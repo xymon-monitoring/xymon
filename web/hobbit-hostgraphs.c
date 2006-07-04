@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.6 2006-06-21 08:51:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.7 2006-07-04 05:44:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -35,12 +35,11 @@ void parse_query(void)
 {
 	cgidata_t *cgidata, *cwalk;
 	int sday = 0, smon = 0, syear = 0, eday = 0, emon = 0, eyear = 0;
+	int smin = 0, shour = 0, ssec = 0, emin = -1, ehour = -1, esec = -1;
 	int hostcount = 0, testcount = 0, alltests = 0;
 
 	cgidata = cgi_request();
 	if (cgidata == NULL) return;
-
-	// start-mon=6&start-day=1&start-yr=2006&end-mon=6&end-day=13&end-yr=2006&hostname=bascop01&testname=ALL&DoReport=Generate+Report
 
 	cwalk = cgidata;
 	while (cwalk) {
@@ -91,6 +90,15 @@ void parse_query(void)
 		else if ((strcmp(cwalk->name, "start-yr") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			syear = atoi(cwalk->value);
 		}
+		else if ((strcmp(cwalk->name, "start-hour") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			shour = atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "start-min") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			smin = atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "start-sec") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			ssec = atoi(cwalk->value);
+		}
 		else if ((strcmp(cwalk->name, "end-day") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			eday = atoi(cwalk->value);
 		}
@@ -99,6 +107,15 @@ void parse_query(void)
 		}
 		else if ((strcmp(cwalk->name, "end-yr") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			eyear = atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "end-hour") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			ehour = atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "end-min") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			emin = atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "end-sec") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			esec = atoi(cwalk->value);
 		}
 
 		cwalk = cwalk->next;
@@ -111,19 +128,22 @@ void parse_query(void)
 		tm.tm_mday = sday;
 		tm.tm_mon = smon - 1;
 		tm.tm_year = syear - 1900;
-		tm.tm_hour = 0;
-		tm.tm_min  = 0;
-		tm.tm_sec  = 0;
+		tm.tm_hour = shour;
+		tm.tm_min  = smin;
+		tm.tm_sec  = ssec;
 		tm.tm_isdst = -1;
 		starttime = mktime(&tm);
 
+		if (ehour == -1) ehour = 23;
+		if (emin  == -1) emin  = 59;
+		if (esec  == -1) esec  = 59;
 		memset(&tm, 0, sizeof(tm));
 		tm.tm_mday = eday;
 		tm.tm_mon = emon - 1;
 		tm.tm_year = eyear - 1900;
-		tm.tm_hour = 23;
-		tm.tm_min  = 59;
-		tm.tm_sec  = 59;
+		tm.tm_hour = ehour;
+		tm.tm_min  = emin;
+		tm.tm_sec  = esec;
 		tm.tm_isdst = -1;
 		endtime = mktime(&tm);
 	}
@@ -161,7 +181,8 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
-	char *hffile = "boilerplate";
+	char *hffile = "hostgraphs";
+	char *formfile = "hostgraphs_form";
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -178,6 +199,8 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
 			hffile = strdup(p+1);
+			formfile = (char *)malloc(strlen(hffile) + 6);
+			sprintf(formfile, "%s_form", hffile);
 		}
 	}
 
@@ -208,12 +231,12 @@ int main(int argc, char *argv[])
 
 		if (hostpattern || pagepattern || ippattern)
 			sethostenv_filter(hostpattern, pagepattern, ippattern);
-		showform(stdout, "hostgraphs", "hostgraphs_form", COL_BLUE, getcurrenttime(NULL), NULL);
+		showform(stdout, hffile, formfile, COL_BLUE, getcurrenttime(NULL), NULL);
 	}
 	else if ((action == A_GENERATE) && hosts && hosts[0] && tests && tests[0]) {
 		int hosti, testi;
 
-		headfoot(stdout, "hostgraphs", "", "header", COL_GREEN);
+		headfoot(stdout, hffile, "", "header", COL_GREEN);
 		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
 
 
@@ -228,7 +251,7 @@ int main(int argc, char *argv[])
 		}
 
 	  	fprintf(stdout, "</table><br><br>\n");
-		headfoot(stdout, "hostgraphs", "", "footer", COL_GREEN);
+		headfoot(stdout, hffile, "", "footer", COL_GREEN);
 	}
 
 	return 0;
