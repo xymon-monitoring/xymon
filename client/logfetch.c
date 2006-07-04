@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.26 2006-06-21 08:51:44 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.27 2006-07-04 11:43:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -75,27 +75,20 @@ typedef struct checkdef_t {
 checkdef_t *checklist = NULL;
 
 
-FILE *rootopen(char *filename, int *err)
+FILE *fileopen(char *filename, int *err)
 {
-	/* Open a file using root privs */
-	uid_t myuid;
+	/* Open a file */
 	FILE *fd;
 
-	myuid = getuid();
-
-#ifdef HPUX
-	setresuid(-1, 0, -1);
-#else
-	seteuid(0);
+#ifdef BIG_SECURITY_HOLE
+	get_root();
 #endif
 
 	fd = fopen(filename, "r");
 	if (err) *err = errno;
 
-#ifdef HPUX
-	setresuid(-1, myuid, -1);
-#else
-	seteuid(myuid);
+#ifdef BIG_SECURITY_HOLE
+	drop_root();
 #endif
 
 	return fd;
@@ -118,7 +111,7 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 #endif
 
 	*truncated = 0;
-	fd = rootopen(filename, &openerr);
+	fd = fileopen(filename, &openerr);
 	if (fd == NULL) {
 		result = (char *)malloc(1024 + strlen(filename));
 		sprintf(result, "Cannot open logfile %s : %s\n", filename, strerror(openerr));
@@ -371,7 +364,7 @@ char *filesum(char *fn, char *dtype)
 
         if ((ctx = digest_init(dtype)) == NULL) return "";
 
-	fd = rootopen(fn, &openerr); 
+	fd = fileopen(fn, &openerr); 
 	if (fd == NULL) return "";
 	while ((buflen = fread(buf, 1, sizeof(buf), fd)) > 0) digest_data(ctx, buf, buflen);
 	fclose(fd);
@@ -468,7 +461,7 @@ void printcountdata(FILE *fd, checkdef_t *cfg)
 	int *counts;
 	char l[8192];
 	
-	logfd = rootopen(cfg->filename, &openerr); 
+	logfd = fileopen(cfg->filename, &openerr); 
 	if (logfd == NULL) {
 		fprintf(fd, "ERROR: Cannot open file %s: %s\n", cfg->filename, strerror(openerr));
 		return;
@@ -806,14 +799,11 @@ int main(int argc, char *argv[])
 	char *cfgfn = NULL, *statfn = NULL;
 	int i;
 	checkdef_t *walk;
-	uid_t myuid;
 
-	/* Immediately drop all root privs, we'll regain them later if needed */
-	myuid = getuid();
-#ifdef HPUX
-	setresuid(-1, myuid, -1);
+#ifdef BIG_SECURITY_HOLE
+	drop_root();
 #else
-	seteuid(myuid);
+	drop_root_and_removesuid(argv[0]);
 #endif
 
 	for (i=1; (i<argc); i++) {

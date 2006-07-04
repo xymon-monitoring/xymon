@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientupdate.c,v 1.4 2006-06-21 08:51:44 henrik Exp $";
+static char rcsid[] = "$Id: clientupdate.c,v 1.5 2006-07-04 11:43:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,33 +30,6 @@ static char rcsid[] = "$Id: clientupdate.c,v 1.4 2006-06-21 08:51:44 henrik Exp 
 #define INPROGRESSFILE "tmp/.inprogress.update"
 
 
-#ifdef HPUX
-
-void drop_root(uid_t myuid)
-{
-	setresuid(-1, myuid, -1);
-}
-
-void get_root(void)
-{
-	setresuid(-1, 0, -1);
-}
-
-#else
-
-void drop_root(uid_t myuid)
-{
-	seteuid(myuid);
-}
-
-void get_root(void)
-{
-	seteuid(0);
-}
-
-#endif
-
-
 int main(int argc, char *argv[])
 {
 	int argi;
@@ -67,11 +40,14 @@ int main(int argc, char *argv[])
 	char *newverreq;
 	char *updateparam = NULL;
 	int  removeself = 0;
-	uid_t myuid;
 
+#ifdef BIG_SECURITY_HOLE
 	/* Immediately drop all root privs, we'll regain them later when needed */
-	myuid = getuid();
-	drop_root(myuid);
+	drop_root();
+#else
+	/* We WILL not run as suid-root. */
+	drop_root_and_removesuid();
+#endif
 
 	versionfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(CLIENTVERSIONFILE) + 2);
 	sprintf(versionfn, "%s/%s", xgetenv("BBHOME"), CLIENTVERSIONFILE);
@@ -156,10 +132,12 @@ int main(int argc, char *argv[])
 			 * logfetch() and clientupdate() will continue to run without
 			 * root privs).
 			 */
+#ifdef BIG_SECURITY_HOLE
 			get_root();
 			chown(tmpfn, 0, getgid());
 			chmod(tmpfn, S_ISUID|S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
-			drop_root(myuid);
+			drop_root();
+#endif
 
 			/* Run the temp. executable */
 			execl(tmpfn, tmpfn, updateparam, "--remove-self", (char *)NULL);
@@ -185,10 +163,12 @@ int main(int argc, char *argv[])
 			 * Note: If get_root() fails, we're left with normal user privileges. That is
 			 * OK, because that is how the client was installed originally, then.
 			 */
+#ifdef BIG_SECURITY_HOLE
 			get_root();
 			chown("bin/logfetch", 0, getgid());
 			chmod("bin/logfetch", S_ISUID|S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
-			drop_root(myuid);
+			drop_root();
+#endif
 
 			return 0;
 		}
@@ -231,10 +211,12 @@ int main(int argc, char *argv[])
 	 * Note: If get_root() fails, we're left with normal user privileges. That is
 	 * OK, because that is how the client was installed originally, then.
 	 */
+#ifdef BIG_SECURITY_HOLE
 	get_root();
 	chown("bin/clientupdate", 0, getgid());
 	chmod("bin/clientupdate", S_ISUID|S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
-	drop_root(myuid);
+	drop_root();
+#endif
 
 	/* Remove temporary- and lock-files */
 	unlink(inprogressfn);
