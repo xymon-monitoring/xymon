@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.243 2006-06-22 12:32:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.244 2006-07-05 13:24:47 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -196,11 +196,11 @@ enum alertstate_t { A_OK, A_ALERT, A_UNDECIDED };
 typedef struct ghostlist_t {
 	char *name;
 	char *sender;
-	struct ghostlist_t *next;
+	time_t tstamp;
 } ghostlist_t;
+RbtHandle rbghosts;
 
 int ghosthandling = -1;
-ghostlist_t *ghostlist = NULL;
 
 char *checkpointfn = NULL;
 FILE *dbgfd = NULL;
@@ -326,6 +326,7 @@ char *generate_stats(void)
 	int i, clients;
 	char bootuptxt[40];
 	char uptimetxt[40];
+	RbtHandle ghandle;
 	time_t uptime = (now - boottime);
 
 	dprintf("-> generate_stats\n");
@@ -378,22 +379,22 @@ char *generate_stats(void)
 	clients = semctl(clichgchn->semid, CLIENTCOUNT, GETVAL);
 	bufp += sprintf(bufp, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
 
-	if (ghostlist) {
-		ghostlist_t *tmp;
+	ghandle = rbtBegin(rbghosts);
+	if (ghandle != rbtEnd(rbghosts)) bufp += sprintf(bufp, "\n\nGhost reports:\n");
+	for (; (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
+		ghostlist_t *gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 
-		bufp += sprintf(bufp, "\n\nGhost reports:\n");
-		while (ghostlist) {
-			if ((statsbuflen - (bufp - statsbuf)) < 512) {
-				/* Less than 512 bytes left in buffer - expand it */
-				statsbuflen += 4096;
-				statsbuf = (char *)realloc(statsbuf, statsbuflen);
-				bufp = statsbuf + strlen(statsbuf);
-			}
-			bufp += sprintf(bufp, "  %-15s reported host %s\n", ghostlist->sender, ghostlist->name);
-			tmp = ghostlist;
-			ghostlist = ghostlist->next;
-			xfree(tmp->name); xfree(tmp->sender); xfree(tmp);
+		/* Skip records older than 10 minutes */
+		if (gwalk->tstamp < (now - 600)) continue;
+
+		if ((statsbuflen - (bufp - statsbuf)) < 512) {
+			/* Less than 512 bytes left in buffer - expand it */
+			statsbuflen += 4096;
+			statsbuf = (char *)realloc(statsbuf, statsbuflen);
+			bufp = statsbuf + strlen(statsbuf);
 		}
+
+		bufp += sprintf(bufp, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
 	}
 
 	if (errbuf) {
@@ -695,6 +696,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 void log_ghost(char *hostname, char *sender, char *msg)
 {
+	RbtHandle ghandle;
 	ghostlist_t *gwalk;
 
 	dprintf("-> log_ghost\n");
@@ -705,15 +707,21 @@ void log_ghost(char *hostname, char *sender, char *msg)
 		fflush(dbgfd);
 	}
 
-	if ((ghosthandling < 2) || (hostname == NULL) || (sender == NULL)) return;
+	if ((hostname == NULL) || (sender == NULL)) return;
 
-	for (gwalk = ghostlist; (gwalk && (strcmp(gwalk->name, hostname) != 0)); gwalk = gwalk->next) ;
-	if (gwalk == NULL) {
+	ghandle = rbtFind(rbghosts, hostname);
+	if (ghandle == rbtEnd(rbghosts)) {
 		gwalk = (ghostlist_t *)malloc(sizeof(ghostlist_t));
 		gwalk->name = strdup(hostname);
 		gwalk->sender = strdup(sender);
-		gwalk->next = ghostlist;
-		ghostlist = gwalk;
+		gwalk->tstamp = time(NULL);
+		rbtInsert(rbghosts, gwalk->name, gwalk);
+	}
+	else {
+		gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
+		if (gwalk->sender) xfree(gwalk->sender);
+		gwalk->sender = strdup(sender);
+		gwalk->tstamp = time(NULL);
 	}
 
 	dprintf("<- log_ghost\n");
@@ -3310,6 +3318,30 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
+	else if (strncmp(msg->buf, "ghostlist", 9) == 0) {
+		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+			RbtHandle ghandle;
+			ghostlist_t *gwalk;
+			strbuffer_t *resp;
+			char msgline[1024];
+
+			resp = newstrbuffer(0);
+
+			for (ghandle = rbtBegin(rbghosts); (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
+				gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
+				snprintf(msgline, sizeof(msgline), "%s|%s|%ld\n", 
+					 gwalk->name, gwalk->sender, (long int)gwalk->tstamp);
+				addtobuffer(resp, msgline);
+			}
+
+			msg->doingwhat = RESPONDING;
+			xfree(msg->buf);
+			msg->buflen = STRBUFLEN(resp);
+			msg->buf = grabstrbuffer(resp);
+			if (!msg->buf) msg->buf = strdup("");
+			msg->bufp = msg->buf;
+		}
+	}
 
 done:
 	if (msg->doingwhat == RESPONDING) {
@@ -3796,6 +3828,7 @@ int main(int argc, char *argv[])
 	rborigins = rbtNew(name_compare);
 	rbcookies = rbtNew(int_compare);
 	rbfilecache = rbtNew(name_compare);
+	rbghosts = rbtNew(name_compare);
 
 	/* For wildcard notify's */
 	create_testinfo("*");
