@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.174 2006-07-05 05:53:21 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.175 2006-07-05 09:03:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -483,7 +483,14 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 				else if (reportstart == 0) {
 					/* Standard webpage */
 					char *skin;
-					htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
+
+					if (strcmp(e->column->name, xgetenv("INFOCOLUMN")) == 0) {
+						/* Show the host IP on the hint display of the "info" column */
+						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
+					}
+					else {
+						htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
+					}
 
 					skin = (e->skin ? e->skin : bbskin);
 
@@ -498,7 +505,6 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 						 * We dont do static pages for the info- and trends-columns, because
 						 * they are always generated dynamically.
 						 */
-						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
 						fprintf(output, "<A HREF=\"%s/html/%s.%s.html\">",
 							xgetenv("BBWEB"), h->hostname, e->column->name);
 						do_rss_item(rssoutput, h, e);
