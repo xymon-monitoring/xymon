@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.173 2006-06-02 21:00:54 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.174 2006-07-05 05:53:21 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -498,6 +498,7 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 						 * We dont do static pages for the info- and trends-columns, because
 						 * they are always generated dynamically.
 						 */
+						htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
 						fprintf(output, "<A HREF=\"%s/html/%s.%s.html\">",
 							xgetenv("BBWEB"), h->hostname, e->column->name);
 						do_rss_item(rssoutput, h, e);
