@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ipaccess.c,v 1.1 2006-06-22 12:32:51 henrik Exp $";
+static char rcsid[] = "$Id: ipaccess.c,v 1.2 2006-07-05 05:56:39 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -56,7 +56,7 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 {
 	int i;
 	unsigned long int tg_ip;
-	char *eoln;
+	char *eoln = NULL;
 
 	dprintf("-> oksender\n");
 
