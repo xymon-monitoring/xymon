@@ -2,7 +2,7 @@
 <HTML>
 <HEAD>
 
-<TITLE>Hobbit - Ghost Report</TITLE>
+<TITLE>Hobbit - Ghost Clients</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
@@ -21,7 +21,7 @@
     <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&HOBBITLOGO</B></FONT>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
-    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Ghost Report</B></FONT></CENTER>
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Ghost Clients</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
