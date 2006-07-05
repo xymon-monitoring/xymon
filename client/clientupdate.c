@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientupdate.c,v 1.5 2006-07-04 11:43:22 henrik Exp $";
+static char rcsid[] = "$Id: clientupdate.c,v 1.6 2006-07-05 06:02:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	drop_root();
 #else
 	/* We WILL not run as suid-root. */
-	drop_root_and_removesuid();
+	drop_root_and_removesuid(argv[0]);
 #endif
 
 	versionfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(CLIENTVERSIONFILE) + 2);
