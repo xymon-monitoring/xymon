@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-osf1.sh,v 1.12 2006-06-10 15:30:26 henrik Exp $
+# $Id: hobbitclient-osf1.sh,v 1.13 2006-07-05 05:52:22 henrik Exp $
 
 echo "[date]"
 date
@@ -28,6 +28,8 @@ df -t noprocfs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[mount]"
+mount
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
@@ -53,11 +55,6 @@ fi
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
-# logfiles
-if test -f $LOGFETCHCFG
-then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
-fi
 
 exit
 

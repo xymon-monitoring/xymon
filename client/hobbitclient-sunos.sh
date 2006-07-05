@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.17 2006-06-30 05:52:43 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.18 2006-07-05 05:52:22 henrik Exp $
 
 echo "[date]"
 date
@@ -32,6 +32,8 @@ while test "$1" != ""; do
   shift
 done
 
+echo "[mount]"
+mount
 echo "[prtconf]"
 /usr/sbin/prtconf
 echo "[memory]"
@@ -70,12 +72,6 @@ sleep 5
 if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
 if test -f $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; then echo "[iostatcpu]"; cat $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; rm -f $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; fi
 if test -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; then echo "[iostatdisk]"; cat $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; rm -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; fi
-
-# logfiles
-if test -f $LOGFETCHCFG
-then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
-fi
 
 exit
 

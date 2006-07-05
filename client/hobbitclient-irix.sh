@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-irix.sh,v 1.4 2006-06-10 15:30:26 henrik Exp $
+# $Id: hobbitclient-irix.sh,v 1.5 2006-07-05 05:52:22 henrik Exp $
 
 echo "[date]"
 date
@@ -21,6 +21,8 @@ echo "[who]"
 who
 echo "[df]"
 df -Plk
+echo "[mount]"
+mount
 echo "[swap]"
 swap -ln
 echo "[ifconfig]"
@@ -51,12 +53,6 @@ fi
 nohup sh -c "sar 300 2 1>$BBTMP/hobbit_sar.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_sar.$MACHINEDOTS.$$ $BBTMP/hobbit_sar.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $BBTMP/hobbit_sar.$MACHINEDOTS; then echo "[sar]"; cat $BBTMP/hobbit_sar.$MACHINEDOTS; rm -f $BBTMP/hobbit_sar.$MACHINEDOTS; fi
-
-# logfiles
-if test -f $LOGFETCHCFG
-then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
-fi
 
 exit
 

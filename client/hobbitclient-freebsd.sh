@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.16 2006-06-27 12:18:23 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.17 2006-07-05 05:52:22 henrik Exp $
 
 echo "[date]"
 date
@@ -26,6 +26,8 @@ df -H -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[mount]"
+mount
 echo "[meminfo]"
 $BBHOME/bin/freebsd-meminfo
 echo "[swapinfo]"
@@ -58,11 +60,6 @@ fi
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
-# logfiles
-if test -f $LOGFETCHCFG
-then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
-fi
 
 exit
 

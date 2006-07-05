@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-netbsd.sh,v 1.14 2006-06-10 15:30:26 henrik Exp $
+# $Id: hobbitclient-netbsd.sh,v 1.15 2006-07-05 05:52:22 henrik Exp $
 
 echo "[date]"
 date
@@ -24,6 +24,8 @@ df -P -tnonfs,kernfs,procfs,cd9660,null | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[mount]"
+mount
 echo "[meminfo]"
 $BBHOME/bin/netbsd-meminfo
 echo "[swapctl]"
@@ -55,11 +57,6 @@ fi
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
-# logfiles
-if test -f $LOGFETCHCFG
-then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
-fi
 
 exit
 

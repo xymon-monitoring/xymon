@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-darwin.sh,v 1.16 2006-06-10 15:30:26 henrik Exp $
+# $Id: hobbitclient-darwin.sh,v 1.17 2006-07-05 05:52:22 henrik Exp $
 
 echo "[date]"
 date
@@ -26,6 +26,8 @@ df -H -t nonfs,nullfs,cd9660,procfs,volfs,devfs,fdesc | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[mount]"
+mount
 echo "[meminfo]"
 vm_stat
 echo "[ifconfig]"
@@ -49,12 +51,6 @@ then
         echo "[top]"
 	$TOP -l 1 -n 20
     fi
-fi
-
-# logfiles
-if test -f $LOGFETCHCFG
-then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
 fi
 
 exit

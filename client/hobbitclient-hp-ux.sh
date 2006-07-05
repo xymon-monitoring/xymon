@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.19 2006-06-10 15:30:26 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.20 2006-07-05 05:52:22 henrik Exp $
 
 echo "[date]"
 date
@@ -26,6 +26,8 @@ df -Pk | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
+echo "[mount]"
+mount
 echo "[memory]"
 $BBHOME/bin/hpux-meminfo
 echo "[swapinfo]"
@@ -60,11 +62,6 @@ fi
 nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
 if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
-# logfiles
-if test -f $LOGFETCHCFG
-then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
-fi
 
 exit
 
