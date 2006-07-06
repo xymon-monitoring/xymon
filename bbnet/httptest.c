@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.85 2006-06-02 16:24:27 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.86 2006-07-06 12:22:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -592,8 +592,19 @@ void add_http_test(testitem_t *t)
 	}
 	{
 		char useragent[100];
+		namelist_t *hinfo;
+		char *browser = NULL;
 
-		sprintf(useragent, "User-Agent: Hobbit bbtest-net/%s\r\n", VERSION);
+		hinfo = hostinfo(t->host->hostname);
+		if (hinfo) browser = bbh_item(hinfo, BBH_BROWSER);
+
+		if (browser) {
+			sprintf(useragent, "User-Agent: %s\r\n", browser);
+		}
+		else {
+			sprintf(useragent, "User-Agent: Hobbit bbtest-net/%s\r\n", VERSION);
+		}
+
 		addtobuffer(httprequest, useragent);
 	}
 	if (httptest->bburl.desturl->auth) {

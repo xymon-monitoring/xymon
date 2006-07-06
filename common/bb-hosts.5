@@ -1081,6 +1081,21 @@ If you would like to hide these from view, then the HIDEHTTP
 tag will keep this information from showing up on the status
 webpages.
 
+.IP browser=BROWSERNAME
+By default, Hobbit sends an HTTP "User-Agent" header identifying
+it a "Hobbit". Some websites require that you use a specific
+browser, typically Internet Explorer. To cater for testing of
+such sites, this tag can be used to modify the data sent in the
+User-Agent header.
+.br
+E.g. to perform an HTTP test with Hobbit masquerading as an Internet
+Explorer 6.0 browser, use \fBbrowser="Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"\fR.
+If you do not know what the User-Agent header should be, open up
+the browser that works with this particular site, and open the
+URL "javascript:document.writeln(navigator.userAgent)" (just copy this
+into the "Open URL" dialog. The text that shows up is what the browser
+sends as the User-Agent header.
+
 .SH LDAP (DIRECTORY SERVER) TESTS
 .IP ldap
 .IP ldaps
