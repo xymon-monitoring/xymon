@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.1 2006-07-05 13:13:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.2 2006-07-06 10:42:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -16,16 +16,10 @@ static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.1 2006-07-05 13:13:24 henrik Exp
 
 #include "libbbgen.h"
 
-static void errormsg(char *msg)
-{
-	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	printf("<html><head><title>Invalid request</title></head>\n");
-	printf("<body>%s</body></html>\n", msg);
-	exit(1);
-}
-
 enum { S_NAME, S_SENDER, S_TIME } sorttype = S_NAME;
+char *sortstring = "name";
 int maxage = 300;
+enum { O_HTML, O_TXT } outform = O_HTML;
 
 void parse_query(void)
 {
@@ -41,6 +35,8 @@ void parse_query(void)
 		 */
 
 		if (strcmp(cwalk->name, "SORT") == 0) {
+			sortstring = strdup(cwalk->value);
+
 			if (strcmp(cwalk->value, "name") == 0) sorttype = S_NAME;
 			else if (strcmp(cwalk->value, "sender") == 0) sorttype = S_SENDER;
 			else if (strcmp(cwalk->value, "time") == 0) sorttype = S_TIME;
@@ -48,6 +44,9 @@ void parse_query(void)
 		else if (strcmp(cwalk->name, "MAXAGE") == 0) {
 			maxage = atoi(cwalk->value);
 			if (maxage <= 0) maxage = 300;
+		}
+		else if (strcmp(cwalk->name, "TEXT") == 0) {
+			outform = O_TXT;
 		}
 
 		cwalk = cwalk->next;
@@ -119,8 +118,16 @@ int main(int argc, char *argv[])
 
 	parse_query();
 
-	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	headfoot(stdout, hffile, "", "header", bgcolor);
+	switch (outform) {
+	  case O_HTML:
+		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+		headfoot(stdout, hffile, "", "header", bgcolor);
+		break;
+	  case O_TXT:
+		fprintf(stdout, "Content-type: text/plain\n\n");
+		break;
+	}
+
 	if (sendmessage("ghostlist", NULL, NULL, &ghosts, 1, BBTALK_TIMEOUT) == BB_OK) {
 		char *bol, *eoln, *name, *sender, *timestr;
 		time_t tstamp, now;
@@ -176,28 +183,44 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		fprintf(stdout, "<table align=center>\n");
-		fprintf(stdout, "<tr>");
-		fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=name&MAXAGE=%d\">Hostname</a></th>", maxage);
-		fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=sender&MAXAGE=%d\">Sent from</a></th>", maxage);
-		fprintf(stdout, "<th align=right><a href=\"hobbit-ghosts.sh?SORT=time&MAXAGE=%d\">Report age</a></th>", maxage);
-		fprintf(stdout, "</tr>\n");
+		if (outform == O_HTML) {
+			fprintf(stdout, "<table align=center>\n");
+			fprintf(stdout, "<tr>");
+			fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=name&MAXAGE=%d\">Hostname</a></th>", maxage);
+			fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=sender&MAXAGE=%d\">Sent from</a></th>", maxage);
+			fprintf(stdout, "<th align=right><a href=\"hobbit-ghosts.sh?SORT=time&MAXAGE=%d\">Report age</a></th>", maxage);
+			fprintf(stdout, "</tr>\n");
+		}
 
 		for (idx = 0; (idx < count); idx++) {
 			if (!ghosttable[idx].name) continue;
 			if (!ghosttable[idx].sender) continue;
 
-			fprintf(stdout, "<tr><td align=left>%s</td><td align=left>%s</td><td align=right>%ld:%02ld</td></tr>\n",
-				ghosttable[idx].name, 
-				ghosttable[idx].sender, 
-				(now - ghosttable[idx].tstamp)/60, (now - ghosttable[idx].tstamp)%60);
+			switch (outform) {
+			  case O_HTML:
+				fprintf(stdout, "<tr><td align=left>%s</td><td align=left>%s</td><td align=right>%ld:%02ld</td></tr>\n",
+					ghosttable[idx].name, 
+					ghosttable[idx].sender, 
+					(now - ghosttable[idx].tstamp)/60, (now - ghosttable[idx].tstamp)%60);
+				break;
+
+			  case O_TXT:
+				fprintf(stdout, "%s\t\t%s\n", ghosttable[idx].sender, ghosttable[idx].name);
+				break;
+			}
 		}
-		fprintf(stdout, "</table>\n");
+
+		if (outform == O_HTML) {
+			fprintf(stdout, "</table>\n");
+			fprintf(stdout, "<br><br><center><a href=\"hobbit-ghosts.sh?SORT=%s&MAXAGE=%d&TEXT\">Text report</a></center>\n", sortstring, maxage);
+		}
 	}
 	else
 		fprintf(stdout, "<h3><center>Failed to retrieve ghostlist from server</center></h3>\n");
 
-	headfoot(stdout, hffile, "", "footer", bgcolor);
+	if (outform == O_HTML) {
+		headfoot(stdout, hffile, "", "footer", bgcolor);
+	}
 
 	return 0;
 }
