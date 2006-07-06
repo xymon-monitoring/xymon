@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.16 2006-07-05 05:52:53 henrik Exp $
+# $Id: hobbitclient.sh,v 1.17 2006-07-06 09:07:53 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -53,7 +53,7 @@ $BBHOME/bin/$BBOSSCRIPT >> $MSGTMPFILE
 # logfiles
 if test -f $LOGFETCHCFG
 then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS
+    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS >>$MSGTMPFILE
 fi
 # Client version
 echo "[clientversion]"  >>$MSGTMPFILE
