@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.4 2006-07-07 12:37:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.5 2006-07-07 12:57:44 henrik Exp $";
 
 #include "config.h"
 
@@ -506,6 +506,8 @@ int main(int argc, char *argv[])
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
 
 		if (n == -1) {
+			if (errno == EINTR) continue;	/* Interrupted, e.g. a SIGHUP */
+
 			errprintf("select failure: %s\n", strerror(errno));
 			return 0;
 		}
