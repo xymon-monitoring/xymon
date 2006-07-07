@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.3 2006-06-27 16:13:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.4 2006-07-07 12:37:32 henrik Exp $";
 
 #include "config.h"
 
@@ -40,6 +40,7 @@ volatile int running = 1;
 volatile time_t reloadtime = 0;
 char *serverip = "127.0.0.1";
 int pollinterval = 60; /* Seconds */
+time_t whentoqueue = 0;
 
 /*
  * When we send in a "client" message to the server, we get the client configuration
@@ -56,20 +57,21 @@ RbtHandle clients;
 
 typedef enum { C_CLIENT, C_SERVER } conntype_t;
 typedef struct conn_t {
+	unsigned long seq;
 	conntype_t ctype;		/* Talking to a client or a server? */
 	int savedata;			/* Save the data to the client data buffer */
 	clients_t *client;		/* Which client this refers to. */
 	time_t tstamp;			/* When did the connection start. */
 	struct sockaddr_in caddr;	/* Destination address */
 	int sockfd;			/* Socket */
-	enum { C_READING, C_WRITING, C_CLEANUP, C_DONE } action;	/* What are we doing? */
+	enum { C_READING, C_WRITING, C_CLEANUP } action;	/* What are we doing? */
 	strbuffer_t *msgbuf;		/* I/O buffer */
 	int sentbytes;
 	struct conn_t *next;
 } conn_t;
 conn_t *chead = NULL;
 conn_t *ctail = NULL;
-
+unsigned long connseq = 0;
 
 void sigmisc_handler(int signum)
 {
@@ -86,19 +88,30 @@ void sigmisc_handler(int signum)
 }
 
 
+int needcleanup = 0;
+
+char *addrstring(struct sockaddr_in *addr)
+{
+	static char res[100];
+
+	sprintf(res, "%s:%d", inet_ntoa(addr->sin_addr), ntohs(addr->sin_port));
+	return res;
+}
+
+void flag_cleanup(conn_t *conn)
+{
+	conn->action = C_CLEANUP;
+	needcleanup = 1;
+}
+
 void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, clients_t *client)
 {
 	conn_t *newconn;
 	int n;
 
-	if (debug) {
-		char dbgmsg[100];
-
-		snprintf(dbgmsg, sizeof(dbgmsg), "%s\n", STRBUF(req));
-		dprintf("Queuing request to %s for %s: '%s'\n", destip, client->hostname, dbgmsg);
-	}
-
+	connseq++;
 	newconn = (conn_t *)calloc(1, sizeof(conn_t));
+	newconn->seq = connseq;
 	newconn->client = client;
 	newconn->msgbuf = req;
 	newconn->sentbytes = 0;
@@ -112,33 +125,39 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	newconn->caddr.sin_family = AF_INET;
 	if (inet_aton(destip, (struct in_addr *)&newconn->caddr.sin_addr.s_addr) == 0) {
 		/* Bad IP. */
-		errprintf("Invalid client IP: %s\n", destip);
-		freestrbuffer(req);
-		xfree(newconn);
-		return;
+		errprintf("Invalid client IP: %s (req %lu)\n", destip, newconn->seq);
+		flag_cleanup(newconn);
+		goto done;
 	}
 
 	newconn->sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (newconn->sockfd == -1) {
 		/* No more sockets available. Try again later. */
-		errprintf("Out of sockets\n");
-		freestrbuffer(req);
-		xfree(newconn);
-		return;
+		errprintf("Out of sockets (req %lu)\n", newconn->seq);
+		flag_cleanup(newconn);
+		goto done;
 	}
 	fcntl(newconn->sockfd, F_SETFL, O_NONBLOCK);
+
+	if (debug) {
+		char dbgmsg[100];
+
+		snprintf(dbgmsg, sizeof(dbgmsg), "%s\n", STRBUF(req));
+		dprintf("Queuing request %lu to %s for %s: '%s'\n", 
+			connseq, addrstring(&newconn->caddr), client->hostname, dbgmsg);
+	}
 
 	/* All set ... start the connection */
 	n = connect(newconn->sockfd, (struct sockaddr *)&newconn->caddr, sizeof(newconn->caddr)); 
 	if ((n == -1) && (errno != EINPROGRESS)) {
 		/* Immediate connect failure - drop it */
-		errprintf("Could not connect to %s\n", destip);
-		close(newconn->sockfd);
-		freestrbuffer(req);
-		xfree(newconn);
-		return;
+		errprintf("Could not connect to %s (req %lu): %s\n", 
+			  addrstring(&newconn->caddr), newconn->seq, strerror(errno));
+		flag_cleanup(newconn);
+		goto done;
 	}
 
+done:
 	/* Add it to our list of active connections */
 	if (ctail) {
 		ctail->next = newconn;
@@ -162,10 +181,12 @@ void senddata(conn_t *conn)
 
 	if (n == -1) {
 		/* Write failure */
-		errprintf("Connection lost during write\n");
-		conn->action = C_CLEANUP;
+		errprintf("Connection lost during write to %s (req %lu): %s\n", 
+			  addrstring(&conn->caddr), conn->seq, strerror(errno));
+		flag_cleanup(conn);
 	}
 	else if (n >= 0) {
+		dprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr), conn->seq);
 		conn->sentbytes += n;
 		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) {
 			clearstrbuffer(conn->msgbuf);
@@ -188,8 +209,7 @@ void process_clientdata(conn_t *conn)
 
 	databegin = strchr(STRBUF(conn->msgbuf), '\n');
 	if (!databegin || (STRBUFLEN(conn->msgbuf) == 0)) {
-		conn->client->busy = 0;
-		conn->client->nextpoll = time(NULL) + pollinterval;
+		flag_cleanup(conn);
 		return;
 	}
 
@@ -233,7 +253,7 @@ void process_serverdata(conn_t *conn)
 		if (conn->client->clientdata) xfree(conn->client->clientdata);
 		conn->client->clientdata = grabstrbuffer(conn->msgbuf);
 		conn->msgbuf = NULL;
-		dprintf("Client data for %s: %s\n", conn->client->hostname, 
+		dprintf("Client data for %s (req %lu): %s\n", conn->client->hostname, conn->seq, 
 			(conn->client->clientdata ? conn->client->clientdata : "<Null>"));
 	}
 }
@@ -246,18 +266,23 @@ void grabdata(conn_t *conn)
         n = read(conn->sockfd, buf, sizeof(buf));
 	if (n == -1) {
 		/* Read failure */
-		errprintf("Connection lost during read\n");
-		conn->action = C_CLEANUP;
+		errprintf("Connection lost during read from %s (req %lu): %s\n", 
+			  addrstring(&conn->caddr), conn->seq, strerror(errno));
+		flag_cleanup(conn);
 	}
 	else if (n > 0) {
 		/* Save the data */
+		dprintf("Got %d bytes of data from %s (req %lu)\n", 
+			n, addrstring(&conn->caddr), conn->seq);
 		buf[n] = '\0';
 		addtobuffer(conn->msgbuf, buf);
 	}
 	else if (n == 0) {
 		/* Done reading. Process the data. */
+		dprintf("Done reading data from %s (req %lu)\n", 
+			addrstring(&conn->caddr), conn->seq);
 		shutdown(conn->sockfd, SHUT_RDWR);
-		conn->action = C_DONE;
+		flag_cleanup(conn);
 
 		switch (conn->ctype) {
 		  case C_CLIENT:
@@ -300,6 +325,15 @@ int main(int argc, char *argv[])
 
 	clients = rbtNew(name_compare);
 
+	{
+		/* Seed the random number generator */
+		struct timeval tv;
+		struct timezone tz;
+
+		gettimeofday(&tv, &tz);
+		srandom(tv.tv_usec);
+	}
+
 	do {
 		RbtIterator handle;
 		conn_t *connwalk, *cprev;
@@ -326,94 +360,124 @@ int main(int argc, char *argv[])
 					newclient = (clients_t *)calloc(1, sizeof(clients_t));
 					newclient->hostname = strdup(hname);
 					rbtInsert(clients, newclient->hostname, newclient);
+					whentoqueue = now;
 				}
 			}
 		}
 
 		/* Remove any finished connections */
-		connwalk = chead; cprev = NULL;
-		while (connwalk) {
-			conn_t *zombie;
+		if (needcleanup) {
+			needcleanup = 0;
+			connwalk = chead; cprev = NULL;
+			dprintf("Doing cleanup\n");
 
-			if ((connwalk->action != C_DONE) && (connwalk->action != C_CLEANUP)) {
-				cprev = connwalk;
-				connwalk = connwalk->next;
-				continue;
+			while (connwalk) {
+				conn_t *zombie;
+
+				if ((connwalk->action == C_READING) || (connwalk->action == C_WRITING)) {
+					/* Active connection - skip to the next conn_t record */
+					cprev = connwalk;
+					connwalk = connwalk->next;
+					continue;
+				}
+
+				if (connwalk->action == C_CLEANUP) {
+					if (connwalk->ctype == C_CLIENT) {
+						int delay;
+						
+						/* 
+						 * Finished getting data from a client, set next poll time.
+						 * We try to avoid doing all polls in one go, by setting
+						 * the next poll to "pollinterval" seconds from now, 
+						 * +/- 15 seconds.
+						 */
+						connwalk->client->busy = 0;
+						delay = pollinterval + ((random() % 31) - 16);
+						connwalk->client->nextpoll = now + delay;
+						if (whentoqueue > connwalk->client->nextpoll) {
+							whentoqueue = connwalk->client->nextpoll;
+						}
+
+						dprintf("Next poll time of %s in %d seconds\n", 
+							connwalk->client->hostname, delay);
+					}
+					else if (connwalk->ctype == C_SERVER) {
+						/* Nothing needed for server cleanups */
+					}
+				}
+
+				/* Unlink the request from the list of active connections */
+				zombie = connwalk;
+				if (cprev == NULL) {
+					chead = zombie->next;
+					connwalk = chead;
+					cprev = NULL;
+				}
+				else {
+					cprev->next = zombie->next;
+					connwalk = zombie->next;
+				}
+
+				/* Purge the zombie */
+				dprintf("Closing connection: req %lu, peer %s, action was %d, type was %d\n", 
+					zombie->seq, addrstring(&zombie->caddr), 
+					zombie->action, zombie->ctype);
+				close(zombie->sockfd);
+				freestrbuffer(zombie->msgbuf);
+				xfree(zombie);
 			}
 
-			if ((connwalk->action == C_CLEANUP) || (connwalk->ctype == C_SERVER)) {
-				/*
-				 * We've talked to both the client and the server, so
-				 * this host is now idle. Call it again after a while.
-				 */
-				connwalk->client->busy = 0;
-				connwalk->client->nextpoll = time(NULL) + pollinterval;
-			}
-
-			/* Close the socket */
-			close(connwalk->sockfd);
-
-			zombie = connwalk;
-			if (cprev == NULL) {
-				chead = zombie->next;
-				connwalk = chead;
-				cprev = NULL;
-			}
-			else {
-				cprev->next = zombie->next;
-				connwalk = zombie->next;
-			}
-
-			freestrbuffer(zombie->msgbuf);
-			xfree(zombie);
+			if (!chead) ctail = NULL;
 		}
-		if (!chead) ctail = NULL;
 
 
 		/* List the clients we should contact now */
-		for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
-			clients_t *clientwalk;
-			strbuffer_t *request;
-			char *pullstr, *ip;
-			int port;
+		if (now >= whentoqueue) {
+			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
+				clients_t *clientwalk;
+				strbuffer_t *request;
+				char *pullstr, *ip;
+				int port;
 
-			clientwalk = (clients_t *)gettreeitem(clients, handle);
-			if (clientwalk->busy) continue;
-			if (clientwalk->nextpoll > now) continue;
+				clientwalk = (clients_t *)gettreeitem(clients, handle);
+				if (clientwalk->busy) continue;
+				if (clientwalk->nextpoll > now) continue;
 
-			/* Deleted hosts stay in our tree - but should disappear from the known hosts */
-			hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
-			pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
+				/* Deleted hosts stay in our tree - but should disappear from the known hosts */
+				hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
+				pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
 
-			ip = strchr(pullstr, '=');
-			port = atoi(xgetenv("BBPORT"));
+				ip = strchr(pullstr, '=');
+				port = atoi(xgetenv("BBPORT"));
 
-			if (!ip) {
-				ip = strdup(bbh_item(hostwalk, BBH_IP));
+				if (!ip) {
+					ip = strdup(bbh_item(hostwalk, BBH_IP));
+				}
+				else {
+					char *p;
+
+					ip++; /* Skip the '=' */
+					ip = strdup(ip);
+					p = strchr(ip, ':');
+					if (p) { *p = '\0'; port = atoi(p+1); }
+				}
+
+				/* 
+				 * Build the "pullclient" request, which includes the latest
+				 * clientdata config we got from the server. Keep the clientdata
+				 * here - we send "pullclient" requests more often that we actually
+				 * contact the server, but we should provide the config data always.
+				 */
+				request = newstrbuffer(0);
+				addtobuffer(request, "pullclient\n");
+				if (clientwalk->clientdata) addtobuffer(request, clientwalk->clientdata);
+
+				/* Put the request on the connection queue */
+				addrequest(C_CLIENT, ip, port, request, clientwalk);
+				clientwalk->busy = 1;
+
+				xfree(ip);
 			}
-			else {
-				char *p;
-
-				ip = strdup(ip++);
-				p = strchr(ip, ':');
-				if (p) { *p = '\0'; port = atoi(p+1); }
-			}
-
-			/* 
-			 * Build the "pullclient" request, which includes the latest
-			 * clientdata config we got from the server. Keep the clientdata
-			 * here - we send "pullclient" requests more often that we actually
-			 * contact the server, but we should provide the config data always.
-			 */
-			request = newstrbuffer(0);
-			addtobuffer(request, "pullclient\n");
-			if (clientwalk->clientdata) addtobuffer(request, clientwalk->clientdata);
-
-			/* Put the request on the connection queue */
-			addrequest(C_CLIENT, ip, port, request, clientwalk);
-			clientwalk->busy = 1;
-
-			xfree(ip);
 		}
 
 		/* Handle connection queue */
@@ -433,12 +497,11 @@ int main(int argc, char *argv[])
 				break;
 
 			  case C_CLEANUP:
-			  case C_DONE:
 				break;
 			}
 		}
 
-		tmo.tv_sec = 10;
+		tmo.tv_sec = 1;
 		tmo.tv_usec = 0;
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
 
@@ -460,7 +523,6 @@ int main(int argc, char *argv[])
 				break;
 
 			  case C_CLEANUP:
-			  case C_DONE:
 				break;
 			}
 		}
