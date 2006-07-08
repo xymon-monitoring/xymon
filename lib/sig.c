@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.8 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.9 2006-07-08 10:49:08 henrik Exp $";
 
 #include <limits.h>
 #include <signal.h>
@@ -55,6 +55,20 @@ static void sigsegv_handler(int signum)
 	/* Dump core and abort */
 	chdir(signal_bbtmp);
 	abort();
+}
+
+static void sigusr2_handler(int signum)
+{
+	/* SIGUSR2 toggles debugging */
+
+	if (debug) {
+		dprintf("Debug OFF\n");
+		debug = 0;
+	}
+	else {
+		debug = 1;
+		dprintf("Debug ON\n");
+	}
 }
 
 void setup_signalhandler(char *programname)
@@ -102,7 +116,9 @@ void setup_signalhandler(char *programname)
 #ifdef SIGBUS
 	sigaction(SIGBUS, &sa, NULL);
 #endif
+
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sigusr2_handler;
+	sigaction(SIGUSR2, &sa, NULL);
 }
-
-
 
