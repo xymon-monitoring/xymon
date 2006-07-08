@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.9 2006-07-08 10:49:08 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.10 2006-07-08 10:56:19 henrik Exp $";
 
 #include <limits.h>
 #include <signal.h>
@@ -85,14 +85,6 @@ void setup_signalhandler(char *programname)
 	sa.sa_handler = sigsegv_handler;
 
 	/*
-	 * After lengthy debugging and perusing of mail archives:
-	 * Need to ignore SIGPIPE since FreeBSD (and others?) can throw this
-	 * on a write() instead of simply returning -EPIPE like any sane
-	 * OS would.
-	 */
-	signal(SIGPIPE, SIG_IGN);
-
-	/*
 	 * Try to allow ourselves to generate core files
 	 */
 	getrlimit(RLIMIT_CORE, &lim);
@@ -113,10 +105,23 @@ void setup_signalhandler(char *programname)
 		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "BBDISPLAY"), programname);
 
 	sigaction(SIGSEGV, &sa, NULL);
+	sigaction(SIGILL, &sa, NULL);
 #ifdef SIGBUS
 	sigaction(SIGBUS, &sa, NULL);
 #endif
 
+	/*
+	 * After lengthy debugging and perusing of mail archives:
+	 * Need to ignore SIGPIPE since FreeBSD (and others?) can throw this
+	 * on a write() instead of simply returning -EPIPE like any sane
+	 * OS would.
+	 */
+	signal(SIGPIPE, SIG_IGN);
+
+	/* Ignore SIGUSR1 unless explicitly set by main program */
+	signal (SIGUSR1, SIG_IGN);
+
+	/* SIGUSR2 toggles debugging */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigusr2_handler;
 	sigaction(SIGUSR2, &sa, NULL);
