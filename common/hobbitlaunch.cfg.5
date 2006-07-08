@@ -97,16 +97,6 @@ hobbitlaunch will start the task with stdout and stderr redirected
 to this file. If this option is not present, then the output
 goes to the same location as the hobbitlaunch output.
 
-The \fBHEARTBEAT\fR keyword can only be used for one task,
-and is specifically aimed at monitoring the
-.I hobbitd(8)
-task. This task must send a SIGUSR2 signal to hobbitlaunch
-regularly; if this signal fails to arrive for more than 15 
-seconds, hobbitlaunch will kill the running task and start
-up a new one.
-.I hobbitd(8)
-will send this signal every 5 seconds.
-
 .SH "SEE ALSO"
 hobbitlaunch(8), hobbitd(8), hobbit(7)
 

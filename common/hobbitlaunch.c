@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.39 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.40 2006-07-08 10:39:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,8 +42,6 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.39 2006-05-03 21:12:33 henrik Exp
  */
 
 #define MAX_FAILS 5
-#define HEARTBEAT_CHECK   5	/* How often to check the heartbeat */
-#define HEARTBEAT_TIMEOUT 60	/* Max time between heartbeats. */
 
 typedef struct grouplist_t {
 	char *groupname;
@@ -66,7 +64,6 @@ typedef struct tasklist_t {
 	int cfload;	/* Used while reloading a configuration */
 	int beingkilled;
 	struct tasklist_t *depends;
-	volatile time_t *heartbeat;
 	struct tasklist_t *next;
 } tasklist_t;
 tasklist_t *taskhead = NULL;
@@ -76,8 +73,6 @@ grouplist_t *grouphead = NULL;
 volatile time_t nextcfgload = 0;
 volatile int running = 1;
 volatile int dologswitch = 0;
-volatile time_t heartbeat;
-time_t nexthbcheck = 0;
 
 void update_task(tasklist_t *newtask)
 {
@@ -292,9 +287,6 @@ void load_config(char *conffn)
 			p += strspn(p, " \t");
 			curtask->envarea = strdup(p);
 		}
-		else if (curtask && (strcasecmp(p, "HEARTBEAT") == 0)) {
-			curtask->heartbeat = &heartbeat;
-		}
 		else if (curtask && (strcasecmp(p, "DISABLED") == 0)) {
 			curtask->disabled = 1;
 		}
@@ -385,10 +377,6 @@ void sig_handler(int signum)
 
 	  case SIGTERM:
 		running = 0;
-		break;
-
-	  case SIGUSR2:
-		heartbeat = time(NULL);
 		break;
 	}
 }
@@ -504,11 +492,8 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
-	sigaction(SIGUSR2, &sa, NULL);
 
 	errprintf("hobbitlaunch starting\n");
-	heartbeat = time(NULL);
-	nexthbcheck = heartbeat + HEARTBEAT_CHECK;
 	while (running) {
 		time_t now = time(NULL);
 
@@ -521,18 +506,6 @@ int main(int argc, char *argv[])
 			freopen(logfn, "a", stdout);
 			freopen(logfn, "a", stderr);
 			dologswitch = 0;
-		}
-
-		if (now >= nexthbcheck) {
-			nexthbcheck = now + HEARTBEAT_CHECK;
-			for (twalk = taskhead; (twalk); twalk = twalk->next) {
-				if (twalk->heartbeat && twalk->pid && ((*(twalk->heartbeat) + HEARTBEAT_TIMEOUT) < now)) {
-					errprintf("Heartbeat lost for task %s, %s it\n", 
-						  twalk->key, (twalk->beingkilled ? "killing" : "bouncing"));
-					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
-					twalk->beingkilled = 1;
-				}
-			}
 		}
 
 		/* Pick up children that have terminated */
@@ -604,11 +577,6 @@ int main(int argc, char *argv[])
 
 				dprintf("About to start task %s\n", twalk->key);
 
-				if (twalk->heartbeat) {
-					/* When we start the heartbeat-checked task, dont kill it off right away */
-					nexthbcheck = now + 3*HEARTBEAT_TIMEOUT;
-				}
-
 				twalk->laststart = now;
 				twalk->pid = fork();
 				if (twalk->pid == 0) {
@@ -665,8 +633,6 @@ int main(int argc, char *argv[])
 				dprintf("Task %s active with PID %d\n", twalk->key, (int)twalk->pid);
 			}
 		}
-
-		dprintf("Heartbeat received at time %d\n", (int) heartbeat);
 
 		sleep(5);
 	}

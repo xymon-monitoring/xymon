@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.244 2006-07-05 13:24:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.245 2006-07-08 10:39:15 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -206,7 +206,6 @@ char *checkpointfn = NULL;
 FILE *dbgfd = NULL;
 char *dbghost = NULL;
 time_t boottime;
-pid_t parentpid = 0;
 int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
@@ -3815,7 +3814,6 @@ int main(int argc, char *argv[])
 	char *pidfile = NULL;
 	struct sigaction sa;
 	time_t conn_timeout = 30;
-	time_t nextheartbeat = 0;
 	char *envarea = NULL;
 
 	MEMDEFINE(colnames);
@@ -4174,12 +4172,6 @@ int main(int argc, char *argv[])
 		if (dbgfd == NULL) errprintf("Cannot open debug file %s: %s\n", fname, strerror(errno));
 	}
 
-	if (!daemonize) {
-		/* Setup to send the parent proces a heartbeat-signal (SIGUSR2) */
-		nextheartbeat = time(NULL);
-		parentpid = getppid(); if (parentpid <= 1) parentpid = 0;
-	}
-
 	errprintf("Setup complete\n");
 	do {
 		/*
@@ -4202,12 +4194,6 @@ int main(int argc, char *argv[])
 		conn_t *cwalk;
 		time_t now = time(NULL);
 		int childstat;
-
-		if (parentpid && (nextheartbeat <= now)) {
-			dprintf("Sending heartbeat to pid %d\n", (int) parentpid);
-			nextheartbeat = now + 5;
-			kill(parentpid, SIGUSR2);
-		}
 
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
