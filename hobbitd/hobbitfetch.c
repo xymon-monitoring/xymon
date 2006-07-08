@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.5 2006-07-07 12:57:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.6 2006-07-08 06:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -38,6 +38,7 @@ static char rcsid[] = "$Id: hobbitfetch.c,v 1.5 2006-07-07 12:57:44 henrik Exp $
 
 volatile int running = 1;
 volatile time_t reloadtime = 0;
+volatile int dumpsessions = 0;
 char *serverip = "127.0.0.1";
 int pollinterval = 60; /* Seconds */
 time_t whentoqueue = 0;
@@ -83,6 +84,10 @@ void sigmisc_handler(int signum)
 
 	  case SIGHUP:
 		reloadtime = 0;
+		break;
+
+	  case SIGUSR1:
+		dumpsessions = 1;
 		break;
 	}
 }
@@ -302,6 +307,7 @@ int main(int argc, char *argv[])
 	int argi;
 	struct sigaction sa;
 	namelist_t *hostwalk;
+	time_t nexttimeout;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--server=")) {
@@ -322,8 +328,10 @@ int main(int argc, char *argv[])
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);
 
 	clients = rbtNew(name_compare);
+	nexttimeout = time(NULL) + 60;
 
 	{
 		/* Seed the random number generator */
@@ -343,7 +351,6 @@ int main(int argc, char *argv[])
 		time_t now;
 		
 		now = time(NULL);
-
 		if (now > reloadtime) {
 			reloadtime = now + 600;
 
@@ -365,8 +372,22 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		/* Remove any finished connections */
+		now = time(NULL);
+		if (now > nexttimeout) {
+			/* Check for connections that have timed out */
+			nexttimeout = now + 60;
+
+			for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
+				if ((connwalk->tstamp + 60) < now) {
+					errprintf("Timeout while talking to %s (req %lu): Aborting session\n",
+						  addrstring(&connwalk->caddr), connwalk->seq);
+					flag_cleanup(connwalk);
+				}
+			}
+		}
+
 		if (needcleanup) {
+			/* Remove any finished connections */
 			needcleanup = 0;
 			connwalk = chead; cprev = NULL;
 			dprintf("Doing cleanup\n");
@@ -427,11 +448,34 @@ int main(int argc, char *argv[])
 				xfree(zombie);
 			}
 
-			if (!chead) ctail = NULL;
+			/* Set the tail pointer correctly */
+			ctail = chead;
+			if (ctail) { while (ctail->next) ctail = ctail->next; }
 		}
 
+		if (dumpsessions) {
+			dumpsessions = 0;
+			for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
+				char *ctypestr, *actionstr;
+
+				switch (connwalk->ctype) {
+				  case C_CLIENT: ctypestr = "client"; break;
+				  case C_SERVER: ctypestr = "server"; break;
+				}
+
+				switch (connwalk->action) {
+				  case C_READING: actionstr = "reading"; break;
+				  case C_WRITING: actionstr = "writing"; break;
+				  case C_CLEANUP: actionstr = "cleanup"; break;
+				}
+
+				errprintf("Request %lu: type %s, action %s, peer %s\n",
+					  connwalk->seq, ctypestr, actionstr, addrstring(&connwalk->caddr));
+			}
+		}
 
 		/* List the clients we should contact now */
+		now = time(NULL);
 		if (now >= whentoqueue) {
 			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
 				clients_t *clientwalk;
