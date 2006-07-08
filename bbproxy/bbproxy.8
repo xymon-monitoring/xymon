@@ -108,7 +108,7 @@ Sends all logging output to the specified file instead of stderr.
 .IP "--log-details"
 Log details (IP-address, message type and hostname) to the logfile.
 This can also be enabled and disabled at run-time by sending the
-bbproxy proces a SIGUSR2 signal.
+bbproxy proces a SIGUSR1 signal.
 
 .IP "--debug"
 Enable debugging output.
@@ -116,7 +116,7 @@ Enable debugging output.
 .SH "REPORT OUTPUT"
 If enabled via the "--report" option, bbproxy will send a 
 status message about itself to the BBDISPLAY server once
-every 5 minutes, or when it gets a SIGUSR1 signal.
+every 5 minutes.
 
 The status message includes the following information:
 
@@ -226,14 +226,7 @@ Re-opens the logfile, e.g. after it has been rotated.
 Shut down the proxy.
 
 .IP SIGUSR1
-Sends a proxy server status message to BBDISPLAY immediately.
-
-.IP SIGUSR2
 Toggles logging of individual messages.
-
-.SH BUGS
-The messages/second counter is always 0 when the proxy
-status message is forced with SIGUSR1.
 
 .SH "SEE ALSO"
 bb(1), bbd(1), hobbit(7)

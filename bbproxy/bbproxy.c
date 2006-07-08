@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.53 2006-05-09 12:36:19 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.54 2006-07-08 10:44:24 henrik Exp $";
 
 #include "config.h"
 
@@ -122,11 +122,7 @@ void sigmisc_handler(int signum)
 		break;
 
 	  case SIGUSR1:
-		/* Trigger a status update */
-		laststatus = 0;
-		break;
-
-	  case SIGUSR2:
+		/* Toggle logging of details */
 		logdetails = (1 - logdetails);
 		errprintf("Log details is %sabled\n", (logdetails ? "en" : "dis"));
 		break;
@@ -490,7 +486,6 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
-	sigaction(SIGUSR2, &sa, NULL);
 
 	do {
 		fd_set fdread, fdwrite;
