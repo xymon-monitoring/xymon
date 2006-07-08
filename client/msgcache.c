@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.6 2006-07-08 13:57:49 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.7 2006-07-08 22:04:39 henrik Exp $";
 
 #include "config.h"
 
@@ -65,6 +65,7 @@ conn_t *ctail = NULL;
 typedef struct msgqueue_t {
 	time_t tstamp;
 	strbuffer_t *msgbuf;
+	unsigned long sentto;
 	struct msgqueue_t *next;
 } msgqueue_t;
 msgqueue_t *qhead = NULL;
@@ -91,151 +92,184 @@ void sigmisc_handler(int signum)
 
 void grabdata(conn_t *conn)
 {
-	/* Get data from the connection socket - we know there is some */
-
 	int n;
 	char buf[8192];
+	int pollid = 0;
 
+	/* Get data from the connection socket - we know there is some */
 	n = read(conn->sockfd, buf, sizeof(buf));
-	if (n == -1) {
+	if (n <= -1) {
 		/* Read failure */
-		errprintf("Connection lost during read\n");
+		errprintf("Connection lost during read: %s\n", strerror(errno));
 		conn->action = C_DONE;
+		return;
 	}
-	else if (n == 0) {
-		/* Done reading */
-		if (STRBUFLEN(conn->msgbuf) == 0) {
+
+	if (n > 0) {
+		/* Got some data - store it */
+		buf[n] = '\0';
+		addtobuffer(conn->msgbuf, buf);
+		return;
+	}
+
+	/* Done reading - process the data */
+	if (STRBUFLEN(conn->msgbuf) == 0) {
+		/* No data ? We're done */
+		conn->action = C_DONE;
+		return;
+	}
+
+	/* 
+	 * See what kind of message this is. If it's a "pullclient" message,
+	 * save the contents of the message - this is the client configuration
+	 * that we'll return the next time a client sends us the "client" message.
+	 */
+
+	if (strncmp(STRBUF(conn->msgbuf), "pullclient", 10) == 0) {
+		char *clientcfg;
+		int idnum;
+
+		/* Access check */
+		if (!oksender(serverlist, NULL, conn->caddr.sin_addr, STRBUF(conn->msgbuf))) {
+			errprintf("Rejected pullclient request from %s\n",
+				  inet_ntoa(conn->caddr.sin_addr));
 			conn->action = C_DONE;
 			return;
 		}
 
-		/* 
-		 * See what kind of message this is. If it's a "pullclient" message,
-		 * start handing off the queued messages.
-		 * If it's a local "client" message, respond with the queued response
-		 * from the Hobbit server.
-		 * Anything else, just close the connection.
+		dprintf("Got pullclient request: %s\n", STRBUF(conn->msgbuf));
+
+		/*
+		 * The pollid is unique for each Hobbit server. It is to allow
+		 * multiple servers to pick up the same message, for resiliance.
 		 */
-		if (strncmp(STRBUF(conn->msgbuf), "pullclient", 10) == 0) {
-			char *clientcfg;
-
-			/* Access check */
-			if (!oksender(serverlist, NULL, conn->caddr.sin_addr, STRBUF(conn->msgbuf))) {
-				conn->action = C_DONE;
-				return;
-			}
-
-			dprintf("Got pullclient request: %s\n", STRBUF(conn->msgbuf));
-			conn->ctype = C_SERVER;
-			conn->action = C_WRITING;
-
-			/* Save any client config sent to us */
-			clientcfg = strchr(STRBUF(conn->msgbuf), '\n');
-			if (clientcfg) {
-				clientcfg++;
-				if (client_response) xfree(client_response);
-				client_response = strdup(clientcfg);
-				dprintf("Saved client response: %s\n", client_response);
-			}
-		}
-		else if (strncmp(STRBUF(conn->msgbuf), "client ", 7) == 0) {
-			conn->ctype = C_CLIENT_CLIENT;
-			conn->action = (client_response ? C_WRITING : C_DONE);
+		idnum = atoi(STRBUF(conn->msgbuf) + 10);
+		if ((idnum <= 0) || (idnum > 31)) {
+			pollid = 0;
 		}
 		else {
-			conn->ctype = C_CLIENT_OTHER;
-			conn->action = C_DONE;
+			pollid = (1 << idnum);
 		}
 
-		if (conn->ctype != C_SERVER) {
-			/* Put it on the outbound queue */
-			msgqueue_t *newq = calloc(1, sizeof(msgqueue_t));
+		conn->ctype = C_SERVER;
+		conn->action = C_WRITING;
 
-			dprintf("Queuing outbound message\n");
-			newq->tstamp = conn->tstamp;
-			newq->msgbuf = conn->msgbuf;
-			conn->msgbuf = NULL;
-			if (qtail) {
-				qtail->next = newq;
-				qtail = newq;
-			}
-			else {
-				qhead = qtail = newq;
-			}
+		/* Save any client config sent to us */
+		clientcfg = strchr(STRBUF(conn->msgbuf), '\n');
+		if (clientcfg) {
+			clientcfg++;
+			if (client_response) xfree(client_response);
+			client_response = strdup(clientcfg);
+			dprintf("Saved client response: %s\n", client_response);
+		}
+	}
+	else if (strncmp(STRBUF(conn->msgbuf), "client ", 7) == 0) {
+		/*
+		 * Got a "client" message. Return the client-response saved from
+		 * earlier, if there is any. If not, then we're done.
+		 */
+		conn->ctype = C_CLIENT_CLIENT;
+		conn->action = (client_response ? C_WRITING : C_DONE);
+	}
+	else {
+		/* Message from a client, but not the "client" message. So no response. */
+		conn->ctype = C_CLIENT_OTHER;
+		conn->action = C_DONE;
+	}
 
-			if ((conn->ctype == C_CLIENT_CLIENT) && (conn->action == C_WRITING)) {
-				/* Send the response back to the client */
-				conn->msgbuf = newstrbuffer(0);
-				addtobuffer(conn->msgbuf, client_response);
-
-				/* 
-				 * Dont drop the client response data. If for some reason
-				 * the "client" request is repeated, he should still get
-				 * the right answer that we have.
-				 */
-			}
+	/*
+	 * Messages we receive from clients are stored on our outbound queue.
+	 * If it's a local "client" message, respond with the queued response
+	 * from the Hobbit server. Other client messages get no response.
+	 *
+	 * Server messages get our outbound queue back in response.
+	 */
+	if (conn->ctype != C_SERVER) {
+		/* Messages from clients go on the outbound queue */
+		msgqueue_t *newq = calloc(1, sizeof(msgqueue_t));
+		dprintf("Queuing outbound message\n");
+		newq->tstamp = conn->tstamp;
+		newq->msgbuf = conn->msgbuf;
+		conn->msgbuf = NULL;
+		if (qtail) {
+			qtail->next = newq;
+			qtail = newq;
 		}
 		else {
-			msgqueue_t *q, *rec;
+			qhead = qtail = newq;
+		}
 
-			/* Clear the outbound message queue */
-			q = qhead; qhead = qtail = NULL;
+		if ((conn->ctype == C_CLIENT_CLIENT) && (conn->action == C_WRITING)) {
+			/* Send the response back to the client */
+			conn->msgbuf = newstrbuffer(0);
+			addtobuffer(conn->msgbuf, client_response);
 
-			if (!q) {
-				/* No queued messages */
-				conn->action = C_DONE;
-			}
-			else {
-				time_t now = time(NULL);
-
-				/* Build a message of all the queued data */
-				clearstrbuffer(conn->msgbuf);
-
-				/* Index line first */
-				for (rec = q; (rec); rec = rec->next) {
-					char idx[20];
-					sprintf(idx, "%d:%ld ", 
-						STRBUFLEN(rec->msgbuf), (long)(now - rec->tstamp));
-					addtobuffer(conn->msgbuf, idx);
-				}
-				addtobuffer(conn->msgbuf, "\n");
-
-				/* Then a stream of messages */
-				while (q) {
-					rec = q; q = q->next;
-					addtostrbuffer(conn->msgbuf, rec->msgbuf);
-					freestrbuffer(rec->msgbuf);
-					xfree(rec);
-				}
-			}
+			/* 
+			 * Dont drop the client response data. If for some reason
+			 * the "client" request is repeated, he should still get
+			 * the right answer that we have.
+			 */
 		}
 	}
 	else {
-		buf[n] = '\0';
-		addtobuffer(conn->msgbuf, buf);
+		/* A server has asked us for our list of messages */
+		time_t now = time(NULL);
+		msgqueue_t *mwalk;
+
+		if (!qhead) {
+			/* No queued messages */
+			conn->action = C_DONE;
+		}
+		else {
+			/* Build a message of all the queued data */
+			clearstrbuffer(conn->msgbuf);
+
+			/* Index line first */
+			for (mwalk = qhead; (mwalk); mwalk = mwalk->next) {
+				if ((mwalk->sentto & pollid) == 0) {
+					char idx[20];
+					sprintf(idx, "%d:%ld ", 
+						STRBUFLEN(mwalk->msgbuf), (long)(now - mwalk->tstamp));
+					addtobuffer(conn->msgbuf, idx);
+				}
+			}
+
+			if (STRBUFLEN(conn->msgbuf) > 0) addtobuffer(conn->msgbuf, "\n");
+
+			/* Then the stream of messages */
+			for (mwalk = qhead; (mwalk); mwalk = mwalk->next) {
+				if ((mwalk->sentto & pollid) == 0) {
+					if (pollid) mwalk->sentto |= pollid;
+					addtostrbuffer(conn->msgbuf, mwalk->msgbuf);
+				}
+			}
+
+			if (STRBUFLEN(conn->msgbuf) == 0) {
+				/* No data for this server */
+				conn->action = C_DONE;
+			}
+		}
 	}
 }
 
 void senddata(conn_t *conn)
 {
-	/* Send data on the connection socket */
 	int n, togo;
 	char *startp;
 
+	/* Send data on the connection socket */
 	togo = STRBUFLEN(conn->msgbuf) - conn->sentbytes;
 	startp = STRBUF(conn->msgbuf) + conn->sentbytes;
 	n = write(conn->sockfd, startp, togo);
 
-	if (n == -1) {
+	if (n <= -1) {
 		/* Write failure */
-		errprintf("Connection lost during write\n");
+		errprintf("Connection lost during write to %s\n", inet_ntoa(conn->caddr.sin_addr));
 		conn->action = C_DONE;
 	}
-	else if (n >= 0) {
+	else {
 		conn->sentbytes += n;
-		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) {
-			conn->action = C_DONE;
-		}
+		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) conn->action = C_DONE;
 	}
 }
 
