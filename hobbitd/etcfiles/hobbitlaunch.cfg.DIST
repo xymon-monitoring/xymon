@@ -10,7 +10,6 @@
 # you also need to remove the "NEEDS hobbitd" lines for the tasks
 # you want to run).
 [hobbitd]
-	HEARTBEAT
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	CMD hobbitd --pidfile=$BBSERVERLOGS/hobbitd.pid --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP --store-clientlogs=!msgs
 
