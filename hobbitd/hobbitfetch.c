@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.6 2006-07-08 06:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.7 2006-07-08 11:14:30 henrik Exp $";
 
 #include "config.h"
 
@@ -40,7 +40,7 @@ volatile int running = 1;
 volatile time_t reloadtime = 0;
 volatile int dumpsessions = 0;
 char *serverip = "127.0.0.1";
-int pollinterval = 60; /* Seconds */
+int pollinterval = 60; /* Seconds between polls, +/- 15 seconds */
 time_t whentoqueue = 0;
 
 /*
@@ -70,9 +70,10 @@ typedef struct conn_t {
 	int sentbytes;
 	struct conn_t *next;
 } conn_t;
-conn_t *chead = NULL;
-conn_t *ctail = NULL;
-unsigned long connseq = 0;
+conn_t *chead = NULL;			/* Head of current connection queue */
+conn_t *ctail = NULL;			/* Tail of current connection queue */
+unsigned long connseq = 0;		/* Sequence number, to identify requests in debugging */
+int needcleanup = 0;			/* Do we need to perform a cleanup? */
 
 void sigmisc_handler(int signum)
 {
@@ -92,9 +93,6 @@ void sigmisc_handler(int signum)
 	}
 }
 
-
-int needcleanup = 0;
-
 char *addrstring(struct sockaddr_in *addr)
 {
 	static char res[100];
@@ -105,12 +103,20 @@ char *addrstring(struct sockaddr_in *addr)
 
 void flag_cleanup(conn_t *conn)
 {
+	/* Called whenever a connection request is complete */
 	conn->action = C_CLEANUP;
 	needcleanup = 1;
 }
 
 void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, clients_t *client)
 {
+	/*
+	 * Add a new request to the connection queue.
+	 * This sets up all of the connection parameters (IP, port, request type,
+	 * i/o buffers), allocates a socket and starts connecting to the peer.
+	 * The connection begins by writing data.
+	 */
+
 	conn_t *newconn;
 	int n;
 
@@ -176,7 +182,7 @@ done:
 
 void senddata(conn_t *conn)
 {
-	/* Send data on the connection socket */
+	/* Write data to a peer connection (client or server) */
 	int n, togo;
 	char *startp;
 
@@ -185,8 +191,8 @@ void senddata(conn_t *conn)
 	n = write(conn->sockfd, startp, togo);
 
 	if (n == -1) {
-		/* Write failure */
-		errprintf("Connection lost during write to %s (req %lu): %s\n", 
+		/* Write failure. Also happens if connecting to peer fails */
+		errprintf("Connection lost during connect/write to %s (req %lu): %s\n", 
 			  addrstring(&conn->caddr), conn->seq, strerror(errno));
 		flag_cleanup(conn);
 	}
@@ -194,6 +200,7 @@ void senddata(conn_t *conn)
 		dprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr), conn->seq);
 		conn->sentbytes += n;
 		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) {
+			/* Everything has been sent, so switch to READ mode */
 			clearstrbuffer(conn->msgbuf);
 			shutdown(conn->sockfd, SHUT_WR);
 			conn->action = C_READING;
@@ -207,6 +214,8 @@ void process_clientdata(conn_t *conn)
 	/* 
 	 * Handle data we received while talking to the Hobbit client.
 	 * This will be a list of messages we must send to the server.
+	 * Each of the messages are pushed to the server through
+	 * new C_SERVER requests.
 	 */
 
 	char *mptr, *databegin, *msgbegin;
@@ -214,12 +223,18 @@ void process_clientdata(conn_t *conn)
 
 	databegin = strchr(STRBUF(conn->msgbuf), '\n');
 	if (!databegin || (STRBUFLEN(conn->msgbuf) == 0)) {
+		/* No data - we're done */
 		flag_cleanup(conn);
 		return;
 	}
-
-	*databegin = '\0';
+	*databegin = '\0'; /* End the first line, and point msgbegin at start of data */
 	msgbegin = (databegin+1);
+
+	/*
+	 * First line of the message is a list of numbers, telling 
+	 * us the size of each of the individual messages we got from 
+	 * the client.
+	 */
 	mptr = strtok(STRBUF(conn->msgbuf), " \t");
 	while (mptr) {
 		int msgbytes;
@@ -268,6 +283,7 @@ void grabdata(conn_t *conn)
 	int n;
 	char buf[8192];
 
+	/* Read data from a peer connection (client or server) */
         n = read(conn->sockfd, buf, sizeof(buf));
 	if (n == -1) {
 		/* Read failure */
@@ -328,7 +344,7 @@ int main(int argc, char *argv[])
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
-	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR1, &sa, NULL);	/* SIGUSR1 triggers logging of active requests */
 
 	clients = rbtNew(name_compare);
 	nexttimeout = time(NULL) + 60;
@@ -352,6 +368,7 @@ int main(int argc, char *argv[])
 		
 		now = time(NULL);
 		if (now > reloadtime) {
+			/* Time to reload the bb-hosts file */
 			reloadtime = now + 600;
 
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
@@ -387,7 +404,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (needcleanup) {
-			/* Remove any finished connections */
+			/* Remove any finished requests */
 			needcleanup = 0;
 			connwalk = chead; cprev = NULL;
 			dprintf("Doing cleanup\n");
@@ -440,7 +457,7 @@ int main(int argc, char *argv[])
 				}
 
 				/* Purge the zombie */
-				dprintf("Closing connection: req %lu, peer %s, action was %d, type was %d\n", 
+				dprintf("Request completed: req %lu, peer %s, action was %d, type was %d\n", 
 					zombie->seq, addrstring(&zombie->caddr), 
 					zombie->action, zombie->ctype);
 				close(zombie->sockfd);
@@ -454,9 +471,11 @@ int main(int argc, char *argv[])
 		}
 
 		if (dumpsessions) {
+			/* Set by SIGUSR1 - dump the list of active requests */
 			dumpsessions = 0;
 			for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
 				char *ctypestr, *actionstr;
+				char timestr[30];
 
 				switch (connwalk->ctype) {
 				  case C_CLIENT: ctypestr = "client"; break;
@@ -469,14 +488,18 @@ int main(int argc, char *argv[])
 				  case C_CLEANUP: actionstr = "cleanup"; break;
 				}
 
-				errprintf("Request %lu: type %s, action %s, peer %s\n",
-					  connwalk->seq, ctypestr, actionstr, addrstring(&connwalk->caddr));
+				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
+					 localtime(&connwalk->tstamp));
+
+				errprintf("Request %lu: state %s/%s, peer %s, started %s (%lu secs ago)\n",
+					  connwalk->seq, ctypestr, actionstr, addrstring(&connwalk->caddr),
+					  timestr, (now - connwalk->tstamp));
 			}
 		}
 
-		/* List the clients we should contact now */
 		now = time(NULL);
 		if (now >= whentoqueue) {
+			/* Scan host-tree for clients we need to contact */
 			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
 				clients_t *clientwalk;
 				strbuffer_t *request;
@@ -524,7 +547,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		/* Handle connection queue */
+		/* Handle request queue */
 		FD_ZERO(&fdread);
 		FD_ZERO(&fdwrite);
 		maxfd = -1;
@@ -545,6 +568,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		/* Do select with a 1 second timeout */
 		tmo.tv_sec = 1;
 		tmo.tv_usec = 0;
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
@@ -552,11 +576,12 @@ int main(int argc, char *argv[])
 		if (n == -1) {
 			if (errno == EINTR) continue;	/* Interrupted, e.g. a SIGHUP */
 
+			/* This is a "cannot-happen" failure. Bail out */
 			errprintf("select failure: %s\n", strerror(errno));
 			return 0;
 		}
 
-		if (n == 0) continue;
+		if (n == 0) continue;	/* Timeout */
 
 		for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
 			switch (connwalk->action) {
