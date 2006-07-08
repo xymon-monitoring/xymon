@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.3 2006-06-05 15:56:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.4 2006-07-08 10:43:51 henrik Exp $";
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	signal(SIGCHLD, SIG_IGN);
+	setup_signalhandler("hobbitd_hostdata");
 
 	running = 1;
 	while (running) {
