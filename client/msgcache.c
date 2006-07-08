@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.5 2006-06-22 19:59:12 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.6 2006-07-08 13:57:49 henrik Exp $";
 
 #include "config.h"
 
@@ -47,7 +47,7 @@ volatile int keeprunning = 1;
 char *client_response = NULL;		/* The latest response to a "client" message */
 char *logfile = NULL;
 int maxage = 600;			/* Maximum time we will cache messages */
-sender_t *serverlist = NULL;
+sender_t *serverlist = NULL;		/* Who is allowed to grab our messages */
 
 typedef struct conn_t {
 	time_t tstamp;
@@ -435,7 +435,8 @@ int main(int argc, char *argv[])
 			freestrbuffer(zombie->msgbuf);
 			xfree(zombie);
 		}
-		if (!qhead) qtail = NULL;
+		qtail = qhead;
+		if (qtail) { while (qtail->next) qtail = qtail->next; }
 
 
 		/* Now we're ready to handle some data */
