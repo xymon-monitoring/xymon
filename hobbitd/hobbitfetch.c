@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.7 2006-07-08 11:14:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.8 2006-07-08 21:55:47 henrik Exp $";
 
 #include "config.h"
 
@@ -42,6 +42,7 @@ volatile int dumpsessions = 0;
 char *serverip = "127.0.0.1";
 int pollinterval = 60; /* Seconds between polls, +/- 15 seconds */
 time_t whentoqueue = 0;
+int serverid = 1;
 
 /*
  * When we send in a "client" message to the server, we get the client configuration
@@ -334,6 +335,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			pollinterval = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--id=")) {
+			char *p = strchr(argv[argi], '=');
+			serverid = atoi(p+1);
+		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
@@ -502,6 +507,7 @@ int main(int argc, char *argv[])
 			/* Scan host-tree for clients we need to contact */
 			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
 				clients_t *clientwalk;
+				char msgline[100];
 				strbuffer_t *request;
 				char *pullstr, *ip;
 				int port;
@@ -536,7 +542,8 @@ int main(int argc, char *argv[])
 				 * contact the server, but we should provide the config data always.
 				 */
 				request = newstrbuffer(0);
-				addtobuffer(request, "pullclient\n");
+				sprintf(msgline, "pullclient %d\n", serverid);
+				addtobuffer(request, msgline);
 				if (clientwalk->clientdata) addtobuffer(request, clientwalk->clientdata);
 
 				/* Put the request on the connection queue */
