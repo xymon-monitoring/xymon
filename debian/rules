@@ -24,6 +24,7 @@ endif
 Makefile: configure
 	dh_testdir
 	# Add here commands to configure the package.
+	USEHOBBITPING=y \
 	ENABLESSL=y \
 	ENABLELDAP=y \
 	ENABLELDAPSSL=y \
