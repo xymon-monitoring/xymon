@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.11 2006-06-09 22:23:49 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.12 2006-07-09 21:10:14 henrik Exp $";
 
 int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -54,31 +54,30 @@ int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	 * 
 	 */
 
-	char *bofdata, *eofdata, *eoln;
+	char *bofdata, *eofdata, *eoln = NULL;
 	int done, found;
 	unsigned long msgsfr, bytesfr, msgsto, bytesto, msgsrej, msgsdis, msgsqur;
-	char mailer[1024];
-
-	MEMDEFINE(mailer);
 
 	if (sendmail_tpl_1 == NULL) sendmail_tpl_1 = setup_template(sendmail_params_1);
 	if (sendmail_tpl_2 == NULL) sendmail_tpl_2 = setup_template(sendmail_params_2);
 
 	/* Find the line that begins with "=====" and NULL the message there */
-	eofdata = strstr(msg, "\n=="); if (eofdata) *(eofdata+1) = '\0'; else { MEMUNDEFINE(mailer); return -1; }
+	eofdata = strstr(msg, "\n=="); if (eofdata) *(eofdata+1) = '\0'; else return -1;
 
 	/* Find the start of the Statistics part. */
-	bofdata = strstr(msg, "\nStatistics ");
+	bofdata = strstr(msg, "\nStatistics "); if (!bofdata) return -1;
 
 	/* Skip the "Statistics from.... " line */
-	if (bofdata) bofdata = strchr(bofdata+1, '\n');
+	bofdata = strchr(bofdata+1, '\n'); if (!bofdata) return -1;
 
 	/* Skip the header line */
-	if (bofdata) bofdata = strchr(bofdata+1, '\n');
-	if (bofdata) bofdata++;
+	bofdata = strchr(bofdata+1, '\n'); if (bofdata) bofdata++; else return -1;
 
 	done = (bofdata == NULL);
 	while (!done) {
+		char mailer[1024];
+
+		MEMDEFINE(mailer);
 		*rrdvalues = '\0';
 
 		eoln = strchr(bofdata, '\n');
@@ -131,12 +130,8 @@ gotdata:
 					char *p;
 
 					/* We have an existing RRD without the msgsqur DS. */
-
 					/* Chop off the msgsqur item in rrdvalues */
-					p = rrdvalues + strlen(rrdvalues);
-					while (*p != ':') p--;
-					*p = '\0';
-
+					p = strrchr(rrdvalues, ':'); if (p) *p = '\0';
 					create_and_update_rrd(hostname, rrdfn, sendmail_params_1, sendmail_tpl_1);
 				}
 				else {
@@ -150,11 +145,12 @@ gotdata:
 			done = (*bofdata == '\0');
 		}
 		else done=1;
+
+		MEMUNDEFINE(mailer);
 	}
 
 	if (eofdata) *(eofdata+1) = '=';
 
-	MEMUNDEFINE(mailer);
 
 	return 0;
 }
