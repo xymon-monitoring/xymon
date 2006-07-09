@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.27 2006-07-04 11:43:22 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.28 2006-07-09 21:08:10 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -814,7 +814,7 @@ int main(int argc, char *argv[])
 			char timestr[50];
 
 			gettimeofday(&tv, &tz);
-			printf("epoch: %ld.%06ld\n", (long)tv.tv_sec, tv.tv_usec);
+			printf("epoch: %ld.%06ld\n", (long int)tv.tv_sec, (long int)tv.tv_usec);
 
 			tm = localtime(&tv.tv_sec);
 			strftime(timestr, sizeof(timestr), "local: %Y-%m-%d %H:%M:%S %Z", tm);

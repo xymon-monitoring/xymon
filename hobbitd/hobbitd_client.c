@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.91 2006-07-09 07:45:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.92 2006-07-09 21:08:10 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -253,7 +253,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		struct timeval clockval;
 
 		p = strstr(clockstr, "epoch:"); 
-		if (p && (sscanf(p, "epoch: %ld.%ld", &clockval.tv_sec, &clockval.tv_usec) == 2)) {
+		if (p && (sscanf(p, "epoch: %ld.%ld", (long int *)&clockval.tv_sec, (long int *)&clockval.tv_usec) == 2)) {
 			struct timeval clockdiff;
 			struct timezone tz;
 			int cachedelay = 0;
