@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.16 2006-06-04 10:52:52 henrik Exp $";
+static char openbsd_rcsid[] = "$Id: openbsd.c,v 1.17 2006-07-09 07:37:26 henrik Exp $";
 
 void handle_openbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 			   namelist_t *hinfo, char *sender, time_t timestamp, 
@@ -19,6 +19,7 @@ void handle_openbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *timestr;
 	char *uptimestr;
 	char *clockstr;
+	char *msgcachestr;
 	char *whostr;
 	char *psstr;
 	char *topstr;
@@ -41,6 +42,7 @@ void handle_openbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
 	clockstr = getdata("clock");
+	msgcachestr = getdata("msgcache");
 	whostr = getdata("who");
 	psstr = getdata("ps");
 	topstr = getdata("top");
@@ -53,7 +55,7 @@ void handle_openbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);

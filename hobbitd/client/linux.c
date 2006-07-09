@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.19 2006-06-04 10:52:52 henrik Exp $";
+static char linux_rcsid[] = "$Id: linux.c,v 1.20 2006-07-09 07:37:26 henrik Exp $";
 
 void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 namelist_t *hinfo, char *sender, time_t timestamp,
@@ -19,6 +19,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *timestr;
 	char *uptimestr;
 	char *clockstr;
+	char *msgcachestr;
 	char *whostr;
 	char *psstr;
 	char *topstr;
@@ -39,6 +40,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
 	clockstr = getdata("clock");
+	msgcachestr = getdata("msgcache");
 	whostr = getdata("who");
 	psstr = getdata("ps");
 	topstr = getdata("top");
@@ -50,7 +52,7 @@ void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os,
 	vmstatstr = getdata("vmstat");
 	portsstr = getdata("ports");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
