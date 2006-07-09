@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.10 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.11 2006-07-09 13:49:00 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -93,7 +93,7 @@ void remove_from_memlist(void *ptr)
 }
 #endif
 
-const char *xfreenullstr = "xfree: Trying to free a NULL pointer";
+const char *xfreenullstr = "xfree: Trying to free a NULL pointer\n";
 
 void *xcalloc(size_t nmemb, size_t size)
 {
