@@ -20,33 +20,38 @@
 		FPING="$USERFPING"
 	fi
 
-	echo "Hobbit has a built-in ping utility (hobbitping)"
-	echo "However, it is not yet fully stable and therefore it"
-	echo "may be best to use the external fping utility instead."
-	if test "$FPING" = ""
+	if test "$USEHOBBITPING" = ""
 	then
-		echo "I could not find fping on your system"
-		echo "Do you want to use hobbitping [Y/n] ?"
-		read USEHOBBITPING
-		if test "$USEHOBBITPING" = "y" -o "$USEHOBBITPING" = ""
+		echo "Hobbit has a built-in ping utility (hobbitping)"
+		echo "However, it is not yet fully stable and therefore it"
+		echo "may be best to use the external fping utility instead."
+		if test "$FPING" = ""
 		then
-			USEHOBBITPING="y"
-			echo "OK, I will use hobbitping."
-			FPING="hobbitping"
+			echo "I could not find fping on your system"
+			echo "Do you want to use hobbitping [Y/n] ?"
+			read USEHOBBITPING
+			if test "$USEHOBBITPING" = "y" -o "$USEHOBBITPING" = ""
+			then
+				USEHOBBITPING="y"
+				echo "OK, I will use hobbitping."
+				FPING="hobbitping"
+			else
+				echo "What command should Hobbit use to run fping ?"
+				read FPING
+			fi
 		else
-			echo "What command should Hobbit use to run fping ?"
-			read FPING
+			echo "I found fping in $FPING"
+			echo "Do you want to use it [Y/n] ?"
+			read USEFPING
+			if test "$USEFPING" = "n"
+			then
+				USEHOBBITPING="y"
+				echo "OK, I will use hobbitping instead."
+				FPING="hobbitping"
+			fi
 		fi
 	else
-		echo "I found fping in $FPING"
-		echo "Do you want to use it [Y/n] ?"
-		read USEFPING
-		if test "$USEFPING" = "n"
-		then
-			USEHOBBITPING="y"
-			echo "OK, I will use hobbitping instead."
-			FPING="hobbitping"
-		fi
+		FPING="hobbitping"
 	fi
 
 	if test "$USEHOBBITPING" = "y"
