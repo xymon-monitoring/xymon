@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.31 2006-06-27 21:53:30 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.32 2006-07-09 16:07:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -62,6 +62,7 @@ char	*pSearchPat = NULL;			/* What're searching for (now its regex, not a hostli
 int 	re_flag     = REG_EXTENDED|REG_NOSUB|REG_ICASE; /* default regcomp flags see man 3 regcomp 	*/
 							/* You must remove REG_ICASE for case sensitive */
 cgidata_t *cgidata = NULL;
+int	dojump     = 0;				/* If set and there is only one page, go directly to it */
 
 void errormsg(char *msg)
 {
@@ -88,6 +89,9 @@ void parse_query(void)
 		else if (strcasecmp(cwalk->name, "case_sensitive") == 0 ) {
 			/* remove the ignore case flag */
 			re_flag ^= REG_ICASE;
+		}
+		else if (strcasecmp(cwalk->name, "jump") == 0 ) {
+			dojump = 1;
 		}
 
 		cwalk = cwalk->next;
@@ -122,6 +126,8 @@ int main(int argc, char *argv[])
 	char msgline[4096];
 	char oneurl[10240];
 	int gotany = 0;
+	enum { OP_INITIAL, OP_YES, OP_NO } gotonepage = OP_INITIAL; /* Tracks if all matches are on one page */
+	char *onepage = NULL;	/* If gotonepage==OP_YES, then this is the page */
 
 	/*[wm] regex support */
 	#define BUFSIZE		256
@@ -196,6 +202,21 @@ int main(int argc, char *argv[])
 			addtobuffer(outbuf, msgline);
 			gotany++;
 
+			/* See if all of the matches so far are on one page */
+			switch (gotonepage) {
+			  case OP_INITIAL:
+				gotonepage = OP_YES;
+				onepage = bbh_item(hostwalk, BBH_PAGEPATH);
+				break;
+
+			  case OP_YES:
+				if (strcmp(onepage, bbh_item(hostwalk, BBH_PAGEPATH)) != 0) gotonepage = OP_NO;
+				break;
+
+			  case OP_NO:
+				break;
+			}
+
 			clonewalk = hostwalk->next;
 			while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
 				sprintf(msgline, "<br><a href=\"%s/%s/#%s\">%s</a>\n",
@@ -218,9 +239,16 @@ int main(int argc, char *argv[])
 	}
 	regfree (&re); 	/*[wm] - free regex compiled patern */
 	
-	if (gotany == 1) {
-		printf("Location: %s%s\n\n", xgetenv("BBWEBHOST"), oneurl);
-		return 0;
+	if (dojump) {
+		if (gotany == 1) {
+			printf("Location: %s%s\n\n", xgetenv("BBWEBHOST"), oneurl);
+			return 0;
+		}
+		else if ((gotany > 1) && (gotonepage == OP_YES)) {
+			printf("Location: %s%s/%s/\n\n", 
+			       xgetenv("BBWEBHOST"), xgetenv("BBWEB"), onepage);
+			return 0;
+		}
 	}
 
 	print_header();

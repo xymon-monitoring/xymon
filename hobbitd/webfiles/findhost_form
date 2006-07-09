@@ -1,21 +1,19 @@
 <CENTER>
   <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
     <TABLE WIDTH="80%" BORDER=0 CELLSPACING=5 SUMMARY="Hostname form">
-       <TR BGCOLOR="#000033">
-           <TD COLSPAN=2 ALIGN="CENTER">
-               <FONT FACE="Arial, Helvetica">
-                  <B>Hobbit Host Finder</B>
-               </FONT>
-           </TD>
-       </TR>
        <TR>
            <TD BGCOLOR="#333333" ALIGN="CENTER">
                <BR>
                <FONT FACE="Arial, Helvetica">
                      <font size="+1">Pattern to look for</font>
-                     <INPUT TYPE="TEXT" NAME="host" ID="hostfield" VALUE="" MAXLENGTH=200 SIZE=70><BR>
+                     <INPUT TYPE="TEXT" NAME="host" ID="hostfield" VALUE="" MAXLENGTH=200 SIZE=70>
+		     <br><br>
                      <font size="+1">Case Sensitive</font>
-		     <INPUT TYPE="CHECKBOX" NAME="case_sensitive">&nbsp;&nbsp;&nbsp;
+		     <INPUT TYPE="CHECKBOX" NAME="case_sensitive">
+		     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                     <font size="+1">Jump to page</font>
+		     <INPUT TYPE="CHECKBOX" NAME="jump" CHECKED>
+		     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                      <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Search" ALT="Search">
                </FONT>
            </TD>
