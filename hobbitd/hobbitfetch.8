@@ -42,6 +42,15 @@ host as hobbitfetch.
 .IP "--interval=N"
 Sets the interval (in seconds) between polls of a client. Default: 60 seconds.
 
+.IP "--id=N"
+Used when you have a setup with multiple Hobbit servers. In that case, you
+must run hobbitfetch on each of the Hobbit servers, with hobbitfetch instance
+using a different value of N. This allows several Hobbit servers to pick up
+data from the clients running msgcache, and msgcache can distinguish between
+which messages have already been forwarded to which server.
+.br
+N is a number in the range 1-31.
+
 .IP "--debug"
 Enable debugging output.
 
