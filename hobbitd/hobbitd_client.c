@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.90 2006-06-21 05:58:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.91 2006-07-09 07:45:48 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -130,7 +130,8 @@ int linecount(char *msg)
 
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     namelist_t *hinfo, char *fromline, char *timestr, 
-		     char *uptimestr, char *clockstr, char *whostr, char *psstr, char *topstr)
+		     char *uptimestr, char *clockstr, char *msgcachestr,
+		     char *whostr, char *psstr, char *topstr)
 {
 	char *p;
 	float load1, load5, load15;
@@ -255,9 +256,16 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		if (p && (sscanf(p, "epoch: %ld.%ld", &clockval.tv_sec, &clockval.tv_usec) == 2)) {
 			struct timeval clockdiff;
 			struct timezone tz;
+			int cachedelay = 0;
+
+			if (msgcachestr) {
+				/* Message passed through msgcache, so adjust for the cache delay */
+				p = strstr(msgcachestr, "Cachedelay:");
+				if (p) cachedelay = atoi(p+11);
+			}
 
 			gettimeofday(&clockdiff, &tz);
-			clockdiff.tv_sec -= clockval.tv_sec;
+			clockdiff.tv_sec -= (clockval.tv_sec + cachedelay);
 			clockdiff.tv_usec -= clockval.tv_usec;
 			if (clockdiff.tv_usec < 0) {
 				clockdiff.tv_usec += 1000000;
