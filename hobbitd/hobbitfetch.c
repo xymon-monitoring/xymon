@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.8 2006-07-08 21:55:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.9 2006-07-09 07:47:05 henrik Exp $";
 
 #include "config.h"
 
@@ -52,6 +52,7 @@ int serverid = 1;
 typedef struct clients_t {
 	char *hostname;
 	time_t nextpoll;	/* When we should contact this host again */
+	time_t suggestpoll;	/* When the client msgcache is expected to get the next client message */
 	char *clientdata;	/* This hosts' client configuration data */
 	int busy;		/* If set, then we are currently processing this host */
 } clients_t;
@@ -234,25 +235,50 @@ void process_clientdata(conn_t *conn)
 	/*
 	 * First line of the message is a list of numbers, telling 
 	 * us the size of each of the individual messages we got from 
-	 * the client.
+	 * the client, and how long ago they were received.
 	 */
 	mptr = strtok(STRBUF(conn->msgbuf), " \t");
 	while (mptr) {
-		int msgbytes;
+		int msgbytes, msgago;
 		char savech;
 		strbuffer_t *req;
 
-		msgbytes = atoi(mptr);
-		savech = *(msgbegin + msgbytes);
-		*(msgbegin + msgbytes) = '\0';
-		req = newstrbuffer(msgbytes+1);
-		addtobuffer(req, msgbegin);
-		addrequest(C_SERVER, serverip, portnum, req, conn->client);
+		if (sscanf(mptr, "%d:%d", &msgbytes, &msgago) == 2) {
+			msgbytes = atoi(mptr);
+			savech = *(msgbegin + msgbytes);
+			*(msgbegin + msgbytes) = '\0';
+			req = newstrbuffer(msgbytes+100);
+			addtobuffer(req, msgbegin);
 
-		*(msgbegin + msgbytes) = savech;
-		msgbegin += msgbytes;
+			if (strncmp(msgbegin, "client ", 7) == 0) {
+				/*
+				 * It's a client message. See when it was received in
+				 * msgcache, and adjust our next poll time accordingly.
+				 */
+				char msgcachesection[100];
 
-		mptr = strtok(NULL, " \t");
+				conn->client->suggestpoll = time(NULL) - (msgago % 300) + 300 + 10;
+				dprintf("Client %s (req %lu) received a client message %d secs ago, poll again at %lu\n",
+					addrstring(&conn->caddr), conn->seq, msgago,
+					conn->client->suggestpoll);
+
+				/* Add a section to the client message with cache delay info */
+				sprintf(msgcachesection, "[msgcache]\nCachedelay: %d\n", msgago);
+				addtobuffer(req, msgcachesection);
+			}
+
+			addrequest(C_SERVER, serverip, portnum, req, conn->client);
+
+			*(msgbegin + msgbytes) = savech;
+			msgbegin += msgbytes;
+
+			mptr = strtok(NULL, " \t");
+		}
+		else {
+			errprintf("Garbled pullclient response from %s (req %lu), token %s\n",
+				  addrstring(&conn->caddr), conn->seq, mptr);
+			mptr = NULL;
+		}
 	}
 }
 
@@ -318,6 +344,37 @@ void grabdata(conn_t *conn)
 	}
 }
 
+void set_polltime(clients_t *client)
+{
+	time_t now = time(NULL);
+
+	if (client->suggestpoll && (client->suggestpoll < (now + pollinterval))) {
+		/*
+		 * We have a suggested poll time tuned to the next "client" message,
+		 * and it happens within a reasonable time. So use that.
+		 */
+		client->nextpoll = client->suggestpoll;
+		dprintf("Next poll of %s in %d seconds (for client msg)\n", 
+			client->hostname, (client->nextpoll - now));
+	}
+	else {
+		/*
+		 * Pick a reasonable next polltime.
+		 * We try to avoid doing all polls in one go, by setting
+		 * the next poll to "pollinterval" seconds from now, 
+		 * +/- 15 seconds.
+		 */
+		int delay;
+
+		delay = pollinterval + ((random() % 31) - 16);
+		client->nextpoll = now + delay;
+		dprintf("Next poll of %s in %d seconds\n", client->hostname, delay);
+	}
+
+	if (whentoqueue > client->nextpoll) {
+		whentoqueue = client->nextpoll;
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -426,23 +483,12 @@ int main(int argc, char *argv[])
 
 				if (connwalk->action == C_CLEANUP) {
 					if (connwalk->ctype == C_CLIENT) {
-						int delay;
-						
 						/* 
-						 * Finished getting data from a client, set next poll time.
-						 * We try to avoid doing all polls in one go, by setting
-						 * the next poll to "pollinterval" seconds from now, 
-						 * +/- 15 seconds.
+						 * Finished getting data from a client, 
+						 * flag idle and set next poll time.
 						 */
 						connwalk->client->busy = 0;
-						delay = pollinterval + ((random() % 31) - 16);
-						connwalk->client->nextpoll = now + delay;
-						if (whentoqueue > connwalk->client->nextpoll) {
-							whentoqueue = connwalk->client->nextpoll;
-						}
-
-						dprintf("Next poll time of %s in %d seconds\n", 
-							connwalk->client->hostname, delay);
+						set_polltime(connwalk->client);
 					}
 					else if (connwalk->ctype == C_SERVER) {
 						/* Nothing needed for server cleanups */
