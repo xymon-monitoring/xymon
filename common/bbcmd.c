@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.18 2006-06-20 11:42:43 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.19 2006-07-09 15:13:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,11 +25,12 @@ static char rcsid[] = "$Id: bbcmd.c,v 1.18 2006-06-20 11:42:43 henrik Exp $";
 
 #include "libbbgen.h"
 
-static void hobbit_default_envs(void)
+static void hobbit_default_envs(char *envfn)
 {
 	FILE *fd;
 	char buf[1024];
 	char *evar;
+	char *homedir, *p;
 
 	if (getenv("MACHINEDOTS") == NULL) {
 		fd = popen("uname -n", "r");
@@ -62,6 +63,21 @@ static void hobbit_default_envs(void)
 		evar = (char *)malloc(strlen(buf) + 10);
 		sprintf(evar, "BBOSTYPE=%s", buf);
 		putenv(evar);
+	}
+
+	homedir = strdup(envfn);
+	p = strrchr(homedir, '/');
+	if (p) {
+		*p = '\0';
+		if (strlen(homedir) > 4) {
+			p = homedir + strlen(homedir) - 4;
+			if (strcmp(p, "/etc") == 0) {
+				*p = '\0';
+				evar = (char *)malloc(20 + strlen(homedir));
+				sprintf(evar, "HOBBITCLIENTHOME=%s", homedir);
+				putenv(evar);
+			}
+		}
 	}
 }
 
@@ -107,14 +123,17 @@ int main(int argc, char *argv[])
 		sprintf(envfn, "%s/etc/hobbitserver.cfg", xgetenv("BBHOME"));
 		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/hobbitclient.cfg", xgetenv("BBHOME"));
 		errprintf("Using default environment file %s\n", envfn);
+
+		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
+		hobbit_default_envs(envfn);
 		loadenv(envfn, envarea);
 	}
 	else {
+		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
+		hobbit_default_envs(envfile);
 		loadenv(envfile, envarea);
 	}
 
-	/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
-	hobbit_default_envs();
 
 	/* Go! */
 	if (cmd == NULL) cmd = cmdargs[0] = "/bin/sh";
