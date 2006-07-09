@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcmd.c,v 1.19 2006-07-09 15:13:36 henrik Exp $";
+static char rcsid[] = "$Id: bbcmd.c,v 1.20 2006-07-09 15:15:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -65,17 +65,19 @@ static void hobbit_default_envs(char *envfn)
 		putenv(evar);
 	}
 
-	homedir = strdup(envfn);
-	p = strrchr(homedir, '/');
-	if (p) {
-		*p = '\0';
-		if (strlen(homedir) > 4) {
-			p = homedir + strlen(homedir) - 4;
-			if (strcmp(p, "/etc") == 0) {
-				*p = '\0';
-				evar = (char *)malloc(20 + strlen(homedir));
-				sprintf(evar, "HOBBITCLIENTHOME=%s", homedir);
-				putenv(evar);
+	if (getenv("HOBBITCLIENTHOME") == NULL) {
+		homedir = strdup(envfn);
+		p = strrchr(homedir, '/');
+		if (p) {
+			*p = '\0';
+			if (strlen(homedir) > 4) {
+				p = homedir + strlen(homedir) - 4;
+				if (strcmp(p, "/etc") == 0) {
+					*p = '\0';
+					evar = (char *)malloc(20 + strlen(homedir));
+					sprintf(evar, "HOBBITCLIENTHOME=%s", homedir);
+					putenv(evar);
+				}
 			}
 		}
 	}
