@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.19 2006-07-05 05:52:22 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.20 2006-07-09 19:25:19 henrik Exp $
 
 echo "[date]"
 date
@@ -28,6 +28,14 @@ elif [ -f /etc/debian_version ]; then
 	cat /etc/debian_version
 elif [ -f /etc/SuSE-release ]; then
 	grep ^SuSE /etc/SuSE-release
+elif [ -f /etc/slackware-version ]; then
+	cat /etc/slackware-version
+elif [ -f /etc/mandrake-release ]; then
+	cat /etc/mandrake-release
+elif [ -f /etc/fedora-release ]; then
+	cat /etc/fedora-release
+elif [ -f /etc/arch-release ]; then
+	cat /etc/arch-release
 fi
 echo "[uptime]"
 uptime
