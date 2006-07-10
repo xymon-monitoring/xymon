@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.10 2006-06-21 05:59:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.11 2006-07-10 14:39:47 henrik Exp $";
 
 #include "config.h"
 
@@ -159,37 +159,6 @@ typedef struct pingdata_t {
 	int id;				/* ID for the host this belongs to */
 	struct timeval timesent;	/* time we sent this ping */
 } pingdata_t;
-
-
-void drop_root(void)
-{
-	static uid_t myuid = 0;
-	static int didwarn = 0;
-
-	if (myuid == 0) myuid = getuid();
-	if (myuid == 0) {
-		if (!didwarn) {
-			errprintf("WARNING: Running hobbit as the \"root\" user is NOT recommended.\n");
-			didwarn = 1;
-		}
-		return; /* Run by "root" */
-	}
-
-#ifdef HPUX
-	setresuid(-1, myuid, -1);
-#else
-	seteuid(myuid);
-#endif
-}
-
-void get_root(void)
-{
-#ifdef HPUX
-	setresuid(-1, 0, -1);
-#else
-	seteuid(0);
-#endif
-}
 
 
 int send_ping(int sock, int startidx, int minresponses)
