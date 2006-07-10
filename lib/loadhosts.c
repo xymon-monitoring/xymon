@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.64 2006-07-06 12:22:36 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.65 2006-07-10 09:24:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -519,6 +519,12 @@ int bbh_item_idx(char *value)
 	i = 0;
 	while (bbh_item_key[i] && strncmp(bbh_item_key[i], value, strlen(bbh_item_key[i]))) i++;
 	return (bbh_item_key[i] ? i : -1);
+}
+
+char *bbh_item_id(enum bbh_item_t idx)
+{
+	if ((idx >= 0) && (idx < BBH_LAST)) return bbh_item_name[idx];
+	return NULL;
 }
 
 namelist_t *first_host(void)

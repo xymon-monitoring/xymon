@@ -113,6 +113,7 @@ extern enum bbh_item_t bbh_key_idx(char *item);
 extern char *bbh_item_byname(namelist_t *host, char *item);
 extern char *bbh_item_walk(namelist_t *host);
 extern int bbh_item_idx(char *value);
+extern char *bbh_item_id(enum bbh_item_t idx);
 extern namelist_t *first_host(void);
 extern void bbh_set_item(namelist_t *host, enum bbh_item_t item, char *value);
 
