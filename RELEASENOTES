@@ -29,11 +29,12 @@ can work without being suid-root - see their man-pages for
 more information.
 
 Hobbit 4.2 uses one more IPC communication channel than the 
-previous release. If your system has a limited number if 
-IPC shared-memory segments and/or semaphores, you may need to
-increase this. See the installation document at docs/install.html
-for some information about this, or refer to your operating
-system documentation on System V IPC.
+previous release (for a total of 8 shared memory segments, and
+8 semaphore sets of 3 semaphores each). If your system has a 
+limited number of IPC shared-memory segments and/or semaphores, 
+you may need to increase this. See the installation document at 
+docs/install.html for some information about this, or refer to 
+your operating system documentation on System V IPC.
 
 
 bbproxy upgrade
@@ -56,12 +57,17 @@ hobbitserver.cfg
 Several new status columns are being reported by the Hobbit client,
 and these have associated graphs. In order for them to show up
 correctly, you must change the two graph-settings:
-- TEST2RRD: Add ",files,procs,ports,clock,lines" to the current setting.
-- GRAPHS: Add ",files,procs,ports,ifstat,clock,lines" to the current setting.
+- TEST2RRD: Add ",files,procs=processes,ports,clock,lines" to 
+  the current setting.
+- GRAPHS: Add ",files,processes,ports,ifstat,clock,lines" to 
+  the current setting.
 
 Hobbit now includes a ping utility, which is faster than "fping"
 which was used in previous Hobbit versions. To use this utility,
-change the FPING setting to FPING="$BBHOME/bin/hobbitping"
+change the FPING setting to FPING="hobbitping". However, the
+hobbitping utility is still somewhat experimental, so if you
+run into problems with the connectivity tests, it is advised that
+you use fping instead.
 
 The following settings in hobbitserver.cfg are no longer used
 and may be deleted: BBPAGE, BBPAGERS, USEHOBBITD, PAGELEVELS,
@@ -73,12 +79,17 @@ hobbitcgi.cfg
 Three new CGI programs have been added in Hobbit 4.2. To ensure
 they are invoked correctly, add these lines to your hobbitcgi.cfg file:
 
+# hobbitgraph.cgi options
+CGI_HOSTGRAPHS_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
 # hobbit-nkview.cgi options
-CGI_NKVIEW_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+CGI_NKVIEW_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
 # hobbit-nkedit.cgi options
-CGI_NKEDIT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+CGI_NKEDIT_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
 # hobbit-ackinfo.cgi options
-CGI_ACKINFO_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+CGI_ACKINFO_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
+
+(Replace "/home/hobbit" with the top-level directory of your
+Hobbit server installation).
 
 
 hobbitgraph.cfg
@@ -88,8 +99,8 @@ file. If you haven't added any custom graphs, it is recommended
 that you install the new version of the file located in the
 hobbit-4.2/hobbitd/etcfiles/ directory. If you have added custom
 graphs, copy the following sections from the 4.2 version of the
-file to your hobbitgraph.cfg file: apache3-multi, ifstat, files,
-procs, clock, lines. 
+file to your hobbitgraph.cfg file: apache3-multi, conn-multi,
+ifstat, files, processes, ports, clock, lines. 
 
 
 hobbitlaunch.cfg
@@ -130,13 +141,17 @@ the new "Critical systems" view. To make this visible, change this:
   Note that this requires you to migrate your current "NK" tags in
   the bb-hosts file to the new Critical Systems configuration file.
   See the "Critical Systems" menu item in the "Help" menu.
+- In the "Reports" menu, after the "Config report" line, add
+      ['Metrics Report', '/hobbit-cgi/hobbit-hostgraphs.sh'],
+      ['Ghost Clients', '/hobbit-cgi/hobbit-ghosts.sh'],
 - In the "Administration" menu, after the "Enable/Disable" line, add
       ['Edit critical systems', '/hobbit-seccgi/hobbit-nkedit.sh'],
 - In the "Help" menu, after the "Tips and Tricks" line, add
       ['Custom graphs', '/hobbit/help/howtograph.html'],
 - In the "Help" menu, after the "Configuring Alerts" line, add
       ['Critical systems', '/hobbit/help/criticalsystems.html'],
-The first part of the URL may be different, depending on your setup.
+      ['Custom graphs', '/hobbit/help/howtograph.html'],
+The "/hobbit-cgi" part of the URL may be different, depending on your setup.
 
 
 ~hobbit/server/www/menu/menu_tpl.js
@@ -147,6 +162,24 @@ of this file from "'width': 150" to "'width': 160".
 
 bb-services
 -----------
-A "cupsd" definition has been added to test the CUPS printing system.
+The [spamd] definition had an erroneous "expect" string. It should
+be changed to
+   expect "SPAMD"
 
+A "cupsd" definition has been added to test the CUPS printing system.
+# CUPS print server. It answers to HTTP requests.
+[cupsd]
+   send "GET /printers\r\n"
+   expect "HTTP/1.1 200 OK"
+   port 631
+
+And an "AJP13" definition has been added for the Apache JServer 
+protocol version 1.3.
+# AJP (Apache JServ Protocol) 1.3 - sends an AJP "ping" request.
+# Ref: http://tomcat.apache.org/connectors-doc/common/ajpv13a.html
+# From Charles Goyard
+[ajp13]
+   send "\x12\x34\x00\x01\x0a"
+   expect "\x41\x42\x00\x01\x09"
+   port 8009
 
