@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.26 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.27 2006-07-10 14:31:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -229,23 +229,30 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			dprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
 			if(rc == -1) {
 				finished = 1;
-				rc2 = ldap_result2error(ld, result, 1);
 				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
-				req->output = strdup(ldap_err2string(rc2));
+
+				if (result == NULL) {
+					errprintf("LDAP library problem - NULL result returned\n");
+					req->output = strdup("LDAP BIND failed\n");
+				}
+				else {
+					rc2 = ldap_result2error(ld, result, 1);
+					req->output = strdup(ldap_err2string(rc2));
+				}
 				ldap_unbind(ld);
 			}
-			if (rc == 0) {
+			else if (rc == 0) {
 				finished = 1;
 				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
-				req->output = "Connection timeout";
+				req->output = strdup("Connection timeout");
 				ldap_unbind(ld);
 			}
-			if( rc > 0 ) {
+			else if( rc > 0 ) {
 				finished = 1;
 				if (result == NULL) {
 					errprintf("LDAP library problem - got a NULL resultcode for status %d\n", rc);
 					req->ldapstatus = BBGEN_LDAP_BINDFAIL;
-					req->output = "LDAP library problem: ldap_result2error returned a NULL result for status %d\n";
+					req->output = strdup("LDAP library problem: ldap_result2error returned a NULL result for status %d\n");
 					ldap_unbind(ld);
 				}
 				else {
