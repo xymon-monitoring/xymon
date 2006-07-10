@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.92 2006-06-02 11:20:46 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.93 2006-07-10 09:25:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -410,88 +410,106 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 		  case M_SCRIPT:
 			{
-				/* Setup all of the environment for a paging script */
-				char *p;
-				int ip1=0, ip2=0, ip3=0, ip4=0;
-				char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *downsecsmsg, *cfidtxt;
 				pid_t scriptpid;
-
-				cfidtxt = (char *)malloc(strlen("CFID=") + 10);
-				sprintf(cfidtxt, "CFID=%d", recip->cfid);
-				putenv(cfidtxt);
-
-				p = message_text(alert, recip);
-				bbalphamsg = (char *)malloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
-				sprintf(bbalphamsg, "BBALPHAMSG=%s", p);
-				putenv(bbalphamsg);
-
-				ackcode = (char *)malloc(strlen("ACKCODE=") + 10);
-				sprintf(ackcode, "ACKCODE=%d", alert->cookie);
-				putenv(ackcode);
-
-				rcpt = (char *)malloc(strlen("RCPT=") + strlen(recip->recipient) + 1);
-				sprintf(rcpt, "RCPT=%s", recip->recipient);
-				putenv(rcpt);
-
-				bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname) + 1);
-				sprintf(bbhostname, "BBHOSTNAME=%s", alert->hostname);
-				putenv(bbhostname);
-
-				bbhostsvc = (char *)malloc(strlen("BBHOSTSVC=") + strlen(alert->hostname) + 1 + strlen(alert->testname) + 1);
-				sprintf(bbhostsvc, "BBHOSTSVC=%s.%s", alert->hostname, alert->testname);
-				putenv(bbhostsvc);
-
-				bbhostsvccommas = (char *)malloc(strlen("BBHOSTSVCCOMMAS=") + strlen(alert->hostname) + 1 + strlen(alert->testname) + 1);
-				sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname), alert->testname);
-				putenv(bbhostsvccommas);
-
-				bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
-				p = bbnumeric;
-				p += sprintf(p, "BBNUMERIC=");
-				p += sprintf(p, "%03d", servicecode(alert->testname));
-				sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
-				p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
-				p += sprintf(p, "%d", alert->cookie);
-				putenv(bbnumeric);
-
-				machip = (char *)malloc(strlen("MACHIP=") + 13);
-				sprintf(machip, "MACHIP=%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
-				putenv(machip);
-
-				bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname) + 1);
-				sprintf(bbsvcname, "BBSVCNAME=%s", alert->testname);
-				putenv(bbsvcname);
-
-				bbsvcnum = (char *)malloc(strlen("BBSVCNUM=") + 10);
-				sprintf(bbsvcnum, "BBSVCNUM=%d", servicecode(alert->testname));
-				putenv(bbsvcnum);
-
-				bbcolorlevel = (char *)malloc(strlen("BBCOLORLEVEL=") + strlen(colorname(alert->color)) + 1);
-				sprintf(bbcolorlevel, "BBCOLORLEVEL=%s", colorname(alert->color));
-				putenv(bbcolorlevel);
-
-				recovered = (char *)malloc(strlen("RECOVERED=") + 2);
-				sprintf(recovered, "RECOVERED=%d", ((alert->state == A_RECOVERED) ? 1 : 0));
-				putenv(recovered);
-
-				downsecs = (char *)malloc(strlen("DOWNSECS=") + 20);
-				sprintf(downsecs, "DOWNSECS=%d", (int)(time(NULL) - alert->eventstart));
-				putenv(downsecs);
-
-				if (alert->state == A_RECOVERED) {
-					downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
-					sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %d", (int)(time(NULL) - alert->eventstart));
-				}
-				else {
-					downsecsmsg = strdup("DOWNSECSMSG=");
-				}
-				putenv(downsecsmsg);
 
 				traceprintf("Script alert with command '%s' and recipient %s\n", recip->scriptname, recip->recipient);
 				if (testonly) break;
 
 				scriptpid = fork();
 				if (scriptpid == 0) {
+					/* Setup all of the environment for a paging script */
+					namelist_t *hinfo;
+					char *p;
+					int ip1=0, ip2=0, ip3=0, ip4=0;
+					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *downsecsmsg, *cfidtxt;
+
+					cfidtxt = (char *)malloc(strlen("CFID=") + 10);
+					sprintf(cfidtxt, "CFID=%d", recip->cfid);
+					putenv(cfidtxt);
+
+					p = message_text(alert, recip);
+					bbalphamsg = (char *)malloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
+					sprintf(bbalphamsg, "BBALPHAMSG=%s", p);
+					putenv(bbalphamsg);
+
+					ackcode = (char *)malloc(strlen("ACKCODE=") + 10);
+					sprintf(ackcode, "ACKCODE=%d", alert->cookie);
+					putenv(ackcode);
+
+					rcpt = (char *)malloc(strlen("RCPT=") + strlen(recip->recipient) + 1);
+					sprintf(rcpt, "RCPT=%s", recip->recipient);
+					putenv(rcpt);
+
+					bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname) + 1);
+					sprintf(bbhostname, "BBHOSTNAME=%s", alert->hostname);
+					putenv(bbhostname);
+
+					bbhostsvc = (char *)malloc(strlen("BBHOSTSVC=") + strlen(alert->hostname) + 1 + strlen(alert->testname) + 1);
+					sprintf(bbhostsvc, "BBHOSTSVC=%s.%s", alert->hostname, alert->testname);
+					putenv(bbhostsvc);
+
+					bbhostsvccommas = (char *)malloc(strlen("BBHOSTSVCCOMMAS=") + strlen(alert->hostname) + 1 + strlen(alert->testname) + 1);
+					sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname), alert->testname);
+					putenv(bbhostsvccommas);
+
+					bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
+					p = bbnumeric;
+					p += sprintf(p, "BBNUMERIC=");
+					p += sprintf(p, "%03d", servicecode(alert->testname));
+					sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
+					p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
+					p += sprintf(p, "%d", alert->cookie);
+					putenv(bbnumeric);
+
+					machip = (char *)malloc(strlen("MACHIP=") + 13);
+					sprintf(machip, "MACHIP=%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
+					putenv(machip);
+
+					bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname) + 1);
+					sprintf(bbsvcname, "BBSVCNAME=%s", alert->testname);
+					putenv(bbsvcname);
+
+					bbsvcnum = (char *)malloc(strlen("BBSVCNUM=") + 10);
+					sprintf(bbsvcnum, "BBSVCNUM=%d", servicecode(alert->testname));
+					putenv(bbsvcnum);
+
+					bbcolorlevel = (char *)malloc(strlen("BBCOLORLEVEL=") + strlen(colorname(alert->color)) + 1);
+					sprintf(bbcolorlevel, "BBCOLORLEVEL=%s", colorname(alert->color));
+					putenv(bbcolorlevel);
+
+					recovered = (char *)malloc(strlen("RECOVERED=") + 2);
+					sprintf(recovered, "RECOVERED=%d", ((alert->state == A_RECOVERED) ? 1 : 0));
+					putenv(recovered);
+
+					downsecs = (char *)malloc(strlen("DOWNSECS=") + 20);
+					sprintf(downsecs, "DOWNSECS=%d", (int)(time(NULL) - alert->eventstart));
+					putenv(downsecs);
+
+					if (alert->state == A_RECOVERED) {
+						downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
+						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %d", (int)(time(NULL) - alert->eventstart));
+					}
+					else {
+						downsecsmsg = strdup("DOWNSECSMSG=");
+					}
+					putenv(downsecsmsg);
+
+					hinfo = hostinfo(alert->hostname);
+					if (hinfo) {
+						enum bbh_item_t walk;
+						char *itm, *id, *bbhenv;
+
+						for (walk = 0; (walk < BBH_LAST); walk++) {
+							itm = bbh_item(hinfo, walk);
+							id = bbh_item_id(walk);
+							if (itm && id) {
+								bbhenv = (char *)malloc(strlen(id) + strlen(itm) + 2);
+								sprintf(bbhenv, "%s=%s", id, itm);
+								putenv(bbhenv);
+							}
+						}
+					}
+
 					/* The child starts the script */
 					execlp(recip->scriptname, recip->scriptname, NULL);
 					errprintf("Could not launch paging script %s: %s\n", 
@@ -531,23 +549,6 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					errprintf("ERROR: Fork failed to launch script '%s' - alert lost\n", recip->scriptname);
 					traceprintf("Script fork failed - alert lost\n");
 				}
-
-				/* Clean out the environment settings */
-				putenv("CFID");            xfree(cfidtxt);
-				putenv("BBALPHAMSG");      xfree(bbalphamsg);
-				putenv("ACKCODE");         xfree(ackcode);
-				putenv("RCPT");            xfree(rcpt);
-				putenv("BBHOSTNAME");      xfree(bbhostname);
-				putenv("BBHOSTSVC");       xfree(bbhostsvc);
-				putenv("BBHOSTSVCCOMMAS"); xfree(bbhostsvccommas);
-				putenv("BBNUMERIC");       xfree(bbnumeric);
-				putenv("MACHIP");          xfree(machip);
-				putenv("BBSVCNAME");       xfree(bbsvcname);
-				putenv("BBSVCNUM");        xfree(bbsvcnum);
-				putenv("BBCOLORLEVEL");    xfree(bbcolorlevel);
-				putenv("RECOVERED");       xfree(recovered);
-				putenv("DOWNSECS");        xfree(downsecs);
-				putenv("DOWNSECSMSG") ;    xfree(downsecsmsg);
 			}
 			break;
 		}
