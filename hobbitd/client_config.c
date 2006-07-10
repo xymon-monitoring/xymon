@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.44 2006-06-21 08:51:44 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.45 2006-07-10 11:47:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -647,7 +647,7 @@ int load_client_config(char *configfn)
 				currule->rule.proc.procexp = setup_expr(tok, 0);
 
 				do {
-					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+					tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
 
 					if (strncasecmp(tok, "min=", 4) == 0) {
 						currule->rule.proc.pmin = atoi(tok+4);
@@ -696,7 +696,7 @@ int load_client_config(char *configfn)
 				currule->rule.log.color     = COL_RED;
 
 				do {
-					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+					tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
 
 					if (strncasecmp(tok, "file=", 5) == 0) {
 						currule->rule.log.logfile   = setup_expr(tok+5, 0);
@@ -1321,7 +1321,6 @@ int scan_log(namelist_t *hinfo, char *classname,
 	char *hostname, *pagename;
 	c_rule_t *rule;
 	int nofile = 0;
-	int anylines = 0;
 	char *boln, *eoln;
 	char msgline[PATH_MAX];
 
@@ -1331,6 +1330,8 @@ int scan_log(namelist_t *hinfo, char *classname,
 	nofile = (strncmp(logdata, "Cannot open logfile ", 20) == 0);
 
 	for (rule = getrule(hostname, pagename, classname, C_LOG); (rule); rule = getrule(NULL, NULL, NULL, C_LOG)) {
+		int anylines = 0;
+
 		/* First, check if the filename matches */
 		if (!namematch(logname, rule->rule.log.logfile->pattern, rule->rule.log.logfile->exp)) continue;
 
