@@ -1,6 +1,6 @@
 # bb-service
 #
-# $Id: bb-services,v 1.13 2006-07-09 15:00:16 henrik Exp $
+# $Id: bb-services,v 1.14 2006-07-10 14:41:39 henrik Exp $
 #
 # This file defines the way TCP services are tested by bbtest-net
 # (part of the bbgen toolkit).
@@ -191,6 +191,5 @@
 [ajp13]
    send "\x12\x34\x00\x01\x0a"
    expect "\x41\x42\x00\x01\x09"
-   options banner
    port 8009
 
