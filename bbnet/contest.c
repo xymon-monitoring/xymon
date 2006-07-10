@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.85 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.86 2006-07-10 08:40:18 henrik Exp $";
 
 #include "config.h"
 
@@ -1014,9 +1014,12 @@ restartselect:
 						 * If we have anything to send then send it.
 						 * If we want the banner, set the "readpending" flag to initiate
 						 * select() for read()'s.
+						 * NB: We want the banner EITHER if the GET_BANNER flag is set,
+						 *     OR if we need it to match the expect string in the servicedef.
 						 */
 
-						item->readpending = (do_talk && !item->silenttest && (item->svcinfo->flags & TCP_GET_BANNER));
+						item->readpending = (do_talk && !item->silenttest && 
+							( (item->svcinfo->flags & TCP_GET_BANNER) || item->svcinfo->exptext ));
 						if (do_talk) {
 							if (item->telnetnegotiate && item->telnetbuflen) {
 								/*
