@@ -51,6 +51,12 @@ which messages have already been forwarded to which server.
 .br
 N is a number in the range 1-31.
 
+.IP "--log-interval=N"
+Limit how often hobbitfetch will log problems with fetching data from a
+host, in seconds. Default: 900 seconds (15 minutes). This is to prevent
+a host that is down or where msgcache has not been started from flooding
+the hobbitfetch logs. Note that this is ignored when debugging is enabled.
+
 .IP "--debug"
 Enable debugging output.
 
