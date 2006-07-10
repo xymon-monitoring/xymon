@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.9 2006-07-09 07:47:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.10 2006-07-10 08:41:22 henrik Exp $";
 
 #include "config.h"
 
@@ -43,6 +43,7 @@ char *serverip = "127.0.0.1";
 int pollinterval = 60; /* Seconds between polls, +/- 15 seconds */
 time_t whentoqueue = 0;
 int serverid = 1;
+int errorloginterval = 900;
 
 /*
  * When we send in a "client" message to the server, we get the client configuration
@@ -53,6 +54,7 @@ typedef struct clients_t {
 	char *hostname;
 	time_t nextpoll;	/* When we should contact this host again */
 	time_t suggestpoll;	/* When the client msgcache is expected to get the next client message */
+	time_t nexterrortxt;	/* When we'll log errors on this client again */
 	char *clientdata;	/* This hosts' client configuration data */
 	int busy;		/* If set, then we are currently processing this host */
 } clients_t;
@@ -138,7 +140,11 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	newconn->caddr.sin_family = AF_INET;
 	if (inet_aton(destip, (struct in_addr *)&newconn->caddr.sin_addr.s_addr) == 0) {
 		/* Bad IP. */
-		errprintf("Invalid client IP: %s (req %lu)\n", destip, newconn->seq);
+		time_t now = time(NULL);
+		if (debug || (newconn->client->nexterrortxt < now)) {
+			errprintf("Invalid client IP: %s (req %lu)\n", destip, newconn->seq);
+			newconn->client->nexterrortxt = now + errorloginterval;
+		}
 		flag_cleanup(newconn);
 		goto done;
 	}
@@ -164,8 +170,13 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	n = connect(newconn->sockfd, (struct sockaddr *)&newconn->caddr, sizeof(newconn->caddr)); 
 	if ((n == -1) && (errno != EINPROGRESS)) {
 		/* Immediate connect failure - drop it */
-		errprintf("Could not connect to %s (req %lu): %s\n", 
-			  addrstring(&newconn->caddr), newconn->seq, strerror(errno));
+		time_t now = time(NULL);
+		if (debug || (newconn->client->nexterrortxt < now)) {
+			errprintf("Could not connect to %s (req %lu): %s\n", 
+				  addrstring(&newconn->caddr), newconn->seq, strerror(errno));
+			newconn->client->nexterrortxt = now + errorloginterval;
+		}
+
 		flag_cleanup(newconn);
 		goto done;
 	}
@@ -194,8 +205,12 @@ void senddata(conn_t *conn)
 
 	if (n == -1) {
 		/* Write failure. Also happens if connecting to peer fails */
-		errprintf("Connection lost during connect/write to %s (req %lu): %s\n", 
-			  addrstring(&conn->caddr), conn->seq, strerror(errno));
+		time_t now = time(NULL);
+		if (debug || (conn->client->nexterrortxt < now)) {
+			errprintf("Connection lost during connect/write to %s (req %lu): %s\n", 
+				  addrstring(&conn->caddr), conn->seq, strerror(errno));
+			conn->client->nexterrortxt = now + errorloginterval;
+		}
 		flag_cleanup(conn);
 	}
 	else if (n >= 0) {
@@ -245,6 +260,14 @@ void process_clientdata(conn_t *conn)
 
 		if (sscanf(mptr, "%d:%d", &msgbytes, &msgago) == 2) {
 			msgbytes = atoi(mptr);
+			if ((msgbytes <= 0) || ((msgbegin + msgbytes) - STRBUF(conn->msgbuf)) > STRBUFLEN(conn->msgbuf)) {
+				/* Someone is playing games with us */
+				errprintf("Invalid message data from %s (req %lu): Current offset %d, msgbytes %d, msglen %d\n",
+					  addrstring(&conn->caddr), conn->seq,
+					  (msgbegin - STRBUF(conn->msgbuf)), msgbytes, STRBUFLEN(conn->msgbuf));
+				return;
+			}
+
 			savech = *(msgbegin + msgbytes);
 			*(msgbegin + msgbytes) = '\0';
 			req = newstrbuffer(msgbytes+100);
@@ -270,8 +293,8 @@ void process_clientdata(conn_t *conn)
 			addrequest(C_SERVER, serverip, portnum, req, conn->client);
 
 			*(msgbegin + msgbytes) = savech;
-			msgbegin += msgbytes;
 
+			msgbegin += msgbytes;
 			mptr = strtok(NULL, " \t");
 		}
 		else {
@@ -314,8 +337,12 @@ void grabdata(conn_t *conn)
         n = read(conn->sockfd, buf, sizeof(buf));
 	if (n == -1) {
 		/* Read failure */
-		errprintf("Connection lost during read from %s (req %lu): %s\n", 
-			  addrstring(&conn->caddr), conn->seq, strerror(errno));
+		time_t now = time(NULL);
+		if (debug || (conn->client->nexterrortxt < now)) {
+			errprintf("Connection lost during read from %s (req %lu): %s\n", 
+				  addrstring(&conn->caddr), conn->seq, strerror(errno));
+			conn->client->nexterrortxt = now + errorloginterval;
+		}
 		flag_cleanup(conn);
 	}
 	else if (n > 0) {
@@ -392,6 +419,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			pollinterval = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--log-interval=")) {
+			char *p = strchr(argv[argi], '=');
+			errorloginterval = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--id=")) {
 			char *p = strchr(argv[argi], '=');
 			serverid = atoi(p+1);
@@ -458,8 +489,11 @@ int main(int argc, char *argv[])
 
 			for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
 				if ((connwalk->tstamp + 60) < now) {
-					errprintf("Timeout while talking to %s (req %lu): Aborting session\n",
-						  addrstring(&connwalk->caddr), connwalk->seq);
+					if (debug || (connwalk->client->nexterrortxt < now)) {
+						errprintf("Timeout while talking to %s (req %lu): Aborting session\n",
+							  addrstring(&connwalk->caddr), connwalk->seq);
+						connwalk->client->nexterrortxt = now + errorloginterval;
+					}
 					flag_cleanup(connwalk);
 				}
 			}
