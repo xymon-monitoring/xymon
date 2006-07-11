@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.12 2006-06-04 21:59:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.13 2006-07-11 17:18:22 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -176,7 +176,7 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	nkconf_t *rec = NULL;
 	int isaclone = 0;
 	int hasclones = 0;
-	char warnmsg[1024];
+	char warnmsg[4096];
 
 	/* Setup the list of cloned records */
 	sethostenv_nkclonelist_clear();
@@ -234,11 +234,11 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
 	*warnmsg = '\0';
-	if (!rec && nodatawarning) sprintf(warnmsg, "alert('%s');", nodatawarning);
-	if (isaclone && isclonewarning) sprintf(warnmsg, "alert('%s');", isclonewarning);
-	if (hasclones && hascloneswarning) sprintf(warnmsg, "alert('%s');", hascloneswarning);
+	if (!rec && nodatawarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", nodatawarning);
+	if (isaclone && isclonewarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", isclonewarning);
+	if (hasclones && hascloneswarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", hascloneswarning);
 
-	showform(stdout, "nkedit", "nkedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg);
+	showform(stdout, "nkedit", "nkedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
 }
 
 
