@@ -65,6 +65,7 @@ enum bbh_item_t {
 	BBH_RAW,
 	BBH_CLASS,
 	BBH_OS,
+	BBH_NOCOLUMNS,
 	BBH_LAST
 };
 
