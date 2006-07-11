@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.25 2006-05-19 12:02:55 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.26 2006-07-11 17:20:12 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -32,7 +32,7 @@ static int  acknum = 0;
 static int  validity = 0;
 static char *ackmsg = "";
 static cgidata_t *cgidata = NULL;
-
+static int  showcodes = 0;
 
 static void parse_query(void)
 {
@@ -62,6 +62,29 @@ static void parse_query(void)
 	}
 }
 
+void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
+{
+	fprintf(output, "<form method=\"GET\" ACTION=\"%s\">", getenv("SCRIPT_NAME"));
+	fprintf(output, "<tr>");
+
+	fprintf(output, "<td>%s</td>", hname);
+
+	fprintf(output, "<td>%s</td>", tname);
+
+	fprintf(output, "<TD><FONT FACE=\"Arial, Helvetica\" COLOR=\"silver\"><INPUT TYPE=TEXT NAME=\"DELAY\" VALUE=\"60\" SIZE=4 MAXLENGTH=4></FONT></TD>");
+
+	fprintf(output, "<TD><FONT FACE=\"Arial, Helvetica\" COLOR=\"silver\"><INPUT TYPE=TEXT NAME=\"MESSAGE\" SIZE=60 MAXLENGTH=80></FONT></TD>");
+
+	fprintf(output, "<TD>");
+	fprintf(output, "<INPUT TYPE=\"HIDDEN\" NAME=\"NUMBER\" SIZE=7 MAXLENGTH=7 VALUE=\"%s\">", ackcode);
+	fprintf(output, "<INPUT TYPE=\"HIDDEN\" NAME=\"ACTION\" VALUE=\"Ack\">");
+	fprintf(output, "<INPUT TYPE=\"SUBMIT\" NAME=\"Send\" VALUE=\"Send\" ALT=\"Send\">");
+	fprintf(output, "</TD>");
+
+	fprintf(output, "</tr>");
+	fprintf(output, "</form>");
+}
+
 int main(int argc, char *argv[])
 {
 	int argi, bbresult;
@@ -80,6 +103,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
+		else if (strcmp(argv[argi], "--show-codes") == 0) {
+			showcodes = 1;
+		}
 	}
 
 	redirect_cgilog("bb-ack");
@@ -88,7 +114,82 @@ int main(int argc, char *argv[])
 	if (cgidata == NULL) {
 		/* Present the query form */
 		sethostenv("", "", "", colorname(COL_RED), NULL);
-		showform(stdout, "acknowledge", "acknowledge_form", COL_RED, getcurrenttime(NULL), NULL);
+
+		printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+
+		if (!showcodes) {
+			showform(stdout, "acknowledge", "acknowledge_form", COL_RED, getcurrenttime(NULL), 
+				 NULL, NULL);
+		}
+		else {
+			char cmd[1024];
+			char *respbuf = NULL;
+                	char *cookie = NULL, *p;
+			int gotfilter = 0;
+
+			headfoot(stdout, "acknowledge", "", "header", COL_RED);
+
+			strcpy(cmd, "hobbitdboard color=red,yellow fields=hostname,testname,cookie");
+
+			p = getenv("HTTP_COOKIE"); 
+			if (p) cookie = strdup(p);
+
+			if (cookie && ((p = strstr(cookie, "host=")) != NULL)) {
+				char *hostname;
+				
+				hostname = p + strlen("host=");
+				p = strchr(hostname, ';'); if (p) *p = '\0';
+				if (*hostname) {
+					sprintf(cmd + strlen(cmd), " host=%s", hostname);
+					gotfilter = 1;
+				}
+				if (p) *p = ';';
+			}
+
+			if (cookie && !gotfilter && ((p = strstr(cookie, "pagepath=")) != NULL)) {
+				char *pagename;
+
+				pagename = p + strlen("pagepath=");
+				p = strchr(pagename, ';'); if (p) *p = '\0';
+				if (*pagename) {
+					sprintf(cmd + strlen(cmd), " page=^%s$", pagename);
+					gotfilter = 1;
+				}
+				if (p) *p = ';';
+			}
+			xfree(cookie);
+
+			if (sendmessage(cmd, NULL, NULL, &respbuf, 1, BBTALK_TIMEOUT) == BB_OK) {
+				char *bol, *eoln;
+				int first = 1;
+
+				bol = respbuf;
+				while (bol) {
+					char *hname, *tname, *ackcode;
+
+					eoln = strchr(bol, '\n'); if (eoln) *eoln = '\0';
+					hname = tname = ackcode = NULL;
+					hname = strtok(bol, "|");
+					if (hname) tname = strtok(NULL, "|");
+					if (tname) ackcode = strtok(NULL, "|");
+					if (hname && tname && ackcode) {
+						if (first) {
+							fprintf(stdout, "<center><table cellpadding=5>\n");
+							fprintf(stdout, "<tr><th align=left>Host</th><th align=left>Test</th><th align=left>Duration<br>(minutes)</th><th align=left>Cause</th></tr>\n");
+							first = 0;
+						}
+
+						generate_ackline(stdout, hname, tname, ackcode);
+					}
+
+					if (eoln) bol = eoln+1; else bol = NULL;
+				}
+
+				if (!first) fprintf(stdout, "</table></center>\n");
+			}
+
+			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
+		}
 		return 0;
 	}
 
