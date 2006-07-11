@@ -76,7 +76,12 @@ PURPLEDELAY, BBREL, BBRELDATE, CLIENTSVCS.
 
 hobbitcgi.cfg
 -------------
-Three new CGI programs have been added in Hobbit 4.2. To ensure
+The bb-ack.cgi tool has a new option, "--no-pin", which allows
+you to acknowledge alerts without having to bother with the
+acknowledgment code. To use this, add the "--no-pin" option to the
+CGI_ACK_OPTS setting.
+
+Four new CGI programs have been added in Hobbit 4.2. To ensure
 they are invoked correctly, add these lines to your hobbitcgi.cfg file:
 
 # hobbitgraph.cgi options
