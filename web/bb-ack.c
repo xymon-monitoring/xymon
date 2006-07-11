@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.26 2006-07-11 17:20:12 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.27 2006-07-11 17:23:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -32,7 +32,7 @@ static int  acknum = 0;
 static int  validity = 0;
 static char *ackmsg = "";
 static cgidata_t *cgidata = NULL;
-static int  showcodes = 0;
+static int  nopin = 0;
 
 static void parse_query(void)
 {
@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
-		else if (strcmp(argv[argi], "--show-codes") == 0) {
-			showcodes = 1;
+		else if (strcmp(argv[argi], "--no-pin") == 0) {
+			nopin = 1;
 		}
 	}
 
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
 		printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
-		if (!showcodes) {
+		if (!nopin) {
 			showform(stdout, "acknowledge", "acknowledge_form", COL_RED, getcurrenttime(NULL), 
 				 NULL, NULL);
 		}
