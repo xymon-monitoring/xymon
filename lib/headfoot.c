@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.51 2006-06-01 21:34:11 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.52 2006-07-11 17:18:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1213,7 +1213,8 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	MEMUNDEFINE(filename);
 }
 
-void showform(FILE *output, char *headertemplate, char *formtemplate, int color, time_t seltime, char *jstext)
+void showform(FILE *output, char *headertemplate, char *formtemplate, int color, time_t seltime, 
+	      char *pretext, char *posttext)
 {
 	/* Present the query form */
 	int formfile;
@@ -1235,10 +1236,9 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 		headfoot(output, headertemplate, "", "header", color);
-		if (jstext && *jstext) {
-			fprintf(output, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\">%s</SCRIPT>\n", jstext);
-		}
+		if (pretext) fprintf(output, "%s", pretext);
 		output_parsed(output, inbuf, color, seltime);
+		if (posttext) fprintf(output, "%s", posttext);
 		headfoot(output, headertemplate, "", "footer", color);
 
 		xfree(inbuf);
