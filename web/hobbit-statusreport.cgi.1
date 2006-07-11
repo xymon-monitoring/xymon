@@ -16,8 +16,16 @@ The generated webpage is a simple HTML table, suitable for copying
 into other documents or e-mail.
 
 hobbit-statusreport.cgi runs as a CGI program, invoked by your webserver.
-It is normally run via a wrapper shell-script in the secured CGI 
-directory for Hobbit.
+It is normally run via a wrapper shell-script in the CGI directory for Hobbit.
+
+.SH EXAMPLES
+The Hobbit installation includes two web report scripts using this
+CGI tool: The \fBhobbit-certreport.sh\fR script generates a list of
+SSL server certificates that are yellow or red (i.e. they will expire
+soon); and the \fBhobbit-nongreen.sh\fR script generates a report
+of all statuses that are currently non-green. These can be accessed
+from a web browser through a URL referencing the script in the
+Hobbit CGI directory (e.g. "/hobbit-cgi/hobbit-nongreen.sh").
 
 .SH OPTIONS
 .IP "--column=COLUMNNAME"
