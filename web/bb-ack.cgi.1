@@ -25,6 +25,12 @@ not to contact you about the problem, or inform them when the problem
 is expected to be resolved.
 
 .SH OPTIONS
+.IP "--no-pin"
+bb-ack.cgi normally requires the user to enter the acknowledgment code
+received in an alert message. If you run it with this option, the user
+will instead get a list of the current non-green statuses, and he may
+send an acknowledge without knowing the code.
+
 .IP "--env=FILENAME"
 Loads the environment defined in FILENAME before executing the CGI script.
 
