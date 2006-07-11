@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.92 2006-07-09 21:08:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.93 2006-07-11 20:23:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +29,7 @@ static char rcsid[] = "$Id: hobbitd_client.c,v 1.92 2006-07-09 21:08:10 henrik E
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
+enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_LAST };
 
 typedef struct sectlist_t {
 	char *sname;
@@ -128,6 +129,38 @@ int linecount(char *msg)
 	return result;
 }
 
+int want_msgtype(namelist_t *hinfo, enum msgtype_t msg)
+{
+	static namelist_t *currhost = NULL;
+	static unsigned long currset = 0;
+
+	if (currhost != hinfo) {
+		char *val, *tok;
+
+		currhost = hinfo;
+		currset = 0;
+		val = bbh_item(currhost, BBH_NOCOLUMNS);
+		if (val) {
+			val = strdup(val);
+			tok = strtok(val, ",");
+			while (tok) {
+				if      (strcmp(tok, "cpu") == 0) currset |= (1 << MSG_CPU);
+				else if (strcmp(tok, "disk") == 0) currset |= (1 << MSG_DISK);
+				else if (strcmp(tok, "files") == 0) currset |= (1 << MSG_FILES);
+				else if (strcmp(tok, "memory") == 0) currset |= (1 << MSG_MEMORY);
+				else if (strcmp(tok, "msgs") == 0) currset |= (1 << MSG_MSGS);
+				else if (strcmp(tok, "ports") == 0) currset |= (1 << MSG_PORTS);
+				else if (strcmp(tok, "procs") == 0) currset |= (1 << MSG_PROCS);
+
+				tok = strtok(NULL, ",");
+			}
+			xfree(val);
+		}
+	}
+
+	return ((currset & (1 << msg)) == 0);
+}
+
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     namelist_t *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *clockstr, char *msgcachestr,
@@ -145,6 +178,8 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	char msgline[4096];
 	strbuffer_t *upmsg;
+
+	if (!want_msgtype(hinfo, MSG_CPU)) return;
 
 	if (!uptimestr) return;
 
@@ -327,6 +362,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	int dmin, dmax, dcount, dcolor;
 	char *group;
 
+	if (!want_msgtype(hinfo, MSG_DISK)) return;
 	if (!dfstr) return;
 
 	dprintf("Disk check host %s\n", hostname);
@@ -503,6 +539,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	char msgline[4096];
 
+	if (!want_msgtype(hinfo, MSG_MEMORY)) return;
 	if (memphystotal == -1) return;
 	if (memphysused  == -1) return;
 
@@ -582,6 +619,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	int anycountdata = 0;
 	char *group;
 
+	if (!want_msgtype(hinfo, MSG_PROCS)) return;
 	if (!psstr) return;
 
 	if (!countdata) countdata = newstrbuffer(0);
@@ -738,6 +776,8 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	char msgline[PATH_MAX];
 	char *group;
 
+	if (!want_msgtype(hinfo, MSG_MSGS)) return;
+
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 
 	if (!swalk) {
@@ -849,6 +889,8 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	char sectionname[PATH_MAX];
 	int anyszdata = 0;
 	char *group;
+
+	if (!want_msgtype(hinfo, MSG_FILES)) return;
 
 	if (!greendata) greendata = newstrbuffer(0);
 	if (!yellowdata) yellowdata = newstrbuffer(0);
@@ -1114,6 +1156,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 	int anycountdata = 0;
 	char *group;
 
+	if (!want_msgtype(hinfo, MSG_PORTS)) return;
 	if (!portstr) return;
 
 	if (!monmsg) monmsg = newstrbuffer(0);
