@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.33 2006-06-01 12:29:36 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.34 2006-07-11 17:18:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	if (cgidata == NULL) {
 		/* Present the query form */
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
-		showform(stdout, "event", "event_form", COL_BLUE, getcurrenttime(NULL), NULL);
+		showform(stdout, "event", "event_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 		return 0;
 	}
 

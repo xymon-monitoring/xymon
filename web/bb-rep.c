@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.38 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.39 2006-07-11 17:18:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 	if (cgidata == NULL) {
 		/* Present the query form */
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
-		showform(stdout, "report", "report_form", COL_BLUE, getcurrenttime(NULL)-86400, 0);
+		showform(stdout, "report", "report_form", COL_BLUE, getcurrenttime(NULL)-86400, NULL, NULL);
 		return 0;
 	}
 

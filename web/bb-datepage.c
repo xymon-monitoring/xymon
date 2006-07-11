@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.14 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.15 2006-07-11 17:18:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 		}
 
 		sethostenv("", "", "", colorname(bgcolor), NULL);
-		showform(stdout, hffile, formfn, COL_BLUE, seltime, NULL);
+		showform(stdout, hffile, formfn, COL_BLUE, seltime, NULL, NULL);
 	}
 
 	return 0;

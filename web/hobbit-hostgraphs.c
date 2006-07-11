@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.7 2006-07-04 05:44:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.8 2006-07-11 17:18:22 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 
 		if (hostpattern || pagepattern || ippattern)
 			sethostenv_filter(hostpattern, pagepattern, ippattern);
-		showform(stdout, hffile, formfile, COL_BLUE, getcurrenttime(NULL), NULL);
+		showform(stdout, hffile, formfile, COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 	}
 	else if ((action == A_GENERATE) && hosts && hosts[0] && tests && tests[0]) {
 		int hosti, testi;

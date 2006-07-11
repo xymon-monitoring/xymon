@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.21 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.22 2006-07-11 17:18:22 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
 		sethostenv_filter(hostpattern, pagepattern, ippattern);
-		showform(stdout, "maint", "maint_form", COL_BLUE, getcurrenttime(NULL), NULL);
+		showform(stdout, "maint", "maint_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 		return 0;
 	}
 
