@@ -30,14 +30,14 @@
 			echo "I could not find fping on your system"
 			echo "Do you want to use hobbitping [Y/n] ?"
 			read USEHOBBITPING
-			if test "$USEHOBBITPING" = "y" -o "$USEHOBBITPING" = ""
+			if test "$USEHOBBITPING" = "n"
 			then
+				echo "What command should Hobbit use to run fping ?"
+				read FPING
+			else
 				USEHOBBITPING="y"
 				echo "OK, I will use hobbitping."
 				FPING="hobbitping"
-			else
-				echo "What command should Hobbit use to run fping ?"
-				read FPING
 			fi
 		else
 			echo "I found fping in $FPING"
@@ -52,6 +52,7 @@
 		fi
 	else
 		FPING="hobbitping"
+		USEHOBBITPING="y"
 	fi
 
 	if test "$USEHOBBITPING" = "y"
