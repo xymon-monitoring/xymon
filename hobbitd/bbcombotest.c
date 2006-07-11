@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.45 2006-05-19 12:02:55 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.46 2006-07-11 08:36:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -53,9 +53,14 @@ static char *gethname(char *spec)
 
 	/* grab the hostname part from a "www.xxx.com.testname" string */
 	p = strrchr(spec, '.');
-	if (p) *p = '\0';
+	if (!p) {
+		errprintf("Item '%s' has no testname part\n", spec);
+		return NULL;
+	}
+
+	*p = '\0'; 
 	result = strdup(spec);
-	if (p) *p = '.';
+	*p = '.';
 
 	return result;
 }
@@ -69,7 +74,11 @@ static char *gettname(char *spec)
 
 	/* grab the testname part from a "www.xxx.com.testname" string */
 	p = strrchr(spec, '.');
-	if (p) result = strdup(p+1); else result = "";
+	if (!p) {
+		errprintf("Item '%s' has no testname part\n", spec);
+		return NULL;
+	}
+	result = strdup(p+1);
 
 	return result;
 }
@@ -160,22 +169,32 @@ static void loadtests(void)
 		strbufferrecalc(inbuf);
 
 		if (STRBUFLEN(inbuf) && (*STRBUF(inbuf) != '#') && (p = strchr(STRBUF(inbuf), '=')) ) {
-			testspec_t *newtest = (testspec_t *) malloc(sizeof(testspec_t));
+			testspec_t *newtest;
+			char *hname, *tname;
 
-			*p = '\0';
-			comment = strchr(p+1, '#');
-			if (comment) *comment = '\0';
-			newtest->reshostname = strdup(gethname(STRBUF(inbuf)));
-			newtest->restestname = strdup(gettname(STRBUF(inbuf)));
-			newtest->expression = strdup(p+1);
-			newtest->comment = (comment ? strdup(comment+1) : NULL);
-			newtest->resultexpr = NULL;
-			newtest->valuelist = NULL;
-			newtest->result = -1;
-			newtest->errbuf = NULL;
-			newtest->next = testhead;
-			testhead = newtest;
-			testcount++;
+			hname = gethname(STRBUF(inbuf));
+			tname = gettname(STRBUF(inbuf));
+
+			if (hname && tname) {
+				*p = '\0';
+				comment = strchr(p+1, '#');
+				if (comment) *comment = '\0';
+				newtest = (testspec_t *) malloc(sizeof(testspec_t));
+				newtest->reshostname = strdup(gethname(STRBUF(inbuf)));
+				newtest->restestname = strdup(gettname(STRBUF(inbuf)));
+				newtest->expression = strdup(p+1);
+				newtest->comment = (comment ? strdup(comment+1) : NULL);
+				newtest->resultexpr = NULL;
+				newtest->valuelist = NULL;
+				newtest->result = -1;
+				newtest->errbuf = NULL;
+				newtest->next = testhead;
+				testhead = newtest;
+				testcount++;
+			}
+			else {
+				errprintf("Invalid combo test %s - missing host/test names. Perhaps you need to escape dashes?\n", STRBUF(inbuf));
+			}
 		}
 	}
 
@@ -283,9 +302,22 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 		else {
 			if (insymbol) {
 				/* Symbol finished - evaluate the symbol */
+				char *hname, *tname;
+
 				*symp = '\0';
 				insymbol = 0;
-				oneval = getvalue(gethname(symbol), gettname(symbol), &onecolor, errbuf);
+				hname = gethname(symbol); 
+				tname = gettname(symbol);
+				if (hname && tname) {
+					oneval = getvalue(gethname(symbol), gettname(symbol), &onecolor, errbuf);
+				}
+				else {
+					errprintf("Invalid data for symbol calculation - missing host/testname: %s\n",
+						  symbol);
+					oneval = 0;
+					onecolor = COL_CLEAR;
+				}
+
 				sprintf(outp, "%ld", oneval);
 				outp += strlen(outp);
 
