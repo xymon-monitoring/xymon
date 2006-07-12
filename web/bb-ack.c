@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.29 2006-07-12 07:01:03 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.30 2006-07-12 11:17:40 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -27,80 +27,158 @@ static char rcsid[] = "$Id: bb-ack.c,v 1.29 2006-07-12 07:01:03 henrik Exp $";
 #include "libbbgen.h"
 #include "version.h"
 
-static char *action = "";
-static int  acknum = 0;
-static int  validity = 0;
-static char *ackmsg = "";
 static cgidata_t *cgidata = NULL;
 static int  nopin = 0;
+
+typedef struct acklist_t {
+	int  id, checked;
+	int acknum;
+	int validity;
+	char *hostname;
+	char *testname;
+	char *ackmsg;
+	struct acklist_t *next;
+} acklist_t;
+acklist_t *ackhead = NULL;
+acklist_t *acktail = NULL;
+char *validityall = NULL;
+char *ackmsgall = NULL;
+enum { ACK_UNKNOWN, ACK_OLDSTYLE, ACK_ONE, ACK_MANY } reqtype = ACK_UNKNOWN;
+int sendnum = 0;
 
 static void parse_query(void)
 {
 	cgidata_t *cwalk;
-	int sendnum = 0;
-	char numberitm[30], delayitm[30], messageitm[30];
+
+	/* See what kind of request this is */
+	for (cwalk=cgidata; (cwalk); cwalk = cwalk->next) {
+		if (nopin && (strcmp(cwalk->name, "Send_all") == 0)) {
+			/* User pushed the "Send all" button */
+			reqtype = ACK_MANY;
+		}
+		else if (nopin && (strncmp(cwalk->name, "Send_", 5) == 0)) {
+			/* User pushed a specific "Send" button */
+			sendnum = atoi(cwalk->name+5);
+			reqtype = ACK_ONE;
+		}
+		else if (!nopin && (strcmp(cwalk->name, "Send") == 0)) {
+			/* Old style request */
+			reqtype = ACK_OLDSTYLE;
+		}
+	}
 
 	for (cwalk=cgidata; (cwalk); cwalk = cwalk->next) {
-		if (strncmp(cwalk->name, "Send_", 5) == 0) sendnum = atoi(cwalk->name+5);
-	}
-
-	if (sendnum) {
-		sprintf(numberitm,  "NUMBER_%d",  sendnum);
-		sprintf(delayitm,   "DELAY_%d",   sendnum);
-		sprintf(messageitm, "MESSAGE_%d", sendnum);
-	}
-	else {
-		*numberitm = *delayitm = *messageitm = '\0';
-	}
-
-	cwalk = cgidata;
-	while (cwalk) {
 		/*
 		 * cwalk->name points to the name of the setting.
 		 * cwalk->value points to the value (may be an empty string).
 		 */
+		int id = 0;
+		char *acknum = NULL, *validity = NULL, *ackmsg = NULL;
+		char *hostname = NULL, *testname = NULL, *checked = NULL;
+		char *delim;
 
-		if (strcasecmp(cwalk->name, "ACTION") == 0) {
-			action = strdup(cwalk->value);
+		if (strncasecmp(cwalk->name, "NUMBER", 6) == 0) {
+			if (*cwalk->value) acknum = cwalk->value;
+			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
 		}
-		else if (strcasecmp(cwalk->name, "NUMBER") == 0) {
-			acknum = atoi(cwalk->value);
+		else if (strcasecmp(cwalk->name, "DELAY_all") == 0) {
+			if (*cwalk->value) validityall = cwalk->value;
 		}
-		else if (sendnum && (strcasecmp(cwalk->name, numberitm) == 0)) {
-			acknum = atoi(cwalk->value);
+		else if (strcasecmp(cwalk->name, "MESSAGE_all") == 0) {
+			if (*cwalk->value) ackmsgall = cwalk->value;
 		}
-		else if (strcasecmp(cwalk->name, "DELAY") == 0) {
-			validity = atoi(cwalk->value);
+		else if (strncasecmp(cwalk->name, "DELAY", 5) == 0) {
+			if (*cwalk->value) validity = cwalk->value;
+			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
 		}
-		else if (sendnum && (strcasecmp(cwalk->name, delayitm) == 0)) {
-			validity = atoi(cwalk->value);
+		else if (strncasecmp(cwalk->name, "MESSAGE", 7) == 0) {
+			if (*cwalk->value) ackmsg = cwalk->value;
+			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
 		}
-		else if (strcasecmp(cwalk->name, "MESSAGE") == 0) {
-			ackmsg = strdup(cwalk->value);
+		else if (strncasecmp(cwalk->name, "HOSTNAME", 8) == 0) {
+			if (*cwalk->value) hostname = cwalk->value;
+			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
 		}
-		else if (sendnum && (strcasecmp(cwalk->name, messageitm) == 0)) {
-			ackmsg = strdup(cwalk->value);
+		else if (strncasecmp(cwalk->name, "TESTNAME", 8) == 0) {
+			if (*cwalk->value) testname = cwalk->value;
+			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
+		}
+		else if (strncasecmp(cwalk->name, "CHECKED", 7) == 0) {
+			if (*cwalk->value) checked = cwalk->value;
+			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
 		}
 
-		cwalk = cwalk->next;
+		switch (reqtype) {
+		  case ACK_UNKNOWN:
+			break;
+
+		  case ACK_OLDSTYLE:
+			id = 1;
+			/* Fall through */
+		  case ACK_ONE:
+			if ((id == sendnum) || (reqtype == ACK_OLDSTYLE)) checked = "checked";
+			/* Fall through */
+		  case ACK_MANY:
+			if (id) {
+				acklist_t *awalk;
+
+				awalk = ackhead; while (awalk && (awalk->id != id)) awalk = awalk->next;
+				if (!awalk) {
+					awalk = (acklist_t *)calloc(1, sizeof(acklist_t));
+					awalk->id = id;
+					awalk->next = NULL;
+
+					if (!ackhead) ackhead = acktail = awalk;
+					else { acktail->next = awalk; acktail = awalk; }
+				}
+
+				if (acknum) awalk->acknum = atoi(acknum);
+				if (validity) awalk->validity = atoi(validity);
+				if (ackmsg) awalk->ackmsg = strdup(ackmsg);
+				if (hostname) awalk->hostname = strdup(hostname);
+				if (testname) awalk->testname = strdup(testname);
+				if (checked) awalk->checked = 1;
+			}
+			break;
+		}
 	}
 }
 
 void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 {
 	static int num = 0;
+	char numstr[10];
 
 	num++;
+	if (ackcode) {
+		sprintf(numstr, "%d", num); 
+	}
+	else {
+		strcpy(numstr, "all");
+	}
+
 	fprintf(output, "<tr>\n");
 
-	fprintf(output, "    <td>%s</td>\n", hname);
+	fprintf(output, "    <td>%s</td>\n", (hname ? hname : "&nbsp;"));
+	fprintf(output, "    <td>%s</td>\n", (tname ? tname : "&nbsp;"));
+	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=4 MAXLENGTH=4></TD>\n", numstr);
+	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%s\" SIZE=60 MAXLENGTH=80></TD>\n", numstr);
 
-	fprintf(output, "    <td>%s</td>\n", tname);
-	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%d\" VALUE=\"60\" SIZE=4 MAXLENGTH=4></TD>\n", num);
-	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%d\" SIZE=60 MAXLENGTH=80></TD>\n", num);
 	fprintf(output, "    <TD>\n");
-	fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"NUMBER_%d\" SIZE=7 MAXLENGTH=7 VALUE=\"%s\">\n", num, ackcode);
-	fprintf(output, "       <INPUT TYPE=\"SUBMIT\" NAME=\"Send_%d\" VALUE=\"Send\" ALT=\"Send\">\n", num);
+	if (ackcode && hname && tname) {
+		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"NUMBER_%d\" VALUE=\"%s\">\n", num, ackcode);
+		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"HOSTNAME_%d\" VALUE=\"%s\">\n", num, hname);
+		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"TESTNAME_%d\" VALUE=\"%s\">\n", num, tname);
+		fprintf(output, "       <INPUT TYPE=\"SUBMIT\" NAME=\"Send_%d\" VALUE=\"Send\" ALT=\"Send\">\n", num);
+	}
+	else {
+		fprintf(output, "       &nbsp;\n");
+	}
+	fprintf(output, "    </TD>\n");
+
+	fprintf(output, "    <TD>\n");
+	if (ackcode) fprintf(output, "       <INPUT TYPE=\"CHECKBOX\" NAME=\"CHECKED_%d\" VALUE=\"OFF\">\n", num);
+	else         fprintf(output, "       <INPUT TYPE=\"SUBMIT\" NAME=\"Send_all\" VALUE=\"Send\" ALT=\"Send\">\n");
 	fprintf(output, "    </TD>\n");
 
 	fprintf(output, "</tr>\n");
@@ -108,8 +186,7 @@ void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 
 int main(int argc, char *argv[])
 {
-	int argi, bbresult;
-	char *respmsgfmt = "";
+	int argi;
 	char *envarea = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -132,7 +209,7 @@ int main(int argc, char *argv[])
 	redirect_cgilog("bb-ack");
 
 	cgidata = cgi_request();
-	if (cgidata == NULL) {
+	if ( (nopin && (cgi_method == CGI_GET)) || (!nopin && (cgidata == NULL)) ) {
 		/* Present the query form */
 		sethostenv("", "", "", colorname(COL_RED), NULL);
 
@@ -197,7 +274,7 @@ int main(int argc, char *argv[])
 						if (first) {
 							fprintf(stdout, "<form method=\"POST\" ACTION=\"%s\">\n", getenv("SCRIPT_NAME"));
 							fprintf(stdout, "<center><table cellpadding=5 summary=\"Ack data\">\n");
-							fprintf(stdout, "<tr><th align=left>Host</th><th align=left>Test</th><th align=left>Duration<br>(minutes)</th><th align=left>Cause</th></tr>\n");
+							fprintf(stdout, "<tr><th align=left>Host</th><th align=left>Test</th><th align=left>Duration<br>(minutes)</th><th align=left>Cause</th><th>Ack</th><th>Ack Multiple</tr>\n");
 							first = 0;
 						}
 
@@ -208,23 +285,24 @@ int main(int argc, char *argv[])
 				}
 
 				if (!first) {
+					generate_ackline(stdout, NULL, NULL, NULL);
 					fprintf(stdout, "</table></center>\n");
-					fprintf(stdout, "<INPUT TYPE=\"HIDDEN\" NAME=\"ACTION\" VALUE=\"Ack\">\n");
 					fprintf(stdout, "</form>\n");
 				}
 			}
 
 			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 		}
-		return 0;
 	}
-
-	parse_query();
-
-	if (strcasecmp(action, "ack") == 0) {
+	else if ( (nopin && (cgi_method == CGI_POST)) || (!nopin && (cgidata != NULL)) ) {
 		char *bbmsg;
 		char *acking_user = "";
+		acklist_t *awalk;
+		char msgline[4096];
+		strbuffer_t *response = newstrbuffer(0);
+		int count = 0;
 
+		parse_query();
 		if (getenv("REMOTE_USER")) {
 			acking_user = (char *)malloc(50 + strlen(getenv("REMOTE_USER")));
 			sprintf(acking_user, "\nAcked by: %s", getenv("REMOTE_USER"));
@@ -234,31 +312,66 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		bbmsg = (char *)malloc(1024 + strlen(ackmsg) + strlen(acking_user));
-		sprintf(bbmsg, "hobbitdack %d %d %s %s", acknum, validity, ackmsg, acking_user);
-		bbresult = sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
-		if (bbresult != BB_OK) {
-			respmsgfmt = "<center><h4>Could not contact %s servers</h4></center>\n";
-		}
-		else {
-			respmsgfmt = "<center><h4>Acknowledgment sent to %s servers</h4></center>\n";
+		addtobuffer(response, "<center>\n");
+		for (awalk = ackhead; (awalk); awalk = awalk->next) {
+			if (!awalk->checked) continue;
+
+			if ((reqtype == ACK_ONE) && (awalk->id != sendnum)) continue;
+
+			if (reqtype == ACK_MANY) {
+				if (!awalk->ackmsg) awalk->ackmsg = ackmsgall;
+				if (!awalk->validity && validityall) awalk->validity = atoi(validityall);
+			}
+
+			count++;
+			if (!awalk->ackmsg || !awalk->validity || !awalk->acknum) {
+				if (awalk->hostname && awalk->testname) {
+					sprintf(msgline, "<b>NO ACK</b> sent for host %s / test %s",
+						awalk->hostname, awalk->testname);
+				}
+				else {
+					sprintf(msgline, "<b>NO ACK</b> sent for item %d", awalk->id);
+				}
+				addtobuffer(response, msgline);
+				addtobuffer(response, ": Duration or message not set<br>\n");
+				continue;
+			}
+
+			bbmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
+			sprintf(bbmsg, "hobbitdack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
+			if (sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT) == BB_OK) {
+				if (awalk->hostname && awalk->testname) {
+					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 
+						awalk->hostname, awalk->testname);
+				}
+				else {
+					sprintf(msgline, "Acknowledge sent for code %d<br>\n", awalk->acknum);
+				}
+			}
+			else {
+				if (awalk->hostname && awalk->testname) {
+					sprintf(msgline, "Failed to send acknowledge for host %s / test %s<br>\n", 
+						awalk->hostname, awalk->testname);
+				}
+				else {
+					sprintf(msgline, "Failed to send acknowledge for code %d<br>\n", awalk->acknum);
+				}
+			}
+
+			addtobuffer(response, msgline);
+			xfree(bbmsg);
 		}
 
-		if (strlen(acking_user)) xfree(acking_user);
-		xfree(bbmsg);
-	}
-	else if (strcasecmp(action, "page") == 0) {
-		respmsgfmt = "<center><h4>This system does not support paging the operator</h4></center>\n";
-	}
-	else {
-		respmsgfmt = "<center><h4>Unknown action ignored</h4></center>\n";
-	}
+		if (count == 0) addtobuffer(response, "<b>No acks requested</b>\n");
 
-	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+		addtobuffer(response, "</center>\n");
+
+		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	
-	headfoot(stdout, "acknowledge", "", "header", COL_RED);
-	fprintf(stdout, respmsgfmt, "Hobbit");
-	headfoot(stdout, "acknowledge", "", "footer", COL_RED);
+		headfoot(stdout, "acknowledge", "", "header", COL_RED);
+		fprintf(stdout, "%s", STRBUF(response));
+		headfoot(stdout, "acknowledge", "", "footer", COL_RED);
+	}
 
 	return 0;
 }
