@@ -23,10 +23,8 @@ Installation
 ============
 Follow the normal procedure for building and installing Hobbit,
 i.e. "./configure; make; make install". Note that Hobbit
-now installs three programs suid-root: hobbitping, logfetch
-and clientupdate. hobbitping must be suid-root; the others
-can work without being suid-root - see their man-pages for
-more information.
+now installs hobbitping suid-root, so root privileges are
+needed for a server installation.
 
 Hobbit 4.2 uses one more IPC communication channel than the 
 previous release (for a total of 8 shared memory segments, and
