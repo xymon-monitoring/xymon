@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.28 2006-07-12 05:14:49 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.29 2006-07-12 07:01:03 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -37,6 +37,21 @@ static int  nopin = 0;
 static void parse_query(void)
 {
 	cgidata_t *cwalk;
+	int sendnum = 0;
+	char numberitm[30], delayitm[30], messageitm[30];
+
+	for (cwalk=cgidata; (cwalk); cwalk = cwalk->next) {
+		if (strncmp(cwalk->name, "Send_", 5) == 0) sendnum = atoi(cwalk->name+5);
+	}
+
+	if (sendnum) {
+		sprintf(numberitm,  "NUMBER_%d",  sendnum);
+		sprintf(delayitm,   "DELAY_%d",   sendnum);
+		sprintf(messageitm, "MESSAGE_%d", sendnum);
+	}
+	else {
+		*numberitm = *delayitm = *messageitm = '\0';
+	}
 
 	cwalk = cgidata;
 	while (cwalk) {
@@ -51,10 +66,19 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "NUMBER") == 0) {
 			acknum = atoi(cwalk->value);
 		}
+		else if (sendnum && (strcasecmp(cwalk->name, numberitm) == 0)) {
+			acknum = atoi(cwalk->value);
+		}
 		else if (strcasecmp(cwalk->name, "DELAY") == 0) {
 			validity = atoi(cwalk->value);
 		}
+		else if (sendnum && (strcasecmp(cwalk->name, delayitm) == 0)) {
+			validity = atoi(cwalk->value);
+		}
 		else if (strcasecmp(cwalk->name, "MESSAGE") == 0) {
+			ackmsg = strdup(cwalk->value);
+		}
+		else if (sendnum && (strcasecmp(cwalk->name, messageitm) == 0)) {
 			ackmsg = strdup(cwalk->value);
 		}
 
@@ -64,21 +88,21 @@ static void parse_query(void)
 
 void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 {
+	static int num = 0;
+
+	num++;
 	fprintf(output, "<tr>\n");
-	fprintf(output, "  <form method=\"GET\" ACTION=\"%s\">\n", getenv("SCRIPT_NAME"));
 
 	fprintf(output, "    <td>%s</td>\n", hname);
 
 	fprintf(output, "    <td>%s</td>\n", tname);
-	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY\" VALUE=\"60\" SIZE=4 MAXLENGTH=4></TD>\n");
-	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE\" SIZE=60 MAXLENGTH=80></TD>\n");
+	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%d\" VALUE=\"60\" SIZE=4 MAXLENGTH=4></TD>\n", num);
+	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%d\" SIZE=60 MAXLENGTH=80></TD>\n", num);
 	fprintf(output, "    <TD>\n");
-	fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"NUMBER\" SIZE=7 MAXLENGTH=7 VALUE=\"%s\">\n", ackcode);
-	fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"ACTION\" VALUE=\"Ack\">\n");
-	fprintf(output, "       <INPUT TYPE=\"SUBMIT\" NAME=\"Send\" VALUE=\"Send\" ALT=\"Send\">\n");
+	fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"NUMBER_%d\" SIZE=7 MAXLENGTH=7 VALUE=\"%s\">\n", num, ackcode);
+	fprintf(output, "       <INPUT TYPE=\"SUBMIT\" NAME=\"Send_%d\" VALUE=\"Send\" ALT=\"Send\">\n", num);
 	fprintf(output, "    </TD>\n");
 
-	fprintf(output, "  </form>\n");
 	fprintf(output, "</tr>\n");
 }
 
@@ -171,7 +195,8 @@ int main(int argc, char *argv[])
 					if (tname) ackcode = strtok(NULL, "|");
 					if (hname && tname && ackcode) {
 						if (first) {
-							fprintf(stdout, "<center><table cellpadding=5>\n");
+							fprintf(stdout, "<form method=\"POST\" ACTION=\"%s\">\n", getenv("SCRIPT_NAME"));
+							fprintf(stdout, "<center><table cellpadding=5 summary=\"Ack data\">\n");
 							fprintf(stdout, "<tr><th align=left>Host</th><th align=left>Test</th><th align=left>Duration<br>(minutes)</th><th align=left>Cause</th></tr>\n");
 							first = 0;
 						}
@@ -182,7 +207,11 @@ int main(int argc, char *argv[])
 					if (eoln) bol = eoln+1; else bol = NULL;
 				}
 
-				if (!first) fprintf(stdout, "</table></center>\n");
+				if (!first) {
+					fprintf(stdout, "</table></center>\n");
+					fprintf(stdout, "<INPUT TYPE=\"HIDDEN\" NAME=\"ACTION\" VALUE=\"Ack\">\n");
+					fprintf(stdout, "</form>\n");
+				}
 			}
 
 			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
