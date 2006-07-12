@@ -19,81 +19,35 @@ received Hobbit originally. See the file COPYING in the Hobbit
 source-archive for details.
 
 Hobbit initially began life as an enhancement to Big Brother called 
-"bbgen".  The Big Brother monitoring system - available from BB4 
-Technologies at http://bb4.com/ - is a flexible system for monitoring 
-the health of networked systems and services. Big Brother will run on 
-anything that has the slightest resemblance with a Unix system, due to the 
-fact that it is almost entirely implemented as Unix shellscripts. 
-However, this flexibility comes at a cost: The performance of the
-Big Brother scripts is abysmal when you need to monitor more than just 
-a handful of systems.
+"bbgen". Over a period of 5 years, Hobbit has evolved from a small
+add-on to a full-fledged monitoring system with capabilities far
+exceeding what was in the original Big Brother package. Hobbit
+does still maintain some compatibility with Big Brother, so it
+is possible to migrate from Big Brother to Hobbit without too
+much trouble. 
 
-Hobbit was first created to solve this problem. By re-implementing 
-the core functionality of the Big Brother shell scripts in C, a 
-huge performance boost was achieved while maintaining compatibility 
-with the data-files and extension interfaces that standard Big Brother 
-defines. 
-
-However, it became clear that the original design of Big Brother 
-had some scalability problems that could not be solved without
-a complete re-implementation of the system.  With the introduction 
-of the Hobbit network daemon in version 4, this goal was achieved.
-
-The Hobbit tools provide a complete replacement for the
-Big Brother server. Detailed information about installing
-and configuring Hobbit is available on-line in the web-pages for 
-your Hobbit server (under the "Help" menu), or in the Hobbit 
-source-tree in the "docs/" directory.
+Migrating to Hobbit will give you a significant performance boost, 
+and provide you with much more advanced monitoring.  The Hobbit tools 
+are designed for installations that need to monitor a large number 
+of hosts, with very little overhead on the monitoring server. 
+Monitoring of thousands of hosts with a single Hobbit server is 
+possible - it was developed to handle just this task.
 
 .SH FEATURES
-The Hobbit tools are designed for installations that need to 
-monitor a large number of hosts, with very little overhead on
-the monitoring server. Monitoring of thousands of hosts with
-a single Hobbit server is possible - it was developed to handle
-just this task.
-
-Fortunately, the speed and efficiency of Hobbit does not incur
-a cost in the form of complexity. Setting up a Hobbit server for
-a small network - perhaps just a couple of servers - can be done
-in less than an hour, and the basic concepts for configuring and
-using Hobbit are easily understood. If you are familiar with how
-Big Brother works, you should not have any problems understanding
-Hobbit. In fact, setting up Hobbit is simpler than setting up
-Big Brother because a lot of functionality that requires you to
-install Big Brother add-ons has been integrated into Hobbit and
-is part of the basic installation.
-
-Apart from the performance improvements, here are some of the
-Hobbit features:
+These are some of the core features in Hobbit:
 
 .IP "Monitoring of hosts and networks"
-Networked applications can be monitored by mimicking the requests
-sent by an end-user. Hosts can be monitored at the operating system
-level through the use of clients installed on each host.
+Hobbit collects information about your systems in two ways: From
+querying network services (Web, LDAP, DNS, Mail etc.), or from
+scripts that run either on the Hobbit server or on the systems 
+you monitor. The Hobbit package includes a \fbHobbit client\fR
+which you can install on the servers you monitor; it collects
+data about the CPU-load, disk- and memory-utilisation, logfiles,
+network ports in use, file- and directory-information and more.
+All of the information is stored inside Hobbit, and you can define
+conditions that result in alerts, e.g. if a network service stops
+responding, or a disk fills up.
 
-The network test tool knows how to test most commonly used protocols,
-including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
-many more. When checking websites, it is possible to not only check
-that the webserver is responding, but also that the response looks
-correct by matching the response against a pre-defined pattern or a
-checksum.
-
-Protocols that use SSL encryption such as https-websites are also supported, 
-and while checking such services the network tester will automatically run a 
-check of the validity of the SSL server certificate, and warn about 
-certificates that are about to expire.
-
-Hosts can be tagged as belonging to specific networks, allowing
-you to have one configuration file for all Hobbit systems,
-even when you have more than one network test engine to perform
-the tests. Each network test engine will perform only the tests
-relevant for the network segment it has access to.
-
-If a single test is not enough, combination tests can be defined
-that combine the result of several tests to a single status-report.
-So if you need to monitor that at least 3 out of 5 servers are
-running at any time, Hobbit can do that for you and generate
-the necessary availability report.
 
 .IP "Centralized configuration"
 All configuration of Hobbit is done on the Hobbit server. Even when
@@ -102,36 +56,19 @@ configuration centrally on the Hobbit server - so there is no need
 for you to login to a system just to change e.g. which processes are
 monitored.
 
-.IP "Flexible alert reduction"
-All network tests can be set not to change status to red
-immediately following a failure, but to gradually go
-through one or more of green -> clear -> yellow -> red.
-This cuts down on the number of false alarms, if you have a
-network or service that often sees brief outages, e.g.
-due to load or other intermittent problems.
 
-Tests can also be configured to depend on each other, so that
-when a critical router goes down you will get alerts only for
-the router - and not from the 200 hosts behind the router.
+.IP "Works on all major platforms"
+The Hobbit server works on all Unix-like systems, including Linux,
+Solaris, FreeBSD, AIX, HP-UX and others. The Hobbit client supports
+all major Unix platforms, and there are other Open Source projects
+- e.g. BBWin, see http://bbwin.sourceforge.net/ - providing support for 
+Microsoft Windows based systems.
 
-.IP "Custom status and trend-graphs"
-Hobbit includes a lot of tests in the core package, but there will
-always be something specific to your setup that you would like to
-watch. Hobbit allows you to write test scripts in your favourite
-scripting language and have the results show up as regular status
-columns in Hobbit. You can trigger alerts from these, and even track
-trend-data in graphs.
 
 .IP "A simple, intuitive web-based front-end"
 "Green is good, red is bad". Using the Hobbit webpages is as simple
 as that. The hosts you monitor can be grouped together in a way that
 makes sense in your organisation and presented in a tree-structure.
-You can have multiple different views of the same hosts for different
-parts of the organisation, e.g. one view for the hardware group,
-and another view for the webmasters. You can have automatic links 
-to on-line documentation, so information about your critical systems
-is just a click or two away.
-
 The webpages use many techniques to convey information about the monitored
 systems, e.g. different icons can be used for recently changed statuses;
 links to subpages can be listed in multiple columns; different icons
@@ -139,59 +76,124 @@ can be used for dialup-tests or reverse-tests; selected columns
 can be dropped or unconditionally included on the webpages to
 eliminate unwanted information, or always include certain information;
 user-friendly names can be shown for hosts regardless of their true
-hostname.
+hostname. You can also have automatic links to on-line documentation, 
+so information about your critical systems is just a click away.
 
-If you have a dedicated Network Operations Centre, you can configure
-precisely which alerts will appear on their monitors - e.g. a simple
-anomaly in the system logfile need not trigger a call the 3rd-level
-support at 2 AM, but if the on-line shop goes down you do want someone
-to respond immediately. So you put the webcheck for the on-line shop 
-on the NOC monitor page, and leave out the log-file check.
-
-.IP "Monitoring data available in many formats"
-Hobbit can natively present the monitoring data not only as HTML
-webpages, but also as data that can be used directly by PDA's and
-cell-phones (WAP/WML format), or an RSS/RDF content-feed. For
-hooking up with other applications, Hobbit can also provide 
-monitoring data in XML format. SLA reports are available in HTML
-format, or it can be imported directly into a spreadsheet for 
-further processing.
 
 .IP "Integrated trend analysis, historical data and SLA reporting"
-The LARRD trend analysis package is a popular add-on to Big Brother,
-but also fairly complicated to setup. Hobbit includes all of this
-functionality in the base package, so that the trends data
-for network response-times, disk utilisation etc is automatically
-collected and made available as graphical data.
+Hobbit stores trend- and availability-information about everything 
+it monitors. So if you need to look at how your systems behave over
+time, Hobbit has all of the information you need: Whether is is response 
+times of your webpages during peak hours, the CPU utilisation over the 
+past 4 weeks, or what the availability of a site was compared to the
+SLA - it's all there inside Hobbit. All measurements are tracked
+and made available in time-based graphs.
 
 When you need to drill down into events that have occurred, Hobbit
 provides a powerful tool for viewing the event history for each
 statuslog, with overviews of when problems have occurred during the
 past and easy-to-use zoom-in on the event.
 
-Reports of service availability can be generated on-the-fly, or
-pre-generated e.g. for monthly reporting of SLA's. Pre-generated
-reports can be exported to e.g. portal sites, so users without
-direct access to the Hobbit website can view the report data.
+For SLA reporting, You can configure planned downtime, agreed service 
+availability level, service availability time and have Hobbit generate 
+availability reports directly showing the actual availability measured 
+against the agreed SLA. Such reports of service availability can be 
+generated on-the-fly, or pre-generated e.g. for monthly reporting. 
 
-You can configure planned downtime, agreed service availability level 
-service availability time and generate availability reports directly 
-showing the actual availability measured against the agreed SLA.
+
+.IP "Role-based views"
+You can have multiple different views of the same hosts for different
+parts of the organisation, e.g. one view for the hardware group,
+and another view for the webmasters - all of them fed by the same
+test tools.
+
+If you have a dedicated Network Operations Centre, you can configure 
+precisely which alerts will appear on their monitors - e.g. a simple 
+anomaly in the system logfile need not trigger a call to 3rd-level 
+support at 2 AM, but if the on-line shop goes down you do want someone
+to respond immediately.  So you put the webcheck for the on-line shop 
+on the NOC monitor page, and leave out the log-file check.
+
+
+.IP "Also for the techies"
+The Hobbit user-interface is simple, but engineers will also find
+lots of relevant information. E.g. the data that clients report to Hobbit
+contain the raw output from a number of system commands.  That information 
+is available directly in Hobbit, so an administrator no longer needs to 
+login to a server to get an overview of how it is behaving - the very 
+commands they would normally run have alredy been performed, and the 
+results are on-line in Hobbit.
+
+
+.IP "Easy to adapt to your needs"
+Hobbit includes a lot of tests in the core package, but there will
+always be something specific to your setup that you would like to
+watch. Hobbit allows you to write test scripts in your favourite
+scripting language and have the results show up as regular status
+columns in Hobbit. You can trigger alerts from these, and even track
+trends in graphs just by a simple configuration setting.
+
+
+.IP "Real network service tests"
+The network test tool knows how to test most commonly used protocols,
+including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
+many more. When checking websites, it is possible to not only check
+that the webserver is responding, but also that the response looks
+correct by matching the response against a pre-defined pattern or a
+checksum. So you can test that a network service is really working
+and supplying the data you expect - not just that the service is
+running.
+
+Protocols that use SSL encryption such as https-websites are fully supported, 
+and while checking such services the network tester will automatically run a 
+check of the validity of the SSL server certificate, and warn about 
+certificates that are about to expire.
+
+
+.IP "Highly configurable alerts"
+You want to know when something breaks. But you don't want to get flooded
+with alerts all the time. Hobbit lets you define several criteria for
+when to send out an alert, so you only get alerts when there is really
+something that needs your attention right away. While you are handling
+an incident, you can tell Hobbit about it so it stops sending more alerts,
+and so that everyone else can check with Hobbit and know that the problem
+is being taken care of.
+
+
+.IP "Combined super-tests and test interdependencies"
+If a single test is not enough, combination tests can be defined
+that combine the result of several tests to a single status-report.
+So if you need to monitor that at least 3 out of 5 servers are
+running at any time, Hobbit can do that for you and generate
+the necessary availability report.
+
+Tests can also be configured to depend on each other, so that
+when a critical router goes down you will get alerts only for
+the router - and not from the 200 hosts behind the router.
 
 
 .SH SECURITY
 All of the Hobbit server tools run under an unprivileged user account.
-It is recommended that you setup an account dedicated to Hobbit.
 A single program - the
 .I hobbitping(1)
 network connectivity tester - must be installed setuid-root, but has
-been written so that it drops all root privileges while running.
+been written so that it drops all root privileges immediately after
+performing the operation that requires root privileges.
 
-Communication between the Hobbit server and Hobbit clients use the
+It is recommended that you setup a dedicated account for Hobbit.
+
+Communications between the Hobbit server and Hobbit clients use the
 Big Brother TCP port 1984. If the Hobbit server is located behind
 a firewall, it must allow for inbound connections to the Hobbit 
-server on tcp port 1984. Hobbit clients must be permitted to connect
-to the Hobbit server on this port.
+server on tcp port 1984. Normally, Hobbit clients - i.e. the servers
+you are monitoring - must be permitted to connect to the Hobbit server 
+on this port. However, if that is not possible due to firewall 
+policies, then Hobbit includes the
+.I hobbitfetch(8)
+and
+.I msgcache(8)
+tools to allows for a pull-style way of collecting data, where it 
+is the Hobbit server that initiates connections to the clients.
 
 The Hobbit webpages are dynamically generated through CGI programs.
 
@@ -199,38 +201,54 @@ Access to the Hobbit webpages is controlled through your webserver
 access controls, e.g. you can require a login through some form of
 HTTP authentication.
 
-.SH VERSIONS
-Version 1 of bbgen was relased in November 2002, and optimized the
-webpage generation on Big Brother servers.
 
-Version 2 of bbgen was released in April 2003, and added a tool
-for performing network tests.
+.SH DEMONSTRATION SITE
+A site running this software can be seen at http://www.hswn.dk/hobbit/
 
-Version 3 of bbgen was released in September 2004, and eliminated the 
-use of several external libraries for network tests, resulting in a 
-significant performance improvement.
 
-With version 4.0 released on March 30 2005, the project was de-coupled 
-from Big Brother, and the name changed to Hobbit. This version was the 
-first full implementation of the Hobbit server, but it still used the
-data collected by Big Brother clients for monitoring host metrics.
+.SH PREREQUISITES AND INSTALLATION
+You will need a Unix-like system (Linux, Solaris, HP-UX, AIX,
+FreeBSD, Mac OS X or similar) with a webserver installed. You
+will also need a C compiler and som additional libraries, but
+many systems come with the required development tools and 
+libraries pre-installed. The required libraries are:
+.sp
+.BR RRDtool
+This library is used to store and present trend-data. It is required.
+.sp
+.BR libpcre
+This library is used for advanced pattern-matching of text strings
+in configuration files. This library is required.
+.sp
+.BR OpenSSL
+This library is used for communication with SSL-enabled network services.
+Although optional, it is recommended that you install this for Hobbit
+since many network tests do use SSL.
+.sp
+.BR OpenLDAP
+This library is used for testing LDAP servers. Use of this is optional.
 
-Version 4.1 was released in July 2005 included a simple Hobbit client
-for Unix. Logfile monitoring was not implemented.
+For more detailed information about Hobbit system requirements and
+how to install Hobbit, refer to the online documentation "Installing
+Hobbit" available from the Hobbit webserver (via the "Help" menu),
+or from the "docs/install.html" file in the Hobbit source archive.
 
-Version 4.2 was released in May 2006, and includes a fully functional
-Hobbit client for Unix.
+
+.SH "SUPPORT and MAILING LISTS"
+hobbit@hswn.dk is an open mailing list for discussions about Hobbit.
+If you would like to participate, send an e-mail to \fBhobbit-subscribe@hswn.dk\fR
+to join the list.
+
+An archive of the mailing list is available at http://www.hswn.dk/hobbiton/
+
+If you just want to be notified of new releases of Hobbit, please
+subscribe to the hobbit-announce mailing list. This is a moderated list,
+used only for announcing new Hobbit releases. To be added to the list, send
+an e-mail to \fBhobbit-announce-subscribe@hswn.dk\fR.
 
 
 .SH HOBBIT SERVER TOOLS
 These tools implement the core functionality of the Hobbit server:
-
-.I hobbitlaunch(8)
-is a program scheduler for Hobbit. It acts as a master program
-for running all of the Hobbit tools on a system. On the Hobbit
-server, it controls running all of the server tasks. On a Hobbit
-client, it periodically launches the client to collect data
-and send them to the Hobbit server.
 
 .I hobbitd(8)
 is the core daemon that collects all reports about the status of 
@@ -240,26 +258,48 @@ out alerts: hobbitd_client, hobbitd_history, hobbitd_alert
 and hobbitd_rrd. There is also a hobbitd_filestore module for
 compatibility with Big Brother.
 
-.I hobbit-mailack(8)
-is a tool for processing acknowledgements sent via e-mail, e.g. as a 
-response to an e-mail alert.
+.I hobbitd_channel(8)
+Implements the communication between the Hobbit daemon and the
+other Hobbit server modules.
 
-.I bbcombotest(1)
-is an extension script for the Hobbit server,
-allowing you to build complicated tests from simpler
-Hobbit test results. E.g. you can define a test that uses the results
-from testing your webserver, database server and router to have a 
-single test showing the availability of your enterprise web
-application.
+.I hobbitd_history(8)
+Stores historical data about the things that Hobbit monitors.
 
-.I bbproxy(8)
-is a proxy-server that forwards Hobbit messages between
-clients and the Hobbit server.
+.I hobbitd_rrd(8)
+Stores trend data, which is used to generate graphs of the data
+monitored by Hobbit.
 
-.I trimhistory(8)
-is a tool to trim the Hobbit history logs. It will remove all
-log entries and optionally also the individual status-logs for
-events that happened before a given time.
+.I hobbitd_alert(8)
+handles alerts. When a status changes to a critical state, this 
+module decides if an alert should be sent out, and to whom.
+
+.I hobbitd_client(8)
+handles data collected by the Hobbit clients, analyzes the data
+and feeds back several status updates to Hobbit to build the
+view of the client status.
+
+.I hobbitd_hostdata(8)
+stores historical client data when something breaks. E.g. when a
+webpage stops responding hobbitd_hostdata will save the latest
+client data, so that you can use this to view a snapshot of how
+the system state was just prior to it failing.
+
+
+.SH HOBBIT NETWORK TEST TOOLS
+These tools are used on servers that execute tests of network services.
+
+.I hobbitping(1)
+performs network connectivity (ping) tests.
+
+.I bbtest-net(1)
+runs the network service tests.
+
+.I bbretest-net.sh(1)
+is an extension script for re-doing failed network tests with a higher 
+frequency than the normal network tests. This allows Hobbit to pick up
+the recovery of a network service as soon as it happens, resulting in 
+less downtime being recorded.
+
 
 .SH HOBBIT TOOLS HANDLING THE WEB USER-INTERFACE
 These tools take care of generating and updating the various
@@ -276,9 +316,23 @@ It is used to present the Hobbit status-logs.
 This CGI program generates graphs of the trend-data collected
 by Hobbit.
 
+.I hobbit-hostgraphs.cgi(1)
+When you want to combine multiple graphs into one, this CGI lets
+you combine graphs so you can e.g. compare the load on all of the
+nodes in your server farm.
+
+.I hobbit-nkview.cgi(1)
+Generates the Critical Systems view, based on the currently critical
+systems and the configuration of what systems and services you want to 
+monitor when.
+
 .I bb-hist.cgi(1)
 This CGI program generates a webpage with the most recent history 
 of a particular host+service combination.
+
+.I bb-eventlog.cgi(1)
+This CGI lets you view a log of events that have happened over a period 
+of time, for a single host or test, or for multiple systems.
 
 .I bb-ack.cgi(1)
 This CGI program allows a user to acknowledge an alert he received
@@ -288,17 +342,21 @@ sent so the technicians are not bothered wit more alerts, and secondly
 it provides feedback to those looking at the Hobbit webpages that the
 problem is being handled.
 
+.I hobbit-mailack(8)
+is a tool for processing acknowledgements sent via e-mail, e.g. as a 
+response to an e-mail alert.
+
+.I hobbit-enadis.cgi(8)
+is a CGI program to disable or re-enable hosts or individual tests.
+When disabling a host or test, you stop alarms from being sent and
+also any outages do not affect the SLA calculations. So this tool
+is useful when systems are being brought down for maintenance.
+
 .I bb-findhost.cgi(1)
 is a CGI program that finds a given host in the Hobbit
 webpages. As your Hobbit installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
-
-.I bb-csvinfo.cgi(1)
-is a CGI program to present information about a host. The 
-information is pulled from a CSV (Comma Separated Values)
-file, which is easily exported from any spreadsheet or
-database program.
 
 .I bb-rep.cgi(1)
 This CGI program triggers the generation of Hobbit availability 
@@ -317,37 +375,17 @@ in time. It uses
 .I bbgen(1)
 as the back-end engine.
 
-.I bb-eventlog.cgi(1)
-is a CGI program to show the Hobbit eventlog. Normally
-the eventlog is included on the bb2.html page, but this CGI
-can be used to have custom eventlog displays e.g. with the
-past 200 events.
-
-.I hobbit-enadis.cgi(8)
-is a CGI program to disable or re-enable hosts or individual tests.
-When disabling a host or test, you stop alarms from being sent and
-also any outages do not affect the SLA calculations. So this tool
-is useful when systems are being brought down for maintenance.
-
 .I hobbit-statusreport.cgi(1)
 is a CGI program reporting test results for a single status but
 for several hosts. It is used to e.g. see which SSL certificates
 are about to expire, across all of the Hobbit webpages.
 
-.SH HOBBIT NETWORK TEST SERVER TOOLS
-These tools are used on servers that execute tests of network services.
+.I bb-csvinfo.cgi(1)
+is a CGI program to present information about a host. The 
+information is pulled from a CSV (Comma Separated Values)
+file, which is easily exported from any spreadsheet or
+database program.
 
-.I hobbitping(1)
-performs network connectivity (ping) tests.
-
-.I bbtest-net(1)
-runs the network service tests.
-
-.I bbretest-net.sh(1)
-is an extension script for re-doing failed network tests with a higher 
-frequency than the normal network tests. This allows Hobbit to pick up
-the recovery of a network service as soon as it happens, resulting in 
-less downtime being recorded.
 
 .SH CLIENT-SIDE TOOLS
 .I logfetch(1)
@@ -355,7 +393,49 @@ is a utility used by the Hobbit Unix client to collect
 information from logfiles on the client. It can also monitor various
 other file-related data, e.g. file metadata or directory sizes.
 
-.SH OTHER HOBBIT TOOLS
+.I clientupdate(1)
+Is used on Hobbit clients, to automatically update the client software
+with new versions. Through this tool, updates of the client software
+can happen without an administrator having to logon to the server.
+
+.I msgcache(8)
+This tool acts as a mini Hobbit server to the client. It stores client
+data internally, so that the
+.I hobbitfetch(8)
+utility can pick it up later and send it to the Hobbit server. It
+is typically used on hosts that cannot contact the Hobbit server 
+directly due to network- or firewall-restrictions.
+
+
+.SH HOBBIT COMMUNICATION TOOLS
+These tools are used for communications between the Hobbit server
+and the Hobbit clients. If there are no firewalls then they are not
+needed, but it may be necessary due to network or firewall issues
+to make use of them.
+
+.I bbproxy(8)
+is a proxy-server that forwards Hobbit messages between
+clients and the Hobbit server. The clients must be able to talk
+to the proxy, and the proxy must be able to talk to the Hobbit
+server.
+
+.I hobbitfetch(8)
+is used when the client is not able to make outbound connections
+to neither bbproxy nor the Hobbit server (typically, for clients
+located in a DMZ network zone). Together with the
+.I msgcache(8)
+utility running on the client, the Hobbit server can contact the
+clients and pick up their data.
+
+
+.SH OTHER TOOLS
+.I hobbitlaunch(8)
+is a program scheduler for Hobbit. It acts as a master program
+for running all of the Hobbit tools on a system. On the Hobbit
+server, it controls running all of the server tasks. On a Hobbit
+client, it periodically launches the client to collect data
+and send them to the Hobbit server.
+
 .I bb(1)
 is the tool used to communicate with the Hobbit server.
 It is used to send status reports to the Hobbit server,
@@ -385,32 +465,42 @@ file following any "include" statements.
 is a utility to compute message digest values for use in
 content checks that use digests.
 
-.SH REQUIREMENTS
-Hobbit runs on Unix-like systems - e.g. Linux, OpenBSD or Solaris.
-It relies on a number of Open-Source libraries and tools:
-.sp
-.BR RRDtool
-This library is used to store and present trend-data. It is required.
-.sp
-.BR libpcre
-This library is used for advanced pattern-matching of text strings
-in configuration files. This library is required.
-.sp
-.BR OpenSSL
-This library is used for communication with SSL-enabled network services.
-Although optional, it is recommended that you install this for Hobbit
-since many network tests do use SSL.
-.sp
-.BR OpenLDAP
-This library is used for testing LDAP servers. Use of this is optional.
+.I bbcombotest(1)
+is an extension script for the Hobbit server,
+allowing you to build complicated tests from simpler
+Hobbit test results. E.g. you can define a test that uses the results
+from testing your webserver, database server and router to have a 
+single test showing the availability of your enterprise web
+application.
 
-For more detailed information about Hobbit system requirements and
-how to install Hobbit, refer to the online documentation "Installing
-Hobbit" available from the Hobbit webserver (via the "Help" menu),
-or from the "docs/install.html" file in the Hobbit source archive.
+.I trimhistory(8)
+is a tool to trim the Hobbit history logs. It will remove all
+log entries and optionally also the individual status-logs for
+events that happened before a given time.
 
-.SH DEMONSTRATION SITE
-A site running this software can be seen at http://www.hswn.dk/hobbit/
+
+.SH VERSIONS
+Version 1 of bbgen was relased in November 2002, and optimized the
+webpage generation on Big Brother servers.
+
+Version 2 of bbgen was released in April 2003, and added a tool
+for performing network tests.
+
+Version 3 of bbgen was released in September 2004, and eliminated the 
+use of several external libraries for network tests, resulting in a 
+significant performance improvement.
+
+With version 4.0 released on March 30 2005, the project was de-coupled 
+from Big Brother, and the name changed to Hobbit. This version was the 
+first full implementation of the Hobbit server, but it still used the
+data collected by Big Brother clients for monitoring host metrics.
+
+Version 4.1 was released in July 2005 included a simple Hobbit client
+for Unix. Logfile monitoring was not implemented.
+
+Version 4.2 was released in July 2006, and includes a fully functional
+Hobbit client for Unix.
+
 
 .SH COPYRIGHT
 Hobbit is
@@ -425,26 +515,20 @@ All other files are released under the GNU General Public License version 2,
 with the additional exemption that compiling, linking, and/or using OpenSSL 
 is allowed.  See the file COPYING for details.
 
-.SH "MAILING LISTS"
-hobbit@hswn.dk is an open mailing list for discussions about Hobbit.
-If you would like to participate, send an e-mail to \fBhobbit-subscribe@hswn.dk\fR
-to join the list.
-
-An archive of the mailing list is available at http://www.hswn.dk/hobbiton/
-
-If you just want to be notified of new releases of Hobbit, please
-subscribe to the hobbit-announce mailing list. This is a moderated list,
-used only for announcing new Hobbit releases. To be added to the list, send
-an e-mail to \fBhobbit-announce-subscribe@hswn.dk\fR.
 
 .SH "SEE ALSO"
-hobbitlaunch(8), hobbitlaunch.cfg(5), 
-hobbitd(8), hobbitd_filestore(8), hobbitd_history(8), hobbitd_alert(8), hobbitd_rrd(8), hobbit-mailack(8),
-bbgen(1), bb-hostsvc.cgi(1), hobbitgraph.cgi(1), bb-hist.cgi(1), bb-ack.cgi(1),
-bb-findhost.cgi(1), bb-csvinfo.cgi(1), bb-rep.cgi(1), 
-bb-replog.cgi(1), bb-snapshot.cgi(1), bb-eventlog.cgi(1),
-bbtest-net(1), bbretest-net.sh(1), bb-services(5),
-bb(1), bbmessage.cgi(1), bbhostgrep(1), bbhostshow(1), bbdigest(1), bbcombotest(1), bbcombotest.cfg(5),
-bbproxy(8), trimhistory(8),
-bb-hosts(5), hobbitserver.cfg(5)
+hobbitd(8), hobbitd_channel(8), hobbitd_history(8), hobbitd_rrd(8), hobbitd_alert(8), 
+hobbitd_client(8), hobbitd_hostdata(8), 
+hobbitping(1), bbtest-net(1), bbretest-net.sh(1), 
+bbgen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
+bb-hist.cgi(1), bb-eventlog.cgi(1), 
+bb-ack.cgi(1), hobbit-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 
+bb-rep.cgi(1), bb-replog.cgi(1), bb-snapshot.cgi(1), hobbit-statusreport.cgi(1), bb-csvinfo.cgi(1), 
+logfetch(1), clientupdate(1), msgcache(8), 
+bbproxy(8), hobbitfetch(8), 
+hobbitlaunch(8), bb(1), bbmessage.cgi(1), bbcmd(1), bbhostgrep(1), bbhostshow(1), 
+bbdigest(1), bbcombotest(1), trimhistory(8),
+bb-hosts(5), hobbitlaunch.cfg(5), hobbitserver.cfg(5),
+hobbit-alerts.cfg(5),
+hobbit-clients.cfg(5), client-local.cfg(5)
 
