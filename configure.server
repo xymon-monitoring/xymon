@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit server
-# $Id: configure.server,v 1.63 2006-01-13 11:39:47 henrik Exp $
+# $Id: configure.server,v 1.64 2006-07-12 04:50:08 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit"
@@ -237,6 +237,7 @@ fi
 echo ""; echo ""
 
 echo "Where to put the Hobbit CGI scripts [$BBTOPDIR/cgi-bin] ? "
+echo "(Note: This is the filesystem directory - we will get to the URL shortly)"
 if test -z "$CGIDIR"
 then
 	read CGIDIR
@@ -248,6 +249,7 @@ fi
 echo ""; echo ""
 
 echo "What is the URL for the Hobbit CGI directory [/hobbit-cgi] ? "
+echo "(Note: This is the URL - NOT the filesystem directory)"
 if test -z "$BBCGIURL"
 then
 	read BBCGIURL
@@ -264,10 +266,12 @@ echo "restrict access to the CGI scripts that handle enable/disable of"
 echo "hosts, and acknowledging of alerts. The easiest way to do this is"
 echo "to put these in a separate CGI directory and require a password to"
 echo "access them."
-echo "If your Hobbit server is on a secure network (Intranet) and you trust"
-echo "your users, then you can keep all the CGI scripts in one directory."
+echo "Even if your Hobbit server is on a secured, internal network, you"
+echo "may want to have some operations (like disabling a host) be password-"
+echo "protected - that lets you see who disabled or acknowledged an alert."
 echo ""
 echo "Where to put the Hobbit Administration CGI scripts [$BBTOPDIR/cgi-secure] ? "
+echo "(Note: This is the filesystem directory - we will get to the URL shortly)"
 if test -z "$SECURECGIDIR"
 then
 	read SECURECGIDIR
@@ -281,6 +285,7 @@ echo ""; echo ""
 if test "$CGIDIR" != "$SECURECGIDIR"
 then
 	echo "What is the URL for the Hobbit Administration CGI directory [/hobbit-seccgi] ? "
+	echo "(Note: This is the URL - NOT the filesystem directory)"
 	if test -z "$SECUREBBCGIURL"
 	then
 		read SECUREBBCGIURL
@@ -339,7 +344,7 @@ if test -z "$BBHOSTIP"
 then
 	read BBHOSTIP
 fi
-if test -z "$BBHOSTIP"
+if test -z "$BBHOSTIP" -o "$BBHOSTIP" = "127.0.0.1"
 then
 	echo "** NOTE: Using 127.0.0.1 (loopback), but it is probably not what you want **"
 	BBHOSTIP=127.0.0.1
@@ -373,41 +378,40 @@ echo "# configure settings for Hobbit"   >>Makefile
 echo "#"                                 >>Makefile
 echo "# Toplevel dir"                    >>Makefile
 echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
-echo "# Server home dir for etc/, www/"  >>Makefile
+echo "# Server home dir for etc/, bin/"  >>Makefile
 echo "BBHOME = $BBHOME"                  >>Makefile
-echo "# Server data dir for hist/ et.al." >>Makefile
+echo "# Server data dir for hist/ etc."  >>Makefile
 echo "BBVAR = $BBVAR"                    >>Makefile
 echo "# CGI scripts go in CGIDIR"        >>Makefile
 echo "CGIDIR = $CGIDIR"                  >>Makefile
+echo "# Admin CGI scripts go in SECURECGIDIR" >>Makefile
 echo "SECURECGIDIR = $SECURECGIDIR"      >>Makefile
+echo "# Where to put logfiles"           >>Makefile
+echo "BBLOGDIR = $BBLOGDIR"              >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
-echo "# How to run fping"                >>Makefile
-echo "FPING=$FPING"                      >>Makefile
+echo "# How to run fping or hobbitping"  >>Makefile
+echo "FPING = $FPING"                    >>Makefile
 echo ""                                  >>Makefile
-echo "# hobbit settings follows"         >>Makefile
-echo "#"                                 >>Makefile
 echo "# Username running hobbit"         >>Makefile
 echo "BBUSER = $BBUSER"                  >>Makefile
-echo "# Logs from hobbit programs go here" >>Makefile
-echo "BBLOGDIR = $BBLOGDIR"              >>Makefile
 echo "# Hobbit server hostname"          >>Makefile
 echo "BBHOSTNAME = $BBHOSTNAME"          >>Makefile
 echo "# Hobbit server IP-address"        >>Makefile
 echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
 echo "# Hobbit server OS"                >>Makefile
 echo "BBHOSTOS = $BBHOSTOS"              >>Makefile
+echo ""                                  >>Makefile
 echo "# URL for Hobbit webpages"         >>Makefile
 echo "BBHOSTURL = $BBHOSTURL"            >>Makefile
 echo "# URL for Hobbit CGIs"             >>Makefile
 echo "BBCGIURL = $BBCGIURL"              >>Makefile
+echo "# URL for Hobbit Admin CGIs"       >>Makefile
 echo "SECUREBBCGIURL = $SECUREBBCGIURL"  >>Makefile
-
-echo ""                                  >>Makefile
 echo "# Webserver group-ID"              >>Makefile
 echo "HTTPDGID=$HTTPDGID"                >>Makefile
-
 echo ""                                  >>Makefile
+
 echo "# RRDtool settings"                >>Makefile
 echo "RRDDEF = $RRDDEF"                  >>Makefile
 echo "RRDINCDIR = -I$RRDINC"             >>Makefile
@@ -423,7 +427,6 @@ echo "# OpenSSL settings"                >>Makefile
 echo "SSLFLAGS = $SSLDEF"                >>Makefile
 if test "$SSLDEF" != ""
 then
-	echo "# Change the following line if compiler complains about a missing ssl.h" >>Makefile
 	echo "SSLINCDIR = -I$OSSLINC"    >>Makefile
 	echo "SSLLIBS = -L$OSSLLIB -lssl -lcrypto" >>Makefile
 	echo "RPATHVAL += ${OSSLLIB}"    >>Makefile
