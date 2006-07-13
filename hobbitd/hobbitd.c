@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.245 2006-07-08 10:39:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.246 2006-07-13 13:55:03 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3186,6 +3186,7 @@ void do_message(conn_t *msg, char *origin)
 		char *hostname = NULL, *clientos = NULL, *clientclass = NULL;
 		char *hname = NULL;
 		char *line1, *p;
+		char savech;
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
@@ -3193,8 +3194,16 @@ void do_message(conn_t *msg, char *origin)
 			*msgfrom = '\0';
 		}
 
-		p = strchr(msg->buf, '\n'); if (p) *p = '\0';
-		line1 = strdup(msg->buf); if (p) *p = '\n';
+		p = msg->buf + strcspn(msg->buf, "\r\n");
+		if ((*p == '\r') || (*p == '\n')) {
+			savech = *p;
+			*p = '\0';
+		}
+		else {
+			p = NULL;
+		}
+		line1 = strdup(msg->buf); if (p) *p = savech;
+
 		p = strtok(line1, " \t"); /* Skip the client keyword */
 		if (p) hostname = strtok(NULL, " \t"); /* Actually, HOSTNAME.CLIENTOS */
 		if (hostname) {
