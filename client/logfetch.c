@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.28 2006-07-09 21:08:10 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.29 2006-07-14 16:32:04 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -103,7 +103,8 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 	FILE *fd;
 	struct stat st;
 	size_t n;
-	int openerr, i;
+	int openerr, i, status;
+	regex_t expr;
 #ifdef _LARGEFILE_SOURCE
 	off_t bufsz;
 #else
@@ -158,49 +159,37 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 #endif
 	if (bufsz < 1024) bufsz = 1024;
 	startpos = buf = (char *)malloc(bufsz + 1);
-	n = fread(buf, 1, bufsz, fd);
+	if (logdef->ignore) {
+		status = regcomp(&expr, logdef->ignore, REG_EXTENDED|REG_ICASE|REG_NOSUB);
+		if (status != 0) logdef->ignore = NULL;
+	}
 
-	if (n >= 0) {
+	if (logdef->ignore == NULL) {
+		/* No ignore setting, so just grab all the data */
+		n = fread(buf, 1, bufsz, fd);
+		if (n >= 0) {
+			sprintf("Error while reading logfile %s : %s\n", filename, strerror(errno));
+			n = 0;
+		}
 		*(buf + n) = '\0';
 	}
 	else {
-		sprintf("Error while reading logfile %s : %s\n", filename, strerror(errno));
+		char *fillpos = buf;
+
+		/* Read one line at a time, and discard the ignored lines */
+		while (fgets(fillpos, (bufsz - (fillpos - buf)), fd)) {
+			status = regexec(&expr, fillpos, 0, NULL, 0);
+			if (status != 0) {
+				/* No "ignore" match, so we want this line */
+				fillpos += strlen(fillpos);
+			}
+		}
+		*fillpos = '\0';
+		n = (fillpos - buf);
 	}
 
 	fclose(fd);
-
-	/* Strip out the ignored lines */
-	if (logdef->ignore) {
-		regex_t expr;
-		int status;
-
-		status = regcomp(&expr, logdef->ignore, REG_EXTENDED|REG_ICASE|REG_NOSUB);
-		if (status == 0) {
-			int bofs, eofs;
-
-			bofs=0;
-			while (*(buf + bofs)) {
-				char savechar;
-
-				eofs = bofs + strcspn(buf + bofs, "\n");
-				savechar = *(buf + eofs);
-				*(buf + eofs) = '\0';
-
-				status = regexec(&expr, (buf + bofs), 0, NULL, 0);
-				if (status == 0) {
-					/* Ignore this line */
-					memmove(buf+bofs, buf+eofs+1, (n-eofs+1));
-					n -= (eofs - bofs);
-				}
-				else {
-					*(buf + eofs) = savechar;
-					bofs = eofs+1;
-				}
-			}
-
-			regfree(&expr);
-		}
-	}
+	if (logdef->ignore) regfree(&expr);
 
 	/*
 	 * If it's too big, we may need to truncate ie. 
@@ -210,9 +199,7 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 		 * Check if there's a trigger string anywhere in the data - 
 		 * if there is, then we'll skip to that trigger string.
 		 */
-		regex_t expr;
 		regmatch_t pmatch[1];
-		int status;
 
 		status = regcomp(&expr, logdef->trigger, REG_EXTENDED|REG_ICASE);
 		if (status == 0) {
