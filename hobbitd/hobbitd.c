@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.246 2006-07-13 13:55:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.247 2006-07-14 10:45:22 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2054,22 +2054,22 @@ void setup_filter(char *buf, char *defaultfields,
 			tname = strrchr(tok, '.');
 			if (tname) { *tname = '\0'; tname++; }
 			s = hname; while ((s = strchr(s, ',')) != NULL) *s = '.';
-
 			hname = knownhost(hname, hostip, ghosthandling);
-			if (hname) {
+
+			if (hname && tname) {
 				hnameexp = (char *)malloc(strlen(hname)+3);
 				sprintf(hnameexp, "^%s$", hname);
 				*shost = compileregex(hnameexp);
 				xfree(hnameexp);
+
+				tnameexp = (char *)malloc(strlen(tname)+3);
+				sprintf(tnameexp, "^%s$", tname);
+				*stest = compileregex(tnameexp);
+				xfree(tnameexp);
+
+				if (chshost) *chshost = hname;
+				if (chstest) *chstest = tname;
 			}
-
-			tnameexp = (char *)malloc(strlen(tname)+3);
-			sprintf(tnameexp, "^%s$", tname);
-			*stest = compileregex(tnameexp);
-			xfree(tnameexp);
-
-			if (chshost) *chshost = hname;
-			if (chstest) *chstest = tname;
 		}
 
 		tok = strtok(NULL, " \t\r\n");
