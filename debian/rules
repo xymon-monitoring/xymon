@@ -92,7 +92,7 @@ install-client: build
 	cd $(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client && rmdir logs && ln -s ../../../../var/log/hobbit logs
 	cd $(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client && rmdir tmp && ln -s ../../../../tmp tmp
 	mv $(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client/etc/hobbitclient.cfg /tmp/hobbitclient.cfg.$$
-	cat /tmp/hobbitclient.cfg.$$ | sed -e's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client/etc/hobbitclient.cfg
+	cat /tmp/hobbitclient.cfg.$$ | sed -e 's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$(CURDIR)/debian/hobbit-client/usr/lib/hobbit/client/etc/hobbitclient.cfg
 
 
 # Build architecture-independent files here.

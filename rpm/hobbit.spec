@@ -82,7 +82,7 @@ rm -rf $RPM_BUILD_ROOT
 	rmdir $RPM_BUILD_ROOT/usr/lib/hobbit/client/logs
 	cd $RPM_BUILD_ROOT/usr/lib/hobbit/client && ln -sf ../../../../var/log/hobbit logs
 	mv $RPM_BUILD_ROOT/usr/lib/hobbit/client/etc/hobbitclient.cfg /tmp/hobbitclient.cfg.$$
-	cat /tmp/hobbitclient.cfg.$$ | sed -e's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$RPM_BUILD_ROOT/usr/lib/hobbit/client/etc/hobbitclient.cfg
+	cat /tmp/hobbitclient.cfg.$$ | sed -e 's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$RPM_BUILD_ROOT/usr/lib/hobbit/client/etc/hobbitclient.cfg
 	rm /tmp/hobbitclient.cfg.$$
 
 %clean

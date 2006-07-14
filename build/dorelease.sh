@@ -78,7 +78,7 @@ if [ "$CMD" = "daily" ]; then
 	if [ -f /tmp/version.h ]; then rm -f /tmp/version.h; fi
 	cp $RELDIR/include/version.h /tmp/
 	rm -f $RELDIR/include/version.h
-	cat /tmp/version.h | sed -e"s/define VERSION.*/define VERSION \"0.$TSTAMP\"/" >$RELDIR/include/version.h
+	cat /tmp/version.h | sed -e "s/define VERSION.*/define VERSION \"0.$TSTAMP\"/" >$RELDIR/include/version.h
 fi
 
 exit 0

@@ -13,7 +13,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.12 2006-06-09 14:40:02 henrik Exp $
+# $Id: runclient.sh,v 1.13 2006-07-14 21:25:19 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -25,13 +25,13 @@ while test "$1" != ""
 do
 	case "$1" in
 	  --hostname=*)
-	  	MACHINEDOTS="`echo $1 | sed -e's/--hostname=//'`"
+	  	MACHINEDOTS="`echo $1 | sed -e 's/--hostname=//'`"
 		;;
 	  --os=*)
-	  	BBOSTYPE="`echo $1 | sed -e's/--os=//' | tr '[A-Z]' '[a-z]'`"
+	  	BBOSTYPE="`echo $1 | sed -e 's/--os=//' | tr '[A-Z]' '[a-z]'`"
 		;;
 	  --class=*)
-	        CONFIGCLASS="`echo $1 | sed -e's/--class=//' | tr '[A-Z]' '[a-z]'`"
+	        CONFIGCLASS="`echo $1 | sed -e 's/--class=//' | tr '[A-Z]' '[a-z]'`"
 		;;
 	  --help)
 	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] [--class=CLASSNAME] start|stop"
@@ -59,7 +59,7 @@ cd "`dirname $0`"
 HOBBITCLIENTHOME="`pwd`"
 cd "$OLDDIR"
 
-MACHINE="`echo $MACHINEDOTS | sed -e's/\./,/g'`"
+MACHINE="`echo $MACHINEDOTS | sed -e 's/\./,/g'`"
 
 export MACHINE MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME CONFIGCLASS
 
