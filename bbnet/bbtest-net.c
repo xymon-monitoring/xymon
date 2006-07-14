@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.236 2006-06-26 20:57:05 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.237 2006-07-14 11:32:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -111,6 +111,7 @@ char		pinglog[PATH_MAX];
 char		pingerrlog[PATH_MAX];
 int		respcheck_color = COL_YELLOW;
 int		extcmdtimeout = 30;
+int		bigfailure = 0;
 
 void dump_hostlist(void)
 {
@@ -1197,14 +1198,17 @@ int finish_ping_service(service_t *service)
 		break;
 
 	  case 3: /* Bad command-line args, or not suid-root */
+		failed = 1;
 		errprintf("Execution of '%s' failed - program not suid root?\n", pingcmd);
 		break;
 
 	  case 98:
+		failed = 1;
 		errprintf("hobbitping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
 		break;
 
 	  case 99:
+		failed = 1;
 		errprintf("Could not run the command '%s' (exec failed)\n", pingcmd);
 		break;
 
@@ -1217,8 +1221,34 @@ int finish_ping_service(service_t *service)
 	/* Load status of previously failed tests */
 	load_ping_status();
 
+	/* Open the new ping result file */
 	logfd = fopen(pinglog, "r");
-	if (logfd == NULL) { errprintf("Cannot open ping output file %s\n", pinglog); return -1; }
+	if (logfd == NULL) { 
+		failed = 1;
+		errprintf("Cannot open ping output file %s\n", pinglog);
+	}
+
+	/* Copy error messages to the Hobbit logfile */
+	if (failed) {
+		FILE *errfd;
+		char buf[1024];
+			
+		errfd = fopen(pingerrlog, "r");
+		if (errfd && fgets(buf, sizeof(buf), errfd)) {
+			errprintf("%s", buf);
+		}
+		if (errfd) fclose(errfd);
+	}
+	if (!debug) unlink(pingerrlog);
+
+	if (failed) {
+		/* Flag all ping tests as "undecided" */
+		bigfailure = 1;
+		for (t=service->items; (t); t = t->next) t->open = -1;
+		goto cleanup;
+	}
+
+	/* The test did run, and we have a result-file. Look at it. */
 	while (fgets(l, sizeof(l), logfd)) {
 		p = strchr(l, '\n'); if (p) *p = '\0';
 		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
@@ -1249,21 +1279,6 @@ int finish_ping_service(service_t *service)
 			}
 		}
 	}
-	fclose(logfd);
-	if (!debug) {
-		unlink(pinglog);
-		if (failed) {
-			FILE *errfd;
-			char buf[1024];
-			
-			errfd = fopen(pingerrlog, "r");
-			if (errfd && fgets(buf, sizeof(buf), errfd)) {
-				errprintf("%s", buf);
-			}
-			if (errfd) fclose(errfd);
-		}
-		unlink(pingerrlog);
-	}
 
 	/* 
 	 * Handle the router dependency stuff. I.e. for all hosts
@@ -1288,6 +1303,10 @@ int finish_ping_service(service_t *service)
 			}
 		}
 	}
+
+cleanup:
+	if (logfd) fclose(logfd);
+	if (!debug) unlink(pinglog);
 
 	return 0;
 }
@@ -1360,7 +1379,12 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		 * "noping" always sends back a status "clear".
 		 * If DNS error, return red and count as down.
 		 */
-		if (test->host->noping) { 
+		if (test->open == -1) {
+			/* Failed to run the ping utility. */
+			strcpy(cause, "Hobbit system failure");
+			return COL_CLEAR;
+		}
+		else if (test->host->noping) { 
 			/* Ping test disabled - go "clear". End of story. */
 			strcpy(cause, "Ping test disabled (noping)");
 			return COL_CLEAR; 
@@ -1668,6 +1692,10 @@ void send_results(service_t *service, int failgoesclear)
 					  else if (t->host->dialup) {
 						  strcat(msgline, ": Disabled (dialup host)");
 						  strcat(msgtext, "Dialup host\n");
+					  }
+					  else if (t->open == -1) {
+						  strcat(msgline, ": System failure of the ping test");
+						  strcat(msgtext, "Hobbit system error\n");
 					  }
 					  /* "clear" due to badconn: no extra text */
 				  }
@@ -2434,6 +2462,7 @@ int main(int argc, char *argv[])
 			errprintf("WARNING: Runtime %ld longer than time limit (%ld)\n", total_runtime(), runtimewarn);
 		}
 		color = (errbuf ? COL_YELLOW : COL_GREEN);
+		if (bigfailure) color = COL_RED;
 
 		combo_start();
 		init_status(color);
