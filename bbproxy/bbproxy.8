@@ -54,10 +54,15 @@ messages are forwarded to. The default portnumber is 1984, the
 standard Big Brother port number. If you have setup the normal
 Big Brother environment, you can use "--bbdisplay=$BBDISP". Up
 to 3 servers can be specified; incoming messages are sent to
-all of them (except "config" and "query" messages, which go to
-the first server only). This option is required.
+all of them (except "config", "query" and "download" messages, 
+which go to the LAST server only). If you have Hobbit clients
+sending their data via this proxy, note that the clients will
+receive their configuration data from the LAST of the servers
+listed here.  This option is required.
 
 .IP "--bbpager=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
+\fBDEPRECATED\fR - this option is only present for compatibility 
+with servers running Big Brother, and will be removed soon.
 Specifies the IP-address and optional portnumber where incoming
 "page" messages are forwarded to. The default portnumber is 1984, 
 the standard Big Brother port number. If you have setup the normal
