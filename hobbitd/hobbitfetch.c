@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.10 2006-07-10 08:41:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.11 2006-07-15 19:54:16 henrik Exp $";
 
 #include "config.h"
 
@@ -286,8 +286,19 @@ void process_clientdata(conn_t *conn)
 					conn->client->suggestpoll);
 
 				/* Add a section to the client message with cache delay info */
-				sprintf(msgcachesection, "[msgcache]\nCachedelay: %d\n", msgago);
+				snprintf(msgcachesection, sizeof(msgcachesection),
+					 "[msgcache]\nCachedelay: %d\n[proxy]\nClientIP:%s", 
+					 msgago, addrstring(&conn->caddr));
 				addtobuffer(req, msgcachesection);
+			}
+			else if ( (strncmp(msgbegin, "status", 6) == 0) ||
+				  (strncmp(msgbegin, "data", 4) == 0) ) {
+				char sourcemsg[100];
+
+				/* Add a line to the message showing where it came from */
+				sprintf(sourcemsg, "\nStatus message received from %s\n", 
+					addrstring(&conn->caddr));
+				addtobuffer(req, sourcemsg);
 			}
 
 			addrequest(C_SERVER, serverip, portnum, req, conn->client);
