@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.247 2006-07-14 10:45:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.248 2006-07-15 19:54:16 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3188,10 +3188,12 @@ void do_message(conn_t *msg, char *origin)
 		char *line1, *p;
 		char savech;
 
-		msgfrom = strstr(msg->buf, "\nStatus message received from ");
+		msgfrom = strstr(msg->buf, "\n[proxy]\n");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
-			*msgfrom = '\0';
+			char *ipline = strstr(msgfrom, "\nClientIP:");
+			if (ipline) { 
+				sscanf(ipline, "\nClientIP:%16s\n", sender);
+			}
 		}
 
 		p = msg->buf + strcspn(msg->buf, "\r\n");
