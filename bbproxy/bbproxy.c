@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.55 2006-07-15 10:34:28 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.56 2006-07-15 19:54:16 henrik Exp $";
 
 #include "config.h"
 
@@ -618,6 +618,14 @@ int main(int argc, char *argv[])
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
 					cwalk->snum = bbdispcount;
+
+					if (usehobbitd && ((cwalk->buflen + 40 ) < cwalk->bufsize)) {
+						int n = sprintf(cwalk->bufp, 
+								"\n[proxy]\nClientIP:%s\n", 
+								inet_ntoa(*cwalk->clientip));
+						cwalk->bufp += n;
+						cwalk->buflen += n;
+					}
 				}
 				else if ((strncmp(cwalk->buf+6, "query", 5) == 0)  ||
 				         (strncmp(cwalk->buf+6, "config", 6) == 0) ||
