@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.54 2006-07-08 10:44:24 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.55 2006-07-15 10:34:28 henrik Exp $";
 
 #include "config.h"
 
@@ -577,6 +577,7 @@ int main(int argc, char *argv[])
 		for (cwalk = chead, idx=0; (cwalk); cwalk = cwalk->next, idx++) {
 			dprintf("state %d: %s\n", idx, statename[cwalk->state]);
 
+			/* First, handle any state transitions and setup the FD sets for select() */
 			switch (cwalk->state) {
 			  case P_REQ_READING:
 				FD_SET(cwalk->csocket, &fdread); 
@@ -608,15 +609,30 @@ int main(int argc, char *argv[])
 				 * at the front of the buffer, we need to skip that when looking at
 				 * what type of message it is. Hence the "cwalk->buf+6".
 				 */
-				if ((strncmp(cwalk->buf+6, "query", 5) == 0)  ||
-				    (strncmp(cwalk->buf+6, "client", 6) == 0) ||
-				    (strncmp(cwalk->buf+6, "config", 6) == 0) ||
-				    (strncmp(cwalk->buf+6, "download", 8) == 0)) {
+				if (strncmp(cwalk->buf+6, "client", 6) == 0) {
+					/*
+					 * "client" messages go to all bbdisplay servers, but
+					 * we will only pass back the response from one of them
+					 * (the last one).
+					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
-					cwalk->snum = 1; /* We only do these once! */
+					cwalk->snum = bbdispcount;
+				}
+				else if ((strncmp(cwalk->buf+6, "query", 5) == 0)  ||
+				         (strncmp(cwalk->buf+6, "config", 6) == 0) ||
+				         (strncmp(cwalk->buf+6, "ping", 4) == 0) ||
+				         (strncmp(cwalk->buf+6, "download", 8) == 0)) {
+					/* 
+					 * These requests get a response back, but send no data.
+					 * Send these to the last of the BBDISPLAY servers only.
+					 */
+					shutdown(cwalk->csocket, SHUT_RD);
+					msgs_other++;
+					cwalk->snum = 1;
 				}
 				else {
+					/* It's a request that doesn't take a response. */
 					if (cwalk->csocket >= 0) {
 						shutdown(cwalk->csocket, SHUT_RDWR);
 						close(cwalk->csocket); sockcount--;
@@ -790,7 +806,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_DONE:
-				/* Request is off to the server */
+				/* Request has been sent to the server - we're done writing data */
 				shutdown(cwalk->ssocket, SHUT_WR);
 				cwalk->snum--;
 				if (cwalk->snum) {
@@ -803,7 +819,7 @@ int main(int argc, char *argv[])
 					break;
 				}
 				else {
-					/* All servers done */
+					/* Have sent to all servers, grab the response from the last one. */
 					cwalk->bufp = cwalk->buf; cwalk->buflen = 0;
 					memset(cwalk->buf, 0, cwalk->bufsize);
 				}
