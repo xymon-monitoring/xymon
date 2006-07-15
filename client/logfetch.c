@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.29 2006-07-14 16:32:04 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.30 2006-07-15 06:51:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -152,6 +152,7 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 		logdef->lastpos[0] = st.st_size;
 	}
 
+	/* Get our read buffer */
 #ifdef _LARGEFILE_SOURCE
 	bufsz = st.st_size - ftello(fd);
 #else
@@ -159,6 +160,12 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 #endif
 	if (bufsz < 1024) bufsz = 1024;
 	startpos = buf = (char *)malloc(bufsz + 1);
+	if (buf == NULL) {
+		/* Couldnt allocate the buffer */
+		return "Out of memory";
+	}
+
+	/* Read data - discard the ignored lines as we go */
 	if (logdef->ignore) {
 		status = regcomp(&expr, logdef->ignore, REG_EXTENDED|REG_ICASE|REG_NOSUB);
 		if (status != 0) logdef->ignore = NULL;
@@ -166,28 +173,33 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 
 	if (logdef->ignore == NULL) {
 		/* No ignore setting, so just grab all the data */
+		clearerr(fd);
 		n = fread(buf, 1, bufsz, fd);
-		if (n >= 0) {
-			sprintf("Error while reading logfile %s : %s\n", filename, strerror(errno));
-			n = 0;
-		}
-		*(buf + n) = '\0';
 	}
 	else {
 		char *fillpos = buf;
 
 		/* Read one line at a time, and discard the ignored lines */
-		while (fgets(fillpos, (bufsz - (fillpos - buf)), fd)) {
+		clearerr(fd);
+		while (!ferror(fd) && fgets(fillpos, (bufsz - (fillpos - buf)), fd)) {
 			status = regexec(&expr, fillpos, 0, NULL, 0);
 			if (status != 0) {
 				/* No "ignore" match, so we want this line */
 				fillpos += strlen(fillpos);
 			}
 		}
-		*fillpos = '\0';
 		n = (fillpos - buf);
 	}
 
+	/* Was there an error reading the file? */
+	if (ferror(fd)) {
+		fclose(fd);
+		result = (char *)malloc(1024 + strlen(filename));
+		sprintf(result, "Error while reading logfile %s : %s\n", filename, strerror(errno));
+		return result;
+	}
+
+	*(buf + n) = '\0';
 	fclose(fd);
 	if (logdef->ignore) regfree(&expr);
 
