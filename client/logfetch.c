@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.30 2006-07-15 06:51:21 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.31 2006-07-17 21:13:26 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -34,7 +34,7 @@ static char rcsid[] = "$Id: logfetch.c,v 1.30 2006-07-15 06:51:21 henrik Exp $";
 #define MAXCHECK   102400   /* When starting, dont look at more than 100 KB of data */
 #define MAXMINUTES 30
 #define POSCOUNT ((MAXMINUTES / 5) + 1)
-#define LINES_AFTER_TRIGGER 10
+#define LINES_AROUND_TRIGGER 5
 
 typedef enum { C_NONE, C_LOG, C_FILE, C_DIR, C_COUNT } checktype_t;
 
@@ -95,28 +95,31 @@ FILE *fileopen(char *filename, int *err)
 }
 
 
-char *logdata(char *filename, logdef_t *logdef, int *truncated)
+char *logdata(char *filename, logdef_t *logdef)
 {
-	static char *result = NULL;
-	char *buf = NULL;
-	char *startpos;
+	static char *buf = NULL;
+	char *startpos, *fillpos, *triggerstartpos, *triggerendpos;
 	FILE *fd;
 	struct stat st;
-	size_t n;
-	int openerr, i, status;
-	regex_t expr;
+	size_t bytesread;
+	int openerr, i, status, triggerlinecount;
+	char *linepos[2*LINES_AROUND_TRIGGER+1];
+	int lpidx;
+	regex_t ignexpr, trigexpr;
 #ifdef _LARGEFILE_SOURCE
 	off_t bufsz;
 #else
 	long bufsz;
 #endif
 
-	*truncated = 0;
+	if (buf) free(buf);
+	buf = NULL;
+
 	fd = fileopen(filename, &openerr);
 	if (fd == NULL) {
-		result = (char *)malloc(1024 + strlen(filename));
-		sprintf(result, "Cannot open logfile %s : %s\n", filename, strerror(openerr));
-		return result;
+		buf = (char *)malloc(1024 + strlen(filename));
+		sprintf(buf, "Cannot open logfile %s : %s\n", filename, strerror(openerr));
+		return buf;
 	}
 
 	/*
@@ -165,123 +168,117 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 		return "Out of memory";
 	}
 
-	/* Read data - discard the ignored lines as we go */
+	/* Compile the regex patterns */
 	if (logdef->ignore) {
-		status = regcomp(&expr, logdef->ignore, REG_EXTENDED|REG_ICASE|REG_NOSUB);
+		status = regcomp(&ignexpr, logdef->ignore, REG_EXTENDED|REG_ICASE|REG_NOSUB);
 		if (status != 0) logdef->ignore = NULL;
 	}
-
-	if (logdef->ignore == NULL) {
-		/* No ignore setting, so just grab all the data */
-		clearerr(fd);
-		n = fread(buf, 1, bufsz, fd);
+	if (logdef->trigger) {
+		status = regcomp(&trigexpr, logdef->trigger, REG_EXTENDED|REG_ICASE|REG_NOSUB);
+		if (status != 0) logdef->trigger = NULL;
 	}
-	else {
-		char *fillpos = buf;
+	triggerstartpos = triggerendpos = NULL;
+	triggerlinecount = 0;
+	memset(linepos, 0, sizeof(linepos)); lpidx = 0;
 
-		/* Read one line at a time, and discard the ignored lines */
-		clearerr(fd);
-		while (!ferror(fd) && fgets(fillpos, (bufsz - (fillpos - buf)), fd)) {
-			status = regexec(&expr, fillpos, 0, NULL, 0);
-			if (status != 0) {
-				/* No "ignore" match, so we want this line */
-				fillpos += strlen(fillpos);
+	/* 
+	 * Read data.
+	 * Discard the ignored lines as we go.
+	 * Remember the last trigger line we see.
+	 */
+	fillpos = buf;
+	clearerr(fd);
+	while (!ferror(fd) && fgets(fillpos, (bufsz - (fillpos - buf)), fd)) {
+		/* Check ignore pattern */
+		if (logdef->ignore) {
+			status = regexec(&ignexpr, fillpos, 0, NULL, 0);
+			if (status == 0) continue;
+		}
+
+		linepos[lpidx] = fillpos;
+
+		/* See if this is a trigger line */
+		if (logdef->trigger) {
+			status = regexec(&trigexpr, fillpos, 0, NULL, 0);
+			if (status == 0) {
+				int sidx;
+				
+				sidx = lpidx - LINES_AROUND_TRIGGER; 
+				if (sidx < 0) sidx += (2*LINES_AROUND_TRIGGER + 1);
+				triggerstartpos = linepos[sidx]; if (!triggerstartpos) triggerstartpos = buf;
+				triggerlinecount = LINES_AROUND_TRIGGER;
 			}
 		}
-		n = (fillpos - buf);
+
+
+		/* We want this line */
+		lpidx = ((lpidx + 1) % (2*LINES_AROUND_TRIGGER+1));
+		fillpos += strlen(fillpos);
+
+		/* Save the current end-position if we had a trigger within the past LINES_AFTER_TRIGGER lines */
+		if (triggerlinecount) {
+			triggerlinecount--;
+			triggerendpos = fillpos;
+		}
 	}
 
 	/* Was there an error reading the file? */
 	if (ferror(fd)) {
-		fclose(fd);
-		result = (char *)malloc(1024 + strlen(filename));
-		sprintf(result, "Error while reading logfile %s : %s\n", filename, strerror(errno));
-		return result;
+		buf = (char *)malloc(1024 + strlen(filename));
+		sprintf(buf, "Error while reading logfile %s : %s\n", filename, strerror(errno));
+		startpos = buf;
+		goto cleanup;
 	}
 
-	*(buf + n) = '\0';
-	fclose(fd);
-	if (logdef->ignore) regfree(&expr);
+	bytesread = (fillpos - startpos);
+	*(buf + bytesread) = '\0';
 
-	/*
-	 * If it's too big, we may need to truncate ie. 
-	 */
-	if ((n > logdef->maxbytes) && logdef->trigger) {
-		/*
-		 * Check if there's a trigger string anywhere in the data - 
-		 * if there is, then we'll skip to that trigger string.
-		 */
-		regmatch_t pmatch[1];
+	if (bytesread > logdef->maxbytes) {
+		char *skiptxt = "<...SKIPPED...>\n";
 
-		status = regcomp(&expr, logdef->trigger, REG_EXTENDED|REG_ICASE);
-		if (status == 0) {
-			status = regexec(&expr, buf, 1, pmatch, 0);
-			if (status == 0) {
-				int dropped;
-				char *tpos = startpos + pmatch[0].rm_so;
-
-				/* Seek back from startpos until we find the start of the line. */
-				while ((tpos >= startpos) && (*tpos != '\n') && ((startpos-tpos) < 500)) tpos--;
-				if (*tpos == '\n') tpos++;
-
-				dropped = (tpos - startpos);
-				startpos += dropped;
-				n -= dropped;
+		if (triggerstartpos) {
+			/* Skip the beginning of the data up until the trigger was found */
+			startpos = triggerstartpos;
+			if ((startpos - strlen(skiptxt)) >= buf) {
+				startpos -= strlen(skiptxt);
+				memcpy(startpos, skiptxt, strlen(skiptxt));
 			}
-			regfree(&expr);
-		}
+			bytesread = (fillpos - startpos);
 
-		/* If it's still too big, show the 10 lines after the trigger, and
-		 * then skip until it will fit.
-		 */
-		if (n > logdef->maxbytes) {
-			char *eoln;
-			int count = 0;
+			/*
+			 * If it's still too big, show some lines after the trigger, and
+			 * then skip until it will fit.
+			 */
+			if (bytesread > logdef->maxbytes) {
+				size_t bytesleft;
 
-			eoln = startpos;
-			while (eoln && (count < LINES_AFTER_TRIGGER)) {
-				eoln = strchr(eoln, '\n');
-				if (eoln) eoln++;
-				count++;
-			}
+				bytesleft = logdef->maxbytes - (triggerendpos - startpos);
+				if (bytesleft > 0) {
+					char *skipend;
 
-			if (eoln) {
-				int used, left, keep, togo;
-					
-				left = strlen(eoln);
-				if (left > 20) {
-					memcpy(eoln, "...<TRUNCATED>...\n", 18);
-					eoln = strchr(eoln, '\n'); eoln++;
-					used = (eoln - startpos);
-					keep = (logdef->maxbytes - used);
-					togo = (left - keep);
-					memmove(eoln, eoln+togo, keep+1);
-					n = n - togo + 18;
+					skipend = fillpos - bytesleft;
+					memmove(triggerendpos, skipend, bytesleft);
+					*(triggerendpos + bytesleft) = '\0';
+
+					if (bytesleft >= strlen(skiptxt)) 
+						memcpy(triggerendpos, skiptxt, strlen(skiptxt));
+					bytesread = (triggerendpos - startpos) + bytesleft;
 				}
 			}
 		}
-	}
-
-	/* If it's still too big, just drop what is too much */
-	if (n > logdef->maxbytes) {
-		startpos += (n - logdef->maxbytes);
-		n = logdef->maxbytes;
-	}
-
-	if (startpos != buf) {
-		result = strdup(startpos);
-		free(buf);
-		*truncated = 1;
-	}
-	else {
-		result = buf;
+		else {
+			/* Just drop what is too much */
+			startpos += (bytesread - logdef->maxbytes);
+			memcpy(startpos, skiptxt, strlen(skiptxt));
+			bytesread = logdef->maxbytes;
+		}
 	}
 
 	/* Avoid sending a '[' as the first char on a line */
 	{
 		char *p;
 
-		p = result;
+		p = startpos;
 		while (p) {
 			if (*p == '[') *p = '.';
 			p = strstr(p, "\n[");
@@ -289,7 +286,12 @@ char *logdata(char *filename, logdef_t *logdef, int *truncated)
 		}
 	}
 
-	return result;
+cleanup:
+	if (fd) fclose(fd);
+	if (logdef->ignore) regfree(&ignexpr);
+	if (logdef->trigger) regfree(&trigexpr);
+
+	return startpos;
 }
 
 char *ftypestr(unsigned int mode, char *symlink)
@@ -835,16 +837,13 @@ int main(int argc, char *argv[])
 
 	for (walk = checklist; (walk); walk = walk->next) {
 		char *data;
-		int truncflag;
 		checkdef_t *fwalk;
 
 		switch (walk->checktype) {
 		  case C_LOG:
-			data = logdata(walk->filename, &walk->check.logcheck, &truncflag);
+			data = logdata(walk->filename, &walk->check.logcheck);
 			fprintf(stdout, "[msgs:%s]\n", walk->filename);
-			if (truncflag) fprintf(stdout, "<truncated>\n");
 			fprintf(stdout, "%s\n", data);
-			free(data);
 
 			/* See if there's a special "file:" entry for this logfile */
 			for (fwalk = checklist; (fwalk && ((fwalk->checktype != C_FILE) || (strcmp(fwalk->filename, walk->filename) != 0))); fwalk = fwalk->next) ;
