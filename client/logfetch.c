@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.33 2006-07-18 22:04:11 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.34 2006-07-18 22:39:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -155,13 +155,20 @@ char *logdata(char *filename, logdef_t *logdef)
 		logdef->lastpos[0] = st.st_size;
 	}
 
-	/* Get our read buffer */
+	/*
+	 * Get our read buffer.
+	 *
+	 * NB: fgets() need some extra room in the input buffer.
+	 *     If it is missing, we will never detect end-of-file 
+	 *     because fgets() will read 0 bytes, but having read that
+	 *     it still hasnt reached end-of-file status.
+	 *     At least, on some platforms (Solaris, FreeBSD).
+	 */
 #ifdef _LARGEFILE_SOURCE
-	bufsz = st.st_size - ftello(fd);
+	bufsz = st.st_size - ftello(fd) + 1024;
 #else
-	bufsz = st.st_size - ftell(fd);
+	bufsz = st.st_size - ftell(fd) + 1024;
 #endif
-	if (bufsz < 1024) bufsz = 1024;
 	startpos = buf = (char *)malloc(bufsz + 1);
 	if (buf == NULL) {
 		/* Couldnt allocate the buffer */
@@ -192,15 +199,11 @@ char *logdata(char *filename, logdef_t *logdef)
 	while ((fgets(fillpos, bytesleft, fd) != NULL) && !done && !ferror(fd)) {
 		if (*fillpos == '\0') {
 			/*
-			 * I do not understand why this is needed, but we have
-			 * lots of evidence that EOF does NOT result in fgets()
-			 * returning a NULL. And feof() stays unset, claiming
-			 * there is one byte left to be read. Still, fgets()
-			 * provides an empty input buffer.
-			 * On Solaris 8, at least. Linux works as expected.
-			 *
-			 * So - this is a workaround to avoid looping indefinitely
-			 * trying to read that last byte.
+			 * fgets() can return an empty buffer without flagging
+			 * end-of-file. It should not happen anymore now that
+			 * we have extended the buffer to have room for the
+			 * terminating \0 byte, but if it does then we will
+			 * catch it here.
 			 */
 			done = 1;
 			continue;
