@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.31 2006-07-17 21:13:26 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.32 2006-07-18 06:19:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -101,7 +101,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	char *startpos, *fillpos, *triggerstartpos, *triggerendpos;
 	FILE *fd;
 	struct stat st;
-	size_t bytesread;
+	size_t bytesread, bytesleft;
 	int openerr, i, status, triggerlinecount;
 	char *linepos[2*LINES_AROUND_TRIGGER+1];
 	int lpidx;
@@ -187,8 +187,9 @@ char *logdata(char *filename, logdef_t *logdef)
 	 * Remember the last trigger line we see.
 	 */
 	fillpos = buf;
+	bytesleft = bufsz;
 	clearerr(fd);
-	while (!ferror(fd) && fgets(fillpos, (bufsz - (fillpos - buf)), fd)) {
+	while (!ferror(fd) && (bytesleft > 0) && fgets(fillpos, bytesleft, fd)) {
 		/* Check ignore pattern */
 		if (logdef->ignore) {
 			status = regexec(&ignexpr, fillpos, 0, NULL, 0);
@@ -220,6 +221,8 @@ char *logdata(char *filename, logdef_t *logdef)
 			triggerlinecount--;
 			triggerendpos = fillpos;
 		}
+
+		bytesleft = (bufsz - (fillpos - buf));
 	}
 
 	/* Was there an error reading the file? */
