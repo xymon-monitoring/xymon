@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.32 2006-07-18 06:19:17 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.33 2006-07-18 22:04:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -102,7 +102,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	FILE *fd;
 	struct stat st;
 	size_t bytesread, bytesleft;
-	int openerr, i, status, triggerlinecount;
+	int openerr, i, status, triggerlinecount, done;
 	char *linepos[2*LINES_AROUND_TRIGGER+1];
 	int lpidx;
 	regex_t ignexpr, trigexpr;
@@ -188,8 +188,24 @@ char *logdata(char *filename, logdef_t *logdef)
 	 */
 	fillpos = buf;
 	bytesleft = bufsz;
-	clearerr(fd);
-	while (!ferror(fd) && (bytesleft > 0) && fgets(fillpos, bytesleft, fd)) {
+	done = 0;
+	while ((fgets(fillpos, bytesleft, fd) != NULL) && !done && !ferror(fd)) {
+		if (*fillpos == '\0') {
+			/*
+			 * I do not understand why this is needed, but we have
+			 * lots of evidence that EOF does NOT result in fgets()
+			 * returning a NULL. And feof() stays unset, claiming
+			 * there is one byte left to be read. Still, fgets()
+			 * provides an empty input buffer.
+			 * On Solaris 8, at least. Linux works as expected.
+			 *
+			 * So - this is a workaround to avoid looping indefinitely
+			 * trying to read that last byte.
+			 */
+			done = 1;
+			continue;
+		}
+
 		/* Check ignore pattern */
 		if (logdef->ignore) {
 			status = regexec(&ignexpr, fillpos, 0, NULL, 0);
