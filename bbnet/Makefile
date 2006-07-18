@@ -80,10 +80,6 @@ install: install-bin install-ext install-config install-man
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
-ifndef PKGBUILD
-	chown root $(INSTALLROOT)$(INSTALLBINDIR)/hobbitping || echo "Could not make hobbitping owned by root, continuing"
-	chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/hobbitping || echo "Could not make hobbitping suid-root, continuing"
-endif
 
 install-ext: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
