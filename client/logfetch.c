@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.34 2006-07-18 22:39:36 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.35 2006-07-19 05:42:46 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -196,7 +196,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	fillpos = buf;
 	bytesleft = bufsz;
 	done = 0;
-	while ((fgets(fillpos, bytesleft, fd) != NULL) && !done && !ferror(fd)) {
+	while (!ferror(fd) && (bytesleft > 0) && !done && (fgets(fillpos, bytesleft, fd) != NULL)) {
 		if (*fillpos == '\0') {
 			/*
 			 * fgets() can return an empty buffer without flagging
