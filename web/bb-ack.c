@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.30 2006-07-12 11:17:40 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.31 2006-07-19 05:55:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 					hname = strtok(bol, "|");
 					if (hname) tname = strtok(NULL, "|");
 					if (tname) ackcode = strtok(NULL, "|");
-					if (hname && tname && ackcode) {
+					if (hname && tname && ackcode && (strcmp(hname, "summary") != 0)) {
 						if (first) {
 							fprintf(stdout, "<form method=\"POST\" ACTION=\"%s\">\n", getenv("SCRIPT_NAME"));
 							fprintf(stdout, "<center><table cellpadding=5 summary=\"Ack data\">\n");
@@ -284,7 +284,10 @@ int main(int argc, char *argv[])
 					if (eoln) bol = eoln+1; else bol = NULL;
 				}
 
-				if (!first) {
+				if (first) {
+					fprintf(stdout, "<center><font size=\"+1\"><b>No active alerts</b></font></center\n");
+				}
+				else {
 					generate_ackline(stdout, NULL, NULL, NULL);
 					fprintf(stdout, "</table></center>\n");
 					fprintf(stdout, "</form>\n");
