@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.34 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.35 2006-07-20 21:57:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "<center>\n");
 	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, 
 			pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
-			colrregex, ignoredialups);
+			colrregex, ignoredialups, NULL);
 	fprintf(stdout, "</center>\n");
 	headfoot(stdout, "event", "", "footer", COL_GREEN);
 
