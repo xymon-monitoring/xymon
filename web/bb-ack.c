@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.31 2006-07-19 05:55:49 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.32 2006-07-20 10:06:46 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -188,6 +188,7 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
+	int obeycookies = 1;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -203,6 +204,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--no-pin") == 0) {
 			nopin = 1;
+		}
+		else if (strcmp(argv[argi], "--no-cookies") == 0) {
+			obeycookies = 0;
 		}
 	}
 
@@ -232,7 +236,7 @@ int main(int argc, char *argv[])
 			p = getenv("HTTP_COOKIE"); 
 			if (p) cookie = strdup(p);
 
-			if (cookie && ((p = strstr(cookie, "host=")) != NULL)) {
+			if (obeycookies && cookie && ((p = strstr(cookie, "host=")) != NULL)) {
 				char *hostname;
 				
 				hostname = p + strlen("host=");
@@ -244,7 +248,7 @@ int main(int argc, char *argv[])
 				if (p) *p = ';';
 			}
 
-			if (cookie && !gotfilter && ((p = strstr(cookie, "pagepath=")) != NULL)) {
+			if (obeycookies && cookie && !gotfilter && ((p = strstr(cookie, "pagepath=")) != NULL)) {
 				char *pagename;
 
 				pagename = p + strlen("pagepath=");

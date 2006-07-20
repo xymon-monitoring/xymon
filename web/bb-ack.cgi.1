@@ -31,6 +31,13 @@ received in an alert message. If you run it with this option, the user
 will instead get a list of the current non-green statuses, and he may
 send an acknowledge without knowing the code.
 
+.IP "--no-cookies"
+Normally, bb-ack.cgi uses a cookie sent by the browser to initially 
+filter the list of hosts presented. If this is not desired, you can
+turn off this behaviour by calling bb-ack.cgi with the --no-cookies
+option. This would normally be placed in the CGI_ACK_OPTS setting in
+.I hobbitcgi.cfg(5)
+
 .IP "--env=FILENAME"
 Loads the environment defined in FILENAME before executing the CGI script.
 

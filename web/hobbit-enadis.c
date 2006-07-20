@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.22 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.23 2006-07-20 10:06:46 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -260,6 +260,7 @@ int main(int argc, char *argv[])
 	char *userip   = getenv("REMOTE_ADDR");
 	char *fullmsg = "No cause specified";
 	char *envarea = NULL;
+	int  obeycookies = 1;
 
 	if ((username == NULL) || (strlen(username) == 0)) username = "unknown";
 	if ((userhost == NULL) || (strlen(userhost) == 0)) userhost = userip;
@@ -272,6 +273,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--no-cookies") == 0) {
+			obeycookies = 0;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -294,7 +298,7 @@ int main(int argc, char *argv[])
 		action = ACT_FILTER;
 
 		cookie = getenv("HTTP_COOKIE");
-		if (cookie && ((p = strstr(cookie, "pagepath=")) != NULL)) {
+		if (obeycookies && cookie && ((p = strstr(cookie, "pagepath=")) != NULL)) {
 			p += strlen("pagepath=");
 			pagepattern = strdup(p);
 			p = strchr(pagepattern, ';'); if (p) *p = '\0';
