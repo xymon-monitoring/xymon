@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifndef SHUT_RDWR
-	printf("#define SHUT_RD 2\n");
+	printf("#define SHUT_RDWR 2\n");
 #endif
 
 	return 0;
