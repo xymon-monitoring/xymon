@@ -24,6 +24,7 @@ typedef struct event_t {
 	struct event_t *next;
 } event_t;
 
+typedef void * (*f_hostcheck)(char *hostname);
 
 extern char *eventignorecolumns;
 extern int havedoneeventlog;
@@ -32,6 +33,7 @@ extern void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromti
 			char *pagematch, char *expagematch, 
 			char *hostmatch, char *exhostmatch, 
 			char *testmatch, char *extestmatch,
-			char *colormatch, int ignoredialups);
+			char *colormatch, int ignoredialups,
+			f_hostcheck hostcheck);
 
 #endif
