@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.23 2006-07-20 10:06:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.24 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -337,37 +337,37 @@ int main(int argc, char *argv[])
 	if (debug) {
 		printf("<pre>\n");
 		switch (action) {
-		  case ACT_NONE   : dprintf("Action = none\n"); break;
+		  case ACT_NONE   : dbgprintf("Action = none\n"); break;
 
-		  case ACT_FILTER : dprintf("Action = filter\n"); break;
+		  case ACT_FILTER : dbgprintf("Action = filter\n"); break;
 
-		  case ACT_ENABLE : dprintf("Action = enable\n"); 
-				    dprintf("Tests = ");
+		  case ACT_ENABLE : dbgprintf("Action = enable\n"); 
+				    dbgprintf("Tests = ");
 				    for (i=0; (i < enablecount); i++) printf("%s ", enabletest[i]);
 				    printf("\n");
 				    break;
 
-		  case ACT_DISABLE: dprintf("Action = disable\n"); 
-				    dprintf("Tests = ");
+		  case ACT_DISABLE: dbgprintf("Action = disable\n"); 
+				    dbgprintf("Tests = ");
 				    for (i=0; (i < disablecount); i++) printf("%s ", disabletest[i]);
 				    printf("\n");
-				    dprintf("Duration = %d, scale = %d\n", duration, scale);
-				    dprintf("Cause = %s\n", textornull(disablemsg));
+				    dbgprintf("Duration = %d, scale = %d\n", duration, scale);
+				    dbgprintf("Cause = %s\n", textornull(disablemsg));
 				    break;
 
 		  case ACT_SCHED_DISABLE:
-				    dprintf("Action = schedule\n");
-				    dprintf("Time = %s\n", ctime(&schedtime));
-				    dprintf("Tests = ");
+				    dbgprintf("Action = schedule\n");
+				    dbgprintf("Time = %s\n", ctime(&schedtime));
+				    dbgprintf("Tests = ");
 				    for (i=0; (i < disablecount); i++) printf("%s ", disabletest[i]);
 				    printf("\n");
-				    dprintf("Duration = %d, scale = %d\n", duration, scale);
-				    dprintf("Cause = %s\n", textornull(disablemsg));
+				    dbgprintf("Duration = %d, scale = %d\n", duration, scale);
+				    dbgprintf("Cause = %s\n", textornull(disablemsg));
 				    break;
 
 		  case ACT_SCHED_CANCEL:
-				    dprintf("Action = cancel\n");
-				    dprintf("ID = %d\n", cancelid);
+				    dbgprintf("Action = cancel\n");
+				    dbgprintf("ID = %d\n", cancelid);
 				    break;
 		}
 		printf("</pre>\n");

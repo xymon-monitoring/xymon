@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.12 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.13 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -162,7 +162,7 @@ void trim_files(time_t cutoff)
 
 	/* We have a list of files to trim, so process them */
 	for (fwalk = flhead; (fwalk); fwalk = fwalk->next) {
-		dprintf("Processing %s\n", fwalk->fname);
+		dbgprintf("Processing %s\n", fwalk->fname);
 		itemno++; if (progressinfo && ((itemno % progressinfo) == 0)) showprogress(itemno); 
 
 		if (fwalk->ftype == F_DROPIT) {
@@ -279,7 +279,7 @@ void trim_logs(time_t cutoff)
 
 	/* We have a list of directories to trim, so process them */
 	for (fwalk = flhead; (fwalk); fwalk = fwalk->next) {
-		dprintf("Processing %s\n", fwalk->fname);
+		dbgprintf("Processing %s\n", fwalk->fname);
 		itemno++; if (progressinfo && ((itemno % progressinfo) == 0)) showprogress(itemno); 
 
 		switch (fwalk->ftype) {

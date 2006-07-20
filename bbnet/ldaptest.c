@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.27 2006-07-10 14:31:29 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.28 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -82,7 +82,7 @@ int add_ldap_test(testitem_t *t)
 	req->usetls = (strncmp(urltotest, "ldaps:", 6) == 0);
 #ifdef BBGEN_LDAP_USESTARTTLS
 	if (req->usetls && (ludp->lud_port == LDAPS_PORT)) {
-		dprintf("Forcing port %d for ldaps with STARTTLS\n", LDAP_PORT );
+		dbgprintf("Forcing port %d for ldaps with STARTTLS\n", LDAP_PORT );
 		ludp->lud_port = LDAP_PORT;
 	}
 #endif
@@ -134,11 +134,11 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		gettimeofday(&starttime, &tz);
 
 		/* Initiate session with the LDAP server */
-		dprintf("Initiating LDAP session for host %s port %d\n",
+		dbgprintf("Initiating LDAP session for host %s port %d\n",
 			ludp->lud_host, ludp->lud_port);
 
 		if( (ld = ldap_init(ludp->lud_host, ludp->lud_port)) == NULL ) {
-			dprintf("ldap_init failed\n");
+			dbgprintf("ldap_init failed\n");
 			req->ldapstatus = BBGEN_LDAP_INITFAIL;
 			continue;
 		}
@@ -177,9 +177,9 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		{
 			int protocol = LDAP_VERSION3;
 
-			dprintf("Attempting to select LDAPv3\n");
+			dbgprintf("Attempting to select LDAPv3\n");
 			if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_SUCCESS) {
-				dprintf("Failed to select LDAPv3, trying LDAPv2\n");
+				dbgprintf("Failed to select LDAPv3, trying LDAPv2\n");
 				protocol = LDAP_VERSION2;
 				if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_SUCCESS) {
 					req->output = strdup(ldap_err2string(rc));
@@ -192,9 +192,9 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 #ifdef BBGEN_LDAP_USESTARTTLS
 		if (req->usetls) {
-			dprintf("Trying to enable TLS for session\n");
+			dbgprintf("Trying to enable TLS for session\n");
 			if ((rc = ldap_start_tls_s(ld, NULL, NULL)) != LDAP_SUCCESS) {
-				dprintf("ldap_start_tls failed\n");
+				dbgprintf("ldap_start_tls failed\n");
 				req->output = strdup(ldap_err2string(rc));
 				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
 				continue;
@@ -226,7 +226,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			int rc2;
 
 			rc = ldap_result(ld, msgID, LDAP_MSG_ONE, &timeout, &result);
-			dprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
+			dbgprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
 			if(rc == -1) {
 				finished = 1;
 				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
@@ -379,7 +379,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	nopage = (strstr(nonetpage, svcname) != NULL);
 	xfree(nopagename);
 
-	dprintf("Calc ldap color host %s : ", host->hostname);
+	dbgprintf("Calc ldap color host %s : ", host->hostname);
 	for (t=host->firstldap; (t && (t->host == host)); t = t->next) {
 		ldap_data_t *req = (ldap_data_t *) t->privdata;
 
@@ -409,7 +409,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 			}
 		}
 
-		dprintf("%s(%s) ", t->testspec, colorname(req->ldapcolor));
+		dbgprintf("%s(%s) ", t->testspec, colorname(req->ldapcolor));
 		if (req->ldapcolor > color) color = req->ldapcolor;
 	}
 
@@ -423,7 +423,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 	}
 
 	if (nopage && (color == COL_RED)) color = COL_YELLOW;
-	dprintf(" --> %s\n", colorname(color));
+	dbgprintf(" --> %s\n", colorname(color));
 
 	/* Send off the ldap status report */
 	init_status(color);

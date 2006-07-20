@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.39 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.40 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -168,13 +168,13 @@ void cleandir(char *dirname)
 			sprintf(fn, "%s/%s", dirname, d->d_name);
 			if ((stat(fn, &st) == 0) && (st.st_mtime < killtime)) {
 				if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
-					dprintf("rm %s\n", fn);
+					dbgprintf("rm %s\n", fn);
 					unlink(fn);
 				}
 				else if (S_ISDIR(st.st_mode)) {
-					dprintf("Cleaning directory %s\n", fn);
+					dbgprintf("Cleaning directory %s\n", fn);
 					cleandir(fn);
-					dprintf("rmdir %s\n", fn);
+					dbgprintf("rmdir %s\n", fn);
 					rmdir(fn);
 				}
 				else { /* Ignore file */ };

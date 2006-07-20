@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: matching.c,v 1.6 2006-06-15 12:09:26 henrik Exp $";
+static char rcsid[] = "$Id: matching.c,v 1.7 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,7 +28,7 @@ static pcre *compileregex_opts(const char *pattern, int flags)
 	const char *errmsg;
 	int errofs;
 
-	dprintf("Compiling regex %s\n", pattern);
+	dbgprintf("Compiling regex %s\n", pattern);
 	result = pcre_compile(pattern, flags, &errmsg, &errofs, NULL);
 	if (result == NULL) {
 		errprintf("pcre compile '%s' failed (offset %d): %s\n", pattern, errofs, errmsg);

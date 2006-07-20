@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.10 2006-07-08 10:56:19 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.11 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <signal.h>
@@ -62,12 +62,12 @@ static void sigusr2_handler(int signum)
 	/* SIGUSR2 toggles debugging */
 
 	if (debug) {
-		dprintf("Debug OFF\n");
+		dbgprintf("Debug OFF\n");
 		debug = 0;
 	}
 	else {
 		debug = 1;
-		dprintf("Debug ON\n");
+		dbgprintf("Debug ON\n");
 	}
 }
 

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.47 2006-07-09 19:26:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.48 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
 		}
 		else {
 			if (errno != EAGAIN) {
-				dprintf("Semaphore wait aborted: %s\n", strerror(errno));
+				dbgprintf("Semaphore wait aborted: %s\n", strerror(errno));
 				continue;
 			}
 		}

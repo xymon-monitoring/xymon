@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.50 2006-07-10 13:14:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.51 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -937,7 +937,7 @@ int main(int argc, char *argv[])
 	rrdargcount = argi; rrdargs[argi++] = NULL;
 
 
-	if (debug) { for (argi=0; (argi < rrdargcount); argi++) dprintf("%s\n", rrdargs[argi]); }
+	if (debug) { for (argi=0; (argi < rrdargcount); argi++) dbgprintf("%s\n", rrdargs[argi]); }
 
 	/* If sending to stdout, print the HTTP header first. */
 	if (strcmp(graphfn, "-") == 0) {

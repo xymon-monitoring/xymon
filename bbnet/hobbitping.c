@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.11 2006-07-10 14:39:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.12 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -216,7 +216,7 @@ int send_ping(int sock, int startidx, int minresponses)
 	else if (sentbytes == PING_PACKET_SIZE) {
 		/* We managed to send a ping! */
 		if (debug) {
-			dprintf("Sent a ping to %s: index=%d, id=%d\n",
+			dbgprintf("Sent a ping to %s: index=%d, id=%d\n",
 				inet_ntoa(hosts[idx]->addr.sin_addr), idx, myicmpid);
 		}
 		idx++;
@@ -271,7 +271,7 @@ int get_response(int sock)
 		hostidx = ntohs(icmphdr->icmp_seq)-1;
 
 		if (debug) {
-			dprintf("Got packet from %s: type=%d, index=%d, id=%d\n",
+			dbgprintf("Got packet from %s: type=%d, index=%d, id=%d\n",
 				inet_ntoa(addr.sin_addr), icmphdr->icmp_type, icmphdr->icmp_id, hostidx);
 		}
 

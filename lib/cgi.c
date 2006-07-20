@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgi.c,v 1.6 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: cgi.c,v 1.7 2006-07-20 16:06:41 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -110,7 +110,7 @@ cgidata_t *cgi_request(void)
 		}
 	}
 
-	dprintf("CGI: Request method='%s', data='%s'\n", method, textornull(reqdata));
+	dbgprintf("CGI: Request method='%s', data='%s'\n", method, textornull(reqdata));
 
 	if ((cgi_method == CGI_GET) || (conttype && (strcasecmp(conttype, "application/x-www-form-urlencoded") == 0))) {
 		token = strtok(reqdata, "&");

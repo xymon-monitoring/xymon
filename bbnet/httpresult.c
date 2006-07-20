@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.24 2006-05-28 16:56:30 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.25 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -89,7 +89,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 	nopage = (strstr(nonetpage, svcname) != NULL);
 	xfree(nopagename);
 
-	dprintf("Calc http color host %s : ", host->hostname);
+	dbgprintf("Calc http color host %s : ", host->hostname);
 
 	msgtext = newstrbuffer(0);
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
@@ -125,7 +125,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			}
 		}
 
-		dprintf("%s(%s) ", t->testspec, colorname(req->httpcolor));
+		dbgprintf("%s(%s) ", t->testspec, colorname(req->httpcolor));
 		if (req->httpcolor > color) color = req->httpcolor;
 
 		/* Build the short msgtext which goes on line 1 of the status message. */
@@ -201,7 +201,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		}
 
 		if (nopage && (color == COL_RED)) color = COL_YELLOW;
-		dprintf(" --> %s\n", colorname(color));
+		dbgprintf(" --> %s\n", colorname(color));
 
 		/* Send off the http status report */
 		init_status(color);
@@ -299,7 +299,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 	nopage = (strstr(nonetpage, contenttestname) != NULL);
 	xfree(nopagename);
 
-	dprintf("Calc content color host %s : ", host->hostname);
+	dbgprintf("Calc content color host %s : ", host->hostname);
 
 	firsttest = host->firsthttp;
 
@@ -400,7 +400,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 		}
 
 		/* Send the content status message */
-		dprintf("Content check on %s is %s\n", req->url, colorname(color));
+		dbgprintf("Content check on %s is %s\n", req->url, colorname(color));
 
 		if (req->bburl.columnname) {
 			strcpy(conttest, req->bburl.columnname);

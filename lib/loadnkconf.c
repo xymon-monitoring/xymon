@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.17 2006-06-04 21:59:18 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.18 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -75,7 +75,7 @@ int load_nkconfig(char *fn)
 	/* First check if there were no modifications at all */
 	if (configfiles) {
 		if (!stackfmodified(configfiles)){
-			dprintf("No files modified, skipping reload of %s\n", fn);
+			dbgprintf("No files modified, skipping reload of %s\n", fn);
 			return 0;
 		}
 		else {

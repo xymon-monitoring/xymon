@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientlocal.c,v 1.1 2006-06-22 06:03:23 henrik Exp $";
+static char rcsid[] = "$Id: clientlocal.c,v 1.2 2006-07-20 16:06:41 henrik Exp $";
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -38,7 +38,7 @@ void load_clientconfig(void)
 	/* First check if there were no modifications at all */
 	if (clientconflist) {
 		if (!stackfmodified(clientconflist)){
-			dprintf("No files modified, skipping reload of %s\n", configfn);
+			dbgprintf("No files modified, skipping reload of %s\n", configfn);
 			return;
 		}
 		else {

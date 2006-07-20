@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.46 2006-07-11 08:36:13 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.47 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -343,7 +343,7 @@ static long evaluate(char *symbolicexpr, char **resultexpr, value_t **valuelist,
 	*outp = '\0';
 
 	if (resultexpr) *resultexpr = strdup(expr);
-	dprintf("Symbolic '%s' converted to '%s'\n", symbolicexpr, expr);
+	dbgprintf("Symbolic '%s' converted to '%s'\n", symbolicexpr, expr);
 
 	error = 0; 
 	result = compute(expr, &error);

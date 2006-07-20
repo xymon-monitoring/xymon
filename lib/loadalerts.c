@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.14 2006-06-02 11:20:33 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.15 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -209,7 +209,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 	/* First check if there were no modifications at all */
 	if (configfiles) {
 		if (!stackfmodified(configfiles)){
-			dprintf("No files modified, skipping reload of %s\n", fn);
+			dbgprintf("No files modified, skipping reload of %s\n", fn);
 			MEMUNDEFINE(fn); 
 			return 0;
 		}
@@ -693,7 +693,7 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 		printf("COLOR=");
 		for (i = 0; (i < COL_COUNT); i++) {
 			if ((1 << i) & crit->colors) {
-				dprintf("first=%d, i=%d\n", first, i);
+				dbgprintf("first=%d, i=%d\n", first, i);
 				printf("%s%s", (first ? "" : ","), colorname(i));
 				first = 0;
 			}
@@ -972,12 +972,12 @@ recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch, time_t
 			while (rulewalk && !criteriamatch(alert, rulewalk->criteria, NULL, NULL, NULL)) rulewalk = rulewalk->next;
 			if (rulewalk) {
 				/* Point recipwalk at the list of possible candidates */
-				dprintf("Found a first matching rule\n");
+				dbgprintf("Found a first matching rule\n");
 				recipwalk = rulewalk->recipients; 
 			}
 			else {
 				/* No matching rules */
-				dprintf("Found no first matching rule\n");
+				dbgprintf("Found no first matching rule\n");
 				recipwalk = NULL;
 			}
 		}
@@ -994,12 +994,12 @@ recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch, time_t
 
 				if (rulewalk) {
 					/* Point recipwalk at the list of possible candidates */
-					dprintf("Found a secondary matching rule\n");
+					dbgprintf("Found a secondary matching rule\n");
 					recipwalk = rulewalk->recipients; 
 				}
 				else {
 					/* No matching rules */
-					dprintf("No more secondary matching rule\n");
+					dbgprintf("No more secondary matching rule\n");
 					recipwalk = NULL;
 				}
 			}

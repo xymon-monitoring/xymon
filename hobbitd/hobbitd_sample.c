@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.18 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.19 2006-07-20 16:06:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[argi], "--debug") == 0) {
 			/*
 			 * A global "debug" variable is available. If
-			 * it is set, then "dprintf()" outputs debug messages.
+			 * it is set, then "dbgprintf()" outputs debug messages.
 			 */
 			debug = 1;
 		}

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.32 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.33 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>
@@ -224,7 +224,7 @@ void send_summaries(summary_t *sumhead)
 			suburl += strlen(xgetenv("BBWEB"));
 		if (*suburl == '/') suburl++;
 
-		dprintf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);
+		dbgprintf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);
 
 		if      (strcmp(suburl, "bb.html") == 0) summarycolor = bb_color;
 		else if (strcmp(suburl, "index.html") == 0) summarycolor = bb_color;
@@ -248,7 +248,7 @@ void send_summaries(summary_t *sumhead)
 				p = strchr(pg, '/');
 				if (p) *p = '\0';
 
-				dprintf("Searching for page %s\n", pg);
+				dbgprintf("Searching for page %s\n", pg);
 				for (pgwalk = sourcepg->subpages; (pgwalk && (strcmp(pgwalk->name, pg) != 0)); pgwalk = pgwalk->next);
 				if (pgwalk != NULL) {
 					sourcepg = pgwalk;
@@ -261,7 +261,7 @@ void send_summaries(summary_t *sumhead)
 				else pg = NULL;
 			} while (pg);
 
-			dprintf("Summary search for %s found page %s (title:%s), color %d\n",
+			dbgprintf("Summary search for %s found page %s (title:%s), color %d\n",
 				suburl, sourcepg->name, sourcepg->title, sourcepg->color);
 			summarycolor = sourcepg->color;
 			xfree(urlcopy);

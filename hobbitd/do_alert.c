@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.93 2006-07-10 09:25:35 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.94 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -296,7 +296,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	time_t now = time(NULL);
 	char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Notify", "Dead" };
 
-	dprintf("send_alert %s:%s state %d\n", alert->hostname, alert->testname, (int)alert->state);
+	dbgprintf("send_alert %s:%s state %d\n", alert->hostname, alert->testname, (int)alert->state);
 	traceprintf("send_alert %s:%s state %s\n", 
 		    alert->hostname, alert->testname, alerttxt[alert->state]);
 
@@ -329,7 +329,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			rpt = find_repeatinfo(alert, recip, 1);
 			if (!rpt) continue;	/* Happens for e.g. M_IGNORE recipients */
 
-			dprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
+			dbgprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 			if (rpt->nextalert > now) {
 				traceprintf("Recipient '%s' dropped, next alert due at %d > %d\n",
 						rpt->recipid, (int)rpt->nextalert, (int)now);
@@ -346,7 +346,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			alertcount++;
 		}
 
-		dprintf("  Alert for %s:%s to %s\n", alert->hostname, alert->testname, recip->recipient);
+		dbgprintf("  Alert for %s:%s to %s\n", alert->hostname, alert->testname, recip->recipient);
 		switch (recip->method) {
 		  case M_IGNORE:
 			break;
@@ -626,7 +626,7 @@ void cleanup_alert(activealerts_t *alert)
 	char *id;
 	repeat_t *rptwalk, *rptprev;
 
-	dprintf("cleanup_alert called for host %s, test %s\n", alert->hostname, alert->testname);
+	dbgprintf("cleanup_alert called for host %s, test %s\n", alert->hostname, alert->testname);
 
 	id = (char *)malloc(strlen(alert->hostname)+strlen(alert->testname)+3);
 	sprintf(id, "%s|%s|", alert->hostname, alert->testname);
@@ -635,7 +635,7 @@ void cleanup_alert(activealerts_t *alert)
 		if (strncmp(rptwalk->recipid, id, strlen(id)) == 0) {
 			repeat_t *tmp = rptwalk;
 
-			dprintf("cleanup_alert found recipient %s\n", rptwalk->recipid);
+			dbgprintf("cleanup_alert found recipient %s\n", rptwalk->recipid);
 
 			if (rptwalk == rpthead) {
 				rptwalk = rpthead = rpthead->next;
@@ -668,7 +668,7 @@ void clear_interval(activealerts_t *alert)
 	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL)) {
 		rpt = find_repeatinfo(alert, recip, 0);
 		if (rpt) {
-			dprintf("Cleared repeat interval for %s\n", rpt->recipid);
+			dbgprintf("Cleared repeat interval for %s\n", rpt->recipid);
 			rpt->nextalert = 0;
 		}
 	}

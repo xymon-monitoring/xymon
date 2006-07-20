@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.35 2006-06-21 08:43:58 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.36 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -133,14 +133,14 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	creparams[1] = filedir;	/* Icky */
 
 	if (stat(filedir, &st) == -1) {
-		dprintf("Creating rrd %s\n", filedir);
+		dbgprintf("Creating rrd %s\n", filedir);
 
 		for (pcount = 0; (creparams[pcount]); pcount++);
 		if (debug) {
 			int i;
 
 			for (i = 0; (creparams[i]); i++) {
-				dprintf("RRD create param %02d: '%s'\n", i, creparams[i]);
+				dbgprintf("RRD create param %02d: '%s'\n", i, creparams[i]);
 			}
 		}
 
@@ -171,7 +171,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		int i;
 
 		for (i = 0; (updparams[i]); i++) {
-			dprintf("RRD update param %02d: '%s'\n", i, updparams[i]);
+			dbgprintf("RRD update param %02d: '%s'\n", i, updparams[i]);
 		}
 	}
 

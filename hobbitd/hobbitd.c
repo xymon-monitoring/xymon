@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.249 2006-07-18 14:46:05 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.250 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -300,10 +300,10 @@ void update_statistics(char *cmd)
 {
 	int i;
 
-	dprintf("-> update_statistics\n");
+	dbgprintf("-> update_statistics\n");
 
 	if (!cmd) {
-		dprintf("No command for update_statistics\n");
+		dbgprintf("No command for update_statistics\n");
 		return;
 	}
 
@@ -313,7 +313,7 @@ void update_statistics(char *cmd)
 	while (hobbitd_stats[i].cmd && strncmp(hobbitd_stats[i].cmd, cmd, strlen(hobbitd_stats[i].cmd))) { i++; }
 	hobbitd_stats[i].count++;
 
-	dprintf("<- update_statistics\n");
+	dbgprintf("<- update_statistics\n");
 }
 
 char *generate_stats(void)
@@ -328,7 +328,7 @@ char *generate_stats(void)
 	RbtHandle ghandle;
 	time_t uptime = (now - boottime);
 
-	dprintf("-> generate_stats\n");
+	dbgprintf("-> generate_stats\n");
 
 	MEMDEFINE(bootuptxt);
 	MEMDEFINE(uptimetxt);
@@ -409,7 +409,7 @@ char *generate_stats(void)
 	MEMUNDEFINE(bootuptxt);
 	MEMUNDEFINE(uptimetxt);
 
-	dprintf("<- generate_stats\n");
+	dbgprintf("<- generate_stats\n");
 
 	return statsbuf;
 }
@@ -461,12 +461,12 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	int semerr = 0;
 	unsigned int bufsz = 1024*shbufsz(channel->channelid);
 
-	dprintf("-> posttochannel\n");
+	dbgprintf("-> posttochannel\n");
 
 	/* First see how many users are on this channel */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL);
 	if (clients == 0) {
-		dprintf("Dropping message - no readers\n");
+		dbgprintf("Dropping message - no readers\n");
 		return;
 	}
 
@@ -667,7 +667,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 	/* Let the readers know it is there.  */
 	clients = semctl(channel->semid, CLIENTCOUNT, GETVAL); /* Get it again, maybe changed since last check */
-	dprintf("Posting message %u to %d readers\n", channel->seq, clients);
+	dbgprintf("Posting message %u to %d readers\n", channel->seq, clients);
 	/* Up BOARDBUSY */
 	s.sem_num = BOARDBUSY; 
 	s.sem_op = (clients - semctl(channel->semid, BOARDBUSY, GETVAL)); 
@@ -687,7 +687,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	s.sem_num = GOCLIENT; s.sem_op = clients; s.sem_flg = 0; 		/* Up GOCLIENT */
 	n = semop(channel->semid, &s, 1);
 
-	dprintf("<- posttochannel\n");
+	dbgprintf("<- posttochannel\n");
 
 	return;
 }
@@ -698,7 +698,7 @@ void log_ghost(char *hostname, char *sender, char *msg)
 	RbtHandle ghandle;
 	ghostlist_t *gwalk;
 
-	dprintf("-> log_ghost\n");
+	dbgprintf("-> log_ghost\n");
 
 	/* If debugging, log the full request */
 	if (dbgfd) {
@@ -723,7 +723,7 @@ void log_ghost(char *hostname, char *sender, char *msg)
 		gwalk->tstamp = time(NULL);
 	}
 
-	dprintf("<- log_ghost\n");
+	dbgprintf("<- log_ghost\n");
 }
 
 hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_hostlist_t **host)
@@ -772,7 +772,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	char *owalk = NULL;
 	hobbitd_log_t *lwalk = NULL;
 
-	dprintf("-> get_hts\n");
+	dbgprintf("-> get_hts\n");
 
 	MEMDEFINE(hostip);
 	*hostip = '\0';
@@ -906,7 +906,7 @@ done:
 
 	MEMUNDEFINE(hostip);
 
-	dprintf("<- get_hts\n");
+	dbgprintf("<- get_hts\n");
 }
 
 
@@ -918,7 +918,7 @@ hobbitd_log_t *find_cookie(int cookie)
 	hobbitd_log_t *result = NULL;
 	RbtIterator cookiehandle;
 
-	dprintf("-> find_cookie\n");
+	dbgprintf("-> find_cookie\n");
 
 	cookiehandle = rbtFind(rbcookies, (void *)cookie);
 	if (cookiehandle != rbtEnd(rbcookies)) {
@@ -926,7 +926,7 @@ hobbitd_log_t *find_cookie(int cookie)
 		if (result->cookieexpires <= time(NULL)) result = NULL;
 	}
 
-	dprintf("<- find_cookie\n");
+	dbgprintf("<- find_cookie\n");
 
 	return result;
 }
@@ -954,7 +954,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	int msglen, issummary;
 	enum alertstate_t oldalertstatus, newalertstatus;
 
-	dprintf("->handle_status\n");
+	dbgprintf("->handle_status\n");
 
 	if (msg == NULL) {
 		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", 
@@ -1153,7 +1153,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		/*
 		 * Change of color goes to the status-change channel.
 		 */
-		dprintf("posting to stachg channel: host=%s, test=%s\n", hostname, testname);
+		dbgprintf("posting to stachg channel: host=%s, test=%s\n", hostname, testname);
 		posttochannel(stachgchn, channelnames[C_STACHG], msg, sender, hostname, log, NULL);
 		log->histsynced = 1;
 
@@ -1173,14 +1173,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	if (!issummary) {
 		if (newalertstatus == A_ALERT) {
 			/* Status is critical, send alerts */
-			dprintf("posting alert to page channel\n");
+			dbgprintf("posting alert to page channel\n");
 
 			log->activealert = 1;
 			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
 		}
 		else if (log->activealert && (oldalertstatus != A_OK) && (newalertstatus == A_OK)) {
 			/* Status has recovered, send recovery notice */
-			dprintf("posting recovery to page channel\n");
+			dbgprintf("posting recovery to page channel\n");
 
 			log->activealert = 0;
 			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
@@ -1191,15 +1191,15 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			 * active alert for this status. So tell the pager module that the
 			 * color has changed.
 			 */
-			dprintf("posting color change to page channel\n");
+			dbgprintf("posting color change to page channel\n");
 			posttochannel(pagechn, channelnames[C_PAGE], msg, sender, hostname, log, NULL);
 		}
 	}
 
-	dprintf("posting to status channel\n");
+	dbgprintf("posting to status channel\n");
 	posttochannel(statuschn, channelnames[C_STATUS], msg, sender, hostname, log, NULL);
 
-	dprintf("<-handle_status\n");
+	dbgprintf("<-handle_status\n");
 	return;
 }
 
@@ -1212,7 +1212,7 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 	htnames_t *nwalk;
 	hobbitd_meta_t *mwalk;
 
-	dprintf("-> handle_meta\n");
+	dbgprintf("-> handle_meta\n");
 
 	eoln = strchr(msg, '\n'); 
 	if (eoln) {
@@ -1256,7 +1256,7 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 
 	if (line1) xfree(line1);
 
-	dprintf("<- handle_meta\n");
+	dbgprintf("<- handle_meta\n");
 }
 
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
@@ -1264,12 +1264,12 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 	char *chnbuf;
 	int buflen = 0;
 
-	dprintf("->handle_data\n");
+	dbgprintf("->handle_data\n");
 
-	if (origin) buflen += strlen(origin); else dprintf("   origin is NULL\n");
-	if (hostname) buflen += strlen(hostname); else dprintf("  hostname is NULL\n");
-	if (testname) buflen += strlen(testname); else dprintf("  testname is NULL\n");
-	if (msg) buflen += strlen(msg); else dprintf("  msg is NULL\n");
+	if (origin) buflen += strlen(origin); else dbgprintf("   origin is NULL\n");
+	if (hostname) buflen += strlen(hostname); else dbgprintf("  hostname is NULL\n");
+	if (testname) buflen += strlen(testname); else dbgprintf("  testname is NULL\n");
+	if (msg) buflen += strlen(msg); else dbgprintf("  msg is NULL\n");
 	buflen += 4;
 
 	chnbuf = (char *)malloc(buflen);
@@ -1281,14 +1281,14 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
 	xfree(chnbuf);
-	dprintf("<-handle_data\n");
+	dbgprintf("<-handle_data\n");
 }
 
 void handle_notes(char *msg, char *sender, char *hostname)
 {
-	dprintf("->handle_notes\n");
+	dbgprintf("->handle_notes\n");
 	posttochannel(noteschn, channelnames[C_NOTES], msg, sender, hostname, NULL, NULL);
-	dprintf("<-handle_notes\n");
+	dbgprintf("<-handle_notes\n");
 }
 
 void handle_enadis(int enabled, conn_t *msg, char *sender)
@@ -1304,7 +1304,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	char *p;
 	char hostip[IP_ADDR_STRLEN];
 
-	dprintf("->handle_enadis\n");
+	dbgprintf("->handle_enadis\n");
 
 	MEMDEFINE(hostip);
 
@@ -1438,7 +1438,7 @@ done:
 	MEMUNDEFINE(hostip);
 	xfree(firstline);
 
-	dprintf("<-handle_enadis\n");
+	dbgprintf("<-handle_enadis\n");
 
 	return;
 }
@@ -1448,7 +1448,7 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 {
 	char *p;
 
-	dprintf("->handle_ack\n");
+	dbgprintf("->handle_ack\n");
 
 	log->acktime = time(NULL)+duration*60;
 	if (log->validtime < log->acktime) log->validtime = log->acktime;
@@ -1464,7 +1464,7 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 	/* Tell the pagers */
 	posttochannel(pagechn, "ack", log->ackmsg, sender, log->host->hostname, log, NULL);
 
-	dprintf("<-handle_ack\n");
+	dbgprintf("<-handle_ack\n");
 	return;
 }
 
@@ -1499,20 +1499,20 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 		ackinfo_t *newack;
 		int isnew;
 
-		dprintf("Got ackinfo: Level=%d,until=%d,ackby=%s,msg=%s\n", level, validuntil, ackedby, ackmsg);
+		dbgprintf("Got ackinfo: Level=%d,until=%d,ackby=%s,msg=%s\n", level, validuntil, ackedby, ackmsg);
 
 		/* See if we already have this ack in the list */
 		for (newack = log->acklist; (newack && ((level != newack->level) || strcmp(newack->ackedby, ackedby))); newack = newack->next);
 
 		isnew = (newack == NULL);
-		dprintf("This ackinfo is %s\n", (isnew ? "new" : "old"));
+		dbgprintf("This ackinfo is %s\n", (isnew ? "new" : "old"));
 		if (isnew) {
-			dprintf("Creating new ackinfo record\n");
+			dbgprintf("Creating new ackinfo record\n");
 			newack = (ackinfo_t *)malloc(sizeof(ackinfo_t));
 		}
 		else {
 			/* Drop the old data so we dont leak memory */
-			dprintf("Dropping old ackinfo data: From %s, msg=%s\n", newack->ackedby, newack->msg);
+			dbgprintf("Dropping old ackinfo data: From %s, msg=%s\n", newack->ackedby, newack->msg);
 			if (newack->ackedby) xfree(newack->ackedby); 
 			if (newack->msg) xfree(newack->msg);
 		}
@@ -1551,7 +1551,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 	char *msgtext, *channelmsg;
 	namelist_t *hi;
 
-	dprintf("-> handle_notify\n");
+	dbgprintf("-> handle_notify\n");
 
 	hi = hostinfo(hostname);
 
@@ -1565,7 +1565,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 
 	xfree(channelmsg);
 
-	dprintf("<- handle_notify\n");
+	dbgprintf("<- handle_notify\n");
 	return;
 }
 
@@ -1575,12 +1575,12 @@ void handle_client(char *msg, char *sender, char *hostname, char *clientos, char
 	int msglen, buflen = 0;
 	RbtIterator hosthandle;
 
-	dprintf("->handle_client\n");
+	dbgprintf("->handle_client\n");
 
 	/* Default class is the OS */
 	theclass = (clientclass ? clientclass : clientos);
 	buflen += strlen(hostname) + strlen(clientos) + strlen(theclass);
-	if (msg) { msglen = strlen(msg); buflen += msglen; } else { dprintf("  msg is NULL\n"); return; }
+	if (msg) { msglen = strlen(msg); buflen += msglen; } else { dbgprintf("  msg is NULL\n"); return; }
 	buflen += 5;
 
 	if (clientsavemem) {
@@ -1609,7 +1609,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *clientos, char
 	snprintf(chnbuf, buflen, "%s|%s|%s\n%s", hostname, clientos, theclass, msg);
 	posttochannel(clientchn, channelnames[C_CLIENT], msg, sender, hostname, NULL, chnbuf);
 	xfree(chnbuf);
-	dprintf("<-handle_client\n");
+	dbgprintf("<-handle_client\n");
 }
 
 
@@ -1671,7 +1671,7 @@ void free_log_t(hobbitd_log_t *zombie)
 {
 	hobbitd_meta_t *mwalk, *mtmp;
 
-	dprintf("-> free_log_t\n");
+	dbgprintf("-> free_log_t\n");
 	mwalk = zombie->metas;
 	while (mwalk) {
 		mtmp = mwalk;
@@ -1687,7 +1687,7 @@ void free_log_t(hobbitd_log_t *zombie)
 	if (zombie->grouplist) xfree(zombie->grouplist);
 	flush_acklist(zombie, 1);
 	xfree(zombie);
-	dprintf("<- free_log_t\n");
+	dbgprintf("<- free_log_t\n");
 }
 
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
@@ -1700,7 +1700,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	char *marker = NULL;
 	char *canonhostname;
 
-	dprintf("-> handle_dropnrename\n");
+	dbgprintf("-> handle_dropnrename\n");
 	MEMDEFINE(hostip);
 
 	{
@@ -1842,7 +1842,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 done:
 	MEMUNDEFINE(hostip);
 
-	dprintf("<- handle_dropnrename\n");
+	dbgprintf("<- handle_dropnrename\n");
 
 	return;
 }
@@ -1909,7 +1909,7 @@ int get_config(char *fn, conn_t *msg)
 	FILE *fd = NULL;
 	strbuffer_t *inbuf, *result;
 
-	dprintf("-> get_config %s\n", fn);
+	dbgprintf("-> get_config %s\n", fn);
 	sprintf(fullfn, "%s/etc/%s", xgetenv("BBHOME"), fn);
 	fd = stackfopen(fullfn, "r", NULL);
 	if (fd == NULL) {
@@ -1927,7 +1927,7 @@ int get_config(char *fn, conn_t *msg)
 	msg->buf = grabstrbuffer(result);
 	msg->bufp = msg->buf + msg->buflen;
 
-	dprintf("<- get_config\n");
+	dbgprintf("<- get_config\n");
 
 	return 0;
 }
@@ -1939,7 +1939,7 @@ int get_binary(char *fn, conn_t *msg)
 	struct stat st;
 	unsigned char *result;
 
-	dprintf("-> get_binary %s\n", fn);
+	dbgprintf("-> get_binary %s\n", fn);
 	sprintf(fullfn, "%s/download/%s", xgetenv("BBHOME"), fn);
 
 	result = get_filecache(fullfn);
@@ -1970,7 +1970,7 @@ int get_binary(char *fn, conn_t *msg)
 	msg->buf = result;
 	msg->bufp = msg->buf + msg->buflen;
 
-	dprintf("<- get_binary\n");
+	dbgprintf("<- get_binary\n");
 
 	return 0;
 }
@@ -2002,7 +2002,7 @@ void setup_filter(char *buf, char *defaultfields,
 	char *tok, *s;
 	int idx = 0;
 
-	dprintf("-> setup_filter: %s\n", buf);
+	dbgprintf("-> setup_filter: %s\n", buf);
 
 	*spage = *shost = *snet = *stest = NULL;
 	if (chspage) *chspage = NULL;
@@ -2112,7 +2112,7 @@ void setup_filter(char *buf, char *defaultfields,
 
 	xfree(s);
 
-	dprintf("<- setup_filter: %s\n", buf);
+	dbgprintf("<- setup_filter: %s\n", buf);
 }
 
 int match_host_filter(namelist_t *hinfo, pcre *spage, pcre *shost, pcre *snet)
@@ -2308,7 +2308,7 @@ void do_message(conn_t *msg, char *origin)
 		char *eoln = strchr(msg->buf, '\n');
 
 		if (eoln) *eoln = '\0';
-		dprintf("-> do_message/%d (%d bytes): %s\n", nesting, msg->buflen, msg->buf);
+		dbgprintf("-> do_message/%d (%d bytes): %s\n", nesting, msg->buflen, msg->buf);
 		if (eoln) *eoln = '\n';
 	}
 
@@ -3365,7 +3365,7 @@ done:
 
 	MEMUNDEFINE(sender);
 
-	dprintf("<- do_message/%d\n", nesting);
+	dbgprintf("<- do_message/%d\n", nesting);
 	nesting--;
 }
 
@@ -3384,7 +3384,7 @@ void save_checkpoint(void)
 
 	if (checkpointfn == NULL) return;
 
-	dprintf("-> save_checkpoint\n");
+	dbgprintf("-> save_checkpoint\n");
 	tempfn = malloc(strlen(checkpointfn) + 20);
 	sprintf(tempfn, "%s.%d", checkpointfn, (int)now);
 	fd = fopen(tempfn, "w");
@@ -3458,7 +3458,7 @@ void save_checkpoint(void)
 	}
 
 	xfree(tempfn);
-	dprintf("<- save_checkpoint\n");
+	dbgprintf("<- save_checkpoint\n");
 }
 
 
@@ -3617,7 +3617,7 @@ void load_checkpoint(char *fn)
 		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
 		if (strcmp(testname, xgetenv("TRENDSCOLUMN")) == 0) continue;
 
-		dprintf("Status: Host=%s, test=%s\n", hostname, testname); count++;
+		dbgprintf("Status: Host=%s, test=%s\n", hostname, testname); count++;
 
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle == rbtEnd(rbhosts)) {
@@ -3696,7 +3696,7 @@ void load_checkpoint(char *fn)
 
 	fclose(fd);
 	freestrbuffer(inbuf);
-	dprintf("Loaded %d status logs\n", count);
+	dbgprintf("Loaded %d status logs\n", count);
 
 	MEMDEFINE(hostip);
 }
@@ -3709,14 +3709,14 @@ void check_purple_status(void)
 	hobbitd_log_t *lwalk;
 	time_t now = time(NULL);
 
-	dprintf("-> check_purple_status\n");
+	dbgprintf("-> check_purple_status\n");
 	for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
 		hwalk = gettreeitem(rbhosts, hosthandle);
 
 		lwalk = hwalk->logs;
 		while (lwalk) {
 			if (lwalk->validtime < now) {
-				dprintf("Purple log from %s %s\n", hwalk->hostname, lwalk->test->name);
+				dbgprintf("Purple log from %s %s\n", hwalk->hostname, lwalk->test->name);
 				if (hwalk->hosttype == H_SUMMARY) {
 					/*
 					 * A summary has gone stale. Drop it.
@@ -3774,7 +3774,7 @@ void check_purple_status(void)
 			}
 		}
 	}
-	dprintf("<- check_purple_status\n");
+	dbgprintf("<- check_purple_status\n");
 }
 
 void sig_handler(int signum)

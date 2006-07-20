@@ -11,10 +11,8 @@
 #ifndef __DEBUG_H_
 #define __DEBUG_H_
 
-extern int debug;
 extern int timing;
 
-extern void dprintf(const char *fmt, ...);
 extern void add_timestamp(const char *msg);
 extern void show_timestamps(char **buffer);
 extern long total_runtime(void);

@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.81 2006-05-20 16:21:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.82 2006-07-20 16:06:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
 	if (checkfn) {
 		load_checkpoint(checkfn);
 		nextcheckpoint = time(NULL) + checkpointinterval;
-		dprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
+		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
 	setup_signalhandler("hobbitd_alert");
@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
 
 		now = time(NULL);
 		if (checkfn && (now > nextcheckpoint)) {
-			dprintf("Saving checkpoint\n");
+			dbgprintf("Saving checkpoint\n");
 			nextcheckpoint = now + checkpointinterval;
 			save_checkpoint(checkfn);
 
@@ -547,7 +547,7 @@ int main(int argc, char *argv[])
 
 			int newcolor, newalertstatus, oldalertstatus;
 
-			dprintf("Got page message from %s:%s\n", hostname, testname);
+			dbgprintf("Got page message from %s:%s\n", hostname, testname);
 			traceprintf("@@page %s:%s:%s=%s\n", hostname, testname, metadata[10], metadata[7]);
 
 			awalk = find_active(hostname, testname);
@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
 						 * the first time, and then follow the repeat
 						 * interval.
 						 */
-						dprintf("Severity increased, cleared repeat interval: %s/%s %s->%s\n",
+						dbgprintf("Severity increased, cleared repeat interval: %s/%s %s->%s\n",
 							awalk->hostname, awalk->testname,
 							colorname(awalk->maxcolor), colorname(newcolor));
 						clear_interval(awalk);
@@ -615,7 +615,7 @@ int main(int argc, char *argv[])
 			}
 
 			if (oldalertstatus != newalertstatus) {
-				dprintf("Alert status changed from %d to %d\n", oldalertstatus, newalertstatus);
+				dbgprintf("Alert status changed from %d to %d\n", oldalertstatus, newalertstatus);
 				clear_interval(awalk);
 			}
 
@@ -637,7 +637,7 @@ int main(int argc, char *argv[])
 			 */
 			time_t nextalert = atoi(metadata[6]);
 
-			dprintf("Got ack message from %s:%s\n", hostname, testname);
+			dbgprintf("Got ack message from %s:%s\n", hostname, testname);
 			traceprintf("@@ack: %s:%s now=%d, ackeduntil %d\n",
 				     hostname, testname, (int)now, (int)nextalert);
 
@@ -805,7 +805,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		dprintf("%d alerts to go\n", anytogo);
+		dbgprintf("%d alerts to go\n", anytogo);
 
 		if (anytogo) {
 			pid_t childpid;

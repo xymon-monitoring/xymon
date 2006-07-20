@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.93 2006-07-11 20:23:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.94 2006-07-20 16:06:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -199,7 +199,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		 * Solaris: " up 21 days 20:58,"
 		 */
 		daymark = strstr(uptimeresult, " day");
-		dprintf("CPU check host %s: daymark '%s'\n", hostname, daymark);
+		dbgprintf("CPU check host %s: daymark '%s'\n", hostname, daymark);
 
 		if (daymark) {
 			uptimesecs = atoi(uptimeresult) * 86400;
@@ -216,7 +216,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 
 		hourmark += strspn(hourmark, " ");
-		dprintf("CPU check host %s: hourmark '%s'\n", hostname, hourmark);
+		dbgprintf("CPU check host %s: hourmark '%s'\n", hostname, hourmark);
 		if (sscanf(hourmark, "%ld:%ld", &uphour, &upmin) == 2) {
 			uptimesecs += 60*(60*uphour + upmin);
 		}
@@ -365,7 +365,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (!want_msgtype(hinfo, MSG_DISK)) return;
 	if (!dfstr) return;
 
-	dprintf("Disk check host %s\n", hostname);
+	dbgprintf("Disk check host %s\n", hostname);
 
 	monmsg = newstrbuffer(0);
 	dfstr_filtered = newstrbuffer(0);
@@ -387,7 +387,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			strcpy(p, bol);
 			mntcol = selectcolumn(p, mnthdr);
 			xfree(p);
-			dprintf("Disk check: header '%s', columns %d and %d\n", bol, freecol, capacol, mntcol);
+			dbgprintf("Disk check: header '%s', columns %d and %d\n", bol, freecol, capacol, mntcol);
 		}
 		else {
 			char *fsname = NULL, *levelstr = NULL;
@@ -410,7 +410,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 				strcpy(p, bol);
 				levelstr = getcolumn(p, capacol); if (levelstr) levelpct = atol(levelstr);
 
-				dprintf("Disk check: FS='%s' level %ld%%/%ldU (thresholds: %lu/%lu, abs: %d/%d)\n",
+				dbgprintf("Disk check: FS='%s' level %ld%%/%ldU (thresholds: %lu/%lu, abs: %d/%d)\n",
 					fsname, levelpct, levelabs, 
 					warnlevel, paniclevel, abswarn, abspanic);
 

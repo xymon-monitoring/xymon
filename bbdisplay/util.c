@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.155 2006-06-02 21:00:54 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.156 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -204,7 +204,7 @@ bbgen_col_t *find_or_create_column(char *testname, int create)
 	bbgen_col_t *newcol = NULL;
 	RbtIterator handle;
 
-	dprintf("find_or_create_column(%s)\n", textornull(testname));
+	dbgprintf("find_or_create_column(%s)\n", textornull(testname));
 
 	if (havecolumntree == 0) {
 		columntree = rbtNew(name_compare);

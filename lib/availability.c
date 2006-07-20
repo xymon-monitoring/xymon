@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.41 2006-06-02 21:00:16 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.42 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -166,7 +166,7 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
 	sprintf(p, "/%s/%s", servicename, timespec);
 
-	dprintf("Looking at history logfile %s\n", fn);
+	dbgprintf("Looking at history logfile %s\n", fn);
 	fd = fopen(fn, "r");
 	if (fd != NULL) {
 		while (!causefull && fgets(l, sizeof(l), fd)) {
@@ -255,7 +255,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 			if (scanres == 2) dur = time(NULL) - start;
 
 			if (scanres >= 2) {
-				dprintf("Skipped to entry starting %lu\n", start);
+				dbgprintf("Skipped to entry starting %lu\n", start);
 
 				if ((start + dur) < fromtime) {
 					fseeko(fd, 2048, SEEK_CUR);
@@ -264,7 +264,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 			}
 			else {
 				err++;
-				dprintf("Bad line in history file '%s'\n", buf);
+				dbgprintf("Bad line in history file '%s'\n", buf);
 				start = dur = 0; /* Try next line */
 			}
 		}
@@ -291,11 +291,11 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 			if (scanres < 2) {
 				err++;
-				dprintf("Bad line in history file '%s'\n", buf);
+				dbgprintf("Bad line in history file '%s'\n", buf);
 				start = dur = 0; /* Try next line */
 			}
 			else {
-				dprintf("Got entry starting %lu lasting %lu\n", start, dur);
+				dbgprintf("Got entry starting %lu lasting %lu\n", start, dur);
 			}
 		}
 		else {
@@ -304,7 +304,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		}
 	} while ((start+dur) < fromtime);
 
-	dprintf("Reporting starts with this entry: %s\n", buf);
+	dbgprintf("Reporting starts with this entry: %s\n", buf);
 
 	*starttime = start;
 	*duration = dur;
@@ -407,7 +407,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		if (color != -1) {
 			unsigned long sladuration = 0;
 
-			dprintf("In-range entry starting %lu lasting %lu color %d: %s", starttime, duration, color, l);
+			dbgprintf("In-range entry starting %lu lasting %lu color %d: %s", starttime, duration, color, l);
 			repinfo->count[color]++;
 			repinfo->fullduration[color] += duration;
 			if (reporttime) {
@@ -448,7 +448,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	} while (!done);
 
 	for (i=0; (i<COL_COUNT); i++) {
-		dprintf("Duration for color %d: %lu\n", i, repinfo->fullduration[i]);
+		dbgprintf("Duration for color %d: %lu\n", i, repinfo->fullduration[i]);
 		repinfo->fullpct[i] = (100.0*repinfo->fullduration[i] / (totime - repinfo->reportstart));
 	}
 	repinfo->fullavailability = 100.0 - repinfo->fullpct[COL_RED];
@@ -573,10 +573,10 @@ int main(int argc, char *argv[])
 	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, 0, reportwarnlevel, reportgreenlevel, NULL);
 
 	for (i=0; (i<COL_COUNT); i++) {
-		dprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.fullpct[i]);
+		dbgprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.fullpct[i]);
 	}
-	dprintf("Availability: %.2f, color =%d\n", repinfo.fullavailability, color);
-	dprintf("History file status: %s\n", repinfo.fstate);
+	dbgprintf("Availability: %.2f, color =%d\n", repinfo.fullavailability, color);
+	dbgprintf("History file status: %s\n", repinfo.fstate);
 
 	fclose(fd);
 
@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
 		sprintf(dhelp, "%lu:%02lu:%02lu", duration / 3600, ((duration % 3600) / 60), (duration % 60));
 		strcat(dur, dhelp);
 
-		dprintf("Start: %s, End: %s, Color: %s, Duration: %s, Cause: %s\n",
+		dbgprintf("Start: %s, End: %s, Color: %s, Duration: %s, Cause: %s\n",
 			start, end, colorname(rwalk->color), dur, rwalk->cause);
 	}
 

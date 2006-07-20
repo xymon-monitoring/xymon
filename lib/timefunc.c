@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.30 2006-06-26 15:09:57 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.31 2006-07-20 16:06:41 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -226,7 +226,7 @@ int within_sla(char *timespec, int defresult)
 						/* The period crosses over midnight: *:2330:0400 */
 						found = ((curtime >= starttime) || (curtime <= endtime));
 					}
-					dprintf("\tstart,end,current time = %d, %d, %d - found=%d\n", 
+					dbgprintf("\tstart,end,current time = %d, %d, %d - found=%d\n", 
 						starttime,endtime,curtime,found);
 				}
 				else errprintf("Bad timespec (missing colon or no endtime): %s\n", onesla);
@@ -234,7 +234,7 @@ int within_sla(char *timespec, int defresult)
 			else errprintf("Bad timespec (missing colon or no starttime): %s\n", onesla);
 		}
 		else {
-			dprintf("\tWeekday does not match\n");
+			dbgprintf("\tWeekday does not match\n");
 		}
 
 		/* Go to next SLA spec. */

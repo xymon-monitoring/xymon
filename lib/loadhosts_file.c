@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.26 2006-06-23 22:06:56 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.27 2006-07-20 16:06:41 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -59,7 +59,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	/* First check if there were no modifications at all */
 	if (bbhfiles) {
 		if (!stackfmodified(bbhfiles)){
-			dprintf("No files modified, skipping reload of %s\n", bbhostsfn);
+			dbgprintf("No files modified, skipping reload of %s\n", bbhostsfn);
 			return namehead;
 		}
 		else {

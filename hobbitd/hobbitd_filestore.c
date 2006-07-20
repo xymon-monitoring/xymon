@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.47 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.48 2006-07-20 16:06:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,7 +42,7 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 
 	MEMDEFINE(tmpfn);
 
-	dprintf("Updating seq %d file %s\n", seq, fn);
+	dbgprintf("Updating seq %d file %s\n", seq, fn);
 
 	p = strrchr(fn, '/');
 	if (p) {
@@ -138,7 +138,7 @@ void update_enable(char *fn, time_t expiretime)
 {
 	time_t now = time(NULL);
 
-	dprintf("Enable/disable file %s, time %d\n", fn, (int)expiretime);
+	dbgprintf("Enable/disable file %s, time %d\n", fn, (int)expiretime);
 
 	if (expiretime <= now) {
 		if (unlink(fn) != 0) {
@@ -170,8 +170,8 @@ static int wantedtest(char *wanted, char *key)
 	p = strstr(wanted, ckey);
 	xfree(ckey);
 
-	if (p) dprintf("wantedtest: Found '%s' at '%s'\n", key, p);
-	else dprintf("wantedtest: '%s' not found\n", key);
+	if (p) dbgprintf("wantedtest: Found '%s' at '%s'\n", key, p);
+	else dbgprintf("wantedtest: '%s' not found\n", key);
 
 	return (p != NULL);
 }
@@ -251,8 +251,8 @@ int main(int argc, char *argv[])
 	setup_signalhandler("hobbitd_filestore");
 	signal(SIGPIPE, SIG_DFL);
 
-	if (onlytests) dprintf("Storing tests '%s' only\n", onlytests);
-	else dprintf("Storing all tests\n");
+	if (onlytests) dbgprintf("Storing tests '%s' only\n", onlytests);
+	else dbgprintf("Storing all tests\n");
 
 	while (running) {
 		char *items[20] = { NULL, };
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 			hostname = items[4];
 			testname = items[5];
 			if (!wantedtest(onlytests, testname)) {
-				dprintf("Status dropped - not wanted\n");
+				dbgprintf("Status dropped - not wanted\n");
 				MEMUNDEFINE(logfn);
 				continue;
 			}
@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
 			p = hostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			testname = items[5];
 			if (!wantedtest(onlytests, testname)) {
-				dprintf("data dropped - not wanted\n");
+				dbgprintf("data dropped - not wanted\n");
 				MEMUNDEFINE(logfn);
 				continue;
 			}

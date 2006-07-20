@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.55 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.56 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -172,7 +172,7 @@ again:
 	result = mktime(tmbuf);
 	if ((dstsetting == -1) && (endofperiod == END_END) && (result < endtime)) {
 		/* DST->normaltime switchover - redo with forced DST setting */
-		dprintf("DST rollover with endtime/change/alignment/endodperiod = %u/%d/%d/%d\n",
+		dbgprintf("DST rollover with endtime/change/alignment/endodperiod = %u/%d/%d/%d\n",
 			(unsigned int)endtime, change, alignment, endofperiod);
 		dstsetting = 0;
 		goto again;
@@ -338,7 +338,7 @@ static void generate_colorbar(
 
 		do {
 			endofinterval = calc_time(begininterval, 0, alignment, END_END);
-			dprintf("Period starts %u ends %u - %s", 
+			dbgprintf("Period starts %u ends %u - %s", 
 				(unsigned int)begininterval, (unsigned int)endofinterval, 
 				ctime(&endofinterval));
 

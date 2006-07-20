@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.29 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.30 2006-07-20 16:06:41 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -101,12 +101,12 @@ static void dns_callback(void *arg, int status, struct hostent *hent)
 
 	if (status == ARES_SUCCESS) {
 		memcpy(&dnsc->addr, *(hent->h_addr_list), sizeof(dnsc->addr));
-		dprintf("Got DNS result for host %s : %s\n", dnsc->name, inet_ntoa(dnsc->addr));
+		dbgprintf("Got DNS result for host %s : %s\n", dnsc->name, inet_ntoa(dnsc->addr));
 		if (stdchannelactive) dns_stats_success++;
 	}
 	else {
 		memset(&dnsc->addr, 0, sizeof(dnsc->addr));
-		dprintf("DNS lookup failed for %s - status %s (%d)\n", dnsc->name, ares_strerror(status), status);
+		dbgprintf("DNS lookup failed for %s - status %s (%d)\n", dnsc->name, ares_strerror(status), status);
 		dnsc->failed = 1;
 		if (stdchannelactive) dns_stats_failed++;
 	}
@@ -127,7 +127,7 @@ void add_host_to_dns_queue(char *hostname)
 		/* New hostname */
 		dnsitem_t *dnsc = (dnsitem_t *)calloc(1, sizeof(dnsitem_t));
 
-		dprintf("Adding hostname '%s' to resolver queue\n", hostname);
+		dbgprintf("Adding hostname '%s' to resolver queue\n", hostname);
 		pending_dns_count++;
 
 		if (use_ares_lookup && !stdchannelactive) {
@@ -162,7 +162,7 @@ void add_host_to_dns_queue(char *hostname)
 			else {
 				status = ARES_ENOTFOUND;
 				dns_stats_failed++;
-				dprintf("gethostbyname() failed with err %d: %s\n", h_errno, hstrerror(h_errno));
+				dbgprintf("gethostbyname() failed with err %d: %s\n", h_errno, hstrerror(h_errno));
 			}
 			dns_callback(dnsc, status, hent);
 		}
@@ -200,7 +200,7 @@ static void dns_queue_run(ares_channel channel)
 	struct timeval cutoff, now;
 	struct timezone tz;
 
-	dprintf("Processing %d DNS lookups with ARES\n", pending_dns_count);
+	dbgprintf("Processing %d DNS lookups with ARES\n", pending_dns_count);
 	gettimeofday(&cutoff, &tz);
 	cutoff.tv_sec += dnstimeout + 1;
 
@@ -320,7 +320,7 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 		tlookup = (p ? p+1 : tst);
 		if (p) { *p = '\0'; atype = dns_name_type(tst); *p = ':'; }
 
-		dprintf("ares_search: tlookup='%s', class=%d, type=%d\n", tlookup, C_IN, atype);
+		dbgprintf("ares_search: tlookup='%s', class=%d, type=%d\n", tlookup, C_IN, atype);
 		ares_search(channel, tlookup, C_IN, atype, dns_detail_callback, newtest);
 		tst = strtok(NULL, ",");
 	} while (tst);

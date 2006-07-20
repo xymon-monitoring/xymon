@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.26 2006-07-11 14:01:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.27 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -168,7 +168,7 @@ startagain:
 		size_t bufleft = bufsz - (fillpos - buf);
 		size_t usedbytes = (fillpos - startpos);
 
-		dprintf("Want msg %d, startpos %ld, fillpos %ld, endpos %ld, usedbytes=%ld, bufleft=%ld\n",
+		dbgprintf("Want msg %d, startpos %ld, fillpos %ld, endpos %ld, usedbytes=%ld, bufleft=%ld\n",
 			  (seqnum+1), (startpos-buf), (fillpos-buf), (endpos ? (endpos-buf) : -1), usedbytes, bufleft);
 
 		if (usedbytes >= maxmsgsize) {
@@ -182,7 +182,7 @@ startagain:
 
 		if (maymove && (bufleft < EXTRABUFSPACE)) {
 			/* Buffer is almost full - move data to accomodate a large message. */
-			dprintf("Moving %d bytes to start of buffer\n", usedbytes);
+			dbgprintf("Moving %d bytes to start of buffer\n", usedbytes);
 			memmove(buf, startpos, usedbytes);
 			startpos = buf;
 			fillpos = startpos + usedbytes;
@@ -213,7 +213,7 @@ startagain:
 
 			/* Some error happened */
 			ioerror = 1;
-			dprintf("get_hobbitd_message: Returning NULL due to select error %s\n",
+			dbgprintf("get_hobbitd_message: Returning NULL due to select error %s\n",
 				  strerror(errno));
 			return NULL;
 		}
@@ -231,7 +231,7 @@ startagain:
 				if ((errno == EAGAIN) || (errno == EINTR)) continue;
 
 				ioerror = 1;
-				dprintf("get_hobbitd_message: Returning NULL due to read error %s\n",
+				dbgprintf("get_hobbitd_message: Returning NULL due to read error %s\n",
 					  strerror(errno));
 				return NULL;
 			}
@@ -282,7 +282,7 @@ startagain:
 
 			if (debug) {
 				p = strchr(result, '\n'); if (p) *p = '\0';
-				dprintf("%s: Got message %u %s\n", id, *seq, result);
+				dbgprintf("%s: Got message %u %s\n", id, *seq, result);
 				if (p) *p = '\n';
 			}
 
@@ -305,7 +305,7 @@ startagain:
 		}
 	}
 
-	dprintf("startpos %ld, fillpos %ld, endpos %ld\n",
+	dbgprintf("startpos %ld, fillpos %ld, endpos %ld\n",
 		  (startpos-buf), (fillpos-buf), (endpos ? (endpos-buf) : -1));
 
 	return result;

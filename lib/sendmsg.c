@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.79 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.80 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -124,10 +124,10 @@ static void setup_transport(char *recipient)
 		bbdportnumber = default_port;
 	}
 
-	dprintf("Transport setup is:\n");
-	dprintf("bbdportnumber = %d\n", bbdportnumber),
-	dprintf("bbdispproxyhost = %s\n", (bbdispproxyhost ? bbdispproxyhost : "NONE"));
-	dprintf("bbdispproxyport = %d\n", bbdispproxyport);
+	dbgprintf("Transport setup is:\n");
+	dbgprintf("bbdportnumber = %d\n", bbdportnumber),
+	dbgprintf("bbdispproxyhost = %s\n", (bbdispproxyhost ? bbdispproxyhost : "NONE"));
+	dbgprintf("bbdispproxyport = %d\n", bbdispproxyport);
 }
 
 static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
@@ -157,7 +157,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 	setup_transport(recipient);
 
-	dprintf("Recipient listed as '%s'\n", recipient);
+	dbgprintf("Recipient listed as '%s'\n", recipient);
 
 	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
 		/* Standard BB communications, directly to bbd */
@@ -167,7 +167,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		if (p) {
 			*p = '\0'; p++; rcptport = atoi(p);
 		}
-		dprintf("Standard BB protocol on port %d\n", rcptport);
+		dbgprintf("Standard BB protocol on port %d\n", rcptport);
 	}
 	else {
 		char *bufp;
@@ -200,7 +200,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 			posthost = strdup(rcptip);
 
-			dprintf("BB-HTTP protocol directly to host %s\n", posthost);
+			dbgprintf("BB-HTTP protocol directly to host %s\n", posthost);
 		}
 		else {
 			char *p;
@@ -223,7 +223,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 				if (p) *p = '\0';
 			}
 
-			dprintf("BB-HTTP protocol via proxy to host %s\n", posthost);
+			dbgprintf("BB-HTTP protocol via proxy to host %s\n", posthost);
 		}
 
 		if ((posturl == NULL) || (posthost == NULL)) {
@@ -243,7 +243,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		if (posthost) xfree(posthost);
 		haveseenhttphdrs = 0;
 
-		dprintf("BB-HTTP message is:\n%s\n", httpmessage);
+		dbgprintf("BB-HTTP message is:\n%s\n", httpmessage);
 	}
 
 	if (inet_aton(rcptip, &addr) == 0) {
@@ -266,7 +266,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 	}
 
 retry_connect:
-	dprintf("Will connect to address %s port %d\n", rcptip, rcptport);
+	dbgprintf("Will connect to address %s port %d\n", rcptip, rcptport);
 
 	memset(&saddr, 0, sizeof(saddr));
 	saddr.sin_family = AF_INET;
@@ -307,7 +307,7 @@ retry_connect:
 			close(sockfd);
 
 			if (!isconnected && (connretries > 0)) {
-				dprintf("Timeout while talking to bbd@%s:%d - retrying\n", rcptip, rcptport);
+				dbgprintf("Timeout while talking to bbd@%s:%d - retrying\n", rcptip, rcptport);
 				connretries--;
 				sleep(1);
 				goto retry_connect;	/* Yuck! */
@@ -322,7 +322,7 @@ retry_connect:
 				socklen_t connressize = sizeof(connres);
 
 				res = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
-				dprintf("Connect status is %d\n", connres);
+				dbgprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
 				if (!isconnected) {
 					shutdown(sockfd, SHUT_RDWR);
@@ -339,7 +339,7 @@ retry_connect:
 
 				n = recv(sockfd, recvbuf, sizeof(recvbuf)-1, 0);
 				if (n > 0) {
-					dprintf("Read %d bytes\n", n);
+					dbgprintf("Read %d bytes\n", n);
 					recvbuf[n] = '\0';
 
 					/*
@@ -398,7 +398,7 @@ retry_connect:
 					return BB_EWRITEERROR;
 				}
 				else {
-					dprintf("Sent %d bytes\n", res);
+					dbgprintf("Sent %d bytes\n", res);
 					msgptr += res;
 					wdone = (strlen(msgptr) == 0);
 					if (wdone) shutdown(sockfd, SHUT_WR);
@@ -407,7 +407,7 @@ retry_connect:
 		}
 	}
 
-	dprintf("Closing connection\n");
+	dbgprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
 	xfree(rcptip);
@@ -525,7 +525,7 @@ static void combo_params(void)
 	if (xgetenv("BBMAXMSGSPERCOMBO")) maxmsgspercombo = atoi(xgetenv("BBMAXMSGSPERCOMBO"));
 	if (maxmsgspercombo == 0) {
 		/* Force it to 100 */
-		dprintf("BBMAXMSGSPERCOMBO is 0, setting it to 100\n");
+		dbgprintf("BBMAXMSGSPERCOMBO is 0, setting it to 100\n");
 		maxmsgspercombo = 100;
 	}
 
@@ -553,14 +553,14 @@ static void combo_flush(void)
 {
 
 	if (!bbmsgqueued) {
-		dprintf("Flush, but bbmsg is empty\n");
+		dbgprintf("Flush, but bbmsg is empty\n");
 		return;
 	}
 
 	if (debug) {
 		char *p1, *p2;
 
-		dprintf("Flushing combo message\n");
+		dbgprintf("Flushing combo message\n");
 		p1 = p2 = STRBUF(bbmsg);
 
 		do {
@@ -583,7 +583,7 @@ static void combo_flush(void)
 static void meta_flush(void)
 {
 	if (!bbmetaqueued) {
-		dprintf("Flush, but bbmeta is empty\n");
+		dbgprintf("Flush, but bbmeta is empty\n");
 		return;
 	}
 
@@ -626,7 +626,7 @@ static void meta_add(strbuffer_t *buf)
 void combo_end(void)
 {
 	combo_flush();
-	dprintf("%d status messages merged into %d transmissions\n", bbstatuscount, bbmsgcount);
+	dbgprintf("%d status messages merged into %d transmissions\n", bbstatuscount, bbmsgcount);
 }
 
 void meta_end(void)
@@ -669,7 +669,7 @@ void finish_status(void)
 		char *p = strchr(STRBUF(msgbuf), '\n');
 
 		if (p) *p = '\0';
-		dprintf("Adding to combo msg: %s\n", STRBUF(msgbuf));
+		dbgprintf("Adding to combo msg: %s\n", STRBUF(msgbuf));
 		if (p) *p = '\n';
 	}
 

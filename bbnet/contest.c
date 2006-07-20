@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.86 2006-07-10 08:40:18 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.87 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -108,8 +108,8 @@ static time_t sslcert_expiretime(char *timestr)
 		result = INT_MAX;
 	}
 
-	dprintf("Output says it expires: %s", timestr);
-	dprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
+	dbgprintf("Output says it expires: %s", timestr);
+	dbgprintf("I think it expires at (localtime) %s\n", asctime(localtime(&result)));
 
 	return result;
 }
@@ -144,7 +144,7 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 {
 	tcptest_t *newtest;
 
-	dprintf("Adding tcp test IP=%s, port=%d, service=%s, silent=%d\n", textornull(ip), port, service, silent);
+	dbgprintf("Adding tcp test IP=%s, port=%d, service=%s, silent=%d\n", textornull(ip), port, service, silent);
 
 	if (port == 0) {
 		errprintf("Trying to scan port 0 for service %s\n", service);
@@ -259,7 +259,7 @@ static int do_telnet_options(tcptest_t *item)
 	int result = 0;
 
 	if (item->telnetbuflen == 0) {
-		dprintf("Ignoring telnet option with length 0\n");
+		dbgprintf("Ignoring telnet option with length 0\n");
 		return 0;
 	}
 
@@ -743,7 +743,7 @@ void do_tcp_tests(int timeout, int concurrency)
 	/* How many tests to do ? */
 	for (item = thead; (item); item = item->next) pending++; 
 	firstactive = nextinqueue = thead;
-	dprintf("About to do %d TCP tests running %d in parallel\n", pending, concurrency);
+	dbgprintf("About to do %d TCP tests running %d in parallel\n", pending, concurrency);
 
 	while (pending > 0) {
 		/*
@@ -845,7 +845,7 @@ void do_tcp_tests(int timeout, int concurrency)
 		}
 
 		/* Ready to go - we have a bunch of connections being established */
-		dprintf("%d tests pending - %d active tests\n", pending, activesockets);
+		dbgprintf("%d tests pending - %d active tests\n", pending, activesockets);
 
 restartselect:
 		/*
@@ -898,7 +898,7 @@ restartselect:
 			 * So set selres=0 (timeout) without doing the select,
 			 * and we will act as correctly.
 			 */
-			dprintf("select timeout is < 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
+			dbgprintf("select timeout is < 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
 					tmo.tv_sec, tmo.tv_usec,
 					cutoff.tv_sec, cutoff.tv_usec,
 					timestamp.tv_sec, timestamp.tv_usec);
@@ -909,9 +909,9 @@ restartselect:
 			selres = 0;
 		}
 		else {
-			dprintf("Doing select\n");
+			dbgprintf("Doing select\n");
 			selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
-			dprintf("select returned %d\n", selres);
+			dbgprintf("select returned %d\n", selres);
 		}
 
 		if (selres == -1) {
@@ -1042,7 +1042,7 @@ restartselect:
 								tcp_stats_written += res;
 								if (res == -1) {
 									/* Write failed - this socket is done. */
-									dprintf("write failed\n");
+									dbgprintf("write failed\n");
 									item->readpending = 0;
 									item->errcode = CONTEST_EIO;
 								}
@@ -1096,7 +1096,7 @@ restartselect:
 						 */
 						res = socket_read(item, msgbuf, sizeof(msgbuf)-1);
 						tcp_stats_read += res;
-						dprintf("read %d bytes from socket\n", res);
+						dbgprintf("read %d bytes from socket\n", res);
 
 						if ((res > 0) && item->datacallback) {
 							datadone = item->datacallback(msgbuf, res, item->priv);
@@ -1119,7 +1119,7 @@ restartselect:
 							 */
 							item->telnetnegotiate--;
 							if (!item->telnetnegotiate) {
-								dprintf("Max. telnet negotiation (%d) reached for host %s\n", 
+								dbgprintf("Max. telnet negotiation (%d) reached for host %s\n", 
 									MAX_TELNET_CYCLES,
 									inet_ntoa(item->addr.sin_addr));
 							}
@@ -1165,7 +1165,7 @@ restartselect:
 		}  /* end for loop */
 	} /* end while (pending) */
 
-	dprintf("TCP tests completed normally\n");
+	dbgprintf("TCP tests completed normally\n");
 }
 
 
@@ -1225,13 +1225,13 @@ int tcp_got_expected(tcptest_t *test)
 
 		/* Did we get enough data? */
 		if (test->banner == NULL) {
-			dprintf("tcp_got_expected: No data in banner\n");
+			dbgprintf("tcp_got_expected: No data in banner\n");
 			return 0;
 		}
 
 		compbytes = (test->svcinfo->explen ? test->svcinfo->explen : strlen(test->svcinfo->exptext));
 		if ((test->svcinfo->expofs + compbytes) > test->bannerbytes) {
-			dprintf("tcp_got_expected: Not enough data\n");
+			dbgprintf("tcp_got_expected: Not enough data\n");
 			return 0;
 		}
 

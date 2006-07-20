@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.40 2006-07-08 10:39:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.41 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -176,7 +176,7 @@ void load_config(char *conffn)
 	/* First check if there were no modifications at all */
 	if (configfiles) {
 		if (!stackfmodified(configfiles)){
-			dprintf("No files modified, skipping reload of %s\n", conffn);
+			dbgprintf("No files modified, skipping reload of %s\n", conffn);
 			return;
 		}
 		else {
@@ -301,7 +301,7 @@ void load_config(char *conffn)
 		  case -1:
 			/* Kill the task, if active */
 			if (twalk->pid) {
-				dprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
 				kill(twalk->pid, SIGTERM);
 			}
 			/* And prepare to free this tasklist entry */
@@ -319,7 +319,7 @@ void load_config(char *conffn)
 		  case 1:
 			/* Bounce the task, if it is active */
 			if (twalk->pid) {
-				dprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
 				kill(twalk->pid, SIGTERM);
 			}
 			break;
@@ -543,39 +543,39 @@ int main(int argc, char *argv[])
 		}
 
 		/* See what new tasks need to get going */
-		dprintf("\n");
-		dprintf("Starting tasklist scan\n");
+		dbgprintf("\n");
+		dbgprintf("Starting tasklist scan\n");
 		for (twalk = taskhead; (twalk); twalk = twalk->next) {
 			if ((twalk->pid == 0) && !twalk->disabled && (now >= (twalk->laststart + twalk->interval))) {
 
 				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
-					dprintf("Postponing start of %s due to %s not yet running\n",
+					dbgprintf("Postponing start of %s due to %s not yet running\n",
 						twalk->key, twalk->depends->key);
 					continue;
 				}
 
 				if (twalk->group && (twalk->group->currentuse >= twalk->group->maxuse)) {
-					dprintf("Postponing start of %s due to group %s being busy\n",
+					dbgprintf("Postponing start of %s due to group %s being busy\n",
 						twalk->key, twalk->group->groupname);
 					continue;
 				}
 
 				if ((twalk->failcount > MAX_FAILS) && ((twalk->laststart + 600) < now)) {
-					dprintf("Releasing %s from failure hold\n", twalk->key);
+					dbgprintf("Releasing %s from failure hold\n", twalk->key);
 					twalk->failcount = 0;
 				}
 
 				if (twalk->failcount > MAX_FAILS) {
-					dprintf("Postponing start of %s due to multiple failures\n", twalk->key);
+					dbgprintf("Postponing start of %s due to multiple failures\n", twalk->key);
 					continue;
 				}
 
 				if (twalk->laststart > (now - 5)) {
-					dprintf("Postponing start of %s, will not try more than once in 5 seconds\n", twalk->key);
+					dbgprintf("Postponing start of %s, will not try more than once in 5 seconds\n", twalk->key);
 					continue;
 				}
 
-				dprintf("About to start task %s\n", twalk->key);
+				dbgprintf("About to start task %s\n", twalk->key);
 
 				twalk->laststart = now;
 				twalk->pid = fork();
@@ -587,7 +587,7 @@ int main(int argc, char *argv[])
 
 					/* Setup environment */
 					if (twalk->envfile) {
-						dprintf("%s -> Loading environment from %s area %s\n", 
+						dbgprintf("%s -> Loading environment from %s area %s\n", 
 							twalk->key, expand_env(twalk->envfile), 
 							(twalk->envarea ? twalk->envarea : ""));
 						loadenv(expand_env(twalk->envfile), twalk->envarea);
@@ -604,14 +604,14 @@ int main(int argc, char *argv[])
 					if (twalk->logfile) {
 						char *logfn = expand_env(twalk->logfile);
 
-						dprintf("%s -> Assigning stdout/stderr to log '%s'\n", twalk->key, logfn);
+						dbgprintf("%s -> Assigning stdout/stderr to log '%s'\n", twalk->key, logfn);
 
 						freopen(logfn, "a", stdout);
 						freopen(logfn, "a", stderr);
 					}
 
 					/* Go! */
-					dprintf("%s -> Running '%s', BBHOME=%s\n", twalk->key, cmd, xgetenv("BBHOME"));
+					dbgprintf("%s -> Running '%s', BBHOME=%s\n", twalk->key, cmd, xgetenv("BBHOME"));
 					execvp(cmd, cmdargs);
 
 					/* Should never go here */
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			else if (twalk->pid > 0) {
-				dprintf("Task %s active with PID %d\n", twalk->key, (int)twalk->pid);
+				dbgprintf("Task %s active with PID %d\n", twalk->key, (int)twalk->pid);
 			}
 		}
 

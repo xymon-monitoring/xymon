@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.86 2006-07-06 12:22:36 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.87 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -123,7 +123,7 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 
 
 		while (len > 0) {
-			dprintf("HDC IN : state=%d, leftinchunk=%d, len=%d\n", item->chunkstate, item->leftinchunk, len);
+			dbgprintf("HDC IN : state=%d, leftinchunk=%d, len=%d\n", item->chunkstate, item->leftinchunk, len);
 			switch (item->chunkstate) {
 			  case CHUNK_NOTCHUNKED:
 				len1chunk = len;
@@ -233,7 +233,7 @@ int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 
 				buf += len1chunk;
 				len -= len1chunk;
-				dprintf("HDC OUT: state=%d, leftinchunk=%d, len=%d\n", item->chunkstate, item->leftinchunk, len);
+				dbgprintf("HDC OUT: state=%d, leftinchunk=%d, len=%d\n", item->chunkstate, item->leftinchunk, len);
 			}
 		}
 	}
@@ -435,7 +435,7 @@ void add_http_test(testitem_t *t)
 			httptest->bburl.proxyurl->ip = strdup(dnsip);
 		}
 		else {
-			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.proxyurl->host);
+			dbgprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.proxyurl->host);
 		}
 	}
 	else if (httptest->bburl.desturl->ip == NULL) {
@@ -444,7 +444,7 @@ void add_http_test(testitem_t *t)
 			httptest->bburl.desturl->ip = strdup(dnsip);
 		}
 		else {
-			dprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.desturl->host);
+			dbgprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.desturl->host);
 		}
 	}
 

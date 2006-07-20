@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.13 2006-05-29 20:02:15 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.14 2006-07-20 16:06:41 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -41,7 +41,7 @@ static link_t *init_link(char *filename, char *urlprefix)
 	char *p;
 	link_t *newlink = NULL;
 
-	dprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
+	dbgprintf("init_link(%s, %s)\n", textornull(filename), textornull(urlprefix));
 
 	newlink = (link_t *) malloc(sizeof(link_t));
 	newlink->filename = strdup(filename);
@@ -74,7 +74,7 @@ static void load_links(char *directory, char *urlprefix)
 	struct dirent 	*d;
 	char		fn[PATH_MAX];
 
-	dprintf("load_links(%s, %s)\n", textornull(directory), textornull(urlprefix));
+	dbgprintf("load_links(%s, %s)\n", textornull(directory), textornull(urlprefix));
 
 	bblinks = opendir(directory);
 	if (!bblinks) {
@@ -105,7 +105,7 @@ void load_all_links(void)
 
 	MEMDEFINE(dirname);
 
-	dprintf("load_all_links()\n");
+	dbgprintf("load_all_links()\n");
 
 	linkstree = rbtNew(name_compare);
 

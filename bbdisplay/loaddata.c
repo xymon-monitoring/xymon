@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.163 2006-06-05 06:46:39 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.164 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -106,7 +106,7 @@ state_t *init_state(char *filename, logdata_t *log)
 	int		logexpired = 0;
 
 	statuscount++;
-	dprintf("init_state(%s, %d, ...)\n", textornull(filename));
+	dbgprintf("init_state(%s, %d, ...)\n", textornull(filename));
 
 	/* Ignore summary files and dot-files (this catches "." and ".." also) */
 	if ( (strncmp(filename, "summary.", 8) == 0) || (filename[0] == '.')) {
@@ -211,7 +211,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		newstate->entry->onwap = (host->waps ? checkalert(host->waps, testname) : 1);
 	}
 	else {
-		dprintf("   hostname %s not found\n", hostname);
+		dbgprintf("   hostname %s not found\n", hostname);
 		newstate->entry->alert = newstate->entry->onwap = 0;
 	}
 
@@ -264,7 +264,7 @@ state_t *init_state(char *filename, logdata_t *log)
 
 	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color, newstate->entry->acked);
 
-	dprintf("init_state: hostname=%s, testname=%s, color=%d, acked=%d, age=%s, oldage=%d, propagate=%d, alert=%d\n",
+	dbgprintf("init_state: hostname=%s, testname=%s, color=%d, acked=%d, age=%s, oldage=%d, propagate=%d, alert=%d\n",
 		textornull(hostname), textornull(testname), 
 		newstate->entry->color, newstate->entry->acked,
 		textornull(newstate->entry->age), newstate->entry->oldage,
@@ -307,7 +307,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 	dispsummary_t *newsum = NULL;
 	time_t now = time(NULL);
 
-	dprintf("init_displaysummary(%s)\n", textornull(fn));
+	dbgprintf("init_displaysummary(%s)\n", textornull(fn));
 
 	if (log->validtime < now) return NULL;
 	strcpy(l, log->msg);
@@ -353,13 +353,13 @@ void init_modembank_status(char *fn, logdata_t *log)
 	host_t *targethost;
 	time_t now = time(NULL);
 
-	dprintf("init_modembank_status(%s)\n", textornull(fn));
+	dbgprintf("init_modembank_status(%s)\n", textornull(fn));
 
 	if (log->validtime < now) return;
 
 	targethost = find_host(fn+strlen("dialup."));
 	if (targethost == NULL) {
-		dprintf("Modembank status from unknown host %s - ignored\n", fn+strlen("dialup."));
+		dbgprintf("Modembank status from unknown host %s - ignored\n", fn+strlen("dialup."));
 		return;
 	}
 
@@ -424,7 +424,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	int		done;
 	logdata_t	log;
 
-	dprintf("load_state()\n");
+	dbgprintf("load_state()\n");
 
 	if (!reportstart && !snapshot) {
 		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);

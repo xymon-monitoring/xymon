@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.45 2006-07-10 11:47:32 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.46 2006-07-20 16:06:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -401,7 +401,7 @@ int load_client_config(char *configfn)
 	/* First check if there were no modifications at all */
 	if (configfiles) {
 		if (!stackfmodified(configfiles)){
-			dprintf("No files modified, skipping reload of %s\n", fn);
+			dbgprintf("No files modified, skipping reload of %s\n", fn);
 			return 0;
 		}
 		else {

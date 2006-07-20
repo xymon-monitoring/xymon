@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.175 2006-07-05 09:03:14 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.176 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -292,7 +292,7 @@ void setup_htaccess(const char *pagepath)
 		struct stat st;
 
 		if (stat(htaccessfn, &st) == 0) {
-			dprintf("htaccess file %s exists, not overwritten\n", htaccessfn);
+			dbgprintf("htaccess file %s exists, not overwritten\n", htaccessfn);
 			return;
 		}
 
@@ -371,7 +371,7 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 		/* Generate the host rows */
 		for (h = head; (h); h = h->next) {
 			/* If there is a host pretitle, show it. */
-			dprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
+			dbgprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
 			if (h->pretitle) {
 				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
@@ -821,7 +821,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			sprintf(rssfilename, "bb%s", rssextension);
 			sprintf(indexfilename, "index%s", htmlextension);
 			symlink(filename, indexfilename);
-			dprintf("Symlinking %s -> %s\n", filename, indexfilename);
+			dbgprintf("Symlinking %s -> %s\n", filename, indexfilename);
 		}
 		else {
 			char tmppath[PATH_MAX];

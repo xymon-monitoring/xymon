@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.56 2006-07-15 19:54:16 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.57 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -575,7 +575,7 @@ int main(int argc, char *argv[])
 		combining = 0;
 
 		for (cwalk = chead, idx=0; (cwalk); cwalk = cwalk->next, idx++) {
-			dprintf("state %d: %s\n", idx, statename[cwalk->state]);
+			dbgprintf("state %d: %s\n", idx, statename[cwalk->state]);
 
 			/* First, handle any state transitions and setup the FD sets for select() */
 			switch (cwalk->state) {
@@ -587,7 +587,7 @@ int main(int argc, char *argv[])
 			  case P_REQ_READY:
 				if (cwalk->buflen <= 6) {
 					/* Got an empty request - just drop it */
-					dprintf("Dropping empty request from %s\n", inet_ntoa(*cwalk->clientip));
+					dbgprintf("Dropping empty request from %s\n", inet_ntoa(*cwalk->clientip));
 					cwalk->state = P_CLEANUP;
 					break;
 				}
@@ -758,7 +758,7 @@ int main(int argc, char *argv[])
 
 				ctime = time(NULL);
 				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
-					dprintf("Delaying retry of connection\n");
+					dbgprintf("Delaying retry of connection\n");
 					break;
 				}
 
@@ -773,7 +773,7 @@ int main(int argc, char *argv[])
 
 				cwalk->ssocket = socket(AF_INET, SOCK_STREAM, 0);
 				if (cwalk->ssocket == -1) {
-					dprintf("Could not get a socket - will try again\n");
+					dbgprintf("Could not get a socket - will try again\n");
 					break; /* Retry the next time around */
 				}
 				sockcount++;
@@ -783,13 +783,13 @@ int main(int argc, char *argv[])
 					int idx = (bbpagercount - cwalk->snum);
 					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr[idx], sizeof(bbpageraddr[idx]));
 					cwalk->serverip = &bbpageraddr[idx].sin_addr;
-					dprintf("Connecting to BBPAGER at %s\n", inet_ntoa(*cwalk->serverip));
+					dbgprintf("Connecting to BBPAGER at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 				else {
 					int idx = (bbdispcount - cwalk->snum);
 					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr[idx], sizeof(bbdispaddr[idx]));
 					cwalk->serverip = &bbdispaddr[idx].sin_addr;
-					dprintf("Connecting to BBDISPLAY at %s\n", inet_ntoa(*cwalk->serverip));
+					dbgprintf("Connecting to BBDISPLAY at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
@@ -801,7 +801,7 @@ int main(int argc, char *argv[])
 				}
 				else {
 					/* Could not connect! Invoke retries */
-					dprintf("Connect to server failed: %s\n", strerror(errno));
+					dbgprintf("Connect to server failed: %s\n", strerror(errno));
 					close(cwalk->ssocket); sockcount--;
 					cwalk->ssocket = -1;
 					break;
@@ -968,7 +968,7 @@ int main(int argc, char *argv[])
 									strcat(cwalk->buf, cextra->buf+6);
 									cwalk->buflen = newsize;
 									cextra->state = P_CLEANUP;
-									dprintf("Merged combo\n");
+									dbgprintf("Merged combo\n");
 									msgs_merged++;
 								}
 							}
@@ -993,7 +993,7 @@ int main(int argc, char *argv[])
 						cwalk->madetocombo++;
 						msgs_merged++; /* Count the proginal message also */
 						msgs_combined++;
-						dprintf("Now going to send combo from %d messages\n%s\n", 
+						dbgprintf("Now going to send combo from %d messages\n%s\n", 
 							cwalk->madetocombo, cwalk->buf);
 					}
 					else {
@@ -1002,7 +1002,7 @@ int main(int argc, char *argv[])
 						 */
 						cwalk->bufp = cwalk->buf+6;
 						cwalk->buflen -= 6;
-						dprintf("No messages to combine - sending unchanged\n");
+						dbgprintf("No messages to combine - sending unchanged\n");
 					}
 				}
 
@@ -1074,7 +1074,7 @@ int main(int argc, char *argv[])
 							n = getsockopt(cwalk->ssocket, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 							if (connres != 0) {
 								/* Connect failed! Invoke retries. */
-								dprintf("Connect to server failed: %s - retrying\n", 
+								dbgprintf("Connect to server failed: %s - retrying\n", 
 									strerror(errno));
 								close(cwalk->ssocket); sockcount--;
 								cwalk->ssocket = -1;
@@ -1089,7 +1089,7 @@ int main(int argc, char *argv[])
 							 * Got a "write" error after connecting.
 							 * Try saving the situation by retrying the send later.
 							 */
-							dprintf("Attempting recovery from write error\n");
+							dbgprintf("Attempting recovery from write error\n");
 							close(cwalk->ssocket); sockcount--; cwalk->ssocket = -1;
 							cwalk->sendtries--;
 							cwalk->state = P_REQ_CONNECTING;
@@ -1121,7 +1121,7 @@ int main(int argc, char *argv[])
 				conn_t *newconn;
 				int caddrsize;
 
-				dprintf("New connection\n");
+				dbgprintf("New connection\n");
 				for (cwalk = chead; (cwalk && (cwalk->state != P_IDLE)); cwalk = cwalk->next);
 				if (cwalk) {
 					newconn = cwalk;
@@ -1157,7 +1157,7 @@ int main(int argc, char *argv[])
 				newconn->csocket = accept(lsocket, (struct sockaddr *)&newconn->caddr, &caddrsize);
 				if (newconn->csocket == -1) {
 					/* accept() failure. Yes, it does happen! */
-					dprintf("accept failure, ignoring connection (%s), sockcount=%d\n", 
+					dbgprintf("accept failure, ignoring connection (%s), sockcount=%d\n", 
 						strerror(errno), sockcount);
 					newconn->state = P_IDLE;
 				}

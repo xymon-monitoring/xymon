@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.45 2006-06-02 21:00:54 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.46 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -117,7 +117,7 @@ bbgen_page_t *init_page(char *name, char *title)
 	bbgen_page_t *newpage = (bbgen_page_t *) calloc(1, sizeof(bbgen_page_t));
 
 	pagecount++;
-	dprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
+	dbgprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
 
 	if (name) {
 		newpage->name = strdup(name);
@@ -145,7 +145,7 @@ group_t *init_group(char *title, char *onlycols, char *exceptcols)
 {
 	group_t *newgroup = (group_t *) calloc(1, sizeof(group_t));
 
-	dprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
+	dbgprintf("init_group(%s, %s)\n", textornull(title), textornull(onlycols));
 
 	if (title) {
 		newgroup->title = strdup(title);
@@ -181,7 +181,7 @@ host_t *init_host(char *hostname, int issummary,
 	hostlist_t	*oldlist;
 
 	hostcount++;
-	dprintf("init_host(%s)\n", textornull(hostname));
+	dbgprintf("init_host(%s)\n", textornull(hostname));
 
 	newhost->hostname = newhost->displayname = strdup(hostname);
 	if (displayname) newhost->displayname = strdup(displayname);
@@ -294,7 +294,7 @@ host_t *init_host(char *hostname, int issummary,
 	else {
 		hostlist_t *clone = (hostlist_t *) calloc(1, sizeof(hostlist_t));
 
-		dprintf("Duplicate host definition for host '%s'\n", hostname);
+		dbgprintf("Duplicate host definition for host '%s'\n", hostname);
 
 		clone->hostentry = newhost;
 		clone->clones = oldlist->clones;
@@ -311,7 +311,7 @@ void getnamelink(char *l, char **name, char **link)
 	/* "page NAME title-or-link" splitup */
 	char *p;
 
-	dprintf("getnamelink(%s, ...)\n", textornull(l));
+	dbgprintf("getnamelink(%s, ...)\n", textornull(l));
 
 	*name = null_text;
 	*link = null_text;
@@ -335,7 +335,7 @@ void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, ch
 	char *parentname;
 	bbpagelist_t *walk;
 
-	dprintf("getnamelink(%s, ...)\n", textornull(l));
+	dbgprintf("getnamelink(%s, ...)\n", textornull(l));
 
 	*name = null_text;
 	*link = null_text;
@@ -378,7 +378,7 @@ void getgrouptitle(char *l, char *pageset, char **title, char **onlycols, char *
 	sprintf(groupexcepttag, "%sgroup-except", pageset);
 	sprintf(grouptag, "%sgroup", pageset);
 
-	dprintf("getgrouptitle(%s, ...)\n", textornull(l));
+	dbgprintf("getgrouptitle(%s, ...)\n", textornull(l));
 
 	if (strncmp(l, grouponlytag, strlen(grouponlytag)) == 0) {
 		char *p;
@@ -411,7 +411,7 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 {
 	summary_t *newsum;
 
-	dprintf("init_summary(%s, %s, %s)\n", textornull(name), textornull(receiver), textornull(url));
+	dbgprintf("init_summary(%s, %s, %s)\n", textornull(name), textornull(receiver), textornull(url));
 
 	/* Sanity check */
 	if ((name == NULL) || (receiver == NULL) || (url == NULL)) 
@@ -446,7 +446,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 	load_hostnames(xgetenv("BBHOSTS"), "dispinclude", fqdn);
 
-	dprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
+	dbgprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
 	/*
 	 * load_hostnames() picks up the hostname definitions, but not the page
@@ -480,7 +480,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	while (stackfgets(inbuf, "dispinclude")) {
 		sanitize_input(inbuf, 0, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
-		dprintf("load_bbhosts: -- got line '%s'\n", STRBUF(inbuf));
+		dbgprintf("load_bbhosts: -- got line '%s'\n", STRBUF(inbuf));
 
 		modembanksize = 0;
 

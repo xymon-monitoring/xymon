@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.11 2006-07-15 19:54:16 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.12 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -162,7 +162,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 		char dbgmsg[100];
 
 		snprintf(dbgmsg, sizeof(dbgmsg), "%s\n", STRBUF(req));
-		dprintf("Queuing request %lu to %s for %s: '%s'\n", 
+		dbgprintf("Queuing request %lu to %s for %s: '%s'\n", 
 			connseq, addrstring(&newconn->caddr), client->hostname, dbgmsg);
 	}
 
@@ -214,7 +214,7 @@ void senddata(conn_t *conn)
 		flag_cleanup(conn);
 	}
 	else if (n >= 0) {
-		dprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr), conn->seq);
+		dbgprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr), conn->seq);
 		conn->sentbytes += n;
 		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) {
 			/* Everything has been sent, so switch to READ mode */
@@ -281,7 +281,7 @@ void process_clientdata(conn_t *conn)
 				char msgcachesection[100];
 
 				conn->client->suggestpoll = time(NULL) - (msgago % 300) + 300 + 10;
-				dprintf("Client %s (req %lu) received a client message %d secs ago, poll again at %lu\n",
+				dbgprintf("Client %s (req %lu) received a client message %d secs ago, poll again at %lu\n",
 					addrstring(&conn->caddr), conn->seq, msgago,
 					conn->client->suggestpoll);
 
@@ -334,7 +334,7 @@ void process_serverdata(conn_t *conn)
 		if (conn->client->clientdata) xfree(conn->client->clientdata);
 		conn->client->clientdata = grabstrbuffer(conn->msgbuf);
 		conn->msgbuf = NULL;
-		dprintf("Client data for %s (req %lu): %s\n", conn->client->hostname, conn->seq, 
+		dbgprintf("Client data for %s (req %lu): %s\n", conn->client->hostname, conn->seq, 
 			(conn->client->clientdata ? conn->client->clientdata : "<Null>"));
 	}
 }
@@ -358,14 +358,14 @@ void grabdata(conn_t *conn)
 	}
 	else if (n > 0) {
 		/* Save the data */
-		dprintf("Got %d bytes of data from %s (req %lu)\n", 
+		dbgprintf("Got %d bytes of data from %s (req %lu)\n", 
 			n, addrstring(&conn->caddr), conn->seq);
 		buf[n] = '\0';
 		addtobuffer(conn->msgbuf, buf);
 	}
 	else if (n == 0) {
 		/* Done reading. Process the data. */
-		dprintf("Done reading data from %s (req %lu)\n", 
+		dbgprintf("Done reading data from %s (req %lu)\n", 
 			addrstring(&conn->caddr), conn->seq);
 		shutdown(conn->sockfd, SHUT_RDWR);
 		flag_cleanup(conn);
@@ -392,7 +392,7 @@ void set_polltime(clients_t *client)
 		 * and it happens within a reasonable time. So use that.
 		 */
 		client->nextpoll = client->suggestpoll;
-		dprintf("Next poll of %s in %d seconds (for client msg)\n", 
+		dbgprintf("Next poll of %s in %d seconds (for client msg)\n", 
 			client->hostname, (client->nextpoll - now));
 	}
 	else {
@@ -406,7 +406,7 @@ void set_polltime(clients_t *client)
 
 		delay = pollinterval + ((random() % 31) - 16);
 		client->nextpoll = now + delay;
-		dprintf("Next poll of %s in %d seconds\n", client->hostname, delay);
+		dbgprintf("Next poll of %s in %d seconds\n", client->hostname, delay);
 	}
 
 	if (whentoqueue > client->nextpoll) {
@@ -514,7 +514,7 @@ int main(int argc, char *argv[])
 			/* Remove any finished requests */
 			needcleanup = 0;
 			connwalk = chead; cprev = NULL;
-			dprintf("Doing cleanup\n");
+			dbgprintf("Doing cleanup\n");
 
 			while (connwalk) {
 				conn_t *zombie;
@@ -553,7 +553,7 @@ int main(int argc, char *argv[])
 				}
 
 				/* Purge the zombie */
-				dprintf("Request completed: req %lu, peer %s, action was %d, type was %d\n", 
+				dbgprintf("Request completed: req %lu, peer %s, action was %d, type was %d\n", 
 					zombie->seq, addrstring(&zombie->caddr), 
 					zombie->action, zombie->ctype);
 				close(zombie->sockfd);

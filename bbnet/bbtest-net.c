@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.237 2006-07-14 11:32:56 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.238 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -796,7 +796,7 @@ void load_tests(void)
 					twalk->badtest[2] = badred;
 				}
 				else {
-					dprintf("No test for badtest spec host=%s, test=%s\n",
+					dbgprintf("No test for badtest spec host=%s, test=%s\n",
 						h->hostname, testname);
 				}
 			}
@@ -825,7 +825,7 @@ void load_tests(void)
 		}
 		else {
 			/* No network tests for this host, so ignore it */
-			dprintf("Did not find any network tests for host %s\n", h->hostname);
+			dbgprintf("Did not find any network tests for host %s\n", h->hostname);
 			xfree(h);
 			notesthostcount++;
 		}
@@ -1261,7 +1261,7 @@ int finish_ping_service(service_t *service)
 			 */
 			for (t=service->items; (t); t = t->next) {
 				if (strcmp(t->host->ip, pingip) == 0) {
-					if (t->open) dprintf("More than one ping result for %s\n", pingip);
+					if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
 					t->open = (strstr(l, "is alive") != NULL);
 					t->banner = dupstrbuffer(l);
 				}
@@ -1270,7 +1270,7 @@ int finish_ping_service(service_t *service)
 					ipping_t *walk;
 					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
 						if (strcmp(walk->ip, pingip) == 0) {
-							if (t->open) dprintf("More than one ping result for %s\n", pingip);
+							if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
 							walk->open = (strstr(l, "is alive") != NULL);
 							walk->banner = dupstrbuffer(l);
 						}
@@ -1331,7 +1331,7 @@ void run_modembank_service(service_t *service)
 		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
 		sprintf(cmd, "%s -g -Ae %s %s 2>/dev/null", cmdpath, startip, endip);
 
-		dprintf("Running command: '%s'\n", cmd);
+		dbgprintf("Running command: '%s'\n", cmd);
 		cmdpipe = popen(cmd, "r");
 		if (cmdpipe == NULL) {
 			errprintf("Could not run the hobbitping command %s\n", cmd);
@@ -1339,7 +1339,7 @@ void run_modembank_service(service_t *service)
 		}
 
 		while (fgets(l, sizeof(l), cmdpipe)) {
-			dprintf("modembank response: %s", l);
+			dbgprintf("modembank response: %s", l);
 
 			if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 				unsigned int idx = IPtou32(ip1, ip2, ip3, ip4) - req->startip;
@@ -1358,9 +1358,9 @@ void run_modembank_service(service_t *service)
 		if (debug) {
 			int i;
 
-			dprintf("Results for modembank start=%s, length %d\n", u32toIP(req->startip), req->banksize);
+			dbgprintf("Results for modembank start=%s, length %d\n", u32toIP(req->startip), req->banksize);
 			for (i=0; (i<req->banksize); i++)
-				dprintf("\t%s is %d\n", u32toIP(req->startip+i), req->responses[i]);
+				dbgprintf("\t%s is %d\n", u32toIP(req->startip+i), req->responses[i]);
 		}
 	}
 }
@@ -1596,7 +1596,7 @@ void send_results(service_t *service, int failgoesclear)
 	svcname = strdup(service->testname);
 	if (service->namelen) svcname[service->namelen] = '\0';
 
-	dprintf("Sending results for service %s\n", svcname);
+	dbgprintf("Sending results for service %s\n", svcname);
 
 	for (t=service->items; (t); t = t->next) {
 		char flags[10];

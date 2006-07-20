@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.7 2006-07-08 22:04:39 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.8 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -137,7 +137,7 @@ void grabdata(conn_t *conn)
 			return;
 		}
 
-		dprintf("Got pullclient request: %s\n", STRBUF(conn->msgbuf));
+		dbgprintf("Got pullclient request: %s\n", STRBUF(conn->msgbuf));
 
 		/*
 		 * The pollid is unique for each Hobbit server. It is to allow
@@ -160,7 +160,7 @@ void grabdata(conn_t *conn)
 			clientcfg++;
 			if (client_response) xfree(client_response);
 			client_response = strdup(clientcfg);
-			dprintf("Saved client response: %s\n", client_response);
+			dbgprintf("Saved client response: %s\n", client_response);
 		}
 	}
 	else if (strncmp(STRBUF(conn->msgbuf), "client ", 7) == 0) {
@@ -187,7 +187,7 @@ void grabdata(conn_t *conn)
 	if (conn->ctype != C_SERVER) {
 		/* Messages from clients go on the outbound queue */
 		msgqueue_t *newq = calloc(1, sizeof(msgqueue_t));
-		dprintf("Queuing outbound message\n");
+		dbgprintf("Queuing outbound message\n");
 		newq->tstamp = conn->tstamp;
 		newq->msgbuf = conn->msgbuf;
 		conn->msgbuf = NULL;
@@ -528,14 +528,14 @@ int main(int argc, char *argv[])
 			conn_t *newconn;
 			int caddrsize;
 
-			dprintf("New connection\n");
+			dbgprintf("New connection\n");
 			newconn = calloc(1, sizeof(conn_t));
 
 			caddrsize = sizeof(newconn->caddr);
 			newconn->sockfd = accept(lsocket, (struct sockaddr *)&newconn->caddr, &caddrsize);
 			if (newconn->sockfd == -1) {
 				/* accept() failure. Yes, it does happen! */
-				dprintf("accept failure, ignoring connection (%s)\n", strerror(errno));
+				dbgprintf("accept failure, ignoring connection (%s)\n", strerror(errno));
 				xfree(newconn);
 				newconn = NULL;
 			}

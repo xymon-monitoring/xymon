@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.68 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.69 2006-07-20 16:06:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -120,11 +120,11 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 	hostdisplayname = bbh_item(host, BBH_DISPLAYNAME);
 	hostrrdgraphs = bbh_item(host, BBH_TRENDS);
 
-	dprintf("rrdlink_text: host %s, rrd %s\n", host->bbhostname, rrd->gdef->hobbitrrdname);
+	dbgprintf("rrdlink_text: host %s, rrd %s\n", host->bbhostname, rrd->gdef->hobbitrrdname);
 
 	/* If no rrdgraphs definition, include all with default links */
 	if (hostrrdgraphs == NULL) {
-		dprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
+		dbgprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
 		return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta);
 	}
@@ -134,18 +134,18 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 
 	/* If not found ... */
 	if (graphdef == NULL) {
-		dprintf("rrdlink_text: NULL graphdef\n");
+		dbgprintf("rrdlink_text: NULL graphdef\n");
 
 		/* Do we include all by default ? */
 		if (*(hostrrdgraphs) == '*') {
-			dprintf("rrdlink_text: Default URL included\n");
+			dbgprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
 			return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, 
 						 HG_WITH_STALE_RRDS, wantmeta);
 		}
 		else {
-			dprintf("rrdlink_text: Default URL NOT included\n");
+			dbgprintf("rrdlink_text: Default URL NOT included\n");
 			/* No, return empty string */
 			return "";
 		}
@@ -155,7 +155,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 
 	/* Does he want to explicitly exclude this RRD ? */
 	if ((graphdef > hostrrdgraphs) && (*(graphdef-1) == '!')) {
-		dprintf("rrdlink_text: This graph is explicitly excluded\n");
+		dbgprintf("rrdlink_text: This graph is explicitly excluded\n");
 		return "";
 	}
 
@@ -246,7 +246,7 @@ char *generate_trends(char *hostname)
 		if ((strlen(fn) <= 4) || (strcmp(fn+strlen(fn)-4, ".rrd") != 0)) continue;
 		graph = find_hobbit_graph(fn); if (!graph) continue;
 
-		dprintf("Got RRD %s\n", fn);
+		dbgprintf("Got RRD %s\n", fn);
 		anyrrds++;
 
 		for (rwalk = (graph_t *)myhost->data; (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
@@ -258,12 +258,12 @@ char *generate_trends(char *hostname)
 			newrrd->next = (graph_t *)myhost->data;
 			myhost->data = (void *)newrrd;
 			rwalk = newrrd;
-			dprintf("New rrd for host:%s, rrd:%s\n", hostname, graph->hobbitrrdname);
+			dbgprintf("New rrd for host:%s, rrd:%s\n", hostname, graph->hobbitrrdname);
 		}
 		else {
 			rwalk->count++;
 
-			dprintf("Extra RRD for host %s, rrd %s   count:%d\n", 
+			dbgprintf("Extra RRD for host %s, rrd %s   count:%d\n", 
 				hostname, 
 				rwalk->gdef->hobbitrrdname, rwalk->count);
 		}

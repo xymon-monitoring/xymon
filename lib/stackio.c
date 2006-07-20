@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.19 2006-06-07 20:42:14 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.20 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -213,7 +213,7 @@ FILE *stackfopen(char *filename, char *mode, void **v_listhead)
 			sprintf(stackfd_filename, "%s/%s", stackfd_base, filename);
 	}
 
-	dprintf("Opening file %s\n", stackfd_filename);
+	dbgprintf("Opening file %s\n", stackfd_filename);
 	newfd = fopen(stackfd_filename, stackfd_mode);
 	if (newfd != NULL) {
 		newitem = (stackfd_t *) malloc(sizeof(stackfd_t));
@@ -283,15 +283,15 @@ int stackfmodified(void *v_listhead)
 
 	for (walk=(filelist_t *)v_listhead; (walk); walk = walk->next) {
 		if (stat(walk->filename, &st) == -1) {
-			dprintf("File %s no longer exists\n", walk->filename);
+			dbgprintf("File %s no longer exists\n", walk->filename);
 			return 1; /* File has disappeared */
 		}
 		if (st.st_mtime != walk->mtime) {
-			dprintf("File %s new timestamp\n", walk->filename);
+			dbgprintf("File %s new timestamp\n", walk->filename);
 			return 1; /* Timestamp has changed */
 		}
 		if (S_ISREG(st.st_mode) && (st.st_size != walk->fsize)) {
-			dprintf("File %s new size\n", walk->filename);
+			dbgprintf("File %s new size\n", walk->filename);
 			return 1; /* Size has changed */
 		}
 	}

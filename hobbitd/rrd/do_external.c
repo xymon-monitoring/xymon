@@ -8,13 +8,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.16 2006-06-09 22:23:49 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.17 2006-07-20 16:06:41 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	pid_t childpid;
 
-	dprintf("-> do_external(%s, %s)\n", hostname, testname);
+	dbgprintf("-> do_external(%s, %s)\n", hostname, testname);
 
 	childpid = fork();
 	if (childpid == 0) {
@@ -32,7 +32,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		MEMDEFINE(fn); MEMDEFINE(extcmd);
 
 		sprintf(fn, "%s/rrd_msg_%d", xgetenv("BBTMP"), (int) getpid());
-		dprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);
+		dbgprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);
 
 		fd = fopen(fn, "w");
 		if (fd == NULL) {
@@ -49,7 +49,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		/* Now call the external helper */
 		sprintf(extcmd, "%s %s %s %s", exthandler, hostname, testname, fn);
-		dprintf("%09d : Calling helper script %s\n", (int)mypid, extcmd);
+		dbgprintf("%09d : Calling helper script %s\n", (int)mypid, extcmd);
 		extfd = popen(extcmd, "r");
 		if (extfd) {
 			pstate = R_DEFS;
@@ -57,7 +57,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 			while (unlimfgets(inbuf, extfd)) {
 				p = strchr(STRBUF(inbuf), '\n'); if (p) *p = '\0';
-				dprintf("%09d : Helper input '%s'\n", (int)mypid, STRBUF(inbuf));
+				dbgprintf("%09d : Helper input '%s'\n", (int)mypid, STRBUF(inbuf));
 				if (STRBUFLEN(inbuf) == 0) continue;
 
 				if (pstate == R_NEXT) {
@@ -133,7 +133,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			xfree(params);
 		}
 
-		dprintf("%09d : Unlinking temp file\n", (int)mypid);
+		dbgprintf("%09d : Unlinking temp file\n", (int)mypid);
 		unlink(fn);
 		freestrbuffer(inbuf);
 
@@ -146,7 +146,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		errprintf("Fork failed in RRD handler: %s\n", strerror(errno));
 	}
 
-	dprintf("<- do_external(%s, %s)\n", hostname, testname);
+	dbgprintf("<- do_external(%s, %s)\n", hostname, testname);
 	return 0;
 }
 

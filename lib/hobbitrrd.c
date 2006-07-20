@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.39 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.40 2006-07-20 16:06:41 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -211,7 +211,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service,
 		gheight = atoi(xgetenv("RRDHEIGHT"));
 	}
 
-	dprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d)\n", 
+	dbgprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d)\n", 
 		hostname, 
 		graphdef->hobbitrrdname, textornull(graphdef->hobbitpartname), graphdef->maxgraphs, itemcount);
 
@@ -285,7 +285,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service,
 		xfree(rrdparturl);
 	}
 
-	dprintf("URLtext: %s\n", rrdurl);
+	dbgprintf("URLtext: %s\n", rrdurl);
 
 	xfree(svcurl);
 

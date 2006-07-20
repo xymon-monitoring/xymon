@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-mailack.c,v 1.18 2006-07-17 09:38:45 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-mailack.c,v 1.19 2006-07-20 16:06:41 henrik Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -91,23 +91,23 @@ int main(int argc, char *argv[])
 
 	/* No subject ? No deal */
 	if (subjectline == NULL) {
-		dprintf("Subject-line not found\n");
+		dbgprintf("Subject-line not found\n");
 		return 1;
 	}
 
 	/* Get the alert cookie */
 	subjexp = pcre_compile(".*(Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
-		dprintf("pcre compile failed - 1\n");
+		dbgprintf("pcre compile failed - 1\n");
 		return 2;
 	}
 	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
 	if (result < 0) {
-		dprintf("Subject line did not match pattern\n");
+		dbgprintf("Subject line did not match pattern\n");
 		return 3; /* Subject did not match what we expected */
 	}
 	if (pcre_copy_substring(subjectline, ovector, result, 2, cookie, sizeof(cookie)) <= 0) {
-		dprintf("Could not find cookie value\n");
+		dbgprintf("Could not find cookie value\n");
 		return 4; /* No cookie */
 	}
 	pcre_free(subjexp);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 	/* See if there's a "DELAY=" delay-value also */
 	subjexp = pcre_compile(".*DELAY[ =]+([0-9]+[mhdw]*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
-		dprintf("pcre compile failed - 2\n");
+		dbgprintf("pcre compile failed - 2\n");
 		return 2;
 	}
 	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 	/* See if there's a "msg" text also */
 	subjexp = pcre_compile(".*MSG[ =]+(.*)", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
-		dprintf("pcre compile failed - 3\n");
+		dbgprintf("pcre compile failed - 3\n");
 		return 2;
 	}
 	result = pcre_exec(subjexp, NULL, subjectline, strlen(subjectline), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));

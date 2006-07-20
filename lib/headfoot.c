@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.52 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.53 2006-07-20 16:06:41 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1154,7 +1154,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		strcat(filename, "_");
 		strcat(filename, head_or_foot);
 
-		dprintf("Trying header/footer file '%s'\n", filename);
+		dbgprintf("Trying header/footer file '%s'\n", filename);
 		fd = open(filename, O_RDONLY);
 
 		if (fd == -1) {
@@ -1174,7 +1174,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 			sprintf(filename, "%s/web/%s_%s", xgetenv("BBHOME"), template, head_or_foot);
 		}
 
-		dprintf("Trying header/footer file '%s'\n", filename);
+		dbgprintf("Trying header/footer file '%s'\n", filename);
 		fd = open(filename, O_RDONLY);
 	}
 

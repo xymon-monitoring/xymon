@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.55 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.56 2006-07-20 16:06:41 henrik Exp $";
 
 #include "config.h"
 
@@ -69,7 +69,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "macosx") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "darwin") == 0)      result = OS_DARWIN;
 
-	if (result == OS_UNKNOWN) dprintf("Unknown OS: '%s'\n", osname);
+	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
 
 	*(osname+n) = savech;
 	return result;
@@ -176,7 +176,7 @@ char *msg_data(char *msg)
 
 	result = strchr(msg, '.');              /* Hits the '.' in "host.test" */
 	if (!result) {
-		dprintf("Msg was not what I expected: '%s'\n", msg);
+		dbgprintf("Msg was not what I expected: '%s'\n", msg);
 		return msg;
 	}
 
@@ -653,7 +653,7 @@ char **setup_commandargs(char *cmdline, char **cmd)
 		eqchar = strchr(barg, '=');
 		if (eqchar && (eqchar == (barg + strspn(barg, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")))) {
 			/* It's an environment definition */
-			dprintf("Setting environment: %s\n", barg);
+			dbgprintf("Setting environment: %s\n", barg);
 			envsetting = strdup(barg);
 			putenv(envsetting);
 		}

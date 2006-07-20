@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ipaccess.c,v 1.2 2006-07-05 05:56:39 henrik Exp $";
+static char rcsid[] = "$Id: ipaccess.c,v 1.3 2006-07-20 16:06:41 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -25,7 +25,7 @@ sender_t *getsenderlist(char *iplist)
 	sender_t *result;
 	int count;
 
-	dprintf("-> getsenderlist\n");
+	dbgprintf("-> getsenderlist\n");
 
 	count = 0; p = iplist; do { count++; p = strchr(p, ','); if (p) p++; } while (p);
 	result = (sender_t *) calloc(1, sizeof(sender_t) * (count+1));
@@ -47,7 +47,7 @@ sender_t *getsenderlist(char *iplist)
 		count++;
 	}
 
-	dprintf("<- getsenderlist\n");
+	dbgprintf("<- getsenderlist\n");
 
 	return result;
 }
@@ -58,11 +58,11 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	unsigned long int tg_ip;
 	char *eoln = NULL;
 
-	dprintf("-> oksender\n");
+	dbgprintf("-> oksender\n");
 
 	/* If oklist is empty, we're not doing any access checks - so return OK */
 	if (oklist == NULL) {
-		dprintf("<- oksender(1-a)\n");
+		dbgprintf("<- oksender(1-a)\n");
 		return 1;
 	}
 
@@ -71,7 +71,7 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 		if (strcmp(targetip, "0.0.0.0") == 0) return 1; /* DHCP hosts can report from any address */
 		tg_ip = ntohl(inet_addr(targetip));
 		if (ntohl(sender.s_addr) == tg_ip) {
-			dprintf("<- oksender(1-b)\n");
+			dbgprintf("<- oksender(1-b)\n");
 			return 1;
 		}
 	}
@@ -80,7 +80,7 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	i = 0;
 	do {
 		if ((oklist[i].ipval & oklist[i].ipmask) == (ntohl(sender.s_addr) & oklist[i].ipmask)) {
-			dprintf("<- oksender(1-c)\n");
+			dbgprintf("<- oksender(1-c)\n");
 			return 1;
 		}
 		i++;
@@ -91,7 +91,7 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	errprintf("Refused message from %s: %s\n", inet_ntoa(sender), (msgbuf ? msgbuf : ""));
 	if (msgbuf && eoln) *eoln = '\n';
 
-	dprintf("<- oksender(0)\n");
+	dbgprintf("<- oksender(0)\n");
 
 	return 0;
 }
