@@ -17,6 +17,7 @@ extern char *hostpage_link(host_t *host);
 extern char *hostpage_name(host_t *host);
 extern int checkpropagation(host_t *host, char *test, int color, int acked);
 extern host_t *find_host(char *hostname);
+extern int host_exists(char *hostname);
 extern hostlist_t *find_hostlist(char *hostname);
 extern hostlist_t *hostlistBegin(void);
 extern hostlist_t *hostlistNext(void);

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.156 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.157 2006-07-20 22:07:47 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>
@@ -142,6 +142,11 @@ host_t *find_host(char *hostname)
 	}
 	
 	return NULL;
+}
+
+int host_exists(char *hostname)
+{
+	return (find_host(hostname) != NULL);
 }
 
 hostlist_t *find_hostlist(char *hostname)

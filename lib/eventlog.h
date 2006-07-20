@@ -24,7 +24,7 @@ typedef struct event_t {
 	struct event_t *next;
 } event_t;
 
-typedef void * (*f_hostcheck)(char *hostname);
+typedef int (*f_hostcheck)(char *hostname);
 
 extern char *eventignorecolumns;
 extern int havedoneeventlog;

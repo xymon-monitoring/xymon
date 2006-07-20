@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.36 2006-07-20 21:57:29 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.37 2006-07-20 22:07:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -221,7 +221,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		     (eventhost && !bbh_item(eventhost, BBH_FLAG_NOBB2)) && 
 		     (wanted_eventcolumn(svcname)) ) {
 			if (ignoredialups && bbh_item(eventhost, BBH_FLAG_DIALUP)) continue;
-			if (hostcheck && (hostcheck(hostname) == NULL)) continue;
+			if (hostcheck && (hostcheck(hostname) == 0)) continue;
 
 			if (pageregexp) {
 				char *pagename = bbh_item(eventhost, BBH_PAGEPATH);
