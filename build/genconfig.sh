@@ -68,6 +68,10 @@ echo "Checking for PATH_MAX definition"
 $CC -o build/testfile $CFLAGS build/test-pathmax.c 1>/dev/null 2>&1
 if test -x build/testfile; then ./build/testfile >>include/config.h; fi
 
+echo "Checking for SHUT_RD/WR/RDWR definitions"
+$CC -o build/testfile $CFLAGS build/test-shutdown.c 1>/dev/null 2>&1
+if test -x build/testfile; then ./build/testfile >>include/config.h; fi
+
 echo "#endif" >>include/config.h
 
 echo "config.h created"
