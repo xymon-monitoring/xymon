@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: suid.c,v 1.1 2006-07-04 11:31:34 henrik Exp $";
+static char rcsid[] = "$Id: suid.c,v 1.2 2006-07-20 09:22:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -19,13 +19,14 @@ static char rcsid[] = "$Id: suid.c,v 1.1 2006-07-04 11:31:34 henrik Exp $";
 
 #include "libbbgen.h"
 
-static uid_t myuid = -1;
+int havemyuid = 0;
+static uid_t myuid;
 
 #ifdef HPUX
 
 void drop_root(void)
 {
-	if (myuid == -1) myuid = getuid();
+	if (!havemyuid) { myuid = getuid(); havemyuid = 1; }
 	setresuid(-1, myuid, -1);
 }
 
@@ -38,7 +39,7 @@ void get_root(void)
 
 void drop_root(void)
 {
-	if (myuid == -1) myuid = getuid();
+	if (!havemyuid) { myuid = getuid(); havemyuid = 1; }
 	seteuid(myuid);
 }
 
