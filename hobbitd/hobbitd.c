@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.250 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.251 2006-07-21 20:32:51 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -957,14 +957,15 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	dbgprintf("->handle_status\n");
 
 	if (msg == NULL) {
-		errprintf("handle_status got a NULL message for %s.%s, sender %s\n", 
-			  textornull(hostname), textornull(testname), textornull(sender));
+		errprintf("handle_status got a NULL message for %s.%s, sender %s, color %s\n", 
+			  textornull(hostname), textornull(testname), textornull(sender), colorname(newcolor));
 		return;
 	}
 
 	msglen = strlen(msg);
 	if (msglen == 0) {
-		errprintf("Bogus status message contains no data: Sent from %s\n", sender);
+		errprintf("Bogus status message for %s.%s contains no data: Sent from %s\n", 
+			  textornull(hostname), textornull(testname), textornull(sender));
 		return;
 	}
 	if (msg_data(msg) == (char *)msg) {
@@ -2395,7 +2396,7 @@ void do_message(conn_t *msg, char *origin)
 					/* Count individual status-messages also */
 					update_statistics(currmsg);
 
-					if (h && t && log && (color != -1) && (color != COL_PURPLE)) {
+					if (h && t && log && (color != -1)) {
 						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause);
 					}
 				}
