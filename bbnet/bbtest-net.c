@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.238 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.239 2006-07-21 14:49:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1739,7 +1739,7 @@ void send_results(service_t *service, int failgoesclear)
 			}
 		}
 
-		if ((service == pingtest) && t->host->traceroute) {
+		if ((service == pingtest) && t->host->traceroute && (STRBUFLEN(t->host->traceroute) > 0)) {
 			addtostatus("Traceroute results:\n");
 			addtostrstatus(t->host->traceroute);
 			addtostatus("\n");
