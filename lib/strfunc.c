@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: strfunc.c,v 1.6 2006-04-05 12:28:57 henrik Exp $";
+static char rcsid[] = "$Id: strfunc.c,v 1.7 2006-07-21 14:49:35 henrik Exp $";
 
 #include "config.h"
 
@@ -109,9 +109,11 @@ static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
 		buf->s = (char *) realloc(buf->s, buf->sz);
 	}
 
-	/* Copy the NUL byte at end of newtext also */
-	memcpy(buf->s+buf->used, newtext, newlen+1);
-	buf->used += newlen;
+	if (newtext) {
+		/* Copy the NUL byte at end of newtext also */
+		memcpy(buf->s+buf->used, newtext, newlen+1);
+		buf->used += newlen;
+	}
 }
 
 void addtobuffer(strbuffer_t *buf, char *newtext)
