@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.12 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.13 2006-07-22 11:23:56 henrik Exp $";
 
 #include "config.h"
 
@@ -386,12 +386,13 @@ void set_polltime(clients_t *client)
 {
 	time_t now = time(NULL);
 
-	if (client->suggestpoll && (client->suggestpoll < (now + pollinterval))) {
+	if ((client->suggestpoll > now) && (client->suggestpoll < (now + pollinterval))) {
 		/*
 		 * We have a suggested poll time tuned to the next "client" message,
 		 * and it happens within a reasonable time. So use that.
 		 */
 		client->nextpoll = client->suggestpoll;
+		client->suggestpoll = 0;
 		dbgprintf("Next poll of %s in %d seconds (for client msg)\n", 
 			client->hostname, (client->nextpoll - now));
 	}
