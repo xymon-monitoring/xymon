@@ -47,7 +47,7 @@ CGI_ACKINFO_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 CGI_GHOST_OPT="--env=@BBHOME@/etc/hobbitserver.cfg"
 
 # bb-ack.cgi options
-CGI_ACK_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg" --no-pin
+CGI_ACK_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-pin"
 # hobbit-enadis.cgi options
 CGI_ENADIS_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 
