@@ -398,9 +398,9 @@ Note: No ports are checked by default.
 Example: Check that the SSH daemon is listening on port 22. Track the
 number of active SSH connections, and warn if there are more than 5.
 .br
-        PORT LOCAL=[.:]22$ STATE=LISTEN "TEXT=SSH listener"
+        PORT LOCAL=%[.:]22$ STATE=LISTEN "TEXT=SSH listener"
 .br
-        PORT LOCAL=[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
+        PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
 .sp
 .SH CHANGING THE DEFAULT SETTINGS
 If you would like to use different defaults for the settings described above, 
