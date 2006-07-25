@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.82 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.83 2006-07-25 06:18:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -223,7 +223,7 @@ void save_checkpoint(char *filename)
 	char *subfn;
 	FILE *fd = fopen(filename, "w");
 	activealerts_t *awalk;
-	unsigned char *pgmsg = "", *ackmsg = "";
+	unsigned char *pgmsg, *ackmsg;
 
 	if (fd == NULL) return;
 
@@ -236,9 +236,9 @@ void save_checkpoint(char *filename)
 			(int) awalk->eventstart,
 			(int) awalk->nextalerttime,
 			statename[awalk->state]);
-		if (awalk->pagemessage) pgmsg = nlencode(awalk->pagemessage);
+		pgmsg = (awalk->pagemessage) ? nlencode(awalk->pagemessage) : "";
 		fprintf(fd, "%s|", pgmsg);
-		if (awalk->ackmessage) ackmsg = nlencode(awalk->ackmessage);
+		ackmsg = (awalk->ackmessage) ? nlencode(awalk->ackmessage) : "";
 		fprintf(fd, "%s\n", ackmsg);
 	}
 	fclose(fd);
