@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.94 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.95 2006-07-25 21:57:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -720,7 +720,41 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	/* And the full ps output for those who want it */
-	if (pslistinprocs) addtostatus(psstr);
+	if (pslistinprocs) {
+		/*
+		 * NB: Process listings may contain HTML special characters.
+		 *     We must encode these for HTML, cf.
+		 *     http://www.w3.org/TR/html4/charset.html#h-5.3.2
+		 */
+		char *inp, *tagpos;
+
+		inp = psstr;
+		do {
+			tagpos = inp + strcspn(inp, "<>&\"");
+			switch (*tagpos) {
+			  case '<':
+				*tagpos = '\0'; addtostatus(inp); addtostatus("&lt;"); *tagpos = '<';
+				inp = tagpos + 1;
+				break;
+			  case '>':
+				*tagpos = '\0'; addtostatus(inp); addtostatus("&gt;"); *tagpos = '>';
+				inp = tagpos + 1;
+				break;
+			  case '&':
+				*tagpos = '\0'; addtostatus(inp); addtostatus("&amp;"); *tagpos = '&';
+				inp = tagpos + 1;
+				break;
+			  case '\"':
+				*tagpos = '\0'; addtostatus(inp); addtostatus("&quot;"); *tagpos = '\"';
+				inp = tagpos + 1;
+				break;
+			  default:
+				/* We're done */
+				addtostatus(inp); inp = NULL;
+				break;
+			}
+		} while (inp && *inp);
+	}
 
 	if (fromline && !localmode) addtostatus(fromline);
 	finish_status();
