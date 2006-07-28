@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-webpage.c,v 1.8 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-webpage.c,v 1.9 2006-07-28 07:12:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -63,8 +63,8 @@ int main(int argc, char *argv[])
 	
 	headfoot(stdout, hffile, "", "header", bgcolor);
 	do {
-		n = fread(inbuf, sizeof(inbuf), 1, stdin);
-		if (n > 0) fwrite(inbuf, n, 1, stdout);
+		n = fread(inbuf, 1, sizeof(inbuf), stdin);
+		if (n > 0) fwrite(inbuf, 1, n, stdout);
 	} while (n == sizeof(inbuf));
 	headfoot(stdout, hffile, "", "footer", bgcolor);
 
