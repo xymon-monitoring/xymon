@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.94 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.95 2006-07-29 21:31:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -331,8 +331,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 			dbgprintf("  repeat %s at %d\n", rpt->recipid, rpt->nextalert);
 			if (rpt->nextalert > now) {
-				traceprintf("Recipient '%s' dropped, next alert due at %d > %d\n",
-						rpt->recipid, (int)rpt->nextalert, (int)now);
+				traceprintf("Recipient '%s' dropped, next alert due at %ld > %ld\n",
+						rpt->recipid, (long)rpt->nextalert, (long)now);
 				continue;
 			}
 			alertcount++;
@@ -386,12 +386,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					pclose(mailpipe);
 					if (logfd) {
 						init_timestamp();
-						fprintf(logfd, "%s %s.%s (%s) %s[%d] %d %d",
+						fprintf(logfd, "%s %s.%s (%s) %s[%d] %ld %d",
 							timestamp, alert->hostname, alert->testname,
 							alert->ip, recip->recipient, recip->cfid,
-							(int)now, servicecode(alert->testname));
+							(long)now, servicecode(alert->testname));
 						if (alert->state == A_RECOVERED) {
-							fprintf(logfd, " %d\n", (int)(now - alert->eventstart));
+							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
 						}
 						else {
 							fprintf(logfd, "\n");
@@ -421,7 +421,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					namelist_t *hinfo;
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
-					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *downsecsmsg, *cfidtxt;
+					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
 
 					cfidtxt = (char *)malloc(strlen("CFID=") + 10);
 					sprintf(cfidtxt, "CFID=%d", recip->cfid);
@@ -482,12 +482,16 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					putenv(recovered);
 
 					downsecs = (char *)malloc(strlen("DOWNSECS=") + 20);
-					sprintf(downsecs, "DOWNSECS=%d", (int)(time(NULL) - alert->eventstart));
+					sprintf(downsecs, "DOWNSECS=%ld", (long)(time(NULL) - alert->eventstart));
 					putenv(downsecs);
+
+					eventtstamp = (char *)malloc(strlen("EVENTSTART=") + 20);
+					sprintf(eventtstamp, "EVENTSTART=%ld", (long)alert->eventstart);
+					putenv(eventtstamp);
 
 					if (alert->state == A_RECOVERED) {
 						downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
-						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %d", (int)(time(NULL) - alert->eventstart));
+						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %ld", (long)(time(NULL) - alert->eventstart));
 					}
 					else {
 						downsecsmsg = strdup("DOWNSECSMSG=");
@@ -532,12 +536,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 					if (logfd) {
 						init_timestamp();
-						fprintf(logfd, "%s %s.%s (%s) %s %d %d",
+						fprintf(logfd, "%s %s.%s (%s) %s %ld %d",
 							timestamp, alert->hostname, alert->testname,
-							alert->ip, recip->recipient, (int)now, 
+							alert->ip, recip->recipient, (long)now, 
 							servicecode(alert->testname));
 						if (alert->state == A_RECOVERED) {
-							fprintf(logfd, " %d\n", (int)(now - alert->eventstart));
+							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
 						}
 						else {
 							fprintf(logfd, "\n");
@@ -681,7 +685,7 @@ void save_state(char *filename)
 
 	if (fd == NULL) return;
 	for (walk = rpthead; (walk); walk = walk->next) {
-		fprintf(fd, "%d|%s\n", (int) walk->nextalert, walk->recipid);
+		fprintf(fd, "%ld|%s\n", (long) walk->nextalert, walk->recipid);
 	}
 	fclose(fd);
 }
