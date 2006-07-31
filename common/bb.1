@@ -344,6 +344,20 @@ for clients that cannot connect directly to the Hobbit server.
 Report a list of \fBghost\fR clients seen by the Hobbit server. Ghosts are systems
 that report data to the Hobbit server, but are not listed in the bb-hosts file.
 
+.IP "schedule [TIMESTAMP COMMAND]"
+Schedules an command sent to the Hobbit server for execution at a later time. E.g.
+used to schedule disabling of a host or service at sometime in the future. COMMAND
+is a complete Hobbit command such as the ones listed above. TIMESTAMP is the
+Unix epoch time when the command will be executed.
+.br
+If no parameters are given, the currently scheduled tasks are listed in the response.
+The response is one line per scheduled command, with the job-id, the time when the
+command will be executed, the IP address from which this was sent, and the full command
+string.
+.br
+To cancel an previously scheduled command, \fB"schedule cancel JOBID"\fR can be
+used. JOBID is a number provided as the first item in the output from the schedule list.
+
 .SH EXAMPLE
 
 Send a normal status message to the BBDISPLAY server, using the
