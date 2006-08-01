@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.87 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.88 2006-08-01 07:11:13 henrik Exp $";
 
 #include "config.h"
 
@@ -1268,6 +1268,11 @@ int main(int argc, char *argv[])
 			concurrency = atoi(p+1);
 			if (concurrency < 0) concurrency = 0;
 		}
+		else if (strcmp(argv[argi], "--help") == 0) {
+			printf("Run with\n~hobbit/server/bin/bbcmd ./contest --debug 172.16.10.2/25/smtp\n");
+			printf("I.e. IP/PORTNUMBER/TESTSPEC\n");
+			return 0;
+		}
 		else {
 			char *ip;
 			char *port;
@@ -1275,8 +1280,8 @@ int main(int argc, char *argv[])
 
 			argp = argv[argi]; ip = port = testspec = NULL;
 
-			p = strchr(argp, '/');
 			ip = argp;
+			p = strchr(argp, '/');
 			if (p) {
 				*p = '\0'; argp = (p+1); 
 				p = strchr(argp, '/');
@@ -1324,15 +1329,14 @@ int main(int argc, char *argv[])
 					}
 				}
 				else if (strncmp(argp, "dns=", 4) == 0) {
-					char *banner = NULL;
-					int bannerlen = 0;
+					strbuffer_t *banner = newstrbuffer(0);
 					int result;
 
-					result = dns_test_server(ip, argp+4, &banner, &bannerlen);
-					printf("DNS test result=%d\nBanner:%s\n", result, textornull(banner));
+					result = dns_test_server(ip, argp+4, banner);
+					printf("DNS test result=%d\nBanner:%s\n", result, STRBUF(banner));
 				}
 				else {
-					add_tcp_test(ip, atoi(port), testspec, NULL, 0, NULL, NULL, NULL, NULL);
+					add_tcp_test(ip, atoi(port), testspec, NULL, NULL, 0, NULL, NULL, NULL, NULL);
 				}
 			}
 			else {
