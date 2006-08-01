@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: links.c,v 1.14 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: links.c,v 1.15 2006-08-01 09:22:08 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -36,6 +36,25 @@ static char *notesskin = NULL;
 static char *helpskin = NULL;
 static char *columndocurl = NULL;
 
+char *link_docext(char *fn)
+{
+	char *p = strrchr(fn, '.');
+	if (p == NULL) return NULL;
+
+	if ( (strcmp(p, ".php") == 0)    ||
+             (strcmp(p, ".php3") == 0)   ||
+             (strcmp(p, ".asp") == 0)    ||
+             (strcmp(p, ".doc") == 0)    ||
+	     (strcmp(p, ".shtml") == 0)  ||
+	     (strcmp(p, ".phtml") == 0)  ||
+	     (strcmp(p, ".html") == 0)   ||
+	     (strcmp(p, ".htm") == 0))      {
+		return p;
+	}
+
+	return NULL;
+}
+
 static link_t *init_link(char *filename, char *urlprefix)
 {
 	char *p;
@@ -47,22 +66,9 @@ static link_t *init_link(char *filename, char *urlprefix)
 	newlink->filename = strdup(filename);
 	newlink->urlprefix = urlprefix;
 
-	p = strrchr(filename, '.');
-	if (p == NULL) p = (filename + strlen(filename));
-
-	if ( (strcmp(p, ".php") == 0)    ||
-             (strcmp(p, ".php3") == 0)   ||
-             (strcmp(p, ".asp") == 0)    ||
-             (strcmp(p, ".doc") == 0)    ||
-	     (strcmp(p, ".shtml") == 0)  ||
-	     (strcmp(p, ".phtml") == 0)  ||
-	     (strcmp(p, ".html") == 0)   ||
-	     (strcmp(p, ".htm") == 0))      
-	{
-		*p = '\0';
-	}
-
 	/* Without extension, this time */
+	p = link_docext(filename);
+	if (p) *p = '\0';
 	newlink->key = strdup(filename);
 
 	return newlink;
@@ -191,5 +197,16 @@ char *hostlink(char *hostname)
 	}
 
 	return NULL;
+}
+
+char *hostlink_filename(char *hostname)
+{
+	link_t *link;
+
+	if (!linksloaded) load_all_links();
+
+	link = find_link(hostname);
+
+	return (link ? link->filename : NULL);
 }
 
