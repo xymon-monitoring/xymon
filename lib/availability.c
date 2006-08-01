@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.42 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.43 2006-08-01 09:19:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -219,6 +219,44 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 	return strdup(cause);
 }
 
+static char *get_historyline(char *buf, int bufsize, FILE *fd, int *err,
+			     char *colstr, unsigned int *start, unsigned int *duration, int *scanres)
+{
+	int ok;
+
+	do {
+		ok = 1;
+
+		if (fgets(buf, bufsize, fd) == NULL) {
+			return NULL;
+		}
+
+		if (strlen(buf) < 25) {
+			ok = 0;
+			*err += 1;
+			dbgprintf("Bad history line (short): %s\n", buf);
+			continue;
+		}
+
+		*scanres = sscanf(buf+25, "%s %u %u", colstr, start, duration);
+		if (*scanres < 2) {
+			ok = 0;
+			*err += 1;
+			dbgprintf("Bad history line (missing items): %s\n", buf);
+			continue;
+		}
+
+		if (parse_color(colstr) == -1) {
+			ok = 0;
+			*err += 1;
+			dbgprintf("Bad history line (bad color string): %s\n", buf);
+			continue;
+		}
+	} while (!ok);
+
+	return buf;
+}
+
 static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 		char *buf, size_t bufsize, 
 		time_t *starttime, time_t *duration, char *colstr)
@@ -235,9 +273,14 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 	/* Is start of history after our report-end time ? */
 	rewind(fd);
-	fgets(buf, bufsize, fd);
-	if (sscanf(buf+25, "%s %u %u", colstr, &uistart, &uidur) == 2) 
-		uidur = time(NULL)-uistart;
+	if (!get_historyline(buf, bufsize, fd, &err, colstr, &uistart, &uidur, &scanres)) {
+		*starttime = time(NULL);
+		*duration = 0;
+		strcpy(colstr, "clear");
+		return err;
+	}
+
+	if (scanres == 2) uidur = time(NULL)-uistart;
 	start = uistart; dur = uidur;
 
 	if (start > totime) {
@@ -249,8 +292,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 	/* First, do a quick scan through the file to find the approximate position where we should start */
 	while ((start+dur) < fromtime) {
-		if (fgets(buf, bufsize, fd)) {
-			scanres = sscanf(buf+25, "%s %u %u", colstr, &uistart, &uidur);
+		if (get_historyline(buf, bufsize, fd, &err, colstr, &uistart, &uidur, &scanres)) {
 			start = uistart; dur = uidur;
 			if (scanres == 2) dur = time(NULL) - start;
 
@@ -261,11 +303,6 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 					fseeko(fd, 2048, SEEK_CUR);
 					fgets(buf, bufsize, fd); /* Skip partial line */
 				}
-			}
-			else {
-				err++;
-				dbgprintf("Bad line in history file '%s'\n", buf);
-				start = dur = 0; /* Try next line */
 			}
 		}
 		else {
@@ -284,19 +321,11 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 
 	/* Read one line at a time until we hit start of our report period */
 	do {
-		if (fgets(buf, bufsize, fd)) {
-			scanres = sscanf(buf+25, "%s %u %u", colstr, &uistart, &uidur);
+		if (get_historyline(buf, bufsize, fd, &err, colstr, &uistart, &uidur, &scanres)) {
 			start = uistart; dur = uidur;
 			if (scanres == 2) dur = time(NULL) - start;
 
-			if (scanres < 2) {
-				err++;
-				dbgprintf("Bad line in history file '%s'\n", buf);
-				start = dur = 0; /* Try next line */
-			}
-			else {
-				dbgprintf("Got entry starting %lu lasting %lu\n", start, dur);
-			}
+			dbgprintf("Got entry starting %lu lasting %lu\n", start, dur);
 		}
 		else {
 			start = time(NULL);
@@ -350,7 +379,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	unsigned int uistart, uidur;
 	char colstr[MAX_LINE_LEN];
 	int color, done, i, scanres;
-	int fileerrors;
+	int fileerrors = 0;
 
 	repinfo->fstate = "OK";
 	repinfo->withreport = 0;
@@ -377,11 +406,15 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	}
 	else {
 		/* Already positioned (probably in a pipe) */
-		fgets(l, sizeof(l), fd);
-		scanres = sscanf(l+25, "%s %u %u", colstr, &uistart, &uidur);
-		starttime = uistart; duration = uidur;
-		if (scanres == 2) duration = time(NULL) - starttime;
-		fileerrors = 0;
+		if (get_historyline(l, sizeof(l), fd, &fileerrors, colstr, &uistart, &uidur, &scanres)) {
+			starttime = uistart; duration = uidur;
+			if (scanres == 2) duration = time(NULL) - starttime;
+		}
+		else {
+			starttime = time(NULL); duration = 0;
+			strcpy(colstr, "clear");
+			fileerrors = 1;
+		}
 	}
 
 	if (starttime > totime) {
@@ -437,8 +470,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		}
 
 		if ((starttime + duration) < totime) {
-			if (fgets(l, sizeof(l), fd)) {
-				scanres = sscanf(l+25, "%s %u %u", colstr, &uistart, &uidur);
+			if (get_historyline(l, sizeof(l), fd, &fileerrors, colstr, &uistart, &uidur, &scanres)) {
 				starttime = uistart; duration = uidur;
 				if (scanres == 2) duration = time(NULL) - starttime;
 			}
