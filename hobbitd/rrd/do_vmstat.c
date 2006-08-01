@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.20 2006-05-03 21:19:24 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.21 2006-08-01 21:32:37 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -257,6 +257,33 @@ static vmstat_layout_t vmstat_linux22_layout[] = {
 	{ -1, NULL }
 };
 
+/*This one is for sco_sv */
+/* NOT compatible with LARRD 0.43c */
+static vmstat_layout_t vmstat_sco_sv_layout[] = {
+	{ 0, "cpu_r" },
+	{ 1, "cpu_b" },
+	{ 2, "cpu_w" },
+	{ 3, "mem_free" },
+	{ 4, "mem_dmd" },
+	{ 5, "mem_swpd" },
+	{ 6, "mem_cach" },
+	{ 7, "mem_fil" },
+	{ 8, "mem_flt" },
+	{ 9, "mem_frd" },
+	{ 10, "mem_pos" },
+	{ 11, "mem_pif" },
+	{ 12, "mem_pis" },
+	{ 13, "mem_so" },
+	{ 14, "mem_si" },
+	{ 15, "sys_calls" },
+	{ 16, "cpu_csw" },
+	{ 17, "cpu_usr" },
+        { 18, "cpu_sys" },
+        { 19, "cpu_idl" },
+	/* { -1, "cpu_wait" }, */
+	{ -1, NULL }
+};
+
 #define MAX_VMSTAT_VALUES 30
 
 int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
@@ -325,6 +352,8 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		layout = vmstat_linux_layout; break;
 	  case OS_RHEL3:
 		layout = vmstat_rhel3_layout; break;
+          case OS_SCO_SV:
+                layout = vmstat_sco_sv_layout; break;
 	  case OS_DARWIN:
 		errprintf("Cannot handle Darwin vmstat from host '%s' \n", hostname);
 		return -1;

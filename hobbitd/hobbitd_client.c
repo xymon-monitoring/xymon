@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.95 2006-07-25 21:57:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.96 2006-08-01 21:32:37 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1313,6 +1313,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/aix.c"
 #include "client/darwin.c"
 #include "client/irix.c"
+#include "client/sco_sv.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1719,7 +1720,11 @@ int main(int argc, char *argv[])
 			  case OS_IRIX:
 				handle_irix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
-
+				
+                          case OS_SCO_SV:
+  			        handle_sco_sv_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+				
 			  case OS_WIN32: 
 			  case OS_SNMP: 
 			  case OS_UNKNOWN:

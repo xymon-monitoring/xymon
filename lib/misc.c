@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.56 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.57 2006-08-01 21:32:37 henrik Exp $";
 
 #include "config.h"
 
@@ -39,7 +39,7 @@ enum ostype_t get_ostype(char *osname)
 	char savech;
 	enum ostype_t result = OS_UNKNOWN;
 
-	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/");
+	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/_");
 	savech = *(osname+n); *(osname+n) = '\0';
 
 	if      (strcasecmp(osname, "solaris") == 0)     result = OS_SOLARIS;
@@ -68,6 +68,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strncasecmp(osname, "irix", 4) == 0)    result = OS_IRIX;
 	else if (strcasecmp(osname, "macosx") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "darwin") == 0)      result = OS_DARWIN;
+	else if (strcasecmp(osname, "sco_sv") == 0)      result = OS_SCO_SV;
 
 	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
 
@@ -92,6 +93,7 @@ char *osname(enum ostype_t os)
 		case OS_SNMP: return "snmp";
 		case OS_IRIX: return "irix";
 		case OS_DARWIN: return "darwin";
+	        case OS_SCO_SV: return "sco_sv";
 		case OS_UNKNOWN: return "unknown";
 	}
 
