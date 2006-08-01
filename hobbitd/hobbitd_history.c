@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.46 2006-05-25 21:04:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.47 2006-08-01 09:23:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -167,6 +167,11 @@ int main(int argc, char *argv[])
 			downtimeactive = (atoi(items[12]) > 0);
 			clienttstamp = atoi(items[13]);
 
+			if (newcolor == -1) {
+				errprintf("Bad message: newcolor is unknown '%s'\n", items[7]);
+				continue;
+			}
+
 			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 			if (save_statusevents) {
@@ -224,7 +229,8 @@ int main(int argc, char *argv[])
 							/* Sun Oct 10 06:49:42 2004 red   1097383782 602 */
 
 							if ((strlen(l) > 24) && 
-							    (sscanf(l+24, " %s %d %d", oldcol, &lastchg_i, &dur_i) == 2)) {
+							    (sscanf(l+24, " %s %d %d", oldcol, &lastchg_i, &dur_i) == 2) &&
+							    (parse_color(oldcol) != -1)) {
 								/* 
 								 * Record the start location of the line
 								 */
@@ -262,7 +268,11 @@ int main(int argc, char *argv[])
 					 * Logfile does not exist.
 					 */
 					lastchg = tstamp;
-					statuslogfd = fopen(statuslogfn, "w");
+					statuslogfd = fopen(statuslogfn, "a");
+					if (statuslogfd == NULL) {
+						errprintf("Cannot open status historyfile '%s' : %s\n", 
+							statuslogfn, strerror(errno));
+					}
 				}
 
 				if (strcmp(oldcol, colorname(newcolor)) == 0) {
@@ -299,10 +309,6 @@ int main(int argc, char *argv[])
 					fprintf(statuslogfd, "%s %s %d", timestamp, colorname(newcolor), (int)tstamp);
 
 					fclose(statuslogfd);
-				}
-				else {
-					errprintf("Cannot open status historyfile '%s' : %s\n", 
-						statuslogfn, strerror(errno));
 				}
 
 				MEMUNDEFINE(statuslogfn);
