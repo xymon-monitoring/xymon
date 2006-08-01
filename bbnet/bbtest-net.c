@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.239 2006-07-21 14:49:56 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.240 2006-08-01 07:24:26 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -2318,7 +2318,7 @@ int main(int argc, char *argv[])
 
 					/* Binary data in banner ... */
 					for (i=0, p=STRBUF(t->banner); (i < STRBUFLEN(t->banner)); i++, p++) {
-						if (!isprint((int)*p)) *p = '.';
+						if (!isprint((int)*p) && !isspace((int)*p)) *p = '.';
 					}
 				}
 			}
