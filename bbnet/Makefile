@@ -62,6 +62,9 @@ beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
+contest: contest.c
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o ./libcares.a ../lib/libbbgen.a
+
 ################################################
 # Default compilation rules
 ################################################
