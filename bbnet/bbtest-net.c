@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.240 2006-08-01 07:24:26 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.241 2006-08-02 14:45:42 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -995,7 +995,7 @@ void save_frequenttestlist(int argc, char *argv[])
 	if (fd == NULL) return;
 
 	for (i=1; (i<argc); i++) {
-		if (!argnmatch(argv[i], "--report")) fprintf(fd, "\"%s\" ", argv[i]);
+		if (!argnmatch(argv[i], "--report")) fprintf(fd, "%s ", argv[i]);
 	}
 	for (handle = rbtBegin(testhosttree); (handle != rbtEnd(testhosttree)); handle = rbtNext(testhosttree, handle)) {
 		h = (testedhost_t *)gettreeitem(testhosttree, handle);
