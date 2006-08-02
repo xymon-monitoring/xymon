@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.251 2006-07-21 20:32:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.252 2006-08-02 15:38:04 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2563,7 +2563,7 @@ void do_message(conn_t *msg, char *origin)
 		p = strtok(p, " \t\r\n");
 		conffn = strdup(p);
 		xfree(msg->buf);
-		if (conffn && (strstr("../", conffn) == NULL) && (get_config(conffn, msg) == 0) ) {
+		if (conffn && (strstr(conffn, "../") == NULL) && (get_config(conffn, msg) == 0) ) {
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
