@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.83 2006-07-25 06:18:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.84 2006-08-02 10:03:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -230,15 +230,17 @@ void save_checkpoint(char *filename)
 	for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
 		if (awalk->state == A_DEAD) continue;
 
+		pgmsg = ackmsg = "";
+
 		fprintf(fd, "%s|%s|%s|%s|%s|%d|%d|%s|",
 			awalk->hostname, awalk->testname, awalk->location, awalk->ip,
 			colorname(awalk->maxcolor),
 			(int) awalk->eventstart,
 			(int) awalk->nextalerttime,
 			statename[awalk->state]);
-		pgmsg = (awalk->pagemessage) ? nlencode(awalk->pagemessage) : "";
+		if (awalk->pagemessage) pgmsg = nlencode(awalk->pagemessage);
 		fprintf(fd, "%s|", pgmsg);
-		ackmsg = (awalk->ackmessage) ? nlencode(awalk->ackmessage) : "";
+		if (awalk->ackmessage) ackmsg = nlencode(awalk->ackmessage);
 		fprintf(fd, "%s\n", ackmsg);
 	}
 	fclose(fd);
@@ -388,20 +390,44 @@ int main(int argc, char *argv[])
 			include_configid = 1;
 		}
 		else if (argnmatch(argv[argi], "--test")) {
-			char *testhost = NULL, *testservice = NULL, *testpage = NULL, *testcolor = "red";
+			char *testhost = NULL, *testservice = NULL, *testpage = NULL, 
+			     *testcolor = "red", *testgroups = NULL;
 			namelist_t *hinfo;
 			int testdur = 0;
 			FILE *logfd = NULL;
 			activealerts_t *awalk = NULL;;
+			int paramno = 0;
 
 			argi++; if (argi < argc) testhost = argv[argi];
 			argi++; if (argi < argc) testservice = argv[argi];
-			argi++; if (argi < argc) testdur = atoi(argv[argi]);
-			argi++; if (argi < argc) testcolor = argv[argi];
-			argi++; if (argi < argc) fakestarttime = (time_t) atoi(argv[argi]);
+			argi++; 
+			while (argi < argc) {
+				if (strncasecmp(argv[argi], "--duration=", 11) == 0) {
+					testdur = atoi(strchr(argv[argi], '=')+1);
+				}
+				else if (strncasecmp(argv[argi], "--color=", 8) == 0) {
+					testcolor = strchr(argv[argi], '=')+1;
+				}
+				else if (strncasecmp(argv[argi], "--group=", 8) == 0) {
+					testgroups = strchr(argv[argi], '=')+1;
+				}
+				else if (strncasecmp(argv[argi], "--time=", 7) == 0) {
+					fakestarttime = (time_t)atoi(strchr(argv[argi], '=')+1);
+				}
+				else {
+					paramno++;
+					if (paramno == 1) testdur = atoi(argv[argi]);
+					else if (paramno == 2) testcolor = argv[argi];
+					else if (paramno == 3) fakestarttime = (time_t) atoi(argv[argi]);
+				}
+
+				argi++;
+			}
 
 			if ((testhost == NULL) || (testservice == NULL)) {
-				printf("Usage: hobbitd_alert --test HOST SERVICE [duration [color [time]]]\n");
+				printf("Usage: hobbitd_alert --test HOST SERVICE [options]\n");
+				printf("Possible options:\n\t[--duration=SECONDS]\n\t[--color=COLOR]\n\t[--group=GROUPNAME]\n\t[--time=TIMESPEC]\n");
+
 				return 1;
 			}
 
@@ -423,6 +449,7 @@ int main(int argc, char *argv[])
 			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
 			awalk->eventstart = time(NULL) - testdur*60;
+			awalk->groups = (testgroups ? strdup(testgroups) : NULL);
 			awalk->state = A_PAGING;
 			awalk->cookie = 12345;
 			awalk->next = NULL;

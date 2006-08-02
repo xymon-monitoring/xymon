@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.15 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.16 2006-08-02 10:03:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -795,29 +795,40 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	}
 
 	/* alert->groups is a comma-separated list of groups, so it needs some special handling */
-	if (crit && alert->groups && (*(alert->groups)) && (crit->groupspec || crit->exgroupspec)) {
-		char *grouplist = strdup(alert->groups);
+	if (crit && (crit->groupspec || crit->exgroupspec)) {
+		char *grouplist;
 		char *tokptr;
 
+		grouplist = (alert->groups && (*(alert->groups))) ? strdup(alert->groups) : NULL;
 		if (crit->groupspec) {
 			char *onegroup;
 			int iswanted = 0;
 
-			onegroup = strtok_r(grouplist, ",", &tokptr);
-			while (onegroup && !iswanted) {
-				iswanted = (namematch(onegroup, crit->groupspec, crit->groupspecre));
-				onegroup = strtok_r(NULL, ",", &tokptr);
+			if (grouplist) {
+				/* There is a group label on the alert, so it must match */
+				onegroup = strtok_r(grouplist, ",", &tokptr);
+				while (onegroup && !iswanted) {
+					iswanted = (namematch(onegroup, crit->groupspec, crit->groupspecre));
+					onegroup = strtok_r(NULL, ",", &tokptr);
+				}
 			}
 
 			if (!iswanted) {
+				/*
+				 * Either the alert had a group list that didn't match, or
+				 * there was no group list and the rule listed one.
+				 * In both cases, it's a failed match.
+				 */
 				traceprintf("Failed '%s' (group not in include list)\n", cfline);
-				xfree(grouplist);
+				if (grouplist) xfree(grouplist);
 				return 0; 
 			}
 		}
 
-		if (crit->exgroupspec) {
+		if (crit->exgroupspec && grouplist) {
 			char *onegroup;
+
+			/* Excluded groups are only handled when the alert does have a group list */
 
 			strcpy(grouplist, alert->groups); /* Might have been used in the include list */
 			onegroup = strtok_r(grouplist, ",", &tokptr);
@@ -831,7 +842,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 			}
 		}
 
-		xfree(grouplist);
+		if (grouplist) xfree(grouplist);
 	}
 
 	if (crit && crit->pagespec && !namematch(pgname, crit->pagespec, crit->pagespecre)) { 

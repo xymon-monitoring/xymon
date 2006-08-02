@@ -42,16 +42,25 @@ If this option is present, alert messages will include a line with
 caused this message to be sent. This can be useful to track down
 problems with duplicate alerts.
 
-.IP "--test HOST SERVICE [duration [color [time]]]"
+.IP "--test HOST SERVICE [options]
 Shows which alert rules matches the given HOST/SERVICE combination.
 Useful to debug configuration problems, and see what rules are used
 for an alert. 
 
-The "duration" parameter is the duration of the alert in seconds. 
-
-The "color" parameter is the color of the alert. 
-
-The "time" parameter is the time-of-day for the alert, expressed as an
+The possible options are:
+.br
+.BI "--color=COLORNAME"
+The COLORNAME parameter is the color of the alert: red, yellow or purple.
+.br
+.BI "--duration=SECONDS"
+The SECONDS parameter is the duration of the alert in seconds. 
+.br
+.BI "--group=GROUPNAME"
+The GROUPNAME paramater is a groupid string from the hobbit-clients.cfg
+file.
+.br
+.BI "--time=TIMESTRING"
+The TIMESTRING parameter is the time-of-day for the alert, expressed as an
 absolute time in the epoch format (seconds since Jan 1 1970). This is
 easily obtained with the GNU date utility using the "+%s" output format.
 

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.46 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.47 2006-08-02 10:03:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -341,7 +341,7 @@ static char *ftypestr(unsigned int ftype)
 	return "";
 }
 
-static char *grouplist;
+static char *grouplist = NULL;
 void clearalertgroups(void)
 {
 	if (grouplist) xfree(grouplist);
