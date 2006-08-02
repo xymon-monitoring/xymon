@@ -4,14 +4,14 @@
 /* Client backend module for SCO_SV                                           */
 /*                                                                            */
 /* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2006 Charles Goyard                                          */
+/* Copyright (C) 2006 Charles Goyard <cg@fsck.Fr>                             */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.1 2006-08-01 21:36:01 henrik Exp $";
+static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.2 2006-08-02 13:34:12 henrik Exp $";
 
 void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  namelist_t *hinfo, char *sender, time_t timestamp,
@@ -25,7 +25,9 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
         char *psstr;
         char *topstr;
         char *dfstr;
-        char *freestr;
+        char *freememstr;
+	char *memsizestr;
+	char *swapstr;
         char *msgsstr;
         char *netstatstr;
         char *vmstatstr;
@@ -46,7 +48,9 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
         psstr = getdata("ps");
         topstr = getdata("top");
         dfstr = getdata("df");
-        freestr = getdata("free");
+	memsizestr = getdata("memsize");
+        freememstr = getdata("freemem");
+	swapstr = getdata("swap");
         msgsstr = getdata("msgs");
         netstatstr = getdata("netstat");
         ifstatstr = getdata("ifstat");
@@ -65,6 +69,38 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
 	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
+	
+	if(freememstr && memsizestr && swapstr) {
+		long memphystotal, memphysfree, memswaptotal, memswapfree;
+		char *p;
 
+		memphystotal = memphysfree = 0;
+		memphystotal = (atoi(memsizestr) / 1048576);
+		if(sscanf(freememstr, "%*s %ld %ld %*d %*d", &memphysfree, &memswapfree) == 2)
+			memphysfree /= 256; /* comes in 4kb pages */
+		else
+			memphysfree = -1;
+		
+	        memswaptotal = memswapfree = 0;
+                if (swapstr) {
+                        p = strchr(swapstr, '\n'); /* Skip the header line */
+                        while (p) {
+                                long stot, sused, sfree;
+                                char *bol;
+                                
+                                bol = p+1;
+                                p = strchr(bol, '\n'); if (p) *p = '\0';
+
+                                if (sscanf(bol, "%*s %*s %*d %ld %ld", &stot, &sfree) == 2) {
+                                        memswaptotal += stot;
+                                        memswapfree += sfree;
+                                }
+
+                                if (p) *p = '\n';
+                        }
+			memswaptotal /= 2048 ; memswapfree /= 2048;
+                }
+		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
+				   memphystotal, (memphystotal - memphysfree), -1, memswaptotal, (memswaptotal - memswapfree));
+	}
 }
-
