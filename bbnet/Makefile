@@ -76,7 +76,7 @@ contest: contest.c
 	chmod 755 $@
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS)
+	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) contest
 
 
 install: install-bin install-ext install-config install-man
