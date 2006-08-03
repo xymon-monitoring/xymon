@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.12 2006-07-09 21:10:14 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.13 2006-08-03 06:11:57 henrik Exp $";
 
 int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -115,16 +115,18 @@ int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 gotdata:
 			if (*rrdvalues) {
 				int dscount, i;
-				char **dsnames;
+				char **dsnames = NULL;
 
 				setupfn("sendmail.%s.rrd", mailer);
 
 				/* Get the RRD-file dataset count, so we can decide what to do */
 				dscount = rrddatasets(hostname, rrdfn, &dsnames);
 
-				/* Free the dsnames list */
-				for (i=0; (i<dscount); i++) xfree(dsnames[i]);
-				xfree(dsnames);
+				if ((dscount > 0) && dsnames) {
+					/* Free the dsnames list */
+					for (i=0; (i<dscount); i++) xfree(dsnames[i]);
+					xfree(dsnames);
+				}
 
 				if (dscount == 6) {
 					char *p;
