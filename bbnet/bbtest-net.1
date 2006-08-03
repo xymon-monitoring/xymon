@@ -123,6 +123,10 @@ DNS or NIS server is down, bbtest-net can take a very long time
 to run. The --dns-timeout option is effectively disabled when
 using this option.
 
+.IP --dnslog=FILENAME
+Log failed hostname lookups to the file FILENAME. FILENAME should 
+be a full pathname.
+
 .IP --report[=COLUMNNAME]
 With this option, bbtest-net will send a status message with details 
 of how many hosts were processed, how many tests were generated, 

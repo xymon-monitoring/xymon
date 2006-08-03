@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.30 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.31 2006-08-03 06:25:49 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -45,6 +45,7 @@ int dnstimeout        = 30;
 
 static int pending_dns_count = 0;
 int max_dns_per_run = 500;
+FILE *dnsfaillog = NULL;
 
 static void dns_queue_run(ares_channel channel);
 
@@ -108,7 +109,13 @@ static void dns_callback(void *arg, int status, struct hostent *hent)
 		memset(&dnsc->addr, 0, sizeof(dnsc->addr));
 		dbgprintf("DNS lookup failed for %s - status %s (%d)\n", dnsc->name, ares_strerror(status), status);
 		dnsc->failed = 1;
-		if (stdchannelactive) dns_stats_failed++;
+		if (stdchannelactive) {
+			if (dnsfaillog) {
+				fprintf(dnsfaillog, "DNS lookup failed for %s - status %s (%d)\n", 
+					dnsc->name, ares_strerror(status), status);
+			}
+			dns_stats_failed++;
+		}
 	}
 }
 
@@ -163,6 +170,10 @@ void add_host_to_dns_queue(char *hostname)
 				status = ARES_ENOTFOUND;
 				dns_stats_failed++;
 				dbgprintf("gethostbyname() failed with err %d: %s\n", h_errno, hstrerror(h_errno));
+				if (dnsfaillog) {
+					fprintf(dnsfaillog, "Hostname lookup failed for %s - status %s (%d)\n", 
+						hostname, hstrerror(h_errno), h_errno);
+				}
 			}
 			dns_callback(dnsc, status, hent);
 		}

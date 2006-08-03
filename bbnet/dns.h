@@ -11,6 +11,8 @@
 #ifndef __DNS_H__
 #define __DNS_H__
 
+#include <stdio.h>
+
 /* dnslookup values */
 #define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
 #define DNS_ONLY        1	/* DNS only - if it fails, report service down */
@@ -24,6 +26,8 @@ extern int dns_stats_total;
 extern int dns_stats_success;
 extern int dns_stats_failed;
 extern int dns_stats_lookups;
+
+extern FILE *dnsfaillog;
 
 extern void add_host_to_dns_queue(char *hostname);
 extern void add_url_to_dns_queue(char *hostname);

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.241 2006-08-02 14:45:42 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.242 2006-08-03 06:25:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -2027,6 +2027,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			max_dns_per_run = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--dnslog=")) {
+			char *fn = strchr(argv[argi], '=');
+			dnsfaillog = fopen(fn+1, "w");
+		}
 		else if (argnmatch(argv[argi], "--report=") || (strcmp(argv[argi], "--report") == 0)) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
@@ -2152,6 +2156,7 @@ int main(int argc, char *argv[])
 			printf("    --dns-timeout=N             : DNS lookups timeout and fail after N seconds [30]\n");
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
 			printf("    --no-ares                   : Use the system resolver library for hostname lookups\n");
+			printf("    --dnslog=FILENAME           : Log failed hostname lookups to file FILENAME\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
@@ -2503,6 +2508,8 @@ int main(int argc, char *argv[])
 		combo_end();
 	}
 	else show_timestamps(NULL);
+
+	if (dnsfaillog) fclose(dnsfaillog);
 
 	return 0;
 }
