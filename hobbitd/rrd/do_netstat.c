@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.25 2006-08-01 21:32:37 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.26 2006-08-03 10:20:51 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -45,55 +45,6 @@ static char *tcpoutdatabytes = NULL, *tcpoutdatapackets = NULL,
 	    *tcpoutorderbytes = NULL, *tcpoutorderpackets = NULL,
             *tcpretransbytes = NULL, *tcpretranspackets = NULL;
 
-
-static pcre **compile_exprs(char *id, const char **patterns, int count)
-{
-	pcre **result = NULL;
-	int i;
-
-	result = (pcre **)calloc(count, sizeof(pcre *));
-	for (i=0; (i < count); i++) {
-		result[i] = compileregex(patterns[i]);
-		if (!result[i]) {
-			errprintf("Internal error: %s netstat PCRE-compile failed\n", id);
-			for (i=0; (i < count); i++) if (result[i]) pcre_free(result[i]);
-			xfree(result);
-			return NULL;
-		}
-	}
-
-	return result;
-}
-
-static int pickdata(char *buf, pcre *expr, ...)
-{
-	int res, i;
-	int ovector[30];
-	va_list ap;
-	char **ptr;
-	char w[100];
-
-	res = pcre_exec(expr, NULL, buf, strlen(buf), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
-	if (res < 0) return 0;
-
-	va_start(ap, expr);
-
-	for (i=1; (i < res); i++) {
-		*w = '\0';
-		pcre_copy_substring(buf, ovector, res, i, w, sizeof(w));
-		ptr = va_arg(ap, char **);
-		if (*ptr == NULL) {
-			*ptr = strdup(w);
-		}
-		else {
-			errprintf("Internal error: Duplicate match ignored\n");
-		}
-	}
-
-	va_end(ap);
-
-	return 1;
-}
 
 static void prepare_update(char *outp)
 {
@@ -135,20 +86,20 @@ static int handle_pcre_netstat(char *msg, pcre **pcreset, char *outp)
 		else {
 			switch (sect) {
 			  case AT_TCP:
-				if (pickdata(datapart, pcreset[0], &tcpretranspackets, &tcpretransbytes)   ||
-				    pickdata(datapart, pcreset[1], &tcpoutdatapackets, &tcpoutdatabytes)   ||
-				    pickdata(datapart, pcreset[2], &tcpinorderpackets, &tcpinorderbytes)   ||
-				    pickdata(datapart, pcreset[3], &tcpoutorderpackets, &tcpoutorderbytes) ||
-				    pickdata(datapart, pcreset[4], &tcpconnrequests)                       ||
-				    pickdata(datapart, pcreset[5], &tcpconnaccepts)) havedata++;
+				if (pickdata(datapart, pcreset[0],  0, &tcpretranspackets, &tcpretransbytes)   ||
+				    pickdata(datapart, pcreset[1],  0, &tcpoutdatapackets, &tcpoutdatabytes)   ||
+				    pickdata(datapart, pcreset[2],  0, &tcpinorderpackets, &tcpinorderbytes)   ||
+				    pickdata(datapart, pcreset[3],  0, &tcpoutorderpackets, &tcpoutorderbytes) ||
+				    pickdata(datapart, pcreset[4],  0, &tcpconnrequests)                       ||
+				    pickdata(datapart, pcreset[5],  0, &tcpconnaccepts)) havedata++;
 				break;
 
 			  case AT_UDP:
-				if (pickdata(datapart, pcreset[6], &udpreceived)   ||
-				    pickdata(datapart, pcreset[7], &udpsent)       ||
-				    pickdata(datapart, pcreset[8], &udperr1)       ||
-				    pickdata(datapart, pcreset[9], &udperr2)       ||
-				    pickdata(datapart, pcreset[10], &udperr3)) havedata++;
+				if (pickdata(datapart, pcreset[6],  0, &udpreceived)   ||
+				    pickdata(datapart, pcreset[7],  0, &udpsent)       ||
+				    pickdata(datapart, pcreset[8],  0, &udperr1)       ||
+				    pickdata(datapart, pcreset[9],  0, &udperr2)       ||
+				    pickdata(datapart, pcreset[10], 0, &udperr3)) havedata++;
 				break;
 
 			  default:

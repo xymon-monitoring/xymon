@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.7 2006-08-01 21:32:37 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.8 2006-08-03 10:20:51 henrik Exp $";
 
 static char *ifstat_params[] = { "rrdcreate", rrdfn, 
 	                         "DS:bytesSent:DERIVE:600:0:U", 
@@ -20,7 +20,7 @@ static char *ifstat_tpl       = NULL;
 /* eth0   Link encap:                                                 */
 /*        RX bytes: 1829192 (265.8 MiB)  TX bytes: 1827320 (187.7 MiB */
 static const char *ifstat_linux_exprs[] = {
-	"^([a-z]+[0-9]+)\\s",
+	"^([a-z]+[0123456789.:]+|lo)\\s",
 	"^\\s+RX bytes:([0-9]+) .*TX bytes.([0-9]+) "
 };
 
@@ -73,7 +73,7 @@ Bytes: 1966314449                             Bytes: 78793615
 */
 static const char *ifstat_aix_exprs[] = {
 	"^ETHERNET STATISTICS \\(([a-z0-9]+)\\) :",
-	"^Bytes:\\s+(\\d+)\\s+(\\d+)"
+	"^Bytes:\\s+(\\d+)\\s+Bytes:\\s+(\\d+)"
 };
 
 
@@ -176,25 +176,39 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		  case OS_LINUX22:
 		  case OS_LINUX:
 		  case OS_RHEL3:
-			if (pickdata(bol, ifstat_linux_pcres[0], &ifname)) dmatch |= 1;
-			else if (pickdata(bol, ifstat_linux_pcres[1], &rxstr, &txstr)) dmatch |= 6;
+			if (pickdata(bol, ifstat_linux_pcres[0], 1, &ifname)) {
+				/*
+				 * Linux' netif aliases mess up things. 
+				 * Clear everything when we see an interface name.
+				 * But we dont want to track the "lo" interface.
+				 */
+				if (strcmp(ifname, "lo") == 0) {
+					xfree(ifname); ifname = NULL;
+				}
+				else {
+					dmatch = 1;
+					if (rxstr) { xfree(rxstr); rxstr = NULL; }
+					if (txstr) { xfree(txstr); txstr = NULL; }
+				}
+			}
+			else if (pickdata(bol, ifstat_linux_pcres[1], 1, &rxstr, &txstr)) dmatch |= 6;
 			break;
 
 		  case OS_FREEBSD:
-			if (pickdata(bol, ifstat_freebsd_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_freebsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_OPENBSD:
-			if (pickdata(bol, ifstat_openbsd_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_openbsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_NETBSD:
-			if (pickdata(bol, ifstat_netbsd_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_netbsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_SOLARIS: 
-			if (pickdata(bol, ifstat_solaris_pcres[0], &ifname, &txstr)) dmatch |= 1;
-			else if (pickdata(bol, ifstat_solaris_pcres[1], &dummy, &rxstr)) dmatch |= 6;
+			if (pickdata(bol, ifstat_solaris_pcres[0], 0, &ifname, &txstr)) dmatch |= 1;
+			else if (pickdata(bol, ifstat_solaris_pcres[1], 0, &dummy, &rxstr)) dmatch |= 6;
 
 			if (ifname && dummy && (strcmp(ifname, dummy) != 0)) {
 				/* They must match, drop the data */
@@ -205,22 +219,32 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 
 		  case OS_AIX: 
-			if (pickdata(bol, ifstat_aix_pcres[0], &ifname)) dmatch |= 1;
-			else if (pickdata(bol, ifstat_aix_pcres[1], &txstr, &rxstr)) dmatch |= 6;
+			if (pickdata(bol, ifstat_aix_pcres[0], 1, &ifname)) {
+				/* Interface names comes first, so any rx/tx data is discarded */
+				dmatch |= 1;
+				if (rxstr) { xfree(rxstr); rxstr = NULL; }
+				if (txstr) { xfree(txstr); txstr = NULL; }
+			}
+			else if (pickdata(bol, ifstat_aix_pcres[1], 1, &txstr, &rxstr)) dmatch |= 6;
 			break;
 
 		  case OS_HPUX: 
-			if (pickdata(bol, ifstat_hpux_pcres[0], &ifname)) dmatch |= 1;
-			else if (pickdata(bol, ifstat_hpux_pcres[1], &rxstr)) dmatch |= 2;
-			else if (pickdata(bol, ifstat_hpux_pcres[2], &txstr)) dmatch |= 4;
+			if (pickdata(bol, ifstat_hpux_pcres[0], 1, &ifname)) {
+				/* Interface names comes first, so any rx/tx data is discarded */
+				dmatch |= 1;
+				if (rxstr) { xfree(rxstr); rxstr = NULL; }
+				if (txstr) { xfree(txstr); txstr = NULL; }
+			}
+			else if (pickdata(bol, ifstat_hpux_pcres[1], 1, &rxstr)) dmatch |= 2;
+			else if (pickdata(bol, ifstat_hpux_pcres[2], 1, &txstr)) dmatch |= 4;
 			break;
 
 		  case OS_DARWIN:
-			if (pickdata(bol, ifstat_darwin_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_darwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 			
  		  case OS_SCO_SV:
-		        if (pickdata(bol, ifstat_sco_sv_pcres[0], &ifname, &rxstr, &txstr)) dmatch = 7;
+		        if (pickdata(bol, ifstat_sco_sv_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 			
 		  case OS_OSF:

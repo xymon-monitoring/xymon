@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.36 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.37 2006-08-03 10:20:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -224,6 +224,61 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 	return dscount;
 }
 
+
+static pcre **compile_exprs(char *id, const char **patterns, int count)
+{
+	pcre **result = NULL;
+	int i;
+
+	result = (pcre **)calloc(count, sizeof(pcre *));
+	for (i=0; (i < count); i++) {
+		result[i] = compileregex(patterns[i]);
+		if (!result[i]) {
+			errprintf("Internal error: %s pickdata PCRE-compile failed\n", id);
+			for (i=0; (i < count); i++) if (result[i]) pcre_free(result[i]);
+			xfree(result);
+			return NULL;
+		}
+	}
+
+	return result;
+}
+
+static int pickdata(char *buf, pcre *expr, int dupok, ...)
+{
+	int res, i;
+	int ovector[30];
+	va_list ap;
+	char **ptr;
+	char w[100];
+
+	res = pcre_exec(expr, NULL, buf, strlen(buf), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	if (res < 0) return 0;
+
+	va_start(ap, dupok);
+
+	for (i=1; (i < res); i++) {
+		*w = '\0';
+		pcre_copy_substring(buf, ovector, res, i, w, sizeof(w));
+		ptr = va_arg(ap, char **);
+		if (dupok) {
+			if (*ptr) xfree(*ptr);
+			*ptr = strdup(w);
+		}
+		else {
+			if (*ptr == NULL) {
+				*ptr = strdup(w);
+			}
+			else {
+				errprintf("Internal error: Duplicate match ignored\n");
+			}
+		}
+	}
+
+	va_end(ap);
+
+	return 1;
+}
 
 /* Include all of the sub-modules. */
 #include "rrd/do_bbgen.c"
