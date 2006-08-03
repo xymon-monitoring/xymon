@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.80 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.81 2006-08-03 18:59:24 henrik Exp $";
 
 #include "config.h"
 
@@ -419,8 +419,9 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, c
 {
 	int result = 0;
 
-	if (strcmp(onercpt, "0.0.0.0") != 0)
+	if (strcmp(onercpt, "0.0.0.0") != 0) {
 		result = sendtobbd(onercpt, msg, respfd, respstr, fullresponse, timeout);
+	}
 	else if (morercpts) {
 		char *bbdlist, *rcpt;
 		int first = 1;
@@ -473,7 +474,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 	scheduleaction = ((strncmp(msg, "schedule", 8) == 0) && (strlen(msg) > 8));
 
 	/* See if this is a multi-recipient command */
-	i = strcspn(msg, " \t\r\n");
+	i = strspn(msg, "abcdefghijklmnopqrstuvwxyz");
 	msgcmd = (char *)malloc(i+1);
 	strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
 	for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++) ;
