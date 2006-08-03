@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.2 2006-08-02 13:34:12 henrik Exp $";
+static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.3 2006-08-03 09:50:23 henrik Exp $";
 
 void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  namelist_t *hinfo, char *sender, time_t timestamp,
@@ -85,7 +85,7 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
                 if (swapstr) {
                         p = strchr(swapstr, '\n'); /* Skip the header line */
                         while (p) {
-                                long stot, sused, sfree;
+                                long stot, sfree;
                                 char *bol;
                                 
                                 bol = p+1;
