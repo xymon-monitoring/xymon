@@ -79,6 +79,10 @@ if [ "$CMD" = "daily" ]; then
 	cp $RELDIR/include/version.h /tmp/
 	rm -f $RELDIR/include/version.h
 	cat /tmp/version.h | sed -e "s/define VERSION.*/define VERSION \"0.$TSTAMP\"/" >$RELDIR/include/version.h
+	DAYAGO=`date +"%Y%m%d" --date=yesterday`
+	WEEKAGO=`date +"%Y%m%d" --date="7 days ago"`
+	~/hobbit/build/listchanges.sh $DAYAGO >$RELDIR/changelog-yesterday.txt
+	~/hobbit/build/listchanges.sh $WEEKAGO >$RELDIR/changelog-lastweek.txt
 fi
 
 exit 0
