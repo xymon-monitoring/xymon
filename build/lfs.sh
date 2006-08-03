@@ -8,12 +8,12 @@
 		exit 1
 	fi
 
-	if test "`./test-lfs-std 4`" != "1:0"; then
+	if test "`./test-lfs-std 4`" != "4:1:0"; then
 		echo "ERROR: LFS support check failed for standard file support"
 		exit 1
 	fi
 
-	if test "`./test-lfs-lfs 8`" != "1:0"; then
+	if test "`./test-lfs-lfs 8`" != "8:1:0"; then
 		echo "ERROR: LFS support check failed for large file support"
 		exit 1
 	fi
