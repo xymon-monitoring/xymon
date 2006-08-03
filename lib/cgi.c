@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgi.c,v 1.7 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: cgi.c,v 1.8 2006-08-03 05:25:54 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -116,7 +116,7 @@ cgidata_t *cgi_request(void)
 		token = strtok(reqdata, "&");
 
 		while (token) {
-			cgidata_t *newitem = (cgidata_t *)malloc(sizeof(cgidata_t));
+			cgidata_t *newitem = (cgidata_t *)calloc(1, sizeof(cgidata_t));
 			char *val;
 
 			val = strchr(token, '='); 
@@ -127,7 +127,6 @@ cgidata_t *cgi_request(void)
 
 			newitem->name = strdup(token);
 			newitem->value = strdup(val ? val : "");
-			newitem->next = NULL;
 
 			if (!tail) {
 				head = newitem;
@@ -140,12 +139,112 @@ cgidata_t *cgi_request(void)
 			token = strtok(NULL, "&");
 		}
 	}
+	else if ((cgi_method == CGI_POST) || (conttype && (strcasecmp(conttype, "multipart/form-data") == 0))) {
+		char *bol, *eoln, *delim;
+		char eolnchar = '\n';
+		char *currelembegin = NULL, *currelemend = NULL;
+		cgidata_t *newitem = NULL;
+		
+		delim = reqdata;
+		eoln = strchr(delim, '\n'); if (!eoln) return NULL;
+		*eoln = '\0'; delim = strdup(reqdata); *eoln = '\n';
+		if (*(delim + strlen(delim) - 1) == '\r') {
+			eolnchar = '\r';
+			*(delim + strlen(delim) - 1) = '\0';
+		}
+
+		bol = reqdata;
+		do {
+			eoln = strchr(bol, eolnchar); if (eoln) *eoln = '\0';
+			if (strncmp(bol, delim, strlen(delim)) == 0) {
+				if (newitem && currelembegin && (currelemend >= currelembegin)) {
+					/* Finish off the current item */
+					char savech;
+					
+					savech = *currelemend;
+					*currelemend = '\0';
+					newitem->value = strdup(currelembegin);
+					*currelemend = savech;
+					currelembegin = currelemend = NULL;
+				}
+
+				if (strcmp(bol+strlen(delim), "--") != 0) {
+					/* New element */
+					newitem = (cgidata_t *)calloc(1, sizeof(cgidata_t));
+
+					if (!tail) head = newitem; else tail->next = newitem;
+					tail = newitem;
+				}
+				else {
+					/* No more elements, end of input */
+					newitem = NULL;
+					bol = NULL;
+					continue;
+				}
+			}
+			else if (newitem && (strncasecmp(bol, "Content-Disposition:", 20) == 0)) {
+				char *tok;
+
+				tok = strtok(bol, ";\t ");
+				while (tok) {
+					if (strncasecmp(tok, "name=", 5) == 0) {
+						char *name;
+
+						name = tok+5; 
+						if (*name == '\"') {
+							name++;
+							*(name + strlen(name) - 1) = '\0';
+						}
+						newitem->name = strdup(name);
+					}
+					else if (strncasecmp(tok, "filename=", 9) == 0) {
+						char *filename;
+
+						filename = tok+9; 
+						if (*filename == '\"') {
+							filename++;
+							*(filename + strlen(filename) - 1) = '\0';
+						}
+						newitem->filename = strdup(filename);
+					}
+
+					tok = strtok(NULL, ";\t ");
+				}
+			}
+			else if (newitem && (strncasecmp(bol, "Content-Type:", 12) == 0)) {
+			}
+			else if (newitem && !currelembegin && (*bol == '\0')) {
+				/* End of headers for one element */
+				if (eoln) {
+					currelembegin = eoln+1;
+					if ((eolnchar == '\r') && (*currelembegin == '\n')) currelembegin++;
+				}
+
+				currelemend = currelembegin;
+			}
+			else if (newitem && currelembegin) {
+				currelemend = (eoln ? eoln+1 : bol + strlen(bol));
+			}
+
+			if (eoln) {
+				bol = eoln+1;
+				if ((eolnchar == '\r') && (*bol == '\n')) bol++;
+			}
+			else {
+				bol = NULL;
+			}
+		} while (bol && (*bol));
+
+		if (newitem) {
+			if (!newitem->name) newitem->name = "";
+			if (!newitem->value) newitem->value = "";
+		}
+	}
 	else {
 		/* Raw data - return a single record to caller */
-		head = (cgidata_t *)malloc(sizeof(cgidata_t));
+		head = (cgidata_t *)calloc(1, sizeof(cgidata_t));
 		head->name = strdup("");
 		head->value = strdup(reqdata);
-		head->next = NULL;
 	}
 
 	if (reqdata) xfree(reqdata);

@@ -14,6 +14,7 @@
 typedef struct cgidata_t {
 	char *name;
 	char *value;
+	char *filename;
 	struct cgidata_t *next;
 } cgidata_t;
 
