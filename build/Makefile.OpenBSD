@@ -2,9 +2,6 @@
 
 OSDEF = -DBSD
 
-# Definitions needed to enable large-file support (>2GB)
-LFSDEF = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
-
 # NETLIBS: None needed
 NETLIBS =
 
