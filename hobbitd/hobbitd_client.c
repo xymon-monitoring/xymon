@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.96 2006-08-01 21:32:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.97 2006-08-03 15:20:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -939,19 +939,21 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	for (swalk = sections; (swalk); swalk = swalk->next) {
 		int trackit, anyrules;
 		char *sfn = NULL;
+		char *id = NULL;
 
 		if (strncmp(swalk->sname, "file:", 5) == 0) {
 			off_t sz;
 			sfn = swalk->sname+5;
 			sprintf(sectionname, "file:%s", sfn);
-			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
+			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &id, &trackit, &anyrules);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track file sizes */
+				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", sfn, sz);
+				sprintf(msgline, "%s:%lld\n", id, sz);
 #else
-				sprintf(msgline, "%s:%ld\n", sfn, sz);
+				sprintf(msgline, "%s:%ld\n", id, sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -961,13 +963,14 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 			off_t sz;
 			sfn = swalk->sname+8;
 			sprintf(sectionname, "logfile:%s", sfn);
-			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit, &anyrules);
+			onecolor = check_file(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &id, &trackit, &anyrules);
 			if (trackit) {
 				/* Save the size data for later DATA message to track file sizes */
+				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", sfn, sz);
+				sprintf(msgline, "%s:%lld\n", id, sz);
 #else
-				sprintf(msgline, "%s:%ld\n", sfn, sz);
+				sprintf(msgline, "%s:%ld\n", id, sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -982,11 +985,12 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 			unsigned long sz;
 			sfn = swalk->sname+4;
 			sprintf(sectionname, "dir:%s", sfn);
-			onecolor = check_dir(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &trackit);
+			onecolor = check_dir(hinfo, clientclass, sfn, swalk->sdata, sectionname, filesummary, &sz, &id, &trackit);
 
 			if (trackit) {
 				/* Save the size data for later DATA message to track directory sizes */
-				sprintf(msgline, "%s:%lu\n", sfn, sz);
+				if (id == NULL) id = sfn;
+				sprintf(msgline, "%s:%lu\n", id, sz);
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
 			}

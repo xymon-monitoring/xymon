@@ -38,9 +38,11 @@ extern void get_memory_thresholds(namelist_t *hhinfo, char *classname,
 extern int scan_log(namelist_t *hinfo, char *classname, 
 		    char *logname, char *logdata, char *section, strbuffer_t *summarybuf);
 extern int check_file(namelist_t *hinfo, char *classname, 
-		      char *filename, char *filedata, char *section, strbuffer_t *summarybuf, off_t *sz, int *trackit, int *anyrules);
+		      char *filename, char *filedata, char *section, strbuffer_t *summarybuf, off_t *sz, 
+		      char **id, int *trackit, int *anyrules);
 extern int check_dir(namelist_t *hinfo, char *classname, 
-		     char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *sz, int *trackit);
+		     char *filename, char *filedata, char *section, strbuffer_t *summarybuf, unsigned long *sz, 
+		     char **id, int *trackit);
 
 extern int clear_process_counts(namelist_t *hinfo, char *classname);
 extern void add_process_count(char *pname);

@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.48 2006-08-03 11:09:14 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.49 2006-08-03 15:20:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1383,7 +1383,8 @@ int scan_log(namelist_t *hinfo, char *classname,
 
 int check_file(namelist_t *hinfo, char *classname, 
 	       char *filename, char *filedata, char *section, 
-	       strbuffer_t *summarybuf, off_t *filesize, int *trackit, int *anyrules)
+	       strbuffer_t *summarybuf, off_t *filesize, 
+	       char **id, int *trackit, int *anyrules)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1690,6 +1691,7 @@ int check_file(namelist_t *hinfo, char *classname,
 		}
 		if (rwalk->flags & CHK_TRACKIT) {
 			*trackit = (trackit || (ftype == S_IFREG));
+			*id = rwalk->rrdidstr;
 		}
 
 nextcheck:
@@ -1702,7 +1704,8 @@ nextcheck:
 
 int check_dir(namelist_t *hinfo, char *classname, 
 	      char *filename, char *filedata, char *section, 
-	      strbuffer_t *summarybuf, unsigned long *dirsize, int *trackit)
+	      strbuffer_t *summarybuf, unsigned long *dirsize, 
+	      char **id, int *trackit)
 {
 	int result = COL_GREEN;
 	char *hostname, *pagename;
@@ -1770,6 +1773,7 @@ int check_dir(namelist_t *hinfo, char *classname,
 		}
 		if (rwalk->flags & CHK_TRACKIT) {
 			*trackit = 1;
+			*id = rwalk->rrdidstr;
 		}
 
 		if (rulecolor != COL_GREEN) addalertgroup(rwalk->groups);
