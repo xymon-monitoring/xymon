@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.47 2006-08-02 10:03:24 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.48 2006-08-03 11:09:14 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1740,7 +1740,11 @@ int check_dir(namelist_t *hinfo, char *classname,
 	*dirsize = dsize;
 
 	/* Got the data? */
-	if (dsize == 0) return COL_CLEAR;
+	if (dsize == 0) {
+		sprintf(msgline, "Could not determine size of directory %s\n", filename);
+		addtobuffer(summarybuf, msgline);
+		return COL_YELLOW;
+	}
 
 	for (rwalk = getrule(hostname, pagename, classname, C_DIR); (rwalk); rwalk = getrule(NULL, NULL, NULL, C_DIR)) {
 		int rulecolor = COL_GREEN;
