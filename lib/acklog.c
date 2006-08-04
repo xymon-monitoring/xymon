@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.21 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.22 2006-08-04 15:23:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -62,11 +62,12 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	if (stat(acklogfilename, &st) == 0) {
 		if (st.st_size != 0) {
 			/* Assume a log entry is max 150 bytes */
-			if (150*maxcount < st.st_size)
+			if (150*maxcount < st.st_size) {
 				fseeko(acklog, -150*maxcount, SEEK_END);
-			fgets(l, sizeof(l), acklog);
-			if (strchr(l, '\n') == NULL) {
-				errprintf("Oops - couldnt find a newline in acklog\n");
+				fgets(l, sizeof(l), acklog);
+				if (strchr(l, '\n') == NULL) {
+					errprintf("Oops - couldnt find a newline in acklog\n");
+				}
 			}
 		}
 	}
