@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.81 2006-08-03 18:59:24 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.82 2006-08-04 07:00:05 henrik Exp $";
 
 #include "config.h"
 
@@ -417,34 +417,80 @@ retry_connect:
 
 static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
-	int result = 0;
+	int allservers = 1, first = 1, result = BB_OK;
+	char *bbdlist, *rcpt;
 
-	if (strcmp(onercpt, "0.0.0.0") != 0) {
-		result = sendtobbd(onercpt, msg, respfd, respstr, fullresponse, timeout);
+	/*
+	 * Even though this is the "sendtomany" routine, we need to decide if the
+	 * request should go to all servers, or just a single server. The default 
+	 * is to send to all servers - but commands that trigger a response can
+	 * only go to a single server.
+	 *
+	 * "schedule" is special - when scheduling an action there is no response, but 
+	 * when it is the blank "schedule" command there will be a response. So a 
+	 * schedule action goes to all BBDISPLAYS, the blank "schedule" goes to a single
+	 * server.
+	 */
+
+	if (strcmp(onercpt, "0.0.0.0") != 0) 
+		allservers = 0;
+	else if (strncmp(msg, "schedule", 8) == 0)
+		/* See if it's just a blank "schedule" command */
+		allservers = (strcmp(msg, "schedule") != 0);
+	else {
+		char *msgcmd;
+		int i;
+
+		/* See if this is a multi-recipient command */
+		i = strspn(msg, "abcdefghijklmnopqrstuvwxyz");
+		msgcmd = (char *)malloc(i+1);
+		strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
+		for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++) ;
+		xfree(msgcmd);
+
+		allservers = (multircptcmds[i] != NULL);
 	}
-	else if (morercpts) {
-		char *bbdlist, *rcpt;
-		int first = 1;
 
+	if (allservers && !morercpts) {
+		errprintf("No recipients listed! BBDISP was %s, BBDISPLAYS %s\n",
+			  onercpt, textornull(morercpts));
+		return BB_EBADIP;
+	}
+
+	if (strcmp(onercpt, "0.0.0.0") != 0) 
+		bbdlist = strdup(onercpt);
+	else
 		bbdlist = strdup(morercpts);
-		rcpt = strtok(bbdlist, " \t");
-		while (rcpt) {
-			if (first) {
-				result += sendtobbd(rcpt, msg, respfd, respstr, fullresponse, timeout);
-				first = 0;
-			}
-			else {
-				result += sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
-			}
-			rcpt = strtok(NULL, " \t");
+
+	rcpt = strtok(bbdlist, " \t");
+	while (rcpt) {
+		int oneres;
+
+		if (first) {
+			/* We grab the result from the first server */
+			oneres =  sendtobbd(rcpt, msg, respfd, respstr, fullresponse, timeout);
+			if (oneres == BB_OK) first = 0;
+		}
+		else {
+			/* Secondary servers do not yield a response */
+			oneres =  sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
 		}
 
-		xfree(bbdlist);
+		/* Save any error results */
+		if (result == BB_OK) result = oneres;
+
+		/*
+		 * Handle more servers IF we're doing all servers, OR
+		 * we are still at the first one (because the previous
+		 * ones failed).
+		 */
+		if (allservers || first) 
+			rcpt = strtok(NULL, " \t");
+		else 
+			rcpt = NULL;
 	}
-	else {
-		errprintf("No recipients for message - oneaddr=%s, moreaddrs is NULL\n", onercpt);
-		result = 100;
-	}
+
+	xfree(bbdlist);
 
 	return result;
 }
@@ -454,9 +500,6 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 {
 	static char *bbdisp = NULL;
 	int res = 0;
-	int i;
-	int scheduleaction = 0;
-	char *msgcmd;
 
  	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = strdup(xgetenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;
@@ -465,27 +508,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		return BB_EBADIP;
 	}
 
-	/* 
-	 * "schedule" is special - when scheduling an action there is no response, but 
-	 * when it is the blank "schedule" command there will be a response. So a 
-	 * schedule action goes to all BBDISPLAYS, the blank "schedule" goes to a single
-	 * server.
-	 */
-	scheduleaction = ((strncmp(msg, "schedule", 8) == 0) && (strlen(msg) > 8));
-
-	/* See if this is a multi-recipient command */
-	i = strspn(msg, "abcdefghijklmnopqrstuvwxyz");
-	msgcmd = (char *)malloc(i+1);
-	strncpy(msgcmd, msg, i); *(msgcmd+i) = '\0';
-	for (i = 0; (multircptcmds[i] && strcmp(multircptcmds[i], msgcmd)); i++) ;
-	xfree(msgcmd);
-
-	if (scheduleaction || multircptcmds[i]) {
-		res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, respfd, respstr, fullresponse, timeout);
-	}
-	else {
-		res = sendtobbd(recipient, msg, respfd, respstr, fullresponse, timeout);
-	}
+	res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, respfd, respstr, fullresponse, timeout);
 
 	if (res != BB_OK) {
 		char *statustext = "";
