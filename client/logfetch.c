@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.35 2006-07-19 05:42:46 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.36 2006-08-04 15:57:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,6 +27,12 @@ static char rcsid[] = "$Id: logfetch.c,v 1.35 2006-07-19 05:42:46 henrik Exp $";
 #include <regex.h>
 #include <pwd.h>
 #include <grp.h>
+
+/* Some systems do not have the S_ISSOCK macro for stat() */
+#ifdef SCO_SV
+#include <cpio.h>
+#define S_ISSOCK(m)   (((m) & S_IFMT) == C_ISSOCK)
+#endif
 
 #include "libbbgen.h"
 
