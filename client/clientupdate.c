@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientupdate.c,v 1.6 2006-07-05 06:02:00 henrik Exp $";
+static char rcsid[] = "$Id: clientupdate.c,v 1.7 2006-08-04 06:41:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,17 +29,24 @@ static char rcsid[] = "$Id: clientupdate.c,v 1.6 2006-07-05 06:02:00 henrik Exp 
 #define CLIENTVERSIONFILE "etc/clientversion.cfg"
 #define INPROGRESSFILE "tmp/.inprogress.update"
 
+void cleanup(char *inprogressfn, char *selffn)
+{
+	/* Remove temporary- and lock-files */
+	unlink(inprogressfn);
+	if (selffn) unlink(selffn);
+}
 
 int main(int argc, char *argv[])
 {
 	int argi;
 	char *versionfn, *inprogressfn;
 	FILE *versionfd, *tarpipefd;
-	char version[10];
+	char version[1024];
 	char *newversion = NULL;
 	char *newverreq;
 	char *updateparam = NULL;
 	int  removeself = 0;
+	int bbstat = 0;
 
 #ifdef BIG_SECURITY_HOLE
 	/* Immediately drop all root privs, we'll regain them later when needed */
@@ -61,10 +68,12 @@ int main(int argc, char *argv[])
 		p = strchr(version, '\n'); if (p) *p = '\0';
 		fclose(versionfd);
 	}
-	else *version = '\0';
+	else {
+		*version = '\0';
+	}
 
 	if (chdir(xgetenv("BBHOME")) != 0) {
-		printf("Cannot chdir to BBHOME\n");
+		errprintf("Cannot chdir to BBHOME\n");
 		return 1;
 	}
 
@@ -92,12 +101,12 @@ int main(int argc, char *argv[])
 			int cperr;
 
 			if (!updateparam) {
-				printf("clientupdate --reexec called with no update version\n");
+				errprintf("clientupdate --reexec called with no update version\n");
 				return 1;
 			}
 
 			if ( (stat(inprogressfn, &st) == 0) && ((time(NULL) - st.st_mtime) < 3600) ) {
-				printf("Found update in progress or failed update (started %ld minutes ago)\n",
+				errprintf("Found update in progress or failed update (started %ld minutes ago)\n",
 					(long) (time(NULL)-st.st_mtime)/60);
 				return 1;
 			}
@@ -110,11 +119,14 @@ int main(int argc, char *argv[])
 
 			sprintf(tmpfn, "%s/.update.%s.%ld.tmp", 
 				xgetenv("BBTMP"), xgetenv("MACHINEDOTS"), (long)time(NULL));
+
+			dbgprintf("Starting update by copying %s to %s\n", srcfn, tmpfn);
+
 			unlink(tmpfn);	/* To avoid symlink attacks */
 			if (srcfd) { tmpfd = fopen(tmpfn, "w"); cperr = errno; }
 
 			if (!srcfd || !tmpfd) {
-				printf("Cannot copy executable: %s\n", strerror(cperr));
+				errprintf("Cannot copy executable: %s\n", strerror(cperr));
 				return 1;
 			}
 
@@ -140,10 +152,11 @@ int main(int argc, char *argv[])
 #endif
 
 			/* Run the temp. executable */
+			dbgprintf("Running command '%s %s ..remove-self'\n", tmpfn, updateparam);
 			execl(tmpfn, tmpfn, updateparam, "--remove-self", (char *)NULL);
 
 			/* We should never go here */
-			printf("exec() failed to launch update: %s\n", strerror(errno));
+			errprintf("exec() failed to launch update: %s\n", strerror(errno));
 			return 1;
 		}
 
@@ -153,6 +166,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--remove-self") == 0) {
 			removeself = 1;
+		}
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
 		}
 
 		else if (strcmp(argv[argi], "--suid-setup") == 0) {
@@ -174,35 +190,57 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!newversion) return 1;
+	if (!newversion) {
+		errprintf("No new version string!\n");
+		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
+		return 1;
+	}
 
 	/* Update to version "newversion" */
+	dbgprintf("Opening pipe to 'tar'\n");
 	tarpipefd = popen("tar xf -", "w");
 	if (tarpipefd == NULL) {
-		printf("Cannot launch 'tar xf -'\n");
+		errprintf("Cannot launch 'tar xf -': %s\n", strerror(errno));
+		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		return 1;
 	}
 
 	newverreq = (char *)malloc(100+strlen(newversion));
 	sprintf(newverreq, "download %s.tar", newversion);
-	if (sendmessage(newverreq, NULL, tarpipefd, NULL, 1, BBTALK_TIMEOUT) != BB_OK) {
-		printf("Cannot fetch new client tarfile\n");
+	dbgprintf("Sending command to Hobbit: %s\n", newverreq);
+	if ((bbstat = sendmessage(newverreq, NULL, tarpipefd, NULL, 1, BBTALK_TIMEOUT)) != BB_OK) {
+		errprintf("Cannot fetch new client tarfile: Status %d\n", bbstat);
+		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		return 1;
 	}
+	else {
+		dbgprintf("Download command completed OK\n");
+	}
 
-	if (pclose(tarpipefd) != 0) {
-		printf("Upgrade failed, tar reported error status\n");
+	dbgprintf("Closing tar pipe\n");
+	if ((bbstat = pclose(tarpipefd)) != 0) {
+		errprintf("Upgrade failed, tar exited with status %d\n", bbstat);
+		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		return 1;
+	}
+	else {
+		dbgprintf("tar pipe exited with status 0 (OK)\n");
 	}
 
 	/* Create the new version file */
+	dbgprintf("Creating new version file %s with version %s\n", versionfn, newversion);
+	unlink(versionfn);
 	versionfd = fopen(versionfn, "w");
 	if (versionfd) {
 		fprintf(versionfd, "%s", newversion);
 		fclose(versionfd);
 	}
+	else {
+		errprintf("Cannot create version file: %s\n", strerror(errno));
+	}
 
 	/* Make sure these have execute permissions */
+	dbgprintf("Setting execute permissions on hobbitclient.sh and clientupdate tools\n");
 	chmod("bin/hobbitclient.sh", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
 	chmod("bin/clientupdate", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
 
@@ -218,9 +256,8 @@ int main(int argc, char *argv[])
 	drop_root();
 #endif
 
-	/* Remove temporary- and lock-files */
-	unlink(inprogressfn);
-	if (removeself) unlink(argv[0]);
+	dbgprintf("Cleaning up after update\n");
+	cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 
 	/*
 	 * Exec the new client-update utility to fix suid-root permissions on
@@ -229,7 +266,7 @@ int main(int argc, char *argv[])
 	execl("bin/clientupdate", "bin/clientupdate", "--suid-setup", (char *)NULL);
 
 	/* We should never go here */
-	printf("exec() of clientupdate --suid-setup failed: %s\n", strerror(errno));
+	errprintf("exec() of clientupdate --suid-setup failed: %s\n", strerror(errno));
 
 	return 0;
 }
