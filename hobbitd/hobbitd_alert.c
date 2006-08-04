@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.84 2006-08-02 10:03:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.85 2006-08-04 15:24:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -669,18 +669,23 @@ int main(int argc, char *argv[])
 				     hostname, testname, (int)now, (int)nextalert);
 
 			awalk = find_active(hostname, testname);
+
+			if (acklogfd) {
+				int cookie = (awalk ? awalk->cookie : -1);
+				int color  = (awalk ? awalk->color : 0);
+
+				fprintf(acklogfd, "%d\t%d\t%d\t%d\t%s\t%s.%s\t%s\t%s\n",
+					(int)now, cookie, 
+					(int)((nextalert - now) / 60), cookie,
+					"np_filename_not_used", 
+					hostname, testname, 
+					colorname(color),
+					nlencode(restofmsg));
+				fflush(acklogfd);
+			}
+
 			if (awalk && (awalk->state == A_PAGING)) {
 				traceprintf("Record updated\n");
-				if (acklogfd) {
-					fprintf(acklogfd, "%d\t%d\t%d\t%d\t%s\t%s.%s\t%s\t%s\n",
-						(int)now, awalk->cookie, 
-						(int)((nextalert - now) / 60), awalk->cookie,
-						"np_filename_not_used", 
-						hostname, testname, 
-						colorname(awalk->color),
-						nlencode(restofmsg));
-					fflush(acklogfd);
-				}
 				awalk->state = A_ACKED;
 				awalk->nextalerttime = nextalert;
 				if (awalk->ackmessage) xfree(awalk->ackmessage);
