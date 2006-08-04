@@ -1,0 +1,18 @@
+# bbgen compile-time settings for SCO_SV (tested on SCO_SV 5.0.5 i386)
+
+OSDEF = -DSCO_SV
+
+# SCO_SV need this
+NETLIBS = -lsocket -lnsl
+
+# Compile flags for normal build
+CC = gcc
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mailx"
+
