@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.36 2006-08-04 15:57:47 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.37 2006-08-06 15:08:33 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -134,32 +134,42 @@ char *logdata(char *filename, logdef_t *logdef)
 	 * from one run to the next.
 	 */
 	fstat(fileno(fd), &st);
-	if (st.st_size < logdef->lastpos[0]) {
-		/* Logfile shrank - probably it was rotated */
-#ifdef _LARGEFILE_SOURCE
-		fseeko(fd, 0, SEEK_SET);
-#else
-		fseek(fd, 0, SEEK_SET);
-#endif
+	if ((st.st_size < logdef->lastpos[0]) || (st.st_size < logdef->lastpos[6])) {
+		/*
+		 * Logfile shrank - probably it was rotated.
+		 * Start from beginning of file.
+		 */
 		for (i=0; (i < 7); i++) logdef->lastpos[i] = 0;
 	}
-	else {
-		int newfile = 1;
-		for (i=0; (newfile && (i < 7)); i++) newfile = (newfile && (logdef->lastpos[i] == 0));
 
-		if (newfile && ((st.st_size - logdef->lastpos[6]) > MAXCHECK)) {
-			/* If we're starting fresh on a new file, only look at the last MAXCHECK KB */
-			for (i=0; (i < 7); i++) logdef->lastpos[i] = (st.st_size - MAXCHECK);
-		}
-
+	/* Go to the position we were at 6 times ago (corresponds to 30 minutes) */
 #ifdef _LARGEFILE_SOURCE
+	fseeko(fd, logdef->lastpos[6], SEEK_SET);
+	bufsz = st.st_size - ftello(fd);
+	if (bufsz > MAXCHECK) {
+		/*
+		 * Too much data for us. We have to skip some of the old data.
+		 */
+		logdef->lastpos[6] = st.st_size - MAXCHECK;
 		fseeko(fd, logdef->lastpos[6], SEEK_SET);
-#else
-		fseek(fd, logdef->lastpos[6], SEEK_SET);
-#endif
-		for (i=6; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
-		logdef->lastpos[0] = st.st_size;
+		bufsz = st.st_size - ftello(fd);
 	}
+#else
+	fseek(fd, logdef->lastpos[6], SEEK_SET);
+	bufsz = st.st_size - ftell(fd);
+	if (bufsz > MAXCHECK) {
+		/*
+		 * Too much data for us. We have to skip some of the old data.
+		 */
+		logdef->lastpos[6] = st.st_size - MAXCHECK;
+		fseek(fd, logdef->lastpos[6], SEEK_SET);
+		bufsz = st.st_size - ftell(fd);
+	}
+#endif
+
+	/* Shift position markers one down for the next round */
+	for (i=6; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
+	logdef->lastpos[0] = st.st_size;
 
 	/*
 	 * Get our read buffer.
@@ -170,11 +180,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	 *     it still hasnt reached end-of-file status.
 	 *     At least, on some platforms (Solaris, FreeBSD).
 	 */
-#ifdef _LARGEFILE_SOURCE
-	bufsz = st.st_size - ftello(fd) + 1024;
-#else
-	bufsz = st.st_size - ftell(fd) + 1024;
-#endif
+	bufsz += 1023;
 	startpos = buf = (char *)malloc(bufsz + 1);
 	if (buf == NULL) {
 		/* Couldnt allocate the buffer */
@@ -793,6 +799,9 @@ void loadlogstatus(char *statfn)
 #else
 			if (tok) walk->check.logcheck.lastpos[i] = atol(tok);
 #endif
+
+			/* Sanity check */
+			if (walk->check.logcheck.lastpos[i] < 0) walk->check.logcheck.lastpos[i] = 0;
 		}
 	}
 
