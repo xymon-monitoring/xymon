@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.49 2006-08-03 15:20:39 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.50 2006-08-06 21:03:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -250,7 +250,7 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 		if (rwalk->expageexp && namematch(pagename, rwalk->expageexp->pattern, rwalk->expageexp->exp)) continue;
 		if (rwalk->pageexp && !namematch(pagename, rwalk->pageexp->pattern, rwalk->pageexp->exp)) continue;
 		/* All criteria match - add this rule to the list of rules for this host */
-		itm = (ruleset_t *)malloc(sizeof(ruleset_t));
+		itm = (ruleset_t *)calloc(1, sizeof(ruleset_t));
 		itm->rule = rwalk;
 		itm->next = NULL;
 		if (head == NULL) {
@@ -1808,7 +1808,7 @@ static int clear_counts(namelist_t *hinfo, char *classname, ruletype_t ruletype,
 
 	rule = getrule(hostname, pagename, classname, ruletype);
 	while (rule) {
-		mon_proc_t *newitem = (mon_proc_t *)malloc(sizeof(mon_proc_t));
+		mon_proc_t *newitem = (mon_proc_t *)calloc(1, sizeof(mon_proc_t));
 
 		newitem->rule = rule;
 		newitem->next = NULL;
