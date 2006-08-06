@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.97 2006-08-03 15:20:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.98 2006-08-06 20:50:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -633,10 +633,16 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	/* 
 	 * Find where the command is located. We look for the header for the command,
 	 * and calculate the offset from the beginning of the line.
+	 *
+	 * NOTE: The header strings could show up in the normal "ps" output. So
+	 *       we must look for both strings, and pick the one that occurs first
+	 *       in the output.
 	 */
-	p = strstr(psstr, cmdhdr);
-	if ((p == NULL) && (altcmdhdr != NULL)) p = strstr(psstr, altcmdhdr);
-	if (p) cmdofs = (p - psstr);
+	p = strstr(psstr, cmdhdr); if (p) cmdofs = (p - psstr);
+	if (altcmdhdr) {
+		p = strstr(psstr, altcmdhdr);
+		if (p && ((p - psstr) < cmdofs)) cmdofs = (p - psstr);
+	}
 
 	pchecks = clear_process_counts(hinfo, clientclass);
 
@@ -653,11 +659,22 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		bol = psstr;
 		while (bol) {
-			nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+			nl = strchr(bol, '\n'); 
 
-			add_process_count(bol+cmdofs);
+			/* Take care - the ps output line may be shorter than what we look at */
+			if (nl) {
+				*nl = '\0';
 
-			if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+				if ((nl-bol) > cmdofs) add_process_count(bol+cmdofs);
+
+				*nl = '\n';
+				bol = nl+1;
+			}
+			else {
+				if (strlen(bol) > cmdofs) add_process_count(bol+cmdofs);
+
+				bol = NULL;
+			}
 		}
 
 		/* Check the number found for each monitored process */
