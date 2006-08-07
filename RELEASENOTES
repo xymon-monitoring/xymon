@@ -27,12 +27,12 @@ now installs hobbitping suid-root, so root privileges are
 needed for a server installation.
 
 Hobbit 4.2 uses one more IPC communication channel than the 
-previous release (for a total of 8 shared memory segments, and
-8 semaphore sets of 3 semaphores each). If your system has a 
-limited number of IPC shared-memory segments and/or semaphores, 
-you may need to increase this. See the installation document at 
-docs/install.html for some information about this, or refer to 
-your operating system documentation on System V IPC.
+previous release (for a total of 8 shared memory segments totalling
+2336 KB of shared memory, and 8 semaphore sets of 3 semaphores each). 
+If your system has a limited number of IPC shared-memory segments 
+and/or semaphores, you may need to increase this. See the installation 
+document at docs/install.html for some information about this, or 
+refer to your operating system documentation on System V IPC.
 
 
 bbproxy upgrade
@@ -79,7 +79,7 @@ you to acknowledge alerts without having to bother with the
 acknowledgment code. To use this, add the "--no-pin" option to the
 CGI_ACK_OPTS setting.
 
-Four new CGI programs have been added in Hobbit 4.2. To ensure
+Five new CGI programs have been added in Hobbit 4.2. To ensure
 they are invoked correctly, add these lines to your hobbitcgi.cfg file:
 
 # hobbitgraph.cgi options
@@ -90,6 +90,8 @@ CGI_NKVIEW_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
 CGI_NKEDIT_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
 # hobbit-ackinfo.cgi options
 CGI_ACKINFO_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
+#hobbit-ghosts.cgi options
+CGI_GHOSTS_OPT="--env=/home/hobbit/etc/hobbitserver.cfg"
 
 (Replace "/home/hobbit" with the top-level directory of your
 Hobbit server installation).
@@ -120,9 +122,9 @@ a symptom of the real problem, and you need to look at other types
 of data to determine the root cause. To enable this module, two
 changes are needed:
 
-- The [hobbitd] command must have the option "--store-clientlogs=!msgs"
+* The [hobbitd] command must have the option "--store-clientlogs=!msgs"
   added. See the hobbitd(8) man-page for further information.
-- A new [hostdata] section must be added:
+* A new [hostdata] section must be added:
   # "hostdata" stores the Hobbit client messages on disk when some status for a host
   # changes. This lets you access a lot of data collected from a host around the time
   # when a problem occurred. However, it may use a significant amount of disk space
@@ -133,6 +135,23 @@ changes are needed:
          ENVFILE $BBHOME/etc/hobbitserver.cfg
          NEEDS hobbitd
          CMD hobbitd_channel --channel=clichg --log=$BBSERVERLOGS/hostdata.log hobbitd_hostdata
+
+If you want to use the new "hobbitfetch" utility to collect data from
+clients, you must add a [hobbitfetch] section to run the data collector.
+Add this to your hobbitlaunch.cfg file:
+
+  # "hobbitfetch" is used when you have clients that cannot connect to your Hobbit server,
+  # but the Hobbit server can connect to the client. Normally the clients will initiate
+  # a connection to the Hobbit server to deliver the data they collect, but this is
+  # forbidden in some firewall setups. By enabling the hobbitfetch task, hosts that have
+  # the "pulldata" tag in the bb-hosts file will be polled by hobbitfetch for their data.
+  #
+  # NOTE: On the clients you must enable the "msgcache" task, since this is what
+  #       hobbitfetch is talking to.
+  [hobbitfetch]
+         ENVFILE $BBHOME/etc/hobbitserver.cfg
+         CMD $BBHOME/bin/hobbitfetch --server=YOUR.HOBBIT.SERVER.IP --no-daemon --pidfile=$BBSERVERLOGS/hobbitfetch.pid
+         LOGFILE $BBSERVERLOGS/hobbitfetch.log
 
 
 ~hobbit/server/www/menu/menu_items.js
