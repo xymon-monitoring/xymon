@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.242 2006-08-03 06:25:49 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.243 2006-08-07 16:28:22 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1145,7 +1145,7 @@ int start_ping_service(service_t *service)
 	}
 	else {
 		/* parent */
-		char ip[IP_ADDR_STRLEN];
+		char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
 
 		close(pfd[0]);
 		pingcount = 0;
