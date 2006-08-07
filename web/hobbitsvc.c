@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.72 2006-08-06 21:23:42 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.73 2006-08-07 10:05:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -191,6 +191,8 @@ int do_request(void)
 			fd = fopen(logfn, "r");
 			if (fd) {
 				struct stat st;
+				int n;
+
 				fstat(fileno(fd), &st);
 				log = (char *)malloc(st.st_size + 1);
 				n = fread(log, 1, st.st_size, fd);
