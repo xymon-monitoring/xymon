@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.37 2006-08-06 15:08:33 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.38 2006-08-07 15:45:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -432,6 +432,8 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 		fprintf(fd, "ERROR: %s\n", strerror(errno));
 	}
 	else {
+		char *stsizefmt;
+
 		pw = getpwuid(st.st_uid);
 		gr = getgrgid(st.st_gid);
 
@@ -444,11 +446,11 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 		fprintf(fd, "linkcount:%d\n", (int)st.st_nlink);
 		fprintf(fd, "owner:%u (%s)\n", (unsigned int)st.st_uid, (pw ? pw->pw_name : ""));
 		fprintf(fd, "group:%u (%s)\n", (unsigned int)st.st_gid, (gr ? gr->gr_name : ""));
-#ifdef _LARGEFILE_SOURCE
-		fprintf(fd, "size:%lld\n",     (long long int)st.st_size);
-#else
-		fprintf(fd, "size:%ld\n",      (long int)st.st_size);
-#endif
+
+		if (sizeof(st.st_size) == sizeof(long long int)) stsizefmt = "size:%lld\n";
+		else stsizefmt = "size:%ld\n";
+		fprintf(fd, stsizefmt,         st.st_size);
+
 		fprintf(fd, "clock:%u (%s)\n", (unsigned int)now, timestr(now));
 		fprintf(fd, "atime:%u (%s)\n", (unsigned int)st.st_atime, timestr(st.st_atime));
 		fprintf(fd, "ctime:%u (%s)\n", (unsigned int)st.st_ctime, timestr(st.st_ctime));
@@ -818,15 +820,16 @@ void savelogstatus(char *statfn)
 
 	for (walk = checklist; (walk); walk = walk->next) {
 		int i;
+		char *fmt;
 
 		if (walk->checktype != C_LOG) continue;
 
+
+		if (sizeof(walk->check.logcheck.lastpos[i]) == sizeof(long long int)) fmt = ":%lld";
+		else fmt = ":%ld";
+
 		fprintf(fd, "%s", walk->filename);
-#ifdef _LARGEFILE_SOURCE
-		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%lld", walk->check.logcheck.lastpos[i]);
-#else
-		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, ":%ld", walk->check.logcheck.lastpos[i]);
-#endif
+		for (i = 0; (i < POSCOUNT); i++) fprintf(fd, fmt, walk->check.logcheck.lastpos[i]);
 		fprintf(fd, "\n");
 	}
 	fclose(fd);
