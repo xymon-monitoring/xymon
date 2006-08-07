@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit CLIENT
-# $Id: configure.client,v 1.4 2005-10-16 07:33:33 henrik Exp $
+# $Id: configure.client,v 1.5 2006-08-07 15:38:05 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit client"
@@ -53,6 +53,14 @@ then
 	echo ""
 fi
 echo ""
+
+MAKE="$MAKE -s" ./build/lfs.sh
+if test $? -eq 0; then
+	LFS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+else
+	LFS=""
+fi
+echo ""; echo ""
 
 echo "What userid will be running Hobbit [hobbit] ?"
 if test -z "$BBUSER"
@@ -153,6 +161,9 @@ echo "# Username running hobbit"         >>Makefile
 echo "BBUSER = $BBUSER"                  >>Makefile
 echo "# Hobbit server IP-address"        >>Makefile
 echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
+echo "# Large File Support settings"     >>Makefile
+echo "LFSDEF = $LFS"                     >>Makefile
+
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
 then
