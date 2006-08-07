@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.85 2006-08-04 15:24:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.86 2006-08-07 06:19:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
 			namelist_t *hinfo;
 			int testdur = 0;
 			FILE *logfd = NULL;
-			activealerts_t *awalk = NULL;;
+			activealerts_t *awalk = NULL;
 			int paramno = 0;
 
 			argi++; if (argi < argc) testhost = argv[argi];
