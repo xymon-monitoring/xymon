@@ -35,10 +35,12 @@ IPC mechanisms (shared memory, semaphores) - that should be just about anything
 Unix-like you are likely to have.</p>
 
 <h4>Sufficient SYSV IPC ressources on your system</h4>
-<p>Experience shows that some systems need tuning to provide the necessary
-IPC channels that Hobbit uses. Specifically, when installing on Solaris you
-need to increase the "shmseg" kernel parameter from the default 6 to at least 7.
-See <a href="http://www.hswn.dk/hobbiton/2005/08/msg00183.html">http://www.hswn.dk/hobbiton/2005/08/msg00183.html</a> for more information about these issues.</p>
+<p>Hobbit uses 8 shared memory segments, ranging in size from 32 KB to 512 KB (2336 KB
+total) in the default configuration; and 8 sets of 3 semaphores. Experience shows that 
+some systems need tuning to provide the necessary IPC ressources that Hobbit uses. 
+Specifically, when installing on Solaris you must increase the "shmseg" kernel parameter 
+from the default 6 to at least 8. Since other programs on your system may also use shared 
+memory, a higher value may be required.  See <a href="http://www.hswn.dk/hobbiton/2005/08/msg00183.html">http://www.hswn.dk/hobbiton/2005/08/msg00183.html</a> for more information about these issues.</p>
 
 <h4>A webserver</h4>
 <p>Hobbit is designed with a web-based front-end. So you should have a webserver
@@ -51,7 +53,7 @@ You will also need a "make" utility - many systems have one by default, but you 
 <a href="http://directory.fsf.org/make.html">GNU make</a> utility. On some systems,
 this is pre-installed as "gmake" or "gnumake". The configure-script checks this for you.</p>
 
-<p><b>HP-UX users</b> should note that the HP C compiler is known to mis-compile the
+<p><b>HP-UX users</b> should note that the HP-supplied C compiler is known to mis-compile the
 lib/environ.c file, and produces an output file lib/environ.o of length 0 bytes.
 HP-UX users on the hobbit mailing list agree that the default C compiler shipped with
 HP-UX should not be used to compile Hobbit - it is only for re-building the HP-UX kernel.
@@ -112,12 +114,11 @@ in Hobbit, I strongly recommend that you create a dedicated userid for the Hobbi
 programs. This user should <em>not</em> be a member of any other groups on your
 system.</p>
 
-<p>Hobbit will install two programs as <b>setuid-root</b>: <u>hobbitping</u> (only on
-the Hobbit server), and <u>logfetch</u> (on both the Hobbit server and clients).
-Both of these have been written to run with root privileges enabled <u>only</u>
-when needed, i.e. they will drop root privileges immediately after they have
-performed the operation that requires root-privileges (typically, opening a
-file).</p>
+<p>Hobbit will install the <u>hobbitping</u> tool as <b>setuid-root</b>(only on
+the Hobbit server). This program requires root privileges to be able to perform
+network &quot;ping&quot; tests. It will drop root privileges immediately after 
+obtaining the network socket needed for this, and will not run with root
+privileges at all while handling network traffic or doing file I/O. </p>
 
 
 <h2>Building Hobbit</h2>
