@@ -53,7 +53,11 @@ to replace Big Brother.</p>
 <p>BB is implemented mostly as shell-scripts, and performance suffers
 greatly from this. In large networks where you need to monitor
 hundreds or thousands of hosts, processing of the data simply
-cannot keep up.</p></li>
+cannot keep up. Another problem with BB is that it stores all
+status-information in individual files; when you have lots of
+hosts and statuses, the amount of disk I/O triggered by this
+severely limits how many systems you can monitor with one
+BB server.</p></li>
 
 <li>Setting up a full-featured BB server is complicated.<br>
 <p>Big Brother has a huge number of add-ons, available from the
@@ -88,7 +92,7 @@ you have a look at it.</p></li>
 
 <li>Development of Big Brother appears to have stopped.<br>
 <p>At least for the non-commercial (BTF) version, there hasn't
-been any real changes for more than a year.</p></li>
+been any real changes since 2003 (not counting bug-fixes).</p></li>
 </ul>
 
 <p>So in the end, writing something new turned out to be the
@@ -106,10 +110,6 @@ or a replacement for it. Since Hobbit provides all of the functionality
 needed for a systems- and network-monitoring tool, I felt the time
 was right for moving away from the Big Brother relation that was
 present in the &quot;bbgen&quot; name.</p>
-
-<p>All of the tools from bbgen are included in Hobbit. So you
-may continue to use these together with your Big Brother/bbgen
-installation.</p>
 
 <h3>Why did you call it Hobbit ?</h3>
 <p>Choosing a name is <em>hard</em>. I wanted a name that was easy
@@ -129,13 +129,17 @@ All of these characteristics apply well to the Hobbit monitor.
 so I would of course say 'Yes, I think you should'. But in the end 
 it is You who have to deal with the hassle of setting up and learning
 a new system, so if you are comfortable with what Big Brother is
-doing for you now, I am not forcing you to switch.</p>
+doing for you now, I am not forcing you to switch. If you want to 
+see what some of the Hobbit users think about changing to Hobbit,
+check out <a href="http://www.hswn.dk/hobbiton/2006/08/msg00034.html">this thread</a> 
+(continued <a href="http://www.hswn.dk/hobbiton/2006/08/msg00041.html">here</a>) 
+from the Hobbit mailing list archive.</p>
 
 <h3><a name="whoareyou">Who are you, and why do you think you can do a better BB than BB ?</a></h3>
 <p>My name is Henrik Storner. I was born in 1964, and live in 
 Copenhagen, Denmark. I have a M.Sc. in Computer Science from the Univ.
 of Copenhagen, and have been working with computers and Unix systems
-for more than 20 years. I have been developing bits and pieces of Open 
+professionally since 1984. I have been developing bits and pieces of Open 
 Source software for the past 10 years - you'll find my name in the
 <a href="http://www.kernel.org/pub/linux/kernel/CREDITS">Linux kernel CREDITS file</a> - 
 and I am actively involved in the local Linux Users Group 
