@@ -678,21 +678,6 @@ of a traceroute for the host after a failed connectivity
 test. It is only used if running traceroute is made the
 default via the --trace option.
 
-.SH PING TEST OF MODEMBANKS
-.IP "dialup hostname startIP count"
-The "dialup" directive is a tag used to monitor ranges of IP-adresses, 
-e.g. modem-banks or VPN concentrators.  \fBhostname\fR is the label 
-given to the modembank on the Hobbit webpage. \fBstartIP\fR is the 
-lowest IP to test, and \fBcount\fR is the number of IP-adresses 
-including the first one to test.
-
-Hobbit places the modembank information on the page where it is defined. 
-For this to appear correctly, you must make sure that the "dialup" directive is
-not mixed in with normal hosts - the "dialup" directive should appear
-immediately following a "page", "subpage", "subparent" or "group"
-directive.
-
-
 .SH SIMPLE NETWORK TESTS
 These tests perform a simple network test of a service by connecting
 to the port and possibly checking that a banner is shown by the
