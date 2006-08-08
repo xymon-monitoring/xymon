@@ -5,8 +5,8 @@
 This release contains several new programs, enhanced functionality
 and changes to the configuration files.
 
-New Critical Systems View
-=========================
+New Critical Systems View - "NK" tags now deprecated
+====================================================
 The "Critical Systems" view is now built dynamically by a new
 CGI tool, hobbit-nkview. It uses a new configuration file
 separate from the bb-hosts file, which is maintained by the
@@ -17,6 +17,18 @@ hobbit-nkedit CGI.
 The NK tags in the bb-hosts file will only be handled in
 Hobbit 4.x. It is recommended that you begin to move your
 critical systems view to the new hobbit-nkview configuration.
+
+
+Modem-bank testing ("dialup" host definition) does not work
+===========================================================
+Previous versions of Hobbit supported the Big Brother "dialup"
+host definition for pinging a range of IP-adresses, e.g. a
+modem-bank or a pool of IP-adresses handed out by a DHCP server.
+This feature is not supported in Hobbit 4.2, but may re-appear
+in a different form in a later version.
+(Note: This has nothing to do with the "dialup" directive 
+which can be applied to individual hosts, to make them go
+clear when they are offline instead of red or purple).
 
 
 Installation
