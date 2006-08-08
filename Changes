@@ -1,5 +1,5 @@
-Changes from 4.1.2p1 -> 4.2
----------------------------
+Changes from 4.1.2p1 -> 4.2 (10 Aug 2006)
+-----------------------------------------
 New features:
 * A major overhaul of the "Critical Systems" (NK) webpage.
   A new hobbit-nkview CGI has been added, allowing much more
@@ -28,6 +28,11 @@ New features:
   the Hobbit server. See the logfetch(1) man-page for details.
   Apart from size limitations, the logfile data is not filtered
   by the client.
+* Two new tools - hobbitfetch and msgcache - can be used to
+  implement a "pull" style of clients, which may be useful if
+  you have systems that cannot make network connections to the
+  Hobbit server to deliver their data. See the hobbitfetch(8)
+  man-page for details.
 * Disabling a status can now be done until the status goes to
   an OK state.
 * A "bulletin_header" or "bulletin_footer" file can now be created
@@ -55,7 +60,17 @@ New features:
   This is based on code provided by Mirko Saam.
 * The Hobbit clients now report network interface statistics.
   This allows for Hobbit to track network utilisation, like
-  MRTG does.
+  MRTG does. Note that due to limitations in many client 
+  operating systems, and the fact that Hobbit only records
+  network statistics every 5 minutes, this is currently 
+  limited to approximately 100 Mbit/sec interfaces (Fast
+  Ethernet). Gigabit interfaces are not handled correctly
+  and will show up with much smaller bandwidth usage than
+  what they actually do use.
+* When a host status goes critical, any client data from the
+  host is saved. This allows detailed analysis of the host
+  status just prior to a critical event happening, which
+  can be helpful for troubleshooting.
 
 Improvements:
 * All of the core programs have been profiled to identify 
@@ -164,6 +179,19 @@ Other:
   may be useful for sites where documentation embedded in
   the Hobbit webpages is in a different character-set, e.g.
   UTF-8 or Japanese.
+
+
+Changes from 4.1.2p1 -> 4.1.2p2 (02 Aug 2006)
+---------------------------------------------
+Bugfixes:
+* [SECURITY] "config" commands would allow remote reading
+  of any file accessible by the hobbit user.
+* Hosts were showing up twice on alternate pageset pages
+* Several programs would crash if a configuration file 
+  had a newline at exactly 4 KB offset into the file
+* Possible segfault in bbgen due to uninitialised variable.
+* Malformed history files could cause errors in reporting.
+* "query" of a disabled status would report the wrong color.
 
 
 Changes from 4.1.2 -> 4.1.2p1 (10 Nov 2005)
