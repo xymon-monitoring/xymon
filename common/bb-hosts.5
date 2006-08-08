@@ -1174,6 +1174,15 @@ If you have certain tags that you want to apply to all hosts, you can
 define a host name ".default." and put the tags on that host. Note that
 per-host definitions will override the default ones.
 
+\fBNOTE:\fR The ".default." host entry will only accept the following
+tags - others are silently ignored: NOCOLUMNS, COMMENT, DESCR, CLASS, 
+dialup, testip, nobb2, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
+NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, REPORTTIME, WARNPCT, NET, noclear, 
+nosslcert, ssldays, DOWNTIME, depends, noping, noconn, trace, notrace, 
+HIDEHTTP, browser, pulldata. Specifically, note that network tests,
+"badTEST" settings, and alternate pageset relations cannot be listed on 
+the ".default." host.
+
 .SH SENDING SUMMARIES TO REMOTE HOBBIT SERVERS
 .IP "summary ROW.COLUMN IP URL"
 If you have multiple Hobbit servers, the "summary" directive lets you 
