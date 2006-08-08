@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.98 2006-08-06 20:50:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.99 2006-08-08 16:58:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -612,7 +612,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	int pchecks;
 	int cmdofs = -1;
-	char *p;
+	char *p, *eol;
 	char msgline[4096];
 	strbuffer_t *monmsg;
 	static strbuffer_t *countdata = NULL;
@@ -635,13 +635,35 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	 * and calculate the offset from the beginning of the line.
 	 *
 	 * NOTE: The header strings could show up in the normal "ps" output. So
-	 *       we must look for both strings, and pick the one that occurs first
-	 *       in the output.
+	 *       we look for it only in the first line of output.
 	 */
-	p = strstr(psstr, cmdhdr); if (p) cmdofs = (p - psstr);
+	eol = strchr(psstr, '\n'); if (eol) *eol = '\0';
+	dbgprintf("Host %s need heading %s or %s - ps header line reads '%s'\n", 
+		  hostname, cmdhdr, (altcmdhdr ? altcmdhdr : "<none>"), psstr);
+
+	/* Look for the primary key */
+	p = strstr(psstr, cmdhdr);
+	if (p) {
+		cmdofs = (p - psstr);
+		dbgprintf("Host %s: Found pri. heading '%s' at offset %d\n", hostname, cmdhdr, cmdofs);
+	}
+
+	/* If there's a secondary key, look for that also */
 	if (altcmdhdr) {
 		p = strstr(psstr, altcmdhdr);
-		if (p && ((p - psstr) < cmdofs)) cmdofs = (p - psstr);
+		if (p) {
+			dbgprintf("Host %s: Found sec. heading '%s' at offset %d\n", hostname, altcmdhdr, (p - psstr));
+			if ((cmdofs == -1) || ((p - psstr) < cmdofs)) {
+				/* We'll use the secondary key */
+				cmdofs = (p - psstr);
+			}
+		}
+	}
+	if (eol) *eol = '\n';
+
+	if (debug) {
+		if (cmdofs >= 0) dbgprintf("Host %s: Found ps commandline at offset %d\n", hostname, cmdofs);
+		else dbgprintf("Host %s: None of the headings found\n", hostname);
 	}
 
 	pchecks = clear_process_counts(hinfo, clientclass);
