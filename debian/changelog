@@ -1,3 +1,9 @@
+hobbit (4.2.0-1) unstable; urgency=low
+
+  * Hobbit version 4.2: New upstream release.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 09 Aug 2006 21:48:00 +0200
+
 hobbit (4.2-RC-20060712) unstable; urgency=low
 
   * Release candidate of 4.2
