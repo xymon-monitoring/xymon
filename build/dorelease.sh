@@ -36,7 +36,7 @@ case "$CMD" in
 		for f in . $DIRLIST
 		do
 			# Tag all current versions a "Release"
-			rcs -sRel ~hobbit/$f/*
+			rcs -sRel ~/hobbit/$f/*
 			# Tag the current version with the release number
 			rcs -nrel_$RCSTAG: ~/hobbit/$f/RCS/*
 			# Checkout the current version
