@@ -10,10 +10,10 @@
 <p>In this document:</p>
 <ul>
 	<li><a href="#whatishobbit">What is Hobbit ?</a></li>
-	<li><a href="#whoareyou">Who are you ?</a></li>
 	<li><a href="#download">Where can I download Hobbit ?</a></li>
-	<li><a href="#addons">Are there any other sites with Hobbit stuff?</a></li>
 	<li><a href="#mailinglists">Hobbit mailinglists</a></li>
+	<li><a href="#addons">Are there any other sites with Hobbit stuff?</a></li>
+	<li><a href="#whoareyou">Who are you ?</a></li>
 </ul>
 
 <h3><a name="whatishobbit">What is Hobbit ?</a></h3>
@@ -34,47 +34,55 @@ and much more.</p>
 which then form the basis for providing trend graphs showing
 how e.g. webserver response-times vary over time.</p>
 
-
-<h3>This sounds a lot like Big Brother!</h3>
-
 <p>Hobbit started out as a replacement for a small part of Big 
 Brother, and owes a great deal of inspiration to how Big Brother
-works. But Hobbit has grown to become a full scale monitoring
-solution, with features that match or exceed what Big Brother
-can do.</p>
-
-
-<h3>So why Hobbit ?</h3>
-
-<p>There were a number of reasons why I decided to develop something
-to replace Big Brother.</p>
+works. But Hobbit is better than Big Brother in many ways:</p>
 
 <ul>
-<li>Big Brother cannot monitor large networks.<br>
-<p>BB is implemented mostly as shell-scripts, and performance suffers
-greatly from this. In large networks where you need to monitor
+<li>Hobbit can handle monitoring lots of systems.<br>
+<p>Big Brother is implemented mostly as shell-scripts, and performance 
+suffers badly from this. In large networks where you need to monitor
 hundreds or thousands of hosts, processing of the data simply
 cannot keep up. Another problem with BB is that it stores all
 status-information in individual files; when you have lots of
 hosts and statuses, the amount of disk I/O triggered by this
 severely limits how many systems you can monitor with one
-BB server.</p></li>
+BB server.<br>
+Hobbit avoids these performance bottlenecks by
+keeping most of the ever-changing data in memory instead of
+on-disk, and by being implemented in C rather than shell scripts.</p></li>
 
-<li>Setting up a full-featured BB server is complicated.<br>
+<li>Hobbit has a centralized configuration.</br>
+<p>Hobbit keeps <b>all</b> configuration data in one place: On
+the Hobbit server. Big Brother has lots of configuration files
+stored on the individual servers being monitored, so to change
+a setting you may need to logon to several servers and change
+each of them individually.</li>
+
+<li>Hobbit is easy to setup and deploy.<br>
 <p>Big Brother has a huge number of add-ons, available from the
 <a href="http://www.deadcat.net/">www.deadcat.net</a> site. This
 is both a blessing and a curse - you can find anything you need
 as an add-on, but many of the add-ons really ought to have been
-part of the base package.<br>
-E.g. the ability to track historical performance data was essential
-to my use of BB, but this relies on the LARRD add-on which is not
-fully integrated into BB. Other "must-have" features - e.g. the
-ability to check SSL-enabled services and SSL certificates - 
-required more add-ons to the standard BB.<br>
-Maintaining and improving all of these add-ons as new versions 
-were released was getting complex.</p></li>
+part of the base package. E.g. the ability to track historical 
+performance data, simple things such as monitoring SSL-enabled services 
+and SSL certificates, or just something as simple as a GUI for
+temporarily disabling monitoring of a system. Maintaining and improving 
+all of these add-ons gets really complex.<br>
+Hobbit has all of these features built-in so you don't have to worry
+about getting the right add-ons and maintaining them - they come with
+the base package.<br>
+Also, when it comes to deploying the client-side packages, Hobbit
+clients require no configuration changes when you install them on
+multiple hosts. So you can setup a template client installation, 
+and then blindly copy it to all of your hosts.</p></li>
 
-<li>Big Brother is a commercial package - it is not Open Source.<br>
+<li>Hobbit is actively being developed.<br>
+<p>New Hobbit versions appear regularly, usually every 4-6 months. In
+contrast, development of Big Brother appears to have stopped - at least 
+when it comes to the non-commercial (BTF) version.</p></li>
+
+<li>Hobbit is licensed as Open Source - Big Brother is not.<br>
 <p>Although the BB "Better-than-Free" license permits the use of
 BB for non-commercial use without having to buy a license, it
 is still a non-free package in the Open Source sense. I fully
@@ -91,26 +99,18 @@ evolve. If you are curious as to why the trend seems to be that
 more and more software exist in an Open Source version, I suggest
 you have a look at it.</p></li>
 
-<li>Development of Big Brother appears to have stopped.<br>
-<p>At least for the non-commercial (BTF) version, there hasn't
-been any real changes since 2003 (not counting bug-fixes).</p></li>
 </ul>
-
-<p>So in the end, writing something new turned out to be the
-most reasonable way of getting the system I need. And besides,
-it's a lot of fun.</p>
 
 <h3>Didn't you write something called &quot;bbgen&quot; ?</h3>
 <p>Yes I did. The <b>bbgen toolkit</b> was the name I used for
-this collection of tools from 2002 until the end of 2004 (i.e.
-bbgen version 1.x, 2.x and 3.x). With the release of version 4,
-bbgen has evolved into a complete replacement for the server-side
-of Big Brother, and I decided to change the name to avoid any
-misunderstanding about whether this was an add-on to Big Brother,
-or a replacement for it. Since Hobbit provides all of the functionality
-needed for a systems- and network-monitoring tool, I felt the time
-was right for moving away from the Big Brother relation that was
-present in the &quot;bbgen&quot; name.</p>
+Hobbit from 2002 until the end of 2004 (i.e.  bbgen version 1.x, 
+2.x and 3.x). With the release of version 4, it had evolved into a 
+complete replacement for the server-side of Big Brother, and I 
+decided to change the name to avoid any misunderstanding about whether 
+this was an add-on to Big Brother, or a replacement for it. 
+Since Hobbit provides all of the functionality needed for a systems- 
+and network-monitoring tool, I felt the time was right for moving away 
+from the Big Brother relation that was present in the &quot;bbgen&quot; name.</p>
 
 <h3>Why did you call it Hobbit ?</h3>
 <p>Choosing a name is <em>hard</em>. I wanted a name that was easy
@@ -125,7 +125,7 @@ attention to what is happening around them, and are capable of doing
 things that you would not think they could when you first saw them.
 All of these characteristics apply well to the Hobbit monitor.
 
-<h3>My Big Brother setup works just fine. Should I use Hobbit ?</h3>
+<h3>Wht should I use Hobbit ? My Big Brother setup works just fine.</h3>
 <p>It is your choice. I think Hobbit has many improvements over BB,
 so I would of course say 'Yes, I think you should'. But in the end 
 it is You who have to deal with the hassle of setting up and learning
@@ -136,32 +136,30 @@ check out <a href="http://www.hswn.dk/hobbiton/2006/08/msg00034.html">this threa
 (continued <a href="http://www.hswn.dk/hobbiton/2006/08/msg00041.html">here</a>) 
 from the Hobbit mailing list archive.</p>
 
-<h3><a name="whoareyou">Who are you, and why do you think you can do a better BB than BB ?</a></h3>
-<p>My name is Henrik Storner. I was born in 1964, and live in 
-Copenhagen, Denmark. I have a M.Sc. in Computer Science from the Univ.
-of Copenhagen, and have been working with computers and Unix systems
-professionally since 1984. I have been developing bits and pieces of Open 
-Source software for the past 10 years - you'll find my name in the
-<a href="http://www.kernel.org/pub/linux/kernel/CREDITS">Linux kernel CREDITS file</a> - 
-and I am actively involved in the local Linux Users Group 
-<a href="http://www.sslug.dk/">SSLUG</a>, one of the largest LUG's world-wide, 
-where I am a systems administrator for their Internet servers (web, e-mail, news).</p>
-<p>I started using Big Brother around 1998, for monitoring a bunch of
-servers that I was administering. In late 2001 I began working for
-the CSC Managed Web Services division in Copenhagen, and one of my
-first tasks was to improve on the monitoring and SLA reporting. After
-looking at what the standard tools could do, I decided to setup a
-Big Brother system as a demonstration of what could be done. This was
-an immediate success. Systems were rapidly added to the Big Brother
-monitor, and I began to see some of the scalability problems that 
-happen when you go from monitoring 50 servers to monitoring 500.
-So I decided it was time to do something about it, and during the
-autumn and early winter 2002 bbgen was born. The rest is history.</p>
-
-<h3><a name="download">Where can I download Hobbit?</a></h3>
+<h3><a name="download">So where can I download Hobbit?</a></h3>
 <p>The Hobbit sources are available on the 
 <a href="http://www.sourceforge.net/projects/hobbitmon/">project page</a>
 at Sourceforge.</p>
+
+
+<h3><a name="mailinglists">Support and Hobbit mailing lists</a></h3>
+<p>There are two mailing lists about Hobbit:
+<ul>
+	<li>The <b>hobbit@hswn.dk</b> mailing list is for general discussion about Hobbit. 
+	To avoid spam you must be a subscriber to the list before you are allowed to post mesages.
+	To subscribe to the list, send an e-mail to 
+	<a href="mailto:hobbit-subscribe@hswn.dk">hobbit-subscribe@hswn.dk</a>.<br>
+	There is an <a href="http://www.hswn.dk/hobbiton/">archive</a> of the list.</li>
+	<li>The <b>hobbit-announce</b> list is an announcement-list where new versions of Hobbit will
+	be announced. You can subscribe to the list by sending an e-mail to
+	<a href="hobbit-announce-subscribe@hswn.dk">hobbit-announce-subscribe@hswn.dk</a>.</li>
+</ul>
+
+<p>If you have a specific problem with something that is not working,
+first check the <a href="known-issues.html">list of known issues</a>.
+If you don't find the answer there, post a message to the Hobbit
+mailing list - I try to answer questions about Hobbit in that forum.</p>
+
 
 <h3><a name="addons">Are there any other sites with Hobbit stuff?</a></h3>
 <p>Several projects have sprung up around Hobbit:</p>
@@ -190,23 +188,29 @@ at Sourceforge.</p>
 </ul>
 
 
-<h3><a name="mailinglists">Support and Hobbit mailing lists</a></h3>
-<p>There are two mailing lists about Hobbit:
-<ul>
-	<li>The <b>hobbit@hswn.dk</b> mailing list is for general discussion about Hobbit. 
-	To avoid spam you must be a subscriber to the list before you are allowed to post mesages.
-	To subscribe to the list, send an e-mail to 
-	<a href="mailto:hobbit-subscribe@hswn.dk">hobbit-subscribe@hswn.dk</a>.<br>
-	There is an <a href="http://www.hswn.dk/hobbiton/">archive</a> of the list.</li>
-	<li>The <b>hobbit-announce</b> list is an announcement-list where new versions of Hobbit will
-	be announced. You can subscribe to the list by sending an e-mail to
-	<a href="hobbit-announce-subscribe@hswn.dk">hobbit-announce-subscribe@hswn.dk</a>.</li>
-</ul>
-
-<p>If you have a specific problem with something that is not working,
-first check the <a href="known-issues.html">list of known issues</a>.
-If you don't find the answer there, post a message to the Hobbit
-mailing list - I try to answer questions about Hobbit in that forum.</p>
+<h3><a name="whoareyou">Who are you ?</a></h3>
+<p>My name is Henrik Storner. I was born in 1964, and live in 
+Copenhagen, the capital of Denmark which is a small country in the
+northern part of Europe. I have a M.Sc. in Computer Science from the University
+of Copenhagen, and have been working with computers and Unix systems
+professionally since 1984. I have been developing bits and pieces of Open 
+Source software for the past 10 years - you'll find my name in the
+<a href="http://www.kernel.org/pub/linux/kernel/CREDITS">Linux kernel CREDITS file</a> - 
+and I am actively involved in the local Linux Users Group 
+<a href="http://www.sslug.dk/">SSLUG</a>, one of the largest LUG's world-wide, 
+where I am a systems administrator for their Internet servers (web, e-mail, news).</p>
+<p>I started using Big Brother around 1998, for monitoring a bunch of
+servers that I was administering. In late 2001 I began working for
+the CSC Managed Web Services division in Copenhagen, and one of my
+first tasks was to improve on the monitoring and SLA reporting. After
+looking at what the standard tools could do, I decided to setup a
+Big Brother system as a demonstration of what could be done. This was
+an immediate success. Systems were rapidly added to the Big Brother
+monitor, and I began to see some of the scalability problems that 
+happen when you go from monitoring 50 servers to monitoring 500
+(not to mention the 2500 hosts we are currently - 2006 - keeping tabs on).
+So I decided it was time to do something about it, and during the
+autumn and early winter 2002 bbgen was born. The rest is history.</p>
 
 </body>
 </html>
