@@ -35,8 +35,11 @@ case "$CMD" in
 		make distclean
 		for f in . $DIRLIST
 		do
-			rcs -sRel ~hobbit/$f/RCS/*
+			# Tag all current versions a "Release"
+			rcs -sRel ~hobbit/$f/*
+			# Tag the current version with the release number
 			rcs -nrel_$RCSTAG: ~/hobbit/$f/RCS/*
+			# Checkout the current version
 			pushd ~/hobbit/$f && co RCS/* && popd
 		done
 		;;
