@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.99 2006-08-08 16:58:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.100 2006-08-09 08:49:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -875,21 +875,39 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		switch (logcolor) {
 		  case COL_GREEN:
-			sprintf(msgline, "\nNo entries in <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+			if (!localmode) {
+				sprintf(msgline, "\nNo entries in <a href=\"%s\">%s</a>\n", 
+					hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+			}
+			else {
+				sprintf(msgline, "\nNo entries in %s\n", 
+					swalk->sname+5);
+			}
 			addtobuffer(greendata, msgline);
 			break;
 
 		  case COL_YELLOW: 
-			sprintf(msgline, "\n&yellow Warnings in <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+			if (!localmode) {
+				sprintf(msgline, "\n&yellow Warnings in <a href=\"%s\">%s</a>\n", 
+					hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+			}
+			else {
+				sprintf(msgline, "\n&yellow Warnings in %s\n", 
+					swalk->sname+5);
+			}
 			addtobuffer(yellowdata, msgline);
 			addtostrbuffer(yellowdata, logsummary);
 			break;
 
 		  case COL_RED:
-			sprintf(msgline, "\n&red Critical entries in <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+			if (!localmode) {
+				sprintf(msgline, "\n&red Critical entries in <a href=\"%s\">%s</a>\n", 
+					hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+			}
+			else {
+				sprintf(msgline, "\n&red Critical entries in %s\n", 
+					swalk->sname+5);
+			}
 			addtobuffer(reddata, msgline);
 			addtostrbuffer(reddata, logsummary);
 			break;
@@ -936,8 +954,14 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	 */
 	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 	while (swalk) {
-		sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
-			hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+		if (!localmode) {
+			sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
+				hostsvcclienturl(hostname, swalk->sname), swalk->sname+5);
+		}
+		else {
+			sprintf(msgline, "\nFull log %s\n", 
+				swalk->sname+5);
+		}
 		addtostatus(msgline);
 		addtostatus(swalk->sdata);
 		do { swalk=swalk->next; } while (swalk && strncmp(swalk->sname, "msgs:", 5));
@@ -1040,21 +1064,36 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 
 		switch (onecolor) {
 		  case COL_GREEN:
-			sprintf(msgline, "\n&green <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), sfn);
+			if (!localmode) {
+				sprintf(msgline, "\n&green <a href=\"%s\">%s</a>\n", 
+					hostsvcclienturl(hostname, sectionname), sfn);
+			}
+			else {
+				sprintf(msgline, "\n&green %s\n", sfn);
+			}
 			addtobuffer(greendata, msgline);
 			break;
 
 		  case COL_YELLOW: 
-			sprintf(msgline, "\n&yellow <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), sfn);
+			if (!localmode) {
+				sprintf(msgline, "\n&yellow <a href=\"%s\">%s</a>\n", 
+					hostsvcclienturl(hostname, sectionname), sfn);
+			}
+			else {
+				sprintf(msgline, "\n&yellow %s\n", sfn);
+			}
 			addtobuffer(yellowdata, msgline);
 			addtostrbuffer(yellowdata, filesummary);
 			break;
 
 		  case COL_RED:
-			sprintf(msgline, "\n&red <a href=\"%s\">%s</a>\n", 
-				hostsvcclienturl(hostname, sectionname), sfn);
+			if (!localmode) {
+				sprintf(msgline, "\n&red <a href=\"%s\">%s</a>\n", 
+					hostsvcclienturl(hostname, sectionname), sfn);
+			}
+			else {
+				sprintf(msgline, "\n&red %s\n", sfn);
+			}
 			addtobuffer(reddata, msgline);
 			addtostrbuffer(reddata, filesummary);
 			break;
