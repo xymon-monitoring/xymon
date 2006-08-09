@@ -35,7 +35,9 @@ case "$CMD" in
 		make distclean
 		for f in . $DIRLIST
 		do
+			rcs -sRel ~hobbit/$f/RCS/*
 			rcs -nrel_$RCSTAG: ~/hobbit/$f/RCS/*
+			pushd ~/hobbit/$f && co RCS/* && popd
 		done
 		;;
 
