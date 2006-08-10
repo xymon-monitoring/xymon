@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.100 2006-08-09 08:49:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.101 2006-08-10 15:04:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1490,11 +1490,12 @@ void testmode(char *configfn)
 		else if (strcmp(s, "disk") == 0) {
 			unsigned long warnlevel, paniclevel;
 			int abswarn, abspanic, ignored;
+			char *groups;
 
 			printf("Filesystem: "); fflush(stdout);
 			fgets(s, sizeof(s), stdin); clean_instr(s);
 			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
-						   &abswarn, &abspanic, &ignored, NULL);
+						   &abswarn, &abspanic, &ignored, &groups);
 			if (ignored) 
 				printf("Ignored\n");
 			else
@@ -1506,6 +1507,7 @@ void testmode(char *configfn)
 			int pchecks = clear_process_counts(hinfo, clientclass);
 			char *pname, *pid;
 			int pcount, pmin, pmax, pcolor, ptrack;
+			char *groups;
 			FILE *fd;
 
 			if (pchecks == 0) {
@@ -1530,7 +1532,7 @@ void testmode(char *configfn)
 				}
 			} while (*s);
 
-			while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, NULL)) != NULL) {
+			while ((pname = check_process_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, &groups)) != NULL) {
 				printf("Process %s color %s: Count=%d, min=%d, max=%d\n",
 					pname, colorname(pcolor), pcount, pmin, pmax);
 			}
@@ -1576,6 +1578,7 @@ void testmode(char *configfn)
 		else if (strcmp(s, "port") == 0) {
 			char *localstr, *remotestr, *statestr, *p, *pname, *pid;
 			int pcount, pmin, pmax, pcolor, pchecks, ptrack;
+			char *groups;
 			int localcol = 4, remotecol = 5, statecol = 6, portcolor = COL_GREEN;
 
 			pchecks = clear_port_counts(hinfo, clientclass);
@@ -1619,7 +1622,7 @@ void testmode(char *configfn)
 			} while (*s);
 
 			/* Check the number found for each monitored port */
- 			while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, NULL)) != NULL) {
+ 			while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, &groups)) != NULL) {
  				char limtxt[1024];
 			
 				if (pmax == -1) {
