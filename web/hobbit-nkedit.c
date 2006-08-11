@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.13 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.14 2006-08-11 13:07:52 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -238,6 +238,7 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	if (isaclone && isclonewarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", isclonewarning);
 	if (hasclones && hascloneswarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", hascloneswarning);
 
+	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	showform(stdout, "nkedit", "nkedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
 }
 

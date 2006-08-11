@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.33 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.34 2006-08-11 13:07:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
 	if (cgidata == NULL) {
 		/* Present the query form */
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
+		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		showform(stdout, "findhost", "findhost_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 		return 0;
 	}
