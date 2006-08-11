@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgi.c,v 1.8 2006-08-03 05:25:54 henrik Exp $";
+static char rcsid[] = "$Id: cgi.c,v 1.9 2006-08-11 21:04:17 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -250,5 +250,34 @@ cgidata_t *cgi_request(void)
 	if (reqdata) xfree(reqdata);
 
 	return head;
+}
+
+char *get_cookie(char *cookiename)
+{
+	static char *ckdata = NULL;
+	char *tok, *p;
+	int n;
+
+	/* If no cookie, just return NULL */
+	p = getenv("HTTP_COOKIE");
+	if (!p) return NULL;
+
+	if (ckdata) xfree(ckdata);
+	n = strlen(cookiename);
+
+	/* Split the cookie variable into elements, separated by ";" and possible space. */
+	ckdata = strdup(p);
+	tok = strtok(ckdata, "; ");
+	while (tok) {
+		if ((strncmp(cookiename, tok, n) == 0) && (*(tok+n) == '=')) {
+			/* Got it */
+			return (tok+n+1);
+		}
+
+		tok = strtok(NULL, "; ");
+	}
+
+	xfree(ckdata); ckdata = NULL;
+	return NULL;
 }
 

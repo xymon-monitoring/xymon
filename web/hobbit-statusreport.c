@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.7 2006-06-02 20:53:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-statusreport.c,v 1.8 2006-08-11 21:04:17 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 {
 	char *envarea = NULL;
 	char *server = NULL;
-	char *cookie, *p, *pagefilter = "";
+	char *cookie, *pagefilter = "";
 	char *filter = NULL;
 	char *heading = NULL;
 	int  showcolors = 1;
@@ -108,13 +108,10 @@ int main(int argc, char *argv[])
 
 	if (!allhosts) {
       		/* Setup the filter we use for the report */
-		cookie = getenv("HTTP_COOKIE");
-		if (cookie && ((p = strstr(cookie, "pagepath=")) != NULL)) {
-			p += strlen("pagepath=");
-			pagefilter = malloc(strlen(p) + 6);
-			sprintf(pagefilter, "page=%s", p);
-			p = strchr(pagefilter, ';'); if (p) *p = '\0';
-			if (strlen(pagefilter) == 0) { xfree(pagefilter); pagefilter = ""; }
+		cookie = get_cookie("pagepath");
+		if (cookie && *cookie) {
+			pagefilter = malloc(10 + 2*strlen(cookie));
+			sprintf(pagefilter, "page=^%s$|^%s/.+", cookie, cookie);
 		}
 	}
 

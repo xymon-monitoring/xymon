@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.25 2006-08-11 13:07:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.26 2006-08-11 21:04:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -289,21 +289,15 @@ int main(int argc, char *argv[])
 
 	if (cgi_method == CGI_GET) {
 		/*
-		 * It's a GET , so the initial request.
+		 * It's a GET, so the initial request.
 		 * If we have a pagepath cookie, use that as the initial
 		 * host-name filter.
 		 */
-		char *cookie, *p;
+		char *pagepath;
 
 		action = ACT_FILTER;
-
-		cookie = getenv("HTTP_COOKIE");
-		if (obeycookies && cookie && ((p = strstr(cookie, "pagepath=")) != NULL)) {
-			p += strlen("pagepath=");
-			pagepattern = strdup(p);
-			p = strchr(pagepattern, ';'); if (p) *p = '\0';
-			if (strlen(pagepattern) == 0) { xfree(pagepattern); pagepattern = 0; }
-		}
+		pagepath = get_cookie(pagepath);
+		if (obeycookies && pagepath && *pagepath) pagepattern = strdup(pagepath);
 	}
 
 	if (action == ACT_FILTER) {

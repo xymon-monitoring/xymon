@@ -23,6 +23,7 @@ extern enum cgi_method_t cgi_method;
 
 extern char *cgi_error(void);
 extern cgidata_t *cgi_request(void);
+extern char *get_cookie(char *cookiename);
 
 #endif
 

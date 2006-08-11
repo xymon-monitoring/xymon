@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.8 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostgraphs.c,v 1.9 2006-08-11 21:04:17 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -209,24 +209,13 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 	if (action == A_SELECT) {
-                char *cookie, *p;
+                char *cookie;
 
-		cookie = getenv("HTTP_COOKIE");
-		if (cookie && !pagepattern && ((p = strstr(cookie, "pagepath=")) != NULL)) {
-			/* Match ONLY the exact pagename by using start/end of line markers */
-
-			p += strlen("pagepath=");
-			pagepattern = (char *)malloc(strlen(p) + 3);
-			sprintf(pagepattern, "^%s", p);
-			p = strchr(pagepattern, ';'); if (p) *p = '\0';
-
-			if (strlen(pagepattern) == 0) { 
-				xfree(pagepattern); 
-				pagepattern = NULL;
-			}
-			else {
-				strcat(pagepattern, "$");
-			}
+		cookie = get_cookie("pagepath");
+		if (!pagepattern && cookie && *cookie) {
+			/* Match the exact pagename and sub-pages */
+			pagepattern = (char *)malloc(10 + 2*strlen(cookie));
+			sprintf(pagepattern, "^%s$|^%s/.+", cookie, cookie);
 		}
 
 		if (hostpattern || pagepattern || ippattern)

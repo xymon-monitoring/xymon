@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.16 2006-08-11 13:07:52 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.17 2006-08-11 21:04:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -108,30 +108,21 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	if (cgi_method == CGI_POST) {
-		char *cookie, *pagepath, *p;
-		char *endurl;
+		char *pagepath, *cookie, *endurl;
 
-		cookie = getenv("HTTP_COOKIE");
-		if (cookie == NULL) {
-			errormsg("Cookies must be enabled\n");
-			return 1;
+		cookie = get_cookie("pagepath");
+
+		if (cookie && *cookie) {
+			pagepath = strdup(cookie);
 		}
+		else {
+			cookie = get_cookie("host");
 
-		p = strstr(cookie, "pagepath="); if (p) p+= strlen("pagepath=");
-		if ((p == NULL) || (strlen(p) == 0) || (*p == ';')) {
-			p = strstr(cookie, "host="); if (p) p += strlen("host=");
-			if ((p == NULL) || (strlen(p) == 0) || (*p == ';')) {
-				pagepath = "";
-			}
-			else {
-				char *hname;
+			if (cookie && *cookie) {
 				namelist_t *hinfo;
 
-				hname = strdup(p);
-				p = strchr(hname, ';'); if (p) *p = '\0';
-
 				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-				hinfo = hostinfo(hname);
+				hinfo = hostinfo(cookie);
 				if (hinfo) {
 					pagepath = bbh_item(hinfo, BBH_PAGEPATH);
 				}
@@ -139,10 +130,9 @@ int main(int argc, char *argv[])
 					pagepath = "";
 				}
 			}
-		}
-		else {
-			pagepath = strdup(p);
-			p = strchr(pagepath, ';'); if (p) *p = '\0';
+			else {
+				pagepath = "";
+			}
 		}
 
 		endurl = (char *)malloc(strlen(urlprefix) + strlen(pagepath) + 1024);
