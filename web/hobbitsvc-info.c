@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.108 2006-06-27 12:41:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.109 2006-08-14 20:46:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -73,7 +73,7 @@ static int fetch_status(char *hostname)
 	int testsz;
 	int haveuname = 0;
 
-	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client host=%s", hostname);
+	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client host=^%s$", hostname);
 	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) != BB_OK) {
 		return 1;
 	}
