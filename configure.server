@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit server
-# $Id: configure.server,v 1.66 2006-08-06 06:45:59 henrik Exp $
+# $Id: configure.server,v 1.67 2006-08-17 07:47:34 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit"
@@ -316,12 +316,15 @@ echo "must have write-access to a directory below the Hobbit"
 echo "top-level directory. I can set this up if you tell me"
 echo "what group-ID your webserver runs with. This is typically"
 echo "'nobody' or 'apache' or 'www-data'"
-echo "If you dont know, just hit ENTER and we will handle it later."
 echo ""
-echo "What group-ID does your webserver use ?"
+echo "What group-ID does your webserver use [nobody] ?"
 if test -z "$HTTPDGID"
 then
 	read HTTPDGID
+fi
+if test -z "$HTTPDGID"
+then
+	HTTPDGID="nobody"
 fi
 echo ""; echo ""
 
