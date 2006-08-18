@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.51 2006-05-25 14:55:41 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.52 2006-08-18 12:13:17 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -358,7 +358,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		xfree(multikey);
 
 		fprintf(output, "<!-- linecount=%d -->\n", linecount);
-		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK));
+		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK));
 	}
 
 	if (histlocation == HIST_BOTTOM) {

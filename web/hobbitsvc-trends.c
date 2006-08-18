@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.69 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-trends.c,v 1.70 2006-08-18 12:13:17 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -125,7 +125,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 	/* If no rrdgraphs definition, include all with default links */
 	if (hostrrdgraphs == NULL) {
 		dbgprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
-		return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, 
+		return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta);
 	}
 
@@ -141,7 +141,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 			dbgprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, 
+			return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 						 HG_WITH_STALE_RRDS, wantmeta);
 		}
 		else {
@@ -193,7 +193,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 			myrrd->gdef->maxgraphs = 0;
 			myrrd->count = rrd->count;
 			myrrd->next = NULL;
-			partlink = hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, myrrd->gdef, myrrd->count, 
+			partlink = hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
 						     HG_WITH_STALE_RRDS, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
@@ -215,7 +215,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 	}
 	else {
 		/* It is included with the default graph */
-		return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, rrd->gdef, rrd->count, 
+		return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta);
 	}
 

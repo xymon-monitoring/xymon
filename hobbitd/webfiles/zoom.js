@@ -601,6 +601,7 @@ function onMouseUpEvent(e) {
   var idxCount =  gUrlObj.getUrlParameterValue("count");
   var graphWidth = gUrlObj.getUrlParameterValue("graph_width");
   var graphHeight = gUrlObj.getUrlParameterValue("graph_height");
+  var bgColor = gUrlObj.getUrlParameterValue("color");
 
   if (firstIdx != "") {
      idxStr = "&first=" + firstIdx;
@@ -609,7 +610,7 @@ function onMouseUpEvent(e) {
      countStr = "&count=" + idxCount; 
   }
 
-  open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth, "_self");
+  open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor, "_self");
  }
 
  if ((gMouseObj.leftButtonPressed()) && (gMouseObj.dragging)) {
@@ -655,6 +656,7 @@ function onMouseUpEvent(e) {
    var idxCount =  gUrlObj.getUrlParameterValue("count");
    var graphWidth = gUrlObj.getUrlParameterValue("graph_width");
    var graphHeight = gUrlObj.getUrlParameterValue("graph_height");
+   var bgColor = gUrlObj.getUrlParameterValue("color");
 
    if (firstIdx != "") {
       idxStr = "&first=" + firstIdx;
@@ -663,7 +665,7 @@ function onMouseUpEvent(e) {
       countStr = "&count=" + idxCount; 
    }
 
-   open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth, "_self");
+   open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor, "_self");
   }
  }
 }

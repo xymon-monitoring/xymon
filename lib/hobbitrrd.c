@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.40 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.41 2006-08-18 12:13:17 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -194,7 +194,7 @@ hobbitgraph_t *find_hobbit_graph(char *rrdname)
 }
 
 
-static char *hobbit_graph_text(char *hostname, char *dispname, char *service, 
+static char *hobbit_graph_text(char *hostname, char *dispname, char *service, int bgcolor,
 			      hobbitgraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt)
 {
 	static char *rrdurl = NULL;
@@ -273,6 +273,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service,
 			strcat(svcurl, urlencode(dispname ? dispname : hostname));
 
 			if (nostale == HG_WITHOUT_STALE_RRDS) strcat(svcurl, "&amp;nostale");
+			if (bgcolor != -1) sprintf(svcurl+strlen(svcurl), "&amp;color=%s", colorname(bgcolor));
 
 			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
@@ -294,12 +295,12 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service,
 	return rrdurl;
 }
 
-char *hobbit_graph_data(char *hostname, char *dispname, char *service, 
+char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 			hobbitgraph_t *graphdef, int itemcount,
 			hg_stale_rrds_t nostale, hg_link_t wantmeta)
 {
 	return hobbit_graph_text(hostname, dispname, 
-				 service, graphdef, 
+				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
 				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt));
 }
