@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.19 2006-08-15 05:40:26 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.20 2006-08-19 08:18:56 henrik Exp $
 
 echo "[date]"
 date
@@ -54,14 +54,13 @@ echo "[ifstat]"
 echo "[ps]"
 ps -A -o pid,ppid,user,stime,s,pri,pcpu,time,pmem,rss,vsz,args
 
-# $TOP must be set, the install utility should do that for us if it exists.
-if test "$TOP" != ""
+# If TOP is defined, then use it. If not, fall back to the Solaris prstat command.
+echo "[top]"
+if test "$TOP" != "" -a -x "$TOP"
 then
-    if test -x "$TOP"
-    then
-        echo "[top]"
-        $TOP -b 20
-    fi
+	"$TOP" -b 20
+else
+	prstat -can 20 1 1
 fi
 
 # vmstat and iostat (iostat -d provides a cpu utilisation with I/O wait number)
