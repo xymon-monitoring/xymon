@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.17 2006-08-14 20:46:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.18 2006-08-19 06:25:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,6 +45,8 @@ static char *pingplus = "conn=";
 static char *coldelim = ";";
 static coltext_t *chead = NULL;
 static int ccount = 0;
+static int nkonly = 0;
+static int newnkconfig = 1;
 
 void errormsg(char *msg)
 {
@@ -131,6 +133,39 @@ static void print_disklist(char *hostname)
 	closedir(d);
 }
 
+char *nkval(char *hname, char *tname, char *nkalerts)
+{
+	static char *result = NULL;
+
+	if (result) xfree(result);
+
+	if (newnkconfig) {
+		char *key;
+		nkconf_t *nkrec;
+
+		key = (char *)malloc(strlen(hname) + strlen(tname) + 2);
+		sprintf(key, "%s|%s", hname, tname);
+		nkrec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
+		if (!nkrec) {
+			result = strdup("No");
+		}
+		else {
+			char *tspec;
+
+			tspec = (nkrec->nktime ? timespec_text(nkrec->nktime) : "24x7");
+			result = (char *)malloc(strlen(tspec) + 30);
+			sprintf(result, "%s&nbsp;prio&nbsp;%d", tspec, nkrec->priority);
+		}
+		xfree(key);
+	}
+	else {
+		result = strdup((checkalert(nkalerts, tname) ? "Yes" : "No"));
+	}
+
+	return result;
+}
+
+
 static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 {
 	int testi, rowcount, netcount;
@@ -157,6 +192,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	comment = bbh_item(hinfo, BBH_COMMENT);
 	description = bbh_item(hinfo, BBH_DESCRIPTION); 
 	net = bbh_item(hinfo, BBH_NET);
+	nkalerts = bbh_item(hinfo, BBH_NK);
 	nktime = bbh_item(hinfo, BBH_NKTIME); if (!nktime) nktime = "24x7"; else nktime = strdup(timespec_text(nktime));
 	downtime = bbh_item(hinfo, BBH_DOWNTIME); if (downtime) downtime = strdup(timespec_text(downtime));
 	reporttime = bbh_item(hinfo, BBH_REPORTTIME); if (!reporttime) reporttime = "24x7"; else reporttime = strdup(timespec_text(reporttime));
@@ -166,7 +202,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	if (dispname || clientalias) rowcount++;
 	if (comment) rowcount++;
 	if (description) rowcount++;
-	if (nktime) rowcount++;
+	if (!newnkconfig && nktime) rowcount++;
 	if (downtime) rowcount++;
 	if (reporttime) rowcount++;
 
@@ -185,12 +221,10 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	if (pagepathtitle) fprintf(stdout, "<tr><td>Monitoring location: %s</td></tr>\n", pagepathtitle);
 	if (comment) fprintf(stdout, "<tr><td>Comment: %s</td></tr>\n", comment);
 	if (description) fprintf(stdout, "<tr><td>Description: %s</td></tr>\n", description);
-	if (nktime) fprintf(stdout, "<tr><td>NK monitoring period: %s</td></tr>\n", nktime);
+	if (!newnkconfig && nktime) fprintf(stdout, "<tr><td>NK monitoring period: %s</td></tr>\n", nktime);
 	if (downtime) fprintf(stdout, "<tr><td>Planned downtime: %s</td></tr>\n", downtime);
 	if (reporttime) fprintf(stdout, "<tr><td>SLA Reporting Period: %s</td></tr>\n", reporttime);
 
-
-	nkalerts = bbh_item(hinfo, BBH_NK);
 
 	/* Build a list of the network tests */
 	itm = bbh_item_walk(hinfo);
@@ -344,7 +378,7 @@ addtolist:
 		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
 		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
-		fprintf(stdout, "<td valign=top>%s</td>", (checkalert(nkalerts, testnames[testi]->name) ? "Yes" : "No"));
+		fprintf(stdout, "<td valign=top>%s</td>", nkval(host->hostname, testnames[testi]->name, nkalerts));
 
 		fprintf(stdout, "<td valign=top>");
 		if (twalk->b1 || twalk->b2 || twalk->b3) {
@@ -384,7 +418,7 @@ addtolist:
 		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
 		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
-		fprintf(stdout, "<td valign=top>%s</td>", (checkalert(nkalerts, testnames[testi]->name) ? "Yes" : "No"));
+		fprintf(stdout, "<td valign=top>%s</td>", nkval(host->hostname, testnames[testi]->name, nkalerts));
 		fprintf(stdout, "<td valign=top>-/-/-</td>");
 
 		/* Make up some default configuration data */
@@ -627,9 +661,18 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			coldelim = strdup(p+1);
 		}
+		else if (strcmp(argv[argi], "--critical") == 0) {
+			nkonly = 1;
+		}
+		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
+			newnkconfig = 0;
+		}
 	}
 
 	redirect_cgilog("hobbit-confreport");
+
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_nkconfig(NULL);
 
 	/* Setup the filter we use for the report */
 	cookie = get_cookie("pagepath"); if (cookie && *cookie) pagepattern = strdup(cookie);
@@ -689,12 +732,20 @@ int main(int argc, char *argv[])
 	nexthost = respbuf;
 	do {
 		char *hname, *tname, *eoln;
+		int wanted = 1;
 
 		eoln = strchr(nexthost, '\n'); if (eoln) *eoln = '\0';
 		hname = nexthost;
 		tname = strchr(nexthost, '|'); if (tname) { *tname = '\0'; tname++; }
 
-		if (hname && tname && strcmp(hname, "summary") && strcmp(tname, xgetenv("INFOCOLUMN")) && strcmp(tname, xgetenv("TRENDSCOLUMN"))) {
+		if (nkonly) {
+			namelist_t *hinfo = hostinfo(hname);
+			char *nkalerts = bbh_item(hinfo, BBH_NK);
+
+			if (!nkalerts || (strcmp(nkval(hname, tname, nkalerts), "No") == 0)) wanted = 0;
+		}
+
+		if (wanted && hname && tname && strcmp(hname, "summary") && strcmp(tname, xgetenv("INFOCOLUMN")) && strcmp(tname, xgetenv("TRENDSCOLUMN"))) {
 			htnames_t *newitem = (htnames_t *)malloc(sizeof(htnames_t));
 
 			for (hwalk = hosthead; (hwalk && strcmp(hwalk->hostname, hname)); hwalk = hwalk->next);
@@ -729,7 +780,6 @@ int main(int argc, char *argv[])
 	qsort(&allhosts[0], hostcount, sizeof(hostlist_t **), host_compare);
 
 	/* Get the static info */
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	load_all_links();
 	init_tcp_services();
 	pingcolumn = xgetenv("PINGCOLUMN");
@@ -756,6 +806,9 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "%s ", allhosts[hosti]->hostname);
 	}
 	fprintf(stdout, "</td></tr>\n");
+	if (nkonly) {
+		fprintf(stdout, "<tr><th valign=top align=left>Filter</th><td>Only data for the &quot;Critical Systems&quot; view reported</td></tr>\n");
+	}
 	fprintf(stdout, "</table>\n");
 
 	headfoot(stdout, "confreport", "", "front", COL_BLUE);
