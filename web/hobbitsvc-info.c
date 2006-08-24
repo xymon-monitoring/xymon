@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.109 2006-08-14 20:46:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.110 2006-08-24 13:43:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -113,7 +113,7 @@ static int fetch_status(char *hostname)
 
 	/* Sort them so the display looks prettier */
 	qsort(&tnames[0], testcount, sizeof(hinf_t), test_name_compare);
-	xfree(statuslist); statuslist = NULL;
+	if (statuslist) xfree(statuslist); statuslist = NULL;
 
 
 	sprintf(hobbitcmd, "schedule");
@@ -544,7 +544,7 @@ char *generate_info(char *hostname)
 	if (strcmp(val, "0.0.0.0") == 0) {
 		struct in_addr addr;
 		struct hostent *hent;
-		static char hostip[IP_ADDR_STRLEN];
+		static char hostip[IP_ADDR_STRLEN + 20];
 
 		hent = gethostbyname(hostname);
 		if (hent) {
