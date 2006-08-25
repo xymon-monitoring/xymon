@@ -140,6 +140,9 @@ typedef struct state_t {
 	struct state_t	*next;
 } state_t;
 
+/* OSX has a built-in "host_t" type. */
+#define host_t bbgen_host_t
+
 typedef struct host_t {
 	char	*hostname;
 	char	*displayname;
