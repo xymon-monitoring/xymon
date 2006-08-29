@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: cgi.c,v 1.9 2006-08-11 21:04:17 henrik Exp $";
+static char rcsid[] = "$Id: cgi.c,v 1.10 2006-08-29 12:09:35 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -139,7 +139,7 @@ cgidata_t *cgi_request(void)
 			token = strtok(NULL, "&");
 		}
 	}
-	else if ((cgi_method == CGI_POST) || (conttype && (strcasecmp(conttype, "multipart/form-data") == 0))) {
+	else if ((cgi_method == CGI_POST) && (conttype && (strcasecmp(conttype, "multipart/form-data") == 0))) {
 		char *bol, *eoln, *delim;
 		char eolnchar = '\n';
 		char *currelembegin = NULL, *currelemend = NULL;
