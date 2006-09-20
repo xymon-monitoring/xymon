@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.8 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.9 2006-09-20 20:32:30 henrik Exp $";
 
 #include "config.h"
 
@@ -440,7 +440,9 @@ int main(int argc, char *argv[])
 			freestrbuffer(zombie->msgbuf);
 			xfree(zombie);
 		}
-		if (!chead) ctail = NULL;
+		ctail = chead;
+		if (ctail) { while (ctail->next) ctail = ctail->next; }
+
 
 		/* Remove expired messages */
 		qwalk = qhead; qprev = NULL;
