@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-aix.sh,v 1.14 2006-07-05 05:52:22 henrik Exp $
+# $Id: hobbitclient-aix.sh,v 1.15 2006-09-27 08:12:33 henrik Exp $
 
 echo "[date]"
 date
@@ -36,7 +36,7 @@ lsps -s
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
-netstat -r
+netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ports]"
