@@ -3,7 +3,7 @@
 
 BBGENLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o htmllog.o ipaccess.o loadalerts.o loadhosts.o loadnkconf.o links.o matching.o md5.o memory.o misc.o netservices.o rbtr.o reportlog.o rmd160c.o sendmsg.o sha1.o sig.o stackio.o strfunc.o suid.o timefunc.o timing.o url.o
 
-CLIENTLIBOBJS = osdefs.o cgiurls.o color.o digest.o encoding.o environ-client.o errormsg.o ipaccess.o loadhosts.o md5.o memory.o misc.o rbtr.o rmd160c.o sendmsg.o sha1.o sig.o stackio.o strfunc.o suid.o timefunc.o
+CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o digest.o encoding.o environ-client.o errormsg.o ipaccess.o loadhosts.o md5.o memory.o misc.o rbtr.o rmd160c.o sendmsg.o sha1.o sig.o stackio.o strfunc.o suid.o timefunc-client.o
 ifeq ($(LOCALCLIENT),yes)
 	CLIENTLIBOBJS += matching.o
 endif
@@ -52,6 +52,12 @@ environ.o: environ.c
 
 environ-client.o: environ.c
 	$(CC) $(CFLAGS) -DBBTOPDIR=\"$(BBTOPDIR)\" -DBBLOGDIR=\"$(BBLOGDIR)\" -DBBHOSTNAME=\"$(BBHOSTNAME)\" -DBBHOSTIP=\"$(BBHOSTIP)\" -DBBHOSTOS=\"$(BBHOSTOS)\" -DBUILD_HOME=\"$(BBTOPDIR)/client\" -c -o $@ environ.c
+
+color-client.o: color.c
+	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
+
+timefunc-client.o: timefunc.c
+	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
 loadhosts: loadhosts.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libbbgen.a

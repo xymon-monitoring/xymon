@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: color.c,v 1.12 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: color.c,v 1.13 2006-10-01 11:48:57 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -111,6 +111,7 @@ char *dotgiffilename(int color, int acked, int oldage)
 	return filename;
 }
 
+#ifndef CLIENTONLY
 int colorset(char *colspec, int excludeset)
 {
 	char *cspeccopy = strdup(colspec);
@@ -131,4 +132,5 @@ int colorset(char *colspec, int excludeset)
 	ac = (ac & ~excludeset);
 	return ac;
 }
+#endif
 
