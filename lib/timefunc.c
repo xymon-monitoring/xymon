@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.31 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.32 2006-10-01 11:47:54 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -245,6 +245,7 @@ int within_sla(char *timespec, int defresult)
 	return found;
 }
 
+#ifndef CLIENTONLY
 char *check_downtime(char *hostname, char *testname)
 {
 	namelist_t *hinfo = hostinfo(hostname);
@@ -300,6 +301,7 @@ char *check_downtime(char *hostname, char *testname)
 
 	return NULL;
 }
+#endif
 
 int periodcoversnow(char *tag)
 {
@@ -415,20 +417,30 @@ int durationvalue(char *dur)
 	 */
 
 	int result = 0;
-	char *p;
-	char modifier;
+	char *startofval;
 
-	p = dur + strspn(dur, "0123456789");
-	modifier = *p;
-	*p = '\0';
-	result = atoi(dur);
-	*p = modifier;
+	startofval = dur;
 
-	switch (modifier) {
-	  case 'm': break;			/* minutes */
-	  case 'h': result *= 60; break;	/* hours */
-	  case 'd': result *= 1440; break;	/* days */
-	  case 'w': result *= 10080; break;	/* weeks */
+	while (startofval && (isdigit((int)*startofval))) {
+		char *p;
+		char modifier;
+		int oneval = 0;
+
+		p = startofval + strspn(startofval, "0123456789");
+		modifier = *p;
+		*p = '\0';
+		oneval = atoi(startofval);
+		*p = modifier;
+
+		switch (modifier) {
+		  case 'm': break;			/* minutes */
+		  case 'h': oneval *= 60; break;	/* hours */
+		  case 'd': oneval *= 1440; break;	/* days */
+		  case 'w': oneval *= 10080; break;	/* weeks */
+		}
+
+		result += oneval;
+		startofval = ((*p) ? p+1 : NULL);
 	}
 
 	return result;
