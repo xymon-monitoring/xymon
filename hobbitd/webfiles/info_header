@@ -20,6 +20,15 @@ function setcheck(field,val) {
         else
                 field.checked = val;
 }
+
+function mark4Disable(services) {
+	for(i=0; i<document.disableform.disabletest.length; i++) {
+		if (services.indexOf(',' + document.disableform.disabletest.options[i].value + ',') > -1) {
+			document.disableform.disabletest.options[i].selected = !document.disableform.disabletest.options[i].selected;
+		}
+	}
+}
+
 </script>
 
 <script language="JavaScript1.2" type="text/javascript">
