@@ -17,6 +17,7 @@
        </TD>
        <TD ALIGN=CENTER>
           <SELECT NAME="MINCOLOR">
+	    <OPTION VALUE="purple" &SELECT_MINCOLOR_PURPLE>Red+Yellow+Purple
 	    <OPTION VALUE="yellow" &SELECT_MINCOLOR_YELLOW>Red+Yellow
 	    <OPTION VALUE="red"    &SELECT_MINCOLOR_RED>Red only
 	  </SELECT>
