@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.110 2006-08-24 13:43:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.111 2006-10-01 08:55:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -266,7 +266,18 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<td rowspan=2><select multiple size=\"15\" name=\"disabletest\">\n");
 	addtobuffer(buf, "<option value=\"*\">ALL</option>\n");
 	for (i=0; (i < testcount); i++) {
-		sprintf(l, "<option value=\"%s\">%s</option>\n", tnames[i].name, tnames[i].name);
+		char *colstyle;
+		switch (tnames[i].color) {
+		  case COL_RED:	   colstyle = "color: red"; break;
+		  case COL_YELLOW: colstyle = "color: #FFDE0F"; break;
+		  case COL_GREEN:  colstyle = "color: green"; break;
+		  case COL_BLUE:   colstyle = "color: blue;"; break;
+		  case COL_PURPLE: colstyle = "color: fuchsia;"; break;
+		  default:         colstyle = "color: black;"; break;
+		}
+
+		sprintf(l, "<option value=\"%s\" style=\"%s\">%s</option>\n", 
+			tnames[i].name, colstyle, tnames[i].name);
 		addtobuffer(buf, l);
 	}
 	addtobuffer(buf, "</select></td>\n");
