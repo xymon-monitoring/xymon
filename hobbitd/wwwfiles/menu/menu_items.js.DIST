@@ -9,6 +9,7 @@ var MENU_ITEMS = [
 		['Availability Report', '@BBCGIURL@/bb-rep.sh'],
 		['Snapshot Report', '@BBCGIURL@/bb-snapshot.sh'],
 		['Config Report', '@BBCGIURL@/hobbit-confreport.sh'],
+		['Config Report (Critical)', '@BBCGIURL@/hobbit-confreport-critical.sh'],
 		['Metrics Report', '@BBCGIURL@/hobbit-hostgraphs.sh'],
 		['Ghost Clients', '@BBCGIURL@/hobbit-ghosts.sh'],
 	],
