@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.18 2006-05-25 14:55:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.19 2006-10-01 11:54:22 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -46,8 +46,10 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	char *bol, *eol;
 	time_t now;
 	char msg[1024];
+	int i;
 
-	sprintf(msg, "hobbitdboard color=red,yellow acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist", nkacklevel);
+	sprintf(msg, "hobbitdboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", nkacklevel,colorname(mincolor));
+	for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
 
 	hobbitdresult = sendmessage(msg, NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	if (hobbitdresult != BB_OK) {
