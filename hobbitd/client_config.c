@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.50 2006-08-06 21:03:46 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.51 2006-10-03 05:26:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1249,6 +1249,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 	*abswarn = 0;
 	*abspanic = 0;
 	*ignored = 0;
+	*group = NULL;
 
 	rule = getrule(hostname, pagename, classname, C_DISK);
 	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
