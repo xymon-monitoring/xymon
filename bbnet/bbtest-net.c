@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.243 2006-08-07 16:28:22 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.244 2006-10-03 10:47:08 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -64,27 +64,13 @@ char *reqenv[] = {
 	NULL
 };
 
-/* toolid values */
-#define TOOL_CONTEST	0
-#define TOOL_NSLOOKUP	1
-#define TOOL_DIG	2
-#define TOOL_NTP        3
-#define TOOL_FPING      4
-#define TOOL_HTTP       5
-#define TOOL_MODEMBANK  6
-#define TOOL_LDAP	7
-#define TOOL_RPCINFO	8
-
-
 RbtHandle	svctree;			/* All known services, has service_t records */
 service_t	*pingtest = NULL;		/* Identifies the pingtest within svctree list */
 int		pingcount = 0;
 service_t	*dnstest = NULL;		/* Identifies the dnstest within svctree list */
-service_t	*digtest = NULL;		/* Identifies the digtest within svctree list */
 service_t	*httptest = NULL;		/* Identifies the httptest within svctree list */
 service_t	*ldaptest = NULL;		/* Identifies the ldaptest within svctree list */
 service_t	*rpctest = NULL;		/* Identifies the rpctest within svctree list */
-service_t	*modembanktest = NULL;		/* Identifies the modembank test within svctree list */
 RbtHandle       testhosttree;			/* All tested hosts, has testedhost_t records */
 char		*nonetpage = NULL;		/* The "NONETPAGE" env. variable */
 int		dnsmethod = DNS_THEN_IP;	/* How to do DNS lookups */
@@ -157,35 +143,21 @@ void dump_testitems(void)
 		printf("Service %s, port %d, toolid %d\n", swalk->testname, swalk->portnum, swalk->toolid);
 
 		for (iwalk = swalk->items; (iwalk); iwalk = iwalk->next) {
-			if (swalk == modembanktest) {
-				modembank_t *mentry;
-				int i;
-
-				mentry = iwalk->privdata;
-				printf("\tModembank   : %s\n", textornull(mentry->hostname));
-				printf("\tStart-IP    : %s\n", u32toIP(mentry->startip));
-				printf("\tBanksize    : %d\n", mentry->banksize);
-				printf("\tOpen        :");
-				for (i=0; i<mentry->banksize; i++) printf(" %d", mentry->responses[i]);
-				printf("\n");
-			}
-			else {
-				printf("\tHost        : %s\n", textornull(iwalk->host->hostname));
-				printf("\ttestspec    : %s\n", textornull(iwalk->testspec));
-				printf("\tFlags       :");
-				if (iwalk->dialup) printf(" dialup");
-				if (iwalk->reverse) printf(" reverse");
-				if (iwalk->silenttest) printf(" silenttest");
-				if (iwalk->alwaystrue) printf(" alwaystrue");
-				printf("\n");
-				printf("\tOpen        : %d\n", iwalk->open);
-				printf("\tBanner      : %s\n", textornull(STRBUF(iwalk->banner)));
-				printf("\tcertinfo    : %s\n", textornull(iwalk->certinfo));
-				printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_usec);
-				printf("\tbadtest     : %d:%d:%d\n", iwalk->badtest[0], iwalk->badtest[1], iwalk->badtest[2]);
-				printf("\tdowncount    : %d started %s", iwalk->downcount, ctime(&iwalk->downstart));
-				printf("\n");
-			}
+			printf("\tHost        : %s\n", textornull(iwalk->host->hostname));
+			printf("\ttestspec    : %s\n", textornull(iwalk->testspec));
+			printf("\tFlags       :");
+			if (iwalk->dialup) printf(" dialup");
+			if (iwalk->reverse) printf(" reverse");
+			if (iwalk->silenttest) printf(" silenttest");
+			if (iwalk->alwaystrue) printf(" alwaystrue");
+			printf("\n");
+			printf("\tOpen        : %d\n", iwalk->open);
+			printf("\tBanner      : %s\n", textornull(STRBUF(iwalk->banner)));
+			printf("\tcertinfo    : %s\n", textornull(iwalk->certinfo));
+			printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_usec);
+			printf("\tbadtest     : %d:%d:%d\n", iwalk->badtest[0], iwalk->badtest[1], iwalk->badtest[2]);
+			printf("\tdowncount    : %d started %s", iwalk->downcount, ctime(&iwalk->downstart));
+			printf("\n");
 		}
 
 		printf("\n");
@@ -423,35 +395,6 @@ void load_tests(void)
 
 		if (!wanted_host(hwalk, location)) continue;
 
-		if (argnmatch(hwalk->bbhostname, "@dialup.")) {
-			/* Modembank entry: "dialup displayname startIP count" */
-
-			char *realname;
-			testitem_t *newtest;
-			modembank_t *newentry;
-			int i, ip1, ip2, ip3, ip4, banksize;
-
-			realname = hwalk->bbhostname + strlen("@dialup.");
-			banksize = atoi(bbh_item(hwalk, BBH_BANKSIZE));
-			sscanf(bbh_item(hwalk, BBH_IP), "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
-
-			newtest = init_testitem(NULL, modembanktest, NULL, 0, 0, 0, 0, 0);
-			newtest->next = modembanktest->items;
-			modembanktest->items = newtest;
-
-			newtest->privdata = (void *)malloc(sizeof(modembank_t));
-			newentry = (modembank_t *)newtest->privdata;
-			newentry->hostname = realname;
-			newentry->startip = IPtou32(ip1, ip2, ip3, ip4);
-			newentry->banksize = banksize;
-			newentry->responses = (int *) malloc(banksize * sizeof(int));
-			for (i=0; i<banksize; i++) newentry->responses[i] = 0;
-
-			/* No more to do for modembanks */
-			continue;
-		}
-
-
 		h = init_testedhost(hwalk->bbhostname);
 
 		p = bbh_custom_item(hwalk, "badconn:");
@@ -645,7 +588,7 @@ void load_tests(void)
 					s = dnstest;
 				}
 				else if (argnmatch(testspec, "dig=")) {
-					s = digtest;
+					s = dnstest;
 				}
 				else {
 					/* 
@@ -1311,60 +1254,6 @@ cleanup:
 	return 0;
 }
 
-void run_modembank_service(service_t *service)
-{
-	testitem_t	*t;
-	char		cmd[1024];
-	char		startip[IP_ADDR_STRLEN], endip[IP_ADDR_STRLEN];
-	char		*p;
-	char		cmdpath[PATH_MAX];
-	FILE		*cmdpipe;
-	char		l[MAX_LINE_LEN];
-	int		ip1, ip2, ip3, ip4;
-
-	for (t=service->items; (t); t = t->next) {
-		modembank_t *req = (modembank_t *)t->privdata;
-
-		p = xgetenv("FPING");
-		strcpy(cmdpath, (p ? p : "hobbitping"));
-		strcpy(startip, u32toIP(req->startip));
-		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
-		sprintf(cmd, "%s -g -Ae %s %s 2>/dev/null", cmdpath, startip, endip);
-
-		dbgprintf("Running command: '%s'\n", cmd);
-		cmdpipe = popen(cmd, "r");
-		if (cmdpipe == NULL) {
-			errprintf("Could not run the hobbitping command %s\n", cmd);
-			return;
-		}
-
-		while (fgets(l, sizeof(l), cmdpipe)) {
-			dbgprintf("modembank response: %s", l);
-
-			if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
-				unsigned int idx = IPtou32(ip1, ip2, ip3, ip4) - req->startip;
-
-				if (idx >= req->banksize) {
-					errprintf("Unexpected response for IP not in bank - %d.%d.%d.%d", 
-						  ip1, ip2, ip3, ip4);
-				}
-				else {
-					req->responses[idx] = (strstr(l, "is alive") != NULL);
-				}
-			}
-		}
-		pclose(cmdpipe);
-
-		if (debug) {
-			int i;
-
-			dbgprintf("Results for modembank start=%s, length %d\n", u32toIP(req->startip), req->banksize);
-			for (i=0; (i<req->banksize); i++)
-				dbgprintf("\t%s is %d\n", u32toIP(req->startip+i), req->responses[i]);
-		}
-	}
-}
-
 
 int decide_color(service_t *service, char *svcname, testitem_t *test, int failgoesclear, char *cause)
 {
@@ -1751,44 +1640,6 @@ void send_results(service_t *service, int failgoesclear)
 			addtostatus(msgtext);
 		}
 		addtostatus("\n\n");
-		finish_status();
-	}
-}
-
-
-void send_modembank_results(service_t *service)
-{
-	testitem_t	*t;
-	char		msgline[1024];
-	int		i, color, inuse;
-	char		startip[IP_ADDR_STRLEN], endip[IP_ADDR_STRLEN];
-
-	for (t=service->items; (t); t = t->next) {
-		modembank_t *req = (modembank_t *)t->privdata;
-
-		inuse = 0;
-		strcpy(startip, u32toIP(req->startip));
-		strcpy(endip, u32toIP(req->startip + req->banksize - 1));
-
-		init_status(COL_GREEN);		/* Modembanks are always green */
-		sprintf(msgline, "status dialup.%s %s %s FROM %s TO %s DATA ", 
-			req->hostname, colorname(COL_GREEN), timestamp, startip, endip);
-		addtostatus(msgline);
-		for (i=0; i<req->banksize; i++) {
-			if (req->responses[i]) {
-				color = COL_GREEN;
-				inuse++;
-			}
-			else {
-				color = COL_CLEAR;
-			}
-
-			sprintf(msgline, "%s ", colorname(color));
-			addtostatus(msgline);
-		}
-
-		sprintf(msgline, "\n\nUsage: %d of %d (%d%%)\n", inuse, req->banksize, ((inuse * 100) / req->banksize));
-		addtostatus(msgline);
 		finish_status();
 	}
 }
@@ -2234,14 +2085,12 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_NSLOOKUP);
-	digtest = add_service("dig", getportnumber("domain"), 0, TOOL_DIG);
+	dnstest = add_service("dns", getportnumber("domain"), 0, TOOL_DNS);
 	add_service("ntp", getportnumber("ntp"),    0, TOOL_NTP);
 	rpctest  = add_service("rpc", getportnumber("sunrpc"), 0, TOOL_RPCINFO);
 	httptest = add_service("http", getportnumber("http"),  0, TOOL_HTTP);
 	ldaptest = add_service("ldapurl", getportnumber("ldap"), strlen("ldap"), TOOL_LDAP);
 	if (pingcolumn) pingtest = add_service(pingcolumn, 0, 0, TOOL_FPING);
-	modembanktest = add_service("dialup", 0, 0, TOOL_MODEMBANK);
 	add_timestamp("Service definitions loaded");
 
 	load_tests();
@@ -2360,18 +2209,14 @@ int main(int argc, char *argv[])
 	add_timestamp("LDAP tests result collection completed");
 
 
-	/* dns, dig, ntp tests */
+	/* dns, ntp tests */
 	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
 		s = (service_t *)gettreeitem(svctree, handle);
 		if (s->items) {
 			switch(s->toolid) {
-				case TOOL_NSLOOKUP:
+				case TOOL_DNS:
 					run_nslookup_service(s); 
-					add_timestamp("NSLOOKUP tests executed");
-					break;
-				case TOOL_DIG:
-					run_nslookup_service(s); 
-					add_timestamp("DIG tests executed");
+					add_timestamp("DNS tests executed");
 					break;
 				case TOOL_NTP:
 					run_ntp_service(s); 
@@ -2381,9 +2226,7 @@ int main(int argc, char *argv[])
 					run_rpcinfo_service(s); 
 					add_timestamp("RPC tests executed");
 					break;
-				case TOOL_MODEMBANK:
-					run_modembank_service(s); 
-					add_timestamp("Modembank tests executed");
+				default:
 					break;
 			}
 		}
@@ -2394,8 +2237,7 @@ int main(int argc, char *argv[])
 		s = (service_t *)gettreeitem(svctree, handle);
 		switch (s->toolid) {
 			case TOOL_CONTEST:
-			case TOOL_NSLOOKUP:
-			case TOOL_DIG:
+			case TOOL_DNS:
 			case TOOL_NTP:
 				send_results(s, failgoesclear);
 				break;
@@ -2404,10 +2246,6 @@ int main(int argc, char *argv[])
 			case TOOL_HTTP:
 			case TOOL_LDAP:
 				/* These handle result-transmission internally */
-				break;
-
-			case TOOL_MODEMBANK:
-				send_modembank_results(s);
 				break;
 
 			case TOOL_RPCINFO:
