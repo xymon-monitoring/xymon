@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.54 2006-08-11 13:07:52 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.55 2006-10-03 10:47:49 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -316,7 +316,7 @@ static void fetch_board(void)
 	walk = statusboard;
 	while (walk) {
 		eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
-		if (strlen(walk) && (strncmp(walk, "summary|", 8) != 0) && (strncmp(walk, "dialup|", 7) != 0)) {
+		if (strlen(walk) && (strncmp(walk, "summary|", 8) != 0)) {
 			char *buf, *hname = NULL, *tname = NULL;
 			treerec_t *newrec;
 

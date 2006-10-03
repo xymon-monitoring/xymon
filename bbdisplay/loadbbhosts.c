@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.46 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.47 2006-10-03 10:48:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -174,8 +174,7 @@ host_t *init_host(char *hostname, int issummary,
 		  int ip1, int ip2, int ip3, int ip4, 
 		  int dialup, double warnpct, char *reporttime,
 		  char *alerts, int nktime, char *waps,
-		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
-		  int modembanksize)
+		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests)
 {
 	host_t 		*newhost = (host_t *) calloc(1, sizeof(host_t));
 	hostlist_t	*oldlist;
@@ -256,21 +255,6 @@ host_t *init_host(char *hostname, int issummary,
 	}
 
 	newhost->parent = NULL;
-	newhost->banks = NULL;
-	newhost->banksize = modembanksize;
-	if (modembanksize) {
-		int i;
-		newhost->banks = (int *) calloc(modembanksize, sizeof(int));
-		for (i=0; i<modembanksize; i++) newhost->banks[i] = -1;
-
-		if (comment) {
-			newhost->comment = (char *) realloc(newhost->comment, strlen(newhost->comment) + 22);
-			sprintf(newhost->comment+strlen(newhost->comment), " - [%s]", newhost->ip);
-		}
-		else {
-			newhost->comment = newhost->ip;
-		}
-	}
 	newhost->nobb2 = 0;
 	newhost->next = NULL;
 
@@ -440,7 +424,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	host_t	*curhost;
 	char	*curtitle;
 	int	ip1, ip2, ip3, ip4;
-	int	modembanksize;
 	char	*p;
 	int	fqdn = get_fqdn();
 
@@ -481,8 +464,6 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		sanitize_input(inbuf, 0, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
 		dbgprintf("load_bbhosts: -- got line '%s'\n", STRBUF(inbuf));
-
-		modembanksize = 0;
 
 		if (strncmp(STRBUF(inbuf), pagetag, strlen(pagetag)) == 0) {
 			getnamelink(STRBUF(inbuf), &name, &link);
@@ -581,9 +562,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
 			curhost = NULL;
 		}
-		else if ( (sscanf(STRBUF(inbuf), "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) ||
-		          (!reportstart && !snapshot && (sscanf(STRBUF(inbuf), "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &modembanksize) == 6) && (modembanksize > 0)) ) {
-
+		else if (sscanf(STRBUF(inbuf), "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			namelist_t *bbhost = NULL;
 			int dialup, nobb2, nktime = 1;
 			double warnpct = reportwarnlevel;
@@ -685,8 +664,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							    ip1, ip2, ip3, ip4, dialup, 
 							    warnpct, reporttime,
 							    alertlist, nktime, onwaplist,
-							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist,
-							    modembanksize);
+							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist);
 					if (curgroup != NULL) {
 						curgroup->hosts = curhost;
 					}
@@ -710,8 +688,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
-									    noproppurplelist, nopropacklist,
-									    modembanksize);
+									    noproppurplelist, nopropacklist);
 				}
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
@@ -758,8 +735,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    warnpct, reporttime,
 									    alertlist, nktime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
-									    noproppurplelist, nopropacklist,
-									    modembanksize);
+									    noproppurplelist, nopropacklist);
 
 						if (wantedgroup > 0) {
 							group_t *gwalk;

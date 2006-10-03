@@ -53,7 +53,6 @@ enum bbh_item_t {
 	BBH_LDAPLOGIN,
 	BBH_IP,
 	BBH_HOSTNAME,
-	BBH_BANKSIZE,
 	BBH_DOCURL,
 	BBH_NOPROP,
 	BBH_PAGEINDEX,
@@ -80,7 +79,6 @@ typedef struct namelist_t {
 	char *bbhostname;	/* Name for item 2 of bb-hosts */
 	char *logname;		/* Name of the host directory in BBHISTLOGS (underscores replaces dots). */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */
-	int banksize;		/* For modem-bank entries only */
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
 	void *data;		/* Misc. data supplied by the user of this library function */
 	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */

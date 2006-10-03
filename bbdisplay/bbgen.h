@@ -51,9 +51,9 @@
                                            dialup               column -------> bbgen_col_t
                                            reportwarnlevel      color             name
                                            comment              age               next
-                                           banks                oldage
-                                           banksize             acked
-                                           next                 alert
+                                           next                 oldage
+                                                                acked
+                                                                alert
                                                                 onwap
                                                                 propagate
                                                                 reportinfo
@@ -169,8 +169,6 @@ typedef struct host_t {
 	struct bbgen_page_t *parent;
 	double  reportwarnlevel;
 	char	*reporttime;
-	int     *banks;
-	int     banksize;
 	int     nobb2;
 	struct host_t	*next;
 } host_t;

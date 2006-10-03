@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.253 2006-08-03 18:59:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.254 2006-10-03 10:48:27 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -124,7 +124,7 @@ typedef struct hobbitd_log_t {
 typedef struct hobbitd_hostlist_t {
 	char *hostname;
 	char ip[IP_ADDR_STRLEN];
-	enum { H_NORMAL, H_SUMMARY, H_DIALUP } hosttype;
+	enum { H_NORMAL, H_SUMMARY } hosttype;
 	hobbitd_log_t *logs;
 	hobbitd_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	time_t clientmsgtstamp;
@@ -431,7 +431,6 @@ hobbitd_hostlist_t *create_hostlist_t(char *hostname, char *ip)
 	hitem->hostname = strdup(hostname);
 	strcpy(hitem->ip, ip);
 	if (strcmp(hostname, "summary") == 0) hitem->hosttype = H_SUMMARY;
-	else if (strcmp(hostname, "dialup") == 0) hitem->hosttype = H_DIALUP;
 	else hitem->hosttype = H_NORMAL;
 	rbtInsert(rbhosts, hitem->hostname, hitem);
 
@@ -2787,7 +2786,7 @@ void do_message(conn_t *msg, char *origin)
 				continue;
 			}
 
-			/* If there is a hostname filter, drop the "summary" and "dialup 'hosts' */
+			/* If there is a hostname filter, drop the "summary" 'hosts' */
 			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
 
 			firstlog = hwalk->logs;
@@ -2953,7 +2952,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
-			     "BBH_HOSTNAME,BBH_IP,BBH_BANKSIZE,BBH_RAW",
+			     "BBH_HOSTNAME,BBH_IP,BBH_RAW",
 			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
 			     &chspage, &chshost, &chsnet, &chstest);
 

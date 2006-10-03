@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.164 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.165 2006-10-03 10:48:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -182,12 +182,6 @@ state_t *init_state(char *filename, logdata_t *log)
 
 	host = find_host(hostname);
 
-	/* If the host is a modem-bank host, dont mix in normal status messages */
-	if (host && (host->banksize > 0)) {
-		errprintf("Modembank %s has additional status-logs - ignored\n", hostname);
-		return NULL;
-	}
-
 	newstate = (state_t *) calloc(1, sizeof(state_t));
 	newstate->entry = (entry_t *) calloc(1, sizeof(entry_t));
 	newstate->next = NULL;
@@ -347,72 +341,6 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 	return newsum;
 }
 
-void init_modembank_status(char *fn, logdata_t *log)
-{
-	char *msgcopy;
-	host_t *targethost;
-	time_t now = time(NULL);
-
-	dbgprintf("init_modembank_status(%s)\n", textornull(fn));
-
-	if (log->validtime < now) return;
-
-	targethost = find_host(fn+strlen("dialup."));
-	if (targethost == NULL) {
-		dbgprintf("Modembank status from unknown host %s - ignored\n", fn+strlen("dialup."));
-		return;
-	}
-
-	msgcopy = strdup(log->msg);
-	if (strlen(msgcopy)) {
-		char *startip, *endip, *tag;
-		int idx = -1;
-
-		startip = endip = NULL;
-		tag = strtok(msgcopy, " \n");
-		while (tag) {
-			if (idx >= 0) {
-				/* Next result */
-				if (idx < targethost->banksize) targethost->banks[idx] = parse_color(tag);
-				idx++;
-			}
-			else if (strcmp(tag, "DATA") == 0) {
-				if (startip && endip) idx = 0;
-				else errprintf("Invalid modembank status logfile %s (missing FROM and/or TO)\n", fn);
-			}
-			else if (strcmp(tag, "FROM") == 0) {
-				tag = strtok(NULL, " \n");
-
-				if (tag) {
-					startip = tag;
-					if (strcmp(startip, targethost->ip) != 0) {
-						errprintf("Modembank in bb-hosts begins with %s, but logfile begins with %s\n",
-						  	targethost->ip, startip);
-					}
-				} else errprintf("Invalid modembank status logfile %s (truncated)\n", fn);
-			}
-			else if (strcmp(tag, "TO") == 0) {
-				tag = strtok(NULL, " \n");
-
-				if (tag) {
-					if (startip) endip = tag;
-					else errprintf("Invalid modembank status logfile %s (no FROM)\n", fn);
-				} else errprintf("Invalid modembank status logfile %s (truncated)\n", fn);
-			}
-
-			if (tag) tag = strtok(NULL, " \n");
-		}
-
-		if ((idx >= 0) && (idx != targethost->banksize)) {
-			errprintf("Modembank status log %s has more entries (%d) than expected (%d)\n", 
-				  fn, (idx-1), targethost->banksize);
-		}
-	}
-
-	xfree(msgcopy);
-}
-
-
 state_t *load_state(dispsummary_t **sumhead)
 {
 	int hobbitdresult;
@@ -505,9 +433,6 @@ state_t *load_state(dispsummary_t **sumhead)
 					topsum = newsum;
 				}
 			}
-		}
-		else if (strncmp(fn, "dialup.", 7) == 0) {
-			init_modembank_status(fn, &log);
 		}
 		else {
 			if (acklist && *acklist) {
