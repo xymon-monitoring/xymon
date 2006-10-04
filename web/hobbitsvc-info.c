@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.112 2006-10-01 11:22:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.113 2006-10-04 07:40:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -249,7 +249,7 @@ static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
 	int i, btncount;
 	char *bbdatefmt;
 	strbuffer_t *servRed, *servYellow, *servPurple, *servBlue;
-	time_t logage, lastchange;
+	time_t logage;
 
 	bbdatefmt = xgetenv("BBDATEFORMAT");
 
