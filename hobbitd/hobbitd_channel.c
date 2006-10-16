@@ -13,21 +13,29 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.49 2006-08-09 19:47:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.50 2006-10-16 13:57:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/time.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <sys/wait.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+#include <errno.h>
+#include <netdb.h>
+#include <fcntl.h>
+
+#include <signal.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 
 #include "libbbgen.h"
 
@@ -81,6 +89,7 @@ int main(int argc, char *argv[])
 	char *logfn = NULL;
 	char *pidfile = NULL;
 	char *envarea = NULL;
+	char *peerip = NULL;
 
 	int cnid = -1;
 	int pfd[2];
@@ -125,6 +134,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--net=")) {
+			char *p = strchr(argv[argi], '=');
+			peerip = strdup(p+1);
+		}
 		else {
 			int i = 0;
 			childcmd = argv[argi];
@@ -133,8 +146,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (childcmd == NULL) {
-		errprintf("No command to pass data to\n");
+	if ((childcmd == NULL) && (peerip == NULL)) {
+		errprintf("No command/net-peer to pass data to\n");
 		return 1;
 	}
 
@@ -183,31 +196,87 @@ int main(int argc, char *argv[])
 	}
 
 	/* Start the channel handler */
-	n = pipe(pfd);
-	if (n == -1) {
-		errprintf("Could not get a pipe: %s\n", strerror(errno));
-		return 1;
-	}
-	childpid = fork();
-	if (childpid == -1) {
-		errprintf("Could not fork channel handler: %s\n", strerror(errno));
-		return 1;
-	}
-	else if (childpid == 0) {
-		/* The channel handler child */
+	if (peerip) {
+		struct in_addr addr;
+		struct sockaddr_in saddr;
+		int peerport = 0;
+		char *delim;
 
-		if (logfn) {
-			char *logfnenv = (char *)malloc(strlen(logfn) + 30);
-			sprintf(logfnenv, "HOBBITCHANNEL_LOGFILENAME=%s", logfn);
-			putenv(logfnenv);
+		delim = strchr(peerip, ':');
+		if (delim) {
+			*delim = '\0';
+			peerport = atoi(delim+1);
 		}
 
-		n = dup2(pfd[0], STDIN_FILENO);
-		close(pfd[0]); close(pfd[1]);
-		n = execvp(childcmd, childargs);
+		if (inet_aton(peerip, &addr) == 0) {
+			/* peer is not an IP - do DNS lookup */
+
+			struct hostent *hent;
+
+			hent = gethostbyname(peerip);
+			if (hent) {
+				char *realip;
+
+				memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
+				realip = inet_ntoa(addr);
+				if (inet_aton(realip, &addr) == 0) {
+					errprintf("Invalid IP address for %s (%s)\n", peerip, realip);
+					return 1;
+				}
+			}
+			else {
+				errprintf("Cannot determine IP address of peer %s\n", peerip);
+				return 1;
+			}
+		}
+
+		if (peerport == 0) peerport = atoi(xgetenv("BBPORT"));
+
+		memset(&saddr, 0, sizeof(saddr));
+		saddr.sin_family = AF_INET;
+		saddr.sin_addr.s_addr = addr.s_addr;
+		saddr.sin_port = htons(peerport);
+
+		n = socket(PF_INET, SOCK_STREAM, 0);
+		if (n == -1) {
+			errprintf("Cannot get socket: %s\n", strerror(errno));
+			return 1;
+		}
+		else pfd[1] = n;
+
+		n = connect(pfd[1], (struct sockaddr *)&saddr, sizeof(saddr));
+		if (n == -1) {
+			errprintf("Cannot connect to peer: %s\n", strerror(errno));
+			return 1;
+		}
 	}
-	/* Parent process continues */
-	close(pfd[0]);
+	else {
+		n = pipe(pfd);
+		if (n == -1) {
+			errprintf("Could not get a pipe: %s\n", strerror(errno));
+			return 1;
+		}
+		childpid = fork();
+		if (childpid == -1) {
+			errprintf("Could not fork channel handler: %s\n", strerror(errno));
+			return 1;
+		}
+		else if (childpid == 0) {
+			/* The channel handler child */
+
+			if (logfn) {
+				char *logfnenv = (char *)malloc(strlen(logfn) + 30);
+				sprintf(logfnenv, "HOBBITCHANNEL_LOGFILENAME=%s", logfn);
+				putenv(logfnenv);
+			}
+
+			n = dup2(pfd[0], STDIN_FILENO);
+			close(pfd[0]); close(pfd[1]);
+			n = execvp(childcmd, childargs);
+		}
+		/* Parent process continues */
+		close(pfd[0]);
+	}
 
 	/* We dont want to block when writing to the worker */
 	fcntl(pfd[1], F_SETFL, O_NONBLOCK);

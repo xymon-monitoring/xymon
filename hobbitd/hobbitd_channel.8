@@ -17,6 +17,7 @@ A number of worker programs are shipped with hobbitd, e.g.
 .I hobbitd_history(8)
 .I hobbitd_alert(8)
 .I hobbitd_rrd(8)
+.I hobbitd_client(8)
 
 If you want to write your own worker module, a sample worker module
 is provided as part of the hobbitd distribution in the hobbitd_sample.c
@@ -40,6 +41,19 @@ This option is required. The following channels are available:
 "notes" receives all Hobbit "notes" messages
 .br
 "enadis" receives information about hosts being disabled or enabled.
+.br
+"client" receives all data sent from Hobbit client systems
+
+.IP "--net=PEERSERVER:PEERPORT"
+Instead of launching a worker module as a local task, the messages in
+the channel are forwarded over a TCP/IP connection to another host
+where the worker module is running. This is typically used for sharing
+the load of the heavier worker modules across multiple systems, e.g. 
+the hobbitd_client and hobbitd_rrd workers may receive data this way.
+With this option, the \fBworkerprogram\fR parameter is ignored and may
+be omitted.
+.br
+On the remote server, the worker modules are usually launched via inetd.
 
 .IP "--daemon"
 hobbitd_channel is normally started by 
