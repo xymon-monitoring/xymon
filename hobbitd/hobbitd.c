@@ -25,13 +25,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.254 2006-10-03 10:48:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.255 2006-10-20 11:00:08 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #ifdef HAVE_SYS_SELECT_H
@@ -3277,6 +3278,7 @@ void do_message(conn_t *msg, char *origin)
 
 		p = msg->buf + strlen("clientlog"); p += strspn(p, "\t ");
 		hostname = p; p += strcspn(p, "\t "); if (*p) { *p = '\0'; p++; }
+		p += strspn(p, "\t ");
 
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle != rbtEnd(rbhosts)) {
@@ -3324,6 +3326,7 @@ void do_message(conn_t *msg, char *origin)
 					msg->buf = grabstrbuffer(resp);
 					if (!msg->buf) msg->buf = strdup("");
 					msg->bufp = msg->buf;
+					xfree(sections);
 				}
 			}
 		}
@@ -3816,7 +3819,8 @@ int main(int argc, char *argv[])
 	int do_purples = 1;
 	time_t nextpurpleupdate;
 	struct sockaddr_in laddr;
-	int lsocket, opt;
+	struct sockaddr_un localaddr;
+	int lsocket, localsocket, opt;
 	int listenq = 512;
 	int argi;
 	struct timeval tv;
@@ -4088,6 +4092,31 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	/* Set up a Unix domain socket for local communications with modules */
+	errprintf("Setting up local listener\n");
+	memset(&localaddr, 0, sizeof(localaddr));
+	sprintf(localaddr.sun_path, "%s/hobbitd_if", xgetenv("BBTMP"));
+	localaddr.sun_family = AF_UNIX;
+	localsocket = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (localsocket == -1) {
+		errprintf("Cannot create local listener socket (%s)\n", strerror(errno));
+		return 1;
+	}
+	fcntl(localsocket, F_SETFL, O_NONBLOCK);
+	if (bind(localsocket, (struct sockaddr *)&localaddr, sizeof(localaddr)) == -1) {
+		errprintf("Cannot bind to local listen socket (%s)\n", strerror(errno));
+		return 1;
+	}
+	if (listen(localsocket, listenq) == -1) {
+		errprintf("Cannot listen locally (%s)\n", strerror(errno));
+		return 1;
+	}
+	/* Linux obeys filesystem permissions on the socket file, so make it world-accessible */
+	if (chmod(localaddr.sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
+		errprintf("Setting permissions on local socket failed: %s\n", strerror(errno));
+	}
+
+
 	/* Go daemon */
 	if (daemonize) {
 		pid_t childpid;
@@ -4205,6 +4234,7 @@ int main(int argc, char *argv[])
 		conn_t *cwalk;
 		time_t now = time(NULL);
 		int childstat;
+		int newnetconn, newlocalconn;
 
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
@@ -4301,7 +4331,8 @@ int main(int argc, char *argv[])
 		 * and setup the select() FD sets.
 		 */
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
-		FD_SET(lsocket, &fdread); maxfd = lsocket;
+		FD_SET(lsocket, &fdread);
+		FD_SET(localsocket, &fdread); maxfd = ((lsocket > localsocket) ? lsocket : localsocket);
 
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
@@ -4495,10 +4526,15 @@ int main(int argc, char *argv[])
 		}
 
 		/* Pick up new connections */
-		if (FD_ISSET(lsocket, &fdread)) {
+		newnetconn = FD_ISSET(lsocket, &fdread);
+		newlocalconn = FD_ISSET(localsocket, &fdread);
+		if (newnetconn || newlocalconn) {
 			struct sockaddr_in addr;
 			int addrsz = sizeof(addr);
-			int sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
+			int sock = -1;
+
+			if (newlocalconn) sock = accept(localsocket, (struct sockaddr *)&addr, &addrsz);
+			else if (newnetconn) sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
 
 			if (sock >= 0) {
 				if (connhead == NULL) {
@@ -4544,6 +4580,8 @@ int main(int argc, char *argv[])
 	close_channel(clichgchn, CHAN_MASTER);
 
 	save_checkpoint();
+	close(lsocket);
+	close(localsocket); unlink(localaddr.sun_path);
 	unlink(pidfile);
 
 	if (dbgfd) fclose(dbgfd);
