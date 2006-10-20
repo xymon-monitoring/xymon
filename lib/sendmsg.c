@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.82 2006-08-04 07:00:05 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.83 2006-10-20 11:01:15 henrik Exp $";
 
 #include "config.h"
 
@@ -22,6 +22,7 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.82 2006-08-04 07:00:05 henrik Exp $";
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #ifdef HAVE_SYS_SELECT_H
@@ -74,6 +75,11 @@ static void setup_transport(char *recipient)
 
 	if (transport_is_setup) return;
 	transport_is_setup = 1;
+
+	if (strcmp(recipient, "local") == 0) {
+		dbgprintf("Using local Unix domain socket transport\n");
+		return;
+	}
 
 	if (strncmp(recipient, "http://", 7) == 0) {
 		/*
@@ -133,7 +139,9 @@ static void setup_transport(char *recipient)
 static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
 	struct in_addr addr;
+	struct sockaddr_un localaddr;
 	struct sockaddr_in saddr;
+	enum { C_IP, C_UNIX } conntype = C_IP;
 	int	sockfd;
 	fd_set	readfds;
 	fd_set	writefds;
@@ -159,7 +167,12 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 	dbgprintf("Recipient listed as '%s'\n", recipient);
 
-	if (strncmp(recipient, "http://", strlen("http://")) != 0) {
+	if (strcmp(recipient, "local") == 0) {
+		/* Connect via local unix domain socket $BBTMP/hobbitd_if */
+		dbgprintf("Unix domain protocol\n");
+		conntype = C_UNIX;
+	}
+	else if (strncmp(recipient, "http://", strlen("http://")) != 0) {
 		/* Standard BB communications, directly to bbd */
 		rcptip = strdup(recipient);
 		rcptport = bbdportnumber;
@@ -246,40 +259,58 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		dbgprintf("BB-HTTP message is:\n%s\n", httpmessage);
 	}
 
-	if (inet_aton(rcptip, &addr) == 0) {
-		/* recipient is not an IP - do DNS lookup */
+	if (conntype == C_IP) {
+		if (inet_aton(rcptip, &addr) == 0) {
+			/* recipient is not an IP - do DNS lookup */
 
-		struct hostent *hent;
-		char hostip[IP_ADDR_STRLEN];
+			struct hostent *hent;
+			char hostip[IP_ADDR_STRLEN];
 
-		hent = gethostbyname(rcptip);
-		if (hent) {
-			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			strcpy(hostip, inet_ntoa(addr));
+			hent = gethostbyname(rcptip);
+			if (hent) {
+				memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
+				strcpy(hostip, inet_ntoa(addr));
 
-			if (inet_aton(hostip, &addr) == 0) return BB_EBADIP;
-		}
-		else {
-			errprintf("Cannot determine IP address of message recipient %s\n", rcptip);
-			return BB_EIPUNKNOWN;
+				if (inet_aton(hostip, &addr) == 0) return BB_EBADIP;
+			}
+			else {
+				errprintf("Cannot determine IP address of message recipient %s\n", rcptip);
+				return BB_EIPUNKNOWN;
+			}
 		}
 	}
 
 retry_connect:
 	dbgprintf("Will connect to address %s port %d\n", rcptip, rcptport);
 
-	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_addr.s_addr = addr.s_addr;
-	saddr.sin_port = htons(rcptport);
+	if (conntype == C_IP) {
+		memset(&saddr, 0, sizeof(saddr));
+		saddr.sin_family = AF_INET;
+		saddr.sin_addr.s_addr = addr.s_addr;
+		saddr.sin_port = htons(rcptport);
 
-	/* Get a non-blocking socket */
-	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (sockfd == -1) return BB_ENOSOCKET;
-	res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
-	if (res != 0) return BB_ECANNOTDONONBLOCK;
+		/* Get a non-blocking socket */
+		sockfd = socket(PF_INET, SOCK_STREAM, 0);
+		if (sockfd == -1) return BB_ENOSOCKET;
+		res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
+		if (res != 0) return BB_ECANNOTDONONBLOCK;
 
-	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
+		res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
+	}
+	else {
+		memset(&localaddr, 0, sizeof(localaddr));
+		localaddr.sun_family = AF_UNIX;
+		sprintf(localaddr.sun_path, "%s/hobbitd_if", xgetenv("BBTMP"));
+
+		/* Get a non-blocking socket */
+		sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
+		if (sockfd == -1) return BB_ENOSOCKET;
+		res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
+		if (res != 0) return BB_ECANNOTDONONBLOCK;
+
+		res = connect(sockfd, (struct sockaddr *)&localaddr, sizeof(localaddr));
+	}
+
 	if ((res == -1) && (errno != EINPROGRESS)) {
 		close(sockfd);
 		errprintf("connect to bbd failed - %s\n", strerror(errno));
@@ -410,7 +441,7 @@ retry_connect:
 	dbgprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
-	xfree(rcptip);
+	if (rcptip) xfree(rcptip);
 	if (httpmessage) xfree(httpmessage);
 	return BB_OK;
 }
