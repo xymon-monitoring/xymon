@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.87 2006-08-24 13:41:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.88 2006-10-24 15:12:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -57,8 +57,8 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.87 2006-08-24 13:41:19 henrik Ex
 #include "hobbitd_worker.h"
 #include "do_alert.h"
 
-static volatile int running = 1;
-static volatile time_t nextcheckpoint = 0;
+static int running = 1;
+static time_t nextcheckpoint = 0;
 
 RbtHandle hostnames;
 RbtHandle testnames;
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
 		}
 
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
-		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout);
+		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout, &running);
 		if (msg == NULL) {
 			running = 0;
 			continue;

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_capture.c,v 1.3 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_capture.c,v 1.4 2006-10-24 15:12:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout);
+		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout, &running);
 		if (msg == NULL) {
 			/*
 			 * get_hobbitd_message will return NULL if hobbitd_channel closes

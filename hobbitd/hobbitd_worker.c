@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.27 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.28 2006-10-24 15:12:00 henrik Exp $";
 
 #include "config.h"
 
@@ -40,7 +40,7 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.27 2006-07-20 16:06:41 henrik E
 
 #define EXTRABUFSPACE 4095
 
-unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
+unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout, int *terminated)
 {
 	static unsigned int seqnum = 0;
 	static char *idlemsg = NULL;
@@ -209,6 +209,7 @@ startagain:
 		res = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
 
 		if (res < 0) {
+			if (*terminated) return NULL;
 			if ((errno == EAGAIN) || (errno == EINTR)) continue;
 
 			/* Some error happened */

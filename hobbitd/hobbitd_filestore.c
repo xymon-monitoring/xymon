@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.48 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.49 2006-10-24 15:12:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 
 		MEMDEFINE(logfn);
 
-		msg = get_hobbitd_message(chnid, "filestore", &seq, NULL);
+		msg = get_hobbitd_message(chnid, "filestore", &seq, NULL, &running);
 		if (msg == NULL) {
 			running = 0;
 			MEMUNDEFINE(logfn);

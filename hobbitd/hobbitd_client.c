@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.102 2006-10-01 11:58:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.103 2006-10-24 15:12:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1720,7 +1720,7 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		msg = get_hobbitd_message(C_CLIENT, argv[0], &seq, NULL);
+		msg = get_hobbitd_message(C_CLIENT, argv[0], &seq, NULL, &running);
 		if (msg == NULL) {
 			errprintf("Failed to get a message, terminating\n");
 			running = 0;

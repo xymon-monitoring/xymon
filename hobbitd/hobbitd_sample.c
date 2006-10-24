@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.19 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.20 2006-10-24 15:12:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -105,12 +105,15 @@ int main(int argc, char *argv[])
 		 * will wait for a new message. get_hobbitd_message() does not modify
 		 * the content of the timeout parameter.
 		 * 
+		 * The fifth parameter should be a pointer to an integer flag, which
+		 * is set when the process receives a SIGTERM signal. get_hobbitd_message()
+		 * will check this flag, and return with NULL result if it sees it.
 		 *
 		 * get_hobbitd_message() does not return until a message is ready,
 		 * or the timeout setting expires, or the channel is closed.
 		 */
 
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout);
+		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout, &running);
 		if (msg == NULL) {
 			/*
 			 * get_hobbitd_message will return NULL if hobbitd_channel closes

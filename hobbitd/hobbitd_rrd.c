@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.25 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.26 2006-10-24 15:12:00 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.25 2006-05-03 21:12:33 henrik Exp 
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
-static volatile int running = 1;
+static int running = 1;
 
 void sig_handler(int signum)
 {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 		int childstat;
 
 		/* Get next message */
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, NULL);
+		msg = get_hobbitd_message(C_LAST, argv[0], &seq, NULL, &running);
 		if (msg == NULL) {
 			running = 0;
 			continue;

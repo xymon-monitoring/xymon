@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.47 2006-08-01 09:23:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.48 2006-10-24 15:12:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
-		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
+		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL, &running);
 		if (msg == NULL) {
 			running = 0;
 			continue;
