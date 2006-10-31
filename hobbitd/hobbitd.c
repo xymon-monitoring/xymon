@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.255 2006-10-20 11:00:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.256 2006-10-31 11:53:40 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -4529,12 +4529,22 @@ int main(int argc, char *argv[])
 		newnetconn = FD_ISSET(lsocket, &fdread);
 		newlocalconn = FD_ISSET(localsocket, &fdread);
 		if (newnetconn || newlocalconn) {
-			struct sockaddr_in addr;
-			int addrsz = sizeof(addr);
+			struct sockaddr_un unixaddr;
+			struct sockaddr_in netaddr;
+			int addrsz;
 			int sock = -1;
 
-			if (newlocalconn) sock = accept(localsocket, (struct sockaddr *)&addr, &addrsz);
-			else if (newnetconn) sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
+			if (newlocalconn) {
+				addrsz = sizeof(unixaddr);
+				sock = accept(localsocket, (struct sockaddr *)&unixaddr, &addrsz);
+				/* Fake the loopback IP for unix domain connections */
+				netaddr.sin_family = AF_INET;
+				inet_aton("127.0.0.1", (struct in_addr *)&netaddr.sin_addr.s_addr);
+			}
+			else if (newnetconn) {
+				addrsz = sizeof(netaddr);
+				sock = accept(lsocket, (struct sockaddr *)&netaddr, &addrsz);
+			}
 
 			if (sock >= 0) {
 				if (connhead == NULL) {
@@ -4546,7 +4556,7 @@ int main(int argc, char *argv[])
 				}
 
 				conntail->sock = sock;
-				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
+				memcpy(&conntail->addr, &netaddr, sizeof(conntail->addr));
 				conntail->doingwhat = RECEIVING;
 				conntail->bufsz = HOBBIT_INBUF_INITIAL;
 				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
