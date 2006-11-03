@@ -22,6 +22,7 @@ raised with Hobbit.</p>
 	<li><a href="#fahrenheit">I want my temperature graphs to show Fahrenheit</a></li>
 	<li><a href="#nohtmllink">How do I remove the HTML links from the alert messages?</a></li>
 	<li><a href="#mancgi">I cannot see the the man-pages on the web</a></li>
+	<li><a href="#rtl">Hobbit will not run due to missing libraries</a></li>
 	<li><a href="#mailnosubj">My alert emails come without a subject</a></li>
 	<li><a href="#snmptraps">Does Hobbit support receiving SNMP traps?</a></li>
 	<li><a href="#scripts">How can I create a custom test script?</a></li>
@@ -204,6 +205,21 @@ scripts. Stephen Beaudry found the solution:</p>
 
    AddHandler cgi-script .cgi     -&gt;to-&gt;    AddHandler cgi-script .cgi$
 </pre>
+
+<hr>
+<h3><a name="rtl">Hobbit will not run due to missing libraries</a></h3>
+<p>This is frequently a problem on Solaris, when you have installed the
+extra libraries needed by Hobbit in /usr/local. By default, this directory
+is NOT searched for libraries by the run-time linker, so your compile will
+work just fine, but nothing will run.
+<ul>
+<li>On Solaris, use the command <tt><b>crle -u -v -l /usr/local/lib</b></tt>
+to configure the run-time linker to also search this library.</li>
+<li>On other systems, you can put <tt><b>LD_LIBRARY_PATH=/usr/local/lib</b></tt>
+in the etc/hobbitserver.cfg and etc/hobbitcgi.cfg to make it pick up the libraries
+from /usr/local/lib.</li>
+</ul>
+</p>
 
 <hr>
 <h3><a name="mailnosubj">My alert emails come without a subject</a></h3>
