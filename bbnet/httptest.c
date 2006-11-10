@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.87 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.88 2006-11-10 12:08:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -581,6 +581,12 @@ void add_http_test(testitem_t *t)
 
 	addtobuffer(httprequest, "Host: ");
 	addtobuffer(httprequest, httptest->bburl.desturl->host);
+	if ((httptest->bburl.desturl->port != 80) && (httptest->bburl.desturl->port != 443)) {
+		char hostporthdr[20];
+
+		sprintf(hostporthdr, ":%d", httptest->bburl.desturl->port);
+		addtobuffer(httprequest, hostporthdr);
+	}
 	addtobuffer(httprequest, "\r\n");
 
 	if (httptest->bburl.postdata) {
