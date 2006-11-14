@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.28 2006-10-24 15:12:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.29 2006-11-14 12:02:55 henrik Exp $";
 
 #include "config.h"
 
@@ -24,6 +24,9 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.28 2006-10-24 15:12:00 henrik E
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ..  . */
 #endif
@@ -31,14 +34,156 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.28 2006-10-24 15:12:00 henrik E
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
+#include <signal.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
 
 #include "libbbgen.h"
 
 #include "hobbitd_ipc.h"
 #include "hobbitd_worker.h"
 
+static int running = 1;
+static int inputfd = STDIN_FILENO;
 
 #define EXTRABUFSPACE 4095
+
+static void netinp_sighandler(int signum)
+{
+	switch (signum) {
+	  case SIGINT:
+	  case SIGTERM:
+		running = 0;
+		break;
+	}
+}
+
+int hobbitd_netinput(char *ipport)
+{
+	/*
+	 * Setup a listener socket on IP+port. When a connection arrives,
+	 * pick it up, fork() and let the rest of the input go via the
+	 * network socket.
+	 */
+
+	char *listenip, *p;
+	int listenport = 0;
+	int lsocket = -1;
+	struct sockaddr_in laddr;
+	struct sigaction sa;
+	pid_t children[5];
+	int i, opt;
+
+	for (i=0; (i < 5); i++) children[i] = 0;
+
+	listenip = ipport;
+	p = strchr(listenip, ':');
+	if (p) {
+		*p = '\0';
+		listenport = atoi(p+1);
+	}
+
+	if (listenport == 0) {
+		errprintf("Must include PORT number in --listen=IP:PORT option\n");
+		return -1;
+	}
+
+        /* Set up a socket to listen for new connections */
+	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
+	memset(&laddr, 0, sizeof(laddr));
+	if ((strlen(listenip) == 0) || (strcmp(listenip, "0.0.0.0") == 0)) {
+		listenip = "0.0.0.0";
+		laddr.sin_addr.s_addr = INADDR_ANY;
+	}
+	else if (inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr) == 0) {
+		/* Not an IP */
+		errprintf("Listener IP must be an IP-address, not hostname\n");
+		return -1;
+	}
+	laddr.sin_port = htons(listenport);
+	laddr.sin_family = AF_INET;
+	lsocket = socket(AF_INET, SOCK_STREAM, 0);
+	if (lsocket == -1) {
+		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
+		return -1;
+	}
+
+	opt = 1;
+	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
+		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
+		return -1;
+	}
+	if (listen(lsocket, 5) == -1) {
+		errprintf("Cannot listen (%s)\n", strerror(errno));
+		return -1;
+	}
+
+	/* Catch some signals */
+	setup_signalhandler("hobbitd_rrd-listener");
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = netinp_sighandler;
+	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
+
+	while (running) {
+		struct sockaddr_in netaddr;
+		int addrsz, sock;
+		int childstat;
+		pid_t childpid;
+
+		addrsz = sizeof(netaddr);
+		sock = accept(lsocket, (struct sockaddr *)&netaddr, &addrsz);
+
+		if (sock >= 0) {
+			/* Got a new connection */
+
+			childpid = fork();
+			if (childpid == 0) {
+				/* Child takes input from the new socket, and starts working */
+				close(lsocket);	/* Close the listener socket */
+				inputfd = sock;
+				return 0;
+			}
+			else if (childpid > 0) {
+				/* Parent closes the new socket (child has it) */
+				int i;
+
+				close(sock);
+
+				for (i=0; (i < 5) && (children[i] > 0); i++) ;
+				if (i < 5) children[i] = childpid;
+				continue;
+			}
+			else {
+				errprintf("Error forking worker for new connection: %s\n", strerror(errno));
+				running = 0;
+				continue;
+			}
+		}
+		else {
+			/* Error while waiting for accept() to complete */
+			if (errno != EINTR) {
+				errprintf("accept() failed: %s\n", strerror(errno));
+				running = 0;
+			}
+		}
+
+		/* Pickup failed children */
+		while ((childpid = wait3(&childstat, WNOHANG, NULL)) > 0) {
+			int i;
+			for (i=0; ((i<5) && (childpid != children[i])); i++) ;
+			if (i < 5) children[i] = 0;
+		}
+	}
+
+	/* Kill any children that are still around */
+	for (i=0; (i<5); i++) if (children[i] > 0) kill(children[i], SIGTERM);
+
+	return 1;
+}
 
 unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout, int *terminated)
 {
@@ -102,7 +247,7 @@ unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq,
 		idlemsg = strdup("@@idle\n");
 
 		/* We dont want to block when reading data. */
-		fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+		fcntl(inputfd, F_SETFL, O_NONBLOCK);
 	}
 
 	/*
@@ -204,9 +349,9 @@ startagain:
 		}
 
 		FD_ZERO(&fdread);
-		FD_SET(STDIN_FILENO, &fdread);
+		FD_SET(inputfd, &fdread);
 
-		res = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
+		res = select(inputfd+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
 
 		if (res < 0) {
 			if (*terminated) return NULL;
@@ -226,8 +371,8 @@ startagain:
 			*seq = 0;
 			return idlemsg;
 		}
-		else if (FD_ISSET(STDIN_FILENO, &fdread)) {
-			res = read(STDIN_FILENO, fillpos, bufleft);
+		else if (FD_ISSET(inputfd, &fdread)) {
+			res = read(inputfd, fillpos, bufleft);
 			if (res < 0) {
 				if ((errno == EAGAIN) || (errno == EINTR)) continue;
 
