@@ -1,10 +1,11 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk
 CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
 
 HOBBITDOBJS   = hobbitd.o hobbitd_buffer.o hobbitd_ipc.o
 CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
+LOCATOROBJS   = hobbitd_locator.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
 FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o hobbitd_buffer.o
 HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o hobbitd_buffer.o
@@ -17,7 +18,7 @@ COMBOTESTOBJS = bbcombotest.o
 MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
 FETCHOBJS     = hobbitfetch.o
-
+CONVERTNKOBJS = convertnk.o
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
 
@@ -32,13 +33,16 @@ hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS) $(NETLIBS)
+
+hobbitd_locator: $(LOCATOROBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(LOCATOROBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
@@ -56,13 +60,13 @@ hobbitd_capture.o: hobbitd_capture.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbitd_capture.c
 
 hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_capture: $(CAPTUREOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(LIBOBJS) $(PCRELIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitd_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
@@ -90,6 +94,9 @@ trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
 
 hobbitfetch: $(FETCHOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(FETCHOBJS) $(LIBOBJS) $(NETLIBS)
+
+convertnk: $(CONVERTNKOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CONVERTNKOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbit.sh: hobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
