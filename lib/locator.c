@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.1 2006-11-14 11:56:02 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.2 2006-11-14 13:35:27 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -39,9 +39,20 @@ static struct sockaddr_in myaddr;
 static socklen_t myaddrsz = 0;
 static int locatorsocket = -1;
 
-enum servicetype_t get_servicetype(char *typestr)
+#define DEFAULT_CACHETIMEOUT (15*60) 	/* 15 minutes */
+static RbtHandle locatorcache[ST_MAX];
+static int havecache[ST_MAX] = {0,};
+static int cachetimeout[ST_MAX] = {0,};
+
+typedef struct cacheitm_t {
+	char *key, *resp;
+	time_t tstamp;
+} cacheitm_t;
+
+
+enum locator_servicetype_t get_servicetype(char *typestr)
 {
-	enum servicetype_t res = 0;
+	enum locator_servicetype_t res = 0;
 
 	while ((res < ST_MAX) && (strcmp(typestr, servicetype_names[res]))) res++;
 
@@ -82,6 +93,83 @@ static int call_locator(char *buf, size_t bufsz)
 	}
 
 	return 0;
+}
+
+static char *locator_querycache(enum locator_servicetype_t svc, char *key)
+{
+	RbtIterator handle;
+	cacheitm_t *itm;
+
+	if (!havecache[svc]) return NULL;
+
+	handle = rbtFind(locatorcache[svc], key);
+	if (handle == rbtEnd(locatorcache[svc])) return NULL;
+
+	itm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+	return (itm->tstamp + cachetimeout[svc]) > time(NULL) ? itm->resp : NULL;
+}
+
+
+static void locator_updatecache(enum locator_servicetype_t svc, char *key, char *resp)
+{
+	RbtIterator handle;
+	cacheitm_t *newitm;
+
+	if (!havecache[svc]) return;
+
+	handle = rbtFind(locatorcache[svc], key);
+	if (handle == rbtEnd(locatorcache[svc])) {
+		newitm = (cacheitm_t *)calloc(1, sizeof(cacheitm_t));
+		newitm->key = strdup(key);
+		newitm->resp = strdup(resp);
+		if (rbtInsert(locatorcache[svc], newitm->key, newitm) != RBT_STATUS_OK) {
+			xfree(newitm->key);
+			xfree(newitm->resp);
+			xfree(newitm);
+		}
+	}
+	else {
+		newitm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+		if (newitm->resp) xfree(newitm->resp);
+		newitm->resp = strdup(resp);
+		newitm->tstamp = time(NULL);
+	}
+}
+
+
+void locator_flushcache(enum locator_servicetype_t svc, char *key)
+{
+	RbtIterator handle;
+
+	if (!havecache[svc]) return;
+
+	if (key) {
+		handle = rbtFind(locatorcache[svc], key);
+		if (handle != rbtEnd(locatorcache[svc])) {
+			cacheitm_t *itm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+			itm->tstamp = 0;
+		}
+	}
+	else {
+		for (handle = rbtBegin(locatorcache[svc]); (handle != rbtEnd(locatorcache[svc])); handle = rbtNext(locatorcache[svc], handle)) {
+			cacheitm_t *itm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+			itm->tstamp = 0;
+		}
+	}
+}
+
+
+void locator_prepcache(enum locator_servicetype_t svc, int timeout)
+{
+	if (!havecache[svc]) {
+		locatorcache[svc] = rbtNew(name_compare);
+		havecache[svc] = 1;
+	}
+	else {
+		locator_flushcache(svc, NULL);
+	}
+
+	cachetimeout[svc] = ((timeout>0) ? timeout : DEFAULT_CACHETIMEOUT);
 }
 
 
@@ -145,7 +233,7 @@ int locator_init(char *ipport)
 }
 
 
-int locator_register_server(char *servername, enum servicetype_t svctype, int weight, enum locator_sticky_t sticky, char *extras)
+int locator_register_server(char *servername, enum locator_servicetype_t svctype, int weight, enum locator_sticky_t sticky, char *extras)
 {
 	char *buf;
 	int bufsz;
@@ -163,7 +251,7 @@ int locator_register_server(char *servername, enum servicetype_t svctype, int we
 	return res;
 }
 
-int locator_register_host(char *hostname, enum servicetype_t svctype, char *servername)
+int locator_register_host(char *hostname, enum locator_servicetype_t svctype, char *servername)
 {
 	char *buf;
 	int bufsz;
@@ -179,7 +267,7 @@ int locator_register_host(char *hostname, enum servicetype_t svctype, char *serv
 	return res;
 }
 
-char *locator_query(char *hostname, enum servicetype_t svctype, int extras)
+char *locator_query(char *hostname, enum locator_servicetype_t svctype, int extras)
 {
 	static char *buf = NULL;
 	static int bufsz = 0;
@@ -194,16 +282,23 @@ char *locator_query(char *hostname, enum servicetype_t svctype, int extras)
 		bufsz = bufneeded;
 		buf = (char *)realloc(buf, bufsz);
 	}
+
+	if (havecache[svctype] && !extras) {
+		char *cachedata = locator_querycache(svctype, hostname);
+		if (cachedata) return cachedata;
+	}
+
 	sprintf(buf, "Q|%s|%s", servicetype_names[svctype], hostname);
 	if (extras) buf[0] = 'X';
-
 	res = call_locator(buf, bufsz);
 	if (res == -1) return NULL;
+
+	if (havecache[svctype] && !extras) locator_updatecache(svctype, hostname, buf+2);
 
 	return buf+2;
 }
 
-int locator_serverdown(char *servername, enum servicetype_t svctype)
+int locator_serverdown(char *servername, enum locator_servicetype_t svctype)
 {
 	char *buf;
 	int bufsz;
@@ -214,12 +309,13 @@ int locator_serverdown(char *servername, enum servicetype_t svctype)
 	sprintf(buf, "D|%s|%s", servername, servicetype_names[svctype]);
 
 	res = call_locator(buf, bufsz);
+	locator_flushcache(svctype, NULL);
 
 	xfree(buf);
 	return res;
 }
 
-int locator_serverup(char *servername, enum servicetype_t svctype)
+int locator_serverup(char *servername, enum locator_servicetype_t svctype)
 {
 	char *buf;
 	int bufsz;
@@ -235,7 +331,7 @@ int locator_serverup(char *servername, enum servicetype_t svctype)
 	return res;
 }
 
-int locator_serverforget(char *servername, enum servicetype_t svctype)
+int locator_serverforget(char *servername, enum locator_servicetype_t svctype)
 {
 	char *buf;
 	int bufsz;
@@ -246,10 +342,13 @@ int locator_serverforget(char *servername, enum servicetype_t svctype)
 	sprintf(buf, "F|%s|%s", servername, servicetype_names[svctype]);
 
 	res = call_locator(buf, bufsz);
+	locator_flushcache(svctype, NULL);
 
 	xfree(buf);
 	return res;
 }
+
+
 
 #ifdef STANDALONE
 
@@ -302,7 +401,7 @@ int main(int argc, char *argv[])
 		switch (*p1) {
 		  case 'R': case 'r':
 			if (*p2 == 's') {
-				enum servicetype_t svc;
+				enum locator_servicetype_t svc;
 				enum locator_sticky_t sticky;
 				int weight;
 
