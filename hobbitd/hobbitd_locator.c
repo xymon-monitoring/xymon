@@ -18,7 +18,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_locator.c,v 1.1 2006-11-14 11:58:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_locator.c,v 1.2 2006-11-14 13:40:47 henrik Exp $";
 
 #include "config.h"
 
@@ -75,7 +75,7 @@ RbtHandle hitree[ST_MAX];
 
 void tree_init(void)
 {
-	enum servicetype_t stype;
+	enum locator_servicetype_t stype;
 
 	for (stype = 0; (stype < ST_MAX); stype++) {
 		sitree[stype] = rbtNew(name_compare);
@@ -83,7 +83,7 @@ void tree_init(void)
 	}
 }
 
-serverinfo_t *register_server(char *servername, enum servicetype_t servicetype, int weight, enum locator_sticky_t sticky, char *extras)
+serverinfo_t *register_server(char *servername, enum locator_servicetype_t servicetype, int weight, enum locator_sticky_t sticky, char *extras)
 {
 	RbtIterator handle;
 	serverinfo_t *itm = NULL;
@@ -110,7 +110,7 @@ serverinfo_t *register_server(char *servername, enum servicetype_t servicetype, 
 	return itm;
 }
 
-serverinfo_t *downup_server(char *servername, enum servicetype_t servicetype, char action)
+serverinfo_t *downup_server(char *servername, enum locator_servicetype_t servicetype, char action)
 {
 	RbtIterator handle;
 	serverinfo_t *itm = NULL;
@@ -146,7 +146,7 @@ serverinfo_t *downup_server(char *servername, enum servicetype_t servicetype, ch
 }
 
 
-hostinfo_t *register_host(char *hostname, enum servicetype_t servicetype, char *servername)
+hostinfo_t *register_host(char *hostname, enum locator_servicetype_t servicetype, char *servername)
 {
 	RbtIterator handle;
 	hostinfo_t *itm = NULL;
@@ -183,7 +183,7 @@ hostinfo_t *register_host(char *hostname, enum servicetype_t servicetype, char *
 }
 
 
-serverinfo_t *find_server_by_type(enum servicetype_t servicetype)
+serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 {
 	serverinfo_t *itm = NULL;
 	RbtIterator endmarker = rbtEnd(sitree[servicetype]);
@@ -285,7 +285,7 @@ serverinfo_t *find_server_by_type(enum servicetype_t servicetype)
 }
 
 
-serverinfo_t *find_server_by_host(enum servicetype_t servicetype, char *hostname)
+serverinfo_t *find_server_by_host(enum locator_servicetype_t servicetype, char *hostname)
 {
 	RbtIterator handle;
 	hostinfo_t *hinfo;
@@ -327,7 +327,7 @@ void load_state(void)
 			if (ssticky) sextra = strtok(NULL, "\n");
 
 			if (tname && sname && sconfweight && sactweight && ssticky) {
-				enum servicetype_t stype = get_servicetype(tname);
+				enum locator_servicetype_t stype = get_servicetype(tname);
 				enum locator_sticky_t sticky = (atoi(ssticky) == 1) ? LOC_STICKY : LOC_ROAMING;
 
 				srv = register_server(sname, stype, atoi(sconfweight), sticky, sextra);
@@ -351,7 +351,7 @@ void load_state(void)
 			if (hname) sname = strtok(NULL, "|\n");
 
 			if (tname && hname && sname) {
-				enum servicetype_t stype = get_servicetype(tname);
+				enum locator_servicetype_t stype = get_servicetype(tname);
 
 				register_host(hname, stype, sname);
 				dbgprintf("Loaded host %s/%s for server %s\n", hname, tname, sname);
@@ -442,7 +442,7 @@ void handle_request(char *buf)
 		/* Register server|type|weight|sticky|extras */
 		{
 			char *tok, *servername = NULL;
-			enum servicetype_t servicetype = ST_MAX;
+			enum locator_servicetype_t servicetype = ST_MAX;
 			int serverweight = 0;
 			enum locator_sticky_t sticky = LOC_ROAMING;
 			char *serverextras = NULL;
@@ -469,7 +469,7 @@ void handle_request(char *buf)
 		/* Down/Up/Forget server|type */
 		{
 			char *tok, *servername = NULL;
-			enum servicetype_t servicetype = ST_MAX;
+			enum locator_servicetype_t servicetype = ST_MAX;
 
 			tok = strtok(buf, delims); if (tok) { tok = strtok(NULL, delims); }
 			if (tok) { servername = tok; tok = strtok(NULL, delims); }
@@ -487,7 +487,7 @@ void handle_request(char *buf)
 		/* Register host|type|server */
 		{
 			char *tok, *hostname = NULL, *servername = NULL;
-			enum servicetype_t servicetype = ST_MAX;
+			enum locator_servicetype_t servicetype = ST_MAX;
 
 			tok = strtok(buf, delims); if (tok) { tok = strtok(NULL, delims); }
 			if (tok) { hostname = tok; tok = strtok(NULL, delims); }
@@ -509,7 +509,7 @@ void handle_request(char *buf)
 		/* Query type|host */
 		{
 			char *tok, *hostname = NULL;
-			enum servicetype_t servicetype = ST_MAX;
+			enum locator_servicetype_t servicetype = ST_MAX;
 			int extquery = (buf[0] == 'X');
 			serverinfo_t *res = NULL;
 
