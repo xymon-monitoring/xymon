@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.256 2006-10-31 11:53:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.257 2006-11-14 11:59:58 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -508,9 +508,9 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	gettimeofday(&tstamp, &tz);
 	if (readymsg) {
 		n = snprintf(channel->channelbuf, (bufsz-5),
-			    "@@%s#%u|%d.%06d|%s|%s", 
-			    channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender,
-			    readymsg);
+			    "@@%s#%u/%s|%d.%06d|%s|%s", 
+			    channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
+			    sender, readymsg);
 		if (n > (bufsz-5)) {
 			char *p, *overmsg = readymsg;
 			*(overmsg+100) = '\0';
@@ -524,8 +524,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 		switch(channel->channelid) {
 		  case C_STATUS:
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, log->origin, hostname, log->test->name, 
 				(int) log->validtime, colnames[log->color], (log->testflags ? log->testflags : ""),
 				colnames[log->oldcolor], (int) log->lastchange); 
@@ -553,8 +553,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_STACHG:
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, log->origin, hostname, log->test->name, 
 				(int) log->validtime, colnames[log->color], 
 				colnames[log->oldcolor], (int) log->lastchange);
@@ -581,8 +581,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_CLICHG:
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%d\n%s",
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
+				"@@%s#%u/%s|%d.%06d|%s|%s|%d\n%s",
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, (int) log->host->clientmsgtstamp, 
 				log->host->clientmsg);
 			if (n > (bufsz-5)) {
@@ -596,8 +596,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 		  case C_PAGE:
 			if (strcmp(channelmarker, "ack") == 0) {
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d\n%s", 
-					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d\n%s", 
+					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip,
 					(int) log->acktime, msg);
@@ -613,8 +613,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				if (!osname) osname = "";
 
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
-					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
+					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
@@ -636,8 +636,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_NOTES:
 			n = snprintf(channel->channelbuf,  (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s\n%s", 
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				"@@%s#%u/%s|%d.%06d|%s|%s\n%s", 
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, msg);
 			if (n > (bufsz-5)) {
 				errprintf("Oversize notes msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
@@ -648,8 +648,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_ENADIS:
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%d",
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%d",
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
 				sender, hostname, log->test->name, (int) log->enabletime);
 			if (n > (bufsz-5)) {
 				errprintf("Oversize enadis msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
