@@ -15,6 +15,7 @@
 
 #include "hobbitd_ipc.h"
 
+extern int hobbitd_netinput(char *ipport);
 extern unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout, int *terminated);
 
 #endif
