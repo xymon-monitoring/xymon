@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.2 2006-11-14 13:35:27 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.3 2006-11-16 21:06:45 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -293,9 +293,17 @@ char *locator_query(char *hostname, enum locator_servicetype_t svctype, int extr
 	res = call_locator(buf, bufsz);
 	if (res == -1) return NULL;
 
-	if (havecache[svctype] && !extras) locator_updatecache(svctype, hostname, buf+2);
+	switch (*buf) {
+	  case '!': /* This host is fixed on an available server */
+	  case '*': /* Roaming host */
+		if (havecache[svctype] && !extras) locator_updatecache(svctype, hostname, buf+2);
+		return ((strlen(buf) > 2) ? buf+2 : NULL);
 
-	return buf+2;
+	  case '?': /* No available server to handle the request */
+		return NULL;
+	}
+
+	return NULL;
 }
 
 int locator_serverdown(char *servername, enum locator_servicetype_t svctype)
