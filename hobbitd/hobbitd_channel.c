@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.51 2006-11-14 13:45:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.52 2006-11-16 21:05:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -118,13 +118,11 @@ void addnetpeer(char *peername)
 			if (inet_aton(realip, &addr) == 0) {
 				errprintf("Invalid IP address for %s (%s)\n", oneip, realip);
 				goto done;
-				return;
 			}
 		}
 		else {
 			errprintf("Cannot determine IP address of peer %s\n", oneip);
 			goto done;
-			return;
 		}
 	}
 
