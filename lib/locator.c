@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.5 2006-11-17 13:10:09 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.6 2006-11-17 20:47:03 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -242,6 +242,8 @@ int locator_register_server(char *servername, enum locator_servicetype_t svctype
 	bufsz = strlen(servername) + 100;
 	if (extras) bufsz += (strlen(extras) + 1);
 	buf = (char *)malloc(bufsz);
+
+	if (sticky == LOC_SINGLESERVER) weight = -1;
 	sprintf(buf, "S|%s|%s|%d|%d|%s", servername, servicetype_names[svctype], weight, 
 		((sticky == LOC_STICKY) ? 1 : 0), (extras ? extras : ""));
 
@@ -274,7 +276,7 @@ char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **e
 	int res, bufneeded;
 
 	bufneeded = strlen(hostname) + 100;
-	if (extras) bufsz += 1024;
+	if (extras) bufneeded += 1024;
 	if (!buf) {
 		bufsz = bufneeded;
 		buf = (char *)malloc(bufsz);
