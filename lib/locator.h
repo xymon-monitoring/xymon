@@ -13,7 +13,7 @@
 
 enum locator_servicetype_t { ST_RRD, ST_CLIENT, ST_ALERT, ST_HISTORY, ST_HOSTDATA, ST_MAX } ;
 extern const char *servicetype_names[];
-enum locator_sticky_t { LOC_ROAMING, LOC_STICKY } ;
+enum locator_sticky_t { LOC_ROAMING, LOC_STICKY, LOC_SINGLESERVER } ;
 
 extern enum locator_servicetype_t get_servicetype(char *typestr);
 extern int locator_init(char *ipport);
