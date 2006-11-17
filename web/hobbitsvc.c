@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.73 2006-08-07 10:05:39 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.74 2006-11-17 14:55:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.73 2006-08-07 10:05:39 henrik Exp $"
 static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,";
+static int locatorbased = 0;
 
 /* CGI params */
 static char *hostname = NULL;
@@ -433,7 +434,7 @@ int do_request(void)
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
 			  ishtmlformatted,
-			  (source == SRC_HOBBITD),
+			  locatorbased,
 			  multigraphs, (clientavail ? clienturi : NULL),
 			  nkprio, nkttgroup, nkttextra,
 			  stdout);
@@ -508,6 +509,11 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--locator=")) {
+			char *p = strchr(argv[argi], '=');
+			locator_init(p+1);
+			locatorbased = 1;
 		}
 	}
 
