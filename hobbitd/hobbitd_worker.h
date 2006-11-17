@@ -14,8 +14,10 @@
 #include <sys/time.h>
 
 #include "hobbitd_ipc.h"
+typedef void (update_fn_t)(char *);
 
-extern int hobbitd_netinput(char *ipport);
+extern int net_worker_option(char *arg);
+extern void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky, update_fn_t *updfunc);
 extern unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout, int *terminated);
 
 #endif
