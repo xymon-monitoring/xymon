@@ -12,8 +12,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.26 2006-10-24 15:12:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.27 2006-11-17 12:54:22 henrik Exp $";
 
+#include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -22,6 +23,8 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.26 2006-10-24 15:12:00 henrik Exp 
 #include <signal.h>
 #include <limits.h>
 #include <sys/wait.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
@@ -37,10 +40,30 @@ void sig_handler(int signum)
 	switch (signum) {
 	  case SIGCHLD:
 		  break;
+	  case SIGINT:
 	  case SIGTERM:
 		  running = 0;
 		  break;
 	}
+}
+
+void update_locator_hostdata(char *id)
+{
+	DIR *fd;
+	struct dirent *d;
+
+	fd = opendir(rrddir);
+	if (fd == NULL) {
+		errprintf("Cannot scan directory %s\n", rrddir);
+		return;
+	}
+
+	while ((d = readdir(fd)) != NULL) {
+		if (*(d->d_name) == '.') continue;
+		locator_register_host(d->d_name, ST_RRD, id);
+	}
+
+	closedir(fd);
 }
 
 int main(int argc, char *argv[])
@@ -68,21 +91,29 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			extids = strdup(p+1);
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 	}
+
+	save_errbuf = 0;
 
 	if ((rrddir == NULL) && xgetenv("BBRRDS")) {
 		rrddir = strdup(xgetenv("BBRRDS"));
 	}
 
-	save_errbuf = 0;
+	if (exthandler && extids) setup_exthandler(exthandler, extids);
+
+	/* Do the network stuff if needed */
+	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
+
 	setup_signalhandler("hobbitd_rrd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
-
-	if (exthandler && extids) setup_exthandler(exthandler, extids);
 
 	running = 1;
 	while (running) {
