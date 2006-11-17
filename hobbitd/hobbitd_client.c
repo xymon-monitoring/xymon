@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.103 2006-10-24 15:12:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.104 2006-11-17 20:48:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1703,7 +1703,15 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--test") == 0) {
 			testmode(configfn);
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 	}
+
+	save_errbuf = 0;
+
+	/* Do the network stuff if needed */
+	net_worker_run(ST_CLIENT, LOC_ROAMING, NULL);
 
 	/* Signals */
 	setup_signalhandler("hobbitd_client");
@@ -1712,7 +1720,6 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGCHLD, SIG_IGN);
 
-	save_errbuf = 0;
 	running = 1;
 
 	while (running) {

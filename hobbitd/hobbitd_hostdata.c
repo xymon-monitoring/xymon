@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.6 2006-10-24 15:12:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.7 2006-11-17 20:48:40 henrik Exp $";
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -23,6 +23,8 @@ static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.6 2006-10-24 15:12:00 henrik 
 #include <signal.h>
 #include <limits.h>
 #include <errno.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
@@ -30,12 +32,33 @@ static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.6 2006-10-24 15:12:00 henrik 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
 
+static char *clientlogdir = NULL;
+
+void update_locator_hostdata(char *id)
+{
+	DIR *fd;
+	struct dirent *d;
+
+	fd = opendir(clientlogdir);
+	if (fd == NULL) {
+		errprintf("Cannot scan directory %s\n", clientlogdir);
+		return;
+	}
+
+	while ((d = readdir(fd)) != NULL) {
+		if (*(d->d_name) == '.') continue;
+		locator_register_host(d->d_name, ST_HOSTDATA, id);
+	}
+
+	closedir(fd);
+}
+
+
 int main(int argc, char *argv[])
 {
 	char *msg;
 	int running;
 	int argi, seq;
-	char *clientlogdir = NULL;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -49,6 +72,9 @@ int main(int argc, char *argv[])
 			 */
 			debug = 1;
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 	}
 
 	if (clientlogdir == NULL) clientlogdir = xgetenv("CLIENTLOGS");
@@ -58,6 +84,10 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
+
+	/* Do the network stuff if needed */
+	net_worker_run(ST_HOSTDATA, LOC_STICKY, update_locator_hostdata);
+
 	setup_signalhandler("hobbitd_hostdata");
 
 	running = 1;

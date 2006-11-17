@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.88 2006-10-24 15:12:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.89 2006-11-17 20:48:40 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -473,10 +473,16 @@ int main(int argc, char *argv[])
 			tracefn = strdup(strchr(argv[argi], '=')+1);
 			starttrace(tracefn);
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 		else {
 			errprintf("Unknown option '%s'\n", argv[argi]);
 		}
 	}
+
+	/* Do the network stuff if needed */
+	net_worker_run(ST_ALERT, LOC_SINGLESERVER, NULL);
 
 	if (checkfn) {
 		load_checkpoint(checkfn);
