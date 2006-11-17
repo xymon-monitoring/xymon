@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.3 2006-11-16 21:06:45 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.4 2006-11-17 12:49:19 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -267,13 +267,14 @@ int locator_register_host(char *hostname, enum locator_servicetype_t svctype, ch
 	return res;
 }
 
-char *locator_query(char *hostname, enum locator_servicetype_t svctype, int extras)
+char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **extras)
 {
 	static char *buf = NULL;
 	static int bufsz = 0;
 	int res, bufneeded;
 
 	bufneeded = strlen(hostname) + 100;
+	if (extras) bufsz += 1024;
 	if (!buf) {
 		bufsz = bufneeded;
 		buf = (char *)malloc(bufsz);
@@ -296,10 +297,15 @@ char *locator_query(char *hostname, enum locator_servicetype_t svctype, int extr
 	switch (*buf) {
 	  case '!': /* This host is fixed on an available server */
 	  case '*': /* Roaming host */
+		if (extras) {
+			*extras = strchr(buf+2, '|');
+			if (**extras == '|') **extras = '\0';
+		}
 		if (havecache[svctype] && !extras) locator_updatecache(svctype, hostname, buf+2);
 		return ((strlen(buf) > 2) ? buf+2 : NULL);
 
 	  case '?': /* No available server to handle the request */
+		locator_flushcache(svctype, hostname);
 		return NULL;
 	}
 
@@ -381,6 +387,7 @@ int main(int argc, char *argv[])
 
 	while (!done) {
 		char *p, *p1, *p2, *p3, *p4, *p5, *p6, *p7;
+		char *extras;
 
 		printf("Commands:\n");
 		printf("  r(egister) s servername type weight sticky\n");
@@ -438,8 +445,15 @@ int main(int argc, char *argv[])
 
 		  case 'Q': case 'q':
 		  case 'X': case 'x':
-			res = locator_query(p2, get_servicetype(p3), (*p1 == 'x'));
-			if (res) printf("Result: %s\n", res); else printf("Failed\n");
+			extras = NULL;
+			res = locator_query(p2, get_servicetype(p3), (*p1 == 'x') ? &extras : NULL);
+			if (res) {
+				printf("Result: %s\n", res); 
+				if (extras) printf("  Extras gave: %s\n", extras);
+			}
+			else {
+				printf("Failed\n");
+			}
 			break;
 
 		  case 'P': case 'p':

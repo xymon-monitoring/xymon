@@ -22,7 +22,7 @@ extern void locator_flushcache(enum locator_servicetype_t svc, char *key);
 extern char *locator_ping(void);
 extern int locator_register_server(char *servername, enum locator_servicetype_t svctype, int weight, enum locator_sticky_t sticky, char *extras);
 extern int locator_register_host(char *hostname, enum locator_servicetype_t svctype, char *servername);
-extern char *locator_query(char *hostname, enum locator_servicetype_t svctype, int extras);
+extern char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **extras);
 extern int locator_serverup(char *servername, enum locator_servicetype_t svctype);
 extern int locator_serverdown(char *servername, enum locator_servicetype_t svctype);
 
