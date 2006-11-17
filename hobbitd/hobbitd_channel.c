@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.52 2006-11-16 21:05:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.53 2006-11-17 12:48:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -276,7 +276,7 @@ void addmessage(char *inbuf)
 			return; /* Malformed input */
 		}
 		*hostend = '\0';
-		peerlocation = locator_query(hostname, locatorservice, 0);
+		peerlocation = locator_query(hostname, locatorservice, NULL);
 		*hostend = '|';
 
 		/*
