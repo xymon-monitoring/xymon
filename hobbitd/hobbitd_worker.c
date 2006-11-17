@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.29 2006-11-14 12:02:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.30 2006-11-17 12:51:19 henrik Exp $";
 
 #include "config.h"
 
@@ -48,6 +48,15 @@ static int inputfd = STDIN_FILENO;
 
 #define EXTRABUFSPACE 4095
 
+static char *locatorlocation = NULL;
+static char *locatorid = NULL;
+static enum locator_servicetype_t locatorsvc = ST_MAX;
+static int  locatorweight = 1;
+static char *locatorextra = NULL;
+static char *listenipport = NULL;
+static time_t locatorhb = 0;
+
+
 static void netinp_sighandler(int signum)
 {
 	switch (signum) {
@@ -58,7 +67,20 @@ static void netinp_sighandler(int signum)
 	}
 }
 
-int hobbitd_netinput(char *ipport)
+static void net_worker_heartbeat(void)
+{
+	time_t now;
+
+	if (!locatorid || (locatorsvc == ST_MAX)) return;
+
+	now = time(NULL);
+	if (now > locatorhb) {
+		locator_serverup(locatorid, locatorsvc);
+		locatorhb = now + 60;
+	}
+}
+
+static int net_worker_listener(char *ipport)
 {
 	/*
 	 * Setup a listener socket on IP+port. When a connection arrives,
@@ -71,10 +93,7 @@ int hobbitd_netinput(char *ipport)
 	int lsocket = -1;
 	struct sockaddr_in laddr;
 	struct sigaction sa;
-	pid_t children[5];
-	int i, opt;
-
-	for (i=0; (i < 5); i++) children[i] = 0;
+	int opt;
 
 	listenip = ipport;
 	p = strchr(listenip, ':');
@@ -120,6 +139,9 @@ int hobbitd_netinput(char *ipport)
 		return -1;
 	}
 
+	/* Make listener socket non-blocking, so we can send keep-alive's while waiting for connections */
+	fcntl(lsocket, F_SETFL, O_NONBLOCK);
+
 	/* Catch some signals */
 	setup_signalhandler("hobbitd_rrd-listener");
 	memset(&sa, 0, sizeof(sa));
@@ -133,56 +155,165 @@ int hobbitd_netinput(char *ipport)
 		int addrsz, sock;
 		int childstat;
 		pid_t childpid;
+		fd_set fdread;
+		struct timeval tmo;
+		int n;
 
-		addrsz = sizeof(netaddr);
-		sock = accept(lsocket, (struct sockaddr *)&netaddr, &addrsz);
-
-		if (sock >= 0) {
-			/* Got a new connection */
-
-			childpid = fork();
-			if (childpid == 0) {
-				/* Child takes input from the new socket, and starts working */
-				close(lsocket);	/* Close the listener socket */
-				inputfd = sock;
-				return 0;
-			}
-			else if (childpid > 0) {
-				/* Parent closes the new socket (child has it) */
-				int i;
-
-				close(sock);
-
-				for (i=0; (i < 5) && (children[i] > 0); i++) ;
-				if (i < 5) children[i] = childpid;
-				continue;
-			}
-			else {
-				errprintf("Error forking worker for new connection: %s\n", strerror(errno));
+		FD_ZERO(&fdread);
+		FD_SET(lsocket, &fdread);
+		tmo.tv_sec = 60; tmo.tv_usec = 0;
+		n = select(lsocket+1, &fdread, NULL, NULL, &tmo);
+		if (n == -1) {
+			if (errno != EINTR) {
+				errprintf("select() failed while waiting for connection : %s\n", strerror(errno));
 				running = 0;
-				continue;
 			}
 		}
+		else if (n == 0) {
+			/* Timeout */
+			net_worker_heartbeat();
+		}
 		else {
-			/* Error while waiting for accept() to complete */
-			if (errno != EINTR) {
-				errprintf("accept() failed: %s\n", strerror(errno));
-				running = 0;
+			/* We have a connection ready */
+			addrsz = sizeof(netaddr);
+			sock = accept(lsocket, (struct sockaddr *)&netaddr, &addrsz);
+
+			if (sock >= 0) {
+				/* Got a new connection */
+
+				childpid = fork();
+				if (childpid == 0) {
+					/* Child takes input from the new socket, and starts working */
+					close(lsocket);	/* Close the listener socket */
+					inputfd = sock;
+					return 0;
+				}
+				else if (childpid > 0) {
+					/* Parent closes the new socket (child has it) */
+					close(sock);
+					continue;
+				}
+				else {
+					errprintf("Error forking worker for new connection: %s\n", strerror(errno));
+					running = 0;
+					continue;
+				}
+			}
+			else {
+				/* Error while waiting for accept() to complete */
+				if (errno != EINTR) {
+					errprintf("accept() failed: %s\n", strerror(errno));
+					running = 0;
+				}
 			}
 		}
 
 		/* Pickup failed children */
-		while ((childpid = wait3(&childstat, WNOHANG, NULL)) > 0) {
-			int i;
-			for (i=0; ((i<5) && (childpid != children[i])); i++) ;
-			if (i < 5) children[i] = 0;
-		}
+		while ((childpid = wait3(&childstat, WNOHANG, NULL)) > 0);
 	}
 
 	/* Kill any children that are still around */
-	for (i=0; (i<5); i++) if (children[i] > 0) kill(children[i], SIGTERM);
+	kill(0, SIGTERM);
 
 	return 1;
+}
+
+int net_worker_option(char *arg)
+{
+	int res = 1;
+
+	if (argnmatch(arg, "--locator=")) {
+		char *p = strchr(arg, '=');
+		locatorlocation = strdup(p+1);
+	}
+	else if (argnmatch(arg, "--locatorid=")) {
+		char *p = strchr(arg, '=');
+		locatorid = strdup(p+1);
+	}
+	else if (argnmatch(arg, "--locatorweight=")) {
+		char *p = strchr(arg, '=');
+		locatorweight = atoi(p+1);
+	}
+	else if (argnmatch(arg, "--locatorextra=")) {
+		char *p = strchr(arg, '=');
+		locatorextra = strdup(p+1);
+	}
+	else if (argnmatch(arg, "--listen=")) {
+		char *p = strchr(arg, '=');
+		listenipport = strdup(p+1);
+	}
+	else {
+		res = 0;
+	}
+
+	return res;
+}
+
+
+void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky, update_fn_t *updfunc)
+{
+	locatorsvc = svc;
+
+	if (listenipport) {
+		char *p;
+		struct in_addr dummy;
+
+		if (!locatorid) locatorid = strdup(listenipport);
+
+		p = strchr(locatorid, ':');
+		if (p == NULL) {
+			errprintf("Locator ID must be IP:PORT matching the listener address\n");
+			exit(1);
+		}
+		*p = '\0'; 
+		if (inet_aton(locatorid, &dummy) == 0) {
+			errprintf("Locator ID must be IP:PORT matching the listener address\n");
+			exit(1);
+		}
+		*p = ':';
+	}
+
+	if (listenipport && locatorlocation) {
+		int res;
+		int delay = 10;
+
+		/* Tell the world we're here */
+		while (locator_init(locatorlocation) != 0) {
+			errprintf("Locator unavailable, waiting for it to be ready\n");
+			sleep(delay);
+			if (delay < 240) delay *= 2;
+		}
+
+		locator_register_server(locatorid, svc, locatorweight, sticky, locatorextra);
+		if (updfunc) (*updfunc)(locatorid);
+
+		/* Launch the network listener and wait for incoming connections */
+		res = net_worker_listener(listenipport);
+
+		/*
+		 * Return value is:
+		 * -1 : Error in setup. Abort.
+		 *  0 : New connection arrived, and this is now a forked worker process. Continue.
+		 *  1 : Listener terminates. Exit normally.
+		 */
+		if (res == -1) {
+			errprintf("Listener setup failed, aborting\n");
+			locator_serverdown(locatorid, svc);
+			exit(1);
+		}
+		else if (res == 1) {
+			errprintf("hobbitd_rrd network listener terminated\n");
+			locator_serverdown(locatorid, svc);
+			exit(0);
+		}
+		else {
+			/* Worker process started. Return from here causes worker to start. */
+		}
+	}
+	else if (listenipport || locatorlocation || locatorid) {
+		errprintf("Must specify all of --listen, --locator and --locatorid\n");
+		exit(1);
+	}
 }
 
 unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout, int *terminated)
@@ -420,8 +551,15 @@ startagain:
 		goto startagain;
 	}
 
-	/* Get and check the message sequence number */
-	{
+	if (!locatorid) {
+		/* 
+		 * Get and check the message sequence number.
+		 * We dont do this for network based workers, since the
+		 * sequence number is globally generated (by hobbitd)
+		 * but a network-based worker may only see some of the
+		 * messages (those that are not handled by other network-based
+		 * worker modules).
+		 */
 		char *p = result + strcspn(result, "0123456789|");
 		if (isdigit((int)*p)) {
 			*seq = atoi(p);
