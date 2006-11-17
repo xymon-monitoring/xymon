@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.4 2006-11-17 12:49:19 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.5 2006-11-17 13:10:09 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -299,7 +299,10 @@ char *locator_query(char *hostname, enum locator_servicetype_t svctype, char **e
 	  case '*': /* Roaming host */
 		if (extras) {
 			*extras = strchr(buf+2, '|');
-			if (**extras == '|') **extras = '\0';
+			if (**extras == '|') {
+				**extras = '\0';
+				(*extras)++;
+			}
 		}
 		if (havecache[svctype] && !extras) locator_updatecache(svctype, hostname, buf+2);
 		return ((strlen(buf) > 2) ? buf+2 : NULL);
