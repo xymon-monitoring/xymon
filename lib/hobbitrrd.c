@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.41 2006-08-18 12:13:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.42 2006-11-17 14:52:24 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -195,7 +195,8 @@ hobbitgraph_t *find_hobbit_graph(char *rrdname)
 
 
 static char *hobbit_graph_text(char *hostname, char *dispname, char *service, int bgcolor,
-			      hobbitgraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt)
+			      hobbitgraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt,
+			      int locatorbased)
 {
 	static char *rrdurl = NULL;
 	static int rrdurlsize = 0;
@@ -203,8 +204,17 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 	char *svcurl;
 	int svcurllen, rrdparturlsize;
 	char rrdservicename[100];
+	char *cgiurl = xgetenv("CGIBINURL");
 
 	MEMDEFINE(rrdservicename);
+
+	if (locatorbased) {
+		char *qres = locator_query(hostname, ST_RRD, &cgiurl);
+		if (!qres) {
+			errprintf("Cannot find RRD files for host %s\n", hostname);
+			return "";
+		}
+	}
 
 	if (!gwidth) {
 		gwidth = atoi(xgetenv("RRDWIDTH"));
@@ -226,7 +236,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 	}
 
 	svcurllen = 2048                        + 
-		    strlen(xgetenv("CGIBINURL")) + 
+		    strlen(cgiurl)              + 
 		    strlen(hostname)            + 
 		    strlen(rrdservicename)  + 
 		    strlen(urlencode(dispname ? dispname : hostname));
@@ -259,13 +269,13 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 		do {
 			if (itemcount > 0) {
 				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
-					xgetenv("CGIBINURL"), hostname, rrdservicename, 
+					cgiurl, hostname, rrdservicename, 
 					gwidth, gheight,
 					first, step);
 			}
 			else {
 				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
-					xgetenv("CGIBINURL"), hostname, rrdservicename,
+					cgiurl, hostname, rrdservicename,
 					gwidth, gheight);
 			}
 
@@ -297,11 +307,12 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 
 char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 			hobbitgraph_t *graphdef, int itemcount,
-			hg_stale_rrds_t nostale, hg_link_t wantmeta)
+			hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased)
 {
 	return hobbit_graph_text(hostname, dispname, 
 				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
-				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt));
+				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt),
+				 locatorbased);
 }
 
