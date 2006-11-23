@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.20 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: stackio.c,v 1.21 2006-11-23 11:35:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -388,15 +388,17 @@ static void addtofnlist(char *dirname, void **v_listhead)
 
 	closedir(dirfd);
 
-	if (fnsz) qsort(fnames, fnsz, sizeof(char *), namecompare);
-	for (i=0; (i<fnsz); i++) {
-		htnames_t *newitem = malloc(sizeof(htnames_t));
-		newitem->name = fnames[i];
-		newitem->next = fnlist;
-		fnlist = newitem;
-	}
+	if (fnsz) {
+		qsort(fnames, fnsz, sizeof(char *), namecompare);
+		for (i=0; (i<fnsz); i++) {
+			htnames_t *newitem = malloc(sizeof(htnames_t));
+			newitem->name = fnames[i];
+			newitem->next = fnlist;
+			fnlist = newitem;
+		}
 
-	xfree(fnames);
+		xfree(fnames);
+	}
 }
 
 char *stackfgets(strbuffer_t *buffer, char *extraincl)
@@ -438,13 +440,18 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 				xfree(tmp->name); xfree(tmp);
 				return stackfgets(buffer, extraincl);
 			}
-			else {
+			else if (fnlist) {
 				htnames_t *tmp = fnlist;
 
 				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", fnlist->name, buffer);
 				fnlist = fnlist->next;
 				xfree(tmp->name); xfree(tmp);
 				if (eol) *eol = '\n';
+				return result;
+			}
+			else {
+				/* Empty directory include - return a blank line */
+				*result = '\0'; 
 				return result;
 			}
 		}
