@@ -8,7 +8,7 @@
 /* a particular task for some ID - e.g. which server holds the RRD files for  */
 /* host "foo" - so Hobbit sends data and requests to the right place.         */
 /*                                                                            */
-/* This daemon provides this locator service. Tasks may register ID's and     */
+/* This daemon provides the locator service. Tasks may register ID's and      */
 /* services, allowing others to lookup where they are located.                */
 /*                                                                            */
 /* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
@@ -18,7 +18,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_locator.c,v 1.2 2006-11-14 13:40:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_locator.c,v 1.3 2006-11-23 21:12:52 henrik Exp $";
 
 #include "config.h"
 
@@ -83,6 +83,24 @@ void tree_init(void)
 	}
 }
 
+void recalc_current(enum locator_servicetype_t stype)
+{
+	/* Point our "last-used-server" pointer at the server with the most negative weight */
+	RbtIterator handle;
+	serverinfo_t *wantedserver = NULL, *oneserver;
+	int minweight = 0;
+
+	for (handle = rbtBegin(sitree[stype]); (handle != rbtEnd(sitree[stype])); handle = rbtNext(sitree[stype], handle)) {
+		oneserver = (serverinfo_t *)gettreeitem(sitree[stype], handle);
+		if (oneserver->serveractualweight < minweight) {
+			wantedserver = oneserver;
+			minweight = oneserver->serveractualweight;
+		}
+	}
+
+	sicurrent[stype] = wantedserver;
+}
+
 serverinfo_t *register_server(char *servername, enum locator_servicetype_t servicetype, int weight, enum locator_sticky_t sticky, char *extras)
 {
 	RbtIterator handle;
@@ -106,6 +124,8 @@ serverinfo_t *register_server(char *servername, enum locator_servicetype_t servi
 
 	if (itm->serverextras) xfree(itm->serverextras);
 	itm->serverextras = (extras ? strdup(extras) : NULL);
+
+	if (weight < 0) recalc_current(servicetype);
 
 	return itm;
 }
@@ -133,12 +153,14 @@ serverinfo_t *downup_server(char *servername, enum locator_servicetype_t service
 		dbgprintf("Downing server '%s' type %s\n", servername, servicetype_names[servicetype]);
 		itm->serveractualweight = 0;
 		itm->serverweightleft = 0;
+		if (itm->serverconfweight < 0) recalc_current(servicetype);
 		break;
 
 	  case 'U':
 		dbgprintf("Upping server '%s' type %s to weight %d\n", servername, servicetype_names[servicetype], itm->serverconfweight);
 		itm->serveractualweight = itm->serverconfweight;
 		/* Dont mess with serverweightleft - this may just be an "i'm alive" message */
+		if (itm->serverconfweight < 0) recalc_current(servicetype);
 		break;
 	}
 
@@ -182,30 +204,71 @@ hostinfo_t *register_host(char *hostname, enum locator_servicetype_t servicetype
 	return itm;
 }
 
+hostinfo_t *rename_host(char *oldhostname, enum locator_servicetype_t servicetype, char *newhostname)
+{
+	RbtIterator handle, newhandle;
+	hostinfo_t *itm = NULL;
+
+	handle = rbtFind(hitree[servicetype], oldhostname);
+	if (handle == rbtEnd(hitree[servicetype])) return NULL;
+	newhandle = rbtFind(hitree[servicetype], newhostname);
+	if (newhandle != rbtEnd(hitree[servicetype])) {
+		errprintf("Ignored rename of %s to %s - new name already exists\n", oldhostname, newhostname);
+		return NULL;
+	}
+
+	itm = gettreeitem(hitree[servicetype], handle);
+
+	rbtErase(hitree[servicetype], handle); xfree(itm->hostname);
+	itm->hostname = strdup(newhostname);
+	rbtInsert(hitree[servicetype], itm->hostname, itm);
+
+	return itm;
+}
 
 serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 {
-	serverinfo_t *itm = NULL;
+	serverinfo_t *nextserver = NULL;
 	RbtIterator endmarker = rbtEnd(sitree[servicetype]);
 
 	/* 
 	 * We must do weight handling here.
-	 * The idea is that each server has "serveractualweight" tokens, and we use them
-	 * one by one for each request. "serveractualweightleft" tells how many tokens are left.
-	 * When a server has been used once, we go to the next server which has any tokens left. 
-	 * When all tokens have been used, we replenish the token counts and start over.
+	 *
+	 * Some weights (the serveractualweight attribute) have special meaning:
+	 * Negative: Only one server receives requests. We should use the
+	 *           server with the lowest weight.
+	 * 0       : This server is down and cannot receive any requests.
+	 * 1       : Server is up, but should only receive requests for hosts
+	 *           that have been registered as resident on this server.
+	 * >1      : Server is up and handles any request.
+	 *
+	 * When looking for a server, we do a weighted round-robin of the
+	 * servers that are available. The idea is that each server has 
+	 * "serveractualweight" tokens, and we use them one by one for each 
+	 * request. "serveractualweightleft" tells how many tokens are left.
+	 * When a server has been used once, we go to the next server which 
+	 * has any tokens left. When all tokens have been used, we replenish 
+	 * the token counts from "serveractualweight" and start over.
 	 *
 	 * sicurrent[servicetype] points to the last server that was used.
 	 */
 
 	if (sicurrent[servicetype] != endmarker) {
-		serverinfo_t *lastitm = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
+		serverinfo_t *lastserver;
 
-		/* See if our current server handles all requests */
-		if (lastitm->serveractualweight < 0) return lastitm;
+		/* We have a last-server-used for this request */
+		lastserver = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
+
+		/* 
+		 * See if our the last server used handles all requests.
+		 * If it does, then sicurrent[servicetype] will ALWAYS
+		 * contain the server we want to use (it is updated
+		 * whenever servers register or weights change).
+		 */
+		if (lastserver->serveractualweight < 0) return lastserver;
 
 		/* OK, we have now used one token from this server. */
-		if (lastitm->serveractualweight > 0) lastitm->serverweightleft -= 1;
+		if (lastserver->serveractualweight > 1) lastserver->serverweightleft -= 1;
 
 		/* Go to the next server with any tokens left */
 		do {
@@ -215,19 +278,20 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 				sicurrent[servicetype] = rbtBegin(sitree[servicetype]);
 			}
 
-			itm = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
-		} while ((itm->serverweightleft == 0) && (itm != lastitm));
+			nextserver = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
+		} while ((nextserver->serverweightleft == 0) && (nextserver != lastserver));
 
-		if (itm == lastitm) {
+		if ((nextserver == lastserver) && (nextserver->serverweightleft == 0)) {
 			/* Could not find any servers with a token left for us to use */
-			itm = NULL;
+			nextserver = NULL;
 		}
 	}
 
-	if (itm == NULL) {
+	if (nextserver == NULL) {
 		/* Restart server RR walk */
 		int totalweight = 0;
 		RbtIterator handle, firstok;
+		serverinfo_t *srv;
 
 		firstok = endmarker;
 
@@ -236,52 +300,20 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 			( (handle != endmarker) && (totalweight >= 0) ); 
 			 handle = rbtNext(sitree[servicetype], handle) ) {
 
-			itm = gettreeitem(sitree[servicetype], handle);
-			if (itm->serveractualweight == 0) {
-				continue;
-			}
-			else if (itm->serveractualweight < 0) {
-				totalweight = -1;
-			}
-			else if (itm->serveractualweight > 0) {
-				totalweight += itm->serveractualweight;
-				itm->serverweightleft = itm->serveractualweight;
-			}
+			srv = gettreeitem(sitree[servicetype], handle);
+			if (srv->serveractualweight <= 1) continue;
+
+			srv->serverweightleft = (srv->serveractualweight - 1);
+			totalweight += srv->serverweightleft;
 
 			if (firstok == endmarker) firstok = handle;
 		}
 
 		sicurrent[servicetype] = firstok;
-		itm = (firstok != endmarker) ?  gettreeitem(sitree[servicetype], firstok) : NULL;
-
-#if 0
-		if (firstok != endmarker) {
-			/*
-			 * We know there is at least one server with some tokens left.
-			 * Find the next server in the sequence that we can use.
-			 */
-
-			if (sicurrent[servicetype] == endmarker) {
-				sicurrent[servicetype] = firstok;
-				itm = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
-			}
-			else {
-				do {
-					sicurrent[servicetype] = rbtNext(sitree[servicetype], sicurrent[servicetype]);
-					if (sicurrent[servicetype] == endmarker) {
-						/* Start from the beginning again */
-						sicurrent[servicetype] = rbtBegin(sitree[servicetype]);
-					}
-	
-					itm = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
-				} while ((itm->serverweightleft == 0) && (sicurrent[servicetype] != firstok));
-			}
-		}
-#endif
-
+		nextserver = (firstok != endmarker) ?  gettreeitem(sitree[servicetype], firstok) : NULL;
 	}
 
-	return itm;
+	return nextserver;
 }
 
 
@@ -307,6 +339,7 @@ void load_state(void)
 	FILE *fd;
 	char buf[4096];
 	char *tname, *sname, *sconfweight, *sactweight, *ssticky, *sextra, *hname;
+	enum locator_servicetype_t stype;
 
 	tmpdir = xgetenv("BBTMP"); if (!tmpdir) tmpdir = "/tmp";
 	fn = (char *)malloc(strlen(tmpdir) + 100);
@@ -327,9 +360,9 @@ void load_state(void)
 			if (ssticky) sextra = strtok(NULL, "\n");
 
 			if (tname && sname && sconfweight && sactweight && ssticky) {
-				enum locator_servicetype_t stype = get_servicetype(tname);
 				enum locator_sticky_t sticky = (atoi(ssticky) == 1) ? LOC_STICKY : LOC_ROAMING;
 
+				stype = get_servicetype(tname);
 				srv = register_server(sname, stype, atoi(sconfweight), sticky, sextra);
 				srv->serveractualweight = atoi(sactweight);
 				dbgprintf("Loaded server %s/%s (cweight %d, aweight %d, %s)\n",
@@ -339,6 +372,8 @@ void load_state(void)
 		}
 		fclose(fd);
 	}
+
+	for (stype = 0; (stype < ST_MAX); stype++) recalc_current(stype);
 
 	sprintf(fn, "%s/locator.hosts.chk", tmpdir);
 	fd = fopen(fn, "r");
@@ -499,6 +534,31 @@ void handle_request(char *buf)
 					  servicetype_names[servicetype], hostname, servername);
 				register_host(hostname, servicetype, servername);
 				strcpy(buf, "OK");
+			}
+			else strcpy(buf, "BADSYNTAX");
+		}
+		break;
+
+	  case 'M':
+		/* Rename host|type|newhostname */
+		{
+			char *tok, *oldhostname = NULL, *newhostname = NULL;
+			enum locator_servicetype_t servicetype = ST_MAX;
+
+			tok = strtok(buf, delims); if (tok) { tok = strtok(NULL, delims); }
+			if (tok) { oldhostname = tok; tok = strtok(NULL, delims); }
+			if (tok) { servicetype = get_servicetype(tok); tok = strtok(NULL, delims); }
+			if (tok) { newhostname = tok; tok = strtok(NULL, delims); }
+
+			if (oldhostname && (servicetype != ST_MAX) && newhostname) {
+				dbgprintf("Renaming type/host %s/%s to %s\n",
+					  servicetype_names[servicetype], oldhostname, newhostname);
+				if (rename_host(oldhostname, servicetype, newhostname)) {
+					strcpy(buf, "OK");
+				}
+				else {
+					strcpy(buf, "FAILED");
+				}
 			}
 			else strcpy(buf, "BADSYNTAX");
 		}
