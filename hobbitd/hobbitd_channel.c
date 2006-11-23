@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.53 2006-11-17 12:48:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.54 2006-11-23 21:13:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -254,59 +254,14 @@ void flushmessage(hobbit_peer_t *peer)
 	pendingcount--;
 }
 
-void addmessage(char *inbuf)
+static void addmessage_onepeer(hobbit_peer_t *peer, char *inbuf, int inlen)
 {
 	hobbit_msg_t *newmsg;
-	RbtIterator phandle;
-	hobbit_peer_t *peer;
-
-	if (locatorbased) {
-		char *hostname, *hostend, *peerlocation;
-
-		/* hobbitd sends us messages with the KEY in the first field, between a '/' and a '|' */
-		hostname = inbuf + strcspn(inbuf, "/|\r\n");
-		if (*hostname != '/') {
-			dbgprintf("No key field in message, dropping it\n");
-			return; /* Malformed input */
-		}
-		hostname++;
-		hostend = hostname + strcspn(hostname, "|\r\n");
-		if (*hostend != '|') {
-			dbgprintf("No delimiter found in input, dropping it\n");
-			return; /* Malformed input */
-		}
-		*hostend = '\0';
-		peerlocation = locator_query(hostname, locatorservice, NULL);
-		*hostend = '|';
-
-		/*
-		 * If we get no response, or an empty response, 
-		 * then there is no server capable of handling this
-		 * request.
-		 */
-		if (!peerlocation || (*peerlocation == '\0')) {
-			dbgprintf("No response from locator, dropping it\n");
-			return;
-		}
-
-		phandle = rbtFind(peers, peerlocation);
-		if (phandle == rbtEnd(peers)) {
-			/* New peer - register it */
-			addnetpeer(peerlocation);
-			phandle = rbtFind(peers, peerlocation);
-		}
-	}
-	else {
-		phandle = rbtFind(peers, "");
-	}
-
-	if (phandle == rbtEnd(peers)) return;
-	peer = (hobbit_peer_t *)gettreeitem(peers, phandle);
 
 	newmsg = (hobbit_msg_t *) malloc(sizeof(hobbit_msg_t));
 	newmsg->tstamp = time(NULL);
 	newmsg->buf = newmsg->bufp = inbuf;
-	newmsg->buflen = strlen(inbuf);
+	newmsg->buflen = inlen;
 	newmsg->next = NULL;
 
 	/* 
@@ -332,22 +287,90 @@ void addmessage(char *inbuf)
 	pendingcount++;
 }
 
+void addmessage(char *inbuf)
+{
+	RbtIterator phandle;
+	hobbit_peer_t *peer;
+	int bcastmsg = 0;
+	int inlen = strlen(inbuf);
+
+	if (locatorbased) {
+		char *hostname, *hostend, *peerlocation;
+
+		/* hobbitd sends us messages with the KEY in the first field, between a '/' and a '|' */
+		hostname = inbuf + strcspn(inbuf, "/|\r\n");
+		if (*hostname != '/') {
+			dbgprintf("No key field in message, dropping it\n");
+			return; /* Malformed input */
+		}
+		hostname++;
+		bcastmsg = (*hostname == '*');
+		if (!bcastmsg) {
+			/* Lookup which server handles this host */
+			hostend = hostname + strcspn(hostname, "|\r\n");
+			if (*hostend != '|') {
+				dbgprintf("No delimiter found in input, dropping it\n");
+				return; /* Malformed input */
+			}
+			*hostend = '\0';
+			peerlocation = locator_query(hostname, locatorservice, NULL);
+			*hostend = '|';
+
+			/*
+			 * If we get no response, or an empty response, 
+			 * then there is no server capable of handling this
+			 * request.
+			 */
+			if (!peerlocation || (*peerlocation == '\0')) {
+				dbgprintf("No response from locator, dropping it\n");
+				return;
+			}
+
+			phandle = rbtFind(peers, peerlocation);
+			if (phandle == rbtEnd(peers)) {
+			/* New peer - register it */
+				addnetpeer(peerlocation);
+				phandle = rbtFind(peers, peerlocation);
+			}
+		}
+	}
+	else {
+		phandle = rbtFind(peers, "");
+	}
+
+	if (bcastmsg) {
+		for (phandle = rbtBegin(peers); (phandle != rbtEnd(peers)); phandle = rbtNext(peers, phandle)) {
+			peer = (hobbit_peer_t *)gettreeitem(peers, phandle);
+
+			addmessage_onepeer(peer, inbuf, inlen);
+		}
+	}
+	else {
+		if (phandle == rbtEnd(peers)) return;
+		peer = (hobbit_peer_t *)gettreeitem(peers, phandle);
+
+		addmessage_onepeer(peer, inbuf, inlen);
+	}
+}
 
 void shutdownconnection(hobbit_peer_t *peer)
 {
 	if (peer->peerstatus != P_UP) return;
 
 	peer->peerstatus = P_DOWN;
-	close(peer->peersocket);
-	peer->peersocket = -1;
 
 	switch (peer->peertype) {
 	  case P_LOCAL:
+		close(peer->peersocket);
+		peer->peersocket = -1;
 		if (peer->childpid > 0) kill(peer->childpid, SIGTERM);
 		peer->childpid = 0;
 		break;
 
 	  case P_NET:
+		shutdown(peer->peersocket, SHUT_RDWR);
+		close(peer->peersocket);
+		peer->peersocket = -1;
 		break;
 	}
 
@@ -355,7 +378,6 @@ void shutdownconnection(hobbit_peer_t *peer)
 	while (peer->msghead) flushmessage(peer);
 	peer->msghead = peer->msgtail = NULL;
 }
-
 
 
 void sig_handler(int signum)
