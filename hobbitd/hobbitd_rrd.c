@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.27 2006-11-17 12:54:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.28 2006-11-23 21:14:12 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -226,6 +226,8 @@ int main(int argc, char *argv[])
 			sprintf(oldhostdir, "%s/%s", rrddir, hostname);
 			sprintf(newhostdir, "%s/%s", rrddir, newhostname);
 			rename(oldhostdir, newhostdir);
+
+			if (net_worker_locatorbased()) locator_rename_host(hostname, newhostname, ST_RRD);
 
 			MEMUNDEFINE(newhostdir);
 			MEMUNDEFINE(oldhostdir);
