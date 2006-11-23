@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.30 2006-11-17 12:51:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.31 2006-11-23 21:12:13 henrik Exp $";
 
 #include "config.h"
 
@@ -249,6 +249,11 @@ int net_worker_option(char *arg)
 	return res;
 }
 
+
+int net_worker_locatorbased(void)
+{
+	return ((locatorsvc != ST_MAX) && listenipport && locatorlocation);
+}
 
 void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky, update_fn_t *updfunc)
 {
