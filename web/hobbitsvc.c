@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.74 2006-11-17 14:55:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.75 2006-11-23 21:16:44 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -214,7 +214,23 @@ int do_request(void)
 		strcpy(timesincechange, "0 minutes");
 
 		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
-			log = restofmsg = generate_trends(hostname);
+			if (locatorbased) {
+				char *cgiurl, *qres;
+
+				qres = locator_query(hostname, ST_RRD, &cgiurl);
+				if (!qres) {
+					errprintf("Cannot find RRD files for host %s\n", hostname);
+				}
+				else {
+					/* Redirect browser to the real server */
+					fprintf(stdout, "Location: %s/bb-hostsvc.sh?HOST=%s&SERVICE=%s\n\n",
+						cgiurl, hostname, service);
+					return 0;
+				}
+			}
+			else {
+				log = restofmsg = generate_trends(hostname);
+			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
 			log = restofmsg = generate_info(hostname);
