@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.6 2006-11-17 20:47:03 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.7 2006-11-23 21:14:41 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -262,6 +262,22 @@ int locator_register_host(char *hostname, enum locator_servicetype_t svctype, ch
 	bufsz = strlen(servername) + strlen(hostname) + 100;
 	buf = (char *)malloc(bufsz);
 	sprintf(buf, "H|%s|%s|%s", hostname, servicetype_names[svctype], servername);
+
+	res = call_locator(buf, bufsz);
+
+	xfree(buf);
+	return res;
+}
+
+int locator_rename_host(char *oldhostname, char *newhostname, enum locator_servicetype_t svctype)
+{
+	char *buf;
+	int bufsz;
+	int res;
+
+	bufsz = strlen(oldhostname) + strlen(newhostname) + 100;
+	buf = (char *)malloc(bufsz);
+	sprintf(buf, "M|%s|%s|%s", oldhostname, servicetype_names[svctype], newhostname);
 
 	res = call_locator(buf, bufsz);
 
