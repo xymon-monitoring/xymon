@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.7 2006-11-17 20:48:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.8 2006-11-23 21:24:52 henrik Exp $";
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -178,6 +178,8 @@ int main(int argc, char *argv[])
 			sprintf(oldhostdir, "%s/%s", clientlogdir, metadata[3]);
 			sprintf(newhostdir, "%s/%s", clientlogdir, metadata[4]);
 			rename(oldhostdir, newhostdir);
+
+			if (net_worker_locatorbased()) locator_rename_host(metadata[3], metadata[4], ST_HOSTDATA);
 		}
 	}
 
