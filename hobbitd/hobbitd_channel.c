@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.54 2006-11-23 21:13:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.55 2006-11-24 10:14:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -683,7 +683,7 @@ int main(int argc, char *argv[])
 						  strerror(errno));
 					canwrite = 0;
 					shutdownconnection(pwalk);
-					locator_serverdown(pwalk->peername, locatorservice);
+					if (pwalk->peertype == P_NET) locator_serverdown(pwalk->peername, locatorservice);
 					pwalk->peerstatus = P_FAILED;
 				}
 			}
