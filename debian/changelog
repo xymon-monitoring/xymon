@@ -1,3 +1,17 @@
+hobbit (4.3.0-0.20061124) unstable; urgency=low
+
+  * Interim release for CSC, to support off-loading of RRD
+    updates to multiple servers.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 24 Nov 2006 10:08:00 +0100
+
+
+hobbit (4.2.0-2) unstable; urgency=low
+
+  * Patchset 2 for Hobbit 4.2.0
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Tue, 03 Oct 2006 15:02:00 +0200
+
 hobbit (4.2.0-1) unstable; urgency=low
 
   * Hobbit version 4.2: New upstream release.
