@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.75 2006-11-23 21:16:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.76 2006-11-24 09:02:02 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -423,14 +423,29 @@ int do_request(void)
 	}
 	else {
 		if (clientid && (source == SRC_HISTLOGS)) {
-			char logfn[PATH_MAX];
-			struct stat st;
+			if (locatorbased) {
+				char *cgiurl, *qres;
 
-			sprintf(logfn, "%s/%s", hostdatadir, clientid);
-			clientavail = (stat(logfn, &st) == 0);
+				qres = locator_query(hostname, ST_HOSTDATA, &cgiurl);
+				if (!qres) {
+					errprintf("Cannot find hostdata files for host %s\n", hostname);
+				}
+				else {
+					clienturi = (char *)malloc(strlen(cgiurl) + 20 + strlen(hostname));
+					sprintf(clienturi, "%s/bb-hostsvc.sh?CLIENT=%s&amp;TIMEBUF=%s", 
+						cgiurl, hostname, clientid);
+				}
+			}
+			else {
+				char logfn[PATH_MAX];
+				struct stat st;
 
-			if (clientavail) {
-				sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
+				sprintf(logfn, "%s/%s", hostdatadir, clientid);
+				clientavail = (stat(logfn, &st) == 0);
+
+				if (clientavail) {
+					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
+				}
 			}
 		}
 
