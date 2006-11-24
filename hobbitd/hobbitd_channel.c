@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.55 2006-11-24 10:14:01 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.56 2006-11-24 11:50:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -654,6 +654,24 @@ int main(int argc, char *argv[])
 			}
 
 			while (pwalk->msghead && canwrite) {
+				fd_set fdwrite;
+				struct timeval tmo;
+
+				/* Check that this peer is ready for writing. */
+				FD_ZERO(&fdwrite); FD_SET(pwalk->peersocket, &fdwrite);
+				tmo.tv_sec = 0; tmo.tv_usec = 2000;
+				n = select(pwalk->peersocket+1, NULL, &fdwrite, NULL, &tmo);
+				if (n == -1) {
+					errprintf("select() failed: %s\n", strerror(errno));
+					canwrite = 0; 
+					hasfailed = 1;
+					continue;
+				}
+				else if ((n == 0) || (!FD_ISSET(pwalk->peersocket, &fdwrite))) {
+					canwrite = 0;
+					continue;
+				}
+
 				n = write(pwalk->peersocket, pwalk->msghead->bufp, pwalk->msghead->buflen);
 				if (n >= 0) {
 					pwalk->msghead->bufp += n;
