@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.20 2006-07-09 19:25:19 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.21 2006-11-30 09:41:14 henrik Exp $
 
 echo "[date]"
 date
@@ -62,7 +62,7 @@ netstat -ant 2>/dev/null
 echo "[ifstat]"
 /sbin/ifconfig
 echo "[ps]"
-ps -Aw -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
+ps -Aww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
 
 # $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""
