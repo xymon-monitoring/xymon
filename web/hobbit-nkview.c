@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.19 2006-10-01 11:54:22 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.20 2006-12-12 06:33:29 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -39,7 +39,7 @@ void errormsg(char *s)
 }
 
 
-void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
+int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 {
 	int hobbitdresult;
 	char *board = NULL;
@@ -54,7 +54,7 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	hobbitdresult = sendmessage(msg, NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	if (hobbitdresult != BB_OK) {
 		errormsg("Unable to fetch current status\n");
-		return;
+		return 1;
 	}
 
 	now = getcurrenttime(NULL);
@@ -120,6 +120,8 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 
 		bol = (eol ? (eol+1) : NULL);
 	}
+
+	return 0;
 }
 
 
@@ -416,11 +418,15 @@ int main(int argc, char *argv[])
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	load_nkconfig(NULL);
 	load_all_links();
-	loadstatus(maxprio, maxage, mincolor, wantacked);
-	use_recentgifs = 1;
-
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	generate_nkpage(stdout, "hobbitnk");
+
+	if (loadstatus(maxprio, maxage, mincolor, wantacked) == 0) {
+		use_recentgifs = 1;
+		generate_nkpage(stdout, "hobbitnk");
+	}
+	else {
+		fprintf(stdout, "Cannot load Hobbit status\n");
+	}
 
 	return 0;
 }
