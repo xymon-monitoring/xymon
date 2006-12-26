@@ -18,7 +18,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_locator.c,v 1.3 2006-11-23 21:12:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_locator.c,v 1.4 2006-12-26 16:47:51 henrik Exp $";
 
 #include "config.h"
 
@@ -86,14 +86,16 @@ void tree_init(void)
 void recalc_current(enum locator_servicetype_t stype)
 {
 	/* Point our "last-used-server" pointer at the server with the most negative weight */
-	RbtIterator handle;
-	serverinfo_t *wantedserver = NULL, *oneserver;
-	int minweight = 0;
+	RbtIterator handle, wantedserver;
+	serverinfo_t *oneserver;
+	int minweight = INT_MAX;
+
+	wantedserver = rbtEnd(sitree[stype]);
 
 	for (handle = rbtBegin(sitree[stype]); (handle != rbtEnd(sitree[stype])); handle = rbtNext(sitree[stype], handle)) {
 		oneserver = (serverinfo_t *)gettreeitem(sitree[stype], handle);
 		if (oneserver->serveractualweight < minweight) {
-			wantedserver = oneserver;
+			wantedserver = handle;
 			minweight = oneserver->serveractualweight;
 		}
 	}
@@ -250,7 +252,8 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 	 * has any tokens left. When all tokens have been used, we replenish 
 	 * the token counts from "serveractualweight" and start over.
 	 *
-	 * sicurrent[servicetype] points to the last server that was used.
+	 * sicurrent[servicetype] points to the tree-handle of the last server 
+	 * that was used.
 	 */
 
 	if (sicurrent[servicetype] != endmarker) {
@@ -698,6 +701,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	/* Make it non-blocking */
+	fcntl(lsocket, F_SETFL, O_NONBLOCK);
+
 	/* Redirect logging to the logfile, if requested */
 	if (logfile) {
 		freopen(logfile, "a", stdout);
@@ -741,11 +747,28 @@ int main(int argc, char *argv[])
 		struct sockaddr_in remaddr;
 		socklen_t remaddrsz;
 		char buf[32768];
+		fd_set fdread;
 
-		remaddrsz = sizeof(remaddr);
-		n = recvfrom(lsocket, buf, sizeof(buf), MSG_WAITALL, (struct sockaddr *)&remaddr, &remaddrsz);
+		/* Wait for a message */
+		FD_ZERO(&fdread);
+		FD_SET(lsocket, &fdread);
+		n = select(lsocket+1, &fdread, NULL, NULL, NULL);
+
 		if (n == -1) {
-			errprintf("Recv error: %s\n", strerror(errno));
+			/* Select error */
+			errprintf("select error, aborting: %s\n", strerror(errno));
+			keeprunning = 0;
+			continue;
+		}
+
+		/* We know there is some data */
+		remaddrsz = sizeof(remaddr);
+		n = recvfrom(lsocket, buf, sizeof(buf), 0, (struct sockaddr *)&remaddr, &remaddrsz);
+		if (n == -1) {
+			/* We may get EAGAIN if there is not a full message yet */
+			if (errno != EAGAIN) {
+				errprintf("Recv error: %s\n", strerror(errno));
+			}
 			continue;
 		}
 		else if (n == 0) {
@@ -758,7 +781,7 @@ int main(int argc, char *argv[])
 
 		handle_request(buf);
 
-		n = sendto(lsocket, buf, strlen(buf)+1, MSG_DONTWAIT, (struct sockaddr *)&remaddr, remaddrsz);
+		n = sendto(lsocket, buf, strlen(buf)+1, 0, (struct sockaddr *)&remaddr, remaddrsz);
 		if (n == -1) {
 			if (errno == EAGAIN) {
 				errprintf("Out-queue full to %s, dropping response\n", inet_ntoa(remaddr.sin_addr));
