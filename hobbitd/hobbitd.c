@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.258 2006-11-23 11:44:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.259 2007-01-04 16:52:00 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2874,18 +2874,27 @@ void do_message(conn_t *msg, char *origin)
 		bufp += sprintf(bufp, "<StatusBoard>\n");
 
 		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
-			namelist_t *hinfo;
-
 			hwalk = gettreeitem(rbhosts, hosthandle);
 			if (!hwalk) {
 				errprintf("host-tree has a record with no data\n");
 				continue;
 			}
 
-			hinfo = hostinfo(hwalk->hostname);
+			/* If there is a hostname filter, drop the "summary" 'hosts' */
+			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
 
-			/* Host/pagename filter */
-			if (!match_host_filter(hinfo, spage, shost, snet)) continue;
+			if (hwalk->hosttype == H_NORMAL) {
+				namelist_t *hinfo;
+				hinfo = hostinfo(hwalk->hostname);
+
+				if (!hinfo) {
+					errprintf("Hostname '%s' in tree, but no host-info\n", hwalk->hostname);
+					continue;
+				}
+
+				/* Host/pagename filter */
+				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
+			}
 
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
