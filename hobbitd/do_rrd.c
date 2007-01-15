@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.37 2006-08-03 10:20:51 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.38 2007-01-15 14:20:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -251,6 +251,8 @@ static int pickdata(char *buf, pcre *expr, int dupok, ...)
 	va_list ap;
 	char **ptr;
 	char w[100];
+
+	if (!expr) return 0;
 
 	res = pcre_exec(expr, NULL, buf, strlen(buf), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
 	if (res < 0) return 0;
