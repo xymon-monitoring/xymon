@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.104 2006-11-17 20:48:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.105 2007-01-15 14:22:19 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -257,6 +257,20 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		if ((sscanf(p, "%f, %f, %f", &load1, &load5, &load15) == 3) ||
 		    (sscanf(p, "%f %f %f", &load1, &load5, &load15) == 3)) {
 			sprintf(loadresult, "%.2f", load5);
+		}
+	}
+	else {
+		p = strstr(uptimestr, " load=");
+		if (p) {
+			char *lstart = p+6;
+			char savech;
+
+			p = lstart + strspn(lstart, "0123456789.");
+			savech = *p; *p = '\0';
+			load5 = atof(loadresult);
+			strcpy(loadresult, lstart);
+			*p = savech;
+			if (savech == '%') strcat(loadresult, "%");
 		}
 	}
 
@@ -1402,6 +1416,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/darwin.c"
 #include "client/irix.c"
 #include "client/sco_sv.c"
+#include "client/netware-snmp.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1821,6 +1836,10 @@ int main(int argc, char *argv[])
 				
                           case OS_SCO_SV:
   			        handle_sco_sv_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+				
+                          case OS_NETWARE_SNMP:
+  			        handle_netware_snmp_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 				
 			  case OS_WIN32: 
