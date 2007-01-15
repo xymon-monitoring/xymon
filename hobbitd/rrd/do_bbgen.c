@@ -8,17 +8,23 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.12 2006-06-09 22:23:49 henrik Exp $";
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.13 2007-01-15 14:19:08 henrik Exp $";
 
 int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	static char *bbgen_params[] = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
 	static char *bbgen_tpl      = NULL;
+	static char *bbgen2_params[] = { "rrdcreate", rrdfn, 
+					"DS:hostcount:GAUGE:600:0:U", "DS:statuscount:GAUGE:600:0:U", 
+					rra1, rra2, rra3, rra4, NULL };
+	static char *bbgen2_tpl      = NULL;
 
 	char	*p;
 	float	runtime;
+	int	hostcount, statuscount;
 
 	if (bbgen_tpl == NULL) bbgen_tpl = setup_template(bbgen_params);
+	if (bbgen2_tpl == NULL) bbgen2_tpl = setup_template(bbgen2_params);
 
 	p = strstr(msg, "TIME TOTAL");
 	if (p && (sscanf(p, "TIME TOTAL %f", &runtime) == 1)) {
@@ -29,8 +35,26 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			strcpy(rrdfn, "bbgen.rrd");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int)tstamp, runtime);
-		return create_and_update_rrd(hostname, rrdfn, bbgen_params, bbgen_tpl);
+		create_and_update_rrd(hostname, rrdfn, bbgen_params, bbgen_tpl);
+	}
+
+	hostcount = statuscount = -1;
+	p = strstr(msg, "\n Hosts");
+	if (!p || (sscanf(p+1, " Hosts : %d", &hostcount) != 1)) hostcount = -1;
+	p = strstr(msg, "\n Status messages");
+	if (!p || (sscanf(p+1, " Status messages : %d", &statuscount) != 1)) statuscount = -1;
+
+	if ((hostcount != -1) && (statuscount != -1)) {
+		if (strcmp("bbgen", testname) != 0) {
+			setupfn("hobbit.%s.rrd", testname);
+		}
+		else {
+			strcpy(rrdfn, "hobbit.rrd");
+		}
+		sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, hostcount, statuscount);
+		create_and_update_rrd(hostname, rrdfn, bbgen2_params, bbgen2_tpl);
 	}
 
 	return 0;
 }
+
