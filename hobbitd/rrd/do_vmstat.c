@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.21 2006-08-01 21:32:37 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.22 2007-01-15 14:17:41 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -358,6 +358,9 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		errprintf("Cannot handle Darwin vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_SNMP:
+		errprintf("Cannot handle SNMP vmstat from host '%s' \n", hostname);
+		return -1;
+	  case OS_NETWARE_SNMP:
 		errprintf("Cannot handle SNMP vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_UNKNOWN:

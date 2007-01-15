@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.8 2006-08-03 10:20:51 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.9 2007-01-15 14:17:41 henrik Exp $";
 
 static char *ifstat_params[] = { "rrdcreate", rrdfn, 
 	                         "DS:bytesSent:DERIVE:600:0:U", 
@@ -251,6 +251,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		  case OS_IRIX:
 		  case OS_SNMP:
 		  case OS_WIN32:
+		  case OS_NETWARE_SNMP:
 		  case OS_UNKNOWN:
 			break;
 		}
