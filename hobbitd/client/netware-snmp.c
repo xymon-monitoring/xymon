@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.2 2007-01-16 10:25:19 henrik Exp $";
+static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.3 2007-01-16 10:29:43 henrik Exp $";
 
 void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t os, 
 				namelist_t *hinfo, char *sender, time_t timestamp,
@@ -64,7 +64,7 @@ void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t 
 	}
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, datestr, uptimestr, NULL, NULL, 
-			NULL, pscount, NULL, usercount, NULL);
+			NULL, usercount, NULL, pscount, NULL);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, datestr, "Available", "Use%", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, datestr, "CMD", NULL, nlmstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, datestr, 1, 2, 3, portsstr);
