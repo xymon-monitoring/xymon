@@ -14,12 +14,15 @@
 /* The clients probably dont have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
 #include <pcre.h>
+#include <stdarg.h>
 
 extern pcre *compileregex(const char *pattern);
 extern pcre *multilineregex(const char *pattern);
 extern int matchregex(char *needle, pcre *pcrecode);
 extern void freeregex(pcre *pcrecode);
 extern int namematch(char *needle, char *haystack, pcre *pcrecode);
+extern pcre **compile_exprs(char *id, const char **patterns, int count);
+extern int pickdata(char *buf, pcre *expr, int dupok, ...);
 extern int timematch(char *tspec);
 #endif
 
