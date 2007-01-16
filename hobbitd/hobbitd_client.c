@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.105 2007-01-15 14:22:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.106 2007-01-16 10:02:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -164,7 +164,8 @@ int want_msgtype(namelist_t *hinfo, enum msgtype_t msg)
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     namelist_t *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *clockstr, char *msgcachestr,
-		     char *whostr, char *psstr, char *topstr)
+		     char *whostr, int usercount, 
+		     char *psstr, int pscount, char *topstr)
 {
 	char *p;
 	float load1, load5, load15;
@@ -339,8 +340,8 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		commafy(hostname), colorname(cpucolor), 
 		(timestr ? timestr : "<no timestamp data>"), 
 		myupstr, 
-		(whostr ? linecount(whostr) : 0), 
-		(psstr ? linecount(psstr)-1 : 0), 
+		(whostr ? linecount(whostr) : usercount), 
+		(psstr ? linecount(psstr)-1 : pscount), 
 		loadresult);
 	addtostatus(msgline);
 	if (STRBUFLEN(upmsg)) {

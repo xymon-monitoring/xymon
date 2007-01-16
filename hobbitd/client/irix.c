@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char irix_rcsid[] = "$Id: irix.c,v 1.7 2006-07-09 20:30:32 henrik Exp $";
+static char irix_rcsid[] = "$Id: irix.c,v 1.8 2007-01-16 10:02:58 henrik Exp $";
 
 void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os, 
 			namelist_t *hinfo, char *sender, time_t timestamp,
@@ -53,7 +53,8 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 	sarstr = getdata("sar");
 	portsstr = getdata("ports");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);

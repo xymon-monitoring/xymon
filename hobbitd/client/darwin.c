@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char darwin_rcsid[] = "$Id: darwin.c,v 1.11 2006-07-09 07:37:26 henrik Exp $";
+static char darwin_rcsid[] = "$Id: darwin.c,v 1.12 2007-01-16 10:02:58 henrik Exp $";
 
 void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  namelist_t *hinfo, char *sender, time_t timestamp, 
@@ -50,7 +50,8 @@ void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os,
 	ifstatstr = getdata("ifstat");
 	portsstr = getdata("ports");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
