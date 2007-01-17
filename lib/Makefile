@@ -1,9 +1,9 @@
 # bbgen library Makefile
 #
 
-BBGENLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o htmllog.o ipaccess.o loadalerts.o loadhosts.o loadnkconf.o locator.o links.o matching.o md5.o memory.o misc.o netservices.o rbtr.o reportlog.o rmd160c.o sendmsg.o sha1.o sig.o stackio.o strfunc.o suid.o timefunc.o timing.o url.o
+BBGENLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadhosts.o loadnkconf.o locator.o links.o matching.o md5.o memory.o misc.o netservices.o rbtr.o reportlog.o rmd160c.o sendmsg.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc.o timing.o url.o
 
-CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o digest.o encoding.o environ-client.o errormsg.o ipaccess.o loadhosts.o md5.o memory.o misc.o rbtr.o rmd160c.o sendmsg.o sha1.o sig.o stackio.o strfunc.o suid.o timefunc-client.o
+CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o digest.o encoding.o environ-client.o errormsg.o holidays.o ipaccess.o loadhosts.o md5.o memory.o misc.o rbtr.o rmd160c.o sendmsg.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc-client.o
 ifeq ($(LOCALCLIENT),yes)
 	CLIENTLIBOBJS += matching.o
 endif
