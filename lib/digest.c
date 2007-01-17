@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.14 2006-04-14 14:39:18 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.15 2007-01-17 22:14:32 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -47,6 +47,38 @@ digestctx_t *digest_init(char *digest)
 		ctx->mdctx = (void *)malloc(myRIPEMD160_Size());
 		myRIPEMD160_Init(ctx->mdctx);
 	}
+	else if (strcmp(digest, "sha512") == 0) {
+		/* Use the built in SHA-512 routines */
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup(digest);
+		ctx->digesttype = D_SHA512;
+		ctx->mdctx = (void *)malloc(mySHA512_Size());
+		mySHA512_Init(ctx->mdctx);
+	}
+	else if (strcmp(digest, "sha256") == 0) {
+		/* Use the built in SHA-256 routines */
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup(digest);
+		ctx->digesttype = D_SHA256;
+		ctx->mdctx = (void *)malloc(mySHA256_Size());
+		mySHA256_Init(ctx->mdctx);
+	}
+	else if (strcmp(digest, "sha224") == 0) {
+		/* Use the built in SHA-224 routines */
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup(digest);
+		ctx->digesttype = D_SHA224;
+		ctx->mdctx = (void *)malloc(mySHA224_Size());
+		mySHA224_Init(ctx->mdctx);
+	}
+	else if (strcmp(digest, "sha384") == 0) {
+		/* Use the built in SHA-384 routines */
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup(digest);
+		ctx->digesttype = D_SHA384;
+		ctx->mdctx = (void *)malloc(mySHA384_Size());
+		mySHA384_Init(ctx->mdctx);
+	}
 	else {
 		errprintf("digest_init failure: Cannot handle digest %s\n", digest);
 		return NULL;
@@ -67,6 +99,18 @@ int digest_data(digestctx_t *ctx, unsigned char *buf, int buflen)
 		break;
 	  case D_RMD160:
 		myRIPEMD160_Update(ctx->mdctx, buf, buflen);
+		break;
+	  case D_SHA512:
+		mySHA512_Update(ctx->mdctx, buf, buflen);
+		break;
+	  case D_SHA256:
+		mySHA256_Update(ctx->mdctx, buf, buflen);
+		break;
+	  case D_SHA384:
+		mySHA384_Update(ctx->mdctx, buf, buflen);
+		break;
+	  case D_SHA224:
+		mySHA224_Update(ctx->mdctx, buf, buflen);
 		break;
 	}
 
@@ -103,6 +147,34 @@ char *digest_done(digestctx_t *ctx)
 		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
 		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
 		myRIPEMD160_Final(md_value, ctx->mdctx);
+		break;
+	  case D_SHA512:
+		/* Built in SHA-512 hash */
+		md_len = (512/8);
+		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
+		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		mySHA512_Final(md_value, ctx->mdctx);
+		break;
+	  case D_SHA256:
+		/* Built in SHA-256 hash */
+		md_len = (256/8);
+		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
+		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		mySHA256_Final(md_value, ctx->mdctx);
+		break;
+	  case D_SHA384:
+		/* Built in SHA-384 hash */
+		md_len = (384/8);
+		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
+		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		mySHA384_Final(md_value, ctx->mdctx);
+		break;
+	  case D_SHA224:
+		/* Built in SHA-224 hash */
+		md_len = (224/8);
+		md_value = (unsigned char *)malloc(md_len*sizeof(unsigned char));
+		md_string = (char *)malloc((2*md_len + strlen(ctx->digestname) + 2)*sizeof(char));
+		mySHA224_Final(md_value, ctx->mdctx);
 		break;
 	}
 
