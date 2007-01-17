@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.3 2007-01-16 10:29:43 henrik Exp $";
+static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.4 2007-01-17 10:22:50 henrik Exp $";
 
 void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t os, 
 				namelist_t *hinfo, char *sender, time_t timestamp,
@@ -41,6 +41,8 @@ void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t 
 	netstatstr = getdata("netstat");
 	portsstr = getdata("ports");
 
+	if (!datestr) return;
+
 	/* Must tweak the datestr slightly */
 	{
 		char *p;
@@ -49,27 +51,30 @@ void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t 
 		p = strchr(datestr, ','); if (p) *p = ' ';
 	}
 
-	/* Since we only have the counts for number of processes and users, we must get these ourselves */
-	if (!countexp) countexp = compileregex(", (\\d+) users, (\\d+) procs,");
-	{
-		char *buf = strdup(uptimestr);
-		char *c1, *c2;
+	if (uptimestr) {
+		/* Since we only have the counts for number of processes and users, we must get these ourselves */
+		if (!countexp) countexp = compileregex(", (\\d+) users, (\\d+) procs,");
+		{
+			char *buf = strdup(uptimestr);
+			char *c1, *c2;
 
-		c1 = c2 = NULL;
-		if (pickdata(buf, countexp, 0, &c1, &c2)) {
-			if (c1) { usercount = atoi(c1); xfree(c1); }
-			if (c2) { pscount = atoi(c2); xfree(c2); }
+			c1 = c2 = NULL;
+			if (pickdata(buf, countexp, 0, &c1, &c2)) {
+				if (c1) { usercount = atoi(c1); xfree(c1); }
+				if (c2) { pscount = atoi(c2); xfree(c2); }
+			}
+			xfree(buf);
 		}
-		xfree(buf);
+
+		unix_cpu_report(hostname, clienttype, os, hinfo, fromline, datestr, uptimestr, NULL, NULL, 
+				NULL, usercount, NULL, pscount, NULL);
 	}
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, datestr, uptimestr, NULL, NULL, 
-			NULL, usercount, NULL, pscount, NULL);
-	unix_disk_report(hostname, clienttype, os, hinfo, fromline, datestr, "Available", "Use%", "Mounted", dfstr);
-	unix_procs_report(hostname, clienttype, os, hinfo, fromline, datestr, "CMD", NULL, nlmstr);
-	unix_ports_report(hostname, clienttype, os, hinfo, fromline, datestr, 1, 2, 3, portsstr);
+	if (dfstr) unix_disk_report(hostname, clienttype, os, hinfo, fromline, datestr, "Available", "Use%", "Mounted", dfstr);
+	if (nlmstr) unix_procs_report(hostname, clienttype, os, hinfo, fromline, datestr, "CMD", NULL, nlmstr);
+	if (portsstr) unix_ports_report(hostname, clienttype, os, hinfo, fromline, datestr, 1, 2, 3, portsstr);
 
-	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, datestr, netstatstr);
+	if (netstatstr) unix_netstat_report(hostname, clienttype, os, hinfo, fromline, datestr, netstatstr);
 
 	if (memorystr) {
 		char *p;
