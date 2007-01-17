@@ -55,6 +55,12 @@ or commenting them out. Upgrades to Hobbit will add standard
 tasks back into the file, so unless you have them listed as DISABLED
 then tasks may re-appear unexpectedly after an upgrade.
 
+The \fBONHOST\fR keyword tells hobbitlaunch that this task should
+only run on specific hosts. After the ONHOST keyword, you must
+provide a "regular expression"; if the hostname where hobbitlaunch
+runs matches this expression, then the task will run. If it doesn't
+match, then the task is treated as if it were DISABLED.
+
 The \fBNEEDS\fR instructs hobbitlaunch not to run this task unless
 the task defined by the NEEDS keyword is already running. This
 is used e.g. to delay the start of some application until the

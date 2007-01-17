@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.41 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.42 2007-01-17 12:48:57 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -26,6 +26,7 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.41 2006-07-20 16:06:41 henrik Exp
 #include <unistd.h>
 #include <errno.h>
 #include <ctype.h>
+#include <regex.h>
 
 #include "libbbgen.h"
 
@@ -56,7 +57,7 @@ typedef struct tasklist_t {
 	char *cmd;
 	int interval;
 	char *logfile;
-	char *envfile, *envarea;
+	char *envfile, *envarea, *onhostptn;
 	pid_t pid;
 	time_t laststart;
 	int exitcode;
@@ -80,6 +81,7 @@ void update_task(tasklist_t *newtask)
 	int freeit = 1;
 	int logfilechanged = 0;
 	int envfilechanged = 0;
+	int disablechanged = 0;
 
 	for (twalk = taskhead; (twalk && (strcmp(twalk->key, newtask->key))); twalk = twalk->next);
 
@@ -113,6 +115,11 @@ void update_task(tasklist_t *newtask)
 		else {
 			envfilechanged = 0;
 		}
+
+		if (twalk->disabled != newtask->disabled)
+			disablechanged = 1;
+		else
+			disablechanged = 0;
 	}
 
 	if (newtask->cmd == NULL) {
@@ -128,16 +135,18 @@ void update_task(tasklist_t *newtask)
 		tasktail = newtask;
 		freeit = 0;
 	}
-	else if (strcmp(twalk->cmd, newtask->cmd) || logfilechanged || envfilechanged) {
+	else if (strcmp(twalk->cmd, newtask->cmd) || logfilechanged || envfilechanged || disablechanged) {
 		/* Task changed. */
 		xfree(twalk->cmd); 
 		if (twalk->logfile) xfree(twalk->logfile);
 		if (twalk->envfile) xfree(twalk->envfile);
 		if (twalk->envarea) xfree(twalk->envarea);
+		if (twalk->onhostptn) xfree(twalk->onhostptn);
 		twalk->cmd = strdup(newtask->cmd);
 		if (newtask->logfile) twalk->logfile = strdup(newtask->logfile); else twalk->logfile = NULL;
 		if (newtask->envfile) twalk->envfile = strdup(newtask->envfile); else twalk->envfile = NULL;
 		if (newtask->envarea) twalk->envarea = strdup(newtask->envarea); else twalk->envarea = NULL;
+		if (newtask->onhostptn) twalk->onhostptn = strdup(newtask->onhostptn); else twalk->onhostptn = NULL;
 
 		/* Must bounce the task */
 		twalk->cfload = 1;
@@ -161,6 +170,7 @@ void update_task(tasklist_t *newtask)
 		if (newtask->logfile) xfree(newtask->logfile);
 		if (newtask->envfile) xfree(newtask->envfile);
 		if (newtask->envarea) xfree(newtask->envarea);
+		if (newtask->onhostptn) xfree(newtask->onhostptn);
 		xfree(newtask);
 	}
 }
@@ -172,6 +182,7 @@ void load_config(char *conffn)
 	FILE *fd;
 	strbuffer_t *inbuf;
 	char *p;
+	char myhostname[256];
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -186,6 +197,10 @@ void load_config(char *conffn)
 	}
 
 	errprintf("Loading tasklist configuration from %s\n", conffn);
+	if (gethostname(myhostname, sizeof(myhostname)) != 0) {
+		errprintf("Cannot get the local hostname, using 'localhost' (error: %s)\n", strerror(errno));
+		strcpy(myhostname, "localhost");
+	}
 
 	/* The cfload flag: -1=delete task, 0=old task unchanged, 1=new/changed task */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
@@ -290,6 +305,25 @@ void load_config(char *conffn)
 		else if (curtask && (strcasecmp(p, "DISABLED") == 0)) {
 			curtask->disabled = 1;
 		}
+		else if (curtask && (strncasecmp(p, "ONHOST ", 7) == 0)) {
+			regex_t cpattern;
+			int status;
+
+			p += 7;
+			p += strspn(p, " \t");
+
+			curtask->onhostptn = strdup(p);
+
+			/* Match the hostname against the pattern; if it doesnt match then disable the task */
+			status = regcomp(&cpattern, curtask->onhostptn, REG_EXTENDED|REG_ICASE|REG_NOSUB);
+			if (status == 0) {
+				status = regexec(&cpattern, myhostname, 0, NULL, 0);
+				if (status == REG_NOMATCH) curtask->disabled = 1;
+			}
+			else {
+				errprintf("ONHOST pattern '%s' is invalid\n", p);
+			}
+		}
 	}
 	if (curtask) update_task(curtask);
 	stackfclose(fd);
@@ -310,6 +344,7 @@ void load_config(char *conffn)
 			if (twalk->logfile) xfree(twalk->logfile);
 			if (twalk->envfile) xfree(twalk->envfile);
 			if (twalk->envarea) xfree(twalk->envarea);
+			if (twalk->onhostptn) xfree(twalk->onhostptn);
 			break;
 
 		  case 0:
@@ -437,12 +472,14 @@ int main(int argc, char *argv[])
 			for (twalk = taskhead; (twalk); twalk = twalk->next) {
 				printf("[%s]\n", twalk->key);
 				printf("\tCMD %s\n", twalk->cmd);
+				if (twalk->disabled) printf("\tDISABLED\n");
 				if (twalk->group)    printf("\tGROUP %s\n", twalk->group->groupname);
 				if (twalk->depends)  printf("\tNEEDS %s\n", twalk->depends->key);
 				if (twalk->interval) printf("\tINTERVAL %d\n", twalk->interval);
 				if (twalk->logfile)  printf("\tLOGFILE %s\n", twalk->logfile);
 				if (twalk->envfile)  printf("\tENVFILE %s\n", twalk->envfile);
 				if (twalk->envarea)  printf("\tENVAREA %s\n", twalk->envarea);
+				if (twalk->onhostptn) printf("\tONHOST %s\n", twalk->onhostptn);
 				printf("\n");
 			}
 			return 0;
