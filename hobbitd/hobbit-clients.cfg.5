@@ -305,10 +305,10 @@ time (seconds since midnight Jan 1 1970 UTC).
 .IP "ctime>MIN.CTIME, ctime<MAX.CTIME, ctime=TIMESTAMP"
 acts as the mtime checks, but for the ctime timestamp (when the directory
 entry of the file was last changed, eg. by chown, chgrp or chmod).
-.IP "md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM"
-trigger a warning if the file checksum using the MD5, SHA1 or RMD160 
-message digest algorithms do not match the one configured here. Note: 
-The "file" entry in the
+.IP "md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM, sha256=SHA256SUM, sha512=SHA512SUM"
+trigger a warning if the file checksum using the MD5, SHA1, RMD160,
+SHA-256 or SHA-512 message digest algorithms do not match the one configured 
+here. Note: The "file" entry in the
 .I client-local.cfg(5)
 file must specify which algorithm to use.
 
