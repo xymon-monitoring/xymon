@@ -52,6 +52,10 @@ form of a book, CD or DVD is appreciated.
 The following files are distributed with Hobbit and used
 by Hobbit, but written by others and are NOT licensed under the GPL:
 
+* The lib/sha2.c file is (C) 2005 Olivier Gay <olivier.gay@a3.epfl.ch>, 
+  available under a BSD license.  See the file for details. It was 
+  downloaded from http://www.ouah.org/ogay/sha2/
+
 * The lib/rmd160c.c, lib/rmdconst.h, lib/rmdlocl.h and lib/ripemd.h
   files are Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com).
   The license is BSD-like, but see these files for the exact license. 
