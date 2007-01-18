@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.4 2007-01-17 10:22:50 henrik Exp $";
+static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.5 2007-01-18 14:21:46 henrik Exp $";
 
 void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t os, 
 				namelist_t *hinfo, char *sender, time_t timestamp,
@@ -23,6 +23,7 @@ void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t 
 	char *memorystr;
 	char *netstatstr;
 	char *portsstr;
+	char *cpqhealthstr;
 
 	static pcre *countexp = NULL;
 	int  pscount = 0, usercount = 0;
@@ -40,6 +41,7 @@ void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t 
 	memorystr = getdata("memory");
 	netstatstr = getdata("netstat");
 	portsstr = getdata("ports");
+	cpqhealthstr = getdata("cpqhealth");
 
 	if (!datestr) return;
 
@@ -104,6 +106,52 @@ void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t 
 			unix_memory_report(hostname, clienttype, os, hinfo, fromline, datestr,
 					   (memphystotal / 1024), (memphysused / 1024), (memactused / 1024), -1, -1);
 		}
+	}
+
+	if (cpqhealthstr) {
+		char *logtxt, *p, *summarystr;
+		int cpqhealthcolor = COL_GREEN;
+		time_t cpqhealthupdate = 0;
+		char msgline[1024];
+
+		logtxt = strstr(cpqhealthstr, "\n\n");
+		if (!logtxt) logtxt = cpqhealthstr;
+
+		p = cpqhealthstr;
+		if (p && (strncmp(p, "Health:", 7)) == 0) {
+			p += (7 + strspn(p+7, " \t"));
+			cpqhealthcolor = parse_color(p);
+			p = strchr(p, '\n'); if (p) p++;
+		}
+		if (p && (strncmp(p, "Last update:", 12)) == 0) {
+			cpqhealthupdate = atoi(p+12);
+			p = strchr(p, '\n'); if (p) p++;
+		}
+
+       		if ((cpqhealthupdate > 0) && (cpqhealthupdate < (time(NULL) - 5*86400))) {
+			summarystr = "No recent events";
+			cpqhealthcolor = COL_GREEN;
+		}
+		else {
+			summarystr = "IML Eventlog problems";
+		}
+
+         	init_status(cpqhealthcolor);
+
+		sprintf(msgline, "status %s.cpqiml %s %s - %s\n", 
+			commafy(hostname), colorname(cpqhealthcolor),
+                        (datestr ? datestr : "<No timestamp data>"), 
+			summarystr);
+                addtostatus(msgline);
+
+		strftime(msgline, sizeof(msgline), "\nLast logentry made at %Y-%m-%d %H:%M\n\n", localtime(&cpqhealthupdate));
+                addtostatus(msgline);
+
+		addtostatus("Log details\n");
+		addtostatus(logtxt);
+
+                if (fromline) addtostatus(fromline);
+                finish_status();
 	}
 }
 
