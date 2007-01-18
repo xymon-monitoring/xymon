@@ -51,8 +51,6 @@
 #define SHA384_BLOCK_SIZE  SHA512_BLOCK_SIZE
 #define SHA224_BLOCK_SIZE  SHA256_BLOCK_SIZE
 
-#define HAVE_STDINT_H
-
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #else
