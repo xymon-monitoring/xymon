@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.58 2007-01-15 14:21:43 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.59 2007-01-26 09:50:19 henrik Exp $";
 
 #include "config.h"
 
@@ -50,6 +50,8 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "osf") == 0)         result = OS_OSF;
 	else if (strcasecmp(osname, "osf1") == 0)        result = OS_OSF;
 	else if (strcasecmp(osname, "win32") == 0)       result = OS_WIN32;
+	else if (strcasecmp(osname, "hmdc") == 0)        result = OS_WIN32_HMDC;
+	else if (strcasecmp(osname, "bbwin") == 0)       result = OS_WIN32_BBWIN;
 	else if (strcasecmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
 	else if (strcasecmp(osname, "netbsd") == 0)      result = OS_NETBSD;
 	else if (strcasecmp(osname, "openbsd") == 0)     result = OS_OPENBSD;
@@ -85,6 +87,8 @@ char *osname(enum ostype_t os)
 		case OS_AIX: return "aix";
 		case OS_OSF: return "osf";
 		case OS_WIN32: return "win32";
+		case OS_WIN32_HMDC: return "hmdc";
+		case OS_WIN32_BBWIN: return "bbwin";
 		case OS_FREEBSD: return "freebsd";
 		case OS_NETBSD: return "netbsd";
 		case OS_OPENBSD: return "openbsd";
