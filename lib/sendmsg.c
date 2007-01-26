@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.84 2006-10-31 11:53:40 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.85 2007-01-26 09:39:42 henrik Exp $";
 
 #include "config.h"
 
@@ -167,10 +167,11 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 	dbgprintf("Recipient listed as '%s'\n", recipient);
 
-	if ((strcmp(recipient, "local") == 0) || (strcmp(recipient, "127.0.0.1") == 0) || (strcmp(recipient, xgetenv("BBDISP")) == 0)) {
+	if ( (strcmp(recipient, "local") == 0) || (strcmp(recipient, "127.0.0.1") == 0) ) {
 		/* Connect via local unix domain socket $BBTMP/hobbitd_if */
 		dbgprintf("Unix domain protocol\n");
 		conntype = C_UNIX;
+		rcptip = strdup("local/unix");
 	}
 	else if (strncmp(recipient, "http://", strlen("http://")) != 0) {
 		/* Standard BB communications, directly to bbd */
