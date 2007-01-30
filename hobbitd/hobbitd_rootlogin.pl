@@ -16,7 +16,7 @@
 #*                                                                            */
 #*----------------------------------------------------------------------------*/
 
-# $Id: hobbitd_rootlogin.pl,v 1.1 2007-01-28 12:42:34 henrik Exp $
+# $Id: hobbitd_rootlogin.pl,v 1.2 2007-01-30 16:43:44 henrik Exp $
 
 
 my $bb;
@@ -67,13 +67,13 @@ while ($line = <STDIN>) {
 		# Start of new message section.
 
 		$cursection = $1;
-		$sections{ $cursection } = "";
+		$sections{ $cursection } = "\n";
 	}
 	else {
 		# Add another line to the entire message text variable,
 		# and the the current section.
 		$msgtxt = $msgtxt . $line;
-		$sections{ $cursection } = $sections{ $cursection } . $line;
+		if ($cursection) { $sections{ $cursection } = $sections{ $cursection } . $line; }
 	}
 }
 
