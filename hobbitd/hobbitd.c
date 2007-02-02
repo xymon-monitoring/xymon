@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.259 2007-01-04 16:52:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.260 2007-02-02 11:30:48 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -4107,6 +4107,7 @@ int main(int argc, char *argv[])
 	errprintf("Setting up local listener\n");
 	memset(&localaddr, 0, sizeof(localaddr));
 	sprintf(localaddr.sun_path, "%s/hobbitd_if", xgetenv("BBTMP"));
+	unlink(localaddr.sun_path);	/* In case it was accidentally left behind */
 	localaddr.sun_family = AF_UNIX;
 	localsocket = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (localsocket == -1) {
