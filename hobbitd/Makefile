@@ -139,6 +139,7 @@ install: install-bin install-man install-cfg install-obsoleted
 
 install-bin:
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+	cp -fp hobbitd_rootlogin.pl $(INSTALLROOT)$(INSTALLBINDIR)/
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man8
