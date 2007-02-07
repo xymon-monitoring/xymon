@@ -78,6 +78,20 @@
      </TR>
 
      <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="RCPTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXRCPTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
+     </TR>
+
+     <TR>
         <TD COLSPAN=3 ALIGN=CENTER>
           <BR><BR>
           <INPUT TYPE="SUBMIT" NAME="Send" VALUE="View log" ALT="View log">

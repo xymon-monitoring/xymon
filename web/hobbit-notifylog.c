@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-notifylog.c,v 1.1 2007-02-07 17:49:50 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-notifylog.c,v 1.2 2007-02-07 21:49:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: hobbit-notifylog.c,v 1.1 2007-02-07 17:49:50 henrik 
 #include "libbbgen.h"
 
 int	maxcount = 100;		/* Default: Include last 100 events */
-int	maxminutes = 240;	/* Default: for the past 4 hours */
+int	maxminutes = 1440;	/* Default: for the past 24 hours */
 char	*totime = NULL;
 char	*fromtime = NULL;
 char	*hostregex = NULL;
@@ -35,7 +35,8 @@ char	*testregex = NULL;
 char	*extestregex = NULL;
 char	*pageregex = NULL;
 char	*expageregex = NULL;
-char	*colrregex = NULL;
+char	*rcptregex = NULL;
+char	*exrcptregex = NULL;
 cgidata_t *cgidata = NULL;
 
 static void parse_query(void)
@@ -79,8 +80,11 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "EXPAGEMATCH") == 0) {
 			if (*(cwalk->value)) expageregex = strdup(cwalk->value);
 		}
-		else if (strcasecmp(cwalk->name, "COLORMATCH") == 0) {
-			if (*(cwalk->value)) colrregex = strdup(cwalk->value);
+		else if (strcasecmp(cwalk->name, "RCPTMATCH") == 0) {
+			if (*(cwalk->value)) rcptregex = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "EXRCPTMATCH") == 0) {
+			if (*(cwalk->value)) exrcptregex = strdup(cwalk->value);
 		}
 
 		cwalk = cwalk->next;
@@ -122,7 +126,10 @@ int main(int argc, char *argv[])
 	headfoot(stdout, "notify", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
 	do_notifylog(stdout, maxcount, maxminutes, fromtime, totime, 
-			pageregex, expageregex, hostregex, exhostregex, testregex, extestregex);
+			pageregex, expageregex, 
+			hostregex, exhostregex, 
+			testregex, extestregex,
+			rcptregex, exrcptregex);
 	fprintf(stdout, "</center>\n");
 	headfoot(stdout, "notify", "", "footer", COL_GREEN);
 

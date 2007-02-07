@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: notifylog.c,v 1.1 2007-02-07 17:49:50 henrik Exp $";
+static char rcsid[] = "$Id: notifylog.c,v 1.2 2007-02-07 21:51:31 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -88,7 +88,8 @@ void do_notifylog(FILE *output,
 		  int maxcount, int maxminutes, char *fromtime, char *totime, 
 		  char *pageregex, char *expageregex,
 		  char *hostregex, char *exhostregex,
-		  char *testregex, char *extestregex)
+		  char *testregex, char *extestregex,
+		  char *rcptregex, char *exrcptregex)
 {
 	FILE *notifylog;
 	char notifylogfilename[PATH_MAX];
@@ -108,6 +109,8 @@ void do_notifylog(FILE *output,
 	pcre *exhostregexp = NULL;
 	pcre *testregexp = NULL;
 	pcre *extestregexp = NULL;
+	pcre *rcptregexp = NULL;
+	pcre *exrcptregexp = NULL;
 
 	if (maxminutes && (fromtime || totime)) {
 		fprintf(output, "<B>Only one time interval type is allowed!</B>");
@@ -148,6 +151,8 @@ void do_notifylog(FILE *output,
 	if (exhostregex && *exhostregex) exhostregexp = pcre_compile(exhostregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (testregex && *testregex) testregexp = pcre_compile(testregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (extestregex && *extestregex) extestregexp = pcre_compile(extestregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (rcptregex && *rcptregex) rcptregexp = pcre_compile(rcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	if (exrcptregex && *exrcptregex) exrcptregexp = pcre_compile(exrcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
 	sprintf(notifylogfilename, "%s/notifications.log", xgetenv("BBSERVERLOGS"));
 	notifylog = fopen(notifylogfilename, "r");
@@ -185,7 +190,7 @@ void do_notifylog(FILE *output,
 		char hostsvc[MAX_LINE_LEN];
 		char recipient[MAX_LINE_LEN];
 		char *hostname, *svcname, *p;
-		int itemsfound, pagematch, hostmatch, testmatch;
+		int itemsfound, pagematch, hostmatch, testmatch, rcptmatch;
 		notification_t *newrec;
 		struct namelist_t *eventhost;
 		struct htnames_t *eventcolumn;
@@ -248,6 +253,20 @@ void do_notifylog(FILE *output,
 		else
 			testmatch = 0;
 		if (testmatch) continue;
+
+		if (rcptregexp)
+			rcptmatch = (pcre_exec(rcptregexp, NULL, recipient, strlen(recipient), 0, 0, 
+					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+		else
+			rcptmatch = 1;
+		if (!rcptmatch) continue;
+
+		if (exrcptregexp)
+			rcptmatch = (pcre_exec(exrcptregexp, NULL, recipient, strlen(recipient), 0, 0, 
+					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+		else
+			rcptmatch = 0;
+		if (rcptmatch) continue;
 
 		newrec = (notification_t *) malloc(sizeof(notification_t));
 		newrec->host       = eventhost;
@@ -335,5 +354,7 @@ void do_notifylog(FILE *output,
 	if (exhostregexp) pcre_free(exhostregexp);
 	if (testregexp)   pcre_free(testregexp);
 	if (extestregexp) pcre_free(extestregexp);
+	if (rcptregexp)   pcre_free(rcptregexp);
+	if (exrcptregexp) pcre_free(exrcptregexp);
 }
 

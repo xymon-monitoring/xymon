@@ -14,7 +14,8 @@
 extern void do_notifylog(FILE *output, int maxcount, int maxminutes, char *fromtime, char *totime, 
 			 char *pagematch, char *expagematch, 
 			 char *hostmatch, char *exhostmatch, 
-			 char *testmatch, char *extestmatch);
+			 char *testmatch, char *extestmatch,
+			 char *rcptmatch, char *exrcptmatch);
 
 #endif
 
