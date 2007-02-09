@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.113 2006-10-04 07:40:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.114 2007-02-09 10:35:41 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -618,6 +618,7 @@ char *generate_info(char *hostname)
 
 		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
+		load_holidays();
 	}
 
 	/* Load links */

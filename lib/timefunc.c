@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.32 2006-10-01 11:47:54 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.33 2007-02-09 10:35:41 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -165,6 +165,7 @@ int within_sla(char *timespec, int defresult)
 	time_t tnow;
 	struct tm *now;
 	int curtime;
+	int newwday;
 	char *onesla;
 
 	if (!timespec) return defresult;
@@ -172,6 +173,7 @@ int within_sla(char *timespec, int defresult)
 	tnow = getcurrenttime(NULL);
 	now = localtime(&tnow);
 	curtime = now->tm_hour*60+now->tm_min;
+	newwday = getweekdayorholiday(now);
 
 	onesla = timespec;
 	while (!found && onesla) {
@@ -191,11 +193,11 @@ int within_sla(char *timespec, int defresult)
 
 			  case 'W':
 			  case 'w':
-				if ((now->tm_wday >= 1) && (now->tm_wday <=5)) wdaymatch = 1;
+				if ((newwday >= 1) && (newwday <=5)) wdaymatch = 1;
 				break;
 
 			  case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-				if (*wday == (now->tm_wday+'0')) wdaymatch = 1;
+				if (*wday == (newwday+'0')) wdaymatch = 1;
 				break;
 
 			  case ':':

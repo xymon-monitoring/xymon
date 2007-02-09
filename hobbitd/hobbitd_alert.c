@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.89 2006-11-17 20:48:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.90 2007-02-09 10:35:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -466,6 +466,7 @@ int main(int argc, char *argv[])
 			testonly = 1;
 
 			load_alertconfig(configfn, alertcolors, alertinterval);
+			load_holidays();
 			send_alert(awalk, logfd);
 			return 0;
 		}
@@ -809,6 +810,7 @@ int main(int argc, char *argv[])
 		 * reason to fork a child process unless it is going to do something.
 		 */
 		configchanged = load_alertconfig(configfn, alertcolors, alertinterval);
+		configchanged += load_holidays();
 		anytogo = 0;
 		for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
 			int anymatch = 0;
