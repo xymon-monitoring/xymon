@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.7 2006-11-23 21:14:41 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.8 2007-02-09 10:34:04 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: locator.c,v 1.7 2006-11-23 21:14:41 henrik Exp $";
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "libbbgen.h"
 
@@ -61,16 +62,42 @@ enum locator_servicetype_t get_servicetype(char *typestr)
 
 static int call_locator(char *buf, size_t bufsz)
 {
-	int n;
+	int n, bytesleft;
 	fd_set fds;
 	struct timeval tmo;
+	char *bufp;
 
-	n = send(locatorsocket, buf, strlen(buf)+1, 0);
-	if (n == -1) {
-		errprintf("Send to locator failed: %s\n", strerror(errno));
-		return -1;
-	}
+	/* First, send the request */
+	bufp = buf;
+	bytesleft = strlen(buf)+1;
+	do {
+		FD_ZERO(&fds);
+		FD_SET(locatorsocket, &fds);
+		tmo.tv_sec = 5;
+		tmo.tv_usec = 0;
+		n = select(locatorsocket+1, NULL, &fds, NULL, &tmo);
 
+		if (n == 0) {
+			errprintf("Send to locator failed: Timeout\n");
+			return -1;
+		}
+		else if (n == -1) {
+			errprintf("Send to locator failed: %s\n", strerror(errno));
+			return -1;
+		}
+
+		n = send(locatorsocket, bufp, bytesleft, 0);
+		if (n == -1) {
+			errprintf("Send to locator failed: %s\n", strerror(errno));
+			return -1;
+		}
+		else {
+			bytesleft -= n;
+			bufp += n;
+		}
+	} while (bytesleft > 0);
+
+	/* Then read the response */
 	FD_ZERO(&fds);
 	FD_SET(locatorsocket, &fds);
 	tmo.tv_sec = 5;
@@ -78,7 +105,7 @@ static int call_locator(char *buf, size_t bufsz)
 	n = select(locatorsocket+1, &fds, NULL, NULL, &tmo);
 
 	if (n > 0) {
-		n = recv(locatorsocket, buf, bufsz-1, MSG_DONTWAIT);
+		n = recv(locatorsocket, buf, bufsz-1, 0);
 
 		if (n == -1) {
 			errprintf("call_locator() recv() failed: %s\n", strerror(errno));
@@ -228,6 +255,8 @@ int locator_init(char *ipport)
 		locatorsocket = -1;
 		return -1;
 	}
+
+	fcntl(locatorsocket, F_SETFL, O_NONBLOCK);
 
 	return (locator_ping() ? 0 : -1);
 }
