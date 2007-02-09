@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.260 2007-02-02 11:30:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.261 2007-02-09 10:32:23 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -188,6 +188,7 @@ hobbitd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
 hobbitd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
 hobbitd_channel_t *clientchn = NULL;	/* Receives "client" messages */
 hobbitd_channel_t *clichgchn = NULL;	/* Receives "clichg" messages */
+hobbitd_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -637,13 +638,14 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_NOTES:
+		  case C_USER:
 			n = snprintf(channel->channelbuf,  (bufsz-5),
 				"@@%s#%u/%s|%d.%06d|%s|%s\n%s", 
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, msg);
 			if (n > (bufsz-5)) {
-				errprintf("Oversize notes msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test->name, n, bufsz);
+				errprintf("Oversize notes/user msg from %s for %s truncated (n=%d, limit=%d)\n", 
+					sender, hostname, n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
@@ -1292,6 +1294,13 @@ void handle_notes(char *msg, char *sender, char *hostname)
 	dbgprintf("->handle_notes\n");
 	posttochannel(noteschn, channelnames[C_NOTES], msg, sender, hostname, NULL, NULL);
 	dbgprintf("<-handle_notes\n");
+}
+
+void handle_usermsg(char *msg, char *sender, char *hostname)
+{
+	dbgprintf("->handle_usermsg\n");
+	posttochannel(userchn, channelnames[C_USER], msg, sender, hostname, NULL, NULL);
+	dbgprintf("<-handle_usermsg\n");
 }
 
 void handle_enadis(int enabled, conn_t *msg, char *sender)
@@ -2515,40 +2524,57 @@ void do_message(conn_t *msg, char *origin)
 			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL);
 		}
 	}
-	else if (strncmp(msg->buf, "notes", 5) == 0) {
-		char *hostname, *bhost, *ehost, *p;
-		char savechar;
+	else if ((strncmp(msg->buf, "notes", 5) == 0) || (strncmp(msg->buf, "usermsg", 7) == 0)) {
+		char *id = NULL;
 
-		bhost = msg->buf + strlen("notes"); bhost += strspn(bhost, " \t");
-		ehost = bhost + strcspn(bhost, " \t\r\n");
-		savechar = *ehost; *ehost = '\0';
-		hostname = strdup(bhost);
-		*ehost = savechar;
+		{
+			/* Get the message ID */
+			char *bid, *eid, *p;
+			char savechar;
 
-		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
-		if (*hostname == '\0') { errprintf("Invalid notes message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
+			bid = msg->buf + strcspn(msg->buf, " \t\r\n"); bid += strspn(bid, " \t");
+			eid = bid + strcspn(bid, " \t\r\n");
+			savechar = *eid; *eid = '\0';
+			id = strdup(bid);
+			*eid = savechar;
 
-		if (hostname) {
-			char *hname, hostip[IP_ADDR_STRLEN];
-
-			MEMDEFINE(hostip);
-
-			hname = knownhost(hostname, hostip, ghosthandling);
-			if (hname == NULL) {
-				log_ghost(hostname, sender, msg->buf);
-			}
-			else if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
-				/* Invalid sender */
-				errprintf("Invalid notes message - sender %s not allowed for host %s\n", sender, hostname);
-			}
-			else {
-				handle_notes(msg->buf, sender, hostname);
-			}
-
-			xfree(hostname);
-
-			MEMUNDEFINE(hostip);
+			p = id; while ((p = strchr(p, ',')) != NULL) *p = '.';
 		}
+
+		/* 
+		 * We dont validate the ID, because "notes" may also send messages
+		 * for documenting pages or column-names. And the "usermsg" stuff can be
+		 * anything in the "ID" field. So we just insist that the IS an ID.
+		 */
+		if (*id) {
+			if (*msg->buf == 'n') {
+				/* "notes" message */
+				if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+					/* Invalid sender */
+					errprintf("Invalid notes message - sender %s not allowed for host %s\n", 
+						  sender, id);
+				}
+				else {
+					handle_notes(msg->buf, sender, id);
+				}
+			}
+			else if (*msg->buf == 'u') {
+				/* "usermsg" message */
+				if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) {
+					/* Invalid sender */
+					errprintf("Invalid user message - sender %s not allowed for host %s\n", 
+						  sender, id);
+				}
+				else {
+					handle_usermsg(msg->buf, sender, id);
+				}
+			}
+		}
+		else {
+			errprintf("Invalid notes/user message from %s - blank ID\n", sender); 
+		}
+
+		xfree(id);
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
 		handle_enadis(1, msg, sender);
@@ -4199,6 +4225,8 @@ int main(int argc, char *argv[])
 	if (clientchn == NULL) { errprintf("Cannot setup client channel\n"); return 1; }
 	clichgchn  = setup_channel(C_CLICHG, CHAN_MASTER);
 	if (clichgchn == NULL) { errprintf("Cannot setup clichg channel\n"); return 1; }
+	userchn  = setup_channel(C_USER, CHAN_MASTER);
+	if (userchn == NULL) { errprintf("Cannot setup user channel\n"); return 1; }
 
 	errprintf("Setting up logfiles\n");
 	setvbuf(stdout, NULL, _IONBF, 0);
