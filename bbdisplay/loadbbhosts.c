@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.47 2006-10-03 10:48:09 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.48 2007-02-09 09:47:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -109,7 +109,7 @@ char *build_noprop(char *defset, char *specset)
 	}
 
 	xfree(set);
-	return ((strlen(result) > 0) ? result : NULL);
+	return result;	/* This may be an empty string */
 }
 
 bbgen_page_t *init_page(char *name, char *title)
