@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.48 2007-02-09 09:47:37 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.49 2007-02-13 12:25:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -141,7 +141,7 @@ bbgen_page_t *init_page(char *name, char *title)
 	return newpage;
 }
 
-group_t *init_group(char *title, char *onlycols, char *exceptcols)
+group_t *init_group(char *title, char *onlycols, char *exceptcols, int sorthosts)
 {
 	group_t *newgroup = (group_t *) calloc(1, sizeof(group_t));
 
@@ -164,6 +164,7 @@ group_t *init_group(char *title, char *onlycols, char *exceptcols)
 	else newgroup->exceptcols = NULL;
 	newgroup->pretitle = NULL;
 	newgroup->hosts = NULL;
+	newgroup->sorthosts = sorthosts;
 	newgroup->next = NULL;
 	return newgroup;
 }
@@ -536,9 +537,11 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			addtopagelist(cursubparent);
 		}
 		else if (strncmp(STRBUF(inbuf), grouptag, strlen(grouptag)) == 0) {
+			int sorthosts = (strstr(STRBUF(inbuf), "group-sorted") != NULL);
+
 			getgrouptitle(STRBUF(inbuf), pgset, &link, &onlycols, &exceptcols);
 			if (curgroup == NULL) {
-				curgroup = init_group(link, onlycols, exceptcols);
+				curgroup = init_group(link, onlycols, exceptcols, sorthosts);
 				if (cursubparent != NULL) {
 					cursubparent->groups = curgroup;
 				}
@@ -556,7 +559,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				}
 			}
 			else {
-				curgroup->next = init_group(link, onlycols, exceptcols);
+				curgroup->next = init_group(link, onlycols, exceptcols, sorthosts);
 				curgroup = curgroup->next;
 			}
 			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
