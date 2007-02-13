@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.51 2006-10-03 05:26:41 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.52 2007-02-13 21:25:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1347,15 +1347,15 @@ int scan_log(namelist_t *hinfo, char *classname,
 		}
 
 		/* Next, check for a match anywhere in the data*/
-		if (!namematch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp)) continue;
+		if (!patternmatch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp)) continue;
 
 		/* Some data in there matches what we want. Look at each line. */
 		boln = logdata;
 		while (boln) {
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
-			if (namematch(boln, rule->rule.log.matchone->pattern, rule->rule.log.matchone->exp)) {
+			if (patternmatch(boln, rule->rule.log.matchone->pattern, rule->rule.log.matchone->exp)) {
 				/* It matches. But maybe we'll ignore it ? */
-				if (!(rule->rule.log.ignoreexp && namematch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp))) {
+				if (!(rule->rule.log.ignoreexp && patternmatch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp))) {
 					/* We wants it ... */
 					anylines++;
 					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
@@ -1374,6 +1374,7 @@ int scan_log(namelist_t *hinfo, char *classname,
 
 		/* We have a match */
 		if (anylines) {
+			dbgprintf("Log rule at line %d matched\n", rule->cfid);
 			if (rule->rule.log.color != COL_GREEN) addalertgroup(rule->groups);
 			if (rule->rule.log.color > result) result = rule->rule.log.color;
 		}

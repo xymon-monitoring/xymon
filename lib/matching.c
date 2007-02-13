@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: matching.c,v 1.8 2007-01-16 10:04:42 henrik Exp $";
+static char rcsid[] = "$Id: matching.c,v 1.9 2007-02-13 21:25:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -123,6 +123,21 @@ int namematch(char *needle, char *haystack, pcre *pcrecode)
 	xfree(xneedle);
 
 	return result;
+}
+
+int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode)
+{
+	if (pcrecode) {
+		/* Do regex matching. The regex has already been compiled for us. */
+		return matchregex(datatosearch, pcrecode);
+	}
+
+	if (strcmp(pattern, "*") == 0) {
+		/* Match anything */
+		return 1;
+	}
+
+	return (strstr(datatosearch, pattern) != NULL);
 }
 
 pcre **compile_exprs(char *id, const char **patterns, int count)
