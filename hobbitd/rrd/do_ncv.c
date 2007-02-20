@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.11 2006-09-14 20:57:48 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.12 2007-02-20 21:02:51 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -62,10 +62,11 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		if (name) { 
 			val = l + strspn(l, " \t"); 
-			l = val + strspn(val, "0123456789."); 
-			if( *l ) { 
+			/* Find the end of the value string */
+			l = val; if ((*l == '-') || (*l == '+')) l++; /* Pass leading sign */
+			l += strspn(l, "0123456789."); /* and the numbers. */
+			if( *val ) { 
 				int iseol = (*l == '\n');
-
 				*l = '\0'; 
 				if (!iseol) {
 					/* If extra data after the value, skip to end of line */
@@ -76,7 +77,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					l++;
 				}
 			}
-			else break;
+			else break; /* No value data */
 		}
 
 		if (name && val && *val) {
@@ -112,11 +113,11 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 					dstype += strlen(dskey);
 					p = strchr(dstype, ','); if (p) *p = '\0';
-					sprintf(dsdef, "DS:%s:%s:600:0:U", dsname, dstype);
+					sprintf(dsdef, "DS:%s:%s:600:U:U", dsname, dstype);
 					if (p) *p = ',';
 				}
 				else {
-					sprintf(dsdef, "DS:%s:DERIVE:600:0:U", dsname);
+					sprintf(dsdef, "DS:%s:DERIVE:600:U:U", dsname);
 				}
 
 				if (!dstype || (strncasecmp(dstype, "NONE", 4) != 0)) {
