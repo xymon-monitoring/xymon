@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.180 2007-02-13 12:25:37 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.181 2007-03-13 13:59:30 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -307,13 +307,21 @@ void setup_htaccess(const char *pagepath)
 	}
 }
 
-static int host_t_compare(const void *v1, const void *v2)
+static int host_t_compare(void *a, void *b)
 {
-	host_t **n1 = (host_t **)v1;
-	host_t **n2 = (host_t **)v2;
-
-	return strcmp((*n1)->hostname, (*n2)->hostname);
+	return (strcmp(((host_t *)a)->hostname, ((host_t *)b)->hostname) < 0);
 }
+
+static void * host_t_getnext(void *a)
+{
+	return ((host_t *)a)->next;
+}
+
+static void host_t_setnext(void *a, void *newval)
+{
+	((host_t *)a)->next = (host_t *)newval;
+}
+
 
 void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
 {
@@ -357,22 +365,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0 CELLPADDING=2>\n");
 
 		/* Generate the host rows */
-		if (sorthosts) {
-			int i, hcount = 0;
-			host_t **hlist;
-
-			for (h=head; (h); h=h->next) hcount++;
-			hlist = (host_t **) calloc((hcount+1), sizeof(host_t *));
-			for (h=head, i=0; (h); h=h->next, i++) hlist[i] = h;
-			qsort(hlist, hcount, sizeof(host_t *), host_t_compare);
-
-			for (h=head=hlist[0], i=1; (i <= hcount); i++) { 
-				h->next = hlist[i];
-				h = h->next;
-			}
-			xfree(hlist);
-		}
-
+		if (sorthosts) mergesort(head, host_t_compare, host_t_getnext, host_t_setnext);
 		for (h = head; (h); h = h->next) {
 			/* If there is a host pretitle, show it. */
 			dbgprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
