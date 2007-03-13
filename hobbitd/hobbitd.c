@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.261 2007-02-09 10:32:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.262 2007-03-13 13:58:20 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -764,7 +764,7 @@ void get_hts(char *msg, char *sender, char *origin,
 	 * This routine takes care of finding existing status log records, or
 	 * (if they dont exist) creating new ones for an incoming status.
 	 *
-	 * "msg" contains an incoming message. First list is of the form "KEYWORD host,domain.test COLOR"
+	 * "msg" contains an incoming message. First list is of the form "KEYWORD host.domain.test COLOR"
 	 */
 
 	char *firstline, *p;
@@ -828,7 +828,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		hostname = hosttest;
 		testname = strrchr(hosttest, '.');
 		if (testname) { *testname = '\0'; testname++; }
-		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+		uncommafy(hostname);	/* For BB agent compatibility */
 
 		knownname = knownhost(hostname, hostip, ghosthandling);
 		if (knownname == NULL) {
@@ -1366,7 +1366,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 		*p = '\0';
 		tname = (p+1);
 	}
-	p = hosttest; while ((p = strchr(p, ',')) != NULL) *p = '.';
+	uncommafy(hosttest);
 	hname = knownhost(hosttest, hostip, ghosthandling);
 	if (hname == NULL) goto done;
 
@@ -2065,7 +2065,7 @@ void setup_filter(char *buf, char *defaultfields,
 			hname = tok;
 			tname = strrchr(tok, '.');
 			if (tname) { *tname = '\0'; tname++; }
-			s = hname; while ((s = strchr(s, ',')) != NULL) *s = '.';
+			uncommafy(hname);
 			hname = knownhost(hname, hostip, ghosthandling);
 
 			if (hname && tname) {
@@ -2477,11 +2477,9 @@ void do_message(conn_t *msg, char *origin)
 
 		btest = strrchr(bhost, '.');
 		if (btest) {
-			char *p;
-
 			*btest = '\0';
 			hostname = strdup(bhost);
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			uncommafy(hostname);	/* For BB compatibility */
 			*btest = '.';
 			testname = strdup(btest+1);
 
@@ -2529,7 +2527,7 @@ void do_message(conn_t *msg, char *origin)
 
 		{
 			/* Get the message ID */
-			char *bid, *eid, *p;
+			char *bid, *eid;
 			char savechar;
 
 			bid = msg->buf + strcspn(msg->buf, " \t\r\n"); bid += strspn(bid, " \t");
@@ -2538,7 +2536,7 @@ void do_message(conn_t *msg, char *origin)
 			id = strdup(bid);
 			*eid = savechar;
 
-			p = id; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			uncommafy(id);	/* For BB compatibility */
 		}
 
 		/* 
@@ -3249,7 +3247,7 @@ void do_message(conn_t *msg, char *origin)
 		if (hostname) {
 			clientos = strrchr(hostname, '.'); 
 			if (clientos) { *clientos = '\0'; clientos++; }
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			uncommafy(hostname);
 			clientclass = strtok(NULL, " \t");
 		}
 
@@ -4414,6 +4412,8 @@ int main(int argc, char *argv[])
 			  case RECEIVING:
 				if (FD_ISSET(cwalk->sock, &fdread)) {
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
+					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
+
 					if (n <= 0) {
 						/* End of input data on this connection */
 						*(cwalk->bufp) = '\0';
@@ -4449,6 +4449,8 @@ int main(int argc, char *argv[])
 			  case RESPONDING:
 				if (FD_ISSET(cwalk->sock, &fdwrite)) {
 					n = write(cwalk->sock, cwalk->bufp, cwalk->buflen);
+
+					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
 
 					if (n < 0) {
 						cwalk->buflen = 0;
@@ -4587,6 +4589,9 @@ int main(int argc, char *argv[])
 			}
 
 			if (sock >= 0) {
+				/* Make sure our sockets are non-blocking */
+				fcntl(sock, F_SETFL, O_NONBLOCK);
+
 				if (connhead == NULL) {
 					connhead = conntail = (conn_t *)malloc(sizeof(conn_t));
 				}
