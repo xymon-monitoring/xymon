@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.59 2007-01-26 09:50:19 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.60 2007-03-13 13:55:51 henrik Exp $";
 
 #include "config.h"
 
@@ -155,6 +155,14 @@ char *commafy(char *hostname)
 	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
 	return s;
 }
+
+void uncommafy(char *hostname)
+{
+	char *p;
+
+	p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+}
+
 
 
 char *skipword(char *l)

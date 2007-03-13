@@ -19,6 +19,7 @@ extern enum ostype_t get_ostype(char *osname);
 extern char *osname(enum ostype_t os);
 extern int hexvalue(unsigned char c);
 extern char *commafy(char *hostname);
+extern void uncommafy(char *hostname);
 extern char *skipword(char *l);
 extern char *skipwhitespace(char *l);
 extern int argnmatch(char *arg, char *match);
