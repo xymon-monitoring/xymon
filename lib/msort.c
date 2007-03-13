@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msort.c,v 1.1 2007-02-25 22:50:26 henrik Exp $";
+static char rcsid[] = "$Id: msort.c,v 1.2 2007-03-13 13:56:26 henrik Exp $";
 
 #include <stdlib.h>
 #include <sys/time.h>
@@ -22,64 +22,59 @@ static char rcsid[] = "$Id: msort.c,v 1.1 2007-02-25 22:50:26 henrik Exp $";
 #include <stdio.h>
 #include <string.h>
 
-
 #include "libbbgen.h"
 
-/* The linked list records MUST have the "next" field as the first field of the record */
-typedef struct msortrec_t {
-	struct msortrec_t *next;
-} msortrec_t;
-
-static msortrec_t *merge(msortrec_t *left, msortrec_t *right, msortcompare_fn_t comparefn_in)
+static void *merge(void *left, void *right, 
+		   msortcompare_fn_t comparefn, 
+		   msortgetnext_fn_t getnext, 
+		   msortsetnext_fn_t setnext)
 {
-	msortrec_t *head, *tail;
+	void *head, *tail;
 
 	head = tail = NULL;
 
 	while (left && right) {
-		if (comparefn_in(left, right)) {
+		if (comparefn(left, right)) {
 			if (tail) {
-				tail->next = left;
+				setnext(tail, left);
 			}
 			else {
 				head = left;
 			}
 
 			tail = left;
-			left = left->next;
+			left = getnext(left);
 		}
 		else {
 			if (tail) {
-				tail->next = right;
+				setnext(tail, right);
 			}
 			else {
 				head = right;
 			}
 
 			tail = right;
-			right = right->next;
+			right = getnext(right);
 		}
 	}
 
 	if (left) {
-		if (tail) tail->next = left; else head = tail = left;
+		if (tail) setnext(tail, left); else head = tail = left;
 	}
 
 	if (right) {
-		if (tail) tail->next = right; else head = tail = right;
+		if (tail) setnext(tail, right); else head = tail = right;
 	}
 
 	return head;
 }
 
-void *mergesort(void *head_in, msortcompare_fn_t comparefn_in)
+void *mergesort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getnext, msortsetnext_fn_t setnext)
 {
-	msortrec_t *head, *left, *right, *middle, *walk;
-
-	head = (msortrec_t *)head_in;
+	void *left, *right, *middle, *walk, *walknext;
 
 	/* First check if list is empty or has only one element */
-	if ((head == NULL) || (head->next == NULL)) return head;
+	if ((head == NULL) || (getnext(head) == NULL)) return head;
 
 	/* 
 	 * Find the middle element of the list.
@@ -87,22 +82,22 @@ void *mergesort(void *head_in, msortcompare_fn_t comparefn_in)
 	 * "middle" takes one step at a time, whereas "walk" takes two.
 	 */
 	middle = head; 
-	walk = head->next; /* "walk" must be ahead of "middle" */
-	while (walk && walk->next) {
-		middle = middle->next;
-		walk = walk->next->next;
+	walk = getnext(head); /* "walk" must be ahead of "middle" */
+	while (walk && (walknext = getnext(walk))) {
+		middle = getnext(middle);
+		walk = getnext(walknext);
 	}
 
 	/* Split the list in two halves, and sort each of them. */
 	left = head;
-	right = middle->next;
-	middle->next = NULL;
+	right = getnext(middle);
+	setnext(middle, NULL);
 
-	left = (msortrec_t *)mergesort(left, comparefn_in);
-	right = (msortrec_t *)mergesort(right, comparefn_in);
+	left = mergesort(left, comparefn, getnext, setnext);
+	right = mergesort(right, comparefn, getnext, setnext);
 
 	/* We have sorted the two halves, now we must merge them together */
-	return (void *)merge(left, right, comparefn_in);
+	return merge(left, right, comparefn, getnext, setnext);
 }
 
 
@@ -127,12 +122,17 @@ void dumplist(rec_t *head)
 
 int record_compare(void *a, void *b)
 {
-	rec_t *arec, *brec;
+	return (((rec_t *)a)->key < ((rec_t *)b)->key);
+}
 
-	arec = (rec_t *)a;
-	brec = (rec_t *)b;
+void * record_getnext(void *a)
+{
+	return ((rec_t *)a)->next;
+}
 
-	return (arec->key < brec->key);
+void record_setnext(void *a, void *newval)
+{
+	((rec_t *)a)->next = (rec_t *)newval;
 }
 
 
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 	}
 
 	dumplist(head);
-	head = mergesort(head, record_compare);
+	head = mergesort(head, record_compare, record_getnext, record_setnext);
 	dumplist(head);
 
 	return 0;
