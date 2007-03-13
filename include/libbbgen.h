@@ -66,6 +66,7 @@ typedef struct strbuffer_t {
 #include "../lib/md5.h"
 #include "../lib/memory.h"
 #include "../lib/misc.h"
+#include "../lib/msort.h"
 #include "../lib/netservices.h"
 #include "../lib/rbtr.h"
 #include "../lib/rmd160c.h"

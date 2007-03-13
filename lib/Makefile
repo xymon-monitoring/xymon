@@ -1,7 +1,7 @@
 # bbgen library Makefile
 #
 
-BBGENLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadhosts.o loadnkconf.o locator.o links.o matching.o md5.o memory.o misc.o netservices.o notifylog.o rbtr.o reportlog.o rmd160c.o sendmsg.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc.o timing.o url.o
+BBGENLIBOBJS = osdefs.o acklog.o availability.o calc.o cgi.o cgiurls.o clientlocal.o color.o digest.o encoding.o environ.o errormsg.o eventlog.o files.o headfoot.o hobbitrrd.o holidays.o htmllog.o ipaccess.o loadalerts.o loadhosts.o loadnkconf.o locator.o links.o matching.o md5.o memory.o misc.o msort.o netservices.o notifylog.o rbtr.o reportlog.o rmd160c.o sendmsg.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc.o timing.o url.o
 
 CLIENTLIBOBJS = osdefs.o cgiurls.o color-client.o digest.o encoding.o environ-client.o errormsg.o holidays.o ipaccess.o loadhosts.o md5.o memory.o misc.o rbtr.o rmd160c.o sendmsg.o sha1.o sha2.o sig.o stackio.o strfunc.o suid.o timefunc-client.o
 ifeq ($(LOCALCLIENT),yes)
@@ -11,7 +11,7 @@ endif
 
 CFLAGS += -I. -I../include 
 
-all: test-endianness libbbgen.a hobbitclient.a loadhosts stackio availability md5 sha1 rmd160 locator
+all: test-endianness libbbgen.a hobbitclient.a loadhosts stackio availability md5 sha1 rmd160 locator msort
 
 client: test-endianness hobbitclient.a
 
@@ -83,6 +83,9 @@ rmd160: rmd160c.c
 locator: locator.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c ./libbbgen.a $(NETLIBS)
 
+msort: msort.c libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ msort.c ./libbbgen.a $(NETLIBS)
+
 clean:
-	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator
+	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator msort
 
