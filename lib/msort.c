@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msort.c,v 1.2 2007-03-13 13:56:26 henrik Exp $";
+static char rcsid[] = "$Id: msort.c,v 1.3 2007-04-02 08:12:32 henrik Exp $";
 
 #include <stdlib.h>
 #include <sys/time.h>
@@ -69,7 +69,7 @@ static void *merge(void *left, void *right,
 	return head;
 }
 
-void *mergesort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getnext, msortsetnext_fn_t setnext)
+void *msort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getnext, msortsetnext_fn_t setnext)
 {
 	void *left, *right, *middle, *walk, *walknext;
 
@@ -93,8 +93,8 @@ void *mergesort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getne
 	right = getnext(middle);
 	setnext(middle, NULL);
 
-	left = mergesort(left, comparefn, getnext, setnext);
-	right = mergesort(right, comparefn, getnext, setnext);
+	left = msort(left, comparefn, getnext, setnext);
+	right = msort(right, comparefn, getnext, setnext);
 
 	/* We have sorted the two halves, now we must merge them together */
 	return merge(left, right, comparefn, getnext, setnext);
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 	}
 
 	dumplist(head);
-	head = mergesort(head, record_compare, record_getnext, record_setnext);
+	head = msort(head, record_compare, record_getnext, record_setnext);
 	dumplist(head);
 
 	return 0;
