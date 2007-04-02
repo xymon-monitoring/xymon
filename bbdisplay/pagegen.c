@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.181 2007-03-13 13:59:30 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.182 2007-04-02 08:45:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -365,7 +365,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0 CELLPADDING=2>\n");
 
 		/* Generate the host rows */
-		if (sorthosts) mergesort(head, host_t_compare, host_t_getnext, host_t_setnext);
+		if (sorthosts) msort(head, host_t_compare, host_t_getnext, host_t_setnext);
 		for (h = head; (h); h = h->next) {
 			/* If there is a host pretitle, show it. */
 			dbgprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
