@@ -143,6 +143,9 @@ GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,
 # NORRDDISKS=""		# Filesystems that will NOT be tracked
 # RRDDISKS=""		# Only track these filesystems
 
+# This is how many seconds the default graph shows on the status- and trends-pages
+TRENDSECONDS=172800	# Default: 48 hours
+
 
 ############################################################
 # These determine some parts of how bbgen generates webpages
