@@ -571,9 +571,14 @@ function onMouseMouveEvent(e) {
 function onMouseUpEvent(e) {
  var graphStart;
  var graphEnd;
+ var graphTop;
+ var graphBottom;
+ var haveGraphLimits;
 
  var newGraphStart;
  var newGraphEnd;
+ var newGraphTop;
+ var newGraphBottom;
 
  var idxStr;
  var countStr;
@@ -582,11 +587,15 @@ function onMouseUpEvent(e) {
 
  graphStart = parseInt(gUrlObj.getUrlParameterValue("graph_start"));
  graphEnd = parseInt(gUrlObj.getUrlParameterValue("graph_end"));
+ graphTop = parseInt(gUrlObj.getUrlParameterValue("upper"));
+ graphBottom = parseInt(gUrlObj.getUrlParameterValue("lower"));
+ haveGraphLimits = (gUrlObj.getUrlParameterValue("upper") != undefined) && (gUrlObj.getUrlParameterValue("lower") != undefined);
 
  idxStr = "";
  countStr = "";
 
  if ((gMouseObj.rightButtonPressed()) && (insideZoomBox())) {
+  // This causes a zoom-out event. We dont care about Y-axis zooming here.
   var Timespan = graphEnd - graphStart;
 
   gMouseObj.dragging = false;
@@ -614,6 +623,7 @@ function onMouseUpEvent(e) {
  }
 
  if ((gMouseObj.leftButtonPressed()) && (gMouseObj.dragging)) {
+  // This is the zoom-to-the-selection-box handling
   gMouseObj.getCurrentPosition();
   gMouseObj.saveCurrentToStopPosition();
   gMouseObj.dragging = false;
@@ -643,10 +653,11 @@ function onMouseUpEvent(e) {
   }
 
   if ((minX != maxX) || (minY != maxY)) {
-   var OnePixel = (graphEnd - graphStart) / gZoomGraphObj.zoomBoxWidth;  // Represent # of seconds for 1 pixel on the graph
+   var OnePixelX = (graphEnd - graphStart) / gZoomGraphObj.zoomBoxWidth;  // Represent # of seconds for 1 pixel on the graph
+   var newURL;
 
-   newGraphEnd = Math.round(graphEnd - (gZoomGraphObj.zoomBoxWidth - maxX) * OnePixel);
-   newGraphStart = Math.round(graphStart + minX * OnePixel);
+   newGraphEnd = Math.round(graphEnd - (gZoomGraphObj.zoomBoxWidth - maxX) * OnePixelX);
+   newGraphStart = Math.round(graphStart + minX * OnePixelX);
 
    var urlBase = cURLBase;
    var host = gUrlObj.getUrlParameterValue("host");
@@ -665,7 +676,19 @@ function onMouseUpEvent(e) {
       countStr = "&count=" + idxCount; 
    }
 
-   open(urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor, "_self");
+   newURL = urlBase + "&host=" + host + "&service=" + service + "&disp=" + dispName + idxStr + countStr + "&graph_start=" + newGraphStart + "&graph_end=" + newGraphEnd + "&graph_height=" + graphHeight + "&graph_width=" + graphWidth + "&color=" + bgColor;
+
+   if (haveGraphLimits) {
+      var OnePixelY = (graphTop - graphBottom) / gZoomGraphObj.zoomBoxHeight; // Represent # of units on Y axis for 1 pixel on the graph
+      newGraphTop = graphTop - minY * OnePixelY;
+      newGraphBottom = graphBottom + (gZoomGraphObj.zoomBoxHeight - maxY) * OnePixelY;
+
+      // alert("graphTop: " + graphTop + "\ngraphBottom: " + graphBottom + "\nBoxHeight: " + gZoomGraphObj.zoomBoxHeight + "\nminY: " + minY + "\nmaxY: " + maxY + "\nonePixelY: " + OnePixelY + "\nnewGraphTop:" + newGraphTop + "\nnewGraphBottom: " + newGraphBottom + "\n");
+
+      newURL = newURL + "&upper=" + newGraphTop + "&lower=" + newGraphBottom;
+   }
+
+   open(newURL, "_self");
   }
  }
 }
