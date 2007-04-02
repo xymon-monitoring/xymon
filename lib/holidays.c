@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.2 2007-04-02 09:01:24 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.3 2007-04-02 11:40:06 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -34,7 +34,7 @@ typedef struct holidayset_t {
 } holidayset_t;
 
 static RbtHandle holidays;
-
+static int haveholidays = 0;
 
 static time_t mkday(int year, int month, int day)
 {
@@ -242,14 +242,14 @@ int load_holidays(void)
 		}
 	}
 
+	reset_holidays();
+
 	fd = stackfopen(fn, "r", &configholidays);
 	if (!fd) {
 		errprintf("Cannot open configuration file %s\n", fn);
 		MEMUNDEFINE(fn);
 		return 0;
 	}
-
-	reset_holidays();
 
 	memset(&newholiday,0,sizeof(holiday_t));
 	inbuf = newstrbuffer(0);
