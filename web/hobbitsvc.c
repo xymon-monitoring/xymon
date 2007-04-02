@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.76 2006-11-24 09:02:02 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.77 2007-04-02 08:56:20 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -40,6 +40,7 @@ static char *tstamp = NULL;
 static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
 static char *clienturi = NULL;
+static int backsecs = 0;
 
 static char errortxt[1000];
 static char *hostdatadir = NULL;
@@ -101,8 +102,25 @@ static int parse_query(void)
 		else if (strcasecmp(cwalk->name, "NKTTEXTRA") == 0) {
 			nkttextra = strdup(cwalk->value);
 		}
+		else if ((strcmp(cwalk->name, "backsecs") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "backmins") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += 60*atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "backhours") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += 60*60*atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "backdays") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += 24*60*60*atoi(cwalk->value);
+		}
 
 		cwalk = cwalk->next;
+	}
+
+	if (backsecs == 0) {
+		if (getenv("TRENDSECONDS")) backsecs = atoi(getenv("TRENDSECONDS"));
+		else backsecs = 48*60*60;
 	}
 
 	if (!hostname || !service) {
@@ -229,7 +247,10 @@ int do_request(void)
 				}
 			}
 			else {
-				log = restofmsg = generate_trends(hostname);
+				time_t endtime = time(NULL);
+
+				sethostenv_backsecs(backsecs);
+				log = restofmsg = generate_trends(hostname, endtime-backsecs, endtime);
 			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
@@ -468,6 +489,7 @@ int do_request(void)
 			  locatorbased,
 			  multigraphs, (clientavail ? clienturi : NULL),
 			  nkprio, nkttgroup, nkttextra,
+			  backsecs,
 			  stdout);
 	}
 
