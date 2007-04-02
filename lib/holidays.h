@@ -14,15 +14,18 @@
 typedef struct holiday_t {
 	enum { HOL_ABSOLUTE, HOL_EASTER, HOL_ADVENT } holtype;
 
-	char *desc;	/*	description					 */
-	int month;  	/* 	month for absolute date				 */
-	int day;    	/* 	day for absolute date or offset for type 2 and 3 */
-	int yday;   	/* 	day of the year					 */
+	char *desc;	/*	description					 	*/
+	int month;  	/* 	month for absolute date				 	*/
+	int day;    	/* 	day for absolute date or offset for type 2 and 3 	*/
+	int yday;   	/* 	day of the year this holiday occurs in current year	*/
 
 	struct holiday_t *next;
 } holiday_t;
 
 extern int load_holidays(void);
-extern int getweekdayorholiday(struct tm *t);
+extern int getweekdayorholiday(char *key, struct tm *t);
+extern char *isholiday(char *key, int dayinyear, int year);
+extern void printholidays(char *key, int year, strbuffer_t *buf);
 
 #endif
+

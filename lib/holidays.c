@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.1 2007-02-09 14:07:12 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.2 2007-04-02 09:01:24 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -26,7 +26,14 @@ static char rcsid[] = "$Id: holidays.c,v 1.1 2007-02-09 14:07:12 henrik Exp $";
 
 
 static int holidays_like_weekday = -1;
-static holiday_t *holidays = NULL, *holidaytail = NULL;
+
+typedef struct holidayset_t {
+	char *key;
+	holiday_t *head;
+	holiday_t *tail;
+} holidayset_t;
+
+static RbtHandle holidays;
 
 
 static time_t mkday(int year, int month, int day)
@@ -87,73 +94,117 @@ static time_t get4AdventDate(int year)
 
 static void reset_holidays(void)
 {
+	static int firsttime = 1;
+	RbtIterator handle;
+	holidayset_t *hset;
 	holiday_t *walk, *zombie;
 
-	holidays_like_weekday = -1;
-	walk = holidays;
-	while (walk) {
-		zombie = walk;
-		walk = walk->next;
-		xfree(zombie->desc);
-		xfree(zombie);
+	if (!firsttime) {
+		for (handle = rbtBegin(holidays); (handle != rbtEnd(holidays)); handle = rbtNext(holidays, handle)) {
+			hset = (holidayset_t *)gettreeitem(holidays, handle);
+			xfree(hset->key);
+
+			walk = hset->head;
+			while (walk) {
+				zombie = walk;
+				walk = walk->next;
+				xfree(zombie->desc);
+				xfree(zombie);
+			}
+		}
+
+		rbtDelete(holidays);
 	}
 
-	holidays = holidaytail = NULL;
+	holidays_like_weekday = -1;
+	firsttime = 0;
+	holidays = rbtNew(name_compare);
 }
 
 
-static void add_holiday(int year, holiday_t *newholiday)
+static void add_holiday(char *key, int year, holiday_t *newhol)
 {
 	int isOK = 0;
 	struct tm *t;
 	time_t day;
+	holiday_t *newitem;
+	RbtIterator handle;
+	holidayset_t *hset;
 
-	switch (newholiday->holtype) {
+	switch (newhol->holtype) {
 	  case HOL_ABSOLUTE:
-		isOK =  ( (newholiday->month >= 1 && newholiday->month <=12) &&
-			  (newholiday->day >=1 && newholiday->day <=31) );
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <=31) );
+		if (isOK) {
+			day = mkday(year, newhol->month, newhol->day);
+			t = localtime(&day);
+			newhol->yday = t->tm_yday;
+		}
 		break;
 
 	  case HOL_EASTER:
+		isOK = (newhol->month == 0);
+		if (isOK) {
+			day = getEasterDate(year);
+			t = localtime(&day);
+			newhol->yday = t->tm_yday + newhol->day;
+		}
+		break;
+
 	  case HOL_ADVENT:
-		isOK =  (newholiday->month == 0);
+		isOK = (newhol->month == 0);
+		if (isOK) {
+			day = get4AdventDate(year);
+			t = localtime(&day);
+			newhol->yday = t->tm_yday + newhol->day;
+		}
 		break;
 	}
 
 	if (!isOK) {
-		errprintf("Error in holiday definition %s\n", newholiday->desc);
+		errprintf("Error in holiday definition %s\n", newhol->desc);
 		return;
 	}
 
-	if (holidays == NULL) {
-		holidays = holidaytail = (holiday_t *)calloc(1, sizeof(holiday_t));
+	newitem = (holiday_t *)calloc(1, sizeof(holiday_t));
+	newitem->holtype = newhol->holtype;
+	newitem->day = newhol->day;
+	newitem->month = newhol->month;
+	newitem->desc = strdup(newhol->desc);
+	newitem->yday = newhol->yday;
+
+	handle = rbtFind(holidays, key);
+	if (handle == rbtEnd(holidays)) {
+		hset = (holidayset_t *)calloc(1, sizeof(holidayset_t));
+		hset->key = strdup(key);
+		rbtInsert(holidays, hset->key, hset);
 	}
 	else {
-		holidaytail = (holiday_t *)calloc(1, sizeof(holiday_t));
+		hset = (holidayset_t *)gettreeitem(holidays, handle);
 	}
-	memcpy (holidaytail, newholiday, sizeof(holiday_t));
-	holidaytail->next = NULL;
 
-	switch (holidaytail->holtype) {
-	  case HOL_ABSOLUTE:
-		day = mkday(year, holidaytail->month, holidaytail->day);
-		t = localtime(&day);
-		holidaytail->yday = t->tm_yday;
-		break;
-
-	  case HOL_EASTER:
-		day = getEasterDate(year);
-		t = localtime(&day);
-		holidaytail->yday = t->tm_yday + holidaytail->day;
-		break;
-
-	  case HOL_ADVENT:
-		day = get4AdventDate(year);
-		t = localtime(&day);
-		holidaytail->yday = t->tm_yday + holidaytail->day;
-		break;
+	if (hset->head == NULL) {
+		hset->head = hset->tail = newitem;
+	}
+	else {
+		hset->tail->next = newitem; hset->tail = hset->tail->next;
 	}
 }
+
+static int record_compare(void *a, void *b)
+{
+	return (((holiday_t *)a)->yday < ((holiday_t *)b)->yday);
+}
+
+static void * record_getnext(void *a)
+{
+	return ((holiday_t *)a)->next;
+}
+
+static void record_setnext(void *a, void *newval)
+{
+	((holiday_t *)a)->next = (holiday_t *)newval;
+}
+
 
 
 int load_holidays(void)
@@ -166,6 +217,9 @@ int load_holidays(void)
 	struct tm *now;
 	strbuffer_t *inbuf;
 	holiday_t newholiday;
+	RbtIterator handle, commonhandle;
+	char *setname = NULL;
+	holidayset_t *commonhols;
 
 	MEMDEFINE(fn);
 
@@ -218,20 +272,28 @@ int load_holidays(void)
 			continue;
 		}
 
+		if (*p == '[') {
+			/* New set of holidays */
+			if (setname) xfree(setname);
+			delim = strchr(p, ']'); if (delim) *delim = '\0';
+			setname = strdup(p+1);
+			continue;
+		}
+
 		delim = strchr(p, ':');
 		if (delim) {
-			add_holiday(now->tm_year, &newholiday);
 			memset(&newholiday,0,sizeof(holiday_t));
 			if (delim == p) {
-				newholiday.desc = strdup("untitled");
+				newholiday.desc = "untitled";
 			}
 			else {
 				*delim = '\0';
-				newholiday.desc = strdup(p);
+				newholiday.desc = p;
 				p=delim+1;
 			}
 		}
-		arg1 = strtok(p,"=");
+
+		arg1 = strtok(p, "=");
 		while (arg1) {
 			arg2=strtok(NULL," ,;\t\n\r");
 			if (!arg2) break;
@@ -252,35 +314,157 @@ int load_holidays(void)
 
 			arg1 = strtok(NULL,"=");
 		}
+
+		add_holiday((setname ? setname : ""), now->tm_year, &newholiday);
 	}
-	add_holiday(now->tm_year, &newholiday);
 
 	stackfclose(fd);
 	freestrbuffer(inbuf);
+
+	commonhandle = rbtFind(holidays, "");
+	commonhols = (commonhandle != rbtEnd(holidays)) ? (holidayset_t *)gettreeitem(holidays, commonhandle) : NULL;
+
+	for (handle = rbtBegin(holidays); (handle != rbtEnd(holidays)); handle = rbtNext(holidays, handle)) {
+		holidayset_t *oneset = (holidayset_t *)gettreeitem(holidays, handle);
+		if (commonhols && (oneset != commonhols)) {
+			/* Add the common holidays to this set */
+			holiday_t *walk;
+
+			for (walk = commonhols->head; (walk); walk = walk->next) add_holiday(oneset->key, now->tm_year, walk);
+		}
+
+		oneset->head = msort(oneset->head, record_compare, record_getnext, record_setnext);
+	}
 
 	MEMUNDEFINE(fn);
 	current_year = now->tm_year;
 
 	return 0;
-}				
+}
 
 
-int getweekdayorholiday(struct tm *t)
+static holiday_t *findholiday(char *key, int dayinyear, int year)
 {
+	RbtIterator handle;
+	holidayset_t *hset;
 	holiday_t *p;
 
-	if (holidays_like_weekday == -1) return t->tm_wday;
+	if (key && *key) {
+		handle = rbtFind(holidays, key);
+		if (handle == rbtEnd(holidays)) {
+			key = NULL;
+			handle = rbtFind(holidays, "");
+		}
+	}
+	else {
+		key = NULL;
+		handle = rbtFind(holidays, "");
+	}
 
-	p = holidays;
+	if (handle != rbtEnd(holidays)) 
+		hset = (holidayset_t *)gettreeitem(holidays, handle);
+	else
+		return NULL;
+
+	p = hset->head;
 	while (p) {
-		if (t->tm_yday == p->yday) {
-			return holidays_like_weekday;
+		if (dayinyear == p->yday) {
+			return p;
 		}
 
 		p = p->next;
 	}
 
+	return NULL;
+}
+
+int getweekdayorholiday(char *key, struct tm *t)
+{
+	holiday_t *rec;
+
+	if (holidays_like_weekday == -1) return t->tm_wday;
+
+	rec = findholiday(key, t->tm_yday, t->tm_year);
+	if (rec) return holidays_like_weekday;
+
 	return t->tm_wday;
 }
 
+char *isholiday(char *key, int dayinyear, int year)
+{
+	holiday_t *rec;
+
+	rec = findholiday(key, dayinyear, year);
+	if (rec) return rec->desc;
+
+	return NULL;
+}
+
+
+void printholidays(char *key, int year, strbuffer_t *buf)
+{
+	int day;
+
+	char oneh[1024];
+
+	if (year == 0) {
+		struct tm tm;
+		time_t t;
+
+		t = time(NULL);
+		memcpy(&tm, localtime(&t), sizeof(struct tm));
+		year = tm.tm_year;
+	}
+
+	for (day = 0; (day < 366); day++) {
+		char *desc = isholiday(key, day, year);
+
+		if (desc) {
+			struct tm tm;
+			time_t t;
+
+			/*
+			 * mktime() ignores the tm_yday parameter, so to get the 
+			 * actual date for the "yday'th" day of the year we just set
+			 * tm_mday to the yday value, and month to January. mktime() 
+			 * will figure out that the 56th of January is really Feb 25.
+			 *
+			 * Note: tm_yday is zero-based, but tm_mday is 1-based!
+			 */
+			tm.tm_mon = 0; tm.tm_mday = day+1; tm.tm_year = year;
+			tm.tm_hour = 12; tm.tm_min = 0; tm.tm_sec = 0;
+
+			t = mktime(&tm);
+			memcpy(&tm, localtime(&t), sizeof(struct tm));
+			sprintf(oneh, "<tr><td>%s</td><td>%02d/%02d</td>\n", desc, tm.tm_mday, tm.tm_mon+1);
+			addtobuffer(buf, oneh);
+		}
+	}
+}
+
+#ifdef STANDALONE
+int main(int argc, char *argv[])
+{
+	char l[1024];
+	char *hset = NULL;
+	char *p;
+	strbuffer_t *sbuf = newstrbuffer(0);
+
+	load_holidays();
+	do {
+		printf("Select set: "); fflush(stdout);
+		if (!fgets(l, sizeof(l), stdin)) return 0;
+		p = strchr(l, '\n'); if (p) *p = '\0';
+		if (hset) xfree(hset);
+		hset = strdup(l);
+
+		printholidays(hset, 0, sbuf);
+		printf("Holidays in set: %s\n", STRBUF(sbuf));
+		clearstrbuffer(sbuf);
+	} while (1);
+
+	return 0;
+}
+
+#endif
 
