@@ -55,13 +55,8 @@ any graphs, only the HTML that links to the graphs.
 .sp
 .BR action=selzoom
 Generate an HTML page with link to single graph, and with JavaScript code 
-that lets the user select part of the graph for a zoom-operation. The 
-JavaScript invokes hobbitgraph.cgi with "action=showzoom" to generate the
-zoomed graph webpage.
-.sp
-.BR action=showzoom
-Generate HTML with a link to the zoomed graph image. This link goes to
-an "action=view" invocation of hobbitgraph.cgi.
+that lets the user select part of the graph for a zoom-operation. Doesn't
+actually generate graph, only the HTML that links to the graph.
 .sp
 .BR action=view
 Generate a single graph image.
