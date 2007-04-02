@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.18 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.19 2007-04-02 09:05:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -211,7 +211,7 @@ static int timecheck(time_t starttime, time_t endtime, char *nktime)
 
 	if (starttime && (now < starttime)) return 0;
 	if (endtime && (now > endtime)) return 0;
-	if ((nktime == NULL) || within_sla(nktime, 0)) return 1;
+	if ((nktime == NULL) || within_sla(NULL, nktime, 0)) return 1; /* FIXME */
 
 	return 0;
 }

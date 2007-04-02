@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.33 2007-02-09 10:35:41 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.34 2007-04-02 09:05:55 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -154,7 +154,7 @@ static int minutes(char *p)
 	}
 }
 
-int within_sla(char *timespec, int defresult)
+int within_sla(char *holidaykey, char *timespec, int defresult)
 {
 	/*
 	 *    timespec is of the form W:HHMM:HHMM[,W:HHMM:HHMM]*
@@ -173,7 +173,7 @@ int within_sla(char *timespec, int defresult)
 	tnow = getcurrenttime(NULL);
 	now = localtime(&tnow);
 	curtime = now->tm_hour*60+now->tm_min;
-	newwday = getweekdayorholiday(now);
+	newwday = getweekdayorholiday(holidaykey, now);
 
 	onesla = timespec;
 	while (!found && onesla) {
@@ -252,10 +252,12 @@ char *check_downtime(char *hostname, char *testname)
 {
 	namelist_t *hinfo = hostinfo(hostname);
 	char *dtag;
+	char *holkey;
 
 	if (hinfo == NULL) return NULL;
 
 	dtag = bbh_item(hinfo, BBH_DOWNTIME);
+	holkey = bbh_item(hinfo, BBH_HOLIDAYS);
 	if (dtag && *dtag) {
 		static char *downtag = NULL;
 		static unsigned char *cause = NULL;
@@ -287,7 +289,7 @@ char *check_downtime(char *hostname, char *testname)
 				getescapestring(s5, &cause, &causelen);
 			}
 
-			if (within_sla(timetxt, 0)) {
+			if (within_sla(holkey, timetxt, 0)) {
 				char *onesvc, *buf;
 
 				if (strcmp(s1, "*") == 0) return cause;

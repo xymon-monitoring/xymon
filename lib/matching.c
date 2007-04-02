@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: matching.c,v 1.9 2007-02-13 21:25:13 henrik Exp $";
+static char rcsid[] = "$Id: matching.c,v 1.10 2007-04-02 09:05:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -198,11 +198,11 @@ int pickdata(char *buf, pcre *expr, int dupok, ...)
 }
 
 
-int timematch(char *tspec)
+int timematch(char *holidaykey, char *tspec)
 {
 	int result;
 
-	result = within_sla(tspec, 0);
+	result = within_sla(holidaykey, tspec, 0);
 
 	return result;
 }

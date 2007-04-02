@@ -24,7 +24,7 @@ extern int namematch(char *needle, char *haystack, pcre *pcrecode);
 extern int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode);
 extern pcre **compile_exprs(char *id, const char **patterns, int count);
 extern int pickdata(char *buf, pcre *expr, int dupok, ...);
-extern int timematch(char *tspec);
+extern int timematch(char *holidaykey, char *tspec);
 #endif
 
 #endif

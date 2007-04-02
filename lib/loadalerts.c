@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.16 2006-08-02 10:03:24 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.17 2007-04-02 09:05:55 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -765,6 +765,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	time_t duration = (time(NULL) - alert->eventstart);
 	int result, cfid = 0;
 	char *pgname, *cfline = NULL;
+	namelist_t *hinfo = hostinfo(alert->hostname);
 
 	/* The top-level page needs a name - cannot match against an empty string */
 	pgname = alert->location; if (strlen(pgname) == 0) pgname = "/";
@@ -921,7 +922,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * some random system recovered ... not good. So apply
 	 * this check to all messages.
 	 */
-	if (crit && crit->timespec && !timematch(crit->timespec)) { 
+	if (crit && crit->timespec && !timematch(hinfo, crit->timespec)) {
 		traceprintf("Failed '%s' (time criteria)\n", cfline);
 		if (!printmode) return 0; 
 	}

@@ -20,7 +20,7 @@ extern time_t getcurrenttime(time_t *retparm);
 extern void init_timestamp(void);
 extern char *timespec_text(char *spec);
 extern struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result);
-extern int within_sla(char *l, int defresult);
+extern int within_sla(char *holidaykey, char *l, int defresult);
 extern char *check_downtime(char *hostname, char *testname);
 extern int periodcoversnow(char *tag);
 extern char *histlogtime(time_t histtime);

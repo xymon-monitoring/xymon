@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.114 2007-02-09 10:35:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.115 2007-04-02 09:05:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -236,10 +236,25 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 		/* No alerts defined. */
 		addtobuffer(buf, "<tr><td colspan=9 align=center><b><i>No alerts defined</i></b></td></tr>\n");
 	}
+
 	addtobuffer(buf, "</table>\n");
 
 	xfree(alert);
+
 }
+
+static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
+{
+	namelist_t *hi = hostinfo(hostname);
+	char l[1024];
+
+	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", hostname);
+	addtobuffer(buf, l);
+	addtobuffer(buf, "<tr><th colspan=2>Holidays</th></tr>\n");
+	printholidays(bbh_item(hi, BBH_HOLIDAYS), 0, buf);
+	addtobuffer(buf, "</table>\n");
+}
+
 
 
 static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
@@ -919,6 +934,11 @@ char *generate_info(char *hostname)
 			addtobuffer(infobuf, "Alert configuration unavailable");
 		addtobuffer(infobuf, "</td></tr>\n");
 	}
+	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+
+	addtobuffer(infobuf, "<tr><th align=left valign=top>Holidays</th><td align=left>\n");
+	generate_hobbit_holidayinfo(hostname, infobuf);
+	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	if (gotstatus && showenadis) {
