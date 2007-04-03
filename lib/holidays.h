@@ -12,7 +12,9 @@
 #define __HOLIDAYS_H__
 
 typedef struct holiday_t {
-	enum { HOL_ABSOLUTE, HOL_EASTER, HOL_ADVENT } holtype;
+	enum { HOL_ABSOLUTE, HOL_EASTER, HOL_ADVENT, 
+	       HOL_MON_AFTER, HOL_TUE_AFTER, HOL_WED_AFTER, HOL_THU_AFTER, HOL_FRI_AFTER, HOL_SAT_AFTER, HOL_SUN_AFTER,
+	       HOL_MON, HOL_TUE, HOL_WED, HOL_THU, HOL_FRI, HOL_SAT, HOL_SUN } holtype;
 
 	char *desc;	/*	description					 	*/
 	int month;  	/* 	month for absolute date				 	*/

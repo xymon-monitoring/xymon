@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.3 2007-04-02 11:40:06 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.4 2007-04-03 12:55:20 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -91,6 +91,58 @@ static time_t get4AdventDate(int year)
 }
 
 
+static int getnumberedweekday(int wkday, int daynum, int month, int year)
+{
+	struct tm tm;
+	time_t t;
+
+	/* First see what weekday the 1st of this month is */
+	memset(&tm, 0, sizeof(tm));
+	tm.tm_mon = (month - 1);
+	tm.tm_year = year;
+	tm.tm_mday = 1;
+	t = mktime(&tm);
+	if (tm.tm_wday != wkday) {
+		/* Skip forward so we reach the first of the wanted weekdays */
+		tm.tm_mday += (wkday - tm.tm_wday);
+		if (tm.tm_mday < 1) tm.tm_mday += 7;
+		t = mktime(&tm);
+	}
+
+	/* t and tm now has the 1st wkday in this month. So skip to the one we want */
+	tm.tm_mday += 7*(daynum - 1);
+	/* Check if we overflowed into next month (if daynum == 5) */
+	t = mktime(&tm);
+	if ((daynum == 5) && (tm.tm_mon != (month - 1))) {
+		/* We drifted into the next month. Go back one week to return the last wkday of the month */
+		tm.tm_mday -= 7;
+		t = mktime(&tm);
+	}
+
+	return tm.tm_yday;
+}
+
+static int getweekdayafter(int wkday, int daynum, int month, int year)
+{
+	struct tm tm;
+	time_t t;
+
+	/* First see what weekday this date is */
+	memset(&tm, 0, sizeof(tm));
+	tm.tm_mon = (month - 1);
+	tm.tm_year = year;
+	tm.tm_mday = daynum;
+	t = mktime(&tm);
+	if (tm.tm_wday != wkday) {
+		/* Skip forward so we reach the wanted weekday */
+		tm.tm_mday += (wkday - tm.tm_wday);
+		if (tm.tm_mday < daynum) tm.tm_mday += 7;
+		t = mktime(&tm);
+	}
+
+	return tm.tm_yday;
+}
+
 
 static void reset_holidays(void)
 {
@@ -134,30 +186,110 @@ static void add_holiday(char *key, int year, holiday_t *newhol)
 	switch (newhol->holtype) {
 	  case HOL_ABSOLUTE:
 		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <=31) );
-		if (isOK) {
-			day = mkday(year, newhol->month, newhol->day);
-			t = localtime(&day);
-			newhol->yday = t->tm_yday;
-		}
+		if (!isOK) break;
+		day = mkday(year, newhol->month, newhol->day);
+		t = localtime(&day);
+		newhol->yday = t->tm_yday;
 		break;
 
 	  case HOL_EASTER:
-		isOK = (newhol->month == 0);
-		if (isOK) {
-			day = getEasterDate(year);
-			t = localtime(&day);
-			newhol->yday = t->tm_yday + newhol->day;
-		}
+		isOK = (newhol->month == 0); if (!isOK) break;
+		day = getEasterDate(year);
+		t = localtime(&day);
+		newhol->yday = t->tm_yday + newhol->day;
 		break;
 
 	  case HOL_ADVENT:
-		isOK = (newhol->month == 0);
-		if (isOK) {
-			day = get4AdventDate(year);
-			t = localtime(&day);
-			newhol->yday = t->tm_yday + newhol->day;
-		}
+		isOK = (newhol->month == 0); if (!isOK) break;
+		day = get4AdventDate(year);
+		t = localtime(&day);
+		newhol->yday = t->tm_yday + newhol->day;
 		break;
+
+	  case HOL_MON:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 5) );
+		if (!isOK) break;
+		newhol->yday = getnumberedweekday(1, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_TUE:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 5) );
+		if (!isOK) break;
+		newhol->yday = getnumberedweekday(2, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_WED:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 5) );
+		if (!isOK) break;
+		newhol->yday = getnumberedweekday(3, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_THU:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 5) );
+		if (!isOK) break;
+		newhol->yday = getnumberedweekday(4, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_FRI:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 5) );
+		if (!isOK) break;
+		newhol->yday = getnumberedweekday(5, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_SAT:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 5) );
+		if (!isOK) break;
+		newhol->yday = getnumberedweekday(6, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_SUN:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 5) );
+		if (!isOK) break;
+		newhol->yday = getnumberedweekday(0, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_MON_AFTER:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 31) );
+		if (!isOK) break;
+		newhol->yday = getweekdayafter(1, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_TUE_AFTER:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 31) );
+		if (!isOK) break;
+		newhol->yday = getweekdayafter(2, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_WED_AFTER:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 31) );
+		if (!isOK) break;
+		newhol->yday = getweekdayafter(3, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_THU_AFTER:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 31) );
+		if (!isOK) break;
+		newhol->yday = getweekdayafter(4, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_FRI_AFTER:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 31) );
+		if (!isOK) break;
+		newhol->yday = getweekdayafter(5, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_SAT_AFTER:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 31) );
+		if (!isOK) break;
+		newhol->yday = getweekdayafter(6, newhol->day, newhol->month, year);
+		break;
+
+	  case HOL_SUN_AFTER:
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <= 31) );
+		if (!isOK) break;
+		newhol->yday = getweekdayafter(0, newhol->day, newhol->month, year);
+		break;
+
 	}
 
 	if (!isOK) {
@@ -298,17 +430,31 @@ int load_holidays(void)
 			arg2=strtok(NULL," ,;\t\n\r");
 			if (!arg2) break;
 			if (strncasecmp(arg1, "TYPE", 4) == 0) {
-				if (strncasecmp(arg2, "STATIC", 6) == 0) newholiday.holtype = HOL_ABSOLUTE;
-				if (strncasecmp(arg2, "EASTER", 6) == 0) newholiday.holtype = HOL_EASTER;
-				if (strncasecmp(arg2, "4ADVENT", 7) == 0) newholiday.holtype = HOL_ADVENT;
+				if      (strncasecmp(arg2, "STATIC", 6) == 0) newholiday.holtype = HOL_ABSOLUTE;
+				else if (strncasecmp(arg2, "EASTER", 6) == 0) newholiday.holtype = HOL_EASTER;
+				else if (strncasecmp(arg2, "4ADVENT", 7) == 0) newholiday.holtype = HOL_ADVENT;
+				else if (strncasecmp(arg2, "MON", 3) == 0) newholiday.holtype = HOL_MON;
+				else if (strncasecmp(arg2, "TUE", 3) == 0) newholiday.holtype = HOL_TUE;
+				else if (strncasecmp(arg2, "WED", 3) == 0) newholiday.holtype = HOL_WED;
+				else if (strncasecmp(arg2, "THU", 3) == 0) newholiday.holtype = HOL_THU;
+				else if (strncasecmp(arg2, "FRI", 3) == 0) newholiday.holtype = HOL_FRI;
+				else if (strncasecmp(arg2, "SAT", 3) == 0) newholiday.holtype = HOL_SAT;
+				else if (strncasecmp(arg2, "SUN", 3) == 0) newholiday.holtype = HOL_SUN;
+				else if (strncasecmp(arg2, "+MON", 4) == 0) newholiday.holtype = HOL_MON_AFTER;
+				else if (strncasecmp(arg2, "+TUE", 4) == 0) newholiday.holtype = HOL_TUE_AFTER;
+				else if (strncasecmp(arg2, "+WED", 4) == 0) newholiday.holtype = HOL_WED_AFTER;
+				else if (strncasecmp(arg2, "+THU", 4) == 0) newholiday.holtype = HOL_THU_AFTER;
+				else if (strncasecmp(arg2, "+FRI", 4) == 0) newholiday.holtype = HOL_FRI_AFTER;
+				else if (strncasecmp(arg2, "+SAT", 4) == 0) newholiday.holtype = HOL_SAT_AFTER;
+				else if (strncasecmp(arg2, "+SUN", 4) == 0) newholiday.holtype = HOL_SUN_AFTER;
 			}
-			if (strncasecmp(arg1, "MONTH", 5) == 0) {
+			else if (strncasecmp(arg1, "MONTH", 5) == 0) {
 				newholiday.month=atoi(arg2);
 			}
-			if (strncasecmp(arg1, "DAY", 3) == 0) {
+			else if (strncasecmp(arg1, "DAY", 3) == 0) {
 				newholiday.day=atoi(arg2);
 			}
-			if (strncasecmp(arg1, "OFFSET", 3) == 0) {
+			else if (strncasecmp(arg1, "OFFSET", 6) == 0) {
 				newholiday.day=atoi(arg2);
 			}
 
@@ -449,18 +595,71 @@ int main(int argc, char *argv[])
 	char *hset = NULL;
 	char *p;
 	strbuffer_t *sbuf = newstrbuffer(0);
+	char *dayname[] = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
 	load_holidays();
 	do {
-		printf("Select set: "); fflush(stdout);
+		printf("$E year, $4 year, $W daynum wkday month year, Setname\n? "); fflush(stdout);
 		if (!fgets(l, sizeof(l), stdin)) return 0;
 		p = strchr(l, '\n'); if (p) *p = '\0';
 		if (hset) xfree(hset);
 		hset = strdup(l);
 
-		printholidays(hset, 0, sbuf);
-		printf("Holidays in set: %s\n", STRBUF(sbuf));
-		clearstrbuffer(sbuf);
+		if (*hset == '$') {
+			time_t t;
+			struct tm *tm;
+			int i;
+			char *tok, *arg[5];
+
+			i = 0; tok = strtok(hset, " ");
+			while (tok) {
+				arg[i] = tok;
+				i++;
+				tok = strtok(NULL, " ");
+			}
+
+			if (arg[0][1] == 'E') {
+				t = getEasterDate(atoi(arg[1]) - 1900);
+				tm = localtime(&t);
+				printf("Easter Sunday %04d is %02d/%02d/%04d\n", atoi(arg[1]), 
+					tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900);
+			}
+			else if (arg[0][1] == '4') {
+				t = get4AdventDate(atoi(arg[1]) - 1900);
+				tm = localtime(&t);
+				printf("4Advent %04d is %02d/%02d/%04d\n", atoi(arg[1]), 
+					tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900);
+			}
+			else if (arg[0][1] == 'W') {
+				struct tm wtm;
+
+				memset(&wtm, 0, sizeof(wtm));
+				wtm.tm_mday = getnumberedweekday(atoi(arg[2]), atoi(arg[1]), atoi(arg[3]), atoi(arg[4])-1900) + 1;
+				wtm.tm_mon = 0;
+				wtm.tm_year = atoi(arg[4]) - 1900;
+				mktime(&wtm);
+				printf("The %d. %s in %02d/%04d is %02d/%02d/%04d\n", 
+					atoi(arg[1]), dayname[atoi(arg[2])], atoi(arg[3]), atoi(arg[4]),
+					wtm.tm_mday, wtm.tm_mon+1, wtm.tm_year+1900);
+			}
+			else if (arg[0][1] == 'A') {
+				struct tm wtm;
+
+				memset(&wtm, 0, sizeof(wtm));
+				wtm.tm_mday = getweekdayafter(atoi(arg[2]), atoi(arg[1]), atoi(arg[3]), atoi(arg[4])-1900) + 1;
+				wtm.tm_mon = 0;
+				wtm.tm_year = atoi(arg[4]) - 1900;
+				mktime(&wtm);
+				printf("The %d. %s on or after %02d/%04d is %02d/%02d/%04d\n", 
+					atoi(arg[1]), dayname[atoi(arg[2])], atoi(arg[3]), atoi(arg[4]),
+					wtm.tm_mday, wtm.tm_mon+1, wtm.tm_year+1900);
+			}
+		}
+		else {
+			printholidays(hset, 0, sbuf);
+			printf("Holidays in set: %s\n", STRBUF(sbuf));
+			clearstrbuffer(sbuf);
+		}
 	} while (1);
 
 	return 0;
