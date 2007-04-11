@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.262 2007-03-13 13:58:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.263 2007-04-11 21:58:28 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -4633,6 +4633,7 @@ int main(int argc, char *argv[])
 	close_channel(enadischn, CHAN_MASTER);
 	close_channel(clientchn, CHAN_MASTER);
 	close_channel(clichgchn, CHAN_MASTER);
+	close_channel(userchn, CHAN_MASTER);
 
 	save_checkpoint();
 	close(lsocket);
