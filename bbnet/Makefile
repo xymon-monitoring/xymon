@@ -5,8 +5,9 @@ DNSFLAGS = -I./c-ares
 
 PROGRAMS = bbtest-net hobbitping beastat
 EXTENSIONS = bbretest-net.sh
+DBGTOOLS = contest
 
-all: $(PROGRAMS) $(EXTENSIONS)
+all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
 PINGTESTOBJS = hobbitping.o
@@ -76,7 +77,7 @@ contest: contest.c
 	chmod 755 $@
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) contest
+	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 
 install: install-bin install-ext install-config install-man
