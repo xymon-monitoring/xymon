@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.108 2007-02-09 14:05:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.109 2007-04-27 11:46:56 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1747,7 +1747,7 @@ int main(int argc, char *argv[])
 
 		msg = get_hobbitd_message(C_CLIENT, argv[0], &seq, NULL, &running);
 		if (msg == NULL) {
-			errprintf("Failed to get a message, terminating\n");
+			if (!localmode) errprintf("Failed to get a message, terminating\n");
 			running = 0;
 			continue;
 		}
