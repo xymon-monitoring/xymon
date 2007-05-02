@@ -15,7 +15,10 @@ using Hobbit to monitor servers.</p>
 	<li><a href="#netfail">Network tests fail sporadically</a></li>
 	<li><a href="#solarisrandom">"Failed to find enough entropy" on Solaris</a></li>
 	<li><a href="#freebsdkernelsem">Hobbit fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></li>
+	<li><a href="#freebsdjail">Hobbit will not run inside a FreeBSD jail</a></li>
 	<li><a href="#solarislinker">Hobbit on Solaris compiles but aborts with some "ld.so" error</a></li>
+	<li><a href="#solarislinker">Hobbit on Solaris compiles but aborts with some "ld.so" error</a></li>
+	<li><a href="#solaris10fusion">Hobbit on Solaris 10 &quot;hobbitd status-board not available&quot;</a></li>
 </ul>
 
 <h3><a name="bugreport">How to report bugs</a></h3>
@@ -114,6 +117,13 @@ current settings (from the <tt>sysctl</tt> output), and Hobbit's needs
 <a href="http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/configtuning-sysctl.html">
 the FreeBSD Handbook</a></p>
 
+<h3><a name="freebsdjail">Hobbit will not run inside a FreeBSD jail</a></h3>
+<p>FreeBSD jails have System V IPC support disabled by default. See the
+<a href="http://www.freebsd.org/doc/en_US.ISO8859-1/books/arch-handbook/jail-restrictions.html">FreeBSD architecture Handbook</a> 
+section on jail restrictions. Essentially, there is a <b>security.jail.jail_sysvipc_allowed</b> 
+sysctl that must be enabled. If it isn't then Hobbit will refuse to start with the error 
+<tt>Could not get shm of size 262144: Function not implemented</tt>.</p>
+
 <h3><a name="solarislinker">Hobbit on Solaris compiles but aborts with some "ld.so" error</a></h3>
 <p><a href="http://www.hswn.dk/hobbiton/2005/09/msg00160.html">This info</a> was contributed by sladewig,
 with a few modifications:</p>
@@ -152,6 +162,25 @@ The GNU linker uses the "-rpath" option which is defined differently: Add</p>
 </tt></p>
 <p>at the bottom of the top-level Makefile.</p>
 
+
+<h3><a name="solaris10fusion">Hobbit on Solaris 10 &quot;hobbitd status-board not available&quot;</a></h3>
+<p>It seems that Hobbit triggers a bug in the Solaris 10 &quot;TCP fusion&quot; loopback interface,
+resulting in no data being returned from hobbitd when queried for the current status of all
+monitored systems. The recommended solution is to disable the use of TCP fusion. Colin Spargo 
+writes:</p>
+<pre><tt>
+If you disable TCP fusion be adding the following kernel parameter to
+/etc/system and reboot, hopefully you will find that the problem goes
+away.
+
+set ip:do_tcp_fusion = 0
+
+Apparently this can be done on a live system as well (without rebooting),
+but will require hobbit to be restarted. To do this:
+
+echo do_tcp_fusion/W0 | mdb -kw
+</tt></pre>
+<p>More in <a href="http://www.hswn.dk/hobbiton/2007/04/msg00187.html">his mail</a></p>
 
 </body>
 </html>
