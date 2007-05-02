@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.88 2006-08-01 07:11:13 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.89 2007-05-02 10:55:57 henrik Exp $";
 
 #include "config.h"
 
@@ -139,6 +139,7 @@ static int tcp_callback(unsigned char *buf, unsigned int len, void *priv)
 
 
 tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
+			char *srcip,
 			char *tspec, int silent, unsigned char *reqmsg, 
 		     void *priv, f_callback_data datacallback, f_callback_final finalcallback)
 {
@@ -171,6 +172,8 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	if ((ip == NULL) || (strlen(ip) == 0) || (inet_aton(ip, (struct in_addr *) &newtest->addr.sin_addr.s_addr) == 0)) {
 		newtest->errcode = CONTEST_EDNS;
 	}
+
+	newtest->srcaddr = (srcip ? strdup(srcip) : NULL);
 
 	if (strcmp(service, "http") == 0) {
 		newtest->svcinfo = &svcinfo_http;
@@ -759,6 +762,35 @@ void do_tcp_tests(int timeout, int concurrency)
 			sockok = (nextinqueue->fd != -1);
 			if (sockok) {
 				res = fcntl(nextinqueue->fd, F_SETFL, O_NONBLOCK);
+
+				/* Set the source address */
+				if (nextinqueue->srcaddr) {
+					struct sockaddr_in src;
+					int isip;
+
+					memset(&src, 0, sizeof(src));
+					src.sin_family = PF_INET;
+					src.sin_port = 0;
+					isip = (inet_aton(nextinqueue->srcaddr, (struct in_addr *) &src.sin_addr.s_addr) != 0);
+
+					if (!isip) {
+						char *envaddr = getenv(nextinqueue->srcaddr);
+						isip = (envaddr && (inet_aton(envaddr, (struct in_addr *) &src.sin_addr.s_addr) != 0));
+					}
+
+					if (isip) {
+						res = bind(nextinqueue->fd, (struct sockaddr *)&src, sizeof(src));
+						if (res != 0) errprintf("Could not bind to source IP %s for test %s: %s\n", 
+									nextinqueue->srcaddr, nextinqueue->tspec, strerror(errno));
+					}
+					else {
+						errprintf("Invalid source IP %s for test %s, using default\n", 
+							  nextinqueue->srcaddr, nextinqueue->tspec);
+					}
+
+					res = 0;
+				}
+
 				if (res == 0) {
 					/*
 					 * Initiate the connection attempt ... 
@@ -1276,9 +1308,10 @@ int main(int argc, char *argv[])
 		else {
 			char *ip;
 			char *port;
+			char *srcip;
 			char *testspec;
 
-			argp = argv[argi]; ip = port = testspec = NULL;
+			argp = argv[argi]; ip = port = srcip = testspec = NULL;
 
 			ip = argp;
 			p = strchr(argp, '/');
@@ -1292,6 +1325,11 @@ int main(int argc, char *argv[])
 					port = "0";
 				}
 				testspec = argp;
+				srcip = strchr(testspec, '@');
+				if (srcip) {
+					*srcip = '\0';
+					srcip++;
+				}
 			}
 
 			if (ip && port && testspec) {
@@ -1336,7 +1374,7 @@ int main(int argc, char *argv[])
 					printf("DNS test result=%d\nBanner:%s\n", result, STRBUF(banner));
 				}
 				else {
-					add_tcp_test(ip, atoi(port), testspec, NULL, NULL, 0, NULL, NULL, NULL, NULL);
+					add_tcp_test(ip, atoi(port), testspec, NULL, srcip, NULL, 0, NULL, NULL, NULL, NULL);
 				}
 			}
 			else {

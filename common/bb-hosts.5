@@ -716,6 +716,13 @@ the service. E.g. to do a silent test of an smtp server, enter
 
 You can combine these two: \fBftp:8021:s\fR is valid.
 
+If you must test a service from a multi-homed host (i.e. using a
+specific source IP-address instead of the one your operating system
+provides), you can use the modifier "@IPADDRESS" at the end of the
+test specification, \fBafter\fR any other modifiers or port number.
+"IPADDRESS" must be a valid dotted IP-address (not hostname) which
+is assigned to the host running the network tests.
+
 The name of the test also determines the columnname that the test 
 result will appear with in the Hobbit webpages.
 
