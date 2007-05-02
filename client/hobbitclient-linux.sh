@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.22 2007-05-02 11:53:32 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.23 2007-05-02 12:15:06 henrik Exp $
 
 echo "[date]"
 date
@@ -26,8 +26,8 @@ elif [ -f /etc/gentoo-release ]; then
 elif [ -f /etc/debian_version ]; then
 	echo -en "Debian "
 	cat /etc/debian_version
-elif [ -f /etc/SuSE-release ]; then
-	grep ^SuSE /etc/SuSE-release
+elif [ -f /etc/S?SE-release ]; then
+	grep -i ^SuSE /etc/S?SE-release
 elif [ -f /etc/slackware-version ]; then
 	cat /etc/slackware-version
 elif [ -f /etc/mandrake-release ]; then
