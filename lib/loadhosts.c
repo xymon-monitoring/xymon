@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.68 2007-04-02 08:59:01 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.69 2007-05-02 11:37:53 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -457,6 +457,11 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 			  if (p) addtobuffer(rawtxt, "|");
 		  }
 		  return STRBUF(rawtxt);
+
+	  case BBH_HOLIDAYS:
+		  p = bbh_find_item(host, item);
+		  if (!p) p = getenv("HOLIDAYS");
+		  return p;
 
 	  default:
 		  return bbh_find_item(host, item);
