@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.21 2006-11-30 09:41:14 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.22 2007-05-02 11:53:32 henrik Exp $
 
 echo "[date]"
 date
@@ -61,6 +61,8 @@ echo "[ports]"
 netstat -ant 2>/dev/null
 echo "[ifstat]"
 /sbin/ifconfig
+# Report mdstat data if it exists
+if test -r /proc/mdstat; then echo "[mdstat]"; cat /proc/mdstat; fi
 echo "[ps]"
 ps -Aww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
 
