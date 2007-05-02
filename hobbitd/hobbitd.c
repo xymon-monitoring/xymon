@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.263 2007-04-11 21:58:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.264 2007-05-02 11:40:18 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2178,7 +2178,6 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		switch (f_type) {
 		  case F_ACKMSG: if (lwalk->ackmsg) needed += 2*strlen(lwalk->ackmsg); break;
 		  case F_DISMSG: if (lwalk->dismsg) needed += 2*strlen(lwalk->dismsg); break;
-		  case F_MSG: needed += 2*strlen(lwalk->message); break;
 
 		  case F_ACKLIST:
 			flush_acklist(lwalk, 0);
@@ -2193,6 +2192,10 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 				if (infostr) needed += strlen(infostr);
 			}
 			break;
+
+		  case F_MSG:
+		  case F_LINE1:
+			needed += 2*strlen(lwalk->message); break;
 
 		  default: break;
 		}
