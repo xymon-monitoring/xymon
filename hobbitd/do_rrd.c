@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.40 2007-01-18 21:47:53 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.41 2007-05-27 16:18:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -28,6 +28,8 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.40 2007-01-18 21:47:53 henrik Exp $";
 #include "do_rrd.h"
 
 char *rrddir = NULL;
+int  log_double_updates = 1;
+
 static char *exthandler = NULL;
 static char **extids = NULL;
 
@@ -183,9 +185,13 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	if (tplstr) xfree(tplstr); 
 
 	if (result != 0) {
-		errprintf("RRD error updating %s from %s: %s\n", 
-			  filedir, (senderip ? senderip : "unknown"), 
-			  rrd_get_error());
+		char *msg = rrd_get_error();
+
+		if (log_double_updates || (strncmp(msg, "illegal attempt", 15) != 0)) {
+			errprintf("RRD error updating %s from %s: %s\n", 
+				  filedir, (senderip ? senderip : "unknown"), msg);
+		}
+
 		MEMUNDEFINE(filedir);
 		MEMUNDEFINE(rrdvalues);
 		return 2;
