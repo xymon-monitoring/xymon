@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.54 2007-05-28 17:57:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.55 2007-05-28 20:21:29 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -118,24 +118,18 @@ void errormsg(char *msg)
 	exit(1);
 }
 
-void request_cacheflush(char *hostdir)
+void request_cacheflush(char *hostname)
 {
 	/* Build a cache-flush request, and send it to all of the $BBTMP/rrdctl.* sockets */
-	strbuffer_t *req = newstrbuffer(0);
+	char *req, *bufp;
 	int bytesleft;
-	char *bufp;
 	DIR *dir;
 	struct dirent *d;
 	int ctlsocket = -1;
 	char fn[PATH_MAX];
 
-	dir = opendir(".");
-	while ((d = readdir(dir)) != NULL) {
-		if (*d->d_name == '.') continue;
-		sprintf(fn, "%s/%s\n", hostdir, d->d_name);
-		addtobuffer(req, fn);
-	}
-	closedir(dir);
+	req = (char *)malloc(strlen(hostname)+3);
+	sprintf(req, "/%s/", hostname);
 
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
@@ -155,7 +149,7 @@ void request_cacheflush(char *hostdir)
 			myaddr.sun_family = AF_UNIX;
 			sprintf(myaddr.sun_path, "%s/%s", xgetenv("BBTMP"), d->d_name);
 			myaddrsz = sizeof(myaddr);
-			bufp = STRBUF(req); bytesleft = STRBUFLEN(req);
+			bufp = req; bytesleft = strlen(req);
 			do {
 				n = sendto(ctlsocket, bufp, bytesleft, 0, (struct sockaddr *)&myaddr, myaddrsz);
 				if (n == -1) {
@@ -172,7 +166,7 @@ void request_cacheflush(char *hostdir)
 		}
 	}
 	closedir(dir);
-	freestrbuffer(req);
+	xfree(req);
 }
 
 
@@ -705,7 +699,11 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
 	/* Request an RRD cache flush from the hobbitd_rrd update daemon */
-	request_cacheflush(rrddir);
+	if (hostlist) {
+		int i;
+		for (i=0; (i < hostlistsize); i++) request_cacheflush(hostlist[i]);
+	}
+	else if (hostname) request_cacheflush(hostname);
 
 	/* What RRD files do we have matching this request? */
 	if (hostlist || (gdef->fnpat == NULL)) {

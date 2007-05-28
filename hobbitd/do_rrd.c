@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.43 2007-05-28 17:51:57 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.44 2007-05-28 20:21:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,7 +43,7 @@ static char *senderip = NULL;
 static char rrdfn[PATH_MAX];	/* This one used by the modules */
 static char filedir[PATH_MAX];	/* This one used here */
 
-#define CACHESZ 3
+#define CACHESZ 6
 static int updcache_keyofs = -1;
 static RbtHandle updcache;
 typedef struct updcacheitem_t {
@@ -52,6 +52,13 @@ typedef struct updcacheitem_t {
 	int valcount;
 	char *vals[CACHESZ];
 } updcacheitem_t;
+
+static RbtHandle flushtree;
+static int have_flushtree = 0;
+typedef struct flushtree_t {
+	char *hostname;
+	time_t flushtime;
+} flushtree_t;
 
 void setup_exthandler(char *handlerpath, char *ids)
 {
@@ -269,31 +276,63 @@ void rrdcacheflushall(void)
 	}
 }
 
-void rrdcacheflushone(char *key)
+void rrdcacheflushhost(char *hostname)
 {
 	RbtIterator handle;
 	updcacheitem_t *cacheitem;
+	flushtree_t *flushitem;
+	int keylen, done;
+	time_t now = time(NULL);
 
 	if (updcache_keyofs == -1) return;
 
 	/* If we get a full path for the key, skip the leading rrddir */
-	if (strncmp(key, rrddir, updcache_keyofs) == 0) key += updcache_keyofs;
+	if (strncmp(hostname, rrddir, updcache_keyofs) == 0) hostname += updcache_keyofs;
+	keylen = strlen(hostname);
 
-	debug = 1;
-	handle = rbtFind(updcache, key);
-	if (handle != rbtEnd(updcache)) {
-		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
-		if (cacheitem->valcount > 0) {
-			dbgprintf("Flushing cache '%s'\n", key);
-			sprintf(filedir, "%s%s", rrddir, cacheitem->key);
-			flush_cached_updates(cacheitem, NULL);
-		}
-		else {
-			dbgprintf("Cacheflush, but no cached data '%s'\n", key);
-		}
+	if (!have_flushtree) {
+		flushtree = rbtNew(name_compare);
+		have_flushtree = 1;
+	}
+	handle = rbtFind(flushtree, hostname);
+	if (handle == rbtEnd(flushtree)) {
+		flushitem = (flushtree_t *)calloc(1, sizeof(flushtree_t));
+		flushitem->hostname = strdup(hostname);
+		flushitem->flushtime = 0;
+		rbtInsert(flushtree, flushitem->hostname, flushitem);
 	}
 	else {
-		dbgprintf("Cacheflush, not found '%s'\n", key);
+		flushitem = (flushtree_t *) gettreeitem(flushtree, handle);
+	}
+
+	debug = 1;
+	if ((flushitem->flushtime + 60) >= now) {
+		dbgprintf("Flush of '%s' skipped, too soon\n", hostname);
+		debug = 0;
+		return;
+	}
+	flushitem->flushtime = now;
+
+	handle = rbtBegin(updcache); 
+	while (handle != rbtEnd(updcache)) {
+		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
+
+		switch (strncasecmp(cacheitem->key, hostname, keylen)) {
+		  case 1 :
+			handle = rbtEnd(updcache); break;
+
+		  case 0:
+			if (cacheitem->valcount > 0) {
+				dbgprintf("Flushing cache '%s'\n", cacheitem->key);
+				sprintf(filedir, "%s%s", rrddir, cacheitem->key);
+				flush_cached_updates(cacheitem, NULL);
+			}
+			/* Fall through */
+
+		  default:
+			handle = rbtNext(updcache, handle);
+			break;
+		}
 	}
 	debug = 0;
 }

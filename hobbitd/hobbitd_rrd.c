@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.30 2007-05-28 17:52:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.31 2007-05-28 20:21:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 			bol = ctlbuf;
 			do {
 				eol = strchr(bol, '\n'); if (eol) *eol = '\0';
-				rrdcacheflushone(bol);
+				rrdcacheflushhost(bol);
 				if (eol) { bol = eol+1; } else bol = NULL;
 			} while (bol && *bol);
 		}
