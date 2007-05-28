@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.56 2006-11-24 11:50:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.57 2007-05-28 07:46:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -247,7 +247,9 @@ void flushmessage(hobbit_peer_t *peer)
 	hobbit_msg_t *zombie;
 
 	zombie = peer->msghead;
+
 	peer->msghead = peer->msghead->next;
+	if (peer->msghead == NULL) peer->msgtail = NULL;
 
 	xfree(zombie->buf);
 	xfree(zombie);
@@ -258,11 +260,10 @@ static void addmessage_onepeer(hobbit_peer_t *peer, char *inbuf, int inlen)
 {
 	hobbit_msg_t *newmsg;
 
-	newmsg = (hobbit_msg_t *) malloc(sizeof(hobbit_msg_t));
+	newmsg = (hobbit_msg_t *) calloc(1, sizeof(hobbit_msg_t));
 	newmsg->tstamp = time(NULL);
 	newmsg->buf = newmsg->bufp = inbuf;
 	newmsg->buflen = inlen;
-	newmsg->next = NULL;
 
 	/* 
 	 * If we've flagged the peer as FAILED, then change status to DOWN so
@@ -272,8 +273,9 @@ static void addmessage_onepeer(hobbit_peer_t *peer, char *inbuf, int inlen)
 	if (peer->peerstatus == P_FAILED) peer->peerstatus = P_DOWN;
 
 	/* If the peer is down, we will only permit ONE message in the queue. */
-	if ((peer->peerstatus != P_UP) && peer->msghead) {
-		flushmessage(peer);
+	if (peer->peerstatus != P_UP) {
+		errprintf("Peer not up, flushing message queue\n");
+		while (peer->msghead) flushmessage(peer);
 	}
 
 	if (peer->msghead == NULL) {
@@ -287,7 +289,7 @@ static void addmessage_onepeer(hobbit_peer_t *peer, char *inbuf, int inlen)
 	pendingcount++;
 }
 
-void addmessage(char *inbuf)
+int addmessage(char *inbuf)
 {
 	RbtIterator phandle;
 	hobbit_peer_t *peer;
@@ -300,8 +302,8 @@ void addmessage(char *inbuf)
 		/* hobbitd sends us messages with the KEY in the first field, between a '/' and a '|' */
 		hostname = inbuf + strcspn(inbuf, "/|\r\n");
 		if (*hostname != '/') {
-			dbgprintf("No key field in message, dropping it\n");
-			return; /* Malformed input */
+			errprintf("No key field in message, dropping it\n");
+			return -1; /* Malformed input */
 		}
 		hostname++;
 		bcastmsg = (*hostname == '*');
@@ -309,8 +311,8 @@ void addmessage(char *inbuf)
 			/* Lookup which server handles this host */
 			hostend = hostname + strcspn(hostname, "|\r\n");
 			if (*hostend != '|') {
-				dbgprintf("No delimiter found in input, dropping it\n");
-				return; /* Malformed input */
+				errprintf("No delimiter found in input, dropping it\n");
+				return -1; /* Malformed input */
 			}
 			*hostend = '\0';
 			peerlocation = locator_query(hostname, locatorservice, NULL);
@@ -322,13 +324,14 @@ void addmessage(char *inbuf)
 			 * request.
 			 */
 			if (!peerlocation || (*peerlocation == '\0')) {
-				dbgprintf("No response from locator, dropping it\n");
-				return;
+				errprintf("No response from locator for %s/%s, dropping it\n",
+					  locatorservice, hostname);
+				return -1;
 			}
 
 			phandle = rbtFind(peers, peerlocation);
 			if (phandle == rbtEnd(peers)) {
-			/* New peer - register it */
+				/* New peer - register it */
 				addnetpeer(peerlocation);
 				phandle = rbtFind(peers, peerlocation);
 			}
@@ -346,11 +349,16 @@ void addmessage(char *inbuf)
 		}
 	}
 	else {
-		if (phandle == rbtEnd(peers)) return;
+		if (phandle == rbtEnd(peers)) {
+			errprintf("No peer found to handle message, dropping it\n");
+			return -1;
+		}
 		peer = (hobbit_peer_t *)gettreeitem(peers, phandle);
 
 		addmessage_onepeer(peer, inbuf, inlen);
 	}
+
+	return 0;
 }
 
 void shutdownconnection(hobbit_peer_t *peer)
@@ -548,6 +556,7 @@ int main(int argc, char *argv[])
 		 */
 		struct sembuf s;
 		int n;
+		time_t now = time(NULL);
 
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
@@ -606,7 +615,10 @@ int main(int argc, char *argv[])
 			/*
 			 * Put the new message on our outbound queue.
 			 */
-			addmessage(inbuf);
+			if (addmessage(inbuf) != 0) {
+				/* Failed to queue message, free the buffer */
+				xfree(inbuf);
+			}
 		}
 		else {
 			if (errno != EAGAIN) {
@@ -630,9 +642,9 @@ int main(int argc, char *argv[])
 		 * of the time because we'll just shove the data to the
 		 * worker child.
 		 */
+		now = time(NULL);
 		for (handle = rbtBegin(peers); (handle != rbtEnd(peers)); handle = rbtNext(peers, handle)) {
 			int canwrite = 1, hasfailed = 0;
-			time_t now = time(NULL);
 			hobbit_peer_t *pwalk;
 
 			pwalk = (hobbit_peer_t *) gettreeitem(peers, handle);
@@ -651,6 +663,24 @@ int main(int argc, char *argv[])
 			  case P_FAILED:
 				canwrite = 0;
 				break;
+			}
+
+			/* See if we have stale messages queued */
+			if ((pwalk->msghead->tstamp + MSGTIMEOUT) < now) {
+				/* Stale message at head of queue, flush all that are stale */
+				hobbit_msg_t *stalemsg;
+				time_t msgtimeout = now - MSGTIMEOUT;
+				int count = 0;
+
+				while (pwalk->msghead->tstamp < msgtimeout) {
+					flushmessage(pwalk);
+					count++;
+				}
+
+				errprintf("Flushed %d stale messages for %s:%d\n",
+					  count,
+				  	  inet_ntoa(pwalk->peeraddr.sin_addr), 
+					  ntohs(pwalk->peeraddr.sin_port));
 			}
 
 			while (pwalk->msghead && canwrite) {
@@ -683,12 +713,6 @@ int main(int argc, char *argv[])
 					 * Write would block ... stop for now. 
 					 */
 					canwrite = 0;
-					if (pwalk->msghead->tstamp + MSGTIMEOUT < now) {
-						dbgprintf("Stale message for %s:%d\n",
-						  	  inet_ntoa(pwalk->peeraddr.sin_addr), 
-							  ntohs(pwalk->peeraddr.sin_port));
-						hasfailed = 1;
-					}
 				}
 				else {
 					hasfailed = 1;
