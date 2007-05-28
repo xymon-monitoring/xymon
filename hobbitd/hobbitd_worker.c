@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.31 2006-11-23 21:12:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.32 2007-05-28 07:45:26 henrik Exp $";
 
 #include "config.h"
 
@@ -387,11 +387,10 @@ unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq,
 	}
 
 	/*
-	 * If the start of the next message doesn't begin with "@@" then 
+	 * If the start of the next message doesn't begin with "@" then 
 	 * there's something rotten.
-	 * It might be some data left-over from an oversized message.
 	 */
-	if (*startpos && strncmp(startpos, "@@", 2) != 0) {
+	if (*startpos && (*startpos != '@')) {
 		errprintf("Bad data in channel, skipping it\n");
 		startpos = strstr(startpos, "\n@@");
 		endpos = (startpos ? strstr(startpos, "\n@@\n") : NULL);
@@ -401,8 +400,10 @@ unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq,
 		}
 
 		if (!startpos) {
-			startpos = buf;
-			fillpos = buf;
+			/* We're lost - flush the buffer and try to recover */
+			errprintf("Buffer sync lost, flushing data\n");
+			*buf = '\0';
+			startpos = fillpos = buf;
 			endpos = NULL;
 		}
 
