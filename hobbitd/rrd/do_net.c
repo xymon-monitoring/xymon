@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.15 2006-06-09 22:23:49 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.16 2007-05-28 17:50:44 henrik Exp $";
 
 int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -16,7 +16,7 @@ int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	static char *bbnet_tpl            = NULL;
 
 	char *p;
-	float seconds;
+	float seconds = 0.0;
 
 	if (bbnet_tpl == NULL) bbnet_tpl = setup_template(bbnet_params);
 
