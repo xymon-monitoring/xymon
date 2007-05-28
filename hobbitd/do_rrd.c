@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.44 2007-05-28 20:21:29 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.45 2007-05-28 20:24:23 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -305,10 +305,8 @@ void rrdcacheflushhost(char *hostname)
 		flushitem = (flushtree_t *) gettreeitem(flushtree, handle);
 	}
 
-	debug = 1;
 	if ((flushitem->flushtime + 60) >= now) {
 		dbgprintf("Flush of '%s' skipped, too soon\n", hostname);
-		debug = 0;
 		return;
 	}
 	flushitem->flushtime = now;
@@ -334,7 +332,6 @@ void rrdcacheflushhost(char *hostname)
 			break;
 		}
 	}
-	debug = 0;
 }
 
 static int rrddatasets(char *hostname, char *fn, char ***dsnames)
