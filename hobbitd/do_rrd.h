@@ -18,7 +18,8 @@
 extern char *rrddir;
 extern void setup_exthandler(char *handlerpath, char *ids);
 extern void update_rrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, char *sender, hobbitrrd_t *ldef);
-extern void rrdcacheflush(void);
+extern void rrdcacheflushall(void);
+extern void rrdcacheflushone(char *key);
 
 #endif
 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.42 2007-05-28 07:19:47 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.43 2007-05-28 17:51:57 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -117,6 +117,9 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	char *updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
 	int i, pcount, result;
 
+	dbgprintf("Flushing '%s' with %d updates pending, template '%s'\n", 
+		  cacheitem->key, (newdata ? 1 : 0) + cacheitem->valcount, cacheitem->tpl);
+
 	/* ISO C90: parameters cannot be used as initializers */
 	updparams[3] = cacheitem->tpl;
 
@@ -177,10 +180,11 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	if (handle == rbtEnd(updcache)) {
 		cacheitem = (updcacheitem_t *)calloc(1, sizeof(updcacheitem_t));
 		cacheitem->key = strdup(updcachekey);
+		cacheitem->tpl = (template ? strdup(template) : setup_template(creparams));
 		rbtInsert(updcache, cacheitem->key, cacheitem);
 	}
 	else {
-		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
+		cacheitem = (updcacheitem_t *)gettreeitem(updcache, handle);
 	}
 
 	/* If the RRD file doesn't exist, create it immediately */
@@ -208,14 +212,6 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 			MEMUNDEFINE(rrdvalues);
 			return 1;
 		}
-	}
-
-	/* Save the template for the cached updates */
-	if (!cacheitem->tpl) {
-		if (template)
-			cacheitem->tpl = strdup(template);
-		else
-			cacheitem->tpl = setup_template(creparams);
 	}
 
 	/* 
@@ -257,7 +253,7 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	return 0;
 }
 
-void rrdcacheflush(void)
+void rrdcacheflushall(void)
 {
 	RbtIterator handle;
 	updcacheitem_t *cacheitem;
@@ -266,8 +262,40 @@ void rrdcacheflush(void)
 
 	for (handle = rbtBegin(updcache); (handle != rbtEnd(updcache)); handle = rbtNext(updcache, handle)) {
 		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
-		if (cacheitem->valcount > 0) flush_cached_updates(cacheitem, NULL);
+		if (cacheitem->valcount > 0) {
+			sprintf(filedir, "%s%s", rrddir, cacheitem->key);
+			flush_cached_updates(cacheitem, NULL);
+		}
 	}
+}
+
+void rrdcacheflushone(char *key)
+{
+	RbtIterator handle;
+	updcacheitem_t *cacheitem;
+
+	if (updcache_keyofs == -1) return;
+
+	/* If we get a full path for the key, skip the leading rrddir */
+	if (strncmp(key, rrddir, updcache_keyofs) == 0) key += updcache_keyofs;
+
+	debug = 1;
+	handle = rbtFind(updcache, key);
+	if (handle != rbtEnd(updcache)) {
+		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
+		if (cacheitem->valcount > 0) {
+			dbgprintf("Flushing cache '%s'\n", key);
+			sprintf(filedir, "%s%s", rrddir, cacheitem->key);
+			flush_cached_updates(cacheitem, NULL);
+		}
+		else {
+			dbgprintf("Cacheflush, but no cached data '%s'\n", key);
+		}
+	}
+	else {
+		dbgprintf("Cacheflush, not found '%s'\n", key);
+	}
+	debug = 0;
 }
 
 static int rrddatasets(char *hostname, char *fn, char ***dsnames)
