@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.53 2007-04-02 08:55:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.54 2007-05-28 17:57:23 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -22,6 +22,10 @@ static char rcsid[] = "$Id: hobbitgraph.c,v 1.53 2007-04-02 08:55:23 henrik Exp 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <fcntl.h>
 
 #include <pcre.h>
 #include <rrd.h>
@@ -113,6 +117,64 @@ void errormsg(char *msg)
 	printf("<body>%s</body></html>\n", msg);
 	exit(1);
 }
+
+void request_cacheflush(char *hostdir)
+{
+	/* Build a cache-flush request, and send it to all of the $BBTMP/rrdctl.* sockets */
+	strbuffer_t *req = newstrbuffer(0);
+	int bytesleft;
+	char *bufp;
+	DIR *dir;
+	struct dirent *d;
+	int ctlsocket = -1;
+	char fn[PATH_MAX];
+
+	dir = opendir(".");
+	while ((d = readdir(dir)) != NULL) {
+		if (*d->d_name == '.') continue;
+		sprintf(fn, "%s/%s\n", hostdir, d->d_name);
+		addtobuffer(req, fn);
+	}
+	closedir(dir);
+
+	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
+	if (ctlsocket == -1) {
+		errprintf("Cannot get socket: %s\n", strerror(errno));
+		return;
+	}
+	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
+
+	dir = opendir(xgetenv("BBTMP"));
+	while ((d = readdir(dir)) != NULL) {
+		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
+			struct sockaddr_un myaddr;
+			socklen_t myaddrsz = 0;
+			int n;
+
+			memset(&myaddr, 0, sizeof(myaddr));
+			myaddr.sun_family = AF_UNIX;
+			sprintf(myaddr.sun_path, "%s/%s", xgetenv("BBTMP"), d->d_name);
+			myaddrsz = sizeof(myaddr);
+			bufp = STRBUF(req); bytesleft = STRBUFLEN(req);
+			do {
+				n = sendto(ctlsocket, bufp, bytesleft, 0, (struct sockaddr *)&myaddr, myaddrsz);
+				if (n == -1) {
+					if (errno != EAGAIN) {
+						errprintf("Sendto failed: %s\n", strerror(errno));
+						bytesleft = 0;
+					}
+				}
+				else {
+					bytesleft -= n;
+					bufp += n;
+				}
+			} while (bytesleft > 0);
+		}
+	}
+	closedir(dir);
+	freestrbuffer(req);
+}
+
 
 void parse_query(void)
 {
@@ -642,6 +704,8 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
+	/* Request an RRD cache flush from the hobbitd_rrd update daemon */
+	request_cacheflush(rrddir);
 
 	/* What RRD files do we have matching this request? */
 	if (hostlist || (gdef->fnpat == NULL)) {
