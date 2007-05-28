@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.29 2007-05-28 07:19:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.30 2007-05-28 17:52:40 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -25,6 +25,10 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.29 2007-05-28 07:19:47 henrik Exp 
 #include <sys/wait.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
@@ -73,6 +77,8 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	char *exthandler = NULL;
 	char *extids = NULL;
+	struct sockaddr_un ctlsockaddr;
+	int ctlsocket;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -115,6 +121,26 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
+	/* Setup the control socket that receives cache-flush commands */
+	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
+	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%d", xgetenv("BBTMP"), getpid());
+	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
+	ctlsockaddr.sun_family = AF_UNIX;
+	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
+	if (ctlsocket == -1) {
+		errprintf("Cannot create cache-control socket (%s)\n", strerror(errno));
+		return 1;
+	}
+	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
+	if (bind(ctlsocket, (struct sockaddr *)&ctlsockaddr, sizeof(ctlsockaddr)) == -1) {
+		errprintf("Cannot bind to cache-control socket (%s)\n", strerror(errno));
+		return 1;
+	}
+	/* Linux obeys filesystem permissions on the socket file, so make it world-accessible */
+	if (chmod(ctlsockaddr.sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
+		errprintf("Setting permissions on cache-control socket failed: %s\n", strerror(errno));
+	}
+
 	running = 1;
 	while (running) {
 		char *eoln, *restofmsg = NULL;
@@ -125,6 +151,23 @@ int main(int argc, char *argv[])
 		hobbitrrd_t *ldef = NULL;
 		time_t tstamp;
 		int childstat;
+                ssize_t n;
+		char ctlbuf[PATH_MAX];
+
+		/* See if we have any cache-control messages pending */
+		n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf), 0);
+		if (n > 0) {
+			/* We have a control message */
+			char *bol, *eol;
+
+			ctlbuf[n] = '\0';
+			bol = ctlbuf;
+			do {
+				eol = strchr(bol, '\n'); if (eol) *eol = '\0';
+				rrdcacheflushone(bol);
+				if (eol) { bol = eol+1; } else bol = NULL;
+			} while (bol && *bol);
+		}
 
 		/* Get next message */
 		msg = get_hobbitd_message(C_LAST, argv[0], &seq, NULL, &running);
@@ -245,8 +288,12 @@ int main(int argc, char *argv[])
 
 	/* Flush all cached updates to disk */
 	errprintf("Shutting down, flushing cached updates to disk\n");
-	rrdcacheflush();
+	rrdcacheflushall();
 	errprintf("Cache flush completed\n");
+
+	/* Close the control socket */
+	close(ctlsocket);
+	unlink(ctlsockaddr.sun_path);
 
 	return 0;
 }
