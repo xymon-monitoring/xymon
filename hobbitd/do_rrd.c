@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.41 2007-05-27 16:18:52 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.42 2007-05-28 07:19:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,6 +42,16 @@ static char rra4[] = "RRA:AVERAGE:0.5:288:576";
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];	/* This one used by the modules */
 static char filedir[PATH_MAX];	/* This one used here */
+
+#define CACHESZ 3
+static int updcache_keyofs = -1;
+static RbtHandle updcache;
+typedef struct updcacheitem_t {
+	char *key;
+	char *tpl;
+	int valcount;
+	char *vals[CACHESZ];
+} updcacheitem_t;
 
 void setup_exthandler(char *handlerpath, char *ids)
 {
@@ -101,15 +111,39 @@ static void setupfn(char *format, char *param)
 	rrdfn[sizeof(rrdfn)-1] = '\0';
 }
 
-static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *template)
+static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 {
-	struct stat st;
-	int pcount, result;
-	char *tplstr = NULL;
-	char *updparams[] = { "rrdupdate", filedir, "-t", NULL, rrdvalues, NULL };
+	/* Flush any updates we've cached */
+	char *updparams[5+CACHESZ+1] = { "rrdupdate", filedir, "-t", NULL, NULL, NULL, };
+	int i, pcount, result;
 
 	/* ISO C90: parameters cannot be used as initializers */
-	updparams[3] = template;
+	updparams[3] = cacheitem->tpl;
+
+	/* Setup the parameter list with all of the cached and new readings */
+	for (i=0; (i < cacheitem->valcount); i++) updparams[4+i] = cacheitem->vals[i];
+	updparams[4+cacheitem->valcount] = newdata;
+	updparams[4+cacheitem->valcount+1] = NULL;
+
+	for (pcount = 0; (updparams[pcount]); pcount++);
+	optind = opterr = 0; rrd_clear_error();
+	result = rrd_update(pcount, updparams);
+
+	/* Clear the cached data */
+	for (i=0; (i < cacheitem->valcount); i++) xfree(cacheitem->vals[i]);
+	cacheitem->valcount = 0;
+
+	return result;
+}
+
+static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *template)
+{
+	static int callcounter = 0;
+	struct stat st;
+	int pcount, result;
+	char *updcachekey;
+	RbtIterator handle;
+	updcacheitem_t *cacheitem = NULL;
 
 	if ((fn == NULL) || (strlen(fn) == 0)) {
 		errprintf("RRD update for no file\n");
@@ -133,6 +167,23 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
 	creparams[1] = filedir;	/* Icky */
 
+	/* Prepare to cache the update. Create the cache tree, and find/create a cache record */
+	if (updcache_keyofs == -1) {
+		updcache = rbtNew(name_compare);
+		updcache_keyofs = strlen(rrddir);
+	}
+	updcachekey = filedir + updcache_keyofs;
+	handle = rbtFind(updcache, updcachekey);
+	if (handle == rbtEnd(updcache)) {
+		cacheitem = (updcacheitem_t *)calloc(1, sizeof(updcacheitem_t));
+		cacheitem->key = strdup(updcachekey);
+		rbtInsert(updcache, cacheitem->key, cacheitem);
+	}
+	else {
+		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
+	}
+
+	/* If the RRD file doesn't exist, create it immediately */
 	if (stat(filedir, &st) == -1) {
 		dbgprintf("Creating rrd %s\n", filedir);
 
@@ -159,31 +210,34 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		}
 	}
 
-	if (template) {
-		updparams[3] = template;
-	}
-	else {
-		tplstr = setup_template(creparams);
-		updparams[3] = tplstr;
+	/* Save the template for the cached updates */
+	if (!cacheitem->tpl) {
+		if (template)
+			cacheitem->tpl = strdup(template);
+		else
+			cacheitem->tpl = setup_template(creparams);
 	}
 
-	for (pcount = 0; (updparams[pcount]); pcount++);
-	if (debug) {
-		int i;
-
-		for (i = 0; (updparams[i]); i++) {
-			dbgprintf("RRD update param %02d: '%s'\n", i, updparams[i]);
+	/* 
+	 * To smooth the load, we force the update through for every CACHESZ updates.
+	 * This gives us a steady load during the initial cache fill period.
+	 */
+	if (++callcounter < CACHESZ) {
+		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
+			/* 
+			 * There's room for caching this update.
+			 */ 
+			cacheitem->vals[cacheitem->valcount] = strdup(rrdvalues);
+			cacheitem->valcount += 1;
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return 0;
 		}
 	}
+	else callcounter = 0;
 
-	/*
-	 * Ugly! RRDtool uses getopt() for parameter parsing, so
-	 * we MUST reset this before every call.
-	 */
-	optind = opterr = 0; rrd_clear_error();
-	result = rrd_update(pcount, updparams);
-	if (tplstr) xfree(tplstr); 
-
+	/* At this point, we will commit the update to disk */
+	result = flush_cached_updates(cacheitem, rrdvalues);
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
@@ -201,6 +255,19 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 	MEMUNDEFINE(rrdvalues);
 
 	return 0;
+}
+
+void rrdcacheflush(void)
+{
+	RbtIterator handle;
+	updcacheitem_t *cacheitem;
+
+	if (updcache_keyofs == -1) return; /* No cache */
+
+	for (handle = rbtBegin(updcache); (handle != rbtEnd(updcache)); handle = rbtNext(updcache, handle)) {
+		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
+		if (cacheitem->valcount > 0) flush_cached_updates(cacheitem, NULL);
+	}
 }
 
 static int rrddatasets(char *hostname, char *fn, char ***dsnames)

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.28 2006-11-23 21:14:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.29 2007-05-28 07:19:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -242,6 +242,11 @@ int main(int argc, char *argv[])
 		 */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 	}
+
+	/* Flush all cached updates to disk */
+	errprintf("Shutting down, flushing cached updates to disk\n");
+	rrdcacheflush();
+	errprintf("Cache flush completed\n");
 
 	return 0;
 }
