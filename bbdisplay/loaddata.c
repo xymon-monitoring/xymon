@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.166 2006-11-14 11:56:40 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.167 2007-05-29 12:58:49 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -87,6 +87,29 @@ int testflag_set(entry_t *e, char flag)
 		return (strchr(e->testflags, flag) != NULL);
 	else
 		return 0;
+}
+
+
+int unwantedcolumn(char *hostname, char *testname)
+{
+	namelist_t *hinfo;
+	char *nc, *tok;
+	int result = 0;
+
+	hinfo = hostinfo(hostname);
+	if (!hinfo) return 1;
+
+	nc = bbh_item(hinfo, BBH_NOCOLUMNS);
+	if (!nc) return 0;
+
+	nc = strdup(nc);
+	tok = strtok(nc, ",");
+	while (tok && (result == 0)) {
+		if (strcmp(tok, testname) == 0) result = 1;
+		tok = strtok(NULL, ",");
+	}
+
+	return result;
 }
 
 
@@ -171,7 +194,7 @@ state_t *init_state(char *filename, logdata_t *log)
 
 	testnameidx = (char *)malloc(strlen(testname) + 3);
 	sprintf(testnameidx, ",%s,", testname);
-	if (ignorecolumns && strstr(ignorecolumns, testnameidx)) {
+	if (unwantedcolumn(hostname, testname) || (ignorecolumns && strstr(ignorecolumns, testnameidx))) {
 		xfree(hostname);
 		xfree(testname);
 		xfree(testnameidx);
