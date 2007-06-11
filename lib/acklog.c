@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.22 2006-08-04 15:23:00 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.23 2007-06-11 14:39:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 	havedoneacklog = 1;
 
-	cutoff = ( (maxminutes) ? (time(NULL) - maxminutes*60) : 0);
+	cutoff = ( (maxminutes) ? (getcurrenttime(NULL) - maxminutes*60) : 0);
 	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
 
 	sprintf(acklogfilename, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
@@ -148,7 +148,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 				/* If ack has expired or tag file is gone, the ack is no longer valid */
 				acks[num].ackvalid = 1;
-				if ((acks[num].acktime + 60*acks[num].duration) < time(NULL)) acks[num].ackvalid = 0;
+				if ((acks[num].acktime + 60*acks[num].duration) < getcurrenttime(NULL)) acks[num].ackvalid = 0;
 				if (acks[num].ackvalid && (stat(ackfn, &st) != 0)) acks[num].ackvalid = 0;
 
 				if (strcmp(ackedby, "np_filename_not_used") != 0) {
@@ -189,7 +189,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			firstack = num;
 			lastack = ( (num == 0) ? maxcount : (num-1));
 			ackintime_count = maxcount;
-			period = ((time(NULL)-acks[firstack].acktime) / 60);
+			period = ((getcurrenttime(NULL)-acks[firstack].acktime) / 60);
 		}
 
 		sprintf(title, "%d events acknowledged in the past %u minutes", ackintime_count, period);

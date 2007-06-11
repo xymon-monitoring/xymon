@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.43 2006-08-01 09:19:43 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.44 2007-06-11 14:39:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -274,13 +274,13 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	/* Is start of history after our report-end time ? */
 	rewind(fd);
 	if (!get_historyline(buf, bufsize, fd, &err, colstr, &uistart, &uidur, &scanres)) {
-		*starttime = time(NULL);
+		*starttime = getcurrenttime(NULL);
 		*duration = 0;
 		strcpy(colstr, "clear");
 		return err;
 	}
 
-	if (scanres == 2) uidur = time(NULL)-uistart;
+	if (scanres == 2) uidur = getcurrenttime(NULL)-uistart;
 	start = uistart; dur = uidur;
 
 	if (start > totime) {
@@ -294,7 +294,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	while ((start+dur) < fromtime) {
 		if (get_historyline(buf, bufsize, fd, &err, colstr, &uistart, &uidur, &scanres)) {
 			start = uistart; dur = uidur;
-			if (scanres == 2) dur = time(NULL) - start;
+			if (scanres == 2) dur = getcurrenttime(NULL) - start;
 
 			if (scanres >= 2) {
 				dbgprintf("Skipped to entry starting %lu\n", start);
@@ -306,7 +306,7 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 			}
 		}
 		else {
-			start = time(NULL);
+			start = getcurrenttime(NULL);
 			dur = 0;
 		}
 	};
@@ -323,12 +323,12 @@ static int scan_historyfile(FILE *fd, time_t fromtime, time_t totime,
 	do {
 		if (get_historyline(buf, bufsize, fd, &err, colstr, &uistart, &uidur, &scanres)) {
 			start = uistart; dur = uidur;
-			if (scanres == 2) dur = time(NULL) - start;
+			if (scanres == 2) dur = getcurrenttime(NULL) - start;
 
 			dbgprintf("Got entry starting %lu lasting %lu\n", start, dur);
 		}
 		else {
-			start = time(NULL);
+			start = getcurrenttime(NULL);
 			dur = 0;
 		}
 	} while ((start+dur) < fromtime);
@@ -383,7 +383,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 
 	repinfo->fstate = "OK";
 	repinfo->withreport = 0;
-	repinfo->reportstart = time(NULL);
+	repinfo->reportstart = getcurrenttime(NULL);
 	for (i=0; (i<COL_COUNT); i++) {
 		repinfo->count[i] = 0;
 		repinfo->fullduration[i] = 0;
@@ -397,7 +397,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	if (reporttime) build_reportspecs(reporttime);
 
 	/* Sanity check */
-	if (totime > time(NULL)) totime = time(NULL);
+	if (totime > getcurrenttime(NULL)) totime = getcurrenttime(NULL);
 
 	/* If for_history and fromtime is 0, dont do any seeking */
 	if (!for_history || (fromtime > 0)) {
@@ -408,10 +408,10 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		/* Already positioned (probably in a pipe) */
 		if (get_historyline(l, sizeof(l), fd, &fileerrors, colstr, &uistart, &uidur, &scanres)) {
 			starttime = uistart; duration = uidur;
-			if (scanres == 2) duration = time(NULL) - starttime;
+			if (scanres == 2) duration = getcurrenttime(NULL) - starttime;
 		}
 		else {
-			starttime = time(NULL); duration = 0;
+			starttime = getcurrenttime(NULL); duration = 0;
 			strcpy(colstr, "clear");
 			fileerrors = 1;
 		}
@@ -472,7 +472,7 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		if ((starttime + duration) < totime) {
 			if (get_historyline(l, sizeof(l), fd, &fileerrors, colstr, &uistart, &uidur, &scanres)) {
 				starttime = uistart; duration = uidur;
-				if (scanres == 2) duration = time(NULL) - starttime;
+				if (scanres == 2) duration = getcurrenttime(NULL) - starttime;
 			}
 			else done = 1;
 		}

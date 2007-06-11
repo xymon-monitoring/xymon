@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.54 2007-04-02 08:43:02 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.55 2007-06-11 14:39:09 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -152,7 +152,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	hobbitrrd_t *rrd = NULL;
 	hobbitgraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	if (graphtime == 0) {
 		if (getenv("TRENDSECONDS")) graphtime = atoi(getenv("TRENDSECONDS"));

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.18 2007-04-02 10:57:22 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.19 2007-06-11 14:39:09 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -762,7 +762,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * Match on pagespec, hostspec, svcspec, classspec, groupspec, colors, timespec, minduration, maxduration, sendrecovered
 	 */
 
-	time_t duration = (time(NULL) - alert->eventstart);
+	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
 	int result, cfid = 0;
 	char *pgname, *cfline = NULL;
 	namelist_t *hinfo = hostinfo(alert->hostname);

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.4 2007-04-03 12:55:20 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.5 2007-06-11 14:39:09 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -557,7 +557,7 @@ void printholidays(char *key, int year, strbuffer_t *buf)
 		struct tm tm;
 		time_t t;
 
-		t = time(NULL);
+		t = getcurrenttime(NULL);
 		memcpy(&tm, localtime(&t), sizeof(struct tm));
 		year = tm.tm_year;
 	}

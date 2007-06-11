@@ -15,7 +15,7 @@ extern time_t fakestarttime;
 extern char *timestamp;
 
 extern time_t getcurrenttime(time_t *retparm);
-#define time(X) getcurrenttime(X)
+#define time(X) nosuchtime(X)
 
 extern void init_timestamp(void);
 extern char *timespec_text(char *spec);

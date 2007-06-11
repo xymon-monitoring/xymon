@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.43 2007-04-02 08:41:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.44 2007-06-11 14:39:09 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -48,7 +48,7 @@ static void rrd_setup(void)
 	hobbitgraph_t *grec;
 
 	/* Do nothing if we have been called within the past 5 minutes */
-	if ((setup_done + 300) >= time(NULL)) return;
+	if ((setup_done + 300) >= getcurrenttime(NULL)) return;
 
 
 	/* 
@@ -144,7 +144,7 @@ static void rrd_setup(void)
 	}
 	xfree(lenv);
 
-	setup_done = time(NULL);
+	setup_done = getcurrenttime(NULL);
 }
 
 

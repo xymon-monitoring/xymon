@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: notifylog.c,v 1.2 2007-02-07 21:51:31 henrik Exp $";
+static char rcsid[] = "$Id: notifylog.c,v 1.3 2007-06-11 14:39:09 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -94,7 +94,7 @@ void do_notifylog(FILE *output,
 	FILE *notifylog;
 	char notifylogfilename[PATH_MAX];
 	time_t firstevent = 0;
-	time_t lastevent = time(NULL);
+	time_t lastevent = getcurrenttime(NULL);
 	notification_t *head, *walk;
 	struct stat st;
 	char l[MAX_LINE_LEN];
@@ -125,10 +125,10 @@ void do_notifylog(FILE *output,
 		}
 	}
 	else if (maxminutes) {
-		firstevent = time(NULL) - maxminutes*60;
+		firstevent = getcurrenttime(NULL) - maxminutes*60;
 	}
 	else {
-		firstevent = time(NULL) - 86400;
+		firstevent = getcurrenttime(NULL) - 86400;
 	}
 
 	if (totime) {
@@ -293,7 +293,7 @@ void do_notifylog(FILE *output,
 
 		if (maxminutes)  { 
 			sprintf(title, "%d notifications in the past %u minutes", 
-				count, (unsigned int)((time(NULL) - lasttoshow->eventtime) / 60));
+				count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
 		}
 		else {
 			sprintf(title, "%d notifications sent.", count);

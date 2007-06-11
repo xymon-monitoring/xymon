@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.8 2007-02-09 10:34:04 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.9 2007-06-11 14:39:09 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -133,7 +133,7 @@ static char *locator_querycache(enum locator_servicetype_t svc, char *key)
 	if (handle == rbtEnd(locatorcache[svc])) return NULL;
 
 	itm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
-	return (itm->tstamp + cachetimeout[svc]) > time(NULL) ? itm->resp : NULL;
+	return (itm->tstamp + cachetimeout[svc]) > getcurrenttime(NULL) ? itm->resp : NULL;
 }
 
 
@@ -159,7 +159,7 @@ static void locator_updatecache(enum locator_servicetype_t svc, char *key, char 
 		newitm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
 		if (newitm->resp) xfree(newitm->resp);
 		newitm->resp = strdup(resp);
-		newitm->tstamp = time(NULL);
+		newitm->tstamp = getcurrenttime(NULL);
 	}
 }
 
