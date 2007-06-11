@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.53 2007-04-02 09:05:55 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.54 2007-06-11 11:02:41 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -337,6 +337,7 @@ static char *ftypestr(unsigned int ftype)
 	else if (ftype == S_IFCHR)  return "char";
 	else if (ftype == S_IFDIR)  return "dir";
 	else if (ftype == S_IFIFO)  return "fifo";
+	else if (ftype == S_IFLNK)  return "symlink";
 
 	return "";
 }
@@ -754,6 +755,7 @@ int load_client_config(char *configfn)
 						else if (strcasecmp(tok+5, "char") == 0) currule->rule.fcheck.ftype = S_IFCHR;
 						else if (strcasecmp(tok+5, "dir") == 0) currule->rule.fcheck.ftype = S_IFDIR;
 						else if (strcasecmp(tok+5, "fifo") == 0) currule->rule.fcheck.ftype = S_IFIFO;
+						else if (strcasecmp(tok+5, "symlink") == 0) currule->rule.fcheck.ftype = S_IFLNK;
 					}
 					else if (strncasecmp(tok, "size>", 5) == 0) {
 						currule->flags |= FCHK_MINSIZE;
@@ -1394,7 +1396,7 @@ int check_file(namelist_t *hinfo, char *classname,
 	char *boln, *eoln;
 	char msgline[PATH_MAX];
 
-	int exists = 1, ftype = 0;
+	int exists = 1, ftype = 0, islink = 0;
 	off_t fsize = 0;
 	unsigned int fmode = 0, linkcount = 0;
 	int ownerid = -1, groupid = -1;
@@ -1425,6 +1427,7 @@ int check_file(namelist_t *hinfo, char *classname,
 				else if (strncmp(tstr, "(block-device", 13) == 0) ftype = S_IFBLK;
 				else if (strncmp(tstr, "(FIFO", 5) == 0) ftype = S_IFIFO;
 				else if (strncmp(tstr, "(socket", 7) == 0) ftype = S_IFSOCK;
+				else if (strstr(tstr, ", symlink -> ") == 0) islink = 1;
 			}
 		}
 		else if (strncmp(boln, "mode:", 5) == 0) {
@@ -1512,7 +1515,7 @@ int check_file(namelist_t *hinfo, char *classname,
 		}
 
 		if (rwalk->flags & FCHK_TYPE) {
-			if (rwalk->rule.fcheck.ftype != ftype) {
+			if ( ((rwalk->rule.fcheck.ftype == S_IFLNK) && !islink) || (rwalk->rule.fcheck.ftype != ftype) ) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is a %s - should be %s\n", 
 					ftypestr(ftype), ftypestr(rwalk->rule.fcheck.ftype));
