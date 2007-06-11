@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-rep.c,v 1.41 2006-08-11 13:07:52 henrik Exp $";
+static char rcsid[] = "$Id: bb-rep.c,v 1.42 2007-06-11 14:51:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -137,9 +137,9 @@ void parse_query(void)
 	tmbuf.tm_isdst = -1;		/* Important! Or we mishandle DST periods */
 	endtime = mktime(&tmbuf);
 
-	if ((starttime == -1) || (endtime == -1) || (starttime > time(NULL))) errormsg("Invalid parameters");
+	if ((starttime == -1) || (endtime == -1) || (starttime > getcurrenttime(NULL))) errormsg("Invalid parameters");
 
-	if (endtime > time(NULL)) endtime = time(NULL);
+	if (endtime > getcurrenttime(NULL)) endtime = getcurrenttime(NULL);
 
 	if (starttime > endtime) {
 		/* Swap start and end times */
@@ -158,7 +158,7 @@ void cleandir(char *dirname)
 	struct dirent *d;
 	struct stat st;
 	char fn[PATH_MAX];
-	time_t killtime = time(NULL)-86400;
+	time_t killtime = getcurrenttime(NULL)-86400;
 
 	dir = opendir(dirname);
 	if (dir == NULL) return;
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 
 	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
-	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
+	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
 	if (!csvoutput) {
 		sprintf(outdir, "%s/%s", xgetenv("BBREP"), dirid);
 		mkdir(outdir, 0755);
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
-		sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
+		sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("--%s\n", htmldelim);

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: orcahobbit.c,v 1.1 2006-06-20 11:44:59 henrik Exp $";
+static char rcsid[] = "$Id: orcahobbit.c,v 1.2 2007-06-11 14:50:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	 * change.
 	 * We will look for the first 20 index numbers only.
 	 */
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 	strftime(datestr, sizeof(datestr), "%Y-%m-%d", localtime(&now));
 	i = 0; fd = NULL;
 	while ((i < 20) && !fd) {

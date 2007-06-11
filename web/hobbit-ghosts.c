@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.3 2006-07-10 15:22:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.4 2007-06-11 14:51:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 		ghosttable = (ghost_t *)calloc(count+1, sizeof(ghost_t));
 
 		idx = count = 0;
-		tstamp = now = time(NULL);
+		tstamp = now = getcurrenttime(NULL);
 		bol = ghosts;
 		while (bol) {
 			name = sender = timestr = NULL;

@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.9 2006-09-20 20:32:30 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.10 2007-06-11 14:50:31 henrik Exp $";
 
 #include "config.h"
 
@@ -213,7 +213,7 @@ void grabdata(conn_t *conn)
 	}
 	else {
 		/* A server has asked us for our list of messages */
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 		msgqueue_t *mwalk;
 
 		if (!qhead) {
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
 
 		/* Remove expired messages */
 		qwalk = qhead; qprev = NULL;
-		mintstamp = time(NULL) - maxage;
+		mintstamp = getcurrenttime(NULL) - maxage;
 		while (qwalk) {
 			msgqueue_t *zombie;
 
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
 				fcntl(newconn->sockfd, F_SETFL, O_NONBLOCK);
 				newconn->action = C_READING;
 				newconn->msgbuf = newstrbuffer(0);
-				newconn->tstamp = time(NULL);
+				newconn->tstamp = getcurrenttime(NULL);
 			}
 
 			if (newconn) {

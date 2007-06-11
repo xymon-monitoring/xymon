@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.20 2006-12-12 06:33:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.21 2007-06-11 14:51:15 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -179,7 +179,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	time_t now;
 	RbtIterator colhandle;
 
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 	hinfo = hostinfo(itm->hostname);
 	dispname = bbh_item(hinfo, BBH_DISPLAYNAME);
 	ip = bbh_item(hinfo, BBH_IP);

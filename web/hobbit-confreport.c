@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.18 2006-08-19 06:25:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.19 2007-06-11 14:51:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -643,7 +643,7 @@ int main(int argc, char *argv[])
 	hostlist_t **allhosts = NULL;
 	htnames_t **alltests = NULL;
 	int hostcount = 0, maxtests = 0;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {

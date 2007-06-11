@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.56 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.57 2007-06-11 14:51:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -179,7 +179,7 @@ again:
 	}
 
 	/* Dont try to foresee the future */
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 	if (result > now) result = now;
 
 	return (unsigned int)result;
@@ -709,7 +709,7 @@ int main(int argc, char *argv[])
 	}
 
 	log1d = log1w = log4w = log1y = NULL;
-	if (req_endtime == 0) req_endtime = time(NULL);
+	if (req_endtime == 0) req_endtime = getcurrenttime(NULL);
 	/*
 	 * Calculate the beginning time of each colorbar. We go back the specified length
 	 * of time, except 1 second - so days are from midnight -> 23:59:59 etc.
@@ -746,7 +746,7 @@ int main(int argc, char *argv[])
 	if (entrycount == 0) {
 		/* All entries - just rewind the history file and do all of them */
 		rewind(fd);
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, getcurrenttime(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
 		fclose(fd);
 	}
 	else {
@@ -755,7 +755,7 @@ int main(int argc, char *argv[])
 		sprintf(tailcmd, "tail -%d %s", entrycount, histlogfn);
 		fd = popen(tailcmd, "r");
 		if (fd == NULL) errormsg("Cannot run tail on the histfile");
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, time(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, getcurrenttime(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
 		pclose(fd);
 	}
 

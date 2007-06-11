@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.77 2007-04-02 08:56:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.78 2007-06-11 14:51:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -228,7 +228,7 @@ int do_request(void)
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
 		color = COL_GREEN;
-		logtime = time(NULL);
+		logtime = getcurrenttime(NULL);
 		strcpy(timesincechange, "0 minutes");
 
 		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
@@ -247,7 +247,7 @@ int do_request(void)
 				}
 			}
 			else {
-				time_t endtime = time(NULL);
+				time_t endtime = getcurrenttime(NULL);
 
 				sethostenv_backsecs(backsecs);
 				log = restofmsg = generate_trends(hostname, endtime-backsecs, endtime);
@@ -314,7 +314,7 @@ int do_request(void)
 		 */
 		color = parse_color(items[2]);
 		flags = strdup(items[3]);
-		logage = time(NULL) - atoi(items[4]);
+		logage = getcurrenttime(NULL) - atoi(items[4]);
 		timesincechange[0] = '\0'; p = timesincechange;
 		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
 		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));

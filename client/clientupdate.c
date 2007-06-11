@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientupdate.c,v 1.7 2006-08-04 06:41:00 henrik Exp $";
+static char rcsid[] = "$Id: clientupdate.c,v 1.8 2007-06-11 14:50:31 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -105,9 +105,9 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 
-			if ( (stat(inprogressfn, &st) == 0) && ((time(NULL) - st.st_mtime) < 3600) ) {
+			if ( (stat(inprogressfn, &st) == 0) && ((getcurrenttime(NULL) - st.st_mtime) < 3600) ) {
 				errprintf("Found update in progress or failed update (started %ld minutes ago)\n",
-					(long) (time(NULL)-st.st_mtime)/60);
+					(long) (getcurrenttime(NULL)-st.st_mtime)/60);
 				return 1;
 			}
 			unlink(inprogressfn);
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 			srcfd = fopen(srcfn, "r"); cperr = errno;
 
 			sprintf(tmpfn, "%s/.update.%s.%ld.tmp", 
-				xgetenv("BBTMP"), xgetenv("MACHINEDOTS"), (long)time(NULL));
+				xgetenv("BBTMP"), xgetenv("MACHINEDOTS"), (long)getcurrenttime(NULL));
 
 			dbgprintf("Starting update by copying %s to %s\n", srcfn, tmpfn);
 

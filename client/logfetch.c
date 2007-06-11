@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: logfetch.c,v 1.39 2006-10-04 07:39:50 henrik Exp $";
+static char rcsid[] = "$Id: logfetch.c,v 1.40 2007-06-11 14:50:31 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -454,7 +454,7 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 	struct group *gr;
 	int staterror;
 	char linknam[PATH_MAX];
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	*linknam = '\0';
 	staterror = lstat(fn, &st);

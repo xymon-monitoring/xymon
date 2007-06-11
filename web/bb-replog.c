@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.39 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.40 2007-06-11 14:51:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reporttime);
 	fclose(fd);
 
-	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)time(NULL), (int)getpid());
+	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (int)getpid());
 	sprintf(textrepfullfn, "%s/%s", xgetenv("BBREP"), textrepfn);
 	sprintf(textrepurl, "%s/%s", xgetenv("BBREPURL"), textrepfn);
 	textrep = fopen(textrepfullfn, "w");

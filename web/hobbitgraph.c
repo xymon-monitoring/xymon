@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.56 2007-06-11 11:01:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.57 2007-06-11 14:51:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -522,7 +522,7 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 		break;
 
 	  case ACT_SELZOOM:
-		if (graphend == 0) gend = time(NULL); else gend = graphend;
+		if (graphend == 0) gend = getcurrenttime(NULL); else gend = graphend;
 		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
 
 		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=%d&amp;graph_width=%d&amp;",
@@ -599,7 +599,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	gdef_t *gdef = NULL, *gdefuser = NULL;
 	int wantsingle = 0;
 	DIR *dir;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	int argi, pcount;
 
@@ -747,7 +747,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		int errofs, result;
 		int ovector[30];
 		struct stat st;
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 
 		/* Scan the directory to see what RRD files are there that match */
 		dir = opendir("."); if (dir == NULL) errormsg("Unexpected error while accessing RRD directory");

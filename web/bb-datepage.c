@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.17 2006-08-11 21:04:17 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.18 2007-06-11 14:51:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 		time_t seltime;
 		struct tm *seltm;
 
-		seltime = time(NULL); seltm = localtime(&seltime);
+		seltime = getcurrenttime(NULL); seltm = localtime(&seltime);
 
                 /* Present the query form */
 		switch (frmtype) {
