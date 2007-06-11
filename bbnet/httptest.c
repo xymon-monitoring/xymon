@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.89 2007-05-02 10:55:57 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.90 2007-06-11 14:36:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -83,7 +83,7 @@ static void load_cookies(void)
 			if (p) { fieldcount++; c_expire = atol(p); p = strtok(NULL, "\t"); }
 			if (p) { fieldcount++; c_name = p; p = strtok(NULL, "\t"); }
 			if (p) { fieldcount++; c_value = p; p = strtok(NULL, "\t"); }
-			if ((fieldcount == 7) && (c_expire > time(NULL))) {
+			if ((fieldcount == 7) && (c_expire > getcurrenttime(NULL))) {
 				/* We have a valid cookie */
 				cookielist_t *ck = (cookielist_t *)malloc(sizeof(cookielist_t));
 				ck->host = strdup(c_host);

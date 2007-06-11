@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.25 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.26 2007-06-11 14:36:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -189,7 +189,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		if (anydown) {
 			firsttest->downcount++; 
-			if(firsttest->downcount == 1) firsttest->downstart = time(NULL);
+			if(firsttest->downcount == 1) firsttest->downstart = getcurrenttime(NULL);
 		} 
 		else firsttest->downcount = 0;
 

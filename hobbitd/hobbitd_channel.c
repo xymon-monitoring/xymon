@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.57 2007-05-28 07:46:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.58 2007-06-11 14:41:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -173,7 +173,7 @@ void openconnection(hobbit_peer_t *peer)
 
 	peer->peerstatus = P_DOWN;
 
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 	if (now < (peer->lastopentime + 60)) return;	/* Will only attempt one open per minute */
 
 	dbgprintf("Connecting to peer %s:%d\n", inet_ntoa(peer->peeraddr.sin_addr), ntohs(peer->peeraddr.sin_port));
@@ -261,7 +261,7 @@ static void addmessage_onepeer(hobbit_peer_t *peer, char *inbuf, int inlen)
 	hobbit_msg_t *newmsg;
 
 	newmsg = (hobbit_msg_t *) calloc(1, sizeof(hobbit_msg_t));
-	newmsg->tstamp = time(NULL);
+	newmsg->tstamp = getcurrenttime(NULL);
 	newmsg->buf = newmsg->bufp = inbuf;
 	newmsg->buflen = inlen;
 
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
 		 */
 		struct sembuf s;
 		int n;
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 
 		s.sem_num = GOCLIENT; s.sem_op  = -1; s.sem_flg = ((pendingcount > 0) ? IPC_NOWAIT : 0);
 		n = semop(channel->semid, &s, 1);
@@ -642,7 +642,7 @@ int main(int argc, char *argv[])
 		 * of the time because we'll just shove the data to the
 		 * worker child.
 		 */
-		now = time(NULL);
+		now = getcurrenttime(NULL);
 		for (handle = rbtBegin(peers); (handle != rbtEnd(peers)); handle = rbtNext(peers, handle)) {
 			int canwrite = 1, hasfailed = 0;
 			hobbit_peer_t *pwalk;

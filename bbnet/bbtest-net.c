@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.245 2007-05-02 10:55:57 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.246 2007-06-11 14:36:43 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -863,7 +863,7 @@ void save_ping_status(void)
 		if (t->host->downcount) {
 			fprintf(statusfd, "%s %d %u\n", t->host->hostname, t->host->downcount, (unsigned int)t->host->downstart);
 			didany = 1;
-			t->host->repeattest = ((time(NULL) - t->host->downstart) < frequenttestlimit);
+			t->host->repeattest = ((getcurrenttime(NULL) - t->host->downstart) < frequenttestlimit);
 		}
 	}
 
@@ -924,7 +924,7 @@ void save_test_status(service_t *test)
 		if (t->downcount) {
 			fprintf(statusfd, "%s %d %u\n", t->host->hostname, t->downcount, (unsigned int)t->downstart);
 			didany = 1;
-			t->host->repeattest = ((time(NULL) - t->downstart) < frequenttestlimit);
+			t->host->repeattest = ((getcurrenttime(NULL) - t->downstart) < frequenttestlimit);
 		}
 	}
 
@@ -1467,14 +1467,14 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 	if (service == pingtest) {
 		if (countasdown) {
 			test->host->downcount++; 
-			if (test->host->downcount == 1) test->host->downstart = time(NULL);
+			if (test->host->downcount == 1) test->host->downstart = getcurrenttime(NULL);
 		}
 		else test->host->downcount = 0;
 	}
 	else {
 		if (countasdown) {
 			test->downcount++; 
-			if (test->downcount == 1) test->downstart = time(NULL);
+			if (test->downcount == 1) test->downstart = getcurrenttime(NULL);
 		}
 		else test->downcount = 0;
 	}
@@ -1613,7 +1613,7 @@ void send_results(service_t *service, int failgoesclear)
 
 		if ((service == pingtest) && t->host->downcount) {
 			sprintf(msgtext, "\nSystem unreachable for %d poll periods (%u seconds)\n",
-				t->host->downcount, (unsigned int)(time(NULL) - t->host->downstart));
+				t->host->downcount, (unsigned int)(getcurrenttime(NULL) - t->host->downstart));
 			addtostatus(msgtext);
 		}
 
@@ -1768,7 +1768,7 @@ void send_sslcert_status(testedhost_t *host)
 	char msgline[1024];
 	char *sslmsg;
 	int sslmsgsize;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 	char *certowner;
 
 	sslmsgsize = 4096;

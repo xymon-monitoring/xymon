@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.167 2007-05-29 12:58:49 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.168 2007-06-11 14:40:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -124,7 +124,7 @@ state_t *init_state(char *filename, logdata_t *log)
 	char		fullfn[PATH_MAX];
 	host_t		*host;
 	struct stat 	log_st;
-	time_t		now = time(NULL);
+	time_t		now = getcurrenttime(NULL);
 	time_t		histentry_start;
 	int		logexpired = 0;
 
@@ -322,7 +322,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 {
 	char l[MAX_LINE_LEN];
 	dispsummary_t *newsum = NULL;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	dbgprintf("init_displaysummary(%s)\n", textornull(fn));
 
@@ -389,7 +389,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	}
 
 	if (reportstart || snapshot) {
-		oldestentry = time(NULL);
+		oldestentry = getcurrenttime(NULL);
 		purplelog = NULL;
 		purplelogfn = NULL;
 	}

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.13 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.14 2007-06-11 14:41:36 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -175,7 +175,7 @@ void trim_files(time_t cutoff)
 			errprintf("Cannot stat input file %s: %s\n", fwalk->fname, strerror(errno));
 			continue;
 		}
-		tstamp.actime = time(NULL);
+		tstamp.actime = getcurrenttime(NULL);
 		tstamp.modtime = st.st_mtime;
 
 		infd = fopen(fwalk->fname, "r");

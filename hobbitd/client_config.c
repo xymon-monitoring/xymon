@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.54 2007-06-11 11:02:41 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.55 2007-06-11 14:40:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1484,7 +1484,7 @@ int check_file(namelist_t *hinfo, char *classname,
 
 	*filesize = fsize;
 
-	if (clock == 0) clock = time(NULL);
+	if (clock == 0) clock = getcurrenttime(NULL);
 	ctimedif = clock - ctime;
 	atimedif = clock - atime;
 	mtimedif = clock - mtime;

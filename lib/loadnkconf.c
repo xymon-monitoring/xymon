@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.19 2007-04-02 09:05:55 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.20 2007-06-11 14:39:29 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -350,7 +350,7 @@ int update_nkconfig(nkconf_t *rec)
 		ut.actime = st.st_atime;
 		ut.modtime = st.st_mtime;
 	}
-	else ut.actime = ut.modtime = time(NULL);
+	else ut.actime = ut.modtime = getcurrenttime(NULL);
 	fd = fopen(configfn, "r");
 	if (fd) {
 		bakfd = fopen(bakfn, "w");

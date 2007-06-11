@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.224 2006-05-25 14:57:06 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.225 2007-06-11 14:39:45 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 			}
 
 			if (reportstart < 788918400) reportstart = 788918400;
-			if (reportend > time(NULL)) reportend = time(NULL);
+			if (reportend > getcurrenttime(NULL)) reportend = getcurrenttime(NULL);
 
 			if (xgetenv("BBREPWARN")) reportwarnlevel = atof(xgetenv("BBREPWARN"));
 			if (xgetenv("BBREPGREEN")) reportgreenlevel = atof(xgetenv("BBREPGREEN"));

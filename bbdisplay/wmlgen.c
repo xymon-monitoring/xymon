@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: wmlgen.c,v 1.26 2006-05-19 12:02:55 henrik Exp $";
+static char rcsid[] = "$Id: wmlgen.c,v 1.27 2007-06-11 14:40:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ static void delete_old_cards(char *dirname)
 	DIR             *bbcards;
 	struct dirent   *d;
 	struct stat     st;
-	time_t		now = time(NULL);
+	time_t		now = getcurrenttime(NULL);
 	char		fn[PATH_MAX];
 
 	bbcards = opendir(dirname);

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.5 2007-01-18 14:21:46 henrik Exp $";
+static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.6 2007-06-11 14:41:36 henrik Exp $";
 
 void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t os, 
 				namelist_t *hinfo, char *sender, time_t timestamp,
@@ -128,7 +128,7 @@ void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t 
 			p = strchr(p, '\n'); if (p) p++;
 		}
 
-       		if ((cpqhealthupdate > 0) && (cpqhealthupdate < (time(NULL) - 5*86400))) {
+       		if ((cpqhealthupdate > 0) && (cpqhealthupdate < (getcurrenttime(NULL) - 5*86400))) {
 			summarystr = "No recent events";
 			cpqhealthcolor = COL_GREEN;
 		}

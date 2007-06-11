@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.12 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.13 2007-06-11 14:36:43 henrik Exp $";
 
 #include "config.h"
 
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
 
 	while (tries) {
 		int sendnow = SENDLIMIT;
-		time_t cutoff = time(NULL) + timeout + 1;
+		time_t cutoff = getcurrenttime(NULL) + timeout + 1;
 		sendidx = 0;
 
 		/* Change this on each iteration, so we dont mix packets from each round of pings */
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 			}
 			else if (n == 0) {
 				/* Time out */
-				if ((time(NULL) >= cutoff) && (sendidx >= hostcount)) {
+				if ((getcurrenttime(NULL) >= cutoff) && (sendidx >= hostcount)) {
 					/* No more to send and the read timed out - so we're done */
 					pending = 0;
 				}
@@ -508,7 +508,7 @@ int main(int argc, char *argv[])
 					sendnow--;
 
 					/* Adjust the cutoff time, so we wait TIMEOUT seconds for a response */
-					cutoff = time(NULL) + timeout + 1;
+					cutoff = getcurrenttime(NULL) + timeout + 1;
 				}
 
 				if (FD_ISSET(pingsocket, &readfds)) {

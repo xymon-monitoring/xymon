@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.42 2007-01-17 12:48:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.43 2007-06-11 14:36:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
 
 	errprintf("hobbitlaunch starting\n");
 	while (running) {
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 
 		if (now >= nextcfgload) {
 			load_config(config);

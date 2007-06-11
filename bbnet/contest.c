@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.89 2007-05-02 10:55:57 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.90 2007-06-11 14:40:32 henrik Exp $";
 
 #include "config.h"
 
@@ -1230,7 +1230,7 @@ void show_tcp_test_results(void)
 		if (item->certinfo) {
 			printf(", certinfo='%s' (%u %s)", 
 				item->certinfo, (unsigned int)item->certexpires,
-				((item->certexpires > time(NULL)) ? "valid" : "expired"));
+				((item->certexpires > getcurrenttime(NULL)) ? "valid" : "expired"));
 		}
 		printf("\n");
 

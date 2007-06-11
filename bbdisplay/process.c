@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: process.c,v 1.33 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: process.c,v 1.34 2007-06-11 14:40:13 henrik Exp $";
 
 #include <limits.h>
 #include <string.h>
@@ -179,7 +179,7 @@ void delete_old_acks(void)
 	DIR             *bbacks;
 	struct dirent   *d;
 	struct stat     st;
-	time_t		now = time(NULL);
+	time_t		now = getcurrenttime(NULL);
 	char		fn[PATH_MAX];
 
 	bbacks = opendir(xgetenv("BBACKS"));

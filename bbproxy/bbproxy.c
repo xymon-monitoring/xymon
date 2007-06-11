@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.57 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.58 2007-06-11 14:37:00 henrik Exp $";
 
 #include "config.h"
 
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 
 	/* Statistics info */
-	time_t startuptime = time(NULL);
+	time_t startuptime = getcurrenttime(NULL);
 	unsigned long msgs_total = 0;
 	unsigned long msgs_total_last = 0;
 	unsigned long msgs_combined = 0;
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
 		int combining = 0;
 
 		/* See if it is time for a status report */
-		if (proxyname && ((now = time(NULL)) >= (laststatus+300))) {
+		if (proxyname && ((now = getcurrenttime(NULL)) >= (laststatus+300))) {
 			conn_t *stentry;
 			int ccount = 0;
 			unsigned long bufspace = 0;
@@ -756,7 +756,7 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->bufpsave;
 				cwalk->buflen = cwalk->buflensave;
 
-				ctime = time(NULL);
+				ctime = getcurrenttime(NULL);
 				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
 					dbgprintf("Delaying retry of connection\n");
 					break;
@@ -1022,7 +1022,7 @@ int main(int argc, char *argv[])
 		}
 		else {
 			static time_t lastlog = 0;
-			if ((now = time(NULL)) < (lastlog+30)) {
+			if ((now = getcurrenttime(NULL)) < (lastlog+30)) {
 				lastlog = now;
 				errprintf("Squelching incoming connections, sockcount=%d\n", sockcount);
 			}
@@ -1094,7 +1094,7 @@ int main(int argc, char *argv[])
 							cwalk->sendtries--;
 							cwalk->state = P_REQ_CONNECTING;
 							cwalk->conntries = CONNECT_TRIES;
-							cwalk->conntime = time(NULL);
+							cwalk->conntime = getcurrenttime(NULL);
 						}
 					}
 					break;
