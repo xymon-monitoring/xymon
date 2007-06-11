@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.90 2007-02-09 10:35:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.91 2007-06-11 14:21:07 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -455,7 +455,7 @@ int main(int argc, char *argv[])
 			strcpy(awalk->ip, "127.0.0.1");
 			awalk->color = awalk->maxcolor = parse_color(testcolor);
 			awalk->pagemessage = "Test of the alert configuration";
-			awalk->eventstart = time(NULL) - testdur*60;
+			awalk->eventstart = getcurrenttime(NULL) - testdur*60;
 			awalk->groups = (testgroups ? strdup(testgroups) : NULL);
 			awalk->state = A_PAGING;
 			awalk->cookie = 12345;
@@ -487,7 +487,7 @@ int main(int argc, char *argv[])
 
 	if (checkfn) {
 		load_checkpoint(checkfn);
-		nextcheckpoint = time(NULL) + checkpointinterval;
+		nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
 		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
@@ -536,7 +536,7 @@ int main(int argc, char *argv[])
 		activealerts_t *awalk;
 		int childstat;
 
-		now = time(NULL);
+		now = getcurrenttime(NULL);
 		if (checkfn && (now > nextcheckpoint)) {
 			dbgprintf("Saving checkpoint\n");
 			nextcheckpoint = now + checkpointinterval;
@@ -554,7 +554,7 @@ int main(int argc, char *argv[])
 		}
 
 		/* See what time it is - must happen AFTER the timeout */
-		now = time(NULL);
+		now = getcurrenttime(NULL);
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
@@ -724,7 +724,7 @@ int main(int argc, char *argv[])
 			awalk->location = pwalk;
 			awalk->cookie = -1;
 			awalk->pagemessage = strdup(restofmsg);
-			awalk->eventstart = time(NULL);
+			awalk->eventstart = getcurrenttime(NULL);
 			awalk->state = A_NOTIFY;
 			add_active(awalk->hostname, awalk);
 		}

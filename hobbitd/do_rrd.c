@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.45 2007-05-28 20:24:23 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.46 2007-06-11 14:21:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -282,7 +282,7 @@ void rrdcacheflushhost(char *hostname)
 	updcacheitem_t *cacheitem;
 	flushtree_t *flushitem;
 	int keylen, done;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	if (updcache_keyofs == -1) return;
 

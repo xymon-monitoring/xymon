@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.20 2006-10-24 15:12:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.21 2007-06-11 14:18:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 		else {
 			int i;
 
-			printf("Message # %d received at %d\n", seq, (int)time(NULL));
+			printf("Message # %d received at %d\n", seq, (int)getcurrenttime(NULL));
 			for (i=0; (metadata[i]); i++) {
 				printf("   Meta #%2d: %s\n", i, metadata[i]);
 			}

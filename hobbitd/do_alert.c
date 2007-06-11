@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.96 2006-08-24 13:41:19 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.97 2007-06-11 14:21:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -293,7 +293,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	recip_t *recip;
 	int first = 1;
 	int alertcount = 0;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 	char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Notify", "Dead" };
 
 	dbgprintf("send_alert %s:%s state %d\n", alert->hostname, alert->testname, (int)alert->state);
@@ -482,7 +482,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					putenv(recovered);
 
 					downsecs = (char *)malloc(strlen("DOWNSECS=") + 20);
-					sprintf(downsecs, "DOWNSECS=%ld", (long)(time(NULL) - alert->eventstart));
+					sprintf(downsecs, "DOWNSECS=%ld", (long)(getcurrenttime(NULL) - alert->eventstart));
 					putenv(downsecs);
 
 					eventtstamp = (char *)malloc(strlen("EVENTSTART=") + 20);
@@ -491,7 +491,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 					if (alert->state == A_RECOVERED) {
 						downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
-						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %ld", (long)(time(NULL) - alert->eventstart));
+						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %ld", (long)(getcurrenttime(NULL) - alert->eventstart));
 					}
 					else {
 						downsecsmsg = strdup("DOWNSECSMSG=");
@@ -567,7 +567,7 @@ void finish_alerts(void)
 
 time_t next_alert(activealerts_t *alert)
 {
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 	int first = 1;
 	int found = 0;
 	time_t nexttime = now+(30*86400);	/* 30 days from now */
@@ -708,7 +708,7 @@ void load_state(char *filename, char *statusbuf)
 			repeat_t *newrpt;
 
 			*p = '\0';
-			if (atoi(STRBUF(inbuf)) > time(NULL)) {
+			if (atoi(STRBUF(inbuf)) > getcurrenttime(NULL)) {
 				char *found = NULL;
 
 				if (statusbuf) {

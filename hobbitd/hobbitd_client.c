@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.109 2007-04-27 11:46:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.110 2007-06-11 14:18:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1752,8 +1752,8 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (reloadconfig || (time(NULL) >= nextconfigload)) {
-			nextconfigload = time(NULL) + 600;
+		if (reloadconfig || (getcurrenttime(NULL) >= nextconfigload)) {
+			nextconfigload = getcurrenttime(NULL) + 600;
 			reloadconfig = 0;
 			if (!localmode) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			load_client_config(configfn);

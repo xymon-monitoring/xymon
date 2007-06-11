@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.51 2007-04-02 08:46:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.52 2007-06-11 14:18:59 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -137,7 +137,7 @@ void update_htmlfile(char *fn, char *msg,
 
 void update_enable(char *fn, time_t expiretime)
 {
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	dbgprintf("Enable/disable file %s, time %d\n", fn, (int)expiretime);
 

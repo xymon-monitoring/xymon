@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.32 2007-05-28 07:45:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.33 2007-06-11 14:18:59 henrik Exp $";
 
 #include "config.h"
 
@@ -73,7 +73,7 @@ static void net_worker_heartbeat(void)
 
 	if (!locatorid || (locatorsvc == ST_MAX)) return;
 
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 	if (now > locatorhb) {
 		locator_serverup(locatorid, locatorsvc);
 		locatorhb = now + 60;
