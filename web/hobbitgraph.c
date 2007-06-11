@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.55 2007-05-28 20:21:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.56 2007-06-11 11:01:03 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -563,7 +563,7 @@ char *build_selfURI(void)
 
 	p += sprintf(p, "&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d&amp;color=%s", 
 		     service, graphheight, graphwidth, colorname(bgcolor));
-	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
+	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", urlencode(displayname));
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
 	if (ignorestalerrds) p += sprintf(p, "&amp;nostale");
