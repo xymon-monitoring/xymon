@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.12 2007-02-20 21:02:51 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.13 2007-06-11 11:12:18 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -60,6 +60,14 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			else break;	/* We've hit the end of the message */
 		}
 
+		/* Skip any color marker "&COLOR " in front of the ds name */
+		if (name && (*name == '&')) {
+			name++;
+			name += strspn(name, "abcdefghijklmnopqrstuvwxyz");
+			name += strspn(name, " \t");
+			if (*name == '\0') name = NULL;
+		}
+
 		if (name) { 
 			val = l + strspn(l, " \t"); 
 			/* Find the end of the value string */
@@ -92,6 +100,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				int outidx;
 
 				/* val contains a valid number */
+
 				/* rrdcreate(1) says: ds must be in the set [a-zA-Z0-9_] */
 				for (inp=name,outidx=0; (*inp && (outidx < 19)); inp++) {
 					if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
