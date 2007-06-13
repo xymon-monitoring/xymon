@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_capture.c,v 1.4 2006-10-24 15:12:00 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_capture.c,v 1.5 2007-06-13 10:53:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +42,10 @@ int main(int argc, char *argv[])
         const char *errmsg = NULL;
 	int errofs = 0;
 	FILE *logfd = stdout;
+	int batchtimeout = 30;
+	char *batchcmd = NULL;
+	strbuffer_t *batchbuf = NULL;
+	time_t lastmsgtime = 0;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -96,12 +100,26 @@ int main(int argc, char *argv[])
 				logfd = stdout;
 			}
 		}
+		else if (argnmatch(argv[argi], "--batch-timeout=")) {
+			char *p = strchr(argv[argi], '=');
+			batchtimeout = atoi(p+1);
+			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
+			timeout->tv_sec = batchtimeout;
+			timeout->tv_usec = 0;
+		}
+		else if (argnmatch(argv[argi], "--batch-command=")) {
+			char *p = strchr(argv[argi], '=');
+			batchcmd = strdup(p+1);
+			batchbuf = newstrbuffer(0);
+		}
 		else {
 			printf("Unknown option %s\n", argv[argi]);
-			printf("Usage: %s [--hosts=EXP] [--tests=EXP] [--exhosts=EXP] [--extests=EXP] [--color=EXP] [--outfile=FILENAME]\n", argv[0]);
+			printf("Usage: %s [--hosts=EXP] [--tests=EXP] [--exhosts=EXP] [--extests=EXP] [--color=EXP] [--outfile=FILENAME] [--batch-timeout=N] [--batch-command=COMMAND]\n", argv[0]);
 			return 0;
 		}
 	}
+
+	signal(SIGCHLD, SIG_IGN);
 
 	running = 1;
 	while (running) {
@@ -182,7 +200,7 @@ int main(int argc, char *argv[])
 		 * some internal processing even though no messages arrive.
 		 */
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
-			printf("Got an 'idle' message\n");
+			dbgprintf("Got an 'idle' message\n");
 		}
 
 		/*
@@ -193,23 +211,24 @@ int main(int argc, char *argv[])
 		 * messages to maintain data consistency.
 		 */
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
-			printf("Got a 'drophost' message for host '%s'\n", metadata[3]);
+			dbgprintf("Got a 'drophost' message for host '%s'\n", metadata[3]);
+		}
+		else if ((metacount > 3) && (strncmp(metadata[0], "@@dropstate", 11) == 0)) {
+			dbgprintf("Got a 'dropstate' message for host '%s'\n", metadata[3]);
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
-			printf("Got a 'droptest' message for host '%s' test '%s'\n", metadata[3], metadata[4]);
+			dbgprintf("Got a 'droptest' message for host '%s' test '%s'\n", metadata[3], metadata[4]);
 		}
 		else if ((metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
-			printf("Got a 'renamehost' message for host '%s' -> '%s'\n", metadata[3], metadata[4]);
+			dbgprintf("Got a 'renamehost' message for host '%s' -> '%s'\n", metadata[3], metadata[4]);
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
-			printf("Got a 'renametest' message for host '%s' test '%s' -> '%s'\n", 
+			dbgprintf("Got a 'renametest' message for host '%s' test '%s' -> '%s'\n", 
 				metadata[3], metadata[4], metadata[5]);
 		}
 
 		/*
-		 * What happens next is up to the worker module.
-		 *
-		 * For this sample module, we'll just print out the data we got.
+		 * Process this message.
 		 */
 		else {
 			int ovector[30];
@@ -217,6 +236,52 @@ int main(int argc, char *argv[])
 			char *hostname = metadata[4];
 			char *testname = metadata[5];
 			char *color = metadata[7];
+
+			/* See if we should handle the batched messages we've got */
+			if (batchcmd && ((lastmsgtime + batchtimeout) < getcurrenttime(NULL)) && (STRBUFLEN(batchbuf) > 0)) {
+				pid_t childpid = fork();
+				int childres = 0;
+
+				if (childpid < 0) {
+					/* Fork failed! */
+					errprintf("Fork failed: %s\n", strerror(errno));
+				}
+				else if (childpid == 0) {
+					/* Child */
+					FILE *cmdpipe = popen(batchcmd, "w");
+					if (cmdpipe) {
+						/* Write the data to the batch command pipe */
+						int n, bytesleft = STRBUFLEN(batchbuf);
+						char *outp = STRBUF(batchbuf);
+
+						while (bytesleft) {
+							n = fwrite(outp, 1, bytesleft, cmdpipe);
+							if (n >= 0) {
+								bytesleft -= n;
+								outp += n;
+							}
+							else {
+								errprintf("Error while writing data to batch command\n");
+								bytesleft = 0;
+							}
+						}
+
+						childres = pclose(cmdpipe);
+					}
+					else {
+						errprintf("Could not open pipe to batch command '%s'\n", batchcmd);
+						childres = 127;
+					}
+
+					exit(childres);
+				}
+				else if (childpid > 0) {
+					/* Parent continues */
+				}
+
+				clearstrbuffer(batchbuf);
+			}
+
 
 			if (hostexp) {
 				match = (pcre_exec(hostexp, NULL, hostname, strlen(hostname), 0, 0, ovector, (sizeof(ovector)/sizeof(int))) >= 0);
@@ -239,10 +304,24 @@ int main(int argc, char *argv[])
 				if (!match) continue;
 			}
 
-			printf("## ");
-			for (i=0; (i < metacount); i++) printf("%s ", metadata[i]);
-			printf("\n");
-			printf("%s\n", restofmsg);
+			lastmsgtime = getcurrenttime(NULL);
+
+			if (batchcmd) {
+				addtobuffer(batchbuf, "## ");
+				for (i=0; (i < metacount); i++) {
+					addtobuffer(batchbuf, metadata[i]);
+					addtobuffer(batchbuf, " ");
+				}
+				addtobuffer(batchbuf, "\n");
+				addtobuffer(batchbuf, restofmsg);
+				addtobuffer(batchbuf, "\n");
+			}
+			else {
+				fprintf(logfd, "## ");
+				for (i=0; (i < metacount); i++) fprintf(logfd, "%s ", metadata[i]);
+				fprintf(logfd, "\n");
+				fprintf(logfd, "%s\n", restofmsg);
+			}
 		}
 	}
 
