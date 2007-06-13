@@ -1,0 +1,51 @@
+.TH HOBBITD_CAPTURE 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.SH NAME
+hobbitd_capture \- catch selected messages from a hobbitd channel
+.SH SYNOPSIS
+.B "hobbitd_channel --channel=status hobbitd_capture [options]"
+
+.SH DESCRIPTION
+hobbitd_capture is a worker module for hobbitd, and as such it is normally
+run via the
+.I hobbitd_channel(8)
+program. It receives messages from hobbitd via stdin and filters them to
+select messages based on the hostname, testname or color of the status.
+By default the resulting messages are printed on stdout, but they can also
+be fed into a command for further processing.
+
+hobbitd_capture supports the \fBstatus\fR, \fBdata\fR and \fBhostdata\fR
+channels.
+
+.SH OPTIONS
+.IP "--hosts=PATTERN"
+Select messages only from hosts matching PATTERN (regular expression).
+
+.IP "--exhosts=PATTERN"
+Exclude messages from hosts matching PATTERN. If used with the --hosts option, 
+then the hostname must match the --hosts pattern, but NOT the --exhosts pattern.
+
+.IP "--tests=PATTERN"
+Select messages only from tests matching PATTERN (regular expression).
+
+.IP "--extests=PATTERN"
+Exclude messages from tests matching PATTERN. If used with the --tests option, 
+then the testname must match the --tests pattern, but NOT the --extests pattern.
+
+.IP "--colors=COLOR[,color]"
+Select messages based on the color of the status message. Multiple colors can be 
+listed, separated by comma. Default: Accept all colors.
+
+.IP "--batch-command=COMMAND"
+Instead of printing the messages to stdout, feed them to COMMAND on stdin. COMMAND
+can be any command which accepts the mssage on standard input.
+
+.IP "--batch-timeout=SECONDS"
+Collect messages until no messages have arrived in SECONDS seconds, before sending
+them to the --batch-command COMMAND.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH "SEE ALSO"
+hobbitd_channel(8), hobbitd(8), hobbit(7)
+
