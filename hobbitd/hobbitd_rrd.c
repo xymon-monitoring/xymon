@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.31 2007-05-28 20:21:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.32 2007-06-19 12:41:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -170,10 +170,17 @@ int main(int argc, char *argv[])
 		}
 
 		/* Get next message */
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, NULL, &running);
+		msg = get_hobbitd_message(C_LAST, argv[0], &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
+		}
+
+		if (timewarp) {
+			errprintf("WARNING: Time has gone BACK by %d seconds.\n", timewarp);
+			if (timewarp >= 300) errprintf("This will cause problems with RRD updates already registered\n");
+			errprintf("hobbitd_rrd module is restarting to pick up new time\n");
+			running = 0;
 		}
 
 		/* Split the message in the first line (with meta-data), and the rest */
@@ -228,6 +235,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
+			continue;
+		}
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			/* Ignored */
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {

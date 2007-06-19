@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.52 2007-06-11 14:18:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.53 2007-06-19 12:41:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 
 		MEMDEFINE(logfn);
 
-		msg = get_hobbitd_message(chnid, "filestore", &seq, NULL, &running);
+		msg = get_hobbitd_message(chnid, "filestore", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			MEMUNDEFINE(logfn);
@@ -446,6 +446,9 @@ int main(int argc, char *argv[])
 				freopen(fn, "a", stderr);
 			}
 			continue;
+		}
+		else if (strncmp(items[0], "@@idle", 6) == 0) {
+			/* Ignored */
 		}
 		else {
 			errprintf("Dropping message type %s, metacount=%d\n", items[0], metacount);

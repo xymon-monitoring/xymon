@@ -16,7 +16,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_sample.c,v 1.21 2007-06-11 14:18:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_sample.c,v 1.22 2007-06-19 12:41:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		 * or the timeout setting expires, or the channel is closed.
 		 */
 
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout, &running);
+		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout);
 		if (msg == NULL) {
 			/*
 			 * get_hobbitd_message will return NULL if hobbitd_channel closes

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.8 2006-11-23 21:24:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.9 2007-06-19 12:41:35 henrik Exp $";
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		msg = get_hobbitd_message(C_CLICHG, "hobbitd_hostdata", &seq, NULL, &running);
+		msg = get_hobbitd_message(C_CLICHG, "hobbitd_hostdata", &seq, NULL);
 		if (msg == NULL) {
 			/*
 			 * get_hobbitd_message will return NULL if hobbitd_channel closes
@@ -147,6 +147,10 @@ int main(int argc, char *argv[])
 		 */
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
+			continue;
+		}
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			/* Ignored */
 			continue;
 		}
 

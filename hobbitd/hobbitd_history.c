@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.49 2007-06-11 14:18:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.50 2007-06-19 12:41:35 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -137,10 +137,16 @@ int main(int argc, char *argv[])
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
-		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL, &running);
+		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
+		}
+
+		if (timewarp) {
+			errprintf("WARNING: Time has gone BACK by %d seconds - this can make your history look odd.\n", timewarp);
+			errprintf("hobbitd_history module is restarting to pick up new time\n");
+			running = 0;
 		}
 
 		p = strchr(msg, '\n'); 
@@ -641,6 +647,9 @@ int main(int argc, char *argv[])
 				freopen(fn, "a", stderr);
 			}
 			continue;
+		}
+		else if (strncmp(items[0], "@@idle", 6) == 0) {
+			/* Ignored */
 		}
 	}
 

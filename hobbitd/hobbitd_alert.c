@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.91 2007-06-11 14:21:07 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.92 2007-06-19 12:41:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +59,7 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.91 2007-06-11 14:21:07 henrik Ex
 
 static int running = 1;
 static time_t nextcheckpoint = 0;
+static int termsig = -1;
 
 RbtHandle hostnames;
 RbtHandle testnames;
@@ -217,6 +218,7 @@ void sig_handler(int signum)
 
 	  default:
 		  running = 0;
+		  termsig = signum;
 		  break;
 	}
 }
@@ -547,14 +549,21 @@ int main(int argc, char *argv[])
 		}
 
 		timeout.tv_sec = 60; timeout.tv_usec = 0;
-		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout, &running);
+		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout);
 		if (msg == NULL) {
+			dbgprintf("get_hobbitd_message returned NULL, termsig is %d, running is %d\n", termsig, running);
 			running = 0;
 			continue;
 		}
 
 		/* See what time it is - must happen AFTER the timeout */
 		now = getcurrenttime(NULL);
+
+		if (timewarp) {
+			errprintf("WARNING: Time has gone BACK by %d seconds - repeat-alerts will be affected.\n", timewarp);
+			errprintf("hobbitd_alert module is restarting to pick up new time\n");
+			running = 0;
+		}
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
@@ -775,6 +784,7 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
+			errprintf("Got a shutdown message\n");
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
@@ -933,6 +943,10 @@ int main(int argc, char *argv[])
 
 	MEMUNDEFINE(notiflogfn);
 	MEMUNDEFINE(acklogfn);
+
+	if (termsig >= 0) {
+		errprintf("Terminated by signal %d\n", termsig);
+	}
 
 	return 0;
 }
