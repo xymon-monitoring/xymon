@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.58 2007-06-11 14:41:36 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.59 2007-06-19 12:38:37 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -668,7 +668,6 @@ int main(int argc, char *argv[])
 			/* See if we have stale messages queued */
 			if ((pwalk->msghead->tstamp + MSGTIMEOUT) < now) {
 				/* Stale message at head of queue, flush all that are stale */
-				hobbit_msg_t *stalemsg;
 				time_t msgtimeout = now - MSGTIMEOUT;
 				int count = 0;
 
