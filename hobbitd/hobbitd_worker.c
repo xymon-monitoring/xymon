@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.33 2007-06-11 14:18:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.34 2007-06-19 12:39:09 henrik Exp $";
 
 #include "config.h"
 
@@ -321,7 +321,7 @@ void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky
 	}
 }
 
-unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout, int *terminated)
+unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
 {
 	static unsigned int seqnum = 0;
 	static char *idlemsg = NULL;
@@ -491,8 +491,13 @@ startagain:
 		res = select(inputfd+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
 
 		if (res < 0) {
-			if (*terminated) return NULL;
-			if ((errno == EAGAIN) || (errno == EINTR)) continue;
+			if (errno == EAGAIN) continue;
+
+			if (errno == EINTR) {
+				dbgprintf("get_hobbitd_message: Interrupted\n");
+				*seq = 0;
+				return idlemsg;
+			}
 
 			/* Some error happened */
 			ioerror = 1;
@@ -521,6 +526,7 @@ startagain:
 			else if (res == 0) {
 				/* read() returns 0 --> End-of-file */
 				ioerror = 1;
+				dbgprintf("get_hobbitd_message: Returning NULL due to EOF\n");
 				return NULL;
 			}
 			else {
