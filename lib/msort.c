@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msort.c,v 1.3 2007-04-02 08:12:32 henrik Exp $";
+static char rcsid[] = "$Id: msort.c,v 1.4 2007-06-21 12:23:15 henrik Exp $";
 
 #include <stdlib.h>
 #include <sys/time.h>
@@ -34,7 +34,8 @@ static void *merge(void *left, void *right,
 	head = tail = NULL;
 
 	while (left && right) {
-		if (comparefn(left, right)) {
+		if (comparefn(left, right) < 0) {
+			/* Add the left item to the resultlist */
 			if (tail) {
 				setnext(tail, left);
 			}
@@ -46,6 +47,7 @@ static void *merge(void *left, void *right,
 			left = getnext(left);
 		}
 		else {
+			/* Add the right item to the resultlist */
 			if (tail) {
 				setnext(tail, right);
 			}
@@ -58,6 +60,7 @@ static void *merge(void *left, void *right,
 		}
 	}
 
+	/* One or both lists have ended. Add whatever elements may remain */
 	if (left) {
 		if (tail) setnext(tail, left); else head = tail = left;
 	}
@@ -82,7 +85,7 @@ void *msort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getnext, 
 	 * "middle" takes one step at a time, whereas "walk" takes two.
 	 */
 	middle = head; 
-	walk = getnext(head); /* "walk" must be ahead of "middle" */
+	walk = getnext(middle); /* "walk" must be ahead of "middle" */
 	while (walk && (walknext = getnext(walk))) {
 		middle = getnext(middle);
 		walk = getnext(walknext);
@@ -105,7 +108,7 @@ void *msort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getnext, 
 
 typedef struct rec_t {
 	struct rec_t *next;
-	int key;
+	char *key;
 	char *val;
 } rec_t;
 
@@ -114,15 +117,14 @@ void dumplist(rec_t *head)
 {
 	rec_t *walk;
 
-	walk = head; while (walk) { printf("%4d ", walk->key); walk = walk->next; } printf("\n");
-	walk = head; while (walk) { printf("%4s ", walk->val); walk = walk->next; } printf("\n");
+	walk = head; while (walk) { printf("%-15s:%3s\n", walk->key, walk->val); walk = walk->next; } printf("\n");
 	printf("\n");
 }
 
 
 int record_compare(void *a, void *b)
 {
-	return (((rec_t *)a)->key < ((rec_t *)b)->key);
+	return strcasecmp(((rec_t *)a)->key, ((rec_t *)b)->key);
 }
 
 void * record_getnext(void *a)
@@ -135,26 +137,129 @@ void record_setnext(void *a, void *newval)
 	((rec_t *)a)->next = (rec_t *)newval;
 }
 
+/* 50 most popular US babynames in 2006: http://www.ssa.gov/OACT/babynames/ */
+char *tdata[] = {
+"Jacob",
+"Emily",
+"Michael",
+"Emma",
+"Joshua",
+"Madison",
+"Ethan",
+"Isabella",
+"Matthew",
+"Ava",
+"Daniel",
+"Abigail",
+"Christopher",
+"Olivia",
+"Andrew",
+"Hannah",
+"Anthony",
+"Sophia",
+"William",
+"Samantha",
+"Joseph",
+"Elizabeth",
+"Alexander",
+"Ashley",
+"David",
+"Mia",
+"Ryan",
+"Alexis",
+"Noah",
+"Sarah",
+"James",
+"Natalie",
+"Nicholas",
+"Grace",
+"Tyler",
+"Chloe",
+"Logan",
+"Alyssa",
+"John",
+"Brianna",
+"Christian",
+"Ella",
+"Jonathan",
+"Taylor",
+"Nathan",
+"Anna",
+"Benjamin",
+"Lauren",
+"Samuel",
+"Hailey",
+"Dylan",
+"Kayla",
+"Brandon",
+"Addison",
+"Gabriel",
+"Victoria",
+"Elijah",
+"Jasmine",
+"Aiden",
+"Savannah",
+"Angel",
+"Julia",
+"Jose",
+"Jessica",
+"Zachary",
+"Lily",
+"Caleb",
+"Sydney",
+"Jack",
+"Morgan",
+"Jackson",
+"Katherine",
+"Kevin",
+"Destiny",
+"Gavin",
+"Lillian",
+"Mason",
+"Alexa",
+"Isaiah",
+"Alexandra",
+"Austin",
+"Kaitlyn",
+"Evan",
+"Kaylee",
+"Luke",
+"Nevaeh",
+"Aidan",
+"Brooke",
+"Justin",
+"Makayla",
+"Jordan",
+"Allison",
+"Robert",
+"Maria",
+"Isaac",
+"Angelina",
+"Landon",
+"Rachel",
+"Jayden",
+"Gabriella",
+NULL };
 
 int main(int argc, char *argv[])
 {
 	int i;
-	rec_t *head, *newrec;
-	struct timeval tv;
-	struct timezone tz;
-	
-	gettimeofday(&tv, &tz);
-	srand(tv.tv_usec);
-	head = NULL;
-	for (i=0; i<20; i++) {
-		char v[10];
+	rec_t *head, *newrec, *tail;
 
+	head = tail = NULL;
+	for (i=0; (tdata[i]); i++) {
+		char numstr[10];
 		newrec = (rec_t *)calloc(1, sizeof(rec_t));
-		newrec->key = random() % 1000;
-		sprintf(v, "%c", i+'A');
-		newrec->val = strdup(v);
-		newrec->next = head;
-		head = newrec;
+		newrec->key = strdup(tdata[i]);
+		sprintf(numstr, "%d", i+1); newrec->val = strdup(numstr);
+
+		if (tail) {
+			tail->next = newrec;
+			tail = newrec;
+		}
+		else {
+			head = tail = newrec;
+		}
 	}
 
 	dumplist(head);
