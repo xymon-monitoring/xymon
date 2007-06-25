@@ -160,5 +160,6 @@ typedef struct dnstest_t {
 
 extern char *deptest_failed(testedhost_t *host, char *testname);
 
+extern int validity;
 #endif
 

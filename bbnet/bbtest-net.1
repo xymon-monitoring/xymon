@@ -169,6 +169,13 @@ enable this option to see which tests have large replies.
 .br
 Default: 0 (disabled).
 
+.IP --validity=N
+Make the test results valid for N minutes before they go purple. 
+By default test results are valid for 30 minutes; if you run bbtest-net
+less often than that, the results will go purple before the next run
+of bbtest-net. This option lets you change how long the status is 
+valid.
+
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
 .IP --checkresponse[=COLOR]
 When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 

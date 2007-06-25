@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.28 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.29 2007-06-25 13:06:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -427,8 +427,8 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 
 	/* Send off the ldap status report */
 	init_status(color);
-	sprintf(msgline, "status %s.%s %s %s", 
-		commafy(host->hostname), svcname, colorname(color), timestamp);
+	sprintf(msgline, "status+%d %s.%s %s %s", 
+		validity, commafy(host->hostname), svcname, colorname(color), timestamp);
 	addtostatus(msgline);
 
 	for (t=host->firstldap; (t && (t->host == host)); t = t->next) {

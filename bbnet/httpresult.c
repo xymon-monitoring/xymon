@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.26 2007-06-11 14:36:43 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.27 2007-06-25 13:06:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -205,8 +205,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		/* Send off the http status report */
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s", 
-			commafy(host->hostname), svcname, colorname(color), timestamp);
+		sprintf(msgline, "status+%d %s.%s %s %s", 
+			validity, commafy(host->hostname), svcname, colorname(color), timestamp);
 		addtostatus(msgline);
 		addtostrstatus(msgtext);
 		addtostatus("\n");
@@ -414,8 +414,8 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 
 		msgline = (char *)malloc(4096 + (2 * strlen(req->url)));
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s: %s\n", 
-			commafy(host->hostname), conttest, colorname(color), timestamp, cause);
+		sprintf(msgline, "status+%d %s.%s %s %s: %s\n", 
+			validity, commafy(host->hostname), conttest, colorname(color), timestamp, cause);
 		addtostatus(msgline);
 
 		if (!got_data) {

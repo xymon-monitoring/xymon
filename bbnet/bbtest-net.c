@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.246 2007-06-11 14:36:43 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.247 2007-06-25 13:06:39 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -80,6 +80,7 @@ char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks colu
 char		*failtext = "not OK";
 int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert column = yellow */
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
+int		validity = 30;
 char		*location = "";			/* BBLOCATION value */
 int		hostcount = 0;
 int		testcount = 0;
@@ -1515,8 +1516,8 @@ void send_results(service_t *service, int failgoesclear)
 
 		init_status(color);
 		if (dosendflags) 
-			sprintf(msgline, "status %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
-				commafy(t->host->hostname), svcname, colorname(color), 
+			sprintf(msgline, "status+%d %s.%s %s <!-- [flags:%s] --> %s %s %s ", 
+				validity, commafy(t->host->hostname), svcname, colorname(color), 
 				flags, timestamp, 
 				svcname, ( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"));
 		else
@@ -1727,8 +1728,8 @@ void send_rpcinfo_results(service_t *service, int failgoesclear)
 		if (wantedrpcsvcs) xfree(wantedrpcsvcs);
 
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s %s %s, %s\n\n", 
-			commafy(t->host->hostname), service->testname, colorname(color), timestamp, 
+		sprintf(msgline, "status+%d %s.%s %s %s %s %s, %s\n\n", 
+			validity, commafy(t->host->hostname), service->testname, colorname(color), timestamp, 
 			service->testname, 
 			( ((color == COL_RED) || (color == COL_YELLOW)) ? "NOT ok" : "ok"),
 			causetext);
@@ -1814,8 +1815,8 @@ void send_sslcert_status(testedhost_t *host)
 	if (color != -1) {
 		/* Send off the sslcert status report */
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n", 
-			commafy(host->hostname), ssltestname, colorname(color), timestamp);
+		sprintf(msgline, "status+%d %s.%s %s %s\n", 
+			validity, commafy(host->hostname), ssltestname, colorname(color), timestamp);
 		addtostatus(msgline);
 		addtostatus(sslmsg);
 		addtostatus("\n\n");
@@ -1971,6 +1972,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--sslalarm=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; sslalarmdays = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--validity=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; validity = atoi(p);
 		}
 
 		/* Debugging options */
@@ -2319,7 +2324,7 @@ int main(int argc, char *argv[])
 
 		combo_start();
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
+		sprintf(msgline, "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
 		sprintf(msgline, "bbtest-net version %s\n", VERSION);
