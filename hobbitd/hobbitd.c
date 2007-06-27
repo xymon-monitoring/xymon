@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.265 2007-06-11 14:15:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.266 2007-06-27 09:16:08 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3779,12 +3779,13 @@ void check_purple_status(void)
 				}
 				else {
 					int newcolor = COL_PURPLE;
+					namelist_t *hinfo = hostinfo(hwalk->hostname);
 
 					/*
 					 * See if this is a host where the "conn" test shows it is down.
 					 * If yes, then go CLEAR, instead of PURPLE.
 					 */
-					if (hwalk->pinglog) {
+					if (hwalk->pinglog && hinfo && (bbh_item(hinfo, BBH_FLAG_NOCLEAR) == NULL)) {
 						switch (hwalk->pinglog->color) {
 						  case COL_RED:
 						  case COL_YELLOW:
@@ -3800,9 +3801,8 @@ void check_purple_status(void)
 					}
 
 					/* Tests on dialup hosts go clear, not purple */
-					if (newcolor == COL_PURPLE) {
-						namelist_t *hinfo = hostinfo(hwalk->hostname);
-						if (hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) newcolor = COL_CLEAR;
+					if ((newcolor == COL_PURPLE) && hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) {
+						newcolor = COL_CLEAR;
 					}
 
 					handle_status(lwalk->message, "hobbitd", 
