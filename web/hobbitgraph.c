@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.57 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.58 2007-06-27 08:31:18 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -167,6 +167,13 @@ void request_cacheflush(char *hostname)
 	}
 	closedir(dir);
 	xfree(req);
+
+	/*
+	 * Sleep 0.3 secs to allow the cache flush to happen.
+	 * Note: It isn't guaranteed to happen in this time, but
+	 * there's a good chance that it will.
+	 */
+	usleep(300000);
 }
 
 
