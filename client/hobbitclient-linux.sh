@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.23 2007-05-02 12:15:06 henrik Exp $
+# $Id: hobbitclient-linux.sh,v 1.24 2007-07-10 10:54:35 henrik Exp $
 
 echo "[date]"
 date
@@ -42,7 +42,8 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -Pl -x none -x tmpfs -x shmfs -x unknown -x iso9660 | sed -e '/^[^ 	][^ 	]*$/{
+EXCLUDES=`cat /proc/filesystems | grep nodev | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
+df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
