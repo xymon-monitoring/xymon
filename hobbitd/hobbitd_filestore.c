@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.53 2007-06-19 12:41:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.54 2007-07-12 12:27:47 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -79,7 +79,7 @@ void update_file(char *fn, char *mode, char *msg, time_t expire, char *sender, t
 }
 
 void update_htmlfile(char *fn, char *msg, 
-		     char *hostname, char *service, int color,
+		     char *hostname, char *service, int color, int flapping,
 		     char *sender, char *flags,
 		     time_t logtime, time_t timesincechange,
 		     time_t acktime, char *ackmsg,
@@ -117,7 +117,7 @@ void update_htmlfile(char *fn, char *msg,
 		}
 
 		generate_html_log(hostname, displayname, service, ip,
-			color, sender, flags,
+			color, flapping, sender, flags,
 			logtime, timestr,
 			firstline, restofmsg, 
 			acktime, ackmsg, NULL,
@@ -286,8 +286,8 @@ int main(int argc, char *argv[])
 		}
 
 		if ((role == ROLE_STATUS) && (metacount >= 14) && (strncmp(items[0], "@@status", 8) == 0)) {
-			/* @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage */
-			int ltime;
+			/* @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage|clientmsgtstamp|flapping */
+			int ltime, flapping = 0;
 			time_t logtime = 0, timesincechange = 0, acktime = 0, disabletime = 0;
 
 			hostname = items[4];
@@ -319,8 +319,10 @@ int main(int argc, char *argv[])
 				if (items[14] && strlen(items[14]) && (disabletime > 0)) dismsg = items[14];
 				if (dismsg) nldecode(dismsg);
 
+				flapping = (items[16] ? (*items[16] == '1') : 0);
+
 				sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
-				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[7]),
+				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[7]), flapping,
 						     items[2], items[8], logtime, timesincechange, 
 						     acktime, ackmsg,
 						     disabletime, dismsg);

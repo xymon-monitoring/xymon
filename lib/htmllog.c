@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.55 2007-06-11 14:39:09 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.56 2007-07-12 12:27:47 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -136,7 +136,7 @@ static void textwithcolorimg(char *msg, FILE *output)
 
 
 void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
-		       int color, char *sender, char *flags, 
+		       int color, int flapping, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
 		       char *firstline, char *restofmsg, 
 		       time_t acktime, char *ackmsg, char *acklist,
@@ -268,12 +268,17 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output, "<br><br><a name=\"begindata\">&nbsp;</a>\n");
 
+	if (flapping) {
+		fprintf(output, "<CENTER><B>WARNING: Flapping status</B></CENTER>\n");
+	}
+
 	if (histlocation == HIST_TOP) {
 		historybutton(cgibinurl, hostname, service, ip, displayname,
 			      (is_history ? "Full History" : "HISTORY"), output);
 	}
 
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY=\"Detail Status\">\n");
+
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 
 	if (disabletime != 0) {

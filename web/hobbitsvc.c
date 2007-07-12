@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.78 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.79 2007-07-12 12:27:47 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -159,7 +159,7 @@ void loadhostdata(char *hostname, char **ip, char **displayname)
 
 int do_request(void)
 {
-	int color = 0;
+	int color = 0, flapping = 0;
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
 	char *log = NULL, *firstline = NULL, *sender = NULL, *clientid = NULL, *flags = NULL;	/* These are free'd */
@@ -265,7 +265,7 @@ int do_request(void)
 		time_t logage, clntstamp;
 		char *sumline, *msg, *p;
 
-		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp", hostname, service);
+		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo", hostname, service);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
@@ -311,6 +311,7 @@ int do_request(void)
 		 * BBH_IP		[15]
 		 * BBH_DISPLAYNAME	[16]
 		 * clienttstamp         [17]
+		 * flapping		[18]
 		 */
 		color = parse_color(items[2]);
 		flags = strdup(items[3]);
@@ -336,6 +337,7 @@ int do_request(void)
 		ip = (items[15] ? items[15] : "");
 		displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
 		clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
+		flapping = (items[18] ? (*items[18] == '1') : 0);
 
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(60);
@@ -475,7 +477,7 @@ int do_request(void)
 			  displayname,
 			  service, 
 			  ip,
-		          color, 
+		          color, flapping,
 			  (sender ? sender : "Hobbit"), 
 			  (flags ? flags : ""),
 		          logtime, timesincechange, 
