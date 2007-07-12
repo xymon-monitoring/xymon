@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.266 2007-06-27 09:16:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.267 2007-07-12 12:59:19 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -61,6 +61,7 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.266 2007-06-27 09:16:08 henrik Exp $";
 #include "hobbitd_ipc.h"
 
 #define DISABLED_UNTIL_OK -1
+#define LASTCHANGESZ 10
 
 /*
  * The absolute maximum size we'll grow our buffers to accomodate an incoming message.
@@ -102,11 +103,11 @@ typedef struct hobbitd_log_t {
 	struct hobbitd_hostlist_t *host;
 	testinfo_t *test;
 	char *origin;
-	int color, oldcolor, activealert, histsynced, downtimeactive;
+	int color, oldcolor, activealert, histsynced, downtimeactive, flapping, oldflapcolor, currflapcolor;
 	char *testflags;
 	char *grouplist;        /* For extended status reports (e.g. from hobbitd_client) */
 	char sender[IP_ADDR_STRLEN];
-	time_t lastchange;	/* time when the currently logged status began */
+	time_t lastchange[LASTCHANGESZ];	/* time when the currently logged status began */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
 	time_t enabletime;	/* time when test auto-enables after a disable */
@@ -155,6 +156,7 @@ int      ignoretraced = 0;
 int      clientsavemem = 1;	/* In memory */
 int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
+int	 flapthreshold = 600;	/* Seconds - if more than LASTCHANGESZ changes during this period, it's flapping */
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -248,6 +250,7 @@ enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS,
 		    F_ACKMSG, F_DISMSG, F_MSG, F_CLIENT, F_CLIENTTSTAMP,
 		    F_ACKLIST,
 		    F_HOSTINFO,
+		    F_FLAPINFO,
 		    F_LAST };
 
 typedef struct boardfieldnames_t {
@@ -274,6 +277,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "clntstamp", F_CLIENTTSTAMP },
 	{ "acklist", F_ACKLIST },
 	{ "BBH_", F_HOSTINFO },
+	{ "flapinfo", F_FLAPINFO },
 	{ NULL, F_LAST },
 };
 typedef struct boardfields_t {
@@ -531,7 +535,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, log->origin, hostname, log->test->name, 
 				(int) log->validtime, colnames[log->color], (log->testflags ? log->testflags : ""),
-				colnames[log->oldcolor], (int) log->lastchange); 
+				colnames[log->oldcolor], (int) log->lastchange[0]); 
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
 					(int)log->acktime, nlencode(log->ackmsg));
@@ -543,6 +547,10 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",
 					(int)log->host->clientmsgtstamp);
+			}
+			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",
+					(int)log->flapping);
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
@@ -560,7 +568,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, log->origin, hostname, log->test->name, 
 				(int) log->validtime, colnames[log->color], 
-				colnames[log->oldcolor], (int) log->lastchange);
+				colnames[log->oldcolor], (int) log->lastchange[0]);
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
 					(int)log->enabletime, nlencode(log->dismsg));
@@ -620,7 +628,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
-					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
+					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange[0],
 					pagepath, log->cookie, osname, classname, 
 					(log->grouplist ? log->grouplist : ""),
 					msg);
@@ -984,6 +992,47 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		validity = durationvalue(msg+7);
 	}
 
+	/*
+	 * Flap check. 
+	 *
+	 * We check if more than LASTCHANGESZ changes have occurred 
+	 * within "flapthreshold" seconds. If yes, and the newcolor 
+	 * is less serious than the old color, then we ignore the
+	 * color change and keep the status at the more serious level.
+	 */
+	if (!issummary && ((now - log->lastchange[LASTCHANGESZ-1]) < flapthreshold)) {
+		if (!log->flapping) {
+			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
+				  hostname, testname, LASTCHANGESZ, (now - log->lastchange[LASTCHANGESZ-1]));
+			log->flapping = 1;
+			log->oldflapcolor = log->color;
+			log->currflapcolor = newcolor;
+		}
+		else {
+			log->oldflapcolor = log->currflapcolor;
+			log->currflapcolor = newcolor;
+		}
+
+		/* Make sure we maintain the most critical level reported by the flapping unit */
+		if (newcolor < log->color) newcolor = log->color;
+
+		/* 
+		 * If the status is actually changing, but we've detected it's a
+		 * flap and therefore suppress atatus change events, then we must
+		 * update the lastchange-times here because it won't be done in
+		 * the status-change handler.
+		 */
+		if ((log->oldflapcolor != log->currflapcolor) && (newcolor == log->color)) {
+			int i;
+			for (i=LASTCHANGESZ-1; (i > 0); i--)
+				log->lastchange[i] = log->lastchange[i-1];
+			log->lastchange[0] = now;
+		}
+	}
+	else {
+		log->flapping = 0;
+	}
+
 	if (log->enabletime == DISABLED_UNTIL_OK) {
 		/* The test is disabled until we get an OK status */
 		if ((newcolor != COL_BLUE) && (decide_alertstate(newcolor) == A_OK)) {
@@ -1066,7 +1115,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 		if ((oldalertstatus != A_OK) && (newalertstatus == A_OK)) {
 			/* The status recovered. Set the "clearack" timer */
-			time_t cleartime = getcurrenttime(NULL) + ACKCLEARDELAY;
+			time_t cleartime = now + ACKCLEARDELAY;
 			for (awalk = log->acklist; (awalk); awalk = awalk->next) awalk->cleartime = cleartime;
 		}
 		else if ((oldalertstatus == A_OK) && (newalertstatus != A_OK)) {
@@ -1167,11 +1216,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * (It is only seen as active if the color has been forced BLUE).
 		 */
 		if (!log->downtimeactive && (log->oldcolor != newcolor)) {
+			int i;
 			if (log->host->clientmsg && !log->host->clientmsgposted && (newalertstatus == A_ALERT) && log->test->clientsave) {
 				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
 						hostname, log, NULL);
 			}
-			log->lastchange = getcurrenttime(NULL);
+			for (i=LASTCHANGESZ-1; (i > 0); i--)
+				log->lastchange[i] = log->lastchange[i-1];
+			log->lastchange[0] = now;
 		}
 	}
 
@@ -1547,7 +1599,7 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 			fprintf(ackinfologfd, "%s %s %s %s %d %d %d %d %s\n",
 				timestamp, log->host->hostname, log->test->name,
 				newack->ackedby, newack->level, 
-				(int)log->lastchange, (int)newack->received, (int)newack->validuntil, 
+				(int)log->lastchange[0], (int)newack->received, (int)newack->validuntil, 
 				nlencode(newack->msg));
 			fflush(ackinfologfd);
 		}
@@ -2220,7 +2272,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_TESTNAME: bufp += sprintf(bufp, "%s", lwalk->test->name); break;
 		  case F_COLOR: bufp += sprintf(bufp, "%s", colnames[lwalk->color]); break;
 		  case F_FLAGS: bufp += sprintf(bufp, "%s", (lwalk->testflags ? lwalk->testflags : "")); break;
-		  case F_LASTCHANGE: bufp += sprintf(bufp, "%d", (int)lwalk->lastchange); break;
+		  case F_LASTCHANGE: bufp += sprintf(bufp, "%d", (int)lwalk->lastchange[0]); break;
 		  case F_LOGTIME: bufp += sprintf(bufp, "%d", (int)lwalk->logtime); break;
 		  case F_VALIDTIME: bufp += sprintf(bufp, "%d", (int)lwalk->validtime); break;
 		  case F_ACKTIME: bufp += sprintf(bufp, "%d", (int)lwalk->acktime); break;
@@ -2246,6 +2298,13 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 				char *infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
 				if (infostr) bufp += sprintf(bufp, "%s", infostr);
 			}
+			break;
+
+		  case F_FLAPINFO:
+			bufp += sprintf(bufp, "%d/%ld/%ld/%s/%s", 
+					lwalk->flapping, 
+					lwalk->lastchange[0], lwalk->lastchange[LASTCHANGESZ-1],
+					colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor]);
 			break;
 
 		  case F_LAST: break;
@@ -2726,7 +2785,7 @@ void do_message(conn_t *msg, char *origin)
 			bufp += sprintf(bufp, "  <Type>%s</Type>\n", log->test->name);
 			bufp += sprintf(bufp, "  <Status>%s</Status>\n", colnames[log->color]);
 			bufp += sprintf(bufp, "  <TestFlags>%s</TestFlags>\n", (log->testflags ? log->testflags : ""));
-			bufp += sprintf(bufp, "  <LastChange>%s</LastChange>\n", timestr(log->lastchange));
+			bufp += sprintf(bufp, "  <LastChange>%s</LastChange>\n", timestr(log->lastchange[0]));
 			bufp += sprintf(bufp, "  <LogTime>%s</LogTime>\n", timestr(log->logtime));
 			bufp += sprintf(bufp, "  <ValidTime>%s</ValidTime>\n", timestr(log->validtime));
 			bufp += sprintf(bufp, "  <AckTime>%s</AckTime>\n", timestr(log->acktime));
@@ -2947,7 +3006,7 @@ void do_message(conn_t *msg, char *origin)
 				bufp += sprintf(bufp, "    <Type>%s</Type>\n", lwalk->test->name);
 				bufp += sprintf(bufp, "    <Status>%s</Status>\n", colnames[lwalk->color]);
 				bufp += sprintf(bufp, "    <TestFlags>%s</TestFlags>\n", (lwalk->testflags ? lwalk->testflags : ""));
-				bufp += sprintf(bufp, "    <LastChange>%s</LastChange>\n", timestr(lwalk->lastchange));
+				bufp += sprintf(bufp, "    <LastChange>%s</LastChange>\n", timestr(lwalk->lastchange[0]));
 				bufp += sprintf(bufp, "    <LogTime>%s</LogTime>\n", timestr(lwalk->logtime));
 				bufp += sprintf(bufp, "    <ValidTime>%s</ValidTime>\n", timestr(lwalk->validtime));
 				bufp += sprintf(bufp, "    <AckTime>%s</AckTime>\n", timestr(lwalk->acktime));
@@ -3457,7 +3516,7 @@ void save_checkpoint(void)
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
 				colnames[lwalk->oldcolor],
-				(int)lwalk->logtime, (int) lwalk->lastchange, (int) lwalk->validtime, 
+				(int)lwalk->logtime, (int) lwalk->lastchange[0], (int) lwalk->validtime, 
 				(int) lwalk->enabletime, (int) lwalk->acktime, 
 				lwalk->cookie, (int) lwalk->cookieexpires,
 				nlencode(lwalk->message));
@@ -3707,7 +3766,7 @@ void load_checkpoint(char *fn)
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
-		ltail->lastchange = lastchange;
+		ltail->lastchange[0] = lastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
 		if (ltail->enabletime == DISABLED_UNTIL_OK) ltail->validtime = INT_MAX;
