@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.168 2007-06-11 14:40:13 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.169 2007-07-12 12:27:19 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -45,7 +45,7 @@ static time_t oldestentry;
 
 
 typedef struct logdata_t {
-	/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
+	/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|flap|1st line of message */
 	char *hostname;
 	char *testname;
 	int  color;
@@ -57,6 +57,7 @@ typedef struct logdata_t {
 	time_t disabletime;
 	char *sender;
 	int cookie;
+	int flapping;
 	char *msg;
 } logdata_t;
 
@@ -378,7 +379,7 @@ state_t *load_state(dispsummary_t **sumhead)
 	dbgprintf("load_state()\n");
 
 	if (!reportstart && !snapshot) {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,flapinfo,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
 	}
 	else {
 		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
@@ -425,7 +426,7 @@ state_t *load_state(dispsummary_t **sumhead)
 		p = gettok(onelog, "|"); i = 0;
 		while (p) {
 			switch (i) {
-			  /* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
+			  /* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|flapinfo|1st line of message|acklist */
 			  case  0: log.hostname = p; break;
 			  case  1: log.testname = p; break;
 			  case  2: log.color = parse_color(p); break;
@@ -437,8 +438,9 @@ state_t *load_state(dispsummary_t **sumhead)
 			  case  8: log.disabletime = atoi(p); break;
 			  case  9: log.sender = p; break;
 			  case 10: log.cookie = atoi(p); break;
-			  case 11: log.msg = p; break;
-			  case 12: acklist = p; break;
+			  case 11: log.flapping = (*p == '1');
+			  case 12: log.msg = p; break;
+			  case 13: acklist = p; break;
 			}
 
 			p = gettok(NULL, "|");
