@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.182 2007-04-02 08:45:34 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.183 2007-07-18 10:44:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -1148,7 +1148,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 			lognkstatus, colorname(bb2page.color), timestamp, colorname(bb2page.color));
 		addtostatus(msgline);
 
-		if (nklog) fprintf(nklog, "%u\t%s", (unsigned int)time(NULL), colorname(bb2page.color));
+		if (nklog) fprintf(nklog, "%u\t%s", (unsigned int)getcurrenttime(NULL), colorname(bb2page.color));
 
 		for (hwalk = bb2page.hosts; hwalk; hwalk = hwalk->next) {
 			msgptr = msgline;
