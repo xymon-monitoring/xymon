@@ -626,6 +626,14 @@ timestamp - you can define the format using the controls in the
 routine. E.g. to have it show up as "2004-08-24 21:59:47 +0200"
 you would set BBDATEFORMAT="%Y-%m-%d %H:%M:%S %z"
 
+.IP HOLIDAYFORMAT
+How holiday dates are displayed. The default is "%d/%m" which
+show the day and month. American users may want to change this 
+to "%m/%d" to suit their preferred date-display style. This
+is a formatting string for the system
+.I strftime(3)
+routine, so any controls available for this routine may be used.
+
 .IP MKBB2COLREPEAT
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
