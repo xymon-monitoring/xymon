@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: notifylog.c,v 1.4 2007-07-18 11:18:13 henrik Exp $";
+static char rcsid[] = "$Id: notifylog.c,v 1.5 2007-07-18 21:31:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -192,7 +192,7 @@ void do_notifylog(FILE *output,
 		char *hostname, *svcname, *p;
 		int itemsfound, pagematch, hostmatch, testmatch, rcptmatch;
 		notification_t *newrec;
-		struct namelist_t *eventhost;
+		void *eventhost;
 		struct htnames_t *eventcolumn;
 		int ovector[30];
 

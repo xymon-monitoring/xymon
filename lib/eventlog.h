@@ -13,7 +13,7 @@
 
 /* Format of records in the $BBHIST/allevents file */
 typedef struct event_t {
-	struct namelist_t *host;
+	void    *host;
 	struct htnames_t *service;
 	time_t	eventtime;
 	time_t	changetime;

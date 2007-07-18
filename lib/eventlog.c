@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.39 2007-07-18 11:18:13 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.40 2007-07-18 21:31:50 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -201,7 +201,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		char *newcolname, *oldcolname;
 		int state, itemsfound, pagematch, hostmatch, testmatch, colrmatch;
 		event_t *newevent;
-		struct namelist_t *eventhost;
+		void *eventhost;
 		struct htnames_t *eventcolumn;
 		int ovector[30];
 
