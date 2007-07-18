@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.169 2007-07-12 12:27:19 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.170 2007-07-18 21:20:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -93,7 +93,7 @@ int testflag_set(entry_t *e, char flag)
 
 int unwantedcolumn(char *hostname, char *testname)
 {
-	namelist_t *hinfo;
+	void *hinfo;
 	char *nc, *tok;
 	int result = 0;
 

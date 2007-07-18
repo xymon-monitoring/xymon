@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.15 2007-06-11 14:18:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.16 2007-07-18 21:20:15 henrik Exp $";
 
 #include "config.h"
 
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	struct sigaction sa;
-	namelist_t *hostwalk;
+	void *hostwalk;
 	time_t nexttimeout;
 
 	for (argi=1; (argi < argc); argi++) {
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
 			reloadtime = now + 600;
 
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-			for (hostwalk = first_host(); (hostwalk); hostwalk = hostwalk->next) {
+			for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk)) {
 				char *hname;
 				clients_t *newclient;
 

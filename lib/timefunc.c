@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.35 2007-07-18 10:41:31 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.36 2007-07-18 21:20:15 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -270,7 +270,7 @@ int within_sla(char *holidaykey, char *timespec, int defresult)
 #ifndef CLIENTONLY
 char *check_downtime(char *hostname, char *testname)
 {
-	namelist_t *hinfo = hostinfo(hostname);
+	void *hinfo = hostinfo(hostname);
 	char *dtag;
 	char *holkey;
 

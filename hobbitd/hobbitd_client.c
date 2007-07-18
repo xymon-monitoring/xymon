@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.111 2007-06-19 12:41:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.112 2007-07-18 21:20:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -129,9 +129,9 @@ int linecount(char *msg)
 	return result;
 }
 
-int want_msgtype(namelist_t *hinfo, enum msgtype_t msg)
+int want_msgtype(void *hinfo, enum msgtype_t msg)
 {
-	static namelist_t *currhost = NULL;
+	static void *currhost = NULL;
 	static unsigned long currset = 0;
 
 	if (currhost != hinfo) {
@@ -162,7 +162,7 @@ int want_msgtype(namelist_t *hinfo, enum msgtype_t msg)
 }
 
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
-		     namelist_t *hinfo, char *fromline, char *timestr, 
+		     void *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *clockstr, char *msgcachestr,
 		     char *whostr, int usercount, 
 		     char *psstr, int pscount, char *topstr)
@@ -361,7 +361,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
 
 void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
-		      namelist_t *hinfo, char *fromline, char *timestr, 
+		      void *hinfo, char *fromline, char *timestr, 
 		      char *freehdr, char *capahdr, char *mnthdr, char *dfstr)
 {
 	int diskcolor = COL_GREEN;
@@ -542,7 +542,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
-		        namelist_t *hinfo, char *fromline, char *timestr, 
+		        void *hinfo, char *fromline, char *timestr, 
 			long memphystotal, long memphysused, long memactused,
 			long memswaptotal, long memswapused)
 {
@@ -620,7 +620,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
-		       namelist_t *hinfo, char *fromline, char *timestr, 
+		       void *hinfo, char *fromline, char *timestr, 
 		       char *cmdhdr, char *altcmdhdr, char *psstr)
 {
 	int pscolor = COL_GREEN;
@@ -819,7 +819,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	clearstrbuffer(countdata);
 }
 
-static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
+static void old_msgs_report(char *hostname, void *hinfo, char *fromline, char *timestr, char *msgsstr)
 {
 	int msgscolor = COL_GREEN;
 	char msgline[4096];
@@ -853,7 +853,7 @@ static void old_msgs_report(char *hostname, namelist_t *hinfo, char *fromline, c
 }
 
 void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
-		 namelist_t *hinfo, char *fromline, char *timestr, char *msgsstr)
+		 void *hinfo, char *fromline, char *timestr, char *msgsstr)
 {
 	static strbuffer_t *greendata = NULL;
 	static strbuffer_t *yellowdata = NULL;
@@ -994,7 +994,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 void file_report(char *hostname, char *clientclass, enum ostype_t os,
-		 namelist_t *hinfo, char *fromline, char *timestr)
+		 void *hinfo, char *fromline, char *timestr)
 {
 	static strbuffer_t *greendata = NULL;
 	static strbuffer_t *yellowdata = NULL;
@@ -1175,7 +1175,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
-			namelist_t *hinfo, char *fromline, char *timestr)
+			void *hinfo, char *fromline, char *timestr)
 {
 	static strbuffer_t *countdata = NULL;
 	sectlist_t *swalk;
@@ -1218,7 +1218,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 
 
 void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
-		 	 namelist_t *hinfo, char *fromline, char *timestr,
+		 	 void *hinfo, char *fromline, char *timestr,
 			 char *netstatstr)
 {
 	strbuffer_t *msg;
@@ -1236,7 +1236,7 @@ void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
-		 	namelist_t *hinfo, char *fromline, char *timestr,
+		 	void *hinfo, char *fromline, char *timestr,
 			char *ifstatstr)
 {
 	strbuffer_t *msg;
@@ -1254,7 +1254,7 @@ void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
 }
 
 void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
-		 	namelist_t *hinfo, char *fromline, char *timestr,
+		 	void *hinfo, char *fromline, char *timestr,
 			char *vmstatstr)
 {
 	strbuffer_t *msg;
@@ -1282,7 +1282,7 @@ void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
 
 
 void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
-		       namelist_t *hinfo, char *fromline, char *timestr, 
+		       void *hinfo, char *fromline, char *timestr, 
 		       int localcol, int remotecol, int statecol, char *portstr)
 {
 	int portcolor = -1;
@@ -1444,7 +1444,7 @@ void clean_instr(char *s)
 
 void testmode(char *configfn)
 {
-	namelist_t *hinfo, *oldhinfo = NULL;
+	void *hinfo, *oldhinfo = NULL;
 	char hostname[1024], clientclass[1024];
 	char s[4096];
 	int cfid;
@@ -1784,7 +1784,7 @@ int main(int argc, char *argv[])
 			char *clientos = metadata[4];
 			char *clientclass = metadata[5];
 			enum ostype_t os;
-			namelist_t *hinfo = NULL;
+			void *hinfo = NULL;
 
 			dbgprintf("Client report from host %s\n", (hostname ? hostname : "<unknown>"));
 

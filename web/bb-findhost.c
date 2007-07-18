@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.34 2006-08-11 13:07:52 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.35 2007-07-18 21:20:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -118,7 +118,7 @@ void print_footer(void)
 
 int main(int argc, char *argv[])
 {
-	namelist_t *hosthead, *hostwalk, *clonewalk;
+	void *hostwalk, *clonewalk;
 	int argi;
 	char *envarea = NULL;
 
@@ -171,8 +171,8 @@ int main(int argc, char *argv[])
 	}
 
 	outbuf = newstrbuffer(0);
-	hosthead = load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	hostwalk = hosthead;
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	hostwalk = first_host();
 	while (hostwalk) {
 		/* 
 		 * [wm] - Allow the search to be done on the hostname
@@ -218,15 +218,15 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			clonewalk = hostwalk->next;
-			while (clonewalk && (strcmp(hostwalk->bbhostname, clonewalk->bbhostname) == 0)) {
+			clonewalk = next_host(hostwalk);
+			while (clonewalk && (strcmp(bbh_item(hostwalk, BBH_HOSTNAME), bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
 				sprintf(msgline, "<br><a href=\"%s/%s/#%s\">%s</a>\n",
 					xgetenv("BBWEB"), 
 					bbh_item(clonewalk, BBH_PAGEPATH),
-					clonewalk->bbhostname,
+					bbh_item(clonewalk, BBH_HOSTNAME),
 					bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 				addtobuffer(outbuf, msgline);
-				clonewalk = clonewalk->next;
+				clonewalk = next_host(clonewalk);
 				gotany++;
 			}
 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 			hostwalk = clonewalk;
 		}
 		else {
-			hostwalk = hostwalk->next;
+			hostwalk = next_host(hostwalk);
 		}
 	}
 	regfree (&re); 	/*[wm] - free regex compiled patern */

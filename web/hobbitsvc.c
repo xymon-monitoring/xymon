@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.79 2007-07-12 12:27:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.80 2007-07-18 21:20:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -143,7 +143,7 @@ static int parse_query(void)
 
 void loadhostdata(char *hostname, char **ip, char **displayname)
 {
-	namelist_t *hinfo = NULL;
+	void *hinfo = NULL;
 
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 

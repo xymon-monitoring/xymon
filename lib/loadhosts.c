@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.70 2007-07-18 11:18:13 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.71 2007-07-18 21:20:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -22,6 +22,39 @@ static char rcsid[] = "$Id: loadhosts.c,v 1.70 2007-07-18 11:18:13 henrik Exp $"
 #include <time.h>
 
 #include "libbbgen.h"
+
+typedef struct pagelist_t {
+	char *pagepath;
+	char *pagetitle;
+	struct pagelist_t *next;
+} pagelist_t;
+
+typedef struct namelist_t {
+	char ip[IP_ADDR_STRLEN];
+	char *bbhostname;	/* Name for item 2 of bb-hosts */
+	char *logname;		/* Name of the host directory in BBHISTLOGS (underscores replaces dots). */
+	int preference;		/* For host with multiple entries, mark if we have the preferred one */
+	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
+	void *data;		/* Misc. data supplied by the user of this library function */
+	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */
+	int pageindex;
+	char *groupid;
+	char *classname;
+	char *osname;
+	struct namelist_t *next;
+
+	char *rawentry;		/* The raw bb-hosts entry for this host. */
+	char *allelems;		/* Storage for data pointed to by elems */
+	char **elems;		/* List of pointers to the elements of the entry */
+
+	/* 
+	 * The following are pre-parsed elements from the "rawentry".
+	 * These are pre-parsed because they are used by the hobbit daemon, so
+	 * fast access to them is an optimization.
+	 */
+	char *clientname;	/* CLIENT: tag - host alias */
+	char *downtime;		/* DOWNTIME tag - when host has planned downtime. */
+} namelist_t;
 
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
@@ -321,7 +354,7 @@ int knownloghost(char *logdir)
 	return (walk != NULL);
 }
 
-namelist_t *hostinfo(char *hostname)
+void *hostinfo(char *hostname)
 {
 	RbtIterator hosthandle;
 	namelist_t *result = NULL;
@@ -339,7 +372,7 @@ namelist_t *hostinfo(char *hostname)
 	return result;
 }
 
-namelist_t *localhostinfo(char *hostname)
+void *localhostinfo(char *hostname)
 {
 	/* Returns a static fake hostrecord */
 	static namelist_t *result = NULL;
@@ -376,13 +409,14 @@ namelist_t *localhostinfo(char *hostname)
 	return result;
 }
 
-char *bbh_item(namelist_t *host, enum bbh_item_t item)
+char *bbh_item(void *hostin, enum bbh_item_t item)
 {
 	static char *result;
 	static char intbuf[10];
 	static char *inttxt = NULL;
 	static strbuffer_t *rawtxt = NULL;
 	char *p;
+	namelist_t *host = (namelist_t *)hostin;
 	namelist_t *hwalk;
 
 	if (rawtxt == NULL) rawtxt = newstrbuffer(0);
@@ -477,6 +511,9 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 		  if (!p) p = getenv("HOLIDAYS");
 		  return p;
 
+	  case BBH_DATA:
+		  return host->data;
+
 	  default:
 		  return bbh_find_item(host, item);
 	}
@@ -484,9 +521,10 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	return NULL;
 }
 
-char *bbh_custom_item(namelist_t *host, char *key)
+char *bbh_custom_item(void *hostin, char *key)
 {
 	int i;
+	namelist_t *host = (namelist_t *)hostin;
 
 	i = 0;
 	while (host->elems[i] && strncmp(host->elems[i], key, strlen(key))) i++;
@@ -504,19 +542,21 @@ enum bbh_item_t bbh_key_idx(char *item)
 	return (bbh_item_name[i] ? i : BBH_LAST);
 }
 
-char *bbh_item_byname(namelist_t *host, char *item)
+char *bbh_item_byname(void *hostin, char *item)
 {
 	enum bbh_item_t i;
+	namelist_t *host = (namelist_t *)hostin;
 
 	i = bbh_key_idx(item);
 	return ((i == -1) ? NULL : bbh_item(host, i));
 }
 
-char *bbh_item_walk(namelist_t *host)
+char *bbh_item_walk(void *hostin)
 {
 	static int idx = -1;
 	static namelist_t *curhost = NULL;
 	char *result;
+	namelist_t *host = (namelist_t *)hostin;
 
 	if ((host == NULL) && (idx == -1)) return NULL; /* Programmer failure */
 	if (host != NULL) { idx = 0; curhost = host; }
@@ -543,23 +583,35 @@ char *bbh_item_id(enum bbh_item_t idx)
 	return NULL;
 }
 
-namelist_t *first_host(void)
+void *first_host(void)
 {
 	return namehead;
 }
 
-
-void bbh_set_item(namelist_t *host, enum bbh_item_t item, char *value)
+void *next_host(void *currenthost)
 {
+	if (currenthost) return ((namelist_t *)currenthost)->next;
+
+	return NULL;
+}
+
+void bbh_set_item(void *hostin, enum bbh_item_t item, void *value)
+{
+	namelist_t *host = (namelist_t *)hostin;
+
 	switch (item) {
 	  case BBH_CLASS:
 		if (host->classname) xfree(host->classname);
-		host->classname = strdup(value);
+		host->classname = strdup((char *)value);
 		break;
 
 	  case BBH_OS:
 		if (host->osname) xfree(host->osname);
-		host->osname = strdup(value);
+		host->osname = strdup((char *)value);
+		break;
+
+	  case BBH_DATA:
+		host->data = value;
 		break;
 
 	  default:
@@ -568,8 +620,9 @@ void bbh_set_item(namelist_t *host, enum bbh_item_t item, char *value)
 }
 
 
-char *bbh_item_multi(namelist_t *host, enum bbh_item_t item)
+char *bbh_item_multi(void *hostin, enum bbh_item_t item)
 {
+	namelist_t *host = (namelist_t *)hostin;
 	static namelist_t *keyhost = NULL, *curhost = NULL;
 
 	if (item == BBH_LAST) return NULL;
@@ -592,10 +645,10 @@ char *bbh_item_multi(namelist_t *host, enum bbh_item_t item)
 int main(int argc, char *argv[])
 {
 	int argi;
-	namelist_t *hosts, *h;
+	namelist_t *h;
 	char *val;
 
-	hosts = load_hostnames(argv[1], NULL, get_fqdn());
+	load_hostnames(argv[1], NULL, get_fqdn());
 
 	for (argi = 2; (argi < argc); argi++) {
 		char s[1024];
@@ -628,7 +681,7 @@ handlehost:
 			printf("Pick item:"); fflush(stdout); fgets(s, sizeof(s), stdin);
 			p = strchr(s, '\n'); if (p) *p = '\0';
 			if (*s == '!') {
-				hosts = load_hostnames(argv[1], NULL, get_fqdn());
+				load_hostnames(argv[1], NULL, get_fqdn());
 				/* Must restart! The "h" handle is no longer valid. */
 				goto handlehost;
 			}

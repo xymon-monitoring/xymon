@@ -10,10 +10,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char darwin_rcsid[] = "$Id: darwin.c,v 1.12 2007-01-16 10:02:58 henrik Exp $";
+static char darwin_rcsid[] = "$Id: darwin.c,v 1.13 2007-07-18 21:20:15 henrik Exp $";
 
 void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os, 
-			  namelist_t *hinfo, char *sender, time_t timestamp, 
+			  void *hinfo, char *sender, time_t timestamp, 
 			  char *clientdata)
 {
 	char *timestr;

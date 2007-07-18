@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.28 2006-10-03 10:47:49 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.29 2007-07-18 21:20:15 henrik Exp $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -45,7 +45,7 @@ static int pagematch(pagelist_t *pg, char *name)
 	}
 }
 
-namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
+void load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 {
 	static void *bbhfiles = NULL;
 	FILE *bbhosts;
@@ -60,7 +60,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	if (bbhfiles) {
 		if (!stackfmodified(bbhfiles)){
 			dbgprintf("No files modified, skipping reload of %s\n", bbhostsfn);
-			return namehead;
+			return;
 		}
 		else {
 			stackfclist(&bbhfiles);
@@ -77,7 +77,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	pageidx = groupid = 0;
 
 	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
-	if (bbhosts == NULL) return NULL;
+	if (bbhosts == NULL) return;
 
 	inbuf = newstrbuffer(0);
 	htree = rbtNew(name_compare);
@@ -295,6 +295,6 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 
 	build_hosttree();
 
-	return namehead;
+	return;
 }
 

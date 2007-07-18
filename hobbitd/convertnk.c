@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: convertnk.c,v 1.1 2006-09-12 21:27:11 henrik Exp $";
+static char rcsid[] = "$Id: convertnk.c,v 1.2 2007-07-18 21:20:15 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -19,11 +19,11 @@ static char rcsid[] = "$Id: convertnk.c,v 1.1 2006-09-12 21:27:11 henrik Exp $";
 
 int main(int argc, char *argv[])
 {
-	namelist_t *walk;
+	void *walk;
 
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
-	for (walk = first_host(); (walk); walk=walk->next) {
+	for (walk = first_host(); (walk); walk=next_host(walk)) {
 		char *nk, *nktime, *tok;
 
 		nk = bbh_item(walk, BBH_NK); if (!nk) continue;

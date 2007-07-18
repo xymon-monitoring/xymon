@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.90 2007-06-11 14:36:43 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.91 2007-07-18 21:20:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -598,7 +598,7 @@ void add_http_test(testitem_t *t)
 	}
 	{
 		char useragent[100];
-		namelist_t *hinfo;
+		void *hinfo;
 		char *browser = NULL;
 
 		hinfo = hostinfo(t->host->hostname);

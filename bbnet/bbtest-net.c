@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.247 2007-06-25 13:06:39 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.248 2007-07-18 21:20:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -351,7 +351,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 }
 
 
-int wanted_host(namelist_t *host, char *netstring)
+int wanted_host(void *host, char *netstring)
 {
 	char *netlocation = bbh_item(host, BBH_NET);
 
@@ -364,7 +364,7 @@ int wanted_host(namelist_t *host, char *netstring)
 		int i;
 
 		for (i=0; (i < selectedcount); i++) {
-			if (strcmp(selectedhosts[i], host->bbhostname) == 0) return 1;
+			if (strcmp(selectedhosts[i], bbh_item(host, BBH_HOSTNAME)) == 0) return 1;
 		}
 	}
 
@@ -375,14 +375,10 @@ int wanted_host(namelist_t *host, char *netstring)
 void load_tests(void)
 {
 	char *p, *routestring = NULL;
-	namelist_t *hosts, *hwalk;
+	void *hosts, *hwalk;
 	testedhost_t *h;
 
-	hosts = load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
-	if (hosts == NULL) {
-		errprintf("Cannot load bb-hosts\n");
-		return;
-	}
+	load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
 
 	/* Each network test tagged with NET:locationname */
 	if (strlen(location) > 0) {
@@ -390,14 +386,14 @@ void load_tests(void)
 		sprintf(routestring, "route_%s:", location);
 	}
 
-	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk)) {
 		int anytests = 0;
 		int ping_dialuptest = 0, ping_reversetest = 0;
 		char *testspec;
 
 		if (!wanted_host(hwalk, location)) continue;
 
-		h = init_testedhost(hwalk->bbhostname);
+		h = init_testedhost(bbh_item(hwalk, BBH_HOSTNAME));
 
 		p = bbh_custom_item(hwalk, "badconn:");
 		if (p) sscanf(p+strlen("badconn:"), "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);

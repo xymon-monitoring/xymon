@@ -11,10 +11,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.4 2007-01-16 10:02:58 henrik Exp $";
+static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.5 2007-07-18 21:20:15 henrik Exp $";
 
 void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os, 
-			  namelist_t *hinfo, char *sender, time_t timestamp,
+			  void *hinfo, char *sender, time_t timestamp,
 			  char *clientdata)
 {
         char *timestr;

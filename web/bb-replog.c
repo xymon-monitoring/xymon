@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-replog.c,v 1.40 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-replog.c,v 1.41 2007-07-18 21:20:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 	reportinfo_t repinfo;
 	int argi;
 	char *envarea = NULL;
-	namelist_t *hinfo;
+	void *hinfo;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {

@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadalerts.c,v 1.20 2007-07-18 11:18:13 henrik Exp $";
+static char rcsid[] = "$Id: loadalerts.c,v 1.21 2007-07-18 21:20:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -767,7 +767,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
 	int result, cfid = 0;
 	char *pgtok, *cfline = NULL;
-	namelist_t *hinfo = hostinfo(alert->hostname);
+	void *hinfo = hostinfo(alert->hostname);
 
 	/* The top-level page needs a name - cannot match against an empty string */
 	if (pgnames) xfree(pgnames);

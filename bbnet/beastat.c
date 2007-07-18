@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.7 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.8 2007-07-18 21:20:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -79,7 +79,7 @@ static void find_idxes(char *buf, char *searchstr)
         }
 }
 
-int wanted_host(namelist_t *host, char *netstring)
+int wanted_host(void *host, char *netstring)
 {
 	char *netlocation = bbh_item(host, BBH_NET);
 
@@ -141,7 +141,7 @@ char *qitems[] = {
 	NULL
 };
 
-void send_data(namelist_t *host, char *beadomain, char *databuf, char **items)
+void send_data(void *host, char *beadomain, char *databuf, char **items)
 {
 	bea_idx_t *idxwalk;
 	strbuffer_t *msgbuf;
@@ -174,7 +174,7 @@ void send_data(namelist_t *host, char *beadomain, char *databuf, char **items)
 
 int main(int argc, char *argv[])
 {
-        namelist_t *hosts, *hwalk;
+        void *hosts, *hwalk;
 	int argi;
 	strbuffer_t *statusmsg, *jrockout, *qout;
 
@@ -209,11 +209,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-        hosts = load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
-        if (hosts == NULL) {
-                errprintf("Cannot load bb-hosts\n");
-                return 1;
-        }
+        load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
 
         if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
 
@@ -223,7 +219,7 @@ int main(int argc, char *argv[])
 	jrockout = newstrbuffer(0);
 	qout = newstrbuffer(0);
 
-	for (hwalk = hosts; (hwalk); hwalk = hwalk->next) {
+	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk)) {
 		char *tspec = bbh_custom_item(hwalk, "bea=");
 		char *snmpcommunity = default_community;
 		char *beadomain = "";

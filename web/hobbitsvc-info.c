@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.117 2007-07-18 13:54:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.118 2007-07-18 21:20:15 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -207,7 +207,7 @@ static int fetch_status(char *hostname)
 
 static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 {
-	namelist_t *hi = hostinfo(hostname);
+	void *hi = hostinfo(hostname);
 	activealerts_t *alert;
 	char l[1024];
 	int i, rcount;
@@ -245,7 +245,7 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 
 static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
 {
-	namelist_t *hi = hostinfo(hostname);
+	void *hi = hostinfo(hostname);
 	char l[1024];
 
 	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", hostname);
@@ -613,9 +613,8 @@ char *generate_info(char *hostname)
 {
 	strbuffer_t *infobuf;
 	char l[MAX_LINE_LEN];
-	namelist_t *hostwalk;
+	void *hostwalk, *clonewalk;
 	char *val;
-	namelist_t *clonewalk;
 	int ping, first, gotstatus;
 	int alertcolors, alertinterval;
 
@@ -707,13 +706,13 @@ char *generate_info(char *hostname)
 		xgetenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 	addtobuffer(infobuf, l);
 
-	clonewalk = hostwalk->next;
-	while (clonewalk && (strcmp(hostname, clonewalk->bbhostname) == 0)) {
+	clonewalk = next_host(hostwalk);
+	while (clonewalk && (strcmp(hostname, bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
 		val = bbh_item(clonewalk, BBH_PAGEPATH);
 		sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
 			xgetenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 		addtobuffer(infobuf, l);
-		clonewalk = clonewalk->next;
+		clonewalk = next_host(clonewalk);
 	}
 	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");

@@ -10,10 +10,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbwin_rcsid[] = "$Id: bbwin.c,v 1.1 2007-01-26 09:53:59 henrik Exp $";
+static char bbwin_rcsid[] = "$Id: bbwin.c,v 1.2 2007-07-18 21:20:15 henrik Exp $";
 
 void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t os, 
-				namelist_t *hinfo, char *sender, time_t timestamp,
+				void *hinfo, char *sender, time_t timestamp,
 				char *clientdata)
 {
 	/* Stub routine for the BBWin backend parser. Waiting for Etienne to provide this. */

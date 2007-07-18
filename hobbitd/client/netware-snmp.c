@@ -10,10 +10,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.6 2007-06-11 14:41:36 henrik Exp $";
+static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.7 2007-07-18 21:20:15 henrik Exp $";
 
 void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t os, 
-				namelist_t *hinfo, char *sender, time_t timestamp,
+				void *hinfo, char *sender, time_t timestamp,
 				char *clientdata)
 {
 	char *nlmstr;

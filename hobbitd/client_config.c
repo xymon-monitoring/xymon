@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.56 2007-07-18 11:18:13 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.57 2007-07-18 21:20:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1192,7 +1192,7 @@ void dump_client_config(void)
 	}
 }
 
-static c_rule_t *getrule(char *hostname, char *pagename, char *classname, namelist_t *hinfo, ruletype_t ruletype)
+static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *hinfo, ruletype_t ruletype)
 {
 	static ruleset_t *rwalk = NULL;
 
@@ -1214,7 +1214,7 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, nameli
 	return NULL;
 }
 
-int get_cpu_thresholds(namelist_t *hinfo, char *classname, 
+int get_cpu_thresholds(void *hinfo, char *classname, 
 		       float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit, int *maxclockdiff)
 {
 	int result = 0;
@@ -1253,7 +1253,7 @@ int get_cpu_thresholds(namelist_t *hinfo, char *classname,
 	return result;
 }
 
-int get_disk_thresholds(namelist_t *hinfo, char *classname, 
+int get_disk_thresholds(void *hinfo, char *classname, 
 			char *fsname, 
 			long *warnlevel, long *paniclevel, 
 			int *abswarn, int *abspanic,
@@ -1290,7 +1290,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 	return 0;
 }
 
-void get_memory_thresholds(namelist_t *hinfo, char *classname,
+void get_memory_thresholds(void *hinfo, char *classname,
 			   int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
 {
 	char *hostname, *pagename;
@@ -1336,7 +1336,7 @@ void get_memory_thresholds(namelist_t *hinfo, char *classname,
 	}
 }
 
-int scan_log(namelist_t *hinfo, char *classname, 
+int scan_log(void *hinfo, char *classname, 
 	     char *logname, char *logdata, char *section, strbuffer_t *summarybuf)
 {
 	int result = COL_GREEN;
@@ -1404,7 +1404,7 @@ int scan_log(namelist_t *hinfo, char *classname,
 	return result;
 }
 
-int check_file(namelist_t *hinfo, char *classname, 
+int check_file(void *hinfo, char *classname, 
 	       char *filename, char *filedata, char *section, 
 	       strbuffer_t *summarybuf, off_t *filesize, 
 	       char **id, int *trackit, int *anyrules)
@@ -1726,7 +1726,7 @@ nextcheck:
 	return result;
 }
 
-int check_dir(namelist_t *hinfo, char *classname, 
+int check_dir(void *hinfo, char *classname, 
 	      char *filename, char *filedata, char *section, 
 	      strbuffer_t *summarybuf, unsigned long *dirsize, 
 	      char **id, int *trackit)
@@ -1813,7 +1813,7 @@ typedef struct mon_proc_t {
 	struct mon_proc_t *next;
 } mon_proc_t;
 
-static int clear_counts(namelist_t *hinfo, char *classname, ruletype_t ruletype, 
+static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype, 
 			mon_proc_t **head, mon_proc_t **tail, mon_proc_t **walk)
 {
 	char *hostname, *pagename;
@@ -2039,17 +2039,17 @@ static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
 static mon_proc_t *dhead = NULL, *dtail = NULL, *dmonwalk = NULL;
 static mon_proc_t *porthead = NULL, *porttail = NULL, *portmonwalk = NULL;
 
-int clear_process_counts(namelist_t *hinfo, char *classname)
+int clear_process_counts(void *hinfo, char *classname)
 {
 	return clear_counts(hinfo, classname, C_PROC, &phead, &ptail, &pmonwalk);
 }
 
-int clear_disk_counts(namelist_t *hinfo, char *classname)
+int clear_disk_counts(void *hinfo, char *classname)
 {
 	return clear_counts(hinfo, classname, C_DISK, &dhead, &dtail, &dmonwalk);
 }
 
-int clear_port_counts(namelist_t *hinfo, char *classname)
+int clear_port_counts(void *hinfo, char *classname)
 {
 	return clear_counts(hinfo, classname, C_PORT, &porthead, &porttail, &portmonwalk);
 }

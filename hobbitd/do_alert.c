@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.97 2007-06-11 14:21:07 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.98 2007-07-18 21:20:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -418,7 +418,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				scriptpid = fork();
 				if (scriptpid == 0) {
 					/* Setup all of the environment for a paging script */
-					namelist_t *hinfo;
+					void *hinfo;
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
 					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;

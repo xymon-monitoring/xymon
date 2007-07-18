@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.93 2007-07-18 11:18:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.94 2007-07-18 21:20:15 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--test")) {
 			char *testhost = NULL, *testservice = NULL, *testpage = NULL, 
 			     *testcolor = "red", *testgroups = NULL;
-			namelist_t *hinfo;
+			void *hinfo;
 			int testdur = 0;
 			FILE *logfd = NULL;
 			activealerts_t *awalk = NULL;

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-datepage.c,v 1.18 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-datepage.c,v 1.19 2007-07-18 21:20:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 			cookie = get_cookie("host");
 
 			if (cookie && *cookie) {
-				namelist_t *hinfo;
+				void *hinfo;
 
 				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 				hinfo = hostinfo(cookie);

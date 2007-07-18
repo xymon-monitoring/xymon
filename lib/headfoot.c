@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.57 2007-06-11 14:39:09 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.58 2007-07-18 21:20:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -278,9 +278,9 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 }
 
 
-static namelist_t *wanted_host(char *hostname)
+static void *wanted_host(char *hostname)
 {
-	namelist_t *hinfo = hostinfo(hostname);
+	void *hinfo = hostinfo(hostname);
 	int result, ovector[30];
 
 	if (!hinfo) return NULL;
@@ -1061,7 +1061,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 
 		else if (hostenv_hikey && (strncmp(t_start, "BBH_", 4) == 0)) {
-			namelist_t *hinfo = hostinfo(hostenv_hikey);
+			void *hinfo = hostinfo(hostenv_hikey);
 			if (hinfo) {
 				char *s = bbh_item_byname(hinfo, t_start);
 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.20 2007-07-18 21:13:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.21 2007-07-18 21:20:15 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -169,7 +169,7 @@ char *nkval(char *hname, char *tname, char *nkalerts)
 static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 {
 	int testi, rowcount, netcount;
-	namelist_t *hinfo = hostinfo(host->hostname);
+	void *hinfo = hostinfo(host->hostname);
 	char *dispname = NULL, *clientalias = NULL, *comment = NULL, *description = NULL, *pagepathtitle = NULL;
 	char *net = NULL, *nkalerts = NULL;
 	char *nktime = NULL, *downtime = NULL, *reporttime = NULL;
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
 		tname = strchr(nexthost, '|'); if (tname) { *tname = '\0'; tname++; }
 
 		if (nkonly) {
-			namelist_t *hinfo = hostinfo(hname);
+			void *hinfo = hostinfo(hname);
 			char *nkalerts = bbh_item(hinfo, BBH_NK);
 
 			if (!nkalerts || (strcmp(nkval(hname, tname, nkalerts), "No") == 0)) wanted = 0;
