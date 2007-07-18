@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.37 2006-07-20 22:07:47 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.38 2007-07-18 10:24:04 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -104,7 +104,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
 	time_t firstevent = 0;
-	time_t lastevent = time(NULL);
+	time_t lastevent = getcurrenttime(NULL);
 	event_t	*eventhead, *walk;
 	struct stat st;
 	char l[MAX_LINE_LEN];
@@ -136,10 +136,10 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		}
 	}
 	else if (maxminutes) {
-		firstevent = time(NULL) - maxminutes*60;
+		firstevent = getcurrenttime(NULL) - maxminutes*60;
 	}
 	else {
-		firstevent = time(NULL) - 86400;
+		firstevent = getcurrenttime(NULL) - 86400;
 	}
 
 	if (totime) {
@@ -308,7 +308,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 
 		if (maxminutes)  { 
 			sprintf(title, "%d events received in the past %u minutes", 
-				count, (unsigned int)((time(NULL) - lasttoshow->eventtime) / 60));
+				count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
 		}
 		else {
 			sprintf(title, "%d events received.", count);
@@ -347,10 +347,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 				xgetenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(hostname, walk->service->name, walk->eventtime, NULL));
-			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
+			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A></TD>\n", 
 				xgetenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
 				colorname(walk->newcolor), colorname(walk->newcolor));
+			fprintf(output, "</TR>\n");
 		}
 
 		fprintf(output, "</TABLE>\n");
