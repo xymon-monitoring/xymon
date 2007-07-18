@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.34 2007-04-02 09:05:55 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.35 2007-07-18 10:41:31 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -22,26 +22,46 @@ static char rcsid[] = "$Id: timefunc.c,v 1.34 2007-04-02 09:05:55 henrik Exp $";
 
 #include "libbbgen.h"
 
+/* Make sure we get the *real* time() function */
 #ifdef time
 #undef time
 #endif
 
 time_t fakestarttime = 0;
+time_t timewarp = 0;
 
 time_t getcurrenttime(time_t *retparm)
 {
 	static time_t firsttime = 0;
+	static time_t lastresult = 0;
+	time_t now, result;
+
+	result = now = time(NULL);
 
 	if (fakestarttime != 0) {
-		time_t result;
-
-		if (firsttime == 0) firsttime = time(NULL);
-		result = fakestarttime + (time(NULL) - firsttime);
-		if (retparm) *retparm = result;
-		return result;
+		if (firsttime == 0) firsttime = now;
+		result = fakestarttime + (now - firsttime);
 	}
-	else
-		return time(retparm);
+
+	if (result < lastresult) {
+		/*
+		 * Einstein says clocks cannot go backwards.
+		 * But it just did. Lets assume time is now the same as the last
+		 * time this function was called, and adjust future calls by
+		 * the necessary amount of seconds to make sure clock never goes
+		 * back in time.
+		 */
+		timewarp = (lastresult - result);
+		errprintf("Time warp detected: Adjusting returned clock by %d seconds\n", timewarp);
+	}
+
+	result += timewarp;
+
+	/* We're done. Save the result for next time to catch clock going backwards. */
+	lastresult = result;
+
+	if (retparm) *retparm = result;
+	return result;
 }
 
 

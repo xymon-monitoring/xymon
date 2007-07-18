@@ -12,6 +12,7 @@
 #define __TIMEFUNC_H__
 
 extern time_t fakestarttime;
+extern time_t timewarp;
 extern char *timestamp;
 
 extern time_t getcurrenttime(time_t *retparm);
