@@ -170,6 +170,7 @@ MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headi
 MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
 MKBBTITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the BB titles (the old "ivory" is invalid HTML)
 BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
+HOLIDAYFORMAT="%d/%m"				# How holiday dates are displayed
 BBRSSTITLE="Hobbit Alerts"			# Title for the RSS and WML outputs.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
 

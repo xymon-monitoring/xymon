@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.5 2007-06-11 14:39:09 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.6 2007-07-18 21:47:42 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -550,8 +550,11 @@ char *isholiday(char *key, int dayinyear, int year)
 void printholidays(char *key, int year, strbuffer_t *buf)
 {
 	int day;
-
+	char *fmt;
 	char oneh[1024];
+	char dstr[1024];
+
+	fmt = xgetenv("HOLIDAYFORMAT");
 
 	if (year == 0) {
 		struct tm tm;
@@ -579,10 +582,9 @@ void printholidays(char *key, int year, strbuffer_t *buf)
 			 */
 			tm.tm_mon = 0; tm.tm_mday = day+1; tm.tm_year = year;
 			tm.tm_hour = 12; tm.tm_min = 0; tm.tm_sec = 0;
-
 			t = mktime(&tm);
-			memcpy(&tm, localtime(&t), sizeof(struct tm));
-			sprintf(oneh, "<tr><td>%s</td><td>%02d/%02d</td>\n", desc, tm.tm_mday, tm.tm_mon+1);
+			strftime(dstr, sizeof(dstr), fmt, localtime(&t));
+			sprintf(oneh, "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
 			addtobuffer(buf, oneh);
 		}
 	}
