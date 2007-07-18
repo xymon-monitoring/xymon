@@ -62,6 +62,7 @@ enum bbh_item_t {
 	BBH_PAGEPATH,
 	BBH_PAGETITLE,
 	BBH_PAGEPATHTITLE,
+	BBH_ALLPAGEPATHS,
 	BBH_RAW,
 	BBH_CLASS,
 	BBH_OS,
@@ -116,6 +117,7 @@ extern int bbh_item_idx(char *value);
 extern char *bbh_item_id(enum bbh_item_t idx);
 extern namelist_t *first_host(void);
 extern void bbh_set_item(namelist_t *host, enum bbh_item_t item, char *value);
+extern char *bbh_item_multi(namelist_t *host, enum bbh_item_t item);
 
 #endif
 

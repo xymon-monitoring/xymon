@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.69 2007-05-02 11:37:53 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.70 2007-07-18 11:18:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -141,6 +141,7 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_PAGEPATH]            = "BBH_PAGEPATH";
 	bbh_item_name[BBH_PAGETITLE]           = "BBH_PAGETITLE";
 	bbh_item_name[BBH_PAGEPATHTITLE]       = "BBH_PAGEPATHTITLE";
+	bbh_item_name[BBH_ALLPAGEPATHS]        = "BBH_ALLPAGEPATHS";
 	bbh_item_name[BBH_GROUPID]             = "BBH_GROUPID";
 	bbh_item_name[BBH_PAGEINDEX]           = "BBH_PAGEINDEX";
 	bbh_item_name[BBH_RAW]                 = "BBH_RAW";
@@ -156,6 +157,8 @@ static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 {
 	int i;
 	char *result;
+
+	if (item == BBH_LAST) return NULL;	/* Unknown item requested */
 
 	bbh_item_list_setup();
 	i = 0;
@@ -380,6 +383,7 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	static char *inttxt = NULL;
 	static strbuffer_t *rawtxt = NULL;
 	char *p;
+	namelist_t *hwalk;
 
 	if (rawtxt == NULL) rawtxt = newstrbuffer(0);
 	if (inttxt == NULL) inttxt = (char *)malloc(10);
@@ -425,6 +429,16 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 	  case BBH_PAGEINDEX:
 		  sprintf(intbuf, "%d", host->pageindex);
 		  return intbuf;
+
+	  case BBH_ALLPAGEPATHS:
+		  if (rawtxt) clearstrbuffer(rawtxt);
+		  hwalk = host;
+		  while (hwalk && (strcmp(hwalk->bbhostname, host->bbhostname) == 0)) {
+			if (STRBUFLEN(rawtxt) > 0) addtobuffer(rawtxt, ",");
+			addtobuffer(rawtxt, hwalk->page->pagepath);
+			hwalk = hwalk->next;
+		  }
+		  return STRBUF(rawtxt);
 
 	  case BBH_GROUPID:
 		  return host->groupid;
@@ -554,6 +568,25 @@ void bbh_set_item(namelist_t *host, enum bbh_item_t item, char *value)
 }
 
 
+char *bbh_item_multi(namelist_t *host, enum bbh_item_t item)
+{
+	static namelist_t *keyhost = NULL, *curhost = NULL;
+
+	if (item == BBH_LAST) return NULL;
+
+	if ((host == NULL) && (keyhost == NULL)) return NULL; /* Programmer failure */
+
+	if (host != NULL) 
+		curhost = keyhost = host;
+	else {
+		curhost = curhost->next;
+		if (!curhost || (strcmp(curhost->bbhostname, keyhost->bbhostname) != 0))
+			curhost = keyhost = NULL; /* End of hostlist */
+	}
+
+	return bbh_item(curhost, item);
+}
+
 #ifdef STANDALONE
 
 int main(int argc, char *argv[])
@@ -591,12 +624,20 @@ handlehost:
 		}
 
 		do {
+			*s = '\0';
 			printf("Pick item:"); fflush(stdout); fgets(s, sizeof(s), stdin);
 			p = strchr(s, '\n'); if (p) *p = '\0';
 			if (*s == '!') {
 				hosts = load_hostnames(argv[1], NULL, get_fqdn());
 				/* Must restart! The "h" handle is no longer valid. */
 				goto handlehost;
+			}
+			else if (*s == '>') {
+				val = bbh_item_multi(h, BBH_PAGEPATH);
+				while (val) {
+					printf("\t%s value is: '%s'\n", s, val);
+					val = bbh_item_multi(NULL, BBH_PAGEPATH);
+				}
 			}
 			else if (*s) {
 				val = bbh_item_byname(h, s);

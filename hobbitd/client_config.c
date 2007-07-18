@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.55 2007-06-11 14:40:46 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.56 2007-07-18 11:18:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -233,12 +233,16 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	RbtIterator handle;
 	c_rule_t *rwalk;
 	ruleset_t *head, *tail, *itm;
+	char *pagenamecopy, *pgtok;
+	int pgmatchres, pgexclres;
 
 	handle = rbtFind(ruletree, hostname);
 	if (handle != rbtEnd(ruletree)) {
 		/* We have the tree for this host */
 		return (ruleset_t *)gettreeitem(ruletree, handle);
 	}
+
+	pagenamecopy = strdup(pagename);
 
 	/* We must build the list of rules for this host */
 	head = tail = NULL;
@@ -247,8 +251,21 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 		if (rwalk->classexp && !namematch(classname, rwalk->classexp->pattern, rwalk->classexp->exp)) continue;
 		if (rwalk->exhostexp && namematch(hostname, rwalk->exhostexp->pattern, rwalk->exhostexp->exp)) continue;
 		if (rwalk->hostexp && !namematch(hostname, rwalk->hostexp->pattern, rwalk->hostexp->exp)) continue;
-		if (rwalk->expageexp && namematch(pagename, rwalk->expageexp->pattern, rwalk->expageexp->exp)) continue;
-		if (rwalk->pageexp && !namematch(pagename, rwalk->pageexp->pattern, rwalk->pageexp->exp)) continue;
+
+		pgmatchres = pgexclres = -1;
+		pgtok = strtok(pagenamecopy, ",");
+		while (pgtok) {
+			if (rwalk->pageexp && (pgmatchres != 1))
+				pgmatchres = (namematch(pgtok, rwalk->pageexp->pattern, rwalk->pageexp->exp) ? 1 : 0);
+	
+			if (rwalk->expageexp && (pgexclres != 1))
+				pgexclres = (namematch(pgtok, rwalk->expageexp->pattern, rwalk->expageexp->exp) ? 1 : 0);
+	
+			pgtok = strtok(NULL, ",");
+		}
+		if (pgexclres == 1) continue;
+		if (pgmatchres == 0) continue;
+
 		/* All criteria match - add this rule to the list of rules for this host */
 		itm = (ruleset_t *)calloc(1, sizeof(ruleset_t));
 		itm->rule = rwalk;
@@ -264,6 +281,8 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 
 	/* Add the list to the tree */
 	rbtInsert(ruletree, strdup(hostname), head);
+
+	xfree(pagenamecopy);
 
 	return head;
 }
@@ -1203,7 +1222,7 @@ int get_cpu_thresholds(namelist_t *hinfo, char *classname,
 	c_rule_t *rule;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 
 	*loadyellow = 5.0;
 	*loadred = 10.0;
@@ -1244,7 +1263,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 	c_rule_t *rule;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 
 	*warnlevel = 90;
 	*paniclevel = 95;
@@ -1279,7 +1298,7 @@ void get_memory_thresholds(namelist_t *hinfo, char *classname,
 	int gotphys = 0, gotswap = 0, gotact = 0;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 
 	*physyellow = 100;
 	*physred = 101;
@@ -1328,7 +1347,7 @@ int scan_log(namelist_t *hinfo, char *classname,
 	char msgline[PATH_MAX];
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 	
 	nofile = (strncmp(logdata, "Cannot open logfile ", 20) == 0);
 
@@ -1406,7 +1425,7 @@ int check_file(namelist_t *hinfo, char *classname,
 	char *md5hash = NULL, *sha1hash = NULL, *rmd160hash = NULL;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 	*trackit = *anyrules = 0;
 
 	boln = filedata;
@@ -1721,7 +1740,7 @@ int check_dir(namelist_t *hinfo, char *classname,
 	unsigned long dsize = 0;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 	*trackit = 0;
 
 	boln = filedata;
@@ -1809,7 +1828,7 @@ static int clear_counts(namelist_t *hinfo, char *classname, ruletype_t ruletype,
 	*head = *tail = *walk = NULL;
 
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 
 	rule = getrule(hostname, pagename, classname, hinfo, ruletype);
 	while (rule) {

@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.92 2007-06-19 12:41:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.93 2007-07-18 11:18:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			hinfo = hostinfo(testhost);
 			if (hinfo) {
-				testpage = strdup(bbh_item(hinfo, BBH_PAGEPATH));
+				testpage = strdup(bbh_item(hinfo, BBH_ALLPAGEPATHS));
 			}
 			else {
 				errprintf("Host not found in bb-hosts - assuming it is on the top page\n");

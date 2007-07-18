@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: notifylog.c,v 1.3 2007-06-11 14:39:09 henrik Exp $";
+static char rcsid[] = "$Id: notifylog.c,v 1.4 2007-07-18 11:18:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -209,18 +209,30 @@ void do_notifylog(FILE *output,
 		p = strchr(recipient, '['); if (p) *p = '\0';
 
 		if (pageregexp) {
-			char *pagename = bbh_item(eventhost, BBH_PAGEPATH);
-			pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			char *pagename;
+
+			pagename = bbh_item_multi(eventhost, BBH_PAGEPATH);
+			pagematch = 0;
+			while (!pagematch && pagename) {
+				pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+			}
 		}
 		else
 			pagematch = 1;
 		if (!pagematch) continue;
 
 		if (expageregexp) {
-			char *pagename = bbh_item(eventhost, BBH_PAGEPATH);
-			pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0, 
-					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+			char *pagename;
+
+			pagename = bbh_item_multi(eventhost, BBH_PAGEPATH);
+			pagematch = 0;
+			while (!pagematch && pagename) {
+				pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0, 
+						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+			}
 		}
 		else
 			pagematch = 0;
