@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.116 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.117 2007-07-18 13:54:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -218,7 +218,7 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
-	alert->location = (hi ? hi->page->pagepath : "");
+	alert->location = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
