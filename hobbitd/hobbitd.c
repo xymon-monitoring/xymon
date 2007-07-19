@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.269 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.270 2007-07-19 20:45:44 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -116,7 +116,7 @@ typedef struct hobbitd_log_t {
 	int msgsz;
 	unsigned char *dismsg, *ackmsg;
 	int cookie;
-	time_t cookieexpires;
+	time_t cookieexpires, lastdoublesourcemsg;
 	struct hobbitd_meta_t *metas;
 	ackinfo_t *acklist;	/* Holds list of acks */
 	struct hobbitd_log_t *next;
@@ -1101,6 +1101,24 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		else if (log->enabletime > log->validtime) log->validtime = log->enabletime;
 	}
 
+	/* 
+	 * If we have an existing status, check if the sender has changed.
+	 * This could be an indication of a mis-configured host reporting with
+	 * the wrong hostname.
+	 */
+	if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
+		/*
+		 * Show a message about this once an hour, except if the status 
+		 * was changed internally by Hobbit (purple)
+		 */
+		if ( ((log->lastdoublesourcemsg + 3600) < now) &&
+		     (strcmp(log->sender, "hobbitd") != 0) && 
+		     (strcmp(sender, "hobbitd") != 0)              )  {
+			errprintf("Status %s:%s is reported from two sources: %s and %s\n",
+				  hostname, testname, log->sender, sender);
+			log->lastdoublesourcemsg = now;
+		}
+	}
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
 	*(log->sender + sizeof(log->sender) - 1) = '\0';
 	log->oldcolor = log->color;
