@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.14 2007-06-11 14:41:36 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.15 2007-07-19 20:46:16 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -151,7 +151,7 @@ void trim_history(FILE *infd, FILE *outfd, enum ftype_t ftype, time_t cutoff)
 	}
 }
 
-void trim_files(time_t cutoff)
+void trim_files(time_t cutoff, int dryrun)
 {
 	filelist_t *fwalk;
 	FILE *infd, *outfd;
@@ -167,7 +167,12 @@ void trim_files(time_t cutoff)
 
 		if (fwalk->ftype == F_DROPIT) {
 			/* It's an orphan, and we want to delete it */
-			unlink(fwalk->fname); 
+			if (dryrun) {
+				errprintf("rm %s\n", fwalk->fname);
+			}
+			else {
+				unlink(fwalk->fname); 
+			}
 			continue;
 		}
 
@@ -268,7 +273,7 @@ time_t logtime(char *fn)
 	return result;
 }
 
-void trim_logs(time_t cutoff)
+void trim_logs(time_t cutoff, int dryrun)
 {
 	filelist_t *fwalk;
 	DIR *ldir = NULL, *sdir = NULL;
@@ -285,7 +290,12 @@ void trim_logs(time_t cutoff)
 		switch (fwalk->ftype) {
 		  case F_DROPIT:
 			/* It's an orphan, and we want to delete it */
-			dropdirectory(fwalk->fname, 0);
+			if (dryrun) {
+				errprintf("rm -rf %s\n", fwalk->fname);
+			}
+			else {
+				dropdirectory(fwalk->fname, 0);
+			}
 			break;
 
 		  case F_PURGELOGS:
@@ -312,8 +322,13 @@ void trim_logs(time_t cutoff)
 					ltime = logtime(lent->d_name);
 					if ((ltime > 0) && (ltime < cutoff)) {
 						sprintf(fn2, "%s/%s", fn1, lent->d_name);
-						if (unlink(fn2) == -1) {
-							errprintf("Failed to unlink %s: %s\n", fn2, strerror(errno));
+						if (dryrun) {
+							errprintf("rm %s\n", fn2);
+						}
+						else {
+							if (unlink(fn2) == -1) {
+								errprintf("Failed to unlink %s: %s\n", fn2, strerror(errno));
+							}
 						}
 					}
 					else allgone = 0;
@@ -322,7 +337,12 @@ void trim_logs(time_t cutoff)
 				closedir(ldir);
 
 				/* Is it empty ? Then remove it */
-				if (allgone) rmdir(fn1);
+				if (allgone) {
+					if (dryrun)
+						errprintf("rmdir %s\n", fn1);
+					else
+						rmdir(fn1);
+				}
 			}
 
 			closedir(sdir);
@@ -334,77 +354,28 @@ void trim_logs(time_t cutoff)
 	}
 }
 
-int main(int argc, char *argv[])
+
+void do_history_files(time_t cutoff, int dropsvcs, int dropfiles, int dryrun)
 {
-	int argi;
 	DIR *histdir = NULL;
 	struct dirent *hent;
 	struct stat st;
-	time_t cutoff = 0;
-	int dropsvcs = 0;
-	int dropfiles = 0;
-	int droplogs = 0;
-	char *envarea = NULL;
 
-	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--cutoff=")) {
-			char *p = strchr(argv[argi], '=');
-			cutoff = atoi(p+1);
-		}
-		else if (argnmatch(argv[argi], "--outdir=")) {
-			char *p = strchr(argv[argi], '=');
-			outdir = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--drop") == 0) {
-			dropfiles = 1;
-		}
-		else if (strcmp(argv[argi], "--dropsvcs") == 0) {
-			dropsvcs = 1;
-		}
-		else if (strcmp(argv[argi], "--droplogs") == 0) {
-			droplogs = 1;
-		}
-		else if (strcmp(argv[argi], "--progress") == 0) {
-			progressinfo = 100;
-		}
-		else if (argnmatch(argv[argi], "--progress=")) {
-			char *p = strchr(argv[argi], '=');
-			progressinfo = atoi(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--help") == 0) {
-			printf("Usage:\n\n\t%s --cutoff=TIME\n\nTIME is in seconds since epoch\n", argv[0]);
-			return 0;
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-	}
-
-	if (cutoff == 0) {
-		errprintf("Must have a cutoff-time\n");
-		return 1;
+	if (dryrun) {
+		errprintf("Not processing history files in dryrun mode\n");
+		return;
 	}
 
 	if (chdir(xgetenv("BBHIST")) == -1) {
 		errprintf("Cannot cd to history directory: %s\n", strerror(errno));
-		return 1;
+		return;
 	}
 
 	histdir = opendir(".");
 	if (!histdir) {
 		errprintf("Cannot read history directory: %s\n", strerror(errno));
-		return 1;
+		return;
 	}
-
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
@@ -464,23 +435,24 @@ int main(int argc, char *argv[])
 
 	/* Then process the files */
 	if (progressinfo) errprintf("Starting trim of %d history-logs\n", totalitems);
-	trim_files(cutoff);
+	trim_files(cutoff, dryrun);
+}
 
+void do_status_logs(time_t cutoff, int dryrun)
+{
+	DIR *histdir = NULL;
+	struct dirent *hent;
+	struct stat st;
 
-	/* Process statuslogs also ? */
-	if (!droplogs) return 0;
-
-	flhead = NULL;  /* Dirty - we should clean it up properly - but I dont care */
-	totalitems = 0;
 	if (chdir(xgetenv("BBHISTLOGS")) == -1) {
 		errprintf("Cannot cd to historical statuslogs directory: %s\n", strerror(errno));
-		return 1;
+		return;
 	}
 
 	histdir = opendir(".");
 	if (!histdir) {
 		errprintf("Cannot read historical statuslogs directory: %s\n", strerror(errno));
-		return 1;
+		return;
 	}
 
 	while ((hent = readdir(histdir)) != NULL) {
@@ -502,7 +474,86 @@ int main(int argc, char *argv[])
 	closedir(histdir);
 
 	if (progressinfo) errprintf("Starting trim of %d status-log collections\n", totalitems);
-	trim_logs(cutoff);
+	trim_logs(cutoff, dryrun);
+}
+
+
+int main(int argc, char *argv[])
+{
+	int argi;
+	char *envarea = NULL;
+	time_t cutoff = 0;
+	int do_histfiles = 1;
+	int dropsvcs = 0;
+	int dropfiles = 0;
+	int do_histlogs = 0;
+	int dryrun = 0;
+
+	for (argi = 1; (argi < argc); argi++) {
+		if (argnmatch(argv[argi], "--cutoff=")) {
+			char *p = strchr(argv[argi], '=');
+			cutoff = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--outdir=")) {
+			char *p = strchr(argv[argi], '=');
+			outdir = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--drop") == 0) {
+			dropfiles = 1;
+		}
+		else if (strcmp(argv[argi], "--dropsvcs") == 0) {
+			dropsvcs = 1;
+		}
+		else if (strcmp(argv[argi], "--droplogs") == 0) {
+			do_histlogs = 1;
+		}
+		else if (strcmp(argv[argi], "--no-histfiles") == 0) {
+			do_histfiles = 0;
+		}
+		else if (strcmp(argv[argi], "--dry-run") == 0) {
+			dryrun = 1;
+		}
+		else if (strcmp(argv[argi], "--progress") == 0) {
+			progressinfo = 100;
+		}
+		else if (argnmatch(argv[argi], "--progress=")) {
+			char *p = strchr(argv[argi], '=');
+			progressinfo = atoi(p+1);
+		}
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--help") == 0) {
+			printf("Usage:\n\n\t%s --cutoff=TIME\n\nTIME is in seconds since epoch\n", argv[0]);
+			return 0;
+		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
+		}
+	}
+
+	if (cutoff == 0) {
+		errprintf("Must have a cutoff-time\n");
+		return 1;
+	}
+
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+
+	if (do_histfiles) {
+		do_history_files(cutoff, dropsvcs, dropfiles, dryrun);
+	}
+
+	/* Process statuslogs also ? */
+	if (do_histlogs) {
+		flhead = NULL;  /* Dirty - we should clean it up properly - but I dont care */
+		totalitems = 0;
+		do_status_logs(cutoff, dryrun);
+	}
 
 	return 0;
 }
