@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.58 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.59 2007-07-20 11:02:10 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -335,7 +335,7 @@ static void fetch_board(void)
 
 			hname = gettok(buf, "|");
 
-			if (hname && wanted_host(hname)) {
+			if (hname && wanted_host(hname) && hostinfo(hname)) {
 				newrec = (treerec_t *)malloc(sizeof(treerec_t));
 				newrec->name = strdup(hname);
 				newrec->flag = 0;
