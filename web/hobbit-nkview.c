@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.22 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkview.c,v 1.23 2007-07-20 11:37:37 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -195,7 +195,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	fprintf(output, "</TD>\n");
 
 	/* Print the hostname with a link to the NK info page */
-	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL));
+	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, 0));
 
 	key = (char *)malloc(strlen(itm->hostname) + 1024);
 	for (colhandle = rbtBegin(columns); (colhandle != rbtEnd(columns)); colhandle = rbtNext(columns, colhandle)) {

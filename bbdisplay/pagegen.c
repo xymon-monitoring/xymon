@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.183 2007-07-18 10:44:14 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.184 2007-07-20 11:37:37 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -397,7 +397,9 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 			else rowcount++;
 
 			fprintf(output, "%s", 
-				hostnamehtml(h->hostname, ((pagetype != PAGE_BB) ? hostpage_link(h) : NULL)) );
+				hostnamehtml(h->hostname, 
+					     ((pagetype != PAGE_BB) ? hostpage_link(h) : NULL), 
+					     (pagetype == PAGE_BB) ) );
 
 			/* Then the columns. */
 			for (gc = groupcols; (gc); gc = gc->next) {

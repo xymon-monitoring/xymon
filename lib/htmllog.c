@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.57 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.58 2007-07-20 11:37:37 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -435,7 +435,7 @@ char *alttag(char *columnname, int color, int acked, int propagate, char *age)
 }
 
 
-static char *nameandcomment(void *host, char *hostname)
+static char *nameandcomment(void *host, char *hostname, int usetooltip)
 {
 	static char *result = NULL;
 	char *cmt, *disp, *hname;
@@ -447,12 +447,21 @@ static char *nameandcomment(void *host, char *hostname)
 
 	hname = bbh_item(host, BBH_HOSTNAME);
 	disp = bbh_item(host, BBH_DISPLAYNAME);
-	cmt = bbh_item(host, BBH_COMMENT);
+	cmt = bbh_item(host, BBH_COMMENT); if (!cmt) cmt = bbh_item(host, BBH_DESCRIPTION);
+	if (!cmt && usetooltip) cmt = bbh_item(host, BBH_IP);
+
 	if (disp == NULL) disp = hname;
 
 	if (cmt) {
-		result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
-		sprintf(result, "%s (%s)", disp, cmt);
+		if (usetooltip) {
+			/* Thanks to Marco Schoemaker for suggesting the use of <span title...> */
+			result = (char *)malloc(strlen(disp) + strlen(cmt) + 30);
+			sprintf(result, "<span title=\"%s\">%s</span>", cmt, disp);
+		}
+		else {
+			result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
+			sprintf(result, "%s (%s)", disp, cmt);
+		}
 		return result;
 	}
 	else 
@@ -492,7 +501,7 @@ void setdoctarget(char *target)
 	doctarget = strdup(target);
 }
 
-char *hostnamehtml(char *hostname, char *defaultlink)
+char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 {
 	static char result[4096];
 	void *hinfo = hostinfo(hostname);
@@ -515,21 +524,21 @@ char *hostnamehtml(char *hostname, char *defaultlink)
 	if (documentationurl) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
 			urldoclink(documentationurl, hostname),
-			doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
+			doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else if ((hostlinkurl = hostlink(hostname)) != NULL) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
-			hostlinkurl, doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
+			hostlinkurl, doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else if (defaultlink) {
 		/* Provide a link to the page where this host lives */
 		snprintf(result, sizeof(result), "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>",
 			xgetenv("BBWEB"), defaultlink, doctarget,
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
+			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else {
 		snprintf(result, sizeof(result), "<FONT %s>%s</FONT>",
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname));
+			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 
 	return result;
