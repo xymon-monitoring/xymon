@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.14 2007-07-21 09:44:37 henrik Exp $";
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.15 2007-07-21 10:19:16 henrik Exp $";
 
 int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -35,7 +35,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			strcpy(rrdfn, "bbgen.rrd");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int)tstamp, runtime);
-		create_and_update_rrd(hostname, rrdfn, bbgen_params, bbgen_tpl);
+		create_and_update_rrd(hostname, testname, rrdfn, bbgen_params, bbgen_tpl);
 	}
 
 	hostcount = statuscount = -1;
@@ -52,7 +52,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			strcpy(rrdfn, "hobbit.rrd");
 		}
 		sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, hostcount, statuscount);
-		create_and_update_rrd(hostname, rrdfn, bbgen2_params, bbgen2_tpl);
+		create_and_update_rrd(hostname, testname, rrdfn, bbgen2_params, bbgen2_tpl);
 	}
 
 	return 0;

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.11 2007-07-21 09:44:37 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.12 2007-07-21 10:19:16 henrik Exp $";
 
 int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -106,7 +106,7 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 
 		MEMUNDEFINE(valstr);
-		return create_and_update_rrd(hostname, rrdfn, hobbitd_params, hobbitd_tpl);
+		return create_and_update_rrd(hostname, testname, rrdfn, hobbitd_params, hobbitd_tpl);
 	}
 
 	MEMUNDEFINE(valstr);

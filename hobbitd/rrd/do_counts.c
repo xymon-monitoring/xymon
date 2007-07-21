@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c,v 1.6 2007-07-21 09:44:37 henrik Exp $";
+static char counts_rcsid[] = "$Id: do_counts.c,v 1.7 2007-07-21 10:19:16 henrik Exp $";
 
 static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp, char *params[], char *tpl) 
 { 
@@ -31,7 +31,7 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 			rrdfn[sizeof(rrdfn)-1] = '\0';
 
 			sprintf(rrdvalues, "%d:%s", (int)tstamp, countstr);
-			create_and_update_rrd(hostname, rrdfn, params, tpl);
+			create_and_update_rrd(hostname, testname,  rrdfn, params, tpl);
 		}
 
 		boln = (eoln ? eoln+1 : NULL);

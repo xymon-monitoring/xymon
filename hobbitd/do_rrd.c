@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.46 2007-06-11 14:21:07 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.47 2007-07-21 10:19:16 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,6 +25,7 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.46 2007-06-11 14:21:07 henrik Exp $";
 
 #include "libbbgen.h"
 
+#include "hobbitd_rrd.h"
 #include "do_rrd.h"
 
 char *rrddir = NULL;
@@ -34,10 +35,6 @@ static char *exthandler = NULL;
 static char **extids = NULL;
 
 static char rrdvalues[MAX_LINE_LEN];
-static char rra1[] = "RRA:AVERAGE:0.5:1:576";
-static char rra2[] = "RRA:AVERAGE:0.5:6:576";
-static char rra3[] = "RRA:AVERAGE:0.5:24:576";
-static char rra4[] = "RRA:AVERAGE:0.5:288:576";
 
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];	/* This one used by the modules */
@@ -146,7 +143,7 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	return result;
 }
 
-static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *template)
+static int create_and_update_rrd(char *hostname, char *testname, char *fn, char *creparams[], char *template)
 {
 	static int callcounter = 0;
 	struct stat st;
@@ -196,13 +193,23 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 
 	/* If the RRD file doesn't exist, create it immediately */
 	if (stat(filedir, &st) == -1) {
+		char **rrdcreate_params, **rrddefinitions;
+		int rrddefcount, i;
+
 		dbgprintf("Creating rrd %s\n", filedir);
 
+		/* How many parameters did we get? */
 		for (pcount = 0; (creparams[pcount]); pcount++);
-		if (debug) {
-			int i;
 
-			for (i = 0; (creparams[i]); i++) {
+		/* Add the RRA definitions to the create parameter set */
+		rrddefinitions = get_rrd_definition(testname, &rrddefcount);
+
+		rrdcreate_params = (char **)calloc(pcount + rrddefcount + 1, sizeof(char *));
+		for (i=0; (i < pcount); i++)      rrdcreate_params[i]        = creparams[i];
+		for (i=0; (i < rrddefcount); i++) rrdcreate_params[pcount++] = rrddefinitions[i];
+
+		if (debug) {
+			for (i = 0; (rrdcreate_params[i]); i++) {
 				dbgprintf("RRD create param %02d: '%s'\n", i, creparams[i]);
 			}
 		}
@@ -212,7 +219,9 @@ static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], ch
 		 * we MUST reset this before every call.
 		 */
 		optind = opterr = 0; rrd_clear_error();
-		result = rrd_create(pcount, creparams);
+		result = rrd_create(pcount, rrdcreate_params);
+		xfree(rrdcreate_params);
+
 		if (result != 0) {
 			errprintf("RRD error creating %s: %s\n", filedir, rrd_get_error());
 			MEMUNDEFINE(filedir);

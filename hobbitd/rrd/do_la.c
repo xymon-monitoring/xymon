@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.27 2007-07-21 09:44:37 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.28 2007-07-21 10:19:16 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -183,25 +183,25 @@ done_parsing:
 	if (gotload) {
 		sprintf(rrdfn, "la.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, load);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
 	}
 
 	if (gotprocs) {
 		sprintf(rrdfn, "procs.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, procs);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
 	}
 
 	if (gotusers) {
 		sprintf(rrdfn, "users.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
 	}
 
 	if (gotclock) {
 		sprintf(rrdfn, "clock.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, clockdiff);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
 	}
 
 	/*
@@ -254,7 +254,7 @@ done_parsing:
 			pagetotal = pagetotal / 100;
 			realuse = 100 - (physavail / phystotal);
 			swapuse = 100 - (pageavail / pagetotal);
-			do_memory_rrd_update(tstamp, hostname, realuse, swapuse, -1);
+			do_memory_rrd_update(tstamp, testname, hostname, realuse, swapuse, -1);
 		}
 		else if (overflow) {
 			errprintf("Host %s cpu report overflows in memory usage calculation\n", hostname);

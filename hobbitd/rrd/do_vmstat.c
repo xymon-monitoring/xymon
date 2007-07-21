@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.23 2007-07-21 09:44:37 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.24 2007-07-21 10:19:16 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -399,7 +399,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	sprintf(rrdfn, "vmstat.rrd");
-	result = create_and_update_rrd(hostname, rrdfn, creparams, NULL);
+	result = create_and_update_rrd(hostname, testname, rrdfn, creparams, NULL);
 
 	for (defidx=0; (defidx < defcount); defidx++) xfree(creparams[2+defidx]);
 	xfree(creparams);

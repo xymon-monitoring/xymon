@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.10 2007-07-21 09:44:37 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.11 2007-07-21 10:19:16 henrik Exp $";
 
 int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -53,6 +53,6 @@ int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		i++;
 	}
 
-	return create_and_update_rrd(hostname, rrdfn, apache_params, apache_tpl);
+	return create_and_update_rrd(hostname, testname, rrdfn, apache_params, apache_tpl);
 }
 

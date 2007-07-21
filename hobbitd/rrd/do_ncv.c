@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.15 2007-07-21 09:44:37 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.16 2007-07-21 10:19:16 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -185,7 +185,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			
 			if (split_ncv && (paridx > 1)) {
 				params[++paridx] = NULL;
-				create_and_update_rrd(hostname, rrdfn, params, NULL);
+				create_and_update_rrd(hostname, testname, rrdfn, params, NULL);
 
 				/* We've created one RRD, so reset the params for the next one */
 				for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
@@ -197,7 +197,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	if (!split_ncv && (paridx > 1)) {
 		params[++paridx] = NULL;
-		create_and_update_rrd(hostname, rrdfn, params, NULL);
+		create_and_update_rrd(hostname, testname, rrdfn, params, NULL);
 		for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
 	}
 

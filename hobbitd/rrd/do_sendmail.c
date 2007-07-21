@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.14 2007-07-21 09:44:37 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.15 2007-07-21 10:19:16 henrik Exp $";
 
 int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -134,11 +134,11 @@ gotdata:
 					/* We have an existing RRD without the msgsqur DS. */
 					/* Chop off the msgsqur item in rrdvalues */
 					p = strrchr(rrdvalues, ':'); if (p) *p = '\0';
-					create_and_update_rrd(hostname, rrdfn, sendmail_params_1, sendmail_tpl_1);
+					create_and_update_rrd(hostname, testname, rrdfn, sendmail_params_1, sendmail_tpl_1);
 				}
 				else {
 					/* New format, or it does not exist: Use latest format */
-					create_and_update_rrd(hostname, rrdfn, sendmail_params_2, sendmail_tpl_2);
+					create_and_update_rrd(hostname, testname, rrdfn, sendmail_params_2, sendmail_tpl_2);
 				}
 			}
 
