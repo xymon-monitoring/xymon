@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.112 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.113 2007-07-21 15:16:12 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1420,6 +1420,8 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/netware-snmp.c"
 #include "client/hmdc.c"
 #include "client/bbwin.c"
+#include "client/zvm.c"
+#include "client/zvse.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1853,6 +1855,14 @@ int main(int argc, char *argv[])
 
 			  case OS_WIN32_BBWIN: 
   			        handle_win32_bbwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_ZVM:
+				handle_zvm_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_ZVSE:
+				handle_zvse_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_WIN32: 
