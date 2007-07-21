@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.24 2007-07-21 10:19:16 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.25 2007-07-21 15:12:21 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -349,6 +349,8 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_LINUX22:
 		layout = vmstat_linux22_layout; break;
 	  case OS_LINUX:
+	  case OS_ZVM:
+	  case OS_ZVSE:
 		layout = vmstat_linux_layout; break;
 	  case OS_RHEL3:
 		layout = vmstat_rhel3_layout; break;

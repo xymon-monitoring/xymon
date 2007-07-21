@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.29 2007-07-21 10:19:16 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.30 2007-07-21 15:12:21 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -502,6 +502,8 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_LINUX22:
 	  case OS_LINUX:
 	  case OS_RHEL3:
+	  case OS_ZVM:
+	  case OS_ZVSE:
 		/* These are of the form "<value> <marker" */
 		datapart = strstr(datapart, "\nTcp:");	/* Skip to the start of "Tcp" (udp comes after) */
 		if (datapart) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);
