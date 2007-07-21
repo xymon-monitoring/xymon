@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.33 2007-07-21 13:42:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.34 2007-07-21 14:03:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -137,32 +137,34 @@ static void load_rrddefs(void)
 
 	stackfclose(fd);
 	freestrbuffer(inbuf);
-}
 
-static char *default_rrddefinitions[] = {
-	"RRA:AVERAGE:0.5:1:576",
-	"RRA:AVERAGE:0.5:6:576",
-	"RRA:AVERAGE:0.5:24:576",
-	"RRA:AVERAGE:0.5:288:576",
-};
+	/* Check if the default record exists */
+	if (rbtFind(rrddeftree, "") == rbtEnd(rrddeftree)) {
+		/* Create the default record */
+		newrec = (rrddeftree_t *)malloc(sizeof(rrddeftree_t));
+		newrec->key = strdup("");
+		newrec->defs = (char **)malloc(4 * sizeof(char *));;
+		newrec->defs[0] = strdup("RRA:AVERAGE:0.5:1:576");
+		newrec->defs[1] = strdup("RRA:AVERAGE:0.5:6:576");
+		newrec->defs[2] = strdup("RRA:AVERAGE:0.5:24:576");
+		newrec->defs[3] = strdup("RRA:AVERAGE:0.5:288:576");
+		newrec->count = 4;
+		rbtInsert(rrddeftree, newrec->key, newrec);
+	}
+}
 
 char **get_rrd_definition(char *key, int *count)
 {
 	RbtHandle handle;
-	char **result;
 
 	handle = rbtFind(rrddeftree, key);
-	if (handle != rbtEnd(rrddeftree)) {
-		rrddeftree_t *rec = (rrddeftree_t *)gettreeitem(rrddeftree, handle);
-		result = rec->defs;
-		*count = rec->count;
+	if (handle == rbtEnd(rrddeftree)) {
+		handle = rbtFind(rrddeftree, "");	/* The default record */
 	}
-	else {
-		result = default_rrddefinitions;
-		*count = (sizeof(default_rrddefinitions) / sizeof(default_rrddefinitions[0]));
-	}
+	rrddeftree_t *rec = (rrddeftree_t *)gettreeitem(rrddeftree, handle);
 
-	return result;
+	*count = rec->count;
+	return rec->defs;
 }
 
 int main(int argc, char *argv[])
