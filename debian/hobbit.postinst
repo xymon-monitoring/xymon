@@ -47,9 +47,9 @@ case "$1" in
 
 	# Update configuration file
 	cp -a -f $CONFIGFILE $CONFIGFILE.tmp
-	sed -e 's/^BBSERVERHOSTNAME=.*/BBSERVERHOSTNAME=\"${BBSERVERHOSTNAME}\"/' \
-	    -e 's/^BBSERVERIP=.*/BBSERVERIP=\"${BBSERVERIP}\"/'                   \
-	    -e 's/^BBSERVERWWWNAME=.*/BBSERVERWWWNAME=\"${BBSERVERWWWNAME}\"/'    \
+	sed -e "s/^BBSERVERHOSTNAME=.*/BBSERVERHOSTNAME=\"${BBSERVERHOSTNAME}\"/" \
+	    -e "s/^BBSERVERIP=.*/BBSERVERIP=\"${BBSERVERIP}\"/"                   \
+	    -e "s/^BBSERVERWWWNAME=.*/BBSERVERWWWNAME=\"${BBSERVERWWWNAME}\"/"    \
 	    < $CONFIGFILE > $CONFIGFILE.tmp
 	mv -f $CONFIGFILE.tmp $CONFIGFILE
     ;;
