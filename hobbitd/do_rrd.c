@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.48 2007-07-21 13:39:14 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.49 2007-07-21 15:16:37 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -400,6 +400,7 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 #include "rrd/do_filesizes.c"
 #include "rrd/do_counts.c"
 #include "rrd/do_trends.c"
+#include "rrd/do_paging.c"
 
 #ifdef USE_BEA2
 #include "rrd/do_bea2.c"
@@ -459,6 +460,7 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
+	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, msg, tstamp);
 
 #ifdef DO_ORCA
