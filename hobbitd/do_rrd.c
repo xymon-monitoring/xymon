@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.47 2007-07-21 10:19:16 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.48 2007-07-21 13:39:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -210,7 +210,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *fn, char 
 
 		if (debug) {
 			for (i = 0; (rrdcreate_params[i]); i++) {
-				dbgprintf("RRD create param %02d: '%s'\n", i, creparams[i]);
+				dbgprintf("RRD create param %02d: '%s'\n", i, rrdcreate_params[i]);
 			}
 		}
 
