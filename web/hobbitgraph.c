@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.58 2007-06-27 08:31:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.59 2007-07-21 16:12:55 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -483,6 +483,45 @@ char *expand_tokens(char *tpl)
 			strcpy(outp, numstr);
 			inp += 8;
 			outp += strlen(outp);
+		}
+		else if (strncmp(inp, "@STACKIT@", 9) == 0) {
+			/* Contributed by Gildas Le Nadan <gn1@sanger.ac.uk> */
+
+			/* the STACK behavior changed between rrdtool 1.0.x
+			 * and 1.2.x, hence the ifdef:
+			 * - in 1.0.x, you replace the graph type (AREA|LINE)
+			 *  for the graph you want to stack with the  STACK
+			 *  keyword
+			 * - in 1.2.x, you add the STACK keyword at the end
+			 *  of the definition
+			 *
+			 * Please note that in both cases the first entry
+			 * mustn't contain the keyword STACK at all, so
+			 * we need a different treatment for the first rrdidx
+			 *
+			 * examples of hobbitgraph.cfg entries:
+			 *
+			 * - rrdtool 1.0.x
+			 * @STACKIT@:la@RRDIDX@#@COLOR@:@RRDPARAM@
+			 *
+			 * - rrdtool 1.2.x
+			 * AREA::la@RRDIDX@#@COLOR@:@RRDPARAM@:@STACKIT@
+			 */
+			char numstr[10];
+
+			if (rrdidx == 0) {
+#ifdef RRDTOOL12
+				strcpy(numstr, "");
+#else
+				sprintf(numstr, "AREA");
+#endif
+			}
+			else {
+				sprintf(numstr, "STACK");
+			}
+			strcpy(outp, numstr);
+			outp += strlen(outp);
+			inp += 9;
 		}
 		else if (strncmp(inp, "@SERVICE@", 9) == 0) {
 			strcpy(outp, service);
