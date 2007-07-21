@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.9 2007-01-15 14:17:41 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.10 2007-07-21 09:44:37 henrik Exp $";
 
 static char *ifstat_params[] = { "rrdcreate", rrdfn, 
 	                         "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
-				 rra1, rra2, rra3, rra4, NULL };
+				 NULL };
 static char *ifstat_tpl       = NULL;
 
 

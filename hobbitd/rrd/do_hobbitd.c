@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.10 2006-06-09 22:23:49 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.11 2007-07-21 09:44:37 henrik Exp $";
 
 int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -36,7 +36,7 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					 "DS:datachmsgs:DERIVE:600:0:U", 
 					 "DS:noteschmsgs:DERIVE:600:0:U", 
 					 "DS:enadischmsgs:DERIVE:600:0:U", 
-					 rra1, rra2, rra3, rra4, NULL };
+					 NULL };
 	static char *hobbitd_tpl       = NULL;
 
 	struct {

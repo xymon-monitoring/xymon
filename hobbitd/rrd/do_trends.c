@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char trends_rcsid[] = "$Id: do_trends.c,v 1.1 2007-01-17 21:35:19 henrik Exp $";
+static char trends_rcsid[] = "$Id: do_trends.c,v 1.2 2007-07-21 09:44:37 henrik Exp $";
 
 /* 
  * This module was inspired by a mail from Stef Coene:
@@ -52,10 +52,6 @@ static void do_trends_rrd_flush(char *hostname, char *rrdfn, char **creparams, i
 		/* Setup the static RRD create-parameters */
 		creparams[0] = "rrdcreate";
 		creparams[1] = rrdfn;
-		creparams[2+dscount] = rra1; dscount++;
-		creparams[2+dscount] = rra2; dscount++;
-		creparams[2+dscount] = rra3; dscount++;
-		creparams[2+dscount] = rra4; dscount++;
 		creparams[2+dscount] = NULL; dscount++;
 
 		create_and_update_rrd(hostname, rrdfn, creparams, NULL);
@@ -69,7 +65,7 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 	int dscount = 0;
 	char **creparams;
 
-	creparams = (char **)calloc(7, sizeof(char *));
+	creparams = (char **)calloc(3, sizeof(char *));
 
 	boln = strchr(msg, '\n'); if (boln) boln++;
 	while (boln && *boln) {
@@ -80,8 +76,7 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 			do_trends_rrd_flush(hostname, rrdfn, creparams, dscount);
 
 			xfree(rrdfn); rrdfn = NULL;
-			creparams = (char **)realloc(creparams, 7*sizeof(char *));
-			memset(creparams, 0, 7*sizeof(char *));
+			creparams = (char **)realloc(creparams, 3*sizeof(char *));
 			dscount = 0;
 
 			/* Get the RRD filename */
@@ -97,7 +92,7 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 			if ((*valptr == ' ') || (*valptr == '\t')) {
 				*valptr = '\0'; valptr += 1 + strspn(valptr+1, " \t");
 				dscount++;
-				creparams = (char **)realloc(creparams, (7+dscount)*sizeof(char **));
+				creparams = (char **)realloc(creparams, (3+dscount)*sizeof(char **));
 				creparams[1+dscount] = boln;
 				sprintf(rrdvalues+strlen(rrdvalues), ":%s", valptr);
 			}

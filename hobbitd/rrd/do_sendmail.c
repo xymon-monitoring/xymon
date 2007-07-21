@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.13 2006-08-03 06:11:57 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.14 2007-07-21 09:44:37 henrik Exp $";
 
 int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -19,7 +19,7 @@ int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					     "DS:bytes_to:DERIVE:600:0:U",
 					     "DS:msgsrej:DERIVE:600:0:U",
 					     "DS:msgsdis:DERIVE:600:0:U",
-					     rra1, rra2, rra3, rra4, NULL };
+					     NULL };
 	static char *sendmail_tpl_1      = NULL;
 
 	static char *sendmail_params_2[] = { "rrdcreate", rrdfn, 
@@ -30,7 +30,7 @@ int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					     "DS:msgsrej:DERIVE:600:0:U",
 					     "DS:msgsdis:DERIVE:600:0:U",
 					     "DS:msgsqur:DERIVE:600:0:U",
-					     rra1, rra2, rra3, rra4, NULL };
+					     NULL };
 	static char *sendmail_tpl_2      = NULL;
 
 	/*

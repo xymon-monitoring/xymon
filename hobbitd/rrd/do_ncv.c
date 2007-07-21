@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.14 2007-07-21 09:08:01 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.15 2007-07-21 09:44:37 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -26,7 +26,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	int dslen;
 
 	sprintf(rrdvalues, "%d", (int)tstamp);
-	params = (char **)calloc(8, sizeof(char *));
+	params = (char **)calloc(4, sizeof(char *));
 	params[0] = "rrdcreate";
 	params[1] = rrdfn;
 	paridx = 1;
@@ -176,7 +176,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 				if (!dstype || (strncasecmp(dstype, "NONE", 4) != 0)) { /* if we have something */
 					paridx++;
-					params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
+					params = (char **)realloc(params, (3 + paridx)*sizeof(char *));
 					params[paridx] = strdup(dsdef);
 					params[paridx+1] = NULL;
 					sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
@@ -184,10 +184,6 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			}
 			
 			if (split_ncv && (paridx > 1)) {
-				params[++paridx] = strdup(rra1);
-				params[++paridx] = strdup(rra2);
-				params[++paridx] = strdup(rra3);
-				params[++paridx] = strdup(rra4);
 				params[++paridx] = NULL;
 				create_and_update_rrd(hostname, rrdfn, params, NULL);
 
@@ -200,10 +196,6 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	} /* end of while */
 
 	if (!split_ncv && (paridx > 1)) {
-		params[++paridx] = strdup(rra1);
-		params[++paridx] = strdup(rra2);
-		params[++paridx] = strdup(rra3);
-		params[++paridx] = strdup(rra4);
 		params[++paridx] = NULL;
 		create_and_update_rrd(hostname, rrdfn, params, NULL);
 		for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);

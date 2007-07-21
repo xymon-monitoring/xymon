@@ -8,11 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.12 2006-06-09 22:23:49 henrik Exp $";
+static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.13 2007-07-21 09:44:37 henrik Exp $";
 
 int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
-	static char *bbproxy_params[]       = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+	static char *bbproxy_params[]       = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", NULL };
 	static char *bbproxy_tpl            = NULL;
 
 	char	*p;

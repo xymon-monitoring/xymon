@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.17 2006-07-20 16:06:41 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.18 2007-07-21 09:44:37 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -80,7 +80,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				switch (pstate) {
 				  case R_DEFS:
 					if (params == NULL) {
-						params = (char **)calloc(8, sizeof(char *));
+						params = (char **)calloc(4, sizeof(char *));
 						params[0] = "rrdcreate";
 						params[1] = rrdfn;
 						paridx = 1;
@@ -89,17 +89,13 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					if (strncasecmp(STRBUF(inbuf), "DS:", 3) == 0) {
 						/* Dataset definition */
 						paridx++;
-						params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
+						params = (char **)realloc(params, (3 + paridx)*sizeof(char *));
 						params[paridx] = strdup(STRBUF(inbuf));
 						params[paridx+1] = NULL;
 						break;
 					}
 					else {
 						/* No more DS defs - put in the RRA's last. */
-						params[++paridx] = strdup(rra1);
-						params[++paridx] = strdup(rra2);
-						params[++paridx] = strdup(rra3);
-						params[++paridx] = strdup(rra4);
 						params[++paridx] = NULL;
 						pstate = R_FN;
 					}

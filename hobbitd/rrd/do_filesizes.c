@@ -10,9 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char filesize_rcsid[] = "$Id: do_filesizes.c,v 1.3 2006-06-09 22:23:49 henrik Exp $";
+static char filesize_rcsid[] = "$Id: do_filesizes.c,v 1.4 2007-07-21 09:44:37 henrik Exp $";
 
-static char *filesize_params[] = { "rrdcreate", rrdfn, "DS:size:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char *filesize_params[] = { "rrdcreate", rrdfn, "DS:size:GAUGE:600:0:U", NULL };
 static char *filesize_tpl      = NULL;
 
 int do_filesizes_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.22 2007-01-15 14:17:41 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.23 2007-07-21 09:44:37 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -376,18 +376,14 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	for (defcount = 0; (layout[defcount].name); defcount++) ;
 
 	/* Setup the create-parameters */
-	creparams = (char **)xmalloc((defcount+7)*sizeof(char *));
+	creparams = (char **)xmalloc((defcount+3)*sizeof(char *));
 	creparams[0] = "rrdcreate";
 	creparams[1] = rrdfn;
 	for (defidx=0; (defidx < defcount); defidx++) {
 		creparams[2+defidx] = (char *)xmalloc(strlen(layout[defidx].name) + strlen("DS::GAUGE:600:0:U") + 1);
 		sprintf(creparams[2+defidx], "DS:%s:GAUGE:600:0:U", layout[defidx].name);
 	}
-	creparams[2+defcount+0] = rra1;
-	creparams[2+defcount+1] = rra2;
-	creparams[2+defcount+2] = rra3;
-	creparams[2+defcount+3] = rra4;
-	creparams[2+defcount+4] = NULL;
+	creparams[2+defcount] = NULL;
 
 	/* Setup the update string, picking out values according to the layout */
 	p = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);

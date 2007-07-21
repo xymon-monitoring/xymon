@@ -8,13 +8,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.11 2006-07-20 16:06:41 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.12 2007-07-21 09:44:37 henrik Exp $";
 
 int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	static char *temperature_params[] = { "rrdcreate", rrdfn, 
 					      "DS:temperature:GAUGE:600:1:U",
-					      rra1, rra2, rra3, rra4, NULL };
+					      NULL };
 	static char *temperature_tpl      = NULL;
 
 	/* Sample input report:

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.27 2007-01-15 14:17:41 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.28 2007-07-21 09:44:37 henrik Exp $";
 
 static char *netstat_params[] = { "rrdcreate", rrdfn, 
 	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
@@ -27,7 +27,7 @@ static char *netstat_params[] = { "rrdcreate", rrdfn,
 	                          "DS:tcpInInorderPackets:DERIVE:600:0:U", 
 	                          "DS:tcpInUnorderPackets:DERIVE:600:0:U", 
 	                          "DS:tcpRetransPackets:DERIVE:600:0:U", 
-				  rra1, rra2, rra3, rra4, NULL };
+				  NULL };
 static char *netstat_tpl       = NULL;
 
 static char *udpreceived = NULL,

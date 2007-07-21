@@ -8,11 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.16 2007-05-28 17:50:44 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.17 2007-07-21 09:44:37 henrik Exp $";
 
 int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+	static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", NULL };
 	static char *bbnet_tpl            = NULL;
 
 	char *p;

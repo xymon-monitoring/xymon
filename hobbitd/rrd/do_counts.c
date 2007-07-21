@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c,v 1.5 2006-06-09 22:23:49 henrik Exp $";
+static char counts_rcsid[] = "$Id: do_counts.c,v 1.6 2007-07-21 09:44:37 henrik Exp $";
 
 static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp, char *params[], char *tpl) 
 { 
@@ -40,9 +40,9 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 	return 0;
 }
 
-static char *counts_params[] = { "rrdcreate", rrdfn, "DS:count:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char *counts_params[] = { "rrdcreate", rrdfn, "DS:count:GAUGE:600:0:U", NULL };
 static char *counts_tpl      = NULL;
-static char *derive_params[] = { "rrdcreate", rrdfn, "DS:count:DERIVE:600:0:U", rra1, rra2, rra3, rra4, NULL };
+static char *derive_params[] = { "rrdcreate", rrdfn, "DS:count:DERIVE:600:0:U", NULL };
 static char *derive_tpl      = NULL;
 
 int do_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp) 

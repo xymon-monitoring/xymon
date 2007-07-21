@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.9 2006-05-03 21:19:24 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.10 2007-07-21 09:44:37 henrik Exp $";
 
 int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -19,7 +19,7 @@ int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					 "DS:IW:GAUGE:600:1:U",
 					 "DS:CPU:GAUGE:600:0:U",
 					 "DS:REQPERSEC:GAUGE:600:0:U",
-					 rra1, rra2, rra3, rra4, NULL };
+					 NULL };
 	static char *apache_tpl      = NULL;
 
 	char *markers[] = { "Total Accesses:", "Total kBytes:", 
