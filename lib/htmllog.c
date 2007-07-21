@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.58 2007-07-20 11:37:37 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.59 2007-07-21 16:13:18 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -364,7 +364,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 	}
 	if (rrd && graph) {
-		char *p, *multikey;
+		char *p, *multikey, *lcountid;
+
 		if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,";
 
 		/* 
@@ -376,35 +377,47 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		 */
 		multikey = (char *)malloc(strlen(service) + 3);
 		sprintf(multikey, ",%s,", service);
-		if (strstr(multigraphs, multikey)) {
-			/* The "disk" report from the NetWare client puts a "warning light" on all entries */
-			int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
 
-			/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
-			linecount = 0; p = restofmsg;
-			do {
-				/* First skip all whitespace and blank lines */
-				while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
-				if (*p) {
-					if ((*p == '&') && (parse_color(p+1) != -1)) {
-						/* A "warninglight" line - skip it, unless its from a Netware box */
-						if (netwarediskreport) linecount++;
-					}
-					else {
-						/* We found something that is not blank, so one more line */
-						if (!netwarediskreport) linecount++;
-					}
-					/* Then skip forward to the EOLN */
-					p = strchr(p, '\n');
-				}
-			} while (p && (*p));
+		/*
+		 * Suggested by Francesco Duranti:
+		 * Check if there's a <!-- linecount=xx -->" already, and use that
+		 * as the linecount if there is. This will work also with test not defined 
+		 * as multigraphs.
+		 */
+		lcountid = strstr(restofmsg, "<!-- linecount=");
+		if (lcountid) {
+				linecount = atoi(lcountid+15);
+		} else {
+			if (strstr(multigraphs, multikey)) {
+				/* The "disk" report from the NetWare client puts a "warning light" on all entries */
+				int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
 
-			/* There is probably a header line ... */
-			if (!netwarediskreport && (linecount > 1)) linecount--;
+				/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
+				linecount = 0; p = restofmsg;
+				do {
+					/* First skip all whitespace and blank lines */
+					while ((*p) && (isspace((int)*p) || iscntrl((int)*p))) p++;
+					if (*p) {
+						if ((*p == '&') && (parse_color(p+1) != -1)) {
+							/* A "warninglight" line - skip it, unless its from a Netware box */
+							if (netwarediskreport) linecount++;
+						}
+						else {
+							/* We found something that is not blank, so one more line */
+							if (!netwarediskreport) linecount++;
+						}
+						/* Then skip forward to the EOLN */
+						p = strchr(p, '\n');
+					}
+				} while (p && (*p));
+
+				/* There is probably a header line ... */
+				if (!netwarediskreport && (linecount > 1)) linecount--;
+			}
+			xfree(multikey);
+
+			fprintf(output, "<!-- linecount=%d -->\n", linecount);
 		}
-		xfree(multikey);
-
-		fprintf(output, "<!-- linecount=%d -->\n", linecount);
 		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 	}
 
