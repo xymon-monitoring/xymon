@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.32 2007-06-19 12:41:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.33 2007-07-21 13:42:21 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -33,13 +33,21 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.32 2007-06-19 12:41:35 henrik Exp 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
 
+#include "hobbitd_rrd.h"
 #include "do_rrd.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
 static int running = 1;
 
-void sig_handler(int signum)
+typedef struct rrddeftree_t {
+	char *key;
+	int count;
+	char **defs;
+} rrddeftree_t;
+static RbtHandle rrddeftree;
+
+static void sig_handler(int signum)
 {
 	switch (signum) {
 	  case SIGCHLD:
@@ -51,7 +59,7 @@ void sig_handler(int signum)
 	}
 }
 
-void update_locator_hostdata(char *id)
+static void update_locator_hostdata(char *id)
 {
 	DIR *fd;
 	struct dirent *d;
@@ -68,6 +76,93 @@ void update_locator_hostdata(char *id)
 	}
 
 	closedir(fd);
+}
+
+static void load_rrddefs(void)
+{
+	char fn[PATH_MAX];
+	FILE *fd;
+	strbuffer_t *inbuf = newstrbuffer(0);
+	char *key = NULL, *p;
+	char **defs = NULL;
+	int defcount = 0;
+	rrddeftree_t *newrec;
+
+	rrddeftree = rbtNew(name_compare);
+
+	sprintf(fn, "%s/etc/hobbit-rrddefinitions.cfg", xgetenv("BBHOME"));
+	fd = stackfopen(fn, "r", NULL);
+	if (fd == NULL) return;
+
+	while (stackfgets(inbuf, NULL)) {
+		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
+
+		if (*(STRBUF(inbuf)) == '[') {
+			if (key && (defcount > 0)) {
+				/* Save the current record */
+				newrec = (rrddeftree_t *)malloc(sizeof(rrddeftree_t));
+				newrec->key = key;
+				newrec->defs = defs;
+				newrec->count = defcount;
+				rbtInsert(rrddeftree, newrec->key, newrec);
+
+				key = NULL; defs = NULL; defcount = 0;
+			}
+
+			key = strdup(STRBUF(inbuf)+1);
+			p = strchr(key, ']'); if (p) *p = '\0';
+		}
+		else if (key) {
+			if (!defs) {
+				defcount = 1;
+				defs = (char **)malloc(sizeof(char *));
+			}
+			else {
+				defcount++;
+				defs = (char **)realloc(defs, defcount * sizeof(char *));
+			}
+			p = STRBUF(inbuf); p += strspn(p, " \t");
+			defs[defcount-1] = strdup(p);
+		}
+	}
+
+	if (key && (defcount > 0)) {
+		/* Save the last record */
+		newrec = (rrddeftree_t *)malloc(sizeof(rrddeftree_t));
+		newrec->key = key;
+		newrec->defs = defs;
+		newrec->count = defcount;
+		rbtInsert(rrddeftree, newrec->key, newrec);
+	}
+
+	stackfclose(fd);
+	freestrbuffer(inbuf);
+}
+
+static char *default_rrddefinitions[] = {
+	"RRA:AVERAGE:0.5:1:576",
+	"RRA:AVERAGE:0.5:6:576",
+	"RRA:AVERAGE:0.5:24:576",
+	"RRA:AVERAGE:0.5:288:576",
+};
+
+char **get_rrd_definition(char *key, int *count)
+{
+	RbtHandle handle;
+	char **result;
+
+	handle = rbtFind(rrddeftree, key);
+	if (handle != rbtEnd(rrddeftree)) {
+		rrddeftree_t *rec = (rrddeftree_t *)gettreeitem(rrddeftree, handle);
+		result = rec->defs;
+		*count = rec->count;
+	}
+	else {
+		result = default_rrddefinitions;
+		*count = (sizeof(default_rrddefinitions) / sizeof(default_rrddefinitions[0]));
+	}
+
+	return result;
 }
 
 int main(int argc, char *argv[])
@@ -140,6 +235,9 @@ int main(int argc, char *argv[])
 	if (chmod(ctlsockaddr.sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
 		errprintf("Setting permissions on cache-control socket failed: %s\n", strerror(errno));
 	}
+
+	/* Load the RRD definitions */
+	load_rrddefs();
 
 	running = 1;
 	while (running) {
