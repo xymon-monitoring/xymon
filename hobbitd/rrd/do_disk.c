@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.33 2007-07-21 10:19:16 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.34 2007-07-21 16:14:05 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -50,7 +50,13 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
 
-	curline = msg;
+	/*
+	 * Francesco Duranti noticed that if we use the "/group" option
+	 * when sending the status message, this tricks the parser to 
+	 * create an extra filesystem called "/group". So skip the first
+	 * line - we never have any disk reports there anyway.
+	 */
+	curline = strchr(msg, '\n'); if (curline) curline++;
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
