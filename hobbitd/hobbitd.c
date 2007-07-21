@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.270 2007-07-19 20:45:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.271 2007-07-21 21:36:54 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -204,6 +204,13 @@ typedef struct ghostlist_t {
 } ghostlist_t;
 RbtHandle rbghosts;
 
+typedef struct multisrclist_t {
+	char *id;
+	char *senders[2];
+	time_t tstamp;
+} multisrclist_t;
+RbtHandle rbmultisrc;
+
 int ghosthandling = -1;
 
 char *checkpointfn = NULL;
@@ -324,15 +331,14 @@ void update_statistics(char *cmd)
 
 char *generate_stats(void)
 {
-	static char *statsbuf = NULL;
-	static int statsbuflen = 0;
+	static strbuffer_t *statsbuf = NULL;
 	time_t now = getcurrenttime(NULL);
-	char *bufp;
 	int i, clients;
 	char bootuptxt[40];
 	char uptimetxt[40];
 	RbtHandle ghandle;
 	time_t uptime = (now - boottime);
+	char msgline[2048];
 
 	dbgprintf("-> generate_stats\n");
 
@@ -340,76 +346,90 @@ char *generate_stats(void)
 	MEMDEFINE(uptimetxt);
 
 	if (statsbuf == NULL) {
-		statsbuflen = 8192;
-		statsbuf = (char *)malloc(statsbuflen);
+		statsbuf = newstrbuffer(8192);
 	}
-	bufp = statsbuf;
+	else {
+		clearstrbuffer(statsbuf);
+	}
 
 	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottime));
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
-	bufp += sprintf(bufp, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
-			xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
-	bufp += sprintf(bufp, "Incoming messages      : %10ld\n", msgs_total);
+	sprintf(msgline, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
+		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
+	addtobuffer(statsbuf, msgline);
+	sprintf(msgline, "Incoming messages      : %10ld\n", msgs_total);
+	addtobuffer(statsbuf, msgline);
 	i = 0;
 	while (hobbitd_stats[i].cmd) {
-		bufp += sprintf(bufp, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
+		sprintf(msgline, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
+		addtobuffer(statsbuf, msgline);
 		i++;
 	}
-	bufp += sprintf(bufp, "- %-20s : %10ld\n", "Bogus/Timeouts ", hobbitd_stats[i].count);
+	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Timeouts ", hobbitd_stats[i].count);
+	addtobuffer(statsbuf, msgline);
 
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
-		bufp += sprintf(bufp, "Incoming messages/sec  : %10ld (average last %d seconds)\n", 
+		sprintf(msgline, "Incoming messages/sec  : %10ld (average last %d seconds)\n", 
 			((msgs_total - msgs_total_last) / (now - last_stats_time)), 
 			(int)(now - last_stats_time));
+		addtobuffer(statsbuf, msgline);
 	}
 	msgs_total_last = msgs_total;
 
-	bufp += sprintf(bufp, "\n");
+	addtobuffer(statsbuf, "\n");
 	clients = semctl(statuschn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "status channel messages: %10ld (%d readers)\n", statuschn->msgcount, clients);
+	sprintf(msgline, "status channel messages: %10ld (%d readers)\n", statuschn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(stachgchn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "stachg channel messages: %10ld (%d readers)\n", stachgchn->msgcount, clients);
+	sprintf(msgline, "stachg channel messages: %10ld (%d readers)\n", stachgchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(pagechn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "page   channel messages: %10ld (%d readers)\n", pagechn->msgcount, clients);
+	sprintf(msgline, "page   channel messages: %10ld (%d readers)\n", pagechn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(datachn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "data   channel messages: %10ld (%d readers)\n", datachn->msgcount, clients);
+	sprintf(msgline, "data   channel messages: %10ld (%d readers)\n", datachn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(noteschn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "notes  channel messages: %10ld (%d readers)\n", noteschn->msgcount, clients);
+	sprintf(msgline, "notes  channel messages: %10ld (%d readers)\n", noteschn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(enadischn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "enadis channel messages: %10ld (%d readers)\n", enadischn->msgcount, clients);
+	sprintf(msgline, "enadis channel messages: %10ld (%d readers)\n", enadischn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(clientchn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "client channel messages: %10ld (%d readers)\n", clientchn->msgcount, clients);
+	sprintf(msgline, "client channel messages: %10ld (%d readers)\n", clientchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(clichgchn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
+	sprintf(msgline, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 
 	ghandle = rbtBegin(rbghosts);
-	if (ghandle != rbtEnd(rbghosts)) bufp += sprintf(bufp, "\n\nGhost reports:\n");
+	if (ghandle != rbtEnd(rbghosts)) addtobuffer(statsbuf, "\n\nGhost reports:\n");
 	for (; (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
 		ghostlist_t *gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 
 		/* Skip records older than 10 minutes */
 		if (gwalk->tstamp < (now - 600)) continue;
+		sprintf(msgline, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
+		addtobuffer(statsbuf, msgline);
+	}
 
-		if ((statsbuflen - (bufp - statsbuf)) < 512) {
-			/* Less than 512 bytes left in buffer - expand it */
-			statsbuflen += 4096;
-			statsbuf = (char *)realloc(statsbuf, statsbuflen);
-			bufp = statsbuf + strlen(statsbuf);
-		}
+	ghandle = rbtBegin(rbmultisrc);
+	if (ghandle != rbtEnd(rbmultisrc)) addtobuffer(statsbuf, "\n\nMulti-source statuses\n");
+	for (; (ghandle != rbtEnd(rbmultisrc)); ghandle = rbtNext(rbmultisrc, ghandle)) {
+		multisrclist_t *mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, ghandle);
 
-		bufp += sprintf(bufp, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
+		/* Skip records older than 10 minutes */
+		if (mwalk->tstamp < (now - 600)) continue;
+		sprintf(msgline, "  %-25s reported by %s and %s\n", mwalk->id, mwalk->senders[0], mwalk->senders[1]);
+		addtobuffer(statsbuf, msgline);
 	}
 
 	if (errbuf) {
-		if ((strlen(statsbuf) + strlen(errbuf) + 1024) > statsbuflen) {
-			statsbuflen = strlen(statsbuf) + strlen(errbuf) + 1024;
-			statsbuf = (char *)realloc(statsbuf, statsbuflen);
-			bufp = statsbuf + strlen(statsbuf);
-		}
-
-		bufp += sprintf(bufp, "\n\nLatest errormessages:\n%s\n", errbuf);
+		addtobuffer(statsbuf, "\n\nLatest errormessages:\n");
+		addtobuffer(statsbuf, errbuf);
+		addtobuffer(statsbuf, "\n");
 	}
 
 	MEMUNDEFINE(bootuptxt);
@@ -417,7 +437,7 @@ char *generate_stats(void)
 
 	dbgprintf("<- generate_stats\n");
 
-	return statsbuf;
+	return STRBUF(statsbuf);
 }
 
 
@@ -736,6 +756,34 @@ void log_ghost(char *hostname, char *sender, char *msg)
 	}
 
 	dbgprintf("<- log_ghost\n");
+}
+
+void log_multisrc(hobbitd_log_t *log, char *newsender)
+{
+	RbtHandle ghandle;
+	multisrclist_t *gwalk;
+	char id[1024];
+
+	dbgprintf("-> log_multisrc\n");
+
+	snprintf(id, sizeof(id), "%s:%s", log->host->hostname, log->test->name);
+	ghandle = rbtFind(rbmultisrc, id);
+	if (ghandle == rbtEnd(rbghosts)) {
+		gwalk = (multisrclist_t *)calloc(1, sizeof(multisrclist_t));
+		gwalk->id = strdup(id);
+		gwalk->senders[0] = strdup(log->sender);
+		gwalk->senders[1] = strdup(newsender);
+		gwalk->tstamp = getcurrenttime(NULL);
+		rbtInsert(rbmultisrc, gwalk->id, gwalk);
+	}
+	else {
+		gwalk = (multisrclist_t *)gettreeitem(rbghosts, ghandle);
+		xfree(gwalk->senders[0]); gwalk->senders[0] = strdup(log->sender);
+		xfree(gwalk->senders[1]); gwalk->senders[1] = strdup(newsender);
+		gwalk->tstamp = getcurrenttime(NULL);
+	}
+
+	dbgprintf("<- log_multisrc\n");
 }
 
 hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_hostlist_t **host)
@@ -1107,16 +1155,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	 * the wrong hostname.
 	 */
 	if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
-		/*
-		 * Show a message about this once an hour, except if the status 
-		 * was changed internally by Hobbit (purple)
-		 */
-		if ( ((log->lastdoublesourcemsg + 3600) < now) &&
-		     (strcmp(log->sender, "hobbitd") != 0) && 
-		     (strcmp(sender, "hobbitd") != 0)              )  {
-			errprintf("Status %s:%s is reported from two sources: %s and %s\n",
-				  hostname, testname, log->sender, sender);
-			log->lastdoublesourcemsg = now;
+		if ( (strcmp(log->sender, "hobbitd") != 0) && (strcmp(sender, "hobbitd") != 0) )  {
+			log_multisrc(log, sender);
 		}
 	}
 	strncpy(log->sender, sender, sizeof(log->sender)-1);
@@ -3480,6 +3520,31 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 
+	else if (strncmp(msg->buf, "multisrclist", 12) == 0) {
+		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+			RbtHandle mhandle;
+			multisrclist_t *mwalk;
+			strbuffer_t *resp;
+			char msgline[1024];
+
+			resp = newstrbuffer(0);
+
+			for (mhandle = rbtBegin(rbmultisrc); (mhandle != rbtEnd(rbmultisrc)); mhandle = rbtNext(rbmultisrc, mhandle)) {
+				mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, mhandle);
+				snprintf(msgline, sizeof(msgline), "%s|%s|%s|%ld\n", 
+					 mwalk->id, mwalk->senders[0], mwalk->senders[1], (long int)mwalk->tstamp);
+				addtobuffer(resp, msgline);
+			}
+
+			msg->doingwhat = RESPONDING;
+			xfree(msg->buf);
+			msg->buflen = STRBUFLEN(resp);
+			msg->buf = grabstrbuffer(resp);
+			if (!msg->buf) msg->buf = strdup("");
+			msg->bufp = msg->buf;
+		}
+	}
+
 done:
 	if (msg->doingwhat == RESPONDING) {
 		shutdown(msg->sock, SHUT_RD);
@@ -3966,6 +4031,7 @@ int main(int argc, char *argv[])
 	rbcookies = rbtNew(int_compare);
 	rbfilecache = rbtNew(name_compare);
 	rbghosts = rbtNew(name_compare);
+	rbmultisrc = rbtNew(name_compare);
 
 	/* For wildcard notify's */
 	create_testinfo("*");
