@@ -13,7 +13,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.14 2006-08-14 15:37:24 henrik Exp $
+# $Id: runclient.sh,v 1.15 2007-07-21 15:41:20 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
@@ -54,11 +54,7 @@ do
 	shift
 done
 
-OLDDIR="`pwd`"
-cd "`dirname $0`"
-HOBBITCLIENTHOME="`pwd`"
-cd "$OLDDIR"
-
+HOBBITCLIENTHOME="`dirname $0`"
 MACHINE="`echo $MACHINEDOTS | sed -e 's/\./,/g'`"
 
 export MACHINE MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME CONFIGCLASS
