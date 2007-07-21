@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.57 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.58 2007-07-21 15:15:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -77,6 +77,10 @@ typedef struct c_log_t {
 	int color;
 } c_log_t;
 
+typedef struct c_paging_t {
+	int warnlevel, paniclevel;
+} c_paging_t;
+
 #define FCHK_NOEXIST  (1 << 0)
 #define FCHK_TYPE     (1 << 1)
 #define FCHK_MODE     (1 << 2)
@@ -138,7 +142,7 @@ typedef struct c_port_t {
 	int color;
 } c_port_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT } ruletype_t;
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_PAGING } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -163,6 +167,7 @@ typedef struct c_rule_t {
 		c_file_t fcheck;
 		c_dir_t dcheck;
 		c_port_t port;
+		c_paging_t paging;
 	} rule;
 } c_rule_t;
 
@@ -983,6 +988,18 @@ int load_client_config(char *configfn)
 					}
 				} while (tok && (!isqual(tok)));
 			}
+			else if (strcasecmp(tok, "PAGING") == 0) {
+				currule = setup_rule(C_PAGING, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+
+				currule->rule.paging.warnlevel = 5;
+				currule->rule.paging.paniclevel = 10;
+
+				tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+				currule->rule.paging.warnlevel = atoi(tok);
+
+				tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+				currule->rule.paging.paniclevel = atoi(tok);
+			}
 			else {
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
 				unknowntok = 1; tok = NULL; continue;
@@ -1171,6 +1188,10 @@ void dump_client_config(void)
 				printf(" max=%d", rwalk->rule.port.pmax);
 			printf(" color=%s", colorname(rwalk->rule.port.color));
 			break;
+
+		  case C_PAGING:
+			printf("PAGING %d %d", rwalk->rule.paging.warnlevel, rwalk->rule.paging.paniclevel);
+			break;
 		}
 
 		if (rwalk->flags & CHK_TRACKIT) {
@@ -1335,6 +1356,29 @@ void get_memory_thresholds(void *hinfo, char *classname,
 		rule = getrule(NULL, NULL, NULL, hinfo, C_MEM);
 	}
 }
+
+int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *pagingred)
+{
+	int result = 0;
+	char *hostname, *pagename;
+	c_rule_t *rule;
+
+	hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+
+	*pagingyellow = 5;
+	*pagingred = 10;
+
+	rule = getrule(hostname, pagename, classname, hinfo, C_PAGING);
+	if (rule) {
+		*pagingyellow = rule->rule.paging.warnlevel;
+		*pagingred    = rule->rule.paging.paniclevel;
+		result = rule->cfid;
+	}
+
+	return result;
+}
+
 
 int scan_log(void *hinfo, char *classname, 
 	     char *logname, char *logdata, char *section, strbuffer_t *summarybuf)
