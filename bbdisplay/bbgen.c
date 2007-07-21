@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.225 2007-06-11 14:39:45 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.226 2007-07-21 15:45:57 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -554,10 +554,9 @@ int main(int argc, char *argv[])
 	if (xgetenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(xgetenv("BBSUBPAGEHTACCESS"));
 
 	/*
-	 * When doing alternate pagesets, disable some stuff:
-	 * No WML or RSS pages.
+	 * When doing embedded- or snapshow-pages, dont build the WML/RSS pages.
 	 */
-	if (pageset || embedded || snapshot) enable_wmlgen = wantrss = 0;
+	if (embedded || snapshot) enable_wmlgen = wantrss = 0;
 	if (embedded) {
 		egocolumn = htaccess = NULL;
 
