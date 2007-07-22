@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rrdcachectl.c,v 1.1 2007-07-22 06:50:26 henrik Exp $";
+static char rcsid[] = "$Id: rrdcachectl.c,v 1.2 2007-07-22 06:55:32 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -123,6 +123,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	printf("Enter the hostname whose RRD cache should be flushed. One host per line\n");
 	while (!done) {
 		done = (fgets(buf, sizeof(buf), stdin) == NULL); if (done) continue;
 		done = (call_svc(buf) != 0);
