@@ -21,7 +21,6 @@ extern time_t   recentgif_limit;
 extern char 	*purplelogfn;
 extern int      colorcount[];
 extern int      colorcount_noprop[];
-extern int	ignoredcount;
 
 extern state_t *load_state(dispsummary_t **sumhead);
 

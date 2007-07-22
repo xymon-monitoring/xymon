@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.227 2007-07-22 07:52:08 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.228 2007-07-22 10:17:08 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -718,9 +718,6 @@ int main(int argc, char *argv[])
 		addtostatus(msgline);
 		sprintf(msgline, " - Blue                     : %5d (%5.2f %%)\n", 
 			colorcount[COL_BLUE], ((100.0 * colorcount[COL_BLUE]) / statuscount));
-		addtostatus(msgline);
-		sprintf(msgline, " - Not included in display  : %5d (%5.2f %%)\n", 
-			ignoredcount, ((100.0 * ignoredcount) / statuscount));
 		addtostatus(msgline);
 
 		if (errbuf) {

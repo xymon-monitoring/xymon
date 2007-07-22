@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.171 2007-07-22 07:52:08 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.172 2007-07-22 10:17:08 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -41,7 +41,6 @@ char		*purplelogfn = NULL;
 static FILE	*purplelog = NULL;
 int		colorcount[COL_COUNT] = { 0, };
 int		colorcount_noprop[COL_COUNT] = { 0, };
-int		ignoredcount = 0;
 
 static time_t oldestentry;
 
@@ -130,6 +129,7 @@ state_t *init_state(char *filename, logdata_t *log)
 	time_t		now = getcurrenttime(NULL);
 	time_t		histentry_start;
 	int		logexpired = 0;
+	int		propagating, isacked;
 
 	dbgprintf("init_state(%s, %d, ...)\n", textornull(filename));
 
@@ -137,8 +137,6 @@ state_t *init_state(char *filename, logdata_t *log)
 	if ( (strncmp(filename, "summary.", 8) == 0) || (filename[0] == '.')) {
 		return NULL;
 	}
-
-	statuscount++;
 
 	if (reportstart || snapshot) {
 		/* Dont do reports for info- and trends-columns */
@@ -196,10 +194,30 @@ state_t *init_state(char *filename, logdata_t *log)
 		}
 	}
 
+	/* Must do these first to get the propagation value for the statistics */
+	host = find_host(hostname);
+	isacked = (log->acktime > now);
+	propagating = checkpropagation(host, testname, log->color, isacked);
+
+	/* Count all of the real columns */
+	if ( (strcmp(testname, xgetenv("INFOCOLUMN")) != 0) && (strcmp(testname, xgetenv("TRENDSCOLUMN")) != 0) ) {
+		statuscount++;
+		switch (log->color) {
+		  case COL_RED:
+		  case COL_YELLOW:
+			if (propagating) colorcount[log->color] += 1;
+			else colorcount_noprop[log->color] += 1;
+			break;
+
+		  default:
+			colorcount[log->color] += 1;
+			break;
+		}
+	}
+
 	testnameidx = (char *)malloc(strlen(testname) + 3);
 	sprintf(testnameidx, ",%s,", testname);
 	if (unwantedcolumn(hostname, testname) || (ignorecolumns && strstr(ignorecolumns, testnameidx))) {
-		ignoredcount++;
 		xfree(hostname);
 		xfree(testname);
 		xfree(testnameidx);
@@ -207,8 +225,6 @@ state_t *init_state(char *filename, logdata_t *log)
 		return NULL;	/* Ignore this type of test */
 	}
 	xfree(testnameidx);
-
-	host = find_host(hostname);
 
 	newstate = (state_t *) calloc(1, sizeof(state_t));
 	newstate->entry = (entry_t *) calloc(1, sizeof(entry_t));
@@ -267,7 +283,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		if (testflag_set(newstate->entry, 'D')) newstate->entry->skin = dialupskin;
 		if (testflag_set(newstate->entry, 'R')) newstate->entry->skin = reverseskin;
 		newstate->entry->shorttext = strdup(log->msg);
-		newstate->entry->acked = (log->acktime > now);
+		newstate->entry->acked = isacked;
 
 		newstate->entry->oldage = (fileage >= recentgif_limit);
 		newstate->entry->fileage = (log->lastchange ? fileage : -1);
@@ -282,26 +298,13 @@ state_t *init_state(char *filename, logdata_t *log)
 		       hostname, testname, (host ? " (expired)" : " (unknown host)"));
 	}
 
-
-	newstate->entry->propagate = checkpropagation(host, testname, newstate->entry->color, newstate->entry->acked);
+	newstate->entry->propagate = propagating;
 
 	dbgprintf("init_state: hostname=%s, testname=%s, color=%d, acked=%d, age=%s, oldage=%d, propagate=%d, alert=%d\n",
 		textornull(hostname), textornull(testname), 
 		newstate->entry->color, newstate->entry->acked,
 		textornull(newstate->entry->age), newstate->entry->oldage,
 		newstate->entry->propagate, newstate->entry->alert);
-
-	switch (newstate->entry->color) {
-	  case COL_RED:
-	  case COL_YELLOW:
-		if (newstate->entry->propagate) colorcount[newstate->entry->color] += 1;
-		else colorcount_noprop[newstate->entry->color] += 1;
-		break;
-
-	  default:
-		colorcount[newstate->entry->color] += 1;
-		break;
-	}
 
 	if (host) {
         	hostlist_t *l;
