@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.58 2007-07-21 15:15:33 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.59 2007-07-22 06:33:46 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -576,7 +576,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "LOAD") == 0) {
 				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 				currule->rule.load.warnlevel = 5.0;
-				currule->rule.load.paniclevel = atof(tok);
+				currule->rule.load.paniclevel = 10.0
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.load.warnlevel = atof(tok);
