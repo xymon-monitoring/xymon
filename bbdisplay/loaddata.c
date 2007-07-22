@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.170 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.171 2007-07-22 07:52:08 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -37,9 +37,11 @@ time_t		recentgif_limit = 86400;		/* Limit for recent-gifs display, in seconds *
 
 bbgen_col_t   	null_column = { "", NULL };		/* Null column */
 
-int		purplecount = 0;
 char		*purplelogfn = NULL;
 static FILE	*purplelog = NULL;
+int		colorcount[COL_COUNT] = { 0, };
+int		colorcount_noprop[COL_COUNT] = { 0, };
+int		ignoredcount = 0;
 
 static time_t oldestentry;
 
@@ -129,13 +131,14 @@ state_t *init_state(char *filename, logdata_t *log)
 	time_t		histentry_start;
 	int		logexpired = 0;
 
-	statuscount++;
 	dbgprintf("init_state(%s, %d, ...)\n", textornull(filename));
 
 	/* Ignore summary files and dot-files (this catches "." and ".." also) */
 	if ( (strncmp(filename, "summary.", 8) == 0) || (filename[0] == '.')) {
 		return NULL;
 	}
+
+	statuscount++;
 
 	if (reportstart || snapshot) {
 		/* Dont do reports for info- and trends-columns */
@@ -196,6 +199,7 @@ state_t *init_state(char *filename, logdata_t *log)
 	testnameidx = (char *)malloc(strlen(testname) + 3);
 	sprintf(testnameidx, ",%s,", testname);
 	if (unwantedcolumn(hostname, testname) || (ignorecolumns && strstr(ignorecolumns, testnameidx))) {
+		ignoredcount++;
 		xfree(hostname);
 		xfree(testname);
 		xfree(testnameidx);
@@ -274,7 +278,6 @@ state_t *init_state(char *filename, logdata_t *log)
 	}
 
 	if (purplelog && (newstate->entry->color == COL_PURPLE)) {
-		purplecount++;
 		fprintf(purplelog, "%s %s%s\n", 
 		       hostname, testname, (host ? " (expired)" : " (unknown host)"));
 	}
@@ -287,6 +290,18 @@ state_t *init_state(char *filename, logdata_t *log)
 		newstate->entry->color, newstate->entry->acked,
 		textornull(newstate->entry->age), newstate->entry->oldage,
 		newstate->entry->propagate, newstate->entry->alert);
+
+	switch (newstate->entry->color) {
+	  case COL_RED:
+	  case COL_YELLOW:
+		if (newstate->entry->propagate) colorcount[newstate->entry->color] += 1;
+		else colorcount_noprop[newstate->entry->color] += 1;
+		break;
+
+	  default:
+		colorcount[newstate->entry->color] += 1;
+		break;
+	}
 
 	if (host) {
         	hostlist_t *l;
