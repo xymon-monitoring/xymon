@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.271 2007-07-21 21:36:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.272 2007-07-22 21:10:40 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -116,9 +116,10 @@ typedef struct hobbitd_log_t {
 	int msgsz;
 	unsigned char *dismsg, *ackmsg;
 	int cookie;
-	time_t cookieexpires, lastdoublesourcemsg;
+	time_t cookieexpires;
 	struct hobbitd_meta_t *metas;
 	ackinfo_t *acklist;	/* Holds list of acks */
+	unsigned long statuschangecount;
 	struct hobbitd_log_t *next;
 } hobbitd_log_t;
 
@@ -258,6 +259,7 @@ enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS,
 		    F_ACKLIST,
 		    F_HOSTINFO,
 		    F_FLAPINFO,
+		    F_STATS,
 		    F_LAST };
 
 typedef struct boardfieldnames_t {
@@ -285,6 +287,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "acklist", F_ACKLIST },
 	{ "BBH_", F_HOSTINFO },
 	{ "flapinfo", F_FLAPINFO },
+	{ "stats", F_STATS },
 	{ NULL, F_LAST },
 };
 typedef struct boardfields_t {
@@ -294,6 +297,7 @@ typedef struct boardfields_t {
 #define BOARDFIELDS_MAX 50
 boardfield_t boardfields[BOARDFIELDS_MAX+1];
 
+/* Statistics counters */
 unsigned long msgs_total = 0;
 unsigned long msgs_total_last = 0;
 time_t last_stats_time = 0;
@@ -1282,6 +1286,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			for (i=LASTCHANGESZ-1; (i > 0); i--)
 				log->lastchange[i] = log->lastchange[i-1];
 			log->lastchange[0] = now;
+			log->statuschangecount++;
 		}
 	}
 
@@ -2372,6 +2377,10 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 					lwalk->flapping, 
 					lwalk->lastchange[0], lwalk->lastchange[LASTCHANGESZ-1],
 					colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor]);
+			break;
+
+		  case F_STATS:
+			bufp += sprintf(bufp, "statuschanges=%lu", lwalk->statuschangecount);
 			break;
 
 		  case F_LAST: break;
