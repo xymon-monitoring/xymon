@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.34 2007-06-19 12:39:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.35 2007-07-22 10:56:25 henrik Exp $";
 
 #include "config.h"
 
@@ -212,11 +212,15 @@ static int net_worker_listener(char *ipport)
 		while ((childpid = wait3(&childstat, WNOHANG, NULL)) > 0);
 	}
 
+	/* Close the listener socket */
+	close(lsocket);
+
 	/* Kill any children that are still around */
 	kill(0, SIGTERM);
 
 	return 1;
 }
+
 
 int net_worker_option(char *arg)
 {
@@ -320,6 +324,7 @@ void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky
 		exit(1);
 	}
 }
+
 
 unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
 {
