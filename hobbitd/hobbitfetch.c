@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.16 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.17 2007-07-24 08:49:17 henrik Exp $";
 
 #include "config.h"
 
@@ -599,11 +599,13 @@ int main(int argc, char *argv[])
 		if (now >= whentoqueue) {
 			/* Scan host-tree for clients we need to contact */
 			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
+				static char *ipbuffer = NULL;
 				clients_t *clientwalk;
 				char msgline[100];
 				strbuffer_t *request;
 				char *pullstr, *ip;
 				int port;
+				struct in_addr addr;
 
 				clientwalk = (clients_t *)gettreeitem(clients, handle);
 				if (clientwalk->busy) continue;
@@ -613,39 +615,41 @@ int main(int argc, char *argv[])
 				hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
 				pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
 
-				ip = strchr(pullstr, '=');
+				ip = bbh_item(hostwalk, BBH_IP);
 				port = atoi(xgetenv("BBPORT"));
+				if (ipbuffer) xfree(ipbuffer);
 
-				if (!ip) {
-					ip = strdup(bbh_item(hostwalk, BBH_IP));
-				}
-				else {
+				if ((pullstr = strchr(pullstr, '=')) != NULL) {
 					/* There is an explicit IP setting in the pulldata tag */
 					char *p;
 
-					ip++; /* Skip the '=' */
-					ip = strdup(ip);
-					p = strchr(ip, ':');
-					if (p) { *p = '\0'; port = atoi(p+1); }
+					ip = ipbuffer = strdup(pullstr+1);
+					p = strchr(ip, ':'); if (p) { *p = '\0'; port = atoi(p+1); }
 
 					if (*ip == '\0') {
 						/* No IP given, just a port number */
-						xfree(ip);
-						ip = strdup(bbh_item(hostwalk, BBH_IP));
+						ip = bbh_item(hostwalk, BBH_IP);
 					}
 				}
 
 				if (strcmp(ip, "0.0.0.0") == 0) {
 					struct hostent *hent;
 
-					xfree(ip); ip = NULL;
+					if (ipbuffer) xfree(ipbuffer);
 					hent = gethostbyname(clientwalk->hostname);
 					if (hent) {
-						struct in_addr addr;
-
 						memcpy(&addr, *(hent->h_addr_list), sizeof(addr));
-						ip = strdup(inet_ntoa(addr));
+						ip = ipbuffer = strdup(inet_ntoa(addr));
 					}
+					else {
+						errprintf("Could not determine IP for %s\n", clientwalk->hostname);
+						ip = NULL;
+					}
+				}
+
+				if (ip && (inet_aton(ip, &addr) == 0)) {
+					errprintf("Invalid IP '%s' for host %s\n", ip, clientwalk->hostname);
+					ip = NULL;
 				}
 
 				if (!ip) continue;
@@ -664,8 +668,6 @@ int main(int argc, char *argv[])
 				/* Put the request on the connection queue */
 				addrequest(C_CLIENT, ip, port, request, clientwalk);
 				clientwalk->busy = 1;
-
-				xfree(ip);
 			}
 		}
 
