@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.25 2007-07-21 15:12:21 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.26 2007-07-24 08:44:07 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -76,6 +76,30 @@ static vmstat_layout_t vmstat_aix_layout[] = {
 	{ 14, "cpu_sys" },
 	{ 15, "cpu_idl" },
 	{ 16, "cpu_wait" },
+	{ -1, NULL }
+};
+
+/* This is for AIX running on Power5 cpu's. */
+static vmstat_layout_t vmstat_aix_power5_layout[] = {
+	{ 0, "cpu_r" },
+	{ 1, "cpu_b" },
+	{ 2, "mem_avm" },
+	{ 3, "mem_free" },
+	{ 4, "mem_re" },
+	{ 5, "mem_pi" },
+	{ 6, "mem_po" },
+	{ 7, "mem_fr" },
+	{ 8, "sr" },
+	{ 9, "mem_cy" },
+	{ 10, "cpu_int" },
+	{ 11, "cpu_syc" },
+	{ 12, "cpu_csw" },
+	{ 13, "cpu_usr" },
+	{ 14, "cpu_sys" },
+	{ 15, "cpu_idl" },
+	{ 16, "cpu_wait" },
+	{ 17, "cpu_pc" },
+	{ 18, "cpu_ec" },
 	{ -1, NULL }
 };
 
@@ -326,13 +350,32 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		p = strtok(NULL, " ");
 	}
 
+	/* Must do this now, to check on the layout of any existing file */
+	setupfn("%s", "vmstat.rrd");
+
 	switch (ostype) {
 	  case OS_SOLARIS: 
 		layout = vmstat_solaris_layout; break;
 	  case OS_OSF:
 		layout = vmstat_osf_layout; break;
+
 	  case OS_AIX: 
-		layout = vmstat_aix_layout; break;
+		/* Special, because there are two layouts for AIX */
+		{
+			char **dsnames;
+			int dscount, i;
+
+			dscount = rrddatasets(hostname, &dsnames);
+			layout = ((dscount == 17) ? vmstat_aix_layout : vmstat_aix_power5_layout);
+
+			if (dsnames) {
+				/* Free the dsnames list */
+				for (i=0; (i<dscount); i++) xfree(dsnames[i]);
+				xfree(dsnames);
+			}
+		}
+		break;
+
 	  case OS_IRIX:
 		layout = vmstat_irix_layout; break;
 	  case OS_HPUX: 
@@ -378,14 +421,12 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	for (defcount = 0; (layout[defcount].name); defcount++) ;
 
 	/* Setup the create-parameters */
-	creparams = (char **)xmalloc((defcount+3)*sizeof(char *));
-	creparams[0] = "rrdcreate";
-	creparams[1] = rrdfn;
+	creparams = (char **)malloc((defcount+1)*sizeof(char *));
 	for (defidx=0; (defidx < defcount); defidx++) {
-		creparams[2+defidx] = (char *)xmalloc(strlen(layout[defidx].name) + strlen("DS::GAUGE:600:0:U") + 1);
-		sprintf(creparams[2+defidx], "DS:%s:GAUGE:600:0:U", layout[defidx].name);
+		creparams[defidx] = (char *)malloc(strlen(layout[defidx].name) + strlen("DS::GAUGE:600:0:U") + 1);
+		sprintf(creparams[defidx], "DS:%s:GAUGE:600:0:U", layout[defidx].name);
 	}
-	creparams[2+defcount] = NULL;
+	creparams[defcount] = NULL;
 
 	/* Setup the update string, picking out values according to the layout */
 	p = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);
@@ -400,10 +441,9 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 	}
 
-	sprintf(rrdfn, "vmstat.rrd");
-	result = create_and_update_rrd(hostname, testname, rrdfn, creparams, NULL);
+	result = create_and_update_rrd(hostname, testname, creparams, NULL);
 
-	for (defidx=0; (defidx < defcount); defidx++) xfree(creparams[2+defidx]);
+	for (defidx=0; (defidx < defcount); defidx++) xfree(creparams[defidx]);
 	xfree(creparams);
 
 	return result;
