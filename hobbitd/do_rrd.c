@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.49 2007-07-21 15:16:37 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.50 2007-07-24 08:38:51 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -111,8 +111,29 @@ static char *setup_template(char *params[])
 
 static void setupfn(char *format, char *param)
 {
+	char *p;
+
 	snprintf(rrdfn, sizeof(rrdfn)-1, format, param);
 	rrdfn[sizeof(rrdfn)-1] = '\0';
+	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
+}
+
+static void setupfn2(char *format, char *param1, char *param2)
+{
+	char *p;
+
+	snprintf(rrdfn, sizeof(rrdfn)-1, format, param1, param2);
+	rrdfn[sizeof(rrdfn)-1] = '\0';
+	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
+}
+
+static void setupfn3(char *format, char *param1, char *param2, char *param3)
+{
+	char *p;
+
+	snprintf(rrdfn, sizeof(rrdfn)-1, format, param1, param2, param3);
+	rrdfn[sizeof(rrdfn)-1] = '\0';
+	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
 }
 
 static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
@@ -143,7 +164,7 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	return result;
 }
 
-static int create_and_update_rrd(char *hostname, char *testname, char *fn, char *creparams[], char *template)
+static int create_and_update_rrd(char *hostname, char *testname, char *creparams[], char *template)
 {
 	static int callcounter = 0;
 	struct stat st;
@@ -152,7 +173,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *fn, char 
 	RbtIterator handle;
 	updcacheitem_t *cacheitem = NULL;
 
-	if ((fn == NULL) || (strlen(fn) == 0)) {
+	if ((rrdfn == NULL) || (strlen(rrdfn) == 0)) {
 		errprintf("RRD update for no file\n");
 		return -1;
 	}
@@ -169,10 +190,9 @@ static int create_and_update_rrd(char *hostname, char *testname, char *fn, char 
 			return -1;
 		}
 	}
-	/* Watch out here - "fn" may be very large. */
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, fn);
+	/* Watch out here - "rrdfn" may be very large. */
+	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
-	creparams[1] = filedir;	/* Icky */
 
 	/* Prepare to cache the update. Create the cache tree, and find/create a cache record */
 	if (updcache_keyofs == -1) {
@@ -203,10 +223,13 @@ static int create_and_update_rrd(char *hostname, char *testname, char *fn, char 
 
 		/* Add the RRA definitions to the create parameter set */
 		rrddefinitions = get_rrd_definition(testname, &rrddefcount);
-
-		rrdcreate_params = (char **)calloc(pcount + rrddefcount + 1, sizeof(char *));
-		for (i=0; (i < pcount); i++)      rrdcreate_params[i]        = creparams[i];
-		for (i=0; (i < rrddefcount); i++) rrdcreate_params[pcount++] = rrddefinitions[i];
+		rrdcreate_params = (char **)calloc(2 + pcount + rrddefcount + 1, sizeof(char *));
+		rrdcreate_params[0] = "rrdcreate";
+		rrdcreate_params[1] = filedir;
+		for (i=0; (i < pcount); i++)
+			rrdcreate_params[2+i]      = creparams[i];
+		for (i=0; (i < rrddefcount); i++, pcount++)
+			rrdcreate_params[2+pcount] = rrddefinitions[i];
 
 		if (debug) {
 			for (i = 0; (rrdcreate_params[i]); i++) {
@@ -219,7 +242,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *fn, char 
 		 * we MUST reset this before every call.
 		 */
 		optind = opterr = 0; rrd_clear_error();
-		result = rrd_create(pcount, rrdcreate_params);
+		result = rrd_create(2+pcount, rrdcreate_params);
 		xfree(rrdcreate_params);
 
 		if (result != 0) {
@@ -343,7 +366,7 @@ void rrdcacheflushhost(char *hostname)
 	}
 }
 
-static int rrddatasets(char *hostname, char *fn, char ***dsnames)
+static int rrddatasets(char *hostname, char ***dsnames)
 {
 	struct stat st;
 
@@ -353,7 +376,7 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 	unsigned long steptime, dscount;
 	rrd_value_t *rrddata;
 
-	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, fn);
+	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
 	filedir[sizeof(filedir)-1] = '\0';
 	if (stat(filedir, &st) == -1) return 0;
 
@@ -402,16 +425,6 @@ static int rrddatasets(char *hostname, char *fn, char ***dsnames)
 #include "rrd/do_trends.c"
 #include "rrd/do_paging.c"
 
-#ifdef USE_BEA2
-#include "rrd/do_bea2.c"
-#else
-#include "rrd/do_bea.c"
-#endif
-
-#ifdef DO_ORCA
-#include "rrd/do_orca.c"
-#endif
-
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
 	int res = 0;
@@ -445,11 +458,6 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "bind") == 0)        res = do_bind_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "mailq") == 0)       res = do_mailq_rrd(hostname, testname, msg, tstamp);
-#ifdef USE_BEA2
-	else if (strcmp(id, "bea2") == 0)        res = do_bea_rrd(hostname, testname, msg, tstamp);
-#else
-	else if (strcmp(id, "bea") == 0)         res = do_bea_rrd(hostname, testname, msg, tstamp);
-#endif
 	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "temperature") == 0) res = do_temperature_rrd(hostname, testname, msg, tstamp);
 
@@ -462,10 +470,6 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, msg, tstamp);
-
-#ifdef DO_ORCA
-	else if (strcmp(id, "orca") == 0)        res = do_orca_rrd(hostname, testname, msg, tstamp);
-#endif
 
 	else if (extids && exthandler) {
 		int i;
