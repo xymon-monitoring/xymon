@@ -8,10 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.30 2007-07-21 15:12:21 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.31 2007-07-24 08:45:01 henrik Exp $";
 
-static char *netstat_params[] = { "rrdcreate", rrdfn, 
-	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
+static char *netstat_params[] = { "DS:udpInDatagrams:DERIVE:600:0:U", 
 	                          "DS:udpOutDatagrams:DERIVE:600:0:U", 
 	                          "DS:udpInErrors:DERIVE:600:0:U", 
 	                          "DS:tcpActiveOpens:DERIVE:600:0:U", 
@@ -528,8 +527,8 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	if (havedata > 0) {
-		sprintf(rrdfn, "netstat.rrd");
-		return create_and_update_rrd(hostname, testname, rrdfn, netstat_params, netstat_tpl);
+		setupfn("%s", "netstat.rrd");
+		return create_and_update_rrd(hostname, testname, netstat_params, netstat_tpl);
 	}
 	else {
 		return -1;

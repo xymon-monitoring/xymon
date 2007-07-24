@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.19 2007-07-21 10:19:16 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.20 2007-07-24 08:45:01 henrik Exp $";
 
 int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -26,7 +26,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		strbuffer_t *inbuf;
 		char *p;
 		char **params = NULL;
-		int paridx = 1;
+		int paridx = 0;
 		pid_t mypid = getpid();
 		
 		MEMDEFINE(fn); MEMDEFINE(extcmd);
@@ -64,14 +64,12 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					/* After doing one set of data, allow script to re-use the same DS defs */
 					if (strncasecmp(STRBUF(inbuf), "DS:", 3) == 0) {
 						/* New DS definitions, scratch the old ones */
-						pstate = R_DEFS;
-
 						if (params) {
-							for (paridx=2; (params[paridx] != NULL); paridx++) 
+							for (paridx=0; (params[paridx] != NULL); paridx++) 
 								xfree(params[paridx]);
+							xfree(params);
+							params = NULL;
 						}
-						xfree(params);
-						params = NULL;
 						pstate = R_DEFS;
 					}
 					else pstate = R_FN;
@@ -80,36 +78,32 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				switch (pstate) {
 				  case R_DEFS:
 					if (params == NULL) {
-						params = (char **)calloc(4, sizeof(char *));
-						params[0] = "rrdcreate";
-						params[1] = rrdfn;
-						paridx = 1;
+						params = (char **)calloc(1, sizeof(char *));
+						paridx = 0;
 					}
 
 					if (strncasecmp(STRBUF(inbuf), "DS:", 3) == 0) {
 						/* Dataset definition */
-						paridx++;
-						params = (char **)realloc(params, (3 + paridx)*sizeof(char *));
 						params[paridx] = strdup(STRBUF(inbuf));
-						params[paridx+1] = NULL;
+						paridx++;
+						params = (char **)realloc(params, (1 + paridx)*sizeof(char *));
+						params[paridx] = NULL;
 						break;
 					}
 					else {
-						/* No more DS defs - put in the RRA's last. */
-						params[++paridx] = NULL;
+						/* No more DS defs */
 						pstate = R_FN;
 					}
 					/* Fall through */
 				  case R_FN:
-					strncpy(rrdfn, STRBUF(inbuf), sizeof(rrdfn)-1);
-					rrdfn[sizeof(rrdfn)-1] = '\0';
+					setupfn("%s", STRBUF(inbuf));
 					pstate = R_DATA;
 					break;
 
 				  case R_DATA:
 					snprintf(rrdvalues, sizeof(rrdvalues)-1, "%d:%s", (int)tstamp, STRBUF(inbuf));
 					rrdvalues[sizeof(rrdvalues)-1] = '\0';
-					create_and_update_rrd(hostname, testname, rrdfn, params, NULL);
+					create_and_update_rrd(hostname, testname, params, NULL);
 					pstate = R_NEXT;
 					break;
 
@@ -125,7 +119,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 
 		if (params) {
-			for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
+			for (paridx=0; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
 			xfree(params);
 		}
 

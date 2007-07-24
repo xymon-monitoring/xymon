@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.16 2007-07-21 10:19:16 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.17 2007-07-24 08:45:01 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -26,10 +26,8 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	int dslen;
 
 	sprintf(rrdvalues, "%d", (int)tstamp);
-	params = (char **)calloc(4, sizeof(char *));
-	params[0] = "rrdcreate";
-	params[1] = rrdfn;
-	paridx = 1;
+	params = (char **)malloc(sizeof(char *));
+	paridx = 0;
 
 	/* Get the NCV_* or SPLITNCV_* environment setting */
 	envnam = (char *)malloc(9 + strlen(testname) + 1);
@@ -125,7 +123,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					/* ... however, for split ncv, we replace anything else  */
 					/* with an underscore, compacting successive invalid     */
 					/* characters into a single one                          */
-					else if (split_ncv && (dsname[outidx - 1] != '_')) {
+					else if (split_ncv && ((outidx == 0) || (dsname[outidx - 1] != '_'))) {
 						dsname[outidx++] = '_';
 					}
 				}
@@ -138,11 +136,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				}
 
 				sprintf(dskey, ",%s:", dsname);
-				if (split_ncv) {
-					/* setupfn("%s,%s.rrd", testname, dsname); */
-					snprintf(rrdfn, sizeof(rrdfn)-1, "%s,%s.rrd", testname, dsname);
-					rrdfn[sizeof(rrdfn)-1] = '\0';
-				}
+				if (split_ncv) setupfn2("%s,%s.rrd", testname, dsname);
 
 				if (dstypes) {
 					dstype = strstr(dstypes, dskey);
@@ -158,10 +152,10 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					dstype += strlen(dskey);
 					p = strchr(dstype, ','); if (p) *p = '\0';
 					if(split_ncv) {
-						sprintf(dsdef, "DS:lambda:%s:600:0:U", dstype);
+						sprintf(dsdef, "DS:lambda:%s:600:U:U", dstype);
 					}
 					else {
-						sprintf(dsdef, "DS:%s:%s:600:0:U", dsname, dstype);
+						sprintf(dsdef, "DS:%s:%s:600:U:U", dsname, dstype);
 					}
 					if (p) *p = ',';
 				}
@@ -175,32 +169,29 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				}
 
 				if (!dstype || (strncasecmp(dstype, "NONE", 4) != 0)) { /* if we have something */
-					paridx++;
-					params = (char **)realloc(params, (3 + paridx)*sizeof(char *));
 					params[paridx] = strdup(dsdef);
-					params[paridx+1] = NULL;
+					paridx++;
+					params = (char **)realloc(params, (1 + paridx)*sizeof(char *));
+					params[paridx] = NULL;
 					sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
 				}
 			}
 			
 			if (split_ncv && (paridx > 1)) {
-				params[++paridx] = NULL;
-				create_and_update_rrd(hostname, testname, rrdfn, params, NULL);
+				create_and_update_rrd(hostname, testname, params, NULL);
 
 				/* We've created one RRD, so reset the params for the next one */
-				for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
-				paridx = 1;
+				for (paridx=0; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
+				paridx = 0;
+				params[0] = NULL;
 				sprintf(rrdvalues, "%d", (int)tstamp);
 			}
 		}
 	} /* end of while */
 
-	if (!split_ncv && (paridx > 1)) {
-		params[++paridx] = NULL;
-		create_and_update_rrd(hostname, testname, rrdfn, params, NULL);
-		for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
-	}
+	if (!split_ncv && params[0]) create_and_update_rrd(hostname, testname, params, NULL);
 
+	for (paridx=0; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
 	xfree(params);
 	if (dstypes) xfree(dstypes);
 

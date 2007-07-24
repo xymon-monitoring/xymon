@@ -8,12 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.11 2007-07-21 10:19:16 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.12 2007-07-24 08:45:01 henrik Exp $";
 
 int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	static char *apache_params[] = { "rrdcreate", rrdfn, 
-					 "DS:TA:DERIVE:600:0:U",
+	static char *apache_params[] = { "DS:TA:DERIVE:600:0:U",
 					 "DS:TKB:DERIVE:600:0:U",
 					 "DS:BW:GAUGE:600:1:U",
 					 "DS:IW:GAUGE:600:1:U",
@@ -33,7 +32,7 @@ int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	if ((p = strstr(msg, "BusyServers:")) != NULL) memcpy(p, "BusyWorkers:", strlen("BusyWorkers:"));
 	if ((p = strstr(msg, "IdleServers:")) != NULL) memcpy(p, "IdleWorkers:", strlen("IdleWorkers:"));
 
-	strcpy(rrdfn, "apache.rrd");
+	setupfn("%s", "apache.rrd");
 	sprintf(rrdvalues, "%d", (int)tstamp);
 	i = 0;
 	while (markers[i]) {
@@ -53,6 +52,6 @@ int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		i++;
 	}
 
-	return create_and_update_rrd(hostname, testname, rrdfn, apache_params, apache_tpl);
+	return create_and_update_rrd(hostname, testname, apache_params, apache_tpl);
 }
 

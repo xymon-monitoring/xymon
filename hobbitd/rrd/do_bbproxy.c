@@ -8,11 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.14 2007-07-21 10:19:16 henrik Exp $";
+static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.15 2007-07-24 08:45:01 henrik Exp $";
 
 int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
-	static char *bbproxy_params[]       = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", NULL };
+	static char *bbproxy_params[]       = { "DS:runtime:GAUGE:600:0:U", NULL };
 	static char *bbproxy_tpl            = NULL;
 
 	char	*p;
@@ -26,10 +26,10 @@ int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			setupfn("bbproxy.%s.rrd", testname);
 		}
 		else {
-			strcpy(rrdfn, "bbproxy.rrd");
+			setupfn("%s", "bbproxy.rrd");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
-		return create_and_update_rrd(hostname, testname, rrdfn, bbproxy_params, bbproxy_tpl);
+		return create_and_update_rrd(hostname, testname, bbproxy_params, bbproxy_tpl);
 	}
 
 	return 0;

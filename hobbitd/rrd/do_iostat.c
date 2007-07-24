@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.15 2007-07-21 10:19:16 henrik Exp $";
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.16 2007-07-24 08:45:01 henrik Exp $";
 
 int do_iostat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -26,8 +26,7 @@ int do_iostat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	 * ENDDATA
 	 */
 
-	static char *iostat_params[] = { "rrdcreate", rrdfn, 
-					"DS:rs:GAUGE:600:1:U", "DS:ws:GAUGE:600:1:U", 
+	static char *iostat_params[] = { "DS:rs:GAUGE:600:1:U", "DS:ws:GAUGE:600:1:U", 
 					"DS:krs:GAUGE:600:1:U", "DS:kws:GAUGE:600:1:U", 
 					"DS:wait:GAUGE:600:1:U", "DS:actv:GAUGE:600:1:U", 
 					"DS:wsvc_t:GAUGE:600:1:U", "DS:asvc_t:GAUGE:600:1:U", 
@@ -110,7 +109,7 @@ int do_iostat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 							(int) tstamp, 
 							v[0], v[1], v[2], v[3], v[4], v[5], v[6],
 							v[7], v[8], v[9], v[10], v[11], v[12], v[13]);
-						create_and_update_rrd(hostname, testname, rrdfn, iostat_params, iostat_tpl);
+						create_and_update_rrd(hostname, testname, iostat_params, iostat_tpl);
 					}
 				}
 				xfree(buf);

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char trends_rcsid[] = "$Id: do_trends.c,v 1.3 2007-07-21 10:19:16 henrik Exp $";
+static char trends_rcsid[] = "$Id: do_trends.c,v 1.4 2007-07-24 08:45:01 henrik Exp $";
 
 /* 
  * This module was inspired by a mail from Stef Coene:
@@ -46,26 +46,15 @@ static char trends_rcsid[] = "$Id: do_trends.c,v 1.3 2007-07-21 10:19:16 henrik 
  *    DS:wind:GAUGE:600:0:U 8
  */
 
-static void do_trends_rrd_flush(char *hostname, char *testname, char *rrdfn, char **creparams, int dscount)
-{
-	if (rrdfn && (dscount > 0)) {
-		/* Setup the static RRD create-parameters */
-		creparams[0] = "rrdcreate";
-		creparams[1] = rrdfn;
-		creparams[2+dscount] = NULL; dscount++;
-
-		create_and_update_rrd(hostname, testname, rrdfn, creparams, NULL);
-	}
-}
 
 static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	char *boln, *eoln, *p;
-	char *rrdfn = NULL;
-	int dscount = 0;
+	int dscount;
 	char **creparams;
 
-	creparams = (char **)calloc(3, sizeof(char *));
+	creparams = (char **)calloc(1, sizeof(char *));
+	dscount = 0;
 
 	boln = strchr(msg, '\n'); if (boln) boln++;
 	while (boln && *boln) {
@@ -73,15 +62,15 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 
 		if (*boln == '[') {
 			/* Flush the current RRD file */
-			do_trends_rrd_flush(hostname, testname, rrdfn, creparams, dscount);
+			if (creparams[0]) create_and_update_rrd(hostname, testname, creparams, NULL);
 
-			xfree(rrdfn); rrdfn = NULL;
-			creparams = (char **)realloc(creparams, 3*sizeof(char *));
+			creparams = (char **)realloc(creparams, 1*sizeof(char *));
+			creparams[0] = NULL;
 			dscount = 0;
 
 			/* Get the RRD filename */
 			p = strchr(boln+1, ']'); if (p) *p = '\0';
-			rrdfn = strdup(boln+1);
+			setupfn("%s", boln+1);
 
 			/* And setup the initial rrdvalues string */
 			sprintf(rrdvalues, "%d", (int)tstamp);
@@ -91,9 +80,10 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 
 			if ((*valptr == ' ') || (*valptr == '\t')) {
 				*valptr = '\0'; valptr += 1 + strspn(valptr+1, " \t");
+				creparams[dscount] = boln;
 				dscount++;
-				creparams = (char **)realloc(creparams, (3+dscount)*sizeof(char **));
-				creparams[1+dscount] = boln;
+				creparams = (char **)realloc(creparams, (1+dscount)*sizeof(char **));
+				creparams[dscount] = NULL;
 				sprintf(rrdvalues+strlen(rrdvalues), ":%s", valptr);
 			}
 		}
@@ -102,9 +92,7 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 	}
 
 	/* Do the last RRD set */
-	do_trends_rrd_flush(hostname, testname, rrdfn, creparams, dscount);
-
-	if (rrdfn) xfree(rrdfn);
+	if (creparams[0]) create_and_update_rrd(hostname, testname, creparams, NULL);
 	xfree(creparams);
 
 	return 0;

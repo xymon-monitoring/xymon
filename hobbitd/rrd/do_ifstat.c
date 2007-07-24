@@ -8,10 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.12 2007-07-21 15:12:21 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.13 2007-07-24 08:45:01 henrik Exp $";
 
-static char *ifstat_params[] = { "rrdcreate", rrdfn, 
-	                         "DS:bytesSent:DERIVE:600:0:U", 
+static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
 				 NULL };
 static char *ifstat_tpl       = NULL;
@@ -261,7 +260,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if ((dmatch == 7) && ifname && rxstr && txstr) {
 			setupfn("ifstat.%s.rrd", ifname);
 			sprintf(rrdvalues, "%d:%s:%s", (int)tstamp, txstr, rxstr);
-			create_and_update_rrd(hostname, testname, rrdfn, ifstat_params, ifstat_tpl);
+			create_and_update_rrd(hostname, testname, ifstat_params, ifstat_tpl);
 			xfree(ifname); xfree(rxstr); xfree(txstr);
 			if (dummy) xfree(dummy);
 			ifname = rxstr = txstr = dummy = NULL;

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c,v 1.7 2007-07-21 10:19:16 henrik Exp $";
+static char counts_rcsid[] = "$Id: do_counts.c,v 1.8 2007-07-24 08:45:01 henrik Exp $";
 
 static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp, char *params[], char *tpl) 
 { 
@@ -27,11 +27,10 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 			char *p;
 
 			for (p=strchr(fn, '/'); (p); p = strchr(p, '/')) *p = ',';
-			snprintf(rrdfn, sizeof(rrdfn)-1, "%s.%s.rrd", counttype, fn);
-			rrdfn[sizeof(rrdfn)-1] = '\0';
+			setupfn2("%s.%s.rrd", counttype, fn);
 
 			sprintf(rrdvalues, "%d:%s", (int)tstamp, countstr);
-			create_and_update_rrd(hostname, testname,  rrdfn, params, tpl);
+			create_and_update_rrd(hostname, testname, params, tpl);
 		}
 
 		boln = (eoln ? eoln+1 : NULL);
@@ -40,9 +39,9 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 	return 0;
 }
 
-static char *counts_params[] = { "rrdcreate", rrdfn, "DS:count:GAUGE:600:0:U", NULL };
+static char *counts_params[] = { "DS:count:GAUGE:600:0:U", NULL };
 static char *counts_tpl      = NULL;
-static char *derive_params[] = { "rrdcreate", rrdfn, "DS:count:DERIVE:600:0:U", NULL };
+static char *derive_params[] = { "DS:count:DERIVE:600:0:U", NULL };
 static char *derive_tpl      = NULL;
 
 int do_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp) 

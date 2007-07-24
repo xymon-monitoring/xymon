@@ -8,18 +8,15 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.16 2007-07-22 12:54:16 henrik Exp $";
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.17 2007-07-24 08:45:01 henrik Exp $";
 
 int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
-	static char *bbgen_params[] = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", NULL };
+	static char *bbgen_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
 	static char *bbgen_tpl      = NULL;
-	static char *bbgen2_params[] = { "rrdcreate", rrdfn, 
-					"DS:hostcount:GAUGE:600:0:U", "DS:statuscount:GAUGE:600:0:U", 
-					NULL };
+	static char *bbgen2_params[] = { "DS:hostcount:GAUGE:600:0:U", "DS:statuscount:GAUGE:600:0:U", NULL };
 	static char *bbgen2_tpl      = NULL;
-	static char *bbgen3_params[] = { "rrdcreate", rrdfn,
-					 "DS:redcount:GAUGE:600:0:U", "DS:rednopropcount:GAUGE:600:0:U",
+	static char *bbgen3_params[] = { "DS:redcount:GAUGE:600:0:U", "DS:rednopropcount:GAUGE:600:0:U",
 					 "DS:yellowcount:GAUGE:600:0:U", "DS:yellownopropcount:GAUGE:600:0:U",
 					 "DS:greencount:GAUGE:600:0:U",
 					 "DS:purplecount:GAUGE:600:0:U",
@@ -117,27 +114,27 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		setupfn("bbgen.%s.rrd", testname);
 	}
 	else {
-		strcpy(rrdfn, "bbgen.rrd");
+		setupfn("%s", "bbgen.rrd");
 	}
 	sprintf(rrdvalues, "%d:%.2f", (int)tstamp, runtime);
-	create_and_update_rrd(hostname, testname, rrdfn, bbgen_params, bbgen_tpl);
+	create_and_update_rrd(hostname, testname, bbgen_params, bbgen_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
 		setupfn("hobbit.%s.rrd", testname);
 	}
 	else {
-		strcpy(rrdfn, "hobbit.rrd");
+		setupfn("%s", "hobbit.rrd");
 	}
 	sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, hostcount, statuscount);
-	create_and_update_rrd(hostname, testname, rrdfn, bbgen2_params, bbgen2_tpl);
+	create_and_update_rrd(hostname, testname, bbgen2_params, bbgen2_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
 		setupfn("hobbit2.%s.rrd", testname);
 	}
 	else {
-		strcpy(rrdfn, "hobbit2.rrd");
+		setupfn("%s", "hobbit2.rrd");
 	}
 	sprintf(rrdvalues, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f", 
 		(int)tstamp, 
@@ -145,7 +142,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		greencount, purplecount, clearcount, bluecount,
 		pctredcount, pctrednopropcount, pctyellowcount, pctyellownopropcount,
 		pctgreencount, pctpurplecount, pctclearcount, pctbluecount);
-	create_and_update_rrd(hostname, testname, rrdfn, bbgen3_params, bbgen3_tpl);
+	create_and_update_rrd(hostname, testname, bbgen3_params, bbgen3_tpl);
 
 
 	return 0;

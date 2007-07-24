@@ -8,12 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.13 2007-07-21 10:19:16 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.14 2007-07-24 08:45:01 henrik Exp $";
 
 int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
-	static char *temperature_params[] = { "rrdcreate", rrdfn, 
-					      "DS:temperature:GAUGE:600:1:U",
+	static char *temperature_params[] = { "DS:temperature:GAUGE:600:1:U",
 					      NULL };
 	static char *temperature_tpl      = NULL;
 
@@ -81,13 +80,11 @@ int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			tmpC = atoi(p);
 			while ((p > bol) && isspace((int)*p)) p--;
 
-			savech = *(p+1); *(p+1) = '\0'; setupfn("temperature.%s.rrd", bol); *(p+1) = savech;
-			while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
+			savech = *(p+1); *(p+1) = '\0'; 
+			setupfn("temperature.%s.rrd", bol); *(p+1) = savech;
 
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, tmpC);
-
-			dbgprintf("RRD %s, value %d\n", rrdfn, tmpC);
-			create_and_update_rrd(hostname, testname, rrdfn, temperature_params, temperature_tpl);
+			create_and_update_rrd(hostname, testname, temperature_params, temperature_tpl);
 		}
 
 		if (comment) *comment = '(';

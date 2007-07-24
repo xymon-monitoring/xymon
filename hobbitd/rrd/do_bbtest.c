@@ -8,11 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.14 2007-07-21 10:19:16 henrik Exp $";
+static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.15 2007-07-24 08:45:01 henrik Exp $";
 
 int do_bbtest_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
-	static char *bbtest_params[] = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", NULL };
+	static char *bbtest_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
 	static char *bbtest_tpl      = NULL;
 
 	char	*p;
@@ -26,10 +26,10 @@ int do_bbtest_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			setupfn("bbtest.%s.rrd", testname);
 		}
 		else {
-			strcpy(rrdfn, "bbtest.rrd");
+			setupfn("%s", "bbtest.rrd");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
-		return create_and_update_rrd(hostname, testname, rrdfn, bbtest_params, bbtest_tpl);
+		return create_and_update_rrd(hostname, testname, bbtest_params, bbtest_tpl);
 	}
 
 	return 0;

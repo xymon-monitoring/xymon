@@ -8,11 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.28 2007-07-21 10:19:16 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.29 2007-07-24 08:45:01 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", NULL };
+	static char *la_params[]          = { "DS:la:GAUGE:600:0:U", NULL };
 	static char *la_tpl               = NULL;
 
 	static pcre *as400_exp = NULL;
@@ -181,27 +181,27 @@ done_parsing:
 	}
 
 	if (gotload) {
-		sprintf(rrdfn, "la.rrd");
+		setupfn("%s", "la.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, load);
-		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, la_params, la_tpl);
 	}
 
 	if (gotprocs) {
-		sprintf(rrdfn, "procs.rrd");
+		setupfn("%s", "procs.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, procs);
-		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, la_params, la_tpl);
 	}
 
 	if (gotusers) {
-		sprintf(rrdfn, "users.rrd");
+		setupfn("%s", "users.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
-		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, la_params, la_tpl);
 	}
 
 	if (gotclock) {
-		sprintf(rrdfn, "clock.rrd");
+		setupfn("%s", "clock.rrd");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, clockdiff);
-		create_and_update_rrd(hostname, testname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, la_params, la_tpl);
 	}
 
 	/*
