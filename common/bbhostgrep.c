@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.37 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.38 2007-07-24 22:22:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -97,7 +97,7 @@ static int downok(char *hostname, int nodownhosts)
 
 int main(int argc, char *argv[])
 { 
-	void *hostlist = NULL, *hwalk;
+	void *hwalk;
 	char *bbhostsfn = NULL;
 	char *netstring = NULL;
 	char *include2 = NULL;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 	}
 
 	load_hostnames(bbhostsfn, include2, get_fqdn());
-	if (hostlist == NULL) {
+	if (first_host() == NULL) {
 		errprintf("Cannot load bb-hosts, or file is empty\n");
 		exit(3);
 	}
