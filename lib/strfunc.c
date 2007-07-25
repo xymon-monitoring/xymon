@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: strfunc.c,v 1.7 2006-07-21 14:49:35 henrik Exp $";
+static char rcsid[] = "$Id: strfunc.c,v 1.8 2007-07-25 13:23:48 henrik Exp $";
 
 #include "config.h"
 
@@ -30,11 +30,11 @@ strbuffer_t *newstrbuffer(int initialsize)
 	
 	newbuf = calloc(1, sizeof(strbuffer_t));
 
-	if (initialsize) {
-		newbuf->s = (char *)malloc(initialsize);
-		*(newbuf->s) = '\0';
-		newbuf->sz = initialsize;
-	}
+	if (!initialsize) initialsize = 4096;
+
+	newbuf->s = (char *)malloc(initialsize);
+	*(newbuf->s) = '\0';
+	newbuf->sz = initialsize;
 
 	return newbuf;
 }
