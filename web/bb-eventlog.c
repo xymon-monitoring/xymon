@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.37 2007-07-25 13:27:43 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.38 2007-07-25 13:50:14 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -93,6 +93,9 @@ static void parse_query(void)
 		}
 		else if (strcasecmp(cwalk->name, "NODIALUPS") == 0) {
 			ignoredialups = 1;
+		}
+		else if (strcasecmp(cwalk->name, "TOP") == 0) {
+			if (*(cwalk->value)) topcount = atoi(cwalk->value);
 		}
 
 		cwalk = cwalk->next;
@@ -266,9 +269,8 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
-		else if (argnmatch(argv[argi], "--top=")) {
-			char *p = strchr(argv[argi], '=');
-			topcount = atoi(p+1);
+		else if (argnmatch(argv[argi], "--top")) {
+			topcount = 10;
 			webfile_hf = "topchanges";
 			webfile_form = "topchanges_form";
 			maxminutes = -1;
