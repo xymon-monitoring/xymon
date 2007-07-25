@@ -1,0 +1,101 @@
+<CENTER>
+<FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+   <TABLE BORDER=0 SUMMARY="Eventlog time period">
+     <TR>
+       <TD><TABLE BORDER=0>
+         <TR>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD> 
+           <TD><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40></TD>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+         </TR>
+         <TR>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>To: </B></FONT></TD> 
+           <TD><INPUT TYPE=TEXT NAME="TOTIME" SIZE=40></TD>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+         </TR>
+       </TABLE></TD>
+     </TR>
+   </TABLE>
+
+   <BR><BR>
+
+   <TABLE BORDER=0 SUMMARY="Eventlog criteria">
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="HOSTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXHOSTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+     </TR>
+
+      <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+     </TR>
+
+      <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXPAGEMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="TESTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXTESTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Colors to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="COLORMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: red|green )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Ignore dialup hosts</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=CHECKBOX NAME="NODIALUPS"></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Show top</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD>
+          <SELECT NAME="TOP">
+	    <OPTION VALUE="5">5</OPTION>
+	    <OPTION VALUE="10" SELECTED>10</OPTION>
+	    <OPTION VALUE="25">25</OPTION>
+	    <OPTION VALUE="50">50</OPTION>
+	  </SELECT>
+       </TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
+        <TD COLSPAN=3 ALIGN=CENTER>
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="Show" ALT="Show">
+        </TD>
+     </TR>
+   </TABLE>
+</FORM>
+</CENTER>
