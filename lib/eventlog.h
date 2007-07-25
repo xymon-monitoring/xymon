@@ -24,6 +24,18 @@ typedef struct event_t {
 	struct event_t *next;
 } event_t;
 
+typedef struct eventcount_t {
+	struct htnames_t *service;
+	unsigned long count;
+	struct eventcount_t *next;
+} eventcount_t;
+typedef struct countlist_t {
+	void *src; /* May be a pointer to a host or a service */
+	unsigned long total;
+	struct countlist_t *next;
+} countlist_t;
+
+
 typedef int (*f_hostcheck)(char *hostname);
 
 extern char *eventignorecolumns;
@@ -34,6 +46,7 @@ extern void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromti
 			char *hostmatch, char *exhostmatch, 
 			char *testmatch, char *extestmatch,
 			char *colormatch, int ignoredialups,
-			f_hostcheck hostcheck);
+			f_hostcheck hostcheck,
+			event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts);
 
 #endif
