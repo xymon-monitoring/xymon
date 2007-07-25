@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.39 2007-07-25 16:00:23 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.40 2007-07-25 20:02:06 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -43,6 +43,7 @@ char	*expageregex = NULL;
 char	*colorregex = NULL;
 int	ignoredialups = 0;
 int	topcount = 0;
+eventsummary_t summarybar = S_NONE;
 char	*webfile_hf = "event";
 char	*webfile_form = "event_form";
 cgidata_t *cgidata = NULL;
@@ -97,6 +98,11 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "TOP") == 0) {
 			if (*(cwalk->value)) topcount = atoi(cwalk->value);
 		}
+		else if (strcasecmp(cwalk->name, "SUMMARY") == 0) {
+			if (strcasecmp(cwalk->value, "hosts") == 0) summarybar = S_HOST_BREAKDOWN;
+			else if (strcasecmp(cwalk->value, "services") == 0) summarybar = S_SERVICE_BREAKDOWN;
+			else summarybar = S_NONE;
+		}
 
 		cwalk = cwalk->next;
 	}
@@ -149,6 +155,7 @@ void show_topchanges(FILE *output,
 		if (ignoredialups) {
 			addtobuffer(othercriteria, "&amp;NODIALUPS=on");
 		}
+		addtobuffer(othercriteria, "&amp;SUMMARY=services");
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d hosts\" border=0>\n", topcount);
@@ -224,6 +231,7 @@ void show_topchanges(FILE *output,
 		if (ignoredialups) {
 			addtobuffer(othercriteria, "&amp;NODIALUPS=on");
 		}
+		addtobuffer(othercriteria, "&amp;SUMMARY=hosts");
 
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
@@ -315,7 +323,7 @@ int main(int argc, char *argv[])
 		do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    NULL, NULL, NULL);
+			    NULL, NULL, NULL, summarybar);
 	}
 	else {
 		countlist_t *hcounts, *scounts;
@@ -325,7 +333,7 @@ int main(int argc, char *argv[])
 		do_eventlog(NULL, -1, -1, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    &events, &hcounts, &scounts);
+			    &events, &hcounts, &scounts, S_NONE);
 
 		if (events) {
 			lastevent = events->eventtime;

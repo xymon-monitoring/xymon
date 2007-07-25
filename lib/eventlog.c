@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.41 2007-07-25 13:25:34 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.42 2007-07-25 20:02:06 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -121,7 +121,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		char *testregex, char *extestregex,
 		char *colrregex, int ignoredialups,
 		f_hostcheck hostcheck,
-		event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts)
+		event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts,
+		eventsummary_t sumtype)
 {
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
@@ -387,6 +388,42 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		int  bgcolor = 0;
 		int  count;
 		struct event_t *lasttoshow = eventhead;
+		countlist_t *cwalk;
+		unsigned long totalcount = 0;
+
+		switch (sumtype) {
+		  case S_HOST_BREAKDOWN:
+			/* Request for a specific service, show breakdown by host */
+			for (cwalk = hostcounthead; (cwalk); cwalk = cwalk->next) totalcount += cwalk->total;
+			fprintf(output, "<table summary=\"Breakdown by host\" border=0>\n");
+			fprintf(output, "<tr><th align=left>Host</th><th colspan=2>State changes</th></tr>\n");
+			fprintf(output, "<tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
+			for (cwalk = hostcounthead; (cwalk); cwalk = cwalk->next) {
+				fprintf(output, "<tr><td align=left>%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</tr>\n",
+					bbh_item(cwalk->src, BBH_HOSTNAME), 
+					cwalk->total, ((100.0 * cwalk->total) / totalcount));
+			}
+			fprintf(output, "</table>\n");
+			break;
+
+		  case S_SERVICE_BREAKDOWN:
+			/* Request for a specific host, show breakdown by service */
+			for (cwalk = svccounthead; (cwalk); cwalk = cwalk->next) totalcount += cwalk->total;
+			fprintf(output, "<table summary=\"Breakdown by service\" border=0>\n");
+			fprintf(output, "<tr><th align=left>Service</th><th colspan=2>State changes</th></tr>\n");
+			fprintf(output, "<tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
+			for (cwalk = svccounthead; (cwalk); cwalk = cwalk->next) {
+				fprintf(output, "<tr><td align=left>%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</tr>\n",
+					((htnames_t *)cwalk->src)->name, 
+					cwalk->total, ((100.0 * cwalk->total) / totalcount));
+			}
+			fprintf(output, "</table>\n");
+			break;
+
+		  case S_NONE:
+			break;
+		}
+
 
 		count=0;
 		walk=eventhead; 
