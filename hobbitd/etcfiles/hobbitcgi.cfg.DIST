@@ -37,6 +37,7 @@ CGI_REPLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 CGI_SNAPSHOT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 # bb-eventlog.cgi options
 CGI_EVENTLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+CGI_TOPCHANGE_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --top"
 # hobbit-nkview.cgi options
 CGI_NKVIEW_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 # hobbit-nkedit.cgi options
