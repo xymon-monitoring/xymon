@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.40 2007-07-25 20:02:06 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.41 2007-07-25 20:48:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -47,6 +47,8 @@ eventsummary_t summarybar = S_NONE;
 char	*webfile_hf = "event";
 char	*webfile_form = "event_form";
 cgidata_t *cgidata = NULL;
+char 	periodstring[100];
+
 
 static void parse_query(void)
 {
@@ -103,6 +105,9 @@ static void parse_query(void)
 			else if (strcasecmp(cwalk->value, "services") == 0) summarybar = S_SERVICE_BREAKDOWN;
 			else summarybar = S_NONE;
 		}
+		else if (strcasecmp(cwalk->name, "TIMETXT") == 0) {
+			if (*(cwalk->value)) strcpy(periodstring, cwalk->value);
+		}
 
 		cwalk = cwalk->next;
 	}
@@ -112,11 +117,7 @@ void show_topchanges(FILE *output,
 		     countlist_t *hostcounthead, countlist_t *svccounthead, event_t *eventhead, 
 		     int topcount, time_t firstevent, time_t lastevent)
 {
-	if (fromtime || totime) {
-		if (fromtime && totime) fprintf(output, "<p><font size=+1>Events between %s - %s</font></p>\n", fromtime, totime);
-		else if (fromtime) fprintf(output, "<p><font size=+1>Events since %s</font></p>\n", fromtime);
-		else if (totime) fprintf(output, "<p><font size=+1>Events until %s</font></p>\n", totime);
-	}
+	fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
 
 	fprintf(output, "<table summary=\"Top changing hosts and services\" border=1>\n");
 	fprintf(output, "<tr>\n");
@@ -156,6 +157,8 @@ void show_topchanges(FILE *output,
 			addtobuffer(othercriteria, "&amp;NODIALUPS=on");
 		}
 		addtobuffer(othercriteria, "&amp;SUMMARY=services");
+		addtobuffer(othercriteria, "&amp;TIMETXT=");
+		addtobuffer(othercriteria, periodstring);
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d hosts\" border=0>\n", topcount);
@@ -232,6 +235,8 @@ void show_topchanges(FILE *output,
 			addtobuffer(othercriteria, "&amp;NODIALUPS=on");
 		}
 		addtobuffer(othercriteria, "&amp;SUMMARY=hosts");
+		addtobuffer(othercriteria, "&amp;TIMETXT=");
+		addtobuffer(othercriteria, periodstring);
 
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
@@ -244,7 +249,7 @@ void show_topchanges(FILE *output,
 
 		for (i=0, cwalk=svccounthead; (cwalk); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					((htnames_t *)cwalk->src)->name, 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
@@ -312,8 +317,15 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	*periodstring = '\0';
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+
+	if ((*periodstring == '\0') && (fromtime || totime)) {
+		if (fromtime && totime) sprintf(periodstring, "Events between %s - %s", fromtime, totime);
+		else if (fromtime) sprintf(periodstring, "Events since %s", fromtime);
+		else if (totime) sprintf(periodstring, "Events until %s", totime);
+	}
 
 	/* Now generate the webpage */
 	headfoot(stdout, webfile_hf, "", "header", COL_GREEN);
@@ -323,7 +335,7 @@ int main(int argc, char *argv[])
 		do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    NULL, NULL, NULL, summarybar);
+			    NULL, NULL, NULL, summarybar, periodstring);
 	}
 	else {
 		countlist_t *hcounts, *scounts;
@@ -333,7 +345,7 @@ int main(int argc, char *argv[])
 		do_eventlog(NULL, -1, -1, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    &events, &hcounts, &scounts, S_NONE);
+			    &events, &hcounts, &scounts, S_NONE, NULL);
 
 		if (events) {
 			lastevent = events->eventtime;

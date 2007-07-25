@@ -49,6 +49,6 @@ extern void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromti
 			char *colormatch, int ignoredialups,
 			f_hostcheck hostcheck,
 			event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts,
-			eventsummary_t sumtype);
+			eventsummary_t sumtype, char *periodstring);
 
 #endif

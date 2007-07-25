@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.42 2007-07-25 20:02:06 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.43 2007-07-25 20:48:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -80,6 +80,14 @@ static time_t convert_time(char *timestamp)
 	return event;
 }
 
+static char *string_time(time_t timestamp)
+{
+	static char result[20];
+
+	strftime(result, sizeof(result), "%Y/%m/%d@%H:%M:%S", localtime(&timestamp));
+	return result;
+}
+
 int record_compare(void *a, void *b)
 {
 	/* Sort the countlist_t records in reverse */
@@ -122,13 +130,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		char *colrregex, int ignoredialups,
 		f_hostcheck hostcheck,
 		event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts,
-		eventsummary_t sumtype)
+		eventsummary_t sumtype, char *periodstring)
 {
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
 	time_t firstevent = 0;
 	time_t lastevent = getcurrenttime(NULL);
-	event_t	*eventhead, *walk;
+	event_t	*eventhead = NULL;
 	struct stat st;
 	char l[MAX_LINE_LEN];
 	char title[200];
@@ -387,9 +395,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		char *bgcolors[2] = { "#000000", "#000033" };
 		int  bgcolor = 0;
 		int  count;
-		struct event_t *lasttoshow = eventhead;
+		struct event_t *ewalk, *lasttoshow = eventhead;
 		countlist_t *cwalk;
 		unsigned long totalcount = 0;
+
+		fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
 
 		switch (sumtype) {
 		  case S_HOST_BREAKDOWN:
@@ -424,14 +434,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			break;
 		}
 
-
 		count=0;
-		walk=eventhead; 
+		ewalk=eventhead; 
 		do {
 			count++;
-			lasttoshow = walk;
-			walk = walk->next;
-		} while (walk && (count<maxcount));
+			lasttoshow = ewalk;
+			ewalk = ewalk->next;
+		} while (ewalk && (count<maxcount));
 
 		if (maxminutes > 0)  { 
 			sprintf(title, "%d events received in the past %u minutes", 
@@ -446,51 +455,43 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 
-		for (walk=eventhead; (walk != lasttoshow->next); walk=walk->next) {
-			char *hostname = bbh_item(walk->host, BBH_HOSTNAME);
+		for (ewalk=eventhead; (ewalk != lasttoshow->next); ewalk=ewalk->next) {
+			char *hostname = bbh_item(ewalk->host, BBH_HOSTNAME);
 
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
 			bgcolor = ((bgcolor + 1) % 2);
 
-			fprintf(output, "<TD ALIGN=CENTER>%s</TD>\n", ctime(&walk->eventtime));
+			fprintf(output, "<TD ALIGN=CENTER>%s</TD>\n", ctime(&ewalk->eventtime));
 
-			if (walk->newcolor == COL_CLEAR) {
+			if (ewalk->newcolor == COL_CLEAR) {
 				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=black><FONT COLOR=white>%s</FONT></TD>\n",
 					hostname);
 			}
 			else {
 				fprintf(output, "<TD ALIGN=CENTER BGCOLOR=%s><FONT COLOR=black>%s</FONT></TD>\n",
-					colorname(walk->newcolor), hostname);
+					colorname(ewalk->newcolor), hostname);
 			}
 
-			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", walk->service->name);
+			fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", ewalk->service->name);
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(hostname, walk->service->name, walk->changetime, NULL));
+				histlogurl(hostname, ewalk->service->name, ewalk->changetime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
-				xgetenv("BBSKIN"), dotgiffilename(walk->oldcolor, 0, 0), 
+				xgetenv("BBSKIN"), dotgiffilename(ewalk->oldcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
-				colorname(walk->oldcolor), colorname(walk->oldcolor));
+				colorname(ewalk->oldcolor), colorname(ewalk->oldcolor));
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
 				xgetenv("BBSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
-				histlogurl(hostname, walk->service->name, walk->eventtime, NULL));
+				histlogurl(hostname, ewalk->service->name, ewalk->eventtime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A></TD>\n", 
-				xgetenv("BBSKIN"), dotgiffilename(walk->newcolor, 0, 0), 
+				xgetenv("BBSKIN"), dotgiffilename(ewalk->newcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
-				colorname(walk->newcolor), colorname(walk->newcolor));
+				colorname(ewalk->newcolor), colorname(ewalk->newcolor));
 			fprintf(output, "</TR>\n");
 		}
 
 		fprintf(output, "</TABLE>\n");
 
-		/* Clean up */
-		walk = eventhead;
-		do {
-			struct event_t *tmp = walk;
-
-			walk = walk->next;
-			xfree(tmp);
-		} while (walk);
 	}
 	else if (output != NULL) {
 		/* No events during the past maxminutes */
@@ -515,8 +516,30 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (testregexp) pcre_free(testregexp);
 	if (colrregexp) pcre_free(colrregexp);
 
-	if (eventlist) *eventlist = eventhead;
-	if (hostcounts) *hostcounts = hostcounthead;
-	if (servicecounts) *servicecounts = svccounthead;
+	/* Return the event- and count-lists, if wanted - or clean them up */
+	if (eventlist) {
+		*eventlist = eventhead;
+	}
+	else {
+		event_t	*zombie, *ewalk = eventhead;
+		while (ewalk) { zombie = ewalk; ewalk = ewalk->next; xfree(zombie); }
+	}
+
+	if (hostcounts) {
+		*hostcounts = hostcounthead;
+	}
+	else {
+		countlist_t *zombie, *hwalk = hostcounthead;
+		while (hwalk) { zombie = hwalk; hwalk = hwalk->next; xfree(zombie); }
+
+	}
+
+	if (servicecounts) {
+		*servicecounts = svccounthead;
+	}
+	else {
+		countlist_t *zombie, *swalk = svccounthead;
+		while (swalk) { zombie = swalk; swalk = swalk->next; xfree(zombie); }
+	}
 }
 
