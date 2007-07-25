@@ -13,6 +13,7 @@ var MENU_ITEMS = [
 		['Metrics Report', '@BBCGIURL@/hobbit-hostgraphs.sh'],
 		['Ghost Clients', '@BBCGIURL@/hobbit-ghosts.sh'],
 		['Notification Report', '@BBCGIURL@/hobbit-notifylog.sh'],
+		['Top-Changes Report', '@BBCGIURL@/hobbit-topchanges.sh'],
 	],
 	['Administration', null, null,
 		['Find host', '@BBCGIURL@/bb-findhost.sh'],
