@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.38 2007-07-25 13:50:14 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.39 2007-07-25 16:00:23 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -117,7 +117,7 @@ void show_topchanges(FILE *output,
 	if (hostcounthead && (output != NULL)) {
 		countlist_t *cwalk;
 		int i;
-		unsigned long others = 0;
+		unsigned long others = 0, totalcount = 0;
 		strbuffer_t *s = newstrbuffer(0);
 		strbuffer_t *othercriteria = newstrbuffer(0);
 
@@ -152,16 +152,20 @@ void show_topchanges(FILE *output,
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d hosts\" border=0>\n", topcount);
-		fprintf(output, "      <tr><th colspan=2>Top %d hosts</th></tr>\n", topcount);
-		fprintf(output, "      <tr><th align=left>Host</th><th align=left>State changes</th></tr>\n");
+		fprintf(output, "      <tr><th colspan=3>Top %d hosts</th></tr>\n", topcount);
+		fprintf(output, "      <tr><th align=left>Host</th><th align=left colspan=2>State changes</th></tr>\n");
+
+		/* Compute the total count */
+		for (i=0, cwalk=hostcounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
 
 		for (i=0, cwalk=hostcounthead; (cwalk); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td></tr>\n", 
+				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					bbh_item(cwalk->src, BBH_HOSTNAME), 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
-					bbh_item(cwalk->src, BBH_HOSTNAME), cwalk->total);
+					bbh_item(cwalk->src, BBH_HOSTNAME), 
+					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 				if (STRBUFLEN(s) > 0) addtobuffer(s, "|"); 
 				addtobuffer(s, "^");
 				addtobuffer(s, bbh_item(cwalk->src, BBH_HOSTNAME));
@@ -171,11 +175,14 @@ void show_topchanges(FILE *output,
 				others += cwalk->total;
 			}
 		}
-		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXHOSTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td></tr>\n", 
+		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXHOSTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 			STRBUF(s),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
-			"Other hosts", others);
+			"Other hosts", 
+			others, ((100.0 * others) / totalcount));
+		fprintf(output, "      <tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
+		fprintf(output, "      <tr><th>Total</th><th>%lu</th><th>&nbsp;</th></tr>\n", totalcount);
 		fprintf(output, "   </table>\n");
 		fprintf(output, "</td>\n");
 
@@ -185,7 +192,7 @@ void show_topchanges(FILE *output,
 	if (svccounthead && (output != NULL)) {
 		countlist_t *cwalk;
 		int i;
-		unsigned long others = 0;
+		unsigned long others = 0, totalcount = 0;
 		strbuffer_t *s = newstrbuffer(0);
 		strbuffer_t *othercriteria = newstrbuffer(0);
 
@@ -221,16 +228,20 @@ void show_topchanges(FILE *output,
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d services\" border=0>\n", topcount);
-		fprintf(output, "      <tr><th colspan=2>Top %d services</th></tr>\n", topcount);
-		fprintf(output, "      <tr><th align=left>Service</th><th align=left>State changes</th></tr>\n");
+		fprintf(output, "      <tr><th colspan=3>Top %d services</th></tr>\n", topcount);
+		fprintf(output, "      <tr><th align=left>Service</th><th align=left colspan=2>State changes</th></tr>\n");
+
+		/* Compute the total count */
+		for (i=0, cwalk=svccounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
 
 		for (i=0, cwalk=svccounthead; (cwalk); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td></tr>\n", 
+				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					((htnames_t *)cwalk->src)->name, 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
-					((htnames_t *)cwalk->src)->name, cwalk->total);
+					((htnames_t *)cwalk->src)->name, 
+					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 				if (STRBUFLEN(s) > 0) addtobuffer(s, "|"); 
 				addtobuffer(s, "^");
 				addtobuffer(s, ((htnames_t *)cwalk->src)->name);
@@ -240,11 +251,14 @@ void show_topchanges(FILE *output,
 				others += cwalk->total;
 			}
 		}
-		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXTESTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td></tr>\n", 
+		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXTESTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 			STRBUF(s),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
-			"Other services", others);
+			"Other services", 
+			others, ((100.0 * others) / totalcount));
+		fprintf(output, "      <tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
+		fprintf(output, "      <tr><th>Total</th><th>%lu</th><th>&nbsp;</th></tr>\n", totalcount);
 		fprintf(output, "   </table>\n");
 		fprintf(output, "</td>\n");
 
