@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.40 2007-07-18 21:31:50 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.41 2007-07-25 13:25:34 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -54,6 +54,9 @@ static time_t convert_time(char *timestamp)
 	unsigned int year,month,day,hour,min,sec,count;
 	struct tm timeinfo;
 
+	if ((*timestamp) && (*(timestamp + strspn(timestamp, "0123456789")) == '\0'))
+		return (time_t) atol(timestamp);
+
 	count = sscanf(timestamp, "%u/%u/%u@%u:%u:%u",
 		&year, &month, &day, &hour, &min, &sec);
 	if(count != 6) {
@@ -75,6 +78,24 @@ static time_t convert_time(char *timestamp)
 	}
 
 	return event;
+}
+
+int record_compare(void *a, void *b)
+{
+	/* Sort the countlist_t records in reverse */
+	if (((countlist_t *)a)->total > ((countlist_t *)b)->total) return -1;
+	else if (((countlist_t *)a)->total < ((countlist_t *)b)->total) return 1;
+	else return 0;
+}
+
+void * record_getnext(void *a)
+{
+	return ((countlist_t *)a)->next;
+}
+
+void record_setnext(void *a, void *newval)
+{
+	((countlist_t *)a)->next = (countlist_t *)newval;
 }
 
 static htnames_t *namehead = NULL;
@@ -99,7 +120,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		char *hostregex, char *exhostregex,
 		char *testregex, char *extestregex,
 		char *colrregex, int ignoredialups,
-		f_hostcheck hostcheck)
+		f_hostcheck hostcheck,
+		event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts)
 {
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
@@ -120,10 +142,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	pcre *testregexp = NULL;
 	pcre *extestregexp = NULL;
 	pcre *colrregexp = NULL;
+	void *hostwalk;
+	countlist_t *hostcounthead = NULL, *svccounthead = NULL;
 
 	havedoneeventlog = 1;
 
-	if (maxminutes && (fromtime || totime)) {
+	if ((maxminutes > 0) && (fromtime || totime)) {
 		fprintf(output, "<B>Only one time interval type is allowed!</B>");
 		return;
 	}
@@ -135,7 +159,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			return;
 		}
 	}
-	else if (maxminutes) {
+	else if (maxminutes == -1) {
+		/* Unlimited number of minutes */
+		firstevent = 0;
+	}
+	else if (maxminutes > 0) {
 		firstevent = getcurrenttime(NULL) - maxminutes*60;
 	}
 	else {
@@ -170,25 +198,34 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (eventlog && (stat(eventlogfilename, &st) == 0)) {
 		time_t curtime;
 		int done = 0;
+		int unlimited = (maxcount == -1);
 
-		/* Find a spot in the eventlog file close to where the firstevent time is */
-		fseeko(eventlog, 0, SEEK_END);
+		if (unlimited) maxcount = 1000;
 		do {
-			/* Go back maxcount*80 bytes - one entry is ~80 bytes */
-			if (ftello(eventlog) > maxcount*80) {
-				unsigned int uicurtime;
-				fseeko(eventlog, -maxcount*80, SEEK_CUR); 
-				fgets(l, sizeof(l), eventlog); /* Skip to start of line */
-				fgets(l, sizeof(l), eventlog);
-				sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", &uicurtime);
-				curtime = uicurtime;
-				done = (curtime < firstevent);
-			}
-			else {
-				rewind(eventlog);
-				done = 1;
-			}
-		} while (!done);
+			/* Find a spot in the eventlog file close to where the firstevent time is */
+			fseeko(eventlog, 0, SEEK_END);
+			do {
+				/* Go back maxcount*80 bytes - one entry is ~80 bytes */
+				if (ftello(eventlog) > maxcount*80) {
+					unsigned int uicurtime;
+					fseeko(eventlog, -maxcount*80, SEEK_CUR); 
+					fgets(l, sizeof(l), eventlog); /* Skip to start of line */
+					fgets(l, sizeof(l), eventlog);
+					sscanf(l, "%*s %*s %u %*u %*u %*s %*s %*d", &uicurtime);
+					curtime = uicurtime;
+					done = (curtime < firstevent);
+					if (unlimited && !done) maxcount += 1000;
+				}
+				else {
+					off_t ofs;
+					rewind(eventlog);
+					ofs = ftello(eventlog);
+					done = 1;
+				}
+			} while (!done);
+
+			if (unlimited) unlimited = ((curtime > firstevent) && (ftello(eventlog) > 0));
+		} while (unlimited);
 	}
 	
 	eventhead = NULL;
@@ -204,6 +241,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		void *eventhost;
 		struct htnames_t *eventcolumn;
 		int ovector[30];
+		eventcount_t *countrec;
 
 		itemsfound = sscanf(l, "%s %s %u %u %u %s %s %d",
 			hostname, svcname,
@@ -217,7 +255,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		eventcolumn = getname(svcname, 1);
 
 		if ( (itemsfound == 8) && 
-		     (eventtime > firstevent) && 
+		     (eventtime >= firstevent) && 
 		     (eventhost && !bbh_item(eventhost, BBH_FLAG_NOBB2)) && 
 		     (wanted_eventcolumn(svcname)) ) {
 			if (ignoredialups && bbh_item(eventhost, BBH_FLAG_DIALUP)) continue;
@@ -301,10 +339,50 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			newevent->oldcolor   = eventcolor(oldcol);
 			newevent->next = eventhead;
 			eventhead = newevent;
+
+			countrec = (eventcount_t *)bbh_item(eventhost, BBH_DATA);
+			while (countrec && (countrec->service != eventcolumn)) countrec = countrec->next;
+			if (countrec == NULL) {
+				countrec = (eventcount_t *)calloc(1, sizeof(eventcount_t));
+				countrec->service = eventcolumn;
+				countrec->next = (eventcount_t *)bbh_item(eventhost, BBH_DATA);
+				bbh_set_item(eventhost, BBH_DATA, (void *)countrec);
+			}
+			countrec->count++;
 		}
 	}
 
-	if (eventhead) {
+	/* Count the state changes per host */
+	svccounthead = hostcounthead = NULL;
+	for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk)) {
+		eventcount_t *swalk;
+		countlist_t *hrec, *srec;
+
+		swalk = (eventcount_t *)bbh_item(hostwalk, BBH_DATA); if (!swalk) continue;
+
+		hrec = (countlist_t *)malloc(sizeof(countlist_t));
+		hrec->src = hostwalk;
+		hrec->total = 0;
+		hrec->next = hostcounthead;
+		hostcounthead = hrec;
+
+		for (swalk = (eventcount_t *)bbh_item(hostwalk, BBH_DATA); (swalk); swalk = swalk->next) {
+			hrec->total += swalk->count;
+			for (srec = svccounthead; (srec && (srec->src != (void *)swalk->service)); srec = srec->next) ;
+			if (!srec) {
+				srec = (countlist_t *)malloc(sizeof(countlist_t));
+				srec->src = (void *)swalk->service;
+				srec->total = 0;
+				srec->next = svccounthead;
+				svccounthead = srec;
+			}
+			srec->total += swalk->count;
+		}
+	}
+	if (hostcounthead) hostcounthead = msort(hostcounthead, record_compare, record_getnext, record_setnext);
+	if (svccounthead)  svccounthead = msort(svccounthead, record_compare, record_getnext, record_setnext);
+
+	if (eventhead && (output != NULL)) {
 		char *bgcolors[2] = { "#000000", "#000033" };
 		int  bgcolor = 0;
 		int  count;
@@ -318,7 +396,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			walk = walk->next;
 		} while (walk && (count<maxcount));
 
-		if (maxminutes)  { 
+		if (maxminutes > 0)  { 
 			sprintf(title, "%d events received in the past %u minutes", 
 				count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
 		}
@@ -377,7 +455,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			xfree(tmp);
 		} while (walk);
 	}
-	else {
+	else if (output != NULL) {
 		/* No events during the past maxminutes */
 		if (eventlog)
 			sprintf(title, "No events received in the last %d minutes", maxminutes);
@@ -399,5 +477,9 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (hostregexp) pcre_free(hostregexp);
 	if (testregexp) pcre_free(testregexp);
 	if (colrregexp) pcre_free(colrregexp);
+
+	if (eventlist) *eventlist = eventhead;
+	if (hostcounts) *hostcounts = hostcounthead;
+	if (servicecounts) *servicecounts = svccounthead;
 }
 
