@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.184 2007-07-20 11:37:37 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.185 2007-07-25 13:25:05 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -928,8 +928,12 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	while (p) {
 		/* Dont redo the eventlog or acklog things */
 		if (strcmp(p, "eventlog.sh") == 0) {
-			if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime,
-				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, host_exists);
+			if (bb2eventlog && !havedoneeventlog) {
+				do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime,
+				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
+				host_exists,
+				NULL, NULL, NULL);
+			}
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
 			if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
@@ -1106,7 +1110,12 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		do_bb2ext(output, "BBMKBB2EXT", "mkbb");
 
 		/* Dont redo the eventlog or acklog things */
-		if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, host_exists);
+		if (bb2eventlog && !havedoneeventlog) {
+			do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, 
+				    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
+				    host_exists,
+				    NULL, NULL, NULL);
+		}
 		if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
 	}
 
