@@ -171,6 +171,7 @@ MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   
 MKBBTITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the BB titles (the old "ivory" is invalid HTML)
 BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
 HOLIDAYFORMAT="%d/%m"				# How holiday dates are displayed
+WEEKSTART="1"					# Week-day number for first day of week. 0=Sunday, 1=Monday ...
 BBRSSTITLE="Hobbit Alerts"			# Title for the RSS and WML outputs.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
 
