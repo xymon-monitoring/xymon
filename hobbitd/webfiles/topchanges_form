@@ -5,16 +5,24 @@
        <TD><TABLE BORDER=0>
          <TR>
            <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD> 
-           <TD><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40></TD>
+           <TD><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40 ID="starttime"></TD>
            <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
          </TR>
          <TR>
            <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>To: </B></FONT></TD> 
-           <TD><INPUT TYPE=TEXT NAME="TOTIME" SIZE=40></TD>
+           <TD><INPUT TYPE=TEXT NAME="TOTIME" SIZE=40 ID="endtime"></TD>
            <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
          </TR>
        </TABLE></TD>
      </TR>
+     <TR><TD>
+        <button onclick="document.getElementById('starttime').value='&EVENTLASTYEARBEGIN'; document.getElementById('endtime').value='&EVENTCURRYEARBEGIN'; return false">Last year</button>
+        <button onclick="document.getElementById('starttime').value='&EVENTLASTMONTHBEGIN'; document.getElementById('endtime').value='&EVENTCURRMONTHBEGIN'; return false">Last month</button>
+        <button onclick="document.getElementById('starttime').value='&EVENTLASTWEEKBEGIN'; document.getElementById('endtime').value='&EVENTCURRWEEKBEGIN'; return false">Last week</button>
+        <button onclick="document.getElementById('starttime').value='&EVENTCURRYEARBEGIN'; document.getElementById('endtime').value=''; return false">This year</button>
+        <button onclick="document.getElementById('starttime').value='&EVENTCURRMONTHBEGIN'; document.getElementById('endtime').value=''; return false">This month</button>
+        <button onclick="document.getElementById('starttime').value='&EVENTCURRWEEKBEGIN'; document.getElementById('endtime').value=''; return false">This week</button>
+     </TD></TR>
    </TABLE>
 
    <BR><BR>
@@ -73,6 +81,18 @@
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Ignore dialup hosts</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=CHECKBOX NAME="NODIALUPS"></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Rank by</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD>
+          <SELECT NAME="COUNTTYPE">
+	    <OPTION VALUE="events" SELECTED>Number of changes</OPTION>
+	    <OPTION VALUE="duration">Duration of red/yellow events</OPTION>
+	  </SELECT>
+       </TD>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
      </TR>
 

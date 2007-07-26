@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.59 2007-07-20 11:02:10 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.60 2007-07-26 10:36:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -363,6 +363,14 @@ static void fetch_board(void)
 
 	if (sendmessage("schedule", NULL, NULL, &scheduleboard, 1, BBTALK_TIMEOUT) != BB_OK)
 		return;
+}
+
+static char *eventreport_timestring(time_t timestamp)
+{
+	static char result[20];
+
+	strftime(result, sizeof(result), "%Y/%m/%d@%H:%M:%S", localtime(&timestamp));
+	return result;
 }
 
 
@@ -1088,6 +1096,81 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 		else if (strncmp(t_start, "BACKSECS", 8) == 0) {
 			fprintf(output, "%d", backsecs);
+		}
+
+		else if (strncmp(t_start, "EVENTLASTMONTHBEGIN", 19) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+
+			tm->tm_mon -= 1;
+			tm->tm_mday = 1;
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
+		else if (strncmp(t_start, "EVENTCURRMONTHBEGIN", 19) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+			tm->tm_mday = 1;
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
+
+		else if (strncmp(t_start, "EVENTLASTWEEKBEGIN", 18) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+			int weekstart = atoi(xgetenv("WEEKSTART"));
+
+			if (tm->tm_wday == weekstart) { /* Do nothing */ }
+			else if (tm->tm_wday > weekstart) tm->tm_mday -= (tm->tm_wday - weekstart);
+			else tm->tm_mday += (weekstart - tm->tm_wday) - 7;
+
+			tm->tm_mday -= 7;
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
+		else if (strncmp(t_start, "EVENTCURRWEEKBEGIN", 18) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+			int weekstart = atoi(xgetenv("WEEKSTART"));
+
+			if (tm->tm_wday == weekstart) { /* Do nothing */ }
+			else if (tm->tm_wday > weekstart) tm->tm_mday -= (tm->tm_wday - weekstart);
+			else tm->tm_mday += (weekstart - tm->tm_wday) - 7;
+
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
+
+		else if (strncmp(t_start, "EVENTLASTYEARBEGIN", 18) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+
+			tm->tm_year -= 1;
+			tm->tm_mon = 0;
+			tm->tm_mday = 1;
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
+		else if (strncmp(t_start, "EVENTCURRYEARBEGIN", 18) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+
+			tm->tm_mon = 0;
+			tm->tm_mday = 1;
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
 		}
 
 		else if (*t_start && (savechar == ';')) {
