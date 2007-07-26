@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.118 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.119 2007-07-26 21:17:06 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -706,13 +706,13 @@ char *generate_info(char *hostname)
 		xgetenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 	addtobuffer(infobuf, l);
 
-	clonewalk = next_host(hostwalk);
+	clonewalk = next_host(hostwalk, 1);
 	while (clonewalk && (strcmp(hostname, bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
 		val = bbh_item(clonewalk, BBH_PAGEPATH);
 		sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
 			xgetenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 		addtobuffer(infobuf, l);
-		clonewalk = next_host(clonewalk);
+		clonewalk = next_host(clonewalk, 1);
 	}
 	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");

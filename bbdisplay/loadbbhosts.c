@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.51 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.52 2007-07-26 21:17:06 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -633,7 +633,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 						bbval = bbh_item_walk(NULL);
 					}
 
-					cwalk = next_host(cwalk);
+					cwalk = next_host(cwalk, 1);
 				} while (cwalk && 
 					 (strcmp(bbh_item(cwalk, BBH_HOSTNAME), bbh_item(bbhost, BBH_HOSTNAME)) == 0) &&
 					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );

@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.272 2007-07-22 21:10:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.273 2007-07-26 21:17:06 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3140,7 +3140,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 		bufp = buf = (char *)malloc(bufsz);
 
-		for (hinfo = first_host(); (hinfo); hinfo = next_host(hinfo)) {
+		for (hinfo = first_host(); (hinfo); hinfo = next_host(hinfo, 0)) {
 			if (!match_host_filter(hinfo, spage, shost, snet)) continue;
 			generate_hostinfo_outbuf(&buf, &bufp, &bufsz, hinfo);
 		}

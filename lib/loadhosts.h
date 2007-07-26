@@ -84,7 +84,7 @@ extern char *bbh_item_walk(void *host);
 extern int bbh_item_idx(char *value);
 extern char *bbh_item_id(enum bbh_item_t idx);
 extern void *first_host(void);
-extern void *next_host(void *currenthost);
+extern void *next_host(void *currenthost, int wantclones);
 extern void bbh_set_item(void *host, enum bbh_item_t item, void *value);
 extern char *bbh_item_multi(void *host, enum bbh_item_t item);
 

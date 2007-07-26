@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.8 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.9 2007-07-26 21:17:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 	jrockout = newstrbuffer(0);
 	qout = newstrbuffer(0);
 
-	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk)) {
+	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		char *tspec = bbh_custom_item(hwalk, "bea=");
 		char *snmpcommunity = default_community;
 		char *beadomain = "";

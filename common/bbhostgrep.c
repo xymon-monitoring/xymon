@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbhostgrep.c,v 1.38 2007-07-24 22:22:54 henrik Exp $";
+static char rcsid[] = "$Id: bbhostgrep.c,v 1.39 2007-07-26 21:17:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		do { hwalk = next_host(hwalk); } while (hwalk && onlypreferredentry && (strcmp(curname, bbh_item(hwalk, BBH_HOSTNAME)) == 0));
+		do { hwalk = next_host(hwalk, 1); } while (hwalk && onlypreferredentry && (strcmp(curname, bbh_item(hwalk, BBH_HOSTNAME)) == 0));
 	}
 
 	return 0;

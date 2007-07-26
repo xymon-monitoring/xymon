@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.71 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.72 2007-07-26 21:17:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -588,11 +588,21 @@ void *first_host(void)
 	return namehead;
 }
 
-void *next_host(void *currenthost)
+void *next_host(void *currenthost, int wantclones)
 {
-	if (currenthost) return ((namelist_t *)currenthost)->next;
+	namelist_t *walk;
 
-	return NULL;
+	if (!currenthost) return NULL;
+
+	if (wantclones) return ((namelist_t *)currenthost)->next;
+
+	/* Find the next non-clone record */
+	walk = (namelist_t *)currenthost;
+	do {
+		walk = walk->next;
+	} while (walk && (strcmp(((namelist_t *)currenthost)->bbhostname, walk->bbhostname) == 0));
+
+	return walk;
 }
 
 void bbh_set_item(void *hostin, enum bbh_item_t item, void *value)

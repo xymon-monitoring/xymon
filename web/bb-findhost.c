@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.35 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.36 2007-07-26 21:17:06 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			clonewalk = next_host(hostwalk);
+			clonewalk = next_host(hostwalk, 1);
 			while (clonewalk && (strcmp(bbh_item(hostwalk, BBH_HOSTNAME), bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
 				sprintf(msgline, "<br><a href=\"%s/%s/#%s\">%s</a>\n",
 					xgetenv("BBWEB"), 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 					bbh_item(clonewalk, BBH_HOSTNAME),
 					bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 				addtobuffer(outbuf, msgline);
-				clonewalk = next_host(clonewalk);
+				clonewalk = next_host(clonewalk, 1);
 				gotany++;
 			}
 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 			hostwalk = clonewalk;
 		}
 		else {
-			hostwalk = next_host(hostwalk);
+			hostwalk = next_host(hostwalk, 0);
 		}
 	}
 	regfree (&re); 	/*[wm] - free regex compiled patern */

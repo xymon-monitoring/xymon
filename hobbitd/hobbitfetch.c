@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.18 2007-07-24 13:00:29 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.19 2007-07-26 21:17:06 henrik Exp $";
 
 #include "config.h"
 
@@ -414,7 +414,7 @@ void reload_config(void)
 	void *hostwalk;
 
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk)) {
+	for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk, 0)) {
 		RbtIterator handle;
 		char *hname;
 		clients_t *newclient;

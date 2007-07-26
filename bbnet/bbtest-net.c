@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.248 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.249 2007-07-26 21:17:06 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -386,7 +386,7 @@ void load_tests(void)
 		sprintf(routestring, "route_%s:", location);
 	}
 
-	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk)) {
+	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		int anytests = 0;
 		int ping_dialuptest = 0, ping_reversetest = 0;
 		char *testspec;
