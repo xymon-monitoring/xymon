@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.44 2007-07-27 12:10:00 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.45 2007-07-27 13:23:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -707,7 +707,6 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (eventhead && (output != NULL)) {
 		char *bgcolors[2] = { "#000000", "#000033" };
 		int  bgcolor = 0;
-		int  count;
 		struct event_t *ewalk, *lasttoshow = eventhead;
 		countlist_t *cwalk;
 		unsigned long totalcount = 0;
@@ -749,20 +748,27 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			break;
 		}
 
-		count=0;
-		ewalk=eventhead; 
-		do {
-			count++;
-			lasttoshow = ewalk;
-			ewalk = ewalk->next;
-		} while (ewalk && (count<maxcount));
+		if (sumtype == S_NONE) {
+			int  count;
+			count=0;
+			ewalk=eventhead; 
+			do {
+				count++;
+				lasttoshow = ewalk;
+				ewalk = ewalk->next;
+			} while (ewalk && (count<maxcount));
+			ewalk->next = NULL;	/* Terminate list */
 
-		if (maxminutes > 0)  { 
-			sprintf(title, "%d events received in the past %u minutes", 
-				count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
+			if (maxminutes > 0)  { 
+				sprintf(title, "%d events received in the past %u minutes", 
+					count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
+			}
+			else {
+				sprintf(title, "%d events received.", count);
+			}
 		}
 		else {
-			sprintf(title, "%d events received.", count);
+			strcpy(title, "Events in summary");
 		}
 
 		fprintf(output, "<BR><BR>\n");
@@ -770,7 +776,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 
-		for (ewalk=eventhead; (ewalk != lasttoshow->next); ewalk=ewalk->next) {
+		for (ewalk=eventhead; (ewalk); ewalk=ewalk->next) {
 			char *hostname = bbh_item(ewalk->host, BBH_HOSTNAME);
 
 			if ( (counttype == COUNT_DURATION) &&
