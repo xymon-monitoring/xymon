@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.187 2007-07-25 20:50:17 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.188 2007-07-27 12:02:59 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -932,7 +932,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 				do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime,
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
 				host_exists,
-				NULL, NULL, NULL, S_NONE, NULL);
+				NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
 			}
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
@@ -1114,7 +1114,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 			do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, 
 				    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
 				    host_exists,
-				    NULL, NULL, NULL, S_NONE, NULL);
+				    NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
 		}
 		if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
 	}

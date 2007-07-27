@@ -36,6 +36,7 @@ typedef struct countlist_t {
 } countlist_t;
 
 typedef enum { S_NONE, S_HOST_BREAKDOWN, S_SERVICE_BREAKDOWN } eventsummary_t;
+typedef enum { COUNT_NONE, COUNT_EVENTS, COUNT_DURATION } countsummary_t;
 
 typedef int (*f_hostcheck)(char *hostname);
 
@@ -49,6 +50,6 @@ extern void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromti
 			char *colormatch, int ignoredialups,
 			f_hostcheck hostcheck,
 			event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts,
-			eventsummary_t sumtype, char *periodstring);
+			countsummary_t counttype, eventsummary_t sumtype, char *periodstring);
 
 #endif
