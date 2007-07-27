@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.41 2007-07-25 20:48:33 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.42 2007-07-27 12:08:00 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -44,6 +44,7 @@ char	*colorregex = NULL;
 int	ignoredialups = 0;
 int	topcount = 0;
 eventsummary_t summarybar = S_NONE;
+countsummary_t counttype = COUNT_NONE;
 char	*webfile_hf = "event";
 char	*webfile_form = "event_form";
 cgidata_t *cgidata = NULL;
@@ -105,6 +106,11 @@ static void parse_query(void)
 			else if (strcasecmp(cwalk->value, "services") == 0) summarybar = S_SERVICE_BREAKDOWN;
 			else summarybar = S_NONE;
 		}
+		else if (strcasecmp(cwalk->name, "COUNTTYPE") == 0) {
+			if (strcasecmp(cwalk->value, "events") == 0) counttype = COUNT_EVENTS;
+			else if (strcasecmp(cwalk->value, "duration") == 0) counttype = COUNT_DURATION;
+			else counttype = COUNT_NONE;
+		}
 		else if (strcasecmp(cwalk->name, "TIMETXT") == 0) {
 			if (*(cwalk->value)) strcpy(periodstring, cwalk->value);
 		}
@@ -159,16 +165,19 @@ void show_topchanges(FILE *output,
 		addtobuffer(othercriteria, "&amp;SUMMARY=services");
 		addtobuffer(othercriteria, "&amp;TIMETXT=");
 		addtobuffer(othercriteria, periodstring);
+		if (counttype == COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
+		else if (counttype == COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d hosts\" border=0>\n", topcount);
 		fprintf(output, "      <tr><th colspan=3>Top %d hosts</th></tr>\n", topcount);
-		fprintf(output, "      <tr><th align=left>Host</th><th align=left colspan=2>State changes</th></tr>\n");
+		fprintf(output, "      <tr><th align=left>Host</th><th align=left colspan=2>%s</th></tr>\n",
+			(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 
 		/* Compute the total count */
 		for (i=0, cwalk=hostcounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
 
-		for (i=0, cwalk=hostcounthead; (cwalk); i++, cwalk=cwalk->next) {
+		for (i=0, cwalk=hostcounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
 				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					bbh_item(cwalk->src, BBH_HOSTNAME), 
@@ -237,17 +246,20 @@ void show_topchanges(FILE *output,
 		addtobuffer(othercriteria, "&amp;SUMMARY=hosts");
 		addtobuffer(othercriteria, "&amp;TIMETXT=");
 		addtobuffer(othercriteria, periodstring);
+		if (counttype == COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
+		else if (counttype == COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d services\" border=0>\n", topcount);
 		fprintf(output, "      <tr><th colspan=3>Top %d services</th></tr>\n", topcount);
-		fprintf(output, "      <tr><th align=left>Service</th><th align=left colspan=2>State changes</th></tr>\n");
+		fprintf(output, "      <tr><th align=left>Service</th><th align=left colspan=2>%s</th></tr>\n",
+			(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 
 		/* Compute the total count */
 		for (i=0, cwalk=svccounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
 
-		for (i=0, cwalk=svccounthead; (cwalk); i++, cwalk=cwalk->next) {
+		for (i=0, cwalk=svccounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
 				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					((htnames_t *)cwalk->src)->name, 
@@ -303,6 +315,9 @@ int main(int argc, char *argv[])
 			maxminutes = -1;
 			maxcount = -1;
 		}
+		else if (strcmp(argv[argi], "--debug=")) {
+			debug = 1;
+		}
 	}
 
 	redirect_cgilog("bb-eventlog");
@@ -335,23 +350,31 @@ int main(int argc, char *argv[])
 		do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    NULL, NULL, NULL, summarybar, periodstring);
+			    NULL, NULL, NULL, counttype, summarybar, periodstring);
 	}
 	else {
 		countlist_t *hcounts, *scounts;
-		event_t *events, *ewalk;
+		event_t *events;
 		time_t firstevent, lastevent;
 
 		do_eventlog(NULL, -1, -1, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    &events, &hcounts, &scounts, S_NONE, NULL);
+			    &events, &hcounts, &scounts, counttype, S_NONE, NULL);
 
-		if (events) {
-			lastevent = events->eventtime;
+		lastevent = (totime ? eventreport_time(totime) : getcurrenttime(NULL));
+
+		if (fromtime) {
+			firstevent = eventreport_time(fromtime);
+		}
+		else if (events) {
+			event_t *ewalk;
 			ewalk = events; while (ewalk->next) ewalk = ewalk->next;
 			firstevent = ewalk->eventtime;
 		}
+		else
+			firstevent = 0;
+
 		show_topchanges(stdout, hcounts, scounts, events, topcount, firstevent, lastevent);
 	}
 
