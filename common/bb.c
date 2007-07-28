@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.11 2007-07-21 21:36:02 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.12 2007-07-28 06:35:52 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 			if (recipient == NULL) {
 				recipient = argv[argi];
 			}
-			else if (STRBUF(msg) == NULL) {
+			else if (STRBUFLEN(msg) == 0) {
 				msg = dupstrbuffer(argv[argi]);
 			}
 			else {
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((recipient == NULL) || (STRBUF(msg) == NULL) || showhelp) {
+	if ((recipient == NULL) || (STRBUFLEN(msg) == 0) || showhelp) {
 		fprintf(stderr, "Hobbit version %s\n", VERSION);
 		fprintf(stderr, "Usage: %s [--debug] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
