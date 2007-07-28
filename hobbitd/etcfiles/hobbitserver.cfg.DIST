@@ -132,11 +132,11 @@ RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 #
 # This is also used by the bb-hostsvc.cgi script to determine if the detailed
 # status view of a test should include a graph.
-TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,mailq,nmailq=mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbit,hobbit2,hobbitd,files,procs=processes,ports,clock,lines"
+TEST2RRD="cpu=la,disk,inode,qtree,memory,paging,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,mailq,nmailq=mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbit,hobbit2,hobbitd,files,procs=processes,ports,clock,lines"
 
 # This defines which RRD files to include on the "trends" column webpage,
 # and the order in which they appear.
-GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbit,hobbit2,hobbitd,clock,lines"
+GRAPHS="la,disk,inode,qtree,files,processes,memory,paging,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbit,hobbit2,hobbitd,clock,lines"
 
 # These two settings can be used to restrict what filesystems are being
 # tracked (i.e. have their utilisation graphed) by Hobbit.
