@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.45 2007-07-27 13:23:51 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.46 2007-08-11 05:47:04 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -757,7 +757,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 				lasttoshow = ewalk;
 				ewalk = ewalk->next;
 			} while (ewalk && (count<maxcount));
-			ewalk->next = NULL;	/* Terminate list */
+			if (ewalk) ewalk->next = NULL;	/* Terminate list if any items left */
 
 			if (maxminutes > 0)  { 
 				sprintf(title, "%d events received in the past %u minutes", 
