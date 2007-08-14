@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rrdcachectl.c,v 1.2 2007-07-22 06:55:32 henrik Exp $";
+static char rcsid[] = "$Id: rrdcachectl.c,v 1.3 2007-08-14 09:36:39 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -103,6 +103,7 @@ static int call_svc(char *buf)
 		}
 	} while (bytesleft > 0);
 
+	errprintf("Request sent\n");
 	return 0;
 }
 
