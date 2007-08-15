@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.46 2007-08-11 05:47:04 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.47 2007-08-15 06:47:53 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -711,7 +711,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		countlist_t *cwalk;
 		unsigned long totalcount = 0;
 
-		fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
+		if (periodstring) fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
 
 		switch (sumtype) {
 		  case S_HOST_BREAKDOWN:
