@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.188 2007-07-27 12:02:59 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.189 2007-08-15 06:47:18 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -937,6 +937,9 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
 			if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
+		}
+		else if (strcmp(p, "summaries") == 0) {
+			do_summaries(dispsums, output);
 		}
 		else {
 			sprintf(extfn, "%s/ext/%s/%s", xgetenv("BBHOME"), family, p);
