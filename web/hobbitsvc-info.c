@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.119 2007-07-26 21:17:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.120 2007-08-22 13:40:38 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -981,7 +981,8 @@ char *generate_info(char *hostname)
 		     (strncmp(val, "post;", 5)   != 0)  &&
 		     (strncmp(val, "post=", 5)   != 0)  &&
 		     (strncmp(val, "nopost=", 7) != 0)  &&
-		     (strncmp(val, "nopost;", 7) != 0) ) {
+		     (strncmp(val, "nopost;", 7) != 0)  &&
+		     (strncmp(val, "DEVMON:", 7) != 0) ) {
 			sprintf(l, "%s ", val);
 			addtobuffer(infobuf, l);
 		}
