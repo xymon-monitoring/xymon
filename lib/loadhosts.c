@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.72 2007-07-26 21:17:06 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.73 2007-08-23 13:58:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -61,6 +61,7 @@ static namelist_t *namehead = NULL;
 static namelist_t *defaulthost = NULL;
 static const char *bbh_item_key[BBH_LAST];
 static const char *bbh_item_name[BBH_LAST];
+static int bbh_item_isflag[BBH_LAST];
 static int configloaded = 0;
 static RbtHandle rbhosts;
 static RbtHandle rbclients;
@@ -69,6 +70,7 @@ static void bbh_item_list_setup(void)
 {
 	static int setupdone = 0;
 	int i;
+	enum bbh_item_t bi;
 
 	if (setupdone) return;
 
@@ -76,6 +78,7 @@ static void bbh_item_list_setup(void)
 	setupdone = 1;
 	memset(bbh_item_key, 0, sizeof(bbh_item_key));
 	memset(bbh_item_name, 0, sizeof(bbh_item_key));
+	memset(bbh_item_isflag, 0, sizeof(bbh_item_isflag));
 	bbh_item_key[BBH_NET]                  = "NET:";
 	bbh_item_name[BBH_NET]                 = "BBH_NET";
 	bbh_item_key[BBH_DISPLAYNAME]          = "NAME:";
@@ -183,6 +186,9 @@ static void bbh_item_list_setup(void)
 	if (i != BBH_IP) {
 		errprintf("ERROR: Setup failure in bbh_item_key position %d\n", i);
 	}
+
+	for (bi = 0; (bi < BBH_LAST); bi++) 
+		if (bbh_item_name[bi]) bbh_item_isflag[bi] = (strncmp(bbh_item_name[bi], "BBH_FLAG_", 9) == 0);
 }
 
 
@@ -205,8 +211,13 @@ static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 		result = (host->elems[i] ? (host->elems[i] + 6) : NULL);
 	}
 
-	if (result || !host->defaulthost || (strcasecmp(host->bbhostname, ".default.") == 0))
-		return result;
+	if (result || !host->defaulthost || (strcasecmp(host->bbhostname, ".default.") == 0)) {
+		if (bbh_item_isflag[item]) {
+			return (result ? bbh_item_key[item] : NULL);
+		}
+		else
+			return result;
+	}
 	else
 		return bbh_find_item(host->defaulthost, item);
 }
