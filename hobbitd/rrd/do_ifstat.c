@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.13 2007-07-24 08:45:01 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.14 2007-09-05 21:37:52 henrik Exp $";
 
 static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
@@ -55,8 +55,8 @@ static const char *ifstat_darwin_exprs[] = {
 /* dmfe:1:dmfe1:obytes64   0             */
 /* dmfe:1:dmfe1:rbytes64   0             */
 static const char *ifstat_solaris_exprs[] = {
-	"^[a-z]+:\\d+:([a-z0-9]+):obytes64\\s+(\\d+)",
-	"^[a-z]+:\\d+:([a-z0-9]+):rbytes64\\s+(\\d+)"
+	"^[a-z0-9]+:\\d+:([a-z0-9]+):obytes64\\s+(\\d+)",
+	"^[a-z0-9]+:\\d+:([a-z0-9]+):rbytes64\\s+(\\d+)"
 };
 
 /*
