@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.4 2007-09-09 21:20:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.5 2007-09-09 21:42:40 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -24,15 +24,14 @@ typedef struct oid_t {
 	char *oidstr;				/* the input definition of the OID */
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
-	int index;
-	char *dsname;
+	char *devname, *dsname;
 	char *result;				/* the printable result data */
 	struct oid_t *next;
 } oid_t;
 
 typedef struct wantedif_t {
 	enum { ID_DESCR, ID_PHYSADDR, ID_IPADDR } idtype;
-	char *id;
+	char *id, *devname;
 	struct wantedif_t *next;
 } wantedif_t;
 
@@ -131,7 +130,7 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 				vp = pdu->variables;
 				while (vp) {
 					snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-					dbgprintf("%s: index %d %s\n", sp->hostip, owalk->index, buf);
+					dbgprintf("%s: device %s %s\n", sp->hostip, owalk->devname, buf);
 					owalk->result = strdup(buf); owalk = owalk->next;
 					vp = vp->next_variable;
 				}
@@ -350,7 +349,6 @@ struct {
 	{ "IF-MIB::ifOperStatus", "ifOperStatus" },
 	{ "IF-MIB::ifLastChange", "ifLastChange" },
 	{ "IF-MIB::ifInOctets", "ifInOctets" },
-	{ "IF-MIB::ifInOctets", "ifInOctets" },
 	{ "IF-MIB::ifInUcastPkts", "ifInUcastPkts" },
 	{ "IF-MIB::ifInNUcastPkts", "ifInNUcastPkts" },
 	{ "IF-MIB::ifInDiscards", "ifInDiscards" },
@@ -455,15 +453,16 @@ void readconfig(char *cfgfn)
 		}
 
 		if (strncmp(bot, "mrtg=", 5) == 0) {
-			char *idx, *oid1 = NULL, *oid2 = NULL;
+			char *idx, *oid1 = NULL, *oid2 = NULL, *devname = NULL;
 
 			idx = strtok(bot+5, " \t");
 			if (idx) oid1 = strtok(NULL, " \t");
 			if (oid1) oid2 = strtok(NULL, " \t");
+			if (oid2) devname = strtok(NULL, "\r\n");
 
-			if (idx && oid1 && oid2) {
+			if (idx && oid1 && oid2 && devname) {
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->index = atoi(idx);
+				oitem->devname = strdup(devname);
 				oitem->dsname = strdup("ds1");
 				oitem->oidstr = strdup(oid1);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -479,7 +478,7 @@ void readconfig(char *cfgfn)
 				}
 
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->index = atoi(idx);
+				oitem->devname = strdup(devname);
 				oitem->dsname = strdup("ds2");
 				oitem->oidstr = strdup(oid2);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -501,11 +500,13 @@ void readconfig(char *cfgfn)
 		}
 
 		if (strncmp(bot, "ifmib=", 6) == 0) {
-			char *idx;
+			char *idx, *devname;
 			int i;
 			char oid[128];
 
 			idx = strtok(bot+6, " \t");
+			if (idx) devname = strtok(NULL, " \r\n");
+
 			if ((*idx == '(') || (*idx == '[') || (*idx == '{')) {
 				/* Interface-by-name or interface-by-physaddr */
 				wantedif_t *newitem = (wantedif_t *)malloc(sizeof(wantedif_t));
@@ -516,6 +517,7 @@ void readconfig(char *cfgfn)
 				}
 				p = idx + strcspn(idx, "])}"); if (p) *p = '\0';
 				newitem->id = strdup(idx+1);
+				newitem->devname = strdup(devname);
 				newitem->next = reqitem->wantedinterfaces;
 				reqitem->wantedinterfaces = newitem;
 			}
@@ -525,7 +527,7 @@ void readconfig(char *cfgfn)
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, idx);
 
 					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->index = atoi(idx);
+					oitem->devname = strdup(devname);
 					oitem->dsname = strdup(ifmibnames[i].dsname);
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -546,14 +548,15 @@ void readconfig(char *cfgfn)
 		}
 
 		if (strncmp(bot, "var=", 4) == 0) {
-			char *dsname, *oid = NULL;
+			char *dsname, *oid = NULL, *devname = NULL;
 
 			dsname = strtok(bot+4, " \t");
 			if (dsname) oid = strtok(NULL, " \t");
+			if (oid) devname = strtok(NULL, " \r\n");
 
 			if (dsname && oid) {
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->index = 0;
+				oitem->devname = strdup(devname);
 				oitem->dsname = strdup(dsname);
 				oitem->oidstr = strdup(oid);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -652,7 +655,7 @@ void resolveifnames(void)
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, ifwalk->index);
 
 					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->index = atoi(ifwalk->index);
+					oitem->devname = strdup(wantwalk->devname);
 					oitem->dsname = strdup(ifmibnames[i].dsname);
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -689,9 +692,9 @@ void sendresult(void)
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
-			printf("%s interface %d: %s = %s\n", 
-				rwalk->hostname, owalk->index, owalk->dsname, 
-				(owalk->result ? owalk->result : "NODATA"));
+			printf("%s interface %s: %s = %s\n", 
+				rwalk->hostname, owalk->devname,
+				owalk->dsname, (owalk->result ? owalk->result : "NODATA"));
 		}
 	}
 }
