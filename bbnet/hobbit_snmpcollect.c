@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.3 2007-09-09 20:38:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.4 2007-09-09 21:20:27 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -31,7 +31,7 @@ typedef struct oid_t {
 } oid_t;
 
 typedef struct wantedif_t {
-	enum { ID_DESCR, ID_PHYSADDR } idtype;
+	enum { ID_DESCR, ID_PHYSADDR, ID_IPADDR } idtype;
 	char *id;
 	struct wantedif_t *next;
 } wantedif_t;
@@ -40,6 +40,7 @@ typedef struct ifids_t {
 	char *index;
 	char *descr;
 	char *physaddr;
+	char *ipaddr;
 	struct ifids_t *next;
 } ifids_t;
 
@@ -57,12 +58,12 @@ typedef struct req_t {
 	struct req_t *next;
 } req_t;
 
-oid ifindexoid[MAX_OID_LEN];
-unsigned int ifindexoidlen;
+oid rootoid[MAX_OID_LEN];
+unsigned int rootoidlen;
 
 req_t *reqhead = NULL;
 int active_requests = 0;
-enum { QUERY_INTERFACES, GET_DATA } querymode = GET_DATA;
+enum { QUERY_INTERFACES, QUERY_IPADDRS, GET_DATA } querymode = GET_DATA;
 
 /* Tuneables */
 int max_pending_requests = 30;
@@ -105,6 +106,23 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 
 				newif->next = sp->interfacenames;
 				sp->interfacenames = newif;
+				break;
+
+
+			  case QUERY_IPADDRS:
+				vp = pdu->variables;
+				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+
+				newif = sp->interfacenames;
+				while (newif && strcmp(newif->index, buf)) newif = newif->next;
+
+				if (newif && (vp->name_length == (rootoidlen + 4))) {
+					sprintf(buf, "%d.%d.%d.%d", 
+						(int)vp->name[rootoidlen+0], (int)vp->name[rootoidlen+1],
+						(int)vp->name[rootoidlen+2], (int)vp->name[rootoidlen+3]);
+					newif->ipaddr = strdup(buf);
+					dbgprintf("Interface %s has IP %s\n", newif->index, newif->ipaddr);
+				}
 				break;
 
 
@@ -162,6 +180,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 
 			switch (querymode) {
 			  case QUERY_INTERFACES:
+			  case QUERY_IPADDRS:
 				if (pdu->errstat == SNMP_ERR_NOERROR) {
 					vp = pdu->variables;
 
@@ -171,8 +190,8 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 						dbgprintf("Got variable: %s\n", buf);
 					}
 
-					if ( (vp->name_length >= ifindexoidlen) && 
-					     (memcmp(&ifindexoid, vp->name, ifindexoidlen * sizeof(oid)) == 0) ) {
+					if ( (vp->name_length >= rootoidlen) && 
+					     (memcmp(&rootoid, vp->name, rootoidlen * sizeof(oid)) == 0) ) {
 						/* Still getting the right kind of data, so ask for more */
 						req = snmp_pdu_create(SNMP_MSG_GETNEXT);
 						while (vp) {
@@ -249,7 +268,7 @@ void starthosts(int resetstart)
 		oid Oid[MAX_OID_LEN];
 		unsigned int OidLen;
 
-		if ((querymode == QUERY_INTERFACES) && !rwalk->wantedinterfaces) continue;
+		if ((querymode != GET_DATA) && !rwalk->wantedinterfaces) continue;
 
 		if (!rwalk->sess) {
 			/* Setup the SNMP session */
@@ -278,6 +297,12 @@ void starthosts(int resetstart)
 			if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
 			OidLen = sizeof(Oid)/sizeof(Oid[0]);
 			if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+			break;
+
+		  case QUERY_IPADDRS:
+			req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+			OidLen = sizeof(Oid)/sizeof(Oid[0]);
+			if (read_objid("IP-MIB::ipAdEntIfIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
 			break;
 
 		  case GET_DATA:
@@ -481,14 +506,15 @@ void readconfig(char *cfgfn)
 			char oid[128];
 
 			idx = strtok(bot+6, " \t");
-			if ((*idx == '(') || (*idx == '[')) {
-				/* Interface-by-name  or interface-by-physaddr */
+			if ((*idx == '(') || (*idx == '[') || (*idx == '{')) {
+				/* Interface-by-name or interface-by-physaddr */
 				wantedif_t *newitem = (wantedif_t *)malloc(sizeof(wantedif_t));
 				switch (*idx) {
 				  case '(': newitem->idtype = ID_DESCR; break;
 				  case '[': newitem->idtype = ID_PHYSADDR; break;
+				  case '{': newitem->idtype = ID_IPADDR; break;
 				}
-				p = idx + strcspn(idx, "])"); if (p) *p = '\0';
+				p = idx + strcspn(idx, "])}"); if (p) *p = '\0';
 				newitem->id = strdup(idx+1);
 				newitem->next = reqitem->wantedinterfaces;
 				reqitem->wantedinterfaces = newitem;
@@ -551,15 +577,9 @@ void readconfig(char *cfgfn)
 	freestrbuffer(inbuf);
 }
 
-void resolveifnames(void)
+
+void communicate(void)
 {
-	struct req_t *rwalk;
-	ifids_t *ifwalk;
-	wantedif_t *wantwalk;
-
-	querymode = QUERY_INTERFACES;
-	starthosts(1);
-
 	/* loop while any active requests */
 	while (active_requests) {
 		int fds = 0, block = 1;
@@ -578,7 +598,32 @@ void resolveifnames(void)
 		else
 			snmp_timeout();
 	}
+}
 
+
+void resolveifnames(void)
+{
+	struct req_t *rwalk;
+	ifids_t *ifwalk;
+	wantedif_t *wantwalk;
+
+	/* 
+	 * To get the interface names, we walk the ifIndex table with getnext.
+	 * We need the fixed part of that OID available to check when we reach
+	 * the end of the table (then we'll get a variable back which has a
+	 * different OID).
+	 */
+	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
+	read_objid(".1.3.6.1.2.1.2.2.1.1", rootoid, &rootoidlen);
+	querymode = QUERY_INTERFACES;
+	starthosts(1);
+	communicate();
+
+	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
+	read_objid(".1.3.6.1.2.1.4.20.1.2", rootoid, &rootoidlen);
+	querymode = QUERY_IPADDRS;
+	starthosts(1);
+	communicate();
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		if (!rwalk->wantedinterfaces || !rwalk->interfacenames) continue;
@@ -591,6 +636,10 @@ void resolveifnames(void)
 
 			  case ID_PHYSADDR:
 				for (ifwalk = rwalk->interfacenames; (ifwalk && strcmp(ifwalk->physaddr, wantwalk->id)); ifwalk = ifwalk->next) ;
+				break;
+
+			  case ID_IPADDR:
+				for (ifwalk = rwalk->interfacenames; (ifwalk && (!ifwalk->ipaddr || strcmp(ifwalk->ipaddr, wantwalk->id))); ifwalk = ifwalk->next) ;
 				break;
 			}
 
@@ -629,26 +678,7 @@ void getdata(void)
 {
 	querymode = GET_DATA;
 	starthosts(1);
-
-	/* loop while any active requests */
-	while (active_requests) {
-		int fds = 0, block = 1;
-		fd_set fdset;
-		struct timeval timeout;
-
-		FD_ZERO(&fdset);
-		snmp_select_info(&fds, &fdset, &timeout, &block);
-		fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
-		if (fds < 0) {
-			perror("select failed");
-			exit(1);
-		}
-		if (fds)
-			snmp_read(&fdset);
-		else
-			snmp_timeout();
-	}
-
+	communicate();
 }
 
 
@@ -699,17 +729,9 @@ int main (int argc, char **argv)
 	init_snmp("hobbit_snmpcollect");
 	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
 
-	/* 
-	 * To get the interface names, we walk the ifIndex table with getnext.
-	 * We need the fixed part of that OID available to check when we reach
-	 * the end of the table (then we'll get a variable back which has a
-	 * different OID).
-	 */
-	ifindexoidlen = sizeof(ifindexoid)/sizeof(ifindexoid[0]);
-	read_objid(".1.3.6.1.2.1.2.2.1.1", ifindexoid, &ifindexoidlen);
-
 	readconfig(configfn);
 	if (cfgcheck) return 0;
+
 	resolveifnames();
 
 	getdata();
