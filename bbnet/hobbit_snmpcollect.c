@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.2 2007-09-09 20:16:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.3 2007-09-09 20:38:24 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -53,7 +53,7 @@ typedef struct req_t {
 	struct snmp_session *sess;		/* SNMP session data */
 	wantedif_t *wantedinterfaces;		/* List of interfaces by description or phys. addr. we want */
 	ifids_t *interfacenames;		/* List of interfaces, pulled from the host */
-	struct oid_t *oidhead, *next_oid;	/* List of the OID's we will getch */
+	struct oid_t *oidhead, *oidtail, *next_oid;	/* List of the OID's we will fetch */
 	struct req_t *next;
 } req_t;
 
@@ -443,8 +443,8 @@ void readconfig(char *cfgfn)
 				oitem->oidstr = strdup(oid1);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					oitem->next = reqitem->oidhead;
-					reqitem->oidhead = oitem;
+					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
+					reqitem->oidtail = oitem;
 				}
 				else {
 					/* Could not parse the OID definition */
@@ -459,8 +459,8 @@ void readconfig(char *cfgfn)
 				oitem->oidstr = strdup(oid2);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					oitem->next = reqitem->oidhead;
-					reqitem->oidhead = oitem;
+					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
+					reqitem->oidtail = oitem;
 				}
 				else {
 					/* Could not parse the OID definition */
@@ -504,8 +504,8 @@ void readconfig(char *cfgfn)
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-						oitem->next = reqitem->oidhead;
-						reqitem->oidhead = oitem;
+						if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
+						reqitem->oidtail = oitem;
 					}
 					else {
 						/* Could not parse the OID definition */
@@ -532,8 +532,8 @@ void readconfig(char *cfgfn)
 				oitem->oidstr = strdup(oid);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					oitem->next = reqitem->oidhead;
-					reqitem->oidhead = oitem;
+					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
+					reqitem->oidtail = oitem;
 				}
 				else {
 					/* Could not parse the OID definition */
@@ -558,7 +558,6 @@ void resolveifnames(void)
 	wantedif_t *wantwalk;
 
 	querymode = QUERY_INTERFACES;
-	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
 	starthosts(1);
 
 	/* loop while any active requests */
@@ -609,8 +608,8 @@ void resolveifnames(void)
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-						oitem->next = rwalk->oidhead;
-						rwalk->oidhead = oitem;
+						if (!rwalk->oidhead) rwalk->oidhead = oitem; else rwalk->oidtail->next = oitem;
+						rwalk->oidtail = oitem;
 					}
 					else {
 						/* Could not parse the OID definition */
@@ -629,7 +628,6 @@ void resolveifnames(void)
 void getdata(void)
 {
 	querymode = GET_DATA;
-	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
 	starthosts(1);
 
 	/* loop while any active requests */
@@ -661,8 +659,8 @@ void sendresult(void)
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
-			printf("%s index %d : %s %s = %s\n", 
-				rwalk->hostname, owalk->index, owalk->oidstr, owalk->dsname, 
+			printf("%s interface %d: %s = %s\n", 
+				rwalk->hostname, owalk->index, owalk->dsname, 
 				(owalk->result ? owalk->result : "NODATA"));
 		}
 	}
@@ -699,6 +697,7 @@ int main (int argc, char **argv)
 	}
 
 	init_snmp("hobbit_snmpcollect");
+	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
 
 	/* 
 	 * To get the interface names, we walk the ifIndex table with getnext.
