@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.1 2007-09-08 12:07:49 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.2 2007-09-09 20:16:59 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -30,20 +30,48 @@ typedef struct oid_t {
 	struct oid_t *next;
 } oid_t;
 
+typedef struct wantedif_t {
+	enum { ID_DESCR, ID_PHYSADDR } idtype;
+	char *id;
+	struct wantedif_t *next;
+} wantedif_t;
+
+typedef struct ifids_t {
+	char *index;
+	char *descr;
+	char *physaddr;
+	struct ifids_t *next;
+} ifids_t;
+
 /* A host and the OID's we will be polling */
 typedef struct req_t {
 	char *hostname;				/* Hostname used for reporting to Hobbit */
 	char *hostip;				/* Hostname or IP used for testing */
+	u_short portnumber;			/* SNMP daemon portnumber */
 	long version;				/* SNMP version to use */
 	unsigned char *community;		/* Community name used to access the SNMP daemon */
 	struct snmp_session *sess;		/* SNMP session data */
+	wantedif_t *wantedinterfaces;		/* List of interfaces by description or phys. addr. we want */
+	ifids_t *interfacenames;		/* List of interfaces, pulled from the host */
 	struct oid_t *oidhead, *next_oid;	/* List of the OID's we will getch */
 	struct req_t *next;
 } req_t;
 
+oid ifindexoid[MAX_OID_LEN];
+unsigned int ifindexoidlen;
+
 req_t *reqhead = NULL;
 int active_requests = 0;
+enum { QUERY_INTERFACES, GET_DATA } querymode = GET_DATA;
 
+/* Tuneables */
+int max_pending_requests = 30;
+int retries = 0;				/* Number of retries before timeout. 0 = Net-SNMP default (5). */
+long timeout = 0;				/* Number of uS until first timeout, then exponential backoff. 0 = Net-SNMP default (1 second). */
+
+
+/* Must forward declare this, since callback-function and starthosts() refer to each other */
+void starthosts(int resetstart);
 
 /*
  * simple printing of returned data
@@ -54,17 +82,42 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 	struct variable_list *vp;
 	struct oid_t *owalk;
 	int ix;
+	ifids_t *newif;
 
 	switch (status) {
 	  case STAT_SUCCESS:
-		vp = pdu->variables;
-		owalk = sp->oidhead;
 		if (pdu->errstat == SNMP_ERR_NOERROR) {
-			while (vp) {
+			switch (querymode) {
+			  case QUERY_INTERFACES:
+				newif = (ifids_t *)calloc(1, sizeof(ifids_t));
+
+				vp = pdu->variables;
 				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-				owalk->result = strdup(buf);
-				dbgprintf("%s: index %d %s\n", sp->hostip, owalk->index, buf);
-				vp = vp->next_variable; owalk = owalk->next;
+				newif->index = strdup(buf);
+
+				vp = vp->next_variable;
+				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+				newif->descr = strdup(buf);
+
+				vp = vp->next_variable;
+				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+				newif->physaddr = strdup(buf);
+
+				newif->next = sp->interfacenames;
+				sp->interfacenames = newif;
+				break;
+
+
+			  case GET_DATA:
+				owalk = sp->oidhead;
+				vp = pdu->variables;
+				while (vp) {
+					snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+					dbgprintf("%s: index %d %s\n", sp->hostip, owalk->index, buf);
+					owalk->result = strdup(buf); owalk = owalk->next;
+					vp = vp->next_variable;
+				}
+				break;
 			}
 		}
 		else {
@@ -101,17 +154,49 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 {
 	struct req_t *item = (struct req_t *)magic;
 	struct snmp_pdu *req;
+	struct variable_list *vp;
 
 	if (operation == NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE) {
 		if (print_result(STAT_SUCCESS, item, pdu)) {
-			if (item->next_oid) {
-				req = snmp_pdu_create(SNMP_MSG_GET);
-				while (item->next_oid) {
-					snmp_add_null_var(req, item->next_oid->Oid, item->next_oid->OidLen);
-					item->next_oid = item->next_oid->next;
+			req = NULL;
+
+			switch (querymode) {
+			  case QUERY_INTERFACES:
+				if (pdu->errstat == SNMP_ERR_NOERROR) {
+					vp = pdu->variables;
+
+					if (debug) {
+						char buf[1024];
+						snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+						dbgprintf("Got variable: %s\n", buf);
+					}
+
+					if ( (vp->name_length >= ifindexoidlen) && 
+					     (memcmp(&ifindexoid, vp->name, ifindexoidlen * sizeof(oid)) == 0) ) {
+						/* Still getting the right kind of data, so ask for more */
+						req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+						while (vp) {
+							snmp_add_null_var(req, vp->name, vp->name_length);
+							vp = vp->next_variable;
+						}
+					}
 				}
+				break;
+
+			  case GET_DATA:
+				if (item->next_oid) {
+					req = snmp_pdu_create(SNMP_MSG_GET);
+					while (item->next_oid) {
+						snmp_add_null_var(req, item->next_oid->Oid, item->next_oid->OidLen);
+						item->next_oid = item->next_oid->next;
+					}
+				}
+				break;
+			}
+
+			if (req) {
 				if (snmp_send(item->sess, req))
-					return 1;
+					goto finish;
 				else {
 					snmp_sess_perror("snmp_send", item->sess);
 					snmp_free_pdu(req);
@@ -126,36 +211,83 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 	 * this host not active any more
 	 */
 	active_requests--;
+
+finish:
+	/* Start some more hosts */
+	starthosts(0);
+
 	return 1;
 }
 
-void asynchronous(void)
+
+void starthosts(int resetstart)
 {
+	static req_t *startpoint = NULL;
+	static int haverun = 0;
+
 	struct req_t *rwalk;
 
-	/* startup all hosts */
-	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
+	if (resetstart) {
+		startpoint = NULL;
+		haverun = 0;
+	}
+
+	if (startpoint == NULL) {
+		if (haverun) {
+			return;
+		}
+		else {
+			startpoint = reqhead;
+			haverun = 1;
+		}
+	}
+
+	/* startup as many hosts as we want to run in parallel */
+	for (rwalk = startpoint; (rwalk && (active_requests <= max_pending_requests)); rwalk = rwalk->next) {
 		struct snmp_session s;
 		struct snmp_pdu *req;
+		oid Oid[MAX_OID_LEN];
+		unsigned int OidLen;
 
-		/* Setup the SNMP session */
-		snmp_sess_init(&s);
-		s.version = rwalk->version;
-		s.peername = rwalk->hostip;
-		s.community = rwalk->community;
-		s.community_len = strlen((char *)rwalk->community);
-		s.callback = asynch_response;
-		s.callback_magic = rwalk;
-		if (!(rwalk->sess = snmp_open(&s))) {
-			snmp_sess_perror("snmp_open", &s);
-			continue;
+		if ((querymode == QUERY_INTERFACES) && !rwalk->wantedinterfaces) continue;
+
+		if (!rwalk->sess) {
+			/* Setup the SNMP session */
+			snmp_sess_init(&s);
+			s.version = rwalk->version;
+			if (timeout > 0) s.timeout = timeout;
+			if (retries > 0) s.retries = retries;
+			s.peername = rwalk->hostip;
+			if (rwalk->portnumber) s.remote_port = rwalk->portnumber;
+			s.community = rwalk->community;
+			s.community_len = strlen((char *)rwalk->community);
+			s.callback = asynch_response;
+			s.callback_magic = rwalk;
+			if (!(rwalk->sess = snmp_open(&s))) {
+				snmp_sess_perror("snmp_open", &s);
+				continue;
+			}
 		}
 
-		/* Build the request PDU and send it */
-		req = snmp_pdu_create(SNMP_MSG_GET);
-		while (rwalk->next_oid) {
-			snmp_add_null_var(req, rwalk->next_oid->Oid, rwalk->next_oid->OidLen);
-			rwalk->next_oid = rwalk->next_oid->next;
+		switch (querymode) {
+		  case QUERY_INTERFACES:
+			req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+			OidLen = sizeof(Oid)/sizeof(Oid[0]);
+			if (read_objid("IF-MIB::ifIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+			OidLen = sizeof(Oid)/sizeof(Oid[0]);
+			if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+			OidLen = sizeof(Oid)/sizeof(Oid[0]);
+			if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+			break;
+
+		  case GET_DATA:
+			/* Build the request PDU and send it */
+			req = snmp_pdu_create(SNMP_MSG_GET);
+			while (rwalk->next_oid) {
+				snmp_add_null_var(req, rwalk->next_oid->Oid, rwalk->next_oid->OidLen);
+				rwalk->next_oid = rwalk->next_oid->next;
+			}
+			break;
 		}
 
 		if (snmp_send(rwalk->sess, req))
@@ -166,31 +298,47 @@ void asynchronous(void)
 		}
 	}
 
-	/* loop while any active hosts */
-	while (active_requests) {
-		int fds = 0, block = 1;
-		fd_set fdset;
-		struct timeval timeout;
+	startpoint = rwalk;
+}
 
-		FD_ZERO(&fdset);
-		snmp_select_info(&fds, &fdset, &timeout, &block);
-		fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
-		if (fds < 0) {
-			perror("select failed");
-			exit(1);
-		}
-		if (fds)
-			snmp_read(&fdset);
-		else
-			snmp_timeout();
-	}
 
-	/* cleanup */
+void stophosts(void)
+{
+	struct req_t *rwalk;
+
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		if (rwalk->sess) snmp_close(rwalk->sess);
 	}
 }
 
+
+struct {
+	char *oid;
+	char *dsname;
+} ifmibnames[] = {
+	{ "IF-MIB::ifDescr", "ifDescr" },
+	{ "IF-MIB::ifType", "ifType" },
+	{ "IF-MIB::ifMtu", "ifMtu" },
+	{ "IF-MIB::ifSpeed", "ifSpeed" },
+	{ "IF-MIB::ifPhysAddress", "ifPhysAddress" },
+	{ "IF-MIB::ifAdminStatus", "ifAdminStatus" },
+	{ "IF-MIB::ifOperStatus", "ifOperStatus" },
+	{ "IF-MIB::ifLastChange", "ifLastChange" },
+	{ "IF-MIB::ifInOctets", "ifInOctets" },
+	{ "IF-MIB::ifInOctets", "ifInOctets" },
+	{ "IF-MIB::ifInUcastPkts", "ifInUcastPkts" },
+	{ "IF-MIB::ifInNUcastPkts", "ifInNUcastPkts" },
+	{ "IF-MIB::ifInDiscards", "ifInDiscards" },
+	{ "IF-MIB::ifInErrors", "ifInErrors" },
+	{ "IF-MIB::ifInUnknownProtos", "ifInUnknownProtos" },
+	{ "IF-MIB::ifOutOctets", "ifOutOctets" },
+	{ "IF-MIB::ifOutUcastPkts", "ifOutUcastPkts" },
+	{ "IF-MIB::ifOutNUcastPkts", "ifOutNUcastPkts" },
+	{ "IF-MIB::ifOutDiscards", "ifOutDiscards" },
+	{ "IF-MIB::ifOutErrors", "ifOutErrors" },
+	{ "IF-MIB::ifOutQLen", "ifOutQLen" },
+	{ NULL, NULL }
+};
 
 /*
  *
@@ -198,9 +346,11 @@ void asynchronous(void)
  *
  * [HOSTNAME]
  *     ip=ADDRESS
+ *     port=PORTNUMBER
  *     version=VERSION
  *     community=COMMUNITY
- *     mrtg=index OID1 OID2
+ *     mrtg=INDEX OID1 OID2
+ *     var=DSNAME OID
  *
  */
 void readconfig(char *cfgfn)
@@ -257,6 +407,11 @@ void readconfig(char *cfgfn)
 
 		if (strncmp(bot, "ip=", 3) == 0) {
 			reqitem->hostip = strdup(bot+3);
+			continue;
+		}
+
+		if (strncmp(bot, "port=", 5) == 0) {
+			reqitem->portnumber = atoi(bot+5);
 			continue;
 		}
 
@@ -317,12 +472,187 @@ void readconfig(char *cfgfn)
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
+			continue;
+		}
+
+		if (strncmp(bot, "ifmib=", 6) == 0) {
+			char *idx;
+			int i;
+			char oid[128];
+
+			idx = strtok(bot+6, " \t");
+			if ((*idx == '(') || (*idx == '[')) {
+				/* Interface-by-name  or interface-by-physaddr */
+				wantedif_t *newitem = (wantedif_t *)malloc(sizeof(wantedif_t));
+				switch (*idx) {
+				  case '(': newitem->idtype = ID_DESCR; break;
+				  case '[': newitem->idtype = ID_PHYSADDR; break;
+				}
+				p = idx + strcspn(idx, "])"); if (p) *p = '\0';
+				newitem->id = strdup(idx+1);
+				newitem->next = reqitem->wantedinterfaces;
+				reqitem->wantedinterfaces = newitem;
+			}
+			else {
+				/* Plain numeric interface */
+				for (i=0; (ifmibnames[i].oid); i++) {
+					sprintf(oid, "%s.%s", ifmibnames[i].oid, idx);
+
+					oitem = (oid_t *)calloc(1, sizeof(oid_t));
+					oitem->index = atoi(idx);
+					oitem->dsname = strdup(ifmibnames[i].dsname);
+					oitem->oidstr = strdup(oid);
+					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
+					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
+						oitem->next = reqitem->oidhead;
+						reqitem->oidhead = oitem;
+					}
+					else {
+						/* Could not parse the OID definition */
+						snmp_perror("read_objid");
+						free(oitem->oidstr);
+						free(oitem);
+					}
+				}
+				reqitem->next_oid = reqitem->oidhead;
+			}
+			continue;
+		}
+
+		if (strncmp(bot, "var=", 4) == 0) {
+			char *dsname, *oid = NULL;
+
+			dsname = strtok(bot+4, " \t");
+			if (dsname) oid = strtok(NULL, " \t");
+
+			if (dsname && oid) {
+				oitem = (oid_t *)calloc(1, sizeof(oid_t));
+				oitem->index = 0;
+				oitem->dsname = strdup(dsname);
+				oitem->oidstr = strdup(oid);
+				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
+				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
+					oitem->next = reqitem->oidhead;
+					reqitem->oidhead = oitem;
+				}
+				else {
+					/* Could not parse the OID definition */
+					snmp_perror("read_objid");
+					free(oitem->oidstr);
+					free(oitem);
+				}
+			}
+			reqitem->next_oid = reqitem->oidhead;
+			continue;
 		}
 	}
 
 	stackfclose(cfgfd);
 	freestrbuffer(inbuf);
 }
+
+void resolveifnames(void)
+{
+	struct req_t *rwalk;
+	ifids_t *ifwalk;
+	wantedif_t *wantwalk;
+
+	querymode = QUERY_INTERFACES;
+	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
+	starthosts(1);
+
+	/* loop while any active requests */
+	while (active_requests) {
+		int fds = 0, block = 1;
+		fd_set fdset;
+		struct timeval timeout;
+
+		FD_ZERO(&fdset);
+		snmp_select_info(&fds, &fdset, &timeout, &block);
+		fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
+		if (fds < 0) {
+			perror("select failed");
+			exit(1);
+		}
+		if (fds)
+			snmp_read(&fdset);
+		else
+			snmp_timeout();
+	}
+
+
+	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
+		if (!rwalk->wantedinterfaces || !rwalk->interfacenames) continue;
+
+		for (wantwalk = rwalk->wantedinterfaces; (wantwalk); wantwalk = wantwalk->next) {
+			switch (wantwalk->idtype) {
+			  case ID_DESCR:
+				for (ifwalk = rwalk->interfacenames; (ifwalk && strcmp(ifwalk->descr, wantwalk->id)); ifwalk = ifwalk->next) ;
+				break;
+
+			  case ID_PHYSADDR:
+				for (ifwalk = rwalk->interfacenames; (ifwalk && strcmp(ifwalk->physaddr, wantwalk->id)); ifwalk = ifwalk->next) ;
+				break;
+			}
+
+			if (ifwalk) {
+				int i;
+				char oid[128];
+				struct oid_t *oitem;
+
+				for (i=0; (ifmibnames[i].oid); i++) {
+					sprintf(oid, "%s.%s", ifmibnames[i].oid, ifwalk->index);
+
+					oitem = (oid_t *)calloc(1, sizeof(oid_t));
+					oitem->index = atoi(ifwalk->index);
+					oitem->dsname = strdup(ifmibnames[i].dsname);
+					oitem->oidstr = strdup(oid);
+					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
+					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
+						oitem->next = rwalk->oidhead;
+						rwalk->oidhead = oitem;
+					}
+					else {
+						/* Could not parse the OID definition */
+						snmp_perror("read_objid");
+						free(oitem->oidstr);
+						free(oitem);
+					}
+				}
+				rwalk->next_oid = rwalk->oidhead;
+			}
+		}
+	}
+}
+
+
+void getdata(void)
+{
+	querymode = GET_DATA;
+	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
+	starthosts(1);
+
+	/* loop while any active requests */
+	while (active_requests) {
+		int fds = 0, block = 1;
+		fd_set fdset;
+		struct timeval timeout;
+
+		FD_ZERO(&fdset);
+		snmp_select_info(&fds, &fdset, &timeout, &block);
+		fds = select(fds, &fdset, NULL, NULL, block ? NULL : &timeout);
+		if (fds < 0) {
+			perror("select failed");
+			exit(1);
+		}
+		if (fds)
+			snmp_read(&fdset);
+		else
+			snmp_timeout();
+	}
+
+}
+
 
 void sendresult(void)
 {
@@ -332,18 +662,60 @@ void sendresult(void)
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
 			printf("%s index %d : %s %s = %s\n", 
-				rwalk->hostname, owalk->index, owalk->oidstr, owalk->dsname, owalk->result);
+				rwalk->hostname, owalk->index, owalk->oidstr, owalk->dsname, 
+				(owalk->result ? owalk->result : "NODATA"));
 		}
 	}
 }
 
 int main (int argc, char **argv)
 {
-	init_snmp("hobbit_snmpcollect");
-	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
+	int argi;
+	char *configfn = "hobbit_snmpcollect.cfg";
+	int cfgcheck = 0;
 
-	readconfig("snmpcollect.cfg");
-	asynchronous();
+	for (argi = 1; (argi < argc); argi++) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--cfgcheck") == 0) {
+			cfgcheck = 1;
+		}
+		else if (argnmatch(argv[argi], "--timeout=")) {
+			char *p = strchr(argv[argi], '=');
+			timeout = 1000000*atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--retries=")) {
+			char *p = strchr(argv[argi], '=');
+			retries = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--concurrency=")) {
+			char *p = strchr(argv[argi], '=');
+			max_pending_requests = atoi(p+1);
+		}
+		else if (*argv[argi] != '-') {
+			configfn = argv[argi];
+		}
+	}
+
+	init_snmp("hobbit_snmpcollect");
+
+	/* 
+	 * To get the interface names, we walk the ifIndex table with getnext.
+	 * We need the fixed part of that OID available to check when we reach
+	 * the end of the table (then we'll get a variable back which has a
+	 * different OID).
+	 */
+	ifindexoidlen = sizeof(ifindexoid)/sizeof(ifindexoid[0]);
+	read_objid(".1.3.6.1.2.1.2.2.1.1", ifindexoid, &ifindexoidlen);
+
+	readconfig(configfn);
+	if (cfgcheck) return 0;
+	resolveifnames();
+
+	getdata();
+	stophosts();
+
 	sendresult();
 
 	return 0;
