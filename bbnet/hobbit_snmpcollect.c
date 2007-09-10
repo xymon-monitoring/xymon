@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.7 2007-09-10 11:38:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.8 2007-09-10 11:53:24 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -54,7 +54,8 @@ typedef struct req_t {
 	struct snmp_session *sess;		/* SNMP session data */
 	wantedif_t *wantedinterfaces;		/* List of interfaces by description or phys. addr. we want */
 	ifids_t *interfacenames;		/* List of interfaces, pulled from the host */
-	struct oid_t *oidhead, *oidtail, *curr_oid, *next_oid;	/* List of the OID's we will fetch */
+	struct oid_t *oidhead, *oidtail;	/* List of the OID's we will fetch */
+	struct oid_t *curr_oid, *next_oid;	/* Current- and next-OID pointers while fetching data */
 	struct req_t *next;
 } req_t;
 
@@ -100,7 +101,6 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 	char buf[1024];
 	struct variable_list *vp;
 	struct oid_t *owalk;
-	int ix;
 	ifids_t *newif;
 
 	switch (status) {
@@ -186,11 +186,22 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 		struct snmp_pdu *req = NULL;
 
 		/* Pick up the results */
-		if (pdu->errstat == SNMP_ERR_NOERROR) {
+		switch (pdu->errstat) {
+		  case SNMP_ERR_NOERROR:
 			print_result(STAT_SUCCESS, item, pdu);
-		}
-		else {
-			dbgprintf("pdu->errstat flags error %d\n", pdu->errstat);
+			break;
+
+		  case SNMP_ERR_NOSUCHNAME:
+			dbgprintf("Host %s item %s: No such name\n", item->hostname, item->curr_oid->devname);
+			break;
+
+		  case SNMP_ERR_TOOBIG:
+			dbgprintf("Host %s item %s: Response too big\n", item->hostname, item->curr_oid->devname);
+			break;
+
+		  default:
+			dbgprintf("Host %s item %s: SNMP error %d\n",  item->hostname, item->curr_oid->devname, pdu->errstat);
+			break;
 		}
 
 		/* Now see if we should send another request */
@@ -245,7 +256,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 	/* something went wrong (or end of variables) 
 	 * this host not active any more
 	 */
-	dbgprintf("Dropping host %s\n", item->hostname);
+	dbgprintf("Finished host %s\n", item->hostname);
 	active_requests--;
 
 finish:
