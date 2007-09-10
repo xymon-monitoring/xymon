@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.5 2007-09-09 21:42:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.6 2007-09-10 08:38:41 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -22,6 +22,7 @@ static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.5 2007-09-09 21:42:40 henri
 /* List of the OID's we will request */
 typedef struct oid_t {
 	char *oidstr;				/* the input definition of the OID */
+	enum { QUERY_IFMIB, QUERY_MRTG, QUERY_VAR } querytype;
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
 	char *devname, *dsname;
@@ -462,8 +463,9 @@ void readconfig(char *cfgfn)
 
 			if (idx && oid1 && oid2 && devname) {
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
+				oitem->querytype = QUERY_MRTG;
 				oitem->devname = strdup(devname);
-				oitem->dsname = strdup("ds1");
+				oitem->dsname = "ds1";
 				oitem->oidstr = strdup(oid1);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
@@ -478,8 +480,9 @@ void readconfig(char *cfgfn)
 				}
 
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
+				oitem->querytype = QUERY_MRTG;
 				oitem->devname = strdup(devname);
-				oitem->dsname = strdup("ds2");
+				oitem->dsname = "ds2";
 				oitem->oidstr = strdup(oid2);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
@@ -523,12 +526,15 @@ void readconfig(char *cfgfn)
 			}
 			else {
 				/* Plain numeric interface */
+				char *devnamecopy = strdup(devname);
+
 				for (i=0; (ifmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, idx);
 
 					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->devname = strdup(devname);
-					oitem->dsname = strdup(ifmibnames[i].dsname);
+					oitem->querytype = QUERY_IFMIB;
+					oitem->devname = devnamecopy;
+					oitem->dsname = ifmibnames[i].dsname;
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
@@ -556,6 +562,7 @@ void readconfig(char *cfgfn)
 
 			if (dsname && oid) {
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
+				oitem->querytype = QUERY_VAR;
 				oitem->devname = strdup(devname);
 				oitem->dsname = strdup(dsname);
 				oitem->oidstr = strdup(oid);
@@ -650,13 +657,15 @@ void resolveifnames(void)
 				int i;
 				char oid[128];
 				struct oid_t *oitem;
+				char *devnamecopy = strdup(wantwalk->devname);
 
 				for (i=0; (ifmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, ifwalk->index);
 
 					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->devname = strdup(wantwalk->devname);
-					oitem->dsname = strdup(ifmibnames[i].dsname);
+					oitem->querytype = QUERY_IFMIB;
+					oitem->devname = devnamecopy;
+					oitem->dsname = ifmibnames[i].dsname;
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
@@ -689,15 +698,78 @@ void sendresult(void)
 {
 	struct req_t *rwalk;
 	struct oid_t *owalk;
+	char msgline[4096];
+	char currdev[1024];
+	strbuffer_t *ifmibdata = newstrbuffer(0);
+	int activestatus = 0;
+	int havemibdata = 0;
+
+	*currdev = '\0';
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
+		clearstrbuffer(ifmibdata);
+		sprintf(msgline, "data %s.ifmib\n", rwalk->hostname);
+		addtobuffer(ifmibdata, msgline);
+
+		combo_start();
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
-			printf("%s interface %s: %s = %s\n", 
-				rwalk->hostname, owalk->devname,
+			if (strcmp(currdev, owalk->devname)) {
+				if (activestatus) {
+					finish_status();
+					activestatus = 0;
+				}
+
+				strcpy(currdev, owalk->devname);
+
+				switch (owalk->querytype) {
+				  case QUERY_IFMIB:
+					havemibdata = 1;
+					sprintf(msgline, "\n[%s]\n", owalk->devname);
+					addtobuffer(ifmibdata, msgline);
+					break;
+
+				  case QUERY_MRTG:
+					init_status(COL_GREEN); activestatus = 1;
+					sprintf(msgline, "status %s.mrtg green\n", rwalk->hostname);
+					addtostatus(msgline);
+					sprintf(msgline, "\n[%s]\n", owalk->devname);
+					addtostatus(msgline);
+					break;
+
+				  case QUERY_VAR:
+					init_status(COL_GREEN); activestatus = 1;
+					sprintf(msgline, "status %s.snmpvar green\n", rwalk->hostname);
+					addtostatus(msgline);
+					sprintf(msgline, "\n[%s]\n", owalk->devname);
+					addtostatus(msgline);
+					break;
+				}
+			}
+
+			sprintf(msgline, "\t%s = %s\n", 
 				owalk->dsname, (owalk->result ? owalk->result : "NODATA"));
+
+			switch (owalk->querytype) {
+			  case QUERY_IFMIB:
+				addtobuffer(ifmibdata, msgline);
+				break;
+
+			  case QUERY_MRTG:
+			  case QUERY_VAR:
+				addtostatus(msgline);
+				break;
+			}
 		}
+
+		if (activestatus) finish_status();
+		combo_end();
+
+		if (havemibdata) sendmessage(STRBUF(ifmibdata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
 	}
+
+	freestrbuffer(ifmibdata);
 }
+
 
 int main (int argc, char **argv)
 {
@@ -708,6 +780,9 @@ int main (int argc, char **argv)
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--no-update") == 0) {
+			dontsendmessages = 1;
 		}
 		else if (strcmp(argv[argi], "--cfgcheck") == 0) {
 			cfgcheck = 1;
