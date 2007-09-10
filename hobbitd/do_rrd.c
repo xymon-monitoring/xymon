@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.50 2007-07-24 08:38:51 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.51 2007-09-10 12:40:08 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -425,6 +425,8 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_trends.c"
 #include "rrd/do_paging.c"
 
+#include "rrd/do_ifmib.c"
+
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
 	int res = 0;
@@ -470,6 +472,8 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, msg, tstamp);
+
+	else if (strcmp(id, "ifmib") == 0)       res = do_ifmib_rrd(hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
