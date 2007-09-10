@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.6 2007-09-10 08:38:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.7 2007-09-10 11:38:23 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -54,7 +54,7 @@ typedef struct req_t {
 	struct snmp_session *sess;		/* SNMP session data */
 	wantedif_t *wantedinterfaces;		/* List of interfaces by description or phys. addr. we want */
 	ifids_t *interfacenames;		/* List of interfaces, pulled from the host */
-	struct oid_t *oidhead, *oidtail, *next_oid;	/* List of the OID's we will fetch */
+	struct oid_t *oidhead, *oidtail, *curr_oid, *next_oid;	/* List of the OID's we will fetch */
 	struct req_t *next;
 } req_t;
 
@@ -73,6 +73,24 @@ long timeout = 0;				/* Number of uS until first timeout, then exponential backo
 
 /* Must forward declare this, since callback-function and starthosts() refer to each other */
 void starthosts(int resetstart);
+
+struct snmp_pdu *generate_datarequest(req_t *item)
+{
+	struct snmp_pdu *req = snmp_pdu_create(SNMP_MSG_GET);
+	char *curdev;
+
+	if (!item->next_oid) return NULL;
+
+	item->curr_oid = item->next_oid;
+	curdev = item->next_oid->devname;
+	while (item->next_oid && (strcmp(curdev, item->next_oid->devname) == 0)) {
+		snmp_add_null_var(req, item->next_oid->Oid, item->next_oid->OidLen);
+		item->next_oid = item->next_oid->next;
+	}
+
+	return req;
+}
+
 
 /*
  * simple printing of returned data
@@ -127,7 +145,7 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 
 
 			  case GET_DATA:
-				owalk = sp->oidhead;
+				owalk = sp->curr_oid;
 				vp = pdu->variables;
 				while (vp) {
 					snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
@@ -139,15 +157,7 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 			}
 		}
 		else {
-			for (ix = 1; vp && ix != pdu->errindex; vp = vp->next_variable, ix++) ;
-
-			if (vp) 
-				snprint_objid(buf, sizeof(buf), vp->name, vp->name_length);
-			else 
-				strcpy(buf, "(none)");
-
-			dbgprintf("%s: %s: %s\n",
-				sp->hostip, buf, snmp_errstring(pdu->errstat));
+			errprintf("ERROR %s: %s\n", sp->hostip, snmp_errstring(pdu->errstat));
 		}
 		return 1;
 
@@ -171,64 +181,71 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 		struct snmp_pdu *pdu, void *magic)
 {
 	struct req_t *item = (struct req_t *)magic;
-	struct snmp_pdu *req;
-	struct variable_list *vp;
 
 	if (operation == NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE) {
-		if (print_result(STAT_SUCCESS, item, pdu)) {
-			req = NULL;
+		struct snmp_pdu *req = NULL;
 
-			switch (querymode) {
-			  case QUERY_INTERFACES:
-			  case QUERY_IPADDRS:
-				if (pdu->errstat == SNMP_ERR_NOERROR) {
-					vp = pdu->variables;
+		/* Pick up the results */
+		if (pdu->errstat == SNMP_ERR_NOERROR) {
+			print_result(STAT_SUCCESS, item, pdu);
+		}
+		else {
+			dbgprintf("pdu->errstat flags error %d\n", pdu->errstat);
+		}
 
-					if (debug) {
-						char buf[1024];
-						snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-						dbgprintf("Got variable: %s\n", buf);
-					}
+		/* Now see if we should send another request */
+		switch (querymode) {
+		  case QUERY_INTERFACES:
+		  case QUERY_IPADDRS:
+			if (pdu->errstat == SNMP_ERR_NOERROR) {
+				struct variable_list *vp = pdu->variables;
 
-					if ( (vp->name_length >= rootoidlen) && 
-					     (memcmp(&rootoid, vp->name, rootoidlen * sizeof(oid)) == 0) ) {
-						/* Still getting the right kind of data, so ask for more */
-						req = snmp_pdu_create(SNMP_MSG_GETNEXT);
-						while (vp) {
-							snmp_add_null_var(req, vp->name, vp->name_length);
-							vp = vp->next_variable;
-						}
+				if (debug) {
+					char buf[1024];
+					snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+					dbgprintf("Got variable: %s\n", buf);
+				}
+
+				if ( (vp->name_length >= rootoidlen) && 
+				     (memcmp(&rootoid, vp->name, rootoidlen * sizeof(oid)) == 0) ) {
+					/* Still getting the right kind of data, so ask for more */
+					req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+					while (vp) {
+						snmp_add_null_var(req, vp->name, vp->name_length);
+						vp = vp->next_variable;
 					}
 				}
-				break;
-
-			  case GET_DATA:
-				if (item->next_oid) {
-					req = snmp_pdu_create(SNMP_MSG_GET);
-					while (item->next_oid) {
-						snmp_add_null_var(req, item->next_oid->Oid, item->next_oid->OidLen);
-						item->next_oid = item->next_oid->next;
-					}
-				}
-				break;
 			}
+			break;
 
-			if (req) {
-				if (snmp_send(item->sess, req))
-					goto finish;
-				else {
-					snmp_sess_perror("snmp_send", item->sess);
-					snmp_free_pdu(req);
-				}
+		  case GET_DATA:
+			if (item->next_oid) {
+				req = generate_datarequest(item);
+			}
+			else {
+				dbgprintf("No more oids left\n");
+			}
+			break;
+		}
+
+		if (req) {
+			if (snmp_send(item->sess, req))
+				goto finish;
+			else {
+				snmp_sess_perror("snmp_send", item->sess);
+				snmp_free_pdu(req);
 			}
 		}
 	}
-	else
+	else {
+		dbgprintf("operation not succesful: %d\n", operation);
 		print_result(STAT_TIMEOUT, item, pdu);
+	}
 
 	/* something went wrong (or end of variables) 
 	 * this host not active any more
 	 */
+	dbgprintf("Dropping host %s\n", item->hostname);
 	active_requests--;
 
 finish:
@@ -307,11 +324,7 @@ void starthosts(int resetstart)
 
 		  case GET_DATA:
 			/* Build the request PDU and send it */
-			req = snmp_pdu_create(SNMP_MSG_GET);
-			while (rwalk->next_oid) {
-				snmp_add_null_var(req, rwalk->next_oid->Oid, rwalk->next_oid->OidLen);
-				rwalk->next_oid = rwalk->next_oid->next;
-			}
+			req = generate_datarequest(rwalk);
 			break;
 		}
 
