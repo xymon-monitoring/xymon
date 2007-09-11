@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.17 2007-07-24 08:45:01 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.18 2007-09-11 13:00:11 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -26,7 +26,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	int dslen;
 
 	sprintf(rrdvalues, "%d", (int)tstamp);
-	params = (char **)malloc(sizeof(char *));
+	params = (char **)calloc(1, sizeof(char *));
 	paridx = 0;
 
 	/* Get the NCV_* or SPLITNCV_* environment setting */
