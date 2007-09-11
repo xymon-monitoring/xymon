@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.35 2007-07-22 10:56:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_worker.c,v 1.36 2007-09-11 21:20:54 henrik Exp $";
 
 #include "config.h"
 
@@ -34,7 +34,6 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.35 2007-07-22 10:56:25 henrik E
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 
@@ -42,6 +41,9 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.35 2007-07-22 10:56:25 henrik E
 
 #include "hobbitd_ipc.h"
 #include "hobbitd_worker.h"
+
+#include <signal.h>
+
 
 static int running = 1;
 static int inputfd = STDIN_FILENO;

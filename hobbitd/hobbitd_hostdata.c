@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.9 2007-06-19 12:41:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.10 2007-09-11 21:20:54 henrik Exp $";
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -20,7 +20,6 @@ static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.9 2007-06-19 12:41:35 henrik 
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <signal.h>
 #include <limits.h>
 #include <errno.h>
 #include <dirent.h>
@@ -28,6 +27,9 @@ static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.9 2007-06-19 12:41:35 henrik 
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
+
+#include <signal.h>
+
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 

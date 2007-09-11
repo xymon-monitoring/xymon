@@ -13,14 +13,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.60 2007-07-22 06:55:32 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.61 2007-09-11 21:20:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <signal.h>
 #include <time.h>
 #include <ctype.h>
 #include <sys/types.h>

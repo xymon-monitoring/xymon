@@ -18,7 +18,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_locator.c,v 1.5 2007-01-18 21:51:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_locator.c,v 1.6 2007-09-11 21:20:54 henrik Exp $";
 
 #include "config.h"
 
@@ -40,12 +40,14 @@ static char rcsid[] = "$Id: hobbitd_locator.c,v 1.5 2007-01-18 21:51:19 henrik E
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
-#include <signal.h>
 #include <time.h>
 #include <limits.h>
 
 #include "version.h"
 #include "libbbgen.h"
+
+#include <signal.h>
+
 
 volatile int keeprunning = 1;
 char *logfile = NULL;

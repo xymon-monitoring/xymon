@@ -40,14 +40,13 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.94 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.95 2007-09-11 21:20:54 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <limits.h>
@@ -56,6 +55,9 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.94 2007-07-18 21:20:15 henrik Ex
 
 #include "hobbitd_worker.h"
 #include "do_alert.h"
+
+#include <signal.h>
+
 
 static int running = 1;
 static time_t nextcheckpoint = 0;

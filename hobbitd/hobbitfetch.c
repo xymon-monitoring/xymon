@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.19 2007-07-26 21:17:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.20 2007-09-11 21:20:54 henrik Exp $";
 
 #include "config.h"
 
@@ -33,9 +33,11 @@ static char rcsid[] = "$Id: hobbitfetch.c,v 1.19 2007-07-26 21:17:06 henrik Exp 
 #include <arpa/nameser.h>
 #include <netdb.h>
 #include <ctype.h>
-#include <signal.h>
 
 #include "libbbgen.h"
+
+#include <signal.h>
+
 
 volatile int running = 1;
 volatile time_t reloadtime = 0;

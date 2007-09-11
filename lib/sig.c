@@ -11,10 +11,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.11 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: sig.c,v 1.12 2007-09-11 21:20:54 henrik Exp $";
 
 #include <limits.h>
-#include <signal.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -24,6 +23,8 @@ static char rcsid[] = "$Id: sig.c,v 1.11 2006-07-20 16:06:41 henrik Exp $";
 #include <stdio.h>
 
 #include "libbbgen.h"
+
+#include <signal.h>
 
 /* Data used while crashing - cannot depend on the stack being usable */
 static char signal_bbcmd[PATH_MAX];

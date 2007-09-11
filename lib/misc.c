@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.61 2007-07-21 15:11:51 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.62 2007-09-11 21:20:54 henrik Exp $";
 
 #include "config.h"
 
@@ -25,7 +25,6 @@ static char rcsid[] = "$Id: misc.c,v 1.61 2007-07-21 15:11:51 henrik Exp $";
 #include <stdio.h>
 #include <sys/wait.h>
 #include <errno.h>
-#include <signal.h>
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
@@ -33,6 +32,8 @@ static char rcsid[] = "$Id: misc.c,v 1.61 2007-07-21 15:11:51 henrik Exp $";
 
 #include "libbbgen.h"
 #include "version.h"
+
+#include <signal.h>
 
 enum ostype_t get_ostype(char *osname)
 {

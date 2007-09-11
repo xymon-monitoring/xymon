@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.9 2007-06-11 14:39:09 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.10 2007-09-11 21:20:54 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -29,10 +29,11 @@ static char rcsid[] = "$Id: locator.c,v 1.9 2007-06-11 14:39:09 henrik Exp $";
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h>
 #include <fcntl.h>
 
 #include "libbbgen.h"
+
+#include <signal.h>
 
 const char *servicetype_names[] = { "rrd", "client", "alert", "history", "hostdata" };
 

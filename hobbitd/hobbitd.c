@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.273 2007-07-26 21:17:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.274 2007-09-11 21:20:54 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -47,7 +47,6 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.273 2007-07-26 21:17:06 henrik Exp $";
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
-#include <signal.h>
 #include <time.h>
 
 #include <sys/ipc.h>
@@ -59,6 +58,9 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.273 2007-07-26 21:17:06 henrik Exp $";
 
 #include "hobbitd_buffer.h"
 #include "hobbitd_ipc.h"
+
+#include <signal.h>
+
 
 #define DISABLED_UNTIL_OK -1
 #define LASTCHANGESZ 10

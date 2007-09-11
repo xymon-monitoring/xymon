@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.35 2007-09-11 13:03:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.36 2007-09-11 21:20:54 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -20,7 +20,6 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.35 2007-09-11 13:03:08 henrik Exp 
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <signal.h>
 #include <limits.h>
 #include <sys/wait.h>
 #include <dirent.h>
@@ -35,6 +34,9 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.35 2007-09-11 13:03:08 henrik Exp 
 
 #include "hobbitd_rrd.h"
 #include "do_rrd.h"
+
+#include <signal.h>
+
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 

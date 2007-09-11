@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-snapshot.c,v 1.26 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-snapshot.c,v 1.27 2007-09-11 21:20:54 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -25,9 +25,11 @@ static char rcsid[] = "$Id: bb-snapshot.c,v 1.26 2007-06-11 14:51:15 henrik Exp 
 #include <sys/wait.h>
 #include <dirent.h>
 #include <time.h>
-#include <signal.h>
 
 #include "libbbgen.h"
+
+#include <signal.h>
+
 
 time_t starttime = 0;
 cgidata_t *cgidata = NULL;

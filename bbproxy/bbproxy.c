@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.58 2007-06-11 14:37:00 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.59 2007-09-11 21:20:54 henrik Exp $";
 
 #include "config.h"
 
@@ -30,11 +30,12 @@ static char rcsid[] = "$Id: bbproxy.c,v 1.58 2007-06-11 14:37:00 henrik Exp $";
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
-#include <signal.h>
 #include <time.h>
 
 #include "version.h"
 #include "libbbgen.h"
+
+#include <signal.h>
 
 enum phase_t {
 	P_IDLE, 

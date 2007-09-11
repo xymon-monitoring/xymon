@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.59 2007-06-19 12:38:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.60 2007-09-11 21:20:54 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -31,7 +31,6 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.59 2007-06-19 12:38:37 henrik 
 #include <netdb.h>
 #include <fcntl.h>
 
-#include <signal.h>
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -40,6 +39,9 @@ static char rcsid[] = "$Id: hobbitd_channel.c,v 1.59 2007-06-19 12:38:37 henrik 
 #include "libbbgen.h"
 
 #include "hobbitd_ipc.h"
+
+#include <signal.h>
+
 
 #define MSGTIMEOUT 30	/* Seconds */
 

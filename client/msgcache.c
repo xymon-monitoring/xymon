@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.10 2007-06-11 14:50:31 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.11 2007-09-11 21:20:54 henrik Exp $";
 
 #include "config.h"
 
@@ -37,11 +37,13 @@ static char rcsid[] = "$Id: msgcache.c,v 1.10 2007-06-11 14:50:31 henrik Exp $";
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
-#include <signal.h>
 #include <time.h>
 
 #include "version.h"
 #include "libbbgen.h"
+
+#include <signal.h>
+
 
 volatile int keeprunning = 1;
 char *client_response = NULL;		/* The latest response to a "client" message */
