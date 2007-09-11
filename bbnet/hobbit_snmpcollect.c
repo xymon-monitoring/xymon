@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.9 2007-09-11 11:53:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.10 2007-09-11 12:53:11 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -22,10 +22,11 @@ static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.9 2007-09-11 11:53:03 henri
 /* List of the OID's we will request */
 typedef struct oid_t {
 	char *oidstr;				/* the input definition of the OID */
-	enum { QUERY_IFMIB, QUERY_MRTG, QUERY_VAR } querytype;
+	enum { QUERY_IFMIB, QUERY_IFMIB_X, QUERY_MRTG, QUERY_VAR } querytype;
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
 	char *devname, *dsname;
+	int  requestset;			/* Used to group vars into SNMP PDU's */
 	char *result;				/* the printable result data */
 	struct oid_t *next;
 } oid_t;
@@ -33,6 +34,7 @@ typedef struct oid_t {
 typedef struct wantedif_t {
 	enum { ID_DESCR, ID_PHYSADDR, ID_IPADDR, ID_NAME } idtype;
 	char *id, *devname;
+	int requestset;
 	struct wantedif_t *next;
 } wantedif_t;
 
@@ -73,19 +75,72 @@ int retries = 0;				/* Number of retries before timeout. 0 = Net-SNMP default (5
 long timeout = 0;				/* Number of uS until first timeout, then exponential backoff. 0 = Net-SNMP default (1 second). */
 
 
+typedef struct oidds_t {
+	char *oid;
+	char *dsname;
+} oidds_t;
+
+oidds_t ifmibnames[] = {
+	{ "IF-MIB::ifDescr", "ifDescr" },
+	{ "IF-MIB::ifType", "ifType" },
+	{ "IF-MIB::ifMtu", "ifMtu" },
+	{ "IF-MIB::ifSpeed", "ifSpeed" },
+	{ "IF-MIB::ifPhysAddress", "ifPhysAddress" },
+	{ "IF-MIB::ifAdminStatus", "ifAdminStatus" },
+	{ "IF-MIB::ifOperStatus", "ifOperStatus" },
+	{ "IF-MIB::ifLastChange", "ifLastChange" },
+	{ "IF-MIB::ifInOctets", "ifInOctets" },
+	{ "IF-MIB::ifInUcastPkts", "ifInUcastPkts" },
+	{ "IF-MIB::ifInNUcastPkts", "ifInNUcastPkts" },
+	{ "IF-MIB::ifInDiscards", "ifInDiscards" },
+	{ "IF-MIB::ifInErrors", "ifInErrors" },
+	{ "IF-MIB::ifInUnknownProtos", "ifInUnknownProtos" },
+	{ "IF-MIB::ifOutOctets", "ifOutOctets" },
+	{ "IF-MIB::ifOutUcastPkts", "ifOutUcastPkts" },
+	{ "IF-MIB::ifOutNUcastPkts", "ifOutNUcastPkts" },
+	{ "IF-MIB::ifOutDiscards", "ifOutDiscards" },
+	{ "IF-MIB::ifOutErrors", "ifOutErrors" },
+	{ "IF-MIB::ifOutQLen", "ifOutQLen" },
+	{ NULL, NULL }
+};
+
+oidds_t ifXmibnames[] = {
+	/* These are extension variables, they may not exist */
+	{ "IF-MIB::ifName", "ifName" },
+	{ "IF-MIB::ifInMulticastPkts", "ifInMulticastPkts" },
+	{ "IF-MIB::ifInBroadcastPkts", "ifInBroadcastPkts" },
+	{ "IF-MIB::ifOutMulticastPkts", "ifOutMulticastPkts" },
+	{ "IF-MIB::ifOutBroadcastPkts", "ifOutBroadcastPkts" },
+	{ "IF-MIB::ifHCInOctets", "ifHCInOctets" },
+	{ "IF-MIB::ifHCInUcastPkts", "ifHCInUcastPkts" },
+	{ "IF-MIB::ifHCInMulticastPkts", "ifHCInMulticastPkts" },
+	{ "IF-MIB::ifHCInBroadcastPkts", "ifHCInBroadcastPkts" },
+	{ "IF-MIB::ifHCOutOctets", "ifHCOutOctets" },
+	{ "IF-MIB::ifHCOutUcastPkts", "ifHCOutUcastPkts" },
+	{ "IF-MIB::ifHCOutMulticastPkts", "ifHCOutMulticastPkts" },
+	{ "IF-MIB::ifHCOutBroadcastPkts", "ifHCOutBroadcastPkts" },
+	{ "IF-MIB::ifLinkUpDownTrapEnable", "ifLinkUpDownTrapEnable" },
+	{ "IF-MIB::ifHighSpeed", "ifHighSpeed" },
+	{ "IF-MIB::ifPromiscuousMode", "ifPromiscuousMode" },
+	{ "IF-MIB::ifConnectorPresent", "ifConnectorPresent" },
+	{ "IF-MIB::ifAlias", "ifAlias" },
+	{ "IF-MIB::ifCounterDiscontinuityTime", "ifCounterDiscontinuityTime" },
+	{ NULL, NULL }
+};
+
 /* Must forward declare this, since callback-function and starthosts() refer to each other */
 void starthosts(int resetstart);
 
 struct snmp_pdu *generate_datarequest(req_t *item)
 {
 	struct snmp_pdu *req = snmp_pdu_create(SNMP_MSG_GET);
-	char *curdev;
+	int currentset;
 
 	if (!item->next_oid) return NULL;
 
 	item->curr_oid = item->next_oid;
-	curdev = item->next_oid->devname;
-	while (item->next_oid && (strcmp(curdev, item->next_oid->devname) == 0)) {
+	currentset = item->next_oid->requestset;
+	while (item->next_oid && (currentset == item->next_oid->requestset)) {
 		snmp_add_null_var(req, item->next_oid->Oid, item->next_oid->OidLen);
 		item->next_oid = item->next_oid->next;
 	}
@@ -200,9 +255,9 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 	if (operation == NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE) {
 		struct snmp_pdu *req = NULL;
 
-		/* Pick up the results */
 		switch (pdu->errstat) {
 		  case SNMP_ERR_NOERROR:
+			/* Pick up the results */
 			print_result(STAT_SUCCESS, item, pdu);
 			break;
 
@@ -382,34 +437,6 @@ void stophosts(void)
 	}
 }
 
-
-struct {
-	char *oid;
-	char *dsname;
-} ifmibnames[] = {
-	{ "IF-MIB::ifDescr", "ifDescr" },
-	{ "IF-MIB::ifType", "ifType" },
-	{ "IF-MIB::ifMtu", "ifMtu" },
-	{ "IF-MIB::ifSpeed", "ifSpeed" },
-	{ "IF-MIB::ifPhysAddress", "ifPhysAddress" },
-	{ "IF-MIB::ifAdminStatus", "ifAdminStatus" },
-	{ "IF-MIB::ifOperStatus", "ifOperStatus" },
-	{ "IF-MIB::ifLastChange", "ifLastChange" },
-	{ "IF-MIB::ifInOctets", "ifInOctets" },
-	{ "IF-MIB::ifInUcastPkts", "ifInUcastPkts" },
-	{ "IF-MIB::ifInNUcastPkts", "ifInNUcastPkts" },
-	{ "IF-MIB::ifInDiscards", "ifInDiscards" },
-	{ "IF-MIB::ifInErrors", "ifInErrors" },
-	{ "IF-MIB::ifInUnknownProtos", "ifInUnknownProtos" },
-	{ "IF-MIB::ifOutOctets", "ifOutOctets" },
-	{ "IF-MIB::ifOutUcastPkts", "ifOutUcastPkts" },
-	{ "IF-MIB::ifOutNUcastPkts", "ifOutNUcastPkts" },
-	{ "IF-MIB::ifOutDiscards", "ifOutDiscards" },
-	{ "IF-MIB::ifOutErrors", "ifOutErrors" },
-	{ "IF-MIB::ifOutQLen", "ifOutQLen" },
-	{ NULL, NULL }
-};
-
 /*
  *
  * Config file syntax
@@ -431,6 +458,7 @@ void readconfig(char *cfgfn)
 
 	struct req_t *reqitem = NULL;
 	struct oid_t *oitem;
+	int setnumber = 0;
 
 	/* Check if config was modified */
 	if (cfgfiles) {
@@ -459,6 +487,7 @@ void readconfig(char *cfgfn)
 
 		if (*bot == '[') {
 			reqitem = (req_t *)calloc(1, sizeof(req_t));
+			setnumber = 0;
 
 			p = strchr(bot, ']'); if (p) *p = '\0';
 			reqitem->hostname = strdup(bot + 1);
@@ -502,6 +531,8 @@ void readconfig(char *cfgfn)
 		if (strncmp(bot, "mrtg=", 5) == 0) {
 			char *idx, *oid1 = NULL, *oid2 = NULL, *devname = NULL;
 
+			setnumber++;
+
 			idx = strtok(bot+5, " \t");
 			if (idx) oid1 = strtok(NULL, " \t");
 			if (oid1) oid2 = strtok(NULL, " \t");
@@ -511,6 +542,7 @@ void readconfig(char *cfgfn)
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
 				oitem->querytype = QUERY_MRTG;
 				oitem->devname = strdup(devname);
+				oitem->requestset = setnumber;
 				oitem->dsname = "ds1";
 				oitem->oidstr = strdup(oid1);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -528,6 +560,7 @@ void readconfig(char *cfgfn)
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
 				oitem->querytype = QUERY_MRTG;
 				oitem->devname = strdup(devname);
+				oitem->requestset = setnumber;
 				oitem->dsname = "ds2";
 				oitem->oidstr = strdup(oid2);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -553,6 +586,8 @@ void readconfig(char *cfgfn)
 			int i;
 			char oid[128];
 
+			setnumber++;
+
 			idx = strtok(bot+6, " \t");
 			if (idx) devname = strtok(NULL, " \r\n");
 
@@ -568,6 +603,7 @@ void readconfig(char *cfgfn)
 				p = idx + strcspn(idx, "])}>"); if (p) *p = '\0';
 				newitem->id = strdup(idx+1);
 				newitem->devname = strdup(devname);
+				newitem->requestset = setnumber;
 				newitem->next = reqitem->wantedinterfaces;
 				reqitem->wantedinterfaces = newitem;
 			}
@@ -581,6 +617,7 @@ void readconfig(char *cfgfn)
 					oitem = (oid_t *)calloc(1, sizeof(oid_t));
 					oitem->querytype = QUERY_IFMIB;
 					oitem->devname = devnamecopy;
+					oitem->requestset = setnumber;
 					oitem->dsname = ifmibnames[i].dsname;
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -595,6 +632,30 @@ void readconfig(char *cfgfn)
 						free(oitem);
 					}
 				}
+
+				setnumber++;
+				for (i=0; (ifXmibnames[i].oid); i++) {
+					sprintf(oid, "%s.%s", ifXmibnames[i].oid, idx);
+
+					oitem = (oid_t *)calloc(1, sizeof(oid_t));
+					oitem->querytype = QUERY_IFMIB_X;
+					oitem->devname = devnamecopy;
+					oitem->requestset = setnumber;
+					oitem->dsname = ifXmibnames[i].dsname;
+					oitem->oidstr = strdup(oid);
+					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
+					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
+						if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
+						reqitem->oidtail = oitem;
+					}
+					else {
+						/* Could not parse the OID definition */
+						snmp_perror("read_objid");
+						free(oitem->oidstr);
+						free(oitem);
+					}
+				}
+
 				reqitem->next_oid = reqitem->oidhead;
 			}
 			continue;
@@ -602,6 +663,8 @@ void readconfig(char *cfgfn)
 
 		if (strncmp(bot, "var=", 4) == 0) {
 			char *dsname, *oid = NULL, *devname = NULL;
+
+			setnumber++;
 
 			dsname = strtok(bot+4, " \t");
 			if (dsname) oid = strtok(NULL, " \t");
@@ -611,6 +674,7 @@ void readconfig(char *cfgfn)
 				oitem = (oid_t *)calloc(1, sizeof(oid_t));
 				oitem->querytype = QUERY_VAR;
 				oitem->devname = strdup(devname);
+				oitem->requestset = setnumber;
 				oitem->dsname = strdup(dsname);
 				oitem->oidstr = strdup(oid);
 				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
@@ -722,7 +786,30 @@ void resolveifnames(void)
 					oitem = (oid_t *)calloc(1, sizeof(oid_t));
 					oitem->querytype = QUERY_IFMIB;
 					oitem->devname = devnamecopy;
+					oitem->requestset = wantwalk->requestset;
 					oitem->dsname = ifmibnames[i].dsname;
+					oitem->oidstr = strdup(oid);
+					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
+					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
+						if (!rwalk->oidhead) rwalk->oidhead = oitem; else rwalk->oidtail->next = oitem;
+						rwalk->oidtail = oitem;
+					}
+					else {
+						/* Could not parse the OID definition */
+						snmp_perror("read_objid");
+						free(oitem->oidstr);
+						free(oitem);
+					}
+				}
+
+				for (i=0; (ifXmibnames[i].oid); i++) {
+					sprintf(oid, "%s.%s", ifXmibnames[i].oid, ifwalk->index);
+
+					oitem = (oid_t *)calloc(1, sizeof(oid_t));
+					oitem->querytype = QUERY_IFMIB_X;
+					oitem->devname = devnamecopy;
+					oitem->requestset = -wantwalk->requestset;	/* Hack! To get a unique request set number */
+					oitem->dsname = ifXmibnames[i].dsname;
 					oitem->oidstr = strdup(oid);
 					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
@@ -780,6 +867,7 @@ void sendresult(void)
 
 				switch (owalk->querytype) {
 				  case QUERY_IFMIB:
+				  case QUERY_IFMIB_X:
 					havemibdata = 1;
 					sprintf(msgline, "\n[%s]\n", owalk->devname);
 					addtobuffer(ifmibdata, msgline);
@@ -808,6 +896,7 @@ void sendresult(void)
 
 			switch (owalk->querytype) {
 			  case QUERY_IFMIB:
+			  case QUERY_IFMIB_X:
 				addtobuffer(ifmibdata, msgline);
 				break;
 
