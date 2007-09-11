@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.10 2007-09-11 12:53:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.11 2007-09-11 13:51:44 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -950,6 +950,7 @@ int main (int argc, char **argv)
 		}
 	}
 
+	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
 	init_snmp("hobbit_snmpcollect");
 	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
 
