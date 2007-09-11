@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.8 2007-09-10 11:53:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.9 2007-09-11 11:53:03 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -31,7 +31,7 @@ typedef struct oid_t {
 } oid_t;
 
 typedef struct wantedif_t {
-	enum { ID_DESCR, ID_PHYSADDR, ID_IPADDR } idtype;
+	enum { ID_DESCR, ID_PHYSADDR, ID_IPADDR, ID_NAME } idtype;
 	char *id, *devname;
 	struct wantedif_t *next;
 } wantedif_t;
@@ -39,6 +39,7 @@ typedef struct wantedif_t {
 typedef struct ifids_t {
 	char *index;
 	char *descr;
+	char *name;
 	char *physaddr;
 	char *ipaddr;
 	struct ifids_t *next;
@@ -64,7 +65,7 @@ unsigned int rootoidlen;
 
 req_t *reqhead = NULL;
 int active_requests = 0;
-enum { QUERY_INTERFACES, QUERY_IPADDRS, GET_DATA } querymode = GET_DATA;
+enum { QUERY_INTERFACES, QUERY_IPADDRS, QUERY_NAMES, GET_DATA } querymode = GET_DATA;
 
 /* Tuneables */
 int max_pending_requests = 30;
@@ -99,6 +100,7 @@ struct snmp_pdu *generate_datarequest(req_t *item)
 int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 {
 	char buf[1024];
+	char ifid[1024];
 	struct variable_list *vp;
 	struct oid_t *owalk;
 	ifids_t *newif;
@@ -127,7 +129,20 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 				break;
 
 
+			  case QUERY_NAMES:
+				/* Value returned is the name. The last byte of the OID is the interface index */
+				vp = pdu->variables;
+				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
+				snprintf(ifid, sizeof(ifid), "%d", (int)vp->name[vp->name_length-1]);
+
+				newif = sp->interfacenames;
+				while (newif && strcmp(newif->index, ifid)) newif = newif->next;
+				if (newif) newif->name = strdup(buf);
+				break;
+
+
 			  case QUERY_IPADDRS:
+				/* value returned is the interface index. The last 4 bytes of the OID is the IP */
 				vp = pdu->variables;
 				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
 
@@ -207,6 +222,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 		/* Now see if we should send another request */
 		switch (querymode) {
 		  case QUERY_INTERFACES:
+		  case QUERY_NAMES:
 		  case QUERY_IPADDRS:
 			if (pdu->errstat == SNMP_ERR_NOERROR) {
 				struct variable_list *vp = pdu->variables;
@@ -296,7 +312,7 @@ void starthosts(int resetstart)
 		oid Oid[MAX_OID_LEN];
 		unsigned int OidLen;
 
-		if ((querymode != GET_DATA) && !rwalk->wantedinterfaces) continue;
+		if ((querymode < GET_DATA) && !rwalk->wantedinterfaces) continue;
 
 		if (!rwalk->sess) {
 			/* Setup the SNMP session */
@@ -325,6 +341,12 @@ void starthosts(int resetstart)
 			if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
 			OidLen = sizeof(Oid)/sizeof(Oid[0]);
 			if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+			break;
+
+		  case QUERY_NAMES:
+			req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+			OidLen = sizeof(Oid)/sizeof(Oid[0]);
+			if (read_objid("IF-MIB::ifName", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
 			break;
 
 		  case QUERY_IPADDRS:
@@ -534,15 +556,16 @@ void readconfig(char *cfgfn)
 			idx = strtok(bot+6, " \t");
 			if (idx) devname = strtok(NULL, " \r\n");
 
-			if ((*idx == '(') || (*idx == '[') || (*idx == '{')) {
+			if ((*idx == '(') || (*idx == '[') || (*idx == '{') || (*idx == '<')) {
 				/* Interface-by-name or interface-by-physaddr */
 				wantedif_t *newitem = (wantedif_t *)malloc(sizeof(wantedif_t));
 				switch (*idx) {
 				  case '(': newitem->idtype = ID_DESCR; break;
 				  case '[': newitem->idtype = ID_PHYSADDR; break;
 				  case '{': newitem->idtype = ID_IPADDR; break;
+				  case '<': newitem->idtype = ID_NAME; break;
 				}
-				p = idx + strcspn(idx, "])}"); if (p) *p = '\0';
+				p = idx + strcspn(idx, "])}>"); if (p) *p = '\0';
 				newitem->id = strdup(idx+1);
 				newitem->devname = strdup(devname);
 				newitem->next = reqitem->wantedinterfaces;
@@ -659,6 +682,12 @@ void resolveifnames(void)
 	starthosts(1);
 	communicate();
 
+	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
+	read_objid(".1.3.6.1.2.1.31.1.1.1.1", rootoid, &rootoidlen);
+	querymode = QUERY_NAMES;
+	starthosts(1);
+	communicate();
+
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		if (!rwalk->wantedinterfaces || !rwalk->interfacenames) continue;
 
@@ -674,6 +703,10 @@ void resolveifnames(void)
 
 			  case ID_IPADDR:
 				for (ifwalk = rwalk->interfacenames; (ifwalk && (!ifwalk->ipaddr || strcmp(ifwalk->ipaddr, wantwalk->id))); ifwalk = ifwalk->next) ;
+				break;
+
+			  case ID_NAME:
+				for (ifwalk = rwalk->interfacenames; (ifwalk && (!ifwalk->name || strcmp(ifwalk->name, wantwalk->id))); ifwalk = ifwalk->next) ;
 				break;
 			}
 
