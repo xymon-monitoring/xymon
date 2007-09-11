@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.34 2007-07-21 14:03:21 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.35 2007-09-11 13:03:08 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -92,7 +92,7 @@ static void load_rrddefs(void)
 
 	sprintf(fn, "%s/etc/hobbit-rrddefinitions.cfg", xgetenv("BBHOME"));
 	fd = stackfopen(fn, "r", NULL);
-	if (fd == NULL) return;
+	if (fd == NULL) goto loaddone;
 
 	while (stackfgets(inbuf, NULL)) {
 		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
@@ -136,6 +136,8 @@ static void load_rrddefs(void)
 	}
 
 	stackfclose(fd);
+
+loaddone:
 	freestrbuffer(inbuf);
 
 	/* Check if the default record exists */
@@ -253,21 +255,25 @@ int main(int argc, char *argv[])
 		int childstat;
                 ssize_t n;
 		char ctlbuf[PATH_MAX];
+		int gotcachectlmessage;
 
 		/* See if we have any cache-control messages pending */
-		n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf), 0);
-		if (n > 0) {
-			/* We have a control message */
-			char *bol, *eol;
+		do {
+			n = recv(ctlsocket, ctlbuf, sizeof(ctlbuf), 0);
+			gotcachectlmessage = (n > 0);
+			if (gotcachectlmessage) {
+				/* We have a control message */
+				char *bol, *eol;
 
-			ctlbuf[n] = '\0';
-			bol = ctlbuf;
-			do {
-				eol = strchr(bol, '\n'); if (eol) *eol = '\0';
-				rrdcacheflushhost(bol);
-				if (eol) { bol = eol+1; } else bol = NULL;
-			} while (bol && *bol);
-		}
+				ctlbuf[n] = '\0';
+				bol = ctlbuf;
+				do {
+					eol = strchr(bol, '\n'); if (eol) *eol = '\0';
+					rrdcacheflushhost(bol);
+					if (eol) { bol = eol+1; } else bol = NULL;
+				} while (bol && *bol);
+			}
+		} while (gotcachectlmessage);
 
 		/* Get next message */
 		msg = get_hobbitd_message(C_LAST, argv[0], &seq, NULL);
