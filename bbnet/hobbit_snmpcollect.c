@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.11 2007-09-11 13:51:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.12 2007-09-11 14:27:53 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -848,14 +848,16 @@ void sendresult(void)
 	int activestatus = 0;
 	int havemibdata = 0;
 
+	init_timestamp();
+
 	*currdev = '\0';
+	combo_start();
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		clearstrbuffer(ifmibdata);
-		sprintf(msgline, "data %s.ifmib\n", rwalk->hostname);
+		sprintf(msgline, "status %s.ifmib green %s\n", rwalk->hostname, timestamp);
 		addtobuffer(ifmibdata, msgline);
 
-		combo_start();
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
 			if (strcmp(currdev, owalk->devname)) {
 				if (activestatus) {
@@ -908,11 +910,15 @@ void sendresult(void)
 		}
 
 		if (activestatus) finish_status();
-		combo_end();
 
-		if (havemibdata) sendmessage(STRBUF(ifmibdata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		if (havemibdata) {
+			init_status(COL_GREEN);
+			addtostrstatus(ifmibdata);
+			finish_status();
+		}
 	}
 
+	combo_end();
 	freestrbuffer(ifmibdata);
 }
 
