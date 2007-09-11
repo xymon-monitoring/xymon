@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.59 2007-07-21 16:12:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.60 2007-09-11 10:38:56 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -143,7 +143,7 @@ void request_cacheflush(char *hostname)
 		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
 			struct sockaddr_un myaddr;
 			socklen_t myaddrsz = 0;
-			int n;
+			int n, sendfailed = 0;
 
 			memset(&myaddr, 0, sizeof(myaddr));
 			myaddr.sun_family = AF_UNIX;
@@ -155,14 +155,15 @@ void request_cacheflush(char *hostname)
 				if (n == -1) {
 					if (errno != EAGAIN) {
 						errprintf("Sendto failed: %s\n", strerror(errno));
-						bytesleft = 0;
 					}
+
+					sendfailed = 1;
 				}
 				else {
 					bytesleft -= n;
 					bufp += n;
 				}
-			} while (bytesleft > 0);
+			} while ((!sendfailed) && (bytesleft > 0));
 		}
 	}
 	closedir(dir);
