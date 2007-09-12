@@ -160,6 +160,15 @@ tests.
 .sp
 .IP "--reverseskin=URL"
 Same as "--dialupskin", but for reverse tests (tests with '!' in front).
+.sp
+.IP "--tooltips=[always,never,main]"
+Determines which pages use tooltips to show the description of the host 
+(from the COMMENT entry in the
+.I bb-hosts(5)
+file). If set to \fBalways\fR, tooltips are used on all pages. If set to 
+\fBnever\fR, tooltips are never used. If set to \fBmain\fR, tooltips are
+used on the main pages, but not on the BB2 (all non-green) or NK (critical
+systems) pages.
 
 .SH COLUMN SELECTION OPTIONS
 These options affect which columns (tests) are included in the webpages

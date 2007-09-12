@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.189 2007-08-15 06:47:18 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.190 2007-09-12 19:37:51 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -338,11 +338,18 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	int	columncount;
 	char	*bbskin;
 	int	rowcount = 0;
+	int     usetooltip = 0;
 
 	if (head == NULL)
 		return;
 
 	bbskin = strdup(xgetenv("BBSKIN"));
+
+	switch (tooltipuse) {
+	  case TT_BBONLY: usetooltip = (pagetype == PAGE_BB); break;
+	  case TT_ALWAYS: usetooltip = 1; break;
+	  case TT_NEVER:  usetooltip = 0; break;
+	}
 
 	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
 	genstatic = generate_static();

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.229 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.230 2007-09-12 19:37:51 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -51,6 +51,7 @@ double		reportwarnlevel = 97.0;
 double		reportgreenlevel = 99.995;
 int		reportstyle = STYLE_CRIT;
 int		dynamicreport = 1;
+enum tooltipuse_t tooltipuse = TT_BBONLY;
 
 char *reqenv[] = {
 "BB",
@@ -410,6 +411,14 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			lp++;
 			select_headers_and_footers(lp);
+		}
+
+		else if (argnmatch(argv[i], "--tooltips=")) {
+			char *lp = strchr(argv[i], '=');
+			lp++;
+			if (strcmp(lp, "always") == 0) tooltipuse = TT_ALWAYS;
+			else if (strcmp(lp, "never") == 0) tooltipuse = TT_NEVER;
+			else tooltipuse = TT_BBONLY;
 		}
 
 		else if (argnmatch(argv[i], "--purplelog=")) {
