@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.27 2007-06-25 13:06:39 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.28 2007-09-27 14:12:37 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -67,6 +67,33 @@ static int statuscolor(testedhost_t *h, long status)
 }
 
 
+static int statuscolor_by_set(testedhost_t *h, long status, char *okcodes, char *badcodes)
+{
+	int result = -1;
+	char codestr[10];
+	pcre *ptn;
+
+	/* Use code 999 to indicate we could not fetch the URL */
+	sprintf(codestr, "%ld", (status ? status : 999));
+
+	if (okcodes) {
+		ptn = compileregex(okcodes);
+		if (matchregex(codestr, ptn)) result = COL_GREEN; else result = COL_RED;
+		freeregex(ptn);
+	}
+
+	if (badcodes) {
+		ptn = compileregex(badcodes);
+		if (matchregex(codestr, ptn)) result = COL_RED; else result = COL_GREEN;
+		freeregex(ptn);
+	}
+
+	if (result == -1) result = statuscolor(h, status);
+
+	return result;
+}
+
+
 void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
 		       char *nonetpage, int failgoesclear)
 {
@@ -99,7 +126,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		if (t->senddata) continue;
 
 		totalreports++;
-		req->httpcolor = statuscolor(host, req->httpstatus);
+		if (req->bburl.okcodes || req->bburl.badcodes) {
+			req->httpcolor = statuscolor_by_set(host, req->httpstatus, req->bburl.okcodes, req->bburl.badcodes);
+		}
+		else {
+			req->httpcolor = statuscolor(host, req->httpstatus);
+		}
 		if (req->httpcolor == COL_RED) anydown++;
 
 		/* Dialup hosts and dialup tests report red as clear */
@@ -158,9 +190,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			addtobuffer(msgtext, req->errorcause);
 		}
 		else if ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) {
-			char m1[30];
+			char m1[100];
 
-			if (req->headers) {
+			if (req->bburl.okcodes || req->bburl.badcodes) {
+				sprintf(m1, "Unwanted HTTP status %ld", req->httpstatus);
+			}
+			else if (req->headers) {
 				char *p = req->headers;
 
 				/* Skip past "HTTP/1.x 200 " and pick up the explanatory text, if any */
@@ -180,6 +215,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		}
 		else {
 			addtobuffer(msgtext, "OK");
+			if (req->bburl.okcodes || req->bburl.badcodes) {
+				char m1[100];
+
+				sprintf(m1, " (HTTP status %ld)", req->httpstatus);
+				addtobuffer(msgtext, m1);
+			}
 		}
 	}
 
