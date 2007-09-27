@@ -24,7 +24,7 @@ typedef struct urlelem_t {
 } urlelem_t;
 
 enum bbtesttype_t { 
-	BBTEST_PLAIN, BBTEST_CONTENT, BBTEST_CONT, BBTEST_NOCONT, BBTEST_POST, BBTEST_NOPOST, BBTEST_TYPE 
+	BBTEST_PLAIN, BBTEST_CONTENT, BBTEST_CONT, BBTEST_NOCONT, BBTEST_POST, BBTEST_NOPOST, BBTEST_TYPE, BBTEST_STATUS 
 };
 
 typedef struct bburl_t {
@@ -34,6 +34,8 @@ typedef struct bburl_t {
 	struct urlelem_t *proxyurl;
 	unsigned char *postdata;
 	unsigned char *expdata;
+	unsigned char *okcodes;
+	unsigned char *badcodes;
 } bburl_t;
 
 extern char *urlunescape(char *url);

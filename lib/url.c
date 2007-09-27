@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.19 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.20 2007-09-27 14:10:20 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -456,8 +456,8 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	static urlelem_t desturlbuf, proxyurlbuf;
 
 	char *inp, *p;
-	char *urlstart, *poststart, *expstart, *proxystart;
-	urlstart = poststart = expstart = proxystart = NULL;
+	char *urlstart, *poststart, *expstart, *proxystart, *okstart, *notokstart;
+	urlstart = poststart = expstart = proxystart = okstart = notokstart = NULL;
 
 	/* If called with no buffer, use our own static one */
 	if (bburl == NULL) {
@@ -510,6 +510,12 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	} else if (strncmp(inp, "type=", 5) == 0) {
 		bburl->testtype = BBTEST_TYPE;
 		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+	} else if (strncmp(inp, "httpstatus;", 11) == 0) {
+		bburl->testtype = BBTEST_STATUS;
+		urlstart = strchr(inp, ';') + 1;
+	} else if (strncmp(inp, "httpstatus=", 11) == 0) {
+		bburl->testtype = BBTEST_STATUS;
+		urlstart = gethttpcolumn(inp+11, &bburl->columnname);
 	}
 	else {
 		/* Plain URL test */
@@ -558,6 +564,30 @@ char *decode_url(char *testspec, bburl_t *bburl)
 			  bburl->testtype = BBTEST_PLAIN;
 		  }
 		  break;
+
+	  case BBTEST_STATUS:
+		  okstart = strchr(urlstart, ';');
+		  if (okstart) {
+			  *okstart = '\0';
+			  okstart++;
+
+			  notokstart = strchr(okstart, ';');
+			  if (notokstart) {
+				  *notokstart = '\0';
+				  notokstart++;
+			  }
+		  }
+
+		  if (okstart && (strlen(okstart) == 0)) okstart = NULL;
+		  if (notokstart && (strlen(notokstart) == 0)) notokstart = NULL;
+
+		  if (!okstart && !notokstart) {
+			  errprintf("HTTP status check, but no OK/not-OK status codes in '%s'\n", testspec);
+			  bburl->testtype = BBTEST_PLAIN;
+		  }
+
+		  if (okstart) bburl->okcodes = strdup(okstart);
+		  if (notokstart) bburl->badcodes = strdup(notokstart);
 	}
 
 	if (poststart) getescapestring(poststart, &bburl->postdata, NULL);
