@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: contest.c,v 1.90 2007-06-11 14:40:32 henrik Exp $";
+static char rcsid[] = "$Id: contest.c,v 1.91 2007-09-27 14:11:09 henrik Exp $";
 
 #include "config.h"
 
@@ -1342,6 +1342,8 @@ int main(int argc, char *argv[])
 					(strncmp(argp, "nocont=", 7) == 0) ||
 					(strncmp(argp, "nopost;", 7) == 0) ||
 					(strncmp(argp, "nopost=", 7) == 0) ||
+					(strncmp(argp, "httpstatus;", 11) == 0) ||
+					(strncmp(argp, "httpstatus=", 11) == 0) ||
 					(strncmp(argp, "type;", 5) == 0)   ||
 					(strncmp(argp, "type=", 5) == 0) ) {
 
@@ -1349,6 +1351,7 @@ int main(int argc, char *argv[])
 					testedhost_t *hostitem = calloc(1, sizeof(testedhost_t));
 					http_data_t *httptest;
 
+					hostitem->hostname = strdup("localhost");
 					testitem->host = hostitem;
 					testitem->testspec = testspec;
 					strcpy(hostitem->ip, ip);
