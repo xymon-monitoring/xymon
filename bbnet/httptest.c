@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.91 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.92 2007-09-27 14:12:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -450,6 +450,7 @@ void add_http_test(testitem_t *t)
 
 	switch (httptest->bburl.testtype) {
 	  case BBTEST_PLAIN:
+	  case BBTEST_STATUS:
 		httptest->contentcheck = CONTENTCHECK_NONE;
 		break;
 
