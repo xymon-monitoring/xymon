@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.28 2007-09-27 14:12:37 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.29 2007-09-30 08:37:48 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -89,6 +89,12 @@ static int statuscolor_by_set(testedhost_t *h, long status, char *okcodes, char 
 	}
 
 	if (result == -1) result = statuscolor(h, status);
+
+	dbgprintf("Host %s status %s [%s:%s] -> color %s\n", 
+		  h->hostname, codestr, 
+		  (okcodes ? okcodes : "<null>"),
+		  (badcodes ? badcodes : "<null>"),
+		  colorname(result));
 
 	return result;
 }
