@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.20 2007-09-27 14:10:20 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.21 2007-09-30 10:37:30 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -516,8 +516,11 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	} else if (strncmp(inp, "httpstatus=", 11) == 0) {
 		bburl->testtype = BBTEST_STATUS;
 		urlstart = gethttpcolumn(inp+11, &bburl->columnname);
-	}
-	else {
+	} else if (strncmp(inp, "http=", 5) == 0) {
+		/* Plain URL test, but in separate column */
+		bburl->testtype = BBTEST_PLAIN;
+		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+	} else {
 		/* Plain URL test */
 		bburl->testtype = BBTEST_PLAIN;
 		urlstart = inp;
