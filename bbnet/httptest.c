@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httptest.c,v 1.92 2007-09-27 14:12:00 henrik Exp $";
+static char rcsid[] = "$Id: httptest.c,v 1.93 2007-10-01 11:01:59 henrik Exp $";
 
 #include <sys/types.h>
 #include <limits.h>
@@ -591,11 +591,15 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "\r\n");
 
 	if (httptest->bburl.postdata) {
-		char contlenhdr[100];
+		char hdr[100];
 
-		sprintf(contlenhdr, "Content-Length: %d\r\n", strlen(httptest->bburl.postdata));
-		addtobuffer(httprequest, contlenhdr);
-		addtobuffer(httprequest, "Content-Type: application/x-www-form-urlencoded\r\n");
+		sprintf(hdr, "Content-Length: %d\r\n", strlen(httptest->bburl.postdata));
+		addtobuffer(httprequest, hdr);
+
+		addtobuffer(httprequest, "Content-type: ");
+		if (httptest->bburl.postcontenttype) addtobuffer(httprequest, httptest->bburl.postcontenttype);
+		else addtobuffer(httprequest, "application/x-www-form-urlencoded");
+		addtobuffer(httprequest, "\r\n");
 	}
 	{
 		char useragent[100];
