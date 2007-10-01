@@ -1067,9 +1067,8 @@ in the form-data field, and the result can be checked
 as if it was a normal content check (see above for a description
 of the cont-tag and the restrictions on how the URL must be writen).
 
-The form-data field must be entered in "application/x-www-form-urlencoded"
-format, which is the most commonly used format for web
-forms.
+The form-data field by default is in the "application/x-www-form-urlencoded"
+format, which is the most commonly used format for web forms.
 
 E.g. if you have a web form defined like this:
 
@@ -1087,9 +1086,19 @@ and you want to post the value "John" to the first field
 and "Doe Jr." to the second field, then the formdata field
 would be
 
-    givenname=John&surname=Doe+Jr.
+    givenname=John&surname=Doe\\x20Jr.
 
 Note that any spaces in the input value is replaced with '+'.
+
+If your form-data requires a different content-type, you can specify 
+it by beginning the form-data with \fB(content-type=TYPE)\fR, 
+e.g. "(content-type=text/xml)" followed by the POST data. Note
+that as with normal forms, the POST data should be specified using
+escape-sequences for reserved characters: "space" should be 
+entered as "\\x20", double quote as "\\x22", newline as "\\n",
+carriage-return as "\\r", TAB as "\\t", backslash as "\\\\".
+Any byte value can be entered using "\\xNN" with NN being
+the hexadecimal value, e.g. "\\x20" is the space character.
 
 The [expected_data_regexp|#digesttype:digest] is the expected
 data returned from the server in response to the POST.
@@ -1118,6 +1127,14 @@ the content data, it checks the type of the data as given by
 the HTTP Content-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
+
+.IP httpstatus[=COLUMN];URL;okstatusexpr;notokstatusexpr
+This is used to explicitly test for certain HTTP statuscodes
+returned when the URL is requested. The \fBokstatusexpr\fR and
+\fBnokokstatusexpr\fR expressions are Perl-compatible regular
+expressions, e.g. "2..|302" will match all OK codes and the
+redirect (302) status code. If the URL cannot be retrived, 
+the status is "999".
 
 .IP HIDEHTTP
 The status display for HTTP checks usually includes the URL,
