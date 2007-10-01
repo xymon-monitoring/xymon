@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: url.c,v 1.21 2007-09-30 10:37:30 henrik Exp $";
+static char rcsid[] = "$Id: url.c,v 1.22 2007-10-01 11:00:42 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -456,8 +456,8 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	static urlelem_t desturlbuf, proxyurlbuf;
 
 	char *inp, *p;
-	char *urlstart, *poststart, *expstart, *proxystart, *okstart, *notokstart;
-	urlstart = poststart = expstart = proxystart = okstart = notokstart = NULL;
+	char *urlstart, *poststart, *postcontenttype, *expstart, *proxystart, *okstart, *notokstart;
+	urlstart = poststart = postcontenttype = expstart = proxystart = okstart = notokstart = NULL;
 
 	/* If called with no buffer, use our own static one */
 	if (bburl == NULL) {
@@ -528,73 +528,86 @@ char *decode_url(char *testspec, bburl_t *bburl)
 
 	switch (bburl->testtype) {
 	  case BBTEST_PLAIN:
-		  break;
+		break;
 
 	  case BBTEST_CONT:
 	  case BBTEST_NOCONT:
 	  case BBTEST_TYPE:
-		  expstart = strchr(urlstart, ';');
-		  if (expstart) {
-			  *expstart = '\0';
-			  expstart++;
-		  }
-		  else {
-			  errprintf("content-check, but no content-data in '%s'\n", testspec);
-			  bburl->testtype = BBTEST_PLAIN;
-		  }
-		  break;
+		expstart = strchr(urlstart, ';');
+		if (expstart) {
+			*expstart = '\0';
+			expstart++;
+		}
+		else {
+			errprintf("content-check, but no content-data in '%s'\n", testspec);
+			bburl->testtype = BBTEST_PLAIN;
+		}
+		break;
 
 	  case BBTEST_POST:
 	  case BBTEST_NOPOST:
-		  poststart = strchr(urlstart, ';');
-		  if (poststart) {
-			  *poststart = '\0';
-			  poststart++;
-			  expstart = strchr(poststart, ';');
-			  if (expstart) {
-				  *expstart = '\0';
-				  expstart++;
-			  }
-			  else {
-				  if (bburl->testtype == BBTEST_NOPOST) {
-			  		errprintf("content-check, but no content-data in '%s'\n", testspec);
-			  		bburl->testtype = BBTEST_PLAIN;
-				  }
-			  }
-		  }
-		  else {
-			  errprintf("post-check, but no post-data in '%s'\n", testspec);
-			  bburl->testtype = BBTEST_PLAIN;
-		  }
-		  break;
+		poststart = strchr(urlstart, ';');
+		if (poststart) {
+			*poststart = '\0';
+			poststart++;
+
+			/* See if "poststart" points to a content-type */
+			if (strncasecmp(poststart, "(content-type=", 14) == 0) {
+				postcontenttype = poststart+14;
+				poststart = strchr(postcontenttype, ')');
+				if (poststart) {
+					*poststart = '\0';
+					poststart++;
+				}
+			}
+
+			if (poststart) {
+				expstart = strchr(poststart, ';');
+				if (expstart) {
+					*expstart = '\0';
+					expstart++;
+			 	}
+			}
+
+			if ((bburl->testtype == BBTEST_NOPOST) && (!expstart)) {
+				errprintf("content-check, but no content-data in '%s'\n", testspec);
+				bburl->testtype = BBTEST_PLAIN;
+			}
+		}
+		else {
+			errprintf("post-check, but no post-data in '%s'\n", testspec);
+			bburl->testtype = BBTEST_PLAIN;
+		}
+		break;
 
 	  case BBTEST_STATUS:
-		  okstart = strchr(urlstart, ';');
-		  if (okstart) {
-			  *okstart = '\0';
-			  okstart++;
+		okstart = strchr(urlstart, ';');
+		if (okstart) {
+			*okstart = '\0';
+			okstart++;
 
-			  notokstart = strchr(okstart, ';');
-			  if (notokstart) {
-				  *notokstart = '\0';
-				  notokstart++;
-			  }
-		  }
+			notokstart = strchr(okstart, ';');
+			if (notokstart) {
+				*notokstart = '\0';
+				notokstart++;
+			}
+		}
 
-		  if (okstart && (strlen(okstart) == 0)) okstart = NULL;
-		  if (notokstart && (strlen(notokstart) == 0)) notokstart = NULL;
+		if (okstart && (strlen(okstart) == 0)) okstart = NULL;
+		if (notokstart && (strlen(notokstart) == 0)) notokstart = NULL;
 
-		  if (!okstart && !notokstart) {
-			  errprintf("HTTP status check, but no OK/not-OK status codes in '%s'\n", testspec);
-			  bburl->testtype = BBTEST_PLAIN;
-		  }
+		if (!okstart && !notokstart) {
+			errprintf("HTTP status check, but no OK/not-OK status codes in '%s'\n", testspec);
+			bburl->testtype = BBTEST_PLAIN;
+		}
 
-		  if (okstart) bburl->okcodes = strdup(okstart);
-		  if (notokstart) bburl->badcodes = strdup(notokstart);
+		if (okstart) bburl->okcodes = strdup(okstart);
+		if (notokstart) bburl->badcodes = strdup(notokstart);
 	}
 
-	if (poststart) getescapestring(poststart, &bburl->postdata, NULL);
-	if (expstart)  getescapestring(expstart, &bburl->expdata, NULL);
+	if (poststart)       getescapestring(poststart, &bburl->postdata, NULL);
+	if (postcontenttype) getescapestring(postcontenttype, &bburl->postcontenttype, NULL);
+	if (expstart)        getescapestring(expstart, &bburl->expdata, NULL);
 
 	p = strstr(urlstart, "/http");
 	if (p) {

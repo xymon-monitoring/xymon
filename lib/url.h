@@ -32,6 +32,7 @@ typedef struct bburl_t {
 	char *columnname;
 	struct urlelem_t *desturl;
 	struct urlelem_t *proxyurl;
+	unsigned char *postcontenttype;
 	unsigned char *postdata;
 	unsigned char *expdata;
 	unsigned char *okcodes;
