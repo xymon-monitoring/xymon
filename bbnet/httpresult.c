@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.30 2007-09-30 10:38:16 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.31 2007-10-01 11:01:30 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -300,6 +300,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 	/* Send of any HTTP status tests in separate columns */
 	for (t=firsttest; (t && (t->host == host)); t = t->next) {
+		int color;
 		char msgline[4096];
 		char *urlmsg;
 		http_data_t *req = (http_data_t *) t->privdata;
@@ -307,6 +308,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		if ((t->senddata) || (!req->bburl.columnname) || (req->contentcheck != CONTENTCHECK_NONE)) continue;
 
 		/* Handle the "badtest" stuff */
+		color = req->httpcolor;
 		if ((color == COL_RED) && (t->downcount < t->badtest[2])) {
 			if      (t->downcount >= t->badtest[1]) color = COL_YELLOW;
 			else if (t->downcount >= t->badtest[0]) color = COL_CLEAR;
