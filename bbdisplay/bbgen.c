@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.230 2007-09-12 19:37:51 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.231 2007-10-02 08:12:43 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -640,7 +640,7 @@ int main(int argc, char *argv[])
 	if (reportstart && csvfile) {
 		csv_availability(csvfile, csvdelim);
 	}
-	else if (do_normal_pages) {
+	if (do_normal_pages) {
 		do_page_with_subs(pagehead, dispsums);
 	}
 	add_timestamp("Hobbit pagegen done");
