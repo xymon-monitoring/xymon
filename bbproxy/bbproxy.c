@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.59 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.60 2007-10-10 11:07:09 henrik Exp $";
 
 #include "config.h"
 
@@ -224,6 +224,8 @@ int main(int argc, char *argv[])
 	struct sockaddr_in laddr;
 	struct sockaddr_in bbdispaddr[MAX_SERVERS];
 	int bbdispcount = 0;
+	struct sockaddr_in clientaddr[MAX_SERVERS];
+	int clientcount = 0;
 	struct sockaddr_in bbpageraddr[MAX_SERVERS];
 	int bbpagercount = 0;
 	int usehobbitd = 0;
@@ -290,6 +292,32 @@ int main(int argc, char *argv[])
 				}
 				else {
 					bbdispcount++;
+				}
+				if (p) *p = ':';
+				ip1 = strtok(NULL, ",");
+			}
+			xfree(ips);
+		}
+		else if (argnmatch(argv[opt], "--clienthandlers=")) {
+			char *ips, *ip1;
+			int port1;
+
+			ips = strdup(strchr(argv[opt], '=')+1);
+
+			ip1 = strtok(ips, ",");
+			while (ip1) {
+				char *p; 
+				p = strchr(ip1, ':');
+				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
+
+				memset(&clientaddr[clientcount], 0, sizeof(clientaddr[clientcount]));
+				clientaddr[clientcount].sin_port = htons(port1);
+				clientaddr[clientcount].sin_family = AF_INET;
+				if (inet_aton(ip1, (struct in_addr *) &clientaddr[clientcount].sin_addr.s_addr) == 0) {
+					errprintf("Invalid remote address %s\n", ip1);
+				}
+				else {
+					clientcount++;
 				}
 				if (p) *p = ':';
 				ip1 = strtok(NULL, ",");
@@ -413,6 +441,17 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (clientcount == 0) {
+		int i;
+
+		for (i = 0; (i < bbdispcount); i++) {
+			memcpy(&clientaddr[i], &bbdispaddr[i], sizeof(clientaddr[i]));
+			clientaddr[i].sin_port = bbdispaddr[i].sin_port;
+			clientaddr[i].sin_family = bbdispaddr[i].sin_family;
+			clientcount++;
+		}
+	}
+
 	/* Set up a socket to listen for new connections */
 	lsocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (lsocket == -1) {
@@ -454,6 +493,11 @@ int main(int argc, char *argv[])
 			p += sprintf(p, "%s:%d ", inet_ntoa(bbpageraddr[i].sin_addr), ntohs(bbpageraddr[i].sin_port));
 		}
 		errprintf("Sending to BBPAGER(s) %s\n", srvrs);
+
+		for (i=0, srvrs[0] = '\0', p=srvrs; (i<clientcount); i++) {
+			p += sprintf(p, "%s:%d ", inet_ntoa(clientaddr[i].sin_addr), ntohs(clientaddr[i].sin_port));
+		}
+		errprintf("Sending to CLIENT handler(s) %s\n", srvrs);
 	}
 
 	if (daemonize) {
@@ -780,11 +824,17 @@ int main(int argc, char *argv[])
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				if (strncmp(cwalk->buf, "page", 4) == 0) {
+				if (strncmp(cwalk->bufp, "page", 4) == 0) {
 					int idx = (bbpagercount - cwalk->snum);
 					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr[idx], sizeof(bbpageraddr[idx]));
 					cwalk->serverip = &bbpageraddr[idx].sin_addr;
 					dbgprintf("Connecting to BBPAGER at %s\n", inet_ntoa(*cwalk->serverip));
+				}
+				else if (strncmp(cwalk->bufp, "client", 6) == 0) {
+					int idx = (clientcount - cwalk->snum);
+					n = connect(cwalk->ssocket, (struct sockaddr *)&clientaddr[idx], sizeof(clientaddr[idx]));
+					cwalk->serverip = &clientaddr[idx].sin_addr;
+					dbgprintf("Connecting to CLIENT interpreter at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 				else {
 					int idx = (bbdispcount - cwalk->snum);
