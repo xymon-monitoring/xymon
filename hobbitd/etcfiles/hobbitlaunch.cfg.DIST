@@ -117,14 +117,14 @@
 # "bbproxy" is the Hobbit proxy server that allows you to forward status messages
 # from a protected network to your Hobbit server. It is not enabled by default,
 # since it would conflict with the hobbitd task.
-# If you need to run this, then disabled hobbitd and the hobbitd-modules
+# If you need to run this, then disable hobbitd and the hobbitd-modules
 # above, then enable this. Make sure you enter the IP-address of your 
 # Hobbit server in the command-line, so that the proxy knows where to forward
-# status messages.
+# messages to.
 [bbproxy]
 	DISABLED
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-	CMD $BBHOME/bin/bbproxy --hobbitd --bbdisplay=YOUR.HOBBIT.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
+	CMD $BBHOME/bin/bbproxy --servers=YOUR.HOBBIT.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
 	LOGFILE $BBSERVERLOGS/bbproxy.log
 
 
