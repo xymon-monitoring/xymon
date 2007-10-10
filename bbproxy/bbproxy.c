@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.61 2007-10-10 11:13:25 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.62 2007-10-10 11:28:47 henrik Exp $";
 
 #include "config.h"
 
@@ -269,9 +269,12 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 		}
-		else if (argnmatch(argv[opt], "--bbdisplay=")) {
+		else if (argnmatch(argv[opt], "--bbdisplay=") || argnmatch(argv[opt], "--servers=")) {
 			char *ips, *ip1;
 			int port1;
+
+			if (argnmatch(argv[opt], "--bbdisplay=")) 
+				errprintf("The --bbdisplay option is obsolete, use --servers instead\n");
 
 			ips = strdup(strchr(argv[opt], '=')+1);
 
@@ -377,10 +380,8 @@ int main(int argc, char *argv[])
 			printf("bbproxy version %s\n", VERSION);
 			printf("\nOptions:\n");
 			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
-			printf("\t--bbdisplay=IP[:port]       : BBDISPLAY server address and portnumber\n");
-			printf("\t--bbpager=IP[:port]         : BBPAGER server address and portnumber\n");
-			printf("\t--hobbitd                   : Modify behaviour to use hobbitd features\n");
-			printf("\t--report=[HOST.]SERVICE     : Sends a BB status message about proxy activity\n");
+			printf("\t--servers=IP[:port]         : Hobbit server address and portnumber\n");
+			printf("\t--report=[HOST.]SERVICE     : Sends a status message about proxy activity\n");
 			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
 			printf("\t--lqueue=N                  : Listen-queue size\n");
 			printf("\t--daemon                    : Run as a daemon\n");
@@ -394,7 +395,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (bbdispcount == 0) {
-		errprintf("No BBDISPLAY address given - aborting\n");
+		errprintf("No Hobbit server address given - aborting\n");
 		return 1;
 	}
 
@@ -444,12 +445,12 @@ int main(int argc, char *argv[])
 		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbdispcount); i++) {
 			p += sprintf(p, "%s:%d ", inet_ntoa(bbdispaddr[i].sin_addr), ntohs(bbdispaddr[i].sin_port));
 		}
-		errprintf("Sending to BBDISPLAY(s) %s\n", srvrs);
+		errprintf("Sending to Hobbit server(s) %s\n", srvrs);
 
 		for (i=0, srvrs[0] = '\0', p=srvrs; (i<clientcount); i++) {
 			p += sprintf(p, "%s:%d ", inet_ntoa(clientaddr[i].sin_addr), ntohs(clientaddr[i].sin_port));
 		}
-		errprintf("Sending to CLIENT handler(s) %s\n", srvrs);
+		errprintf("Sending client data to server(s) %s\n", srvrs);
 	}
 
 	if (daemonize) {
@@ -630,7 +631,7 @@ int main(int argc, char *argv[])
 				         (strncmp(cwalk->buf+6, "download", 8) == 0)) {
 					/* 
 					 * These requests get a response back, but send no data.
-					 * Send these to the last of the BBDISPLAY servers only.
+					 * Send these to the last of the Hobbit servers only.
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
@@ -775,7 +776,7 @@ int main(int argc, char *argv[])
 					int idx = (bbdispcount - cwalk->snum);
 					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr[idx], sizeof(bbdispaddr[idx]));
 					cwalk->serverip = &bbdispaddr[idx].sin_addr;
-					dbgprintf("Connecting to BBDISPLAY at %s\n", inet_ntoa(*cwalk->serverip));
+					dbgprintf("Connecting to Hobbit at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
