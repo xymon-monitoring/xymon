@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.60 2007-10-10 11:07:09 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.61 2007-10-10 11:13:25 henrik Exp $";
 
 #include "config.h"
 
@@ -226,9 +226,6 @@ int main(int argc, char *argv[])
 	int bbdispcount = 0;
 	struct sockaddr_in clientaddr[MAX_SERVERS];
 	int clientcount = 0;
-	struct sockaddr_in bbpageraddr[MAX_SERVERS];
-	int bbpagercount = 0;
-	int usehobbitd = 0;
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
@@ -324,35 +321,6 @@ int main(int argc, char *argv[])
 			}
 			xfree(ips);
 		}
-		else if (argnmatch(argv[opt], "--bbpager=")) {
-			char *ips, *ip1;
-			int port1;
-
-			ips = strdup(strchr(argv[opt], '=')+1);
-
-			ip1 = strtok(ips, ",");
-			while (ip1) {
-				char *p; 
-				p = strchr(ip1, ':');
-				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
-
-				memset(&bbpageraddr[bbpagercount], 0, sizeof(bbpageraddr[bbpagercount]));
-				bbpageraddr[bbpagercount].sin_port = htons(port1);
-				bbpageraddr[bbpagercount].sin_family = AF_INET;
-				if (inet_aton(ip1, (struct in_addr *) &bbpageraddr[bbpagercount].sin_addr.s_addr) == 0) {
-					errprintf("Invalid remote address %s\n", ip1);
-				}
-				else {
-					bbpagercount++;
-				}
-				if (p) *p = ':';
-				ip1 = strtok(NULL, ",");
-			}
-			xfree(ips);
-		}
-		else if (strcmp(argv[opt], "--hobbitd") == 0) {
-			usehobbitd = 1;
-		}
 		else if (argnmatch(argv[opt], "--timeout=")) {
 			char *p = strchr(argv[opt], '=');
 			timeout = atoi(p+1);
@@ -430,17 +398,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (bbpagercount == 0) {
-		int i;
-
-		for (i = 0; (i < bbdispcount); i++) {
-			memcpy(&bbpageraddr[i], &bbdispaddr[i], sizeof(bbpageraddr[i]));
-			bbpageraddr[i].sin_port = bbdispaddr[i].sin_port;
-			bbpageraddr[i].sin_family = bbdispaddr[i].sin_family;
-			bbpagercount++;
-		}
-	}
-
 	if (clientcount == 0) {
 		int i;
 
@@ -488,11 +445,6 @@ int main(int argc, char *argv[])
 			p += sprintf(p, "%s:%d ", inet_ntoa(bbdispaddr[i].sin_addr), ntohs(bbdispaddr[i].sin_port));
 		}
 		errprintf("Sending to BBDISPLAY(s) %s\n", srvrs);
-
-		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbpagercount); i++) {
-			p += sprintf(p, "%s:%d ", inet_ntoa(bbpageraddr[i].sin_addr), ntohs(bbpageraddr[i].sin_port));
-		}
-		errprintf("Sending to BBPAGER(s) %s\n", srvrs);
 
 		for (i=0, srvrs[0] = '\0', p=srvrs; (i<clientcount); i++) {
 			p += sprintf(p, "%s:%d ", inet_ntoa(clientaddr[i].sin_addr), ntohs(clientaddr[i].sin_port));
@@ -664,7 +616,7 @@ int main(int argc, char *argv[])
 					msgs_other++;
 					cwalk->snum = bbdispcount;
 
-					if (usehobbitd && ((cwalk->buflen + 40 ) < cwalk->bufsize)) {
+					if ((cwalk->buflen + 40 ) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
 								"\n[proxy]\nClientIP:%s\n", 
 								inet_ntoa(*cwalk->clientip));
@@ -709,7 +661,7 @@ int main(int argc, char *argv[])
 						cwalk->buflen = strlen(cwalk->buf);
 						cwalk->bufp = cwalk->buf + cwalk->buflen;
 
-						if (usehobbitd && ((cwalk->buflen + 50 ) < cwalk->bufsize)) {
+						if ((cwalk->buflen + 50 ) < cwalk->bufsize) {
 							int n = sprintf(cwalk->bufp, 
 									"\nStatus message received from %s\n", 
 									inet_ntoa(*cwalk->clientip));
@@ -749,14 +701,9 @@ int main(int argc, char *argv[])
 							memcpy(ctmp, cwalk, sizeof(conn_t));
 							ctmp->bufsize = BUFSZ_INC*(((6 + strlen(currmsg) + 50) / BUFSZ_INC) + 1);
 							ctmp->buf = (char *)malloc(ctmp->bufsize);
-							if (usehobbitd) {
-								ctmp->buflen = sprintf(ctmp->buf, 
-									"combo\n%s\nStatus message received from %s\n", 
-									currmsg, inet_ntoa(*cwalk->clientip));
-							}
-							else {
-								ctmp->buflen = sprintf(ctmp->buf, "combo\n%s", currmsg);
-							}
+							ctmp->buflen = sprintf(ctmp->buf, 
+								"combo\n%s\nStatus message received from %s\n", 
+								currmsg, inet_ntoa(*cwalk->clientip));
 							ctmp->bufp = ctmp->buf + ctmp->buflen;
 							ctmp->state = P_REQ_COMBINING;
 							ctmp->next = chead;
@@ -770,15 +717,9 @@ int main(int argc, char *argv[])
 						break;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
-						if (usehobbitd) {
-							/* hobbitd has no use for page requests */
-							cwalk->state = P_CLEANUP;
-							break;
-						}
-						else {
-							cwalk->snum = bbpagercount;
-							msgs_page++;
-						}
+						/* hobbitd has no use for page requests */
+						cwalk->state = P_CLEANUP;
+						break;
 					}
 					else {
 						msgs_other++;
@@ -824,13 +765,7 @@ int main(int argc, char *argv[])
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				if (strncmp(cwalk->bufp, "page", 4) == 0) {
-					int idx = (bbpagercount - cwalk->snum);
-					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr[idx], sizeof(bbpageraddr[idx]));
-					cwalk->serverip = &bbpageraddr[idx].sin_addr;
-					dbgprintf("Connecting to BBPAGER at %s\n", inet_ntoa(*cwalk->serverip));
-				}
-				else if (strncmp(cwalk->bufp, "client", 6) == 0) {
+				if (strncmp(cwalk->bufp, "client", 6) == 0) {
 					int idx = (clientcount - cwalk->snum);
 					n = connect(cwalk->ssocket, (struct sockaddr *)&clientaddr[idx], sizeof(clientaddr[idx]));
 					cwalk->serverip = &clientaddr[idx].sin_addr;
