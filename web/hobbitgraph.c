@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.62 2007-10-16 11:38:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.63 2007-10-16 11:54:10 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -404,6 +404,7 @@ void lookup_meta(char *keybuf, char *rrdfn)
 {
 	FILE *fd;
 	char *metafn, *p;
+	int servicelen = strlen(service);
 	int keylen = strlen(keybuf);
 	char buf[1024];
 	int found;
@@ -426,14 +427,17 @@ void lookup_meta(char *keybuf, char *rrdfn)
 	/* Find the first line that has our key and then whitespace */
 	found = 0;
 	while (!found && fgets(buf, sizeof(buf), fd)) {
-		found = ((strncmp(buf, keybuf, keylen) == 0) && isspace(*(buf+keylen)));
+		found = ( (strncmp(buf, service, servicelen) == 0) &&
+			  (*(buf+servicelen) == ':') &&
+			  (strncmp(buf+servicelen+1, keybuf, keylen) == 0) && 
+			  isspace(*(buf+servicelen+1+keylen)) );
 	}
 	fclose(fd);
 
 	if (found) {
 		char *eoln, *val;
 
-		val = buf + keylen;
+		val = buf + servicelen + 1 + keylen;
 		val += strspn(val, " \t");
 
 		eoln = strchr(val, '\n');
