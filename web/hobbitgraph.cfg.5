@@ -34,7 +34,9 @@ to exclude from the graph with EXFNPATTERN (see "[tcp]" for an example).
 When FNPATTERN is used, you can use "@RRDFN@" in the RRDtool definitions
 to pick up each filename. "@RRDIDX@" is an index (starting at 0) for each
 file in the set. "@RRDPARAM@" contains the first word extracted from the
-pattern of files (see e.g. "[memory]" how this is used). "@COLOR@" picks
+pattern of files (see e.g. "[memory]" how this is used). "@RRDMETA@" by default
+works like "@RRDPARAM@", but if you create a file called \fBrrd.meta\fR in the 
+hosts rrd directory, it will lookup a legend in this file. "@COLOR@" picks
 a new color for each graph automatically.
 
 The remainder of the lines in each definition are passed directly to the
