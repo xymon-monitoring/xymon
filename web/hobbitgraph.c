@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.61 2007-10-16 11:16:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.62 2007-10-16 11:38:11 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -403,13 +403,21 @@ void load_gdefs(char *fn)
 void lookup_meta(char *keybuf, char *rrdfn)
 {
 	FILE *fd;
-	char *metafn;
+	char *metafn, *p;
 	int keylen = strlen(keybuf);
 	char buf[1024];
 	int found;
 
-	metafn = (char *)malloc(strlen(rrdfn) + 6);
-	sprintf(metafn, "%s.meta", rrdfn);
+	p = strrchr(rrdfn, '/');
+	if (!p) {
+		metafn = strdup("rrd.meta");
+	}
+	else {
+		metafn = (char *)malloc(strlen(rrdfn) + 10);
+		*p = '\0';
+		sprintf(metafn, "%s/rrd.meta", rrdfn);
+		*p = '/';
+	}
 	fd = fopen(metafn, "r");
 	xfree(metafn);
 
