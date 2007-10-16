@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.60 2007-09-11 10:38:56 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.61 2007-10-16 11:16:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -400,6 +400,41 @@ void load_gdefs(char *fn)
 	freestrbuffer(inbuf);
 }
 
+void lookup_meta(char *keybuf, char *rrdfn)
+{
+	FILE *fd;
+	char *metafn;
+	int keylen = strlen(keybuf);
+	char buf[1024];
+	int found;
+
+	metafn = (char *)malloc(strlen(rrdfn) + 6);
+	sprintf(metafn, "%s.meta", rrdfn);
+	fd = fopen(metafn, "r");
+	xfree(metafn);
+
+	if (!fd) return;
+
+	/* Find the first line that has our key and then whitespace */
+	found = 0;
+	while (!found && fgets(buf, sizeof(buf), fd)) {
+		found = ((strncmp(buf, keybuf, keylen) == 0) && isspace(*(buf+keylen)));
+	}
+	fclose(fd);
+
+	if (found) {
+		char *eoln, *val;
+
+		val = buf + keylen;
+		val += strspn(val, " \t");
+
+		eoln = strchr(val, '\n');
+		if (eoln) *eoln = '\0';
+
+		strcpy(keybuf, val);
+	}
+}
+
 char *colon_escape(char *buf)
 {
 	static char *result = NULL;
@@ -476,6 +511,20 @@ char *expand_tokens(char *tpl)
 				outp += strlen(outp);
 			}
 			inp += 10;
+		}
+		else if (strncmp(inp, "@RRDMETA@", 9) == 0) {
+			/* 
+			 * We do a colon-escape first, then change all commas to slashes as
+			 * this is a common mangling used by multiple backends (disk, http, iostat...)
+			 */
+			if (rrddbs[rrdidx].rrdparam) {
+				char *p;
+				sprintf(outp, "%s", colon_escape(rrddbs[rrdidx].rrdparam));
+				p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
+				lookup_meta(outp, rrddbs[rrdidx].rrdfn);
+			}
+			inp += 9;
+			outp += strlen(outp);
 		}
 		else if (strncmp(inp, "@RRDIDX@", 8) == 0) {
 			char numstr[10];
@@ -981,7 +1030,9 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	for (rrdidx=0; (rrdidx < rrddbcount); rrdidx++) {
 		if ((firstidx == -1) || ((rrdidx >= firstidx) && (rrdidx <= lastidx))) {
 			int i;
-			for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
+			for (i=0; (gdef->defs[i]); i++) {
+				rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
+			}
 		}
 	}
 
