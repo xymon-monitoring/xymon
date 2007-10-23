@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.14 2007-10-23 12:19:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.15 2007-10-23 13:47:55 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -50,7 +50,8 @@ typedef struct ifids_t {
 /* A host and the OID's we will be polling */
 typedef struct req_t {
 	char *hostname;				/* Hostname used for reporting to Hobbit */
-	char *hostip;				/* Hostname or IP used for testing */
+	char *hostip[10];			/* Hostname or IP used for testing */
+	int hostipidx;
 	u_short portnumber;			/* SNMP daemon portnumber */
 	long version;				/* SNMP version to use */
 	unsigned char *community;		/* Community name used to access the SNMP daemon */
@@ -128,7 +129,8 @@ oidds_t ifXmibnames[] = {
 	{ NULL, NULL }
 };
 
-/* Must forward declare this, since callback-function and starthosts() refer to each other */
+/* Must forward declare these */
+void startonehost(struct req_t *r, int ipchange);
 void starthosts(int resetstart);
 
 struct snmp_pdu *generate_datarequest(req_t *item)
@@ -219,7 +221,7 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 				vp = pdu->variables;
 				while (vp) {
 					snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-					dbgprintf("%s: device %s %s\n", sp->hostip, owalk->devname, buf);
+					dbgprintf("%s: device %s %s\n", sp->hostip[sp->hostipidx], owalk->devname, buf);
 					owalk->result = strdup(buf); owalk = owalk->next;
 					vp = vp->next_variable;
 				}
@@ -227,16 +229,20 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 			}
 		}
 		else {
-			errprintf("ERROR %s: %s\n", sp->hostip, snmp_errstring(pdu->errstat));
+			errprintf("ERROR %s: %s\n", sp->hostip[sp->hostipidx], snmp_errstring(pdu->errstat));
 		}
 		return 1;
 
 	  case STAT_TIMEOUT:
 		dbgprintf("%s: Timeout\n", sp->hostip);
+		if (sp->hostip[sp->hostipidx+1]) {
+			sp->hostipidx++;
+			startonehost(sp, 1);
+		}
 		return 0;
 
 	  case STAT_ERROR:
-		snmp_sess_perror(sp->hostip, sp->sess);
+		snmp_sess_perror(sp->hostip[sp->hostipidx], sp->sess);
 		return 0;
 	}
 
@@ -263,6 +269,10 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 
 		  case SNMP_ERR_NOSUCHNAME:
 			dbgprintf("Host %s item %s: No such name\n", item->hostname, item->curr_oid->devname);
+			if (item->hostip[item->hostipidx+1]) {
+				item->hostipidx++;
+				startonehost(item, 1);
+			}
 			break;
 
 		  case SNMP_ERR_TOOBIG:
@@ -338,6 +348,84 @@ finish:
 }
 
 
+void startonehost(struct req_t *r, int ipchange)
+{
+	struct snmp_session s;
+	struct snmp_pdu *req = NULL;
+	oid Oid[MAX_OID_LEN];
+	unsigned int OidLen;
+
+	if ((querymode < GET_DATA) && !r->wantedinterfaces) return;
+
+	/* Are we retrying a cluster with a new IP? Then drop the current session */
+	if (r->sess && ipchange) {
+		/*
+		 * Apparently, we cannot close a session while in a callback.
+		 * So leave this for now - it will leak some memory, but
+		 * this is not a problem as long as we only run once.
+		 */
+		/* snmp_close(r->sess); */
+		r->sess = NULL;
+	}
+
+	/* Setup the SNMP session */
+	if (!r->sess) {
+		snmp_sess_init(&s);
+		s.version = r->version;
+		if (timeout > 0) s.timeout = timeout;
+		if (retries > 0) s.retries = retries;
+		s.peername = r->hostip[r->hostipidx];
+		if (r->portnumber) s.remote_port = r->portnumber;
+		s.community = r->community;
+		s.community_len = strlen((char *)r->community);
+		s.callback = asynch_response;
+		s.callback_magic = r;
+		if (!(r->sess = snmp_open(&s))) {
+			snmp_sess_perror("snmp_open", &s);
+			return;
+		}
+	}
+
+	switch (querymode) {
+	  case QUERY_INTERFACES:
+		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+		OidLen = sizeof(Oid)/sizeof(Oid[0]);
+		if (read_objid("IF-MIB::ifIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		OidLen = sizeof(Oid)/sizeof(Oid[0]);
+		if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		OidLen = sizeof(Oid)/sizeof(Oid[0]);
+		if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		break;
+
+	  case QUERY_NAMES:
+		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+		OidLen = sizeof(Oid)/sizeof(Oid[0]);
+		if (read_objid("IF-MIB::ifName", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		break;
+
+	  case QUERY_IPADDRS:
+		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+		OidLen = sizeof(Oid)/sizeof(Oid[0]);
+		if (read_objid("IP-MIB::ipAdEntIfIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		break;
+
+	  case GET_DATA:
+		/* Build the request PDU and send it */
+		req = generate_datarequest(r);
+		break;
+	}
+
+	if (!req) return;
+
+	if (snmp_send(r->sess, req))
+		active_requests++;
+	else {
+		snmp_sess_perror("snmp_send", r->sess);
+		snmp_free_pdu(req);
+	}
+}
+
+
 void starthosts(int resetstart)
 {
 	static req_t *startpoint = NULL;
@@ -362,68 +450,7 @@ void starthosts(int resetstart)
 
 	/* startup as many hosts as we want to run in parallel */
 	for (rwalk = startpoint; (rwalk && (active_requests <= max_pending_requests)); rwalk = rwalk->next) {
-		struct snmp_session s;
-		struct snmp_pdu *req = NULL;
-		oid Oid[MAX_OID_LEN];
-		unsigned int OidLen;
-
-		if ((querymode < GET_DATA) && !rwalk->wantedinterfaces) continue;
-
-		if (!rwalk->sess) {
-			/* Setup the SNMP session */
-			snmp_sess_init(&s);
-			s.version = rwalk->version;
-			if (timeout > 0) s.timeout = timeout;
-			if (retries > 0) s.retries = retries;
-			s.peername = rwalk->hostip;
-			if (rwalk->portnumber) s.remote_port = rwalk->portnumber;
-			s.community = rwalk->community;
-			s.community_len = strlen((char *)rwalk->community);
-			s.callback = asynch_response;
-			s.callback_magic = rwalk;
-			if (!(rwalk->sess = snmp_open(&s))) {
-				snmp_sess_perror("snmp_open", &s);
-				continue;
-			}
-		}
-
-		switch (querymode) {
-		  case QUERY_INTERFACES:
-			req = snmp_pdu_create(SNMP_MSG_GETNEXT);
-			OidLen = sizeof(Oid)/sizeof(Oid[0]);
-			if (read_objid("IF-MIB::ifIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
-			OidLen = sizeof(Oid)/sizeof(Oid[0]);
-			if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
-			OidLen = sizeof(Oid)/sizeof(Oid[0]);
-			if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
-			break;
-
-		  case QUERY_NAMES:
-			req = snmp_pdu_create(SNMP_MSG_GETNEXT);
-			OidLen = sizeof(Oid)/sizeof(Oid[0]);
-			if (read_objid("IF-MIB::ifName", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
-			break;
-
-		  case QUERY_IPADDRS:
-			req = snmp_pdu_create(SNMP_MSG_GETNEXT);
-			OidLen = sizeof(Oid)/sizeof(Oid[0]);
-			if (read_objid("IP-MIB::ipAdEntIfIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
-			break;
-
-		  case GET_DATA:
-			/* Build the request PDU and send it */
-			req = generate_datarequest(rwalk);
-			break;
-		}
-
-		if (!req) continue;
-
-		if (snmp_send(rwalk->sess, req))
-			active_requests++;
-		else {
-			snmp_sess_perror("snmp_send", rwalk->sess);
-			snmp_free_pdu(req);
-		}
+		startonehost(rwalk, 0);
 	}
 
 	startpoint = rwalk;
@@ -516,7 +543,7 @@ void readconfig(char *cfgfn)
 			reqitem->hostname = strdup(bot + 1);
 			if (p) *p = ']';
 
-			reqitem->hostip = reqitem->hostname;
+			reqitem->hostip[0] = reqitem->hostname;
 			reqitem->version = SNMP_VERSION_1;
 			reqitem->next = reqhead;
 			reqhead = reqitem;
@@ -528,7 +555,13 @@ void readconfig(char *cfgfn)
 		if (!reqitem) continue;
 
 		if (strncmp(bot, "ip=", 3) == 0) {
-			reqitem->hostip = strdup(bot+3);
+			char *nextip = strtok(strdup(bot+3), ",");
+			int i = 0;
+
+			do {
+				reqitem->hostip[i++] = nextip;
+				nextip = strtok(NULL, ",");
+			} while (nextip);
 			continue;
 		}
 
@@ -885,6 +918,9 @@ void sendresult(void)
 			2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, timestamp);
 		addtobuffer(ifmibdata, msgline);
 		sprintf(msgline, "Interval=%d\n", atoi(xgetenv("BBSLEEP")));
+		addtobuffer(ifmibdata, msgline);
+		sprintf(msgline, "ActiveIP=%s\n", rwalk->hostip[rwalk->hostipidx]);
+		addtobuffer(ifmibdata, msgline);
 
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
 			if (strcmp(currdev, owalk->devname)) {
