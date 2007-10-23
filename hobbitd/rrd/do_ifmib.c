@@ -8,29 +8,29 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.2 2007-09-11 14:29:04 henrik Exp $";
+static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.3 2007-10-23 12:15:56 henrik Exp $";
 
 static char *ifmib_params[] = { 
-	                        "DS:ifInNUcastPkts:DERIVE:600:0:U", 
-	                        "DS:ifInDiscards:DERIVE:600:0:U", 
-	                        "DS:ifInErrors:DERIVE:600:0:U", 
-				"DS:ifInUnknownProtos:DERIVE:600:0:U", 
-	                        "DS:ifOutNUcastPkts:DERIVE:600:0:U", 
-	                        "DS:ifOutDiscards:DERIVE:600:0:U", 
-	                        "DS:ifOutErrors:DERIVE:600:0:U", 
+	                        "DS:ifInNUcastPkts:COUNTER:600:0:U", 
+	                        "DS:ifInDiscards:COUNTER:600:0:U", 
+	                        "DS:ifInErrors:COUNTER:600:0:U", 
+				"DS:ifInUnknownProtos:COUNTER:600:0:U", 
+	                        "DS:ifOutNUcastPkts:COUNTER:600:0:U", 
+	                        "DS:ifOutDiscards:COUNTER:600:0:U", 
+	                        "DS:ifOutErrors:COUNTER:600:0:U", 
 	                        "DS:ifOutQLen:GAUGE:600:0:U", 
-				"DS:ifInMcastPkts:DERIVE:600:0:U",
-				"DS:ifInBcastPkts:DERIVE:600:0:U",
-				"DS:ifOutMcastPkts:DERIVE:600:0:U",
-				"DS:ifOutBcastPkts:DERIVE:600:0:U",
-				"DS:ifHCInMcastPkts:DERIVE:600:0:U",
-				"DS:ifHCInBcastPkts:DERIVE:600:0:U",
-				"DS:ifHCOutMcastPkts:DERIVE:600:0:U",
-				"DS:ifHCOutBcastPkts:DERIVE:600:0:U",
-				"DS:InOctets:DERIVE:600:0:U",
-	                        "DS:OutOctets:DERIVE:600:0:U", 
-				"DS:InUcastPkts:DERIVE:600:0:U", 
-	                        "DS:OutUcastPkts:DERIVE:600:0:U", 
+				"DS:ifInMcastPkts:COUNTER:600:0:U",
+				"DS:ifInBcastPkts:COUNTER:600:0:U",
+				"DS:ifOutMcastPkts:COUNTER:600:0:U",
+				"DS:ifOutBcastPkts:COUNTER:600:0:U",
+				"DS:ifHCInMcastPkts:COUNTER:600:0:U",
+				"DS:ifHCInBcastPkts:COUNTER:600:0:U",
+				"DS:ifHCOutMcastPkts:COUNTER:600:0:U",
+				"DS:ifHCOutBcastPkts:COUNTER:600:0:U",
+				"DS:InOctets:COUNTER:600:0:U",
+	                        "DS:OutOctets:COUNTER:600:0:U", 
+				"DS:InUcastPkts:COUNTER:600:0:U", 
+	                        "DS:OutUcastPkts:COUNTER:600:0:U", 
 			 	NULL };
 static char *ifmib_tpl      = NULL;
 
@@ -65,10 +65,12 @@ static char *ifmib_valnames[] = {
 	NULL
 };
 
-static void ifmib_flush_data(char *devname, time_t tstamp, char *hostname, char *testname, char **values, 
+static void ifmib_flush_data(int ifmibinterval, 
+			     char *devname, time_t tstamp, char *hostname, char *testname, char **values, 
 			     int inidx, int outidx, int inUcastidx, int outUcastidx)
 {
 	setupfn("ifmib.%s.rrd", devname);
+	setupinterval(ifmibinterval);
 	sprintf(rrdvalues, "%d:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
 		(int)tstamp,
 		values[0], values[1], values[2], values[3],
@@ -87,6 +89,7 @@ int do_ifmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char *values[sizeof(ifmib_valnames)/sizeof(ifmib_valnames[0])];
 	int valcount = 0;
 	int incountidx = 16, outcountidx = 18, inUcastidx = 20, outUcastidx = 22;
+	int pollinterval = 0;
 
 	if (ifmib_tpl == NULL) ifmib_tpl = setup_template(ifmib_params);
 
@@ -107,10 +110,13 @@ int do_ifmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (*bol == '\0') {
 			/* Nothing */
 		}
+		else if (strncmp(bol, "Interval=", 9) == 0) {
+			pollinterval = atoi(bol+9);
+		}
 		else if (*bol == '[') {
 			/* New interface data begins */
 			if (devname && (valcount == 24)) {
-				ifmib_flush_data(devname, tstamp, hostname, testname, values, 
+				ifmib_flush_data(pollinterval, devname, tstamp, hostname, testname, values, 
 						 incountidx, outcountidx, inUcastidx, outUcastidx);
 				memset(values, 0, sizeof(values));
 				valcount = 0;
@@ -150,7 +156,7 @@ nextline:
 
 	/* Flush the last device */
 	if (devname && (valcount == 24)) {
-		ifmib_flush_data(devname, tstamp, hostname, testname, values, 
+		ifmib_flush_data(pollinterval, devname, tstamp, hostname, testname, values, 
 				 incountidx, outcountidx, inUcastidx, outUcastidx);
 		valcount = 0;
 	}
