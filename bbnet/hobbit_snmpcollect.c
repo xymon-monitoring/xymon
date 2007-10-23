@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.12 2007-09-11 14:27:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.13 2007-10-23 12:06:09 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -363,7 +363,7 @@ void starthosts(int resetstart)
 	/* startup as many hosts as we want to run in parallel */
 	for (rwalk = startpoint; (rwalk && (active_requests <= max_pending_requests)); rwalk = rwalk->next) {
 		struct snmp_session s;
-		struct snmp_pdu *req;
+		struct snmp_pdu *req = NULL;
 		oid Oid[MAX_OID_LEN];
 		unsigned int OidLen;
 
@@ -416,6 +416,8 @@ void starthosts(int resetstart)
 			break;
 		}
 
+		if (!req) continue;
+
 		if (snmp_send(rwalk->sess, req))
 			active_requests++;
 		else {
@@ -459,6 +461,7 @@ void readconfig(char *cfgfn)
 	struct req_t *reqitem = NULL;
 	struct oid_t *oitem;
 	int setnumber = 0;
+	int bbsleep = atoi(xgetenv("BBSLEEP"));
 
 	/* Check if config was modified */
 	if (cfgfiles) {
@@ -486,6 +489,26 @@ void readconfig(char *cfgfn)
 		bot = STRBUF(inbuf) + strspn(STRBUF(inbuf), " \t");
 
 		if (*bot == '[') {
+			char *intvl = strchr(bot, '/');
+
+			/*
+			 * See if we're running a non-standard interval.
+			 * If yes, then process only the records that match
+			 * this BBSLEEP setting.
+			 */
+			if (bbsleep != 300) {
+				/* Non-default interval. Skip the host if it HASN'T got an interval setting */
+				if (!intvl) continue;
+
+				/* Also skip the hosts that have an interval different from the current */
+				*intvl = '\0';	/* Clip the interval from the hostname */
+				if (atoi(intvl+1) != bbsleep) continue;
+			}
+			else {
+				/* Default interval. Skip the host if it HAS an interval setting */
+				if (intvl) continue;
+			}
+
 			reqitem = (req_t *)calloc(1, sizeof(req_t));
 			setnumber = 0;
 
@@ -582,7 +605,7 @@ void readconfig(char *cfgfn)
 		}
 
 		if (strncmp(bot, "ifmib=", 6) == 0) {
-			char *idx, *devname;
+			char *idx, *devname = NULL;
 			int i;
 			char oid[128];
 
@@ -590,6 +613,7 @@ void readconfig(char *cfgfn)
 
 			idx = strtok(bot+6, " \t");
 			if (idx) devname = strtok(NULL, " \r\n");
+			if (!devname) devname = idx;
 
 			if ((*idx == '(') || (*idx == '[') || (*idx == '{') || (*idx == '<')) {
 				/* Interface-by-name or interface-by-physaddr */
@@ -756,6 +780,8 @@ void resolveifnames(void)
 		if (!rwalk->wantedinterfaces || !rwalk->interfacenames) continue;
 
 		for (wantwalk = rwalk->wantedinterfaces; (wantwalk); wantwalk = wantwalk->next) {
+			ifwalk = NULL;
+
 			switch (wantwalk->idtype) {
 			  case ID_DESCR:
 				for (ifwalk = rwalk->interfacenames; (ifwalk && strcmp(ifwalk->descr, wantwalk->id)); ifwalk = ifwalk->next) ;
