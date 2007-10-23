@@ -16,7 +16,7 @@ PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
 bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS)
 
 hobbitping: $(PINGTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libbbgen.a $(NETLIBS)
@@ -65,11 +65,11 @@ beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
-contest: contest.c
+contest: contest.c ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o ./libcares.a ../lib/libbbgen.a $(NETLIBS)
 
 
-hobbit_snmpcollect: hobbit_snmpcollect.o
+hobbit_snmpcollect: hobbit_snmpcollect.o ../lib/libbbgen.a
 	$(CC) $(LDFLAGS) -o $@ hobbit_snmpcollect.o `net-snmp-config --libs` ../lib/libbbgen.a $(NETLIBS)
 
 hobbit_snmpcollect.o: hobbit_snmpcollect.c
