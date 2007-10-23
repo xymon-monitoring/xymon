@@ -363,6 +363,20 @@ Used together with --reportopts, this causes bbgen to generate an
 availability report in the form of a comma-separated values (CSV) file.
 This format is commonly used for importing into spreadsheets for further
 processing.
+.br
+The CSV file includes Unix timestamps. To display these as human readable
+times in Excel, the formula \fB=C2/86400+DATEVALUE(1-jan-1970)\fR (if
+you have the Unix timestamp in the cell C2) can be used. The result cell 
+should be formatted as a date/time field. Note that the timestamps are in 
+UTC, so you may also need to handle local timezone and DST issues yourself.
+.sp
+.IP "--csvdelim=DELIMITER"
+By default, a comma is used to delimit fields in the CSV output. Some
+non-english spreadsheets use a different delimiter, typically semi-colon.
+To generate a CSV file with the proper delimiter, you can use this option
+to set the character used as delimiter. E.g. "--csvdelim=;" - note that 
+this normally should be in double quotes, to prevent the Unix shell from
+interpreting the delimiter character as a commandline delimiter.
 .sp
 .IP "--snapshot=TIME"
 Generate a snapshot of the Hobbit pages, as they appeared at
