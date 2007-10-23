@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.51 2007-09-10 12:40:08 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.52 2007-10-23 12:15:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -28,6 +28,7 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.51 2007-09-10 12:40:08 henrik Exp $";
 #include "hobbitd_rrd.h"
 #include "do_rrd.h"
 
+
 char *rrddir = NULL;
 int  log_double_updates = 1;
 
@@ -39,6 +40,10 @@ static char rrdvalues[MAX_LINE_LEN];
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];	/* This one used by the modules */
 static char filedir[PATH_MAX];	/* This one used here */
+
+/* How often do we feed data into the RRD file */
+#define DEFAULT_RRD_INTERVAL 300
+static int  rrdinterval = DEFAULT_RRD_INTERVAL;
 
 #define CACHESZ 6
 static int updcache_keyofs = -1;
@@ -136,6 +141,11 @@ static void setupfn3(char *format, char *param1, char *param2, char *param3)
 	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
 }
 
+static void setupinterval(int intvl)
+{
+	rrdinterval = (intvl ? intvl : DEFAULT_RRD_INTERVAL);
+}
+
 static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 {
 	/* Flush any updates we've cached */
@@ -172,6 +182,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 	char *updcachekey;
 	RbtIterator handle;
 	updcacheitem_t *cacheitem = NULL;
+	int pollinterval;
+
+	/* Reset the RRD poll interval */
+	pollinterval = rrdinterval;
+	rrdinterval = DEFAULT_RRD_INTERVAL;
 
 	if ((rrdfn == NULL) || (strlen(rrdfn) == 0)) {
 		errprintf("RRD update for no file\n");
@@ -215,6 +230,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 	if (stat(filedir, &st) == -1) {
 		char **rrdcreate_params, **rrddefinitions;
 		int rrddefcount, i;
+		char *rrakey = NULL;
+		char stepsetting[10];
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
@@ -222,14 +239,22 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 		for (pcount = 0; (creparams[pcount]); pcount++);
 
 		/* Add the RRA definitions to the create parameter set */
-		rrddefinitions = get_rrd_definition(testname, &rrddefcount);
-		rrdcreate_params = (char **)calloc(2 + pcount + rrddefcount + 1, sizeof(char *));
+		if (pollinterval != DEFAULT_RRD_INTERVAL) {
+			rrakey = (char *)malloc(strlen(testname) + 10);
+			sprintf(rrakey, "%s/%d", testname, pollinterval);
+		}
+		sprintf(stepsetting, "%d", pollinterval);
+
+		rrddefinitions = get_rrd_definition((rrakey ? rrakey : testname), &rrddefcount);
+		rrdcreate_params = (char **)calloc(4 + pcount + rrddefcount + 1, sizeof(char *));
 		rrdcreate_params[0] = "rrdcreate";
 		rrdcreate_params[1] = filedir;
+		rrdcreate_params[2] = "-s";
+		rrdcreate_params[3] = stepsetting;
 		for (i=0; (i < pcount); i++)
-			rrdcreate_params[2+i]      = creparams[i];
+			rrdcreate_params[4+i]      = creparams[i];
 		for (i=0; (i < rrddefcount); i++, pcount++)
-			rrdcreate_params[2+pcount] = rrddefinitions[i];
+			rrdcreate_params[4+pcount] = rrddefinitions[i];
 
 		if (debug) {
 			for (i = 0; (rrdcreate_params[i]); i++) {
@@ -242,8 +267,9 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 		 * we MUST reset this before every call.
 		 */
 		optind = opterr = 0; rrd_clear_error();
-		result = rrd_create(2+pcount, rrdcreate_params);
+		result = rrd_create(4+pcount, rrdcreate_params);
 		xfree(rrdcreate_params);
+		if (rrakey) xfree(rrakey);
 
 		if (result != 0) {
 			errprintf("RRD error creating %s: %s\n", filedir, rrd_get_error());
