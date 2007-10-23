@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.63 2007-10-16 11:54:10 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.64 2007-10-23 12:21:24 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -443,7 +443,7 @@ void lookup_meta(char *keybuf, char *rrdfn)
 		eoln = strchr(val, '\n');
 		if (eoln) *eoln = '\0';
 
-		strcpy(keybuf, val);
+		if (strlen(val) > 0) strcpy(keybuf, val);
 	}
 }
 
