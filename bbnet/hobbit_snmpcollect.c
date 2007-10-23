@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.13 2007-10-23 12:06:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.14 2007-10-23 12:19:51 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -881,8 +881,10 @@ void sendresult(void)
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		clearstrbuffer(ifmibdata);
-		sprintf(msgline, "status %s.ifmib green %s\n", rwalk->hostname, timestamp);
+		sprintf(msgline, "status+%d %s.ifmib green %s\n", 
+			2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, timestamp);
 		addtobuffer(ifmibdata, msgline);
+		sprintf(msgline, "Interval=%d\n", atoi(xgetenv("BBSLEEP")));
 
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
 			if (strcmp(currdev, owalk->devname)) {
