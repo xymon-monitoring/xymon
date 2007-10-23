@@ -2,7 +2,7 @@
 <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
    <TABLE BORDER=0 SUMMARY="Eventlog time period">
      <TR>
-       <TD><TABLE BORDER=0>
+       <TD><TABLE BORDER=0 SUMMARY="Time criteria">
          <TR>
            <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD> 
            <TD><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40 ID="starttime"></TD>
@@ -78,10 +78,19 @@
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Ignore dialup hosts</B></FONT></TD>
-       <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=CHECKBOX NAME="NODIALUPS"></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+        <td colspan=4>
+	  <table summary="Selection options" border=0><tr>
+	      <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Only Critical systems</B></FONT></TD>
+              <TD WIDTH=10>&nbsp;</TD>
+              <TD><INPUT TYPE=CHECKBOX NAME="ONLYCRITITCAL"></TD>
+              <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+
+	      <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Ignore dialup hosts</B></FONT></TD>
+              <TD WIDTH=10>&nbsp;</TD>
+              <TD><INPUT TYPE=CHECKBOX NAME="NODIALUPS"></TD>
+              <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+	  </tr></table>
+	</td>
      </TR>
 
      <TR>
