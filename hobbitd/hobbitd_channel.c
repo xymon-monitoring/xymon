@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_channel.c,v 1.60 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_channel.c,v 1.61 2007-10-26 10:48:00 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -648,6 +648,8 @@ int main(int argc, char *argv[])
 		for (handle = rbtBegin(peers); (handle != rbtEnd(peers)); handle = rbtNext(peers, handle)) {
 			int canwrite = 1, hasfailed = 0;
 			hobbit_peer_t *pwalk;
+			time_t msgtimeout = now - MSGTIMEOUT;
+			int flushcount = 0;
 
 			pwalk = (hobbit_peer_t *) gettreeitem(peers, handle);
 			if (pwalk->msghead == NULL) continue; /* Ignore peers with nothing queued */
@@ -668,18 +670,14 @@ int main(int argc, char *argv[])
 			}
 
 			/* See if we have stale messages queued */
-			if ((pwalk->msghead->tstamp + MSGTIMEOUT) < now) {
-				/* Stale message at head of queue, flush all that are stale */
-				time_t msgtimeout = now - MSGTIMEOUT;
-				int count = 0;
+			while (pwalk->msghead && (pwalk->msghead->tstamp < msgtimeout)) {
+				flushmessage(pwalk);
+				flushcount++;
+			}
 
-				while (pwalk->msghead->tstamp < msgtimeout) {
-					flushmessage(pwalk);
-					count++;
-				}
-
+			if (flushcount) {
 				errprintf("Flushed %d stale messages for %s:%d\n",
-					  count,
+					  flushcount,
 				  	  inet_ntoa(pwalk->peeraddr.sin_addr), 
 					  ntohs(pwalk->peeraddr.sin_port));
 			}
