@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.20 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.21 2007-10-26 12:03:12 henrik Exp $";
 
 #include "config.h"
 
@@ -140,7 +140,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 			errprintf("Invalid client IP: %s (req %lu)\n", destip, newconn->seq);
 			newconn->client->nexterrortxt = now + errorloginterval;
 		}
-		xfree(newconn)
+		xfree(newconn);
 		goto done;
 	}
 
