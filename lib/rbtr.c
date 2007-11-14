@@ -393,8 +393,8 @@ int name_compare(void *a, void *b)
 
 int int_compare(void *a, void *b)
 {
-	if ((int)a < (int)b) return -1;
-	else if ((int)a > (int)b) return 1;
+	if (*((int *)a) < *((int *)b)) return -1;
+	else if ((*(int *)a) > (*(int *)b)) return 1;
 	else return 0;
 }
 
