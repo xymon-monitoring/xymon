@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.36 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.37 2007-11-26 22:43:06 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -178,6 +178,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	char *exthandler = NULL;
 	char *extids = NULL;
+	char *processor = NULL;
 	struct sockaddr_un ctlsockaddr;
 	int ctlsocket;
 
@@ -197,6 +198,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--extra-tests=")) {
 			char *p = strchr(argv[argi], '=');
 			extids = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--processor=")) {
+			char *p = strchr(argv[argi], '=');
+			processor = strdup(p+1);
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
@@ -244,6 +249,9 @@ int main(int argc, char *argv[])
 
 	/* Load the RRD definitions */
 	load_rrddefs();
+
+	/* If we are passing data to an external processor, create the pipe to it */
+	setup_extprocessor(processor);
 
 	running = 1;
 	while (running) {
@@ -409,6 +417,9 @@ int main(int argc, char *argv[])
 	errprintf("Shutting down, flushing cached updates to disk\n");
 	rrdcacheflushall();
 	errprintf("Cache flush completed\n");
+
+	/* Close the external processor */
+	shutdown_extprocessor();
 
 	/* Close the control socket */
 	close(ctlsocket);
