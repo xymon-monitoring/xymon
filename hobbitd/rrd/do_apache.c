@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.12 2007-07-24 08:45:01 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.13 2007-11-26 21:41:31 henrik Exp $";
 
 int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -32,7 +32,7 @@ int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	if ((p = strstr(msg, "BusyServers:")) != NULL) memcpy(p, "BusyWorkers:", strlen("BusyWorkers:"));
 	if ((p = strstr(msg, "IdleServers:")) != NULL) memcpy(p, "IdleWorkers:", strlen("IdleWorkers:"));
 
-	setupfn("%s", "apache.rrd");
+	setupfn("%s.rrd", "apache");
 	sprintf(rrdvalues, "%d", (int)tstamp);
 	i = 0;
 	while (markers[i]) {

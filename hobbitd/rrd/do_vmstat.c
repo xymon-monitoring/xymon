@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.26 2007-07-24 08:44:07 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.27 2007-11-26 21:41:31 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -351,7 +351,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	/* Must do this now, to check on the layout of any existing file */
-	setupfn("%s", "vmstat.rrd");
+	setupfn("%s.rrd", "vmstat");
 
 	switch (ostype) {
 	  case OS_SOLARIS: 

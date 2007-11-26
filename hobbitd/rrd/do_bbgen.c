@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.17 2007-07-24 08:45:01 henrik Exp $";
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.18 2007-11-26 21:41:31 henrik Exp $";
 
 int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -111,30 +111,30 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 
 	if (strcmp("bbgen", testname) != 0) {
-		setupfn("bbgen.%s.rrd", testname);
+		setupfn2("%s.%s.rrd", "bbgen", testname);
 	}
 	else {
-		setupfn("%s", "bbgen.rrd");
+		setupfn("%s.rrd", "bbgen");
 	}
 	sprintf(rrdvalues, "%d:%.2f", (int)tstamp, runtime);
 	create_and_update_rrd(hostname, testname, bbgen_params, bbgen_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
-		setupfn("hobbit.%s.rrd", testname);
+		setupfn2("%s.%s.rrd", "hobbit", testname);
 	}
 	else {
-		setupfn("%s", "hobbit.rrd");
+		setupfn("%s.rrd", "hobbit");
 	}
 	sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, hostcount, statuscount);
 	create_and_update_rrd(hostname, testname, bbgen2_params, bbgen2_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
-		setupfn("hobbit2.%s.rrd", testname);
+		setupfn2("%s.%s.rrd", "hobbit2", testname);
 	}
 	else {
-		setupfn("%s", "hobbit2.rrd");
+		setupfn("%s.rrd", "hobbit2");
 	}
 	sprintf(rrdvalues, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f", 
 		(int)tstamp, 

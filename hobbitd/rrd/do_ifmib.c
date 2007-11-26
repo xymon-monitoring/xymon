@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.3 2007-10-23 12:15:56 henrik Exp $";
+static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.4 2007-11-26 21:41:31 henrik Exp $";
 
 static char *ifmib_params[] = { 
 	                        "DS:ifInNUcastPkts:COUNTER:600:0:U", 
@@ -69,7 +69,7 @@ static void ifmib_flush_data(int ifmibinterval,
 			     char *devname, time_t tstamp, char *hostname, char *testname, char **values, 
 			     int inidx, int outidx, int inUcastidx, int outUcastidx)
 {
-	setupfn("ifmib.%s.rrd", devname);
+	setupfn2("%s.%s.rrd", "ifmib", devname);
 	setupinterval(ifmibinterval);
 	sprintf(rrdvalues, "%d:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",
 		(int)tstamp,

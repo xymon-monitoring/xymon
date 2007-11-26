@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.20 2007-07-24 08:45:01 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.21 2007-11-26 21:41:31 henrik Exp $";
 
 static char *memory_params[]      = { "DS:realmempct:GAUGE:600:0:U", NULL };
 static char *memory_tpl           = NULL;
@@ -40,16 +40,16 @@ void do_memory_rrd_update(time_t tstamp, char *hostname, char *testname, int phy
 {
 	if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
 
-	setupfn("%s", "memory.real.rrd");
+	setupfn2("%s.%s.rrd", "memory", "real");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, physval);
 	create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
 
-	setupfn("%s", "memory.swap.rrd");
+	setupfn2("%s.%s.rrd", "memory", "swap");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, swapval);
 	create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
 
 	if ((actval >= 0) && (actval <= 100)) {
-		setupfn("%s", "memory.actual.rrd");
+		setupfn2("%s.%s.rrd", "memory", "actual");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, actval);
 		create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
 	}
@@ -91,7 +91,7 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			p = strchr(p, ':');
 			if (p) {
 				val = atoi(p+1);
-				setupfn("%s", "memory.tcb.rrd");
+				setupfn2("%s.%s.rrd", "memory", "tcb");
 				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
 				create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
 			}
@@ -102,7 +102,7 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			p = strchr(p, ':');
 			if (p) {
 				val = atoi(p+1);
-				setupfn("%s", "memory.dcb.rrd");
+				setupfn2("%s.%s.rrd", "memory", "dcb");
 				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
 				create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
 			}
@@ -113,7 +113,7 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			p = strchr(p, ':');
 			if (p) {
 				val = atoi(p+1);
-				setupfn("%s", "memory.ltch.rrd");
+				setupfn2("%s.%s.rrd", "memory", "ltch");
 				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
 				create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
 			}

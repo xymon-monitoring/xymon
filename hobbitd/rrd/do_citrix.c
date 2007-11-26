@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char citrix_rcsid[] = "$Id: do_citrix.c,v 1.14 2007-07-24 08:45:01 henrik Exp $";
+static char citrix_rcsid[] = "$Id: do_citrix.c,v 1.15 2007-11-26 21:41:31 henrik Exp $";
 
 int do_citrix_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -23,7 +23,7 @@ int do_citrix_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	p = strstr(msg, " users active\n");
 	while (p && (p > msg) && (*p != '\n')) p--;
 	if (p && (sscanf(p+1, "\n%d users active\n", &users) == 1)) {
-		setupfn("%s", "citrix.rrd");
+		setupfn("%s.rrd", "citrix");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
 		return create_and_update_rrd(hostname, testname, citrix_params, citrix_tpl);
 	}

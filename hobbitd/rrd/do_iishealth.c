@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.11 2007-07-24 08:45:01 henrik Exp $";
+static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.12 2007-11-26 21:41:31 henrik Exp $";
 
 int do_iishealth_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -33,7 +33,7 @@ int do_iishealth_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				tok = strtok(NULL, " \t\r\n");
 				if (tok == NULL) continue;
 
-				setupfn("%s", "iishealth.connections.rrd");
+				setupfn2("%s.%s.rrd", "iishealth", "connections");
 				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
 				havedata = 1;
 			}
@@ -41,7 +41,7 @@ int do_iishealth_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				tok = strtok(NULL, " \t\r\n");
 				if (tok == NULL) continue;
 
-				setupfn("%s", "iishealth.requestqueued.rrd");
+				setupfn2("%s.%s.rrd", "iishealth", "requestqueued");
 				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
 				havedata = 1;
 			}
@@ -49,7 +49,7 @@ int do_iishealth_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				tok = strtok(NULL, " \t\r\n");
 				if (tok == NULL) continue;
 
-				setupfn("%s", "iishealth.sessions.rrd");
+				setupfn2("%s.%s.rrd", "iishealth", "sessions");
 				sprintf(rrdvalues, "%d:%lu", (int)tstamp, atol(tok));
 				havedata = 1;
 			}

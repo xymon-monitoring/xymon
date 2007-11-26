@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.18 2007-07-24 08:45:01 henrik Exp $";
+static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.19 2007-11-26 21:41:31 henrik Exp $";
 
 int do_mailq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -47,11 +47,11 @@ int do_mailq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		p = inqueue + strcspn(inqueue, "0123456789"); inq = atoi(p);
 
 		/* Update RRD's */
-		setupfn("%s", "mailqin.rrd");
+		setupfn("%s.rrd", "mailqin");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, inq);
 		create_and_update_rrd(hostname, testname, mailq_params, mailq_tpl);
 
-		setupfn("%s", "mailqout.rrd");
+		setupfn("%s.rrd", "mailqout");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, outq);
 		create_and_update_rrd(hostname, testname, mailq_params, mailq_tpl);
 		return 0;
@@ -71,7 +71,7 @@ int do_mailq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 			mailq = atoi(valptr);
 
-			setupfn("%s", "mailq.rrd");
+			setupfn("%s.rrd", "mailq");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, mailq);
 			return create_and_update_rrd(hostname, testname, mailq_params, mailq_tpl);
 		}

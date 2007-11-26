@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.15 2007-07-24 08:45:01 henrik Exp $";
+static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.16 2007-11-26 21:41:31 henrik Exp $";
 
 int do_bbtest_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
@@ -23,10 +23,10 @@ int do_bbtest_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	p = strstr(msg, "TIME TOTAL");
 	if (p && (sscanf(p, "TIME TOTAL %f", &runtime) == 1)) {
 		if (strcmp("bbtest", testname) != 0) {
-			setupfn("bbtest.%s.rrd", testname);
+			setupfn2("%s.%s.rrd", "bbtest", testname);
 		}
 		else {
-			setupfn("%s", "bbtest.rrd");
+			setupfn("%s.rrd", "bbtest");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
 		return create_and_update_rrd(hostname, testname, bbtest_params, bbtest_tpl);

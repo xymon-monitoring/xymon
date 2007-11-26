@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.16 2007-07-24 08:45:01 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.17 2007-11-26 21:41:31 henrik Exp $";
 
 int do_ntpstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -34,7 +34,7 @@ int do_ntpstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	if (gotdata) {
-		setupfn("%s", "ntpstat.rrd");
+		setupfn("%s.rrd", "ntpstat");
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, offset);
 		return create_and_update_rrd(hostname, testname, ntpstat_params, ntpstat_tpl);
 	}

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.13 2007-07-24 08:45:01 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.14 2007-11-26 21:41:31 henrik Exp $";
 
 int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
@@ -98,10 +98,10 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	if (gotany) {
 		if (strcmp("hobbitd", testname) != 0) {
-			setupfn("hobbitd.%s.rrd", testname);
+			setupfn2("%s.%s.rrd", "hobbitd", testname);
 		}
 		else {
-			setupfn("%s", "hobbitd.rrd");
+			setupfn("%s.rrd", "hobbitd");
 		}
 
 		MEMUNDEFINE(valstr);
