@@ -51,6 +51,39 @@ List of testnames that are handled by the external script. See the
 CUSTOM RRD DATA section below. Note that NCV graphs should NOT be
 listed here, but in the TEST2RRD environment variable - see below.
 
+.IP "--processor=COMMAND"
+Feed the raw RRD data into COMMAND via standard input. COMMAND must be
+a simple command with no options; if necessary, COMMAND can be a script
+that runs the real command with the necessary options. The data sent to
+COMMAND consists of lines of text of the form
+.br
+   dsname1[:dsname2] time:value1[:value2] rrdtype [key1] [key2]
+.br
+First the dataset names, corresponding to the DS definitions in the RRD files.
+Next the timestamp of the update, followed by the values in the same order
+as the dsname-list. Third item is the type of RRD file. After that there may
+be between 0-2 additional keys: For "disk" this is the filesystem mountpoint,
+for "tcp" tests it is the service name, for "tcp" "http" tests there is also
+the URL checked. Note that filesystem names and URLs have forwardslash substituted
+by comma. See the hobbitd/rrd/*.c sourcecode for details, look for the
+"setupfn" function calls. An example:
+.br
+.sp
+.nf
+la 1196115478:7 la
+la 1196115478:169 procs
+la 1196115478:1 users
+la 1196115478:244 clock
+pct:used 1196115478:63:62338144 disk ,root
+realmempct 1196115478:76 memory real
+realmempct 1196115478:0 memory swap
+realmempct 1196115478:20 memory actual
+sec 1196115478:0.03 tcp conn
+sec 1196115478:1.38 tcp http osiris.hswn.dk,
+.fi
+
+
+
 .SH ENVIRONMENT
 .IP TEST2RRD
 Defines the mapping between a status-log columnname and the corresponding
