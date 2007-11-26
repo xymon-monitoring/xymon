@@ -20,6 +20,8 @@ extern void setup_exthandler(char *handlerpath, char *ids);
 extern void update_rrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, char *sender, hobbitrrd_t *ldef);
 extern void rrdcacheflushall(void);
 extern void rrdcacheflushhost(char *hostname);
+extern void setup_extprocessor(char *cmd);
+extern void shutdown_extprocessor(void);
 
 #endif
 

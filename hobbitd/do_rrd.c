@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.52 2007-10-23 12:15:01 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.53 2007-11-26 22:44:12 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,14 +32,18 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.52 2007-10-23 12:15:01 henrik Exp $";
 char *rrddir = NULL;
 int  log_double_updates = 1;
 
+static int  processorfd = 0;
+static FILE *processorstream = NULL;
+
 static char *exthandler = NULL;
 static char **extids = NULL;
 
 static char rrdvalues[MAX_LINE_LEN];
 
 static char *senderip = NULL;
-static char rrdfn[PATH_MAX];	/* This one used by the modules */
-static char filedir[PATH_MAX];	/* This one used here */
+static char rrdfn[PATH_MAX];	/* Base filename without directories, from setupfn() */
+static char filedir[PATH_MAX];	/* Full path filename */
+static char *fnparams[4] = { NULL, };	/* Saved parameters passed to setupfn() */
 
 /* How often do we feed data into the RRD file */
 #define DEFAULT_RRD_INTERVAL 300
@@ -83,6 +87,58 @@ void setup_exthandler(char *handlerpath, char *ids)
 	MEMUNDEFINE(rrdvalues);
 }
 
+void setup_extprocessor(char *cmd)
+{
+
+	int n;
+	int pfd[2];
+	pid_t childpid;
+
+	if (!cmd) return;
+
+	processorfd = 0;
+
+	n = pipe(pfd);
+	if (n == -1) {
+		errprintf("Could not get a pipe: %s\n", strerror(errno));
+	}
+	else {
+		childpid = fork();
+		if (childpid == -1) {
+			errprintf("Could not fork channel handler: %s\n", strerror(errno));
+		}
+		else if (childpid == 0) {
+			/* The channel handler child */
+			n = dup2(pfd[0], STDIN_FILENO);
+			close(pfd[0]); close(pfd[1]);
+			n = execvp(cmd, NULL);
+
+			/* We should never go here */
+			errprintf("exec() failed for child command %s: %s\n", cmd, strerror(errno));
+			exit(1);
+		}
+		else {
+			/* Parent process continues */
+			close(pfd[0]);
+			processorfd = pfd[1];
+			processorstream = fdopen(processorfd, "w");
+			errprintf("External processor '%s' started\n", cmd);
+		}
+	}
+}
+
+void shutdown_extprocessor(void)
+{
+	if (!processorfd) return;
+
+	close(processorfd);
+	processorfd = 0;
+	processorstream = NULL;
+
+	errprintf("External processor stopped\n");
+}
+
+
 static char *setup_template(char *params[])
 {
 	int i;
@@ -118,6 +174,9 @@ static void setupfn(char *format, char *param)
 {
 	char *p;
 
+	memset(fnparams, 0, sizeof(fnparams));
+	fnparams[0] = param;
+
 	snprintf(rrdfn, sizeof(rrdfn)-1, format, param);
 	rrdfn[sizeof(rrdfn)-1] = '\0';
 	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
@@ -127,6 +186,10 @@ static void setupfn2(char *format, char *param1, char *param2)
 {
 	char *p;
 
+	memset(fnparams, 0, sizeof(fnparams));
+	fnparams[0] = param1;
+	fnparams[1] = param2;
+
 	snprintf(rrdfn, sizeof(rrdfn)-1, format, param1, param2);
 	rrdfn[sizeof(rrdfn)-1] = '\0';
 	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
@@ -135,6 +198,11 @@ static void setupfn2(char *format, char *param1, char *param2)
 static void setupfn3(char *format, char *param1, char *param2, char *param3)
 {
 	char *p;
+
+	memset(fnparams, 0, sizeof(fnparams));
+	fnparams[0] = param1;
+	fnparams[1] = param2;
+	fnparams[2] = param3;
 
 	snprintf(rrdfn, sizeof(rrdfn)-1, format, param1, param2, param3);
 	rrdfn[sizeof(rrdfn)-1] = '\0';
@@ -276,6 +344,23 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 			MEMUNDEFINE(filedir);
 			MEMUNDEFINE(rrdvalues);
 			return 1;
+		}
+	}
+
+	/*
+	 * See if we want the data to go to an external handler.
+	 */
+	if (processorstream) {
+		int i, n;
+
+		n = fprintf(processorstream, "%s %s", template, rrdvalues);
+		for (i=0; ((n >= 0) && fnparams[i]); i++) n = fprintf(processorstream, " %s", fnparams[i]);
+		if (n >= 0) n = fprintf(processorstream, "\n");
+		if (n >= 0) fflush(processorstream);
+
+		if (n == -1) {
+			errprintf("Ext-processor write failed: %s\n", strerror(errno));
+			shutdown_extprocessor();
 		}
 	}
 
