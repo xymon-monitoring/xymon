@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.53 2007-11-26 22:44:12 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.54 2007-11-28 06:34:27 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -353,7 +353,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 	if (processorstream) {
 		int i, n;
 
-		n = fprintf(processorstream, "%s %s", template, rrdvalues);
+		n = fprintf(processorstream, "%s %s %s", template, rrdvalues, hostname);
 		for (i=0; ((n >= 0) && fnparams[i]); i++) n = fprintf(processorstream, " %s", fnparams[i]);
 		if (n >= 0) n = fprintf(processorstream, "\n");
 		if (n >= 0) fflush(processorstream);

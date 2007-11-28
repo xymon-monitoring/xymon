@@ -61,25 +61,25 @@ COMMAND consists of lines of text of the form
 .br
 First the dataset names, corresponding to the DS definitions in the RRD files.
 Next the timestamp of the update, followed by the values in the same order
-as the dsname-list. Third item is the type of RRD file. After that there may
-be between 0-2 additional keys: For "disk" this is the filesystem mountpoint,
-for "tcp" tests it is the service name, for "tcp" "http" tests there is also
-the URL checked. Note that filesystem names and URLs have forwardslash substituted
-by comma. See the hobbitd/rrd/*.c sourcecode for details, look for the
-"setupfn" function calls. An example:
+as the dsname-list. Third item is the hostname, fourth is the type of RRD file. 
+After that there may be between 0-2 additional keys: For "disk" this is the 
+filesystem mountpoint, for "tcp" tests it is the service name, for "tcp" "http" 
+tests there is also the URL checked. Note that filesystem names and URLs have 
+forward slash substituted by comma. See the hobbitd/rrd/*.c sourcecode for details, 
+look for the "setupfn" function calls. An example:
 .br
 .sp
 .nf
-la 1196115478:7 la
-la 1196115478:169 procs
-la 1196115478:1 users
-la 1196115478:244 clock
-pct:used 1196115478:63:62338144 disk ,root
-realmempct 1196115478:76 memory real
-realmempct 1196115478:0 memory swap
-realmempct 1196115478:20 memory actual
-sec 1196115478:0.03 tcp conn
-sec 1196115478:1.38 tcp http osiris.hswn.dk,
+la 1196115478:7 myhost la
+la 1196115478:169 myhost procs
+la 1196115478:1 myhost users
+la 1196115478:244 myhost clock
+pct:used 1196115478:63:62338144 myhost disk ,root
+realmempct 1196115478:76 myhost memory real
+realmempct 1196115478:0 myhost memory swap
+realmempct 1196115478:20 myhost memory actual
+sec 1196115478:0.03 tcp myhost conn
+sec 1196115478:1.38 myhost tcp http www.hobbitmon.com,
 .fi
 
 
