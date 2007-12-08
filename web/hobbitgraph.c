@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.64 2007-10-23 12:21:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.65 2007-12-08 12:29:04 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -126,7 +126,6 @@ void request_cacheflush(char *hostname)
 	DIR *dir;
 	struct dirent *d;
 	int ctlsocket = -1;
-	char fn[PATH_MAX];
 
 	req = (char *)malloc(strlen(hostname)+3);
 	sprintf(req, "/%s/", hostname);
@@ -611,6 +610,19 @@ int rrd_name_compare(const void *v1, const void *v2)
 {
 	rrddb_t *r1 = (rrddb_t *)v1;
 	rrddb_t *r2 = (rrddb_t *)v2;
+	char *endptr;
+	long numkey1, numkey2;
+	int key1isnumber, key2isnumber;
+
+	/* See if the keys are all numeric; if yes, then do a numeric sort */
+	numkey1 = strtol(r1->key, &endptr, 10); key1isnumber = (*endptr == '\0');
+	numkey2 = strtol(r2->key, &endptr, 10); key2isnumber = (*endptr == '\0');
+
+	if (key1isnumber && key2isnumber) {
+		if (numkey1 < numkey2) return -1;
+		else if (numkey1 > numkey2) return 1;
+		else return 0;
+	}
 
 	return strcmp(r1->key, r2->key);
 }
