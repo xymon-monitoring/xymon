@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.44 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.45 2007-12-11 22:36:19 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -566,7 +566,6 @@ int main(int argc, char *argv[])
 					twalk->exitcode = -WTERMSIG(status);
 					twalk->failcount++;
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
-					twalk->failcount++;
 				}
 
 				if (twalk->group) twalk->group->currentuse--;
