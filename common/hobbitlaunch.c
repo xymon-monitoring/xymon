@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.45 2007-12-11 22:36:19 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.46 2007-12-11 22:37:47 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -247,7 +247,7 @@ void load_config(char *conffn)
 			int maxuse;
 			grouplist_t *gwalk;
 
-			p += 3;
+			p += 6;
 			p += strspn(p, " \t");
 			groupname = p;
 			p += strcspn(p, " \t");
