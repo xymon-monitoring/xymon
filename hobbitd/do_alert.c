@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.98 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.99 2008-01-02 14:13:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -422,14 +422,21 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
 					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
+					int msglen;
 
 					cfidtxt = (char *)malloc(strlen("CFID=") + 10);
 					sprintf(cfidtxt, "CFID=%d", recip->cfid);
 					putenv(cfidtxt);
 
 					p = message_text(alert, recip);
-					bbalphamsg = (char *)malloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
-					sprintf(bbalphamsg, "BBALPHAMSG=%s", p);
+					msglen = strlen(p);
+					if (msglen > MAX_ALERTMSG_SCRIPTS) {
+						dbgprintf("Cropping large alert message from %d to %d bytes\n", msglen, MAX_ALERTMSG_SCRIPTS);
+						msglen = MAX_ALERTMSG_SCRIPTS;
+					}
+					msglen += strlen("BBALPHAMSG=");
+					bbalphamsg = (char *)malloc(msglen + 1);
+					snprintf(bbalphamsg, msglen, "BBALPHAMSG=%s", p);
 					putenv(bbalphamsg);
 
 					ackcode = (char *)malloc(strlen("ACKCODE=") + 10);

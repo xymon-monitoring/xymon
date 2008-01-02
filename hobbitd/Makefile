@@ -52,7 +52,7 @@ hobbitd_rrd: $(RRDOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
 
 do_alert.o: do_alert.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -DMAX_ALERTMSG_SCRIPTS=$(MAXALERTMSGSZ) -c -o $@ do_alert.c
 
 do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
 	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) -c -o $@ do_rrd.c
