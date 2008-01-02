@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.27 2007-11-26 21:41:31 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.28 2008-01-02 14:35:01 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -381,6 +381,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_HPUX: 
 		layout = vmstat_hpux_layout; break;
 	  case OS_WIN32:
+	  case OS_WIN32_BBWIN:
 		errprintf("Cannot handle Win32 vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_FREEBSD:

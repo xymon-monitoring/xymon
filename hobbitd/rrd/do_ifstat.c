@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.15 2007-11-26 21:41:31 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.16 2008-01-02 14:35:01 henrik Exp $";
 
 static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
@@ -248,6 +248,11 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		        if (pickdata(bol, ifstat_sco_sv_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 			
+		  case OS_WIN32_BBWIN:
+			/* Uses same layout as OpenBSD */
+			if (pickdata(bol, ifstat_openbsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			break;
+
 		  case OS_OSF:
 		  case OS_IRIX:
 		  case OS_SNMP:

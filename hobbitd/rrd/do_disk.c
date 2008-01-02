@@ -8,14 +8,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.35 2007-07-24 08:45:01 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.36 2008-01-02 14:35:01 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *disk_params[] = { "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", NULL };
 	static char *disk_tpl      = NULL;
 
-	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE } dsystype;
+	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
 	static pcre *inclpattern = NULL;
@@ -47,6 +47,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
 	else if (strstr(msg, "NetWare Volumes")) dsystype = DT_NETWARE;
 	else if (strstr(msg, "NetAPP")) dsystype = DT_NETAPP;
+	else if (strstr(msg, "Summary")) dsystype = DT_BBWIN; /* BBWin > 0.10 is almost like Windows/NT */
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
 
@@ -118,6 +119,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			aused = 0; /* Not available */
 			break;
 		  case DT_NT:
+		  case DT_BBWIN:
 			diskname = xmalloc(strlen(columns[0])+2);
 			sprintf(diskname, "/%s", columns[0]);
 			p = strchr(columns[4], '%'); if (p) *p = ' ';
