@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.46 2007-12-11 22:37:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.47 2008-01-02 12:54:34 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -56,7 +56,7 @@ typedef struct tasklist_t {
 	int disabled;
 	grouplist_t *group;
 	char *cmd;
-	int interval;
+	int interval, maxruntime;
 	char *logfile;
 	char *envfile, *envarea, *onhostptn;
 	pid_t pid;
@@ -154,6 +154,10 @@ void update_task(tasklist_t *newtask)
 	}
 	else if (twalk->interval != newtask->interval) {
 		twalk->interval = newtask->interval;
+		twalk->cfload = 0;
+	}
+	else if (twalk->maxruntime != newtask->maxruntime) {
+		twalk->maxruntime = newtask->maxruntime;
 		twalk->cfload = 0;
 	}
 	else if (twalk->disabled != newtask->disabled) {
@@ -277,6 +281,17 @@ void load_config(char *conffn)
 			  case 'd': curtask->interval *= 86400; break;	/* Days */
 			}
 		}
+		else if (curtask && (strncasecmp(p, "MAXTIME ", 8) == 0)) {
+			char *tspec;
+			p += 8;
+			curtask->maxruntime = atoi(p);
+			tspec = p + strspn(p, "0123456789");
+			switch (*tspec) {
+			  case 'm': curtask->maxruntime *= 60; break;	/* Minutes */
+			  case 'h': curtask->maxruntime *= 3600; break;	/* Hours */
+			  case 'd': curtask->maxruntime *= 86400; break;	/* Days */
+			}
+		}
 		else if (curtask && (strncasecmp(p, "LOGFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
@@ -337,6 +352,7 @@ void load_config(char *conffn)
 			/* Kill the task, if active */
 			if (twalk->pid) {
 				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
 			/* And prepare to free this tasklist entry */
@@ -356,6 +372,7 @@ void load_config(char *conffn)
 			/* Bounce the task, if it is active */
 			if (twalk->pid) {
 				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
 			break;
@@ -477,6 +494,7 @@ int main(int argc, char *argv[])
 				if (twalk->group)    printf("\tGROUP %s\n", twalk->group->groupname);
 				if (twalk->depends)  printf("\tNEEDS %s\n", twalk->depends->key);
 				if (twalk->interval) printf("\tINTERVAL %d\n", twalk->interval);
+				if (twalk->maxruntime) printf("\tMAXTIME %d\n", twalk->maxruntime);
 				if (twalk->logfile)  printf("\tLOGFILE %s\n", twalk->logfile);
 				if (twalk->envfile)  printf("\tENVFILE %s\n", twalk->envfile);
 				if (twalk->envarea)  printf("\tENVAREA %s\n", twalk->envarea);
@@ -573,6 +591,7 @@ int main(int argc, char *argv[])
 				/* Tasks that depend on this task should be killed ... */
 				for (dwalk = taskhead; (dwalk); dwalk = dwalk->next) {
 					if ((dwalk->depends == twalk) && (dwalk->pid > 0)) {
+						dwalk->beingkilled = 1;
 						kill(dwalk->pid, SIGTERM);
 					}
 				}
@@ -668,6 +687,13 @@ int main(int argc, char *argv[])
 			}
 			else if (twalk->pid > 0) {
 				dbgprintf("Task %s active with PID %d\n", twalk->key, (int)twalk->pid);
+				if (twalk->maxruntime && ((now - twalk->laststart) > twalk->maxruntime)) {
+					errprintf("Killing hung task %s (PID %d) after %d seconds\n",
+						  twalk->key, (int)twalk->pid,
+						  (now - twalk->laststart));
+					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
+					twalk->beingkilled = 1; /* Next time it's a real kill */
+				}
 			}
 		}
 
