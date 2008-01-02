@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.60 2007-07-26 10:36:30 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.61 2008-01-02 13:00:01 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -125,6 +125,13 @@ void sethostenv_template(char *dir)
 void sethostenv_refresh(int n)
 {
 	hostenv_refresh = n;
+}
+
+void sethostenv_pagepath(char *s)
+{
+	if (!s) return;
+	if (hostenv_pagepath) xfree(hostenv_pagepath);
+	hostenv_pagepath = strdup(s);
 }
 
 void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
@@ -1211,6 +1218,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	struct  stat st;
 	char	*templatedata;
 	char	*hfpath;
+	int	have_pagepath = (hostenv_pagepath != NULL);
 
 	MEMDEFINE(filename);
 
@@ -1238,7 +1246,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	}
 	fd = -1;
 
-	hostenv_pagepath = strdup(hfpath);
+	if (!have_pagepath) hostenv_pagepath = strdup(hfpath);
 
 	while ((fd == -1) && strlen(hfpath)) {
 		char *p;
@@ -1317,7 +1325,10 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		xfree(templatedata);
 	}
 
-	xfree(hostenv_pagepath); hostenv_pagepath = NULL;
+	if (!have_pagepath) {
+		xfree(hostenv_pagepath); hostenv_pagepath = NULL;
+	}
+
 	xfree(bulletinfile);
 
 	MEMUNDEFINE(filename);
@@ -1343,11 +1354,11 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		inbuf[st.st_size] = '\0';
 		close(formfile);
 
-		headfoot(output, headertemplate, "", "header", color);
+		headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "header", color);
 		if (pretext) fprintf(output, "%s", pretext);
 		output_parsed(output, inbuf, color, seltime);
 		if (posttext) fprintf(output, "%s", posttext);
-		headfoot(output, headertemplate, "", "footer", color);
+		headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "footer", color);
 
 		xfree(inbuf);
 	}
