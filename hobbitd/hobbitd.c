@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.275 2007-11-14 14:08:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.276 2008-01-02 14:35:31 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -529,6 +529,12 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			  semctl(channel->semid, BOARDBUSY, GETNCNT),
 			  semctl(channel->semid, BOARDBUSY, GETPID),
 			  semctl(channel->semid, CLIENTCOUNT, GETVAL));
+		return;
+	}
+
+	/* Check if we failed to grab the semaphore */
+	if (n == -1) {
+		errprintf("Dropping message due to semaphore error\n");
 		return;
 	}
 
