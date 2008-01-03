@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.15 2007-10-23 13:47:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.16 2008-01-03 09:28:18 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -75,6 +75,15 @@ int max_pending_requests = 30;
 int retries = 0;				/* Number of retries before timeout. 0 = Net-SNMP default (5). */
 long timeout = 0;				/* Number of uS until first timeout, then exponential backoff. 0 = Net-SNMP default (1 second). */
 
+/* Statistics */
+char *reportcolumn = NULL;
+int varcount = 0;
+int pducount = 0;
+int okcount = 0;
+int toobigcount = 0;
+int timeoutcount = 0;
+int errorcount = 0;
+struct timeval starttv, endtv;
 
 typedef struct oidds_t {
 	char *oid;
@@ -135,14 +144,17 @@ void starthosts(int resetstart);
 
 struct snmp_pdu *generate_datarequest(req_t *item)
 {
-	struct snmp_pdu *req = snmp_pdu_create(SNMP_MSG_GET);
+	struct snmp_pdu *req;
 	int currentset;
 
 	if (!item->next_oid) return NULL;
 
+	req = snmp_pdu_create(SNMP_MSG_GET);
+	pducount++;
 	item->curr_oid = item->next_oid;
 	currentset = item->next_oid->requestset;
 	while (item->next_oid && (currentset == item->next_oid->requestset)) {
+		varcount++;
 		snmp_add_null_var(req, item->next_oid->Oid, item->next_oid->OidLen);
 		item->next_oid = item->next_oid->next;
 	}
@@ -165,6 +177,8 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 	switch (status) {
 	  case STAT_SUCCESS:
 		if (pdu->errstat == SNMP_ERR_NOERROR) {
+			okcount++;
+
 			switch (querymode) {
 			  case QUERY_INTERFACES:
 				newif = (ifids_t *)calloc(1, sizeof(ifids_t));
@@ -229,11 +243,13 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 			}
 		}
 		else {
+			errorcount++;
 			errprintf("ERROR %s: %s\n", sp->hostip[sp->hostipidx], snmp_errstring(pdu->errstat));
 		}
 		return 1;
 
 	  case STAT_TIMEOUT:
+		timeoutcount++;
 		dbgprintf("%s: Timeout\n", sp->hostip);
 		if (sp->hostip[sp->hostipidx+1]) {
 			sp->hostipidx++;
@@ -242,6 +258,7 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 		return 0;
 
 	  case STAT_ERROR:
+		errorcount++;
 		snmp_sess_perror(sp->hostip[sp->hostipidx], sp->sess);
 		return 0;
 	}
@@ -276,11 +293,13 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 			break;
 
 		  case SNMP_ERR_TOOBIG:
-			dbgprintf("Host %s item %s: Response too big\n", item->hostname, item->curr_oid->devname);
+			toobigcount++;
+			errprintf("Host %s item %s: Response too big\n", item->hostname, item->curr_oid->devname);
 			break;
 
 		  default:
-			dbgprintf("Host %s item %s: SNMP error %d\n",  item->hostname, item->curr_oid->devname, pdu->errstat);
+			errorcount++;
+			errprintf("Host %s item %s: SNMP error %d\n",  item->hostname, item->curr_oid->devname, pdu->errstat);
 			break;
 		}
 
@@ -302,7 +321,9 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 				     (memcmp(&rootoid, vp->name, rootoidlen * sizeof(oid)) == 0) ) {
 					/* Still getting the right kind of data, so ask for more */
 					req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+					pducount++;
 					while (vp) {
+						varcount++;
 						snmp_add_null_var(req, vp->name, vp->name_length);
 						vp = vp->next_variable;
 					}
@@ -389,24 +410,42 @@ void startonehost(struct req_t *r, int ipchange)
 	switch (querymode) {
 	  case QUERY_INTERFACES:
 		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+		pducount++;
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		if (read_objid("IF-MIB::ifIndex", Oid, &OidLen)) {
+			varcount++;
+			snmp_add_null_var(req, Oid, OidLen);
+		}
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) {
+			varcount++;
+			snmp_add_null_var(req, Oid, OidLen);
+		}
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) {
+			varcount++;
+			snmp_add_null_var(req, Oid, OidLen);
+		}
 		break;
 
 	  case QUERY_NAMES:
 		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+		pducount++;
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifName", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		if (read_objid("IF-MIB::ifName", Oid, &OidLen)) {
+			varcount++;
+			snmp_add_null_var(req, Oid, OidLen);
+		}
 		break;
 
 	  case QUERY_IPADDRS:
 		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+		pducount++;
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IP-MIB::ipAdEntIfIndex", Oid, &OidLen)) snmp_add_null_var(req, Oid, OidLen);
+		if (read_objid("IP-MIB::ipAdEntIfIndex", Oid, &OidLen)) {
+			varcount++;
+			snmp_add_null_var(req, Oid, OidLen);
+		}
 		break;
 
 	  case GET_DATA:
@@ -420,6 +459,7 @@ void startonehost(struct req_t *r, int ipchange)
 	if (snmp_send(r->sess, req))
 		active_requests++;
 	else {
+		errorcount++;
 		snmp_sess_perror("snmp_send", r->sess);
 		snmp_free_pdu(req);
 	}
@@ -986,6 +1026,38 @@ void sendresult(void)
 	freestrbuffer(ifmibdata);
 }
 
+void egoresult(int color, char *egocolumn)
+{
+	char msgline[1024];
+	char *timestamps = NULL;
+
+	combo_start();
+	init_status(color);
+	sprintf(msgline, "status %s.%s %s %s\n\n", 
+		xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
+	addtostatus(msgline);
+
+	sprintf(msgline, "Variables  : %d\n", varcount);
+	addtostatus(msgline);
+	sprintf(msgline, "PDUs       : %d\n", pducount);
+	addtostatus(msgline);
+	sprintf(msgline, "Responses  : %d\n", okcount);
+	addtostatus(msgline);
+	sprintf(msgline, "Timeouts   : %d\n", timeoutcount);
+	addtostatus(msgline);
+	sprintf(msgline, "Too big    : %d\n", toobigcount);
+	addtostatus(msgline);
+	sprintf(msgline, "Errors     : %d\n", errorcount);
+	addtostatus(msgline);
+
+	show_timestamps(&timestamps);
+	if (timestamps) addtostatus(timestamps);
+
+	finish_status();
+	combo_end();
+
+}
+
 
 int main (int argc, char **argv)
 {
@@ -1015,10 +1087,17 @@ int main (int argc, char **argv)
 			char *p = strchr(argv[argi], '=');
 			max_pending_requests = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--report=")) {
+			char *p = strchr(argv[argi], '=');
+			reportcolumn = strdup(p+1);
+			timing = 1;
+		}
 		else if (*argv[argi] != '-') {
 			configfn = argv[argi];
 		}
 	}
+
+	add_timestamp("hobbit_snmpcollect startup");
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
 	init_snmp("hobbit_snmpcollect");
@@ -1026,13 +1105,19 @@ int main (int argc, char **argv)
 
 	readconfig(configfn);
 	if (cfgcheck) return 0;
+	add_timestamp("Configuration loaded");
 
 	resolveifnames();
+	add_timestamp("Interface names detected");
 
 	getdata();
 	stophosts();
+	add_timestamp("Data retrieved");
 
 	sendresult();
+	add_timestamp("Results transmitted");
+
+	if (reportcolumn) egoresult(COL_GREEN, reportcolumn);
 
 	return 0;
 }
