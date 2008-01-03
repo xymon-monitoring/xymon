@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.7 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.8 2008-01-03 13:36:59 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -35,6 +35,7 @@ typedef struct holidayset_t {
 
 static RbtHandle holidays;
 static int haveholidays = 0;
+static int current_year = 0;
 
 static time_t mkday(int year, int month, int day)
 {
@@ -339,14 +340,11 @@ static void record_setnext(void *a, void *newval)
 
 
 
-int load_holidays(void)
+int load_holidays(int year)
 {
 	static void *configholidays = NULL;
-	static int current_year = 0;
 	char fn[PATH_MAX];
 	FILE *fd;
-	time_t tnow;
-	struct tm *now;
 	strbuffer_t *inbuf;
 	holiday_t newholiday;
 	RbtIterator handle, commonhandle;
@@ -355,15 +353,23 @@ int load_holidays(void)
 
 	MEMDEFINE(fn);
 
-	tnow = getcurrenttime(NULL);
-	now = localtime(&tnow);
+	if (year == 0) {
+		time_t tnow;
+		struct tm *now;
+		tnow = getcurrenttime(NULL);
+		now = localtime(&tnow);
+		year = now->tm_year;
+	}
+	else if (year > 1000) {
+		year -= 1900;
+	}
 
 	sprintf(fn, "%s/etc/hobbit-holidays.cfg", xgetenv("BBHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configholidays) {
 		/* if the new year begins, the holidays have to be recalculated */
-		if (!stackfmodified(configholidays) && (now->tm_year == current_year)){
+		if (!stackfmodified(configholidays) && (year == current_year)){
 			dbgprintf("No files modified, skipping reload of %s\n", fn);
 			MEMUNDEFINE(fn);
 			return 0;
@@ -461,7 +467,7 @@ int load_holidays(void)
 			arg1 = strtok(NULL,"=");
 		}
 
-		add_holiday((setname ? setname : ""), now->tm_year, &newholiday);
+		add_holiday((setname ? setname : ""), year, &newholiday);
 	}
 
 	stackfclose(fd);
@@ -476,20 +482,20 @@ int load_holidays(void)
 			/* Add the common holidays to this set */
 			holiday_t *walk;
 
-			for (walk = commonhols->head; (walk); walk = walk->next) add_holiday(oneset->key, now->tm_year, walk);
+			for (walk = commonhols->head; (walk); walk = walk->next) add_holiday(oneset->key, year, walk);
 		}
 
 		oneset->head = msort(oneset->head, record_compare, record_getnext, record_setnext);
 	}
 
 	MEMUNDEFINE(fn);
-	current_year = now->tm_year;
+	current_year = year;
 
 	return 0;
 }
 
 
-static holiday_t *findholiday(char *key, int dayinyear, int year)
+static holiday_t *findholiday(char *key, int dayinyear)
 {
 	RbtIterator handle;
 	holidayset_t *hset;
@@ -530,24 +536,24 @@ int getweekdayorholiday(char *key, struct tm *t)
 
 	if (holidays_like_weekday == -1) return t->tm_wday;
 
-	rec = findholiday(key, t->tm_yday, t->tm_year);
+	rec = findholiday(key, t->tm_yday);
 	if (rec) return holidays_like_weekday;
 
 	return t->tm_wday;
 }
 
-char *isholiday(char *key, int dayinyear, int year)
+char *isholiday(char *key, int dayinyear)
 {
 	holiday_t *rec;
 
-	rec = findholiday(key, dayinyear, year);
+	rec = findholiday(key, dayinyear);
 	if (rec) return rec->desc;
 
 	return NULL;
 }
 
 
-void printholidays(char *key, int year, strbuffer_t *buf)
+void printholidays(char *key, strbuffer_t *buf)
 {
 	int day;
 	char *fmt;
@@ -556,17 +562,8 @@ void printholidays(char *key, int year, strbuffer_t *buf)
 
 	fmt = xgetenv("HOLIDAYFORMAT");
 
-	if (year == 0) {
-		struct tm tm;
-		time_t t;
-
-		t = getcurrenttime(NULL);
-		memcpy(&tm, localtime(&t), sizeof(struct tm));
-		year = tm.tm_year;
-	}
-
 	for (day = 0; (day < 366); day++) {
-		char *desc = isholiday(key, day, year);
+		char *desc = isholiday(key, day);
 
 		if (desc) {
 			struct tm tm;
@@ -580,7 +577,7 @@ void printholidays(char *key, int year, strbuffer_t *buf)
 			 *
 			 * Note: tm_yday is zero-based, but tm_mday is 1-based!
 			 */
-			tm.tm_mon = 0; tm.tm_mday = day+1; tm.tm_year = year;
+			tm.tm_mon = 0; tm.tm_mday = day+1; tm.tm_year = current_year;
 			tm.tm_hour = 12; tm.tm_min = 0; tm.tm_sec = 0;
 			t = mktime(&tm);
 			strftime(dstr, sizeof(dstr), fmt, localtime(&t));
@@ -599,7 +596,7 @@ int main(int argc, char *argv[])
 	strbuffer_t *sbuf = newstrbuffer(0);
 	char *dayname[] = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
-	load_holidays();
+	load_holidays(0);
 	do {
 		printf("$E year, $4 year, $W daynum wkday month year, Setname\n? "); fflush(stdout);
 		if (!fgets(l, sizeof(l), stdin)) return 0;
@@ -658,7 +655,9 @@ int main(int argc, char *argv[])
 			}
 		}
 		else {
-			printholidays(hset, 0, sbuf);
+			int year = atoi(hset);
+			load_holidays(year);
+			printholidays(hset, sbuf);
 			printf("Holidays in set: %s\n", STRBUF(sbuf));
 			clearstrbuffer(sbuf);
 		}

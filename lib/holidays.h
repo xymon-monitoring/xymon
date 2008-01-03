@@ -24,10 +24,10 @@ typedef struct holiday_t {
 	struct holiday_t *next;
 } holiday_t;
 
-extern int load_holidays(void);
+extern int load_holidays(int year);
 extern int getweekdayorholiday(char *key, struct tm *t);
-extern char *isholiday(char *key, int dayinyear, int year);
-extern void printholidays(char *key, int year, strbuffer_t *buf);
+extern char *isholiday(char *key, int dayinyear);
+extern void printholidays(char *key, strbuffer_t *buf);
 
 #endif
 
