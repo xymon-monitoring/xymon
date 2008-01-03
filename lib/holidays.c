@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.8 2008-01-03 13:36:59 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.9 2008-01-03 15:11:55 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -102,11 +102,13 @@ static int getnumberedweekday(int wkday, int daynum, int month, int year)
 	tm.tm_mon = (month - 1);
 	tm.tm_year = year;
 	tm.tm_mday = 1;
+	tm.tm_isdst = -1;
 	t = mktime(&tm);
 	if (tm.tm_wday != wkday) {
 		/* Skip forward so we reach the first of the wanted weekdays */
 		tm.tm_mday += (wkday - tm.tm_wday);
 		if (tm.tm_mday < 1) tm.tm_mday += 7;
+		tm.tm_isdst = -1;
 		t = mktime(&tm);
 	}
 
@@ -114,9 +116,11 @@ static int getnumberedweekday(int wkday, int daynum, int month, int year)
 	tm.tm_mday += 7*(daynum - 1);
 	/* Check if we overflowed into next month (if daynum == 5) */
 	t = mktime(&tm);
+	tm.tm_isdst = -1;
 	if ((daynum == 5) && (tm.tm_mon != (month - 1))) {
 		/* We drifted into the next month. Go back one week to return the last wkday of the month */
 		tm.tm_mday -= 7;
+		tm.tm_isdst = -1;
 		t = mktime(&tm);
 	}
 
@@ -133,11 +137,13 @@ static int getweekdayafter(int wkday, int daynum, int month, int year)
 	tm.tm_mon = (month - 1);
 	tm.tm_year = year;
 	tm.tm_mday = daynum;
+	tm.tm_isdst = -1;
 	t = mktime(&tm);
 	if (tm.tm_wday != wkday) {
 		/* Skip forward so we reach the wanted weekday */
 		tm.tm_mday += (wkday - tm.tm_wday);
 		if (tm.tm_mday < daynum) tm.tm_mday += 7;
+		tm.tm_isdst = -1;
 		t = mktime(&tm);
 	}
 
@@ -579,6 +585,7 @@ void printholidays(char *key, strbuffer_t *buf)
 			 */
 			tm.tm_mon = 0; tm.tm_mday = day+1; tm.tm_year = current_year;
 			tm.tm_hour = 12; tm.tm_min = 0; tm.tm_sec = 0;
+			tm.tm_isdst = -1;
 			t = mktime(&tm);
 			strftime(dstr, sizeof(dstr), fmt, localtime(&t));
 			sprintf(oneh, "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
@@ -636,6 +643,7 @@ int main(int argc, char *argv[])
 				wtm.tm_mday = getnumberedweekday(atoi(arg[2]), atoi(arg[1]), atoi(arg[3]), atoi(arg[4])-1900) + 1;
 				wtm.tm_mon = 0;
 				wtm.tm_year = atoi(arg[4]) - 1900;
+				wtm.tm_isdst = -1;
 				mktime(&wtm);
 				printf("The %d. %s in %02d/%04d is %02d/%02d/%04d\n", 
 					atoi(arg[1]), dayname[atoi(arg[2])], atoi(arg[3]), atoi(arg[4]),
@@ -648,6 +656,7 @@ int main(int argc, char *argv[])
 				wtm.tm_mday = getweekdayafter(atoi(arg[2]), atoi(arg[1]), atoi(arg[3]), atoi(arg[4])-1900) + 1;
 				wtm.tm_mon = 0;
 				wtm.tm_year = atoi(arg[4]) - 1900;
+				wtm.tm_isdst = -1;
 				mktime(&wtm);
 				printf("The %d. %s on or after %02d/%04d is %02d/%02d/%04d\n", 
 					atoi(arg[1]), dayname[atoi(arg[2])], atoi(arg[3]), atoi(arg[4]),
