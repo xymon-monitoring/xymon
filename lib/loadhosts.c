@@ -5,7 +5,7 @@
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.73 2007-08-23 13:58:50 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.74 2008-01-03 09:59:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

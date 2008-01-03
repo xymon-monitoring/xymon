@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains environment variable handling routines.                        */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: environ.c,v 1.39 2007-07-26 09:10:10 henrik Exp $";
+static char rcsid[] = "$Id: environ.c,v 1.40 2008-01-03 09:59:13 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>

@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for communicating with the Hobbit locator service.    */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: locator.c,v 1.10 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: locator.c,v 1.11 2008-01-03 09:59:13 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>

@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for handling header- and footer-files.                */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: headfoot.c,v 1.61 2008-01-02 13:00:01 henrik Exp $";
+static char rcsid[] = "$Id: headfoot.c,v 1.62 2008-01-03 09:59:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

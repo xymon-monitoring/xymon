@@ -4,14 +4,14 @@
 /* This file contains code to calculate availability percentages and do       */
 /* SLA calculations.                                                          */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: availability.c,v 1.44 2007-06-11 14:39:09 henrik Exp $";
+static char rcsid[] = "$Id: availability.c,v 1.45 2008-01-03 09:59:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

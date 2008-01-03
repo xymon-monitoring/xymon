@@ -4,14 +4,14 @@
 /* This is a library module for Hobbit, responsible for loading the           */
 /* hobbit-nkview.cfg file.                                                    */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadnkconf.c,v 1.20 2007-06-11 14:39:29 henrik Exp $";
+static char rcsid[] = "$Id: loadnkconf.c,v 1.21 2008-01-03 09:59:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

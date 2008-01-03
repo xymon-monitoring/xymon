@@ -4,14 +4,14 @@
 /* This file contains code to build the acknowledgement log shown on the      */
 /* "all non-green" page.                                                      */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: acklog.c,v 1.24 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: acklog.c,v 1.25 2008-01-03 09:59:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

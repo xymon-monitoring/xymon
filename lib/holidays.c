@@ -4,15 +4,15 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for handling holidays.                                */
 /*                                                                            */
-/* Copyright (C) 2006-2007 Michael Nagel                                      */
-/* Modifications for Hobbit (C) 2007 Henrik Storner <henrik@hswn.dk>          */
+/* Copyright (C) 2006-2008 Michael Nagel                                      */
+/* Modifications for Hobbit (C) 2007-2008 Henrik Storner <henrik@hswn.dk>     */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.6 2007-07-18 21:47:42 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.7 2008-01-03 09:59:13 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>

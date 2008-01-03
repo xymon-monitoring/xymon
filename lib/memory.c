@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains memory management routines.                                    */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: memory.c,v 1.11 2006-07-09 13:49:00 henrik Exp $";
+static char rcsid[] = "$Id: memory.c,v 1.12 2008-01-03 09:59:13 henrik Exp $";
 
 #include <ctype.h>
 #include <string.h>

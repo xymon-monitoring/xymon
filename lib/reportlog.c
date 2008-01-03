@@ -4,14 +4,14 @@
 /* This tool generates the report status log for a single status, with the    */
 /* availability percentages etc needed for a report-mode view.                */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: reportlog.c,v 1.4 2006-02-08 22:08:53 henrik Exp $";
+static char rcsid[] = "$Id: reportlog.c,v 1.5 2008-01-03 09:59:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

@@ -4,14 +4,14 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for handling UID changes.                             */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: suid.c,v 1.2 2006-07-20 09:22:18 henrik Exp $";
+static char rcsid[] = "$Id: suid.c,v 1.3 2008-01-03 09:59:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

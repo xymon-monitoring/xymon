@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This displays the "notification" log.                                      */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /* Host/test/color/start/end filtering code by Eric Schwimmer 2005            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: notifylog.c,v 1.5 2007-07-18 21:31:50 henrik Exp $";
+static char rcsid[] = "$Id: notifylog.c,v 1.6 2008-01-03 09:59:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

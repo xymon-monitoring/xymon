@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Utility program to define endian-ness of the target system.                */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: test-endianness.c,v 1.2 2006-04-14 11:15:23 henrik Exp $";
+static char rcsid[] = "$Id: test-endianness.c,v 1.3 2008-01-03 09:59:13 henrik Exp $";
 
 #include <string.h>
 #include <stdio.h>
