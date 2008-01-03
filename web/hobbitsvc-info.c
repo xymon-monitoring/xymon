@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.121 2008-01-03 10:04:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc-info.c,v 1.122 2008-01-03 13:37:12 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -247,12 +247,73 @@ static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
 {
 	void *hi = hostinfo(hostname);
 	char l[1024];
+	time_t now = getcurrenttime(NULL);
+	struct tm *tm;
+	int month, year;
+	int needreload = 0;
+	char *holidayset;
+
+	tm = localtime(&now);
+	year = tm->tm_year + 1900;
+	month = tm->tm_mon;
+
+	holidayset = bbh_item(hi, BBH_HOLIDAYS);
 
 	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", hostname);
 	addtobuffer(buf, l);
-	addtobuffer(buf, "<tr><th colspan=2>Holidays</th></tr>\n");
-	printholidays(bbh_item(hi, BBH_HOLIDAYS), 0, buf);
+
+	addtobuffer(buf, "<tr>");
+
+	/* In January+February, show last year's holidays */
+	if (month <= 1) {
+		needreload = 1;
+		load_holidays(year-1);
+		addtobuffer(buf, "<td><table>\n");
+		if (holidayset) {
+			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year-1, holidayset);
+		}
+		else {
+			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year-1);
+		}
+		addtobuffer(buf, l);
+		printholidays(holidayset, buf);
+		addtobuffer(buf, "</table></td>\n");
+	}
+
+	/* Show this year's holidays */
+	if (needreload) load_holidays(year);
+	addtobuffer(buf, "<td><table>\n");
+	if (holidayset) {
+		sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year, holidayset);
+	}
+	else {
+		sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year);
+	}
+	addtobuffer(buf, l);
+	printholidays(holidayset, buf);
+	addtobuffer(buf, "</table></td>\n");
+
+	/* In November+December, show next year's holidays */
+	if (month >= 10) {
+		needreload = 1;
+		load_holidays(year+1);
+		addtobuffer(buf, "<td><table>\n");
+		if (holidayset) {
+			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year+1, holidayset);
+		}
+		else {
+			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year+1);
+		}
+		addtobuffer(buf, l);
+		printholidays(holidayset, buf);
+		addtobuffer(buf, "</table></td>\n");
+	}
+
+	addtobuffer(buf, "</tr>\n");
+
 	addtobuffer(buf, "</table>\n");
+
+	if (needreload) load_holidays(0);
 }
 
 
@@ -632,7 +693,7 @@ char *generate_info(char *hostname)
 
 		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
-		load_holidays();
+		load_holidays(0);
 	}
 
 	/* Load links */
