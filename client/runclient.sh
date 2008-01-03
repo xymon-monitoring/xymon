@@ -5,7 +5,7 @@
 # This invokes hobbitlaunch, which in turn runs the Hobbit client and any    #
 # extensions configured.                                                     #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 # "status" section (C) Scott Smith 2006                                      #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
@@ -13,7 +13,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.15 2007-07-21 15:41:20 henrik Exp $
+# $Id: runclient.sh,v 1.16 2008-01-03 09:49:28 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname

@@ -4,14 +4,14 @@
 /* This is used to send a single message using the Hobbit/BB protocol to the  */
 /* Hobbit server.                                                             */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.12 2007-07-28 06:35:52 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.13 2008-01-03 09:50:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -2,14 +2,14 @@
 #----------------------------------------------------------------------------#
 # NetBSD client for Hobbit                                                   #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-netbsd.sh,v 1.15 2006-07-05 05:52:22 henrik Exp $
+# $Id: hobbitclient-netbsd.sh,v 1.16 2008-01-03 09:49:28 henrik Exp $
 
 echo "[date]"
 date

@@ -4,14 +4,14 @@
 /* This is the main program for generating Hobbit overview webpages, showing  */
 /* the status of hosts in a Hobbit system.                                    */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.231 2007-10-02 08:12:43 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.232 2008-01-03 09:40:31 henrik Exp $";
 
 #include <stdio.h>
 #include <unistd.h>

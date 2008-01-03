@@ -6,14 +6,14 @@
 /* current version on the server, and if they do not match then this utility  */
 /* is run to fetch the new version from the server and unpack it via "tar".   */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: clientupdate.c,v 1.8 2007-06-11 14:50:31 henrik Exp $";
+static char rcsid[] = "$Id: clientupdate.c,v 1.9 2008-01-03 09:49:28 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

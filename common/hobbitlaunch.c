@@ -4,14 +4,14 @@
 /* This is used to launch various parts of the Hobbit system. Some programs   */
 /* start up once and keep running, other must run at various intervals.       */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitlaunch.c,v 1.47 2008-01-02 12:54:34 henrik Exp $";
+static char rcsid[] = "$Id: hobbitlaunch.c,v 1.48 2008-01-03 09:50:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

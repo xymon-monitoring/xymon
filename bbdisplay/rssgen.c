@@ -4,14 +4,14 @@
 /* This file contains code to generate RSS/RDF format output of alerts.       */
 /* It is heavily influenced by Jeff Stoner's bb_content-feed script.          */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rssgen.c,v 1.23 2006-06-07 07:29:44 henrik Exp $";
+static char rcsid[] = "$Id: rssgen.c,v 1.24 2008-01-03 09:40:31 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

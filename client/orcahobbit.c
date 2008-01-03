@@ -3,14 +3,14 @@
 /* This tool grabs the last reading from an ORCA logfile and formats it in    */
 /* NAME:VALUE format for the client message.                                  */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: orcahobbit.c,v 1.2 2007-06-11 14:50:31 henrik Exp $";
+static char rcsid[] = "$Id: orcahobbit.c,v 1.3 2008-01-03 09:49:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

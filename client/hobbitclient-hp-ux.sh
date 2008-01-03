@@ -3,14 +3,14 @@
 #----------------------------------------------------------------------------#
 # HP-UX client for Hobbit                                                    #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-hp-ux.sh,v 1.20 2006-07-05 05:52:22 henrik Exp $
+# $Id: hobbitclient-hp-ux.sh,v 1.21 2008-01-03 09:49:28 henrik Exp $
 
 echo "[date]"
 date

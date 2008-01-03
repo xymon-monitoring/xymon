@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is an implementation of a fast "ping" program, for use with Hobbit.   */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.13 2007-06-11 14:36:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.14 2008-01-03 09:42:11 henrik Exp $";
 
 #include "config.h"
 

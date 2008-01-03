@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This is used to implement the testing of a LDAP service.                   */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit monitor SNMP data collection tool                                   */
 /*                                                                            */
-/* Copyright (C) 2007 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2007-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* Inspired by the asyncapp.c file from the "NET-SNMP demo", available from   */
 /* the Net-SNMP website. This file carries the attribution                    */
@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.16 2008-01-03 09:28:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.17 2008-01-03 09:42:11 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>

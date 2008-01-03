@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This file contains code to load the page-structure from the bb-hosts file. */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.52 2007-07-26 21:17:06 henrik Exp $";
+static char rcsid[] = "$Id: loadbbhosts.c,v 1.53 2008-01-03 09:40:31 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

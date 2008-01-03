@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is used to implement the testing of an LDAP service.                  */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: ldaptest.c,v 1.30 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: ldaptest.c,v 1.31 2008-01-03 09:42:11 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>

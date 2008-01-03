@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit monitor network test tool.                                          */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.11 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.12 2008-01-03 09:42:11 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into

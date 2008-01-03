@@ -5,14 +5,14 @@
 # This invokes the OS-specific script to build a client message, and sends   #
 # if off to the Hobbit server.                                               #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.17 2006-07-06 09:07:53 henrik Exp $
+# $Id: hobbitclient.sh,v 1.18 2008-01-03 09:49:28 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C

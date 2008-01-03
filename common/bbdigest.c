@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is used to implement message digest functions (MD5, SHA1 etc.)        */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbdigest.c,v 1.4 2007-01-17 22:22:54 henrik Exp $";
+static char rcsid[] = "$Id: bbdigest.c,v 1.5 2008-01-03 09:50:18 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>

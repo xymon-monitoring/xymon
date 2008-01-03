@@ -2,15 +2,15 @@
 #----------------------------------------------------------------------------#
 # SCO_SV client for Hobbit                                                   #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
-# Copyright (C) 2006 Charles Goyard <cg@fsck.fr>                             #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2006-2008 Charles Goyard <cg@fsck.fr>                        #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sco_sv.sh,v 1.2 2006-08-02 13:35:46 henrik Exp $
+# $Id: hobbitclient-sco_sv.sh,v 1.3 2008-01-03 09:49:28 henrik Exp $
 
 echo "[date]"
 date

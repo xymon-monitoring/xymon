@@ -2,14 +2,14 @@
 /* Hobbit memory information tool for HP-UX.                                  */
 /* This tool retrieves information about the total and free RAM.              */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hpux-meminfo.c,v 1.4 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: hpux-meminfo.c,v 1.5 2008-01-03 09:49:28 henrik Exp $";
 
 #include <sys/pstat.h>
 #include <stdio.h>

@@ -4,14 +4,14 @@
 /* Various utility functions specific to bbgen. Generally useful code is      */
 /* in the library.                                                            */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: util.c,v 1.157 2006-07-20 22:07:47 henrik Exp $";
+static char rcsid[] = "$Id: util.c,v 1.158 2008-01-03 09:40:31 henrik Exp $";
 
 #include <limits.h>
 #include <sys/types.h>

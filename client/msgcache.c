@@ -8,14 +8,14 @@
 /* Any data provided in the "pullclient" request is saved, and passed as      */
 /* response to the first "client" command seen afterwards.                    */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.11 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: msgcache.c,v 1.12 2008-01-03 09:49:28 henrik Exp $";
 
 #include "config.h"
 

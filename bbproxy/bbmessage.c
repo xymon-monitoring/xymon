@@ -4,14 +4,14 @@
 /* This CGI can gateway a Hobbit/BB message sent via HTTP PORT to a Hobbit    */
 /* server running on the local host.                                          */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbmessage.c,v 1.1 2006-01-13 13:52:06 henrik Exp $";
+static char rcsid[] = "$Id: bbmessage.c,v 1.2 2008-01-03 09:46:25 henrik Exp $";
 
 #include "libbbgen.h"
 
