@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for Netware/SNMP                                     */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.7 2007-07-18 21:20:15 henrik Exp $";
+static char netware_snmp__rcsid[] = "$Id: netware-snmp.c,v 1.8 2008-01-03 10:11:16 henrik Exp $";
 
 void handle_netware_snmp_client(char *hostname, char *clienttype, enum ostype_t os, 
 				void *hinfo, char *sender, time_t timestamp,

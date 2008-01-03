@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit backend script for disabling/enabling tests.                        */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-enadis.c,v 1.27 2006-08-15 09:36:20 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-enadis.c,v 1.28 2008-01-03 10:04:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

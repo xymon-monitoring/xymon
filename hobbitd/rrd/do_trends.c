@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This module handles custom "trends" data.                                  */
 /*                                                                            */
-/* Copyright (C) 2007 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2007-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char trends_rcsid[] = "$Id: do_trends.c,v 1.4 2007-07-24 08:45:01 henrik Exp $";
+static char trends_rcsid[] = "$Id: do_trends.c,v 1.5 2008-01-03 10:13:50 henrik Exp $";
 
 /* 
  * This module was inspired by a mail from Stef Coene:

@@ -7,14 +7,14 @@
 /* incoming status messages to the bbvar/logs/, bbvar/data/, bb/www/notes/    */
 /* and bbvar/disabled/ directories.                                           */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.55 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.56 2008-01-03 10:08:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This CGI tool shows an HTML version of a status log.                       */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.80 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.81 2008-01-03 10:04:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

@@ -4,14 +4,14 @@
 /* This is a CGI script for generating graphs from the data stored in the     */
 /* RRD databases.                                                             */
 /*                                                                            */
-/* Copyright (C) 2004-2007 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.65 2007-12-08 12:29:04 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c,v 1.66 2008-01-03 10:04:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

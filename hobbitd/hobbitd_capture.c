@@ -5,14 +5,14 @@
 /* or test, or data type. This is fed from the status- or data-channel, and   */
 /* simply logs the data received to a file.                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_capture.c,v 1.7 2007-09-11 21:22:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_capture.c,v 1.8 2008-01-03 10:08:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

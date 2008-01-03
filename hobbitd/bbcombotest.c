@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit combination test tool.                                              */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbcombotest.c,v 1.47 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: bbcombotest.c,v 1.48 2008-01-03 10:08:13 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

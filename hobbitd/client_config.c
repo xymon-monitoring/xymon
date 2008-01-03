@@ -5,7 +5,7 @@
 /* This file has routines that load the hobbitd_client configuration and      */
 /* finds the rules relevant for a particular test when applied.               */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /* "PORT" handling (C) Mirko Saam                                             */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.61 2007-09-11 21:20:54 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.62 2008-01-03 10:08:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

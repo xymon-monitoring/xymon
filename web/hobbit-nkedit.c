@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit CGI for administering the hobbit-nkview.cfg file                    */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.14 2006-08-11 13:07:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-nkedit.c,v 1.15 2008-01-03 10:04:58 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>

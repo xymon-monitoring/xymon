@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit webpage generator tool.                                             */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.4 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.5 2008-01-03 10:04:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

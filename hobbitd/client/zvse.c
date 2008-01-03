@@ -3,15 +3,15 @@
 /*                                                                            */
 /* Client backend module for z/VSE or VSE/ESA                                 */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2006-2007 Rich Smrcina                                       */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2008 Rich Smrcina                                       */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char zvse_rcsid[] = "$Id: zvse.c,v 1.1 2007-07-21 15:17:21 henrik Exp $";
+static char zvse_rcsid[] = "$Id: zvse.c,v 1.2 2008-01-03 10:11:16 henrik Exp $";
 
 static void zvse_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr,

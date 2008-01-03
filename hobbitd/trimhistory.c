@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This tool trims the history-logs of old entries.                           */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.15 2007-07-19 20:46:16 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.16 2008-01-03 10:08:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

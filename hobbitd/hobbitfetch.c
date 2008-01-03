@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is used to pull client data from the client "msgcache" daemon         */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitfetch.c,v 1.21 2007-10-26 12:03:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbitfetch.c,v 1.22 2008-01-03 10:08:13 henrik Exp $";
 
 #include "config.h"
 

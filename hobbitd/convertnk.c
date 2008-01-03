@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit utility to convert the deprecated NK tags to a hobbit-nkview.cfg    */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: convertnk.c,v 1.3 2007-07-26 21:17:06 henrik Exp $";
+static char rcsid[] = "$Id: convertnk.c,v 1.4 2008-01-03 10:08:13 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>

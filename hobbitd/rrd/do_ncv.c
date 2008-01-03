@@ -4,7 +4,7 @@
 /* This module handles any message with data in the form                      */
 /*     NAME: VALUE                                                            */
 /*                                                                            */
-/* Copyright (C) 2004-2007 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /* split-ncv added by Charles Goyard November 2006                            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.18 2007-09-11 13:00:11 henrik Exp $";
+static char ncv_rcsid[] = "$Id: do_ncv.c,v 1.19 2008-01-03 10:13:50 henrik Exp $";
 
 int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 

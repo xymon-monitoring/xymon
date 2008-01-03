@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This is a CGI tool used to view the history of a status log.               */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-hist.c,v 1.57 2007-06-11 14:51:15 henrik Exp $";
+static char rcsid[] = "$Id: bb-hist.c,v 1.58 2008-01-03 10:04:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

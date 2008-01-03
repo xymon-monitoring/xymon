@@ -5,14 +5,14 @@
 /* This module maintains the RRD database-files, updating them as new         */
 /* data arrives.                                                              */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.37 2007-11-26 22:43:06 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.38 2008-01-03 10:08:13 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>

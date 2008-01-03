@@ -5,7 +5,7 @@
 /* their full name. When you have 1200+ hosts split on 60+ pages, it can be   */
 /* tiresome to do a manual search to find a host ...                          */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.36 2007-07-26 21:17:06 henrik Exp $";
+static char rcsid[] = "$Id: bb-findhost.c,v 1.37 2008-01-03 10:04:58 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>

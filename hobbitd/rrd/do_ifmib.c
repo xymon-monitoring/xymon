@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.4 2007-11-26 21:41:31 henrik Exp $";
+static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.5 2008-01-03 10:13:50 henrik Exp $";
 
 static char *ifmib_params[] = { 
 	                        "DS:ifInNUcastPkts:COUNTER:600:0:U", 

@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit CGI tool to generate a report of the Hobbit configuration           */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.21 2007-07-18 21:20:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.22 2008-01-03 10:04:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

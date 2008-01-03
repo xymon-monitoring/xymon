@@ -5,7 +5,7 @@
 /* It also implements a CGI tool to show an eventlog for a given period of    */
 /* time, as a reporting function.                                             */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
 /* Host/test/color/start/end filtering code by Eric Schwimmer 2005            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-eventlog.c,v 1.42 2007-07-27 12:08:00 henrik Exp $";
+static char rcsid[] = "$Id: bb-eventlog.c,v 1.43 2008-01-03 10:04:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

@@ -4,14 +4,14 @@
 /* This module contains a shared routine to find the size of a shared memory  */
 /* buffer used for one of the Hobbit communications-channels.                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.9 2007-02-09 10:32:51 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_buffer.c,v 1.10 2008-01-03 10:08:13 henrik Exp $";
 
 #include <unistd.h>
 #include <stdlib.h>

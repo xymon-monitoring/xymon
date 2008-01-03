@@ -6,14 +6,14 @@
 /* if called with a proper CGI query string it will send an ack-message to    */
 /* the Hobbit daemon.                                                         */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.34 2006-10-01 11:50:59 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.35 2008-01-03 10:04:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

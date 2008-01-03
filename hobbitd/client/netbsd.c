@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for NetBSD                                           */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.19 2007-07-18 21:20:15 henrik Exp $";
+static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.20 2008-01-03 10:11:16 henrik Exp $";
 
 void handle_netbsd_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  void *hinfo, char *sender, time_t timestamp, 

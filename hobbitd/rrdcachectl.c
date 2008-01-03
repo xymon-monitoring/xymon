@@ -4,14 +4,14 @@
 /* This utility is used to manually control the RRD cache.                    */
 /* It is a debugging tool.                                                    */
 /*                                                                            */
-/* Copyright (C) 2007 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2007-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: rrdcachectl.c,v 1.3 2007-08-14 09:36:39 henrik Exp $";
+static char rcsid[] = "$Id: rrdcachectl.c,v 1.4 2008-01-03 10:08:13 henrik Exp $";
 
 #include <sys/time.h>
 #include <sys/types.h>

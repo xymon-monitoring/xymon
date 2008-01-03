@@ -3,15 +3,15 @@
 /*                                                                            */
 /* Client backend module for SCO_SV                                           */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2006 Charles Goyard <cg@fsck.Fr>                             */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2008 Charles Goyard <cg@fsck.Fr>                        */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.5 2007-07-18 21:20:15 henrik Exp $";
+static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.6 2008-01-03 10:11:16 henrik Exp $";
 
 void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  void *hinfo, char *sender, time_t timestamp,

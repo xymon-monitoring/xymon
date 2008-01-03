@@ -3,14 +3,14 @@
 /*                                                                            */
 /* This module handles "filesizes" messages.                                  */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char filesize_rcsid[] = "$Id: do_filesizes.c,v 1.7 2007-11-26 21:41:31 henrik Exp $";
+static char filesize_rcsid[] = "$Id: do_filesizes.c,v 1.8 2008-01-03 10:13:50 henrik Exp $";
 
 static char *filesize_params[] = { "DS:size:GAUGE:600:0:U", NULL };
 static char *filesize_tpl      = NULL;

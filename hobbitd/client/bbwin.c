@@ -3,16 +3,16 @@
 /*                                                                            */
 /* Client backend module for BBWin/Windoes client                             */
 /*                                                                            */
-/* Copyright (C) 2006-2007 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2007 Francois Lacroix					      */
-/* Copyright (C) 2007 Etienne Grignon <etienne.grignon@gmail.com>             */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007-2008 Francois Lacroix				      */
+/* Copyright (C) 2007-2008 Etienne Grignon <etienne.grignon@gmail.com>        */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbwin_rcsid[] = "$Id: bbwin.c,v 1.3 2008-01-02 14:38:22 henrik Exp $";
+static char bbwin_rcsid[] = "$Id: bbwin.c,v 1.4 2008-01-03 10:10:39 henrik Exp $";
 
 static void bbwin_uptime_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr,

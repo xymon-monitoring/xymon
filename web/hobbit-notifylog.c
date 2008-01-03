@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit notification log viewer                                             */
 /*                                                                            */
-/* Copyright (C) 2007 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2007-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-notifylog.c,v 1.2 2007-02-07 21:49:47 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-notifylog.c,v 1.3 2008-01-03 10:04:58 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>

@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit hostlist report generator.                                          */
 /*                                                                            */
-/* Copyright (C) 2007      Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007-2008      Henrik Storner <henrik@hswn.dk>               */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostlist.c,v 1.1 2008-01-02 12:56:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostlist.c,v 1.2 2008-01-03 10:04:58 henrik Exp $";
 
 #include <stdio.h>
 #include <ctype.h>

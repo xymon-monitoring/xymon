@@ -3,15 +3,15 @@
 /*                                                                            */
 /* This module handles "paging" messages.                                     */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
-/* Copyright (C) 2007 Rich Smrcina                                            */
+/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007-2008 Rich Smrcina                                       */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char paging_rcsid[] = "$Id: do_paging.c,v 1.3 2007-11-26 21:41:31 henrik Exp $";
+static char paging_rcsid[] = "$Id: do_paging.c,v 1.4 2008-01-03 10:13:50 henrik Exp $";
 
 static char *paging_params[] = { "DS:paging:GAUGE:600:0:U", NULL };
 static char *paging_tpl      = NULL;

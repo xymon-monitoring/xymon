@@ -1,14 +1,14 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit CGI for sending in an "ackinfo" message.                            */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.4 2006-04-05 08:23:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ackinfo.c,v 1.5 2008-01-03 10:04:58 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
