@@ -1,3 +1,26 @@
+hobbit (4.3.0-0.20080103) unstable; urgency=low
+
+  * Interim release for testing
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Thu,  3 Jan 2008 10:30:00 +0100
+
+
+hobbit (4.3.0-0.20070402) unstable; urgency=low
+
+  * Interim release for CSC, to support Easter holiday
+    reduction in alerts.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 02 Apr 2007 11:12:00 +0100
+
+
+hobbit (4.3.0-0.20070202) unstable; urgency=low
+
+  * Interim release for CSC, to support off-loading of RRD
+    updates to multiple servers.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 02 Feb 2007 12:29:00 +0100
+
+
 hobbit (4.3.0-0.20061124) unstable; urgency=low
 
   * Interim release for CSC, to support off-loading of RRD
