@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.18 2008-01-04 21:29:09 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.19 2008-01-04 21:50:12 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -20,9 +20,10 @@ static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.18 2008-01-04 21:29:09 henr
 #include "libbbgen.h"
 
 /* List of the OID's we will request */
+enum querytype_t { QUERY_IFMIB, QUERY_IFMIB_X, QUERY_MRTG, QUERY_VAR, QUERY_SNMPMIB, QUERY_ICMPMIB };
 typedef struct oid_t {
 	char *oidstr;				/* the input definition of the OID */
-	enum { QUERY_IFMIB, QUERY_IFMIB_X, QUERY_MRTG, QUERY_VAR, QUERY_SNMPMIB, QUERY_ICMPMIB } querytype;
+	enum querytype_t querytype;
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
 	char *devname, *dsname;
@@ -582,6 +583,32 @@ void stophosts(void)
  *     var=DSNAME OID
  *
  */
+
+static oid_t *make_oitem(enum querytype_t qtype, char *devname, int setnumber, char *dsname, char *oidstr, struct req_t *reqitem)
+{
+	oid_t *oitem = (oid_t *)calloc(1, sizeof(oid_t));
+
+	oitem->querytype = qtype;
+	oitem->devname = strdup(devname);
+	oitem->requestset = setnumber;
+	oitem->dsname = dsname;
+	oitem->oidstr = strdup(oidstr);
+	oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
+	if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
+		if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
+		reqitem->oidtail = oitem;
+	}
+	else {
+		/* Could not parse the OID definition */
+		snmp_perror("read_objid");
+		xfree(oitem->oidstr);
+		xfree(oitem);
+	}
+
+	return oitem;
+}
+
+
 void readconfig(char *cfgfn)
 {
 	static void *cfgfiles = NULL;
@@ -589,7 +616,6 @@ void readconfig(char *cfgfn)
 	strbuffer_t *inbuf;
 
 	struct req_t *reqitem = NULL;
-	struct oid_t *oitem;
 	int setnumber = 0;
 	int bbsleep = atoi(xgetenv("BBSLEEP"));
 
@@ -698,42 +724,8 @@ void readconfig(char *cfgfn)
 			if (oid2) devname = strtok(NULL, "\r\n");
 
 			if (idx && oid1 && oid2 && devname) {
-				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->querytype = QUERY_MRTG;
-				oitem->devname = strdup(devname);
-				oitem->requestset = setnumber;
-				oitem->dsname = "ds1";
-				oitem->oidstr = strdup(oid1);
-				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
-					reqitem->oidtail = oitem;
-				}
-				else {
-					/* Could not parse the OID definition */
-					snmp_perror("read_objid");
-					free(oitem->oidstr);
-					free(oitem);
-				}
-
-				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->querytype = QUERY_MRTG;
-				oitem->devname = strdup(devname);
-				oitem->requestset = setnumber;
-				oitem->dsname = "ds2";
-				oitem->oidstr = strdup(oid2);
-				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
-					reqitem->oidtail = oitem;
-				}
-				else {
-					/* Could not parse the OID definition */
-					snmp_perror("read_objid");
-					free(oitem->oidstr);
-					free(oitem);
-				}
-
+				make_oitem(QUERY_MRTG, devname, setnumber, "ds1", oid1, reqitem);
+				make_oitem(QUERY_MRTG, devname, setnumber, "ds2", oid2, reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -744,23 +736,7 @@ void readconfig(char *cfgfn)
 			int i;
 
 			for (i=0; (snmpmibnames[i].oid); i++) {
-				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->querytype = QUERY_SNMPMIB;
-				oitem->devname = strdup("-");
-				oitem->requestset = 0;
-				oitem->dsname = snmpmibnames[i].dsname;
-				oitem->oidstr = strdup(snmpmibnames[i].oid);
-				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
-					reqitem->oidtail = oitem;
-				}
-				else {
-					/* Could not parse the OID definition */
-					snmp_perror("read_objid");
-					free(oitem->oidstr);
-					free(oitem);
-				}
+				make_oitem(QUERY_SNMPMIB, "-", 0, snmpmibnames[i].dsname, snmpmibnames[i].oid, reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -771,23 +747,7 @@ void readconfig(char *cfgfn)
 			int i;
 
 			for (i=0; (icmpmibnames[i].oid); i++) {
-				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->querytype = QUERY_ICMPMIB;
-				oitem->devname = strdup("-");
-				oitem->requestset = 0;
-				oitem->dsname = icmpmibnames[i].dsname;
-				oitem->oidstr = strdup(icmpmibnames[i].oid);
-				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
-					reqitem->oidtail = oitem;
-				}
-				else {
-					/* Could not parse the OID definition */
-					snmp_perror("read_objid");
-					free(oitem->oidstr);
-					free(oitem);
-				}
+				make_oitem(QUERY_ICMPMIB, "-", 0, icmpmibnames[i].dsname, icmpmibnames[i].oid, reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -827,47 +787,13 @@ void readconfig(char *cfgfn)
 
 				for (i=0; (ifmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, idx);
-
-					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->querytype = QUERY_IFMIB;
-					oitem->devname = devnamecopy;
-					oitem->requestset = setnumber;
-					oitem->dsname = ifmibnames[i].dsname;
-					oitem->oidstr = strdup(oid);
-					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-						if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
-						reqitem->oidtail = oitem;
-					}
-					else {
-						/* Could not parse the OID definition */
-						snmp_perror("read_objid");
-						free(oitem->oidstr);
-						free(oitem);
-					}
+					make_oitem(QUERY_IFMIB, devnamecopy, setnumber, ifmibnames[i].dsname, oid, reqitem);
 				}
 
 				setnumber++;
 				for (i=0; (ifXmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifXmibnames[i].oid, idx);
-
-					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->querytype = QUERY_IFMIB_X;
-					oitem->devname = devnamecopy;
-					oitem->requestset = setnumber;
-					oitem->dsname = ifXmibnames[i].dsname;
-					oitem->oidstr = strdup(oid);
-					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-						if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
-						reqitem->oidtail = oitem;
-					}
-					else {
-						/* Could not parse the OID definition */
-						snmp_perror("read_objid");
-						free(oitem->oidstr);
-						free(oitem);
-					}
+					make_oitem(QUERY_IFMIB_X, devnamecopy, setnumber, ifXmibnames[i].dsname, oid, reqitem);
 				}
 
 				reqitem->next_oid = reqitem->oidhead;
@@ -885,23 +811,7 @@ void readconfig(char *cfgfn)
 			if (oid) devname = strtok(NULL, " \r\n");
 
 			if (dsname && oid) {
-				oitem = (oid_t *)calloc(1, sizeof(oid_t));
-				oitem->querytype = QUERY_VAR;
-				oitem->devname = strdup(devname ? devname : "-");
-				oitem->requestset = setnumber;
-				oitem->dsname = strdup(dsname);
-				oitem->oidstr = strdup(oid);
-				oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-				if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-					if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
-					reqitem->oidtail = oitem;
-				}
-				else {
-					/* Could not parse the OID definition */
-					snmp_perror("read_objid");
-					free(oitem->oidstr);
-					free(oitem);
-				}
+				make_oitem(QUERY_VAR, (devname ? devname : "-"), setnumber, dsname, oid, reqitem);
 			}
 			reqitem->next_oid = reqitem->oidhead;
 			continue;
@@ -993,51 +903,21 @@ void resolveifnames(void)
 			if (ifwalk) {
 				int i;
 				char oid[128];
-				struct oid_t *oitem;
 				char *devnamecopy = strdup(wantwalk->devname);
 
 				for (i=0; (ifmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, ifwalk->index);
 
-					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->querytype = QUERY_IFMIB;
-					oitem->devname = devnamecopy;
-					oitem->requestset = wantwalk->requestset;
-					oitem->dsname = ifmibnames[i].dsname;
-					oitem->oidstr = strdup(oid);
-					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-						if (!rwalk->oidhead) rwalk->oidhead = oitem; else rwalk->oidtail->next = oitem;
-						rwalk->oidtail = oitem;
-					}
-					else {
-						/* Could not parse the OID definition */
-						snmp_perror("read_objid");
-						free(oitem->oidstr);
-						free(oitem);
-					}
+					make_oitem(QUERY_IFMIB, devnamecopy, 
+						   wantwalk->requestset, 
+						   ifmibnames[i].dsname, oid, rwalk);
 				}
 
 				for (i=0; (ifXmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifXmibnames[i].oid, ifwalk->index);
-
-					oitem = (oid_t *)calloc(1, sizeof(oid_t));
-					oitem->querytype = QUERY_IFMIB_X;
-					oitem->devname = devnamecopy;
-					oitem->requestset = -wantwalk->requestset;	/* Hack! To get a unique request set number */
-					oitem->dsname = ifXmibnames[i].dsname;
-					oitem->oidstr = strdup(oid);
-					oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-					if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
-						if (!rwalk->oidhead) rwalk->oidhead = oitem; else rwalk->oidtail->next = oitem;
-						rwalk->oidtail = oitem;
-					}
-					else {
-						/* Could not parse the OID definition */
-						snmp_perror("read_objid");
-						free(oitem->oidstr);
-						free(oitem);
-					}
+					make_oitem(QUERY_IFMIB_X, devnamecopy, 
+						   -wantwalk->requestset, /* Hack! To get a unique request set number */
+						   ifXmibnames[i].dsname, oid, rwalk);
 				}
 				rwalk->next_oid = rwalk->oidhead;
 			}
