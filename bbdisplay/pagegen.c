@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: pagegen.c,v 1.192 2008-01-03 09:40:31 henrik Exp $";
+static char rcsid[] = "$Id: pagegen.c,v 1.193 2008-01-04 09:40:33 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -384,7 +384,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 			/* If there is a host pretitle, show it. */
 			dbgprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
-			if (h->pretitle) {
+			if (h->pretitle && (pagetype == PAGE_BB)) {
 				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
 						columncount+1, xgetenv("MKBBTITLE"), h->pretitle);
 				rowcount = 0;
