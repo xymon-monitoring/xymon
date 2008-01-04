@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.19 2008-01-04 21:50:12 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.20 2008-01-04 22:26:40 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -69,7 +69,13 @@ unsigned int rootoidlen;
 
 req_t *reqhead = NULL;
 int active_requests = 0;
-enum { QUERY_INTERFACES, QUERY_IPADDRS, QUERY_NAMES, GET_DATA } querymode = GET_DATA;
+/* dataoperation tracks what we are currently doing */
+enum { 	SCAN_INTERFACES, 	/* Scan what descriptions (IF-MIB::ifDescr) or MAC address 
+				   (IF-MIB::ifPhysAddress) have been given to each interface */
+	SCAN_IPADDRS, 		/* Scan what IP's (IP-MIB::ipAdEntIfIndex) have been given to each interface */
+	SCAN_IFNAMES, 		/* Scan what names (IF-MIB::ifName) have been given to each interface */
+	GET_DATA 		/* Fetch the actual data */
+} dataoperation = GET_DATA;
 
 /* Tuneables */
 int max_pending_requests = 30;
@@ -243,8 +249,8 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 		if (pdu->errstat == SNMP_ERR_NOERROR) {
 			okcount++;
 
-			switch (querymode) {
-			  case QUERY_INTERFACES:
+			switch (dataoperation) {
+			  case SCAN_INTERFACES:
 				newif = (ifids_t *)calloc(1, sizeof(ifids_t));
 
 				vp = pdu->variables;
@@ -264,7 +270,7 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 				break;
 
 
-			  case QUERY_NAMES:
+			  case SCAN_IFNAMES:
 				/* Value returned is the name. The last byte of the OID is the interface index */
 				vp = pdu->variables;
 				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
@@ -276,7 +282,7 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 				break;
 
 
-			  case QUERY_IPADDRS:
+			  case SCAN_IPADDRS:
 				/* value returned is the interface index. The last 4 bytes of the OID is the IP */
 				vp = pdu->variables;
 				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
@@ -368,10 +374,10 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 		}
 
 		/* Now see if we should send another request */
-		switch (querymode) {
-		  case QUERY_INTERFACES:
-		  case QUERY_NAMES:
-		  case QUERY_IPADDRS:
+		switch (dataoperation) {
+		  case SCAN_INTERFACES:
+		  case SCAN_IFNAMES:
+		  case SCAN_IPADDRS:
 			if (pdu->errstat == SNMP_ERR_NOERROR) {
 				struct variable_list *vp = pdu->variables;
 
@@ -440,7 +446,7 @@ void startonehost(struct req_t *r, int ipchange)
 	oid Oid[MAX_OID_LEN];
 	unsigned int OidLen;
 
-	if ((querymode < GET_DATA) && !r->wantedinterfaces) return;
+	if ((dataoperation < GET_DATA) && !r->wantedinterfaces) return;
 
 	/* Are we retrying a cluster with a new IP? Then drop the current session */
 	if (r->sess && ipchange) {
@@ -471,8 +477,8 @@ void startonehost(struct req_t *r, int ipchange)
 		}
 	}
 
-	switch (querymode) {
-	  case QUERY_INTERFACES:
+	switch (dataoperation) {
+	  case SCAN_INTERFACES:
 		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
 		pducount++;
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
@@ -492,7 +498,7 @@ void startonehost(struct req_t *r, int ipchange)
 		}
 		break;
 
-	  case QUERY_NAMES:
+	  case SCAN_IFNAMES:
 		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
 		pducount++;
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
@@ -502,7 +508,7 @@ void startonehost(struct req_t *r, int ipchange)
 		}
 		break;
 
-	  case QUERY_IPADDRS:
+	  case SCAN_IPADDRS:
 		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
 		pducount++;
 		OidLen = sizeof(Oid)/sizeof(Oid[0]);
@@ -860,19 +866,19 @@ void resolveifnames(void)
 	 */
 	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
 	read_objid(".1.3.6.1.2.1.2.2.1.1", rootoid, &rootoidlen);
-	querymode = QUERY_INTERFACES;
+	dataoperation = SCAN_INTERFACES;
 	starthosts(1);
 	communicate();
 
 	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
 	read_objid(".1.3.6.1.2.1.4.20.1.2", rootoid, &rootoidlen);
-	querymode = QUERY_IPADDRS;
+	dataoperation = SCAN_IPADDRS;
 	starthosts(1);
 	communicate();
 
 	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
 	read_objid(".1.3.6.1.2.1.31.1.1.1.1", rootoid, &rootoidlen);
-	querymode = QUERY_NAMES;
+	dataoperation = SCAN_IFNAMES;
 	starthosts(1);
 	communicate();
 
@@ -928,7 +934,7 @@ void resolveifnames(void)
 
 void getdata(void)
 {
-	querymode = GET_DATA;
+	dataoperation = GET_DATA;
 	starthosts(1);
 	communicate();
 }
