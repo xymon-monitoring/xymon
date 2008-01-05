@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.23 2008-01-05 13:43:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.24 2008-01-05 16:34:23 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -518,8 +518,7 @@ void readmibs(char *cfgfn)
 		sanitize_input(inbuf, 0, 0);
 		bot = STRBUF(inbuf) + strspn(STRBUF(inbuf), " \t");
 
-		if (*bot == '\0')
-			continue;
+		if ((*bot == '\0') || (*bot == '#')) continue;
 
 		if (*bot == '[') {
 			char *mibname;
@@ -554,13 +553,14 @@ void readmibs(char *cfgfn)
 			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 */
 			char oid[1024], name[1024];
 
-			mib->oidlisttail->oidcount++;
-			if (mib->oidlisttail->oidcount == mib->oidlisttail->oidsz) {
-				mib->oidlisttail->oidsz += 10;
-				mib->oidlisttail->oids = (oidds_t *)realloc(mib->oidlisttail->oids, mib->oidlisttail->oidsz*sizeof(oidds_t));
-			}
-
 			if (sscanf(bot, "%s = %s", name, oid) == 2) {
+				mib->oidlisttail->oidcount++;
+
+				if (mib->oidlisttail->oidcount == mib->oidlisttail->oidsz) {
+					mib->oidlisttail->oidsz += 10;
+					mib->oidlisttail->oids = (oidds_t *)realloc(mib->oidlisttail->oids, mib->oidlisttail->oidsz*sizeof(oidds_t));
+				}
+
 				mib->oidlisttail->oids[mib->oidlisttail->oidcount].oid = strdup(oid);
 				mib->oidlisttail->oids[mib->oidlisttail->oidcount].dsname = strdup(name);
 			}
@@ -585,7 +585,7 @@ void readmibs(char *cfgfn)
 			dbgprintf("[%s]\n", mib->mibname);
 			for (swalk = mib->oidlisthead; (swalk); swalk = swalk->next) {
 				dbgprintf("\t*** OID set, %d entries ***\n", swalk->oidcount);
-				for (i=0; (i < swalk->oidcount); i++) {
+				for (i=0; (i <= swalk->oidcount); i++) {
 					dbgprintf("\t\t%s = %s\n", swalk->oids[i].dsname, swalk->oids[i].oid);
 				}
 			}
@@ -695,7 +695,7 @@ void readconfig(char *cfgfn)
 
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, NULL)) {
-		char *bot, *p;
+		char *bot, *p, *mibidx;
 		char savech;
 
 		sanitize_input(inbuf, 0, 0);
@@ -796,8 +796,8 @@ void readconfig(char *cfgfn)
 			if (oid2) devname = strtok(NULL, "\r\n");
 
 			if (idx && oid1 && oid2 && devname) {
-				make_oitem(QUERY_MRTG, NULL, devname, "ds1", oid1, reqitem);
-				make_oitem(QUERY_MRTG, NULL, devname, "ds2", oid2, reqitem);
+				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds1", oid1, reqitem);
+				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds2", oid2, reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -844,18 +844,27 @@ void readconfig(char *cfgfn)
 		/* Custom mibs */
 		p = bot + strcspn(bot, "= \t\r\n"); savech = *p; *p = '\0';
 		mibhandle = rbtFind(mibdefs, bot);
-		*p = savech;
+		*p = savech; mibidx = p + strspn(p, "= \t");
+		p = mibidx + strcspn(mibidx, "\r\n\t "); *p = '\0';
 		if (mibhandle != rbtEnd(mibdefs)) {
 			int i;
 			mibdef_t *mib;
+			char *oid, oidbuf[1024];
 			
 			reqitem->setnumber++;
 
 			mib = (mibdef_t *)gettreeitem(mibdefs, mibhandle);
 			for (i=0; (i <= mib->oidlisttail->oidcount); i++) {
+				if (savech == '=') {
+					sprintf(oidbuf, "%s.%s", mib->oidlisttail->oids[i].oid, mibidx);
+					oid = oidbuf;
+				}
+				else
+					oid = mib->oidlisttail->oids[i].oid;
+
 				make_oitem(QUERY_MIB, mib, "-",
 					   mib->oidlisttail->oids[i].dsname, 
-					   mib->oidlisttail->oids[i].oid, 
+					   oid,
 					   reqitem);
 			}
 
