@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.24 2008-01-05 16:34:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.25 2008-01-05 17:00:23 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -71,7 +71,7 @@ typedef struct ifids_t {
 /* A host and the OID's we will be polling */
 typedef struct req_t {
 	char *hostname;				/* Hostname used for reporting to Hobbit */
-	char *hostip[10];			/* Hostname or IP used for testing */
+	char *hostip[10];			/* Hostname(s) or IP(s) used for testing. Max 10 IP's */
 	int hostipidx;
 	u_short portnumber;			/* SNMP daemon portnumber */
 	long version;				/* SNMP version to use */
@@ -850,22 +850,33 @@ void readconfig(char *cfgfn)
 			int i;
 			mibdef_t *mib;
 			char *oid, oidbuf[1024];
-			
-			reqitem->setnumber++;
+			char *devname;
+			oidset_t *swalk;
 
 			mib = (mibdef_t *)gettreeitem(mibdefs, mibhandle);
-			for (i=0; (i <= mib->oidlisttail->oidcount); i++) {
-				if (savech == '=') {
-					sprintf(oidbuf, "%s.%s", mib->oidlisttail->oids[i].oid, mibidx);
-					oid = oidbuf;
-				}
-				else
-					oid = mib->oidlisttail->oids[i].oid;
 
-				make_oitem(QUERY_MIB, mib, "-",
-					   mib->oidlisttail->oids[i].dsname, 
-					   oid,
-					   reqitem);
+			swalk = mib->oidlisthead;
+			while (swalk) {
+				reqitem->setnumber++;
+
+				for (i=0; (i <= swalk->oidcount); i++) {
+					if (savech == '=') {
+						sprintf(oidbuf, "%s.%s", swalk->oids[i].oid, mibidx);
+						oid = oidbuf;
+						devname = strdup(mibidx);
+					}
+					else {
+						oid = swalk->oids[i].oid;
+						devname = "-";
+					}
+
+					make_oitem(QUERY_MIB, mib, devname,
+						   swalk->oids[i].dsname, 
+						   oid,
+						   reqitem);
+				}
+
+				swalk = swalk->next;
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -1032,7 +1043,7 @@ void sendresult(void)
 					break;
 
 				  case QUERY_MIB:
-					if (*owalk->devname && (*owalk->devname != '-')) {
+					if (*owalk->devname && (*owalk->devname != '-') ) {
 						sprintf(msgline, "\n[%s]\n", owalk->devname);
 						addtobuffer(owalk->mib->resultbuf, msgline);
 					}
@@ -1049,7 +1060,7 @@ void sendresult(void)
 				addtostatus(msgline);
 				break;
 
-			  default:
+			  case QUERY_MIB:
 				owalk->mib->haveresult = 1;
 				addtobuffer(owalk->mib->resultbuf, msgline);
 				break;
