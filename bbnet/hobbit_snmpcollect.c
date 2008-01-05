@@ -12,18 +12,33 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.21 2008-01-05 07:40:25 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.22 2008-01-05 11:41:42 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
 #include "libbbgen.h"
 
+typedef struct oidds_t {
+	char *oid;
+	char *dsname;
+} oidds_t;
+
+typedef struct mibdef_t {
+	char *mibname;
+	int oidsz, oidcount;
+	oidds_t *oids;
+	strbuffer_t *resultbuf;
+	int haveresult;
+} mibdef_t;
+
+enum querytype_t { QUERY_VAR, QUERY_MRTG, QUERY_IFMIB, QUERY_IFMIB_X, QUERY_CUSTOM };
+
 /* List of the OID's we will request */
-enum querytype_t { QUERY_VAR, QUERY_MRTG, QUERY_IFMIB, QUERY_IFMIB_X, QUERY_SNMPMIB, QUERY_ICMPMIB };
 typedef struct oid_t {
 	char *oidstr;				/* the input definition of the OID */
-	int querytype;
+	enum querytype_t querytype;
+	mibdef_t *mib;				/* pointer to the mib definition for custom mibs */
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
 	char *devname, *dsname;
@@ -92,10 +107,7 @@ int timeoutcount = 0;
 int errorcount = 0;
 struct timeval starttv, endtv;
 
-typedef struct oidds_t {
-	char *oid;
-	char *dsname;
-} oidds_t;
+RbtHandle mibdefs;
 
 oidds_t ifmibnames[] = {
 	{ "IF-MIB::ifDescr", "ifDescr" },
@@ -145,68 +157,6 @@ oidds_t ifXmibnames[] = {
 	{ NULL, NULL }
 };
 
-oidds_t snmpmibnames[] = {
-	{ "SNMPv2-MIB::snmpInPkts.0", "snmpInPkts" },
-	{ "SNMPv2-MIB::snmpOutPkts.0", "snmpOutPkts" },
-	{ "SNMPv2-MIB::snmpInBadVersions.0", "snmpInBadVersions" },
-	{ "SNMPv2-MIB::snmpInBadCommunityNames.0", "snmpInBadCommunityNames" },
-	{ "SNMPv2-MIB::snmpInBadCommunityUses.0", "snmpInBadcommunityUses" },
-	{ "SNMPv2-MIB::snmpInASNParseErrs.0", "snmpInASMParseErrs" },
-	{ "SNMPv2-MIB::snmpInTooBigs.0", "snmpInTooBigs" },
-	{ "SNMPv2-MIB::snmpInNoSuchNames.0", "snmpInNoSuchNames" },
-	{ "SNMPv2-MIB::snmpInBadValues.0", "snmpInBadValues" },
-	{ "SNMPv2-MIB::snmpInReadOnlys.0", "snmpInReadOnlys" },
-	{ "SNMPv2-MIB::snmpInGenErrs.0", "snmpInGenErrs" },
-	{ "SNMPv2-MIB::snmpInTotalReqVars.0", "snmpInTotalReqVars" },
-	{ "SNMPv2-MIB::snmpInTotalSetVars.0", "snmpInTotalSetVars" },
-	{ "SNMPv2-MIB::snmpInGetRequests.0", "snmpInGetRequests" },
-	{ "SNMPv2-MIB::snmpInGetNexts.0", "snmpInGetNexts" },
-	{ "SNMPv2-MIB::snmpInSetRequests.0", "snmpInSetRequests" },
-	{ "SNMPv2-MIB::snmpInGetResponses.0", "snmpInGetResponses" },
-	{ "SNMPv2-MIB::snmpInTraps.0", "snmpInTraps" },
-	{ "SNMPv2-MIB::snmpOutTooBigs.0", "snmpOutTooBigs" },
-	{ "SNMPv2-MIB::snmpOutNoSuchNames.0", "snmpOutNoSuchNames" },
-	{ "SNMPv2-MIB::snmpOutBadValues.0", "snmpOutBadValues" },
-	{ "SNMPv2-MIB::snmpOutGenErrs.0", "snmpOutGenErrs" },
-	{ "SNMPv2-MIB::snmpOutGetRequests.0", "snmpOutGetRequests" },
-	{ "SNMPv2-MIB::snmpOutGetNexts.0", "snmpOutGetNexts" },
-	{ "SNMPv2-MIB::snmpOutSetRequests.0", "snmpOutSetRequests" },
-	{ "SNMPv2-MIB::snmpOutGetResponses.0", "snmpOutGetResponses" },
-	{ "SNMPv2-MIB::snmpOutTraps.0", "snmpOutTraps" },
-	{ "SNMPv2-MIB::snmpSilentDrops.0", "snmpSilentDrops" },
-	{ "SNMPv2-MIB::snmpProxyDrops.0", "snmpProxyDrops" },
-	{ NULL, NULL }
-};
-
-oidds_t icmpmibnames[] = {
-	{ "IP-MIB::icmpInMsgs.0", "icmpInMsgs" },
-	{ "IP-MIB::icmpInErrors.0", "icmpInErrors" },
-	{ "IP-MIB::icmpInDestUnreachs.0", "icmpInDestUnreachs" },
-	{ "IP-MIB::icmpInTimeExcds.0", "icmpInTimeExcds" },
-	{ "IP-MIB::icmpInParmProbs.0", "icmpInParmProbs" },
-	{ "IP-MIB::icmpInSrcQuenchs.0", "icmpInSrcQuenchs" },
-	{ "IP-MIB::icmpInRedirects.0", "icmpInRedirects" },
-	{ "IP-MIB::icmpInEchos.0", "icmpInEchos" },
-	{ "IP-MIB::icmpInEchoReps.0", "icmpInEchoReps" },
-	{ "IP-MIB::icmpInTimestamps.0", "icmpInTimestamps" },
-	{ "IP-MIB::icmpInTimestampReps.0", "icmpInTimestampReps" },
-	{ "IP-MIB::icmpInAddrMasks.0", "icmpInAddrMasks" },
-	{ "IP-MIB::icmpInAddrMaskReps.0", "icmpInAddrMaskReps" },
-	{ "IP-MIB::icmpOutMsgs.0", "icmpOutMsgs" },
-	{ "IP-MIB::icmpOutErrors.0", "icmpOutErrors" },
-	{ "IP-MIB::icmpOutDestUnreachs.0", "icmpOutDestUnreachs" },
-	{ "IP-MIB::icmpOutTimeExcds.0", "icmpOutTimeExcds" },
-	{ "IP-MIB::icmpOutParmProbs.0", "icmpOutParmProbs" },
-	{ "IP-MIB::icmpOutSrcQuenchs.0", "icmpOutSrcQuenchs" },
-	{ "IP-MIB::icmpOutRedirects.0", "icmpOutRedirects" },
-	{ "IP-MIB::icmpOutEchos.0", "icmpOutEchos" },
-	{ "IP-MIB::icmpOutEchoReps.0", "icmpOutEchoReps" },
-	{ "IP-MIB::icmpOutTimestamps.0", "icmpOutTimestamps" },
-	{ "IP-MIB::icmpOutTimestampReps.0", "icmpOutTimestampReps" },
-	{ "IP-MIB::icmpOutAddrMasks.0", "icmpOutAddrMasks" },
-	{ "IP-MIB::icmpOutAddrMaskReps.0", "icmpOutAddrMaskReps" },
-	{ NULL, NULL }
-};
 
 /* Must forward declare these */
 void startonehost(struct req_t *r, int ipchange);
@@ -577,6 +527,79 @@ void stophosts(void)
 	}
 }
 
+
+void readmibs(char *cfgfn)
+{
+	static void *cfgfiles = NULL;
+	FILE *cfgfd;
+	strbuffer_t *inbuf;
+	mibdef_t *mib = NULL;
+
+	/* Check if config was modified */
+	if (cfgfiles) {
+		if (!stackfmodified(cfgfiles)) {
+			dbgprintf("No files changed, skipping reload\n");
+			return;
+		}
+		else {
+			stackfclist(&cfgfiles);
+			cfgfiles = NULL;
+		}
+	}
+
+	cfgfd = stackfopen(cfgfn, "r", &cfgfiles);
+	if (cfgfd == NULL) {
+		errprintf("Cannot open configuration files %s\n", cfgfn);
+		return;
+	}
+
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, NULL)) {
+		char *bot, *p;
+
+		sanitize_input(inbuf, 0, 0);
+		bot = STRBUF(inbuf) + strspn(STRBUF(inbuf), " \t");
+
+		if (*bot == '\0')
+			continue;
+
+		if (*bot == '[') {
+			char *mibname;
+			
+			mibname = bot+1;
+			p = strchr(mibname, ']'); if (p) *p = '\0';
+
+			mib = (mibdef_t *)calloc(1, sizeof(mibdef_t));
+			mib->mibname = strdup(mibname);
+			mib->oidsz = 10;
+			mib->oidcount = -1;
+			mib->oids = (oidds_t *)malloc(mib->oidsz*sizeof(oidds_t));
+			mib->resultbuf = newstrbuffer(0);
+			rbtInsert(mibdefs, mib->mibname, mib);
+			continue;
+		}
+
+		if (mib) {
+			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 */
+			char oid[1024], name[1024];
+
+			mib->oidcount++;
+			if (mib->oidcount == mib->oidsz) {
+				mib->oidsz += 10;
+				mib->oids = (oidds_t *)realloc(mib->oids, mib->oidsz*sizeof(oidds_t));
+			}
+
+			if (sscanf(bot, "%s = %s", name, oid) == 2) {
+				mib->oids[mib->oidcount].oid = strdup(oid);
+				mib->oids[mib->oidcount].dsname = strdup(name);
+			}
+		}
+	}
+
+	stackfclose(cfgfd);
+	freestrbuffer(inbuf);
+}
+
 /*
  *
  * Config file syntax
@@ -591,11 +614,14 @@ void stophosts(void)
  *
  */
 
-static oid_t *make_oitem(int qtype, char *devname, int setnumber, char *dsname, char *oidstr, struct req_t *reqitem)
+static oid_t *make_oitem(enum querytype_t qtype, mibdef_t *mib,
+			 char *devname, int setnumber, 
+			 char *dsname, char *oidstr, struct req_t *reqitem)
 {
 	oid_t *oitem = (oid_t *)calloc(1, sizeof(oid_t));
 
 	oitem->querytype = qtype;
+	oitem->mib = mib;
 	oitem->devname = strdup(devname);
 	oitem->requestset = setnumber;
 	oitem->dsname = dsname;
@@ -626,6 +652,8 @@ void readconfig(char *cfgfn)
 	int setnumber = 0;
 	int bbsleep = atoi(xgetenv("BBSLEEP"));
 
+	RbtIterator mibhandle;
+
 	/* Check if config was modified */
 	if (cfgfiles) {
 		if (!stackfmodified(cfgfiles)) {
@@ -647,6 +675,7 @@ void readconfig(char *cfgfn)
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, NULL)) {
 		char *bot, *p;
+		char savech;
 
 		sanitize_input(inbuf, 0, 0);
 		bot = STRBUF(inbuf) + strspn(STRBUF(inbuf), " \t");
@@ -730,7 +759,7 @@ void readconfig(char *cfgfn)
 			if (oid) devname = strtok(NULL, " \r\n");
 
 			if (dsname && oid) {
-				make_oitem(QUERY_VAR, (devname ? devname : "-"), setnumber, dsname, oid, reqitem);
+				make_oitem(QUERY_VAR, NULL, (devname ? devname : "-"), setnumber, dsname, oid, reqitem);
 			}
 			reqitem->next_oid = reqitem->oidhead;
 			continue;
@@ -747,8 +776,8 @@ void readconfig(char *cfgfn)
 			if (oid2) devname = strtok(NULL, "\r\n");
 
 			if (idx && oid1 && oid2 && devname) {
-				make_oitem(QUERY_MRTG, devname, setnumber, "ds1", oid1, reqitem);
-				make_oitem(QUERY_MRTG, devname, setnumber, "ds2", oid2, reqitem);
+				make_oitem(QUERY_MRTG, NULL, devname, setnumber, "ds1", oid1, reqitem);
+				make_oitem(QUERY_MRTG, NULL, devname, setnumber, "ds2", oid2, reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -788,13 +817,13 @@ void readconfig(char *cfgfn)
 
 				for (i=0; (ifmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, idx);
-					make_oitem(QUERY_IFMIB, devnamecopy, setnumber, ifmibnames[i].dsname, oid, reqitem);
+					make_oitem(QUERY_IFMIB, NULL, devnamecopy, setnumber, ifmibnames[i].dsname, oid, reqitem);
 				}
 
 				setnumber++;
 				for (i=0; (ifXmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifXmibnames[i].oid, idx);
-					make_oitem(QUERY_IFMIB_X, devnamecopy, setnumber, ifXmibnames[i].dsname, oid, reqitem);
+					make_oitem(QUERY_IFMIB_X, NULL, devnamecopy, setnumber, ifXmibnames[i].dsname, oid, reqitem);
 				}
 
 				reqitem->next_oid = reqitem->oidhead;
@@ -802,22 +831,17 @@ void readconfig(char *cfgfn)
 			continue;
 		}
 
-		if (strncmp(bot, "snmpmib", 7) == 0) {
+		/* Custom mibs */
+		p = bot + strcspn(bot, "= \t\r\n"); savech = *p; *p = '\0';
+		mibhandle = rbtFind(mibdefs, bot);
+		*p = savech;
+		if (mibhandle != rbtEnd(mibdefs)) {
 			int i;
-
-			for (i=0; (snmpmibnames[i].oid); i++) {
-				make_oitem(QUERY_SNMPMIB, "-", 0, snmpmibnames[i].dsname, snmpmibnames[i].oid, reqitem);
-			}
-
-			reqitem->next_oid = reqitem->oidhead;
-			continue;
-		}
-
-		if (strncmp(bot, "icmpmib", 7) == 0) {
-			int i;
-
-			for (i=0; (icmpmibnames[i].oid); i++) {
-				make_oitem(QUERY_ICMPMIB, "-", 0, icmpmibnames[i].dsname, icmpmibnames[i].oid, reqitem);
+			mibdef_t *mib;
+			
+			mib = (mibdef_t *)gettreeitem(mibdefs, mibhandle);
+			for (i=0; (i <= mib->oidcount); i++) {
+				make_oitem(QUERY_CUSTOM, mib, "-", 0, mib->oids[i].dsname, mib->oids[i].oid, reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -915,14 +939,14 @@ void resolveifnames(void)
 				for (i=0; (ifmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifmibnames[i].oid, ifwalk->index);
 
-					make_oitem(QUERY_IFMIB, devnamecopy, 
+					make_oitem(QUERY_IFMIB, NULL, devnamecopy, 
 						   wantwalk->requestset, 
 						   ifmibnames[i].dsname, oid, rwalk);
 				}
 
 				for (i=0; (ifXmibnames[i].oid); i++) {
 					sprintf(oid, "%s.%s", ifXmibnames[i].oid, ifwalk->index);
-					make_oitem(QUERY_IFMIB_X, devnamecopy, 
+					make_oitem(QUERY_IFMIB_X, NULL, devnamecopy, 
 						   -wantwalk->requestset, /* Hack! To get a unique request set number */
 						   ifXmibnames[i].dsname, oid, rwalk);
 				}
@@ -948,12 +972,10 @@ void sendresult(void)
 	char msgline[4096];
 	char currdev[1024];
 	strbuffer_t *ifmibdata = newstrbuffer(0);
-	strbuffer_t *snmpmibdata = newstrbuffer(0);
-	strbuffer_t *icmpmibdata = newstrbuffer(0);
 	int activestatus = 0;
 	int haveifmibdata = 0;
-	int havesnmpmibdata = 0;
-	int haveicmpmibdata = 0;
+	RbtIterator handle;
+	mibdef_t *mib;
 
 	init_timestamp();
 
@@ -962,29 +984,29 @@ void sendresult(void)
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		clearstrbuffer(ifmibdata);
-		clearstrbuffer(snmpmibdata);
-		clearstrbuffer(icmpmibdata);
 
 		sprintf(msgline, "status+%d %s.ifmib green %s\n", 
 			2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, timestamp);
 		addtobuffer(ifmibdata, msgline);
-		sprintf(msgline, "status+%d %s.snmpmib green %s\n", 
-			2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, timestamp);
-		addtobuffer(snmpmibdata, msgline);
-		sprintf(msgline, "status+%d %s.icmpmib green %s\n", 
-			2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, timestamp);
-		addtobuffer(icmpmibdata, msgline);
-
 		sprintf(msgline, "Interval=%d\n", atoi(xgetenv("BBSLEEP")));
 		addtobuffer(ifmibdata, msgline);
-		addtobuffer(snmpmibdata, msgline);
-		addtobuffer(icmpmibdata, msgline);
-
 		sprintf(msgline, "ActiveIP=%s\n", rwalk->hostip[rwalk->hostipidx]);
 		addtobuffer(ifmibdata, msgline);
-		addtobuffer(snmpmibdata, msgline);
-		addtobuffer(icmpmibdata, msgline);
 
+		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
+			mib = (mibdef_t *)gettreeitem(mibdefs, handle);
+
+			clearstrbuffer(mib->resultbuf);
+			mib->haveresult = 0;
+
+			sprintf(msgline, "status+%d %s.%s green %s\n", 
+				2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, mib->mibname, timestamp);
+			addtobuffer(mib->resultbuf, msgline);
+			sprintf(msgline, "Interval=%d\n", atoi(xgetenv("BBSLEEP")));
+			addtobuffer(mib->resultbuf, msgline);
+			sprintf(msgline, "ActiveIP=%s\n", rwalk->hostip[rwalk->hostipidx]);
+			addtobuffer(mib->resultbuf, msgline);
+		}
 
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
 			if (strcmp(currdev, owalk->devname)) {
@@ -1019,7 +1041,7 @@ void sendresult(void)
 					addtostatus(msgline);
 					break;
 
-				  default:
+				  case QUERY_CUSTOM:
 					break;
 				}
 			}
@@ -1038,14 +1060,9 @@ void sendresult(void)
 				addtostatus(msgline);
 				break;
 
-			  case QUERY_SNMPMIB:
-				havesnmpmibdata = 1;
-				addtobuffer(snmpmibdata, msgline);
-				break;
-
-			  case QUERY_ICMPMIB:
-				haveicmpmibdata = 1;
-				addtobuffer(icmpmibdata, msgline);
+			  default:
+				owalk->mib->haveresult = 1;
+				addtobuffer(owalk->mib->resultbuf, msgline);
 				break;
 			}
 		}
@@ -1057,22 +1074,23 @@ void sendresult(void)
 			addtostrstatus(ifmibdata);
 			finish_status();
 		}
-		if (havesnmpmibdata) {
-			init_status(COL_GREEN);
-			addtostrstatus(snmpmibdata);
-			finish_status();
-		}
-		if (haveicmpmibdata) {
-			init_status(COL_GREEN);
-			addtostrstatus(icmpmibdata);
-			finish_status();
+
+		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
+			mib = (mibdef_t *)gettreeitem(mibdefs, handle);
+
+			if (mib->haveresult) {
+				init_status(COL_GREEN);
+				addtostrstatus(mib->resultbuf);
+				finish_status();
+
+				freestrbuffer(mib->resultbuf);
+				mib->haveresult = 0;
+			}
 		}
 	}
 
 	combo_end();
 	freestrbuffer(ifmibdata);
-	freestrbuffer(snmpmibdata);
-	freestrbuffer(icmpmibdata);
 }
 
 void egoresult(int color, char *egocolumn)
@@ -1111,6 +1129,7 @@ void egoresult(int color, char *egocolumn)
 int main (int argc, char **argv)
 {
 	int argi;
+	char *mibfn = NULL;
 	char *configfn = NULL;
 	int cfgcheck = 0;
 
@@ -1151,6 +1170,13 @@ int main (int argc, char **argv)
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
 	init_snmp("hobbit_snmpcollect");
 	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
+
+	if (mibfn == NULL) {
+		mibfn = (char *)malloc(PATH_MAX);
+		sprintf(mibfn, "%s/etc/hobbit-snmpmibs.cfg", xgetenv("BBHOME"));
+	}
+	mibdefs = rbtNew(name_compare);
+	readmibs(mibfn);
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
