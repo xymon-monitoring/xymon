@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.20 2008-01-04 22:26:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.21 2008-01-05 07:40:25 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -20,10 +20,10 @@ static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.20 2008-01-04 22:26:40 henr
 #include "libbbgen.h"
 
 /* List of the OID's we will request */
-enum querytype_t { QUERY_IFMIB, QUERY_IFMIB_X, QUERY_MRTG, QUERY_VAR, QUERY_SNMPMIB, QUERY_ICMPMIB };
+enum querytype_t { QUERY_VAR, QUERY_MRTG, QUERY_IFMIB, QUERY_IFMIB_X, QUERY_SNMPMIB, QUERY_ICMPMIB };
 typedef struct oid_t {
 	char *oidstr;				/* the input definition of the OID */
-	enum querytype_t querytype;
+	int querytype;
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
 	char *devname, *dsname;
@@ -79,8 +79,8 @@ enum { 	SCAN_INTERFACES, 	/* Scan what descriptions (IF-MIB::ifDescr) or MAC add
 
 /* Tuneables */
 int max_pending_requests = 30;
-int retries = 0;				/* Number of retries before timeout. 0 = Net-SNMP default (5). */
-long timeout = 0;				/* Number of uS until first timeout, then exponential backoff. 0 = Net-SNMP default (1 second). */
+int retries = 0;	/* Number of retries before timeout. 0 = Net-SNMP default (5). */
+long timeout = 0;	/* Number of uS until first timeout, then exponential backoff. 0 = Net-SNMP default (1 second). */
 
 /* Statistics */
 char *reportcolumn = NULL;
@@ -425,8 +425,9 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 		print_result(STAT_TIMEOUT, item, pdu);
 	}
 
-	/* something went wrong (or end of variables) 
-	 * this host not active any more
+	/* 
+	 * Something went wrong (or end of variables).
+	 * This host not active any more
 	 */
 	dbgprintf("Finished host %s\n", item->hostname);
 	active_requests--;
@@ -590,7 +591,7 @@ void stophosts(void)
  *
  */
 
-static oid_t *make_oitem(enum querytype_t qtype, char *devname, int setnumber, char *dsname, char *oidstr, struct req_t *reqitem)
+static oid_t *make_oitem(int qtype, char *devname, int setnumber, char *dsname, char *oidstr, struct req_t *reqitem)
 {
 	oid_t *oitem = (oid_t *)calloc(1, sizeof(oid_t));
 
@@ -719,6 +720,22 @@ void readconfig(char *cfgfn)
 			continue;
 		}
 
+		if (strncmp(bot, "var=", 4) == 0) {
+			char *dsname, *oid = NULL, *devname = NULL;
+
+			setnumber++;
+
+			dsname = strtok(bot+4, " \t");
+			if (dsname) oid = strtok(NULL, " \t");
+			if (oid) devname = strtok(NULL, " \r\n");
+
+			if (dsname && oid) {
+				make_oitem(QUERY_VAR, (devname ? devname : "-"), setnumber, dsname, oid, reqitem);
+			}
+			reqitem->next_oid = reqitem->oidhead;
+			continue;
+		}
+
 		if (strncmp(bot, "mrtg=", 5) == 0) {
 			char *idx, *oid1 = NULL, *oid2 = NULL, *devname = NULL;
 
@@ -732,28 +749,6 @@ void readconfig(char *cfgfn)
 			if (idx && oid1 && oid2 && devname) {
 				make_oitem(QUERY_MRTG, devname, setnumber, "ds1", oid1, reqitem);
 				make_oitem(QUERY_MRTG, devname, setnumber, "ds2", oid2, reqitem);
-			}
-
-			reqitem->next_oid = reqitem->oidhead;
-			continue;
-		}
-
-		if (strncmp(bot, "snmpmib", 7) == 0) {
-			int i;
-
-			for (i=0; (snmpmibnames[i].oid); i++) {
-				make_oitem(QUERY_SNMPMIB, "-", 0, snmpmibnames[i].dsname, snmpmibnames[i].oid, reqitem);
-			}
-
-			reqitem->next_oid = reqitem->oidhead;
-			continue;
-		}
-
-		if (strncmp(bot, "icmpmib", 7) == 0) {
-			int i;
-
-			for (i=0; (icmpmibnames[i].oid); i++) {
-				make_oitem(QUERY_ICMPMIB, "-", 0, icmpmibnames[i].dsname, icmpmibnames[i].oid, reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -807,18 +802,24 @@ void readconfig(char *cfgfn)
 			continue;
 		}
 
-		if (strncmp(bot, "var=", 4) == 0) {
-			char *dsname, *oid = NULL, *devname = NULL;
+		if (strncmp(bot, "snmpmib", 7) == 0) {
+			int i;
 
-			setnumber++;
-
-			dsname = strtok(bot+4, " \t");
-			if (dsname) oid = strtok(NULL, " \t");
-			if (oid) devname = strtok(NULL, " \r\n");
-
-			if (dsname && oid) {
-				make_oitem(QUERY_VAR, (devname ? devname : "-"), setnumber, dsname, oid, reqitem);
+			for (i=0; (snmpmibnames[i].oid); i++) {
+				make_oitem(QUERY_SNMPMIB, "-", 0, snmpmibnames[i].dsname, snmpmibnames[i].oid, reqitem);
 			}
+
+			reqitem->next_oid = reqitem->oidhead;
+			continue;
+		}
+
+		if (strncmp(bot, "icmpmib", 7) == 0) {
+			int i;
+
+			for (i=0; (icmpmibnames[i].oid); i++) {
+				make_oitem(QUERY_ICMPMIB, "-", 0, icmpmibnames[i].dsname, icmpmibnames[i].oid, reqitem);
+			}
+
 			reqitem->next_oid = reqitem->oidhead;
 			continue;
 		}
@@ -1043,8 +1044,8 @@ void sendresult(void)
 				break;
 
 			  case QUERY_ICMPMIB:
-				addtobuffer(icmpmibdata, msgline);
 				haveicmpmibdata = 1;
+				addtobuffer(icmpmibdata, msgline);
 				break;
 			}
 		}
@@ -1110,7 +1111,7 @@ void egoresult(int color, char *egocolumn)
 int main (int argc, char **argv)
 {
 	int argi;
-	char *configfn = "hobbit_snmpcollect.cfg";
+	char *configfn = NULL;
 	int cfgcheck = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -1141,7 +1142,7 @@ int main (int argc, char **argv)
 			timing = 1;
 		}
 		else if (*argv[argi] != '-') {
-			configfn = argv[argi];
+			configfn = strdup(argv[argi]);
 		}
 	}
 
@@ -1151,6 +1152,10 @@ int main (int argc, char **argv)
 	init_snmp("hobbit_snmpcollect");
 	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
 
+	if (configfn == NULL) {
+		configfn = (char *)malloc(PATH_MAX);
+		sprintf(configfn, "%s/etc/hobbit-snmphosts.cfg", xgetenv("BBHOME"));
+	}
 	readconfig(configfn);
 	if (cfgcheck) return 0;
 	add_timestamp("Configuration loaded");
