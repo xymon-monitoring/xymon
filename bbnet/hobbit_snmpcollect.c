@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.25 2008-01-05 17:00:23 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.26 2008-01-05 17:54:08 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -1004,9 +1004,6 @@ void sendresult(void)
 		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
 			mib = (mibdef_t *)gettreeitem(mibdefs, handle);
 
-			clearstrbuffer(mib->resultbuf);
-			mib->haveresult = 0;
-
 			sprintf(msgline, "status+%d %s.%s green %s\n", 
 				2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, mib->mibname, timestamp);
 			addtobuffer(mib->resultbuf, msgline);
@@ -1077,7 +1074,7 @@ void sendresult(void)
 				addtostrstatus(mib->resultbuf);
 				finish_status();
 
-				freestrbuffer(mib->resultbuf);
+				clearstrbuffer(mib->resultbuf);
 				mib->haveresult = 0;
 			}
 		}
