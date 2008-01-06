@@ -12,18 +12,21 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.26 2008-01-05 17:54:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.27 2008-01-06 16:34:40 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
 #include "libbbgen.h"
 
+/* -------------------  struct's used for the MIB definition  ------------------------ */
+/* This holds one OID and our corresponding short-name */
 typedef struct oidds_t {
 	char *oid;
 	char *dsname;
 } oidds_t;
 
+/* This holds a list of OID's and their shortnames */
 typedef struct oidset_t {
 	int oidsz, oidcount;
 	oidds_t *oids;
@@ -37,6 +40,10 @@ typedef struct mibdef_t {
 	int haveresult;
 } mibdef_t;
 
+RbtHandle mibdefs;
+
+
+/* -----------------  struct's used for the host/requests we need to do ---------------- */
 enum querytype_t { QUERY_VAR, QUERY_MRTG, QUERY_MIB };
 
 /* List of the OID's we will request */
@@ -54,8 +61,8 @@ typedef struct oid_t {
 
 typedef struct wantedif_t {
 	enum { ID_DESCR, ID_PHYSADDR, ID_IPADDR, ID_NAME } idtype;
-	char *id, *devname;
-	int requestset;
+	char *id;
+	char *devname;
 	struct wantedif_t *next;
 } wantedif_t;
 
@@ -85,11 +92,12 @@ typedef struct req_t {
 	struct req_t *next;
 } req_t;
 
+req_t *reqhead = NULL;
+
+int active_requests = 0;
 oid rootoid[MAX_OID_LEN];
 unsigned int rootoidlen;
 
-req_t *reqhead = NULL;
-int active_requests = 0;
 /* dataoperation tracks what we are currently doing */
 enum { 	SCAN_INTERFACES, 	/* Scan what descriptions (IF-MIB::ifDescr) or MAC address 
 				   (IF-MIB::ifPhysAddress) have been given to each interface */
@@ -97,6 +105,7 @@ enum { 	SCAN_INTERFACES, 	/* Scan what descriptions (IF-MIB::ifDescr) or MAC add
 	SCAN_IFNAMES, 		/* Scan what names (IF-MIB::ifName) have been given to each interface */
 	GET_DATA 		/* Fetch the actual data */
 } dataoperation = GET_DATA;
+
 
 /* Tuneables */
 int max_pending_requests = 30;
@@ -113,7 +122,6 @@ int timeoutcount = 0;
 int errorcount = 0;
 struct timeval starttv, endtv;
 
-RbtHandle mibdefs;
 
 
 /* Must forward declare these */
@@ -614,12 +622,14 @@ static oid_t *make_oitem(enum querytype_t qtype, mibdef_t *mib,
 {
 	oid_t *oitem = (oid_t *)calloc(1, sizeof(oid_t));
 
+	/* Note: Caller must ensure dsname and oidstr are long-lived (static or strdup'ed) */
+
 	oitem->querytype = qtype;
 	oitem->mib = mib;
 	oitem->devname = strdup(devname);
 	oitem->requestset = reqitem->setnumber;
 	oitem->dsname = dsname;
-	oitem->oidstr = strdup(oidstr);
+	oitem->oidstr = oidstr;
 	oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 	if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
 		if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
@@ -628,7 +638,7 @@ static oid_t *make_oitem(enum querytype_t qtype, mibdef_t *mib,
 	else {
 		/* Could not parse the OID definition */
 		snmp_perror("read_objid");
-		xfree(oitem->oidstr);
+		xfree(oitem->devname);
 		xfree(oitem);
 	}
 
@@ -655,7 +665,7 @@ static void add_ifmib_request(char *idx, char *devname, struct req_t *reqitem)
 			sprintf(oid, "%s.%s", swalk->oids[i].oid, idx);
 			make_oitem(QUERY_MIB, mib, devname,
 				   swalk->oids[i].dsname, 
-				   oid, 
+				   strdup(oid), 
 				   reqitem);
 		}
 
@@ -779,7 +789,7 @@ void readconfig(char *cfgfn)
 			if (oid) devname = strtok(NULL, " \r\n");
 
 			if (dsname && oid) {
-				make_oitem(QUERY_VAR, NULL, (devname ? devname : "-"), dsname, oid, reqitem);
+				make_oitem(QUERY_VAR, NULL, (devname ? devname : "-"), strdup(dsname), strdup(oid), reqitem);
 			}
 			reqitem->next_oid = reqitem->oidhead;
 			continue;
@@ -796,8 +806,8 @@ void readconfig(char *cfgfn)
 			if (oid2) devname = strtok(NULL, "\r\n");
 
 			if (idx && oid1 && oid2 && devname) {
-				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds1", oid1, reqitem);
-				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds2", oid2, reqitem);
+				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds1", strdup(oid1), reqitem);
+				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds2", strdup(oid2), reqitem);
 			}
 
 			reqitem->next_oid = reqitem->oidhead;
@@ -827,15 +837,12 @@ void readconfig(char *cfgfn)
 
 				newitem->id = strdup(idx+1);
 				newitem->devname = strdup(devname);
-				newitem->requestset = reqitem->setnumber;
 				newitem->next = reqitem->wantedinterfaces;
 				reqitem->wantedinterfaces = newitem;
 			}
 			else {
 				/* Plain numeric interface */
-				char *devnamecopy = strdup(devname);
-
-				add_ifmib_request(idx, devnamecopy, reqitem);
+				add_ifmib_request(idx, devname, reqitem);
 				reqitem->next_oid = reqitem->oidhead;
 			}
 			continue;
@@ -844,7 +851,7 @@ void readconfig(char *cfgfn)
 		/* Custom mibs */
 		p = bot + strcspn(bot, "= \t\r\n"); savech = *p; *p = '\0';
 		mibhandle = rbtFind(mibdefs, bot);
-		*p = savech; mibidx = p + strspn(p, "= \t");
+		*p = savech; mibidx = p + strspn(p, "= \t\r\n");
 		p = mibidx + strcspn(mibidx, "\r\n\t "); *p = '\0';
 		if (mibhandle != rbtEnd(mibdefs)) {
 			int i;
@@ -860,10 +867,10 @@ void readconfig(char *cfgfn)
 				reqitem->setnumber++;
 
 				for (i=0; (i <= swalk->oidcount); i++) {
-					if (savech == '=') {
+					if (*mibidx) {
 						sprintf(oidbuf, "%s.%s", swalk->oids[i].oid, mibidx);
 						oid = oidbuf;
-						devname = strdup(mibidx);
+						devname = mibidx;
 					}
 					else {
 						oid = swalk->oids[i].oid;
@@ -872,7 +879,7 @@ void readconfig(char *cfgfn)
 
 					make_oitem(QUERY_MIB, mib, devname,
 						   swalk->oids[i].dsname, 
-						   oid,
+						   strdup(oid),
 						   reqitem);
 				}
 
@@ -967,9 +974,7 @@ void resolveifnames(void)
 			}
 
 			if (ifwalk) {
-				char *devnamecopy = strdup(wantwalk->devname);
-
-				add_ifmib_request(ifwalk->index, devnamecopy, rwalk);
+				add_ifmib_request(ifwalk->index, wantwalk->devname, rwalk);
 				rwalk->next_oid = rwalk->oidhead;
 			}
 		}
