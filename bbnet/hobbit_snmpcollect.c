@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.28 2008-01-07 11:17:55 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.29 2008-01-07 22:18:52 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -22,8 +22,8 @@ static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.28 2008-01-07 11:17:55 henr
 /* -------------------  struct's used for the MIB definition  ------------------------ */
 /* This holds one OID and our corresponding short-name */
 typedef struct oidds_t {
-	char *oid;
-	char *dsname;
+	char *dsname;		/* Our short-name for the data item in the mib definition */
+	char *oid;		/* The OID for the data in the mib definition */
 } oidds_t;
 
 /* This holds a list of OID's and their shortnames */
@@ -33,78 +33,100 @@ typedef struct oidset_t {
 	struct oidset_t *next;
 } oidset_t;
 
+/* This describes the ways we can index into this MIB */
+enum mibidxtype_t { 
+	MIB_INDEX_IN_OID, 	/*
+				 * The index is part of the key-table OID's; by scanning the key-table
+				 * values we find the one matching the wanted key, and can extract the
+				 * index from the matching rows' OID.
+				 * E.g. interfaces table looking for ifDescr or ifPhysAddress, or
+				 * interfaces table looking for the extension-object ifName.
+				 *   IF-MIB::ifDescr.1 = STRING: lo
+				 *   IF-MIB::ifDescr.2 = STRING: eth1
+				 *   IF-MIB::ifPhysAddress.1 = STRING:
+				 *   IF-MIB::ifPhysAddress.2 = STRING: 0:e:a6:ce:cf:7f
+				 *   IF-MIB::ifName.1 = STRING: lo
+				 *   IF-MIB::ifName.2 = STRING: eth1
+				 * The key table has an entry with the value = key-value. The index
+				 * is then the part of the key-OID beyond the base key table OID.
+				 */
+
+	MIB_INDEX_IN_VALUE 	/*
+				 * Index can be found by adding the key value as a part-OID to the
+				 * base OID of the key (e.g. interfaces by IP-address).
+				 *   IP-MIB::ipAdEntIfIndex.127.0.0.1 = INTEGER: 1
+				 *   IP-MIB::ipAdEntIfIndex.172.16.10.100 = INTEGER: 3
+				 */
+};
+
+typedef struct mibidx_t {
+	char marker;				/* Marker character for key OID */
+	enum mibidxtype_t idxtype;		/* How to interpret the key */
+	char *keyoid;				/* Key OID */
+	oid rootoid[MAX_OID_LEN];		/* Binary representation of keyoid */
+	unsigned int rootoidlen;		/* Length of binary keyoid */
+	struct mibidx_t *next;
+} mibidx_t;
+
 typedef struct mibdef_t {
-	char *mibname;
-	oidset_t *oidlisthead, *oidlisttail;
-	strbuffer_t *resultbuf;
-	int haveresult;
+	char *mibname;				/* MIB definition name */
+	oidset_t *oidlisthead, *oidlisttail;	/* The list of OID's in the MIB set */
+	mibidx_t *idxlist;			/* List of the possible indices used for the MIB */
+	int haveresult;				/* Used while building result messages */
+	strbuffer_t *resultbuf;			/* Used while building result messages */
 } mibdef_t;
 
-RbtHandle mibdefs;
+RbtHandle mibdefs;				/* Holds the list of MIB definitions */
 
 
 /* -----------------  struct's used for the host/requests we need to do ---------------- */
-enum querytype_t { QUERY_VAR, QUERY_MRTG, QUERY_MIB };
-
 /* List of the OID's we will request */
 typedef struct oid_t {
-	char *oidstr;				/* the input definition of the OID */
-	enum querytype_t querytype;
-	mibdef_t *mib;				/* pointer to the mib definition for custom mibs */
+	mibdef_t *mib;				/* pointer to the mib definition for mibs */
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
-	char *devname, *dsname;
-	int  requestset;			/* Used to group vars into SNMP PDU's */
+	char *devname;				/* Users' chosen device name. May be a key (e.g "eth0") */
+	char *dsname;				/* Points to the dsname in the oidds_t definition */
+	int  setnumber;				/* All vars fetched in one PDU's have the same setnumber */
 	char *result;				/* the printable result data */
 	struct oid_t *next;
 } oid_t;
 
-typedef struct wantedif_t {
-	enum { ID_DESCR, ID_PHYSADDR, ID_IPADDR, ID_NAME } idtype;
-	char *id;
-	char *devname;
-	struct wantedif_t *next;
-} wantedif_t;
 
-typedef struct ifids_t {
-	char *index;
-	char *descr;
-	char *name;
-	char *physaddr;
-	char *ipaddr;
-	struct ifids_t *next;
-} ifids_t;
+typedef struct keyrecord_t {
+	char *key;				/* The user-provided key we must find */
+	char *indexoid;				/* The index part of the OID we have determined */
+	mibdef_t *mib;
+	mibidx_t *indexmethod;
+	struct keyrecord_t *next;
+} keyrecord_t;
 
 /* A host and the OID's we will be polling */
 typedef struct req_t {
 	char *hostname;				/* Hostname used for reporting to Hobbit */
 	char *hostip[10];			/* Hostname(s) or IP(s) used for testing. Max 10 IP's */
-	int hostipidx;
+	int hostipidx;				/* Index into hostip[] for the active IP we use */
 	u_short portnumber;			/* SNMP daemon portnumber */
 	long version;				/* SNMP version to use */
 	unsigned char *community;		/* Community name used to access the SNMP daemon */
-	int setnumber;
+	int setnumber;				/* Per-host setnumber used while building requests */
 	struct snmp_session *sess;		/* SNMP session data */
-	wantedif_t *wantedinterfaces;		/* List of interfaces by description or phys. addr. we want */
-	ifids_t *interfacenames;		/* List of interfaces, pulled from the host */
-	struct oid_t *oidhead, *oidtail;	/* List of the OID's we will fetch */
-	struct oid_t *curr_oid, *next_oid;	/* Current- and next-OID pointers while fetching data */
+
+	keyrecord_t *keyrecords, *currentkey;
+
+	oid_t *oidhead, *oidtail;		/* List of the OID's we will fetch */
+	oid_t *curr_oid, *next_oid;		/* Current- and next-OID pointers while fetching data */
 	struct req_t *next;
 } req_t;
 
 req_t *reqhead = NULL;
-
 int active_requests = 0;
-oid rootoid[MAX_OID_LEN];
-unsigned int rootoidlen;
 
 /* dataoperation tracks what we are currently doing */
-enum { 	SCAN_INTERFACES, 	/* Scan what descriptions (IF-MIB::ifDescr) or MAC address 
-				   (IF-MIB::ifPhysAddress) have been given to each interface */
-	SCAN_IPADDRS, 		/* Scan what IP's (IP-MIB::ipAdEntIfIndex) have been given to each interface */
-	SCAN_IFNAMES, 		/* Scan what names (IF-MIB::ifName) have been given to each interface */
+enum { 
+	GET_KEYS,		/* Scan for the keys */
 	GET_DATA 		/* Fetch the actual data */
-} dataoperation = GET_DATA;
+} dataoperation;
 
 
 /* Tuneables */
@@ -138,8 +160,8 @@ struct snmp_pdu *generate_datarequest(req_t *item)
 	req = snmp_pdu_create(SNMP_MSG_GET);
 	pducount++;
 	item->curr_oid = item->next_oid;
-	currentset = item->next_oid->requestset;
-	while (item->next_oid && (currentset == item->next_oid->requestset)) {
+	currentset = item->next_oid->setnumber;
+	while (item->next_oid && (currentset == item->next_oid->setnumber)) {
 		varcount++;
 		snmp_add_null_var(req, item->next_oid->Oid, item->next_oid->OidLen);
 		item->next_oid = item->next_oid->next;
@@ -154,11 +176,12 @@ struct snmp_pdu *generate_datarequest(req_t *item)
  */
 int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 {
-	char buf[1024];
-	char ifid[1024];
+	char valstr[1024];
+	char oidstr[1024];
 	struct variable_list *vp;
-	struct oid_t *owalk;
-	ifids_t *newif;
+	oid_t *owalk;
+	keyrecord_t *kwalk;
+	int n;
 
 	switch (status) {
 	  case STAT_SUCCESS:
@@ -166,63 +189,40 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 			okcount++;
 
 			switch (dataoperation) {
-			  case SCAN_INTERFACES:
-				newif = (ifids_t *)calloc(1, sizeof(ifids_t));
-
+			  case GET_KEYS:
 				vp = pdu->variables;
-				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-				newif->index = strdup(buf);
+				snprint_variable(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
+				snprint_objid(oidstr, sizeof(oidstr), vp->name, vp->name_length);
+				for (kwalk = sp->currentkey; (kwalk); kwalk = kwalk->next) {
+					if (kwalk->indexoid || (kwalk->indexmethod != sp->currentkey->indexmethod)) {
+						continue;
+					}
 
-				vp = vp->next_variable;
-				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-				newif->descr = strdup(buf);
+					switch (kwalk->indexmethod->idxtype) {
+					  case MIB_INDEX_IN_OID:
+						if (strcmp(valstr, kwalk->key) == 0) {
+							kwalk->indexoid = strdup(oidstr + strlen(sp->currentkey->indexmethod->keyoid) + 1);
+						}
+						break;
 
-				vp = vp->next_variable;
-				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-				newif->physaddr = strdup(buf);
+					  case MIB_INDEX_IN_VALUE:
+						n = strlen(sp->currentkey->indexmethod->keyoid);
 
-				newif->next = sp->interfacenames;
-				sp->interfacenames = newif;
-				break;
-
-
-			  case SCAN_IFNAMES:
-				/* Value returned is the name. The last byte of the OID is the interface index */
-				vp = pdu->variables;
-				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-				snprintf(ifid, sizeof(ifid), "%d", (int)vp->name[vp->name_length-1]);
-
-				newif = sp->interfacenames;
-				while (newif && strcmp(newif->index, ifid)) newif = newif->next;
-				if (newif) newif->name = strdup(buf);
-				break;
-
-
-			  case SCAN_IPADDRS:
-				/* value returned is the interface index. The last 4 bytes of the OID is the IP */
-				vp = pdu->variables;
-				snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-
-				newif = sp->interfacenames;
-				while (newif && strcmp(newif->index, buf)) newif = newif->next;
-
-				if (newif && (vp->name_length == (rootoidlen + 4))) {
-					sprintf(buf, "%d.%d.%d.%d", 
-						(int)vp->name[rootoidlen+0], (int)vp->name[rootoidlen+1],
-						(int)vp->name[rootoidlen+2], (int)vp->name[rootoidlen+3]);
-					newif->ipaddr = strdup(buf);
-					dbgprintf("Interface %s has IP %s\n", newif->index, newif->ipaddr);
+						if ((*(oidstr+n) == '.') && (strcmp(oidstr+n+1, kwalk->key)) == 0) {
+							kwalk->indexoid = strdup(valstr);
+						}
+						break;
+					}
 				}
 				break;
-
 
 			  case GET_DATA:
 				owalk = sp->curr_oid;
 				vp = pdu->variables;
 				while (vp) {
-					snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-					dbgprintf("%s: device %s %s\n", sp->hostip[sp->hostipidx], owalk->devname, buf);
-					owalk->result = strdup(buf); owalk = owalk->next;
+					snprint_variable(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
+					dbgprintf("%s: device %s %s\n", sp->hostip[sp->hostipidx], owalk->devname, valstr);
+					owalk->result = strdup(valstr); owalk = owalk->next;
 					vp = vp->next_variable;
 				}
 				break;
@@ -291,9 +291,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 
 		/* Now see if we should send another request */
 		switch (dataoperation) {
-		  case SCAN_INTERFACES:
-		  case SCAN_IFNAMES:
-		  case SCAN_IPADDRS:
+		  case GET_KEYS:
 			if (pdu->errstat == SNMP_ERR_NOERROR) {
 				struct variable_list *vp = pdu->variables;
 
@@ -303,8 +301,8 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 					dbgprintf("Got variable: %s\n", buf);
 				}
 
-				if ( (vp->name_length >= rootoidlen) && 
-				     (memcmp(&rootoid, vp->name, rootoidlen * sizeof(oid)) == 0) ) {
+				if ( (vp->name_length >= item->currentkey->indexmethod->rootoidlen) && 
+				     (memcmp(&item->currentkey->indexmethod->rootoid, vp->name, item->currentkey->indexmethod->rootoidlen * sizeof(oid)) == 0) ) {
 					/* Still getting the right kind of data, so ask for more */
 					req = snmp_pdu_create(SNMP_MSG_GETNEXT);
 					pducount++;
@@ -312,6 +310,19 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 						varcount++;
 						snmp_add_null_var(req, vp->name, vp->name_length);
 						vp = vp->next_variable;
+					}
+				}
+				else {
+					do { 
+						item->currentkey = item->currentkey->next;
+					} while (item->currentkey && item->currentkey->indexoid);
+
+					if (item->currentkey) {
+						req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+						pducount++;
+						snmp_add_null_var(req, 
+								  item->currentkey->indexmethod->rootoid, 
+								  item->currentkey->indexmethod->rootoidlen);
 					}
 				}
 			}
@@ -360,10 +371,8 @@ void startonehost(struct req_t *r, int ipchange)
 {
 	struct snmp_session s;
 	struct snmp_pdu *req = NULL;
-	oid Oid[MAX_OID_LEN];
-	unsigned int OidLen;
 
-	if ((dataoperation < GET_DATA) && !r->wantedinterfaces) return;
+	if ((dataoperation < GET_DATA) && !r->currentkey) return;
 
 	/* Are we retrying a cluster with a new IP? Then drop the current session */
 	if (r->sess && ipchange) {
@@ -395,44 +404,10 @@ void startonehost(struct req_t *r, int ipchange)
 	}
 
 	switch (dataoperation) {
-	  case SCAN_INTERFACES:
+	  case GET_KEYS:
 		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
 		pducount++;
-		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifIndex", Oid, &OidLen)) {
-			varcount++;
-			snmp_add_null_var(req, Oid, OidLen);
-		}
-		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifDescr", Oid, &OidLen)) {
-			varcount++;
-			snmp_add_null_var(req, Oid, OidLen);
-		}
-		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifPhysAddress", Oid, &OidLen)) {
-			varcount++;
-			snmp_add_null_var(req, Oid, OidLen);
-		}
-		break;
-
-	  case SCAN_IFNAMES:
-		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
-		pducount++;
-		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IF-MIB::ifName", Oid, &OidLen)) {
-			varcount++;
-			snmp_add_null_var(req, Oid, OidLen);
-		}
-		break;
-
-	  case SCAN_IPADDRS:
-		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
-		pducount++;
-		OidLen = sizeof(Oid)/sizeof(Oid[0]);
-		if (read_objid("IP-MIB::ipAdEntIfIndex", Oid, &OidLen)) {
-			varcount++;
-			snmp_add_null_var(req, Oid, OidLen);
-		}
+		snmp_add_null_var(req, r->currentkey->indexmethod->rootoid, r->currentkey->indexmethod->rootoidlen);
 		break;
 
 	  case GET_DATA:
@@ -500,6 +475,7 @@ void readmibs(char *cfgfn)
 	FILE *cfgfd;
 	strbuffer_t *inbuf;
 	mibdef_t *mib = NULL;
+	char oidstr[1024];
 
 	/* Check if config was modified */
 	if (cfgfiles) {
@@ -557,6 +533,35 @@ void readmibs(char *cfgfn)
 			continue;
 		}
 
+		if (mib && ((strncmp(bot, "keyidx", 6) == 0) || (strncmp(bot, "validx", 6) == 0))) {
+			/* 
+			 * Define an index. Looks like:
+			 *    keyidx (IF-MIB::ifDescr)
+			 *    validx [IP-MIB::ipAdEntIfIndex]
+			 */
+			char endmarks[6];
+			mibidx_t *newidx = (mibidx_t *)calloc(1, sizeof(mibidx_t));
+
+			p = bot + 6; p += strspn(p, " \t");
+			newidx->marker = *p; p++;
+			newidx->idxtype = (strncmp(bot, "keyidx", 6) == 0) ? MIB_INDEX_IN_OID : MIB_INDEX_IN_VALUE;
+			newidx->keyoid = p;
+			sprintf(endmarks, "%s%c", ")]}>", newidx->marker);
+			p = newidx->keyoid + strcspn(newidx->keyoid, endmarks); *p = '\0';
+			newidx->rootoidlen = sizeof(newidx->rootoid) / sizeof(newidx->rootoid[0]);
+			if (read_objid(newidx->keyoid, newidx->rootoid, &newidx->rootoidlen)) {
+				snprint_objid(oidstr, sizeof(oidstr), newidx->rootoid, newidx->rootoidlen);
+				newidx->keyoid = strdup(oidstr);
+				newidx->next = mib->idxlist;
+				mib->idxlist = newidx;
+			}
+			else {
+				xfree(newidx);
+			}
+
+			continue;
+		}
+
 		if (mib) {
 			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 */
 			char oid[1024], name[1024];
@@ -569,8 +574,8 @@ void readmibs(char *cfgfn)
 					mib->oidlisttail->oids = (oidds_t *)realloc(mib->oidlisttail->oids, mib->oidlisttail->oidsz*sizeof(oidds_t));
 				}
 
-				mib->oidlisttail->oids[mib->oidlisttail->oidcount].oid = strdup(oid);
 				mib->oidlisttail->oids[mib->oidlisttail->oidcount].dsname = strdup(name);
+				mib->oidlisttail->oids[mib->oidlisttail->oidcount].oid = strdup(oid);
 			}
 
 			continue;
@@ -610,12 +615,10 @@ void readmibs(char *cfgfn)
  *     port=PORTNUMBER
  *     version=VERSION
  *     community=COMMUNITY
- *     mrtg=INDEX OID1 OID2
- *     var=DSNAME OID
  *
  */
 
-static oid_t *make_oitem(enum querytype_t qtype, mibdef_t *mib,
+static oid_t *make_oitem(mibdef_t *mib,
 			 char *devname,
 			 char *dsname, char *oidstr, 
 			 struct req_t *reqitem)
@@ -624,14 +627,12 @@ static oid_t *make_oitem(enum querytype_t qtype, mibdef_t *mib,
 
 	/* Note: Caller must ensure dsname and oidstr are long-lived (static or strdup'ed) */
 
-	oitem->querytype = qtype;
 	oitem->mib = mib;
 	oitem->devname = strdup(devname);
-	oitem->requestset = reqitem->setnumber;
+	oitem->setnumber = reqitem->setnumber;
 	oitem->dsname = dsname;
-	oitem->oidstr = oidstr;
 	oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
-	if (read_objid(oitem->oidstr, oitem->Oid, &oitem->OidLen)) {
+	if (read_objid(oidstr, oitem->Oid, &oitem->OidLen)) {
 		if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
 		reqitem->oidtail = oitem;
 	}
@@ -643,34 +644,6 @@ static oid_t *make_oitem(enum querytype_t qtype, mibdef_t *mib,
 	}
 
 	return oitem;
-}
-
-
-static void add_ifmib_request(char *idx, char *devname, struct req_t *reqitem)
-{
-	RbtIterator mibhandle;
-	mibdef_t *mib;
-	oidset_t *swalk;
-	int i;
-	char oid[128];
-
-	mibhandle = rbtFind(mibdefs, "ifmib");
-	mib = (mibdef_t *)gettreeitem(mibdefs, mibhandle);
-
-	swalk = mib->oidlisthead;
-	while (swalk) {
-		reqitem->setnumber++;
-
-		for (i=0; (i <= swalk->oidcount); i++) {
-			sprintf(oid, "%s.%s", swalk->oids[i].oid, idx);
-			make_oitem(QUERY_MIB, mib, devname,
-				   swalk->oids[i].dsname, 
-				   strdup(oid), 
-				   reqitem);
-		}
-
-		swalk = swalk->next;
-	}
 }
 
 
@@ -710,6 +683,7 @@ void readconfig(char *cfgfn)
 
 		sanitize_input(inbuf, 0, 0);
 		bot = STRBUF(inbuf) + strspn(STRBUF(inbuf), " \t");
+		if ((*bot == '\0') || (*bot == '#')) continue;
 
 		if (*bot == '[') {
 			char *intvl = strchr(bot, '/');
@@ -779,75 +753,6 @@ void readconfig(char *cfgfn)
 			continue;
 		}
 
-		if (strncmp(bot, "var=", 4) == 0) {
-			char *dsname, *oid = NULL, *devname = NULL;
-
-			reqitem->setnumber++;
-
-			dsname = strtok(bot+4, " \t");
-			if (dsname) oid = strtok(NULL, " \t");
-			if (oid) devname = strtok(NULL, " \r\n");
-
-			if (dsname && oid) {
-				make_oitem(QUERY_VAR, NULL, (devname ? devname : "-"), strdup(dsname), strdup(oid), reqitem);
-			}
-			reqitem->next_oid = reqitem->oidhead;
-			continue;
-		}
-
-		if (strncmp(bot, "mrtg=", 5) == 0) {
-			char *idx, *oid1 = NULL, *oid2 = NULL, *devname = NULL;
-
-			reqitem->setnumber++;
-
-			idx = strtok(bot+5, " \t");
-			if (idx) oid1 = strtok(NULL, " \t");
-			if (oid1) oid2 = strtok(NULL, " \t");
-			if (oid2) devname = strtok(NULL, "\r\n");
-
-			if (idx && oid1 && oid2 && devname) {
-				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds1", strdup(oid1), reqitem);
-				make_oitem(QUERY_MRTG, NULL, (devname ? devname : "-"), "ds2", strdup(oid2), reqitem);
-			}
-
-			reqitem->next_oid = reqitem->oidhead;
-			continue;
-		}
-
-		if (strncmp(bot, "ifmib=", 6) == 0) {
-			char *idx, *devname = NULL;
-
-			idx = strtok(bot+6, " \t");
-			if (idx) devname = strtok(NULL, " \r\n");
-			if (!devname) devname = idx;
-
-			if ((*idx == '(') || (*idx == '[') || (*idx == '{') || (*idx == '<')) {
-				/* Interface-by-name or interface-by-physaddr */
-				wantedif_t *newitem = (wantedif_t *)malloc(sizeof(wantedif_t));
-				switch (*idx) {
-				  case '(': newitem->idtype = ID_DESCR; break;
-				  case '[': newitem->idtype = ID_PHYSADDR; break;
-				  case '{': newitem->idtype = ID_IPADDR; break;
-				  case '<': newitem->idtype = ID_NAME; break;
-				}
-				p = idx + strcspn(idx, "])}>"); if (p) *p = '\0';
-
-				/* If we're using the default devname, make sure to skip the marker */
-				if (devname == idx) devname++;
-
-				newitem->id = strdup(idx+1);
-				newitem->devname = strdup(devname);
-				newitem->next = reqitem->wantedinterfaces;
-				reqitem->wantedinterfaces = newitem;
-			}
-			else {
-				/* Plain numeric interface */
-				add_ifmib_request(idx, devname, reqitem);
-				reqitem->next_oid = reqitem->oidhead;
-			}
-			continue;
-		}
-
 		/* Custom mibs */
 		p = bot + strcspn(bot, "= \t\r\n"); savech = *p; *p = '\0';
 		mibhandle = rbtFind(mibdefs, bot);
@@ -856,38 +761,62 @@ void readconfig(char *cfgfn)
 		if (mibhandle != rbtEnd(mibdefs)) {
 			int i;
 			mibdef_t *mib;
+			mibidx_t *iwalk = NULL;
 			char *oid, oidbuf[1024];
 			char *devname;
 			oidset_t *swalk;
 
 			mib = (mibdef_t *)gettreeitem(mibdefs, mibhandle);
 
-			swalk = mib->oidlisthead;
-			while (swalk) {
-				reqitem->setnumber++;
-
-				for (i=0; (i <= swalk->oidcount); i++) {
-					if (*mibidx) {
-						sprintf(oidbuf, "%s.%s", swalk->oids[i].oid, mibidx);
-						oid = oidbuf;
-						devname = mibidx;
-					}
-					else {
-						oid = swalk->oids[i].oid;
-						devname = "-";
-					}
-
-					make_oitem(QUERY_MIB, mib, devname,
-						   swalk->oids[i].dsname, 
-						   strdup(oid),
-						   reqitem);
-				}
-
-				swalk = swalk->next;
+			/* See if this is an entry where we must determine the index ourselves */
+			if (*mibidx) {
+				for (iwalk = mib->idxlist; (iwalk && (*mibidx != iwalk->marker)); iwalk = iwalk->next) ;
 			}
 
-			reqitem->next_oid = reqitem->oidhead;
+			if (!iwalk) {
+				/* No key lookup */
+				swalk = mib->oidlisthead;
+				while (swalk) {
+					reqitem->setnumber++;
+
+					for (i=0; (i <= swalk->oidcount); i++) {
+						if (*mibidx) {
+							sprintf(oidbuf, "%s.%s", swalk->oids[i].oid, mibidx);
+							oid = oidbuf;
+							devname = mibidx;
+						}
+						else {
+							oid = swalk->oids[i].oid;
+							devname = "-";
+						}
+
+						make_oitem(mib, devname,
+							   swalk->oids[i].dsname, strdup(oid), reqitem);
+					}
+
+					swalk = swalk->next;
+				}
+
+				reqitem->next_oid = reqitem->oidhead;
+			}
+			else {
+				keyrecord_t *newitem = (keyrecord_t *)calloc(1, sizeof(keyrecord_t));
+				char endmarks[6];
+
+				mibidx++;
+				sprintf(endmarks, "%s%c", ")]}>", iwalk->marker);
+				p = mibidx + strcspn(mibidx, endmarks); *p = '\0';
+				newitem->key = strdup(mibidx);
+				newitem->indexmethod = iwalk;
+				newitem->mib = mib;
+				newitem->next = reqitem->keyrecords;
+				reqitem->currentkey = reqitem->keyrecords = newitem;
+			}
+
 			continue;
+		}
+		else {
+			errprintf("Unknown MIB (not in hobbit-snmpmibs.cfg): '%s'\n", bot);
 		}
 	}
 
@@ -921,62 +850,37 @@ void communicate(void)
 
 void resolveifnames(void)
 {
-	struct req_t *rwalk;
-	ifids_t *ifwalk;
-	wantedif_t *wantwalk;
+	req_t *rwalk;
+	keyrecord_t *kwalk;
+	oidset_t *swalk;
+	int i;
+	char oid[1024];
 
-	/* 
-	 * To get the interface names, we walk the ifIndex table with getnext.
-	 * We need the fixed part of that OID available to check when we reach
-	 * the end of the table (then we'll get a variable back which has a
-	 * different OID).
-	 */
-	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
-	read_objid(".1.3.6.1.2.1.2.2.1.1", rootoid, &rootoidlen);
-	dataoperation = SCAN_INTERFACES;
+	dataoperation = GET_KEYS;
 	starthosts(1);
 	communicate();
-
-	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
-	read_objid(".1.3.6.1.2.1.4.20.1.2", rootoid, &rootoidlen);
-	dataoperation = SCAN_IPADDRS;
-	starthosts(1);
-	communicate();
-
-	rootoidlen = sizeof(rootoid)/sizeof(rootoid[0]);
-	read_objid(".1.3.6.1.2.1.31.1.1.1.1", rootoid, &rootoidlen);
-	dataoperation = SCAN_IFNAMES;
-	starthosts(1);
-	communicate();
-
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
-		if (!rwalk->wantedinterfaces || !rwalk->interfacenames) continue;
+		if (!rwalk->keyrecords) continue;
 
-		for (wantwalk = rwalk->wantedinterfaces; (wantwalk); wantwalk = wantwalk->next) {
-			ifwalk = NULL;
+		for (kwalk = rwalk->keyrecords; (kwalk); kwalk = kwalk->next) {
+			if (!kwalk->indexoid) continue;
 
-			switch (wantwalk->idtype) {
-			  case ID_DESCR:
-				for (ifwalk = rwalk->interfacenames; (ifwalk && strcmp(ifwalk->descr, wantwalk->id)); ifwalk = ifwalk->next) ;
-				break;
+			swalk = kwalk->mib->oidlisthead;
+			while (swalk) {
 
-			  case ID_PHYSADDR:
-				for (ifwalk = rwalk->interfacenames; (ifwalk && strcmp(ifwalk->physaddr, wantwalk->id)); ifwalk = ifwalk->next) ;
-				break;
+				rwalk->setnumber++;
 
-			  case ID_IPADDR:
-				for (ifwalk = rwalk->interfacenames; (ifwalk && (!ifwalk->ipaddr || strcmp(ifwalk->ipaddr, wantwalk->id))); ifwalk = ifwalk->next) ;
-				break;
+				for (i=0; (i <= swalk->oidcount); i++) {
+					sprintf(oid, "%s.%s", swalk->oids[i].oid, kwalk->indexoid);
+					make_oitem(kwalk->mib, kwalk->key,
+						   swalk->oids[i].dsname, 
+						   strdup(oid), rwalk);
+				}
 
-			  case ID_NAME:
-				for (ifwalk = rwalk->interfacenames; (ifwalk && (!ifwalk->name || strcmp(ifwalk->name, wantwalk->id))); ifwalk = ifwalk->next) ;
-				break;
+				swalk = swalk->next;
 			}
 
-			if (ifwalk) {
-				add_ifmib_request(ifwalk->index, wantwalk->devname, rwalk);
-				rwalk->next_oid = rwalk->oidhead;
-			}
+			rwalk->next_oid = rwalk->oidhead;
 		}
 	}
 }
@@ -996,7 +900,6 @@ void sendresult(void)
 	struct oid_t *owalk;
 	char msgline[4096];
 	char currdev[1024];
-	int activestatus = 0;
 	RbtIterator handle;
 	mibdef_t *mib;
 
@@ -1024,56 +927,19 @@ void sendresult(void)
 
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
 			if (strcmp(currdev, owalk->devname)) {
-				if (activestatus) {
-					finish_status();
-					activestatus = 0;
-				}
-
 				strcpy(currdev, owalk->devname);
 
-				switch (owalk->querytype) {
-				  case QUERY_VAR:
-					init_status(COL_GREEN); activestatus = 1;
-					sprintf(msgline, "status %s.snmpvar green\n", rwalk->hostname);
-					addtostatus(msgline);
+				if (*owalk->devname && (*owalk->devname != '-') ) {
 					sprintf(msgline, "\n[%s]\n", owalk->devname);
-					addtostatus(msgline);
-					break;
-
-				  case QUERY_MRTG:
-					init_status(COL_GREEN); activestatus = 1;
-					sprintf(msgline, "status %s.mrtg green\n", rwalk->hostname);
-					addtostatus(msgline);
-					sprintf(msgline, "\n[%s]\n", owalk->devname);
-					addtostatus(msgline);
-					break;
-
-				  case QUERY_MIB:
-					if (*owalk->devname && (*owalk->devname != '-') ) {
-						sprintf(msgline, "\n[%s]\n", owalk->devname);
-						addtobuffer(owalk->mib->resultbuf, msgline);
-					}
-					break;
+					addtobuffer(owalk->mib->resultbuf, msgline);
 				}
 			}
 
 			sprintf(msgline, "\t%s = %s\n", 
 				owalk->dsname, (owalk->result ? owalk->result : "NODATA"));
-
-			switch (owalk->querytype) {
-			  case QUERY_VAR:
-			  case QUERY_MRTG:
-				addtostatus(msgline);
-				break;
-
-			  case QUERY_MIB:
-				owalk->mib->haveresult = 1;
-				addtobuffer(owalk->mib->resultbuf, msgline);
-				break;
-			}
+			addtobuffer(owalk->mib->resultbuf, msgline);
+			owalk->mib->haveresult = 1;
 		}
-
-		if (activestatus) finish_status();
 
 		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
 			mib = (mibdef_t *)gettreeitem(mibdefs, handle);
@@ -1165,7 +1031,7 @@ int main (int argc, char **argv)
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
 	init_snmp("hobbit_snmpcollect");
-	snmp_out_toggle_options("vqs");	/* Like snmpget -Ovqs */
+	snmp_out_toggle_options("vqsn");	/* Like snmpget -Ovqsn */
 
 	if (mibfn == NULL) {
 		mibfn = (char *)malloc(PATH_MAX);
