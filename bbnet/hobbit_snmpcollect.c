@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.29 2008-01-07 22:18:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.30 2008-01-07 22:53:35 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -76,8 +76,6 @@ typedef struct mibdef_t {
 	strbuffer_t *resultbuf;			/* Used while building result messages */
 } mibdef_t;
 
-RbtHandle mibdefs;				/* Holds the list of MIB definitions */
-
 
 /* -----------------  struct's used for the host/requests we need to do ---------------- */
 /* List of the OID's we will request */
@@ -92,12 +90,12 @@ typedef struct oid_t {
 	struct oid_t *next;
 } oid_t;
 
-
+/* Used for requests where we must determine the appropriate table index first */
 typedef struct keyrecord_t {
+	mibdef_t *mib;				/* Pointer to the mib definition */
+	mibidx_t *indexmethod;			/* Pointer to the mib index definition */
 	char *key;				/* The user-provided key we must find */
-	char *indexoid;				/* The index part of the OID we have determined */
-	mibdef_t *mib;
-	mibidx_t *indexmethod;
+	char *indexoid;				/* Result: Index part of the OID */
 	struct keyrecord_t *next;
 } keyrecord_t;
 
@@ -112,22 +110,24 @@ typedef struct req_t {
 	int setnumber;				/* Per-host setnumber used while building requests */
 	struct snmp_session *sess;		/* SNMP session data */
 
-	keyrecord_t *keyrecords, *currentkey;
+	keyrecord_t *keyrecords, *currentkey;	/* For keyed requests: Key records */
 
 	oid_t *oidhead, *oidtail;		/* List of the OID's we will fetch */
 	oid_t *curr_oid, *next_oid;		/* Current- and next-OID pointers while fetching data */
 	struct req_t *next;
 } req_t;
 
-req_t *reqhead = NULL;
-int active_requests = 0;
+
+/* Global variables */
+RbtHandle mibdefs;				/* Holds the list of MIB definitions */
+req_t *reqhead = NULL;				/* Holds the list of requests */
+int active_requests = 0;			/* Number of active SNMP requests in flight */
 
 /* dataoperation tracks what we are currently doing */
 enum { 
-	GET_KEYS,		/* Scan for the keys */
-	GET_DATA 		/* Fetch the actual data */
+	GET_KEYS,	/* Scan for the keys */
+	GET_DATA 	/* Fetch the actual data */
 } dataoperation;
-
 
 /* Tuneables */
 int max_pending_requests = 30;
@@ -149,6 +149,7 @@ struct timeval starttv, endtv;
 /* Must forward declare these */
 void startonehost(struct req_t *r, int ipchange);
 void starthosts(int resetstart);
+
 
 struct snmp_pdu *generate_datarequest(req_t *item)
 {
@@ -172,16 +173,16 @@ struct snmp_pdu *generate_datarequest(req_t *item)
 
 
 /*
- * simple printing of returned data
+ * Store data received in response PDU
  */
-int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
+int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 {
+	struct variable_list *vp;
 	char valstr[1024];
 	char oidstr[1024];
-	struct variable_list *vp;
-	oid_t *owalk;
 	keyrecord_t *kwalk;
-	int n;
+	int keyoidlen;
+	oid_t *owalk;
 
 	switch (status) {
 	  case STAT_SUCCESS:
@@ -190,25 +191,35 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 
 			switch (dataoperation) {
 			  case GET_KEYS:
+				/* 
+				 * Find the keyrecord currently processed for this request, and
+				 * look through the unresolved keys to see if we have a match.
+				 * If we do, determine the index for data retrieval.
+				 */
 				vp = pdu->variables;
 				snprint_variable(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
 				snprint_objid(oidstr, sizeof(oidstr), vp->name, vp->name_length);
-				for (kwalk = sp->currentkey; (kwalk); kwalk = kwalk->next) {
-					if (kwalk->indexoid || (kwalk->indexmethod != sp->currentkey->indexmethod)) {
+				for (kwalk = req->currentkey; (kwalk); kwalk = kwalk->next) {
+					/* Skip records where we have the result already, or that are not keyed */
+					if (kwalk->indexoid || (kwalk->indexmethod != req->currentkey->indexmethod)) {
 						continue;
 					}
 
+					keyoidlen = strlen(req->currentkey->indexmethod->keyoid);
+
 					switch (kwalk->indexmethod->idxtype) {
 					  case MIB_INDEX_IN_OID:
+						/* Does the key match the value we just got? */
 						if (strcmp(valstr, kwalk->key) == 0) {
-							kwalk->indexoid = strdup(oidstr + strlen(sp->currentkey->indexmethod->keyoid) + 1);
+							/* Grab the index part of the OID */
+							kwalk->indexoid = strdup(oidstr + keyoidlen + 1);
 						}
 						break;
 
 					  case MIB_INDEX_IN_VALUE:
-						n = strlen(sp->currentkey->indexmethod->keyoid);
-
-						if ((*(oidstr+n) == '.') && (strcmp(oidstr+n+1, kwalk->key)) == 0) {
+						/* Does the key match the index-part of the result OID? */
+						if ((*(oidstr+keyoidlen) == '.') && (strcmp(oidstr+keyoidlen+1, kwalk->key)) == 0) {
+							/* Grab the index which is the value */
 							kwalk->indexoid = strdup(valstr);
 						}
 						break;
@@ -217,11 +228,10 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 				break;
 
 			  case GET_DATA:
-				owalk = sp->curr_oid;
+				owalk = req->curr_oid;
 				vp = pdu->variables;
 				while (vp) {
 					snprint_variable(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
-					dbgprintf("%s: device %s %s\n", sp->hostip[sp->hostipidx], owalk->devname, valstr);
 					owalk->result = strdup(valstr); owalk = owalk->next;
 					vp = vp->next_variable;
 				}
@@ -230,22 +240,22 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 		}
 		else {
 			errorcount++;
-			errprintf("ERROR %s: %s\n", sp->hostip[sp->hostipidx], snmp_errstring(pdu->errstat));
+			errprintf("ERROR %s: %s\n", req->hostip[req->hostipidx], snmp_errstring(pdu->errstat));
 		}
 		return 1;
 
 	  case STAT_TIMEOUT:
 		timeoutcount++;
-		dbgprintf("%s: Timeout\n", sp->hostip);
-		if (sp->hostip[sp->hostipidx+1]) {
-			sp->hostipidx++;
-			startonehost(sp, 1);
+		dbgprintf("%s: Timeout\n", req->hostip);
+		if (req->hostip[req->hostipidx+1]) {
+			req->hostipidx++;
+			startonehost(req, 1);
 		}
 		return 0;
 
 	  case STAT_ERROR:
 		errorcount++;
-		snmp_sess_perror(sp->hostip[sp->hostipidx], sp->sess);
+		snmp_sess_perror(req->hostip[req->hostipidx], req->sess);
 		return 0;
 	}
 
@@ -256,81 +266,81 @@ int print_result (int status, req_t *sp, struct snmp_pdu *pdu)
 /*
  * response handler
  */
-int asynch_response(int operation, struct snmp_session *sp, int reqid,
-		struct snmp_pdu *pdu, void *magic)
+int asynch_response(int operation, struct snmp_session *sp, int reqid, struct snmp_pdu *pdu, void *magic)
 {
-	struct req_t *item = (struct req_t *)magic;
+	struct req_t *req = (struct req_t *)magic;
 
 	if (operation == NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE) {
-		struct snmp_pdu *req = NULL;
+		struct snmp_pdu *snmpreq = NULL;
 
 		switch (pdu->errstat) {
 		  case SNMP_ERR_NOERROR:
 			/* Pick up the results */
-			print_result(STAT_SUCCESS, item, pdu);
+			print_result(STAT_SUCCESS, req, pdu);
 			break;
 
 		  case SNMP_ERR_NOSUCHNAME:
-			dbgprintf("Host %s item %s: No such name\n", item->hostname, item->curr_oid->devname);
-			if (item->hostip[item->hostipidx+1]) {
-				item->hostipidx++;
-				startonehost(item, 1);
+			dbgprintf("Host %s item %s: No such name\n", req->hostname, req->curr_oid->devname);
+			if (req->hostip[req->hostipidx+1]) {
+				req->hostipidx++;
+				startonehost(req, 1);
 			}
 			break;
 
 		  case SNMP_ERR_TOOBIG:
 			toobigcount++;
-			errprintf("Host %s item %s: Response too big\n", item->hostname, item->curr_oid->devname);
+			errprintf("Host %s item %s: Response too big\n", req->hostname, req->curr_oid->devname);
 			break;
 
 		  default:
 			errorcount++;
-			errprintf("Host %s item %s: SNMP error %d\n",  item->hostname, item->curr_oid->devname, pdu->errstat);
+			errprintf("Host %s item %s: SNMP error %d\n",  req->hostname, req->curr_oid->devname, pdu->errstat);
 			break;
 		}
 
 		/* Now see if we should send another request */
 		switch (dataoperation) {
 		  case GET_KEYS:
+			/*
+			 * While fetching keys, walk the current key-table until we reach the end of the table.
+			 * When we reach the end of one key-table, start with the next.
+			 * FIXME: Could optimize so we dont fetch the whole table, but only those rows we need.
+			 */
 			if (pdu->errstat == SNMP_ERR_NOERROR) {
 				struct variable_list *vp = pdu->variables;
 
-				if (debug) {
-					char buf[1024];
-					snprint_variable(buf, sizeof(buf), vp->name, vp->name_length, vp);
-					dbgprintf("Got variable: %s\n", buf);
-				}
-
-				if ( (vp->name_length >= item->currentkey->indexmethod->rootoidlen) && 
-				     (memcmp(&item->currentkey->indexmethod->rootoid, vp->name, item->currentkey->indexmethod->rootoidlen * sizeof(oid)) == 0) ) {
-					/* Still getting the right kind of data, so ask for more */
-					req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+				if ( (vp->name_length >= req->currentkey->indexmethod->rootoidlen) && 
+				     (memcmp(&req->currentkey->indexmethod->rootoid, vp->name, req->currentkey->indexmethod->rootoidlen * sizeof(oid)) == 0) ) {
+					/* Still more data in the current key table, get the next row */
+					snmpreq = snmp_pdu_create(SNMP_MSG_GETNEXT);
 					pducount++;
 					while (vp) {
 						varcount++;
-						snmp_add_null_var(req, vp->name, vp->name_length);
+						snmp_add_null_var(snmpreq, vp->name, vp->name_length);
 						vp = vp->next_variable;
 					}
 				}
 				else {
+					/* End of current key table. If more keys to be found, start the next table. */
 					do { 
-						item->currentkey = item->currentkey->next;
-					} while (item->currentkey && item->currentkey->indexoid);
+						req->currentkey = req->currentkey->next;
+					} while (req->currentkey && req->currentkey->indexoid);
 
-					if (item->currentkey) {
-						req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+					if (req->currentkey) {
+						snmpreq = snmp_pdu_create(SNMP_MSG_GETNEXT);
 						pducount++;
-						snmp_add_null_var(req, 
-								  item->currentkey->indexmethod->rootoid, 
-								  item->currentkey->indexmethod->rootoidlen);
+						snmp_add_null_var(snmpreq, 
+								  req->currentkey->indexmethod->rootoid, 
+								  req->currentkey->indexmethod->rootoidlen);
 					}
 				}
 			}
 			break;
 
 		  case GET_DATA:
-			if (item->next_oid) {
-				req = generate_datarequest(item);
+			/* Generate a request for the next dataset, if any */
+			if (req->next_oid) {
+				snmpreq = generate_datarequest(req);
 			}
 			else {
 				dbgprintf("No more oids left\n");
@@ -338,25 +348,26 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid,
 			break;
 		}
 
-		if (req) {
-			if (snmp_send(item->sess, req))
+		/* Send the request we just made */
+		if (snmpreq) {
+			if (snmp_send(req->sess, snmpreq))
 				goto finish;
 			else {
-				snmp_sess_perror("snmp_send", item->sess);
-				snmp_free_pdu(req);
+				snmp_sess_perror("snmp_send", req->sess);
+				snmp_free_pdu(snmpreq);
 			}
 		}
 	}
 	else {
 		dbgprintf("operation not succesful: %d\n", operation);
-		print_result(STAT_TIMEOUT, item, pdu);
+		print_result(STAT_TIMEOUT, req, pdu);
 	}
 
 	/* 
 	 * Something went wrong (or end of variables).
 	 * This host not active any more
 	 */
-	dbgprintf("Finished host %s\n", item->hostname);
+	dbgprintf("Finished host %s\n", req->hostname);
 	active_requests--;
 
 finish:
@@ -367,37 +378,37 @@ finish:
 }
 
 
-void startonehost(struct req_t *r, int ipchange)
+void startonehost(struct req_t *req, int ipchange)
 {
 	struct snmp_session s;
-	struct snmp_pdu *req = NULL;
+	struct snmp_pdu *snmpreq = NULL;
 
-	if ((dataoperation < GET_DATA) && !r->currentkey) return;
+	if ((dataoperation < GET_DATA) && !req->currentkey) return;
 
 	/* Are we retrying a cluster with a new IP? Then drop the current session */
-	if (r->sess && ipchange) {
+	if (req->sess && ipchange) {
 		/*
 		 * Apparently, we cannot close a session while in a callback.
 		 * So leave this for now - it will leak some memory, but
 		 * this is not a problem as long as we only run once.
 		 */
-		/* snmp_close(r->sess); */
-		r->sess = NULL;
+		/* snmp_close(req->sess); */
+		req->sess = NULL;
 	}
 
 	/* Setup the SNMP session */
-	if (!r->sess) {
+	if (!req->sess) {
 		snmp_sess_init(&s);
-		s.version = r->version;
+		s.version = req->version;
 		if (timeout > 0) s.timeout = timeout;
 		if (retries > 0) s.retries = retries;
-		s.peername = r->hostip[r->hostipidx];
-		if (r->portnumber) s.remote_port = r->portnumber;
-		s.community = r->community;
-		s.community_len = strlen((char *)r->community);
+		s.peername = req->hostip[req->hostipidx];
+		if (req->portnumber) s.remote_port = req->portnumber;
+		s.community = req->community;
+		s.community_len = strlen((char *)req->community);
 		s.callback = asynch_response;
-		s.callback_magic = r;
-		if (!(r->sess = snmp_open(&s))) {
+		s.callback_magic = req;
+		if (!(req->sess = snmp_open(&s))) {
 			snmp_sess_perror("snmp_open", &s);
 			return;
 		}
@@ -405,25 +416,25 @@ void startonehost(struct req_t *r, int ipchange)
 
 	switch (dataoperation) {
 	  case GET_KEYS:
-		req = snmp_pdu_create(SNMP_MSG_GETNEXT);
+		snmpreq = snmp_pdu_create(SNMP_MSG_GETNEXT);
 		pducount++;
-		snmp_add_null_var(req, r->currentkey->indexmethod->rootoid, r->currentkey->indexmethod->rootoidlen);
+		snmp_add_null_var(snmpreq, req->currentkey->indexmethod->rootoid, req->currentkey->indexmethod->rootoidlen);
 		break;
 
 	  case GET_DATA:
 		/* Build the request PDU and send it */
-		req = generate_datarequest(r);
+		snmpreq = generate_datarequest(req);
 		break;
 	}
 
-	if (!req) return;
+	if (!snmpreq) return;
 
-	if (snmp_send(r->sess, req))
+	if (snmp_send(req->sess, snmpreq))
 		active_requests++;
 	else {
 		errorcount++;
-		snmp_sess_perror("snmp_send", r->sess);
-		snmp_free_pdu(req);
+		snmp_sess_perror("snmp_send", req->sess);
+		snmp_free_pdu(snmpreq);
 	}
 }
 
@@ -618,14 +629,9 @@ void readmibs(char *cfgfn)
  *
  */
 
-static oid_t *make_oitem(mibdef_t *mib,
-			 char *devname,
-			 char *dsname, char *oidstr, 
-			 struct req_t *reqitem)
+static oid_t *make_oitem(mibdef_t *mib, char *devname, char *dsname, char *oidstr, struct req_t *reqitem)
 {
 	oid_t *oitem = (oid_t *)calloc(1, sizeof(oid_t));
-
-	/* Note: Caller must ensure dsname and oidstr are long-lived (static or strdup'ed) */
 
 	oitem->mib = mib;
 	oitem->devname = strdup(devname);
@@ -790,8 +796,7 @@ void readconfig(char *cfgfn)
 							devname = "-";
 						}
 
-						make_oitem(mib, devname,
-							   swalk->oids[i].dsname, strdup(oid), reqitem);
+						make_oitem(mib, devname, swalk->oids[i].dsname, oid, reqitem);
 					}
 
 					swalk = swalk->next;
@@ -848,7 +853,7 @@ void communicate(void)
 }
 
 
-void resolveifnames(void)
+void resolvekeys(void)
 {
 	req_t *rwalk;
 	keyrecord_t *kwalk;
@@ -872,9 +877,7 @@ void resolveifnames(void)
 
 				for (i=0; (i <= swalk->oidcount); i++) {
 					sprintf(oid, "%s.%s", swalk->oids[i].oid, kwalk->indexoid);
-					make_oitem(kwalk->mib, kwalk->key,
-						   swalk->oids[i].dsname, 
-						   strdup(oid), rwalk);
+					make_oitem(kwalk->mib, kwalk->key, swalk->oids[i].dsname, oid, rwalk);
 				}
 
 				swalk = swalk->next;
@@ -1048,8 +1051,8 @@ int main (int argc, char **argv)
 	if (cfgcheck) return 0;
 	add_timestamp("Configuration loaded");
 
-	resolveifnames();
-	add_timestamp("Interface names detected");
+	resolvekeys();
+	add_timestamp("Keys lookup complete");
 
 	getdata();
 	stophosts();
