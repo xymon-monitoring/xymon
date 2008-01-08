@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.30 2008-01-07 22:53:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.31 2008-01-08 11:58:37 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -183,6 +183,7 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 	keyrecord_t *kwalk;
 	int keyoidlen;
 	oid_t *owalk;
+	int done;
 
 	switch (status) {
 	  case STAT_SUCCESS:
@@ -197,9 +198,9 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 				 * If we do, determine the index for data retrieval.
 				 */
 				vp = pdu->variables;
-				snprint_variable(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
+				snprint_value(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
 				snprint_objid(oidstr, sizeof(oidstr), vp->name, vp->name_length);
-				for (kwalk = req->currentkey; (kwalk); kwalk = kwalk->next) {
+				for (kwalk = req->currentkey, done = 0; (kwalk && !done); kwalk = kwalk->next) {
 					/* Skip records where we have the result already, or that are not keyed */
 					if (kwalk->indexoid || (kwalk->indexmethod != req->currentkey->indexmethod)) {
 						continue;
@@ -213,6 +214,7 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 						if (strcmp(valstr, kwalk->key) == 0) {
 							/* Grab the index part of the OID */
 							kwalk->indexoid = strdup(oidstr + keyoidlen + 1);
+							done = 1;
 						}
 						break;
 
@@ -221,6 +223,7 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 						if ((*(oidstr+keyoidlen) == '.') && (strcmp(oidstr+keyoidlen+1, kwalk->key)) == 0) {
 							/* Grab the index which is the value */
 							kwalk->indexoid = strdup(valstr);
+							done = 1;
 						}
 						break;
 					}
@@ -231,7 +234,7 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 				owalk = req->curr_oid;
 				vp = pdu->variables;
 				while (vp) {
-					snprint_variable(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
+					snprint_value(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
 					owalk->result = strdup(valstr); owalk = owalk->next;
 					vp = vp->next_variable;
 				}
@@ -314,6 +317,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid, struct sn
 					/* Still more data in the current key table, get the next row */
 					snmpreq = snmp_pdu_create(SNMP_MSG_GETNEXT);
 					pducount++;
+					/* Probably only one variable to fetch, but never mind ... */
 					while (vp) {
 						varcount++;
 						snmp_add_null_var(snmpreq, vp->name, vp->name_length);
@@ -626,6 +630,9 @@ void readmibs(char *cfgfn)
  *     port=PORTNUMBER
  *     version=VERSION
  *     community=COMMUNITY
+ *     mibname1[=index]
+ *     mibname2[=index]
+ *     mibname3[=index]
  *
  */
 
@@ -805,6 +812,7 @@ void readconfig(char *cfgfn)
 				reqitem->next_oid = reqitem->oidhead;
 			}
 			else {
+				/* Add a key-record so we can try to locate the index */
 				keyrecord_t *newitem = (keyrecord_t *)calloc(1, sizeof(keyrecord_t));
 				char endmarks[6];
 
@@ -861,14 +869,22 @@ void resolvekeys(void)
 	int i;
 	char oid[1024];
 
+	/* Fetch the key data, and determine the indices we want to use */
 	dataoperation = GET_KEYS;
 	starthosts(1);
 	communicate();
+
+	/* Generate new requests for the datasets we now know the indices of */
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		if (!rwalk->keyrecords) continue;
 
 		for (kwalk = rwalk->keyrecords; (kwalk); kwalk = kwalk->next) {
-			if (!kwalk->indexoid) continue;
+			if (!kwalk->indexoid) {
+				/* We failed to determine the index */
+				errprintf("Could not determine index for host=%s mib=%s key=%s\n",
+					  rwalk->hostname, kwalk->mib->mibname, kwalk->key);
+				continue;
+			}
 
 			swalk = kwalk->mib->oidlisthead;
 			while (swalk) {
@@ -1034,7 +1050,7 @@ int main (int argc, char **argv)
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
 	init_snmp("hobbit_snmpcollect");
-	snmp_out_toggle_options("vqsn");	/* Like snmpget -Ovqsn */
+	snmp_out_toggle_options("qn");	/* Like snmpget -Oqn: OID's printed as numbers, values printed without type */
 
 	if (mibfn == NULL) {
 		mibfn = (char *)malloc(PATH_MAX);
