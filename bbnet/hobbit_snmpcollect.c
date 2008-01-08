@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.33 2008-01-08 14:12:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.34 2008-01-08 22:33:30 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -69,6 +69,12 @@ typedef struct mibidx_t {
 } mibidx_t;
 
 typedef struct mibdef_t {
+	enum { 
+		MIB_STATUS_NOTLOADED, 		/* Not loaded */
+		MIB_STATUS_LOADED, 		/* Loaded OK, can be used */
+		MIB_STATUS_LOADFAILED 		/* Load failed (e.g. missing MIB file) */
+	} loadstatus;
+	char *mibfn;				/* Filename of the MIB file (for non-standard MIB's) */
 	char *mibname;				/* MIB definition name */
 	oidset_t *oidlisthead, *oidlisttail;	/* The list of OID's in the MIB set */
 	mibidx_t *idxlist;			/* List of the possible indices used for the MIB */
@@ -177,8 +183,7 @@ struct snmp_pdu *generate_datarequest(req_t *item)
 int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 {
 	struct variable_list *vp;
-	char valstr[1024];
-	char oidstr[1024];
+	int len;
 	keyrecord_t *kwalk;
 	int keyoidlen;
 	oid_t *owalk;
@@ -187,6 +192,9 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 	switch (status) {
 	  case STAT_SUCCESS:
 		if (pdu->errstat == SNMP_ERR_NOERROR) {
+			unsigned char *valstr = NULL, *oidstr = NULL;
+			int valsz = 0, oidsz = 0;
+
 			okcount++;
 
 			switch (dataoperation) {
@@ -197,8 +205,8 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 				 * If we do, determine the index for data retrieval.
 				 */
 				vp = pdu->variables;
-				snprint_value(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
-				snprint_objid(oidstr, sizeof(oidstr), vp->name, vp->name_length);
+				len = 0; sprint_realloc_value(&valstr, &valsz, &len, 1, vp->name, vp->name_length, vp);
+				len = 0; sprint_realloc_objid(&oidstr, &oidsz, &len, 1, vp->name, vp->name_length);
 				dbgprintf("Got key-oid '%s' = '%s'\n", oidstr, valstr);
 				for (kwalk = req->currentkey, done = 0; (kwalk && !done); kwalk = kwalk->next) {
 					/* Skip records where we have the result already, or that are not keyed */
@@ -221,8 +229,11 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 					  case MIB_INDEX_IN_VALUE:
 						/* Does the key match the index-part of the result OID? */
 						if ((*(oidstr+keyoidlen) == '.') && (strcmp(oidstr+keyoidlen+1, kwalk->key)) == 0) {
-							/* Grab the index which is the value */
-							kwalk->indexoid = strdup(valstr);
+							/* 
+							 * Grab the index which is the value. 
+							 * Avoid a strdup by grabbing the valstr pointer.
+							 */
+							kwalk->indexoid = valstr; valstr = NULL; valsz = 0;
 							done = 1;
 						}
 						break;
@@ -234,12 +245,16 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 				owalk = req->curr_oid;
 				vp = pdu->variables;
 				while (vp) {
-					snprint_value(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
-					owalk->result = strdup(valstr); owalk = owalk->next;
-					vp = vp->next_variable;
+					valsz = len = 0;
+					sprint_realloc_value((unsigned char **)&owalk->result, &valsz, &len, 1, 
+							     vp->name, vp->name_length, vp);
+					owalk = owalk->next; vp = vp->next_variable;
 				}
 				break;
 			}
+
+			if (valstr) xfree(valstr);
+			if (oidstr) xfree(oidstr);
 		}
 		else {
 			errorcount++;
@@ -483,7 +498,9 @@ void stophosts(void)
 	struct req_t *rwalk;
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
-		if (rwalk->sess) snmp_close(rwalk->sess);
+		if (rwalk->sess) {
+			snmp_close(rwalk->sess);
+		}
 	}
 }
 
@@ -494,7 +511,6 @@ void readmibs(char *cfgfn, int verbose)
 	FILE *cfgfd;
 	strbuffer_t *inbuf;
 	mibdef_t *mib = NULL;
-	char oidstr[1024];
 
 	/* Check if config was modified */
 	if (cfgfiles) {
@@ -543,13 +559,7 @@ void readmibs(char *cfgfn, int verbose)
 
 		if (mib && (strncmp(bot, "mibfile", 7) == 0)) {
 			p = bot + 7; p += strspn(p, " \t");
-			if (read_mib(p) == NULL) {
-				if (verbose) {
-					errprintf("Failed to read MIB file %s\n", p);
-					snmp_perror("read_objid");
-				}
-				xfree(mib);
-			}
+			mib->mibfn = strdup(p);
 
 			continue;
 		}
@@ -577,31 +587,22 @@ void readmibs(char *cfgfn, int verbose)
 			p = bot + 6; p += strspn(p, " \t");
 			newidx->marker = *p; p++;
 			newidx->idxtype = (strncmp(bot, "keyidx", 6) == 0) ? MIB_INDEX_IN_OID : MIB_INDEX_IN_VALUE;
-			newidx->keyoid = p;
+			newidx->keyoid = strdup(p);
 			sprintf(endmarks, "%s%c", ")]}>", newidx->marker);
 			p = newidx->keyoid + strcspn(newidx->keyoid, endmarks); *p = '\0';
-			newidx->rootoidlen = sizeof(newidx->rootoid) / sizeof(newidx->rootoid[0]);
-			if (read_objid(newidx->keyoid, newidx->rootoid, &newidx->rootoidlen)) {
-				snprint_objid(oidstr, sizeof(oidstr), newidx->rootoid, newidx->rootoidlen);
-				newidx->keyoid = strdup(oidstr);
-				newidx->next = mib->idxlist;
-				mib->idxlist = newidx;
-			}
-			else {
-				if (verbose) {
-					errprintf("Cannot determine OID for %s\n", newidx->keyoid);
-					snmp_perror("read_objid");
-				}
-				xfree(newidx);
-			}
+			newidx->next = mib->idxlist;
+			mib->idxlist = newidx;
 
 			continue;
 		}
 
 		if (mib) {
 			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 */
-			char oid[1024], name[1024];
+			char *oid, *name;
+			int linelen = strlen(bot);
 
+			oid = (char *)malloc(linelen+1);
+			name = (char *)malloc(linelen+1);
 			if (sscanf(bot, "%s = %s", name, oid) == 2) {
 				mib->oidlisttail->oidcount++;
 
@@ -613,6 +614,7 @@ void readmibs(char *cfgfn, int verbose)
 				mib->oidlisttail->oids[mib->oidlisttail->oidcount].dsname = strdup(name);
 				mib->oidlisttail->oids[mib->oidlisttail->oidcount].oid = strdup(oid);
 			}
+			xfree(oid); xfree(name);
 
 			continue;
 		}
@@ -642,6 +644,48 @@ void readmibs(char *cfgfn, int verbose)
 			}
 		}
 	}
+}
+
+
+/* 
+ * This routine loads MIB files, and computes the key-OID values.
+ * We defer this until the mib-definition is actually being referred to 
+ * in hobbit-snmphosts.cfg, because lots of MIB's are not being used
+ * (and probably do not exist on the host where we're running) and
+ * to avoid spending a lot of time to load MIB's that are not used.
+ */
+void setupmib(mibdef_t *mib, int verbose)
+{
+	mibidx_t *iwalk;
+	int sz, len;
+
+	if (mib->loadstatus != MIB_STATUS_NOTLOADED) return;
+
+	if (mib->mibfn && (read_mib(mib->mibfn) == NULL)) {
+		mib->loadstatus = MIB_STATUS_LOADFAILED;
+		if (verbose) {
+			errprintf("Failed to read MIB file %s\n", mib->mibfn);
+			snmp_perror("read_objid");
+		}
+	}
+
+	for (iwalk = mib->idxlist; (iwalk); iwalk = iwalk->next) {
+		iwalk->rootoidlen = sizeof(iwalk->rootoid) / sizeof(iwalk->rootoid[0]);
+		if (read_objid(iwalk->keyoid, iwalk->rootoid, &iwalk->rootoidlen)) {
+			/* Re-use the iwalk->keyoid buffer */
+			sz = strlen(iwalk->keyoid) + 1; len = 0;
+			sprint_realloc_objid((unsigned char **)&iwalk->keyoid, &sz, &len, 1, iwalk->rootoid, iwalk->rootoidlen);
+		}
+		else {
+			mib->loadstatus = MIB_STATUS_LOADFAILED;
+			if (verbose) {
+				errprintf("Cannot determine OID for %s\n", iwalk->keyoid);
+				snmp_perror("read_objid");
+			}
+		}
+	}
+
+	mib->loadstatus = MIB_STATUS_LOADED;
 }
 
 /*
@@ -683,7 +727,7 @@ static oid_t *make_oitem(mibdef_t *mib, char *devname, char *dsname, char *oidst
 }
 
 
-void readconfig(char *cfgfn)
+void readconfig(char *cfgfn, int verbose)
 {
 	static void *cfgfiles = NULL;
 	FILE *cfgfd;
@@ -793,11 +837,13 @@ void readconfig(char *cfgfn)
 			int i;
 			mibdef_t *mib;
 			mibidx_t *iwalk = NULL;
-			char *oid, oidbuf[1024];
+			char *oid, *oidbuf;
 			char *devname;
 			oidset_t *swalk;
 
 			mib = (mibdef_t *)gettreeitem(mibdefs, mibhandle);
+			setupmib(mib, verbose);
+			if (mib->loadstatus != MIB_STATUS_LOADED) continue;	/* Cannot use this MIB */
 
 			/* See if this is an entry where we must determine the index ourselves */
 			if (*mibidx) {
@@ -812,16 +858,18 @@ void readconfig(char *cfgfn)
 
 					for (i=0; (i <= swalk->oidcount); i++) {
 						if (*mibidx) {
+							oid = oidbuf = (char *)malloc(strlen(swalk->oids[i].oid) + strlen(mibidx) + 2);
 							sprintf(oidbuf, "%s.%s", swalk->oids[i].oid, mibidx);
-							oid = oidbuf;
 							devname = mibidx;
 						}
 						else {
 							oid = swalk->oids[i].oid;
+							oidbuf = NULL;
 							devname = "-";
 						}
 
 						make_oitem(mib, devname, swalk->oids[i].dsname, oid, reqitem);
+						if (oidbuf) xfree(oidbuf);
 					}
 
 					swalk = swalk->next;
@@ -885,7 +933,7 @@ void resolvekeys(void)
 	keyrecord_t *kwalk;
 	oidset_t *swalk;
 	int i;
-	char oid[1024];
+	char *oid;
 
 	/* Fetch the key data, and determine the indices we want to use */
 	dataoperation = GET_KEYS;
@@ -910,8 +958,10 @@ void resolvekeys(void)
 				rwalk->setnumber++;
 
 				for (i=0; (i <= swalk->oidcount); i++) {
+					oid = (char *)malloc(strlen(swalk->oids[i].oid) + strlen(kwalk->indexoid) + 2);
 					sprintf(oid, "%s.%s", swalk->oids[i].oid, kwalk->indexoid);
 					make_oitem(kwalk->mib, kwalk->key, swalk->oids[i].dsname, oid, rwalk);
+					xfree(oid);
 				}
 
 				swalk = swalk->next;
@@ -935,8 +985,8 @@ void sendresult(void)
 {
 	struct req_t *rwalk;
 	struct oid_t *owalk;
-	char msgline[4096];
-	char currdev[1024];
+	char msgline[1024];
+	char *currdev;
 	RbtIterator handle;
 	mibdef_t *mib;
 
@@ -945,7 +995,7 @@ void sendresult(void)
 	combo_start();
 
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
-		*currdev = '\0';
+		currdev = "";
 
 		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
 			mib = (mibdef_t *)gettreeitem(mibdefs, handle);
@@ -964,17 +1014,20 @@ void sendresult(void)
 
 		for (owalk = rwalk->oidhead; (owalk); owalk = owalk->next) {
 			if (strcmp(currdev, owalk->devname)) {
-				strcpy(currdev, owalk->devname);
+				currdev = owalk->devname;	/* OK, because ->devname is permanent */
 
 				if (*owalk->devname && (*owalk->devname != '-') ) {
-					sprintf(msgline, "\n[%s]\n", owalk->devname);
-					addtobuffer(owalk->mib->resultbuf, msgline);
+					addtobuffer(owalk->mib->resultbuf, "\n[");
+					addtobuffer(owalk->mib->resultbuf, owalk->devname);
+					addtobuffer(owalk->mib->resultbuf, "]\n");
 				}
 			}
 
-			sprintf(msgline, "\t%s = %s\n", 
-				owalk->dsname, (owalk->result ? owalk->result : "NODATA"));
-			addtobuffer(owalk->mib->resultbuf, msgline);
+			addtobuffer(owalk->mib->resultbuf, "\t");
+			addtobuffer(owalk->mib->resultbuf, owalk->dsname);
+			addtobuffer(owalk->mib->resultbuf, " = ");
+			addtobuffer(owalk->mib->resultbuf, (owalk->result ? owalk->result : "NODATA"));
+			addtobuffer(owalk->mib->resultbuf, "\n");
 			owalk->mib->haveresult = 1;
 		}
 
@@ -1017,7 +1070,10 @@ void egoresult(int color, char *egocolumn)
 	addtostatus(msgline);
 
 	show_timestamps(&timestamps);
-	if (timestamps) addtostatus(timestamps);
+	if (timestamps) {
+		addtostatus(timestamps);
+		xfree(timestamps);
+	}
 
 	finish_status();
 	combo_end();
@@ -1086,7 +1142,7 @@ int main (int argc, char **argv)
 		configfn = (char *)malloc(PATH_MAX);
 		sprintf(configfn, "%s/etc/hobbit-snmphosts.cfg", xgetenv("BBHOME"));
 	}
-	readconfig(configfn);
+	readconfig(configfn, mibcheck);
 	if (cfgcheck) return 0;
 	add_timestamp("Configuration loaded");
 
@@ -1101,6 +1157,10 @@ int main (int argc, char **argv)
 	add_timestamp("Results transmitted");
 
 	if (reportcolumn) egoresult(COL_GREEN, reportcolumn);
+
+	/* To silence valgrind */
+	xfree(mibfn);
+	xfree(configfn);
 
 	return 0;
 }
