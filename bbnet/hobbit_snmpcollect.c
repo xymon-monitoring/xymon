@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.31 2008-01-08 11:58:37 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.32 2008-01-08 13:45:59 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -104,7 +104,6 @@ typedef struct req_t {
 	char *hostname;				/* Hostname used for reporting to Hobbit */
 	char *hostip[10];			/* Hostname(s) or IP(s) used for testing. Max 10 IP's */
 	int hostipidx;				/* Index into hostip[] for the active IP we use */
-	u_short portnumber;			/* SNMP daemon portnumber */
 	long version;				/* SNMP version to use */
 	unsigned char *community;		/* Community name used to access the SNMP daemon */
 	int setnumber;				/* Per-host setnumber used while building requests */
@@ -200,6 +199,7 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 				vp = pdu->variables;
 				snprint_value(valstr, sizeof(valstr), vp->name, vp->name_length, vp);
 				snprint_objid(oidstr, sizeof(oidstr), vp->name, vp->name_length);
+				dbgprintf("Got key-oid '%s' = '%s'\n", oidstr, valstr);
 				for (kwalk = req->currentkey, done = 0; (kwalk && !done); kwalk = kwalk->next) {
 					/* Skip records where we have the result already, or that are not keyed */
 					if (kwalk->indexoid || (kwalk->indexmethod != req->currentkey->indexmethod)) {
@@ -407,7 +407,11 @@ void startonehost(struct req_t *req, int ipchange)
 		if (timeout > 0) s.timeout = timeout;
 		if (retries > 0) s.retries = retries;
 		s.peername = req->hostip[req->hostipidx];
-		if (req->portnumber) s.remote_port = req->portnumber;
+		/* 
+		 * snmp_session has a "remote_port" field, but it does not work.
+		 * Instead, the peername should include a port number (IP:PORT)
+		 * if (req->portnumber) s.remote_port = req->portnumber;
+		 */
 		s.community = req->community;
 		s.community_len = strlen((char *)req->community);
 		s.callback = asynch_response;
@@ -571,6 +575,8 @@ void readmibs(char *cfgfn)
 				mib->idxlist = newidx;
 			}
 			else {
+				errprintf("Cannot determine OID for %s\n", newidx->keyoid);
+				snmp_perror("read_objid");
 				xfree(newidx);
 			}
 
@@ -626,8 +632,7 @@ void readmibs(char *cfgfn)
  * Config file syntax
  *
  * [HOSTNAME]
- *     ip=ADDRESS
- *     port=PORTNUMBER
+ *     ip=ADDRESS[:PORT]
  *     version=VERSION
  *     community=COMMUNITY
  *     mibname1[=index]
@@ -651,6 +656,7 @@ static oid_t *make_oitem(mibdef_t *mib, char *devname, char *dsname, char *oidst
 	}
 	else {
 		/* Could not parse the OID definition */
+		errprintf("Cannot determine OID for %s\n", oidstr);
 		snmp_perror("read_objid");
 		xfree(oitem->devname);
 		xfree(oitem);
@@ -744,11 +750,6 @@ void readconfig(char *cfgfn)
 				reqitem->hostip[i++] = nextip;
 				nextip = strtok(NULL, ",");
 			} while (nextip);
-			continue;
-		}
-
-		if (strncmp(bot, "port=", 5) == 0) {
-			reqitem->portnumber = atoi(bot+5);
 			continue;
 		}
 
