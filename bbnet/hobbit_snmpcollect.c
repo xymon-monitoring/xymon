@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.32 2008-01-08 13:45:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.33 2008-01-08 14:12:31 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -488,7 +488,7 @@ void stophosts(void)
 }
 
 
-void readmibs(char *cfgfn)
+void readmibs(char *cfgfn, int verbose)
 {
 	static void *cfgfiles = NULL;
 	FILE *cfgfd;
@@ -541,6 +541,19 @@ void readmibs(char *cfgfn)
 			continue;
 		}
 
+		if (mib && (strncmp(bot, "mibfile", 7) == 0)) {
+			p = bot + 7; p += strspn(p, " \t");
+			if (read_mib(p) == NULL) {
+				if (verbose) {
+					errprintf("Failed to read MIB file %s\n", p);
+					snmp_perror("read_objid");
+				}
+				xfree(mib);
+			}
+
+			continue;
+		}
+
 		if (mib && (strncmp(bot, "extra", 5) == 0)) {
 			/* Add an extra set of MIB objects to retrieve separately */
 			mib->oidlisttail->next = (oidset_t *)calloc(1, sizeof(oidset_t));
@@ -575,8 +588,10 @@ void readmibs(char *cfgfn)
 				mib->idxlist = newidx;
 			}
 			else {
-				errprintf("Cannot determine OID for %s\n", newidx->keyoid);
-				snmp_perror("read_objid");
+				if (verbose) {
+					errprintf("Cannot determine OID for %s\n", newidx->keyoid);
+					snmp_perror("read_objid");
+				}
 				xfree(newidx);
 			}
 
@@ -602,7 +617,9 @@ void readmibs(char *cfgfn)
 			continue;
 		}
 
-		errprintf("Unknown MIB definition line: '%s'\n", bot);
+		if (verbose) {
+			errprintf("Unknown MIB definition line: '%s'\n", bot);
+		}
 	}
 
 	stackfclose(cfgfd);
@@ -1014,6 +1031,7 @@ int main (int argc, char **argv)
 	char *mibfn = NULL;
 	char *configfn = NULL;
 	int cfgcheck = 0;
+	int mibcheck = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -1024,6 +1042,9 @@ int main (int argc, char **argv)
 		}
 		else if (strcmp(argv[argi], "--cfgcheck") == 0) {
 			cfgcheck = 1;
+		}
+		else if (strcmp(argv[argi], "--mibcheck") == 0) {
+			mibcheck = 1;
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {
 			char *p = strchr(argv[argi], '=');
@@ -1051,14 +1072,15 @@ int main (int argc, char **argv)
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
 	init_snmp("hobbit_snmpcollect");
-	snmp_out_toggle_options("qn");	/* Like snmpget -Oqn: OID's printed as numbers, values printed without type */
+	snmp_mib_toggle_options("e");	/* Like -Pe: Dont show MIB parsing errors */
+	snmp_out_toggle_options("qn");	/* Like -Oqn: OID's printed as numbers, values printed without type */
 
 	if (mibfn == NULL) {
 		mibfn = (char *)malloc(PATH_MAX);
 		sprintf(mibfn, "%s/etc/hobbit-snmpmibs.cfg", xgetenv("BBHOME"));
 	}
 	mibdefs = rbtNew(name_compare);
-	readmibs(mibfn);
+	readmibs(mibfn, mibcheck);
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
