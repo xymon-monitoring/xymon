@@ -87,8 +87,10 @@ typedef struct mibdef_t {
 } mibdef_t;
 
 
-extern RbtHandle mibdefs;
 extern void readmibs(char *cfgfn, int verbose);
+extern mibdef_t *first_mib(void);
+extern mibdef_t *next_mib(void);
+extern mibdef_t *find_mib(char *mibname);
 
 #endif
 

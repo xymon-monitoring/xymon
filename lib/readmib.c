@@ -8,14 +8,15 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.2 2008-01-09 12:39:44 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.3 2008-01-09 12:53:18 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
 #include "libbbgen.h"
 
-RbtHandle mibdefs;				/* Holds the list of MIB definitions */
+static RbtHandle mibdefs;				/* Holds the list of MIB definitions */
+static RbtIterator nexthandle;
 
 void readmibs(char *cfgfn, int verbose)
 {
@@ -80,6 +81,7 @@ void readmibs(char *cfgfn, int verbose)
 	}
 
 	mibdefs = rbtNew(name_compare);
+	nexthandle = rbtEnd(mibdefs);
 	cfgfd = stackfopen(cfgfn, "r", &cfgfiles);
 	if (cfgfd == NULL) {
 		errprintf("Cannot open configuration files %s\n", cfgfn);
@@ -223,6 +225,37 @@ void readmibs(char *cfgfn, int verbose)
 			}
 		}
 	}
+}
+
+mibdef_t *first_mib(void)
+{
+	nexthandle = rbtBegin(mibdefs);
+
+	if (nexthandle == rbtEnd(mibdefs))
+		return NULL;
+	else
+		return (mibdef_t *)gettreeitem(mibdefs, nexthandle);
+}
+
+mibdef_t *next_mib(void)
+{
+	nexthandle = rbtNext(mibdefs, nexthandle);
+
+	if (nexthandle == rbtEnd(mibdefs))
+		return NULL;
+	else
+		return (mibdef_t *)gettreeitem(mibdefs, nexthandle);
+}
+
+mibdef_t *find_mib(char *mibname)
+{
+	RbtIterator handle;
+
+	handle = rbtFind(mibdefs, mibname);
+	if (handle == rbtEnd(mibdefs)) 
+		return NULL;
+	else
+		return (mibdef_t *)gettreeitem(mibdefs, handle);
 }
 
 
