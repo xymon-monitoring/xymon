@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.1 2008-01-09 12:12:36 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.2 2008-01-09 12:39:44 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -31,11 +31,55 @@ void readmibs(char *cfgfn, int verbose)
 			return;
 		}
 		else {
+			RbtIterator handle;
+
+			errprintf("Re-loading MIBs\n");
+
+			/* Clear list of config files */
 			stackfclist(&cfgfiles);
 			cfgfiles = NULL;
+
+			/* Drop the current data */
+			for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
+				mibdef_t *mib = (mibdef_t *)gettreeitem(mibdefs, handle);
+				oidset_t *swalk, *szombie;
+				mibidx_t *iwalk, *izombie;
+				int i;
+
+				swalk = mib->oidlisthead;
+				while (swalk) {
+					szombie = swalk;
+					swalk = swalk->next;
+
+					for (i=0; (i <= szombie->oidcount); i++) {
+						xfree(szombie->oids[i].dsname);
+						xfree(szombie->oids[i].oid);
+					}
+					xfree(szombie->oids);
+					xfree(szombie);
+				}
+
+				iwalk = mib->idxlist;
+				while (iwalk) {
+					izombie = iwalk;
+					iwalk = iwalk->next;
+
+					if (izombie->keyoid) xfree(izombie->keyoid);
+					if (izombie->rootoid) xfree(izombie->rootoid);
+					xfree(izombie);
+				}
+
+				if (mib->mibfn) xfree(mib->mibfn);
+				if (mib->mibname) xfree(mib->mibname);
+				freestrbuffer(mib->resultbuf);
+				xfree(mib);
+			}
+
+			rbtDelete(mibdefs);
 		}
 	}
 
+	mibdefs = rbtNew(name_compare);
 	cfgfd = stackfopen(cfgfn, "r", &cfgfiles);
 	if (cfgfd == NULL) {
 		errprintf("Cannot open configuration files %s\n", cfgfn);
