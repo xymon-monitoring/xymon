@@ -8,78 +8,230 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.1 2008-01-04 21:26:55 henrik Exp $";
+static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.2 2008-01-09 15:30:26 henrik Exp $";
 
-static char *snmpmib_params[] = { 
-				"DS:InPkts:COUNTER:600:0:U",
-				"DS:OutPkts:COUNTER:600:0:U",
-				"DS:InBadVersions:COUNTER:600:0:U",
-				"DS:InBadCommunityName:COUNTER:600:0:U",
-				"DS:InBadcommunityUses:COUNTER:600:0:U",
-				"DS:InASMParseErrs:COUNTER:600:0:U",
-				"DS:InTooBigs:COUNTER:600:0:U",
-				"DS:InNoSuchNames:COUNTER:600:0:U",
-				"DS:InBadValues:COUNTER:600:0:U",
-				"DS:InReadOnlys:COUNTER:600:0:U",
-				"DS:InGenErrs:COUNTER:600:0:U",
-				"DS:InTotalReqVars:COUNTER:600:0:U",
-				"DS:InTotalSetVars:COUNTER:600:0:U",
-				"DS:InGetRequests:COUNTER:600:0:U",
-				"DS:InGetNexts:COUNTER:600:0:U",
-				"DS:InSetRequests:COUNTER:600:0:U",
-				"DS:InGetResponses:COUNTER:600:0:U",
-				"DS:InTraps:COUNTER:600:0:U",
-				"DS:OutTooBigs:COUNTER:600:0:U",
-				"DS:OutNoSuchNames:COUNTER:600:0:U",
-				"DS:OutBadValues:COUNTER:600:0:U",
-				"DS:OutGenErrs:COUNTER:600:0:U",
-				"DS:OutGetRequests:COUNTER:600:0:U",
-				"DS:OutGetNexts:COUNTER:600:0:U",
-				"DS:OutSetRequests:COUNTER:600:0:U",
-				"DS:OutGetResponses:COUNTER:600:0:U",
-				"DS:OutTraps:COUNTER:600:0:U",
-				"DS:SilentDrops:COUNTER:600:0:U",
-				"DS:ProxyDrops:COUNTER:600:0:U",
-			 	NULL };
-static char *snmpmib_tpl      = NULL;
+static time_t snmp_nextreload = 0;
 
-static char *snmpmib_valnames[] = {
-	"snmpInPkts",
-	"snmpOutPkts",
-	"snmpInBadVersions",
-	"snmpInBadCommunityNames",
-	"snmpInBadcommunityUses",
-	"snmpInASMParseErrs",
-	"snmpInTooBigs",
-	"snmpInNoSuchNames",
-	"snmpInBadValues",
-	"snmpInReadOnlys",
-	"snmpInGenErrs",
-	"snmpInTotalReqVars",
-	"snmpInTotalSetVars",
-	"snmpInGetRequests",
-	"snmpInGetNexts",
-	"snmpInSetRequests",
-	"snmpInGetResponses",
-	"snmpInTraps",
-	"snmpOutTooBigs",
-	"snmpOutNoSuchNames",
-	"snmpOutBadValues",
-	"snmpOutGenErrs",
-	"snmpOutGetRequests",
-	"snmpOutGetNexts",
-	"snmpOutSetRequests",
-	"snmpOutGetResponses",
-	"snmpOutTraps",
-	"snmpSilentDrops",
-	"snmpProxyDrops",
-	NULL
-};
+typedef struct snmpmib_param_t {
+	char *name;
+	char **valnames;
+	char **dsdefs;
+	char *tpl;
+	int valcount;
+} snmpmib_param_t;
+static RbtHandle snmpmib_paramtree;
+
+
+int is_snmpmib_rrd(char *testname)
+{
+	time_t now = getcurrenttime(NULL);
+	RbtIterator handle;
+	mibdef_t *mib;
+	oidset_t *swalk;
+	int i;
+
+	if (now > snmp_nextreload) {
+		if (snmp_nextreload > 0) {
+			/* Flush the old params and templates */
+			snmpmib_param_t *walk;
+			int i;
+
+			for (handle = rbtBegin(snmpmib_paramtree); (handle != rbtEnd(snmpmib_paramtree)); handle = rbtNext(snmpmib_paramtree, handle)) {
+				walk = (snmpmib_param_t *)gettreeitem(snmpmib_paramtree, handle);
+				if (walk->valnames) xfree(walk->valnames);
+				for (i=0; (i < walk->valcount); i++) xfree(walk->dsdefs[i]);
+				if (walk->dsdefs) xfree(walk->dsdefs);
+				if (walk->tpl) xfree(walk->tpl);
+				xfree(walk);
+			}
+			rbtDelete(snmpmib_paramtree);
+		}
+
+		readmibs(NULL, 0);
+		snmpmib_paramtree = rbtNew(name_compare);
+		snmp_nextreload = now + 600;
+	}
+
+	mib = find_mib(testname);
+	if (!mib) return 0;
+
+	handle = rbtFind(snmpmib_paramtree, mib->mibname);
+	if (handle == rbtEnd(snmpmib_paramtree)) {
+		snmpmib_param_t *newitem = (snmpmib_param_t *)calloc(1, sizeof(snmpmib_param_t));
+		int totalvars;
+
+		newitem->name = mib->mibname;
+
+		for (swalk = mib->oidlisthead, totalvars = 1; (swalk); swalk = swalk->next) totalvars += swalk->oidcount;
+		newitem->valnames = (char **)calloc(totalvars, sizeof(char *));
+		newitem->dsdefs = (char **)calloc(totalvars, sizeof(char *));
+		for (swalk = mib->oidlisthead, newitem->valcount = 0; (swalk); swalk = swalk->next) {
+			for (i=0; (i <= swalk->oidcount); i++) {
+				int n;
+				char *datatypestr, *minimumstr;
+
+				if (swalk->oids[i].rrdtype == RRD_NOTRACK) continue;
+
+				switch (swalk->oids[i].rrdtype) {
+				  case RRD_TRACK_GAUGE:
+					datatypestr = "GAUGE";
+					minimumstr = "U";
+					break;
+
+				  case RRD_TRACK_ABSOLUTE:
+					datatypestr = "ABSOLUTE";
+					minimumstr = "U";
+					break;
+
+				  case RRD_TRACK_COUNTER:
+					datatypestr = "COUNTER";
+					minimumstr = "0";
+					break;
+
+				  case RRD_TRACK_DERIVE:
+					datatypestr = "DERIVE";
+					minimumstr = "0";
+					break;
+
+				  case RRD_NOTRACK:
+					break;
+				}
+
+				newitem->valnames[newitem->valcount] = swalk->oids[i].dsname;
+				newitem->dsdefs[newitem->valcount] = (char *)malloc(strlen(swalk->oids[i].dsname) + 20);
+				sprintf(newitem->dsdefs[newitem->valcount], "DS:%s:%s:600:%s:U",
+					swalk->oids[i].dsname, datatypestr, minimumstr);
+				newitem->valcount++;
+			}
+		}
+
+		newitem->dsdefs[newitem->valcount] = NULL;
+		newitem->tpl = setup_template(newitem->dsdefs);
+		rbtInsert(snmpmib_paramtree, newitem->name, newitem);
+	}
+
+	return 1;
+}
+
+static void do_simple_snmpmib(char *hostname, char *testname, char *fnkey,
+			      char *msg, time_t tstamp, 
+			      snmpmib_param_t *params, int *pollinterval)
+{
+	char *bol, *eoln;
+	char **values;
+	int valcount = 0;
+
+	values = (char **)calloc(params->valcount, sizeof(char *));
+
+	bol = msg;
+	while (bol) {
+		eoln = strchr(bol, '\n'); if (eoln) *eoln = '\0';
+		bol += strspn(bol, " \t");
+		if (*bol == '\0') {
+			/* Nothing */
+		}
+		else if (strncmp(bol, "Interval=", 9) == 0) {
+			*pollinterval = atoi(bol+9);
+		}
+		else if (strncmp(bol, "ActiveIP=", 9) == 0) {
+			/* Nothing */
+		}
+		else {
+			char *valnam, *valstr = NULL;
+
+			valnam = strtok(bol, " =");
+			if (valnam) valstr = strtok(NULL, " =");
+
+			if (valnam && valstr) {
+				int validx;
+				for (validx = 0; (params->valnames[validx] && strcmp(params->valnames[validx], valnam)); validx++) ;
+				if (params->valnames[validx]) {
+					values[validx] = (isdigit(*valstr) ? valstr : "U");
+					valcount++;
+				}
+				else {
+					errprintf("Unknown data: %s\n", valnam);
+				}
+			}
+		}
+
+nextline:
+		bol = (eoln ? eoln+1 : NULL);
+	}
+
+	if (valcount == params->valcount) {
+		int i;
+		char *ptr;
+
+		if (fnkey) setupfn2("%s.%s.rrd", testname, fnkey); else setupfn("%s.rrd", testname);
+		setupinterval(*pollinterval);
+
+		ptr = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);
+		for (i = 0; (i < valcount); i++) {
+			ptr += sprintf(ptr, ":%s", values[i]);
+		}
+		create_and_update_rrd(hostname, testname, params->dsdefs, params->tpl);
+	}
+
+	xfree(values);
+}
+
+static void do_tabular_snmpmib(char *hostname, char *testname, char *msg, time_t tstamp, snmpmib_param_t *params)
+{
+	char *fnkey;
+	int pollinterval = 0;
+	char *boset, *eoset, *intvl;
+
+	boset = strstr(msg, "\n[");
+	if (!boset) return;
+
+	/* See if there's a poll interval value */
+	*boset = '\0'; boset++;
+	intvl = strstr(msg, "Interval=");
+	if (intvl) pollinterval = atoi(intvl+9);
+
+	while (boset) {
+		fnkey = boset+1;
+		boset = boset + strcspn(boset, "]\n"); *boset = '\0'; boset++;
+		eoset = strstr(boset, "\n[");
+		if (eoset) {
+			*eoset = '\0';
+			do_simple_snmpmib(hostname, testname, fnkey, boset, tstamp, params, &pollinterval);
+			*eoset = '\n';
+			boset = eoset+1;
+		}
+		else
+			boset = NULL;
+	}
+}
 
 int do_snmpmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	return do_simple_mib_rrd(hostname, testname, msg, tstamp,
-				 (sizeof(snmpmib_valnames) / sizeof(snmpmib_valnames[0])),
-				 snmpmib_valnames, snmpmib_params, &snmpmib_tpl);
+	time_t now = getcurrenttime(NULL);
+	mibdef_t *mib;
+	RbtIterator handle;
+	snmpmib_param_t *params;
+	int pollinterval = 0;
+	char *datapart;
+
+	if (now > snmp_nextreload) readmibs(NULL, 0);
+
+	mib = find_mib(testname); if (!mib) return 0;
+	handle = rbtFind(snmpmib_paramtree, mib->mibname);
+	if (handle == rbtEnd(snmpmib_paramtree)) return 0;
+	params = (snmpmib_param_t *)gettreeitem(snmpmib_paramtree, handle);
+
+	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {
+		/* Skip the first line of full status- and data-messages. */
+		datapart = strchr(msg, '\n');
+		if (datapart) datapart++; else datapart = msg;
+	}
+
+	if (mib->tabular) 
+		do_tabular_snmpmib(hostname, testname, datapart, tstamp, params);
+	else
+		do_simple_snmpmib(hostname, testname, NULL, datapart, tstamp, params, &pollinterval);
+
+	return 0;
 }
 
