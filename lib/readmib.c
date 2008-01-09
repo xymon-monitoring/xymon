@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.5 2008-01-09 15:27:24 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.6 2008-01-09 15:28:51 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -165,6 +165,7 @@ void readmibs(char *cfgfn, int verbose)
 			p = newidx->keyoid + strcspn(newidx->keyoid, endmarks); *p = '\0';
 			newidx->next = mib->idxlist;
 			mib->idxlist = newidx;
+			mib->tabular = 1;
 
 			continue;
 		}
