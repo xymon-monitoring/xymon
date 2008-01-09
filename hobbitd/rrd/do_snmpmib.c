@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.2 2008-01-09 15:30:26 henrik Exp $";
+static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.3 2008-01-09 23:00:34 henrik Exp $";
 
 static time_t snmp_nextreload = 0;
 
@@ -145,12 +145,10 @@ static void do_simple_snmpmib(char *hostname, char *testname, char *fnkey,
 			if (valnam && valstr) {
 				int validx;
 				for (validx = 0; (params->valnames[validx] && strcmp(params->valnames[validx], valnam)); validx++) ;
+				/* Note: There may be items which are not RRD data (eg text strings) */
 				if (params->valnames[validx]) {
 					values[validx] = (isdigit(*valstr) ? valstr : "U");
 					valcount++;
-				}
-				else {
-					errprintf("Unknown data: %s\n", valnam);
 				}
 			}
 		}
@@ -220,6 +218,7 @@ int do_snmpmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	handle = rbtFind(snmpmib_paramtree, mib->mibname);
 	if (handle == rbtEnd(snmpmib_paramtree)) return 0;
 	params = (snmpmib_param_t *)gettreeitem(snmpmib_paramtree, handle);
+	if (params->valcount == 0) return 0;
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {
 		/* Skip the first line of full status- and data-messages. */
