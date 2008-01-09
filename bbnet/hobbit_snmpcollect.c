@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.40 2008-01-09 22:08:35 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.41 2008-01-09 22:58:30 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -970,7 +970,6 @@ void egoresult(int color, char *egocolumn)
 int main (int argc, char **argv)
 {
 	int argi;
-	char *mibfn = NULL;
 	char *configfn = NULL;
 	int cfgcheck = 0;
 	int mibcheck = 0;
@@ -1017,7 +1016,7 @@ int main (int argc, char **argv)
 	snmp_mib_toggle_options("e");	/* Like -Pe: Dont show MIB parsing errors */
 	snmp_out_toggle_options("qn");	/* Like -Oqn: OID's printed as numbers, values printed without type */
 
-	readmibs(mibfn, mibcheck);
+	readmibs(NULL, mibcheck);
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
@@ -1039,8 +1038,6 @@ int main (int argc, char **argv)
 
 	if (reportcolumn) egoresult(COL_GREEN, reportcolumn);
 
-	/* To silence valgrind */
-	xfree(mibfn);
 	xfree(configfn);
 
 	return 0;
