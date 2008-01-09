@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.3 2008-01-09 12:53:18 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.4 2008-01-09 14:27:13 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -20,6 +20,7 @@ static RbtIterator nexthandle;
 
 void readmibs(char *cfgfn, int verbose)
 {
+	static char *fn = NULL;
 	static void *cfgfiles = NULL;
 	FILE *cfgfd;
 	strbuffer_t *inbuf;
@@ -82,7 +83,15 @@ void readmibs(char *cfgfn, int verbose)
 
 	mibdefs = rbtNew(name_compare);
 	nexthandle = rbtEnd(mibdefs);
-	cfgfd = stackfopen(cfgfn, "r", &cfgfiles);
+
+	if (fn) xfree(fn);
+	fn = cfgfn;
+	if (!fn) {
+		fn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/hobbit-snmpmibs.cfg") + 1);
+		sprintf(fn, "%s/etc/hobbit-snmpmibs.cfg", xgetenv("BBHOME"));
+	}
+
+	cfgfd = stackfopen(fn, "r", &cfgfiles);
 	if (cfgfd == NULL) {
 		errprintf("Cannot open configuration files %s\n", cfgfn);
 		return;
