@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.34 2008-01-08 22:33:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.35 2008-01-09 11:52:15 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -24,6 +24,18 @@ static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.34 2008-01-08 22:33:30 henr
 typedef struct oidds_t {
 	char *dsname;		/* Our short-name for the data item in the mib definition */
 	char *oid;		/* The OID for the data in the mib definition */
+	enum {
+		RRD_NOTRACK,
+		RRD_TRACK_GAUGE,
+		RRD_TRACK_COUNTER,
+		RRD_TRACK_DERIVE,
+		RRD_TRACK_ABSOLUTE
+	} rrdtype;		/* How to store this in an RRD file */
+
+	enum {
+		OID_CONVERT_NONE,	/* No conversion */
+		OID_CONVERT_U32		/* Convert signed -> unsigned 32 bit integer */
+	} conversion;
 } oidds_t;
 
 /* This holds a list of OID's and their shortnames */
@@ -90,7 +102,7 @@ typedef struct oid_t {
 	oid Oid[MAX_OID_LEN];			/* the internal OID representation */
 	unsigned int OidLen;			/* size of the oid */
 	char *devname;				/* Users' chosen device name. May be a key (e.g "eth0") */
-	char *dsname;				/* Points to the dsname in the oidds_t definition */
+	oidds_t *oiddef;			/* Points to the oidds_t definition */
 	int  setnumber;				/* All vars fetched in one PDU's have the same setnumber */
 	char *result;				/* the printable result data */
 	struct oid_t *next;
@@ -597,13 +609,14 @@ void readmibs(char *cfgfn, int verbose)
 		}
 
 		if (mib) {
-			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 */
-			char *oid, *name;
-			int linelen = strlen(bot);
+			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 [/u32] [/rrd:TYPE] */
+			char *tok, *name, *oid = NULL;
 
-			oid = (char *)malloc(linelen+1);
-			name = (char *)malloc(linelen+1);
-			if (sscanf(bot, "%s = %s", name, oid) == 2) {
+			name = strtok(bot, " \t");
+			if (name) tok = strtok(NULL, " \t");
+			if (tok && (*tok == '=')) oid = strtok(NULL, " \t"); else oid = tok;
+
+			if (name && oid) {
 				mib->oidlisttail->oidcount++;
 
 				if (mib->oidlisttail->oidcount == mib->oidlisttail->oidsz) {
@@ -613,8 +626,28 @@ void readmibs(char *cfgfn, int verbose)
 
 				mib->oidlisttail->oids[mib->oidlisttail->oidcount].dsname = strdup(name);
 				mib->oidlisttail->oids[mib->oidlisttail->oidcount].oid = strdup(oid);
+
+				tok = strtok(NULL, " \t");
+				while (tok) {
+					if (strcasecmp(tok, "/u32") == 0) {
+						mib->oidlisttail->oids[mib->oidlisttail->oidcount].conversion = OID_CONVERT_U32;
+					}
+					else if (strncasecmp(tok, "/rrd:", 5) == 0) {
+						char *rrdtype = tok+5;
+
+						if (strcasecmp(rrdtype, "COUNTER") == 0)
+							mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_COUNTER;
+						else if (strcasecmp(rrdtype, "GAUGE") == 0)
+							 mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_GAUGE;
+						else if (strcasecmp(rrdtype, "DERIVE") == 0)
+							 mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_DERIVE;
+						else if (strcasecmp(rrdtype, "ABSOLUTE") == 0)
+							 mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_ABSOLUTE;
+					}
+
+					tok = strtok(NULL, " \t");
+				}
 			}
-			xfree(oid); xfree(name);
 
 			continue;
 		}
@@ -702,14 +735,14 @@ void setupmib(mibdef_t *mib, int verbose)
  *
  */
 
-static oid_t *make_oitem(mibdef_t *mib, char *devname, char *dsname, char *oidstr, struct req_t *reqitem)
+static oid_t *make_oitem(mibdef_t *mib, char *devname, oidds_t *oiddef, char *oidstr, struct req_t *reqitem)
 {
 	oid_t *oitem = (oid_t *)calloc(1, sizeof(oid_t));
 
 	oitem->mib = mib;
 	oitem->devname = strdup(devname);
 	oitem->setnumber = reqitem->setnumber;
-	oitem->dsname = dsname;
+	oitem->oiddef = oiddef;
 	oitem->OidLen = sizeof(oitem->Oid)/sizeof(oitem->Oid[0]);
 	if (read_objid(oidstr, oitem->Oid, &oitem->OidLen)) {
 		if (!reqitem->oidhead) reqitem->oidhead = oitem; else reqitem->oidtail->next = oitem;
@@ -868,7 +901,7 @@ void readconfig(char *cfgfn, int verbose)
 							devname = "-";
 						}
 
-						make_oitem(mib, devname, swalk->oids[i].dsname, oid, reqitem);
+						make_oitem(mib, devname, &swalk->oids[i], oid, reqitem);
 						if (oidbuf) xfree(oidbuf);
 					}
 
@@ -960,7 +993,7 @@ void resolvekeys(void)
 				for (i=0; (i <= swalk->oidcount); i++) {
 					oid = (char *)malloc(strlen(swalk->oids[i].oid) + strlen(kwalk->indexoid) + 2);
 					sprintf(oid, "%s.%s", swalk->oids[i].oid, kwalk->indexoid);
-					make_oitem(kwalk->mib, kwalk->key, swalk->oids[i].dsname, oid, rwalk);
+					make_oitem(kwalk->mib, kwalk->key, &swalk->oids[i], oid, rwalk);
 					xfree(oid);
 				}
 
@@ -1024,9 +1057,27 @@ void sendresult(void)
 			}
 
 			addtobuffer(owalk->mib->resultbuf, "\t");
-			addtobuffer(owalk->mib->resultbuf, owalk->dsname);
+			addtobuffer(owalk->mib->resultbuf, owalk->oiddef->dsname);
 			addtobuffer(owalk->mib->resultbuf, " = ");
-			addtobuffer(owalk->mib->resultbuf, (owalk->result ? owalk->result : "NODATA"));
+			if (owalk->result) {
+				int ival;
+				unsigned int uval;
+
+				switch (owalk->oiddef->conversion) {
+				  case OID_CONVERT_U32:
+					ival = atoi(owalk->result);
+					memcpy(&uval, &ival, sizeof(uval));
+					sprintf(msgline, "%u", uval);
+					addtobuffer(owalk->mib->resultbuf, msgline);
+					break;
+
+				  default:
+					addtobuffer(owalk->mib->resultbuf, owalk->result);
+					break;
+				}
+			}
+			else
+				addtobuffer(owalk->mib->resultbuf, "NODATA");
 			addtobuffer(owalk->mib->resultbuf, "\n");
 			owalk->mib->haveresult = 1;
 		}
