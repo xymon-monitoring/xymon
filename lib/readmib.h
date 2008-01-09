@@ -80,6 +80,7 @@ typedef struct mibdef_t {
 	} loadstatus;
 	char *mibfn;				/* Filename of the MIB file (for non-standard MIB's) */
 	char *mibname;				/* MIB definition name */
+	int tabular;				/* Does the MIB contain a table ? Or just simple data */
 	oidset_t *oidlisthead, *oidlisttail;	/* The list of OID's in the MIB set */
 	mibidx_t *idxlist;			/* List of the possible indices used for the MIB */
 	int haveresult;				/* Used while building result messages */

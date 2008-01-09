@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.4 2008-01-09 14:27:13 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.5 2008-01-09 15:27:24 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -119,6 +119,7 @@ void readmibs(char *cfgfn, int verbose)
 			mib->oidlisttail->oidcount = -1;
 			mib->oidlisttail->oids = (oidds_t *)malloc(mib->oidlisttail->oidsz*sizeof(oidds_t));
 			mib->resultbuf = newstrbuffer(0);
+			mib->tabular = 0;
 			rbtInsert(mibdefs, mib->mibname, mib);
 
 			continue;
@@ -139,6 +140,11 @@ void readmibs(char *cfgfn, int verbose)
 			mib->oidlisttail->oidcount = -1;
 			mib->oidlisttail->oids = (oidds_t *)malloc(mib->oidlisttail->oidsz*sizeof(oidds_t));
 
+			continue;
+		}
+
+		if (mib && (strncmp(bot, "table", 5) == 0)) {
+			mib->tabular = 1;
 			continue;
 		}
 
