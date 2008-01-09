@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.37 2008-01-09 12:40:46 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.38 2008-01-09 12:54:08 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -530,7 +530,7 @@ void readconfig(char *cfgfn, int verbose)
 	struct req_t *reqitem = NULL;
 	int bbsleep = atoi(xgetenv("BBSLEEP"));
 
-	RbtIterator mibhandle;
+	mibdef_t *mib;
 
 	/* Check if config was modified */
 	if (cfgfiles) {
@@ -624,18 +624,16 @@ void readconfig(char *cfgfn, int verbose)
 
 		/* Custom mibs */
 		p = bot + strcspn(bot, "= \t\r\n"); savech = *p; *p = '\0';
-		mibhandle = rbtFind(mibdefs, bot);
+		mib = find_mib(bot);
 		*p = savech; mibidx = p + strspn(p, "= \t\r\n");
 		p = mibidx + strcspn(mibidx, "\r\n\t "); *p = '\0';
-		if (mibhandle != rbtEnd(mibdefs)) {
+		if (mib) {
 			int i;
-			mibdef_t *mib;
 			mibidx_t *iwalk = NULL;
 			char *oid, *oidbuf;
 			char *devname;
 			oidset_t *swalk;
 
-			mib = (mibdef_t *)gettreeitem(mibdefs, mibhandle);
 			setupmib(mib, verbose);
 			if (mib->loadstatus != MIB_STATUS_LOADED) continue;	/* Cannot use this MIB */
 
@@ -781,7 +779,6 @@ void sendresult(void)
 	struct oid_t *owalk;
 	char msgline[1024];
 	char *currdev;
-	RbtIterator handle;
 	mibdef_t *mib;
 
 	init_timestamp();
@@ -791,9 +788,7 @@ void sendresult(void)
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		currdev = "";
 
-		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
-			mib = (mibdef_t *)gettreeitem(mibdefs, handle);
-
+		for (mib = first_mib(); (mib); mib = next_mib()) {
 			clearstrbuffer(mib->resultbuf);
 			mib->haveresult = 0;
 
@@ -843,9 +838,7 @@ void sendresult(void)
 			owalk->mib->haveresult = 1;
 		}
 
-		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
-			mib = (mibdef_t *)gettreeitem(mibdefs, handle);
-
+		for (mib = first_mib(); (mib); mib = next_mib()) {
 			if (mib->haveresult) {
 				init_status(COL_GREEN);
 				addtostrstatus(mib->resultbuf);
