@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.38 2008-01-09 12:54:08 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.39 2008-01-09 14:26:03 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -936,10 +936,6 @@ int main (int argc, char **argv)
 	snmp_mib_toggle_options("e");	/* Like -Pe: Dont show MIB parsing errors */
 	snmp_out_toggle_options("qn");	/* Like -Oqn: OID's printed as numbers, values printed without type */
 
-	if (mibfn == NULL) {
-		mibfn = (char *)malloc(PATH_MAX);
-		sprintf(mibfn, "%s/etc/hobbit-snmpmibs.cfg", xgetenv("BBHOME"));
-	}
 	readmibs(mibfn, mibcheck);
 
 	if (configfn == NULL) {
