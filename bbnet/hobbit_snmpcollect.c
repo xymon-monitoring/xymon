@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.39 2008-01-09 14:26:03 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.40 2008-01-09 22:08:35 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -47,7 +47,13 @@ typedef struct req_t {
 	char *hostip[10];			/* Hostname(s) or IP(s) used for testing. Max 10 IP's */
 	int hostipidx;				/* Index into hostip[] for the active IP we use */
 	long version;				/* SNMP version to use */
-	unsigned char *community;		/* Community name used to access the SNMP daemon */
+	unsigned char *community;		/* Community name used to access the SNMP daemon (v1, v2c) */
+	unsigned char *username;		/* Username used to access the SNMP daemon (v3) */
+	unsigned char *passphrase;		/* Passphrase used to access the SNMP daemon (v3) */
+	enum { 
+		SNMP_V3AUTH_MD5, 
+		SNMP_V3AUTH_SHA1 
+	} authmethod;				/* Authentication method (v3) */
 	int setnumber;				/* Per-host setnumber used while building requests */
 	struct snmp_session *sess;		/* SNMP session data */
 
@@ -353,19 +359,69 @@ void startonehost(struct req_t *req, int ipchange)
 	/* Setup the SNMP session */
 	if (!req->sess) {
 		snmp_sess_init(&s);
-		s.version = req->version;
-		if (timeout > 0) s.timeout = timeout;
-		if (retries > 0) s.retries = retries;
-		s.peername = req->hostip[req->hostipidx];
+
 		/* 
 		 * snmp_session has a "remote_port" field, but it does not work.
 		 * Instead, the peername should include a port number (IP:PORT)
 		 * if (req->portnumber) s.remote_port = req->portnumber;
 		 */
-		s.community = req->community;
-		s.community_len = strlen((char *)req->community);
+		s.peername = req->hostip[req->hostipidx];
+
+		/* Set the SNMP version and authentication token(s) */
+		s.version = req->version;
+		switch (s.version) {
+		  case SNMP_VERSION_1:
+		  case SNMP_VERSION_2c:
+			s.community = req->community;
+			s.community_len = strlen((char *)req->community);
+			break;
+
+		  case SNMP_VERSION_3:
+			/* set the SNMPv3 user name */
+			s.securityName = strdup(req->username);
+			s.securityNameLen = strlen(s.securityName);
+
+			/* set the security level to authenticated, but not encrypted */
+			s.securityLevel = SNMP_SEC_LEVEL_AUTHNOPRIV;
+
+			/* set the authentication method */
+			switch (req->authmethod) {
+			  case SNMP_V3AUTH_MD5:
+				s.securityAuthProto = usmHMACMD5AuthProtocol;
+				s.securityAuthProtoLen = sizeof(usmHMACMD5AuthProtocol)/sizeof(oid);
+				s.securityAuthKeyLen = USM_AUTH_KU_LEN;
+				break;
+
+			  case SNMP_V3AUTH_SHA1:
+				s.securityAuthProto = usmHMACSHA1AuthProtocol;
+				s.securityAuthProtoLen = sizeof(usmHMACSHA1AuthProtocol)/sizeof(oid);
+				s.securityAuthKeyLen = USM_AUTH_KU_LEN;
+				break;
+			}
+
+			/*
+			 * set the authentication key to a hashed version of our
+			 * passphrase (which must be at least 8 characters long).
+			 */
+			if (generate_Ku(s.securityAuthProto, s.securityAuthProtoLen,
+					(u_char *)req->passphrase, strlen(req->passphrase),
+					s.securityAuthKey, &s.securityAuthKeyLen) != SNMPERR_SUCCESS) {
+				errprintf("Failed to generate Ku from authentication pass phrase for host %s\n",
+					  req->hostname);
+				snmp_perror("generate_Ku");
+				return;
+			}
+			break;
+		}
+
+		/* Set timeouts and retries */
+		if (timeout > 0) s.timeout = timeout;
+		if (retries > 0) s.retries = retries;
+
+		/* Setup the callback */
 		s.callback = asynch_response;
 		s.callback_magic = req;
+
 		if (!(req->sess = snmp_open(&s))) {
 			snmp_sess_perror("snmp_open", &s);
 			return;
@@ -490,6 +546,9 @@ void setupmib(mibdef_t *mib, int verbose)
  *     ip=ADDRESS[:PORT]
  *     version=VERSION
  *     community=COMMUNITY
+ *     username=USERNAME
+ *     passphrase=PASSPHRASE
+ *     authmethod=[MD5|SHA1]
  *     mibname1[=index]
  *     mibname2[=index]
  *     mibname3[=index]
@@ -588,6 +647,7 @@ void readconfig(char *cfgfn, int verbose)
 
 			reqitem->hostip[0] = reqitem->hostname;
 			reqitem->version = SNMP_VERSION_1;
+			reqitem->authmethod = SNMP_V3AUTH_MD5;
 			reqitem->next = reqhead;
 			reqhead = reqitem;
 
@@ -619,6 +679,27 @@ void readconfig(char *cfgfn, int verbose)
 
 		if (strncmp(bot, "community=", 10) == 0) {
 			reqitem->community = strdup(bot+10);
+			continue;
+		}
+
+		if (strncmp(bot, "username=", 9) == 0) {
+			reqitem->username = strdup(bot+9);
+			continue;
+		}
+
+		if (strncmp(bot, "passphrase=", 10) == 0) {
+			reqitem->passphrase = strdup(bot+10);
+			continue;
+		}
+
+		if (strncmp(bot, "authmethod=", 10) == 0) {
+			if (strcasecmp(bot+10, "md5") == 0)
+				reqitem->authmethod = SNMP_V3AUTH_MD5;
+			else if (strcasecmp(bot+10, "sha1") == 0)
+				reqitem->authmethod = SNMP_V3AUTH_SHA1;
+			else
+				errprintf("Unknown SNMPv3 authentication method '%s'\n", bot+10);
+
 			continue;
 		}
 
