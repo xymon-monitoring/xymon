@@ -12,88 +12,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.35 2008-01-09 11:52:15 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.36 2008-01-09 12:14:47 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
 #include "libbbgen.h"
-
-/* -------------------  struct's used for the MIB definition  ------------------------ */
-/* This holds one OID and our corresponding short-name */
-typedef struct oidds_t {
-	char *dsname;		/* Our short-name for the data item in the mib definition */
-	char *oid;		/* The OID for the data in the mib definition */
-	enum {
-		RRD_NOTRACK,
-		RRD_TRACK_GAUGE,
-		RRD_TRACK_COUNTER,
-		RRD_TRACK_DERIVE,
-		RRD_TRACK_ABSOLUTE
-	} rrdtype;		/* How to store this in an RRD file */
-
-	enum {
-		OID_CONVERT_NONE,	/* No conversion */
-		OID_CONVERT_U32		/* Convert signed -> unsigned 32 bit integer */
-	} conversion;
-} oidds_t;
-
-/* This holds a list of OID's and their shortnames */
-typedef struct oidset_t {
-	int oidsz, oidcount;
-	oidds_t *oids;
-	struct oidset_t *next;
-} oidset_t;
-
-/* This describes the ways we can index into this MIB */
-enum mibidxtype_t { 
-	MIB_INDEX_IN_OID, 	/*
-				 * The index is part of the key-table OID's; by scanning the key-table
-				 * values we find the one matching the wanted key, and can extract the
-				 * index from the matching rows' OID.
-				 * E.g. interfaces table looking for ifDescr or ifPhysAddress, or
-				 * interfaces table looking for the extension-object ifName.
-				 *   IF-MIB::ifDescr.1 = STRING: lo
-				 *   IF-MIB::ifDescr.2 = STRING: eth1
-				 *   IF-MIB::ifPhysAddress.1 = STRING:
-				 *   IF-MIB::ifPhysAddress.2 = STRING: 0:e:a6:ce:cf:7f
-				 *   IF-MIB::ifName.1 = STRING: lo
-				 *   IF-MIB::ifName.2 = STRING: eth1
-				 * The key table has an entry with the value = key-value. The index
-				 * is then the part of the key-OID beyond the base key table OID.
-				 */
-
-	MIB_INDEX_IN_VALUE 	/*
-				 * Index can be found by adding the key value as a part-OID to the
-				 * base OID of the key (e.g. interfaces by IP-address).
-				 *   IP-MIB::ipAdEntIfIndex.127.0.0.1 = INTEGER: 1
-				 *   IP-MIB::ipAdEntIfIndex.172.16.10.100 = INTEGER: 3
-				 */
-};
-
-typedef struct mibidx_t {
-	char marker;				/* Marker character for key OID */
-	enum mibidxtype_t idxtype;		/* How to interpret the key */
-	char *keyoid;				/* Key OID */
-	oid rootoid[MAX_OID_LEN];		/* Binary representation of keyoid */
-	unsigned int rootoidlen;		/* Length of binary keyoid */
-	struct mibidx_t *next;
-} mibidx_t;
-
-typedef struct mibdef_t {
-	enum { 
-		MIB_STATUS_NOTLOADED, 		/* Not loaded */
-		MIB_STATUS_LOADED, 		/* Loaded OK, can be used */
-		MIB_STATUS_LOADFAILED 		/* Load failed (e.g. missing MIB file) */
-	} loadstatus;
-	char *mibfn;				/* Filename of the MIB file (for non-standard MIB's) */
-	char *mibname;				/* MIB definition name */
-	oidset_t *oidlisthead, *oidlisttail;	/* The list of OID's in the MIB set */
-	mibidx_t *idxlist;			/* List of the possible indices used for the MIB */
-	int haveresult;				/* Used while building result messages */
-	strbuffer_t *resultbuf;			/* Used while building result messages */
-} mibdef_t;
-
 
 /* -----------------  struct's used for the host/requests we need to do ---------------- */
 /* List of the OID's we will request */
@@ -136,7 +60,6 @@ typedef struct req_t {
 
 
 /* Global variables */
-RbtHandle mibdefs;				/* Holds the list of MIB definitions */
 req_t *reqhead = NULL;				/* Holds the list of requests */
 int active_requests = 0;			/* Number of active SNMP requests in flight */
 
@@ -340,7 +263,7 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid, struct sn
 				struct variable_list *vp = pdu->variables;
 
 				if ( (vp->name_length >= req->currentkey->indexmethod->rootoidlen) && 
-				     (memcmp(&req->currentkey->indexmethod->rootoid, vp->name, req->currentkey->indexmethod->rootoidlen * sizeof(oid)) == 0) ) {
+				     (memcmp(req->currentkey->indexmethod->rootoid, vp->name, req->currentkey->indexmethod->rootoidlen * sizeof(oid)) == 0) ) {
 					/* Still more data in the current key table, get the next row */
 					snmpreq = snmp_pdu_create(SNMP_MSG_GETNEXT);
 					pducount++;
@@ -517,169 +440,6 @@ void stophosts(void)
 }
 
 
-void readmibs(char *cfgfn, int verbose)
-{
-	static void *cfgfiles = NULL;
-	FILE *cfgfd;
-	strbuffer_t *inbuf;
-	mibdef_t *mib = NULL;
-
-	/* Check if config was modified */
-	if (cfgfiles) {
-		if (!stackfmodified(cfgfiles)) {
-			dbgprintf("No files changed, skipping reload\n");
-			return;
-		}
-		else {
-			stackfclist(&cfgfiles);
-			cfgfiles = NULL;
-		}
-	}
-
-	cfgfd = stackfopen(cfgfn, "r", &cfgfiles);
-	if (cfgfd == NULL) {
-		errprintf("Cannot open configuration files %s\n", cfgfn);
-		return;
-	}
-
-	inbuf = newstrbuffer(0);
-	while (stackfgets(inbuf, NULL)) {
-		char *bot, *p;
-
-		sanitize_input(inbuf, 0, 0);
-		bot = STRBUF(inbuf) + strspn(STRBUF(inbuf), " \t");
-
-		if ((*bot == '\0') || (*bot == '#')) continue;
-
-		if (*bot == '[') {
-			char *mibname;
-			
-			mibname = bot+1;
-			p = strchr(mibname, ']'); if (p) *p = '\0';
-
-			mib = (mibdef_t *)calloc(1, sizeof(mibdef_t));
-			mib->mibname = strdup(mibname);
-			mib->oidlisthead = mib->oidlisttail = (oidset_t *)calloc(1, sizeof(oidset_t));
-			mib->oidlisttail->oidsz = 10;
-			mib->oidlisttail->oidcount = -1;
-			mib->oidlisttail->oids = (oidds_t *)malloc(mib->oidlisttail->oidsz*sizeof(oidds_t));
-			mib->resultbuf = newstrbuffer(0);
-			rbtInsert(mibdefs, mib->mibname, mib);
-
-			continue;
-		}
-
-		if (mib && (strncmp(bot, "mibfile", 7) == 0)) {
-			p = bot + 7; p += strspn(p, " \t");
-			mib->mibfn = strdup(p);
-
-			continue;
-		}
-
-		if (mib && (strncmp(bot, "extra", 5) == 0)) {
-			/* Add an extra set of MIB objects to retrieve separately */
-			mib->oidlisttail->next = (oidset_t *)calloc(1, sizeof(oidset_t));
-			mib->oidlisttail = mib->oidlisttail->next;
-			mib->oidlisttail->oidsz = 10;
-			mib->oidlisttail->oidcount = -1;
-			mib->oidlisttail->oids = (oidds_t *)malloc(mib->oidlisttail->oidsz*sizeof(oidds_t));
-
-			continue;
-		}
-
-		if (mib && ((strncmp(bot, "keyidx", 6) == 0) || (strncmp(bot, "validx", 6) == 0))) {
-			/* 
-			 * Define an index. Looks like:
-			 *    keyidx (IF-MIB::ifDescr)
-			 *    validx [IP-MIB::ipAdEntIfIndex]
-			 */
-			char endmarks[6];
-			mibidx_t *newidx = (mibidx_t *)calloc(1, sizeof(mibidx_t));
-
-			p = bot + 6; p += strspn(p, " \t");
-			newidx->marker = *p; p++;
-			newidx->idxtype = (strncmp(bot, "keyidx", 6) == 0) ? MIB_INDEX_IN_OID : MIB_INDEX_IN_VALUE;
-			newidx->keyoid = strdup(p);
-			sprintf(endmarks, "%s%c", ")]}>", newidx->marker);
-			p = newidx->keyoid + strcspn(newidx->keyoid, endmarks); *p = '\0';
-			newidx->next = mib->idxlist;
-			mib->idxlist = newidx;
-
-			continue;
-		}
-
-		if (mib) {
-			/* icmpInMsgs = IP-MIB::icmpInMsgs.0 [/u32] [/rrd:TYPE] */
-			char *tok, *name, *oid = NULL;
-
-			name = strtok(bot, " \t");
-			if (name) tok = strtok(NULL, " \t");
-			if (tok && (*tok == '=')) oid = strtok(NULL, " \t"); else oid = tok;
-
-			if (name && oid) {
-				mib->oidlisttail->oidcount++;
-
-				if (mib->oidlisttail->oidcount == mib->oidlisttail->oidsz) {
-					mib->oidlisttail->oidsz += 10;
-					mib->oidlisttail->oids = (oidds_t *)realloc(mib->oidlisttail->oids, mib->oidlisttail->oidsz*sizeof(oidds_t));
-				}
-
-				mib->oidlisttail->oids[mib->oidlisttail->oidcount].dsname = strdup(name);
-				mib->oidlisttail->oids[mib->oidlisttail->oidcount].oid = strdup(oid);
-
-				tok = strtok(NULL, " \t");
-				while (tok) {
-					if (strcasecmp(tok, "/u32") == 0) {
-						mib->oidlisttail->oids[mib->oidlisttail->oidcount].conversion = OID_CONVERT_U32;
-					}
-					else if (strncasecmp(tok, "/rrd:", 5) == 0) {
-						char *rrdtype = tok+5;
-
-						if (strcasecmp(rrdtype, "COUNTER") == 0)
-							mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_COUNTER;
-						else if (strcasecmp(rrdtype, "GAUGE") == 0)
-							 mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_GAUGE;
-						else if (strcasecmp(rrdtype, "DERIVE") == 0)
-							 mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_DERIVE;
-						else if (strcasecmp(rrdtype, "ABSOLUTE") == 0)
-							 mib->oidlisttail->oids[mib->oidlisttail->oidcount].rrdtype = RRD_TRACK_ABSOLUTE;
-					}
-
-					tok = strtok(NULL, " \t");
-				}
-			}
-
-			continue;
-		}
-
-		if (verbose) {
-			errprintf("Unknown MIB definition line: '%s'\n", bot);
-		}
-	}
-
-	stackfclose(cfgfd);
-	freestrbuffer(inbuf);
-
-	if (debug) {
-		RbtIterator handle;
-
-		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
-			mibdef_t *mib = (mibdef_t *)gettreeitem(mibdefs, handle);
-			oidset_t *swalk;
-			int i;
-
-			dbgprintf("[%s]\n", mib->mibname);
-			for (swalk = mib->oidlisthead; (swalk); swalk = swalk->next) {
-				dbgprintf("\t*** OID set, %d entries ***\n", swalk->oidcount);
-				for (i=0; (i <= swalk->oidcount); i++) {
-					dbgprintf("\t\t%s = %s\n", swalk->oids[i].dsname, swalk->oids[i].oid);
-				}
-			}
-		}
-	}
-}
-
-
 /* 
  * This routine loads MIB files, and computes the key-OID values.
  * We defer this until the mib-definition is actually being referred to 
@@ -703,7 +463,8 @@ void setupmib(mibdef_t *mib, int verbose)
 	}
 
 	for (iwalk = mib->idxlist; (iwalk); iwalk = iwalk->next) {
-		iwalk->rootoidlen = sizeof(iwalk->rootoid) / sizeof(iwalk->rootoid[0]);
+		iwalk->rootoid = calloc(MAX_OID_LEN, sizeof(oid));
+		iwalk->rootoidlen = MAX_OID_LEN;
 		if (read_objid(iwalk->keyoid, iwalk->rootoid, &iwalk->rootoidlen)) {
 			/* Re-use the iwalk->keyoid buffer */
 			sz = strlen(iwalk->keyoid) + 1; len = 0;
