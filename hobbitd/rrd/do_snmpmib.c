@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.3 2008-01-09 23:00:34 henrik Exp $";
+static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.4 2008-01-10 09:28:24 henrik Exp $";
 
 static time_t snmp_nextreload = 0;
 
@@ -191,15 +191,9 @@ static void do_tabular_snmpmib(char *hostname, char *testname, char *msg, time_t
 	while (boset) {
 		fnkey = boset+1;
 		boset = boset + strcspn(boset, "]\n"); *boset = '\0'; boset++;
-		eoset = strstr(boset, "\n[");
-		if (eoset) {
-			*eoset = '\0';
-			do_simple_snmpmib(hostname, testname, fnkey, boset, tstamp, params, &pollinterval);
-			*eoset = '\n';
-			boset = eoset+1;
-		}
-		else
-			boset = NULL;
+		eoset = strstr(boset, "\n["); if (eoset) *eoset = '\0';
+		do_simple_snmpmib(hostname, testname, fnkey, boset, tstamp, params, &pollinterval);
+		boset = (eoset ? eoset+1 : NULL);
 	}
 }
 
