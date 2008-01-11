@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.57 2008-01-09 14:28:41 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.58 2008-01-11 13:07:05 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -185,6 +185,8 @@ static void setupfn(char *format, char *param)
 static void setupfn2(char *format, char *param1, char *param2)
 {
 	char *p;
+
+	while ((p = strchr(param2, '/')) != NULL) *p = ',';
 
 	memset(fnparams, 0, sizeof(fnparams));
 	fnparams[0] = param1;
