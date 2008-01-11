@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_alert.c,v 1.100 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id: do_alert.c,v 1.101 2008-01-11 13:11:07 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -30,6 +30,10 @@ static char rcsid[] = "$Id: do_alert.c,v 1.100 2008-01-03 10:08:13 henrik Exp $"
 #include <pcre.h>
 
 #include "libbbgen.h"
+
+#ifndef MAX_ALERTMSG_SCRIPTS
+#define MAX_ALERTMSG_SCRIPTS 4096
+#endif
 
 /*
  * This is the dynamic info stored to keep track of active alerts. We
