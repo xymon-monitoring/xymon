@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns.c,v 1.32 2008-01-03 09:42:11 henrik Exp $";
+static char rcsid[] = "$Id: dns.c,v 1.33 2008-01-11 10:10:09 henrik Exp $";
 
 #include <unistd.h>
 #include <string.h>
@@ -23,10 +23,11 @@ static char rcsid[] = "$Id: dns.c,v 1.32 2008-01-03 09:42:11 henrik Exp $";
 
 #include "libbbgen.h"
 
+#include <ares.h>
+#include <ares_version.h>
+
 #include "dns.h"
 #include "dns2.h"
-
-#include <ares.h>
 
 #ifdef HPUX
 /* Doesn't have hstrerror */
@@ -91,7 +92,15 @@ static char *find_dnscache(char *hostname)
 }
 
 
+#if (ARES_VERSION_MAJOR > 1)
+#error "Unsupported C-ARES version"
+#else
+#if (ARES_VERSION_MINOR > 4)
+static void dns_callback(void *arg, int status, int timeout, struct hostent *hent)
+#else
 static void dns_callback(void *arg, int status, struct hostent *hent)
+#endif
+#endif
 {
 	dnsitem_t *dnsc = (dnsitem_t *) arg;
 	struct timeval etime;
@@ -175,7 +184,17 @@ void add_host_to_dns_queue(char *hostname)
 						hostname, hstrerror(h_errno), h_errno);
 				}
 			}
+
+#if (ARES_VERSION_MAJOR > 1)
+#error "Unsupported C-ARES version"
+#else
+#if (ARES_VERSION_MINOR > 4)
+			dns_callback(dnsc, status, 0, hent);
+#else
 			dns_callback(dnsc, status, hent);
+#endif
+#endif
+
 		}
 
 		dns_stats_total++;

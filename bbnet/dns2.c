@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.12 2008-01-03 09:42:11 henrik Exp $";
+static char rcsid[] = "$Id: dns2.c,v 1.13 2008-01-11 10:10:09 henrik Exp $";
 
 /*
  * All of the code for parsing DNS responses and formatting these into
@@ -45,9 +45,11 @@ static char rcsid[] = "$Id: dns2.c,v 1.12 2008-01-03 09:42:11 henrik Exp $";
 
 #include "libbbgen.h"
 
+#include <ares.h>
+#include <ares_dns.h>
+#include <ares_version.h>
+
 #include "dns2.h"
-#include "ares.h"
-#include "ares_dns.h"
 
 /* Some systems (AIX, HP-UX) dont know the DNS T_SRV record */
 #ifndef T_SRV
@@ -139,7 +141,15 @@ static const char *rcodes[] = {
   "(unknown)", "(unknown)", "(unknown)", "(unknown)", "NOCHANGE"
 };
 
+#if (ARES_VERSION_MAJOR > 1)
+#error "Unsupported C-ARES version"
+#else
+#if (ARES_VERSION_MINOR > 4)
+void dns_detail_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen)
+#else
 void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen)
+#endif
+#endif
 {
 	int id, qr, opcode, aa, tc, rd, ra, rcode;
 	unsigned int qdcount, ancount, nscount, arcount, i;

@@ -17,7 +17,16 @@ typedef struct dns_resp_t {
 	struct dns_resp_t *next;
 } dns_resp_t;
 
+#if (ARES_VERSION_MAJOR > 1)
+#error "Unsupported C-ARES version"
+#else
+#if (ARES_VERSION_MINOR > 4)
+extern void dns_detail_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
+#else
 extern void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen);
+#endif
+#endif
+
 extern int dns_name_type(char *name);
 
 #endif
