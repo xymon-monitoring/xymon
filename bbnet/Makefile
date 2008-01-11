@@ -8,7 +8,10 @@ SNMPPROGRAMS = hobbit_snmpcollect
 EXTENSIONS = bbretest-net.sh
 DBGTOOLS = contest
 
+ifeq ($(DOSNMP),yes)
 PROGRAMS += $(SNMPPROGRAMS)
+endif
+
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
