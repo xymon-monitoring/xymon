@@ -21,8 +21,8 @@ do
 			then
 				NAME=`head -n 1 $FILE | awk '{print $2}'`;
 				SECTION=`head -n 1 $FILE | awk '{print $3}'`;
-				(echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Hobbit Monitor\""; tail +2 $FILE) | \
-				man2html -r - | tail +2 >docs/manpages/man$SECT/`basename $FILE`.html
+				(echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Hobbit Monitor\""; tail -n +2 $FILE) | \
+				man2html -r - | tail -n +2 >docs/manpages/man$SECT/`basename $FILE`.html
 			fi
 		done
 	done
