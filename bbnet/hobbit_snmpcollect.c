@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.42 2008-01-11 12:48:17 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.43 2008-01-11 13:08:54 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -758,6 +758,12 @@ void readconfig(char *cfgfn, int verbose)
 			/* See if this is an entry where we must determine the index ourselves */
 			if (*mibidx) {
 				for (iwalk = mib->idxlist; (iwalk && (*mibidx != iwalk->marker)); iwalk = iwalk->next) ;
+			}
+
+			if ((*mibidx == '*') && !iwalk) {
+				errprintf("Cannot do wildcard matching without an index (host %s, mib %s)\n",
+					  reqitem->hostname, mib->mibname);
+				continue;
 			}
 
 			if (!iwalk) {
