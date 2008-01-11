@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.41 2008-01-09 22:58:30 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.42 2008-01-11 12:48:17 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -160,7 +160,19 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 					switch (kwalk->indexmethod->idxtype) {
 					  case MIB_INDEX_IN_OID:
 						/* Does the key match the value we just got? */
-						if (strcmp(valstr, kwalk->key) == 0) {
+						if (*kwalk->key == '*') {
+							/* Match all. Add an extra key-record at the end. */
+							keyrecord_t *newkey;
+
+							newkey = (keyrecord_t *)calloc(1, sizeof(keyrecord_t));
+							memcpy(newkey, kwalk, sizeof(keyrecord_t));
+							newkey->indexoid = strdup(oidstr + keyoidlen + 1);
+							newkey->key = valstr; valstr = NULL;
+							newkey->next = kwalk->next;
+							kwalk->next = newkey;
+							done = 1;
+						}
+						else if (strcmp(valstr, kwalk->key) == 0) {
 							/* Grab the index part of the OID */
 							kwalk->indexoid = strdup(oidstr + keyoidlen + 1);
 							done = 1;
@@ -169,7 +181,19 @@ int print_result (int status, req_t *req, struct snmp_pdu *pdu)
 
 					  case MIB_INDEX_IN_VALUE:
 						/* Does the key match the index-part of the result OID? */
-						if ((*(oidstr+keyoidlen) == '.') && (strcmp(oidstr+keyoidlen+1, kwalk->key)) == 0) {
+						if (*kwalk->key == '*') {
+							/* Match all. Add an extra key-record at the end. */
+							keyrecord_t *newkey;
+
+							newkey = (keyrecord_t *)calloc(1, sizeof(keyrecord_t));
+							memcpy(newkey, kwalk, sizeof(keyrecord_t));
+							newkey->indexoid = valstr; valstr = NULL;
+							newkey->key = strdup(oidstr + keyoidlen + 1);
+							newkey->next = kwalk->next;
+							kwalk->next = newkey;
+							done = 1;
+						}
+						else if ((*(oidstr+keyoidlen) == '.') && (strcmp(oidstr+keyoidlen+1, kwalk->key)) == 0) {
 							/* 
 							 * Grab the index which is the value. 
 							 * Avoid a strdup by grabbing the valstr pointer.
@@ -231,11 +255,24 @@ int asynch_response(int operation, struct snmp_session *sp, int reqid, struct sn
 
 	if (operation == NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE) {
 		struct snmp_pdu *snmpreq = NULL;
+		int okoid = 1;
+
+		if (dataoperation == GET_KEYS) {
+			/* 
+			 * We're doing GETNEXT's when retrieving keys, so we will get a response
+			 * which has nothing really to do with the data we're looking for. In that
+			 * case, we should NOT process data from this response.
+			 */
+			struct variable_list *vp = pdu->variables;
+
+			okoid = ((vp->name_length >= req->currentkey->indexmethod->rootoidlen) && 
+			         (memcmp(req->currentkey->indexmethod->rootoid, vp->name, req->currentkey->indexmethod->rootoidlen * sizeof(oid)) == 0));
+		}
 
 		switch (pdu->errstat) {
 		  case SNMP_ERR_NOERROR:
-			/* Pick up the results */
-			print_result(STAT_SUCCESS, req, pdu);
+			/* Pick up the results, but only if the OID is valid */
+			if (okoid) print_result(STAT_SUCCESS, req, pdu);
 			break;
 
 		  case SNMP_ERR_NOSUCHNAME:
@@ -819,9 +856,12 @@ void resolvekeys(void)
 
 		for (kwalk = rwalk->keyrecords; (kwalk); kwalk = kwalk->next) {
 			if (!kwalk->indexoid) {
-				/* We failed to determine the index */
-				errprintf("Could not determine index for host=%s mib=%s key=%s\n",
-					  rwalk->hostname, kwalk->mib->mibname, kwalk->key);
+				/* Dont report failed lookups for the pseudo match-all key record */
+				if (*kwalk->key != '*') {
+					/* We failed to determine the index */
+					errprintf("Could not determine index for host=%s mib=%s key=%s\n",
+						  rwalk->hostname, kwalk->mib->mibname, kwalk->key);
+				}
 				continue;
 			}
 
