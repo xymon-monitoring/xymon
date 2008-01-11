@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit server
-# $Id: configure.server,v 1.68 2008-01-02 14:14:30 henrik Exp $
+# $Id: configure.server,v 1.69 2008-01-11 17:02:41 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit"
@@ -154,6 +154,9 @@ else
 	echo ""
 fi
 echo ""; echo "";
+
+. build/snmp.sh
+echo ""; echo ""
 
 MAKE="$MAKE -s" ./build/lfs.sh
 if test $? -eq 0; then
@@ -460,11 +463,16 @@ then
 	fi
 fi
 
+#
+echo "#"                                 >>Makefile
+echo "# Net-SNMP settings"               >>Makefile
+echo "DOSNMP = $DOSNMP"                  >>Makefile
+echo "#"                                 >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
 
 echo "# Limit the size of status message texts passed to external alert scripts" >>Makefile
-echo "MAXALERTMSGSZ = 4096"
+echo "MAXALERTMSGSZ = 4096"              >>Makefile
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
