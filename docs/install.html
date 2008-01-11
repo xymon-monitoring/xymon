@@ -61,7 +61,7 @@ The GNU C compiler works fine on HP-UX. More details in
 <a href="http://www.hswn.dk/hobbiton/2005/06/msg00079.html">this e-mail</a> from
 the Hobbit mailing list.</p>
 
-<h4>PCRE, RRDtool, libpng, OpenSSL, OpenLDAP libraries.</h4>
+<h4>PCRE, RRDtool, libpng, OpenSSL, OpenLDAP, Net-SNMP libraries.</h4>
 <p>Hobbit relies on a number of Open-Source libraries - these must be installed
 before you start building Hobbit. On many systems you already have these 
 pre-installed - they are commonly installed by default on Linux systems, and
@@ -101,6 +101,12 @@ files installed as well. Often these are in packages called "something<em>-dev</
 	<li>OpenLDAP is used to query LDAP directory servers. If you would like
 	to test that your directory server is up and running, you will need this
 	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
+
+	<li>Net-SNMP is used to query SNMP-based systems, typically network devices
+	like routers, switches or firewalls. But nearly all types of computer 
+	systems have some sort of SNMP support. If you would like to collect
+	data from SNMP-enabled systems you will need this library. It is available
+	from <a href="http://net-snmp.sourceforge.net/">http://net-snmp.sourceforge.net/</a></li>
 </ul>
 
 <p>The configure-script will attempt to locate all of these libraries on 
