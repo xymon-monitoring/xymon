@@ -10,8 +10,18 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.2 2008-01-14 20:55:21 henrik Exp $";
+static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.3 2008-01-14 21:27:13 henrik Exp $";
 
+/*
+ * Right now, this module simply takes each of the sections in the client
+ * message re-posts it as a status message to hobbitd. This lets us use
+ * SNMP data for feeding graphs.
+ *
+ * At some point in the future it would be very nice to analyze the data
+ * and make a real (colored) status from it. Perhaps also feed into some
+ * of the standard columns (cpu, memory, disk, procs) based on data from
+ * various mibs.
+ */
 void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t os, 
 				void *hinfo, char *sender, time_t timestamp,
 				char *clientdata)
