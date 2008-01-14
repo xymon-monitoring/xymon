@@ -89,7 +89,7 @@ hobbit_snmpcollect.o: hobbit_snmpcollect.c
 	chmod 755 $@
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
+	rm -f *.o *.a *~ $(PROGRAMS) $(SNMPPROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 
 install: install-bin install-ext install-config install-man
