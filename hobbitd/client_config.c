@@ -7,13 +7,14 @@
 /*                                                                            */
 /* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /* "PORT" handling (C) Mirko Saam                                             */
+/* "SVC" handling (C) Francois Lacroix                                        */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.62 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.63 2008-01-14 21:20:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -141,7 +142,16 @@ typedef struct c_port_t {
 	int color;
 } c_port_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_PAGING } ruletype_t;
+typedef struct c_svc_t {
+	exprlist_t *svcexp;
+        exprlist_t *stateexp;
+        exprlist_t *startupexp;
+	char *startup, *state;
+	int scount;
+        int color;
+} c_svc_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_PAGING } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -166,6 +176,7 @@ typedef struct c_rule_t {
 		c_file_t fcheck;
 		c_dir_t dcheck;
 		c_port_t port;
+		c_svc_t	svc;
 		c_paging_t paging;
 	} rule;
 } c_rule_t;
@@ -999,6 +1010,37 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (!tok || isqual(tok)) continue;
 				currule->rule.paging.paniclevel = atoi(tok);
 			}
+                        else if (strcasecmp(tok, "SVC") == 0) {
+				int idx = 0;
+
+                                currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+
+				currule->rule.svc.svcexp = NULL;
+                                currule->rule.svc.startupexp = NULL;
+                                currule->rule.svc.stateexp = NULL;
+				currule->rule.svc.state = NULL;
+				currule->rule.svc.startup = NULL; 
+                                currule->rule.svc.color = COL_RED;
+
+                                tok = wstok(NULL);
+                                currule->rule.svc.svcexp = setup_expr(tok, 0);
+                                do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
+
+                                        if (strncasecmp(tok, "startup=", 8) == 0) {
+                                                currule->rule.svc.startupexp = setup_expr(tok+8, 0);
+                                        }
+                                        else if (strncasecmp(tok, "status=", 7) == 0) {
+                                                currule->rule.svc.stateexp = setup_expr(tok+7, 0);
+                                        }
+                                        else if (strncasecmp(tok, "col=", 4) == 0) {
+                                                currule->rule.svc.color = parse_color(tok+4);
+                                        }
+                                        else if (strncasecmp(tok, "color=", 6) == 0) {
+                                                currule->rule.svc.color = parse_color(tok+6);
+                                        }
+                                } while (tok && (!isqual(tok)));
+                        }
 			else {
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
 				unknowntok = 1; tok = NULL; continue;
@@ -1191,6 +1233,17 @@ void dump_client_config(void)
 		  case C_PAGING:
 			printf("PAGING %d %d", rwalk->rule.paging.warnlevel, rwalk->rule.paging.paniclevel);
 			break;
+
+                  case C_SVC:
+                        printf("SVC");
+                        if (rwalk->rule.svc.svcexp)
+                                printf(" %s", rwalk->rule.svc.svcexp->pattern);
+                        if (rwalk->rule.svc.stateexp)
+                                printf(" status=%s", rwalk->rule.svc.stateexp->pattern);
+                        if (rwalk->rule.svc.startupexp)
+                                printf(" startup=%s", rwalk->rule.svc.startupexp->pattern);
+                        printf(" color=%s", colorname(rwalk->rule.svc.color));
+                        break;
 		}
 
 		if (rwalk->flags & CHK_TRACKIT) {
@@ -1887,6 +1940,7 @@ static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype,
 		  case C_DISK : rule->rule.disk.dcount = 0; break;
 		  case C_PROC : rule->rule.proc.pcount = 0; break;
 		  case C_PORT : rule->rule.port.pcount = 0; break;
+                  case C_SVC : rule->rule.svc.scount = 0; break;
 		  default: break;
 		}
 
@@ -1982,6 +2036,20 @@ static void add_count3(char *pname0, char *pname1, char *pname2 , mon_proc_t *he
 			if (mymatch == 3) {pwalk->rule->rule.port.pcount++;}
 			break;
 
+                  case C_SVC: 
+                        mymatch = 0;
+
+                        if (check_expr_match(pname0, pwalk->rule->rule.svc.svcexp, NULL)) {
+				mymatch++;
+				pwalk->rule->rule.svc.startup = strdup(pname1);
+				pwalk->rule->rule.svc.state = strdup(pname2);
+			}
+                        if (check_expr_match(pname1, pwalk->rule->rule.svc.startupexp, NULL)) mymatch++;
+                        if (check_expr_match(pname2, pwalk->rule->rule.svc.stateexp, NULL)) mymatch++;
+
+                        if (mymatch == 3) {pwalk->rule->rule.svc.scount++;}
+                        break;
+
 		  default:
 			break;
 		}
@@ -2070,6 +2138,56 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		if (group) *group = (*walk)->rule->groups;
 		break;
 
+          case C_SVC:
+ 		result = (*walk)->rule->statustext;
+                if (!result) { 
+			int sz = 0;
+			char *p;
+
+			if ((*walk)->rule->rule.svc.svcexp->pattern)
+				sz = strlen((*walk)->rule->rule.svc.svcexp->pattern);
+			/* Current state */
+			if ((*walk)->rule->rule.svc.startup)
+				sz += strlen((*walk)->rule->rule.svc.startup);
+			else
+				sz += strlen("Not Found");
+			if ((*walk)->rule->rule.svc.state)
+				sz += strlen((*walk)->rule->rule.svc.state);
+			/* Rule state */
+			if ((*walk)->rule->rule.svc.startupexp->pattern)
+				sz += strlen((*walk)->rule->rule.svc.startupexp->pattern);
+                        if ((*walk)->rule->rule.svc.stateexp->pattern)
+                                sz += strlen((*walk)->rule->rule.svc.stateexp->pattern);
+
+			(*walk)->rule->statustext = (char *)malloc(sz + 12);
+			p = (*walk)->rule->statustext;
+			if ((*walk)->rule->rule.svc.svcexp->pattern)
+				p += sprintf(p, "%s is", (*walk)->rule->rule.svc.svcexp->pattern);
+			if ((*walk)->rule->rule.svc.startup)
+				p += sprintf(p, " %s", (*walk)->rule->rule.svc.startup);
+			else
+				p += sprintf(p, " %s", "Not Found");
+			if ((*walk)->rule->rule.svc.state)
+				p += sprintf(p, " %s",	(*walk)->rule->rule.svc.state);
+                        if ((*walk)->rule->rule.svc.startupexp->pattern)
+                                 p += sprintf(p, " req %s", (*walk)->rule->rule.svc.startupexp->pattern);
+			if ((*walk)->rule->rule.svc.stateexp->pattern)
+				p += sprintf(p, " %s", (*walk)->rule->rule.svc.stateexp->pattern);
+			*p = '\0';
+
+			result = (*walk)->rule->statustext;
+			/* We free the extra buffer */
+			if ((*walk)->rule->rule.svc.state)
+				xfree((*walk)->rule->rule.svc.state);
+			if ((*walk)->rule->rule.svc.startup)
+				xfree((*walk)->rule->rule.svc.startup);
+		}
+                *count = (*walk)->rule->rule.svc.scount;
+		*color = COL_GREEN;
+		if (*count == 0) *color = (*walk)->rule->rule.svc.color;
+                if (group) *group = (*walk)->rule->groups;
+                break;
+
 	  default: break;
 	}
 
@@ -2081,6 +2199,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
 static mon_proc_t *dhead = NULL, *dtail = NULL, *dmonwalk = NULL;
 static mon_proc_t *porthead = NULL, *porttail = NULL, *portmonwalk = NULL;
+static mon_proc_t *svchead = NULL, *svctail = NULL, *svcmonwalk = NULL;
 
 int clear_process_counts(void *hinfo, char *classname)
 {
@@ -2095,6 +2214,11 @@ int clear_disk_counts(void *hinfo, char *classname)
 int clear_port_counts(void *hinfo, char *classname)
 {
 	return clear_counts(hinfo, classname, C_PORT, &porthead, &porttail, &portmonwalk);
+}
+
+int clear_svc_counts(void *hinfo, char *classname)
+{
+        return clear_counts(hinfo, classname, C_SVC, &svchead, &svctail, &svcmonwalk);
 }
 
 void add_process_count(char *pname)
@@ -2112,6 +2236,11 @@ void add_port_count(char *localstr, char *foreignstr, char *stname)
 	add_count3(localstr, foreignstr, stname, porthead);
 }
 
+void add_svc_count(char *localstr, char *foreignstr, char *stname)
+{
+        add_count3(localstr, foreignstr, stname, svchead);
+}
+
 char *check_process_count(int *count, int *lowlim, int *uplim, int *color, char **id, int *trackit, char **group)
 {
 	return check_count(count, C_PROC, lowlim, uplim, color, &pmonwalk, id, trackit, group);
@@ -2125,5 +2254,10 @@ char *check_disk_count(int *count, int *lowlim, int *uplim, int *color, char **g
 char *check_port_count(int *count, int *lowlim, int *uplim, int *color, char **id, int *trackit, char **group)
 {
 	return check_count(count, C_PORT, lowlim, uplim, color, &portmonwalk, id, trackit, group);
+}
+
+char *check_svc_count(int *count, int *color, char **group)
+{
+        return check_count(count, C_SVC, NULL, NULL, color, &svcmonwalk, NULL, NULL, group);
 }
 

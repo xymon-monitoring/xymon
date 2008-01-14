@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.116 2008-01-14 14:46:27 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.117 2008-01-14 21:20:28 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -31,7 +31,7 @@ static char rcsid[] = "$Id: hobbitd_client.c,v 1.116 2008-01-14 14:46:27 henrik 
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
-enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_LAST };
+enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_SVCS, MSG_WHO, MSG_LAST };
 
 typedef struct sectlist_t {
 	char *sname;
@@ -41,9 +41,11 @@ typedef struct sectlist_t {
 sectlist_t *sections = NULL;
 int pslistinprocs = 1;
 int portlistinports = 1;
+int svclistinsvcs = 1;
 int sendclearmsgs = 1;
 int sendclearfiles = 1;
 int sendclearports = 1;
+int sendclearsvcs = 1;
 int localmode     = 0;
 int noreportcolor = COL_CLEAR;
 
@@ -174,6 +176,8 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 				else if (strcmp(tok, "msgs") == 0) currset |= (1 << MSG_MSGS);
 				else if (strcmp(tok, "ports") == 0) currset |= (1 << MSG_PORTS);
 				else if (strcmp(tok, "procs") == 0) currset |= (1 << MSG_PROCS);
+				else if (strcmp(tok, "svcs") == 0) currset |= (1 << MSG_SVCS);
+				else if (strcmp(tok, "who") == 0) currset |= (1 << MSG_WHO);
 
 				tok = strtok(NULL, ",");
 			}

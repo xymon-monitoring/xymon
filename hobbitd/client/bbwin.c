@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbwin_rcsid[] = "$Id: bbwin.c,v 1.4 2008-01-03 10:10:39 henrik Exp $";
+static char bbwin_rcsid[] = "$Id: bbwin.c,v 1.5 2008-01-14 21:20:28 henrik Exp $";
 
 static void bbwin_uptime_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr,
@@ -242,6 +242,156 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
         freestrbuffer(clockmsg);
 }
 
+void bbwin_who_report(char *hostname, char *clientclass, enum ostype_t os,
+                      void *hinfo, char *fromline, char *timestr, char *whostr)
+{
+        char *whockstr;
+        int whocolor = COL_GREEN;
+        char msgline[4096];
+        strbuffer_t *whomsg;
+
+        if (!want_msgtype(hinfo, MSG_WHO)) return;
+        if (!whostr) return;
+
+        dbgprintf("Who check host %s\n", hostname);
+
+        whomsg = newstrbuffer(0);
+
+        init_status(whocolor);
+        sprintf(msgline, "status %s.who %s %s %s\n",
+                commafy(hostname), colorname(whocolor),
+                (timestr ? timestr : "<No timestamp data>"),
+                ((whocolor == COL_GREEN) ? "OK" : "NOT ok"));
+
+        addtostatus(msgline);
+        /* And add the info if pb */
+        if (STRBUFLEN(whomsg)) {
+                addtostrstatus(whomsg);
+                addtostatus("\n");
+        }
+        /* And add the msg we recevied */
+        if (whostr) {
+                addtostatus(whostr);
+                addtostatus("\n");
+        }
+
+        dbgprintf("msgline %s", msgline); /* DEBUG TODO REMOVE */
+
+        if (fromline && !localmode) addtostatus(fromline);
+        finish_status();
+
+        freestrbuffer(whomsg);
+}
+
+void bbwin_svcs_report(char *hostname, char *clientclass, enum ostype_t os,
+                       void *hinfo, char *fromline, char *timestr,
+                       int namecol, int startupcol, int statecol, char *svcstr, char *svcauto)
+{
+        int svccolor = -1;
+        int schecks;
+        char msgline[4096];
+        static strbuffer_t *monmsg = NULL;
+        char *group;
+
+        if (!want_msgtype(hinfo, MSG_SVCS)) return;
+        if (!svcstr) return;
+
+        if (!monmsg) monmsg = newstrbuffer(0);
+
+	dbgprintf("Services check host %s\n", hostname);
+
+        clearalertgroups();
+        schecks = clear_svc_counts(hinfo, clientclass);
+	dbgprintf("schecks: [%d]\n", schecks); /* DEBUG TODO REMOVE */
+
+        if (schecks > 0) {
+                /* Count how many instances of each monitored condition are found */
+                char *sname, *bol, *nl;
+                int scount, scolor;
+                char *namestr, *startupstr, *statestr;
+
+                bol = svcstr;
+                while (bol) {
+                        char *p;
+
+                        nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+
+                        /* Data lines */
+
+                        p = strdup(bol); namestr = getcolumn(p, namecol);
+                        strcpy(p, bol); startupstr = getcolumn(p, startupcol);
+                        strcpy(p, bol); statestr = getcolumn(p, statecol);
+
+                        add_svc_count(namestr, startupstr, statestr);
+
+                        xfree(p);
+
+                        if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+                }
+
+                /* Check the status and state found for each monitored svc */
+                while ((sname = check_svc_count(&scount, &scolor, &group)) != NULL) {
+
+                        if (scolor > svccolor) svccolor = scolor;
+
+                        if (scolor == COL_GREEN) {
+                                sprintf(msgline, "&green %s\n", sname);
+                                addtobuffer(monmsg, msgline);
+                        }
+                        else {
+                                sprintf(msgline, "&%s %s\n",
+                                        colorname(scolor), sname);
+                                addtobuffer(monmsg, msgline);
+                                addalertgroup(group);
+                        }
+                }
+        }
+
+        if ((svccolor == -1) && sendclearsvcs) {
+                /* Nothing to check */
+                addtobuffer(monmsg, "No Services checks defined\n");
+		svccolor = noreportcolor;
+        }
+
+        if (svccolor != -1) {
+		if (svcauto && strlen(svcauto) > 1 && 
+			(svccolor == COL_GREEN || svccolor == noreportcolor)) 
+			svccolor = COL_YELLOW;
+
+                /* Now we know the result, so generate a status message */
+                init_status(svccolor);
+
+                group = getalertgroups();
+                if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+                addtostatus(msgline);
+
+                sprintf(msgline, "%s.svcs %s %s - Services %s\n",
+                        commafy(hostname), colorname(svccolor),
+                        (timestr ? timestr : "<No timestamp data>"),
+                        ((svccolor == COL_GREEN) ? "OK" : "NOT ok"));
+                addtostatus(msgline);
+
+                /* And add the info about what's wrong */
+                addtostrstatus(monmsg);
+                addtostatus("\n");
+                clearstrbuffer(monmsg);
+
+		/* Add AutoRestart status */
+		if (svcauto && strlen(svcauto) > 1) {
+			addtostatus(svcauto); addtostatus("\n\n"); 
+		}
+
+                /* And the full svc output for those who want it */
+                if (svclistinsvcs) addtostatus(svcstr);
+
+                if (fromline) addtostatus(fromline);
+                finish_status();
+        }
+        else {
+                clearstrbuffer(monmsg);
+        }
+}
+
 void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 void *hinfo, char *sender, time_t timestamp,
 			 char *clientdata)
@@ -258,6 +408,9 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
 	char *memorystr;
 	char *netstatstr;
 	char *ifstatstr;
+	char *svcstr;
+	char *svcauto;
+	char *whostr;
 
 	char fromline[1024];
 
@@ -279,14 +432,19 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
 	memorystr = getdata("memory");
 	msgsstr = getdata("msg");
         netstatstr = getdata("netstat");
-        ifstatstr = getdata("ifstat");	
+        ifstatstr = getdata("ifstat");
+	svcstr = getdata("svcs");
+	svcauto = getdata("svcautorestart");
+	whostr = getdata("who");
 
 	bbwin_uptime_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr);
-	bbwin_clock_report(hostname, clienttype, os, hinfo, fromline, timestr, clockstr, msgcachestr); 
+	bbwin_clock_report(hostname, clienttype, os, hinfo, fromline, timestr, clockstr, msgcachestr);
 	bbwin_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, cpuutilstr);
         unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "Name", NULL, procsstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 1, 2, 3, portsstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail", "Capacity", "Filesystem", diskstr);
+	bbwin_svcs_report(hostname, clienttype, os, hinfo, fromline, timestr, 0, 1, 2, svcstr, svcauto);
+	bbwin_who_report(hostname, clienttype, os, hinfo, fromline, timestr, whostr);
 
 	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
         file_report(hostname, clienttype, os, hinfo, fromline, timestr);
@@ -314,4 +472,3 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
                                    memphystotal, memphysused, memactused, memswaptotal, memswapused);
         }
 }
-
