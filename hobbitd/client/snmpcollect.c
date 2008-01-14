@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.1 2008-01-14 14:46:36 henrik Exp $";
+static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.2 2008-01-14 20:55:21 henrik Exp $";
 
 void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t os, 
 				void *hinfo, char *sender, time_t timestamp,
@@ -45,9 +45,5 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 
 		onemib = nextsection(NULL, &mibname);
 	}
-
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, 
-			uptimestr, clockstr, msgcachestr, 
-			whostr, 0, psstr, 0, topstr);
 }
 
