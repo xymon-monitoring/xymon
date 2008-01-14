@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.17 2008-01-03 10:13:50 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.18 2008-01-14 21:21:53 henrik Exp $";
 
 static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
@@ -101,6 +101,12 @@ static const char *ifstat_sco_sv_exprs[] = {
 	"^([a-z]+[0-9]+)\\s+[0-9]+\\s+[0-9.]+\\s+[0-9.]+\\s+([0-9]+)\\s+[0-9]+\\s+([0-9]+)\\s+"
 };
 
+/* IP          Ibytes Obytes */
+/* 192.168.0.1 1818   1802  */
+static const char *ifstat_bbwin_exprs[] = {
+        "^([a-zA-Z0-9.:]+)\\s+([0-9]+)\\s+([0-9]+)"
+};
+
 int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
@@ -113,6 +119,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	static pcre **ifstat_aix_pcres = NULL;
 	static pcre **ifstat_hpux_pcres = NULL;
 	static pcre **ifstat_sco_sv_pcres = NULL;
+	static pcre **ifstat_bbwin_pcres = NULL;
 
 	enum ostype_t ostype;
 	char *datapart = msg;
@@ -140,6 +147,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						 (sizeof(ifstat_hpux_exprs) / sizeof(ifstat_hpux_exprs[0])));
 		ifstat_sco_sv_pcres = compile_exprs("SCO_SV", ifstat_sco_sv_exprs, 
 						 (sizeof(ifstat_sco_sv_exprs) / sizeof(ifstat_sco_sv_exprs[0])));
+		ifstat_bbwin_pcres = compile_exprs("BBWIN", ifstat_bbwin_exprs, 
+						 (sizeof(ifstat_bbwin_exprs) / sizeof(ifstat_bbwin_exprs[0])));
 	}
 
 
@@ -249,8 +258,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 			
 		  case OS_WIN32_BBWIN:
-			/* Uses same layout as OpenBSD */
-			if (pickdata(bol, ifstat_openbsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			if (pickdata(bol, ifstat_bbwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_OSF:
