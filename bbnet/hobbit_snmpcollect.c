@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.43 2008-01-11 13:08:54 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.44 2008-01-14 14:43:43 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -743,8 +743,9 @@ void readconfig(char *cfgfn, int verbose)
 		/* Custom mibs */
 		p = bot + strcspn(bot, "= \t\r\n"); savech = *p; *p = '\0';
 		mib = find_mib(bot);
-		*p = savech; mibidx = p + strspn(p, "= \t\r\n");
-		p = mibidx + strcspn(mibidx, "\r\n\t "); *p = '\0';
+		*p = savech; 
+		p += strspn(p, "= \t");
+		mibidx = p;
 		if (mib) {
 			int i;
 			mibidx_t *iwalk = NULL;
@@ -798,7 +799,7 @@ void readconfig(char *cfgfn, int verbose)
 				keyrecord_t *newitem = (keyrecord_t *)calloc(1, sizeof(keyrecord_t));
 				char endmarks[6];
 
-				mibidx++;
+				mibidx++;	/* Skip the key-marker */
 				sprintf(endmarks, "%s%c", ")]}>", iwalk->marker);
 				p = mibidx + strcspn(mibidx, endmarks); *p = '\0';
 				newitem->key = strdup(mibidx);
@@ -905,26 +906,33 @@ void sendresult(void)
 	struct req_t *rwalk;
 	struct oid_t *owalk;
 	char msgline[1024];
-	char *currdev;
+	char *currdev, *currhost;
 	mibdef_t *mib;
+	strbuffer_t *clientmsg = newstrbuffer(0);
+	int havemsg = 0;
 
-	init_timestamp();
-
-	combo_start();
-
+	currhost = "";
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
+		if (strcmp(rwalk->hostname, currhost) != 0) {
+			/* Flush buffer */
+			if (havemsg) sendmessage(STRBUF(clientmsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+			clearstrbuffer(clientmsg);
+			havemsg = 0;
+
+			sprintf(msgline, "client %s.snmpcollect snmp\n\n", rwalk->hostname);
+			addtobuffer(clientmsg, msgline);
+		}
+
 		currdev = "";
 
 		for (mib = first_mib(); (mib); mib = next_mib()) {
 			clearstrbuffer(mib->resultbuf);
 			mib->haveresult = 0;
 
-			sprintf(msgline, "status+%d %s.%s green %s\n", 
-				2*atoi(xgetenv("BBSLEEP")), rwalk->hostname, mib->mibname, timestamp);
-			addtobuffer(mib->resultbuf, msgline);
-			sprintf(msgline, "Interval=%d\n", atoi(xgetenv("BBSLEEP")));
-			addtobuffer(mib->resultbuf, msgline);
-			sprintf(msgline, "ActiveIP=%s\n", rwalk->hostip[rwalk->hostipidx]);
+			sprintf(msgline, "\n[%s]\nInterval=%d\nActiveIP=%s\n\n",
+				mib->mibname,
+				atoi(xgetenv("BBSLEEP")),
+				rwalk->hostip[rwalk->hostipidx]);
 			addtobuffer(mib->resultbuf, msgline);
 		}
 
@@ -933,9 +941,9 @@ void sendresult(void)
 				currdev = owalk->devname;	/* OK, because ->devname is permanent */
 
 				if (*owalk->devname && (*owalk->devname != '-') ) {
-					addtobuffer(owalk->mib->resultbuf, "\n[");
+					addtobuffer(owalk->mib->resultbuf, "\n<");
 					addtobuffer(owalk->mib->resultbuf, owalk->devname);
-					addtobuffer(owalk->mib->resultbuf, "]\n");
+					addtobuffer(owalk->mib->resultbuf, ">\n");
 				}
 			}
 
@@ -967,14 +975,17 @@ void sendresult(void)
 
 		for (mib = first_mib(); (mib); mib = next_mib()) {
 			if (mib->haveresult) {
-				init_status(COL_GREEN);
-				addtostrstatus(mib->resultbuf);
-				finish_status();
+				addtostrbuffer(clientmsg, mib->resultbuf);
+				havemsg = 1;
 			}
 		}
 	}
 
-	combo_end();
+	if (havemsg) {
+		sendmessage(STRBUF(clientmsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	}
+	
+	freestrbuffer(clientmsg);
 }
 
 void egoresult(int color, char *egocolumn)
