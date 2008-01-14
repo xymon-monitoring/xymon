@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.115 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.116 2008-01-14 14:46:27 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -104,6 +104,27 @@ void splitmsg(char *clientdata)
 		cursection = nextsection;
 	}
 }
+
+char *nextsection(char *clientdata, char **name)
+{
+	static sectlist_t *current;
+
+	if (clientdata) {
+		splitmsg(clientdata);
+		current = sections;
+	}
+	else {
+		current = (current ? current->next : NULL);
+	}
+
+	if (current) {
+		*name = current->sname;
+		return current->sdata;
+	}
+
+	return NULL;
+}
+
 
 char *getdata(char *sectionname)
 {
@@ -1424,6 +1445,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/bbwin.c"
 #include "client/zvm.c"
 #include "client/zvse.c"
+#include "client/snmpcollect.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1865,6 +1887,10 @@ int main(int argc, char *argv[])
 
 			  case OS_ZVSE:
 				handle_zvse_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_SNMPCOLLECT:
+				handle_snmpcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_WIN32: 
