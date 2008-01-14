@@ -12,10 +12,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.44 2008-01-14 14:43:43 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.45 2008-01-14 21:17:58 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
+
+#include <limits.h>
 
 #include "libbbgen.h"
 
