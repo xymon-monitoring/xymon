@@ -8,10 +8,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.6 2008-01-09 15:28:51 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.7 2008-01-22 06:27:30 henrik Exp $";
 
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "libbbgen.h"
 
