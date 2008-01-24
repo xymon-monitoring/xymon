@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: digest.c,v 1.16 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: digest.c,v 1.17 2008-01-24 16:12:17 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -183,6 +183,7 @@ char *digest_done(digestctx_t *ctx)
 	*p = '\0';
 
 	xfree(md_value);
+	xfree(ctx->digestname);
 	xfree(ctx->mdctx);
 	xfree(ctx);
 
