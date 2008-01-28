@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.117 2008-01-14 21:20:28 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.118 2008-01-28 11:18:26 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1450,6 +1450,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/zvm.c"
 #include "client/zvse.c"
 #include "client/snmpcollect.c"
+#include "client/gnukfreebsd.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1895,6 +1896,10 @@ int main(int argc, char *argv[])
 
 			  case OS_SNMPCOLLECT:
 				handle_snmpcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_GNUKFREEBSD:
+				handle_gnukfreebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_WIN32: 
