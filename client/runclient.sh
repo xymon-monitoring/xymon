@@ -13,11 +13,11 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.16 2008-01-03 09:49:28 henrik Exp $
+# $Id: runclient.sh,v 1.17 2008-01-28 11:17:46 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
-BBOSTYPE="`uname -s | tr '[A-Z]' '[a-z]'`"	# This systems operating system in lowercase
+BBOSTYPE="`uname -s | tr '[A-Z/]' '[a-z_]'`"	# This systems operating system in lowercase
 BBOSSCRIPT="hobbitclient-$BBOSTYPE.sh"
 
 # Commandline mods for the defaults

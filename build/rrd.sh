@@ -79,14 +79,14 @@
 		exit 1
 	else
 		cd build
-		OS=`uname -s` $MAKE -f Makefile.test-rrd clean
-		OS=`uname -s` RRDDEF="$RRDDEF" RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
+		OS=`uname -s | tr '[/]' '[_]'` RRDDEF="$RRDDEF" RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
 		if [ $? -ne 0 ]; then
 			# See if it's the new RRDtool 1.2.x
 			echo "Not RRDtool 1.0.x, checking for 1.2.x"
 			RRDDEF="-DRRDTOOL12"
-			OS=`uname -s` $MAKE -f Makefile.test-rrd clean
-			OS=`uname -s` RRDDEF="$RRDDEF" RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
+			OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
+			OS=`uname -s | tr '[/]' '[_]'` RRDDEF="$RRDDEF" RRDINC="-I$RRDINC" $MAKE -f Makefile.test-rrd test-compile
 		fi
 		if [ $? -eq 0 ]; then
 			echo "Found RRDtool include files in $RRDINC"
@@ -95,17 +95,17 @@
 			exit 1
 		fi
 
-		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
+		OS=`uname -s | tr '[/]' '[_]'` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -ne 0 ]; then
 			# Could be that we need -lz for RRD
 			PNGLIB="$PNGLIB $ZLIB"
 		fi
-		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
+		OS=`uname -s | tr '[/]' '[_]'` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -ne 0 ]; then
 			# Could be that we need -lm for RRD
 			PNGLIB="$PNGLIB -lm"
 		fi
-		OS=`uname -s` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
+		OS=`uname -s | tr '[/]' '[_]'` RRDLIB="-L$RRDLIB" PNGLIB="$PNGLIB" $MAKE -f Makefile.test-rrd test-link 2>/dev/null
 		if [ $? -eq 0 ]; then
 			echo "Found RRDtool libraries in $RRDLIB"
 			if test "$PNGLIB" != ""; then
@@ -115,7 +115,7 @@
 			echo "ERROR: RRDtool library files found in $RRDLIB, but link fails."
 			exit 1
 		fi
-		OS=`uname -s` $MAKE -f Makefile.test-rrd clean
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-rrd clean
 		cd ..
 	fi
 

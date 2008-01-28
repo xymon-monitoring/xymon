@@ -56,8 +56,8 @@
 		fi
 
 		cd build
-		OS=`uname -s` $MAKE -f Makefile.test-ssl clean
-		OS=`uname -s` OSSLINC="-I$OSSLINC $OSSLINC2" $MAKE -f Makefile.test-ssl test-compile
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
+		OS=`uname -s | tr '[/]' '[_]'` OSSLINC="-I$OSSLINC $OSSLINC2" $MAKE -f Makefile.test-ssl test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found OpenSSL include files in $OSSLINC"
 			OSSLINC="$OSSLINC $OSSLINC2"
@@ -66,7 +66,7 @@
 			OSSLINC=""
 		fi
 	
-		OS=`uname -s` OSSLLIB="-L$OSSLLIB" $MAKE -f Makefile.test-ssl test-link
+		OS=`uname -s | tr '[/]' '[_]'` OSSLLIB="-L$OSSLLIB" $MAKE -f Makefile.test-ssl test-link
 		if [ $? -eq 0 ]; then
 			echo "Found OpenSSL libraries in $OSSLLIB"
 		else
@@ -74,7 +74,7 @@
 			OSSLINC=""
 			OSSLLIB=""
 		fi
-		OS=`uname -s` $MAKE -f Makefile.test-ssl clean
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
 		cd ..
 
 	fi
