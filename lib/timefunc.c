@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.38 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.39 2008-01-28 12:05:01 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -35,6 +35,7 @@ time_t getcurrenttime(time_t *retparm)
 	static time_t firsttime = 0;
 	static time_t lastresult = 0;
 	time_t now, result;
+	int timewarphappened = 0;
 
 	result = now = time(NULL);
 
@@ -52,7 +53,7 @@ time_t getcurrenttime(time_t *retparm)
 		 * back in time.
 		 */
 		timewarp = (lastresult - result);
-		errprintf("Time warp detected: Adjusting returned clock by %d seconds\n", timewarp);
+		timewarphappened = 1;
 	}
 
 	result += timewarp;
@@ -61,6 +62,17 @@ time_t getcurrenttime(time_t *retparm)
 	lastresult = result;
 
 	if (retparm) *retparm = result;
+
+	if (timewarphappened) {
+		/* 
+		 * Tell the world about it. 
+		 * Must do this AFTER changing timewarp and lastresult,
+		 * or we will start an endless loop triggering a stack
+		 * overflow because errprintf() calls getcurrenttime().
+		 */
+		errprintf("Time warp detected: Adjusting returned clock by %d seconds\n", timewarp);
+	}
+
 	return result;
 }
 
