@@ -1,8 +1,8 @@
 #include <time.h>
 #include <stdio.h>
 
-#include <lber.h>
 #include <ldap.h>
+#include <lber.h>
 
 LDAPURLDesc ludp;
 
