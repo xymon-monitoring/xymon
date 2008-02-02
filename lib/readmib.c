@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.7 2008-01-22 06:27:30 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.8 2008-02-02 08:00:37 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -93,7 +93,7 @@ void readmibs(char *cfgfn, int verbose)
 
 	cfgfd = stackfopen(fn, "r", &cfgfiles);
 	if (cfgfd == NULL) {
-		errprintf("Cannot open configuration files %s\n", cfgfn);
+		errprintf("Cannot open configuration files %s\n", fn);
 		return;
 	}
 
