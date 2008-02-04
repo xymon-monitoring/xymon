@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit server
-# $Id: configure.server,v 1.69 2008-01-11 17:02:41 henrik Exp $
+# $Id: configure.server,v 1.70 2008-02-04 21:20:13 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit"
@@ -467,12 +467,18 @@ fi
 echo "#"                                 >>Makefile
 echo "# Net-SNMP settings"               >>Makefile
 echo "DOSNMP = $DOSNMP"                  >>Makefile
-echo "#"                                 >>Makefile
+echo "" >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
 
+echo "" >>Makefile
 echo "# Limit the size of status message texts passed to external alert scripts" >>Makefile
 echo "MAXALERTMSGSZ = 4096"              >>Makefile
+
+echo "" >>Makefile
+echo "# Build a shared library for common Hobbit code"  >>Makefile
+echo "# NOTE: Only tested on Linux" >>Makefile
+echo "# HOBBITLIBARY = libhobbit.so" >>Makefile
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
