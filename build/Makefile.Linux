@@ -10,11 +10,16 @@ CC = gcc
 CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
 
 ifndef PKGBUILD
-RPATH = -Wl,--rpath=
+RPATH = -Wl,--rpath,
 endif
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+# By default, Hobbit uses a static library for common code.
+# To save some diskspace and run-time memory, you can use a
+# shared library by un-commenting this.
+# HOBBITLIBRARY=libhobbit.so
 
 # Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
 # Typically, this will be "mail" or "mailx"

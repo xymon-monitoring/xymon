@@ -8,6 +8,7 @@ NETLIBS = -lresolv -lsocket -lnsl
 # Compile flags for normal build
 CC = gcc
 CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
+RPATH=-Wl,--rpath,
 
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
