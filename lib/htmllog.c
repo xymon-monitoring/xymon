@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.61 2008-02-04 21:36:23 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.62 2008-02-04 21:54:34 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -366,7 +366,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (rrd && graph) {
 		char *p, *lcountid;
 
-		if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,";
+		if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,ifmib,";
 
 		/*
 		 * Suggested by Francesco Duranti:
