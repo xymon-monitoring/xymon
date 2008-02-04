@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.173 2008-01-03 09:40:31 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.174 2008-02-04 21:25:25 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -397,7 +397,26 @@ state_t *load_state(dispsummary_t **sumhead)
 	dbgprintf("load_state()\n");
 
 	if (!reportstart && !snapshot) {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,flapinfo,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+		char *dumpfn = getenv("BOARDDUMP");
+		if (dumpfn) {
+			/* Debugging - read data from a dump file */
+			struct stat st;
+			FILE *fd;
+
+			hobbitdresult = BB_ETIMEOUT;
+			if (stat(dumpfn, &st) == 0) {
+				fd = fopen(dumpfn, "r");
+				if (fd) {
+					board = (char *)malloc(st.st_size + 1);
+					fread(board, 1, st.st_size, fd);
+					fclose(fd);
+					hobbitdresult = BB_OK;
+				}
+			}
+		}
+		else {
+			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,flapinfo,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+		}
 	}
 	else {
 		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
