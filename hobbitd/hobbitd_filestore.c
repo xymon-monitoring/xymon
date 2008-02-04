@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.56 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.57 2008-02-04 21:52:39 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -32,7 +32,7 @@ static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.56 2008-01-03 10:08:13 henri
 #include <signal.h>
 
 
-static char *multigraphs = ",disk,inode,qtree,";
+static char *multigraphs = NULL;
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 

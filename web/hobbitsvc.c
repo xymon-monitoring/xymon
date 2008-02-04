@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.81 2008-01-03 10:04:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.82 2008-02-04 21:53:21 henrik Exp $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.81 2008-01-03 10:04:58 henrik Exp $"
 /* Commandline params */
 static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
 static int wantserviceid = 1;
-static char *multigraphs = ",disk,inode,qtree,";
+static char *multigraphs = NULL;
 static int locatorbased = 0;
 
 /* CGI params */
