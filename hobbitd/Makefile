@@ -1,7 +1,7 @@
 PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/hobbitd_client
 
-LIBOBJS = ../lib/libbbgen.a
+LIBOBJS = ../lib/$(HOBBITLIBRARY)
 
 HOBBITDOBJS   = hobbitd.o hobbitd_buffer.o hobbitd_ipc.o
 CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o

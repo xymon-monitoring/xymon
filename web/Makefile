@@ -1,8 +1,8 @@
-PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi boilerplate.cgi hobbit-hostgraphs.cgi hobbit-ghosts.cgi hobbit-notifylog.cgi hobbit-hostlist.cgi
-CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-confreport-critical.sh hobbit-nkview.sh hobbit-certreport.sh hobbit-nongreen.sh hobbit-hostgraphs.sh hobbit-ghosts.sh hobbit-notifylog.sh hobbit-topchanges.sh hobbit-hostlist.sh
+PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi boilerplate.cgi hobbit-hostgraphs.cgi hobbit-ghosts.cgi hobbit-notifylog.cgi hobbit-hostlist.cgi hobbit-perfdata.cgi
+CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-confreport-critical.sh hobbit-nkview.sh hobbit-certreport.sh hobbit-nongreen.sh hobbit-hostgraphs.sh hobbit-ghosts.sh hobbit-notifylog.sh hobbit-topchanges.sh hobbit-hostlist.sh hobbit-perfdata.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh hobbit-nkedit.sh hobbit-ackinfo.sh
 
-LIBOBJS = ../lib/libbbgen.a
+LIBOBJS = ../lib/$(HOBBITLIBRARY)
 
 HISTOBJS        = bb-hist.o
 EVENTLOGOBJS    = bb-eventlog.o
@@ -27,6 +27,7 @@ MAILACKOBJS     = hobbit-mailack.o
 GHOSTOBJS       = hobbit-ghosts.o
 NOTIFYOBJS      = hobbit-notifylog.o
 HOSTLISTOBJS    = hobbit-hostlist.o
+PERFDATAOBJS    = hobbit-perfdata.o
 
 HOSTGRAPHSOBJS  = hobbit-hostgraphs.o
 BOILERPLATEOBJS = boilerplate.o
@@ -37,37 +38,40 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS)
 
-bb-hist.cgi: $(HISTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-hist.cgi: $(HISTOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-eventlog.cgi: $(EVENTLOGOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-rep.cgi: $(REPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-rep.cgi: $(REPOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(REPOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-replog.cgi: $(REPLOGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-replog.cgi: $(REPLOGOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-snapshot.cgi: $(SNAPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-snapshot.cgi: $(SNAPOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-findhost.cgi: $(FINDHOSTOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-csvinfo.cgi: $(CSVINFOOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-ack.cgi: $(ACKCGIOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-webpage: $(WEBPAGEOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
-bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bb-datepage.cgi: $(DATEPAGEOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbitgraph.o: hobbitgraph.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
+
+hobbit-perfdata.o: hobbit-perfdata.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
@@ -112,6 +116,9 @@ hobbit-notifylog.cgi: $(NOTIFYOBJS) $(LIBOBJS)
 
 hobbit-hostlist.cgi: $(HOSTLISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+
+hobbit-perfdata.cgi: $(PERFDATAOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
 
 
 bb-ack.sh: bb-ack.sh.DIST
@@ -215,6 +222,10 @@ hobbit-topchanges.sh: hobbit-topchanges.sh.DIST
 	chmod 755 $@
 
 hobbit-hostlist.sh: hobbit-hostlist.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbit-perfdata.sh: hobbit-perfdata.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 

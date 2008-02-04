@@ -12,17 +12,19 @@ ifeq ($(DOSNMP),yes)
 PROGRAMS += $(SNMPPROGRAMS)
 endif
 
+LIBOBJS = ../lib/$(HOBBITLIBRARY)
+
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
 PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
-bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS)
+bbtest-net: $(NETTESTOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(LIBOBJS) libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS)
 
-hobbitping: $(PINGTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libbbgen.a $(NETLIBS)
+hobbitping: $(PINGTESTOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(LIBOBJS) $(NETLIBS)
 
 bbtest-net.o: bbtest-net.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
@@ -61,19 +63,19 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
 	touch c-ares/configure
 
-beastat: $(BEASTATOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+beastat: $(BEASTATOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
-contest: contest.c ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o ./libcares.a ../lib/libbbgen.a $(NETLIBS)
+contest: contest.c $(LIBOBJS)
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o ./libcares.a $(LIBOBJS) $(NETLIBS)
 
 
-hobbit_snmpcollect: hobbit_snmpcollect.o ../lib/libbbgen.a
-	$(CC) $(LDFLAGS) -o $@ hobbit_snmpcollect.o `net-snmp-config --libs` ../lib/libbbgen.a $(NETLIBS)
+hobbit_snmpcollect: hobbit_snmpcollect.o $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ hobbit_snmpcollect.o `net-snmp-config --libs` $(LIBOBJS) $(NETLIBS)
 
 hobbit_snmpcollect.o: hobbit_snmpcollect.c
 	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ hobbit_snmpcollect.c

@@ -11,42 +11,44 @@ BBOBJS       = bb.o
 LAUNCHOBJS   = hobbitlaunch.o
 CMDOBJS      = bbcmd.o
 
+LIBOBJS = ../lib/$(HOBBITLIBRARY)
+
 all: $(PROGRAMS)
 
 client: $(CLIENTPROGRAMS)
 
-bbhostgrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a $(NETLIBS)
+bbhostgrep: $(HOSTGREPOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(LIBOBJS) $(NETLIBS)
 
 ../client/bbhostgrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(NETLIBS)
 
-bbhostshow: $(HOSTSHOWOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libbbgen.a
+bbhostshow: $(HOSTSHOWOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(LIBOBJS)
 
 ../client/bbhostshow: $(HOSTSHOWOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a
 
-bb: $(BBOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libbbgen.a $(NETLIBS)
+bb: $(BBOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) $(LIBOBJS) $(NETLIBS)
 
 ../client/bb: $(BBOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(NETLIBS)
 
-hobbitlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a
+hobbitlaunch: $(LAUNCHOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(LIBOBJS)
 
 ../client/hobbitlaunch: $(LAUNCHOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/hobbitclient.a
 
-bbcmd: $(CMDOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a
+bbcmd: $(CMDOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) $(LIBOBJS)
 
 ../client/bbcmd: $(CMDOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/hobbitclient.a
 
-bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(NETLIBS)
+bbdigest: $(DIGESTOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(LIBOBJS) $(NETLIBS)
 
 ../client/bbdigest: $(DIGESTOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS)

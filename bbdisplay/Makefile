@@ -3,11 +3,12 @@
 
 PROGRAMS = bbgen
 GENOBJS = bbgen.o loadbbhosts.o loaddata.o bbconvert.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
+LIBOBJS = ../lib/$(HOBBITLIBRARY)
 
 all: $(PROGRAMS)
 
-bbgen: $(GENOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS)
+bbgen: $(GENOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 
 ################################################
