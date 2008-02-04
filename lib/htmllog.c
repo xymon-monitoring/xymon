@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.60 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.61 2008-02-04 21:36:23 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -364,19 +364,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 	}
 	if (rrd && graph) {
-		char *p, *multikey, *lcountid;
+		char *p, *lcountid;
 
 		if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,";
-
-		/* 
-		 * Some reports (disk) use the number of lines as a rough measure for how many
-		 * graphs to build.
-		 * What we *really* should do was to scan the RRD directory and count how many
-		 * RRD database files are present matching this service - but that is way too
-		 * much overhead for something that might be called on every status logged.
-		 */
-		multikey = (char *)malloc(strlen(service) + 3);
-		sprintf(multikey, ",%s,", service);
 
 		/*
 		 * Suggested by Francesco Duranti:
@@ -386,8 +376,18 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		 */
 		lcountid = strstr(restofmsg, "<!-- linecount=");
 		if (lcountid) {
-				linecount = atoi(lcountid+15);
+			linecount = atoi(lcountid+15);
 		} else {
+			/* 
+			 * Some reports (disk) use the number of lines as a rough measure for how many
+			 * graphs to build.
+			 * What we *really* should do was to scan the RRD directory and count how many
+			 * RRD database files are present matching this service - but that is way too
+			 * much overhead for something that might be called on every status logged.
+			 */
+			char *multikey = (char *)malloc(strlen(service) + 3);
+			sprintf(multikey, ",%s,", service);
+
 			if (strstr(multigraphs, multikey)) {
 				/* The "disk" report from the NetWare client puts a "warning light" on all entries */
 				int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
@@ -414,6 +414,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				/* There is probably a header line ... */
 				if (!netwarediskreport && (linecount > 1)) linecount--;
 			}
+
 			xfree(multikey);
 
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
