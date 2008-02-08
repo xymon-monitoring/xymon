@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.118 2008-01-28 11:18:26 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.119 2008-02-08 13:39:57 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -36,9 +36,12 @@ enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, 
 typedef struct sectlist_t {
 	char *sname;
 	char *sdata;
+	char *nextsectionrestoreptr, *sectdatarestoreptr;
+	char nextsectionrestoreval, sectdatarestoreval;
 	struct sectlist_t *next;
 } sectlist_t;
-sectlist_t *sections = NULL;
+static sectlist_t *defsecthead = NULL;
+
 int pslistinprocs = 1;
 int portlistinports = 1;
 int svclistinsvcs = 1;
@@ -49,24 +52,10 @@ int sendclearsvcs = 1;
 int localmode     = 0;
 int noreportcolor = COL_CLEAR;
 
-void splitmsg(char *clientdata)
+void splitmsg_r(char *clientdata, sectlist_t **secthead)
 {
 	char *cursection, *nextsection;
 	char *sectname, *sectdata;
-
-	/* Free the old list */
-	if (sections) {
-		sectlist_t *swalk, *stmp;
-
-		swalk = sections;
-		while (swalk) {
-			stmp = swalk;
-			swalk = swalk->next;
-			xfree(stmp);
-		}
-
-		sections = NULL;
-	}
 
 	if (clientdata == NULL) {
 		errprintf("Got a NULL client data message\n");
@@ -82,11 +71,13 @@ void splitmsg(char *clientdata)
 	}
 
 	while (cursection) {
-		sectlist_t *newsect = (sectlist_t *)malloc(sizeof(sectlist_t));
+		sectlist_t *newsect = (sectlist_t *)calloc(1, sizeof(sectlist_t));
 
 		/* Find end of this section (i.e. start of the next section, if any) */
 		nextsection = strstr(cursection, "\n[");
 		if (nextsection) {
+			newsect->nextsectionrestoreptr = nextsection;
+			newsect->nextsectionrestoreval = *nextsection;
 			*nextsection = '\0';
 			nextsection++;
 		}
@@ -94,37 +85,72 @@ void splitmsg(char *clientdata)
 		/* Pick out the section name and data */
 		sectname = cursection+1;
 		sectdata = sectname + strcspn(sectname, "]\n");
-		*sectdata = '\0'; sectdata++; if (*sectdata == '\n') sectdata++;
+		newsect->sectdatarestoreptr = sectdata;
+		newsect->sectdatarestoreval = *sectdata;
+		*sectdata = '\0'; 
+		sectdata++; if (*sectdata == '\n') sectdata++;
 
 		/* Save the pointers in the list */
 		newsect->sname = sectname;
 		newsect->sdata = sectdata;
-		newsect->next = sections;
-		sections = newsect;
+		newsect->next = *secthead;
+		*secthead = newsect;
 
 		/* Next section, please */
 		cursection = nextsection;
 	}
 }
 
-char *nextsection(char *clientdata, char **name)
+void splitmsg(char *clientdata)
 {
-	static sectlist_t *current;
+	splitmsg_r(clientdata, &defsecthead);
+}
 
+void nextsection_r_done(void *secthead)
+{
+	/* Free the old list */
+	sectlist_t *swalk, *stmp;
+
+	swalk = (sectlist_t *)secthead;
+	while (swalk) {
+		if (swalk->nextsectionrestoreptr) *swalk->nextsectionrestoreptr = swalk->nextsectionrestoreval;
+		if (swalk->sectdatarestoreptr) *swalk->sectdatarestoreptr = swalk->sectdatarestoreval;
+
+		stmp = swalk;
+		swalk = swalk->next;
+		xfree(stmp);
+	}
+}
+
+char *nextsection_r(char *clientdata, char **name, void **current, void **secthead)
+{
 	if (clientdata) {
-		splitmsg(clientdata);
-		current = sections;
+		*secthead = NULL;
+		splitmsg_r(clientdata, (sectlist_t **)secthead);
+		*current = *secthead;
 	}
 	else {
-		current = (current ? current->next : NULL);
+		*current = (*current ? ((sectlist_t *)*current)->next : NULL);
 	}
 
-	if (current) {
-		*name = current->sname;
-		return current->sdata;
+	if (*current) {
+		*name = ((sectlist_t *)*current)->sname;
+		return ((sectlist_t *)*current)->sdata;
 	}
 
 	return NULL;
+}
+
+char *nextsection(char *clientdata, char **name)
+{
+	static void *current = NULL;
+
+	if (clientdata && defsecthead) {
+		nextsection_r_done(defsecthead);
+		defsecthead = NULL;
+	}
+
+	return nextsection_r(clientdata, name, &current, (void **)&defsecthead);
 }
 
 
@@ -132,7 +158,7 @@ char *getdata(char *sectionname)
 {
 	sectlist_t *swalk;
 
-	for (swalk = sections; (swalk && strcmp(swalk->sname, sectionname)); swalk = swalk->next) ;
+	for (swalk = defsecthead; (swalk && strcmp(swalk->sname, sectionname)); swalk = swalk->next) ;
 	if (swalk) return swalk->sdata;
 
 	return NULL;
@@ -893,7 +919,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (!want_msgtype(hinfo, MSG_MSGS)) return;
 
-	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
+	for (swalk = defsecthead; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 
 	if (!swalk) {
 		old_msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
@@ -998,7 +1024,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	 * It's probably faster to re-walk the section list than
 	 * stuffing the full messages into a temporary buffer.
 	 */
-	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
+	for (swalk = defsecthead; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 	while (swalk) {
 		if (!localmode) {
 			sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
@@ -1047,7 +1073,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.filesizes\n", commafy(hostname));
 	addtobuffer(sizedata, msgline);
 
-	for (swalk = sections; (swalk); swalk = swalk->next) {
+	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
 		int trackit, anyrules;
 		char *sfn = NULL;
 		char *id = NULL;
@@ -1214,7 +1240,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.linecounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
 
-	for (swalk = sections; (swalk); swalk = swalk->next) {
+	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
 		if (strncmp(swalk->sname, "linecount:", 10) == 0) {
 			char *fn, *boln, *eoln, *id, *countstr;
 
@@ -1717,6 +1743,9 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--no-update") == 0) {
+			dontsendmessages = 1;
 		}
 		else if (strcmp(argv[argi], "--no-ps-listing") == 0) {
 			pslistinprocs = 0;
