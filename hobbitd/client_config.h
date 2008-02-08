@@ -38,6 +38,10 @@ extern void get_memory_thresholds(void *hhinfo, char *classname,
 extern int get_paging_thresholds(void *hinfo, char *classname, 
 				 int *pagingyellow, int *pagingred);
 
+extern int check_mibvals(void *hinfo, char *classname, 
+			 char *mibname, char *keyname, char *mibdata,
+		  	 strbuffer_t *summarybuf, int *anyrules);
+
 extern int scan_log(void *hinfo, char *classname, 
 		    char *logname, char *logdata, char *section, strbuffer_t *summarybuf);
 extern int check_file(void *hinfo, char *classname, 
