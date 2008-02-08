@@ -10,33 +10,34 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.3 2008-01-14 21:27:13 henrik Exp $";
+static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.4 2008-02-08 13:43:59 henrik Exp $";
 
 /*
- * Right now, this module simply takes each of the sections in the client
- * message re-posts it as a status message to hobbitd. This lets us use
- * SNMP data for feeding graphs.
- *
- * At some point in the future it would be very nice to analyze the data
- * and make a real (colored) status from it. Perhaps also feed into some
- * of the standard columns (cpu, memory, disk, procs) based on data from
- * various mibs.
+ * Split the snmpcollect client-message into individual mib-datasets.
+ * Run each dataset through the mib-value configuration module, and
+ * generate a status-message for each dataset.
  */
+
 void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t os, 
 				void *hinfo, char *sender, time_t timestamp,
 				char *clientdata)
 {
+	void *ns1var, *ns1sects;
 	char *onemib;
 	char *mibname;
 	char fromline[1024], msgline[1024];
+	strbuffer_t *summary = newstrbuffer(0);
 
 	sprintf(fromline, "\nStatus message received from %s\n", sender);
 
-	onemib = nextsection(clientdata, &mibname);
+	onemib = nextsection_r(clientdata, &mibname, &ns1var, &ns1sects);
 	while (onemib) {
-		/* Convert the "<NNN>" markers to "[NNN]" */
 		char *bmark, *emark;
+		char *oneds, *dskey;
+		void *ns2var, *ns2sects;
+		int color, rulecolor, anyrules;
 
+		/* Convert the "<NNN>" markers to "[NNN]" */
 		bmark = onemib;
 		while ((bmark = strstr(bmark, "\n<")) != NULL) {
 			emark = strchr(bmark, '>');
@@ -46,14 +47,43 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 			bmark += 2;
 		}
 
-		init_status(COL_GREEN);
-		sprintf(msgline, "status %s.%s green %s\n", hostname, mibname, ctime(&timestamp));
+		/* Match the mib data against the configuration */
+		anyrules = 1;
+		color = COL_GREEN;
+		clearstrbuffer(summary);
+		oneds = nextsection_r(onemib, &dskey, &ns2var, &ns2sects);
+		if (oneds) {
+			/* Tabular MIB data. Handle each of the rows in the table. */
+			while (oneds && anyrules) {
+				rulecolor = check_mibvals(hinfo, clienttype, mibname, dskey, oneds, summary, &anyrules);
+
+				if (rulecolor > color) color = rulecolor;
+				oneds = nextsection_r(NULL, &dskey, &ns2var, &ns2sects);
+			}
+			nextsection_r_done(ns2sects);
+		}
+		else {
+			/* Non-tabular MIB data - no key */
+			rulecolor = check_mibvals(hinfo, clienttype, mibname, NULL, onemib, summary, &anyrules);
+			if (rulecolor > color) color = rulecolor;
+		}
+
+		/* Generate the status message */
+		init_status(color);
+		sprintf(msgline, "status %s.%s %s %s\n", hostname, mibname, colorname(color), ctime(&timestamp));
 		addtostatus(msgline);
+		if (STRBUFLEN(summary) > 0) {
+			addtostrstatus(summary);
+			addtostatus("\n");
+		}
 		addtostatus(onemib);
 		addtostatus(fromline);
 		finish_status();
 
-		onemib = nextsection(NULL, &mibname);
+		onemib = nextsection_r(NULL, &mibname, &ns1var, &ns1sects);
 	}
+	nextsection_r_done(ns1sects);
+
+	freestrbuffer(summary);
 }
 
