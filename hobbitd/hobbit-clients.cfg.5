@@ -408,6 +408,40 @@ number of active SSH connections, and warn if there are more than 5.
 .br
         PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
 .sp
+
+.SH SVC STATUS COLUMN SETTINGS (WINDOWS SERVICES)
+.sp
+.BR "SVC startup status color"
+.sp
+The "svcs" listing sent by the client will be scanned to check 
+that specific services are running.
+.sp
+"servicename" is a simple string, in which case this string must
+show up in the "svcs" listing.
+Note that servicename is case-sensitive. 
+.br
+If "servicename" contains whitespace (blanks or TAB), you must enclose
+the full string in double quotes. You cannot use regular expression.
+Both options startup and status are required and are simple strings, and
+must show up in the "svcs" listing as StartupType and Status columns.
+.sp
+    SVC Fax startup=manual status=stopped
+    SVC MSSQLSERVER startup=automatic status=started
+.sp
+You can have multiple "SVC" entries for the same host, all of the
+checks are merged into the "svcs" status and the most severe
+check defines the color of the status. 
+.sp
+Example: Check that SQL Server Agent is running:
+.br
+	SVC SQLSERVERAGENT startup=automatic status=started color=yellow
+.sp
+Defaults:
+.br
+	color="red".
+.br
+	Note that no service are checked by default.
+
 .SH CHANGING THE DEFAULT SETTINGS
 If you would like to use different defaults for the settings described above, 
 then you can define the new defaults after a DEFAULT line. E.g. this would

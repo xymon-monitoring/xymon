@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.64 2008-02-08 13:56:10 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.65 2008-02-10 12:08:49 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -2327,12 +2327,13 @@ static void add_count3(char *pname0, char *pname1, char *pname2 , mon_proc_t *he
 
                         if (check_expr_match(pname0, pwalk->rule->rule.svc.svcexp, NULL)) {
 				mymatch++;
+				/* Match service name backup is status */
 				pwalk->rule->rule.svc.startup = strdup(pname1);
 				pwalk->rule->rule.svc.state = strdup(pname2);
+				/* Since we match service name we can check startup ans status */
+				if (check_expr_match(pname1, pwalk->rule->rule.svc.startupexp, NULL)) mymatch++;
+				if (check_expr_match(pname2, pwalk->rule->rule.svc.stateexp, NULL)) mymatch++;
 			}
-                        if (check_expr_match(pname1, pwalk->rule->rule.svc.startupexp, NULL)) mymatch++;
-                        if (check_expr_match(pname2, pwalk->rule->rule.svc.stateexp, NULL)) mymatch++;
-
                         if (mymatch == 3) {pwalk->rule->rule.svc.scount++;}
                         break;
 

@@ -145,6 +145,20 @@ to use a \fBdu\fR command which reports data in KB, e.g. by setting
 .br
 in the hobbitclient.cfg file.
 
+.SH WINDOWS SERVICES
+The windows services monitoring entry is used to enable the automatic restart of stopped services which
+are configured in the automatic startup mode. 
+.sp
+    svcautorestart:on|off
+.sp
+By default, the option is disabled.
+.br
+\fBNOTE:\fR This option is used with BBWin client. 
+.sp
+Automatic restarts will be reported with the yellow color in the "svcs"
+column.
+
+
 .SH NOTES
 The ability of the Hobbit client to calculate file hashes and monitor those
 can be used for file integrity validation on a small scale. However, there is
