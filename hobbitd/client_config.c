@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.65 2008-02-10 12:08:49 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.66 2008-02-10 12:45:20 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1515,7 +1515,7 @@ int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *
 
 int get_mibval_thresholds(void *hinfo, char *classname, 
 			  char *mibname, char *keyname, char *valname,
-			  long *minval, long *maxval, void **matchexp, int *color)
+			  long *minval, long *maxval, void **matchexp, int *color, char **group)
 {
 	static RbtHandle mibnametree;
 	static int have_mibnametree = 0;
@@ -1540,6 +1540,7 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 	*maxval = LONG_MAX;
 	*matchexp = NULL;
 	*color = COL_GREEN;
+	*group = NULL;
 
 	/* 
 	 * Configuration rules are indexed by three items:
@@ -1627,6 +1628,7 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 
 	if (rule) {
 		*color = rule->rule.mibval.color;
+		*group = rule->groups;
 		if (rule->flags & MIBCHK_MINVALUE) *minval = rule->rule.mibval.minval;
 		if (rule->flags & MIBCHK_MAXVALUE) *maxval = rule->rule.mibval.maxval;
 		if (rule->flags & MIBCHK_MATCH) *matchexp = rule->rule.mibval.matchexp;
@@ -1645,6 +1647,7 @@ int check_mibvals(void *hinfo, char *classname,
 	void *matchexp;
 	int rulecolor, color = COL_GREEN;
 	char msgline[MAX_LINE_LEN];
+	char *group;
 
 	/* 
 	 * Scan a single section of MIB data - without the [key] line - 
@@ -1658,7 +1661,7 @@ int check_mibvals(void *hinfo, char *classname,
 		delimp = dnam + strcspn(dnam, " ="); delim = *delimp; *delimp = '\0';
 		dval = delimp + 1; dval += strspn(dval, " ="); actval = atol(dval);
 
-		switch (get_mibval_thresholds(hinfo, classname, mibname, keyname, dnam, &minval, &maxval, &matchexp, &rulecolor)) {
+		switch (get_mibval_thresholds(hinfo, classname, mibname, keyname, dnam, &minval, &maxval, &matchexp, &rulecolor, &group)) {
 		  case -1:
 			/* This means: No rules at all for this host. So just drop all further processing */
 			*anyrules = 0;
@@ -1678,6 +1681,7 @@ int check_mibvals(void *hinfo, char *classname,
 						colorname(rulecolor), dnam, actval, minval);
 				addtobuffer(summarybuf, msgline);
 				if (rulecolor > color) color = rulecolor;
+				if (group) addalertgroup(group);
 			}
 
 			if (actval > maxval) {
@@ -1689,6 +1693,7 @@ int check_mibvals(void *hinfo, char *classname,
 						colorname(rulecolor), dnam, actval, maxval);
 				addtobuffer(summarybuf, msgline);
 				if (rulecolor > color) color = rulecolor;
+				if (group) addalertgroup(group);
 			}
 
 			if (matchexp && !namematch(dval, ((exprlist_t *)matchexp)->pattern, ((exprlist_t *)matchexp)->exp)) {
@@ -1700,6 +1705,7 @@ int check_mibvals(void *hinfo, char *classname,
 						colorname(rulecolor), dnam, dval, ((exprlist_t *)matchexp)->pattern);
 				addtobuffer(summarybuf, msgline);
 				if (rulecolor > color) color = rulecolor;
+				if (group) addalertgroup(group);
 			}
 			break;
 		}
