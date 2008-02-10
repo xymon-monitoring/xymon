@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.4 2008-02-08 13:43:59 henrik Exp $";
+static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.5 2008-02-10 12:45:53 henrik Exp $";
 
 /*
  * Split the snmpcollect client-message into individual mib-datasets.
@@ -36,6 +36,7 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 		char *oneds, *dskey;
 		void *ns2var, *ns2sects;
 		int color, rulecolor, anyrules;
+		char *groups;
 
 		/* Convert the "<NNN>" markers to "[NNN]" */
 		bmark = onemib;
@@ -50,6 +51,7 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 		/* Match the mib data against the configuration */
 		anyrules = 1;
 		color = COL_GREEN;
+		clearalertgroups();
 		clearstrbuffer(summary);
 		oneds = nextsection_r(onemib, &dskey, &ns2var, &ns2sects);
 		if (oneds) {
@@ -69,8 +71,11 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 		}
 
 		/* Generate the status message */
+		groups = getalertgroups();
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s\n", hostname, mibname, colorname(color), ctime(&timestamp));
+		if (groups) sprintf(msgline, "status/group:%s ", groups); else strcpy(msgline, "status ");
+		addtostatus(msgline);
+		sprintf(msgline, "%s.%s %s %s\n", hostname, mibname, colorname(color), ctime(&timestamp));
 		addtostatus(msgline);
 		if (STRBUFLEN(summary) > 0) {
 			addtostrstatus(summary);
