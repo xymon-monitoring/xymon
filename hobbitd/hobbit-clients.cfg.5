@@ -442,6 +442,28 @@ Defaults:
 .br
 	Note that no service are checked by default.
 
+
+.SH SNMP-BASED (MIB) STATUS COLUMN SETTINGS
+.sp
+.BR "MIB mibname:varname [KEY=key] [MAX=maxvalue] [MIN=minvalue] [MATCH=pattern] [COLOR=color]"
+.sp
+This defines criteria which is used when analyzing data collected by the
+.I hobbit_snmpcollect(1)
+utility.
+"mibname" is the name of the dataset, as defined in the
+.I hobbit-snmpmibs.cfg(5)
+file. "varname" is the name of the MIB variable to check - this is also defined
+in the hobbit-snmpmibs.cfg file. "maxvalue" is the maximum value allowed for
+this variable, "minvalue" is the minimum value allowed - these two are for
+numeric data and are integers. "pattern" is a pattern used to match variables
+that contain text data - e.g. to check if a link has the status "up". If "pattern"
+begins with a '%' character, is is treated as a regular expression.
+.sp
+The standard TRACK setting has no effect here, since the 
+.I hobbit-snmpmibs.cfg
+file defines the variables that are tracked in RRD files.
+
+
 .SH CHANGING THE DEFAULT SETTINGS
 If you would like to use different defaults for the settings described above, 
 then you can define the new defaults after a DEFAULT line. E.g. this would
