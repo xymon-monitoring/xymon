@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-perfdata.c,v 1.1 2008-02-18 12:11:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-perfdata.c,v 1.2 2008-02-18 12:39:24 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,6 +27,35 @@ static char rcsid[] = "$Id: hobbit-perfdata.c,v 1.1 2008-02-18 12:11:14 henrik E
 
 enum { O_XML, O_CSV } outform = O_XML;
 char csvdelim = ',';
+char *hostpattern = NULL;
+char *starttime = NULL;
+char *endtime = NULL;
+
+static void parse_query(void)
+{
+	cgidata_t *cgidata = cgi_request();
+	cgidata_t *cwalk;
+
+	cwalk = cgidata;
+	while (cwalk) {
+		if (strcasecmp(cwalk->name, "HOST") == 0) {
+			hostpattern = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "STARTTIME") == 0) {
+			starttime = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "ENDTIME") == 0) {
+			endtime = strdup(cwalk->value);
+		}
+		else if (strcasecmp(cwalk->name, "CSV") == 0) {
+			outform = O_CSV;
+			if (*(cwalk->value)) csvdelim = *(cwalk->value);
+		}
+
+		cwalk = cwalk->next;
+	}
+}
+
 
 int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *colname, double subfrom, char *dsdescr)
 {
@@ -214,31 +243,46 @@ int onehost(char *hostname, char *starttime, char *endtime)
 
 int main(int argc, char **argv)
 {
-	char *pattern, *starttime, *endtime;
 	pcre *ptn;
 	void *hwalk;
 	char *hostname;
 
-	if (argc < 4) {
-		errprintf("Usage:\n%s HOSTNAME-PATTERN STARTTIME ENDTIME", argv[0]);
-		return 1;
+	if (getenv("QUERY_STRING") == NULL) {
+		/* Not invoked through the CGI */
+		if (argc < 4) {
+			errprintf("Usage:\n%s HOSTNAME-PATTERN STARTTIME ENDTIME", argv[0]);
+			return 1;
+		}
+
+		hostpattern = argv[1];
+		starttime = argv[2];
+		endtime = argv[3];
+		if (argc > 4) {
+			if (strncmp(argv[4], "--csv", 5) == 0) {
+				char *p;
+
+				outform = O_CSV;
+				if ((p = strchr(argv[4], '=')) != NULL) csvdelim = *(p+1);
+			}
+		}
 	}
+	else {
+		/* Parse CGI parameters */
+		parse_query();
+		switch (outform) {
+		  case O_XML:
+			printf("Content-type: application/xml\n\n");
+			break;
 
-	pattern = argv[1];
-	starttime = argv[2];
-	endtime = argv[3];
-	if (argc > 4) {
-		if (strncmp(argv[4], "--csv", 5) == 0) {
-			char *p;
-
-			outform = O_CSV;
-			if ((p = strchr(argv[4], '=')) != NULL) csvdelim = *(p+1);
+		  case O_CSV:
+			printf("Content-type: text/csv\n\n");
+			break;
 		}
 	}
 
-	ptn = compileregex(pattern);
+	ptn = compileregex(hostpattern);
 	if (!ptn) {
-		errprintf("Invalid pattern '%s'\n", pattern);
+		errprintf("Invalid pattern '%s'\n", hostpattern);
 		return 1;
 	}
 
