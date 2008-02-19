@@ -118,7 +118,7 @@ hobbit-hostlist.cgi: $(HOSTLISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
 
 hobbit-perfdata.cgi: $(PERFDATAOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PERFDATAOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
 
 
 bb-ack.sh: bb-ack.sh.DIST
