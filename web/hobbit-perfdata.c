@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-perfdata.c,v 1.2 2008-02-18 12:39:24 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-perfdata.c,v 1.3 2008-02-22 13:09:38 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -101,12 +101,12 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 
 	switch (outform) {
 	  case O_XML:
-		printf("<dataset>\n");
-		printf("   <hostname>%s</hostname>\n", hostname);
-		printf("   <datasource>%s</datasource>\n", rrdname);
-		printf("   <rrdcolumn>%s</rrdcolumn>\n", colname);
-		printf("   <measurement>%s</measurement>\n", (dsdescr ? dsdescr : colname));
-		printf("   <datapoints>\n");
+		printf("  <dataset>\n");
+		printf("     <hostname>%s</hostname>\n", hostname);
+		printf("     <datasource>%s</datasource>\n", rrdname);
+		printf("     <rrdcolumn>%s</rrdcolumn>\n", colname);
+		printf("     <measurement>%s</measurement>\n", (dsdescr ? dsdescr : colname));
+		printf("     <datapoints>\n");
 		break;
 
 	  case O_CSV:
@@ -130,10 +130,10 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 
 		switch (outform) {
 		  case O_XML:
-			printf("      <dataelement>\n");
-			printf("         <time>%s</time>\n", tstamp);
-			printf("         <value>%f</value>\n", val);
-			printf("      </dataelement>\n");
+			printf("        <dataelement>\n");
+			printf("           <time>%s</time>\n", tstamp);
+			printf("           <value>%f</value>\n", val);
+			printf("        </dataelement>\n");
 			break;
 		  case O_CSV:
 			printf("\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c\"%s\"%c%f\n",
@@ -154,14 +154,14 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 	}
 
 	if (outform == O_XML) {
-		printf("   </datapoints>\n");
-		printf("   <summary>\n");
-		printf("        <minimum>%f</minimum>\n", min);
-		printf("        <maximum>%f</maximum>\n", max);
-		printf("        <average>%f</average>\n", (sum / rowcount));
-		printf("        <missingdatapoints>%d</missingdatapoints>\n", missingdata);
-		printf("   </summary>\n");
-		printf("</dataset>\n");
+		printf("     </datapoints>\n");
+		printf("     <summary>\n");
+		printf("          <minimum>%f</minimum>\n", min);
+		printf("          <maximum>%f</maximum>\n", max);
+		printf("          <average>%f</average>\n", (sum / rowcount));
+		printf("          <missingdatapoints>%d</missingdatapoints>\n", missingdata);
+		printf("     </summary>\n");
+		printf("  </dataset>\n");
 	}
 
 	return 0;
@@ -177,14 +177,6 @@ int onehost(char *hostname, char *starttime, char *endtime)
 	if ((chdir(xgetenv("BBRRDS")) == -1) || (chdir(hostname) == -1)) {
 		errprintf("Cannot cd to %s/%s\n", xgetenv("BBRRDS"), hostname);
 		return 1;
-	}
-
-	switch (outform) {
-	  case O_XML:
-		printf("<?xml version='1.0' encoding='ISO-8859-1'?>\n");
-		break;
-	  case O_CSV:
-		break;
 	}
 
 	/* 
@@ -288,12 +280,29 @@ int main(int argc, char **argv)
 
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
+	switch (outform) {
+	  case O_XML:
+		printf("<?xml version='1.0' encoding='ISO-8859-1'?>\n");
+		printf("<datasets>\n");
+		break;
+	  case O_CSV:
+		break;
+	}
+
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		hostname = bbh_item(hwalk, BBH_HOSTNAME);
 
 		if (!matchregex(hostname, ptn)) continue;
 
 		onehost(hostname, starttime, endtime);
+	}
+
+	switch (outform) {
+	  case O_XML:
+		printf("</datasets>\n");
+		break;
+	  case O_CSV:
+		break;
 	}
 
 	return 0;
