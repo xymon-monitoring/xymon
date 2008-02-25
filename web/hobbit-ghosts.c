@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.5 2008-01-03 10:04:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.6 2008-02-25 12:19:13 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -58,6 +58,7 @@ typedef struct ghost_t {
 	unsigned long senderval;
 	char *name;
 	time_t tstamp;
+	void *candidate;
 } ghost_t;
 
 
@@ -89,6 +90,41 @@ int time_compare(const void *v1, const void *v2)
 	else return 0;
 }
 
+void find_candidate(ghost_t *rec)
+{
+	/*
+	 * Try to find an existing host definition for this ghost.
+	 * We look at the IP-address.
+	 * If the ghost reports with a FQDN, look for a host with
+	 * the same hostname without domain.
+	 * If the ghost reports a plain hostname (no domain), look
+	 * for a FQDN record with the same plain hostname.
+	 */
+
+	void *hrec;
+	int found;
+	char *gdelim, *tdelim, *ghostnofqdn, *hname;
+
+	ghostnofqdn = rec->name;
+	if ((gdelim = strchr(ghostnofqdn, '.')) != NULL) *gdelim = '\0';
+
+	for (hrec = first_host(), found = 0; (hrec && !found); hrec = next_host(hrec, 0)) {
+		/* Check the IP */
+		found = (strcmp(rec->sender, bbh_item(hrec, BBH_IP)) == 0);
+
+		if (!found) {
+			/* Check if hostnames w/o domain match */
+			hname = bbh_item(hrec, BBH_HOSTNAME);
+			if ((tdelim = strchr(hname, '.')) != NULL) *tdelim = '\0';
+			found = (strcasecmp(ghostnofqdn, hname) == 0);
+			if (tdelim) *tdelim = '.';
+		}
+
+		if (found) rec->candidate = hrec;
+	}
+
+	if (gdelim) *gdelim = '.';
+}
 
 int main(int argc, char *argv[])
 {
@@ -116,6 +152,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	parse_query();
 
 	switch (outform) {
@@ -162,6 +199,7 @@ int main(int argc, char *argv[])
 				ghosttable[idx].senderval = (i1 << 24) + (i2 << 16) + (i3 << 8) + i4;
 				ghosttable[idx].name = name;
 				ghosttable[idx].tstamp = tstamp;
+				find_candidate(&ghosttable[idx]);
 				idx++; count++;
 			}
 
@@ -188,6 +226,7 @@ int main(int argc, char *argv[])
 			fprintf(stdout, "<tr>");
 			fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=name&MAXAGE=%d\">Hostname</a></th>", maxage);
 			fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=sender&MAXAGE=%d\">Sent from</a></th>", maxage);
+			fprintf(stdout, "<th align=left>Candidate</th>");
 			fprintf(stdout, "<th align=right><a href=\"hobbit-ghosts.sh?SORT=time&MAXAGE=%d\">Report age</a></th>", maxage);
 			fprintf(stdout, "</tr>\n");
 		}
@@ -198,9 +237,20 @@ int main(int argc, char *argv[])
 
 			switch (outform) {
 			  case O_HTML:
-				fprintf(stdout, "<tr><td align=left>%s</td><td align=left>%s</td><td align=right>%ld:%02ld</td></tr>\n",
+				fprintf(stdout, "<tr><td align=left>%s</td><td align=left>%s</td>",
 					ghosttable[idx].name, 
-					ghosttable[idx].sender, 
+					ghosttable[idx].sender);
+
+				if (ghosttable[idx].candidate) {
+					fprintf(stdout, "<td align=left><a href=\"%s\">%s</a></td>",
+						hostsvcurl(bbh_item(ghosttable[idx].candidate, BBH_HOSTNAME), xgetenv("INFOCOLUMN"), 1),
+						bbh_item(ghosttable[idx].candidate, BBH_HOSTNAME));
+				}
+				else {
+					fprintf(stdout, "<td>&nbsp;</td>");
+				}
+
+				fprintf(stdout, "<td align=right>%ld:%02ld</td></tr>\n",
 					(now - ghosttable[idx].tstamp)/60, (now - ghosttable[idx].tstamp)%60);
 				break;
 
