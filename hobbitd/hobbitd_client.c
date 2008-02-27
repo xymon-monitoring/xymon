@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.119 2008-02-08 13:39:57 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.120 2008-02-27 09:30:31 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1843,10 +1843,14 @@ int main(int argc, char *argv[])
 			char *hostname = metadata[3];
 			char *clientos = metadata[4];
 			char *clientclass = metadata[5];
+			char *collectorid = metadata[6];
 			enum ostype_t os;
 			void *hinfo = NULL;
 
 			dbgprintf("Client report from host %s\n", (hostname ? hostname : "<unknown>"));
+
+			/* We handle data from the default client collector - nothing else */
+			if (collectorid && (strcmp(collectorid, "") != 0)) continue;
 
 			hinfo = (localmode ? localhostinfo(hostname) : hostinfo(hostname));
 			if (!hinfo) continue;
