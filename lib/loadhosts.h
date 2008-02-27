@@ -68,6 +68,8 @@ enum bbh_item_t {
 	BBH_OS,
 	BBH_NOCOLUMNS,
 	BBH_DATA,
+	BBH_NOTBEFORE,
+	BBH_NOTAFTER,
 	BBH_LAST
 };
 

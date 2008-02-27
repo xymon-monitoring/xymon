@@ -13,13 +13,14 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.74 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.75 2008-02-27 09:28:44 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 
 #include "libbbgen.h"
 
@@ -54,6 +55,7 @@ typedef struct namelist_t {
 	 */
 	char *clientname;	/* CLIENT: tag - host alias */
 	char *downtime;		/* DOWNTIME tag - when host has planned downtime. */
+	time_t notbefore, notafter; /* NOTBEFORE and NOTAFTER tags as time_t values */
 } namelist_t;
 
 static pagelist_t *pghead = NULL;
@@ -169,6 +171,10 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_OS]                  = "BBH_OS";
 	bbh_item_key[BBH_NOCOLUMNS]            = "NOCOLUMNS:";
 	bbh_item_name[BBH_NOCOLUMNS]           = "BBH_NOCOLUMNS";
+	bbh_item_key[BBH_NOTBEFORE]            = "NOTBEFORE:";
+	bbh_item_name[BBH_NOTBEFORE]           = "BBH_NOTBEFORE";
+	bbh_item_key[BBH_NOTAFTER]             = "NOTAFTER:";
+	bbh_item_name[BBH_NOTAFTER]            = "BBH_NOTAFTER";
 
 	bbh_item_name[BBH_IP]                  = "BBH_IP";
 	bbh_item_name[BBH_CLIENTALIAS]         = "BBH_CLIENTALIAS";
@@ -274,6 +280,7 @@ static void build_hosttree(void)
 	static int hosttree_exists = 0;
 	namelist_t *walk;
 	RbtStatus status;
+	char *tstr;
 
 	if (hosttree_exists) {
 		rbtDelete(rbhosts);
@@ -298,6 +305,14 @@ static void build_hosttree(void)
 			errprintf("loadhosts:build_hosttree - insert into tree failed code %d\n", status);
 			break;
 		}
+
+		tstr = bbh_item(walk, BBH_NOTBEFORE);
+		walk->notbefore = (tstr ? timestr2timet(tstr) : 0);
+		if (walk->notbefore == -1) walk->notbefore = 0;
+
+		tstr = bbh_item(walk, BBH_NOTAFTER);
+		walk->notafter = (tstr ? timestr2timet(tstr) : INT_MAX);
+		if (walk->notafter == -1) walk->notafter = INT_MAX;
 	}
 }
 
@@ -314,6 +329,7 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling)
 	namelist_t *walk = NULL;
 	static char *result = NULL;
 	void *k1, *k2;
+	time_t now = getcurrenttime(NULL);
 
 	if (result) xfree(result);
 	result = NULL;
@@ -351,6 +367,8 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling)
 	/* Allow all summaries */
 	if (strcmp(hostname, "summary") == 0) return result;
 
+	if ((walk->notbefore > now) || (walk->notafter < now)) return NULL;
+
 	return (walk ? result : NULL);
 }
 
@@ -369,6 +387,7 @@ void *hostinfo(char *hostname)
 {
 	RbtIterator hosthandle;
 	namelist_t *result = NULL;
+	time_t now = getcurrenttime(NULL);
 
 	if (!configloaded) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
@@ -379,6 +398,8 @@ void *hostinfo(char *hostname)
 		rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
 		result = (namelist_t *)k2;
 	}
+
+	if ((result->notbefore > now) || (result->notafter < now)) return NULL;
 
 	return result;
 }

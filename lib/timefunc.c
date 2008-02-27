@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: timefunc.c,v 1.39 2008-01-28 12:05:01 henrik Exp $";
+static char rcsid[] = "$Id: timefunc.c,v 1.40 2008-02-27 09:28:44 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -590,5 +590,26 @@ time_t eventreport_time(char *timestamp)
 
 	return event;
 }
+
+
+time_t timestr2timet(char *s)
+{
+	/* Convert a string "YYYYMMDDHHMM" to time_t value */
+	struct tm tm;
+
+	if (strlen(s) != 12) {
+		errprintf("Invalid timestring in bb-hosts: '%s'\n", s);
+		return -1;
+	}
+
+	tm.tm_min = atoi(s+10); *(s+10) = '\0';
+	tm.tm_hour = atoi(s+8); *(s+8) = '\0';
+	tm.tm_mday = atoi(s+6); *(s+6) = '\0';
+	tm.tm_mon = atoi(s+4) - 1; *(s+4) = '\0';
+	tm.tm_year = atoi(s) - 1900; *(s+4) = '\0';
+	tm.tm_isdst = -1;
+	return mktime(&tm);
+}
+
 
 
