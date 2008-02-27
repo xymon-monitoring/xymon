@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.45 2008-01-14 21:17:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.46 2008-02-27 09:30:31 henrik Exp $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -921,7 +921,7 @@ void sendresult(void)
 			clearstrbuffer(clientmsg);
 			havemsg = 0;
 
-			sprintf(msgline, "client %s.snmpcollect snmp\n\n", rwalk->hostname);
+			sprintf(msgline, "client/snmpcollect %s.snmpcollect snmp\n\n", rwalk->hostname);
 			addtobuffer(clientmsg, msgline);
 		}
 
