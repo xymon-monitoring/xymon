@@ -13,11 +13,11 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.17 2008-01-28 11:17:46 henrik Exp $
+# $Id: runclient.sh,v 1.18 2008-02-27 21:02:16 henrik Exp $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
-BBOSTYPE="`uname -s | tr '[A-Z/]' '[a-z_]'`"	# This systems operating system in lowercase
+BBOSTYPE="`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
 BBOSSCRIPT="hobbitclient-$BBOSTYPE.sh"
 
 # Commandline mods for the defaults
@@ -28,10 +28,10 @@ do
 	  	MACHINEDOTS="`echo $1 | sed -e 's/--hostname=//'`"
 		;;
 	  --os=*)
-	  	BBOSTYPE="`echo $1 | sed -e 's/--os=//' | tr '[A-Z]' '[a-z]'`"
+	  	BBOSTYPE="`echo $1 | sed -e 's/--os=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
 		;;
 	  --class=*)
-	        CONFIGCLASS="`echo $1 | sed -e 's/--class=//' | tr '[A-Z]' '[a-z]'`"
+	        CONFIGCLASS="`echo $1 | sed -e 's/--class=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
 		;;
 	  --help)
 	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] [--class=CLASSNAME] start|stop"

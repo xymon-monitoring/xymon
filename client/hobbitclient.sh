@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.19 2008-01-28 11:17:46 henrik Exp $
+# $Id: hobbitclient.sh,v 1.20 2008-02-27 21:02:16 henrik Exp $
 
 # Must make sure the commands return standard (english) texts.
 LANG=C
@@ -29,7 +29,7 @@ if test $# -ge 1; then
 fi
 
 if test "$BBOSSCRIPT" = ""; then
-	BBOSSCRIPT="hobbitclient-`uname -s | tr '[A-Z/]' '[a-z_]'`.sh"
+	BBOSSCRIPT="hobbitclient-`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`.sh"
 fi
 
 MSGFILE="$BBTMP/msg.$MACHINEDOTS.txt"
