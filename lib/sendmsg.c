@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.87 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.88 2008-03-02 12:44:57 henrik Exp $";
 
 #include "config.h"
 
@@ -60,6 +60,7 @@ static strbuffer_t *metamsg = NULL;	/* Complete meta message buffer */
 static strbuffer_t *metabuf = NULL;	/* message buffer for one meta message */
 
 int dontsendmessages = 0;
+int sendcompressedmessages = 0;
 
 
 void setproxy(char *proxy)
@@ -148,6 +149,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 	int	res, isconnected, wdone, rdone;
 	struct timeval tmo;
 	char *msgptr = message;
+	int msgremain = strlen(message);
 	char *p;
 	char *rcptip = NULL;
 	int rcptport = 0;
@@ -157,6 +159,9 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 	int haveseenhttphdrs = 1;
 	int respstrsz = 0;
 	int respstrlen = 0;
+	enum { C_LOOKFORMARKER, C_DECOMPRESS, C_NONE } cmprhandling = C_NONE;
+	void *cmprhandle = NULL;
+	strbuffer_t *cmprbuf;
 
 	if (dontsendmessages && !respfd && !respstr) {
 		printf("%s\n", message);
@@ -164,7 +169,6 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 	}
 
 	setup_transport(recipient);
-
 	dbgprintf("Recipient listed as '%s'\n", recipient);
 
 	if (strcmp(recipient, "local") == 0) {
@@ -174,7 +178,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		rcptip = strdup("local/unix");
 	}
 	else if (strncmp(recipient, "http://", strlen("http://")) != 0) {
-		/* Standard BB communications, directly to bbd */
+		/* Standard BB communications, directly to hobbitd */
 		rcptip = strdup(recipient);
 		rcptport = bbdportnumber;
 		p = strchr(rcptip, ':');
@@ -182,6 +186,19 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			*p = '\0'; p++; rcptport = atoi(p);
 		}
 		dbgprintf("Standard BB protocol on port %d\n", rcptport);
+
+		if (sendcompressedmessages) {
+			static strbuffer_t *cbuf = NULL;
+
+			if (cbuf) freestrbuffer(cbuf);
+
+			cbuf = compress_buffer(message, msgremain);
+			if (cbuf) {
+				msgremain = STRBUFLEN(cbuf);
+				msgptr = message = STRBUF(cbuf);
+				cmprhandling = C_LOOKFORMARKER;
+			}
+		}
 	}
 	else {
 		char *bufp;
@@ -394,7 +411,34 @@ retry_connect:
 
 					if (n > 0) {
 						if (respfd) {
-							fwrite(outp, n, 1, respfd);
+							switch (cmprhandling) {
+							  case C_NONE:
+								fwrite(outp, n, 1, respfd);
+								break;
+
+							  case C_LOOKFORMARKER:
+								if (strncmp(outp, compressionmarker, compressionmarkersz) != 0) {
+									cmprhandling = C_NONE;
+									fwrite(outp, n, 1, respfd);
+									break;
+								}
+								else {
+									cmprhandle = uncompress_stream_init();
+									cmprhandling = C_DECOMPRESS;
+									outp += 4;
+									n -= 4;
+									cmprbuf = uncompress_stream_data(cmprhandle, outp, n);
+									fwrite(STRBUF(cmprbuf), STRBUFLEN(cmprbuf), 1, respfd);
+									freestrbuffer(cmprbuf);
+								}
+								break;
+
+							  case C_DECOMPRESS:
+								cmprbuf = uncompress_stream_data(cmprhandle, outp, n);
+								fwrite(STRBUF(cmprbuf), STRBUFLEN(cmprbuf), 1, respfd);
+								freestrbuffer(cmprbuf);
+								break;
+							}
 						}
 						else if (respstr) {
 							char *respend;
@@ -423,7 +467,7 @@ retry_connect:
 
 			if (!wdone && FD_ISSET(sockfd, &writefds)) {
 				/* Send some data */
-				res = write(sockfd, msgptr, strlen(msgptr));
+				res = write(sockfd, msgptr, msgremain);
 				if (res == -1) {
 					shutdown(sockfd, SHUT_RDWR); close(sockfd);
 					errprintf("Write error while sending message to bbd@%s:%d\n", rcptip, rcptport);
@@ -432,7 +476,8 @@ retry_connect:
 				else {
 					dbgprintf("Sent %d bytes\n", res);
 					msgptr += res;
-					wdone = (strlen(msgptr) == 0);
+					msgremain -= res;
+					wdone = (msgremain == 0);
 					if (wdone) shutdown(sockfd, SHUT_WR);
 				}
 			}
@@ -442,10 +487,20 @@ retry_connect:
 	dbgprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
+
+	if (respstr && (cmprhandling == C_LOOKFORMARKER) && (strncmp(*respstr, compressionmarker, compressionmarkersz) == 0)) {
+		/* Decompress the message */
+		strbuffer_t *s = uncompress_buffer(*respstr, respstrlen, NULL);
+		xfree(*respstr);
+		*respstr = grabstrbuffer(s);
+	}
+
+	if (cmprhandle) uncompress_stream_done(cmprhandle);
 	if (rcptip) xfree(rcptip);
 	if (httpmessage) xfree(httpmessage);
 	return BB_OK;
 }
+
 
 static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, char **respstr, int fullresponse, int timeout)
 {
