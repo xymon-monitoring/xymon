@@ -26,6 +26,7 @@ typedef struct strbuffer_t {
 
 #define STRBUF(buf) (buf->s)
 #define STRBUFLEN(buf) (buf->used)
+#define STRBUFSZ(buf) (buf->sz)
 
 #define IP_ADDR_STRLEN 16
 
@@ -48,8 +49,9 @@ typedef struct strbuffer_t {
 #include "../lib/availability.h"
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
-#include "../lib/color.h"
 #include "../lib/clientlocal.h"
+#include "../lib/color.h"
+#include "../lib/compression.h"
 #include "../lib/digest.h"
 #include "../lib/encoding.h"
 #include "../lib/environ.h"
