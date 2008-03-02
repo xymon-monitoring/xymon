@@ -106,7 +106,9 @@ holidays: holidays.c $(HOBBITLIBRARY)
 clean:
 	rm -f *.o *.a libhobbit.so.* libhobbit.so *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator msort holidays
 
-installsharedlibrary:
+install:
+ifeq ($(HOBBITLIBRARY),libhobbit.so)
 	cp -fp $(HOBBITLIBRARY) $(INSTALLROOT)$(INSTALLBINDIR)/
 	/sbin/ldconfig -n $(INSTALLROOT)$(INSTALLBINDIR)
+endif
 
