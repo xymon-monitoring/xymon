@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: compression.c,v 1.1 2008-03-02 12:43:40 henrik Exp $";
+static char rcsid[] = "$Id: compression.c,v 1.2 2008-03-02 18:37:28 henrik Exp $";
 
 #include "config.h"
 
@@ -95,7 +95,7 @@ strbuffer_t *uncompress_buffer(char *msg, int msglen, char *prestring)
 	strbuffer_t *dbuf;
 	static int dbufmax = 0;
 	int n;
-	unsigned int nbytes;
+	unsigned int nbytes, avbytes;
 
 	if (!strm) {
 		strm = uncompress_stream_init();
@@ -114,14 +114,16 @@ strbuffer_t *uncompress_buffer(char *msg, int msglen, char *prestring)
 		strm->next_in = msg + compressionmarkersz;
 
 		do {
-			strm->avail_out = STRBUFSZ(dbuf) - STRBUFLEN(dbuf);
+			avbytes = STRBUFSZ(dbuf) - STRBUFLEN(dbuf) - 1;	/* -1 for the trailing \0 */
 			if (strm->avail_out < 4096) {
 				strbuffergrow(dbuf, 4096);
-				strm->avail_out = STRBUFSZ(dbuf) - STRBUFLEN(dbuf);
+				avbytes = STRBUFSZ(dbuf) - STRBUFLEN(dbuf) - 1;
 			}
-			strm->next_out = STRBUF(dbuf) + STRBUFLEN(dbuf);
 
+			strm->avail_out = avbytes;
+			strm->next_out = STRBUF(dbuf) + STRBUFLEN(dbuf);
 			n = inflate(strm, Z_NO_FLUSH);
+
 			switch (n) {
 			  case Z_STREAM_ERROR:
 				xfree(strm); strm = NULL;
@@ -133,14 +135,14 @@ strbuffer_t *uncompress_buffer(char *msg, int msglen, char *prestring)
 				n = Z_DATA_ERROR;
 				goto done;
 			}
-			nbytes = STRBUFSZ(dbuf) - STRBUFLEN(dbuf) - strm->avail_out;
+			nbytes = avbytes - strm->avail_out;
 			strbufferuse(dbuf, nbytes);
 		} while (strm->avail_out == 0);
 	} while (n != Z_STREAM_END);
 
 done:
 	if (n == Z_STREAM_END) {
-		errprintf("Inflated message from %d to %d bytes (%d %%)\n", msglen, STRBUFLEN(dbuf), 100*STRBUFLEN(dbuf)/msglen-100);
+		// errprintf("Inflated message from %d to %d bytes (%d %%)\n", msglen, STRBUFLEN(dbuf), 100*STRBUFLEN(dbuf)/msglen-100);
 		return dbuf;
 	}
 	else {
@@ -193,7 +195,7 @@ strbuffer_t *compress_buffer(char *msg, int msglen)
 	if ((ret != Z_STREAM_ERROR) && (strm->avail_in == 0)) {
 		/* All was compressed OK */
 		strbufferuse(cmsg, (sz - strm->avail_out));
-		errprintf("Compressed message from %d to %d bytes (%d %%)\n", msglen, STRBUFLEN(cmsg), 100 - (100*STRBUFLEN(cmsg)/msglen));
+		// errprintf("Compressed message from %d to %d bytes (%d %%)\n", msglen, STRBUFLEN(cmsg), 100 - (100*STRBUFLEN(cmsg)/msglen));
 	}
 	else {
 		errprintf("Compression failed: ret=%d, avail_in=%u\n", ret, strm->avail_in);
