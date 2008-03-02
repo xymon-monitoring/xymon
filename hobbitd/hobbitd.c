@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.278 2008-02-27 09:32:18 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.279 2008-03-02 12:49:40 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -181,6 +181,7 @@ typedef struct conn_t {
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
+	int compressionok;		/* Remote end can handle compression */
 	time_t timeout;			/* When the timeout for this connection happens */
 	struct conn_t *next;
 } conn_t;
@@ -2546,6 +2547,28 @@ void do_message(conn_t *msg, char *origin)
 	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
 	now = getcurrenttime(NULL);
 
+	/* If the data is compressed, deflate it */
+	if (strncmp(msg->buf, compressionmarker, compressionmarkersz) == 0) {
+		strbuffer_t *dbuf;
+
+		msg->compressionok = 1;
+		dbuf = uncompress_buffer(msg->buf, msg->buflen, NULL);
+
+		if (dbuf) {
+			/* Grab the output buffer */
+			xfree(msg->buf);
+			msg->buflen = STRBUFLEN(dbuf);
+			msg->bufsz = STRBUFSZ(dbuf);
+			msg->buf = grabstrbuffer(dbuf);
+			msg->bufp = msg->buf + msg->buflen;
+			*(msg->bufp) = '\0';
+		}
+		else {
+			errprintf("Invalid compressed message from '%s', dropped\n", sender);
+			goto done;
+		}
+	}
+
 	if (traceall || tracelist) {
 		int found = 0;
 
@@ -3635,6 +3658,16 @@ void do_message(conn_t *msg, char *origin)
 
 done:
 	if (msg->doingwhat == RESPONDING) {
+		if (msg->compressionok) {
+			/* Compress the message response */
+			strbuffer_t *cmsg = compress_buffer(msg->buf, msg->buflen);
+			if (cmsg) {
+				xfree(msg->buf);
+				msg->buflen = STRBUFLEN(cmsg);
+				msg->buf = msg->bufp = grabstrbuffer(cmsg);
+			}
+		}
+
 		shutdown(msg->sock, SHUT_RD);
 	}
 	else {
@@ -4836,10 +4869,10 @@ int main(int argc, char *argv[])
 				fcntl(sock, F_SETFL, O_NONBLOCK);
 
 				if (connhead == NULL) {
-					connhead = conntail = (conn_t *)malloc(sizeof(conn_t));
+					connhead = conntail = (conn_t *)calloc(1, sizeof(conn_t));
 				}
 				else {
-					conntail->next = (conn_t *)malloc(sizeof(conn_t));
+					conntail->next = (conn_t *)calloc(1, sizeof(conn_t));
 					conntail = conntail->next;
 				}
 
@@ -4865,6 +4898,8 @@ int main(int argc, char *argv[])
 	posttochannel(noteschn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
 	posttochannel(enadischn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
 	posttochannel(clientchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(clichgchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(userchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
 	running = 0;
 
 	/* Close the channels */
