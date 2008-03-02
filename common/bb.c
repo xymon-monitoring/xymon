@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb.c,v 1.13 2008-01-03 09:50:18 henrik Exp $";
+static char rcsid[] = "$Id: bb.c,v 1.14 2008-03-02 12:50:58 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,6 +36,11 @@ int main(int argc, char *argv[])
 	FILE *respfd = stdout;
 	char *response = NULL;
 	char *envarea = NULL;
+
+	/* If invoked as "bbz", enable compression */
+	if (*(argv[0] + strlen(argv[0]) - 1) == 'z') {
+		sendcompressedmessages = 1;
+	}
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -70,6 +75,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--compress") == 0) {
+			sendcompressedmessages = 1;
 		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
