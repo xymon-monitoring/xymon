@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.63 2008-01-03 09:46:25 henrik Exp $";
+static char rcsid[] = "$Id: bbproxy.c,v 1.64 2008-03-02 18:35:38 henrik Exp $";
 
 #include "config.h"
 
@@ -81,7 +81,7 @@ typedef struct conn_t {
 	int conntries, sendtries;
 	int connectpending;
 	time_t conntime;
-	int madetocombo;
+	int madetocombo, isclientmessage, compressionok;
 	struct timeval timelimit, arrival;
 	unsigned char *buf, *bufp, *bufpsave;
 	unsigned int bufsize, buflen, buflensave;
@@ -103,6 +103,7 @@ int keeprunning = 1;
 time_t laststatus = 0;
 char *logfile = NULL;
 int logdetails = 0;
+int compressmessages = 0;
 unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
 
 
@@ -349,6 +350,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--log-details") == 0) {
 			logdetails = 1;
 		}
+		else if (strcmp(argv[opt], "--compress") == 0) {
+			compressmessages = 1;
+		}
 		else if (argnmatch(argv[opt], "--report=")) {
 			char *p1 = strchr(argv[opt], '=')+1;
 
@@ -583,6 +587,26 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_READY:
+				if (strncmp(cwalk->buf+6, compressionmarker, compressionmarkersz) == 0) {
+					strbuffer_t *dbuf;
+
+					cwalk->compressionok = 1;
+					dbuf = uncompress_buffer(cwalk->buf+6, cwalk->buflen-6, "combo\n");
+					if (!dbuf) {
+						errprintf("Invalid compressed data from %s\n", inet_ntoa(*cwalk->clientip));
+						cwalk->state = P_CLEANUP;
+						break;
+					}
+					else {
+						xfree(cwalk->buf);
+						if (STRBUFSZ(dbuf) < BUFSZ_INC) strbuffergrow(dbuf, BUFSZ_INC);
+						cwalk->buflen = cwalk->buflensave = STRBUFLEN(dbuf);
+						cwalk->bufsize = STRBUFSZ(dbuf);
+						cwalk->buf = grabstrbuffer(dbuf);
+						cwalk->bufp = cwalk->bufpsave = (cwalk->buf + cwalk->buflen);
+					}
+				}
+
 				if (cwalk->buflen <= 6) {
 					/* Got an empty request - just drop it */
 					dbgprintf("Dropping empty request from %s\n", inet_ntoa(*cwalk->clientip));
@@ -615,7 +639,8 @@ int main(int argc, char *argv[])
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
-					cwalk->snum = bbdispcount;
+					cwalk->snum = clientcount;
+					cwalk->isclientmessage = 1;
 
 					if ((cwalk->buflen + 40 ) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
@@ -733,6 +758,17 @@ int main(int argc, char *argv[])
 				 */
 				cwalk->bufp = cwalk->buf+6; 
 				cwalk->buflen -= 6;
+				if (compressmessages) {
+					strbuffer_t *cbuf = compress_buffer(cwalk->bufp, cwalk->buflen);
+					if (cbuf) {
+						xfree(cwalk->buf);
+						if (STRBUFSZ(cbuf) < BUFSZ_INC) strbuffergrow(cbuf, BUFSZ_INC);
+						cwalk->buflen = STRBUFLEN(cbuf);
+						cwalk->bufsize = STRBUFSZ(cbuf);
+						cwalk->buf = cwalk->bufp = grabstrbuffer(cbuf);
+					}
+				}
+
 				cwalk->bufpsave = cwalk->bufp;
 				cwalk->buflensave = cwalk->buflen;
 				cwalk->state = P_REQ_CONNECTING;
@@ -753,7 +789,7 @@ int main(int argc, char *argv[])
 				cwalk->conntime = ctime;
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
-					cwalk->state = P_REQ_DONE;	/* Not CLENAUP - might be more servers */
+					cwalk->state = (cwalk->snum > 1) ? P_REQ_DONE : P_CLEANUP;
 					msgs_timeout_from[P_REQ_CONNECTING]++;
 					break;
 				}
@@ -766,7 +802,7 @@ int main(int argc, char *argv[])
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				if (strncmp(cwalk->bufp, "client", 6) == 0) {
+				if (cwalk->isclientmessage) {
 					int idx = (clientcount - cwalk->snum);
 					n = connect(cwalk->ssocket, (struct sockaddr *)&clientaddr[idx], sizeof(clientaddr[idx]));
 					cwalk->serverip = &clientaddr[idx].sin_addr;
@@ -869,6 +905,17 @@ int main(int argc, char *argv[])
 				shutdown(cwalk->ssocket, SHUT_RD);
 				close(cwalk->ssocket); sockcount--;
 				cwalk->ssocket = -1;
+
+				/* Decompress response for clients that do not understand compression */
+				if ((strncmp(cwalk->buf, compressionmarker, compressionmarkersz) == 0) && !cwalk->compressionok) {
+					/* Must de-compress the response */
+					strbuffer_t *cbuf = uncompress_buffer(cwalk->buf, cwalk->buflen, NULL);
+					xfree(cwalk->buf);
+					cwalk->buflen = STRBUFLEN(cbuf);
+					cwalk->bufsize = STRBUFSZ(cbuf);
+					cwalk->buf = grabstrbuffer(cbuf);
+				}
+
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_RESP_SENDING;
 				gettimeofday(&cwalk->timelimit, &tz);
@@ -991,6 +1038,19 @@ int main(int argc, char *argv[])
 						cwalk->buflen -= 6;
 						dbgprintf("No messages to combine - sending unchanged\n");
 					}
+
+					/* Compress the resulting combined message */
+					if (compressmessages) {
+						strbuffer_t *cbuf = compress_buffer(cwalk->buf, cwalk->buflen);
+						if (cbuf) {
+							if (STRBUFSZ(cbuf) < BUFSZ_INC) strbuffergrow(cbuf, BUFSZ_INC);
+							xfree(cwalk->buf);
+							cwalk->buflen = STRBUFLEN(cbuf);
+							cwalk->bufsize = STRBUFSZ(cbuf);
+							cwalk->buf = cwalk->bufp = grabstrbuffer(cbuf);
+						}
+					}
+
 				}
 
 				cwalk->bufpsave = cwalk->bufp;
@@ -1114,21 +1174,14 @@ int main(int argc, char *argv[])
 					newconn = cwalk;
 				}
 				else {
-					newconn = malloc(sizeof(conn_t));
+					newconn = calloc(1, sizeof(conn_t));
 					newconn->next = chead;
 					chead = newconn;
 					newconn->bufsize = BUFSZ_INC;
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
-				newconn->connectpending = 0;
-				newconn->madetocombo = 0;
-				newconn->snum = 0;
 				newconn->ssocket = -1;
-				newconn->serverip = NULL;
-				newconn->conntries = 0;
-				newconn->sendtries = 0;
-				newconn->timelimit.tv_sec = newconn->timelimit.tv_usec = 0;
 
 				/*
 				 * Why this ? Because we like to merge small status messages
