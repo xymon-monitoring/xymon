@@ -18,40 +18,40 @@ all: $(PROGRAMS)
 client: $(CLIENTPROGRAMS)
 
 bbhostgrep: $(HOSTGREPOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 ../client/bbhostgrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
 
 bbhostshow: $(HOSTSHOWOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(LIBOBJS) $(HOBBITZLIB)
 
 ../client/bbhostshow: $(HOSTSHOWOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a $(HOBBITZLIB)
 
 bb: $(BBOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 ../client/bb: $(BBOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
 
 hobbitlaunch: $(LAUNCHOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(LIBOBJS) $(HOBBITZLIB)
 
 ../client/hobbitlaunch: $(LAUNCHOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/hobbitclient.a $(HOBBITZLIB)
 
 bbcmd: $(CMDOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) $(LIBOBJS) $(HOBBITZLIB)
 
 ../client/bbcmd: $(CMDOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/hobbitclient.a $(HOBBITZLIB)
 
 bbdigest: $(DIGESTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 ../client/bbdigest: $(DIGESTOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
 
 ################################################
 # Default compilation rules
@@ -66,6 +66,7 @@ install: install-bin install-man
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
+	ln -sf $(INSTALLROOT)$(INSTALLBINDIR)/bbz
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8

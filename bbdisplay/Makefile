@@ -8,7 +8,7 @@ LIBOBJS = ../lib/$(HOBBITLIBRARY)
 all: $(PROGRAMS)
 
 bbgen: $(GENOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 
 ################################################

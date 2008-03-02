@@ -31,7 +31,7 @@ all: $(PROGRAMS) cfgfiles
 client: $(CLIENTPROGRAMS)
 
 hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(HOBBITZLIB)
 
 hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS) $(NETLIBS)
@@ -40,16 +40,19 @@ hobbitd_locator: $(LOCATOROBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(LOCATOROBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitd_rrd: $(RRDOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
+
+hobbitd.o: hobbitd.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -DMAX_ALERTMSG_SCRIPTS=$(MAXALERTMSGSZ) -c -o $@ do_alert.c
@@ -64,16 +67,16 @@ hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS) $(NETLIBS)
 
 hobbitd_capture: $(CAPTUREOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitd_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 ../client/hobbitd_client: $(CLIENTOBJS) ../lib/hobbitclient.a
-	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/hobbitclient.a $(PCRELIBS) $(NETLIBS)
+	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/hobbitclient.a $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitd_client.o: hobbitd_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c
@@ -82,25 +85,25 @@ bbcombotest.o: bbcombotest.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
 bbcombotest: $(COMBOTESTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbit-mailack.o: hobbit-mailack.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
 
 hobbit-mailack: $(MAILACKOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitfetch: $(FETCHOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(FETCHOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(FETCHOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 convertnk: $(CONVERTNKOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CONVERTNKOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CONVERTNKOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 rrdcachectl: $(RRDCACHECTLOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbit.sh: hobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@

@@ -9,10 +9,10 @@ LIBOBJS = ../lib/$(HOBBITLIBRARY)
 all: $(PROGRAMS)
 
 bbproxy: $(PROXYOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 bbmessage.cgi: $(BBCGIOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 ################################################
 # Default compilation rules

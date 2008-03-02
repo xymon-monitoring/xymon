@@ -21,7 +21,7 @@ PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
 bbtest-net: $(NETTESTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(LIBOBJS) libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(LIBOBJS) libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitping: $(PINGTESTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(LIBOBJS) $(NETLIBS)
@@ -64,18 +64,18 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	touch c-ares/configure
 
 beastat: $(BEASTATOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
 contest: contest.c $(LIBOBJS)
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o ./libcares.a $(LIBOBJS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o ./libcares.a $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 
 hobbit_snmpcollect: hobbit_snmpcollect.o $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ hobbit_snmpcollect.o `net-snmp-config --libs` $(LIBOBJS) $(NETLIBS)
+	$(CC) $(LDFLAGS) -o $@ hobbit_snmpcollect.o `net-snmp-config --libs` $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbit_snmpcollect.o: hobbit_snmpcollect.c
 	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ hobbit_snmpcollect.c
