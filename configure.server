@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit server
-# $Id: configure.server,v 1.70 2008-02-04 21:20:13 henrik Exp $
+# $Id: configure.server,v 1.71 2008-03-02 12:41:36 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit"
@@ -88,6 +88,9 @@ echo ""; echo ""
 . build/rrd.sh
 echo ""; echo ""
 . build/pcre.sh
+echo ""; echo ""
+
+. build/zlib.sh
 echo ""; echo ""
 
 . build/ssl.sh
@@ -365,7 +368,7 @@ then
 fi
 echo ""; echo ""
 
-BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
+BBHOSTOS=`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`
 if test "$BBHOME" = ""; then
 	BBHOME=$BBTOPDIR/server
 fi
@@ -430,12 +433,14 @@ echo "# RRDtool settings"                >>Makefile
 echo "RRDDEF = $RRDDEF"                  >>Makefile
 echo "RRDINCDIR = -I$RRDINC"             >>Makefile
 echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
-echo "RPATHVAL += ${RRDLIB}"             >>Makefile
 echo ""                                  >>Makefile
 echo "# PCRE settings"                   >>Makefile
 echo "PCREINCDIR = -I$PCREINC"           >>Makefile
 echo "PCRELIBS = -L$PCRELIB -lpcre"      >>Makefile
-echo "RPATHVAL += ${PCRELIB}"            >>Makefile
+echo "#"                                 >>Makefile
+echo "# ZLIB settings"                   >>Makefile
+echo "ZLIBINCDIR = -I$ZLIBINC"           >>Makefile
+echo "HOBBITZLIB = -L$ZLIBLIB -lz"       >>Makefile
 echo "#"                                 >>Makefile
 echo "# OpenSSL settings"                >>Makefile
 echo "SSLFLAGS = $SSLDEF"                >>Makefile
@@ -443,7 +448,6 @@ if test "$SSLDEF" != ""
 then
 	echo "SSLINCDIR = -I$OSSLINC"    >>Makefile
 	echo "SSLLIBS = -L$OSSLLIB -lssl -lcrypto" >>Makefile
-	echo "RPATHVAL += ${OSSLLIB}"    >>Makefile
 fi
 echo "#"                                 >>Makefile
 echo "# OpenLDAP settings"               >>Makefile
@@ -457,7 +461,6 @@ then
 	if test "$LDAPLIB" != ""
 	then
 		echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
-		echo "RPATHVAL += ${LDAPLIB}"                 >>Makefile
 	else
 		echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
 	fi
@@ -478,7 +481,12 @@ echo "MAXALERTMSGSZ = 4096"              >>Makefile
 echo "" >>Makefile
 echo "# Build a shared library for common Hobbit code"  >>Makefile
 echo "# NOTE: Only tested on Linux" >>Makefile
-echo "# HOBBITLIBARY = libhobbit.so" >>Makefile
+echo "# HOBBITLIBRARY = libhobbit.so" >>Makefile
+
+# Get the run-time library paths, but only once per directory
+LIBDIRS=`for D in "${RRDLIB}" "${PCRELIB}" "${ZLIBLIB}" "${OSSLLIB}" "${LDAPLIB}" "${BBHOME}/bin"; do echo "$D"; done | sort | uniq | xargs echo`
+echo ""                                  >>Makefile
+echo "RPATHVAL += ${LIBDIRS}"            >>Makefile
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
