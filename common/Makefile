@@ -66,7 +66,8 @@ install: install-bin install-man
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
-	ln -sf $(INSTALLROOT)$(INSTALLBINDIR)/bbz
+	if test -f $(INSTALLROOT)$(INSTALLBINDIR)/bbz; then rm -f $(INSTALLROOT)$(INSTALLBINDIR)/bbz; fi
+	cd $(INSTALLROOT)$(INSTALLBINDIR) && ln -s bb bbz
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5 $(INSTALLROOT)$(MANROOT)/man7 $(INSTALLROOT)$(MANROOT)/man8
