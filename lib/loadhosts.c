@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.75 2008-02-27 09:28:44 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.76 2008-03-02 12:12:50 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -367,8 +367,7 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling)
 	/* Allow all summaries */
 	if (strcmp(hostname, "summary") == 0) return result;
 
-	if ((walk->notbefore > now) || (walk->notafter < now)) return NULL;
-
+	if (walk && ( ((walk->notbefore > now) || (walk->notafter < now)) )) walk = NULL;
 	return (walk ? result : NULL);
 }
 
