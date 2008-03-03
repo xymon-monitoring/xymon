@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.120 2008-02-27 09:30:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.121 2008-03-03 13:57:32 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1475,6 +1475,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/bbwin.c"
 #include "client/zvm.c"
 #include "client/zvse.c"
+#include "client/zos.c"
 #include "client/snmpcollect.c"
 #include "client/gnukfreebsd.c"
 
@@ -1925,6 +1926,10 @@ int main(int argc, char *argv[])
 
 			  case OS_ZVSE:
 				handle_zvse_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_ZOS:
+				handle_zos_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_SNMPCOLLECT:

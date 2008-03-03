@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.65 2008-01-28 11:18:26 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.66 2008-03-03 13:57:32 henrik Exp $";
 
 #include "config.h"
 
@@ -75,6 +75,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "netware_snmp") == 0) result = OS_NETWARE_SNMP;
 	else if (strcasecmp(osname, "zvm") == 0)         result = OS_ZVM;
 	else if (strcasecmp(osname, "zvse") == 0)        result = OS_ZVSE;
+	else if (strcasecmp(osname, "zos") == 0)         result = OS_ZOS;
 	else if (strcasecmp(osname, "snmpcollect") == 0) result = OS_SNMPCOLLECT;
 	else if (strcasecmp(osname, "gnu/kfreebsd") == 0) result = OS_GNUKFREEBSD;
 	else if (strcasecmp(osname, "gnu_kfreebsd") == 0) result = OS_GNUKFREEBSD;
@@ -108,6 +109,7 @@ char *osname(enum ostype_t os)
 	        case OS_NETWARE_SNMP: return "netware_snmp";
 		case OS_ZVM: return "zvm";
 		case OS_ZVSE: return "zvse";
+		case OS_ZOS: return "zos";
 		case OS_SNMPCOLLECT: return "snmpcollect";
 		case OS_GNUKFREEBSD: return "gnu/kfreebsd";
 		case OS_UNKNOWN: return "unknown";

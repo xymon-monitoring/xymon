@@ -11,20 +11,17 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char paging_rcsid[] = "$Id: do_paging.c,v 1.4 2008-01-03 10:13:50 henrik Exp $";
+static char paging_rcsid[] = "$Id: do_paging.c,v 1.5 2008-03-03 13:57:32 henrik Exp $";
 
 static char *paging_params[] = { "DS:paging:GAUGE:600:0:U", NULL };
 static char *paging_tpl      = NULL;
 
 int do_paging_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
-	char *p1, *p2, *p3, *pr;
+	char *pr;
 	int pagerate;
 
-	p1=(strstr(msg, "z/VM"));
-	p2=(strstr(msg, "z/VSE"));
-
-	if (p1 || p2) {
+	if (strstr(msg, "z/VM") || strstr(msg, "z/VSE") || strstr(msg, "z/OS")) {
 		pr=(strstr(msg, "Rate"));
 		if (pr) {
 			pr += 5;

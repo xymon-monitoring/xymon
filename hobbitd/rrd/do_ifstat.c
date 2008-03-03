@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.18 2008-01-14 21:21:53 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.19 2008-03-03 13:57:32 henrik Exp $";
 
 static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
@@ -186,6 +186,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		  case OS_RHEL3:
 		  case OS_ZVM:
 		  case OS_ZVSE:
+		  case OS_ZOS:
 			if (pickdata(bol, ifstat_linux_pcres[0], 1, &ifname)) {
 				/*
 				 * Linux' netif aliases mess up things. 
