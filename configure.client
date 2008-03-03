@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit CLIENT
-# $Id: configure.client,v 1.5 2006-08-07 15:38:05 henrik Exp $
+# $Id: configure.client,v 1.6 2008-03-03 11:53:32 henrik Exp $
 
 echo ""
 echo "Configuration script for Hobbit client"
@@ -53,6 +53,9 @@ then
 	echo ""
 fi
 echo ""
+
+. build/zlib.sh
+echo ""; echo ""
 
 MAKE="$MAKE -s" ./build/lfs.sh
 if test $? -eq 0; then
@@ -163,6 +166,9 @@ echo "# Hobbit server IP-address"        >>Makefile
 echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
+echo "# ZLIB settings"                   >>Makefile
+echo "ZLIBINCDIR = -I$ZLIBINC"           >>Makefile
+echo "HOBBITZLIB = -L$ZLIBLIB -lz"       >>Makefile
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
