@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: htmllog.c,v 1.62 2008-02-04 21:54:34 henrik Exp $";
+static char rcsid[] = "$Id: htmllog.c,v 1.63 2008-03-04 22:02:44 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -138,7 +138,7 @@ static void textwithcolorimg(char *msg, FILE *output)
 void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
 		       int color, int flapping, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
-		       char *firstline, char *restofmsg, 
+		       char *firstline, char *restofmsg, char *modifiers,
 		       time_t acktime, char *ackmsg, char *acklist,
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int locatorbased,
@@ -297,13 +297,28 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			
 	}
 	else {
-		char *txt = skipword(firstline);
+		char *txt;
 
 		if (dismsg) {
 			fprintf(output, "<TR><TD><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
 			fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 		}
 
+		if (modifiers) {
+			nldecode(modifiers);
+			fprintf(output, "<TR><TD>");
+			txt = strtok(modifiers, "\n");
+			while (txt) {
+				fprintf(output, "<H3>");
+				textwithcolorimg(txt, output);
+				fprintf(output, "</H3>");
+				txt = strtok(NULL, "\n");
+				if (txt) fprintf(output, "<br>");
+			}
+			fprintf(output, "\n");
+		}
+
+		txt = skipword(firstline);
 		fprintf(output, "<TR><TD>");
 		if (strlen(txt)) {
 			fprintf(output, "<H3>");

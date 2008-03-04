@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.279 2008-03-02 12:49:40 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.280 2008-03-04 22:02:44 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -103,6 +103,12 @@ typedef struct testinfo_t {
 	int clientsave;
 } testinfo_t;
 
+typedef struct modifier_t {
+	char *source, *cause;
+	int color, valid;
+	struct modifier_t *next;
+} modifier_t;
+
 /* This holds all information about a single status */
 typedef struct hobbitd_log_t {
 	struct hobbitd_hostlist_t *host;
@@ -123,6 +129,7 @@ typedef struct hobbitd_log_t {
 	int cookie;
 	time_t cookieexpires;
 	struct hobbitd_meta_t *metas;
+	struct modifier_t *modifiers;
 	ackinfo_t *acklist;	/* Holds list of acks */
 	unsigned long statuschangecount;
 	struct hobbitd_log_t *next;
@@ -272,6 +279,7 @@ enum boardfield_t { F_NONE, F_HOSTNAME, F_TESTNAME, F_COLOR, F_FLAGS,
 		    F_HOSTINFO,
 		    F_FLAPINFO,
 		    F_STATS,
+		    F_MODIFIERS,
 		    F_LAST };
 
 typedef struct boardfieldnames_t {
@@ -300,6 +308,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "BBH_", F_HOSTINFO },
 	{ "flapinfo", F_FLAPINFO },
 	{ "stats", F_STATS },
+	{ "modifiers", F_MODIFIERS },
 	{ NULL, F_LAST },
 };
 typedef struct boardfields_t {
@@ -641,6 +650,19 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 
 						(int) log->host->clientmsgtstamp);
+			}
+			if (n < (bufsz-5)) {
+				modifier_t *mwalk;
+
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
+				mwalk = log->modifiers;
+				while ((n < (bufsz-5)) && mwalk) {
+					if (mwalk->valid) {
+						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
+								nlencode(mwalk->cause));
+					}
+					mwalk = mwalk->next;
+				}
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
@@ -1048,7 +1070,7 @@ void clear_cookie(hobbitd_log_t *log)
 
 
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist, 
-		   hobbitd_log_t *log, int newcolor, char *downcause)
+		   hobbitd_log_t *log, int newcolor, char *downcause, int modifyonly)
 {
 	int validity = 30;	/* validity is counted in minutes */
 	time_t now = getcurrenttime(NULL);
@@ -1081,6 +1103,31 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		validity = durationvalue(msg+7);
 	}
 
+	if (!modifyonly && log->modifiers) {
+		/*
+		 * Original status message - check if there is an active modifier for the color.
+		 * We dont do this for status changes triggered by a "modify" command.
+		 */
+		modifier_t *mwalk;
+		int mcolor = -1;
+
+		for (mwalk = log->modifiers; (mwalk); mwalk = mwalk->next) {
+			if (mwalk->valid <= 0) continue;
+
+			mwalk->valid--;
+			if (mwalk->valid == 0) {
+				/* Modifier no longer valid */
+				if (mwalk->cause) xfree(mwalk->cause);
+				continue;
+			}
+
+			if (mwalk->color > mcolor) mcolor = mwalk->color;
+		}
+
+		/* If there was an active modifier, this overrides the current "newcolor" status value */
+		if ((mcolor != -1) && (mcolor != newcolor)) newcolor = mcolor;
+	}
+
 	/*
 	 * Flap check. 
 	 *
@@ -1089,7 +1136,10 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	 * is less serious than the old color, then we ignore the
 	 * color change and keep the status at the more serious level.
 	 */
-	if (!issummary && ((now - log->lastchange[LASTCHANGESZ-1]) < flapthreshold)) {
+	if (modifyonly) {
+		/* Nothing */
+	}
+	else if (!issummary && ((now - log->lastchange[LASTCHANGESZ-1]) < flapthreshold)) {
 		if (!log->flapping) {
 			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
 				  hostname, testname, LASTCHANGESZ, (now - log->lastchange[LASTCHANGESZ-1]));
@@ -1169,39 +1219,42 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		}
 	}
 
-	log->logtime = now;
+	if (!modifyonly) {
+		log->logtime = now;
 
-	/*
-	 * Decide how long this status is valid.
-	 *
-	 * Normally we'll just set the valid time according 
-	 * to the validity of the status report.
-	 *
-	 * If the status is acknowledged, make it valid for the longest period
-	 * of the acknowledgment and the normal validity (so an acknowledged status
-	 * does not go purple because it is not being updated due to the host being down).
-	 *
-	 * Same tweak must be done for disabled tests.
-	 */
-	log->validtime = now + validity*60;
-	if (log->acktime    && (log->acktime > log->validtime))    log->validtime = log->acktime;
-	if (log->enabletime) {
-		if (log->enabletime == DISABLED_UNTIL_OK) log->validtime = INT_MAX;
-		else if (log->enabletime > log->validtime) log->validtime = log->enabletime;
-	}
-
-	/* 
-	 * If we have an existing status, check if the sender has changed.
-	 * This could be an indication of a mis-configured host reporting with
-	 * the wrong hostname.
-	 */
-	if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
-		if ( (strcmp(log->sender, "hobbitd") != 0) && (strcmp(sender, "hobbitd") != 0) )  {
-			log_multisrc(log, sender);
+		/*
+		 * Decide how long this status is valid.
+		 *
+		 * Normally we'll just set the valid time according 
+		 * to the validity of the status report.
+		 *
+		 * If the status is acknowledged, make it valid for the longest period
+		 * of the acknowledgment and the normal validity (so an acknowledged status
+		 * does not go purple because it is not being updated due to the host being down).
+		 *
+		 * Same tweak must be done for disabled tests.
+		 */
+		log->validtime = now + validity*60;
+		if (log->acktime    && (log->acktime > log->validtime))    log->validtime = log->acktime;
+		if (log->enabletime) {
+			if (log->enabletime == DISABLED_UNTIL_OK) log->validtime = INT_MAX;
+			else if (log->enabletime > log->validtime) log->validtime = log->enabletime;
 		}
+
+		/* 
+		 * If we have an existing status, check if the sender has changed.
+		 * This could be an indication of a mis-configured host reporting with
+		 * the wrong hostname.
+		 */
+		if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
+			if ( (strcmp(log->sender, "hobbitd") != 0) && (strcmp(sender, "hobbitd") != 0) )  {
+				log_multisrc(log, sender);
+			}
+		}
+		strncpy(log->sender, sender, sizeof(log->sender)-1);
+		*(log->sender + sizeof(log->sender) - 1) = '\0';
 	}
-	strncpy(log->sender, sender, sizeof(log->sender)-1);
-	*(log->sender + sizeof(log->sender) - 1) = '\0';
+
 	log->oldcolor = log->color;
 	log->color = newcolor;
 	oldalertstatus = decide_alertstate(log->oldcolor);
@@ -1416,6 +1469,79 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 	dbgprintf("<- handle_meta\n");
 }
 
+void handle_modify(char *msg, hobbitd_log_t *log, int color)
+{
+	char *tok, *sourcename, *cause;
+	hobbitd_hostlist_t h;
+	modifier_t *mwalk;
+	int newcolor;
+	time_t now = getcurrenttime(NULL);
+
+	/* "modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE ..." */
+	dbgprintf("->handle_modify\n");
+
+	sourcename = cause = NULL;
+	tok = strtok(msg, " "); /* Skip "modify" */
+	if (tok) tok = strtok(NULL, " "); /* Skip HOSTNAME.TESTNAME */
+	if (tok) tok = strtok(NULL, " "); /* Skip COLOR */
+	if (tok) sourcename = strtok(NULL, " ");
+	if (sourcename) cause = strtok(NULL, "\r\n");
+
+	if (cause) {
+		/* Got all tokens - find the modifier, if this is just an update */
+		for (mwalk = log->modifiers; (mwalk && strcmp(mwalk->source, sourcename)); mwalk = mwalk->next);
+
+		if (color == -1) {
+			/* An invalid color means "cancel the current modifier" */
+			if (mwalk) {
+				mwalk->valid = 0;
+				if (mwalk->cause) xfree(mwalk->cause);
+			}
+		}
+		else {
+			if (!mwalk) {
+				/* New modifier record */
+				mwalk = (modifier_t *)calloc(1, sizeof(modifier_t));
+				mwalk->source = strdup(sourcename);
+				mwalk->next = log->modifiers;
+				log->modifiers = mwalk;
+			}
+
+			mwalk->color = color;
+			mwalk->valid = 2;
+			if (mwalk->cause) xfree(mwalk->cause);
+			mwalk->cause = (char *)malloc(strlen(cause) + 10); /* 10 for maxlength of colorname + markers */
+			sprintf(mwalk->cause, "&%s %s\n", colnames[mwalk->color], cause);
+		}
+
+		/*
+		 * See if there's a change of color because of this modification.
+		 *
+		 * We must determine the color based ONLY on the modifications that
+		 * have been reported.
+		 * The reason we dont include the original status color in the scan
+		 * is because the modifiers override the original status - and they
+		 * can make it both worse (green -> red) or better (red -> green).
+		 *
+		 * So we simply decide what's the worst modifier we have, and if it
+		 * is different than the original status color, we trigger a change.
+		 */
+		for (newcolor=color, mwalk=log->modifiers; (mwalk); mwalk = mwalk->next) {
+			if (!mwalk->valid) continue;
+			if (mwalk->color > newcolor) newcolor = mwalk->color;
+		}
+
+		if (newcolor != log->color) {
+			/* Color change - trigger a status update */
+			handle_status(log->message, log->sender, 
+				log->host->hostname, log->test->name, log->grouplist, log, newcolor, NULL, 1);
+		}
+	}
+
+	dbgprintf("<-handle_modify\n");
+}
+
+
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
 	char *chnbuf;
@@ -1577,7 +1703,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 				}
 				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL);
+				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL, 0);
 			}
 		}
 		else {
@@ -1592,7 +1718,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 				posttochannel(enadischn, channelnames[C_ENADIS], msg->buf, sender, log->host->hostname, log, NULL);
 
 				/* Trigger an immediate status update */
-				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL);
+				handle_status(log->message, sender, log->host->hostname, log->test->name, log->grouplist, log, COL_BLUE, NULL, 0);
 			}
 		}
 
@@ -1868,8 +1994,10 @@ char *acklist_string(hobbitd_log_t *log, int level)
 void free_log_t(hobbitd_log_t *zombie)
 {
 	hobbitd_meta_t *mwalk, *mtmp;
+	modifier_t *modwalk, *modtmp;
 
 	dbgprintf("-> free_log_t\n");
+
 	mwalk = zombie->metas;
 	while (mwalk) {
 		mtmp = mwalk;
@@ -1877,6 +2005,15 @@ void free_log_t(hobbitd_log_t *zombie)
 
 		if (mtmp->value) xfree(mtmp->value);
 		xfree(mtmp);
+	}
+
+	modwalk = zombie->modifiers;
+	while (modwalk) {
+		modtmp = modwalk;
+		modwalk = modwalk->next;
+
+		if (modtmp->cause) xfree(modtmp->cause);
+		xfree(modtmp);
 	}
 
 	if (zombie->message) xfree(zombie->message);
@@ -2367,6 +2504,8 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 	char *acklist = NULL;
 	int needed, used;
 	enum boardfield_t f_type;
+	modifier_t *mwalk;
+	time_t now = getcurrenttime(NULL);
 
 	buf = *outbuf;
 	bufp = *outpos;
@@ -2398,6 +2537,13 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_MSG:
 		  case F_LINE1:
 			needed += 2*strlen(lwalk->message); break;
+
+		  case F_MODIFIERS:
+			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
+				if (!mwalk->valid) continue;
+				needed += 3+2*strlen(mwalk->cause);
+			}
+			break;
 
 		  default: break;
 		}
@@ -2459,6 +2605,13 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		  case F_STATS:
 			bufp += sprintf(bufp, "statuschanges=%lu", lwalk->statuschangecount);
+			break;
+
+		  case F_MODIFIERS:
+			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
+				if (!mwalk->valid) continue;
+				bufp += sprintf(bufp, "%s", nlencode(mwalk->cause));
+			}
 			break;
 
 		  case F_LAST: break;
@@ -2646,7 +2799,7 @@ void do_message(conn_t *msg, char *origin)
 					update_statistics(currmsg);
 
 					if (h && t && log && (color != -1)) {
-						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause);
+						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
 					}
 				}
 			}
@@ -2665,6 +2818,22 @@ void do_message(conn_t *msg, char *origin)
 			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
 				handle_meta(currmsg, log);
+			}
+
+			currmsg = nextmsg;
+		} while (currmsg);
+	}
+	else if (strncmp(msg->buf, "modify", 6) == 0) {
+		char *currmsg, *nextmsg;
+
+		currmsg = msg->buf;
+		do {
+			nextmsg = strstr(currmsg, "\n\nmodify");
+			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
+
+			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
+			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+				handle_modify(currmsg, log, color);
 			}
 
 			currmsg = nextmsg;
@@ -2694,7 +2863,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 		else {
 			if (h && t && log && (color != -1)) {
-				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause);
+				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
 			}
 		}
 	}
@@ -2757,7 +2926,7 @@ void do_message(conn_t *msg, char *origin)
 		/* Summaries are always allowed. Or should we ? */
 		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
-			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL);
+			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL, 0);
 		}
 	}
 	else if ((strncmp(msg->buf, "notes", 5) == 0) || (strncmp(msg->buf, "usermsg", 7) == 0)) {
@@ -2896,7 +3065,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
-		 	     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client",
+		 	     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,modifiers",
 			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
 			     &chspage, &chshost, &chsnet, &chstest);
 
@@ -4078,7 +4247,7 @@ void check_purple_status(void)
 					}
 
 					handle_status(lwalk->message, "hobbitd", 
-						hwalk->hostname, lwalk->test->name, lwalk->grouplist, lwalk, newcolor, NULL);
+						hwalk->hostname, lwalk->test->name, lwalk->grouplist, lwalk, newcolor, NULL, 0);
 					lwalk = lwalk->next;
 				}
 			}
@@ -4618,7 +4787,7 @@ int main(int argc, char *argv[])
 					  xgetenv("MACHINE"));
 			}
 			else {
-				handle_status(buf, "hobbitd", h->hostname, t->name, NULL, log, color, NULL);
+				handle_status(buf, "hobbitd", h->hostname, t->name, NULL, log, color, NULL, 0);
 			}
 			last_stats_time = now;
 			flush_errbuf();

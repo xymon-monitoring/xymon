@@ -20,7 +20,7 @@ extern enum histbutton_t histlocation;
 extern void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
 		       int color, int flapping, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
-		       char *firstline, char *restofmsg, 
+		       char *firstline, char *restofmsg, char *modifiers,
 		       time_t acktime, char *ackmsg, char *acklist,
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int locatorbased,
