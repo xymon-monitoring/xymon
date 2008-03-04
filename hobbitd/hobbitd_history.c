@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_history.c,v 1.52 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_history.c,v 1.53 2008-03-04 22:03:39 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *p;
 		char *statusdata = "";
-		char *hostname, *hostnamecommas, *testname, *dismsg;
+		char *hostname, *hostnamecommas, *testname, *dismsg, *modifiers;
 		time_t tstamp, lastchg, disabletime, clienttstamp;
 		int tstamp_i, lastchg_i;
 		int newcolor, oldcolor;
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 		}
 
 		if ((metacount > 9) && (strncmp(items[0], "@@stachg", 8) == 0)) {
-			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp */
+			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp|modifiers */
 			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			hostname = items[4];
 			testname = items[5];
@@ -174,6 +174,7 @@ int main(int argc, char *argv[])
 			dismsg   = items[11];
 			downtimeactive = (atoi(items[12]) > 0);
 			clienttstamp = atoi(items[13]);
+			modifiers = items[14];
 
 			if (newcolor == -1) {
 				errprintf("Bad message: newcolor is unknown '%s'\n", items[7]);
@@ -366,6 +367,11 @@ int main(int argc, char *argv[])
 						fprintf(histlogfd, " Planned downtime: %s\n\n", dismsg);
 						fprintf(histlogfd, "Original status message follows:\n\n");
 						statusdata = origstatus;
+					}
+
+					if (modifiers && *modifiers) {
+						nldecode(modifiers);
+						fprintf(histlogfd, " %s", modifiers);
 					}
 
 					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
