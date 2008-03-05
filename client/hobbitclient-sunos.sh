@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.21 2008-01-03 09:49:28 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.22 2008-03-05 12:30:23 henrik Exp $
 
 echo "[date]"
 date
@@ -21,12 +21,13 @@ echo "[who]"
 who
 
 echo "[df]"
-# All of this because Solaris df cannot show multiple fs-types, or exclude certain fs types.
-FSTYPES=`/bin/df -n -l|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^lofs"|sort|uniq`
-if test "$FSTYPES" = ""; then FSTYPES="ufs"; fi
+# Bothersome, because Solaris df cannot show multiple fs-types, or exclude certain fs types.
+# Print the root filesystem first, with the header, and those fs's that have the same type.
+ROOTFSTYPE=`/bin/df -n / | awk '{print $3}'`
+/bin/df -F $ROOTFSTYPE -k
+# Then see what fs types are in use, and weed out those we dont want.
+FSTYPES=`/bin/df -n -l|awk '{print $3}'|egrep -v "^${ROOTFSTYPE}|^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^lofs"|sort|uniq`
 set $FSTYPES
-/bin/df -F $1 -k | grep -v " /var/run"
-shift
 while test "$1" != ""; do
   /bin/df -F $1 -k | grep -v " /var/run" | tail +2
   shift
