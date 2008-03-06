@@ -117,8 +117,9 @@ hobbit-notifylog.cgi: $(NOTIFYOBJS) $(LIBOBJS)
 hobbit-hostlist.cgi: $(HOSTLISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(LIBOBJS) $(HOBBITZLIB) $(PCRELIBS) $(NETLIBS)
 
+# Need -lm on hobbit-perfdata because it refers to isnan()
 hobbit-perfdata.cgi: $(PERFDATAOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PERFDATAOBJS) $(LIBOBJS) $(HOBBITZLIB) $(PCRELIBS) $(RRDLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PERFDATAOBJS) $(LIBOBJS) $(HOBBITZLIB) $(PCRELIBS) $(RRDLIBS) $(NETLIBS) -lm
 
 
 bb-ack.sh: bb-ack.sh.DIST
