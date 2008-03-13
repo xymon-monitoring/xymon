@@ -17,6 +17,7 @@
 /* reentrant red-black tree */
 
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include "libbbgen.h"
 
