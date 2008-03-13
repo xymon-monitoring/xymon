@@ -16,7 +16,7 @@ LIBOBJS = ../lib/$(HOBBITLIBRARY)
 
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
-NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
+NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
 PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
