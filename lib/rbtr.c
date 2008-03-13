@@ -391,6 +391,11 @@ int name_compare(void *a, void *b)
 	return strcasecmp((char *)a, (char *)b);
 }
 
+int string_compare(void *a, void *b)
+{
+	return strcmp((char *)a, (char *)b);
+}
+
 int int_compare(void *a, void *b)
 {
 	if (*((int *)a) < *((int *)b)) return -1;
