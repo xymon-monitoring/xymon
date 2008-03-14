@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.22 2008-01-03 10:13:50 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.23 2008-03-14 06:30:11 henrik Exp $";
 
 static char *memory_params[]      = { "DS:realmempct:GAUGE:600:0:U", NULL };
 static char *memory_tpl           = NULL;
@@ -21,9 +21,6 @@ static char *memory_tpl           = NULL;
  */
 RbtHandle memhosts;
 int memhosts_init = 0;
-static int string_compare(void *a, void *b) {
-	return strcmp((char *)a, (char *)b);
-}
 
 static int get_mem_percent(char *l)
 {
