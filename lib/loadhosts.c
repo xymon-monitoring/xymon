@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 
-static char rcsid[] = "$Id: loadhosts.c,v 1.76 2008-03-02 12:12:50 henrik Exp $";
+static char rcsid[] = "$Id: loadhosts.c,v 1.77 2008-03-19 23:04:33 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -396,9 +396,9 @@ void *hostinfo(char *hostname)
 
 		rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
 		result = (namelist_t *)k2;
-	}
 
-	if ((result->notbefore > now) || (result->notafter < now)) return NULL;
+		if ((result->notbefore > now) || (result->notafter < now)) return NULL;
+	}
 
 	return result;
 }
