@@ -8,14 +8,14 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.19 2008-01-03 10:13:50 henrik Exp $";
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.20 2008-03-21 11:53:55 henrik Exp $";
 
 int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	static char *bbgen_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
-	static char *bbgen_tpl      = NULL;
+	static void *bbgen_tpl      = NULL;
 	static char *bbgen2_params[] = { "DS:hostcount:GAUGE:600:0:U", "DS:statuscount:GAUGE:600:0:U", NULL };
-	static char *bbgen2_tpl      = NULL;
+	static void *bbgen2_tpl      = NULL;
 	static char *bbgen3_params[] = { "DS:redcount:GAUGE:600:0:U", "DS:rednopropcount:GAUGE:600:0:U",
 					 "DS:yellowcount:GAUGE:600:0:U", "DS:yellownopropcount:GAUGE:600:0:U",
 					 "DS:greencount:GAUGE:600:0:U",
@@ -29,7 +29,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					 "DS:clearpct:GAUGE:600:0:100",
 					 "DS:bluepct:GAUGE:600:0:100",
 					NULL };
-	static char *bbgen3_tpl      = NULL;
+	static void *bbgen3_tpl      = NULL;
 
 	char	*p, *bol, *eoln;
 	float	runtime;

@@ -11,10 +11,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char paging_rcsid[] = "$Id: do_paging.c,v 1.6 2008-03-21 10:54:49 henrik Exp $";
+static char paging_rcsid[] = "$Id: do_paging.c,v 1.7 2008-03-21 11:53:55 henrik Exp $";
 
 static char *paging_params[] = { "DS:paging:GAUGE:600:0:U", NULL };
-static char *paging_tpl      = NULL;
+static void *paging_tpl      = NULL;
 
 int do_paging_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 

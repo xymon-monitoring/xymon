@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.19 2008-03-03 13:57:32 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.20 2008-03-21 11:53:55 henrik Exp $";
 
 static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
 				 NULL };
-static char *ifstat_tpl       = NULL;
+static void *ifstat_tpl       = NULL;
 
 
 /* eth0   Link encap:                                                 */

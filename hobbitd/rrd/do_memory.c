@@ -8,10 +8,10 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.23 2008-03-14 06:30:11 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c,v 1.24 2008-03-21 11:53:55 henrik Exp $";
 
 static char *memory_params[]      = { "DS:realmempct:GAUGE:600:0:U", NULL };
-static char *memory_tpl           = NULL;
+static void *memory_tpl           = NULL;
 
 /*
  * Use the R/B tree to hold names of the hosts

@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.18 2008-01-03 10:13:50 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.19 2008-03-21 11:53:55 henrik Exp $";
 
 int do_ntpstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *ntpstat_params[]     = { "DS:offsetms:GAUGE:600:U:U", NULL };
-	static char *ntpstat_tpl          = NULL;
+	static void *ntpstat_tpl          = NULL;
 
 	char *p;
 	float offset;

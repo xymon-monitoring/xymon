@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.17 2008-01-03 10:13:50 henrik Exp $";
+static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.18 2008-03-21 11:53:55 henrik Exp $";
 
 int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
 	static char *bbproxy_params[]       = { "DS:runtime:GAUGE:600:0:U", NULL };
-	static char *bbproxy_tpl            = NULL;
+	static void *bbproxy_tpl            = NULL;
 
 	char	*p;
 	float	runtime;

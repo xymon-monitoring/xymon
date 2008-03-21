@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.18 2008-01-03 10:13:50 henrik Exp $";
+static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.19 2008-03-21 11:53:55 henrik Exp $";
 
 int do_iostat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -34,7 +34,7 @@ int do_iostat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					"DS:sw:GAUGE:600:1:U", "DS:hw:GAUGE:600:1:U", 
 					"DS:trn:GAUGE:600:1:U", "DS:tot:GAUGE:600:1:U", 
 					NULL };
-	static char *iostat_tpl      = NULL;
+	static void *iostat_tpl      = NULL;
 
 	typedef struct iostatkey_t { 
 		char *key; 

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.5 2008-01-03 10:13:50 henrik Exp $";
+static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.6 2008-03-21 11:53:55 henrik Exp $";
 
 static char *ifmib_params[] = { 
 	                        "DS:ifInNUcastPkts:COUNTER:600:0:U", 
@@ -32,7 +32,7 @@ static char *ifmib_params[] = {
 				"DS:InUcastPkts:COUNTER:600:0:U", 
 	                        "DS:OutUcastPkts:COUNTER:600:0:U", 
 			 	NULL };
-static char *ifmib_tpl      = NULL;
+static void *ifmib_tpl      = NULL;
 
 static char *ifmib_valnames[] = {
 	/* These are in the standard interface MIB */

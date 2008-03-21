@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.13 2008-01-03 10:13:50 henrik Exp $";
+static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.14 2008-03-21 11:53:55 henrik Exp $";
 
 int do_iishealth_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
 { 
 	static char *iishealth_params[] = { "DS:realmempct:GAUGE:600:0:U", NULL };
-	static char *iishealth_tpl      = NULL;
+	static void *iishealth_tpl      = NULL;
 
 	char *bol, *eoln, *tok;
 

@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.21 2008-01-03 10:13:50 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.22 2008-03-21 11:53:55 henrik Exp $";
 
 int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *bbnet_params[]       = { "DS:sec:GAUGE:600:0:U", NULL };
-	static char *bbnet_tpl            = NULL;
+	static void *bbnet_tpl            = NULL;
 
 	char *p;
 	float seconds = 0.0;

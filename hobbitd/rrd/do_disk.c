@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.37 2008-01-03 10:13:50 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.38 2008-03-21 11:53:55 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *disk_params[] = { "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", NULL };
-	static char *disk_tpl      = NULL;
+	static void *disk_tpl      = NULL;
 
 	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;

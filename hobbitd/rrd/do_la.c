@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.32 2008-03-03 13:57:32 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.33 2008-03-21 11:53:55 henrik Exp $";
 
 int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *la_params[]          = { "DS:la:GAUGE:600:0:U", NULL };
-	static char *la_tpl               = NULL;
+	static void *la_tpl               = NULL;
 
 	static pcre *as400_exp = NULL;
 	static pcre *zVM_exp = NULL;

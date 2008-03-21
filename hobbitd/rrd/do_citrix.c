@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char citrix_rcsid[] = "$Id: do_citrix.c,v 1.16 2008-01-03 10:13:50 henrik Exp $";
+static char citrix_rcsid[] = "$Id: do_citrix.c,v 1.17 2008-03-21 11:53:55 henrik Exp $";
 
 int do_citrix_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *citrix_params[] = { "DS:users:GAUGE:600:0:U", NULL };
-	static char *citrix_tpl      = NULL;
+	static void *citrix_tpl      = NULL;
 
 	char *p;
 	int users;

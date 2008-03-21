@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.20 2008-01-03 10:13:50 henrik Exp $";
+static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.21 2008-03-21 11:53:55 henrik Exp $";
 
 int do_mailq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
 	static char *mailq_params[]       = { "DS:mailq:GAUGE:600:0:U", NULL };
-	static char *mailq_tpl            = NULL;
+	static void *mailq_tpl            = NULL;
 
 	char	*p;
 	char    *inqueue, *outqueue;

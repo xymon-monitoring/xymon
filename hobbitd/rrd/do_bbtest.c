@@ -8,12 +8,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.17 2008-01-03 10:13:50 henrik Exp $";
+static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.18 2008-03-21 11:53:55 henrik Exp $";
 
 int do_bbtest_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
 	static char *bbtest_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
-	static char *bbtest_tpl      = NULL;
+	static void *bbtest_tpl      = NULL;
 
 	char	*p;
 	float	runtime;

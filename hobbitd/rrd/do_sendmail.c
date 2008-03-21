@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.18 2008-01-03 10:13:50 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.19 2008-03-21 11:53:55 henrik Exp $";
 
 int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
@@ -19,7 +19,7 @@ int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					     "DS:msgsrej:DERIVE:600:0:U",
 					     "DS:msgsdis:DERIVE:600:0:U",
 					     NULL };
-	static char *sendmail_tpl_1      = NULL;
+	static void *sendmail_tpl_1      = NULL;
 
 	static char *sendmail_params_2[] = { "DS:msgsfr:DERIVE:600:0:U",
 					     "DS:bytes_from:DERIVE:600:0:U",
@@ -29,7 +29,7 @@ int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					     "DS:msgsdis:DERIVE:600:0:U",
 					     "DS:msgsqur:DERIVE:600:0:U",
 					     NULL };
-	static char *sendmail_tpl_2      = NULL;
+	static void *sendmail_tpl_2      = NULL;
 
 	/*
 	 * The data we process is the output from the "mailstats" command.

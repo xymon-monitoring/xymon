@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.34 2008-01-03 10:13:50 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.35 2008-03-21 11:53:55 henrik Exp $";
 
 static char *netstat_params[] = { "DS:udpInDatagrams:DERIVE:600:0:U", 
 	                          "DS:udpOutDatagrams:DERIVE:600:0:U", 
@@ -27,7 +27,7 @@ static char *netstat_params[] = { "DS:udpInDatagrams:DERIVE:600:0:U",
 	                          "DS:tcpInUnorderPackets:DERIVE:600:0:U", 
 	                          "DS:tcpRetransPackets:DERIVE:600:0:U", 
 				  NULL };
-static char *netstat_tpl       = NULL;
+static void *netstat_tpl       = NULL;
 
 static char *udpreceived = NULL,
 	    *udpsent = NULL,
