@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char paging_rcsid[] = "$Id: do_paging.c,v 1.5 2008-03-03 13:57:32 henrik Exp $";
+static char paging_rcsid[] = "$Id: do_paging.c,v 1.6 2008-03-21 10:54:49 henrik Exp $";
 
 static char *paging_params[] = { "DS:paging:GAUGE:600:0:U", NULL };
 static char *paging_tpl      = NULL;
@@ -20,6 +20,8 @@ int do_paging_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
 	char *pr;
 	int pagerate;
+
+	if (paging_tpl == NULL) paging_tpl = setup_template(paging_params);
 
 	if (strstr(msg, "z/VM") || strstr(msg, "z/VSE") || strstr(msg, "z/OS")) {
 		pr=(strstr(msg, "Rate"));
