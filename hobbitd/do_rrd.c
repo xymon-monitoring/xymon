@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.58 2008-01-11 13:07:05 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.59 2008-03-22 12:55:03 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,6 +27,7 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.58 2008-01-11 13:07:05 henrik Exp $";
 
 #include "hobbitd_rrd.h"
 #include "do_rrd.h"
+#include "client_config.h"
 
 
 char *rrddir = NULL;
@@ -54,7 +55,7 @@ static int updcache_keyofs = -1;
 static RbtHandle updcache;
 typedef struct updcacheitem_t {
 	char *key;
-	char *tpl;
+	rrdtpldata_t *tpl;
 	int valcount;
 	char *vals[CACHESZ];
 } updcacheitem_t;
@@ -139,37 +140,6 @@ void shutdown_extprocessor(void)
 }
 
 
-static char *setup_template(char *params[])
-{
-	int i;
-	char *result = NULL;
-
-	for (i = 0; (params[i]); i++) {
-		if (strncasecmp(params[i], "DS:", 3) == 0) {
-			char *pname, *pend;
-
-			pname = params[i] + 3;
-			pend = strchr(pname, ':');
-			if (pend) {
-				int plen = (pend - pname);
-
-				if (result == NULL) {
-					result = (char *)malloc(plen + 1);
-					*result = '\0';
-				}
-				else {
-					/* Hackish way of getting the colon delimiter */
-					pname--; plen++;
-					result = (char *)realloc(result, strlen(result) + plen + 1);
-				}
-				strncat(result, pname, plen);
-			}
-		}
-	}
-
-	return result;
-}
-
 static void setupfn(char *format, char *param)
 {
 	char *p;
@@ -223,10 +193,10 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	int i, pcount, result;
 
 	dbgprintf("Flushing '%s' with %d updates pending, template '%s'\n", 
-		  cacheitem->key, (newdata ? 1 : 0) + cacheitem->valcount, cacheitem->tpl);
+		  cacheitem->key, (newdata ? 1 : 0) + cacheitem->valcount, cacheitem->tpl->template);
 
 	/* ISO C90: parameters cannot be used as initializers */
-	updparams[3] = cacheitem->tpl;
+	updparams[3] = cacheitem->tpl->template;
 
 	/* Setup the parameter list with all of the cached and new readings */
 	for (i=0; (i < cacheitem->valcount); i++) updparams[4+i] = cacheitem->vals[i];
@@ -244,7 +214,7 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	return result;
 }
 
-static int create_and_update_rrd(char *hostname, char *testname, char *creparams[], char *template)
+static int create_and_update_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *creparams[], void *template)
 {
 	static int callcounter = 0;
 	struct stat st;
@@ -253,6 +223,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 	RbtIterator handle;
 	updcacheitem_t *cacheitem = NULL;
 	int pollinterval;
+	char *modifymsg;
 
 	/* Reset the RRD poll interval */
 	pollinterval = rrdinterval;
@@ -279,7 +250,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 	snprintf(filedir, sizeof(filedir)-1, "%s/%s/%s", rrddir, hostname, rrdfn);
 	filedir[sizeof(filedir)-1] = '\0'; /* Make sure it is null terminated */
 
-	/* Prepare to cache the update. Create the cache tree, and find/create a cache record */
+	/* 
+	 * Prepare to cache the update. Create the cache tree, and find/create a cache record.
+	 * Note: Cache records are persistent, once created they remain in place forever.
+	 * Only the update-data is flushed from time to time.
+	 */
 	if (updcache_keyofs == -1) {
 		updcache = rbtNew(name_compare);
 		updcache_keyofs = strlen(rrddir);
@@ -289,7 +264,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 	if (handle == rbtEnd(updcache)) {
 		cacheitem = (updcacheitem_t *)calloc(1, sizeof(updcacheitem_t));
 		cacheitem->key = strdup(updcachekey);
-		cacheitem->tpl = (template ? strdup(template) : setup_template(creparams));
+		if (!template) template = setup_template(creparams);
+		cacheitem->tpl = template;
 		rbtInsert(updcache, cacheitem->key, cacheitem);
 	}
 	else {
@@ -350,12 +326,18 @@ static int create_and_update_rrd(char *hostname, char *testname, char *creparams
 	}
 
 	/*
+	 * Match the RRD data against any DS client-configuration modifiers.
+	 */
+	modifymsg = check_rrdds_thresholds(hostname, classname, pagepaths, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
+	if (modifymsg) sendmessage(modifymsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+
+	/*
 	 * See if we want the data to go to an external handler.
 	 */
 	if (processorstream) {
 		int i, n;
 
-		n = fprintf(processorstream, "%s %s %s", template, rrdvalues, hostname);
+		n = fprintf(processorstream, "%s %s %s", ((rrdtpldata_t *)template)->template, rrdvalues, hostname);
 		for (i=0; ((n >= 0) && fnparams[i]); i++) n = fprintf(processorstream, " %s", fnparams[i]);
 		if (n >= 0) n = fprintf(processorstream, "\n");
 		if (n >= 0) fflush(processorstream);
@@ -523,7 +505,6 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_ifstat.c"
 
 #include "rrd/do_apache.c"
-#include "rrd/do_bind.c"
 #include "rrd/do_sendmail.c"
 #include "rrd/do_mailq.c"
 #include "rrd/do_iishealth.c"
@@ -541,7 +522,7 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_ifmib.c"
 #include "rrd/do_snmpmib.c"
 
-void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
+void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef, char *classname, char *pagepaths)
 {
 	int res = 0;
 	char *id;
@@ -551,51 +532,50 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	if (ldef) id = ldef->hobbitrrdname; else id = testname;
 	senderip = sender;
 
-	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bbproxy") == 0)     res = do_bbproxy_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "hobbitd") == 0)     res = do_hobbitd_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "citrix") == 0)      res = do_citrix_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "ntpstat") == 0)     res = do_ntpstat_rrd(hostname, testname, msg, tstamp);
+	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbproxy") == 0)     res = do_bbproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "hobbitd") == 0)     res = do_hobbitd_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "citrix") == 0)      res = do_citrix_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ntpstat") == 0)     res = do_ntpstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "la") == 0)          res = do_la_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "disk") == 0)        res = do_disk_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "memory") == 0)      res = do_memory_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "netstat") == 0)     res = do_netstat_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "vmstat") == 0)      res = do_vmstat_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "iostat") == 0)      res = do_iostat_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "ifstat") == 0)      res = do_ifstat_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "la") == 0)          res = do_la_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "disk") == 0)        res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "memory") == 0)      res = do_memory_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "netstat") == 0)     res = do_netstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "vmstat") == 0)      res = do_vmstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "iostat") == 0)      res = do_iostat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ifstat") == 0)      res = do_ifstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/* These two come from the filerstats2bb.pl script. The reports are in disk-format */
-	else if (strcmp(id, "inode") == 0)       res = do_disk_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "qtree") == 0)       res = do_disk_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "inode") == 0)       res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "qtree") == 0)       res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "apache") == 0)      res = do_apache_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bind") == 0)        res = do_bind_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "mailq") == 0)       res = do_mailq_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "temperature") == 0) res = do_temperature_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "apache") == 0)      res = do_apache_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "mailq") == 0)       res = do_mailq_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "temperature") == 0) res = do_temperature_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "ncv") == 0)         res = do_ncv_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "tcp") == 0)         res = do_net_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ncv") == 0)         res = do_ncv_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "tcp") == 0)         res = do_net_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "filesizes") == 0)   res = do_filesizes_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, msg, tstamp);
-	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
-	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
-	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "filesizes") == 0)   res = do_filesizes_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
-	else if (strcmp(id, "ifmib") == 0)       res = do_ifmib_rrd(hostname, testname, msg, tstamp);
-	else if (is_snmpmib_rrd(id))             res = do_snmpmib_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ifmib") == 0)       res = do_ifmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (is_snmpmib_rrd(id))             res = do_snmpmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
 
 		for (i=0; (extids[i] && strcmp(extids[i], id)); i++) ;
 
-		if (extids[i]) res = do_external_rrd(hostname, testname, msg, tstamp);
+		if (extids[i]) res = do_external_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	}
 
 	senderip = NULL;
