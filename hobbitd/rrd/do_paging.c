@@ -11,12 +11,12 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char paging_rcsid[] = "$Id: do_paging.c,v 1.7 2008-03-21 11:53:55 henrik Exp $";
+static char paging_rcsid[] = "$Id: do_paging.c,v 1.8 2008-03-22 07:48:55 henrik Exp $";
 
 static char *paging_params[] = { "DS:paging:GAUGE:600:0:U", NULL };
 static void *paging_tpl      = NULL;
 
-int do_paging_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_paging_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	char *pr;
 	int pagerate;
@@ -31,7 +31,7 @@ int do_paging_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			setupfn("%s.rrd", "paging");
 
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, pagerate);
-			create_and_update_rrd(hostname, testname, paging_params, paging_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, paging_params, paging_tpl);
 		}
 
 	}

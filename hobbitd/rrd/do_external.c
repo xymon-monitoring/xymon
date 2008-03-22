@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.21 2008-01-03 10:13:50 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c,v 1.22 2008-03-22 07:48:55 henrik Exp $";
 
-int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_external_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	pid_t childpid;
 
@@ -103,7 +103,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				  case R_DATA:
 					snprintf(rrdvalues, sizeof(rrdvalues)-1, "%d:%s", (int)tstamp, STRBUF(inbuf));
 					rrdvalues[sizeof(rrdvalues)-1] = '\0';
-					create_and_update_rrd(hostname, testname, params, NULL);
+					create_and_update_rrd(hostname, testname, classname, pagepaths, params, NULL);
 					pstate = R_NEXT;
 					break;
 

@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.22 2008-03-21 11:53:55 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c,v 1.23 2008-03-22 07:48:55 henrik Exp $";
 
-int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *bbnet_params[]       = { "DS:sec:GAUGE:600:0:U", NULL };
 	static void *bbnet_tpl            = NULL;
@@ -45,7 +45,7 @@ int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				p = urlfn; while ((p = strchr(p, '/')) != NULL) *p = ',';
 				setupfn3("%s.%s.%s.rrd", "tcp", "http", urlfn);
 				sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-				create_and_update_rrd(hostname, testname, bbnet_params, bbnet_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
 				xfree(url); url = NULL;
 			}
 
@@ -76,7 +76,7 @@ int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		setupfn2("%s.%s.rrd", "tcp", testname);
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
-		return create_and_update_rrd(hostname, testname, bbnet_params, bbnet_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
 	}
 	else {
 		/*
@@ -86,7 +86,7 @@ int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (p && (sscanf(p+1, "Seconds: %f", &seconds) == 1)) {
 			setupfn2("%s.%s.rrd", "tcp", testname);
 			sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-			return create_and_update_rrd(hostname, testname, bbnet_params, bbnet_tpl);
+			return create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
 		}
 	}
 

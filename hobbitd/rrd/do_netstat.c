@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.35 2008-03-21 11:53:55 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.36 2008-03-22 07:48:55 henrik Exp $";
 
 static char *netstat_params[] = { "DS:udpInDatagrams:DERIVE:600:0:U", 
 	                          "DS:udpOutDatagrams:DERIVE:600:0:U", 
@@ -408,7 +408,7 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 	return gotany;
 }
 
-int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
 	static pcre **netstat_osf_pcres = NULL;
@@ -529,7 +529,7 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	if (havedata > 0) {
 		setupfn("%s.rrd", "netstat");
-		return create_and_update_rrd(hostname, testname, netstat_params, netstat_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, netstat_params, netstat_tpl);
 	}
 	else {
 		return -1;

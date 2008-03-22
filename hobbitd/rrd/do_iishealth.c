@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.14 2008-03-21 11:53:55 henrik Exp $";
+static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.15 2008-03-22 07:48:55 henrik Exp $";
 
-int do_iishealth_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_iishealth_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	static char *iishealth_params[] = { "DS:realmempct:GAUGE:600:0:U", NULL };
 	static void *iishealth_tpl      = NULL;
@@ -54,7 +54,7 @@ int do_iishealth_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				havedata = 1;
 			}
 
-			if (havedata) create_and_update_rrd(hostname, testname, iishealth_params, iishealth_tpl);
+			if (havedata) create_and_update_rrd(hostname, testname, classname, pagepaths, iishealth_params, iishealth_tpl);
 		}
 
 		bol = (eoln ? eoln+1 : NULL);

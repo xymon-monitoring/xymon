@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.15 2008-03-21 11:53:55 henrik Exp $";
+static char apache_rcsid[] = "$Id: do_apache.c,v 1.16 2008-03-22 07:48:55 henrik Exp $";
 
-int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_apache_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *apache_params[] = { "DS:TA:DERIVE:600:0:U",
 					 "DS:TKB:DERIVE:600:0:U",
@@ -52,6 +52,6 @@ int do_apache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		i++;
 	}
 
-	return create_and_update_rrd(hostname, testname, apache_params, apache_tpl);
+	return create_and_update_rrd(hostname, testname, classname, pagepaths, apache_params, apache_tpl);
 }
 

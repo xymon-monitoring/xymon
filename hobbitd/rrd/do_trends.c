@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char trends_rcsid[] = "$Id: do_trends.c,v 1.5 2008-01-03 10:13:50 henrik Exp $";
+static char trends_rcsid[] = "$Id: do_trends.c,v 1.6 2008-03-22 07:48:55 henrik Exp $";
 
 /* 
  * This module was inspired by a mail from Stef Coene:
@@ -47,7 +47,7 @@ static char trends_rcsid[] = "$Id: do_trends.c,v 1.5 2008-01-03 10:13:50 henrik 
  */
 
 
-static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+static int do_trends_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	char *boln, *eoln, *p;
 	int dscount;
@@ -62,7 +62,7 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 
 		if (*boln == '[') {
 			/* Flush the current RRD file */
-			if (creparams[0]) create_and_update_rrd(hostname, testname, creparams, NULL);
+			if (creparams[0]) create_and_update_rrd(hostname, testname, classname, pagepaths, creparams, NULL);
 
 			creparams = (char **)realloc(creparams, 1*sizeof(char *));
 			creparams[0] = NULL;
@@ -92,7 +92,7 @@ static int do_trends_rrd(char *hostname, char *testname, char *msg, time_t tstam
 	}
 
 	/* Do the last RRD set */
-	if (creparams[0]) create_and_update_rrd(hostname, testname, creparams, NULL);
+	if (creparams[0]) create_and_update_rrd(hostname, testname, classname, pagepaths, creparams, NULL);
 	xfree(creparams);
 
 	return 0;

@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.20 2008-03-21 11:53:55 henrik Exp $";
+static char bbgen_rcsid[] = "$Id: do_bbgen.c,v 1.21 2008-03-22 07:48:55 henrik Exp $";
 
-int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_bbgen_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	static char *bbgen_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
 	static void *bbgen_tpl      = NULL;
@@ -117,7 +117,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		setupfn("%s.rrd", "bbgen");
 	}
 	sprintf(rrdvalues, "%d:%.2f", (int)tstamp, runtime);
-	create_and_update_rrd(hostname, testname, bbgen_params, bbgen_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, bbgen_params, bbgen_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
@@ -127,7 +127,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		setupfn("%s.rrd", "hobbit");
 	}
 	sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, hostcount, statuscount);
-	create_and_update_rrd(hostname, testname, bbgen2_params, bbgen2_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, bbgen2_params, bbgen2_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
@@ -142,7 +142,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		greencount, purplecount, clearcount, bluecount,
 		pctredcount, pctrednopropcount, pctyellowcount, pctyellownopropcount,
 		pctgreencount, pctpurplecount, pctclearcount, pctbluecount);
-	create_and_update_rrd(hostname, testname, bbgen3_params, bbgen3_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, bbgen3_params, bbgen3_tpl);
 
 
 	return 0;

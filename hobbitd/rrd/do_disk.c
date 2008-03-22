@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.38 2008-03-21 11:53:55 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.39 2008-03-22 07:48:55 henrik Exp $";
 
-int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *disk_params[] = { "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", NULL };
 	static void *disk_tpl      = NULL;
@@ -185,7 +185,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			 */
 			setupfn2("%s%s.rrd", testname, diskname);
 			sprintf(rrdvalues, "%d:%d:%lld", (int)tstamp, pused, aused);
-			create_and_update_rrd(hostname, testname, disk_params, disk_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, disk_params, disk_tpl);
 		}
 		if (diskname) { xfree(diskname); diskname = NULL; }
 

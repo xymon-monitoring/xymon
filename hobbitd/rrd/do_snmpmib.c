@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.4 2008-01-10 09:28:24 henrik Exp $";
+static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.5 2008-03-22 07:48:55 henrik Exp $";
 
 static time_t snmp_nextreload = 0;
 
@@ -113,7 +113,7 @@ int is_snmpmib_rrd(char *testname)
 	return 1;
 }
 
-static void do_simple_snmpmib(char *hostname, char *testname, char *fnkey,
+static void do_simple_snmpmib(char *hostname, char *testname, char *classname, char *pagepaths, char *fnkey,
 			      char *msg, time_t tstamp, 
 			      snmpmib_param_t *params, int *pollinterval)
 {
@@ -168,13 +168,13 @@ nextline:
 		for (i = 0; (i < valcount); i++) {
 			ptr += sprintf(ptr, ":%s", values[i]);
 		}
-		create_and_update_rrd(hostname, testname, params->dsdefs, params->tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, params->dsdefs, params->tpl);
 	}
 
 	xfree(values);
 }
 
-static void do_tabular_snmpmib(char *hostname, char *testname, char *msg, time_t tstamp, snmpmib_param_t *params)
+static void do_tabular_snmpmib(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp, snmpmib_param_t *params)
 {
 	char *fnkey;
 	int pollinterval = 0;
@@ -192,12 +192,12 @@ static void do_tabular_snmpmib(char *hostname, char *testname, char *msg, time_t
 		fnkey = boset+1;
 		boset = boset + strcspn(boset, "]\n"); *boset = '\0'; boset++;
 		eoset = strstr(boset, "\n["); if (eoset) *eoset = '\0';
-		do_simple_snmpmib(hostname, testname, fnkey, boset, tstamp, params, &pollinterval);
+		do_simple_snmpmib(hostname, testname, classname, pagepaths, fnkey, boset, tstamp, params, &pollinterval);
 		boset = (eoset ? eoset+1 : NULL);
 	}
 }
 
-int do_snmpmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_snmpmib_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	time_t now = getcurrenttime(NULL);
 	mibdef_t *mib;
@@ -221,9 +221,9 @@ int do_snmpmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	if (mib->tabular) 
-		do_tabular_snmpmib(hostname, testname, datapart, tstamp, params);
+		do_tabular_snmpmib(hostname, testname, classname, pagepaths, datapart, tstamp, params);
 	else
-		do_simple_snmpmib(hostname, testname, NULL, datapart, tstamp, params, &pollinterval);
+		do_simple_snmpmib(hostname, testname, classname, pagepaths, NULL, datapart, tstamp, params, &pollinterval);
 
 	return 0;
 }

@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.20 2008-03-21 11:53:55 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.21 2008-03-22 07:48:55 henrik Exp $";
 
 static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
@@ -107,7 +107,7 @@ static const char *ifstat_bbwin_exprs[] = {
         "^([a-zA-Z0-9.:]+)\\s+([0-9]+)\\s+([0-9]+)"
 };
 
-int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
 	static pcre **ifstat_linux_pcres = NULL;
@@ -274,7 +274,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if ((dmatch == 7) && ifname && rxstr && txstr) {
 			setupfn2("%s.%s.rrd", "ifstat", ifname);
 			sprintf(rrdvalues, "%d:%s:%s", (int)tstamp, txstr, rxstr);
-			create_and_update_rrd(hostname, testname, ifstat_params, ifstat_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, ifstat_params, ifstat_tpl);
 			xfree(ifname); xfree(rxstr); xfree(txstr);
 			if (dummy) xfree(dummy);
 			ifname = rxstr = txstr = dummy = NULL;

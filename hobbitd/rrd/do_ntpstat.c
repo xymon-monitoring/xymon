@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.19 2008-03-21 11:53:55 henrik Exp $";
+static char ntpstat_rcsid[] = "$Id: do_ntpstat.c,v 1.20 2008-03-22 07:48:55 henrik Exp $";
 
-int do_ntpstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_ntpstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *ntpstat_params[]     = { "DS:offsetms:GAUGE:600:U:U", NULL };
 	static void *ntpstat_tpl          = NULL;
@@ -36,7 +36,7 @@ int do_ntpstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	if (gotdata) {
 		setupfn("%s.rrd", "ntpstat");
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, offset);
-		return create_and_update_rrd(hostname, testname, ntpstat_params, ntpstat_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, ntpstat_params, ntpstat_tpl);
 	}
 
 	return 0;

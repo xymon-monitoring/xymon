@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.6 2008-03-21 11:53:55 henrik Exp $";
+static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.7 2008-03-22 07:48:55 henrik Exp $";
 
 static char *ifmib_params[] = { 
 	                        "DS:ifInNUcastPkts:COUNTER:600:0:U", 
@@ -66,7 +66,9 @@ static char *ifmib_valnames[] = {
 };
 
 static void ifmib_flush_data(int ifmibinterval, 
-			     char *devname, time_t tstamp, char *hostname, char *testname, char **values, 
+			     char *devname, time_t tstamp, 
+			     char *hostname, char *testname, char *classname, char *pagepaths,
+			     char **values, 
 			     int inidx, int outidx, int inUcastidx, int outUcastidx)
 {
 	setupfn2("%s.%s.rrd", "ifmib", devname);
@@ -78,10 +80,10 @@ static void ifmib_flush_data(int ifmibinterval,
 		values[8], values[9], values[10], values[11],
 		values[12], values[13], values[14], values[15],
 		values[inidx], values[outidx], values[inUcastidx], values[outUcastidx]);
-	create_and_update_rrd(hostname, testname, ifmib_params, ifmib_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, ifmib_params, ifmib_tpl);
 }
 
-int do_ifmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_ifmib_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	char *datapart = msg;
 	char *bol, *eoln;
@@ -116,7 +118,8 @@ int do_ifmib_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		else if (*bol == '[') {
 			/* New interface data begins */
 			if (devname && (valcount == 24)) {
-				ifmib_flush_data(pollinterval, devname, tstamp, hostname, testname, values, 
+				ifmib_flush_data(pollinterval, devname, tstamp, hostname, testname, classname, pagepaths, 
+						 values, 
 						 incountidx, outcountidx, inUcastidx, outUcastidx);
 				memset(values, 0, sizeof(values));
 				valcount = 0;
@@ -156,7 +159,8 @@ nextline:
 
 	/* Flush the last device */
 	if (devname && (valcount == 24)) {
-		ifmib_flush_data(pollinterval, devname, tstamp, hostname, testname, values, 
+		ifmib_flush_data(pollinterval, devname, tstamp, hostname, testname, classname, pagepaths, 
+				 values, 
 				 incountidx, outcountidx, inUcastidx, outUcastidx);
 		valcount = 0;
 	}

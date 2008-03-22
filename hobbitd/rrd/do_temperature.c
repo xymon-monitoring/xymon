@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.17 2008-03-21 11:53:55 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.18 2008-03-22 07:48:55 henrik Exp $";
 
-int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	static char *temperature_params[] = { "DS:temperature:GAUGE:600:1:U",
 					      NULL };
@@ -84,7 +84,7 @@ int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			setupfn2("%s.%s.rrd", "temperature", bol); *(p+1) = savech;
 
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, tmpC);
-			create_and_update_rrd(hostname, testname, temperature_params, temperature_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, temperature_params, temperature_tpl);
 		}
 
 		if (comment) *comment = '(';

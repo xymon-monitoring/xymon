@@ -10,9 +10,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c,v 1.10 2008-03-21 11:53:55 henrik Exp $";
+static char counts_rcsid[] = "$Id: do_counts.c,v 1.11 2008-03-22 07:48:55 henrik Exp $";
 
-static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp, char *params[], char *tpl) 
+static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp, char *params[], char *tpl) 
 { 
 	char *boln, *eoln;
 
@@ -30,7 +30,7 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 			setupfn2("%s.%s.rrd", counttype, fn);
 
 			sprintf(rrdvalues, "%d:%s", (int)tstamp, countstr);
-			create_and_update_rrd(hostname, testname, params, tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, params, tpl);
 		}
 
 		boln = (eoln ? eoln+1 : NULL);
@@ -44,17 +44,17 @@ static void *counts_tpl      = NULL;
 static char *derive_params[] = { "DS:count:DERIVE:600:0:U", NULL };
 static void *derive_tpl      = NULL;
 
-int do_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_counts_rrd(char *counttype, char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 {
 	if (counts_tpl == NULL) counts_tpl = setup_template(counts_params);
 
-	return do_one_counts_rrd(counttype, hostname, testname, msg, tstamp, counts_params, counts_tpl);
+	return do_one_counts_rrd(counttype, hostname, testname, classname, pagepaths, msg, tstamp, counts_params, counts_tpl);
 }
 
-int do_derives_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_derives_rrd(char *counttype, char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 {
 	if (derive_tpl == NULL) derive_tpl = setup_template(derive_params);
 
-	return do_one_counts_rrd(counttype, hostname, testname, msg, tstamp, derive_params, derive_tpl);
+	return do_one_counts_rrd(counttype, hostname, testname, classname, pagepaths, msg, tstamp, derive_params, derive_tpl);
 }
 

@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.16 2008-03-21 11:53:55 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.17 2008-03-22 07:48:55 henrik Exp $";
 
-int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_hobbitd_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	static char *hobbitd_params[] = { "DS:inmessages:DERIVE:600:0:U", 
 					 "DS:statusmessages:DERIVE:600:0:U", 
@@ -105,7 +105,7 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 
 		MEMUNDEFINE(valstr);
-		return create_and_update_rrd(hostname, testname, hobbitd_params, hobbitd_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, hobbitd_params, hobbitd_tpl);
 	}
 
 	MEMUNDEFINE(valstr);

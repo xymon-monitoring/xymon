@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.19 2008-03-21 11:53:55 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.20 2008-03-22 07:48:55 henrik Exp $";
 
-int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_sendmail_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *sendmail_params_1[] = { "DS:msgsfr:DERIVE:600:0:U",
 					     "DS:bytes_from:DERIVE:600:0:U",
@@ -132,11 +132,11 @@ gotdata:
 					/* We have an existing RRD without the msgsqur DS. */
 					/* Chop off the msgsqur item in rrdvalues */
 					p = strrchr(rrdvalues, ':'); if (p) *p = '\0';
-					create_and_update_rrd(hostname, testname, sendmail_params_1, sendmail_tpl_1);
+					create_and_update_rrd(hostname, testname, classname, pagepaths, sendmail_params_1, sendmail_tpl_1);
 				}
 				else {
 					/* New format, or it does not exist: Use latest format */
-					create_and_update_rrd(hostname, testname, sendmail_params_2, sendmail_tpl_2);
+					create_and_update_rrd(hostname, testname, classname, pagepaths, sendmail_params_2, sendmail_tpl_2);
 				}
 			}
 
