@@ -12,6 +12,7 @@
 #define __HOBBITRRD_H__
 
 #include <time.h>
+#include "rbtr.h"
 
 /* This is for mapping a service -> an RRD file */
 typedef struct {
@@ -34,6 +35,16 @@ typedef enum {
 	HG_PLAIN_LINK, HG_META_LINK
 } hg_link_t;
 
+typedef struct rrdtpldata_t {
+	char *template;
+	RbtHandle dsnames;	/* Tree of tplnames_t records */
+} rrdtpldata_t;
+typedef struct rrdtplnames_t {
+	char *dsnam;
+	int idx;
+} rrdtplnames_t;
+
+
 extern hobbitrrd_t *hobbitrrds;
 extern hobbitgraph_t *hobbitgraphs;
 
@@ -43,6 +54,7 @@ extern char *hobbit_graph_data(char *hostname, char *dispname, char *service, in
 		hobbitgraph_t *graphdef, int itemcount, 
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
 		time_t starttime, time_t endtime);
+extern void *setup_template(char *params[]);
 
 #endif
 

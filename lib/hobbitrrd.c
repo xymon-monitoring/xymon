@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.45 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.46 2008-03-22 07:51:59 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -317,4 +317,47 @@ char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcol
 				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt),
 				 locatorbased, starttime, endtime);
 }
+
+
+void *setup_template(char *params[])
+{
+	int i;
+	rrdtpldata_t *result;
+	rrdtplnames_t *nam;
+	int dsindex = 1;
+
+	result = (rrdtpldata_t *)calloc(1, sizeof(rrdtpldata_t));
+	result->dsnames = rbtNew(string_compare);
+
+	for (i = 0; (params[i]); i++) {
+		if (strncasecmp(params[i], "DS:", 3) == 0) {
+			char *pname, *pend;
+
+			pname = params[i] + 3;
+			pend = strchr(pname, ':');
+			if (pend) {
+				int plen = (pend - pname);
+
+				if (result->template == NULL) {
+					result->template = (char *)malloc(plen + 1);
+					*result->template = '\0';
+				}
+				else {
+					/* Hackish way of getting the colon delimiter */
+					pname--; plen++;
+					result->template = (char *)realloc(result->template, strlen(result->template) + plen + 1);
+				}
+				strncat(result->template, pname, plen);
+
+				nam = (rrdtplnames_t *)calloc(1, sizeof(rrdtplnames_t));
+				nam->dsnam = (char *)malloc(plen); strncpy(nam->dsnam, pname+1, plen-1); nam->dsnam[plen-1] = '\0';
+				nam->idx = dsindex++;
+				rbtInsert(result->dsnames, nam->dsnam, nam);
+			}
+		}
+	}
+
+	return result;
+}
+
 
