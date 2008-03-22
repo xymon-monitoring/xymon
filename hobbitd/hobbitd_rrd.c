@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.38 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.39 2008-03-22 12:49:43 henrik Exp $";
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -34,6 +34,7 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.38 2008-01-03 10:08:13 henrik Exp 
 
 #include "hobbitd_rrd.h"
 #include "do_rrd.h"
+#include "client_config.h"
 
 #include <signal.h>
 
@@ -41,6 +42,7 @@ static char rcsid[] = "$Id: hobbitd_rrd.c,v 1.38 2008-01-03 10:08:13 henrik Exp 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
 static int running = 1;
+static time_t reloadtime = 0;
 
 typedef struct rrddeftree_t {
 	char *key;
@@ -52,6 +54,9 @@ static RbtHandle rrddeftree;
 static void sig_handler(int signum)
 {
 	switch (signum) {
+	  case SIGHUP:
+		  reloadtime = 0;
+		  break;
 	  case SIGCHLD:
 		  break;
 	  case SIGINT:
@@ -222,6 +227,7 @@ int main(int argc, char *argv[])
 	setup_signalhandler("hobbitd_rrd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
+	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
@@ -259,13 +265,14 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 		char *p;
-		char *hostname = NULL, *testname = NULL, *sender = NULL;
+		char *hostname = NULL, *testname = NULL, *sender = NULL, *classname = NULL, *pagepaths = NULL;
 		hobbitrrd_t *ldef = NULL;
 		time_t tstamp;
 		int childstat;
                 ssize_t n;
 		char ctlbuf[PATH_MAX];
 		int gotcachectlmessage;
+		time_t now;
 
 		/* See if we have any cache-control messages pending */
 		do {
@@ -299,6 +306,13 @@ int main(int argc, char *argv[])
 			running = 0;
 		}
 
+		if (reloadtime < (now = getcurrenttime(NULL))) {
+			/* Reload configuration files */
+			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_client_config(NULL);
+			reloadtime = now + 600;
+		}
+
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
 		if (eoln) {
@@ -318,7 +332,8 @@ int main(int argc, char *argv[])
 		if ((metacount >= 14) && (strncmp(metadata[0], "@@status", 8) == 0)) {
 			/*
 			 * @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|\
-			 * prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage 
+			 * prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage|\
+			 * clienttstamp|flapping|classname|pagepaths
 			 */
 			int color = parse_color(metadata[7]);
 
@@ -331,8 +346,10 @@ int main(int argc, char *argv[])
 				sender = metadata[2];
 				hostname = metadata[4]; 
 				testname = metadata[5];
+				classname = (metadata[17] ? metadata[17] : "");
+				pagepaths = (metadata[18] ? metadata[18] : "");
 				ldef = find_hobbit_rrd(testname, metadata[8]);
-				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
+				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 				break;
 
 			  default:
@@ -341,13 +358,15 @@ int main(int argc, char *argv[])
 			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
-			/* @@data|timestamp|sender|origin|hostname|testname */
+			/* @@data|timestamp|sender|origin|hostname|testname|classname|pagepaths */
 			tstamp = atoi(metadata[1]);
 			sender = metadata[2];
 			hostname = metadata[4]; 
 			testname = metadata[5];
+			classname = (metadata[6] ? metadata[6] : "");
+			pagepaths = (metadata[7] ? metadata[7] : "");
 			ldef = find_hobbit_rrd(testname, "");
-			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef);
+			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
