@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.46 2008-03-22 07:51:59 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.47 2008-03-22 12:45:13 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -284,7 +284,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 
 			if (nostale == HG_WITHOUT_STALE_RRDS) strcat(svcurl, "&amp;nostale");
 			if (bgcolor != -1) sprintf(svcurl+strlen(svcurl), "&amp;color=%s", colorname(bgcolor));
-			sprintf(svcurl+strlen(svcurl), "&amp;graph_start=%d&amp;graph_end=%d", starttime, endtime);
+			sprintf(svcurl+strlen(svcurl), "&amp;graph_start=%d&amp;graph_end=%d", (int)starttime, (int)endtime);
 
 			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
@@ -338,20 +338,22 @@ void *setup_template(char *params[])
 			if (pend) {
 				int plen = (pend - pname);
 
+				nam = (rrdtplnames_t *)calloc(1, sizeof(rrdtplnames_t));
+				nam->idx = dsindex++;
+
 				if (result->template == NULL) {
 					result->template = (char *)malloc(plen + 1);
 					*result->template = '\0';
+					nam->dsnam = (char *)malloc(plen+1); strncpy(nam->dsnam, pname, plen); nam->dsnam[plen] = '\0';
 				}
 				else {
 					/* Hackish way of getting the colon delimiter */
 					pname--; plen++;
 					result->template = (char *)realloc(result->template, strlen(result->template) + plen + 1);
+					nam->dsnam = (char *)malloc(plen); strncpy(nam->dsnam, pname+1, plen-1); nam->dsnam[plen-1] = '\0';
 				}
 				strncat(result->template, pname, plen);
 
-				nam = (rrdtplnames_t *)calloc(1, sizeof(rrdtplnames_t));
-				nam->dsnam = (char *)malloc(plen); strncpy(nam->dsnam, pname+1, plen-1); nam->dsnam[plen-1] = '\0';
-				nam->idx = dsindex++;
 				rbtInsert(result->dsnames, nam->dsnam, nam);
 			}
 		}
