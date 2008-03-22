@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.66 2008-02-10 12:45:20 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.67 2008-03-22 12:57:35 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -173,7 +173,21 @@ typedef struct c_mibval_t {
 	RbtHandle valdeftree;
 } c_mibval_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_PAGING, C_MIBVAL } ruletype_t;
+#define RRDDSCHK_GT  (1 << 0)
+#define RRDDSCHK_GE  (1 << 1)
+#define RRDDSCHK_LT  (1 << 2)
+#define RRDDSCHK_LE  (1 << 3)
+#define RRDDSCHK_EQ  (1 << 4)
+typedef struct c_rrdds_t {
+	exprlist_t *rrdkey;	/* Pattern match for filename of the RRD file */
+	char *rrdds;		/* DS name */
+	char *column;		/* Status column modified by this check */
+	int color;
+	/* For absolute min/max values of the data item */
+	double limitval;
+} c_rrdds_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_PAGING, C_MIBVAL, C_RRDDS } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -201,6 +215,7 @@ typedef struct c_rule_t {
 		c_svc_t	svc;
 		c_paging_t paging;
 		c_mibval_t mibval;
+		c_rrdds_t rrdds;
 	} rule;
 } c_rule_t;
 
@@ -487,6 +502,11 @@ int load_client_config(char *configfn)
 		switch (tmp->ruletype) {
 		  case C_MIBVAL:
 			if (tmp->rule.mibval.havetree) rbtDelete(tmp->rule.mibval.valdeftree);
+			break;
+
+		  case C_RRDDS:
+			if (tmp->rule.rrdds.rrdds) xfree(tmp->rule.rrdds.rrdds);
+			if (tmp->rule.rrdds.column) xfree(tmp->rule.rrdds.column);
 			break;
 
 		  default:
@@ -1103,8 +1123,56 @@ int load_client_config(char *configfn)
 						currule->rule.mibval.matchexp = setup_expr(tok+6, 0);
 					}
 					else if (strncasecmp(tok, "color=", 6) == 0) {
-						int col = parse_color(tok);
+						int col = parse_color(tok+6);
 						if (col != -1) currule->rule.mibval.color = col;
+					}
+				} while (tok && (!isqual(tok)));
+			}
+			else if (strcasecmp(tok, "DS") == 0) {
+				char *key, *ds, *column;
+
+				currule = setup_rule(C_RRDDS, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.rrdds.color = COL_RED;
+
+				tok = wstok(NULL);
+				column = tok;
+
+				tok = wstok(NULL);
+				key = tok;
+				ds = (tok ? strrchr(tok, ':') : NULL);
+				if (ds) { *ds = '\0'; ds++; }
+
+				if (!column || !key || !ds) {
+					errprintf("Invalid DS definition at line %d (missing column, key and/or dataset)\n", cfid);
+					continue;
+				}
+
+				currule->rule.rrdds.rrdkey = setup_expr(key, 0);
+				currule->rule.rrdds.rrdds = strdup(ds);
+				currule->rule.rrdds.column = strdup(column);
+
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, ">=", 2) == 0) {
+						currule->flags |= RRDDSCHK_GE;
+						currule->rule.rrdds.limitval = atof(tok+2);
+					}
+					else if (strncasecmp(tok, "<=", 2) == 0) {
+						currule->flags |= RRDDSCHK_LE;
+						currule->rule.rrdds.limitval = atof(tok+2);
+					}
+					else if (strncasecmp(tok, ">", 1) == 0) {
+						currule->flags |= RRDDSCHK_GT;
+						currule->rule.rrdds.limitval = atof(tok+1);
+					}
+					else if (strncasecmp(tok, "<", 1) == 0) {
+						currule->flags |= RRDDSCHK_LT;
+						currule->rule.rrdds.limitval = atof(tok+1);
+					}
+					else if (strncasecmp(tok, "color=", 6) == 0) {
+						int col = parse_color(tok+6);
+						if (col != -1) currule->rule.rrdds.color = col;
 					}
 				} while (tok && (!isqual(tok)));
 			}
@@ -1325,6 +1393,21 @@ void dump_client_config(void)
 			if (rwalk->flags & MIBCHK_MATCH) 
 				printf(" match=%s", rwalk->rule.mibval.matchexp->pattern);
 			printf(" color=%s", colorname(rwalk->rule.mibval.color));
+			break;
+
+		  case C_RRDDS:
+			printf("DS %s %s:%s", rwalk->rule.rrdds.column,
+				rwalk->rule.rrdds.rrdkey->pattern, rwalk->rule.rrdds.rrdds);
+			if (rwalk->flags & RRDDSCHK_LT) 
+				printf(" <%f", rwalk->rule.rrdds.limitval);
+			if (rwalk->flags & RRDDSCHK_GT) 
+				printf(" >%f", rwalk->rule.rrdds.limitval);
+			if (rwalk->flags & RRDDSCHK_LE) 
+				printf(" <=%f", rwalk->rule.rrdds.limitval);
+			if (rwalk->flags & RRDDSCHK_GE) 
+				printf(" >=%f", rwalk->rule.rrdds.limitval);
+			printf(" color=%s", colorname(rwalk->rule.rrdds.color));
+			break;
 		}
 
 		if (rwalk->flags & CHK_TRACKIT) {
@@ -1349,6 +1432,7 @@ void dump_client_config(void)
 static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *hinfo, ruletype_t ruletype)
 {
 	static ruleset_t *rwalk = NULL;
+	char *holidayset;
 
 	if (hostname || pagename) {
 		rwalk = ruleset(hostname, pagename, classname); 
@@ -1357,9 +1441,11 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *
 		rwalk = rwalk->next;
 	}
 
+	holidayset = (hinfo ? bbh_item(hinfo, BBH_HOLIDAYS) : NULL);
+
 	for (; (rwalk); rwalk = rwalk->next) {
 		if (rwalk->rule->ruletype != ruletype) continue;
-		if (rwalk->rule->timespec && !timematch(bbh_item(hinfo, BBH_HOLIDAYS), rwalk->rule->timespec)) continue;
+		if (rwalk->rule->timespec && !timematch(holidayset, rwalk->rule->timespec)) continue;
 
 		/* If we get here, then we have something that matches */
 		return rwalk->rule;
@@ -1443,6 +1529,74 @@ int get_disk_thresholds(void *hinfo, char *classname,
 
 	return 0;
 }
+
+char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, RbtHandle valnames, char *vals)
+{
+	static strbuffer_t *resbuf = NULL;
+	char msgline[1024];
+	c_rule_t *rule;
+	char *valscopy = NULL;
+	char **vallist = NULL;
+	RbtIterator handle;
+	rrdtplnames_t *tpl;
+	double val;
+	void *hinfo;
+
+	if (!resbuf) resbuf = newstrbuffer(0);
+	clearstrbuffer(resbuf);
+
+	hinfo = hostinfo(hostname);
+	rule = getrule(hostname, pagepaths, classname, hinfo, C_RRDDS);
+	while (rule) {
+		if (!namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
+
+		handle = rbtFind(valnames, rule->rule.rrdds.rrdds);
+		if (handle == rbtEnd(valnames)) goto nextrule;
+		tpl = (rrdtplnames_t *)gettreeitem(valnames, handle);
+
+		/* Split the value-string into individual numbers that we can index */
+		if (!vallist) {
+			char *p;
+			int idx = 0;
+
+			valscopy = strdup(vals);
+			vallist = calloc(128, sizeof(char *));
+			vallist[0] = valscopy;
+
+			for (p = strchr(valscopy, ':'); (p); p = strchr(p+1, ':')) {
+				vallist[++idx] = p+1;
+				*p = '\0';
+			}
+		}
+
+		if (vallist[tpl->idx] == NULL) goto nextrule;
+		val = atof(vallist[tpl->idx]);
+
+		/* Do the checks */
+		if ( ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval)) ||
+		     ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval)) ||
+		     ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval)) ||
+		     ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) )
+		{
+			sprintf(msgline, "modify %s.%s %s rrdds ", 
+				hostname, rule->rule.rrdds.column,
+				colorname(rule->rule.rrdds.color));
+			addtobuffer(resbuf, msgline);
+			snprintf(msgline, sizeof(msgline), rule->statustext, val, rule->rule.rrdds.limitval);
+			addtobuffer(resbuf, msgline);
+			addtobuffer(resbuf, "\n\n");
+		}
+
+nextrule:
+		rule = getrule(NULL, NULL, NULL, hinfo, C_RRDDS);
+	}
+
+	if (valscopy) xfree(valscopy);
+	if (vallist) xfree(vallist);
+
+	return (STRBUFLEN(resbuf) > 0) ? STRBUF(resbuf) : NULL;
+}
+
 
 void get_memory_thresholds(void *hinfo, char *classname,
 			   int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
