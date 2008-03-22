@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.67 2008-03-22 12:57:35 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.68 2008-03-22 13:27:05 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1578,6 +1578,16 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 		     ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval)) ||
 		     ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) )
 		{
+			char *fmt = rule->statustext;
+
+			if (!fmt) {
+				if      (rule->flags & RRDDSCHK_LT) fmt = "%.2f < %.2f";
+				else if (rule->flags & RRDDSCHK_GT) fmt = "%.2f > %.2f";
+				else if (rule->flags & RRDDSCHK_LE) fmt = "%.2f <= %.2f";
+				else if (rule->flags & RRDDSCHK_GE) fmt = "%.2f >= %.2f";
+				else fmt = "";
+			}
+
 			sprintf(msgline, "modify %s.%s %s rrdds ", 
 				hostname, rule->rule.rrdds.column,
 				colorname(rule->rule.rrdds.color));
