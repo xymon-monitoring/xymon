@@ -464,6 +464,42 @@ The standard TRACK setting has no effect here, since the
 file defines the variables that are tracked in RRD files.
 
 
+.SH COLUMNS MODIFIED BY GRAPH DATA
+.sp
+.BR "DS column rrdfile:rrddataset criterium [COLOR=color]
+.sp
+"column" is the name of an existing status column. "rrdfile" is the
+filename of an RRD file, or a regular expression used to match against
+the filename. "rrddataset" is the name of a dataset in the RRD file.
+"criterium" consists of a numeric comparison operator (">", "<",
+">=" or "<=") followed by a number. E.g.
+.sp
+	DS cpu vmstat.rrd:cpu_idl >=50 COLOR=green
+.br
+	DS cpu vmstat.rrd:cpu_idl <50 COLOR=yellow
+.br
+	DS cpu vmstat.rrd:cpu_idl <20 COLOR=red "TEXT=CPU busy"
+.br
+	DS http %tcp.http:sec >10 COLOR=red "TEXT=Slow URL (%.2f sec)"
+.sp
+This type of rule is for using data fed into the Hobbit RRD graphs
+to modify the color of an existing status column. E.g. the color of
+the "cpu" status is normally controlled by the LOAD setting (see above),
+but it is often more interesting to use data from the "vmstat" command
+where the percentage of idle CPU time is reported. Or it is not enough
+that a website responds, it must also do so in less than 10 seconds.
+.sp
+As the example above illustrates, there can be multiple rules for the same
+data item. In that case, the order of the rules becomes significant, and
+must have the most critical (typically: red) status LAST.
+.sp
+The TEXT string will appear on the modified status page. It is an 
+.I sprintf(3)
+formatting string, which takes 2 floating point values: First is the
+actual value of the data item, second is the threshold used in the
+"criterium" setting.
+
+
 .SH CHANGING THE DEFAULT SETTINGS
 If you would like to use different defaults for the settings described above, 
 then you can define the new defaults after a DEFAULT line. E.g. this would
