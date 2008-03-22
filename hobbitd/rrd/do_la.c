@@ -8,9 +8,9 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.33 2008-03-21 11:53:55 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c,v 1.34 2008-03-22 07:47:25 henrik Exp $";
 
-int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static char *la_params[]          = { "DS:la:GAUGE:600:0:U", NULL };
 	static void *la_tpl               = NULL;
@@ -185,25 +185,25 @@ done_parsing:
 	if (gotload) {
 		setupfn("%s.rrd", "la");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, load);
-		create_and_update_rrd(hostname, testname, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	if (gotprocs) {
 		setupfn("%s.rrd", "procs");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, procs);
-		create_and_update_rrd(hostname, testname, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	if (gotusers) {
 		setupfn("%s.rrd", "users");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
-		create_and_update_rrd(hostname, testname, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	if (gotclock) {
 		setupfn("%s.rrd", "clock");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, clockdiff);
-		create_and_update_rrd(hostname, testname, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	/*
@@ -256,7 +256,7 @@ done_parsing:
 			pagetotal = pagetotal / 100;
 			realuse = 100 - (physavail / phystotal);
 			swapuse = 100 - (pageavail / pagetotal);
-			do_memory_rrd_update(tstamp, testname, hostname, realuse, swapuse, -1);
+			do_memory_rrd_update(tstamp, hostname, testname, classname, pagepaths, realuse, swapuse, -1);
 		}
 		else if (overflow) {
 			errprintf("Host %s cpu report overflows in memory usage calculation\n", hostname);
