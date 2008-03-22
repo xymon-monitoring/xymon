@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.281 2008-03-22 07:54:14 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.282 2008-03-22 12:47:44 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -3691,7 +3691,9 @@ void do_message(conn_t *msg, char *origin)
 			clientos = strrchr(hostname, '.'); 
 			if (clientos) { *clientos = '\0'; clientos++; }
 			uncommafy(hostname);
-			clientclass = strtok(NULL, " \t");
+
+			/* Only the default client (which has no collector-ID) can set the client class */
+			if (!collectorid) clientclass = strtok(NULL, " \t");
 		}
 
 		if (hostname && clientos) {
