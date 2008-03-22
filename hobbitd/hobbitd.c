@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.280 2008-03-04 22:02:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.281 2008-03-22 07:54:14 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -530,6 +530,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	struct timezone tz;
 	int semerr = 0;
 	unsigned int bufsz = 1024*shbufsz(channel->channelid);
+	void *hi;
+	char *pagepath, *classname, *osname;
 
 	dbgprintf("-> posttochannel\n");
 
@@ -601,27 +603,45 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	else {
 		switch(channel->channelid) {
 		  case C_STATUS:
+			hi = hostinfo(hostname);
+			pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
+			classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
+			if (!classname) classname = "";
+
 			n = snprintf(channel->channelbuf, (bufsz-5),
 				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
-				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
-				sender, log->origin, hostname, log->test->name, 
-				(int) log->validtime, colnames[log->color], (log->testflags ? log->testflags : ""),
-				colnames[log->oldcolor], (int) log->lastchange[0]); 
+				channelmarker, channel->seq, hostname, 		/*  0 */
+				(int) tstamp.tv_sec, (int) tstamp.tv_usec,	/*  1 */
+				sender, 					/*  2 */
+				log->origin, 					/*  3 */
+				hostname, 					/*  4 */
+				log->test->name, 				/*  5 */
+				(int) log->validtime, 				/*  6 */
+				colnames[log->color], 				/*  7 */
+				(log->testflags ? log->testflags : ""),		/*  8 */
+				colnames[log->oldcolor], 			/*  9 */
+				(int) log->lastchange[0]); 			/* 10 */
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 11+12 */
 					(int)log->acktime, nlencode(log->ackmsg));
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 13+14 */
 					(int)log->enabletime, nlencode(log->dismsg));
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 15 */
 					(int)log->host->clientmsgtstamp);
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 16 */
 					(int)log->flapping);
+			}
+			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", classname);	/* 17 */
+			}
+			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", pagepath);	/* 18 */
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
@@ -636,26 +656,33 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 		  case C_STACHG:
 			n = snprintf(channel->channelbuf, (bufsz-5),
 				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
-				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
-				sender, log->origin, hostname, log->test->name, 
-				(int) log->validtime, colnames[log->color], 
-				colnames[log->oldcolor], (int) log->lastchange[0]);
+				channelmarker, channel->seq, hostname, 		/*  0 */
+				(int) tstamp.tv_sec, (int) tstamp.tv_usec,	/*  1 */
+				sender,						/*  2 */ 
+				log->origin,					/*  3 */ 
+				hostname,					/*  4 */ 
+				log->test->name,				/*  5 */ 
+				(int) log->validtime,				/*  6 */ 
+				colnames[log->color],				/*  7 */ 
+				colnames[log->oldcolor],			/*  8 */ 
+				(int) log->lastchange[0])			/*  9 */;
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 10+11 */
 					(int)log->enabletime, nlencode(log->dismsg));
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", log->downtimeactive);
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 12 */
+						log->downtimeactive);
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 13 */
 						(int) log->host->clientmsgtstamp);
 			}
 			if (n < (bufsz-5)) {
 				modifier_t *mwalk;
 
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
-				mwalk = log->modifiers;
+				mwalk = log->modifiers;						/* 14 */
 				while ((n < (bufsz-5)) && mwalk) {
 					if (mwalk->valid) {
 						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
@@ -697,9 +724,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					(int) log->acktime, msg);
 			}
 			else {
-				void *hi = hostinfo(hostname);
-				char *pagepath, *classname, *osname;
-
+				hi = hostinfo(hostname);
 				pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
 				classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
 				osname = (hi ? bbh_item(hi, BBH_OS) : "");
@@ -1544,22 +1569,32 @@ void handle_modify(char *msg, hobbitd_log_t *log, int color)
 
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
+	void *hi;
 	char *chnbuf;
 	int buflen = 0;
+	char *classname, *pagepath;
 
 	dbgprintf("->handle_data\n");
+
+	hi = hostinfo(hostname);
+	classname = (hi ? bbh_item(hi, BBH_CLASS) : NULL);
+	pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
 
 	if (origin) buflen += strlen(origin); else dbgprintf("   origin is NULL\n");
 	if (hostname) buflen += strlen(hostname); else dbgprintf("  hostname is NULL\n");
 	if (testname) buflen += strlen(testname); else dbgprintf("  testname is NULL\n");
+	if (classname) buflen += strlen(classname);
+	if (pagepath) buflen += strlen(pagepath);
 	if (msg) buflen += strlen(msg); else dbgprintf("  msg is NULL\n");
-	buflen += 4;
+	buflen += 6;
 
 	chnbuf = (char *)malloc(buflen);
-	snprintf(chnbuf, buflen, "%s|%s|%s\n%s", 
+	snprintf(chnbuf, buflen, "%s|%s|%s|%s|%s\n%s", 
 		 (origin ? origin : ""), 
 		 (hostname ? hostname : ""), 
 		 (testname ? testname : ""), 
+		 (classname ? classname : ""),
+		 (pagepath ? pagepath : ""),
 		 msg);
 
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
