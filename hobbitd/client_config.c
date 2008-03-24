@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.68 2008-03-22 13:27:05 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.69 2008-03-24 06:45:01 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -173,18 +173,19 @@ typedef struct c_mibval_t {
 	RbtHandle valdeftree;
 } c_mibval_t;
 
-#define RRDDSCHK_GT  (1 << 0)
-#define RRDDSCHK_GE  (1 << 1)
-#define RRDDSCHK_LT  (1 << 2)
-#define RRDDSCHK_LE  (1 << 3)
-#define RRDDSCHK_EQ  (1 << 4)
+#define RRDDSCHK_GT     (1 << 0)
+#define RRDDSCHK_GE     (1 << 1)
+#define RRDDSCHK_LT     (1 << 2)
+#define RRDDSCHK_LE     (1 << 3)
+#define RRDDSCHK_EQ     (1 << 4)
+#define RRDDSCHK_INTVL  (1 << 29)
 typedef struct c_rrdds_t {
 	exprlist_t *rrdkey;	/* Pattern match for filename of the RRD file */
 	char *rrdds;		/* DS name */
 	char *column;		/* Status column modified by this check */
 	int color;
 	/* For absolute min/max values of the data item */
-	double limitval;
+	double limitval, limitval2;
 } c_rrdds_t;
 
 typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_PAGING, C_MIBVAL, C_RRDDS } ruletype_t;
@@ -1152,27 +1153,49 @@ int load_client_config(char *configfn)
 				currule->rule.rrdds.column = strdup(column);
 
 				do {
+					int getnumber = 0;
+
 					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
 
 					if (strncasecmp(tok, ">=", 2) == 0) {
+						if (currule->flags) currule->flags |= RRDDSCHK_INTVL;
 						currule->flags |= RRDDSCHK_GE;
-						currule->rule.rrdds.limitval = atof(tok+2);
+						getnumber = 2;
 					}
 					else if (strncasecmp(tok, "<=", 2) == 0) {
+						if (currule->flags) currule->flags |= RRDDSCHK_INTVL;
 						currule->flags |= RRDDSCHK_LE;
-						currule->rule.rrdds.limitval = atof(tok+2);
+						getnumber = 2;
 					}
 					else if (strncasecmp(tok, ">", 1) == 0) {
+						if (currule->flags) currule->flags |= RRDDSCHK_INTVL;
 						currule->flags |= RRDDSCHK_GT;
-						currule->rule.rrdds.limitval = atof(tok+1);
+						getnumber = 1;
 					}
 					else if (strncasecmp(tok, "<", 1) == 0) {
+						if (currule->flags) currule->flags |= RRDDSCHK_INTVL;
 						currule->flags |= RRDDSCHK_LT;
-						currule->rule.rrdds.limitval = atof(tok+1);
+						getnumber = 1;
 					}
 					else if (strncasecmp(tok, "color=", 6) == 0) {
 						int col = parse_color(tok+6);
 						if (col != -1) currule->rule.rrdds.color = col;
+					}
+
+					if (getnumber) {
+						if (currule->flags & RRDDSCHK_INTVL)
+							currule->rule.rrdds.limitval2 = atof(tok+getnumber);
+						else
+							currule->rule.rrdds.limitval = atof(tok+getnumber);
+
+						if ((currule->flags & RRDDSCHK_INTVL) && (currule->rule.rrdds.limitval > currule->rule.rrdds.limitval2)) {
+							/* Swap the two values, so we always have limitval as the lower bound, and limitval2 as the upper */
+							double tmp;
+
+							tmp=currule->rule.rrdds.limitval;
+							currule->rule.rrdds.limitval = currule->rule.rrdds.limitval2;
+							currule->rule.rrdds.limitval2 = tmp;
+						}
 					}
 				} while (tok && (!isqual(tok)));
 			}
@@ -1398,14 +1421,23 @@ void dump_client_config(void)
 		  case C_RRDDS:
 			printf("DS %s %s:%s", rwalk->rule.rrdds.column,
 				rwalk->rule.rrdds.rrdkey->pattern, rwalk->rule.rrdds.rrdds);
-			if (rwalk->flags & RRDDSCHK_LT) 
-				printf(" <%f", rwalk->rule.rrdds.limitval);
 			if (rwalk->flags & RRDDSCHK_GT) 
-				printf(" >%f", rwalk->rule.rrdds.limitval);
-			if (rwalk->flags & RRDDSCHK_LE) 
-				printf(" <=%f", rwalk->rule.rrdds.limitval);
+				printf(" >%.2f", rwalk->rule.rrdds.limitval);
 			if (rwalk->flags & RRDDSCHK_GE) 
-				printf(" >=%f", rwalk->rule.rrdds.limitval);
+				printf(" >=%.2f", rwalk->rule.rrdds.limitval);
+
+			if (rwalk->flags & RRDDSCHK_INTVL) {
+				if (rwalk->flags & RRDDSCHK_LT) 
+					printf(" <%.2f", rwalk->rule.rrdds.limitval2);
+				if (rwalk->flags & RRDDSCHK_LE) 
+					printf(" <=%.2f", rwalk->rule.rrdds.limitval2);
+			}
+			else {
+				if (rwalk->flags & RRDDSCHK_LT) 
+					printf(" <%.2f", rwalk->rule.rrdds.limitval);
+				if (rwalk->flags & RRDDSCHK_LE) 
+					printf(" <=%.2f", rwalk->rule.rrdds.limitval);
+			}
 			printf(" color=%s", colorname(rwalk->rule.rrdds.color));
 			break;
 		}
@@ -1548,6 +1580,8 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 	hinfo = hostinfo(hostname);
 	rule = getrule(hostname, pagepaths, classname, hinfo, C_RRDDS);
 	while (rule) {
+		int rulematch = 0;
+
 		if (!namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
 
 		handle = rbtFind(valnames, rule->rule.rrdds.rrdds);
@@ -1573,27 +1607,87 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 		val = atof(vallist[tpl->idx]);
 
 		/* Do the checks */
-		if ( ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval)) ||
-		     ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval)) ||
-		     ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval)) ||
-		     ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) )
-		{
-			char *fmt = rule->statustext;
+		if (rule->flags & RRDDSCHK_INTVL) {
+			rulematch = ( ( ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval))  ||
+				        ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) ) &&
+				      ( ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval2))  ||
+				        ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval2)) ) );
 
-			if (!fmt) {
-				if      (rule->flags & RRDDSCHK_LT) fmt = "%.2f < %.2f";
-				else if (rule->flags & RRDDSCHK_GT) fmt = "%.2f > %.2f";
-				else if (rule->flags & RRDDSCHK_LE) fmt = "%.2f <= %.2f";
-				else if (rule->flags & RRDDSCHK_GE) fmt = "%.2f >= %.2f";
-				else fmt = "";
+			if (!rule->statustext) {
+				char fmt[100];
+
+				strcpy(fmt, "&N=&V, should be");
+				if (rule->flags & RRDDSCHK_GT) strcat(fmt, " > &L");
+				else if (rule->flags & RRDDSCHK_GE) strcat(fmt, " >= &L");
+				strcat(fmt, " and");
+				if (rule->flags & RRDDSCHK_LT) strcat(fmt, " < &H");
+				else if (rule->flags & RRDDSCHK_LE) strcat(fmt, " <= &H");
+
+				rule->statustext = strdup(fmt);
 			}
+		}
+		else {
+			rulematch = ( ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval))  ||
+				      ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) ||
+				      ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval))  ||
+				      ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval))   );
+
+			if (!rule->statustext) {
+				char *fmt = "";
+
+				if      (rule->flags & RRDDSCHK_GT) fmt = "&N=&V, should be > &L";
+				else if (rule->flags & RRDDSCHK_GE) fmt = "&N=&V, should be >= &L";
+				else if (rule->flags & RRDDSCHK_LT) fmt = "&N=&V, should be < &L";
+				else if (rule->flags & RRDDSCHK_LE) fmt = "&N=&V, should be <= &L";
+
+				rule->statustext = strdup(fmt);
+			}
+		}
+
+		if (rulematch) {
+			char *bot, *marker;
 
 			sprintf(msgline, "modify %s.%s %s rrdds ", 
 				hostname, rule->rule.rrdds.column,
 				colorname(rule->rule.rrdds.color));
 			addtobuffer(resbuf, msgline);
-			snprintf(msgline, sizeof(msgline), rule->statustext, val, rule->rule.rrdds.limitval);
-			addtobuffer(resbuf, msgline);
+
+			/* Format and add the status text */
+			bot = rule->statustext;
+			do {
+				marker = strchr(bot, '&');
+				if (marker) {
+					*marker = '\0';
+					addtobuffer(resbuf, bot);
+					*marker = '&';
+					switch (*(marker+1)) {
+					  case 'N': addtobuffer(resbuf, rule->rule.rrdds.rrdds); 
+						    bot = marker+2; 
+						    break;
+
+					  case 'V': addtobuffer(resbuf, vallist[tpl->idx]); 
+						    bot = marker+2; 
+						    break;
+
+					  case 'L': sprintf(msgline, "%.2f", rule->rule.rrdds.limitval); 
+						    addtobuffer(resbuf, msgline);
+						    bot = marker+2;
+						    break;
+
+					  case 'H': sprintf(msgline, "%.2f", (rule->flags & RRDDSCHK_INTVL) ? rule->rule.rrdds.limitval2 : rule->rule.rrdds.limitval); 
+						    addtobuffer(resbuf, msgline);
+						    bot = marker+2;
+						    break;
+
+					  default:  addtobuffer(resbuf, "&"); bot = marker+1; break;
+					}
+				}
+				else {
+					addtobuffer(resbuf, bot);
+					bot = NULL;
+				}
+			} while (bot);
+
 			addtobuffer(resbuf, "\n\n");
 		}
 
