@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.59 2008-03-22 12:55:03 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.60 2008-03-24 06:42:50 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -270,6 +270,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 	else {
 		cacheitem = (updcacheitem_t *)gettreeitem(updcache, handle);
+		if (!template) template = cacheitem->tpl;
 	}
 
 	/* If the RRD file doesn't exist, create it immediately */
