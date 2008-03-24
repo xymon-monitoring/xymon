@@ -476,11 +476,11 @@ the filename. "rrddataset" is the name of a dataset in the RRD file.
 .sp
 	DS cpu vmstat.rrd:cpu_idl >=50 COLOR=green
 .br
-	DS cpu vmstat.rrd:cpu_idl <50 COLOR=yellow
+	DS cpu vmstat.rrd:cpu_idl >20 <50 COLOR=yellow
 .br
-	DS cpu vmstat.rrd:cpu_idl <20 COLOR=red "TEXT=CPU busy"
+	DS cpu vmstat.rrd:cpu_idl <=20 COLOR=red
 .br
-	DS http %tcp.http:sec >10 COLOR=red "TEXT=Slow URL (%.2f sec)"
+	DS http %tcp.http:sec >10 COLOR=red "TEXT=Slow URL (&V sec)"
 .sp
 This type of rule is for using data fed into the Hobbit RRD graphs
 to modify the color of an existing status column. E.g. the color of
@@ -490,14 +490,15 @@ where the percentage of idle CPU time is reported. Or it is not enough
 that a website responds, it must also do so in less than 10 seconds.
 .sp
 As the example above illustrates, there can be multiple rules for the same
-data item. In that case, the order of the rules becomes significant, and
-must have the most critical (typically: red) status LAST.
+data item. You should normally write the rules so that only one of them
+matches; if there is more than one match, the order of the rules becomes 
+significant, and the last rule to match decides the color.
 .sp
-The TEXT string will appear on the modified status page. It is an 
-.I sprintf(3)
-formatting string, which takes 2 floating point values: First is the
-actual value of the data item, second is the threshold used in the
-"criterium" setting.
+The TEXT string (if present) will appear on the modified status page. 
+Inside this string, the tokens "&V", "&N", "&L" and "&U" are replaced
+with the current value, the rrddataset name, the lower limit and the
+upper limit, respectively. All numbers are printed as floating point
+numbers, with 2 decimals.
 
 
 .SH CHANGING THE DEFAULT SETTINGS
