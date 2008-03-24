@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.71 2008-03-24 12:46:24 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.72 2008-03-24 12:49:36 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1635,10 +1635,10 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 			if (!rule->statustext) {
 				char *fmt = "";
 
-				if      (rule->flags & RRDDSCHK_GT) fmt = "&N=&V, (> &L)";
-				else if (rule->flags & RRDDSCHK_GE) fmt = "&N=&V, (>= &L)";
-				else if (rule->flags & RRDDSCHK_LT) fmt = "&N=&V, (< &L)";
-				else if (rule->flags & RRDDSCHK_LE) fmt = "&N=&V, (<= &L)";
+				if      (rule->flags & RRDDSCHK_GT) fmt = "&N=&V (> &L)";
+				else if (rule->flags & RRDDSCHK_GE) fmt = "&N=&V (>= &L)";
+				else if (rule->flags & RRDDSCHK_LT) fmt = "&N=&V (< &L)";
+				else if (rule->flags & RRDDSCHK_LE) fmt = "&N=&V (<= &L)";
 
 				rule->statustext = strdup(fmt);
 			}
