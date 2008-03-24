@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.70 2008-03-24 06:50:34 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.71 2008-03-24 12:46:24 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1616,12 +1616,12 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 			if (!rule->statustext) {
 				char fmt[100];
 
-				strcpy(fmt, "&N=&V, should be");
+				strcpy(fmt, "&N=&V (");
 				if (rule->flags & RRDDSCHK_GT) strcat(fmt, " > &L");
 				else if (rule->flags & RRDDSCHK_GE) strcat(fmt, " >= &L");
 				strcat(fmt, " and");
 				if (rule->flags & RRDDSCHK_LT) strcat(fmt, " < &U");
-				else if (rule->flags & RRDDSCHK_LE) strcat(fmt, " <= &U");
+				else if (rule->flags & RRDDSCHK_LE) strcat(fmt, " <= &U)");
 
 				rule->statustext = strdup(fmt);
 			}
@@ -1635,10 +1635,10 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 			if (!rule->statustext) {
 				char *fmt = "";
 
-				if      (rule->flags & RRDDSCHK_GT) fmt = "&N=&V, should be > &L";
-				else if (rule->flags & RRDDSCHK_GE) fmt = "&N=&V, should be >= &L";
-				else if (rule->flags & RRDDSCHK_LT) fmt = "&N=&V, should be < &L";
-				else if (rule->flags & RRDDSCHK_LE) fmt = "&N=&V, should be <= &L";
+				if      (rule->flags & RRDDSCHK_GT) fmt = "&N=&V, (> &L)";
+				else if (rule->flags & RRDDSCHK_GE) fmt = "&N=&V, (>= &L)";
+				else if (rule->flags & RRDDSCHK_LT) fmt = "&N=&V, (< &L)";
+				else if (rule->flags & RRDDSCHK_LE) fmt = "&N=&V, (<= &L)";
 
 				rule->statustext = strdup(fmt);
 			}
