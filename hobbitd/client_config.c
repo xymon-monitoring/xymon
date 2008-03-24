@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: client_config.c,v 1.69 2008-03-24 06:45:01 henrik Exp $";
+static char rcsid[] = "$Id: client_config.c,v 1.70 2008-03-24 06:50:34 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1620,8 +1620,8 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 				if (rule->flags & RRDDSCHK_GT) strcat(fmt, " > &L");
 				else if (rule->flags & RRDDSCHK_GE) strcat(fmt, " >= &L");
 				strcat(fmt, " and");
-				if (rule->flags & RRDDSCHK_LT) strcat(fmt, " < &H");
-				else if (rule->flags & RRDDSCHK_LE) strcat(fmt, " <= &H");
+				if (rule->flags & RRDDSCHK_LT) strcat(fmt, " < &U");
+				else if (rule->flags & RRDDSCHK_LE) strcat(fmt, " <= &U");
 
 				rule->statustext = strdup(fmt);
 			}
@@ -1674,7 +1674,7 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 						    bot = marker+2;
 						    break;
 
-					  case 'H': sprintf(msgline, "%.2f", (rule->flags & RRDDSCHK_INTVL) ? rule->rule.rrdds.limitval2 : rule->rule.rrdds.limitval); 
+					  case 'U': sprintf(msgline, "%.2f", (rule->flags & RRDDSCHK_INTVL) ? rule->rule.rrdds.limitval2 : rule->rule.rrdds.limitval); 
 						    addtobuffer(resbuf, msgline);
 						    bot = marker+2;
 						    break;
