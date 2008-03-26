@@ -9,7 +9,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-sunos.sh,v 1.22 2008-03-05 12:30:23 henrik Exp $
+# $Id: hobbitclient-sunos.sh,v 1.23 2008-03-26 10:39:42 henrik Exp $
 
 echo "[date]"
 date
@@ -26,7 +26,7 @@ echo "[df]"
 ROOTFSTYPE=`/bin/df -n / | awk '{print $3}'`
 /bin/df -F $ROOTFSTYPE -k
 # Then see what fs types are in use, and weed out those we dont want.
-FSTYPES=`/bin/df -n -l|awk '{print $3}'|egrep -v "^${ROOTFSTYPE}|^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^lofs"|sort|uniq`
+FSTYPES=`/bin/df -n -l|cut -d: -f2 | awk '{print $1}'|egrep -v "^${ROOTFSTYPE}|^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^lofs"|sort|uniq`
 set $FSTYPES
 while test "$1" != ""; do
   /bin/df -F $1 -k | grep -v " /var/run" | tail +2
