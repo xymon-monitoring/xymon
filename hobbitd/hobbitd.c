@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.282 2008-03-22 12:47:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.283 2008-03-27 12:37:53 henrik Exp $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -2225,7 +2225,7 @@ done:
 }
 
 
-unsigned char *get_filecache(char *fn)
+unsigned char *get_filecache(char *fn, long *len)
 {
 	RbtIterator handle;
 	filecache_t *item;
@@ -2239,6 +2239,7 @@ unsigned char *get_filecache(char *fn)
 
 	result = (unsigned char *)malloc(item->len);
 	memcpy(result, item->fdata, item->len);
+	*len = item->len;
 
 	return result;
 }
@@ -2315,11 +2316,12 @@ int get_binary(char *fn, conn_t *msg)
 	int fd;
 	struct stat st;
 	unsigned char *result;
+	long flen;
 
 	dbgprintf("-> get_binary %s\n", fn);
 	sprintf(fullfn, "%s/download/%s", xgetenv("BBHOME"), fn);
 
-	result = get_filecache(fullfn);
+	result = get_filecache(fullfn, &flen);
 	if (!result) {
 		fd = open(fullfn, O_RDONLY);
 		if (fd == -1) {
@@ -2338,12 +2340,18 @@ int get_binary(char *fn, conn_t *msg)
 				close(fd);
 				return -1;
 			}
-		}
 
-		add_filecache(fullfn, result, st.st_size);
+			flen = st.st_size;
+			add_filecache(fullfn, result, flen);
+		}
+		else {
+			errprintf("Impossible - cannot fstat() an open file ..\n");
+			close(fd);
+			return -1;
+		}
 	}
 
-	msg->buflen = st.st_size;
+	msg->buflen = flen;
 	msg->buf = result;
 	msg->bufp = msg->buf + msg->buflen;
 
