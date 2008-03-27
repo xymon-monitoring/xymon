@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: holidays.c,v 1.9 2008-01-03 15:11:55 henrik Exp $";
+static char rcsid[] = "$Id: holidays.c,v 1.10 2008-03-27 09:07:05 henrik Exp $";
 
 #include <time.h>
 #include <sys/time.h>
@@ -192,7 +192,7 @@ static void add_holiday(char *key, int year, holiday_t *newhol)
 
 	switch (newhol->holtype) {
 	  case HOL_ABSOLUTE:
-		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <=31) );
+		isOK = ( (newhol->month >= 1 && newhol->month <=12) && (newhol->day >=1 && newhol->day <=31) && (!newhol->year || (newhol->year == year)) );
 		if (!isOK) break;
 		day = mkday(year, newhol->month, newhol->day);
 		t = localtime(&day);
@@ -468,6 +468,12 @@ int load_holidays(int year)
 			}
 			else if (strncasecmp(arg1, "OFFSET", 6) == 0) {
 				newholiday.day=atoi(arg2);
+			}
+			else if (strncasecmp(arg1, "YEAR", 4) == 0) {
+				newholiday.year=atoi(arg2);
+				if (newholiday.year > 1000) {
+			                newholiday.year -= 1900;
+			        }
 			}
 
 			arg1 = strtok(NULL,"=");

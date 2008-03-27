@@ -20,6 +20,7 @@ typedef struct holiday_t {
 	int month;  	/* 	month for absolute date				 	*/
 	int day;    	/* 	day for absolute date or offset for type 2 and 3 	*/
 	int yday;   	/* 	day of the year this holiday occurs in current year	*/
+	int year;   	/* 	year for absolute date 					*/
 
 	struct holiday_t *next;
 } holiday_t;
