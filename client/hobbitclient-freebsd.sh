@@ -10,7 +10,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.19 2008-01-03 09:49:28 henrik Exp $
+# $Id: hobbitclient-freebsd.sh,v 1.20 2008-03-27 11:43:30 henrik Exp $
 
 echo "[date]"
 date
@@ -32,6 +32,8 @@ echo "[meminfo]"
 $BBHOME/bin/freebsd-meminfo
 echo "[swapinfo]"
 swapinfo -k
+echo "[vmtotal]"
+sysctl vm.vmtotal
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
