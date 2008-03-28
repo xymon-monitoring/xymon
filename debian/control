@@ -2,7 +2,7 @@ Source: hobbit
 Section: net
 Priority: optional
 Maintainer: Henrik Stoerner <henrik@hswn.dk>
-Build-Depends: debhelper (>= 4.0.0), librrd0-dev, libssl-dev, libldap2-dev, libpcre3-dev, fping
+Build-Depends: debhelper (>= 4.0.0), librrd2-dev, libssl-dev, libldap2-dev, libpcre3-dev, fping
 Standards-Version: 3.6.1
 
 Package: hobbit
