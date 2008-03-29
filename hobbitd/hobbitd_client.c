@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.121 2008-03-03 13:57:32 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.122 2008-03-29 07:08:52 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -52,6 +52,22 @@ int sendclearsvcs = 1;
 int localmode     = 0;
 int noreportcolor = COL_CLEAR;
 
+void nextsection_r_done(void *secthead)
+{
+	/* Free the old list */
+	sectlist_t *swalk, *stmp;
+
+	swalk = (sectlist_t *)secthead;
+	while (swalk) {
+		if (swalk->nextsectionrestoreptr) *swalk->nextsectionrestoreptr = swalk->nextsectionrestoreval;
+		if (swalk->sectdatarestoreptr) *swalk->sectdatarestoreptr = swalk->sectdatarestoreval;
+
+		stmp = swalk;
+		swalk = swalk->next;
+		xfree(stmp);
+	}
+}
+
 void splitmsg_r(char *clientdata, sectlist_t **secthead)
 {
 	char *cursection, *nextsection;
@@ -60,6 +76,17 @@ void splitmsg_r(char *clientdata, sectlist_t **secthead)
 	if (clientdata == NULL) {
 		errprintf("Got a NULL client data message\n");
 		return;
+	}
+
+	if (secthead == NULL) {
+		errprintf("BUG: splitmsg_r called with NULL secthead\n");
+		return;
+	}
+
+	if (*secthead) {
+		errprintf("BUG: splitmsg_r called with non-empty secthead\n");
+		nextsection_r_done(*secthead);
+		*secthead = NULL;
 	}
 
 	/* Find the start of the first section */
@@ -103,23 +130,13 @@ void splitmsg_r(char *clientdata, sectlist_t **secthead)
 
 void splitmsg(char *clientdata)
 {
-	splitmsg_r(clientdata, &defsecthead);
-}
-
-void nextsection_r_done(void *secthead)
-{
-	/* Free the old list */
-	sectlist_t *swalk, *stmp;
-
-	swalk = (sectlist_t *)secthead;
-	while (swalk) {
-		if (swalk->nextsectionrestoreptr) *swalk->nextsectionrestoreptr = swalk->nextsectionrestoreval;
-		if (swalk->sectdatarestoreptr) *swalk->sectdatarestoreptr = swalk->sectdatarestoreval;
-
-		stmp = swalk;
-		swalk = swalk->next;
-		xfree(stmp);
+	if (defsecthead) {
+		/* Clean up after the previous message */
+		nextsection_r_done(defsecthead);
+		defsecthead = NULL;
 	}
+
+	splitmsg_r(clientdata, &defsecthead);
 }
 
 char *nextsection_r(char *clientdata, char **name, void **current, void **secthead)
