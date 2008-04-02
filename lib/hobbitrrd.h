@@ -54,7 +54,7 @@ extern char *hobbit_graph_data(char *hostname, char *dispname, char *service, in
 		hobbitgraph_t *graphdef, int itemcount, 
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
 		time_t starttime, time_t endtime);
-extern void *setup_template(char *params[]);
+extern rrdtpldata_t *setup_template(char *params[]);
 
 #endif
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitrrd.c,v 1.47 2008-03-22 12:45:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbitrrd.c,v 1.48 2008-04-02 10:45:15 henrik Exp $";
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -319,7 +319,7 @@ char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcol
 }
 
 
-void *setup_template(char *params[])
+rrdtpldata_t *setup_template(char *params[])
 {
 	int i;
 	rrdtpldata_t *result;
