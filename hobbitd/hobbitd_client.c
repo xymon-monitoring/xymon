@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_client.c,v 1.122 2008-03-29 07:08:52 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_client.c,v 1.123 2008-04-02 10:29:03 henrik Exp $";
 
 #include <stdio.h>
 #include <string.h>
@@ -1867,8 +1867,8 @@ int main(int argc, char *argv[])
 
 			dbgprintf("Client report from host %s\n", (hostname ? hostname : "<unknown>"));
 
-			/* We handle data from the default client collector - nothing else */
-			if (collectorid && (strcmp(collectorid, "") != 0)) continue;
+			/* We handle data from the default client collector and snmpcollect - nothing else */
+			if (collectorid && (strcmp(collectorid, "") != 0) && (strcmp(collectorid, "snmpcollect") != 0)) continue;
 
 			hinfo = (localmode ? localhostinfo(hostname) : hostinfo(hostname));
 			if (!hinfo) continue;
