@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: readmib.c,v 1.8 2008-02-02 08:00:37 henrik Exp $";
+static char rcsid[] = "$Id: readmib.c,v 1.9 2008-04-02 10:46:07 henrik Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@ static char rcsid[] = "$Id: readmib.c,v 1.8 2008-02-02 08:00:37 henrik Exp $";
 static RbtHandle mibdefs;				/* Holds the list of MIB definitions */
 static RbtIterator nexthandle;
 
-void readmibs(char *cfgfn, int verbose)
+int readmibs(char *cfgfn, int verbose)
 {
 	static char *fn = NULL;
 	static void *cfgfiles = NULL;
@@ -30,7 +30,7 @@ void readmibs(char *cfgfn, int verbose)
 	if (cfgfiles) {
 		if (!stackfmodified(cfgfiles)) {
 			dbgprintf("No files changed, skipping reload\n");
-			return;
+			return 0;
 		}
 		else {
 			RbtIterator handle;
@@ -94,7 +94,7 @@ void readmibs(char *cfgfn, int verbose)
 	cfgfd = stackfopen(fn, "r", &cfgfiles);
 	if (cfgfd == NULL) {
 		errprintf("Cannot open configuration files %s\n", fn);
-		return;
+		return 0;
 	}
 
 	inbuf = newstrbuffer(0);
@@ -241,6 +241,8 @@ void readmibs(char *cfgfn, int verbose)
 			}
 		}
 	}
+
+	return 1;
 }
 
 mibdef_t *first_mib(void)
