@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.60 2008-03-24 06:42:50 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.61 2008-04-02 10:42:14 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -262,9 +262,16 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	updcachekey = filedir + updcache_keyofs;
 	handle = rbtFind(updcache, updcachekey);
 	if (handle == rbtEnd(updcache)) {
+		if (!template) template = setup_template(creparams);
+		if (!template) {
+			errprintf("BUG: setup_template() returns NULL! host=%s,test=%s,cp[0]=%s, cp[1]=%s\n",
+				  hostname, testname, 
+				  (creparams[0] ? creparams[0] : "NULL"),
+				  (creparams[1] ? creparams[1] : "NULL"));
+			return -1;
+		}
 		cacheitem = (updcacheitem_t *)calloc(1, sizeof(updcacheitem_t));
 		cacheitem->key = strdup(updcachekey);
-		if (!template) template = setup_template(creparams);
 		cacheitem->tpl = template;
 		rbtInsert(updcache, cacheitem->key, cacheitem);
 	}
@@ -409,7 +416,7 @@ void rrdcacheflushhost(char *hostname)
 	RbtIterator handle;
 	updcacheitem_t *cacheitem;
 	flushtree_t *flushitem;
-	int keylen, done;
+	int keylen;
 	time_t now = getcurrenttime(NULL);
 
 	if (updcache_keyofs == -1) return;
