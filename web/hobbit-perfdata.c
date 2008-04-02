@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-perfdata.c,v 1.3 2008-02-22 13:09:38 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-perfdata.c,v 1.4 2008-04-02 10:46:37 henrik Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -156,9 +156,9 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 	if (outform == O_XML) {
 		printf("     </datapoints>\n");
 		printf("     <summary>\n");
-		printf("          <minimum>%f</minimum>\n", min);
-		printf("          <maximum>%f</maximum>\n", max);
-		printf("          <average>%f</average>\n", (sum / rowcount));
+		if (havemin) printf("          <minimum>%f</minimum>\n", min);
+		if (havemax) printf("          <maximum>%f</maximum>\n", max);
+		if (rowcount) printf("          <average>%f</average>\n", (sum / rowcount));
 		printf("          <missingdatapoints>%d</missingdatapoints>\n", missingdata);
 		printf("     </summary>\n");
 		printf("  </dataset>\n");
