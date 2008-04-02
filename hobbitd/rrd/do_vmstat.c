@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.30 2008-03-22 07:48:55 henrik Exp $";
+static char vmstat_rcsid[] = "$Id: do_vmstat.c,v 1.31 2008-04-02 10:44:49 henrik Exp $";
 
 typedef struct vmstat_layout_t {
 	int index;
@@ -434,7 +434,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	for (defidx=0; (defidx < defcount); defidx++) {
 		int dataidx = layout[defidx].index;
 
-		if ((dataidx > datacount) || (dataidx == -1)) {
+		if ((dataidx >= datacount) || (dataidx == -1)) {
 			p += sprintf(p, ":U");
 		}
 		else {
