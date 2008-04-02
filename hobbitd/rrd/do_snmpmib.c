@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.5 2008-03-22 07:48:55 henrik Exp $";
+static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.6 2008-04-02 10:43:41 henrik Exp $";
 
 static time_t snmp_nextreload = 0;
 
@@ -16,7 +16,7 @@ typedef struct snmpmib_param_t {
 	char *name;
 	char **valnames;
 	char **dsdefs;
-	char *tpl;
+	rrdtpldata_t *tpl;
 	int valcount;
 } snmpmib_param_t;
 static RbtHandle snmpmib_paramtree;
@@ -31,24 +31,35 @@ int is_snmpmib_rrd(char *testname)
 	int i;
 
 	if (now > snmp_nextreload) {
-		if (snmp_nextreload > 0) {
-			/* Flush the old params and templates */
-			snmpmib_param_t *walk;
-			int i;
+		int updated = readmibs(NULL, 0);
 
-			for (handle = rbtBegin(snmpmib_paramtree); (handle != rbtEnd(snmpmib_paramtree)); handle = rbtNext(snmpmib_paramtree, handle)) {
-				walk = (snmpmib_param_t *)gettreeitem(snmpmib_paramtree, handle);
-				if (walk->valnames) xfree(walk->valnames);
-				for (i=0; (i < walk->valcount); i++) xfree(walk->dsdefs[i]);
-				if (walk->dsdefs) xfree(walk->dsdefs);
-				if (walk->tpl) xfree(walk->tpl);
-				xfree(walk);
+		if (updated) {
+			if (snmp_nextreload > 0) {
+				/* Flush the old params and templates */
+				snmpmib_param_t *walk;
+				int i;
+
+				for (handle = rbtBegin(snmpmib_paramtree); (handle != rbtEnd(snmpmib_paramtree)); handle = rbtNext(snmpmib_paramtree, handle)) {
+					walk = (snmpmib_param_t *)gettreeitem(snmpmib_paramtree, handle);
+					if (walk->valnames) xfree(walk->valnames);
+					for (i=0; (i < walk->valcount); i++) xfree(walk->dsdefs[i]);
+					if (walk->dsdefs) xfree(walk->dsdefs);
+
+					/* 
+					 * We don't free the "tpl" data here. We cannot do it, because
+					 * there are probably cached RRD updates waiting to use this
+					 * template - so freeing it would cause all sorts of bad behaviour.
+					 * It DOES cause a memory leak ...
+					 */
+
+					xfree(walk);
+				}
+				rbtDelete(snmpmib_paramtree);
 			}
-			rbtDelete(snmpmib_paramtree);
+
+			snmpmib_paramtree = rbtNew(name_compare);
 		}
 
-		readmibs(NULL, 0);
-		snmpmib_paramtree = rbtNew(name_compare);
 		snmp_nextreload = now + 600;
 	}
 
@@ -67,7 +78,6 @@ int is_snmpmib_rrd(char *testname)
 		newitem->dsdefs = (char **)calloc(totalvars, sizeof(char *));
 		for (swalk = mib->oidlisthead, newitem->valcount = 0; (swalk); swalk = swalk->next) {
 			for (i=0; (i <= swalk->oidcount); i++) {
-				int n;
 				char *datatypestr, *minimumstr;
 
 				if (swalk->oids[i].rrdtype == RRD_NOTRACK) continue;
@@ -153,7 +163,6 @@ static void do_simple_snmpmib(char *hostname, char *testname, char *classname, c
 			}
 		}
 
-nextline:
 		bol = (eoln ? eoln+1 : NULL);
 	}
 
