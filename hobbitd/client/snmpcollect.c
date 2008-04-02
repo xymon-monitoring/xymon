@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.5 2008-02-10 12:45:53 henrik Exp $";
+static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.6 2008-04-02 10:29:27 henrik Exp $";
 
 /*
  * Split the snmpcollect client-message into individual mib-datasets.
@@ -37,6 +37,14 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 		void *ns2var, *ns2sects;
 		int color, rulecolor, anyrules;
 		char *groups;
+
+		if (strcmp(mibname, "proxy") == 0) {
+			/*
+			 * Data was forwarded through a proxy - skip this section.
+			 * We dont want a "proxy" status for all SNMP-enabled hosts.
+			 */
+			goto sectiondone;
+		}
 
 		/* Convert the "<NNN>" markers to "[NNN]" */
 		bmark = onemib;
@@ -85,6 +93,7 @@ void handle_snmpcollect_client(char *hostname, char *clienttype, enum ostype_t o
 		addtostatus(fromline);
 		finish_status();
 
+sectiondone:
 		onemib = nextsection_r(NULL, &mibname, &ns1var, &ns1sects);
 	}
 	nextsection_r_done(ns1sects);
