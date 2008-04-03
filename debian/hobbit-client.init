@@ -26,14 +26,33 @@ if [ "$HOBBITSERVERS" = "" ]; then
 	exit 1
 fi
 
-set $HOBBITSERVERS
-if [ $# -eq 1 ]; then
-	echo "BBDISP=\"$HOBBITSERVERS\"" >/var/run/hobbitclient-runtime.cfg
-	echo "BBDISPLAYS=\"\"" >>/var/run/hobbitclient-runtime.cfg
-else
-	echo "BBDISP=\"0.0.0.0\"" >/var/run/hobbitclient-runtime.cfg
-	echo "BBDISPLAYS=\"$HOBBITSERVERS\"" >>/var/run/hobbitclient-runtime.cfg
-fi
+set_servers () {
+	set $HOBBITSERVERS
+	if [ $# -eq 1 ]; then
+		echo "BBDISP=\"$HOBBITSERVERS\"" >/var/run/hobbitclient-runtime.cfg
+		echo "BBDISPLAYS=\"\"" >>/var/run/hobbitclient-runtime.cfg
+	else
+		echo "BBDISP=\"0.0.0.0\"" >/var/run/hobbitclient-runtime.cfg
+		echo "BBDISPLAYS=\"$HOBBITSERVERS\"" >>/var/run/hobbitclient-runtime.cfg
+	fi
+}
+
+kill_rogue_vmstat () {
+	for VMSTAT_PID in `ps -U hobbit | grep vmstat | awk '{print $1}'`; do
+		kill ${VMSTAT_PID}
+	done
+	# wait for the nohup parent shell script to finish
+	sleep 1
+}
+
+clean_var_run () {
+	rm /var/run/hobbitclient-runtime.cfg >/dev/null 2>&1
+}
+
+clean_tmp () {
+	# it's not the cleanest but debian client use /tmp as BBTMP anyway
+	find /tmp -user hobbit -exec rm -rf \{} \; >/dev/null 2>&1
+}
 
 if [ "$CLIENTHOSTNAME" != "" ]; then
 	DMNOPTS="${DMNOPTS} --hostname=${CLIENTHOSTNAME}"
@@ -47,17 +66,23 @@ set -e
 case "$CMD" in
   start)
 	echo -n "Starting $DESC: "
+	set_servers
 	su -c "$DAEMON $DMNOPTS start" - hobbit
 	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
 	su -c "$DAEMON stop" - hobbit
+	kill_rogue_vmstat
+	clean_tmp
+	clean_var_run
 	echo "$NAME."
 	;;
   restart|force-reload)
 	echo -n "Restarting $DESC: "
 	su -c "$DAEMON stop" - hobbit
+	kill_rogue_vmstat
+	clean_tmp
 	su -c "$DAEMON $DMNOPTS start" - hobbit
 	echo "$NAME."
 	;;
