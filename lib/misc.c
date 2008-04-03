@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: misc.c,v 1.66 2008-03-03 13:57:32 henrik Exp $";
+static char rcsid[] = "$Id: misc.c,v 1.67 2008-04-03 05:49:40 henrik Exp $";
 
 #include "config.h"
 
@@ -705,6 +705,9 @@ char **setup_commandargs(char *cmdline, char **cmd)
 
 long long str2ll(char *s, char **errptr)
 {
+#ifdef HAVE_STRTOLL
+	return strtoll(s, errptr, 10);
+#else
 	long long result = 0;
 	int negative = 0;
 	char *inp;
@@ -721,7 +724,9 @@ long long str2ll(char *s, char **errptr)
 	if (negative) result = -result;
 
 	return result;
+#endif
 }
+
 int checkalert(char *alertlist, char *testname)
 {
 	char *alist, *aname;
