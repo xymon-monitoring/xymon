@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.39 2008-03-22 07:48:55 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.40 2008-04-03 05:49:40 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
@@ -99,7 +99,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 			diskname = xstrdup(columns[6]);
 			p = strchr(columns[5], '%'); if (p) *p = ' ';
 			pused = atoi(columns[5]);
-			aused = atoi(columns[3]);
+			aused = str2ll(columns[3], NULL);
 			break;
 		  case DT_AS400:
 			diskname = xstrdup("/DASD");
@@ -124,13 +124,13 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 			sprintf(diskname, "/%s", columns[0]);
 			p = strchr(columns[4], '%'); if (p) *p = ' ';
 			pused = atoi(columns[4]);
-			aused = atoi(columns[2]);
+			aused = str2ll(columns[2], NULL);
 			break;
 		  case DT_UNIX:
 			diskname = xstrdup(columns[5]);
 			p = strchr(columns[4], '%'); if (p) *p = ' ';
 			pused = atoi(columns[4]);
-			aused = atoi(columns[2]);
+			aused = str2ll(columns[2], NULL);
 			break;
 		  case DT_NETAPP:
 			diskname = xstrdup(columns[1]);
