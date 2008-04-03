@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.23 2008-03-27 12:24:12 henrik Exp $";
+static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.24 2008-04-03 20:27:41 henrik Exp $";
 
 void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os, 
 			   void *hinfo, char *sender, time_t timestamp,
@@ -59,6 +59,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	ifstatstr = getdata("ifstat");
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
+	vmtotalstr = getdata("vmtotal");
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
 			whostr, 0, psstr, 0, topstr);
