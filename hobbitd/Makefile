@@ -31,7 +31,7 @@ all: $(PROGRAMS) cfgfiles
 client: $(CLIENTPROGRAMS)
 
 hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(HOBBITZLIB)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(HOBBITZLIB) $(SSLLIBS)
 
 hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS) $(NETLIBS)
@@ -52,7 +52,7 @@ hobbitd_rrd: $(RRDOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
 
 hobbitd.o: hobbitd.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ $<
 
 do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -DMAX_ALERTMSG_SCRIPTS=$(MAXALERTMSGSZ) -c -o $@ do_alert.c
