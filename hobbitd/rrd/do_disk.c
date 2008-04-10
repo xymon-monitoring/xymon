@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char disk_rcsid[] = "$Id: do_disk.c,v 1.40 2008-04-03 05:49:40 henrik Exp $";
+static char disk_rcsid[] = "$Id: do_disk.c,v 1.41 2008-04-10 09:02:17 henrik Exp $";
 
 int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
@@ -50,6 +50,16 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	else if (strstr(msg, "Summary")) dsystype = DT_BBWIN; /* BBWin > 0.10 is almost like Windows/NT */
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
+
+	if (dsystype == DT_NT) {
+		/*
+		 * The MrBig client includes HTML tables with the configured disk thresholds.
+		 * We simply cut off that part of the message before doing any trend analysis.
+		 */
+		char *mrbigstuff = strstr(msg, "<b>Limits:</b>");
+
+		if (mrbigstuff) *mrbigstuff = '\0';
+	}
 
 	/*
 	 * Francesco Duranti noticed that if we use the "/group" option
