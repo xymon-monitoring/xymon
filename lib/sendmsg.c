@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.88 2008-03-02 12:44:57 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.89 2008-04-29 08:54:55 henrik Exp $";
 
 #include "config.h"
 
@@ -32,6 +32,11 @@ static char rcsid[] = "$Id: sendmsg.c,v 1.88 2008-03-02 12:44:57 henrik Exp $";
 #include <netdb.h>
 #include <fcntl.h>
 #include <stdio.h>
+
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif
 
 #include "libbbgen.h"
 
@@ -61,7 +66,74 @@ static strbuffer_t *metabuf = NULL;	/* message buffer for one meta message */
 
 int dontsendmessages = 0;
 int sendcompressedmessages = 0;
+int sendssl = 0;
+char *sslcertfn = NULL;
+char *sslkeyfn = NULL;
 
+#ifdef HAVE_OPENSSL
+static SSL_METHOD *sslmethod = NULL;
+static SSL_CTX *sslctx = NULL;
+static SSL *sslobj = NULL;
+#endif
+
+
+static int sslinitialize(void)
+{
+	static int initdone = 0;
+
+	if (initdone) return 0;
+
+#ifdef HAVE_OPENSSL
+	/* Setup OpenSSL */
+	SSL_load_error_strings();
+	SSL_library_init();
+	sslmethod = SSLv23_client_method();
+	sslctx = SSL_CTX_new(sslmethod);
+	if (sslctx == NULL) {
+		errprintf("Cannot create SSL context\n");
+		ERR_print_errors_fp(stderr);
+		return 1;
+	}
+	SSL_CTX_set_options(sslctx, SSL_OP_NO_SSLv2);
+
+	/* Load a client certificate if there is one */
+	if (sslcertfn && sslkeyfn) {
+		if (SSL_CTX_use_certificate_chain_file(sslctx, sslcertfn) <= 0) {
+			errprintf("Cannot load SSL certificate\n");
+			ERR_print_errors_fp(stderr);
+			return 1;
+		}
+		if (SSL_CTX_use_PrivateKey_file(sslctx, sslkeyfn, SSL_FILETYPE_PEM) <= 0) {
+			errprintf("Cannot load SSL private key\n");
+			ERR_print_errors_fp(stderr);
+			return 1;
+		}
+		if (!SSL_CTX_check_private_key(sslctx)) {
+			errprintf("Invalid private key, does not match certificate\n");
+			return 1;
+		}
+	}
+
+	initdone = 1;
+#endif
+
+	return 0;
+}
+
+
+static void closesocket(int fd)
+{
+#ifdef HAVE_OPENSSL
+	if (sslobj) {
+		SSL_shutdown(sslobj);
+		SSL_free(sslobj);
+		sslobj = NULL;
+	}
+#endif
+
+	shutdown(fd, SHUT_RDWR);
+	close(fd);
+}
 
 void setproxy(char *proxy)
 {
@@ -269,6 +341,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		bufp += sprintf(bufp, "Content-Length: %d\n", strlen(message));
 		bufp += sprintf(bufp, "Host: %s\n", posthost);
 		bufp += sprintf(bufp, "\n%s", message);
+		msgremain = (bufp - msgptr);
 
 		if (posturl) xfree(posturl);
 		if (posthost) xfree(posthost);
@@ -278,6 +351,9 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 	}
 
 	if (conntype == C_IP) {
+		/* Setup SSL (if we use it), bail out if it fails */
+		if (sslinitialize() != 0) return;
+
 		if (inet_aton(rcptip, &addr) == 0) {
 			/* recipient is not an IP - do DNS lookup */
 
@@ -346,14 +422,12 @@ retry_connect:
 		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
 		if (res == -1) {
 			errprintf("Select failure while sending to bbd@%s:%d!\n", rcptip, rcptport);
-			shutdown(sockfd, SHUT_RDWR);
-			close(sockfd);
+			closesocket(sockfd);
 			return BB_ESELFAILED;
 		}
 		else if (res == 0) {
 			/* Timeout! */
-			shutdown(sockfd, SHUT_RDWR);
-			close(sockfd);
+			closesocket(sockfd);
 
 			if (!isconnected && (connretries > 0)) {
 				dbgprintf("Timeout while talking to bbd@%s:%d - retrying\n", rcptip, rcptport);
@@ -374,8 +448,7 @@ retry_connect:
 				dbgprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
 				if (!isconnected) {
-					shutdown(sockfd, SHUT_RDWR);
-					close(sockfd);
+					closesocket(sockfd);
 					errprintf("Could not connect to bbd@%s:%d - %s\n", 
 						  rcptip, rcptport, strerror(connres));
 					return BB_ECONNFAILED;
@@ -462,14 +535,14 @@ retry_connect:
 					}
 				}
 				else rdone = 1;
-				if (rdone) shutdown(sockfd, SHUT_RD);
+				/* if (rdone) shutdown(sockfd, SHUT_RD); */
 			}
 
 			if (!wdone && FD_ISSET(sockfd, &writefds)) {
 				/* Send some data */
 				res = write(sockfd, msgptr, msgremain);
 				if (res == -1) {
-					shutdown(sockfd, SHUT_RDWR); close(sockfd);
+					closesocket(sockfd);
 					errprintf("Write error while sending message to bbd@%s:%d\n", rcptip, rcptport);
 					return BB_EWRITEERROR;
 				}
@@ -478,15 +551,14 @@ retry_connect:
 					msgptr += res;
 					msgremain -= res;
 					wdone = (msgremain == 0);
-					if (wdone) shutdown(sockfd, SHUT_WR);
+					/* if (wdone) shutdown(sockfd, SHUT_WR); */
 				}
 			}
 		}
 	}
 
 	dbgprintf("Closing connection\n");
-	shutdown(sockfd, SHUT_RDWR);
-	close(sockfd);
+	closesocket(sockfd);
 
 	if (respstr && (cmprhandling == C_LOOKFORMARKER) && (strncmp(*respstr, compressionmarker, compressionmarkersz) == 0)) {
 		/* Decompress the message */
