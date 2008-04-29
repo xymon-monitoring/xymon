@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.21 2008-01-03 10:11:16 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.22 2008-04-29 08:51:40 henrik Exp $";
 
 void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			   void *hinfo, char *sender, time_t timestamp, 
@@ -32,6 +32,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *ifstatstr;
 	char *portsstr;
 	char *vmstatstr;
+	char *iostatdiskstr;
 
 	char fromline[1024];
 
@@ -55,6 +56,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	ifstatstr = getdata("ifstat");
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
+	iostatdiskstr = getdata("iostatdisk");
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
 			whostr, 0, psstr, 0, topstr);
@@ -88,6 +90,22 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 					   memphystotal, (memphystotal - memphysfree), -1,
 					   (memswapused + memswapfree), memswapused);
 		}
+	}
+
+	if (iostatdiskstr) {
+		char msgline[1024];
+		strbuffer_t *msg = newstrbuffer(0);
+		char *p;
+
+		p = strchr(iostatdiskstr, '\n'); 
+		if (p) {
+			p++;
+			sprintf(msgline, "data %s.iostatdisk\n%s\n", commafy(hostname), osname(os));
+			addtobuffer(msg, msgline);
+			addtobuffer(msg, p);
+			sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		}
+		freestrbuffer(msg);
 	}
 }
 
