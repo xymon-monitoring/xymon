@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitping.c,v 1.14 2008-01-03 09:42:11 henrik Exp $";
+static char rcsid[] = "$Id: hobbitping.c,v 1.15 2008-05-23 08:49:03 henrik Exp $";
 
 #include "config.h"
 
@@ -211,7 +211,10 @@ int send_ping(int sock, int startidx, int minresponses)
 			   (struct sockaddr *) &hosts[idx]->addr, sizeof(struct sockaddr_in));
 
 	if (sentbytes == -1) {
-		if (errno != EWOULDBLOCK) errprintf("Failed to send ICMP packet: %s\n", strerror(errno));
+		if (errno != EWOULDBLOCK) {
+			errprintf("Failed to send ICMP packet: %s\n", strerror(errno));
+			idx++; /* To avoid looping indefinitely trying to send to this host */
+		}
 	}
 	else if (sentbytes == PING_PACKET_SIZE) {
 		/* We managed to send a ping! */
