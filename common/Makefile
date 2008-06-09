@@ -18,22 +18,22 @@ all: $(PROGRAMS)
 client: $(CLIENTPROGRAMS)
 
 bbhostgrep: $(HOSTGREPOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) $(LIBOBJS) $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 ../client/bbhostgrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 bbhostshow: $(HOSTSHOWOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(LIBOBJS) $(HOBBITZLIB)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) $(LIBOBJS) $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 ../client/bbhostshow: $(HOSTSHOWOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a $(HOBBITZLIB)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
 
 bb: $(BBOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) $(LIBOBJS) $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 ../client/bb: $(BBOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 hobbitlaunch: $(LAUNCHOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) $(LIBOBJS) $(HOBBITZLIB)

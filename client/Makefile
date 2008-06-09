@@ -36,10 +36,10 @@ logfetch: logfetch.c
 	$(CC) $(CFLAGS) -o $@ logfetch.c ../lib/hobbitclient.a
 
 clientupdate: clientupdate.c
-	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/hobbitclient.a $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 orcahobbit: orcahobbit.c
-	$(CC) $(CFLAGS) -o $@ orcahobbit.c ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ orcahobbit.c ../lib/hobbitclient.a $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 msgcache: msgcache.c
 	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)

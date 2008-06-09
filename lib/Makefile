@@ -58,6 +58,9 @@ loadalerts.o: loadalerts.c
 matching.o: matching.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
+sendmsg.o: sendmsg.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(SSLINCDIR) -c -o $@ $<
+
 sha1.o: sha1.c
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 

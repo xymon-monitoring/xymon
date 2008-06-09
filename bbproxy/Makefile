@@ -12,7 +12,7 @@ bbproxy: $(PROXYOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
 
 bbmessage.cgi: $(BBCGIOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) $(LIBOBJS) $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
 
 ################################################
 # Default compilation rules
