@@ -563,6 +563,13 @@ alarm (red) status. These default to the values from the
 tool; the values specified in the "ssldays" tag overrides
 the default.
 
+.IP "sslbits=MINIMUMKEYBITS"
+Enable checking of the encryption strengt of the SSL protocol
+offered by the server. If the server offers encryption using
+a key with fewer than MINIMUMKEYBITS bits, the "sslcert"
+test will go red. E.g. to check that your server only uses
+strong encryption (128 bits or better), use "sslbits=128".
+
 .IP depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]
 This tag allows you to define dependencies betweeen tests.
 If "testA" for the current host depends on "test1" for host "host1"

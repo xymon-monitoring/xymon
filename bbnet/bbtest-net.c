@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbtest-net.c,v 1.251 2008-03-13 14:23:45 henrik Exp $";
+static char rcsid[] = "$Id: bbtest-net.c,v 1.251 2008/03/13 14:23:45 henrik Exp henrik $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -81,6 +81,7 @@ char		*ssltestname = "sslcert";       /* Name of the SSL certificate checks colu
 char		*failtext = "not OK";
 int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert column = yellow */
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
+int             mincipherbits = 0;		/* If weakest cipher is weaker than this # of buts, SSL cert column = red */
 int		validity = 30;
 char		*location = "";			/* BBLOCATION value */
 int		hostcount = 0;
@@ -317,6 +318,7 @@ testedhost_t *init_testedhost(char *hostname)
 	newhost->dotrace = dotraceroute;
 	newhost->sslwarndays = sslwarndays;
 	newhost->sslalarmdays = sslalarmdays;
+	newhost->mincipherbits = mincipherbits;
 
 	return newhost;
 }
@@ -343,6 +345,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	newtest->banner = newstrbuffer(0);
 	newtest->certinfo = NULL;
 	newtest->certexpires = 0;
+	newtest->mincipherbits = 0;
 	newtest->duration.tv_sec = newtest->duration.tv_usec = -1;
 	newtest->downcount = 0;
 	newtest->badtest[0] = newtest->badtest[1] = newtest->badtest[2] = 0;
@@ -418,6 +421,9 @@ void load_tests(void)
 
 		p = bbh_item(hwalk, BBH_SSLDAYS);
 		if (p) sscanf(p, "%d:%d", &h->sslwarndays, &h->sslalarmdays);
+
+		p = bbh_item(hwalk, BBH_SSLMINBITS);
+		if (p) h->mincipherbits = atoi(p);
 
 		p = bbh_item(hwalk, BBH_DEPENDS);
 		if (p) h->deptests = p;
@@ -1764,14 +1770,11 @@ void send_sslcert_status(testedhost_t *host)
 	service_t *s;
 	testitem_t *t;
 	char msgline[1024];
-	char *sslmsg;
-	int sslmsgsize;
+	strbuffer_t *sslmsg;
 	time_t now = getcurrenttime(NULL);
 	char *certowner;
 
-	sslmsgsize = 4096;
-	sslmsg = (char *)malloc(sslmsgsize);
-	*sslmsg = '\0';
+	sslmsg = newstrbuffer(0);
 
 	for (handle = rbtBegin(svctree); handle != rbtEnd(svctree); handle = rbtNext(svctree, handle)) {
 		s = (service_t *)gettreeitem(svctree, handle);
@@ -1780,6 +1783,7 @@ void send_sslcert_status(testedhost_t *host)
 		for (t=s->items; (t); t=t->next) {
 			if ((t->host == host) && t->certinfo && (t->certexpires > 0)) {
 				int sslcolor = COL_GREEN;
+				int ciphercolor = COL_GREEN;
 
 				if (s == httptest) certowner = ((http_data_t *)t->privdata)->url;
 				else if (s == ldaptest) certowner = t->testspec;
@@ -1787,6 +1791,9 @@ void send_sslcert_status(testedhost_t *host)
 				if (t->certexpires < (now+host->sslwarndays*86400)) sslcolor = COL_YELLOW;
 				if (t->certexpires < (now+host->sslalarmdays*86400)) sslcolor = COL_RED;
 				if (sslcolor > color) color = sslcolor;
+
+				if (host->mincipherbits && (t->mincipherbits < host->mincipherbits)) ciphercolor = COL_RED;
+				if (ciphercolor > color) color = ciphercolor;
 
 				if (t->certexpires > now) {
 					sprintf(msgline, "\n&%s SSL certificate for %s expires in %u days\n\n", 
@@ -1798,13 +1805,16 @@ void send_sslcert_status(testedhost_t *host)
 						colorname(sslcolor), certowner,
 						(unsigned int)((now - t->certexpires) / 86400));
 				}
+				addtobuffer(sslmsg, msgline);
 
-				if ((strlen(msgline)+strlen(sslmsg) + strlen(t->certinfo)) > sslmsgsize) {
-					sslmsgsize += (4096 + strlen(t->certinfo) + strlen(msgline));
-					sslmsg = (char *)realloc(sslmsg, sslmsgsize);
+				if (host->mincipherbits) {
+					sprintf(msgline, "&%s Minimum available SSL encryption is %d bits (should be %d)\n",
+						colorname(ciphercolor), t->mincipherbits, host->mincipherbits);
+					addtobuffer(sslmsg, msgline);
 				}
-				strcat(sslmsg, msgline);
-				strcat(sslmsg, t->certinfo);
+				addtobuffer(sslmsg, "\n");
+
+				addtobuffer(sslmsg, t->certinfo);
 			}
 		}
 	}
@@ -1815,12 +1825,12 @@ void send_sslcert_status(testedhost_t *host)
 		sprintf(msgline, "status+%d %s.%s %s %s\n", 
 			validity, commafy(host->hostname), ssltestname, colorname(color), timestamp);
 		addtostatus(msgline);
-		addtostatus(sslmsg);
+		addtostrstatus(sslmsg);
 		addtostatus("\n\n");
 		finish_status();
 	}
 
-	xfree(sslmsg);
+	freestrbuffer(sslmsg);
 }
 
 int main(int argc, char *argv[])
@@ -1969,6 +1979,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--sslalarm=")) {
 			char *p = strchr(argv[argi], '=');
 			p++; sslalarmdays = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--sslbits=")) {
+			char *p = strchr(argv[argi], '=');
+			p++; mincipherbits = atoi(p);
 		}
 		else if (argnmatch(argv[argi], "--validity=")) {
 			char *p = strchr(argv[argi], '=');
@@ -2180,6 +2194,7 @@ int main(int argc, char *argv[])
 					t->banner = dupstrbuffer(testresult->banner);
 					t->certinfo = testresult->certinfo;
 					t->certexpires = testresult->certexpires;
+					t->mincipherbits = testresult->mincipherbits;
 					t->duration.tv_sec = testresult->duration.tv_sec;
 					t->duration.tv_usec = testresult->duration.tv_usec;
 
@@ -2197,6 +2212,7 @@ int main(int argc, char *argv[])
 
 			t->certinfo = testresult->tcptest->certinfo;
 			t->certexpires = testresult->tcptest->certexpires;
+			t->mincipherbits = testresult->tcptest->mincipherbits;
 		}
 	}
 
@@ -2216,6 +2232,7 @@ int main(int argc, char *argv[])
 			ldap_data_t *testresult = (ldap_data_t *)t->privdata;
 
 			t->certinfo = testresult->certinfo;
+			t->mincipherbits = testresult->mincipherbits;
 			t->certexpires = testresult->certexpires;
 		}
 	}

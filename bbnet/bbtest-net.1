@@ -243,7 +243,7 @@ scripts earlier, you may want to use "--content=cont" to report content
 checks using the same test name as these scripts do.
 
 
-.SH OPTIONS FOR SSL CERTIFICATE TESTS
+.SH OPTIONS FOR SSL TESTS
 .IP --ssl=SSLCERTTESTNAME
 Determines the name of the column Hobbit displays for the SSL certificate checks.
 The default is "sslcert".
@@ -255,6 +255,15 @@ Disables reporting of the SSL certificate check.
 Determines the number of days before an SSL certificate
 expires, where bbtest-net will generate a warning or
 alarm status for the SSL certificate column.
+
+.IP --sslbits=N
+Enables checking that the encryption supported by the
+SSL protocol uses an encryption key of at least N bits.
+E.g. to trigger an alert if your SSL-enabled website 
+supports less than 128 bits of encryption, use "--sslbits=128".
+Note: This can be enabled on a per-host basis using the
+"sslbits=N" setting in 
+.I bb-hosts(5)
 
 
 .SH DEBUGGING OPTIONS
