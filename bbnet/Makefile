@@ -21,7 +21,7 @@ PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
 bbtest-net: $(NETTESTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(LIBOBJS) libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(LIBOBJS) libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS) $(LIBRTDEF)
 
 hobbitping: $(PINGTESTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(LIBOBJS) $(NETLIBS)
@@ -71,7 +71,7 @@ beastat.o: beastat.c
 
 
 contest: contest.c $(LIBOBJS)
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS) $(LIBRTDEF)
 
 
 hobbit_snmpcollect: hobbit_snmpcollect.o $(LIBOBJS)
