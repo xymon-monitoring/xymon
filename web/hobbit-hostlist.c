@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-hostlist.c,v 1.2 2008-01-03 10:04:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-hostlist.c,v 1.2 2008/01/03 10:04:58 henrik Exp henrik $";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 	char *req, *board, *l;
 	int argi, res;
+	sendreturn_t *sres;
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
@@ -97,12 +98,14 @@ int main(int argc, char *argv[])
 	parse_query();
 
 
+	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(fields) + strlen(testfilter) + strlen(pagefilter));
 	sprintf(req, "hobbitdboard fields=%s test=%s page=%s",
 		fields, testfilter, pagefilter);
-	res = sendmessage(req, NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+	res = sendmessage(req, NULL, BBTALK_TIMEOUT, sres);
 	if (res != BB_OK) return 1;
-
+	board = getsendreturnstr(sres, 1);
+	freesendreturnbuf(sres);
 
 	printf("Content-type: text/csv\n\n");
 	l = strtok(fields, ",");

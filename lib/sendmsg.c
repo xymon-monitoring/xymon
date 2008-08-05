@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.89 2008-04-29 08:54:55 henrik Exp $";
+static char rcsid[] = "$Id: sendmsg.c,v 1.89 2008/04/29 08:54:55 henrik Exp henrik $";
 
 #include "config.h"
 
@@ -75,6 +75,18 @@ static SSL_METHOD *sslmethod = NULL;
 static SSL_CTX *sslctx = NULL;
 static SSL *sslobj = NULL;
 #endif
+
+typedef enum { 	TALK_DONE, 					/* Done */
+		TALK_INIT_CONNECTION, TALK_CONNECTING, 		/* Connecting to peer */
+		TALK_SEND, TALK_RECEIVE, 			/* Un-encrypted data exchange */
+#ifdef HAVE_OPENSSL
+		TALK_SSLSEND, TALK_SSLRECEIVE, 			/* Encrypted data exchange */
+		TALK_SEND_STARTTLS,				/* We're requesting switch to SSL */
+		TALK_SSLREAD_SETUP, TALK_SSLWRITE_SETUP,	/* SSL read/write during initial handshake */
+		TALK_SSLREAD_SEND, TALK_SSLWRITE_SEND, 		/* SSL read/write during TALK_SEND */
+		TALK_SSLREAD_RECEIVE, TALK_SSLWRITE_RECEIVE, 	/* SSL read/write during TALK_RECEIVE */
+#endif
+} talkstate_t;
 
 
 static int sslinitialize(void)
@@ -209,33 +221,96 @@ static void setup_transport(char *recipient)
 	dbgprintf("bbdispproxyport = %d\n", bbdispproxyport);
 }
 
-static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respstr, int fullresponse, int timeout)
+static talkstate_t process_receive(char *recvbuf, int n, sendreturn_t *response, talkstate_t currstate)
+{
+	strbuffer_t *cmprbuf;
+	char *outp;
+
+	if (n <= 0) return TALK_DONE;
+
+	dbgprintf("Read %d bytes\n", n);
+	recvbuf[n] = '\0';
+
+	/*
+	 * When running over a HTTP transport, we must strip
+	 * off the HTTP headers we get back, so the response
+	 * is consistent with what we get from the normal bbd
+	 * transport.
+	 * (Non-http transport sets "haveseenhttphdrs" to 1)
+	 */
+	if (!response->haveseenhttphdrs) {
+		outp = strstr(recvbuf, "\r\n\r\n");
+		if (outp) {
+			outp += 4;
+			n -= (outp - recvbuf);
+			response->haveseenhttphdrs = 1;
+		}
+		else n = 0;
+	}
+	else outp = recvbuf;
+
+	if (n <= 0) return currstate; /* Ignore data if we're still inside http headers */
+
+	if (response->respfd) {
+		switch (response->cmprhandling) {
+			case CMP_NONE:
+				fwrite(outp, n, 1, response->respfd);
+				break;
+
+			case CMP_LOOKFORMARKER:
+				if (strncmp(outp, compressionmarker, compressionmarkersz) != 0) {
+					response->cmprhandling = CMP_NONE;
+					fwrite(outp, n, 1, response->respfd);
+					break;
+				}
+				else {
+					response->cmprhandle = uncompress_stream_init();
+					response->cmprhandling = CMP_DECOMPRESS;
+					outp += 4;
+					n -= 4;
+					cmprbuf = uncompress_stream_data(response->cmprhandle, outp, n);
+					fwrite(STRBUF(cmprbuf), STRBUFLEN(cmprbuf), 1, response->respfd);
+					freestrbuffer(cmprbuf);
+				}
+				break;
+
+			case CMP_DECOMPRESS:
+				cmprbuf = uncompress_stream_data(response->cmprhandle, outp, n);
+				fwrite(STRBUF(cmprbuf), STRBUFLEN(cmprbuf), 1, response->respfd);
+				freestrbuffer(cmprbuf);
+				break;
+		}
+	}
+	else if (response->respstr) {
+		addtobufferraw(response->respstr, recvbuf, n);
+	}
+
+	if (!response->fullresponse) {
+		return (strchr(outp, '\n') == NULL) ? currstate : TALK_DONE;
+	}
+
+	return currstate;
+}
+
+
+static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *response)
 {
 	struct in_addr addr;
-	struct sockaddr_un localaddr;
-	struct sockaddr_in saddr;
 	enum { C_IP, C_UNIX } conntype = C_IP;
 	int	sockfd;
-	fd_set	readfds;
-	fd_set	writefds;
-	int	res, isconnected, wdone, rdone;
-	struct timeval tmo;
+	int	res;
 	char *msgptr = message;
 	int msgremain = strlen(message);
-	char *p;
 	char *rcptip = NULL;
 	int rcptport = 0;
 	int connretries = BBSENDRETRIES;
 	char *httpmessage = NULL;
 	char recvbuf[32768];
-	int haveseenhttphdrs = 1;
-	int respstrsz = 0;
-	int respstrlen = 0;
-	enum { C_LOOKFORMARKER, C_DECOMPRESS, C_NONE } cmprhandling = C_NONE;
-	void *cmprhandle = NULL;
-	strbuffer_t *cmprbuf;
+	char *starttlsptr = "starttls\n";
+	talkstate_t talkstate = TALK_DONE, postconnectstate = TALK_DONE, postsendstate = TALK_DONE;
+	int talkresult = BB_OK;
 
-	if (dontsendmessages && !respfd && !respstr) {
+	if (dontsendmessages && !response) {
 		printf("%s\n", message);
 		return BB_OK;
 	}
@@ -248,16 +323,19 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		dbgprintf("Unix domain protocol\n");
 		conntype = C_UNIX;
 		rcptip = strdup("local/unix");
+		postconnectstate = TALK_SEND;
 	}
-	else if (strncmp(recipient, "http://", strlen("http://")) != 0) {
-		/* Standard BB communications, directly to hobbitd */
+	else if ((strncmp(recipient, "http://", 7) != 0) && (strncmp(recipient, "https://", 8) != 0)) {
+		/* Hobbit protocol, directly to hobbitd */
+		char *p;
+
 		rcptip = strdup(recipient);
 		rcptport = bbdportnumber;
 		p = strchr(rcptip, ':');
 		if (p) {
 			*p = '\0'; p++; rcptport = atoi(p);
 		}
-		dbgprintf("Standard BB protocol on port %d\n", rcptport);
+		dbgprintf("Hobbit protocol on port %d\n", rcptport);
 
 		if (sendcompressedmessages) {
 			static strbuffer_t *cbuf = NULL;
@@ -268,9 +346,16 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			if (cbuf) {
 				msgremain = STRBUFLEN(cbuf);
 				msgptr = message = STRBUF(cbuf);
-				cmprhandling = C_LOOKFORMARKER;
+				response->cmprhandling = CMP_LOOKFORMARKER;
 			}
 		}
+
+#ifdef HAVE_OPENSSL
+		postconnectstate = (sendssl ? TALK_SEND_STARTTLS : TALK_SEND);
+#else
+		postconnectstate = TALK_SEND;
+#endif
+
 	}
 	else {
 		char *bufp;
@@ -345,14 +430,16 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 		if (posturl) xfree(posturl);
 		if (posthost) xfree(posthost);
-		haveseenhttphdrs = 0;
+		response->haveseenhttphdrs = 0;
 
 		dbgprintf("BB-HTTP message is:\n%s\n", httpmessage);
+
+		postconnectstate = TALK_SEND;
 	}
 
 	if (conntype == C_IP) {
 		/* Setup SSL (if we use it), bail out if it fails */
-		if (sslinitialize() != 0) return;
+		if (sslinitialize() != 0) BB_ECONNFAILED;
 
 		if (inet_aton(rcptip, &addr) == 0) {
 			/* recipient is not an IP - do DNS lookup */
@@ -374,207 +461,324 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 		}
 	}
 
-retry_connect:
-	dbgprintf("Will connect to address %s port %d\n", rcptip, rcptport);
+	talkstate = TALK_INIT_CONNECTION;
+	postsendstate = TALK_DONE;
+	if (response && (response->respstr || response->respfd)) postsendstate = TALK_RECEIVE;
+#ifdef HAVE_OPENSSL
+	if (sendssl && (postsendstate == TALK_RECEIVE)) postsendstate = TALK_SSLRECEIVE;
+#endif
+	while (talkstate != TALK_DONE) {
+		fd_set readfds, writefds;
+		struct timeval tmo;
 
-	if (conntype == C_IP) {
-		memset(&saddr, 0, sizeof(saddr));
-		saddr.sin_family = AF_INET;
-		saddr.sin_addr.s_addr = addr.s_addr;
-		saddr.sin_port = htons(rcptport);
-
-		/* Get a non-blocking socket */
-		sockfd = socket(PF_INET, SOCK_STREAM, 0);
-		if (sockfd == -1) return BB_ENOSOCKET;
-		res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
-		if (res != 0) return BB_ECANNOTDONONBLOCK;
-
-		res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
-	}
-	else {
-		memset(&localaddr, 0, sizeof(localaddr));
-		localaddr.sun_family = AF_UNIX;
-		sprintf(localaddr.sun_path, "%s/hobbitd_if", xgetenv("BBTMP"));
-
-		/* Get a non-blocking socket */
-		sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
-		if (sockfd == -1) return BB_ENOSOCKET;
-		res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
-		if (res != 0) return BB_ECANNOTDONONBLOCK;
-
-		res = connect(sockfd, (struct sockaddr *)&localaddr, sizeof(localaddr));
-	}
-
-	if ((res == -1) && (errno != EINPROGRESS)) {
-		close(sockfd);
-		errprintf("connect to bbd failed - %s\n", strerror(errno));
-		return BB_ECONNFAILED;
-	}
-
-	rdone = ((respfd == NULL) && (respstr == NULL));
-	isconnected = wdone = 0;
-	while (!wdone || !rdone) {
 		FD_ZERO(&writefds);
 		FD_ZERO(&readfds);
-		if (!rdone) FD_SET(sockfd, &readfds);
-		if (!wdone) FD_SET(sockfd, &writefds);
+
+		switch (talkstate) {
+		  case TALK_DONE:
+			/* Cannot happen ... */
+			break;
+
+		  case TALK_INIT_CONNECTION:
+			dbgprintf("Will connect to address %s port %d\n", rcptip, rcptport);
+
+			if (conntype == C_IP) {
+				struct sockaddr_in saddr;
+
+				memset(&saddr, 0, sizeof(saddr));
+				saddr.sin_family = AF_INET;
+				saddr.sin_addr.s_addr = addr.s_addr;
+				saddr.sin_port = htons(rcptport);
+
+				/* Get a non-blocking socket */
+				sockfd = socket(PF_INET, SOCK_STREAM, 0);
+				if (sockfd == -1) return BB_ENOSOCKET;
+				res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
+				if (res != 0) return BB_ECANNOTDONONBLOCK;
+
+				res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
+			}
+			else {
+				struct sockaddr_un localaddr;
+
+				memset(&localaddr, 0, sizeof(localaddr));
+				localaddr.sun_family = AF_UNIX;
+				sprintf(localaddr.sun_path, "%s/hobbitd_if", xgetenv("BBTMP"));
+		
+				/* Get a non-blocking socket */
+				sockfd = socket(PF_UNIX, SOCK_STREAM, 0);
+				if (sockfd == -1) return BB_ENOSOCKET;
+				res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
+				if (res != 0) return BB_ECANNOTDONONBLOCK;
+		
+				res = connect(sockfd, (struct sockaddr *)&localaddr, sizeof(localaddr));
+			}
+
+			if ((res == -1) && (errno != EINPROGRESS)) {
+				errprintf("connect to hobbitd failed - %s\n", strerror(errno));
+				talkstate = TALK_DONE;
+				talkresult = BB_ECONNFAILED;
+			}
+			talkstate = TALK_CONNECTING;
+			FD_SET(sockfd, &writefds); break;
+			break;
+
+		  case TALK_CONNECTING:
+			FD_SET(sockfd, &writefds); break;
+			break;
+
+		  case TALK_SEND:
+			FD_SET(sockfd, &writefds); break;
+			break;
+
+		  case TALK_RECEIVE:
+			FD_SET(sockfd, &readfds); break;
+			break;
+
+#ifdef HAVE_OPENSSL
+		  case TALK_SEND_STARTTLS:
+		  case TALK_SSLSEND:
+			FD_SET(sockfd, &writefds); break;
+			break;
+
+		  case TALK_SSLRECEIVE:
+			FD_SET(sockfd, &readfds); break;
+			break;
+
+		  case TALK_SSLWRITE_SETUP:
+		  case TALK_SSLWRITE_SEND:
+		  case TALK_SSLWRITE_RECEIVE:
+			FD_SET(sockfd, &writefds); break;
+			break;
+
+		  case TALK_SSLREAD_SETUP:
+		  case TALK_SSLREAD_SEND:
+		  case TALK_SSLREAD_RECEIVE:
+			FD_SET(sockfd, &readfds); break;
+			break;
+#endif
+		}
+
 		tmo.tv_sec = timeout;  tmo.tv_usec = 0;
 		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
+
+		/* Handle special error cases first: select() failures and timeouts */
 		if (res == -1) {
-			errprintf("Select failure while sending to bbd@%s:%d!\n", rcptip, rcptport);
+			errprintf("Select failure while talking to hobbitd@%s:%d!\n", rcptip, rcptport);
 			closesocket(sockfd);
-			return BB_ESELFAILED;
+			talkstate = TALK_DONE;
+			talkresult = BB_ESELFAILED;
 		}
 		else if (res == 0) {
 			/* Timeout! */
-			closesocket(sockfd);
 
-			if (!isconnected && (connretries > 0)) {
-				dbgprintf("Timeout while talking to bbd@%s:%d - retrying\n", rcptip, rcptport);
+			if ((talkstate == TALK_CONNECTING) && (connretries > 0)) {
+				dbgprintf("Timeout while connecting to hobbitd@%s:%d - retrying\n", rcptip, rcptport);
+				closesocket(sockfd);
 				connretries--;
-				sleep(1);
-				goto retry_connect;	/* Yuck! */
+				if (connretries > 0) {
+					sleep(1);
+					talkstate = TALK_INIT_CONNECTION;
+				}
+				else {
+					talkstate = TALK_DONE;
+					talkresult = BB_ETIMEOUT;
+				}
 			}
-
-			return BB_ETIMEOUT;
+			else {
+				talkstate = TALK_DONE;
+				talkresult = BB_ETIMEOUT;
+			}
 		}
-		else {
-			if (!isconnected) {
-				/* Havent seen our connect() status yet - must be now */
+
+		switch (talkstate) {
+		  case TALK_DONE:
+		  case TALK_INIT_CONNECTION:
+			break;
+
+		  case TALK_CONNECTING:
+			if (!FD_ISSET(sockfd, &writefds)) break;
+			/* Havent seen our connect() status yet - must be now */
+			{
 				int connres;
 				socklen_t connressize = sizeof(connres);
 
 				res = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 				dbgprintf("Connect status is %d\n", connres);
-				isconnected = (connres == 0);
-				if (!isconnected) {
-					closesocket(sockfd);
-					errprintf("Could not connect to bbd@%s:%d - %s\n", 
+				if (connres != 0) {
+					errprintf("Could not connect to hobbitd@%s:%d - %s\n", 
 						  rcptip, rcptport, strerror(connres));
-					return BB_ECONNFAILED;
-				}
-			}
-
-			if (!rdone && FD_ISSET(sockfd, &readfds)) {
-				char *outp;
-				int n;
-
-				n = recv(sockfd, recvbuf, sizeof(recvbuf)-1, 0);
-				if (n > 0) {
-					dbgprintf("Read %d bytes\n", n);
-					recvbuf[n] = '\0';
-
-					/*
-					 * When running over a HTTP transport, we must strip
-					 * off the HTTP headers we get back, so the response
-					 * is consistent with what we get from the normal bbd
-					 * transport.
-					 * (Non-http transport sets "haveseenhttphdrs" to 1)
-					 */
-					if (!haveseenhttphdrs) {
-						outp = strstr(recvbuf, "\r\n\r\n");
-						if (outp) {
-							outp += 4;
-							n -= (outp - recvbuf);
-							haveseenhttphdrs = 1;
-						}
-						else n = 0;
-					}
-					else outp = recvbuf;
-
-					if (n > 0) {
-						if (respfd) {
-							switch (cmprhandling) {
-							  case C_NONE:
-								fwrite(outp, n, 1, respfd);
-								break;
-
-							  case C_LOOKFORMARKER:
-								if (strncmp(outp, compressionmarker, compressionmarkersz) != 0) {
-									cmprhandling = C_NONE;
-									fwrite(outp, n, 1, respfd);
-									break;
-								}
-								else {
-									cmprhandle = uncompress_stream_init();
-									cmprhandling = C_DECOMPRESS;
-									outp += 4;
-									n -= 4;
-									cmprbuf = uncompress_stream_data(cmprhandle, outp, n);
-									fwrite(STRBUF(cmprbuf), STRBUFLEN(cmprbuf), 1, respfd);
-									freestrbuffer(cmprbuf);
-								}
-								break;
-
-							  case C_DECOMPRESS:
-								cmprbuf = uncompress_stream_data(cmprhandle, outp, n);
-								fwrite(STRBUF(cmprbuf), STRBUFLEN(cmprbuf), 1, respfd);
-								freestrbuffer(cmprbuf);
-								break;
-							}
-						}
-						else if (respstr) {
-							char *respend;
-
-							if (respstrsz == 0) {
-								respstrsz = (n+sizeof(recvbuf));
-								*respstr = (char *)malloc(respstrsz);
-							}
-							else if ((n+respstrlen) >= respstrsz) {
-								respstrsz += (n+sizeof(recvbuf));
-								*respstr = (char *)realloc(*respstr, respstrsz);
-							}
-							respend = (*respstr) + respstrlen;
-							memcpy(respend, outp, n);
-							*(respend + n) = '\0';
-							respstrlen += n;
-						}
-						if (!fullresponse) {
-							rdone = (strchr(outp, '\n') == NULL);
-						}
-					}
-				}
-				else rdone = 1;
-				/* if (rdone) shutdown(sockfd, SHUT_RD); */
-			}
-
-			if (!wdone && FD_ISSET(sockfd, &writefds)) {
-				/* Send some data */
-				res = write(sockfd, msgptr, msgremain);
-				if (res == -1) {
-					closesocket(sockfd);
-					errprintf("Write error while sending message to bbd@%s:%d\n", rcptip, rcptport);
-					return BB_EWRITEERROR;
+					talkstate = TALK_DONE;
+					talkresult = BB_ECONNFAILED;
 				}
 				else {
-					dbgprintf("Sent %d bytes\n", res);
-					msgptr += res;
-					msgremain -= res;
-					wdone = (msgremain == 0);
-					/* if (wdone) shutdown(sockfd, SHUT_WR); */
+					talkstate = postconnectstate;
 				}
 			}
+			break;
+
+		  case TALK_SEND:
+			if (!FD_ISSET(sockfd, &writefds)) break;
+			res = write(sockfd, msgptr, msgremain);
+			if (res < 0) {
+				errprintf("Write error while sending message to hobbitd@%s:%d\n", rcptip, rcptport);
+				talkstate = TALK_DONE;
+				talkresult = BB_EWRITEERROR;
+			}
+			else {
+				msgptr += res;
+				msgremain -= res;
+				if (msgremain == 0) {
+					shutdown(sockfd, SHUT_WR);
+					talkstate = postsendstate;
+				}
+			}
+			break;
+
+		  case TALK_RECEIVE:
+			if (!FD_ISSET(sockfd, &readfds)) break;
+			res = read(sockfd,  recvbuf, sizeof(recvbuf)-1);
+			if (res < 0) {
+				errprintf("Read error while reading response from hobbitd@%s:%d\n", rcptip, rcptport);
+				talkstate = TALK_DONE;
+				talkresult = BB_EREADERROR;
+			}
+			else if (res == 0) {
+				talkstate = TALK_DONE;
+				talkresult = BB_OK;
+			}
+			else {
+				talkstate = process_receive(recvbuf, res, response, talkstate);
+			}
+			break;
+
+
+#ifdef HAVE_OPENSSL
+
+		  case TALK_SEND_STARTTLS:
+			if (!FD_ISSET(sockfd, &writefds)) break;
+			res = write(sockfd, starttlsptr, strlen(starttlsptr));
+			if (res == -1) {
+				errprintf("Write error while sending STARTTLS to hobbitd@%s:%d\n", rcptip, rcptport);
+				talkstate = TALK_DONE;
+				talkresult = BB_EWRITEERROR;
+			}
+			else {
+				sslobj = SSL_new(sslctx);
+				SSL_set_fd(sslobj, sockfd);
+				SSL_set_connect_state(sslobj);
+				starttlsptr += res;
+				if (*starttlsptr == '\0') talkstate = TALK_SSLREAD_SETUP;
+			}
+			break;
+
+		  case TALK_SSLWRITE_SETUP:
+		  case TALK_SSLREAD_SETUP:
+			if ((talkstate == TALK_SSLWRITE_SETUP) && (!FD_ISSET(sockfd, &writefds))) break;
+			if ((talkstate == TALK_SSLREAD_SETUP) && (!FD_ISSET(sockfd, &readfds))) break;
+			res = SSL_do_handshake(sslobj);
+			if (res == 1) {
+				/* SSL handshake completed */
+				talkstate = TALK_SSLSEND;
+			}
+			else {
+				switch (SSL_get_error(sslobj, res)) {
+				  case SSL_ERROR_WANT_READ:
+					talkstate = TALK_SSLREAD_SETUP;
+					break;
+				  case SSL_ERROR_WANT_WRITE:
+					talkstate = TALK_SSLWRITE_SETUP;
+					break;
+				}
+			}
+			break;
+
+		  case TALK_SSLWRITE_SEND:
+		  case TALK_SSLREAD_SEND:
+		  case TALK_SSLSEND:
+			if ((talkstate == TALK_SSLWRITE_SEND) && (!FD_ISSET(sockfd, &writefds))) break;
+			if ((talkstate == TALK_SSLREAD_SEND) && (!FD_ISSET(sockfd, &readfds))) break;
+			if ((talkstate == TALK_SSLSEND) && (!FD_ISSET(sockfd, &writefds))) break;
+			res = SSL_write(sslobj, msgptr, msgremain);
+			if (res <= 0) {
+				switch (SSL_get_error(sslobj, res)) {
+				  case SSL_ERROR_WANT_READ:
+					talkstate = TALK_SSLREAD_SEND;
+					break;
+				  case SSL_ERROR_WANT_WRITE:
+					talkstate = TALK_SSLWRITE_SEND;
+					break;
+				  case SSL_ERROR_ZERO_RETURN:
+					break;
+				  default:
+					errprintf("SSL send error\n");
+					talkstate = TALK_DONE;
+					talkresult = BB_EWRITEERROR;
+					break;
+				}
+			}
+			else {
+				msgptr += res;
+				msgremain -= res;
+				if (msgremain == 0) talkstate = postsendstate;
+			}
+			break;
+
+		  case TALK_SSLWRITE_RECEIVE:
+		  case TALK_SSLREAD_RECEIVE:
+		  case TALK_SSLRECEIVE:
+			if ((talkstate == TALK_SSLWRITE_RECEIVE) && (!FD_ISSET(sockfd, &writefds))) break;
+			if ((talkstate == TALK_SSLREAD_RECEIVE) && (!FD_ISSET(sockfd, &readfds))) break;
+			if ((talkstate == TALK_SSLRECEIVE) && (!FD_ISSET(sockfd, &readfds))) break;
+			res = SSL_read(sslobj,  recvbuf, sizeof(recvbuf)-1);
+			if (res <= 0) {
+				switch (SSL_get_error(sslobj, res)) {
+				  case SSL_ERROR_WANT_READ:
+					talkstate = TALK_SSLREAD_RECEIVE;
+					break;
+				  case SSL_ERROR_WANT_WRITE:
+					talkstate = TALK_SSLWRITE_RECEIVE;
+					break;
+				  case SSL_ERROR_ZERO_RETURN:
+					talkstate = TALK_DONE;
+					talkresult = BB_OK;
+					break;
+				  default:
+					errprintf("SSL receive error\n");
+					talkstate = TALK_DONE;
+					talkresult = BB_EREADERROR;
+					break;
+				}
+			}
+			else {
+				talkstate = process_receive(recvbuf, res, response, talkstate);
+			}
+			break;
+#endif /* HAVE_OPENSSL */
+
 		}
 	}
 
 	dbgprintf("Closing connection\n");
 	closesocket(sockfd);
 
-	if (respstr && (cmprhandling == C_LOOKFORMARKER) && (strncmp(*respstr, compressionmarker, compressionmarkersz) == 0)) {
+	if (response && response->respstr && (response->cmprhandling == CMP_LOOKFORMARKER) && 
+	    (strncmp(STRBUF(response->respstr), compressionmarker, compressionmarkersz) == 0)) {
 		/* Decompress the message */
-		strbuffer_t *s = uncompress_buffer(*respstr, respstrlen, NULL);
-		xfree(*respstr);
-		*respstr = grabstrbuffer(s);
+		strbuffer_t *s = uncompress_buffer(STRBUF(response->respstr), STRBUFLEN(response->respstr), NULL);
+		freestrbuffer(response->respstr);
+		response->respstr = s;
 	}
 
-	if (cmprhandle) uncompress_stream_done(cmprhandle);
+	if (response && response->cmprhandle) uncompress_stream_done(response->cmprhandle);
 	if (rcptip) xfree(rcptip);
 	if (httpmessage) xfree(httpmessage);
-	return BB_OK;
+
+	return talkresult;
 }
 
 
-static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, char **respstr, int fullresponse, int timeout)
+static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, sendreturn_t *response)
 {
 	int allservers = 1, first = 1, result = BB_OK;
 	char *bbdlist, *rcpt;
@@ -627,12 +831,12 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, c
 
 		if (first) {
 			/* We grab the result from the first server */
-			oneres =  sendtobbd(rcpt, msg, respfd, respstr, fullresponse, timeout);
+			oneres =  sendtobbd(rcpt, msg, timeout, response);
 			if (oneres == BB_OK) first = 0;
 		}
 		else {
 			/* Secondary servers do not yield a response */
-			oneres =  sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
+			oneres =  sendtobbd(rcpt, msg, timeout, NULL);
 		}
 
 		/* Save any error results */
@@ -654,8 +858,46 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, c
 	return result;
 }
 
+sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd)
+{
+	sendreturn_t *result;
 
-int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse, int timeout)
+	result = (sendreturn_t *)calloc(1, sizeof(sendreturn_t));
+	result->fullresponse = fullresponse;
+	result->respfd = respfd;
+	if (!respfd) {
+		/* No response file, so return it in a strbuf */
+		result->respstr = newstrbuffer(0);
+	}
+	result->haveseenhttphdrs = 1;
+	result->cmprhandle = NULL;
+	result->cmprhandling = CMP_NONE;
+
+	return result;
+}
+
+void freesendreturnbuf(sendreturn_t *s)
+{
+	if (!s) return;
+	if (s->respstr) freestrbuffer(s->respstr);
+	xfree(s);
+}
+
+char *getsendreturnstr(sendreturn_t *s, int takeover)
+{
+	char *result = NULL;
+
+	if (!s) return NULL;
+	if (!s->respstr) return NULL;
+	result = STRBUF(s->respstr);
+	if (takeover) s->respstr = NULL;
+
+	return result;
+}
+
+
+
+sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *response)
 {
 	static char *bbdisp = NULL;
 	int res = 0;
@@ -667,7 +909,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		return BB_EBADIP;
 	}
 
-	res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, respfd, respstr, fullresponse, timeout);
+	res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout, response);
 
 	if (res != BB_OK) {
 		char *statustext = "";
@@ -682,6 +924,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		  case BB_ESELFAILED    : statustext = "select(2) failed"; break;
 		  case BB_ETIMEOUT      : statustext = "timeout"; break;
 		  case BB_EWRITEERROR   : statustext = "write error"; break;
+		  case BB_EREADERROR    : statustext = "read error"; break;
 		  case BB_EBADURL       : statustext = "Bad URL"; break;
 		  default:                statustext = "Unknown error"; break;
 		};
@@ -759,7 +1002,7 @@ static void combo_flush(void)
 		} while (p1 && p2);
 	}
 
-	sendmessage(STRBUF(bbmsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(bbmsg), NULL, BBTALK_TIMEOUT, NULL);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -770,7 +1013,7 @@ static void meta_flush(void)
 		return;
 	}
 
-	sendmessage(STRBUF(metamsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(metamsg), NULL, BBTALK_TIMEOUT, NULL);
 	meta_start();	/* Get ready for the next */
 }
 

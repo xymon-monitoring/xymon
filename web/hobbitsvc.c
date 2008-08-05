@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitsvc.c,v 1.83 2008-03-04 22:02:44 henrik Exp $";
+static char rcsid[] = "$Id: hobbitsvc.c,v 1.83 2008/03/04 22:02:44 henrik Exp henrik $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -141,7 +141,7 @@ static int parse_query(void)
 	return 0;
 }
 
-void loadhostdata(char *hostname, char **ip, char **displayname)
+int loadhostdata(char *hostname, char **ip, char **displayname)
 {
 	void *hinfo = NULL;
 
@@ -149,12 +149,14 @@ void loadhostdata(char *hostname, char **ip, char **displayname)
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
-		exit(1);
+		return 1;
 	}
 
 	*ip = bbh_item(hinfo, BBH_IP);
 	*displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
 	if (!(*displayname)) *displayname = hostname;
+
+	return 0;
 }
 
 int do_request(void)
@@ -189,18 +191,23 @@ int do_request(void)
 		if (source == SRC_HOBBITD) {
 			char *hobbitdreq;
 			int hobbitdresult;
+			sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
 			hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
 			sprintf(hobbitdreq, "clientlog %s", hostname);
 			if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
 
-			hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
+			hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
 			if (hobbitdresult != BB_OK) {
 				char errtxt[4096];
 				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
 				errormsg(errtxt);
 				return 1;
 			}
+			else {
+				log = getsendreturnstr(sres, 1);
+			}
+			freesendreturnbuf(sres);
 		}
 		else if (source == SRC_HISTLOGS) {
 			char logfn[PATH_MAX];
@@ -223,7 +230,7 @@ int do_request(void)
 		restofmsg = (log ? log : strdup("<No data>\n"));
 	}
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
-		loadhostdata(hostname, &ip, &displayname);
+		if (loadhostdata(hostname, &ip, &displayname) != 0) return 1;
 		ishtmlformatted = 1;
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
@@ -264,9 +271,13 @@ int do_request(void)
 		int icount;
 		time_t logage, clntstamp;
 		char *sumline, *msg, *p;
+		sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
 		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
-		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
+		hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
+		if (hobbitdresult == BB_OK) log = getsendreturnstr(sres, 1);
+		freesendreturnbuf(sres);
+
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;
@@ -359,9 +370,9 @@ int do_request(void)
 		char *p, *unchangedstr, *receivedfromstr, *clientidstr, *hostnamedash;
 		int n;
 
-		if (!tstamp) errormsg("Invalid request");
+		if (!tstamp) { errormsg("Invalid request"); return 1; }
 
-		loadhostdata(hostname, &ip, &displayname);
+		if (loadhostdata(hostname, &ip, &displayname) != 0) return 1;
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';

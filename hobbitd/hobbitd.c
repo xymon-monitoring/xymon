@@ -25,7 +25,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd.c,v 1.283 2008-03-27 12:37:53 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd.c,v 1.283 2008/03/27 12:37:53 henrik Exp henrik $";
 
 #include <limits.h>
 #include <sys/time.h>
@@ -53,6 +53,11 @@ static char rcsid[] = "$Id: hobbitd.c,v 1.283 2008-03-27 12:37:53 henrik Exp $";
 #include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
+
+#ifdef HAVE_OPENSSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif
 
 #include "libbbgen.h"
 
@@ -177,18 +182,20 @@ int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
 int	 flapthreshold = 600;	/* Seconds - if more than LASTCHANGESZ changes during this period, it's flapping */
 
-#define NOTALK 0
-#define RECEIVING 1
-#define RESPONDING 2
-
 /* This struct describes an active connection with a Hobbit client */
 typedef struct conn_t {
 	int sock;			/* Communications socket */
 	struct sockaddr_in addr;	/* Client source address */
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
-	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
+	enum { NOTALK, 
+	       SSLREAD_HANDSHAKE, SSLWRITE_HANDSHAKE, 
+	       SSLREAD_RECEIVING, SSLWRITE_RECEIVING,
+	       SSLREAD_RESPONDING, SSLWRITE_RESPONDING,
+	       RECEIVING, RESPONDING } doingwhat;	/* Communications state */
 	int compressionok;		/* Remote end can handle compression */
+	int onelinercheckdone;		/* Flag if we have checked if this is a one-line command */
+	void *sslobj;			/* SSL object for SSL-enabled connections */
 	time_t timeout;			/* When the timeout for this connection happens */
 	struct conn_t *next;
 } conn_t;
@@ -333,6 +340,193 @@ typedef struct scheduletask_t {
 } scheduletask_t;
 scheduletask_t *schedulehead = NULL;
 int nextschedid = 1;
+
+
+#ifdef HAVE_OPENSSL
+SSL_METHOD *sslmethod = NULL;
+SSL_CTX *sslctx = NULL;
+#endif
+
+int sslinitialize(char *certfn, char *keyfn)
+{
+#ifdef HAVE_OPENSSL
+	/* Setup OpenSSL */
+	SSL_load_error_strings();
+	SSL_library_init();
+	sslmethod = SSLv23_server_method();
+	sslctx = SSL_CTX_new(sslmethod);
+	if (sslctx == NULL) {
+		errprintf("Cannot create SSL context\n");
+		ERR_print_errors_fp(stderr);
+		return 1;
+	}
+	SSL_CTX_set_options(sslctx, SSL_OP_NO_SSLv2);
+	if (SSL_CTX_use_certificate_chain_file(sslctx, certfn) <= 0) {
+		errprintf("Cannot load SSL certificate\n");
+		ERR_print_errors_fp(stderr);
+		return 1;
+	}
+	if (SSL_CTX_use_PrivateKey_file(sslctx, keyfn, SSL_FILETYPE_PEM) <= 0) {
+		errprintf("Cannot load SSL private key\n");
+		ERR_print_errors_fp(stderr);
+		return 1;
+	}
+	if (!SSL_CTX_check_private_key(sslctx)) {
+		errprintf("Invalid private key, does not match certificate\n");
+		return 1;
+	}
+#endif
+
+	return 0;
+}
+
+
+void sslhandshake(conn_t *cn)
+{
+#ifdef HAVE_OPENSSL
+	int n;
+
+	n = SSL_do_handshake((SSL *)cn->sslobj);
+	if (n == 1) {
+		/* SSL handshake is done */
+		cn->doingwhat = RECEIVING;
+	}
+	else {
+		/* SSL handshake in progress or an error occurred */
+		switch (SSL_get_error((SSL *)cn->sslobj, n)) {
+		  case SSL_ERROR_WANT_READ:
+			cn->doingwhat = SSLREAD_HANDSHAKE;
+			break;
+		  case SSL_ERROR_WANT_WRITE:
+			cn->doingwhat = SSLWRITE_HANDSHAKE;
+			break;
+		  default:
+			cn->doingwhat = NOTALK;
+			break;
+		}
+	}
+#else
+	errprintf("SSL attempted, but server does not support it\n");
+	cn->doingwhat = NOTALK;
+#endif
+}
+
+int socketread(conn_t *cn)
+{
+	int n;
+
+#ifdef HAVE_OPENSSL
+	if (cn->sslobj) {
+		n = SSL_read((SSL *)cn->sslobj, cn->bufp, (cn->bufsz - cn->buflen - 1));
+		if (n <= 0) {
+			switch (SSL_get_error((SSL *)cn->sslobj, n)) {
+			  case SSL_ERROR_WANT_READ:
+				cn->doingwhat = SSLREAD_RECEIVING;
+				break;
+
+			  case SSL_ERROR_WANT_WRITE:
+				cn->doingwhat = SSLWRITE_RECEIVING;
+				break;
+
+			  case SSL_ERROR_ZERO_RETURN:
+				/* Normal end of read */
+				n = 0;
+				break;
+
+			  default:
+				/* Communication error */
+				n = -1;
+				break;
+			}
+		}
+	}
+	else {
+		/* 
+		 * Must check for the "starttls\n" string first.
+		 * At the beginning of our read sequence, only read 
+		 * enough bytes to determine if there is a "starttls\n"
+		 * string - if yes, then the SSL handshake data follows
+		 * immediately, and we don't want to grab that ahead of
+		 * SSL_handshake().
+		 */
+		if (cn->buflen < 9) {
+			n = read(cn->sock, cn->bufp, 9 - cn->buflen);
+			if ((n > 0) && (n+cn->buflen >= 9) && (memcmp(cn->buf, "starttls\n", 9) == 0)) {
+				cn->sslobj = SSL_new(sslctx);
+				SSL_set_fd((SSL *)cn->sslobj, cn->sock);
+				SSL_set_accept_state((SSL *)cn->sslobj);
+				cn->doingwhat = SSLREAD_HANDSHAKE;
+				cn->bufp = cn->buf;
+				cn->buflen = 0;
+				n = -1;
+			}
+		}
+		else {
+			n = read(cn->sock, cn->bufp, (cn->bufsz - cn->buflen - 1));
+		}
+	}
+#else
+	n = read(cn->sock, cn->bufp, (cn->bufsz - cn->buflen - 1));
+#endif
+
+	return n;
+}
+
+int socketwrite(conn_t *cn)
+{
+	int n;
+
+#ifdef HAVE_OPENSSL
+	if (cn->sslobj) {
+		n = SSL_write((SSL *)cn->sslobj, cn->bufp, cn->buflen);
+		if (n <= 0) {
+			switch (SSL_get_error((SSL *)cn->sslobj, n)) {
+			  case SSL_ERROR_WANT_READ:
+				cn->doingwhat = SSLREAD_RESPONDING;
+				break;
+
+			  case SSL_ERROR_WANT_WRITE:
+				cn->doingwhat = SSLWRITE_RESPONDING;
+				break;
+
+			  case SSL_ERROR_ZERO_RETURN:
+				/* Normal end of read */
+				n = 0;
+				break;
+
+			  default:
+				/* Communication error */
+				n = -1;
+				break;
+			}
+		}
+	}
+	else
+		n = write(cn->sock, cn->bufp, cn->buflen);
+#else
+	n = write(cn->sock, cn->bufp, cn->buflen);
+#endif
+
+	return n;
+}
+
+void socketclose(conn_t *cn)
+{
+	int n;
+
+#ifdef HAVE_OPENSSL
+	if (cn->sslobj) {
+		n = SSL_shutdown((SSL *)cn->sslobj);
+		SSL_free((SSL *)cn->sslobj);
+		cn->sslobj = NULL;
+	}
+#endif
+
+	shutdown(cn->sock, SHUT_RDWR);
+	close(cn->sock);
+	cn->sock = -1;
+}
+
 
 void update_statistics(char *cmd)
 {
@@ -3882,12 +4076,10 @@ done:
 			}
 		}
 
-		shutdown(msg->sock, SHUT_RD);
+		/* shutdown(msg->sock, SHUT_RD); ---- not needed, I think */
 	}
 	else {
-		shutdown(msg->sock, SHUT_RDWR);
-		close(msg->sock);
-		msg->sock = -1;
+		socketclose(msg);
 	}
 
 	MEMUNDEFINE(sender);
@@ -3895,7 +4087,6 @@ done:
 	dbgprintf("<- do_message/%d\n", nesting);
 	nesting--;
 }
-
 
 void save_checkpoint(void)
 {
@@ -4330,6 +4521,44 @@ void sig_handler(int signum)
 	}
 }
 
+int commandiscomplete(conn_t *cn)
+{
+	 /* One-line commands */
+	char *oneliners[] = {
+		"ping",
+		"query",
+		"hobbitdlog",
+		"hobbitdxlog",
+		"hobbitdboard",
+		"hobbitdxboard",
+		"hostinfo",
+		"clientlog",
+		"ghostlist",
+		"multisrclist"
+	};
+	int i;
+
+	/* If we already did the check, skip doing it again (it must be a multi-line command) */
+	if (cn->onelinercheckdone) return 0;
+
+	/* 
+	 * This check is done when we have a newline in the buffer.
+	 * We check the "oneliners" array for a match just below, and
+	 * if there is one then the command is done (so onelinercheckdone
+	 * becomes irrelevant). If there is no match but we have a NL
+	 * now, then there is no way it can be a one-line command so
+	 * set onelinercheckdone TRUE to skip doing the tests again.
+	 */
+	cn->onelinercheckdone = (strchr(cn->buf, '\n') != NULL);
+
+	/* See if the command is one of our one-line commands */
+	for (i=0; (i < (sizeof(oneliners) / sizeof(oneliners[0]))); i++) {
+		if (cn->buflen < strlen(oneliners[i])) continue;
+		if (strncmp(cn->buf, oneliners[i], strlen(oneliners[i])) == 0) return 1;
+	}
+
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -4354,6 +4583,8 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	time_t conn_timeout = 30;
 	char *envarea = NULL;
+	char *sslcertfn = NULL;
+	char *sslkeyfn = NULL;
 
 	MEMDEFINE(colnames);
 
@@ -4589,6 +4820,11 @@ int main(int argc, char *argv[])
 		load_checkpoint(restartfn);
 	}
 
+	sslcertfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/hobbitserver.cert") + 1);
+	sprintf(sslcertfn, "%s/etc/hobbitserver.cert", xgetenv("BBHOME"));
+	sslkeyfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/hobbitserver.key") + 1);
+	sprintf(sslkeyfn, "%s/etc/hobbitserver.key", xgetenv("BBHOME"));
+
 	nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
 	nextpurpleupdate = getcurrenttime(NULL) + 600;	/* Wait 10 minutes the first time */
 	last_stats_time = getcurrenttime(NULL);	/* delay sending of the first status report until we're fully running */
@@ -4642,6 +4878,8 @@ int main(int argc, char *argv[])
 		errprintf("Setting permissions on local socket failed: %s\n", strerror(errno));
 	}
 
+	/* Initialize SSL, if used */
+	if (sslinitialize(sslcertfn, sslkeyfn) != 0) return 1;	/* SSL setup failed */
 
 	/* Go daemon */
 	if (daemonize) {
@@ -4864,13 +5102,23 @@ int main(int argc, char *argv[])
 
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
+				case SSLREAD_HANDSHAKE:
+				case SSLREAD_RECEIVING:
+				case SSLREAD_RESPONDING:
 				case RECEIVING:
 					FD_SET(cwalk->sock, &fdread);
 					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
 					break;
+
+				case SSLWRITE_HANDSHAKE:
+				case SSLWRITE_RECEIVING:
+				case SSLWRITE_RESPONDING:
 				case RESPONDING:
 					FD_SET(cwalk->sock, &fdwrite);
 					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
+					break;
+
+				default:
 					break;
 			}
 		}
@@ -4899,64 +5147,87 @@ int main(int argc, char *argv[])
 		 */
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
-			  case RECEIVING:
-				if (FD_ISSET(cwalk->sock, &fdread)) {
-					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
-					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
-
-					if (n <= 0) {
-						/* End of input data on this connection */
-						*(cwalk->bufp) = '\0';
-
-						/* FIXME - need to set origin here */
-						do_message(cwalk, "");
-					}
-					else {
-						/* Add data to the input buffer - within reason ... */
-						cwalk->bufp += n;
-						cwalk->buflen += n;
-						*(cwalk->bufp) = '\0';
-						if ((cwalk->bufsz - cwalk->buflen) < 2048) {
-							if (cwalk->bufsz < MAX_HOBBIT_INBUFSZ) {
-								cwalk->bufsz += HOBBIT_INBUF_INCREMENT;
-								cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
-								cwalk->bufp = cwalk->buf + cwalk->buflen;
-							}
-							else {
-								/* Someone is flooding us */
-								errprintf("Data flooding from %s, closing connection\n",
-									  inet_ntoa(cwalk->addr.sin_addr));
-								shutdown(cwalk->sock, SHUT_RDWR);
-								close(cwalk->sock); 
-								cwalk->sock = -1; 
-								cwalk->doingwhat = NOTALK;
-							}
-						}
-					}
+			  case SSLREAD_HANDSHAKE:
+			  case SSLWRITE_HANDSHAKE:
+				if ( ((cwalk->doingwhat == SSLREAD_HANDSHAKE) && FD_ISSET(cwalk->sock, &fdread)) ||
+				     ((cwalk->doingwhat == SSLWRITE_HANDSHAKE) && FD_ISSET(cwalk->sock, &fdwrite)) ) {
+					sslhandshake(cwalk);
 				}
 				break;
 
-			  case RESPONDING:
-				if (FD_ISSET(cwalk->sock, &fdwrite)) {
-					n = write(cwalk->sock, cwalk->bufp, cwalk->buflen);
+			  case SSLREAD_RECEIVING:
+				if (FD_ISSET(cwalk->sock, &fdread)) goto statereceiving;
+				break;
+			  case SSLWRITE_RECEIVING:
+				if (FD_ISSET(cwalk->sock, &fdwrite)) goto statereceiving;
+				break;
+			  case RECEIVING:
+				if (!FD_ISSET(cwalk->sock, &fdread)) break;
+statereceiving:
+				n = socketread(cwalk);
+				if ((n == -1) && ((errno == EAGAIN) || (cwalk->doingwhat == SSLREAD_HANDSHAKE))) break; /* Do nothing */
 
-					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
+				if (n <= 0) {
+					/* End of input data on this connection */
+					*(cwalk->bufp) = '\0';
 
-					if (n < 0) {
-						cwalk->buflen = 0;
+					/* FIXME - need to set origin here */
+					do_message(cwalk, "");
+				}
+				else {
+					/* Add data to the input buffer - within reason ... */
+					cwalk->bufp += n;
+					cwalk->buflen += n;
+					*(cwalk->bufp) = '\0';
+					if (commandiscomplete(cwalk)) {
+						do_message(cwalk, "");
 					}
-					else {
-						cwalk->bufp += n;
-						cwalk->buflen -= n;
-					}
-
-					if (cwalk->buflen == 0) {
-						shutdown(cwalk->sock, SHUT_WR);
-						close(cwalk->sock); 
-						cwalk->sock = -1; 
-						cwalk->doingwhat = NOTALK;
+					else if ((cwalk->bufsz - cwalk->buflen) < 2048) {
+						if (cwalk->bufsz < MAX_HOBBIT_INBUFSZ) {
+							cwalk->bufsz += HOBBIT_INBUF_INCREMENT;
+							cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
+							cwalk->bufp = cwalk->buf + cwalk->buflen;
+						}
+						else {
+							/* Someone is flooding us */
+							errprintf("Data flooding from %s, closing connection\n",
+								  inet_ntoa(cwalk->addr.sin_addr));
+							socketclose(cwalk);
+							cwalk->doingwhat = NOTALK;
+						}
 					}
 				}
+
+				break;
+
+			  case SSLREAD_RESPONDING:
+				if (FD_ISSET(cwalk->sock, &fdread)) goto stateresponding;
+				break;
+			  case SSLWRITE_RESPONDING:
+				if (FD_ISSET(cwalk->sock, &fdwrite)) goto stateresponding;
+				break;
+			  case RESPONDING:
+				if (!FD_ISSET(cwalk->sock, &fdwrite)) break;
+stateresponding:
+				n = socketwrite(cwalk);
+
+				if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
+
+				if (n < 0) {
+					cwalk->buflen = 0;
+				}
+				else {
+					cwalk->bufp += n;
+					cwalk->buflen -= n;
+				}
+
+				if (cwalk->buflen == 0) {
+					socketclose(cwalk);
+					cwalk->doingwhat = NOTALK;
+				}
+				break;
+
+			  default:
 				break;
 			}
 		}
@@ -5007,9 +5278,7 @@ int main(int argc, char *argv[])
 					update_statistics("");
 					cwalk->doingwhat = NOTALK;
 					if (cwalk->sock >= 0) {
-						shutdown(cwalk->sock, SHUT_RDWR);
-						close(cwalk->sock);
-						cwalk->sock = -1;
+						socketclose(cwalk);
 					}
 				}
 

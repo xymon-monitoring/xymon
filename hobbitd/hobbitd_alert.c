@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.97 2008-01-03 21:18:48 henrik Exp $";
+static char rcsid[] = "$Id: hobbitd_alert.c,v 1.97 2008/01/03 21:18:48 henrik Exp henrik $";
 
 #include <stdio.h>
 #include <string.h>
@@ -265,12 +265,16 @@ void load_checkpoint(char *filename)
 	strbuffer_t *inbuf;
 	char statuscmd[1024];
 	char *statusbuf = NULL;
+	sendreturn_t *sres;
 
 	fd = fopen(filename, "r");
 	if (fd == NULL) return;
 
 	sprintf(statuscmd, "hobbitdboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
-	sendmessage(statuscmd, NULL, NULL, &statusbuf, 1, BBTALK_TIMEOUT);
+	sres = newsendreturnbuf(1, NULL);
+	sendmessage(statuscmd, NULL, BBTALK_TIMEOUT, sres);
+	statusbuf = getsendreturnstr(sres, 1);
+	freesendreturnbuf(sres);
 
 	initfgets(fd);
 	inbuf = newstrbuffer(0);

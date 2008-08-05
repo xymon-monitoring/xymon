@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: httpresult.c,v 1.33 2008-03-13 14:23:45 henrik Exp $";
+static char rcsid[] = "$Id: httpresult.c,v 1.33 2008/03/13 14:23:45 henrik Exp henrik $";
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -377,7 +377,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		msg = (char *)malloc(1024 + strlen(host->hostname) + strlen(req->bburl.columnname) + strlen(data));
 		sprintf(msg, "data %s.%s\n%s", commafy(host->hostname), req->bburl.columnname, data);
-		sendmessage(msg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		sendmessage(msg, NULL, BBTALK_TIMEOUT, NULL);
 		xfree(msg);
 	}
 

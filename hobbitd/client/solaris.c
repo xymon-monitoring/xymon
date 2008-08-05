@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.22 2008-04-29 08:51:40 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c,v 1.22 2008/04/29 08:51:40 henrik Exp henrik $";
 
 void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			   void *hinfo, char *sender, time_t timestamp, 
@@ -103,7 +103,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			sprintf(msgline, "data %s.iostatdisk\n%s\n", commafy(hostname), osname(os));
 			addtobuffer(msg, msgline);
 			addtobuffer(msg, p);
-			sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+			sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
 		}
 		freestrbuffer(msg);
 	}

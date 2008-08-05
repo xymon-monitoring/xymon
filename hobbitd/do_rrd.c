@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: do_rrd.c,v 1.61 2008-04-02 10:42:14 henrik Exp $";
+static char rcsid[] = "$Id: do_rrd.c,v 1.61 2008/04/02 10:42:14 henrik Exp henrik $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -337,7 +337,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * Match the RRD data against any DS client-configuration modifiers.
 	 */
 	modifymsg = check_rrdds_thresholds(hostname, classname, pagepaths, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
-	if (modifymsg) sendmessage(modifymsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	if (modifymsg) sendmessage(modifymsg, NULL, BBTALK_TIMEOUT, NULL);
 
 	/*
 	 * See if we want the data to go to an external handler.

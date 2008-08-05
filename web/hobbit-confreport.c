@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-confreport.c,v 1.22 2008-01-03 10:04:58 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-confreport.c,v 1.22 2008/01/03 10:04:58 henrik Exp henrik $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -644,6 +644,7 @@ int main(int argc, char *argv[])
 	htnames_t **alltests = NULL;
 	int hostcount = 0, maxtests = 0;
 	time_t now = getcurrenttime(NULL);
+	sendreturn_t *sres;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -710,18 +711,25 @@ int main(int argc, char *argv[])
 		sprintf(svcscmd,   "hobbitdboard test=svcs fields=hostname,msg");
 	}
 
-	if (sendmessage(hobbitcmd, NULL, NULL, &respbuf, 1, BBTALK_TIMEOUT) != BB_OK) {
+	sres = newsendreturnbuf(1, NULL);
+
+	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 		errormsg("Cannot contact the Hobbit server\n");
 		return 1;
 	}
-	if (sendmessage(procscmd, NULL, NULL, &procsbuf, 1, BBTALK_TIMEOUT) != BB_OK) {
+	respbuf = getsendreturnstr(sres, 1);
+	if (sendmessage(procscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 		errormsg("Cannot contact the Hobbit server\n");
 		return 1;
 	}
-	if (sendmessage(svcscmd, NULL, NULL, &svcsbuf, 1, BBTALK_TIMEOUT) != BB_OK) {
+	procsbuf = getsendreturnstr(sres, 1);
+	if (sendmessage(svcscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 		errormsg("Cannot contact the Hobbit server\n");
 		return 1;
 	}
+	svcsbuf = getsendreturnstr(sres, 1);
+
+	freesendreturnbuf(sres);
 
 	if (!respbuf) {
 		errormsg("Unable to find host information\n");

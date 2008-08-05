@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bb-ack.c,v 1.35 2008-01-03 10:04:58 henrik Exp $";
+static char rcsid[] = "$Id: bb-ack.c,v 1.35 2008/01/03 10:04:58 henrik Exp henrik $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -228,6 +228,7 @@ int main(int argc, char *argv[])
 			char *respbuf = NULL;
 			char *hostname, *pagename;
 			int gotfilter = 0;
+			sendreturn_t *sres = NULL;
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 
@@ -250,9 +251,13 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			if (sendmessage(cmd, NULL, NULL, &respbuf, 1, BBTALK_TIMEOUT) == BB_OK) {
+			sres = newsendreturnbuf(1, NULL);
+
+			if (sendmessage(cmd, NULL, BBTALK_TIMEOUT, sres) == BB_OK) {
 				char *bol, *eoln;
 				int first = 1;
+
+				respbuf = getsendreturnstr(sres, 1);
 
 				bol = respbuf;
 				while (bol) {
@@ -286,6 +291,8 @@ int main(int argc, char *argv[])
 					fprintf(stdout, "</form>\n");
 				}
 			}
+
+			freesendreturnbuf(sres);
 
 			headfoot(stdout, "acknowledge", "", "footer", COL_RED);
 		}
@@ -335,7 +342,7 @@ int main(int argc, char *argv[])
 
 			bbmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
 			sprintf(bbmsg, "hobbitdack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
-			if (sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT) == BB_OK) {
+			if (sendmessage(bbmsg, NULL, BBTALK_TIMEOUT, NULL) == BB_OK) {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 
 						awalk->hostname, awalk->testname);

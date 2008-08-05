@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: orcahobbit.c,v 1.3 2008-01-03 09:49:28 henrik Exp $";
+static char rcsid[] = "$Id: orcahobbit.c,v 1.3 2008/01/03 09:49:28 henrik Exp henrik $";
 
 #include <stdio.h>
 #include <string.h>
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		val = strtok_r(NULL, " \t\n", &vp);
 	}
 
-	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
 
 	return 0;
 }

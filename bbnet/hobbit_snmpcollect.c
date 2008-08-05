@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.46 2008-02-27 09:30:31 henrik Exp $";
+static char rcsid[] = "$Id: hobbit_snmpcollect.c,v 1.46 2008/02/27 09:30:31 henrik Exp henrik $";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -917,7 +917,7 @@ void sendresult(void)
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		if (strcmp(rwalk->hostname, currhost) != 0) {
 			/* Flush buffer */
-			if (havemsg) sendmessage(STRBUF(clientmsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+			if (havemsg) sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
 			clearstrbuffer(clientmsg);
 			havemsg = 0;
 
@@ -984,7 +984,7 @@ void sendresult(void)
 	}
 
 	if (havemsg) {
-		sendmessage(STRBUF(clientmsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
 	}
 	
 	freestrbuffer(clientmsg);

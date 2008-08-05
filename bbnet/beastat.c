@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: beastat.c,v 1.10 2008-01-03 09:42:11 henrik Exp $";
+static char rcsid[] = "$Id: beastat.c,v 1.10 2008/01/03 09:42:11 henrik Exp henrik $";
 
 #include <stdio.h>
 #include <string.h>
@@ -165,7 +165,7 @@ void send_data(void *host, char *beadomain, char *databuf, char **items)
 			addtobuffer(msgbuf, msgline);
 		}
 
-		sendmessage(STRBUF(msgbuf), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		sendmessage(STRBUF(msgbuf), NULL, BBTALK_TIMEOUT, NULL);
 		clearstrbuffer(msgbuf);
 	}
 

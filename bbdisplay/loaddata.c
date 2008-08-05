@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loaddata.c,v 1.174 2008-02-04 21:25:25 henrik Exp $";
+static char rcsid[] = "$Id: loaddata.c,v 1.174 2008/02/04 21:25:25 henrik Exp henrik $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -393,11 +393,15 @@ state_t *load_state(dispsummary_t **sumhead)
 	char		*nextline;
 	int		done;
 	logdata_t	log;
+	sendreturn_t	*sres;
 
 	dbgprintf("load_state()\n");
 
+	sres = newsendreturnbuf(1, NULL);
+
 	if (!reportstart && !snapshot) {
 		char *dumpfn = getenv("BOARDDUMP");
+
 		if (dumpfn) {
 			/* Debugging - read data from a dump file */
 			struct stat st;
@@ -415,12 +419,17 @@ state_t *load_state(dispsummary_t **sumhead)
 			}
 		}
 		else {
-			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,flapinfo,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,flapinfo,line1,acklist", NULL, BBTALK_TIMEOUT, sres);
+			board = getsendreturnstr(sres, 1);
 		}
 	}
 	else {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres);
+		board = getsendreturnstr(sres, 1);
 	}
+
+	freesendreturnbuf(sres);
+
 	if ((hobbitdresult != BB_OK) || (board == NULL) || (*board == '\0')) {
 		errprintf("hobbitd status-board not available, code %d\n", hobbitdresult);
 		return NULL;

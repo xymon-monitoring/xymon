@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.6 2008-02-25 12:19:13 henrik Exp $";
+static char rcsid[] = "$Id: hobbit-ghosts.c,v 1.6 2008/02/25 12:19:13 henrik Exp henrik $";
 
 #include <stdio.h>
 #include <string.h>
@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
 	char *hffile = "ghosts";
 	int bgcolor = COL_BLUE;
 	char *ghosts = NULL;
+	sendreturn_t *sres;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -165,11 +166,15 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	if (sendmessage("ghostlist", NULL, NULL, &ghosts, 1, BBTALK_TIMEOUT) == BB_OK) {
+	sres = newsendreturnbuf(1, NULL);
+
+	if (sendmessage("ghostlist", NULL, BBTALK_TIMEOUT, sres) == BB_OK) {
 		char *bol, *eoln, *name, *sender, *timestr;
 		time_t tstamp, now;
 		int count, idx;
 		ghost_t *ghosttable;
+
+		ghosts = getsendreturnstr(sres, 1);
 
 		/* Count the number of lines */
 		for (bol = ghosts, count=0; (bol); bol = strchr(bol, '\n')) {
@@ -267,6 +272,8 @@ int main(int argc, char *argv[])
 	}
 	else
 		fprintf(stdout, "<h3><center>Failed to retrieve ghostlist from server</center></h3>\n");
+
+	freesendreturnbuf(sres);
 
 	if (outform == O_HTML) {
 		headfoot(stdout, hffile, "", "footer", bgcolor);

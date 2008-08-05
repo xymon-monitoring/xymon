@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char zvse_rcsid[] = "$Id: zvse.c,v 1.2 2008-01-03 10:11:16 henrik Exp $";
+static char zvse_rcsid[] = "$Id: zvse.c,v 1.2 2008/01/03 10:11:16 henrik Exp henrik $";
 
 static void zvse_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr,
@@ -307,7 +307,7 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
 
         freestrbuffer(monmsg);
 
-        if (anycountdata) sendmessage(STRBUF(countdata), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+        if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
         clearstrbuffer(countdata);
 }
 

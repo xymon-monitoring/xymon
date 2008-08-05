@@ -13,7 +13,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: eventlog.c,v 1.48 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: eventlog.c,v 1.48 2008/01/03 09:59:13 henrik Exp henrik $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -259,7 +259,7 @@ static void count_duration(time_t fromtime, time_t totime,
 	elist_t *lwalk;
 	event_t *ewalk;
 	ed_t *ed;
-	char *bdata;
+	sendreturn_t *bdata;
 
 	/*
 	 * Restructure the event-list so we have a tree instead:
@@ -305,7 +305,8 @@ static void count_duration(time_t fromtime, time_t totime,
 	 * color we can add a pseudo-event that lets us determine what the 
 	 * color has been since the start of the event-period.
 	 */
-	if (sendmessage("hobbitdboard fields=hostname,testname,color,lastchange", NULL, NULL, &bdata, 1, BBTALK_TIMEOUT) == BB_OK) {
+	bdata = newsendreturnbuf(1, NULL);
+	if (sendmessage("hobbitdboard fields=hostname,testname,color,lastchange", NULL, BBTALK_TIMEOUT, bdata) == BB_OK) {
 		char *bol, *eol;
 		char *hname, *tname;
 		int color;
@@ -315,7 +316,7 @@ static void count_duration(time_t fromtime, time_t totime,
 		char *icname = xgetenv("INFOCOLUMN");
 		char *tcname = xgetenv("TRENDSCOLUMN");
 
-		bol = bdata;
+		bol = getsendreturnstr(bdata, 0);
 		while (bol) {
 			eol = strchr(bol, '\n'); if (eol) *eol = '\0';
 			hname = strtok(bol, "|");
@@ -394,10 +395,11 @@ nextrecord:
 			bol = (eol ? eol+1 : NULL);
 		}
 
-		xfree(bdata);
+		freesendreturnbuf(bdata);
 	}
 	else {
 		errprintf("Cannot get the current state\n");
+		freesendreturnbuf(bdata);
 		return;
 	}
 

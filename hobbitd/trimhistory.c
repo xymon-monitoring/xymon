@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: trimhistory.c,v 1.16 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id: trimhistory.c,v 1.16 2008/01/03 10:08:13 henrik Exp henrik $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -50,11 +50,17 @@ int validstatus(char *hname, char *tname)
 	char *p;
 	int result = 0;
 
+
 	if (!board) {
-		if (sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, BBTALK_TIMEOUT) != BB_OK) {
+		sendreturn_t *sres;
+
+		sres = newsendreturnbuf(1, NULL);
+		if (sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 			errprintf("Cannot get list of host/test combinations\n");
 			exit(1);
 		}
+		board = getsendreturnstr(sres, 1);
+		freesendreturnbuf(sres);
 
 		if (debug) {
 			char fname[PATH_MAX];
