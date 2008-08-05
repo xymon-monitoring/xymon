@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: reportlog.c,v 1.5 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id: reportlog.c,v 1.5 2008/01/03 09:59:13 henrik Exp henrik $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -26,7 +26,7 @@ char *stylenames[3] = { "crit", "nongr", "all" };
 void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 		     char *hostname, char *service, int color, int style,
 		     char *ip, char *displayname,
-		     time_t st, time_t end, double reportwarnlevel, double reportgreenlevel, 
+		     time_t st, time_t end, double reportwarnlevel, double reportgreenlevel, int reportwarnstops, 
 		     reportinfo_t *repinfo)
 {
 	replog_t *walk;

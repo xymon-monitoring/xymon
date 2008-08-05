@@ -22,7 +22,7 @@ extern host_t *init_host(char *hostname, int issummary,
 			 char *comment, char *description,
 			 int ip1, int ip2, int ip3, int ip4,
 			 int dialup,
-			 double warnpct, char *reporttime,
+			 double warnpct, int warnstops, char *reporttime,
 			 char *alerts, int nktime, char *waps,
 			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests);
 

@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbgen.c,v 1.232 2008-01-03 09:40:31 henrik Exp $";
+static char rcsid[] = "$Id: bbgen.c,v 1.232 2008/01/03 09:40:31 henrik Exp henrik $";
 
 #include <stdio.h>
 #include <unistd.h>
@@ -49,6 +49,7 @@ time_t		reportstart = 0;
 time_t		reportend = 0;
 double		reportwarnlevel = 97.0;
 double		reportgreenlevel = 99.995;
+int		reportwarnstops = -1;
 int		reportstyle = STYLE_CRIT;
 int		dynamicreport = 1;
 enum tooltipuse_t tooltipuse = TT_BBONLY;
