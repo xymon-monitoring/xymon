@@ -56,6 +56,10 @@
 		if [ $? -eq 0 ]; then
 			echo "Found ZLIB libraries in $ZLIBLIB"
 			./test-zlib
+			if [ $? -ne 0 ]; then
+				echo "ZLIB version too old, must be at least version 1.2.x"
+				exit 1
+			fi
 		else
 			echo "ERROR: ZLIB library files found in $ZLIBLIB, but link fails."
 			exit 1
