@@ -406,7 +406,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", columncount);
 			}
 
-			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
+			fprintf(output, "<TR class=line>\n <TD NOWRAP><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
 			if (maxrowsbeforeheading) rowcount = (rowcount + 1) % maxrowsbeforeheading;
 			else rowcount++;
 
