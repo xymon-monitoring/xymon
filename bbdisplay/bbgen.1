@@ -18,6 +18,14 @@ generates the overview webpages for the Hobbit monitor. These are the webpages
 that show the overall status of your hosts, not the detailed status pages for 
 each test.
 
+Note: The data for the webpages is retrieved from the 
+.I hobbitd(8)
+daemon, and bbgen uses the values of the BBDISPLAY / BBDISPLAYS environment 
+variables to determine the network address where hobbitd can be reached. If
+you have more than one server listed in BBDISPLAYS, make sure the first one
+is the local hobbitd server - this is the one that bbgen will query for data.
+
+
 .SH OPTIONS
 bbgen has a large number of commandline options.  The options
 can be used to change the behaviour of bbgen and affect the web pages generated 
