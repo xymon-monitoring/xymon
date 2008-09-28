@@ -349,6 +349,16 @@ SSL_CTX *sslctx = NULL;
 int sslpossible = 1;
 #endif
 
+
+#ifdef HAVE_OPENSSL
+static int sslcert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	/* No verification for now, we just accept the client certificate */
+
+	return 1;	/* 1=accept connection, 0=reject it */
+}
+#endif
+
 int sslinitialize(char *certfn, char *keyfn)
 {
 #ifdef HAVE_OPENSSL
@@ -377,6 +387,8 @@ int sslinitialize(char *certfn, char *keyfn)
 		errprintf("Invalid private key, does not match certificate\n");
 		return 1;
 	}
+	/* We want a peer certificate */
+	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE, sslcert_verify_callback);
 #endif
 
 	return 0;
@@ -390,8 +402,26 @@ void sslhandshake(conn_t *cn)
 
 	n = SSL_do_handshake((SSL *)cn->sslobj);
 	if (n == 1) {
+		X509 *peercert;
+
 		/* SSL handshake is done */
 		cn->doingwhat = RECEIVING;
+
+		peercert = SSL_get_peer_certificate(cn->sslobj);
+		if (!peercert) {
+			errprintf("Host %s does not provide a client certificate\n", inet_ntoa(cn->addr.sin_addr));
+		}
+		else {
+			char *certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
+			char *issuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
+
+			errprintf("Host %s presents certificate %s, issued by %s\n", 
+				  inet_ntoa(cn->addr.sin_addr), 
+				  certcn, issuer);
+
+			xfree(certcn); xfree(issuer);
+			X509_free(peercert);
+		}
 	}
 	else {
 		/* SSL handshake in progress or an error occurred */
