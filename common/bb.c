@@ -80,6 +80,18 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--compress") == 0) {
 			sendcompressedmessages = 1;
 		}
+		else if (strcmp(argv[argi], "--ssl") == 0) {
+			sendssl = 1;
+		}
+		else if (argnmatch(argv[argi], "--ssl=")) {
+			char *p = strchr(argv[argi], '=');
+			sendssl = 1;
+			sslcertfn = strdup(p+1);
+			sslkeyfn = strdup(p+1);
+			p = strstr(sslkeyfn, ".cert");
+			if (!p) p = strstr(sslkeyfn, ".crt");
+			if (p) strcpy(p, ".key");
+		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
 		}

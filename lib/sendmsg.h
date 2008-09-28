@@ -42,6 +42,9 @@ extern int bbstatuscount;
 extern int bbnocombocount;
 extern int dontsendmessages;
 extern int sendcompressedmessages;
+extern int sendssl;
+extern char *sslcertfn;
+extern char *sslkeyfn;
 
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);

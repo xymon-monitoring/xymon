@@ -29,6 +29,14 @@ server.
 Specifies the timeout for connecting to the Hobbit server, in
 seconds. The default is 5 seconds.
 
+.IP "--ssl[=CERTIFICATEFILE]"
+Establish an SSL-encrypted connection to the Hobbit server.
+If a certificate-file is specified, this is used as a
+client certificate which the server may use to verify that
+the client is allowed to talk to the server. CERTIFICATEFILE
+must be a filename ending with ".cert"; the private key
+file must have the same file except for a ".key" extension.
+
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
