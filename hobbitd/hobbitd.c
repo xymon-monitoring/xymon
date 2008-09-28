@@ -345,6 +345,7 @@ int nextschedid = 1;
 #ifdef HAVE_OPENSSL
 SSL_METHOD *sslmethod = NULL;
 SSL_CTX *sslctx = NULL;
+int sslpossible = 1;
 #endif
 
 int sslinitialize(char *certfn, char *keyfn)
@@ -451,7 +452,7 @@ int socketread(conn_t *cn)
 		 */
 		if (cn->buflen < 9) {
 			n = read(cn->sock, cn->bufp, 9 - cn->buflen);
-			if ((n > 0) && (n+cn->buflen >= 9) && (memcmp(cn->buf, "starttls\n", 9) == 0)) {
+			if (sslpossible && (n > 0) && (n+cn->buflen >= 9) && (memcmp(cn->buf, "starttls\n", 9) == 0)) {
 				cn->sslobj = SSL_new(sslctx);
 				SSL_set_fd((SSL *)cn->sslobj, cn->sock);
 				SSL_set_accept_state((SSL *)cn->sslobj);
@@ -4076,7 +4077,7 @@ done:
 			}
 		}
 
-		/* shutdown(msg->sock, SHUT_RD); ---- not needed, I think */
+		shutdown(msg->sock, SHUT_RD); /* ---- not needed, I think */
 	}
 	else {
 		socketclose(msg);
@@ -4879,7 +4880,11 @@ int main(int argc, char *argv[])
 	}
 
 	/* Initialize SSL, if used */
-	if (sslinitialize(sslcertfn, sslkeyfn) != 0) return 1;	/* SSL setup failed */
+	if (sslinitialize(sslcertfn, sslkeyfn) != 0) {
+		/* SSL setup failed */
+		errprintf("SSL setup failed, continuing with SSL support disabled\n");
+		sslpossible = 0;
+	}
 
 	/* Go daemon */
 	if (daemonize) {
