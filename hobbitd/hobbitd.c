@@ -4551,6 +4551,7 @@ int commandiscomplete(conn_t *cn)
 	 * set onelinercheckdone TRUE to skip doing the tests again.
 	 */
 	cn->onelinercheckdone = (strchr(cn->buf, '\n') != NULL);
+	if (!cn->onelinercheckdone) return 0;	/* Oneliners MUST finish with a newline, or they are incomplete */
 
 	/* See if the command is one of our one-line commands */
 	for (i=0; (i < (sizeof(oneliners) / sizeof(oneliners[0]))); i++) {
