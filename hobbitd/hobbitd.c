@@ -486,7 +486,7 @@ int socketread(conn_t *cn)
 			if (sslpossible && (n > 0) && (n+cn->buflen >= 18) && (memcmp(cn->buf, "starttls ", 9) == 0)) {
 				dbgprintf("Initiating SSL handshake\n");
 				cn->sslobj = SSL_new(sslctx);
-				cn->expectbytes = atoi(cn->buf+9);
+				cn->expectbytes = atoi(cn->buf+9); if (cn->expectbytes < 0) cn->expectbytes = 0;
 				SSL_set_fd((SSL *)cn->sslobj, cn->sock);
 				SSL_set_accept_state((SSL *)cn->sslobj);
 				cn->doingwhat = SSLREAD_HANDSHAKE;
