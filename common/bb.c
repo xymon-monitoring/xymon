@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
 	char *recipient = NULL;
 	strbuffer_t *msg = newstrbuffer(0);
 	FILE *respfd = stdout;
-	char *response = NULL;
 	char *envarea = NULL;
 	sendreturn_t *sres;
 	int wantresponse = 0;
@@ -131,7 +130,7 @@ int main(int argc, char *argv[])
 		freestrbuffer(inpline);
 	}
 
-	if (strncmp(STRBUF(msg), "query ", 6) == 0) wantresponse = 1;
+	if      (strncmp(STRBUF(msg), "query ", 6) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "client ", 7) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "config ", 7) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "download ", 9) == 0) wantresponse = 1;
@@ -153,7 +152,7 @@ int main(int argc, char *argv[])
 	sres = newsendreturnbuf(wantresponse, respfd);
 	result = sendmessage(STRBUF(msg), recipient, timeout, sres);
 
-	if (sres->respstr) printf("Buffered response is '%s'\n", response);
+	if (sres->respstr) printf("Buffered response is '%s'\n", STRBUF(sres->respstr));
 
 	return result;
 }
