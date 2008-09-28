@@ -88,6 +88,16 @@ typedef enum { 	TALK_DONE, 					/* Done */
 #endif
 } talkstate_t;
 
+static char *tsstrings[TALK_SSLWRITE_RECEIVE+1] = {
+	"talk_done", 
+	"talk_init_connection", "talk_connecting", 
+	"talk_send", "talk_receive",
+	"talk_sslsend", "talk_sslreceive",
+	"talk_send_starttls",
+	"talk_sslread_setup", "talk_sslwrite_setup",
+	"talk_sslread_send", "talk_sslwrite_send",
+	"talk_sslread_receive", "talk_sslwrite_receive"
+};
 
 static int sslinitialize(void)
 {
@@ -306,7 +316,8 @@ static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *
 	int connretries = BBSENDRETRIES;
 	char *httpmessage = NULL;
 	char recvbuf[32768];
-	char *starttlsptr = "starttls\n";
+	char starttlsbuf[20];
+	char *starttlsptr = starttlsbuf;
 	talkstate_t talkstate = TALK_DONE, postconnectstate = TALK_DONE, postsendstate = TALK_DONE;
 	int talkresult = BB_OK;
 
@@ -466,6 +477,8 @@ static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *
 	if (response && (response->respstr || response->respfd)) postsendstate = TALK_RECEIVE;
 #ifdef HAVE_OPENSSL
 	if (sendssl && (postsendstate == TALK_RECEIVE)) postsendstate = TALK_SSLRECEIVE;
+	/* NB: The "starttls" line MUST be 18 bytes, since this is what the daemon expects. */
+	sprintf(starttlsbuf, "starttls %08d\n", msgremain);
 #endif
 	while (talkstate != TALK_DONE) {
 		fd_set readfds, writefds;
@@ -474,6 +487,7 @@ static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *
 		FD_ZERO(&writefds);
 		FD_ZERO(&readfds);
 
+		dbgprintf("talkstate=%s\n", tsstrings[talkstate]);
 		switch (talkstate) {
 		  case TALK_DONE:
 			/* Cannot happen ... */
@@ -629,7 +643,7 @@ static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *
 				msgptr += res;
 				msgremain -= res;
 				if (msgremain == 0) {
-					shutdown(sockfd, SHUT_WR);
+					shutdown(sockfd, SHUT_WR);	/* Needed to signal "no more data from client" */
 					talkstate = postsendstate;
 				}
 			}
@@ -664,11 +678,21 @@ static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *
 				talkresult = BB_EWRITEERROR;
 			}
 			else {
-				sslobj = SSL_new(sslctx);
-				SSL_set_fd(sslobj, sockfd);
-				SSL_set_connect_state(sslobj);
 				starttlsptr += res;
-				if (*starttlsptr == '\0') talkstate = TALK_SSLREAD_SETUP;
+				if (*starttlsptr == '\0') {
+					talkstate = TALK_SSLREAD_SETUP;
+					sslobj = SSL_new(sslctx);
+					SSL_set_fd(sslobj, sockfd);
+					SSL_set_connect_state(sslobj);
+
+					/*
+					 * We must begin the SSL handshake right away,
+					 * but just falling through won't work because the
+					 * FD_ISSET() checks will prevent us from reaching
+					 * SSL_do_handshake(). Hence the <gasp!> goto ..
+					 */
+					goto letsdossl;
+				}
 			}
 			break;
 
@@ -676,18 +700,27 @@ static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *
 		  case TALK_SSLREAD_SETUP:
 			if ((talkstate == TALK_SSLWRITE_SETUP) && (!FD_ISSET(sockfd, &writefds))) break;
 			if ((talkstate == TALK_SSLREAD_SETUP) && (!FD_ISSET(sockfd, &readfds))) break;
+letsdossl:
 			res = SSL_do_handshake(sslobj);
 			if (res == 1) {
 				/* SSL handshake completed */
 				talkstate = TALK_SSLSEND;
 			}
 			else {
+				char errmsg[120];
+
 				switch (SSL_get_error(sslobj, res)) {
 				  case SSL_ERROR_WANT_READ:
 					talkstate = TALK_SSLREAD_SETUP;
 					break;
 				  case SSL_ERROR_WANT_WRITE:
 					talkstate = TALK_SSLWRITE_SETUP;
+					break;
+				  default:
+					ERR_error_string(res, errmsg);
+					errprintf("SSL handshake error: %s\n", errmsg);
+					talkstate = TALK_DONE;
+					talkresult = BB_EWRITEERROR;
 					break;
 				}
 			}

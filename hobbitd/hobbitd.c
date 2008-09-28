@@ -196,6 +196,7 @@ typedef struct conn_t {
 	int compressionok;		/* Remote end can handle compression */
 	int onelinercheckdone;		/* Flag if we have checked if this is a one-line command */
 	void *sslobj;			/* SSL object for SSL-enabled connections */
+	int expectbytes;		/* # of bytes to read from client (from "starttls") */
 	time_t timeout;			/* When the timeout for this connection happens */
 	struct conn_t *next;
 } conn_t;
@@ -443,17 +444,19 @@ int socketread(conn_t *cn)
 	}
 	else {
 		/* 
-		 * Must check for the "starttls\n" string first.
+		 * Must check for the "starttls %08d\n" string first.
 		 * At the beginning of our read sequence, only read 
 		 * enough bytes to determine if there is a "starttls\n"
 		 * string - if yes, then the SSL handshake data follows
 		 * immediately, and we don't want to grab that ahead of
 		 * SSL_handshake().
 		 */
-		if (cn->buflen < 9) {
-			n = read(cn->sock, cn->bufp, 9 - cn->buflen);
-			if (sslpossible && (n > 0) && (n+cn->buflen >= 9) && (memcmp(cn->buf, "starttls\n", 9) == 0)) {
+		if (cn->buflen < 18) {
+			n = read(cn->sock, cn->bufp, 18 - cn->buflen);
+			if (sslpossible && (n > 0) && (n+cn->buflen >= 18) && (memcmp(cn->buf, "starttls ", 9) == 0)) {
+				dbgprintf("Initiating SSL handshake\n");
 				cn->sslobj = SSL_new(sslctx);
+				cn->expectbytes = atoi(cn->buf+9);
 				SSL_set_fd((SSL *)cn->sslobj, cn->sock);
 				SSL_set_accept_state((SSL *)cn->sslobj);
 				cn->doingwhat = SSLREAD_HANDSHAKE;
@@ -4539,7 +4542,44 @@ int commandiscomplete(conn_t *cn)
 	};
 	int i;
 
-	/* If we already did the check, skip doing it again (it must be a multi-line command) */
+	/*
+	 * It is actually a bit tricky to decide when a client 
+	 * has sent us the full command.
+	 *
+	 * Non-SSL connections from the "bb" utility (or any 
+	 * Hobbbit tool) must be compatible with the old
+	 * BB protocol, which simply shuts down the connection
+	 * when all data has been sent. In that case the read()
+	 * operation will indicate that the command is complete,
+	 * and we never go here.
+	 *
+	 * Non-SSL connections from e.g. "telnet" do not close
+	 * the connection. There is no way we can figure out 
+	 * when the command is complete, except for those that
+	 * by design are only on one line - those are complete
+	 * when we have a newline in the receive buffer. So 
+	 * this type of connection will only work with the one-
+	 * liner commands.
+	 *
+	 * SSL connections do not support the shutdown() transport
+	 * layer method of indicating when no more data is being
+	 * sent by the client which we use for non-SSL connections.
+	 * So we need some other way of detecting this, and do so
+	 * by having the message length (in bytes) appear in the 
+	 * "starttls" command - as "starttls 00014\n". This number
+	 * is parsed when the "starttls" command is seen and stored
+	 * in the "expectbytes" field, so if this is non-zero, we
+	 * can easily tell if all of the data has been received.
+	 */
+
+	/* If we know how much to expect, use it */
+	if (cn->expectbytes) return (cn->buflen >= cn->expectbytes);
+
+	/* If we already did the check, skip doing it again (it must be a 
+	 * multi-line command from a non-SSL connection). So this command
+	 * is terminated by the client shutting down the connection, 
+	 * which is detected elsewhere.
+	 */
 	if (cn->onelinercheckdone) return 0;
 
 	/* 
