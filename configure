@@ -7,6 +7,9 @@ BASEDIR="`dirname $0`"
 TARGET="$1"
 if test "$TARGET" != ""; then shift; fi
 
+# Workaround SVN not preserving exec-permissions
+chmod ugo+x $BASEDIR/configure.* $BASEDIR/build/*.sh
+
 case "$TARGET" in
   "--client")
 	$BASEDIR/configure.client $*
