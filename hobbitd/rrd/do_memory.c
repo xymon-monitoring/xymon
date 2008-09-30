@@ -105,22 +105,22 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
  
                 setupfn2("%s.%s.rrd", "memory", "CSA");
                 sprintf(rrdvalues, "%d:%d", (int)tstamp, csautil);
-                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+                create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
  
                 setupfn2("%s.%s.rrd", "memory", "ECSA");
                 sprintf(rrdvalues, "%d:%d", (int)tstamp, ecsautil);
-                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+                create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
  
                 setupfn2("%s.%s.rrd", "memory", "SQA");
                 sprintf(rrdvalues, "%d:%d", (int)tstamp, sqautil);
-                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+                create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
  
                 setupfn2("%s.%s.rrd", "memory", "ESQA");
                 sprintf(rrdvalues, "%d:%d", (int)tstamp, esqautil);
-                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+                create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
  
                 return 0;
-                }
+	}
 
 	if (strstr(msg, "Total Cache Buffers")) {
 		/* Netware nwstat2bb memory report.
