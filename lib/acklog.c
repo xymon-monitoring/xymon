@@ -72,7 +72,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		}
 	}
 
-	acks = (ack_t *) malloc(maxcount*sizeof(ack_t));
+	acks = (ack_t *) calloc(maxcount, sizeof(ack_t));
 	ackintime_count = num = 0;
 
 	while (fgets(l, sizeof(l), acklog)) {
@@ -87,7 +87,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			char *p, *p1, *hobbitdacker = NULL;
 
 			sscanf(l, "%u\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
-				(unsigned int *)&acks[num].acktime, &acks[num].acknum,
+				(time_t *)&acks[num].acktime, &acks[num].acknum,
 				&acks[num].duration, &acks[num].acknum2,
 				ackedby, hosttest, color, &c_used);
 
