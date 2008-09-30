@@ -69,6 +69,59 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		}
 	}
 
+        if (strstr(msg, "z/OS Memory Map")) {
+                long j1, j2, j3;
+                int csautil, ecsautil, sqautil, esqautil;
+                char *p;
+ 
+                /* z/OS Memory Utilization:
+                 Area    Alloc     Used      HWM  Util
+                 CSA      3524     3034     3436   86.1
+                 ECSA    20172    19979    20014   99.0
+                 SQA      1540      222      399   14.4
+                 ESQA    13988     4436     4726   31.7  */
+ 
+                p = strstr(msg, "CSA ") + 4;
+                if (p) {
+                        sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &csautil);
+                        }
+ 
+                p = strstr(msg, "ECSA ") + 5;
+                if (p) {
+                        sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &ecsautil);
+                        }
+ 
+                p = strstr(msg, "SQA ") + 4;
+                if (p) {
+                        sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &sqautil);
+                        }
+ 
+                p = strstr(msg, "ESQA ") + 5;
+                if (p) {
+                        sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &esqautil);
+                        }
+ 
+                if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
+ 
+                setupfn2("%s.%s.rrd", "memory", "CSA");
+                sprintf(rrdvalues, "%d:%d", (int)tstamp, csautil);
+                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+ 
+                setupfn2("%s.%s.rrd", "memory", "ECSA");
+                sprintf(rrdvalues, "%d:%d", (int)tstamp, ecsautil);
+                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+ 
+                setupfn2("%s.%s.rrd", "memory", "SQA");
+                sprintf(rrdvalues, "%d:%d", (int)tstamp, sqautil);
+                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+ 
+                setupfn2("%s.%s.rrd", "memory", "ESQA");
+                sprintf(rrdvalues, "%d:%d", (int)tstamp, esqautil);
+                create_and_update_rrd(hostname, testname, memory_params, memory_tpl);
+ 
+                return 0;
+                }
+
 	if (strstr(msg, "Total Cache Buffers")) {
 		/* Netware nwstat2bb memory report.
 		 *

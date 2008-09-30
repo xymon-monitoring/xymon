@@ -65,6 +65,11 @@ typedef struct c_mem_t {
 	int warnlevel, paniclevel;
 } c_mem_t;
 
+typedef struct c_zos_mem_t {
+       enum { C_MEM_CSA, C_MEM_ECSA, C_MEM_SQA, C_MEM_ESQA } zos_memtype;
+       int warnlevel, paniclevel;
+} c_zos_mem_t;
+
 typedef struct c_proc_t {
 	exprlist_t *procexp;
 	int pmin, pmax, pcount;
@@ -208,6 +213,7 @@ typedef struct c_rule_t {
 		c_clock_t clock;
 		c_disk_t disk;
 		c_mem_t mem;
+                c_zos_mem_t zos_mem;
 		c_proc_t proc;
 		c_log_t log;
 		c_file_t fcheck;
@@ -723,6 +729,50 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
+                        else if (strcasecmp(tok, "MEMCSA") == 0) {
+                                currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule->rule.zos_mem.zos_memtype = C_MEM_CSA;
+                                currule->rule.zos_mem.warnlevel = 90;
+                                currule->rule.zos_mem.paniclevel = 95;
+ 
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.warnlevel = atoi(tok);
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.paniclevel = atoi(tok);
+                        }
+                        else if (strcasecmp(tok, "MEMECSA") == 0) {
+                                currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule->rule.zos_mem.zos_memtype = C_MEM_ECSA;
+                                currule->rule.zos_mem.warnlevel = 90;
+                                currule->rule.zos_mem.paniclevel = 95;
+ 
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.warnlevel = atoi(tok);
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.paniclevel = atoi(tok);
+                        }
+                        else if (strcasecmp(tok, "MEMSQA") == 0) {
+                                currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule->rule.zos_mem.zos_memtype = C_MEM_SQA;
+                                currule->rule.zos_mem.warnlevel = 90;
+                                currule->rule.zos_mem.paniclevel = 95;
+ 
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.warnlevel = atoi(tok);
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.paniclevel = atoi(tok);
+                        }
+                        else if (strcasecmp(tok, "MEMESQA") == 0) {
+                                currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule->rule.zos_mem.zos_memtype = C_MEM_ESQA;
+                                currule->rule.zos_mem.warnlevel = 90;
+                                currule->rule.zos_mem.paniclevel = 95;
+ 
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.warnlevel = atoi(tok);
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zos_mem.paniclevel = atoi(tok);
+                        }
 			else if (strcasecmp(tok, "PROC") == 0) {
 				int idx = 0;
 
@@ -1701,7 +1751,6 @@ nextrule:
 	return (STRBUFLEN(resbuf) > 0) ? STRBUF(resbuf) : NULL;
 }
 
-
 void get_memory_thresholds(void *hinfo, char *classname,
 			   int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
 {
@@ -1746,6 +1795,62 @@ void get_memory_thresholds(void *hinfo, char *classname,
 		}
 		rule = getrule(NULL, NULL, NULL, hinfo, C_MEM);
 	}
+}
+
+void get_zos_memory_thresholds(void *hinfo, char *classname,
+                               int *csayellow, int *csared, int *ecsayellow, int *ecsared,
+                              int *sqayellow, int *sqared, int *esqayellow, int *esqared)
+{
+        char *hostname, *pagename;
+        c_rule_t *rule;
+        int gotcsa = 0, gotecsa = 0, gotsqa = 0, gotesqa = 0;
+
+        hostname = bbh_item(hinfo, BBH_HOSTNAME);
+        pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+
+        *csayellow = 90;
+        *csared = 95;
+        *ecsayellow = 90;
+        *ecsared = 95;
+        *sqayellow = 90;
+        *sqared = 95;
+        *esqayellow = 90;
+        *esqared = 95;
+
+        rule = getrule(hostname, pagename, classname, hinfo, C_MEM);
+        while (rule) {
+                switch (rule->rule.zos_mem.zos_memtype) {
+                  case C_MEM_CSA:
+                        if (!gotcsa) {
+                                *csayellow = rule->rule.zos_mem.warnlevel;
+                                *csared    = rule->rule.zos_mem.paniclevel;
+                                gotcsa     = 1;
+                        }
+                        break;
+                  case C_MEM_ECSA:
+                        if (!gotecsa) {
+                                *ecsayellow = rule->rule.zos_mem.warnlevel;
+                                *ecsared    = rule->rule.zos_mem.paniclevel;
+                                gotecsa     = 1;
+                        }
+                        break;
+                  case C_MEM_SQA:
+                        if (!gotsqa) {
+                                *sqayellow = rule->rule.zos_mem.warnlevel;
+                                *sqared    = rule->rule.zos_mem.paniclevel;
+                                gotsqa     = 1;
+                        }
+                        break;
+                  case C_MEM_ESQA:
+                        if (!gotesqa) {
+                                *esqayellow = rule->rule.zos_mem.warnlevel;
+                                *esqared    = rule->rule.zos_mem.paniclevel;
+                                gotesqa     = 1;
+                        }
+                        break;
+                }
+                rule = getrule(NULL, NULL, NULL, hinfo, C_MEM);
+        }
 }
 
 int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *pagingred)
