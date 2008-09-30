@@ -17,8 +17,8 @@ int main(int argc, char **argv)
 	}
 	else {
 		printf("zlib version %s\n", zlibVersion());
-		if ((ZLIB_VER_MAJOR < 1) || ((ZLIB_VER_MAJOR == 1) && (ZLIB_VER_MINOR < 2))) {
-			printf("Your zlib version is too old, requires version 1.2.x or later\n");
+		if (ZLIB_VERNUM < 0x1230) {
+			printf("Your zlib version is too old, requires version 1.2.3 or later\n");
 			return 1;
 		}
 	}
