@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char irix_rcsid[] = "$Id: irix.c,v 1.10 2008-01-03 10:11:16 henrik Exp $";
+static char irix_rcsid[] = "$Id$";
 
 void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os, 
 			void *hinfo, char *sender, time_t timestamp,

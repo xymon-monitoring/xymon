@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sendmsg.c,v 1.89 2008/04/29 08:54:55 henrik Exp henrik $";
+static char rcsid[] = "$Id$";
 
 #include "config.h"
 

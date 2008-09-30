@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.19 2008-03-22 07:48:55 henrik Exp $";
+static char bbproxy_rcsid[] = "$Id$";
 
 int do_bbproxy_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 { 

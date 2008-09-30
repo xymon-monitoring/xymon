@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbit-nkview.c,v 1.24 2008/01/03 10:04:58 henrik Exp henrik $";
+static char rcsid[] = "$Id$";
 
 #include <string.h>
 #include <stdlib.h>

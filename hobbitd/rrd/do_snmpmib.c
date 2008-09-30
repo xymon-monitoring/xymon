@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpmib_rcsid[] = "$Id: do_snmpmib.c,v 1.6 2008-04-02 10:43:41 henrik Exp $";
+static char snmpmib_rcsid[] = "$Id$";
 
 static time_t snmp_nextreload = 0;
 

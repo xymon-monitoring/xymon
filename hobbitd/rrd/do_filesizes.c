@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char filesize_rcsid[] = "$Id: do_filesizes.c,v 1.10 2008-03-22 07:48:55 henrik Exp $";
+static char filesize_rcsid[] = "$Id$";
 
 static char *filesize_params[] = { "DS:size:GAUGE:600:0:U", NULL };
 static void *filesize_tpl      = NULL;

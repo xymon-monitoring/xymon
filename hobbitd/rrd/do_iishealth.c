@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iishealth_rcsid[] = "$Id: do_iishealth.c,v 1.15 2008-03-22 07:48:55 henrik Exp $";
+static char iishealth_rcsid[] = "$Id$";
 
 int do_iishealth_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char aix_rcsid[] = "$Id: aix.c,v 1.14 2008-01-03 10:10:39 henrik Exp $";
+static char aix_rcsid[] = "$Id$";
 
 void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 		       void *hinfo, char *sender, time_t timestamp,

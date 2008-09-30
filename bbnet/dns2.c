@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: dns2.c,v 1.13 2008-01-11 10:10:09 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 /*
  * All of the code for parsing DNS responses and formatting these into

@@ -15,7 +15,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msgcache.c,v 1.12 2008-01-03 09:49:28 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include "config.h"
 

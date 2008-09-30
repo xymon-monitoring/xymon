@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: sig.c,v 1.13 2008-01-03 09:59:13 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include <limits.h>
 #include <string.h>

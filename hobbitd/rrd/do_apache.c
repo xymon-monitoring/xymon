@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char apache_rcsid[] = "$Id: do_apache.c,v 1.16 2008-03-22 07:48:55 henrik Exp $";
+static char apache_rcsid[] = "$Id$";
 
 int do_apache_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {

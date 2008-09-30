@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbtest_rcsid[] = "$Id: do_bbtest.c,v 1.19 2008-03-22 07:48:55 henrik Exp $";
+static char bbtest_rcsid[] = "$Id$";
 
 int do_bbtest_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 { 

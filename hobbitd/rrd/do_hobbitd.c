@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.17 2008-03-22 07:48:55 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id$";
 
 int do_hobbitd_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 

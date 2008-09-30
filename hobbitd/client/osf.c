@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char osf_rcsid[] = "$Id: osf.c,v 1.18 2008-01-03 10:11:16 henrik Exp $";
+static char osf_rcsid[] = "$Id$";
 
 void handle_osf_client(char *hostname, char *clienttype, enum ostype_t os, 
 		       void *hinfo, char *sender, time_t timestamp, 

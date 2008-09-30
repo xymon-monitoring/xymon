@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: loadbbhosts.c,v 1.53 2008/01/03 09:40:31 henrik Exp henrik $";
+static char rcsid[] = "$Id$";
 
 #include <limits.h>
 #include <stdio.h>

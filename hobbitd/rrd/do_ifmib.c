@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifmib_rcsid[] = "$Id: do_ifmib.c,v 1.7 2008-03-22 07:48:55 henrik Exp $";
+static char ifmib_rcsid[] = "$Id$";
 
 static char *ifmib_params[] = { 
 	                        "DS:ifInNUcastPkts:COUNTER:600:0:U", 

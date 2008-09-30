@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Hobbit CLIENT
-# $Id: configure.client,v 1.6 2008-03-03 11:53:32 henrik Exp $
+# $Id$
 
 echo ""
 echo "Configuration script for Hobbit client"

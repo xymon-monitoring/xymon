@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hmdc_rcsid[] = "$Id: hmdc.c,v 1.1 2008-08-02 08:41:11 henrik Exp $";
+static char hmdc_rcsid[] = "$Id$";
 
 typedef struct process_info_t {
 	int pid, ppid;

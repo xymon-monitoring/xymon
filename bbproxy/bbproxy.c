@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbproxy.c,v 1.64 2008-03-02 18:35:38 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include "config.h"
 

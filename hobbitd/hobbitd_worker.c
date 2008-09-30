@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitd_worker.c,v 1.37 2008-01-03 10:08:13 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include "config.h"
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.22 2008/04/29 08:51:40 henrik Exp henrik $";
+static char solaris_rcsid[] = "$Id$";
 
 void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			   void *hinfo, char *sender, time_t timestamp, 

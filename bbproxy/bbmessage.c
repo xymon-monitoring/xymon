@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: bbmessage.c,v 1.2 2008/01/03 09:46:25 henrik Exp henrik $";
+static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 

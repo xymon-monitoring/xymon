@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char iostat_rcsid[] = "$Id: do_iostat.c,v 1.21 2008-04-29 08:52:32 henrik Exp $";
+static char iostat_rcsid[] = "$Id$";
 
 static char *iostat_params[] = { "DS:rs:GAUGE:600:1:U", "DS:ws:GAUGE:600:1:U", 
 				"DS:krs:GAUGE:600:1:U", "DS:kws:GAUGE:600:1:U", 

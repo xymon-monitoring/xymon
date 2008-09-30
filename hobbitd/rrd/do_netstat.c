@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.36 2008-03-22 07:48:55 henrik Exp $";
+static char netstat_rcsid[] = "$Id$";
 
 static char *netstat_params[] = { "DS:udpInDatagrams:DERIVE:600:0:U", 
 	                          "DS:udpOutDatagrams:DERIVE:600:0:U", 

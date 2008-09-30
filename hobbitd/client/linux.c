@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char linux_rcsid[] = "$Id: linux.c,v 1.23 2008-01-03 10:11:16 henrik Exp $";
+static char linux_rcsid[] = "$Id$";
 
 void handle_linux_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 void *hinfo, char *sender, time_t timestamp,

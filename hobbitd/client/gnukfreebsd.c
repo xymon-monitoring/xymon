@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char gnukfreebsd_rcsid[] = "$Id: gnukfreebsd.c,v 1.1 2008-01-28 11:18:44 henrik Exp $";
+static char gnukfreebsd_rcsid[] = "$Id$";
 
 void handle_gnukfreebsd_client(char *hostname, char *clienttype, enum ostype_t os, 
 				void *hinfo, char *sender, time_t timestamp,

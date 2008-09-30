@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char zos_rcsid[] = "$Id: zos.c,v 1.1 2008/03/03 13:59:59 henrik Exp henrik $";
+static char zos_rcsid[] = "$Id$";
 
 
 void zos_cpu_report(char *hostname, char *clientclass, enum ostype_t os,

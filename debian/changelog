@@ -1,8 +1,8 @@
-hobbit (4.3.0-0.20080402) unstable; urgency=low
+hobbit (4.3.0-0.20080929) unstable; urgency=low
 
   * Interim release for testing
 
- -- Henrik Stoerner <henrik@hswn.dk>  Wed,  2 Apr 2008 12:56:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Tue, 29 Sep 2008 17:25:00 +0200
 
 
 hobbit (4.3.0-0.20070402) unstable; urgency=low

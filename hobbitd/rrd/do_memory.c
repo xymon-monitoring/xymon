@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.25 2008-03-22 07:48:55 henrik Exp $";
+static char memory_rcsid[] = "$Id$";
 
 static char *memory_params[]      = { "DS:realmempct:GAUGE:600:0:U", NULL };
 static void *memory_tpl           = NULL;

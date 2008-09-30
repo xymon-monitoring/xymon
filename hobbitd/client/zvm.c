@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char zvm_rcsid[] = "$Id: zvm.c,v 1.2 2008/01/03 10:11:16 henrik Exp henrik $";
+static char zvm_rcsid[] = "$Id$";
 
 static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr,

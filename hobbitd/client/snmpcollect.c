@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char snmpcollect_rcsid[] = "$Id: snmpcollect.c,v 1.6 2008-04-02 10:29:27 henrik Exp $";
+static char snmpcollect_rcsid[] = "$Id$";
 
 /*
  * Split the snmpcollect client-message into individual mib-datasets.

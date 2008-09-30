@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.22 2008-01-03 10:11:08 henrik Exp $";
+static char hpux_rcsid[] = "$Id$";
 
 void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os, 
 			void *hinfo, char *sender, time_t timestamp,

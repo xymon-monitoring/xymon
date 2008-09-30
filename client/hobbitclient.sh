@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh,v 1.20 2008-02-27 21:02:16 henrik Exp $
+# $Id$
 
 # Must make sure the commands return standard (english) texts.
 LANG=C

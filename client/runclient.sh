@@ -13,7 +13,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.18 2008-02-27 21:02:16 henrik Exp $
+# $Id$
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname

@@ -14,7 +14,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: msort.c,v 1.4 2007-06-21 12:23:15 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include <stdlib.h>
 #include <sys/time.h>

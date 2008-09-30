@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.24 2008-04-03 20:27:41 henrik Exp $";
+static char freebsd_rcsid[] = "$Id$";
 
 void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os, 
 			   void *hinfo, char *sender, time_t timestamp,

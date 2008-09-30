@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.20 2008-01-03 10:11:16 henrik Exp $";
+static char netbsd_rcsid[] = "$Id$";
 
 void handle_netbsd_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  void *hinfo, char *sender, time_t timestamp, 
