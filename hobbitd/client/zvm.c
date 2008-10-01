@@ -28,11 +28,12 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 
         int cpucolor = COL_GREEN;
 
-        char msgline[4096];
+        char msgline[1024];
         strbuffer_t *upmsg;
 
 	if (!want_msgtype(hinfo, MSG_CPU)) return;
 
+        if (!cpuutilstr) return;
         if (!uptimestr) return;
 
         uptimesecs = 0;
@@ -47,7 +48,7 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
         sprintf(myupstr, "%s\n", uptimestr);
 
         /*
-         *  Looking for average CPU Utilization in CPU message
+         *  Looking for average CPU Utilization in 'IND' command response
          *  AVGPROC-000% 
          */
         *loadresult = '\0';
@@ -108,11 +109,12 @@ static void zvm_paging_report(char *hostname, char *clientclass, enum ostype_t o
         char pagingresult[100];
 
         int pagingcolor = COL_GREEN;
-        char msgline[4096];
+        char msgline[256];
         strbuffer_t *upmsg;
 
+        if (!cpuutilstr) return;
         /*
-         *  Looking for Paging rate in CPU message
+         *  Looking for Paging rate info in 'IND' command response
          *  PAGING-0000/SEC
          */
         *pagingresult = '\0';
@@ -151,6 +153,42 @@ static void zvm_paging_report(char *hostname, char *clientclass, enum ostype_t o
         finish_status();
 
         freestrbuffer(upmsg);
+}
+
+static void zvm_mdc_report(char *hostname, char *clientclass, enum ostype_t os,
+                     void *hinfo, char *fromline, char *timestr, char *cpuutilstr)
+{
+        char *p;
+        int mdcreads, mdcwrites, mdchitpct;
+        char mdcresult[100];
+
+        char msgline[256];
+        strbuffer_t *msg;
+
+        if (!cpuutilstr) return;
+        msg = newstrbuffer(0);
+
+        /*
+         *  Looking for MDC info in 'IND' command response
+         *  MDC READS-000001/SEC WRITES-000001/SEC HIT RATIO-098%
+         */
+        *mdcresult = '\0';
+        /*  Skip past three newlines in message to the PAGING text  */
+        p=strstr(cpuutilstr,"READS-");
+        if (p) {
+		p += 6;
+        	sscanf(p, "%d/SEC", &mdcreads);
+        	p=strstr(cpuutilstr,"WRITES-") + 7;
+        	sscanf(p, "%d/SEC", &mdcwrites);
+        	p=strstr(cpuutilstr,"RATIO-") + 6;
+        	sscanf(p, "%d", &mdchitpct);
+
+	        sprintf(msgline, "data %s.mdc\n%s\n%d:%d:%d\n", commafy(hostname), osname(os), mdcreads, mdcwrites, mdchitpct);
+        	addtobuffer(msg, msgline);
+		sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+        	}
+
+        freestrbuffer(msg);
 }
 
 static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os,
@@ -349,12 +387,15 @@ void handle_zvm_client(char *hostname, char *clienttype, enum ostype_t os,
 	usersstr = getdata("UserID");
 	msgsstr = getdata("msgs");
 	portsstr = getdata("ports");
+	ifstatstr = getdata("ifstat");
 
 	zvm_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, cpuutilstr, uptimestr);
 	zvm_paging_report(hostname, clienttype, os, hinfo, fromline, timestr, cpuutilstr);
+        zvm_mdc_report(hostname, clienttype, os, hinfo, fromline, timestr, cpuutilstr);
 	zvm_users_report(hostname, clienttype, os, hinfo, fromline, timestr, usersstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
 	msgs_report(hostname, clienttype, os, hinfo, fromline, timestr, msgsstr);
 	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);

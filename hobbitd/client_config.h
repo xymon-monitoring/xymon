@@ -35,6 +35,19 @@ extern void get_memory_thresholds(void *hhinfo, char *classname,
 				  int *swapyellow, int *swapred, 
 				  int *actyellow, int *actred);
 
+extern void get_zos_memory_thresholds(void *hinfo, char *classname,
+                               int *csayellow, int *csared, int *ecsayellow, int *ecsared,
+                               int *sqayellow, int *sqared, int *esqayellow, int *esqared);
+
+extern void get_cics_thresholds(void *hinfo, char *classname, char *appid,
+                        int *dsayel, int *dsared, int *edsayel, int *edsared);
+
+extern void get_zvsevsize_thresholds(void *hinfo, char *classname,
+                        int *availyel, int *availred);
+
+extern void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
+                        int *gv24yel, int *gv24red, int *gvanyyel, int *gvanyred);
+
 extern int get_paging_thresholds(void *hinfo, char *classname, 
 				 int *pagingyellow, int *pagingred);
 

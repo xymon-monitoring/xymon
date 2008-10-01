@@ -34,6 +34,7 @@ static void zvse_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
         if (!want_msgtype(hinfo, MSG_CPU)) return;
 
         if (!uptimestr) return;
+        if (!cpuutilstr) return;
 
         uptimesecs = 0;
 
@@ -112,6 +113,7 @@ static void zvse_paging_report(char *hostname, char *clientclass, enum ostype_t 
         char msgline[4096];
         strbuffer_t *upmsg;
 
+        if (!pagingstr) return;
         /*
          *  Looking for Paging rate in message
          *  Page Rate=0.00 /sec
@@ -157,6 +159,116 @@ static void zvse_paging_report(char *hostname, char *clientclass, enum ostype_t 
         finish_status();
 
         freestrbuffer(upmsg);
+}
+
+static void zvse_cics_report(char *hostname, char *clientclass, enum ostype_t os,
+                     void *hinfo, char *fromline, char *timestr, char *cicsstr)
+{
+        char cicsappl[9], cicsdate[11], cicstime[9];
+        int numtrans=0, cicsok=1;
+        float dsapct=0.0;
+        float edsapct=0.0;
+        char cicsresult[100];
+        char tempresult[100];
+        char *cicsentry = NULL;
+
+        int cicscolor = COL_GREEN;
+        int dsayel, dsared, edsayel, edsared;
+        char msgline[4096];
+        char cicsokmsg[]="All CICS Systems OK";
+        char cicsnotokmsg[]="One or more CICS Systems not OK";
+        strbuffer_t *headline;
+        strbuffer_t *upmsg;
+        strbuffer_t *cicsmsg;
+
+        if (!cicsstr) return;
+        cicsmsg = newstrbuffer(0);
+        upmsg   = newstrbuffer(0);
+        headline= newstrbuffer(0);
+        addtobuffer(headline, "Appl ID   Trans    DSA Pct    EDSA Pct\n");
+
+        /*
+         *
+         *  Each CICS system reporting uses one line in the message, the format is:
+         *  applid date time numtrans dsapct edsapct
+         *  applid is the CICS application id
+         *  date and time are the date and time of the report
+         *  numtrans is the number of transactions that were executed in CICS since the last report
+         *  dsapct  is the DSA  utilization percentage
+         *  edsapct is the EDSA utilization percentage
+         *
+         */
+
+        if (cicsstr) {
+                cicsentry=strtok(cicsstr, "\n");
+                while (cicsentry != NULL) {
+                        sscanf(cicsentry, "%8s %10s %8s %d %f %f", cicsappl, cicsdate, cicstime, &numtrans, &dsapct, &edsapct);
+                        sprintf(cicsresult,"%-8s %6d       %3.1f        %3.1f\n", cicsappl, numtrans, dsapct, edsapct);
+                        addtobuffer(cicsmsg, cicsresult);
+                        if (numtrans == -1 ) {
+                                if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
+                                cicsok=0;
+                                sprintf(tempresult,"&yellow CICS system %s not responding, removed\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                                }
+
+        /*  Get CICS thresholds for this application ID. */
+                        get_cics_thresholds(hinfo, clientclass, cicsappl, &dsayel, &dsared, &edsayel, &edsared);
+
+        /*  The threshold of the DSA values for each CICS must be checked in this loop.  */
+                        if (dsapct > dsared) {
+                                if (cicscolor < COL_RED) cicscolor = COL_RED;
+                                cicsok=0;
+                                sprintf(tempresult,"&red %s DSA Utilization is CRITICAL\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+                        else if (dsapct > dsayel) {
+                                if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
+                                cicsok=0;
+                                sprintf(tempresult,"&yellow %s DSA Utilization is HIGH\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+
+                        if (edsapct > edsared) {
+                                if (cicscolor < COL_RED) cicscolor = COL_RED;
+                                cicsok=0;
+                                sprintf(tempresult,"&red %s EDSA Utilization is CRITICAL\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+                        else if (edsapct > edsayel) {
+                                if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
+                                cicsok=0;
+                                sprintf(tempresult,"&yellow %s EDSA Utilization is HIGH\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+
+                        init_status(cicscolor);
+                        cicsentry=strtok(NULL, "\n");
+                        }
+                }
+
+        sprintf(msgline, "status %s.cics %s %s %s\n",
+                commafy(hostname), colorname(cicscolor),
+                (timestr ? timestr : "<no timestamp data>"),
+                ( (cicsok==1) ? cicsokmsg : cicsnotokmsg) );
+
+        addtostatus(msgline);
+        if (STRBUFLEN(upmsg)) {
+                addtostrstatus(upmsg);
+        }
+
+        if (STRBUFLEN(cicsmsg)) {
+                addtostrstatus(headline);
+                addtostrstatus(cicsmsg);
+                addtostatus("\n");
+        }
+
+        if (fromline && !localmode) addtostatus(fromline);
+        finish_status();
+
+        freestrbuffer(headline);
+        freestrbuffer(upmsg);
+        freestrbuffer(cicsmsg);
 }
 
 static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
@@ -311,6 +423,187 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
         clearstrbuffer(countdata);
 }
 
+static void zvse_memory_report(char *hostname, char *clientclass, enum ostype_t os,
+                     void *hinfo, char *fromline, char *timestr, char *memstr)
+{
+        int usedyellow, usedred;  /* Thresholds for total used system memory */
+	int sysmemok=1;
+	long totmem, availmem;
+	float pctavail, pctused;
+        char memoryresult[100];
+        char memorystr[1024];
+
+        int memorycolor = COL_GREEN;
+        char memokmsg[]="Memory OK";
+        char memnotokmsg[]="Memory Not OK";
+        char msgline[4096];
+
+        strbuffer_t *upmsg;
+
+        if (!memstr) return;
+        upmsg     = newstrbuffer(0);
+ 
+        /*
+         *  The message is just two values, the total system memory and
+	 *  the available memory; both values are in K. 
+         *  tttttt aaaaaa
+         */
+
+        sscanf(memstr, "%ld %ld", &totmem, &availmem);
+	pctavail = ((float)availmem / (float)totmem) * 100;
+	pctused = 100 - pctavail;
+
+        sprintf(memorystr, "z/VSE VSIZE Utilization %3.1f%%\nMemory Allocated %ldK, Memory Available %ldK\n", pctused, totmem, availmem);
+        get_zvsevsize_thresholds(hinfo, clientclass, &usedyellow, &usedred);
+
+        if (pctused > (float)usedred) {
+                memorycolor = COL_RED;
+		sysmemok=0;
+                addtobuffer(upmsg, "&red VSIZE Utilization is CRITICAL\n");
+        	}
+        else if (pctused > (float)usedyellow) {
+                memorycolor = COL_YELLOW;
+		sysmemok=0;
+                addtobuffer(upmsg, "&yellow VSIZE Utilization is HIGH\n");
+        	}
+
+        init_status(memorycolor);
+        sprintf(msgline, "status %s.memory %s %s %s\n%s",
+                commafy(hostname), colorname(memorycolor),
+                (timestr ? timestr : "<no timestamp data>"),
+                ( (sysmemok==1) ? memokmsg : memnotokmsg ),
+                memorystr);
+
+        addtostatus(msgline);
+        if (STRBUFLEN(upmsg)) {
+                addtostrstatus(upmsg);
+                addtostatus("\n");
+        	}
+
+        if (fromline && !localmode) addtostatus(fromline);
+        finish_status();
+
+        freestrbuffer(upmsg);
+}
+
+static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t os,
+                     void *hinfo, char *fromline, char *timestr, char *gvstr)
+{
+        char *q;
+        int gv24yel, gv24red, gvanyyel, gvanyred;  /* Thresholds for getvis  */
+        int i, getvisok=1;
+        float used24p, usedanyp;
+        char jinfo[11], pid[4], jobname[9];
+        int size24, used24, free24, sizeany, usedany, freeany;
+        char *getvisentry = NULL;
+        char tempresult[128];
+        char getvisresult[128];
+
+        char msgline[4096];
+        int memorycolor = COL_GREEN;
+        char getvisokmsg[]="Getvis OK";
+        char getvisnotokmsg[]="Getvis Not OK";
+
+        strbuffer_t *getvismsg;
+        strbuffer_t *upmsg;
+        strbuffer_t *headline;
+
+	if (!gvstr) return;
+        getvismsg = newstrbuffer(0);
+        upmsg     = newstrbuffer(0);
+        headline  = newstrbuffer(0);
+
+        /*
+         *  The getvis message is a table if the partitions requested including the SVA.
+         *  The format of the table is:
+         *
+         *   Partition    Used/24  Free/24  Used/Any  Free/Any
+         *   SVA              748     1500      2056      5604
+         *   F1               824      264       824       264
+         *   Z1-CICSICCF     7160     3844     27516      4992
+         *   O1-CICS1        5912     5092     31584     19352
+         */
+
+        addtobuffer(headline, "z/VSE Getvis Map\nPID Jobname    Size24    Used24    Free24    SizeAny    UsedAny    FreeAny Used24% UsedAny%\n");
+
+        getvisentry=strtok(gvstr, "\n");
+        getvisentry=strtok(NULL, "\n");    /*  Skip heading line */
+        while (getvisentry != NULL) {
+                sscanf(getvisentry, "%s %d %d %d %d", jinfo, &used24, &free24, &usedany, &freeany);
+                q = strchr(jinfo, '-');              /* Check if jobname passed  */
+                if (q) {
+                        strncpy(pid, jinfo, 2);          /*  Copy partition ID  */
+                        q++;                             /*  Increment pointer  */
+			strcpy(jobname,q);		 /*  Copy jobname       */
+                        }
+                else {
+                        strcpy(pid,jinfo);            /* Just copy jinfo into partition ID */
+			strcpy(jobname, "-       ");  /* Jobname placeholder               */
+                        }
+                size24  = used24  + free24;
+                sizeany = usedany + freeany;
+                used24p  = ( (float)used24  / (float)size24  ) * 100;
+                usedanyp = ( (float)usedany / (float)sizeany ) * 100;
+                sprintf(getvisresult,"%-3s %-8s   %6d    %6d    %6d     %6d     %6d     %6d    %3.0f      %3.0f\n", pid, jobname, size24, used24, free24, sizeany, usedany, freeany, used24p, usedanyp);
+                get_zvsegetvis_thresholds(hinfo, clientclass, pid, &gv24yel, &gv24red, &gvanyyel, &gvanyred);
+
+                if (used24p > (float)gv24red) {
+                        memorycolor = COL_RED;
+                        getvisok=0;
+                        sprintf(tempresult,"&red 24-bit Getvis utilization for %s is CRITICAL\n", pid);
+                        addtobuffer(upmsg, tempresult);
+                        }
+                else if (used24p > (float)gv24yel) {
+                        memorycolor = COL_YELLOW;
+                        getvisok=0;
+                        sprintf(tempresult,"&yellow 24-bit Getvis utilization for %s is HIGH\n", pid);
+                        addtobuffer(upmsg, tempresult);
+                        }
+
+                if (usedanyp > (float)gvanyred) {
+                        memorycolor = COL_RED;
+                        getvisok=0;
+                        sprintf(tempresult,"&red Any Getvis utilization for %s is CRITICAL\n", pid);
+                        addtobuffer(upmsg, tempresult);
+                        }
+                else if (usedanyp > (float)gvanyyel) {
+                        memorycolor = COL_YELLOW;
+                        getvisok=0;
+                        sprintf(tempresult,"&yellow Any Getvis utilization for %s is HIGH\n", pid);
+                        addtobuffer(upmsg, tempresult);
+                        }
+
+                addtobuffer(getvismsg, getvisresult);
+                getvisentry=strtok(NULL, "\n");
+                }
+
+        init_status(memorycolor);
+        sprintf(msgline, "status %s.getvis %s %s %s\n",
+                commafy(hostname), colorname(memorycolor),
+                (timestr ? timestr : "<no timestamp data>"),
+                ( (getvisok==1) ? getvisokmsg : getvisnotokmsg ) );
+
+        addtostatus(msgline);
+        if (STRBUFLEN(upmsg)) {
+                addtostrstatus(upmsg);
+                addtostatus("\n");
+        }
+
+        if (STRBUFLEN(getvismsg)) {
+                addtostrstatus(headline);
+                addtostrstatus(getvismsg);
+                addtostatus("\n");
+        }
+
+        if (fromline && !localmode) addtostatus(fromline);
+        finish_status();
+
+        freestrbuffer(headline);
+        freestrbuffer(upmsg);
+        freestrbuffer(getvismsg);
+}
+
+
 void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 void *hinfo, char *sender, time_t timestamp,
 			 char *clientdata)
@@ -318,12 +611,14 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *timestr;
 	char *cpuutilstr;
 	char *pagingstr;
+	char *cicsstr;
 	char *uptimestr;
 	char *clockstr;
-	char *msgcachestr;
 	char *dfstr;
 	char *jobsstr;		/* z/VSE Running jobs  */
 	char *portsstr;
+	char *memstr;		/* System Memory data  */
+	char *gvstr;		/* GETVIS data	       */
 
 	char fromline[1024];
 
@@ -335,17 +630,22 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
 	uptimestr = getdata("uptime");
 	cpuutilstr = getdata("cpu");
 	pagingstr = getdata("paging");
-	msgcachestr = getdata("msgcache");
+	cicsstr = getdata("cics");
 	dfstr = getdata("df");
 	jobsstr = getdata("jobs");
 	portsstr = getdata("ports");
+	memstr = getdata("memory");
+	gvstr = getdata("getvis");
 
 	zvse_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, cpuutilstr, uptimestr);
 	zvse_paging_report(hostname, clienttype, os, hinfo, fromline, timestr, pagingstr);
+	zvse_cics_report(hostname, clienttype, os, hinfo, fromline, timestr, cicsstr);
 	zvse_jobs_report(hostname, clienttype, os, hinfo, fromline, timestr, jobsstr);
+	zvse_memory_report(hostname, clienttype, os, hinfo, fromline, timestr, memstr);
+	zvse_getvis_report(hostname, clienttype, os, hinfo, fromline, timestr, gvstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Cap", "Mounted", dfstr);
-	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
-	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
+  	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
+/*	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr); */
 
 }
 

@@ -35,6 +35,7 @@ void zos_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
         if (!want_msgtype(hinfo, MSG_CPU)) return;
 
         if (!uptimestr) return;
+        if (!cpuutilstr) return;
 
         uptimesecs = 0;
 
@@ -113,6 +114,7 @@ void zos_paging_report(char *hostname, char *clientclass, enum ostype_t os,
         char msgline[4096];
         strbuffer_t *upmsg;
 
+        if (!pagingstr) return;
         /*
          *  Looking for Paging rate in message
          *  Paging Rate=0
@@ -165,15 +167,16 @@ void zos_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 {
         char *p;
         char headstr[100], csastr[100], ecsastr[100], sqastr[100], esqastr[100];
-       long csaalloc, csaused, csahwm, ecsaalloc, ecsaused, ecsahwm;
-       long sqaalloc, sqaused, sqahwm, esqaalloc, esqaused, esqahwm;
+	long csaalloc, csaused, csahwm, ecsaalloc, ecsaused, ecsahwm;
+	long sqaalloc, sqaused, sqahwm, esqaalloc, esqaused, esqahwm;
         float csautil, ecsautil, sqautil, esqautil;
-       int csayellow, csared, ecsayellow, ecsared, sqayellow, sqared, esqayellow, esqared;
+	int csayellow, csared, ecsayellow, ecsared, sqayellow, sqared, esqayellow, esqared;
 
         int memcolor = COL_GREEN;
         char msgline[4096];
         strbuffer_t *upmsg;
 
+        if (!memstr) return;
         /*
          *  Looking for memory eyecatchers in message
          */
@@ -198,58 +201,58 @@ void zos_memory_report(char *hostname, char *clientclass, enum ostype_t os,
                 sscanf(p, "%ld %ld %ld", &esqaalloc, &esqaused, &esqahwm);
                 }
 
-        csautil = ((float)csaused / (float)csaalloc) * 100;
-        ecsautil = ((float)ecsaused / (float)ecsaalloc) * 100;
-        sqautil = ((float)sqaused / (float)sqaalloc) * 100;
+        csautil = ((float)csaused / (float)csaalloc) * 100; 
+        ecsautil = ((float)ecsaused / (float)ecsaalloc) * 100; 
+        sqautil = ((float)sqaused / (float)sqaalloc) * 100; 
         esqautil = ((float)esqaused / (float)esqaalloc) * 100;
-
-       get_zos_memory_thresholds(hinfo, clientclass, &csayellow, &csared, &ecsayellow, &ecsared, &sqayellow, &sqared, &esqayellow, &esqared);
+	
+	get_zos_memory_thresholds(hinfo, clientclass, &csayellow, &csared, &ecsayellow, &ecsared, &sqayellow, &sqared, &esqayellow, &esqared);
 
         upmsg = newstrbuffer(0);
 
-       if (csautil > csared) {
-               if (memcolor < COL_RED) memcolor = COL_RED;
-               addtobuffer(upmsg, "&red CSA Utilization is CRITICAL\n");
-               }
-       else if (csautil > csayellow) {
-               if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
-               addtobuffer(upmsg, "&yellow CSA Utilization is HIGH\n");
-               }
-       if (ecsautil > ecsared) {
-               if (memcolor < COL_RED) memcolor = COL_RED;
-               addtobuffer(upmsg, "&red ECSA Utilization is CRITICAL\n");
-               }
-       else if (ecsautil > ecsayellow) {
-               if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
-               addtobuffer(upmsg, "&yellow ECSA Utilization is HIGH\n");
-               }
-       if (sqautil > sqared) {
-               if (memcolor < COL_RED) memcolor = COL_RED;
-               addtobuffer(upmsg, "&red SQA Utilization is CRITICAL\n");
-               }
-       else if (sqautil > sqayellow) {
-               if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
-               addtobuffer(upmsg, "&yellow SQA Utilization is HIGH\n");
-               }
-       if (esqautil > esqared) {
-               if (memcolor < COL_RED) memcolor = COL_RED;
-               addtobuffer(upmsg, "&red ESQA Utilization is CRITICAL\n");
-               }
-       else if (esqautil > esqayellow) {
-               if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
-               addtobuffer(upmsg, "&yellow ESQA Utilization is HIGH\n");
-               }
+	if (csautil > csared) {
+		if (memcolor < COL_RED) memcolor = COL_RED;
+		addtobuffer(upmsg, "&red CSA Utilization is CRITICAL\n");
+		}
+	else if (csautil > csayellow) {
+		if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
+		addtobuffer(upmsg, "&yellow CSA Utilization is HIGH\n");
+		}
+	if (ecsautil > ecsared) {
+		if (memcolor < COL_RED) memcolor = COL_RED;
+		addtobuffer(upmsg, "&red ECSA Utilization is CRITICAL\n");
+		}
+	else if (ecsautil > ecsayellow) {
+		if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
+		addtobuffer(upmsg, "&yellow ECSA Utilization is HIGH\n");
+		}
+	if (sqautil > sqared) {
+		if (memcolor < COL_RED) memcolor = COL_RED;
+		addtobuffer(upmsg, "&red SQA Utilization is CRITICAL\n");
+		}
+	else if (sqautil > sqayellow) {
+		if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
+		addtobuffer(upmsg, "&yellow SQA Utilization is HIGH\n");
+		}
+	if (esqautil > esqared) {
+		if (memcolor < COL_RED) memcolor = COL_RED;
+		addtobuffer(upmsg, "&red ESQA Utilization is CRITICAL\n");
+		}
+	else if (esqautil > esqayellow) {
+		if (memcolor < COL_YELLOW) memcolor = COL_YELLOW;
+		addtobuffer(upmsg, "&yellow ESQA Utilization is HIGH\n");
+		}
 
         *headstr = '\0';
         *csastr = '\0';
         *ecsastr = '\0';
         *sqastr = '\0';
         *esqastr = '\0';
-       strcpy(headstr, "z/OS Memory Map\n Area    Alloc     Used      HWM  Util%\n");
-       sprintf(csastr, "CSA  %8ld %8ld %8ld   %3.1f\n", csaalloc, csaused, csahwm, csautil);
-       sprintf(ecsastr, "ECSA %8ld %8ld %8ld   %3.1f\n", ecsaalloc, ecsaused, ecsahwm, ecsautil);
-       sprintf(sqastr, "SQA  %8ld %8ld %8ld   %3.1f\n", sqaalloc, sqaused, sqahwm, sqautil);
-       sprintf(esqastr, "ESQA %8ld %8ld %8ld   %3.1f\n", esqaalloc, esqaused, esqahwm, esqautil);
+	strcpy(headstr, "z/OS Memory Map\n Area    Alloc     Used      HWM  Util%\n");
+	sprintf(csastr, "CSA  %8ld %8ld %8ld   %3.1f\n", csaalloc, csaused, csahwm, csautil);
+	sprintf(ecsastr, "ECSA %8ld %8ld %8ld   %3.1f\n", ecsaalloc, ecsaused, ecsahwm, ecsautil);
+	sprintf(sqastr, "SQA  %8ld %8ld %8ld   %3.1f\n", sqaalloc, sqaused, sqahwm, sqautil);
+	sprintf(esqastr, "ESQA %8ld %8ld %8ld   %3.1f\n", esqaalloc, esqaused, esqahwm, esqautil);
 
         init_status(memcolor);
         sprintf(msgline, "status %s.memory %s %s\n%s %s %s %s %s",
@@ -266,6 +269,116 @@ void zos_memory_report(char *hostname, char *clientclass, enum ostype_t os,
         finish_status();
 
         freestrbuffer(upmsg);
+}
+
+static void zos_cics_report(char *hostname, char *clientclass, enum ostype_t os,
+                     void *hinfo, char *fromline, char *timestr, char *cicsstr)
+{
+        char cicsappl[9], cicsdate[11], cicstime[9];
+        int numtrans=0, cicsok=1;
+        float dsapct=0.0;
+        float edsapct=0.0;
+        char cicsresult[100];
+        char tempresult[100];
+        char *cicsentry = NULL;
+
+        int cicscolor = COL_GREEN;
+	int dsayel, dsared, edsayel, edsared;
+        char msgline[4096];
+        char cicsokmsg[]="All CICS Systems OK";
+        char cicsnotokmsg[]="One or more CICS Systems not OK";
+        strbuffer_t *headline;
+        strbuffer_t *upmsg;
+        strbuffer_t *cicsmsg;
+
+        if (!cicsstr) return;
+        cicsmsg = newstrbuffer(0);
+        upmsg   = newstrbuffer(0);
+        headline= newstrbuffer(0);
+        addtobuffer(headline, "Appl ID   Trans    DSA Pct    EDSA Pct\n");
+
+        /*
+         *
+         *  Each CICS system reporting uses one line in the message, the format is:
+         *  applid date time numtrans dsapct edsapct
+         *  applid is the CICS application id
+         *  date and time are the date and time of the report
+         *  numtrans is the number of transactions that were executed in CICS since the last report
+         *  dsapct  is the DSA  utilization percentage
+         *  edsapct is the EDSA utilization percentage
+         *
+         */
+
+        if (cicsstr) {
+                cicsentry=strtok(cicsstr, "\n");
+                while (cicsentry != NULL) {
+                        sscanf(cicsentry, "%8s %10s %8s %d %f %f", cicsappl, cicsdate, cicstime, &numtrans, &dsapct, &edsapct);
+                        sprintf(cicsresult,"%-8s %6d       %3.1f        %3.1f\n", cicsappl, numtrans, dsapct, edsapct);
+                        addtobuffer(cicsmsg, cicsresult);
+                        if (numtrans == -1 ) {
+                                if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
+                                cicsok=0;
+                                sprintf(tempresult,"&yellow CICS system %s not responding, removed\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                                }
+
+        /*  Get CICS thresholds for this application ID. */
+			get_cics_thresholds(hinfo, clientclass, cicsappl, &dsayel, &dsared, &edsayel, &edsared);
+
+        /*  The threshold of the DSA values for each CICS must be checked in this loop.  */
+                        if (dsapct > dsared) {
+                                if (cicscolor < COL_RED) cicscolor = COL_RED;
+                                cicsok=0;
+                                sprintf(tempresult,"&red %s DSA Utilization is CRITICAL\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+                        else if (dsapct > dsayel) {
+                                if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
+                                cicsok=0;
+                                sprintf(tempresult,"&yellow %s DSA Utilization is HIGH\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+
+                        if (edsapct > edsared) {
+                                if (cicscolor < COL_RED) cicscolor = COL_RED;
+                                cicsok=0;
+                                sprintf(tempresult,"&red %s EDSA Utilization is CRITICAL\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+                        else if (edsapct > edsayel) {
+                                if (cicscolor < COL_YELLOW) cicscolor = COL_YELLOW;
+                                cicsok=0;
+                                sprintf(tempresult,"&yellow %s EDSA Utilization is HIGH\n", cicsappl);
+                                addtobuffer(upmsg, tempresult);
+                        }
+
+                        init_status(cicscolor);
+                        cicsentry=strtok(NULL, "\n");
+                        }
+                }
+
+        sprintf(msgline, "status %s.cics %s %s %s\n",
+                commafy(hostname), colorname(cicscolor),
+                (timestr ? timestr : "<no timestamp data>"),
+                ( (cicsok==1) ? cicsokmsg : cicsnotokmsg) );
+
+        addtostatus(msgline);
+        if (STRBUFLEN(upmsg)) {
+                addtostrstatus(upmsg);
+        }
+
+        if (STRBUFLEN(cicsmsg)) {
+                addtostrstatus(headline);
+                addtostrstatus(cicsmsg);
+                addtostatus("\n");
+        }
+
+        if (fromline && !localmode) addtostatus(fromline);
+        finish_status();
+
+        freestrbuffer(headline);
+        freestrbuffer(upmsg);
+        freestrbuffer(cicsmsg);
 }
 
 void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
@@ -432,8 +545,9 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *clockstr;
 	char *msgcachestr;
 	char *dfstr;
+        char *cicsstr;          /* z/OS CICS Information */
 	char *jobsstr;		/* z/OS Running jobs  */
-        char *memstr;           /* z/OS Memory Utilization  */
+	char *memstr;		/* z/OS Memory Utilization  */
 	char *portsstr;
 	char *ifstatstr;
 
@@ -449,15 +563,17 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 	pagingstr = getdata("paging");
 	msgcachestr = getdata("msgcache");
 	dfstr = getdata("df");
+        cicsstr = getdata("cics");
 	jobsstr = getdata("jobs");
-        memstr = getdata("memory");
+	memstr = getdata("memory");
 	portsstr = getdata("ports");
 	ifstatstr = getdata("ifstat");
 
 	zos_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, cpuutilstr, uptimestr);
 	zos_paging_report(hostname, clienttype, os, hinfo, fromline, timestr, pagingstr);
+        zos_cics_report(hostname, clienttype, os, hinfo, fromline, timestr, cicsstr);
 	zos_jobs_report(hostname, clienttype, os, hinfo, fromline, timestr, jobsstr);
-        zos_memory_report(hostname, clienttype, os, hinfo, fromline, timestr, memstr);
+	zos_memory_report(hostname, clienttype, os, hinfo, fromline, timestr, memstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Cap", "Mounted", dfstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
