@@ -503,6 +503,7 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	  case OS_RHEL3:
 	  case OS_ZVM:
 	  case OS_ZVSE:
+	  case OS_ZOS:
 		/* These are of the form "<value> <marker" */
 		datapart = strstr(datapart, "\nTcp:");	/* Skip to the start of "Tcp" (udp comes after) */
 		if (datapart) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);

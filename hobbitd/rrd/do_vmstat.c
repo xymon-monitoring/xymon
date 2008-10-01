@@ -395,6 +395,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	  case OS_LINUX:
 	  case OS_ZVM:
 	  case OS_ZVSE:
+	  case OS_ZOS:
 		layout = vmstat_linux_layout; break;
 	  case OS_RHEL3:
 		layout = vmstat_rhel3_layout; break;
