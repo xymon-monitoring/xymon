@@ -393,7 +393,7 @@ static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	static char result[256];
 	char *asn1_string;
 	int gmt=0;
-	int i;
+	int i, yearlen;
 	int year=0,month=0,day=0,hour=0,minute=0,second=0;
 
 	i=tm->length;
@@ -405,18 +405,29 @@ static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 		if ((asn1_string[i] > '9') || (asn1_string[i] < '0')) return NULL;
 	}
 
-	year=(asn1_string[0]-'0')*10+(asn1_string[1]-'0');
-	if (year < 50) year+=100;
+	yearlen = (tm->length >= 14) ? 4 : 2;
 
-	month=(asn1_string[2]-'0')*10+(asn1_string[3]-'0');
+	if (yearlen == 4) {
+		year = (asn1_string[0]-'0')*1000 + 
+		       (asn1_string[1]-'0')*100 +
+		       (asn1_string[2]-'0')*10 +
+		       (asn1_string[3]-'0') -
+		       1900;
+	}
+	else {
+		year=(asn1_string[0]-'0')*10+(asn1_string[1]-'0');
+		if (year < 50) year+=100;
+	}
+
+	month=(asn1_string[yearlen+0]-'0')*10+(asn1_string[yearlen+1]-'0');
 	if ((month > 12) || (month < 1)) return NULL;
 
-	day=(asn1_string[4]-'0')*10+(asn1_string[5]-'0');
-	hour=(asn1_string[6]-'0')*10+(asn1_string[7]-'0');
-	minute=(asn1_string[8]-'0')*10+(asn1_string[9]-'0');
-	if ( (asn1_string[10] >= '0') && (asn1_string[10] <= '9') &&
-	     (asn1_string[11] >= '0') && (asn1_string[11] <= '9')) {
-		second= (asn1_string[10]-'0')*10+(asn1_string[11]-'0');
+	day=(asn1_string[yearlen+2]-'0')*10+(asn1_string[yearlen+3]-'0');
+	hour=(asn1_string[yearlen+4]-'0')*10+(asn1_string[yearlen+5]-'0');
+	minute=(asn1_string[yearlen+6]-'0')*10+(asn1_string[yearlen+7]-'0');
+	if ( (asn1_string[yearlen+8] >= '0') && (asn1_string[yearlen+8] <= '9') &&
+	     (asn1_string[yearlen+9] >= '0') && (asn1_string[yearlen+9] <= '9')) {
+		second= (asn1_string[yearlen+8]-'0')*10+(asn1_string[yearlen+9]-'0');
 	}
 
 	sprintf(result, "%04d-%02d-%02d %02d:%02d:%02d %s",
