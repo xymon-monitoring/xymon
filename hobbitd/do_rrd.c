@@ -32,6 +32,7 @@ static char rcsid[] = "$Id$";
 
 char *rrddir = NULL;
 int  log_double_updates = 1;
+int use_rrd_cache = 1;		/* Use the cache by default */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
@@ -360,7 +361,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * To smooth the load, we force the update through for every CACHESZ updates.
 	 * This gives us a steady load during the initial cache fill period.
 	 */
-	if (++callcounter < CACHESZ) {
+	if (use_rrd_cache && (++callcounter < CACHESZ)) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
 			/* 
 			 * There's room for caching this update.

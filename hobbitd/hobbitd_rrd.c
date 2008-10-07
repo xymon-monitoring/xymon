@@ -208,6 +208,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			processor = strdup(p+1);
 		}
+		else if (strcmp(argv[argi], "--no-cache") == 0) {
+			use_rrd_cache = 0;
+		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
 		}

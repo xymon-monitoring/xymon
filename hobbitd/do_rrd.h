@@ -16,6 +16,7 @@
 #include "libbbgen.h"
 
 extern char *rrddir;
+extern int use_rrd_cache;
 extern void setup_exthandler(char *handlerpath, char *ids);
 extern void update_rrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, char *sender, hobbitrrd_t *ldef, char *classname, char *pagepaths);
 extern void rrdcacheflushall(void);

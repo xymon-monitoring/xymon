@@ -45,6 +45,24 @@ int do_external_rrd(char *hostname, char *testname, char *classname, char *pagep
 		}
 		if (fclose(fd)) errprintf("Error closing file %s: %s\n", fn, strerror(errno));
 
+		/* 
+		 * Disable the RRD update cache.
+		 * We cannot use the cache, because this child
+		 * process terminates without flushing the cache,
+		 * and it cannot feed the update-data back to the
+		 * parent process which owns the cache. So using
+		 * an external handler means the updates will be
+		 * sync'ed to disk immediately.
+		 *
+		 * NB: It is OK to do this now and not re-enable it,
+		 * since we're running in the external helper
+		 * child process - so this only affects the current
+		 * update.
+		 *
+		 * Thanks to Graham Nayler for the analysis.
+		 */
+		use_rrd_cache = 0;
+
 		inbuf = newstrbuffer(0);
 
 		/* Now call the external helper */
