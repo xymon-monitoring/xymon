@@ -5,7 +5,7 @@
 
 BASEDIR="`dirname $0`"
 TARGET="$1"
-if test "$TARGET" != ""; then shift; fi
+if test "$TARGET" = "--server" -o "$TARGET" = "--client"; then shift; fi
 
 # Workaround SVN not preserving exec-permissions
 chmod ugo+x $BASEDIR/configure.* $BASEDIR/build/*.sh
@@ -15,7 +15,7 @@ case "$TARGET" in
 	$BASEDIR/configure.client $*
 	;;
 
-  "--server"|"")
+  "--server"|""|*)
 	$BASEDIR/configure.server $*
 	;;
 

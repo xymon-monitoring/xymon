@@ -70,7 +70,10 @@
 		OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link
 		if [ $? -eq 0 ]; then
 			echo "Found LDAP libraries in $LDAPLIB"
-			LDAPVENDOR=`./test-ldap`
+			LDAPVENDOR=`./test-ldap vendor`
+			LDAPVERSION=`./test-ldap version`
+			LDAPCOMPILEFLAGS=`./test-ldap flags`
+			# echo "LDAP vendor is $LDAPVENDOR, version $LDAPVERSION"
 		else
 			echo "WARNING: LDAP library files found in $LDAPLIB, but link fails."
 			LDAPINC=""
