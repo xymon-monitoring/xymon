@@ -379,7 +379,7 @@ int wanted_host(void *host, char *netstring)
 void load_tests(void)
 {
 	char *p, *routestring = NULL;
-	void *hosts, *hwalk;
+	void *hwalk;
 	testedhost_t *h;
 
 	load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());

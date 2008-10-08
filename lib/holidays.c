@@ -34,7 +34,6 @@ typedef struct holidayset_t {
 } holidayset_t;
 
 static RbtHandle holidays;
-static int haveholidays = 0;
 static int current_year = 0;
 
 static time_t mkday(int year, int month, int day)

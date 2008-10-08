@@ -279,7 +279,6 @@ static void zvse_jobs_report(char *hostname, char *clientclass, enum ostype_t os
 
         int pchecks;
         int cmdofs = -1;
-        char *p, *eol;
         char msgline[4096];
         strbuffer_t *monmsg;
         static strbuffer_t *countdata = NULL;
@@ -430,7 +429,6 @@ static void zvse_memory_report(char *hostname, char *clientclass, enum ostype_t 
 	int sysmemok=1;
 	long totmem, availmem;
 	float pctavail, pctused;
-        char memoryresult[100];
         char memorystr[1024];
 
         int memorycolor = COL_GREEN;
@@ -491,7 +489,7 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
 {
         char *q;
         int gv24yel, gv24red, gvanyyel, gvanyred;  /* Thresholds for getvis  */
-        int i, getvisok=1;
+        int getvisok=1;
         float used24p, usedanyp;
         char jinfo[11], pid[4], jobname[9];
         int size24, used24, free24, sizeany, usedany, freeany;
@@ -613,7 +611,6 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *pagingstr;
 	char *cicsstr;
 	char *uptimestr;
-	char *clockstr;
 	char *dfstr;
 	char *jobsstr;		/* z/VSE Running jobs  */
 	char *portsstr;

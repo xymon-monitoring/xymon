@@ -163,7 +163,7 @@ strbuffer_t *compress_buffer(char *msg, int msglen)
 #if defined(HOBBITZLIB)
 	static z_stream *strm = NULL;
 	int ret;
-	unsigned int have, sz;
+	unsigned int sz;
 	strbuffer_t *cmsg;
 
 	if (!strm) {
@@ -202,7 +202,6 @@ strbuffer_t *compress_buffer(char *msg, int msglen)
 		freestrbuffer(cmsg); cmsg = NULL;
 	}
 
-compressdone:
 	return cmsg;
 
 #else

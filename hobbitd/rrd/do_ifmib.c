@@ -153,7 +153,6 @@ int do_ifmib_rrd(char *hostname, char *testname, char *classname, char *pagepath
 			}
 		}
 
-nextline:
 		bol = (eoln ? eoln+1 : NULL);
 	}
 

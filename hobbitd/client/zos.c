@@ -389,7 +389,6 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
 
         int pchecks;
         int cmdofs = -1;
-        char *p, *eol;
         char msgline[4096];
         strbuffer_t *monmsg;
         static strbuffer_t *countdata = NULL;
@@ -542,7 +541,6 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *cpuutilstr;
 	char *pagingstr;
 	char *uptimestr;
-	char *clockstr;
 	char *msgcachestr;
 	char *dfstr;
         char *cicsstr;          /* z/OS CICS Information */

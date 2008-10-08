@@ -245,7 +245,6 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
 void bbwin_who_report(char *hostname, char *clientclass, enum ostype_t os,
                       void *hinfo, char *fromline, char *timestr, char *whostr)
 {
-        char *whockstr;
         int whocolor = COL_GREEN;
         char msgline[4096];
         strbuffer_t *whomsg;

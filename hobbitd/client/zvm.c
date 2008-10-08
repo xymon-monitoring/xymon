@@ -199,7 +199,6 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
 
         int pchecks;
         int cmdofs = -1;
-        char *p, *eol;
         char msgline[4096];
         strbuffer_t *monmsg;
         static strbuffer_t *countdata = NULL;
@@ -363,13 +362,11 @@ void handle_zvm_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *timestr;
 	char *cpuutilstr;
 	char *uptimestr;
-	char *clockstr;
 	char *msgcachestr;
 	char *dfstr;
 	char *usersstr;		/* Logged on z/VM Users  */
 	char *msgsstr;
 	char *netstatstr;
-	char *vmstatstr;
 	char *ifstatstr;
 	char *portsstr;
 

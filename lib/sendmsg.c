@@ -450,7 +450,7 @@ static int sendtobbd(char *recipient, char *message, int timeout, sendreturn_t *
 
 	if (conntype == C_IP) {
 		/* Setup SSL (if we use it), bail out if it fails */
-		if (sslinitialize() != 0) BB_ECONNFAILED;
+		if (sslinitialize() != 0) return BB_ECONNFAILED;
 
 		if (inet_aton(rcptip, &addr) == 0) {
 			/* recipient is not an IP - do DNS lookup */

@@ -174,7 +174,7 @@ void send_data(void *host, char *beadomain, char *databuf, char **items)
 
 int main(int argc, char *argv[])
 {
-        void *hosts, *hwalk;
+        void *hwalk;
 	int argi;
 	strbuffer_t *statusmsg, *jrockout, *qout;
 

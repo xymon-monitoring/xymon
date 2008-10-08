@@ -41,8 +41,6 @@ static int ctlsocket = -1;
 
 int init_svc(char *sockfn)
 {
-	char *ip, *p;
-
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (ctlsocket == -1) {
 		errprintf("Cannot get socket: %s\n", strerror(errno));

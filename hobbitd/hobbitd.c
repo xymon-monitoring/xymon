@@ -1725,10 +1725,8 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 void handle_modify(char *msg, hobbitd_log_t *log, int color)
 {
 	char *tok, *sourcename, *cause;
-	hobbitd_hostlist_t h;
 	modifier_t *mwalk;
 	int newcolor;
-	time_t now = getcurrenttime(NULL);
 
 	/* "modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE ..." */
 	dbgprintf("->handle_modify\n");
