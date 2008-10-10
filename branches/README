@@ -1,1 +1,7 @@
-Once this branch is ready and accepted by Henrik, "tjyang" will be renamed to 4.4.
+This branch is very diffrent in following ways.
+1. Autoconfiscated hobbitmon source.
+2. doxygen to generate documenation from soucecode.
+3. hobbitmon slides and books using latex.
+4. Use TWW tools to complete the hobbit deployment lifecycle.
+   ie, download,compile,install,packaging,uploading to depot server and then deployment.   
+      This process is mostly digitized into XML language to be repeatable process.
