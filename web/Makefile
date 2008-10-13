@@ -1,6 +1,6 @@
-PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi boilerplate.cgi hobbit-hostgraphs.cgi hobbit-ghosts.cgi hobbit-notifylog.cgi hobbit-hostlist.cgi hobbit-perfdata.cgi
+PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi boilerplate.cgi hobbit-hostgraphs.cgi hobbit-ghosts.cgi hobbit-notifylog.cgi hobbit-hostlist.cgi hobbit-perfdata.cgi hobbit-useradm.cgi
 CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-confreport-critical.sh hobbit-nkview.sh hobbit-certreport.sh hobbit-nongreen.sh hobbit-hostgraphs.sh hobbit-ghosts.sh hobbit-notifylog.sh hobbit-topchanges.sh hobbit-hostlist.sh hobbit-perfdata.sh
-SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh hobbit-nkedit.sh hobbit-ackinfo.sh
+SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh hobbit-nkedit.sh hobbit-ackinfo.sh hobbit-useradm.sh
 
 LIBOBJS = ../lib/$(HOBBITLIBRARY)
 
@@ -30,6 +30,7 @@ HOSTLISTOBJS    = hobbit-hostlist.o
 PERFDATAOBJS    = hobbit-perfdata.o
 
 HOSTGRAPHSOBJS  = hobbit-hostgraphs.o
+USERADMOBJS     = hobbit-useradm.o
 BOILERPLATEOBJS = boilerplate.o
 
 
@@ -116,6 +117,9 @@ hobbit-notifylog.cgi: $(NOTIFYOBJS) $(LIBOBJS)
 
 hobbit-hostlist.cgi: $(HOSTLISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(LIBOBJS) $(HOBBITZLIB) $(PCRELIBS) $(SSLLIBS) $(NETLIBS)
+
+hobbit-useradm.cgi: $(USERADMOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(USERADMOBJS) $(LIBOBJS) $(HOBBITZLIB) $(PCRELIBS) $(SSLLIBS) $(NETLIBS)
 
 # Need -lm on hobbit-perfdata because it refers to isnan()
 hobbit-perfdata.cgi: $(PERFDATAOBJS) $(LIBOBJS)
@@ -227,6 +231,10 @@ hobbit-hostlist.sh: hobbit-hostlist.sh.DIST
 	chmod 755 $@
 
 hobbit-perfdata.sh: hobbit-perfdata.sh.DIST
+	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+hobbit-useradm.sh: hobbit-useradm.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 

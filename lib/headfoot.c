@@ -65,6 +65,13 @@ typedef struct treerec_t {
 
 static int backdays = 0, backhours = 0, backmins = 0, backsecs = 0;
 
+typedef struct listrec_t {
+	char *name, *val;
+	int selected;
+	struct listrec_t *next;
+} listrec_t;
+static listrec_t *listhead = NULL, *listtail = NULL;
+
 static void clearflags(RbtHandle tree)
 {
 	RbtIterator handle;
@@ -158,6 +165,34 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 	if (ipptn) {
 		ippattern_text = strdup(ipptn);
 		ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	}
+}
+
+void sethostenv_clearlist(void)
+{
+	listrec_t *zombie;
+
+	while (listhead) {
+		zombie = listhead;
+		listhead = listhead->next;
+
+		xfree(zombie->name); xfree(zombie->val); xfree(zombie);
+	}
+}
+
+void sethostenv_addtolist(char *name, char *val, int selected)
+{
+	listrec_t *newitem = (listrec_t *)calloc(1, sizeof(listrec_t));
+
+	newitem->name = strdup(name);
+	newitem->val = strdup(val);
+	newitem->selected = selected;
+	if (listtail) {
+		listtail->next = newitem;
+		listtail = newitem;
+	}
+	else {
+		listhead = listtail = newitem;
 	}
 }
 
@@ -943,6 +978,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			if (!gotany) {
 				fprintf(output, "<tr><th align=center colspan=3><i>No tasks scheduled</i></th></tr>\n");
 			}
+		}
+
+		else if (strcmp(t_start, "GENERICLIST") == 0) {
+			listrec_t *walk;
+
+			for (walk = listhead; (walk); walk = walk->next)
+				fprintf(output, "<OPTION VALUE=\"%s\" %s>%s</OPTION>\n", walk->val, (walk->selected ? "SELECTED" : ""), walk->name);
 		}
 
 		else if (strcmp(t_start, "NKACKTTPRIO") == 0) fprintf(output, "%d", nkackttprio);
