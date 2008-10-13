@@ -105,7 +105,8 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 					if (ackbystr)    ackmsgstr = strtok(NULL, ":");
 				}
 
-				if ( (newitem->config->priority > maxprio)  ||
+				if ( (hostinfo(newitem->hostname) == NULL)  ||
+				     (newitem->config->priority > maxprio)  ||
 				     ((now - newitem->lastchange) > maxage) ||
 				     (newitem->color < mincolor)            ||
 				     (ackmsgstr && !wantacked)              ) {
