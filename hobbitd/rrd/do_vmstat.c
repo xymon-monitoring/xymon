@@ -362,13 +362,13 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	  case OS_AIX: 
 		/* Special, because there are two layouts for AIX */
 		{
-			char **dsnames;
+			char **dsnames = NULL;
 			int dscount, i;
 
 			dscount = rrddatasets(hostname, &dsnames);
 			layout = ((dscount == 17) ? vmstat_aix_layout : vmstat_aix_power5_layout);
 
-			if (dsnames) {
+			if ((dscount > 0) && dsnames) {
 				/* Free the dsnames list */
 				for (i=0; (i<dscount); i++) xfree(dsnames[i]);
 				xfree(dsnames);
