@@ -45,9 +45,9 @@ CGI_NKEDIT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 # hobbit-ackinfo.cgi options
 CGI_ACKINFO_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 #hobbit-ghosts.cgi options
-CGI_GHOSTS_OPT="--env=@BBHOME@/etc/hobbitserver.cfg"
-CGI_NOTIFYLOG_OPT="--env=@BBHOME@/etc/hobbitserver.cfg"
-CGI_HOSTLIST_OPT="--env=@BBHOME@/etc/hobbitserver.cfg"
+CGI_GHOSTS_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+CGI_NOTIFYLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+CGI_HOSTLIST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 
 # bb-ack.cgi options
 CGI_ACK_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-pin"
