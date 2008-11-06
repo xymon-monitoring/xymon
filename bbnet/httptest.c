@@ -522,14 +522,45 @@ void add_http_test(testitem_t *t)
 
 	if (httptest->bburl.postdata) {
 		char hdr[100];
+		int contlen = strlen(httptest->bburl.postdata);
 
-		sprintf(hdr, "Content-Length: %d\r\n", strlen(httptest->bburl.postdata));
-		addtobuffer(httprequest, hdr);
+		if (strncmp(httptest->bburl.postdata, "file:", 5) == 0) {
+			/* Load the POST data from a file */
+			FILE *pf = fopen(httptest->bburl.postdata+5, "r");
+			if (pf == NULL) {
+				errprintf("Cannot open POST data file %s\n", httptest->bburl.postdata+5);
+				xfree(httptest->bburl.postdata);
+				httptest->bburl.postdata = strdup("");
+				contlen = 0;
+			}
+			else {
+				struct stat st;
+
+				if (fstat(fileno(pf), &st) == 0) {
+					xfree(httptest->bburl.postdata);
+					httptest->bburl.postdata = (char *)malloc(st.st_size + 1);
+					fread(httptest->bburl.postdata, 1, st.st_size, pf);
+					*(httptest->bburl.postdata+st.st_size) = '\0';
+					contlen = st.st_size;
+				}
+				else {
+					errprintf("Cannot stat file %s\n", httptest->bburl.postdata+5);
+					httptest->bburl.postdata = strdup("");
+					contlen = 0;
+				}
+
+				fclose(pf);
+			}
+		}
 
 		addtobuffer(httprequest, "Content-type: ");
-		if (httptest->bburl.postcontenttype) addtobuffer(httprequest, httptest->bburl.postcontenttype);
+		if      (httptest->bburl.postcontenttype) addtobuffer(httprequest, httptest->bburl.postcontenttype);
+		else if (httptest->bburl.testtype == BBTEST_SOAP) addtobuffer(httprequest, "application/soap+xml; charset=utf-8");
 		else addtobuffer(httprequest, "application/x-www-form-urlencoded");
 		addtobuffer(httprequest, "\r\n");
+
+		sprintf(hdr, "Content-Length: %d\r\n", contlen);
+		addtobuffer(httprequest, hdr);
 	}
 	{
 		char useragent[100];
