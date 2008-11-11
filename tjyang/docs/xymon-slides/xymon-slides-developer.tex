@@ -1,4 +1,4 @@
-% Copyright (C) 2008  Hobbitmon Community.
+% Copyright (C) 2008  Xymon Community.
 % Permission is granted to use, modify, and redistribute under the terms
 % of the Creative Commons Attribution-ShareAlike 2.0 license.
 % http://creativecommons.org/licenses/by-sa/2.0/
@@ -13,9 +13,10 @@
 %
 % 
 % USAGE
-%       make -f Makefile to use latex to generat into different formats.
+%       gmake -f Makefile
 %
 % DESCRIPTION
+% Automate the slides generation with beamer and makefile
 %
 % ---------------------------- CONSTANT DECLARATION ---------------------------
 %
@@ -141,8 +142,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\title{Hobbitmon Development}
-\author[T.J. Yang]{Hobbitmon Community \\\url{hobbit@hswn.dk}}
+\title{Xymon Development}
+\author[T.J. Yang]{Xymon Community \\\url{hobbit@hswn.dk}}
 \date{\today}
 \subject{Introduction to Hobbit development using GNU Autotools plus TWW Hyper Package Mangement System}
 \keywords{autoconf, automake, build system, tutorial, introduction, presentation, TWW, HPMS,doxygen,vmware}
@@ -182,7 +183,7 @@ Please email the corrections and suggestions \textbf{about this
 
 \centering
 \fbox{\begin{minipage}{0.8\textwidth}
-Copyright \copyright{} 2008  Hobbitmon Community\\
+Copyright \copyright{} 2008  Xymon Community\\
 \url{http://creativecommons.org/licenses/by-sa/2.0/} \\
 
 
@@ -195,7 +196,7 @@ Copyright \copyright{} 2008  Hobbitmon Community\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %---------------------------------------------------------------------
 
-\mypart{Hobbitmon Development Models}
+\mypart{Xymon Development Models}
 
 \section{Current 2008 development}
 
@@ -222,6 +223,48 @@ Learning GNU autotool is like learning driving. Take lots of efforts.
 \end{itemize}
 
 \uncover<2>{As long as it works, why not ?.}
+
+\frametitle{The (real) \filenamew{configure} process}
+\begin{center}
+\begin{tikzpicture}
+
+\dgfile (Makefilein) at (1,5) {\filenamew{Makefile.in}};
+\dgfile (src/Makefilein) at (4,5) {\filenamew{src/Makefile.in}};
+\dgfile (confighin) at (7,5) {\filenamew{config.h.in}};
+\dgfile (configure) at (-.7,4) {\filenamew{configure}};
+\uncover<all:2->{\bfile (configlog) at (5.5,2) {\filenamew{config.log}};}
+\uncover<all:3->{\bfile (configstatus) at (2.5,3) {\filenamew{config.status}};}
+
+\uncover<all:4->{\bfile (Makefile) at (1,1) {\filenamew{Makefile}};
+\bfile (src/Makefile) at (4,1) {\filenamew{src/Makefile}};
+\bfile (configh) at (7,1) {\filenamew{config.h}};}
+\uncover<all:5->{\bfile (configcache) at (0,2) {\filenamew{config.cache}};}
+
+\uncover<all:2>{\arr[color=red] (configure) .. controls +(10:2cm) and +(80:2cm) .. (configlog);}
+\uncover<all:3->{\arr (configure) .. controls +(10:2cm) and +(80:2cm) .. (configlog);}
+\uncover<all:3>{\arr[color=red] (configure) .. controls +(0:1cm) and +(90:1cm) .. (configstatus);}
+\uncover<all:4->{\arr (configure) .. controls +(0:1cm) and +(90:1cm) .. (configstatus);}
+\uncover<all:5>{\arr[color=red] (configure) .. controls +(-10:1.5cm) and +(80:1cm) .. (configcache);
+              \arr[color=red] (configcache) .. controls +(-140:2cm) and +(-170:2cm) .. (configure);}
+\uncover<all:4>{\arr[color=red] (Makefilein) .. controls +(-90:1cm) and +(180:2.8cm) .. (configstatus);
+\arr[color=red] (src/Makefilein) .. controls +(-90:1cm) and +(170:3cm) .. (configstatus);
+\arr[color=red] (confighin) .. controls +(-90:1cm) and +(170:3cm) .. (configstatus);
+
+\arr[color=red] (configstatus) .. controls +(-10:3cm) and +(70:1cm) .. (Makefile);
+\arr[color=red] (configstatus) .. controls +(-5:2.5cm) and +(90:2cm) .. (src/Makefile);
+\arr[color=red] (configstatus) .. controls +(5:2cm) and +(90:2cm) .. (configh);
+\arr[color=red] (configstatus) .. controls +(0:2cm) and +(100:.5cm) .. (configlog);
+}
+\uncover<all:5->{\arr (Makefilein) .. controls +(-90:1cm) and +(180:2.8cm) .. (configstatus);
+\arr (src/Makefilein) .. controls +(-90:1cm) and +(170:3cm) .. (configstatus);
+\arr (confighin) .. controls +(-90:1cm) and +(170:3cm) .. (configstatus);
+
+\arr (configstatus) .. controls +(-10:3cm) and +(70:1cm) .. (Makefile);
+\arr (configstatus) .. controls +(-5:2.5cm) and +(90:2cm) .. (src/Makefile);
+\arr (configstatus) .. controls +(5:2cm) and +(90:2cm) .. (configh);
+\arr (configstatus) .. controls +(0:2cm) and +(100:.5cm) .. (configlog);
+}
+\end{tikzpicture}
 
 \end{frame}
 
@@ -376,7 +419,7 @@ Practices that packages of the GNU project should follow:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{New Hobbitmon  Devevelopment Model}
+\section{New Xymon  Devevelopment Model}
 \mysubsection{GNU Autotool model}
 
 \begin{frame}[fragile]
@@ -805,8 +848,6 @@ to use for building}
 
 \begin{frame}<handout:2,4-5>[label=real-configure]
 \frametitle{The (real) \filenamew{configure} process}
-
-
 \begin{center}
 \begin{tikzpicture}
 
@@ -860,7 +901,7 @@ to use for building}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\mysection{Why Hobbitmon developers Need autotools }
+\mysection{Why Xymon developers Need autotools }
 \begin{frame}
 \frametitle{Why We Need Tools}
 
@@ -3576,7 +3617,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: bug-report@address\\n"
 "POT-Creation-Date: 2005-03-05 00:27+0100\\n"
 "PO-Revision-Date: \alert<1,4>{2005-03-15 20:54+0100}\\n"
-"Last-Translator: \alert<1>{Hobbitmon Community <hobbit@hswn.dk>}\\n"
+"Last-Translator: \alert<1>{Xymon Community <hobbit@hswn.dk>}\\n"
 "Language-Team: \alert<1>{French}\\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=\only<all:-2>{\alert<1>{ASCII}}\only<all:3->{\alert<3>{iso-8859-1}}\\n"
@@ -6495,7 +6536,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: bug-report@address\\n"
 "POT-Creation-Date: 2005-03-05 00:27+0100\\n"
 "PO-Revision-Date: \alert<1,4>{2005-03-15 20:54+0100}\\n"
-"Last-Translator: \alert<1>{Hobbitmon Community <hobbit@hswn.dk>}\\n"
+"Last-Translator: \alert<1>{Xymon Community <hobbit@hswn.dk>}\\n"
 "Language-Team: \alert<1>{French}\\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=\only<all:-2>{\alert<1>{ASCII}}\only<all:3->{\alert<3>{iso-8859-1}}\\n"

@@ -46,9 +46,10 @@ txt: pdf xymon-slides-developer.txt  xymon-slides-intro.txt \
 
 
 # WHAT: slides in pdf format
-pdf: xymon-slides-developer.pdf  xymon-slides-intro.pdf \
+#pdf: xymon-slides-developer.pdf 
+pdf:  xymon-slides-intro.pdf 
+#pdf: xymon-slides-developer.pdf  xymon-slides-intro.pdf \
         xymon-slides-sysadmin.pdf
-
 # WHAT: Hobbit Introduction Slides
 xymon-slides-intro.pdf: xymon-slides-intro.tex
 	${PDFLATEX}  xymon-slides-intro.tex
@@ -78,7 +79,7 @@ xymon-slides-sysadmin.pdf: xymon-slides-sysadmin.tex
 
 # WHAT: clean up all the unwanted files.
 clean:
-	rm -rf 	*.{aux,log,nav,out,snm,toc,vrb,ps,txt,pdf} *~
+	rm -rf 	*.{aux,log,nav,out,snm,toc,vrb,ps,txt} *~
 
 # WHAT: use svn to checkin the changes and updated pdf file.
 svncheckin: all
