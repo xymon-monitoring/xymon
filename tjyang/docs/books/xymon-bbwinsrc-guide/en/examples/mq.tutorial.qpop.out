@@ -1,0 +1,14 @@
+$ \textbf{hg qapplied}
+first.patch
+second.patch
+$ \textbf{hg qpop}
+Now at: first.patch
+$ \textbf{hg qseries}
+first.patch
+second.patch
+$ \textbf{hg qapplied}
+first.patch
+$ \textbf{cat file1}
+line 1
+line 2
+line 3

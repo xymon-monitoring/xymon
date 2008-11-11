@@ -1,0 +1,3 @@
+$ \textbf{echo c > c}
+$ \textbf{hg commit -A -m 'Commit with addremove'}
+adding c

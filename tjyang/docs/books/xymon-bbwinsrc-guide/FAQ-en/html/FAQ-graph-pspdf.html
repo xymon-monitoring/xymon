@@ -1,0 +1,35 @@
+<head>
+<title>UK TeX FAQ -- question label graph-pspdf</title>
+</head><body>
+<h3>Portable imported graphics</h3>
+<p>A regular need is a document to be distributed in more than
+one format: commonly both PostScript and PDF.  The
+following advice is based on a post by one with much experience of
+dealing with the problem of dealing with EPS graphics in this
+case.
+<ul>
+<li> Don&rsquo;t specify a driver when loading loading whichever version of
+  the <i>graphics</i> package you use.  The scheme relies on the
+  distribution&rsquo;s ability to decide which driver is going to be used:
+  the choice is between <i>dvips</i> and PDFTeX, in this case.
+  Be sure to exclude options <code>dvips</code>, <code>pdftex</code> and
+  <code>dvipdfm</code> (<i>dvipdfm</i> is not used in this scheme,
+  but the aspirant PDF-maker may be using it for his output,
+  before switching to the scheme).
+<li> Use <code>\</code><code>includegraphics[...]{filename}</code> without
+  specifying the extension (i.e., neither <code>.eps</code> nor
+  <code>.pdf</code>).
+<li> For every <code>.eps</code> file you will be including, produce a
+  <code>.pdf</code> version, as described in 
+  <a href="FAQ-pdftexgraphics.html">Graphics in PDFLaTeX</a>.  Having
+  done this, you will have two copies of each graphic (a <code>.eps</code>
+  and a <code>.pdf</code> file) in your directory.
+<li> Use PDFLaTeX (rather than
+  LaTeX&ndash;<i>dvips</i>&ndash;distillation or
+  LaTeX&ndash;<i>dvipdfm</i>) to produce your PDF output.
+</ul>
+<i>Dvipdfm</i>&rsquo;s charms are less than attractive here: the
+document itself needs to be altered from its default
+(<i>dvips</i>) state, before <i>dvipdfm</i> will process it.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=graph-pspdf">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=graph-pspdf</a>
+</body>

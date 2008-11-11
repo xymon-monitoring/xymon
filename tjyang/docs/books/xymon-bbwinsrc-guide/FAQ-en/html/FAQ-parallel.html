@@ -1,0 +1,54 @@
+<head>
+<title>UK TeX FAQ -- question label parallel</title>
+</head><body>
+<h3>Parallel setting of text</h3>
+<p>It&rsquo;s commonly necessary to present text in two languages &lsquo;together&rsquo; on a
+page, or on a two-page spread.  For this to be satisfactory, one usually
+needs some sort of alignment between the two texts.
+<p>The <i>parallel</i> package satisfies the need, permitting
+typesetting in two columns (not necessarily of the same width) on one
+page, or on the two opposing pages of a two-page spread.  Use can be
+as simple as
+<blockquote>
+<pre>
+\usepackage{parallel}
+...
+\begin{Parallel}{&lt;left-width&gt;}{&lt;right-width}
+  \ParallelLText{left-text}
+  \ParallelRText{right-text}
+  \ParallelPar
+  ...
+\end{Parallel}
+</pre>
+</blockquote><p>
+<p>The <i>parcolumns</i> package can (in principle) deal with any
+number of columns: the documentation shows its use with three
+columns.  Usage is rather similar to that of <i>parallel</i>,
+though there is of course a &ldquo;number of columns to specify&rdquo;:
+<blockquote>
+<pre>
+\usepackage{parcolumns}
+...
+\begin{parcolumns}[&lt;options&gt;]{3}
+  \colchunk{&lt;Column 1 text&gt;}
+  \colchunk{&lt;Column 2 text&gt;}
+  \colchunk{&lt;Column 3 text&gt;}
+  \colplacechunks
+  ...
+\end{parcolumns}
+</pre>
+</blockquote><p>
+The &lt;<i>options</i>&gt; can specify the widths of the columns, whether to
+place rules between the columns, whether to set the columns sloppy, etc.
+<p>The <i>ledpar</i> package is distributed with (and integrated with)
+the <a href="FAQ-linenos.html"><i>ledmac</i> package</a>.  It provides parallel
+setting carefully integrated with the needs of a scholarly text,
+permitting translation, or notes, or both, to be set in parallel with
+the &lsquo;base&rsquo; text of the document.
+<dl>
+<dt><tt><i>ledpar.sty</i></tt><dd>Distributed with <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ledmac.zip">macros/latex/contrib/ledmac</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ledmac.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/ledmac/">browse</a>)
+<dt><tt><i>parallel.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/parallel.zip">macros/latex/contrib/parallel</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/parallel.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/parallel/">browse</a>)
+<dt><tt><i>parcolumns.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/sauerj.zip">macros/latex/contrib/sauerj</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/sauerj.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/sauerj/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=parallel">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=parallel</a>
+</body>

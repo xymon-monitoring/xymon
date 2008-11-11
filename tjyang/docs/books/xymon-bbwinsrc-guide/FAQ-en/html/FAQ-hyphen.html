@@ -1,0 +1,38 @@
+<head>
+<title>UK TeX FAQ -- question label hyphen</title>
+</head><body>
+<h3>How does hyphenation work in TeX?</h3>
+<p>Everyone knows what hyphenation is: we see it in most books we read,
+and (if we&rsquo;re alert) often spot ridiculous mis-hyphenation from time
+to time (at one time, British newspapers were a fertile source).
+<p>Hyphenation styles are culturally-determined, and the same language
+may be hyphenated differently in different countries &mdash; for example,
+British and American styles of hyphenation of English are very
+different.  As a result, a typesetting system that is not restricted
+to a single language at a single locale needs to be able to change its
+hyphenation rules from time to time.
+<p>TeX uses a pretty good system for hyphenation (originally designed
+by Frank Liang), and while it&rsquo;s capable of missing &ldquo;sensible&rdquo;
+hyphenation points, it seldom selects grossly wrong ones.  The
+algorithm matches candidates for hyphenation against a set of
+&ldquo;hyphenation patterns&rdquo;.  The candidates for hyphenation must be
+sequences of letters (or other single characters that TeX may be
+persuaded to think of as letters) &mdash; things such as TeX&rsquo;s
+<code>\</code><code>accent</code> primitive interrupt hyphenation.
+<p>Sets of hyphenation patterns are usually derived from analysis of
+a list of valid hyphenations (the process of derivation, using a tool
+called <i>patgen</i>, is not ordinarily a participatory sport).
+<p>The patterns for the languages a TeX system is going to deal with
+may only be loaded when the system is installed.  To change the set of
+languages, a <a href="FAQ-newlang.html">partial reinstallation</a> is necessary.
+<p>TeX provides two &ldquo;user-level&rdquo; commands for control of
+hyphenation: <code>\</code><code>language</code> (which selects a hyphenation style), and
+<code>\</code><code>hyphenation</code> (which gives explicit instructions to the hyphenation
+engine, overriding the effect of the patterns).
+<p>The ordinary LaTeX user need not worry about <code>\</code><code>language</code>, since
+it is very thoroughly managed by the <i>babel</i> package; use of
+<code>\</code><code>hyphenation</code> is discussed in
+
+<a href="FAQ-nohyph.html">hyphenation failure</a>.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hyphen">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hyphen</a>
+</body>

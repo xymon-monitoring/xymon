@@ -1,0 +1,17 @@
+$ \textbf{cd ../main}
+$ \textbf{hg pull ../stable}
+pulling from ../stable
+searching for changes
+adding changesets
+adding manifests
+adding file changes
+added 1 changesets with 1 changes to 1 files (+1 heads)
+(run 'hg heads' to see heads, 'hg merge' to merge)
+$ \textbf{hg merge}
+merging myfile
+0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+(branch merge, don't forget to commit)
+$ \textbf{hg commit -m 'Bring in bugfix from stable branch'}
+$ \textbf{cat myfile}
+This is a fix to a boring feature.
+This is exciting and new!

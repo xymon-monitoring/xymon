@@ -1,0 +1,86 @@
+<head>
+<title>UK TeX FAQ -- question label fonts-pln</title>
+</head><body>
+<h3>Using non-standard fonts in Plain TeX</h3>
+<p>Plain TeX (in accordance with its description) doesn&rsquo;t do anything
+fancy with fonts: it sets up the fonts that Knuth found he needed when
+writing the package, and leaves you to do the rest.
+<p>To use something other than Knuth&rsquo;s default, the default mechanism is
+to use the <code>\</code><code>font</code> primitive:
+<blockquote>
+<pre>
+\font\foo=nonstdfont
+...
+\foo
+Text set using nonstdfont ...
+</pre>
+</blockquote><p>
+The name you use (<code>nonstdfont</code>, above) is the name of the
+<code>.tfm</code> file for the font you want.
+<p>If you want to use an italic version of <code>\</code><code>foo</code>, you need to use
+<code>\</code><code>font</code> again:
+<blockquote>
+<pre>
+\font\fooi=nonstdfont-italic
+...
+\fooi
+Text set using nonstdfont italic...
+</pre>
+</blockquote><p>
+<p>This is all very elementary stuff, and serves for simple use of fonts.
+However, there are wrinkles, the most important of which is the matter
+of <a href="FAQ-whatenc.html">font encodings</a>.  Unfortunately, many fonts that
+have appeared recently simply don&rsquo;t come in versions using Knuth&rsquo;s
+eccentric font encodings &mdash; but those encodings are built into Plain
+TeX, so that some macros of Plain TeX need to be changed to use
+the fonts.  LaTeX gets around all these problems by using a &ldquo;font
+selection scheme&rdquo; &mdash; this &lsquo;NFSS&rsquo; (&lsquo;N&rsquo; for &lsquo;new&rsquo;, as
+opposed to what LaTeX 2.09 had) carries around with it separate
+information about the fonts you use, so the changes to
+encoding-specific commands happen automagically.
+<p>If you only want to use the <a href="FAQ-ECfonts.html">EC fonts</a>, you
+can in principle use the <i>ec-plain</i> bundle, which gives you a version
+of Plain TeX which you can run in the same way that you run
+Plain TeX using the original CM fonts, by invoking
+<i>tex</i>.  (<i>Ec-plain</i> also extends the EC fonts,
+for reasons which aren&rsquo;t immediately clear, but which might cause
+problems if you&rsquo;re hoping to use Type 1 versions of the fonts.)
+<p>The <i>font_selection</i> package provides a sort of halfway house:
+it provides font face and size, but not family selection.  This gives
+you considerable freedom, but leaves you stuck with the original
+CM fonts.  It&rsquo;s a compact solution, within its restrictions.
+<p>Other Plain TeX approaches to the problem (packages
+<i>plnfss</i>, <i>fontch</i> and <i>ofs</i>) break out of the
+Plain TeX model, towards the sort of font selection provided by
+ConTeXt and LaTeX &mdash; font selection that allows you to change
+family, as well as size and face.  The remaining packages all make
+provision for using encodings other than Knuth&rsquo;s OT1.
+<p><i>Plnfss</i> has a rather basic set of font family details;
+however, it is capable of using font description (<code>.fd</code>) files
+created for LaTeX.  (This is useful, since most modern mechanisms
+for integrating outline fonts with TeX generate <code>.fd</code> files
+in their process.)
+<p><i>Fontch</i> has special provision for T1 and TS1
+encodings, which you select by arcane commands, such as:
+<blockquote>
+<pre>
+\let\LMTone\relax
+\input fontch.tex
+</pre>
+</blockquote><p>
+for T1.
+<p><i>Ofs</i> seems to be the most thoroughly thought-through of the
+alternatives, and can select more than one encoding: as well as
+T1 it covers the encoding IL2, which is favoured in the
+Czech Republic and Slovakia.  <i>Ofs</i> also covers mathematical fonts,
+allowing you the dubious pleasure of using fonts such as the 
+<a href="FAQ-psfchoice.html"><i>pxfonts</i> and <i>txfonts</i></a>.
+<dl>
+<dt><tt><i>ec-plain</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/ec-plain.zip">macros/ec-plain</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/ec-plain.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/ec-plain/">browse</a>)
+<dt><tt><i>fontch</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/plain/contrib/fontch.zip">macros/plain/contrib/fontch</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/plain/contrib/fontch.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/plain/contrib/fontch/">browse</a>)
+<dt><tt><i>font_selection</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/plain/contrib/font_selection.zip">macros/plain/contrib/font_selection</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/plain/contrib/font_selection.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/plain/contrib/font_selection/">browse</a>)
+<dt><tt><i>ofs</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/generic/ofs.zip">macros/generic/ofs</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/generic/ofs.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/generic/ofs/">browse</a>)
+<dt><tt><i>plnfss</i></tt><dd><a href="http://www.tex.ac.uk/tex-archive/macros/plain/contrib/plnfss/">macros/plain/contrib/plnfss/</a>
+</dl>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=fonts-pln">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=fonts-pln</a>
+</body>

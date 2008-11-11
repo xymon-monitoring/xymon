@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#$ name: init
+
+hg init mytag
+cd mytag
+
+echo hello > myfile
+hg commit -A -m 'Initial commit'
+
+#$ name: tag
+
+hg tag v1.0
+
+#$ name: tags
+
+hg tags
+
+#$ name: log
+
+hg log
+
+#$ name: log.v1.0
+
+echo goodbye > myfile2
+hg commit -A -m 'Second commit'
+hg log -r v1.0
+
+#$ name: remove
+
+hg tag --remove v1.0
+hg tags
+
+#$ name: replace
+
+hg tag -r 1 v1.1
+hg tags
+hg tag -r 2 v1.1
+hg tag -f -r 2 v1.1
+hg tags
+
+#$ name: tip
+
+hg tip

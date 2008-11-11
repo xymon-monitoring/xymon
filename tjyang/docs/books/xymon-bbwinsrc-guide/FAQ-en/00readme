@@ -1,0 +1,59 @@
+If you believe you need to process this FAQ, stop; it can be tedious.
+
+1) Do you have a 300dpi or 600dpi PostScript printer? -- if so, try
+   newfaq.300ps or newfaq.ps (these were made for CanonCX and
+   Laserjet4 engines, respectively)
+2) Do you need PostScript output at some other resolution? -- if so,
+   process newfaq.dvi (you'll need the font set required by psnfss, at
+   least for Times, Helvetica and Symbol fonts; you'll also need the
+   logo* fonts -- the mostly likely oddity is logod10, the .mf for
+   which is to be found on CTAN in tex-archive in
+   tex-archive/systems/knuth/local/lib/logod10.mf)
+3) Do you need non-PostScript output? -- if so, process newfaq-cm.dvi
+   (this only needs the logo* fonts)
+4) Do you use (North American) letter paper? -- if so, modify the
+   above recommendations to use letterfaq instead of newfaq.
+
+I've not dissuaded you?
+
+Well, you need a production LaTeX2e (i.e., at the very least
+1994/06/01, though the development work is done using the latest
+version of LaTeX2e (1995/12/01 at the time of writing), and no
+guarantees are offered that the code will process using anything
+earlier), and you should process newfaq.tex (for A4 paper) or
+letterfaq.tex (for letter paper).  You should download every file in
+the CTAN directory (except things like ChangeLog [boring] and Makefile
+[mine: may not even be there, but not intended for your use])
+----
+Package and class use (breathe deep)
+
+newfaq.tex and letterfaq.tex use class faq, which passes all its
+options to article.cls, and then loads packages faq (in the CTAN
+directory) and multicol (part of the LaTeX2e tools set)
+
+faq.sty loads
+
+ times and pifont (from the PSNFSS package) if the default faqfont.cfg
+   (in the CTAN directory) isn't there
+ mflogo (which implies loading Ulogo.fd) (but both of those are in the
+   CTAN directory)
+ texnames (which is in the CTAN directory)
+ ifthen (from the 2e distribution)
+ comment (from tex-archive/macros/latex209/contrib/misc/)
+
+newfaq.tex and letterfaq.tex also load
+
+ faqbody.tex the questions
+
+The fonts I have (over and above the default) are logod10 at magsteps
+0, 1 and 2 (thus I have a logod10.300pk,360pk,432pk for making the .ps
+file in the CTAN directory, and .600pk,720pk and 864pk for use on the
+LJ4 printers here).  The source for logod10 is in
+tex-archive/systems/knuth/local/lib (it uses logo.mf, which should be
+in your distribution).
+----
+Robin Fairbairns
+UKTUG honorary victim,
+      production of the new FAQ
+rf@cl.cam.ac.uk  (please address comments on the document, or on
+   anything related, to me)

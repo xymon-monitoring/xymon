@@ -1,0 +1,71 @@
+<head>
+<title>UK TeX FAQ -- question label erroradvice</title>
+</head><body>
+<h3>How to approach errors</h3>
+<p>Since TeX is a macroprocessor, its error messages are often
+difficult to understand; this is a (seemingly invariant) property of
+macroprocessors.  Knuth makes light of the problem in the TeXbook,
+suggesting that you acquire the sleuthing skills of a latter-day
+Sherlock Holmes; while this approach has a certain romantic charm to
+it, it&rsquo;s not good for the &lsquo;production&rsquo; user of (La)TeX.  This
+answer (derived, in part, from an article by Sebastian Rahtz in
+<i>TUGboat</i> 16(4)) offers some general guidance in dealing with TeX
+error reports, and other answers in this section deal with common (but
+perplexing) errors that you may encounter.  There&rsquo;s a long list of
+&ldquo;hints&rdquo; in Sebastian&rsquo;s article, including the following:
+<ul>
+<li> Look at TeX errors; those messages may seem cryptic at first,
+  but they often contain a straightforward clue to the problem.  See
+  <a href="FAQ-errstruct.html">the structure of errors</a> for further
+  details. 
+<li> Read the <code>.log</code> file; it contains hints to things you may
+  not understand, often things that have not even presented as error
+  messages.
+<li> Be aware of the amount of context that TeX gives you.  The
+  error messages gives you some bits of TeX code (or of the
+  document itself), that show where the error &ldquo;actually happened&rdquo;;
+  it&rsquo;s possible to control how much of this &lsquo;context&rsquo; TeX actually
+  gives you.  LaTeX (nowadays) instructs TeX only to give you
+  one line of context, but you may tell it otherwise by saying
+<blockquote>
+<pre>
+\setcounter{errorcontextlines}{999}
+</pre>
+</blockquote><p>
+  in the preamble of your document.  (If you&rsquo;re not a confident macro
+  programmer, don&rsquo;t be ashamed of cutting that 999 down a bit; some
+  errors will go on and <em>on</em>, and spotting the differences
+  between those lines can be a significant challenge.)
+<li> As a last resort, tracing can be a useful tool; reading a full
+  (La)TeX trace takes a strong constitution, but once you know how,
+  the trace can lead you quickly to the source of a problem.  You need
+  to have read the TeXbook (see
+
+  <a href="FAQ-books.html">books about TeX</a>) in some detail, fully
+  to understand the trace.
+<p>  The command <code>\</code><code>tracingall</code> sets up maximum tracing; it also sets
+  the output to come to the interactive terminal, which is somewhat of
+  a mixed blessing (since the output tends to be so vast &mdash; all but
+  the simplest traces are best examined in a text editor after the event).
+<p>  The LaTeX <i>trace</i> package (first distributed with the
+  2001 release of LaTeX) provides more manageable tracing.  Its
+  <code>\</code><code>traceon</code> command gives you what <code>\</code><code>tracingall</code> offers, but
+  suppresses tracing around some of the truly verbose parts of
+  LaTeX itself.  The package also provides a <code>\</code><code>traceoff</code>
+  command (there&rsquo;s no &ldquo;off&rdquo; command for <code>\</code><code>tracingall</code>), and a
+  package option (<code>logonly</code>) allows you to suppress output to the
+  terminal.
+</ul>
+The best advice to those faced with TeX errors is not to panic:
+most of the common errors are plain to the eye when you go back to the
+source line that TeX tells you of.  If that approach doesn&rsquo;t work,
+the remaining answers in this section deal with some of the odder
+error messages you may encounter.  You should not ordinarily need to
+appeal to the <a href="FAQ-gethelp.html">wider public</a>
+for assistance, but if you do, be sure to
+report full backtraces (see <code>errorcontextlines</code> above) and so on.
+<dl>
+<dt><tt><i>trace.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=erroradvice">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=erroradvice</a>
+</body>

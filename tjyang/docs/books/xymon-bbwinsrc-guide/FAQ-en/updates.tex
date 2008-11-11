@@ -1,0 +1,45 @@
+\section{Updates to the FAQ}
+
+The list of frequently-asked questions that was published as
+Baskerville volume~4, number~6, should be maintained if it's to retain
+its usefulness.
+
+While I can do at least some of this for myself, I would welcome
+comments on:
+\begin{itemize}
+\item Questions that weren't ansswered in the original, but should
+  have been, and
+\item Errors in the original.
+\end{itemize}
+
+To kick the ball off, here's one of each type.
+
+New question: Typesetting a degree sign in \LaTeXe{}.
+
+Answer: The following macro will do the job
+
+|  \newcommand{\degree}[1][]{\ensuremath{{#1}^\circ}}|
+
+Errata in the original:
+
+The question on ``getting \MF{} to do what you want'' refers you to the
+CTAN file~|documentation/metafont_for_beginners.tex|; the file is in
+fact~|info/metafont-for-beginners.tex|
+
+The question on ``Mailing lists about \TeX{} and its friends'' has two
+errors in it.
+
+\begin{itemize}
+\item The UK\TeX{} list has now ceased publication, and its content
+      has now been taken over by the \TeX{}hax list.
+\item The description of the |ctt-digest| and |info-tex| lists, and
+      their relation to the newsgroup |comp.text.tex| is confusing.
+      |info-tex| does \emph{not} receive postings to |comp.text.tex|,
+      and therefore the content of |ctt-digest| will typically contain
+      much material that isn't present in |info-tex|.  However,
+      messages mailed to |info-tex| appear in |comp.text.tex|, and
+      therefore (ultimately) appear in |ctt-digest|.
+\end{itemize}
+
+Thanks to Allan Reese and Barbara Beeton for pointing me towards these
+problems.

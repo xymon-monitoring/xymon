@@ -1,0 +1,44 @@
+<head>
+<title>UK TeX FAQ -- question label newfunction</title>
+</head><body>
+<h3>Defining a new log-like function in LaTeX</h3>
+<p>Use the <code>\</code><code>mathop</code> command, as in:
+<blockquote>
+<pre>
+\newcommand{\diag}{\mathop{\mathrm{diag}}}
+</pre>
+</blockquote><p>
+<p>Subscripts and superscripts on <code>\</code><code>diag</code> will be placed below and
+above the function name, as they are on
+<code>\</code><code>lim</code>.  If you want your subscripts and superscripts always placed
+to the right, do:
+<blockquote>
+
+<pre>
+\newcommand{\diag}{\mathop{\mathrm{diag}}\nolimits}
+</pre>
+</blockquote><p>
+<p>AMSLaTeX (in its <i>amsopn</i> package, which is automatically
+loaded by <i>amsmath</i>) provides a command
+<code>\</code><code>DeclareMathOperator</code> that takes does the same job as the first
+definition above.  To create our original <code>\</code><code>diag</code> command, one would
+say:
+<blockquote>
+<pre>
+\DeclareMathOperator{\diag}{diag}
+</pre>
+</blockquote><p>
+<code>\</code><code>DeclareMathOperator*</code> declares the operator always to have its
+sub- and superscripts in the 
+&ldquo;<a href="FAQ-limits.html"><code>\</code><code>limits</code> position</a>&rdquo;.
+<p>The <i>amsopn</i> command <code>\</code><code>operatorname</code> allows you to
+introduce <em>ad hoc</em> operators into your mathematics; as with
+<code>\</code><code>DeclareMathOperator</code> there&rsquo;s a starred version
+<code>\</code><code>operatorname*</code> for sub- and superscripts in the limits position.
+<p>(It should be noted that &ldquo;log-like&rdquo; was reportedly a <em>joke</em> on
+Lamport&rsquo;s part; it is of course clear what was meant.)
+<dl>
+<dt><tt><i>amsopn.sty</i></tt><dd>In the AMSLaTeX distribution <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.zip">macros/latex/required/amslatex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/amslatex/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=newfunction">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=newfunction</a>
+</body>

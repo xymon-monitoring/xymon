@@ -1,0 +1,17 @@
+$ \textbf{export HGMERGE=merge}
+$ \textbf{hg merge}
+merging letter.txt
+merge: warning: conflicts during merge
+merging letter.txt failed!
+0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+There are unresolved merges, you can redo the full merge using:
+  hg update -C 1
+  hg merge 2
+$ \textbf{cat letter.txt}
+Greetings!
+<<<<<<< /tmp/tour-merge-conflictLU7A2P/scam-merge/letter.txt
+I am Shehu Musa Abacha, cousin to the former
+=======
+I am Alhaji Abba Abacha, son of the former
+>>>>>>> /tmp/letter.txt~other.B3Si9Y
+Nigerian dictator Sani Abacha.

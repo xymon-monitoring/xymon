@@ -1,0 +1,42 @@
+<head>
+<title>UK TeX FAQ -- question label filesused</title>
+</head><body>
+<h3>All the files used by this document</h3>
+<p>When you&rsquo;re sharing a document with someone else (perhaps as part of a
+co-development cycle) it&rsquo;s as well to arrange that both correspondents
+have the same set of auxiliary files, as well as the document in
+question.  Your correspondent obviously needs the same set of files
+(if you use the <i>url</i> package, she has to have <i>url</i>
+too, for example).  But suppose you have a bug-free version of the
+<i>shinynew</i> package but her copy is still the unstable
+original; until you both realise what is happening, such a situation
+can be very confusing.
+<p>The simplest solution is the LaTeX <code>\</code><code>listfiles</code> command.  This
+places a list of the files used and their version numbers in the log
+file.  If you extract that list and transmit it with your file, it can
+be used as a check-list in case that problems arise.
+<p>Note that <code>\</code><code>listfiles</code> only registers things that are input by the
+&ldquo;standard&rdquo; LaTeX mechanisms (<code>\</code><code>documentclass</code>, <code>\</code><code>usepackage</code>,
+<code>\</code><code>input</code>, <code>\</code><code>include</code>, <code>\</code><code>includegraphics</code> and so on).  But if you
+use TeX primitive syntax, as in
+<pre>
+  \input mymacros
+</pre>
+<i>mymacros.tex</i> <em>won&rsquo;t</em> be listed by <code>\</code><code>listfiles</code>, since
+you&rsquo;ve bypassed the mechanism that records its use.
+<p>The <i>snapshot</i> package helps the owner of a LaTeX document
+obtain a list of the external dependencies of the document, in a form
+that can be embedded at the top of the document.  The intended use of
+the package is the creation of archival copies of documents, but it
+has application in document exchange situations too.
+<p>The <i>bundledoc</i> system uses the <i>snapshot</i> to produce an
+archive (e.g., <code>.tar.gz</code> or <code>.zip</code>) of the files needed by your
+document; it comes with configuration files for use with
+<i>teTeX</i> and <i>MiKTeX</i>.  It&rsquo;s plainly useful when
+you&rsquo;re sending the first copy of a document.
+<dl>
+<dt><tt><i>bundledoc</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/bundledoc.zip">support/bundledoc</a> (<a href="ftp://cam.ctan.org/tex-archive/support/bundledoc.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/bundledoc/">browse</a>)
+<dt><tt><i>snapshot.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/snapshot.zip">macros/latex/contrib/snapshot</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/snapshot.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/snapshot/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=filesused">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=filesused</a>
+</body>

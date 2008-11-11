@@ -1,0 +1,14 @@
+#!/bin/sh
+
+hg init a
+cd a
+echo '[hooks]' > .hg/hgrc
+echo 'pretxncommit.msglen = test `hg tip --template {desc} | wc -c` -ge 10' >> .hg/hgrc
+
+#$ name: go
+
+cat .hg/hgrc
+echo a > a
+hg add a
+hg commit -A -m 'too short'
+hg commit -A -m 'long enough'

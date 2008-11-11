@@ -1,0 +1,33 @@
+<head>
+<title>UK TeX FAQ -- question label subsubsub</title>
+</head><body>
+<h3>How to create a <code>\</code><code>subsubsubsection</code></h3>
+<p>LaTeX&rsquo;s set of &ldquo;sections&rdquo; stops at the level of
+<code>\</code><code>subsubsection</code>.  This reflects a design decision by Lamport &mdash;
+for, after all, who can reasonably want a section with such huge
+strings of numbers in front of it?
+<p>In fact, LaTeX standard classes <em>do</em> define &ldquo;sectioning&rdquo;
+levels lower than <code>\</code><code>subsubsection</code>, but they don&rsquo;t format them like
+sections (they&rsquo;re not numbered, and the text is run-in after the
+heading).  These deeply inferior section commands are <code>\</code><code>paragraph</code>
+and <code>\</code><code>subparagraph</code>; you can (if you <em>must</em>) arrange that these
+two commands produce numbered headings, so that you can use them as
+<code>\</code><code>subsubsubsection</code>s and lower.
+<p>The <i>titlesec</i> allows you to adjust the definitions of the
+sectioning macros, and it may be used to
+transform a <code>\</code><code>paragraph</code>&rsquo;s typesetting so that it looks like that
+of a <code>\</code><code>section</code>.
+<p>If you want to program the change yourself, you&rsquo;ll find that the
+commands (<code>\</code><code>section</code> all the way down to <code>\</code><code>subparagraph</code>) are
+defined in terms of the internal <code>\</code><code>@startsection</code> command, which
+takes 6 arguments.  Before attempting this sort of work, you are well
+advised to read the LaTeX sources (<i>ltsect.dtx</i> in the
+LaTeX distribution) and the source of the standard packages
+(<i>classes.dtx</i>).  The <a href="FAQ-books.html">LaTeX Companion</a>
+discusses use of <code>\</code><code>@startsection</code> for this sort of thing.
+<dl>
+<dt><tt><i>LaTeX source</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.zip">macros/latex/base</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/base/">browse</a>)
+<dt><tt><i>titlesec.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/titlesec.zip">macros/latex/contrib/titlesec</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/titlesec.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/titlesec/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=subsubsub">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=subsubsub</a>
+</body>

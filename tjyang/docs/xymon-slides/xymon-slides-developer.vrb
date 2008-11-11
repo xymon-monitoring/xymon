@@ -1,0 +1,33 @@
+\frametitle {Nested Packages Example}
+
+The \filename{arm} program links with an \filename{hand} library, a
+nested package in \filename{hand/}.
+
+\begin{columns}
+\column{0.66\textwidth}
+\begin{block}{\filenamew{arm}'s \filenamew{configure.ac}}
+\begin{semiverbatim}
+AC_INIT([arm], [1.0])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AC_PROG_CC
+AC_CONFIG_FILES([Makefile src/Makefile])
+\alert{AC_CONFIG_SUBDIRS([hand])}
+AC_OUTPUT
+\end{semiverbatim}
+\end{block}
+\column{0.31\textwidth}
+\begin{block}{\filenamew{arm}'s \filenamew{Makefile.am}}
+\begin{semiverbatim}
+SUBDIRS = \alert{hand} src
+\end{semiverbatim}
+\end{block}
+\end{columns}
+
+\begin{block}{\filenamew{arm}'s \filenamew{src/Makefile.am}}
+\begin{semiverbatim}
+AM_CPPFLAGS = -I\$(top_srcdir)/hand
+bin_PROGRAMS = arm
+arm_SOURCES = arm.c
+arm_LDADD = ../hand/libhand.a
+\end{semiverbatim}
+\end{block}

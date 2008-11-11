@@ -1,0 +1,2 @@
+$ \textbf{hg update}
+abort: update spans branches, use 'hg merge' or 'hg update -C' to lose changes

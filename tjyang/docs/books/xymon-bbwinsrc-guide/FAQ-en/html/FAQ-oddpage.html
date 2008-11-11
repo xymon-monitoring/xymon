@@ -1,0 +1,44 @@
+<head>
+<title>UK TeX FAQ -- question label oddpage</title>
+</head><body>
+<h3>Finding if you&rsquo;re on an odd or an even page</h3>
+<p><a href="FAQ-marginparside.html">Another question</a> discusses the issue
+of getting <code>\</code><code>marginpar</code> commands to put their output in the correct
+margin of two-sided documents.  This is an example of the general
+problem of knowing where a particular bit of text lies: the output
+routine is asynchronous, and (La)TeX will usually process quite a
+bit of the &ldquo;next&rdquo; page before deciding to output any page.  As a
+result, the <code>page</code> counter (known internally in LaTeX as
+<code>\</code><code>c@page</code>) is normally only reliable when you&rsquo;re actually <em>in</em>
+the output routine.
+<p>The solution is to use some version of the <code>\</code><code>label</code> mechanism to
+determine which side of the page you&rsquo;re on; the value of the page
+counter that appears in a <code>\</code><code>pageref</code> command has been inserted in
+the course of the output routine, and is therefore safe.
+<p>However, <code>\</code><code>pageref</code> itself isn&rsquo;t reliable: one might hope that
+<pre>
+\ifthenelse{\isodd{\pageref{foo}}}{odd}{even}
+</pre>
+would do the necessary, but both the <i>babel</i> and
+<i>hyperref</i> packages have been known to interfere with the
+output of <code>\</code><code>pageref</code>; be careful!
+<p>The <i>chngpage</i> package needs to provide this functionality for
+its own use, and therefore provides a command <code>\</code><code>checkoddpage</code>; this
+sets a private-use label, and the page reference part of that label is
+then examined (in a <i>hyperref</i>-safe way) to set a conditional 
+<code>\</code><code>ifcpoddpage</code> true if the command was issued on an odd page.  The
+<i>memoir</i> class has the same command setting a conditional
+<code>\</code><code>ifoddpage</code>.  Of course, the <code>\</code><code>label</code> contributes to LaTeX&rsquo;s
+&ldquo;Rerun to get cross-references right&rdquo; error messages...
+<p>The Koma-Script classes have an <code>addmargin*</code> environment
+that also provides the sorts of facilities that the <i>chngpage</i>
+offers.  Koma-Script&rsquo;s supporting command is 
+<code>\</code><code>ifthispageodd{&lt;true&gt;}{&lt;false&gt;}</code> executes different things
+depending on the page number.
+<dl>
+<dt><tt><i>chngpage.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/chngpage.sty">macros/latex/contrib/misc/chngpage.sty</a>
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=oddpage">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=oddpage</a>
+</body>

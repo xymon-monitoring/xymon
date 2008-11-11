@@ -1,0 +1,65 @@
+<head>
+<title>UK TeX FAQ -- question label dvipdfmgraphics</title>
+</head><body>
+<h3>Imported graphics in <i>dvipdfm</i></h3>
+<p><i>Dvipdfm</i> translates direct from DVI to PDF
+(all other available routes produce PostScript output using
+<i>dvips</i> and then convert that to PDF with
+<i>ghostscript</i> or <i>Acrobat</i> <i>Distiller</i>).
+<p><i>Dvipdfm</i> is a particularly flexible application.  It will
+permit the inclusion of bitmap and PDF graphics, as does
+<a href="FAQ-pdftexgraphics.html">PDFTeX</a>, but is also capable of employing
+<i>ghostscript</i> &ldquo;on the fly&rdquo; so as to be able to permit the
+inclusion of encapsulated PostScript (<code>.eps</code>) files by translating
+them to PDF.  In this way, <i>dvipdfm</i> combines the good
+qualities of <i>dvips</i> and of PDFTeX as a means of
+processing illustrated documents.
+<p>Unfortunately, &ldquo;ordinary&rdquo; LaTeX can&rsquo;t deduce the bounding box of
+a binary bitmap file (such as JPEG or PNG), so you have
+to specify the bounding box.  This may be done explicitly, in the
+document:
+<blockquote>
+<pre>
+\usepackage[dvipdfm]{graphicx}
+...
+\includegraphics[bb=0 0 540 405]{photo.jpg}
+</pre>
+</blockquote><p>
+It&rsquo;s usually not obvious what values to give the &ldquo;<code>bb</code>&rdquo; key,
+but the program <i>ebb</i> will generate a file
+containing the information; the above numbers came from an
+<i>ebb</i> output file <i>photo.bb</i>:
+<blockquote>
+<pre>
+%%Title: /home/gsm10/photo.jpg
+%%Creator: ebb Version 0.5.2
+%%BoundingBox: 0 0 540 405
+%%CreationDate: Mon Mar  8 15:17:47 2004
+</pre>
+</blockquote><p>
+However, if such a file is available, you may abbreviate the inclusion
+code, above, to read:
+<blockquote>
+<pre>
+\usepackage[dvipdfm]{graphicx}
+...
+\includegraphics{photo}
+</pre>
+</blockquote><p>
+which makes the operation feel as simple as does including
+<code>.eps</code> images in a LaTeX file for processing with
+<i>dvips</i>; the <i>graphicx</i> package knows to look for a
+<code>.bb</code> file if no bounding box is provided in the
+<code>\</code><code>includegraphics</code> command.
+<p>The one place where usage isn&rsquo;t quite so simple is the need to quote
+<i>dvipdfm</i> explicitly, as an option when loading the
+<i>graphicx</i> package: if you are using <i>dvips</i>, you
+don&rsquo;t ordinarily need to specify the fact, since the default graphics
+configuration file (of most distributions) &ldquo;guesses&rdquo; the
+<code>dvips</code> option if you&rsquo;re using TeX.
+<dl>
+<dt><tt><i>dvipdfm</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfm.zip">dviware/dvipdfm</a> (<a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfm.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/dviware/dvipdfm/">browse</a>)
+<dt><tt><i>ebb</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfm.zip">dviware/dvipdfm</a> (<a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfm.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/dviware/dvipdfm/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dvipdfmgraphics">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dvipdfmgraphics</a>
+</body>

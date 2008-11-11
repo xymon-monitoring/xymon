@@ -1,0 +1,3 @@
+$ \textbf{hg remove --after a}
+$ \textbf{hg status}
+R a

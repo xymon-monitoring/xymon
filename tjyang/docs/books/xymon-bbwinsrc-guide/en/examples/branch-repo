@@ -1,0 +1,48 @@
+#!/bin/bash
+
+hg init myproject
+cd myproject
+echo hello > myfile
+hg commit -A -m 'Initial commit'
+cd ..
+
+#$ name: tag
+
+cd myproject
+hg tag v1.0
+
+#$ name: clone
+
+cd ..
+hg clone myproject myproject-1.0.1
+
+#$ name: bugfix
+
+hg clone myproject-1.0.1 my-1.0.1-bugfix
+cd my-1.0.1-bugfix
+echo 'I fixed a bug using only echo!' >> myfile
+hg commit -m 'Important fix for 1.0.1'
+#$ ignore: /tmp/branch-repo.*
+hg push
+
+#$ name: new
+
+cd ..
+hg clone myproject my-feature
+cd my-feature
+echo 'This sure is an exciting new feature!' > mynewfile
+hg commit -A -m 'New feature'
+hg push
+
+#$ name: pull
+
+cd ..
+hg clone myproject myproject-merge
+cd myproject-merge
+hg pull ../myproject-1.0.1
+
+#$ name: merge
+
+hg merge
+hg commit -m 'Merge bugfix from 1.0.1 branch'
+hg push

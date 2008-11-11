@@ -1,0 +1,122 @@
+<head>
+<title>UK TeX FAQ -- question label ltxcmds</title>
+</head><body>
+<h3>The definitions of LaTeX commands</h3>
+<p>There are several reasons to want to know the definitions of LaTeX
+commands: from the simplest &ldquo;idle curiosity&rdquo;, to the pressing need
+to patch something to make it &ldquo;work the way you want it&rdquo;.  None of
+these are <em>pure</em> motives, but knowledge and expertise seldom
+arrive through the purest of motives.
+<p>The simple answer is to try <code>\</code><code>show</code>, in a run of LaTeX that is
+taking commands from the terminal:
+<blockquote>
+<pre>
+*\makeatletter
+*\show\protected@edef
+&gt; \protected@edef=macro:
+-&gt;\let \@@protect \protect
+  \let \protect \@unexpandable@protect
+  \afterassignment \restore@protect \edef .
+</pre>
+</blockquote><p>
+(I&rsquo;ve rearranged the output there, from the rather confused version
+TeX itself produces.)  We may perhaps, now, wonder about
+<code>\</code><code>@unexpandable@protect</code>:
+<blockquote>
+<pre>
+*\show\@unexpandable@protect
+&gt; \@unexpandable@protect=macro:
+-&gt;\noexpand \protect \noexpand .
+</pre>
+</blockquote><p>
+and we&rsquo;re starting to see how one part of the <code>\</code><code>protect</code>ion
+mechanism works (one can probably fairly safely guess what
+<code>\</code><code>restore@protect</code> does).
+<p>Many kernel commands are declared robust:
+<blockquote>
+<pre>
+*\show\texttt
+&gt; \texttt=macro:
+-&gt;\protect \texttt  .
+</pre>
+</blockquote><p>
+so that <code>\</code><code>show</code> isn&rsquo;t much help.  Define a command <code>\</code><code>pshow</code> as
+shown below, and use that instead:
+<blockquote>
+<pre>
+*\def\pshow#1{{\let\protect\show #1}}
+*\pshow\texttt
+&gt; \texttt =\long macro:
+#1-&gt;\ifmmode \nfss@text {\ttfamily #1}%
+    \else \hmode@bgroup \text@command {#1}%
+          \ttfamily \check@icl #1\check@icr
+    \expandafter \egroup \fi .
+</pre>
+</blockquote><p>
+Note that the command name that is protected is the &lsquo;base&rsquo; command,
+with a space appended.  This is cryptically visible, in a couple of
+places above.  (Again, the output has been sanitised.)
+<p>If one has a malleable text editor, the same investigation may more
+comfortably be conducted by examining the file <i>latex.ltx</i> (which
+is usually to be found, in a TDS system, in directory
+<i>tex/latex/base</i>).
+<p>In fact, <i>latex.ltx</i> is the product of a <i>docstrip</i>
+process on a large number of <a href="FAQ-dtx.html"><code>.dtx</code> files</a>, and
+you can refer to those instead.  The LaTeX distribution includes a file
+<i>source2e.tex</i>, and most systems retain it, again in
+<i>tex/latex/base</i>.  <i>Source2e.tex</i> may be processed to
+provide a complete source listing of the LaTeX kernel (in fact the
+process isn&rsquo;t entirely straightforward, but the file produces messages
+advising you what to do).  The result is a huge document, with a
+line-number index of control sequences the entire kernel and a
+separate index of changes recorded in each of the files since the
+LaTeX team took over.
+<p>The printed kernel is a nice thing to have, but it&rsquo;s unwieldy and sits
+on my shelves, seldom used.  One problem is that the comments are
+patchy: the different modules range from well and lucidly documented,
+through modules documented only through an automatic process that
+converted the documentation of the source of LaTeX 2.09, to modules
+that hardly had any useful documentation even in the LaTeX 2.09 original.
+<p>In fact, each kernel module <code>.dtx</code> file will process separately
+through LaTeX, so you don&rsquo;t have to work with the whole of
+<i>source2e</i>.  You can easily determine which module defines the
+macro you&rsquo;re interested in: use your &ldquo;malleable text editor&rdquo; to find
+the definition in <i>latex.ltx</i>; then search backwards from that
+point for a line that starts 
+<code>%%% From File:</code> &mdash; that line
+tells you which <code>.dtx</code> file contains the definition you are interested
+in.  Doing this for <code>\</code><code>protected@edef</code>, we find:
+<blockquote>
+<pre>
+%%% From File: ltdefns.dtx
+</pre>
+</blockquote><p>
+When we come to look at it, <i>ltdefns.dtx</i> proves to contain
+quite a dissertation on the methods of handling <code>\</code><code>protect</code>ion; it
+also contains some automatically-converted LaTeX 2.09 documentation.
+<p>And of course, the kernel isn&rsquo;t all of LaTeX: your command may be
+defined in one of LaTeX&rsquo;s class or package files.  For example, we
+find a definition of <code>\</code><code>thebibliography</code> in <i>article</i>, but
+there&rsquo;s no <i>article.dtx</i>.  Some such files are generated from
+parts of the kernel, some from other files in the distribution.  You
+find which by looking at the start of the file: in <i>article.cls</i>,
+we find:
+<blockquote>
+<pre>
+%% This is file `article.cls',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% classes.dtx  (with options: `article')
+</pre>
+</blockquote><p>
+so we need to format <i>classes.dtx</i> to see the definition in
+context.
+<p>All these .dtx files are on CTAN as part of the main LaTeX
+distribution.
+<dl>
+<dt><tt><i>LaTeX distribution</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.zip">macros/latex/base</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/base/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ltxcmds">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ltxcmds</a>
+</body>

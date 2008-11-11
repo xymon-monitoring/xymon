@@ -1,0 +1,44 @@
+<head>
+<title>UK TeX FAQ -- question label hyper</title>
+</head><body>
+<h3>Making hypertext documents from TeX</h3>
+<p>If you want on-line hypertext with a (La)TeX source, probably on the
+World Wide Web, there are four technologies to consider:
+<ul>
+<li> Direct <a href="FAQ-LaTeX2HTML.html">(La)TeX conversion to HTML</a>;
+
+<li> Use <a href="FAQ-texinfo.html"><i>Texinfo</i></a>,
+  and use the <i>info</i> viewer, or convert the <i>texinfo</i>
+  to HTML;
+<li> Use Adobe Acrobat, which will preserve your typesetting
+  perfectly
+  <a href="FAQ-acrobat.html">Making Acrobat PDF documents from LaTeX</a>;
+<li> The hyperTeX conventions (standardised <code>\</code><code>special</code>
+  commands); there are supporting macro packages for Plain TeX and
+  LaTeX).
+</ul>
+<p>The HyperTeX project extended the functionality of all the
+LaTeX cross-referencing commands (including the table of contents)
+to produce <code>\</code><code>special</code> commands which are parsed by DVI processors
+conforming to the HyperTeX guidelines;
+it provides general hypertext links, including those
+to external documents.
+<p>The HyperTeX specification says that conformant viewers/translators
+must recognize the following set of <code>\</code><code>special</code> commands:
+<dl>
+<dt>href:<dd> <code>html:&lt;a href = "href_string"&gt;</code>
+<dt>name:<dd> <code>html:&lt;a name = "name_string"&gt;</code>
+<dt>end:<dd> <code>html:&lt;/a&gt;</code>
+<dt>image:<dd> <code>html:&lt;img src = "href_string"&gt;</code>
+<dt>base_name:<dd> <code>html:&lt;base href = "href_string"&gt;</code>
+</dl>
+<p>The <em>href</em>, <em>name</em> and <em>end</em> commands are used to do
+the basic hypertext operations of establishing links between sections
+of documents. 
+<p>Further details are available on <a href="http://arXiv.org/hypertex/">http://arXiv.org/hypertex/</a>; there
+are two commonly-used implementations of the specification, a
+modified <i>xdvi</i> and (recent releases of)
+<i>dvips</i>. Output from the latter may be used in recent
+releases of <i>ghostscript</i> or Acrobat Distiller.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hyper">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hyper</a>
+</body>

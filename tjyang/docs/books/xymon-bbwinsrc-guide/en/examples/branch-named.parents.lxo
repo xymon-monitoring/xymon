@@ -1,0 +1,12 @@
+$ \textbf{hg parents}
+changeset:   2:4dbdda54dd36
+branch:      bar
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Wed Oct 01 15:43:25 2008 +0000
+summary:     Third commit
+
+$ \textbf{hg branches}
+bar                            2:4dbdda54dd36
+foo                            1:d54238e4a7c3 (inactive)
+default                        0:fcda42415596 (inactive)

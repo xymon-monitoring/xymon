@@ -1,0 +1,22 @@
+#!/bin/bash
+
+hg init diff
+cd diff
+cat > myfile.c <<EOF
+int myfunc()
+{
+    return 1;
+}
+EOF
+hg ci -Ama
+
+sed -ie 's/return 1/return 10/' myfile.c
+
+#$ name: diff-p
+
+echo '[diff]' >> $HGRC
+echo 'showfunc = False' >> $HGRC
+
+hg diff
+
+hg diff -p

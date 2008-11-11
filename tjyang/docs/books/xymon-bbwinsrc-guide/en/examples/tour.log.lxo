@@ -1,0 +1,27 @@
+$ \textbf{hg log}
+changeset:   4:b57f9a090b62
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Tue Sep 06 15:43:07 2005 -0700
+summary:     Trim comments.
+
+changeset:   3:ff5d7b70a2a9
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Tue Sep 06 13:15:58 2005 -0700
+summary:     Get make to generate the final binary from a .o file.
+
+changeset:   2:057d3c2d823c
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Tue Sep 06 13:15:43 2005 -0700
+summary:     Introduce a typo into hello.c.
+
+changeset:   1:82e55d328c8c
+user:        mpm@selenic.com
+date:        Fri Aug 26 01:21:28 2005 -0700
+summary:     Create a makefile
+
+changeset:   0:0a04b987be5a
+user:        mpm@selenic.com
+date:        Fri Aug 26 01:20:50 2005 -0700
+summary:     Create a standard "hello, world" program
+

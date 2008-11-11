@@ -1,0 +1,178 @@
+#!/bin/bash
+
+#$ name: version
+
+hg version
+
+#$ name: help
+
+hg help init
+
+#$ name: clone
+
+hg clone http://hg.serpentine.com/tutorial/hello
+
+#$ name: ls
+#$ ignore: ^drwx.*
+#$ ignore: ^total \d+
+
+ls -l
+ls hello
+
+#$ name: ls-a
+
+cd hello
+ls -a
+
+#$ name: log
+
+hg log
+
+#$ name: log-r
+
+hg log -r 3
+hg log -r ff5d7b70a2a9
+hg log -r 1 -r 4
+
+#$ name: log.range
+
+hg log -r 2:4
+
+#$ name: log-v
+
+hg log -v -r 3
+
+#$ name: log-vp
+
+hg log -v -p -r 2
+
+#$ name: reclone
+
+cd ..
+hg clone hello my-hello
+cd my-hello
+
+#$ name: sed
+
+sed -i '/printf/a\\tprintf("hello again!\\n");' hello.c
+
+#$ name: status
+
+ls
+hg status
+
+#$ name: diff
+
+hg diff
+
+#$ name:
+
+export HGEDITOR='echo Added an extra line of output >'
+
+#$ name: commit
+
+hg commit
+
+#$ name: tip
+
+hg tip -vp
+
+#$ name: clone-pull
+
+cd ..
+hg clone hello hello-pull
+
+#$ name: incoming
+
+cd hello-pull
+hg incoming ../my-hello
+
+#$ name: pull
+
+hg tip
+hg pull ../my-hello
+hg tip
+
+#$ name: update
+
+grep printf hello.c
+hg update tip
+grep printf hello.c
+
+#$ name: parents
+
+hg parents
+
+#$ name: older
+
+hg update 2
+hg parents
+hg update
+
+#$ name: clone-push
+
+cd ..
+hg clone hello hello-push
+
+#$ name: outgoing
+
+cd my-hello
+hg outgoing ../hello-push
+
+#$ name: push
+
+hg push ../hello-push
+
+#$ name: push.nothing
+
+hg push ../hello-push
+
+#$ name: outgoing.net
+
+hg outgoing http://hg.serpentine.com/tutorial/hello
+
+#$ name: push.net
+
+hg push http://hg.serpentine.com/tutorial/hello
+
+#$ name: merge.clone
+
+cd ..
+hg clone hello my-new-hello
+cd my-new-hello
+sed -i '/printf/i\\tprintf("once more, hello.\\n");' hello.c
+hg commit -m 'A new hello for a new day.'
+
+#$ name: merge.cat
+
+cat hello.c
+cat ../my-hello/hello.c
+
+#$ name: merge.pull
+
+hg pull ../my-hello
+
+#$ name: merge.heads
+
+hg heads
+
+#$ name: merge.update
+
+hg update
+
+#$ name: merge.merge
+
+hg merge
+
+#$ name: merge.parents
+
+hg parents
+cat hello.c
+
+#$ name: merge.commit
+
+hg commit -m 'Merged changes'
+
+#$ name: merge.tip
+
+hg tip

@@ -1,0 +1,57 @@
+<head>
+<title>UK TeX FAQ -- question label csname</title>
+</head><body>
+<h3>Defining a macro from an argument</h3>
+<p>It&rsquo;s common to want a command to create another command: often one
+wants the new command&rsquo;s name to derive from an argument.  LaTeX
+does this all the time: for example, <code>\</code><code>newenvironment</code> creates
+start- and end-environment commands whose names are derived from the
+name of the environment command.
+<p>The (seemingly) obvious approach:
+<blockquote>
+<pre>
+\def\relay#1#2{\def\#1{#2}}
+</pre>
+</blockquote><p>
+doesn&rsquo;t work (the TeX engine interprets it
+as a rather strange redefinition of <code>#</code>).  The trick is to use
+<code>\</code><code>csname</code>, which is a TeX primitive for generating command names
+from random text, together with <code>\</code><code>expandafter</code>.  The definition
+above should read:
+<blockquote>
+<pre>
+\def\relay#1#2{%
+  \expandafter\def\csname #1\endcsname{#2}%
+}
+</pre>
+</blockquote><p>
+With this definition, <code>\</code><code>relay{blah}{bleah}</code> is equivalent to
+<code>\</code><code>def</code><code>\</code><code>blah{bleah}</code>.
+<p>Note that the definition of <code>\</code><code>relay</code> omits the braces round the
+&lsquo;command name&rsquo; in the <code>\</code><code>newcommand</code> it executes.  This is
+because they&rsquo;re not necessary (in fact they seldom are), and in this
+circumstance they make the macro code slightly more tedious.
+<p>The name created need not (of course) be <em>just</em> the argument:
+<blockquote>
+
+<pre>
+\def\newrace#1#2#3{%
+  \expandafter\def\csname start#1\endcsname{%
+    #2%
+  }%
+  \expandafter\def\csname finish#1\endcsname{%
+    #3%
+  }%
+}
+</pre>
+</blockquote><p>
+With commands
+<blockquote>
+<pre>
+\def\start#1{\csname start#1\endcsname}
+\def\finish#1{\csname finish#1\endcsname}
+</pre>
+</blockquote><p>
+these &lsquo;races&rsquo; could behave a bit like LaTeX environments.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=csname">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=csname</a>
+</body>

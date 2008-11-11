@@ -1,0 +1,6 @@
+$ \textbf{hg qselect quux}
+number of guarded, applied patches has changed from 0 to 2
+$ \textbf{hg qpop -a}
+Patch queue now empty
+$ \textbf{hg qpush -a}
+abort: patch series fully applied

@@ -1,0 +1,15 @@
+\frametitle {\texttt{amhello}'s \filenamew{src/Makefile.am} explained}
+
+\begin{block}{\filenamew{src/Makefile.am}}
+\begin{semiverbatim}
+\alert<all:2>{bin}_\alert<all:1>{PROGRAMS} = \alert<all:3>{hello}
+\alert<all:4>{hello_SOURCES = main.c}
+\end{semiverbatim}
+\end{block}
+
+\begin{itemize}
+\item<1-> We are building some programs.
+\item<2-> These programs will be installed in \variable{bindir}.
+\item<3-> There is only one program to build: \filename{hello}.
+\item<4-> To create \filename{hello}, just compile \filename{main.c}.\only<5>{}
+\end{itemize}

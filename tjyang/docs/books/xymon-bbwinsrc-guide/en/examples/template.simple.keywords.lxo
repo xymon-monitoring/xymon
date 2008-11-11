@@ -1,0 +1,21 @@
+$ \textbf{hg log -r1 --template 'author: \{author\}\textbackslash{}n'}
+author: Bryan O'Sullivan <bos@serpentine.com>
+$ \textbf{hg log -r1 --template 'desc:\textbackslash{}n\{desc\}\textbackslash{}n'}
+desc:
+   added line to end of <<hello>> file.
+
+in addition, added a file with the helpful name (at least i hope that some might consider it so) of goodbye.
+$ \textbf{hg log -r1 --template 'files: \{files\}\textbackslash{}n'}
+files: goodbye hello
+$ \textbf{hg log -r1 --template 'file_adds: \{file_adds\}\textbackslash{}n'}
+file_adds: 
+$ \textbf{hg log -r1 --template 'file_dels: \{file_dels\}\textbackslash{}n'}
+file_dels: 
+$ \textbf{hg log -r1 --template 'node: \{node\}\textbackslash{}n'}
+node: aa211e578997e049c5320f883f8a05fd917f7862
+$ \textbf{hg log -r1 --template 'parents: \{parents\}\textbackslash{}n'}
+parents: 
+$ \textbf{hg log -r1 --template 'rev: \{rev\}\textbackslash{}n'}
+rev: 1
+$ \textbf{hg log -r1 --template 'tags: \{tags\}\textbackslash{}n'}
+tags: mytag

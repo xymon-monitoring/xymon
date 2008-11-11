@@ -1,0 +1,35 @@
+<head>
+<title>UK TeX FAQ -- question label protect</title>
+</head><body>
+<h3>What&rsquo;s the reason for &lsquo;protection&rsquo;?</h3>
+<p>Sometimes LaTeX saves data it will reread later. These data are
+often the argument of some command; they are the so-called moving
+arguments.  (&lsquo;Moving&rsquo; because data are moved around.)  Places to look for
+are all arguments that may go into table of contents, list of figures,
+<em>etc</em>.; namely, data that are written to an auxiliary file and
+read in later.  Other places are those data that might appear in head-
+or footlines.  Section headings and figure captions are the most
+prominent examples; there&rsquo;s a complete list in Lamport&rsquo;s book
+(see <a href="FAQ-books.html">TeX-related books</a>).
+<p>
+
+<p>What&rsquo;s going on really, behind the scenes? The commands in the moving
+arguments are already expanded to their internal structure during the
+process of saving. Sometimes this expansion results in invalid TeX
+code when processed again. &ldquo;<code>\</code><code>protect</code><code>\</code><code>cmd</code>&rdquo; tells LaTeX to save
+<code>\</code><code>cmd</code> as <code>\</code><code>cmd</code>, without expansion.
+<p>What is a &lsquo;fragile command&rsquo;?  It&rsquo;s a command that expands into illegal
+TeX code during the save process.
+<p>What is a &lsquo;robust command&rsquo;?  It&rsquo;s a command that expands into legal
+TeX code during the save process.
+<p>Again, commands are marked as &lsquo;robust&rsquo; or &lsquo;fragile&rsquo;, as they&rsquo;re
+defined in Lamport&rsquo;s book.  Sadly, some commands are robust in
+LaTeX itself, but are redefined by some packages to be fragile; the
+<code>\</code><code>cite</code> command commonly suffers this treatment.
+<p>No-one (of course) likes this situation; the LaTeX3 team have
+removed the need for protection of some things in the production of
+LaTeX2e, but the techniques available to them within current
+LaTeX mean that this is an expensive exercise.  It remains a
+long-term aim of the team to remove all need for these things.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=protect">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=protect</a>
+</body>

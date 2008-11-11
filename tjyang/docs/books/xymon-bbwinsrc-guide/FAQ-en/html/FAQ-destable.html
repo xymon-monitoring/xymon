@@ -1,0 +1,82 @@
+<head>
+<title>UK TeX FAQ -- question label destable</title>
+</head><body>
+<h3>The design of tables</h3>
+<p>In recent years, several authors have argued that the examples, set
+out by Lamport in his <a href="FAQ-books.html">LaTeX manual</a>, have cramped
+authors&rsquo; style and have led to extremely poor table design.  It is in
+fact difficult even to work out what many of the examples in Lamport&rsquo;s
+book &ldquo;mean&rdquo;.
+<p>The criticism focuses on the excessive use of rules (both horizontal
+and vertical) and on the poor vertical spacing that Lamport&rsquo;s macros
+offer.
+<p>The problem of vertical spacing is plain for all to see, and is
+addressed in several packages &mdash; see 
+&ldquo;<a href="FAQ-struttab.html">spacing of lines in tables</a>&rdquo;.
+<p>The argument about rules is presented in the excellent essay that
+prefaces the documentation of Simon Fear&rsquo;s <i>booktabs</i> package,
+which (of course) implements Fear&rsquo;s scheme for &lsquo;comfortable&rsquo; rules.
+(The same rule commands are implemented in the <i>memoir</i> class.)
+<p>Lamport&rsquo;s LaTeX was also inflexibly wrong in &ldquo;insisting&rdquo; that
+captions should come at the bottom of a table.  Since a table may
+extend over several pages, traditional typography places the caption
+at the top of a table float.  The <code>\</code><code>caption</code> command will get its
+position wrong (by <code>10pt</code>) if you simply write:
+<blockquote>
+<pre>
+\begin{table}
+  \caption{Example table}
+  \begin{tabular}{...}
+    ...
+  \end{tabular}
+\end{table}
+</pre>
+</blockquote><p>
+The <i>topcapt</i> package solves this problem:
+<blockquote>
+<pre>
+\usepackage{topcaption}
+...
+\begin{table}
+  \topcaption{Example table}
+  \begin{tabular}{...}
+    ...
+  \end{tabular}
+\end{table}
+</pre>
+</blockquote><p>
+The <i>KOMA-script</i> classes provide a similar command
+<code>\</code><code>captionabove</code>; they also have a class option
+<code>tablecaptionabove</code> which arranges that <code>\</code><code>caption</code>
+<em>means</em> <code>\</code><code>captionabove</code>, in table environments.  The
+<i>caption</i> (from the release of 23 January, 2004) may be loaded
+with an option that has the same effect:
+<blockquote>
+<pre>
+\usepackage[tableposition=top]{caption}
+</pre>
+</blockquote><p>
+<p>Doing the job yourself is pretty easy: <i>topcapt</i> switches the
+values of the LaTeX2e parameters <code>\</code><code>abovecaptionskip</code> (default
+value <code>10pt</code>) and <code>\</code><code>belowcaptionskip</code> (default value <code>0pt</code>), so:
+<blockquote>
+<pre>
+\begin{table}
+  \setlength{\abovecaptionskip}{0pt}
+  \setlength{\belowcaptionskip}{10pt}
+  \caption{Example table}
+  \begin{tabular}{...}
+    ...
+  \end{tabular}
+\end{table}
+</pre>
+</blockquote><p>
+does the job.  (The package itself is very slightly more elaborate...)
+<dl>
+<dt><tt><i>booktabs.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/booktabs.zip">macros/latex/contrib/booktabs</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/booktabs.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/booktabs/">browse</a>)
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>topcapt.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/topcapt.sty">macros/latex/contrib/misc/topcapt.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=destable">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=destable</a>
+</body>

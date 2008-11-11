@@ -1,0 +1,59 @@
+<head>
+<title>UK TeX FAQ -- question label footintab</title>
+</head><body>
+<h3>Footnotes in tables</h3>
+<p>The standard LaTeX <code>\</code><code>footnote</code> command doesn&rsquo;t work in tables; the table
+traps the footnotes and they can&rsquo;t escape to the bottom of the page.
+<p>If your table is floating, your best bet is (unfortunately) to put the
+table in a <code>minipage</code> environment and to put the notes
+underneath the table, or to use Donald Arseneau&rsquo;s package
+<i>threeparttable</i> (which implements &ldquo;table notes&rdquo; proper).
+<p>The <i>ctable</i> package extends the model of
+<i>threeparttable</i>, and also uses the ideas of the
+<i>booktabs</i> package.  The <code>\</code><code>ctable</code> command does the complete
+job of setting the table, placing the caption, and defining the
+notes.  The &ldquo;table&rdquo; may consist of diagrams, and a parameter in
+<code>\</code><code>ctable</code>&rsquo;s optional argument makes the float that is created a
+&ldquo;figure&rdquo; rather than a &ldquo;table&rdquo;.
+<p>Otherwise, if your table is not floating (it&rsquo;s just a
+&lsquo;<code>tabular</code>&rsquo; in the middle of some text), there are several
+things you can do to fix the problem.
+<ul>
+<li> Use <code>\</code><code>footnotemark</code> to position the little marker
+  appropriately, and then put in <code>\</code><code>footnotetext</code> commands to fill in
+  the text once you&rsquo;ve closed the <code>tabular</code> environment.
+  This is described in Lamport&rsquo;s book, but it gets messy if there&rsquo;s
+  more than one footnote.
+<li> Stick the table in a <code>minipage</code> anyway.  This provides all the
+  ugliness of footnotes in a minipage with no extra effort.
+<li> Use <i>threeparttable</i> anyway; the package is intended for
+  floating tables, and the result might look odd if the table is not
+  floating, but it will be reasonable.
+<li> Use <i>tabularx</i> or <i>longtable</i> from the LaTeX
+  tools distribution; they&rsquo;re noticeably less efficient than the
+  standard <code>tabular</code> environment, but they do allow
+  footnotes.
+<li> Grab hold of <i>footnote</i>, and put your
+  <code>tabular</code> environment inside a <code>savenotes</code>
+  environment.  Alternatively, say
+  <code>\</code><code>makesavenoteenv{tabular}</code> in the preamble of your
+  document, and tables will all handle footnotes correctly.
+<li> Use <i>mdwtab</i> from the same bundle; it will handle
+  footnotes properly, and has other facilities to increase the beauty
+  of your tables.  It may also cause other table-related packages (not
+  the standard &lsquo;tools&rsquo; ones, though) to become very unhappy and stop
+  working.
+</ul>
+<p>The documentation of <i>threeparttable</i> appears in the package
+file itself; that of <i>ctable</i> is distributed as a PDF
+file (for convenience&rsquo;s sake).
+<dl>
+<dt><tt><i>ctable.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ctable.zip">macros/latex/contrib/ctable</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ctable.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/ctable/">browse</a>)
+<dt><tt><i>footnote.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.zip">macros/latex/contrib/mdwtools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/mdwtools/">browse</a>)
+<dt><tt><i>longtable.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>mdwtab.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.zip">macros/latex/contrib/mdwtools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/mdwtools/">browse</a>)
+<dt><tt><i>threeparttable.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/threeparttable.sty">macros/latex/contrib/misc/threeparttable.sty</a>
+<dt><tt><i>tabularx.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=footintab">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=footintab</a>
+</body>

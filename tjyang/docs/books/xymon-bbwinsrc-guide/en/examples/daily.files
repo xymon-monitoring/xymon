@@ -1,0 +1,93 @@
+#!/bin/bash
+
+#$ name: add
+
+hg init add-example
+cd add-example
+echo a > a
+hg status
+hg add a
+hg status
+hg commit -m 'Added one file'
+hg status
+
+#$ name: add-dir
+
+mkdir b
+echo b > b/b
+echo c > b/c
+mkdir b/d
+echo d > b/d/d
+hg add b
+hg commit -m 'Added all files in subdirectory'
+
+#$ name:
+
+cd ..
+
+#$ name: hidden
+
+hg init hidden-example
+cd hidden-example
+mkdir empty
+touch empty/.hidden
+hg add empty/.hidden
+hg commit -m 'Manage an empty-looking directory'
+ls empty
+cd ..
+hg clone hidden-example tmp
+ls tmp
+ls tmp/empty
+
+#$ name: remove
+
+hg init remove-example
+cd remove-example
+echo a > a
+mkdir b
+echo b > b/b
+hg add a b
+hg commit -m 'Small example for file removal'
+hg remove a
+hg status
+hg remove b
+
+#$ name:
+
+cd ..
+
+#$ name: missing
+hg init missing-example
+cd missing-example
+echo a > a
+hg add a
+hg commit -m 'File about to be missing'
+rm a
+hg status
+
+#$ name: remove-after
+
+hg remove --after a
+hg status
+
+#$ name: recover-missing
+hg revert a
+cat a
+hg status
+
+#$ name:
+
+cd ..
+
+#$ name: addremove
+
+hg init addremove-example
+cd addremove-example
+echo a > a
+echo b > b
+hg addremove
+
+#$ name: commit-addremove
+
+echo c > c
+hg commit -A -m 'Commit with addremove'

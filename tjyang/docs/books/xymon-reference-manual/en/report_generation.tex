@@ -1,0 +1,269 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Report Generation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{HOBBIT-CONFREPORT.CGI}
+ hobbit-confreport.cgi - Hobbit Configuration report
+
+ \subsection{SYNOPSIS}
+\textbf{hobbit-confreport.cgi}
+
+ 
+\subsection{DESCRIPTION}
+\textbf{hobbit-confreport.cgi}
+ is invoked as a CGI script via the hobbit-confreport.sh CGI wrapper. 
+
+ \textbf{hobbit-confreport.cgi}
+ provides a plain HTML (Web) report of the Hobbit configuration for a
+ group of hosts; which hosts are included is determined by the hosts
+ available on the webpage from where the CGI script is invoked. 
+
+
+
+  The configuration report include the hostnames, a list of the
+  statuses monitored for each host, and if applicable any
+  configuration settings affecting these. Alerts that may be triggered
+  by status changes are also included. 
+
+
+
+  The report is plain HTML without any images included, and therefore
+  suitable for inclusion into e-mails or other documents that may be
+  accessed outside the Hobbit system. 
+
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--critical] Report only on the statuses that are configured to
+  show up on the \textbf{Critical Systems} view. 
+
+ 
+
+\item[--old-nk-config] Use the deprecated \textbf{NK}
+ tag in bb-hosts to determine if tests appear on the Critical Systems view. 
+
+ 
+
+\item[--env=FILENAME] Loads the environment defined in FILENAME before
+  executing the CGI script. 
+
+
+ 
+
+\item[--area=NAME] Load environment variables for a specific area. NB:
+  if used, this option must appear before any --env=FILENAME option. 
+
+
+\item[--debug] Enables debugging output. 
+
+ 
+
+\end{description}
+\subsection{BUGS}
+ Client-side configuration done in the \emph{hobbit-clients.cfg(5)}
+ is not currently reflected in the report. 
+
+  Critical Systems view configuration is not reflected in the report. 
+
+
+ 
+\subsection{SEE ALSO}
+bb-hosts(5), hobbit-alerts.cfg(5), hobbit-clients.cfg(5), hobbit(7) 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{BB-REP.CGI}
+
+ bb-rep.cgi - CGI front-end to bbgen reporting
+ \subsection{SYNOPSIS}
+\textbf{bb-rep.cgi [--noclean] [bbgen-options]}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{bb-rep.cgi}
+ is invoked as a CGI script via the bb-rep.sh CGI wrapper. It triggers the generation of a Hobbit availability report for the timeperiod specified by the CGI paramaters. 
+
+  bb-rep.cgi is passed a QUERY\_STRING environment variable with the following parameters: 
+
+
+  
+start-mon(Startmonthofthereport)  
+start-day(Startday-of-monthofthereport)  
+start-yr(Startyearofthereport)  
+end-mon(Endmonthofthereport)  
+end-day(Endday-of-monthofthereport)  
+end-yr(Endyearofthereport)  
+style(Reportstyle)  
+ The following non-standard parameters are handled by the bbgen version of bb-rep.cgi: 
+
+
+  
+suburl(Pageinreporttogoto,ifnotthetoppage) 
+
+
+  The ``month'' parameters must be specified as the three-letter english month name abbreviation: Jan, Feb, Mar ... 
+
+
+  Start- and end-days are in the range 1..31; the start- and end-year must be specified including century (e.g. ``2003''). 
+
+
+  End-times beyond the current time are silently replaced with the current time. 
+
+
+  The generated report will include data for the start- and end-days, i.e. the report will begin at 00:00:00 of the start-day, and end at 23:59:59 of the end-day. 
+
+
+  The ``style'' parameter is passed directly to \emph{bbgen(1)}
+ and should be ``crit'', ``non-crit'' or ``all''. Other values result in undefined behaviour. 
+
+
+  All of the processing involved in generating the report is done by invoking \emph{bbgen(1)}
+ with the proper ``--reportopts'' option. 
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--noclean] Do not clean the BBREP directory of old reports. Makes the report-tool go a bit faster - instead, you can clean up the BBREP directory e.g. via a cron-job. 
+
+ 
+
+\item[--env=FILENAME] Load the environment from FILENAME before executing the CGI. 
+
+ 
+
+\item[bbgen-options] All other options passed to bb-rep.cgi are passed on to the \emph{bbgen(1)}
+ program building the report files. 
+
+ 
+
+
+\end{description}
+\subsection{FILES}
+\begin{description}
+\item[\$BBHOME/web/report\_header] HTML template header for the report request form 
+
+ 
+
+\item[\$BBHOME/web/report\_footer] HTML template footer for the report request form 
+
+ 
+
+\item[\$BBHOME/web/report\_form] HTML template report request form 
+
+ 
+
+
+\end{description}
+\subsection{ENVIRONMENT VARIABLES}
+\begin{description}
+\item[BBGENREPOPTS] bbgen options passed by default to the bb-rep.cgi. This happens in the bb-rep.sh wrapper. 
+\item[BBHOME] Home directory of the Hobbit server installation 
+\item[BBREP] Directory where generated reports are stored. This directory must be writable by the userid executing the CGI script, typically ``www'', ``apache'' or ``nobody''. Default: \$BBHOME/www/rep/ 
+\item[BBREPURL] The URL prefix to use when accessing the reports via a browser. Default: \$BBWEB/rep 
+
+
+\end{description}
+\subsection{SEE ALSO}
+bbgen(1), bb-hosts(5), hobbitserver.cfg(5) 
+
+ 
+
+
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\include{hobbitd_filestore.8}
+\newpage
+\section{HOBBITD\_FILESTORE}
+
+ hobbitd\_filestore - hobbitd worker module for storing Hobbit data \subsection{SYNOPSIS}
+\textbf{hobbitd\_channel --channel=status hobbitd\_filestore --status [options]}
+ 
+\textbf{hobbitd\_channel --channel=data hobbitd\_filestore --data [options]}
+ 
+\textbf{hobbitd\_channel --channel=notes hobbitd\_filestore --notes [options]}
+ 
+\textbf{hobbitd\_channel --channel=enadis hobbitd\_filestore --enadis [options]}
+
+
+ 
+\subsection{DESCRIPTION}
+ hobbitd\_filestore is a worker module for hobbitd, and as such it is normally run via the \emph{hobbitd\_channel(8)}
+ program. It receives hobbitd messages from a hobbitd channel via stdin, and stores these in the filesystem in a manner that is compatible with the Big Brother daemon, bbd. 
+
+  This program can be started multiple times, if you want to store messages for more than one channel. 
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--status] Incoming messages are ``status'' messages, they will be stored in the \$BBLOGS/ directory. If you are using \emph{hobbit(7)}
+ throughout your Hobbit server, you will not need to run this module to save status messages, unless you have a third-party add-on that reads the status-logs directly. This module is NOT needed to get trend graphs, you should run the \emph{hobbitd\_rrd(8)}
+ module instead. 
+
+ 
+
+\item[--data] Incoming messages are ``data'' messages, they will be stored in the \$BBDATA directory. This module is not needed, unless you have a third-party module that processes the data-files. This module is NOT needed to get trend graphs, you should run the \emph{hobbitd\_rrd(8)}
+ module instead. 
+
+ 
+
+\item[--notes] Incoming messages are ``notes'' messages, they will be stored in the \$BBNOTES directory. This modules is only needed if you want to allow people to remotely update the notes-files available on the Hobbit webpages. 
+
+ 
+
+\item[--enadis] Incoming messages are enable/disable messages, they will update files in the \$BBDISABLED directory. This is only needed if you have third-party add-ons that use these files. 
+
+ 
+
+\item[--dir=DIRECTORY] Overrides the default output directory. 
+
+ 
+
+\item[--html] Used together with ``--status''. Tells hobbitd\_filestore to also save an HTML version of the status-log. Should not be used unless you must run with ``BBLOGSTATUS=static''. 
+
+ 
+
+\item[--htmldir=DIRECTORY] The directory where HTML-versions of the status logs are stored. Default: \$BBHTML 
+
+ 
+
+\item[--htmlext=.EXT] Set the filename extension for generated HTML files. By default, HTML files are saved with a ``.html'' extension. 
+
+ 
+
+\item[--multigraphs=TEST1[,TEST2]] This causes hobbitd\_filestore to generate HTML status pages with links to service graphs that are split up into multiple images, with at most 5 graphs per image. If not specified, only the ``disk'' status is split up this way. 
+
+ 
+
+\item[--only=test[,test,test]] Save status messages only for the listed set of tests. This can be useful if you have an external script that needs to parse some of the status logs, but you do not want to save all status logs. 
+
+ 
+
+\item[--debug] Enable debugging output. 
+
+ 
+
+
+\end{description}
+\subsection{FILES}
+ This module does not rely on any configuration files. 
+
+ 
+\subsection{SEE ALSO}
+hobbitd\_channel(8), hobbitd\_rrd(8), hobbitd(8), hobbit(7) 
+
+ 

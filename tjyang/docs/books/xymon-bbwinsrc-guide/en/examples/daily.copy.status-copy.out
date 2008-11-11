@@ -1,0 +1,4 @@
+$ \textbf{hg status -C}
+A new-file
+  file
+$ \textbf{hg commit -m 'Copied file'}

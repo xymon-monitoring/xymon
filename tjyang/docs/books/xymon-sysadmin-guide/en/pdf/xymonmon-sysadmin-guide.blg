@@ -1,0 +1,72 @@
+This is BibTeX, Version 0.99c (Web2C 7.5.6)
+The top-level auxiliary file: xymonmon-sysadmin-guide.aux
+A level-1 auxiliary file: preface.aux
+A level-1 auxiliary file: xymon_overview.aux
+A level-1 auxiliary file: howtograph.aux
+A level-1 auxiliary file: install.aux
+A level-1 auxiliary file: about.aux
+A level-1 auxiliary file: xymon-alerts.aux
+A level-1 auxiliary file: xymon-config.aux
+A level-1 auxiliary file: bb-to-xymon.aux
+A level-1 auxiliary file: xymon-mrtg.aux
+A level-1 auxiliary file: criticalsystems.aux
+A level-1 auxiliary file: known-issues.aux
+A level-1 auxiliary file: server_configuration_files.aux
+A level-1 auxiliary file: web_page_generation.aux
+A level-1 auxiliary file: report_generation.aux
+A level-1 auxiliary file: administrative_web_pages.aux
+A level-1 auxiliary file: network_service_testing.aux
+A level-1 auxiliary file: combination_tests.aux
+A level-1 auxiliary file: messages_protocols.aux
+A level-1 auxiliary file: xymon_server_programs.aux
+A level-1 auxiliary file: xymon_client.aux
+A level-1 auxiliary file: data_backend.aux
+A level-1 auxiliary file: misc_programs.aux
+A level-1 auxiliary file: bookmaking.aux
+A level-1 auxiliary file: license.aux
+The style file: alpha.bst
+Database file #1: 99book.bib
+Warning--entry type for "wikibook:wikibooktjyang" isn't style-file defined
+--line 1 of file 99book.bib
+You've used 2 entries,
+            2543 wiz_defined-function locations,
+            590 strings with 5146 characters,
+and the built_in function-call counts, 550 in all, are:
+= -- 48
+> -- 16
+< -- 2
++ -- 4
+- -- 4
+* -- 22
+:= -- 94
+add.period$ -- 6
+call.type$ -- 2
+change.case$ -- 10
+chr.to.int$ -- 2
+cite$ -- 2
+duplicate$ -- 22
+empty$ -- 51
+format.name$ -- 8
+if$ -- 112
+int.to.chr$ -- 1
+int.to.str$ -- 0
+missing$ -- 0
+newline$ -- 13
+num.names$ -- 6
+pop$ -- 28
+preamble$ -- 1
+purify$ -- 12
+quote$ -- 0
+skip$ -- 16
+stack$ -- 0
+substring$ -- 14
+swap$ -- 2
+text.length$ -- 2
+text.prefix$ -- 2
+top$ -- 0
+type$ -- 16
+warning$ -- 0
+while$ -- 4
+width$ -- 4
+write$ -- 24
+(There was 1 warning)

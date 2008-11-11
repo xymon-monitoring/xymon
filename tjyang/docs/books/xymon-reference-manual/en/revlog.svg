@@ -1,0 +1,1155 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.44.1"
+   sodipodi:docbase="/home/bos/hg/hgbook/en"
+   sodipodi:docname="revlog.svg">
+  <defs
+     id="defs4">
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Mend"
+       style="overflow:visible;">
+      <path
+         id="path4852"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt;marker-start:none;"
+         transform="scale(0.4) rotate(180) translate(10,0)" />
+    </marker>
+    <linearGradient
+       id="linearGradient3092">
+      <stop
+         style="stop-color:#44436f;stop-opacity:1;"
+         offset="0"
+         id="stop3094" />
+      <stop
+         style="stop-color:#abade5;stop-opacity:1;"
+         offset="1"
+         id="stop3096" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient3118"
+       gradientUnits="userSpaceOnUse"
+       x1="176.16635"
+       y1="405.21934"
+       x2="417.11935"
+       y2="405.21934" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient3120"
+       gradientUnits="userSpaceOnUse"
+       x1="176.16635"
+       y1="405.21934"
+       x2="417.11935"
+       y2="405.21934" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient3129"
+       gradientUnits="userSpaceOnUse"
+       x1="176.16635"
+       y1="405.21934"
+       x2="417.11935"
+       y2="405.21934"
+       gradientTransform="translate(-0.928574,-1.428574)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient3133"
+       gradientUnits="userSpaceOnUse"
+       x1="176.16635"
+       y1="405.21934"
+       x2="417.11935"
+       y2="405.21934"
+       gradientTransform="translate(-0.928574,-1.428574)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient3708"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.423343,0,0,0.423343,138.874,-67.01732)"
+       x1="175.23776"
+       y1="509.98154"
+       x2="416.29077"
+       y2="297.49997" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient5164"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.423343,0,0,0.423343,198.249,247.4358)"
+       x1="175.23776"
+       y1="509.98154"
+       x2="416.29077"
+       y2="297.49997" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient5584"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.423343,0,0,0.423343,143.9081,371.2915)"
+       x1="175.23776"
+       y1="509.98154"
+       x2="416.29077"
+       y2="297.49997" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient5784"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.423343,0,0,0.423343,76.37397,152.137)"
+       x1="175.23776"
+       y1="509.98154"
+       x2="416.29077"
+       y2="297.49997" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient5786"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.423343,0,0,0.423343,198.249,152.137)"
+       x1="175.23776"
+       y1="509.98154"
+       x2="416.29077"
+       y2="297.49997" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient5895"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.423343,0,0,0.423343,198.0215,261.7142)"
+       x1="175.23776"
+       y1="509.98154"
+       x2="416.29077"
+       y2="297.49997" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3092"
+       id="linearGradient5958"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.423343,0,0,0.423343,137.1978,42.55987)"
+       x1="175.23776"
+       y1="509.98154"
+       x2="416.29077"
+       y2="297.49997" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.64"
+     inkscape:cx="566.02368"
+     inkscape:cy="688.16826"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:window-width="906"
+     inkscape:window-height="620"
+     inkscape:window-x="29"
+     inkscape:window-y="79"
+     inkscape:connector-spacing="11" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       y="168.74846"
+       x="211.58516"
+       height="89.506805"
+       width="101.60232"
+       id="rect3068"
+       style="fill:url(#linearGradient5958);fill-opacity:1;stroke:black;stroke-width:0.48811448;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <g
+       id="g3215"
+       transform="matrix(0.423343,0,0,0.423343,137.1977,42.55985)">
+      <rect
+         y="447.71451"
+         x="299.67859"
+         height="48.571426"
+         width="103.14286"
+         id="rect2899"
+         style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text2903"
+         y="464.8139"
+         x="308.89639"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="464.8139"
+           x="308.89639"
+           sodipodi:role="line"
+           id="tspan2905">Second parent</tspan></text>
+      <text
+         id="text2907"
+         y="485.50256"
+         x="308.20175"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           style="font-family:Courier"
+           y="485.50256"
+           x="308.20175"
+           id="tspan2909"
+           sodipodi:role="line">32bf9a5f22c0</tspan></text>
+    </g>
+    <g
+       id="g3250"
+       transform="matrix(0.423343,0,0,0.423343,137.1977,42.55986)">
+      <rect
+         y="311.28598"
+         x="188.6071"
+         height="48.571426"
+         width="103.14286"
+         id="rect2936"
+         style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text2940"
+         y="328.38538"
+         x="197.82495"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="328.38538"
+           x="197.82495"
+           sodipodi:role="line"
+           id="tspan2942">Revision hash</tspan></text>
+      <text
+         id="text2944"
+         y="349.07404"
+         x="197.13031"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           style="font-family:Courier"
+           y="349.07404"
+           x="197.13031"
+           id="tspan2946"
+           sodipodi:role="line">34b8b7a15ea1</tspan></text>
+    </g>
+    <g
+       id="g3243"
+       transform="matrix(0.423343,0,0,0.423343,137.6664,43.91853)">
+      <rect
+         y="363.07654"
+         x="187.5"
+         height="75"
+         width="213.85715"
+         id="rect2950"
+         style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text2958"
+         y="400.86459"
+         x="196.02321"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           style="fill:black;fill-opacity:1;font-family:Courier"
+           y="400.86459"
+           x="196.02321"
+           id="tspan2960"
+           sodipodi:role="line">...</tspan></text>
+      <text
+         id="text2954"
+         y="380.17593"
+         x="196.71785"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="380.17593"
+           x="196.71785"
+           sodipodi:role="line"
+           id="tspan2956"
+           style="fill:black;fill-opacity:1">Revision data (delta or snapshot)</tspan></text>
+    </g>
+    <g
+       id="g5529"
+       transform="translate(-6.710312,-8.165836e-6)">
+      <rect
+         style="fill:url(#linearGradient5584);fill-opacity:1;stroke:black;stroke-width:0.48811448;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect3509"
+         width="101.60232"
+         height="89.506805"
+         x="218.29547"
+         y="497.4801" />
+      <g
+         transform="matrix(0.423343,0,0,0.423343,143.908,371.2915)"
+         id="g3513">
+        <g
+           id="g3515">
+          <rect
+             y="447.72418"
+             x="188.6071"
+             height="48.571426"
+             width="103.14286"
+             id="rect3517"
+             style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+          <text
+             id="text3519"
+             y="464.82358"
+             x="197.82495"
+             style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+             xml:space="preserve"><tspan
+               y="464.82358"
+               x="197.82495"
+               sodipodi:role="line"
+               id="tspan3521">First parent</tspan></text>
+          <text
+             id="text3523"
+             y="485.51224"
+             x="197.13031"
+             style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+             xml:space="preserve"><tspan
+               style="font-family:Courier"
+               y="485.51224"
+               x="197.13031"
+               id="tspan3525"
+               sodipodi:role="line">000000000000</tspan></text>
+        </g>
+        <g
+           id="g3527">
+          <rect
+             y="447.71451"
+             x="299.67859"
+             height="48.571426"
+             width="103.14286"
+             id="rect3529"
+             style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+          <text
+             id="text3531"
+             y="464.8139"
+             x="308.89639"
+             style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+             xml:space="preserve"><tspan
+               y="464.8139"
+               x="308.89639"
+               sodipodi:role="line"
+               id="tspan3533">Second parent</tspan></text>
+          <text
+             id="text3535"
+             y="485.50256"
+             x="308.20175"
+             style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+             xml:space="preserve"><tspan
+               style="font-family:Courier"
+               y="485.50256"
+               x="308.20175"
+               id="tspan3537"
+               sodipodi:role="line">000000000000</tspan></text>
+        </g>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,143.908,371.2915)"
+         id="g3539">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3541"
+           width="103.14286"
+           height="48.571426"
+           x="188.6071"
+           y="311.28598" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.82495"
+           y="328.38538"
+           id="text3543"><tspan
+             id="tspan3545"
+             sodipodi:role="line"
+             x="197.82495"
+             y="328.38538">Revision hash</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.13031"
+           y="349.07404"
+           id="text3547"><tspan
+             sodipodi:role="line"
+             id="tspan3549"
+             x="197.13031"
+             y="349.07404"
+             style="font-family:Courier">ff9dc8bc2a8b</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,144.3767,372.6502)"
+         id="g3551">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3553"
+           width="213.85715"
+           height="75"
+           x="187.5"
+           y="363.07654" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.02321"
+           y="400.86459"
+           id="text3555"><tspan
+             sodipodi:role="line"
+             id="tspan3557"
+             x="196.02321"
+             y="400.86459"
+             style="fill:black;fill-opacity:1;font-family:Courier">...</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.71785"
+           y="380.17593"
+           id="text3559"><tspan
+             style="fill:black;fill-opacity:1"
+             id="tspan3561"
+             sodipodi:role="line"
+             x="196.71785"
+             y="380.17593">Revision data (delta or snapshot)</tspan></text>
+      </g>
+    </g>
+    <g
+       id="g4868"
+       transform="translate(-1.676208,-2.342463e-5)">
+      <rect
+         style="fill:url(#linearGradient3708);fill-opacity:1;stroke:black;stroke-width:0.48811448;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect3567"
+         width="101.60232"
+         height="89.506805"
+         x="213.26137"
+         y="59.171272" />
+      <g
+         transform="matrix(0.423343,0,0,0.423343,138.8739,-67.01734)"
+         id="g3573">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3575"
+           width="103.14286"
+           height="48.571426"
+           x="188.6071"
+           y="447.72418" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.82495"
+           y="464.82358"
+           id="text3577"><tspan
+             id="tspan3579"
+             sodipodi:role="line"
+             x="197.82495"
+             y="464.82358">First parent</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.13031"
+           y="485.51224"
+           id="text3581"><tspan
+             sodipodi:role="line"
+             id="tspan3583"
+             x="197.13031"
+             y="485.51224"
+             style="font-family:Courier">34b8b7a15ea1</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,138.8739,-67.01734)"
+         id="g3585">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3587"
+           width="103.14286"
+           height="48.571426"
+           x="299.67859"
+           y="447.71451" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="308.89639"
+           y="464.8139"
+           id="text3589"><tspan
+             id="tspan3591"
+             sodipodi:role="line"
+             x="308.89639"
+             y="464.8139">Second parent</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="308.20175"
+           y="485.50256"
+           id="text3593"><tspan
+             sodipodi:role="line"
+             id="tspan3595"
+             x="308.20175"
+             y="485.50256"
+             style="font-family:Courier">000000000000</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,138.8739,-67.01733)"
+         id="g3597">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3599"
+           width="103.14286"
+           height="48.571426"
+           x="188.6071"
+           y="311.28598" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.82495"
+           y="328.38538"
+           id="text3601"><tspan
+             id="tspan3603"
+             sodipodi:role="line"
+             x="197.82495"
+             y="328.38538">Revision hash</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.13031"
+           y="349.07404"
+           id="text3605"><tspan
+             sodipodi:role="line"
+             id="tspan3607"
+             x="197.13031"
+             y="349.07404"
+             style="font-family:Courier">1b67dc96f27a</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,139.3426,-65.65866)"
+         id="g3609">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3611"
+           width="213.85715"
+           height="75"
+           x="187.5"
+           y="363.07654" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.02321"
+           y="400.86459"
+           id="text3613"><tspan
+             sodipodi:role="line"
+             id="tspan3615"
+             x="196.02321"
+             y="400.86459"
+             style="fill:black;fill-opacity:1;font-family:Courier">...</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.71785"
+           y="380.17593"
+           id="text3617"><tspan
+             style="fill:black;fill-opacity:1"
+             id="tspan3619"
+             sodipodi:role="line"
+             x="196.71785"
+             y="380.17593">Revision data (delta or snapshot)</tspan></text>
+      </g>
+    </g>
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:none;marker-end:url(#Arrow1Mend)"
+       d="M 240.78255,143.08593 L 241.42595,171.75349"
+       id="path3801"
+       inkscape:connector-type="polyline"
+       inkscape:connection-start="#g3573"
+       inkscape:connection-end="#g3250" />
+    <g
+       id="g5677">
+      <rect
+         style="fill:url(#linearGradient5784);fill-opacity:1;stroke:black;stroke-width:0.48811448;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect3393"
+         width="101.60232"
+         height="89.506805"
+         x="150.76137"
+         y="278.32565" />
+      <g
+         transform="matrix(0.423343,0,0,0.423343,76.37397,152.137)"
+         id="g3399">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3401"
+           width="103.14286"
+           height="48.571426"
+           x="188.6071"
+           y="447.72418" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.82495"
+           y="464.82358"
+           id="text3403"><tspan
+             id="tspan3405"
+             sodipodi:role="line"
+             x="197.82495"
+             y="464.82358">First parent</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.13031"
+           y="485.51224"
+           id="text3407"><tspan
+             sodipodi:role="line"
+             id="tspan3409"
+             x="197.13031"
+             y="485.51224"
+             style="font-family:Courier">ff9dc8bc2a8b</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,76.37397,152.137)"
+         id="g3411">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3413"
+           width="103.14286"
+           height="48.571426"
+           x="299.67859"
+           y="447.71451" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="308.89639"
+           y="464.8139"
+           id="text3415"><tspan
+             id="tspan3417"
+             sodipodi:role="line"
+             x="308.89639"
+             y="464.8139">Second parent</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="308.20175"
+           y="485.50256"
+           id="text3419"><tspan
+             sodipodi:role="line"
+             id="tspan3421"
+             x="308.20175"
+             y="485.50256"
+             style="font-family:Courier">000000000000</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,76.37397,152.137)"
+         id="g3423">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3425"
+           width="103.14286"
+           height="48.571426"
+           x="188.6071"
+           y="311.28598" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.82495"
+           y="328.38538"
+           id="text3427"><tspan
+             id="tspan3429"
+             sodipodi:role="line"
+             x="197.82495"
+             y="328.38538">Revision hash</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.13031"
+           y="349.07404"
+           id="text3431"><tspan
+             sodipodi:role="line"
+             id="tspan3433"
+             x="197.13031"
+             y="349.07404"
+             style="font-family:Courier">5b80c922ebdd</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,76.84265,153.4957)"
+         id="g3435">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3437"
+           width="213.85715"
+           height="75"
+           x="187.5"
+           y="363.07654" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.02321"
+           y="400.86459"
+           id="text3439"><tspan
+             sodipodi:role="line"
+             id="tspan3441"
+             x="196.02321"
+             y="400.86459"
+             style="fill:black;fill-opacity:1;font-family:Courier">...</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.71785"
+           y="380.17593"
+           id="text3443"><tspan
+             style="fill:black;fill-opacity:1"
+             id="tspan3445"
+             sodipodi:role="line"
+             x="196.71785"
+             y="380.17593">Revision data (delta or snapshot)</tspan></text>
+      </g>
+    </g>
+    <g
+       id="g5646"
+       transform="translate(-0.227432,0)">
+      <rect
+         style="fill:url(#linearGradient5786);fill-opacity:1;stroke:black;stroke-width:0.48811448;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect3451"
+         width="101.60232"
+         height="89.506805"
+         x="272.63638"
+         y="278.32565" />
+      <g
+         transform="matrix(0.423343,0,0,0.423343,198.2489,152.137)"
+         id="g3457">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3459"
+           width="103.14286"
+           height="48.571426"
+           x="188.6071"
+           y="447.72418" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.82495"
+           y="464.82358"
+           id="text3461"><tspan
+             id="tspan3463"
+             sodipodi:role="line"
+             x="197.82495"
+             y="464.82358">First parent</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.13031"
+           y="485.51224"
+           id="text3465"><tspan
+             sodipodi:role="line"
+             id="tspan3467"
+             x="197.13031"
+             y="485.51224"
+             style="font-family:Courier">ecacb6b4c9fd</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,198.2489,152.137)"
+         id="g3469">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3471"
+           width="103.14286"
+           height="48.571426"
+           x="299.67859"
+           y="447.71451" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="308.89639"
+           y="464.8139"
+           id="text3473"><tspan
+             id="tspan3475"
+             sodipodi:role="line"
+             x="308.89639"
+             y="464.8139">Second parent</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="308.20175"
+           y="485.50256"
+           id="text3477"><tspan
+             sodipodi:role="line"
+             id="tspan3479"
+             x="308.20175"
+             y="485.50256"
+             style="font-family:Courier">000000000000</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,198.2489,152.137)"
+         id="g3481">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3483"
+           width="103.14286"
+           height="48.571426"
+           x="188.6071"
+           y="311.28598" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.82495"
+           y="328.38538"
+           id="text3485"><tspan
+             id="tspan3487"
+             sodipodi:role="line"
+             x="197.82495"
+             y="328.38538">Revision hash</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="197.13031"
+           y="349.07404"
+           id="text3489"><tspan
+             sodipodi:role="line"
+             id="tspan3491"
+             x="197.13031"
+             y="349.07404"
+             style="font-family:Courier">32bf9a5f22c0</tspan></text>
+      </g>
+      <g
+         transform="matrix(0.423343,0,0,0.423343,198.7176,153.4957)"
+         id="g3493">
+        <rect
+           style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect3495"
+           width="213.85715"
+           height="75"
+           x="187.5"
+           y="363.07654" />
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.02321"
+           y="400.86459"
+           id="text3497"><tspan
+             sodipodi:role="line"
+             id="tspan3499"
+             x="196.02321"
+             y="400.86459"
+             style="fill:black;fill-opacity:1;font-family:Courier">...</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+           x="196.71785"
+           y="380.17593"
+           id="text3501"><tspan
+             style="fill:black;fill-opacity:1"
+             id="tspan3503"
+             sodipodi:role="line"
+             x="196.71785"
+             y="380.17593">Revision data (delta or snapshot)</tspan></text>
+      </g>
+    </g>
+    <rect
+       y="387.90286"
+       x="272.40894"
+       height="89.506805"
+       width="101.60232"
+       id="rect5081"
+       style="fill:url(#linearGradient5895);fill-opacity:1;stroke:black;stroke-width:0.48811448;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <g
+       id="g5087"
+       transform="matrix(0.423343,0,0,0.423343,198.0214,261.7142)">
+      <rect
+         y="447.72418"
+         x="188.6071"
+         height="48.571426"
+         width="103.14286"
+         id="rect5089"
+         style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text5091"
+         y="464.82358"
+         x="197.82495"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="464.82358"
+           x="197.82495"
+           sodipodi:role="line"
+           id="tspan5093">First parent</tspan></text>
+      <text
+         id="text5095"
+         y="485.51224"
+         x="197.13031"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           style="font-family:Courier"
+           y="485.51224"
+           x="197.13031"
+           id="tspan5097"
+           sodipodi:role="line">ff9dc8bc2a8b</tspan></text>
+    </g>
+    <g
+       id="g5099"
+       transform="matrix(0.423343,0,0,0.423343,198.0214,261.7142)">
+      <rect
+         y="447.71451"
+         x="299.67859"
+         height="48.571426"
+         width="103.14286"
+         id="rect5101"
+         style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text5103"
+         y="464.8139"
+         x="308.89639"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="464.8139"
+           x="308.89639"
+           sodipodi:role="line"
+           id="tspan5105">Second parent</tspan></text>
+      <text
+         id="text5107"
+         y="485.50256"
+         x="308.20175"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           style="font-family:Courier"
+           y="485.50256"
+           x="308.20175"
+           id="tspan5109"
+           sodipodi:role="line">000000000000</tspan></text>
+    </g>
+    <g
+       id="g5111"
+       transform="matrix(0.423343,0,0,0.423343,198.0214,261.7142)">
+      <rect
+         y="311.28598"
+         x="188.6071"
+         height="48.571426"
+         width="103.14286"
+         id="rect5113"
+         style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text5115"
+         y="328.38538"
+         x="197.82495"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="328.38538"
+           x="197.82495"
+           sodipodi:role="line"
+           id="tspan5117">Revision hash</tspan></text>
+      <text
+         id="text5119"
+         y="349.07404"
+         x="197.13031"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           style="font-family:Courier"
+           y="349.07404"
+           x="197.13031"
+           id="tspan5121"
+           sodipodi:role="line">ecacb6b4c9fd</tspan></text>
+    </g>
+    <g
+       id="g5123"
+       transform="matrix(0.423343,0,0,0.423343,198.4901,263.0729)">
+      <rect
+         y="363.07654"
+         x="187.5"
+         height="75"
+         width="213.85715"
+         id="rect5125"
+         style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text5127"
+         y="400.86459"
+         x="196.02321"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           style="fill:black;fill-opacity:1;font-family:Courier"
+           y="400.86459"
+           x="196.02321"
+           id="tspan5129"
+           sodipodi:role="line">...</tspan></text>
+      <text
+         id="text5131"
+         y="380.17593"
+         x="196.71785"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="380.17593"
+           x="196.71785"
+           sodipodi:role="line"
+           id="tspan5133"
+           style="fill:black;fill-opacity:1">Revision data (delta or snapshot)</tspan></text>
+    </g>
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-opacity:1;display:inline"
+       d="M 299.69935,362.24027 L 299.69931,393.49494"
+       id="path5203"
+       inkscape:connector-type="polyline"
+       inkscape:connection-start="#g3457"
+       inkscape:connection-end="#g5111" />
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-opacity:1"
+       d="M 182.35357,362.22647 L 241.2842,503.07224"
+       id="path5271"
+       inkscape:connector-type="polyline"
+       inkscape:connection-start="#g3399"
+       inkscape:connection-end="#g3539" />
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-opacity:1;display:inline"
+       d="M 287.63109,471.81747 L 250.9438,503.07223"
+       id="path5285"
+       inkscape:connector-type="polyline"
+       inkscape:connection-start="#g5087"
+       inkscape:connection-end="#g3539" />
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
+       d="M 290.80419,250.07192 L 297.80065,283.90394"
+       id="path5077"
+       inkscape:connector-type="polyline"
+       inkscape:connection-start="#g3215"
+       inkscape:connection-end="#g3481" />
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)"
+       d="M 229.63373,250.07601 L 190.07484,283.90394"
+       id="path5075"
+       inkscape:connector-type="polyline"
+       inkscape:connection-end="#g3423" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="131.5625"
+       y="100.79968"
+       id="text5897"><tspan
+         sodipodi:role="line"
+         id="tspan5899"
+         x="131.5625"
+         y="100.79968"
+         style="text-align:end;text-anchor:end">Head revision</tspan><tspan
+         sodipodi:role="line"
+         x="131.5625"
+         y="115.79968"
+         id="tspan5901"
+         style="text-align:end;text-anchor:end">(no children)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="131.5625"
+       y="207.04968"
+       id="text5903"><tspan
+         sodipodi:role="line"
+         id="tspan5905"
+         x="131.5625"
+         y="207.04968"
+         style="text-align:end;text-anchor:end">Merge revision</tspan><tspan
+         sodipodi:role="line"
+         x="131.5625"
+         y="222.04968"
+         id="tspan5907"
+         style="text-align:end;text-anchor:end">(two parents)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="131.92578"
+       y="451.58093"
+       id="text5909"><tspan
+         sodipodi:role="line"
+         id="tspan5911"
+         x="131.92578"
+         y="451.58093"
+         style="text-align:end;text-anchor:end">Branches</tspan><tspan
+         sodipodi:role="line"
+         x="131.92578"
+         y="466.58093"
+         id="tspan5913"
+         style="text-align:end;text-anchor:end">(two revisions,</tspan><tspan
+         sodipodi:role="line"
+         x="131.92578"
+         y="481.58093"
+         id="tspan5915"
+         style="text-align:end;text-anchor:end">same parent)</tspan></text>
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:2, 1;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+       d="M 111.71875,433.61218 L 154.7268,368.52294"
+       id="path5917"
+       inkscape:connector-type="polyline" />
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:2, 1;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+       d="M 134.375,464.86218 L 277.86691,440.37816"
+       id="path5919"
+       inkscape:connector-type="polyline"
+       inkscape:connection-end="#g5123" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;text-anchor:end;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="131.5625"
+       y="536.73718"
+       id="text5927"><tspan
+         sodipodi:role="line"
+         id="tspan5929"
+         x="131.5625"
+         y="536.73718">First revision</tspan><tspan
+         sodipodi:role="line"
+         x="131.5625"
+         y="551.73718"
+         id="tspan5931">(both parents null)</tspan></text>
+    <rect
+       style="fill:#bbb4ff;fill-opacity:1;stroke:none;stroke-width:0.95291203;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2830"
+       width="43.664806"
+       height="20.562374"
+       x="217.0432"
+       y="232.10075" />
+    <text
+       xml:space="preserve"
+       style="font-size:5.0801158px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="220.94551"
+       y="239.33966"
+       id="text2832"><tspan
+         id="tspan2836"
+         sodipodi:role="line"
+         x="220.94551"
+         y="239.33966">First parent</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:5.0801158px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="220.65144"
+       y="248.09805"
+       id="text2879"><tspan
+         sodipodi:role="line"
+         id="tspan2881"
+         x="220.65144"
+         y="248.09805"
+         style="font-family:Courier">5b80c922ebdd</tspan></text>
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:2, 1;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+       d="M 139.84375,107.83093 L 210.15625,107.83093"
+       id="path5965"
+       inkscape:connector-type="polyline" />
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:2, 1;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+       d="M 137.5,213.29968 L 210.49036,214.09055"
+       id="path5967"
+       inkscape:connector-type="polyline" />
+    <path
+       style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:black;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:2, 1;stroke-dashoffset:0;stroke-opacity:1;display:inline"
+       d="M 136.34375,544.54968 L 206.65625,544.54968"
+       id="path5969"
+       inkscape:connector-type="polyline"
+       inkscape:transform-center-y="-171.09375"
+       inkscape:transform-center-x="53.90625" />
+  </g>
+</svg>

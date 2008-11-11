@@ -1,0 +1,9 @@
+$ \textbf{hg log -v -r 3}
+changeset:   
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+files:       Makefile
+description:
+Get make to generate the final binary from a .o file.
+
+

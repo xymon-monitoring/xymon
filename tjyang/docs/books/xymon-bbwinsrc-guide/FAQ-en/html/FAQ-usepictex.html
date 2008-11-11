@@ -1,0 +1,58 @@
+<head>
+<title>UK TeX FAQ -- question label usepictex</title>
+</head><body>
+<h3>Why can&rsquo;t I load PiCTeX?</h3>
+<p>PiCTeX is a resource hog; fortunately, most modern TeX
+implementations offer generous amounts of space, and most modern
+computers are pretty fast, so users aren&rsquo;t too badly affected by its
+performance.
+<p>However, PiCTeX has the further unfortunate tendency to fill up
+TeX&rsquo;s fixed-size arrays &mdash; notably the array of 256 &lsquo;dimension&rsquo;
+registers.  This is a particular problem when you&rsquo;re using
+<i>pictex.sty</i> with LaTeX and some other packages that also need
+dimension registers.  When this happens, you will see the TeX error
+message:
+<blockquote>
+<pre>
+! No room for a new \dimen.
+</pre>
+</blockquote><p>
+There is nothing that can directly be done about this error: you
+can&rsquo;t extend the number of available <code>\</code><code>dimen</code> registers without
+extending TeX itself.
+  <a href="FAQ-etex.html">e-TeX</a> and <a href="FAQ-omegaleph.html">Omega</a> both do this, as
+  does <a href="FAQ-commercial.html">MicroPress Inc&rsquo;s VTeX</a>.
+
+<p>It&rsquo;s actually quite practical (with most modern distributions) to use
+e-TeX&rsquo;s extended register set: use package <i>etex</i> (which
+comes with e-TeX distributions) and the allocation mechanism is
+altered to cope with the larger register set: PiCTeX will now load.
+<p>If you&rsquo;re in some situation where you can&rsquo;t use e-TeX, you need to change
+PiCTeX; unfortunately PiCTeX&rsquo;s author is no longer active in the
+TeX world, so one must resort to patching.  There are two solutions
+available.
+<p>The ConTeXt module <i>m-pictex.tex</i> (for Plain TeX and
+variants) or the corresponding LaTeX <i>m-pictex</i> package provide
+an ingenious solution to the problem based on hacking the code of
+<code>\</code><code>newdimen</code> itself.
+<p>Alternatively, Andreas Schell&rsquo;s <i>pictexwd</i> and related
+packages replace PiCTeX with a version that uses 33 fewer
+<code>\</code><code>dimen</code> registers; so use <i>pictexwd</i> in place of
+<i>pictex</i> (either as a LaTeX package, or as a file to read
+into Plain TeX).
+<p>And how does one use PiCTeX anyway, given that the
+manual is so <a href="FAQ-docpictex.html">hard to come by</a>?
+Fortunately for us all, the <i>MathsPic</i>
+system may be used to translate a somewhat different language into
+PiCTeX commands; and the <i>MathsPic</i> manual is free (and
+part of the distribution).  <i>MathsPic</i> is available either as
+a <i>Basic</i> program for DOS, or as a <i>Perl</i>
+program for other systems (including Windows, nowadays).
+<dl>
+<dt><tt><i>m-pictex.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/context/current/cont-tmf.zip">macros/context/current/cont-tmf.zip</a>
+<dt><tt><i>m-pictex.tex</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/context/current/cont-tmf.zip">macros/context/current/cont-tmf.zip</a>
+<dt><tt><i>MathsPic</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/graphics/mathspic.zip">graphics/mathspic</a> (<a href="ftp://cam.ctan.org/tex-archive/graphics/mathspic.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/graphics/mathspic/">browse</a>)
+<dt><tt><i>pictexwd.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/graphics/pictex/addon.zip">graphics/pictex/addon</a> (<a href="ftp://cam.ctan.org/tex-archive/graphics/pictex/addon.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/graphics/pictex/addon/">browse</a>)
+</dl>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=usepictex">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=usepictex</a>
+</body>

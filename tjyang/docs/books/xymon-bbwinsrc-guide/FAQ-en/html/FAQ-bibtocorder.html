@@ -1,0 +1,32 @@
+<head>
+<title>UK TeX FAQ -- question label bibtocorder</title>
+</head><body>
+<h3>Table of contents rearranges &ldquo;<i>unsrt</i>&rdquo; ordering</h3>
+<p>If you&rsquo;re using the <i>unsrt</i> bibliography style, you&rsquo;re
+expecting that your bibliography will <em>not</em> be sorted, but that
+the entries will appear in the order that they first appeared in your
+document.
+<p>However, if you&rsquo;re unfortunate enough to need a citation in a section
+title, and you also have a table of contents, the citations that now
+appear in the table of contents will upset the &ldquo;natural&rdquo; ordering
+produced by the <i>unsrt</i> style.  Similarly, if you have
+citations in captions, and have a list of figures (or tables).
+<p>There&rsquo;s a pretty simple &ldquo;manual&rdquo; method for dealing with the
+problem &mdash; when you have the document stable:
+<ol>
+<li> Delete the <code>.aux</code> file, and any of <code>.toc</code>,
+  <code>.lof</code>, <code>.lot</code> files.
+<li> Run LaTeX.
+<li> Run BibTeX for the last time.
+<li> Run LaTeX often enough that things are stable again.
+</ol>
+Which is indeed simple, but it&rsquo;s going to get tedious when you&rsquo;ve
+found errors in your &ldquo;stable&rdquo; version, often enough.
+<p>The package <i>notoccite</i> avoids the kerfuffle, and suppresses
+citations while in the table of contents, or lists of figures, tables
+(or other floating things: the code is quite general).
+<dl>
+<dt><tt><i>notoccite.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/notoccite.sty">macros/latex/contrib/misc/notoccite.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=bibtocorder">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=bibtocorder</a>
+</body>

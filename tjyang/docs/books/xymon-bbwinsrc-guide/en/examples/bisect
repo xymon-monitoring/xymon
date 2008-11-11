@@ -1,0 +1,88 @@
+#!/bin/bash
+
+echo '[extensions]' >> $HGRC
+echo 'hbisect =' >> $HGRC
+
+# XXX There's some kind of horrible nondeterminism in the execution of
+# bisect at the moment.  Ugh.
+
+#$ ignore: .*
+
+#$ name: init
+
+hg init mybug
+cd mybug
+
+#$ name: commits
+
+buggy_change=22
+
+for (( i = 0; i < 35; i++ )); do
+  if [[ $i = $buggy_change ]]; then
+    echo 'i have a gub' > myfile$i
+    hg commit -q -A -m 'buggy changeset'
+  else
+    echo 'nothing to see here, move along' > myfile$i
+    hg commit -q -A -m 'normal changeset'
+  fi
+done
+
+#$ name: help
+
+hg help bisect
+
+#$ name: search.init
+
+hg bisect --init
+
+#$ name: search.bad-init
+
+hg bisect --bad
+
+#$ name: search.good-init
+
+hg bisect --good 10
+
+#$ name: search.step1
+
+if grep -q 'i have a gub' *
+then
+  result=bad
+else
+  result=good
+fi
+
+echo this revision is $result
+hg bisect --$result
+
+#$ name: search.mytest
+
+mytest() {
+  if grep -q 'i have a gub' *
+  then
+    result=bad
+  else
+    result=good
+  fi
+
+  echo this revision is $result
+  hg bisect --$result
+}
+  
+#$ name: search.step2
+
+mytest
+
+#$ name: search.rest
+
+mytest
+mytest
+mytest
+
+#$ name: search.reset
+
+hg bisect --reset
+
+#$ name:
+
+exit 0

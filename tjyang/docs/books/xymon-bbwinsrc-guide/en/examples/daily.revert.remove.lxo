@@ -1,0 +1,7 @@
+$ \textbf{hg remove file}
+$ \textbf{hg status}
+R file
+$ \textbf{hg revert file}
+$ \textbf{hg status}
+$ \textbf{ls file}
+file

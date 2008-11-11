@@ -1,0 +1,542 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{xymon Client}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{\motohbcmd{logfetch} - xymon client data collector }
+
+ 
+\subsection{SYNOPSIS}
+\textbf{logfetch CONFIGFILE STATUSFILE}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{logfetch}
+ is part of the xymon client. It is responsible for collecting data from logfiles, and other file-related data, which is then sent to the Xymon server for analysis. 
+
+  logfetch uses a configuration file, which is automatically retrieved from the xymon server. There is no configuration done locally. The configuration file is usually stored in the \textbf{\$BBHOME/tmp/logfetch.cfg}
+ file, but editing this file has no effect since it is re-written with data from the xymon server each time the client runs. 
+
+
+  logfetch stores information about what parts of the monitored logfiles have been processed already in the \textbf{\$BBHOME/tmp/logfetch.status}
+ file. This file is an internal file used by logfetch, and should not be edited. If deleted, it will be re-created automatically. 
+
+
+ 
+\subsection{SECURITY}
+ logfetch needs read access to the logfiles it should monitor. If you configure monitoring of files or directories through the ``file:'' and ``dir:'' entries in \emph{client-local.cfg(5)}
+ then logfetch will require at least read-acces to the directory where the file is located. If you request checksum calculation for a file, then it must be readable by the xymon client user. 
+
+  Do \textbf{NOT}
+ install logfetch as suid-root. There is no way that logfetch can check whether the configuration file it uses has been tampered with, so installing logfetch with suid-root privileges could allow an attacker to read any file on the system by using a hand-crafted configuration file. In fact, logfetch will attempt to remove its own suid-root setup if it detects that it has been installed suid-root. 
+
+
+ 
+\subsection{ENVIRONMENT VARIABLES}
+\begin{description}
+\item[DU] Command used to collect information about the size of directories. By default, this is the command \textbf{du -k}
+. If the local du-command on the client does not recognize the ``-k'' option, you should set the DU environment variable in the \textbf{\$BBHOME/etc/xymonclient.cfg}
+ file to a command that does report directory sizes in kilobytes. 
+
+ 
+
+
+\end{description}
+\subsection{FILES}
+\begin{description}
+\item[\$BBHOME/tmp/logfetch.cfg]
+\item[\$BBHOME/tmp/logfetch.status]
+
+ 
+
+
+\end{description}
+\subsection{SEE ALSO}
+xymon(7), hobbit-clients.cfg(5) 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{CLIENTUPDATE}
+
+
+\subsection{NAME}
+ clientupdate - xymon client update utility \subsection{SYNOPSIS}
+\textbf{clientupdate [options]}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{clientupdate}
+ is part of the xymon client. It is responsible for updating an existing client installation from a central repository of client packages stored on the Xymon server. 
+
+  When the xymon client sends a normal client report to the Xymon server, the server responds with the section of the \emph{client-local.cfg(5)}
+ file that is relevant to this client. Included in this may be a ``clientversion'' value. The clientversion received from the server is compared against the current clientversion installed on the client, as determined by the contents of the \$BBHOME/etc/clientversion.cfg file. If the two versions are not identical, clientupdate is launched to update the client installation. 
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--level] Report the current clientversion. 
+
+ 
+
+\item[--update=NEWVERSION] Attempt to update the client to NEWVERSION by fetching this version of the client software from the xymon server. 
+
+ 
+
+\item[--reexec] Used internally during the update process, see \textbf{OPERATION}
+ below. 
+
+ 
+
+\item[--remove-self] Used internally during the update process. This option causes the running clientupdate utility to delete itself - it is used during the update to purge a temporary copy of the clientupdate utility that is installed in \$BBTMP. 
+
+ 
+
+
+\end{description}
+\subsection{USING CLIENTUPDATE IN HOBBIT}
+ To manage updating clients without having to logon to each server, you can use the clientupdate utility. This is how you setup the release of a new client version. 
+
+ \begin{description}
+\item[Create the new client] Setup the new client \$BBHOME directory, e.g. by copying an existing client installation to an empty directory and modifying it for your needs. It is a good idea to delete all files in the tmp/ and logs/ directories, since there is no need to copy these over to all of the clients. Pay attention to the etc/ files, and make sure that they are suitable for the systems where you want to deploy this new client. You can add files - e.g. extension scripts in the ext/ directory - but the clientupdate utility cannot delete or rename files. 
+
+ 
+
+\item[Package the client] When your new client software is ready, create a tar-file of the new client. All files in the tar archive must have filenames relative to the clients' \$BBHOME (usually, ~xymon/client/). Save the tarfile on the xymon server in ~hobbit/server/download/somefile.tar. Dont compress it. It is recommended that you use some sort of operating-system and version-numbering scheme for the filename, but you can choose whatever filename suits you - the only requirement is that it must end with ``.tar''. The part of the filename preceding ``.tar'' is what Xymon will use as the ``clientversion'' ID. 
+
+ 
+
+\item[Configure which hosts receive the new client] In the \emph{client-local.cfg(5)}
+ file, you must now setup a \textbf{clientversion:ID}
+ line where the \textbf{ID}
+ matches the filename you used for the tar-file. So if you have packaged the new client into the file \textbf{linux.v2.tar}
+, then the corresponding entry in client-local.cfg would be \textbf{clientversion:linux.v2}
+. 
+
+ 
+
+\item[Wait for xymond to reload client-local.cfg] hobbitd will automatically reload the client-local.cfg file after at most 10 minutes. If you want to force an immediate reload, send a SIGHUP signal to the hobbitd process. 
+
+ 
+
+\item[Wait for the client to update] The next time the client contacts the xymon server to send the client data, it will notice the new clientversion setting in client-local.cfg, and will run \textbf{clientupdate}
+ to install the new client software. So when the client runs the next time, it will use the new client software. 
+
+ 
+
+
+\end{description}
+
+\subsection{OPERATION}
+\textbf{clientupdate}
+ runs in two steps: 
+
+ \begin{description}
+\item[Re-exec step] The first step is when clientupdate is first invoked from the xymonclient.sh script with the ``--re-exec'' option. This step copies the clientupdate program from \$BBHOME/bin/ to a temporary file in the \$BBTMP directory. This is to avoid conflicts when the update procedure installs a new version of the clientupdate utility itself. Upon completion of this step, the clientupdate utility automatically launches the next step by running the program from the file in \$BBTMP. 
+
+ 
+
+\item[Update step] The second step downloads the new client software from the xymon server. The new software must be packed into a tar file, which clientupdate then unpacks into the \envar{\$BBHOME} directory. 
+
+ 
+
+
+\end{description}
+
+\subsection{ENVIRONMENT VARIABLES}
+ clientupdate uses several of the standard xymon environment variables, including \envar{\textbf{BBHOME}}
+ and \envar{\textbf{BBTMP}}
+. 
+
+ 
+\subsection{SEE ALSO}
+xymon(7), bb(1), client-local.cfg(5) 
+
+
+
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\include{bb-replog.cgi.1}
+
+
+
+\newpage
+\section{BB-REPLOG.CGI}
+
+ bb-replog.cgi - CGI program to report service availability log 
+
+\subsection{SYNOPSIS}
+\textbf{bb-replog.cgi}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{bb-replog.cgi}
+ is invoked as a CGI script via the bb-replog.sh CGI wrapper. Based on
+ the parameters it receives, it generates an availability report for a
+ specific host-service combination for the requested time-period. The
+ availability report includes a calculation of the availability
+ percentage (split out on percent green, yellow, red time), and an
+ eventlog for the period listing the status changes that have occurred
+ to allow for drill-down to the test reports that indicate a
+ problem. Access to the individual historical status logs go via the
+ \emph{xymonsvc.cgi(1)} CGI script. 
+
+
+  bb-replog.cgi is passed a QUERY\_STRING environment variable with the following parameters: 
+
+
+  
+HOSTSVC(thehostandservicetoreporton)  
+STYLE(reportstyle:''crit'',''non-crit'',''all'')  
+ST(starttimeinsecondssince1-1-197000:00UTC)  
+END(endtimeinsecondssince1-1-197000:00UTC) 
+
+
+  The following non-standard parameters are handled by the bbgen version of bb-hist.cgi: 
+
+
+  
+IP(IPaddressofhost-fordisplaypurposesonly)  
+REPORTTIME(theREPORTTIME:settingforthishost)  
+WARNPCT(theWARNPCT:settingforthishost) 
+
+
+  The REPORTTIME and WARNPCT options are taken from the
+  \emph{bb-hosts(5)} definition for the host, or the defaults are
+  used. These modify the availability calculation to handle reporting
+  against agreed Service Level Agreements re. the time of day when the
+  service must be available, and the agreed availability level. 
+
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--env=FILENAME] Loads environment from FILENAME before executing the CGI. 
+
+ 
+
+
+\end{description}
+\subsection{SEE ALSO}
+bb-hosts(5), xymonserver.cfg(5), hobbitsvc.cgi(1) 
+
+ 
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{HOBBITD\_HISTORY}
+
+ xymond\_history - hobbitd worker module for logging status changes
+
+ \subsection{SYNOPSIS}
+\textbf{xymond\_channel --channel=stachg hobbitd\_history [options]}
+
+
+ 
+\subsection{DESCRIPTION}
+ xymond\_history is a worker module for hobbitd, and as such it is
+ normally run via the \emph{xymond\_channel(8)} program. It receives
+ xymond status-change messages from the ``stachg'' channel via stdin,
+ and uses these to update the history logfiles in a manner that is
+ compatible with the standard Big Brother daemon, bbd. 
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--histdir=DIRECTORY] The directory for the history files. If not
+  specified, the directory given by the BBHIST environment is used. 
+
+
+ 
+
+\item[--histlogdir=DIRECTORY] The directory for the historical status-logs. If not specified, the directory given by the BBHISTLOGS environment is used. 
+
+ 
+
+\item[--debug] Enable debugging output. 
+
+ 
+
+
+\end{description}
+\subsection{ENVIRONMENT}
+\begin{description}
+\item[BBALLHISTLOG] This environment variable controls if the
+  \$BBHIST/allevents logfile is updated. This file is used by the
+  event-log display on the BB2 html page. If you do not use this, you
+  can disable it by setting BBALLHISTLOGS=FALSE. 
+
+
+ 
+
+\item[BBHOSTHISTLOG] This environment variable controls if the
+  \$BBHIST/HOSTNAME logfile is updated. This file holds a list of all
+  status changes seen for a single host, but is not used by any of the
+  standard xymon tools. If you do not want to save this, you can
+  disable it by setting BBHOSTHISTLOG=FALSE. 
+
+
+ 
+
+\item[SAVESTATUSLOG] This environment variable controls if the
+  historical status-logs are saved whenever a status change
+  occurs. These logfiles are stored in the \$BBHISTLOGS directory, and
+  are used for the detailed log-display of a status from the xymon
+  ``History'' page. If you do not want to save these, you can disable
+  it by setting SAVESTATUSLOG=FALSE. 
+
+
+ 
+
+
+\end{description}
+\subsection{FILES}
+ This module does not rely on any configuration files. 
+
+ 
+\subsection{SEE ALSO}
+xymond\_channel(8), hobbitd(8), hobbit(7) 
+
+  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\include{msgcache.8}
+
+\newpage
+\section{MSGCACHE}
+
+ msgcache - Cache client messages for later pickup by xymonfetch 
+
+ 
+\subsection{SYNOPSIS}
+\textbf{msgcache [options]}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{msgcache}
+ implements a xymon message cache. It is intended for use with clients which cannot deliver their data to the Xymon server in the normal way. Instead of having the client tools connect to the Hobbit server, msgcache runs locally and the client tools then deliver their data to the msgcache daemon. The msgcache daemon is then polled regularly by the \emph{xymonfetch(8)}
+ utility, which collects the client messages stored by msgcache and forwards them to the xymon server. 
+
+ \textbf{NOTE:}
+ When using msgcache, the \textbf{BBDISP}
+ setting for the clients should be \textbf{BBDISP=127.0.0.1}
+ instead of pointing at the real xymon server. 
+
+
+ 
+\subsection{RESTRICTIONS}
+ Clients delivering their data to msgcache instead of the real xymon server will in general not notice this. Specifically, the client configuration data provided by the Xymon server when a client delivers its data is forwarded through the xymonfetch / msgcache chain, so the normal centralized client configuration works. 
+
+  However, other commands which rely on clients communicating directly with the xymon server will not work. This includes the \textbf{config}
+ and \textbf{query}
+ commands which clients may use to fetch configuration files and query the xymon server for a current status. 
+
+
+  The \textbf{download}
+ command also does not work with msgcache. This means that the automatic client update facility will not work for clients communicating via msgcache. 
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--listen=IPADDRESS[:PORT]] Defines the IP-address and portnumber where msgcache listens for incoming connections. By default, msgcache listens for connections on all network interfaces, port 1984. 
+
+ 
+
+\item[--server=IPADDRESS[,IPADDRESS]] Restricts which servers are allowed to pick up the cached messages. By default anyone can contact the msgcache utility and request all of the cached messages. This option allows only the listed servers to request the cached messages. 
+
+ 
+
+\item[--max-age=N] Defines how long cached messages are kept. If the message has not been picked up with N seconds after being delivered to msgcache, it is silently discarded. Default: N=600 seconds (10 minutes). 
+
+ 
+
+\item[--daemon] Run as a daemon, i.e. msgcache will detach from the terminal and run as a background task 
+
+ 
+
+\item[--no-daemon] Run as a foreground task. This option must be used when msgcache is started by \emph{xymonlaunch(8)}
+ which is the normal way of running msgcache. 
+
+ 
+
+\item[--pidfile=FILENAME] Store the process ID of the msgcache task in FILENAME. 
+
+ 
+
+\item[--logfile=FILENAME] Log msgcache output to FILENAME. 
+
+ 
+
+\item[--debug] Enable debugging output. 
+
+ 
+
+
+\end{description}
+\subsection{SEE ALSO}
+xymonfetch(8), hobbit(7) 
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{BBRETEST-NET.SH}
+
+ bbretest-net.sh - xymon network re-test tool
+
+ \subsection{SYNOPSIS}
+\textbf{bbretest-net.sh}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{bbretest-net.sh}
+ is an extension script for xymon that runs on the network test
+ server. It picks up the failing network tests executed by the
+ \emph{bbtest-net(1)} program, and repeats these tests with a faster
+ test cycle than the normal bbtest-net schedule. This means that when
+ the server recovers and the network service becomes available again,
+ this is detected quicker resulting in less reported downtime. 
+
+
+  Only tests whose first failure occurred within 30 minutes are
+  included in the tests that are run by bbretest-net.sh. The 30 minute
+  limit is there to avoid hosts that are down for longer periods of
+  time to bog down bbretest-net.sh. You can change this limit with the
+  ``--frequenttestlimit=SECONDS'' when you run bbtest-net. 
+
+
+
+ 
+
+
+ 
+\subsection{INSTALLATION}
+ This script runs by default from your \emph{xymonlaunch.cfg(5)}
+ file. 
+
+ 
+
+
+ 
+\subsection{FILES}
+\begin{description}
+\item[\$BBTMP/TESTNAME.LOCATION.status] Temporary status file managed
+  by bbtest-net with status of tests that have currently failed. 
+
+\item[\$BBTMP/frequenttests.LOCATION] Temporary file managed by
+  bbtest-net with the hostnames that bbretest-net.sh should test. 
+
+
+ 
+
+
+\end{description}
+\subsection{SEE ALSO}
+bbtest-net(1), xymon(7), hobbitlaunch.cfg(5) 
+
+ 
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\include{xymond_hostdata.8}
+
+\newpage
+\section{HOBBITD\_HOSTDATA}
+
+ xymond\_hostdata - hobbitd worker module for storing historical
+ client data 
+\subsection{SYNOPSIS}
+\textbf{xymond\_channel --channel=clichg hobbitd\_hostdata}
+
+
+ 
+\subsection{DESCRIPTION}
+ xymond\_hostdata is a worker module for hobbitd, and as such it is normally run via the \emph{hobbitd\_channel(8)}
+ program. Whenever a status column in xymon changes to an alert state (usually red, yellow or purple), this module receives a copy of the latest Xymon client data sent by the host, and stores it on disk. This allows you to review all of the data collected by the Hobbit client on the server around the time that a problem occurred. This can make troubleshooting incidents easier by providing a snapshot of the host status shortly before a problem became apparent. 
+
+  Note: This module requires that \emph{xymond(8)}
+ is launched with the ``--store-clientlogs'' option enabled. 
+
+
+ 
+\subsection{FILES}
+ All of the host data are stored in the \$CLIENTLOGS directory, by default this is the \$BBVAR/hostdata/ directory. 
+
+ 
+\subsection{SEE ALSO}
+xymond(8), hobbitd\_channel(8), hobbit(7) 
+
+ 
+  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\newpage
+\section{ORCAHOBBIT}
+
+hgcmd{orcaxymon} - xymon client utility to grab data from ORCA
+
+ \subsection{SYNOPSIS}
+\textbf{orcaxymon --orca=PREFIX [options]}
+
+
+ 
+\subsection{NOTICE}
+ This utility is included in the client distribution for xymon 4.2. However, the backend module to parse the data it sends it \textbf{NOT}
+ included in xymon 4.2. It is possible to use the generic Xymon NCV data handler in \emph{xymond\_rrd(8)}
+ to process ORCA data, if you have an urgent need to do so. 
+
+ 
+\subsection{DESCRIPTION}
+\textbf{orcaxymon}
+ is an add-on tool for the xymon client. It is used to grab data collected by the ORCA data collection tool (orcallator.se), and send it to the Xymon server in NCV format. 
+
+  orcaxymon should run from the client \emph{hobbitlaunch(8)}
+ utility, i.e. there must be an entry in the \emph{clientlaunch.cfg(5)}
+ file for orcaxymon. 
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--orca=PREFIX] The filename prefix for the ORCA data log. Typically this is the directory for the ORCA logs, followed by ``orcallator''. The actual filename for the ORCA logs include a timestamp and sequence number, e.g. ``orcallator-2006-06-20-000''. This option is required. 
+
+ 
+
+\item[--debug] Enable debugging output. 
+
+ 
+
+
+\end{description}
+\subsection{SEE ALSO}
+xymon(7), clientlaunch.cfg(5) 
+
+ 
+
+
+  

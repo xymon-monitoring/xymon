@@ -1,0 +1,3 @@
+$ \textbf{cat .hg/patches/series}
+hello.patch #-quux
+goodbye.patch #+foo

@@ -1,0 +1,5 @@
+%
+% null FAQ configuration file: leaves LaTeX default use of cm* fonts
+\typeout{FAQ -- Typesetting using Computer Modern fonts}
+\@ifundefined{Dings}{\let\Dings\relax}{}
+\boldmathavailtrue

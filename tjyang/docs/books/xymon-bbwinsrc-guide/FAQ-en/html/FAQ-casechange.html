@@ -1,0 +1,65 @@
+<head>
+<title>UK TeX FAQ -- question label casechange</title>
+</head><body>
+<h3>Case-changing oddities</h3>
+<p>TeX provides two primitive commands <code>\</code><code>uppercase</code> and
+<code>\</code><code>lowercase</code> to change the case of text; they&rsquo;re not much used, but
+are capable creating confusion.
+<p>The two commands do not expand the text that is their parameter &mdash;
+the result of <code>\</code><code>uppercase{abc}</code> is &lsquo;<code>ABC</code>&rsquo;, but
+<code>\</code><code>uppercase{<code>\</code><code>abc</code>}</code> is always &lsquo;<code>\</code><code>abc</code>&rsquo;, whatever the
+meaning of <code>\</code><code>abc</code>.  The commands are simply interpreting a table of
+equivalences between upper- and lowercase characters.
+They have (for example) no mathematical sense, and
+<blockquote>
+<pre>
+\uppercase{About $y=f(x)$}
+</pre>
+</blockquote><p>
+will produce
+<blockquote>
+<pre>
+ABOUT $Y=F(X)$
+</pre>
+</blockquote><p>
+which is probably not what is wanted.
+<p>In addition, <code>\</code><code>uppercase</code> and <code>\</code><code>lowercase</code> do not deal very well
+with non-American characters, for example
+<code>\</code><code>uppercase{<code>\</code><code>ae</code>}</code> is the same as <code>\</code><code>ae</code>.
+<p>LaTeX provides commands <code>\</code><code>MakeUppercase</code> and <code>\</code><code>MakeLowercase</code>
+which fixes the latter problem.  These commands are used in the
+standard classes to produce upper case running heads for chapters
+and sections.
+<p>Unfortunately <code>\</code><code>MakeUppercase</code> and <code>\</code><code>MakeLowercase</code> do not solve
+the other problems with <code>\</code><code>uppercase</code>, so for example a section
+title containing <code>\</code><code>begin{tabular}</code> ...
+<code>\</code><code>end{tabular}</code> will produce a running head containing
+<code>\</code><code>begin{TABULAR}</code>.  The simplest solution to this problem is
+using a user-defined command, for example: 
+<blockquote>
+<pre>
+\newcommand{\mytable}{\begin{tabular}...
+  \end{tabular}}
+\section{A section title \protect\mytable{}
+  with a table}
+</pre>
+</blockquote><p>
+Note that <code>\</code><code>mytable</code> has to be protected, otherwise it will be
+expanded and made upper case; you can achieve the same result by
+declaring it with <code>\</code><code>DeclareRobustCommand</code>, in which case the
+<code>\</code><code>protect</code> won&rsquo;t be necessary.
+<p>David Carlisle&rsquo;s <i>textcase</i> package
+addresses many of these problems in a transparent way.  It defines
+commands <code>\</code><code>MakeTextUppercase</code> and <code>\</code><code>MakeTextLowercase</code> which do
+upper- or lowercase, with the fancier features of the LaTeX
+standard <code>\</code><code>Make*</code>-commands but without the problems
+mentioned above.  Load the package with
+<code>\</code><code>usepackage[overload]{textcase}</code>, and it will redefine the LaTeX
+commands (<em>not</em> the TeX primitive commands <code>\</code><code>uppercase</code> and
+<code>\</code><code>lowercase</code>), so that section headings and the like don&rsquo;t produce
+broken page headings.
+<dl>
+<dt><tt><i>textcase.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/textcase.zip">macros/latex/contrib/textcase</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/textcase.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/textcase/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=casechange">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=casechange</a>
+</body>

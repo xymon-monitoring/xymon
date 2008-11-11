@@ -1,0 +1,227 @@
+<head>
+<title>UK TeX FAQ -- question label TeXsystems</title>
+</head><body>
+<h3>(La)TeX for different machines</h3>
+<!-- windows,macintosh,ms-dos,os/2,unix,linux -->
+<p>We list here the free or shareware packages;
+
+  another question addresses
+  <a href="FAQ-commercial.html">commercial TeX vendors&rsquo;</a> products.
+<dl>
+<dt>Unix<dd> Instructions for retrieving the <i>web2c</i> Unix
+  TeX distribution via anonymous <code>ftp</code> are to be found in
+  <i>unixtex.ftp</i>, though nowadays the sensible installer will
+  take (and possibly customise) one of the packaged distributions such
+  as teTeX, or the <a href="FAQ-CD.html">TeX Live distribution</a>.
+<p>  To compile and produce a complete teTeX distribution, you need a
+  <code>.tar.gz</code> file for each of <code>teTeX-src</code>,
+  <code>teTeX-texmf</code> and <code>teTeX-texmfsrc</code>.
+<p>  No sets of teTeX binaries are provided on CTAN; however,
+  compilation of teTeX is pretty stable, on a wide variety of
+  platforms.  If you don&rsquo;t have the means to compile teTeX
+  yourself, you will find that most &ldquo;support&rdquo; sites carry compiled
+  versions in their &ldquo;free area&rdquo;, and the TeX-live discs also
+  carry a wide range of binary distributions.
+<p>  There&rsquo;s a mailing list for teTeX installation problems (and the
+  like): subscribe by sending mail to
+  <a href="mailto:majordomo@dbs.uni-hannover.de"><i>majordomo@dbs.uni-hannover.de</i></a> containing nothing more than
+  &ldquo;<code>subscribe tetex</code>&rdquo;.  The list is archived at
+  <a href="http://www.mail-archive.com/tetex@dbs.uni-hannover.de/">http://www.mail-archive.com/tetex@dbs.uni-hannover.de/</a>, and an
+  RSS feed is available at the same site:
+  <a href="http://www.mail-archive.com/tetex@dbs.uni-hannover.de/maillist.xml">http://www.mail-archive.com/tetex@dbs.uni-hannover.de/maillist.xml</a>
+<p>  During periods when teTeX is itself under development, a
+  &ldquo;teTeX-beta&rdquo; is available.  Before proceeding with the
+  beta-release, check the <i>ANNOUNCE</i> files
+  in the two directories on CTAN: it may well be that the
+  beta-release doesn&rsquo;t offer you anything new,
+  that you need.
+<p>  MacOS X users should refer to the information below,
+  under item &ldquo;Mac&rdquo;.
+  <dl>
+  <dt><tt><i>tetex</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/systems/unix/teTeX/current/distrib/">systems/unix/teTeX/current/distrib/</a>
+  <dt><tt><i>tetex-beta</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/unix/teTeX-beta.zip">systems/unix/teTeX-beta</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/unix/teTeX-beta.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/unix/teTeX-beta/">browse</a>)
+  <dt><tt><i>unixtex.ftp</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/unix/unixtex.ftp">systems/unix/unixtex.ftp</a>
+  <dt><tt><i>web2c</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/web2c.zip">systems/web2c</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/web2c.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/web2c/">browse</a>)
+  </dl>
+<dt>Linux<dd> Linux users may use teTeX (see above).
+<p>  A free version of the commercial 
+  <a href="FAQ-commercial.html">VTeX</a> is available, which among other
+  things, specialises in direct production of PDF from
+  (La)TeX input.  Unfortunately, it&rsquo;s no longer supported.
+  <dl>
+  <dt><tt><i>tetex</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/systems/unix/teTeX/current/distrib/">systems/unix/teTeX/current/distrib/</a>
+  <dt><tt><i>vtex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/vtex/linux.zip">systems/vtex/linux</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/vtex/linux.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/vtex/linux/">browse</a>)
+  <dt><tt><i>vtex required common files</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/vtex/common.zip">systems/vtex/common</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/vtex/common.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/vtex/common/">browse</a>)
+  </dl>
+<dt>PC: Win32<dd>
+  MiKTeX, by Christian Schenk, is also a comprehensive
+  distribution, developed separately from the teTeX work.  It has
+  its own previewer, YAP, which is itself capable of printing,
+  though the distribution also includes a port of <i>dvips</i>.
+  The current version is available for file-by-file download (the
+  HTML files in the directory offer hints
+  on what you need to get going).  The MiKTeX developers provide a
+  ready-to-run copy of the distribution, on CDROM (for purchase) via the
+  <a href="http://www.miktex.org/cd/">MiKTeX web site</a>; otherwise the
+  <i>setup</i> executable is available on CTAN, together with
+  all the optional packages.
+<p>  <a href="http://tug.org/protext/">ProTeXt</a>, by Thomas Feuerstack, is
+  a further option for installing MiKTeX.  It bundles a MiKTeX
+  setup with some further useful utilities, together with a PDF
+  file which contains clickable links for the various installation
+  steps, along with explanations.  It again it is freeware, and copies
+  are distributed with the <a href="FAQ-CD.html">TeX-live CD set</a>.
+<p>  <a href="https://xemtex.groups.foundry.supelec.fr/">XEmTeX</a>, by
+  Fabrice Popineau (he who created the excellent, but now defunct,
+  fpTeX distribution), is an integrated distribution of TeX, LaTeX,
+  ConTeXt, <i>XEmacs</i> and friends for Windows.  All programs
+  have been compiled natively to take the best advantage of the
+  Windows environment.  Configuration is provided so that the
+  resulting set of programs runs out-of-the-box.
+<p>  The (Japanese) W32TEX distribution was motivated by
+  the needs of Japanese users (Japanese won&rsquo;t fit in a &ldquo;simple&rdquo;
+  character set like ASCII, but TeX is based on a version of
+  ASCII).  Despite its origins, W32TEX is said to
+  be a good bet for Western users, notably those whose disks are short
+  of space: the minimum documented download is as small as
+  95 MBytes.  Investigate the distribution at
+  <a href="http://www.fsci.fuk.kindai.ac.jp/kakuto/win32-ptex/web2c75-e.html">http://www.fsci.fuk.kindai.ac.jp/kakuto/win32-ptex/web2c75-e.html</a>
+<p>  A further (free) option arises from the
+  <a href="http://www.cygwin.com">&ldquo;CygWin&rdquo; bundle</a>, which presents a
+  Unix-like environment over the Win32 interface; an X-windows server
+  is available.  If you run CygWin on your Windows machine, you have
+  the option of using teTeX, too (you will need the X-server, to
+  run <i>xdvi</i>).  Of course, teTeX components will look like
+  Unix applications (but that&rsquo;s presumably what you wanted), but it&rsquo;s
+  also reputedly somewhat slower than native Win32 implementations
+  such as MiKTeX or XEmTeX.  TeTeX is available as part of the
+  CygWin distribution (in the same way that a version is available
+  with most Linux distributions, nowadays), and you may also build
+  your own copy from the current sources.
+<p>  BaKoMa TeX, by Basil Malyshev, is a comprehensive (shareware)
+  distribution, which focuses on support of Acrobat.  The distribution
+  comes with a bunch of Type 1 fonts packaged to work with BaKoMa
+  TeX, which further the focus.
+  <dl>
+  <dt><tt><i>bakoma</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/nonfree/systems/win32/bakoma.zip">nonfree/systems/win32/bakoma</a> (<a href="ftp://cam.ctan.org/tex-archive/nonfree/systems/win32/bakoma.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/nonfree/systems/win32/bakoma/">browse</a>)
+  <dt><tt><i>miktex</i></tt><dd>Acquire <a href="ftp://cam.ctan.org/tex-archive/systems/win32/miktex/setup/setup.exe">systems/win32/miktex/setup/setup.exe</a> (also available from the
+    MiKTeX web site), and read installation instructions from 
+                                
+    <a href="http://www.miktex.org/2.5/Setup.aspx">the MiKTeX installation page</a>
+  <dt><tt><i>protext.exe</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/texlive/Images/protext.exe">systems/texlive/Images/protext.exe</a>
+  <dt><tt><i>tetex</i></tt><dd><a href="http://www.tex.ac.uk/tex-archive/systems/unix/teTeX/current/distrib/">systems/unix/teTeX/current/distrib/</a>
+  </dl>
+<dt>PC: MSDOS or OS/2<dd> EmTeX, by Eberhard Mattes,
+  includes LaTeX, BibTeX, previewers, and drivers, and is
+  available  as a series of zip archives.  Documentation is
+  available in both German and English.  Appropriate memory managers
+  for using emTeX with 386 (and better) processors and under
+  Windows, are included in the distribution.  EmTeX will operate
+  under Windows, but Windows users are better advised to use a
+  distribution tailored for the Windows environment.
+<p>  A version of emTeX, packaged to use a
+  
+  <a href="FAQ-tds.html">TDS directory structure</a>, is separately available as
+  an emTeX &lsquo;contribution&rsquo;.  Note that neither emTeX itself, nor
+  emTeXTDS, is maintained.  Most users of Microsoft
+  operating systems, who want an up-to-date (La)TeX system, need to
+  migrate to Win32-based systems.
+  <dl>
+  <dt><tt><i>emtex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/msdos/emtex.zip">systems/msdos/emtex</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/msdos/emtex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/msdos/emtex/">browse</a>)
+  <dt><tt><i>emtexTDS</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/obsolete/systems/os2/emtex-contrib/emtexTDS.zip">obsolete/systems/os2/emtex-contrib/emtexTDS</a> (<a href="ftp://cam.ctan.org/tex-archive/obsolete/systems/os2/emtex-contrib/emtexTDS.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/obsolete/systems/os2/emtex-contrib/emtexTDS/">browse</a>)
+  </dl>
+<dt>PC: MSDOS<dd> The most recent MSDOS offering is a
+  port of the Web2C 7.0 implementation, using the GNU
+  <i>djgpp</i> compiler.  While this package is more recent than
+  emTeX, it still implements a rather old instance of (La)TeX.
+  <dl>
+  <dt><tt><i>djgpp</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/msdos/djgpp.zip">systems/msdos/djgpp</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/msdos/djgpp.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/msdos/djgpp/">browse</a>)
+  </dl>
+<dt>PC: OS/2<dd> OS/2 may also use a free version of the
+  commercial <a href="FAQ-commercial.html">VTeX</a>, which specialises
+  in direct production of PDF from (La)TeX input.  (This
+  version is, like the Linux version, unfortunately no longer supported.)
+  <dl>
+  <dt><tt><i>vtex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/vtex/os2.zip">systems/vtex/os2</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/vtex/os2.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/vtex/os2/">browse</a>)
+  <dt><tt><i>vtex required common files</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/vtex/common.zip">systems/vtex/common</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/vtex/common.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/vtex/common/">browse</a>)
+  </dl>
+<dt>Windows NT, other platforms<dd> Ports of MiKTeX for
+  NT on Power PC and AXP are available.  Neither
+  version has been updated for version 1.2 (or later) of
+  MiKTeX &mdash; they may not be satisfactory.
+  <dl>
+  <dt><tt><i>miktex for AXP</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/obsolete/systems/win32/miktex-AXP.zip">obsolete/systems/win32/miktex-AXP</a> (<a href="ftp://cam.ctan.org/tex-archive/obsolete/systems/win32/miktex-AXP.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/obsolete/systems/win32/miktex-AXP/">browse</a>)
+  <dt><tt><i>miktex for Power PC</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/obsolete/systems/win32/miktexppc.zip">obsolete/systems/win32/miktexppc</a> (<a href="ftp://cam.ctan.org/tex-archive/obsolete/systems/win32/miktexppc.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/obsolete/systems/win32/miktexppc/">browse</a>)
+  </dl>
+<dt>Mac<dd> OzTeX, by Andrew Trevorrow, is a shareware version of
+  TeX for the Macintosh.  A DVI previewer and PostScript
+  driver are also included.
+
+
+<p>  UK TUG prepays the shareware fee for its members, so
+  that they may
+  acquire the software without further payment.  Questions about
+  OzTeX may be directed to <a href="mailto:oztex@midway.uchicago.edu"><i>oztex@midway.uchicago.edu</i></a>
+<p>  Another partly shareware program is CMacTeX, put together
+  by Tom Kiffe. This is much closer 
+  to the Unix TeX setup (it uses <i>dvips</i>, for instance).
+  CMacTeX includes a port of a version of
+  <a href="FAQ-omegaleph.html">Omega</a>.
+<p>  Both OzTeX and CMacTeX run on either MacOS
+  X or on a sufficiently recent MacOS with CarbonLib
+  (v1.3 for OzTeX, v1.4 for CMacTeX).
+  
+  MacOS X users also have the option of
+  <a href="http://www.rna.nl/tex.html">gwTeX</a>, by Gerben Wierda (which
+  is based on teTeX).  This is naturally usable from the
+  command line, just like any other Unix-based system, but it can also
+  be used Mac-style as the engine behind Richard Koch&rsquo;s (free)
+  <a href="http://www.uoregon.edu/~koch/texshop/texshop.html">TeXShop</a>,
+  which is an integrated TeX editor and previewer.
+<p>  From its 2005 release, the <a href="FAQ-CD.html">TeX-Live disc set</a>
+  includes &ldquo;MacTeX&rdquo;, a CDROM image that contains
+  MacOS X teTeX (the Gerben Wierda set mentioned
+  above), TeXshop, and <a href="FAQ-xetex.html">XeTeX</a>.  Details (and a
+  downloadable distribution set) may be found on the
+  <a href="http://tug.org/mactex">TUG web site</a>; the distribution
+  is also on CTAN.
+<p>
+  A useful
+  <a href="http://www.esm.psu.edu/mac-tex/">resource for Mac users</a>
+  has a news and &lsquo;help&rsquo; section, as well as details of systems and
+  tools.
+<dl>
+  <dt><tt><i>cmactex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/nonfree/systems/mac/cmactex.zip">nonfree/systems/mac/cmactex</a> (<a href="ftp://cam.ctan.org/tex-archive/nonfree/systems/mac/cmactex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/nonfree/systems/mac/cmactex/">browse</a>)
+  <dt><tt><i>mactex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/mac/mactex.zip">systems/mac/mactex</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/mac/mactex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/mac/mactex/">browse</a>)
+  <dt><tt><i>oztex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/nonfree/systems/mac/oztex.zip">nonfree/systems/mac/oztex</a> (<a href="ftp://cam.ctan.org/tex-archive/nonfree/systems/mac/oztex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/nonfree/systems/mac/oztex/">browse</a>)
+  <dt><tt><i>MacOS X teTeX</i></tt><dd><a href="ftp://ftp.nluug.nl/pub/comp/macosx/tex-gs/">ftp://ftp.nluug.nl/pub/comp/macosx/tex-gs/</a>
+  <dt><tt><i>TeXShop</i></tt><dd><a href="http://darkwing.uoregon.edu/~koch/texshop/texshop.html">http://darkwing.uoregon.edu/~koch/texshop/texshop.html</a>
+  </dl>
+<dt>OpenVMS<dd> TeX for OpenVMS is available.
+<p>
+
+  
+  <dl>
+  <dt><tt><i>OpenVMS</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/OpenVMS/TEX97_CTAN.ZIP">systems/OpenVMS/TEX97_CTAN.ZIP</a>
+  </dl>
+<dt>Atari<dd> TeX is available for the Atari ST.
+<p>  If anonymous <code>ftp</code> is not available to you, send a message
+  containing the line &lsquo;<code>help</code>&rsquo; to
+  <a href="mailto:atari@atari.archive.umich.edu"><i>atari@atari.archive.umich.edu</i></a>
+  <dl>
+  <dt><tt><i>Atari TeX</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/atari.zip">systems/atari</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/atari.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/atari/">browse</a>)
+  </dl>
+<dt>Amiga<dd> Full implementations of TeX 3.1 (PasTeX) and Metafont
+  2.7 are available.
+  <dl>
+  <dt><tt><i>PasTeX</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/systems/amiga.zip">systems/amiga</a> (<a href="ftp://cam.ctan.org/tex-archive/systems/amiga.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/systems/amiga/">browse</a>)
+  </dl>
+<dt>TOPS-20<dd> TeX was originally written on a DEC-10
+  under WAITS,
+  and so was easily ported to TOPS-20. A distribution that runs on
+  TOPS-20 is available via anonymous <code>ftp</code> from <a href="ftp://ftp.math.utah.edu/">ftp.math.utah.edu</a>
+  in <i>pub/tex/pub/web</i>
+  
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=TeXsystems">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=TeXsystems</a>
+</body>

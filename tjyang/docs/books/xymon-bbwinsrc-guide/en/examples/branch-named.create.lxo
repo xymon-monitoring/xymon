@@ -1,0 +1,4 @@
+$ \textbf{hg branch foo}
+marked working directory as branch foo
+$ \textbf{hg branch}
+foo

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#$ name: init
+
+hg init my-copy
+cd my-copy
+echo line > file
+hg add file
+hg commit -m 'Added a file'
+
+#$ name: clone
+
+cd ..
+hg clone my-copy your-copy
+
+#$ name: copy
+
+cd my-copy
+hg copy file new-file
+
+#$ name: status
+
+hg status
+
+#$ name: status-copy
+
+hg status -C
+hg commit -m 'Copied file'
+
+#$ name: other
+
+cd ../your-copy
+echo 'new contents' >> file
+hg commit -m 'Changed file'
+
+#$ name: cat
+
+cat file
+cat ../my-copy/new-file
+
+#$ name: merge
+
+hg pull ../my-copy
+hg merge
+cat new-file
+
+#$ name:
+
+cd ..
+hg init copy-example
+cd copy-example
+echo a > a
+echo b > b
+mkdir c
+mkdir c/a
+echo c > c/a/c
+hg ci -Ama
+
+#$ name: simple
+
+mkdir k
+hg copy a k
+ls k
+
+#$ name: dir-dest
+
+mkdir d
+hg copy a b d
+ls d
+
+#$ name: dir-src
+
+hg copy c e
+
+#$ name: dir-src-dest
+
+hg copy c d
+
+#$ name: after
+
+cp a z
+hg copy --after a z

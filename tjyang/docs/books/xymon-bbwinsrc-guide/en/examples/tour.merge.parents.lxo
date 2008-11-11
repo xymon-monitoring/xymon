@@ -1,0 +1,28 @@
+$ \textbf{hg parents}
+changeset:   5:ed5e66ff9bb2
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Sun Mar 02 16:16:40 2008 +0000
+summary:     A new hello for a new day.
+
+changeset:   6:a3ce8b616f22
+tag:         tip
+parent:      4:b57f9a090b62
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Sun Mar 02 16:16:39 2008 +0000
+summary:     Added an extra line of output
+
+$ \textbf{cat hello.c}
+/*
+ * Placed in the public domain by Bryan O'Sullivan.  This program is
+ * not covered by patents in the United States or other countries.
+ */
+
+#include <stdio.h>
+
+int main(int argc, char **argv)
+\{
+	printf("once more, hello.\textbackslash{}n");
+	printf("hello, world!\textbackslash{}");
+	printf("hello again!\textbackslash{}n");
+	return 0;
+\}

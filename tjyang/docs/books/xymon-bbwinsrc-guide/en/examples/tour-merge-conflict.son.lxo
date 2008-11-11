@@ -1,0 +1,10 @@
+$ \textbf{cd ..}
+$ \textbf{hg clone scam scam-son}
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+$ \textbf{cd scam-son}
+$ \textbf{cat > letter.txt <<EOF}
+> \textbf{Greetings!}
+> \textbf{I am Alhaji Abba Abacha, son of the former}
+> \textbf{Nigerian dictator Sani Abacha.}
+> \textbf{EOF}
+$ \textbf{hg commit -m '419 scam, with son'}

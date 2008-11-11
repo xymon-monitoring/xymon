@@ -1,0 +1,28 @@
+$ \textbf{hg qnew second.patch}
+$ \textbf{hg log --style=compact --limit=2}
+2[second.patch,qtip,tip]   
+  New patch: second.patch
+
+1[first.patch,qbase]   
+  patch queue: first.patch
+
+$ \textbf{echo 'line 4' >> file1}
+$ \textbf{hg qrefresh}
+$ \textbf{hg tip --style=compact --patch}
+2[second.patch,qtip,tip]   
+  patch queue: second.patch
+
+diff -r  -r  file1
+
+
+@@ -1,3 +1,4 @@ line 1
+ line 1
+ line 2
+ line 3
++line 4
+
+$ \textbf{hg annotate file1}
+0: line 1
+1: line 2
+1: line 3
+2: line 4

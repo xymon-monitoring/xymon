@@ -1,0 +1,7 @@
+$ \textbf{echo oops > oops}
+$ \textbf{hg add oops}
+$ \textbf{hg status oops}
+A oops
+$ \textbf{hg revert oops}
+$ \textbf{hg status}
+? oops

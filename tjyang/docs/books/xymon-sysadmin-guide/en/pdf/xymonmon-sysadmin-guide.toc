@@ -1,0 +1,599 @@
+\contentsline {chapter}{Contents}{i}{section*.1}
+\contentsline {chapter}{\numberline {1}Preface}{2}{chapter.1}
+\contentsline {section}{\numberline {1.1}This book is a work in progress}{2}{section.1.1}
+\contentsline {section}{\numberline {1.2}xymon Documentation Road Map}{2}{section.1.2}
+\contentsline {section}{\numberline {1.3}Revision History}{2}{section.1.3}
+\contentsline {section}{\numberline {1.4}Colophon---this book is Free}{3}{section.1.4}
+\contentsline {chapter}{\numberline {2}xymon Overview}{4}{chapter.2}
+\contentsline {section}{\numberline {2.1}xymon - Introduction to the Xymon Monitor}{4}{section.2.1}
+\contentsline {section}{\numberline {2.2}FEATURES}{4}{section.2.2}
+\contentsline {section}{\numberline {2.3}SECURITY}{6}{section.2.3}
+\contentsline {section}{\numberline {2.4}DEMONSTRATION SITE}{6}{section.2.4}
+\contentsline {section}{\numberline {2.5}PREREQUISITES}{6}{section.2.5}
+\contentsline {section}{\numberline {2.6}INSTALLATION}{6}{section.2.6}
+\contentsline {section}{\numberline {2.7}SUPPORT and MAILING LISTS}{7}{section.2.7}
+\contentsline {section}{\numberline {2.8}xymon Wiki Book}{7}{section.2.8}
+\contentsline {section}{\numberline {2.9}HOBBIT SERVER DAEMONS}{7}{section.2.9}
+\contentsline {section}{\numberline {2.10}HOBBIT NETWORK TEST TOOLS}{8}{section.2.10}
+\contentsline {section}{\numberline {2.11}HOBBIT TOOLS HANDLING THE WEB USER-INTERFACE}{8}{section.2.11}
+\contentsline {section}{\numberline {2.12}CLIENT-SIDE TOOLS}{9}{section.2.12}
+\contentsline {section}{\numberline {2.13}HOBBIT COMMUNICATION TOOLS}{9}{section.2.13}
+\contentsline {section}{\numberline {2.14}OTHER TOOLS}{9}{section.2.14}
+\contentsline {section}{\numberline {2.15}VERSIONS}{10}{section.2.15}
+\contentsline {section}{\numberline {2.16}COPYRIGHT}{10}{section.2.16}
+\contentsline {section}{\numberline {2.17}SEE ALSO}{10}{section.2.17}
+\contentsline {chapter}{\numberline {3}How to setup custom graphs}{13}{chapter.3}
+\contentsline {section}{\numberline {3.1}How to setup custom graphs}{13}{section.3.1}
+\contentsline {subsection}{\numberline {3.1.1}Make a script to collect the data}{13}{subsection.3.1.1}
+\contentsline {subsection}{\numberline {3.1.2}Get xymonlaunch to run the script}{13}{subsection.3.1.2}
+\contentsline {subsection}{\numberline {3.1.3}Check that the script data arrives in xymon}{14}{subsection.3.1.3}
+\contentsline {subsection}{\numberline {3.1.4}Arrange for the data to be collected into an RRD file}{14}{subsection.3.1.4}
+\contentsline {subsection}{\numberline {3.1.5}Check that the RRD collects data}{15}{subsection.3.1.5}
+\contentsline {subsection}{\numberline {3.1.6}Setup a graph definition}{15}{subsection.3.1.6}
+\contentsline {subsection}{\numberline {3.1.7}Add the graph to the collection of graphs on the trends column}{16}{subsection.3.1.7}
+\contentsline {subsection}{\numberline {3.1.8}Common problems and pitfalls}{16}{subsection.3.1.8}
+\contentsline {subsubsection}{If your graph nearly always shows 0}{16}{section*.5}
+\contentsline {subsubsection}{No graph on the status page, but OK on the trends page}{16}{section*.6}
+\contentsline {chapter}{\numberline {4}Installing xymon}{17}{chapter.4}
+\contentsline {section}{\numberline {4.1}Installing xymon}{17}{section.4.1}
+\contentsline {subsection}{\numberline {4.1.1}Prerequisites - before you install xymon}{17}{subsection.4.1.1}
+\contentsline {subsection}{\numberline {4.1.2}Building xymon}{18}{subsection.4.1.2}
+\contentsline {subsection}{\numberline {4.1.3}Configuring your webserver}{19}{subsection.4.1.3}
+\contentsline {subsection}{\numberline {4.1.4}Starting xymon}{19}{subsection.4.1.4}
+\contentsline {subsection}{\numberline {4.1.5}Next steps}{20}{subsection.4.1.5}
+\contentsline {chapter}{\numberline {5}About the xymon Monitor}{22}{chapter.5}
+\contentsline {section}{\numberline {5.1}About xymon}{22}{section.5.1}
+\contentsline {subsubsection}{What is xymon ?}{22}{section*.7}
+\contentsline {subsubsection}{Didn't you write something called ``bbgen'' ?}{23}{section*.8}
+\contentsline {subsubsection}{Why did you call it xymon ?}{23}{section*.9}
+\contentsline {subsubsection}{Wht should I use xymon ? My Big Brother setup works just fine.}{24}{section*.10}
+\contentsline {subsubsection}{So where can I download xymon?}{24}{section*.11}
+\contentsline {subsubsection}{Support}{24}{section*.12}
+\contentsline {subsubsection}{Are there any other sites with xymon stuff?}{24}{section*.13}
+\contentsline {subsubsection}{Who are you ?}{24}{section*.14}
+\contentsline {chapter}{\numberline {6}Configuring xymon Alerts}{26}{chapter.6}
+\contentsline {section}{\numberline {6.1}Configuring xymon Alerts}{26}{section.6.1}
+\contentsline {subsubsection}{A simple alert configuration}{26}{section*.15}
+\contentsline {subsubsection}{Keywords in rules and recipients}{27}{section*.16}
+\contentsline {subsubsection}{Wildcards - regular expressions}{27}{section*.17}
+\contentsline {subsubsection}{If e-mail is not enough}{28}{section*.18}
+\contentsline {subsubsection}{Save on the typing - use macros}{28}{section*.19}
+\contentsline {subsubsection}{There are rules ... and exceptions: IGNORE}{29}{section*.20}
+\contentsline {chapter}{\numberline {7}Configuring xymon Monitoring}{30}{chapter.7}
+\contentsline {section}{\numberline {7.1}Configuring xymon Monitoring}{30}{section.7.1}
+\contentsline {section}{\numberline {7.2}Setting up monitoring of hosts}{31}{section.7.2}
+\contentsline {subsubsection}{Monitoring network services}{32}{section*.21}
+\contentsline {subsubsection}{Monitoring host-specific data with clients}{33}{section*.22}
+\contentsline {subsubsection}{More about logfile monitoring}{33}{section*.23}
+\contentsline {section}{\numberline {7.3}Upgrading from Big Brother to xymon}{34}{section.7.3}
+\contentsline {subsubsection}{First step: Install xymon}{34}{section*.24}
+\contentsline {subsubsection}{Step two: Move the configuration files}{34}{section*.25}
+\contentsline {subsubsection}{Step three: Stop Big Brother}{34}{section*.26}
+\contentsline {subsubsection}{Step four: Move the history logs}{34}{section*.27}
+\contentsline {subsubsection}{Step five: Move the RRD files}{35}{section*.28}
+\contentsline {subsubsection}{Step 6: Start xymon}{35}{section*.29}
+\contentsline {chapter}{\numberline {8}Integrating MRTG data into xymon}{36}{chapter.8}
+\contentsline {section}{\numberline {8.1}Integrating MRTG data into xymon}{36}{section.8.1}
+\contentsline {subsubsection}{Simple xymon-MRTG support}{36}{section*.30}
+\contentsline {subsubsection}{Running the MRTG data collector from xymonlaunch}{37}{section*.31}
+\contentsline {chapter}{\numberline {9}Critical Systems}{38}{chapter.9}
+\contentsline {section}{\numberline {9.1}Critical Systems}{38}{section.9.1}
+\contentsline {section}{\numberline {9.2}The Critical Systems editor}{38}{section.9.2}
+\contentsline {subsubsection}{The editor form}{38}{section*.32}
+\contentsline {subsubsection}{Setting up a disk status}{39}{section*.33}
+\contentsline {subsubsection}{Template definitions - cloning records}{41}{section*.34}
+\contentsline {section}{\numberline {9.3}The Critical Systems view}{41}{section.9.3}
+\contentsline {subsubsection}{Filtering the Critical Systems view}{41}{section*.35}
+\contentsline {subsubsection}{The detailed status view}{43}{section*.36}
+\contentsline {subsubsection}{Critical Systems acknowledgment}{43}{section*.37}
+\contentsline {subsubsection}{How acknowledgements are visible to everyone}{43}{section*.38}
+\contentsline {chapter}{\numberline {10}Known issues in xymon}{48}{chapter.10}
+\contentsline {section}{\numberline {10.1}Known issues in xymon}{48}{section.10.1}
+\contentsline {subsubsection}{How to report bugs}{48}{section*.39}
+\contentsline {subsubsection}{Internet Explorer complains about Javascript errors in Enable/Disable}{49}{section*.40}
+\contentsline {subsubsection}{DNS error reported for network tests}{49}{section*.41}
+\contentsline {subsubsection}{Network tests fail sporadically, or report long reponsetimes}{49}{section*.42}
+\contentsline {subsubsection}{Network tests fail on Solaris with ``Failed to find enough entropy''}{49}{section*.43}
+\contentsline {subsubsection}{xymon fails on FreeBSD with ``Could not get sem: No space left on device''}{49}{section*.44}
+\contentsline {subsubsection}{xymon will not run inside a FreeBSD jail}{50}{section*.45}
+\contentsline {subsubsection}{xymon on Solaris compiles but aborts with some ``ld.so'' error}{50}{section*.46}
+\contentsline {subsubsection}{xymon on Solaris 10 ``xymond status-board not available''}{50}{section*.47}
+\contentsline {chapter}{\numberline {11}Server Configuration files}{51}{chapter.11}
+\contentsline {section}{\numberline {11.1}xymonserver.cfg - xymon Environment Variables }{51}{section.11.1}
+\contentsline {subsection}{\numberline {11.1.1}DESCRIPTION}{51}{subsection.11.1.1}
+\contentsline {subsection}{\numberline {11.1.2}ENVIRONMENT AREAS}{51}{subsection.11.1.2}
+\contentsline {subsection}{\numberline {11.1.3}GENERAL SETTINGS}{51}{subsection.11.1.3}
+\contentsline {subsection}{\numberline {11.1.4}DIRECTORIES}{52}{subsection.11.1.4}
+\contentsline {subsection}{\numberline {11.1.5}SYSTEM FILES}{53}{subsection.11.1.5}
+\contentsline {subsection}{\numberline {11.1.6}URLS}{53}{subsection.11.1.6}
+\contentsline {subsection}{\numberline {11.1.7}SETTINGS FOR SENDING MESSAGES TO HOBBIT}{54}{subsection.11.1.7}
+\contentsline {subsection}{\numberline {11.1.8}HOBBITD SETTINGS}{54}{subsection.11.1.8}
+\contentsline {subsection}{\numberline {11.1.9}HOBBITD\_HISTORY SETTINGS}{55}{subsection.11.1.9}
+\contentsline {subsection}{\numberline {11.1.10}HOBBITD\_ALERT SETTINGS}{55}{subsection.11.1.10}
+\contentsline {subsection}{\numberline {11.1.11}HOBBITD\_RRD SETTINGS}{56}{subsection.11.1.11}
+\contentsline {subsection}{\numberline {11.1.12}BBTEST-NET NETWORK TEST SETTINGS}{56}{subsection.11.1.12}
+\contentsline {subsection}{\numberline {11.1.13}BBGEN WEBPAGE GENERATOR SETTINGS}{57}{subsection.11.1.13}
+\contentsline {subsection}{\numberline {11.1.14}FILES}{58}{subsection.11.1.14}
+\contentsline {subsection}{\numberline {11.1.15}SEE ALSO}{58}{subsection.11.1.15}
+\contentsline {section}{\numberline {11.2}bb-hosts - Main xymon configuration file}{58}{section.11.2}
+\contentsline {subsection}{\numberline {11.2.1}SYNOPSIS}{58}{subsection.11.2.1}
+\contentsline {subsection}{\numberline {11.2.2}DESCRIPTION}{58}{subsection.11.2.2}
+\contentsline {subsection}{\numberline {11.2.3}FILE FORMAT}{58}{subsection.11.2.3}
+\contentsline {subsection}{\numberline {11.2.4}TAGS RECOGNIZED BY ALL TOOLS}{59}{subsection.11.2.4}
+\contentsline {subsection}{\numberline {11.2.5}GENERAL PER-HOST OPTIONS }{59}{subsection.11.2.5}
+\contentsline {subsection}{\numberline {11.2.6}BBGEN DISPLAY OPTIONS}{59}{subsection.11.2.6}
+\contentsline {subsection}{\numberline {11.2.7}HOBBIT TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE}{62}{subsection.11.2.7}
+\contentsline {subsection}{\numberline {11.2.8}HOBBIT TAGS FOR THE WML (WAP) CARDS}{62}{subsection.11.2.8}
+\contentsline {subsection}{\numberline {11.2.9}HOBBIT STATUS PROPAGATION OPTIONS}{63}{subsection.11.2.9}
+\contentsline {subsection}{\numberline {11.2.10}HOBBIT AVAILABILITY REPORT OPTIONS}{63}{subsection.11.2.10}
+\contentsline {subsection}{\numberline {11.2.11}NETWORK TEST SETTINGS}{64}{subsection.11.2.11}
+\contentsline {subsection}{\numberline {11.2.12}CONNECTIVITY (PING) TEST}{65}{subsection.11.2.12}
+\contentsline {subsection}{\numberline {11.2.13}SIMPLE NETWORK TESTS}{66}{subsection.11.2.13}
+\contentsline {subsection}{\numberline {11.2.14}DNS SERVER TESTS}{67}{subsection.11.2.14}
+\contentsline {subsection}{\numberline {11.2.15}OTHER NETWORK TESTS}{67}{subsection.11.2.15}
+\contentsline {subsection}{\numberline {11.2.16}HTTP TESTS}{67}{subsection.11.2.16}
+\contentsline {subsection}{\numberline {11.2.17}LDAP (DIRECTORY SERVER) TESTS}{71}{subsection.11.2.17}
+\contentsline {subsection}{\numberline {11.2.18}PERFORMANCE MONITORING TESTS}{71}{subsection.11.2.18}
+\contentsline {subsection}{\numberline {11.2.19}DEFAULT HOST}{72}{subsection.11.2.19}
+\contentsline {subsection}{\numberline {11.2.20}SENDING SUMMARIES TO REMOTE HOBBIT SERVERS}{72}{subsection.11.2.20}
+\contentsline {subsection}{\numberline {11.2.21}OTHER TAGS}{73}{subsection.11.2.21}
+\contentsline {subsection}{\numberline {11.2.22}FILES}{73}{subsection.11.2.22}
+\contentsline {subsection}{\numberline {11.2.23}SEE ALSO}{73}{subsection.11.2.23}
+\contentsline {section}{\numberline {11.3}xymon-alerts.cfg - Configuration for the hobbitd\_alert module}{74}{section.11.3}
+\contentsline {subsection}{\numberline {11.3.1}SYNOPSIS}{74}{subsection.11.3.1}
+\contentsline {subsection}{\numberline {11.3.2}DESCRIPTION}{74}{subsection.11.3.2}
+\contentsline {subsection}{\numberline {11.3.3}FILE FORMAT}{74}{subsection.11.3.3}
+\contentsline {subsection}{\numberline {11.3.4}RULES}{74}{subsection.11.3.4}
+\contentsline {subsection}{\numberline {11.3.5}RECIPIENTS}{75}{subsection.11.3.5}
+\contentsline {subsection}{\numberline {11.3.6}MACROS}{75}{subsection.11.3.6}
+\contentsline {subsection}{\numberline {11.3.7}ALERT SCRIPTS}{75}{subsection.11.3.7}
+\contentsline {subsection}{\numberline {11.3.8}SEE ALSO}{76}{subsection.11.3.8}
+\contentsline {section}{\numberline {11.4}xymon-clients.cfg - Configuration file for the hobbitd\_client module}{77}{section.11.4}
+\contentsline {subsection}{\numberline {11.4.1}SYNOPSIS}{77}{subsection.11.4.1}
+\contentsline {subsection}{\numberline {11.4.2}DESCRIPTION}{77}{subsection.11.4.2}
+\contentsline {subsection}{\numberline {11.4.3}FILE FORMAT}{77}{subsection.11.4.3}
+\contentsline {subsection}{\numberline {11.4.4}CPU STATUS COLUMN SETTINGS}{77}{subsection.11.4.4}
+\contentsline {subsection}{\numberline {11.4.5}DISK STATUS COLUMN SETTINGS}{77}{subsection.11.4.5}
+\contentsline {subsection}{\numberline {11.4.6}MEMORY STATUS COLUMN SETTINGS}{78}{subsection.11.4.6}
+\contentsline {subsection}{\numberline {11.4.7}PROCS STATUS COLUMN SETTINGS}{78}{subsection.11.4.7}
+\contentsline {subsection}{\numberline {11.4.8}MSGS STATUS COLUMN SETTINGS}{79}{subsection.11.4.8}
+\contentsline {subsection}{\numberline {11.4.9}FILES STATUS COLUMN SETTINGS}{79}{subsection.11.4.9}
+\contentsline {subsection}{\numberline {11.4.10}PORTS STATUS COLUMN SETTINGS}{81}{subsection.11.4.10}
+\contentsline {subsection}{\numberline {11.4.11}CHANGING THE DEFAULT SETTINGS}{81}{subsection.11.4.11}
+\contentsline {subsection}{\numberline {11.4.12}RULES TO SELECT HOSTS}{82}{subsection.11.4.12}
+\contentsline {subsection}{\numberline {11.4.13}DIRECTING ALERTS TO GROUPS}{82}{subsection.11.4.13}
+\contentsline {subsection}{\numberline {11.4.14}RULES: APPLYING SETTINGS TO SELECTED HOSTS}{82}{subsection.11.4.14}
+\contentsline {subsection}{\numberline {11.4.15}NOTES}{83}{subsection.11.4.15}
+\contentsline {subsection}{\numberline {11.4.16}SEE ALSO}{83}{subsection.11.4.16}
+\contentsline {section}{\numberline {11.5}HOBBITCGI.CFG}{84}{section.11.5}
+\contentsline {subsection}{\numberline {11.5.1}SYNOPSIS}{84}{subsection.11.5.1}
+\contentsline {subsection}{\numberline {11.5.2}DESCRIPTION}{84}{subsection.11.5.2}
+\contentsline {subsection}{\numberline {11.5.3}SETTINGS}{84}{subsection.11.5.3}
+\contentsline {subsection}{\numberline {11.5.4}SEE ALSO}{85}{subsection.11.5.4}
+\contentsline {section}{\numberline {11.6}HOBBIT-NKVIEW.CGI}{86}{section.11.6}
+\contentsline {subsection}{\numberline {11.6.1}SYNOPSIS}{86}{subsection.11.6.1}
+\contentsline {subsection}{\numberline {11.6.2}DESCRIPTION}{86}{subsection.11.6.2}
+\contentsline {subsection}{\numberline {11.6.3}RELATION TO BBNK PAGE}{86}{subsection.11.6.3}
+\contentsline {subsection}{\numberline {11.6.4}OPTIONS}{86}{subsection.11.6.4}
+\contentsline {subsection}{\numberline {11.6.5}ENVIRONMENT VARIABLES}{86}{subsection.11.6.5}
+\contentsline {subsection}{\numberline {11.6.6}SEE ALSO}{86}{subsection.11.6.6}
+\contentsline {section}{\numberline {11.7}CLIENT-LOCAL.CFG}{87}{section.11.7}
+\contentsline {subsection}{\numberline {11.7.1}NAME}{87}{subsection.11.7.1}
+\contentsline {subsection}{\numberline {11.7.2}SYNOPSIS}{87}{subsection.11.7.2}
+\contentsline {subsection}{\numberline {11.7.3}DESCRIPTION}{87}{subsection.11.7.3}
+\contentsline {subsection}{\numberline {11.7.4}PROPAGATION TO CLIENTS}{87}{subsection.11.7.4}
+\contentsline {subsection}{\numberline {11.7.5}FILE FORMAT}{87}{subsection.11.7.5}
+\contentsline {subsection}{\numberline {11.7.6}LOGFILE CONFIGURATION ENTRIES}{87}{subsection.11.7.6}
+\contentsline {subsection}{\numberline {11.7.7}COUNTING LOGENTRIES}{88}{subsection.11.7.7}
+\contentsline {subsection}{\numberline {11.7.8}FILE CONFIGURATION ENTRIES}{88}{subsection.11.7.8}
+\contentsline {subsection}{\numberline {11.7.9}DIRECTORY CONFIGURATION ENTRIES}{88}{subsection.11.7.9}
+\contentsline {subsection}{\numberline {11.7.10}NOTES}{88}{subsection.11.7.10}
+\contentsline {subsection}{\numberline {11.7.11}SEE ALSO}{89}{subsection.11.7.11}
+\contentsline {chapter}{\numberline {12}Web page generation}{90}{chapter.12}
+\contentsline {section}{\numberline {12.1}BBGEN}{90}{section.12.1}
+\contentsline {subsection}{\numberline {12.1.1}SYNOPSIS}{90}{subsection.12.1.1}
+\contentsline {subsection}{\numberline {12.1.2}DESCRIPTION}{90}{subsection.12.1.2}
+\contentsline {subsection}{\numberline {12.1.3}OPTIONS}{90}{subsection.12.1.3}
+\contentsline {subsection}{\numberline {12.1.4}GENERAL OPTIONS}{90}{subsection.12.1.4}
+\contentsline {subsection}{\numberline {12.1.5}PAGE LAYOUT OPTIONS}{91}{subsection.12.1.5}
+\contentsline {subsection}{\numberline {12.1.6}COLUMN SELECTION OPTIONS}{92}{subsection.12.1.6}
+\contentsline {subsection}{\numberline {12.1.7}STATUS PROPAGATION OPTIONS}{92}{subsection.12.1.7}
+\contentsline {subsection}{\numberline {12.1.8}PURPLE STATUS OPTIONS}{93}{subsection.12.1.8}
+\contentsline {subsection}{\numberline {12.1.9}ALTERNATE PAGESET OPTIONS}{93}{subsection.12.1.9}
+\contentsline {subsection}{\numberline {12.1.10}ALTERNATE OUTPUT FORMATS}{93}{subsection.12.1.10}
+\contentsline {subsection}{\numberline {12.1.11}OPTIONS USED BY CGI FRONT-ENDS}{94}{subsection.12.1.11}
+\contentsline {subsection}{\numberline {12.1.12}DEBUGGING OPTIONS}{94}{subsection.12.1.12}
+\contentsline {subsection}{\numberline {12.1.13}BUILDING ALTERNATE PAGESETS}{94}{subsection.12.1.13}
+\contentsline {subsection}{\numberline {12.1.14}USING BBGEN FOR REPORTS}{95}{subsection.12.1.14}
+\contentsline {subsection}{\numberline {12.1.15}SLA REPORTING}{96}{subsection.12.1.15}
+\contentsline {subsection}{\numberline {12.1.16}PRE-GENERATED REPORTS}{96}{subsection.12.1.16}
+\contentsline {subsection}{\numberline {12.1.17}SEE ALSO}{97}{subsection.12.1.17}
+\contentsline {section}{\numberline {12.2}BB-HIST.CGI}{98}{section.12.2}
+\contentsline {subsection}{\numberline {12.2.1}SYNOPSIS}{98}{subsection.12.2.1}
+\contentsline {subsection}{\numberline {12.2.2}DESCRIPTION}{98}{subsection.12.2.2}
+\contentsline {subsection}{\numberline {12.2.3}PARAMETERS}{98}{subsection.12.2.3}
+\contentsline {subsection}{\numberline {12.2.4}OPTIONS}{99}{subsection.12.2.4}
+\contentsline {subsection}{\numberline {12.2.5}SEE ALSO}{99}{subsection.12.2.5}
+\contentsline {section}{\numberline {12.3}HOBBIT-NKVIEW.CGI}{100}{section.12.3}
+\contentsline {subsection}{\numberline {12.3.1}SYNOPSIS}{100}{subsection.12.3.1}
+\contentsline {subsection}{\numberline {12.3.2}DESCRIPTION}{100}{subsection.12.3.2}
+\contentsline {subsection}{\numberline {12.3.3}RELATION TO BBNK PAGE}{100}{subsection.12.3.3}
+\contentsline {subsection}{\numberline {12.3.4}OPTIONS}{100}{subsection.12.3.4}
+\contentsline {subsection}{\numberline {12.3.5}ENVIRONMENT VARIABLES}{100}{subsection.12.3.5}
+\contentsline {subsection}{\numberline {12.3.6}SEE ALSO}{100}{subsection.12.3.6}
+\contentsline {section}{\numberline {12.4}BBHOSTGREP}{101}{section.12.4}
+\contentsline {subsection}{\numberline {12.4.1}SYNOPSIS}{101}{subsection.12.4.1}
+\contentsline {subsection}{\numberline {12.4.2}DESCRIPTION}{101}{subsection.12.4.2}
+\contentsline {subsection}{\numberline {12.4.3}OPTIONS}{101}{subsection.12.4.3}
+\contentsline {subsection}{\numberline {12.4.4}EXAMPLE}{101}{subsection.12.4.4}
+\contentsline {subsection}{\numberline {12.4.5}USE IN EXTENSION SCRIPTS}{102}{subsection.12.4.5}
+\contentsline {subsection}{\numberline {12.4.6}ENVIRONMENT VARIABLES}{102}{subsection.12.4.6}
+\contentsline {subsection}{\numberline {12.4.7}FILES}{102}{subsection.12.4.7}
+\contentsline {subsection}{\numberline {12.4.8}SEE ALSO}{102}{subsection.12.4.8}
+\contentsline {section}{\numberline {12.5}HOBBITD}{103}{section.12.5}
+\contentsline {subsection}{\numberline {12.5.1}SYNOPSIS}{103}{subsection.12.5.1}
+\contentsline {subsection}{\numberline {12.5.2}DESCRIPTION}{103}{subsection.12.5.2}
+\contentsline {subsection}{\numberline {12.5.3}OPTIONS}{103}{subsection.12.5.3}
+\contentsline {subsection}{\numberline {12.5.4}HOW ALERTS TRIGGER}{105}{subsection.12.5.4}
+\contentsline {subsection}{\numberline {12.5.5}CHANNELS}{105}{subsection.12.5.5}
+\contentsline {subsection}{\numberline {12.5.6}SIGNALS}{105}{subsection.12.5.6}
+\contentsline {subsection}{\numberline {12.5.7}BUGS}{106}{subsection.12.5.7}
+\contentsline {subsection}{\numberline {12.5.8}FILES}{106}{subsection.12.5.8}
+\contentsline {subsection}{\numberline {12.5.9}SEE ALSO}{106}{subsection.12.5.9}
+\contentsline {section}{\numberline {12.6}HOBBITPING}{107}{section.12.6}
+\contentsline {subsection}{\numberline {12.6.1}SYNOPSIS}{107}{subsection.12.6.1}
+\contentsline {subsection}{\numberline {12.6.2}DESCRIPTION}{107}{subsection.12.6.2}
+\contentsline {subsection}{\numberline {12.6.3}SUID-ROOT INSTALLATION REQUIRED}{107}{subsection.12.6.3}
+\contentsline {subsection}{\numberline {12.6.4}OPTIONS}{107}{subsection.12.6.4}
+\contentsline {subsection}{\numberline {12.6.5}SEE ALSO}{108}{subsection.12.6.5}
+\contentsline {section}{\numberline {12.7}HOBBITD\_ALERT}{109}{section.12.7}
+\contentsline {subsection}{\numberline {12.7.1}SYNOPSIS}{109}{subsection.12.7.1}
+\contentsline {subsection}{\numberline {12.7.2}DESCRIPTION}{109}{subsection.12.7.2}
+\contentsline {subsection}{\numberline {12.7.3}OPTIONS}{109}{subsection.12.7.3}
+\contentsline {subsection}{\numberline {12.7.4}HOW HOBBIT DECIDES WHEN TO SEND ALERTS}{109}{subsection.12.7.4}
+\contentsline {subsection}{\numberline {12.7.5}ENVIRONMENT}{110}{subsection.12.7.5}
+\contentsline {subsection}{\numberline {12.7.6}FILES}{110}{subsection.12.7.6}
+\contentsline {subsection}{\numberline {12.7.7}SEE ALSO}{110}{subsection.12.7.7}
+\contentsline {section}{\numberline {12.8}BBHOSTSHOW}{111}{section.12.8}
+\contentsline {subsection}{\numberline {12.8.1}SYNOPSIS}{111}{subsection.12.8.1}
+\contentsline {subsection}{\numberline {12.8.2}DESCRIPTION}{111}{subsection.12.8.2}
+\contentsline {subsection}{\numberline {12.8.3}OPTIONS}{111}{subsection.12.8.3}
+\contentsline {subsection}{\numberline {12.8.4}ENVIRONMENT VARIABLES}{111}{subsection.12.8.4}
+\contentsline {subsection}{\numberline {12.8.5}SEE ALSO}{111}{subsection.12.8.5}
+\contentsline {section}{\numberline {12.9}HOBBITD\_CAPTURE}{112}{section.12.9}
+\contentsline {subsection}{\numberline {12.9.1}SYNOPSIS}{112}{subsection.12.9.1}
+\contentsline {subsection}{\numberline {12.9.2}DESCRIPTION}{112}{subsection.12.9.2}
+\contentsline {subsection}{\numberline {12.9.3}OPTIONS}{112}{subsection.12.9.3}
+\contentsline {subsection}{\numberline {12.9.4}SEE ALSO}{112}{subsection.12.9.4}
+\contentsline {section}{\numberline {12.10}HOBBIT-STATUSREPORT.CGI}{113}{section.12.10}
+\contentsline {subsection}{\numberline {12.10.1}SYNOPSIS}{113}{subsection.12.10.1}
+\contentsline {subsection}{\numberline {12.10.2}DESCRIPTION}{113}{subsection.12.10.2}
+\contentsline {subsection}{\numberline {12.10.3}EXAMPLES}{113}{subsection.12.10.3}
+\contentsline {subsection}{\numberline {12.10.4}OPTIONS}{113}{subsection.12.10.4}
+\contentsline {subsection}{\numberline {12.10.5}SEE ALSO}{114}{subsection.12.10.5}
+\contentsline {section}{\numberline {12.11}BBMESSAGE.CGI}{115}{section.12.11}
+\contentsline {subsection}{\numberline {12.11.1}SYNOPSIS}{115}{subsection.12.11.1}
+\contentsline {subsection}{\numberline {12.11.2}DESCRIPTION}{115}{subsection.12.11.2}
+\contentsline {subsection}{\numberline {12.11.3}SECURITY}{115}{subsection.12.11.3}
+\contentsline {subsection}{\numberline {12.11.4}SEE ALSO}{115}{subsection.12.11.4}
+\contentsline {section}{\numberline {12.12}BB-WEBPAGE}{116}{section.12.12}
+\contentsline {subsection}{\numberline {12.12.1}SYNOPSIS}{116}{subsection.12.12.1}
+\contentsline {subsection}{\numberline {12.12.2}DESCRIPTION}{116}{subsection.12.12.2}
+\contentsline {subsection}{\numberline {12.12.3}OPTIONS}{116}{subsection.12.12.3}
+\contentsline {subsection}{\numberline {12.12.4}SEE ALSO}{116}{subsection.12.12.4}
+\contentsline {chapter}{\numberline {13}Report Generation}{117}{chapter.13}
+\contentsline {section}{\numberline {13.1}HOBBIT-CONFREPORT.CGI}{118}{section.13.1}
+\contentsline {subsection}{\numberline {13.1.1}SYNOPSIS}{118}{subsection.13.1.1}
+\contentsline {subsection}{\numberline {13.1.2}DESCRIPTION}{118}{subsection.13.1.2}
+\contentsline {subsection}{\numberline {13.1.3}OPTIONS}{118}{subsection.13.1.3}
+\contentsline {subsection}{\numberline {13.1.4}BUGS}{118}{subsection.13.1.4}
+\contentsline {subsection}{\numberline {13.1.5}SEE ALSO}{118}{subsection.13.1.5}
+\contentsline {section}{\numberline {13.2}BB-REP.CGI}{119}{section.13.2}
+\contentsline {subsection}{\numberline {13.2.1}SYNOPSIS}{119}{subsection.13.2.1}
+\contentsline {subsection}{\numberline {13.2.2}DESCRIPTION}{119}{subsection.13.2.2}
+\contentsline {subsection}{\numberline {13.2.3}OPTIONS}{119}{subsection.13.2.3}
+\contentsline {subsection}{\numberline {13.2.4}FILES}{119}{subsection.13.2.4}
+\contentsline {subsection}{\numberline {13.2.5}ENVIRONMENT VARIABLES}{119}{subsection.13.2.5}
+\contentsline {subsection}{\numberline {13.2.6}SEE ALSO}{120}{subsection.13.2.6}
+\contentsline {section}{\numberline {13.3}HOBBITD\_FILESTORE}{121}{section.13.3}
+\contentsline {subsection}{\numberline {13.3.1}SYNOPSIS}{121}{subsection.13.3.1}
+\contentsline {subsection}{\numberline {13.3.2}DESCRIPTION}{121}{subsection.13.3.2}
+\contentsline {subsection}{\numberline {13.3.3}OPTIONS}{121}{subsection.13.3.3}
+\contentsline {subsection}{\numberline {13.3.4}FILES}{122}{subsection.13.3.4}
+\contentsline {subsection}{\numberline {13.3.5}SEE ALSO}{122}{subsection.13.3.5}
+\contentsline {chapter}{\numberline {14}xymon Server Administration}{123}{chapter.14}
+\contentsline {section}{\numberline {14.1}HOBBIT-ENADIS.CGI}{124}{section.14.1}
+\contentsline {subsection}{\numberline {14.1.1}SYNOPSIS}{124}{subsection.14.1.1}
+\contentsline {subsection}{\numberline {14.1.2}DESCRIPTION}{124}{subsection.14.1.2}
+\contentsline {subsection}{\numberline {14.1.3}OPTIONS}{124}{subsection.14.1.3}
+\contentsline {subsection}{\numberline {14.1.4}BUGS}{124}{subsection.14.1.4}
+\contentsline {subsection}{\numberline {14.1.5}SEE ALSO}{124}{subsection.14.1.5}
+\contentsline {section}{\numberline {14.2}BB-ACK.CGI}{125}{section.14.2}
+\contentsline {subsection}{\numberline {14.2.1}SYNOPSIS}{125}{subsection.14.2.1}
+\contentsline {subsection}{\numberline {14.2.2}DESCRIPTION}{125}{subsection.14.2.2}
+\contentsline {subsection}{\numberline {14.2.3}PARAMETERS}{125}{subsection.14.2.3}
+\contentsline {subsection}{\numberline {14.2.4}OPTIONS}{125}{subsection.14.2.4}
+\contentsline {subsection}{\numberline {14.2.5}FILES}{125}{subsection.14.2.5}
+\contentsline {subsection}{\numberline {14.2.6}ENVIRONMENT VARIABLES}{125}{subsection.14.2.6}
+\contentsline {subsection}{\numberline {14.2.7}BUGS}{126}{subsection.14.2.7}
+\contentsline {subsection}{\numberline {14.2.8}SEE ALSO}{126}{subsection.14.2.8}
+\contentsline {section}{\numberline {14.3}HOBBIT-GHOSTS.CGI}{127}{section.14.3}
+\contentsline {subsection}{\numberline {14.3.1}SYNOPSIS}{127}{subsection.14.3.1}
+\contentsline {subsection}{\numberline {14.3.2}DESCRIPTION}{127}{subsection.14.3.2}
+\contentsline {subsection}{\numberline {14.3.3}OPTIONS}{127}{subsection.14.3.3}
+\contentsline {subsection}{\numberline {14.3.4}SEE ALSO}{127}{subsection.14.3.4}
+\contentsline {section}{\numberline {14.4}TRIMHISTORY}{128}{section.14.4}
+\contentsline {subsection}{\numberline {14.4.1}NAME}{128}{subsection.14.4.1}
+\contentsline {subsection}{\numberline {14.4.2}DESCRIPTION}{128}{subsection.14.4.2}
+\contentsline {subsection}{\numberline {14.4.3}OPTIONS}{128}{subsection.14.4.3}
+\contentsline {subsection}{\numberline {14.4.4}FILES}{128}{subsection.14.4.4}
+\contentsline {subsection}{\numberline {14.4.5}ENVIRONMENT VARIABLES}{129}{subsection.14.4.5}
+\contentsline {subsection}{\numberline {14.4.6}SEE ALSO}{129}{subsection.14.4.6}
+\contentsline {section}{\numberline {14.5}HOBBIT-ACKINFO.CGI}{130}{section.14.5}
+\contentsline {subsection}{\numberline {14.5.1}SYNOPSIS}{130}{subsection.14.5.1}
+\contentsline {subsection}{\numberline {14.5.2}DESCRIPTION}{130}{subsection.14.5.2}
+\contentsline {subsection}{\numberline {14.5.3}OPTIONS}{130}{subsection.14.5.3}
+\contentsline {subsection}{\numberline {14.5.4}ENVIRONMENT VARIABLES}{130}{subsection.14.5.4}
+\contentsline {subsection}{\numberline {14.5.5}SEE ALSO}{130}{subsection.14.5.5}
+\contentsline {chapter}{\numberline {15}Network Service Testing}{131}{chapter.15}
+\contentsline {section}{\numberline {15.1}BBTEST-NET}{131}{section.15.1}
+\contentsline {subsection}{\numberline {15.1.1}SYNOPSIS}{131}{subsection.15.1.1}
+\contentsline {subsection}{\numberline {15.1.2}DESCRIPTION}{131}{subsection.15.1.2}
+\contentsline {subsection}{\numberline {15.1.3}GENERAL OPTIONS}{131}{subsection.15.1.3}
+\contentsline {subsection}{\numberline {15.1.4}OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES}{133}{subsection.15.1.4}
+\contentsline {subsection}{\numberline {15.1.5}OPTIONS FOR THE PING TEST}{133}{subsection.15.1.5}
+\contentsline {subsection}{\numberline {15.1.6}OPTIONS FOR HTTP (WEB) TESTS}{133}{subsection.15.1.6}
+\contentsline {subsection}{\numberline {15.1.7}OPTIONS FOR SSL CERTIFICATE TESTS}{133}{subsection.15.1.7}
+\contentsline {subsection}{\numberline {15.1.8}DEBUGGING OPTIONS}{134}{subsection.15.1.8}
+\contentsline {subsection}{\numberline {15.1.9}INFORMATIONAL OPTIONS}{134}{subsection.15.1.9}
+\contentsline {subsection}{\numberline {15.1.10}USING COOKIES IN WEB TESTS}{134}{subsection.15.1.10}
+\contentsline {subsection}{\numberline {15.1.11}ABOUT SSL CERTIFICATE CHECKS}{134}{subsection.15.1.11}
+\contentsline {subsection}{\numberline {15.1.12}LDAP TESTS}{134}{subsection.15.1.12}
+\contentsline {subsection}{\numberline {15.1.13}USING MULTIPLE NETWORK TEST SYSTEMS}{136}{subsection.15.1.13}
+\contentsline {subsection}{\numberline {15.1.14}BBTEST-NET INTERNALS}{136}{subsection.15.1.14}
+\contentsline {subsection}{\numberline {15.1.15}ENVIRONMENT VARIABLES}{136}{subsection.15.1.15}
+\contentsline {subsection}{\numberline {15.1.16}FILES}{137}{subsection.15.1.16}
+\contentsline {subsection}{\numberline {15.1.17}SEE ALSO}{137}{subsection.15.1.17}
+\contentsline {section}{\numberline {15.2}BB-SERVICES}{138}{section.15.2}
+\contentsline {subsection}{\numberline {15.2.1}SYNOPSIS}{138}{subsection.15.2.1}
+\contentsline {subsection}{\numberline {15.2.2}DESCRIPTION}{138}{subsection.15.2.2}
+\contentsline {subsection}{\numberline {15.2.3}FILE FORMAT}{138}{subsection.15.2.3}
+\contentsline {subsection}{\numberline {15.2.4}FILES}{138}{subsection.15.2.4}
+\contentsline {subsection}{\numberline {15.2.5}SEE ALSO}{139}{subsection.15.2.5}
+\contentsline {section}{\numberline {15.3}HOBBITFETCH}{140}{section.15.3}
+\contentsline {subsection}{\numberline {15.3.1}NAME}{140}{subsection.15.3.1}
+\contentsline {subsection}{\numberline {15.3.2}SYNOPSIS}{140}{subsection.15.3.2}
+\contentsline {subsection}{\numberline {15.3.3}DESCRIPTION}{140}{subsection.15.3.3}
+\contentsline {subsection}{\numberline {15.3.4}OPTIONS}{140}{subsection.15.3.4}
+\contentsline {subsection}{\numberline {15.3.5}SEE ALSO}{140}{subsection.15.3.5}
+\contentsline {section}{\numberline {15.4}bbcmd}{141}{section.15.4}
+\contentsline {subsection}{\numberline {15.4.1}SYNOPSIS}{141}{subsection.15.4.1}
+\contentsline {subsection}{\numberline {15.4.2}DESCRIPTION}{141}{subsection.15.4.2}
+\contentsline {subsection}{\numberline {15.4.3}SEE ALSO}{141}{subsection.15.4.3}
+\contentsline {section}{\numberline {15.5}CLIENTLAUNCH.CFG}{142}{section.15.5}
+\contentsline {subsection}{\numberline {15.5.1}SYNOPSIS}{142}{subsection.15.5.1}
+\contentsline {subsection}{\numberline {15.5.2}DESCRIPTION}{142}{subsection.15.5.2}
+\contentsline {subsection}{\numberline {15.5.3}FILE FORMAT}{142}{subsection.15.5.3}
+\contentsline {subsection}{\numberline {15.5.4}SEE ALSO}{142}{subsection.15.5.4}
+\contentsline {chapter}{\numberline {16}Combination Tests}{143}{chapter.16}
+\contentsline {section}{\numberline {16.1}BBCOMBOTEST}{143}{section.16.1}
+\contentsline {subsection}{\numberline {16.1.1}SYNOPSIS}{143}{subsection.16.1.1}
+\contentsline {subsection}{\numberline {16.1.2}DESCRIPTION}{143}{subsection.16.1.2}
+\contentsline {subsection}{\numberline {16.1.3}OPTIONS}{143}{subsection.16.1.3}
+\contentsline {subsection}{\numberline {16.1.4}FILES}{143}{subsection.16.1.4}
+\contentsline {subsection}{\numberline {16.1.5}SEE ALSO}{143}{subsection.16.1.5}
+\contentsline {section}{\numberline {16.2}HOBBITGRAPH.CGI}{144}{section.16.2}
+\contentsline {subsection}{\numberline {16.2.1}NAME}{144}{subsection.16.2.1}
+\contentsline {subsection}{\numberline {16.2.2}SYNOPSIS}{144}{subsection.16.2.2}
+\contentsline {subsection}{\numberline {16.2.3}DESCRIPTION}{144}{subsection.16.2.3}
+\contentsline {subsection}{\numberline {16.2.4}OPTIONS}{144}{subsection.16.2.4}
+\contentsline {subsection}{\numberline {16.2.5}ENVIRONMENT}{144}{subsection.16.2.5}
+\contentsline {subsection}{\numberline {16.2.6}FILES}{144}{subsection.16.2.6}
+\contentsline {subsection}{\numberline {16.2.7}SEE ALSO}{145}{subsection.16.2.7}
+\contentsline {section}{\numberline {16.3}BBCOMBOTEST.CFG}{146}{section.16.3}
+\contentsline {subsection}{\numberline {16.3.1}NAME}{146}{subsection.16.3.1}
+\contentsline {subsection}{\numberline {16.3.2}SYNOPSIS}{146}{subsection.16.3.2}
+\contentsline {subsection}{\numberline {16.3.3}DESCRIPTION}{146}{subsection.16.3.3}
+\contentsline {subsection}{\numberline {16.3.4}FILE FORMAT}{146}{subsection.16.3.4}
+\contentsline {subsection}{\numberline {16.3.5}EXAMPLE}{146}{subsection.16.3.5}
+\contentsline {subsection}{\numberline {16.3.6}FILES}{147}{subsection.16.3.6}
+\contentsline {subsection}{\numberline {16.3.7}SEE ALSO}{147}{subsection.16.3.7}
+\contentsline {section}{\numberline {16.4}HOBBITGRAPH.CGI}{148}{section.16.4}
+\contentsline {subsection}{\numberline {16.4.1}NAME}{148}{subsection.16.4.1}
+\contentsline {subsection}{\numberline {16.4.2}SYNOPSIS}{148}{subsection.16.4.2}
+\contentsline {subsection}{\numberline {16.4.3}DESCRIPTION}{148}{subsection.16.4.3}
+\contentsline {subsection}{\numberline {16.4.4}OPTIONS}{148}{subsection.16.4.4}
+\contentsline {subsection}{\numberline {16.4.5}ENVIRONMENT}{148}{subsection.16.4.5}
+\contentsline {subsection}{\numberline {16.4.6}FILES}{148}{subsection.16.4.6}
+\contentsline {subsection}{\numberline {16.4.7}SEE ALSO}{149}{subsection.16.4.7}
+\contentsline {section}{\numberline {16.5}BB-SNAPSHOT.CGI}{150}{section.16.5}
+\contentsline {subsection}{\numberline {16.5.1}NAME}{150}{subsection.16.5.1}
+\contentsline {subsection}{\numberline {16.5.2}SYNOPSIS}{150}{subsection.16.5.2}
+\contentsline {subsection}{\numberline {16.5.3}DESCRIPTION}{150}{subsection.16.5.3}
+\contentsline {subsection}{\numberline {16.5.4}OPTIONS}{150}{subsection.16.5.4}
+\contentsline {subsection}{\numberline {16.5.5}ENVIRONMENT VARIABLES}{150}{subsection.16.5.5}
+\contentsline {subsection}{\numberline {16.5.6}SEE ALSO}{150}{subsection.16.5.6}
+\contentsline {section}{\numberline {16.6}HOBBITD\_SAMPLE}{151}{section.16.6}
+\contentsline {subsection}{\numberline {16.6.1}NAME}{151}{subsection.16.6.1}
+\contentsline {subsection}{\numberline {16.6.2}SYNOPSIS}{151}{subsection.16.6.2}
+\contentsline {subsection}{\numberline {16.6.3}DESCRIPTION}{151}{subsection.16.6.3}
+\contentsline {subsection}{\numberline {16.6.4}OPTIONS}{151}{subsection.16.6.4}
+\contentsline {subsection}{\numberline {16.6.5}SEE ALSO}{151}{subsection.16.6.5}
+\contentsline {section}{\numberline {16.7}BB-CSVINFO.CGI}{152}{section.16.7}
+\contentsline {subsection}{\numberline {16.7.1}NAME}{152}{subsection.16.7.1}
+\contentsline {subsection}{\numberline {16.7.2}SYNOPSIS}{152}{subsection.16.7.2}
+\contentsline {subsection}{\numberline {16.7.3}DESCRIPTION}{152}{subsection.16.7.3}
+\contentsline {subsection}{\numberline {16.7.4}Example usage}{152}{subsection.16.7.4}
+\contentsline {subsection}{\numberline {16.7.5}SEE ALSO}{152}{subsection.16.7.5}
+\contentsline {section}{\numberline {16.8}HOBBIT-HOSTGRAPHS.CGI}{153}{section.16.8}
+\contentsline {subsection}{\numberline {16.8.1}SYNOPSIS}{153}{subsection.16.8.1}
+\contentsline {subsection}{\numberline {16.8.2}DESCRIPTION}{153}{subsection.16.8.2}
+\contentsline {subsection}{\numberline {16.8.3}OPTIONS}{153}{subsection.16.8.3}
+\contentsline {subsection}{\numberline {16.8.4}BUGS}{153}{subsection.16.8.4}
+\contentsline {subsection}{\numberline {16.8.5}SEE ALSO}{153}{subsection.16.8.5}
+\contentsline {section}{\numberline {16.9}BB-DATEPAGE.CGI}{154}{section.16.9}
+\contentsline {subsection}{\numberline {16.9.1}SYNOPSIS}{154}{subsection.16.9.1}
+\contentsline {subsection}{\numberline {16.9.2}DESCRIPTION}{154}{subsection.16.9.2}
+\contentsline {subsection}{\numberline {16.9.3}OPTIONS}{154}{subsection.16.9.3}
+\contentsline {subsection}{\numberline {16.9.4}ENVIRONMENT VARIABLES}{154}{subsection.16.9.4}
+\contentsline {subsection}{\numberline {16.9.5}SEE ALSO}{155}{subsection.16.9.5}
+\contentsline {section}{\numberline {16.10}BBDIGEST}{156}{section.16.10}
+\contentsline {subsection}{\numberline {16.10.1}SYNOPSIS}{156}{subsection.16.10.1}
+\contentsline {subsection}{\numberline {16.10.2}DESCRIPTION}{156}{subsection.16.10.2}
+\contentsline {subsection}{\numberline {16.10.3}EXAMPLE}{156}{subsection.16.10.3}
+\contentsline {subsection}{\numberline {16.10.4}SEE ALSO}{156}{subsection.16.10.4}
+\contentsline {section}{\numberline {16.11}HOBBITLAUNCH.CFG}{157}{section.16.11}
+\contentsline {subsection}{\numberline {16.11.1}SYNOPSIS}{157}{subsection.16.11.1}
+\contentsline {subsection}{\numberline {16.11.2}DESCRIPTION}{157}{subsection.16.11.2}
+\contentsline {subsection}{\numberline {16.11.3}FILE FORMAT}{157}{subsection.16.11.3}
+\contentsline {subsection}{\numberline {16.11.4}SEE ALSO}{158}{subsection.16.11.4}
+\contentsline {section}{\numberline {16.12}BB-EVENTLOG.CGI}{159}{section.16.12}
+\contentsline {subsection}{\numberline {16.12.1}SYNOPSIS}{159}{subsection.16.12.1}
+\contentsline {subsection}{\numberline {16.12.2}DESCRIPTION}{159}{subsection.16.12.2}
+\contentsline {subsection}{\numberline {16.12.3}OPTIONS}{159}{subsection.16.12.3}
+\contentsline {subsection}{\numberline {16.12.4}SEE ALSO}{159}{subsection.16.12.4}
+\contentsline {section}{\numberline {16.13}HOBBIT-MAILACK}{160}{section.16.13}
+\contentsline {subsection}{\numberline {16.13.1}SYNOPSIS}{160}{subsection.16.13.1}
+\contentsline {subsection}{\numberline {16.13.2}DESCRIPTION}{160}{subsection.16.13.2}
+\contentsline {subsection}{\numberline {16.13.3}ADDING INFORMATION TO THE REPLY MAIL}{160}{subsection.16.13.3}
+\contentsline {subsection}{\numberline {16.13.4}USE WITH PROCMAIL}{160}{subsection.16.13.4}
+\contentsline {subsection}{\numberline {16.13.5}USE WITH QMAIL}{160}{subsection.16.13.5}
+\contentsline {subsection}{\numberline {16.13.6}OPTIONS}{160}{subsection.16.13.6}
+\contentsline {subsection}{\numberline {16.13.7}SEE ALSO}{160}{subsection.16.13.7}
+\contentsline {section}{\numberline {16.14}BB-FINDHOST.CGI}{161}{section.16.14}
+\contentsline {subsection}{\numberline {16.14.1}SYNOPSIS}{161}{subsection.16.14.1}
+\contentsline {subsection}{\numberline {16.14.2}DESCRIPTION}{161}{subsection.16.14.2}
+\contentsline {subsection}{\numberline {16.14.3}OPTIONS}{161}{subsection.16.14.3}
+\contentsline {subsection}{\numberline {16.14.4}FILES}{161}{subsection.16.14.4}
+\contentsline {subsection}{\numberline {16.14.5}ENVIRONMENT VARIABLES}{161}{subsection.16.14.5}
+\contentsline {subsection}{\numberline {16.14.6}SEE ALSO}{161}{subsection.16.14.6}
+\contentsline {section}{\numberline {16.15}HOBBITCLIENT.CFG}{162}{section.16.15}
+\contentsline {subsection}{\numberline {16.15.1}DESCRIPTION}{162}{subsection.16.15.1}
+\contentsline {subsection}{\numberline {16.15.2}SETTINGS}{162}{subsection.16.15.2}
+\contentsline {subsection}{\numberline {16.15.3}INHERITED SETTINGS}{162}{subsection.16.15.3}
+\contentsline {subsection}{\numberline {16.15.4}SEE ALSO}{162}{subsection.16.15.4}
+\contentsline {chapter}{\numberline {17}xymon/BB Messages Protocols}{163}{chapter.17}
+\contentsline {section}{\numberline {17.1}BNF}{163}{section.17.1}
+\contentsline {subsection}{\numberline {17.1.1}xymon messages syntax}{163}{subsection.17.1.1}
+\contentsline {subsection}{\numberline {17.1.2}Big Brother messages syntax}{164}{subsection.17.1.2}
+\contentsline {section}{\numberline {17.2}bb - xymon client communication program}{165}{section.17.2}
+\contentsline {subsection}{\numberline {17.2.1}SYNOPSIS}{165}{subsection.17.2.1}
+\contentsline {subsection}{\numberline {17.2.2}DESCRIPTION}{165}{subsection.17.2.2}
+\contentsline {subsection}{\numberline {17.2.3}OPTIONS AND PARAMETERS}{165}{subsection.17.2.3}
+\contentsline {subsection}{\numberline {17.2.4}HOBBIT MESSAGE SYNTAX}{165}{subsection.17.2.4}
+\contentsline {subsection}{\numberline {17.2.5}EXAMPLE}{168}{subsection.17.2.5}
+\contentsline {subsection}{\numberline {17.2.6}NOTES}{169}{subsection.17.2.6}
+\contentsline {subsection}{\numberline {17.2.7}SEE ALSO}{169}{subsection.17.2.7}
+\contentsline {chapter}{\numberline {18}xymon server programs}{170}{chapter.18}
+\contentsline {section}{\numberline {18.1}HOBBITD\_CHANNEL}{170}{section.18.1}
+\contentsline {subsection}{\numberline {18.1.1}SYNOPSIS}{170}{subsection.18.1.1}
+\contentsline {subsection}{\numberline {18.1.2}DESCRIPTION}{170}{subsection.18.1.2}
+\contentsline {subsection}{\numberline {18.1.3}OPTIONS}{170}{subsection.18.1.3}
+\contentsline {subsection}{\numberline {18.1.4}FILES}{171}{subsection.18.1.4}
+\contentsline {subsection}{\numberline {18.1.5}SEE ALSO}{171}{subsection.18.1.5}
+\contentsline {section}{\numberline {18.2}BB-HOSTSVC.CGI}{172}{section.18.2}
+\contentsline {subsection}{\numberline {18.2.1}SYNOPSIS}{172}{subsection.18.2.1}
+\contentsline {subsection}{\numberline {18.2.2}DESCRIPTION}{172}{subsection.18.2.2}
+\contentsline {subsection}{\numberline {18.2.3}OPTIONS}{172}{subsection.18.2.3}
+\contentsline {subsection}{\numberline {18.2.4}FILES}{173}{subsection.18.2.4}
+\contentsline {subsection}{\numberline {18.2.5}ENVIRONMENT}{173}{subsection.18.2.5}
+\contentsline {subsection}{\numberline {18.2.6}SEE ALSO}{173}{subsection.18.2.6}
+\contentsline {section}{\numberline {18.3}BBPROXY}{174}{section.18.3}
+\contentsline {subsection}{\numberline {18.3.1}SYNOPSIS}{174}{subsection.18.3.1}
+\contentsline {subsection}{\numberline {18.3.2}DESCRIPTION}{174}{subsection.18.3.2}
+\contentsline {subsection}{\numberline {18.3.3}OPTIONS}{174}{subsection.18.3.3}
+\contentsline {subsection}{\numberline {18.3.4}REPORT OUTPUT}{175}{subsection.18.3.4}
+\contentsline {subsection}{\numberline {18.3.5}}{176}{subsection.18.3.5}
+\contentsline {subsection}{\numberline {18.3.6}SIGNALS}{176}{subsection.18.3.6}
+\contentsline {subsection}{\numberline {18.3.7}SEE ALSO}{176}{subsection.18.3.7}
+\contentsline {section}{\numberline {18.4}HOBBITD\_CLIENT}{177}{section.18.4}
+\contentsline {subsection}{\numberline {18.4.1}SYNOPSIS}{177}{subsection.18.4.1}
+\contentsline {subsection}{\numberline {18.4.2}DESCRIPTION}{177}{subsection.18.4.2}
+\contentsline {subsection}{\numberline {18.4.3}OPTIONS}{177}{subsection.18.4.3}
+\contentsline {subsection}{\numberline {18.4.4}FILES}{177}{subsection.18.4.4}
+\contentsline {subsection}{\numberline {18.4.5}SEE ALSO}{177}{subsection.18.4.5}
+\contentsline {section}{\numberline {18.5}HOBBITWEB}{178}{section.18.5}
+\contentsline {subsection}{\numberline {18.5.1}DESCRIPTION}{178}{subsection.18.5.1}
+\contentsline {subsection}{\numberline {18.5.2}SEE ALSO}{179}{subsection.18.5.2}
+\contentsline {chapter}{\numberline {19}xymon Client}{180}{chapter.19}
+\contentsline {section}{\numberline {19.1}``\texttt {/opt/bin/logfetch}'' - xymon client data collector }{180}{section.19.1}
+\contentsline {subsection}{\numberline {19.1.1}SYNOPSIS}{180}{subsection.19.1.1}
+\contentsline {subsection}{\numberline {19.1.2}DESCRIPTION}{180}{subsection.19.1.2}
+\contentsline {subsection}{\numberline {19.1.3}SECURITY}{180}{subsection.19.1.3}
+\contentsline {subsection}{\numberline {19.1.4}ENVIRONMENT VARIABLES}{180}{subsection.19.1.4}
+\contentsline {subsection}{\numberline {19.1.5}FILES}{180}{subsection.19.1.5}
+\contentsline {subsection}{\numberline {19.1.6}SEE ALSO}{181}{subsection.19.1.6}
+\contentsline {section}{\numberline {19.2}CLIENTUPDATE}{182}{section.19.2}
+\contentsline {subsection}{\numberline {19.2.1}NAME}{182}{subsection.19.2.1}
+\contentsline {subsection}{\numberline {19.2.2}SYNOPSIS}{182}{subsection.19.2.2}
+\contentsline {subsection}{\numberline {19.2.3}DESCRIPTION}{182}{subsection.19.2.3}
+\contentsline {subsection}{\numberline {19.2.4}OPTIONS}{182}{subsection.19.2.4}
+\contentsline {subsection}{\numberline {19.2.5}USING CLIENTUPDATE IN HOBBIT}{182}{subsection.19.2.5}
+\contentsline {subsection}{\numberline {19.2.6}OPERATION}{183}{subsection.19.2.6}
+\contentsline {subsection}{\numberline {19.2.7}ENVIRONMENT VARIABLES}{183}{subsection.19.2.7}
+\contentsline {subsection}{\numberline {19.2.8}SEE ALSO}{183}{subsection.19.2.8}
+\contentsline {section}{\numberline {19.3}BB-REPLOG.CGI}{184}{section.19.3}
+\contentsline {subsection}{\numberline {19.3.1}SYNOPSIS}{184}{subsection.19.3.1}
+\contentsline {subsection}{\numberline {19.3.2}DESCRIPTION}{184}{subsection.19.3.2}
+\contentsline {subsection}{\numberline {19.3.3}OPTIONS}{184}{subsection.19.3.3}
+\contentsline {subsection}{\numberline {19.3.4}SEE ALSO}{184}{subsection.19.3.4}
+\contentsline {section}{\numberline {19.4}HOBBITD\_HISTORY}{185}{section.19.4}
+\contentsline {subsection}{\numberline {19.4.1}SYNOPSIS}{185}{subsection.19.4.1}
+\contentsline {subsection}{\numberline {19.4.2}DESCRIPTION}{185}{subsection.19.4.2}
+\contentsline {subsection}{\numberline {19.4.3}OPTIONS}{185}{subsection.19.4.3}
+\contentsline {subsection}{\numberline {19.4.4}ENVIRONMENT}{185}{subsection.19.4.4}
+\contentsline {subsection}{\numberline {19.4.5}FILES}{185}{subsection.19.4.5}
+\contentsline {subsection}{\numberline {19.4.6}SEE ALSO}{185}{subsection.19.4.6}
+\contentsline {section}{\numberline {19.5}MSGCACHE}{186}{section.19.5}
+\contentsline {subsection}{\numberline {19.5.1}SYNOPSIS}{186}{subsection.19.5.1}
+\contentsline {subsection}{\numberline {19.5.2}DESCRIPTION}{186}{subsection.19.5.2}
+\contentsline {subsection}{\numberline {19.5.3}RESTRICTIONS}{186}{subsection.19.5.3}
+\contentsline {subsection}{\numberline {19.5.4}OPTIONS}{186}{subsection.19.5.4}
+\contentsline {subsection}{\numberline {19.5.5}SEE ALSO}{186}{subsection.19.5.5}
+\contentsline {section}{\numberline {19.6}BBRETEST-NET.SH}{187}{section.19.6}
+\contentsline {subsection}{\numberline {19.6.1}SYNOPSIS}{187}{subsection.19.6.1}
+\contentsline {subsection}{\numberline {19.6.2}DESCRIPTION}{187}{subsection.19.6.2}
+\contentsline {subsection}{\numberline {19.6.3}INSTALLATION}{187}{subsection.19.6.3}
+\contentsline {subsection}{\numberline {19.6.4}FILES}{187}{subsection.19.6.4}
+\contentsline {subsection}{\numberline {19.6.5}SEE ALSO}{187}{subsection.19.6.5}
+\contentsline {section}{\numberline {19.7}HOBBITD\_HOSTDATA}{188}{section.19.7}
+\contentsline {subsection}{\numberline {19.7.1}SYNOPSIS}{188}{subsection.19.7.1}
+\contentsline {subsection}{\numberline {19.7.2}DESCRIPTION}{188}{subsection.19.7.2}
+\contentsline {subsection}{\numberline {19.7.3}FILES}{188}{subsection.19.7.3}
+\contentsline {subsection}{\numberline {19.7.4}SEE ALSO}{188}{subsection.19.7.4}
+\contentsline {section}{\numberline {19.8}ORCAHOBBIT}{189}{section.19.8}
+\contentsline {subsection}{\numberline {19.8.1}SYNOPSIS}{189}{subsection.19.8.1}
+\contentsline {subsection}{\numberline {19.8.2}NOTICE}{189}{subsection.19.8.2}
+\contentsline {subsection}{\numberline {19.8.3}DESCRIPTION}{189}{subsection.19.8.3}
+\contentsline {subsection}{\numberline {19.8.4}OPTIONS}{189}{subsection.19.8.4}
+\contentsline {subsection}{\numberline {19.8.5}SEE ALSO}{189}{subsection.19.8.5}
+\contentsline {chapter}{\numberline {20}Data Backend}{190}{chapter.20}
+\contentsline {section}{\numberline {20.1}HOBBITD\_RRD}{190}{section.20.1}
+\contentsline {subsection}{\numberline {20.1.1}SYNOPSIS}{190}{subsection.20.1.1}
+\contentsline {subsection}{\numberline {20.1.2}DESCRIPTION}{190}{subsection.20.1.2}
+\contentsline {subsection}{\numberline {20.1.3}OPTIONS}{190}{subsection.20.1.3}
+\contentsline {subsection}{\numberline {20.1.4}ENVIRONMENT}{191}{subsection.20.1.4}
+\contentsline {subsection}{\numberline {20.1.5}COLLECTED DATA}{191}{subsection.20.1.5}
+\contentsline {subsection}{\numberline {20.1.6}CUSTOM RRD DATA IN NAME-COLON-VALUE (NCV) FORMAT}{192}{subsection.20.1.6}
+\contentsline {subsection}{\numberline {20.1.7}CUSTOM RRD DATA VIA SCRIPTS}{193}{subsection.20.1.7}
+\contentsline {subsection}{\numberline {20.1.8}COMPATIBILITY}{194}{subsection.20.1.8}
+\contentsline {subsection}{\numberline {20.1.9}SEE ALSO}{195}{subsection.20.1.9}
+\contentsline {chapter}{\numberline {21}Miscellanceours programs}{196}{chapter.21}
+\contentsline {section}{\numberline {21.1}HOBBITLAUNCH}{197}{section.21.1}
+\contentsline {subsection}{\numberline {21.1.1}SYNOPSIS}{197}{subsection.21.1.1}
+\contentsline {subsection}{\numberline {21.1.2}DESCRIPTION}{197}{subsection.21.1.2}
+\contentsline {subsection}{\numberline {21.1.3}OPTIONS}{197}{subsection.21.1.3}
+\contentsline {subsection}{\numberline {21.1.4}STARTING TASKS}{197}{subsection.21.1.4}
+\contentsline {subsection}{\numberline {21.1.5}SEE ALSO}{198}{subsection.21.1.5}
+\contentsline {chapter}{\numberline {A}Making of this book}{199}{appendix.A}
+\contentsline {section}{\numberline {A.1}Using Mercurial's book template to build our bookor}{199}{section.A.1}
+\contentsline {section}{\numberline {A.2}On Windows}{200}{section.A.2}
+\contentsline {chapter}{\numberline {B}Open Publication License}{201}{appendix.B}
+\contentsline {section}{\numberline {B.1}Requirements on both unmodified and modified versions}{201}{section.B.1}
+\contentsline {section}{\numberline {B.2}Copyright}{201}{section.B.2}
+\contentsline {section}{\numberline {B.3}Scope of license}{201}{section.B.3}
+\contentsline {section}{\numberline {B.4}Requirements on modified works}{202}{section.B.4}
+\contentsline {section}{\numberline {B.5}Good-practice recommendations}{202}{section.B.5}
+\contentsline {section}{\numberline {B.6}License options}{202}{section.B.6}
+\contentsline {chapter}{Bibliography}{203}{Item.125}
+\contentsline {chapter}{Index}{203}{appendix*.48}

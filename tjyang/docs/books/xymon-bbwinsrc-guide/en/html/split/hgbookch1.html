@@ -1,0 +1,3623 @@
+<?xml version="1.0" encoding="iso-8859-1" ?> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">  
+<!--http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd-->  
+<html xmlns="http://www.w3.org/1999/xhtml"  
+> 
+<head><title>1 User FAQ</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" /> 
+<meta name="generator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)" /> 
+<meta name="originator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)" /> 
+<!-- html4-uni,2,html,xhtml --> 
+<meta name="src" content="hgbook.tex" /> 
+<meta name="date" content="2008-03-02 11:10:00" /> 
+<link rel="stylesheet" type="text/css" href="hgbook.css" /> 
+</head><body 
+>
+   <!--l. 1--><div class="crosslinks"><p class="noindent">[<a 
+href="hgbookch2.html" >next</a>] [<a 
+href="hgbookli3.html" >prev</a>] [<a 
+href="hgbookli3.html#tailhgbookli3.html" >prev-tail</a>] [<a 
+href="#tailhgbookch1.html">tail</a>] [<a 
+href="hgbook.html#hgbookch1.html" >up</a>] </p></div>
+   <h2 class="chapterHead"><span class="titlemark">Chapter&#x00A0;1</span><br /><a 
+ id="x5-70001"></a>User FAQ</h2>
+<!--l. 4--><p class="noindent">To err might be human, but to really handle the consequences well takes a top-notch revision control system. In this chapter,
+we&#x2019;ll discuss some of the techniques you can use when you find that a problem has crept into your project.
+Mercurial has some highly capable features that will help you to isolate the sources of problems, and to handle them
+appropriately.
+</p>
+   <h3 class="sectionHead"><span class="titlemark">1.1    </span> <a 
+ id="x5-80001.1"></a>Erasing local history</h3>
+<!--l. 13--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.1.1    </span> <a 
+ id="x5-90001.1.1"></a>The accidental commit</h4>
+<!--l. 15--><p class="noindent">I have the occasional but persistent problem of typing rather more quickly than I can think, which sometimes results in me
+committing a changeset that is either incomplete or plain wrong. In my case, the usual kind of incomplete changeset is one in
+which I&#x2019;ve created a new source file, but forgotten to <a 
+ id="dx5-9001"></a>&#x201C;<span 
+class="pcrr7tn-">hg add</span>&#x201D; it. A &#x201C;plain wrong&#x201D; changeset is not as common, but no less
+annoying.
+</p><!--l. 22--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.1.2    </span> <a 
+ id="x5-100001.1.2"></a>Rolling back a transaction</h4>
+<!--l. 25--><p class="noindent">In section&#x00A0;<a 
+href="#x5-70001">1<!--tex4ht:ref: chap:userfaq --></a>, I mentioned that Mercurial treats each modification of a repository as a <span 
+class="ptmri7t-">transaction</span>. Every time you commit a
+changeset or pull changes from another repository, Mercurial remembers what you did. You can undo, or <span 
+class="ptmri7t-">roll back</span>, exactly one
+of these actions using the <a 
+ id="dx5-10001"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D; command. (See section&#x00A0;<a 
+href="#x5-120001.1.4">1.1.4<!--tex4ht:ref: sec:undo:rollback-after-push --></a> for an important caveat about the use of this
+command.)
+</p><!--l. 33--><p class="indent">   Here&#x2019;s a mistake that I often find myself making: committing a change in which I&#x2019;ve created a new file, but forgotten to <a 
+ id="dx5-10002"></a>&#x201C;<span 
+class="pcrr7tn-">hg</span>
+<span 
+class="pcrr7tn-">add</span>&#x201D; it.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-10004r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-10006r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;M</span><span 
+class="pcrr7tn-">&#x00A0;a</span>
+<br class="fancyvrb" /><a 
+ id="x5-10008r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;b</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;b</span>
+<br class="fancyvrb" /><a 
+ id="x5-10010r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'Add</span><span 
+class="pcrb7t-">&#x00A0;file</span><span 
+class="pcrb7t-">&#x00A0;b'</span>
+   </div>
+<!--l. 36--><p class="noindent">Looking at the output of <a 
+ id="dx5-10011"></a>&#x201C;<span 
+class="pcrr7tn-">hg status</span>&#x201D; after the commit immediately confirms the error.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-10013r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-10015r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;?</span><span 
+class="pcrr7tn-">&#x00A0;b</span>
+<br class="fancyvrb" /><a 
+ id="x5-10017r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x5-10019r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1:3cce73072f4a</span>
+<br class="fancyvrb" /><a 
+ id="x5-10021r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tag:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x5-10023r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;user:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Bryan</span><span 
+class="pcrr7tn-">&#x00A0;O'Sullivan</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;bos@serpentine.com&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x5-10025r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;date:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:16:35</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x5-10027r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;summary:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Add</span><span 
+class="pcrr7tn-">&#x00A0;file</span><span 
+class="pcrr7tn-">&#x00A0;b</span>
+<br class="fancyvrb" /><a 
+ id="x5-10029r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+                                                                                         
+                                                                                         
+   </div>
+<!--l. 39--><p class="noindent">The commit captured the changes to the file <span 
+class="pcrr7tn-">a</span>, but not the new file <span 
+class="pcrr7tn-">b</span>. If I were to push this changeset to a repository that I shared
+with a colleague, the chances are high that something in <span 
+class="pcrr7tn-">a </span>would refer to <span 
+class="pcrr7tn-">b</span>, which would not be present in their repository when
+they pulled my changes. I would thus become the object of some indignation.
+</p><!--l. 46--><p class="indent">   However, luck is with me&#x2014;I&#x2019;ve caught my error before I pushed the changeset. I use the <a 
+ id="dx5-10030"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D; command, and
+Mercurial makes that last changeset vanish.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-10032r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;rollback</span>
+<br class="fancyvrb" /><a 
+ id="x5-10034r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;rolling</span><span 
+class="pcrr7tn-">&#x00A0;back</span><span 
+class="pcrr7tn-">&#x00A0;last</span><span 
+class="pcrr7tn-">&#x00A0;transaction</span>
+<br class="fancyvrb" /><a 
+ id="x5-10036r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x5-10038r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;0:c625b4a05789</span>
+<br class="fancyvrb" /><a 
+ id="x5-10040r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tag:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x5-10042r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;user:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Bryan</span><span 
+class="pcrr7tn-">&#x00A0;O'Sullivan</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;bos@serpentine.com&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x5-10044r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;date:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:16:35</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x5-10046r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;summary:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;First</span><span 
+class="pcrr7tn-">&#x00A0;commit</span>
+<br class="fancyvrb" /><a 
+ id="x5-10048r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-10050r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-10052r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;M</span><span 
+class="pcrr7tn-">&#x00A0;a</span>
+<br class="fancyvrb" /><a 
+ id="x5-10054r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;?</span><span 
+class="pcrr7tn-">&#x00A0;b</span>
+   </div>
+<!--l. 50--><p class="noindent">Notice that the changeset is no longer present in the repository&#x2019;s history, and the working directory once again thinks
+that the file <span 
+class="pcrr7tn-">a </span>is modified. The commit and rollback have left the working directory exactly as it was prior to
+the commit; the changeset has been completely erased. I can now safely <a 
+ id="dx5-10055"></a>&#x201C;<span 
+class="pcrr7tn-">hg add</span>&#x201D; the file <span 
+class="pcrr7tn-">b</span>, and rerun my
+commit.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-10057r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;add</span><span 
+class="pcrb7t-">&#x00A0;b</span>
+<br class="fancyvrb" /><a 
+ id="x5-10059r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'Add</span><span 
+class="pcrb7t-">&#x00A0;file</span><span 
+class="pcrb7t-">&#x00A0;b,</span><span 
+class="pcrb7t-">&#x00A0;this</span><span 
+class="pcrb7t-">&#x00A0;time</span><span 
+class="pcrb7t-">&#x00A0;for</span><span 
+class="pcrb7t-">&#x00A0;real'</span>
+   </div>
+<!--l. 58--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.1.3    </span> <a 
+ id="x5-110001.1.3"></a>The erroneous pull</h4>
+<!--l. 60--><p class="noindent">It&#x2019;s common practice with Mercurial to maintain separate development branches of a project in different repositories. Your
+development team might have one shared repository for your project&#x2019;s &#x201C;0.9&#x201D; release, and another, containing different changes,
+for the &#x201C;1.0&#x201D; release.
+</p><!--l. 66--><p class="indent">   Given this, you can imagine that the consequences could be messy if you had a local &#x201C;0.9&#x201D; repository, and
+accidentally pulled changes from the shared &#x201C;1.0&#x201D; repository into it. At worst, you could be paying insufficient
+attention, and push those changes into the shared &#x201C;0.9&#x201D; tree, confusing your entire team (but don&#x2019;t worry, we&#x2019;ll
+return to this horror scenario later). However, it&#x2019;s more likely that you&#x2019;ll notice immediately, because Mercurial
+will display the URL it&#x2019;s pulling from, or you will see it pull a suspiciously large number of changes into the
+repository.
+</p><!--l. 76--><p class="indent">   The <a 
+ id="dx5-11001"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D; command will work nicely to expunge all of the changesets that you just pulled. Mercurial groups
+all changes from one <a 
+ id="dx5-11002"></a>&#x201C;<span 
+class="pcrr7tn-">hg pull</span>&#x201D; into a single transaction, so one <a 
+ id="dx5-11003"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D; is all you need to undo this
+mistake.
+                                                                                         
+                                                                                         
+</p><!--l. 81--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.1.4    </span> <a 
+ id="x5-120001.1.4"></a>Rolling back is useless once you&#x2019;ve pushed</h4>
+<!--l. 84--><p class="noindent">The value of the <a 
+ id="dx5-12001"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D; command drops to zero once you&#x2019;ve pushed your changes to another repository. Rolling
+back a change makes it disappear entirely, but <span 
+class="ptmri7t-">only </span>in the repository in which you perform the <a 
+ id="dx5-12002"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D;.
+Because a rollback eliminates history, there&#x2019;s no way for the disappearance of a change to propagate between
+repositories.
+</p><!--l. 91--><p class="indent">   If you&#x2019;ve pushed a change to another repository&#x2014;particularly if it&#x2019;s a shared repository&#x2014;it has essentially &#x201C;escaped into the
+wild,&#x201D; and you&#x2019;ll have to recover from your mistake in a different way. What will happen if you push a changeset
+somewhere, then roll it back, then pull from the repository you pushed to, is that the changeset will reappear in your
+repository.
+</p><!--l. 98--><p class="indent">   (If you absolutely know for sure that the change you want to roll back is the most recent change in the repository that you
+pushed to, <span 
+class="ptmri7t-">and </span>you know that nobody else could have pulled it from that repository, you can roll back the changeset there, too,
+but you really should really not rely on this working reliably. If you do this, sooner or later a change really
+will make it into a repository that you don&#x2019;t directly control (or have forgotten about), and come back to bite
+you.)
+</p><!--l. 107--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.1.5    </span> <a 
+ id="x5-130001.1.5"></a>You can only roll back once</h4>
+<!--l. 109--><p class="noindent">Mercurial stores exactly one transaction in its transaction log; that transaction is the most recent one that occurred in the
+repository. This means that you can only roll back one transaction. If you expect to be able to roll back one transaction, then its
+predecessor, this is not the behaviour you will get.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-13002r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;rollback</span>
+<br class="fancyvrb" /><a 
+ id="x5-13004r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;rolling</span><span 
+class="pcrr7tn-">&#x00A0;back</span><span 
+class="pcrr7tn-">&#x00A0;last</span><span 
+class="pcrr7tn-">&#x00A0;transaction</span>
+<br class="fancyvrb" /><a 
+ id="x5-13006r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;rollback</span>
+<br class="fancyvrb" /><a 
+ id="x5-13008r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;no</span><span 
+class="pcrr7tn-">&#x00A0;rollback</span><span 
+class="pcrr7tn-">&#x00A0;information</span><span 
+class="pcrr7tn-">&#x00A0;available</span>
+   </div>
+<!--l. 115--><p class="noindent">Once you&#x2019;ve rolled back one transaction in a repository, you can&#x2019;t roll back again in that repository until you perform another
+commit or pull.
+</p><!--l. 119--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">1.2    </span> <a 
+ id="x5-140001.2"></a>Reverting the mistaken change</h3>
+<!--l. 121--><p class="noindent">If you make a modification to a file, and decide that you really didn&#x2019;t want to change the file at all, and you haven&#x2019;t yet
+committed your changes, the <a 
+ id="dx5-14001"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; command is the one you&#x2019;ll need. It looks at the changeset that&#x2019;s the parent of the
+working directory, and restores the contents of the file to their state as of that changeset. (That&#x2019;s a long-winded way of saying
+that, in the normal case, it undoes your modifications.)
+</p><!--l. 129--><p class="indent">   Let&#x2019;s illustrate how the <a 
+ id="dx5-14002"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; command works with yet another small example. We&#x2019;ll begin by modifying a file that
+Mercurial is already tracking.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-14004r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-14006r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;original</span><span 
+class="pcrr7tn-">&#x00A0;content</span>
+<br class="fancyvrb" /><a 
+ id="x5-14008r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;unwanted</span><span 
+class="pcrb7t-">&#x00A0;change</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+                                                                                         
+                                                                                         
+<br class="fancyvrb" /><a 
+ id="x5-14010r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;diff</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-14012r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;diff</span><span 
+class="pcrr7tn-">&#x00A0;-r</span><span 
+class="pcrr7tn-">&#x00A0;677e270630bd</span><span 
+class="pcrr7tn-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-14014r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;---</span><span 
+class="pcrr7tn-">&#x00A0;a/file        Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:16:28</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x5-14016r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;+++</span><span 
+class="pcrr7tn-">&#x00A0;b/file        Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:16:28</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x5-14018r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;@@</span><span 
+class="pcrr7tn-">&#x00A0;-1,1</span><span 
+class="pcrr7tn-">&#x00A0;+1,2</span><span 
+class="pcrr7tn-">&#x00A0;@@</span><span 
+class="pcrr7tn-">&#x00A0;original</span><span 
+class="pcrr7tn-">&#x00A0;content</span>
+<br class="fancyvrb" /><a 
+ id="x5-14020r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;original</span><span 
+class="pcrr7tn-">&#x00A0;content</span>
+<br class="fancyvrb" /><a 
+ id="x5-14022r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;+unwanted</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+   </div>
+<!--l. 133--><p class="noindent">If we don&#x2019;t want that change, we can simply <a 
+ id="dx5-14023"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; the file.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-14025r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-14027r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;M</span><span 
+class="pcrr7tn-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-14029r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;revert</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-14031r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-14033r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;original</span><span 
+class="pcrr7tn-">&#x00A0;content</span>
+   </div>
+<!--l. 135--><p class="noindent">The <a 
+ id="dx5-14034"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; command provides us with an extra degree of safety by saving our modified file with a <span 
+class="pcrr7tn-">.orig</span>
+extension.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-14036r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-14038r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;?</span><span 
+class="pcrr7tn-">&#x00A0;file.orig</span>
+<br class="fancyvrb" /><a 
+ id="x5-14040r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;file.orig</span>
+<br class="fancyvrb" /><a 
+ id="x5-14042r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;original</span><span 
+class="pcrr7tn-">&#x00A0;content</span>
+<br class="fancyvrb" /><a 
+ id="x5-14044r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;unwanted</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+   </div>
+<!--l. 139--><p class="indent">   Here is a summary of the cases that the <a 
+ id="dx5-14045"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; command can deal with. We will describe each of these in more detail
+in the section that follows. </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">If you modify a file, it will restore the file to its unmodified state.
+     </span><li><span class="dt">
+     </span><span class="dd">If you <a 
+ id="dx5-14046"></a>&#x201C;<span 
+class="pcrr7tn-">hg add</span>&#x201D; a file, it will undo the &#x201C;added&#x201D; state of the file, but leave the file itself untouched.
+     </span><li><span class="dt">
+     </span><span class="dd">If you delete a file without telling Mercurial, it will restore the file to its unmodified contents.
+     </span><li><span class="dt">
+     </span><span class="dd">If you use the <a 
+ id="dx5-14047"></a>&#x201C;<span 
+class="pcrr7tn-">hg remove</span>&#x201D; command to remove a file, it will undo the &#x201C;removed&#x201D; state of the file, and restore
+     the file to its unmodified contents.</li></ul>
+<!--l. 154--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.2.1    </span> <a 
+ id="x5-150001.2.1"></a>File management errors</h4>
+<!--l. 157--><p class="noindent">The <a 
+ id="dx5-15001"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; command is useful for more than just modified files. It lets you reverse the results of all of Mercurial&#x2019;s file
+management commands&#x2014;<a 
+ id="dx5-15002"></a>&#x201C;<span 
+class="pcrr7tn-">hg add</span>&#x201D;, <a 
+ id="dx5-15003"></a>&#x201C;<span 
+class="pcrr7tn-">hg remove</span>&#x201D;, and so on.
+</p><!--l. 161--><p class="indent">   If you <a 
+ id="dx5-15004"></a>&#x201C;<span 
+class="pcrr7tn-">hg add</span>&#x201D; a file, then decide that in fact you don&#x2019;t want Mercurial to track it, use <a 
+ id="dx5-15005"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; to undo the add.
+Don&#x2019;t worry; Mercurial will not modify the file in any way. It will just &#x201C;unmark&#x201D; the file.
+                                                                                         
+                                                                                         
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-15007r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;oops</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;oops</span>
+<br class="fancyvrb" /><a 
+ id="x5-15009r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;add</span><span 
+class="pcrb7t-">&#x00A0;oops</span>
+<br class="fancyvrb" /><a 
+ id="x5-15011r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span><span 
+class="pcrb7t-">&#x00A0;oops</span>
+<br class="fancyvrb" /><a 
+ id="x5-15013r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;A</span><span 
+class="pcrr7tn-">&#x00A0;oops</span>
+<br class="fancyvrb" /><a 
+ id="x5-15015r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;revert</span><span 
+class="pcrb7t-">&#x00A0;oops</span>
+<br class="fancyvrb" /><a 
+ id="x5-15017r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-15019r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;?</span><span 
+class="pcrr7tn-">&#x00A0;oops</span>
+   </div>
+<!--l. 167--><p class="indent">   Similarly, if you ask Mercurial to <a 
+ id="dx5-15020"></a>&#x201C;<span 
+class="pcrr7tn-">hg remove</span>&#x201D; a file, you can use <a 
+ id="dx5-15021"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; to restore it to the contents it had as of the
+parent of the working directory.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-15023r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;remove</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15025r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-15027r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;R</span><span 
+class="pcrr7tn-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15029r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;revert</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15031r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-15033r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">ls</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15035r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;file</span>
+   </div>
+<!--l. 171--><p class="noindent">This works just as well for a file that you deleted by hand, without telling Mercurial (recall that in Mercurial terminology, this kind
+of file is called &#x201C;missing&#x201D;).
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-15037r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">rm</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15039r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-15041r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;!</span><span 
+class="pcrr7tn-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15043r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;revert</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15045r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">ls</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15047r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;file</span>
+   </div>
+<!--l. 176--><p class="indent">   If you revert a <a 
+ id="dx5-15048"></a>&#x201C;<span 
+class="pcrr7tn-">hg copy</span>&#x201D;, the copied-to file remains in your working directory afterwards, untracked. Since a copy doesn&#x2019;t
+affect the copied-from file in any way, Mercurial doesn&#x2019;t do anything with the copied-from file.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-15050r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;copy</span><span 
+class="pcrb7t-">&#x00A0;file</span><span 
+class="pcrb7t-">&#x00A0;new-file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15052r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;revert</span><span 
+class="pcrb7t-">&#x00A0;new-file</span>
+<br class="fancyvrb" /><a 
+ id="x5-15054r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-15056r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;?</span><span 
+class="pcrr7tn-">&#x00A0;new-file</span>
+   </div>
+<!--l. 182--><p class="noindent">
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x5-160001.2.1"></a>A slightly special case: reverting a rename</h5>
+<!--l. 184--><p class="noindent">If you <a 
+ id="dx5-16001"></a>&#x201C;<span 
+class="pcrr7tn-">hg rename</span>&#x201D; a file, there is one small detail that you should remember. When you <a 
+ id="dx5-16002"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert</span>&#x201D; a rename, it&#x2019;s not
+enough to provide the name of the renamed-to file, as you can see here.
+                                                                                         
+                                                                                         
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-16004r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;rename</span><span 
+class="pcrb7t-">&#x00A0;file</span><span 
+class="pcrb7t-">&#x00A0;new-file</span>
+<br class="fancyvrb" /><a 
+ id="x5-16006r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;revert</span><span 
+class="pcrb7t-">&#x00A0;new-file</span>
+<br class="fancyvrb" /><a 
+ id="x5-16008r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-16010r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;R</span><span 
+class="pcrr7tn-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-16012r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;?</span><span 
+class="pcrr7tn-">&#x00A0;new-file</span>
+   </div>
+<!--l. 189--><p class="noindent">As you can see from the output of <a 
+ id="dx5-16013"></a>&#x201C;<span 
+class="pcrr7tn-">hg status</span>&#x201D;, the renamed-to file is no longer identified as added, but the renamed-<span 
+class="ptmri7t-">from </span>file is
+still removed! This is counter-intuitive (at least to me), but at least it&#x2019;s easy to deal with.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-16015r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;revert</span><span 
+class="pcrb7t-">&#x00A0;file</span>
+<br class="fancyvrb" /><a 
+ id="x5-16017r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;status</span>
+<br class="fancyvrb" /><a 
+ id="x5-16019r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;?</span><span 
+class="pcrr7tn-">&#x00A0;new-file</span>
+   </div>
+<!--l. 194--><p class="noindent">So remember, to revert a <a 
+ id="dx5-16020"></a>&#x201C;<span 
+class="pcrr7tn-">hg rename</span>&#x201D;, you must provide <span 
+class="ptmri7t-">both </span>the source and destination names.
+</p><!--l. 197--><p class="indent">   (By the way, if you rename a file, then modify the renamed-to file, then revert both components of the rename, when
+Mercurial restores the file that was removed as part of the rename, it will be unmodified. If you need the modifications in the
+renamed-to file to show up in the renamed-from file, don&#x2019;t forget to copy them over.)
+</p><!--l. 203--><p class="indent">   These fiddly aspects of reverting a rename arguably constitute a small bug in Mercurial.
+</p><!--l. 206--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">1.3    </span> <a 
+ id="x5-170001.3"></a>Dealing with committed changes</h3>
+<!--l. 208--><p class="noindent">Consider a case where you have committed a change <span 
+class="zptmcmrm-">a</span>, and another change <span 
+class="zptmcmrm-">b </span>on top of it; you then realise that change <span 
+class="zptmcmrm-">a </span>was
+incorrect. Mercurial lets you &#x201C;back out&#x201D; an entire changeset automatically, and building blocks that let you reverse part of a
+changeset by hand.
+</p><!--l. 214--><p class="indent">   Before you read this section, here&#x2019;s something to keep in mind: the <a 
+ id="dx5-17001"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command undoes changes by <span 
+class="ptmri7t-">adding</span>
+history, not by modifying or erasing it. It&#x2019;s the right tool to use if you&#x2019;re fixing bugs, but not if you&#x2019;re trying to undo some
+change that has catastrophic consequences. To deal with those, see section&#x00A0;<a 
+href="#x5-240001.4">1.4<!--tex4ht:ref: sec:undo:aaaiiieee --></a>.
+</p><!--l. 221--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.3.1    </span> <a 
+ id="x5-180001.3.1"></a>Backing out a changeset</h4>
+<!--l. 223--><p class="noindent">The <a 
+ id="dx5-18001"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command lets you &#x201C;undo&#x201D; the effects of an entire changeset in an automated fashion. Because Mercurial&#x2019;s
+history is immutable, this command <span 
+class="ptmri7t-">does not </span>get rid of the changeset you want to undo. Instead, it creates a new changeset that
+<span 
+class="ptmri7t-">reverses </span>the effect of the to-be-undone changeset.
+</p><!--l. 229--><p class="indent">   The operation of the <a 
+ id="dx5-18002"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command is a little intricate, so let&#x2019;s illustrate it with some examples. First, we&#x2019;ll create
+a repository with some simple changes.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-18004r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;init</span><span 
+class="pcrb7t-">&#x00A0;myrepo</span>
+<br class="fancyvrb" /><a 
+ id="x5-18006r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;myrepo</span>
+<br class="fancyvrb" /><a 
+ id="x5-18008r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;first</span><span 
+class="pcrb7t-">&#x00A0;change</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-18010r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;add</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+                                                                                         
+                                                                                         
+<br class="fancyvrb" /><a 
+ id="x5-18012r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'first</span><span 
+class="pcrb7t-">&#x00A0;change'</span>
+<br class="fancyvrb" /><a 
+ id="x5-18014r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;second</span><span 
+class="pcrb7t-">&#x00A0;change</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-18016r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'second</span><span 
+class="pcrb7t-">&#x00A0;change'</span>
+   </div>
+<!--l. 234--><p class="indent">   The <a 
+ id="dx5-18017"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command takes a single changeset ID as its argument; this is the changeset to back out.
+Normally, <a 
+ id="dx5-18018"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; will drop you into a text editor to write a commit message, so you can record why
+you&#x2019;re backing the change out. In this example, we provide a commit message on the command line using the <a 
+ id="dx5-18019"></a><span 
+class="pcrr7tn-">-m</span>
+option.
+</p><!--l. 241--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.3.2    </span> <a 
+ id="x5-190001.3.2"></a>Backing out the tip changeset</h4>
+<!--l. 243--><p class="noindent">We&#x2019;re going to start by backing out the last changeset we committed.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-19002r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;backout</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'back</span><span 
+class="pcrb7t-">&#x00A0;out</span><span 
+class="pcrb7t-">&#x00A0;second</span><span 
+class="pcrb7t-">&#x00A0;change'</span><span 
+class="pcrb7t-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x5-19004r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;reverting</span><span 
+class="pcrr7tn-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-19006r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;2:6e62878a5774</span><span 
+class="pcrr7tn-">&#x00A0;backs</span><span 
+class="pcrr7tn-">&#x00A0;out</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;1:668580b3a0ad</span>
+<br class="fancyvrb" /><a 
+ id="x5-19008r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-19010r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;first</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+   </div>
+<!--l. 245--><p class="noindent">You can see that the second line from <span 
+class="pcrr7tn-">myfile </span>is no longer present. Taking a look at the output of <a 
+ id="dx5-19011"></a>&#x201C;<span 
+class="pcrr7tn-">hg log</span>&#x201D; gives us an idea of what
+the <a 
+ id="dx5-19012"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command has done.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-19014r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;log</span><span 
+class="pcrb7t-">&#x00A0;--style</span><span 
+class="pcrb7t-">&#x00A0;compact</span>
+<br class="fancyvrb" /><a 
+ id="x5-19016r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2[tip]</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;6e62878a5774</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2008-03-02</span><span 
+class="pcrr7tn-">&#x00A0;16:14</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bos</span>
+<br class="fancyvrb" /><a 
+ id="x5-19018r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;back</span><span 
+class="pcrr7tn-">&#x00A0;out</span><span 
+class="pcrr7tn-">&#x00A0;second</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-19020r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-19022r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;668580b3a0ad</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2008-03-02</span><span 
+class="pcrr7tn-">&#x00A0;16:14</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bos</span>
+<br class="fancyvrb" /><a 
+ id="x5-19024r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;second</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-19026r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-19028r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;115ab223c2a3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2008-03-02</span><span 
+class="pcrr7tn-">&#x00A0;16:14</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bos</span>
+<br class="fancyvrb" /><a 
+ id="x5-19030r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;first</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-19032r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+   </div>
+<!--l. 249--><p class="noindent">Notice that the new changeset that <a 
+ id="dx5-19033"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; has created is a child of the changeset we backed out. It&#x2019;s easier to see this
+in figure&#x00A0;<a 
+href="#x5-190341">1.1<!--tex4ht:ref: fig:undo:backout --></a>, which presents a graphical view of the change history. As you can see, the history is nice and
+linear.
+</p>
+   <hr class="figure" /><div class="figure" 
+><table class="figure"><tr class="figure"><td class="figure" 
+>
+                                                                                         
+                                                                                         
+<a 
+ id="x5-190341"></a>
+                                                                                         
+                                                                                         
+<!--l. 256--><p class="noindent"><img 
+src="undo-simple.png" alt="PIC"  
+ />
+<br /> </p><table class="caption" 
+><tr style="vertical-align:baseline;" class="caption"><td class="id">Figure&#x00A0;1.1: </td><td  
+class="content">Backing out a change using the <a 
+ id="dx5-19035"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command</td></tr></table><!--tex4ht:label?: x5-190341 -->
+                                                                                         
+                                                                                         
+   </td></tr></table></div><hr class="endfigure" />
+   <h4 class="subsectionHead"><span class="titlemark">1.3.3    </span> <a 
+ id="x5-200001.3.3"></a>Backing out a non-tip change</h4>
+<!--l. 263--><p class="noindent">If you want to back out a change other than the last one you committed, pass the <a 
+ id="dx5-20001"></a><span 
+class="pcrr7tn-">--merge </span>option to the <a 
+ id="dx5-20002"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D;
+command.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-20004r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;..</span>
+<br class="fancyvrb" /><a 
+ id="x5-20006r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;clone</span><span 
+class="pcrb7t-">&#x00A0;-r1</span><span 
+class="pcrb7t-">&#x00A0;myrepo</span><span 
+class="pcrb7t-">&#x00A0;non-tip-repo</span>
+<br class="fancyvrb" /><a 
+ id="x5-20008r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;requesting</span><span 
+class="pcrr7tn-">&#x00A0;all</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x5-20010r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-20012r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;manifests</span>
+<br class="fancyvrb" /><a 
+ id="x5-20014r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;file</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x5-20016r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;added</span><span 
+class="pcrr7tn-">&#x00A0;2</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span><span 
+class="pcrr7tn-">&#x00A0;with</span><span 
+class="pcrr7tn-">&#x00A0;2</span><span 
+class="pcrr7tn-">&#x00A0;changes</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span>
+<br class="fancyvrb" /><a 
+ id="x5-20018r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+<br class="fancyvrb" /><a 
+ id="x5-20020r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;non-tip-repo</span>
+   </div>
+<!--l. 267--><p class="noindent">This makes backing out any changeset a &#x201C;one-shot&#x201D; operation that&#x2019;s usually simple and fast.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-20022r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;third</span><span 
+class="pcrb7t-">&#x00A0;change</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-20024r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'third</span><span 
+class="pcrb7t-">&#x00A0;change'</span>
+<br class="fancyvrb" /><a 
+ id="x5-20026r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;backout</span><span 
+class="pcrb7t-">&#x00A0;--merge</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'back</span><span 
+class="pcrb7t-">&#x00A0;out</span><span 
+class="pcrb7t-">&#x00A0;second</span><span 
+class="pcrb7t-">&#x00A0;change'</span><span 
+class="pcrb7t-">&#x00A0;1</span>
+<br class="fancyvrb" /><a 
+ id="x5-20028r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;reverting</span><span 
+class="pcrr7tn-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-20030r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;3:6e62878a5774</span><span 
+class="pcrr7tn-">&#x00A0;backs</span><span 
+class="pcrr7tn-">&#x00A0;out</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;1:668580b3a0ad</span>
+<br class="fancyvrb" /><a 
+ id="x5-20032r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;merging</span><span 
+class="pcrr7tn-">&#x00A0;with</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;2:e48885580852</span>
+<br class="fancyvrb" /><a 
+ id="x5-20034r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;merging</span><span 
+class="pcrr7tn-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-20036r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+<br class="fancyvrb" /><a 
+ id="x5-20038r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;(branch</span><span 
+class="pcrr7tn-">&#x00A0;merge,</span><span 
+class="pcrr7tn-">&#x00A0;don't</span><span 
+class="pcrr7tn-">&#x00A0;forget</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;commit)</span>
+   </div>
+<!--l. 271--><p class="indent">   If you take a look at the contents of <span 
+class="pcrr7tn-">myfile </span>after the backout finishes, you&#x2019;ll see that the first and third changes are present,
+but not the second.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-20040r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-20042r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;first</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-20044r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;third</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+   </div>
+<!--l. 276--><p class="indent">   As the graphical history in figure&#x00A0;<a 
+href="#x5-200452">1.2<!--tex4ht:ref: fig:undo:backout-non-tip --></a> illustrates, Mercurial actually commits <span 
+class="ptmri7t-">two </span>changes in this kind of situation (the
+box-shaped nodes are the ones that Mercurial commits automatically). Before Mercurial begins the backout process, it first
+remembers what the current parent of the working directory is. It then backs out the target changeset, and commits that as a
+changeset. Finally, it merges back to the previous parent of the working directory, and commits the result of the
+merge.
+</p>
+   <hr class="figure" /><div class="figure" 
+><table class="figure"><tr class="figure"><td class="figure" 
+>
+                                                                                         
+                                                                                         
+<a 
+ id="x5-200452"></a>
+                                                                                         
+                                                                                         
+<!--l. 287--><p class="noindent"><img 
+src="undo-non-tip.png" alt="PIC"  
+ />
+<br /> </p><table class="caption" 
+><tr style="vertical-align:baseline;" class="caption"><td class="id">Figure&#x00A0;1.2: </td><td  
+class="content">Automated backout of a non-tip change using the <a 
+ id="dx5-20046"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command</td></tr></table><!--tex4ht:label?: x5-200452 -->
+                                                                                         
+                                                                                         
+   </td></tr></table></div><hr class="endfigure" />
+<!--l. 292--><p class="indent">   The result is that you end up &#x201C;back where you were&#x201D;, only with some extra history that undoes the effect of the changeset
+you wanted to back out.
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x5-210001.3.3"></a>Always use the <span 
+class="pcrr7tn-">--merge </span>option</h5>
+<!--l. 298--><p class="noindent">In fact, since the <a 
+ id="dx5-21001"></a><span 
+class="pcrr7tn-">--merge </span>option will do the &#x201C;right thing&#x201D; whether or not the changeset you&#x2019;re backing out is the tip (i.e.&#x00A0;it
+won&#x2019;t try to merge if it&#x2019;s backing out the tip, since there&#x2019;s no need), you should <span 
+class="ptmri7t-">always </span>use this option when you run the <a 
+ id="dx5-21002"></a>&#x201C;<span 
+class="pcrr7tn-">hg</span>
+<span 
+class="pcrr7tn-">backout</span>&#x201D; command.
+</p><!--l. 304--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.3.4    </span> <a 
+ id="x5-220001.3.4"></a>Gaining more control of the backout process</h4>
+<!--l. 306--><p class="noindent">While I&#x2019;ve recommended that you always use the <a 
+ id="dx5-22001"></a><span 
+class="pcrr7tn-">--merge </span>option when backing out a change, the <a 
+ id="dx5-22002"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D;
+command lets you decide how to merge a backout changeset. Taking control of the backout process by hand is
+something you will rarely need to do, but it can be useful to understand what the <a 
+ id="dx5-22003"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command is
+doing for you automatically. To illustrate this, let&#x2019;s clone our first repository, but omit the backout change that it
+contains.
+</p><!--l. 315--><p class="indent">
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-22005r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;..</span>
+<br class="fancyvrb" /><a 
+ id="x5-22007r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;clone</span><span 
+class="pcrb7t-">&#x00A0;-r1</span><span 
+class="pcrb7t-">&#x00A0;myrepo</span><span 
+class="pcrb7t-">&#x00A0;newrepo</span>
+<br class="fancyvrb" /><a 
+ id="x5-22009r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;requesting</span><span 
+class="pcrr7tn-">&#x00A0;all</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x5-22011r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-22013r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;manifests</span>
+<br class="fancyvrb" /><a 
+ id="x5-22015r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;file</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x5-22017r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;added</span><span 
+class="pcrr7tn-">&#x00A0;2</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span><span 
+class="pcrr7tn-">&#x00A0;with</span><span 
+class="pcrr7tn-">&#x00A0;2</span><span 
+class="pcrr7tn-">&#x00A0;changes</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span>
+<br class="fancyvrb" /><a 
+ id="x5-22019r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+<br class="fancyvrb" /><a 
+ id="x5-22021r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;newrepo</span>
+   </div>
+<!--l. 316--><p class="noindent">As with our earlier example, We&#x2019;ll commit a third changeset, then back out its parent, and see what happens.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-22023r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;third</span><span 
+class="pcrb7t-">&#x00A0;change</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-22025r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'third</span><span 
+class="pcrb7t-">&#x00A0;change'</span>
+<br class="fancyvrb" /><a 
+ id="x5-22027r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;backout</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'back</span><span 
+class="pcrb7t-">&#x00A0;out</span><span 
+class="pcrb7t-">&#x00A0;second</span><span 
+class="pcrb7t-">&#x00A0;change'</span><span 
+class="pcrb7t-">&#x00A0;1</span>
+<br class="fancyvrb" /><a 
+ id="x5-22029r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;reverting</span><span 
+class="pcrr7tn-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-22031r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;3:30cd4bc76a4a</span><span 
+class="pcrr7tn-">&#x00A0;backs</span><span 
+class="pcrr7tn-">&#x00A0;out</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;1:668580b3a0ad</span>
+<br class="fancyvrb" /><a 
+ id="x5-22033r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;backout</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;a</span><span 
+class="pcrr7tn-">&#x00A0;new</span><span 
+class="pcrr7tn-">&#x00A0;head</span><span 
+class="pcrr7tn-">&#x00A0;-</span><span 
+class="pcrr7tn-">&#x00A0;do</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;forget</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;merge</span>
+<br class="fancyvrb" /><a 
+ id="x5-22035r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;(use</span><span 
+class="pcrr7tn-">&#x00A0;"backout</span><span 
+class="pcrr7tn-">&#x00A0;--merge"</span><span 
+class="pcrr7tn-">&#x00A0;if</span><span 
+class="pcrr7tn-">&#x00A0;you</span><span 
+class="pcrr7tn-">&#x00A0;want</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;auto-merge)</span>
+   </div>
+<!--l. 319--><p class="noindent">Our new changeset is again a descendant of the changeset we backout out; it&#x2019;s thus a new head, <span 
+class="ptmri7t-">not </span>a descendant of the changeset
+that was the tip. The <a 
+ id="dx5-22036"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command was quite explicit in telling us this.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+                                                                                         
+                                                                                         
+<a 
+ id="x5-22038r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;log</span><span 
+class="pcrb7t-">&#x00A0;--style</span><span 
+class="pcrb7t-">&#x00A0;compact</span>
+<br class="fancyvrb" /><a 
+ id="x5-22040r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;3[tip]:1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;30cd4bc76a4a</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2008-03-02</span><span 
+class="pcrr7tn-">&#x00A0;16:14</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bos</span>
+<br class="fancyvrb" /><a 
+ id="x5-22042r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;back</span><span 
+class="pcrr7tn-">&#x00A0;out</span><span 
+class="pcrr7tn-">&#x00A0;second</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22044r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-22046r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;e48885580852</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2008-03-02</span><span 
+class="pcrr7tn-">&#x00A0;16:14</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bos</span>
+<br class="fancyvrb" /><a 
+ id="x5-22048r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;third</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22050r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-22052r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;668580b3a0ad</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2008-03-02</span><span 
+class="pcrr7tn-">&#x00A0;16:14</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bos</span>
+<br class="fancyvrb" /><a 
+ id="x5-22054r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;second</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22056r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-22058r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;115ab223c2a3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2008-03-02</span><span 
+class="pcrr7tn-">&#x00A0;16:14</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bos</span>
+<br class="fancyvrb" /><a 
+ id="x5-22060r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;first</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22062r13"></a><span 
+class="ptmr7t-x-x-50">13</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+   </div>
+<!--l. 325--><p class="indent">   Again, it&#x2019;s easier to see what has happened by looking at a graph of the revision history, in figure&#x00A0;<a 
+href="#x5-220643">1.3<!--tex4ht:ref: fig:undo:backout-manual --></a>. This makes it clear
+that when we use <a 
+ id="dx5-22063"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; to back out a change other than the tip, Mercurial adds a new head to the repository (the
+change it committed is box-shaped).
+</p>
+   <hr class="figure" /><div class="figure" 
+><table class="figure"><tr class="figure"><td class="figure" 
+>
+                                                                                         
+                                                                                         
+<a 
+ id="x5-220643"></a>
+                                                                                         
+                                                                                         
+<!--l. 333--><p class="noindent"><img 
+src="undo-manual.png" alt="PIC"  
+ />
+<br /> </p><table class="caption" 
+><tr style="vertical-align:baseline;" class="caption"><td class="id">Figure&#x00A0;1.3: </td><td  
+class="content">Backing out a change using the <a 
+ id="dx5-22065"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command</td></tr></table><!--tex4ht:label?: x5-220643 -->
+                                                                                         
+                                                                                         
+   </td></tr></table></div><hr class="endfigure" />
+<!--l. 338--><p class="indent">   After the <a 
+ id="dx5-22066"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command has completed, it leaves the new &#x201C;backout&#x201D; changeset as the parent of the working
+directory.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-22068r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;parents</span>
+<br class="fancyvrb" /><a 
+ id="x5-22070r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;3:30cd4bc76a4a</span>
+<br class="fancyvrb" /><a 
+ id="x5-22072r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tag:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x5-22074r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;parent:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1:668580b3a0ad</span>
+<br class="fancyvrb" /><a 
+ id="x5-22076r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;user:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Bryan</span><span 
+class="pcrr7tn-">&#x00A0;O'Sullivan</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;bos@serpentine.com&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x5-22078r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;date:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:14:44</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x5-22080r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;summary:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;back</span><span 
+class="pcrr7tn-">&#x00A0;out</span><span 
+class="pcrr7tn-">&#x00A0;second</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22082r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+   </div>
+<!--l. 341--><p class="noindent">Now we have two isolated sets of changes.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-22084r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;heads</span>
+<br class="fancyvrb" /><a 
+ id="x5-22086r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;3:30cd4bc76a4a</span>
+<br class="fancyvrb" /><a 
+ id="x5-22088r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tag:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x5-22090r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;parent:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1:668580b3a0ad</span>
+<br class="fancyvrb" /><a 
+ id="x5-22092r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;user:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Bryan</span><span 
+class="pcrr7tn-">&#x00A0;O'Sullivan</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;bos@serpentine.com&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x5-22094r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;date:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:14:44</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x5-22096r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;summary:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;back</span><span 
+class="pcrr7tn-">&#x00A0;out</span><span 
+class="pcrr7tn-">&#x00A0;second</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22098r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-22100r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;2:e48885580852</span>
+<br class="fancyvrb" /><a 
+ id="x5-22102r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;user:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Bryan</span><span 
+class="pcrr7tn-">&#x00A0;O'Sullivan</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;bos@serpentine.com&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x5-22104r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;date:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:14:43</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x5-22106r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;summary:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;third</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22108r13"></a><span 
+class="ptmr7t-x-x-50">13</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+   </div>
+<!--l. 344--><p class="indent">   Let&#x2019;s think about what we expect to see as the contents of <span 
+class="pcrr7tn-">myfile </span>now. The first change should be present, because
+we&#x2019;ve never backed it out. The second change should be missing, as that&#x2019;s the change we backed out. Since
+the history graph shows the third change as a separate head, we <span 
+class="ptmri7t-">don&#x2019;t </span>expect to see the third change present in
+<span 
+class="pcrr7tn-">myfile</span>.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-22110r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-22112r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;first</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+   </div>
+<!--l. 351--><p class="noindent">To get the third change back into the file, we just do a normal merge of our two heads.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-22114r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;merge</span>
+<br class="fancyvrb" /><a 
+ id="x5-22116r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;merging</span><span 
+class="pcrr7tn-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-22118r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+<br class="fancyvrb" /><a 
+ id="x5-22120r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;(branch</span><span 
+class="pcrr7tn-">&#x00A0;merge,</span><span 
+class="pcrr7tn-">&#x00A0;don't</span><span 
+class="pcrr7tn-">&#x00A0;forget</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;commit)</span>
+<br class="fancyvrb" /><a 
+ id="x5-22122r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'merged</span><span 
+class="pcrb7t-">&#x00A0;backout</span><span 
+class="pcrb7t-">&#x00A0;with</span><span 
+class="pcrb7t-">&#x00A0;previous</span><span 
+class="pcrb7t-">&#x00A0;tip'</span>
+                                                                                         
+                                                                                         
+<br class="fancyvrb" /><a 
+ id="x5-22124r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x5-22126r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;first</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+<br class="fancyvrb" /><a 
+ id="x5-22128r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;third</span><span 
+class="pcrr7tn-">&#x00A0;change</span>
+   </div>
+<!--l. 354--><p class="noindent">Afterwards, the graphical history of our repository looks like figure&#x00A0;<a 
+href="#x5-221294">1.4<!--tex4ht:ref: fig:undo:backout-manual-merge --></a>.
+</p>
+   <hr class="figure" /><div class="figure" 
+><table class="figure"><tr class="figure"><td class="figure" 
+>
+                                                                                         
+                                                                                         
+<a 
+ id="x5-221294"></a>
+                                                                                         
+                                                                                         
+<!--l. 359--><p class="noindent"><img 
+src="undo-manual-merge.png" alt="PIC"  
+ />
+<br /> </p><table class="caption" 
+><tr style="vertical-align:baseline;" class="caption"><td class="id">Figure&#x00A0;1.4: </td><td  
+class="content">Manually merging a backout change</td></tr></table><!--tex4ht:label?: x5-221294 -->
+                                                                                         
+                                                                                         
+   </td></tr></table></div><hr class="endfigure" />
+   <h4 class="subsectionHead"><span class="titlemark">1.3.5    </span> <a 
+ id="x5-230001.3.5"></a>Why &#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; works as it does</h4>
+<!--l. 366--><p class="noindent">Here&#x2019;s a brief description of how the <a 
+ id="dx5-23001"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command works.
+     </p><ol  class="enumerate1" >
+     <li class="enumerate"><a 
+ id="x5-23003x1"></a>It ensures that the working directory is &#x201C;clean&#x201D;, i.e.&#x00A0;that the output of <a 
+ id="dx5-23004"></a>&#x201C;<span 
+class="pcrr7tn-">hg status</span>&#x201D; would be empty.
+     </li>
+     <li class="enumerate"><a 
+ id="x5-23006x2"></a>It remembers the current parent of the working directory. Let&#x2019;s call this changeset <span 
+class="pcrr7tn-">orig</span>
+     </li>
+     <li class="enumerate"><a 
+ id="x5-23008x3"></a>It does the equivalent of a <a 
+ id="dx5-23009"></a>&#x201C;<span 
+class="pcrr7tn-">hg update</span>&#x201D; to sync the working directory to the changeset you want to back out.
+     Let&#x2019;s call this changeset <span 
+class="pcrr7tn-">backout</span>
+     </li>
+     <li class="enumerate"><a 
+ id="x5-23011x4"></a>It finds the parent of that changeset. Let&#x2019;s call that changeset <span 
+class="pcrr7tn-">parent</span>.
+     </li>
+     <li class="enumerate"><a 
+ id="x5-23013x5"></a>For each file that the <span 
+class="pcrr7tn-">backout </span>changeset affected, it does the equivalent of a <a 
+ id="dx5-23014"></a>&#x201C;<span 
+class="pcrr7tn-">hg revert -r parent</span>&#x201D; on that
+     file, to restore it to the contents it had before that changeset was committed.
+     </li>
+     <li class="enumerate"><a 
+ id="x5-23016x6"></a>It commits the result as a new changeset. This changeset has <span 
+class="pcrr7tn-">backout </span>as its parent.
+     </li>
+     <li class="enumerate"><a 
+ id="x5-23018x7"></a>If you specify <a 
+ id="dx5-23019"></a><span 
+class="pcrr7tn-">--merge </span>on the command line, it merges with <span 
+class="pcrr7tn-">orig</span>, and commits the result of the merge.</li></ol>
+<!--l. 387--><p class="indent">   An alternative way to implement the <a 
+ id="dx5-23020"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command would be to <a 
+ id="dx5-23021"></a>&#x201C;<span 
+class="pcrr7tn-">hg export</span>&#x201D; the to-be-backed-out changeset as
+a diff, then use the <a 
+ id="dx5-23022"></a><span 
+class="pcrr7tn-">--reverse </span>option to the <a 
+ id="dx5-23023"></a><span 
+class="pcrr7tn-">patch </span>command to reverse the effect of the change without fiddling with the
+working directory. This sounds much simpler, but it would not work nearly as well.
+</p><!--l. 394--><p class="indent">   The reason that <a 
+ id="dx5-23024"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; does an update, a commit, a merge, and another commit is to give the merge machinery the
+best chance to do a good job when dealing with all the changes <span 
+class="ptmri7t-">between </span>the change you&#x2019;re backing out and the current
+tip.
+</p><!--l. 399--><p class="indent">   If you&#x2019;re backing out a changeset that&#x2019;s&#x00A0;100 revisions back in your project&#x2019;s history, the chances that the <a 
+ id="dx5-23025"></a><span 
+class="pcrr7tn-">patch </span>command
+will be able to apply a reverse diff cleanly are not good, because intervening changes are likely to have &#x201C;broken the context&#x201D;
+that <a 
+ id="dx5-23026"></a><span 
+class="pcrr7tn-">patch </span>uses to determine whether it can apply a patch (if this sounds like gibberish, see <a 
+href="#x5-70001">1<!--tex4ht:ref: chap:userfaq --></a> for a discussion of the <a 
+ id="dx5-23027"></a><span 
+class="pcrr7tn-">patch</span>
+command). Also, Mercurial&#x2019;s merge machinery will handle files and directories being renamed, permission changes, and
+modifications to binary files, none of which <a 
+ id="dx5-23028"></a><span 
+class="pcrr7tn-">patch </span>can deal with.
+</p><!--l. 410--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">1.4    </span> <a 
+ id="x5-240001.4"></a>Changes that should never have been</h3>
+<!--l. 413--><p class="noindent">Most of the time, the <a 
+ id="dx5-24001"></a>&#x201C;<span 
+class="pcrr7tn-">hg backout</span>&#x201D; command is exactly what you need if you want to undo the effects of a change. It leaves a
+permanent record of exactly what you did, both when committing the original changeset and when you cleaned up after
+it.
+</p><!--l. 418--><p class="indent">   On rare occasions, though, you may find that you&#x2019;ve committed a change that really should not be present in the repository
+at all. For example, it would be very unusual, and usually considered a mistake, to commit a software project&#x2019;s object files as
+well as its source files. Object files have almost no intrinsic value, and they&#x2019;re <span 
+class="ptmri7t-">big</span>, so they increase the size of the repository and
+the amount of time it takes to clone or pull changes.
+                                                                                         
+                                                                                         
+</p><!--l. 426--><p class="indent">   Before I discuss the options that you have if you commit a &#x201C;brown paper bag&#x201D; change (the kind that&#x2019;s so bad that
+you want to pull a brown paper bag over your head), let me first discuss some approaches that probably won&#x2019;t
+work.
+</p><!--l. 431--><p class="indent">   Since Mercurial treats history as accumulative&#x2014;every change builds on top of all changes that preceded it&#x2014;you generally
+can&#x2019;t just make disastrous changes disappear. The one exception is when you&#x2019;ve just committed a change, and it hasn&#x2019;t been
+pushed or pulled into another repository. That&#x2019;s when you can safely use the <a 
+ id="dx5-24002"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D; command, as I detailed in
+section&#x00A0;<a 
+href="#x5-100001.1.2">1.1.2<!--tex4ht:ref: sec:undo:rollback --></a>.
+</p><!--l. 438--><p class="indent">   After you&#x2019;ve pushed a bad change to another repository, you <span 
+class="ptmri7t-">could </span>still use <a 
+ id="dx5-24003"></a>&#x201C;<span 
+class="pcrr7tn-">hg rollback</span>&#x201D; to make your local copy of the
+change disappear, but it won&#x2019;t have the consequences you want. The change will still be present in the remote repository, so it
+will reappear in your local repository the next time you pull.
+</p><!--l. 444--><p class="indent">   If a situation like this arises, and you know which repositories your bad change has propagated into, you can <span 
+class="ptmri7t-">try </span>to get
+rid of the changeefrom <span 
+class="ptmri7t-">every </span>one of those repositories. This is, of course, not a satisfactory solution: if you
+miss even a single repository while you&#x2019;re expunging, the change is still &#x201C;in the wild&#x201D;, and could propagate
+further.
+</p><!--l. 451--><p class="indent">   If you&#x2019;ve committed one or more changes <span 
+class="ptmri7t-">after </span>the change that you&#x2019;d like to see disappear, your options are further reduced.
+Mercurial doesn&#x2019;t provide a way to &#x201C;punch a hole&#x201D; in history, leaving changesets intact.
+</p><!--l. 456--><p class="indent">   XXX This needs filling out. The <span 
+class="pcrr7tn-">hg-replay </span>script in the <span 
+class="pcrr7tn-">examples </span>directory works, but doesn&#x2019;t handle merge changesets.
+Kind of an important omission.
+</p><!--l. 460--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.4.1    </span> <a 
+ id="x5-250001.4.1"></a>Protect yourself from &#x201C;escaped&#x201D; changes</h4>
+<!--l. 462--><p class="noindent">If you&#x2019;ve committed some changes to your local repository and they&#x2019;ve been pushed or pulled somewhere else, this isn&#x2019;t
+necessarily a disaster. You can protect yourself ahead of time against some classes of bad changeset. This is particularly easy if
+your team usually pulls changes from a central repository.
+</p><!--l. 468--><p class="indent">   By configuring some hooks on that repository to validate incoming changesets (see chapter&#x00A0;<a 
+href="hgbookch3.html#x7-690003">3<!--tex4ht:ref: chap:adminfaq --></a>), you can automatically
+prevent some kinds of bad changeset from being pushed to the central repository at all. With such a configuration in place,
+some kinds of bad changeset will naturally tend to &#x201C;die out&#x201D; because they can&#x2019;t propagate into the central repository. Better yet,
+this happens without any need for explicit intervention.
+</p><!--l. 476--><p class="indent">   For instance, an incoming change hook that verifies that a changeset will actually compile can prevent people from
+inadvertantly &#x201C;breaking the build&#x201D;.
+</p><!--l. 480--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">1.5    </span> <a 
+ id="x5-260001.5"></a>Finding the source of a bug</h3>
+<!--l. 483--><p class="noindent">While it&#x2019;s all very well to be able to back out a changeset that introduced a bug, this requires that you know which changeset to
+back out. Mercurial provides an invaluable command, called <a 
+ id="dx5-26001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D;, that helps you to automate this process and
+accomplish it very efficiently.
+</p><!--l. 489--><p class="indent">   The idea behind the <a 
+ id="dx5-26002"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command is that a changeset has introduced some change of behaviour that you can
+identify with a simple binary test. You don&#x2019;t know which piece of code introduced the change, but you know how to test for the
+presence of the bug. The <a 
+ id="dx5-26003"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command uses your test to direct its search for the changeset that introduced the code
+that caused the bug.
+</p><!--l. 496--><p class="indent">   Here are a few scenarios to help you understand how you might apply this command. </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">The most recent version of your software has a bug that you remember wasn&#x2019;t present a few weeks ago, but you
+     don&#x2019;t know when it was introduced. Here, your binary test checks for the presence of that bug.
+                                                                                         
+                                                                                         
+     </span><li><span class="dt">
+     </span><span class="dd">You fixed a bug in a rush, and now it&#x2019;s time to close the entry in your team&#x2019;s bug database. The bug database
+     requires a changeset ID when you close an entry, but you don&#x2019;t remember which changeset you fixed the bug in.
+     Once again, your binary test checks for the presence of the bug.
+     </span><li><span class="dt">
+     </span><span class="dd">Your software works correctly, but runs&#x00A0;15% slower than the last time you measured it. You want to know which
+     changeset introduced the performance regression. In this case, your binary test measures the performance of
+     your software, to see whether it&#x2019;s &#x201C;fast&#x201D; or &#x201C;slow&#x201D;.
+     </span><li><span class="dt">
+     </span><span class="dd">The sizes of the components of your project that you ship exploded recently, and you suspect that something
+     changed in the way you build your project.</li></ul>
+<!--l. 518--><p class="indent">   From these examples, it should be clear that the <a 
+ id="dx5-26004"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command is not useful only for finding the sources of bugs.
+You can use it to find any &#x201C;emergent property&#x201D; of a repository (anything that you can&#x2019;t find from a simple text search of the files
+in the tree) for which you can write a binary test.
+</p><!--l. 524--><p class="indent">   We&#x2019;ll introduce a little bit of terminology here, just to make it clear which parts of the search process are your
+responsibility, and which are Mercurial&#x2019;s. A <span 
+class="ptmri7t-">test </span>is something that <span 
+class="ptmri7t-">you </span>run when <a 
+ id="dx5-26005"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; chooses a changeset. A <span 
+class="ptmri7t-">probe </span>is
+what <a 
+ id="dx5-26006"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; runs to tell whether a revision is good. Finally, we&#x2019;ll use the word &#x201C;bisect&#x201D;, as both a noun and a verb, to
+stand in for the phrase &#x201C;search using the <a 
+ id="dx5-26007"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command.
+</p><!--l. 532--><p class="indent">   One simple way to automate the searching process would be simply to probe every changeset. However, this scales poorly.
+If it took ten minutes to test a single changeset, and you had 10,000 changesets in your repository, the exhaustive approach
+would take on average&#x00A0;35 <span 
+class="ptmri7t-">days </span>to find the changeset that introduced a bug. Even if you knew that the bug was introduced by
+one of the last 500 changesets, and limited your search to those, you&#x2019;d still be looking at over 40 hours to find the changeset that
+introduced your bug.
+</p><!--l. 541--><p class="indent">   What the <a 
+ id="dx5-26008"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command does is use its knowledge of the &#x201C;shape&#x201D; of your project&#x2019;s revision history to perform a
+search in time proportional to the <span 
+class="ptmri7t-">logarithm </span>of the number of changesets to check (the kind of search it performs is called a
+dichotomic search). With this approach, searching through 10,000 changesets will take less than three hours, even at ten
+minutes per test (the search will require about 14 tests). Limit your search to the last hundred changesets, and it will take only
+about an hour (roughly seven tests).
+</p><!--l. 550--><p class="indent">   The <a 
+ id="dx5-26009"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command is aware of the &#x201C;branchy&#x201D; nature of a Mercurial project&#x2019;s revision history, so it has no
+problems dealing with branches, merges, or multiple heads in a repoository. It can prune entire branches of history with a single
+probe, which is how it operates so efficiently.
+</p><!--l. 556--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.5.1    </span> <a 
+ id="x5-270001.5.1"></a>Using the &#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command</h4>
+<!--l. 558--><p class="noindent">Here&#x2019;s an example of <a 
+ id="dx5-27001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; in action.
+</p>
+   <div class="fbox"><span 
+class="ptmb7t-">Note:   </span>In  versions  0.9.5  and  earlier  of  Mercurial,  &#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D;  was  not  a  core
+command: it was distributed with Mercurial as an extension. This section describes
+the built-in command, not the old extension.                                                             </div>
+<!--l. 566--><p class="indent">   Now let&#x2019;s create a repository, so that we can try out the <a 
+ id="dx5-27003"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command in isolation.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27005r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;init</span><span 
+class="pcrb7t-">&#x00A0;mybug</span>
+<br class="fancyvrb" /><a 
+ id="x5-27007r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;mybug</span>
+   </div>
+<!--l. 569--><p class="noindent">We&#x2019;ll simulate a project that has a bug in it in a simple-minded way: create trivial changes in a loop, and nominate one specific
+change that will have the &#x201C;bug&#x201D;. This loop creates 35 changesets, each adding a single file to the repository. We&#x2019;ll represent our
+&#x201C;bug&#x201D; with a file that contains the text &#x201C;i have a gub&#x201D;.
+                                                                                         
+                                                                                         
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27009r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">buggy_change=22</span>
+<br class="fancyvrb" /><a 
+ id="x5-27011r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">for</span><span 
+class="pcrb7t-">&#x00A0;((</span><span 
+class="pcrb7t-">&#x00A0;i</span><span 
+class="pcrb7t-">&#x00A0;=</span><span 
+class="pcrb7t-">&#x00A0;0;</span><span 
+class="pcrb7t-">&#x00A0;i</span><span 
+class="pcrb7t-">&#x00A0;&#x003c;</span><span 
+class="pcrb7t-">&#x00A0;35;</span><span 
+class="pcrb7t-">&#x00A0;i++</span><span 
+class="pcrb7t-">&#x00A0;));</span><span 
+class="pcrb7t-">&#x00A0;do</span>
+<br class="fancyvrb" /><a 
+ id="x5-27013r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;if</span><span 
+class="pcrb7t-">&#x00A0;[[</span><span 
+class="pcrb7t-">&#x00A0;$i</span><span 
+class="pcrb7t-">&#x00A0;=</span><span 
+class="pcrb7t-">&#x00A0;$buggy_change</span><span 
+class="pcrb7t-">&#x00A0;]];</span><span 
+class="pcrb7t-">&#x00A0;then</span>
+<br class="fancyvrb" /><a 
+ id="x5-27015r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;echo</span><span 
+class="pcrb7t-">&#x00A0;'i</span><span 
+class="pcrb7t-">&#x00A0;have</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;gub'</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile$i</span>
+<br class="fancyvrb" /><a 
+ id="x5-27017r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-q</span><span 
+class="pcrb7t-">&#x00A0;-A</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'buggy</span><span 
+class="pcrb7t-">&#x00A0;changeset'</span>
+<br class="fancyvrb" /><a 
+ id="x5-27019r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;else</span>
+<br class="fancyvrb" /><a 
+ id="x5-27021r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;echo</span><span 
+class="pcrb7t-">&#x00A0;'nothing</span><span 
+class="pcrb7t-">&#x00A0;to</span><span 
+class="pcrb7t-">&#x00A0;see</span><span 
+class="pcrb7t-">&#x00A0;here,</span><span 
+class="pcrb7t-">&#x00A0;move</span><span 
+class="pcrb7t-">&#x00A0;along'</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile$i</span>
+<br class="fancyvrb" /><a 
+ id="x5-27023r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-q</span><span 
+class="pcrb7t-">&#x00A0;-A</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'normal</span><span 
+class="pcrb7t-">&#x00A0;changeset'</span>
+<br class="fancyvrb" /><a 
+ id="x5-27025r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;fi</span>
+<br class="fancyvrb" /><a 
+ id="x5-27027r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">done</span>
+   </div>
+<!--l. 576--><p class="indent">   The next thing that we&#x2019;d like to do is figure out how to use the <a 
+ id="dx5-27028"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command. We can use Mercurial&#x2019;s normal
+built-in help mechanism for this.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27030r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;help</span><span 
+class="pcrb7t-">&#x00A0;bisect</span>
+<br class="fancyvrb" /><a 
+ id="x5-27032r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27034r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27036r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27038r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+<!--l. 581--><p class="indent">   The <a 
+ id="dx5-27039"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command works in steps. Each step proceeds as follows.
+     </p><ol  class="enumerate1" >
+     <li class="enumerate"><a 
+ id="x5-27041x1"></a>You run your binary test.
+         <ul><li><span class="dt">
+         </span><span class="dd">If the test succeeded, you tell <a 
+ id="dx5-27042"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; by running the <a 
+ id="dx5-27043"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect good</span>&#x201D; command.
+         </span><li><span class="dt">
+         </span><span class="dd">If it failed, run the <a 
+ id="dx5-27044"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect --bad</span>&#x201D; command.</li></ul>
+     </li>
+     <li class="enumerate"><a 
+ id="x5-27046x2"></a>The command uses your information to decide which changeset to test next.
+     </li>
+     <li class="enumerate"><a 
+ id="x5-27048x3"></a>It updates the working directory to that changeset, and the process begins again.</li></ol>
+<!--l. 594--><p class="noindent">The process ends when <a 
+ id="dx5-27049"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; identifies a unique changeset that marks the point where your test transitioned from
+&#x201C;succeeding&#x201D; to &#x201C;failing&#x201D;.
+</p><!--l. 598--><p class="indent">   To start the search, we must run the <a 
+ id="dx5-27050"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect --reset</span>&#x201D; command.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27052r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;bisect</span><span 
+class="pcrb7t-">&#x00A0;--init</span>
+<br class="fancyvrb" /><a 
+ id="x5-27054r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--init</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27056r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27058r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27060r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27062r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+                                                                                         
+                                                                                         
+<!--l. 601--><p class="indent">   In our case, the binary test we use is simple: we check to see if any file in the repository contains the string &#x201C;i have a gub&#x201D;.
+If it does, this changeset contains the change that &#x201C;caused the bug&#x201D;. By convention, a changeset that has the property we&#x2019;re
+searching for is &#x201C;bad&#x201D;, while one that doesn&#x2019;t is &#x201C;good&#x201D;.
+</p><!--l. 607--><p class="indent">   Most of the time, the revision to which the working directory is synced (usually the tip) already exhibits the problem
+introduced by the buggy change, so we&#x2019;ll mark it as &#x201C;bad&#x201D;.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27064r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;bisect</span><span 
+class="pcrb7t-">&#x00A0;--bad</span>
+<br class="fancyvrb" /><a 
+ id="x5-27066r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--bad</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27068r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27070r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27072r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27074r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+<!--l. 612--><p class="indent">   Our next task is to nominate a changeset that we know <span 
+class="ptmri7t-">doesn&#x2019;t </span>have the bug; the <a 
+ id="dx5-27075"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command will &#x201C;bracket&#x201D; its
+search between the first pair of good and bad changesets. In our case, we know that revision&#x00A0;10 didn&#x2019;t have the bug. (I&#x2019;ll have
+more words about choosing the first &#x201C;good&#x201D; changeset later.)
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27077r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;bisect</span><span 
+class="pcrb7t-">&#x00A0;--good</span><span 
+class="pcrb7t-">&#x00A0;10</span>
+<br class="fancyvrb" /><a 
+ id="x5-27079r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--good</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27081r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27083r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27085r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27087r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+<!--l. 619--><p class="indent">   Notice that this command printed some output. </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">It told us how many changesets it must consider before it can identify the one that introduced the bug, and how
+     many tests that will require.
+     </span><li><span class="dt">
+     </span><span class="dd">It updated the working directory to the next changeset to test, and told us which changeset it&#x2019;s testing.</li></ul>
+<!--l. 628--><p class="indent">   We now run our test in the working directory. We use the <a 
+ id="dx5-27088"></a><span 
+class="pcrr7tn-">grep </span>command to see if our &#x201C;bad&#x201D; file is present in the working
+directory. If it is, this revision is bad; if not, this revision is good.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27090r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">if</span><span 
+class="pcrb7t-">&#x00A0;grep</span><span 
+class="pcrb7t-">&#x00A0;-q</span><span 
+class="pcrb7t-">&#x00A0;'i</span><span 
+class="pcrb7t-">&#x00A0;have</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;gub'</span><span 
+class="pcrb7t-">&#x00A0;&#x22C6;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27092r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">then</span>
+<br class="fancyvrb" /><a 
+ id="x5-27094r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;result=bad</span>
+<br class="fancyvrb" /><a 
+ id="x5-27096r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">else</span>
+<br class="fancyvrb" /><a 
+ id="x5-27098r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;result=good</span>
+<br class="fancyvrb" /><a 
+ id="x5-27100r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">fi</span>
+<br class="fancyvrb" /><a 
+ id="x5-27102r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;this</span><span 
+class="pcrb7t-">&#x00A0;revision</span><span 
+class="pcrb7t-">&#x00A0;is</span><span 
+class="pcrb7t-">&#x00A0;$result</span>
+<br class="fancyvrb" /><a 
+ id="x5-27104r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;this</span><span 
+class="pcrr7tn-">&#x00A0;revision</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;bad</span>
+<br class="fancyvrb" /><a 
+ id="x5-27106r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;bisect</span><span 
+class="pcrb7t-">&#x00A0;--$result</span>
+<br class="fancyvrb" /><a 
+ id="x5-27108r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--bad</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27110r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+                                                                                         
+                                                                                         
+<br class="fancyvrb" /><a 
+ id="x5-27112r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27114r13"></a><span 
+class="ptmr7t-x-x-50">13</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27116r14"></a><span 
+class="ptmr7t-x-x-50">14</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+<!--l. 634--><p class="indent">   This test looks like a perfect candidate for automation, so let&#x2019;s turn it into a shell function.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27118r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">mytest()</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="cmsy-10">{</span>
+<br class="fancyvrb" /><a 
+ id="x5-27120r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;if</span><span 
+class="pcrb7t-">&#x00A0;grep</span><span 
+class="pcrb7t-">&#x00A0;-q</span><span 
+class="pcrb7t-">&#x00A0;'i</span><span 
+class="pcrb7t-">&#x00A0;have</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;gub'</span><span 
+class="pcrb7t-">&#x00A0;&#x22C6;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27122r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;then</span>
+<br class="fancyvrb" /><a 
+ id="x5-27124r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;result=bad</span>
+<br class="fancyvrb" /><a 
+ id="x5-27126r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;else</span>
+<br class="fancyvrb" /><a 
+ id="x5-27128r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;result=good</span>
+<br class="fancyvrb" /><a 
+ id="x5-27130r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;fi</span>
+<br class="fancyvrb" /><a 
+ id="x5-27132r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;echo</span><span 
+class="pcrb7t-">&#x00A0;this</span><span 
+class="pcrb7t-">&#x00A0;revision</span><span 
+class="pcrb7t-">&#x00A0;is</span><span 
+class="pcrb7t-">&#x00A0;$result</span>
+<br class="fancyvrb" /><a 
+ id="x5-27134r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;</span><span 
+class="pcrb7t-">&#x00A0;hg</span><span 
+class="pcrb7t-">&#x00A0;bisect</span><span 
+class="pcrb7t-">&#x00A0;--$result</span>
+<br class="fancyvrb" /><a 
+ id="x5-27136r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="cmsy-10">}</span>
+   </div>
+<!--l. 637--><p class="noindent">We can now run an entire test step with a single command, <span 
+class="pcrr7tn-">mytest</span>.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27138r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">mytest</span>
+<br class="fancyvrb" /><a 
+ id="x5-27140r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;this</span><span 
+class="pcrr7tn-">&#x00A0;revision</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;bad</span>
+<br class="fancyvrb" /><a 
+ id="x5-27142r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--bad</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27144r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27146r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27148r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27150r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+<!--l. 640--><p class="noindent">A few more invocations of our canned test step command, and we&#x2019;re done.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-27152r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">mytest</span>
+<br class="fancyvrb" /><a 
+ id="x5-27154r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;this</span><span 
+class="pcrr7tn-">&#x00A0;revision</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;bad</span>
+<br class="fancyvrb" /><a 
+ id="x5-27156r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--bad</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27158r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27160r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27162r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27164r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+<br class="fancyvrb" /><a 
+ id="x5-27166r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">mytest</span>
+<br class="fancyvrb" /><a 
+ id="x5-27168r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;this</span><span 
+class="pcrr7tn-">&#x00A0;revision</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;bad</span>
+<br class="fancyvrb" /><a 
+ id="x5-27170r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--bad</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27172r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27174r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27176r13"></a><span 
+class="ptmr7t-x-x-50">13</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27178r14"></a><span 
+class="ptmr7t-x-x-50">14</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+<br class="fancyvrb" /><a 
+ id="x5-27180r15"></a><span 
+class="ptmr7t-x-x-50">15</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">mytest</span>
+<br class="fancyvrb" /><a 
+ id="x5-27182r16"></a><span 
+class="ptmr7t-x-x-50">16</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;this</span><span 
+class="pcrr7tn-">&#x00A0;revision</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;bad</span>
+                                                                                         
+                                                                                         
+<br class="fancyvrb" /><a 
+ id="x5-27184r17"></a><span 
+class="ptmr7t-x-x-50">17</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--bad</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-27186r18"></a><span 
+class="ptmr7t-x-x-50">18</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-27188r19"></a><span 
+class="ptmr7t-x-x-50">19</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-27190r20"></a><span 
+class="ptmr7t-x-x-50">20</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-27192r21"></a><span 
+class="ptmr7t-x-x-50">21</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+<!--l. 644--><p class="indent">   Even though we had&#x00A0;40 changesets to search through, the <a 
+ id="dx5-27193"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command let us find the changeset that introduced
+our &#x201C;bug&#x201D; with only five tests. Because the number of tests that the <a 
+ id="dx5-27194"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command grows logarithmically with the
+number of changesets to search, the advantage that it has over the &#x201C;brute force&#x201D; search approach increases with every changeset
+you add.
+</p><!--l. 651--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.5.2    </span> <a 
+ id="x5-280001.5.2"></a>Cleaning up after your search</h4>
+<!--l. 653--><p class="noindent">When you&#x2019;re finished using the <a 
+ id="dx5-28001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command in a repository, you can use the <a 
+ id="dx5-28002"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect reset</span>&#x201D; command to drop
+the information it was using to drive your search. The command doesn&#x2019;t use much space, so it doesn&#x2019;t matter if you forget to
+run this command. However, <a 
+ id="dx5-28003"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; won&#x2019;t let you start a new search in that repository until you do a <a 
+ id="dx5-28004"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>
+<span 
+class="pcrr7tn-">reset</span>&#x201D;.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x5-28006r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;bisect</span><span 
+class="pcrb7t-">&#x00A0;--reset</span>
+<br class="fancyvrb" /><a 
+ id="x5-28008r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect:</span><span 
+class="pcrr7tn-">&#x00A0;option</span><span 
+class="pcrr7tn-">&#x00A0;--reset</span><span 
+class="pcrr7tn-">&#x00A0;not</span><span 
+class="pcrr7tn-">&#x00A0;recognized</span>
+<br class="fancyvrb" /><a 
+ id="x5-28010r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;[help|init|reset|next|good|bad]</span>
+<br class="fancyvrb" /><a 
+ id="x5-28012r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x5-28014r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;extension:</span><span 
+class="pcrr7tn-">&#x00A0;dichotomic</span><span 
+class="pcrr7tn-">&#x00A0;search</span><span 
+class="pcrr7tn-">&#x00A0;in</span><span 
+class="pcrr7tn-">&#x00A0;the</span><span 
+class="pcrr7tn-">&#x00A0;DAG</span><span 
+class="pcrr7tn-">&#x00A0;of</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x5-28016r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;subcommands</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;"hg</span><span 
+class="pcrr7tn-">&#x00A0;bisect</span><span 
+class="pcrr7tn-">&#x00A0;help"</span>
+   </div>
+<!--l. 661--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">1.6    </span> <a 
+ id="x5-290001.6"></a>Tips for finding bugs effectively</h3>
+<!--l. 663--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.6.1    </span> <a 
+ id="x5-300001.6.1"></a>Give consistent input</h4>
+<!--l. 665--><p class="noindent">The <a 
+ id="dx5-30001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command requires that you correctly report the result of every test you perform. If you tell it that a test failed
+when it really succeeded, it <span 
+class="ptmri7t-">might </span>be able to detect the inconsistency. If it can identify an inconsistency in your reports, it will
+tell you that a particular changeset is both good and bad. However, it can&#x2019;t do this perfectly; it&#x2019;s about as likely to report the
+wrong changeset as the source of the bug.
+</p><!--l. 673--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.6.2    </span> <a 
+ id="x5-310001.6.2"></a>Automate as much as possible</h4>
+                                                                                         
+                                                                                         
+<!--l. 675--><p class="noindent">When I started using the <a 
+ id="dx5-31001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command, I tried a few times to run my tests by hand, on the command line. This is an
+approach that I, at least, am not suited to. After a few tries, I found that I was making enough mistakes that I was having to
+restart my searches several times before finally getting correct results.
+</p><!--l. 681--><p class="indent">   My initial problems with driving the <a 
+ id="dx5-31002"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command by hand occurred even with simple searches on small
+repositories; if the problem you&#x2019;re looking for is more subtle, or the number of tests that <a 
+ id="dx5-31003"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; must perform increases,
+the likelihood of operator error ruining the search is much higher. Once I started automating my tests, I had much better
+results.
+</p><!--l. 688--><p class="indent">   The key to automated testing is twofold: </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">always test for the same symptom, and
+     </span><li><span class="dt">
+     </span><span class="dd">always feed consistent input to the <a 
+ id="dx5-31004"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command.</li></ul>
+<!--l. 693--><p class="noindent">In my tutorial example above, the <a 
+ id="dx5-31005"></a><span 
+class="pcrr7tn-">grep </span>command tests for the symptom, and the <span 
+class="pcrr7tn-">if </span>statement takes the result of this check and
+ensures that we always feed the same input to the <a 
+ id="dx5-31006"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command. The <span 
+class="pcrr7tn-">mytest </span>function marries these together in a
+reproducible way, so that every test is uniform and consistent.
+</p><!--l. 699--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.6.3    </span> <a 
+ id="x5-320001.6.3"></a>Check your results</h4>
+<!--l. 701--><p class="noindent">Because the output of a <a 
+ id="dx5-32001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; search is only as good as the input you give it, don&#x2019;t take the changeset it reports as the
+absolute truth. A simple way to cross-check its report is to manually run your test at each of the following changesets:
+</p>
+     <ul><li><span class="dt">
+     </span><span class="dd">The changeset that it reports as the first bad revision. Your test should still report this as bad.
+     </span><li><span class="dt">
+     </span><span class="dd">The parent of that changeset (either parent, if it&#x2019;s a merge). Your test should report this changeset as good.
+     </span><li><span class="dt">
+     </span><span class="dd">A child of that changeset. Your test should report this changeset as bad.</li></ul>
+<!--l. 714--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.6.4    </span> <a 
+ id="x5-330001.6.4"></a>Beware interference between bugs</h4>
+<!--l. 716--><p class="noindent">It&#x2019;s possible that your search for one bug could be disrupted by the presence of another. For example, let&#x2019;s say your
+software crashes at revision 100, and worked correctly at revision 50. Unknown to you, someone else introduced a
+different crashing bug at revision 60, and fixed it at revision 80. This could distort your results in one of several
+ways.
+</p><!--l. 723--><p class="indent">   It is possible that this other bug completely &#x201C;masks&#x201D; yours, which is to say that it occurs before your bug has a chance to
+manifest itself. If you can&#x2019;t avoid that other bug (for example, it prevents your project from building), and so can&#x2019;t tell whether
+your bug is present in a particular changeset, the <a 
+ id="dx5-33001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; command cannot help you directly. Instead, you can mark a
+changeset as untested by running <a 
+ id="dx5-33002"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect --skip</span>&#x201D;.
+</p><!--l. 731--><p class="indent">   A different problem could arise if your test for a bug&#x2019;s presence is not specific enough. If you check for &#x201C;my program
+crashes&#x201D;, then both your crashing bug and an unrelated crashing bug that masks it will look like the same thing, and mislead
+<a 
+ id="dx5-33003"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D;.
+                                                                                         
+                                                                                         
+</p><!--l. 736--><p class="indent">   Another useful situation in which to use <a 
+ id="dx5-33004"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect --skip</span>&#x201D; is if you can&#x2019;t test a revision because your project was in a
+broken and hence untestable state at that revision, perhaps because someone checked in a change that prevented the project
+from building.
+</p><!--l. 741--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">1.6.5    </span> <a 
+ id="x5-340001.6.5"></a>Bracket your search lazily</h4>
+<!--l. 743--><p class="noindent">Choosing the first &#x201C;good&#x201D; and &#x201C;bad&#x201D; changesets that will mark the end points of your search is often easy, but it bears a little
+discussion nevertheless. From the perspective of <a 
+ id="dx5-34001"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D;, the &#x201C;newest&#x201D; changeset is conventionally &#x201C;bad&#x201D;, and the older
+changeset is &#x201C;good&#x201D;.
+</p><!--l. 749--><p class="indent">   If you&#x2019;re having trouble remembering when a suitable &#x201C;good&#x201D; change was, so that you can tell <a 
+ id="dx5-34002"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D;, you could do
+worse than testing changesets at random. Just remember to eliminate contenders that can&#x2019;t possibly exhibit the bug (perhaps
+because the feature with the bug isn&#x2019;t present yet) and those where another problem masks the bug (as I discussed
+above).
+</p><!--l. 756--><p class="indent">   Even if you end up &#x201C;early&#x201D; by thousands of changesets or months of history, you will only add a handful of tests to the total
+number that <a 
+ id="dx5-34003"></a>&#x201C;<span 
+class="pcrr7tn-">hg bisect</span>&#x201D; must perform, thanks to its logarithmic behaviour.
+                                                                                         
+                                                                                         
+                                                                                         
+                                                                                         
+                                                                                         
+                                                                                         
+</p>
+   <!--l. 1--><div class="crosslinks"><p class="noindent">[<a 
+href="hgbookch2.html" >next</a>] [<a 
+href="hgbookli3.html" >prev</a>] [<a 
+href="hgbookli3.html#tailhgbookli3.html" >prev-tail</a>] [<a 
+href="hgbookch1.html" >front</a>] [<a 
+href="hgbook.html#hgbookch1.html" >up</a>] </p></div>
+<!--l. 1--><p class="indent">   <a 
+ id="tailhgbookch1.html"></a>   </p> 
+</body></html> 

@@ -1,0 +1,47 @@
+%% 
+%% This is file `Ulogo.fd',
+%% generated with the docstrip utility.
+%% 
+%% The original source files were:
+%% 
+%% mflogo.dtx  (with options: `Ulogo')
+%% 
+%% Copyright (C) 1994,95 Ulrik Vieth 
+%% All rights reserved. 
+%% 
+%% This file is part of the mflogo package. 
+%% ---------------------------------------- 
+%% 
+%% This is a generated file. Permission is granted to customize the 
+%% declarations in this file to serve the needs of your installation. 
+%% However, no permission is granted to distribute a modified version 
+%% of this file under its original name. 
+%% 
+\ProvidesFile{Ulogo.fd}
+  [1995/12/04 v1.5c LaTeX font definitions for METAFONT logo fonts]
+\DeclareFontFamily{U}{logo}{}
+\DeclareFontShape{U}{logo}{m}{n}{
+  <8> <9> gen * logo
+  <10> <10.95> <12> <14.4> <17.28> <20.74> <24.88> logo10
+}{}
+\DeclareFontShape{U}{logo}{m}{it}{
+  <8> <9> gen * logosl
+  <10> <10.95> <12> <14.4> <17.28> <20.74> <24.88> logosl10
+}{}
+\DeclareFontShape{U}{logo}{m}{sl}{
+  <-> ssub * logo/m/it
+}{}
+\DeclareFontShape{U}{logo}{sbc}{n}{
+  <8> <9> sub * logo/m/n
+  <10> <10.95> <12> <14.4> <17.28> <20.74> <24.88> logobf10
+}{}
+\DeclareFontShape{U}{logo}{b}{n}{
+  <8> <9> sub * logo/m/n
+  <10> <10.95> <12> <14.4> <17.28> <20.74> <24.88> logod10
+}{}
+\DeclareFontShape{U}{logo}{bx}{n}{
+  <-> ssub * logo/b/n
+}{}
+\endinput
+%% 
+%% End of file `Ulogo.fd'.

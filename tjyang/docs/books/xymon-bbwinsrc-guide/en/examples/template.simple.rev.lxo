@@ -1,0 +1,3 @@
+$ \textbf{echo 'changeset = "rev: \{rev\}\textbackslash{}n"' > rev}
+$ \textbf{hg log -l1 --style ./rev}
+rev: 3

@@ -1,0 +1,47 @@
+\BOOKMARK [2][]{Outline0.1}{Foreword}{}
+\BOOKMARK [2][]{Outline0.2}{Title Page}{}
+\BOOKMARK [1][]{Outline1}{Hobbitmon Development Models}{}
+\BOOKMARK [2][]{Outline1.3}{Current 2008 development}{Outline1}
+\BOOKMARK [3][]{Outline1.3.1.4}{Manually created configure and Makefile}{Outline1.3}
+\BOOKMARK [3][]{Outline1.3.2.11}{GNU developement model}{Outline1.3}
+\BOOKMARK [2][]{Outline1.4}{New Hobbitmon Devevelopment Model}{Outline1}
+\BOOKMARK [3][]{Outline1.4.1.22}{GNU Autotool model}{Outline1.4}
+\BOOKMARK [3][]{Outline1.4.2.39}{TWW's CPAM to complete GNU autotool}{Outline1.4}
+\BOOKMARK [3][]{Outline1.4.3.66}{The Packager Point of View}{Outline1.4}
+\BOOKMARK [3][]{Outline1.4.4.71}{The Maintainer Point of View}{Outline1.4}
+\BOOKMARK [2][]{Outline1.5}{The configure Process}{Outline1}
+\BOOKMARK [2][]{Outline1.6}{Why Hobbitmon developers Need autotools }{Outline1}
+\BOOKMARK [1][]{Outline2}{GNU Autotools}{}
+\BOOKMARK [2][]{Outline2.7}{Hello World}{Outline2}
+\BOOKMARK [2][]{Outline2.8}{Introducing Core Autotools}{Outline2}
+\BOOKMARK [2][]{Outline2.9}{Hello World Explained}{Outline2}
+\BOOKMARK [2][]{Outline2.10}{Using Autoconf}{Outline2}
+\BOOKMARK [2][]{Outline2.11}{Using Automake}{Outline2}
+\BOOKMARK [1][]{Outline3}{More Autotools}{}
+\BOOKMARK [2][]{Outline3.12}{Writing and Managing Custom Macros}{Outline3}
+\BOOKMARK [3][]{Outline3.12.1.381}{Writing Autoconf Macros}{Outline3.12}
+\BOOKMARK [3][]{Outline3.12.2.416}{Managing Custom Macros with `aclocal'}{Outline3.12}
+\BOOKMARK [2][]{Outline3.13}{Libtool}{Outline3}
+\BOOKMARK [2][]{Outline3.14}{Gettext}{Outline3}
+\BOOKMARK [3][]{Outline3.14.1.468}{Introducing Gettext}{Outline3.14}
+\BOOKMARK [3][]{Outline3.14.2.480}{Internationalizing a Package, Start to Finish}{Outline3.14}
+\BOOKMARK [3][]{Outline3.14.3.509}{Localizing a Package}{Outline3.14}
+\BOOKMARK [2][]{Outline3.15}{Nested Packages}{Outline3}
+\BOOKMARK [2][]{Outline3.16}{The End}{Outline3}
+\BOOKMARK [1][]{Outline4}{GNU Autotools}{}
+\BOOKMARK [2][]{Outline4.17}{Hello World}{Outline4}
+\BOOKMARK [2][]{Outline4.18}{Introducing Core Autotools}{Outline4}
+\BOOKMARK [2][]{Outline4.19}{Hello World Explained}{Outline4}
+\BOOKMARK [2][]{Outline4.20}{Using Autoconf}{Outline4}
+\BOOKMARK [2][]{Outline4.21}{Using Automake}{Outline4}
+\BOOKMARK [1][]{Outline5}{More Autotools}{}
+\BOOKMARK [2][]{Outline5.22}{Writing and Managing Custom Macros}{Outline5}
+\BOOKMARK [3][]{Outline5.22.1.844}{Writing Autoconf Macros}{Outline5.22}
+\BOOKMARK [3][]{Outline5.22.2.879}{Managing Custom Macros with `aclocal'}{Outline5.22}
+\BOOKMARK [2][]{Outline5.23}{Libtool}{Outline5}
+\BOOKMARK [2][]{Outline5.24}{Gettext}{Outline5}
+\BOOKMARK [3][]{Outline5.24.1.931}{Introducing Gettext}{Outline5.24}
+\BOOKMARK [3][]{Outline5.24.2.943}{Internationalizing a Package, Start to Finish}{Outline5.24}
+\BOOKMARK [3][]{Outline5.24.3.972}{Localizing a Package}{Outline5.24}
+\BOOKMARK [2][]{Outline5.25}{Nested Packages}{Outline5}
+\BOOKMARK [2][]{Outline5.26}{The End}{Outline5}

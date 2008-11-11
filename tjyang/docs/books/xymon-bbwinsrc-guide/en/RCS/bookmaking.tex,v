@@ -1,0 +1,76 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@% @;
+
+
+1.1
+date	2008.02.09.00.31.31;	author tjyang;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@\chapter{Making of this book}
+\label{chap:bookmaking}
+
+\section{Where to download the book source}
+\label{sec:srcinstall:unixlike}
+
+If you are using a Unix-like system that has a sufficiently recent
+version of Python (2.3~or newer) available, it is easy to install
+Mercurial from source.
+\begin{enumerate}
+\item Download a recent source tarball from
+  \url{http://www.selenic.com/mercurial/download}.
+\item Unpack the tarball:
+  \begin{codesample4}
+    gzip -dc mercurial-\emph{version}.tar.gz | tar xf -
+  \end{codesample4}
+\item Go into the source directory and run the installer script.  This
+  will build Mercurial and install it in your home directory.
+  \begin{codesample4}
+    cd mercurial-\emph{version}
+    python setup.py install --force --home=\$HOME
+  \end{codesample4}
+\end{enumerate}
+Once the install finishes, Mercurial will be in the \texttt{bin}
+subdirectory of your home directory.  Don't forget to make sure that
+this directory is present in your shell's search path.
+
+You will probably need to set the \envar{PYTHONPATH} environment
+variable so that the Mercurial executable can find the rest of the
+Mercurial packages.  For example, on my laptop, I have set it to
+\texttt{/home/bos/lib/python}.  The exact path that you will need to
+use depends on how Python was built for your system, but should be
+easy to figure out.  If you're uncertain, look through the output of
+the installer script above, and see where the contents of the
+\texttt{mercurial} directory were installed to.
+
+\section{On Windows}
+
+Building and installing Mercurial on Windows requires a variety of
+tools, a fair amount of technical knowledge, and considerable
+patience.  I very much \emph{do not recommend} this route if you are a
+``casual user''.  Unless you intend to hack on Mercurial, I strongly
+suggest that you use a binary package instead.
+
+If you are intent on building Mercurial from source on Windows, follow
+the ``hard way'' directions on the Mercurial wiki at
+\url{http://www.selenic.com/mercurial/wiki/index.cgi/WindowsInstall},
+and expect the process to involve a lot of fiddly work.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "00book"
+%%% End: 
+@

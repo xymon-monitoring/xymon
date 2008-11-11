@@ -1,0 +1,76 @@
+<head>
+<title>UK TeX FAQ -- question label wherefiles</title>
+</head><body>
+<h3>Where to put new files</h3>
+<p>Where precisely you put files that you have downloaded does
+depend on what TeX distribution you have. However,
+assuming that you have one of the modern TDS-compliant
+distributions (such as teTeX or MiKTeX) there are
+some general rules that you can follow:
+<p>
+
+
+
+(1) Always install new files in a local <i>texmf</i>
+tree. The root directory will be named something like:
+<pre>
+ teTeX:          /usr/share/texmf-local/ or
+                 /usr/local/share/texmf/
+ fpTeX:          c:\Programs\TeXLive\texmf-local\
+ MiKTeX:         c:\localtexmf\
+</pre>
+(In fact, a teTeX system can be asked to tell you what its local
+root is; on a Unix system, the command to use is:
+<blockquote>
+<pre>
+kpsewhich -expand-var "\$TEXMFLOCAL"
+</pre>
+</blockquote><p>
+the output being the actual path.)
+<p>Let&rsquo;s write <code>$TEXMF</code> for this root, whatever it is for your system.
+<p>
+(2) In your local texmf tree, imitate the directory structure in your
+main tree. Here are some examples of where files of given extensions
+should go:
+<pre>
+.sty, .cls or .fd: $TEXMF/tex/latex/&lt;package&gt;/
+.dvi, .ps or .pdf: $TEXMF/doc/latex/&lt;package&gt;/
+.mf:   $TEXMF/fonts/source/&lt;supplier&gt;/&lt;font&gt;/
+.tfm:  $TEXMF/fonts/tfm/&lt;supplier&gt;/&lt;font&gt;/
+.vf:   $TEXMF/fonts/vf/&lt;supplier&gt;/&lt;font&gt;/
+.afm:  $TEXMF/fonts/afm/&lt;supplier&gt;/&lt;font&gt;/
+.pfb:  $TEXMF/fonts/type1/&lt;supplier&gt;/&lt;font&gt;/
+.ttf:  $TEXMF/fonts/truetype/&lt;supplier&gt;/&lt;font&gt;/
+.pool, .fmt, .base or .mem: $TEXMF/web2c
+</pre>
+and for modern systems (distributed in 2005 or later, such as
+teTeX 3.0, using TDS v1.1 layouts):
+<pre>
+.map:  $TEXMF/fonts/map/&lt;syntax&gt;/&lt;bundle&gt;/
+.enc:  $TEXMF/fonts/enc/&lt;syntax&gt;/&lt;bundle&gt;/
+</pre>
+Where of course &lt;<i>package</i>&gt;, &lt;<i>font</i>&gt; and &lt;<i>supplier</i>&gt; depend
+upon what&rsquo;s appropriate for the individual file.  The &lt;<i>syntax</i>&gt;
+(for <code>.map</code> and <code>.enc</code> files) is a categorisation based
+on the way the files are written; typically, it&rsquo;s the name of a
+program such as <i>dvips</i> or <i>pdftex</i>.
+<p>&ldquo;Straight&rdquo; (La)TeX input can take other forms than the <code>.sty</code>,
+<code>.cls</code> or <code>.fd</code> listed above, too.  Examples are
+<code>.sto</code> and <code>.clo</code> for package and class options,
+<code>.cfg</code> for configuration information, and so on.
+<p>Note that &lt;<i>font</i>&gt; may stand for a single font or an entire family:
+for example, files for all of Knuth&rsquo;s Computer Modern fonts are to be
+found in <code>.../public/cm</code>, with various prefixes as appropriate.
+<p>The font &ldquo;supplier&rdquo; <em>public</em> is a sort of hold-all for
+&ldquo;free fonts produced for use with (La)TeX&rdquo;: as well as Knuth&rsquo;s
+fonts, <em>public</em>&rsquo;s directory holds fonts designed by others
+(originally, but no longer exclusively, in Metafont).
+<p>Some packages have configuration files (commonly with file suffix
+<code>.cfg</code>), and occasionally other run-time files.  The package
+documentation <em>should</em> mention these things, but sometimes
+doesn&rsquo;t.  A common exception is the <code>.drv</code> file, used by some
+packages as part of the documentation building process; this is a
+hang-over from the pre-LaTeX2e predecessor of the package
+documentation process.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=wherefiles">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=wherefiles</a>
+</body>

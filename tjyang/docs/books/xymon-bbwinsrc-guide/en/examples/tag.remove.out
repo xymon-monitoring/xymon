@@ -1,0 +1,31 @@
+$ \textbf{hg tag --remove v1.0}
+hg tag: option --remove not recognized
+hg tag [-l] [-m TEXT] [-d DATE] [-u USER] [-r REV] NAME
+
+add a tag for the current or given revision
+
+    Name a particular revision using <name>.
+
+    Tags are used to name particular revisions of the repository and are
+    very useful to compare different revision, to go back to significant
+    earlier versions or to mark branch points as releases, etc.
+
+    If no revision is given, the parent of the working directory is used,
+    or tip if no revision is checked out.
+
+    To facilitate version control, distribution, and merging of tags,
+    they are stored as a file named ".hgtags" which is managed
+    similarly to other project files and can be hand-edited if
+    necessary.  The file '.hg/localtags' is used for local tags (not
+    shared among repositories).
+
+options:
+
+ -l --local    make the tag local
+ -m --message  message for tag commit log entry
+ -d --date     record datecode as commit date
+ -u --user     record user as commiter
+ -r --rev      revision to tag
+$ \textbf{hg tags}
+tip                                
+v1.0                               

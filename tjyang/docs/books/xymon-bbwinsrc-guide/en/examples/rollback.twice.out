@@ -1,0 +1,4 @@
+$ \textbf{hg rollback}
+rolling back last transaction
+$ \textbf{hg rollback}
+no rollback information available

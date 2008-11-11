@@ -1,0 +1,34 @@
+<head>
+<title>UK TeX FAQ -- question label linenos</title>
+</head><body>
+<h3>Including line numbers in typeset output</h3>
+<p>For general numbering of lines, there are two packages for use with
+LaTeX, <i>lineno</i> (which permits labels attached to
+individual lines of typeset output) and <i>numline</i>.
+<p>Both of these packages play fast and loose with the LaTeX output
+routine, which can cause problems: the user should beware...
+<p>If the requirement is for numbering verbatim text, <i>moreverb</i>,
+<i>memoir</i> or <i>fancyvrb</i> (see 
+<a href="FAQ-verbfile.html">including files verbatim</a>) may be used.
+<p>One common use of line numbers is in critical editions of texts, and
+for this the <i>edmac</i> package offers comprehensive support;
+<i>ledmac</i> is a LaTeX port of <i>edmac</i>.
+<p>The <i>vruler</i> package sidesteps many of the problems associated
+with line-numbering, by offering (as its name suggests) a rule that
+numbers positions on the page.  The effect is good, applied to
+even-looking text, but is poor in texts that involve breaks such as
+interpolated mathematics or figures.  Documentation of the package, in
+the package itself, is pretty tough going, though there is an example
+(also inside the package file).
+<dl>
+<dt><tt><i>edmac</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/plain/contrib/edmac.zip">macros/plain/contrib/edmac</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/plain/contrib/edmac.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/plain/contrib/edmac/">browse</a>)
+<dt><tt><i>fancyvrb.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fancyvrb.zip">macros/latex/contrib/fancyvrb</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fancyvrb.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/fancyvrb/">browse</a>)
+<dt><tt><i>ledmac.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ledmac.zip">macros/latex/contrib/ledmac</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ledmac.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/ledmac/">browse</a>)
+<dt><tt><i>lineno.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/lineno.zip">macros/latex/contrib/lineno</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/lineno.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/lineno/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>moreverb.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/moreverb.zip">macros/latex/contrib/moreverb</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/moreverb.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/moreverb/">browse</a>)
+<dt><tt><i>numline.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/numline/numline.sty">macros/latex/contrib/numline/numline.sty</a>
+<dt><tt><i>vruler.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/vruler.sty">macros/latex/contrib/misc/vruler.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=linenos">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=linenos</a>
+</body>

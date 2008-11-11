@@ -1,0 +1,13 @@
+$ \textbf{hg log --style compact}
+3[tip]   ff8f4d8692f1   2008-03-02 16:16 +0000   bos
+  Added tag v0.1 for changeset 0ada688e2b27
+
+2[v0.1]   0ada688e2b27   2008-03-02 16:16 +0000   bos
+  Added tag mytag for changeset aa211e578997
+
+1[mytag]   aa211e578997   2008-03-02 16:16 +0000   bos
+  added line to end of <<hello>> file.
+
+0   7506a826a037   2008-03-02 16:16 +0000   bos
+  added hello
+

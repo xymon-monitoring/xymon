@@ -1,0 +1,55 @@
+<head>
+<title>UK TeX FAQ -- question label bibtranscinit</title>
+</head><body>
+<h3>Transcribed initials in BibTeX</h3>
+<p>If your bibliographic style uses initials + surname, you may encounter
+a problem with some transcribed names (for example, Russian ones).
+Consider the following example from the real world:
+<blockquote>
+
+<pre>
+@article{epifanov1997,
+   author = {Epifanov, S. Yu. and Vigasin, A. A.},
+   title  = ...
+}
+</pre>
+</blockquote><p>
+Note that the &ldquo;Yu&rdquo; is the initial, not a complete name. However,
+BibTeX&rsquo;s algorithms will leave you with a citation &mdash; 
+slightly depending on the bibliographic style &mdash; that reads:
+&ldquo;S. Y. Epifanov and A. A. Vigasin, ...&rdquo;. instead of the intended
+&ldquo;S. Yu. Epifanov and A. A. Vigasin, ...&rdquo;.
+<p>One solution is to replace each affected initial by a command that 
+prints the correct combination.  To keep your bibliography portable,
+you need to add that command to your bibliography with the
+<code>@preamble</code> directive:
+<blockquote>
+
+<pre>
+@preamble{ {\providecommand{\BIBYu}{Yu} } }
+
+@article{epifanov1997,
+   author   = {Epifanov, S. {\BIBYu}. and Vigasin, A. A.},
+   title    = ...
+}
+</pre>
+</blockquote><p>
+If you have many such commands, you may want to put them in a separate
+file and <code>\</code><code>input</code> that LaTeX file in a <code>@preamble</code>
+directive.
+<p>An alternative is to make the transcription look like an accent, from
+BibTeX&rsquo;s point of view.  For this we need a control sequence that
+does nothing:
+<blockquote>
+<pre>
+@article{epifanov1997,
+   author   = {Epifanov, S. {\relax Yu}. and Vigasin, A. A.},
+   title    = ...
+}
+</pre>
+</blockquote><p>
+Like the solution by generating extra commands, this involves tedious
+extra typing; which of the two techniques is preferable for a given
+bibliography will be determined by the names in it.
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=bibtranscinit">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=bibtranscinit</a>
+</body>

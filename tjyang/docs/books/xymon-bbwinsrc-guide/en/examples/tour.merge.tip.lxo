@@ -1,0 +1,9 @@
+$ \textbf{hg tip}
+changeset:   7:49c225dde7c4
+tag:         tip
+parent:      5:ed5e66ff9bb2
+parent:      6:a3ce8b616f22
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Sun Mar 02 16:16:40 2008 +0000
+summary:     Merged changes
+

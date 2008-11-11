@@ -1,0 +1,243 @@
+\chapter{Configuring Hobbit Alerts}
+\section{Configuring Hobbit Alerts}
+
+
+ When something breaks, you want to know about it. Since you probably dont have the Hobbit webpages in view all of the time, Hobbit can generate alerts to draw your attention to problems. Alerts can go out as e-mail, or Hobbit can run a script that takes care of activating a pager, sending an SMS, or however you prefer to get alerted.
+\begin{itemize}
+\item A simple alert configuration
+\item Configuration file keywords
+\item Using regular expressions for names
+\item Alering via a script
+\item Using macros
+\item There are rules ... and exceptions: IGNORE
+
+\end{itemize}
+\subsubsection{A simple alert configuration}
+
+
+ The configuration file for the Hobbit alert module is \emph{~/server/etc/hobbit-alerts.cfg}
+. This file consists of a number of \emph{rules}
+ that are matched against the name of the host that has a problem, the name of the service, the time of day and a number of other criteria. Each rule then has a number of \emph{recipients}
+ that receive the alert. For each recipient you can further refine the rules that need to be matched. An example:
+\begin{verbatim}
+
+	HOST=www.foo.com
+		MAIL webmaster@foo.com SERVICE=http REPEAT=1h
+		MAIL unixsupport@foo.com SERVICE=cpu,disk,memory
+
+\end{verbatim}
+
+
+ The first line defines a \emph{rule}
+ for alerting when something breaks on the host ``www.foo.com''.
+ There are two recipients: webmaster@foo.com is notified if it is the ``http'' service that fails, and the notification is repeated once an hour until the problem is resolved.
+unixsupport@foo.com is notified if it is the ``cpu'', ``disk'' or ``memory'' tests that report a failure. Since there is no ``REPEAT'' setting for this recipient, the default is used which is to repeat the alert every 30 minutes.
+
+
+ OK, suppose now that the webmaster complains about getting e-mails at 4 AM in the morning. The webserver is not supposed to be running between 9 PM and 8 AM, so even though there is a problem, he doesn't want to hear about it until 7:30 - that gives him just enough time to fix the problem. So you must modify the rule so that it doesn't send out alerts until 7:30 AM:
+\begin{verbatim}
+
+	HOST=www.foo.com
+		MAIL webmaster@foo.com SERVICE=http REPEAT=1h TIME=*:0730:2100
+		MAIL unixsupport@foo.com SERVICE=cpu,disk,memory
+
+\end{verbatim}
+
+
+ Adding the \emph{TIME}
+ setting on the recipient causes the alerts \emph{for this recipient}
+ to be suppressed, unless the time of day is within the interval. So with this setup, the webmaster gets his sleep.
+
+
+ What would have happened if you put the \emph{TIME}
+ setting on the \emph{rule}
+ instead of on the \emph{recipient}
+ ? Like this: \begin{verbatim}
+
+	HOST=www.foo.com TIME=*:0730:2100
+		MAIL webmaster@foo.com SERVICE=http REPEAT=1h
+		MAIL unixsupport@foo.com SERVICE=cpu,disk,memory
+
+\end{verbatim}
+
+
+
+ Well, the webmaster would still have his nights to himself - but the TIME setting would then also apply to the alerts that go out when there is a problem with the ``cpu'', ``disk'' or ``memory'' services. So there would not be any mails going to unixsupport@foo.com when a disk fills up during the night.
+\subsubsection{Keywords in rules and recipients}
+
+
+ These are the keywords for setting up rules:
+
+
+%\begin{tabular}{lc}
+%PAGE &rule matching an alert by the name of the page the host is displayed on. This is the name following the ``page'', ``subpage'' or ``subparent'' keyword in the bb-hosts file. 
+%EXPAGE &rule excluding an alert if the pagename matches. 
+%HOST &rule matching an alert by the hostname. 
+%EXHOST &rule excluding an alert by matching the hostname. 
+%SERVICE &rule matching an alert by the service name. 
+%EXSERVICE &rule excluding an alert by matching the hostname. 
+%COLOR &rule matching an alert by color. Can be ``red'', ``yellow'', or ``purple''. 
+%TIME &rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file (see bb-hosts(5)). 
+%DURATION &Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. \emph{DURATION$>$10m}
+% (lasted longer than 10 minutes) or \emph{DURATION$<$2h}
+% (only sends alerts the first 2 hours). Unless explicitly stated, this is in minutes - you can use 'm', 'h', 'd' for 'minutes', 'hours' and 'days' respectively. 
+%UNMATCHED &This keyword on a recipient means that he will only get an alert, if no other alerts have been sent. So you can use it e.g. when setting up alerts to specific people for some services, then after those you add a recipient with the UNMATCHED keyword who will only get those alerts that were not sent anyone else. You can also use it to setup a ``catch-all'' alert recipient, use the UNMATHED keyword on a recipient at the end of the hobbit-alerts.cfg file. 
+%RECOVERED &Rule matches if the alert has recovered from an alert state. 
+%NOTICE &Rule matches if the message is a ``notify'' message. This type of message is sent when a host or test is disabled or enabled.
+%
+%\end{tabular}
+%
+
+
+ These are the keywords for specifying a recipient:
+
+
+%\begin{tabular}{lc}
+%MAIL &Recipient who receives an e-mail alert. This takes one parameter, the e-mail address. 
+%SCRIPT &Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script. 
+%IGNORE &Recipient that does NOT send an alert, and will cause Hobbit to stop looking for any more recipients. See the example below. 
+%FORMAT &format of the text message with the alert. Default is ``TEXT'' (suitable for e-mail alerts). ``PLAIN'' is the same as TEXT, except it does not include the URL linking to the status webpage. ``SMS'' is a short message with no subject for SMS alerts. ``SCRIPT'' is a brief message template for scripts. 
+%REPEAT &How often an alert gets repeated. As with the DURATION setting, this is in minutes unless explicitly modified with 'm', 'h', 'd'. 
+%STOP &By default, hobbitd\_alert looks at all the possible recipients in the hobbit-alerts.cfg file when handling an alert. If you would like it stop after a specific recipient gets an alert, add the STOP keyword to this recipient. This terminates the search for more recipients.
+%
+%\end{tabular}
+
+\subsubsection{Wildcards - regular expressions}
+
+
+ So now we can setup an alert. But using explicit hostnames is bothersome, if you have many hosts. There is a smarter way: \begin{verbatim}
+
+	HOST=%(www|intranet|support|mail).foo.com
+		MAIL webmaster@foo.com SERVICE=http REPEAT=1h
+		MAIL unixsupport@foo.com SERVICE=cpu,disk,memory
+
+\end{verbatim}
+
+
+
+ The percent-sign indicates that the hostname should not be taken literally - instead, (www|intranet|support|mail).foo.com is a \emph{Perl-compatible regular expression}
+. This particular expression matches ``www.foo.com'', ``intranet.foo.com'', ``support.foo.com'' and ``mail.foo.com''. You can use regular expressions to match hostnames, service-names and page-names.
+
+
+ If you want to test how your alert configuration handles a specific host, you can run hobbitd\_alert in \textbf{test}
+ mode - you give it a hostname and servicename as input, and it will go through the configuration and tell you which rules match and who gets an alert.
+\begin{verbatim}
+
+	osiris:~ $ cd server/
+	osiris:~/server $ ./bin/bbcmd hobbitd_alert --test osiris.hswn.dk cpu
+	Matching host:service:page 'osiris.hswn.dk:cpu:' against rule line 109:Matched
+	    *** Match with 'HOST=*' ***
+	Matching host:service:page 'osiris.hswn.dk:cpu:' against rule line 110:Matched
+	    *** Match with 'MAIL henrik@sample.com REPEAT=2 RECOVERED COLOR=red' ***
+	Mail alert with command 'mail -s "BB [12345] osiris.hswn.dk:cpu is RED" henrik@sample.com'
+
+\end{verbatim}
+\subsubsection{If e-mail is not enough}
+
+
+ The \emph{MAIL}
+ keyword means that the alert is sent in an e-mail. Sometimes this ends up being an SMS to your cell-phone - there are several ``e-mail to SMS'' gateways that perform this service - but that may not be what you want to do. And also, for an e-mail to actually be delivered requires that the mail-server is working. So if you need full control over how alerts are handled, you can use the \emph{SCRIPT}
+ method instead. Here's how: \begin{verbatim}
+
+	HOST=%(www|intranet|support|mail).foo.com SERVICE=http
+		SCRIPT /usr/local/bin/smsalert 4538761925 FORMAT=sms
+
+\end{verbatim}
+
+
+
+ This alert doesn't go out as e-mail. Instead, when an alert needs to be delivered, Hobbit will run the script /usr/local/bin/smsalert. The script can use data from a series of environment variables to build the information it sends in the alert, depending on what the recipient can handle. E.g. for pagers you will typically just send a sequence of numbers - Hobbit provides things like the IP-address of the server that has a problem and a numeric code for the service to the script. So a simple script to send an SMS alert with the ``sendsms'' tool could look like this:
+\begin{verbatim}
+
+	#!/bin/sh
+
+	/usr/local/bin/sendsms $RCPT "$BBALPHAMSG"
+
+\end{verbatim}
+
+
+ Here you can see the script use two environment variables that Hobbit sets up for the script: The \emph{\$RCPT}
+ is the recipient, i.e. the phone-number ``4538761925'' that is in the hobbitalerts.cfg file. The \emph{\$BBALPHAMSG}
+ is text of the status that triggers the alert.
+
+
+ Although \$BBALPHAMSG is nice to have, not all recipients can handle the large messages that may be sent in the status message. The FORMAT=sms tells Hobbit to change the BBALPHAMSG into a form that is suitable for an SMS message - which has a maximum size of 160 bytes. So Hobbit picks out the most important bits of the status message, and puts as much of that as possible into the BBALPHSMSG variable for the script.
+
+
+ The full list of environment variables provided to scripts are as follows:
+
+
+%\begin{tabular}{lc}
+%BBCOLORLEVEL &The current color of the status 
+%BBALPHAMSG &The full text of the status log triggering the alert 
+%ACKCODE &The ``cookie'' that can be used to acknowledge the alert 
+%RCPT &The recipient, from the SCRIPT entry 
+%BBHOSTNAME &The name of the host that the alert is about 
+%MACHIP &The IP-address of the host that has a problem 
+%BBSVCNAME &The name of the service that the alert is about 
+%BBSVCNUM &The numeric code for the service. From SVCCODES definition. 
+%BBHOSTSVC &HOSTNAME.SERVICE that the alert is about. 
+%BBHOSTSVCCOMMAS  &As BBHOSTSVC, but dots in the hostname replaced with commas 
+%BBNUMERIC &A 22-digit number made by BBSVCNUM, MACHIP and ACKCODE. 
+%RECOVERED &Is ``1'' if the service has recovered. 
+%DOWNSECS &Number of seconds the service has been down. 
+%DOWNSECSMSG &When recovered, holds the text ``Event duration : N'' where N is the DOWNSECS value.
+%
+%\end{tabular}
+
+
+
+ This set of environment variables are the same as those provided by Big Brother to custom paging scripts, so you should be able to re-use any paging scripts written for Big Brother with Hobbit.
+\subsubsection{Save on the typing - use macros}
+
+
+ Say you have a long list of hosts or e-mail adresses that you want to use several times throughout the hobbit-alerts.cfg file. Do you have to write the full list every time ? No: 
+\begin{verbatim}
+
+	$WEBHOSTS=%(www|intranet|support|mail).foo.com 
+	
+	HOST=$WEBHOSTS SERVICE=http
+		SCRIPT /usr/local/bin/smsalert 4538761925 FORMAT=sms
+
+	HOST=$WEBHOSTS SERVICE=cpu,disk,memory
+		MAIL unixsupport@foo.com
+
+\end{verbatim}
+
+ The first line defines \emph{\$WEBHOSTS} as a \emph{macro}. So everywhere else in the file, ``\$WEBHOSTS'' is automatically replaced with ``\%(www|intranet|support|mail).foo.com'' before the rule is processed. The same method can be used for recipients, e.g. e-mail adresses. In fact, you can put an entire line into a macro:
+
+\begin{verbatim}
+
+	$UNIXSUPPORT=MAIL unixsupport@foo.com TIME=*:0800:1600 SERVICE=cpu,disk,memory
+
+	HOST=%(www|intranet|support|mail).foo.com 
+		$UNIXSUPPORT
+
+	HOST=dns.bar.com
+		$UNIXSUPPORT
+
+\end{verbatim}
+
+
+
+ would be a perfectly valid way of specifying that unixsupport@foo.com gets e-mailed about cpu-, disk- or memory-problems on the foo.com web-servers, and the bar.com dns-servers.
+
+
+ Note: Nesting macros is possible, except that you must define a macro before you use it in a subsequent macro definition.
+\subsubsection{There are rules ... and exceptions: IGNORE}
+
+
+ A common scenario is where you handle most of the alerts with a wildcard rule, but there is \emph{just}
+ that one exception where you dont want any cpu alerts from the marketing server on Thursday afternoon. Then it is time for the IGNORE recipient:
+\begin{verbatim}
+
+	HOST=* COLOR=red
+		IGNORE HOST=marketing.foo.com SERVICE=cpu TIME=4:1500:1800
+		MAIL admin@foo.com
+
+\end{verbatim}
+
+
+
+ What this does is it defines a general catch-all alert: All red alerts go off to the admin@foo.com mailbox. There is just one exception: When the marketing.foo.com alerts on the ``cpu'' status on Thursdays between 3PM and 6PM, that alert is ignored. The IGNORE recipient implicitly has a STOP flag associated, so when the IGNORE recipient is matched, Hobbit will stop looking for more recipients - so the next line with the MAIL recipient is never looked at when handling that busy marketing server on Thursdays.
+

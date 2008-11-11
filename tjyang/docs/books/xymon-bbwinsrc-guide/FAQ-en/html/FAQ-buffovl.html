@@ -1,0 +1,54 @@
+<head>
+<title>UK TeX FAQ -- question label buffovl</title>
+</head><body>
+<h3>Unable to read an entire line</h3>
+<p>TeX belongs to the generation of applications written for
+environments that didn&rsquo;t offer the sophisticated string and i/o
+manipulation we nowadays take for granted (TeX was written in
+Pascal, and the original Pascal standard made no mention of i/o, so
+that anything but the most trivial operations were likely to be
+unportable).
+<p>When you overwhelm TeX&rsquo;s input mechanism, you get told:
+<pre>
+! Unable to read an entire line---bufsize=3000.
+    Please ask a wizard to enlarge me.
+</pre>
+(for some value of &lsquo;3000&rsquo; &mdash; the quote was from a
+<i>comp.text.tex</i> posting by a someone who was presumably
+using an old TeX).
+<p>As the message implies, there&rsquo;s (what TeX thinks of as a) line in
+your input that&rsquo;s &ldquo;too long&rdquo; (to TeX&rsquo;s way of thinking).  Since
+modern distributions tend to have tens of thousands of bytes of input
+buffer, it&rsquo;s somewhat rare that these messages occur &ldquo;for real&rdquo;.
+Probable culprits are:
+<ul>
+<li> A file transferred from another system, without translating
+  record endings.  With the decline of fixed-format records (on
+  mainframe operating systems) and the increased intelligence of
+  TeX distributions at recognising other systems&rsquo; explicit
+  record-ending characters, this is nowadays rather a rare cause of
+  the problem.
+<li> A graphics input file, which a package is examining for its
+  bounding box, contains a binary preview section.  Again,
+  sufficiently clever TeX distributions recognise this situation,
+  and ignore the previews (which are only of interest, if at all, to a
+  TeX previewer).
+</ul>
+<p>The usual advice is to ignore what TeX says (i.e., anything about
+enlarging), and to put the problem right in the source. 
+<p>If the real problem is over-long text lines, most self-respecting text
+editors will be pleased to automatically split long lines (while
+preserving the &ldquo;word&rdquo; structure) so that they are nowhere any longer
+than a given length; so the solution is just to edit the file.
+<p>If the problem is a ridiculous preview section, try using
+<i>ghostscript</i> to reprocess the file, outputting a &ldquo;plain
+<code>.eps</code>&rdquo; file.  (<i>Ghostscript</i> is distributed with a script
+<i>ps2epsi</i> which will regenerate the preview if necessary.)
+Users of the shareware program <i>GSview</i> will find buttons to
+perform the required transformation of the file being displayed.
+<dl>
+<dt><tt><i>ghostscript</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/support/ghostscript/">nonfree/support/ghostscript/</a>
+<dt><tt><i>GSview</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/support/ghostscript/ghostgum/">nonfree/support/ghostscript/ghostgum/</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=buffovl">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=buffovl</a>
+</body>

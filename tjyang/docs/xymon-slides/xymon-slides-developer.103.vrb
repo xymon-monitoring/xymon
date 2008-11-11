@@ -1,0 +1,29 @@
+\frametitle {Writing a Low-Level Macro}
+
+Low-level macros need to
+\begin{itemize}
+\item print a \emph{checking whether...} message
+\item do the actual check
+\item cache the result of the check
+\end{itemize}
+
+\uncover<2->{Most of this is achieved via the \texttt{AC\_CACHE\_CHECK} macro.}
+
+\begin{block}<2->{}
+\begin{semiverbatim}
+AC_DEFUN(\variable{MACRO-NAME},
+[AC_CACHE_CHECK(\variable{WHETHER-MESSAGE},
+                \variable{\alert<3>{CACHE-VARIABLE}},
+                \variable{\alert<4>{CODE-TO-SET-CACHE-VARIABLE}})
+\variable{\alert<5>{CODE-USING-CACHE-VARIABLE}}])
+\end{semiverbatim}
+\end{block}
+
+\begin{itemize}
+\item<3-> The \variable{CACHE-VARIABLE} should match \texttt{*\_cv\_*}.
+\item<4-> \variable{CODE-TO-SET-CACHE-VARIABLE} should contain the check.
+  It will be skipped when the cache is used.
+\item<5-> \variable{CODE-USING-CACHE-VARIABLE} is always executed, use
+  \texttt{AC\_SUBST} and \texttt{AC\_DEFINE} here.
+\end{itemize}
+

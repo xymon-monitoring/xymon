@@ -1,0 +1,54 @@
+<head>
+<title>UK TeX FAQ -- question label divzero</title>
+</head><body>
+<h3>Graphics division by zero</h3>
+<p>While the error
+<blockquote>
+<pre>
+! Package graphics Error: Division by 0.
+</pre>
+</blockquote><p>
+can actually be caused by offering the package a figure which claims
+to have a zero dimension, it&rsquo;s more commonly caused by rotation.
+<p>Objects in TeX may have both height (the height above the baseline)
+and depth (the distance the object goes below the baseline).  If you
+rotate an object by 180 degrees, you convert its height into depth,
+and vice versa; if the object started with zero depth, you&rsquo;ve
+converted it to a zero-height object.
+<p>Suppose you&rsquo;re including your graphic with a command like:
+<blockquote>
+<pre>
+\includegraphics[angle=180,height=5cm]{myfig.eps}
+</pre>
+
+</blockquote><p>
+In the case that <i>myfig.eps</i> has no depth to start with, the
+scaling calculations will produce the division-by-zero error.
+<p>Fortunately, the <i>graphicx</i> package has a keyword
+<code>totalheight</code>, which allows you to specify the size of the
+image relative to the sum of the object&rsquo;s <code>height</code> and
+<code>depth</code>, so
+<blockquote>
+<pre>
+\includegraphics[angle=180,totalheight=5cm]{myfig.eps}
+</pre>
+
+</blockquote><p>
+will resolve the error, and will behave as you might hope.
+<p>If you&rsquo;re using the simpler <i>graphics</i> package, use the
+<code>*</code> form of the <code>\</code><code>resizebox</code> command to specify the use of
+<code>totalheight</code>:
+<blockquote>
+<pre>
+\resizebox*{!}{5cm}{%
+  \rotatebox{180}{%
+    \includegraphics{myfig.eps}%
+  }%
+}
+</pre>
+</blockquote><p>
+<dl>
+<dt><tt><i>graphics.sty,graphicx.sty</i></tt><dd>Both parts of the <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.zip">macros/latex/required/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/graphics/">browse</a>) bundle
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=divzero">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=divzero</a>
+</body>

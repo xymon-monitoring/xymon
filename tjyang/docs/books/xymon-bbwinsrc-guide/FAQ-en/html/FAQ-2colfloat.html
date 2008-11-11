@@ -1,0 +1,34 @@
+<head>
+<title>UK TeX FAQ -- question label 2colfloat</title>
+</head><body>
+<h3>Placing two-column floats at bottom of page</h3>
+<p>You specified placement &lsquo;<code>[htbp]</code>&rsquo; for your full-width figure or
+table, but they always get placed at the top of the page...  Well,
+it <em>is</em> what the documentation says: LaTeX, unadorned, only
+allows full-width floats at the top of a page, or occupying (part of) a
+float page.
+<p>The <i>stfloats</i> package ameliorates the situation somewhat, and
+makes LaTeX honour &lsquo;[b]&rsquo; placement as well; the
+<i>dblfloatfix</i> package combines a tidied version of the changes
+made in <i>stfloats</i> with the
+
+  <a href="FAQ-2colfltorder.html">float ordering corrections</a> defined in
+  <i>fixltx2e</i>.
+<p>A particular problem with <i>stfloats</i> and <i>dblfloatfix</i>
+is that the float will appear, at its earliest, on the page after it
+is specified.  This has two undesirable side-effects: first, there may
+be no bottom float on the first page of a document, and second, float
+numbers may become &ldquo;entangled&rdquo; (particularly if you&rsquo;re using
+<i>dblfloatfix</i> that ensures that the early-specified bottom
+float is set <em>before</em> any single column floats).
+<p>(The FAQ team doesn&rsquo;t know of any package that will make
+LaTeX honour &lsquo;[h]&rsquo; placement of double-column floats, but the
+<i>midfloat</i> package can be pressed into service to provide
+something approximating the effect it would have.)
+<dl>
+<dt><tt><i>dblfloatfix.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/dblfloatfix.sty">macros/latex/contrib/misc/dblfloatfix.sty</a>
+<dt><tt><i>stfloats.sty, midfloat.sty</i></tt><dd>Distributed as part of
+  <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/sttools.zip">macros/latex/contrib/sttools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/sttools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/sttools/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=2colfloat">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=2colfloat</a>
+</body>

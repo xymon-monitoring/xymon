@@ -1,0 +1,94 @@
+Following text  will be in xymonmon developer FAQ in the future.
+
+How do I help improving the xymonmon books ?
+
+1. Get a developer account from xymonmon project admin(Henrik Stoner) to have svn write access.
+2. check out xymonmon source.
+   2.1 books source in in xymonmon branches.
+   svn co https://xymonmon.svn.sourceforge.net/svnroot/xymon hobbitmon 
+3. using xymonmon-rtfm as an example
+   3.1 "cd xymonmon/branches/tjyang/src/books/xymon-rtfm/en"
+   3.2 edit the tex file that has an typo of "Hobbitmon" as "Hobbit" 
+       Ex: perl -pi -e 's!Hobbit!Hobbitmon!' about.tex 
+   3.3 make
+
+[tjyang@ibm en]$ make
+mkdir -p pdf/
+TEXINPUTS=./: pdflatex -interaction batchmode -output-directory pdf/ -jobname xymon-RTFM 00book.tex || (rm -f pdf/hobbit-RTFM.pdf; exit 1)
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6)
+ %&-line parsing enabled.
+entering extended mode
+cp 99book.bib pdf/
+cd pdf/ && bibtex xymon-RTFM
+This is BibTeX, Version 0.99c (Web2C 7.5.6)
+The top-level auxiliary file: xymon-RTFM.aux
+A level-1 auxiliary file: preface.aux
+A level-1 auxiliary file: xymon_overview.aux
+A level-1 auxiliary file: howtograph.aux
+A level-1 auxiliary file: install.aux
+A level-1 auxiliary file: about.aux
+A level-1 auxiliary file: xymon-alerts.aux
+A level-1 auxiliary file: xymon-config.aux
+A level-1 auxiliary file: bb-to-xymon.aux
+A level-1 auxiliary file: xymon-mrtg.aux
+A level-1 auxiliary file: criticalsystems.aux
+A level-1 auxiliary file: known-issues.aux
+A level-1 auxiliary file: server_configuration_files.aux
+A level-1 auxiliary file: web_page_generation.aux
+A level-1 auxiliary file: report_generation.aux
+A level-1 auxiliary file: administrative_web_pages.aux
+A level-1 auxiliary file: network_service_testing.aux
+A level-1 auxiliary file: combination_tests.aux
+A level-1 auxiliary file: messages_protocols.aux
+A level-1 auxiliary file: xymon_server_programs.aux
+A level-1 auxiliary file: xymon_client.aux
+A level-1 auxiliary file: data_backend.aux
+A level-1 auxiliary file: misc_programs.aux
+A level-1 auxiliary file: bookmaking.aux
+A level-1 auxiliary file: license.aux
+The style file: alpha.bst
+Database file #1: 99book.bib
+Warning--entry type for "wikibook:wikibooktjyang" isn't style-file defined
+--line 1 of file 99book.bib
+(There was 1 warning)
+cd pdf/ && makeindex xymon-RTFM
+This is makeindex, version 2.14 [02-Oct-2002] (kpathsea + Thai support).
+Scanning input file xymon-RTFM.idx....done (195 entries accepted, 1 rejected).
+Sorting entries.....done (1581 comparisons).
+Generating output file xymon-RTFM.ind....done (248 lines written, 0 warnings).
+Output written in xymon-RTFM.ind.
+Transcript written in xymon-RTFM.ilg.
+TEXINPUTS=./: pdflatex -interaction batchmode -output-directory pdf/ -jobname xymon-RTFM 00book.tex || (rm -f pdf/hobbit-RTFM.pdf; exit 1)
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6)
+ %&-line parsing enabled.
+entering extended mode
+TEXINPUTS=./: pdflatex -interaction batchmode -output-directory pdf/ -jobname xymon-RTFM 00book.tex || (rm -f pdf/hobbit-RTFM.pdf; exit 1)
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6)
+ %&-line parsing enabled.
+entering extended mode
+if grep 'Reference.*undefined' pdf/xymon-RTFM.log; then exit 1; fi
+[tjyang@ibm en]$ 
+
+   3.4  the new version of xymon-RTFM.pdf got generated.
+
+[tjyang@ibm en]$ ls -l pdf/*.pdf
+-rw-rw-r-- 1 tjyang tjyang 9244471 2008-08-11 10:06 pdf/xymon-RTFM.pdf
+[tjyang@ibm en]$ 
+  
+  3.5   we can see content of xymon-RTFM.pdf got "M"odified.
+<snip>
+?      pdf/xymon-mrtg.aux
+?      pdf/data_backend.aux
+M      pdf/xymon-RTFM.pdf
+[tjyang@ibm en]$ 
+
+  3.6  commit the change. you can see the changes got uploaded to SVN server on sourceforge.net.
+  
+[tjyang@ibm en]$ svn commit -m "correct type of Hobbitmon from Hobbit"
+Sending        en/about.tex
+Sending        en/pdf/xymon-RTFM.pdf
+Transmitting file data ..
+Committed revision 5743.
+[tjyang@ibm en]$
+
+

@@ -1,0 +1,36 @@
+<head>
+<title>UK TeX FAQ -- question label pdfpagelabels</title>
+</head><body>
+<h3><i>Hyperref</i> and repeated page numbers</h3>
+<p>The <i>book</i> class (and its friends and relations) automatically
+changes the display of page numbers in the frontmatter of the document
+to lower-case roman.  This is fine for human readers, but it confuses
+<i>hyperref</i> since there are pages which seem (to
+<i>hyperref</i>) to have the same page number.  Fortunately, there are
+configuration options to make <i>hyperref</i> &ldquo;do the right
+thing&rdquo;.
+<p>The two options in question are:
+<dl>
+<dt><code>plainpages=false</code><dd> Make page anchors using the
+  formatted form of the page number.  With this option,
+  <i>hyperref</i> writes different anchors for pages &lsquo;ii&rsquo; and &lsquo;2&rsquo;.
+  (If the option is set &lsquo;<code>true</code>&rsquo; &mdash; the default &mdash;
+  <i>hyperref</i> writes page anchors as the arabic form of the
+  absolute page number, rather than the formatted form.)
+<dt><code>pdfpagelabels</code><dd> Set PDF page labels; i.e.,
+  write the value of <code>\</code><code>thepage</code> to the PDF file so that
+  <i>Acrobat Reader</i> can display the page number as (say) &lsquo;ii (4
+  of 40)&rsquo; rather than simply &lsquo;4 of 40&rsquo;.
+</dl>
+The two should be used whenever page numbering is not just
+&lsquo;1<code>..</code>n&rsquo;; they may be used independently, but usually are not.
+<p>The recipe isn&rsquo;t perfect: it relies on <code>\</code><code>thepage</code> being different
+for every page in the document.  A common problem arises when there is
+an unnumbered title page, after which page numbers are reset: the
+PDFTeX warning of &ldquo;<a href="FAQ-hyperdupdest.html">duplicate destinations</a>&rdquo;
+will happen in this case, regardless of the options.
+<dl>
+<dt><tt><i>hyperref.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.zip">macros/latex/contrib/hyperref</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/hyperref/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=pdfpagelabels">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=pdfpagelabels</a>
+</body>

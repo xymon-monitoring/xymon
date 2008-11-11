@@ -1,0 +1,69 @@
+<head>
+<title>UK TeX FAQ -- question label cmdstar</title>
+</head><body>
+<h3>Commands defined with * options</h3>
+<p>LaTeX commands commonly have &ldquo;versions&rdquo; defined with an asterisk
+tagged onto their name: for example <code>\</code><code>newcommand</code> and
+<code>\</code><code>newcommand*</code> (the former defines a <code>\</code><code>long</code> version of the
+command).
+<p>The simple-minded way for a user to write such a command involves use
+of the <i>ifthen</i> package:
+<blockquote>
+<pre>
+\newcommand{\mycommand}[1]{\ifthenelse{\equal{#1}{*}}%
+  {\mycommandStar}%
+  {\mycommandNoStar{#1}}%
+}
+\newcommand{\mycommandStar}{starred version}
+\newcommand{\mycommandNoStar}[1]{normal version}
+</pre>
+</blockquote><p>
+
+This does the trick, for sufficiently simple commands, but it has
+various tiresome failure modes, and it requires <code>\</code><code>mycommandnostar</code>
+to take an argument.
+<p>Of course, the LaTeX kernel has something slicker than this:
+<blockquote>
+<pre>
+\newcommand{\mycommand}{\@ifstar
+                     \mycommandStar%
+                     \mycommandNoStar%
+}
+\newcommand{\mycommandStar}[2]{starred version}
+\newcommand{\mycommandNoStar}[1]{normal version}
+</pre>
+
+</blockquote><p>
+(Note that arguments to <code>\</code><code>mycommandStar</code> and <code>\</code><code>mycommandNoStar</code>
+are independent &mdash; either can have their own arguments, unconstrained
+by the technique we&rsquo;re using, unlike the trick described above.)
+The <code>\</code><code>@ifstar</code> trick is all very well, is fast and efficient, but
+it requires the definition to be 
+<a href="FAQ-atsigns.html"><code>\</code><code>makeatletter</code> protected</a>.
+<p>A pleasing alternative is the <i>suffix</i> package.  This elegant
+piece of code allows you to define variants of your commands:
+
+<blockquote>
+<pre>
+\newcommand\mycommand{normal version}
+\WithSuffix\newcommand\mycommand*{starred version}
+</pre>
+</blockquote><p>
+The package needs <a href="FAQ-etex.html">e-LaTeX</a>, but any new enough
+distribution defines LaTeX as e-LaTeX by default.  Command
+arguments may be specified in the normal way, in both command
+definitions (after the &ldquo;<code>*</code>&rdquo; in the <code>\</code><code>WithSuffix</code>
+version).  You can also use the TeX primitive commands, creating a
+definition like:
+<blockquote>
+<pre>
+\WithSuffix\gdef\mycommand*{starred version}
+</pre>
+</blockquote><p>
+<dl>
+<dt><tt><i>ifthen.sty</i></tt><dd>Part of the LaTeX distribution
+<dt><tt><i>suffix.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/bigfoot.zip">macros/latex/contrib/bigfoot</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/bigfoot.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/bigfoot/">browse</a>)
+</dl>
+<p>
+<p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=cmdstar">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=cmdstar</a>
+</body>

@@ -1,0 +1,65 @@
+<head>
+<title>UK TeX FAQ -- question label SGML2TeX</title>
+</head><body>
+<h3>Conversion from SGML or HTML to TeX</h3>
+<p>SGML is a very important system for document storage and interchange,
+but it has no formatting features; its companion ISO standard
+DSSSL
+(see <a href="http://www.jclark.com/dsssl/">http://www.jclark.com/dsssl/</a>) is designed for writing
+transformations and formatting,
+but this has not yet been widely implemented. Some SGML authoring
+systems (e.g., SoftQuad <i>Author/Editor</i>) have formatting
+abilities, and
+there are high-end specialist SGML typesetting systems (e.g., Miles33&rsquo;s
+<i>Genera</i>).  However, the majority of SGML users probably transform
+the source to an existing typesetting system when they want to print. 
+TeX is a good candidate for this. There are three approaches to writing a
+translator:
+<ol>
+<li> Write a free-standing translator in the traditional way, with
+  tools like <i>yacc</i> and <i>lex</i>; this is hard, in
+  practice, because of the complexity of SGML.
+<li> Use a specialist language designed for SGML transformations; the
+  best known are probably <i>Omnimark</i> and <i>Balise</i>.
+  They are expensive, but powerful, incorporating SGML query and
+  transformation abilities as well as simple translation.
+<li> Build a translator on top of an existing SGML parser.  By far
+  the best-known (and free!) parser is James Clark&rsquo;s
+  <i>nsgmls</i>, and this produces a much simpler output format,
+  called ESIS, which can be parsed quite straightforwardly (one also
+  has the benefit of an SGML parse against the DTD). Two
+  good public domain packages use this method:
+  <ul>
+  <li>
+
+      David Megginson&rsquo;s
+      <a href="http://www.perl.com/CPAN/modules/by-module/SGMLS"><i>sgmlspm</a></i>,
+      written in <i>Perl</i> 5.
+    <li>
+
+      Joachim Schrod and Christine Detig&rsquo;s
+      <a href="ftp://ftp.tu-darmstadt.de/pub/text/sgml/stil"><i>STIL</a></i>,
+       (&lsquo;SGML Transformations in Lisp&rsquo;).
+  </ul>
+  Both of these allow the user to write &lsquo;handlers&rsquo; for every SGML
+  element, with plenty of access to attributes, entities, and
+  information about the context within the document tree.
+<p>  If these packages don&rsquo;t meet your needs for an average SGML
+  typesetting job, you need the big commercial stuff.
+</ol>
+<p>Since HTML is simply an example of SGML, we do not need a specific
+system for HTML.  However, Nathan Torkington developed
+
+<i>html2latex</i> from the HTML parser in NCSA&rsquo;s
+Xmosaic package.
+The program takes an HTML file and generates a LaTeX file from it.
+The conversion code is subject to NCSA restrictions, but the whole
+source is available on CTAN.
+<p>Michel Goossens and Janne Saarela published a very useful summary of
+SGML, and of public domain tools for writing and manipulating it, in
+<i>TUGboat</i> 16(2).
+<dl>
+<dt><tt><i>html2latex source</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/html2latex.zip">support/html2latex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/html2latex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/html2latex/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=SGML2TeX">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=SGML2TeX</a>
+</body>

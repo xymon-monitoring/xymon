@@ -1,0 +1,35 @@
+<head>
+<title>UK TeX FAQ -- question label tds</title>
+</head><body>
+<h3>What is the TDS?</h3>
+<p>    TDS stands for the TeX Directory Structure, which is a standard
+way of organising all the TeX-related files on a computer system. 
+<p>    Most modern distributions conform to the TDS, which
+provides for both a &lsquo;standard&rsquo; and a (set of) &lsquo;local&rsquo; hierarchies of
+directories containing TeX-related files. The
+TDS reserves the name <code>texmf</code> as the name of the root directory
+(folder) of the hierarchies.  Files supplied as part of the
+distribution are put into the standard hierarchy. The location of the
+standard hierarchy is system dependent, but on a Unix system it might
+be at 
+<i>/usr/local/texmf</i>, or
+<i>/usr/local/share/texmf</i>, or
+<i>/opt/texmf</i>, or
+a similar location, but in each case the TeX files will be under the 
+<i>/texmf</i> subdirectory. 
+<p>There may be more than on &lsquo;local&rsquo; hierarchy in which additional files
+can be stored. In the extreme an installation can have a local
+hierarchy and each user can also have an individual local hierarchy. The
+location of any local hierarchy is not only system dependent but also user
+dependent. Again, though, all files should be put under a local <i>/texmf</i>
+directory.
+<p>The TDS is published as the output of a TUG 
+<a href="FAQ-TUGstar.html">Technical Working Group</a>.
+You may browse an <a href="http://tug.org/tds/">on-line version</a> of the
+standard, and copies in several other formats (including source) are
+available on CTAN.
+<dl>
+<dt><tt><i>TDS specification</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/tds.zip">tds</a> (<a href="ftp://cam.ctan.org/tex-archive/tds.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/tds/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tds">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tds</a>
+</body>

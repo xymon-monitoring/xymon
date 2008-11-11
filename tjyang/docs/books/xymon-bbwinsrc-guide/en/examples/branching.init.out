@@ -1,0 +1,5 @@
+$ \textbf{hg init main}
+$ \textbf{cd main}
+$ \textbf{echo 'This is a boring feature.' > myfile}
+$ \textbf{hg commit -A -m 'We have reached an important milestone!'}
+adding myfile

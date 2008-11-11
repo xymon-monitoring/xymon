@@ -1,0 +1,110 @@
+% The use of oneside here is a temporary hack; \marginpar entries
+% don't show up on odd pages of PDF output without it.  Sigh.
+\documentclass[oneside]{book}
+\usepackage{enumerate}
+\usepackage{fullpage}
+\usepackage{makeidx}
+\usepackage{ifpdf}
+\usepackage{graphicx}
+\usepackage{pslatex}
+\usepackage{fancyvrb}
+
+%%%%%%%%%%% 
+%%% http://www.ctan.org/tex-archive/macros/latex/contrib/fancyhdr/fancyhdr.pdf
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead[LE,RO]
+          {\slshape\rightmark}
+\fancyhead[LO,RE]
+          {\slshape\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand\headrulewidth{0.5pt}
+\renewcommand\footrulewidth{0pt}
+\headheight 12pt
+\voffset 0pt
+\topmargin 0pt
+\headsep  25pt
+%%%%%%%%%%% 
+
+
+% leave hyperref until last
+\usepackage[colorlinks=true,bookmarks=true,pdftitle={Read The Hobbit Fine Manpages},pdfsubject={System Monitoring
+  },pdfkeywords={Hobbit, System Monitoring},pdfauthor={Tyng-Jing Yang}]{hyperref}
+
+\include{99defs}
+
+\title{Read Hobbitmon Manpages} \author{Hobbitmon Community}
+
+\date{Copyright \copyright\ 2008 GNU\\
+  This material may be distributed only subject to the terms and
+  conditions set forth in version 1.0 of the Open Publication License.
+  Please refer to Appendix~\ref{cha:opl} for the license text.
+  \includegraphics[scale=0.18]{./hobbit-cable.png} 
+}
+
+
+% \includegraphics[scale=0.5]{./latex-manpage.png} 
+%\begin{figure} 
+%\centering \caption{latex-manpage.png}
+%\label{latex-manpage.png}
+%\includegraphics[scale=0.5]{./latex-manpage.png} 
+%\end{figure}
+%
+
+\makeindex
+
+\begin{document}
+
+\maketitle
+
+\addcontentsline{toc}{chapter}{Contents}
+\pagenumbering{roman}
+\tableofcontents
+\listoffigures
+\listoftables
+
+\pagenumbering{arabic}
+\include{preface}
+\include{hobbit_overview}
+\include{howtograph}
+\include{install}
+\include{about}
+\include{hobbit-alerts}
+\include{hobbit-config}
+\include{bb-to-hobbit}
+\include{hobbit-mrtg}
+\include{criticalsystems}
+\include{known-issues}
+\include{server_configuration_files}
+\include{web_page_generation}
+\include{report_generation}
+\include{administrative_web_pages}
+\include{network_service_testing}
+\include{combination_tests}
+\include{messages_protocols}
+\include{hobbit_server_programs}
+\include{hobbit_client}
+\include{data_backend}
+\include{misc_programs}
+
+
+
+%\include{manpages}
+
+\appendix
+\include{bookmaking}
+\include{license}
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{alpha}
+\bibliography{99book}
+\addcontentsline{toc}{chapter}{Index}
+\printindex
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+

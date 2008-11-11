@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#$ name: go
+
+hg init issue29
+cd issue29
+echo a > a
+hg ci -Ama
+echo b > b
+hg ci -Amb
+hg up 0
+mkdir b
+echo b > b/b
+hg ci -Amc
+
+#$ ignore: abort: Is a directory: .*
+hg merge
+
+#$ name:
+# This error is expected from the failed merge.
+
+exit 0

@@ -1,0 +1,79 @@
+<head>
+<title>UK TeX FAQ -- question label struttab</title>
+</head><body>
+<h3>Spacing lines in tables</h3>
+<p>(La)TeX mechanisms for maintaining the space between lines (the
+&ldquo;<em>leading</em>&rdquo;) rely on TeX&rsquo;s paragraph builder, which compares
+the shape of consecutive lines and adjusts the space between them.
+<p>These mechanisms can&rsquo;t work in exactly the same way when (La)TeX is
+building a table, because the paragraph builder doesn&rsquo;t get to see the
+lines themselves.  As a result, tables sometimes typeset with lines
+uncomfortably close together (or occasionally ridiculously far apart).
+<p>Traditional (moving metal type) typographers would adjust the spacing
+between lines of a table by use of a &ldquo;<em>strut</em>&rdquo; (a metal
+spacer).  A TeX user can do exactly the same thing: most macro
+packages define a <code>\</code><code>strut</code> command, that defines a space appropriate
+to the current size of the text; placing a <code>\</code><code>strut</code> command at the
+end of a troublesome row is the simplest solution to the problem &mdash;
+if it works.  Other solutions below are LaTeX-specific, but some
+may be simply translated to Plain TeX commands.
+<p>If your table exhibits a systematic problem (i.e., every row is wrong
+by the same amount) use <code>\</code><code>extrarowheight</code>, which is defined by the
+<i>array</i> package:
+<blockquote>
+<pre>
+\usepackage{array}% in the preamble
+...
+\setlength{\extrarowheight}{length}
+\begin{tabular}{....}
+</pre>
+</blockquote><p>
+<p>To correct a single row whose maladjustment isn&rsquo;t corrected by a
+<code>\</code><code>strut</code> command, you can define your own, using
+<code>\</code><code>rule{0pt}{length}</code> &mdash; which is a near approximation to the
+command that goes inside a <code>\</code><code>strut</code>.  The <i>bigstrut</i> package
+defines a strut command that you can use for this purpose:
+<code>\</code><code>bigstrut</code> on its own opens up both above and below the current
+line; <code>\</code><code>bigstrut[t]</code> opens up above the line,
+<code>\</code><code>bigstrut[b]</code> opens up below the line.
+<p>General solutions are available, however.  The <i>tabls</i> package
+automatically generates an appropriately-sized strut at the end of
+each row.  Its disadvantages are that it&rsquo;s really rather slow in
+operation (since it gets in the way of everything within tables) and
+its (lack of) compatibility with other packages.
+<p>The <i>cellspace</i> does a (possibly inferior) job by defining a
+new table/array column type &ldquo;S&rdquo;, which you apply to each column
+specification.  So, for example,
+<blockquote>
+<pre>
+\cmdinvoke{begin}{tabular}{l l l p{3cm}}
+</pre>
+</blockquote><p>
+would become
+<blockquote>
+<pre>
+\cmdinvoke{begin}{tabular}{Sl Sl Sl Sp{3cm}}
+</pre>
+</blockquote><p>
+and so on.  This technique shows
+promise of not interfering so much with other packages, but this
+author has heard of no reports from the field.
+<p>The <i>booktabs</i> package comes with a thought-provoking essay
+about how tables should be designed.  Since table row-spacing problems
+most often appear in collisions with rules, the author&rsquo;s thesis,
+that LaTeX users tend too often to rule their tables, is
+interesting.  The package provides rule commands to support the
+author&rsquo;s scheme, but deals with inter-row spacing too.  The most
+recent release of <i>booktabs</i> sports compatibility with
+packages such as <i>longtable</i>.
+<p>Documentation of both <i>bigstrut</i> and <i>tabls</i> may be
+found as comments in the package files themselves.
+<dl>
+<dt><tt><i>array.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>bigstrut.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multirow.zip">macros/latex/contrib/multirow</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multirow.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/multirow/">browse</a>)
+<dt><tt><i>booktabs.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/booktabs.zip">macros/latex/contrib/booktabs</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/booktabs.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/booktabs/">browse</a>)
+<dt><tt><i>cellspace.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/cellspace.zip">macros/latex/contrib/cellspace</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/cellspace.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/cellspace/">browse</a>)
+<dt><tt><i>tabls.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/tabls.sty">macros/latex/contrib/misc/tabls.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=struttab">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=struttab</a>
+</body>

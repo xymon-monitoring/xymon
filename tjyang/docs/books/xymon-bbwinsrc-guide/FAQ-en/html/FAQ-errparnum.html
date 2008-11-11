@@ -1,0 +1,43 @@
+<head>
+<title>UK TeX FAQ -- question label errparnum</title>
+</head><body>
+<h3>Illegal parameter number in definition</h3>
+<p>The error message means what it says.  In the simple case, you&rsquo;ve
+attempted a definition like:
+<blockquote>
+<pre>
+\newcommand{\abc}{joy, oh #1!}
+</pre>
+</blockquote><p>
+or (using TeX primitive definitions):
+<blockquote>
+<pre>
+\def\abc{joy, oh #1!}
+</pre>
+</blockquote><p>
+In either of the above, the definition uses an argument, but the
+programmer did not tell (La)TeX, in advance, that she was going to.
+The fix is simple &mdash; <code>\</code><code>newcommand{<code>\</code><code>abc</code>}[1]</code>, in the
+LaTeX case, <code>\def\abc#1</code> in the basic TeX case.
+<p>The more complicated case is exemplified by the attempted definition:
+<blockquote>
+<pre>
+\newcommand{\abc}{joy, oh joy!%
+  \newcommand{\ghi}[1]{gloom, oh #1!}%
+}
+</pre>
+</blockquote><p>
+will also produce this error, as will its TeX primitive equivalent:
+<blockquote>
+<pre>
+\def\abc{joy, oh joy!%
+  \def\ghi#1{gloom, oh #1!}%
+}
+</pre>
+</blockquote><p>
+This is because special care is needed when defining one macro within
+the code of another macro.  This is explained elsewhere, separately
+for <a href="FAQ-ltxhash.html">LaTeX definitions</a> and for
+<a href="FAQ-hash.html">TeX primitive definitions</a>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=errparnum">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=errparnum</a>
+</body>

@@ -1,0 +1,6 @@
+$ \textbf{cd ../main}
+$ \textbf{echo 'This is exciting and new!' >> myfile}
+$ \textbf{hg commit -m 'Add a new feature'}
+$ \textbf{cat myfile}
+This is a boring feature.
+This is exciting and new!

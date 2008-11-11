@@ -1,0 +1,46 @@
+<head>
+<title>UK TeX FAQ -- question label marginmanual</title>
+</head><body>
+<h3>How to set up page layout &ldquo;by hand&rdquo;</h3>
+<p>So you&rsquo;re eager to do it yourself, notwithstanding the cautions
+
+  outlined in &ldquo;<a href="FAQ-changemargin.html">changing margins</a>&rdquo;.
+<p>It&rsquo;s important that you first start by familiarising yourself
+with LaTeX&rsquo;s page layout parameters. For example, see section C.5.3 of the
+LaTeX manual (pp. 181-182), or corresponding sections in many of the other
+good LaTeX manuals (see <a href="FAQ-books.html">LaTeX books</a>). 
+<p>LaTeX controls the page layout with a number of parameters, which
+allow you to change the distance from the edges of a page to the left
+and top edges of your typeset text, the width and height of the text,
+and the placement of other text on the page.  However, they are
+somewhat complex, and it is easy to get their interrelationships wrong
+when redefining the page layout. The layout package defines a
+<code>\</code><code>layout</code> command which draws a diagram of your existing page
+layout, with the dimensions (but not their interrelationships) shown.
+<p>Even changing the text height and width, <code>\</code><code>textheight</code> and
+<code>\</code><code>textwidth</code>, requires more care than you might expect: the height
+should be set to fit a whole number of text lines (in terms of
+multiples of <code>\</code><code>baselinskip</code>), and the width should be constrained
+by the number of characters per line, as mentioned in 
+&ldquo;<a href="FAQ-changemargin.html">changing margins</a>&rdquo;.
+<p>Margins are controlled by two parameters: <code>\</code><code>oddsidemargin</code> and
+<code>\</code><code>evensidemargin</code>, whose names come from the convention that
+odd-numbered pages appear on the right-hand side (&lsquo;recto&rsquo;) of a
+two-page spread and even-numbered pages on the left-hand side
+(&lsquo;verso&rsquo;).  Both parameters actually refer to the left-hand margin of
+the relevant pages; in each case the right-hand margin is specified by
+implication, from the value of <code>\</code><code>textwidth</code> and the width of the
+paper.  (In a one-sided document, which is the default in many
+classes, including the standard <i>article</i> and <i>report</i>
+classes, <code>\</code><code>oddsidemargin</code> stands for both.)
+<p>The
+&ldquo;origin&rdquo; (the zero position) on the page is one inch from the top of
+the paper and one inch from the left side; positive horizontal
+measurements extend right across the page, and positive vertical
+measurements extend down the page. Thus, the parameters
+<code>\</code><code>evensidemargin</code>, <code>\</code><code>oddsidemargin</code> and <code>\</code><code>topmargin</code>, should
+be set to be 1 inch less than the true margin; for margins closer to
+the left and top edges of the page than 1 inch, the margin parameters
+must be set to negative values.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=marginmanual">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=marginmanual</a>
+</body>

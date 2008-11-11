@@ -1,0 +1,98 @@
+<head>
+<title>UK TeX FAQ -- question label multirow</title>
+</head><body>
+<h3>Merging cells in a column of a table</h3>
+<p>It&rsquo;s easy to come up with a table design that requires a cell that
+spans several rows.  An example is something where the left-most
+column labels the rest of the table; this can be done (in simple
+cases) by using 
+<a href="FAQ-slashbox.html">diagonal separation in corner cells</a>, but that
+technique rather strictly limits what can be used as the content of
+the cell.
+<p>The <i>multirow</i> package enables you to construct such multi-row
+cells, in a very simple manner.  For the simplest possible use, one
+might write:
+<blockquote>
+<pre>
+\begin{tabular}{|c|c|}
+\hline
+\multirow{4}{*}{Common g text} 
+      & Column g2a\\
+      & Column g2b \\
+      & Column g2c \\
+      & Column g2d \\
+\hline
+\end{tabular}
+</pre>
+</blockquote><p>
+and <i>multirow</i> will position &ldquo;Common g text&rdquo; at the vertical
+centre of the space defined by the other rows.  Note that the rows
+that don&rsquo;t contain the &ldquo;multi-row&rdquo; specification must have empty
+cells where the multi-row is going to appear.
+<p>The &ldquo;<code>*</code>&rdquo; may be replaced by a column width specification.  In this
+case, the argument may contain forced line-breaks:
+<blockquote>
+<pre>
+\begin{tabular}{|c|c|}
+\hline
+\multirow{4}{25mm}{Common\\g text} 
+      & Column g2a\\
+      & Column g2b \\
+      & Column g2c \\
+      & Column g2d \\
+\hline
+\end{tabular}
+</pre>
+</blockquote><p>
+A similar effect (with the possibility of a little more
+sophistication) may be achieved by putting a smaller table that lines
+up the text into a <code>*</code>-declared <code>\</code><code>multirow</code>.
+<p>The <code>\</code><code>multirow</code> command may also used to write labels vertically
+down one or other side of a table (with the help of the
+<i>graphics</i> or <i>graphicx</i> package, which provide the
+<code>\</code><code>rotatebox</code> command):
+<blockquote>
+<pre>
+\begin{tabular}{|l|l|}
+\hline
+\multirow{4}{*}{\rotatebox{90}{hi there}}
+      & Column g2a\\
+      & Column g2b \\
+      & Column g2c \\
+      & Column g2d \\
+\hline
+\end{tabular}
+</pre>
+</blockquote><p>
+(which gives text going upwards; use angle <code>-90</code> for text going
+downwards, of course).
+<p>To make a <code>\</code><code>multicolumn</code> multi-row &ldquo;cell&rdquo; in a table, you have to
+enclose a <code>\</code><code>multirow</code> inside a <code>\</code><code>multicolumn</code> &mdash; the other way
+around does not work, so:
+<blockquote>
+<pre>
+\begin{tabular}{|c|c|c|}\hline
+\multicolumn{2}{|c|}{\multirow{2}{*}{combined cells}}
+     &top right\\ \cline{3-3}
+\multicolumn{2}{|c|}{}
+     &middle right\\ \hline
+bottom left
+     &bottom center
+     &bottom right\\ \hline
+\end{tabular}
+</pre>
+
+</blockquote><p>
+<i>Multirow</i> is set up to interact with the <i>bigstrut</i>
+package (which is also discussed in the answer to 
+<a href="FAQ-struttab.html">spacing lines in tables</a>).  You use an
+optional argument to the <code>\</code><code>multirow</code> command to say how many of the
+rows in the multi-row have been opened up with <code>\</code><code>bigstrut</code>.
+<p>The documentation of both <i>multirow</i> and <i>bigstrut</i> is
+to be found, as comments, in the package files themselves.
+<dl>
+<dt><tt><i>bigstrut.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multirow.zip">macros/latex/contrib/multirow</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multirow.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/multirow/">browse</a>)
+<dt><tt><i>multirow.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multirow.zip">macros/latex/contrib/multirow</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multirow.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/multirow/">browse</a>)
+</dl>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=multirow">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=multirow</a>
+</body>

@@ -1,0 +1,14 @@
+$ \textbf{cd src}
+$ \textbf{hg add -n}
+adding ../MANIFEST.in
+adding ../examples/performant.py
+adding ../setup.py
+adding main.py
+adding watcher/_watcher.c
+adding watcher/watcher.py
+adding xyzzy.txt
+$ \textbf{hg add -n .}
+adding main.py
+adding watcher/_watcher.c
+adding watcher/watcher.py
+adding xyzzy.txt

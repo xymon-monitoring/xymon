@@ -1,0 +1,98 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@% @;
+
+
+1.1
+date	2008.02.09.00.31.31;	author tjyang;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@\chapter{Upgrading from Big Brother to Hobbit}
+\label{chap:Upgrading from Big Brother to Hobbit}
+
+\section{Upgrading from Big Brother to Hobbit}
+
+
+ First, you should realize that this is not a fully automated proces. You will need to do some work yourself - especially with the handling of alerts.
+\subsubsection{First step: Install Hobbit}
+
+
+ To begin, install Hobbit as described in the Hobbit installation guide. I recommend that you configure Hobbit to use the same user-ID as your current Big Brother installation, but have it use a different directory for the server- and data-files. The default is to use \emph{~/server}
+ and \emph{~/data}
+ respectively, which is unlikely to clash with the directories where you have Big Brother installed. If you do need to change the directories, you must edit the top-level Makefile and change the BBHOME and BBVAR settings near the top of the file.
+\subsubsection{Step two: Move the configuration files}
+
+
+ A couple of configuration files can be copied directly from Big Brother to Hobbit:
+\begin{itemize}
+\item The \textbf{bb-hosts}
+ file 
+\item The \textbf{bb-services}
+ file. You need only copy this if you have used bbgen before, and added custom network tests to the bb-services file.
+\item The \textbf{cookies}
+ file. You may not have this file - it is only present if you have used bbgen before and have setup HTTP tests that require cookies.
+\item The \textbf{bbcombotests.cfg}
+ file. You may not have this file - it is only present if you have used bbgen before and have setup the bbcombotest tool.
+
+\end{itemize}
+
+
+ The \emph{bbwarnrules.cfg}
+ and \emph{bbwarnsetup.cfg}
+ files cannot be copied over. Hobbit uses a very different configuration file for the alert configuration, so you will have to re-write your alert configuration for Hobbit. See the Hobbit alert configuration to learn how Hobbit alerts are configured.
+
+
+ Any server-side extension-scripts can be copied from the \$BBHOME/ext/ directory to the ~/server/ext/ directory. You must also add entries for them to the Hobbit \emph{hobbitlaunch.cfg}
+ file. Beware that many scripts rely on environment variables that Big Brother defines, but which Hobbit does not define - in that case, you need to setup those environment variables in the hobbitserver.cfg file. It is probably easiest to save this until you start running Hobbit, and can look at any error-output from the scripts.
+
+
+ If you have modified the webpage header- and footer-files in \$BBHOME/web/ then you can copy the modified files over directly to the ~/server/web/ directory. Note that Hobbit has a number of header- and footer-files for the various CGI scripts that are not present in Big Brother, so you may need to setup a few extra files to get a consistent look across your new Hobbit installation.
+\subsubsection{Step three: Stop Big Brother}
+
+
+ You are now going to move over the data files. To avoid confusion about files being updated by Big Brother while they are being moved over to Hobbit, I recommend that you stop Big Brother now.
+\subsubsection{Step four: Move the history logs}
+
+
+ You may want to save the historical logfiles and the history of your status changes. To do that, move all of the files or directories in the \emph{\$BBVAR/hist/}
+ to the \emph{~/data/hist/}
+ directory, and all of the files or directories in \emph{\$BBVAR/histlogs/}
+ to the \emph{~/data/histlogs/}
+ directory. If you prefer to keep them in the Big Brother directory, you can copy them over with ``cp -r'' or ``tar'' instead of moving them.
+\subsubsection{Step five: Move the RRD files}
+
+
+ The RRD files are used to generate the graphs, if you have installed the LARRD add-on to Big Brother. Hobbit has RRD support built-in, and it is obviously nice to keep the historical data that has been collected over time.
+
+
+ The filesystem layout of the RRD files is different from Big Brother+LARRD to Hobbit. Instead of having all of the RRD files in one big directory, there is a subdirectory for each host holding only the RRD files for data from that host. This is easier to manage, and also speeds up the graph generation when you have many hosts. Unfortunately, it makes migrating from Big Brother to Hobbit slightly more complicated.
+
+
+ In the Hobbit source-tree, you will find a script \emph{hobbitd/moverrd.sh}
+. This script moves or copies the RRD files from the Big Brother+LARRD structure into the Hobbit structure. You must edit a couple of settings at the beginning of the file, especially to set the correct directory where Big Brother stores your current RRD files (the SRCDIR setting). By default the script \emph{copies}
+ the files over to the new structure, if you would rather just move them then change to ``OP'' setting to ``mv''.
+
+
+ After setting up the script, run it and it should copy all of the RRD-files that relate to a host currently in the bb-hosts file to the new directory structure.
+\subsubsection{Step 6: Start Hobbit}
+
+
+ Start Hobbit with the ~/server/hobbit.sh start command. Look at the logfiles in the /var/log/hobbit directory (or elsewhere, if you did not choose the default logfile directory when configuring Hobbit) and fix any problems that show up.
+
+
+ Look at the webpages generated. For the first few minutes, there will be some missing columns and icons for each host, since it takes some time for all of the tests to report a status to the new Hobbit daemon. After 5-10 minutes all of the standard tests should appear.
+
+@

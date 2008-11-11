@@ -1,0 +1,59 @@
+<head>
+<title>UK TeX FAQ -- question label secnumdep</title>
+</head><body>
+<h3>Unnumbered sections in the Table of Contents</h3>
+<p>The way the relevant parts of sectioning commands work is exemplified
+by the way the <code>\</code><code>chapter</code> command uses the counter <code>secnumdepth</code>
+(described in Appendix C of the LaTeX manual):
+<ol>
+<li> put something in the <code>.aux</code> file, which will appear in
+  the <code>.toc</code>;
+
+<li> if the <code>secnumdepth</code> counter is greater than or equal to
+  zero,
+  increase the counter for the chapter and write it out.
+<li> write the chapter title.
+</ol>
+Other sectioning commands are similar, but with other values used in
+the test.
+<p>So a simple way to get headings of funny &lsquo;sections&rsquo; such as prefaces
+in the table of contents is to use the counter:
+<blockquote>
+<pre>
+\setcounter{secnumdepth}{-1}
+\chapter{Preface}
+</pre>
+</blockquote><p>
+Unfortunately, you have to set <code>secnumdepth</code> back to its usual
+value (which is 2 in the standard styles) before you do any &lsquo;section&rsquo;
+which you want to be numbered.
+<p>Similar settings are made, automatically, in the LaTeX book class by
+the <code>\</code><code>frontmatter</code> and <code>\</code><code>backmatter</code> commands.
+<p>The value of the counter <code>tocdepth</code> controls which headings
+will be finally printed in the table of contents.  This normally has
+to be set in the preamble and is a constant for the document.  The
+package <i>tocvsec2</i> package provides a convenient interface to
+allow you to change the <code>secnumdepth</code> and/or the
+<code>tocdepth</code> counter values at any point in the body of the
+document; this provides convenient independent controls over the
+sectional numbering and the table of contents.
+<p>The package <i>abstract</i> (see 
+<a href="FAQ-onecolabs.html">one-column abstracts</a>) includes an option
+to add the <code>abstract</code> to the table of contents, while the
+package <i>tocbibind</i> has options to include the table of
+contents itself, the <code>bibliography</code>, <code>index</code>, etc., to
+the table of contents.
+<p>The <i>KOMA-Script</i> classes have commands <code>\</code><code>addchap</code> and
+<code>\</code><code>addsec</code>, which work like <code>\</code><code>chapter</code> and <code>\</code><code>section</code> but
+aren&rsquo;t numbered.  The <i>memoir</i> class incorporates the facilities
+of all three of the <i>abstract</i>, <i>tocbibind</i> and
+<i>tocvsec2</i> packages.
+<dl>
+<dt><tt><i>abstract.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/abstract.zip">macros/latex/contrib/abstract</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/abstract.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/abstract/">browse</a>)
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>tocbibind.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocbibind.zip">macros/latex/contrib/tocbibind</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocbibind.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/tocbibind/">browse</a>)
+<dt><tt><i>tocvsec2.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocvsec2.zip">macros/latex/contrib/tocvsec2</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocvsec2.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/tocvsec2/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=secnumdep">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=secnumdep</a>
+</body>

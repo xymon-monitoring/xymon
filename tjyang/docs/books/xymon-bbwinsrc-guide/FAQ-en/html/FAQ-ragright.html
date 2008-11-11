@@ -1,0 +1,30 @@
+<head>
+<title>UK TeX FAQ -- question label ragright</title>
+</head><body>
+<h3>Setting text ragged right</h3>
+<p>The trick with typesetting ragged right is to be sure you&rsquo;ve told the
+TeX engine &ldquo;make this paragraph ragged, but never <em>too</em>
+ragged&rdquo;.  The LaTeX <code>\</code><code>raggedright</code> command (and the
+corresponding <code>flushleft</code> environment) has a tendency to
+miss the &ldquo;never&rdquo; part, and will often create ridiculously short
+lines, for some minor benefit later in the paragraph.  The Plain
+TeX version of the command doesn&rsquo;t suffer this failing, but is
+rather conservative: it is loath to create too large a gap at the end
+of the line, but in some circumstances (such as where
+
+
+<a href="FAQ-hyphoff.html">hyphenation is suppressed</a>) painfully large gaps may
+sometimes be required.
+<p>Martin Schr&ouml;der&rsquo;s <i>ragged2e</i> package offers the best of both
+worlds: it provides raggedness which is built on the Plain TeX
+model, but which is easily configurable.  It defines easily-remembered
+command (e.g., <code>\</code><code>RaggedRight</code>) and environment (e.g.,
+<code>FlushLeft</code>) names that are simply capitalised
+transformations of the LaTeX kernel originals.  The documentation
+discusses the issues and explains the signficance of the various
+parameters of <i>ragged2e</i>&rsquo;s operation.
+<dl>
+<dt><tt><i>ragged2e.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ms.zip">macros/latex/contrib/ms</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ms.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/ms/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ragright">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ragright</a>
+</body>

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#$ name: diff
+
+echo 'this is my original thought' > oldfile
+echo 'i have changed my mind' > newfile
+
+diff -u oldfile newfile > tiny.patch
+
+cat tiny.patch
+
+patch < tiny.patch
+
+cat oldfile

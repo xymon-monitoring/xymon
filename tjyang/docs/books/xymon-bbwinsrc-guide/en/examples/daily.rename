@@ -1,0 +1,18 @@
+#!/bin/bash
+
+hg init a
+cd a
+echo a > a
+hg ci -Ama
+
+#$ name: rename
+
+hg rename a b
+
+#$ name: status
+
+hg status
+
+#$ name: status-copy
+
+hg status -C

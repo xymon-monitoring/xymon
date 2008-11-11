@@ -1,0 +1,50 @@
+<head>
+<title>UK TeX FAQ -- question label eplain</title>
+</head><body>
+<h3>What is Eplain?</h3>
+<p>The <a href="http://tug.org/eplain">Eplain</a>
+macro package expands on and extends the definitions in Plain TeX.
+Eplain is not intended to provide &ldquo;generic typesetting
+capabilities&rdquo;, as do LaTeX or <a href="FAQ-texinfo.html">Texinfo</a>.  Instead, it
+defines macro tools that should be useful whatever commands you choose
+to use when you prepare your manuscript.
+<p>For example, Eplain does not have a command <code>\</code><code>section</code>,
+which would format section headings in an &ldquo;appropriate&rdquo; way, as
+LaTeX&rsquo;s <code>\</code><code>section</code> does.  The philosophy of Eplain is that
+some people will always need or want to go beyond the macro designer&rsquo;s
+idea of &ldquo;appropriate&rdquo;.  Such canned macros are fine &mdash; as long as you
+are willing to accept the resulting output.  If you don&rsquo;t like the
+results, or if you are trying to match a different format, you are out
+of luck.
+<p>On the other hand, almost everyone would like capabilities such as
+cross-referencing by labels, so that you don&rsquo;t have to put actual page
+numbers in the manuscript.  The authors of Eplain are not aware of
+any generally available macro packages that do not force their
+typographic style on an author, and yet provide such capabilities.
+<p>Another useful feature of Eplain is the ability to create PDF files
+with hyperlinks.  The cross-referencing macros can implicitly generate
+hyperlinks for the cross-references, but you can also create explicit
+hyperlinks, both internal (pointing to a destination within the
+current document) and external (pointing to another local document or
+a URL).
+<p>Several LaTeX packages provide capabilities which Plain TeX
+users are lacking, most notably text colouring and rotation provided by
+the <i>graphics</i> bundle (packages <i>color</i> and
+<i>graphics</i>).  Although the <i>graphics</i> bundle provides
+a Plain TeX &ldquo;loader&rdquo; for some of the packages, it is not a
+trivial job to pass options to those packages under Plain TeX, and
+much of the functionality of the packages is accessed through package
+options.  Eplain extends the loader so that options can be passed
+to the packages just as they are in LaTeX.  The following packages are
+known to work with Eplain:  <i>graphics</i>, <i>graphicx</i>,
+<i>color</i>, <i>autopict</i> (LaTeX picture environment),
+<i>psfrag</i>, and <i>url</i>.
+<p><a href="http://tug.org/docs/html/eplain">Eplain documentation</a> is
+available online, and there&rsquo;s
+also a mailing list &mdash; sign up, or browse the list archives, via
+<a href="http://tug.org/mailman/listinfo/tex-eplain">http://tug.org/mailman/listinfo/tex-eplain</a>
+<dl>
+<dt><tt><i>Eplain distribution</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/eplain.zip">macros/eplain</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/eplain.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/eplain/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=eplain">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=eplain</a>
+</body>

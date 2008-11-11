@@ -1,0 +1,31 @@
+<head>
+<title>UK TeX FAQ -- question label clsvpkg</title>
+</head><body>
+<h3>What are LaTeX classes and packages?</h3>
+<p>Current LaTeX makes a distinction between the macros that define the
+overall layout of a document, and the macros that tweak that layout
+(to one extent or another) to provide what the author <em>really</em>
+wants.
+<p>The distinction was not very clear in LaTeX 2.09, and after some
+discussion (in the later stages of development of current LaTeX)
+the names &ldquo;class&rdquo; and &ldquo;package&rdquo; were applied to the two concepts.
+<p>The idea is that a document&rsquo;s <em>class</em> tells LaTeX what sort of
+document it&rsquo;s dealing with, while the <em>packages</em> the document
+loads &ldquo;refine&rdquo; that overall specification.
+<p>On the disc, the files only appear different by virtue of their name
+&ldquo;extension&rdquo; &mdash; class files are called <code>*.cls</code> while package
+files are called <code>*.sty</code>.  Thus we find that the LaTeX
+standard <i>article</i> class is represented on disc by a file called
+<i>article.cls</i>, while the <i>footmisc</i> package (which
+refines <i>article</i>&rsquo;s definition of footnotes) is represented on
+disc by a file called <i>footmisc.sty</i>.
+<p>The user defines the class of his document with the
+<code>\</code><code>documentclass</code> command (typically the first command in a
+document), and loads packages with the <code>\</code><code>usepackage</code> command.  A
+document may have several <code>\</code><code>usepackage</code> commands, but it may have
+only one <code>\</code><code>documentclass</code> command.  (Note that there are
+programming-interface versions of both commands, since a class may
+choose to load another class to refine its capabilities, and both
+classes and packages may choose to load other packages.)
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=clsvpkg">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=clsvpkg</a>
+</body>

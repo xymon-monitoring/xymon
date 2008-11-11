@@ -1,0 +1,71 @@
+<head>
+<title>UK TeX FAQ -- question label seccntfmt</title>
+</head><body>
+<h3>Adjusting the presentation of section numbers</h3>
+<p>The general issues of adjusting the appearance of section headings are
+pretty complex, and are covered in 
+the question on
+<a href="FAQ-secthead.html">the style of section headings</a>.
+<p>However, people regularly want merely to change the way the section
+number appears in the heading, and some such people don&rsquo;t mind writing
+out a few macros.  This answer is for <em>them</em>.
+<p>The section number is typeset using the
+
+  <a href="FAQ-atsigns.html">LaTeX internal</a>
+<code>\</code><code>@seccntformat</code> command, which is given the &ldquo;name&rdquo; (section,
+subsection, ...) of the heading, as argument.  Ordinarily,
+<code>\</code><code>@seccntformat</code> 
+merely outputs the section number, and then a <code>\</code><code>quad</code> of space.
+Suppose you want to put a stop after every section (subsection,
+subsubsection, ...) number, a trivial change may be implemented by
+simple modification of the command:
+<blockquote>
+<pre>
+\renewcommand*{\@seccntformat}[1]{%
+  \csname the#1\endcsname.\quad
+}
+</pre>
+</blockquote><p>
+<p>Many people (for some reason) want a stop after a section number, but
+not after a subsection number, or any of the others.
+To do this, one must make <code>\</code><code>@seccntformat</code> switch according to its
+argument.  The following technique for doing the job is slightly
+wasteful, but is efficient enough for a relatively rare operation:
+<blockquote>
+<pre>
+\let\@@seccntformat\@seccntformat
+\renewcommand*{\@seccntformat}[1]{%
+  \expandafter\ifx\csname @seccntformat@#1\endcsname\relax
+    \expandafter\@@seccntformat
+  \else
+    \expandafter
+      \csname @seccntformat@#1\expandafter\endcsname
+  \fi
+    {#1}%
+}
+</pre>
+</blockquote><p>
+
+which looks to see if a second-level command has been defined, and
+uses it if so; otherwise it uses the original.  The second-level
+command to define stops after section numbers (only) has the same
+definition as the original &ldquo;all levels alike&rdquo; version:
+<blockquote>
+<pre>
+\newcommand*{\@seccntformat@section}[1]{%
+  \csname the#1\endcsname.\quad
+}
+</pre>
+</blockquote><p>
+Note that all the command definitions of this answer are dealing in
+<a href="FAQ-atsigns.html">LaTeX internal commands</a>, so the above
+code should be in a package file, for preference.
+<p>The <i>Koma-script</i> classes have different commands for specifying
+changes to section number presentation: <code>\</code><code>partformat</code>,
+<code>\</code><code>chapterformat</code> and <code>\</code><code>othersectionlevelsformat</code>, but otherwise
+their facilities are similar to those of &ldquo;raw&rdquo; LaTeX.
+<dl>
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=seccntfmt">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=seccntfmt</a>
+</body>

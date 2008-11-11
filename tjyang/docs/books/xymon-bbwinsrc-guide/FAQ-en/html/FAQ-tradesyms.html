@@ -1,0 +1,30 @@
+<head>
+<title>UK TeX FAQ -- question label tradesyms</title>
+</head><body>
+<h3>How to get copyright, trademark, etc.</h3>
+<p>The &ldquo;
+<a href="FAQ-symbols.html">Comprehensive symbol list</a>&rdquo;, lists
+the symbol commands <code>\</code><code>textcopyright</code>,
+<code>\</code><code>textregistered</code> and <code>\</code><code>texttrademark</code>, which are available in
+TS1-encoded fonts, and which are enabled using the
+<i>textcomp</i> package.
+<p>In fact, all three commands are enabled in default LaTeX, but the
+glyphs you get aren&rsquo;t terribly beautiful.  In particular,
+<code>\</code><code>textregistered</code> behaves oddly when included in bold text (for
+example, in a section heading), since it is composed of a small-caps
+letter, which typically degrades to a regular shape letter when asked
+to set in a bold font.  This means that the glyph becomes a circled
+&ldquo;r&rdquo;, whereas the proper symbol is a circled &ldquo;R&rdquo;.
+<p>This effect is of course avoided by use of <i>textcomp</i>.
+<p>Another problem arises if you want <code>\</code><code>textregistered</code> in a
+superscript position (to look similar to <code>\</code><code>texttrademark</code>).
+Using a maths-mode superscript to do this provokes lots of pointless
+errors: you <em>must</em> use
+<blockquote>
+<pre>
+\textsuperscript{\textregistered}
+</pre>
+</blockquote><p>
+<p>
+<p><p><p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tradesyms">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tradesyms</a>
+</body>

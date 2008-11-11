@@ -1,0 +1,48 @@
+<head>
+<title>UK TeX FAQ -- question label mcite</title>
+</head><body>
+<h3>Multiple citations</h3>
+<p>A convention sometimes used in physics journals is to &ldquo;collapse&rdquo; a group of
+related citations into a single entry in the bibliography.  BibTeX,
+by default, can&rsquo;t cope with this arrangement, but the <i>mcite</i>
+package deals with the problem.
+<p>The package overloads the <code>\</code><code>cite</code> command to recognise a
+&ldquo;<code>*</code>&rdquo; at the start of a key, so that citations of the form
+<blockquote>
+<pre>
+\cite{paper1,*paper2}
+</pre>
+</blockquote><p>
+appear in the document as a single citation, and appear arranged
+appropriately in the bibliography itself.  You&rsquo;re not limited to
+collapsing just two references.  You can mix &ldquo;collapsed&rdquo; references
+with &ldquo;ordinary&rdquo; ones, as in
+<blockquote>
+<pre>
+\cite{paper0,paper1,*paper2,paper3}
+</pre>
+</blockquote><p>
+Which will appear in the document as 3 citations &ldquo;[4,7,11]&rdquo;
+(say) &mdash; citation &lsquo;4&rsquo; will refer to paper 0, &lsquo;7&rsquo; will refer to a
+combined entry for paper 1 and paper 2, and &lsquo;11&rsquo; will refer to
+paper 3.
+<p>You need to make a small change to the bibliography style
+(<code>.bst</code>) file you use; the <i>mcite</i> package
+documentation tells you how to do that.
+<p>Unfortunately, the <i>revtex</i> system doesn&rsquo;t play with
+<i>mcite</i>.  As a result, for that (primarily physics-targeted
+system) you need to play silly games like:
+<blockquote>
+<pre>
+\cite{paper0,paper1,paper3}
+\nocite{paper2}
+</pre>
+</blockquote><p>
+and then edit the <code>.bbl</code> file to merge the two citations, to
+achieve the effects of <i>mcite</i>.
+<dl>
+<dt><tt><i>mcite.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mcite.zip">macros/latex/contrib/mcite</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mcite.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/mcite/">browse</a>)
+<dt><tt><i>revtex bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/revtex.zip">macros/latex/contrib/revtex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/revtex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/revtex/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=mcite">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=mcite</a>
+</body>

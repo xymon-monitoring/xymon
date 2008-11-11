@@ -1,0 +1,8 @@
+$ \textbf{hg qpop -a}
+Patch queue now empty
+$ \textbf{hg qselect}
+no active guards
+$ \textbf{hg qselect foo}
+number of unguarded, unapplied patches has changed from 1 to 2
+$ \textbf{hg qselect}
+foo

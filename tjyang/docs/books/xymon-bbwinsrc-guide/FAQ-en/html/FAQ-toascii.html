@@ -1,0 +1,58 @@
+<head>
+<title>UK TeX FAQ -- question label toascii</title>
+</head><body>
+<h3>Conversion from (La)TeX to plain text</h3>
+<p>The aim here is to emulate the Unix <i>nroff</i>, which formats
+text as best it can for the screen, from the same
+input as the Unix typesetting program <i>troff</i>.
+<p>Converting DVI to plain text is the basis of many of these
+techniques; sometimes the simple conversion provides a good enough
+response.  Options are:
+<ul>
+<li> <i>dvi2tty</i> (one of the earliest),
+<li> <i>crudetype</i> and
+<li> <i>catdvi</i>, which is capable of generating Latin-1
+  (ISO 8859-1) or UTF-8 encoded output.  <i>Catdvi</i> was
+  conceived as a replacement for <i>dvi2tty</i>, but can&rsquo;t (quite)
+  be recommended as a complete replacement yet.
+</ul>
+A common problem is the hyphenation that TeX inserts when
+typesetting something: since the output is inevitably viewed using
+fonts that don&rsquo;t match the original, the hyphenation usually looks
+silly.
+<p>Ralph Droms provides a <i>txt</i> bundle of things in support of
+ASCII generation,
+but it doesn&rsquo;t do a good job with tables and mathematics.  An
+alternative is the <i>screen</i> package.
+<p>Another possibility is to
+use the LaTeX-to-ASCII conversion program, <i>l2a</i>,
+although this is really more of a de-TeXing program.
+<p>The canonical de-TeXing program is <i>detex</i>, which removes
+all comments and control sequences 
+from its input before writing it to its output.  Its original purpose
+was to prepare input for a dumb spelling checker, and it&rsquo;s only usable
+for preparing useful ASCII versions of a document in highly
+restricted circumstances.
+<p><i>Tex2mail</i> is slightly more than a de-TeXer &mdash; it&rsquo;s a
+<i>Perl</i> script that converts TeX files into
+plain text files, expanding various mathematical symbols
+(sums, products, integrals, sub/superscripts, fractions, square
+roots, ...) into &ldquo;ASCII art&rdquo; that spreads over
+multiple lines if necessary. The result is more readable to human
+beings than the flat-style TeX code.
+<p>Another significant possibility is to use one of the
+<a href="FAQ-LaTeX2HTML.html">HTML-generation solutions</a>,
+and then to use a browser such as <i>lynx</i> to dump the resulting
+HTML as plain text.
+<dl>
+<dt><tt><i>catdvi</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/dviware/catdvi.zip">dviware/catdvi</a> (<a href="ftp://cam.ctan.org/tex-archive/dviware/catdvi.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/dviware/catdvi/">browse</a>)
+<dt><tt><i>crudetype</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/dviware/crudetype.zip">dviware/crudetype</a> (<a href="ftp://cam.ctan.org/tex-archive/dviware/crudetype.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/dviware/crudetype/">browse</a>)
+<dt><tt><i>detex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/detex.zip">support/detex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/detex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/detex/">browse</a>)
+<dt><tt><i>dvi2tty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/nonfree/dviware/dvi2tty.zip">nonfree/dviware/dvi2tty</a> (<a href="ftp://cam.ctan.org/tex-archive/nonfree/dviware/dvi2tty.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/nonfree/dviware/dvi2tty/">browse</a>)
+<dt><tt><i>l2a</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/l2a.zip">support/l2a</a> (<a href="ftp://cam.ctan.org/tex-archive/support/l2a.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/l2a/">browse</a>)
+<dt><tt><i>screen.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex209/contrib/misc/screen.sty">macros/latex209/contrib/misc/screen.sty</a>
+<dt><tt><i>tex2mail</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/tex2mail.zip">support/tex2mail</a> (<a href="ftp://cam.ctan.org/tex-archive/support/tex2mail.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/tex2mail/">browse</a>)
+<dt><tt><i>txt</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/txt.zip">support/txt</a> (<a href="ftp://cam.ctan.org/tex-archive/support/txt.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/txt/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=toascii">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=toascii</a>
+</body>

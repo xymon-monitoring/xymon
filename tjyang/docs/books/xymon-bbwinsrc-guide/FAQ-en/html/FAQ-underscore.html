@@ -1,0 +1,41 @@
+<head>
+<title>UK TeX FAQ -- question label underscore</title>
+</head><body>
+<h3>How to use the underscore character</h3>
+<p>The underscore character <code>_</code> is ordinarily used in
+TeX to indicate a subscript in maths mode; if you type
+<code>_</code> in the course of ordinary text, TeX will
+complain.  If you&rsquo;re writing a document which will contain a large
+number of underscore characters, the prospect of typing
+<code>\</code><code>_</code> (or, worse, <code>\</code><code>textunderscore</code>) for every one of
+them will daunt most ordinary people.
+<p>Moderately skilled macro programmers can readily generate a quick hack
+to permit typing <code>_</code> to mean &lsquo;text underscore&rsquo;.
+However, the code <em>is</em> somewhat tricky, and more importantly
+there are significant points where it&rsquo;s easy to get it wrong.  There
+is therefore a package <i>underscore</i> which provides a general
+solution to this requirement.
+<p>There is a problem, though: OT1 text fonts don&rsquo;t contain an
+underscore character, unless they&rsquo;re in the typewriter version of the
+encoding (used by fixed-width fonts such as <code>cmtt</code>).  So either
+you must ensure that your underscore characters only occur in text set
+in a typewriter font, or you must use a fuller encoding, such as
+T1, which has an underscore character in every font.
+<p>If the requirement is only for occasional uses of underscores, it may
+be acceptable to use the following construct:
+<blockquote>
+<pre>
+\def\us{\char`\_}
+...
+\texttt{create\us process}
+</pre>
+</blockquote><p>
+The construction isn&rsquo;t in the least robust (in the normal English
+sense of the word), but it <em>is</em> robust under expansion (i.e., the
+LaTeX sense of the word); so use it with care, but don&rsquo;t worry
+about section headings and the like.
+<dl>
+<dt><tt><i>underscore.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/underscore.sty">macros/latex/contrib/misc/underscore.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=underscore">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=underscore</a>
+</body>

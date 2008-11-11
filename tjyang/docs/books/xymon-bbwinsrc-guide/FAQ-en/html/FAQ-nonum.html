@@ -1,0 +1,48 @@
+<head>
+<title>UK TeX FAQ -- question label nonum</title>
+</head><body>
+<h3>&ldquo;Missing number, treated as zero&rdquo;</h3>
+<p>In general, this means you&rsquo;ve tried to assign something to a count,
+dimension or skip register that isn&rsquo;t (in TeX&rsquo;s view of things) a
+number.  Usually the problem will become clear using the
+<a href="FAQ-erroradvice.html">ordinary techniques of examining errors</a>.
+<p>Two LaTeX-specific errors are commonly aired on the newsgroups.
+<p>The commonest arises from attempting to use an example from the
+<a href="FAQ-books.html"><em>The LaTeX Companion</em> (first edition)</a>, and is
+exemplified by the following error text:
+<pre>
+! Missing number, treated as zero.
+&lt;to be read again&gt; 
+                   \relax 
+l.21 \begin{Ventry}{Return values}
+</pre>
+The problem arises because, in its first edition, the
+<em>Companion</em>&rsquo;s examples always assumed that the <i>calc</i>
+package is loaded: this fact is mentioned in the book, but often not
+noticed.  The remedy is to load the <i>calc</i> package in any
+document using such examples from the <em>Companion</em>.  (The problem
+does not really arise with the second edition; copies of all the
+examples are available on the accompanying CDROM, or on
+CTAN.)
+<p>The other problem, which is increasingly rare nowadays, arises from
+misconfiguration of a system that has been upgraded from LaTeX 2.09:
+the document uses the <i>times</i> package, and the error appears
+at <code>\</code><code>begin{document}</code>.  The file search paths are wrongly set
+up, and your <code>\</code><code>usepackage{times}</code> has picked up a LaTeX 2.09
+version of the package, which in its turn has invoked another which
+has no equivalent in LaTeX2e.  The obvious solution is to rewrite
+the paths so that LaTeX 2.09 packages are chosen only as a last resort
+so that the startlingly simple LaTeX2e <i>times</i> package will
+be picked up.  Better still is to replace the whole thing with
+something more modern still; current <i>psnfss</i> doesn&rsquo;t provide
+a <i>times</i> package &mdash; the alternative <i>mathptmx</i>
+incorporates <i>Times</i>-like mathematics, and a sans-serif face
+based on <i>Helvetica</i>, but scaled to match <i>Times</i>
+text rather better.
+<dl>
+<dt><tt><i>calc.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>Examples for LaTeX Companion</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/info/examples/tlc2.zip">info/examples/tlc2</a> (<a href="ftp://cam.ctan.org/tex-archive/info/examples/tlc2.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/info/examples/tlc2/">browse</a>)
+<dt><tt><i>The psnfss bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/psnfss.zip">macros/latex/required/psnfss</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/psnfss.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/psnfss/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=nonum">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=nonum</a>
+</body>

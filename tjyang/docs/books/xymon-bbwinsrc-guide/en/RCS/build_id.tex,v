@@ -1,0 +1,23 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@% @;
+
+
+1.1
+date	2008.02.09.00.31.31;	author tjyang;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@c9202b05c4f5, dated 2008-01-29 17:34 -0600,@

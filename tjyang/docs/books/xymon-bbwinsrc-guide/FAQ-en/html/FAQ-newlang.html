@@ -1,0 +1,101 @@
+<head>
+<title>UK TeX FAQ -- question label newlang</title>
+</head><body>
+<h3>Using a new language with Babel</h3>
+<p><i>Babel</i> is capable of working with a large range of
+languages, and a new user often wants to use a language that her
+TeX installation is not set up to employ.  Simply asking Babel to
+use the language, with the command
+<pre>
+  \usepackage[catalan]{babel}
+</pre>
+provokes the warning message
+<pre>
+Package babel Warning: No hyphenation patterns were loaded for
+(babel)                the language `Catalan'
+(babel)                I will use the patterns loaded for \language=0 instead.
+</pre>
+
+<p>The problem is that your TeX system doesn&rsquo;t know how to hyphenate
+Catalan text: you need to tell it how before Babel can do its work
+properly.  To do this, for LaTeX installations, one needs to change
+<i>language.dat</i> (which is part of the Babel installation); it will
+contain a line
+<pre>
+%catalan         cahyphen.tex
+</pre>
+which, if you remove the comment marker, is supposed to instruct
+LaTeX to load Catalan hyphenation patterns when you tell it to build
+a new format.
+<p>Unfortunately, in many Babel distributions, the line just isn&rsquo;t
+right &mdash; you need to check the name of the file containing the
+patterns you&rsquo;re going to use.  As you can see, in the author&rsquo;s system,
+the name is supposed to be <i>cahyphen.tex</i>; however the file
+actually present on the system is <i>cahyph.tex</i> &mdash; fortunately,
+the error should prove little more than an inconvenience (most of the
+files are in better distributions anyway, but an elusive one
+may be found on CTAN; if you have to retrieve
+a new file, ensure that it&rsquo;s correctly installed, for which see
+<a href="FAQ-instpackages.html">installing a new package</a>).
+<p>Finally, you need to regenerate the formats used (in fact, most users
+of Babel are using it in their LaTeX documents, so regenerating the
+LaTeX-related formats will ordinarily be enough; however, the
+author always generates the lot, regardless).
+<dl>
+<dt>teTeX<dd>It&rsquo;s possible to do the whole operation in one go, by
+  using the <i>texconfig</i> command:
+<pre>
+texconfig hyphen latex
+</pre>
+  which first enters an editor for you to edit <i>language.dat</i>,
+  and then regenerates the format you specify (<i>latex</i> in
+  this case).
+<p>  Otherwise, to regenerate all formats, do: <br>
+  <code>fmtutil --all</code>
+<p>  If you&rsquo;re willing to think through what you&rsquo;re doing (this is
+  <em>not</em> for the faint-hearted), you can select a sequence of
+  formats and for each one, run: <br>
+  <code>fmtutil --byfmt &lt;<i>formatname</i>&gt;</code><br>
+  where <em><code>formatname</em></code> is something like &lsquo;<code>latex</code>&rsquo;,
+  or: <br>
+  <code>fmtutil --byhyphen &lt;<i>hyphenfile</i>&gt;</code><br>
+  where <em><code>hyphenfile</em></code> is the file specifying hyphenation
+  to the format &mdash; usually <code>language.dat</code>
+<dt>MiKTeX<dd> On a <i>MiKTeX</i> distribution earlier than v2.0, do: <br>
+  <code>Start</code>-&gt; 
+  <code>Programs</code>-&gt; 
+  <code>MiKTeX</code>-&gt; 
+  <code>Maintenance</code>-&gt; 
+  <code>Create all format files</code>
+
+<p>  or get a DOS window and run:<br>
+  <code>initexmf --dump</code>
+<p>  On a <i>MiKTeX</i> distribtution v2.0 or later, the whole
+  procedure can be done via the GUI.  To select the new
+  language, do:<br>
+  <code>Start</code>-&gt; 
+  <code>Programs</code>-&gt; 
+  <code>MiKTeX 2</code>-&gt; 
+  <code>MiKTeX Options</code>, and select the <code>Languages</code> tab.
+  Select your language from the list, press the <code>Apply</code> button,
+  and then the <code>OK</code> button.  Then select the <code>General</code>
+  tab and press the <code>Update Now</code> button.
+<p>  Otherwise, edit the <i>language.dat</i> file (as outlined above),
+  and then run:<br>
+  <code>initexmf --dump</code><br>
+  just as for a pre-v2.0 system.
+</dl>
+<p><b><em>Caveat</em>:</b> It is (just) possible that
+your TeX system may run out of &ldquo;pattern memory&rdquo; while generating
+the new format.  Most TeX implementations have fixed-size arrays
+for storing the details of hyphenation patterns, but although their
+size is adjustable in most modern distributions, actually changing the
+size is a fiddle.  If you <em>do</em> find you&rsquo;ve run out of memory,
+it may be worth scanning the list of languages in your
+<i>language.dat</i> to see whether any could reasonably be removed.
+<dl>
+<dt><tt><i>babel</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/babel.zip">macros/latex/required/babel</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/babel.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/babel/">browse</a>)
+<dt><tt><i>hyphenation patterns</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/language/hyphenation.zip">language/hyphenation</a> (<a href="ftp://cam.ctan.org/tex-archive/language/hyphenation.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/language/hyphenation/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=newlang">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=newlang</a>
+</body>

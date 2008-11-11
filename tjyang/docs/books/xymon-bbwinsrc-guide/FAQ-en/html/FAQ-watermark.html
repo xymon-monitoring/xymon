@@ -1,0 +1,43 @@
+<head>
+<title>UK TeX FAQ -- question label watermark</title>
+</head><body>
+<h3>&lsquo;Watermarks&rsquo; on every page</h3>
+<p>It&rsquo;s often useful to place some text (such as &lsquo;DRAFT&rsquo;) in the
+background of every page of a document.  For LaTeX users, this can
+be achieved with the <i>draftcopy</i> package.  This can deal with
+many types of DVI processors (in the same way that the graphics
+package does) and knows translations for the word &lsquo;DRAFT&rsquo; into a wide
+range of languages (though you can choose your own word, too).
+Unfortunately, however, the package relies on PostScript specials, and will
+therefore fail if you are viewing your document with <i>xdvi</i>,
+and won&rsquo;t even compile if you&rsquo;re using PDFLaTeX.  (PDFLaTeX
+users need one of the other solutions below.)
+<p>The <i>wallpaper</i> package builds on <i>eso-pic</i> (see
+below).  Apart from the single-image backdrops described above
+(&ldquo;wallpapers&rdquo;, of course, to this package), the package provides
+facilities for tiling images.  All its commands come in pairs: one for
+&ldquo;general&rdquo; use, and one applying to the current page only.
+<p>The <i>draftwatermark</i> package uses the same author&rsquo;s
+<i>everypage</i> package to provide a simple interface for adding
+textual (&lsquo;DRAFT&rsquo;-like) watermarks.
+<p>More elaborate watermarks may be achieved using the <i>eso-pic</i>
+package, which in turn uses the package <i>everyshi</i>, or by
+using <i>everypage</i>.  <i>Eso-pic</i> attaches a
+<code>picture</code> environment to every page as it is shipped out;
+you can put things into that environment.  The package provides
+commands for placing things at certain useful points (like &ldquo;text
+upper left&rdquo; or &ldquo;text centre&rdquo;) in the picture, but you&rsquo;re at liberty
+to do what you like.
+<p><i>Everypage</i> allows you to add &ldquo;something&rdquo; to every page, or
+to a particular page; you therefore need to construct your own
+apparatus for anything complicated.
+<dl>
+<dt><tt><i>draftcopy.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/draftcopy.zip">macros/latex/contrib/draftcopy</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/draftcopy.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/draftcopy/">browse</a>)
+<dt><tt><i>draftwatermark.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/draftwatermark.zip">macros/latex/contrib/draftwatermark</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/draftwatermark.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/draftwatermark/">browse</a>)
+<dt><tt><i>eso-pic.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/eso-pic.zip">macros/latex/contrib/eso-pic</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/eso-pic.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/eso-pic/">browse</a>)
+<dt><tt><i>everypage.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/everypage.zip">macros/latex/contrib/everypage</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/everypage.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/everypage/">browse</a>)
+<dt><tt><i>everyshi.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ms.zip">macros/latex/contrib/ms</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ms.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/ms/">browse</a>)
+<dt><tt><i>wallpaper.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/wallpaper.zip">macros/latex/contrib/wallpaper</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/wallpaper.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/wallpaper/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=watermark">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=watermark</a>
+</body>

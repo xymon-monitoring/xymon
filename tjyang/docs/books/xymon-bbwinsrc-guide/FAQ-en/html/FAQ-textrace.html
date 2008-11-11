@@ -1,0 +1,41 @@
+<head>
+<title>UK TeX FAQ -- question label textrace</title>
+</head><body>
+<h3>Making outline fonts from Metafont</h3>
+<p><i>TeXtrace</i>, originally developed by  P&eacute;ter Szab&oacute;, is a
+bundle of Unix scripts that use  Martin Weber&rsquo;s freeware boundary
+tracing package
+<a href="http://autotrace.sourceforge.net"><i>autotrace</a></i> to 
+generate Type 1 outline fonts from Metafont bitmap 
+font outputs.  The result is unlikely ever to be of the quality of
+the commercially-produced Type 1 font, but there&rsquo;s always the
+<a href="http://fontforge.sourceforge.net/"><i>FontForge</a></i> font
+editor to tidy things.  Whatever, there
+remain fonts which many people find useful and which fail to attract
+the paid experts, and auto-tracing is providing a useful service here.
+Notable sets of
+fonts generated using <i>TeXtrace</i> are P&eacute;ter Szab&oacute;&rsquo;s own
+EC/TC font set <i>tt2001</i> and Vladimir Volovich&rsquo;s
+CM-Super set, which covers the EC, TC, and the
+Cyrillic LH font sets (for details of both of which sets, see
+<a href="FAQ-type1T1.html">&ldquo;8-bit&rdquo; type 1 fonts</a>).
+<p>Another system, which arrived slightly later, is 
+<a href="http://www.cs.uu.nl/~hanwen/mftrace/"><i>mftrace</a></i>:
+this is a small <i>Python</i> program that does the same job.
+<i>Mftrace</i> may use either <i>autotrace</i> (like
+<i>TeXtrace</i>) or Peter Selinger&rsquo;s
+<a href="http://potrace.sourceforge.net"><i>potrace</a></i> to produce
+the initial outlines to process.  <i>Mftrace</i> is said to be
+more flexible, and easier to use, than is <i>TeXtrace</i>, but both systems
+are increasingly being used to provide Type 1 fonts to the public domain.
+<p>The <i>MetaType1</i> system aims to use Metafont font sources, by way
+of MetaPost and a bunch of scripts and so on, to produce high-quality
+Type 1 fonts.  The first results, the 
+<a href="FAQ-type1T1.html"><i>Latin Modern</i> fonts</a>, are now
+well-established, and a bunch of existing designs have been reworked
+in MetaType1 format.
+<dl>
+<dt><tt><i>MetaType1</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/metatype1.zip">fonts/utilities/metatype1</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/metatype1.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/utilities/metatype1/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=textrace">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=textrace</a>
+</body>

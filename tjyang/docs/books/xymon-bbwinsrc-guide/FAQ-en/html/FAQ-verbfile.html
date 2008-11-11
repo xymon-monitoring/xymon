@@ -1,0 +1,62 @@
+<head>
+<title>UK TeX FAQ -- question label verbfile</title>
+</head><body>
+<h3>Including a file verbatim in LaTeX</h3>
+<p>A good way is to use Rainer Sch&ouml;pf&rsquo;s <i>verbatim</i> package,
+which provides a command <code>\verbatiminput</code> that takes a file name as
+argument:
+<blockquote>
+<pre>
+\usepackage{verbatim}
+...
+\verbatiminput{verb.txt}
+</pre>
+</blockquote><p>
+Another way is to use the <code>alltt</code> environment, which
+requires the <i>alltt</i> package.  The environment interprets its
+contents &lsquo;mostly&rsquo; verbatim, but executes any (La)TeX commands it
+finds:
+<blockquote>
+<pre>
+\usepackage{alltt}
+...
+\begin{alltt}
+\input{verb.txt}
+\end{alltt}
+</pre>
+</blockquote><p>
+of course, this is little use for inputting (La)TeX source
+code...
+<p>The <i>moreverb</i> package extends the <i>verbatim</i> package,
+providing a <code>listing</code> environment and a <code>\</code><code>listinginput</code>
+command, which line-number the text of the file.  The package also has
+a <code>\</code><code>verbatimtabinput</code> command, that honours TAB characters in
+the input (the package&rsquo;s <code>listing</code> environment and the
+<code>\</code><code>listinginput</code> command also both honour TAB).
+<p>The <i>sverb</i> package provides verbatim input (without recourse
+to the facilities of the <i>verbatim</i> package):
+<blockquote>
+<pre>
+\usepackage{sverb}
+...
+\verbinput{verb.txt}
+</pre>
+</blockquote><p>
+<p>The <i>fancyvrb</i> package offers configurable implementations of
+everything <i>verbatim</i>, <i>sverb</i> and <i>moreverb</i>
+have, and more besides.  It is nowadays the package of choice for the
+discerning typesetter of verbatim text, but its wealth of facilities
+makes it a complex beast and study of the documentation is strongly
+advised.
+<p>The <i>memoir</i> class includes the relevant functionality of the
+<i>verbatim</i> and <i>moreverb</i> packages.
+<dl>
+<dt><tt><i>alltt.sty</i></tt><dd>Part of the LaTeX distribution.
+<dt><tt><i>fancyvrb.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fancyvrb.zip">macros/latex/contrib/fancyvrb</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fancyvrb.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/fancyvrb/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>moreverb.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/moreverb.zip">macros/latex/contrib/moreverb</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/moreverb.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/moreverb/">browse</a>)
+<dt><tt><i>sverb.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.zip">macros/latex/contrib/mdwtools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/mdwtools/">browse</a>)
+<dt><tt><i>verbatim.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=verbfile">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=verbfile</a>
+</body>

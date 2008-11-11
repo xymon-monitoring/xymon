@@ -1,0 +1,61 @@
+<head>
+<title>UK TeX FAQ -- question label latexbug</title>
+</head><body>
+<h3>Reporting a LaTeX bug</h3>
+<p>The LaTeX team supports LaTeX, and will deal with
+
+<em>bona fide</em> bug reports.  Note that the LaTeX team does
+<em>not</em> deal with contributed packages &mdash; just the software that
+is part of the LaTeX distribution itself: LaTeX and the
+&ldquo;required&rdquo; packages.
+Furthermore, you need to be slightly
+careful to produce a bug report that is usable by the team.  The steps
+are:
+<p><b>1.</b> Are you still using current LaTeX?  Maintenance is only
+available for sufficiently up-to-date versions of LaTeX &mdash; if your
+LaTeX is more than two versions out of date, the bug reporting
+mechanisms may reject your report.
+<p><b>2.</b> Has your bug already been reported?  Browse the
+
+<a href="http://www.latex-project.org/cgi-bin/ltxbugs2html?introduction=yes">LaTeX bugs database</a>,
+to find any earlier instance of your bug.  In many cases, the database
+will list a work-around.
+<p><b>3.</b> Prepare a 
+<a href="FAQ-minxampl.html">&ldquo;minimum&rdquo; file</a> that exhibits the problem.
+Ideally, such a file should contain no contributed packages &mdash; the
+LaTeX team as a whole takes no responsibility for such packages (if
+they&rsquo;re supported at all, they&rsquo;re supported by their authors).  The
+&ldquo;minimum&rdquo; file should be self-sufficient: if a member of the team
+should run it in a clean directory, on a system with no contributed
+packages, it should replicate your problem.
+<p><b>4.</b> Run your file through LaTeX: the bug
+system needs the <code>.log</code> file that this process creates.
+<p>You now have two possible ways to proceed: either create a mail report
+to send to the bug processing mechanism (5, below), or submit your bug
+report via the web (7, below).
+<p><b>5.</b> Process the bug-report creation file, using LaTeX itself:
+<pre>
+  latex latexbug
+</pre>
+<i>latexbug</i> asks you some questions, and then lets you describe
+the bug you&rsquo;ve found.  It produces an output file <i>latexbug.msg</i>,
+which includes the details you&rsquo;ve supplied, your &ldquo;minimum&rdquo; example
+file, and the log file you got after running the example.  (I always
+need to edit the result before submitting it: typing text into
+<i>latexbug</i> isn&rsquo;t much fun.)
+<p><b>6.</b> Mail the resulting file to
+<i>latex-bugs@latex-project.org</i>; the subject line of your email
+should be the same as the bug title you gave to <i>latexbug</i>.  The
+file <i>latexbug.msg</i> should be included into your message in-line:
+attachments are likely to be rejected by the bug processor.
+<p><b>7.</b> Connect to the
+
+<a href="http://www.latex-project.org/bugs-upload.html">latex bugs processing web page</a>
+and enter details of your bug &mdash; category, summary and full
+description, and the two important files (source and log file); note
+that members of the LaTeX team <em>need</em> your name and email address, as
+they may need to discuss the bug with you, or to advise you of a
+work-around.
+<p>
+<p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=latexbug">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=latexbug</a>
+</body>

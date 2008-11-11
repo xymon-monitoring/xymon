@@ -1,0 +1,38 @@
+<head>
+<title>UK TeX FAQ -- question label make</title>
+</head><body>
+<h3>Makefiles for LaTeX documents</h3>
+<p>LaTeX is a tricky beast for running <i>make</i> on: the need to
+instruct LaTeX to run several times for essentially different
+reasons (for example, &ldquo;get the table of contents stable&rdquo;, &ldquo;get the
+labels stable&rdquo;, &ldquo;add the bibliography&rdquo;, &ldquo;add the index&rdquo;) is
+actually rather difficult to express in the &lsquo;ordinary&rsquo; sort of
+dependency graph that one constructs for <i>make</i>.
+<p>For this reason, the only <i>make</i>-like package on CTAN
+(for a long time) was <i>latexmk</i>, which is a <i>Perl</i>
+script that analyses your LaTeX source for its dependencies, runs
+BibTeX or <i>makeindex</i> as and when it notices that those
+programs&rsquo; input (parts of the <code>.aux</code> file, or the <code>.idx</code> file,
+respectively) has changed, and so on.  <i>Latexmk</i> is a fine
+solution (and was used in generating printable versions of these
+FAQs for a long time); it has recently been upgraded and has
+many bells and whistles that allow it to operate as if it were a poor
+man&rsquo;s WYSIWYG system.
+<p>The <a href="FAQ-texinfo.html"><i>texinfo</i> system</a> comes with a
+utility called <i>texi2dvi</i>, which is capable of &ldquo;converting&rdquo;
+either LaTeX or <i>texinfo</i> files into DVI (or into
+PDF, using PDFTeX).
+<p>A later contribution is the bundle <i>latexmake</i>, which
+offers a set of <i>make</i> rules that invoke <i>texi2dvi</i>
+as necessary.
+<p>The curious may examine the rules employed to run the present
+FAQ through LaTeX: we don&rsquo;t present them as a complete
+solution, but some of the tricks employed are surely re-usable.
+<dl>
+<dt><tt><i>FAQ distribution</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/help/uk-tex-faq.zip">help/uk-tex-faq</a> (<a href="ftp://cam.ctan.org/tex-archive/help/uk-tex-faq.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/help/uk-tex-faq/">browse</a>)
+<dt><tt><i>latexmake</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/latexmake.zip">support/latexmake</a> (<a href="ftp://cam.ctan.org/tex-archive/support/latexmake.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/latexmake/">browse</a>)
+<dt><tt><i>latexmk</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/latexmk.zip">support/latexmk</a> (<a href="ftp://cam.ctan.org/tex-archive/support/latexmk.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/latexmk/">browse</a>)
+<dt><tt><i>texi2dvi</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/texinfo/texinfo.zip">macros/texinfo/texinfo</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/texinfo/texinfo.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/texinfo/texinfo/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=make">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=make</a>
+</body>

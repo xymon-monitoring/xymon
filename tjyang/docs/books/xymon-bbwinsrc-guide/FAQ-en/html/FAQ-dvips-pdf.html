@@ -1,0 +1,46 @@
+<head>
+<title>UK TeX FAQ -- question label dvips-pdf</title>
+</head><body>
+<h3>Quality of PDF from PostScript</h3>
+<!-- blurry fuzzy crippled -->
+<p>Any reasonable PostScript, including any output of <i>dvips</i>, may be
+converted to PDF, using (for example) a sufficiently recent
+version of <i>ghostscript</i>, Frank Siegert&rsquo;s (shareware)
+<a href="http://www.pstill.com/"><i>PStill</a></i>, or Adobe&rsquo;s (commercial)
+<i>Distiller</i>.
+<p>But, although the job may (almost always) be done, the results are
+often not acceptable: the most frequent problem is bad presentation of
+the character glyphs that make up the document.  The following answers
+offer solutions to this (and other) problems of bad presentation.
+Issues covered are:
+<ul>
+<li> <a href="FAQ-fuzzy-type3.html">Wrong type of fonts used</a>, which is
+  the commonest cause of fuzzy text.
+<li> <a href="FAQ-fuzzy-gs.html"><i>Ghostscript</i> too old</a>,
+  which can also result in fuzzy text.
+
+<li> <a href="FAQ-fuzzy-T1.html">Switching to font encoding T1 encoding</a>,
+  which is yet another possible cause of fuzzy text.
+<li> Another problem &mdash; missing characters &mdash; arises from an
+  
+  <a href="FAQ-distill-prob.html">aged version of <i>Adobe</i> <i>Distiller</i></a>.
+<li> Finally, there&rsquo;s the common confusion that arises from using the
+  <i>dvips</i> configuration file <code>-Ppdf</code>, the 
+  <a href="FAQ-charshift.html">weird characters</a>.
+</ul>
+It should be noted that <i>Adobe</i> 
+                                         
+<i>Reader</i> 6 (released in mid-2003, and later versions) does
+not exhibit the &ldquo;fuzziness&rdquo; that so many of the answers below
+address.  This is of course good news: however, it will inevitably be
+a long time before every user in the world has this (or later)
+versions, so the remedies below are going to remain for some time to
+come.
+<p>The problems are also discussed, with practical examples, in Mike
+Shell&rsquo;s <i>testflow</i> package, which these FAQs recommend as a
+&ldquo;<a href="FAQ-tutbitslatex.html">specialised tutorial</a>.
+<dl>
+<dt><tt><i>testflow</i></tt><dd><a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/IEEEtran/testflow/">macros/latex/contrib/IEEEtran/testflow/</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dvips-pdf">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dvips-pdf</a>
+</body>

@@ -1,0 +1,4 @@
+$ \textbf{hg status}
+M a
+$ \textbf{echo b > b}
+$ \textbf{hg commit -m 'Add file b'}

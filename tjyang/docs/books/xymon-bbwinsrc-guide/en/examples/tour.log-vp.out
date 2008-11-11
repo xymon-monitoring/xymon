@@ -1,0 +1,21 @@
+$ \textbf{hg log -v -p -r 2}
+changeset:   
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+files:       hello.c
+description:
+Introduce a typo into hello.c.
+
+
+diff -r  -r  hello.c
+
+
+@@ -11,6 +11,6 @@
+ 
+ int main(int argc, char **argv)
+ \{
+-	printf("hello, world!\textbackslash{}n");
++	printf("hello, world!\textbackslash{}");
+ 	return 0;
+ \}
+

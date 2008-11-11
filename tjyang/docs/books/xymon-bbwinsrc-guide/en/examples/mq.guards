@@ -1,0 +1,67 @@
+#!/bin/bash
+
+echo '[extensions]' >> $HGRC
+echo 'hgext.mq =' >> $HGRC
+
+hg init a
+cd a
+
+#$ name: init
+
+hg qinit
+hg qnew hello.patch
+echo hello > hello
+hg add hello
+hg qrefresh
+hg qnew goodbye.patch
+echo goodbye > goodbye
+hg add goodbye
+hg qrefresh
+
+#$ name: qguard
+
+hg qguard
+
+#$ name: qguard.pos
+
+hg qguard +foo
+hg qguard
+
+#$ name: qguard.neg
+
+hg qguard hello.patch -quux
+hg qguard hello.patch
+
+#$ name: series
+
+cat .hg/patches/series
+
+#$ name: qselect.foo
+
+hg qpop -a
+hg qselect
+hg qselect foo
+hg qselect
+
+#$ name: qselect.cat
+
+cat .hg/patches/guards
+
+#$ name: qselect.qpush
+hg qpush -a
+
+#$ name: qselect.error
+
+hg qselect +foo
+
+#$ name: qselect.quux
+
+hg qselect quux
+hg qpop -a
+hg qpush -a
+
+#$ name: qselect.foobar
+
+hg qselect foo bar
+hg qpop -a
+hg qpush -a

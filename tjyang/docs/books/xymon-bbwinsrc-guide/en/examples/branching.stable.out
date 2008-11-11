@@ -1,0 +1,12 @@
+$ \textbf{hg clone stable stable-fix}
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+$ \textbf{cd stable-fix}
+$ \textbf{echo 'This is a fix to a boring feature.' > myfile}
+$ \textbf{hg commit -m 'Fix a bug'}
+$ \textbf{hg push}
+pushing to 
+searching for changes
+adding changesets
+adding manifests
+adding file changes
+added 1 changesets with 1 changes to 1 files

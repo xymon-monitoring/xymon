@@ -1,0 +1,96 @@
+<head>
+<title>UK TeX FAQ -- question label impgraph</title>
+</head><body>
+<h3>How to import graphics into (La)TeX documents</h3>
+<p>Knuth, when designing the current version of TeX back in the early
+1980s, could discern no &ldquo;standard&rdquo; way of expressing graphics in
+documents.  He reasoned that this state could not persist for ever,
+but that it would be foolish for him to define TeX primitives that
+allowed the import of graphical image definitions.  He therefore
+deferred the specification of the use of graphics to the writers of
+DVI drivers; TeX documents would control the drivers by
+means of 
+<a href="FAQ-specials.html"><code>\</code><code>special</code> commands</a>.
+<p>There is therefore a straightforward way for anyone to import graphics
+into their document: read the specification of the <code>\</code><code>special</code>
+commands your driver uses, and &lsquo;just&rsquo; code them.  This is the
+hair-shirt approach: it definitely works, but it&rsquo;s not for everyone.
+<p>Over the years, therefore, &ldquo;graphics inclusion&rdquo; packages have sprung
+up; most were designed for inclusion of
+
+<a href="FAQ-eps.html">Encapsulated PostScript graphics</a> &mdash;
+which has become the <em>lingua franca</em> of graphics inclusion over
+the last decade or so.
+<p>Notable examples are the <i>epsf</i> package (distributed with
+<i>dvips</i>) and the <i>psfig</i> package.  (Both of these
+packages were designed to work well with both Plain TeX and
+LaTeX 2.09; they are both still available.)  All such packages were
+tied to a particular DVI driver (<i>dvips</i>, in
+the above two cases), but their code could be configured for others.
+<p>The obvious next step was to make the code configurable dynamically.
+The LaTeX standard <i>graphics</i> package and its derivatives
+made this step: it is strongly preferred for all current work.  It can
+also be used (with the help of the <i>miniltx</i> &ldquo;LaTeX
+emulator&rdquo; and the <i>graphicx.tex</i> front-end) in documents
+written in Plain TeX.
+<p>The <i>graphics</i> package takes a variety of &ldquo;driver
+options&rdquo; &mdash; package options that select code to generate the
+commands appropriate to the DVI driver in use.  In most cases,
+your (La)TeX distribution will provide a <i>graphics.cfg</i> file
+that will select the correct driver for what you&rsquo;re doing (for
+example, a distribution that provides both LaTeX and PDFLaTeX
+will usually provide a configuration file that determins whether
+PDFLaTeX is running, and selects the definitions for it if so).
+<p>The <i>graphics</i> package provides a toolkit of commands (insert
+graphics, scale a box, rotate a box), which may be composed to provide
+most facilities you need; the basic command, <code>\</code><code>includegraphics</code>,
+takes one optional argument, which specifies  the bounding box of the
+graphics to be included.
+<p>The <i>graphicx</i> package uses the facilities of of
+<i>graphics</i> behind a rather more sophisticated command syntax
+to provide a very powerful version of the <code>\</code><code>includegraphics</code>
+command.  <i>graphicx</i>&rsquo;s version can combine scaling and
+rotation, viewporting and clipping, and many other things.  While this
+is all a convenience (at some cost of syntax), it is also capable of
+producing noticeably more efficient PostScript, and some of its
+combinations are simply not possible with the <i>graphics</i>
+package version.
+<p>The <i>epsfig</i> package provides the same facilities as
+<i>graphicx</i>, but via a <code>\</code><code>psfig</code> command (also known as
+<code>\</code><code>epsfig</code>), capable of emulating
+the behaviour (if not the bugs) the old <i>psfig</i> package.
+<i>Epsfig</i> also supplies homely support for former users of the
+<i>epsf</i> package.  However, there&rsquo;s a support issue: if you
+declare you&rsquo;re using <i>epsfig</i>, any potential mailing list or
+usenet helper has to clear out of the equation the possibility that
+you&rsquo;re using &ldquo;old&rdquo; <i>epsfig</i>, so that support is slower
+coming than it would otherwise be.
+<p>There is no rational reason to stick with the old packages, which have
+never been entirely satisfactory in the LaTeX context. (One
+irrational reason to leave them behind is that their replacement&rsquo;s
+name tends not to imply that it&rsquo;s exclusively related to PostScript
+graphics.  The reasoning also excludes <i>epsfig</i>, of course.)
+<p>A wide variety of detailed techniques and tricks have been developed
+over the years, and Keith Reckdahl&rsquo;s <i>epslatex</i> outlines them
+in compendious detail: this highly recommendable document is available
+from CTAN.  An invaluable review of the practicalities of
+exchanging graphics between sites,
+
+&ldquo;<a href="http://silas.psfc.mit.edu/elec_fig/elec_figures.pdf">Graphics for Inclusion in Electronic Documents</a>&rdquo;
+
+has been written by Ian Hutchinson; the document isn&rsquo;t on CTAN,
+but may also be
+
+<a href="http://silas.psfc.mit.edu/elec_fig/">browsed on the Web</a>.
+<dl>
+<dt><tt><i>epsf.tex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/generic/epsf/epsf.tex">macros/generic/epsf/epsf.tex</a>
+<dt><tt><i>epsfig.sty</i></tt><dd>Part of the <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.zip">macros/latex/required/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/graphics/">browse</a>) bundle
+<dt><tt><i>epslatex.pdf</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/info/epslatex/english/epslatex.pdf">info/epslatex/english/epslatex.pdf</a>; the document is also available
+  in PostScript format as <a href="ftp://cam.ctan.org/tex-archive/info/epslatex/english/epslatex.ps">info/epslatex/english/epslatex.ps</a>
+<dt><tt><i>graphics.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.zip">macros/latex/required/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/graphics/">browse</a>)
+<dt><tt><i>graphicx.sty</i></tt><dd>Part of the <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.zip">macros/latex/required/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/graphics/">browse</a>) bundle
+<dt><tt><i>miniltx.tex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/plain/graphics.zip">macros/plain/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/plain/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/plain/graphics/">browse</a>)
+<dt><tt><i>psfig.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/nonfree/graphics/psfig.zip">nonfree/graphics/psfig</a> (<a href="ftp://cam.ctan.org/tex-archive/nonfree/graphics/psfig.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/nonfree/graphics/psfig/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=impgraph">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=impgraph</a>
+</body>

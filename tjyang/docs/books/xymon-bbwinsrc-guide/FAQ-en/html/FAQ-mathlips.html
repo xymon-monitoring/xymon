@@ -1,0 +1,45 @@
+<head>
+<title>UK TeX FAQ -- question label mathlips</title>
+</head><body>
+<h3>Ellipses</h3>
+<!-- <code>\</code><code>dots</code> <code>\</code><code>cdots</code> <code>\</code><code>vdots</code> <code>\</code><code>ddots</code> -->
+<p>Ellipses are commonly required, and LaTeX natively supplies a fair
+range (<code>\</code><code>dots</code>, <code>\</code><code>cdots</code>, <code>\</code><code>vdots</code> and <code>\</code><code>ddots</code>).  By using
+the <i>graphics</i> package, one can change the slope of the
+<code>\</code><code>ddots</code> command, as in
+<pre>
+  $ ... \reflectbox{$\ddots$} ... $
+</pre>
+While this works, it is not a recommended way of achieving the desired
+result (see below).  Moreover, LaTeX&rsquo;s range is not adequate to
+everyone&rsquo;s requirements, and at least three packages provide
+extensions to the set.
+<p>The AMSLaTeX bundle provides a range of &ldquo;semantically-named&rdquo;
+ellipses, for use in different situations: <code>\</code><code>dotsb</code> for use between
+pairs of binary operators, <code>\</code><code>dotsc</code> for use between pairs of commas,
+and so on.
+<p>The <i>yhmath</i> package defines an <code>\</code><code>adots</code> command, which is
+the analogue of <code>\</code><code>ddots</code>, sloping forwards rather than backwards.
+The <i>yhmath</i> package comes with a rather interesting font that
+extends the standard <i>cmex</i>; details are in the documentation.
+The disadvantage of this setup is, that although <code>\</code><code>adots</code> is merely
+a macro, the package tries to load its own font and produces a
+&ldquo;missing font&rdquo; substitution warning message if you haven&rsquo;t installed
+the font.
+<p>The <i>mathdots</i> package (besides fixing up the behaviour of
+(La)TeX <code>\</code><code>ddots</code> and <code>\</code><code>vdots</code> when the font size changes)
+provides an &ldquo;inverse diagonal&rdquo; ellipsis <code>\</code><code>iddots</code> (doing the same
+job as <i>yhmath</i>&rsquo;s <code>\</code><code>adots</code>, but better).
+<p>Documentation of <i>yhmath</i> appears, processed, in the
+distribution (thus saving you the bother of installing the package
+before being able to read the documentation).  Documentation of
+<i>mathdots</i> appears at the end the package file itself.
+<dl>
+<dt><tt><i>amslatex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.zip">macros/latex/required/amslatex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/amslatex/">browse</a>)
+<dt><tt><i>graphics.sty</i></tt><dd>Part of the <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.zip">macros/latex/required/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/graphics/">browse</a>) bundle
+<dt><tt><i>mathdots.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/generic/mathdots.zip">macros/generic/mathdots</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/generic/mathdots.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/generic/mathdots/">browse</a>)
+<dt><tt><i>yhmath (fonts)</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/yhmath.zip">fonts/yhmath</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/yhmath.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/yhmath/">browse</a>)
+<dt><tt><i>yhmath (macros)</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/yhmath.zip">macros/latex/contrib/yhmath</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/yhmath.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/yhmath/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=mathlips">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=mathlips</a>
+</body>

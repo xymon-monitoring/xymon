@@ -1,0 +1,3 @@
+$ \textbf{cd ../your-copy}
+$ \textbf{echo 'new contents' >> file}
+$ \textbf{hg commit -m 'Changed file'}

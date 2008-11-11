@@ -1,0 +1,17 @@
+Changes in version 3.16a
+
+Revised answers:
+  Label filename: extend macro definitions, hopefully expanding the
+                  usefulness and usability of the answer
+
+Bugfixes:
+  Label cmdstar: part of the example code was just wrong
+  Label enumerate: unclarity in text caused by a typo
+  Bug in "introduction=yes" code corrected
+
+Future releases:
+  I'm still aiming for (approximately) monthly "bugfix" releases.
+  There are no current plans for a major release.
+
+Robin Fairbairns
+2006-08-03

@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#$ name: init
+
+hg init main
+cd main
+echo 'This is a boring feature.' > myfile
+hg commit -A -m 'We have reached an important milestone!'
+
+#$ name: tag
+
+hg tag v1.0
+hg tip
+hg tags
+
+#$ name: main
+
+cd ../main
+echo 'This is exciting and new!' >> myfile
+hg commit -m 'Add a new feature'
+cat myfile
+
+#$ name: update
+
+cd ..
+hg clone -U main main-old
+cd main-old
+hg update v1.0
+cat myfile
+
+#$ name: clone
+
+cd ..
+hg clone -rv1.0 main stable
+
+#$ name: stable
+
+hg clone stable stable-fix
+cd stable-fix
+echo 'This is a fix to a boring feature.' > myfile
+hg commit -m 'Fix a bug'
+#$ ignore: /tmp/branching.*
+hg push
+
+#$ name:
+
+export HGMERGE=$(mktemp)
+echo '#!/bin/sh' > $HGMERGE
+echo 'echo "This is a fix to a boring feature." > "$1"' >> $HGMERGE
+echo 'echo "This is exciting and new!" >> "$1"' >> $HGMERGE
+chmod 700 $HGMERGE
+
+#$ name: merge
+
+cd ../main
+hg pull ../stable
+hg merge
+hg commit -m 'Bring in bugfix from stable branch'
+cat myfile
+
+#$ name:
+
+rm $HGMERGE

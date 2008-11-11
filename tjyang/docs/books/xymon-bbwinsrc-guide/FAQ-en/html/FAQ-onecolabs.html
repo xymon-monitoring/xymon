@@ -1,0 +1,57 @@
+<head>
+<title>UK TeX FAQ -- question label onecolabs</title>
+</head><body>
+<h3>1-column abstract in 2-column document</h3>
+<p>One often requires that the abstract of a paper should appear across
+the entire page, even in a two-column paper.  The required trick is:
+<pre>
+  \documentclass[twocolumn]{article}
+  ...
+  \begin{document}
+  ... % \author, etc
+  \twocolumn[
+    \begin{@twocolumnfalse}
+      \maketitle
+      \begin{abstract}
+        ...
+      \end{abstract}
+    \end{@twocolumnfalse}
+  ]
+</pre>
+Unfortunately, with the above <code>\</code><code>thanks</code> won&rsquo;t work in the
+<code>\</code><code>author</code> list.  If you need such specially-numbered footnotes, you
+can make them like this:
+<pre>
+  \title{Demonstration}
+  \author{Me, You\thanks{}}
+  \twocolumn[
+    ... as above ...
+  ]
+  {
+    \renewcommand{\thefootnote}%
+      {\fnsymbol{footnote}}
+    \footnotetext[1]{Thanks for nothing}
+  }
+</pre>
+and so on.
+<p>As an alternative, among other facilities the <i>abstract</i> package 
+provides a
+<code>\</code><code>saythanks</code> command and a <code>onecolabstract</code> environment
+which remove the need to fiddle with the <code>\</code><code>thanks</code> and
+footnoting. They can be used like this:
+<pre>
+\twocolumn[
+  \maketitle             % full width title
+  \begin{onecolabstract} % full width abstract
+  ... text 
+  \end{onecolabstract}
+]
+\saythanks               % typeset any \thanks
+</pre>
+The <i>memoir</i> class offers all the facilities of <i>abstract</i>.
+<dl>
+<dt><tt><i>abstract.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/abstract.zip">macros/latex/contrib/abstract</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/abstract.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/abstract/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=onecolabs">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=onecolabs</a>
+</body>

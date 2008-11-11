@@ -1,0 +1,73 @@
+<head>
+<title>UK TeX FAQ -- question label ouparmd</title>
+</head><body>
+<h3>Not in outer par mode</h3>
+<p>The error:
+<blockquote>
+<pre>
+! LaTeX Error: Not in outer par mode.
+</pre>
+</blockquote><p>
+comes when some &ldquo;main&rdquo; document feature is shut up somewhere it
+doesn&rsquo;t like.
+<p>The commonest occurrence is when the user wants a figure somewhere
+inside a table:
+<blockquote>
+<pre>
+\begin{tabular}{|l|}
+  \hline
+  \begin{figure}
+  \includegraphics{foo}
+  \end{figure}
+  \hline
+\end{tabular}
+</pre>
+</blockquote><p>
+a construction that was supposed to put a frame around the diagram,
+but doesn&rsquo;t work, any more than:
+<blockquote>
+<pre>
+\framebox{\begin{figure}
+  \includegraphics{foo}
+  \end{figure}%
+}
+</pre>
+</blockquote><p>
+The problem is, that the <code>tabular</code> environment, and the
+<code>\</code><code>framebox</code> command restrain the <code>figure</code> environment
+from its natural m&eacute;tier, which is to float around the document.
+<p>The solution is simply not to use the <code>figure</code> environment
+here:
+<blockquote>
+<pre>
+\begin{tabular}{|l|}
+  \hline
+  \includegraphics{foo}
+  \hline
+\end{tabular}
+</pre>
+</blockquote><p>
+What was the float for? &mdash; as written in the first two examples, it
+serves no useful purpose; but perhaps you actually wanted a diagram
+and its caption framed, in a float.
+<p>It&rsquo;s simple to achieve this &mdash; just reverse the order of the
+environments (or of the <code>figure</code> environment and the
+command):
+<blockquote>
+<pre>
+\begin{figure}
+  \begin{tabular}{|l|}
+    \hline
+    \includegraphics{foo}
+    \caption{A foo}
+    \hline
+  \end{tabular}
+\end{figure}
+</pre>
+</blockquote><p>
+The same goes for <code>table</code> environments (or any other sort
+of float you&rsquo;ve defined for yourself) inside tabulars or box commands;
+you <em>must</em> get the float environment out from inside, one way or
+another.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ouparmd">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ouparmd</a>
+</body>

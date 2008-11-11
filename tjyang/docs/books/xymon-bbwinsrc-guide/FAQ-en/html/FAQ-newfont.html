@@ -1,0 +1,57 @@
+<head>
+<title>UK TeX FAQ -- question label newfont</title>
+</head><body>
+<h3>What&rsquo;s wrong with <code>\</code><code>newfont</code>?</h3>
+<p>If all else fails, you <em>can</em> specify a font using the LaTeX
+<code>\</code><code>newfont</code> command.  The font so specified doesn&rsquo;t fit into the
+LaTeX font selection mechanism, but the technique can be tempting
+under several circumstances.  The command is merely the thinnest of
+wrappers around the <code>\</code><code>font</code> primitive, and suffers from exactly the
+problems with font encodings and sizes that are outlined in
+<a href="FAQ-plninltx.html">using Plain TeX commands in \LaTeX</a>.
+<p>Almost all fonts, nowadays, are provided with LaTeX control files
+(if they&rsquo;re adapted to TeX at all).  There is therefore little gain
+in using <code>\</code><code>newfont</code>.
+<p>One temptation arises from the way that LaTeX restricts the sizes
+of fonts.  In fact, this restriction only significantly applies to the
+default (Computer Modern) and the Cork-encoded (T1) EC fonts, but it
+is widely considered to be anomalous, nowadays.  In recognition of
+this problem, there is a package <i>fix-cm</i> which will allow you
+to use the fonts, within LaTeX, at any size you choose.  If you&rsquo;re
+not using scaleable versions of the fonts, most modern distributions
+will just generate an appropriate bitmap for you.
+<p>So, suppose you want to use Computer Modern Roman at 30 points, you
+might be tempted to write:
+<blockquote>
+<pre>
+\newfont{\bigfont}{cmr10 at 30pt}
+{\bigfont Huge text}
+</pre>
+</blockquote><p>
+which will indeed work, but will actually produce a worse result than
+<blockquote>
+<pre>
+\usepackage{fix-cm}
+...
+{%
+  \fontsize{30}{36}\selectfont
+  Huge text%
+}
+</pre>
+</blockquote><p>
+Note that the <i>fix-cm</i> package was not distributed until the
+December 2003 edition of LaTeX; if you have an older distribution,
+the packages <i>type1cm</i> (for CM fonts) and
+<i>type1ec</i> (for EC fonts) are available.
+<dl>
+<dt><tt><i>fix-cm.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.zip">macros/latex/base</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/base/">browse</a>) (an unpacked
+  version is available at <a href="ftp://cam.ctan.org/tex-archive/macros/latex/unpacked/fix-cm.sty">macros/latex/unpacked/fix-cm.sty</a>)
+<dt><tt><i>type1cm.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/type1cm.zip">macros/latex/contrib/type1cm</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/type1cm.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/type1cm/">browse</a>)
+<dt><tt><i>type1ec.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-super/type1ec.sty">fonts/ps-type1/cm-super/type1ec.sty</a> (the package is actually part of
+  the <a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-super.zip">fonts/ps-type1/cm-super</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-super.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ps-type1/cm-super/">browse</a>) distribution, but it works happily in
+  the absence of the scaled fonts)
+</dl>
+<p>
+<p>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=newfont">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=newfont</a>
+</body>

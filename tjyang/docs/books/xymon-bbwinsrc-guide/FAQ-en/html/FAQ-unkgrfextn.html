@@ -1,0 +1,40 @@
+<head>
+<title>UK TeX FAQ -- question label unkgrfextn</title>
+</head><body>
+<h3>&ldquo;Unknown graphics extension&rdquo;</h3>
+<p>The LaTeX graphics package deals with several different types of
+DVI (or other) output drivers; each one of them has a potential
+to deal with a different selection of graphics formats.  The package
+therefore has to be told what graphics file types its output driver
+knows about; this is usually done in the &lt;<i>driver</i>&gt;<code>.def</code> file
+corresponding to the output driver you&rsquo;re using.
+<p>The error message arises, then, if you have a graphics file whose
+extension doesn&rsquo;t correspond with one your driver knows about.  Most
+often, this is because you&rsquo;re being optimistic: asking
+<i>dvips</i> to deal with a <code>.png</code> file, or PDFTeX to deal with
+a <code>.eps</code> file: the solution in this case is to transform the graphics
+file to a format your driver knows about.
+<p>If you happen to <em>know</em> that your device driver deals with the
+format of your file, you are probably falling foul of a limitation of
+the file name parsing code that the graphics package uses.  Suppose
+you want to include a graphics file <i>home.bedroom.eps</i> using the
+<i>dvips</i> driver; the package will conclude that your file&rsquo;s
+extension is <i>.bedroom.eps</i>, and will complain.  To get around
+this limitation, you have three alternatives:
+<ul>
+<li> Rename the file &mdash; for example <i>home.bedroom.eps</i>-&gt; 
+  <i>home-bedroom.eps</i>
+<li> Mask the first dot in the file name:
+<pre>
+\newcommand*{\DOT}{.}
+\includegraphics{home\DOT bedroom.eps}
+</pre>
+<li> Tell the graphics package what the file is, by means of options
+  to the <code>\</code><code>includegraphics</code> command:
+
+<pre>
+\includegraphics[type=eps,ext=.eps,read=.eps]{home.bedroom}
+</pre>
+</ul>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=unkgrfextn">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=unkgrfextn</a>
+</body>

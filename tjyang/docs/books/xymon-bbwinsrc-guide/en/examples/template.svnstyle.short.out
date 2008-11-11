@@ -1,0 +1,10 @@
+$ \textbf{svn log -r9653}
+------------------------------------------------------------------------
+r9653 | sean.hefty | 2006-09-27 14:39:55 -0700 (Wed, 27 Sep 2006) | 5 lines
+
+On reporting a route error, also include the status for the error,
+rather than indicating a status of 0 when an error has occurred.
+
+Signed-off-by: Sean Hefty <sean.hefty@intel.com>
+
+------------------------------------------------------------------------

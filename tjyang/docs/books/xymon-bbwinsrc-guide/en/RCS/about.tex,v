@@ -1,0 +1,232 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@% @;
+
+
+1.1
+date	2008.02.09.00.31.31;	author tjyang;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@\chapter{About Hobbit}
+\label{chap:About Hobbit}
+
+
+\section{About Hobbit}
+
+
+In this document:
+\begin{itemize}
+\item What is Hobbit ?
+\item Where can I download Hobbit ?
+\item Support
+\item Are there any other sites with Hobbit stuff?
+\item Who are you ?
+
+\end{itemize}
+\subsection{What is Hobbit ?}
+
+
+ Hobbit is a tool for monitoring servers, applications and
+ networks. It collects information about the health of your computers,
+ the applications running on them, and the network connectivity
+ between them. All of this information is presented in a set of
+ simple, intuitive webpages that are updated frequently to reflect
+ changes in the status of your systems.
+
+
+
+ Hobbit is capable of monitoring a vast set of network services,
+ e.g. mail-servers, web-servers (both plain HTTP and encrypted HTTPS),
+ local server application logs, ressource utilisation and much more.
+
+
+
+ Much of the information is processed and stored in RRD files, which
+ then form the basis for providing trend graphs showing how
+ e.g. webserver response-times vary over time.
+
+
+
+ Hobbit was inspired by the Big Brother monitoring tool, a freely
+ available tool from BB4 Technologies (now part of Quest Software)
+ with some of the features that Hobbit has. But Hobbit is better than
+ Big Brother in many ways:
+
+\begin{itemize}
+\item Hobbit can handle monitoring lots of systems.\\ 
+
+
+ Big Brother is implemented mostly as shell-scripts, and performance
+ suffers badly from this. In large networks where you need to monitor
+ hundreds or thousands of hosts, processing of the data simply cannot
+ keep up. Another problem with BB is that it stores all
+ status-information in individual files; when you have lots of hosts
+ and statuses, the amount of disk I/O triggered by this severely
+ limits how many systems you can monitor with one BB server.\\ 
+
+ Hobbit avoids these performance bottlenecks by keeping most of the
+ ever-changing data in memory instead of on-disk, and by being
+ implemented in C rather than shell scripts.
+
+
+\item Hobbit has a centralized configuration. 
+
+ Hobbit keeps \textbf{all}
+ configuration data in one place: On the Hobbit server. Big Brother
+ has lots of configuration files stored on the individual servers
+ being monitored, so to change a setting you may need to logon to
+ several servers and change each of them individually.
+
+
+\item Hobbit is easy to setup and deploy.\\ 
+
+
+ Big Brother has a huge number of add-ons, available from the
+ www.deadcat.net site. This is both a blessing and a curse - you can
+ find anything you need as an add-on, but many of the add-ons really
+ ought to have been part of the base package. E.g. the ability to
+ track historical performance data, simple things such as monitoring
+ SSL-enabled services and SSL certificates, or just something as
+ simple as a GUI for temporarily disabling monitoring of a
+ system. Maintaining and improving all of these add-ons gets really
+ complex.\\ 
+
+ Hobbit has all of these features built-in so you don't have to worry
+ about getting the right add-ons and maintaining them - they come with
+ the base package.\\ 
+
+ Also, when it comes to deploying the client-side packages, Hobbit
+ clients require no configuration changes when you install them on
+ multiple hosts. So you can setup a template client installation, and
+ then blindly copy it to all of your hosts.
+
+
+\item Hobbit is actively being developed.\\ 
+
+
+ New Hobbit versions appear regularly, usually every 4-6 months. In
+ contrast, development of Big Brother appears to have stopped - at
+ least when it comes to the non-commercial (BTF) version.
+
+
+\item Hobbit is licensed as Open Source - Big Brother is not.\\ 
+
+
+ Although the BB ``Better-than-Free'' license permits the use of BB
+ for non-commercial use without having to buy a license, it is still a
+ non-free package in the Open Source sense. I fully respect the
+ decision of the people behind Big Brother to choose the licensing
+ terms they find best - just as I can choose the licensing terms that
+ I find best for the software I develop. It is my sincere belief that
+ an Open Source license works best for a project such as Hobbit, where
+ community involvement is essential to get a tool capable of
+ monitoring as many different systems as possible.
+
+
+
+ An interesting essay appeared recently, which tries to explain why
+ Open Source is the natural way for a software product to evolve. If
+ you are curious as to why the trend seems to be that more and more
+ software exist in an Open Source version, I suggest you have a look
+ at it.
+
+
+
+\end{itemize}
+\subsection{Didn't you write something called ``bbgen'' ?}
+
+
+ Yes I did. The \textbf{bbgen toolkit}
+ was the name I used for Hobbit from 2002 until the end of 2004 (i.e. bbgen version 1.x, 2.x and 3.x). The bbgen versions relied on a Big Brother server to hold the monitoring data and status logs, and this turned out to be a real performance problem for me. So I needed to completely replace Big Brother with something more powerful. In March 2005 version 4 was ready and capable of operating without any need for a Big Brother server, so I decided to change the name to avoid any misunderstanding about whether this was an add-on to Big Brother, or a replacement for it. Hobbit no longer has any relation to Big Brother.
+\subsection{Why did you call it Hobbit ?}
+
+
+ Choosing a name is \emph{hard}
+. I wanted a name that was easy to remember; could be interpreted as a somewhat meaningful acronym; and one that did not refer directly to the Big Brother origin.\\ 
+ ``Hobbit'' could mean ``High-performance Open-source BB ImplemenTation'' but it might as well just be a name. If you're familiar with the Hobbit's in Tolkien's books, you will know that hobbits are very fond of things that are green - just like any systems- or network-administrator prefers his monitoring screen to be. They also pay a great deal of attention to what is happening around them, and are capable of doing things that you would not think they could when you first saw them. All of these characteristics apply well to the Hobbit monitor. 
+\subsection{Wht should I use Hobbit ? My Big Brother setup works just fine.}
+
+
+ It is your choice. I think Hobbit has many improvements over BB, so I would of course say 'Yes, I think you should'. But in the end it is You who have to deal with the hassle of setting up and learning a new system, so if you are comfortable with what Big Brother is doing for you now, I am not forcing you to switch. If you want to see what some of the Hobbit users think about changing to Hobbit, check out this thread (continued here) from the Hobbit mailing list archive. The executive summary of those messages is that You won't regret switching.
+\subsection{So where can I download Hobbit?}
+
+
+ The Hobbit sources are available on the project page at Sourceforge.
+\subsection{Support}
+
+
+ There are two mailing lists about Hobbit: \begin{itemize}
+\item The \textbf{hobbit@@hswn.dk}
+ mailing list is for general discussion about Hobbit. To avoid spam you must be a subscriber to the list before you are allowed to post mesages. To subscribe to the list, send an e-mail to hobbit-subscribe@@hswn.dk.\\ 
+ There is an archive of the list.
+\item The \textbf{hobbit-announce}
+ list is an announcement-list where new versions of Hobbit will be announced. You can subscribe to the list by sending an e-mail to hobbit-announce-subscribe@@hswn.dk.
+
+\end{itemize}
+
+
+
+ If you have a specific problem with something that is not working, first check the list of known issues, and try to search the list archive. If you don't find the answer, post a message to the Hobbit mailing list - I try to answer questions about Hobbit in that forum.
+\subsection{Are there any other sites with Hobbit stuff?}
+
+
+ Several projects have sprung up around Hobbit:
+\begin{itemize}
+\item \textbf{BBWin}
+ is a client for Microsoft Windows systems. It is available from the BBWin project page at Sourceforge.
+\item \textbf{DevMon}
+ is a tool to collect data from SNMP-capable devices. It is available from the DevMon project page at SourceForge.
+\item \textbf{The Shire}
+ is a repository of Hobbit add-on scripts, utilities, sample configurations etc. which is currently being established. At the time of writing (August 2006) this is just being started, but you can check out The Shire project page at SourceForge.
+\item The Hobbit Wiki has some information about Hobbit usage.
+\item \textbf{Deadcat}
+ is a repository for Big Brother extensions. Although these were written for Big Brother, most of these can be used with Hobbit with little or no extra work since Hobbit is compatible with the Big Brother extensions. See the Deadcat site.
+
+\end{itemize}
+
+\subsection{Who are you ?}
+
+
+ My name is Henrik Storner. I was born in 1964, and live in
+ Copenhagen, the capital of Denmark which is a small country in the
+ northern part of Europe. I have a M.Sc. in Computer Science from the
+ University of Copenhagen, and have been working with computers and
+ Unix systems professionally since 1984. I have been developing bits
+ and pieces of Open Source software for the past 10 years - you'll
+ find my name in the Linux kernel CREDITS file - and I am actively
+ involved in the local Linux Users Group SSLUG, one of the largest
+ LUG's world-wide, where I am a systems administrator for their
+ Internet servers (web, e-mail, news).
+
+
+
+ I started using Big Brother around 1998, for monitoring a bunch of
+ servers that I was administering. In late 2001 I began working for
+ the CSC Managed Web Services division in Copenhagen, and one of my
+ first tasks was to improve on the monitoring and SLA reporting. After
+ looking at what the standard tools could do, I decided to setup a Big
+ Brother system as a demonstration of what could be done. This was an
+ immediate success. Systems were rapidly added to the Big Brother
+ monitor, and I began to see some of the scalability problems that
+ happen when you go from monitoring 50 servers to monitoring 500 (not
+ to mention the 2500 hosts we are currently - 2006 - keeping tabs
+ on). So I decided it was time to do something about it, and during
+ the autumn and early winter 2002 bbgen was born. The rest is history.
+
+
+
+
+@

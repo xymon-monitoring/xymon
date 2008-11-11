@@ -1,0 +1,7 @@
+$ \textbf{hg parents}
+changeset:   
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+summary:     Added an extra line of output
+

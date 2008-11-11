@@ -1,0 +1,3 @@
+$ \textbf{hg qguard +foo}
+$ \textbf{hg qguard}
+goodbye.patch: +foo

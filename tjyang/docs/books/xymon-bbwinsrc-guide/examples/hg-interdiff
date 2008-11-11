@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+#
+# Adapter for using interdiff with mercurial's extdiff extension.
+#
+# Copyright 2006 Bryan O'Sullivan <bos@serpentine.com>
+#
+# This software may be used and distributed according to the terms of
+# the GNU General Public License, incorporated herein by reference.
+
+import os, sys
+
+def walk(base):
+    # yield all non-directories below the base path.
+    for root, dirs, files in os.walk(base):
+        for f in files:
+            path = os.path.join(root, f)
+            yield path[len(base)+1:], path
+    else:
+        if os.path.isfile(base):
+            yield '', base
+
+# create list of unique file names under both directories.
+files = dict(walk(sys.argv[1]))
+files.update(walk(sys.argv[2]))
+files = files.keys()
+files.sort()
+
+def name(base, f):
+    if f:
+        path = os.path.join(base, f)
+    else:
+        path = base
+    # interdiff requires two files; use /dev/null if one is missing.
+    if os.path.exists(path):
+        return path
+    return '/dev/null'
+
+ret = 0
+
+for f in files:
+    if os.system('interdiff "%s" "%s"' % (name(sys.argv[1], f),
+                                          name(sys.argv[2], f))):
+        ret = 1
+
+sys.exit(ret)

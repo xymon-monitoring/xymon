@@ -1,0 +1,8 @@
+$ \textbf{hg merge}
+merging myfile
+0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+(branch merge, don't forget to commit)
+$ \textbf{hg commit -m 'merged backout with previous tip'}
+$ \textbf{cat myfile}
+first change
+third change

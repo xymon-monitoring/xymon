@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="744.09448819"
+   height="1052.3622047"
+   id="svg2807"
+   sodipodi:version="0.32"
+   inkscape:version="0.44.1"
+   sodipodi:docbase="/home/bos/hg/hgbook/en"
+   sodipodi:docname="snapshots.svg">
+  <defs
+     id="defs2809" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10000"
+     guidetolerance="10"
+     objecttolerance="10"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="252.04111"
+     inkscape:cy="605.75448"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     inkscape:window-width="906"
+     inkscape:window-height="721"
+     inkscape:window-x="0"
+     inkscape:window-y="25" />
+  <metadata
+     id="metadata2812">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="opacity:1;fill:#d3ceff;fill-opacity:1;stroke:#a7a7a7;stroke-width:1.88795626;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2817"
+       width="118.18347"
+       height="245.32632"
+       x="243.05112"
+       y="315.4133"
+       inkscape:transform-center-x="136.84403"
+       inkscape:transform-center-y="-66.529183" />
+    <rect
+       y="315.04153"
+       x="46.965065"
+       height="97.803009"
+       width="108.92702"
+       id="rect2815"
+       style="fill:#ffced6;fill-opacity:1;stroke:#a7a7a7;stroke-width:1.14441991;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <g
+       id="g3814">
+      <rect
+         y="348.94302"
+         x="59.285713"
+         height="30"
+         width="84.285713"
+         id="rect2819"
+         style="fill:#ff6e86;fill-opacity:1;stroke:#a7a7a7;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         ry="0" />
+      <text
+         id="text2821"
+         y="368.02701"
+         x="72.717636"
+         style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+         xml:space="preserve"><tspan
+           y="368.02701"
+           x="72.717636"
+           id="tspan2823"
+           sodipodi:role="line">Index, rev 7</tspan></text>
+    </g>
+    <text
+       id="text3722"
+       y="301.29074"
+       x="46.187778"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       xml:space="preserve"><tspan
+         y="301.29074"
+         x="46.187778"
+         id="tspan3724"
+         sodipodi:role="line">Revlog index (.i file)</tspan></text>
+    <text
+       id="text3726"
+       y="301.29074"
+       x="241.90207"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       xml:space="preserve"><tspan
+         y="301.29074"
+         x="241.90207"
+         id="tspan3728"
+         sodipodi:role="line">Revlog data (.d file)</tspan></text>
+    <path
+       style="fill:#c695ff;fill-opacity:0.60109288;fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 143.57143,348.07647 L 255,368.07646 L 255.71429,544.50504 L 142.85714,379.50504 L 143.57143,348.07647 z "
+       id="path3839"
+       sodipodi:nodetypes="ccccc" />
+    <rect
+       style="fill:#4733ff;fill-opacity:1;stroke:#a7a7a7;stroke-width:2.35124183;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect3752"
+       width="92.720184"
+       height="67.005905"
+       x="255.42564"
+       y="368.64264" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="264.45859"
+       y="387.30099"
+       id="text3754"><tspan
+         sodipodi:role="line"
+         id="tspan3756"
+         x="264.45859"
+         y="387.30099">Snapshot, rev 4</tspan></text>
+    <rect
+       style="fill:#7c6eff;fill-opacity:1;stroke:#a7a7a7;stroke-width:1.57776296;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect3761"
+       width="93.49366"
+       height="29.922237"
+       x="255.03891"
+       y="442.04395" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="263.2662"
+       y="460.17206"
+       id="text3763"><tspan
+         sodipodi:role="line"
+         id="tspan3765"
+         x="263.2662"
+         y="460.17206">Delta, rev 4 to 5</tspan></text>
+    <rect
+       style="fill:#7c6eff;fill-opacity:1;stroke:#a7a7a7;stroke-width:1.57776296;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect3774"
+       width="93.49366"
+       height="29.922237"
+       x="255.03891"
+       y="477.97485" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="263.2662"
+       y="496.10297"
+       id="text3776"><tspan
+         sodipodi:role="line"
+         id="tspan3778"
+         x="263.2662"
+         y="496.10297">Delta, rev 5 to 6</tspan></text>
+    <rect
+       style="fill:#7c6eff;fill-opacity:1;stroke:#a7a7a7;stroke-width:1.57776296;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect3782"
+       width="93.49366"
+       height="29.922237"
+       x="255.03891"
+       y="513.90576" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="263.2662"
+       y="532.03387"
+       id="text3784"><tspan
+         sodipodi:role="line"
+         id="tspan3786"
+         x="263.2662"
+         y="532.03387">Delta, rev 6 to 7</tspan></text>
+    <rect
+       style="fill:#7c6eff;fill-opacity:1;stroke:#a7a7a7;stroke-width:1.57776296;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect3889"
+       width="93.49366"
+       height="29.922237"
+       x="255.03891"
+       y="332.32489" />
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman"
+       x="263.2662"
+       y="350.453"
+       id="text3891"><tspan
+         sodipodi:role="line"
+         id="tspan3893"
+         x="263.2662"
+         y="350.453">Delta, rev 2 to 3</tspan></text>
+  </g>
+</svg>

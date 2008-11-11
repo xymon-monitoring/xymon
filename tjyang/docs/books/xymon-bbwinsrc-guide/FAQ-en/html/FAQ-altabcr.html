@@ -1,0 +1,55 @@
+<head>
+<title>UK TeX FAQ -- question label altabcr</title>
+</head><body>
+<h3>Alignment tab changed to <code>\</code><code>cr</code></h3>
+<p>This is an error you may encounter in LaTeX when a tabular
+environment is being processed.  &ldquo;Alignment tabs&rdquo; are the
+<code>&amp;</code> signs that separate the columns of a tabular; so the error
+message
+<blockquote>
+
+<pre>
+! Extra alignment tab has been changed to \cr
+</pre>
+</blockquote><p>
+could arise from a simple typo, such as:
+<blockquote>
+<pre>
+\begin{tabular}{ll}
+  hello   & there & jim \\
+  goodbye & now
+\end{tabular}
+</pre>
+</blockquote><p>
+where the second <code>&</code> in the first line of the table is more than the
+two-column <code>ll</code> column specification can cope with &mdash; an extra
+&ldquo;<code>l</code>&rdquo; in that solves the problem.  (As a result of the error,
+&ldquo;<code>jim</code>&rdquo; will be moved to a row of his own.)
+<p>Rather more difficult to spot is the occurrence of the error when
+you&rsquo;re using alignment instructions in a &ldquo;<code>p</code>&rdquo; column:
+<blockquote>
+<pre>
+\usepackage{array}
+...
+\begin{tabular}{l&gt;{\raggedright}p{2in}}
+here & we are again \\
+happy & as can be
+\end{tabular}
+</pre>
+</blockquote><p>
+the problem here (as explained in 
+<a href="FAQ-tabcellalign.html">tabular cell alignment</a>) is that the
+<code>\</code><code>raggedright</code> command in the column specification has overwritten
+<code>tabular</code>&rsquo;s definition of <code>\\</code>, so that
+&ldquo;<code>happy</code>&rdquo; appears in a new line of the second column, and the
+following <code>&amp;</code> appears to LaTeX just like the second
+<code>&amp;</code> in the first example above.
+<p>Get rid of the error in the way described in 
+<a href="FAQ-tabcellalign.html">tabular cell alignment</a> &mdash; either use
+<code>\</code><code>tabularnewline</code> explicitly, or use the <code>\</code><code>RBS</code> trick described
+there.
+<dl>
+<dt><tt><i>array.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=altabcr">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=altabcr</a>
+</body>

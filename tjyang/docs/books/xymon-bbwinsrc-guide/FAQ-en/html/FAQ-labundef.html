@@ -1,0 +1,39 @@
+<head>
+<title>UK TeX FAQ -- question label labundef</title>
+</head><body>
+<h3>Finding if a label is undefined</h3>
+<p>People seem to want to know (at run time) if a label is undefined (I
+don&rsquo;t actually understand <em>why</em>, particularly: it&rsquo;s a transient
+state, and LaTeX deals with it quite well).
+<p>A resolved label is simply a command:
+<code>\</code><code>r@</code><code>&lt;<i>label-name</i>&gt;</code>; determining if the label is set is
+then simply a matter of detecting if the command exists.  The usual
+LaTeX internal way of doing this is to use the command
+<code>\</code><code>@ifundefined</code>:
+<blockquote>
+  <code>\</code><code>@ifundefined{</code><em></em>r@<em>label-name</em><code>}{</code><em>undef-cmds</em><code>}{</code><em>def-cmds</em><code>}</code>
+</blockquote><p>
+In which, &lt;<i>label-name</i>&gt; is exactly what you would use in
+a <code>\</code><code>label</code> command, and the remaining two arguments are command
+sequences to be used if the label is undefined
+(&lt;<i>undef-cmds</i>&gt;) or if it is defined
+(&lt;<i>def-cmds</i>&gt;).
+<p>Note that any command that incorporates <code>\</code><code>@ifundefined</code> is naturally
+fragile, so remember to create it with <code>\</code><code>DeclareRobustCommand</code> or to
+use it with <code>\</code><code>protect</code> in a moving argument.
+<p>If you&rsquo;re into this game, you may well not care about LaTeX&rsquo;s
+warning about undefined labels at the end of the document; however,
+if you are, include the command <code>\</code><code>G@refundefinedtrue</code> in
+&lt;<i><code>undef-cmds</i>&gt;</code>.
+<p>And of course, remember you&rsquo;re dealing in internal commands, and pay
+attention to the <a href="FAQ-atsigns.html">at-signs</a>.
+<p>All the above can be avoided by using the <i>labelcas</i> package:
+it provides commands that enable you to switch according to the state
+of a single label, or the states of a list of labels.  The package&rsquo;s
+definition is a bit complicated, but the package itself is pretty
+powerful.
+<dl>
+<dt><tt><i>labelcas.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/labelcas.zip">macros/latex/contrib/labelcas</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/labelcas.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/labelcas/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=labundef">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=labundef</a>
+</body>

@@ -1,0 +1,5 @@
+r{rev} | {author|user} | {date|isodate} ({date|rfc822date})
+
+{desc|strip|fill76}
+
+------------------------------------------------------------------------

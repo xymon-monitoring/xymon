@@ -1,0 +1,47 @@
+<head>
+<title>UK TeX FAQ -- question label vertposfp</title>
+</head><body>
+<h3>Vertical layout of float pages</h3>
+<p>By default, LaTeX vertically centres the floats on a float page;
+the present author is not alone in not liking this arrangement.
+Unfortunately, the control of the positioning is &ldquo;buried&rdquo; in
+LaTeX-internal commands, so some care is needed to change the
+layout.
+<p>Float pages use three LaTeX lengths (i.e., TeX skips) to define
+their layout:
+<dl>
+<dt><code>\</code><code>@fptop</code><dd> defines the distance from the
+  top of the page to the top of the first float,
+<dt><code>\</code><code>@fpsep</code><dd> defines the separation between
+  floats, and
+<dt><code>\</code><code>@fpbot</code><dd> defines the distance from the
+  bottom of the last float on the page to the bottom of the page.
+</dl>
+(In fact, the output routine places a skip of <code>\</code><code>@fpsep</code> above each float, so
+the <code>\</code><code>@fptop</code> skip is always followed by a correction for that.)
+<p><p>The LaTeX defaults are:<br>
+<code>\</code><code>@fptop</code> = <code>0pt + 1fil</code><br>
+<code>\</code><code>@fpsep</code> = <code>8pt + 2fil</code><br>
+<code>\</code><code>@fpbot</code> = <code>0pt + 1fil</code><br>
+so that the gaps expand to fill the space not occupied by floats, but
+if there is more than one float on the page, the gap between them will
+expand to twice the space at top and bottom.
+<p>Those who understand this stuff will be able to play elaborate games,
+but the commonest requirement, that the floats start at the top of the
+page, is a simple thing to do:
+<blockquote>
+<pre>
+\makeatletter
+\setlength{\@fptop}{0pt}
+\makeatother
+</pre>
+</blockquote><p>
+Surprisingly, you may find this setting leaves your floats too high on
+the page.  One can justify a value of <code>5pt</code> (in place of
+<code>0pt</code>) &mdash; it&rsquo;s roughly the difference between <code>\</code><code>topskip</code>
+and the height of normal (<code>10pt</code>) text.
+<p>Note that this is a &ldquo;global&rdquo; setting (best established in a class
+file, or at worst in the document preamble); making the change for a
+single float page is likely (at the least) to be rather tricky.
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=vertposfp">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=vertposfp</a>
+</body>

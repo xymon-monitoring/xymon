@@ -1,0 +1,85 @@
+<head>
+<title>UK TeX FAQ -- question label repfootnote</title>
+</head><body>
+<h3>Footnotes whose texts are identical</h3>
+<p>If the <em>same</em> footnote turns up at several places within a
+document, it&rsquo;s often inappropriate to repeat the footnote in its
+entirety over and over again.  We can avoid repetition by
+semi-automatic means, or by simply labelling footnotes that we know
+we&rsquo;re going to repeat and then referencing the result.  There is no
+completely automatic solution (that detects and suppresses repeats)
+available.
+<p>If you know you only have one footnote, which you want to repeat, the
+solution is simple: merely use the optional argument of
+<code>\</code><code>footnotemark</code> to signify the repeats:
+<blockquote>
+<pre>
+...\footnote{Repeating note}
+...
+...\footnotemark[1]
+</pre>
+</blockquote><p>
+... which is very easy, since we know there will only ever be a
+footnote number 1.  A similar technique can be used once the footnotes
+are stable, reusing the number that LaTeX has allocated.  This can
+be tiresome, though, as any change of typesetting could change the
+relationships of footnote and repeat: labelling is inevitably better.
+<p>Simple hand-labelling of footnotes is possible, using a counter dedicated
+to the job:
+<blockquote>
+<pre>
+\newcounter{fnnumber}
+...
+...\footnote{Text to repeat}%
+\setcounter{fnnumber}{\thefootnote}%
+...
+...\footnotemark[\thefnnumber]
+</pre>
+</blockquote><p>
+but this is somewhat tedious.  LaTeX&rsquo;s labelling mechanism can be
+summoned to our aid, but there are ugly error messages before the
+<code>\</code><code>ref</code> is resolved on a second run through LaTeX:
+<blockquote>
+<pre>
+...\footnote{Text to repeat\label{fn:repeat}}
+...
+...\footnotemark[\ref{fn:repeat}]
+</pre>
+</blockquote><p>
+Alternatively, one may use the <code>\</code><code>footref</code> command, which has the
+advantage of working even when the footnote mark isn&rsquo;t expressed as a
+number.  The command is defined in the <i>footmisc</i> package and
+in the <i>memoir</i> class (at least); <code>\</code><code>footref</code> reduces the above
+example to:
+<blockquote>
+<pre>
+...\footnote{Text to repeat\label{fn:repeat}}
+...
+...\footref{fn:repeat}
+</pre>
+</blockquote><p>
+This is the cleanest simple way of doing the job.  Note that the
+<code>\</code><code>label</code> command <em>must</em> be inside the argument of
+<code>\</code><code>footnote</code>.
+<p>The <i>fixfoot</i> package takes away some of the pain of the
+matter: you declare footnotes you&rsquo;re going to reuse, typically in the
+preamble of your document, using a <code>\</code><code>DeclareFixedFoot</code> command, and
+then use the command you&rsquo;ve &lsquo;declared&rsquo; in the body of the document:
+<blockquote>
+<pre>
+\DeclareFixedFootnote{\rep}{Text to repeat}
+...
+...\rep{}
+...\rep{}
+</pre>
+</blockquote><p>
+The package ensures that the repeated text appears at most once per
+page: it will usually take more than one run of LaTeX to get rid of
+the repeats.
+<dl>
+<dt><tt><i>fixfoot.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fixfoot.zip">macros/latex/contrib/fixfoot</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fixfoot.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/fixfoot/">browse</a>)
+<dt><tt><i>footmisc.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/footmisc.zip">macros/latex/contrib/footmisc</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/footmisc.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/footmisc/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=repfootnote">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=repfootnote</a>
+</body>

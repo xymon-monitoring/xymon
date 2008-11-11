@@ -1,0 +1,133 @@
+<head>
+<title>UK TeX FAQ -- question label overfull</title>
+</head><body>
+<h3>(La)TeX makes overfull lines</h3>
+<p>When TeX is building a paragraph, it can make several attempts to
+get the line-breaking right; on each attempt it runs the same
+algorithm, but gives it different parameters.  You can affect the way
+TeX&rsquo;s line breaking works by adjusting the parameters: this answer
+deals with the &ldquo;tolerance&rdquo; and stretchability parameters.  The other
+vital &lsquo;parameter&rsquo; is the set of hyphenations to be applied: see
+&ldquo;<a href="FAQ-nohyph.html">my words aren&rsquo;t being hyphenated</a>&rdquo;
+(and the questions it references) for advice.
+<p>If you&rsquo;re getting an undesired &ldquo;overfull box&rdquo;, what has happened is
+that TeX has given up: the parameters you gave it don&rsquo;t allow it to
+produce a result that <em>doesn&rsquo;t</em> overfill.  In this circumstance,
+Knuth decided the best thing to do was to produce a warning, and to
+allow the user to solve the problem.  (The alternative, silently to go
+beyond the envelope of &ldquo;good taste&rdquo; defined for this run of TeX,
+would be distasteful to any discerning typographer.)  The user can
+almost always address the problem by rewriting the text that&rsquo;s
+provoking the problem &mdash; but that&rsquo;s not always possible, and in some
+cases it&rsquo;s impossible to solve the problem without adjusting the
+parameters.  This answer discusses the approaches one might take to
+resolution of the problem, on the assumption that you&rsquo;ve got the
+hyphenation correct.
+<p>The simplest case is where a &lsquo;small&rsquo; word fails to break at the end of
+a line; pushing the entire word to a new line isn&rsquo;t going to make much
+difference, but it might make things just bad enough that TeX won&rsquo;t
+do it by default.  In such a case on can <em>try</em> the LaTeX
+<code>\</code><code>linebreak</code> command: it may solve the problem, and if it does, it
+will save an awful lot of fiddling.  Otherwise, one needs to adjust
+parameters: to do that we need to recap the details of TeX&rsquo;s line
+breaking mechanisms.
+<p>TeX&rsquo;s first attempt at breaking lines is performed without even
+trying hyphenation: TeX sets its &ldquo;tolerance&rdquo; of line breaking
+oddities to the internal value <code>\</code><code>pretolerance</code>, and sees what
+happens.  If it can&rsquo;t get an acceptable break, TeX adds the
+hyphenation points allowed by the current patterns, and tries again
+using the internal <code>\</code><code>tolerance</code> value.  If this pass also fails, and
+the internal <code>\</code><code>emergencystretch</code> value is positive, TeX will try
+a pass that allows <code>\</code><code>emergencystretch</code> worth of extra stretchability
+to the spaces in each line.
+<p>In principle, therefore, there are three parameters (other than
+hyphenation) that you can change: <code>\</code><code>pretolerance</code>, <code>\</code><code>tolerance</code>
+and <code>\</code><code>emergencystretch</code>.  Both the <code>tolerance</code> values are
+simple numbers, and should be set by TeX primitive count
+assignment &mdash; for example
+<blockquote>
+<pre>
+\pretolerance=150
+</pre>
+</blockquote><p>
+For both, an &ldquo;infinite&rdquo; tolerance is represented by the value
+<code>10</code><code>000</code>, but infinite tolerance is rarely
+appropriate, since it can lead to very bad line breaks indeed.
+<p><code>\</code><code>emergencystretch</code> is a TeX-internal &lsquo;dimen&rsquo; register, and can
+be set as normal for dimens in Plain TeX; in LaTeX, use
+<code>\</code><code>setlength</code> &mdash; for example:
+<blockquote>
+<pre>
+\setlength{\emergencystretch}{3em}
+</pre>
+</blockquote><p>
+<p>The choice of method has time implications &mdash; each of the
+passes takes time, so adding a pass (by changing
+<code>\</code><code>emergencystretch</code>) is less desirable than suppressing one (by
+changing <code>\</code><code>pretolerance</code>).  However, it&rsquo;s unusual nowadays to find a
+computer that&rsquo;s slow enough that the extra passes are really
+troublesome.
+<p>In practice, <code>\</code><code>pretolerance</code> is rarely used other than to manipulate
+the use of hyphenation; Plain TeX and LaTeX both set its value
+to <code>100</code>.  To suppress the first scan of paragraphs, set
+<code>\</code><code>pretolerance</code> to <code>-1</code>.
+<p><code>\</code><code>tolerance</code> is often a good method for adjusting spacing;
+Plain TeX and LaTeX both set its value to <code>200</code>.  LaTeX&rsquo;s
+<code>\</code><code>sloppy</code> command sets it to <code>9999</code>, as does the
+<code>sloppypar</code> environment.  This value is the largest
+available, this side of infinity, and can allow pretty poor-looking
+breaks (this author rarely uses <code>\</code><code>sloppy</code> &ldquo;bare&rdquo;, though he does
+occasionally use <code>sloppypar</code> &mdash; that way, the change of
+<code>\</code><code>tolerance</code> is confined to the environment).  More satisfactory is
+to make small changes to <code>\</code><code>tolerance</code>, incrementally, and then to look to
+see how the change affects the result; very small increases can often
+do what&rsquo;s necessary.  Remember that <code>\</code><code>tolerance</code> is a paragraph
+parameter, so you need to ensure it&rsquo;s actually applied &mdash; see
+&ldquo;<a href="FAQ-paraparam.html">ignoring paragraph parameters</a>&rdquo;.
+LaTeX users could use an environment like:
+<blockquote>
+<pre>
+\newenvironment{tolerant}[1]{%
+  \par\tolerance=#1\relax
+}{%
+  \par
+}
+</pre>
+</blockquote><p>
+enclosing entire paragraphs (or set of paragraphs) in it.
+<p>The value of <code>\</code><code>emergencystretch</code> is added to the assumed
+stretchability of each line of a paragraph, in a further run of the
+paragraph formatter in case that the paragraph can&rsquo;t be made to look
+right any other way.  (The extra scan happens if
+<code>\</code><code>emergencystretch&gt;0pt</code> &mdash; if it&rsquo;s zero or negative, no gain
+could be had from rerunning the paragraph setter.)  The example above
+set it to <code>3em</code>; the Computer Modern fonts ordinarily fit three
+space skips to the <code>em</code>, so the change would allow anything up
+to the equivalent of nine extra spaces in each line.  In a line with
+lots of spaces, this could be reasonable, but with (say) only three
+spaces on the line, each could stretch to four times its natural
+width.  It is therefore clear that <code>\</code><code>emergencystretch</code> needs to be
+treated with a degree of caution.
+<p>More subtle (but more tricky to manage) are the microtypographic
+extensions provided by PDFTeX.  Since PDFTeX is the default
+&lsquo;engine&rsquo; for LaTeX and ConTeXt work in all distributions,
+nowadays, the extensions are available to all.  There are two
+extensions, margin kerning and font expansion; margin kerning only
+affects the visual effect of the typeset page, and has little effect
+on the ability of the paragraph setter to &ldquo;get things right&rdquo;.
+Font expansion works like a subtler version of the trick that
+<code>\</code><code>emergencystretch</code> plays: PDFTeX &lsquo;knows&rsquo; that your current font
+may be stretched (or shrunk) to a certain extent, and will do that
+&ldquo;on the fly&rdquo; to optimise the setting of a paragraph.  This is a
+powerful tool in the armoury of the typesetter.
+<p>As mentioned above, the microtypographic extensions are tricky beasts
+to control; however, the <i>microtype</i> package relieves the user
+of the tedious work of specifying how to perform margin adjustments
+and how much to scale each font ... for the fonts the package
+knows about; it&rsquo;s a good tool, and users who can take on the
+specification of adjustments for yet more fonts are always welcome.
+<dl>
+<dt><tt><i>microtype.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/microtype.zip">macros/latex/contrib/microtype</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/microtype.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/microtype/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=overfull">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=overfull</a>
+</body>

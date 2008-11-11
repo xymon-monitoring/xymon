@@ -1,0 +1,386 @@
+<head>
+<title>UK TeX FAQ -- question label psfchoice</title>
+</head><body>
+<h3>Choice of scalable outline fonts</h3>
+<p>If you are interested in text alone, you can in principle use any of
+the huge numbers of text fonts in Adobe Type 1, TrueType or OpenType
+formats.  The constraint is, of course, that your previewer and
+printer driver should support such fonts (TeX itself <em>only</em>
+cares about metrics, not the actual character programs).
+<p>If you also need mathematics, then you are severely limited by the
+demands that TeX makes of maths fonts (for details, see the paper by B.K.P. 
+Horn in <i>TUGboat</i> 14(3)).
+For maths, then, there are relatively few choices (though the list is
+at last growing).  There are several font families available that are
+based on Knuth&rsquo;s original designs, and some that complement other
+commercial text font designs; one set (MicroPress&rsquo;s &lsquo;informal math&rsquo;)
+stands alone.  &ldquo;Free&rdquo; font families that will support TeX
+mathematics include:
+<dl>
+<dt>Computer Modern<dd>(75 fonts &mdash; optical scaling) Donald E. Knuth<br>
+  The CM fonts were originally designed in Metafont, but are also
+  now available in scalable outline form.  There are commercial as
+  well as public domain versions, and there are both Adobe Type 1 and
+  TrueType versions.  A set of outline versions of the fonts was
+  developed as a commercial venture by Y&amp;Y and Blue Sky Research;
+  they have since assigned the copyright to the AMS, and the
+  fonts are now freely available from CTAN.  Their quality is
+  such that they have become the <em>de facto</em> standard for Type 1
+  versions of the fonts.
+<dt>AMS fonts<dd>(52 fonts, optical scaling) The AMS<br>
+  This set of fonts offers adjuncts to the CM set, including
+  two sets of symbol fonts (<code>msam</code> and <code>msbm</code>) and Euler text fonts.
+  These are not a self-standing family, but merit discussion here (not
+  least because several other families mimic the symbol fonts).
+  Freely-available Type 1 versions of the fonts are available on
+  CTAN.  The <i>eulervm</i> package permits use
+  of the Euler maths alphabet in conjunction with text fonts that do
+  not provide maths alphabets of their own (for instance, Adobe
+  Palatino or Minion).
+<dt>mathpazo version 1.003<dd>(5 fonts) Diego Puga<br>
+  The Pazo Math fonts are a family of type 1 fonts suitable for
+  typesetting maths in combination with the Palatino family of text
+  fonts.  Four of the five fonts of the distribution are maths
+  alphabets, in upright and italic shapes, medium and bold weights;
+  the fifth font contains a small selection of &ldquo;blackboard bold&rdquo;
+  characters (chosen for their mathematical significance).  Support
+  under LaTeX2e is available in 
+  <a href="FAQ-usepsfont.html">PSNFSS</a>; the fonts are
+  licensed under the GPL, with legalese permitting the use of
+  the fonts in published documents.
+<dt>Fourier/Utopia<dd>(15 fonts) Michel Bovani<br>
+  <i>Fourier</i> is a family built on Adobe <i>Utopia</i>
+  (which has been released for usage free of charge by Adobe).  The
+  fonts provide the basic Computer Modern set of mathematical symbols,
+  and add many of the AMS mathematical symbols (though you are
+  expected to use some from the AMS fonts themselves).  There
+  are also several other mathematical and decorative symbols.  The
+  fonts come with a <i>fourier</i> package for use with LaTeX;
+  text support of OT1 encoding is not provided &mdash; you are
+  expected to use T1.
+<dt>MathDesign<dd>(3 entire families...so far) Paul Pichareau<br>
+  This (very new: first release was in April 2005) set so far offers
+  mathematics fonts to match Adobe Utopia, URW Garamond and Bitstream
+  Charter (all of which are separately available, on CTAN, in Type 1
+  format).  There has been a little comment on these fonts, but none
+  from actual users posted to the public forums.  Users, particularly
+  those who are willing to discuss their experiences, would obviously
+  be welcome.  Browse the CTAN directory and see which you
+  want: there is a wealth of documentation and examples.
+<dt>Belleek<dd>(3 fonts) Richard Kinch<br>
+  Belleek is the upshot of Kinch&rsquo;s thoughts on how Metafont might be used
+  in the future: they were published simultaneously as Metafont source,
+  as Type 1 fonts, and as TrueType fonts.  The fonts act as &ldquo;drop-in&rdquo;
+  replacements for the basic MathTime set (as an example of &ldquo;what might
+  be done&rdquo;).
+<p>  The paper outlining Kinch&rsquo;s thoughts, proceeding from considerations
+  of the &lsquo;intellectual&rsquo; superiority of Metafont to evaluations of why its
+  adoption is so limited and what might be done about the problem, is
+  to be found at <a href="http://truetex.com/belleek.pdf">http://truetex.com/belleek.pdf</a> (the paper is a
+  good read, but exhibits the problems discussed in 
+  &ldquo;<a href="FAQ-dvips-pdf.html">getting good PDF</a>&rdquo; &mdash;
+  don&rsquo;t try to read it on-screen in Acrobat reader).
+<dt>mathptmx<dd>Alan Jeffrey, Walter Schmidt and others.<br>
+  This set contains maths italic, symbol, extension, and roman virtual
+  fonts, built from Adobe Times, Symbol, Zapf Chancery, and the
+  Computer Modern fonts.  The resulting mixture is not  entirely
+  acceptable, but can pass in many circumstances.  The real advantage
+  is that the mathptm fonts are (effectively) free, and the resulting
+  PostScript files can be freely exchanged.  Support under LaTeX2e
+  is available in <a href="FAQ-usepsfont.html">PSNFSS</a>.
+<dt>Computer Modern Bright<dd>Free scalable outline versions of these
+  fonts do exist; they are covered below together with their
+  commercial parallels.
+</dl>
+Fonts capable of setting TeX mathematics, that are available
+commercially, include:
+<dl>
+<dt>BA Math<dd>(13 fonts) MicroPress Inc.<br>
+  BA Math is a family of serif fonts, inspired by the elegant
+  and graphically perfect font design of John Baskerville.  BA
+  Math comprises the fonts necessary for mathematical typesetting
+  (maths italic, math symbols and extensions) in normal and bold
+  weights.  The family also includes all OT1 and T1
+  encoded text fonts of various shapes, as well as fonts with most
+  useful glyphs of the TS1 encoding.  Macros for using the
+  fonts with Plain TeX, LaTeX 2.09 and current LaTeX are
+  provided.
+<p>  
+  For further details (including samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/bamath/bamain.htm">http://www.micropress-inc.com/fonts/bamath/bamain.htm</a>
+  
+<dt>CH Math<dd>(15 fonts) MicroPress Inc.<br>
+  CH Math is a family of slab serif fonts, designed as a maths
+  companion for Bitstream Charter.  (The distribution includes
+  four free Bitstream text fonts, in addition to the 15 hand-hinted
+  MicroPress fonts.)
+  
+  For further details (including samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/chmath/chmain.htm">http://www.micropress-inc.com/fonts/chmath/chmain.htm</a>
+  
+<dt>Computer Modern Bright<dd>(62 fonts &mdash; optical scaling) Walter
+  Schmidt<br>
+  CM Bright is a family of sans serif fonts, based on Knuth&rsquo;s
+  CM fonts.  It comprises the fonts necessary for mathematical
+  typesetting, including AMS symbols, as well as text and text
+  symbol fonts of various shapes.  The collection comes with its own
+  set of files for use with LaTeX.  The CM Bright fonts are
+  supplied in Type 1 format by MicroPress, Inc.   The
+  <i>hfbright</i> bundle offers free Type 1 fonts for text using
+  the OT1 encoding &mdash; the <i>cm-super</i> set for
+  use with T1 texts doesn&rsquo;t (yet) offer support for mathematics.
+<p>  
+  For further details of Micropress&rsquo; offering (including samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/brmath/brmain.htm">http://www.micropress-inc.com/fonts/brmath/brmain.htm</a>
+  
+<dt>Concrete Math<dd>(25 fonts &mdash; optical scaling) Ulrik Vieth<br>
+  The Concrete Math font set was derived from the Concrete Roman
+  typefaces designed by Knuth.  The set provides a collection of math
+  italics, math symbol, and math extension fonts, and fonts of
+  AMS symbols that fit with the Concrete set, so that Concrete
+  may be used as a complete replacement for Computer Modern.  Since
+  Concrete is considerably darker than CM, the family may
+  particularly attractive for use in low-resolution printing or in
+  applications such as posters or transparencies.  Concrete Math
+  fonts, as well as Concrete Roman fonts, are supplied in Type 1
+  format by MicroPress, Inc.
+<p>  
+  For further information (including samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/ccmath/ccmain.htm">http://www.micropress-inc.com/fonts/ccmath/ccmain.htm</a>
+  
+<dt>HV Math<dd>(14 fonts) MicroPress Inc.<br>
+  HV Math is a family of sans serif fonts, inspired by the
+  Helvetica (TM) typeface.  HV Math comprises the fonts
+  necessary for mathematical typesetting (maths italic, maths symbols
+  and extensions) in normal and bold weights.  The family also
+  includes all OT1 and T1 encoded text fonts of various
+  shapes, as well as fonts with most useful glyphs of the TS1
+  encoding.  Macros for using the fonts with Plain TeX, LaTeX 2.09
+  and current LaTeX are provided.  Bitmapped copies of the fonts
+  are available free, on CTAN.
+<p>  
+  For further details (and samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/hvmath/hvmain.htm">http://www.micropress-inc.com/fonts/hvmath/hvmain.htm</a>
+  
+<dt>Informal Math<dd>(7 outline fonts) MicroPress Inc.<br>
+  Informal Math is a family of fanciful fonts loosely based on the
+  Adobe&rsquo;s Tekton (TM) family, fonts which imitate handwritten
+  text.  Informal Math comprises the fonts necessary for
+  mathematical typesetting (maths italic, maths symbols and extensions)
+  in normal weight, as well as OT1 encoded text fonts in
+  upright and oblique shapes.  Macros for using the fonts with
+  Plain TeX, LaTeX 2.09 and current LaTeX are provided.
+<p>  
+  For further details (including samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/ifmath/ifmain.htm">http://www.micropress-inc.com/fonts/ifmath/ifmain.htm</a>
+  
+<dt>Lucida Bright <em>with</em> Lucida New Math<dd>(25 fonts) Chuck Bigelow and
+  Kris Holmes<br>
+  Lucida is a family of related fonts including seriffed, sans serif,
+  sans serif fixed width, calligraphic, blackletter, fax, Kris Holmes&rsquo;
+  connected handwriting font, <em>etc</em>; they&rsquo;re not as &lsquo;spindly&rsquo; as
+  Computer Modern, with a large x-height, and include a larger set of
+  maths symbols, operators, relations and delimiters than CM
+  (over 800 instead of 384: among others, it also includes the
+  AMS <code>msam</code> and <code>msbm</code> symbol sets).  &lsquo;Lucida
+  Bright Expert&rsquo; 
+  (14 fonts) adds seriffed fixed width, another handwriting font,
+  smallcaps, bold maths, upright &lsquo;maths italic&rsquo;, <em>etc</em>., to the
+  set.  Support under LaTeX is available under the auspices of the
+  PSNFSS, and pre-built metrics are also provided.
+<p>  
+  TUG has recently (November 2005) acquired the right to distribute
+  these fonts; the web site
+
+    &ldquo;<a href="http://tug.org/lucida/">Lucida and TUG</a>&rdquo;
+  has details.
+  
+<dt>Adobe Lucida, LucidaSans <em>and</em> LucidaMath<dd>(12 fonts)<br>
+  Lucida and LucidaMath are generally considered to be a bit heavy.
+  The three maths fonts contain only the glyphs in the CM maths
+  italic, symbol, and extension fonts.  Support for using LucidaMath
+  with TeX is not very good; you will need to do some work
+  reencoding fonts <em>etc</em>.  (In some sense this set is the
+  ancestor of the LucidaBright plus LucidaNewMath font set, which are
+  not currently available.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dt>MathTime Pro<dd>Publish or Perish (Michael Spivak)<br>
+  This latest instance of the MathTime family covers all the weights
+  (medium, bold and heavy) and symbols of previous versions of
+  MathTime.  In addition it has a much extended range of symbols, and
+  many typographic improvements that make for high-quality documents.
+  The fonts are supported under both Plain TeX and LaTeX2e, and
+  are exclusively available for purchase from
+  <a href="FAQ-commercial.html">Personal TeX Inc</a>.
+  \par
+  
+  For a sample, see <a href="http://www.pctex.com/mtpdemo.pdf">http://www.pctex.com/mtpdemo.pdf</a>
+  
+<dt>PA Math<dd> PA Math is a family of serif fonts
+  loosely based on the Palatino (TM) typeface.  PA Math
+  comprises the fonts necessary for mathematical typesetting (maths
+  italics, maths, calligraphic and oldstyle symbols, and extensions)
+  in normal and bold weights. The family also includes all OT1,
+  T1 encoded text fonts of various shapes, as well as fonts
+  with the most useful glyphs of the TS1 encoding.  Macros for
+  using the fonts with Plain TeX, LaTeX 2.09 and current LaTeX
+  are provided.
+<p>  
+  For further details (and samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/pamath/pamain.htm">http://www.micropress-inc.com/fonts/pamath/pamain.htm</a> 
+  
+<dt>TM Math<dd>(14 fonts) MicroPress Inc.<br>
+  TM Math is a family of serif fonts, inspired by the Times
+  (TM) typeface.  TM Math comprises the fonts necessary for
+  mathematical typesetting (maths italic, maths symbols and extensions)
+  in normal and bold weights. The family also includes all OT1
+  and T1 encoded text fonts of various shapes, as well as fonts
+  with most useful glyphs of the TS1 encoding.  Macros for
+  using the fonts with Plain TeX, LaTeX 2.09 and current LaTeX
+  are provided.  Bitmapped copies of the fonts are available free, on
+  CTAN.
+<p>  
+  For further details (and samples) see<br>
+  <a href="http://www.micropress-inc.com/fonts/tmmath/tmmain.htm">http://www.micropress-inc.com/fonts/tmmath/tmmain.htm</a> 
+  
+</dl>
+Two other font sets should be mentioned, even though they don&rsquo;t
+currently produce satisfactory output &mdash; their author is no longer
+working on them, and several problems have been identified:
+<dl>
+<dt>pxfonts set version 1.0<dd>(26 fonts) by Young Ryu<br>
+  The <i>pxfonts</i> set consists of
+  <ul>
+  <li> virtual text fonts using <i>Adobe</i> <i>Palatino</i> (or the URW
+    replacement used by <i>ghostscript</i>) with modified plus,
+    equal and slash symbols;
+  <li> maths alphabets using <i>Palatino</i>;
+  <li> maths fonts of all symbols in the computer modern maths fonts
+    (<i>cmsy</i>, <i>cmmi</i>, <i>cmex</i> and the Greek
+    letters of <i>cmr</i>) 
+  <li> maths fonts of all symbols corresponding to the AMS
+    fonts (<i>msam</i> and <i>msbm</i>);
+  <li> additional maths fonts of various symbols.
+  </ul>
+  The text fonts are available in OT1, T1 and LY1
+  encodings, and TS encoded symbols are also available.  The
+  sans serif and monospaced fonts supplied with the <i>txfonts</i>
+  set (see below) may be used with <i>pxfonts</i>; the
+  <i>txfonts</i> set should be installed whenever <i>pxfonts</i>
+  are.  LaTeX, <i>dvips</i> and PDFTeX support files are
+  included.
+
+  <a href="http://www.tex.ac.uk/tex-archive/fonts/pxfonts/doc/pxfontsdocA4.pdf">Documentation</a>
+  is readily available.
+<p>  The fonts are licensed under the GPL; use in published
+  documents is permitted.
+<dt>txfonts set version 3.1<dd>(42 fonts) by Young Ryu<br>
+  The <i>txfonts</i> set consists of
+  <ul>
+  <li> virtual text fonts using <i>Adobe</i> <i>Times</i> (or the URW
+    replacement used by <i>ghostscript</i>) with modified plus,
+    equal and slash symbols;
+  <li> matching sets of sans serif and monospace (&lsquo;typewriter&rsquo;)
+    fonts (the sans serif set is based on <i>Adobe</i> <i>Helvetica</i>);
+  <li> maths alphabets using <i>Times</i>;
+  <li> maths fonts of all symbols in the computer modern maths fonts
+    (<i>cmsy</i>, <i>cmmi</i>, <i>cmex</i> and the Greek letters of <i>cmr</i>)
+  <li> maths fonts of all symbols corresponding to the AMS
+    fonts (<i>msam</i> and <i>msbm</i>);
+  <li> additional maths fonts of various symbols.
+  </ul>
+  The text fonts are available in OT1, T1 and LY1
+  encodings, and TS encoded symbols are also available.
+
+  <a href="http://www.tex.ac.uk/tex-archive/fonts/txfonts/doc/txfontsdocA4.pdf">Documentation</a>
+  is readily available.
+<p>  The fonts are licensed under the GPL; use in published
+  documents is permitted.
+</dl>
+Finally, one must not forget:
+<dl>
+<dt>Proprietary fonts<dd>Various sources.<br>
+  Since having a high quality font set in scalable outline form that
+  works with TeX can give a publisher a real competitive advantage,
+  there are some publishers that have paid (a lot) to have such font
+  sets made for them.  Unfortunately, these sets are not available on
+  the open market, despite the likelihood that they&rsquo;re more complete
+  than those that are.
+</dl>
+We observe a very limited selection of commercial maths font sets; a
+maths font has to be explicitly designed for use with TeX, which is
+an expensive business, and is of little appeal in other markets.
+Furthermore, the TeX market for commercial fonts is minute by
+comparison with the huge sales of other font sets.
+<p>Text fonts in Type 1 format are available from many vendors including
+Adobe, Monotype and Bitstream.  However, be careful with cheap font
+&ldquo;collections&rdquo;; many of them dodge copyright restrictions by removing
+(or crippling) parts of the font programs such as hinting.  Such
+behaviour is both unethical and bad for the consumer.
+The fonts may not render well (or at all, under ATM), may not have the
+&lsquo;standard&rsquo; complement of 228 glyphs, or may not include metric files
+(which you need to make TFM files).
+<p>TrueType remains the &ldquo;native&rdquo; format for Windows.  Some TeX
+implementations such as <a href="FAQ-commercial.html">TrueTeX</a> use TrueType
+versions of Computer Modern and Times Maths fonts to render TeX
+documents in Windows without the need for additional system software like
+ATM.  (When used on a system running Windows XP, TrueTeX can
+also use Type 1 fonts.)
+<p>When choosing fonts, your own system environment may not be the only one of
+interest.  If you will be sending your finished documents to others for
+further use, you should consider whether a given font format will introduce
+compatibility problems.  Publishers may require TrueType exclusively because
+their systems are Windows-based, or Type 1 exclusively, because their systems
+are based on the early popularity of that format in the publishing industry.
+Many service bureaus don&rsquo;t care as long as you present them with a finished
+print file (PostScript or PDF) for their output device.
+<dl>
+<dt><tt><i>CM family collection</i></tt><dd>
+  Browse <a href="http://www.tex.ac.uk/tex-archive/fonts/cm/ps-type1/bluesky/">fonts/cm/ps-type1/bluesky/</a>
+<dt><tt><i>AMS font collection</i></tt><dd>
+  Browse <a href="http://www.tex.ac.uk/tex-archive/fonts/amsfonts/ps-type1/">fonts/amsfonts/ps-type1/</a>
+<dt><tt><i>Belleek fonts</i></tt><dd>
+  <a href="ftp://cam.ctan.org/tex-archive/fonts/belleek/belleek.zip">fonts/belleek/belleek.zip</a>
+<dt><tt><i>CM-super collection</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-super.zip">fonts/ps-type1/cm-super</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-super.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ps-type1/cm-super/">browse</a>)
+<dt><tt><i>eulervm.sty and supporting metrics</i></tt><dd>
+  <a href="ftp://cam.ctan.org/tex-archive/fonts/eulervm.zip">fonts/eulervm</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/eulervm.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/eulervm/">browse</a>)
+<dt><tt><i>fourier (including metrics and other support for utopia</i></tt><dd>
+  <a href="ftp://cam.ctan.org/tex-archive/fonts/fourier-GUT.zip">fonts/fourier-GUT</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/fourier-GUT.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/fourier-GUT/">browse</a>)
+<dt><tt><i>hfbright collection</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/hfbright.zip">fonts/ps-type1/hfbright</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/hfbright.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ps-type1/hfbright/">browse</a>)
+<dt><tt><i>hvmath (free bitmapped version)</i></tt><dd>
+  <a href="ftp://cam.ctan.org/tex-archive/fonts/micropress/hvmath.zip">fonts/micropress/hvmath</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/micropress/hvmath.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/micropress/hvmath/">browse</a>)
+<dt><tt><i>Lucida Bright/Math metrics</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/psfonts/bh/lucida.zip">fonts/psfonts/bh/lucida</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/psfonts/bh/lucida.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/psfonts/bh/lucida/">browse</a>)
+<dt><tt><i>Lucida PSNFSS support</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/psnfssx/lucidabr.zip">macros/latex/contrib/psnfssx/lucidabr</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/psnfssx/lucidabr.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/psnfssx/lucidabr/">browse</a>)
+<dt><tt><i>MathDesign collection</i></tt><dd><a href="http://www.tex.ac.uk/tex-archive/fonts/mathdesign/">fonts/mathdesign/</a>
+<dt><tt><i>pxfonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/pxfonts.zip">fonts/pxfonts</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/pxfonts.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/pxfonts/">browse</a>)
+<dt><tt><i>tmmath (free bitmapped version)</i></tt><dd>
+  <a href="ftp://cam.ctan.org/tex-archive/fonts/micropress/tmmath.zip">fonts/micropress/tmmath</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/micropress/tmmath.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/micropress/tmmath/">browse</a>)
+<dt><tt><i>txfonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/txfonts.zip">fonts/txfonts</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/txfonts.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/txfonts/">browse</a>)
+<dt><tt><i>utopia fonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/utopia.zip">fonts/utopia</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/utopia.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/utopia/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=psfchoice">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=psfchoice</a>
+</body>

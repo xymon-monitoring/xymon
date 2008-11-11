@@ -1,0 +1,59 @@
+<head>
+<title>UK TeX FAQ -- question label ltxabbrv</title>
+</head><body>
+<h3>LaTeX internal &ldquo;abbreviations&rdquo;, etc.</h3>
+<p>In the deeps of time, when TeX first happened, computers had
+extremely limited memory, and were (by today&rsquo;s standards) painfully
+slow.  When LaTeX came along, things weren&rsquo;t much better, and even
+when LaTeX2e appeared, there was a strong imperative to save memory
+space (and to a lesser extent) CPU time.
+<p>From the very earliest days, Knuth used shortcut macros to speed
+things up.  LaTeX, over the years, has extended Knuth&rsquo;s list by a
+substantial amount.  An interesting feature  of the &ldquo;abbreviations&rdquo; is
+that on paper, they may look longer than the thing they stand for;
+however, to (La)TeX they <em>feel</em> smaller\dots
+<p>The table at the end of this answer lists the commonest of these
+&ldquo;abbreviations&rdquo;.  It is not complete; as always, if the table
+doesn&rsquo;t help, try the LaTeX source.  The table lists each
+abbreviation&rsquo;s <em>name</em> and its <em>value</em>, which provide most of
+what a user needs to know.  The table also lists the abbreviation&rsquo;s
+<em>type</em>, which is a trickier concept: if you need to know, the
+only real confusion is that the abbreviations labelled &lsquo;defn&rsquo; are
+defined using an <code>\</code><code><em>xxx</code>def</em> command.
+<p><table rules="groups" border="0" cellpadding="3"><tbody><tr><td>
+Name <td> Type <td> Value <tr><td>
+</tbody><tbody><tr><td>
+<code>\</code><code>m@ne</code> <td> count <td> -1 <tr><td>
+<code>\</code><code>p@</code>  <td> dimen <td> 1pt <tr><td>
+<code>\</code><code>z@</code>  <td> dimen <td> 0pt <tr><td>
+<code>\</code><code>z@skip</code> <td> skip <td> 0pt plus 0pt minus 0pt <tr><td>
+</tbody><tbody><tr><td>
+<code>\</code><code>@ne</code> <td> defn <td> 1 <tr><td>
+<code>\</code><code>tw@</code> <td> defn <td> 2<tr><td>
+<code>\</code><code>thr@@</code> <td> defn <td> 3 <tr><td>
+<code>\</code><code>sixt@@n</code> <td> defn <td> 16 <tr><td>
+<code>\</code><code>@cclv</code> <td> defn <td> 255 <tr><td>
+<code>\</code><code>@cclvi</code> <td> defn <td> 256 <tr><td>
+<code>\</code><code>@m</code> <td> defn <td> 1000 <tr><td>
+<code>\</code><code>@M</code> <td> defn <td> 10000 <tr><td>
+<code>\</code><code>@MM</code> <td> defn <td> 20000 <tr><td>
+</tbody><tbody><tr><td>
+<code>\</code><code>@vpt</code> <td> macro <td> 5 <tr><td>
+<code>\</code><code>@vipt</code> <td> macro <td> 6 <tr><td>
+<code>\</code><code>@viipt</code> <td> macro <td> 7 <tr><td>
+<code>\</code><code>@viiipt</code> <td> macro <td> 8 <tr><td>
+<code>\</code><code>@ixpt</code> <td> macro <td> 9 <tr><td>
+<code>\</code><code>@xpt</code> <td> macro <td> 10 <tr><td>
+<code>\</code><code>@xipt</code> <td> macro <td> 10.95 <tr><td>
+<code>\</code><code>@xiipt</code> <td> macro <td> 12 <tr><td>
+<code>\</code><code>@xivpt</code> <td> macro <td> 14.4 <tr><td>
+<code>\</code><code>@xviipt</code> <td> macro <td> 17.28 <tr><td>
+<code>\</code><code>@xxpt</code> <td> macro <td> 20.74 <tr><td>
+<code>\</code><code>@xxvpt</code> <td> macro <td> 24.88 <tr><td>
+</tbody><tbody><tr><td>
+<code>\</code><code>@plus</code> <td> macro <td> &ldquo;<code>plus</code>&rdquo; <tr><td>
+<code>\</code><code>@minus</code> <td> macro <td> &ldquo;<code>minus</code>&rdquo; <tr><td>
+
+</tbody></table>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ltxabbrv">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ltxabbrv</a>
+</body>

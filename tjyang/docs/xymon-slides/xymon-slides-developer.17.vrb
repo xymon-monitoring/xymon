@@ -1,0 +1,27 @@
+\frametitle {Standard File System Hierarchy}
+
+\begin{center}
+\begin{tabular}{ll}
+Directory variable & Default value \\
+\variable{prefix}                   & \filename{/usr/local} \\
+\hspace{1cm}\variable{exec-prefix} & \variable{prefix} \\
+\hspace{2cm}\variable{bindir}       & \variable{exec-prefix}\filename{/bin} \\
+\hspace{2cm}\variable{libdir}       & \variable{exec-prefix}\filename{/lib} \\
+\hspace{2cm}... & \\
+\hspace{1cm}\variable{includedir}   & \variable{prefix}\filename{/include} \\
+\hspace{1cm}\variable{datarootdir}  & \variable{prefix}\filename{/share} \\
+\hspace{2cm}\variable{datadir}      & \variable{datarootdir} \\
+\hspace{2cm}\variable{mandir}       & \variable{datarootdir}\filename{/man} \\
+\hspace{2cm}\variable{infodir}      & \variable{datarootdir}\filename{/info} \\
+\hspace{1cm}... & \\
+\end{tabular}
+\end{center}
+
+\begin{block}<-4>{}
+\begin{semiverbatim}
+~/amhello-1.0 % \uncover<2->{\alert<2>{\textit{./configure --prefix ~/usr}}}
+\uncover<3->{~/amhello-1.0 % \alert<3>{\textit{make}}}
+\uncover<4->{~/amhello-1.0 % \alert<4>{\textit{make install}}}
+\end{semiverbatim}
+\end{block}
+\only<5>{}% So I can replay this frame later without the above block.

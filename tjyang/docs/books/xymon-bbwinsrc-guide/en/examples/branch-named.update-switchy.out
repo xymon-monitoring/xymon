@@ -1,0 +1,19 @@
+$ \textbf{hg update foo}
+0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+$ \textbf{hg parents}
+changeset:   
+branch:      foo
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+summary:     Second commit
+
+$ \textbf{hg update bar}
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+$ \textbf{hg parents}
+changeset:   
+branch:      bar
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+summary:     Third commit
+

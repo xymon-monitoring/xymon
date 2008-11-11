@@ -1,0 +1,3 @@
+$ \textbf{cd ../bob}
+$ \textbf{hg mv foo quux}
+$ \textbf{hg ci -m 'Rename foo to quux'}

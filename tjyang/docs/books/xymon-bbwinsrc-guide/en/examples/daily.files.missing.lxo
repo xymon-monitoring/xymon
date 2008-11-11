@@ -1,0 +1,8 @@
+$ \textbf{hg init missing-example}
+$ \textbf{cd missing-example}
+$ \textbf{echo a > a}
+$ \textbf{hg add a}
+$ \textbf{hg commit -m 'File about to be missing'}
+$ \textbf{rm a}
+$ \textbf{hg status}
+! a

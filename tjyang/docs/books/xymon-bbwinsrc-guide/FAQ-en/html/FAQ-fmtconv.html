@@ -1,0 +1,95 @@
+<head>
+<title>UK TeX FAQ -- question label fmtconv</title>
+</head><body>
+<h3>Other conversions to and from (La)TeX</h3>
+<p><dl>
+<dt>troff<dd><i>Tr2latex</i>, assists in the translation of a
+  <i>troff</i> document into LaTeX 2.09 format.  It recognises most
+  <code>-ms</code> and <code>-man</code> macros, plus most <i>eqn</i> and some
+  <i>tbl</i> preprocessor commands.  Anything fancier needs to be
+  done by hand. Two style files are provided. There is also a man page
+  (which converts very well to LaTeX...).
+  <i>Tr2latex</i> is an enhanced version of the earlier
+  <i>troff-to-latex</i> (which is no longer available).
+<p>
+
+
+<p>
+
+
+
+
+<p><dt>WordPerfect<dd> <i>wp2latex</i>
+  has recently been much improved, and is now
+  available either for MSDOS or for Unix systems, thanks to its
+  current maintainer Jaroslav Fojtik.
+<dt>PC-Write<dd><i>pcwritex.arc</i> is a
+  print driver for PC-Write that &ldquo;prints&rdquo; a PC-Write
+  V2.71 document to a TeX-compatible disk file.  It was written by Peter
+  Flynn at University College, Cork, Republic of Ireland.
+<dt>runoff<dd> Peter Vanroose&rsquo;s <i>rnototex</i>
+  conversion program is written in VMS Pascal.
+  The sources are distributed with a VAX executable.
+<dt>refer/tib<dd> There are a few programs for converting bibliographic
+  data between BibTeX and <i>refer</i>/<i>tib</i> formats.
+  The collection includes a shell script converter from BibTeX to
+  <i>refer</i> format as well. The collection
+  is not maintained.
+<dt>RTF<dd> <i>Rtf2tex</i>, by Robert Lupton, is for
+  converting Microsoft&rsquo;s Rich Text Format to TeX.  There is also a
+  convertor to LaTeX by Erwin Wechtl, called <i>rtf2latex</i>.
+  The latest converter, by Ujwal Sathyam and Scott Prahl, is
+  <i>rtf2latex2e</i>; this system seems rather good already, and
+  is still being improved.
+<p>  Translation <em>to</em> RTF may be done (for a somewhat
+  constrained set of LaTeX documents) by TeX2RTF, which
+  can produce ordinary RTF, Windows Help RTF (as well as
+  HTML, <a href="FAQ-LaTeX2HTML.html">conversion to HTML</a>).
+  TeX2RTF is supported on various Unix platforms and under
+  Windows 3.1
+<dt>Microsoft Word<dd> A rudimentary (free) program for converting
+  MS-Word to LaTeX is <i>wd2latex</i>, which runs on MSDOS.
+  <i>Word2</i><em>TeX</em> and <em>TeX</em><i>2Word</i> are 
+  shareware translators from 
+  <a href="http://www.chikrii.com/">Chikrii Softlab</a>; users&rsquo; reports are
+  very positive.
+<p>  If cost is a constraint, the best bet is probably to use an
+  intermediate format such as RTF or HTML.
+  <i>Word</i> outputs and reads both, so in principle this route
+  may be useful.
+<p>  Another, unlikely, intermediate form is PDF: Acrobat Reader
+  for Windows (version 5.0 and later) will output rather feeble
+  RTF that <i>Word</i> can read.
+<dt>Excel<dd> <i>Excel2Latex</i> converts an <i>Excel</i> file
+  into a LaTeX <code>tabular</code> environment; it comes as a
+  <code>.xls</code> file which defines some <i>Excel</i> macros to produce
+  output in a new format.
+</dl>
+<p>
+<a href="http://www.tug.org/utilities/texconv/index.html">Wilfried Hennings&rsquo; FAQ</a>,
+which deals specifically with conversions between TeX-based formats
+and word processor formats, offers much detail as well as tables that
+allow quick comparison of features.
+<p>A group at Ohio State University (USA) is working on
+a common document format based on SGML, with the ambition that any
+format could be
+translated to or from this one.  <i>FrameMaker</i> provides
+&ldquo;import filters&rdquo; to aid translation from alien formats
+(presumably including TeX) to <i>FrameMaker</i>&rsquo;s own.
+<dl>
+<dt><tt><i>excel2latex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/excel2latex/xl2latex.zip">support/excel2latex/xl2latex.zip</a>
+<dt><tt><i>pcwritex.arc</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/pcwritex.zip">support/pcwritex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/pcwritex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/pcwritex/">browse</a>)
+<dt><tt><i>refer and tib tools</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/biblio/bibtex/utils/refer-tools.zip">biblio/bibtex/utils/refer-tools</a> (<a href="ftp://cam.ctan.org/tex-archive/biblio/bibtex/utils/refer-tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/biblio/bibtex/utils/refer-tools/">browse</a>)
+<dt><tt><i>rnototex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/rnototex.zip">support/rnototex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/rnototex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/rnototex/">browse</a>)
+<dt><tt><i>rtf2latex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/rtf2latex.zip">support/rtf2latex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/rtf2latex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/rtf2latex/">browse</a>)
+<dt><tt><i>rtf2latex2e</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/rtf2latex2e.zip">support/rtf2latex2e</a> (<a href="ftp://cam.ctan.org/tex-archive/support/rtf2latex2e.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/rtf2latex2e/">browse</a>)
+<dt><tt><i>rtf2tex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/rtf2tex.zip">support/rtf2tex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/rtf2tex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/rtf2tex/">browse</a>)
+<dt><tt><i>tex2rtf</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/tex2rtf.zip">support/tex2rtf</a> (<a href="ftp://cam.ctan.org/tex-archive/support/tex2rtf.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/tex2rtf/">browse</a>)
+<dt><tt><i>tr2latex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/tr2latex.zip">support/tr2latex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/tr2latex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/tr2latex/">browse</a>)
+<dt><tt><i>wd2latex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/wd2latex.zip">support/wd2latex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/wd2latex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/wd2latex/">browse</a>)
+<dt><tt><i>wp2latex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/wp2latex.zip">support/wp2latex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/wp2latex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/wp2latex/">browse</a>)
+<dt><tt><i>Word processor FAQ (source)</i></tt><dd>
+  <a href="ftp://cam.ctan.org/tex-archive/help/wp-conv.zip">help/wp-conv</a> (<a href="ftp://cam.ctan.org/tex-archive/help/wp-conv.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/help/wp-conv/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=fmtconv">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=fmtconv</a>
+</body>

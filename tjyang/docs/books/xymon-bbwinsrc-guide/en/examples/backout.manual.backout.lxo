@@ -1,0 +1,7 @@
+$ \textbf{echo third change >> myfile}
+$ \textbf{hg commit -m 'third change'}
+$ \textbf{hg backout -m 'back out second change' 1}
+reverting myfile
+changeset 3:30cd4bc76a4a backs out changeset 1:668580b3a0ad
+the backout changeset is a new head - do not forget to merge
+(use "backout --merge" if you want to auto-merge)

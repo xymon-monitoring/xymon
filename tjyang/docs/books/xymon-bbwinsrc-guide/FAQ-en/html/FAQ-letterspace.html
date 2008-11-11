@@ -1,0 +1,36 @@
+<head>
+<title>UK TeX FAQ -- question label letterspace</title>
+</head><body>
+<h3>Changing the space between letters</h3>
+<p>A common technique in advertising copy (and other text whose actual
+content need not actually be <em>read</em>) is to alter the space
+between the letters (otherwise known as the tracking).  As a general
+rule, this is a very bad idea: it detracts from legibility, which is
+contrary to the principles of typesetting (any respectable font you
+might be using should already have optimum tracking built into it).
+<p>The great type designer, Eric Gill, is credited with saying &ldquo;he who
+would letterspace lower-case text, would steal sheep&rdquo;.  (The
+attribution is probably apocryphal: others are also credited with the
+remark.  Stealing sheep was, in the 19th century, a capital offence in
+Britain.)  As the remark suggests, though, letterspacing of upper-case
+text is less awful a crime; the technique used also to be used for
+emphasis of text set in Fraktur (or similar) fonts.
+<p>Straightforward macros (usable, in principle, with any TeX macro
+package) may be found in <i>letterspacing</i> (which is the name of
+the <code>.tex</code> file; it also appears as the <i>letterspace</i> package
+in some distributions).
+<p>
+
+<p>A more comprehensive solution is to be found in the <i>soul</i>
+package (which is optimised for use with LaTeX, but also works with
+Plain TeX).  Soul also permits hyphenation of letterspaced text;
+Gill&rsquo;s view of such an activity is not (even apocryphally) recorded.
+(Spacing-out forms part of the name of <i>soul</i>; the other half
+is described in <a href="FAQ-underline.html">another question</a>.)
+<dl>
+<dt><tt><i>letterspacing.tex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/generic/misc/letterspacing.tex">macros/generic/misc/letterspacing.tex</a>
+<dt><tt><i>soul.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/soul.zip">macros/latex/contrib/soul</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/soul.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/soul/">browse</a>)
+
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=letterspace">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=letterspace</a>
+</body>

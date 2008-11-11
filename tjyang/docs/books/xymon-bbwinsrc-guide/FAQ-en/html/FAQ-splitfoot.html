@@ -1,0 +1,44 @@
+<head>
+<title>UK TeX FAQ -- question label splitfoot</title>
+</head><body>
+<h3>Why does LaTeX split footnotes across pages?</h3>
+<p>LaTeX splits footnotes when it can think of nothing better to do.
+Typically, when this happens, the footnote mark is at the bottom of
+the page, and the complete footnote would overfill the page.  LaTeX
+could try to salvage this problem by making the page short of both the
+footnote and the line with the footnote mark, but its priorities told
+it that splitting the footnote would be preferable.
+<p>As always, the best solution is to change your text so that the
+problem doesn&rsquo;t occur in the first place.  Consider whether the text
+that bears the footnote could move earlier in the current page, or on
+to the next page.
+<p>If this isn&rsquo;t possible, you might want to change LaTeX&rsquo;s perception
+of its priorities: they&rsquo;re controlled by
+<code>\</code><code>interfootnotelinepenalty</code> &mdash; the larger it is, the less willing
+LaTeX is to split footnotes.
+<p>Setting
+<blockquote>
+<pre>
+\interfootnotelinepenalty=10000
+</pre>
+</blockquote><p>
+inhibits split footnotes altogether, which will cause &lsquo;<code>Underfull</code>
+<code>\</code><code>vbox</code>&rsquo; messages unless you also specify <code>\</code><code>raggedbottom</code>.  The
+default value of the penalty is <code>100</code>, which is rather mild.
+<p>An alternative technique is to juggle with the actual size of the
+pages.  <code>\</code><code>enlargethispage</code> changes the size of the current page by
+its argument (for example, you might say
+<code>\</code><code>enlargethispage{<code>\</code><code>baselineskip</code>}</code> to add a single line
+to the page, but you can use any ordinary TeX length such as
+<code>15mm</code> or <code>-20pt</code> as argument).  Reducing the size of
+the current page could force the offending text to the next page;
+increasing the size of the page may allow the footnote to be included
+in its entirety.  It may be necessary to change the size of more than
+one page.
+<p>The <i>fnbreak</i> package detects (and generates warnings about)
+split footnotes.
+<dl>
+<dt><tt><i>fnbreak.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fnbreak.zip">macros/latex/contrib/fnbreak</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fnbreak.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/fnbreak/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=splitfoot">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=splitfoot</a>
+</body>

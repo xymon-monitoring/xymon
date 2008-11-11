@@ -1,0 +1,48 @@
+<head>
+<title>UK TeX FAQ -- question label getbitmap</title>
+</head><body>
+<h3>Acquiring bitmap fonts</h3>
+<p>When CTAN was young, most people would start using TeX
+with a 300 dots-per-inch (dpi) laser printer, and sets of Computer
+Modern bitmap fonts for this resolution are available on CTAN.
+(There are separate sets for write-black and write-white printers, as
+well as sets at 120 dpi and 240 dpi.)
+<p>Over the years, there have been regular requests that CTAN should hold
+a wider range of resolutions, but they were resisted for two reasons:
+<ul>
+<li> The need to decide which printers to generate fonts for.  The
+  broad-brush approach taken for 300 dpi printers was (more or less)
+  justified back then, given the dominance of certain printer
+  &lsquo;engines&rsquo;, but nowadays one could not make any such assumption.
+<li> Given the above, justifying the space taken up by a huge array
+  of bitmap fonts.
+</ul>
+Fortunately, (La)TeX distribution technology has put a stop to these
+arguments: most (if not all) current distributions generate bitmap
+fonts as needed, and cache them for later re-use.  The impatient
+user, who is determined that all bitmap fonts should be created once
+and for all, may be supported by scripts such as <i>allcm</i>
+(distributed with teTeX, at least; otherwise such a person should
+consult <a href="FAQ-useMF.html">"the use of Metafont"</a>).
+<p>If your output is to a PostScript-capable device, you advised to switch to
+using Type 1 versions of the CM fonts.  Two free
+sets are currently available; the older (<i>bakoma</i>) is
+somewhat less well produced than the <i>bluesky</i> fonts, which were
+originally professionally produced and sold, but were then donated to
+the public domain by their originators Y&amp;Y and Bluesky Research,
+in association with the AMS.  Unfortunately, the coverage of
+the sets is slightly different, but you are advised to use the
+<i>bluesky</i> set except when <i>bakoma</i> is for some reason
+absolutely unavoidable.  In recent years, several other &lsquo;Metafont&rsquo; fonts
+have been converted to Type 1 format; it&rsquo;s common never to need to
+generate bitmap fonts for any purpose other than previewing (see
+
+<a href="FAQ-PSpreview.html">&ldquo;previewing documents with Type 1 fonts&rdquo;</a>).
+<dl>
+<dt><tt><i>bakoma</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/cm/ps-type1/bakoma.zip">fonts/cm/ps-type1/bakoma</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/cm/ps-type1/bakoma.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/cm/ps-type1/bakoma/">browse</a>)
+<dt><tt><i>bluesky</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/fonts/cm/ps-type1/bluesky/">fonts/cm/ps-type1/bluesky/</a>
+<dt><tt><i>cm fonts (write-black printers)</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/cm/pk/pk300.zip">fonts/cm/pk/pk300.zip</a>
+<dt><tt><i>cm fonts (write-white printers)</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/cm/pk/pk300w.zip">fonts/cm/pk/pk300w.zip</a>
+</dl>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=getbitmap">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=getbitmap</a>
+</body>

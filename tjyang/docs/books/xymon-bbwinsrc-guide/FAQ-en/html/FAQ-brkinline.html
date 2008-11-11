@@ -1,0 +1,54 @@
+<head>
+<title>UK TeX FAQ -- question label brkinline</title>
+</head><body>
+<h3>Line-breaking in in-line maths</h3>
+<p>TeX, by default, allows you to split a mathematical expression at
+the end of the line; it allows breaks at relational operators (like
+&ldquo;=&rdquo;, &ldquo;&lt;&rdquo;, etc.) and at binary operators (like &ldquo;+&rdquo;,
+&ldquo;-&rdquo;, etc.).  In the case of large expressions, this can sometimes be
+a life-saver.
+<p>However, in the case of simple expressions like a=b+c, a
+break can be really disturbing to the reader, and one would like to
+avoid it.
+<p>Fortunately, these breaks are controllable: there are &ldquo;penalties&rdquo;
+associated with each type of operator: the penalty 
+ says how
+undesirable a break at each point is.  Default values are:
+<blockquote>
+<pre>
+\relpenalty   = 500
+\binoppenalty = 700
+</pre>
+</blockquote><p>
+You make the break progressively less attractive by increasing these
+values.  You can actually forbid all breaks, everywhere, by:
+<blockquote>
+<pre>
+\relpenalty   = 10000
+\binoppenalty = 10000
+</pre>
+</blockquote><p>
+If you want just to prevent breaks in a single expression, write:
+<blockquote>
+<pre>
+{%
+  \relpenalty   = 10000
+  \binoppenalty = 10000
+  $a=b+c$
+}
+</pre>
+</blockquote><p>
+and the original values will remain undisturbed outside the braces.
+This is tedious: there is often value in an alternative approach,
+in which you say which parts of the expression may not break whatever
+happens, and fortunately this is surprisingly easy.  Suppose we want
+to defer a break until after the equality, we could write:
+<blockquote>
+<pre>
+${a+b+c+d} = z+y+x+w$
+</pre>
+</blockquote><p>
+The braces say &ldquo;treat this subformula as one atom&rdquo; and (in TeX at
+least) atoms don&rsquo;t get split: not a <code>\</code><code>binoppenalty</code> change in sight.
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=brkinline">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=brkinline</a>
+</body>

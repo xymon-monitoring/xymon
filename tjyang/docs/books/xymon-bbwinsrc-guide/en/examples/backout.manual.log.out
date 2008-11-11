@@ -1,0 +1,13 @@
+$ \textbf{hg log --style compact}
+3[tip]:1   
+  back out second change
+
+2   
+  third change
+
+1   
+  second change
+
+0   
+  first change
+

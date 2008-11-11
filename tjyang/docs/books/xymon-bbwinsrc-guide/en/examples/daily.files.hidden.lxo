@@ -1,0 +1,13 @@
+$ \textbf{hg init hidden-example}
+$ \textbf{cd hidden-example}
+$ \textbf{mkdir empty}
+$ \textbf{touch empty/.hidden}
+$ \textbf{hg add empty/.hidden}
+$ \textbf{hg commit -m 'Manage an empty-looking directory'}
+$ \textbf{ls empty}
+$ \textbf{cd ..}
+$ \textbf{hg clone hidden-example tmp}
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+$ \textbf{ls tmp}
+empty
+$ \textbf{ls tmp/empty}

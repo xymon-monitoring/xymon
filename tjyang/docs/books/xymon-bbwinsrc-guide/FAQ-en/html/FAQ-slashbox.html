@@ -1,0 +1,51 @@
+<head>
+<title>UK TeX FAQ -- question label slashbox</title>
+</head><body>
+<h3>Diagonal separation in corner cells of tables</h3>
+<p>You want to label both the top or bottom row and the left- or
+rightmost column, somewhere at the corner of the table where the row
+and column meet.  A simple way to achieve the result is to construct
+the table with an arrangement of rules (and possibly <code>\</code><code>multicolumn</code>
+entries), to look like:
+<blockquote>
+<pre>
+-----------------
+x  y
+   --------------
+   1  2  3  4  5
+-----------------
+1
+2
+3
+4
+5
+-----------------
+</pre>
+</blockquote><p>
+However, this doesn&rsquo;t satisfy everyone: many want the labelling in a
+single cell at the top left of the table.  It sounds a simple enough
+requirement, yet it calls for some slightly tricky LaTeX coding.
+The <i>slashbox</i> package does the job for you: it defines
+commands <code>\</code><code>slashbox</code> and <code>\</code><code>backslashbox</code>, each taking the two
+labels as arguments.  It draws a picture with the two labels on either
+side of a slanting line; the command (and hence the picture) may be
+placed in the corner cell, where the labelled row and column meet.
+<p>The package isn&rsquo;t the world&rsquo;s neatest: it uses LaTeX
+<code>picture</code> mode to draw its line, and picture mode has many
+tedious restrictions (and doesn&rsquo;t, in all honesty, produce
+particularly good pictures).  Load slashbox with the <i>pict2e</i>
+package, and at least the picture quality will be improved.
+<p>Documentation of <i>slashbox</i> is less than satisfactory: a
+LaTeX source file of rather startling starkness accompanies the
+package file in the distribution.  It does, however, process to a
+DVI file that gives some idea of how the <code>\</code><code>slashbox</code> may be
+expected to look.  (The third example in the file shows the effect of
+<code>picture</code> mode&rsquo;s restrictions: the dividing line doesn&rsquo;t
+go from corner to corner in the box: to correct this requires revision
+of <i>slashbox</i> &mdash; <i>pict2e</i> alone doesn&rsquo;t help in this
+regard.)
+<dl>
+<dt><tt><i>slashbox.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/slashbox.zip">macros/latex/contrib/slashbox</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/slashbox.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/slashbox/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=slashbox">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=slashbox</a>
+</body>

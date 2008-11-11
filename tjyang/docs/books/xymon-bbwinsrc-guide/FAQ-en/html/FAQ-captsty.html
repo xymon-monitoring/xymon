@@ -1,0 +1,51 @@
+<head>
+<title>UK TeX FAQ -- question label captsty</title>
+</head><body>
+<h3>The style of captions</h3>
+<p>Changes to the style of captions may be made by redefining the commands
+that produce the caption.  So, for example, <code>\</code><code>fnum@figure</code> (which
+produces the float number for figure floats) may be redefined, in a
+package of your own, or between
+<a href="FAQ-atsigns.html"><code>\</code><code>makeatletter</code>&ndash;<code>\</code><code>makeatother</code></a>:
+<blockquote>
+<pre>
+\renewcommand{\fnum@figure}{\textbf{Fig.~\thefigure}}
+</pre>
+
+</blockquote><p>
+which will cause the number to be typeset in bold face.  (Note that
+the original definition used 
+<a href="FAQ-fixnam.html"><code>\</code><code>figurename</code></a>.)  More elaborate changes can be
+made by patching the <code>\</code><code>caption</code> command, but since there are
+packages to do the job, such changes (which can get rather tricky)
+aren&rsquo;t recommended for ordinary users.
+<p>The <i>float</i> package provides some control of the appearance of
+captions, though it&rsquo;s principally designed for the creation of
+non-standard floats.  The <i>caption</i> and <i>ccaption</i>
+(note the double &ldquo;<em>c</em>&rdquo;) packages provide a range of different
+formatting options.
+<p><i>ccaption</i> also provides &lsquo;continuation&rsquo; captions and captions
+that can be placed outside of float environments.  The (very simple)
+<i>capt-of</i> package also allows captions outside a float
+environment.  Note that care is needed when doing things that assume
+the sequence of floats (as in continuation captions), or potentially
+mix non-floating captions with floating ones.
+<p>The <i>memoir</i> class includes the facilities of the
+<i>ccaption</i> package; the <i>KOMA-script</i> classes also
+provide a wide range of caption-formatting commands.
+<p>The documentation of <i>caption</i> is available by processing a
+file <i>manual.tex</i>, which is created when you unpack
+<i>caption.dtx</i>
+<p>Note that the previously-recommended package <i>caption2</i> has
+now been overtaken again by <i>caption</i>; however,
+<i>caption2</i> remains available for use in older documents.
+<dl>
+<dt><tt><i>caption.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/caption.zip">macros/latex/contrib/caption</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/caption.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/caption/">browse</a>)
+<dt><tt><i>capt-of.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/capt-of.sty">macros/latex/contrib/misc/capt-of.sty</a>
+<dt><tt><i>ccaption.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ccaption.zip">macros/latex/contrib/ccaption</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ccaption.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/ccaption/">browse</a>)
+<dt><tt><i>float.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/float.zip">macros/latex/contrib/float</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/float.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/float/">browse</a>)
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=captsty">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=captsty</a>
+</body>

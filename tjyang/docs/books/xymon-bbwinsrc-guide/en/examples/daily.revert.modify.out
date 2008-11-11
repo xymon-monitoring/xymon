@@ -1,0 +1,10 @@
+$ \textbf{cat file}
+original content
+$ \textbf{echo unwanted change >> file}
+$ \textbf{hg diff file}
+diff -r  file
+
+
+@@ -1,1 +1,2 @@ original content
+ original content
++unwanted change

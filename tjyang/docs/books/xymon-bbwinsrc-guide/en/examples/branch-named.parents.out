@@ -1,0 +1,11 @@
+$ \textbf{hg parents}
+changeset:   
+branch:      bar
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+summary:     Third commit
+
+$ \textbf{hg branches}
+bar                            
+foo                            

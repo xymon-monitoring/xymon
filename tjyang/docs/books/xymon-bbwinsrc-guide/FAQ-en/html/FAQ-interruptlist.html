@@ -1,0 +1,96 @@
+<head>
+<title>UK TeX FAQ -- question label interruptlist</title>
+</head><body>
+<h3>Interrupting enumerated lists</h3>
+<p>It&rsquo;s often convenient to have commentary text, &lsquo;outside&rsquo; the list,
+between successive entries of a list.  In the case of
+<code>itemize</code> lists this is no problem, since there&rsquo;s never
+anything to distinguish successive items, while in the case of
+<code>description</code> lists, the item labels are under the user&rsquo;s
+control so there&rsquo;s no automatic issue of continuity.
+<p>For <code>enumerate</code> lists, the labels are generated
+automatically, and are context-sensitive, so the context (in this
+case, the state of the enumeration counter) needs to be preserved.
+<p>The belt-and-braces approach is to remember the state of the
+enumeration in your own counter variable, and then restore it when
+restarting enumerate:
+<blockquote>
+<pre>
+\newcounter{saveenum}
+ ...
+\begin{enumerate}
+  ...
+  \setcounter{saveenum}{\value{enumi}}
+\end{enumerate}
+&lt;Commentary text&gt;
+\begin{enumerate}
+  \setcounter{enumi}{\value{saveenum}}
+  ...
+\end{enumerate}
+</pre>
+</blockquote><p>
+<p>This is reasonable, in small doses... Problems (apart from sheer
+verbosity) are getting the level right (&ldquo;should I use counter
+<code>enumi</code>, <code>enumii</code>, ...&rdquo;) and remembering not to
+nest the interruptions (i.e., not to have a separate list, that is
+itself interrupted) in the &ldquo;commentary text&rdquo;).
+<p>The <i>mdwlist</i> package defines commands <code>\</code><code>suspend</code> and
+<code>\</code><code>resume</code> that simplify the process:
+<blockquote>
+<pre>
+\begin{enumerate}
+  ...
+\suspend{enumerate}
+&lt;Commentary text&gt;
+\resume{enumerate}
+  ...
+\end{enumerate}
+</pre>
+</blockquote><p>
+The package allows an optional name (as in
+<code>\</code><code>suspend[id]{enumerate}</code>) to allow you to identify a
+particular suspension, and hence provide a handle for manipulating
+nested suspensions.
+<p>If you&rsquo;re suspending a <a href="FAQ-enumerate.html">fancy-enumeration list</a>,
+you need to 
+re-supply the optional &ldquo;item label layout&rdquo; parameters required by
+the <i>enumerate</i> package when resuming the list, whether by the
+belt-and-braces approach, or by the <i>mdwlist</i>
+<code>\</code><code>resume{enumerate}</code> technique.  The task is a little tedious
+in the <i>mdwlist</i> case, since the optional argument has to be
+encapsulated, whole, inside an optional argument to <code>\</code><code>resume</code>,
+which requires use of extra braces:
+<blockquote>
+<pre>
+\begin{enumerate}[\textbf{Item} i]
+  ...
+\suspend{enumerate}
+&lt;comment&gt;
+\resume{enumerate}[{[\textbf{Item} i]}]
+...
+\end{enumerate}
+</pre>
+</blockquote><p>
+The <i>enumitem</i> package, in its most recent
+release, will allow you to resume lists, at one level only:
+<blockquote>
+<pre>
+\begin{enumerate}
+...
+\end{enumerate}
+&lt;comment&gt;
+\begin{enumerate}[resume]
+...
+\end{enumerate}
+</pre>
+</blockquote><p>
+which feels just as &ldquo;natural&rdquo; as the <i>mdwtools</i> facility,
+and has the advantage of playing well with the other excellent
+facilities of <i>enumitem</i>.
+<dl>
+<dt><tt><i>enumerate.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>enumitem.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/enumitem.zip">macros/latex/contrib/enumitem</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/enumitem.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/enumitem/">browse</a>)
+<dt><tt><i>mdwlist.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.zip">macros/latex/contrib/mdwtools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/mdwtools/">browse</a>)
+</dl>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=interruptlist">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=interruptlist</a>
+</body>

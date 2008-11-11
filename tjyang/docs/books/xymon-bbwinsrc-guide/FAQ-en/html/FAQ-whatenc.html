@@ -1,0 +1,78 @@
+<head>
+<title>UK TeX FAQ -- question label whatenc</title>
+</head><body>
+<h3>What are encodings?</h3>
+<p>Let&rsquo;s start by defining two concepts, the <em>character</em> and the
+<em>glyph</em>.
+The character is the abstract idea of the &lsquo;atom&rsquo; of a
+language or other dialogue: so it might be a letter in an alphabetic
+language, a syllable in a syllabic language, or an ideogram in an
+ideographic language.  The glyph is the mark created on screen or
+paper which represents a character.  Of
+course, if reading is to be possible, there must be some agreed
+relationship between the glyph and the character, so while the precise
+shape of the glyph can be affected by many other factors, such as the
+capabilities of the writing medium and the designer&rsquo;s style, the
+essence of the underlying character must be retained.
+<p>Whenever a computer has to represent characters, someone has to define
+the relationship between a set of numbers and the characters they
+represent.  This is the essence of an encoding: it is a mapping
+between a set of numbers and a set of things to be represented.
+<p>TeX of course deals in encoded characters all the time: the
+characters presented to it in its input are encoded, and it emits
+encoded characters in its DVI (or PDF) output.  These
+encodings have rather different properties.
+<p>The TeX input stream was pretty unruly back in the days when Knuth
+first implemented the language.  Knuth himself prepared documents on
+terminals that produced all sorts of odd characters, and as a result
+TeX contains some provision for translating the input encoding to
+something regular.  Nowadays, 
+the operating system translates keystrokes into a code appropriate for
+the user&rsquo;s language: the encoding used is often a national or
+international standard, though many operating systems use &ldquo;code
+pages&rdquo; defined by Microsoft.  These standards and code pages often
+contain characters that can&rsquo;t appear in the TeX system&rsquo;s input
+stream.  Somehow, these characters have to be dealt with &mdash; so
+an input character like &ldquo;&eacute;&rdquo; needs to be interpreted by TeX in
+a way that that at least mimics the way it interprets &ldquo;<code>\</code><code>&rsquo;</code><code>e</code>&rdquo;.  
+<p>The TeX output stream is in a somewhat different situation:
+characters in it are to be used to select glyphs from the fonts to be
+used.  Thus the encoding of the output stream is notionally a font
+encoding (though the font in question may be a
+
+
+<a href="FAQ-virtualfonts.html">virtual font</a>).  In principle, a
+fair bit of what appears in the output stream could be direct
+transcription of what arrived in the input, but the output stream
+also contains the product of commands in the input, and translations
+of the input such as ligatures like 
+<code>fi</code>.
+<p>Font encodings became a hot topic when the
+<a href="FAQ-ECfonts.html">Cork encoding</a>
+appeared, because of the possibility of suppressing
+<code>\</code><code>accent</code> commands in the output stream (and hence improving the
+quality of the hyphenation of text in inflected languages, which is
+interrupted by the <code>\</code><code>accent</code> commands &mdash; see
+
+<a href="FAQ-hyphen.html">&ldquo;how does hyphenation work&rdquo;</a>).
+To take advantage of the diacriticised characters represented in the
+fonts, it is necessary to arrange that whenever the
+command sequence &ldquo;<code>\&rsquo;</code><code>e</code>&rdquo; has been input
+(explicitly, or implicitly via the sort of mapping of input mentioned
+above), the character that codes the position of the &ldquo;&eacute;&rdquo; glyph is
+used.
+<p>Thus we could have the odd arrangement that the diacriticised character in
+the TeX input stream is translated into TeX commands that would
+generate something looking like the input character; this sequence of
+TeX commands is then translated back again into a single
+diacriticised glyph as the output is created.  This is in fact
+precisely what the LaTeX packages <i>inputenc</i> and
+<i>fontenc</i> do, if operated in tandem on (most) characters in
+the ISO Latin-1 input encoding and the T1 font encoding.
+At first sight, it seems eccentric to have the first package do a thing, and
+the second precisely undo it, but it doesn&rsquo;t always happen that way:
+most font encodings can&rsquo;t match the corresponding input encoding
+nearly so well, and the two packages provide the sort of symmetry the
+LaTeX system needs.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=whatenc">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=whatenc</a>
+</body>

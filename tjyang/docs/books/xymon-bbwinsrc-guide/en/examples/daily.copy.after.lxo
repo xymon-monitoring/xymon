@@ -1,0 +1,2 @@
+$ \textbf{cp a z}
+$ \textbf{hg copy --after a z}

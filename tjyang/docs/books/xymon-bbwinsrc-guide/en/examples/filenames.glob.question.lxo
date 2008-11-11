@@ -1,0 +1,2 @@
+$ \textbf{hg status 'glob:**.?'}
+? src/watcher/_watcher.c

@@ -1,0 +1,2357 @@
+<?xml version="1.0" encoding="iso-8859-1" ?> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">  
+<!--http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd-->  
+<html xmlns="http://www.w3.org/1999/xhtml"  
+> 
+<head><title>2 Developer FAQ</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" /> 
+<meta name="generator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)" /> 
+<meta name="originator" content="TeX4ht (http://www.cse.ohio-state.edu/~gurari/TeX4ht/)" /> 
+<!-- html4-uni,2,html,xhtml --> 
+<meta name="src" content="hgbook.tex" /> 
+<meta name="date" content="2008-03-02 11:10:00" /> 
+<link rel="stylesheet" type="text/css" href="hgbook.css" /> 
+</head><body 
+>
+   <!--l. 1--><div class="crosslinks"><p class="noindent">[<a 
+href="hgbookch3.html" >next</a>] [<a 
+href="hgbookch1.html" >prev</a>] [<a 
+href="hgbookch1.html#tailhgbookch1.html" >prev-tail</a>] [<a 
+href="#tailhgbookch2.html">tail</a>] [<a 
+href="hgbook.html#hgbookch2.html" >up</a>] </p></div>
+   <h2 class="chapterHead"><span class="titlemark">Chapter&#x00A0;2</span><br /><a 
+ id="x6-350002"></a>Developer FAQ</h2>
+<!--l. 4--><p class="noindent">As a completely decentralised tool, Mercurial doesn&#x2019;t impose any policy on how people ought to work with each other.
+However, if you&#x2019;re new to distributed revision control, it helps to have some tools and examples in mind when you&#x2019;re thinking
+about possible workflow models.
+</p>
+   <h3 class="sectionHead"><span class="titlemark">2.1    </span> <a 
+ id="x6-360002.1"></a>Mercurial&#x2019;s web interface</h3>
+<!--l. 12--><p class="noindent">Mercurial has a powerful web interface that provides several useful capabilities.
+</p><!--l. 15--><p class="indent">   For interactive use, the web interface lets you browse a single repository or a collection of repositories. You can view the
+history of a repository, examine each change (comments and diffs), and view the contents of each directory and
+file.
+</p><!--l. 20--><p class="indent">   Also for human consumption, the web interface provides an RSS feed of the changes in a repository. This lets you
+&#x201C;subscribe&#x201D; to a repository using your favourite feed reader, and be automatically notified of activity in that repository as soon
+as it happens. I find this capability much more convenient than the model of subscribing to a mailing list to
+which notifications are sent, as it requires no additional configuration on the part of whoever is serving the
+repository.
+</p><!--l. 29--><p class="indent">   The web interface also lets remote users clone a repository, pull changes from it, and (when the server is configured to
+permit it) push changes back to it. Mercurial&#x2019;s HTTP tunneling protocol aggressively compresses data, so that it works
+efficiently even over low-bandwidth network connections.
+</p><!--l. 35--><p class="indent">   The easiest way to get started with the web interface is to use your web browser to visit an existing repository, such as the
+master Mercurial repository at   <a 
+href="http://www.selenic.com/repo/hg?style=gitweb" class="url" ><span 
+class="pcrr7tn-">http://www.selenic.com/repo/hg?style=gitweb</span></a>.
+</p><!--l. 40--><p class="indent">   If you&#x2019;re interested in providing a web interface to your own repositories, Mercurial provides two ways to do this. The first
+is using the <a 
+ id="dx6-36001"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command, which is best suited to short-term &#x201C;lightweight&#x201D; serving. See section&#x00A0;<a 
+href="#x6-480002.4">2.4<!--tex4ht:ref: sec:collab:serve --></a> below for details
+of how to use this command. If you have a long-lived repository that you&#x2019;d like to make permanently available, Mercurial has
+built-in support for the CGI (Common Gateway Interface) standard, which all common web servers support. See section&#x00A0;<a 
+href="#x6-570002.6">2.6<!--tex4ht:ref: sec:collab:cgi --></a>
+for details of CGI configuration.
+</p><!--l. 50--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">2.2    </span> <a 
+ id="x6-370002.2"></a>Collaboration models</h3>
+<!--l. 52--><p class="noindent">With a suitably flexible tool, making decisions about workflow is much more of a social engineering challenge than a technical
+one. Mercurial imposes few limitations on how you can structure the flow of work in a project, so it&#x2019;s up to you and your group
+to set up and live with a model that matches your own particular needs.
+</p><!--l. 58--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.1    </span> <a 
+ id="x6-380002.2.1"></a>Factors to keep in mind</h4>
+<!--l. 60--><p class="noindent">The most important aspect of any model that you must keep in mind is how well it matches the needs and capabilities of
+the people who will be using it. This might seem self-evident; even so, you still can&#x2019;t afford to forget it for a
+moment.
+</p><!--l. 65--><p class="indent">   I once put together a workflow model that seemed to make perfect sense to me, but that caused a considerable amount of
+consternation and strife within my development team. In spite of my attempts to explain why we needed a complex set of
+branches, and how changes ought to flow between them, a few team members revolted. Even though they were smart people,
+they didn&#x2019;t want to pay attention to the constraints we were operating under, or face the consequences of those constraints in the
+details of the model that I was advocating.
+                                                                                         
+                                                                                         
+</p><!--l. 74--><p class="indent">   Don&#x2019;t sweep foreseeable social or technical problems under the rug. Whatever scheme you put into effect, you should plan
+for mistakes and problem scenarios. Consider adding automated machinery to prevent, or quickly recover from, trouble that
+you can anticipate. As an example, if you intend to have a branch with not-for-release changes in it, you&#x2019;d do well to think early
+about the possibility that someone might accidentally merge those changes into a release branch. You could
+avoid this particular problem by writing a hook that prevents changes from being merged from an inappropriate
+branch.
+</p><!--l. 84--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.2    </span> <a 
+ id="x6-390002.2.2"></a>Informal anarchy</h4>
+<!--l. 86--><p class="noindent">I wouldn&#x2019;t suggest an &#x201C;anything goes&#x201D; approach as something sustainable, but it&#x2019;s a model that&#x2019;s easy to grasp, and it works
+perfectly well in a few unusual situations.
+</p><!--l. 90--><p class="indent">   As one example, many projects have a loose-knit group of collaborators who rarely physically meet each other.
+Some groups like to overcome the isolation of working at a distance by organising occasional &#x201C;sprints&#x201D;. In a
+sprint, a number of people get together in a single location (a company&#x2019;s conference room, a hotel meeting
+room, that kind of place) and spend several days more or less locked in there, hacking intensely on a handful of
+projects.
+</p><!--l. 98--><p class="indent">   A sprint is the perfect place to use the <a 
+ id="dx6-39001"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command, since <a 
+ id="dx6-39002"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; does not requires any fancy server
+infrastructure. You can get started with <a 
+ id="dx6-39003"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; in moments, by reading section&#x00A0;<a 
+href="#x6-480002.4">2.4<!--tex4ht:ref: sec:collab:serve --></a> below. Then simply tell the person
+next to you that you&#x2019;re running a server, send the URL to them in an instant message, and you immediately have a
+quick-turnaround way to work together. They can type your URL into their web browser and quickly review your changes; or
+they can pull a bugfix from you and verify it; or they can clone a branch containing a new feature and try it
+out.
+</p><!--l. 109--><p class="indent">   The charm, and the problem, with doing things in an ad hoc fashion like this is that only people who know about your
+changes, and where they are, can see them. Such an informal approach simply doesn&#x2019;t scale beyond a handful people, because
+each individual needs to know about <span 
+class="zptmcmrm-">n </span>different repositories to pull from.
+</p><!--l. 115--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.3    </span> <a 
+ id="x6-400002.2.3"></a>A single central repository</h4>
+<!--l. 117--><p class="noindent">For smaller projects migrating from a centralised revision control tool, perhaps the easiest way to get started is to have changes
+flow through a single shared central repository. This is also the most common &#x201C;building block&#x201D; for more ambitious workflow
+schemes.
+</p><!--l. 122--><p class="indent">   Contributors start by cloning a copy of this repository. They can pull changes from it whenever they need to, and
+some (perhaps all) developers have permission to push a change back when they&#x2019;re ready for other people to see
+it.
+</p><!--l. 127--><p class="indent">   Under this model, it can still often make sense for people to pull changes directly from each other, without going through
+the central repository. Consider a case in which I have a tentative bug fix, but I am worried that if I were to publish it to the
+central repository, it might subsequently break everyone else&#x2019;s trees as they pull it. To reduce the potential for damage, I can ask
+you to clone my repository into a temporary repository of your own and test it. This lets us put off publishing the potentially
+unsafe change until it has had a little testing.
+</p><!--l. 137--><p class="indent">   In this kind of scenario, people usually use the <a 
+ id="dx6-40001"></a><span 
+class="pcrr7tn-">ssh </span>protocol to securely push changes to the central repository, as
+documented in section&#x00A0;<a 
+href="#x6-500002.5">2.5<!--tex4ht:ref: sec:collab:ssh --></a>. It&#x2019;s also usual to publish a read-only copy of the repository over HTTP using CGI, as in
+section&#x00A0;<a 
+href="#x6-570002.6">2.6<!--tex4ht:ref: sec:collab:cgi --></a>. Publishing over HTTP satisfies the needs of people who don&#x2019;t have push access, and those who want to use web
+browsers to browse the repository&#x2019;s history.
+</p><!--l. 145--><p class="noindent">
+</p>
+                                                                                         
+                                                                                         
+   <h4 class="subsectionHead"><span class="titlemark">2.2.4    </span> <a 
+ id="x6-410002.2.4"></a>Working with multiple branches</h4>
+<!--l. 147--><p class="noindent">Projects of any significant size naturally tend to make progress on several fronts simultaneously. In the case of software, it&#x2019;s
+common for a project to go through periodic official releases. A release might then go into &#x201C;maintenance mode&#x201D;
+for a while after its first publication; maintenance releases tend to contain only bug fixes, not new features.
+In parallel with these maintenance releases, one or more future releases may be under development. People
+normally use the word &#x201C;branch&#x201D; to refer to one of these many slightly different directions in which development is
+proceeding.
+</p><!--l. 157--><p class="indent">   Mercurial is particularly well suited to managing a number of simultaneous, but not identical, branches. Each &#x201C;development
+direction&#x201D; can live in its own central repository, and you can merge changes from one to another as the need arises. Because
+repositories are independent of each other, unstable changes in a development branch will never affect a stable branch unless
+someone explicitly merges those changes in.
+</p><!--l. 165--><p class="indent">   Here&#x2019;s an example of how this can work in practice. Let&#x2019;s say you have one &#x201C;main branch&#x201D; on a central
+server.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-41002r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;init</span><span 
+class="pcrb7t-">&#x00A0;main</span>
+<br class="fancyvrb" /><a 
+ id="x6-41004r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;main</span>
+<br class="fancyvrb" /><a 
+ id="x6-41006r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;'This</span><span 
+class="pcrb7t-">&#x00A0;is</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;boring</span><span 
+class="pcrb7t-">&#x00A0;feature.'</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x6-41008r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-A</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'We</span><span 
+class="pcrb7t-">&#x00A0;have</span><span 
+class="pcrb7t-">&#x00A0;reached</span><span 
+class="pcrb7t-">&#x00A0;an</span><span 
+class="pcrb7t-">&#x00A0;important</span><span 
+class="pcrb7t-">&#x00A0;milestone!'</span>
+<br class="fancyvrb" /><a 
+ id="x6-41010r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;myfile</span>
+   </div>
+<!--l. 168--><p class="noindent">People clone it, make changes locally, test them, and push them back.
+</p><!--l. 170--><p class="indent">   Once the main branch reaches a release milestone, you can use the <a 
+ id="dx6-41011"></a>&#x201C;<span 
+class="pcrr7tn-">hg tag</span>&#x201D; command to give a permanent name to the
+milestone revision.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-41013r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;tag</span><span 
+class="pcrb7t-">&#x00A0;v1.0</span>
+<br class="fancyvrb" /><a 
+ id="x6-41015r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x6-41017r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;changeset:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1:103f8658694c</span>
+<br class="fancyvrb" /><a 
+ id="x6-41019r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tag:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tip</span>
+<br class="fancyvrb" /><a 
+ id="x6-41021r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;user:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Bryan</span><span 
+class="pcrr7tn-">&#x00A0;O'Sullivan</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;bos@serpentine.com&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x6-41023r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;date:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Sun</span><span 
+class="pcrr7tn-">&#x00A0;Mar</span><span 
+class="pcrr7tn-">&#x00A0;02</span><span 
+class="pcrr7tn-">&#x00A0;16:14:46</span><span 
+class="pcrr7tn-">&#x00A0;2008</span><span 
+class="pcrr7tn-">&#x00A0;+0000</span>
+<br class="fancyvrb" /><a 
+ id="x6-41025r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;summary:</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Added</span><span 
+class="pcrr7tn-">&#x00A0;tag</span><span 
+class="pcrr7tn-">&#x00A0;v1.0</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;changeset</span><span 
+class="pcrr7tn-">&#x00A0;894c4a5ae086</span>
+<br class="fancyvrb" /><a 
+ id="x6-41027r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span>
+<br class="fancyvrb" /><a 
+ id="x6-41029r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;tags</span>
+<br class="fancyvrb" /><a 
+ id="x6-41031r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;tip</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1:103f8658694c</span>
+<br class="fancyvrb" /><a 
+ id="x6-41033r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;v1.0</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;0:894c4a5ae086</span>
+   </div>
+<!--l. 174--><p class="noindent">Let&#x2019;s say some ongoing development occurs on the main branch.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-41035r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;../main</span>
+<br class="fancyvrb" /><a 
+ id="x6-41037r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;'This</span><span 
+class="pcrb7t-">&#x00A0;is</span><span 
+class="pcrb7t-">&#x00A0;exciting</span><span 
+class="pcrb7t-">&#x00A0;and</span><span 
+class="pcrb7t-">&#x00A0;new!'</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x6-41039r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'Add</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;new</span><span 
+class="pcrb7t-">&#x00A0;feature'</span>
+<br class="fancyvrb" /><a 
+ id="x6-41041r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x6-41043r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;This</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;a</span><span 
+class="pcrr7tn-">&#x00A0;boring</span><span 
+class="pcrr7tn-">&#x00A0;feature.</span>
+<br class="fancyvrb" /><a 
+ id="x6-41045r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;This</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;exciting</span><span 
+class="pcrr7tn-">&#x00A0;and</span><span 
+class="pcrr7tn-">&#x00A0;new!</span>
+   </div>
+                                                                                         
+                                                                                         
+<!--l. 176--><p class="noindent">Using the tag that was recorded at the milestone, people who clone that repository at any time in the future can use <a 
+ id="dx6-41046"></a>&#x201C;<span 
+class="pcrr7tn-">hg update</span>&#x201D; to
+get a copy of the working directory exactly as it was when that tagged revision was committed.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-41048r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;..</span>
+<br class="fancyvrb" /><a 
+ id="x6-41050r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;clone</span><span 
+class="pcrb7t-">&#x00A0;-U</span><span 
+class="pcrb7t-">&#x00A0;main</span><span 
+class="pcrb7t-">&#x00A0;main-old</span>
+<br class="fancyvrb" /><a 
+ id="x6-41052r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;main-old</span>
+<br class="fancyvrb" /><a 
+ id="x6-41054r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;update</span><span 
+class="pcrb7t-">&#x00A0;v1.0</span>
+<br class="fancyvrb" /><a 
+ id="x6-41056r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+<br class="fancyvrb" /><a 
+ id="x6-41058r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x6-41060r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;This</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;a</span><span 
+class="pcrr7tn-">&#x00A0;boring</span><span 
+class="pcrr7tn-">&#x00A0;feature.</span>
+   </div>
+<!--l. 182--><p class="indent">   In addition, immediately after the main branch is tagged, someone can then clone the main branch on the server to a new
+&#x201C;stable&#x201D; branch, also on the server.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-41062r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;..</span>
+<br class="fancyvrb" /><a 
+ id="x6-41064r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;clone</span><span 
+class="pcrb7t-">&#x00A0;-rv1.0</span><span 
+class="pcrb7t-">&#x00A0;main</span><span 
+class="pcrb7t-">&#x00A0;stable</span>
+<br class="fancyvrb" /><a 
+ id="x6-41066r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;requesting</span><span 
+class="pcrr7tn-">&#x00A0;all</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x6-41068r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x6-41070r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;manifests</span>
+<br class="fancyvrb" /><a 
+ id="x6-41072r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;file</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x6-41074r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;added</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span><span 
+class="pcrr7tn-">&#x00A0;with</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;changes</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span>
+<br class="fancyvrb" /><a 
+ id="x6-41076r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+   </div>
+<!--l. 187--><p class="indent">   Someone who needs to make a change to the stable branch can then clone <span 
+class="ptmri7t-">that </span>repository, make their changes, commit, and
+push their changes back there.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-41078r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;clone</span><span 
+class="pcrb7t-">&#x00A0;stable</span><span 
+class="pcrb7t-">&#x00A0;stable-fix</span>
+<br class="fancyvrb" /><a 
+ id="x6-41080r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+<br class="fancyvrb" /><a 
+ id="x6-41082r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;stable-fix</span>
+<br class="fancyvrb" /><a 
+ id="x6-41084r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">echo</span><span 
+class="pcrb7t-">&#x00A0;'This</span><span 
+class="pcrb7t-">&#x00A0;is</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;fix</span><span 
+class="pcrb7t-">&#x00A0;to</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;boring</span><span 
+class="pcrb7t-">&#x00A0;feature.'</span><span 
+class="pcrb7t-">&#x00A0;&#x003e;</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x6-41086r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'Fix</span><span 
+class="pcrb7t-">&#x00A0;a</span><span 
+class="pcrb7t-">&#x00A0;bug'</span>
+<br class="fancyvrb" /><a 
+ id="x6-41088r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;push</span>
+<br class="fancyvrb" /><a 
+ id="x6-41090r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;pushing</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;/tmp/branchingU6TRDc/stable</span>
+<br class="fancyvrb" /><a 
+ id="x6-41092r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;searching</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x6-41094r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x6-41096r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;manifests</span>
+<br class="fancyvrb" /><a 
+ id="x6-41098r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;file</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x6-41100r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;added</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span><span 
+class="pcrr7tn-">&#x00A0;with</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;changes</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span>
+   </div>
+<!--l. 191--><p class="noindent">Because Mercurial repositories are independent, and Mercurial doesn&#x2019;t move changes around automatically, the stable and main
+branches are <span 
+class="ptmri7t-">isolated </span>from each other. The changes that you made on the main branch don&#x2019;t &#x201C;leak&#x201D; to the stable branch, and
+vice versa.
+</p><!--l. 196--><p class="indent">   You&#x2019;ll often want all of your bugfixes on the stable branch to show up on the main branch, too. Rather than rewrite a bugfix
+on the main branch, you can simply pull and merge changes from the stable to the main branch, and Mercurial will bring those
+bugfixes in for you.
+                                                                                         
+                                                                                         
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-41102r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cd</span><span 
+class="pcrb7t-">&#x00A0;../main</span>
+<br class="fancyvrb" /><a 
+ id="x6-41104r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;pull</span><span 
+class="pcrb7t-">&#x00A0;../stable</span>
+<br class="fancyvrb" /><a 
+ id="x6-41106r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;pulling</span><span 
+class="pcrr7tn-">&#x00A0;from</span><span 
+class="pcrr7tn-">&#x00A0;../stable</span>
+<br class="fancyvrb" /><a 
+ id="x6-41108r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;searching</span><span 
+class="pcrr7tn-">&#x00A0;for</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x6-41110r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span>
+<br class="fancyvrb" /><a 
+ id="x6-41112r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;manifests</span>
+<br class="fancyvrb" /><a 
+ id="x6-41114r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;adding</span><span 
+class="pcrr7tn-">&#x00A0;file</span><span 
+class="pcrr7tn-">&#x00A0;changes</span>
+<br class="fancyvrb" /><a 
+ id="x6-41116r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;added</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;changesets</span><span 
+class="pcrr7tn-">&#x00A0;with</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;changes</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;(+1</span><span 
+class="pcrr7tn-">&#x00A0;heads)</span>
+<br class="fancyvrb" /><a 
+ id="x6-41118r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;(run</span><span 
+class="pcrr7tn-">&#x00A0;'hg</span><span 
+class="pcrr7tn-">&#x00A0;heads'</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;see</span><span 
+class="pcrr7tn-">&#x00A0;heads,</span><span 
+class="pcrr7tn-">&#x00A0;'hg</span><span 
+class="pcrr7tn-">&#x00A0;merge'</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;merge)</span>
+<br class="fancyvrb" /><a 
+ id="x6-41120r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;merge</span>
+<br class="fancyvrb" /><a 
+ id="x6-41122r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;merging</span><span 
+class="pcrr7tn-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x6-41124r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;updated,</span><span 
+class="pcrr7tn-">&#x00A0;1</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;merged,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;removed,</span><span 
+class="pcrr7tn-">&#x00A0;0</span><span 
+class="pcrr7tn-">&#x00A0;files</span><span 
+class="pcrr7tn-">&#x00A0;unresolved</span>
+<br class="fancyvrb" /><a 
+ id="x6-41126r13"></a><span 
+class="ptmr7t-x-x-50">13</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;(branch</span><span 
+class="pcrr7tn-">&#x00A0;merge,</span><span 
+class="pcrr7tn-">&#x00A0;don't</span><span 
+class="pcrr7tn-">&#x00A0;forget</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;commit)</span>
+<br class="fancyvrb" /><a 
+ id="x6-41128r14"></a><span 
+class="ptmr7t-x-x-50">14</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">hg</span><span 
+class="pcrb7t-">&#x00A0;commit</span><span 
+class="pcrb7t-">&#x00A0;-m</span><span 
+class="pcrb7t-">&#x00A0;'Bring</span><span 
+class="pcrb7t-">&#x00A0;in</span><span 
+class="pcrb7t-">&#x00A0;bugfix</span><span 
+class="pcrb7t-">&#x00A0;from</span><span 
+class="pcrb7t-">&#x00A0;stable</span><span 
+class="pcrb7t-">&#x00A0;branch'</span>
+<br class="fancyvrb" /><a 
+ id="x6-41130r15"></a><span 
+class="ptmr7t-x-x-50">15</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;$</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrb7t-">cat</span><span 
+class="pcrb7t-">&#x00A0;myfile</span>
+<br class="fancyvrb" /><a 
+ id="x6-41132r16"></a><span 
+class="ptmr7t-x-x-50">16</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;This</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;a</span><span 
+class="pcrr7tn-">&#x00A0;fix</span><span 
+class="pcrr7tn-">&#x00A0;to</span><span 
+class="pcrr7tn-">&#x00A0;a</span><span 
+class="pcrr7tn-">&#x00A0;boring</span><span 
+class="pcrr7tn-">&#x00A0;feature.</span>
+<br class="fancyvrb" /><a 
+ id="x6-41134r17"></a><span 
+class="ptmr7t-x-x-50">17</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;This</span><span 
+class="pcrr7tn-">&#x00A0;is</span><span 
+class="pcrr7tn-">&#x00A0;exciting</span><span 
+class="pcrr7tn-">&#x00A0;and</span><span 
+class="pcrr7tn-">&#x00A0;new!</span>
+   </div>
+<!--l. 201--><p class="noindent">The main branch will still contain changes that are not on the stable branch, but it will also contain all of the bugfixes from the
+stable branch. The stable branch remains unaffected by these changes.
+</p><!--l. 205--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.5    </span> <a 
+ id="x6-420002.2.5"></a>Feature branches</h4>
+<!--l. 207--><p class="noindent">For larger projects, an effective way to manage change is to break up a team into smaller groups. Each group has a shared
+branch of its own, cloned from a single &#x201C;master&#x201D; branch used by the entire project. People working on an individual branch are
+typically quite isolated from developments on other branches.
+</p>
+   <hr class="figure" /><div class="figure" 
+><table class="figure"><tr class="figure"><td class="figure" 
+>
+                                                                                         
+                                                                                         
+<a 
+ id="x6-420011"></a>
+                                                                                         
+                                                                                         
+<!--l. 215--><p class="noindent"><img 
+src="feature-branches.png" alt="PIC"  
+ />
+<br /> </p><table class="caption" 
+><tr style="vertical-align:baseline;" class="caption"><td class="id">Figure&#x00A0;2.1: </td><td  
+class="content">Feature branches</td></tr></table><!--tex4ht:label?: x6-420011 -->
+                                                                                         
+                                                                                         
+   </td></tr></table></div><hr class="endfigure" />
+<!--l. 220--><p class="indent">   When a particular feature is deemed to be in suitable shape, someone on that feature team pulls and merges from the master
+branch into the feature branch, then pushes back up to the master branch.
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.6    </span> <a 
+ id="x6-430002.2.6"></a>The release train</h4>
+<!--l. 226--><p class="noindent">Some projects are organised on a &#x201C;train&#x201D; basis: a release is scheduled to happen every few months, and whatever features are
+ready when the &#x201C;train&#x201D; is ready to leave are allowed in.
+</p><!--l. 230--><p class="indent">   This model resembles working with feature branches. The difference is that when a feature branch misses a
+train, someone on the feature team pulls and merges the changes that went out on that train release into the
+feature branch, and the team continues its work on top of that release so that their feature can make the next
+release.
+</p><!--l. 236--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.7    </span> <a 
+ id="x6-440002.2.7"></a>The Linux kernel model</h4>
+<!--l. 238--><p class="noindent">The development of the Linux kernel has a shallow hierarchical structure, surrounded by a cloud of apparent chaos. Because
+most Linux developers use <a 
+ id="dx6-44001"></a><span 
+class="pcrr7tn-">git</span>, a distributed revision control tool with capabilities similar to Mercurial, it&#x2019;s useful
+to describe the way work flows in that environment; if you like the ideas, the approach translates well across
+tools.
+</p><!--l. 245--><p class="indent">   At the center of the community sits Linus Torvalds, the creator of Linux. He publishes a single source repository that is
+considered the &#x201C;authoritative&#x201D; current tree by the entire developer community. Anyone can clone Linus&#x2019;s tree, but he is very
+choosy about whose trees he pulls from.
+</p><!--l. 251--><p class="indent">   Linus has a number of &#x201C;trusted lieutenants&#x201D;. As a general rule, he pulls whatever changes they publish, in most cases
+without even reviewing those changes. Some of those lieutenants are generally agreed to be &#x201C;maintainers&#x201D;, responsible for
+specific subsystems within the kernel. If a random kernel hacker wants to make a change to a subsystem that they want to end
+up in Linus&#x2019;s tree, they must find out who the subsystem&#x2019;s maintainer is, and ask that maintainer to take their
+change. If the maintainer reviews their changes and agrees to take them, they&#x2019;ll pass them along to Linus in due
+course.
+</p><!--l. 261--><p class="indent">   Individual lieutenants have their own approaches to reviewing, accepting, and publishing changes; and for deciding when to
+feed them to Linus. In addition, there are several well known branches that people use for different purposes. For example, a
+few people maintain &#x201C;stable&#x201D; repositories of older versions of the kernel, to which they apply critical fixes as needed. Some
+maintainers publish multiple trees: one for experimental changes; one for changes that they are about to feed upstream; and so
+on. Others just publish a single tree.
+</p><!--l. 271--><p class="indent">   This model has two notable features. The first is that it&#x2019;s &#x201C;pull only&#x201D;. You have to ask, convince, or beg another developer to
+take a change from you, because there are almost no trees to which more than one person can push, and there&#x2019;s no way to push
+changes into a tree that someone else controls.
+</p><!--l. 277--><p class="indent">   The second is that it&#x2019;s based on reputation and acclaim. If you&#x2019;re an unknown, Linus will probably ignore changes from you
+without even responding. But a subsystem maintainer will probably review them, and will likely take them if they pass their
+criteria for suitability. The more &#x201C;good&#x201D; changes you contribute to a maintainer, the more likely they are to trust
+your judgment and accept your changes. If you&#x2019;re well-known and maintain a long-lived branch for something
+Linus hasn&#x2019;t yet accepted, people with similar interests may pull your changes regularly to keep up with your
+work.
+</p><!--l. 287--><p class="indent">   Reputation and acclaim don&#x2019;t necessarily cross subsystem or &#x201C;people&#x201D; boundaries. If you&#x2019;re a respected but specialised
+storage hacker, and you try to fix a networking bug, that change will receive a level of scrutiny from a network maintainer
+comparable to a change from a complete stranger.
+</p><!--l. 293--><p class="indent">   To people who come from more orderly project backgrounds, the comparatively chaotic Linux kernel development process
+often seems completely insane. It&#x2019;s subject to the whims of individuals; people make sweeping changes whenever they deem it
+appropriate; and the pace of development is astounding. And yet Linux is a highly successful, well-regarded piece of
+                                                                                         
+                                                                                         
+software.
+</p><!--l. 300--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.8    </span> <a 
+ id="x6-450002.2.8"></a>Pull-only versus shared-push collaboration</h4>
+<!--l. 302--><p class="noindent">A perpetual source of heat in the open source community is whether a development model in which people
+only ever pull changes from others is &#x201C;better than&#x201D; one in which multiple people can push changes to a shared
+repository.
+</p><!--l. 307--><p class="indent">   Typically, the backers of the shared-push model use tools that actively enforce this approach. If you&#x2019;re using a centralised
+revision control tool such as Subversion, there&#x2019;s no way to make a choice over which model you&#x2019;ll use: the tool gives you
+shared-push, and if you want to do anything else, you&#x2019;ll have to roll your own approach on top (such as applying a patch by
+hand).
+</p><!--l. 314--><p class="indent">   A good distributed revision control tool, such as Mercurial, will support both models. You and your collaborators can then
+structure how you work together based on your own needs and preferences, not on what contortions your tools force you
+into.
+</p><!--l. 319--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.2.9    </span> <a 
+ id="x6-460002.2.9"></a>Where collaboration meets branch management</h4>
+<!--l. 321--><p class="noindent">Once you and your team set up some shared repositories and start propagating changes back and forth between local and shared
+repos, you begin to face a related, but slightly different challenge: that of managing the multiple directions in which your team
+may be moving at once. Even though this subject is intimately related to how your team collaborates, it&#x2019;s dense enough to merit
+treatment of its own, in chapter&#x00A0;<a 
+href="hgbookch1.html#x5-70001">1<!--tex4ht:ref: chap:userfaq --></a>.
+</p><!--l. 329--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">2.3    </span> <a 
+ id="x6-470002.3"></a>The technical side of sharing</h3>
+<!--l. 331--><p class="noindent">The remainder of this chapter is devoted to the question of serving data to your collaborators.
+</p><!--l. 334--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">2.4    </span> <a 
+ id="x6-480002.4"></a>Informal sharing with &#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D;</h3>
+<!--l. 337--><p class="noindent">Mercurial&#x2019;s <a 
+ id="dx6-48001"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command is wonderfully suited to small, tight-knit, and fast-paced group environments. It also
+provides a great way to get a feel for using Mercurial commands over a network.
+</p><!--l. 341--><p class="indent">   Run <a 
+ id="dx6-48002"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; inside a repository, and in under a second it will bring up a specialised HTTP server; this will accept
+connections from any client, and serve up data for that repository until you terminate it. Anyone who knows the URL of the
+server you just started, and can talk to your computer over the network, can then use a web browser or Mercurial to read data
+from that repository. A URL for a <a 
+ id="dx6-48003"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; instance running on a laptop is likely to look something like
+<span class="verb"><span 
+class="pcrr7tn-">http://my-laptop.local:8000/</span></span>.
+</p><!--l. 350--><p class="indent">   The <a 
+ id="dx6-48004"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command is <span 
+class="ptmri7t-">not </span>a general-purpose web server. It can do only two things: </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">Allow people to browse the history of the repository it&#x2019;s serving, from their normal web browsers.
+     </span><li><span class="dt">
+     </span><span class="dd">Speak Mercurial&#x2019;s wire protocol, so that people can <a 
+ id="dx6-48005"></a>&#x201C;<span 
+class="pcrr7tn-">hg clone</span>&#x201D; or <a 
+ id="dx6-48006"></a>&#x201C;<span 
+class="pcrr7tn-">hg pull</span>&#x201D; changes from that repository.</li></ul>
+                                                                                         
+                                                                                         
+<!--l. 358--><p class="noindent">In particular, <a 
+ id="dx6-48007"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; won&#x2019;t allow remote users to <span 
+class="ptmri7t-">modify </span>your repository. It&#x2019;s intended for read-only use.
+</p><!--l. 361--><p class="indent">   If you&#x2019;re getting started with Mercurial, there&#x2019;s nothing to prevent you from using <a 
+ id="dx6-48008"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; to serve up a repository on
+your own computer, then use commands like <a 
+ id="dx6-48009"></a>&#x201C;<span 
+class="pcrr7tn-">hg clone</span>&#x201D;, <a 
+ id="dx6-48010"></a>&#x201C;<span 
+class="pcrr7tn-">hg incoming</span>&#x201D;, and so on to talk to that server as if the repository
+was hosted remotely. This can help you to quickly get acquainted with using commands on network-hosted
+repositories.
+</p><!--l. 368--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.4.1    </span> <a 
+ id="x6-490002.4.1"></a>A few things to keep in mind</h4>
+<!--l. 370--><p class="noindent">Because it provides unauthenticated read access to all clients, you should only use <a 
+ id="dx6-49001"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; in an environment where
+you either don&#x2019;t care, or have complete control over, who can access your network and pull data from your
+repository.
+</p><!--l. 375--><p class="indent">   The <a 
+ id="dx6-49002"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command knows nothing about any firewall software you might have installed on your system or network.
+It cannot detect or control your firewall software. If other people are unable to talk to a running <a 
+ id="dx6-49003"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; instance, the
+second thing you should do (<span 
+class="ptmri7t-">after </span>you make sure that they&#x2019;re using the correct URL) is check your firewall
+configuration.
+</p><!--l. 382--><p class="indent">   By default, <a 
+ id="dx6-49004"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; listens for incoming connections on port&#x00A0;8000. If another process is already listening on the port
+you want to use, you can specify a different port to listen on using the <a 
+ id="dx6-49005"></a><span 
+class="pcrr7tn-">-p </span>option.
+</p><!--l. 387--><p class="indent">   Normally, when <a 
+ id="dx6-49006"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; starts, it prints no output, which can be a bit unnerving. If you&#x2019;d like to confirm that it is
+indeed running correctly, and find out what URL you should send to your collaborators, start it with the <a 
+ id="dx6-49007"></a><span 
+class="pcrr7tn-">-v</span>
+option.
+</p><!--l. 392--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">2.5    </span> <a 
+ id="x6-500002.5"></a>Using the Secure Shell (ssh) protocol</h3>
+<!--l. 395--><p class="noindent">You can pull and push changes securely over a network connection using the Secure Shell (<span 
+class="pcrr7tn-">ssh</span>) protocol. To use this
+successfully, you may have to do a little bit of configuration on the client or server sides.
+</p><!--l. 400--><p class="indent">   If you&#x2019;re not familiar with ssh, it&#x2019;s a network protocol that lets you securely communicate with another computer. To use it
+with Mercurial, you&#x2019;ll be setting up one or more user accounts on a server so that remote users can log in and execute
+commands.
+</p><!--l. 405--><p class="indent">   (If you <span 
+class="ptmri7t-">are </span>familiar with ssh, you&#x2019;ll probably find some of the material that follows to be elementary in
+nature.)
+</p><!--l. 408--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.5.1    </span> <a 
+ id="x6-510002.5.1"></a>How to read and write ssh URLs</h4>
+<!--l. 410--><p class="noindent">An ssh URL tends to look like this:
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-51002r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;ssh://bos@hg.serpentine.com:22/hg/hgbook</span>
+   </div>
+<!--l. 415--><p class="noindent">
+     </p><ol  class="enumerate1" >
+     <li class="enumerate"><a 
+ id="x6-51004x1"></a>The &#x201C;<span 
+class="pcrr7tn-">ssh://</span>&#x201D; part tells Mercurial to use the ssh protocol.
+                                                                                         
+                                                                                         
+     </li>
+     <li class="enumerate"><a 
+ id="x6-51006x2"></a>The &#x201C;<span 
+class="pcrr7tn-">bos@</span>&#x201D; component indicates what username to log into the server as. You can leave this out if the remote
+     username is the same as your local username.
+     </li>
+     <li class="enumerate"><a 
+ id="x6-51008x3"></a>The &#x201C;<span 
+class="pcrr7tn-">hg.serpentine.com</span>&#x201D; gives the hostname of the server to log into.
+     </li>
+     <li class="enumerate"><a 
+ id="x6-51010x4"></a>The &#x201C;:22&#x201D; identifies the port number to connect to the server on. The default port is&#x00A0;22, so you only need to
+     specify this part if you&#x2019;re <span 
+class="ptmri7t-">not </span>using port&#x00A0;22.
+     </li>
+     <li class="enumerate"><a 
+ id="x6-51012x5"></a>The remainder of the URL is the local path to the repository on the server.</li></ol>
+<!--l. 429--><p class="indent">   There&#x2019;s plenty of scope for confusion with the path component of ssh URLs, as there is no standard way for tools to
+interpret it. Some programs behave differently than others when dealing with these paths. This isn&#x2019;t an ideal situation, but it&#x2019;s
+unlikely to change. Please read the following paragraphs carefully.
+</p><!--l. 435--><p class="indent">   Mercurial treats the path to a repository on the server as relative to the remote user&#x2019;s home directory. For example, if user
+<span 
+class="pcrr7tn-">foo </span>on the server has a home directory of <span 
+class="pcrr7tn-">/home/foo</span>, then an ssh URL that contains a path component of <span 
+class="pcrr7tn-">bar </span><span 
+class="ptmri7t-">really </span>refers to
+the directory <span 
+class="pcrr7tn-">/home/foo/bar</span>.
+</p><!--l. 441--><p class="indent">   If you want to specify a path relative to another user&#x2019;s home directory, you can use a path that starts with a tilde character
+followed by the user&#x2019;s name (let&#x2019;s call them <span 
+class="pcrr7tn-">otheruser</span>), like this.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-51014r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;ssh://server/~otheruser/hg/repo</span>
+   </div>
+<!--l. 449--><p class="indent">   And if you really want to specify an <span 
+class="ptmri7t-">absolute </span>path on the server, begin the path component with two slashes, as in this
+example.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-51016r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;ssh://server//absolute/path</span>
+   </div>
+<!--l. 455--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.5.2    </span> <a 
+ id="x6-520002.5.2"></a>Finding an ssh client for your system</h4>
+<!--l. 457--><p class="noindent">Almost every Unix-like system comes with OpenSSH preinstalled. If you&#x2019;re using such a system, run <span class="verb"><span 
+class="pcrr7tn-">which</span><span 
+class="pcrr7tn-">&#x00A0;ssh</span></span> to find out if
+the <a 
+ id="dx6-52001"></a><span 
+class="pcrr7tn-">ssh </span>command is installed (it&#x2019;s usually in <span 
+class="pcrr7tn-">/usr/bin</span>). In the unlikely event that it isn&#x2019;t present, take a look at your system
+documentation to figure out how to install it.
+</p><!--l. 464--><p class="indent">   On Windows, you&#x2019;ll first need to choose download a suitable ssh client. There are two alternatives. </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">Simon Tatham&#x2019;s excellent PuTTY package&#x00A0;<span class="cite">[<span 
+class="ptmb7t-">?</span>]</span> provides a complete suite of ssh client commands.
+     </span><li><span class="dt">
+     </span><span class="dd">If you have a high tolerance for pain, you can use the Cygwin port of OpenSSH.</li></ul>
+<!--l. 472--><p class="noindent">In either case, you&#x2019;ll need to edit your <a 
+ id="dx6-52002"></a><a 
+ id="dx6-52003"></a><span 
+class="pcrr7tn-">Mercurial.ini</span>&#x00A0;file to tell Mercurial where to find the actual client command. For example,
+if you&#x2019;re using PuTTY, you&#x2019;ll need to use the <a 
+ id="dx6-52004"></a><span 
+class="pcrr7tn-">plink </span>command as a command-line ssh client.
+                                                                                         
+                                                                                         
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-52006r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;[ui]</span>
+<br class="fancyvrb" /><a 
+ id="x6-52008r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;ssh</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;C:/path/to/plink.exe</span><span 
+class="pcrr7tn-">&#x00A0;-ssh</span><span 
+class="pcrr7tn-">&#x00A0;-i</span><span 
+class="pcrr7tn-">&#x00A0;"C:/path/to/my/private/key"</span>
+   </div>
+</p>
+   <div class="fbox"><span 
+class="ptmb7t-">Note:  </span>The path to <span 
+class="pcrr7tn-">plink </span>shouldn&#x2019;t contain any whitespace characters, or Mercurial
+may not be able to run it correctly (so putting it in <span 
+class="pcrr7tn-">C:</span>
+<span 
+class="pcrr7tn-">Program Files </span>is probably not a good idea).                                                          </div>
+<!--l. 488--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.5.3    </span> <a 
+ id="x6-530002.5.3"></a>Generating a key pair</h4>
+<!--l. 490--><p class="noindent">To avoid the need to repetitively type a password every time you need to use your ssh client, I recommend generating a key pair.
+On a Unix-like system, the <a 
+ id="dx6-53001"></a><span 
+class="pcrr7tn-">ssh-keygen </span>command will do the trick. On Windows, if you&#x2019;re using PuTTY, the <a 
+ id="dx6-53002"></a><span 
+class="pcrr7tn-">puttygen</span>
+command is what you&#x2019;ll need.
+</p><!--l. 496--><p class="indent">   When you generate a key pair, it&#x2019;s usually <span 
+class="ptmri7t-">highly </span>advisable to protect it with a passphrase. (The only time that you might
+not want to do this id when you&#x2019;re using the ssh protocol for automated tasks on a secure network.)
+</p><!--l. 501--><p class="indent">   Simply generating a key pair isn&#x2019;t enough, however. You&#x2019;ll need to add the public key to the set of authorised keys for
+whatever user you&#x2019;re logging in remotely as. For servers using OpenSSH (the vast majority), this will mean adding the public
+key to a list in a file called <a 
+ id="dx6-53003"></a><span 
+class="pcrr7tn-">authorized</span><span 
+class="pcrr7tn-">_keys </span>in their <a 
+ id="dx6-53004"></a><span 
+class="pcrr7tn-">.ssh </span>directory.
+</p><!--l. 508--><p class="indent">   On a Unix-like system, your public key will have a <span 
+class="pcrr7tn-">.pub </span>extension. If you&#x2019;re using <a 
+ id="dx6-53005"></a><span 
+class="pcrr7tn-">puttygen </span>on Windows, you can save
+the public key to a file of your choosing, or paste it from the window it&#x2019;s displayed in straight into the <a 
+ id="dx6-53006"></a><span 
+class="pcrr7tn-">authorized</span><span 
+class="pcrr7tn-">_keys</span>
+file.
+</p><!--l. 514--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.5.4    </span> <a 
+ id="x6-540002.5.4"></a>Using an authentication agent</h4>
+<!--l. 516--><p class="noindent">An authentication agent is a daemon that stores passphrases in memory (so it will forget passphrases if you
+log out and log back in again). An ssh client will notice if it&#x2019;s running, and query it for a passphrase. If there&#x2019;s
+no authentication agent running, or the agent doesn&#x2019;t store the necessary passphrase, you&#x2019;ll have to type your
+passphrase every time Mercurial tries to communicate with a server on your behalf (e.g.&#x00A0;whenever you pull or push
+changes).
+</p><!--l. 524--><p class="indent">   The downside of storing passphrases in an agent is that it&#x2019;s possible for a well-prepared attacker to recover the plain text of
+your passphrases, in some cases even if your system has been power-cycled. You should make your own judgment as to
+whether this is an acceptable risk. It certainly saves a lot of repeated typing.
+</p><!--l. 530--><p class="indent">   On Unix-like systems, the agent is called <a 
+ id="dx6-54001"></a><span 
+class="pcrr7tn-">ssh-agent</span>, and it&#x2019;s often run automatically for you when you log in. You&#x2019;ll need
+to use the <a 
+ id="dx6-54002"></a><span 
+class="pcrr7tn-">ssh-add </span>command to add passphrases to the agent&#x2019;s store. On Windows, if you&#x2019;re using PuTTY,
+the <a 
+ id="dx6-54003"></a><span 
+class="pcrr7tn-">pageant </span>command acts as the agent. It adds an icon to your system tray that will let you manage stored
+passphrases.
+</p><!--l. 537--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.5.5    </span> <a 
+ id="x6-550002.5.5"></a>Configuring the server side properly</h4>
+<!--l. 539--><p class="noindent">Because ssh can be fiddly to set up if you&#x2019;re new to it, there&#x2019;s a variety of things that can go wrong. Add Mercurial on top, and
+there&#x2019;s plenty more scope for head-scratching. Most of these potential problems occur on the server side, not the
+client side. The good news is that once you&#x2019;ve gotten a configuration working, it will usually continue to work
+indefinitely.
+                                                                                         
+                                                                                         
+</p><!--l. 546--><p class="indent">   Before you try using Mercurial to talk to an ssh server, it&#x2019;s best to make sure that you can use the normal <a 
+ id="dx6-55001"></a><span 
+class="pcrr7tn-">ssh </span>or <a 
+ id="dx6-55002"></a><span 
+class="pcrr7tn-">putty</span>
+command to talk to the server first. If you run into problems with using these commands directly, Mercurial surely won&#x2019;t work.
+Worse, it will obscure the underlying problem. Any time you want to debug ssh-related Mercurial problems, you should drop
+back to making sure that plain ssh client commands work first, <span 
+class="ptmri7t-">before </span>you worry about whether there&#x2019;s a problem with
+Mercurial.
+</p><!--l. 555--><p class="indent">   The first thing to be sure of on the server side is that you can actually log in from another machine at all. If you can&#x2019;t use
+<a 
+ id="dx6-55003"></a><span 
+class="pcrr7tn-">ssh </span>or <a 
+ id="dx6-55004"></a><span 
+class="pcrr7tn-">putty </span>to log in, the error message you get may give you a few hints as to what&#x2019;s wrong. The most common problems are
+as follows. </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">If you get a &#x201C;connection refused&#x201D; error, either there isn&#x2019;t an SSH daemon running on the server at all, or it&#x2019;s
+     inaccessible due to firewall configuration.
+     </span><li><span class="dt">
+     </span><span class="dd">If you get a &#x201C;no route to host&#x201D; error, you either have an incorrect address for the server or a seriously locked
+     down firewall that won&#x2019;t admit its existence at all.
+     </span><li><span class="dt">
+     </span><span class="dd">If you get a &#x201C;permission denied&#x201D; error, you may have mistyped the username on the server, or you could have
+     mistyped your key&#x2019;s passphrase or the remote user&#x2019;s password.</li></ul>
+<!--l. 571--><p class="noindent">In summary, if you&#x2019;re having trouble talking to the server&#x2019;s ssh daemon, first make sure that one is running at all. On many
+systems it will be installed, but disabled, by default. Once you&#x2019;re done with this step, you should then check that
+the server&#x2019;s firewall is configured to allow incoming connections on the port the ssh daemon is listening on
+(usually&#x00A0;22). Don&#x2019;t worry about more exotic possibilities for misconfiguration until you&#x2019;ve checked these two
+first.
+</p><!--l. 580--><p class="indent">   If you&#x2019;re using an authentication agent on the client side to store passphrases for your keys, you ought to be able to log into
+the server without being prompted for a passphrase or a password. If you&#x2019;re prompted for a passphrase, there are a few possible
+culprits. </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">You might have forgotten to use <a 
+ id="dx6-55005"></a><span 
+class="pcrr7tn-">ssh-add </span>or <a 
+ id="dx6-55006"></a><span 
+class="pcrr7tn-">pageant </span>to store the passphrase.
+     </span><li><span class="dt">
+     </span><span class="dd">You might have stored the passphrase for the wrong key.</li></ul>
+<!--l. 589--><p class="noindent">If you&#x2019;re being prompted for the remote user&#x2019;s password, there are another few possible problems to check. </p>
+     <ul><li><span class="dt">
+     </span><span class="dd">Either the user&#x2019;s home directory or their <a 
+ id="dx6-55007"></a><span 
+class="pcrr7tn-">.ssh </span>directory might have excessively liberal permissions. As a result,
+     the ssh daemon will not trust or read their <a 
+ id="dx6-55008"></a><span 
+class="pcrr7tn-">authorized</span><span 
+class="pcrr7tn-">_keys </span>file. For example, a group-writable home or <a 
+ id="dx6-55009"></a><span 
+class="pcrr7tn-">.ssh</span>
+     directory will often cause this symptom.
+     </span><li><span class="dt">
+     </span><span class="dd">The user&#x2019;s <a 
+ id="dx6-55010"></a><span 
+class="pcrr7tn-">authorized</span><span 
+class="pcrr7tn-">_keys </span>file may have a problem. If anyone other than the user owns or can write to that
+     file, the ssh daemon will not trust or read it.</li></ul>
+<!--l. 602--><p class="indent">   In the ideal world, you should be able to run the following command successfully, and it should print exactly one line of
+output, the current date and time.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-55012r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;ssh</span><span 
+class="pcrr7tn-">&#x00A0;myserver</span><span 
+class="pcrr7tn-">&#x00A0;date</span>
+   </div>
+                                                                                         
+                                                                                         
+<!--l. 609--><p class="indent">   If, on your server, you have login scripts that print banners or other junk even when running non-interactive commands like
+this, you should fix them before you continue, so that they only print output if they&#x2019;re run interactively. Otherwise these banners
+will at least clutter up Mercurial&#x2019;s output. Worse, they could potentially cause problems with running Mercurial commands
+remotely. Mercurial makes tries to detect and ignore banners in non-interactive <a 
+ id="dx6-55013"></a><span 
+class="pcrr7tn-">ssh </span>sessions, but it is not foolproof. (If you&#x2019;re
+editing your login scripts on your server, the usual way to see if a login script is running in an interactive shell is to check the
+return code from the command <span class="verb"><span 
+class="pcrr7tn-">tty</span><span 
+class="pcrr7tn-">&#x00A0;-s</span></span>.)
+</p><!--l. 621--><p class="indent">   Once you&#x2019;ve verified that plain old ssh is working with your server, the next step is to ensure that Mercurial runs on the
+server. The following command should run successfully:
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-55015r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;ssh</span><span 
+class="pcrr7tn-">&#x00A0;myserver</span><span 
+class="pcrr7tn-">&#x00A0;hg</span><span 
+class="pcrr7tn-">&#x00A0;version</span>
+   </div>
+<!--l. 627--><p class="noindent">If you see an error message instead of normal <a 
+ id="dx6-55016"></a>&#x201C;<span 
+class="pcrr7tn-">hg version</span>&#x201D; output, this is usually because you haven&#x2019;t installed Mercurial to
+<span 
+class="pcrr7tn-">/usr/bin</span>. Don&#x2019;t worry if this is the case; you don&#x2019;t need to do that. But you should check for a few possible problems.
+</p>
+     <ul><li><span class="dt">
+     </span><span class="dd">Is Mercurial really installed on the server at all? I know this sounds trivial, but it&#x2019;s worth checking!
+     </span><li><span class="dt">
+     </span><span class="dd">Maybe your shell&#x2019;s search path (usually set via the <a 
+ id="dx6-55017"></a><a 
+ id="dx6-55018"></a><span 
+class="pcrr7tn-">PATH </span>environment variable) is simply misconfigured.
+     </span><li><span class="dt">
+     </span><span class="dd">Perhaps your <a 
+ id="dx6-55019"></a><a 
+ id="dx6-55020"></a><span 
+class="pcrr7tn-">PATH </span>environment variable is only being set to point to the location of the <a 
+ id="dx6-55021"></a><span 
+class="pcrr7tn-">hg </span>executable if the
+     login session is interactive. This can happen if you&#x2019;re setting the path in the wrong shell login script. See your
+     shell&#x2019;s documentation for details.
+     </span><li><span class="dt">
+     </span><span class="dd">The <a 
+ id="dx6-55022"></a><a 
+ id="dx6-55023"></a><span 
+class="pcrr7tn-">PYTHONPATH </span>environment variable may need to contain the path to the Mercurial Python modules. It might
+     not be set at all; it could be incorrect; or it may be set only if the login is interactive.</li></ul>
+<!--l. 647--><p class="indent">   If you can run <a 
+ id="dx6-55024"></a>&#x201C;<span 
+class="pcrr7tn-">hg version</span>&#x201D; over an ssh connection, well done! You&#x2019;ve got the server and client sorted out. You
+should now be able to use Mercurial to access repositories hosted by that username on that server. If you run into
+problems with Mercurial and ssh at this point, try using the <a 
+ id="dx6-55025"></a><span 
+class="pcrr7tn-">--debug </span>option to get a clearer picture of what&#x2019;s going
+on.
+</p><!--l. 654--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.5.6    </span> <a 
+ id="x6-560002.5.6"></a>Using compression with ssh</h4>
+<!--l. 656--><p class="noindent">Mercurial does not compress data when it uses the ssh protocol, because the ssh protocol can transparently compress data.
+However, the default behaviour of ssh clients is <span 
+class="ptmri7t-">not </span>to request compression.
+</p><!--l. 661--><p class="indent">   Over any network other than a fast LAN (even a wireless network), using compression is likely to significantly speed up
+Mercurial&#x2019;s network operations. For example, over a WAN, someone measured compression as reducing the amount of time
+required to clone a particularly large repository from&#x00A0;51 minutes to&#x00A0;17 minutes.
+</p><!--l. 667--><p class="indent">   Both <a 
+ id="dx6-56001"></a><span 
+class="pcrr7tn-">ssh </span>and <a 
+ id="dx6-56002"></a><span 
+class="pcrr7tn-">plink </span>accept a <a 
+ id="dx6-56003"></a><span 
+class="pcrr7tn-">-C </span>option which turns on compression. You can easily edit your <a 
+ id="dx6-56004"></a><a 
+ id="dx6-56005"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;to enable compression
+for all of Mercurial&#x2019;s uses of the ssh protocol.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-56007r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;[ui]</span>
+<br class="fancyvrb" /><a 
+ id="x6-56009r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;ssh</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;ssh</span><span 
+class="pcrr7tn-">&#x00A0;-C</span>
+   </div>
+                                                                                         
+                                                                                         
+<!--l. 675--><p class="indent">   If you use <a 
+ id="dx6-56010"></a><span 
+class="pcrr7tn-">ssh</span>, you can configure it to always use compression when talking to your server. To do this, edit your
+<a 
+ id="dx6-56011"></a><span 
+class="pcrr7tn-">.ssh/config </span>file (which may not yet exist), as follows.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-56013r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Host</span><span 
+class="pcrr7tn-">&#x00A0;hg</span>
+<br class="fancyvrb" /><a 
+ id="x6-56015r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Compression</span><span 
+class="pcrr7tn-">&#x00A0;yes</span>
+<br class="fancyvrb" /><a 
+ id="x6-56017r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;HostName</span><span 
+class="pcrr7tn-">&#x00A0;hg.example.com</span>
+   </div>
+<!--l. 683--><p class="noindent">This defines an alias, <span 
+class="pcrr7tn-">hg</span>. When you use it on the <a 
+ id="dx6-56018"></a><span 
+class="pcrr7tn-">ssh </span>command line or in a Mercurial <span 
+class="pcrr7tn-">ssh</span>-protocol URL, it will cause <a 
+ id="dx6-56019"></a><span 
+class="pcrr7tn-">ssh </span>to
+connect to <span 
+class="pcrr7tn-">hg.example.com </span>and use compression. This gives you both a shorter name to type and compression, each of which
+is a good thing in its own right.
+</p><!--l. 689--><p class="noindent">
+</p>
+   <h3 class="sectionHead"><span class="titlemark">2.6    </span> <a 
+ id="x6-570002.6"></a>Serving over HTTP using CGI</h3>
+<!--l. 692--><p class="noindent">Depending on how ambitious you are, configuring Mercurial&#x2019;s CGI interface can take anything from a few moments to several
+hours.
+</p><!--l. 695--><p class="indent">   We&#x2019;ll begin with the simplest of examples, and work our way towards a more complex configuration. Even for the most
+basic case, you&#x2019;re almost certainly going to need to read and modify your web server&#x2019;s configuration.
+</p>
+   <div class="fbox"><span 
+class="ptmb7t-">Note:  </span>Configuring a web server is a complex, fiddly, and highly system-dependent
+activity. I can&#x2019;t possibly give you instructions that will cover anything like all of
+the cases you will encounter. Please use your discretion and judgment in following
+the sections below. Be prepared to make plenty of mistakes, and to spend a lot of
+time reading your server&#x2019;s error logs.                                                                        </div>
+<!--l. 709--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.6.1    </span> <a 
+ id="x6-580002.6.1"></a>Web server configuration checklist</h4>
+<!--l. 711--><p class="noindent">Before you continue, do take a few moments to check a few aspects of your system&#x2019;s setup.
+</p><!--l. 715--><p class="indent">
+     </p><ol  class="enumerate1" >
+     <li class="enumerate"><a 
+ id="x6-58002x1"></a>Do you have a web server installed at all? Mac OS X ships with Apache, but many other systems may not have
+     a web server installed.
+     </li>
+     <li class="enumerate"><a 
+ id="x6-58004x2"></a>If you have a web server installed, is it actually running? On most systems, even if one is present, it will be
+     disabled by default.
+     </li>
+     <li class="enumerate"><a 
+ id="x6-58006x3"></a>Is your server configured to allow you to run CGI programs in the directory where you plan to do so? Most
+     servers default to explicitly disabling the ability to run CGI programs.</li></ol>
+<!--l. 725--><p class="indent">   If you don&#x2019;t have a web server installed, and don&#x2019;t have substantial experience configuring Apache, you should consider
+using the <span 
+class="pcrr7tn-">lighttpd </span>web server instead of Apache. Apache has a well-deserved reputation for baroque and confusing
+configuration. While <span 
+class="pcrr7tn-">lighttpd </span>is less capable in some ways than Apache, most of these capabilities are not
+relevant to serving Mercurial repositories. And <span 
+class="pcrr7tn-">lighttpd </span>is undeniably <span 
+class="ptmri7t-">much </span>easier to get started with than
+Apache.
+                                                                                         
+                                                                                         
+</p><!--l. 734--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.6.2    </span> <a 
+ id="x6-590002.6.2"></a>Basic CGI configuration</h4>
+<!--l. 736--><p class="noindent">On Unix-like systems, it&#x2019;s common for users to have a subdirectory named something like <span 
+class="pcrr7tn-">public</span><span 
+class="pcrr7tn-">_html </span>in their home
+directory, from which they can serve up web pages. A file named <span 
+class="pcrr7tn-">foo </span>in this directory will be accessible at a URL of the form
+<span 
+class="pcrr7tn-">http://www.example.com/</span><span 
+class="pcrr7tn-">&#x0169;sername/foo</span>.
+</p><!--l. 742--><p class="indent">   To get started, find the <a 
+ id="dx6-59001"></a><span 
+class="pcrr7tn-">hgweb.cgi </span>script that should be present in your Mercurial installation. If you can&#x2019;t
+quickly find a local copy on your system, simply download one from the master Mercurial repository at
+<a 
+href="http://www.selenic.com/repo/hg/raw-file/tip/hgweb.cgi" class="url" ><span 
+class="pcrr7tn-">http://www.selenic.com/repo/hg/raw-file/tip/hgweb.cgi</span></a>.
+</p><!--l. 748--><p class="indent">   You&#x2019;ll need to copy this script into your <span 
+class="pcrr7tn-">public</span><span 
+class="pcrr7tn-">_html </span>directory, and ensure that it&#x2019;s executable.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-59003r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;cp</span><span 
+class="pcrr7tn-">&#x00A0;.../hgweb.cgi</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html</span>
+<br class="fancyvrb" /><a 
+ id="x6-59005r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;chmod</span><span 
+class="pcrr7tn-">&#x00A0;755</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html/hgweb.cgi</span>
+   </div>
+<!--l. 754--><p class="noindent">The <span 
+class="pcrr7tn-">755 </span>argument to <a 
+ id="dx6-59006"></a><span 
+class="pcrr7tn-">chmod </span>is a little more general than just making the script executable: it ensures that the script is executable by
+anyone, and that &#x201C;group&#x201D; and &#x201C;other&#x201D; write permissions are <span 
+class="ptmri7t-">not </span>set. If you were to leave those write permissions enabled,
+Apache&#x2019;s <span 
+class="pcrr7tn-">suexec </span>subsystem would likely refuse to execute the script. In fact, <span 
+class="pcrr7tn-">suexec </span>also insists that the <span 
+class="ptmri7t-">directory </span>in which the
+script resides must not be writable by others.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-59008r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;chmod</span><span 
+class="pcrr7tn-">&#x00A0;755</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html</span>
+   </div>
+<!--l. 766--><p class="noindent">
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x6-600002.6.2"></a>What could <span 
+class="ptmri7t-">possibly </span>go wrong?</h5>
+<!--l. 769--><p class="noindent">Once you&#x2019;ve copied the CGI script into place, go into a web browser, and try to open the URL
+<a 
+href="http://myhostname/~myuser/hgweb.cgi" class="url" ><span 
+class="pcrr7tn-">http://myhostname/~myuser/hgweb.cgi</span></a>, <span 
+class="ptmri7t-">but </span>brace yourself for instant failure. There&#x2019;s a high probability that trying to visit
+this URL will fail, and there are many possible reasons for this. In fact, you&#x2019;re likely to stumble over almost every one of the
+possible errors below, so please read carefully. The following are all of the problems I ran into on a system
+running Fedora&#x00A0;7, with a fresh installation of Apache, and a user account that I created specially to perform this
+exercise.
+</p><!--l. 779--><p class="indent">   Your web server may have per-user directories disabled. If you&#x2019;re using Apache, search your config file for a <span 
+class="pcrr7tn-">UserDir</span>
+directive. If there&#x2019;s none present, per-user directories will be disabled. If one exists, but its value is <span 
+class="pcrr7tn-">disabled</span>, then per-user
+directories will be disabled. Otherwise, the string after <span 
+class="pcrr7tn-">UserDir </span>gives the name of the subdirectory that Apache will look in
+under your home directory, for example <span 
+class="pcrr7tn-">public</span><span 
+class="pcrr7tn-">_html</span>.
+</p><!--l. 787--><p class="indent">   Your file access permissions may be too restrictive. The web server must be able to traverse your home directory and
+directories under your <span 
+class="pcrr7tn-">public</span><span 
+class="pcrr7tn-">_html </span>directory, and read files under the latter too. Here&#x2019;s a quick recipe to help you to make
+your permissions more appropriate.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-60002r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;chmod</span><span 
+class="pcrr7tn-">&#x00A0;755</span><span 
+class="pcrr7tn-">&#x00A0;~</span>
+<br class="fancyvrb" /><a 
+ id="x6-60004r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;find</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html</span><span 
+class="pcrr7tn-">&#x00A0;-type</span><span 
+class="pcrr7tn-">&#x00A0;d</span><span 
+class="pcrr7tn-">&#x00A0;-print0</span><span 
+class="pcrr7tn-">&#x00A0;|</span><span 
+class="pcrr7tn-">&#x00A0;xargs</span><span 
+class="pcrr7tn-">&#x00A0;-0r</span><span 
+class="pcrr7tn-">&#x00A0;chmod</span><span 
+class="pcrr7tn-">&#x00A0;755</span>
+<br class="fancyvrb" /><a 
+ id="x6-60006r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;find</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html</span><span 
+class="pcrr7tn-">&#x00A0;-type</span><span 
+class="pcrr7tn-">&#x00A0;f</span><span 
+class="pcrr7tn-">&#x00A0;-print0</span><span 
+class="pcrr7tn-">&#x00A0;|</span><span 
+class="pcrr7tn-">&#x00A0;xargs</span><span 
+class="pcrr7tn-">&#x00A0;-0r</span><span 
+class="pcrr7tn-">&#x00A0;chmod</span><span 
+class="pcrr7tn-">&#x00A0;644</span>
+   </div>
+                                                                                         
+                                                                                         
+<!--l. 798--><p class="indent">   The other possibility with permissions is that you might get a completely empty window when you try to load the script. In
+this case, it&#x2019;s likely that your access permissions are <span 
+class="ptmri7t-">too permissive</span>. Apache&#x2019;s <span 
+class="pcrr7tn-">suexec </span>subsystem won&#x2019;t execute a script that&#x2019;s
+group-&#x00A0;or world-writable, for example.
+</p><!--l. 804--><p class="indent">   Your web server may be configured to disallow execution of CGI programs in your per-user web directory. Here&#x2019;s Apache&#x2019;s
+default per-user configuration from my Fedora system.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-60008r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;Directory</span><span 
+class="pcrr7tn-">&#x00A0;/home/&#x22C6;/public_html&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x6-60010r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;AllowOverride</span><span 
+class="pcrr7tn-">&#x00A0;FileInfo</span><span 
+class="pcrr7tn-">&#x00A0;AuthConfig</span><span 
+class="pcrr7tn-">&#x00A0;Limit</span>
+<br class="fancyvrb" /><a 
+ id="x6-60012r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Options</span><span 
+class="pcrr7tn-">&#x00A0;MultiViews</span><span 
+class="pcrr7tn-">&#x00A0;Indexes</span><span 
+class="pcrr7tn-">&#x00A0;SymLinksIfOwnerMatch</span><span 
+class="pcrr7tn-">&#x00A0;IncludesNoExec</span>
+<br class="fancyvrb" /><a 
+ id="x6-60014r4"></a><span 
+class="ptmr7t-x-x-50">4</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;Limit</span><span 
+class="pcrr7tn-">&#x00A0;GET</span><span 
+class="pcrr7tn-">&#x00A0;POST</span><span 
+class="pcrr7tn-">&#x00A0;OPTIONS&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x6-60016r5"></a><span 
+class="ptmr7t-x-x-50">5</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Order</span><span 
+class="pcrr7tn-">&#x00A0;allow,deny</span>
+<br class="fancyvrb" /><a 
+ id="x6-60018r6"></a><span 
+class="ptmr7t-x-x-50">6</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Allow</span><span 
+class="pcrr7tn-">&#x00A0;from</span><span 
+class="pcrr7tn-">&#x00A0;all</span>
+<br class="fancyvrb" /><a 
+ id="x6-60020r7"></a><span 
+class="ptmr7t-x-x-50">7</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;/Limit&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x6-60022r8"></a><span 
+class="ptmr7t-x-x-50">8</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;LimitExcept</span><span 
+class="pcrr7tn-">&#x00A0;GET</span><span 
+class="pcrr7tn-">&#x00A0;POST</span><span 
+class="pcrr7tn-">&#x00A0;OPTIONS&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x6-60024r9"></a><span 
+class="ptmr7t-x-x-50">9</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Order</span><span 
+class="pcrr7tn-">&#x00A0;deny,allow</span>
+<br class="fancyvrb" /><a 
+ id="x6-60026r10"></a><span 
+class="ptmr7t-x-x-50">10</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;Deny</span><span 
+class="pcrr7tn-">&#x00A0;from</span><span 
+class="pcrr7tn-">&#x00A0;all</span>
+<br class="fancyvrb" /><a 
+ id="x6-60028r11"></a><span 
+class="ptmr7t-x-x-50">11</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;/LimitExcept&#x003e;</span>
+<br class="fancyvrb" /><a 
+ id="x6-60030r12"></a><span 
+class="ptmr7t-x-x-50">12</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;&#x003c;/Directory&#x003e;</span>
+   </div>
+<!--l. 821--><p class="noindent">If you find a similar-looking <span 
+class="pcrr7tn-">Directory </span>group in your Apache configuration, the directive to look at inside it is <span 
+class="pcrr7tn-">Options</span>. Add
+<span 
+class="pcrr7tn-">ExecCGI </span>to the end of this list if it&#x2019;s missing, and restart the web server.
+</p><!--l. 826--><p class="indent">   If you find that Apache serves you the text of the CGI script instead of executing it, you may need to either uncomment (if
+already present) or add a directive like this.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-60032r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;AddHandler</span><span 
+class="pcrr7tn-">&#x00A0;cgi-script</span><span 
+class="pcrr7tn-">&#x00A0;.cgi</span>
+   </div>
+<!--l. 833--><p class="indent">   The next possibility is that you might be served with a colourful Python backtrace claiming that it can&#x2019;t import a
+<span 
+class="pcrr7tn-">mercurial</span>-related module. This is actually progress! The server is now capable of executing your CGI script. This error is
+only likely to occur if you&#x2019;re running a private installation of Mercurial, instead of a system-wide version. Remember that the
+web server runs the CGI program without any of the environment variables that you take for granted in an interactive session. If
+this error happens to you, edit your copy of <a 
+ id="dx6-60033"></a><span 
+class="pcrr7tn-">hgweb.cgi </span>and follow the directions inside it to correctly set your <a 
+ id="dx6-60034"></a><a 
+ id="dx6-60035"></a><span 
+class="pcrr7tn-">PYTHONPATH</span>
+environment variable.
+</p><!--l. 845--><p class="indent">   Finally, you are <span 
+class="ptmri7t-">certain </span>to by served with another colourful Python backtrace: this one will complain that it can&#x2019;t find
+<span 
+class="pcrr7tn-">/path/to/repository</span>. Edit your <a 
+ id="dx6-60036"></a><span 
+class="pcrr7tn-">hgweb.cgi </span>script and replace the <span 
+class="pcrr7tn-">/path/to/repository </span>string with the complete path to
+the repository you want to serve up.
+</p><!--l. 851--><p class="indent">   At this point, when you try to reload the page, you should be presented with a nice HTML view of your repository&#x2019;s history.
+Whew!
+</p><!--l. 854--><p class="noindent">
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x6-610002.6.2"></a>Configuring lighttpd</h5>
+<!--l. 856--><p class="noindent">To be exhaustive in my experiments, I tried configuring the increasingly popular <span 
+class="pcrr7tn-">lighttpd </span>web server to serve the same
+repository as I described with Apache above. I had already overcome all of the problems I outlined with Apache, many of
+which are not server-specific. As a result, I was fairly sure that my file and directory permissions were good, and that my
+<a 
+ id="dx6-61001"></a><span 
+class="pcrr7tn-">hgweb.cgi </span>script was properly edited.
+                                                                                         
+                                                                                         
+</p><!--l. 864--><p class="indent">   Once I had Apache running, getting <span 
+class="pcrr7tn-">lighttpd </span>to serve the repository was a snap (in other words, even if you&#x2019;re trying to
+use <span 
+class="pcrr7tn-">lighttpd</span>, you should read the Apache section). I first had to edit the <span 
+class="pcrr7tn-">mod</span><span 
+class="pcrr7tn-">_access </span>section of its config file to enable
+<span 
+class="pcrr7tn-">mod</span><span 
+class="pcrr7tn-">_cgi </span>and <span 
+class="pcrr7tn-">mod</span><span 
+class="pcrr7tn-">_userdir</span>, both of which were disabled by default on my system. I then added a few lines to the end of the
+config file, to configure these modules.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-61003r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;userdir.path</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;"public_html"</span>
+<br class="fancyvrb" /><a 
+ id="x6-61005r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;cgi.assign</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;(</span><span 
+class="pcrr7tn-">&#x00A0;".cgi"</span><span 
+class="pcrr7tn-">&#x00A0;=&#x003e;</span><span 
+class="pcrr7tn-">&#x00A0;""</span><span 
+class="pcrr7tn-">&#x00A0;)</span>
+   </div>
+<!--l. 875--><p class="noindent">With this done, <span 
+class="pcrr7tn-">lighttpd </span>ran immediately for me. If I had configured <span 
+class="pcrr7tn-">lighttpd </span>before Apache, I&#x2019;d almost certainly have run into
+many of the same system-level configuration problems as I did with Apache. However, I found <span 
+class="pcrr7tn-">lighttpd </span>to be noticeably
+easier to configure than Apache, even though I&#x2019;ve used Apache for over a decade, and this was my first exposure to
+<span 
+class="pcrr7tn-">lighttpd</span>.
+</p><!--l. 882--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.6.3    </span> <a 
+ id="x6-620002.6.3"></a>Sharing multiple repositories with one CGI script</h4>
+<!--l. 884--><p class="noindent">The <a 
+ id="dx6-62001"></a><span 
+class="pcrr7tn-">hgweb.cgi </span>script only lets you publish a single repository, which is an annoying restriction. If you want to publish more
+than one without wracking yourself with multiple copies of the same script, each with different names, a better choice is to use
+the <a 
+ id="dx6-62002"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>script.
+</p><!--l. 890--><p class="indent">   The procedure to configure <a 
+ id="dx6-62003"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>is only a little more involved than for <a 
+ id="dx6-62004"></a><span 
+class="pcrr7tn-">hgweb.cgi</span>. First, you must obtain a copy
+of the script. If you don&#x2019;t have one handy, you can download a copy from the master Mercurial repository at
+<a 
+href="http://www.selenic.com/repo/hg/raw-file/tip/hgwebdir.cgi" class="url" ><span 
+class="pcrr7tn-">http://www.selenic.com/repo/hg/raw-file/tip/hgwebdir.cgi</span></a>.
+</p><!--l. 896--><p class="indent">   You&#x2019;ll need to copy this script into your <span 
+class="pcrr7tn-">public</span><span 
+class="pcrr7tn-">_html </span>directory, and ensure that it&#x2019;s executable.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-62006r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;cp</span><span 
+class="pcrr7tn-">&#x00A0;.../hgwebdir.cgi</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html</span>
+<br class="fancyvrb" /><a 
+ id="x6-62008r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;chmod</span><span 
+class="pcrr7tn-">&#x00A0;755</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html</span><span 
+class="pcrr7tn-">&#x00A0;~/public_html/hgwebdir.cgi</span>
+   </div>
+<!--l. 902--><p class="noindent">With basic configuration out of the way, try to visit   <a 
+href="http://myhostname/~myuser/hgwebdir.cgi" class="url" ><span 
+class="pcrr7tn-">http://myhostname/~myuser/hgwebdir.cgi</span></a> in your browser. It should
+display an empty list of repositories. If you get a blank window or error message, try walking through the list of potential
+problems in section&#x00A0;<a 
+href="#x6-600002.6.2">2.6.2<!--tex4ht:ref: sec:collab:wtf --></a>.
+</p><!--l. 908--><p class="indent">   The <a 
+ id="dx6-62009"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>script relies on an external configuration file. By default, it searches for a file named <a 
+ id="dx6-62010"></a><span 
+class="pcrr7tn-">hgweb.config </span>in
+the same directory as itself. You&#x2019;ll need to create this file, and make it world-readable. The format of the file is similar to a
+Windows &#x201C;ini&#x201D; file, as understood by Python&#x2019;s <span 
+class="pcrr7tn-">ConfigParser</span>&#x00A0;<span class="cite">[<span 
+class="ptmb7t-">?</span>]</span> module.
+</p><!--l. 915--><p class="indent">   The easiest way to configure <a 
+ id="dx6-62011"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>is with a section named <span 
+class="pcrr7tn-">collections</span>. This will automatically publish <span 
+class="ptmri7t-">every</span>
+repository under the directories you name. The section should look like this:
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-62013r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;[collections]</span>
+<br class="fancyvrb" /><a 
+ id="x6-62015r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;/my/root</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;/my/root</span>
+   </div>
+<!--l. 923--><p class="noindent">Mercurial interprets this by looking at the directory name on the <span 
+class="ptmri7t-">right </span>hand side of the &#x201C;<span 
+class="pcrr7tn-">=</span>&#x201D; sign; finding repositories in that
+directory hierarchy; and using the text on the <span 
+class="ptmri7t-">left </span>to strip off matching text from the names it will actually list
+in the web interface. The remaining component of a path after this stripping has occurred is called a &#x201C;virtual
+path&#x201D;.
+                                                                                         
+                                                                                         
+</p><!--l. 930--><p class="indent">   Given the example above, if we have a repository whose local path is <span 
+class="pcrr7tn-">/my/root/this/repo</span>, the CGI script will strip the
+leading <span 
+class="pcrr7tn-">/my/root </span>from the name, and publish the repository with a virtual path of <span 
+class="pcrr7tn-">this/repo</span>. If the base URL for our
+CGI script is   <a 
+href="http://myhostname/~myuser/hgwebdir.cgi" class="url" ><span 
+class="pcrr7tn-">http://myhostname/~myuser/hgwebdir.cgi</span></a>, the complete URL for that repository will be
+<a 
+href="http://myhostname/~myuser/hgwebdir.cgi/this/repo" class="url" ><span 
+class="pcrr7tn-">http://myhostname/~myuser/hgwebdir.cgi/this/repo</span></a>.
+</p><!--l. 938--><p class="indent">   If we replace <span 
+class="pcrr7tn-">/my/root </span>on the left hand side of this example with <span 
+class="pcrr7tn-">/my</span>, then <a 
+ id="dx6-62016"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>will only strip off <span 
+class="pcrr7tn-">/my </span>from the
+repository name, and will give us a virtual path of <span 
+class="pcrr7tn-">root/this/repo </span>instead of <span 
+class="pcrr7tn-">this/repo</span>.
+</p><!--l. 943--><p class="indent">   The <a 
+ id="dx6-62017"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>script will recursively search each directory listed in the <span 
+class="pcrr7tn-">collections </span>section of its configuration file,
+but it will <span 
+class="pcrr7tn-">not </span>recurse into the repositories it finds.
+</p><!--l. 948--><p class="indent">   The <span 
+class="pcrr7tn-">collections </span>mechanism makes it easy to publish many repositories in a &#x201C;fire and forget&#x201D; manner. You only need to
+set up the CGI script and configuration file one time. Afterwards, you can publish or unpublish a repository at any
+time by simply moving it into, or out of, the directory hierarchy in which you&#x2019;ve configured <a 
+ id="dx6-62018"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>to
+look.
+</p><!--l. 955--><p class="noindent">
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x6-630002.6.3"></a>Explicitly specifying which repositories to publish</h5>
+<!--l. 957--><p class="noindent">In addition to the <span 
+class="pcrr7tn-">collections </span>mechanism, the <a 
+ id="dx6-63001"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>script allows you to publish a specific list of repositories. To do
+so, create a <span 
+class="pcrr7tn-">paths </span>section, with contents of the following form.
+</p>
+   <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-63003r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;[paths]</span>
+<br class="fancyvrb" /><a 
+ id="x6-63005r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;repo1</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;/my/path/to/some/repo</span>
+<br class="fancyvrb" /><a 
+ id="x6-63007r3"></a><span 
+class="ptmr7t-x-x-50">3</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;repo2</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;/some/path/to/another</span>
+   </div>
+<!--l. 966--><p class="noindent">In this case, the virtual path (the component that will appear in a URL) is on the left hand side of each definition, while the path to
+the repository is on the right. Notice that there does not need to be any relationship between the virtual path you choose and the
+location of a repository in your filesystem.
+</p><!--l. 972--><p class="indent">   If you wish, you can use both the <span 
+class="pcrr7tn-">collections </span>and <span 
+class="pcrr7tn-">paths </span>mechanisms simultaneously in a single configuration
+file.
+</p>
+   <div class="fbox"><span 
+class="ptmb7t-">Note:  </span>If multiple repositories have the same virtual path, <span 
+class="pcrr7tn-">hgwebdir.cgi </span>will not
+report an error. Instead, it will behave unpredictably.                                                </div>
+<!--l. 982--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.6.4    </span> <a 
+ id="x6-640002.6.4"></a>Downloading source archives</h4>
+<!--l. 984--><p class="noindent">Mercurial&#x2019;s web interface lets users download an archive of any revision. This archive will contain a snapshot of the working
+directory as of that revision, but it will not contain a copy of the repository data.
+</p><!--l. 989--><p class="indent">   By default, this feature is not enabled. To enable it, you&#x2019;ll need to add an <a 
+ id="dx6-64001"></a><span 
+class="pcrr7tn-">allow</span><span 
+class="pcrr7tn-">_archive </span>item to the <a 
+ id="dx6-64002"></a><span 
+class="pcrr7tn-">[web] </span>section of your
+<a 
+ id="dx6-64003"></a><a 
+ id="dx6-64004"></a><span 
+class="pcrr7tn-">hgrc</span>.
+</p><!--l. 993--><p class="noindent">
+</p>
+   <h4 class="subsectionHead"><span class="titlemark">2.6.5    </span> <a 
+ id="x6-650002.6.5"></a>Web configuration options</h4>
+<!--l. 995--><p class="noindent">Mercurial&#x2019;s web interfaces (the <a 
+ id="dx6-65001"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command, and the <a 
+ id="dx6-65002"></a><span 
+class="pcrr7tn-">hgweb.cgi </span>and <a 
+ id="dx6-65003"></a><span 
+class="pcrr7tn-">hgwebdir.cgi </span>scripts) have a number of
+configuration options that you can set. These belong in a section named <a 
+ id="dx6-65004"></a><span 
+class="pcrr7tn-">[web]</span>. </p>
+                                                                                         
+                                                                                         
+     <ul><li><span class="dt">
+<a 
+ id="dx6-65005"></a><span 
+class="pcrr7tn-">allow</span><span 
+class="pcrr7tn-">_archive</span> </span><span class="dd">Determines which (if any) archive download mechanisms Mercurial supports. If you enable this feature, users of the
+     web interface will be able to download an archive of whatever revision of a repository they are viewing.
+     To enable the archive feature, this item must take the form of a sequence of words drawn from the list
+     below.
+         <ul><li><span class="dt">
+     <span 
+class="pcrr7tn-">bz2</span> </span><span class="dd">A <a 
+ id="dx6-65006"></a><span 
+class="pcrr7tn-">tar </span>archive, compressed using <span 
+class="pcrr7tn-">bzip2 </span>compression. This has the best compression ratio, but uses the
+         most CPU time on the server.
+         </span><li><span class="dt">
+      <span 
+class="pcrr7tn-">gz</span> </span><span class="dd">A <a 
+ id="dx6-65007"></a><span 
+class="pcrr7tn-">tar </span>archive, compressed using <span 
+class="pcrr7tn-">gzip </span>compression.
+         </span><li><span class="dt">
+     <span 
+class="pcrr7tn-">zip</span> </span><span class="dd">A <a 
+ id="dx6-65008"></a><span 
+class="pcrr7tn-">zip </span>archive, compressed using LZW compression. This format has the worst compression ratio, but is
+         widely used in the Windows world.</li></ul>
+     <!--l. 1016--><p class="noindent">If you provide an empty list, or don&#x2019;t have an <a 
+ id="dx6-65009"></a><span 
+class="pcrr7tn-">allow</span><span 
+class="pcrr7tn-">_archive </span>entry at all, this feature will be disabled. Here is an
+     example of how to enable all three supported formats.
+</p>
+     <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-65011r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;[web]</span>
+<br class="fancyvrb" /><a 
+ id="x6-65013r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;allow_archive</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;bz2</span><span 
+class="pcrr7tn-">&#x00A0;gz</span><span 
+class="pcrr7tn-">&#x00A0;zip</span>
+</div>
+     </span><li><span class="dt">
+<a 
+ id="dx6-65014"></a><span 
+class="pcrr7tn-">allowpull</span> </span><span class="dd">Boolean. Determines whether the web interface allows remote users to <a 
+ id="dx6-65015"></a>&#x201C;<span 
+class="pcrr7tn-">hg pull</span>&#x201D; and <a 
+ id="dx6-65016"></a>&#x201C;<span 
+class="pcrr7tn-">hg clone</span>&#x201D; this
+     repository over&#x00A0;HTTP. If set to <span 
+class="pcrr7tn-">no </span>or <span 
+class="pcrr7tn-">false</span>, only the &#x201C;human-oriented&#x201D; portion of the web interface is
+     available.
+     </span><li><span class="dt">
+<a 
+ id="dx6-65017"></a><span 
+class="pcrr7tn-">contact</span> </span><span class="dd">String. A free-form (but preferably brief) string identifying the person or group in charge of the repository. This often
+     contains the name and email address of a person or mailing list. It often makes sense to place this entry in a
+     repository&#x2019;s own <a 
+ id="dx6-65018"></a><span 
+class="pcrr7tn-">.hg/hgrc </span>file, but it can make sense to use in a global <a 
+ id="dx6-65019"></a><a 
+ id="dx6-65020"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;if every repository has a single
+     maintainer.
+     </span><li><span class="dt">
+<a 
+ id="dx6-65021"></a><span 
+class="pcrr7tn-">maxchanges</span> </span><span class="dd">Integer. The default maximum number of changesets to display in a single page of output.
+     </span><li><span class="dt">
+<a 
+ id="dx6-65022"></a><span 
+class="pcrr7tn-">maxfiles</span> </span><span class="dd">Integer. The default maximum number of modified files to display in a single page of output.
+     </span><li><span class="dt">
+<a 
+ id="dx6-65023"></a><span 
+class="pcrr7tn-">stripes</span> </span><span class="dd">Integer. If the web interface displays alternating &#x201C;stripes&#x201D; to make it easier to visually align rows when you are looking at
+     a table, this number controls the number of rows in each stripe.
+     </span><li><span class="dt">
+<a 
+ id="dx6-65024"></a><span 
+class="pcrr7tn-">style</span> </span><span class="dd">Controls the template Mercurial uses to display the web interface. Mercurial ships with two web templates, named
+     <span 
+class="pcrr7tn-">default </span>and <span 
+class="pcrr7tn-">gitweb </span>(the latter is much more visually attractive). You can also specify a custom template of your own;
+     see chapter&#x00A0;<a 
+href="hgbookch4.html#x8-1230004">4<!--tex4ht:ref: chap:hobbitgraph --></a> for details. Here, you can see how to enable the <span 
+class="pcrr7tn-">gitweb </span>style.
+     <div class="fancyvrb" id="fancyvrb">
+<a 
+ id="x6-65026r1"></a><span 
+class="ptmr7t-x-x-50">1</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;[web]</span>
+<br class="fancyvrb" /><a 
+ id="x6-65028r2"></a><span 
+class="ptmr7t-x-x-50">2</span><span 
+class="pcrr7tn-">&#x00A0;</span><span 
+class="pcrr7tn-">&#x00A0;style</span><span 
+class="pcrr7tn-">&#x00A0;=</span><span 
+class="pcrr7tn-">&#x00A0;gitweb</span>
+</div>
+                                                                                         
+                                                                                         
+     </span><li><span class="dt">
+<a 
+ id="dx6-65029"></a><span 
+class="pcrr7tn-">templates</span> </span><span class="dd">Path. The directory in which to search for template files. By default, Mercurial searches in the directory in which it was
+     installed.</li></ul>
+<!--l. 1057--><p class="noindent">If you are using <a 
+ id="dx6-65030"></a><span 
+class="pcrr7tn-">hgwebdir.cgi</span>, you can place a few configuration items in a <a 
+ id="dx6-65031"></a><span 
+class="pcrr7tn-">[web] </span>section of the <a 
+ id="dx6-65032"></a><span 
+class="pcrr7tn-">hgweb.config </span>file instead of a
+<a 
+ id="dx6-65033"></a><a 
+ id="dx6-65034"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;file, for convenience. These items are <a 
+ id="dx6-65035"></a><span 
+class="pcrr7tn-">motd </span>and <a 
+ id="dx6-65036"></a><span 
+class="pcrr7tn-">style</span>.
+</p><!--l. 1063--><p class="noindent">
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x6-660002.6.5"></a>Options specific to an individual repository</h5>
+<!--l. 1065--><p class="noindent">A few <a 
+ id="dx6-66001"></a><span 
+class="pcrr7tn-">[web] </span>configuration items ought to be placed in a repository&#x2019;s local <a 
+ id="dx6-66002"></a><span 
+class="pcrr7tn-">.hg/hgrc</span>, rather than a user&#x2019;s or global <a 
+ id="dx6-66003"></a><a 
+ id="dx6-66004"></a><span 
+class="pcrr7tn-">hgrc</span>.
+</p>
+     <ul><li><span class="dt">
+<a 
+ id="dx6-66005"></a><span 
+class="pcrr7tn-">description</span> </span><span class="dd">String. A free-form (but preferably brief) string that describes the contents or purpose of the repository.
+     </span><li><span class="dt">
+<a 
+ id="dx6-66006"></a><span 
+class="pcrr7tn-">name</span> </span><span class="dd">String. The name to use for the repository in the web interface. This overrides the default name, which is the
+     last component of the repository&#x2019;s path.</li></ul>
+<!--l. 1077--><p class="noindent">
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x6-670002.6.5"></a>Options specific to the &#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command</h5>
+<!--l. 1079--><p class="noindent">Some of the items in the <a 
+ id="dx6-67001"></a><span 
+class="pcrr7tn-">[web] </span>section of a <a 
+ id="dx6-67002"></a><a 
+ id="dx6-67003"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;file are only for use with the <a 
+ id="dx6-67004"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command. </p>
+     <ul><li><span class="dt">
+<a 
+ id="dx6-67005"></a><span 
+class="pcrr7tn-">accesslog</span> </span><span class="dd">Path. The name of a file into which to write an access log. By default, the <a 
+ id="dx6-67006"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command writes this
+     information to standard output, not to a file. Log entries are written in the standard &#x201C;combined&#x201D; file format used
+     by almost all web servers.
+     </span><li><span class="dt">
+<a 
+ id="dx6-67007"></a><span 
+class="pcrr7tn-">address</span> </span><span class="dd">String. The local address on which the server should listen for incoming connections. By default, the server
+     listens on all addresses.
+     </span><li><span class="dt">
+<a 
+ id="dx6-67008"></a><span 
+class="pcrr7tn-">errorlog</span> </span><span class="dd">Path. The name of a file into which to write an error log. By default, the <a 
+ id="dx6-67009"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command writes this
+     information to standard error, not to a file.
+     </span><li><span class="dt">
+<a 
+ id="dx6-67010"></a><span 
+class="pcrr7tn-">ipv6</span> </span><span class="dd">Boolean. Whether to use the IPv6 protocol. By default, IPv6 is not used.
+     </span><li><span class="dt">
+<a 
+ id="dx6-67011"></a><span 
+class="pcrr7tn-">port</span> </span><span class="dd">Integer. The TCP&#x00A0;port number on which the server should listen. The default port number used is&#x00A0;8000.</li></ul>
+<!--l. 1100--><p class="noindent">
+</p>
+   <h5 class="subsubsectionHead"><a 
+ id="x6-680002.6.5"></a>Choosing the right <span 
+class="pcrr7tn-">hgrc</span>&#x00A0;file to add <span 
+class="pcrr7tn-">[web] </span>items to</h5>
+<!--l. 1102--><p class="noindent">It is important to remember that a web server like Apache or <span 
+class="pcrr7tn-">lighttpd </span>will run under a user&#x00A0;ID that is different to yours. CGI
+scripts run by your server, such as <a 
+ id="dx6-68001"></a><span 
+class="pcrr7tn-">hgweb.cgi</span>, will usually also run under that user&#x00A0;ID.
+                                                                                         
+                                                                                         
+</p><!--l. 1107--><p class="indent">   If you add <a 
+ id="dx6-68002"></a><span 
+class="pcrr7tn-">[web] </span>items to your own personal <a 
+ id="dx6-68003"></a><a 
+ id="dx6-68004"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;file, CGI scripts won&#x2019;t read that <a 
+ id="dx6-68005"></a><a 
+ id="dx6-68006"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;file. Those settings will thus only
+affect the behaviour of the <a 
+ id="dx6-68007"></a>&#x201C;<span 
+class="pcrr7tn-">hg serve</span>&#x201D; command when you run it. To cause CGI scripts to see your settings, either create a
+<a 
+ id="dx6-68008"></a><a 
+ id="dx6-68009"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;file in the home directory of the user ID that runs your web server, or add those settings to a system-wide
+<a 
+ id="dx6-68010"></a><a 
+ id="dx6-68011"></a><span 
+class="pcrr7tn-">hgrc</span>&#x00A0;file.
+                                                                                         
+                                                                                         
+                                                                                         
+                                                                                         
+                                                                                         
+                                                                                         
+</p>
+   <!--l. 1--><div class="crosslinks"><p class="noindent">[<a 
+href="hgbookch3.html" >next</a>] [<a 
+href="hgbookch1.html" >prev</a>] [<a 
+href="hgbookch1.html#tailhgbookch1.html" >prev-tail</a>] [<a 
+href="hgbookch2.html" >front</a>] [<a 
+href="hgbook.html#hgbookch2.html" >up</a>] </p></div>
+<!--l. 1--><p class="indent">   <a 
+ id="tailhgbookch2.html"></a>    </p> 
+</body></html> 

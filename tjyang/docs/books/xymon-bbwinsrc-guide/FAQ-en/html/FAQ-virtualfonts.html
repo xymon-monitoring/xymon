@@ -1,0 +1,63 @@
+<head>
+<title>UK TeX FAQ -- question label virtualfonts</title>
+</head><body>
+<h3>Virtual fonts</h3>
+<p>Virtual fonts for TeX were first implemented by David Fuchs in the
+early days of TeX, but for most people they date from when Knuth
+redefined the format, and wrote some support software, in 1989 (he
+published an article in <i>TUGboat</i> at the time, and a plain text
+copy is available on CTAN).
+<p>Virtual fonts provide a way of telling TeX about something more
+complicated than just a one-to-one character mapping. The entities you
+define in a virtual font look like characters to TeX (they appear
+with their sizes in a font metric file), but the DVI processor may
+expand them to something quite different.
+<p>Specifically, TeX itself only looks at a TFM file that
+contains details of how the virtual font will appear: but of course,
+TeX only cares about the metrics of a character, so its demands are
+pretty small.  The acro{DVI} processor, however, has to understand the
+details of what is in the virtual font, so as to know &ldquo;what to draw,
+where&rdquo;.  So, for every virtual font read by a DVI driver,
+there has to be a TFM file to be read by TeX.
+(PDFTeX, of course, needs both the TFM and the
+translation of the virtual font, since it does the whole job in the
+one program.)
+<p>You can use a virtual font:
+<ul>
+<li> simply just to remap the glyphs of a single font,
+<li> to make a composite font with glyphs drawn from several
+  different onts, or
+<li> to build up an effect in arbitrarily complicated ways (since a
+  virtual font may contain anything which is legal in a DVI
+  file).
+</ul>
+<p>In practice, the most common use of virtual fonts is to remap
+Adobe Type 1 fonts (see <a href="FAQ-metrics.html">font metrics</a>),
+though there has also been useful useful work building &lsquo;fake&rsquo; maths
+fonts (by bundling glyphs from several fonts into a single virtual
+font).  Virtual Computer Modern fonts, making a 
+<a href="FAQ-ECfonts.html">Cork encoded</a> font from Knuth&rsquo;s originals by using
+remapping and fragments of DVI for single-glyph &lsquo;accented
+characters&rsquo;, were the first &ldquo;Type 1 format&rdquo; versions available.
+<p>Virtual fonts are normally created in a single ASCII
+VPL (Virtual Property List) file, which includes both sets of
+information. The <i>vptovf</i> program is then used to the create
+the binary TFM and VF files.
+<p>A &ldquo;how-to&rdquo; document, explaining how to generate a VPL,
+describes the endless hours of fun that may be had, doing the job by
+hand.  Despite the pleasures to be had of the manual method, the
+commonest way (nowadays) of generating VPL files is to use the
+<i>fontinst</i> package, which is described in detail
+together with the discussion of
+<a href="FAQ-metrics.html">PostScript font metrics</a>.
+<i>Qdtexvpl</i> is another utility for creating ad-hoc virtual
+fonts (it uses TeX to parse a description of the virtual font, and
+<i>qdtexvpl</i> itself processes the resulting DVI file).
+<dl>
+<dt><tt><i>fontinst</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/fontinst.zip">fonts/utilities/fontinst</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/fontinst.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/utilities/fontinst/">browse</a>)
+<dt><tt><i>Knuth on virtual fonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/info/knuth/virtual-fonts">info/knuth/virtual-fonts</a>
+<dt><tt><i>Virtual fonts &ldquo;how to&rdquo;</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/info/virtualfontshowto/virtualfontshowto.txt">info/virtualfontshowto/virtualfontshowto.txt</a>
+<dt><tt><i>qdtexvpl</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/qdtexvpl.zip">fonts/utilities/qdtexvpl</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/qdtexvpl.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/utilities/qdtexvpl/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=virtualfonts">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=virtualfonts</a>
+</body>

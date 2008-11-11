@@ -1,0 +1,41 @@
+<head>
+<title>UK TeX FAQ -- question label manymathalph</title>
+</head><body>
+<h3>Too many math alphabets</h3>
+<p>TeX mathematics is one of its most impressive features, yet the
+internal structure of the mechanism that produces it is painfully
+complicated and (in some senses) pathetically limited.  One area of
+limitation is that one is only allowed 16 &rdquo;maths alphabets&rdquo;
+<p>LaTeX offers the user quite a lot of flexibility with allocating
+maths alphabets, but few people use the flexibility directly.
+Nevertheless, there are many packages that provide symbols, or that
+manipulate them, which allocate themselves one or more maths alphabet.
+<p>If you can&rsquo;t afford to drop any of these packages, there&rsquo;s
+still hope if you&rsquo;re using the <i>bm</i> package to support
+<a href="FAQ-boldgreek.html">bold maths</a>: <i>bm</i> is capable
+of gobbling alphabets as if there is no tomorrow.  The package defines
+two limiter commands: <code>\</code><code>bmmax</code> (for <em>bold</em> symbols; default 4)
+and <code>\</code><code>hmmax</code> (for <em>heavy</em> symbols, if you have them;
+default 3), which control the number of alphabets to be used.  
+<p>Any reduction of the <code>\</code><code><em>xx</code>max</em> variables will slow
+<i>bm</i> down &mdash; but that&rsquo;s surely better than the document not
+running at all.  So unless you&rsquo;re using maths fonts (such as
+<i>Mathtime Plus</i>) that feature a heavy symbol weight, suppress all
+use of heavy families by
+<blockquote>
+<pre>
+  \renewcommand{\hmmax}{0}
+</pre>
+</blockquote><p>
+and then steadily reduce the bold families, starting with
+<blockquote>
+<pre>
+  \renewcommand{\bmmax}{3}
+</pre>
+</blockquote><p>
+until (with a bit of luck) the error goes away.
+<dl>
+<dt><tt><i>bm.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=manymathalph">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=manymathalph</a>
+</body>

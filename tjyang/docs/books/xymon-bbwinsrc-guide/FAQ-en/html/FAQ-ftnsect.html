@@ -1,0 +1,26 @@
+<head>
+<title>UK TeX FAQ -- question label ftnsect</title>
+</head><body>
+<h3>Footnotes in LaTeX section headings</h3>
+<p>The <code>\</code><code>footnote</code> command is fragile, so that simply placing the
+command in <code>\</code><code>section</code>&rsquo;s arguments isn&rsquo;t satisfactory.  Using
+<code>\</code><code>protect</code><code>\</code><code>footnote</code> isn&rsquo;t a good idea either: the arguments of a
+section command are used in the table of contents and (more
+dangerously) potentially also in page headings.  Unfortunately,
+there&rsquo;s no mechanism to suppress the footnote in the heading while
+allowing it in the table of contents, though having footnotes in the
+table of contents is probably unsatisfactory anyway.
+<p>To suppress the footnote in headings and table of contents:
+<ul>
+<li> Take advantage of the fact that the mandatory argument doesn&rsquo;t
+  &lsquo;move&rsquo; if the optional argument is present:
+  <code>\section[title]{title</code><code>\</code><code>footnote</code><code>{title ftnt}}</code>
+<li> Use the <i>footmisc</i> package, with package option
+  <code>stable</code> &mdash; this modifies footnotes so that they softly and
+  silently vanish away if used in a moving argument.
+</ul>
+<dl>
+<dt><tt><i>footmisc.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/footmisc.zip">macros/latex/contrib/footmisc</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/footmisc.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/footmisc/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ftnsect">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ftnsect</a>
+</body>

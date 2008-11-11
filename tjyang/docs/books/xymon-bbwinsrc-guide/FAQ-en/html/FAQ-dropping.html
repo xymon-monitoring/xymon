@@ -1,0 +1,30 @@
+<head>
+<title>UK TeX FAQ -- question label dropping</title>
+</head><body>
+<h3>Big letters at the start of a paragraph</h3>
+<p>A common style of typesetting, now seldom seen except in newspapers,
+is to start a paragraph (in books, usually the first of a chapter)
+with its first letter set large enough to span several lines.
+<p>This style is known as &ldquo;dropped capitals&rdquo;, or (in French)
+«lettrines», and TeX&rsquo;s primitive
+facilities for hanging indentation make its (simple) implementation
+pretty straightforward.
+<p>The <i>dropping</i> package does the job simply, but has a curious
+attitude to the calculation of the size of the font to be used for the
+big letters.  Examples appear in the package documentation, so before
+you process the <code>.dtx</code>, the package itself must already be installed.
+Unfortunately, <i>dropping</i> has an intimate relation to the set
+of device drivers available in an early version of the LaTeX
+graphics package, and it cannot be trusted to work with recent
+offerings like PDFTeX, VTeX or DVIpdfm.
+<p>On such occasions, the more recent <i>lettrine</i> package is more
+likely to succeed.  It has a well-constructed array of options, and
+the examples (a pretty impressive set) come as a separate file in the
+distribution (also available in PostScript, so that they can be viewed
+without installing the package itself).
+<dl>
+<dt><tt><i>dropping</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/dropping.zip">macros/latex/contrib/dropping</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/dropping.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/dropping/">browse</a>)
+<dt><tt><i>lettrine</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/lettrine.zip">macros/latex/contrib/lettrine</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/lettrine.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/lettrine/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dropping">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dropping</a>
+</body>

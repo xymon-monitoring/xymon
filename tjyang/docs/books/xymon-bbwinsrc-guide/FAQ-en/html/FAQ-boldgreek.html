@@ -1,0 +1,46 @@
+<head>
+<title>UK TeX FAQ -- question label boldgreek</title>
+</head><body>
+<h3>Setting bold Greek letters in LaTeX</h3>
+<p>The issue here is complicated by the fact that <code>\</code><code>mathbf</code> (the
+command for setting bold <em>text</em> in TeX maths) affects a select
+few mathematical symbols (the uppercase Greek letters).  However
+lower-case Greek letters behave differently from upper-case Greek
+letters (due to Knuth&rsquo;s esoteric font encoding decisions).  However,
+<code>\</code><code>mathbf</code> <em>can&rsquo;t</em> be used even for upper-case Greek letters in
+the AMSLaTeX <i>amsmath</i> package, which
+disables this font-switching and you must use one of the techniques
+outlined below.
+<p>The Plain TeX solution <em>does</em> work, in a limited way:
+<blockquote>
+<pre>
+{\boldmath$\theta$}
+</pre>
+</blockquote><p>
+but <code>\</code><code>boldmath</code> may not be used in maths mode, so this &lsquo;solution&rsquo;
+requires arcana such as:
+<blockquote>
+<pre>
+$... \mbox{\boldmath$\theta$} ...$
+</pre>
+</blockquote><p>
+which then causes problems in superscripts, etc.
+<p>These problems may be addressed by using a bold mathematics package.
+<ul>
+<li> The <i>bm</i> package, which is part of the LaTeX tools
+  distribution, defines a command <code>\</code><code>bm</code> which may be used anywhere
+  in maths mode.
+<li> The <i>amsbsy</i> package (which is part of AMSLaTeX)
+  defines a command <code>\</code><code>boldsymbol</code>, which (though slightly less
+  comprehensive than <code>\</code><code>bm</code>) covers almost all common cases.
+</ul>
+<p>All these solutions cover all mathematical symbols, not merely Greek
+letters.
+<dl>
+<dt><tt><i>bm.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>amsbsy.sty</i></tt><dd>Distributed as part of AMSLaTeX <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.zip">macros/latex/required/amslatex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/amslatex/">browse</a>)
+<dt><tt><i>amsmath.sty</i></tt><dd>Distributed as part of AMSLaTeX
+  <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.zip">macros/latex/required/amslatex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/amslatex/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=boldgreek">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=boldgreek</a>
+</body>

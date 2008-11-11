@@ -1,0 +1,22 @@
+$ \textbf{hg tip}
+changeset:   4:b57f9a090b62
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Tue Sep 06 15:43:07 2005 -0700
+summary:     Trim comments.
+
+$ \textbf{hg pull ../my-hello}
+pulling from ../my-hello
+searching for changes
+adding changesets
+adding manifests
+adding file changes
+added 1 changesets with 1 changes to 1 files
+(run 'hg update' to get a working copy)
+$ \textbf{hg tip}
+changeset:   5:a3ce8b616f22
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+date:        Sun Mar 02 16:16:39 2008 +0000
+summary:     Added an extra line of output
+

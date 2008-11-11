@@ -1,0 +1,61 @@
+<head>
+<title>UK TeX FAQ -- question label alreadydef</title>
+</head><body>
+<h3>Package reports &ldquo;command already defined&rdquo;</h3>
+<p>You load a pair of packages, and the second reports that one of the
+commands it defines is already present.  For example, both the
+<i>txfonts</i> and <i>amsmath</i> define a command <code>\</code><code>iint</code>
+(and <code>\</code><code>iiint</code> and so on); so
+<blockquote>
+<pre>
+...
+\usepackage{txfonts}
+\usepackage{amsmath}
+</pre>
+</blockquote><p>
+produces a string of error messages of the form:
+<blockquote>
+<pre>
+! LaTeX Error: Command \iint already defined.
+               Or name \end... illegal, see p.192 of the manual.
+</pre>
+
+</blockquote><p>
+As a general rule, things that <i>amsmath</i> defines, it defines
+well; however, there is a good case for using the <i>txfonts</i>
+version of <code>\</code><code>iint</code> &mdash; the associated <i>tx</i> fonts have a
+double integral symbol that doesn&rsquo;t need to be &ldquo;faked&rdquo; in the way
+<i>amsmath</i> does.  In the case that you are loading several
+symbol packages, every one of which defines the same symbol, you are
+likely to experience the problem in a big way (<code>\</code><code>euro</code> is a common
+victim).
+<p>There are similar cases where one package redefines another&rsquo;s command,
+but no error occurs because the redefining package doesn&rsquo;t use
+<code>\</code><code>newcommand</code>.  Often, in such a case, you only notice the change
+because you assume the definition given by the first package.  The
+<i>amsmath</i>&ndash;<i>txfonts</i> packages are just such a pair;
+<i>txfonts</i> doesn&rsquo;t provoke errors.
+<p>You may deal with the problem by saving and restoring the command.
+Macro programmers may care to do this for themselves; for the rest of
+us, there&rsquo;s the package <i>savesym</i>.  The sequence:
+<blockquote>
+<pre>
+\usepackage{savesym}
+\usepackage{amsmath}
+\savesymbol{iint}
+\usepackage{txfonts}
+\restoresymbol{TXF}{iint}
+</pre>
+</blockquote><p>
+does the job; restoring the <i>amsmath</i> version of the command,
+and making the <i>txfonts</i> version of the command available as
+<code>\</code><code>TXFiint</code>.
+<p>Documentation of <i>savesym</i> doesn&rsquo;t amount to much: the only
+commands are <code>\</code><code>savesymbol</code> and <code>\</code><code>restoresymbol</code>, as noted above.
+<dl>
+<dt><tt><i>amsmath.sty</i></tt><dd>Part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.zip">macros/latex/required/amslatex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/amslatex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/amslatex/">browse</a>)
+<dt><tt><i>savesym.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/savesym/savesym.sty">macros/latex/contrib/savesym/savesym.sty</a>
+<dt><tt><i>txfonts.sty</i></tt><dd>Part of <a href="ftp://cam.ctan.org/tex-archive/fonts/txfonts.zip">fonts/txfonts</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/txfonts.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/txfonts/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=alreadydef">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=alreadydef</a>
+</body>

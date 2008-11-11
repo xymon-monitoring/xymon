@@ -1,0 +1,467 @@
+\BOOKMARK [1][-]{contents.1}{Contents}{}
+\BOOKMARK [1][-]{section.1}{A Introduction}{}
+\BOOKMARK [2][-]{subsectionstar.2.2}{Finding the Files}{section.1}
+\BOOKMARK [2][-]{subsectionstar.4.2}{Origins}{section.1}
+\BOOKMARK [1][-]{section.2}{B The Background}{}
+\BOOKMARK [2][-]{question.1}{1 What is TeX?}{section.2}
+\BOOKMARK [2][-]{question.2}{2 How should I pronounce ``TeX''?}{section.2}
+\BOOKMARK [2][-]{question.3}{3 What is Metafont?}{section.2}
+\BOOKMARK [2][-]{question.4}{4 What is MetaPost?}{section.2}
+\BOOKMARK [2][-]{question.5}{5 How can I be sure it's really TeX?}{section.2}
+\BOOKMARK [2][-]{question.6}{6 Are TeX and friends Y2K compliant?}{section.2}
+\BOOKMARK [2][-]{question.7}{7 What is e-TeX?}{section.2}
+\BOOKMARK [2][-]{question.8}{8 What is PDFTeX?}{section.2}
+\BOOKMARK [2][-]{question.9}{9 What is LaTeX?}{section.2}
+\BOOKMARK [2][-]{question.10}{10 What is LaTeX2e?}{section.2}
+\BOOKMARK [2][-]{question.11}{11 How should I pronounce ``LaTeX\(2e\)''?}{section.2}
+\BOOKMARK [2][-]{question.12}{12 Should I use Plain TeX or LaTeX?}{section.2}
+\BOOKMARK [2][-]{question.13}{13 How does LaTeX relate to Plain TeX?}{section.2}
+\BOOKMARK [2][-]{question.14}{14 What is ConTeXt?}{section.2}
+\BOOKMARK [2][-]{question.15}{15 What are the AMS packages \(AmSTeX, etc.\)?}{section.2}
+\BOOKMARK [2][-]{question.16}{16 What is Eplain?}{section.2}
+\BOOKMARK [2][-]{question.17}{17 What is Lollipop?}{section.2}
+\BOOKMARK [2][-]{question.18}{18 What is Texinfo?}{section.2}
+\BOOKMARK [2][-]{question.19}{19 If TeX is so good, how come it's free?}{section.2}
+\BOOKMARK [2][-]{question.20}{20 What is the future of TeX?}{section.2}
+\BOOKMARK [2][-]{question.21}{21 Reading \(La\)TeX files}{section.2}
+\BOOKMARK [2][-]{question.22}{22 Why is TeX not a WYSIWYG system?}{section.2}
+\BOOKMARK [2][-]{question.23}{23 TeX User Groups}{section.2}
+\BOOKMARK [1][-]{section.3}{C Documentation and Help}{}
+\BOOKMARK [2][-]{question.24}{24 Books on TeX and its relations}{section.3}
+\BOOKMARK [2][-]{question.25}{25 Books on Type}{section.3}
+\BOOKMARK [2][-]{question.26}{26 Where to find FAQs}{section.3}
+\BOOKMARK [2][-]{question.27}{27 How to get help}{section.3}
+\BOOKMARK [2][-]{question.28}{28 Specialist mailing lists}{section.3}
+\BOOKMARK [2][-]{question.29}{29 How to ask a question}{section.3}
+\BOOKMARK [2][-]{question.30}{30 How to make a ``minimum example''}{section.3}
+\BOOKMARK [2][-]{question.31}{31 \(La\)TeX Tutorials, etc.}{section.3}
+\BOOKMARK [2][-]{question.32}{32 Online introductions: Plain TeX}{section.3}
+\BOOKMARK [2][-]{question.33}{33 Online introductions: LaTeX}{section.3}
+\BOOKMARK [2][-]{question.34}{34 Specialised \(La\)TeX tutorials}{section.3}
+\BOOKMARK [2][-]{question.35}{35 Reference documents}{section.3}
+\BOOKMARK [2][-]{question.36}{36 WIKI pages for TeX and friends}{section.3}
+\BOOKMARK [2][-]{question.37}{37 Typography tutorials}{section.3}
+\BOOKMARK [2][-]{question.38}{38 Directories of \(La\)TeX information}{section.3}
+\BOOKMARK [2][-]{question.39}{39 Freely available \(La\)TeX books}{section.3}
+\BOOKMARK [2][-]{question.40}{40 Documentation of packages}{section.3}
+\BOOKMARK [2][-]{question.41}{41 Learning to write LaTeX classes and packages}{section.3}
+\BOOKMARK [2][-]{question.42}{42 Metafont and MetaPost Tutorials}{section.3}
+\BOOKMARK [2][-]{question.43}{43 BibTeX Documentation}{section.3}
+\BOOKMARK [2][-]{question.44}{44 Where can I find the symbol for...}{section.3}
+\BOOKMARK [2][-]{question.45}{45 The PiCTeX manual}{section.3}
+\BOOKMARK [1][-]{section.4}{D Bits and pieces of \(La\)TeX}{}
+\BOOKMARK [2][-]{question.46}{46 What is a DVI file?}{section.4}
+\BOOKMARK [2][-]{question.47}{47 What is a driver?}{section.4}
+\BOOKMARK [2][-]{question.48}{48 What are PK files?}{section.4}
+\BOOKMARK [2][-]{question.49}{49 What are TFM files?}{section.4}
+\BOOKMARK [2][-]{question.50}{50 Virtual fonts}{section.4}
+\BOOKMARK [2][-]{question.51}{51 \134special commands}{section.4}
+\BOOKMARK [2][-]{question.52}{52 How does hyphenation work in TeX?}{section.4}
+\BOOKMARK [2][-]{question.53}{53 What are LaTeX classes and packages?}{section.4}
+\BOOKMARK [2][-]{question.54}{54 Documented LaTeX sources \(.dtx files\)}{section.4}
+\BOOKMARK [2][-]{question.55}{55 What are encodings?}{section.4}
+\BOOKMARK [2][-]{question.56}{56 What are the EC fonts?}{section.4}
+\BOOKMARK [2][-]{question.57}{57 What is the TDS?}{section.4}
+\BOOKMARK [2][-]{question.58}{58 What is ``Encapsulated PostScript'' \(``EPS''\)}{section.4}
+\BOOKMARK [2][-]{question.59}{59 Adobe font formats}{section.4}
+\BOOKMARK [2][-]{question.60}{60 What are ``resolutions''}{section.4}
+\BOOKMARK [2][-]{question.61}{61 What is the ``Berry naming scheme''}{section.4}
+\BOOKMARK [1][-]{section.5}{E Acquiring the Software}{}
+\BOOKMARK [2][-]{question.62}{62 Repositories of TeX material}{section.5}
+\BOOKMARK [2][-]{question.63}{63 What's the CTAN nonfree tree?}{section.5}
+\BOOKMARK [2][-]{question.64}{64 Contributing a file to the archives}{section.5}
+\BOOKMARK [2][-]{question.65}{65 Finding \(La\)TeX files}{section.5}
+\BOOKMARK [2][-]{question.66}{66 Finding new fonts}{section.5}
+\BOOKMARK [2][-]{question.67}{67 The TeX Live distribution}{section.5}
+\BOOKMARK [1][-]{section.6}{F TeX Systems}{}
+\BOOKMARK [2][-]{question.68}{68 \(La\)TeX for different machines}{section.6}
+\BOOKMARK [2][-]{question.69}{69 TeX-friendly editors and shells}{section.6}
+\BOOKMARK [2][-]{question.70}{70 Commercial TeX implementations}{section.6}
+\BOOKMARK [1][-]{section.7}{G DVI Drivers and Previewers}{}
+\BOOKMARK [2][-]{question.71}{71 DVI to PostScript conversion programs}{section.7}
+\BOOKMARK [2][-]{question.72}{72 DVI drivers for HP LaserJet}{section.7}
+\BOOKMARK [2][-]{question.73}{73 Output to ``other'' printers}{section.7}
+\BOOKMARK [2][-]{question.74}{74 DVI previewers}{section.7}
+\BOOKMARK [2][-]{question.75}{75 Generating bitmaps from DVI}{section.7}
+\BOOKMARK [1][-]{section.8}{H Support Packages for TeX}{}
+\BOOKMARK [2][-]{question.76}{76 Fig, a \(La\)TeX-friendly drawing package}{section.8}
+\BOOKMARK [2][-]{question.77}{77 TeXCAD, a drawing package for LaTeX}{section.8}
+\BOOKMARK [2][-]{question.78}{78 Spelling checkers for work with TeX}{section.8}
+\BOOKMARK [2][-]{question.79}{79 How many words have you written?}{section.8}
+\BOOKMARK [1][-]{section.9}{I Literate programming}{}
+\BOOKMARK [2][-]{question.80}{80 What is Literate Programming?}{section.9}
+\BOOKMARK [2][-]{question.81}{81 WEB systems for various languages}{section.9}
+\BOOKMARK [1][-]{section.10}{J Format conversions}{}
+\BOOKMARK [2][-]{question.82}{82 Conversion from \(La\)TeX to plain text}{section.10}
+\BOOKMARK [2][-]{question.83}{83 Conversion from SGML or HTML to TeX}{section.10}
+\BOOKMARK [2][-]{question.84}{84 Conversion from \(La\)TeX to HTML}{section.10}
+\BOOKMARK [2][-]{question.85}{85 Other conversions to and from \(La\)TeX}{section.10}
+\BOOKMARK [2][-]{question.86}{86 Using TeX to read SGML or XML directly}{section.10}
+\BOOKMARK [2][-]{question.87}{87 Retrieving \(La\)TeX from DVI, etc.}{section.10}
+\BOOKMARK [2][-]{question.88}{88 Translating LaTeX to Plain TeX}{section.10}
+\BOOKMARK [1][-]{section.11}{K Installing \(La\)TeX files}{}
+\BOOKMARK [2][-]{question.89}{89 Installing a new package}{section.11}
+\BOOKMARK [2][-]{question.90}{90 Where to put new files}{section.11}
+\BOOKMARK [2][-]{question.91}{91 Installing MiKTeX ``known packages''}{section.11}
+\BOOKMARK [2][-]{question.92}{92 ``Temporary'' installation of \(La\)TeX files}{section.11}
+\BOOKMARK [2][-]{question.93}{93 ``Private'' installations of files}{section.11}
+\BOOKMARK [2][-]{question.94}{94 Installing a new font}{section.11}
+\BOOKMARK [2][-]{question.95}{95 Installing a font provided as Metafont source}{section.11}
+\BOOKMARK [2][-]{question.96}{96 Installing a PostScript printer built-in font}{section.11}
+\BOOKMARK [2][-]{question.97}{97 Installing the Bluesky versions of the CM fonts}{section.11}
+\BOOKMARK [2][-]{question.98}{98 Installing a Type 1 font}{section.11}
+\BOOKMARK [1][-]{section.12}{L Fonts}{}
+\BOOKMARK [2][-]{subsection.12.1}{L.1 Metafont fonts}{section.12}
+\BOOKMARK [3][-]{question.99}{99 Getting Metafont to do what you want}{subsection.12.1}
+\BOOKMARK [3][-]{question.100}{100 Which font files should be kept}{subsection.12.1}
+\BOOKMARK [3][-]{question.101}{101 Acquiring bitmap fonts}{subsection.12.1}
+\BOOKMARK [2][-]{subsection.12.2}{L.2 Adobe Type 1 \(``PostScript''\) fonts}{section.12}
+\BOOKMARK [3][-]{question.102}{102 Using PostScript fonts with TeX}{subsection.12.2}
+\BOOKMARK [3][-]{question.103}{103 Previewing files using Type 1 fonts}{subsection.12.2}
+\BOOKMARK [3][-]{question.104}{104 TeX font metric files for PostScript fonts}{subsection.12.2}
+\BOOKMARK [3][-]{question.105}{105 Deploying Type 1 fonts}{subsection.12.2}
+\BOOKMARK [3][-]{question.106}{106 Choice of scalable outline fonts}{subsection.12.2}
+\BOOKMARK [3][-]{question.107}{107 Weird characters in dvips output}{subsection.12.2}
+\BOOKMARK [2][-]{subsection.12.3}{L.3 Macros for using fonts}{section.12}
+\BOOKMARK [3][-]{question.108}{108 Using non-standard fonts in Plain TeX}{subsection.12.3}
+\BOOKMARK [2][-]{subsection.12.4}{L.4 Particular font families}{section.12}
+\BOOKMARK [3][-]{question.109}{109 Using the ``Concrete'' fonts}{subsection.12.4}
+\BOOKMARK [3][-]{question.110}{110 Using the Latin Modern fonts}{subsection.12.4}
+\BOOKMARK [1][-]{section.13}{M Hypertext and PDF}{}
+\BOOKMARK [2][-]{question.111}{111 Making hypertext documents from TeX}{section.13}
+\BOOKMARK [2][-]{question.112}{112 Making Acrobat PDF documents from \(La\)TeX}{section.13}
+\BOOKMARK [2][-]{question.113}{113 Quality of PDF from PostScript}{section.13}
+\BOOKMARK [2][-]{question.114}{114 The wrong type of fonts in PDF}{section.13}
+\BOOKMARK [2][-]{question.115}{115 Fuzzy fonts because Ghostscript too old}{section.13}
+\BOOKMARK [2][-]{question.116}{116 Fonts go fuzzy when you switch to T1}{section.13}
+\BOOKMARK [2][-]{question.117}{117 Characters missing from PDF output}{section.13}
+\BOOKMARK [2][-]{question.118}{118 Finding `8-bit' Type 1 fonts}{section.13}
+\BOOKMARK [2][-]{question.119}{119 Replacing Type 3 fonts in PostScript}{section.13}
+\BOOKMARK [2][-]{question.120}{120 Hyperref and repeated page numbers}{section.13}
+\BOOKMARK [2][-]{question.121}{121 Searching PDF files}{section.13}
+\BOOKMARK [1][-]{section.14}{N Graphics}{}
+\BOOKMARK [2][-]{question.122}{122 How to import graphics into \(La\)TeX documents}{section.14}
+\BOOKMARK [2][-]{question.123}{123 Imported graphics in dvips}{section.14}
+\BOOKMARK [2][-]{question.124}{124 Imported graphics in PDFLaTeX}{section.14}
+\BOOKMARK [2][-]{question.125}{125 Imported graphics in dvipdfm}{section.14}
+\BOOKMARK [2][-]{question.126}{126 Importing graphics from ``somewhere else''}{section.14}
+\BOOKMARK [2][-]{question.127}{127 Portable imported graphics}{section.14}
+\BOOKMARK [2][-]{question.128}{128 Repeated graphics in a document}{section.14}
+\BOOKMARK [2][-]{question.129}{129 Limit the width of imported graphics}{section.14}
+\BOOKMARK [2][-]{question.130}{130 Top-aligning imported graphics}{section.14}
+\BOOKMARK [2][-]{question.131}{131 Displaying MetaPost output in ghostscript}{section.14}
+\BOOKMARK [2][-]{question.132}{132 Drawing with TeX}{section.14}
+\BOOKMARK [2][-]{question.133}{133 Drawing Feynman diagrams in LaTeX}{section.14}
+\BOOKMARK [2][-]{question.134}{134 Labelling graphics}{section.14}
+\BOOKMARK [1][-]{section.15}{O Bibliographies and citations}{}
+\BOOKMARK [2][-]{subsection.15.1}{O.1 Creating bibliographies}{section.15}
+\BOOKMARK [3][-]{question.135}{135 Creating a BibTeX bibliography file}{subsection.15.1}
+\BOOKMARK [3][-]{question.136}{136 Creating a bibliography style}{subsection.15.1}
+\BOOKMARK [3][-]{question.137}{137 Capitalisation in BibTeX}{subsection.15.1}
+\BOOKMARK [3][-]{question.138}{138 Accents in bibliographies}{subsection.15.1}
+\BOOKMARK [3][-]{question.139}{139 `String too long' in BibTeX}{subsection.15.1}
+\BOOKMARK [3][-]{question.140}{140 BibTeX doesn't understand lists of names}{subsection.15.1}
+\BOOKMARK [3][-]{question.141}{141 URLs in BibTeX bibliographies}{subsection.15.1}
+\BOOKMARK [3][-]{question.142}{142 Using BibTeX with Plain TeX}{subsection.15.1}
+\BOOKMARK [3][-]{question.143}{143 Reconstructing .bib files}{subsection.15.1}
+\BOOKMARK [3][-]{question.144}{144 BibTeX sorting and name prefixes}{subsection.15.1}
+\BOOKMARK [3][-]{question.145}{145 Transcribed initials in BibTeX}{subsection.15.1}
+\BOOKMARK [2][-]{subsection.15.2}{O.2 Creating citations}{section.15}
+\BOOKMARK [3][-]{question.146}{146 ``Normal'' use of BibTeX from LaTeX}{subsection.15.2}
+\BOOKMARK [3][-]{question.147}{147 Choosing a bibliography style}{subsection.15.2}
+\BOOKMARK [3][-]{question.148}{148 Separate bibliographies per chapter?}{subsection.15.2}
+\BOOKMARK [3][-]{question.149}{149 Multiple bibliographies?}{subsection.15.2}
+\BOOKMARK [3][-]{question.150}{150 Putting bibliography entries in text}{subsection.15.2}
+\BOOKMARK [3][-]{question.151}{151 Sorting and compressing citations}{subsection.15.2}
+\BOOKMARK [3][-]{question.152}{152 Multiple citations}{subsection.15.2}
+\BOOKMARK [3][-]{question.153}{153 References from the bibliography to the citation}{subsection.15.2}
+\BOOKMARK [3][-]{question.154}{154 Sorting lists of citations}{subsection.15.2}
+\BOOKMARK [3][-]{question.155}{155 Reducing spacing in the bibliography}{subsection.15.2}
+\BOOKMARK [3][-]{question.156}{156 Table of contents rearranges ``unsrt'' ordering}{subsection.15.2}
+\BOOKMARK [3][-]{question.157}{157 Non-english bibliographies}{subsection.15.2}
+\BOOKMARK [3][-]{question.158}{158 Format of numbers in the bibliography}{subsection.15.2}
+\BOOKMARK [2][-]{subsection.15.3}{O.3 Manipulating whole bibliographies}{section.15}
+\BOOKMARK [3][-]{question.159}{159 Listing all your BibTeX entries}{subsection.15.3}
+\BOOKMARK [3][-]{question.160}{160 Making HTML of your Bibliography}{subsection.15.3}
+\BOOKMARK [1][-]{section.16}{P Adjusting the typesetting}{}
+\BOOKMARK [2][-]{subsection.16.1}{P.1 Alternative document classes}{section.16}
+\BOOKMARK [3][-]{question.161}{161 Replacing the standard classes}{subsection.16.1}
+\BOOKMARK [3][-]{question.162}{162 Producing slides}{subsection.16.1}
+\BOOKMARK [3][-]{question.163}{163 Creating posters with LaTeX}{subsection.16.1}
+\BOOKMARK [3][-]{question.164}{164 Formatting a thesis in LaTeX}{subsection.16.1}
+\BOOKMARK [3][-]{question.165}{165 Setting papers for journals}{subsection.16.1}
+\BOOKMARK [3][-]{question.166}{166 A `report' from lots of `article's}{subsection.16.1}
+\BOOKMARK [3][-]{question.167}{167 Curriculum Vitae \(R\351sum\351\)}{subsection.16.1}
+\BOOKMARK [3][-]{question.168}{168 Letters and the like}{subsection.16.1}
+\BOOKMARK [3][-]{question.169}{169 Other ``document font'' sizes?}{subsection.16.1}
+\BOOKMARK [2][-]{subsection.16.2}{P.2 Document structure}{section.16}
+\BOOKMARK [3][-]{question.170}{170 The style of document titles}{subsection.16.2}
+\BOOKMARK [3][-]{question.171}{171 The style of section headings}{subsection.16.2}
+\BOOKMARK [3][-]{question.172}{172 Appendixes}{subsection.16.2}
+\BOOKMARK [3][-]{question.173}{173 Indent after section headings}{subsection.16.2}
+\BOOKMARK [3][-]{question.174}{174 How to create a \134subsubsubsection}{subsection.16.2}
+\BOOKMARK [3][-]{question.175}{175 The style of captions}{subsection.16.2}
+\BOOKMARK [3][-]{question.176}{176 Alternative head- and footlines in LaTeX}{subsection.16.2}
+\BOOKMARK [3][-]{question.177}{177 Wide figures in two-column documents}{subsection.16.2}
+\BOOKMARK [3][-]{question.178}{178 1-column abstract in 2-column document}{subsection.16.2}
+\BOOKMARK [3][-]{question.179}{179 Really blank pages between chapters}{subsection.16.2}
+\BOOKMARK [3][-]{question.180}{180 Balancing columns at the end of a document}{subsection.16.2}
+\BOOKMARK [3][-]{question.181}{181 My section title is too wide for the page header}{subsection.16.2}
+\BOOKMARK [3][-]{question.182}{182 Page numbering ``<n> of <m>''}{subsection.16.2}
+\BOOKMARK [3][-]{question.183}{183 Page numbering by chapter}{subsection.16.2}
+\BOOKMARK [2][-]{subsection.16.3}{P.3 Page layout}{section.16}
+\BOOKMARK [3][-]{question.184}{184 Printer paper sizes}{subsection.16.3}
+\BOOKMARK [3][-]{question.185}{185 Changing the margins in LaTeX}{subsection.16.3}
+\BOOKMARK [3][-]{question.186}{186 Packages to set up page designs}{subsection.16.3}
+\BOOKMARK [3][-]{question.187}{187 How to set up page layout ``by hand''}{subsection.16.3}
+\BOOKMARK [3][-]{question.188}{188 Changing margins ``on the fly''}{subsection.16.3}
+\BOOKMARK [3][-]{question.189}{189 How to get rid of page numbers}{subsection.16.3}
+\BOOKMARK [3][-]{question.190}{190 \pagestyle{empty} on first page in LaTeX}{subsection.16.3}
+\BOOKMARK [3][-]{question.191}{191 How to create crop marks}{subsection.16.3}
+\BOOKMARK [3][-]{question.192}{192 `Watermarks' on every page}{subsection.16.3}
+\BOOKMARK [3][-]{question.193}{193 Typesetting things in landscape orientation}{subsection.16.3}
+\BOOKMARK [3][-]{question.194}{194 Putting things at fixed positions on the page}{subsection.16.3}
+\BOOKMARK [3][-]{question.195}{195 Preventing page breaks between lines}{subsection.16.3}
+\BOOKMARK [3][-]{question.196}{196 Parallel setting of text}{subsection.16.3}
+\BOOKMARK [3][-]{question.197}{197 Typesetting epigraphs}{subsection.16.3}
+\BOOKMARK [3][-]{question.198}{198 \(La\)TeX PDF output prints at wrong size}{subsection.16.3}
+\BOOKMARK [2][-]{subsection.16.4}{P.4 Spacing of characters and lines}{section.16}
+\BOOKMARK [3][-]{question.199}{199 Double-spaced documents in LaTeX}{subsection.16.4}
+\BOOKMARK [3][-]{question.200}{200 Changing the space between letters}{subsection.16.4}
+\BOOKMARK [3][-]{question.201}{201 Setting text ragged right}{subsection.16.4}
+\BOOKMARK [3][-]{question.202}{202 Cancelling \134ragged commands}{subsection.16.4}
+\BOOKMARK [2][-]{subsection.16.5}{P.5 Typesetting specialities}{section.16}
+\BOOKMARK [3][-]{question.203}{203 Including a file verbatim in LaTeX}{subsection.16.5}
+\BOOKMARK [3][-]{question.204}{204 Including line numbers in typeset output}{subsection.16.5}
+\BOOKMARK [3][-]{question.205}{205 Code listings in LaTeX}{subsection.16.5}
+\BOOKMARK [3][-]{question.206}{206 Typesetting pseudocode in LaTeX}{subsection.16.5}
+\BOOKMARK [3][-]{question.207}{207 Generating an index in \(La\)TeX}{subsection.16.5}
+\BOOKMARK [3][-]{question.208}{208 Typesetting URLs}{subsection.16.5}
+\BOOKMARK [3][-]{question.209}{209 Typesetting music in TeX}{subsection.16.5}
+\BOOKMARK [3][-]{question.210}{210 Zero paragraph indent}{subsection.16.5}
+\BOOKMARK [3][-]{question.211}{211 Big letters at the start of a paragraph}{subsection.16.5}
+\BOOKMARK [3][-]{question.212}{212 The comma as a decimal separator}{subsection.16.5}
+\BOOKMARK [3][-]{question.213}{213 Breaking boxes of text}{subsection.16.5}
+\BOOKMARK [3][-]{question.214}{214 Overstriking characters}{subsection.16.5}
+\BOOKMARK [3][-]{question.215}{215 Realistic quotes for verbatim listings}{subsection.16.5}
+\BOOKMARK [3][-]{question.216}{216 Printing the time}{subsection.16.5}
+\BOOKMARK [3][-]{question.217}{217 Redefining counters' \134the-commands}{subsection.16.5}
+\BOOKMARK [2][-]{subsection.16.6}{P.6 Tables of contents and indexes}{section.16}
+\BOOKMARK [3][-]{question.218}{218 The format of the Table of Contents, etc.}{subsection.16.6}
+\BOOKMARK [3][-]{question.219}{219 Unnumbered sections in the Table of Contents}{subsection.16.6}
+\BOOKMARK [3][-]{question.220}{220 Bibliography, index, etc., in TOC}{subsection.16.6}
+\BOOKMARK [3][-]{question.221}{221 Table of contents, etc., per chapter}{subsection.16.6}
+\BOOKMARK [3][-]{question.222}{222 Multiple indexes}{subsection.16.6}
+\BOOKMARK [2][-]{subsection.16.7}{P.7 Labels and references}{section.16}
+\BOOKMARK [3][-]{question.223}{223 Referring to things by their name}{subsection.16.7}
+\BOOKMARK [3][-]{question.224}{224 Referring to labels in other documents}{subsection.16.7}
+\BOOKMARK [1][-]{section.17}{Q How do I do...?}{}
+\BOOKMARK [2][-]{subsection.17.1}{Q.1 Mathematics}{section.17}
+\BOOKMARK [3][-]{question.225}{225 Proof environment}{subsection.17.1}
+\BOOKMARK [3][-]{question.226}{226 Roman theorems}{subsection.17.1}
+\BOOKMARK [3][-]{question.227}{227 Defining a new log-like function in LaTeX}{subsection.17.1}
+\BOOKMARK [3][-]{question.228}{228 Set specifications and Dirac brackets}{subsection.17.1}
+\BOOKMARK [3][-]{question.229}{229 Cancelling terms in maths expressions}{subsection.17.1}
+\BOOKMARK [3][-]{question.230}{230 Adjusting maths font sizes}{subsection.17.1}
+\BOOKMARK [3][-]{question.231}{231 Ellipses}{subsection.17.1}
+\BOOKMARK [3][-]{question.232}{232 Sub- and superscript positioning for operators}{subsection.17.1}
+\BOOKMARK [3][-]{question.233}{233 Text inside maths}{subsection.17.1}
+\BOOKMARK [3][-]{question.234}{234 Re-using an equation}{subsection.17.1}
+\BOOKMARK [3][-]{question.235}{235 Line-breaking in in-line maths}{subsection.17.1}
+\BOOKMARK [2][-]{subsection.17.2}{Q.2 Lists}{section.17}
+\BOOKMARK [3][-]{question.236}{236 Fancy enumeration lists}{subsection.17.2}
+\BOOKMARK [3][-]{question.237}{237 How to reduce list spacing}{subsection.17.2}
+\BOOKMARK [3][-]{question.238}{238 Interrupting enumerated lists}{subsection.17.2}
+\BOOKMARK [2][-]{subsection.17.3}{Q.3 Tables, figures and diagrams}{section.17}
+\BOOKMARK [3][-]{question.239}{239 The design of tables}{subsection.17.3}
+\BOOKMARK [3][-]{question.240}{240 Fixed-width tables}{subsection.17.3}
+\BOOKMARK [3][-]{question.241}{241 Variable-width columns in tables}{subsection.17.3}
+\BOOKMARK [3][-]{question.242}{242 Spacing lines in tables}{subsection.17.3}
+\BOOKMARK [3][-]{question.243}{243 Tables longer than a single page}{subsection.17.3}
+\BOOKMARK [3][-]{question.244}{244 How to alter the alignment of tabular cells}{subsection.17.3}
+\BOOKMARK [3][-]{question.245}{245 The thickness of rules in LaTeX tables}{subsection.17.3}
+\BOOKMARK [3][-]{question.246}{246 Flowing text around figures in LaTeX}{subsection.17.3}
+\BOOKMARK [3][-]{question.247}{247 Diagonal separation in corner cells of tables}{subsection.17.3}
+\BOOKMARK [3][-]{question.248}{248 How to change a whole row of a table}{subsection.17.3}
+\BOOKMARK [3][-]{question.249}{249 Merging cells in a column of a table}{subsection.17.3}
+\BOOKMARK [2][-]{subsection.17.4}{Q.4 Floating tables, figures, etc.}{section.17}
+\BOOKMARK [3][-]{question.250}{250 Floats on their own on float pages}{subsection.17.4}
+\BOOKMARK [3][-]{question.251}{251 Extra vertical space in floats}{subsection.17.4}
+\BOOKMARK [3][-]{question.252}{252 Placing two-column floats at bottom of page}{subsection.17.4}
+\BOOKMARK [3][-]{question.253}{253 Floats in multicolumn setting}{subsection.17.4}
+\BOOKMARK [3][-]{question.254}{254 Facing floats on 2-page spread}{subsection.17.4}
+\BOOKMARK [3][-]{question.255}{255 Vertical layout of float pages}{subsection.17.4}
+\BOOKMARK [2][-]{subsection.17.5}{Q.5 Footnotes}{section.17}
+\BOOKMARK [3][-]{question.256}{256 Footnotes in tables}{subsection.17.5}
+\BOOKMARK [3][-]{question.257}{257 Footnotes in LaTeX section headings}{subsection.17.5}
+\BOOKMARK [3][-]{question.258}{258 Footnotes in captions}{subsection.17.5}
+\BOOKMARK [3][-]{question.259}{259 Footnotes whose texts are identical}{subsection.17.5}
+\BOOKMARK [3][-]{question.260}{260 More than one sequence of footnotes}{subsection.17.5}
+\BOOKMARK [3][-]{question.261}{261 Footnotes numbered ``per page''}{subsection.17.5}
+\BOOKMARK [2][-]{subsection.17.6}{Q.6 Document management}{section.17}
+\BOOKMARK [3][-]{question.262}{262 What's the name of this file}{subsection.17.6}
+\BOOKMARK [3][-]{question.263}{263 All the files used by this document}{subsection.17.6}
+\BOOKMARK [3][-]{question.264}{264 Marking changed parts of your document}{subsection.17.6}
+\BOOKMARK [3][-]{question.265}{265 Conditional compilation and ``comments''}{subsection.17.6}
+\BOOKMARK [3][-]{question.266}{266 Bits of document from other directories}{subsection.17.6}
+\BOOKMARK [3][-]{question.267}{267 Version control using RCS, CVS or Subversion}{subsection.17.6}
+\BOOKMARK [3][-]{question.268}{268 Makefiles for LaTeX documents}{subsection.17.6}
+\BOOKMARK [3][-]{question.269}{269 How many pages are there in my document?}{subsection.17.6}
+\BOOKMARK [3][-]{question.270}{270 Including Plain TeX files in LaTeX}{subsection.17.6}
+\BOOKMARK [2][-]{subsection.17.7}{Q.7 Hyphenation}{section.17}
+\BOOKMARK [3][-]{question.271}{271 My words aren't being hyphenated}{subsection.17.7}
+\BOOKMARK [3][-]{question.272}{272 Weird hyphenation of words}{subsection.17.7}
+\BOOKMARK [3][-]{question.273}{273 \(Merely\) peculiar hyphenation}{subsection.17.7}
+\BOOKMARK [3][-]{question.274}{274 Accented words aren't hyphenated}{subsection.17.7}
+\BOOKMARK [3][-]{question.275}{275 Using a new language with Babel}{subsection.17.7}
+\BOOKMARK [3][-]{question.276}{276 Stopping all hyphenation}{subsection.17.7}
+\BOOKMARK [3][-]{question.277}{277 Preventing hyphenation of a particular word}{subsection.17.7}
+\BOOKMARK [3][-]{question.278}{278 Hyphenation exceptions}{subsection.17.7}
+\BOOKMARK [2][-]{subsection.17.8}{Q.8 Odds and ends}{section.17}
+\BOOKMARK [3][-]{question.279}{279 Typesetting all those TeX-related logos}{subsection.17.8}
+\BOOKMARK [3][-]{question.280}{280 How to do bold-tt or bold-sc}{subsection.17.8}
+\BOOKMARK [3][-]{question.281}{281 Automatic sizing of minipage}{subsection.17.8}
+\BOOKMARK [1][-]{section.18}{R Symbols, etc.}{}
+\BOOKMARK [2][-]{question.282}{282 Symbols for the number sets}{section.18}
+\BOOKMARK [2][-]{question.283}{283 Better script fonts for maths}{section.18}
+\BOOKMARK [2][-]{question.284}{284 Setting bold Greek letters in LaTeX}{section.18}
+\BOOKMARK [2][-]{question.285}{285 The Principal Value Integral symbol}{section.18}
+\BOOKMARK [2][-]{question.286}{286 How to use the underscore character}{section.18}
+\BOOKMARK [2][-]{question.287}{287 How to type an `@' sign?}{section.18}
+\BOOKMARK [2][-]{question.288}{288 Typesetting the Euro sign}{section.18}
+\BOOKMARK [2][-]{question.289}{289 How to get copyright, trademark, etc.}{section.18}
+\BOOKMARK [1][-]{section.19}{S Macro programming}{}
+\BOOKMARK [2][-]{subsection.19.1}{S.1 ``Generic'' macros and techniques}{section.19}
+\BOOKMARK [3][-]{question.290}{290 Finding the width of a letter, word, or phrase}{subsection.19.1}
+\BOOKMARK [3][-]{question.291}{291 Patching existing commands}{subsection.19.1}
+\BOOKMARK [3][-]{question.292}{292 Comparing the ``job name''}{subsection.19.1}
+\BOOKMARK [3][-]{question.293}{293 Is the argument a number?}{subsection.19.1}
+\BOOKMARK [3][-]{question.294}{294 Defining macros within macros}{subsection.19.1}
+\BOOKMARK [3][-]{question.295}{295 Spaces in macros}{subsection.19.1}
+\BOOKMARK [3][-]{question.296}{296 How to break the 9-argument limit}{subsection.19.1}
+\BOOKMARK [3][-]{question.297}{297 Defining characters as macros}{subsection.19.1}
+\BOOKMARK [3][-]{question.298}{298 Active characters in command arguments}{subsection.19.1}
+\BOOKMARK [3][-]{question.299}{299 Defining a macro from an argument}{subsection.19.1}
+\BOOKMARK [3][-]{question.300}{300 Transcribing LaTeX command definitions}{subsection.19.1}
+\BOOKMARK [3][-]{question.301}{301 Detecting that something is empty}{subsection.19.1}
+\BOOKMARK [3][-]{question.302}{302 Am I using PDFTeX?}{subsection.19.1}
+\BOOKMARK [3][-]{question.303}{303 Subverting a token register}{subsection.19.1}
+\BOOKMARK [3][-]{question.304}{304 Is this command defined?}{subsection.19.1}
+\BOOKMARK [2][-]{subsection.19.2}{S.2 LaTeX macro tools and techniques}{section.19}
+\BOOKMARK [3][-]{question.305}{305 Using Plain or primitive commands in LaTeX}{subsection.19.2}
+\BOOKMARK [3][-]{question.306}{306 \134@ and @ in macro names}{subsection.19.2}
+\BOOKMARK [3][-]{question.307}{307 What's the reason for `protection'?}{subsection.19.2}
+\BOOKMARK [3][-]{question.308}{308 \134edef does not work with \134protect}{subsection.19.2}
+\BOOKMARK [3][-]{question.309}{309 The definitions of LaTeX commands}{subsection.19.2}
+\BOOKMARK [3][-]{question.310}{310 Optional arguments like \134section}{subsection.19.2}
+\BOOKMARK [3][-]{question.311}{311 More than one optional argument}{subsection.19.2}
+\BOOKMARK [3][-]{question.312}{312 Commands defined with * options}{subsection.19.2}
+\BOOKMARK [3][-]{question.313}{313 LaTeX internal ``abbreviations'', etc.}{subsection.19.2}
+\BOOKMARK [3][-]{question.314}{314 Defining LaTeX commands within other commands}{subsection.19.2}
+\BOOKMARK [2][-]{subsection.19.3}{S.3 LaTeX macro programming}{section.19}
+\BOOKMARK [3][-]{question.315}{315 How to change LaTeX's ``fixed names''}{subsection.19.3}
+\BOOKMARK [3][-]{question.316}{316 Changing the words babel uses}{subsection.19.3}
+\BOOKMARK [3][-]{question.317}{317 Running equation, figure and table numbering}{subsection.19.3}
+\BOOKMARK [3][-]{question.318}{318 Making labels from a counter}{subsection.19.3}
+\BOOKMARK [3][-]{question.319}{319 Finding if you're on an odd or an even page}{subsection.19.3}
+\BOOKMARK [3][-]{question.320}{320 How to change the format of labels}{subsection.19.3}
+\BOOKMARK [3][-]{question.321}{321 Adjusting the presentation of section numbers}{subsection.19.3}
+\BOOKMARK [3][-]{question.322}{322 There's a space added after my environment}{subsection.19.3}
+\BOOKMARK [3][-]{question.323}{323 Finding if a label is undefined}{subsection.19.3}
+\BOOKMARK [3][-]{question.324}{324 Master and slave counters}{subsection.19.3}
+\BOOKMARK [1][-]{section.20}{T Things are Going Wrong...}{}
+\BOOKMARK [2][-]{subsection.20.1}{T.1 Getting things to fit}{section.20}
+\BOOKMARK [3][-]{question.325}{325 Enlarging TeX}{subsection.20.1}
+\BOOKMARK [3][-]{question.326}{326 Why can't I load PiCTeX?}{subsection.20.1}
+\BOOKMARK [2][-]{subsection.20.2}{T.2 Making things stay where you want them}{section.20}
+\BOOKMARK [3][-]{question.327}{327 Moving tables and figures in LaTeX}{subsection.20.2}
+\BOOKMARK [3][-]{question.328}{328 Underlined text won't break}{subsection.20.2}
+\BOOKMARK [3][-]{question.329}{329 Controlling widows and orphans}{subsection.20.2}
+\BOOKMARK [2][-]{subsection.20.3}{T.3 Things have ``gone away''}{section.20}
+\BOOKMARK [3][-]{question.330}{330 Old LaTeX font references such as \134tenrm}{subsection.20.3}
+\BOOKMARK [3][-]{question.331}{331 Missing symbol commands}{subsection.20.3}
+\BOOKMARK [3][-]{question.332}{332 Where are the msx and msy fonts?}{subsection.20.3}
+\BOOKMARK [3][-]{question.333}{333 Where are the am fonts?}{subsection.20.3}
+\BOOKMARK [1][-]{section.21}{U Why does it do that?}{}
+\BOOKMARK [2][-]{subsection.21.1}{U.1 Common errors}{section.21}
+\BOOKMARK [3][-]{question.334}{334 LaTeX gets cross-references wrong}{subsection.21.1}
+\BOOKMARK [3][-]{question.335}{335 Start of line goes awry}{subsection.21.1}
+\BOOKMARK [3][-]{question.336}{336 Why doesn't verbatim work within...?}{subsection.21.1}
+\BOOKMARK [3][-]{question.337}{337 No line here to end}{subsection.21.1}
+\BOOKMARK [3][-]{question.338}{338 Two-column float numbers out of order}{subsection.21.1}
+\BOOKMARK [3][-]{question.339}{339 Accents misbehave in tabbing}{subsection.21.1}
+\BOOKMARK [3][-]{question.340}{340 Package reports ``command already defined''}{subsection.21.1}
+\BOOKMARK [3][-]{question.341}{341 Why are my sections numbered 0.1...?}{subsection.21.1}
+\BOOKMARK [3][-]{question.342}{342 Link text doesn't break at end line}{subsection.21.1}
+\BOOKMARK [3][-]{question.343}{343 Page number is wrong at start of page}{subsection.21.1}
+\BOOKMARK [3][-]{question.344}{344 My brackets don't match}{subsection.21.1}
+\BOOKMARK [2][-]{subsection.21.2}{U.2 Common misunderstandings}{section.21}
+\BOOKMARK [3][-]{question.345}{345 What's going on in my \134include commands?}{subsection.21.2}
+\BOOKMARK [3][-]{question.346}{346 Why does it ignore paragraph parameters?}{subsection.21.2}
+\BOOKMARK [3][-]{question.347}{347 Case-changing oddities}{subsection.21.2}
+\BOOKMARK [3][-]{question.348}{348 Why does LaTeX split footnotes across pages?}{subsection.21.2}
+\BOOKMARK [3][-]{question.349}{349 Getting \134marginpar on the right side}{subsection.21.2}
+\BOOKMARK [3][-]{question.350}{350 Where have my characters gone?}{subsection.21.2}
+\BOOKMARK [3][-]{question.351}{351 ``Rerun'' messages won't go away}{subsection.21.2}
+\BOOKMARK [3][-]{question.352}{352 Commands gobble following space}{subsection.21.2}
+\BOOKMARK [3][-]{question.353}{353 \(La\)TeX makes overfull lines}{subsection.21.2}
+\BOOKMARK [3][-]{question.354}{354 Maths symbols don't scale up}{subsection.21.2}
+\BOOKMARK [3][-]{question.355}{355 Why doesn't \134linespread work?}{subsection.21.2}
+\BOOKMARK [3][-]{question.356}{356 Only one \134baselineskip per paragraph}{subsection.21.2}
+\BOOKMARK [3][-]{question.357}{357 Numbers too large in table of contents, etc.}{subsection.21.2}
+\BOOKMARK [3][-]{question.358}{358 Why is the inside margin so narrow?}{subsection.21.2}
+\BOOKMARK [2][-]{subsection.21.3}{U.3 Why shouldn't I?}{section.21}
+\BOOKMARK [3][-]{question.359}{359 Why use fontenc rather than t1enc?}{subsection.21.3}
+\BOOKMARK [3][-]{question.360}{360 Why bother with inputenc and fontenc?}{subsection.21.3}
+\BOOKMARK [3][-]{question.361}{361 Why not use eqnarray?}{subsection.21.3}
+\BOOKMARK [3][-]{question.362}{362 Why use \134[...\134] in place of \044\044...\044\044?}{subsection.21.3}
+\BOOKMARK [3][-]{question.363}{363 What's wrong with \134bf, \134it, etc.?}{subsection.21.3}
+\BOOKMARK [3][-]{question.364}{364 What's wrong with \134newfont?}{subsection.21.3}
+\BOOKMARK [1][-]{section.22}{V The joy of TeX errors}{}
+\BOOKMARK [2][-]{question.365}{365 How to approach errors}{section.22}
+\BOOKMARK [2][-]{question.366}{366 The structure of TeX error messages}{section.22}
+\BOOKMARK [2][-]{question.367}{367 An extra `\175'??}{section.22}
+\BOOKMARK [2][-]{question.368}{368 Capacity exceeded [semantic nest...]}{section.22}
+\BOOKMARK [2][-]{question.369}{369 No room for a new `thing'}{section.22}
+\BOOKMARK [2][-]{question.370}{370 epsf gives up after a bit}{section.22}
+\BOOKMARK [2][-]{question.371}{371 Improper \134hyphenation will be flushed}{section.22}
+\BOOKMARK [2][-]{question.372}{372 ``Too many unprocessed floats''}{section.22}
+\BOOKMARK [2][-]{question.373}{373 \134spacefactor complaints}{section.22}
+\BOOKMARK [2][-]{question.374}{374 \134end occurred inside a group}{section.22}
+\BOOKMARK [2][-]{question.375}{375 ``Missing number, treated as zero''}{section.22}
+\BOOKMARK [2][-]{question.376}{376 ``Please type a command or say \134end''}{section.22}
+\BOOKMARK [2][-]{question.377}{377 ``Unknown graphics extension''}{section.22}
+\BOOKMARK [2][-]{question.378}{378 ``Missing \044 inserted''}{section.22}
+\BOOKMARK [2][-]{question.379}{379 Warning: ``Font shape ... not available''}{section.22}
+\BOOKMARK [2][-]{question.380}{380 Unable to read an entire line}{section.22}
+\BOOKMARK [2][-]{question.381}{381 ``Fatal format file error; I'm stymied''}{section.22}
+\BOOKMARK [2][-]{question.382}{382 Non-PDF special ignored!}{section.22}
+\BOOKMARK [2][-]{question.383}{383 Mismatched mode ljfour and resolution 8000}{section.22}
+\BOOKMARK [2][-]{question.384}{384 ``Too deeply nested''}{section.22}
+\BOOKMARK [2][-]{question.385}{385 Capacity exceeded --- input levels}{section.22}
+\BOOKMARK [2][-]{question.386}{386 PDFTeX destination ... ignored}{section.22}
+\BOOKMARK [2][-]{question.387}{387 Alignment tab changed to \134cr}{section.22}
+\BOOKMARK [2][-]{question.388}{388 Graphics division by zero}{section.22}
+\BOOKMARK [2][-]{question.389}{389 Missing \134begin\173document\175}{section.22}
+\BOOKMARK [2][-]{question.390}{390 \134normalsize not defined}{section.22}
+\BOOKMARK [2][-]{question.391}{391 Too many math alphabets}{section.22}
+\BOOKMARK [2][-]{question.392}{392 Not in outer par mode}{section.22}
+\BOOKMARK [2][-]{question.393}{393 Perhaps a missing \134item?}{section.22}
+\BOOKMARK [2][-]{question.394}{394 Illegal parameter number in definition}{section.22}
+\BOOKMARK [2][-]{question.395}{395 Float\(s\) lost}{section.22}
+\BOOKMARK [2][-]{question.396}{396 Option clash for package}{section.22}
+\BOOKMARK [1][-]{section.23}{W Current TeX-related projects}{}
+\BOOKMARK [2][-]{question.397}{397 The LaTeX3 project}{section.23}
+\BOOKMARK [2][-]{question.398}{398 Future WWW technologies and \(La\)TeX}{section.23}
+\BOOKMARK [2][-]{question.399}{399 Making outline fonts from Metafont}{section.23}
+\BOOKMARK [2][-]{question.400}{400 The TeX document preparation environment}{section.23}
+\BOOKMARK [2][-]{question.401}{401 The ANT typesetting system}{section.23}
+\BOOKMARK [2][-]{question.402}{402 The ExTeX project}{section.23}
+\BOOKMARK [2][-]{question.403}{403 Omega and Aleph}{section.23}
+\BOOKMARK [2][-]{question.404}{404 PDFTeX becomes LUATeX}{section.23}
+\BOOKMARK [2][-]{question.405}{405 The XeTeX project}{section.23}
+\BOOKMARK [1][-]{section.24}{X You're still stuck?}{}
+\BOOKMARK [2][-]{question.406}{406 You don't understand the answer}{section.24}
+\BOOKMARK [2][-]{question.407}{407 Submitting new material for the FAQ}{section.24}
+\BOOKMARK [2][-]{question.408}{408 Reporting a LaTeX bug}{section.24}
+\BOOKMARK [2][-]{question.409}{409 What to do if you find a bug}{section.24}

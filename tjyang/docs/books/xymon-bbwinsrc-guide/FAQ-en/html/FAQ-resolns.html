@@ -1,0 +1,54 @@
+<head>
+<title>UK TeX FAQ -- question label resolns</title>
+</head><body>
+<h3>What are &ldquo;resolutions&rdquo;</h3>
+<p>&ldquo;Resolution&rdquo; is a word that is used with little concern for its
+multiple meanings, in computer equipment marketing.  The word suggests
+a measure of what an observer (perhaps the human eye) can resolve; yet
+we regularly see advertisements for printers whose resolution is
+1200dpi &mdash; far finer than the unaided human eye can distinguish.  The
+advertisements are talking about the precision with which the printer
+can place spots on the printed image, which affects the fineness of
+the representation of fonts, and the accuracy of the placement of
+glyphs and other marks on the page.
+<p>In fact, there are two sorts of &ldquo;resolution&rdquo; on the printed page
+that we need to consider for (La)TeX&rsquo;s purposes:
+<ul>
+<li> the positioning accuracy, and
+<li> the quality of the fonts.
+</ul>
+In the case where (La)TeX output is being sent direct to a printer,
+in the printer&rsquo;s &ldquo;native&rdquo; language, it&rsquo;s plain that the DVI
+processor must know all such details, and must take detailed account
+of both types of resolution.
+<p>In the case where output is being sent to an intermediate distribution
+format, that has potential for printing (or displaying) we know not
+where, the final translator, that connects to directly to the printer
+or display, has the knowledge of the device&rsquo;s properties: the
+DVI processor need not know, and should not presume to guess.
+<p>Both PostScript and PDF output are in this category.  While PostScript is
+used less frequently for document distribution nowadays, it is
+regularly used as the source for distillation into PDF; and
+PDF is the workhorse of an enormous explosion of document
+distribution.
+<p>Therefore, we need DVI processors that will produce
+&ldquo;resolution independent&rdquo; PostScript or PDF output; of course, the
+independence needs to extend to both forms of independence outlined
+above.
+<p>Resolution-independence of fonts is forced upon the world by the
+feebleness of Adobe&rsquo;s <i>Acrobat</i> <i>Reader</i> at dealing
+with bitmap files: a sequence of answers starting with one aiming at
+the <a href="FAQ-dvips-pdf.html">quality of PDF from PostScript</a> addresses
+the problems that arise.
+<p>Resolution-independence of positioning is more troublesome:
+<i>dvips</i> is somewhat notorious for insisting on positioning to
+the accuracy of the declared resolution of the printer.
+
+
+
+One
+commonly-used approach is to declare a resolution of 8000 (&ldquo;better
+than any device&rdquo;), and this is reasonably successful though it does
+have its <a href="FAQ-8000.html">problems</a>.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=resolns">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=resolns</a>
+</body>

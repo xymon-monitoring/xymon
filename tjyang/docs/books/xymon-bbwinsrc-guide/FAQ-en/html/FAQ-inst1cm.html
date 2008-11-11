@@ -1,0 +1,72 @@
+<head>
+<title>UK TeX FAQ -- question label inst1cm</title>
+</head><body>
+<h3>Installing the Bluesky versions of the CM fonts</h3>
+<p>This is a specialised case of <a href="FAQ-instfont.html">installing a font</a>,
+but it comes easier
+than most, since the font metrics are installed in every (La)TeX
+system before you even start.  Indeed, most recent systems will have
+the Type 1 fonts themselves already installed, so that the job is
+already done, and all you need is to start using them:
+so the first thing to do is to just try it.  On a system that uses
+<i>dvips</i> (most systems nowadays do), try the sequence:
+<pre>
+  latex sample2e
+  dvips -Pcmz -Pamz -o sample2e.ps sample2e
+</pre>
+at a &ldquo;command prompt&rdquo; (<i>shell</i>, in a Unix-style system,
+&ldquo;DOS box&rdquo; in a Windows system).
+<p>If the command works at all, the console output of the command will
+include a sequence of Type 1 font file names, listed as
+<code>&lt;cmr10.pfb&gt;</code> and so on;
+this is <i>dvips</i> telling you it&rsquo;s including the Type 1 font,
+and you need do no more.
+<p>If the test has failed, you need to install your own set of the fonts.
+<p>The CTAN directories listed below contain compressed archives of
+the Type 1 
+files for various architectures, both for the Computer Modern fonts
+and for the AMS fonts of mathematical and other useful things.
+Download the archives that are appropriate for your architecture, and
+extract the files &mdash; you only actually need the contents of the
+<i>pfb</i> directories, since you already have the fonts
+installed in the &ldquo;ordinary&rdquo; way, so that the TFM files are
+already present.  (You don&rsquo;t need the PostScript font metric &mdash; AFM
+and PFM &mdash; files in any case.)
+<p>The files should go into your local <code>texmf</code> tree (<i>texmf.local</i>,
+<i>texmf-local</i>, <i>localtexmf</i>, or whatever).  Create
+directories at offsets <i>fonts/type1/bluesky/cm</i> and
+<i>fonts/type1/bluesky/ams</i>, and copy the <code>pfb</code> files into them.
+<p>Now you need to tell <i>dvips</i>, PDFTeX, etc., that the fonts
+are available.  This is done by use of a <em>map file</em>, which lists
+<em>font name</em> (as TeX understands it), <em>font name</em> (as it
+appears in the type 1 file itself), and where the program will find
+the file.  Map files are provided in the download bundles for the
+AMS fonts; for the CM fonts, map files are available
+separately.
+<p>The set of map files includes files <code>config.*</code>; each of these contains
+an instruction to load a single map file.  For ordinary use, you
+instruct <i>dvips</i> to load the &ldquo;detailed&rdquo; map of the
+CM fonts by use of the command:
+<pre>
+  dvips -Pcmz myfile
+</pre>
+The same can be done with the AMS fonts, and you may invoke
+both sets of fonts with:
+<pre>
+  dvips -Pcmz -Pamz myfile
+</pre>
+Alternatively, the contents of <i>config.cmz</i> and <i>config.amz</i>
+could be combined into a single file, perhaps <i>config.bluesky</i>,
+loaded by the command
+<pre>
+  dvips -Pbluesky myfile
+</pre>
+<p>Remember, after all such changes, the 
+<a href="FAQ-instpackages.html">file-name database must be refreshed</a>.
+<dl>
+<dt><tt><i>AMS fonts</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/fonts/amsfonts/ps-type1/">fonts/amsfonts/ps-type1/</a>
+<dt><tt><i>CM fonts</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/fonts/cm/ps-type1/bluesky/">fonts/cm/ps-type1/bluesky/</a>
+<dt><tt><i>CM font maps</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/cm/ps-type1/bluesky-contrib/dvips.zip">fonts/cm/ps-type1/bluesky-contrib/dvips</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/cm/ps-type1/bluesky-contrib/dvips.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/cm/ps-type1/bluesky-contrib/dvips/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=inst1cm">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=inst1cm</a>
+</body>

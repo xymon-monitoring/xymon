@@ -1,0 +1,98 @@
+<head>
+<title>UK TeX FAQ -- question label complist</title>
+</head><body>
+<h3>How to reduce list spacing</h3>
+<p><a href="FAQ-books.html">Lamport&rsquo;s book</a> lists various
+parameters for the layout of list (things like <code>\</code><code>topsep</code>,
+<code>\</code><code>itemsep</code> and <code>\</code><code>parsep</code>), but fails to mention that they&rsquo;re set
+automatically within the list itself.  This happens because each list
+executes a command <code>\</code><code>@list</code><code>&lt;<i>depth</i>&gt;</code> (the depth
+appearing as a lower-case roman numeral); what&rsquo;s more, the top-level
+<code>\</code><code>@listi</code> is usually reset when the font size is changed.  As a
+result, it&rsquo;s rather tricky for 
+the user to control list spacing.  Of course, the real answer is to use
+a document class designed with more modest list spacing, but we all
+know such things are hard to come by.  The <i>memoir</i> class wasn&rsquo;t
+designed for more compact lists <em>per se</em>, but offers the user
+control over the list spacing.
+<p>There are packages that provide some control of list spacing, but they
+seldom address the separation from surrounding text (defined by
+<code>\</code><code>topsep</code>).  The <i>expdlist</i> package, among its many controls
+of the appearance of <code>description</code> lists, offers a
+compaction parameter (see the documentation); the <i>mdwlist</i>
+package offers a <code>\</code><code>makecompactlist</code> command for users&rsquo; own list
+definitions, and uses it to define compact lists
+<code>itemize*</code>, <code>enumerate*</code> and
+<code>description*</code>.  In fact, you can write lists such as
+these commands define pretty straightforwardly &mdash; for example:
+<blockquote>
+<pre>
+\newenvironment{itemize*}%
+  {\begin{itemize}%
+    \setlength{\itemsep}{0pt}%
+    \setlength{\parskip}{0pt}}%
+  {\end{itemize}}
+</pre>
+</blockquote><p>
+The <i>paralist</i> package provides several approaches to list
+compaction:
+<ul>
+<li> its <code>asparaenum</code> environment formats each item as if
+  it were a paragraph introduced by the enumeration label (which saves
+  space if the item texts are long);
+<li> its <code>compactenum</code> environment is the same sort of
+  compact list as is provided in <i>expdlist</i> and
+  <i>mdwlist</i>; and
+<li> its <code>inparaenum</code> environment produces a list &ldquo;in
+  the paragraph&rdquo;, i.e., with no line break between items, which is a
+  great space-saver if the list item texts are short.
+</ul>
+The package will manipulate its <code>enumerate</code> environment
+labels just like the <a href="FAQ-enumerate.html"><i>enumerate</i> package</a>
+does.
+<p><i>Paralist</i> also provides <code>itemize</code> equivalents
+(<code>asparaitem</code>, etc.), and <code>description</code>
+equivalents (<code>asparadesc</code>, etc.).
+<p>The <i>multenum</i> package offers a more regular form of
+<i>paralist</i>&rsquo;s <code>inparaenum</code>; you define a notional
+grid on which list entries are to appear, and list items will always
+appear at positions on that grid.  The effect is somewhat like that of
+the &lsquo;tab&rsquo; keys on traditional typewriters; the package was designed
+for example sheets, or lists of answers in the appendices of a book.
+<p>The ultimate in compaction (of every sort) is offered by the
+<i>savetrees</i> package; compaction of lists is included.  The
+package&rsquo;s prime purpose is to save space at every touch and turn:
+don&rsquo;t use it if you&rsquo;re under any design constraint whatever!
+<p>The <i>expdlist</i>, <i>mdwlist</i> and <i>paralist</i>
+packages all offer other facilities for list configuration: you should
+probably not try the &ldquo;do-it-yourself&rdquo; approaches outlined below if
+you need one of the packages for some other list configuration
+purpose.
+<p>For ultimate flexibility (including manipulation of <code>\</code><code>topsep</code>), the
+<i>enumitem</i> package permits adjustment of list parameters using
+a &ldquo;<em>key</em>=&lt;<i>value</i>&gt;&rdquo; format; so
+for example, one might write
+<blockquote>
+<pre>
+\usepackage{enumitem}
+...
+\begin{enumerate}[topsep=0pt, partopsep=0pt]
+\item ...  ...
+\end{enumerate}
+</pre>
+</blockquote><p>
+to suppress all spacing above and below your list.  <i>Enumitem</i>
+also permits manipulation of the label format in a more &ldquo;basic&rdquo;
+manner than the <a href="FAQ-enumerate.html"><i>enumerate</i> package</a> does.
+<dl>
+<dt><tt><i>enumerate.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>enumitem.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/enumitem.zip">macros/latex/contrib/enumitem</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/enumitem.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/enumitem/">browse</a>)
+<dt><tt><i>expdlist.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/expdlist.zip">macros/latex/contrib/expdlist</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/expdlist.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/expdlist/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>mdwlist.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.zip">macros/latex/contrib/mdwtools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/mdwtools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/mdwtools/">browse</a>)
+<dt><tt><i>multenum.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multenum.zip">macros/latex/contrib/multenum</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/multenum.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/multenum/">browse</a>)
+<dt><tt><i>paralist.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/paralist.zip">macros/latex/contrib/paralist</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/paralist.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/paralist/">browse</a>)
+<dt><tt><i>savetrees.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/savetrees.zip">macros/latex/contrib/savetrees</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/savetrees.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/savetrees/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=complist">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=complist</a>
+</body>

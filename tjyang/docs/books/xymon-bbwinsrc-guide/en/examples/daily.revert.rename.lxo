@@ -1,0 +1,5 @@
+$ \textbf{hg rename file new-file}
+$ \textbf{hg revert new-file}
+$ \textbf{hg status}
+R file
+? new-file

@@ -1,0 +1,34 @@
+<head>
+<title>UK TeX FAQ -- question label fontname</title>
+</head><body>
+<h3>What is the &ldquo;Berry naming scheme&rdquo;</h3>
+<p>In the olden days, (La)TeX distributions were limited by the
+feebleness of file systems&rsquo; ability to represent long names.  (The
+MSDOS file system was a particular bugbear: fortunately any current
+Microsoft system allows rather more freedom to specify file names.
+Sadly, the ISO 9660 standard for the structure of CDROMs has a
+similar failing, but that too has been modified by various extension
+mechanisms.)
+<p>One area in which this was a particular problem was that of file names
+for Type 1 fonts.  These fonts are distributed by their vendors with
+pretty meaningless short names, and there&rsquo;s a natural ambition to
+change the name to something that identifies the font somewhat
+precisely.  Unfortunately, names such as &ldquo;BaskervilleMT&rdquo; are
+already far beyond the abilities of the typical feeble file system,
+and add the specifier of a font shape or variant, and the difficulties
+spiral out of control.
+<p>Thus arose the Berry naming scheme.
+<p>The basis of the scheme is to encode the meanings of the various parts
+of the file&rsquo;s specification in an extremely terse way, so that enough
+font names can be expressed even in impoverished file spaces.  The
+encoding allocates one letter to the font &ldquo;foundry&rdquo;, two to the
+typeface name, one to the weight, and so on.  The whole scheme is
+outlined in the <i>fontname</i> distribution, which includes
+extensive documentation and a set of tables of fonts whose names have
+been systematised.
+<dl>
+<dt><tt><i>fontname distribution</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/info/fontname.zip">info/fontname</a> (<a href="ftp://cam.ctan.org/tex-archive/info/fontname.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/info/fontname/">browse</a>)
+</dl>
+<p>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=fontname">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=fontname</a>
+</body>

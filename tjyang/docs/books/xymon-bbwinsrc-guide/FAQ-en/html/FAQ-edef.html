@@ -1,0 +1,20 @@
+<head>
+<title>UK TeX FAQ -- question label edef</title>
+</head><body>
+<h3><code>\</code><code>edef</code> does not work with <code>\</code><code>protect</code></h3>
+<p>Robust LaTeX commands are either &ldquo;naturally robust&rdquo; &mdash; meaning that
+they never need <code>\</code><code>protect</code>, or &ldquo;self-protected&rdquo; &mdash; meaning that
+they have <code>\</code><code>protect</code> built in to their definition in some
+way. Self-protected commands are robust only in a context where the
+<code>\</code><code>protect</code> mechanism is properly handled.  The body of an
+<code>\</code><code>edef</code> definition doesn&rsquo;t handle <code>\</code><code>protect</code> properly, since
+<code>\</code><code>edef</code> is a TeX primitive rather than a LaTeX command.
+<p>This problem is resolved by a LaTeX internal command
+<code>\</code><code>protected@edef</code>, which does the job of <code>\</code><code>edef</code> while keeping the
+<code>\</code><code>protect</code> mechanism working.  There&rsquo;s a corresponding
+<code>\</code><code>protected@xdef</code> which does the job of <code>\</code><code>xdef</code>.
+<p>Of course, these commands need to be tended carefully, since they&rsquo;re
+
+internal: see <a href="FAQ-atsigns.html">&rsquo;@&rsquo; in control sequence names</a>.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=edef">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=edef</a>
+</body>

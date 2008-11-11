@@ -1,0 +1,35 @@
+<head>
+<title>UK TeX FAQ -- question label citesort</title>
+</head><body>
+<h3>Sorting and compressing citations</h3>
+<p>If you give LaTeX
+<code>\</code><code>cite{fred,joe,harry,min}</code>, its default commands could give
+something like &ldquo;[2,6,4,3]&rdquo;;
+this looks awful.  One can of course get the things in order by
+rearranging the keys in the <code>\</code><code>cite</code> command, but who wants to do
+that sort of thing for no more improvement than &ldquo;[2,3,4,6]&rdquo;?
+<p>The <i>cite</i> package sorts the numbers and detects consecutive
+sequences, so creating &ldquo;[2&ndash;4,6]&rdquo;.  The <i>natbib</i> package,
+with the <code>numbers</code> and <code>sort&amp;compress</code> options, will
+do the same when working with its own numeric bibliography styles
+(<i>plainnat.bst</i> and <i>unsrtnat.bst</i>).
+<p>If you might need to make hyperreferences to your citations,
+<i>cite</i> isn&rsquo;t adequate.  If you add the <i>hypernat</i>
+package:
+<pre>
+  \usepackage[...]{hyperref}
+  \usepackage[numbers,sort&compress]{natbib}
+  \usepackage{hypernat}
+  ...
+  \bibliographystyle{plainnat}
+</pre>
+the <i>natbib</i> and <i>hyperref</i> packages will interwork.
+<dl>
+<dt><tt><i>cite.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/cite.zip">macros/latex/contrib/cite</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/cite.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/cite/">browse</a>)
+<dt><tt><i>hypernat.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/hypernat.sty">macros/latex/contrib/misc/hypernat.sty</a>
+<dt><tt><i>hyperref.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.zip">macros/latex/contrib/hyperref</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/hyperref/">browse</a>)
+<dt><tt><i>plainnat.bst</i></tt><dd>Distributed with <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/natbib.zip">macros/latex/contrib/natbib</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/natbib.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/natbib/">browse</a>)
+<dt><tt><i>unsrtnat.bst</i></tt><dd>Distributed with <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/natbib.zip">macros/latex/contrib/natbib</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/natbib.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/natbib/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=citesort">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=citesort</a>
+</body>

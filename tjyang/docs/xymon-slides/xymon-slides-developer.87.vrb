@@ -1,0 +1,24 @@
+\frametitle {Per-Target Flags}
+
+Assuming \variable{foo} is a program or library:
+\begin{description}[\texttt{foo\_CPPFLAGS}]
+\item<1->[\texttt{foo\_CFLAGS}] Additional C compiler flags
+\item<1->[\texttt{foo\_CPPFLAGS}] Additional preprocessor flags (\texttt{-I}s and \texttt{-D}s)
+\item<2->[\texttt{foo\_LDADD}] Additional link objects, \texttt{-l}s and \texttt{-L}s (if \variable{foo} is a program)
+\item<2->[\texttt{foo\_LIBADD}] Additional link objects, \texttt{-l}s and \texttt{-L}s (if \variable{foo} is a library)
+\item<2->[\texttt{foo\_LDFLAGS}] Additional linker flags
+\end{description}
+The default value for \texttt{foo\_\variable{XXX}FLAGS} is \texttt{\$(AM\_\variable{XXX}FLAGS)}.
+
+\uncover<3->{Use plain file names to refer to libraries inside your package
+  (keep \texttt{-l}s and \texttt{-L}s for external libraries only).}
+
+\begin{block}<3->{\filenamew{src/Makefile.am}}
+\begin{semiverbatim}
+bin_PROGRAMS = foo run-me
+foo_SOURCES = foo.c foo.h print.c print.h
+run_me_SOURCES = run.c run.h print.c
+run_me_CPPFLAGS = -I\$(srcdir)/../lib
+\alert<3>{run_me_LDADD = ../lib/libcompat.a \uncover<4>{\alert<4>{\$(EFENCELIB)}}}
+\end{semiverbatim}
+\end{block}

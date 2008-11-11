@@ -1,0 +1,464 @@
+\contentsline {section}{\numberline {A}Introduction}{9}{section.1}
+\contentsline {section}{\numberline {B}The Background}{10}{section.2}
+\contentsline {question}{\numberline {1}What is \TeX {}?}{10}{question.1}
+\contentsline {question}{\numberline {2}How should I pronounce ``\TeX {}''?}{11}{question.2}
+\contentsline {question}{\numberline {3}What is \MF {}?}{11}{question.3}
+\contentsline {question}{\numberline {4}What is \MP {}?}{11}{question.4}
+\contentsline {question}{\numberline {5}How can I be sure it's really \TeX {}?}{12}{question.5}
+\contentsline {question}{\numberline {6}Are \TeX {} and friends Y2K compliant?}{12}{question.6}
+\contentsline {question}{\numberline {7}What is e-\TeX {}?}{12}{question.7}
+\contentsline {question}{\numberline {8}What is PDF\TeX {}?}{13}{question.8}
+\contentsline {question}{\numberline {9}What is La\TeX {}?}{13}{question.9}
+\contentsline {question}{\numberline {10}What is \LaTeXe {}?}{13}{question.10}
+\contentsline {question}{\numberline {11}How should I pronounce ``La\TeX {}(2e{})''?}{14}{question.11}
+\contentsline {question}{\numberline {12}Should I use Plain \TeX {} or La\TeX {}?}{14}{question.12}
+\contentsline {question}{\numberline {13}How does La\TeX {} relate to Plain \TeX {}?}{14}{question.13}
+\contentsline {question}{\numberline {14}What is Con\TeX {}t{}?}{14}{question.14}
+\contentsline {question}{\numberline {15}What are the \acro {AMS} packages (AMS\TeX {}, \emph {etc}.)?}{15}{question.15}
+\contentsline {question}{\numberline {16}What is Eplain{}?}{15}{question.16}
+\contentsline {question}{\numberline {17}What is Lollipop?}{15}{question.17}
+\contentsline {question}{\numberline {18}What is Texinfo?}{16}{question.18}
+\contentsline {question}{\numberline {19}If \TeX {} is so good, how come it's free?}{16}{question.19}
+\contentsline {question}{\numberline {20}What is the future of \TeX {}?}{16}{question.20}
+\contentsline {question}{\numberline {21}Reading (La)\TeX {} files}{17}{question.21}
+\contentsline {question}{\numberline {22}Why is \TeX {} not a \WYSIWYG {} system?}{17}{question.22}
+\contentsline {question}{\numberline {23}\TeX {} User Groups}{18}{question.23}
+\contentsline {section}{\numberline {C}Documentation and Help}{18}{section.3}
+\contentsline {question}{\numberline {24}Books on \TeX {} and its relations}{18}{question.24}
+\contentsline {question}{\numberline {25}Books on Type}{20}{question.25}
+\contentsline {question}{\numberline {26}Where to find \acro {FAQ}s}{21}{question.26}
+\contentsline {question}{\numberline {27}How to get help}{22}{question.27}
+\contentsline {question}{\numberline {28}Specialist mailing lists}{22}{question.28}
+\contentsline {question}{\numberline {29}How to ask a question}{23}{question.29}
+\contentsline {question}{\numberline {30}How to make a ``minimum example''}{23}{question.30}
+\contentsline {question}{\numberline {31}(La)\TeX {} Tutorials, etc.}{24}{question.31}
+\contentsline {question}{\numberline {32}Online introductions: Plain \TeX {}}{24}{question.32}
+\contentsline {question}{\numberline {33}Online introductions: La\TeX {}}{24}{question.33}
+\contentsline {question}{\numberline {34}Specialised (La)\TeX {} tutorials}{25}{question.34}
+\contentsline {question}{\numberline {35}Reference documents}{26}{question.35}
+\contentsline {question}{\numberline {36}WIKI pages for \TeX {} and friends}{26}{question.36}
+\contentsline {question}{\numberline {37}Typography tutorials}{26}{question.37}
+\contentsline {question}{\numberline {38}Directories of (La)\TeX {} information}{27}{question.38}
+\contentsline {question}{\numberline {39}Freely available (La)\TeX {} books}{27}{question.39}
+\contentsline {question}{\numberline {40}Documentation of packages}{27}{question.40}
+\contentsline {question}{\numberline {41}Learning to write La\TeX {} classes and packages}{28}{question.41}
+\contentsline {question}{\numberline {42}\MF {} and \MP {} Tutorials}{28}{question.42}
+\contentsline {question}{\numberline {43}Bib\TeX {} Documentation}{29}{question.43}
+\contentsline {question}{\numberline {44}Where can I find the symbol for\,\dots {}}{29}{question.44}
+\contentsline {question}{\numberline {45}The PiC\TeX {} manual}{30}{question.45}
+\contentsline {section}{\numberline {D}Bits and pieces of (La)\TeX {}}{30}{section.4}
+\contentsline {question}{\numberline {46}What is a \acro {DVI} file?}{30}{question.46}
+\contentsline {question}{\numberline {47}What is a driver?}{30}{question.47}
+\contentsline {question}{\numberline {48}What are \acro {PK} files?}{30}{question.48}
+\contentsline {question}{\numberline {49}What are \acro {TFM} files?}{30}{question.49}
+\contentsline {question}{\numberline {50}Virtual fonts}{31}{question.50}
+\contentsline {question}{\numberline {51}\csx {special} commands}{31}{question.51}
+\contentsline {question}{\numberline {52}How does hyphenation work in \TeX {}?}{32}{question.52}
+\contentsline {question}{\numberline {53}What are La\TeX {} classes and packages?}{32}{question.53}
+\contentsline {question}{\numberline {54}Documented La\TeX {} sources (\texttt {.dtx} files)}{32}{question.54}
+\contentsline {question}{\numberline {55}What are encodings?}{33}{question.55}
+\contentsline {question}{\numberline {56}What are the \acro {EC} fonts?}{34}{question.56}
+\contentsline {question}{\numberline {57}What is the \acro {TDS}?}{35}{question.57}
+\contentsline {question}{\numberline {58}What is ``Encapsulated PostScript{}'' (``\acro {EPS}'')}{35}{question.58}
+\contentsline {question}{\numberline {59}Adobe font formats}{36}{question.59}
+\contentsline {question}{\numberline {60}What are ``resolutions''}{36}{question.60}
+\contentsline {question}{\numberline {61}What is the ``Berry naming scheme''}{37}{question.61}
+\contentsline {section}{\numberline {E}Acquiring the Software}{37}{section.5}
+\contentsline {question}{\numberline {62}Repositories of \TeX {} material}{37}{question.62}
+\contentsline {question}{\numberline {63}What's the \acro {CTAN} \texttt {nonfree} tree?}{38}{question.63}
+\contentsline {question}{\numberline {64}Contributing a file to the archives}{38}{question.64}
+\contentsline {question}{\numberline {65}Finding (La)\TeX {} files}{39}{question.65}
+\contentsline {question}{\numberline {66}Finding new fonts}{39}{question.66}
+\contentsline {question}{\numberline {67}The \TeX {}\nobreakspace {}Live distribution}{39}{question.67}
+\contentsline {section}{\numberline {F}\TeX {} Systems}{40}{section.6}
+\contentsline {question}{\numberline {68}(La)\TeX {} for different machines}{40}{question.68}
+\contentsline {question}{\numberline {69}\TeX {}-friendly editors and shells}{42}{question.69}
+\contentsline {question}{\numberline {70}Commercial \TeX {} implementations}{43}{question.70}
+\contentsline {section}{\numberline {G}\acro {DVI} Drivers and Previewers}{45}{section.7}
+\contentsline {question}{\numberline {71}\acro {DVI} to PostScript{} conversion programs}{45}{question.71}
+\contentsline {question}{\numberline {72}\acro {DVI} drivers for \acro {HP} LaserJet}{45}{question.72}
+\contentsline {question}{\numberline {73}Output to ``other'' printers}{46}{question.73}
+\contentsline {question}{\numberline {74}\acro {DVI} previewers}{46}{question.74}
+\contentsline {question}{\numberline {75}Generating bitmaps from \acro {DVI}}{46}{question.75}
+\contentsline {section}{\numberline {H}Support Packages for \TeX {}}{47}{section.8}
+\contentsline {question}{\numberline {76}Fig, a (La)\TeX {}-friendly drawing package}{47}{question.76}
+\contentsline {question}{\numberline {77}\TeX {}\acro {CAD}, a drawing package for La\TeX {}}{47}{question.77}
+\contentsline {question}{\numberline {78}Spelling checkers for work with \TeX {}}{47}{question.78}
+\contentsline {question}{\numberline {79}How many words have you written?}{48}{question.79}
+\contentsline {section}{\numberline {I}Literate programming}{48}{section.9}
+\contentsline {question}{\numberline {80}What is Literate Programming?}{48}{question.80}
+\contentsline {question}{\numberline {81}\acro {WEB} systems for various languages}{48}{question.81}
+\contentsline {section}{\numberline {J}Format conversions}{49}{section.10}
+\contentsline {question}{\numberline {82}Conversion from (La)\TeX {} to plain text}{49}{question.82}
+\contentsline {question}{\numberline {83}Conversion from \acro {SGML} or \acro {HTML} to \TeX {}}{50}{question.83}
+\contentsline {question}{\numberline {84}Conversion from (La)\TeX {} to \acro {HTML}}{50}{question.84}
+\contentsline {question}{\numberline {85}Other conversions to and from (La)\TeX {}}{51}{question.85}
+\contentsline {question}{\numberline {86}Using \TeX {} to read \acro {SGML} or \acro {XML} directly}{53}{question.86}
+\contentsline {question}{\numberline {87}Retrieving (La)\TeX {} from \acro {DVI}, etc.}{53}{question.87}
+\contentsline {question}{\numberline {88}Translating La\TeX {} to Plain \TeX {}}{53}{question.88}
+\contentsline {section}{\numberline {K}Installing (La)\TeX {} files}{54}{section.11}
+\contentsline {question}{\numberline {89}Installing a new package}{54}{question.89}
+\contentsline {question}{\numberline {90}Where to put new files}{55}{question.90}
+\contentsline {question}{\numberline {91}Installing MiKTeX{} ``known packages''}{55}{question.91}
+\contentsline {question}{\numberline {92}``Temporary'' installation of (La)\TeX {} files}{56}{question.92}
+\contentsline {question}{\numberline {93}``Private'' installations of files}{57}{question.93}
+\contentsline {question}{\numberline {94}Installing a new font}{58}{question.94}
+\contentsline {question}{\numberline {95}Installing a font provided as \MF {} source}{58}{question.95}
+\contentsline {question}{\numberline {96}Installing a PostScript{} printer built-in font}{58}{question.96}
+\contentsline {question}{\numberline {97}Installing the Bluesky versions of the CM\nobreakspace {}fonts}{59}{question.97}
+\contentsline {question}{\numberline {98}Installing a Type\nobreakspace {}1 font}{60}{question.98}
+\contentsline {section}{\numberline {L}Fonts}{61}{section.12}
+\contentsline {subsection}{\numberline {L.1}\MF {} fonts}{61}{subsection.12.1}
+\contentsline {question}{\numberline {99}Getting \MF {} to do what you want}{61}{question.99}
+\contentsline {question}{\numberline {100}Which font files should be kept}{62}{question.100}
+\contentsline {question}{\numberline {101}Acquiring bitmap fonts}{62}{question.101}
+\contentsline {subsection}{\numberline {L.2}Adobe Type\nobreakspace {}1 (``PostScript{}'') fonts}{63}{subsection.12.2}
+\contentsline {question}{\numberline {102}Using PostScript{} fonts with \TeX {}}{63}{question.102}
+\contentsline {question}{\numberline {103}Previewing files using Type 1 fonts}{64}{question.103}
+\contentsline {question}{\numberline {104}\TeX {} font metric files for PostScript{} fonts}{64}{question.104}
+\contentsline {question}{\numberline {105}Deploying Type 1 fonts}{65}{question.105}
+\contentsline {question}{\numberline {106}Choice of scalable outline fonts}{65}{question.106}
+\contentsline {question}{\numberline {107}Weird characters in \ProgName {dvips} output}{70}{question.107}
+\contentsline {subsection}{\numberline {L.3}Macros for using fonts}{70}{subsection.12.3}
+\contentsline {question}{\numberline {108}Using non-standard fonts in Plain \TeX {}}{70}{question.108}
+\contentsline {subsection}{\numberline {L.4}Particular font families}{71}{subsection.12.4}
+\contentsline {question}{\numberline {109}Using the ``Concrete'' fonts}{71}{question.109}
+\contentsline {question}{\numberline {110}Using the Latin Modern fonts}{72}{question.110}
+\contentsline {section}{\numberline {M}Hypertext and \acro {PDF}}{73}{section.13}
+\contentsline {question}{\numberline {111}Making hypertext documents from \TeX {}}{73}{question.111}
+\contentsline {question}{\numberline {112}Making Acrobat \acro {PDF} documents from (La)\TeX {}}{73}{question.112}
+\contentsline {question}{\numberline {113}Quality of \acro {PDF} from PostScript{}}{74}{question.113}
+\contentsline {question}{\numberline {114}The wrong type of fonts in \acro {PDF}}{75}{question.114}
+\contentsline {question}{\numberline {115}Fuzzy fonts because \ProgName {Ghostscript} too old}{75}{question.115}
+\contentsline {question}{\numberline {116}Fonts go fuzzy when you switch to \acro {T}1}{76}{question.116}
+\contentsline {question}{\numberline {117}Characters missing from \acro {PDF} output}{76}{question.117}
+\contentsline {question}{\numberline {118}Finding `8-bit' Type\nobreakspace {}1 fonts}{76}{question.118}
+\contentsline {question}{\numberline {119}Replacing Type 3 fonts in PostScript{}}{77}{question.119}
+\contentsline {question}{\numberline {120}\ProgName {Hyperref} and repeated page numbers}{78}{question.120}
+\contentsline {question}{\numberline {121}Searching \acro {PDF} files}{78}{question.121}
+\contentsline {section}{\numberline {N}Graphics}{79}{section.14}
+\contentsline {question}{\numberline {122}How to import graphics into (La)\TeX {} documents}{79}{question.122}
+\contentsline {question}{\numberline {123}Imported graphics in \ProgName {dvips}}{80}{question.123}
+\contentsline {question}{\numberline {124}Imported graphics in PDFLa\TeX {}}{80}{question.124}
+\contentsline {question}{\numberline {125}Imported graphics in \ProgName {dvipdfm}}{81}{question.125}
+\contentsline {question}{\numberline {126}Importing graphics from ``somewhere else''}{82}{question.126}
+\contentsline {question}{\numberline {127}Portable imported graphics}{82}{question.127}
+\contentsline {question}{\numberline {128}Repeated graphics in a document}{83}{question.128}
+\contentsline {question}{\numberline {129}Limit the width of imported graphics}{84}{question.129}
+\contentsline {question}{\numberline {130}Top-aligning imported graphics}{84}{question.130}
+\contentsline {question}{\numberline {131}Displaying \MP {} output in \ProgName {ghostscript}}{85}{question.131}
+\contentsline {question}{\numberline {132}Drawing with \TeX {}}{86}{question.132}
+\contentsline {question}{\numberline {133}Drawing Feynman diagrams in La\TeX {}}{86}{question.133}
+\contentsline {question}{\numberline {134}Labelling graphics}{87}{question.134}
+\contentsline {section}{\numberline {O}Bibliographies and citations}{88}{section.15}
+\contentsline {subsection}{\numberline {O.1}Creating bibliographies}{88}{subsection.15.1}
+\contentsline {question}{\numberline {135}Creating a Bib\TeX {} bibliography file}{88}{question.135}
+\contentsline {question}{\numberline {136}Creating a bibliography style}{89}{question.136}
+\contentsline {question}{\numberline {137}Capitalisation in Bib\TeX {}}{89}{question.137}
+\contentsline {question}{\numberline {138}Accents in bibliographies}{89}{question.138}
+\contentsline {question}{\numberline {139}`String too long' in Bib\TeX {}}{89}{question.139}
+\contentsline {question}{\numberline {140}Bib\TeX {} doesn't understand lists of names}{90}{question.140}
+\contentsline {question}{\numberline {141}\acro {URL}s in Bib\TeX {} bibliographies}{91}{question.141}
+\contentsline {question}{\numberline {142}Using Bib\TeX {} with Plain \TeX {}}{92}{question.142}
+\contentsline {question}{\numberline {143}Reconstructing \texttt {.bib} files}{92}{question.143}
+\contentsline {question}{\numberline {144}Bib\TeX {} sorting and name prefixes}{92}{question.144}
+\contentsline {question}{\numberline {145}Transcribed initials in Bib\TeX {}}{93}{question.145}
+\contentsline {subsection}{\numberline {O.2}Creating citations}{93}{subsection.15.2}
+\contentsline {question}{\numberline {146}``Normal'' use of Bib\TeX {} from La\TeX {}}{93}{question.146}
+\contentsline {question}{\numberline {147}Choosing a bibliography style}{94}{question.147}
+\contentsline {question}{\numberline {148}Separate bibliographies per chapter?}{95}{question.148}
+\contentsline {question}{\numberline {149}Multiple bibliographies?}{95}{question.149}
+\contentsline {question}{\numberline {150}Putting bibliography entries in text}{97}{question.150}
+\contentsline {question}{\numberline {151}Sorting and compressing citations}{97}{question.151}
+\contentsline {question}{\numberline {152}Multiple citations}{98}{question.152}
+\contentsline {question}{\numberline {153}References from the bibliography to the citation}{98}{question.153}
+\contentsline {question}{\numberline {154}Sorting lists of citations}{99}{question.154}
+\contentsline {question}{\numberline {155}Reducing spacing in the bibliography}{99}{question.155}
+\contentsline {question}{\numberline {156}Table of contents rearranges ``\ProgName {unsrt}'' ordering}{99}{question.156}
+\contentsline {question}{\numberline {157}Non-english bibliographies}{100}{question.157}
+\contentsline {question}{\numberline {158}Format of numbers in the bibliography}{100}{question.158}
+\contentsline {subsection}{\numberline {O.3}Manipulating whole bibliographies}{101}{subsection.15.3}
+\contentsline {question}{\numberline {159}Listing all your Bib\TeX {} entries}{101}{question.159}
+\contentsline {question}{\numberline {160}Making \acro {HTML} of your Bibliography}{101}{question.160}
+\contentsline {section}{\numberline {P}Adjusting the typesetting}{101}{section.16}
+\contentsline {subsection}{\numberline {P.1}Alternative document classes}{101}{subsection.16.1}
+\contentsline {question}{\numberline {161}Replacing the standard classes}{101}{question.161}
+\contentsline {question}{\numberline {162}Producing slides}{102}{question.162}
+\contentsline {question}{\numberline {163}Creating posters with La\TeX {}}{103}{question.163}
+\contentsline {question}{\numberline {164}Formatting a thesis in La\TeX {}}{104}{question.164}
+\contentsline {question}{\numberline {165}Setting papers for journals}{104}{question.165}
+\contentsline {question}{\numberline {166}A `report' from lots of `article's}{104}{question.166}
+\contentsline {question}{\numberline {167}\emph {Curriculum Vitae} (R\'esum\'e)}{105}{question.167}
+\contentsline {question}{\numberline {168}Letters and the like}{105}{question.168}
+\contentsline {question}{\numberline {169}Other ``document font'' sizes?}{106}{question.169}
+\contentsline {subsection}{\numberline {P.2}Document structure}{106}{subsection.16.2}
+\contentsline {question}{\numberline {170}The style of document titles}{106}{question.170}
+\contentsline {question}{\numberline {171}The style of section headings}{107}{question.171}
+\contentsline {question}{\numberline {172}Appendixes}{107}{question.172}
+\contentsline {question}{\numberline {173}Indent after section headings}{109}{question.173}
+\contentsline {question}{\numberline {174}How to create a \csx {subsubsubsection}}{109}{question.174}
+\contentsline {question}{\numberline {175}The style of captions}{109}{question.175}
+\contentsline {question}{\numberline {176}Alternative head- and footlines in La\TeX {}}{110}{question.176}
+\contentsline {question}{\numberline {177}Wide figures in two-column documents}{110}{question.177}
+\contentsline {question}{\numberline {178}1-column abstract in 2-column document}{111}{question.178}
+\contentsline {question}{\numberline {179}Really blank pages between chapters}{111}{question.179}
+\contentsline {question}{\numberline {180}Balancing columns at the end of a document}{112}{question.180}
+\contentsline {question}{\numberline {181}My section title is too wide for the page header}{113}{question.181}
+\contentsline {question}{\numberline {182}Page numbering ``\ensuremath {\delimiter "426830A }\emph {n}\ensuremath {\delimiter "526930B } of \ensuremath {\delimiter "426830A }\emph {m}\ensuremath {\delimiter "526930B }''}{114}{question.182}
+\contentsline {question}{\numberline {183}Page numbering by chapter}{114}{question.183}
+\contentsline {subsection}{\numberline {P.3}Page layout}{114}{subsection.16.3}
+\contentsline {question}{\numberline {184}Printer paper sizes}{114}{question.184}
+\contentsline {question}{\numberline {185}Changing the margins in La\TeX {}}{115}{question.185}
+\contentsline {question}{\numberline {186}Packages to set up page designs}{115}{question.186}
+\contentsline {question}{\numberline {187}How to set up page layout ``by hand''}{116}{question.187}
+\contentsline {question}{\numberline {188}Changing margins ``on the fly''}{116}{question.188}
+\contentsline {question}{\numberline {189}How to get rid of page numbers}{117}{question.189}
+\contentsline {question}{\numberline {190}\psatempty {} on first page in La\TeX {}}{118}{question.190}
+\contentsline {question}{\numberline {191}How to create crop marks}{118}{question.191}
+\contentsline {question}{\numberline {192}`Watermarks' on every page}{118}{question.192}
+\contentsline {question}{\numberline {193}Typesetting things in landscape orientation}{119}{question.193}
+\contentsline {question}{\numberline {194}Putting things at fixed positions on the page}{120}{question.194}
+\contentsline {question}{\numberline {195}Preventing page breaks between lines}{120}{question.195}
+\contentsline {question}{\numberline {196}Parallel setting of text}{122}{question.196}
+\contentsline {question}{\numberline {197}Typesetting epigraphs}{122}{question.197}
+\contentsline {question}{\numberline {198}(La)\TeX {} \acro {PDF} output prints at wrong size}{123}{question.198}
+\contentsline {subsection}{\numberline {P.4}Spacing of characters and lines}{124}{subsection.16.4}
+\contentsline {question}{\numberline {199}Double-spaced documents in La\TeX {}}{124}{question.199}
+\contentsline {question}{\numberline {200}Changing the space between letters}{124}{question.200}
+\contentsline {question}{\numberline {201}Setting text ragged right}{124}{question.201}
+\contentsline {question}{\numberline {202}Cancelling \csx {ragged} commands}{125}{question.202}
+\contentsline {subsection}{\numberline {P.5}Typesetting specialities}{125}{subsection.16.5}
+\contentsline {question}{\numberline {203}Including a file verbatim in La\TeX {}}{125}{question.203}
+\contentsline {question}{\numberline {204}Including line numbers in typeset output}{126}{question.204}
+\contentsline {question}{\numberline {205}Code listings in La\TeX {}}{126}{question.205}
+\contentsline {question}{\numberline {206}Typesetting pseudocode in La\TeX {}}{128}{question.206}
+\contentsline {question}{\numberline {207}Generating an index in (La)\TeX {}}{129}{question.207}
+\contentsline {question}{\numberline {208}Typesetting \acro {URL}s}{129}{question.208}
+\contentsline {question}{\numberline {209}Typesetting music in \TeX {}}{130}{question.209}
+\contentsline {question}{\numberline {210}Zero paragraph indent}{131}{question.210}
+\contentsline {question}{\numberline {211}Big letters at the start of a paragraph}{131}{question.211}
+\contentsline {question}{\numberline {212}The comma as a decimal separator}{132}{question.212}
+\contentsline {question}{\numberline {213}Breaking boxes of text}{132}{question.213}
+\contentsline {question}{\numberline {214}Overstriking characters}{133}{question.214}
+\contentsline {question}{\numberline {215}Realistic quotes for verbatim listings}{133}{question.215}
+\contentsline {question}{\numberline {216}Printing the time}{133}{question.216}
+\contentsline {question}{\numberline {217}Redefining counters' \csx {the-}commands}{133}{question.217}
+\contentsline {subsection}{\numberline {P.6}Tables of contents and indexes}{134}{subsection.16.6}
+\contentsline {question}{\numberline {218}The format of the Table of Contents, etc.}{134}{question.218}
+\contentsline {question}{\numberline {219}Unnumbered sections in the Table of Contents}{134}{question.219}
+\contentsline {question}{\numberline {220}Bibliography, index, etc., in \acro {TOC}}{135}{question.220}
+\contentsline {question}{\numberline {221}Table of contents, etc., per chapter}{135}{question.221}
+\contentsline {question}{\numberline {222}Multiple indexes}{136}{question.222}
+\contentsline {subsection}{\numberline {P.7}Labels and references}{137}{subsection.16.7}
+\contentsline {question}{\numberline {223}Referring to things by their name}{137}{question.223}
+\contentsline {question}{\numberline {224}Referring to labels in other documents}{138}{question.224}
+\contentsline {section}{\numberline {Q}How do I do\dots {}?}{139}{section.17}
+\contentsline {subsection}{\numberline {Q.1}Mathematics}{139}{subsection.17.1}
+\contentsline {question}{\numberline {225}Proof environment}{139}{question.225}
+\contentsline {question}{\numberline {226}Roman theorems}{139}{question.226}
+\contentsline {question}{\numberline {227}Defining a new log-like function in La\TeX {}}{139}{question.227}
+\contentsline {question}{\numberline {228}Set specifications and Dirac brackets}{140}{question.228}
+\contentsline {question}{\numberline {229}Cancelling terms in maths expressions}{140}{question.229}
+\contentsline {question}{\numberline {230}Adjusting maths font sizes}{140}{question.230}
+\contentsline {question}{\numberline {231}Ellipses}{141}{question.231}
+\contentsline {question}{\numberline {232}Sub- and superscript positioning for operators}{141}{question.232}
+\contentsline {question}{\numberline {233}Text inside maths}{142}{question.233}
+\contentsline {question}{\numberline {234}Re-using an equation}{143}{question.234}
+\contentsline {question}{\numberline {235}Line-breaking in in-line maths}{144}{question.235}
+\contentsline {subsection}{\numberline {Q.2}Lists}{144}{subsection.17.2}
+\contentsline {question}{\numberline {236}Fancy enumeration lists}{144}{question.236}
+\contentsline {question}{\numberline {237}How to reduce list spacing}{145}{question.237}
+\contentsline {question}{\numberline {238}Interrupting enumerated lists}{147}{question.238}
+\contentsline {subsection}{\numberline {Q.3}Tables, figures and diagrams}{148}{subsection.17.3}
+\contentsline {question}{\numberline {239}The design of tables}{148}{question.239}
+\contentsline {question}{\numberline {240}Fixed-width tables}{149}{question.240}
+\contentsline {question}{\numberline {241}Variable-width columns in tables}{149}{question.241}
+\contentsline {question}{\numberline {242}Spacing lines in tables}{150}{question.242}
+\contentsline {question}{\numberline {243}Tables longer than a single page}{151}{question.243}
+\contentsline {question}{\numberline {244}How to alter the alignment of tabular cells}{152}{question.244}
+\contentsline {question}{\numberline {245}The thickness of rules in La\TeX {} tables}{153}{question.245}
+\contentsline {question}{\numberline {246}Flowing text around figures in La\TeX {}}{154}{question.246}
+\contentsline {question}{\numberline {247}Diagonal separation in corner cells of tables}{155}{question.247}
+\contentsline {question}{\numberline {248}How to change a whole row of a table}{155}{question.248}
+\contentsline {question}{\numberline {249}Merging cells in a column of a table}{156}{question.249}
+\contentsline {subsection}{\numberline {Q.4}Floating tables, figures, etc.}{157}{subsection.17.4}
+\contentsline {question}{\numberline {250}Floats on their own on float pages}{157}{question.250}
+\contentsline {question}{\numberline {251}Extra vertical space in floats}{157}{question.251}
+\contentsline {question}{\numberline {252}Placing two-column floats at bottom of page}{158}{question.252}
+\contentsline {question}{\numberline {253}Floats in multicolumn setting}{158}{question.253}
+\contentsline {question}{\numberline {254}Facing floats on 2-page spread}{159}{question.254}
+\contentsline {question}{\numberline {255}Vertical layout of float pages}{159}{question.255}
+\contentsline {subsection}{\numberline {Q.5}Footnotes}{160}{subsection.17.5}
+\contentsline {question}{\numberline {256}Footnotes in tables}{160}{question.256}
+\contentsline {question}{\numberline {257}Footnotes in La\TeX {} section headings}{160}{question.257}
+\contentsline {question}{\numberline {258}Footnotes in captions}{161}{question.258}
+\contentsline {question}{\numberline {259}Footnotes whose texts are identical}{161}{question.259}
+\contentsline {question}{\numberline {260}More than one sequence of footnotes}{162}{question.260}
+\contentsline {question}{\numberline {261}Footnotes numbered ``per page''}{163}{question.261}
+\contentsline {subsection}{\numberline {Q.6}Document management}{163}{subsection.17.6}
+\contentsline {question}{\numberline {262}What's the name of this file}{163}{question.262}
+\contentsline {question}{\numberline {263}All the files used by this document}{164}{question.263}
+\contentsline {question}{\numberline {264}Marking changed parts of your document}{165}{question.264}
+\contentsline {question}{\numberline {265}Conditional compilation and ``comments''}{166}{question.265}
+\contentsline {question}{\numberline {266}Bits of document from other directories}{168}{question.266}
+\contentsline {question}{\numberline {267}Version control using \acro {RCS}, \acro {CVS} or \ProgName {Subversion}}{169}{question.267}
+\contentsline {question}{\numberline {268}Makefiles for La\TeX {} documents}{169}{question.268}
+\contentsline {question}{\numberline {269}How many pages are there in my document?}{170}{question.269}
+\contentsline {question}{\numberline {270}Including Plain \TeX {} files in La\TeX {}}{170}{question.270}
+\contentsline {subsection}{\numberline {Q.7}Hyphenation}{171}{subsection.17.7}
+\contentsline {question}{\numberline {271}My words aren't being hyphenated}{171}{question.271}
+\contentsline {question}{\numberline {272}Weird hyphenation of words}{171}{question.272}
+\contentsline {question}{\numberline {273}(Merely) peculiar hyphenation}{172}{question.273}
+\contentsline {question}{\numberline {274}Accented words aren't hyphenated}{172}{question.274}
+\contentsline {question}{\numberline {275}Using a new language with Babel}{172}{question.275}
+\contentsline {question}{\numberline {276}Stopping all hyphenation}{173}{question.276}
+\contentsline {question}{\numberline {277}Preventing hyphenation of a particular word}{174}{question.277}
+\contentsline {question}{\numberline {278}Hyphenation exceptions}{175}{question.278}
+\contentsline {subsection}{\numberline {Q.8}Odds and ends}{176}{subsection.17.8}
+\contentsline {question}{\numberline {279}Typesetting all those \TeX {}-related logos}{176}{question.279}
+\contentsline {question}{\numberline {280}How to do bold-tt or bold-sc}{176}{question.280}
+\contentsline {question}{\numberline {281}Automatic sizing of \texttt {minipage}}{177}{question.281}
+\contentsline {section}{\numberline {R}Symbols, etc.}{177}{section.18}
+\contentsline {question}{\numberline {282}Symbols for the number sets}{177}{question.282}
+\contentsline {question}{\numberline {283}Better script fonts for maths}{179}{question.283}
+\contentsline {question}{\numberline {284}Setting bold Greek letters in La\TeX {}}{179}{question.284}
+\contentsline {question}{\numberline {285}The Principal Value Integral symbol}{180}{question.285}
+\contentsline {question}{\numberline {286}How to use the underscore character}{180}{question.286}
+\contentsline {question}{\numberline {287}How to type an `@' sign?}{181}{question.287}
+\contentsline {question}{\numberline {288}Typesetting the Euro sign}{181}{question.288}
+\contentsline {question}{\numberline {289}How to get copyright, trademark, etc.}{182}{question.289}
+\contentsline {section}{\numberline {S}Macro programming}{182}{section.19}
+\contentsline {subsection}{\numberline {S.1}``Generic'' macros and techniques}{182}{subsection.19.1}
+\contentsline {question}{\numberline {290}Finding the width of a letter, word, or phrase}{182}{question.290}
+\contentsline {question}{\numberline {291}Patching existing commands}{182}{question.291}
+\contentsline {question}{\numberline {292}Comparing the ``job name''}{183}{question.292}
+\contentsline {question}{\numberline {293}Is the argument a number?}{184}{question.293}
+\contentsline {question}{\numberline {294}Defining macros within macros}{185}{question.294}
+\contentsline {question}{\numberline {295}Spaces in macros}{186}{question.295}
+\contentsline {question}{\numberline {296}How to break the 9-argument limit}{187}{question.296}
+\contentsline {question}{\numberline {297}Defining characters as macros}{188}{question.297}
+\contentsline {question}{\numberline {298}Active characters in command arguments}{189}{question.298}
+\contentsline {question}{\numberline {299}Defining a macro from an argument}{190}{question.299}
+\contentsline {question}{\numberline {300}Transcribing La\TeX {} command definitions}{191}{question.300}
+\contentsline {question}{\numberline {301}Detecting that something is empty}{192}{question.301}
+\contentsline {question}{\numberline {302}Am I using PDF\TeX {}?}{192}{question.302}
+\contentsline {question}{\numberline {303}Subverting a token register}{193}{question.303}
+\contentsline {question}{\numberline {304}Is this command defined?}{194}{question.304}
+\contentsline {subsection}{\numberline {S.2}La\TeX {} macro tools and techniques}{195}{subsection.19.2}
+\contentsline {question}{\numberline {305}Using Plain or primitive commands in La\TeX {}}{195}{question.305}
+\contentsline {question}{\numberline {306}\csx {@} and \texttt {@} in macro names}{196}{question.306}
+\contentsline {question}{\numberline {307}What's the reason for `protection'?}{196}{question.307}
+\contentsline {question}{\numberline {308}\csx {edef} does not work with \csx {protect}}{197}{question.308}
+\contentsline {question}{\numberline {309}The definitions of La\TeX {} commands}{197}{question.309}
+\contentsline {question}{\numberline {310}Optional arguments like \csx {section}}{198}{question.310}
+\contentsline {question}{\numberline {311}More than one optional argument}{199}{question.311}
+\contentsline {question}{\numberline {312}Commands defined with * options}{200}{question.312}
+\contentsline {question}{\numberline {313}La\TeX {} internal ``abbreviations'', etc.}{200}{question.313}
+\contentsline {question}{\numberline {314}Defining La\TeX {} commands within other commands}{201}{question.314}
+\contentsline {subsection}{\numberline {S.3}La\TeX {} macro programming}{202}{subsection.19.3}
+\contentsline {question}{\numberline {315}How to change La\TeX {}'s ``fixed names''}{202}{question.315}
+\contentsline {question}{\numberline {316}Changing the words \ProgName {babel} uses}{203}{question.316}
+\contentsline {question}{\numberline {317}Running equation, figure and table numbering}{203}{question.317}
+\contentsline {question}{\numberline {318}Making labels from a counter}{204}{question.318}
+\contentsline {question}{\numberline {319}Finding if you're on an odd or an even page}{204}{question.319}
+\contentsline {question}{\numberline {320}How to change the format of labels}{205}{question.320}
+\contentsline {question}{\numberline {321}Adjusting the presentation of section numbers}{205}{question.321}
+\contentsline {question}{\numberline {322}There's a space added after my environment}{206}{question.322}
+\contentsline {question}{\numberline {323}Finding if a label is undefined}{206}{question.323}
+\contentsline {question}{\numberline {324}Master and slave counters}{207}{question.324}
+\contentsline {section}{\numberline {T}Things are Going Wrong\dots {}}{208}{section.20}
+\contentsline {subsection}{\numberline {T.1}Getting things to fit}{208}{subsection.20.1}
+\contentsline {question}{\numberline {325}Enlarging \TeX {}}{208}{question.325}
+\contentsline {question}{\numberline {326}Why can't I load PiC\TeX {}?}{208}{question.326}
+\contentsline {subsection}{\numberline {T.2}Making things stay where you want them}{209}{subsection.20.2}
+\contentsline {question}{\numberline {327}Moving tables and figures in La\TeX {}}{209}{question.327}
+\contentsline {question}{\numberline {328}Underlined text won't break}{210}{question.328}
+\contentsline {question}{\numberline {329}Controlling widows and orphans}{211}{question.329}
+\contentsline {subsection}{\numberline {T.3}Things have ``gone away''}{211}{subsection.20.3}
+\contentsline {question}{\numberline {330}Old La\TeX {} font references such as \csx {tenrm}}{211}{question.330}
+\contentsline {question}{\numberline {331}Missing symbol commands}{211}{question.331}
+\contentsline {question}{\numberline {332}Where are the \texttt {msx} and \texttt {msy} fonts?}{212}{question.332}
+\contentsline {question}{\numberline {333}Where are the \texttt {am} fonts?}{212}{question.333}
+\contentsline {section}{\numberline {U}Why does it \emph {do} that?}{212}{section.21}
+\contentsline {subsection}{\numberline {U.1}Common errors}{212}{subsection.21.1}
+\contentsline {question}{\numberline {334}La\TeX {} gets cross-references wrong}{212}{question.334}
+\contentsline {question}{\numberline {335}Start of line goes awry}{213}{question.335}
+\contentsline {question}{\numberline {336}Why doesn't verbatim work within\,\dots {}?}{213}{question.336}
+\contentsline {question}{\numberline {337}No line here to end}{215}{question.337}
+\contentsline {question}{\numberline {338}Two-column float numbers out of order}{216}{question.338}
+\contentsline {question}{\numberline {339}Accents misbehave in \texttt {tabbing}}{216}{question.339}
+\contentsline {question}{\numberline {340}Package reports ``command already defined''}{217}{question.340}
+\contentsline {question}{\numberline {341}Why are my sections numbered 0.1\,\dots {}?}{217}{question.341}
+\contentsline {question}{\numberline {342}Link text doesn't break at end line}{218}{question.342}
+\contentsline {question}{\numberline {343}Page number is wrong at start of page}{218}{question.343}
+\contentsline {question}{\numberline {344}My brackets don't match}{219}{question.344}
+\contentsline {subsection}{\numberline {U.2}Common misunderstandings}{219}{subsection.21.2}
+\contentsline {question}{\numberline {345}What's going on in my \csx {include} commands?}{219}{question.345}
+\contentsline {question}{\numberline {346}Why does it ignore paragraph parameters?}{220}{question.346}
+\contentsline {question}{\numberline {347}Case-changing oddities}{220}{question.347}
+\contentsline {question}{\numberline {348}Why does La\TeX {} split footnotes across pages?}{221}{question.348}
+\contentsline {question}{\numberline {349}Getting \csx {marginpar} on the right side}{222}{question.349}
+\contentsline {question}{\numberline {350}Where have my characters gone?}{222}{question.350}
+\contentsline {question}{\numberline {351}``Rerun'' messages won't go away}{222}{question.351}
+\contentsline {question}{\numberline {352}Commands gobble following space}{223}{question.352}
+\contentsline {question}{\numberline {353}(La)\TeX {} makes overfull lines}{223}{question.353}
+\contentsline {question}{\numberline {354}Maths symbols don't scale up}{225}{question.354}
+\contentsline {question}{\numberline {355}Why doesn't \csx {linespread} work?}{225}{question.355}
+\contentsline {question}{\numberline {356}Only one \csx {baselineskip} per paragraph}{226}{question.356}
+\contentsline {question}{\numberline {357}Numbers too large in table of contents, etc.}{226}{question.357}
+\contentsline {question}{\numberline {358}Why is the inside margin so narrow?}{227}{question.358}
+\contentsline {subsection}{\numberline {U.3}Why shouldn't I?}{227}{subsection.21.3}
+\contentsline {question}{\numberline {359}Why use \ProgName {fontenc} rather than \ProgName {t1enc}?}{227}{question.359}
+\contentsline {question}{\numberline {360}Why bother with \ProgName {inputenc} and \ProgName {fontenc}?}{228}{question.360}
+\contentsline {question}{\numberline {361}Why not use \texttt {eqnarray}?}{228}{question.361}
+\contentsline {question}{\numberline {362}Why use \csx {[}\,\dots {}\csx {]} in place of \texttt {\$\$}\,\dots {}\texttt {\$\$}?}{228}{question.362}
+\contentsline {question}{\numberline {363}What's wrong with \csx {bf}, \csx {it}, etc.?}{229}{question.363}
+\contentsline {question}{\numberline {364}What's wrong with \csx {newfont}?}{230}{question.364}
+\contentsline {section}{\numberline {V}The joy of \TeX {} errors}{231}{section.22}
+\contentsline {question}{\numberline {365}How to approach errors}{231}{question.365}
+\contentsline {question}{\numberline {366}The structure of \TeX {} error messages}{232}{question.366}
+\contentsline {question}{\numberline {367}An extra `\texttt {\char 125\relax {}}'??}{232}{question.367}
+\contentsline {question}{\numberline {368}Capacity exceeded [semantic nest\,\dots {}]}{233}{question.368}
+\contentsline {question}{\numberline {369}No room for a new `\emph {thing}'}{234}{question.369}
+\contentsline {question}{\numberline {370}\texttt {epsf} gives up after a bit}{234}{question.370}
+\contentsline {question}{\numberline {371}Improper \csx {hyphenation} will be flushed}{234}{question.371}
+\contentsline {question}{\numberline {372}``Too many unprocessed floats''}{235}{question.372}
+\contentsline {question}{\numberline {373}\csx {spacefactor} complaints}{235}{question.373}
+\contentsline {question}{\numberline {374}\csx {end} occurred inside a group}{236}{question.374}
+\contentsline {question}{\numberline {375}``Missing number, treated as zero''}{237}{question.375}
+\contentsline {question}{\numberline {376}``Please type a command or say \csx {end}''}{237}{question.376}
+\contentsline {question}{\numberline {377}``Unknown graphics extension''}{238}{question.377}
+\contentsline {question}{\numberline {378}``Missing \texttt {\$} inserted''}{238}{question.378}
+\contentsline {question}{\numberline {379}Warning: ``Font shape \dots {}\ not available''}{238}{question.379}
+\contentsline {question}{\numberline {380}Unable to read an entire line}{239}{question.380}
+\contentsline {question}{\numberline {381}``Fatal format file error; I'm stymied''}{240}{question.381}
+\contentsline {question}{\numberline {382}Non-\acro {PDF} special ignored!}{240}{question.382}
+\contentsline {question}{\numberline {383}Mismatched mode ljfour and resolution 8000}{241}{question.383}
+\contentsline {question}{\numberline {384}``Too deeply nested''}{241}{question.384}
+\contentsline {question}{\numberline {385}Capacity exceeded\nobreakspace {}--- input levels}{242}{question.385}
+\contentsline {question}{\numberline {386}PDF\TeX {} destination \dots {} ignored}{242}{question.386}
+\contentsline {question}{\numberline {387}Alignment tab changed to \csx {cr}}{242}{question.387}
+\contentsline {question}{\numberline {388}Graphics division by zero}{243}{question.388}
+\contentsline {question}{\numberline {389}Missing \csx {begin}\texttt {\char 123\relax {document}\char 125\relax }}{244}{question.389}
+\contentsline {question}{\numberline {390}\csx {normalsize} not defined}{244}{question.390}
+\contentsline {question}{\numberline {391}Too many math alphabets}{244}{question.391}
+\contentsline {question}{\numberline {392}Not in outer par mode}{245}{question.392}
+\contentsline {question}{\numberline {393}Perhaps a missing \csx {item}?}{245}{question.393}
+\contentsline {question}{\numberline {394}Illegal parameter number in definition}{246}{question.394}
+\contentsline {question}{\numberline {395}Float(s) lost}{247}{question.395}
+\contentsline {question}{\numberline {396}Option clash for package}{247}{question.396}
+\contentsline {section}{\numberline {W}Current \TeX {}-related projects}{248}{section.23}
+\contentsline {question}{\numberline {397}The La\TeX {}3 project}{248}{question.397}
+\contentsline {question}{\numberline {398}Future \acro {WWW} technologies and (La)\TeX {}}{249}{question.398}
+\contentsline {question}{\numberline {399}Making outline fonts from \MF {}}{250}{question.399}
+\contentsline {question}{\numberline {400}The \TeX {} document preparation environment}{250}{question.400}
+\contentsline {question}{\numberline {401}The \textsf {ANT} typesetting system}{251}{question.401}
+\contentsline {question}{\numberline {402}The Ex\TeX {} project}{251}{question.402}
+\contentsline {question}{\numberline {403}Omega and Aleph}{252}{question.403}
+\contentsline {question}{\numberline {404}PDF\TeX {} becomes \acro {LUA}\TeX {}}{252}{question.404}
+\contentsline {question}{\numberline {405}The XeTeX project}{252}{question.405}
+\contentsline {section}{\numberline {X}You're still stuck?}{253}{section.24}
+\contentsline {question}{\numberline {406}You don't understand the answer}{253}{question.406}
+\contentsline {question}{\numberline {407}Submitting new material for the \acro {FAQ}}{253}{question.407}
+\contentsline {question}{\numberline {408}Reporting a La\TeX {} bug}{253}{question.408}
+\contentsline {question}{\numberline {409}What to do if you find a bug}{254}{question.409}

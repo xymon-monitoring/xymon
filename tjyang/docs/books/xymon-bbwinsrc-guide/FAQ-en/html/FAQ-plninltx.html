@@ -1,0 +1,90 @@
+<head>
+<title>UK TeX FAQ -- question label plninltx</title>
+</head><body>
+<h3>Using Plain or primitive commands in LaTeX</h3>
+<p>It&rsquo;s well-known that LaTeX commands tend to be more complex, and to
+run more slowly than, any Plain (or primitive) command that they
+replace.  There is therefore great temptation not to use LaTeX
+commands when macro programming.  Nevertheless, the general rule is
+that you should use LaTeX commands, if there are seeming
+equivalents.  The exception is when you are sure you know the
+differences between the two commands and you know that you need the
+Plain version.  So, for example, use <code>\</code><code>mbox</code> in place of <code>\</code><code>hbox</code>
+unless you know that the extras that LaTeX provides in <code>\</code><code>mbox</code>
+would cause trouble in your application.  Similarly, use
+<code>\</code><code>newcommand</code> (or one of its relatives) unless you need one of the
+constructs that cannot be achieved without the use of <code>\</code><code>def</code> (or friends).
+<p>As a general rule, any LaTeX text command will start a new
+paragraph if necessary; this isn&rsquo;t the case with Plain TeX
+commands, a fact which has a potential to confuse.
+<p>The commands <code>\</code><code>smallskip</code>, <code>\</code><code>medskip</code> and <code>\</code><code>bigskip</code> exist both
+in Plain TeX and LaTeX, but behave slightly differently: in Plain
+TeX they terminate the current paragraph, but in LaTeX they
+don&rsquo;t.  The command <code>\</code><code>line</code> is part of picture mode in LaTeX,
+whereas it&rsquo;s defined as &ldquo;<code>\</code><code>hbox</code><code> to </code><code>\</code><code>hsize</code>&rdquo; in
+Plain TeX. (There&rsquo;s no equivalent for users of the Plain TeX command in
+LaTeX: an equivalent appears as the internal command <code>\</code><code>@@line</code>).
+<p>Maths setting shows a case where the LaTeX version <em>is</em>
+essentially equivalent to the TeX primitive commands: the LaTeX
+<code>\</code><code>(</code><code> ... </code><code>\</code><code>)</code> does essentially no different to the
+TeX <code>$ ... $</code>
+(except for checking that you&rsquo;re not attempting to open a maths
+environment when you&rsquo;re already in one, or vice versa).  
+However, <code>\</code><code>[</code><code> ... </code><code>\</code><code>]</code> <em>isn&rsquo;t</em> the same as 
+<code>$$ ... $$</code>: the TeX version, used
+in LaTeX, contrives to miss the effect of the class option
+<code>fleqn</code>.
+<p>Font handling is, of course, wildly different in Plain TeX and
+LaTeX: even the LaTeX equivalent of the Plain TeX
+font-loading command (<code>\</code><code>newfont</code>) should be avoided wherever
+possible: the possibilities of confusion with constructs that vary
+their behaviour according to the font size that LaTeX has recorded
+are (sadly) legion.  A really rather funny example is to be had by
+saying:
+<blockquote>
+<pre>
+\documentclass{article}
+\begin{document}
+\font \myfont=cmr17 scaled 2000
+\myfont
+\LaTeX
+\end{document}
+</pre>
+</blockquote><p>
+(the reader is encouraged to try this).  The &ldquo;A&rdquo; of LaTeX
+has pretty much disappeared: LaTeX sets the &ldquo;A&rdquo; according to
+<em>its</em> idea of the font size (10pt), but &ldquo;<code>\</code><code>myfont</code>&rdquo; is more
+than three times that size.
+<p>Another &ldquo;<code>\</code><code>myfont</code>&rdquo; example arises from an entirely different
+source.  The mini-document:
+<blockquote>
+<pre>
+\documentclass{article}
+\begin{document}
+\font \myfont=ecrm1000
+{\myfont par\`a}
+\end{document}
+</pre>
+</blockquote><p>
+gives you &ldquo;German low double quotes&rdquo; in place of the grave accent.
+This problem arises because <i>ecrm1000</i> is in a different
+<a href="FAQ-whatenc.html">font encoding</a> than LaTeX is expecting &mdash; if you
+use LaTeX font commands, all the tiresome encoding issues are
+solved for you, behind the scenes.
+<p>So, whether you&rsquo;re dealing with a one-off font or a major new family, you
+are far more likely to be satisfied with the LaTeX file selection
+system, so it&rsquo;s worth investing a small amount of effort to write
+declarations of the font&rsquo;s family and how it should be loaded.  For
+details of the commands you need, see the LaTeX font usage guide,
+<i>fntguide</i>: this may be viewed on the archive, but you should
+find a copy of the document in your own system.
+
+
+
+
+<dl>
+<dt><tt><i>fntguide.pdf</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/doc/fntguide.pdf">macros/latex/doc/fntguide.pdf</a>
+<dt><tt><i>fntguide.tex</i></tt><dd>Distributed with <a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.zip">macros/latex/base</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/base.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/base/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=plninltx">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=plninltx</a>
+</body>

@@ -1,0 +1,22 @@
+<head>
+<title>UK TeX FAQ -- question label otherprinters</title>
+</head><body>
+<h3>Output to &ldquo;other&rdquo; printers</h3>
+<p>In the early years of TeX, there were masses of DVI drivers
+for any (then) imaginable kind of printer, but the steam seems rather
+to have gone out of the market for production of such drivers for
+printer-specific formats.  There are several reasons for this, but the
+primary one is that few formats offer the flexibility available
+through PostScript, and <i>ghostscript</i> is <em>so</em> good, and
+has <em>such</em> a wide range of printer drivers (perhaps this is where
+the DVI output driver writers have all gone?).
+<p>The general advice, then, is to <a href="FAQ-dvips.html">generate PostScript</a>, and
+to process that with <i>ghostscript</i> set to generate the format
+for the printer you actually have.  If you are using a Unix system of
+some sort, it&rsquo;s generally quite easy to insert <i>ghostscript</i>
+into the print spooling process.
+<dl>
+<dt><tt><i>ghostscript</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/support/ghostscript/">nonfree/support/ghostscript/</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=otherprinters">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=otherprinters</a>
+</body>

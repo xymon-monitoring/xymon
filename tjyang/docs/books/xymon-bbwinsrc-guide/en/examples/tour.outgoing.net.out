@@ -1,0 +1,8 @@
+$ \textbf{hg outgoing http://hg.serpentine.com/tutorial/hello}
+searching for changes
+changeset:   
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+summary:     Added an extra line of output
+

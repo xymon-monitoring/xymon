@@ -1,0 +1,3 @@
+$ \textbf{cd ..}
+$ \textbf{hg clone my-copy your-copy}
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved

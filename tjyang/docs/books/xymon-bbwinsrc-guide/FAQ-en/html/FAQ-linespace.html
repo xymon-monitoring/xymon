@@ -1,0 +1,41 @@
+<head>
+<title>UK TeX FAQ -- question label linespace</title>
+</head><body>
+<h3>Double-spaced documents in LaTeX</h3>
+<p>A quick and easy way of getting inter-line space for copy-editing is
+to change <code>\</code><code>baselinestretch</code> &mdash; <code>\</code><code>linespread{1.2}</code> (or,
+equivalently <code>\</code><code>renewcommand{<code>\</code><code>baselinestretch</code>}{1.2}</code>) may
+be adequate.  Note that <code>\</code><code>baselinestretch</code> changes don&rsquo;t take
+effect until you select a new font, so make the change in the preamble
+before any font is selected.  Don&rsquo;t try changing <code>\</code><code>baselineskip</code>:
+its value is reset at any size-changing command so that results will
+be inconsistent.
+<p>For preference (and certainly for a production document, such as a
+dissertation or an article submission), use a line-spacing package.
+The only one currently supported is <i>setspace</i> (do <em>not</em>
+be tempted by <i>doublespace</i> &mdash; its performance under current
+LaTeX is at best problematical).  <i>Setspace</i> switches off
+double-spacing at places where even the most die-hard official would
+doubt its utility (footnotes, figure captions, and so on); it&rsquo;s very
+difficult to do this consistently if you&rsquo;re manipulating
+<code>\</code><code>baselinestretch</code> yourself.
+<p>Of course, the real solution (other than for private copy editing) is
+<em>not</em> to use double-spacing at all.  Universities, in particular,
+have no excuse for specifying double-spacing in submitted
+dissertations: LaTeX is a typesetting system, not a
+typewriter-substitute, and can (properly used) make single-spaced text
+even more easily readable than double-spaced typewritten text.  If you
+have any influence on your university&rsquo;s system (for example, through
+your dissertation supervisor), it may be worth attempting to get the
+rules changed (at least to permit a &ldquo;well-designed book&rdquo; format).
+<p>Double-spaced submissions are also commonly required when submitting
+papers to conferences or journals.  Fortunately (judging by the
+questions from users in this author&rsquo;s department), this demand is
+becoming less common.
+<p>Documentation of <i>setspace</i> appears as TeX comments in the
+package file itself.
+<dl>
+<dt><tt><i>setspace.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/setspace/setspace.sty">macros/latex/contrib/setspace/setspace.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=linespace">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=linespace</a>
+</body>

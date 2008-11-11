@@ -1,0 +1,61 @@
+<head>
+<title>UK TeX FAQ -- question label music</title>
+</head><body>
+<h3>Typesetting music in TeX</h3>
+<p>In the early days, a simple music package called MuTeX was
+written by Angelika Schofer and Andrea Steinbach, which demonstrated
+that music typesetting was possible; the package was very limited, and is
+hardly ever used nowadays.  Daniel Taupin took up the baton, and
+developed MusicTeX, which allows the typesetting of polyphonic and
+other multiple-stave music; MusicTeX remains available, but is most
+definitely no longer recommended.
+<p>MusicTeX has been superseded by its successor MusiXTeX, which is
+a three-pass system (with a processor program that computes values for
+the element spacing in the music), and achieves finer control than is
+possible in the unmodified TeX-based mechanism that MusicTeX
+uses.  Daniel Taupin&rsquo;s is the only version of MusiXTeX currently
+being developed (the original author, Andreas Egler, had an
+alternative version, but he is now working on a different package
+altogether).
+<p>Input to MusixTeX is extremely tricky stuff, and Don Simons&rsquo;
+preprocessor <i>pmx</i> is the preferred method of creating input
+for Taupin&rsquo;s version.  <i>Pmx</i> greatly eases use of
+MusixTeX, but it doesn&rsquo;t support the full range of MusixTeX&rsquo;s
+facilities directly; however, it does allow in-line MusixTeX code
+in <i>pmx</i> sources.
+<p>Dirk Laurie&rsquo;s <i>M-Tx</i> allows preparation of music with lyrics;
+it operates &ldquo;on top of&rdquo; <i>pmx</i>
+<p>Another simple notation is supported by <i>abc2mtex</i>; this is a
+package designed to notate tunes stored in an ASCII format
+(<code>abc</code> notation). It was designed primarily for folk and traditional
+tunes of Western European origin (such as Irish, English and Scottish)
+which can be written on one stave in standard classical notation, and
+creates input intended for MusicTeX.  However, it should be
+extendable to many other types of music.
+<p>Digital music fans can typeset notation for their efforts by using
+<i>midi2tex</i>, which translates MIDI data files into
+MusicTeX source code.
+<p>There is a mailing list (<i>TeX-music@icking-music-archive.org</i>)
+for discussion of typesetting music in TeX; it mostly covers
+MusixTeX and related systems.  To subscribe, use
+<a href="http://icking-music-archive.org/mailman/listinfo/tex-music/">http://icking-music-archive.org/mailman/listinfo/tex-music/</a>
+<p>An alternative (free) means of embedding music examples into (La)TeX
+documents is <a href="http://www.lilypond.org">Lilypond</a>.  Lilypond is
+(at heart) a batch music typesetting system with plain text input that
+does most of its work without TeX.  Lilypond&rsquo;s input syntax is far
+less cryptic than is MusixTeX&rsquo;s, and it handles much more stuff
+automatically, yielding the same or better quality with less effort.
+Lilypond can also produce basic MIDI output.
+<dl>
+<dt><tt><i>abc2mtex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/abc2mtex.zip">support/abc2mtex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/abc2mtex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/abc2mtex/">browse</a>)
+<dt><tt><i>M-Tx</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/mtx.zip">support/mtx</a> (<a href="ftp://cam.ctan.org/tex-archive/support/mtx.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/mtx/">browse</a>)
+<dt><tt><i>midi2tex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/midi2tex.zip">support/midi2tex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/midi2tex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/midi2tex/">browse</a>)
+<dt><tt><i>musictex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/musictex.zip">macros/musictex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/musictex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/musictex/">browse</a>)
+
+<dt><tt><i>musixtex (Taupin&rsquo;s version)</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/musixtex/taupin.zip">macros/musixtex/taupin</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/musixtex/taupin.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/musixtex/taupin/">browse</a>)
+<dt><tt><i>musixtex (Egler&rsquo;s version)</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/musixtex/egler.zip">macros/musixtex/egler</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/musixtex/egler.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/musixtex/egler/">browse</a>)
+<dt><tt><i>mutex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/mtex.zip">macros/mtex</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/mtex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/mtex/">browse</a>)
+<dt><tt><i>pmx</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/pmx.zip">support/pmx</a> (<a href="ftp://cam.ctan.org/tex-archive/support/pmx.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/pmx/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=music">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=music</a>
+</body>

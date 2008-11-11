@@ -1,0 +1,42 @@
+<head>
+<title>UK TeX FAQ -- question label minitoc</title>
+</head><body>
+<h3>Table of contents, etc., per chapter</h3>
+<p>The common style, of a &ldquo;small&rdquo; table of contents for each part,
+chapter, or even section, is supported by the <i>minitoc</i>
+package.  The package also supports mini-lists of tables and figures;
+but, as the documentation observes, mini-bibliographies are a
+different problem &mdash; see
+<a href="FAQ-chapbib.html">bibliographies per chapter</a>.
+<p>The package&rsquo;s basic scheme is to generate a little <code>.aux</code> file for
+each chapter, and to process that within the chapter.  Simple usage
+would be:
+<blockquote>
+<pre>
+\usepackage{minitoc}
+...
+\begin{document}
+...
+\dominitoc \tableofcontents
+\dominilof \listoffigures
+...
+\chapter{blah blah}
+\minitoc \mtcskip \minilof
+...
+</pre>
+</blockquote><p>
+though a lot of elaborations are possible (for example, you don&rsquo;t need
+a <code>\</code><code>minitoc</code> for every chapter).
+<p><i>Babel</i> doesn&rsquo;t know about <i>minitoc</i>, but
+<i>minitoc</i> makes provision for other document languages than
+English &mdash; a wide variety is available.  Fortunately, the current
+version of the <i>hyperref</i> package does know about
+<i>minitoc</i> and treats <code>\</code><code>minitoc</code> tables in the
+same way as &ldquo;real&rdquo; tables of contents.
+<dl>
+<dt><tt><i>babel.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/babel.zip">macros/latex/required/babel</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/babel.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/babel/">browse</a>)
+<dt><tt><i>hyperref.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.zip">macros/latex/contrib/hyperref</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/hyperref/">browse</a>)
+<dt><tt><i>minitoc.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/minitoc.zip">macros/latex/contrib/minitoc</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/minitoc.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/minitoc/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=minitoc">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=minitoc</a>
+</body>

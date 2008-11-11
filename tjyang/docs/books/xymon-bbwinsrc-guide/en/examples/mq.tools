@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cp $EXAMPLE_DIR/data/remove-redundant-null-checks.patch .
+
+#$ name: tools
+diffstat -p1 remove-redundant-null-checks.patch
+
+filterdiff -i '*/video/*' remove-redundant-null-checks.patch
+
+#$ name: lsdiff
+lsdiff -nvv remove-redundant-null-checks.patch

@@ -1,0 +1,62 @@
+<head>
+<title>UK TeX FAQ -- question label notWYSIWYG</title>
+</head><body>
+<h3>Why is TeX not a WYSIWYG system?</h3>
+<p>WYSIWYG is a marketing term (&ldquo;What you see is what you get&rdquo;) for
+a particular style of text processor.  WYSIWYG systems are
+characterised by two principal claims: that you type what you want to
+print, and that what you see on the screen as you type is a close
+approximation to how your text will finally be printed.
+<p>The simple answer to the question is, of course, that TeX was
+conceived long before the marketing term, at a time when the marketing
+imperative wasn&rsquo;t perceived as significant.  However, that was a long
+time ago: why has nothing been done with the &ldquo;wonder text processor&rdquo;
+to make it fit with modern perceptions?
+<p>There are two answers to this.  First, the simple &ldquo;things <em>have</em>
+been done&rdquo; (but they&rsquo;ve not taken over the TeX world); and second,
+&ldquo;there are philosophical reasons why the way TeX has developed is
+ill-suited to the WYSIWYG style&rdquo;.
+Indeed, there is a fundamental problem with applying WYSIWYG techniques
+to TeX: the complexity of TeX makes it hard to get the
+equivalent of TeX&rsquo;s output without actually running TeX.
+<p>A celebrated early system offering &ldquo;WYSIWYG using TeX&rdquo; came from the
+VorTeX project: a pair of (early) Sun workstations worked in
+tandem, one handling the user interface while the other beavered away
+in the background typesetting the result.  VorTeX was quite
+impressive for its time, but the two workstations combined had hugely less
+power than the average sub-thousand dollar Personal Computer
+nowadays, and its code has not proved portable (it never even made the
+last &lsquo;great&rsquo; TeX version change, at the turn of the 1990s, to
+TeX version 3).  Modern systems that are similar in
+their approach are Lightning Textures (an extension of
+Blue Sky&rsquo;s original TeX system for the Macintosh), and Scientific
+Word (which can also cooperate with a computer algebra system); both
+these systems are <a href="FAQ-commercial.html">commercially available</a>.
+<p>The issue has of recent years started to attract attention from TeX
+developers, and several interesting projects addressing the
+&ldquo;<a href="FAQ-WYGexpts.html">TeX document preparation environment</a>&rdquo;
+are in progress.
+<p>Nevertheless, the TeX world has taken a long time to latch onto the
+idea of WYSIWYG.
+Apart from simple arrogance (&ldquo;we&rsquo;re better, and have no need to
+consider the petty doings of the commercial word processor market&rdquo;),
+there is a real conceptual difference between the word processor model
+of the world and the model LaTeX and ConTeXt employ &mdash; the idea of
+&ldquo;markup&rdquo;.  &ldquo;Pure&rdquo; markup expresses a logical model of a document,
+where every object within the document is labelled according to what
+it is rather than how it should appear: appearance is deduced from the
+properties of the type of object.  Properly applied, markup can
+provide valuable assistance when it comes to re-use of documents.
+<p>Established WYSIWYG systems find the expression of this sort of
+structured markup difficult; however, markup <em>is</em> starting to
+appear in the lists of the commercial world&rsquo;s requirements, for two
+reasons.  First, an element of markup helps impose style on a
+document, and commercial users are increasingly obsessed with
+uniformity of style; and second, the increasingly pervasive use of
+XML-derived document archival formats demands it.  The same
+challenges must needs be addressed by TeX-based document
+preparation support schemes, so we are
+observing a degree of confluence of the needs of the two communities:
+interesting times may be ahead of us.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=notWYSIWYG">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=notWYSIWYG</a>
+</body>

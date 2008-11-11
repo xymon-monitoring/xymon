@@ -1,0 +1,42 @@
+<head>
+<title>UK TeX FAQ -- question label ps@empty</title>
+</head><body>
+<h3><code>\pagestyle{empty}</code> on first page in LaTeX</h3>
+<p>If you use <code>\</code><code>pagestyle{empty}</code>, but the first page is numbered
+anyway, you are probably using the <code>\</code><code>maketitle</code> command too. The
+behaviour is not a bug but a feature.  The standard LaTeX classes are
+written so that initial pages (pages containing a <code>\</code><code>maketitle</code>,
+<code>\</code><code>part</code>, or <code>\</code><code>chapter</code>) have a different page style from the rest
+of the document; to achieve this, the commands internally issue
+<code>\</code><code>thispagestyle{plain}</code>. This is usually not acceptable
+behaviour if the surrounding page style is &lsquo;empty&rsquo;.
+<p>Possible workarounds include:
+<ul>
+<li> Put <code>\</code><code>thispagestyle{empty</code>} immediately after the
+  <code>\</code><code>maketitle</code> command, with no blank line between them.
+<li> Use the <i>fancyhdr</i> or <i>scrpage2</i> packages, which
+  allow you to customise the style for initial pages independently of
+  that for body pages.
+<p>  For example, use <i>fancyhdr</i> commands:
+<pre>
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+</pre>
+  and the &ldquo;<code>empty</code>&rdquo; page style (invoked by <code>\</code><code>chapter</code>
+  commands and title pages) will have no header or footer.
+<li> If you are using either the <i>memoir</i> class or a
+  <i>KOMA-script</i> class, use the techniques outlined for them in
+  &ldquo;<a href="FAQ-nopageno.html">no page numbers</a>&rdquo;.
+</ul>
+<dl>
+<dt><tt><i>fancyhdr.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fancyhdr.zip">macros/latex/contrib/fancyhdr</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/fancyhdr.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/fancyhdr/">browse</a>)
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>nopageno.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/carlisle/nopageno.sty">macros/latex/contrib/carlisle/nopageno.sty</a>
+<dt><tt><i>scrpage2.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ps@empty">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ps@empty</a>
+</body>

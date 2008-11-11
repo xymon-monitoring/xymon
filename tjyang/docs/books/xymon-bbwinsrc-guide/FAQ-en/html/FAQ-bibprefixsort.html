@@ -1,0 +1,56 @@
+<head>
+<title>UK TeX FAQ -- question label bibprefixsort</title>
+</head><body>
+<h3>BibTeX sorting and name prefixes</h3>
+<p>BibTeX recognises a bewildering array of name prefixes (mostly
+those deriving from European language names); it ignores the prefixes
+when sorting the bibliography &mdash; you want &ldquo;Ludwig van Beethoven&rdquo;
+sorted under &ldquo;Beethoven&rdquo;, not under &ldquo;van&rdquo;.  (Lamport made a witty
+deliberate mistake with Beethoven&rsquo;s name, in the first edition of his
+LaTeX manual.)
+<p>However, a recurring issue is the desire to quote Lord Rayleigh&rsquo;s
+publications (&ldquo;Lord&rdquo; isn&rsquo;t an acceptable prefix), or names from
+languages that weren&rsquo;t considered when BibTeX was designed such as
+&ldquo;al-Wakil&rdquo; (transcribed from the Arabic).  What&rsquo;s needed is a
+separate &ldquo;sort key&rdquo;, but BibTeX only allows such a thing in
+citations of items that have no author or editor.
+<p>The solution is to embed the sort key in the author&rsquo;s name, but to
+prevent it from being typeset.  Patashnik recommends a command
+<code>\</code><code>noopsort</code> (no-output-sortkey), which is defined and used as
+follows:
+<blockquote>
+<pre>
+@PREAMBLE{ {\providecommand{\noopsort}[1]{}} }
+...
+@ARTICLE{Rayleigh1,
+AUTHOR = "{\noopsort{Rayleigh}}{Lord Rayleigh}",
+...
+}
+</pre>
+
+</blockquote><p>
+Note that this <code>\</code><code>noopsort</code> applies to the last name in this kind of
+construct, so an author with an Arabic name might be rendered:
+<blockquote>
+<pre>
+...
+AUTHOR = "Ali {\noopsort{Hadiidii}}{al-Hadiidii}",
+...
+</pre>
+</blockquote><p>
+
+A further use might deal with word order games, as in the famous
+Vietnamese name:
+<blockquote>
+<pre>
+...
+AUTHOR = "\noopsort{Thanh Han The}{Han The Thanh}",
+...
+</pre>
+</blockquote><p>
+
+though that author seems well-acquainted with Western confusion about
+the significance of the parts of his name (even to the extent of
+missing out the accentuation, as above...).
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=bibprefixsort">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=bibprefixsort</a>
+</body>

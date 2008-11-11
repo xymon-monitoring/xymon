@@ -1,0 +1,58 @@
+<head>
+<title>UK TeX FAQ -- question label mathsize</title>
+</head><body>
+<h3>Adjusting maths font sizes</h3>
+<p>In Plain TeX, when you introduce a new font size you must also
+declare what size fonts are to be used in mathematics with it.  This
+is done by declaring <code>\</code><code>textfont</code>, <code>\</code><code>scriptfont</code> and
+<code>\</code><code>scriptscriptfont</code> for the maths families you&rsquo;re using; all such
+things are described in chapter 17 of the 
+<a href="FAQ-books.html">TeXbook</a> and in other books and
+<a href="FAQ-man-tex.html">tutorials</a> that discuss Plain TeX in sufficient
+detail.
+<p>In LaTeX, of course, all this stuff is automated: there is a scheme
+that, for each (text) font size, determines what maths font sizes are
+to be used.  The scheme first checks a set of &ldquo;known&rdquo; text sizes,
+for each of which maths sizes are declared in advance.  If the text
+size isn&rsquo;t &ldquo;known&rdquo;, the script- and scriptscriptfont sizes are
+calculated as fixed ratios of the tex font size.  (The values used are
+<code>\</code><code>defaultscriptratio</code>=0.7, and
+<code>\</code><code>defaultscriptscriptratio</code>=0.5.)
+<p>The fixed-ratio formula is capable of producing inconvenient results
+(particularly if you are using fonts which LaTeX believes are only
+available in a fixed set of sizes).  You may also want to replace
+LaTeX&rsquo;s ideas altogether, for example by setting maths noticeably
+larger or smaller than its surrounding text.  For this purpose, the
+LaTeX command
+<code>\</code><code>DeclareMathSizes{&lt;<i>tfs</i>&gt;}{&lt;<i>ts</i>&gt;}{&lt;<i>ss</i>&gt;}{&lt;<i>sss</i>&gt;}</code>
+may be used (this is the same command that LaTeX itself uses to
+define its own set of sizes).  This establishes (or re-establishes)
+the maths font sizes to be used when the surrounding text font size is
+<code>&lt;<i>tfs</i>&gt;</code>; (<code>&lt;<i>ts</i>&gt;</code> being the size used for
+<code>\</code><code>textfont</code>, <code>&lt;<i>ss</i>&gt;</code> for <code>\</code><code>scriptfont</code> and
+<code>&lt;<i>sss</i>&gt;</code> for <code>\</code><code>scriptscriptfont</code>).
+<p>For example, you might want to use a font with a smaller body height
+than Computer Modern, but still prefer CM math to any of the
+alternatives.  In this case, you might use:
+<blockquote>
+<pre>
+\DeclareMathSizes{10}{9}{7}{5}
+</pre>
+</blockquote><p>
+to get 9pt maths when the surrounding body text is (nominal) 10pt.
+<p><code>\</code><code>DeclareMathSizes</code> may only be used in the preamble of the
+document: only one association is available for each text font size
+for the whole document.  The default settings are specified in
+<i>fontdef.dtx</i> in the latex distribution, and are compiled into
+<i>fontmath.ltx</i>; the arguments to the command are just numbers
+(&lsquo;<code>pt</code>&rsquo; is assumed), but some of them are written using
+<a href="FAQ-ltxabbrv.html">LaTeX abbreviations</a> for standard font sizes.
+Beware simply copying (parts of) the LaTeX definitions &mdash; since
+they contain those internal abbreviations, they need to be treated as
+<a href="FAQ-atsigns.html">internal commands</a>.
+<dl>
+<dt><tt><i>fontdef.dtx</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/base/fontdef.dtx">macros/latex/base/fontdef.dtx</a>
+<dt><tt><i>fontmath.ltx</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/unpacked/fontmath.ltx">macros/latex/unpacked/fontmath.ltx</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=mathsize">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=mathsize</a>
+</body>

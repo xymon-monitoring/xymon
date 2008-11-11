@@ -1,0 +1,83 @@
+<head>
+<title>UK TeX FAQ -- question label acrobat</title>
+</head><body>
+<h3>Making Acrobat PDF documents from (La)TeX</h3>
+<p>There are three general routes to PDF output: Adobe&rsquo;s original
+&lsquo;distillation&rsquo; route (via PostScript output), conversion of a
+DVI file, and the use of a direct PDF generator such as
+<a href="FAQ-whatpdftex.html">PDFTeX</a>) or
+MicroPress&rsquo;s VTeX (which comes both as a 
+<a href="FAQ-commercial.html">commercial version</a> for Windows PCs, and as a
+<a href="FAQ-TeXsystems.html">&lsquo;free&rsquo; version)</a> for OS/2 and Linux systems).
+<p>For simple documents (with no hyper-references), you can either
+<ul>
+<li> process the document in the normal way, produce PostScript
+  output and distill it;
+<li> (on a Windows or Macintosh machine with the appropriate Adobe
+  tools installed) pass the output through the
+  PDFwriter in place of a printer driver (this route is a dead
+  end: the PDFwriter cannot create hyperlinks);
+<li> process the document in the normal way and generate PDF
+  direct from the DVI using
+  <i>dvipdfm</i>/<i>dvipdfmx</i>; or 
+<li> process the document direct to PDF with PDFTeX or
+  VTeX.  PDFTeX has
+  the advantage of availability for a wide range of platforms, VTeX
+  (available commercially for Windows, or free of charge, but
+  unsupported, for Linux or OS/2) has wider graphics
+  capability, dealing with encapsulated PostScript and some in-line PostScript.
+</ul>
+<p>To translate all the LaTeX cross-referencing into Acrobat
+links, you need a LaTeX package to suitably redefine
+the internal commands.  There are two of these for LaTeX, both
+capable of conforming to the
+<a href="FAQ-hyper.html">HyperTeX specification</a>:
+Heiko Oberdiek&rsquo;s <i>hyperref</i>, and Michael Mehlich&rsquo;s
+<i>hyper</i>.  (In practice, almost everyone uses
+<i>hyperref</i>; <i>hyper</i> hasn&rsquo;t been updated since 2000.)
+<i>Hyperref</i> can often determine how it should generate
+hypertext from its environment, but there is a wide set of
+configuration options you can give via <code>\</code><code>usepackage</code>.  The package
+can operate using PDFTeX primitives, the hyperTeX
+<code>\</code><code>special</code>s, or DVI driver-specific <code>\</code><code>special</code> commands.
+Both <i>dvips</i> and Y&amp;Y&rsquo;s <i>DVIPSONE</i> can
+translate the DVI with these <code>\</code><code>special</code> commands into
+PostScript acceptable to Distiller, and <i>dvipdfm</i> has <code>\</code><code>special</code>
+commands of its own.
+<p>If you use Plain TeX, the <a href="FAQ-eplain.html">Eplain macros</a> can
+help you create PDF documents with hyper-references.
+It can operate using PDFTeX primitives, or <code>\</code><code>special</code> commands
+for the <i>dvipdfm</i> DVI driver.
+<p>While there is no free implementation of all of <i>Adobe</i>
+<i>Distiller</i>&rsquo;s
+functionality, any but the very oldest versions of <i>Ghostscript</i>
+provide pretty reliable distillation (but beware of the problems with
+<a href="FAQ-dvips-pdf.html"><i>dvips</i> output for distillation</a>).
+<p>For viewing (and printing) the resulting files, Adobe&rsquo;s
+<i>Acrobat</i> <i>Reader</i> is available for a fair range of
+platforms; for those for which Adobe&rsquo;s reader is unavailable, remotely
+current versions of <i>ghostscript</i> combined with
+<i>gv</i>, <i>GSview</i> (or even the unsupported
+<i>ghostview</i>) can display and print PDF files, as can
+<i>xpdf</i>.
+<p>In many circumstances, <i>Ghostscript</i> combined with a viewer
+application is actually preferable to Acrobat Reader.  For example, on
+Windows Acrobat Reader locks the <code>.pdf</code> file it&rsquo;s displaying: this
+makes the traditional (and highly effective) (La)TeX development
+cycle of &ldquo;Edit-&gt; Process-&gt; Preview&rdquo; become
+rather clumsy &mdash; <i>GSview</i> doesn&rsquo;t make the same
+mistake.
+<dl>
+<dt><tt><i>Acrobat Reader</i></tt><dd>browse
+  <a href="ftp://ftp.adobe.com/pub/adobe/acrobatreader">ftp://ftp.adobe.com/pub/adobe/acrobatreader</a>
+<dt><tt><i>dvipdfm</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfm.zip">dviware/dvipdfm</a> (<a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfm.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/dviware/dvipdfm/">browse</a>)
+<dt><tt><i>dvipdfmx</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfmx.zip">dviware/dvipdfmx</a> (<a href="ftp://cam.ctan.org/tex-archive/dviware/dvipdfmx.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/dviware/dvipdfmx/">browse</a>)
+<dt><tt><i>ghostscript</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/support/ghostscript/">nonfree/support/ghostscript/</a>
+<dt><tt><i>ghostview</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/support/ghostscript/gnu/ghostview/">support/ghostscript/gnu/ghostview/</a>
+<dt><tt><i>GSview</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/support/ghostscript/ghostgum/">nonfree/support/ghostscript/ghostgum/</a>
+<dt><tt><i>gv</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/gv.zip">support/gv</a> (<a href="ftp://cam.ctan.org/tex-archive/support/gv.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/gv/">browse</a>)
+<dt><tt><i>hyper.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyper.zip">macros/latex/contrib/hyper</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyper.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/hyper/">browse</a>)
+<dt><tt><i>hyperref.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.zip">macros/latex/contrib/hyperref</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyperref.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/hyperref/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=acrobat">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=acrobat</a>
+</body>

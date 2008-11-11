@@ -1,0 +1,459 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{xymon Server Administration}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\section{HOBBIT-ENADIS.CGI}
+ xymon-enadis.cgi - CGI program to enable/disable xymon tests \
+\subsection{SYNOPSIS}
+\textbf{xymon-enadis.cgi (invoked via CGI from webserver)}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{xymon-enadis.cgi} is a CGI tool for disabling and enabling
+hosts and tests monitored by xymon. You can disable monitoring of a
+single test, all tests for a host, or multiple hosts - immediately or
+at a future point in time. 
+
+
+  xymon-enadis.cgi runs as a CGI program, invoked by your
+  webserver. It is normally run via a wrapper shell-script in the
+  secured CGI directory for xymon. 
+
+
+
+  xymon-enadis.cgi is the back-end script for the enable/disable form
+  present on the ``info'' status-pages. It can also run in
+  ``stand-alone'' mode, in which case it displays a web form allowing
+  users to select what to enable or disable. 
+
+
+
+ 
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--no-cookies] Normally, xymon-enadis.cgi uses a cookie sent by
+  the browser to initially filter the list of hosts presented. If this
+  is not desired, you can turn off this behaviour by calling
+  bb-ack.cgi with the --no-cookies option. This would normally be
+  placed in the CGI\_ENADIS\_OPTS setting in \emph{xymoncgi.cfg(5)}
+
+
+
+ 
+
+\item[--env=FILENAME] Load the environment from FILENAME before
+  executing the CGI. 
+
+
+ 
+
+\item[--area=NAME] Load environment variables for a specific area. NB:
+  if used, this option must appear before any --env=FILENAME option. 
+
+\end{description}
+\
+
+subsection{FILES}
+\begin{description}
+\item [\$BBHOME/web/maint\_{header,form,footer}] HTML template header 
+
+ 
+
+
+\end{description}
+\subsection{BUGS}
+ When using alternate pagesets, hosts will only show up on the
+ Enable/Disable page if this is accessed from the primary page in
+ which they are defined. So if you have hosts on multiple pages, they
+ will only be visible for disabling from their main page which is not
+ what you would expect. 
+
+
+ 
+\subsection{SEE ALSO}
+xymon(7) 
+
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{BB-ACK.CGI}
+ bb-ack.cgi - xymon CGI script to acknowledge alerts \
+
+\subsection{SYNOPSIS}
+\textbf{bb-ack.cgi?ACTION=action\&NUMBER=acknum\&DELAY=validity\&MESSAGE=text}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{bb-ack.cgi}
+ is invoked as a CGI script via the bb-ack.sh CGI wrapper. 
+
+  bb-ack.cgi is passed a QUERY\_STRING environment variable with the
+  ACTION, NUMBER, DELAY and MESSAGE parameters. 
+
+
+
+ 
+\subsection{PARAMETERS}
+ ACTION is the action to perform. The only supported action is ``Ack'' to acknowledge an alert. 
+
+  NUMBER is the number identifying the host/service to be
+  acknowledged. It is included in all alert-messages sent out by
+  xymon. 
+
+
+
+  DELAY is the time (in minutes) that the acknowledge is valid. 
+
+
+  MESSAGE is an optional text which will be shown on the status page
+  while the acknowledgment is active. You can use it to e.g. tell
+  users not to contact you about the problem, or inform them when the
+  problem is expected to be resolved. 
+
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--no-pin] bb-ack.cgi normally requires the user to enter the
+  acknowledgment code received in an alert message. If you run it with
+  this option, the user will instead get a list of the current
+  non-green statuses, and he may send an acknowledge without knowing
+  the code. 
+
+
+ 
+
+\item[--no-cookies] Normally, bb-ack.cgi uses a cookie sent by the
+  browser to initially filter the list of hosts presented. If this is
+  not desired, you can turn off this behaviour by calling bb-ack.cgi
+  with the --no-cookies option. This would normally be placed in the
+  CGI\_ACK\_OPTS setting in \emph{xymoncgi.cfg(5)}
+
+
+
+ 
+\item[--env=FILENAME] Loads the environment defined in FILENAME before executing the CGI script. 
+
+ 
+
+\item[--debug] Enables debugging output. 
+
+ 
+
+
+\end{description}
+\subsection{FILES}
+\begin{description}
+\item[\$BBHOME/web/acknowledge\_header] HTML header file for the generated web page 
+
+ 
+
+\item[\$BBHOME/web/acknowledge\_footer] HTML footer file for the generated web page 
+
+ 
+
+\item[\$BBHOME/web/acknowledge\_form] Query form displayed when bb-ack.cgi is called with no parameters. 
+
+ 
+\end{description}
+\subsection{ENVIRONMENT VARIABLES}
+\begin{description}
+\item[BBHOME] Used to locate the template files for the generated web pages. 
+
+ 
+
+\item[QUERY\_STRING] Contains the parameters for the CGI script. 
+
+ 
+
+
+\end{description}
+\subsection{BUGS}
+ When using alternate pagesets, hosts will only show up on the
+ acknowledgment page if this is accessed from the primary page in
+ which they are defined. So if you have hosts on multiple pages, they
+ will only be visible for acknowledging from their main page which is
+ not what you would expect. 
+
+ 
+\subsection{SEE ALSO}
+bbgen(1), bb-hosts(5), xymonserver.cfg(5) 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{HOBBIT-GHOSTS.CGI}
+ xymon-ghosts.cgi - CGI program to view ghost clients
+ \subsection{SYNOPSIS}
+\textbf{xymon-ghosts.cgi}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{xymon-ghosts.cgi} is invoked as a CGI script via the hobbit-ghosts.sh CGI wrapper. 
+
+  It generates a listing of the xymon clients that have reported data
+  to the xymon server, but are not listed in the \emph{bb-hosts(5)}
+  file. Data from these clients - called ``ghosts'' - are ignored,
+  since xymon does not know which webpage to present the data on. 
+
+
+
+  The listing includes the hostname that the client reports with, the
+  IP-address where the report came from, and how long ago the report
+  arrived. 
+
+
+
+  By far the most common reason for hosts showing up here is that the
+  client uses a hostname without a DNS domain, but the bb-hosts file
+  uses the hostname with the DNS domain. Or vice versa. You can then
+  use a \textbf{CLIENT} setting in the bb-hosts file to match the two
+  hostnames together. 
+
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--env=FILENAME] Loads the environment defined in FILENAME before executing the CGI script. 
+
+
+\end{description}
+\subsection{SEE ALSO}
+bb-hosts(5), xymonserver.cfg(5) 
+
+ 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{TRIMHISTORY}
+\subsection{NAME}
+ \motohbcmd{trimhistory} - Remove old xymon history-log entries 
+
+subsection{SYNOPSIS}
+\textbf{trimhistory --cutoff=TIME [options]}
+
+
+ 
+\subsection{DESCRIPTION}
+ The \textbf{trimhistory}
+ tool is used to purge old entries from the xymon history logs. These
+ logfiles accumulate information about all status changes that have
+ occurred for any given service, host, or the entire xymon system,
+ and is used to generate the event- and history-log webpages. 
+
+
+  Purging old entries can be done while xymon is running, since the
+  tool takes care not to commit updates to a file if it changes
+  mid-way through the operation. In that case, the update is aborted
+  and the existing logfile is left untouched. 
+
+
+
+  Optionally, this tool will also remove logfiles from hosts that are
+  no longer defined in the xymon \emph{bb-hosts(5)} file. As an
+  extension, even logfiles from services can be removed, if the
+  service no longer has a valid status-report logged in the current
+  xymon status. 
+
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--cutoff=TIME] This defines the cutoff-time when processing the
+  history logs. Entries dated before this time are discarded. TIME is
+  specified as the number of seconds since the beginning of the
+  Epoch. This is easily generated by the GNU \emph{date(1)} utility,
+  e.g. the following command will trim history logs of all entries
+  prior to Oct. 1st 2004:  
+
+
+
+  
+trimhistory--cutoff=`date+\%s--date=''1Oct2004''` 
+
+
+ 
+
+\item[--outdir=DIRECTORY] Normally, files in the BBHIST directory are
+  replaced. This option causes trimhistory to save the shortened
+  history logfiles to another directory, so you can verify that the
+  operation works as intended. The output directory must exist. 
+
+
+ 
+
+\item[--drop] Causes trimhistory to delete files from hosts that are
+  not listed in the \emph{bb-hosts(5)} file. 
+
+ 
+
+\item[--dropsvcs] Causes trimhistory to delete files from services
+  that are not currently tracked by xymon. Normally these files would
+  be left untouched if only the host exists. 
+
+ 
+
+\item[--droplogs] Process the BBHISTLOGS directory also, and delete
+  status-logs from events prior to the cut-off time. Note that this
+  can dramatically increase the processing time, since there are often
+  lots and lots of files to process. 
+
+
+ 
+
+\item[--progress[=N]] This will cause trimhistory to output a status
+  line for every N history logs or status-log collections it
+  processes, to indicate how far it has progressed. The default
+  setting for N is 100. 
+
+
+ 
+
+\item[--env=FILENAME] Loads the environment from FILENAME before executing trimhistory. 
+
+ 
+
+\item[--debug] Enable debugging output. 
+
+ 
+\end{description}
+\subsection{FILES}
+\begin{description}
+\item[\$BBHIST/allevents] The eventlog of all events that have happened in xymon. 
+
+ 
+
+\item[\$BBHIST/HOSTNAME] The per-host eventlogs. 
+
+ 
+
+\item[\$BBHIST/HOSTNAME.SERVICE] The per-service eventlogs. 
+
+ 
+
+\item[\$BBHISTLOGS/*/*] The historical status-logs. 
+
+ 
+
+
+\end{description}
+\subsection{ENVIRONMENT VARIABLES}
+\begin{description}
+\item[BBHIST] The directory holding all history logs. 
+
+ 
+
+\item[BBHISTLOGS] The top-level directory for the historical status-log collections. 
+
+ 
+
+\item[BBHOSTS] The location of the bb-hosts file, holding the list of currently known hosts in xymon. 
+
+
+\end{description}
+\subsection{SEE ALSO}
+xymon(7), bb-hosts(5) 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{HOBBIT-ACKINFO.CGI}
+ xymon-ackinfo.cgi - xymon CGI script to acknowledge alerts \subsection{SYNOPSIS}
+\textbf{xymon-ackinfo.cgi}
+
+
+ 
+\subsection{DESCRIPTION}
+\textbf{xymon-ackinfo.cgi}
+ is invoked as a CGI script via the xymon-ackinfo.sh CGI wrapper. 
+
+  xymon-ackinfo.cgi is used to acknowledge an alert on the xymon
+  ``Critical Systems'' view, generated by the
+  \emph{xymon-nkview.cgi(1)} utility. This allows the staff viewing
+  the Critical Systems view to acknowledge alerts with a ``Level 1''
+  alert, thereby removing the alert from the Critical Systems view. 
+
+
+
+  Note that the Level 1 alert generated by the xymon-ackinfo.cgi
+  utility does \textbf{NOT} stop alerts from being sent. 
+
+
+
+  In a future version of xymon (after Xymon 4.2), this utility will
+  also be used for acknowledging alerts at other levels. 
+
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--level=NUMBER] Sets the acknowledgment level. This is typically
+  used to force a specific level of the acknowledgment, e.g. a level 1
+  acknowledge when called from the Critical Systems view. 
+
+
+ 
+
+\item[--validity=TIME] Sets the validity of the acknowledgment. By
+  default this is taken from the CGI parameters supplied by the user. 
+
+
+ 
+
+\item[--sender=STRING] Logs STRING as the sender of the
+  acknowledgment. By default, this is taken from the loginname of the
+  webuser sending the acknowledgment. 
+
+
+ 
+
+\item[--env=FILENAME] Loads the environment defined in FILENAME before executing the CGI script. 
+
+ 
+
+\item[--area=NAME] Load environment variables for a specific area. NB:
+  if used, this option must appear before any --env=FILENAME option. 
+
+
+ 
+
+\item[--debug] Enables debugging output. 
+
+
+\end{description}
+\subsection{ENVIRONMENT VARIABLES}
+\begin{description}
+\item[BBHOME] Used to locate the template files for the generated web pages. 
+
+
+\item[QUERY\_STRING] Contains the parameters for the CGI script. 
+
+\end{description}
+\subsection{SEE ALSO}
+xymon-nkview.cgi(1), hobbit(7) 
+
+

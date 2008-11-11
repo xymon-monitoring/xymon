@@ -1,0 +1,16 @@
+$ \textbf{echo 'line 3' >> file1}
+$ \textbf{hg status}
+M file1
+$ \textbf{hg qrefresh}
+$ \textbf{hg tip --style=compact --patch}
+1[qtip,first.patch,tip,qbase]   6e5d41167dc4   2008-03-02 16:16 +0000   bos
+  patch queue: first.patch
+
+diff -r 86a2bac0642a -r 6e5d41167dc4 file1
+--- a/file1	Sun Mar 02 16:16:33 2008 +0000
++++ b/file1	Sun Mar 02 16:16:34 2008 +0000
+@@ -1,1 +1,3 @@ line 1
+ line 1
++line 2
++line 3
+

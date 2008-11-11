@@ -1,0 +1,65 @@
+<head>
+<title>UK TeX FAQ -- question label chngmargonfly</title>
+</head><body>
+<h3>Changing margins &ldquo;on the fly&rdquo;</h3>
+<p>One of the surprises characteristic of TeX use is that you cannot
+change the width or height of the text within the document, simply by
+modifying the text size parameters; TeX can&rsquo;t change the text width
+on the fly, and LaTeX only ever looks at text height when starting
+a new page.
+<p>So the simple rule is that the parameters should only be
+changed in the preamble of the document, i.e., before the
+<code>\</code><code>begin{document}</code> statement (so before any typesetting has
+happened.
+<p>To adjust text width within a document we define an environment:
+<blockquote>
+<pre>
+\newenvironment{changemargin}[2]{%
+  \begin{list}{}{%
+    \setlength{\topsep}{0pt}%
+    \setlength{\leftmargin}{#1}%
+    \setlength{\rightmargin}{#2}%
+    \setlength{\listparindent}{\parindent}%
+    \setlength{\itemindent}{\parindent}%
+    \setlength{\parsep}{\parskip}%
+  }%
+  \item[]}{\end{list}}
+</pre>
+</blockquote><p>
+The environment takes two arguments, and will indent the left and
+right margins, respectively, by the parameters&rsquo; values. Negative
+values will cause the margins to be narrowed, so
+<code>\</code><code>begin{changemargin}{-1cm}{-1cm}</code> narrows the left and right
+margins by 1 centimetre.
+<p>Given that TeX can&rsquo;t do this, how does it work? &mdash; well, the
+environment (which is a close relation of the LaTeX
+<code>quote</code> environment) <em>doesn&rsquo;t</em> change the text width
+as far as TeX is concerned: it merely moves text around inside the
+width that TeX believes in.
+<p>The <i>chngpage</i> package provides ready-built commands to do the
+above; it includes provision for changing the shifts applied to your
+text according to whether you&rsquo;re on an odd or an even page of a
+two-sided document.  The package&rsquo;s documentation (in the file itself)
+suggests a strategy for changing text dimensions between pages &mdash; as
+mentioned above, changing the text dimensions within the body of a
+page may lead to unpredictable results.
+<p>Changing the vertical dimensions of a page is clunkier still: the
+LaTeX command <code>\</code><code>enlargethispage</code> adjusts the size of the current
+page by the size of its argument.  Common uses are
+<blockquote>
+<pre>
+\enlargethispage{\baselineskip}
+</pre>
+</blockquote><p>
+to make the page one line longer, or
+<blockquote>
+<pre>
+\enlargethispage{-\baselineskip}
+</pre>
+</blockquote><p>
+to make the page one line shorter.
+<dl>
+<dt><tt><i>chngpage.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/chngpage.sty">macros/latex/contrib/misc/chngpage.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=chngmargonfly">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=chngmargonfly</a>
+</body>

@@ -1,0 +1,8 @@
+$ \textbf{hg clone http://hg.serpentine.com/tutorial/hello}
+destination directory: hello
+requesting all changes
+adding changesets
+adding manifests
+adding file changes
+added 5 changesets with 5 changes to 2 files
+2 files updated, 0 files merged, 0 files removed, 0 files unresolved

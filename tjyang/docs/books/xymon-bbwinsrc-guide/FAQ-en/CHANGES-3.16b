@@ -1,0 +1,55 @@
+Changes in version 3.16c
+
+This file incorporates the changes from version 3.16 that previously
+appeared in file CHANGES-3.16a and -3.16b; new changes for this
+release (3.16c) are marked with a plus ("+") sign.
+ 
+
+New answer:
+ +Label isdef:    "is this command defined?" tests
+  Label optionclash: clashing package options error in LaTeX
+
+Revised answers:
+ +Label bibprefixsort: two new examples
+ +Label citeURL:  provide a list (rather than a bunch) of alternative
+                  styles, mention babelbib
+  Label ECfonts:  reword discussion of mathematics and EC fonts (i.e.,
+		  emphasise that there's no direct relation)
+  Label filename: extend macro definitions, hopefully expanding the
+                  usefulness and usability of the answer
+  Label hyperdupdest: other sources of the error than repeated pages
+  Label minitoc:  corrected error in q-minitoc code, tidy comments
+  Label minxampl: include the word "minimal", since it's a common search term
+ +Label multirow: mention the case of multicolumn-multirow
+  Label music:    mention Lilypond as a source of TeX-compatible music
+ +Label music:    correct Web output of package list at end of answer
+ +Label oarglikesect: mention kernel command \@dblarg
+  Label poster:   mention Nicola Talbot's experimental flowfram layout package
+ +Label secthead: rewritten accounts of sectsty & titlesec
+  Label texinfo:  rewritten in parts, following a reader comment
+  Label texsystems: miktex installation has changed with v2.5
+  Label tutbitslatex: added pointers to TUG-maintained material on fonts
+ +Label tutbitslatex: added pointer to Fauske's page on PGF/TikZ
+  Label virtualfonts: re-thought through
+ +Label watermark: noted that package draftcopy doesn't work with pdflatex,
+ +Label watermark: mention draftwatermark
+ +Label whatbst:  correct reed.edu link
+
+Bugfixes:
+  Label cmdstar:   part of the example code was just wrong
+  Label enumerate: unclarity in text caused by a typo
+  Bug in "introduction=yes" HTML code corrected
+  Label atsigns:   mark-up error caused curious HTML output (editorial
+		   improvement too)
+ +Release dates are now represented in ISO format (yyyy-mm-dd) --
+  previously we used the LaTeX format, using solidus instead of hyphen
+
+Future releases:
+  Despite missing the nominal "end August 2006" delivery (through an
+  unfortunate combination of events), I'm aiming to maintain the
+  stream of (approximately) monthly "bugfix" releases.  There are no
+  current plans for a major release, though work on the new web-based
+  version continues.
+
+Robin Fairbairns
+2006-10-02

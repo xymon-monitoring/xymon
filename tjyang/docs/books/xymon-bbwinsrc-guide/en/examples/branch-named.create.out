@@ -1,0 +1,3 @@
+$ \textbf{hg branch foo}
+$ \textbf{hg branch}
+foo

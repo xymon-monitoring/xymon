@@ -1,0 +1,6 @@
+$ \textbf{hg log -r1 --template 'description:\textbackslash{}n\textbackslash{}t\{desc|strip|fill68|tabindent\}\textbackslash{}n'}
+description:
+	added line to end of <<hello>> file.
+
+	in addition, added a file with the helpful name (at least i hope
+	that some might consider it so) of goodbye.

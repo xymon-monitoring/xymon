@@ -1,0 +1,7 @@
+$ \textbf{hg init addremove-example}
+$ \textbf{cd addremove-example}
+$ \textbf{echo a > a}
+$ \textbf{echo b > b}
+$ \textbf{hg addremove}
+adding a
+adding b

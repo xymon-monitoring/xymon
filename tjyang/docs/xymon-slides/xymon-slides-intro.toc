@@ -1,0 +1,9 @@
+\beamer@endinputifotherversion {3.06pt}
+\select@language {english}
+\beamer@sectionintoc {1}{WHAT ? Hobbit ability}{3}{0}{1}
+\beamer@subsectionintoc {1}{1}{First Subsection Name}{3}{0}{1}
+\beamer@sectionintoc {2}{WHY ? History of Hobbit}{5}{0}{2}
+\beamer@subsectionintoc {2}{1}{First Subsection Name}{5}{0}{2}
+\beamer@sectionintoc {3}{HOW ? Getting Hobbit}{13}{0}{3}
+\beamer@subsectionintoc {3}{1}{First Subsection Name}{13}{0}{3}
+\beamer@subsectionintoc {3}{2}{Second Subsection}{21}{0}{3}

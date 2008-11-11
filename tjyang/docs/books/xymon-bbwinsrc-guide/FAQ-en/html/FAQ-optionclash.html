@@ -1,0 +1,105 @@
+<head>
+<title>UK TeX FAQ -- question label optionclash</title>
+</head><body>
+<h3>Option clash for package</h3>
+<p>So you&rsquo;ve innocently added:
+<blockquote>
+<code>\</code><code>usepackage[draft]{graphics}</code>
+</blockquote><p>
+to your document, and LaTeX responds with
+<blockquote>
+<pre>
+! LaTeX Error: Option clash for package graphics.
+</pre>
+</blockquote><p>
+
+<p>The error is a complaint about loading a package 
+<em>with options</em>, more than once (LaTeX doesn&rsquo;t actually examine
+what options there are: it complains because it can&rsquo;t do anything with
+the multiple sets of options).  You can load a package
+any number of times, with no options, and LaTeX will be happy, but
+you may only supply options when you first load the package.
+<p>So perhaps you weren&rsquo;t entirely innocent &mdash; the error would have
+occurred on the second line of:
+<blockquote>
+<code>\</code><code>usepackage[dvips]{graphics}</code><br>
+<code>\</code><code>usepackage[draft]{graphics}</code>
+</blockquote><p>
+which could quite reasonably (and indeed correctly) have been typed:
+<blockquote>
+<code>\</code><code>usepackage[dvips,draft]{graphics}</code>
+</blockquote><p>
+<p>But if you&rsquo;ve not made that mistake (even with several lines
+separating the <code>\</code><code>usepackage</code> commands, it&rsquo;s pretty easy to spot),
+the problem could arise from something else loading the package for
+you.  How do you find the culprit?  The "<code>h</code>" response to the
+error message tells you which options were loaded each time.
+Otherwise, it&rsquo;s down to the log analysis games discussed in 
+&ldquo;<a href="FAQ-erroradvice.html">How to approach errors</a>&rdquo;; the trick to remember
+is that that the process of loading each file is parenthesised in the
+log; so if package <i>foo</i> loads <i>graphics</i>, the log
+will contain something like:
+<blockquote>
+<pre>
+(&lt;path&gt;/foo.sty ...
+...
+(&lt;path&gt;/graphics.sty ...
+...)
+...
+)
+</pre>
+</blockquote><p>
+(the parentheses for <i>graphics</i> are completely enclosed in
+those for <i>foo</i>; the same is of course true if <i>bar</i> is
+the culprit, except that the line will start with the path to
+<code>bar.cls</code>).
+<p>If we&rsquo;re dealing with a package that loads the package you are
+interested in, you need to ask LaTeX to slip in options when
+<i>foo</i> loads it.  Instead of:
+<blockquote>
+<code>\</code><code>usepackage{foo}</code><br>
+<code>\</code><code>usepackage[draft]{graphics}</code>
+</blockquote><p>
+you would write:
+<blockquote>
+<code>\</code><code>PassOptionsToPackage{draft}{graphics}</code><br>
+<code>\</code><code>usepackage{foo}</code>
+</blockquote><p>
+The command <code>\</code><code>PassOptionsToPackage</code> tells LaTeX to behave as if
+its options were passed, when it finally loads a package.  As you would
+expect from its name, <code>\</code><code>PassOptionsToPackage</code> can deal with a list
+of options, just as you would have in the the options brackets of
+<code>\</code><code>usepackage</code>.
+<p>More trickily, instead of:
+<blockquote>
+<code>\</code><code>documentclass[...]{bar}</code><br>
+<code>\</code><code>usepackage[draft]{graphics}</code>
+</blockquote><p>
+you would write:
+<blockquote>
+<code>\</code><code>PassOptionsToPackage{draft}{graphics}</code><br>
+<code>\</code><code>documentclass[...]{bar}</code>
+</blockquote><p>
+with <code>\</code><code>PassOptionsToPackage</code> <em>before</em> the <code>\</code><code>documentclass</code>
+command.
+<p>However, if the <i>foo</i> package or the <i>bar</i> class loads
+<i>graphics</i> with an option of its own that clashes with
+what you need in some way, you&rsquo;re stymied.  For example:
+<blockquote>
+<code>\</code><code>PassOptionsToPackage{draft}{graphics}</code>
+</blockquote><p>
+where the package or class does:
+<blockquote>
+<code>\</code><code>usepackage[final]{graphics}</code>
+</blockquote><p>
+sets <code>final</code> <em>after</em> it&rsquo;s dealt with option you passed to
+it, so your <code>draft</code> will get forgotten.  In extreme cases,
+the package might generate an error here (<i>graphics</i> doesn&rsquo;t
+go in for that kind of thing, and there&rsquo;s no indication that
+<code>draft</code> has been forgotten).
+<p>In such a case, you have to modify the package or class itself
+(subject to the terms of its licence).  It may prove useful to contact
+the author: she may have a useful alternative to suggest.
+<p>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=optionclash">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=optionclash</a>
+</body>

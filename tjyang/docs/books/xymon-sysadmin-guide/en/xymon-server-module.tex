@@ -1,0 +1,429 @@
+\chapter{xymon Server Module Programming}
+\label{chap:xymon-server-module}
+
+While the core of Mercurial is quite complete from a functionality
+standpoint, it's deliberately shorn of fancy features.  This approach
+of preserving simplicity keeps the software easy to deal with for both
+maintainers and users.
+
+However, Mercurial doesn't box you in with an inflexible command set:
+you can add features to it as \emph{extensions} (sometimes known as
+\emph{plugins}).  We've already discussed a few of these extensions in
+earlier chapters.
+\begin{itemize}
+\item Section~\ref{sec:tour-merge:fetch} covers the \hgext{fetch}
+  extension; this combines pulling new changes and merging them with
+  local changes into a single command, \hgxcmd{fetch}{fetch}.
+\item In chapter~\ref{chap:adminfaq}, we covered several extensions that
+  are useful for hook-related functionality: \hgext{acl} adds access
+  control lists; \hgext{bugzilla} adds integration with the Bugzilla
+  bug tracking system; and \hgext{notify} sends notification emails on
+  new changes.
+\item The Mercurial Queues patch management extension is so invaluable
+  that it merits two chapters and an appendix all to itself.
+  Chapter~\ref{chap:mq} covers the basics;
+  chapter~\ref{chap:mq-collab} discusses advanced topics; and
+  appendix~\ref{chap:mqref} goes into detail on each command.
+\end{itemize}
+
+In this chapter, we'll cover some of the other extensions that are
+available for Mercurial, and briefly touch on some of the machinery
+you'll need to know about if you want to write an extension of your
+own.
+\begin{itemize}
+\item In section~\ref{sec:hgext:inotify}, we'll discuss the
+  possibility of \emph{huge} performance improvements using the
+  \hgext{inotify} extension.
+\end{itemize}
+
+\section{Improve performance with the \hgext{inotify} extension}
+\label{sec:hgext:inotify}
+
+Are you interested in having some of the most common Mercurial
+operations run as much as a hundred times faster?  Read on!
+
+Mercurial has great performance under normal circumstances.  For
+example, when you run the \hgcmd{status} command, Mercurial has to
+scan almost every directory and file in your repository so that it can
+display file status.  Many other Mercurial commands need to do the
+same work behind the scenes; for example, the \hgcmd{diff} command
+uses the status machinery to avoid doing an expensive comparison
+operation on files that obviously haven't changed.
+
+Because obtaining file status is crucial to good performance, the
+authors of Mercurial have optimised this code to within an inch of its
+life.  However, there's no avoiding the fact that when you run
+\hgcmd{status}, Mercurial is going to have to perform at least one
+expensive system call for each managed file to determine whether it's
+changed since the last time Mercurial checked.  For a sufficiently
+large repository, this can take a long time.
+
+To put a number on the magnitude of this effect, I created a
+repository containing 150,000 managed files.  I timed \hgcmd{status}
+as taking ten seconds to run, even when \emph{none} of those files had
+been modified.
+
+Many modern operating systems contain a file notification facility.
+If a program signs up to an appropriate service, the operating system
+will notify it every time a file of interest is created, modified, or
+deleted.  On Linux systems, the kernel component that does this is
+called \texttt{inotify}.
+
+Mercurial's \hgext{inotify} extension talks to the kernel's
+\texttt{inotify} component to optimise \hgcmd{status} commands.  The
+extension has two components.  A daemon sits in the background and
+receives notifications from the \texttt{inotify} subsystem.  It also
+listens for connections from a regular Mercurial command.  The
+extension modifies Mercurial's behaviour so that instead of scanning
+the filesystem, it queries the daemon.  Since the daemon has perfect
+information about the state of the repository, it can respond with a
+result instantaneously, avoiding the need to scan every directory and
+file in the repository.
+
+Recall the ten seconds that I measured plain Mercurial as taking to
+run \hgcmd{status} on a 150,000 file repository.  With the
+\hgext{inotify} extension enabled, the time dropped to 0.1~seconds, a
+factor of \emph{one hundred} faster.
+
+Before we continue, please pay attention to some caveats.
+\begin{itemize}
+\item The \hgext{inotify} extension is Linux-specific.  Because it
+  interfaces directly to the Linux kernel's \texttt{inotify}
+  subsystem, it does not work on other operating systems.
+\item It should work on any Linux distribution that was released after
+  early~2005.  Older distributions are likely to have a kernel that
+  lacks \texttt{inotify}, or a version of \texttt{glibc} that does not
+  have the necessary interfacing support.
+\item Not all filesystems are suitable for use with the
+  \hgext{inotify} extension.  Network filesystems such as NFS are a
+  non-starter, for example, particularly if you're running Mercurial
+  on several systems, all mounting the same network filesystem.  The
+  kernel's \texttt{inotify} system has no way of knowing about changes
+  made on another system.  Most local filesystems (e.g.~ext3, XFS,
+  ReiserFS) should work fine.
+\end{itemize}
+
+The \hgext{inotify} extension is not yet shipped with Mercurial as of
+May~2007, so it's a little more involved to set up than other
+extensions.  But the performance improvement is worth it!
+
+The extension currently comes in two parts: a set of patches to the
+Mercurial source code, and a library of Python bindings to the
+\texttt{inotify} subsystem.
+\begin{note}
+  There are \emph{two} Python \texttt{inotify} binding libraries.  One
+  of them is called \texttt{pyinotify}, and is packaged by some Linux
+  distributions as \texttt{python-inotify}.  This is \emph{not} the
+  one you'll need, as it is too buggy and inefficient to be practical.
+\end{note}
+To get going, it's best to already have a functioning copy of
+Mercurial installed.
+\begin{note}
+  If you follow the instructions below, you'll be \emph{replacing} and
+  overwriting any existing installation of Mercurial that you might
+  already have, using the latest ``bleeding edge'' Mercurial code.
+  Don't say you weren't warned!
+\end{note}
+\begin{enumerate}
+\item Clone the Python \texttt{inotify} binding repository.  Build and
+  install it.
+  \begin{codesample4}
+    hg clone http://hg.kublai.com/python/inotify
+    cd inotify
+    python setup.py build --force
+    sudo python setup.py install --skip-build
+  \end{codesample4}
+\item Clone the \dirname{crew} Mercurial repository.  Clone the
+  \hgext{inotify} patch repository so that Mercurial Queues will be
+  able to apply patches to your cope of the \dirname{crew} repository.
+  \begin{codesample4}
+    hg clone http://hg.intevation.org/mercurial/crew
+    hg clone crew inotify
+    hg clone http://hg.kublai.com/mercurial/patches/inotify inotify/.hg/patches
+  \end{codesample4}
+\item Make sure that you have the Mercurial Queues extension,
+  \hgext{mq}, enabled.  If you've never used MQ, read
+  section~\ref{sec:mq:start} to get started quickly.
+\item Go into the \dirname{inotify} repo, and apply all of the
+  \hgext{inotify} patches using the \hgxopt{mq}{qpush}{-a} option to
+  the \hgxcmd{mq}{qpush} command.
+  \begin{codesample4}
+    cd inotify
+    hg qpush -a
+  \end{codesample4}
+  If you get an error message from \hgxcmd{mq}{qpush}, you should not
+  continue.  Instead, ask for help.
+\item Build and install the patched version of Mercurial.
+  \begin{codesample4}
+    python setup.py build --force
+    sudo python setup.py install --skip-build
+  \end{codesample4}
+\end{enumerate}
+Once you've build a suitably patched version of Mercurial, all you
+need to do to enable the \hgext{inotify} extension is add an entry to
+your \hgrc.
+\begin{codesample2}
+  [extensions]
+  inotify =
+\end{codesample2}
+When the \hgext{inotify} extension is enabled, Mercurial will
+automatically and transparently start the status daemon the first time
+you run a command that needs status in a repository.  It runs one
+status daemon per repository.
+
+The status daemon is started silently, and runs in the background.  If
+you look at a list of running processes after you've enabled the
+\hgext{inotify} extension and run a few commands in different
+repositories, you'll thus see a few \texttt{hg} processes sitting
+around, waiting for updates from the kernel and queries from
+Mercurial.
+
+The first time you run a Mercurial command in a repository when you
+have the \hgext{inotify} extension enabled, it will run with about the
+same performance as a normal Mercurial command.  This is because the
+status daemon needs to perform a normal status scan so that it has a
+baseline against which to apply later updates from the kernel.
+However, \emph{every} subsequent command that does any kind of status
+check should be noticeably faster on repositories of even fairly
+modest size.  Better yet, the bigger your repository is, the greater a
+performance advantage you'll see.  The \hgext{inotify} daemon makes
+status operations almost instantaneous on repositories of all sizes!
+
+If you like, you can manually start a status daemon using the
+\hgxcmd{inotify}{inserve} command.  This gives you slightly finer
+control over how the daemon ought to run.  This command will of course
+only be available when the \hgext{inotify} extension is enabled.
+
+When you're using the \hgext{inotify} extension, you should notice
+\emph{no difference at all} in Mercurial's behaviour, with the sole
+exception of status-related commands running a whole lot faster than
+they used to.  You should specifically expect that commands will not
+print different output; neither should they give different results.
+If either of these situations occurs, please report a bug.
+
+\section{Flexible diff support with the \hgext{extdiff} extension}
+\label{sec:hgext:extdiff}
+
+Mercurial's built-in \hgcmd{diff} command outputs plaintext unified
+diffs.
+\interaction{extdiff.diff}
+If you would like to use an external tool to display modifications,
+you'll want to use the \hgext{extdiff} extension.  This will let you
+use, for example, a graphical diff tool.
+
+The \hgext{extdiff} extension is bundled with Mercurial, so it's easy
+to set up.  In the \rcsection{extensions} section of your \hgrc,
+simply add a one-line entry to enable the extension.
+\begin{codesample2}
+  [extensions]
+  extdiff =
+\end{codesample2}
+This introduces a command named \hgxcmd{extdiff}{extdiff}, which by
+default uses your system's \command{diff} command to generate a
+unified diff in the same form as the built-in \hgcmd{diff} command.
+\interaction{extdiff.extdiff}
+The result won't be exactly the same as with the built-in \hgcmd{diff}
+variations, because the output of \command{diff} varies from one
+system to another, even when passed the same options.
+
+As the ``\texttt{making snapshot}'' lines of output above imply, the
+\hgxcmd{extdiff}{extdiff} command works by creating two snapshots of
+your source tree.  The first snapshot is of the source revision; the
+second, of the target revision or working directory.  The
+\hgxcmd{extdiff}{extdiff} command generates these snapshots in a
+temporary directory, passes the name of each directory to an external
+diff viewer, then deletes the temporary directory.  For efficiency, it
+only snapshots the directories and files that have changed between the
+two revisions.
+
+Snapshot directory names have the same base name as your repository.
+If your repository path is \dirname{/quux/bar/foo}, then \dirname{foo}
+will be the name of each snapshot directory.  Each snapshot directory
+name has its changeset ID appended, if appropriate.  If a snapshot is
+of revision \texttt{a631aca1083f}, the directory will be named
+\dirname{foo.a631aca1083f}.  A snapshot of the working directory won't
+have a changeset ID appended, so it would just be \dirname{foo} in
+this example.  To see what this looks like in practice, look again at
+the \hgxcmd{extdiff}{extdiff} example above.  Notice that the diff has
+the snapshot directory names embedded in its header.
+
+The \hgxcmd{extdiff}{extdiff} command accepts two important options.
+The \hgxopt{extdiff}{extdiff}{-p} option lets you choose a program to
+view differences with, instead of \command{diff}.  With the
+\hgxopt{extdiff}{extdiff}{-o} option, you can change the options that
+\hgxcmd{extdiff}{extdiff} passes to the program (by default, these
+options are ``\texttt{-Npru}'', which only make sense if you're
+running \command{diff}).  In other respects, the
+\hgxcmd{extdiff}{extdiff} command acts similarly to the built-in
+\hgcmd{diff} command: you use the same option names, syntax, and
+arguments to specify the revisions you want, the files you want, and
+so on.
+
+As an example, here's how to run the normal system \command{diff}
+command, getting it to generate context diffs (using the
+\cmdopt{diff}{-c} option) instead of unified diffs, and five lines of
+context instead of the default three (passing \texttt{5} as the
+argument to the \cmdopt{diff}{-C} option).
+\interaction{extdiff.extdiff-ctx}
+
+Launching a visual diff tool is just as easy.  Here's how to launch
+the \command{kdiff3} viewer.
+\begin{codesample2}
+  hg extdiff -p kdiff3 -o ''
+\end{codesample2}
+
+If your diff viewing command can't deal with directories, you can
+easily work around this with a little scripting.  For an example of
+such scripting in action with the \hgext{mq} extension and the
+\command{interdiff} command, see
+section~\ref{mq-collab:tips:interdiff}.
+
+\section{Defining command aliases}
+
+It can be cumbersome to remember the options to both the
+\hgxcmd{extdiff}{extdiff} command and the diff viewer you want to use,
+so the \hgext{extdiff} extension lets you define \emph{new} commands
+that will invoke your diff viewer with exactly the right options.
+
+All you need to do is edit your \hgrc, and add a section named
+\rcsection{extdiff}.  Inside this section, you can define multiple
+commands.  Here's how to add a \texttt{kdiff3} command.  Once you've
+defined this, you can type ``\texttt{hg kdiff3}'' and the
+\hgext{extdiff} extension will run \command{kdiff3} for you.
+\begin{codesample2}
+  [extdiff]
+  cmd.kdiff3 =
+\end{codesample2}
+If you leave the right hand side of the definition empty, as above,
+the \hgext{extdiff} extension uses the name of the command you defined
+as the name of the external program to run.  But these names don't
+have to be the same.  Here, we define a command named ``\texttt{hg
+  wibble}'', which runs \command{kdiff3}.
+\begin{codesample2}
+  [extdiff]
+  cmd.wibble = kdiff3
+\end{codesample2}
+
+You can also specify the default options that you want to invoke your
+diff viewing program with.  The prefix to use is ``\texttt{opts.}'',
+followed by the name of the command to which the options apply.  This
+example defines a ``\texttt{hg vimdiff}'' command that runs the
+\command{vim} editor's \texttt{DirDiff} extension.
+\begin{codesample2}
+  [extdiff]  
+  cmd.vimdiff = vim
+  opts.vimdiff = -f '+next' '+execute "DirDiff" argv(0) argv(1)'
+\end{codesample2}
+
+\section{Cherrypicking changes with the \hgext{transplant} extension}
+\label{sec:hgext:transplant}
+
+Need to have a long chat with Brendan about this.
+
+\section{Send changes via email with the \hgext{patchbomb} extension}
+\label{sec:hgext:patchbomb}
+
+Many projects have a culture of ``change review'', in which people
+send their modifications to a mailing list for others to read and
+comment on before they commit the final version to a shared
+repository.  Some projects have people who act as gatekeepers; they
+apply changes from other people to a repository to which those others
+don't have access.
+
+Mercurial makes it easy to send changes over email for review or
+application, via its \hgext{patchbomb} extension.  The extension is so
+namd because changes are formatted as patches, and it's usual to send
+one changeset per email message.  Sending a long series of changes by
+email is thus much like ``bombing'' the recipient's inbox, hence
+``patchbomb''.
+
+As usual, the basic configuration of the \hgext{patchbomb} extension
+takes just one or two lines in your \hgrc.
+\begin{codesample2}
+  [extensions]
+  patchbomb =
+\end{codesample2}
+Once you've enabled the extension, you will have a new command
+available, named \hgxcmd{patchbomb}{email}.
+
+The safest and best way to invoke the \hgxcmd{patchbomb}{email}
+command is to \emph{always} run it first with the
+\hgxopt{patchbomb}{email}{-n} option.  This will show you what the
+command \emph{would} send, without actually sending anything.  Once
+you've had a quick glance over the changes and verified that you are
+sending the right ones, you can rerun the same command, with the
+\hgxopt{patchbomb}{email}{-n} option removed.
+
+The \hgxcmd{patchbomb}{email} command accepts the same kind of
+revision syntax as every other Mercurial command.  For example, this
+command will send every revision between 7 and \texttt{tip},
+inclusive.
+\begin{codesample2}
+  hg email -n 7:tip
+\end{codesample2}
+You can also specify a \emph{repository} to compare with.  If you
+provide a repository but no revisions, the \hgxcmd{patchbomb}{email}
+command will send all revisions in the local repository that are not
+present in the remote repository.  If you additionally specify
+revisions or a branch name (the latter using the
+\hgxopt{patchbomb}{email}{-b} option), this will constrain the
+revisions sent.
+
+It's perfectly safe to run the \hgxcmd{patchbomb}{email} command
+without the names of the people you want to send to: if you do this,
+it will just prompt you for those values interactively.  (If you're
+using a Linux or Unix-like system, you should have enhanced
+\texttt{readline}-style editing capabilities when entering those
+headers, too, which is useful.)
+
+When you are sending just one revision, the \hgxcmd{patchbomb}{email}
+command will by default use the first line of the changeset
+description as the subject of the single email message it sends.
+
+If you send multiple revisions, the \hgxcmd{patchbomb}{email} command
+will usually send one message per changeset.  It will preface the
+series with an introductory message, in which you should describe the
+purpose of the series of changes you're sending.
+
+\section{Changing the behaviour of patchbombs}
+
+Not every project has exactly the same conventions for sending changes
+in email; the \hgext{patchbomb} extension tries to accommodate a
+number of variations through command line options.
+\begin{itemize}
+\item You can write a subject for the introductory message on the
+  command line using the \hgxopt{patchbomb}{email}{-s} option.  This
+  takes one argument, the text of the subject to use.
+\item To change the email address from which the messages originate,
+  use the \hgxopt{patchbomb}{email}{-f} option.  This takes one
+  argument, the email address to use.
+\item The default behaviour is to send unified diffs (see
+  section~\ref{chap:userfaq} for a description of the format), one per
+  message.  You can send a binary bundle instead with the
+  \hgxopt{patchbomb}{email}{-b} option.  
+\item Unified diffs are normally prefaced with a metadata header.  You
+  can omit this, and send unadorned diffs, with the
+  \hgxopt{patchbomb}{email}{--plain} option.
+\item Diffs are normally sent ``inline'', in the same body part as the
+  description of a patch.  This makes it easiest for the largest
+  number of readers to quote and respond to parts of a diff, as some
+  mail clients will only quote the first MIME body part in a message.
+  If you'd prefer to send the description and the diff in separate
+  body parts, use the \hgxopt{patchbomb}{email}{-a} option.
+\item Instead of sending mail messages, you can write them to an
+  \texttt{mbox}-format mail folder using the
+  \hgxopt{patchbomb}{email}{-m} option.  That option takes one
+  argument, the name of the file to write to.
+\item If you would like to add a \command{diffstat}-format summary to
+  each patch, and one to the introductory message, use the
+  \hgxopt{patchbomb}{email}{-d} option.  The \command{diffstat}
+  command displays a table containing the name of each file patched,
+  the number of lines affected, and a histogram showing how much each
+  file is modified.  This gives readers a qualitative glance at how
+  complex a patch is.
+\end{itemize}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "00book"
+%%% End: 

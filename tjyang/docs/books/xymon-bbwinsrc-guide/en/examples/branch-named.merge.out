@@ -1,0 +1,14 @@
+$ \textbf{hg branch}
+bar
+$ \textbf{hg merge}
+abort: there is nothing to merge - use "hg update" instead
+$ \textbf{hg commit -m 'Merge'}
+nothing changed
+$ \textbf{hg tip}
+changeset:   
+branch:      bar
+tag:         tip
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+summary:     New file
+

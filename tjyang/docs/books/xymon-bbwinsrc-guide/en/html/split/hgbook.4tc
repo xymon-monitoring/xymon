@@ -1,0 +1,9 @@
+\expandafter\ifx\csname doTocEntry\endcsname\relax \expandafter\endinput\fi
+\doTocEntry\tocchapter{}{\csname a:TocLink\endcsname{1}{Q1-1-1}{}{Contents}}{i}\relax 
+\doTocEntry\toclikechapter{}{\csname a:TocLink\endcsname{2}{x2-1000}{QQ2-2-2}{Contents}}{2}\relax 
+\doTocEntry\toclikechapter{}{\csname a:TocLink\endcsname{3}{x3-2000}{QQ2-3-3}{List of Figures}}{1}\relax 
+\doTocEntry\toclikechapter{}{\csname a:TocLink\endcsname{4}{x4-3000}{QQ2-4-4}{Preface}}{4}\relax 
+\doTocEntry\tocchapter{}{\csname a:TocLink\endcsname{4}{Q1-4-5}{}{Preface}}{4}\relax 
+\doTocEntry\tocsection{0.1}{\csname a:TocLink\endcsname{4}{x4-40000.1}{QQ2-4-6}{This book is a work in progress}}{4}\relax 
+\doTocEntry\tocsection{0.2}{\csname a:TocLink\endcsname{4}{x4-50000.2}{QQ2-4-7}{About the examples in this book}}{4}\relax 
+\doTocEntry\tocsection{0.3}{\csname a:TocLink\endcsname{4}{x4-60000.3}{QQ2-4-8}{Colophon---this book is Free}}{4}\relax 

@@ -1,0 +1,47 @@
+<head>
+<title>UK TeX FAQ -- question label PSpreview</title>
+</head><body>
+<h3>Previewing files using Type 1 fonts</h3>
+<p>Until recently, free TeX previewers have only been capable of
+displaying bitmap PK fonts, but current versions of
+<i>xdvi</i> sport a Type 1 font renderer.
+
+
+
+
+
+<p>Other (free) previewers of the current generation offer automatic
+generation of the requisite PK files (using <i>gsftopk</i>,
+or similar, behind the scenes).  If your previewer isn&rsquo;t capable of
+this, you have three options:
+<ul>
+<li> Convert the DVI file to PostScript and use a
+  PostScript previewer.  Some systems offer this capability as
+  standard, but most people will need to use a separate previewer such
+  as <i>ghostscript</i> or <i>ghostscript</i>-based viewers
+  such as <i>ghostview</i> or shareware offering <i>GSview</i>.
+<li> Under Windows on a PC, or on a Macintosh, let Adobe Type Manager
+  display the fonts (textures, on the Macintosh, works like this).
+
+
+
+
+    (See <a href="FAQ-commercial.html">commercial suppliers</a> for details.)
+<li> If you have the PostScript fonts in Type 1 format,
+  use <i>ps2pk</i> or <i>gsftopk</i>
+  (designed for use with the <i>ghostscript</i> fonts) to make
+  PK bitmap fonts which your previewer 
+  will understand. This can produce excellent results, also suitable
+  for printing with non-PostScript devices. Check the legalities of
+  this if you have purchased the fonts.
+</ul>
+<dl>
+<dt><tt><i>ghostscript</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/support/ghostscript/">nonfree/support/ghostscript/</a>
+<dt><tt><i>ghostview</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/support/ghostscript/gnu/ghostview/">support/ghostscript/gnu/ghostview/</a>
+<dt><tt><i>gsftopk</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/gsftopk.zip">fonts/utilities/gsftopk</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/gsftopk.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/utilities/gsftopk/">browse</a>)
+<dt><tt><i>GSview</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/support/ghostscript/ghostgum/">nonfree/support/ghostscript/ghostgum/</a>
+<dt><tt><i>ps2pk</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/ps2pk.zip">fonts/utilities/ps2pk</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/utilities/ps2pk.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/utilities/ps2pk/">browse</a>)
+<dt><tt><i>xdvi</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/dviware/xdvi.zip">dviware/xdvi</a> (<a href="ftp://cam.ctan.org/tex-archive/dviware/xdvi.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/dviware/xdvi/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=PSpreview">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=PSpreview</a>
+</body>

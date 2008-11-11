@@ -1,0 +1,80 @@
+<head>
+<title>UK TeX FAQ -- question label ifpdf</title>
+</head><body>
+<h3>Am I using PDFTeX?</h3>
+<p>It&rsquo;s often useful to know whether your macros are operating within
+PDFTeX or within (&ldquo;normal&rdquo;) TeX; getting the right answer is
+surprisingly tricky.
+<p>Suppose you need to test whether your output will be PDF or
+DVI.  The natural thing is to check whether you have access to
+some PDFTeX-only primitive; a good one to try (not least because it
+was present in the very first releases of PDFTeX) is
+<code>\</code><code>pdfoutput</code>.  So you try
+<blockquote>
+<pre>
+\ifx\pdfoutput\undefined
+  &lt;not running PDFTeX&gt;
+\else
+  &lt;running PDFTeX&gt;
+\fi
+</pre>
+</blockquote><p>
+Except that neither branch of this conditional is rock-solid.  The
+first branch can be misleading, since the &ldquo;awkward&rdquo; user could have
+written:
+<blockquote>
+<pre>
+\let\pdfoutput\undefined
+</pre>
+</blockquote><p>
+so that your test will falsely choose the first alternative.  While
+this is a theoretical problem, it is unlikely to be a major one.
+<p>More important is the user who loads a package that uses
+LaTeX-style testing for the command name&rsquo;s existence (for example,
+the LaTeX <i>graphics</i> package, which is useful even to the
+Plain TeX user).  Such a package may have gone ahead of you, so the
+test may need to be elaborated:
+<blockquote>
+<pre>
+\ifx\pdfoutput\undefined
+  &lt;not running PDFTeX&gt;
+\else
+  \ifx\pdfoutput\relax
+    &lt;not running PDFTeX&gt;
+  \else
+    &lt;running PDFTeX&gt;
+  \fi
+\fi
+</pre>
+</blockquote><p>
+If you only want to know whether some PDFTeX extension (such as
+marginal kerning) is present, you can stop at this point: you know as
+much as you need.
+<p>However, if you need to know whether you&rsquo;re creating PDF
+output, you also need to know about the value of <code>\</code><code>pdfoutput</code>:
+<blockquote>
+<pre>
+\ifx\pdfoutput\undefined
+  &lt;not running PDFTeX&gt;
+\else
+  \ifx\pdfoutput\relax
+    &lt;not running PDFTeX&gt;
+  \else
+    &lt;running PDFTeX, with...&gt;
+    \ifnum\pdfoutput&gt;0
+      &lt;...PDF output&gt;
+    \else
+      &lt;...DVI output&gt;
+    \fi
+  \fi
+\fi
+</pre>
+</blockquote><p>
+The above is, in essence, what Heiko Oberdiek&rsquo;s <i>ifpdf</i>
+package does; the reasoning is the FAQ&rsquo;s interpretation of
+Heiko&rsquo;s explanation.
+<dl>
+<dt><tt><i>ifpdf.sty</i></tt><dd>Distributed with Heiko Oberdiek&rsquo;s packages <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/oberdiek.zip">macros/latex/contrib/oberdiek</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/oberdiek.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/oberdiek/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ifpdf">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=ifpdf</a>
+</body>

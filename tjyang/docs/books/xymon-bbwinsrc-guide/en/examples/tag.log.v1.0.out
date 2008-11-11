@@ -1,0 +1,10 @@
+$ \textbf{echo goodbye > myfile2}
+$ \textbf{hg commit -A -m 'Second commit'}
+adding myfile2
+$ \textbf{hg log -r v1.0}
+changeset:   
+tag:         v1.0
+user:        Bryan O'Sullivan <bos@serpentine.com>
+
+summary:     Initial commit
+

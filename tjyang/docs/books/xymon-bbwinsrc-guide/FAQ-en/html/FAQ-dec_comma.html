@@ -1,0 +1,25 @@
+<head>
+<title>UK TeX FAQ -- question label dec_comma</title>
+</head><body>
+<h3>The comma as a decimal separator</h3>
+<p>If you use a comma in maths mode, you get a small space after it; this
+space is inappropriate if the comma is being used as a decimal
+separator.  An easy solution to this problem, in maths
+mode, is to type <code>3</code><code>{,}</code><code>14</code> instead of typing
+<code>3,14</code>.  However, if your language&rsquo;s
+typographic rules require the comma as a decimal separator, such usage
+can rapidly become extremely tiresome.  There are two packages that
+can help relieve the tedium: <i>icomma</i> and <i>ziffer</i>.
+<p><i>Icomma</i> ensures that there will be no extra space after a
+comma, unless you type a space after it (as in <code>f(x, y)</code>, for
+instance), in which case the usual small space after the comma
+appears.  <i>Ziffer</i> is specifically targeted at the needs of
+those typesetting German, but covers the present need, as well as
+providing the double-minus sign used in German (and other languages)
+for the empty &lsquo;cents&rsquo; part of an amount of currency.
+<dl>
+<dt><tt><i>icomma.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/was.zip">macros/latex/contrib/was</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/was.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/was/">browse</a>)
+<dt><tt><i>ziffer.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/ziffer.sty">macros/latex/contrib/misc/ziffer.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dec_comma">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dec_comma</a>
+</body>

@@ -1,0 +1,10 @@
+$ \textbf{cat .hg/hgrc}
+[hooks]
+pretxncommit.msglen = test `hg tip --template \{desc\} | wc -c` -ge 10
+$ \textbf{echo a > a}
+$ \textbf{hg add a}
+$ \textbf{hg commit -A -m 'too short'}
+abort: pretxncommit.msglen hook exited with status 1
+transaction abort!
+rollback completed
+$ \textbf{hg commit -A -m 'long enough'}

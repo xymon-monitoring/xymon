@@ -1,0 +1,111 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Miscellanceours programs}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{HOBBITLAUNCH}
+ xymonlaunch - Master program to launch other xymon programs 
+
+ 
+\subsection{SYNOPSIS}
+\textbf{xymonlaunch [options]}
+
+
+ 
+\subsection{DESCRIPTION}
+\emph{xymonlaunch(8)} is the main program that controls the execution
+and scheduling of all of the components in the xymon system. 
+
+
+  xymonlaunch allows the administrator to add, remove or change the
+  set of xymon applications and extensions without restarting Xymon
+  - xymonlaunch will automatically notice any changes in the set of
+  tasks, and change the scheduling of activities accordingly. 
+
+
+
+  xymonlaunch also allows the administrator to setup specific
+  logfiles for each component of the xymon system, instead of getting
+  output from all components logged to a single file. 
+
+
+
+ 
+\subsection{OPTIONS}
+\begin{description}
+\item[--env=FILENAME] Loads the environment from FILENAME before
+  starting other tools. The environment defined by FILENAME is the
+  default, it can be overridden by the ENVFILE option in
+  \emph{xymonlaunch.cfg(5)}
+
+
+
+ 
+
+\item[--config=FILENAME] This option defines the file that
+  xymonlaunch scans for tasks it must launch. A description of this
+  file is in \emph{xymonlaunch.cfg(5)}
+
+ The default tasklist is /etc/xymonlaunch.cfg 
+
+ 
+
+\item[--log=FILENAME] Defines the logfile where xymonlaunch logs
+  information about failures to launch tasks and other data about the
+  operation of xymonlaunch. Logs from individual tasks are defined in
+  the xymonlaunch.cfg file. By default this is logged to stdout. 
+
+
+ 
+
+\item[--pidfile=FILENAME] Filename which xymonlaunch saves its own process-ID to. Commonly used by automated start/stop scripts. 
+
+ 
+
+\item[--verbose] Logs the launch of all tasks to the logfile. Note that the logfile may become quite large if you enable this. 
+
+ 
+
+\item[--dump] Just dump the contents of the xymonlaunch.cfg file after parsing it. Used for debugging. 
+
+ 
+
+\item[--debug] Enable debugging output while running. 
+
+ 
+
+\item[--no-daemon] xymonlaunch normally detaches from the controlling
+  tty and runs as a background task. This option keeps it running in
+  the foreground. 
+
+
+ 
+
+\end{description}
+
+\subsection{STARTING TASKS}  xymonlaunch will read the configuration
+ file and start all of the tasks listed there. 
+
+
+  If a task completes abnormally (i.e. terminated by a signal or with
+  a non-zero exit status), then xymonlaunch will attempt to restart
+  it 5 times. If it still will not run, then the task is disabled for
+  10 minutes. This will be logged to the xymonlaunch logfile. 
+
+
+  If the configuration file changes, xymonlaunch will re-read it and
+  notice any changes. If a running task was removed from the
+  configuration, then the task is stopped. If a new task was added, it
+  will be started. If the command used for a task changed, or it was
+  given a new environment definition file, or the logfile was changed,
+  then the task is stopped and restarted with the new definition. 
+
+
+
+ 
+\subsection{SEE ALSO}
+xymonlaunch.cfg(5), hobbit(7) 

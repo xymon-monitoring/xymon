@@ -1,0 +1,72 @@
+<head>
+<title>UK TeX FAQ -- question label changebars</title>
+</head><body>
+<h3>Marking changed parts of your document</h3>
+<p>One often needs clear indications of how a document has changed, but
+the commonest technique, &ldquo;change bars&rdquo; (also known as &ldquo;revision
+bars&rdquo;), requires surprisingly much
+trickery of the programmer (the problem being that TeX &lsquo;proper&rsquo;
+doesn&rsquo;t provide the programmer with any information about the
+&ldquo;current position&rdquo; from which a putative start- or end-point of a
+bar might be calculated; PDFTeX <em>does</em> provide the
+information, but we&rsquo;re not aware yet of any programmer taking
+advantage of the fact to write a PDFTeX-based changebar package).
+<p>The simplest package that offers change bars is Peter Schmitt&rsquo;s
+<i>backgrnd.tex</i>; this was written as a Plain TeX application
+that patches the output routine, but it appears to work at least on
+simple LaTeX documents.  Wise LaTeX users will be alerted by the
+information that <i>backgrnd</i> patches their output routine, and
+will watch its behaviour very carefully (patching the LaTeX output
+routine is not something to undertake lightly...).
+<p>The longest-established solution is the <i>changebar</i> package,
+which uses <code>\</code><code>special</code> commands supplied by the driver you&rsquo;re using.
+You need therefore to tell the package which driver to generate
+<code>\</code><code>special</code>s for (in the same way that you need to tell the
+<i>graphics</i> package); the list of available drivers is pretty
+wide, but does not include <i>dvipdfm</i>.  The package comes with
+a shell script <i>chbar.sh</i> (for use on Unix machines) that
+will compare two documents and generate a third which is marked-up
+with <i>changebar</i> macros to highlight changes.  The
+shareware <i>WinEDT</i> editor has a macro that will generate
+<i>changebar</i> (or other) macros to show differences from an
+earlier version of your file, stored in an
+<i>RCS</i>-controlled repository &mdash; see
+<a href="http://www.winedt.org/Macros/LaTeX/RCSdiff.php">http://www.winedt.org/Macros/LaTeX/RCSdiff.php</a>
+<p>The <i>vertbars</i> package uses the techniques of the
+<i>lineno</i> package (which it loads, so the <i>lineno</i>
+itself must be installed); it&rsquo;s thus the smallest of the packages for
+change bar marking, since it leaves all the trickery to another
+package.  <i>Vertbars</i> defines a <code>vertbar</code>
+environment to create changebars.
+<p>The <i>framed</i> package is
+another that provides bars as a side-effect of other desirable
+functionality: its <code>leftbar</code> environment is simply a
+stripped-down frame (note, though, that the environment makes a
+separate paragraph of its contents, so it is best used when the
+convention is to mark a whole changed paragraph.
+<p>Finally, the <i>memoir</i> class allows marginal editorial comments,
+which you can obviously use to delimit areas of changed text.
+<p>Another way to keep track of changes is employed by some
+word-processors &mdash; to produce a document that embodies both &ldquo;old&rdquo;
+and &ldquo;new&rdquo; versions.  The <i>Perl</i> script <i>latexdiff</i>
+does this for LaTeX documents; you feed it the two documents, and
+it produces a new LaTeX document in which the changes are very
+visible.  An example of the output is embedded in the documentation,
+
+  <a href="http://www.tex.ac.uk/tex-archive/support/latexdiff/latexdiff-man.pdf">latexdiff-man.pdf</a>
+  (part of the distribution).
+A rudimentary revision facility is provided by another
+<i>Perl</i> script, <i>latexrevise</i>, which accepts or rejects
+all changes.  Manual editing of the difference file can be used to 
+accept or reject selected changes only. 
+<dl>
+<dt><tt><i>backgrnd.tex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/generic/misc/backgrnd.tex">macros/generic/misc/backgrnd.tex</a>
+<dt><tt><i>changebar.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/changebar.zip">macros/latex/contrib/changebar</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/changebar.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/changebar/">browse</a>)
+<dt><tt><i>framed.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/framed.sty">macros/latex/contrib/misc/framed.sty</a>
+<dt><tt><i>latexdiff, latexrevise</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/latexdiff.zip">support/latexdiff</a> (<a href="ftp://cam.ctan.org/tex-archive/support/latexdiff.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/latexdiff/">browse</a>)
+<dt><tt><i>lineno.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/lineno.zip">macros/latex/contrib/lineno</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/lineno.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/lineno/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>vertbars.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/vertbars.sty">macros/latex/contrib/misc/vertbars.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=changebars">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=changebars</a>
+</body>

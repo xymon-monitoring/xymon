@@ -1,0 +1,692 @@
+\beamer@endinputifotherversion {3.06pt}
+\headcommand {\sectionentry {1}{Foreword}{1}{Foreword}{0}}
+\headcommand {\beamer@sectionpages {1}{0}}
+\headcommand {\beamer@subsectionpages {1}{0}}
+\headcommand {\slideentry {1}{0}{1}{1/1}{}{0}}
+\headcommand {\beamer@framepages {1}{1}}
+\headcommand {\sectionentry {2}{Title Page}{2}{Title Page}{0}}
+\headcommand {\beamer@sectionpages {1}{1}}
+\headcommand {\beamer@subsectionpages {1}{1}}
+\headcommand {\slideentry {2}{0}{2}{2/2}{}{0}}
+\headcommand {\beamer@framepages {2}{2}}
+\headcommand {\partentry {Hobbitmon Development Models}{1}}
+\headcommand {\beamer@partpages {1}{2}}
+\headcommand {\beamer@sectionpages {2}{2}}
+\headcommand {\beamer@subsectionpages {2}{2}}
+\headcommand {\slideentry {2}{0}{3}{3/3}{}{1}}
+\headcommand {\beamer@framepages {3}{3}}
+\headcommand {\sectionentry {3}{Current 2008 development}{4}{Current 2008 development}{1}}
+\headcommand {\beamer@sectionpages {3}{3}}
+\headcommand {\beamer@subsectionpages {3}{3}}
+\headcommand {\beamer@subsectionpages {4}{3}}
+\headcommand {\slideentry {3}{1}{1}{4/4}{Manually created configure and Makefile}{1}}
+\headcommand {\beamer@framepages {4}{4}}
+\headcommand {\slideentry {3}{1}{2}{5/5}{Manually created configure and Makefile}{1}}
+\headcommand {\beamer@framepages {5}{5}}
+\headcommand {\slideentry {3}{1}{3}{6/7}{Manually created configure and Makefile}{1}}
+\headcommand {\beamer@framepages {6}{7}}
+\headcommand {\slideentry {3}{1}{4}{8/8}{Manually created configure and Makefile}{1}}
+\headcommand {\beamer@framepages {8}{8}}
+\headcommand {\slideentry {3}{1}{5}{9/9}{Manually created configure and Makefile}{1}}
+\headcommand {\beamer@framepages {9}{9}}
+\headcommand {\slideentry {3}{1}{6}{10/10}{Manually created configure and Makefile}{1}}
+\headcommand {\beamer@framepages {10}{10}}
+\headcommand {\beamer@subsectionpages {4}{10}}
+\headcommand {\slideentry {3}{2}{1}{11/11}{GNU developement model}{1}}
+\headcommand {\beamer@framepages {11}{11}}
+\headcommand {\slideentry {3}{2}{2}{12/13}{GNU developement model}{1}}
+\headcommand {\beamer@framepages {12}{13}}
+\headcommand {\slideentry {3}{2}{3}{14/16}{GNU developement model}{1}}
+\headcommand {\beamer@framepages {14}{16}}
+\headcommand {\slideentry {3}{2}{4}{17/21}{GNU developement model}{1}}
+\headcommand {\beamer@framepages {17}{21}}
+\headcommand {\sectionentry {4}{New Hobbitmon Devevelopment Model}{22}{New Hobbitmon Devevelopment Model}{1}}
+\headcommand {\beamer@sectionpages {4}{21}}
+\headcommand {\beamer@subsectionpages {11}{21}}
+\headcommand {\beamer@subsectionpages {22}{21}}
+\headcommand {\slideentry {4}{1}{1}{22/22}{GNU Autotool model}{1}}
+\headcommand {\beamer@framepages {22}{22}}
+\headcommand {\slideentry {4}{1}{2}{23/31}{GNU Autotool model}{1}}
+\headcommand {\beamer@framepages {23}{31}}
+\headcommand {\slideentry {4}{1}{3}{32/32}{GNU Autotool model}{1}}
+\headcommand {\beamer@framepages {32}{32}}
+\headcommand {\slideentry {4}{1}{4}{33/36}{GNU Autotool model}{1}}
+\headcommand {\beamer@framepages {33}{36}}
+\headcommand {\slideentry {4}{1}{5}{37/38}{GNU Autotool model}{1}}
+\headcommand {\beamer@framepages {37}{38}}
+\headcommand {\beamer@subsectionpages {22}{38}}
+\headcommand {\slideentry {4}{2}{1}{39/39}{TWW's CPAM to complete GNU autotool}{1}}
+\headcommand {\beamer@framepages {39}{39}}
+\headcommand {\slideentry {4}{2}{2}{40/42}{TWW's CPAM to complete GNU autotool}{1}}
+\headcommand {\beamer@framepages {40}{42}}
+\headcommand {\slideentry {4}{2}{3}{43/48}{TWW's CPAM to complete GNU autotool}{1}}
+\headcommand {\beamer@framepages {43}{48}}
+\headcommand {\slideentry {4}{2}{4}{49/53}{TWW's CPAM to complete GNU autotool}{1}}
+\headcommand {\beamer@framepages {49}{53}}
+\headcommand {\slideentry {4}{2}{5}{54/56}{TWW's CPAM to complete GNU autotool}{1}}
+\headcommand {\beamer@framepages {54}{56}}
+\headcommand {\slideentry {4}{2}{6}{57/62}{TWW's CPAM to complete GNU autotool}{1}}
+\headcommand {\beamer@framepages {57}{62}}
+\headcommand {\slideentry {4}{2}{7}{63/65}{TWW's CPAM to complete GNU autotool}{1}}
+\headcommand {\beamer@framepages {63}{65}}
+\headcommand {\beamer@subsectionpages {39}{65}}
+\headcommand {\slideentry {4}{3}{1}{66/66}{The Packager Point of View}{1}}
+\headcommand {\beamer@framepages {66}{66}}
+\headcommand {\slideentry {4}{3}{2}{67/70}{The Packager Point of View}{1}}
+\headcommand {\beamer@framepages {67}{70}}
+\headcommand {\beamer@subsectionpages {66}{70}}
+\headcommand {\slideentry {4}{4}{1}{71/71}{The Maintainer Point of View}{1}}
+\headcommand {\beamer@framepages {71}{71}}
+\headcommand {\slideentry {4}{4}{2}{72/73}{The Maintainer Point of View}{1}}
+\headcommand {\beamer@framepages {72}{73}}
+\headcommand {\slideentry {4}{4}{3}{74/75}{The Maintainer Point of View}{1}}
+\headcommand {\beamer@framepages {74}{75}}
+\headcommand {\slideentry {4}{4}{4}{76/78}{The Maintainer Point of View}{1}}
+\headcommand {\beamer@framepages {76}{78}}
+\headcommand {\sectionentry {5}{The configure Process}{79}{The configure Process}{1}}
+\headcommand {\beamer@sectionpages {22}{78}}
+\headcommand {\beamer@subsectionpages {71}{78}}
+\headcommand {\slideentry {5}{0}{5}{79/79}{}{1}}
+\headcommand {\beamer@framepages {79}{79}}
+\headcommand {\slideentry {5}{0}{6}{80/81}{}{1}}
+\headcommand {\beamer@framepages {80}{81}}
+\headcommand {\slideentry {5}{0}{7}{82/86}{}{1}}
+\headcommand {\beamer@framepages {82}{86}}
+\headcommand {\sectionentry {6}{Why Hobbitmon developers Need autotools }{87}{Why Hobbitmon developers Need autotools }{1}}
+\headcommand {\beamer@sectionpages {79}{86}}
+\headcommand {\beamer@subsectionpages {79}{86}}
+\headcommand {\slideentry {6}{0}{8}{87/87}{}{1}}
+\headcommand {\beamer@framepages {87}{87}}
+\headcommand {\slideentry {6}{0}{9}{88/93}{}{1}}
+\headcommand {\beamer@framepages {88}{93}}
+\headcommand {\partentry {GNU Autotools}{2}}
+\headcommand {\beamer@partpages {3}{93}}
+\headcommand {\beamer@sectionpages {87}{93}}
+\headcommand {\beamer@subsectionpages {87}{93}}
+\headcommand {\slideentry {6}{0}{10}{94/94}{}{2}}
+\headcommand {\beamer@framepages {94}{94}}
+\headcommand {\sectionentry {7}{Hello World}{95}{Hello World}{2}}
+\headcommand {\beamer@sectionpages {94}{94}}
+\headcommand {\beamer@subsectionpages {94}{94}}
+\headcommand {\slideentry {7}{0}{11}{95/95}{}{2}}
+\headcommand {\beamer@framepages {95}{95}}
+\headcommand {\slideentry {7}{0}{12}{96/96}{}{2}}
+\headcommand {\beamer@framepages {96}{96}}
+\headcommand {\slideentry {7}{0}{13}{97/101}{}{2}}
+\headcommand {\beamer@framepages {97}{101}}
+\headcommand {\slideentry {7}{0}{14}{102/104}{}{2}}
+\headcommand {\beamer@framepages {102}{104}}
+\headcommand {\slideentry {7}{0}{15}{105/118}{}{2}}
+\headcommand {\beamer@framepages {105}{118}}
+\headcommand {\sectionentry {8}{Introducing Core Autotools}{119}{Introducing Core Autotools}{2}}
+\headcommand {\beamer@sectionpages {95}{118}}
+\headcommand {\beamer@subsectionpages {95}{118}}
+\headcommand {\slideentry {8}{0}{16}{119/119}{}{2}}
+\headcommand {\beamer@framepages {119}{119}}
+\headcommand {\slideentry {8}{0}{17}{120/130}{}{2}}
+\headcommand {\beamer@framepages {120}{130}}
+\headcommand {\slideentry {8}{0}{18}{131/140}{}{2}}
+\headcommand {\beamer@framepages {131}{140}}
+\headcommand {\slideentry {8}{0}{19}{141/142}{}{2}}
+\headcommand {\beamer@framepages {141}{142}}
+\headcommand {\sectionentry {9}{Hello World Explained}{143}{Hello World Explained}{2}}
+\headcommand {\beamer@sectionpages {119}{142}}
+\headcommand {\beamer@subsectionpages {119}{142}}
+\headcommand {\slideentry {9}{0}{20}{143/143}{}{2}}
+\headcommand {\beamer@framepages {143}{143}}
+\headcommand {\slideentry {9}{0}{21}{144/146}{}{2}}
+\headcommand {\beamer@framepages {144}{146}}
+\headcommand {\slideentry {9}{0}{22}{147/148}{}{2}}
+\headcommand {\beamer@framepages {147}{148}}
+\headcommand {\slideentry {9}{0}{23}{149/153}{}{2}}
+\headcommand {\beamer@framepages {149}{153}}
+\headcommand {\slideentry {9}{0}{24}{154/155}{}{2}}
+\headcommand {\beamer@framepages {154}{155}}
+\headcommand {\slideentry {9}{0}{25}{156/157}{}{2}}
+\headcommand {\beamer@framepages {156}{157}}
+\headcommand {\slideentry {9}{0}{26}{158/158}{}{2}}
+\headcommand {\beamer@framepages {158}{158}}
+\headcommand {\slideentry {9}{0}{27}{159/161}{}{2}}
+\headcommand {\beamer@framepages {159}{161}}
+\headcommand {\sectionentry {10}{Using Autoconf}{162}{Using Autoconf}{2}}
+\headcommand {\beamer@sectionpages {143}{161}}
+\headcommand {\beamer@subsectionpages {143}{161}}
+\headcommand {\slideentry {10}{0}{28}{162/162}{}{2}}
+\headcommand {\beamer@framepages {162}{162}}
+\headcommand {\slideentry {10}{0}{29}{163/166}{}{2}}
+\headcommand {\beamer@framepages {163}{166}}
+\headcommand {\slideentry {10}{0}{30}{167/191}{}{2}}
+\headcommand {\beamer@framepages {167}{191}}
+\headcommand {\slideentry {10}{0}{31}{192/221}{}{2}}
+\headcommand {\beamer@framepages {192}{221}}
+\headcommand {\slideentry {10}{0}{32}{222/246}{}{2}}
+\headcommand {\beamer@framepages {222}{246}}
+\headcommand {\slideentry {10}{0}{33}{247/250}{}{2}}
+\headcommand {\beamer@framepages {247}{250}}
+\headcommand {\slideentry {10}{0}{34}{251/255}{}{2}}
+\headcommand {\beamer@framepages {251}{255}}
+\headcommand {\slideentry {10}{0}{35}{256/261}{}{2}}
+\headcommand {\beamer@framepages {256}{261}}
+\headcommand {\slideentry {10}{0}{36}{262/265}{}{2}}
+\headcommand {\beamer@framepages {262}{265}}
+\headcommand {\slideentry {10}{0}{37}{266/266}{}{2}}
+\headcommand {\beamer@framepages {266}{266}}
+\headcommand {\slideentry {10}{0}{38}{267/268}{}{2}}
+\headcommand {\beamer@framepages {267}{268}}
+\headcommand {\slideentry {10}{0}{39}{269/272}{}{2}}
+\headcommand {\beamer@framepages {269}{272}}
+\headcommand {\slideentry {10}{0}{40}{273/275}{}{2}}
+\headcommand {\beamer@framepages {273}{275}}
+\headcommand {\slideentry {10}{0}{41}{276/278}{}{2}}
+\headcommand {\beamer@framepages {276}{278}}
+\headcommand {\slideentry {10}{0}{42}{279/282}{}{2}}
+\headcommand {\beamer@framepages {279}{282}}
+\headcommand {\slideentry {10}{0}{43}{283/289}{}{2}}
+\headcommand {\beamer@framepages {283}{289}}
+\headcommand {\slideentry {10}{0}{44}{290/293}{}{2}}
+\headcommand {\beamer@framepages {290}{293}}
+\headcommand {\sectionentry {11}{Using Automake}{294}{Using Automake}{2}}
+\headcommand {\beamer@sectionpages {162}{293}}
+\headcommand {\beamer@subsectionpages {162}{293}}
+\headcommand {\slideentry {11}{0}{45}{294/294}{}{2}}
+\headcommand {\beamer@framepages {294}{294}}
+\headcommand {\slideentry {11}{0}{46}{295/302}{}{2}}
+\headcommand {\beamer@framepages {295}{302}}
+\headcommand {\slideentry {11}{0}{47}{303/303}{}{2}}
+\headcommand {\beamer@framepages {303}{303}}
+\headcommand {\slideentry {11}{0}{48}{304/304}{}{2}}
+\headcommand {\beamer@framepages {304}{304}}
+\headcommand {\slideentry {11}{0}{49}{305/306}{}{2}}
+\headcommand {\beamer@framepages {305}{306}}
+\headcommand {\slideentry {11}{0}{50}{307/309}{}{2}}
+\headcommand {\beamer@framepages {307}{309}}
+\headcommand {\slideentry {11}{0}{51}{310/310}{}{2}}
+\headcommand {\beamer@framepages {310}{310}}
+\headcommand {\slideentry {11}{0}{52}{311/315}{}{2}}
+\headcommand {\beamer@framepages {311}{315}}
+\headcommand {\slideentry {11}{0}{53}{316/322}{}{2}}
+\headcommand {\beamer@framepages {316}{322}}
+\headcommand {\slideentry {11}{0}{54}{323/328}{}{2}}
+\headcommand {\beamer@framepages {323}{328}}
+\headcommand {\slideentry {11}{0}{55}{329/336}{}{2}}
+\headcommand {\beamer@framepages {329}{336}}
+\headcommand {\slideentry {11}{0}{56}{337/337}{}{2}}
+\headcommand {\beamer@framepages {337}{337}}
+\headcommand {\slideentry {11}{0}{57}{338/338}{}{2}}
+\headcommand {\beamer@framepages {338}{338}}
+\headcommand {\slideentry {11}{0}{58}{339/342}{}{2}}
+\headcommand {\beamer@framepages {339}{342}}
+\headcommand {\slideentry {11}{0}{59}{343/348}{}{2}}
+\headcommand {\beamer@framepages {343}{348}}
+\headcommand {\slideentry {11}{0}{60}{349/351}{}{2}}
+\headcommand {\beamer@framepages {349}{351}}
+\headcommand {\slideentry {11}{0}{61}{352/352}{}{2}}
+\headcommand {\beamer@framepages {352}{352}}
+\headcommand {\slideentry {11}{0}{62}{353/353}{}{2}}
+\headcommand {\beamer@framepages {353}{353}}
+\headcommand {\slideentry {11}{0}{63}{354/358}{}{2}}
+\headcommand {\beamer@framepages {354}{358}}
+\headcommand {\slideentry {11}{0}{64}{359/366}{}{2}}
+\headcommand {\beamer@framepages {359}{366}}
+\headcommand {\slideentry {11}{0}{65}{367/368}{}{2}}
+\headcommand {\beamer@framepages {367}{368}}
+\headcommand {\slideentry {11}{0}{66}{369/373}{}{2}}
+\headcommand {\beamer@framepages {369}{373}}
+\headcommand {\slideentry {11}{0}{67}{374/376}{}{2}}
+\headcommand {\beamer@framepages {374}{376}}
+\headcommand {\slideentry {11}{0}{68}{377/379}{}{2}}
+\headcommand {\beamer@framepages {377}{379}}
+\headcommand {\partentry {More Autotools}{3}}
+\headcommand {\beamer@partpages {94}{379}}
+\headcommand {\beamer@sectionpages {294}{379}}
+\headcommand {\beamer@subsectionpages {294}{379}}
+\headcommand {\slideentry {11}{0}{69}{380/380}{}{3}}
+\headcommand {\beamer@framepages {380}{380}}
+\headcommand {\sectionentry {12}{Writing and Managing Custom Macros}{381}{Writing and Managing Custom Macros}{3}}
+\headcommand {\beamer@sectionpages {380}{380}}
+\headcommand {\beamer@subsectionpages {380}{380}}
+\headcommand {\beamer@subsectionpages {381}{380}}
+\headcommand {\slideentry {12}{1}{1}{381/381}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {381}{381}}
+\headcommand {\slideentry {12}{1}{2}{382/384}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {382}{384}}
+\headcommand {\slideentry {12}{1}{3}{385/387}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {385}{387}}
+\headcommand {\slideentry {12}{1}{4}{388/390}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {388}{390}}
+\headcommand {\slideentry {12}{1}{5}{391/396}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {391}{396}}
+\headcommand {\slideentry {12}{1}{6}{397/401}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {397}{401}}
+\headcommand {\slideentry {12}{1}{7}{402/402}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {402}{402}}
+\headcommand {\slideentry {12}{1}{8}{403/403}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {403}{403}}
+\headcommand {\slideentry {12}{1}{9}{404/407}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {404}{407}}
+\headcommand {\slideentry {12}{1}{10}{408/410}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {408}{410}}
+\headcommand {\slideentry {12}{1}{11}{411/415}{Writing Autoconf Macros}{3}}
+\headcommand {\beamer@framepages {411}{415}}
+\headcommand {\beamer@subsectionpages {381}{415}}
+\headcommand {\slideentry {12}{2}{1}{416/416}{Managing Custom Macros with `\texttt {aclocal}'}{3}}
+\headcommand {\beamer@framepages {416}{416}}
+\headcommand {\slideentry {12}{2}{2}{417/419}{Managing Custom Macros with `\texttt {aclocal}'}{3}}
+\headcommand {\beamer@framepages {417}{419}}
+\headcommand {\slideentry {12}{2}{3}{420/420}{Managing Custom Macros with `\texttt {aclocal}'}{3}}
+\headcommand {\beamer@framepages {420}{420}}
+\headcommand {\slideentry {12}{2}{4}{421/421}{Managing Custom Macros with `\texttt {aclocal}'}{3}}
+\headcommand {\beamer@framepages {421}{421}}
+\headcommand {\slideentry {12}{2}{5}{422/425}{Managing Custom Macros with `\texttt {aclocal}'}{3}}
+\headcommand {\beamer@framepages {422}{425}}
+\headcommand {\sectionentry {13}{Libtool}{426}{Libtool}{3}}
+\headcommand {\beamer@sectionpages {381}{425}}
+\headcommand {\beamer@subsectionpages {416}{425}}
+\headcommand {\slideentry {13}{0}{6}{426/426}{}{3}}
+\headcommand {\beamer@framepages {426}{426}}
+\headcommand {\slideentry {13}{0}{7}{427/431}{}{3}}
+\headcommand {\beamer@framepages {427}{431}}
+\headcommand {\slideentry {13}{0}{8}{432/434}{}{3}}
+\headcommand {\beamer@framepages {432}{434}}
+\headcommand {\slideentry {13}{0}{9}{435/437}{}{3}}
+\headcommand {\beamer@framepages {435}{437}}
+\headcommand {\slideentry {13}{0}{10}{438/438}{}{3}}
+\headcommand {\beamer@framepages {438}{438}}
+\headcommand {\slideentry {13}{0}{11}{439/439}{}{3}}
+\headcommand {\beamer@framepages {439}{439}}
+\headcommand {\slideentry {13}{0}{12}{440/440}{}{3}}
+\headcommand {\beamer@framepages {440}{440}}
+\headcommand {\slideentry {13}{0}{13}{441/447}{}{3}}
+\headcommand {\beamer@framepages {441}{447}}
+\headcommand {\slideentry {13}{0}{14}{448/451}{}{3}}
+\headcommand {\beamer@framepages {448}{451}}
+\headcommand {\slideentry {13}{0}{15}{452/454}{}{3}}
+\headcommand {\beamer@framepages {452}{454}}
+\headcommand {\slideentry {13}{0}{16}{455/459}{}{3}}
+\headcommand {\beamer@framepages {455}{459}}
+\headcommand {\slideentry {13}{0}{17}{460/463}{}{3}}
+\headcommand {\beamer@framepages {460}{463}}
+\headcommand {\slideentry {13}{0}{18}{464/466}{}{3}}
+\headcommand {\beamer@framepages {464}{466}}
+\headcommand {\slideentry {13}{0}{19}{467/467}{}{3}}
+\headcommand {\beamer@framepages {467}{467}}
+\headcommand {\sectionentry {14}{Gettext}{468}{Gettext}{3}}
+\headcommand {\beamer@sectionpages {426}{467}}
+\headcommand {\beamer@subsectionpages {426}{467}}
+\headcommand {\beamer@subsectionpages {468}{467}}
+\headcommand {\slideentry {14}{1}{1}{468/468}{Introducing Gettext}{3}}
+\headcommand {\beamer@framepages {468}{468}}
+\headcommand {\slideentry {14}{1}{2}{469/476}{Introducing Gettext}{3}}
+\headcommand {\beamer@framepages {469}{476}}
+\headcommand {\slideentry {14}{1}{3}{477/479}{Introducing Gettext}{3}}
+\headcommand {\beamer@framepages {477}{479}}
+\headcommand {\beamer@subsectionpages {468}{479}}
+\headcommand {\slideentry {14}{2}{1}{480/480}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {480}{480}}
+\headcommand {\slideentry {14}{2}{2}{481/481}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {481}{481}}
+\headcommand {\slideentry {14}{2}{3}{482/482}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {482}{482}}
+\headcommand {\slideentry {14}{2}{4}{483/483}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {483}{483}}
+\headcommand {\slideentry {14}{2}{5}{484/486}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {484}{486}}
+\headcommand {\slideentry {14}{2}{6}{487/489}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {487}{489}}
+\headcommand {\slideentry {14}{2}{7}{490/490}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {490}{490}}
+\headcommand {\slideentry {14}{2}{8}{491/493}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {491}{493}}
+\headcommand {\slideentry {14}{2}{9}{494/495}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {494}{495}}
+\headcommand {\slideentry {14}{2}{10}{496/500}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {496}{500}}
+\headcommand {\slideentry {14}{2}{11}{501/503}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {501}{503}}
+\headcommand {\slideentry {14}{2}{12}{504/506}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {504}{506}}
+\headcommand {\slideentry {14}{2}{13}{507/508}{Internationalizing a Package, Start to Finish}{3}}
+\headcommand {\beamer@framepages {507}{508}}
+\headcommand {\beamer@subsectionpages {480}{508}}
+\headcommand {\slideentry {14}{3}{1}{509/509}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {509}{509}}
+\headcommand {\slideentry {14}{3}{2}{510/511}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {510}{511}}
+\headcommand {\slideentry {14}{3}{3}{512/516}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {512}{516}}
+\headcommand {\slideentry {14}{3}{4}{517/518}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {517}{518}}
+\headcommand {\slideentry {14}{3}{5}{519/519}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {519}{519}}
+\headcommand {\slideentry {14}{3}{6}{520/521}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {520}{521}}
+\headcommand {\slideentry {14}{3}{7}{522/523}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {522}{523}}
+\headcommand {\slideentry {14}{3}{8}{524/525}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {524}{525}}
+\headcommand {\slideentry {14}{3}{9}{526/529}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {526}{529}}
+\headcommand {\slideentry {14}{3}{10}{530/531}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {530}{531}}
+\headcommand {\slideentry {14}{3}{11}{532/539}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {532}{539}}
+\headcommand {\slideentry {14}{3}{12}{540/543}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {540}{543}}
+\headcommand {\slideentry {14}{3}{13}{544/546}{Localizing a Package}{3}}
+\headcommand {\beamer@framepages {544}{546}}
+\headcommand {\sectionentry {15}{Nested Packages}{547}{Nested Packages}{3}}
+\headcommand {\beamer@sectionpages {468}{546}}
+\headcommand {\beamer@subsectionpages {509}{546}}
+\headcommand {\slideentry {15}{0}{14}{547/547}{}{3}}
+\headcommand {\beamer@framepages {547}{547}}
+\headcommand {\slideentry {15}{0}{15}{548/548}{}{3}}
+\headcommand {\beamer@framepages {548}{548}}
+\headcommand {\slideentry {15}{0}{16}{549/551}{}{3}}
+\headcommand {\beamer@framepages {549}{551}}
+\headcommand {\slideentry {15}{0}{17}{552/552}{}{3}}
+\headcommand {\beamer@framepages {552}{552}}
+\headcommand {\sectionentry {16}{The End}{553}{The End}{3}}
+\headcommand {\beamer@sectionpages {547}{552}}
+\headcommand {\beamer@subsectionpages {547}{552}}
+\headcommand {\slideentry {16}{0}{18}{553/553}{}{3}}
+\headcommand {\beamer@framepages {553}{553}}
+\headcommand {\slideentry {16}{0}{19}{554/556}{}{3}}
+\headcommand {\beamer@framepages {554}{556}}
+\headcommand {\partentry {GNU Autotools}{4}}
+\headcommand {\beamer@partpages {380}{556}}
+\headcommand {\beamer@sectionpages {553}{556}}
+\headcommand {\beamer@subsectionpages {553}{556}}
+\headcommand {\slideentry {16}{0}{20}{557/557}{}{4}}
+\headcommand {\beamer@framepages {557}{557}}
+\headcommand {\sectionentry {17}{Hello World}{558}{Hello World}{4}}
+\headcommand {\beamer@sectionpages {557}{557}}
+\headcommand {\beamer@subsectionpages {557}{557}}
+\headcommand {\slideentry {17}{0}{21}{558/558}{}{4}}
+\headcommand {\beamer@framepages {558}{558}}
+\headcommand {\slideentry {17}{0}{22}{559/559}{}{4}}
+\headcommand {\beamer@framepages {559}{559}}
+\headcommand {\slideentry {17}{0}{23}{560/564}{}{4}}
+\headcommand {\beamer@framepages {560}{564}}
+\headcommand {\slideentry {17}{0}{24}{565/567}{}{4}}
+\headcommand {\beamer@framepages {565}{567}}
+\headcommand {\slideentry {17}{0}{25}{568/581}{}{4}}
+\headcommand {\beamer@framepages {568}{581}}
+\headcommand {\sectionentry {18}{Introducing Core Autotools}{582}{Introducing Core Autotools}{4}}
+\headcommand {\beamer@sectionpages {558}{581}}
+\headcommand {\beamer@subsectionpages {558}{581}}
+\headcommand {\slideentry {18}{0}{26}{582/582}{}{4}}
+\headcommand {\beamer@framepages {582}{582}}
+\headcommand {\slideentry {18}{0}{27}{583/593}{}{4}}
+\headcommand {\beamer@framepages {583}{593}}
+\headcommand {\slideentry {18}{0}{28}{594/603}{}{4}}
+\headcommand {\beamer@framepages {594}{603}}
+\headcommand {\slideentry {18}{0}{29}{604/605}{}{4}}
+\headcommand {\beamer@framepages {604}{605}}
+\headcommand {\sectionentry {19}{Hello World Explained}{606}{Hello World Explained}{4}}
+\headcommand {\beamer@sectionpages {582}{605}}
+\headcommand {\beamer@subsectionpages {582}{605}}
+\headcommand {\slideentry {19}{0}{30}{606/606}{}{4}}
+\headcommand {\beamer@framepages {606}{606}}
+\headcommand {\slideentry {19}{0}{31}{607/609}{}{4}}
+\headcommand {\beamer@framepages {607}{609}}
+\headcommand {\slideentry {19}{0}{32}{610/611}{}{4}}
+\headcommand {\beamer@framepages {610}{611}}
+\headcommand {\slideentry {19}{0}{33}{612/616}{}{4}}
+\headcommand {\beamer@framepages {612}{616}}
+\headcommand {\slideentry {19}{0}{34}{617/618}{}{4}}
+\headcommand {\beamer@framepages {617}{618}}
+\headcommand {\slideentry {19}{0}{35}{619/620}{}{4}}
+\headcommand {\beamer@framepages {619}{620}}
+\headcommand {\slideentry {19}{0}{36}{621/621}{}{4}}
+\headcommand {\beamer@framepages {621}{621}}
+\headcommand {\slideentry {19}{0}{37}{622/624}{}{4}}
+\headcommand {\beamer@framepages {622}{624}}
+\headcommand {\sectionentry {20}{Using Autoconf}{625}{Using Autoconf}{4}}
+\headcommand {\beamer@sectionpages {606}{624}}
+\headcommand {\beamer@subsectionpages {606}{624}}
+\headcommand {\slideentry {20}{0}{38}{625/625}{}{4}}
+\headcommand {\beamer@framepages {625}{625}}
+\headcommand {\slideentry {20}{0}{39}{626/629}{}{4}}
+\headcommand {\beamer@framepages {626}{629}}
+\headcommand {\slideentry {20}{0}{40}{630/654}{}{4}}
+\headcommand {\beamer@framepages {630}{654}}
+\headcommand {\slideentry {20}{0}{41}{655/684}{}{4}}
+\headcommand {\beamer@framepages {655}{684}}
+\headcommand {\slideentry {20}{0}{42}{685/709}{}{4}}
+\headcommand {\beamer@framepages {685}{709}}
+\headcommand {\slideentry {20}{0}{43}{710/713}{}{4}}
+\headcommand {\beamer@framepages {710}{713}}
+\headcommand {\slideentry {20}{0}{44}{714/718}{}{4}}
+\headcommand {\beamer@framepages {714}{718}}
+\headcommand {\slideentry {20}{0}{45}{719/724}{}{4}}
+\headcommand {\beamer@framepages {719}{724}}
+\headcommand {\slideentry {20}{0}{46}{725/728}{}{4}}
+\headcommand {\beamer@framepages {725}{728}}
+\headcommand {\slideentry {20}{0}{47}{729/729}{}{4}}
+\headcommand {\beamer@framepages {729}{729}}
+\headcommand {\slideentry {20}{0}{48}{730/731}{}{4}}
+\headcommand {\beamer@framepages {730}{731}}
+\headcommand {\slideentry {20}{0}{49}{732/735}{}{4}}
+\headcommand {\beamer@framepages {732}{735}}
+\headcommand {\slideentry {20}{0}{50}{736/738}{}{4}}
+\headcommand {\beamer@framepages {736}{738}}
+\headcommand {\slideentry {20}{0}{51}{739/741}{}{4}}
+\headcommand {\beamer@framepages {739}{741}}
+\headcommand {\slideentry {20}{0}{52}{742/745}{}{4}}
+\headcommand {\beamer@framepages {742}{745}}
+\headcommand {\slideentry {20}{0}{53}{746/752}{}{4}}
+\headcommand {\beamer@framepages {746}{752}}
+\headcommand {\slideentry {20}{0}{54}{753/756}{}{4}}
+\headcommand {\beamer@framepages {753}{756}}
+\headcommand {\sectionentry {21}{Using Automake}{757}{Using Automake}{4}}
+\headcommand {\beamer@sectionpages {625}{756}}
+\headcommand {\beamer@subsectionpages {625}{756}}
+\headcommand {\slideentry {21}{0}{55}{757/757}{}{4}}
+\headcommand {\beamer@framepages {757}{757}}
+\headcommand {\slideentry {21}{0}{56}{758/765}{}{4}}
+\headcommand {\beamer@framepages {758}{765}}
+\headcommand {\slideentry {21}{0}{57}{766/766}{}{4}}
+\headcommand {\beamer@framepages {766}{766}}
+\headcommand {\slideentry {21}{0}{58}{767/767}{}{4}}
+\headcommand {\beamer@framepages {767}{767}}
+\headcommand {\slideentry {21}{0}{59}{768/769}{}{4}}
+\headcommand {\beamer@framepages {768}{769}}
+\headcommand {\slideentry {21}{0}{60}{770/772}{}{4}}
+\headcommand {\beamer@framepages {770}{772}}
+\headcommand {\slideentry {21}{0}{61}{773/773}{}{4}}
+\headcommand {\beamer@framepages {773}{773}}
+\headcommand {\slideentry {21}{0}{62}{774/778}{}{4}}
+\headcommand {\beamer@framepages {774}{778}}
+\headcommand {\slideentry {21}{0}{63}{779/785}{}{4}}
+\headcommand {\beamer@framepages {779}{785}}
+\headcommand {\slideentry {21}{0}{64}{786/791}{}{4}}
+\headcommand {\beamer@framepages {786}{791}}
+\headcommand {\slideentry {21}{0}{65}{792/799}{}{4}}
+\headcommand {\beamer@framepages {792}{799}}
+\headcommand {\slideentry {21}{0}{66}{800/800}{}{4}}
+\headcommand {\beamer@framepages {800}{800}}
+\headcommand {\slideentry {21}{0}{67}{801/801}{}{4}}
+\headcommand {\beamer@framepages {801}{801}}
+\headcommand {\slideentry {21}{0}{68}{802/805}{}{4}}
+\headcommand {\beamer@framepages {802}{805}}
+\headcommand {\slideentry {21}{0}{69}{806/811}{}{4}}
+\headcommand {\beamer@framepages {806}{811}}
+\headcommand {\slideentry {21}{0}{70}{812/814}{}{4}}
+\headcommand {\beamer@framepages {812}{814}}
+\headcommand {\slideentry {21}{0}{71}{815/815}{}{4}}
+\headcommand {\beamer@framepages {815}{815}}
+\headcommand {\slideentry {21}{0}{72}{816/816}{}{4}}
+\headcommand {\beamer@framepages {816}{816}}
+\headcommand {\slideentry {21}{0}{73}{817/821}{}{4}}
+\headcommand {\beamer@framepages {817}{821}}
+\headcommand {\slideentry {21}{0}{74}{822/829}{}{4}}
+\headcommand {\beamer@framepages {822}{829}}
+\headcommand {\slideentry {21}{0}{75}{830/831}{}{4}}
+\headcommand {\beamer@framepages {830}{831}}
+\headcommand {\slideentry {21}{0}{76}{832/836}{}{4}}
+\headcommand {\beamer@framepages {832}{836}}
+\headcommand {\slideentry {21}{0}{77}{837/839}{}{4}}
+\headcommand {\beamer@framepages {837}{839}}
+\headcommand {\slideentry {21}{0}{78}{840/842}{}{4}}
+\headcommand {\beamer@framepages {840}{842}}
+\headcommand {\partentry {More Autotools}{5}}
+\headcommand {\beamer@partpages {557}{842}}
+\headcommand {\beamer@sectionpages {757}{842}}
+\headcommand {\beamer@subsectionpages {757}{842}}
+\headcommand {\slideentry {21}{0}{79}{843/843}{}{5}}
+\headcommand {\beamer@framepages {843}{843}}
+\headcommand {\sectionentry {22}{Writing and Managing Custom Macros}{844}{Writing and Managing Custom Macros}{5}}
+\headcommand {\beamer@sectionpages {843}{843}}
+\headcommand {\beamer@subsectionpages {843}{843}}
+\headcommand {\beamer@subsectionpages {844}{843}}
+\headcommand {\slideentry {22}{1}{1}{844/844}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {844}{844}}
+\headcommand {\slideentry {22}{1}{2}{845/847}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {845}{847}}
+\headcommand {\slideentry {22}{1}{3}{848/850}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {848}{850}}
+\headcommand {\slideentry {22}{1}{4}{851/853}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {851}{853}}
+\headcommand {\slideentry {22}{1}{5}{854/859}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {854}{859}}
+\headcommand {\slideentry {22}{1}{6}{860/864}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {860}{864}}
+\headcommand {\slideentry {22}{1}{7}{865/865}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {865}{865}}
+\headcommand {\slideentry {22}{1}{8}{866/866}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {866}{866}}
+\headcommand {\slideentry {22}{1}{9}{867/870}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {867}{870}}
+\headcommand {\slideentry {22}{1}{10}{871/873}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {871}{873}}
+\headcommand {\slideentry {22}{1}{11}{874/878}{Writing Autoconf Macros}{5}}
+\headcommand {\beamer@framepages {874}{878}}
+\headcommand {\beamer@subsectionpages {844}{878}}
+\headcommand {\slideentry {22}{2}{1}{879/879}{Managing Custom Macros with `\texttt {aclocal}'}{5}}
+\headcommand {\beamer@framepages {879}{879}}
+\headcommand {\slideentry {22}{2}{2}{880/882}{Managing Custom Macros with `\texttt {aclocal}'}{5}}
+\headcommand {\beamer@framepages {880}{882}}
+\headcommand {\slideentry {22}{2}{3}{883/883}{Managing Custom Macros with `\texttt {aclocal}'}{5}}
+\headcommand {\beamer@framepages {883}{883}}
+\headcommand {\slideentry {22}{2}{4}{884/884}{Managing Custom Macros with `\texttt {aclocal}'}{5}}
+\headcommand {\beamer@framepages {884}{884}}
+\headcommand {\slideentry {22}{2}{5}{885/888}{Managing Custom Macros with `\texttt {aclocal}'}{5}}
+\headcommand {\beamer@framepages {885}{888}}
+\headcommand {\sectionentry {23}{Libtool}{889}{Libtool}{5}}
+\headcommand {\beamer@sectionpages {844}{888}}
+\headcommand {\beamer@subsectionpages {879}{888}}
+\headcommand {\slideentry {23}{0}{6}{889/889}{}{5}}
+\headcommand {\beamer@framepages {889}{889}}
+\headcommand {\slideentry {23}{0}{7}{890/894}{}{5}}
+\headcommand {\beamer@framepages {890}{894}}
+\headcommand {\slideentry {23}{0}{8}{895/897}{}{5}}
+\headcommand {\beamer@framepages {895}{897}}
+\headcommand {\slideentry {23}{0}{9}{898/900}{}{5}}
+\headcommand {\beamer@framepages {898}{900}}
+\headcommand {\slideentry {23}{0}{10}{901/901}{}{5}}
+\headcommand {\beamer@framepages {901}{901}}
+\headcommand {\slideentry {23}{0}{11}{902/902}{}{5}}
+\headcommand {\beamer@framepages {902}{902}}
+\headcommand {\slideentry {23}{0}{12}{903/903}{}{5}}
+\headcommand {\beamer@framepages {903}{903}}
+\headcommand {\slideentry {23}{0}{13}{904/910}{}{5}}
+\headcommand {\beamer@framepages {904}{910}}
+\headcommand {\slideentry {23}{0}{14}{911/914}{}{5}}
+\headcommand {\beamer@framepages {911}{914}}
+\headcommand {\slideentry {23}{0}{15}{915/917}{}{5}}
+\headcommand {\beamer@framepages {915}{917}}
+\headcommand {\slideentry {23}{0}{16}{918/922}{}{5}}
+\headcommand {\beamer@framepages {918}{922}}
+\headcommand {\slideentry {23}{0}{17}{923/926}{}{5}}
+\headcommand {\beamer@framepages {923}{926}}
+\headcommand {\slideentry {23}{0}{18}{927/929}{}{5}}
+\headcommand {\beamer@framepages {927}{929}}
+\headcommand {\slideentry {23}{0}{19}{930/930}{}{5}}
+\headcommand {\beamer@framepages {930}{930}}
+\headcommand {\sectionentry {24}{Gettext}{931}{Gettext}{5}}
+\headcommand {\beamer@sectionpages {889}{930}}
+\headcommand {\beamer@subsectionpages {889}{930}}
+\headcommand {\beamer@subsectionpages {931}{930}}
+\headcommand {\slideentry {24}{1}{1}{931/931}{Introducing Gettext}{5}}
+\headcommand {\beamer@framepages {931}{931}}
+\headcommand {\slideentry {24}{1}{2}{932/939}{Introducing Gettext}{5}}
+\headcommand {\beamer@framepages {932}{939}}
+\headcommand {\slideentry {24}{1}{3}{940/942}{Introducing Gettext}{5}}
+\headcommand {\beamer@framepages {940}{942}}
+\headcommand {\beamer@subsectionpages {931}{942}}
+\headcommand {\slideentry {24}{2}{1}{943/943}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {943}{943}}
+\headcommand {\slideentry {24}{2}{2}{944/944}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {944}{944}}
+\headcommand {\slideentry {24}{2}{3}{945/945}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {945}{945}}
+\headcommand {\slideentry {24}{2}{4}{946/946}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {946}{946}}
+\headcommand {\slideentry {24}{2}{5}{947/949}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {947}{949}}
+\headcommand {\slideentry {24}{2}{6}{950/952}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {950}{952}}
+\headcommand {\slideentry {24}{2}{7}{953/953}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {953}{953}}
+\headcommand {\slideentry {24}{2}{8}{954/956}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {954}{956}}
+\headcommand {\slideentry {24}{2}{9}{957/958}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {957}{958}}
+\headcommand {\slideentry {24}{2}{10}{959/963}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {959}{963}}
+\headcommand {\slideentry {24}{2}{11}{964/966}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {964}{966}}
+\headcommand {\slideentry {24}{2}{12}{967/969}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {967}{969}}
+\headcommand {\slideentry {24}{2}{13}{970/971}{Internationalizing a Package, Start to Finish}{5}}
+\headcommand {\beamer@framepages {970}{971}}
+\headcommand {\beamer@subsectionpages {943}{971}}
+\headcommand {\slideentry {24}{3}{1}{972/972}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {972}{972}}
+\headcommand {\slideentry {24}{3}{2}{973/974}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {973}{974}}
+\headcommand {\slideentry {24}{3}{3}{975/979}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {975}{979}}
+\headcommand {\slideentry {24}{3}{4}{980/981}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {980}{981}}
+\headcommand {\slideentry {24}{3}{5}{982/982}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {982}{982}}
+\headcommand {\slideentry {24}{3}{6}{983/984}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {983}{984}}
+\headcommand {\slideentry {24}{3}{7}{985/986}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {985}{986}}
+\headcommand {\slideentry {24}{3}{8}{987/988}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {987}{988}}
+\headcommand {\slideentry {24}{3}{9}{989/992}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {989}{992}}
+\headcommand {\slideentry {24}{3}{10}{993/994}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {993}{994}}
+\headcommand {\slideentry {24}{3}{11}{995/1002}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {995}{1002}}
+\headcommand {\slideentry {24}{3}{12}{1003/1006}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {1003}{1006}}
+\headcommand {\slideentry {24}{3}{13}{1007/1009}{Localizing a Package}{5}}
+\headcommand {\beamer@framepages {1007}{1009}}
+\headcommand {\sectionentry {25}{Nested Packages}{1010}{Nested Packages}{5}}
+\headcommand {\beamer@sectionpages {931}{1009}}
+\headcommand {\beamer@subsectionpages {972}{1009}}
+\headcommand {\slideentry {25}{0}{14}{1010/1010}{}{5}}
+\headcommand {\beamer@framepages {1010}{1010}}
+\headcommand {\slideentry {25}{0}{15}{1011/1011}{}{5}}
+\headcommand {\beamer@framepages {1011}{1011}}
+\headcommand {\slideentry {25}{0}{16}{1012/1014}{}{5}}
+\headcommand {\beamer@framepages {1012}{1014}}
+\headcommand {\slideentry {25}{0}{17}{1015/1015}{}{5}}
+\headcommand {\beamer@framepages {1015}{1015}}
+\headcommand {\sectionentry {26}{The End}{1016}{The End}{5}}
+\headcommand {\beamer@sectionpages {1010}{1015}}
+\headcommand {\beamer@subsectionpages {1010}{1015}}
+\headcommand {\slideentry {26}{0}{18}{1016/1016}{}{5}}
+\headcommand {\beamer@framepages {1016}{1016}}
+\headcommand {\slideentry {26}{0}{19}{1017/1019}{}{5}}
+\headcommand {\beamer@framepages {1017}{1019}}
+\headcommand {\beamer@partpages {843}{1019}}
+\headcommand {\beamer@subsectionpages {1016}{1019}}
+\headcommand {\beamer@sectionpages {1016}{1019}}
+\headcommand {\beamer@documentpages {1019}}
+\headcommand {\def \inserttotalframenumber {286}}

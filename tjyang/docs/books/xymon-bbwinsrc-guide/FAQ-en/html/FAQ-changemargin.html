@@ -1,0 +1,37 @@
+<head>
+<title>UK TeX FAQ -- question label changemargin</title>
+</head><body>
+<h3>Changing the margins in LaTeX</h3>
+<p>Changing the layout of a document&rsquo;s text on the page involves several
+subtleties not often realised by the beginner.  There are interactions
+between fundamental TeX constraints, constraints related to the
+design of LaTeX, and good typesetting and design practice, that
+mean that any change must be very carefully considered, both to ensure
+that it &ldquo;works&rdquo; and to ensure that the result is pleasing to the
+eye.
+<p>LaTeX&rsquo;s defaults sometimes seem excessively conservative,
+but there are sound reasons behind how Lamport designed the layouts
+themselves, whatever one may feel about his overall design.  For
+example, the common request for &ldquo;one-inch margins all round on A4
+paper&rdquo; is fine for 10- or 12-pitch typewriters, but not for 10pt (or
+even 11pt or 12pt) type because readers find such wide, dense, lines
+difficult to read.  There should ideally be no more than 75 characters
+per line (though the constraints change for two-column text).
+<p>So Lamport&rsquo;s warning to beginners in his section on &lsquo;Customizing the
+Style&rsquo; &mdash; &ldquo;don&rsquo;t do it&rdquo; &mdash; should not lightly be ignored.
+<p>This set of FAQs recommends that you use a package to establish
+consistent settings of the parameters: the interrelationships are
+taken care of in the established packages, without you needing to
+think about them, but 
+<p>The following answers deal with the ways one may choose to proceed:
+<ul>
+<li> <a href="FAQ-marginpkgs.html">Choose which package to use</a>.
+<li> <a href="FAQ-marginmanual.html">Find advice on setting up page layout by hand</a>.
+</ul>
+There is a related question &mdash; how to change the layout
+temporarily &mdash; and there&rsquo;s an answer that covers that, too:
+<ul>
+<li> <a href="FAQ-chngmargonfly.html">Change the margins on the fly</a>.
+</ul>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=changemargin">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=changemargin</a>
+</body>

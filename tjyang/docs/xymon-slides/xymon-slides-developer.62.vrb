@@ -1,0 +1,20 @@
+\frametitle {The Structure of a \filenamew{configure.ac}}
+
+\begin{block}{\filenamew{configure.ac}}
+\begin{semiverbatim}
+# Prelude.
+AC_INIT([\only<all:1>{\variable{PACKAGE}}\only<all:2->{\alert<2>{amhello}}], [\only<all:1>{\variable{VERSION}}\only<all:2->{\alert<2>{1.0}}], [\only<all:1>{\variable{BUG-REPORT-ADDRESS}}\only<all:2->{\alert<2>{bug-report@address}}])
+\uncover<3->{\alert<3>{AM_INIT_AUTOMAKE([-Wall -Werror foreign])}}
+# \textsf{Checks for programs.}
+\uncover<4->{\alert<4>{AC_PROG_CC}}
+# \textsf{Checks for libraries.}
+# \textsf{Checks for header files.}
+# \textsf{Checks for typedefs, structures, and compiler characteristics.}
+# \textsf{Checks for library functions.}
+# \textsf{Output files.}
+\uncover<6->{\alert<6>{AC_CONFIG_HEADERS([config.h])}}
+AC_CONFIG_FILES([\only<all:-4>{\variable{FILES}}\only<all:5->{\alert<5>{Makefile src/Makefile}}])
+AC_OUTPUT
+\end{semiverbatim}
+\end{block}
+

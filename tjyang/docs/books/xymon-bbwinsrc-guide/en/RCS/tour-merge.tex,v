@@ -1,0 +1,306 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@% @;
+
+
+1.1
+date	2008.02.09.00.31.31;	author tjyang;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@\chapter{A tour of Mercurial: merging work}
+\label{chap:tour-merge}
+
+We've now covered cloning a repository, making changes in a
+repository, and pulling or pushing changes from one repository into
+another.  Our next step is \emph{merging} changes from separate
+repositories.
+
+\section{Merging streams of work}
+
+Merging is a fundamental part of working with a distributed revision
+control tool.
+\begin{itemize}
+\item Alice and Bob each have a personal copy of a repository for a
+  project they're collaborating on.  Alice fixes a bug in her
+  repository; Bob adds a new feature in his.  They want the shared
+  repository to contain both the bug fix and the new feature.
+\item I frequently work on several different tasks for a single
+  project at once, each safely isolated in its own repository.
+  Working this way means that I often need to merge one piece of my
+  own work with another.
+\end{itemize}
+
+Because merging is such a common thing to need to do, Mercurial makes
+it easy.  Let's walk through the process.  We'll begin by cloning yet
+another repository (see how often they spring up?) and making a change
+in it.
+\interaction{tour.merge.clone}
+We should now have two copies of \filename{hello.c} with different
+contents.  The histories of the two repositories have also diverged,
+as illustrated in figure~\ref{fig:tour-merge:sep-repos}.
+\interaction{tour.merge.cat}
+
+\begin{figure}[ht]
+  \centering
+  \grafix{tour-merge-sep-repos}
+  \caption{Divergent recent histories of the \dirname{my-hello} and
+    \dirname{my-new-hello} repositories}
+  \label{fig:tour-merge:sep-repos}
+\end{figure}
+
+We already know that pulling changes from our \dirname{my-hello}
+repository will have no effect on the working directory.
+\interaction{tour.merge.pull}
+However, the \hgcmd{pull} command says something about ``heads''.  
+
+\subsection{Head changesets}
+
+A head is a change that has no descendants, or children, as they're
+also known.  The tip revision is thus a head, because the newest
+revision in a repository doesn't have any children, but a repository
+can contain more than one head.
+
+\begin{figure}[ht]
+  \centering
+  \grafix{tour-merge-pull}
+  \caption{Repository contents after pulling from \dirname{my-hello} into
+    \dirname{my-new-hello}}
+  \label{fig:tour-merge:pull}
+\end{figure}
+
+In figure~\ref{fig:tour-merge:pull}, you can see the effect of the
+pull from \dirname{my-hello} into \dirname{my-new-hello}.  The history
+that was already present in \dirname{my-new-hello} is untouched, but a
+new revision has been added.  By referring to
+figure~\ref{fig:tour-merge:sep-repos}, we can see that the
+\emph{changeset ID} remains the same in the new repository, but the
+\emph{revision number} has changed.  (This, incidentally, is a fine
+example of why it's not safe to use revision numbers when discussing
+changesets.)  We can view the heads in a repository using the
+\hgcmd{heads} command.
+\interaction{tour.merge.heads}
+
+\subsection{Performing the merge}
+
+What happens if we try to use the normal \hgcmd{update} command to
+update to the new tip?
+\interaction{tour.merge.update}
+Mercurial is telling us that the \hgcmd{update} command won't do a
+merge; it won't update the working directory when it thinks we might
+be wanting to do a merge, unless we force it to do so.  Instead, we
+use the \hgcmd{merge} command to merge the two heads.
+\interaction{tour.merge.merge}
+
+\begin{figure}[ht]
+  \centering
+  \grafix{tour-merge-merge}
+  \caption{Working directory and repository during merge, and
+    following commit}
+  \label{fig:tour-merge:merge}
+\end{figure}
+
+This updates the working directory so that it contains changes from
+\emph{both} heads, which is reflected in both the output of
+\hgcmd{parents} and the contents of \filename{hello.c}.
+\interaction{tour.merge.parents}
+
+\subsection{Committing the results of the merge}
+
+Whenever we've done a merge, \hgcmd{parents} will display two parents
+until we \hgcmd{commit} the results of the merge.
+\interaction{tour.merge.commit}
+We now have a new tip revision; notice that it has \emph{both} of
+our former heads as its parents.  These are the same revisions that
+were previously displayed by \hgcmd{parents}.
+\interaction{tour.merge.tip}
+In figure~\ref{fig:tour-merge:merge}, you can see a representation of
+what happens to the working directory during the merge, and how this
+affects the repository when the commit happens.  During the merge, the
+working directory has two parent changesets, and these become the
+parents of the new changeset.
+
+\section{Merging conflicting changes}
+
+Most merges are simple affairs, but sometimes you'll find yourself
+merging changes where each modifies the same portions of the same
+files.  Unless both modifications are identical, this results in a
+\emph{conflict}, where you have to decide how to reconcile the
+different changes into something coherent.
+
+\begin{figure}[ht]
+  \centering
+  \grafix{tour-merge-conflict}
+  \caption{Conflicting changes to a document}
+  \label{fig:tour-merge:conflict}
+\end{figure}
+
+Figure~\ref{fig:tour-merge:conflict} illustrates an instance of two
+conflicting changes to a document.  We started with a single version
+of the file; then we made some changes; while someone else made
+different changes to the same text.  Our task in resolving the
+conflicting changes is to decide what the file should look like.
+
+Mercurial doesn't have a built-in facility for handling conflicts.
+Instead, it runs an external program called \command{hgmerge}.  This
+is a shell script that is bundled with Mercurial; you can change it to
+behave however you please.  What it does by default is try to find one
+of several different merging tools that are likely to be installed on
+your system.  It first tries a few fully automatic merging tools; if
+these don't succeed (because the resolution process requires human
+guidance) or aren't present, the script tries a few different
+graphical merging tools.
+
+It's also possible to get Mercurial to run another program or script
+instead of \command{hgmerge}, by setting the \envar{HGMERGE}
+environment variable to the name of your preferred program.
+
+\subsection{Using a graphical merge tool}
+
+My preferred graphical merge tool is \command{kdiff3}, which I'll use
+to describe the features that are common to graphical file merging
+tools.  You can see a screenshot of \command{kdiff3} in action in
+figure~\ref{fig:tour-merge:kdiff3}.  The kind of merge it is
+performing is called a \emph{three-way merge}, because there are three
+different versions of the file of interest to us.  The tool thus
+splits the upper portion of the window into three panes:
+\begin{itemize}
+\item At the left is the \emph{base} version of the file, i.e.~the
+  most recent version from which the two versions we're trying to
+  merge are descended.
+\item In the middle is ``our'' version of the file, with the contents
+  that we modified.
+\item On the right is ``their'' version of the file, the one that
+  from the changeset that we're trying to merge with.
+\end{itemize}
+In the pane below these is the current \emph{result} of the merge.
+Our task is to replace all of the red text, which indicates unresolved
+conflicts, with some sensible merger of the ``ours'' and ``theirs''
+versions of the file.
+
+All four of these panes are \emph{locked together}; if we scroll
+vertically or horizontally in any of them, the others are updated to
+display the corresponding sections of their respective files.
+
+\begin{figure}[ht]
+  \centering
+  \grafix{kdiff3}
+  \caption{Using \command{kdiff3} to merge versions of a file}
+  \label{fig:tour-merge:kdiff3}
+\end{figure}
+
+For each conflicting portion of the file, we can choose to resolve
+the conflict using some combination of text from the base version,
+ours, or theirs.  We can also manually edit the merged file at any
+time, in case we need to make further modifications.
+
+There are \emph{many} file merging tools available, too many to cover
+here.  They vary in which platforms they are available for, and in
+their particular strengths and weaknesses.  Most are tuned for merging
+files containing plain text, while a few are aimed at specialised file
+formats (generally XML).
+
+\subsection{A worked example}
+
+In this example, we will reproduce the file modification history of
+figure~\ref{fig:tour-merge:conflict} above.  Let's begin by creating a
+repository with a base version of our document.
+\interaction{tour-merge-conflict.wife}
+We'll clone the repository and make a change to the file.
+\interaction{tour-merge-conflict.cousin}
+And another clone, to simulate someone else making a change to the
+file.  (This hints at the idea that it's not all that unusual to merge
+with yourself when you isolate tasks in separate repositories, and
+indeed to find and resolve conflicts while doing so.)
+\interaction{tour-merge-conflict.son}
+Having created two different versions of the file, we'll set up an
+environment suitable for running our merge.
+\interaction{tour-merge-conflict.pull}
+
+In this example, I won't use Mercurial's normal \command{hgmerge}
+program to do the merge, because it would drop my nice automated
+example-running tool into a graphical user interface.  Instead, I'll
+set \envar{HGMERGE} to tell Mercurial to use the non-interactive
+\command{merge} command.  This is bundled with many Unix-like systems.
+If you're following this example on your computer, don't bother
+setting \envar{HGMERGE}.
+\interaction{tour-merge-conflict.merge}
+Because \command{merge} can't resolve the conflicting changes, it
+leaves \emph{merge markers} inside the file that has conflicts,
+indicating which lines have conflicts, and whether they came from our
+version of the file or theirs.
+
+Mercurial can tell from the way \command{merge} exits that it wasn't
+able to merge successfully, so it tells us what commands we'll need to
+run if we want to redo the merging operation.  This could be useful
+if, for example, we were running a graphical merge tool and quit
+because we were confused or realised we had made a mistake.
+
+If automatic or manual merges fail, there's nothing to prevent us from
+``fixing up'' the affected files ourselves, and committing the results
+of our merge:
+\interaction{tour-merge-conflict.commit}
+
+\section{Simplifying the pull-merge-commit sequence}
+\label{sec:tour-merge:fetch}
+
+The process of merging changes as outlined above is straightforward,
+but requires running three commands in sequence.
+\begin{codesample2}
+  hg pull
+  hg merge
+  hg commit -m 'Merged remote changes'
+\end{codesample2}
+In the case of the final commit, you also need to enter a commit
+message, which is almost always going to be a piece of uninteresting
+``boilerplate'' text.
+
+It would be nice to reduce the number of steps needed, if this were
+possible.  Indeed, Mercurial is distributed with an extension called
+\hgext{fetch} that does just this.
+
+Mercurial provides a flexible extension mechanism that lets people
+extend its functionality, while keeping the core of Mercurial small
+and easy to deal with.  Some extensions add new commands that you can
+use from the command line, while others work ``behind the scenes,''
+for example adding capabilities to the server.
+
+The \hgext{fetch} extension adds a new command called, not
+surprisingly, \hgcmd{fetch}.  This extension acts as a combination of
+\hgcmd{pull}, \hgcmd{update} and \hgcmd{merge}.  It begins by pulling
+changes from another repository into the current repository.  If it
+finds that the changes added a new head to the repository, it begins a
+merge, then commits the result of the merge with an
+automatically-generated commit message.  If no new heads were added,
+it updates the working directory to the new tip changeset.
+
+Enabling the \hgext{fetch} extension is easy.  Edit your
+\sfilename{.hgrc}, and either go to the \rcsection{extensions} section
+or create an \rcsection{extensions} section.  Then add a line that
+simply reads ``\Verb+fetch +''.
+\begin{codesample2}
+  [extensions]
+  fetch =
+\end{codesample2}
+(Normally, on the right-hand side of the ``\texttt{=}'' would appear
+the location of the extension, but since the \hgext{fetch} extension
+is in the standard distribution, Mercurial knows where to search for
+it.)
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "00book"
+%%% End: 
+@

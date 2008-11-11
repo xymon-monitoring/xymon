@@ -1,0 +1,7 @@
+$ \textbf{hg init mq-sandbox}
+$ \textbf{cd mq-sandbox}
+$ \textbf{echo 'line 1' > file1}
+$ \textbf{echo 'another line 1' > file2}
+$ \textbf{hg add file1 file2}
+$ \textbf{hg commit -m'first change'}
+$ \textbf{hg qinit}

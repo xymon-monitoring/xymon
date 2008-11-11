@@ -1,0 +1,22 @@
+$ \textbf{echo '[diff]' >> $HGRC}
+$ \textbf{echo 'showfunc = False' >> $HGRC}
+$ \textbf{hg diff}
+diff -r  myfile.c
+
+
+@@ -1,4 +1,4 @@
+ int myfunc()
+ \{
+-    return 1;
++    return 10;
+ \}
+$ \textbf{hg diff -p}
+diff -r  myfile.c
+
+
+@@ -1,4 +1,4 @@ int myfunc()
+ int myfunc()
+ \{
+-    return 1;
++    return 10;
+ \}

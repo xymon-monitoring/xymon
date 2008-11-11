@@ -1,0 +1,3 @@
+$ \textbf{cd anne}
+$ \textbf{hg mv foo bar}
+$ \textbf{hg ci -m 'Rename foo to bar'}

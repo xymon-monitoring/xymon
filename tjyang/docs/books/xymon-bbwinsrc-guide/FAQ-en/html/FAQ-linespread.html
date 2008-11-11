@@ -1,0 +1,39 @@
+<head>
+<title>UK TeX FAQ -- question label linespread</title>
+</head><body>
+<h3>Why doesn&rsquo;t <code>\</code><code>linespread</code> work?</h3>
+<p>The command <code>\</code><code>linespread{</code><em>factor</em><code>}</code> is supposed to multiply
+the current <code>\</code><code>baselineskip</code> by &lt;<i>factor</i>&gt;; but, to all
+appearances, it doesn&rsquo;t.
+<p>In fact, the command is equivalent to
+<code>\</code><code>renewcommand{<code>\</code><code>baselinestretch</code>}{factor}</code>: written that
+way, it somehow feels less surprising that the effect isn&rsquo;t immediate.
+The <code>\</code><code>baselinestretch</code> factor is only used when a font is selected;
+a mere change of <code>\</code><code>baselinestretch</code> doesn&rsquo;t change the font, any
+more than does the command
+<code>\</code><code>fontsize{</code><em>size</em><code>}{</code><em>baselineskip</em><code>}</code> &mdash; you have to follow
+either command with <code>\</code><code>selectfont</code>.  So:
+<blockquote>
+<pre>
+\fontsize{10}{12}%
+\selectfont
+</pre>
+</blockquote><p>
+or:
+<blockquote>
+<pre>
+\linespread{1.2}%
+\selectfont
+</pre>
+</blockquote><p>
+Of course, a package such as <i>setspace</i>, whose job is to
+manage the baseline, will deal with all this stuff &mdash; see
+&ldquo;<a href="FAQ-linespace.html">managing double-spaced documents</a>&rdquo;.  If
+you want to avoid <i>setspace</i>, beware the behaviour of
+linespread changes within a paragraph: read 
+&ldquo;<a href="FAQ-baselinepar.html"><code>\</code><code>baselineskip</code> is a paragraph parameter</a>&rdquo;.
+<dl>
+<dt><tt><i>setspace.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/setspace/setspace.sty">macros/latex/contrib/setspace/setspace.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=linespread">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=linespread</a>
+</body>

@@ -1,0 +1,37 @@
+<head>
+<title>UK TeX FAQ -- question label hash</title>
+</head><body>
+<h3>Defining macros within macros</h3>
+<p>The way to think of this is that <code>##</code> gets replaced by <code>#</code> in just the
+same way that <code>#1</code> gets replaced by &lsquo;whatever is the first argument&rsquo;.
+<p>So if you define a macro and use it as:
+<blockquote>
+<pre>
+\def\a#1{+++#1+++#1+++#1+++}  \a{b}
+</pre>
+</blockquote><p>
+the macro expansion produces &lsquo;+++b+++b+++b+++&rsquo;,
+which people find normal.  However, if we now replace part of the macro:
+<blockquote>
+<pre>
+\def\a#1{+++#1+++\def\x #1{xxx#1}}
+</pre>
+</blockquote><p>
+<code>\</code><code>a{b}</code> will expand to &lsquo;+++b+++<code>\def\x b{xxxb}</code>&rsquo;.  This
+defines <code>\</code><code>x</code> to be a macro <em>delimited</em> by <code>b</code>, and taking no
+arguments, which people may find strange, even though it is just a
+specialisation of the example above.  If you want <code>\</code><code>a</code> to
+define <code>\</code><code>x</code> to be a macro with one argument, you need to write:
+<blockquote>
+<pre>
+\def\a#1{+++#1+++\def\x ##1{xxx##1}}
+</pre>
+</blockquote><p>
+and <code>\</code><code>a{b</code>} will expand to 
+&lsquo;+++b+++<code>\def\x #1{xxx#1}</code>&rsquo;, because <code>#1</code> gets replaced by &lsquo;b&rsquo;
+and <code>##</code> gets replaced by <code>#</code>.
+<p>To nest a definition inside a definition inside a definition then
+you need <code>####1</code>, as at each stage <code>##</code> is replaced by
+<code>#</code>.  At the next level you need 8 <code>#</code>s each time, and so on.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hash">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hash</a>
+</body>

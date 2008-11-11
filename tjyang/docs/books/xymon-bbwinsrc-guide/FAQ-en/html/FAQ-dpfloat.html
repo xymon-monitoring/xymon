@@ -1,0 +1,31 @@
+<head>
+<title>UK TeX FAQ -- question label dpfloat</title>
+</head><body>
+<h3>Facing floats on 2-page spread</h3>
+<p>If a pair of floats are to be forced to form a 2-page spread (in a
+book, or whatever), the first must lie on the left side of the spread,
+on an even-numbered page.  The <i>dpfloat</i> package provides for
+this: the construction to use is:
+<blockquote>
+<pre>
+\begin{figure}[p]
+  \begin{leftfullpage}
+    &lt;left side figure&gt;
+  \end{leftfullpage}
+\end{figure}
+\begin{figure}[p]
+  \begin{fullpage}
+    &lt;right side figure&gt;
+  \end{fullpage}
+\end{figure}
+</pre>
+</blockquote><p>
+The construction has no effect unless the standard class option
+<code>twoside</code> is in effect.
+<p>Full documentation of the package (such as it is) is to be found in
+<i>README.dpfloat</i>
+<dl>
+<dt><tt><i>dpfloat.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/dpfloat.zip">macros/latex/contrib/dpfloat</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/dpfloat.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/dpfloat/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dpfloat">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=dpfloat</a>
+</body>

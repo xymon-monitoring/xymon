@@ -1,0 +1,67 @@
+<head>
+<title>UK TeX FAQ -- question label longtab</title>
+</head><body>
+<h3>Tables longer than a single page</h3>
+<p>Tables are, by default, set entirely in boxes of their own: as a
+result, they won&rsquo;t split over a page boundary.  Sadly, the world keeps
+turning up tables longer than a single page that we need to typeset.
+<p>For simple tables (whose shape is highly regular), the simplest
+solution may well be to use the <code>tabbing</code> environment,
+which is slightly tedious to set up, but which doesn&rsquo;t force the whole aligment
+onto a single page.
+<p>The <i>longtable</i> package builds the whole table (in chunks), in
+a first pass, and then uses information it has written to the <code>.aux</code>
+file during later passes to get the setting &ldquo;right&rdquo; (the package
+ordinarily manages to set tables in just two passes).  Since the
+package has overview of the whole table at the time it&rsquo;s doing
+&ldquo;final&rdquo; setting, the table is set &ldquo;uniformly&rdquo; over its entire
+length, with columns matching on consecutive pages.
+<i>longtable</i> has a reputation for failing to interwork with
+other packages, but it does work with <i>colortbl</i>, and its
+author has provided the <i>ltxtable</i> package to provide (most
+of) the facilities of <i>tabularx</i> (see
+
+<a href="FAQ-fixwidtab.html">fixed-width tables</a>) for long tables:
+beware of its rather curious usage constraints &mdash; each long table
+should be in a file of its own, and included by
+<code>\</code><code>LTXtable{</code><em>width</em><code>}{</code><em>file</em><code>}</code>.  Since <i>longtable</i>&rsquo;s
+multiple-page tables can&rsquo;t possibly live inside floats, the package
+provides for captions within the <code>longtable</code> environment
+itself.
+<p>A seeming alternative to <i>ltxtable</i> is <i>ltablex</i>; but
+it is outdated and not fully functional.  Its worst problem is its
+strictly limited memory capacity (<i>longtable</i> is not so
+limited, at the cost of much complication in its code);
+<i>ltablex</i> can only deal with relatively small tables, it doesn&rsquo;t seem
+likely that support is available; but its user interface is much
+simpler than <i>ltxtable</i>, so if its restrictions aren&rsquo;t a
+problem for you, it may be worth a try.
+<p>The <i>supertabular</i> package starts and stops a
+<code>tabular</code> environment for each page of the table.  As a
+result, each &lsquo;page worth&rsquo; of the table is compiled independently, and
+the widths of corresponding columns may differ on successive pages.
+However, if the correspondence doesn&rsquo;t matter, or if your columns are
+fixed-width, <i>supertabular</i> has the great advantage of doing
+its job in a single run.
+<p>Both <i>longtable</i> and <i>supertabular</i> allow definition
+of head- and footlines for the table; <i>longtable</i> allows
+distinction of the first and last head and foot.
+<p>The <i>xtab</i> package fixes some infelicities of
+<i>supertabular</i>, and also provides a &ldquo;last head&rdquo; facility
+(though this, of course, destroys <i>supertabular</i>&rsquo;s advantage
+of operating in a single run).
+<p>The <i>stabular</i> package provides a simple-to-use &ldquo;extension to
+<code>tabular</code>&rdquo; that allows it to typeset tables that run over
+the end of a page; it also has usability extensions, but doesn&rsquo;t have
+the head- and footline capabilities of the major packages.
+<p>Documentation of <i>ltablex</i> is to be found in the package file.
+<dl>
+<dt><tt><i>longtable.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>ltablex.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/ltablex/ltablex.sty">macros/latex/contrib/ltablex/ltablex.sty</a>
+<dt><tt><i>ltxtable.sty</i></tt><dd>Generate by running <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/carlisle/ltxtable.tex">macros/latex/contrib/carlisle/ltxtable.tex</a>
+<dt><tt><i>stabular.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/sttools.zip">macros/latex/contrib/sttools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/sttools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/sttools/">browse</a>)
+<dt><tt><i>supertabular.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/supertabular.zip">macros/latex/contrib/supertabular</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/supertabular.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/supertabular/">browse</a>)
+<dt><tt><i>xtab.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/xtab.zip">macros/latex/contrib/xtab</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/xtab.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/xtab/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=longtab">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=longtab</a>
+</body>

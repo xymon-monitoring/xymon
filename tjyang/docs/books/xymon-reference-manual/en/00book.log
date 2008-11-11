@@ -1,0 +1,2030 @@
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=latex 2008.5.14)  6 NOV 2008 16:29
+entering extended mode
+ %&-line parsing enabled.
+**00book.tex
+(./00book.tex
+LaTeX2e <2005/12/01>
+Babel <v3.8h> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, arabic, basque, bulgarian, coptic, welsh, czech, slovak, german, ng
+erman, danish, esperanto, spanish, catalan, galician, estonian, farsi, finnish,
+ french, greek, monogreek, ancientgreek, croatian, hungarian, interlingua, ibyc
+us, indonesian, icelandic, italian, latin, mongolian, dutch, norsk, polish, por
+tuguese, pinyin, romanian, russian, slovenian, uppersorbian, serbian, swedish, 
+turkish, ukenglish, ukrainian, loaded.
+(/usr/share/texmf/tex/latex/base/book.cls
+Document Class: book 2005/09/16 v1.4f Standard LaTeX document class
+(/usr/share/texmf/tex/latex/base/bk10.clo
+File: bk10.clo 2005/09/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@chapter=\count80
+\c@section=\count81
+\c@subsection=\count82
+\c@subsubsection=\count83
+\c@paragraph=\count84
+\c@subparagraph=\count85
+\c@figure=\count86
+\c@table=\count87
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf/tex/latex/tools/enumerate.sty
+Package: enumerate 1999/03/05 v3.00 enumerate extensions (DPC)
+\@enLab=\toks14
+)
+(/usr/share/texmf/tex/latex/preprint/fullpage.sty
+Package: fullpage 1999/02/23 1.1 (PWD)
+\FP@margin=\skip43
+)
+(/usr/share/texmf/tex/latex/base/makeidx.sty
+Package: makeidx 2000/03/29 v1.0m Standard LaTeX package
+)
+(/usr/share/texmf/tex/generic/oberdiek/ifpdf.sty
+Package: ifpdf 2006/02/20 v1.4 Provides the ifpdf switch (HO)
+Package ifpdf Info: pdfTeX in pdf mode not detected.
+)
+(/usr/share/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks15
+)
+(/usr/share/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 2006/02/20 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2007/01/18 v1.5 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: dvips.def on input line 90.
+
+(/usr/share/texmf/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+\Gin@req@height=\dimen103
+\Gin@req@width=\dimen104
+)
+(/usr/share/texmf/tex/latex/pslatex/pslatex.sty
+Package: pslatex 1996/07/24 v1.2 pslatex emulation (DPC)
+LaTeX Font Info:    Redeclaring symbol font `operators' on input line 65.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
+(Font)                  OT1/cmr/m/n --> OT1/ptmcm/m/n on input line 65.
+LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
+(Font)                  OT1/cmr/bx/n --> OT1/ptmcm/m/n on input line 65.
+LaTeX Font Info:    Redeclaring symbol font `letters' on input line 66.
+LaTeX Font Info:    Overwriting symbol font `letters' in version `normal'
+(Font)                  OML/cmm/m/it --> OML/ptmcm/m/it on input line 66.
+LaTeX Font Info:    Overwriting symbol font `letters' in version `bold'
+(Font)                  OML/cmm/b/it --> OML/ptmcm/m/it on input line 66.
+LaTeX Font Info:    Redeclaring symbol font `symbols' on input line 67.
+LaTeX Font Info:    Overwriting symbol font `symbols' in version `normal'
+(Font)                  OMS/cmsy/m/n --> OMS/pzccm/m/n on input line 67.
+LaTeX Font Info:    Overwriting symbol font `symbols' in version `bold'
+(Font)                  OMS/cmsy/b/n --> OMS/pzccm/m/n on input line 67.
+LaTeX Font Info:    Redeclaring symbol font `largesymbols' on input line 68.
+LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `normal'
+(Font)                  OMX/cmex/m/n --> OMX/psycm/m/n on input line 68.
+LaTeX Font Info:    Overwriting symbol font `largesymbols' in version `bold'
+(Font)                  OMX/cmex/m/n --> OMX/psycm/m/n on input line 68.
+\symbold=\mathgroup4
+\symitalic=\mathgroup5
+LaTeX Font Info:    Redeclaring math alphabet \mathbf on input line 74.
+LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `normal'
+(Font)                  OT1/cmr/bx/n --> OT1/ptm/bx/n on input line 74.
+LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `bold'
+(Font)                  OT1/cmr/bx/n --> OT1/ptm/bx/n on input line 74.
+LaTeX Font Info:    Redeclaring math alphabet \mathit on input line 75.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `normal'
+(Font)                  OT1/cmr/m/it --> OT1/ptm/m/it on input line 75.
+LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `bold'
+(Font)                  OT1/cmr/bx/it --> OT1/ptm/m/it on input line 75.
+)
+(/usr/share/texmf/tex/latex/fancyvrb/fancyvrb.sty
+Package: fancyvrb 1998/07/17
+
+Style option: `fancyvrb' v2.6, with DG/SPQR fixes <1998/07/17> (tvz)
+\FV@CodeLineNo=\count88
+\FV@InFile=\read1
+\FV@TabBox=\box26
+\c@FancyVerbLine=\count89
+\FV@StepNumber=\count90
+\FV@OutFile=\write3
+
+No file fancyvrb.cfg.
+) (/usr/share/texmf/tex/latex/fancyhdr/fancyhdr.sty
+\fancy@headwidth=\skip44
+\f@ncyO@elh=\skip45
+\f@ncyO@erh=\skip46
+\f@ncyO@olh=\skip47
+\f@ncyO@orh=\skip48
+\f@ncyO@elf=\skip49
+\f@ncyO@erf=\skip50
+\f@ncyO@olf=\skip51
+\f@ncyO@orf=\skip52
+)
+
+Package Fancyhdr Warning: \fancyhead's `E' option without twoside option is use
+less on input line 17.
+
+
+Package Fancyhdr Warning: \fancyhead's `E' option without twoside option is use
+less on input line 19.
+
+(/usr/share/texmf/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2007/02/07 v6.75r Hypertext links for LaTeX
+\@linkdim=\dimen105
+\Hy@linkcounter=\count91
+\Hy@pagecounter=\count92
+
+(/usr/share/texmf/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2007/02/07 v6.75r Hyperref: PDFDocEncoding definition (HO)
+)
+(/usr/share/texmf/tex/latex/config/hyperref.cfg
+File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive
+)
+(/usr/share/texmf/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2006/08/22 v2.4 Connects package keyval with LaTeX options (
+HO)
+)
+Package hyperref Info: Option `colorlinks' set `true' on input line 2238.
+Package hyperref Info: Option `bookmarks' set `true' on input line 2238.
+Package hyperref Info: Hyper figures OFF on input line 2288.
+Package hyperref Info: Link nesting OFF on input line 2293.
+Package hyperref Info: Hyper index ON on input line 2296.
+Package hyperref Info: Plain pages OFF on input line 2303.
+Package hyperref Info: Backreferencing OFF on input line 2308.
+
+Implicit mode ON; LaTeX internals redefined
+Package hyperref Info: Bookmarks ON on input line 2444.
+(/usr/share/texmf/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 2599.
+\Fld@menulength=\count93
+\Field@Width=\dimen106
+\Fld@charsize=\dimen107
+\Choice@toks=\toks16
+\Field@toks=\toks17
+Package hyperref Info: Hyper figures OFF on input line 3102.
+Package hyperref Info: Link nesting OFF on input line 3107.
+Package hyperref Info: Hyper index ON on input line 3110.
+Package hyperref Info: backreferencing OFF on input line 3117.
+Package hyperref Info: Link coloring ON on input line 3120.
+\Hy@abspage=\count94
+\c@Item=\count95
+\c@Hfootnote=\count96
+)
+*hyperref using default driver hdvips*
+(/usr/share/texmf/tex/latex/hyperref/hdvips.def
+File: hdvips.def 2007/02/07 v6.75r Hyperref driver for dvips
+
+(/usr/share/texmf/tex/latex/hyperref/pdfmark.def
+File: pdfmark.def 2007/02/07 v6.75r Hyperref definitions for pdfmark specials
+\pdf@docset=\toks18
+\pdf@box=\box27
+\pdf@toks=\toks19
+\pdf@defaulttoks=\toks20
+\Fld@listcount=\count97
+))
+\@input{99defs.aux}
+\openout2 = `99defs.aux'.
+
+(./99defs.tex
+\notebox=\box28
+)
+\@indexfile=\write4
+\openout4 = `00book.idx'.
+
+
+Writing index file 00book.idx
+(./00book.aux (./preface.aux) (./hobbit_overview.aux) (./howtograph.aux)
+(./install.aux) (./about.aux) (./hobbit-alerts.aux) (./hobbit-config.aux)
+(./bb-to-hobbit.aux) (./hobbit-mrtg.aux) (./criticalsystems.aux
+
+LaTeX Warning: Label `critview-disk.png' multiply defined.
+
+
+LaTeX Warning: Label `critview-disk.png' multiply defined.
+
+) (./known-issues.aux) (./server_configuration_files.aux)
+(./web_page_generation.aux) (./report_generation.aux)
+(./administrative_web_pages.aux) (./network_service_testing.aux)
+(./combination_tests.aux) (./messages_protocols.aux)
+(./hobbit_server_programs.aux) (./hobbit_client.aux) (./data_backend.aux)
+(./misc_programs.aux) (./manpages.aux))
+\openout1 = `00book.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OMS/pzccm/m/n on input line 56.
+LaTeX Font Info:    Try loading font information for OMS+pzccm on input line 56
+.
+
+(/usr/share/texmf/tex/latex/psnfss/omspzccm.fd
+File: omspzccm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/pzccm.
+)
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+
+(/usr/share/texmf/tex/latex/graphics/color.sty
+Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
+
+(/usr/share/texmf/tex/latex/config/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package color Info: Driver file: dvips.def on input line 130.
+
+(/usr/share/texmf/tex/latex/graphics/dvipsnam.def
+File: dvipsnam.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+Package hyperref Info: Link coloring ON on input line 56.
+
+(/usr/share/texmf/tex/latex/hyperref/nameref.sty
+Package: nameref 2006/12/27 v2.28 Cross-referencing by name of section
+
+(/usr/share/texmf/tex/latex/oberdiek/refcount.sty
+Package: refcount 2006/02/20 v3.0 Data extraction from references (HO)
+)
+\c@section@level=\count98
+)
+LaTeX Info: Redefining \ref on input line 56.
+LaTeX Info: Redefining \pageref on input line 56.
+ (./00book.out)
+(./00book.out)
+\@outlinefile=\write5
+\openout5 = `00book.out'.
+
+LaTeX Font Info:    Try loading font information for OT1+ptmcm on input line 59
+.
+ (/usr/share/texmf/tex/latex/psnfss/ot1ptmcm.fd
+File: ot1ptmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ptmcm.
+)
+LaTeX Font Info:    Try loading font information for OML+ptmcm on input line 59
+.
+
+(/usr/share/texmf/tex/latex/psnfss/omlptmcm.fd
+File: omlptmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ptmcm.
+)
+LaTeX Font Info:    Try loading font information for OMX+psycm on input line 59
+.
+
+(/usr/share/texmf/tex/latex/psnfss/omxpsycm.fd
+File: omxpsycm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/psycm.
+)
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 59.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 59.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 59.
+LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <12> not available
+(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 59.
+
+
+LaTeX Warning: Reference `cha:opl' on page 1 undefined on input line 59.
+
+
+! LaTeX Error: Cannot determine size of graphic in ./hobbit-cable.png (no Bound
+ingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.59 
+     
+? 
+File: ./hobbit-cable.png Graphic file (type eps)
+<./hobbit-cable.png> [1
+
+
+
+
+]
+
+Package hyperref Warning: No destination for bookmark of \addcontentsline,
+(hyperref)                destination is added on input line 60.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <24.88> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 62.
+(./00book.toc)
+\tf@toc=\write6
+\openout6 = `00book.toc'.
+
+ [1
+
+] (./00book.lof)
+\tf@lof=\write7
+\openout7 = `00book.lof'.
+
+ [2
+
+] (./00book.lot)
+\tf@lot=\write8
+\openout8 = `00book.lot'.
+
+ [1
+
+]
+\openout2 = `preface.aux'.
+
+ (./preface.tex
+Chapter 1.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <20.74> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1.
+LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <10> not available
+(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 14.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <14.4> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 22.
+[2
+
+
+]
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 62.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 62.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 62.
+
+Overfull \hbox (64.04105pt too wide) in paragraph at lines 65--67
+[]\OT1/ptm/m/n/10 The com-plete source code for this book is pub-lished as a Me
+r-cu-rial repos-i-tory, at [][][][][][]. 
+ []
+
+) [3]
+\openout2 = `hobbit_overview.aux'.
+
+ (./hobbit_overview.tex
+Chapter 2.
+
+LaTeX Warning: Citation `web:patchutils' on page 4 undefined on input line 10.
+
+
+Overfull \hbox (1.7907pt too wide) in paragraph at lines 62--68
+[]\OT1/ptm/m/n/10 The Hob-bit server works on all Unix-like sys-tems, in-clud-i
+ng Linux, So-laris, FreeBSD,
+ []
+
+[4
+
+
+
+]
+Overfull \hbox (8.3599pt too wide) in paragraph at lines 85--92
+[]\OT1/ptm/m/n/10 Hobbit stores trend- and availability-information about
+ []
+
+[5]
+Overfull \hbox (8.73975pt too wide) in paragraph at lines 240--245
+\OT1/ptm/m/n/10 men-ta-tion ``In-stalling Hob-bit'' avail-able from the Hob-bit
+ web-server (via the ``Help'' menu), or from the ``docs/install.html''
+ []
+
+[6]
+
+LaTeX Warning: Citation `wikibook:wikibooktjyang' on page 7 undefined on input 
+line 263.
+
+
+Overfull \hbox (94.06166pt too wide) in paragraph at lines 271--273
+[]\OT1/ptm/m/n/10 User Guide Ad-min-is-tra-tion Guide [][][][][][] 
+ []
+
+
+Overfull \hbox (2.1328pt too wide) in paragraph at lines 274--275
+[]\OT1/ptm/m/n/10 Developer Guide [][][][][][] 
+ []
+
+[7] [8] [9] [10] [11]) [12]
+\openout2 = `howtograph.aux'.
+
+ (./howtograph.tex
+Chapter 3.
+[13
+
+
+
+]
+Overfull \hbox (30.76152pt too wide) in paragraph at lines 77--79
+\OT1/ptm/m/n/10 datatypes. It is avail-able on-line at [][][][][][] 
+ []
+
+[14] [15]) [16]
+\openout2 = `install.aux'.
+
+ (./install.tex
+Chapter 4.
+[17
+
+
+
+] [18]
+
+! LaTeX Error: Cannot determine size of graphic in ./hobbitprocs.png (no Boundi
+ngBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.129 ...udegraphics[scale=0.6]{./hobbitprocs.png}
+                                                  
+? 
+File: ./hobbitprocs.png Graphic file (type eps)
+<./hobbitprocs.png> [19]
+
+! LaTeX Error: Cannot determine size of graphic in ./hobbitmain.png (no Boundin
+gBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.177 ...ludegraphics[scale=0.6]{./hobbitmain.png}
+                                                  
+? 
+File: ./hobbitmain.png Graphic file (type eps)
+<./hobbitmain.png>) [20]
+\openout2 = `about.aux'.
+
+ (./about.tex
+Chapter 5.
+
+Underfull \hbox (badness 10000) in paragraph at lines 28--29
+
+ []
+
+[21
+
+
+
+]
+Underfull \hbox (badness 10000) in paragraph at lines 39--40
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 46--47
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 51--52
+
+ []
+
+[22] [23]) [24]
+\openout2 = `hobbit-alerts.aux'.
+
+ (./hobbit-alerts.tex
+Chapter 6.
+[25
+
+
+
+]
+Overfull \hbox (44.05984pt too wide) in paragraph at lines 118--120
+[]\OT1/ptm/m/n/10 The percent-sign in-di-cates that the host-name should not be
+ taken lit-er-ally - in-stead, (www|intranet|support|mail).foo.com
+ []
+
+[26] [27]) [28]
+\openout2 = `hobbit-config.aux'.
+
+ (./hobbit-config.tex
+Chapter 7.
+[29
+
+
+
+]
+
+! LaTeX Error: Cannot determine size of graphic in ./hobbit-bbhosts.png (no Bou
+ndingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.68 ...egraphics[scale=0.5]{./hobbit-bbhosts.png}
+                                                  
+? 
+File: ./hobbit-bbhosts.png Graphic file (type eps)
+<./hobbit-bbhosts.png>
+LaTeX Font Info:    Font shape `OT1/pcr/m/it' in size <10> not available
+(Font)              Font shape `OT1/pcr/m/sl' tried instead on input line 109.
+
+Overfull \hbox (294.66707pt too wide) in paragraph at lines 202--210
+ [][] 
+ []
+
+[30] [31]
+
+! LaTeX Error: Cannot determine size of graphic in ./hobbit-clients.png (no Bou
+ndingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.224 ...graphics[scale=0.5]{./hobbit-clients.png}
+                                                  
+? 
+File: ./hobbit-clients.png Graphic file (type eps)
+<./hobbit-clients.png>
+Overfull \hbox (6217.21606pt too wide) in paragraph at lines 233--280
+[][] 
+ []
+
+) [32]
+\openout2 = `bb-to-hobbit.aux'.
+
+ (./bb-to-hobbit.tex [33
+
+
+]) [34]
+\openout2 = `hobbit-mrtg.aux'.
+
+ (./hobbit-mrtg.tex
+Chapter 8.
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmb7t!
+
+Overfull \hbox (52.1685pt too wide) in paragraph at lines 46--50
+\OT1/ptm/m/n/10 rel-a-tive to the \OT1/ptm/b/n/10 WorkDir \OT1/ptm/m/n/10 di-re
+c-tory, i.e. the fi-nal di-rec-tory for the RRD datafile will be /usr/local/hob
+bit/data/rrd/myrouter.sample.com
+ []
+
+[35
+
+
+
+]) [36]
+\openout2 = `criticalsystems.aux'.
+
+ (./criticalsystems.tex
+Chapter 9.
+
+! LaTeX Error: Cannot determine size of graphic in ./critview-disk.png (no Boun
+dingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.23 ...degraphics[scale=0.6]{./critview-disk.png}
+                                                  
+? 
+File: ./critview-disk.png Graphic file (type eps)
+<./critview-disk.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./editor-main.png (no Boundi
+ngBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.57 ...ludegraphics[scale=0.5]{./editor-main.png}
+                                                  
+? 
+File: ./editor-main.png Graphic file (type eps)
+<./editor-main.png> [37
+
+
+
+]
+
+! LaTeX Error: Cannot determine size of graphic in ./mainview.png (no BoundingB
+ox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.124 \includegraphics[scale=0.5]{./mainview.png}
+                                                 
+? 
+File: ./mainview.png Graphic file (type eps)
+<./mainview.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./editor-nohost.png (no Boun
+dingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.145 ...egraphics[scale=0.5]{./editor-nohost.png}
+                                                  
+? 
+File: ./editor-nohost.png Graphic file (type eps)
+<./editor-nohost.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./editor-diskchanged.png (no
+ BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.161 ...hics[scale=0.5]{./editor-diskchanged.png}
+                                                  
+? 
+File: ./editor-diskchanged.png Graphic file (type eps)
+<./editor-diskchanged.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./critview-disk.png (no Boun
+dingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.173 ...egraphics[scale=0.5]{./critview-disk.png}
+                                                  
+? 
+File: ./critview-disk.png Graphic file (type eps)
+<./critview-disk.png> [38]
+
+! LaTeX Error: Cannot determine size of graphic in ./editor-clonemaster.png (no
+ BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.198 ...hics[scale=0.5]{./editor-clonemaster.png}
+                                                  
+? 
+File: ./editor-clonemaster.png Graphic file (type eps)
+<./editor-clonemaster.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./editor-makeclone.png (no B
+oundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.210 ...aphics[scale=0.5]{./editor-makeclone.png}
+                                                  
+? 
+File: ./editor-makeclone.png Graphic file (type eps)
+<./editor-makeclone.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./editor-showclone.png (no B
+oundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.217 ...aphics[scale=0.5]{./editor-showclone.png}
+                                                  
+? 
+File: ./editor-showclone.png Graphic file (type eps)
+<./editor-showclone.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./critview-disk.png (no Boun
+dingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.232 ...egraphics[scale=0.5]{./critview-disk.png}
+                                                  
+? 
+File: ./critview-disk.png Graphic file (type eps)
+<./critview-disk.png> [39]
+
+! LaTeX Error: Cannot determine size of graphic in ./critview-detail-ackform.pn
+g (no BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.289 ...scale=0.5]{./critview-detail-ackform.png}
+                                                  
+? 
+File: ./critview-detail-ackform.png Graphic file (type eps)
+<./critview-detail-ackform.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./critview-detail-acked.png 
+(no BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.303 ...s[scale=0.5]{./critview-detail-acked.png}
+                                                  
+? 
+File: ./critview-detail-acked.png Graphic file (type eps)
+<./critview-detail-acked.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./mainview-acked.png (no Bou
+ndingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.323 ...graphics[scale=0.5]{./mainview-acked.png}
+                                                  
+? 
+File: ./mainview-acked.png Graphic file (type eps)
+<./mainview-acked.png>
+
+! LaTeX Error: Cannot determine size of graphic in ./stdview-detail-acked.png (
+no BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.332 ...cs[scale=0.5]{./stdview-detail-acked.png}
+                                                  
+? 
+File: ./stdview-detail-acked.png Graphic file (type eps)
+<./stdview-detail-acked.png>) [40] [41]
+\openout2 = `known-issues.aux'.
+
+ (./known-issues.tex
+Chapter 10.
+
+Underfull \hbox (badness 10000) in paragraph at lines 26--28
+
+ []
+
+
+Overfull \hbox (11.61981pt too wide) in paragraph at lines 45--46
+\OT1/ptm/m/n/10 bisvc.cgi com-mand - this dis-ables Javascript val-i-da-tion on
+ the ``info'' page - and edit the file  hob-bit/server/web/maint[]form
+ []
+
+[42
+
+
+
+] [43]
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+
+Overfull \hbox (2701.0022pt too wide) in paragraph at lines 108--138
+ [] 
+ []
+
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+Missing character: There is no   in font ptmr7t!
+) [44]
+\openout2 = `server_configuration_files.aux'.
+
+ (./server_configuration_files.tex
+Chapter 11.
+[45
+
+
+
+]
+Overfull \hbox (21.65921pt too wide) in paragraph at lines 154--156
+[]\OT1/ptm/m/n/10 Directory for Hob-bit notes-files. The $BB-NOTESSKIN URL must
+ map to this di-rec-tory. De-fault: $BB-HOME/www/notes/ 
+ []
+
+[46] [47]
+Overfull \hbox (33.21042pt too wide) in paragraph at lines 339--343
+[]\OT1/ptm/m/n/10 Format string used to build a link to the doc-u-men-ta-tion f
+or a col-umn head-ing. De-fault: ``$CGIB-IN-URL/hobbitcolumn.sh?%s'',
+ []
+
+[48] [49] [50] [51] [52]
+Overfull \hbox (2.27063pt too wide) in paragraph at lines 1081--1085
+[]\OT1/ptm/m/n/10 pageUSAUnitedStates sub-pageNYNewYork sub-par-ent-NY-man-hat-
+tan-Man-hat-tan-dat-a-cen-ters sub-par-ent-man-hat-tan-
+ []
+
+[53] [54] [55] [56] [57] [58] [59]
+Overfull \hbox (41.00043pt too wide) in paragraph at lines 1798--1805
+[]\OT1/ptm/m/n/10 If the BBLO-CA-TION en-vi-ron-ment vari-able is de-fined, a t
+ag of ``route[]BBLOCATION:''
+ []
+
+LaTeX Font Info:    Font shape `OT1/pcr/bx/n' in size <10> not available
+(Font)              Font shape `OT1/pcr/b/n' tried instead on input line 1856.
+[60] [61]
+Overfull \hbox (20.03056pt too wide) in paragraph at lines 2069--2075
+\OT1/ptm/m/n/10 only $\OML/ptmcm/m/it/10 >$\OT1/ptm/m/n/10 128-bit ci-phers * `
+`10'', e.g. http10://www.sample.com/ : use HTTP 1.0 * ``11'', e.g. http11://www
+.sample.com/
+ []
+
+
+Overfull \hbox (10.32239pt too wide) in paragraph at lines 2121--2124
+[][][][][][][] \OT1/ptm/m/n/10 would be the syn-tax for test-ing the www.foo.co
+m
+ []
+
+[62]
+Overfull \hbox (24.35023pt too wide) in paragraph at lines 2226--2230
+[]\OT1/ptm/m/n/10 You can also spec-ify the column-name di-rectly in the test s
+pec-i-fi-ca-tion, by writ-ing it as ``cont=COLUMN;[][][][][][]``.
+ []
+
+
+Overfull \hbox (6.6505pt too wide) in paragraph at lines 2248--2254
+[]\OT1/ptm/m/n/10 ;URL;form-data;[expected[]data[]regexp|#digesttype:digest]] T
+his tag can be used to test web pages,
+ []
+
+[63] [64]
+Overfull \hbox (54.70229pt too wide) in paragraph at lines 2443--2458
+\OT1/ptm/m/n/10 statis-tics from the Apache web-server by query-ing the URL [][
+][][][][].
+ []
+
+
+Overfull \hbox (170.97202pt too wide) in paragraph at lines 2443--2458
+\OT1/ptm/m/n/10 you can pro-vide the full URL needed to fetch the server-status
+ page, e.g. \OT1/ptm/b/n/10 apache=[][][][][][]
+ []
+
+
+Overfull \hbox (51.74309pt too wide) in paragraph at lines 2443--2458
+\OT1/ptm/m/n/10 for a pass-word pro-tected server-status page, or \OT1/ptm/b/n/
+10 apache=[][][][][][]
+ []
+
+[65] [66] [67] [68] [69] [70] [71] [72]
+Overfull \hbox (3.54982pt too wide) in paragraph at lines 3089--3091
+\OT1/ptm/m/n/10 mon.log'' file, ex-cept those from the ``lpr'' sys-tem: LOG /va
+r/log/daemon.log %WARN-ING|NOTICE COLOR=yellow
+ []
+
+[73]
+Overfull \hbox (9.29195pt too wide) in paragraph at lines 3146--3148
+[]\OT1/ptm/m/n/10 trigger
+ []
+
+[74] [75]
+Overfull \hbox (28.961pt too wide) in paragraph at lines 3300--3308
+\OT1/ptm/m/n/10 ``HOST=dns.foo.com,www.foo.com`` iden-ti-fies two spe-cific hos
+ts; ``HOST=%www.*.foo.com EXHOST=www-test.foo.com''
+ []
+
+[76] [77]
+Overfull \hbox (29.06958pt too wide) in paragraph at lines 3500--3503
+[]\OT1/ptm/m/n/10 Hobbit-specific op-tions for col-umn doc-u-men-ta-tion. This 
+uses the \OT1/ptm/m/it/10 bb-csvinfo.cgi(1) \OT1/ptm/m/n/10 util-ity with the \
+OT1/ptm/b/n/10 server/etc/columndoc.cfg
+ []
+
+[78] [79] [80] [81] [82]) [83]
+\openout2 = `web_page_generation.aux'.
+
+ (./web_page_generation.tex
+Chapter 12.
+[84
+
+
+
+] [85]
+Overfull \hbox (2.45027pt too wide) in paragraph at lines 279--284
+[]\OT1/ptm/m/n/10 ] Al-ways in-clude these columns on bb2 page Will in-clude ce
+r-tain columns on the bb2.html
+ []
+
+
+Overfull \hbox (2.0711pt too wide) in paragraph at lines 307--310
+[]\OT1/ptm/m/n/10 or --noprop=test[,test]] Dis-able up-wards sta-tus prop-a-ga-
+tion when YEL-LOW. The ``--noprop''
+ []
+
+[86]
+Overfull \hbox (133.79112pt too wide) in paragraph at lines 418--420
+[]\OT1/ptm/m/n/10 The ``add-button.gif'' is avail-able from Netscape at [][][][
+][][] 
+ []
+
+[87] [88]
+Overfull \hbox (5.56049pt too wide) in paragraph at lines 626--648
+\OT1/ptm/m/n/10 able, and the ''$BB-HOME/www/os/''optionworktogether,andplacest
+he new-page-setHTML-filesina-sub-di-rec-to-ry-offthenor-
+ []
+
+
+Overfull \hbox (4.20068pt too wide) in paragraph at lines 626--648
+\OT1/ptm/m/n/10 mal Hob-bitwe-b-root.IfyounormallyaccesstheHobbitpagesas ''[][]
+[][][][]``,youwillthenaccess
+ []
+
+
+Overfull \hbox (0.30081pt too wide) in paragraph at lines 626--648
+\OT1/ptm/m/n/10 the-new-page-se-tas''[][][][][][]`` NB:ThedirectorygivenasBBWEB
+mustcontainasymbolic
+ []
+
+
+Overfull \hbox (1.37909pt too wide) in paragraph at lines 626--648
+\OT1/ptm/m/n/10 link-tothe$BBHOME/www/html/directory,orlinksto in-di-vid-u-al-s
+ta-tusmes-sageswill-not-work.Similarlinks shouldbe-made-
+ []
+
+
+Overfull \hbox (79.4287pt too wide) in paragraph at lines 626--648
+\OT1/ptm/m/n/10 forthegifs/,help/andnotes/ di-rec-to-ries. * ``--pageset=os'' t
+ells bb-gen to struc-ture the web-pages us-ingthe''os''layout,insteadofthedefau
+ltlayout.
+ []
+
+
+Overfull \hbox (28.16953pt too wide) in paragraph at lines 626--648
+\OT1/ptm/m/n/10 platein$BBHOME/web/bb[]headerand .../bb[]footer-withthisoption,
+itwillinsteaduse the-files''os[]header''and''os[]footer''fromthe
+ []
+
+
+Overfull \hbox (4.6199pt too wide) in paragraph at lines 626--648
+\OT1/ptm/m/n/10 $BB-HOME/web/directory.Thisallowsyoutocustomize head-er-sand-fo
+ot-ers-fore-ach-page-set.Ifyoujustwant tou-sethenor-mal-
+ []
+
+
+Overfull \hbox (16.71077pt too wide) in paragraph at lines 673--677
+[]\OT1/ptm/m/n/10 The re-port files gen-er-ated by bb-gen are stored in in-di-v
+id-ual di-rec-to-ries (one per re-port) be-low the $BB-HOME/www/rep/
+ []
+
+[89]
+Overfull \hbox (36.19107pt too wide) in paragraph at lines 734--739
+[]\OT1/ptm/m/n/10 0700:greenfor10minutes(600seconds) 0710:blue-for5minutes(300s
+econds) 0715:green-for14hours38minutes(52680seconds)
+ []
+
+[90]
+Overfull \hbox (116.93987pt too wide) in paragraph at lines 815--823
+[]\OT1/ptm/m/n/10 START=`date+%s--date=''22Jun200300:00:00''` END=`date+%s--dat
+e=''22Jun200323:59:59''` BBWEB=/reports/bigbrother/daily/2003/06/22$\OMS/pzccm/
+m/n/10 n$
+ []
+
+
+Overfull \hbox (42.7405pt too wide) in paragraph at lines 815--823
+\OT1/ptm/m/n/10 BBHELPSKIN=/hobbit/help$\OMS/pzccm/m/n/10 n$ \OT1/ptm/m/n/10 BB
+NOTESSKIN=/hobbit/notes$\OMS/pzccm/m/n/10 n$ \OT1/ptm/m/n/10 bbgen--reportopts=
+$START:$END:1:crit$\OMS/pzccm/m/n/10 n$ \OT1/ptm/m/n/10 --subpagecolumns=2$\OMS
+/pzccm/m/n/10 n$
+ []
+
+
+Overfull \hbox (128.02931pt too wide) in paragraph at lines 825--830
+[]\OT1/ptm/m/n/10 The ``BB-WEB'' set-ting means that the re-port will be avail-
+able with a URL of ``[][][][][][]``.
+ []
+
+[91]
+Overfull \hbox (102.66989pt too wide) in paragraph at lines 874--878
+[]\OT1/ptm/m/n/10 IP(IPaddressofhost-fordisplaypurposesonly) PIXELS(widthofcolo
+rbarwheninpixel-mode) END-TIME(whenthecolorbarbegins,atime[]tvalue)
+ []
+
+[92] [93]
+Overfull \hbox (0.75075pt too wide) in paragraph at lines 1001--1005
+[]\OT1/ptm/m/n/10 Sets the ac-knowl-edg-ment level for ac-knowl-edg-ments sent 
+via the \OT1/ptm/m/it/10 hobbit-ackinfo.cgi(1) \OT1/ptm/m/n/10 page.
+ []
+
+[94]
+Overfull \hbox (12.01147pt too wide) in paragraph at lines 1093--1100
+\OT1/ptm/m/n/10 ment, bbtest-net will ig-nore hosts that do not have any ``NET:
+x'' tag. So only hosts that have a NET:$BBLOCATION
+ []
+
+[95] [96] [97] [98] [99] [100] [101] [102] [103] [104] [105] [106] [107]
+[108] [109]) [110]
+\openout2 = `report_generation.aux'.
+
+ (./report_generation.tex
+Chapter 13.
+[111
+
+
+
+] [112]
+Overfull \hbox (89.14885pt too wide) in paragraph at lines 101--109
+[]\OT1/ptm/m/n/10 start-mon(Startmonthofthereport) start-day(Startday-of-montho
+fthereport) start-yr(Startyearofthereport) end-mon(Endmonthofthereport)
+ []
+
+[113] [114]) [115] [116]
+\openout2 = `administrative_web_pages.aux'.
+
+ (./administrative_web_pages.tex
+Chapter 14.
+[117
+
+
+
+] [118] [119] [120] [121] [122] [123]) [124]
+\openout2 = `network_service_testing.aux'.
+
+ (./network_service_testing.tex
+Chapter 15.
+[125
+
+
+
+]
+Overfull \hbox (12.01147pt too wide) in paragraph at lines 152--156
+\OT1/ptm/m/n/10 ment, bbtest-net will ig-nore hosts that do not have any ``NET:
+x'' tag. So only hosts that have a NET:$BBLOCATION
+ []
+
+[126] [127]
+Overfull \hbox (46.41052pt too wide) in paragraph at lines 339--345
+\OT1/ptm/m/n/10 check-ing web-sites. This file is in the Netscape Cookie for-ma
+t, see [][][][][][][]spec.html
+ []
+
+[128]
+Overfull \hbox (156.86131pt too wide) in paragraph at lines 448--453
+[]\OT1/ptm/m/n/10 For a dis-cus-sion of the var-i-ous ways of run-ning en-crypt
+ed ldap, see [][][][][][]
+ []
+
+
+Overfull \hbox (226.74168pt too wide) in paragraph at lines 448--453
+[][][][][][] [][][][][][]
+ []
+
+[129] [130]
+Overfull \hbox (5.02055pt too wide) in paragraph at lines 613--618
+[]\OT1/ptm/m/n/10 If you have password-protected sites, you
+ []
+
+[131] [132] [133] [134] [135]) [136]
+\openout2 = `combination_tests.aux'.
+
+ (./combination_tests.tex
+Chapter 16.
+
+Overfull \hbox (0.4631pt too wide) in paragraph at lines 54--56
+[]\OT1/ptm/m/n/10 Configuration file for bb-com-botest, where the com-bined
+ []
+
+
+Overfull \hbox (4.143pt too wide) in paragraph at lines 57--59
+[]\OT1/ptm/m/n/10 Configuration file con-trol-ling when bb-com-botest is run. 
+ []
+
+[137
+
+
+
+]
+Overfull \hbox (136.06085pt too wide) in paragraph at lines 144--146
+[]\OT1/ptm/m/n/10 Loads the graph con-fig-u-ra-tion file from FILE-NAME. If not
+ spec-i-fied, the file []``\OT1/pcr/m/n/10 /etc/opt/hobbitserver42/hobbitgraph.
+cfg\OT1/ptm/m/n/10 ''
+ []
+
+[138] [139] [140] [141]
+Overfull \hbox (136.06085pt too wide) in paragraph at lines 395--397
+[]\OT1/ptm/m/n/10 Loads the graph con-fig-u-ra-tion file from FILE-NAME. If not
+ spec-i-fied, the file []``\OT1/pcr/m/n/10 /etc/opt/hobbitserver42/hobbitgraph.
+cfg\OT1/ptm/m/n/10 ''
+ []
+
+[142] [143]
+Overfull \hbox (50.30972pt too wide) in paragraph at lines 463--469
+[]\OT1/ptm/m/n/10 mon(Startmonthofthesnapshot) day(Startday-of-monthofthesnapsh
+ot) yr(Startyearofthesnapshot) hour(Starthourofthesnapshot)
+ []
+
+
+Overfull \hbox (4.2409pt too wide) in paragraph at lines 504--507
+[]\OT1/ptm/m/n/10 bbgen op-tions passed by de-fault to the bb-snapshot.cgi scri
+pt. This hap-pens in the bb-snapshot.sh
+ []
+
+[144] [145]
+Overfull \hbox (156.69833pt too wide) in paragraph at lines 589--593
+[]\OT1/ptm/m/n/10 key(stringtosearchfor,typicallyhostname) column(columnnumbert
+osearch-default0) db(nameoftheCSVdatabasefilein$BBHOME/etc/,defaulthostinfo.csv
+)
+ []
+
+[146] [147] [148] [149] [150] [151] [152] [153] [154] [155]) [156]
+\openout2 = `messages_protocols.aux'.
+
+
+(./messages_protocols.tex
+Chapter 17.
+[157
+
+
+
+] [158] [159]
+Overfull \hbox (14.86006pt too wide) in paragraph at lines 191--198
+\OT1/ptm/m/n/10 re-ceive alerts for this HOST-NAME+TESTNAME com-bi-na-tion, ac-
+cord-ing to the rules de-fined in \OT1/ptm/m/it/10 hobbit-alerts.cfg(5)
+ []
+
+[160] [161]
+Overfull \hbox (155.89743pt too wide) in paragraph at lines 461--464
+[]\OT1/ptm/m/n/10 If the ``fields'' pa-ram-e-ter is omit-ted, a de-fault set of
+ host-name,testname,color,flags,lastchange,logtime,validtime,acktime,disabletim
+e,sender,cookie,line1
+ []
+
+
+Overfull \hbox (44.73033pt too wide) in paragraph at lines 550--551
+[]\OT1/ptm/m/n/10 $WWW=`$BB$BBDISP''querywww.foo.com.www``|awk'\OMS/pzccm/m/n/1
+0 f\OT1/ptm/m/n/10 print$1\OMS/pzccm/m/n/10 g\OT1/ptm/m/n/10 '` $if[''$WWW''=''
+red''];then/etc/init.d/apacherestart;fi 
+ []
+
+
+Overfull \hbox (44.55025pt too wide) in paragraph at lines 557--561
+[]\OT1/ptm/m/n/10 $$BB$BBDISP''configbb-dftab''$\OML/ptmcm/m/it/10 >$\OT1/ptm/m
+/n/10 /tmp/bb-dftab.new $if[-s/tmp/bb-dftab.new];then mv/tmp/bb-dftab.new$BBHOM
+E/etc/bb-
+ []
+
+[162]) [163]
+\openout2 = `hobbit_server_programs.aux'.
+
+ (./hobbit_server_programs.tex
+Chapter 18.
+[164
+
+
+
+] [165] [166] [167]
+
+LaTeX Warning: Citation `web:patchutils' on page 168 undefined on input line 23
+7.
+
+[168]
+Overfull \hbox (19.96942pt too wide) in paragraph at lines 308--309
+[]\OT1/ptm/m/n/10 The to-tal num-ber of con-nec-tions ac-cepted from clients si
+nce the proxy started. The ``(N msgs/second)''
+ []
+
+[169] [170] [171]
+Overfull \hbox (2.4813pt too wide) in paragraph at lines 510--512
+[]\OT1/ptm/m/n/10 Header, footer and form tem-plate for the Hob-bit \OT1/ptm/b/
+n/10 ac-knowl-edge alert \OT1/ptm/m/n/10 web-page gen-er-ated by \OT1/ptm/m/it/
+10 bb-ack.cgi(1) 
+ []
+
+
+Overfull \hbox (5.66129pt too wide) in paragraph at lines 559--562
+[]\OT1/ptm/m/n/10 Header and footer for the Hob-bit \OT1/ptm/b/n/10 Con-fig-u-r
+a-tion re-port \OT1/ptm/m/n/10 web-page, gen-er-ated by the \OT1/ptm/m/it/10 ho
+bbit-confreport.cgi(1)
+ []
+
+[172]
+Overfull \hbox (2.75124pt too wide) in paragraph at lines 642--645
+[]\OT1/ptm/m/n/10 Header, footer and forms for se-lect-ing a pre-generated \OT1
+/ptm/b/n/10 Avail-abil-ity Re-port \OT1/ptm/m/n/10 . Han-dled by the \OT1/ptm/m
+/it/10 bb-datepage.cgi(1)
+ []
+
+) [173]
+\openout2 = `hobbit_client.aux'.
+
+ (./hobbit_client.tex
+Chapter 19.
+LaTeX Font Info:    Font shape `OT1/pcr/bx/n' in size <14.4> not available
+(Font)              Font shape `OT1/pcr/b/n' tried instead on input line 9.
+[174
+
+
+
+] [175] [176] [177]
+Overfull \hbox (1.43947pt too wide) in paragraph at lines 199--203
+[]\OT1/ptm/m/n/10 HOSTSVC(thehostandservicetoreporton) STYLE(reportstyle:''crit
+'',''non-crit'',''all'') ST(starttimeinsecondssince1-
+ []
+
+
+Overfull \hbox (126.98877pt too wide) in paragraph at lines 209--212
+[]\OT1/ptm/m/n/10 IP(IPaddressofhost-fordisplaypurposesonly) RE-PORT-TIME(theRE
+PORTTIME:settingforthishost) WARN-PCT(theWARNPCT:settingforthishost) 
+ []
+
+[178] [179] [180] [181] [182]) [183]
+\openout2 = `data_backend.aux'.
+
+ (./data_backend.tex
+Chapter 20.
+[184
+
+
+
+] [185]
+Overfull \hbox (1.81094pt too wide) in paragraph at lines 182--184
+[]\OT1/ptm/m/n/10 To en-able the ncv mod-ule for a sta-tus, add a ``COLUMN-NAME
+=ncv'' to the TEST2RRD set-ting and the COLUMN-
+ []
+
+[186] [187] [188]) [189]
+\openout2 = `misc_programs.aux'.
+
+ (./misc_programs.tex
+Chapter 21.
+[190
+
+
+
+]) [191] [192]
+\openout2 = `manpages.aux'.
+
+ (./manpages.tex
+Chapter 22.
+
+Overfull \hbox (1.7907pt too wide) in paragraph at lines 62--68
+[]\OT1/ptm/m/n/10 The Hob-bit server works on all Unix-like sys-tems, in-clud-i
+ng Linux, So-laris, FreeBSD,
+ []
+
+[193
+
+
+
+]
+Overfull \hbox (8.3599pt too wide) in paragraph at lines 85--92
+[]\OT1/ptm/m/n/10 Hobbit stores trend- and availability-information about
+ []
+
+[194]
+Overfull \hbox (8.73975pt too wide) in paragraph at lines 240--245
+\OT1/ptm/m/n/10 men-ta-tion ``In-stalling Hob-bit'' avail-able from the Hob-bit
+ web-server (via the ``Help'' menu), or from the ``docs/install.html''
+ []
+
+[195]
+
+LaTeX Warning: Citation `wikibook:wikibooktjyang' on page 196 undefined on inpu
+t line 263.
+
+
+Overfull \hbox (94.06166pt too wide) in paragraph at lines 271--273
+[]\OT1/ptm/m/n/10 User Guide Ad-min-is-tra-tion Guide [][][][][][] 
+ []
+
+
+Overfull \hbox (2.1328pt too wide) in paragraph at lines 274--275
+[]\OT1/ptm/m/n/10 Developer Guide [][][][][][] 
+ []
+
+[196] [197] [198] [199] [200] [201]
+Chapter 23.
+[202
+
+]
+Overfull \hbox (19.23103pt too wide) in paragraph at lines 784--785
+[]\OT1/ptm/m/n/10 The Hob-bit server di-rec-tory, where pro-grams and con-fig-u
+-ra-tions are kept. De-fault: $BB-SERVER-ROOT/server/
+ []
+
+
+Overfull \hbox (0.39975pt too wide) in paragraph at lines 792--793
+[]\OT1/ptm/m/n/10 Directory for Hob-bit web-files. The $BB-WEB URL must map to 
+this di-rec-tory. De-fault: $BB-HOME/www/ 
+ []
+
+[203]
+Overfull \hbox (13.08998pt too wide) in paragraph at lines 819--821
+\OT1/ptm/m/n/10 which is \OT1/ptm/b/n/10 dis-cour-aged \OT1/ptm/m/n/10 since it
+ in-creases the load on the Hob-bit server sig-nif-i-cantly. De-fault: $BB-HOME
+/www/html/ 
+ []
+
+
+Overfull \hbox (18.09082pt too wide) in paragraph at lines 894--895
+[]\OT1/ptm/m/n/10 Initial part of the Hob-bit URL, in-clud-ing just the pro-to-
+col and the host-name, e.g. ``[][][][][][]`` 
+ []
+
+[204]
+Overfull \hbox (23.90971pt too wide) in paragraph at lines 1002--1004
+[]\OT1/ptm/m/n/10 Comma-separated list of the col-ors that may trig-ger an aler
+t-message. The de-fault is ``red,yellow,purple''.
+ []
+
+
+Overfull \hbox (11.14996pt too wide) in paragraph at lines 1007--1008
+[]\OT1/ptm/m/n/10 Comma-separated list of the col-ors that may trig-ger a recov
+ery-message. The de-fault is ``green,clear,blue''. 
+ []
+
+[205]
+Overfull \hbox (43.2205pt too wide) in paragraph at lines 1047--1048
+[]\OT1/ptm/m/n/10 The max-i-mum size of a ``sta-tus change'' mes-sage in kB, de
+-fault: Cur-rent value of the MAXMSG[]STATUS
+ []
+
+
+Overfull \hbox (42.25029pt too wide) in paragraph at lines 1059--1060
+[]\OT1/ptm/m/n/10 The max-i-mum size of a ``client change'' mes-sage in kB, de-
+fault: Cur-rent value of the MAXMSG[]CLIENT
+ []
+
+[206] [207] [208]
+Overfull \hbox (23.48021pt too wide) in paragraph at lines 1275--1276
+\OT1/ptm/m/n/10 client data avail-able for the host - in-clude a link to the ra
+w data sent by the client. De-fault: cpu,disk,memory,procs,svcs. 
+ []
+
+
+Overfull \hbox (23.04027pt too wide) in paragraph at lines 1301--1302
+[]\OT1/ptm/m/n/10 Default bb-gen op-tions used for re-ports. This will typ-i-ca
+lly in-clude such op-tions as ``--subpagecolumns'',
+ []
+
+[209] [210]
+Overfull \hbox (2.27063pt too wide) in paragraph at lines 1485--1489
+[]\OT1/ptm/m/n/10 pageUSAUnitedStates sub-pageNYNewYork sub-par-ent-NY-man-hat-
+tan-Man-hat-tan-dat-a-cen-ters sub-par-ent-man-hat-tan-
+ []
+
+[211]
+Overfull \hbox (24.65996pt too wide) in paragraph at lines 1679--1689
+\OT1/ptm/m/n/10 Which * of these are shown can be sp-e-fi-cied like this: * ``T
+RENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn''
+ []
+
+[212] [213] [214] [215] [216]
+Overfull \hbox (41.00043pt too wide) in paragraph at lines 2206--2213
+[]\OT1/ptm/m/n/10 If the BBLO-CA-TION en-vi-ron-ment vari-able is de-fined, a t
+ag of ``route[]BBLOCATION:''
+ []
+
+[217] [218]
+Overfull \hbox (20.03056pt too wide) in paragraph at lines 2479--2485
+\OT1/ptm/m/n/10 only $\OML/ptmcm/m/it/10 >$\OT1/ptm/m/n/10 128-bit ci-phers * `
+`10'', e.g. http10://www.sample.com/ : use HTTP 1.0 * ``11'', e.g. http11://www
+.sample.com/
+ []
+
+[219]
+Overfull \hbox (10.32239pt too wide) in paragraph at lines 2531--2534
+[][][][][][][] \OT1/ptm/m/n/10 would be the syn-tax for test-ing the www.foo.co
+m
+ []
+
+[220]
+Overfull \hbox (24.35023pt too wide) in paragraph at lines 2636--2640
+[]\OT1/ptm/m/n/10 You can also spec-ify the column-name di-rectly in the test s
+pec-i-fi-ca-tion, by writ-ing it as ``cont=COLUMN;[][][][][][]``.
+ []
+
+
+Overfull \hbox (6.6505pt too wide) in paragraph at lines 2658--2664
+[]\OT1/ptm/m/n/10 ;URL;form-data;[expected[]data[]regexp|#digesttype:digest]] T
+his tag can be used to test web pages,
+ []
+
+[221]
+Overfull \hbox (54.70229pt too wide) in paragraph at lines 2856--2871
+\OT1/ptm/m/n/10 statis-tics from the Apache web-server by query-ing the URL [][
+][][][][].
+ []
+
+
+Overfull \hbox (170.97202pt too wide) in paragraph at lines 2856--2871
+\OT1/ptm/m/n/10 you can pro-vide the full URL needed to fetch the server-status
+ page, e.g. \OT1/ptm/b/n/10 apache=[][][][][][]
+ []
+
+
+Overfull \hbox (51.74309pt too wide) in paragraph at lines 2856--2871
+\OT1/ptm/m/n/10 for a pass-word pro-tected server-status page, or \OT1/ptm/b/n/
+10 apache=[][][][][][]
+ []
+
+[222] [223] [224] [225] [226] [227] [228] [229]
+Overfull \hbox (3.54982pt too wide) in paragraph at lines 3488--3490
+\OT1/ptm/m/n/10 mon.log'' file, ex-cept those from the ``lpr'' sys-tem: LOG /va
+r/log/daemon.log %WARN-ING|NOTICE COLOR=yellow
+ []
+
+[230]
+Overfull \hbox (9.29195pt too wide) in paragraph at lines 3545--3547
+[]\OT1/ptm/m/n/10 trigger
+ []
+
+[231] [232]
+Overfull \hbox (28.961pt too wide) in paragraph at lines 3689--3697
+\OT1/ptm/m/n/10 ``HOST=dns.foo.com,www.foo.com`` iden-ti-fies two spe-cific hos
+ts; ``HOST=%www.*.foo.com EXHOST=www-test.foo.com''
+ []
+
+[233]
+
+! LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3825 ...ysis, historical data and SLA reporting]
+                                                  
+? 
+
+Underfull \hbox (badness 10000) detected at line 3825
+[][]
+ []
+
+
+! LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3847 \item[Role-based views]
+                               You can have multiple different views of the
+? q
+OK, entering \batchmode...
+
+Underfull \hbox (badness 10000) detected at line 3847
+[][]
+ []
+
+ [234]
+
+! LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3862 \item[Also for the techies]
+                                   The Hobbit user-interface is simple, but
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 3862
+[][]
+ []
+
+
+! LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3872 \item[Easy to adapt to your needs]
+                                          Hobbit includes a lot of tests in
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 3872
+[][]
+ []
+
+
+! LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3881 \item[Real network service tests]
+                                         The network test tool knows how to
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 3881
+[][]
+ []
+
+
+! LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3895 \item[Highly configurable alerts]
+                                         You want to know when something
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 3895
+[][]
+ []
+
+
+! LaTeX Error: Lonely \item--perhaps a missing list environment.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3905 ... super-tests and test interdependencies]
+                                                   If a single
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Underfull \hbox (badness 10000) detected at line 3905
+[][]
+ []
+
+
+! LaTeX Error: \begin{document} ended by \end{description}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.3917 \end{description}
+                        
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+! Extra \endgroup.
+<recently read> \endgroup 
+                          
+l.3917 \end{description}
+                        
+Things are pretty mixed up, but I think the worst is over.
+
+ [235]
+Overfull \hbox (8.73975pt too wide) in paragraph at lines 3981--3986
+\OT1/ptm/m/n/10 men-ta-tion ``In-stalling Hob-bit'' avail-able from the Hob-bit
+ web-server (via the ``Help'' menu), or from the ``docs/install.html''
+ []
+
+
+LaTeX Warning: Citation `wikibook:wikibooktjyang' on page 236 undefined on inpu
+t line 4004.
+
+
+Overfull \hbox (94.06166pt too wide) in paragraph at lines 4012--4014
+[]\OT1/ptm/m/n/10 User Guide Ad-min-is-tra-tion Guide [][][][][][] 
+ []
+
+
+Overfull \hbox (2.1328pt too wide) in paragraph at lines 4015--4016
+[]\OT1/ptm/m/n/10 Developer Guide [][][][][][] 
+ []
+
+ [236] [237] [238] [239] [240] [241]
+Chapter 24.
+ [242
+
+]
+Overfull \hbox (19.23103pt too wide) in paragraph at lines 4525--4526
+[]\OT1/ptm/m/n/10 The Hob-bit server di-rec-tory, where pro-grams and con-fig-u
+-ra-tions are kept. De-fault: $BB-SERVER-ROOT/server/
+ []
+
+
+Overfull \hbox (0.39975pt too wide) in paragraph at lines 4533--4534
+[]\OT1/ptm/m/n/10 Directory for Hob-bit web-files. The $BB-WEB URL must map to 
+this di-rec-tory. De-fault: $BB-HOME/www/ 
+ []
+
+ [243]
+Overfull \hbox (13.08998pt too wide) in paragraph at lines 4560--4562
+\OT1/ptm/m/n/10 which is \OT1/ptm/b/n/10 dis-cour-aged \OT1/ptm/m/n/10 since it
+ in-creases the load on the Hob-bit server sig-nif-i-cantly. De-fault: $BB-HOME
+/www/html/ 
+ []
+
+
+Overfull \hbox (18.09082pt too wide) in paragraph at lines 4635--4636
+[]\OT1/ptm/m/n/10 Initial part of the Hob-bit URL, in-clud-ing just the pro-to-
+col and the host-name, e.g. ``[][][][][][]`` 
+ []
+
+ [244]
+Overfull \hbox (23.90971pt too wide) in paragraph at lines 4743--4745
+[]\OT1/ptm/m/n/10 Comma-separated list of the col-ors that may trig-ger an aler
+t-message. The de-fault is ``red,yellow,purple''.
+ []
+
+
+Overfull \hbox (11.14996pt too wide) in paragraph at lines 4748--4749
+[]\OT1/ptm/m/n/10 Comma-separated list of the col-ors that may trig-ger a recov
+ery-message. The de-fault is ``green,clear,blue''. 
+ []
+
+ [245]
+Overfull \hbox (43.2205pt too wide) in paragraph at lines 4788--4789
+[]\OT1/ptm/m/n/10 The max-i-mum size of a ``sta-tus change'' mes-sage in kB, de
+-fault: Cur-rent value of the MAXMSG[]STATUS
+ []
+
+
+Overfull \hbox (42.25029pt too wide) in paragraph at lines 4800--4801
+[]\OT1/ptm/m/n/10 The max-i-mum size of a ``client change'' mes-sage in kB, de-
+fault: Cur-rent value of the MAXMSG[]CLIENT
+ []
+
+ [246] [247] [248]
+Overfull \hbox (23.48021pt too wide) in paragraph at lines 5016--5017
+\OT1/ptm/m/n/10 client data avail-able for the host - in-clude a link to the ra
+w data sent by the client. De-fault: cpu,disk,memory,procs,svcs. 
+ []
+
+
+Overfull \hbox (23.04027pt too wide) in paragraph at lines 5042--5043
+[]\OT1/ptm/m/n/10 Default bb-gen op-tions used for re-ports. This will typ-i-ca
+lly in-clude such op-tions as ``--subpagecolumns'',
+ []
+
+ [249] [250]
+Overfull \hbox (0.75075pt too wide) in paragraph at lines 5229--5233
+[]\OT1/ptm/m/n/10 Sets the ac-knowl-edg-ment level for ac-knowl-edg-ments sent 
+via the \OT1/ptm/m/it/10 hobbit-ackinfo.cgi(1) \OT1/ptm/m/n/10 page.
+ []
+
+ [251] [252] [253]
+Chapter 25.
+ [254
+
+]
+Overfull \hbox (12.01147pt too wide) in paragraph at lines 5550--5554
+\OT1/ptm/m/n/10 ment, bbtest-net will ig-nore hosts that do not have any ``NET:
+x'' tag. So only hosts that have a NET:$BBLOCATION
+ []
+
+ [255] [256]
+Overfull \hbox (46.41052pt too wide) in paragraph at lines 5737--5743
+\OT1/ptm/m/n/10 check-ing web-sites. This file is in the Netscape Cookie for-ma
+t, see [][][][][][][]spec.html
+ []
+
+ [257]
+Overfull \hbox (156.86131pt too wide) in paragraph at lines 5846--5851
+[]\OT1/ptm/m/n/10 For a dis-cus-sion of the var-i-ous ways of run-ning en-crypt
+ed ldap, see [][][][][][]
+ []
+
+
+Overfull \hbox (226.74168pt too wide) in paragraph at lines 5846--5851
+[][][][][][] [][][][][][]
+ []
+
+ [258] [259]
+Overfull \hbox (5.02055pt too wide) in paragraph at lines 6011--6016
+[]\OT1/ptm/m/n/10 If you have password-protected sites, you
+ []
+
+ [260] [261] [262] [263] [264]
+Chapter 26.
+ [265
+
+] [266] [267] [268] [269]
+Overfull \hbox (56.88072pt too wide) in paragraph at lines 6614--6616
+[]\OT1/ptm/m/n/10 Loads the graph con-fig-u-ra-tion file from FILE-NAME. If not
+ spec-i-fied, the file $BB-HOME/etc/hobbitgraph.cfg
+ []
+
+ [270] [271] [272] [273] [274] [275]
+Overfull \hbox (56.88072pt too wide) in paragraph at lines 6966--6968
+[]\OT1/ptm/m/n/10 Loads the graph con-fig-u-ra-tion file from FILE-NAME. If not
+ spec-i-fied, the file $BB-HOME/etc/hobbitgraph.cfg
+ []
+
+ [276] [277]
+Overfull \hbox (50.30972pt too wide) in paragraph at lines 7034--7040
+[]\OT1/ptm/m/n/10 mon(Startmonthofthesnapshot) day(Startday-of-monthofthesnapsh
+ot) yr(Startyearofthesnapshot) hour(Starthourofthesnapshot)
+ []
+
+
+Overfull \hbox (4.2409pt too wide) in paragraph at lines 7075--7078
+[]\OT1/ptm/m/n/10 bbgen op-tions passed by de-fault to the bb-snapshot.cgi scri
+pt. This hap-pens in the bb-snapshot.sh
+ []
+
+ [278] [279]
+Overfull \hbox (156.69833pt too wide) in paragraph at lines 7160--7164
+[]\OT1/ptm/m/n/10 key(stringtosearchfor,typicallyhostname) column(columnnumbert
+osearch-default0) db(nameoftheCSVdatabasefilein$BBHOME/etc/,defaulthostinfo.csv
+)
+ []
+
+ [280] [281] [282] [283] [284] [285] [286] [287] [288] [289] [290]
+Chapter 27.
+ [291
+
+] [292]
+Chapter 28.
+ [293
+
+] [294] [295]
+Overfull \hbox (2.45027pt too wide) in paragraph at lines 8197--8202
+[]\OT1/ptm/m/n/10 ] Al-ways in-clude these columns on bb2 page Will in-clude ce
+r-tain columns on the bb2.html
+ []
+
+
+Overfull \hbox (2.0711pt too wide) in paragraph at lines 8225--8228
+[]\OT1/ptm/m/n/10 or --noprop=test[,test]] Dis-able up-wards sta-tus prop-a-ga-
+tion when YEL-LOW. The ``--noprop''
+ []
+
+ [296]
+Overfull \hbox (133.79112pt too wide) in paragraph at lines 8336--8338
+[]\OT1/ptm/m/n/10 The ``add-button.gif'' is avail-able from Netscape at [][][][
+][][] 
+ []
+
+ [297] [298]
+Overfull \hbox (5.56049pt too wide) in paragraph at lines 8544--8566
+\OT1/ptm/m/n/10 able, and the ''$BB-HOME/www/os/''optionworktogether,andplacest
+he new-page-setHTML-filesina-sub-di-rec-to-ry-offthenor-
+ []
+
+
+Overfull \hbox (4.20068pt too wide) in paragraph at lines 8544--8566
+\OT1/ptm/m/n/10 mal Hob-bitwe-b-root.IfyounormallyaccesstheHobbitpagesas ''[][]
+[][][][]``,youwillthenaccess
+ []
+
+
+Overfull \hbox (0.30081pt too wide) in paragraph at lines 8544--8566
+\OT1/ptm/m/n/10 the-new-page-se-tas''[][][][][][]`` NB:ThedirectorygivenasBBWEB
+mustcontainasymbolic
+ []
+
+
+Overfull \hbox (1.37909pt too wide) in paragraph at lines 8544--8566
+\OT1/ptm/m/n/10 link-tothe$BBHOME/www/html/directory,orlinksto in-di-vid-u-al-s
+ta-tusmes-sageswill-not-work.Similarlinks shouldbe-made-
+ []
+
+
+Overfull \hbox (79.4287pt too wide) in paragraph at lines 8544--8566
+\OT1/ptm/m/n/10 forthegifs/,help/andnotes/ di-rec-to-ries. * ``--pageset=os'' t
+ells bb-gen to struc-ture the web-pages us-ingthe''os''layout,insteadofthedefau
+ltlayout.
+ []
+
+
+Overfull \hbox (28.16953pt too wide) in paragraph at lines 8544--8566
+\OT1/ptm/m/n/10 platein$BBHOME/web/bb[]headerand .../bb[]footer-withthisoption,
+itwillinsteaduse the-files''os[]header''and''os[]footer''fromthe
+ []
+
+
+Overfull \hbox (4.6199pt too wide) in paragraph at lines 8544--8566
+\OT1/ptm/m/n/10 $BB-HOME/web/directory.Thisallowsyoutocustomize head-er-sand-fo
+ot-ers-fore-ach-page-set.Ifyoujustwant tou-sethenor-mal-
+ []
+
+
+Overfull \hbox (16.71077pt too wide) in paragraph at lines 8591--8595
+[]\OT1/ptm/m/n/10 The re-port files gen-er-ated by bb-gen are stored in in-di-v
+id-ual di-rec-to-ries (one per re-port) be-low the $BB-HOME/www/rep/
+ []
+
+
+Overfull \hbox (36.19107pt too wide) in paragraph at lines 8652--8657
+[]\OT1/ptm/m/n/10 0700:greenfor10minutes(600seconds) 0710:blue-for5minutes(300s
+econds) 0715:green-for14hours38minutes(52680seconds)
+ []
+
+ [299]
+Overfull \hbox (116.93987pt too wide) in paragraph at lines 8733--8741
+[]\OT1/ptm/m/n/10 START=`date+%s--date=''22Jun200300:00:00''` END=`date+%s--dat
+e=''22Jun200323:59:59''` BBWEB=/reports/bigbrother/daily/2003/06/22$\OMS/pzccm/
+m/n/10 n$
+ []
+
+
+Overfull \hbox (42.7405pt too wide) in paragraph at lines 8733--8741
+\OT1/ptm/m/n/10 BBHELPSKIN=/hobbit/help$\OMS/pzccm/m/n/10 n$ \OT1/ptm/m/n/10 BB
+NOTESSKIN=/hobbit/notes$\OMS/pzccm/m/n/10 n$ \OT1/ptm/m/n/10 bbgen--reportopts=
+$START:$END:1:crit$\OMS/pzccm/m/n/10 n$ \OT1/ptm/m/n/10 --subpagecolumns=2$\OMS
+/pzccm/m/n/10 n$
+ []
+
+
+Overfull \hbox (128.02931pt too wide) in paragraph at lines 8743--8748
+[]\OT1/ptm/m/n/10 The ``BB-WEB'' set-ting means that the re-port will be avail-
+able with a URL of ``[][][][][][]``.
+ []
+
+ [300]
+Overfull \hbox (0.75075pt too wide) in paragraph at lines 8800--8804
+[]\OT1/ptm/m/n/10 Sets the ac-knowl-edg-ment level for ac-knowl-edg-ments sent 
+via the \OT1/ptm/m/it/10 hobbit-ackinfo.cgi(1) \OT1/ptm/m/n/10 page.
+ []
+
+ [301]
+Overfull \hbox (102.66989pt too wide) in paragraph at lines 8867--8871
+[]\OT1/ptm/m/n/10 IP(IPaddressofhost-fordisplaypurposesonly) PIXELS(widthofcolo
+rbarwheninpixel-mode) END-TIME(whenthecolorbarbegins,atime[]tvalue)
+ []
+
+ [302] [303] [304] [305]
+Overfull \hbox (12.01147pt too wide) in paragraph at lines 9108--9115
+\OT1/ptm/m/n/10 ment, bbtest-net will ig-nore hosts that do not have any ``NET:
+x'' tag. So only hosts that have a NET:$BBLOCATION
+ []
+
+ [306] [307] [308] [309] [310] [311] [312] [313] [314] [315] [316] [317] [318] 
+[319] [320]
+Chapter 29.
+ [321
+
+] [322] [323] [324]
+
+LaTeX Warning: Citation `web:patchutils' on page 325 undefined on input line 10
+299.
+
+ [325]
+Overfull \hbox (19.96942pt too wide) in paragraph at lines 10370--10371
+[]\OT1/ptm/m/n/10 The to-tal num-ber of con-nec-tions ac-cepted from clients si
+nce the proxy started. The ``(N msgs/second)''
+ []
+
+ [326] [327] [328]
+Overfull \hbox (2.4813pt too wide) in paragraph at lines 10572--10574
+[]\OT1/ptm/m/n/10 Header, footer and form tem-plate for the Hob-bit \OT1/ptm/b/
+n/10 ac-knowl-edge alert \OT1/ptm/m/n/10 web-page gen-er-ated by \OT1/ptm/m/it/
+10 bb-ack.cgi(1) 
+ []
+
+
+Overfull \hbox (5.66129pt too wide) in paragraph at lines 10621--10624
+[]\OT1/ptm/m/n/10 Header and footer for the Hob-bit \OT1/ptm/b/n/10 Con-fig-u-r
+a-tion re-port \OT1/ptm/m/n/10 web-page, gen-er-ated by the \OT1/ptm/m/it/10 ho
+bbit-confreport.cgi(1)
+ []
+
+ [329]
+Overfull \hbox (2.75124pt too wide) in paragraph at lines 10704--10707
+[]\OT1/ptm/m/n/10 Header, footer and forms for se-lect-ing a pre-generated \OT1
+/ptm/b/n/10 Avail-abil-ity Re-port \OT1/ptm/m/n/10 . Han-dled by the \OT1/ptm/m
+/it/10 bb-datepage.cgi(1)
+ []
+
+ [330]
+Chapter 30.
+ [331
+
+]
+Overfull \hbox (89.14885pt too wide) in paragraph at lines 10746--10754
+[]\OT1/ptm/m/n/10 start-mon(Startmonthofthereport) start-day(Startday-of-montho
+fthereport) start-yr(Startyearofthereport) end-mon(Endmonthofthereport)
+ []
+
+ [332] [333] [334] [335]
+Chapter 31.
+ [336
+
+] [337]
+Overfull \hbox (1.43947pt too wide) in paragraph at lines 11011--11015
+[]\OT1/ptm/m/n/10 HOSTSVC(thehostandservicetoreporton) STYLE(reportstyle:''crit
+'',''non-crit'',''all'') ST(starttimeinsecondssince1-
+ []
+
+
+Overfull \hbox (126.98877pt too wide) in paragraph at lines 11021--11024
+[]\OT1/ptm/m/n/10 IP(IPaddressofhost-fordisplaypurposesonly) RE-PORT-TIME(theRE
+PORTTIME:settingforthishost) WARN-PCT(theWARNPCT:settingforthishost) 
+ []
+
+ [338] [339] [340] [341] [342] [343] [344] [345]
+Chapter 32.
+ [346
+
+] [347]
+Overfull \hbox (1.81094pt too wide) in paragraph at lines 11622--11624
+[]\OT1/ptm/m/n/10 To en-able the ncv mod-ule for a sta-tus, add a ``COLUMN-NAME
+=ncv'' to the TEST2RRD set-ting and the COLUMN-
+ []
+
+ [348] [349] [350] [351]
+Chapter 33.
+ [352
+
+]
+
+Package hyperref Warning: Difference (2) between bookmark levels is greater 
+(hyperref)                than one, level fixed on input line 11823.
+
+ [353] [354]
+Overfull \hbox (14.86006pt too wide) in paragraph at lines 11965--11972
+\OT1/ptm/m/n/10 re-ceive alerts for this HOST-NAME+TESTNAME com-bi-na-tion, ac-
+cord-ing to the rules de-fined in \OT1/ptm/m/it/10 hobbit-alerts.cfg(5)
+ []
+
+ [355] [356]
+Overfull \hbox (155.89743pt too wide) in paragraph at lines 12235--12238
+[]\OT1/ptm/m/n/10 If the ``fields'' pa-ram-e-ter is omit-ted, a de-fault set of
+ host-name,testname,color,flags,lastchange,logtime,validtime,acktime,disabletim
+e,sender,cookie,line1
+ []
+
+
+Overfull \hbox (44.73033pt too wide) in paragraph at lines 12324--12325
+[]\OT1/ptm/m/n/10 $WWW=`$BB$BBDISP''querywww.foo.com.www``|awk'\OMS/pzccm/m/n/1
+0 f\OT1/ptm/m/n/10 print$1\OMS/pzccm/m/n/10 g\OT1/ptm/m/n/10 '` $if[''$WWW''=''
+red''];then/etc/init.d/apacherestart;fi 
+ []
+
+
+Overfull \hbox (44.55025pt too wide) in paragraph at lines 12331--12335
+[]\OT1/ptm/m/n/10 $$BB$BBDISP''configbb-dftab''$\OML/ptmcm/m/it/10 >$\OT1/ptm/m
+/n/10 /tmp/bb-dftab.new $if[-s/tmp/bb-dftab.new];then mv/tmp/bb-dftab.new$BBHOM
+E/etc/bb-
+ []
+
+ [357] [358]
+Chapter 34.
+ [359
+
+] [360] [361] [362] [363] [364] [365]) [366]
+\openout2 = `bookmaking.aux'.
+
+ (./bookmaking.tex
+Appendix A.
+ [367
+
+
+
+]) [368]
+\openout2 = `license.aux'.
+
+ (./license.tex
+Appendix B.
+
+LaTeX Warning: Reference `sec:opl:options' on page 369 undefined on input line 
+26.
+
+ [369
+
+
+
+]) [370]
+No file 00book.bbl.
+No file 00book.ind.
+ (./00book.aux (./preface.aux) (./hobbit_overview.aux) (./howtograph.aux) (./in
+stall.aux) (./about.aux) (./hobbit-alerts.aux) (./hobbit-config.aux) (./bb-to-h
+obbit.aux) (./hobbit-mrtg.aux) (./criticalsystems.aux) (./known-issues.aux) (./
+server_configuration_files.aux) (./web_page_generation.aux) (./report_generatio
+n.aux) (./administrative_web_pages.aux) (./network_service_testing.aux) (./comb
+ination_tests.aux) (./messages_protocols.aux) (./hobbit_server_programs.aux) (.
+/hobbit_client.aux) (./data_backend.aux) (./misc_programs.aux) (./manpages.aux)
+ (./bookmaking.aux) (./license.aux))
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: There were multiply-defined labels.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 4435 strings out of 94074
+ 65665 string characters out of 1167095
+ 181014 words of memory out of 1500000
+ 7492 multiletter control sequences out of 10000+50000
+ 26739 words of font info for 66 fonts, out of 1200000 for 2000
+ 645 hyphenation exceptions out of 8191
+ 28i,13n,43p,2031b,683s stack positions out of 5000i,500n,6000p,200000b,10000s
+
+Output written on 00book.dvi (373 pages, 1690132 bytes).

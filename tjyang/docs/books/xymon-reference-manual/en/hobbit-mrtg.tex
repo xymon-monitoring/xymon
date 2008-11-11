@@ -1,0 +1,99 @@
+\chapter{Integrating MRTG data into Hobbit}
+\section{Integrating MRTG data into Hobbit}
+
+
+ This document describes one way of integrating MRTG graphs into Hobbit. It's simple, doesn't require any additional scripts, and provides all of your MRTG graphs as part of the ``trends'' column that is already present for all hosts in Hobbit.
+
+
+ Another way of doing this is the bb-mrtg.pl script. This is an extension script that gives you some more options for controlling where the graphs show up, and also lets you generate alerts based on data collected by MRTG.
+\subsubsection{Simple Hobbit-MRTG support}
+
+
+ MRTG by default uses its own fileformat for the data files, and continuously generates PNG- or GIF-images of the data. This is a waste of ressources - most of the time, these images are never seen. This was in fact one of the reasons that RRDtool was developed, to separate the data-collection from the graph generation.
+
+
+ Hobbit uses the RRDtool format for all of its data. You can configure MRTG to save data using the RRDtool data format, instead of the default MRTG log-file format. This lets your MRTG save the data directly into the Hobbit RRD directory, in the same format that all of the other Hobbit RRD files use. You can then use the normal Hobbit graph tools to view the graphs.
+
+
+ To configure MRTG to use the RRDtool format, you must setup the mrtg.cfg file like this at the top of the file:
+\begin{verbatim}
+
+# For Hobbit integration
+WorkDir: /usr/local/hobbit/data/rrd
+LogFormat: rrdtool
+
+\end{verbatim}
+
+
+ Note that the WorkDir setting points to the top-level RRD directory, i.e. the one defined via the BBRRDS setting in hobbitserver.cfg. The Logformat: rrdtool makes MRTG save data using the RRDtool data format.
+
+
+ Each of the network interfaces you monitor have a target-definition in the mrtg.cfg file. You need to modify this slightly, to make it save the RRD data file in a subdirectory matching the hostname you have in the bb-hosts file, and with a filename that begins with ``mrtg.''. Like this:
+\begin{verbatim}
+
+Target[mrtg.myrouter.eth0]: /10.0.0.1:public@myrouter.sample.com:
+Directory[mrtg.myrouter.eth0]: myrouter.sample.com
+
+\end{verbatim}
+
+
+ This defines an MRTG target, where it monitors the interface on \textbf{myrouter.sample.com}
+ that has the IP-address \textbf{10.0.0.1}
+. It uses the community name \textbf{public}
+ to query the SNMP daemon on the router.
+
+
+ The \textbf{Directory[mrtg.myrouter.eth0]: myrouter.sample.com}
+ instructs MRTG to save the data file in this directory relative to the \textbf{WorkDir}
+ directory, i.e. the final directory for the RRD datafile will be /usr/local/hobbit/data/rrd/myrouter.sample.com which is where Hobbit expects all of the RRD-files for the myrouter.sample.com host to be. The name of the RRD data-file will be \textbf{mrtg.myrouter.eth0.rrd}
+ - i.e. the name of the target.
+
+
+ The reason for naming the data file \textbf{mrtg.*.rrd}
+ is that the hobbitgraph tool has a built-in definition for generating graphs from this type of files. So if you stick to this naming convention, the graphs will automatically show up on the Hobbit ``trends'' page. If you have more than one device that you collect data from, you'll need to modify this; you can use any name for the target as long as it is of the form \textbf{mrtg.*.DEVICE}
+ - i.e. first ``mrtg.'', then some random text (e.g. the hostname), then a dot and the device-name. The device-name is used as a legend on the graphs, so you probably want to make this something recognizable, like the name of the network interface, or some sensible description like ``DSL'', ``LAN'', ``T1'' or whatever you know your devices as. Note the MRTG converts this to lower-case.
+
+
+ Here is the full mrtg.cfg configuration used to track traffic on my Internet gateway (currently a 4 Mbit/512 Kbit ADSL). Note that even though MRTG does not use the Title and MaxBytes settings, they are required - MRTG will not run without them:
+\begin{verbatim}
+
+# For Hobbit integration
+WorkDir: /var/lib/hobbit/rrd
+LogFormat: rrdtool
+
+# The external interface on my router
+Directory[mrtg.fenris.dsl]: fenris.hswn.dk
+Target[mrtg.fenris.dsl]: /80.62.63.88:public@fenris:
+Title[mrtg.fenris.dsl]: Traffic Analysis for External DSL
+MaxBytes1[mrtg.fenris.dsl]: 500000
+MaxBytes2[mrtg.fenris.dsl]: 62500
+
+# The internal interface on my router
+Directory[mrtg.fenris.lan]: fenris.hswn.dk
+Target[mrtg.fenris.lan]: /10.0.0.1:public@fenris:
+Title[mrtg.fenris.lan]: Traffic Analysis for internal LAN
+MaxBytes[mrtg.fenris.lan]: 1250000
+
+\end{verbatim}
+
+
+ With this setup, I have the MRTG graphs readily available on the ``trends'' page, together with all of the other Hobbit graphs.
+\subsubsection{Running the MRTG data collector from hobbitlaunch}
+
+
+ Normally there is a cron job that runs the mrtg command every 5 minutes to collect the MRTG data. But you can run it from hobbitlaunch - this also has the benefit that the RRD files will be owned by the hobbit user.
+
+
+ All that is needed is to add a section for MRTG to Hobbit's hobbitlaunch.cfg file. Mine looks like this:
+\begin{verbatim}
+
+[mrtg]
+	CMD /usr/bin/mrtg --lock-file $BBSERVERLOGS/mrtg.lock /etc/mrtg.cfg
+	INTERVAL 5m
+	LOGFILE $BBSERVERLOGS/mrtg.log
+
+\end{verbatim}
+
+
+ Some Linux distributions setup MRTG with the expectation that it will always be run by the root user. So you may have to change permissions on some files and directories e.g. to permit the hobbit user to read the mrtg.cfg file. Check the mrtg.log file for errors.
+

@@ -1,0 +1,419 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@% @;
+
+
+1.1
+date	2008.02.09.00.31.31;	author tjyang;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@\chapter{Managing releases and branchy development}
+\label{chap:branch}
+
+Mercurial provides several mechanisms for you to manage a project that
+is making progress on multiple fronts at once.  To understand these
+mechanisms, let's first take a brief look at a fairly normal software
+project structure.
+
+Many software projects issue periodic ``major'' releases that contain
+substantial new features.  In parallel, they may issue ``minor''
+releases.  These are usually identical to the major releases off which
+they're based, but with a few bugs fixed.
+
+In this chapter, we'll start by talking about how to keep records of
+project milestones such as releases.  We'll then continue on to talk
+about the flow of work between different phases of a project, and how
+Mercurial can help you to isolate and manage this work.
+
+\section{Giving a persistent name to a revision}
+
+Once you decide that you'd like to call a particular revision a
+``release'', it's a good idea to record the identity of that revision.
+This will let you reproduce that release at a later date, for whatever
+purpose you might need at the time (reproducing a bug, porting to a
+new platform, etc).
+\interaction{tag.init}
+
+Mercurial lets you give a permanent name to any revision using the
+\hgcmd{tag} command.  Not surprisingly, these names are called
+``tags''.
+\interaction{tag.tag}
+
+A tag is nothing more than a ``symbolic name'' for a revision.  Tags
+exist purely for your convenience, so that you have a handy permanent
+way to refer to a revision; Mercurial doesn't interpret the tag names
+you use in any way.  Neither does Mercurial place any restrictions on
+the name of a tag, beyond a few that are necessary to ensure that a
+tag can be parsed unambiguously.  A tag name cannot contain any of the
+following characters:
+\begin{itemize}
+\item Colon (ASCII 58, ``\texttt{:}'')
+\item Carriage return (ASCII 13, ``\Verb+\r+'')
+\item Newline (ASCII 10, ``\Verb+\n+'')
+\end{itemize}
+
+You can use the \hgcmd{tags} command to display the tags present in
+your repository.  In the output, each tagged revision is identified
+first by its name, then by revision number, and finally by the unique
+hash of the revision.  
+\interaction{tag.tags}
+Notice that \texttt{tip} is listed in the output of \hgcmd{tags}.  The
+\texttt{tip} tag is a special ``floating'' tag, which always
+identifies the newest revision in the repository.
+
+In the output of the \hgcmd{tags} command, tags are listed in reverse
+order, by revision number.  This usually means that recent tags are
+listed before older tags.  It also means that \texttt{tip} is always
+going to be the first tag listed in the output of \hgcmd{tags}.
+
+When you run \hgcmd{log}, if it displays a revision that has tags
+associated with it, it will print those tags.
+\interaction{tag.log}
+
+Any time you need to provide a revision~ID to a Mercurial command, the
+command will accept a tag name in its place.  Internally, Mercurial
+will translate your tag name into the corresponding revision~ID, then
+use that.
+\interaction{tag.log.v1.0}
+
+There's no limit on the number of tags you can have in a repository,
+or on the number of tags that a single revision can have.  As a
+practical matter, it's not a great idea to have ``too many'' (a number
+which will vary from project to project), simply because tags are
+supposed to help you to find revisions.  If you have lots of tags, the
+ease of using them to identify revisions diminishes rapidly.
+
+For example, if your project has milestones as frequent as every few
+days, it's perfectly reasonable to tag each one of those.  But if you
+have a continuous build system that makes sure every revision can be
+built cleanly, you'd be introducing a lot of noise if you were to tag
+every clean build.  Instead, you could tag failed builds (on the
+assumption that they're rare!), or simply not use tags to track
+buildability.
+
+If you want to remove a tag that you no longer want, use
+\hgcmdargs{tag}{--remove}.  
+\interaction{tag.remove}
+You can also modify a tag at any time, so that it identifies a
+different revision, by simply issuing a new \hgcmd{tag} command.
+You'll have to use the \hgopt{tag}{-f} option to tell Mercurial that
+you \emph{really} want to update the tag.
+\interaction{tag.replace}
+There will still be a permanent record of the previous identity of the
+tag, but Mercurial will no longer use it.  There's thus no penalty to
+tagging the wrong revision; all you have to do is turn around and tag
+the correct revision once you discover your error.
+
+Mercurial stores tags in a normal revision-controlled file in your
+repository.  If you've created any tags, you'll find them in a file
+named \sfilename{.hgtags}.  When you run the \hgcmd{tag} command,
+Mercurial modifies this file, then automatically commits the change to
+it.  This means that every time you run \hgcmd{tag}, you'll see a
+corresponding changeset in the output of \hgcmd{log}.
+\interaction{tag.tip}
+
+\subsection{Handling tag conflicts during a merge}
+
+You won't often need to care about the \sfilename{.hgtags} file, but
+it sometimes makes its presence known during a merge.  The format of
+the file is simple: it consists of a series of lines.  Each line
+starts with a changeset hash, followed by a space, followed by the
+name of a tag.
+
+If you're resolving a conflict in the \sfilename{.hgtags} file during
+a merge, there's one twist to modifying the \sfilename{.hgtags} file:
+when Mercurial is parsing the tags in a repository, it \emph{never}
+reads the working copy of the \sfilename{.hgtags} file.  Instead, it
+reads the \emph{most recently committed} revision of the file.
+
+An unfortunate consequence of this design is that you can't actually
+verify that your merged \sfilename{.hgtags} file is correct until
+\emph{after} you've committed a change.  So if you find yourself
+resolving a conflict on \sfilename{.hgtags} during a merge, be sure to
+run \hgcmd{tags} after you commit.  If it finds an error in the
+\sfilename{.hgtags} file, it will report the location of the error,
+which you can then fix and commit.  You should then run \hgcmd{tags}
+again, just to be sure that your fix is correct.
+
+\subsection{Tags and cloning}
+
+You may have noticed that the \hgcmd{clone} command has a
+\hgopt{clone}{-r} option that lets you clone an exact copy of the
+repository as of a particular changeset.  The new clone will not
+contain any project history that comes after the revision you
+specified.  This has an interaction with tags that can surprise the
+unwary.
+
+Recall that a tag is stored as a revision to the \sfilename{.hgtags}
+file, so that when you create a tag, the changeset in which it's
+recorded necessarily refers to an older changeset.  When you run
+\hgcmdargs{clone}{-r foo} to clone a repository as of tag
+\texttt{foo}, the new clone \emph{will not contain the history that
+  created the tag} that you used to clone the repository.  The result
+is that you'll get exactly the right subset of the project's history
+in the new repository, but \emph{not} the tag you might have expected.
+
+\subsection{When permanent tags are too much}
+
+Since Mercurial's tags are revision controlled and carried around with
+a project's history, everyone you work with will see the tags you
+create.  But giving names to revisions has uses beyond simply noting
+that revision \texttt{4237e45506ee} is really \texttt{v2.0.2}.  If
+you're trying to track down a subtle bug, you might want a tag to
+remind you of something like ``Anne saw the symptoms with this
+revision''.
+
+For cases like this, what you might want to use are \emph{local} tags.
+You can create a local tag with the \hgopt{tag}{-l} option to the
+\hgcmd{tag} command.  This will store the tag in a file called
+\sfilename{.hg/localtags}.  Unlike \sfilename{.hgtags},
+\sfilename{.hg/localtags} is not revision controlled.  Any tags you
+create using \hgopt{tag}{-l} remain strictly local to the repository
+you're currently working in.
+
+\section{The flow of changes---big picture vs. little}
+
+To return to the outline I sketched at the beginning of a chapter,
+let's think about a project that has multiple concurrent pieces of
+work under development at once.
+
+There might be a push for a new ``main'' release; a new minor bugfix
+release to the last main release; and an unexpected ``hot fix'' to an
+old release that is now in maintenance mode.
+
+The usual way people refer to these different concurrent directions of
+development is as ``branches''.  However, we've already seen numerous
+times that Mercurial treats \emph{all of history} as a series of
+branches and merges.  Really, what we have here is two ideas that are
+peripherally related, but which happen to share a name.
+\begin{itemize}
+\item ``Big picture'' branches represent the sweep of a project's
+  evolution; people give them names, and talk about them in
+  conversation.
+\item ``Little picture'' branches are artefacts of the day-to-day
+  activity of developing and merging changes.  They expose the
+  narrative of how the code was developed.
+\end{itemize}
+
+\section{Managing big-picture branches in repositories}
+
+The easiest way to isolate a ``big picture'' branch in Mercurial is in
+a dedicated repository.  If you have an existing shared
+repository---let's call it \texttt{myproject}---that reaches a ``1.0''
+milestone, you can start to prepare for future maintenance releases on
+top of version~1.0 by tagging the revision from which you prepared
+the~1.0 release.
+\interaction{branch-repo.tag}
+You can then clone a new shared \texttt{myproject-1.0.1} repository as
+of that tag.
+\interaction{branch-repo.clone}
+
+Afterwards, if someone needs to work on a bug fix that ought to go
+into an upcoming~1.0.1 minor release, they clone the
+\texttt{myproject-1.0.1} repository, make their changes, and push them
+back.
+\interaction{branch-repo.bugfix}
+Meanwhile, development for the next major release can continue,
+isolated and unabated, in the \texttt{myproject} repository.
+\interaction{branch-repo.new}
+
+\section{Don't repeat yourself: merging across branches}
+
+In many cases, if you have a bug to fix on a maintenance branch, the
+chances are good that the bug exists on your project's main branch
+(and possibly other maintenance branches, too).  It's a rare developer
+who wants to fix the same bug multiple times, so let's look at a few
+ways that Mercurial can help you to manage these bugfixes without
+duplicating your work.
+
+In the simplest instance, all you need to do is pull changes from your
+maintenance branch into your local clone of the target branch.
+\interaction{branch-repo.pull}
+You'll then need to merge the heads of the two branches, and push back
+to the main branch.
+\interaction{branch-repo.merge}
+
+\section{Naming branches within one repository}
+
+In most instances, isolating branches in repositories is the right
+approach.  Its simplicity makes it easy to understand; and so it's
+hard to make mistakes.  There's a one-to-one relationship between
+branches you're working in and directories on your system.  This lets
+you use normal (non-Mercurial-aware) tools to work on files within a
+branch/repository.
+
+If you're more in the ``power user'' category (\emph{and} your
+collaborators are too), there is an alternative way of handling
+branches that you can consider.  I've already mentioned the
+human-level distinction between ``small picture'' and ``big picture''
+branches.  While Mercurial works with multiple ``small picture''
+branches in a repository all the time (for example after you pull
+changes in, but before you merge them), it can \emph{also} work with
+multiple ``big picture'' branches.
+
+The key to working this way is that Mercurial lets you assign a
+persistent \emph{name} to a branch.  There always exists a branch
+named \texttt{default}.  Even before you start naming branches
+yourself, you can find traces of the \texttt{default} branch if you
+look for them.
+
+As an example, when you run the \hgcmd{commit} command, and it pops up
+your editor so that you can enter a commit message, look for a line
+that contains the text ``\texttt{HG: branch default}'' at the bottom.
+This is telling you that your commit will occur on the branch named
+\texttt{default}.
+
+To start working with named branches, use the \hgcmd{branches}
+command.  This command lists the named branches already present in
+your repository, telling you which changeset is the tip of each.
+\interaction{branch-named.branches}
+Since you haven't created any named branches yet, the only one that
+exists is \texttt{default}.
+
+To find out what the ``current'' branch is, run the \hgcmd{branch}
+command, giving it no arguments.  This tells you what branch the
+parent of the current changeset is on.
+\interaction{branch-named.branch}
+
+To create a new branch, run the \hgcmd{branch} command again.  This
+time, give it one argument: the name of the branch you want to create.
+\interaction{branch-named.create}
+
+After you've created a branch, you might wonder what effect the
+\hgcmd{branch} command has had.  What do the \hgcmd{status} and
+\hgcmd{tip} commands report?
+\interaction{branch-named.status}
+Nothing has changed in the working directory, and there's been no new
+history created.  As this suggests, running the \hgcmd{branch} command
+has no permanent effect; it only tells Mercurial what branch name to
+use the \emph{next} time you commit a changeset.
+
+When you commit a change, Mercurial records the name of the branch on
+which you committed.  Once you've switched from the \texttt{default}
+branch to another and committed, you'll see the name of the new branch
+show up in the output of \hgcmd{log}, \hgcmd{tip}, and other commands
+that display the same kind of output.
+\interaction{branch-named.commit}
+The \hgcmd{log}-like commands will print the branch name of every
+changeset that's not on the \texttt{default} branch.  As a result, if
+you never use named branches, you'll never see this information.
+
+Once you've named a branch and committed a change with that name,
+every subsequent commit that descends from that change will inherit
+the same branch name.  You can change the name of a branch at any
+time, using the \hgcmd{branch} command.  
+\interaction{branch-named.rebranch}
+In practice, this is something you won't do very often, as branch
+names tend to have fairly long lifetimes.  (This isn't a rule, just an
+observation.)
+
+\section{Dealing with multiple named branches in a repository}
+
+If you have more than one named branch in a repository, Mercurial will
+remember the branch that your working directory on when you start a
+command like \hgcmd{update} or \hgcmdargs{pull}{-u}.  It will update
+the working directory to the tip of this branch, no matter what the
+``repo-wide'' tip is.  To update to a revision that's on a different
+named branch, you may need to use the \hgopt{update}{-C} option to
+\hgcmd{update}.
+
+This behaviour is a little subtle, so let's see it in action.  First,
+let's remind ourselves what branch we're currently on, and what
+branches are in our repository.
+\interaction{branch-named.parents}
+We're on the \texttt{bar} branch, but there also exists an older
+\hgcmd{foo} branch.
+
+We can \hgcmd{update} back and forth between the tips of the
+\texttt{foo} and \texttt{bar} branches without needing to use the
+\hgopt{update}{-C} option, because this only involves going backwards
+and forwards linearly through our change history.
+\interaction{branch-named.update-switchy}
+
+If we go back to the \texttt{foo} branch and then run \hgcmd{update},
+it will keep us on \texttt{foo}, not move us to the tip of
+\texttt{bar}.
+\interaction{branch-named.update-nothing}
+
+Committing a new change on the \texttt{foo} branch introduces a new
+head.
+\interaction{branch-named.foo-commit}
+We can no longer update from \texttt{foo} to \texttt{bar} without
+going ``sideways'' in history, so Mercurial forces us to provide the
+\hgopt{update}{-C} option to \hgcmd{update}.
+\interaction{branch-named.update-bar}
+
+\section{Branch names and merging}
+
+As you've probably noticed, merges in Mercurial are not symmetrical.
+Let's say our repository has two heads, 17 and 23.  If I
+\hgcmd{update} to 17 and then \hgcmd{merge} with 23, Mercurial records
+17 as the first parent of the merge, and 23 as the second.  Whereas if
+I \hgcmd{update} to 23 and then \hgcmd{merge} with 17, it records 23
+as the first parent, and 17 as the second.
+
+This affects Mercurial's choice of branch name when you merge.  After
+a merge, Mercurial will retain the branch name of the first parent
+when you commit the result of the merge.  If your first parent's
+branch name is \texttt{foo}, and you merge with \texttt{bar}, the
+branch name will still be \texttt{foo} after you merge.
+
+It's not unusual for a repository to contain multiple heads, each with
+the same branch name.  Let's say I'm working on the \texttt{foo}
+branch, and so are you.  We commit different changes; I pull your
+changes; I now have two heads, each claiming to be on the \texttt{foo}
+branch.  The result of a merge will be a single head on the
+\texttt{foo} branch, as you might hope.
+
+But if I'm working on the \texttt{bar} branch, and I merge work from
+the \texttt{foo} branch, the result will remain on the \texttt{bar}
+branch.
+\interaction{branch-named.merge}
+
+To give a more concrete example, if I'm working on the
+\texttt{bleeding-edge} branch, and I want to bring in the latest fixes
+from the \texttt{stable} branch, Mercurial will choose the ``right''
+(\texttt{bleeding-edge}) branch name when I pull and merge from
+\texttt{stable}.
+
+\section{Branch naming is generally useful}
+
+You shouldn't think of named branches as applicable only to situations
+where you have multiple long-lived branches cohabiting in a single
+repository.  They're very useful even in the one-branch-per-repository
+case.  
+
+In the simplest case, giving a name to each branch gives you a
+permanent record of which branch a changeset originated on.  This
+gives you more context when you're trying to follow the history of a
+long-lived branchy project.
+
+If you're working with shared repositories, you can set up a
+\hook{pretxnchangegroup} hook on each that will block incoming changes
+that have the ``wrong'' branch name.  This provides a simple, but
+effective, defence against people accidentally pushing changes from a
+``bleeding edge'' branch to a ``stable'' branch.  Such a hook might
+look like this inside the shared repo's \hgrc.
+\begin{codesample2}
+  [hooks]
+  pretxnchangegroup.branch = hg heads --template '{branches} ' | grep mybranch
+\end{codesample2}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "00book"
+%%% End: 
+@

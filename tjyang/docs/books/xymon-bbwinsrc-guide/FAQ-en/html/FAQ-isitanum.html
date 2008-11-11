@@ -1,0 +1,138 @@
+<head>
+<title>UK TeX FAQ -- question label isitanum</title>
+</head><body>
+<h3>Is the argument a number?</h3>
+<p>TeX&rsquo;s own lexical analysis doesn&rsquo;t offer the macro programmer
+terribly much support: while category codes will distinguish letters
+(or what TeX currently thinks of as letters) from everything else,
+there&rsquo;s no support for analysing numbers.
+<p>The simple-minded solution is to compare numeric characters with the
+characters of the argument, one by one, by a sequence of direct tests,
+and to declare the argument &ldquo;not a number&rdquo; if any character fails
+all comparisons:
+<blockquote>
+<pre>
+\ifx1#1
+\else\ifx2#1
+...
+\else\ifx9#1
+\else\isanumfalse
+\fi\fi...\fi
+</pre>
+</blockquote><p>
+which one would then use in a tail-recursing macro to gobble an
+argument.  One could do slightly better by assuming (pretty safely)
+that the digits&rsquo; character codes are consecutive:
+<blockquote>
+<pre>
+\ifnum`#1&lt;`0 \isanumfalse
+\else\ifnum`#1&gt;`9 \isanumfalse
+     \fi
+\fi
+</pre>
+</blockquote><p>
+again used in tail-recursion.  However, these forms aren&rsquo;t very
+satisfactory: getting the recursion &ldquo;right&rdquo; is troublesome (it has a
+tendency to gobble spaces in the argument), and in any case TeX
+itself has mechanisms for reading numbers, and it would be nice to use
+them.
+<p>Donald Arseneau&rsquo;s <i>cite</i> package offers the following test
+for an argument being a strictly positive integer:
+<blockquote>
+<pre>
+\def\IsPositive#1{%
+  TT\fi
+  \ifcat_\ifnum0&lt;0#1 _\else A\fi
+}
+</pre>
+</blockquote><p>
+which can be adapted to a test for a non-negative integer thus:
+<blockquote>
+<pre>
+\def\IsNonNegative{%
+  \ifcat_\ifnum9&lt;1#1 _\else A\fi
+}
+</pre>
+</blockquote><p>
+or a test for any integer:
+<blockquote>
+<pre>
+\def\gobbleminus#1{\ifx-#1\else#1\fi}
+\def\IsInteger#1{%
+  TT\fi
+  \ifcat_\ifnum9&lt;1\gobbleminus#1 _\else A\fi
+}
+</pre>
+</blockquote><p>
+but this surely stretches the technique further than is reasonable.
+<p>If we don&rsquo;t care about the sign, we can use TeX to remove the
+entire number (sign and all) from the input stream, and then look at
+what&rsquo;s left:
+<blockquote>
+
+<pre>
+\def\testnum#1{\afterassignment\testresult\count255=#1 \end}
+\def\testresult#1\end{\ifx\end#1\end\isanumtrue\else\isanumfalse\fi}
+</pre>
+</blockquote><p>
+(which technique is due to David Kastrup); this can provoke errors.
+In a later thread on the same topic, Michael Downes offered:
+<blockquote>
+<pre>
+\def\IsInteger#1{%
+  TT\fi
+  \begingroup \lccode`\-=`\0 \lccode`+=`\0
+    \lccode`\1=`\0 \lccode`\2=`\0 \lccode`\3=`\0
+    \lccode`\4=`\0 \lccode`\5=`\0 \lccode`\6=`\0
+    \lccode`\7=`\0 \lccode`\8=`\0 \lccode`\9=`\0
+  \lowercase{\endgroup
+    \expandafter\ifx\expandafter\delimiter
+    \romannumeral0\string#1}\delimiter
+}
+</pre>
+
+</blockquote><p>
+which relies on <code>\</code><code>romannumeral</code> producing an empty result if its
+argument is zero.  Sadly, this technique has the unfortunate property
+that it accepts simple expressions such as &lsquo;<code>1+2-3</code>&rsquo;; this
+could be solved by an initial <code>\</code><code>gobbleminus</code>-like construction.
+<p>All the complete functions above are designed to be used in TeX
+conditionals written &ldquo;naturally&rdquo; &mdash; for example:
+<blockquote>
+<pre>
+\if\IsInteger{&lt;subject of test&gt;}%
+  &lt;deal with integer&gt;%
+\else
+  &lt;deal with non-integer&gt;%
+\fi
+</pre>
+</blockquote><p>
+The LaTeX <i>memoir</i> class has an internal command of its own,
+<code>\</code><code>checkifinteger{</code><em>num</em><code>}</code>, that sets the conditional command
+<code>\</code><code>ifinteger</code> according to whether the argument was an integer.
+<p>Of course, all this kerfuffle would be (essentially) void if there was
+a simple means of &ldquo;catching&rdquo; TeX errors.  Imagining an
+error-catching primitive <code>\</code><code>ifnoerror</code>, one might write:
+<blockquote>
+<pre>
+\def\IsInteger#1{%
+  TT%
+  \ifnoerror
+    \tempcount=#1\relax
+% carries on if no error
+    \expandafter\iftrue
+  \else
+% here if there was an error
+    \expandafter\iffalse
+  \fi
+}
+</pre>
+</blockquote><p>
+thus using TeX&rsquo;s own integer-parsing code to do the check.  It&rsquo;s a
+pity that such a mechanism was never defined (it could be that it&rsquo;s
+impossible to program within TeX!).
+<dl>
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=isitanum">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=isitanum</a>
+</body>

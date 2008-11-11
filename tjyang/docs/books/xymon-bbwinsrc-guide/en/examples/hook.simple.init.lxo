@@ -1,0 +1,11 @@
+$ \textbf{hg init hook-test}
+$ \textbf{cd hook-test}
+$ \textbf{echo '[hooks]' >> .hg/hgrc}
+$ \textbf{echo 'commit = echo committed $HG_NODE' >> .hg/hgrc}
+$ \textbf{cat .hg/hgrc}
+[hooks]
+commit = echo committed $HG_NODE
+$ \textbf{echo a > a}
+$ \textbf{hg add a}
+$ \textbf{hg commit -m 'testing commit hook'}
+committed 56f1582ee5ad216797b263fce7d2ebe2da234ff3

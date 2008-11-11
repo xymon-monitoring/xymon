@@ -1,0 +1,7 @@
+$ \textbf{cat > letter.txt <<EOF}
+> \textbf{Greetings!}
+> \textbf{I am Mariam Abacha, the wife of former}
+> \textbf{Nigerian dictator Sani Abacha.}
+> \textbf{EOF}
+$ \textbf{hg add letter.txt}
+$ \textbf{hg commit -m '419 scam, first draft'}

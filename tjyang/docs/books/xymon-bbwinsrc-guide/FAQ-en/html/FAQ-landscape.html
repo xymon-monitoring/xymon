@@ -1,0 +1,83 @@
+<head>
+<title>UK TeX FAQ -- question label landscape</title>
+</head><body>
+<h3>Typesetting things in landscape orientation</h3>
+<p>It&rsquo;s often necessary to typeset part of a document in landscape
+orientation; to achieve this, one needs not only to change the page
+dimensions, but also to instruct the output device to print the
+strange page differently.
+<p>There are two &ldquo;ordinary&rdquo; mechanisms for doing two slight variations
+of landscape typesetting:
+<ul>
+<li> If you have a single floating object that is wider than it is
+  deep, and will only fit on the page in landscape orientation, use
+  the <i>rotating</i> package; this defines
+  <code>sidewaysfigure</code> and <code>sidewaystable</code>
+  environments which create floats that occupy a whole page.
+<p>  Note that <i>rotating</i> has problems in a document that also
+  loads the <i>float</i> package, which recommended in other
+  answers in these FAQs, for example that on
+  <a href="FAQ-floats.html">float placement</a>.  The <i>rotfloat</i> package
+  loads <i>rotating</i> for you, and smooths the interaction with
+  <i>float</i>.
+<li> If you have a long sequence of things that need to be typeset in
+  landscape (perhaps a code listing, a wide <code>tabbing</code>
+  environment, or a huge table typeset using <i>longtable</i> or
+  <i>supertabular</i>), use the <i>lscape</i> package (or
+  <i>pdflscape</i> if you&rsquo;re generating PDF output, whether
+  using PDFLaTeX or <i>dvips</i> and generating PDF from
+  that).  Both packages define an environment <code>landscape</code>, which
+  clears the current page and restarts typesetting in landscape
+  orientation (and clears the page at the end of the environment
+  before returning to portrait orientation).
+</ul>
+No currently available package makes direct provision for typesetting
+in both portrait and landscape orientation on the same page (it&rsquo;s not
+the sort of thing that TeX is well set-up to do).  If such
+behaviour was an absolute necessity, one might use the techniques
+described in
+
+<a href="FAQ-textflow.html">"flowing text around figures"</a>, and would
+rotate the landscape portion using the rotation facilities of the
+<i>graphics</i> package.  (Returning from landscape to portrait
+orientation would be somewhat easier: the portrait part of the page
+would be a bottom float at the end of the landscape section, with its
+content rotated.)
+<p>To set an entire document in landscape orientation, one might use
+<i>lscape</i> around the whole document.  A better option is the
+<code>landscape</code> option of the <i>geometry</i> package; if you
+also give it <code>dvips</code> or <code>pdftex</code> option,
+<i>geometry</i> also emits the rotation instructions to cause the
+output to be properly oriented.  The <i>memoir</i> class has the same
+facilities, in this respect, as does <i>geometry</i>.
+<p>A word of warning: most current TeX previewers do not honour
+rotation requests in DVI files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Your best bet is to convert your output to PostScript or to PDF, and
+to view these &lsquo;final&rsquo; forms with an appropriate viewer.
+<dl>
+<dt><tt><i>geometry.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/geometry.zip">macros/latex/contrib/geometry</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/geometry.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/geometry/">browse</a>)
+<dt><tt><i>graphics.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.zip">macros/latex/required/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/graphics/">browse</a>)
+<dt><tt><i>longtable.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>lscape.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.zip">macros/latex/required/graphics</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/graphics.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/graphics/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>pdflscape.sty</i></tt><dd>Distributed with Heiko Oberdiek&rsquo;s packages
+  <a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/oberdiek.zip">macros/latex/contrib/oberdiek</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/oberdiek.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/oberdiek/">browse</a>)
+<dt><tt><i>rotating.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/rotating.zip">macros/latex/contrib/rotating</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/rotating.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/rotating/">browse</a>)
+<dt><tt><i>rotfloat.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/rotfloat.zip">macros/latex/contrib/rotfloat</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/rotfloat.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/rotfloat/">browse</a>)
+<dt><tt><i>supertabular.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/supertabular.zip">macros/latex/contrib/supertabular</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/supertabular.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/supertabular/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=landscape">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=landscape</a>
+</body>

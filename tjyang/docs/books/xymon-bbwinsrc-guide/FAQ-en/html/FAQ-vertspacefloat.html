@@ -1,0 +1,57 @@
+<head>
+<title>UK TeX FAQ -- question label vertspacefloat</title>
+</head><body>
+<h3>Extra vertical space in floats</h3>
+<p>A common complaint is that extra vertical space has crept into
+<code>figure</code> or <code>table</code> floating environments.
+More common still are users who post code that introduces this extra
+space, and <em>haven&rsquo;t noticed the problem</em>!
+<p>The trouble arises from the fact that the <code>center</code>
+environment (and its siblings <code>flushleft</code> and
+<code>flushright</code>) are actually based on LaTeX&rsquo;s
+list-handling code; and lists always separate themselves from the
+material around them.  Meanwhile, there are parameters provided to
+adjust the spacing between floating environments and their
+surroundings; so if we have:
+<blockquote>
+<pre>
+\begin{figure}
+ \begin{center}
+   \includegraphics{...}
+   \caption{...}
+ \end{center}
+\end{figure}
+</pre>
+</blockquote><p>
+or worse still:
+<blockquote>
+<pre>
+\begin{figure}
+ \begin{center}
+   \includegraphics{...}
+ \end{center}
+ \caption{...}
+\end{figure}
+</pre>
+</blockquote><p>
+unwarranted vertical space is going to appear.
+<p>The solution is to let the float and the objects in it position
+themselves, and to use &ldquo;generic&rdquo; layout commands rather than their
+list-based encapsulations.
+<blockquote>
+<pre>
+\begin{figure}
+  \centering
+  \includegraphics{...}
+  \caption{...}
+\end{figure}
+</pre>
+</blockquote><p>
+(which even involves less typing).
+<p>This alternative code will work with any LaTeX package.  It will
+not work with obsolete (pre-LaTeX2e) packages such as
+<i>psfig</i> or <i>epsf</i> &mdash; see 
+<a href="FAQ-impgraph.html">graphics inclusion</a> for discussion of the
+genesis of <code>\</code><code>includegraphics</code>.
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=vertspacefloat">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=vertspacefloat</a>
+</body>

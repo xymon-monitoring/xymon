@@ -1,0 +1,7 @@
+$ \textbf{cd ..}
+$ \textbf{hg status 'glob:**.py'}
+A examples/simple.py
+A src/main.py
+? examples/performant.py
+? setup.py
+? src/watcher/watcher.py

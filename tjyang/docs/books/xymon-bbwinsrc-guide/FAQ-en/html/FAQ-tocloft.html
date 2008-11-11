@@ -1,0 +1,32 @@
+<head>
+<title>UK TeX FAQ -- question label tocloft</title>
+</head><body>
+<h3>The format of the Table of Contents, etc.</h3>
+<p>The formats of entries in the table of contents (TOC) are
+controlled by a number of internal commands (discussed in section 2.3
+of <a href="FAQ-books.html"><em>The LaTeX Companion</em></a>.  The commands
+<code>\</code><code>@pnumwidth</code>, <code>\</code><code>@tocrmarg</code> and <code>\</code><code>@dotsep</code> control the space
+for page numbers, the indentation of the right-hand margin, and the
+separation of the dots in the dotted leaders, respectively.  The
+series of commands named <code>\</code><code>l@<em>xxx</code></em>, where <code><em>xxx</em></code>
+is the name of a sectional heading (such as <code>chapter</code> or
+<code>section</code>, ...) control the layout of the corresponding
+heading, including the space for section numbers.  All these internal
+commands may be individually redefined to give the effect that you
+want.
+<p>Alternatively, the package <i>tocloft</i> provides a set of
+user-level commands that may be used to change the TOC
+formatting.  Since exactly the same mechanisms are used for the List
+of Figures and List of Tables, the layout of these sections may be
+controlled in the same way.
+<p>The <i>KOMA-Script</i> classes provides an optional variant structure
+for the table of contents, and calculates the space needed for the
+numbers automatically.  The <i>memoir</i> class includes the functionality
+of <i>tocloft</i>.
+<dl>
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>tocloft.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocloft.zip">macros/latex/contrib/tocloft</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocloft.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/tocloft/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tocloft">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tocloft</a>
+</body>

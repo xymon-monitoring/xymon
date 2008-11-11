@@ -1,0 +1,4 @@
+$ \textbf{hg merge}
+merging hello.c
+0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+(branch merge, don't forget to commit)

@@ -1,0 +1,47 @@
+<head>
+<title>UK TeX FAQ -- question label tocbibind</title>
+</head><body>
+<h3>Bibliography, index, etc., in TOC</h3>
+<p>The standard LaTeX classes (and many others) use <code>\</code><code>section*</code> or
+<code>\</code><code>chapter*</code> for auto-generated parts of the document (the tables of
+contents, lists of figures and tables, the bibliography and the index).  As a
+result, these items aren&rsquo;t numbered (which most people don&rsquo;t mind),
+and (more importantly) they don&rsquo;t appear in the table of contents.
+<p>The correct solution (as always) is to have a class of your own that
+formats your document according to your requirements.  The macro to do
+the job (<code>\</code><code>addcontentsline</code>) is fairly simple, but there is always
+an issue of ensuring that the contents entry quotes the correct page.
+Supposing that our the document is chapter-based (class <i>report</i>
+or <i>book</i>, for example), the text:
+<blockquote>
+<pre>
+\bibliography{frooble}
+\addcontentsline{toc}{chapter}{Bibliography}
+</pre>
+</blockquote><p>
+will produce the <em>wrong</em> answer if the bibliography is more than
+one page long.  Instead, one should say:
+<blockquote>
+<pre>
+\cleardoublepage
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliography{frooble}
+</pre>
+</blockquote><p>
+(Note that <code>\</code><code>cleardoublepage</code> does the right thing, even if your
+document is single-sided &mdash; in that case, it&rsquo;s a synonym for
+<code>\</code><code>clearpage</code>).  Ensuring that the entry refers to the right place is
+trickier still in a <code>\</code><code>section</code>-based class.
+<p>The common solution, therefore, is to use the <i>tocbibind</i>
+package, which provides many facilities to control the way these
+entries appear in the table of contents.
+<p>Classes of the <i>KOMA-script</i> bundle provide this functionality
+as a set of class options; the <i>memoir</i> class includes
+<i>tocbibind</i> itself.
+<dl>
+<dt><tt><i>KOMA script bundle</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.zip">macros/latex/contrib/koma-script</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/koma-script.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/koma-script/">browse</a>)
+<dt><tt><i>memoir.cls</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.zip">macros/latex/contrib/memoir</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/memoir.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/memoir/">browse</a>)
+<dt><tt><i>tocbibind.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocbibind.zip">macros/latex/contrib/tocbibind</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/tocbibind.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/tocbibind/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tocbibind">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=tocbibind</a>
+</body>

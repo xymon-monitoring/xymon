@@ -1,0 +1,71 @@
+<head>
+<title>UK TeX FAQ -- question label hyphoff</title>
+</head><body>
+<h3>Stopping all hyphenation</h3>
+<p>It may seem an odd thing to want to do (after all, one of TeX&rsquo;s
+great advertised virtues is the quality of its hyphenation) but it&rsquo;s
+sometimes necessary.  The real problem is, that the quality of
+TeX&rsquo;s output is by default largely dependent on the presence of
+hyphenation; if you want to abandon hyphenation, something has to
+give.
+<p>TeX (slightly confusingly) offers four possible mechanisms for
+suppressing hyphenation (there were only two prior to the extensions
+that arrived with TeX version 3).
+<p>First, one can set the hyphenation penalties <code>\</code><code>hyphenpenalty</code> and
+<code>\</code><code>exhyphenpenalty</code> to an &lsquo;infinite&rsquo; value (that is to say, 10000).
+This means that all hyphenations will sufficiently penalise the line
+that would contain them, that the hyphenation won&rsquo;t happen.  The
+disadvantage of this method is that TeX will re-evaluate any
+paragraph for which hyphenations might help, which will slow TeX
+down.
+<p>Second, one can select a language for which no hyphenation patterns
+exist.  Some distributions create a language <code>nohyphenation</code>,
+and the <i>hyphenat</i> package uses this technique for its
+<code>\</code><code>nohyphens</code> command which sets its argument without any
+hyphenation.
+<p>Third, one can set <code>\</code><code>left-</code> and/or <code>\</code><code>righthyphenmin</code> to a
+sufficiently large value that no hyphenation could possibly succeed,
+since the minimum is larger than the length of the longest word
+TeX is willing to hyphenate (the appropriate value is 62).
+<p>Fourth, one can suppress hyphenation for all text using the current
+font by the command
+<blockquote>
+<pre>
+\hyphenchar\font=-1
+</pre>
+</blockquote><p>
+This isn&rsquo;t a particularly practical way for users to suppress
+hyphenation &mdash; the command has to be issued for every font the
+document uses &mdash; but it&rsquo;s how LaTeX itself suppresses hyphenation
+in <code>tt</code> and other fixed-width fonts.
+<p>Which of the techniques you should use depends on what you actually
+want to do.  If the text whose hyphenation is to be suppressed runs
+for less than a paragraph, your only choice is the no-hyphens
+language: the language value is preserved along with the text (in the
+same way that the current font is); the values for penalties and
+hyphen minima active at the end of a paragraph are used when
+hyphenation is calculated.
+<p>Contrariwise, if you are writing a multilanguage document using the
+<i>babel</i> package, you <em>cannot</em> suppress hyphenation
+throughout using either the no-hyphens language or the hyphen minima:
+all those values get changed at a <i>babel</i> language switch: use
+the penalties instead.
+<p>If you simply switch off hyphenation for a good bit of text, the
+output will have a jagged edge (with many lines seriously overfull),
+and your (La)TeX run will bombard you with warnings about overfull
+and underfull lines.  To avoid this you have two options.  You may use
+<code>\</code><code>sloppy</code> (or its environment version <code>sloppypar</code>), and
+have TeX stretch what would otherwise be underfull lines to fill the space
+offered, and wrap other lines, while prematurely wrapping overfull
+lines and stretching the remainder.  Alternatively, you may set the
+text <a href="FAQ-ragright.html">ragged right</a>, and at least get rid of
+the overfull lines; this technique is &lsquo;traditional&rsquo; (in the sense that
+typists do it) and may be expected to appeal to the specifiers of
+eccentric document layouts (such as those for dissertations), but for
+once their sense conforms with typographic style.  (Or at least, style
+constrained in this curious way.)
+<dl>
+<dt><tt><i>hyphenat.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyphenat.zip">macros/latex/contrib/hyphenat</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/hyphenat.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/hyphenat/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hyphoff">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=hyphoff</a>
+</body>

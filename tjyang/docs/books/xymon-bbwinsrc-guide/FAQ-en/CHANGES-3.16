@@ -1,0 +1,87 @@
+Changes in version 3.16
+
+These are changes from 3.15a, which incorporated a couple of
+minor corrections made on the day 3.15 was uploaded
+
+New answers:
+  Label chngmargonfly: changing the document's margins "on the fly"
+  Label doc-wiki: catalogue of known tex-related WIKIs
+  Label fonts-pln: "sophisticated" font selection macros in Plain TeX
+  Label gutter: the problem with two-sided document margins
+  Label marginmanual: setting up the document's margins "by hand"
+  Label marginpkgs: packages for setting up the document's margins
+  Label matchbrak: matching "[]" in optional arguments, etc.
+  Label newfont: why shouldn't I use \newfont in LaTeX?
+  Label poster: summary of the inadequate state of support for posters
+  Label repeatgrf: repeated graphics in documents
+  Label whatbst: choosing a BibTeX style
+  Label whatpdftex: "PDFTeX has entered the mainstream" (actually, it did some
+                    time ago, but I've now "recognised" that in the FAQ)
+
+Answers removed:
+  Label pdftex: I think pdftex is no longer "research" -- see label whatpdftex
+
+Revised answers:
+  Label ant: correct home page reference
+  Label changemargin: rehashed as intro and list of links to (new)
+                      "instruction" answers marginpkgs, marginmanual
+                      and chngmargonfly
+  Label complist: mention multenum package
+  Label cv: europecv has improved, and there's a new class moderncv
+  Label dvipsgraphics: extend discussion of bitmap graphics in dvips
+  Label drawing: correct URL for pstricks site
+  Label findfiles: remove mention of the (long dead) quote site index,
+                   add the catalogue bytopic.html
+  Label fmtconv: troff-to-latex no longer available
+  Label newfunction: mention \operatorname command
+  Label labundef: mention labelcas package
+  Label labelfig: mention iTe editor, correct URL on pstricks page
+  Label man-tex: correct URL for Andy Roberts' page
+  Label man-latex: add Chris Harrison's web manual
+  Label rotating: mention rotfloat package
+  Label seccntformat: correction of suggested code
+  Label secthead: remove 2.09 font commands from "simple" example
+  Label struttab: mention new cellspace package
+  Label texsystems: mention w32tex (from japan) -- capable of being a "minimal"
+                    system
+  Label tutbitslatex: correct URL for the pTeX description, add link to Smith's
+                      "LaTeX for logicians"
+  Label usepictex: correct stuff about mathspic package
+  Label verbwithin: make clear problems apply to verbatim environment, too
+  Label xetex: simplify the answer (the details are all on the web
+               site, anyway), and mention the new linux port
+
+Presentation:
+  LaTeX ``...'' quotes in the source used to be converted to the ascii
+  double-quote character in the HTML; this is changed to use the HTML
+  entities for "typographic" quotes (similarly for single quotes and
+  apostrophes).
+
+  A minor change to html generation has been made, inserting paragraph
+  elements after block quotes: this makes CSS-controlled display more
+  regular (a CSS sheet is used in the code generated for the new CGI
+  engine -- see below).
+
+  Building the FAQ now requires e-TeX (or rather [pdf-]e-LaTeX); this
+  should not be a problem unless your TeX distribution is a bit aged.
+
+Future releases:
+  This release is wildly overdue (even making allowance for my
+  extended illness).  If I can find the time to do so, I intend in
+  future to release anything that's available, around the end of each
+  month.  Full releases, with batches of new questions, may still be
+  long delayed, but I hope not.
+
+Coming up (still):
+  I have a far more efficient CGI engine for serving answers to the web;
+  those of a strong constitution may view the experimental testbed at:
+    URL http://www.tex.ac.uk/cgi-bin/texfaq2html-gamma
+  It is missing a search engine, various links and topping and tailing
+  of answers; it uses Cambridge University's "default" CSS sheet in a
+  non-standard way; and, crucially it lacks **SUPPORT**.  I welcome
+  suggestions for improving the way I do things, but I can't claim it
+  will always work.
+
+  Mechanisms whereby I can point to the CTAN catalogue from FAQ
+  answers remains as a "background task"; I suggested several ways
+  (last time) in which such links would be valuable.

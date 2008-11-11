@@ -1,0 +1,43 @@
+<head>
+<title>UK TeX FAQ -- question label wordcount</title>
+</head><body>
+<h3>How many words have you written?</h3>
+<p>One often has to submit a document (e.g., a paper or a dissertation)
+under some sort of constraint about its size.  Sensible people set a
+constraint in terms of numbers of pages, but there are some that
+persist in limiting the numbers of words you type.
+<p>A simple solution to the requirement can be achieved following a
+simple observation: the powers that be are unlikely to count all the
+words of a document submitted to them.  Therefore, a statistical
+method can be employed: find how many words there are on a full page;
+find how many full pages there are in the document (allowing for
+displays of various sorts, this number will probably not be an
+integer); multiply the two.  However, if the document to be submitted
+is to determine the success of the rest of one&rsquo;s life, it takes a
+brave person to thumb their nose at authority quite so
+comprehensively...
+<p>The simplest method is to strip out the (La)TeX markup, and to count
+what&rsquo;s left.  On a  Unix-like system, this may be done using
+<i>detex</i> and the built-in <i>wc</i>:
+<pre>
+  detex &lt;filename&gt; | wc -w
+</pre>
+The <i>latexcount</i> script does the same sort of job, in one
+&ldquo;step&rdquo;; being a <i>perl</i> script, it is in principle rather
+easily configured (see documentation inside the script).
+<i>Winedt</i> (see <a href="FAQ-editors.html">editors and shells</a>)
+provides this functionality direct in the Windows environment.
+<p>Simply stripping (La)TeX markup isn&rsquo;t entirely reliable, however:
+that markup itself may contribute typeset words, and this could be a
+problem.  The <i>wordcount</i> package
+contains a Bourne shell (i.e., typically Unix) script for running a
+LaTeX file with a special piece of supporting TeX code, and then
+counting word indications in the log file.  This is probably as
+accurate automatic counting as you can get.
+<dl>
+<dt><tt><i>detex</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/support/detex.zip">support/detex</a> (<a href="ftp://cam.ctan.org/tex-archive/support/detex.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/support/detex/">browse</a>)
+<dt><tt><i>wordcount</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/wordcount.zip">macros/latex/contrib/wordcount</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/wordcount.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/wordcount/">browse</a>)
+</dl>
+<p>
+<p><p><p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=wordcount">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=wordcount</a>
+</body>

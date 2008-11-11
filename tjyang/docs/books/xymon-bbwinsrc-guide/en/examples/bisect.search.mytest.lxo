@@ -1,0 +1,10 @@
+$ \textbf{mytest() \{}
+> \textbf{  if grep -q 'i have a gub' *}
+> \textbf{  then}
+> \textbf{    result=bad}
+> \textbf{  else}
+> \textbf{    result=good}
+> \textbf{  fi}
+> \textbf{  echo this revision is $result}
+> \textbf{  hg bisect --$result}
+> \textbf{\}}

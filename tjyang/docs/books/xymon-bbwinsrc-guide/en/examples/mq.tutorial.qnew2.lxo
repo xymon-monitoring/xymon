@@ -1,0 +1,28 @@
+$ \textbf{hg qnew second.patch}
+$ \textbf{hg log --style=compact --limit=2}
+2[second.patch,qtip,tip]   ebca0485a9e4   2008-03-02 16:16 +0000   bos
+  New patch: second.patch
+
+1[first.patch,qbase]   6e5d41167dc4   2008-03-02 16:16 +0000   bos
+  patch queue: first.patch
+
+$ \textbf{echo 'line 4' >> file1}
+$ \textbf{hg qrefresh}
+$ \textbf{hg tip --style=compact --patch}
+2[second.patch,qtip,tip]   f8ad340905be   2008-03-02 16:16 +0000   bos
+  patch queue: second.patch
+
+diff -r 6e5d41167dc4 -r f8ad340905be file1
+--- a/file1	Sun Mar 02 16:16:34 2008 +0000
++++ b/file1	Sun Mar 02 16:16:34 2008 +0000
+@@ -1,3 +1,4 @@ line 1
+ line 1
+ line 2
+ line 3
++line 4
+
+$ \textbf{hg annotate file1}
+0: line 1
+1: line 2
+1: line 3
+2: line 4

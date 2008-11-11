@@ -1,0 +1,106 @@
+<head>
+<title>UK TeX FAQ -- question label type1T1</title>
+</head><body>
+<h3>Finding &lsquo;8-bit&rsquo; Type 1 fonts</h3>
+<!-- eight -->
+<p>Elsewhere, answers to these FAQs recommend that you use an
+&lsquo;8-bit&rsquo; font to permit 
+<a href="FAQ-hyphenaccents.html">accentuation of inflected languages</a>,
+and also recommend the use of Type 1 fonts to ensure that
+you get <a href="FAQ-fuzzy-type3.html">good quality PDF</a>.  These
+recommendations used to be contradictory: one could not just
+&ldquo;switch&rdquo; from the free CM fonts to free Cork- (or similarly)
+encoded Type 1 fonts.  The first approach that started to alleviate
+these problems, was the development of virtual fonts that make
+a good approach to the Cork encoding (see below).  Now, however, we
+have &ldquo;true&rdquo; Type 1 fonts available: as always, we have an
+embarrassment of riches with three free alternatives, and one
+commercial and one shareware version.
+<p><i>CM-super</i> is an
+auto-traced set which encompasses all of the T1 and TS1
+encodings as well as the T2* series (the family of encodings
+that cover languages based on Cyrillic alphabets).  These fonts are
+pretty easy to install (the installation instructions are clear), but
+they are huge: don&rsquo;t try to install them if you&rsquo;re short of disc
+space.
+<p><i>CM-LGC</i> is a similar &ldquo;super-font&rdquo; set, but of much more
+modest size; it covers T1, TS1 and T2{A}
+encodings (as does <i>CM-super</i>, and also covers the LGR
+encoding (for typesetting Greek, based on Claudio Beccari&rsquo;s Metafont
+sources).  <i>CM-LGC</i> manages to be small by going to the
+opposite extreme from <i>CM-super</i>, which includes fonts at all
+the sizes supported by the original EC (a huge range);
+<i>CM-LGC</i> has one font per font shape, getting other sizes by
+scaling.  There is an inevitable loss of quality inherent in this
+approach, but for the disc-space-challenged machine, <i>CM-LGC</i>
+is an obvious choice.
+<p><i>Tt2001</i> is a simple scan of the EC and TC
+fonts, and has some virtues &mdash; it&rsquo;s noticeably smaller than
+<i>CM-super</i> while being less stark than <i>CM-LGC</i>.
+<p><i>Latin</i> <i>Modern</i> is produced using the
+program <a href="FAQ-textrace.html"><i>MetaType1</i></a>.  The
+<i>Latin</i> <i>Modern</i> set comes with T1, TS1
+LY1 encoded variants (as well as a variant using the Polish
+QX encoding); for the glyph set it covers, its outlines seem
+rather cleaner than those of <i>CM-super</i>.  <i>Latin</i>
+<i>Modern</i> is more modest in its disc space demands than is
+<i>CM-super</i>, while not being nearly as stark in its range of
+design sizes as is <i>CM-LGC</i> &mdash;  <i>Latin</i>
+<i>Modern</i>&rsquo;s fonts are offered in the same set of sizes as the
+original <i>CM</i> fonts.  It&rsquo;s hard to argue with the choice:
+Knuth&rsquo;s range of sizes has stood the test of time, and is one of the
+bases on which the excellence of the TeX system rests.
+<p><a href="FAQ-virtualfonts.html">Virtual fonts</a> help us deal with the problem,
+since they allow us to map &ldquo;bits of DVI file&rdquo; to single
+characters in the virtual font; so we can create an &ldquo;&eacute;&rdquo; character
+by recreating the DVI commands that would result from the code
+&ldquo;<code>\&rsquo;</code><code>e</code>&rdquo;.  However, since this involves two characters being
+selected from a font, the arrangement is sufficient to fool
+<i>Acrobat</i> <i>Reader</i>: you can&rsquo;t use the program&rsquo;s
+facilities for searching for text that contains inflected characters,
+and if you <em>cut</em> text from a window that contains such a
+character, you&rsquo;ll find something unexpected (typically the accent and
+the &lsquo;base&rsquo; characters separated by a space) when you <i>paste</i>
+the result.  However, if you can live with this difficulty, virtual
+fonts are a useful and straightforward solution to the problem.
+<p>There are two virtual-font offerings of CM-based 8-bit
+fonts &mdash; the <i>ae</i> (&ldquo;almost EC&rdquo;) and
+<i>zefonts</i> sets; the <i>zefonts</i> set has wider coverage
+(though the <i>ae</i> set may be extended to offer guillemets by
+use of the <i>aeguill</i> package).  Neither offers characters such
+as <code>eth</code> and <code>thorn</code> (used in, for example, in
+Icelandic), but the <i>aecompl</i> package works with the
+<i>ae</i> fonts to provide the missing characters from the
+EC fonts (i.e., as bitmaps).
+<p>The sole remaining commercial CM-like 8-bit font comes from
+Micropress, who offer the complete EC set
+in Type 1 format, as part of their range of outline versions of fonts
+that were originally distributed in Metafont format.  See
+<a href="FAQ-commercial.html">&ldquo;commercial distributions&rdquo;</a>.
+<p>The shareware 
+<a href="FAQ-TeXsystems.html">BaKoMa TeX distribution</a> offers a
+set of Type 1 EC fonts, as an extra shareware option.  (As far
+as the present author can tell, these fonts are <em>only</em> available
+to users of BaKoMa TeX: they are stored in an archive format that
+seems not to be publicly available.)
+<p>Finally, you can use one of the myriad text fonts available in Type 1
+format (with appropriate PSNFSS metrics for T1 encoding,
+or metrics for some other 8-bit encoding such as LY1).  However,
+if you use someone else&rsquo;s text font (even something as simple as
+Adobe&rsquo;s Times family) you have to find a matching family of
+mathematical fonts, which is a non-trivial undertaking &mdash;
+see <a href="FAQ-psfchoice.html">&ldquo;choice of scalable fonts&rdquo;</a>.
+<dl>
+<dt><tt><i>ae fonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/ae.zip">fonts/ae</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ae.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ae/">browse</a>)
+<dt><tt><i>aecompl.sty</i></tt><dd>Distributed with <a href="ftp://cam.ctan.org/tex-archive/fonts/ae.zip">fonts/ae</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ae.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ae/">browse</a>)
+<dt><tt><i>aeguill.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/aeguill.zip">macros/latex/contrib/aeguill</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/aeguill.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/contrib/aeguill/">browse</a>)
+<dt><tt><i>BaKoMa fonts</i></tt><dd>Browse <a href="http://www.tex.ac.uk/tex-archive/nonfree/systems/win32/bakoma/fonts/">nonfree/systems/win32/bakoma/fonts/</a>
+<dt><tt><i>CM-LGC fonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-lgc.zip">fonts/ps-type1/cm-lgc</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-lgc.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ps-type1/cm-lgc/">browse</a>)
+<dt><tt><i>CM-super fonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-super.zip">fonts/ps-type1/cm-super</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/cm-super.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ps-type1/cm-super/">browse</a>) (beware:
+  very large download)
+<dt><tt><i>Latin Modern fonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/lm.zip">fonts/lm</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/lm.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/lm/">browse</a>)
+<dt><tt><i>tt2001 fonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/tt2001.zip">fonts/ps-type1/tt2001</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/ps-type1/tt2001.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/ps-type1/tt2001/">browse</a>)
+<dt><tt><i>zefonts</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/zefonts.zip">fonts/zefonts</a> (<a href="ftp://cam.ctan.org/tex-archive/fonts/zefonts.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/fonts/zefonts/">browse</a>)
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=type1T1">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=type1T1</a>
+</body>

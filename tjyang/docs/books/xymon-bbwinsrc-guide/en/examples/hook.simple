@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#$ name: init
+
+hg init hook-test
+cd hook-test
+echo '[hooks]' >> .hg/hgrc
+echo 'commit = echo committed $HG_NODE' >> .hg/hgrc
+cat .hg/hgrc
+echo a > a
+hg add a
+hg commit -m 'testing commit hook'
+
+#$ name: ext
+#$ ignore: ^date of commit.*
+
+echo 'commit.when = echo -n "date of commit: "; date' >> .hg/hgrc
+echo a >> a
+hg commit -m 'i have two hooks'
+
+#$ name:
+
+echo '#!/bin/sh' >> check_bug_id
+echo '# check that a commit comment mentions a numeric bug id' >> check_bug_id
+echo 'hg log -r $1 --template {desc} | grep -q "\<bug *[0-9]"' >> check_bug_id
+chmod +x check_bug_id
+
+#$ name: pretxncommit
+
+cat check_bug_id
+
+echo 'pretxncommit.bug_id_required = ./check_bug_id $HG_NODE' >> .hg/hgrc
+
+echo a >> a
+hg commit -m 'i am not mentioning a bug id'
+
+hg commit -m 'i refer you to bug 666'

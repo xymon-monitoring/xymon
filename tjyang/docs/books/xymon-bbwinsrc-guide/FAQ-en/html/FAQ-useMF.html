@@ -1,0 +1,106 @@
+<head>
+<title>UK TeX FAQ -- question label useMF</title>
+</head><body>
+<h3>Getting Metafont to do what you want</h3>
+<p>Metafont allows you to create your own fonts, and most TeX users
+will never need to use it. Metafont, unlike TeX, requires some
+customisation: each output device for which you will be generating
+fonts needs a mode associated with it. Modes are defined using the
+<code>mode_def</code> convention described on page 94 of <em>The Metafontbook</em>
+(see <a href="FAQ-books.html">TeX-related books</a>). You will need
+a file, which conventionally called <i>local.mf</i>, containing all the
+<code>mode_def</code>s you will be using. If <i>local.mf</i> doesn&rsquo;t already
+exist, Karl Berry&rsquo;s collection of modes (<i>modes.mf</i>)
+is a good starting point 
+(it can be used as a &lsquo;<i>local.mf</i>&rsquo; without modification in a &lsquo;big
+enough&rsquo; implementation of Metafont). Lists of
+settings for various output devices are also published periodically in
+<i>TUGboat</i> (see <a href="FAQ-TUGstar.html">TUG</a>). Now create
+a <code>plain</code> base
+file using <i>inimf</i>, <code>plain.mf</code>, and <code>local.mf</code>:
+<pre>
+   % inimf
+   This is METAFONT...
+   **plain # you type plain
+   (output)
+   *input local # you type this
+   (output)
+   *dump # you type this
+   Beginning to dump on file plain...
+   (output)
+</pre>
+
+This will create a base file named <i>plain.base</i> (or something
+similar; for example, it will be
+
+  <i>PLAIN.BAS</i>
+on MSDOS systems) which should be moved to the directory containing
+the base files on your system (note that some systems have two or more
+such directories, one for each &lsquo;size&rsquo; of Metafont used).
+<p>Now you need to make sure Metafont loads this new base when it starts up. If
+Metafont loads the <code>plain</code> base by default on your system, then you&rsquo;re
+ready to go. Under Unix (using the default <i>web2c</i>
+distribution
+)
+this does indeed happen, but we could for instance define a command
+<i>mf</i> which executes <code>virmf &plain</code> loading the <code>plain</code> base
+file.
+<p>The usual way to create a font with <code>plain</code> Metafont is to start 
+it with the line
+
+<pre>
+\mode=&lt;mode name&gt;; mag=&lt;magnification&gt;; input &lt;font file name&gt;
+</pre>
+in
+response to the &lsquo;**&rsquo; prompt or on the Metafont command line. (If
+<code>&lt;mode name&gt;</code> is unknown or omitted, the mode defaults to &lsquo;proof&rsquo; and
+Metafont will produce an output file called
+
+<i>&lt;font file name&gt;.2602gf</i>)
+The <code>&lt;magnification&gt;</code> is a floating point number or
+&lsquo;magstep&rsquo; (magsteps are defined in <em>The Metafontbook</em> and
+<em>The TeXbook</em>).
+If <code>mag=&lt;magnification&gt;</code> is omitted, then the default
+is 1 (magstep 0).  For example, to generate cmr10 at 12pt for an epson
+printer you would type
+<pre>
+  mf \mode=epson; mag=magstep 1; input cmr10
+</pre>
+Note that under Unix the <code>\</code> and <code>;</code> characters must usually be quoted or
+escaped, so this would typically look something like
+<pre>
+  mf '\mode=epson; mag=magstep 1; input cmr10'
+</pre>
+<p>If you don&rsquo;t have <i>inimf</i> or need a special mode that isn&rsquo;t
+in the base, you can put its commands in a file (<em>e.g.</em>,
+<i>ln03.mf</i>) and invoke it on the fly with the <code>\smode</code> command.
+For example, to create <i>cmr10.300gf</i> for an LN03 printer, using
+the file
+<pre>
+   % This is ln03.mf as of 1990/02/27
+   % mode_def courtesy of John Sauter
+   proofing:=0;
+   fontmaking:=1;
+   tracingtitles:=0;
+   pixels_per_inch:=300;
+   blacker:=0.65;
+   fillin:=-0.1;
+   o_correction:=.5;
+</pre>
+(note the absence of the <code>mode_def</code> and <code>enddef</code> commands), you would
+type
+<pre>
+   mf \smode="ln03"; input cmr10
+</pre>
+This technique isn&rsquo;t one you should regularly use, but it may
+prove useful if you acquire a new printer and want to experiment with
+parameters, or for some other reason are regularly editing the
+parameters you&rsquo;re using.  Once you&rsquo;ve settled on an appropriate set of
+parameters, you should use them to rebuild the base file that you use.
+<p>Other sources of help are mentioned in 
+<a href="FAQ-mfptutorials.html">Metafont and MetaPost Tutorials</a>.
+<dl>
+<dt><tt><i>modes.mf</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/fonts/modes/modes.mf">fonts/modes/modes.mf</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=useMF">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=useMF</a>
+</body>

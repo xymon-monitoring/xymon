@@ -1,0 +1,61 @@
+<head>
+<title>UK TeX FAQ -- question label varwidcol</title>
+</head><body>
+<h3>Variable-width columns in tables</h3>
+<p>This is a slightly different take on the problem addressed in
+&ldquo;<a href="FAQ-fixwidtab.html">fixed-width tables</a>&rdquo; &mdash; here we have
+a column whose size we can&rsquo;t absolutely predict when we design the
+document.
+<p>While the basic techniques (the <i>tabularx</i>, <i>tabulary</i>
+and <i>ltxtable</i> packages) are the same for this problem as for the
+fixed-width <em>table</em> problem, there&rsquo;s one extra tool that we can
+call to our aid, which may be preferable in some situations.
+<p>Suppose we have data in one column which we read from an external
+source, and the source itself isn&rsquo;t entirely predictable.  The data in
+the column may end up pretty narrow in every row of the table, or it
+may be wide enough that the table would run over the edge of the page;
+however, we don&rsquo;t want to make the column as wide as possible &ldquo;just
+in case&rdquo;, by defining a fixed size for the table.  We would like the
+column to be as small as possible, but have the possibility to spread
+to a maximum width and (if even that width is exceeded) turn into a
+<code>p</code>-style column.
+<p>The <i>varwidth</i> package, discussed in 
+&ldquo;<a href="FAQ-varwidth.html">automatic sizing of minipages</a>&rdquo;, provides
+a solution.  If you load it together with the LaTeX &ldquo;required&rdquo;
+<i>array</i> package, i.e.:
+<blockquote>
+<pre>
+\usepackage{array}
+\usepackage{varwidth}
+</pre>
+</blockquote><p>
+<i>varwidth</i> defines a new column-type &ldquo;<code>V</code>&rdquo;, which you
+can use as follows:
+<blockquote>
+<pre>
+\begin{tabular}{l V{3.5cm} r}
+  foo & blah      & bar \\
+  foo & blah blah & bar \\
+\end{tabular}
+</pre>
+</blockquote><p>
+when the second column ends up less than 3.5cm wide;
+or you can use it as follows:
+<blockquote>
+<pre>
+\begin{tabular}{l V{3.5cm} r}
+  foo & blah      & bar \\
+  foo & blah blah & bar \\
+  foo & blah blah blah blah blah blah
+                  & bar \\
+\end{tabular}
+</pre>
+</blockquote><p>
+where the second column will end up noticeably wider, and will wrap to
+a second line in the third row.
+<dl>
+<dt><tt><i>array.sty</i></tt><dd>Distributed as part of <a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.zip">macros/latex/required/tools</a> (<a href="ftp://cam.ctan.org/tex-archive/macros/latex/required/tools.tar.gz">gzipped tar</a>, <a href="http://www.tex.ac.uk/tex-archive/macros/latex/required/tools/">browse</a>)
+<dt><tt><i>varwidth.sty</i></tt><dd><a href="ftp://cam.ctan.org/tex-archive/macros/latex/contrib/misc/varwidth.sty">macros/latex/contrib/misc/varwidth.sty</a>
+</dl>
+<p><p>This question on the Web: <a href="http://www.tex.ac.uk/cgi-bin/texfaq2html?label=varwidcol">http://www.tex.ac.uk/cgi-bin/texfaq2html?label=varwidcol</a>
+</body>
