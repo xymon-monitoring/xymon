@@ -1,9 +1,0 @@
-This is makeindex, version 2.14 [02-Oct-2002] (kpathsea + Thai support).
-Scanning input file xymonmon-sysadmin-guide.idx....
-!! Input index error (file = xymonmon-sysadmin-guide.idx, line = 39):
-   -- Extra `@' at position 27 of first argument.
-done (195 entries accepted, 1 rejected).
-Sorting entries.....done (1566 comparisons).
-Generating output file xymonmon-sysadmin-guide.ind....done (248 lines written, 0 warnings).
-Output written in xymonmon-sysadmin-guide.ind.
-Transcript written in xymonmon-sysadmin-guide.ilg.
