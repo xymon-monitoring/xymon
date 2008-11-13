@@ -1,5 +1,5 @@
 # This makefile requires GNU make.
-BOOKNAME= xymonmon-sysadmin-guide
+BOOKNAME= xymon-sysadmin-guide
 sources := \
 	00book.tex \
 	99book.bib \
