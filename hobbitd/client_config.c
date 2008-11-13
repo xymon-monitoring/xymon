@@ -86,6 +86,11 @@ typedef struct c_cics_t {
 	int edsawarnlevel, edsapaniclevel;
 } c_cics_t;
 
+typedef struct c_asid_t {
+        enum { C_ASID_MAXUSER, C_ASID_NPARTS } asidtype;
+        int warnlevel, paniclevel;
+} c_asid_t;
+
 typedef struct c_proc_t {
 	exprlist_t *procexp;
 	int pmin, pmax, pcount;
@@ -209,7 +214,7 @@ typedef struct c_rrdds_t {
 	double limitval, limitval2;
 } c_rrdds_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_CICS, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_MIBVAL, C_RRDDS } ruletype_t;
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_CICS, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_MIBVAL, C_RRDDS } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -233,6 +238,7 @@ typedef struct c_rule_t {
 		c_zvse_vsize_t zvse_vsize;
 		c_zvse_getvis_t zvse_getvis;
 		c_cics_t cics;
+		c_asid_t asid;
 		c_proc_t proc;
 		c_log_t log;
 		c_file_t fcheck;
@@ -1201,6 +1207,32 @@ int load_client_config(char *configfn)
                                 tok = wstok(NULL); if (isqual(tok)) continue;
                                 currule->rule.zvse_vsize.paniclevel = atoi(tok);
                         }
+                        else if (strcasecmp(tok, "MAXUSER") == 0) {
+                                currule = setup_rule(C_ASID, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.asid.asidtype = C_ASID_MAXUSER;
+
+                                currule->rule.asid.warnlevel = 101;
+                                currule->rule.asid.paniclevel = 101;
+
+                                tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+                                currule->rule.asid.warnlevel = atoi(tok);
+
+                                tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+                                currule->rule.asid.paniclevel = atoi(tok);
+                        }
+                        else if (strcasecmp(tok, "NPARTS") == 0) {
+                                currule = setup_rule(C_ASID, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule->rule.asid.asidtype = C_ASID_NPARTS;
+
+                                currule->rule.asid.warnlevel = 101;
+                                currule->rule.asid.paniclevel = 101;
+
+                                tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+                                currule->rule.asid.warnlevel = atoi(tok);
+
+                                tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+                                currule->rule.asid.paniclevel = atoi(tok);
+                        }
 			else if (strcasecmp(tok, "SVC") == 0) {
 				int idx = 0;
 
@@ -1409,6 +1441,14 @@ void dump_client_config(void)
 			}
 			printf(" %d %d", rwalk->rule.mem.warnlevel, rwalk->rule.mem.paniclevel);
 			break;
+
+                  case C_ASID:
+                        switch (rwalk->rule.asid.asidtype) {
+                          case C_ASID_MAXUSER: printf("MAXUSER: "); break;
+                          case C_ASID_NPARTS:  printf(" NPARTS: "); break;
+                        }
+                        printf(" %d %d", rwalk->rule.asid.warnlevel, rwalk->rule.asid.paniclevel);
+                        break;
 
 		  case C_PROC:
 			if (strchr(rwalk->rule.proc.procexp->pattern, ' ') ||
@@ -1948,7 +1988,6 @@ nextrule:
 	return (STRBUFLEN(resbuf) > 0) ? STRBUF(resbuf) : NULL;
 }
 
-
 void get_memory_thresholds(void *hinfo, char *classname,
 			   int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
 {
@@ -2048,6 +2087,43 @@ void get_zos_memory_thresholds(void *hinfo, char *classname,
                         break;
                 }
                 rule = getrule(NULL, NULL, NULL, hinfo, C_MEM);
+        }
+
+}
+
+/* This routine doubles to get threshold values for z/OS Maxuser and z/VSE Nparts.  */
+void get_asid_thresholds(void *hinfo, char *classname,
+                               int *maxyellow, int *maxred)
+{
+        int gotmaxuser = 0, gotnparts = 0;
+        char *hostname, *pagename;
+        c_rule_t *rule;
+
+        hostname = bbh_item(hinfo, BBH_HOSTNAME);
+        pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+
+        *maxyellow = 101;
+        *maxred = 101;
+
+        rule = getrule(hostname, pagename, classname, hinfo, C_ASID);
+        while (rule) {
+                switch (rule->rule.asid.asidtype) {
+			case C_ASID_MAXUSER: 
+				if (!gotmaxuser) {
+        				*maxyellow = rule->rule.asid.warnlevel;
+			        	*maxred    = rule->rule.asid.paniclevel;
+					gotmaxuser = 1;
+				}
+				break;
+                        case C_ASID_NPARTS: 
+                                if (!gotnparts) {
+                                        *maxyellow = rule->rule.asid.warnlevel;
+                                        *maxred    = rule->rule.asid.paniclevel;
+					gotnparts  = 1;
+                                }
+                                break;
+		}
+                rule = getrule(NULL, NULL, NULL, hinfo, C_ASID);
         }
 
 }

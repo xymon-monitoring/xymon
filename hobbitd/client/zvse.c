@@ -601,6 +601,67 @@ static void zvse_getvis_report(char *hostname, char *clientclass, enum ostype_t 
         freestrbuffer(getvismsg);
 }
 
+void zvse_nparts_report(char *hostname, char *clientclass, enum ostype_t os,
+                     void *hinfo, char *fromline, char *timestr, char *npartstr)
+{
+	char npdispstr[256];
+        long nparts, runparts, partsavail;
+	int npartsyellow, npartsred;
+        float partutil;
+
+        int npartcolor = COL_GREEN;
+        char msgline[4096];
+        strbuffer_t *upmsg;
+
+        if (!npartstr) return;
+
+        sscanf(npartstr, "%ld %ld", &nparts, &runparts);
+
+        /*
+         *  The nparts message is two values that indicate the maximum number of partitions
+	 *  configured in the system (based on the NPARTS value in the IPL proc) and
+	 *  the number of partitions currently running jobs:
+         *  The format of the data is:
+         *
+         *   nnnnnnn mmmmmmm
+	 *
+         */
+
+        partsavail = nparts - runparts;
+        partutil  = ((float)runparts / (float)nparts) * 100;
+
+        get_asid_thresholds(hinfo, clientclass, &npartsyellow, &npartsred);
+
+        upmsg = newstrbuffer(0);
+
+        if ((int)partutil > npartsred) {
+                if (npartcolor < COL_RED) npartcolor = COL_RED;
+                addtobuffer(upmsg, "&red NPARTS Utilization is CRITICAL\n");
+                }
+        else if ((int)partutil > npartsyellow) {
+                if (npartcolor < COL_YELLOW) npartcolor = COL_YELLOW;
+                addtobuffer(upmsg, "&yellow NPARTS Utilization is HIGH\n");
+                }
+
+        *npdispstr = '\0';
+        sprintf(npdispstr, "Nparts: %8ld  Free: %8ld  Used: %8ld  %3.1f\n",nparts,partsavail,runparts,partutil);
+
+        init_status(npartcolor);
+        sprintf(msgline, "status %s.nparts %s %s\n%s",
+                commafy(hostname), colorname(npartcolor),
+                (timestr ? timestr : "<no timestamp data>"),
+                npdispstr);
+        addtostatus(msgline);
+        if (STRBUFLEN(upmsg)) {
+                addtostrstatus(upmsg);
+                addtostatus("\n");
+        }
+
+        if (fromline && !localmode) addtostatus(fromline);
+        finish_status();
+
+        freestrbuffer(upmsg);
+}
 
 void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 void *hinfo, char *sender, time_t timestamp,
@@ -616,6 +677,7 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *portsstr;
 	char *memstr;		/* System Memory data  */
 	char *gvstr;		/* GETVIS data	       */
+	char *npartstr;		/* Num Parts	       */
 
 	char fromline[1024];
 
@@ -633,6 +695,7 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
 	portsstr = getdata("ports");
 	memstr = getdata("memory");
 	gvstr = getdata("getvis");
+	npartstr = getdata("nparts");
 
 	zvse_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, cpuutilstr, uptimestr);
 	zvse_paging_report(hostname, clienttype, os, hinfo, fromline, timestr, pagingstr);
@@ -640,9 +703,10 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
 	zvse_jobs_report(hostname, clienttype, os, hinfo, fromline, timestr, jobsstr);
 	zvse_memory_report(hostname, clienttype, os, hinfo, fromline, timestr, memstr);
 	zvse_getvis_report(hostname, clienttype, os, hinfo, fromline, timestr, gvstr);
+	zvse_nparts_report(hostname, clienttype, os, hinfo, fromline, timestr, npartstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Cap", "Mounted", dfstr);
   	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
-/*	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr); */
+	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 
 }
 
