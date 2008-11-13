@@ -21,7 +21,6 @@ sources := \
         administrative_web_pages.tex \
         howtograph.tex \
         install.tex \
-        about.tex \
         xymon-alerts.tex \
         xymon-config.tex \
         bb-to-xymon.tex \
@@ -29,6 +28,9 @@ sources := \
         criticalsystems.tex \
         known-issues.tex \
 	license.tex
+
+
+#        hobbitvm13_install.tex 
 
 image-sources := \
 	feature-branches.dot \

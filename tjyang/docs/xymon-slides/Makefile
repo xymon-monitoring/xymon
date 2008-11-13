@@ -47,7 +47,7 @@ txt: pdf xymon-slides-developer.txt  xymon-slides-intro.txt \
 
 # WHAT: slides in pdf format
 #pdf: xymon-slides-developer.pdf 
-pdf:  xymon-slides-intro.pdf 
+pdf:  xymon-slides-developer.pdf 
 #pdf: xymon-slides-developer.pdf  xymon-slides-intro.pdf \
         xymon-slides-sysadmin.pdf
 # WHAT: Hobbit Introduction Slides
