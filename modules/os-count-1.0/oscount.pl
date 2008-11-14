@@ -10,7 +10,7 @@
 #* a "login" status that goes red when an active "root" login is found.       */
 #*                                                                            */
 #* Written 2007-Jan-28 by Henrik Storner <henrik@hswn.dk>                     */
-#* Adapted 2007-Aug-17 by T.J. Yang <aty010@motorola.com>                     */
+#* Adapted 2007-Aug-17 by T.J. Yang <tj_yang@hotmail.com>                     */
 #*                                                                            */
 #* This program is in the public domain, and may be used freely for           */
 #* creating your own Hobbit server-side modules.                              */
