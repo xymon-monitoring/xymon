@@ -2,18 +2,16 @@
 #*----------------------------------------------------------------------------*/
 #* Hobbit client message processor.                                           */
 #*                                                                            */
-#* This perl program shows how to create a server-side module using the       */
+#* This perl program is a  server-side module using the                       */
 #* data sent by the Hobbit clients. This program is fed data from the         */
 #* Hobbit "client" channel via the hobbitd_channel program; each client       */
 #* message is processed by looking at the [uname] section of solaris and hpux */
 #* [osversion] for linux  and tabcount the generates                          */
-#* a "login" status that goes red when an active "root" login is found.       */
+#* Each Client message is parsed and processed                                */
 #*                                                                            */
-#* Written 2007-Jan-28 by Henrik Storner <henrik@hswn.dk>                     */
+#* Started out from rootlogin.pl  Written 2007-Jan-28 by Henrik Storner       */
 #* Adapted 2007-Aug-17 by T.J. Yang <tj_yang@hotmail.com>                     */
 #*                                                                            */
-#* This program is in the public domain, and may be used freely for           */
-#* creating your own Hobbit server-side modules.                              */
 #*                                                                            */
 #*----------------------------------------------------------------------------*/
 # use perl excel module
@@ -35,10 +33,11 @@ my $msgtxt = "";
 my %sections = ();
 my $cursection = "";
  
-sub processmessage;
+sub processmessageOS;
  
  
 # Get the BB and BBDISP environment settings.
+# if BBDISP="0.0.0.0" then we need to BBDISPLAYS.
 $bb = $ENV{"BB"} || die "BB not defined";
 $bbdisp = $ENV{"BBDISP"} || die "BBDISP not defined";
  
@@ -127,38 +126,5 @@ sub processmessageOS {
 }
 
 
-# This subroutine processes the client message. In this case,
-# we watch the [who] section of the client message and alert
-# if there is a root login active.
- 
-sub processmessage {
-	my $color;
-	my $summary;
-	my $statusmsg;
-	my $cmd;
- 
-	# Dont do anything unless we have the "who" section
-	return unless ( $sections{"who"} );
- 
-	# Is there a "root" login somewhere in the "who" section?
-	# Note that we must match with /m because there are multiple
-	# lines in the [who] section.
-	if ( $sections{"who"} =~ /^root /m ) {
-		$color = "red";
-		$summary = "ROOT login active";
-		$statusmsg = "&red ROOT login detected!\n\n" . $sections{"who"};
-	}
-	else {
-		$color = "green";
-		$summary = "OK";
-		$statusmsg = "&green No root login active\n\n" . $sections{"who"};
-	}
- 
-	# Build the command we use to send a status to the Hobbit daemon
-	$cmd = $bb . " " . $bbdisp . " \"status " . $hostname . "." . $hobbitcolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
- 
-	# And send the message
-	system $cmd;
-}
 
 
