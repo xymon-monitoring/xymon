@@ -504,6 +504,18 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	} else if (strncmp(inp, "nopost=", 7) == 0) {
 		bburl->testtype = BBTEST_NOPOST;
 		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
+	} else if (strncmp(inp, "soap;", 5) == 0) {
+		bburl->testtype = BBTEST_SOAP;
+		urlstart = inp+5;
+	} else if (strncmp(inp, "soap=", 5) == 0) {
+		bburl->testtype = BBTEST_SOAP;
+		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+	} else if (strncmp(inp, "nosoap;", 7) == 0) {
+		bburl->testtype = BBTEST_NOSOAP;
+		urlstart = inp+7;
+	} else if (strncmp(inp, "nosoap=", 7) == 0) {
+		bburl->testtype = BBTEST_NOSOAP;
+		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
 	} else if (strncmp(inp, "type;", 5) == 0) {
 		bburl->testtype = BBTEST_TYPE;
 		urlstart = inp+5;
@@ -546,6 +558,7 @@ char *decode_url(char *testspec, bburl_t *bburl)
 
 	  case BBTEST_POST:
 	  case BBTEST_NOPOST:
+	  case BBTEST_SOAP:
 		poststart = strchr(urlstart, ';');
 		if (poststart) {
 			*poststart = '\0';
