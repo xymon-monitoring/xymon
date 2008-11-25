@@ -923,7 +923,16 @@ char *getsendreturnstr(sendreturn_t *s, int takeover)
 	if (!s) return NULL;
 	if (!s->respstr) return NULL;
 	result = STRBUF(s->respstr);
-	if (takeover) s->respstr = NULL;
+	if (takeover) {
+		/*
+		 * We cannot leave respstr as NULL, because later calls 
+		 * to sendmessage() might re-use this sendreturn_t struct
+		 * and expect to get the data back. So allocate a new
+		 * responsebuffer for future use - if it isn't used, it
+		 * will be freed by freesendreturnbuf().
+		 */
+		s->respstr = newstrbuffer(0);
+	}
 
 	return result;
 }
