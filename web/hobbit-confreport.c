@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
 {
 	int argi, hosti, testi;
 	char *pagepattern = NULL, *hostpattern = NULL;
-	char *envarea = NULL, *cookie = NULL, *p, *nexthost;
+	char *envarea = NULL, *cookie = NULL, *nexthost;
 	char *hobbitcmd, *procscmd, *svcscmd;
         int alertcolors, alertinterval;
 	char configfn[PATH_MAX];
@@ -632,20 +632,8 @@ int main(int argc, char *argv[])
 	redirect_cgilog("hobbit-confreport");
 
 	/* Setup the filter we use for the report */
-	cookie = getenv("HTTP_COOKIE");
-	if (cookie && ((p = strstr(cookie, "pagepath=")) != NULL)) {
-		p += strlen("pagepath=");
-		pagepattern = strdup(p);
-		p = strchr(pagepattern, ';'); if (p) *p = '\0';
-		if (strlen(pagepattern) == 0) { xfree(pagepattern); pagepattern = NULL; }
-	}
-
-	if (cookie && (!pagepattern) && ((p = strstr(cookie, "host=")) != NULL)) {
-		p += strlen("host=");
-		hostpattern = strdup(p);
-		p = strchr(hostpattern, ';'); if (p) *p = '\0';
-		if (strlen(hostpattern) == 0) { xfree(hostpattern); hostpattern = NULL; }
-	}
+	cookie = get_cookie("pagepath"); if (cookie && *cookie) pagepattern = strdup(cookie);
+	cookie = get_cookie("host");     if (cookie && *cookie) hostpattern = strdup(cookie);
 
 	/* Fetch the list of host+test statuses we currently know about */
 	if (pagepattern) {

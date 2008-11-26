@@ -224,42 +224,31 @@ int main(int argc, char *argv[])
 				 NULL, NULL);
 		}
 		else {
-			char cmd[1024];
+			char *cmd;
 			char *respbuf = NULL;
-                	char *cookie = NULL, *p;
+			char *hostname, *pagename;
 			int gotfilter = 0;
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 
+			cmd = (char *)malloc(1024);
 			strcpy(cmd, "hobbitdboard color=red,yellow fields=hostname,testname,cookie");
 
-			p = getenv("HTTP_COOKIE"); 
-			if (p) cookie = strdup(p);
-
-			if (obeycookies && cookie && ((p = strstr(cookie, "host=")) != NULL)) {
-				char *hostname;
-				
-				hostname = p + strlen("host=");
-				p = strchr(hostname, ';'); if (p) *p = '\0';
+			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
-					sprintf(cmd + strlen(cmd), " host=%s", hostname);
+					cmd = (char *)realloc(cmd, 1024 + strlen(hostname));
+					sprintf(cmd + strlen(cmd), " host=^%s$", hostname);
 					gotfilter = 1;
 				}
-				if (p) *p = ';';
 			}
 
-			if (obeycookies && cookie && !gotfilter && ((p = strstr(cookie, "pagepath=")) != NULL)) {
-				char *pagename;
-
-				pagename = p + strlen("pagepath=");
-				p = strchr(pagename, ';'); if (p) *p = '\0';
+			if (obeycookies && !gotfilter && ((pagename = get_cookie("pagepath")) != NULL)) {
 				if (*pagename) {
-					sprintf(cmd + strlen(cmd), " page=^%s$", pagename);
+					cmd = (char *)realloc(cmd, 1024 + 2*strlen(pagename));
+					sprintf(cmd + strlen(cmd), " page=^%s$|^%s/.+", pagename, pagename);
 					gotfilter = 1;
 				}
-				if (p) *p = ';';
 			}
-			xfree(cookie);
 
 			if (sendmessage(cmd, NULL, NULL, &respbuf, 1, BBTALK_TIMEOUT) == BB_OK) {
 				char *bol, *eoln;
