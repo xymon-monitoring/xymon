@@ -600,7 +600,7 @@ int main(int argc, char *argv[])
 	int argi, hosti, testi;
 	char *pagepattern = NULL, *hostpattern = NULL;
 	char *envarea = NULL, *cookie = NULL, *p, *nexthost;
-	char hobbitcmd[1024], procscmd[1024], svcscmd[1024];
+	char *hobbitcmd, *procscmd, *svcscmd;
         int alertcolors, alertinterval;
 	char configfn[PATH_MAX];
 	char *respbuf = NULL, *procsbuf = NULL, *svcsbuf = NULL;
@@ -649,16 +649,31 @@ int main(int argc, char *argv[])
 
 	/* Fetch the list of host+test statuses we currently know about */
 	if (pagepattern) {
-		sprintf(hobbitcmd, "hobbitdboard page=%s fields=hostname,testname", pagepattern);
-		sprintf(procscmd,  "hobbitdboard page=%s test=procs fields=hostname,msg", pagepattern);
-		sprintf(svcscmd,   "hobbitdboard page=%s test=svcs fields=hostname,msg", pagepattern);
+		hobbitcmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+		procscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+		svcscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+
+		sprintf(hobbitcmd, "hobbitdboard page=^%s$|^%s/.+ fields=hostname,testname", 
+			pagepattern, pagepattern);
+		sprintf(procscmd,  "hobbitdboard page=^%s$|^%s/.+ test=procs fields=hostname,msg",
+			pagepattern, pagepattern);
+		sprintf(svcscmd,   "hobbitdboard page=^%s$|^%s/.+ test=svcs fields=hostname,msg",
+			pagepattern, pagepattern);
 	}
 	else if (hostpattern) {
-		sprintf(hobbitcmd, "hobbitdboard host=%s fields=hostname,testname", hostpattern);
-		sprintf(procscmd,  "hobbitdboard host=%s test=procs fields=hostname,msg", hostpattern);
-		sprintf(svcscmd,   "hobbitdboard host=%s test=svcs fields=hostname,msg", hostpattern);
+		hobbitcmd = (char *)malloc(strlen(hostpattern) + 1024);
+		procscmd = (char *)malloc(strlen(hostpattern) + 1024);
+		svcscmd = (char *)malloc(strlen(hostpattern) + 1024);
+
+		sprintf(hobbitcmd, "hobbitdboard host=^%s$ fields=hostname,testname", hostpattern);
+		sprintf(procscmd,  "hobbitdboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
+		sprintf(svcscmd,   "hobbitdboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
 	}
 	else {
+		hobbitcmd = (char *)malloc(1024);
+		procscmd = (char *)malloc(1024);
+		svcscmd = (char *)malloc(1024);
+
 		sprintf(hobbitcmd, "hobbitdboard fields=hostname,testname");
 		sprintf(procscmd,  "hobbitdboard test=procs fields=hostname,msg");
 		sprintf(svcscmd,   "hobbitdboard test=svcs fields=hostname,msg");

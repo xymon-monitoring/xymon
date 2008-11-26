@@ -73,7 +73,7 @@ static int fetch_status(char *hostname)
 	int testsz;
 	int haveuname = 0;
 
-	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client host=%s", hostname);
+	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client host=^%s$", hostname);
 	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) != BB_OK) {
 		return 1;
 	}
