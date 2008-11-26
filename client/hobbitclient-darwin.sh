@@ -33,7 +33,7 @@ vm_stat
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
-netstat -r
+netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ifstat]"

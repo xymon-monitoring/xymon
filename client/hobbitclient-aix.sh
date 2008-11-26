@@ -36,7 +36,7 @@ lsps -s
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
-netstat -r
+netstat -rn
 echo "[netstat]"
 netstat -s
 echo "[ports]"
