@@ -22,7 +22,7 @@ who
 
 echo "[df]"
 # All of this because Solaris df cannot show multiple fs-types, or exclude certain fs types.
-FSTYPES=`/bin/df -n -l|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs"|sort|uniq`
+FSTYPES=`/bin/df -n -l|awk '{print $3}'|egrep -v "^proc|^fd|^mntfs|^ctfs|^devfs|^objfs|^nfs|^lofs"|sort|uniq`
 if test "$FSTYPES" = ""; then FSTYPES="ufs"; fi
 set $FSTYPES
 /bin/df -F $1 -k | grep -v " /var/run"
