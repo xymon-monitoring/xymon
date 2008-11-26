@@ -544,7 +544,7 @@ char *generate_info(char *hostname)
 	if (strcmp(val, "0.0.0.0") == 0) {
 		struct in_addr addr;
 		struct hostent *hent;
-		static char hostip[IP_ADDR_STRLEN];
+		static char hostip[IP_ADDR_STRLEN + 20];
 
 		hent = gethostbyname(hostname);
 		if (hent) {
