@@ -4368,6 +4368,8 @@ int main(int argc, char *argv[])
 			switch (cwalk->doingwhat) {
 			  case RECEIVING:
 				if (FD_ISSET(cwalk->sock, &fdread)) {
+					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
+
 					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
 					if (n <= 0) {
 						/* End of input data on this connection */
@@ -4404,6 +4406,8 @@ int main(int argc, char *argv[])
 			  case RESPONDING:
 				if (FD_ISSET(cwalk->sock, &fdwrite)) {
 					n = write(cwalk->sock, cwalk->bufp, cwalk->buflen);
+
+					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
 
 					if (n < 0) {
 						cwalk->buflen = 0;
@@ -4527,6 +4531,9 @@ int main(int argc, char *argv[])
 			int sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
 
 			if (sock >= 0) {
+				/* Make sure our sockets are non-blocking */
+				fcntl(sock, F_SETFL, O_NONBLOCK);
+
 				if (connhead == NULL) {
 					connhead = conntail = (conn_t *)malloc(sizeof(conn_t));
 				}
