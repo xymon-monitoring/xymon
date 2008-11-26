@@ -23,22 +23,12 @@ echo "# The following defines a bunch of commands that BB extensions expect to b
 echo "# Hobbit does not use them, but they are provided here so if you use BB extension"
 echo "# scripts, then they will hopefully run without having to do a lot of tweaking."
 echo ""
-for CMD in uptime awk cat cp cut date egrep expr find grep head id ln ls mv rm sed sort tail touch tr uniq who
+for CMD in uptime awk cat cp cut date egrep expr find grep head id ln ls mv rm sed sort tail top touch tr uniq who
 do
 	ENVNAME=`echo $CMD | tr "[a-z]" "[A-Z]"`
 	PGM=`findbin $CMD | head -n 1`
 	echo "${ENVNAME}=\"${PGM}\""
 done
-
-# TOP can either be "top", or on Solaris the "prstat" command.
-PRSTAT=`findbin prstat | head -n 1`
-if test "$PRSTAT" != ""
-then
-	PGM="$PRSTAT -can 20 1 1"
-else
-	PGM=`findbin top | head -n 1`
-fi
-echo "TOP=\"${PGM}\""
 
 # WC is special
 PGM=`findbin wc | head -n 1`
