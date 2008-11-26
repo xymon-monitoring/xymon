@@ -139,7 +139,7 @@ cgidata_t *cgi_request(void)
 			token = strtok(NULL, "&");
 		}
 	}
-	else if ((cgi_method == CGI_POST) || (conttype && (strcasecmp(conttype, "multipart/form-data") == 0))) {
+	else if ((cgi_method == CGI_POST) && (conttype && (strcasecmp(conttype, "multipart/form-data") == 0))) {
 		char *bol, *eoln, *delim;
 		char eolnchar = '\n';
 		char *currelembegin = NULL, *currelemend = NULL;
