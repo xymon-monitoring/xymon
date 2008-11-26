@@ -168,7 +168,7 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 
 static char *message_text(activealerts_t *alert, recip_t *recip)
 {
-	strbuffer_t *buf = NULL;
+	static strbuffer_t *buf = NULL;
 	char *eoln, *bom, *p;
 	char info[4096];
 

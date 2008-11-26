@@ -124,6 +124,9 @@ void clean_active(alertanchor_t *anchor)
 		curr = curr->next;
 
 		if (tmp->state == A_DEAD) {
+			if (tmp->osname) xfree(tmp->osname);
+			if (tmp->classname) xfree(tmp->classname);
+			if (tmp->groups) xfree(tmp->groups);
 			if (tmp->pagemessage) xfree(tmp->pagemessage);
 			if (tmp->ackmessage) xfree(tmp->ackmessage);
 			xfree(tmp);
@@ -285,7 +288,8 @@ void load_checkpoint(char *filename)
 		}
 
 		if (i > 9) {
-			char *key, *valid = NULL;
+			char *valid = NULL;
+
 			activealerts_t *newalert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 			newalert->hostname = find_name(hostnames, item[0]);
 			newalert->testname = find_name(testnames, item[1]);
@@ -297,10 +301,13 @@ void load_checkpoint(char *filename)
 			newalert->state = A_PAGING;
 
 			if (statusbuf) {
+				char *key;
+
 				key = (char *)malloc(strlen(newalert->hostname) + strlen(newalert->testname) + 100);
 				sprintf(key, "\n%s|%s|%s\n", newalert->hostname, newalert->testname, colorname(newalert->color));
 				valid = strstr(statusbuf, key);
 				if (!valid && (strncmp(statusbuf, key+1, strlen(key+1)) == 0)) valid = statusbuf;
+				xfree(key);
 			}
 			if (!valid) {
 				errprintf("Stale alert for %s:%s dropped\n", newalert->hostname, newalert->testname);
@@ -648,10 +655,12 @@ int main(int argc, char *argv[])
 
 			strcpy(awalk->ip, metadata[5]);
 			awalk->cookie = atoi(metadata[11]);
+			if (awalk->osname) xfree(awalk->osname);
 			awalk->osname    = (metadata[12] ? strdup(metadata[12]) : NULL);
+			if (awalk->classname) xfree(awalk->classname);
 			awalk->classname = (metadata[13] ? strdup(metadata[13]) : NULL);
+			if (awalk->groups) xfree(awalk->groups);
 			awalk->groups    = (metadata[14] ? strdup(metadata[14]) : NULL);
-
 			if (awalk->pagemessage) xfree(awalk->pagemessage);
 			awalk->pagemessage = strdup(restofmsg);
 		}
