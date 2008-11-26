@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
 
 	p += sprintf(p, "&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d&amp;color=%s", 
 		     service, graphheight, graphwidth, colorname(bgcolor));
-	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
+	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", urlencode(displayname));
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
 	if (ignorestalerrds) p += sprintf(p, "&amp;nostale");
