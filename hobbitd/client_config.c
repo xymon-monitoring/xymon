@@ -1249,6 +1249,7 @@ int get_disk_thresholds(namelist_t *hinfo, char *classname,
 	*abswarn = 0;
 	*abspanic = 0;
 	*ignored = 0;
+	*group = NULL;
 
 	rule = getrule(hostname, pagename, classname, C_DISK);
 	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
