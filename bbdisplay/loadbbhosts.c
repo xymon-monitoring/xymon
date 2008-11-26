@@ -109,7 +109,7 @@ char *build_noprop(char *defset, char *specset)
 	}
 
 	xfree(set);
-	return ((strlen(result) > 0) ? result : NULL);
+	return result;	/* This may be an empty string */
 }
 
 bbgen_page_t *init_page(char *name, char *title)
