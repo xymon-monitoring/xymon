@@ -440,7 +440,9 @@ int main(int argc, char *argv[])
 			freestrbuffer(zombie->msgbuf);
 			xfree(zombie);
 		}
-		if (!chead) ctail = NULL;
+		ctail = chead;
+		if (ctail) { while (ctail->next) ctail = ctail->next; }
+
 
 		/* Remove expired messages */
 		qwalk = qhead; qprev = NULL;
