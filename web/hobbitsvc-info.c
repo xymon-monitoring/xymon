@@ -40,7 +40,7 @@ typedef struct hinf_t {
 	char *name;
 	int color;
 	char *dismsg;
-	time_t distime;
+	time_t distime, lastchange;
 	struct hinf_t *next;
 } hinf_t;
 hinf_t *tnames = NULL;
@@ -73,7 +73,7 @@ static int fetch_status(char *hostname)
 	int testsz;
 	int haveuname = 0;
 
-	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client host=^%s$", hostname);
+	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
 	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) != BB_OK) {
 		return 1;
 	}
@@ -94,7 +94,8 @@ static int fetch_status(char *hostname)
 			if (tok) { tnames[testcount].color = parse_color(tok); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].distime = atol(tok); tok = gettok(NULL, "|"); }
 			if (tok) { tnames[testcount].dismsg = strdup(tok); tok = gettok(NULL, "|"); }
-			if (tok) { haveuname |= (*tok == 'Y'); }
+			if (tok) { haveuname |= (*tok == 'Y'); tok = gettok(NULL, "|"); }
+			if (tok) { tnames[testcount].lastchange = atol(tok); }
 			tnames[testcount].next = NULL;
 			testcount++;
 			if (testcount == testsz) {
@@ -113,7 +114,7 @@ static int fetch_status(char *hostname)
 
 	/* Sort them so the display looks prettier */
 	qsort(&tnames[0], testcount, sizeof(hinf_t), test_name_compare);
-	xfree(statuslist); statuslist = NULL;
+	if (statuslist) xfree(statuslist); statuslist = NULL;
 
 
 	sprintf(hobbitcmd, "schedule");
@@ -241,6 +242,108 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 }
 
 
+static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
+{
+	char msgline[4096];
+	char datestr[100];
+	int i, btncount;
+	char *bbdatefmt;
+	strbuffer_t *servRed, *servYellow, *servPurple, *servBlue;
+	time_t logage;
+
+	bbdatefmt = xgetenv("BBDATEFORMAT");
+
+	servRed = newstrbuffer(0);
+	servYellow = newstrbuffer(0);
+	servPurple = newstrbuffer(0);
+	servBlue = newstrbuffer(0);
+
+	addtobuffer(buf, "<tr><th align=left valign=top>Status summary</th><td align=left>\n");
+	addtobuffer(buf, "<form name=\"colorsel\" action=\"nosubmit\" method=\"GET\">\n");
+	addtobuffer(buf, "<table summary=\"Status summary\" border=1>\n");
+	addtobuffer(buf, "<tr><th>Service</th><th>Since</th><th>Duration</th></tr>\n");
+
+	for (i = 0; i < testcount; i++) {
+		strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&tnames[i].lastchange));
+		logage = time(NULL) - tnames[i].lastchange;
+
+		addtobuffer(buf, "<tr>");
+
+		sprintf(msgline, "<td><img src=\"%s/%s\" height=\"%s\" width=\"%s\" border=0 alt=\"%s status\"> %s</td>",
+			xgetenv("BBSKIN"), dotgiffilename(tnames[i].color, 0, 1),
+			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"),
+			colorname(tnames[i].color), tnames[i].name);
+		addtobuffer(buf, msgline);
+
+		sprintf(msgline, "<td>%s</td>", datestr);
+		addtobuffer(buf, msgline);
+
+		sprintf(msgline, "<td align=right>%d days, %02d hours, %02d minutes</td>",
+			(int)(logage / 86400),(int) ((logage % 86400) / 3600),(int) ((logage % 3600) / 60));
+		addtobuffer(buf, msgline);
+
+		addtobuffer(buf, "</tr>\n");
+
+		sprintf(msgline, ",%s", tnames[i].name);
+		switch (tnames[i].color) {
+		  case COL_BLUE   : addtobuffer(servBlue, msgline);   break;
+		  case COL_RED    : addtobuffer(servRed, msgline);    break;
+		  case COL_YELLOW : addtobuffer(servYellow, msgline); break;
+		  case COL_PURPLE : addtobuffer(servPurple, msgline); break;
+		}
+	}
+
+	btncount = 0;
+	if (STRBUFLEN(servRed) > 0)    btncount++;
+	if (STRBUFLEN(servYellow) > 0) btncount++;
+	if (STRBUFLEN(servPurple) > 0) btncount++;
+	if (STRBUFLEN(servBlue) > 0)   btncount++;
+	if (btncount > 0) {
+		addtobuffer(buf, "<tr><td colspan=3>\n");
+
+		addtobuffer(buf, "<table width=\"100%\">\n");
+		sprintf(msgline, "<tr><th colspan=%d><center><i>Toggle tests to disable</i></center></th></tr>\n", btncount);
+		addtobuffer(buf, msgline);
+
+		addtobuffer(buf, "<tr>\n");
+		if (STRBUFLEN(servRed) > 0) {
+			addtobuffer(buf, "<td align=center><input type=button value=\"Toggle red\" onClick=\"mark4Disable('");
+			addtostrbuffer(buf, servRed);
+			addtobuffer(buf, ",');\"></td>\n");
+		} 
+		if (STRBUFLEN(servYellow) > 0) {
+			addtobuffer(buf, "<td align=center><input type=button value=\"Toggle yellow\" onClick=\"mark4Disable('");
+			addtostrbuffer(buf, servYellow);
+			addtobuffer(buf, ",');\"></td>\n");
+		} 
+		if (STRBUFLEN(servPurple) > 0) {
+			addtobuffer(buf, "<td align=center><input type=button value=\"Toggle purple\" onClick=\"mark4Disable('");
+			addtostrbuffer(buf, servPurple);
+			addtobuffer(buf, ",');\"></td>\n");
+		} 
+		if (STRBUFLEN(servBlue) > 0) {
+			addtobuffer(buf, "<td align=center><input type=button value=\"Toggle blue\" onClick=\"mark4Disable('");
+			addtostrbuffer(buf, servBlue);
+			addtobuffer(buf, ",');\"></td>\n");
+		} 
+
+		addtobuffer(buf, "</tr>\n");
+		addtobuffer(buf, "</table>\n");
+
+		addtobuffer(buf,"</td></tr>\n");
+
+	}
+
+	addtobuffer(buf,"</table></form>\n");
+	addtobuffer(buf, "</td></tr>\n");
+	addtobuffer(buf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+
+	freestrbuffer(servRed);
+	freestrbuffer(servYellow);
+	freestrbuffer(servPurple);
+	freestrbuffer(servBlue);
+}
+
 static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 {
 	int i;
@@ -256,7 +359,7 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 	beginyear = nowtm->tm_year + 1900;
 	endyear = nowtm->tm_year + 1900 + 5;
 
-	sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+	sprintf(l, "<form name=\"disableform\" method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, l);
 	sprintf(l, "<table summary=\"%s disable\" border=1>\n", hostname);
 	addtobuffer(buf, l);
@@ -266,7 +369,18 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<td rowspan=2><select multiple size=\"15\" name=\"disabletest\">\n");
 	addtobuffer(buf, "<option value=\"*\">ALL</option>\n");
 	for (i=0; (i < testcount); i++) {
-		sprintf(l, "<option value=\"%s\">%s</option>\n", tnames[i].name, tnames[i].name);
+		char *colstyle;
+		switch (tnames[i].color) {
+		  case COL_RED:	   colstyle = "color: red"; break;
+		  case COL_YELLOW: colstyle = "color: #FFDE0F"; break;
+		  case COL_GREEN:  colstyle = "color: green"; break;
+		  case COL_BLUE:   colstyle = "color: blue;"; break;
+		  case COL_PURPLE: colstyle = "color: fuchsia;"; break;
+		  default:         colstyle = "color: black;"; break;
+		}
+
+		sprintf(l, "<option value=\"%s\" style=\"%s\">%s</option>\n", 
+			tnames[i].name, colstyle, tnames[i].name);
 		addtobuffer(buf, l);
 	}
 	addtobuffer(buf, "</select></td>\n");
@@ -809,6 +923,7 @@ char *generate_info(char *hostname)
 	if (gotstatus && showenadis) {
 		int i, anydisabled = 0;
 
+		generate_hobbit_statuslist(hostname, infobuf);
 		addtobuffer(infobuf, "<tr><th align=left valign=top>Disable tests</th><td align=left>\n");
 		generate_hobbit_disable(hostname, infobuf);
 		addtobuffer(infobuf, "</td></tr>\n");
