@@ -358,7 +358,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		xfree(multikey);
 
 		fprintf(output, "<!-- linecount=%d -->\n", linecount);
-		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK));
+		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK));
 	}
 
 	if (histlocation == HIST_BOTTOM) {

@@ -63,6 +63,7 @@ double lowerlimit = 0.0;
 int graphwidth = 0;
 int graphheight = 0;
 int ignorestalerrds = 0;
+int bgcolor = COL_GREEN;
 
 int coloridx = 0;
 char *colorlist[] = { 
@@ -215,6 +216,10 @@ void parse_query(void)
 		}
 		else if (strcmp(cwalk->name, "nostale") == 0) {
 			ignorestalerrds = 1;
+		}
+		else if (strcmp(cwalk->name, "color") == 0) {
+			int color = parse_color(cwalk->value);
+			if (color != -1) bgcolor = color;
 		}
 
 		cwalk = cwalk->next;
@@ -440,8 +445,8 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 	  case ACT_MENU:
 		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\" alt=\"%s graph\"></td>\n",
 			uri, grtype, grtype);
-		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
-			uri, grtype, getenv("BBSKIN"));
+		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom&amp;color=%s\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
+			uri, grtype, colorname(bgcolor), getenv("BBSKIN"));
 		break;
 
 	  case ACT_SELZOOM:
@@ -538,8 +543,8 @@ int main(int argc, char *argv[])
 	else
 		p += sprintf(p, "?host=%s", hostname);
 
-	p += sprintf(p, "&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d", 
-		     service, graphheight, graphwidth);
+	p += sprintf(p, "&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d&amp;color=%s", 
+		     service, graphheight, graphwidth, colorname(bgcolor));
 	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", displayname);
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
@@ -548,8 +553,8 @@ int main(int argc, char *argv[])
 	switch (action) {
 	  case ACT_MENU:
 		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
-		headfoot(stdout, "graphs", "", "header", COL_GREEN);
+		sethostenv(displayname, "", service, colorname(bgcolor), hostname);
+		headfoot(stdout, "graphs", "", "header", bgcolor);
 
 		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
 
@@ -560,13 +565,13 @@ int main(int argc, char *argv[])
 
 		fprintf(stdout, "</table>\n");
 
-		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
+		headfoot(stdout, "graphs", "", "footer", bgcolor);
 		return 0;
 
 	  case ACT_SELZOOM:
 		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
-		headfoot(stdout, "graphs", "", "header", COL_GREEN);
+		sethostenv(displayname, "", service, colorname(bgcolor), hostname);
+		headfoot(stdout, "graphs", "", "header", bgcolor);
 
 
 		fprintf(stdout, "  <div id='zoomBox' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; background:red; filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity:0.5'></div>\n");
@@ -608,13 +613,13 @@ int main(int argc, char *argv[])
 		}
 
 
-		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
+		headfoot(stdout, "graphs", "", "footer", bgcolor);
 		return 0;
 
 	  case ACT_SHOWZOOM:
 		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-		sethostenv(displayname, "", service, colorname(COL_GREEN), hostname);
-		headfoot(stdout, "graphs", "", "header", COL_GREEN);
+		sethostenv(displayname, "", service, colorname(bgcolor), hostname);
+		headfoot(stdout, "graphs", "", "header", bgcolor);
 
 		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
 
@@ -622,7 +627,7 @@ int main(int argc, char *argv[])
 
 		fprintf(stdout, "</table>\n");
 
-		headfoot(stdout, "graphs", "", "footer", COL_GREEN);
+		headfoot(stdout, "graphs", "", "footer", bgcolor);
 		return 0;
 
 	  case ACT_VIEW:
