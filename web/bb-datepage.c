@@ -201,6 +201,7 @@ int main(int argc, char *argv[])
 		}
 
 		sethostenv("", "", "", colorname(bgcolor), NULL);
+		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		showform(stdout, hffile, formfn, COL_BLUE, seltime, NULL, NULL);
 	}
 

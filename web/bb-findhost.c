@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
 	if (cgidata == NULL) {
 		/* Present the query form */
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
+		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		showform(stdout, "findhost", "findhost_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 		return 0;
 	}

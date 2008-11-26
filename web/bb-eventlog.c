@@ -114,6 +114,8 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("bb-eventlog");
 
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+
 	cgidata = cgi_request();
 	if (cgidata == NULL) {
 		/* Present the query form */
@@ -126,8 +128,6 @@ int main(int argc, char *argv[])
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	/* Now generate the webpage */
-	printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-
 	headfoot(stdout, "event", "", "header", COL_GREEN);
 	fprintf(stdout, "<center>\n");
 	do_eventlog(stdout, maxcount, maxminutes, fromtime, totime, 

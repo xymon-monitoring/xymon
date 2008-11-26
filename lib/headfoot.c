@@ -1233,8 +1233,6 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		inbuf[st.st_size] = '\0';
 		close(formfile);
 
-		printf("Content-Type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-
 		headfoot(output, headertemplate, "", "header", color);
 		if (pretext) fprintf(output, "%s", pretext);
 		output_parsed(output, inbuf, color, seltime);

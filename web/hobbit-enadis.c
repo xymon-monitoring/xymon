@@ -312,6 +312,7 @@ int main(int argc, char *argv[])
 		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
 		sethostenv_filter(hostpattern, pagepattern, ippattern);
+		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 		showform(stdout, "maint", "maint_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 		return 0;
 	}
