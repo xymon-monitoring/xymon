@@ -12,6 +12,7 @@ var MENU_ITEMS = [
 		['Config Report (Critical)', '@BBCGIURL@/hobbit-confreport-critical.sh'],
 		['Metrics Report', '@BBCGIURL@/hobbit-hostgraphs.sh'],
 		['Ghost Clients', '@BBCGIURL@/hobbit-ghosts.sh'],
+		['Notification Report', '@BBCGIURL@/hobbit-notifylog.sh'],
 	],
 	['Administration', null, null,
 		['Find host', '@BBCGIURL@/bb-findhost.sh'],

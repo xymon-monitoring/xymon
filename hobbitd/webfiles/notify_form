@@ -1,0 +1,102 @@
+<CENTER>
+<FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+   <TABLE BORDER=0 SUMMARY="Notification time period">
+     <TR>
+       <TD><TABLE BORDER=0>
+         <TR>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Starting </B></FONT></TD>
+           <TD><INPUT TYPE=TEXT NAME="MAXTIME" SIZE=40></TD>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B> minutes ago </B>( Default 1440 )</FONT></TD> 
+         </TR>
+         <TR>
+           <TD COLSPAN=3 ALIGN=CENTER><FONT FACE="Arial, Helvetica" COLOR="silver"><B>&nbsp;- OR -&nbsp;</B></FONT></TD>
+         </TR>
+         <TR>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD> 
+           <TD><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40></TD>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+         </TR>
+         <TR>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>To: </B></FONT></TD> 
+           <TD><INPUT TYPE=TEXT NAME="TOTIME" SIZE=40></TD>
+           <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+         </TR>
+       </TABLE></TD>
+     </TR>
+   </TABLE>
+
+   <BR><BR>
+
+   <TABLE BORDER=0 SUMMARY="Notification criteria">
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Max # of notifications</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="MAXCOUNT" SIZE=40 VALUE=100></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( Default 100 )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="HOSTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXHOSTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+     </TR>
+
+      <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+     </TR>
+
+      <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXPAGEMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="TESTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXTESTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="RCPTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXRCPTMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
+     </TR>
+
+     <TR>
+        <TD COLSPAN=3 ALIGN=CENTER>
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="View log" ALT="View log">
+        </TD>
+     </TR>
+   </TABLE>
+</FORM>
+</CENTER>
