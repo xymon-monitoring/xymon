@@ -581,6 +581,12 @@ void add_http_test(testitem_t *t)
 
 	addtobuffer(httprequest, "Host: ");
 	addtobuffer(httprequest, httptest->bburl.desturl->host);
+	if ((httptest->bburl.desturl->port != 80) && (httptest->bburl.desturl->port != 443)) {
+		char hostporthdr[20];
+
+		sprintf(hostporthdr, ":%d", httptest->bburl.desturl->port);
+		addtobuffer(httprequest, hostporthdr);
+	}
 	addtobuffer(httprequest, "\r\n");
 
 	if (httptest->bburl.postdata) {
