@@ -49,6 +49,7 @@ char *channelnames[C_LAST+1] = {
 	"enadis",
 	"client",
 	"clichg",
+	"user",
 	NULL
 };
 
