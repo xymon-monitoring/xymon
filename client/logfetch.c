@@ -52,8 +52,10 @@ typedef struct logdef_t {
 	long lastpos[POSCOUNT];
 	long maxbytes;
 #endif
-	char *trigger;
-	char *ignore;
+	char **trigger;
+	int triggercount;
+	char **ignore;
+	int ignorecount;
 } logdef_t;
 
 typedef struct filedef_t {
@@ -111,7 +113,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	int openerr, i, status, triggerlinecount, done;
 	char *linepos[2*LINES_AROUND_TRIGGER+1];
 	int lpidx;
-	regex_t ignexpr, trigexpr;
+	regex_t *ignexpr = NULL, *trigexpr = NULL;
 #ifdef _LARGEFILE_SOURCE
 	off_t bufsz;
 #else
@@ -188,13 +190,21 @@ char *logdata(char *filename, logdef_t *logdef)
 	}
 
 	/* Compile the regex patterns */
-	if (logdef->ignore) {
-		status = regcomp(&ignexpr, logdef->ignore, REG_EXTENDED|REG_ICASE|REG_NOSUB);
-		if (status != 0) logdef->ignore = NULL;
+	if (logdef->ignorecount) {
+		int i;
+		ignexpr = (regex_t *) malloc(logdef->ignorecount * sizeof(regex_t));
+		for (i=0; (i < logdef->ignorecount); i++) {
+			status = regcomp(&ignexpr[i], logdef->ignore[i], REG_EXTENDED|REG_ICASE|REG_NOSUB);
+			if (status != 0) logdef->ignore[i] = NULL;
+		}
 	}
-	if (logdef->trigger) {
-		status = regcomp(&trigexpr, logdef->trigger, REG_EXTENDED|REG_ICASE|REG_NOSUB);
-		if (status != 0) logdef->trigger = NULL;
+	if (logdef->triggercount) {
+		int i;
+		trigexpr = (regex_t *) malloc(logdef->triggercount * sizeof(regex_t));
+		for (i=0; (i < logdef->triggercount); i++) {
+			status = regcomp(&trigexpr[i], logdef->trigger[i], REG_EXTENDED|REG_ICASE|REG_NOSUB);
+			if (status != 0) logdef->trigger[i] = NULL;
+		}
 	}
 	triggerstartpos = triggerendpos = NULL;
 	triggerlinecount = 0;
@@ -222,17 +232,27 @@ char *logdata(char *filename, logdef_t *logdef)
 		}
 
 		/* Check ignore pattern */
-		if (logdef->ignore) {
-			status = regexec(&ignexpr, fillpos, 0, NULL, 0);
-			if (status == 0) continue;
+		if (logdef->ignorecount) {
+			int i, match = 0;
+
+			for (i=0; ((i < logdef->ignorecount) && !match); i++) {
+				match = (regexec(&ignexpr[i], fillpos, 0, NULL, 0) == 0);
+			}
+
+			if (match) continue;
 		}
 
 		linepos[lpidx] = fillpos;
 
 		/* See if this is a trigger line */
-		if (logdef->trigger) {
-			status = regexec(&trigexpr, fillpos, 0, NULL, 0);
-			if (status == 0) {
+		if (logdef->triggercount) {
+			int i, match = 0;
+
+			for (i=0; ((i < logdef->ignorecount) && !match); i++) {
+				match = (regexec(&trigexpr[i], fillpos, 0, NULL, 0) == 0);
+			}
+
+			if (match) {
 				int sidx;
 				
 				sidx = lpidx - LINES_AROUND_TRIGGER; 
@@ -270,6 +290,7 @@ char *logdata(char *filename, logdef_t *logdef)
 	if (bytesread > logdef->maxbytes) {
 		char *skiptxt = "<...SKIPPED...>\n";
 
+		/* FIXME: Must make sure to only pass complete lines back to the server */
 		if (triggerstartpos) {
 			/* Skip the beginning of the data up until the trigger was found */
 			startpos = triggerstartpos;
@@ -322,8 +343,24 @@ char *logdata(char *filename, logdef_t *logdef)
 
 cleanup:
 	if (fd) fclose(fd);
-	if (logdef->ignore) regfree(&ignexpr);
-	if (logdef->trigger) regfree(&trigexpr);
+
+	{
+		int i;
+
+		if (logdef->ignorecount) {
+			for (i=0; (i < logdef->ignorecount); i++) {
+				if (logdef->ignore[i]) regfree(&ignexpr[i]);
+			}
+			xfree(ignexpr);
+		}
+
+		if (logdef->triggercount) {
+			for (i=0; (i < logdef->triggercount); i++) {
+				if (logdef->trigger[i]) regfree(&trigexpr[i]);
+			}
+			xfree(trigexpr);
+		}
+	}
 
 	return startpos;
 }
@@ -707,12 +744,33 @@ int loadconfig(char *cfgfn)
 					checkdef_t *walk = currcfg;
 
 					do {
-						walk->check.logcheck.ignore = strdup(p);
+						walk->check.logcheck.ignorecount++;
+						if (walk->check.logcheck.ignore == NULL) {
+							walk->check.logcheck.ignore = (char **)malloc(sizeof(char *));
+						}
+						else {
+							walk->check.logcheck.ignore = 
+								(char **)realloc(walk->check.logcheck.ignore, 
+										 walk->check.logcheck.ignorecount * sizeof(char **));
+						}
+
+						walk->check.logcheck.ignore[walk->check.logcheck.ignorecount-1] = strdup(p);
+
 						walk = walk->next;
 					} while (walk && (walk != firstpipeitem->next));
 				}
 				else {
-					currcfg->check.logcheck.ignore = strdup(p);
+					currcfg->check.logcheck.ignorecount++;
+					if (currcfg->check.logcheck.ignore == NULL) {
+						currcfg->check.logcheck.ignore = (char **)malloc(sizeof(char *));
+					}
+					else {
+						currcfg->check.logcheck.ignore = 
+							(char **)realloc(currcfg->check.logcheck.ignore, 
+									 currcfg->check.logcheck.ignorecount * sizeof(char **));
+					}
+
+					currcfg->check.logcheck.ignore[currcfg->check.logcheck.ignorecount-1] = strdup(p);
 				}
 			}
 			else if (strncmp(bol, "trigger ", 8) == 0) {
@@ -725,12 +783,33 @@ int loadconfig(char *cfgfn)
 					checkdef_t *walk = currcfg;
 
 					do {
-						walk->check.logcheck.trigger = strdup(p);
+						walk->check.logcheck.triggercount++;
+						if (walk->check.logcheck.trigger == NULL) {
+							walk->check.logcheck.trigger = (char **)malloc(sizeof(char *));
+						}
+						else {
+							walk->check.logcheck.trigger = 
+								(char **)realloc(walk->check.logcheck.trigger, 
+										 walk->check.logcheck.triggercount * sizeof(char **));
+						}
+
+						walk->check.logcheck.trigger[walk->check.logcheck.triggercount-1] = strdup(p);
+
 						walk = walk->next;
 					} while (walk && (walk != firstpipeitem->next));
 				}
 				else {
-					currcfg->check.logcheck.trigger = strdup(p);
+					currcfg->check.logcheck.triggercount++;
+					if (currcfg->check.logcheck.trigger == NULL) {
+						currcfg->check.logcheck.trigger = (char **)malloc(sizeof(char *));
+					}
+					else {
+						currcfg->check.logcheck.trigger = 
+							(char **)realloc(currcfg->check.logcheck.trigger, 
+									 currcfg->check.logcheck.triggercount * sizeof(char **));
+					}
+
+					currcfg->check.logcheck.trigger[currcfg->check.logcheck.triggercount-1] = strdup(p);
 				}
 			}
 		}
