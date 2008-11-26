@@ -2175,6 +2175,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		switch (f_type) {
 		  case F_ACKMSG: if (lwalk->ackmsg) needed += 2*strlen(lwalk->ackmsg); break;
 		  case F_DISMSG: if (lwalk->dismsg) needed += 2*strlen(lwalk->dismsg); break;
+		  case F_LINE1:
 		  case F_MSG: needed += 2*strlen(lwalk->message); break;
 
 		  case F_ACKLIST:
