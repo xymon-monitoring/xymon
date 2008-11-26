@@ -44,11 +44,22 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		l += strspn(l, " \t\n");
 		if (*l) { 
+			/* See if this line contains a '=' or ':' sign */
 			name = l; 
-			l += strcspn(l, ":="); 
-			if( *l ) { *l = '\0'; l++; }
-			else break;
+			l += strcspn(l, ":=\n"); 
+
+			if (*l) {
+				if (( *l == '=') || (*l == ':')) { 
+					*l = '\0'; l++;
+				}
+				else {
+					/* No marker, so skip this line */
+					name = NULL;
+				}
+			}
+			else break;	/* We've hit the end of the message */
 		}
+
 		if (name) { 
 			val = l + strspn(l, " \t"); 
 			l = val + strspn(val, "0123456789."); 
