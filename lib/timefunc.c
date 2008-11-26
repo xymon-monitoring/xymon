@@ -245,6 +245,7 @@ int within_sla(char *timespec, int defresult)
 	return found;
 }
 
+#ifndef CLIENTONLY
 char *check_downtime(char *hostname, char *testname)
 {
 	namelist_t *hinfo = hostinfo(hostname);
@@ -300,6 +301,7 @@ char *check_downtime(char *hostname, char *testname)
 
 	return NULL;
 }
+#endif
 
 int periodcoversnow(char *tag)
 {

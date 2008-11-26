@@ -111,6 +111,7 @@ char *dotgiffilename(int color, int acked, int oldage)
 	return filename;
 }
 
+#ifndef CLIENTONLY
 int colorset(char *colspec, int excludeset)
 {
 	char *cspeccopy = strdup(colspec);
@@ -131,4 +132,5 @@ int colorset(char *colspec, int excludeset)
 	ac = (ac & ~excludeset);
 	return ac;
 }
+#endif
 
