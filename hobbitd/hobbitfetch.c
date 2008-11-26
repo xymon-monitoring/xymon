@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: hobbitfetch.c,v 1.13 2006-07-22 11:23:56 henrik Exp 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <arpa/nameser.h>
 #include <netdb.h>
 #include <ctype.h>
 #include <signal.h>
@@ -619,13 +620,35 @@ int main(int argc, char *argv[])
 					ip = strdup(bbh_item(hostwalk, BBH_IP));
 				}
 				else {
+					/* There is an explicit IP setting in the pulldata tag */
 					char *p;
 
 					ip++; /* Skip the '=' */
 					ip = strdup(ip);
 					p = strchr(ip, ':');
 					if (p) { *p = '\0'; port = atoi(p+1); }
+
+					if (*ip == '\0') {
+						/* No IP given, just a port number */
+						xfree(ip);
+						ip = strdup(bbh_item(hostwalk, BBH_IP));
+					}
 				}
+
+				if (strcmp(ip, "0.0.0.0") == 0) {
+					struct hostent *hent;
+
+					xfree(ip); ip = NULL;
+					hent = gethostbyname(clientwalk->hostname);
+					if (hent) {
+						struct in_addr addr;
+
+						memcpy(&addr, *(hent->h_addr_list), sizeof(addr));
+						ip = strdup(inet_ntoa(addr));
+					}
+				}
+
+				if (!ip) continue;
 
 				/* 
 				 * Build the "pullclient" request, which includes the latest
