@@ -316,12 +316,15 @@ echo "must have write-access to a directory below the Hobbit"
 echo "top-level directory. I can set this up if you tell me"
 echo "what group-ID your webserver runs with. This is typically"
 echo "'nobody' or 'apache' or 'www-data'"
-echo "If you dont know, just hit ENTER and we will handle it later."
 echo ""
-echo "What group-ID does your webserver use ?"
+echo "What group-ID does your webserver use [nobody] ?"
 if test -z "$HTTPDGID"
 then
 	read HTTPDGID
+fi
+if test -z "$HTTPDGID"
+then
+	HTTPDGID="nobody"
 fi
 echo ""; echo ""
 
