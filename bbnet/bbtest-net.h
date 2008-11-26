@@ -19,6 +19,9 @@
 
 #define MAX_CONTENT_DATA (1024*1024)	/* 1 MB should be enough for most */
 
+/* toolids */
+enum toolid_t { TOOL_CONTEST, TOOL_DNS, TOOL_NTP, TOOL_FPING, TOOL_HTTP, TOOL_LDAP, TOOL_RPCINFO };
+
 /*
  * Structure of the bbtest-net in-memory records
  *
@@ -62,12 +65,11 @@ typedef struct service_t {
 	char *testname;		/* Name of the test = column name in Hobbit report */
 	int namelen;		/* Length of name - "testname:port" has this as strlen(testname), others 0 */
 	int portnum;		/* Port number this service runs on */
-	int toolid;		/* Which tool to use */
+	enum toolid_t toolid;	/* Which tool to use */
 	struct testitem_t *items; /* testitem_t linked list of tests for this service */
 } service_t;
 
-#define MULTIPING_BEST 0
-#define MULTIPING_WORST 1
+enum multiping_t { MULTIPING_BEST, MULTIPING_WORST };
 typedef struct ipping_t {
 	char *ip;
 	int  open;
@@ -76,7 +78,7 @@ typedef struct ipping_t {
 } ipping_t;
 
 typedef struct extraping_t {
-	int   matchtype;
+	enum multiping_t matchtype;
 	ipping_t *iplist;
 } extraping_t;
 
@@ -149,13 +151,6 @@ typedef struct testitem_t {
 
 	struct testitem_t *next;
 } testitem_t;
-
-typedef struct modembank_t {
-	char		*hostname;
-	unsigned int 	startip;	/* Saved as 32-bit binary */
-	int		banksize;
-	int		*responses;
-} modembank_t;
 
 typedef struct dnstest_t {
 	int	testcount;

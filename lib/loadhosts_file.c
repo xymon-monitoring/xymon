@@ -49,7 +49,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 {
 	static void *bbhfiles = NULL;
 	FILE *bbhosts;
-	int ip1, ip2, ip3, ip4, banksize, groupid, pageidx;
+	int ip1, ip2, ip3, ip4, groupid, pageidx;
 	char hostname[4096];
 	strbuffer_t *inbuf;
 	pagelist_t *curtoppage, *curpage, *pgtail;
@@ -284,30 +284,6 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 
 			MEMUNDEFINE(clientname);
 			MEMUNDEFINE(downtime);
-		}
-		else if (sscanf(STRBUF(inbuf), "dialup %s %d.%d.%d.%d %d", hostname, &ip1, &ip2, &ip3, &ip4, &banksize) == 6) {
-			char groupidstr[10];
-			namelist_t *newitem = calloc(1, sizeof(namelist_t));
-
-			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-			sprintf(groupidstr, "%d", groupid);
-			newitem->bbhostname = (char *)malloc(strlen("@dialup.") + strlen(hostname) + 1);
-			sprintf(newitem->bbhostname, "@dialup.%s", hostname);
-			newitem->clientname = newitem->bbhostname;
-			newitem->page = curpage;
-			newitem->elems = (char **)malloc(sizeof(char *));
-			newitem->elems[0] = NULL;
-			newitem->banksize = banksize;
-			newitem->groupid = strdup(groupidstr);
-			newitem->pageindex = pageidx++;
-			newitem->next = NULL;
-
-			if (namehead == NULL) 
-				namehead = nametail = newitem;
-			else {
-				nametail->next = newitem;
-				nametail = newitem;
-			}
 		}
 	}
 	stackfclose(bbhosts);

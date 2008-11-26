@@ -24,8 +24,7 @@ extern host_t *init_host(char *hostname, int issummary,
 			 int dialup,
 			 double warnpct, char *reporttime,
 			 char *alerts, int nktime, char *waps,
-			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests,
-			 int modembanksize);
+			 char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests);
 
 extern char	*nopropyellowdefault;
 extern char	*nopropreddefault;

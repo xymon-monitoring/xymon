@@ -134,7 +134,6 @@ static void bbh_item_list_setup(void)
 
 	bbh_item_name[BBH_IP]                  = "BBH_IP";
 	bbh_item_name[BBH_CLIENTALIAS]         = "BBH_CLIENTALIAS";
-	bbh_item_name[BBH_BANKSIZE]            = "BBH_BANKSIZE";
 	bbh_item_name[BBH_HOSTNAME]            = "BBH_HOSTNAME";
 	bbh_item_name[BBH_PAGENAME]            = "BBH_PAGENAME";
 	bbh_item_name[BBH_PAGEPATH]            = "BBH_PAGEPATH";
@@ -300,9 +299,8 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling)
 	/* If default method, just say yes */
 	if (ghosthandling == 0) return result;
 
-	/* Allow all summaries and modembanks */
+	/* Allow all summaries */
 	if (strcmp(hostname, "summary") == 0) return result;
-	if (strcmp(hostname, "dialup") == 0) return result;
 
 	return (walk ? result : NULL);
 }
@@ -402,11 +400,6 @@ char *bbh_item(namelist_t *host, enum bbh_item_t item)
 		  if (host->osname) return host->osname;
 		  else return bbh_find_item(host, item);
 		  break;
-
-	  case BBH_BANKSIZE:
-		  if (host->banksize == 0) return NULL;
-		  sprintf(inttxt, "%d", host->banksize);
-		  return inttxt;
 
 	  case BBH_HOSTNAME: 
 		  return host->bbhostname;
