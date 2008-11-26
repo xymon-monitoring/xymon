@@ -133,7 +133,7 @@ static void parse_query(void)
 				}
 
 				if (acknum) awalk->acknum = atoi(acknum);
-				if (validity) awalk->validity = atoi(validity);
+				if (validity) awalk->validity = durationvalue(validity);
 				if (ackmsg) awalk->ackmsg = strdup(ackmsg);
 				if (hostname) awalk->hostname = strdup(hostname);
 				if (testname) awalk->testname = strdup(testname);
@@ -161,7 +161,7 @@ void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 
 	fprintf(output, "    <td>%s</td>\n", (hname ? hname : "&nbsp;"));
 	fprintf(output, "    <td>%s</td>\n", (tname ? tname : "&nbsp;"));
-	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=4 MAXLENGTH=4></TD>\n", numstr);
+	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=8 MAXLENGTH=20></TD>\n", numstr);
 	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%s\" SIZE=60 MAXLENGTH=80></TD>\n", numstr);
 
 	fprintf(output, "    <TD>\n");
@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 
 			if (reqtype == ACK_MANY) {
 				if (!awalk->ackmsg) awalk->ackmsg = ackmsgall;
-				if (!awalk->validity && validityall) awalk->validity = atoi(validityall);
+				if (!awalk->validity && validityall) awalk->validity = durationvalue(validityall);
 			}
 
 			count++;
