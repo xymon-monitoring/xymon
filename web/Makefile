@@ -186,10 +186,6 @@ hobbit-confreport-critical.sh: hobbit-confreport-critical.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-hobbit-confreport-critical.sh: hobbit-confreport-critical.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
-	chmod 755 $@
-
 hobbit-certreport.sh: hobbit-certreport.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@

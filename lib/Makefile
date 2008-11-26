@@ -62,12 +62,6 @@ color-client.o: color.c
 timefunc-client.o: timefunc.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
-color-client.o: color.c
-	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
-
-timefunc-client.o: timefunc.c
-	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
-
 loadhosts: loadhosts.c libbbgen.a
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libbbgen.a
 
