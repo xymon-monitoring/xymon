@@ -1,10 +1,11 @@
-hobbit (4.2.1-1) unstable; urgency=low
+hobbit (4.2.2-1) unstable; urgency=low
 
-  * Xymon version 4.2.1: 4.2.0 plus all-in-one patch
+  * Xymon version 4.2.2: 4.2.0 plus all-in-one patch
+  * BBWin support added
   * Project renamed to "Xymon" - preliminary changes in
     documents and web templates, but no filename changes.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Wed, 12 Sep 2008 13:56:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Thu, 28 Sep 2008 14:52:00 +0100
 
 
 hobbit (4.2.0-1) unstable; urgency=low
