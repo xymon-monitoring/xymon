@@ -56,5 +56,9 @@ extern int clear_port_counts(namelist_t *hinfo, char *classname);
 extern void add_port_count(char *spname, char *tpname, char *stname);
 extern char *check_port_count(int *pcount, int *lowlim, int *uplim, int *pcolor, char **id, int *trackit, char **group);
 
+extern int clear_svc_counts(void *hinfo, char *classname); 
+extern void add_svc_count(char *spname, char *tpname, char *stname);
+extern char *check_svc_count(int *pcount, int *pcolor, char **group);
+
 #endif
 

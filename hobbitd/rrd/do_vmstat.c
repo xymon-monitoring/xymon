@@ -2,6 +2,7 @@
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007 Francois Lacroix					      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -338,6 +339,7 @@ int do_vmstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_HPUX: 
 		layout = vmstat_hpux_layout; break;
 	  case OS_WIN32:
+	  case OS_WIN32_BBWIN:
 		errprintf("Cannot handle Win32 vmstat from host '%s' \n", hostname);
 		return -1;
 	  case OS_FREEBSD:

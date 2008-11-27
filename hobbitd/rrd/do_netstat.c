@@ -2,6 +2,7 @@
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007 Francois Lacroix					      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -512,6 +513,7 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		break;
 
 	  case OS_WIN32:
+	  case OS_WIN32_BBWIN:
 		havedata = do_valaftermarkerequal(netstat_win32_markers, datapart, outp);
 		break;
 

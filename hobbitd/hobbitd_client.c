@@ -29,7 +29,7 @@ static char rcsid[] = "$Id: hobbitd_client.c,v 1.100 2006-08-09 08:49:19 henrik 
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
-enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_LAST };
+enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_SVCS, MSG_WHO, MSG_LAST };
 
 typedef struct sectlist_t {
 	char *sname;
@@ -39,9 +39,11 @@ typedef struct sectlist_t {
 sectlist_t *sections = NULL;
 int pslistinprocs = 1;
 int portlistinports = 1;
+int svclistinsvcs = 1;
 int sendclearmsgs = 1;
 int sendclearfiles = 1;
 int sendclearports = 1;
+int sendclearsvcs = 1;
 int localmode     = 0;
 int noreportcolor = COL_CLEAR;
 
@@ -151,6 +153,8 @@ int want_msgtype(namelist_t *hinfo, enum msgtype_t msg)
 				else if (strcmp(tok, "msgs") == 0) currset |= (1 << MSG_MSGS);
 				else if (strcmp(tok, "ports") == 0) currset |= (1 << MSG_PORTS);
 				else if (strcmp(tok, "procs") == 0) currset |= (1 << MSG_PROCS);
+				else if (strcmp(tok, "svcs") == 0) currset |= (1 << MSG_SVCS);
+				else if (strcmp(tok, "who") == 0) currset |= (1 << MSG_WHO);
 
 				tok = strtok(NULL, ",");
 			}
@@ -1402,6 +1406,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/darwin.c"
 #include "client/irix.c"
 #include "client/sco_sv.c"
+#include "client/bbwin.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1770,57 +1775,61 @@ int main(int argc, char *argv[])
 
 			combo_start();
 			switch (os) {
-			  case OS_FREEBSD: 
-				handle_freebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_FREEBSD:
+                                handle_freebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_NETBSD: 
-				handle_netbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_NETBSD:
+                                handle_netbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_OPENBSD: 
-				handle_openbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_OPENBSD:
+                                handle_openbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_LINUX22: 
-			  case OS_LINUX: 
-			  case OS_RHEL3: 
-				handle_linux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_LINUX22:
+                          case OS_LINUX:
+                          case OS_RHEL3:
+                                handle_linux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_DARWIN:
-				handle_darwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_DARWIN:
+                                handle_darwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_SOLARIS: 
-				handle_solaris_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_SOLARIS:
+                                handle_solaris_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_HPUX: 
-				handle_hpux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_HPUX:
+                                handle_hpux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_OSF: 
-				handle_osf_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_OSF:
+                                handle_osf_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_AIX: 
-				handle_aix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_AIX:
+                                handle_aix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_IRIX:
-				handle_irix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
-				
+                          case OS_IRIX:
+                                handle_irix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
+
                           case OS_SCO_SV:
-  			        handle_sco_sv_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
-				
-			  case OS_WIN32: 
-			  case OS_SNMP: 
-			  case OS_UNKNOWN:
-				errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
-				break;
+                                handle_sco_sv_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
+
+                          case OS_WIN32_BBWIN:
+                                handle_win32_bbwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
+
+                          case OS_WIN32:
+                          case OS_SNMP:
+                          case OS_UNKNOWN:
+                                errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
+                                break;
 			}
 			combo_end();
 		}

@@ -2,6 +2,7 @@
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007 Francois Lacroix					      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -16,7 +17,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					rra1, rra2, rra3, rra4, NULL };
 	static char *disk_tpl      = NULL;
 
-	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE } dsystype;
+	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
 	static pcre *inclpattern = NULL;
@@ -48,6 +49,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
 	else if (strstr(msg, "NetWare Volumes")) dsystype = DT_NETWARE;
 	else if (strstr(msg, "NetAPP")) dsystype = DT_NETAPP;
+	else if (strstr(msg, "Summary")) dsystype = DT_BBWIN; /* Make sur it is a bbwin client v > 0.10 */
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
 
@@ -83,6 +85,8 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		 * Some Unix filesystem reports contain the word "Filesystem".
 		 * So check if there's a slash in the NT filesystem letter - if yes,
 		 * then it's really a Unix system after all.
+		 * Not always has BBWIN > 0.10 not give the information also on mounted disk.
+		 * (IE more than one letter)
 		 */
 		if ( (dsystype == DT_NT) && (*(columns[5])) &&
 		     ((strchr(columns[0], '/')) || (strlen(columns[0]) > 1)) )
@@ -112,6 +116,7 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			pused = atoi(columns[columncount-1]);
 			aused = 0; /* Not available */
 			break;
+		  case DT_BBWIN:
 		  case DT_NT:
 			diskname = xmalloc(strlen(columns[0])+2);
 			sprintf(diskname, "/%s", columns[0]);
