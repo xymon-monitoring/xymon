@@ -297,7 +297,6 @@ static int pickdata(char *buf, pcre *expr, int dupok, ...)
 #include "rrd/do_ifstat.c"
 
 #include "rrd/do_apache.c"
-#include "rrd/do_bind.c"
 #include "rrd/do_sendmail.c"
 #include "rrd/do_mailq.c"
 #include "rrd/do_iishealth.c"
@@ -309,16 +308,6 @@ static int pickdata(char *buf, pcre *expr, int dupok, ...)
 #include "rrd/do_external.c"
 #include "rrd/do_filesizes.c"
 #include "rrd/do_counts.c"
-
-#ifdef USE_BEA2
-#include "rrd/do_bea2.c"
-#else
-#include "rrd/do_bea.c"
-#endif
-
-#ifdef DO_ORCA
-#include "rrd/do_orca.c"
-#endif
 
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
@@ -350,14 +339,8 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "qtree") == 0)       res = do_disk_rrd(hostname, testname, msg, tstamp);
 
 	else if (strcmp(id, "apache") == 0)      res = do_apache_rrd(hostname, testname, msg, tstamp);
-	else if (strcmp(id, "bind") == 0)        res = do_bind_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "sendmail") == 0)    res = do_sendmail_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "mailq") == 0)       res = do_mailq_rrd(hostname, testname, msg, tstamp);
-#ifdef USE_BEA2
-	else if (strcmp(id, "bea2") == 0)        res = do_bea_rrd(hostname, testname, msg, tstamp);
-#else
-	else if (strcmp(id, "bea") == 0)         res = do_bea_rrd(hostname, testname, msg, tstamp);
-#endif
 	else if (strcmp(id, "iishealth") == 0)   res = do_iishealth_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "temperature") == 0) res = do_temperature_rrd(hostname, testname, msg, tstamp);
 
@@ -368,10 +351,6 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
-
-#ifdef DO_ORCA
-	else if (strcmp(id, "orca") == 0)        res = do_orca_rrd(hostname, testname, msg, tstamp);
-#endif
 
 	else if (extids && exthandler) {
 		int i;
