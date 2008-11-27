@@ -132,8 +132,8 @@ clean:
 	$(MAKE) -C web clean
 	$(MAKE) -C docs clean
 	$(MAKE) -C client clean
-	$(MAKE) -C demotool clean
-	$(MAKE) -C custom clean || echo ""
+#	$(MAKE) -C demotool clean
+#	$(MAKE) -C custom clean || echo ""
 	rm -f ./*~ include/config.h include/*~ debian/*~ rpm/*~ contrib/*~
 
 
