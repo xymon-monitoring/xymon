@@ -1,7 +1,7 @@
-.TH BBPROXY 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH BBPROXY 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 
 .SH NAME
-bbproxy \- Hobbit / Big Brother message proxy
+bbproxy \- Xymon message proxy
 .SH SYNOPSIS
 .B "bbproxy [options] --bbdisplay=$BBDISP"
 
@@ -10,44 +10,30 @@ bbproxy \- Hobbit / Big Brother message proxy
 is a proxy for forwarding Big Brother messages from one
 server to another. It will typically be needed if you have
 clients behind a firewall, so they cannot send status
-messages to the BBDISPLAY server directly.
+messages to the Xymon server directly.
 
 bbproxy serves three purposes. First, it acts as a regular
 proxy server, allowing clients that cannot connect directly to 
-the BBDISPLAY or BBPAGER servers to send messages to the
-Big Brother servers. Although bbproxy is optimized for handling
+the Xymon servers to send data. Although bbproxy is optimized for handling
 status messages, it will forward all types of messages, including
 notes- and data-messages.
-The standard Big Brother daemon,
-.I bbd(1)
-can also do this via the BBRELAY setting. However, bbproxy
-has a much lower overhead since it runs as a single-thread
-application and does not launch new processes to handle 
-each incoming message.
 .br
 
 Second, it acts as a buffer, smoothing out peak loads if
 many clients try to send status messages simultaneously.
 bbproxy can absorb messages very quickly, but will queue
-them up internally and forward them to the BBDISPLAY server
-at a reasonable pace. This helps even out the load on 
-your BBDISPLAY server.
+them up internally and forward them to the Xymon server
+at a reasonable pace.
 .br
 
 Third, bbproxy merges small "status" messages into larger
 "combo" messages. This can dramatically decrease the number
-of connections that need to go from bbproxy to the BBDISPLAY
-server, and since each connection to the BBDISPLAY server
-requires a new proces to be started this will also cut down
-on the load on your BBDISPLAY server. The merging of messages
-causes "status" messages to be delayed for up to 0.25 seconds
-before being sent off to the BBDISPLAY server.
+of connections that need to go from bbproxy to the Xymon
+server.  The merging of messages causes "status" messages 
+to be delayed for up to 0.25 seconds before being sent off 
+to the Xymon server.
 
 .SH OPTIONS
-.IP "--hobbitd"
-Enable this option when the destination server is a Hobbit server,
-not the Big Brother bbd daemon.
-
 .IP "--bbdisplay=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
@@ -55,7 +41,7 @@ standard Big Brother port number. If you have setup the normal
 Big Brother environment, you can use "--bbdisplay=$BBDISP". Up
 to 3 servers can be specified; incoming messages are sent to
 all of them (except "config", "query" and "download" messages, 
-which go to the LAST server only). If you have Hobbit clients
+which go to the LAST server only). If you have Xymon clients
 sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
 listed here.  This option is required.
@@ -83,7 +69,7 @@ aborted due to a timeout. Default: 10 seconds.
 
 .IP "--report=[PROXYHOSTNAME.]BBSERVICE"
 If given, this option causes bbproxy to send a status report
-every 5 minutes to the BBDISPLAY server about itself. If you
+every 5 minutes to the Xymon server about itself. If you
 have set the standard Big Brother environment, you can use
 "--report=bbproxy" to have bbproxy report its status to a
 "bbproxy" column in Big Brother. The default for PROXYHOSTNAME
@@ -120,7 +106,7 @@ Enable debugging output.
 
 .SH "REPORT OUTPUT"
 If enabled via the "--report" option, bbproxy will send a 
-status message about itself to the BBDISPLAY server once
+status message about itself to the Xymon server once
 every 5 minutes.
 
 The status message includes the following information:
@@ -131,8 +117,8 @@ since the proxy started. The "(N msgs/second)" is the
 average number of messages per second over the past 5 minutes.
 
 .IP "Outbound messages"
-The total number of messages sent to the BBDISPLAY and
-BBPAGER servers. Note that this is probably smaller than
+The total number of messages sent to the Xymon server. 
+Note that this is probably smaller than
 the number of incoming messages, since bbproxy merges
 messages before sending them.
 
@@ -169,11 +155,11 @@ from the client timed out.
 
 .IP "Timeout details - connecting to server"
 The number of messages dropped, because a connection to the
-BBDISPLAY or BBPAGER server could not be established.
+Xymon server could not be established.
 
 .IP "Timeout details - sending to server"
 The number of messages dropped because the communication
-to the BBDISPLAY/BBPAGER server timed out after a connection
+to the Xymon server timed out after a connection
 was established.
 
 .IP "Timeout details - recovered"
@@ -200,7 +186,7 @@ The average time it took the proxy to process a message,
 calculated from the messages that have passed through the
 proxy during the past 5 minutes. This number is computed
 from the messages that actually end up establishing a
-connection to the BBDISPLAY or BBPAGER server, i.e. status 
+connection to the Xymon server, i.e. status 
 messages that were combined into combo-messages do not
 go into the calculation - if they did, it would reduce the
 average time, since it is faster to merge messages than
@@ -234,5 +220,5 @@ Shut down the proxy.
 Toggles logging of individual messages.
 
 .SH "SEE ALSO"
-bb(1), bbd(1), hobbit(7)
+bb(1), bbd(1), xymon(7)
 

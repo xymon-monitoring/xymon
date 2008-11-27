@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
-<TITLE>Hobbit Availability Report : &BBHOST - &BBSVC &BBDATE</TITLE>
+<TITLE>Xymon Availability Report : &BBHOST - &BBSVC &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">

@@ -1,19 +1,19 @@
-.TH HOBBIT-CLIENTS.CFG 5 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBIT-CLIENTS.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 hobbit-clients.cfg \- Configuration file for the hobbitd_client module
 
 .SH SYNOPSIS
-.B ~hobbit/server/etc/hobbit-clients.cfg
+.B ~Xymon/server/etc/hobbit-clients.cfg
 
 .SH DESCRIPTION
 The hobbit-clients.cfg file controls what color is assigned to
-the status-messages that are generated from the Hobbit client
+the status-messages that are generated from the Xymon client
 data - typically the cpu, disk, memory, procs- and msgs-columns. Color
 is decided on the basis of some \fBsettings\fR defined in this file;
 settings apply to specific hosts through a set of \fBrules\fR.
 
-Note: This file is only used on the Hobbit server - it is not
-used by the Hobbit client, so there is no need to distribute
+Note: This file is only used on the Xymon server - it is not
+used by the Xymon client, so there is no need to distribute
 it to your client systems.
 
 .SH FILE FORMAT
@@ -44,7 +44,7 @@ Defaults: bootlimit=1h, toolonglimit=-1 (infinite).
 .BR "CLOCK max.offset"
 .sp
 The cpu status goes yellow if the system clock on the client
-differs more than "max.offset" seconds from that of the Hobbit
+differs more than "max.offset" seconds from that of the Xymon
 server. Note that this is not a particularly accurate test, since 
 it is affected by network delays between the client and the server,
 and the load on both systems. You should therefore not rely on this
@@ -53,15 +53,15 @@ catch a client clock that goes completely wrong. The default is
 NOT to check the system clock.
 .br
 \fBNOTE:\fR Correct operation of this test obviously requires that
-the system clock of the Hobbit server is correct. You should therefore
-make sure that the Hobbit server is synchronized to the real clock,
+the system clock of the Xymon server is correct. You should therefore
+make sure that the Xymon server is synchronized to the real clock,
 e.g. by using NTP.
 
 .sp
 Example: Go yellow if the load average exceeds 5, and red if it
 exceeds 10. Also, go yellow for 10 minutes after a reboot, and after 
 4 weeks uptime. Finally, check that the system clock is at most
-15 seconds offset from the clock of the Hobbit system.
+15 seconds offset from the clock of the Xymon system.
 .IP
 .nf
 LOAD 5 10
@@ -146,7 +146,7 @@ as "cron".
 "%java.*inst[0123]" can be used to find entries in the ps-listing for
 "java -Xmx512m inst2" and "java -Xmx256 inst3". In that case,
 "processname" must begin with "%" followed by the regular expression.
-Note that Hobbit defaults to case-insensitive pattern matching; if that
+Note that Xymon defaults to case-insensitive pattern matching; if that
 is not what you want, put "(?-i)" between the "%" and the regular
 expression to turn this off. E.g. "%(?-i)HTTPD" will match the
 word HTTPD only when it is upper-case.
@@ -165,7 +165,7 @@ You can have multiple "PROC" entries for the same host, all of the
 checks are merged into the "procs" status and the most severe
 check defines the color of the status.
 .sp
-The optional \fBTRACK=id\fR setting causes Hobbit to track the number of
+The optional \fBTRACK=id\fR setting causes Xymon to track the number of
 processes found in an RRD file, and put this into a graph which is shown
 on the "procs" status display. The \fBid\fR setting is a simple text string 
 which will be used as the legend for the graph, and also as part of the
@@ -176,7 +176,7 @@ Note that the process counts which are tracked are only performed once
 when the client does a poll cycle - i.e. the counts represent snapshots
 of the system state, not an average value over the client poll cycle.
 Therefore there may be peaks or dips in the actual process counts which
-will not show up in the graphs, because they happen while the Hobbit client
+will not show up in the graphs, because they happen while the Xymon client
 is not doing any polling.
 .sp
 The optional \fBTEXT=text\fR setting is used in the summary of the "procs"
@@ -205,7 +205,7 @@ Defaults:
 .sp
 .BR "LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern]"
 .sp
-The Hobbit client extracts interesting lines from one or 
+The Xymon client extracts interesting lines from one or 
 more logfiles - see the
 .I client-local.cfg(5)
 man-page for information about how to configure which
@@ -224,7 +224,7 @@ no "color" parameter is present, the default is to go "red" when
 the pattern is matched. To match against a regular expression, "pattern"
 must begin with a '%' sign - e.g "%WARNING|NOTICE" will match any lines
 containing either of these two words.
-Note that Hobbit defaults to case-insensitive pattern matching; if that
+Note that Xymon defaults to case-insensitive pattern matching; if that
 is not what you want, put "(?-i)" between the "%" and the regular
 expression to turn this off. E.g. "%(?-i)WARNING" will match the
 word WARNING only when it is upper-case.
@@ -357,7 +357,7 @@ the clients "netstat" command.
 Exclude certain states from the rule.
 .LP
 "addr" is typically "10.0.0.1:80" for the IP 10.0.0.1, port 80. 
-Or "*:80" for any local address, port 80. Note that the Hobbit clients 
+Or "*:80" for any local address, port 80. Note that the Xymon clients 
 normally report only the numeric data for IP-adresses and port-numbers, 
 so you must specify the port number (e.g. "80") instead of the service 
 name ("www").
@@ -372,7 +372,7 @@ here. If the count is outside the thresholds, the color of the "ports"
 status changes to "color".  To check for a socket that must NOT exist: Set 
 minimum and maximum to 0.
 .sp
-The optional \fBTRACK=id\fR setting causes Hobbit to track the number of
+The optional \fBTRACK=id\fR setting causes Xymon to track the number of
 sockets found in an RRD file, and put this into a graph which is shown
 on the "ports" status display. The \fBid\fR setting is a simple text string 
 which will be used as the legend for the graph, and also as part of the
@@ -383,7 +383,7 @@ Note that the sockets counts which are tracked are only performed once
 when the client does a poll cycle - i.e. the counts represent snapshots
 of the system state, not an average value over the client poll cycle.
 Therefore there may be peaks or dips in the actual sockets counts which
-will not show up in the graphs, because they happen while the Hobbit client
+will not show up in the graphs, because they happen while the Xymon client
 is not doing any polling.
 .sp
 The \fBTEXT=displaytext\fR option affects how the port appears on the
@@ -444,7 +444,7 @@ to specify the page name, e.g. \fBPAGE=%.*/db\fR would find the "Database
 servers" page regardless of where this page was placed in the hierarchy.
 
 The top-level page has a the fixed name \fB/\fR, e.g. \fBPAGE=/\fR would 
-match all hosts on the Hobbit frontpage. If you need it in a regular
+match all hosts on the Xymon frontpage. If you need it in a regular
 expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
 present in subpage-names.
 
@@ -487,7 +487,7 @@ failures are handled by the Unix admins.
 
 To handle this, all rules can have a "GROUP=groupname" setting.
 When a rule with this setting triggers a yellow or red status,
-the groupname is passed on to the Hobbit alerts module, so you
+the groupname is passed on to the Xymon alerts module, so you
 can use it in the alert rule definitions in 
 .I hobbit-alerts.cfg(5)
 to direct alerts to the correct group of people.
@@ -547,5 +547,5 @@ is not considered strong enough when a high level of security is required.
 
 
 .SH "SEE ALSO"
-hobbitd_client(8), client-local.cfg(5), hobbitd(8), hobbit(7)
+hobbitd_client(8), client-local.cfg(5), hobbitd(8), xymon(7)
 

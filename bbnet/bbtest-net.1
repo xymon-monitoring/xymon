@@ -1,6 +1,6 @@
-.TH BBTEST-NET 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH BBTEST-NET 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-bbtest-net \- Hobbit network test tool
+bbtest-net \- Xymon network test tool
 .SH SYNOPSIS
 .B "bbtest-net -?"
 .br
@@ -14,7 +14,7 @@ bbtest-net \- Hobbit network test tool
 
 .SH DESCRIPTION
 .I bbtest-net(1)
-handles the network tests of hosts defined in the Hobbit configuration
+handles the network tests of hosts defined in the Xymon configuration
 file, bb-hosts. It is normally run at regular intervals by 
 .I hobbitlaunch(8)
 via an entry in the
@@ -186,7 +186,7 @@ to be sent when the service does not respond as expected.
 By default, bbtest-net sends some extra information in the
 status messages, called "flags". These are used by bbgen
 e.g. to pick different icons for reversed tests when
-generating the Hobbit webpages. This option makes
+generating the Xymon webpages. This option makes
 bbtest-net omit these flags from the status messages.
 
 
@@ -230,7 +230,7 @@ hosts by putting a "notrace" tag on the host-entry.
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
 .IP --content=CONTENTTESTNAME 
-Determines the name of the column Hobbit displays for content checks. 
+Determines the name of the column Xymon displays for content checks. 
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
 scripts earlier, you may want to use "--content=cont" to report content
 checks using the same test name as these scripts do.
@@ -238,7 +238,7 @@ checks using the same test name as these scripts do.
 
 .SH OPTIONS FOR SSL CERTIFICATE TESTS
 .IP --ssl=SSLCERTTESTNAME
-Determines the name of the column Hobbit displays for the SSL certificate checks.
+Determines the name of the column Xymon displays for the SSL certificate checks.
 The default is "sslcert".
 .IP --no-ssl
 Disables reporting of the SSL certificate check.
@@ -444,7 +444,7 @@ tests for only those hosts.
 Defines the maximum number of status messages that can be sent in 
 one combo message. Default is 0 - no limit.
 .br
-In practice, the maximum size of a single Hobbit message
+In practice, the maximum size of a single Xymon message
 sets a limit - the default value for the maximum message
 size is 32 KB, but that will easily accomodate 100 status
 messages per transmission. So if you want to experiment
@@ -490,7 +490,7 @@ Location of the
 utility. Used by bbtest-net for the "rpc" service checks.
 
 .SH FILES
-.IP "~/server/etc/bb-services (Hobbit)"
+.IP "~/server/etc/bb-services"
 This file contains definitions of TCP services that bbtest-net
 can test. Definitions for a default set of common services is built
 into bbtest-net, but these can be overridden or supplemented by
@@ -511,7 +511,7 @@ for details - a sample entry would look like this
 .br
 Note that the machine-name must be the name you use in the
 http://machinename/ URL setting - it need not be the one you
-use for the system-name in Hobbit.
+use for the system-name in Xymon.
 
 .sp
 .IP "$BBHOME/etc/cookies"

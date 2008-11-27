@@ -1,10 +1,10 @@
 #!/bin/sh
 
-# Configure script for Hobbit CLIENT
-# $Id: configure.client,v 1.5 2006-08-07 15:38:05 henrik Exp $
+# Configure script for Xymon CLIENT
+# $Id: configure.client,v 1.5 2006/08/07 15:38:05 henrik Rel $
 
 echo ""
-echo "Configuration script for Hobbit client"
+echo "Configuration script for Xymon client"
 echo ""
 
 if test -r Makefile
@@ -13,7 +13,7 @@ then
 	exit 1
 fi
 
-echo "This script asks a few questions and builds a Makefile to compile Hobbit"
+echo "This script asks a few questions and builds a Makefile to compile Xymon"
 echo ""
 
 if test "$MAKE" = ""; then
@@ -23,14 +23,14 @@ echo "Checking your make-utility"
 MAKEVER=`$MAKE -version 2>&1 | head -n 1 | awk '{print $1 " " $2}'`
 if test "$MAKEVER" != "GNU Make"
 then
-	echo "GNU make is required to build Hobbit."
+	echo "GNU make is required to build Xymon."
 	echo "If it is available as \"gmake\", run configure as: 'MAKE=gmake $0'"
 	exit 1
 fi
 echo ""
 
-echo "Hobbit normally keeps all of the client configuration files"
-echo "on the Hobbit server. If you prefer, it is possible to use"
+echo "Xymon normally keeps all of the client configuration files"
+echo "on the Xymon server. If you prefer, it is possible to use"
 echo "a local client configuration file instead - if so, answer"
 echo "'client' to the next question."
 echo "NB: Local configuration requires the PCRE libs on each host."
@@ -62,14 +62,14 @@ else
 fi
 echo ""; echo ""
 
-echo "What userid will be running Hobbit [hobbit] ?"
+echo "What userid will be running Xymon [xymon] ?"
 if test -z "$BBUSER"
 then
 	read BBUSER
 fi
 if test -z "$BBUSER"
 then
-	BBUSER="hobbit"
+	BBUSER="xymon"
 fi
 
 if test -z "$BBTOPDIR"
@@ -103,7 +103,7 @@ else
 	HOMEDIR="$BBTOPDIR"
 fi
 
-echo "Where do you want the Hobbit installation [${HOMEDIR}] ?"
+echo "Where do you want the Xymon installation [${HOMEDIR}] ?"
 if test -z "$BBTOPDIR"
 then
 	read BBTOPDIR
@@ -114,13 +114,13 @@ then
 fi
 if test -d "$BBTOPDIR"
 then
-	echo "OK, will configure to use $BBTOPDIR as the Hobbit toplevel directory"
+	echo "OK, will configure to use $BBTOPDIR as the Xymon toplevel directory"
 else
 	echo "WARNING: $BBTOPDIR does not exist."
 fi
 echo ""; echo ""
 
-echo "What is the IP-address of your Hobbit server [127.0.0.1] ? "
+echo "What is the IP-address of your Xymon server [127.0.0.1] ? "
 if test -z "$BBHOSTIP"
 then
 	read BBHOSTIP
@@ -137,7 +137,7 @@ if test "$BBHOME" = ""; then
 	BBHOME=$BBTOPDIR/client
 fi
 
-echo "# Toplevel Makefile for Hobbit"    > Makefile
+echo "# Toplevel Makefile for Xymon"    > Makefile
 
 echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
 echo "CLIENTONLY = yes"                  >>Makefile
@@ -148,18 +148,18 @@ else
 	echo "LOCALCLIENT = no"          >>Makefile
 fi
 echo ""                                  >>Makefile
-echo "# configure settings for Hobbit"   >>Makefile
+echo "# configure settings for Xymon"    >>Makefile
 echo "#"                                 >>Makefile
 echo "# Toplevel dir"                    >>Makefile
 echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
 echo "# Server home dir for etc/, www/"  >>Makefile
 echo "BBHOME = $BBHOME"                  >>Makefile
 echo ""                                  >>Makefile
-echo "# hobbit settings follows"         >>Makefile
+echo "# Xymon settings follows"          >>Makefile
 echo "#"                                 >>Makefile
-echo "# Username running hobbit"         >>Makefile
+echo "# Username running Xymon"          >>Makefile
 echo "BBUSER = $BBUSER"                  >>Makefile
-echo "# Hobbit server IP-address"        >>Makefile
+echo "# Xymon server IP-address"         >>Makefile
 echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
@@ -216,7 +216,7 @@ echo "include build/Makefile.rules" >> Makefile
 echo "" >> Makefile
 
 echo ""; echo ""
-echo "Created Makefile with the necessary information to build Hobbit"
+echo "Created Makefile with the necessary information to build Xymon"
 echo "Some defaults are used, so do look at the Makefile before continuing."
 echo ""
 

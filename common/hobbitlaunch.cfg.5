@@ -1,13 +1,13 @@
-.TH HOBBITLAUNCH.CFG 5 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITLAUNCH.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 hobbitlaunch.cfg \- Task definitions for the hobbitlaunch utility
 
 .SH SYNOPSIS
-.B ~hobbit/server/etc/hobbitlaunch.cfg
+.B ~xymon/server/etc/hobbitlaunch.cfg
 
 .SH DESCRIPTION
 The hobbitlaunch.cfg file holds the list of tasks that hobbitlaunch runs 
-to perform all of the tasks needed by the Hobbit monitor.
+to perform all of the tasks needed by the Xymon monitor.
 
 .SH FILE FORMAT
 A task is defined by a \fBkey\fR, a \fBcommand\fR, and optionally 
@@ -22,15 +22,15 @@ An entry looks like this:
 .sp
     [hobbitd]
 .br
-          ENVFILE /usr/local/hobbit/server/etc/hobbitserver.cfg
+          ENVFILE /usr/local/xymon/server/etc/hobbitserver.cfg
 .br
-          CMD /usr/local/hobbit/server/bin/hobbitd
+          CMD /usr/local/xymon/server/bin/hobbitd
 .sp
     [updateweb]
 .br
-          ENVFILE /usr/local/hobbit/server/etc/hobbitserver.cfg
+          ENVFILE /usr/local/xymon/server/etc/hobbitserver.cfg
 .br
-          CMD /usr/local/hobbit/server/bin/bbgen
+          CMD /usr/local/xymon/server/bin/bbgen
 .br
           NEEDS hobbitd
 .br
@@ -38,7 +38,7 @@ An entry looks like this:
 .br
           INTERVAL 5m
 .br
-          LOGFILE /var/log/hobbit/updateweb.log
+          LOGFILE /var/log/xymon/updateweb.log
 .sp
 The \fBkey\fR is enclosed in angle brackets, and must be unique
 for each task. You can choose your key-names as you like, they
@@ -51,7 +51,7 @@ task. This is required for all tasks.
 The \fBDISABLED\fR keyword means that this command is disabled.
 hobbitlaunch will not start this task. It is recommended that 
 you use this to disable standard tasks, instead of removing them
-or commenting them out. Upgrades to Hobbit will add standard
+or commenting them out. Upgrades to Xymon will add standard
 tasks back into the file, so unless you have them listed as DISABLED
 then tasks may re-appear unexpectedly after an upgrade.
 
@@ -82,7 +82,7 @@ The \fBENVFILE\fR setting points to a file with definitions of
 environment variables. Before running the task, hobbitlaunch will
 setup all of the environment variables listed in this file.
 Since this is a per-task setting, you can use the same hobbitlaunch
-instance to run e.g. both the server- and client-side Hobbit 
+instance to run e.g. both the server- and client-side Xymon 
 tasks. If this option is not present, then the environment 
 defined to hobbitlaunch is used.
 
@@ -98,5 +98,5 @@ to this file. If this option is not present, then the output
 goes to the same location as the hobbitlaunch output.
 
 .SH "SEE ALSO"
-hobbitlaunch(8), hobbitd(8), hobbit(7)
+hobbitlaunch(8), hobbitd(8), xymon(7)
 

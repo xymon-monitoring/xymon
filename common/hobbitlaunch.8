@@ -1,6 +1,6 @@
-.TH HOBBITLAUNCH 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITLAUNCH 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-hobbitlaunch \- Master program to launch other Hobbit programs
+hobbitlaunch \- Master program to launch other Xymon programs
 
 .SH SYNOPSIS
 .B "hobbitlaunch [options]"
@@ -8,15 +8,15 @@ hobbitlaunch \- Master program to launch other Hobbit programs
 .SH DESCRIPTION
 .I hobbitlaunch(8)
 is the main program that controls the execution and scheduling of 
-all of the components in the Hobbit system.
+all of the components in the Xymon system.
 
 hobbitlaunch allows the administrator to add, remove or change the set of
-Hobbit applications and extensions without restarting Hobbit -
+Xymon applications and extensions without restarting Xymon -
 hobbitlaunch will automatically notice any changes in the set of tasks,
 and change the scheduling of activities accordingly.
 
 hobbitlaunch also allows the administrator to setup specific logfiles for
-each component of the Hobbit system, instead of getting output
+each component of the Xymon system, instead of getting output
 from all components logged to a single file.
 
 .SH OPTIONS
@@ -74,5 +74,5 @@ definition file, or the logfile was changed, then the task is stopped
 and restarted with the new definition.
 
 .SH "SEE ALSO"
-hobbitlaunch.cfg(5), hobbit(7)
+hobbitlaunch.cfg(5), xymon(7)
 

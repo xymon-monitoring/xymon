@@ -1,35 +1,35 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-	<title>Known issues in Hobbit</title>
+	<title>Known issues in Xymon</title>
 </head>
 <body>
 
-<h1>Known issues in Hobbit</h1>
+<h1>Known issues in Xymon</h1>
 <p>This describes some known problems you may encounter when
-using Hobbit to monitor servers.</p>
+using Xymon to monitor servers.</p>
 <ul>
 	<li><a href="#bugreport">How to report bugs</a></li>
 	<li><a href="#jsval">JavaScript errors when using enable/disable function</a></li>
 	<li><a href="#dnserror">DNS error reported for network tests</a></li>
 	<li><a href="#netfail">Network tests fail sporadically</a></li>
 	<li><a href="#solarisrandom">"Failed to find enough entropy" on Solaris</a></li>
-	<li><a href="#freebsdkernelsem">Hobbit fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></li>
-	<li><a href="#solarislinker">Hobbit on Solaris compiles but aborts with some "ld.so" error</a></li>
+	<li><a href="#freebsdkernelsem">Xymon fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></li>
+	<li><a href="#solarislinker">Xymon on Solaris compiles but aborts with some "ld.so" error</a></li>
 </ul>
 
 <h3><a name="bugreport">How to report bugs</a></h3>
-<p>If you think you have found a bug in Hobbit, please report it
-to the Hobbit mailing list at <a href="mailto:hobbit@hswn.dk">hobbit@hswn.dk</a>.
+<p>If you think you have found a bug in Xymon, please report it
+to the Xymon mailing list at <a href="mailto:hobbit@hswn.dk">hobbit@hswn.dk</a>.
 You can do a lot to help getting bugs fixed by providing detailed information
 about the bug:</p>
 <ul>
-	<li>Always include the version number of Hobbit you're using</li>
-	<li>If one of the Hobbit tools crashes and leaves a core-file (usually
+	<li>Always include the version number of Xymon you're using</li>
+	<li>If one of the Xymon tools crashes and leaves a core-file (usually
 	in the ~hobbit/server/tmp/ directory), please use the <b>gdb</b> tool to
 	pinpoint where the crash occurred:<br>
 	<ul>
-		<li>Login as the Hobbit user</li>
+		<li>Login as the Xymon user</li>
 		<li><tt>
 			$ <b>cd ~/server</b><br>
 			$ <b>gdb bin/PROGRAMFILE tmp/COREFILE</b><br>
@@ -83,10 +83,10 @@ I have been using ANDIrand since that did not require a reboot and easily
 available.
 </p>
 
-<h3><a name="freebsdkernelsem">Hobbit fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></h3>
-<p>Hobbit uses some kernel ressources - semaphores and shared memory. 
+<h3><a name="freebsdkernelsem">Xymon fails on FreeBSD with &quot;Could not get sem: No space left on device&quot;</a></h3>
+<p>Xymon uses some kernel ressources - semaphores and shared memory. 
 If you get the following error message in hobbitlaunch.log when trying
-to start Hobbit:</p>
+to start Xymon:</p>
 <pre><tt>
 2005-05-29 20:25:14 Setting up hobbitd channels
 2005-05-29 20:25:14 Could not get sem: No space left on device
@@ -99,7 +99,7 @@ individual semaphores available to applications.</p>
 <p>The current settings for your kernel can be found with 
 &quot;<tt>sysctl kern.ipc.semmni</tt>&quot; (semaphore sets)
 and &quot;<tt>sysctl kern.ipc.semmns</tt>&quot; (total number
-of semaphores). Hobbit uses 6 semaphore sets, with a total of 18 semaphores.</p>
+of semaphores). Xymon uses 6 semaphore sets, with a total of 18 semaphores.</p>
 
 <p>To increase this, put these two lines in /boot/loader.conf on your system:</p>
 <pre><tt>
@@ -107,14 +107,14 @@ kern.ipc.semmni="40"
 kern.ipc.semmns="100"
 </tt></pre>
 <p>Adjust the values to something reasonable for your system - considering the
-current settings (from the <tt>sysctl</tt> output), and Hobbit's needs
+current settings (from the <tt>sysctl</tt> output), and Xymon's needs
 (6 sets with 18 semaphores).</p>
 
 <p>More information about tuning the FreeBSD kernel parameters is available in
 <a href="http://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/configtuning-sysctl.html">
 the FreeBSD Handbook</a></p>
 
-<h3><a name="solarislinker">Hobbit on Solaris compiles but aborts with some "ld.so" error</a></h3>
+<h3><a name="solarislinker">Xymon on Solaris compiles but aborts with some "ld.so" error</a></h3>
 <p><a href="http://www.hswn.dk/hobbiton/2005/09/msg00160.html">This info</a> was contributed by sladewig,
 with a few modifications:</p>
 

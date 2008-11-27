@@ -4,7 +4,7 @@
   <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Report date specification">
     <TR BGCOLOR="#000033">
        <TD COLSPAN=2>
-           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Hobbit Monitor Availability Report</B></FONT></CENTER>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Xymon Availability Report</B></FONT></CENTER>
        </TD>
     </TR>
     <TR>

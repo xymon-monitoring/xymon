@@ -1,13 +1,19 @@
-README file for Hobbit
-======================
+README file for Xymon
+=====================
 
 What is it ?
 ------------
-Hobbit is a system for monitoring your network servers and 
+Xymon is a system for monitoring your network servers and 
 applications. It is heavily inspired by the Big Brother
 tool, but is a complete re-implementation with a lot of added
 functionality and performance improvements. A slightly more
-detailed rationale for Hobbit is in the docs/about.html file.
+detailed rationale for Xymon is in the docs/about.html file.
+
+NOTE: On Nov 10 2008, Hobbit was officially renamed to
+"Xymon". The name "Hobbit" is trademarked, and therefore
+cannot be used without permission from the trademark
+holders. The 4.2.1 release is an interim version where
+the name change has not been fully implemented.
 
 
 How to install
@@ -25,37 +31,37 @@ detailed instructions.
 Documentation
 -------------
 The docs/ directory holds information about the basic
-installation and configuration of Hobbit. All of the
-tools and configuration files in Hobbit have man-pages
-that are installed automatically when installing Hobbit.
-The hobbit(7) man page provides an introduction to 
-Hobbit and has pointers to the other man-pages of the
+installation and configuration of Xymon. All of the
+tools and configuration files in Xymon have man-pages
+that are installed automatically when installing Xymon.
+The xymon(7) man page provides an introduction to 
+Xymon and has pointers to the other man-pages of the
 package.
 
 
 License
 -------
-Hobbit is copyrighted (C) 2002-2006 by Henrik Storner.
+Xymon is copyrighted (C) 2002-2006 by Henrik Storner.
 
-Hobbit is Open Source software, made available under the 
+Xymon is Open Source software, made available under the 
 GNU General Public License (GPL) version 2, with the explicit 
 exemption that linking with the OpenSSL libraries is permitted. 
 See the file COPYING for details.
 
-Hobbit is released under the GPL, and therefore available
+Xymon is released under the GPL, and therefore available
 free of charge. However, if you find it useful and want
 to encourage further development, I do have an Amazon
 wishlist at http://www.amazon.co.uk/ - just search for
 my mail-address (henrik@hswn.dk). A contribution in the 
 form of a book, CD or DVD is appreciated.
 
-The following files are distributed with Hobbit and used
-by Hobbit, but written by others and are NOT licensed under the GPL:
+The following files are distributed with Xymon and used
+by Xymon, but written by others and are NOT licensed under the GPL:
 
 * The lib/rmd160c.c, lib/rmdconst.h, lib/rmdlocl.h and lib/ripemd.h
   files are Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com).
   The license is BSD-like, but see these files for the exact license. 
-  The version in Hobbit was taken from the FreeBSD CVS archive.
+  The version in Xymon was taken from the FreeBSD CVS archive.
 
 * The lib/md5.c and lib/md5.h files are (C) L. Peter Deutsch,
   available under a BSD-like license from
@@ -63,7 +69,7 @@ by Hobbit, but written by others and are NOT licensed under the GPL:
 
 * The lib/sha1.c file is originally written by by Steve Reid 
   <steve@edmweb.com> and placed in the public domain. The version 
-  in Hobbit was taken from the "mutt" mail client sources, so 
+  in Xymon was taken from the "mutt" mail client sources, so 
   some changes were done by Thomas Roessler <roessler@does-not-exist.org>.
 
 * The lib/rbtr.c and lib/rbtr.h files are by Thomas Nieman,
@@ -74,8 +80,8 @@ by Hobbit, but written by others and are NOT licensed under the GPL:
 
 Support
 -------
-There is an open mailing list for discussing Hobbit, asking
-questions about how to use Hobbit, reporting bugs etc. You
+There is an open mailing list for discussing Xymon, asking
+questions about how to use Xymon, reporting bugs etc. You
 can subscribe to the list by sending an e-mail to
 
    hobbit-subscribe@hswn.dk
@@ -93,5 +99,5 @@ to the hobbit-announce mailing list. Send an email to
    hobbit-announce-subscribe@hswn.dk
 
 to be added to the mailing list. This is a moderated list, used
-only for announcing new Hobbit releases.
+only for announcing new Xymon releases.
 

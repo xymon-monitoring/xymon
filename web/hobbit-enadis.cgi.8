@@ -1,18 +1,18 @@
-.TH HOBBIT-ENADIS.CGI 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBIT-ENADIS.CGI 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-hobbit-enadis.cgi \- CGI program to enable/disable Hobbit tests
+hobbit-enadis.cgi \- CGI program to enable/disable Xymon tests
 .SH SYNOPSIS
 .B "hobbit-enadis.cgi (invoked via CGI from webserver)"
 
 .SH DESCRIPTION
 \fBhobbit-enadis.cgi\fR is a CGI tool for disabling and enabling
-hosts and tests monitored by Hobbit. You can disable monitoring of
+hosts and tests monitored by Xymon. You can disable monitoring of
 a single test, all tests for a host, or multiple hosts - immediately
 or at a future point in time.
 
 hobbit-enadis.cgi runs as a CGI program, invoked by your webserver.
 It is normally run via a wrapper shell-script in the secured CGI 
-directory for Hobbit.
+directory for Xymon.
 
 hobbit-enadis.cgi is the back-end script for the enable/disable
 form present on the "info" status-pages. It can also run in
@@ -47,5 +47,5 @@ pages, they will only be visible for disabling from their
 main page which is not what you would expect.
 
 .SH "SEE ALSO"
-hobbit(7)
+xymon(7)
 

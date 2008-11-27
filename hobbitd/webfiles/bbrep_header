@@ -3,7 +3,7 @@
 <HEAD>
 <META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=&BBPAGEPATH; path=/">
 <META HTTP-EQUIV="Set-Cookie" CONTENT="host=; path=/">
-<TITLE>Hobbit Availability Report : &BBDATE</TITLE>
+<TITLE>Xymon Availability Report : &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">

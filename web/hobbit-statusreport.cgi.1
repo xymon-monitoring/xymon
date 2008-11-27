@@ -1,4 +1,4 @@
-.TH HOBBIT-STATUSREPORT.CGI 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBIT-STATUSREPORT.CGI 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 hobbit-statusreport.cgi \- CGI program to report a status for a group of servers
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ hobbit-statusreport.cgi \- CGI program to report a status for a group of servers
 .SH DESCRIPTION
 \fBhobbit-statusreport.cgi\fR is a CGI tool to generate a simple HTML
 report showing the current status of a single column for a group of
-Hobbit hosts.
+Xymon hosts.
 
 E.g. You can use this report to get an overview of all of the SSL 
 certificates that are about to expire.
@@ -16,23 +16,23 @@ The generated webpage is a simple HTML table, suitable for copying
 into other documents or e-mail.
 
 hobbit-statusreport.cgi runs as a CGI program, invoked by your webserver.
-It is normally run via a wrapper shell-script in the CGI directory for Hobbit.
+It is normally run via a wrapper shell-script in the CGI directory for Xymon.
 
 .SH EXAMPLES
-The Hobbit installation includes two web report scripts using this
+The Xymon installation includes two web report scripts using this
 CGI tool: The \fBhobbit-certreport.sh\fR script generates a list of
 SSL server certificates that are yellow or red (i.e. they will expire
 soon); and the \fBhobbit-nongreen.sh\fR script generates a report
 of all statuses that are currently non-green. These can be accessed
 from a web browser through a URL referencing the script in the
-Hobbit CGI directory (e.g. "/hobbit-cgi/hobbit-nongreen.sh").
+Xymon CGI directory (e.g. "/xymon-cgi/xymon-nongreen.sh").
 
 .SH OPTIONS
 .IP "--column=COLUMNNAME"
 Report the status of the COLUMNNAME column.
 
 .IP "--all"
-Report the status for all hosts known to Hobbit. By default,
+Report the status for all hosts known to Xymon. By default,
 this tool reports only on the hosts found on the current page
 from where the CGI was invoked (by looking at the "pagepath"
 cookie).
@@ -84,5 +84,5 @@ Load environment variables for a specific area. NB: if used,
 this option must appear before any --env=FILENAME option.
 
 .SH "SEE ALSO"
-hobbit(7)
+xymon(7)
 

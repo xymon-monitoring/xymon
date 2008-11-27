@@ -1,4 +1,4 @@
-.TH BBHOSTGREP 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH BBHOSTGREP 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 bbhostgrep \- pick out lines in bb-hosts
 .SH SYNOPSIS
@@ -47,7 +47,7 @@ in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
 .IP "--no-down[=TESTNAME]"
-bbhostgrep will query the Hobbit server for the current
+bbhostgrep will query the Xymon server for the current
 status of the "conn" test, and if TESTNAME is specified
 also for the current state of the specified test. If
 the status of the "conn" test for a host is non-green,
@@ -71,7 +71,7 @@ If your bb-hosts file looks like this
    192.168.1.2   db1.test.com  # oracle
    192.168.1.3   mail.test.com # smtp
 
-and you have a custom Hobbit extension script that performs the
+and you have a custom Xymon extension script that performs the
 "oracle" test, then running "bbhostgrep oracle" would yield
 
    192.168.1.1   www.test.com  # !oracle
@@ -81,7 +81,7 @@ so the script can quickly find the hosts that are of interest.
 
 Note that the reverse-test modifier - "!oracle" - is included
 in the output; this also applies to the other test modifiers
-defined by Hobbit (the dialup and always-true modifiers).
+defined by Xymon (the dialup and always-true modifiers).
 
 If your extension scripts use more than one tag, just list
 all of the interesting tags on the command line.
@@ -110,13 +110,13 @@ If set, bbhostgrep outputs only lines from bb-hosts that have
 a matching NET:$BBLOCATION setting.
 .sp
 .IP BBHOSTS
-Filename for the Hobbit
+Filename for the Xymon
 .I bb-hosts(5)
 file.
 
 .SH FILES
 .IP $BBHOSTS
-The Hobbit bb-hosts file
+The Xymon bb-hosts file
 
 .SH "SEE ALSO"
 bb-hosts(5), hobbitserver.cfg(5)

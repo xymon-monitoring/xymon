@@ -1,13 +1,13 @@
-.TH HOBBITCGI.CFG 5 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITCGI.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-hobbitcgi.cfg \- Command-line parameters for the Hobbit CGI tools
+hobbitcgi.cfg \- Command-line parameters for the Xymon CGI tools
 
 .SH SYNOPSIS
 .B $BBHOME/etc/hobbitcgi.cfg
 
 .SH DESCRIPTION
 .I hobbitcgi.cfg(1)
-controls the commandline options passed to all of the Hobbit CGI tools
+controls the commandline options passed to all of the Xymon CGI tools
 through their respective shell-script wrappers. Typically the options
 listed here are used for system-wide configuration of the CGI utilities,
 e.g. to define where they read configuration files.
@@ -60,7 +60,7 @@ Options for the
 utility.
 
 .IP CGI_HOBBITCOLUMN_OPTS
-Hobbit-specific options for column documentation. This uses the
+Xymon-specific options for column documentation. This uses the
 .I bb-csvinfo.cgi(1)
 utility with the \fBserver/etc/columndoc.cfg\fR configuration file.
 
@@ -116,5 +116,5 @@ Options for the
 utility.
 
 .SH "SEE ALSO"
-hobbit(7), the individual CGI utility man-pages.
+xymon(7), the individual CGI utility man-pages.
 

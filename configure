@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Configuration script for Hobbit.
-# $Id: configure,v 1.3 2006-08-08 12:40:29 henrik Exp $
+# Configuration script for Xymon.
+# $Id: configure,v 1.3 2006/08/08 12:40:29 henrik Rel $
 
 BASEDIR="`dirname $0`"
 TARGET="$1"
@@ -17,8 +17,8 @@ case "$TARGET" in
 	;;
 
   "--help")
-  	echo "To configure a Hobbit server: $0 --server"
-  	echo "To configure a Hobbit client: $0 --client"
+  	echo "To configure a Xymon server: $0 --server"
+  	echo "To configure a Xymon client: $0 --client"
 	;;
 esac
 

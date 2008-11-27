@@ -2,36 +2,36 @@
 <html>
 
 <head>
-	<title>Configuring Hobbit Monitoring</title>
+	<title>Configuring Xymon Monitoring</title>
 </head>
 
 <body>
 
-<h1>Configuring Hobbit Monitoring</h1>
-<p>The Hobbit configuration is kept in the files in the <tt>~/server/etc/</tt> 
+<h1>Configuring Xymon Monitoring</h1>
+<p>The Xymon configuration is kept in the files in the <tt>~/server/etc/</tt> 
 directory. If you look at this directory, you will see these files:</p>
 <ul>
 	<li><a href="manpages/man5/bb-hosts.5.html">bb-hosts</a> is the one you will change the most. This file contains
 	a list of all the hosts you are monitoring, including information such as their
 	IP-address, what network services you are monitoring on the host, what URL's
-	you are checking, what subpage in the Hobbit web-pages this host is shown on etc.
+	you are checking, what subpage in the Xymon web-pages this host is shown on etc.
 	The name of the file - "bb-hosts" - was chosen so it is compatible with the
 	Big Brother system which uses the same filename and file format.</li>
-	<li><a href="manpages/man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</a> is the configuration file for data reported by the Hobbit clients installed on the hosts you are monitoring. This defines the color of the cpu-, disk-, memory- and procs-columns, based on the information that is sent to Hobbit by the clients.</li>
+	<li><a href="manpages/man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</a> is the configuration file for data reported by the Xymon clients installed on the hosts you are monitoring. This defines the color of the cpu-, disk-, memory- and procs-columns, based on the information that is sent to Xymon by the clients.</li>
 	<li><a href="manpages/man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</a> holds the alerting configuration. In this file,
 	you setup the rules for sending out alerts about services going down: Who gets
 	the alert, how is it sent, how often, whether to send alerts 24x7 or only between
 	10 AM and 4 PM on weekdays etc.</li>
-	<li><a href="manpages/man5/hobbitserver.cfg.5.html">hobbitserver.cfg</a> is the configuration file for the Hobbit server.
+	<li><a href="manpages/man5/hobbitserver.cfg.5.html">hobbitserver.cfg</a> is the configuration file for the Xymon server.
 	This file defines a lot of environment variables that are made available to
-	all of the Hobbit programs when they run. Some environment variables that are defined
-	in the Big Brother system are also setup by Hobbit, so that Big Brother extension
+	all of the Xymon programs when they run. Some environment variables that are defined
+	in the Big Brother system are also setup by Xymon, so that Big Brother extension
 	scripts will work.<br>The initial configuration of hobbitserver.cfg is setup by the 
-	<tt>configure</tt> script when you install Hobbit, and in most cases you will 
+	<tt>configure</tt> script when you install Xymon, and in most cases you will 
 	not need to change it.</li>
 	<li><a href="manpages/man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</a> is the configuration file for the <tt>hobbitlaunch</tt>
-	tool. hobbitlaunch is the master program in Hobbit, it is the only program you start
-	to run the Hobbit server. hobbitlaunch reads the hobbitlaunch.cfg file, and starts
+	tool. hobbitlaunch is the master program in Xymon, it is the only program you start
+	to run the Xymon server. hobbitlaunch reads the hobbitlaunch.cfg file, and starts
 	the programs listed here to run the server. Some of the programs may run as daemons,
 	some of the programs may run at regular intervals. If you want to use some of the
 	advanced options for the <tt>bbgen</tt> or <tt>bbtest-net</tt> programs, you change
@@ -43,9 +43,9 @@ directory. If you look at this directory, you will see these files:</p>
 </ul>
 
 <h1>Setting up monitoring of hosts</h1>
-<p>The <a href="manpages/man5/bb-hosts.5.html">bb-hosts</a> file defines which hosts Hobbit monitors. When you install Hobbit,
-a simple configuration is setup that just lists the Hobbit server:<br>
-<img src="hobbit-bbhosts.png" alt="Simple Hobbit bb-hosts file"></p>
+<p>The <a href="manpages/man5/bb-hosts.5.html">bb-hosts</a> file defines which hosts Xymon monitors. When you install Xymon,
+a simple configuration is setup that just lists the Xymon server:<br>
+<img src="hobbit-bbhosts.png" alt="Simple Xymon bb-hosts file"></p>
 
 <p>There are a few things to notice here:</p>
 <ul>
@@ -53,34 +53,34 @@ a simple configuration is setup that just lists the Hobbit server:<br>
 	<li>Each host you monitor is on a line by itself, with the IP-address
 	and the hostname of the host.</li>
 	<li>You can add extra tags to each host definition, by putting in a
-	&#35;-mark and then some keywords. These keywords define how Hobbit
+	&#35;-mark and then some keywords. These keywords define how Xymon
 	handles the host.</li>
 </ul>
 <p>The bb-hosts file shown in the example has only one host defined: 
-<em>www.hswn.dk</em> which is the server running Hobbit. There are a few
+<em>www.hswn.dk</em> which is the server running Xymon. There are a few
 extra keywords thrown in:</p>
 <ul>
 	<li><em>BBDISPLAY, BBPAGER, BBNET</em> are compatibility settings 
-	for extensions written for Big Brother. Hobbit doesn't use these,
+	for extensions written for Big Brother. Xymon doesn't use these,
 	but puts them in the bb-hosts file to avoid problems if you mix 
-	Hobbit and Big Brother modules.</li>
+	Xymon and Big Brother modules.</li>
 	<li><em>bbd</em> is the name of a <i>network test</i>. This keyword
-	causes the Hobbit network-tester <tt>bbtest-net</tt> to check if 
+	causes the Xymon network-tester <tt>bbtest-net</tt> to check if 
 	the bbd network service is running on this host, and send a status
-	report to the Hobbit server with the information about this service.
-	So you'll get a (hopefully!) green icon on the Hobbit webpage for
+	report to the Xymon server with the information about this service.
+	So you'll get a (hopefully!) green icon on the Xymon webpage for
 	this host, showing the status of the bbd network service.<br>
 	Network services are defined in the <em>bb-services</em> file, so
 	this file must have an entry for <tt>bbd</tt> defining what TCP
 	port to check, and possibly also what data to send to the service and
 	what to expect as a response.</li>
 	<li><em>http://www.hswn.dk/</em> is a URL, obviously. This also
-	triggers a network test, the Hobbit network tester will try to request
+	triggers a network test, the Xymon network tester will try to request
 	this URL, and send in a status report showing if the URL was accessible
 	or not.</li>
 </ul>
-<p>By default, Hobbit will always check if the host is up and running by trying to
-&quot;ping&quot; it. This results in a <em>conn</em> column on the Hobbit webpage
+<p>By default, Xymon will always check if the host is up and running by trying to
+&quot;ping&quot; it. This results in a <em>conn</em> column on the Xymon webpage
 for this host, showing if the ping-test succeeded. If you have a host that does
 not respond to ping - e.g. because there is a firewall that filters out such
 requests - then you can disable the ping-test by putting a "noconn" keyword on 
@@ -91,7 +91,7 @@ URL for this server ? Just add the URL to the line. Need to check if ssh (Secure
 is running ? Just add <em>ssh</em> to the line. The full set of keywords you can
 use is described in the <a href="manpages/man5/bb-hosts.5.html">bb-hosts man-page</a>.
 Many of the keywords relate to the
-way Hobbit displays the information about the host on the web-pages, other keywords
+way Xymon displays the information about the host on the web-pages, other keywords
 deal with how the uptime percentage is calculated for availability reports, and
 some keywords - like the <em>bbd</em> and <em>http://...</em> mentioned above -
 describe the network services that are tested for this host.</p>
@@ -99,7 +99,7 @@ describe the network services that are tested for this host.</p>
 <h3>Monitoring network services</h3>
 <p>As shown in the example above, adding a network test for a host is as simple as
 putting the right keyword into the bb-hosts file. The default set of network tests
-configured in Hobbit 4.0 is as follows:</p>
+configured in Xymon 4.0 is as follows:</p>
 <table align="center" width="80%" summary="Network test keywords">
 	<tr><th align="left" valign="top">conn</th><td>Simple ping test. Enabled by default, you can disable it by putting "noconn" into bb-hosts.</td></tr>
 	<tr><th align="left" valign="top">http</th><td>Web-server test. Enter the URL to request from the webserver.</td></tr>
@@ -110,9 +110,9 @@ configured in Hobbit 4.0 is as follows:</p>
 	<tr><th align="left" valign="top">pop3</th><td>POP-3 test.</td></tr>
 	<tr><th align="left" valign="top">imap</th><td>IMAP test. IMAP version 2 and 4 are supported, for version 3 use "imap3".</td></tr>
 	<tr><th align="left" valign="top">nntp</th><td>NNTP (News) server test.</td></tr>
-	<tr><th align="left" valign="top">ldap</th><td>LDAP (Directory server) test. Enter the full LDAP URI if Hobbit is configured with LDAP support.</td></tr>
+	<tr><th align="left" valign="top">ldap</th><td>LDAP (Directory server) test. Enter the full LDAP URI if Xymon is configured with LDAP support.</td></tr>
 	<tr><th align="left" valign="top">rsync</th><td>rsync server test</td></tr>
-	<tr><th align="left" valign="top">bbd</th><td>Big Brother daemon test. Also works with the Hobbit network daemon.</td></tr>
+	<tr><th align="left" valign="top">bbd</th><td>Big Brother daemon test. Also works with the Xymon network daemon.</td></tr>
 	<tr><th align="left" valign="top">clamd</th><td>CLAM anti-virus daemon test.</td></tr>
 	<tr><th align="left" valign="top">spamd</th><td>SpamAssassin anti-spam daemon test.</td></tr>
 	<tr><th align="left" valign="top">oratns</th><td>Oracle TNS listener test. Will attempt to do an oratns "ping".</td></tr>
@@ -120,7 +120,7 @@ configured in Hobbit 4.0 is as follows:</p>
 	<tr><th align="left" valign="top">qmqp</th><td>QMQP server test. For qmail's qmqpd service.</td></tr>
 </table>
 
-<p>If Hobbit is built with OpenSSL support, the following SSL-enabled services can also be checked:</p>
+<p>If Xymon is built with OpenSSL support, the following SSL-enabled services can also be checked:</p>
 <table align="center" width="80%" summary="SSL network tests">
 	<tr><th align="left" valign="top">https</th><td>Web-server test. Enter the URL to request from the webserver.</td></tr>
 	<tr><th align="left" valign="top">ftps</th><td>Secure FTP server test.</td></tr>
@@ -129,10 +129,10 @@ configured in Hobbit 4.0 is as follows:</p>
 	<tr><th align="left" valign="top">pop3s</th><td>Secure POP-3 server test.</td></tr>
 	<tr><th align="left" valign="top">imaps</th><td>Secure IMAP server test.</td></tr>
 	<tr><th align="left" valign="top">nntps</th><td>Secure NNTP (News) server test.</td></tr>
-	<tr><th align="left" valign="top">ldaps</th><td>Secure LDAP (Directory) server test. Enter the full LDAP URI if Hobbit is configured with LDAP support. Note that this is only possible when Hobbit is built with the OpenLDAP v2.x client library, and only for LDAP servers that support LDAP version 3 and the "starttls" command. LDAP server that use the older non-standard method of tunnelling LDAP through SSL on port 636 will not work.</td></tr>
+	<tr><th align="left" valign="top">ldaps</th><td>Secure LDAP (Directory) server test. Enter the full LDAP URI if Xymon is configured with LDAP support. Note that this is only possible when Xymon is built with the OpenLDAP v2.x client library, and only for LDAP servers that support LDAP version 3 and the "starttls" command. LDAP server that use the older non-standard method of tunnelling LDAP through SSL on port 636 will not work.</td></tr>
 </table>
 
-<p>There are a few network tests that Hobbit can run for you, by using external programs. This is not a very effective way of testing, so it is only done this way for a few very specialised tests:</p>
+<p>There are a few network tests that Xymon can run for you, by using external programs. This is not a very effective way of testing, so it is only done this way for a few very specialised tests:</p>
 <table align="center" width="80%" summary="Network tests using external programs">
 	<tr><th align="left" valign="top">ntp</th><td>NTP (Network Time protocol) server test, using the "ntpdate" command.</td></tr>
 	<tr><th align="left" valign="top">rpc</th><td>RPC service test. This queries the <em>portmapper</em> service on the server, using the "rpcinfo" command. See the <b>bb-hosts(5)</b> man-page for details on how to test for specific RPC services.</td></tr>
@@ -141,20 +141,20 @@ configured in Hobbit 4.0 is as follows:</p>
 <h3>Monitoring host-specific data with clients</h3>
 <p>You can install a client on each of the hosts you monitor, to check 
 host-specific data such as CPU utilisation, disk usage, if certain processes 
-and services are running etc. Hobbit includes clients for most Unix-like
+and services are running etc. Xymon includes clients for most Unix-like
 operating systems. A client for Windows is planned but the programming
 has not yet started.</p>
 
-<p>First, make sure you have installed the Hobbit client on all of the
+<p>First, make sure you have installed the Xymon client on all of the
 hosts you want to monitor, and you have these hosts listed in your 
-bb-hosts file. The Hobbit client will pick up the hostname of the box
+bb-hosts file. The Xymon client will pick up the hostname of the box
 it is running on automatically, but it is not uncommon for the name
 it finds to be different from what you've put into bb-hosts. So if
 you know that the client is running but no data appears, check that
-the hostname used by the Hobbit client is the one you expect. See
+the hostname used by the Xymon client is the one you expect. See
 <a href="hobbit-tips.html#noclient">this FAQ item</a> for details.</p>
 
-<p>With the Hobbit client running and reporting data into Hobbit, you
+<p>With the Xymon client running and reporting data into Xymon, you
 should see the cpu-, disk-, memory- and procs-columns appear. The color
 of these status columns is determined by settings in the 
 <a href="manpages/man5/hobbit-clients.cfg.5.html"> hobbit-clients.cfg</a>
@@ -221,7 +221,7 @@ color of each of the status columns.</p>
 		<td>Sets the <b>procs</b> column color based on what processes are running.
 			This takes at least one parameter: A string that is (part of) the 
 			command line that the process runs. You can have a simple string here
-			or a regular expression - Hobbit will scan the &quot;ps&quot; output
+			or a regular expression - Xymon will scan the &quot;ps&quot; output
 			for the string or expression, and count how many times it appeared
 			in the ps listing.<br>
 			The process count is then matched against the thresholds that are
@@ -264,7 +264,7 @@ color of each of the status columns.</p>
 
 <h3>More about logfile monitoring</h3>
 <p>Configuring the LOG entries in the hobbit-clients.cfg file is only one half of
-the configuration - you also need to tell the Hobbit client running on the 
+the configuration - you also need to tell the Xymon client running on the 
 monitored system that it must send in some data from that logfile in the
 first place. For that, you must configure the
 <a href="manpages/man5/client-local.cfg.5.html"> client-local.cfg</a> file

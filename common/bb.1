@@ -1,17 +1,17 @@
-.TH BB 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH BB 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-bb \- Hobbit client communication program
+bb \- Xymon client communication program
 .SH SYNOPSIS
 .B "bb [options] RECIPIENT message"
 
 .SH DESCRIPTION
 .I bb(1)
 is the client program used to communicate with a
-Hobbit server. It is frequently used by Hobbit
+Xymon server. It is frequently used by Xymon
 client systems to send in status messages and pager
 alerts on local tests.
 
-In Hobbit, the bb program is also used for administrative
+In Xymon, the bb program is also used for administrative
 purposes, e.g. to rename or delete hosts, or to disable
 hosts that are down for longer periods of time.
 
@@ -26,7 +26,7 @@ as an HTTP proxy instead of connecting directly to the BBDISPLAY
 server.
 
 .IP "--timeout=N"
-Specifies the timeout for connecting to the Hobbit server, in
+Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
 .IP "RECIPIENT"
@@ -42,16 +42,16 @@ to automatically contain the correct value.
 
 The \fBRECIPIENT\fR parameter may be a URL for a webserver
 that has the bbmessage.cgi or similar script installed. This
-tunnels the Hobbit messages to the BBDISPLAY server 
+tunnels the Xymon messages to the BBDISPLAY server 
 using standard HTTP protocol. The 
 .I bbmessage.cgi(8)
-CGI tool (included in Hobbit) must be installed on the webserver 
+CGI tool (included in Xymon) must be installed on the webserver 
 for the HTTP transport to work.
 .br
 
 .IP MESSAGE
 The \fBmessage\fR parameter is the message to be sent across
-to the Hobbit server. Messages must be enclosed in quotes,
+to the Xymon server. Messages must be enclosed in quotes,
 but by doing so they can span multiple lines. The maximum size
 of a message is defined by the maximum allowed length of your
 shell's commandline, and is typically 8-32 KB. 
@@ -60,14 +60,14 @@ If you need to send longer status messages, you can specify "@"
 as the message: bb will then read the status message from its
 stdin.
 
-.SH HOBBIT MESSAGE SYNTAX
+.SH XYMON MESSAGE SYNTAX
 
-This section lists the most commonly used messages in the Hobbit
+This section lists the most commonly used messages in the Xymon
 protocol.
 
-Each message must begin with one of the Hobbit commands. Where
+Each message must begin with one of the Xymon commands. Where
 a HOSTNAME is specified, it must have any dots in the hostname changed
-to commas if the Hobbit FQDN setting is enabled (which is the default).
+to commas if the Xymon FQDN setting is enabled (which is the default).
 So e.g. the host "www.foo.com" would report as "www,foo,com".
 
 .IP "status[+LIFETIME][/group:GROUP] HOSTNAME.TESTNAME COLOR <additional text>"
@@ -76,7 +76,7 @@ TESTNAME is the name of the column where this test will show up; any
 name is valid except that using dots in the testname will not work.
 COLOR must be one of the valid colors: "green", "yellow", "red" or "clear".
 The colors "blue" and "purple" - although valid colors - should not be sent in a
-status-message, as these are handled specially by the Hobbit server.
+status-message, as these are handled specially by the Xymon server.
 .br
 The "additional text" normally includes a local timestamp and a summary
 of the test result on the first line. Any lines following the first one
@@ -84,7 +84,7 @@ are free-form, and can include any information that may be useful to
 diagnose the problem being reported.
 .br
 The LIFETIME defines how long this status is valid after being received
-by the Hobbit server. The default is 30 minutes, but you can set any
+by the Xymon server. The default is 30 minutes, but you can set any
 period you like. E.g. for a custom test that runs once an hour, you will
 want to set this to at least 60 minutes - otherwise the status will go
 purple after 30 minutes. It is a good idea to set the LIFETIME to
@@ -94,7 +94,7 @@ unless you add an "h" (hours), "d" (days) or "w" (weeks) immediately after
 the number, e.g. "status+5h" for a status that is valid for 5 hours.
 .br
 The GROUP option is used to direct alerts from the status to a specific group.
-It is currently used for status generated from the Hobbit clients' data,
+It is currently used for status generated from the Xymon clients' data,
 e.g. to direct alerts for a "procs" status to different people, depending on
 exactly which process is down.
 
@@ -111,11 +111,11 @@ server administrators.
 
 .IP "data HOSTNAME.DATANAME<newline><additional text>"
 The "data" message allows tools to send data about a host, without
-it appearing as a column on the Hobbit webpages. This
+it appearing as a column on the Xymon webpages. This
 is used e.g. to report statistics about a host, e.g. vmstat data which
 does not in itself represent something that has a red, yellow or
 green identity. It is used by RRD bottom-feeder modules, among
-others. In Hobbit, data messages are by default processed only by the
+others. In Xymon, data messages are by default processed only by the
 .I hobbitd_rrd(8)
 module. If you want to handle data-messages by an external application,
 you may want to enable the 
@@ -142,17 +142,17 @@ the first line of the status report - the current color will be the
 first word on the line. Additional lines of text that might be 
 present on the status-message cannot be retrieved.
 .br
-This allows any Hobbit client to determine the status of a particular
+This allows any Xymon client to determine the status of a particular
 test, whether it is one pertaining to the host where the client
 is running, some other host, or perhaps the result of a combined
 test from multiple hosts managed by
 .I bbcombotest(1)
-This will typically be useful to Hobbit client extension scripts, that
+This will typically be useful to Xymon client extension scripts, that
 need to determine the status of other hosts e.g. to decide if an
 automatic recovery action should be initiated.
 
 .IP "config FILENAME"
-Retrieve one of the Hobbit configuration files from the
+Retrieve one of the Xymon configuration files from the
 server. This command allows a client to pull files from the
 $BBHOME/etc/ directory on the server, allowing for semi-automatic
 updates of the client configuration. Since the configuration files 
@@ -176,7 +176,7 @@ before changing the hostname in the bb-hosts configuration file.
 Rename data about a single test (column).
 
 .IP "hobbitdlog HOSTNAME.TESTNAME"
-Retrieve the Hobbit status-log for a single test. The first line of the
+Retrieve the Xymon status-log for a single test. The first line of the
 response contain a series of fields separated by a pipe-sign:
 .sp
 .BR hostname
@@ -228,10 +228,10 @@ Retrieves an XML-string with the status log as for the
 
 .IP "hobbitdboard [CRITERIA] [fields=FIELDLIST]"
 Retrieves a summary of the status of all known tests available to
-the Hobbit daemon. 
+the Xymon daemon. 
 
 By default - if no CRITERIA is provided - it returns one line for all 
-status messages that are found in Hobbit. You can filter the response
+status messages that are found in Xymon. You can filter the response
 by selecting a page, a host, a test or a color - wildcards are not 
 supported, so you can pick only one page, host, test or color. 
 .sp
@@ -315,11 +315,11 @@ Retrieves an XML-string with the summary of all status logs
 as for the "hobbitdboard" command.
 
 .IP "download FILENAME"
-Download a file from the Hobbit servers' download directory.
+Download a file from the Xymon servers' download directory.
 
 .IP "client HOSTNAME.OSTYPE [HOSTCLASS]"
-Used to send a "client" message to the Hobbit server. Client messages
-are generated by the Hobbit client; when sent to the Hobbit server they
+Used to send a "client" message to the Xymon server. Client messages
+are generated by the Xymon client; when sent to the Xymon server they
 are matched against the rules in the
 .I hobbit-clients.cfg(5)
 configuration file, and status messages are generated for the client-side
@@ -330,7 +330,7 @@ Retrieves the current raw client message last sent by HOSTNAME. The optional
 "section" filter is used to select specific sections of the client data.
 
 .IP "ping"
-Attempts to contact the Hobbit server. If successful, the Hobbit server version ID
+Attempts to contact the Xymon server. If successful, the Xymon server version ID
 is reported.
 
 .IP "pullclient"
@@ -338,16 +338,16 @@ This message is used when fetching client data via the "pull" mechanism implemen
 .I hobbitfetch(8)
 and
 .I msgcache(8)
-for clients that cannot connect directly to the Hobbit server.
+for clients that cannot connect directly to the Xymon server.
 
 .IP "ghostlist"
-Report a list of \fBghost\fR clients seen by the Hobbit server. Ghosts are systems
-that report data to the Hobbit server, but are not listed in the bb-hosts file.
+Report a list of \fBghost\fR clients seen by the Xymon server. Ghosts are systems
+that report data to the Xymon server, but are not listed in the bb-hosts file.
 
 .IP "schedule [TIMESTAMP COMMAND]"
-Schedules an command sent to the Hobbit server for execution at a later time. E.g.
+Schedules an command sent to the Xymon server for execution at a later time. E.g.
 used to schedule disabling of a host or service at sometime in the future. COMMAND
-is a complete Hobbit command such as the ones listed above. TIMESTAMP is the
+is a complete Xymon command such as the ones listed above. TIMESTAMP is the
 Unix epoch time when the command will be executed.
 .br
 If no parameters are given, the currently scheduled tasks are listed in the response.
@@ -361,7 +361,7 @@ used. JOBID is a number provided as the first item in the output from the schedu
 .SH EXAMPLE
 
 Send a normal status message to the BBDISPLAY server, using the
-standard Hobbit protocol on TCP port 1984:
+standard Xymon protocol on TCP port 1984:
 .br
    $ $BB $BBDISP "status www,foo,com.http green `date` Web OK"
 
@@ -394,12 +394,12 @@ pass it via stdin to the bb command:
 
 .SH NOTES
 This man-page describes the bb client program provided
-as part of Hobbit . This implementation provides features 
+as part of Xymon . This implementation provides features 
 not present in the standard Big Brother bb client - 
 specifically, the support for sending messages over HTTP, 
 and many commands such as "query" and "config" are not part 
 of the bb client shipped with Big Brother.
 
 .SH "SEE ALSO"
-bbcombotest(1), bb-hosts(5), hobbitserver.cfg(5), hobbit(7)
+bbcombotest(1), bb-hosts(5), hobbitserver.cfg(5), xymon(7)
 

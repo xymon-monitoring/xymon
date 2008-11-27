@@ -3,7 +3,7 @@
 <HEAD>
 <META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=; path=/">
 <META HTTP-EQUIV="Set-Cookie" CONTENT="host=&BBHIKEY; path=/">
-<TITLE>Hobbit Historical Status: &BBHOST - &BBSVC @ &LOGTIME</TITLE>
+<TITLE>Xymon Historical Status: &BBHOST - &BBSVC @ &LOGTIME</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">

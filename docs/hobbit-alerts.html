@@ -2,15 +2,15 @@
 <html>
 
 <head>
-	<title>Configuring Hobbit Alerts</title>
+	<title>Configuring Xymon Alerts</title>
 </head>
 
 <body>
-<h1>Configuring Hobbit Alerts</h1>
+<h1>Configuring Xymon Alerts</h1>
 <p>When something breaks, you want to know about it. Since you probably 
-dont have the Hobbit webpages in view all of the time, Hobbit can 
+dont have the Xymon webpages in view all of the time, Xymon can 
 generate alerts to draw your attention to problems. Alerts can go out
-as e-mail, or Hobbit can run a script that takes care of activating
+as e-mail, or Xymon can run a script that takes care of activating
 a pager, sending an SMS, or however you prefer to get alerted.</p>
 <ul>
 	<li><a href="#simple">A simple alert configuration</a></li>
@@ -22,7 +22,7 @@ a pager, sending an SMS, or however you prefer to get alerted.</p>
 </ul>
 
 <h3><a name="simple">A simple alert configuration</a></h3>
-<p>The configuration file for the Hobbit alert module is <em>~/server/etc/hobbit-alerts.cfg</em>.
+<p>The configuration file for the Xymon alert module is <em>~/server/etc/hobbit-alerts.cfg</em>.
 This file consists of a number of <em>rules</em> that are matched against
 the name of the host that has a problem, the name of the service, the
 time of day and a number of other criteria. Each rule then has a number
@@ -89,7 +89,7 @@ fills up during the night.</p>
 <table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
 	<tr><th align="left" valign="top">MAIL</th><td>Recipient who receives an e-mail alert. This takes one parameter, the e-mail address.</td></tr>
 	<tr><th align="left" valign="top">SCRIPT</th><td>Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.</td></tr>
-	<tr><th align="left" valign="top">IGNORE</th><td>Recipient that does NOT send an alert, and will cause Hobbit to stop looking for any more recipients. See the example below.</td></tr>
+	<tr><th align="left" valign="top">IGNORE</th><td>Recipient that does NOT send an alert, and will cause Xymon to stop looking for any more recipients. See the example below.</td></tr>
 	<tr><th align="left" valign="top">FORMAT</th><td>format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as TEXT, except it does not include the URL linking to the status webpage. "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.</td></tr>
 	<tr><th align="left" valign="top">REPEAT</th><td>How often an alert gets repeated. As with the DURATION setting, this is in minutes unless explicitly modified with 'm', 'h', 'd'.</td></tr>
 	<tr><th align="left" valign="top">STOP</th><td>By default, hobbitd_alert looks at all the possible recipients in the hobbit-alerts.cfg file when handling an alert. If you would like it stop after a specific recipient gets an alert, add the STOP keyword to this recipient. This terminates the search for more recipients.</td></tr>
@@ -129,11 +129,11 @@ alerts are handled, you can use the <em>SCRIPT</em> method instead. Here's how:
 	HOST=%(www|intranet|support|mail).foo.com SERVICE=http
 		SCRIPT /usr/local/bin/smsalert 4538761925 FORMAT=sms
 </pre>
-<p>This alert doesn't go out as e-mail. Instead, when an alert needs to be delivered, Hobbit
+<p>This alert doesn't go out as e-mail. Instead, when an alert needs to be delivered, Xymon
 will run the script <tt>/usr/local/bin/smsalert</tt>. The script can use data from a series of 
 environment variables to build the information it sends in the alert, depending on what the 
 recipient can handle. E.g. for pagers you will typically just send a sequence of numbers - 
-Hobbit provides things like the IP-address of the server that has a problem and a numeric code 
+Xymon provides things like the IP-address of the server that has a problem and a numeric code 
 for the service to the script. So a simple script to send an SMS alert with the "sendsms" 
 tool could look like this:</p>
 <pre>
@@ -141,13 +141,13 @@ tool could look like this:</p>
 
 	/usr/local/bin/sendsms $RCPT "$BBALPHAMSG"
 </pre>
-<p>Here you can see the script use two environment variables that Hobbit sets up for the script: The
+<p>Here you can see the script use two environment variables that Xymon sets up for the script: The
 <em>$RCPT</em> is the recipient, i.e. the phone-number "4538761925" that is in the hobbitalerts.cfg
 file. The <em>$BBALPHAMSG</em> is text of the status that triggers the alert.</p>
 
 <p>Although $BBALPHAMSG is nice to have, not all recipients can handle the large messages that may
-be sent in the status message.  The <tt>FORMAT=sms</tt> tells Hobbit to change the BBALPHAMSG into
-a form that is suitable for an SMS message - which has a maximum size of 160 bytes. So Hobbit picks
+be sent in the status message.  The <tt>FORMAT=sms</tt> tells Xymon to change the BBALPHAMSG into
+a form that is suitable for an SMS message - which has a maximum size of 160 bytes. So Xymon picks
 out the most important bits of the status message, and puts as much of that as possible into the
 BBALPHSMSG variable for the script.</p>
 <p>The full list of environment variables provided to scripts are as follows:</p>
@@ -169,7 +169,7 @@ BBALPHSMSG variable for the script.</p>
 </table>
 <p>This set of environment variables are the same as those provided by Big Brother to custom
 paging scripts, so you should be able to re-use any paging scripts written for Big Brother
-with Hobbit.</p>
+with Xymon.</p>
 
 <h3><a name="macros">Save on the typing - use macros</a></h3>
 <p>Say you have a long list of hosts or e-mail adresses that you want to use several times throughout the
@@ -217,7 +217,7 @@ IGNORE recipient:<br>
 go off to the admin@foo.com mailbox. There is just one exception: When the
 marketing.foo.com alerts on the "cpu" status on Thursdays between 3PM and
 6PM, that alert is ignored. The IGNORE recipient implicitly has a STOP 
-flag associated, so when the IGNORE recipient is matched, Hobbit will stop
+flag associated, so when the IGNORE recipient is matched, Xymon will stop
 looking for more recipients - so the next line with the MAIL recipient is
 never looked at when handling that busy marketing server on Thursdays.</p>
 </body>

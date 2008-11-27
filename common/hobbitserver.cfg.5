@@ -1,11 +1,11 @@
-.TH HOBBITSERVER.CFG 5 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITSERVER.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-hobbitserver.cfg \- Hobbit environment variables
+hobbitserver.cfg \- Xymon environment variables
 
 .SH DESCRIPTION
-Hobbit programs use multiple environment variables beside the
+Xymon programs use multiple environment variables beside the
 normal set of variables.  The environment definitions
-are stored in the ~hobbit/server/etc/hobbitserver.cfg file. 
+are stored in the ~Xymon/server/etc/hobbitserver.cfg file. 
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
@@ -31,22 +31,22 @@ file.
 .SH GENERAL SETTINGS
 
 .IP BBSERVERHOSTNAME
-The fully-qualified hostname of the server that is running Hobbit.
+The fully-qualified hostname of the server that is running Xymon.
 
 .IP BBSERVERWWWNAME
 The hostname used to access this servers' web-pages, used to construct
-URL's in the Hobbit webpages. Default is the BBSERVERHOSTNAME.
+URL's in the Xymon webpages. Default is the BBSERVERHOSTNAME.
 
 .IP BBSERVERIP
-The public IP-address of the server that is running Hobbit.
+The public IP-address of the server that is running Xymon.
 
 .IP BBSERVEROS
-A name identifying the operating system of the Hobbit server. The 
+A name identifying the operating system of the Xymon server. The 
 known names are currently "linux", "freebsd", "solaris", "hpux",
 "aix" and "osf".
 
 .IP FQDN
-If set to TRUE, Hobbit will use fully-qualified hostnames throughout.
+If set to TRUE, Xymon will use fully-qualified hostnames throughout.
 If set to FALSE, hostnames are stripped of their domain-part before
 being processed. It is \fBhighly recommended\fR that you keep this
 set to TRUE. Default: TRUE.
@@ -61,12 +61,12 @@ module (through an entry in the
 .I hobbitlaunch.cfg(5)
 file) to create and store the HTML logs whenever a status update is
 received. Setting "BBLOGSTATUS=STATIC" is \fBdiscouraged\fR since the
-I/O load on the Hobbit server will increase significantly.
+I/O load on the Xymon server will increase significantly.
 
 .IP PINGCOLUMN
 Defines the name of the column for "ping" test status. The data from
-the "ping" test is used internally by Hobbit, so it must be defined
-here so all of the Hobbit tools know which column to watch for this 
+the "ping" test is used internally by Xymon, so it must be defined
+here so all of the Xymon tools know which column to watch for this 
 data. The default setting is PINGCOLUMN=conn.
 
 .IP INFOCOLUMN
@@ -98,37 +98,37 @@ add this, if configured to do so.
 .SH DIRECTORIES
 
 .IP BBSERVERROOT
-The top-level directory for the Hobbit installation. The default 
-is the home-directory for the user running Hobbit.
+The top-level directory for the Xymon installation. The default 
+is the home-directory for the user running Xymon.
 
 .IP BBSERVERLOGS
-The directory for the Hobbit's own logfiles (NOT the status-logs
+The directory for the Xymon's own logfiles (NOT the status-logs
 from the monitored hosts).
 
 .IP BBHOME
-The Hobbit server directory, where programs and configurations are kept.
+The Xymon server directory, where programs and configurations are kept.
 Default: $BBSERVERROOT/server/ .
 
 .IP BBTMP
 Directory used for temporary files. Default: $BBHOME/tmp/
 
 .IP BBWWW
-Directory for Hobbit webfiles. The $BBWEB URL must map to this directory.
+Directory for Xymon webfiles. The $BBWEB URL must map to this directory.
 Default: $BBHOME/www/
 
 .IP BBNOTES
-Directory for Hobbit notes-files. The $BBNOTESSKIN URL must map to this directory.
+Directory for Xymon notes-files. The $BBNOTESSKIN URL must map to this directory.
 Default: $BBHOME/www/notes/
 
 .IP BBREP
-Directory for Hobbit availability reports. The $BBREPURL URL must map to this directory.
+Directory for Xymon availability reports. The $BBREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
 .I bb-rep.cgi(1)
 CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
 
 .IP BBSNAP
-Directory for Hobbit snapshots. The $BBSNAPURL URL must map to this directory.
+Directory for Xymon snapshots. The $BBSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
 .I bb-snapshot.cgi(1)
@@ -141,13 +141,13 @@ Default: $BBSERVERROOT/data/
 .IP BBLOGS
 Directory for storing the raw status-logs. Not used unless
 "hobbitd_filestore --status" is running, which is \fBdiscouraged\fR
-since it increases the load on the Hobbit server significantly.
+since it increases the load on the Xymon server significantly.
 Default: $BBVAR/logs/
 
 .IP BBHTML
 Directory for storing HTML status-logs. Not used unless
 "hobbitd_filestore --status --html" is running, which is \fBdiscouraged\fR
-since it increases the load on the Hobbit server significantly.
+since it increases the load on the Xymon server significantly.
 Default: $BBHOME/www/html/
 
 .IP BBHIST
@@ -176,7 +176,7 @@ trend-information used to generate graphs).
 Default: $BBVAR/rrd/
 
 .IP CLIENTLOGS
-Directory for storing the data sent by a Hobbit client around the
+Directory for storing the data sent by a Xymon client around the
 time a status changes to a warning (yellow) or critical (red) state.
 Used by the
 .I hobbitd_hostdata(8)
@@ -187,7 +187,7 @@ Default: $BBVAR/hostdata/
 .SH SYSTEM FILES
 
 .IP BBHOSTS
-Full path to the Hobbit
+Full path to the Xymon
 .I bb-hosts(5)
 configuration file. Default: $BBHOME/etc/bb-hosts.
 
@@ -204,53 +204,53 @@ webpage generator program. Default: $BBHOME/bin/bbgen.
 
 .SH URLS
 .IP BBSERVERWWWURL
-The root URL for the Hobbit webpages, without the hostname. This
+The root URL for the Xymon webpages, without the hostname. This
 URL must be mapped to the ~/server/www/ directory in your webserver
 configuration. See the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
 
 .IP BBSERVERCGIURL
-The root URL for the Hobbit CGI-scripts, without the hostname. This
+The root URL for the Xymon CGI-scripts, without the hostname. This
 directory must be mapped to the ~/cgi-bin/ directory in your webserver
 configuration, and must be flagged as holding executable scripts. See
 the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
 
 .IP BBWEBHOST
-Initial part of the Hobbit URL, including just the protocol and the
+Initial part of the Xymon URL, including just the protocol and the
 hostname, e.g. "http://www.foo.com"
 
 .IP BBWEBHOSTURL
-Prefix for all of the static Hobbit webpages, e.g. "http://www.foo.com/hobbit"
+Prefix for all of the static Xymon webpages, e.g. "http://www.foo.com/xymon"
 
 .IP BBWEBHTMLLOGS
 URL prefix for the static HTML status-logs generated when BBLOGSTATUS=STATIC.
 Note that this setting is \fBdiscouraged\fR so this setting should not be used.
 
 .IP BBWEB
-URL prefix (without hostname) of the Hobbit webpages. E.g. "/hobbit".
+URL prefix (without hostname) of the Xymon webpages. E.g. "/xymon".
 
 .IP BBSKIN
-URL prefix (without hostname) of the Hobbit graphics. E.g. "/hobbit/gifs".
+URL prefix (without hostname) of the Xymon graphics. E.g. "/xymon/gifs".
 
 .IP BBHELPSKIN
-URL prefix (without hostname) of the Hobbit on-line help files. E.g "/hobbit/help".
+URL prefix (without hostname) of the Xymon on-line help files. E.g "/xymon/help".
 
 .IP BBMENUSKIN
-URL prefix (without hostname) of the Hobbit menu files. E.g "/hobbit/menu".
+URL prefix (without hostname) of the Xymon menu files. E.g "/xymon/menu".
 
 .IP BBNOTESSKIN
-URL prefix (without hostname) of the Hobbit on-line notes files. E.g "/hobbit/notes".
+URL prefix (without hostname) of the Xymon on-line notes files. E.g "/xymon/notes".
 
 .IP BBREPURL
-URL prefix (without hostname) of the Hobbit availability reports. E.g. "/hobbit/rep".
+URL prefix (without hostname) of the Xymon availability reports. E.g. "/xymon/rep".
 
 .IP BBSNAPURL
-URL prefix (without hostname) of the Hobbit snapshots. E.g. "/hobbit/snap".
+URL prefix (without hostname) of the Xymon snapshots. E.g. "/xymon/snap".
 
 .IP BBWAP
-URL prefix (without hostname) of the Hobbit WAP/WML files. E.g. "/hobbit/wml".
+URL prefix (without hostname) of the Xymon WAP/WML files. E.g. "/xymon/wml".
 
 .IP CGIBINURL
-URL prefix (without hostname) of the Hobbit CGI-scripts. Default: $BBSERVERCGIURL .
+URL prefix (without hostname) of the Xymon CGI-scripts. Default: $BBSERVERCGIURL .
 
 .IP COLUMNDOCURL
 Format string used to build a link to the documentation for a column heading.
@@ -268,21 +268,21 @@ Default: $BBSERVERIP
 
 .IP BBDISPLAYS
 List of IP-adresses. Clients and network test tools will try to
-send status reports to a Hobbit server running on each of these
+send status reports to a Xymon server running on each of these
 adresses. This setting is only used if BBDISP=0.0.0.0.
 
 .IP PAGELEVELS
 Compatibility setting for Big Brother: List of colors that are 
 considered "critical" and therefore will trigger an alert. Not
-used by Hobbit.
+used by Xymon.
 
 .IP BBPAGE
 Compatibility setting for Big Brother: This is the IP-address of
-the server where a BBPAGER service is running. It is not used by Hobbit.
+the server where a BBPAGER service is running. It is not used by Xymon.
 
 .IP BBPAGERS
 Compatibility setting for Big Brother: List of servers running the
-BBPAGER service, used if BBPAGE=0.0.0.0. It is not used by Hobbit.
+BBPAGER service, used if BBPAGE=0.0.0.0. It is not used by Xymon.
 
 .IP BBPORT
 The portnumber for used to contact the
@@ -292,7 +292,7 @@ Default: 1984.
 
 .IP DOCOMBO
 Compatibility setting for Big Brother. Controls whether so send 
-combo-messages or not. Ignored by Hobbit.
+combo-messages or not. Ignored by Xymon.
 
 .IP BBMAXMSGSPERCOMBO
 The maximum number of status messages to combine into one
@@ -334,7 +334,7 @@ listed in the bb-hosts file) are handled.
 .sp
 .BR BBGHOSTS=1:
 Causes the status report to be silently discarded. This is the
-default behaviour in Hobbit.
+default behaviour in Xymon.
 .sp
 .BR BBGHOSTS=2: 
 Discards the status report, but keep track of the hostname
@@ -360,7 +360,7 @@ messages being truncated.
 
 .IP MAXMSG_CLIENT
 The maximum size of a "client" message in kB, default: 512.
-"client" messages are generated by the Hobbit client, and often
+"client" messages are generated by the Xymon client, and often
 include large process-listings. You should only change
 this if you see messages in the hobbitd log file about client
 messages being truncated.
@@ -375,7 +375,7 @@ data messages being truncated.
 .IP MAXMSG_NOTES
 The maximum size of a "notes" message in kB, default: 256.
 "notes" messages provide a way for uploading documentation
-about a host to Hobbit; it is not enabled by default. If you 
+about a host to Xymon; it is not enabled by default. If you 
 want to upload large documents, you may need to change this
 setting.
 
@@ -419,7 +419,7 @@ If set to TRUE,
 .I hobbitd_history(8)
 will update the host-specific eventlog that keeps record
 of all status changes for a host. This logfile is not used
-by any Hobbit tool.
+by any Xymon tool.
 
 .IP SAVESTATUSLOG
 If set to TRUE,
@@ -472,11 +472,11 @@ to disable this for certain filesystems, e.g. database filesystems since they
 are always completely full. This setting is a regular expression that is matched
 against the filesystem name (the Unix mount-point, or the Windows disk-letter) -
 if the filesystem name matches this expression, then it will not be tracked
-by Hobbit.
+by Xymon.
 .br
 Note: Setting this does not affect filesystems that are already being tracked
-by Hobbit - to remove them, you must remove the RRD files for the unwanted filesystems
-from the ~hobbit/data/rrd/HOSTNAME/ directory.
+by Xymon - to remove them, you must remove the RRD files for the unwanted filesystems
+from the ~xymon/data/rrd/HOSTNAME/ directory.
 
 .IP RRDDISKS
 This is used to enable tracking of only selected filesystems (see the NORRDDISKS
@@ -523,7 +523,7 @@ you can change it to "FAILED" or customize it as you like.
 The command used to run the
 .I hobbitping(1)
 tool for the connectivity test. (The name FPING is due to the fact that
-the "fping" utility was used until Hobbit version 4.2). This may include 
+the "fping" utility was used until Xymon version 4.2). This may include 
 suid-root wrappers and hobbitping options.
 Default: "hobbitping"
 
@@ -564,21 +564,21 @@ Default: "rpcinfo"
 
 .IP HOBBITLOGO
 HTML code that is inserted on all standard headers. The default is to add
-the text "Hobbit" in the upper-left corner of the page, but you can easily 
+the text "Xymon" in the upper-left corner of the page, but you can easily 
 replace this with e.g. a company logo. If you do, I suggest that you keep 
 it at about 30-35 pixels high, and 100-150 pixels wide.
 
 .IP MKBBLOCAL
 The string "Pages hosted locally" that appears above all of the pages
-linked from the main Hobbit webpage.
+linked from the main Xymon webpage.
 
 .IP MKBBSUBLOCAL
 The string "Subpages hosted locally" that appears above all of the sub-pages
-linked from pages below the main Hobbit webpage.
+linked from pages below the main Xymon webpage.
 
 .IP MKBBREMOTE
 The string "Remote status display" that appears about the summary
-statuses displayed on the min Hobbit webpage.
+statuses displayed on the min Xymon webpage.
 
 .IP MKBBTITLE
 HTML tags designed to go in a <FONT> tag, to choose the font for 
@@ -599,7 +599,7 @@ for an acknowledged status.
 
 .IP ACKUNTILMSG
 When displaying the detailed status of an acknowledged test,
-Hobbit will include the time that the acknowledge expires
+Xymon will include the time that the acknowledge expires
 using the print-format defined in this setting. You can define
 the timeformat using the controls in your systems
 .I strftime(3)
@@ -626,7 +626,7 @@ and all other pages (bb.html, subpages, bbnk.html).
 
 .IP SUMMARY_SET_BKG
 If set to TRUE, then summaries will affect the color of the
-main Hobbit webpage. Default: FALSE.
+main Xymon webpage. Default: FALSE.
 
 .IP DOTHEIGHT
 The height (in pixels) of the icons showing the color of a status.
@@ -637,15 +637,15 @@ The width (in pixels) of the icons showing the color of a status.
 Default: 16, which matches the default icons.
 
 .IP CLIENTSVCS
-List of the status logs fed by data from the Hobbit client. These
-status logs will - if there are Hobbit client data available for
+List of the status logs fed by data from the Xymon client. These
+status logs will - if there are Xymon client data available for
 the host - include a link to the raw data sent by the client.
 Default: cpu,disk,memory,procs,svcs.
 
 .IP BBRSSTITLE
 If defined, this is the title of the RSS/RDF documents generated when
 .I bbgen(1)
-is invoked with the "--rss" option. The default value is "Hobbit Alerts".
+is invoked with the "--rss" option. The default value is "Xymon Alerts".
 
 .IP WMLMAXCHARS
 Maximum size of a WAP/WML output "card" when generating these.
@@ -674,11 +674,11 @@ you wish to exclude certain tests from reports by default.
 
 .IP BBGENSNAPOPTS
 Default bbgen options used by snapshots. This should be identical to
-the options you normally used when building Hobbit webpages.
+the options you normally used when building Xymon webpages.
 
 .SH FILES
-.BR "~hobbit/server/etc/hobbitserver.cfg"
+.BR "~xymon/server/etc/hobbitserver.cfg"
 
 .SH "SEE ALSO"
-hobbit(7)
+xymon(7)
 

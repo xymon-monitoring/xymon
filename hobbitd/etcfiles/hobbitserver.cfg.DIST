@@ -1,6 +1,6 @@
 # NB : Even though it might look like a shell-script, it is NOT.
 #
-BBSERVERROOT="@BBTOPDIR@"		# Where Hobbit is installed - holds the server and bbvar sub-dirs.
+BBSERVERROOT="@BBTOPDIR@"		# Where Xymon is installed - holds the server and bbvar sub-dirs.
 BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The hobbit user must have write-access here.
 HOBBITCLIENTHOME="@BBTOPDIR@/client"    # BBHOME directory for the client
 
@@ -10,16 +10,16 @@ BBSERVERIP="@BBHOSTIP@"			# The IP-address of your server. Use the real one, not
 BBSERVEROS="@BBHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
 
 BBSERVERWWWNAME="@BBHOSTNAME@"		# The name used for this hosts' webserver
-BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the Hobbit webpages
-BBSERVERCGIURL="@BBCGIURL@"		# The URL for the Hobbit CGI scripts.
-BBSERVERSECURECGIURL="@SECUREBBCGIURL@"	# The URL for the secured Hobbit CGI scripts.
+BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the Xymon webpages
+BBSERVERCGIURL="@BBCGIURL@"		# The URL for the Xymon CGI scripts.
+BBSERVERSECURECGIURL="@SECUREBBCGIURL@"	# The URL for the secured Xymon CGI scripts.
 
 # BBLOCATION="foo"			# The network location, makes bbtest-net test only hosts with NET:foo
 					# You only need to set this if you have multiple network test servers with
 					# a shared bb-hosts file.
 
 # Make sure the path includes the directories where you have fping, mail and (optionally) ntpdate installed,
-# as well as the BBHOME/bin directory where all of the Hobbit programs reside.
+# as well as the BBHOME/bin directory where all of the Xymon programs reside.
 PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
 
 # Some systems need extra settings e.g. to locate run-time libraries.
@@ -37,7 +37,7 @@ FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless yo
 BBGHOSTS="1"                    # How to handle status messages from unknown hosts.
                                 # 0=accept message, 1=discard message, 2=discard message and log the event
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
-				# Use DYNAMIC with Hobbit, unless you run hobbitd_filestore --status --html
+				# Use DYNAMIC with Xymon, unless you run hobbitd_filestore --status --html
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 INFOCOLUMN="info"		# Column where the info-pages are reported.
@@ -54,21 +54,21 @@ MACHINEADDR="$BBSERVERIP"	# This systems IP-address
 
 # URL's generated/used by bbgen
 BBWEBHOST="http://$BBSERVERWWWNAME"		# Just the host part of the URL - http://www.foo.com
-BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static Hobbit pages - http://www.foo.com/bb
-BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the Hobbit HTML logs (only if BBLOGSTATUS=STATIC)
-BBWEB="$BBSERVERWWWURL"				# Hobbit URL prefix without the host part
-BBSKIN="$BBSERVERWWWURL/gifs"			# Hobbit URL prefix for the GIF files
-BBHELPSKIN="$BBSERVERWWWURL/help"               # Hobbit URL prefix for the online help files.
-BBNOTESSKIN="$BBSERVERWWWURL/notes"             # Hobbit URL prefix for the online notes-files.
-BBMENUSKIN="$BBSERVERWWWURL/menu"               # Hobbit URL prefix for the webpage menu files.
-BBREPURL="$BBSERVERWWWURL/rep"			# Hobbit URL prefix for the Hobbit availability reports
-BBSNAPURL="$BBSERVERWWWURL/snap"		# Hobbit URL prefix for the Hobbit snapshots
-BBWAP="$BBSERVERWWWURL/wml"			# Hobbit URL prefix for the WAP/WML files.
-CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the Hobbit CGI-scripts - /cgi-bin
-SECURECGIBINURL="$BBSERVERSECURECGIURL"		# URL prefix for the secured Hobbit CGI-scripts - /cgi-secure
+BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static Xymon pages - http://www.foo.com/bb
+BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the Xymon HTML logs (only if BBLOGSTATUS=STATIC)
+BBWEB="$BBSERVERWWWURL"				# Xymon URL prefix without the host part
+BBSKIN="$BBSERVERWWWURL/gifs"			# Xymon URL prefix for the GIF files
+BBHELPSKIN="$BBSERVERWWWURL/help"               # Xymon URL prefix for the online help files.
+BBNOTESSKIN="$BBSERVERWWWURL/notes"             # Xymon URL prefix for the online notes-files.
+BBMENUSKIN="$BBSERVERWWWURL/menu"               # Xymon URL prefix for the webpage menu files.
+BBREPURL="$BBSERVERWWWURL/rep"			# Xymon URL prefix for the Xymon availability reports
+BBSNAPURL="$BBSERVERWWWURL/snap"		# Xymon URL prefix for the Xymon snapshots
+BBWAP="$BBSERVERWWWURL/wml"			# Xymon URL prefix for the WAP/WML files.
+CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the Xymon CGI-scripts - /cgi-bin
+SECURECGIBINURL="$BBSERVERSECURECGIURL"		# URL prefix for the secured Xymon CGI-scripts - /cgi-secure
 
 # Locations of system-wide files and directories
-BBHOME="@BBHOME@"				# The Hobbit server directory, where programs and configurations go. 
+BBHOME="@BBHOME@"				# The Xymon server directory, where programs and configurations go. 
 BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
 BBHOSTS="$BBHOME/etc/bb-hosts"			# The bb-hosts file
 BB="$BBHOME/bin/bb"				# The 'bb' client program
@@ -81,12 +81,12 @@ BBDATA="$BBVAR/data"				# Data files go here (hobbitd_filestore --data)
 BBDISABLED="$BBVAR/disabled"			# Enabled/disabled flags are stored here (hobbitd_filestore --enadis)
 BBHIST="$BBVAR/hist"				# History logs are stored here (hobbitd_history)
 BBHISTLOGS="$BBVAR/histlogs"			# Historical detail status-loge are stored here (hobbitd_history)
-BBLOGS="$BBVAR/logs"				# Status logs go here (hobbitd_filestore --status). Not needed by Hobbit.
-BBWWW="$BBHOME/www"				# The directory for Hobbit webpage files.
+BBLOGS="$BBVAR/logs"				# Status logs go here (hobbitd_filestore --status). Not needed by Xymon.
+BBWWW="$BBHOME/www"				# The directory for Xymon webpage files.
 BBHTML="$BBWWW/html"				# HTML status logs go here (hobbitd_filestore --status --html)
 BBNOTES="$BBWWW/notes"				# For notes-files (hobbitd_filestore --notes)
-BBREP="$BBWWW/rep"				# Top-level directory for Hobbit reports.
-BBSNAP="$BBWWW/snap"				# Top-level directory for Hobbit snapshots.
+BBREP="$BBWWW/rep"				# Top-level directory for Xymon reports.
+BBSNAP="$BBWWW/snap"				# Top-level directory for Xymon snapshots.
 
 # For the hobbitd_history module
 BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the bb2 webpage)
@@ -139,7 +139,7 @@ TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tc
 GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,tcp,ncv,netstat,ifstat,mrtg::1,ports,temperature,ntpstat,apache,bind,sendmail,mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,clock,lines"
 
 # These two settings can be used to restrict what filesystems are being
-# tracked (i.e. have their utilisation graphed) by Hobbit.
+# tracked (i.e. have their utilisation graphed) by Xymon.
 # NORRDDISKS=""		# Filesystems that will NOT be tracked
 # RRDDISKS=""		# Only track these filesystems
 
@@ -158,7 +158,7 @@ COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-
 HTMLCONTENTTYPE="text/html"                     # You can add charset options here.
 
 # Fonts and texts
-HOBBITLOGO="Hobbit"                             # HTML inserted on all header pages at top-left corner.
+HOBBITLOGO="Xymon"                             # HTML inserted on all header pages at top-left corner.
 MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"
 MKBBREMOTE="<B><I>Remote Status Display</I></B>"
 MKBBSUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"
@@ -167,7 +167,7 @@ MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headi
 MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
 MKBBTITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the BB titles (the old "ivory" is invalid HTML)
 BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
-BBRSSTITLE="Hobbit Alerts"			# Title for the RSS and WML outputs.
+BBRSSTITLE="Xymon Alerts"			# Title for the RSS and WML outputs.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
 
 # For WML output

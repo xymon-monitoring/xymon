@@ -1,4 +1,4 @@
-.TH HOBBITD_ALERT 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITD_ALERT 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 hobbitd_alert \- hobbitd worker module for sending out alerts
 .SH SYNOPSIS
@@ -21,7 +21,7 @@ that determine who gets alerts, how often, for what servers etc.
 .IP "--config=FILENAME"
 Sets the filename for the 
 .I hobbit-alerts.cfg
-file. The default value is "etc/hobbit-alerts.cfg" below the Hobbit
+file. The default value is "etc/hobbit-alerts.cfg" below the Xymon
 server directory.
 
 .IP "--dump-config"
@@ -123,8 +123,8 @@ add the mail recipients to form the command line used for sending
 out email alerts.
 
 .SH FILES
-.IP "~hobbit/server/etc/hobbit-alerts.cfg"
+.IP "~xymon/server/etc/hobbit-alerts.cfg"
 
 .SH "SEE ALSO"
-hobbit-alerts.cfg(5), hobbitd(8), hobbitd_channel(8), hobbit(7)
+hobbit-alerts.cfg(5), hobbitd(8), hobbitd_channel(8), xymon(7)
 

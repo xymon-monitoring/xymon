@@ -5,7 +5,7 @@
 <META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2001 00:00:00 GMT">
 <META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=; path=/">
 <META HTTP-EQUIV="Set-Cookie" CONTENT="host=&BBHIKEY; path=/">
-<TITLE>&BBCOLOR : Hobbit - &BBSVC status for &BBHOST (&BBIP) @ &BBDATE</TITLE>
+<TITLE>&BBCOLOR : Xymon - &BBSVC status for &BBHOST (&BBIP) @ &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">

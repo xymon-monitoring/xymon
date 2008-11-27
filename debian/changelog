@@ -1,3 +1,12 @@
+hobbit (4.2.1-1) unstable; urgency=low
+
+  * Xymon version 4.2.1: 4.2.0 plus all-in-one patch
+  * Project renamed to "Xymon" - preliminary changes in
+    documents and web templates, but no filename changes.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 12 Sep 2008 13:56:00 +0100
+
+
 hobbit (4.2.0-1) unstable; urgency=low
 
   * Hobbit version 4.2: New upstream release.

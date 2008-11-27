@@ -1,4 +1,4 @@
-.TH HOBBIT-HOSTGRAPHS.CGI 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBIT-HOSTGRAPHS.CGI 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 hobbit-hostgraphs.cgi \- CGI program to show multiple graphs
 .SH SYNOPSIS
@@ -24,7 +24,7 @@ display a multi-host graph for each type where the graphs for all
 hosts are overlayed in a single image, allowing for easy comparison
 of the hosts.
 
-The hostlist uses the PAGEPATH cookie provided by Hobbit webpages to
+The hostlist uses the PAGEPATH cookie provided by Xymon webpages to
 select the list of hosts to present. Only the hosts visible on the
 page where hobbit-hostgraph.cgi is invoked from will be visible.
 
@@ -36,7 +36,7 @@ also fixates the time period shown.
 Loads the environment defined in FILENAME before executing the CGI script.
 
 .SH BUGS
-This utility is experimental. It may change in a future release of Hobbit.
+This utility is experimental. It may change in a future release of Xymon.
 
 It is possible for the user to select graphs which do not exist. This results
 in broken image links.
@@ -44,7 +44,7 @@ in broken image links.
 The set of graph-types is fixed in the server/web/hostgraphs_form template 
 and does not adjust to which graphs are available.
 
-If the tool is invoked directly, all hosts defined in Hobbit will be listed.
+If the tool is invoked directly, all hosts defined in Xymon will be listed.
 
 .SH "SEE ALSO"
 bb-hosts(5), hobbitserver.cfg(5)
