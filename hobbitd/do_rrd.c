@@ -308,6 +308,7 @@ static int pickdata(char *buf, pcre *expr, int dupok, ...)
 #include "rrd/do_external.c"
 #include "rrd/do_filesizes.c"
 #include "rrd/do_counts.c"
+#include "rrd/do_trends.c"
 
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
@@ -351,6 +352,7 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
+	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;
