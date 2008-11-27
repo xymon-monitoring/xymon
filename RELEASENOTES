@@ -1,6 +1,26 @@
-          <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Hobbit 4.2    * * *
-          <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>
+          <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+           * * *   Release notes for Xymon 4.2.2    * * *
+          <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+
+Changes from 4.2.0 -> 4.2.2
+===========================
+The 4.2.2 release is an interim release. It contains the
+original 4.2.0 release, with the "all-in-one" patch applied.
+It also - partially - implements the change of project name
+from "Hobbit" to "Xymon", which happened in November 2008.
+
+This release also adds server-side support for the
+BBWin (Xymon Windows client), so it can be used in
+the centralized configuration mode.
+
+Information about the bugs that are fixed in 4.2.2 can
+be found at http://www.xymon.com/patches/
+
+Note: There was never an official 4.2.1 release.
+
+Below are the release notes for the 4.2.0 version
+
+                         * * * * *
 
 This release contains several new programs, enhanced functionality
 and changes to the configuration files.
@@ -15,16 +35,16 @@ hobbit-nkedit CGI.
  *** The "NK" tags in bb-hosts are being deprecated ***
 
 The NK tags in the bb-hosts file will only be handled in
-Hobbit 4.x. It is recommended that you begin to move your
+Xymon 4.x. It is recommended that you begin to move your
 critical systems view to the new hobbit-nkview configuration.
 
 
 Modem-bank testing ("dialup" host definition) does not work
 ===========================================================
-Previous versions of Hobbit supported the Big Brother "dialup"
+Previous versions of Xymon supported the Big Brother "dialup"
 host definition for pinging a range of IP-adresses, e.g. a
 modem-bank or a pool of IP-adresses handed out by a DHCP server.
-This feature is not supported in Hobbit 4.2, but may re-appear
+This feature is not supported in Xymon 4.2, but may re-appear
 in a different form in a later version.
 (Note: This has nothing to do with the "dialup" directive 
 which can be applied to individual hosts, to make them go
@@ -33,12 +53,12 @@ clear when they are offline instead of red or purple).
 
 Installation
 ============
-Follow the normal procedure for building and installing Hobbit,
-i.e. "./configure; make; make install". Note that Hobbit
+Follow the normal procedure for building and installing Xymon,
+i.e. "./configure; make; make install". Note that Xymon
 now installs hobbitping suid-root, so root privileges are
 needed for a server installation.
 
-Hobbit 4.2 uses one more IPC communication channel than the 
+Xymon 4.2 uses one more IPC communication channel than the 
 previous release (for a total of 8 shared memory segments totalling
 2336 KB of shared memory, and 8 semaphore sets of 3 semaphores each). 
 If your system has a limited number of IPC shared-memory segments 
@@ -50,21 +70,21 @@ refer to your operating system documentation on System V IPC.
 bbproxy upgrade
 ===============
 If you have a multi-host setup using the bbproxy utility, then
-you must upgrade bbproxy for the new Hobbit clients to be fully
+you must upgrade bbproxy for the new Xymon clients to be fully
 functional.
 
 
 Configuration file changes
 ==========================
-If you are upgrading from a previous version of Hobbit, you will
-need to merge several new configuration items into your Hobbit
+If you are upgrading from a previous version of Xymon, you will
+need to merge several new configuration items into your Xymon
 configuration files, in order to make full use of these enhance-
 ments. These notes describe what changes to perform.
 
 
 hobbitserver.cfg
 ----------------
-Several new status columns are being reported by the Hobbit client,
+Several new status columns are being reported by the Xymon client,
 and these have associated graphs. In order for them to show up
 correctly, you must change the two graph-settings:
 - TEST2RRD: Add ",files,procs=processes,ports,clock,lines" to 
@@ -72,8 +92,8 @@ correctly, you must change the two graph-settings:
 - GRAPHS: Add ",files,processes,ports,ifstat,clock,lines" to 
   the current setting.
 
-Hobbit now includes a ping utility, which is faster than "fping"
-which was used in previous Hobbit versions. To use this utility,
+Xymon now includes a ping utility, which is faster than "fping"
+which was used in previous Xymon versions. To use this utility,
 change the FPING setting to FPING="hobbitping". However, the
 hobbitping utility is still somewhat experimental, so if you
 run into problems with the connectivity tests, it is advised that
@@ -91,7 +111,7 @@ you to acknowledge alerts without having to bother with the
 acknowledgment code. To use this, add the "--no-pin" option to the
 CGI_ACK_OPTS setting.
 
-Five new CGI programs have been added in Hobbit 4.2. To ensure
+Five new CGI programs have been added in Xymon 4.2. To ensure
 they are invoked correctly, add these lines to your hobbitcgi.cfg file:
 
 # hobbitgraph.cgi options
@@ -106,7 +126,7 @@ CGI_ACKINFO_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
 CGI_GHOSTS_OPT="--env=/home/hobbit/etc/hobbitserver.cfg"
 
 (Replace "/home/hobbit" with the top-level directory of your
-Hobbit server installation).
+Xymon server installation).
 
 
 hobbitgraph.cfg
@@ -126,10 +146,10 @@ The path for the [bbcombotest] module was incorrect. To use the
 bbcombotest feature, make sure that it has
    CMD BBHOME/bin/bbcombotest
 
-A new Hobbit module has been implemented, which saves a snapshot
-of the client data reported by a Hobbit client prior to a status
+A new Xymon module has been implemented, which saves a snapshot
+of the client data reported by a Xymon client prior to a status
 going into a critical or warning state. This aids in diagnosing
-problems where the critical status appearing in Hobbit is only
+problems where the critical status appearing in Xymon is only
 a symptom of the real problem, and you need to look at other types
 of data to determine the root cause. To enable this module, two
 changes are needed:
@@ -137,10 +157,10 @@ changes are needed:
 * The [hobbitd] command must have the option "--store-clientlogs=!msgs"
   added. See the hobbitd(8) man-page for further information.
 * A new [hostdata] section must be added:
-  # "hostdata" stores the Hobbit client messages on disk when some status for a host
+  # "hostdata" stores the Xymon client messages on disk when some status for a host
   # changes. This lets you access a lot of data collected from a host around the time
   # when a problem occurred. However, it may use a significant amount of disk space
-  # if you have lots of Hobbit clients.
+  # if you have lots of Xymon clients.
   # Note: The --store-clientlogs option for the [hobbitd] provides control over
   #       which status-changes will cause a client message to be stored.
   [hostdata]
@@ -152,9 +172,9 @@ If you want to use the new "hobbitfetch" utility to collect data from
 clients, you must add a [hobbitfetch] section to run the data collector.
 Add this to your hobbitlaunch.cfg file:
 
-  # "hobbitfetch" is used when you have clients that cannot connect to your Hobbit server,
-  # but the Hobbit server can connect to the client. Normally the clients will initiate
-  # a connection to the Hobbit server to deliver the data they collect, but this is
+  # "hobbitfetch" is used when you have clients that cannot connect to your Xymon server,
+  # but the Xymon server can connect to the client. Normally the clients will initiate
+  # a connection to the Xymon server to deliver the data they collect, but this is
   # forbidden in some firewall setups. By enabling the hobbitfetch task, hosts that have
   # the "pulldata" tag in the bb-hosts file will be polled by hobbitfetch for their data.
   #
