@@ -742,7 +742,11 @@ int main(int argc, char *argv[])
 			namelist_t *hinfo = hostinfo(hname);
 			char *nkalerts = bbh_item(hinfo, BBH_NK);
 
-			if (!nkalerts || (strcmp(nkval(hname, tname, nkalerts), "No") == 0)) wanted = 0;
+			if (newnkconfig) {
+				if (strcmp(nkval(hname, tname, nkalerts), "No") == 0 ) wanted = 0;
+			} else {
+				if (!nkalerts) wanted = 0;
+			}
 		}
 
 		if (wanted && hname && tname && strcmp(hname, "summary") && strcmp(tname, xgetenv("INFOCOLUMN")) && strcmp(tname, xgetenv("TRENDSCOLUMN"))) {
