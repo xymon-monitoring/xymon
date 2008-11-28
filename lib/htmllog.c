@@ -332,6 +332,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		if (strstr(multigraphs, multikey)) {
 			/* The "disk" report from the NetWare client puts a "warning light" on all entries */
 			int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
+			/* Old BB clients do not send in df's header line */
+			int header = (strchr(firstline, '/') == NULL);
 
 			/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
 			linecount = 0; p = restofmsg;
@@ -352,8 +354,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				}
 			} while (p && (*p));
 
-			/* There is probably a header line ... */
-			if (!netwarediskreport && (linecount > 1)) linecount--;
+			/* Do not count the 'df' header line */
+			if (!netwarediskreport && header && (linecount > 1)) linecount--;
 		}
 		xfree(multikey);
 
