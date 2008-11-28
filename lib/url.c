@@ -622,7 +622,9 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	if (postcontenttype) getescapestring(postcontenttype, &bburl->postcontenttype, NULL);
 	if (expstart)        getescapestring(expstart, &bburl->expdata, NULL);
 
-	p = strstr(urlstart, "/http");
+	p = strstr(urlstart, "/http://");
+	if (!p)
+		p = strstr(urlstart, "/https://");
 	if (p) {
 		proxystart = urlstart;
 		urlstart = (p+1);
