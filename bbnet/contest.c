@@ -390,20 +390,25 @@ static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	static char result[256];
 	char *asn1_string;
 	int gmt=0;
-	int i;
-	int year=0,month=0,day=0,hour=0,minute=0,second=0;
+	int len, i;
+	int century=0,year=0,month=0,day=0,hour=0,minute=0,second=0;
 
-	i=tm->length;
+	len=tm->length;
 	asn1_string=(char *)tm->data;
 
-	if (i < 10) return NULL;
-	if (asn1_string[i-1] == 'Z') gmt=1;
-	for (i=0; i<10; i++) {
+	if (len < 10) return NULL;
+	if (asn1_string[len-1] == 'Z') gmt=1;
+	for (i=0; i<len-1; i++) {
 		if ((asn1_string[i] > '9') || (asn1_string[i] < '0')) return NULL;
 	}
 
+	if (len >= 15) { /* 20541024111745Z format */
+		century = 100 * ((asn1_string[0]-'0')*10+(asn1_string[1]-'0'));
+		asn1_string += 2;
+	}
+
 	year=(asn1_string[0]-'0')*10+(asn1_string[1]-'0');
-	if (year < 50) year+=100;
+	if (century == 0 && year < 50) year+=100;
 
 	month=(asn1_string[2]-'0')*10+(asn1_string[3]-'0');
 	if ((month > 12) || (month < 1)) return NULL;
@@ -417,7 +422,7 @@ static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 	}
 
 	sprintf(result, "%04d-%02d-%02d %02d:%02d:%02d %s",
-		year+1900, month, day, hour, minute, second, (gmt?"GMT":""));
+		year+(century?century:1900), month, day, hour, minute, second, (gmt?"GMT":""));
 
 	return result;
 }
