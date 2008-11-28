@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include <lber.h>
+#define LDAP_DEPRECATED 1
 #include <ldap.h>
 
 LDAPURLDesc ludp;
