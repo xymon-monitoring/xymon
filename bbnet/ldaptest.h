@@ -17,6 +17,7 @@
 
 #ifdef BBGEN_LDAP
 #include <lber.h>
+#define LDAP_DEPRECATED 1
 #include <ldap.h>
 
 #ifndef LDAPS_PORT
