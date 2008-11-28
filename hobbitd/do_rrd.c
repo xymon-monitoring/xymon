@@ -29,6 +29,7 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.37 2006-08-03 10:20:51 henrik Exp $";
 #include "do_rrd.h"
 
 char *rrddir = NULL;
+char *trackmax = NULL;
 static char *exthandler = NULL;
 static char **extids = NULL;
 
@@ -37,10 +38,15 @@ static char rra1[] = "RRA:AVERAGE:0.5:1:576";
 static char rra2[] = "RRA:AVERAGE:0.5:6:576";
 static char rra3[] = "RRA:AVERAGE:0.5:24:576";
 static char rra4[] = "RRA:AVERAGE:0.5:288:576";
+static char rra5[] = "RRA:MAX:0.5:1:576";
+static char rra6[] = "RRA:MAX:0.5:6:576";
+static char rra7[] = "RRA:MAX:0.5:24:576";
+static char rra8[] = "RRA:MAX:0.5:288:576";
 
 static char *senderip = NULL;
 static char rrdfn[PATH_MAX];	/* This one used by the modules */
 static char filedir[PATH_MAX];	/* This one used here */
+
 
 void setup_exthandler(char *handlerpath, char *ids)
 {
@@ -99,6 +105,24 @@ static void setupfn(char *format, char *param)
 	snprintf(rrdfn, sizeof(rrdfn)-1, format, param);
 	rrdfn[sizeof(rrdfn)-1] = '\0';
 }
+
+static int has_trackmax(char *testname)
+{
+	char testnamecoma[strlen(testname)+3];
+
+	if(trackmax == NULL) {
+		return 0;
+	}
+	
+	sprintf(testnamecoma, ",%s,", testname);
+	if(strstr(trackmax, testnamecoma)) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
 
 static int create_and_update_rrd(char *hostname, char *fn, char *creparams[], char *template)
 {

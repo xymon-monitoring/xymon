@@ -5,6 +5,7 @@
 /*     NAME: VALUE                                                            */
 /*                                                                            */
 /* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* split-ncv added by Charles Goyard November 2006                            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -17,21 +18,30 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 { 
 	char **params = NULL;
 	int paridx;
-	char dsdef[1024];
+	char dsdef[1024];     /* destination DS syntax for rrd engine */
 	char *l, *name, *val;
 	char *envnam;
-	char *dstypes = NULL;
-
-	setupfn("%s.rrd", testname);
+	char *dstypes = NULL; /* contain NCV_testname value*/
+	int split_ncv = 0;
+	int dslen;
 	sprintf(rrdvalues, "%d", (int)tstamp);
-
 	params = (char **)calloc(8, sizeof(char *));
 	params[0] = "rrdcreate";
-	params[1] = rrdfn;
 	paridx = 1;
 
-	envnam = (char *)malloc(4 + strlen(testname) + 1); sprintf(envnam, "NCV_%s", testname);
+	envnam = (char *)malloc(9 + strlen(testname) + 1);
+	sprintf(envnam, "SPLITNCV_%s", testname);
 	l = getenv(envnam);
+	if (l) {
+		split_ncv = 1;
+		dslen = 200;
+	}
+	else {
+		dslen = 19;
+		setupfn("%s.rrd", testname);
+		sprintf(envnam, "NCV_%s", testname);
+	l = getenv(envnam);
+	}
 	if (l) {
 		dstypes = (char *)malloc(strlen(l)+3);
 		sprintf(dstypes, ",%s,", l);
@@ -84,62 +94,128 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 			strtod(val, &endptr);
 			if (isspace((int)*endptr) || (*endptr == '\0')) {
-				char dsname[20];
-				char dskey[22];
-				char *dstype = NULL;
+				char dsname[250];    /* name of ncv in status message (with space and al) */
+				char dskey[252];     /* name of final DS key (stripped)                   */
+				char *dstype = NULL; /* type of final DS                                  */
 				char *inp;
 				int outidx;
-
 				/* val contains a valid number */
-				/* rrdcreate(1) says: ds must be in the set [a-zA-Z0-9_] */
-				for (inp=name,outidx=0; (*inp && (outidx < 19)); inp++) {
+				/* rrdcreate(1) says: ds must be in the set [a-zA-Z0-9_] ... */
+				for (inp=name,outidx=0; (*inp && (outidx < dslen)); inp++) {
 					if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
 					     ((*inp >= 'a') && (*inp <= 'z')) ||
 					     ((*inp >= '0') && (*inp <= '9'))    ) {
 						dsname[outidx++] = *inp;
 					}
+					/* ... however, for split ncv, we replace anything else  */
+					/* with an underscore, compacting successive invalid     */
+					/* characters into a single one                          */
+					else if (split_ncv && (dsname[outidx - 1] != '_')) {
+						dsname[outidx++] = '_';
+					}
 				}
+				if(dsname[outidx-1] == '_') {
+					dsname[outidx-1] = '\0';
+				}
+				else {
 				dsname[outidx] = '\0';
+				}
 				sprintf(dskey, ",%s:", dsname);
+				if(split_ncv) {
+					/* setupfn("%s,%s.rrd", testname, dsname); */
+					snprintf(rrdfn, sizeof(rrdfn)-1, "%s,%s.rrd", testname,dsname);
+					rrdfn[sizeof(rrdfn)-1] = '\0';
+					
+					params[1] = rrdfn;
+					paridx = 1;
+				}
 
 				if (dstypes) {
 					dstype = strstr(dstypes, dskey);
-					if (!dstype) { strcpy(dskey, ",*:"); dstype = strstr(dstypes, dskey); }
+					if (!dstype) {
+						strcpy(dskey, ",*:");
+						dstype = strstr(dstypes, dskey);
+					}
 				}
 
-				if (dstype) {
+				if (dstype) { /* if ds type is forced */
 					char *p;
 
 					dstype += strlen(dskey);
 					p = strchr(dstype, ','); if (p) *p = '\0';
+					if(split_ncv) {
+						sprintf(dsdef, "DS:lambda:%s:600:0:U", dstype);
+					}
+					else {
 					sprintf(dsdef, "DS:%s:%s:600:0:U", dsname, dstype);
+					}
 					if (p) *p = ',';
 				}
+				else { /* nothing specified in the environnement, and no '*:' default */
+					if(split_ncv) {
+						strcpy(dsdef, "DS:lambda:DERIVE:600:0:U");
+					}
 				else {
 					sprintf(dsdef, "DS:%s:DERIVE:600:0:U", dsname);
 				}
+				}
 
-				if (!dstype || (strncasecmp(dstype, "NONE", 4) != 0)) {
+				if (!dstype || (strncasecmp(dstype, "NONE", 4) != 0)) { /* if we have something */
 					paridx++;
 					params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
 					params[paridx] = strdup(dsdef);
 					params[paridx+1] = NULL;
-
 					sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
 				}
 			}
+			
+			if(split_ncv && (paridx > 1)) {
+				int i;
+				params[++paridx] = strdup(rra1);
+				params[++paridx] = strdup(rra2);
+				params[++paridx] = strdup(rra3);
+				params[++paridx] = strdup(rra4);
+
+				if(has_trackmax(testname)) {
+					params = (char **)realloc(params, (11 + paridx)*sizeof(char *));
+					params[++paridx] = strdup(rra5);
+					params[++paridx] = strdup(rra6);
+					params[++paridx] = strdup(rra7);
+					params[++paridx] = strdup(rra8);
+				}
+
+				params[++paridx] = NULL;
+				create_and_update_rrd(hostname, rrdfn, params, NULL);
+				for(i = 2 ; i<paridx ; i++) {
+					params[i] = NULL;
+				}
+				sprintf(rrdvalues, "%d", (int)tstamp);
 		}
 	}
 
-	if (paridx > 1) {
+	} /* end of while */
+
+	if (split_ncv) {
+		for (paridx=2; (params[paridx] != NULL); paridx++) {
+			xfree(params[paridx]);
+		}
+	}
+	else if(paridx > 1) {
 		params[++paridx] = strdup(rra1);
 		params[++paridx] = strdup(rra2);
 		params[++paridx] = strdup(rra3);
 		params[++paridx] = strdup(rra4);
+
+		if(has_trackmax(testname)) {
+			params = (char **)realloc(params, (11 + paridx)*sizeof(char *));
+			params[++paridx] = strdup(rra5);
+			params[++paridx] = strdup(rra6);
+			params[++paridx] = strdup(rra7);
+			params[++paridx] = strdup(rra8);
+		}
+
 		params[++paridx] = NULL;
-
 		create_and_update_rrd(hostname, rrdfn, params, NULL);
-
 		for (paridx=2; (params[paridx] != NULL); paridx++)
 		xfree(params[paridx]);
 	}

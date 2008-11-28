@@ -74,6 +74,13 @@ int main(int argc, char *argv[])
 		rrddir = strdup(xgetenv("BBRRDS"));
 	}
 
+	/* trackmax initialization */
+	if(getenv("TRACKMAX")) {
+		trackmax = (char*)malloc(strlen(getenv("TRACKMAX"))+3);
+		sprintf(trackmax, ",%s,", getenv("TRACKMAX"));
+		dbgprintf("Will track max for: %s\n", trackmax);
+	}
+	
 	save_errbuf = 0;
 	setup_signalhandler("hobbitd_rrd");
 	memset(&sa, 0, sizeof(sa));
@@ -139,7 +146,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  default:
-				/* Ignore reports with purple, blue or clear - they have no data we want. */
+				/* Ignore reports with purple or clear - they have no data we want. */
 				break;
 			}
 		}
