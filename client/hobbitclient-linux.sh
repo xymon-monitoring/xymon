@@ -26,8 +26,8 @@ elif [ -f /etc/gentoo-release ]; then
 elif [ -f /etc/debian_version ]; then
 	echo -en "Debian "
 	cat /etc/debian_version
-elif [ -f /etc/SuSE-release ]; then
-	grep ^SuSE /etc/SuSE-release
+elif [ -f /etc/S?SE-release ]; then
+	egrep -i "^suse|^opensuse" /etc/S?SE-release
 elif [ -f /etc/slackware-version ]; then
 	cat /etc/slackware-version
 elif [ -f /etc/mandrake-release ]; then
