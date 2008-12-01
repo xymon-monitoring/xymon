@@ -191,17 +191,18 @@ if test -z "$BBTOPDIR"
 then
 	if test "`uname -s`" = "Darwin"
 	then
-		# Use "nireport" to pick data on Mac OSX. From Peter Welter
-		USERDATA="`nireport / /users name home | grep $BBUSER`"
+		# Use "dscl" for locating user information. From Isaac Vetter
+		# http://www.hswn.dk/hobbiton/2008/02/msg00173.html
+		USERDATA="`dscl . -list /Users  | grep $BBUSER`"
 		if test "$USERDATA" != ""
 		then
-			echo "Found NetInfo entry for user: $USERDATA"
+			echo "Found Directory entry for user: $USERDATA"
 		else
-			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
+			echo "FAILURE: The user $BBUSER does not exist locally. Create user and try again."
 			exit 1
 		fi
 		echo ""; echo ""
-		HOMEDIR="`echo $USERDATA | awk '{print $2}'`"
+		HOMEDIR="`dscl . -read /Users/$BBUSER | grep HomeDirectory | awk '{print $2}'`"
 	else
 		USERDATA=`getent passwd $BBUSER 2>/dev/null || ypmatch "${BBUSER}" passwd || grep "^${BBUSER}:" /etc/passwd`
 		if test $? -eq 0
