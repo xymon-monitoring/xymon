@@ -1,3 +1,736 @@
+Changes from 4.2.0 -> 4.2.2 (01 Dec 2008)
+=========================================
+
+Changelog extracted from Subversion.
+
+------------------------------------------------------------------------
+r5935 | storner | 2008-11-26 12:57:11 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   A /branches/4.2.0 (from /trunk:5040)
+
+Create branch for maintenance of the 4.2.x release.
+
+
+------------------------------------------------------------------------
+r5936 | storner | 2008-11-26 13:13:50 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.0/common/bb-hosts.5
+
+The ability to set a DOWNTIME for an individual test was mentioned in the Changes file, but not documented in the bb-hosts man-page.
+
+
+------------------------------------------------------------------------
+r5937 | storner | 2008-11-26 13:14:48 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.0/hobbitd/hobbitd_client.c
+
+The hobbitd_client program would crash when running in test-mode, i.e. launched with the --test option to test disk-, procs- and ports-settings. This only applies to running it in test-mode, normal operation is not affected.
+
+
+------------------------------------------------------------------------
+r5938 | storner | 2008-11-26 13:15:40 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.0/lib/headfoot.c
+   M /branches/4.2.0/web/bb-datepage.c
+   M /branches/4.2.0/web/bb-eventlog.c
+   M /branches/4.2.0/web/bb-findhost.c
+   M /branches/4.2.0/web/bb-rep.c
+   M /branches/4.2.0/web/bb-snapshot.c
+   M /branches/4.2.0/web/hobbit-enadis.c
+   M /branches/4.2.0/web/hobbit-nkedit.c
+
+Some of the web page would generate an extra line with "Content-type: text/html" at the top of the webpage, although this would most often be hidden by the menubar.
+
+
+------------------------------------------------------------------------
+r5939 | storner | 2008-11-26 13:16:21 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.0/client/runclient.sh
+
+Using extra options with the client-side "runclient.sh" script when performing a restart command fails to pass the extra options to the final command. 
+
+
+------------------------------------------------------------------------
+r5940 | storner | 2008-11-26 13:17:12 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.0/hobbitd/hobbitfetch.c
+
+hobbitfetch insisted that hosts must have a valid IP-adress in bb-hosts. This causes problems for hosts with dynamic IP-adresses. This patch causes hobbitfetch to lookup the IP-address at run-time if the IP is listed as "0.0.0.0".
+
+
+------------------------------------------------------------------------
+r5941 | storner | 2008-11-26 13:20:44 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.0/web/hobbit-confreport.c
+   M /branches/4.2.0/web/hobbitsvc-info.c
+
+Hostname filtering on the info column page is broken, if you have multiple hosts with similar names, resulting in the same columns showing up multiple times in the disable section. A similar problem affects host filtering in the configuration report tool.
+
+
+------------------------------------------------------------------------
+r5942 | storner | 2008-11-26 13:21:27 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.0/client/hobbitclient-sunos.sh
+
+The Solaris client would not collect the "top" process-listing data which is normally included in the data on the "cpu" column.
+
+
+------------------------------------------------------------------------
+r5943 | storner | 2008-11-26 13:25:28 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/build/bb-commands.sh
+   M /branches/4.2.0/client/hobbitclient-sunos.sh
+
+The Solaris lofs (loopback filesystem) should not be included in the df output appearing on the Disk status.
+------------------------------------------------------------------------
+r5944 | storner | 2008-11-26 13:29:56 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/lib/cgi.c
+   M /branches/4.2.0/lib/cgi.h
+   M /branches/4.2.0/web/bb-ack.c
+   M /branches/4.2.0/web/bb-datepage.c
+   M /branches/4.2.0/web/hobbit-confreport.c
+   M /branches/4.2.0/web/hobbit-enadis.c
+   M /branches/4.2.0/web/hobbit-hostgraphs.c
+   M /branches/4.2.0/web/hobbit-statusreport.c
+
+Cookie handling does not always work. This results in hosts not showing up on the new acknowledgment page, or hosts missing from the Metrics report.
+------------------------------------------------------------------------
+r5945 | storner | 2008-11-26 13:30:31 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/bbdisplay/bbgen.h
+
+Hobbit 4.2.0 fails to build on some OS X releases due to a naming conflict between a system-defined datatype, and a different datatype defined in Hobbit.
+------------------------------------------------------------------------
+r5946 | storner | 2008-11-26 13:31:41 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/webfiles/zoom.js
+   M /branches/4.2.0/lib/hobbitrrd.c
+   M /branches/4.2.0/lib/hobbitrrd.h
+   M /branches/4.2.0/lib/htmllog.c
+   M /branches/4.2.0/web/hobbitgraph.c
+   M /branches/4.2.0/web/hobbitsvc-trends.c
+
+When viewing detailed graphs linked from the detailed status page, the background color of the webpages would always show green, regardless of the actual color of the status it was linked from. This patch keeps the background color at what the status page shows.
+------------------------------------------------------------------------
+r5947 | storner | 2008-11-26 13:32:55 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/webfiles/confreport_front
+   M /branches/4.2.0/hobbitd/wwwfiles/menu/menu_items.js.DIST
+   M /branches/4.2.0/web/Makefile
+   M /branches/4.2.0/web/hobbit-confreport.c
+   M /branches/4.2.0/web/hobbit-confreport.cgi.1
+
+The Configuration Report did not include information about what systems appears on the "Critical Systems" view.
+------------------------------------------------------------------------
+r5948 | storner | 2008-11-26 13:33:43 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/web/hobbitsvc-info.c
+
+The info-column page for hosts with an IP-address of 0.0.0.0 - i.e. a dynamic or unknown IP - often fails to work because of a buffer overflow when printing the real IP address of the host.
+------------------------------------------------------------------------
+r5949 | storner | 2008-11-26 13:34:23 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/do_alert.c
+   M /branches/4.2.0/hobbitd/hobbitd_alert.c
+
+The hobbitd_alert module is leaking memory each time it sends out an alert, or whenever a status recovers and is removed from the list of active alerts.
+------------------------------------------------------------------------
+r5950 | storner | 2008-11-26 13:35:03 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/lib/cgi.c
+
+Relaying of Hobbit status messages through HTTP via bbmessage.cgi was broken.
+------------------------------------------------------------------------
+r5951 | storner | 2008-11-26 13:37:00 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/webfiles/hobbitnk_footer
+   M /branches/4.2.0/web/hobbit-nkview.c
+
+Let the Critical Systems view include Purple statuses as an option
+------------------------------------------------------------------------
+r5952 | storner | 2008-11-26 13:38:04 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/lib/Makefile
+   M /branches/4.2.0/lib/color.c
+   M /branches/4.2.0/lib/timefunc.c
+
+Avoid use of strtok_r in client code, since this may not exist on all platforms
+------------------------------------------------------------------------
+r5953 | storner | 2008-11-26 13:39:35 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/rrd/do_ncv.c
+
+The NCV custom graphs module would mistakenly include text from lines with no data into the name of the next dataset. Apply this patch. Note that any existing RRD files affected by this bug must be deleted, since this changes the names of the datasets inside the RRD files.
+------------------------------------------------------------------------
+r5954 | storner | 2008-11-26 13:40:32 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/client/msgcache.c
+
+The msgcache utility used on some clients could lock up and/or crash if multiple connections to the program were active at the same time. Thanks to Rolf Masfelder for spotting it.
+------------------------------------------------------------------------
+r5955 | storner | 2008-11-26 13:41:13 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/client_config.c
+
+The hobbitd_client module handling status reports from Hobbit clients could crash while processing the disk status.
+------------------------------------------------------------------------
+r5956 | storner | 2008-11-26 13:42:04 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/hobbitd_client.c
+
+The logfile status display could be corrupted if the logs contained HTML tags. This patch wraps the logfile texts in a pre-formatted HTML sequence.
+------------------------------------------------------------------------
+r5957 | storner | 2008-11-26 13:42:49 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/bbdisplay/bbgen.h
+   M /branches/4.2.0/bbdisplay/loadbbhosts.c
+   M /branches/4.2.0/bbdisplay/loadbbhosts.h
+   M /branches/4.2.0/bbdisplay/loaddata.c
+   M /branches/4.2.0/bbdisplay/pagegen.c
+   M /branches/4.2.0/bbnet/bbtest-net.c
+   M /branches/4.2.0/bbnet/bbtest-net.h
+   M /branches/4.2.0/hobbitd/hobbitd.c
+   M /branches/4.2.0/lib/headfoot.c
+   M /branches/4.2.0/lib/loadhosts.c
+   M /branches/4.2.0/lib/loadhosts.h
+   M /branches/4.2.0/lib/loadhosts_file.c
+
+The modembank-testing feature has been broken for a couple of releases. This patch removes this dead code.
+------------------------------------------------------------------------
+r5958 | storner | 2008-11-26 13:43:31 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/client/logfetch.c
+
+The client-side logfetch utility has been enhanced to support multiple ignore and trigger patterns.
+------------------------------------------------------------------------
+r5959 | storner | 2008-11-26 13:44:28 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/webfiles/info_header
+   M /branches/4.2.0/web/hobbitsvc-info.c
+
+The info page disable function has been enhanced in two ways: A separate status summmary shows the current color of all statuses, and lets you easily pick all red/yellow/purple tests to disable them. Also, the status names in the disable listbox now shows the current color of the status. This enhancement was based on code from Michael Nagel.
+------------------------------------------------------------------------
+r5960 | storner | 2008-11-26 13:45:38 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/Makefile
+   A /branches/4.2.0/hobbitd/convertnk.c
+
+A new convertnk utility has been added to convert the old NK tags in bb-hosts to the new Critical Systems view configuration file.
+------------------------------------------------------------------------
+r5961 | storner | 2008-11-26 13:46:32 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/configure.server
+
+The configuration script would allow you to enter a blank value for the webserver group-ID, causing installation to fail later. This patch changes the configuration script to require a value for this setting.
+------------------------------------------------------------------------
+r5962 | storner | 2008-11-26 13:47:38 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/client/hobbitclient-aix.sh
+   M /branches/4.2.0/client/hobbitclient-darwin.sh
+
+AIX and Darwin clients: Show routing entries using IP-address, not hostnames
+------------------------------------------------------------------------
+r5963 | storner | 2008-11-26 13:49:04 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/lib/timefunc.c
+   M /branches/4.2.0/web/bb-ack.c
+
+The acknowledgment webpage requires you to enter the acknowledgment duration in minutes. This patch lets you enter the duration as "2d" or "4h30m" for an easier way of setting the duration.
+------------------------------------------------------------------------
+r5964 | storner | 2008-11-26 13:50:35 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/bbnet/httptest.c
+
+Include port-number in HTTP "Host" header if it is not standard
+------------------------------------------------------------------------
+r5965 | storner | 2008-11-26 13:51:57 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/lib/stackio.c
+
+Do not crash if a configuration Include directory is empty
+------------------------------------------------------------------------
+r5966 | storner | 2008-11-26 13:52:58 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/bbdisplay/loadbbhosts.c
+
+The bbgen tool which creates the Hobbit webpages might crash if certain noprop settings were used.
+------------------------------------------------------------------------
+r5967 | storner | 2008-11-26 14:02:51 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   A /branches/4.2.0/web/hobbit-confreport-critical.sh.DIST
+
+Missed this file in previous commit.
+
+
+------------------------------------------------------------------------
+r5968 | storner | 2008-11-26 14:04:25 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   A /branches/4.2.0/hobbitd/webfiles/notify_footer
+   A /branches/4.2.0/hobbitd/webfiles/notify_form
+   A /branches/4.2.0/hobbitd/webfiles/notify_header
+   M /branches/4.2.0/hobbitd/wwwfiles/menu/menu_items.js.DIST
+   M /branches/4.2.0/include/libbbgen.h
+   M /branches/4.2.0/lib/Makefile
+   A /branches/4.2.0/lib/notifylog.c
+   A /branches/4.2.0/lib/notifylog.h
+   M /branches/4.2.0/web/Makefile
+   A /branches/4.2.0/web/hobbit-notifylog.c
+   A /branches/4.2.0/web/hobbit-notifylog.sh.DIST
+
+A utility for viewing the notifications log has been added.
+------------------------------------------------------------------------
+r5969 | storner | 2008-11-26 14:38:26 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/hobbitd.c
+   M /branches/4.2.0/hobbitd/hobbitd_buffer.c
+   M /branches/4.2.0/hobbitd/hobbitd_buffer.h
+   M /branches/4.2.0/hobbitd/hobbitd_ipc.c
+
+The Hobbit daemon now has a "user channel" that may be used to send custom messages through Hobbit.
+------------------------------------------------------------------------
+r5970 | storner | 2008-11-26 14:45:50 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/lib/Makefile
+   M /branches/4.2.0/web/Makefile
+
+Cleanup merge errors from allinone patch
+------------------------------------------------------------------------
+r5971 | storner | 2008-11-26 14:47:08 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/hobbitd.c
+
+Do not hang when reading from socket
+------------------------------------------------------------------------
+r5972 | storner | 2008-11-26 14:48:02 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/hobbitd/hobbitd.c
+
+Make sure there is space for Line-1 in message sent to workers
+------------------------------------------------------------------------
+r5973 | storner | 2008-11-26 14:48:45 +0100 (Wed, 26 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.0/web/hobbitgraph.c
+
+Hostnames used in URL must be URL-encoded
+------------------------------------------------------------------------
+r5974 | storner | 2008-11-26 14:51:47 +0100 (Wed, 26 Nov 2008) | 3 lines
+Changed paths:
+   A /branches/4.2.2 (from /branches/4.2.0:5973)
+
+New branch off the 4.2.0 + allinone patch for a 4.2.2 release.
+
+
+------------------------------------------------------------------------
+r5975 | storner | 2008-11-27 14:07:05 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/build/updmanver
+
+Adjusted to work with SVN
+
+
+------------------------------------------------------------------------
+r5976 | storner | 2008-11-27 14:12:12 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/CREDITS
+   M /branches/4.2.2/README
+   M /branches/4.2.2/README.CLIENT
+   M /branches/4.2.2/bbdisplay/bbgen.1
+   M /branches/4.2.2/bbnet/bb-services.5
+   M /branches/4.2.2/bbnet/bbretest-net.sh.1
+   M /branches/4.2.2/bbnet/bbtest-net.1
+   M /branches/4.2.2/bbnet/hobbitping.1
+   M /branches/4.2.2/bbproxy/bbmessage.cgi.8
+   M /branches/4.2.2/bbproxy/bbproxy.8
+   M /branches/4.2.2/build/makedeb.sh
+   M /branches/4.2.2/build/makehtml.sh
+   M /branches/4.2.2/common/bb-hosts.5
+   M /branches/4.2.2/common/bb.1
+   M /branches/4.2.2/common/bbcmd.1
+   M /branches/4.2.2/common/bbdigest.1
+   M /branches/4.2.2/common/bbhostgrep.1
+   M /branches/4.2.2/common/bbhostshow.1
+   M /branches/4.2.2/common/clientlaunch.cfg.5
+   M /branches/4.2.2/common/clientupdate.1
+   M /branches/4.2.2/common/hobbit.7
+   M /branches/4.2.2/common/hobbitclient.cfg.5
+   M /branches/4.2.2/common/hobbitlaunch.8
+   M /branches/4.2.2/common/hobbitlaunch.cfg.5
+   M /branches/4.2.2/common/hobbitserver.cfg.5
+   M /branches/4.2.2/common/logfetch.1
+   M /branches/4.2.2/common/msgcache.8
+   M /branches/4.2.2/common/orcahobbit.1
+   M /branches/4.2.2/configure
+   M /branches/4.2.2/configure.client
+   M /branches/4.2.2/configure.server
+   M /branches/4.2.2/debian/changelog
+   M /branches/4.2.2/debian/control
+   M /branches/4.2.2/debian/hobbit-client.init
+   M /branches/4.2.2/debian/hobbit-client.postinst
+   M /branches/4.2.2/debian/hobbit-client.preinst
+   M /branches/4.2.2/debian/hobbit.conffiles
+   M /branches/4.2.2/debian/hobbit.config
+   M /branches/4.2.2/debian/hobbit.logrotate
+   M /branches/4.2.2/debian/hobbit.postinst
+   M /branches/4.2.2/debian/hobbit.preinst
+   M /branches/4.2.2/debian/rules
+   M /branches/4.2.2/docs/about.html
+   M /branches/4.2.2/docs/bb-to-hobbit.html
+   M /branches/4.2.2/docs/criticalsystems.html
+   M /branches/4.2.2/docs/hobbit-alerts.html
+   M /branches/4.2.2/docs/hobbit-config.html
+   M /branches/4.2.2/docs/hobbit-mrtg.html
+   M /branches/4.2.2/docs/howtograph.html
+   M /branches/4.2.2/docs/install.html
+   M /branches/4.2.2/docs/known-issues.html
+   M /branches/4.2.2/docs/man-index.html
+   M /branches/4.2.2/hobbitd/bbcombotest.1
+   M /branches/4.2.2/hobbitd/bbcombotest.cfg.5
+   M /branches/4.2.2/hobbitd/client-local.cfg.5
+   M /branches/4.2.2/hobbitd/etcfiles/bb-hosts.DIST
+   M /branches/4.2.2/hobbitd/etcfiles/client-local.cfg
+   M /branches/4.2.2/hobbitd/etcfiles/columndoc.csv
+   M /branches/4.2.2/hobbitd/etcfiles/hobbit-apache-open.DIST
+   M /branches/4.2.2/hobbitd/etcfiles/hobbit-apache-secure.DIST
+   M /branches/4.2.2/hobbitd/etcfiles/hobbit-clients.cfg
+   M /branches/4.2.2/hobbitd/etcfiles/hobbitcgi.cfg.DIST
+   M /branches/4.2.2/hobbitd/etcfiles/hobbitlaunch.cfg.DIST
+   M /branches/4.2.2/hobbitd/etcfiles/hobbitserver.cfg.DIST
+   M /branches/4.2.2/hobbitd/hobbit-alerts.cfg.5
+   M /branches/4.2.2/hobbitd/hobbit-clients.cfg.5
+   M /branches/4.2.2/hobbitd/hobbit-mailack.8
+   M /branches/4.2.2/hobbitd/hobbitd.8
+   M /branches/4.2.2/hobbitd/hobbitd_alert.8
+   M /branches/4.2.2/hobbitd/hobbitd_channel.8
+   M /branches/4.2.2/hobbitd/hobbitd_client.8
+   M /branches/4.2.2/hobbitd/hobbitd_filestore.8
+   M /branches/4.2.2/hobbitd/hobbitd_history.8
+   M /branches/4.2.2/hobbitd/hobbitd_hostdata.8
+   M /branches/4.2.2/hobbitd/hobbitd_rrd.8
+   M /branches/4.2.2/hobbitd/hobbitd_sample.8
+   M /branches/4.2.2/hobbitd/hobbitfetch.8
+   M /branches/4.2.2/hobbitd/hobbitweb.5
+   M /branches/4.2.2/hobbitd/trimhistory.8
+   M /branches/4.2.2/hobbitd/webfiles/acknowledge_header
+   M /branches/4.2.2/hobbitd/webfiles/bb2_header
+   M /branches/4.2.2/hobbitd/webfiles/bb_footer
+   M /branches/4.2.2/hobbitd/webfiles/bb_header
+   M /branches/4.2.2/hobbitd/webfiles/bbnk_header
+   M /branches/4.2.2/hobbitd/webfiles/bbrep_header
+   M /branches/4.2.2/hobbitd/webfiles/bbsnap2_header
+   M /branches/4.2.2/hobbitd/webfiles/bbsnap_header
+   M /branches/4.2.2/hobbitd/webfiles/bbsnapnk_header
+   M /branches/4.2.2/hobbitd/webfiles/columndoc_header
+   M /branches/4.2.2/hobbitd/webfiles/confreport_front
+   M /branches/4.2.2/hobbitd/webfiles/confreport_header
+   M /branches/4.2.2/hobbitd/webfiles/event_header
+   M /branches/4.2.2/hobbitd/webfiles/findhost_header
+   M /branches/4.2.2/hobbitd/webfiles/ghosts_header
+   M /branches/4.2.2/hobbitd/webfiles/graphs_header
+   M /branches/4.2.2/hobbitd/webfiles/hist_header
+   M /branches/4.2.2/hobbitd/webfiles/histlog_header
+   M /branches/4.2.2/hobbitd/webfiles/hobbitnk_footer
+   M /branches/4.2.2/hobbitd/webfiles/hobbitnk_header
+   M /branches/4.2.2/hobbitd/webfiles/hostgraphs_header
+   M /branches/4.2.2/hobbitd/webfiles/hostsvc_header
+   M /branches/4.2.2/hobbitd/webfiles/info_header
+   M /branches/4.2.2/hobbitd/webfiles/maint_header
+   M /branches/4.2.2/hobbitd/webfiles/maintact_header
+   M /branches/4.2.2/hobbitd/webfiles/nkedit_header
+   M /branches/4.2.2/hobbitd/webfiles/notify_footer
+   M /branches/4.2.2/hobbitd/webfiles/notify_header
+   M /branches/4.2.2/hobbitd/webfiles/replog_header
+   M /branches/4.2.2/hobbitd/webfiles/report_form
+   M /branches/4.2.2/hobbitd/webfiles/report_form_daily
+   M /branches/4.2.2/hobbitd/webfiles/report_form_monthly
+   M /branches/4.2.2/hobbitd/webfiles/report_form_weekly
+   M /branches/4.2.2/hobbitd/webfiles/report_header
+   M /branches/4.2.2/hobbitd/webfiles/snapshot_form
+   M /branches/4.2.2/hobbitd/webfiles/snapshot_header
+   M /branches/4.2.2/hobbitd/webfiles/zoom.js
+   M /branches/4.2.2/hobbitd/wwwfiles/menu/menu_items.js.DIST
+   M /branches/4.2.2/rpm/hobbit.spec
+   M /branches/4.2.2/web/bb-ack.cgi.1
+   M /branches/4.2.2/web/bb-csvinfo.cgi.1
+   M /branches/4.2.2/web/bb-datepage.cgi.1
+   M /branches/4.2.2/web/bb-eventlog.cgi.1
+   M /branches/4.2.2/web/bb-findhost.cgi.1
+   M /branches/4.2.2/web/bb-hist.cgi.1
+   M /branches/4.2.2/web/bb-rep.cgi.1
+   M /branches/4.2.2/web/bb-replog.cgi.1
+   M /branches/4.2.2/web/bb-snapshot.cgi.1
+   M /branches/4.2.2/web/bb-webpage.cgi.1
+   M /branches/4.2.2/web/hobbit-ackinfo.cgi.1
+   M /branches/4.2.2/web/hobbit-confreport.cgi.1
+   M /branches/4.2.2/web/hobbit-enadis.cgi.8
+   M /branches/4.2.2/web/hobbit-ghosts.cgi.1
+   M /branches/4.2.2/web/hobbit-hostgraphs.cgi.1
+   M /branches/4.2.2/web/hobbit-nkedit.cgi.1
+   M /branches/4.2.2/web/hobbit-nkview.cfg.5
+   M /branches/4.2.2/web/hobbit-nkview.cgi.1
+   M /branches/4.2.2/web/hobbit-statusreport.cgi.1
+   M /branches/4.2.2/web/hobbitcgi.cfg.5
+   M /branches/4.2.2/web/hobbitgraph.cfg.5
+   M /branches/4.2.2/web/hobbitgraph.cgi.1
+   M /branches/4.2.2/web/hobbitsvc.cgi.1
+
+Documentation etc. updates for renaming project to Xymon.
+
+
+------------------------------------------------------------------------
+r5977 | storner | 2008-11-27 14:13:45 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/debian/hobbit.init
+
+Add standard stanza for daemon init scripts.
+
+
+------------------------------------------------------------------------
+r5978 | storner | 2008-11-27 14:23:39 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   A /branches/4.2.2/common/xymon.7 (from /branches/4.2.2/common/hobbit.7:5976)
+
+Rename "hobbit.7" to "xymon.7" as part of project rename
+
+
+------------------------------------------------------------------------
+r5979 | storner | 2008-11-27 14:24:24 +0100 (Thu, 27 Nov 2008) | 2 lines
+Changed paths:
+   A /branches/4.2.2/hobbitd/client/bbwin.c
+   M /branches/4.2.2/hobbitd/client_config.c
+   M /branches/4.2.2/hobbitd/client_config.h
+   M /branches/4.2.2/hobbitd/hobbitd_client.c
+   M /branches/4.2.2/hobbitd/rrd/do_disk.c
+   M /branches/4.2.2/hobbitd/rrd/do_ifstat.c
+   M /branches/4.2.2/hobbitd/rrd/do_netstat.c
+   M /branches/4.2.2/hobbitd/rrd/do_vmstat.c
+   M /branches/4.2.2/lib/misc.c
+   M /branches/4.2.2/lib/misc.h
+
+Add support for BBWin in centralized mode.
+
+------------------------------------------------------------------------
+r5980 | storner | 2008-11-27 14:25:03 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   D /branches/4.2.2/common/hobbit.7
+
+Renamed to xymon.7
+
+
+------------------------------------------------------------------------
+r5981 | storner | 2008-11-27 14:27:10 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/common/xymon.7
+
+Actually updated the contents of the file for the Xymon rename.
+
+
+------------------------------------------------------------------------
+r5982 | storner | 2008-11-27 14:31:18 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/RELEASENOTES
+
+Modified notes for 4.2.2.
+
+
+------------------------------------------------------------------------
+r5983 | storner | 2008-11-27 15:07:06 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/hobbitd/do_rrd.c
+
+Drop the BEA and BIND statistics - they never really worked.
+
+
+------------------------------------------------------------------------
+r5984 | storner | 2008-11-27 15:10:26 +0100 (Thu, 27 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/bbdisplay/bbgen.1
+   M /branches/4.2.2/bbnet/bb-services.5
+   M /branches/4.2.2/bbnet/bbretest-net.sh.1
+   M /branches/4.2.2/bbnet/bbtest-net.1
+   M /branches/4.2.2/bbnet/hobbitping.1
+   M /branches/4.2.2/bbproxy/bbmessage.cgi.8
+   M /branches/4.2.2/bbproxy/bbproxy.8
+   M /branches/4.2.2/common/bb-hosts.5
+   M /branches/4.2.2/common/bb.1
+   M /branches/4.2.2/common/bbcmd.1
+   M /branches/4.2.2/common/bbdigest.1
+   M /branches/4.2.2/common/bbhostgrep.1
+   M /branches/4.2.2/common/bbhostshow.1
+   M /branches/4.2.2/common/clientlaunch.cfg.5
+   M /branches/4.2.2/common/clientupdate.1
+   M /branches/4.2.2/common/hobbitclient.cfg.5
+   M /branches/4.2.2/common/hobbitlaunch.8
+   M /branches/4.2.2/common/hobbitlaunch.cfg.5
+   M /branches/4.2.2/common/hobbitserver.cfg.5
+   M /branches/4.2.2/common/logfetch.1
+   M /branches/4.2.2/common/msgcache.8
+   M /branches/4.2.2/common/orcahobbit.1
+   M /branches/4.2.2/common/xymon.7
+   M /branches/4.2.2/debian/changelog
+   M /branches/4.2.2/hobbitd/bbcombotest.1
+   M /branches/4.2.2/hobbitd/bbcombotest.cfg.5
+   M /branches/4.2.2/hobbitd/client-local.cfg.5
+   M /branches/4.2.2/hobbitd/hobbit-alerts.cfg.5
+   M /branches/4.2.2/hobbitd/hobbit-clients.cfg.5
+   M /branches/4.2.2/hobbitd/hobbit-mailack.8
+   M /branches/4.2.2/hobbitd/hobbitd.8
+   M /branches/4.2.2/hobbitd/hobbitd_alert.8
+   M /branches/4.2.2/hobbitd/hobbitd_channel.8
+   M /branches/4.2.2/hobbitd/hobbitd_client.8
+   M /branches/4.2.2/hobbitd/hobbitd_filestore.8
+   M /branches/4.2.2/hobbitd/hobbitd_history.8
+   M /branches/4.2.2/hobbitd/hobbitd_hostdata.8
+   M /branches/4.2.2/hobbitd/hobbitd_rrd.8
+   M /branches/4.2.2/hobbitd/hobbitd_sample.8
+   M /branches/4.2.2/hobbitd/hobbitfetch.8
+   M /branches/4.2.2/hobbitd/hobbitweb.5
+   M /branches/4.2.2/hobbitd/trimhistory.8
+   M /branches/4.2.2/include/version.h
+   M /branches/4.2.2/web/bb-ack.cgi.1
+   M /branches/4.2.2/web/bb-csvinfo.cgi.1
+   M /branches/4.2.2/web/bb-datepage.cgi.1
+   M /branches/4.2.2/web/bb-eventlog.cgi.1
+   M /branches/4.2.2/web/bb-findhost.cgi.1
+   M /branches/4.2.2/web/bb-hist.cgi.1
+   M /branches/4.2.2/web/bb-rep.cgi.1
+   M /branches/4.2.2/web/bb-replog.cgi.1
+   M /branches/4.2.2/web/bb-snapshot.cgi.1
+   M /branches/4.2.2/web/bb-webpage.cgi.1
+   M /branches/4.2.2/web/hobbit-ackinfo.cgi.1
+   M /branches/4.2.2/web/hobbit-confreport.cgi.1
+   M /branches/4.2.2/web/hobbit-enadis.cgi.8
+   M /branches/4.2.2/web/hobbit-ghosts.cgi.1
+   M /branches/4.2.2/web/hobbit-hostgraphs.cgi.1
+   M /branches/4.2.2/web/hobbit-nkedit.cgi.1
+   M /branches/4.2.2/web/hobbit-nkview.cfg.5
+   M /branches/4.2.2/web/hobbit-nkview.cgi.1
+   M /branches/4.2.2/web/hobbit-statusreport.cgi.1
+   M /branches/4.2.2/web/hobbitcgi.cfg.5
+   M /branches/4.2.2/web/hobbitgraph.cfg.5
+   M /branches/4.2.2/web/hobbitgraph.cgi.1
+   M /branches/4.2.2/web/hobbitsvc.cgi.1
+
+Bump version number to 4.2.2
+------------------------------------------------------------------------
+r5985 | storner | 2008-11-27 15:34:16 +0100 (Thu, 27 Nov 2008) | 3 lines
+Changed paths:
+   A /branches/4.2.2/debian/default
+
+debian/default had not been checked into SVN.
+
+
+------------------------------------------------------------------------
+r5987 | storner | 2008-11-27 22:40:08 +0100 (Thu, 27 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/build/Makefile.rules
+
+Dont try to clean the optional directories
+------------------------------------------------------------------------
+r5988 | storner | 2008-11-27 22:42:45 +0100 (Thu, 27 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/web/hobbit-confreport.c
+
+Fix Config Report (Critical) to work when hosts are in nkview.cfg but have no NK tags in bb-hosts. From Mandriva sources.
+------------------------------------------------------------------------
+r5989 | storner | 2008-11-27 22:59:07 +0100 (Thu, 27 Nov 2008) | 2 lines
+Changed paths:
+   M /branches/4.2.2/hobbitd/do_rrd.c
+   A /branches/4.2.2/hobbitd/rrd/do_trends.c
+
+"trends" RRD support from http://www.hswn.dk/hobbiton/2007/01/msg00236.html
+
+------------------------------------------------------------------------
+r5990 | storner | 2008-11-28 07:43:02 +0100 (Fri, 28 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/build/test-ldap.c
+
+Build properly with new OpenLDAP API by using deprecated functions.
+------------------------------------------------------------------------
+r5991 | storner | 2008-11-28 07:44:53 +0100 (Fri, 28 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/bbnet/contest.c
+
+Debian bug #503111: Dont crash on long-living SSL certs.
+------------------------------------------------------------------------
+r5992 | storner | 2008-11-28 07:47:24 +0100 (Fri, 28 Nov 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/lib/htmllog.c
+
+Old BB clients do not send in the "df" header line, so adjust linecount accordingly. From Debian patches for 4.2.0.dfsg-14lenny2.
+
+
+------------------------------------------------------------------------
+r5993 | storner | 2008-11-28 10:18:41 +0100 (Fri, 28 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/lib/url.c
+
+The BB proxy-syntax could not handle https target URLs. From Debian.
+------------------------------------------------------------------------
+r5995 | storner | 2008-11-28 10:27:42 +0100 (Fri, 28 Nov 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/bbnet/ldaptest.h
+
+Build properly with new OpenLDAP API by using deprecated functions (missed ldaptest.h in previous commit)
+------------------------------------------------------------------------
+r5996 | storner | 2008-11-28 11:55:16 +0100 (Fri, 28 Nov 2008) | 2 lines
+Changed paths:
+   M /branches/4.2.2/hobbitd/do_rrd.c
+   M /branches/4.2.2/hobbitd/do_rrd.h
+   M /branches/4.2.2/hobbitd/hobbitd_rrd.8
+   M /branches/4.2.2/hobbitd/hobbitd_rrd.c
+   M /branches/4.2.2/hobbitd/rrd/do_ncv.c
+
+Split-NCV and TRACKMAX support from Charles Goyard (ref: http://www.hobbitmon.com/hobbiton/2007/03/msg00368.html). Taken from the Debian patchset.
+
+------------------------------------------------------------------------
+r5997 | storner | 2008-11-28 19:19:10 +0100 (Fri, 28 Nov 2008) | 2 lines
+Changed paths:
+   M /branches/4.2.2/client/hobbitclient-linux.sh
+
+Fix for SuSE being ridiculous with their naming scheme.
+
+------------------------------------------------------------------------
+r5998 | storner | 2008-12-01 10:54:58 +0100 (Mon, 01 Dec 2008) | 3 lines
+Changed paths:
+   M /branches/4.2.2/lib/htmllog.c
+
+Dont count lines if there is already a "linecount" HTML comment.
+
+
+------------------------------------------------------------------------
+r5999 | storner | 2008-12-01 10:58:09 +0100 (Mon, 01 Dec 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/hobbitd/do_rrd.c
+   M /branches/4.2.2/hobbitd/etcfiles/hobbitgraph.cfg
+   M /branches/4.2.2/hobbitd/etcfiles/hobbitserver.cfg.DIST
+   M /branches/4.2.2/hobbitd/hobbitd_filestore.c
+   A /branches/4.2.2/hobbitd/rrd/do_beastat.c
+   A /branches/4.2.2/hobbitd/rrd/do_dbcheck.c
+   M /branches/4.2.2/hobbitd/rrd/do_disk.c
+   A /branches/4.2.2/hobbitd/rrd/do_fd_lib.c
+   M /branches/4.2.2/hobbitd/rrd/do_la.c
+   A /branches/4.2.2/hobbitd/rrd/do_netapp.c
+   M /branches/4.2.2/lib/htmllog.c
+   M /branches/4.2.2/web/hobbitsvc.c
+
+Merge hobbit-perl-client v1.15 server-side patches by Francesco Duranti
+------------------------------------------------------------------------
+r6000 | storner | 2008-12-01 11:53:35 +0100 (Mon, 01 Dec 2008) | 1 line
+Changed paths:
+   M /branches/4.2.2/hobbitd/do_rrd.c
+   M /branches/4.2.2/hobbitd/etcfiles/hobbitserver.cfg.DIST
+   M /branches/4.2.2/hobbitd/hobbitd_filestore.c
+   A /branches/4.2.2/hobbitd/rrd/do_devmon.c
+   M /branches/4.2.2/lib/hobbitrrd.c
+   M /branches/4.2.2/lib/htmllog.c
+   M /branches/4.2.2/web/hobbitsvc.c
+
+Merged server-side patch for Devmon 0.3.0
+------------------------------------------------------------------------
+
+
+
 Changes from 4.1.2p1 -> 4.2 (10 Aug 2006)
 -----------------------------------------
 New features:

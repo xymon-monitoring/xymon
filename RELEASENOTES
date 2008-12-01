@@ -5,16 +5,46 @@
 Changes from 4.2.0 -> 4.2.2
 ===========================
 The 4.2.2 release is an interim release. It contains the
-original 4.2.0 release, with the "all-in-one" patch applied.
-It also - partially - implements the change of project name
-from "Hobbit" to "Xymon", which happened in November 2008.
+original 4.2.0 release plus the following changes:
 
-This release also adds server-side support for the
-BBWin (Xymon Windows client), so it can be used in
-the centralized configuration mode.
+*) Due to the Hobbit project being renamed to Xymon (for
+   legal reasons), the documentation has been updated to
+   refer to this as the name of the project.
+*) All patches from the "all-in-one" patch have been applied
+*) Patches from Debian and Mandriva source archives and 
+   elsewhere have been merged, fixing: 
+   - The "Critical Systems" configuration report would crash
+     when hosts were in NKview.cfg, but no NK tags were in
+     bb-hosts (from Mandriva)
+   - SSL certificates with 4-digit expiration years would
+     crash the network tester (from Debian)
+   - Newer OpenLDAP versions have a different API, so 
+     the LDAP test code would not build correctly (from
+     Debian)
+   - Old Big Brother clients report disk output with no
+     header line (from Debian)
+   - The bb-hosts syntax for HTTP testing via a proxy
+     could not support https target-URL's (from Debian)
+   - Certain SuSE versions would not be identified by
+     the Linux client as such (only affected OS name
+     displayed in the "info" status).
+*) Support for sending custom graph data in a "trends"
+   data message (from 
+   http://www.hswn.dk/hobbiton/2007/01/msg00236.html)
+*) Split-NCV and TRACKMAX support for custom graphs (from
+   http://www.hobbitmon.com/hobbiton/2007/03/msg00368.htm).
+*) Support for the "BBWin" client http://bbwin.sf.net/
+   in centralized (server-side) configuration mode.
+   Based on BBWin v. 0.12.
+*) Support for the "hobbit-perl-client" add-on 
+   http://hobbit-perl-client.sf.net/ .
+   Based on perl-http-client v1.15
+*) Support for the "Devmon" SNMP data collector
+   http://devmon.sf.net/ based on Devmon 0.3.0.
 
-Information about the bugs that are fixed in 4.2.2 can
-be found at http://www.xymon.com/patches/
+A detailed changelog can be found in the Changes 
+document.
+
 
 Note: There was never an official 4.2.1 release.
 
