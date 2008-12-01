@@ -334,6 +334,19 @@ static int pickdata(char *buf, pcre *expr, int dupok, ...)
 #include "rrd/do_counts.c"
 #include "rrd/do_trends.c"
 
+/*
+ * From hobbit-perl-client http://sourceforge.net/projects/hobbit-perl-cl/
+ * version 1.15 Oct. 17 2006 (downloaded on 2008-12-01).
+ *
+ * Include file for netapp.pl dbcheck.pl and beastat.pl scripts
+ * do_fd_lib.c contains some function used by the other library
+ */
+#include "rrd/do_fd_lib.c"
+#include "rrd/do_netapp.c"
+#include "rrd/do_beastat.c"
+#include "rrd/do_dbcheck.c"
+
+
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
 	int res = 0;
@@ -377,6 +390,30 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, msg, tstamp);
 	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, msg, tstamp);
+
+	/* 
+	 * These are from the hobbit-perl-client
+	 * NetApp check for netapp.pl, dbcheck.pl and beastat.pl scripts
+	 */
+	else if (strcmp(id, "xtstats") == 0)     res = do_netapp_extrastats_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "quotas") == 0)      res = do_disk_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "snapshot") == 0)    res = do_disk_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "TblSpace") == 0)    res = do_disk_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "stats") == 0)       res = do_netapp_stats_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ops") == 0)         res = do_netapp_ops_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "cifs") == 0)        res = do_netapp_cifs_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "snaplist") == 0)    res = do_netapp_snaplist_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "snapmirr") == 0)    res = do_netapp_snapmirror_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "HitCache") == 0)    res = do_dbcheck_hitcache_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "Session") == 0)     res = do_dbcheck_session_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "RollBack") == 0)    res = do_dbcheck_rb_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "InvObj") == 0)      res = do_dbcheck_invobj_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "MemReq") == 0)      res = do_dbcheck_memreq_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "JVM") == 0)         res = do_beastat_jvm_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "JMS") == 0)         res = do_beastat_jms_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "JTA") == 0)         res = do_beastat_jta_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "ExecQueue") == 0)   res = do_beastat_exec_rrd(hostname, testname, msg, tstamp);
+	else if (strcmp(id, "JDBCConn") == 0)    res = do_beastat_jdbc_rrd(hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;

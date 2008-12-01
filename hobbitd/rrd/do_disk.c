@@ -2,7 +2,8 @@
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
 /* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2007 Francois Lacroix					      */
+/* Copyright (C) 2006 Francesco Duranti (fduranti@q8.it) (DBCHECK, NETAPP2)   */
+/* Copyright (C) 2007 Francois Lacroix (BBWIN)				      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,11 +14,13 @@ static char disk_rcsid[] = "$Id: do_disk.c,v 1.31 2006-06-09 22:23:49 henrik Exp
 
 int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 {
-	static char *disk_params[] = { "rrdcreate", rrdfn, "DS:pct:GAUGE:600:0:100", "DS:used:GAUGE:600:0:U", 
+	static char *disk_params[] = { "rrdcreate", rrdfn, 
+				       "DS:pct:GAUGE:600:0:U", /* Upper bound is U because TblSpace can grow >100 */
+				       "DS:used:GAUGE:600:0:U", 
 					rra1, rra2, rra3, rra4, NULL };
 	static char *disk_tpl      = NULL;
 
-	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETWARE, DT_BBWIN } dsystype;
+	enum { DT_IRIX, DT_AS400, DT_NT, DT_UNIX, DT_NETAPP, DT_NETAPP2, DT_NETWARE, DT_BBWIN, DT_DBCHECK } dsystype;
 	char *eoln, *curline;
 	static int ptnsetup = 0;
 	static pcre *inclpattern = NULL;
@@ -49,11 +52,28 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	else if (strstr(msg, "DASD")) dsystype = DT_AS400;
 	else if (strstr(msg, "NetWare Volumes")) dsystype = DT_NETWARE;
 	else if (strstr(msg, "NetAPP")) dsystype = DT_NETAPP;
-	else if (strstr(msg, "Summary")) dsystype = DT_BBWIN; /* Make sur it is a bbwin client v > 0.10 */
+	else if (strstr(msg, "netapp.pl")) dsystype = DT_NETAPP2;
+	else if (strstr(msg, "dbcheck.pl")) dsystype = DT_DBCHECK;
+	else if (strstr(msg, "Summary")) dsystype = DT_BBWIN; /* Make sure it is a bbwin client v > 0.10 */
 	else if (strstr(msg, "Filesystem")) dsystype = DT_NT;
 	else dsystype = DT_UNIX;
 
 	curline = msg;
+
+	switch (dsystype) {
+	  case DT_NETAPP2:
+		curline = strchr(curline, '\n'); if (curline) curline++;
+		break;
+	  case DT_DBCHECK:
+		curline = strchr(curline, '\n'); if (curline) curline++;
+		curline=strstr(curline, "TableSpace/DBSpace");
+		if (curline) {
+			eoln = strchr(curline, '\n');
+			curline = (eoln ? (eoln+1) : NULL);
+		}
+		break;
+	}
+
 	while (curline)  {
 		char *fsline, *p;
 		char *columns[20];
@@ -62,14 +82,24 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		int pused = -1;
 		int wanteddisk = 1;
 		long long aused = 0;
+		/* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
+		double dused = 0;
+		/* FD: used to add a column if the filesystem is named "snap reserve" for netapp.pl */
+		int snapreserve=0;
 
 		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
 
 		/* AS/400 reports must contain the word DASD */
 		if ((dsystype == DT_AS400) && (strstr(curline, "DASD") == NULL)) goto nextline;
 
-		/* All clients except AS/400 report the mount-point with slashes - ALSO Win32 clients. */
-		if ((dsystype != DT_AS400) && (strchr(curline, '/') == NULL)) goto nextline;
+		/* FD: Exit if doing DBCHECK and the end of the tablespaces are reached */
+		if ((dsystype == DT_DBCHECK) && (strstr(eoln+1, "dbcheck.pl") == (eoln+1))) break;
+
+		/* FD: netapp.pl snapshot line that start with "snap reserve" need a +1 */
+		if ((dsystype == DT_NETAPP2) && (strstr(curline, "snap reserve"))) snapreserve=1;
+
+		/* All clients except AS/400 and DBCHECK report the mount-point with slashes - ALSO Win32 clients. */
+		if ((dsystype != DT_AS400) && (dsystype != DT_DBCHECK) && (strchr(curline, '/') == NULL)) goto nextline;
 
 		/* red/yellow filesystems show up twice */
 		if ((dsystype != DT_NETAPP) && (dsystype != DT_NETWARE) && (dsystype != DT_AS400)) {
@@ -124,6 +154,56 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			pused = atoi(columns[4]);
 			aused = atoi(columns[2]);
 			break;
+
+		  /* FD: Check TableSpace from dbcheck.pl */
+		  case DT_DBCHECK:
+			/* FD: Add an initial "/" to TblSpace Name so they're reported in the trends column */
+			diskname=xmalloc(strlen(columns[0])+2);
+			sprintf(diskname,"/%s",columns[0]);
+			p = strchr(columns[4], '%'); if (p) *p = ' ';
+			pused = atoi(columns[4]);
+			p = columns[2] + strspn(columns[2], "0123456789.");
+			/* FD: Using double instead of long long because we can have decimal */
+			dused = str2ll(columns[2], NULL);
+			/* FD: dbspace report contains M/G/T 
+			   Convert to KB if there's a modifier after the numbers
+			*/
+			if (*p == 'M') dused *= 1024;
+			else if (*p == 'G') dused *= (1024*1024);
+			else if (*p == 'T') dused *= (1024*1024*1024);
+			aused=(long long)dused;
+			break;
+		  /* FD: Check diskspace from netapp.pl */
+		  case DT_NETAPP2:
+			/* FD: Name column can contain "spaces" so it could be split in multiple
+			   columns, create a unique string from columns[5] that point to the
+			   complete disk name 
+			*/
+			while (columncount-- > 6+snapreserve) { 
+				p = strchr(columns[columncount-1],0); 
+				if (p) *p = '_'; 
+			}
+			/* FD: Add an initial "/" to qtree and quotas */
+			if (*columns[5+snapreserve] != '/') {
+				diskname=xmalloc(strlen(columns[5+snapreserve])+2);
+				sprintf(diskname,"/%s",columns[5+snapreserve]);
+			} else {
+				diskname = xstrdup(columns[5+snapreserve]);
+			}
+			p = strchr(columns[4+snapreserve], '%'); if (p) *p = ' ';
+			pused = atoi(columns[4+snapreserve]);
+			p = columns[2+snapreserve] + strspn(columns[2+snapreserve], "0123456789.");
+			/* Using double instead of long long because we can have decimal */
+			dused = str2ll(columns[2+snapreserve], NULL);
+			/* snapshot and qtree contains M/G/T 
+			   Convert to KB if there's a modifier after the numbers
+			*/
+			if (*p == 'M') dused *= 1024;
+			else if (*p == 'G') dused *= (1024*1024);
+			else if (*p == 'T') dused *= (1024*1024*1024);
+			aused=(long long) dused;
+			break;
+
 		  case DT_UNIX:
 			diskname = xstrdup(columns[5]);
 			p = strchr(columns[4], '%'); if (p) *p = ' ';

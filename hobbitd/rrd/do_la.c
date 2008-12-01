@@ -27,7 +27,7 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	if (la_tpl == NULL) la_tpl = setup_template(la_params);
 	if (starttime == 0) starttime = now;
 
-	if (strstr(msg, "bb-xsnmp")) {
+	if (strstr(msg, "bb-xsnmp") || strstr(msg, "netapp.pl")) {
 		/*
 		 * bb-xsnmp.pl script output.
 		 *

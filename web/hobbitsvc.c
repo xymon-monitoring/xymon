@@ -30,7 +30,7 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.73 2006-08-07 10:05:39 henrik Exp $"
 /* Commandline params */
 static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
 static int wantserviceid = 1;
-static char *multigraphs = ",disk,inode,qtree,";
+static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,";
 
 /* CGI params */
 static char *hostname = NULL;
