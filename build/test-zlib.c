@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <zlib.h>
 
 int main(int argc, char **argv)
@@ -18,8 +19,12 @@ int main(int argc, char **argv)
 	else {
 		printf("zlib version %s\n", zlibVersion());
 		if (ZLIB_VERNUM < 0x1230) {
+			char *override = getenv("IGNOREOLDZLIB");
+
 			printf("Your zlib version is too old, requires version 1.2.3 or later\n");
-			return 1;
+			if (override) printf("Ignoring this and continuing anyway\n");
+
+			return (override ? 0 : 1);
 		}
 	}
 

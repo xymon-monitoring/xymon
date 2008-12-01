@@ -24,6 +24,7 @@ do
      --ldapinclude DIRECTORY  : Specify location of OpenLDAP include files
      --ldaplib DIRECTORY      : Specify location of OpenLDAP libraries
      --fping FILENAME         : Specify location of the Fping program
+     --buggy-zlib             : Ignore version check of zlib
 
   The script will search a number of standard directories for
   all of these files, so you normally do not have to specify any options.
@@ -56,6 +57,10 @@ EOF
 		;;
 	  "--fping")
 	  	USERFPING="$1"; shift
+		;;
+	  "--buggy-zlib")
+	        IGNOREOLDZLIB=1;
+		export IGNOREOLDZLIB
 		;;
 	esac
 done
