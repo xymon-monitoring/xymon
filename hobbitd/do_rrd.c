@@ -346,6 +346,12 @@ static int pickdata(char *buf, pcre *expr, int dupok, ...)
 #include "rrd/do_beastat.c"
 #include "rrd/do_dbcheck.c"
 
+/*
+ * From devmon http://sourceforge.net/projects/devmon/
+ * version 0.3.0 (downloaded on 2008-12-01).
+ */
+#include "rrd/do_devmon.c"
+
 
 void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef)
 {
@@ -414,6 +420,11 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "JTA") == 0)         res = do_beastat_jta_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "ExecQueue") == 0)   res = do_beastat_exec_rrd(hostname, testname, msg, tstamp);
 	else if (strcmp(id, "JDBCConn") == 0)    res = do_beastat_jdbc_rrd(hostname, testname, msg, tstamp);
+
+	/*
+	 * This is from the devmon SNMP collector
+	 */
+	else if (strcmp(id, "devmon") == 0)      res = do_devmon_rrd(hostname, testname, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;

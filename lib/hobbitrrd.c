@@ -221,6 +221,9 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 	else if ((service != NULL) && (strcmp(graphdef->hobbitrrdname, "ncv") == 0)) {
 		sprintf(rrdservicename, "ncv:%s", service);
 	}
+	else if ((service != NULL) && (strcmp(graphdef->hobbitrrdname, "devmon") == 0)) {
+		sprintf(rrdservicename, "devmon:%s", service);
+	}
 	else {
 		strcpy(rrdservicename, graphdef->hobbitrrdname);
 	}

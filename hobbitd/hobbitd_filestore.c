@@ -30,7 +30,7 @@ static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.48 2006-07-20 16:06:41 henri
 
 #include "hobbitd_worker.h"
 
-static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,";
+static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 
