@@ -108,6 +108,7 @@ static void dns_callback(void *arg, int status, struct hostent *hent)
 
 	gettimeofday(&etime, &tz);
 	tvdiff(&dnsc->resolvetime, &etime, &dnsc->resolvetime);
+	pending_dns_count--;
 
 	if (status == ARES_SUCCESS) {
 		memcpy(&dnsc->addr, *(hent->h_addr_list), sizeof(dnsc->addr));
@@ -225,7 +226,6 @@ static void dns_queue_run(ares_channel channel)
 	int nfds, selres;
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
-	int progress = 10;
 	int loops = 0;
 	struct timeval cutoff, now;
 	struct timezone tz;
@@ -246,23 +246,8 @@ static void dns_queue_run(ares_channel channel)
 		selres = select(nfds, &read_fds, &write_fds, NULL, tvp);
 		ares_process(channel, &read_fds, &write_fds);
 
-		/* 
-		 * This is a guesstimate way of preventing this from being an
-		 * infinite loop. select must return with some sort of data; 
-		 * if it does not, then a timeout happened and we'll tolerate
-		 * those only for a limited number of times.
-		 */
-		if (selres > 0) { 
-			progress = 10; 
-		}
-		else {
-			progress--;
-			if (!progress) {
-				errprintf("dns_queue_run deadlock - loops=%d\n", loops);
-			}
-		}
 		gettimeofday(&now, &tz);
-	} while (progress && (now.tv_sec < cutoff.tv_sec));
+	} while ((pending_dns_count > 0) && (now.tv_sec < cutoff.tv_sec));
 
 	ares_destroy(channel);
 	if (stdchannelactive && (channel == stdchannel)) {
