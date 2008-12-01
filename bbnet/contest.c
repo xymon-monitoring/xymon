@@ -700,6 +700,7 @@ static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 {
 	int res = 0;
+	char errtxt[1024];
 
 	if (item->svcinfo->flags & TCP_SSL) {
 		if (item->sslrunning) {
@@ -711,6 +712,10 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 				  case SSL_ERROR_WANT_WRITE:
 					  item->sslagain = 1;
 					  break;
+				  default:
+					  ERR_error_string(ERR_get_error(), errtxt);
+					  dbgprintf("SSL read error %s\n", errtxt);
+					  break;
 				}
 			}
 		}
@@ -719,9 +724,14 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 			res = 0;
 		}
 	}
-	else res = read(item->fd, inbuf, inbufsize);
+	else {
+		res = read(item->fd, inbuf, inbufsize);
+		if (res < 0) {
+			dbgprintf("Read error %s\n", strerror(errno));
+		}
+	}
 
-	item->bytesread += res;
+	if (res > 0) item->bytesread += res;
 	return res;
 }
 
