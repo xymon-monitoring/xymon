@@ -211,7 +211,10 @@ int send_ping(int sock, int startidx, int minresponses)
 			   (struct sockaddr *) &hosts[idx]->addr, sizeof(struct sockaddr_in));
 
 	if (sentbytes == -1) {
-		if (errno != EWOULDBLOCK) errprintf("Failed to send ICMP packet: %s\n", strerror(errno));
+		if (errno != EWOULDBLOCK) {
+			errprintf("Failed to send ICMP packet: %s\n", strerror(errno));
+			idx++; /* To avoid looping indefinitely trying to send to this host */
+		}
 	}
 	else if (sentbytes == PING_PACKET_SIZE) {
 		/* We managed to send a ping! */
