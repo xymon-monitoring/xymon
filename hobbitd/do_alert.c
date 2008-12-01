@@ -31,6 +31,8 @@ static char rcsid[] = "$Id: do_alert.c,v 1.95 2006-07-29 21:31:59 henrik Exp $";
 
 #include "libbbgen.h"
 
+#define MAX_ALERTMSG_SCRIPTS 4096
+
 /*
  * This is the dynamic info stored to keep track of active alerts. We
  * need to keep track of when the next alert is due for each recipient,
@@ -422,14 +424,21 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
 					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
+					int msglen;
 
 					cfidtxt = (char *)malloc(strlen("CFID=") + 10);
 					sprintf(cfidtxt, "CFID=%d", recip->cfid);
 					putenv(cfidtxt);
 
 					p = message_text(alert, recip);
-					bbalphamsg = (char *)malloc(strlen("BBALPHAMSG=") + strlen(p) + 1);
-					sprintf(bbalphamsg, "BBALPHAMSG=%s", p);
+					msglen = strlen(p);
+					if (msglen > MAX_ALERTMSG_SCRIPTS) {
+						dbgprintf("Cropping large alert message from %d to %d bytes\n", msglen, MAX_ALERTMSG_SCRIPTS);
+						msglen = MAX_ALERTMSG_SCRIPTS;
+					}
+					msglen += strlen("BBALPHAMSG=");
+					bbalphamsg = (char *)malloc(msglen + 1);
+					snprintf(bbalphamsg, msglen, "BBALPHAMSG=%s", p);
 					putenv(bbalphamsg);
 
 					ackcode = (char *)malloc(strlen("ACKCODE=") + 10);
