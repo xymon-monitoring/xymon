@@ -63,6 +63,7 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				devmon_params[numds+2] = xstrdup(columns[numds]);
 				numds++;
 			}
+			dbgprintf("Found %d DS definitions\n",numds);
 		       	devmon_params[numds+2] = rra1;
 			devmon_params[numds+3] = rra2;
 		        devmon_params[numds+4] = rra3;
@@ -72,7 +73,12 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			if (devmon_tpl == NULL) devmon_tpl = setup_template(devmon_params);
 			goto nextline;
 		}
-		dbgprintf("Found %d DS definitions\n",numds);
+
+		dbgprintf("Found %d columns in devmon rrd data\n",columncount);
+		if (columncount > 2) {
+			dbgprintf("Skipping line, found %d (max 2) columns in devmon rrd data, space in repeater name?\n",columncount);
+			goto nextline;
+		}
 
 		/* Now we should be on to values:
 		 * eth0.0 4678222:9966777
