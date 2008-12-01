@@ -531,6 +531,10 @@ void load_tests(void)
 					  argnmatch(testspec, "post=")        ||
 					  argnmatch(testspec, "nopost;http")  ||
 					  argnmatch(testspec, "nopost=")      ||
+					  argnmatch(testspec, "soap;http")    ||
+					  argnmatch(testspec, "soap=")        ||
+					  argnmatch(testspec, "nosoap;http")    ||
+					  argnmatch(testspec, "nosoap=")        ||
 					  argnmatch(testspec, "type;http")    ||
 					  argnmatch(testspec, "type=")        )      {
 

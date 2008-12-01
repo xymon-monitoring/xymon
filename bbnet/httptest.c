@@ -419,6 +419,7 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_POST:
+	  case BBTEST_SOAP:
 		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
@@ -428,6 +429,7 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_NOPOST:
+	  case BBTEST_NOSOAP:
 		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
@@ -554,9 +556,12 @@ void add_http_test(testitem_t *t)
 		}
 
 		addtobuffer(httprequest, "Content-type: ");
-		if      (httptest->bburl.postcontenttype) addtobuffer(httprequest, httptest->bburl.postcontenttype);
-		else if (httptest->bburl.testtype == BBTEST_SOAP) addtobuffer(httprequest, "application/soap+xml; charset=utf-8");
-		else addtobuffer(httprequest, "application/x-www-form-urlencoded");
+		if      (httptest->bburl.postcontenttype) 
+			addtobuffer(httprequest, httptest->bburl.postcontenttype);
+		else if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) 
+			addtobuffer(httprequest, "application/soap+xml; charset=utf-8");
+		else 
+			addtobuffer(httprequest, "application/x-www-form-urlencoded");
 		addtobuffer(httprequest, "\r\n");
 
 		sprintf(hdr, "Content-Length: %d\r\n", contlen);
@@ -621,6 +626,13 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "Accept: */*\r\n");
 	addtobuffer(httprequest, "Pragma: no-cache\r\n");
 
+	if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) {
+		/* Must provide a SOAPAction header */
+		addtobuffer(httprequest, "SOAPAction: ");
+		addtobuffer(httprequest, httptest->url);
+		addtobuffer(httprequest, "\r\n");
+	}
+	
 	/* The final blank line terminates the headers */
 	addtobuffer(httprequest, "\r\n");
 
