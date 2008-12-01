@@ -216,6 +216,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 				strncpy(m1, p, sizeof(m1)-1);
 				m1[sizeof(m1)-1] = '\0';
+
+				/* Only show the first line of the HTTP status description */
+				p = strchr(m1, '\n'); if (p) *p = '\0';
 			}
 			else {
 				sprintf(m1, "HTTP error %ld", req->httpstatus);
