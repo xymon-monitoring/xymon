@@ -1061,7 +1061,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	fontspec = normalfont;
 	stoprulefound = 0;
 	while ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL) {
-		int mindur = 0, maxdur = INT_MAX;
+		int mindur = 0, maxdur = 0;
 		char *timespec = NULL;
 		int colors = defaultcolors;
 		int i, firstcolor = 1;
