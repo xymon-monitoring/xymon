@@ -72,6 +72,8 @@ int do_disk_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			curline = (eoln ? (eoln+1) : NULL);
 		}
 		break;
+	  default:
+		break;
 	}
 
 	while (curline)  {
