@@ -1061,7 +1061,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	fontspec = normalfont;
 	stoprulefound = 0;
 	while ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL) {
-		int mindur = 0, maxdur = 0;
+		int mindur = 0, maxdur = INT_MAX;
 		char *timespec = NULL;
 		int colors = defaultcolors;
 		int i, firstcolor = 1;
@@ -1075,9 +1075,19 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 			addtobuffer(buf, l);
 		}
 
-		if (printrule->criteria) mindur = printrule->criteria->minduration;
+		/*
+		 * The min/max duration of an alert can be controlled by both the actual rule,
+		 * and by the recipient specification.
+		 * The rule must be fulfilled before the recipient even gets into play, so
+		 * if there is a min/max duration on the rule then this becomes the default
+		 * and recipient-specific settings can only increase the minduration/decrease
+		 * the maxduration.
+		 * On the other hand, if there is no rule-setting then the recipient-specific
+		 * settings determine everything.
+		 */
+		if (printrule->criteria && printrule->criteria->minduration) mindur = printrule->criteria->minduration;
 		if (recip->criteria && recip->criteria->minduration && (recip->criteria->minduration > mindur)) mindur = recip->criteria->minduration;
-		if (printrule->criteria) maxdur = printrule->criteria->maxduration;
+		if (printrule->criteria && printrule->criteria->maxduration) maxdur = printrule->criteria->maxduration;
 		if (recip->criteria && recip->criteria->maxduration && (recip->criteria->maxduration < maxdur)) maxdur = recip->criteria->maxduration;
 		if (printrule->criteria && printrule->criteria->timespec) timespec = printrule->criteria->timespec;
 		if (recip->criteria && recip->criteria->timespec) {
