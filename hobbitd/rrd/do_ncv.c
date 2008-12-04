@@ -40,7 +40,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		dslen = 19;
 		setupfn("%s.rrd", testname);
 		sprintf(envnam, "NCV_%s", testname);
-	l = getenv(envnam);
+		l = getenv(envnam);
 	}
 	if (l) {
 		dstypes = (char *)malloc(strlen(l)+3);
@@ -70,9 +70,17 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			else break;	/* We've hit the end of the message */
 		}
 
+		/* Skip any color marker "&COLOR " in front of the ds name */
+		if (name && (*name == '&')) {
+			name++;
+			name += strspn(name, "abcdefghijklmnopqrstuvwxyz");
+			name += strspn(name, " \t");
+			if (*name == '\0') name = NULL;
+		}
+
 		if (name) { 
 			val = l + strspn(l, " \t"); 
-			l = val + strspn(val, "0123456789."); 
+			l = val + strspn(val, "0123456789.+-"); 
 			if( *l ) { 
 				int iseol = (*l == '\n');
 
@@ -91,8 +99,10 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		if (name && val && *val) {
 			char *endptr;
+			int dummy;
 
-			strtod(val, &endptr);
+			/* We dont care about the return value, we just want the end-position of the number */
+			dummy = strtod(val, &endptr);
 			if (isspace((int)*endptr) || (*endptr == '\0')) {
 				char dsname[250];    /* name of ncv in status message (with space and al) */
 				char dskey[252];     /* name of final DS key (stripped)                   */
@@ -103,8 +113,8 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				/* rrdcreate(1) says: ds must be in the set [a-zA-Z0-9_] ... */
 				for (inp=name,outidx=0; (*inp && (outidx < dslen)); inp++) {
 					if ( ((*inp >= 'A') && (*inp <= 'Z')) ||
-					     ((*inp >= 'a') && (*inp <= 'z')) ||
-					     ((*inp >= '0') && (*inp <= '9'))    ) {
+							((*inp >= 'a') && (*inp <= 'z')) ||
+							((*inp >= '0') && (*inp <= '9'))    ) {
 						dsname[outidx++] = *inp;
 					}
 					/* ... however, for split ncv, we replace anything else  */
@@ -118,15 +128,16 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					dsname[outidx-1] = '\0';
 				}
 				else {
-				dsname[outidx] = '\0';
+					dsname[outidx] = '\0';
 				}
 				sprintf(dskey, ",%s:", dsname);
 				if(split_ncv) {
 					/* setupfn("%s,%s.rrd", testname, dsname); */
 					snprintf(rrdfn, sizeof(rrdfn)-1, "%s,%s.rrd", testname,dsname);
 					rrdfn[sizeof(rrdfn)-1] = '\0';
-					
+
 					params[1] = rrdfn;
+					params[2] = NULL;
 					paridx = 1;
 				}
 
@@ -147,7 +158,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						sprintf(dsdef, "DS:lambda:%s:600:0:U", dstype);
 					}
 					else {
-					sprintf(dsdef, "DS:%s:%s:600:0:U", dsname, dstype);
+						sprintf(dsdef, "DS:%s:%s:600:0:U", dsname, dstype);
 					}
 					if (p) *p = ',';
 				}
@@ -155,9 +166,9 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					if(split_ncv) {
 						strcpy(dsdef, "DS:lambda:DERIVE:600:0:U");
 					}
-				else {
-					sprintf(dsdef, "DS:%s:DERIVE:600:0:U", dsname);
-				}
+					else {
+						sprintf(dsdef, "DS:%s:DERIVE:600:0:U", dsname);
+					}
 				}
 
 				if (!dstype || (strncasecmp(dstype, "NONE", 4) != 0)) { /* if we have something */
@@ -168,7 +179,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
 				}
 			}
-			
+
 			if(split_ncv && (paridx > 1)) {
 				int i;
 				params[++paridx] = strdup(rra1);
@@ -187,11 +198,14 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				params[++paridx] = NULL;
 				create_and_update_rrd(hostname, rrdfn, params, NULL);
 				for(i = 2 ; i<paridx ; i++) {
+					xfree(params[i]);
 					params[i] = NULL;
 				}
+				params[1] = NULL;
+				paridx = 1;
 				sprintf(rrdvalues, "%d", (int)tstamp);
+			}
 		}
-	}
 
 	} /* end of while */
 
@@ -217,7 +231,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		params[++paridx] = NULL;
 		create_and_update_rrd(hostname, rrdfn, params, NULL);
 		for (paridx=2; (params[paridx] != NULL); paridx++)
-		xfree(params[paridx]);
+			xfree(params[paridx]);
 	}
 
 	xfree(params);
