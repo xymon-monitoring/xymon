@@ -1401,16 +1401,24 @@ int scan_log(namelist_t *hinfo, char *classname,
 		}
 
 		/* Next, check for a match anywhere in the data*/
+		dbgprintf("Looking for %s anywhere in the text\n", rule->rule.log.matchexp->pattern);
 		if (!namematch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp)) continue;
+		dbgprintf("Pattern found somewhere in the text\n");
 
 		/* Some data in there matches what we want. Look at each line. */
 		boln = logdata;
 		while (boln) {
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
 			if (namematch(boln, rule->rule.log.matchone->pattern, rule->rule.log.matchone->exp)) {
+				dbgprintf("Line '%s' matches\n", boln);
+
 				/* It matches. But maybe we'll ignore it ? */
-				if (!(rule->rule.log.ignoreexp && namematch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp))) {
+				if (rule->rule.log.ignoreexp && namematch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp)) {
+					dbgprintf("IGNORED match in line '%s'\n", boln);
+				}
+				else {
 					/* We wants it ... */
+					dbgprintf("FOUND match in line '%s'\n", boln);
 					anylines++;
 					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
 					addtobuffer(summarybuf, msgline);
