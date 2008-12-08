@@ -1568,11 +1568,11 @@ void testmode(char *configfn)
 				fgets(s, sizeof(s), stdin); clean_instr(s);
 				if (*s == '@') {
 					fd = fopen(s+1, "r");
+					if (!fd) errprintf("Cannot open file %s\n", s+1);
 					while (fd && fgets(s, sizeof(s), fd)) {
-						clean_instr(s);
-						if (*s) addtobuffer(logdata, s);
+						addtobuffer(logdata, s);
 					}
-					fclose(fd);
+					if (fd) fclose(fd);
 				}
 				else {
 					if (*s) addtobuffer(logdata, s);
