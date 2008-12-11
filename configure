@@ -7,6 +7,11 @@ BASEDIR="`dirname $0`"
 TARGET="$1"
 if test "$TARGET" != ""; then shift; fi
 
+# Make sure that all shell-scripts are executable.
+# Subversion has a habit of exporting without the
+# execute-bit set.
+chmod 755 $BASEDIR/configure* $BASEDIR/build/*.sh $BASEDIR/client/*.sh
+
 case "$TARGET" in
   "--client")
 	$BASEDIR/configure.client $*
