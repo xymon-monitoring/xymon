@@ -235,7 +235,7 @@ fi
 
 if test -z "$BBHOSTURL"
 then
-	BBHOSTURL="/xmon"
+	BBHOSTURL="/xymon"
 elif test "$BBHOSTURL" = "/"
 then
 	# For Xymon as the root URL, we must clear this setting.
