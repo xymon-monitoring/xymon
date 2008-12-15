@@ -21,8 +21,8 @@ static char rcsid[] = "$Id: netbsd-meminfo.c,v 1.3 2006-05-03 21:12:33 henrik Ex
 
 int main(int argc, char *argv[])
 {
-	int hw_physmem[] = { CTL_HW, HW_PHYSMEM };
-	int physmem;
+	int hw_physmem[] = { CTL_HW, HW_PHYSMEM64 };
+	int64_t physmem;
 
 	int hw_pagesize[] = { CTL_HW, HW_PAGESIZE };
 	int pagesize;
