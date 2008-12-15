@@ -1,0 +1,100 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITD_HISTORY</TITLE>
+</HEAD><BODY>
+<H1>HOBBITD_HISTORY</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitd_history - hobbitd worker module for logging status changes 
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>hobbitd_channel --channel=stachg hobbitd_history [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+hobbitd_history is a worker module for hobbitd, and as such it is normally
+run via the
+<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+
+program. It receives hobbitd status-change messages from the &quot;stachg&quot; 
+channel via stdin, and uses these to update the history logfiles in a manner 
+that is compatible with the standard Big Brother daemon, bbd.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--histdir=DIRECTORY<DD>
+The directory for the history files. If not specified, the
+directory given by the BBHIST environment is used.
+<P>
+<DT>--histlogdir=DIRECTORY<DD>
+The directory for the historical status-logs. If not specified, the
+directory given by the BBHISTLOGS environment is used.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>ENVIRONMENT</H2>
+
+<DL COMPACT>
+<DT>BBALLHISTLOG<DD>
+This environment variable controls if the $BBHIST/allevents
+logfile is updated. This file is used by the event-log display on the
+BB2 html page. If you do not use this, you can disable it by setting
+BBALLHISTLOGS=FALSE.
+<P>
+<DT>BBHOSTHISTLOG<DD>
+This environment variable controls if the $BBHIST/HOSTNAME
+logfile is updated. This file holds a list of all status changes seen
+for a single host, but is not used by any of the standard Xymon
+tools. If you do not want to save this, you can disable it by setting
+BBHOSTHISTLOG=FALSE.
+<P>
+<DT>SAVESTATUSLOG<DD>
+This environment variable controls if the historical
+status-logs are saved whenever a status change occurs. These logfiles
+are stored in the $BBHISTLOGS directory, and are used for the detailed
+log-display of a status from the Xymon &quot;History&quot; page. If you
+do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>FILES</H2>
+
+This module does not rely on any configuration files.
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">ENVIRONMENT</A><DD>
+<DT><A HREF="#lbAG">FILES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:30 GMT, December 15, 2008
+</BODY>
+</HTML>
