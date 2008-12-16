@@ -9,7 +9,9 @@ original 4.2.0 release plus the following changes:
 
 *) Due to the Hobbit project being renamed to Xymon (for
    legal reasons), the documentation has been updated to
-   refer to this as the name of the project.
+   refer to this as the name of the project. Note that the
+   4.2.2 release does not change any filenames for 
+   configuration files or programs.
 *) All patches from the "all-in-one" patch have been applied
 *) Patches from Debian and Mandriva source archives and 
    elsewhere have been merged, fixing: 
@@ -28,6 +30,18 @@ original 4.2.0 release plus the following changes:
    - Certain SuSE versions would not be identified by
      the Linux client as such (only affected OS name
      displayed in the "info" status).
+   - hobbitping could loop indefinitely in case of 
+     network errors.
+   - Installing on newer Darwin versions failed because
+     "nireport" was used to find user-info. Changed to
+     use "dscl".
+   - Alert-scripts might fail because of size limitations
+     on how large environment variables could be passed.
+   - 64-bit systems might put odd numbers into the 
+     acknowledgment-log
+   - Fixed display of alert duration on the "info" page.
+   - NetBSD systems with >2 GB RAM would report strange
+     memory data.
 *) Support for sending custom graph data in a "trends"
    data message (from 
    http://www.hswn.dk/hobbiton/2007/01/msg00236.html)
