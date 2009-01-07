@@ -125,6 +125,13 @@ void sethostenv_refresh(int n)
 	hostenv_refresh = n;
 }
 
+void sethostenv_pagepath(char *s)
+{
+	if (!s) return;
+	if (hostenv_pagepath) xfree(hostenv_pagepath);
+	hostenv_pagepath = strdup(s);
+}
+
 void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 {
 	const char *errmsg;
