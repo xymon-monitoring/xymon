@@ -141,15 +141,7 @@ static const char *rcodes[] = {
   "(unknown)", "(unknown)", "(unknown)", "(unknown)", "NOCHANGE"
 };
 
-#if (ARES_VERSION_MAJOR > 1)
-#error "Unsupported C-ARES version"
-#else
-#if (ARES_VERSION_MINOR > 4)
 void dns_detail_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen)
-#else
-void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen)
-#endif
-#endif
 {
 	int id, qr, opcode, aa, tc, rd, ra, rcode;
 	unsigned int qdcount, ancount, nscount, arcount, i;

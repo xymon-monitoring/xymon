@@ -1,0 +1,14 @@
+include Makefile.$(OS)
+
+test-clockgettime-librt.o: test-clockgettime-librt.c
+	@$(CC) $(CFLAGS) -o test-clockgettime-librt.o -c test-clockgettime-librt.c
+
+test-link: test-clockgettime-librt.o
+	@$(CC) $(CFLAGS) -o test-clockgettime-librt test-clockgettime-librt.o
+
+test-link-rt: test-clockgettime-librt.o
+	@$(CC) $(CFLAGS) -o test-clockgettime-librt test-clockgettime-librt.o -lrt
+
+clean:
+	@rm -f test-clockgettime-librt.o test-clockgettime-librt
+

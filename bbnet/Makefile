@@ -13,7 +13,7 @@ PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
 bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 hobbitping: $(PINGTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libbbgen.a $(NETLIBS)

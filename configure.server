@@ -155,6 +155,9 @@ else
 fi
 echo ""; echo "";
 
+. build/clock-gettime-librt.sh
+echo ""; echo ""
+
 MAKE="$MAKE -s" ./build/lfs.sh
 if test $? -eq 0; then
 	LFS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
@@ -460,6 +463,9 @@ then
 		echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
 	fi
 fi
+
+echo "# clock_gettime() settings"        >>Makefile
+echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
 
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile

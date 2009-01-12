@@ -17,7 +17,7 @@ typedef struct dns_resp_t {
 	struct dns_resp_t *next;
 } dns_resp_t;
 
-extern void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen);
+extern void dns_detail_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
 extern int dns_name_type(char *name);
 
 #endif
