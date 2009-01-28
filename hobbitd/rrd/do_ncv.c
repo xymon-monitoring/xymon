@@ -155,19 +155,19 @@ int do_ncv_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					dstype += strlen(dskey);
 					p = strchr(dstype, ','); if (p) *p = '\0';
 					if(split_ncv) {
-						sprintf(dsdef, "DS:lambda:%s:600:0:U", dstype);
+						sprintf(dsdef, "DS:lambda:%s:600:U:U", dstype);
 					}
 					else {
-						sprintf(dsdef, "DS:%s:%s:600:0:U", dsname, dstype);
+						sprintf(dsdef, "DS:%s:%s:600:U:U", dsname, dstype);
 					}
 					if (p) *p = ',';
 				}
 				else { /* nothing specified in the environnement, and no '*:' default */
 					if(split_ncv) {
-						strcpy(dsdef, "DS:lambda:DERIVE:600:0:U");
+						strcpy(dsdef, "DS:lambda:DERIVE:600:U:U");
 					}
 					else {
-						sprintf(dsdef, "DS:%s:DERIVE:600:0:U", dsname);
+						sprintf(dsdef, "DS:%s:DERIVE:600:U:U", dsname);
 					}
 				}
 
