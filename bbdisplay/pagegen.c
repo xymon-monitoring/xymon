@@ -786,7 +786,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 			sprintf(filename, "bb%s", htmlextension);
 			sprintf(rssfilename, "bb%s", rssextension);
 			sprintf(indexfilename, "index%s", htmlextension);
-			symlink(filename, indexfilename);
+			unlink(indexfilename); symlink(filename, indexfilename);
 			dbgprintf("Symlinking %s -> %s\n", filename, indexfilename);
 		}
 		else {
