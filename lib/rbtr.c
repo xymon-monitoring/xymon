@@ -17,6 +17,7 @@
 /* reentrant red-black tree */
 
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include "libbbgen.h"
 
@@ -391,10 +392,15 @@ int name_compare(void *a, void *b)
 	return strcasecmp((char *)a, (char *)b);
 }
 
+int string_compare(void *a, void *b)
+{
+	return strcmp((char *)a, (char *)b);
+}
+
 int int_compare(void *a, void *b)
 {
-	if ((int)a < (int)b) return -1;
-	else if ((int)a > (int)b) return 1;
+	if (*((int *)a) < *((int *)b)) return -1;
+	else if ((*(int *)a) > (*(int *)b)) return 1;
 	else return 0;
 }
 

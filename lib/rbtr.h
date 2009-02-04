@@ -67,6 +67,7 @@ RbtIterator rbtFind(RbtHandle h, void *key);
 
 /* Utility functions used in Hobbit */
 extern int name_compare(void *a, void *b);
+extern int string_compare(void *a, void *b);
 extern int int_compare(void *a, void *b);
 extern void *gettreeitem(RbtHandle tree, RbtIterator handle);
 
