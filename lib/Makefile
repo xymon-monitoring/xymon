@@ -63,13 +63,13 @@ timefunc-client.o: timefunc.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
 loadhosts: loadhosts.c libbbgen.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libbbgen.a $(LIBRTDEF)
 
 stackio: stackio.c libbbgen.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c ./libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c ./libbbgen.a $(LIBRTDEF)
 
 availability: availability.c libbbgen.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libbbgen.a
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libbbgen.a $(LIBRTDEF)
 
 md5: md5.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c

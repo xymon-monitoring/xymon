@@ -90,7 +90,7 @@ int add_ldap_test(testitem_t *t)
 	req->output = NULL;
 	req->ldapcolor = -1;
 	req->faileddeps = NULL;
-	req->duration.tv_sec = req->duration.tv_usec = 0;
+	req->duration.tv_sec = req->duration.tv_nsec = 0;
 	req->certinfo = NULL;
 	req->certexpires = 0;
 #endif
@@ -110,9 +110,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 #ifdef BBGEN_LDAP
 	ldap_data_t *req;
 	testitem_t *t;
-	struct timeval starttime;
-	struct timeval endtime;
-	struct timezone tz;
+	struct timespec starttime;
+	struct timespec endtime;
 
 	/* Pick a sensible default for the timeout setting */
 	if (querytimeout == 0) querytimeout = 30;
@@ -122,7 +121,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		LDAP		*ld;
 		int		rc, finished;
 		int		msgID = -1;
-		struct timeval	timeout;
+		struct timeval	ldaptimeout;
 		LDAPMessage	*result;
 		LDAPMessage	*e;
 		strbuffer_t	*response;
@@ -131,7 +130,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		req = (ldap_data_t *) t->privdata;
 		ludp = (LDAPURLDesc *) req->ldapdesc;
 
-		gettimeofday(&starttime, &tz);
+		getntimer(&starttime);
 
 		/* Initiate session with the LDAP server */
 		dbgprintf("Initiating LDAP session for host %s port %d\n",
@@ -220,12 +219,12 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		/* Wait for bind to complete */
 		rc = 0; finished = 0; 
-		timeout.tv_sec = querytimeout;
-		timeout.tv_usec = 0L;
+		ldaptimeout.tv_sec = querytimeout;
+		ldaptimeout.tv_usec = 0L;
 		while( ! finished ) {
 			int rc2;
 
-			rc = ldap_result(ld, msgID, LDAP_MSG_ONE, &timeout, &result);
+			rc = ldap_result(ld, msgID, LDAP_MSG_ONE, &ldaptimeout, &result);
 			dbgprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
 			if(rc == -1) {
 				finished = 1;
@@ -270,9 +269,9 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		if (req->ldapstatus != 0) continue;
 
 		/* Now do the search. With a timeout */
-		timeout.tv_sec = querytimeout;
-		timeout.tv_usec = 0L;
-		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &timeout, &result);
+		ldaptimeout.tv_sec = querytimeout;
+		ldaptimeout.tv_usec = 0L;
+		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &ldaptimeout, &result);
 
 		if(rc == LDAP_TIMEOUT) {
 			req->ldapstatus = BBGEN_LDAP_TIMEOUT;
@@ -287,7 +286,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			continue;
 		}
 
-		gettimeofday(&endtime, &tz);
+		getntimer(&endtime);
 
 		response = newstrbuffer(0);
 		sprintf(buf, "Searching LDAP for %s yields %d results:\n\n", 
@@ -445,7 +444,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
 		sprintf(msgline, "\nSeconds: %u.%02u\n",
-			(unsigned int)req->duration.tv_sec, (unsigned int)req->duration.tv_usec / 10000);
+			(unsigned int)req->duration.tv_sec, (unsigned int)req->duration.tv_nsec / 10000000);
 
 		addtostatus(msgline);
 	}
@@ -466,7 +465,7 @@ void show_ldap_test_results(service_t *ldaptest)
 		printf("URL        : %s\n", t->testspec);
 		printf("Time spent : %u.%02u\n", 
 			(unsigned int)req->duration.tv_sec, 
-			(unsigned int)req->duration.tv_usec / 10000);
+			(unsigned int)req->duration.tv_nsec / 10000000);
 		printf("LDAP output:\n%s\n", textornull(req->output));
 		printf("------------------------------------------------------\n");
 	}

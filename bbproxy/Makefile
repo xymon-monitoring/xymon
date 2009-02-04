@@ -8,10 +8,10 @@ BBCGIOBJS = bbmessage.o
 all: $(PROGRAMS)
 
 bbproxy: $(PROXYOBJS)
-	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
 bbmessage.cgi: $(BBCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libbbgen.a $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
 ################################################
 # Default compilation rules

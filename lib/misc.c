@@ -452,8 +452,7 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 	else {
 		/* The parent runs here */
 		int done = 0, didterm = 0, n;
-		struct timeval tmo, timestamp, cutoff;
-		struct timezone tz;
+		struct timespec tmo, timestamp, cutoff;
 
 		close(pfd[1]);
 
@@ -463,22 +462,26 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 			errprintf("Could not set non-blocking reads on pipe: %s\n", strerror(errno));
 		}
 
-		gettimeofday(&cutoff, &tz);
+		getntimer(&cutoff);
 		cutoff.tv_sec += timeout;
 
 		while (!done) {
 			fd_set readfds;
 
-			gettimeofday(&timestamp, &tz);
+			getntimer(&timestamp);
 			tvdiff(&timestamp, &cutoff, &tmo);
-			if ((tmo.tv_sec < 0) || (tmo.tv_usec < 0)) {
+			if ((tmo.tv_sec < 0) || (tmo.tv_nsec < 0)) {
 				/* Timeout already happened */
 				n = 0;
 			}
 			else {
+				struct timeval selecttmo;
+
+				selecttmo.tv_sec = tmo.tv_sec;
+				selecttmo.tv_usec = tmo.tv_nsec / 1000;
 				FD_ZERO(&readfds);
 				FD_SET(pfd[0], &readfds);
-				n = select(pfd[0]+1, &readfds, NULL, NULL, &tmo);
+				n = select(pfd[0]+1, &readfds, NULL, NULL, &selecttmo);
 			}
 
 			if (n == -1) {

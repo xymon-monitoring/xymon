@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	char *msg;
 	int running;
 	int argi, seq;
-	struct timeval *timeout = NULL;
+	struct timespec *timeout = NULL;
 	pcre *hostexp = NULL;
 	pcre *exhostexp = NULL;
 	pcre *testexp = NULL;
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 			 */
 			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
 			timeout->tv_sec = (atoi(argv[argi]+10));
-			timeout->tv_usec = 0;
+			timeout->tv_nsec = 0;
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
 		 * like strtok(), but can handle empty elements.
 		 */
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < MAX_META)) {
 			metadata[metacount++] = p;

@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {
-		char *items[20] = { NULL, };
+		char *metadata[20] = { NULL, };
 		int metacount;
 		char *p;
 		char *statusdata = "";
@@ -148,27 +148,29 @@ int main(int argc, char *argv[])
 			*p = '\0'; 
 			statusdata = msg_data(p+1);
 		}
-		p = gettok(msg, "|"); metacount = 0;
+		metacount = 0;
+		memset(&metadata, 0, sizeof(metadata));
+		p = gettok(msg, "|");
 		while (p && (metacount < 20)) {
-			items[metacount++] = p;
+			metadata[metacount++] = p;
 			p = gettok(NULL, "|");
 		}
 
-		if ((metacount > 9) && (strncmp(items[0], "@@stachg", 8) == 0)) {
+		if ((metacount > 9) && (strncmp(metadata[0], "@@stachg", 8) == 0)) {
 			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp */
-			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
-			hostname = items[4];
-			testname = items[5];
-			newcolor = parse_color(items[7]);
-			oldcolor = parse_color(items[8]);
-			lastchg  = atoi(items[9]);
-			disabletime = atoi(items[10]);
-			dismsg   = items[11];
-			downtimeactive = (atoi(items[12]) > 0);
-			clienttstamp = atoi(items[13]);
+			sscanf(metadata[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
+			hostname = metadata[4];
+			testname = metadata[5];
+			newcolor = parse_color(metadata[7]);
+			oldcolor = parse_color(metadata[8]);
+			lastchg  = atoi(metadata[9]);
+			disabletime = atoi(metadata[10]);
+			dismsg   = metadata[11];
+			downtimeactive = (atoi(metadata[12]) > 0);
+			clienttstamp = atoi(metadata[13]);
 
 			if (newcolor == -1) {
-				errprintf("Bad message: newcolor is unknown '%s'\n", items[7]);
+				errprintf("Bad message: newcolor is unknown '%s'\n", metadata[7]);
 				continue;
 			}
 
@@ -362,7 +364,7 @@ int main(int argc, char *argv[])
 
 					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
 					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
-					fprintf(histlogfd, "Message received from %s\n", items[2]);
+					fprintf(histlogfd, "Message received from %s\n", metadata[2]);
 					if (clienttstamp) fprintf(histlogfd, "Client data ID %d\n", (int) clienttstamp);
 					fclose(histlogfd);
 				}
@@ -413,10 +415,10 @@ int main(int argc, char *argv[])
 
 			xfree(hostnamecommas);
 		}
-		else if ((metacount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0))) {
+		else if ((metacount > 3) && ((strncmp(metadata[0], "@@drophost", 10) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 
-			hostname = items[3];
+			hostname = metadata[3];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -480,11 +482,11 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(statuslogfn);
 			}
 		}
-		else if ((metacount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0))) {
+		else if ((metacount > 4) && ((strncmp(metadata[0], "@@droptest", 10) == 0))) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
-			hostname = items[3];
-			testname = items[4];
+			hostname = metadata[3];
+			testname = metadata[4];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -515,12 +517,12 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(statuslogfn);
 			}
 		}
-		else if ((metacount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0))) {
+		else if ((metacount > 4) && ((strncmp(metadata[0], "@@renamehost", 12) == 0))) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			char *newhostname;
 
-			hostname = items[3];
-			newhostname = items[4];
+			hostname = metadata[3];
+			newhostname = metadata[4];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -591,13 +593,13 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(statuslogfn); MEMUNDEFINE(newlogfn);
 			}
 		}
-		else if ((metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 
-			hostname = items[3];
-			testname = items[4];
-			newtestname = items[5];
+			hostname = metadata[3];
+			testname = metadata[4];
+			newtestname = metadata[5];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -631,10 +633,10 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(newstatuslogfn); MEMUNDEFINE(statuslogfn);
 			}
 		}
-		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
+		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
 		}
-		else if (strncmp(items[0], "@@logrotate", 11) == 0) {
+		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
 			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);

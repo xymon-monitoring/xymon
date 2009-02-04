@@ -523,7 +523,7 @@ int main(int argc, char *argv[])
 		char *p;
 		int metacount;
 		char *hostname = NULL, *testname = NULL;
-		struct timeval timeout;
+		struct timespec timeout;
 		time_t now;
 		int anytogo;
 		activealerts_t *awalk;
@@ -539,7 +539,7 @@ int main(int argc, char *argv[])
 			if (notiflogfd) notiflogfd = freopen(notiflogfn, "a", notiflogfd);
 		}
 
-		timeout.tv_sec = 60; timeout.tv_usec = 0;
+		timeout.tv_sec = 60; timeout.tv_nsec = 0;
 		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout);
 		if (msg == NULL) {
 			running = 0;
@@ -565,6 +565,7 @@ int main(int argc, char *argv[])
 		 * like strtok(), but can handle empty elements.
 		 */
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < 19)) {
 			metadata[metacount] = p;

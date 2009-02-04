@@ -40,7 +40,7 @@ static char rcsid[] = "$Id: hobbitd_worker.c,v 1.27 2006-07-20 16:06:41 henrik E
 
 #define EXTRABUFSPACE 4095
 
-unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
+unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timespec *timeout)
 {
 	static unsigned int seqnum = 0;
 	static char *idlemsg = NULL;
@@ -53,7 +53,7 @@ unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq,
 	static char *endpos;	/* Where the first message ends */
 	static char *fillpos;	/* Where our unused data ends (the \0 byte) */
 
-	struct timeval cutoff;
+	struct timespec cutoff;
 	struct timezone tz;
 	int maymove, needmoredata;
 	char *endsrch;		/* Where in the buffer do we start looking for the end-message marker */
@@ -137,12 +137,12 @@ startagain:
 
 	if (timeout) {
 		/* Calculate when the read should timeout. */
-		gettimeofday(&cutoff, &tz);
+		getntimer(&cutoff);
 		cutoff.tv_sec += timeout->tv_sec;
-		cutoff.tv_usec += timeout->tv_usec;
-		if (cutoff.tv_usec > 1000000) {
+		cutoff.tv_nsec += timeout->tv_nsec;
+		if (cutoff.tv_nsec > 1000000000) {
 			cutoff.tv_sec += 1;
-			cutoff.tv_usec -= 1000000;
+			cutoff.tv_nsec -= 1000000000;
 		}
 	}
 
@@ -163,7 +163,8 @@ startagain:
 	needmoredata = (endpos == NULL);
 	while (needmoredata) {
 		/* Fill buffer with more data until we get an end-of-message marker */
-		struct timeval now, tmo;
+		struct timespec now, tmo;
+		struct timeval selecttmo;
 		fd_set fdread;
 		int res;
 		size_t bufleft = bufsz - (fillpos - buf);
@@ -195,12 +196,13 @@ startagain:
 
 		if (timeout) {
 			/* How long time until the timeout ? */
-			gettimeofday(&now, &tz);
-			tmo.tv_sec = cutoff.tv_sec - now.tv_sec;
-			tmo.tv_usec = cutoff.tv_usec - now.tv_usec;
-			if (tmo.tv_usec < 0) {
-				tmo.tv_sec--;
-				tmo.tv_usec += 1000000;
+
+			getntimer(&now);
+			selecttmo.tv_sec = cutoff.tv_sec - now.tv_sec;
+			selecttmo.tv_usec = (cutoff.tv_nsec - now.tv_nsec) / 1000;
+			if (selecttmo.tv_usec < 0) {
+				selecttmo.tv_sec--;
+				selecttmo.tv_usec += 1000000;
 			}
 		}
 

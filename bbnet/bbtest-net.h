@@ -139,7 +139,7 @@ typedef struct testitem_t {
 	strbuffer_t	*banner;
 	char		*certinfo;
 	time_t		certexpires;
-	struct timeval	duration;
+	struct timespec	duration;
 
 	/* For badTEST handling: Need to track downtime duration and poll count */
 	int		badtest[3];

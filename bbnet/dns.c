@@ -53,7 +53,7 @@ typedef struct dnsitem_t {
 	struct in_addr addr;
 	struct dnsitem_t *next;
 	int failed;
-	struct timeval resolvetime;
+	struct timespec resolvetime;
 } dnsitem_t;
 
 static RbtHandle dnscache;
@@ -104,10 +104,9 @@ static char *find_dnscache(char *hostname)
 static void dns_simple_callback(void *arg, int status, int timeout, struct hostent *hent)
 {
 	struct dnsitem_t *dnsc = (dnsitem_t *)arg;
-	struct timeval etime;
-	struct timezone tz;
+	struct timespec etime;
 
-	gettimeofday(&etime, &tz);
+	getntimer(&etime);
 	tvdiff(&dnsc->resolvetime, &etime, &dnsc->resolvetime);
 	pending_dns_count--;
 
@@ -177,7 +176,6 @@ static void dns_ares_queue_run(ares_channel channel)
 
 void add_host_to_dns_queue(char *hostname)
 {
-	struct timezone tz;
 	dnsitem_t *dnsc;
 
 	dns_init();
@@ -197,7 +195,7 @@ void add_host_to_dns_queue(char *hostname)
 	pending_dns_count++;
 
 	dnsc->name = strdup(hostname);
-	gettimeofday(&dnsc->resolvetime, &tz);
+	getntimer(&dnsc->resolvetime);
 	rbtInsert(dnscache, dnsc->name, dnsc);
 
 	if (use_ares_lookup) {
@@ -284,9 +282,8 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	struct ares_options options;
 	struct in_addr serveraddr;
 	int status;
-	struct timeval starttime, endtime;
-	struct timeval *tspent;
-	struct timezone tz;
+	struct timespec starttime, endtime;
+	struct timespec *tspent;
 	char msg[100];
 	char *tspec, *tst;
 	dns_resp_t *responses = NULL;
@@ -312,7 +309,7 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	}
 
 	tspec = strdup(hostname);
-	gettimeofday(&starttime, &tz);
+	getntimer(&starttime);
 	tst = strtok(tspec, ",");
 	do {
 		dns_resp_t *newtest = (dns_resp_t *)malloc(sizeof(dns_resp_t));
@@ -335,7 +332,7 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 
 	dns_ares_queue_run(channel);
 
-	gettimeofday(&endtime, &tz);
+	getntimer(&endtime);
 	tspent = tvdiff(&starttime, &endtime, NULL);
 	clearstrbuffer(banner); status = ARES_SUCCESS;
 	strcpy(tspec, hostname);
@@ -352,7 +349,7 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 		tst = strtok(NULL, ",");
 	}
 	xfree(tspec);
-	sprintf(msg, "\nSeconds: %u.%03u\n", (unsigned int)tspent->tv_sec, (unsigned int)tspent->tv_usec/1000);
+	sprintf(msg, "\nSeconds: %u.%03u\n", (unsigned int)tspent->tv_sec, (unsigned int)tspent->tv_nsec/1000000);
 	addtobuffer(banner, msg);
 
 	ares_destroy(channel);

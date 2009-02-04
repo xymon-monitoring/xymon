@@ -19,6 +19,7 @@ static char rcsid[] = "$Id: timefunc.c,v 1.31 2006-07-20 16:06:41 henrik Exp $";
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "libbbgen.h"
 
@@ -42,6 +43,36 @@ time_t getcurrenttime(time_t *retparm)
 	}
 	else
 		return time(retparm);
+}
+
+
+time_t gettimer(void)
+{
+	int res;
+	struct timespec t;
+
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	res = clock_gettime(CLOCK_MONOTONIC, &t);
+	return (time_t) t.tv_sec;
+#else
+	return time(NULL);
+#endif
+}
+
+
+void getntimer(struct timespec *tp)
+{
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	int res;
+	res = clock_gettime(CLOCK_MONOTONIC, tp);
+#else
+	struct timeval t;
+	struct timezone tz;
+
+	gettimeofday(&t, &tz);
+	tp->tv_sec = t.tv_sec;
+	tp->tv_nsec = 1000*t.tv_usec;
+#endif
 }
 
 
@@ -123,20 +154,20 @@ char *timespec_text(char *spec)
 	return STRBUF(result);
 }
 
-struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result)
+struct timespec *tvdiff(struct timespec *tstart, struct timespec *tend, struct timespec *result)
 {
-	static struct timeval resbuf;
+	static struct timespec resbuf;
 
 	if (result == NULL) result = &resbuf;
 
 	result->tv_sec = tend->tv_sec;
-	result->tv_usec = tend->tv_usec;
-	if (result->tv_usec < tstart->tv_usec) {
+	result->tv_nsec = tend->tv_nsec;
+	if (result->tv_nsec < tstart->tv_nsec) {
 		result->tv_sec--;
-		result->tv_usec += 1000000;
+		result->tv_nsec += 1000000000;
 	}
 	result->tv_sec  -= tstart->tv_sec;
-	result->tv_usec -= tstart->tv_usec;
+	result->tv_nsec -= tstart->tv_nsec;
 
 	return result;
 }

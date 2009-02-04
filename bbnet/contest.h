@@ -78,6 +78,8 @@ typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
 	int  fd;                        /* Socket filedescriptor */
+	time_t lastactive;
+	time_t cutoff;
 	char *tspec;
 	unsigned int bytesread;
 	unsigned int byteswritten;
@@ -86,9 +88,9 @@ typedef struct tcptest_t {
 	int  connres;                   /* connect() status returned */
 	int  open;                      /* Result - is it open? */
 	int  errcode;                   /* Pick up any errors */
-	struct timeval timestart;	/* Starttime of connection attempt */
-	struct timeval duration;	/* Duration of connection attempt */
-	struct timeval totaltime;	/* Duration of the full transfer */
+	struct timespec timestart;	/* Starttime of connection attempt */
+	struct timespec duration;	/* Duration of connection attempt */
+	struct timespec totaltime;	/* Duration of the full transfer */
 
 	/* Data we send */
 	unsigned char *sendtxt;

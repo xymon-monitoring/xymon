@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 
 	errprintf("hobbitlaunch starting\n");
 	while (running) {
-		time_t now = time(NULL);
+		time_t now = gettimer();
 
 		if (now >= nextcfgload) {
 			load_config(config);

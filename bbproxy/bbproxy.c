@@ -81,7 +81,8 @@ typedef struct conn_t {
 	int connectpending;
 	time_t conntime;
 	int madetocombo;
-	struct timeval timelimit, arrival;
+	struct timespec arrival;
+	struct timespec timelimit;
 	unsigned char *buf, *bufp, *bufpsave;
 	unsigned int bufsize, buflen, buflensave;
 	struct conn_t *next;
@@ -96,7 +97,7 @@ typedef struct conn_t {
 #define MAX_OPEN_SOCKS 256
 #define MINIMUM_FOR_COMBO 2048	/* To start merging messages, at least have 2 KB free */
 #define MAXIMUM_FOR_COMBO 32768 /* Max. size of a combined message */
-#define COMBO_DELAY 250000	/* Delay before sending a combo message (in microseconds) */
+#define COMBO_DELAY 250000000	/* Delay before sending a combo message (in nanoseconds) */
 
 int keeprunning = 1;
 time_t laststatus = 0;
@@ -129,11 +130,11 @@ void sigmisc_handler(int signum)
 	}
 }
 
-int overdue(struct timeval *now, struct timeval *limit)
+int overdue(struct timespec *now, struct timespec *limit)
 {
 	if (now->tv_sec < limit->tv_sec) return 0;
 	else if (now->tv_sec > limit->tv_sec) return 1;
-	else return (now->tv_usec >= limit->tv_usec);
+	else return (now->tv_nsec >= limit->tv_nsec);
 }
 
 static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
@@ -231,7 +232,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 
 	/* Statistics info */
-	time_t startuptime = time(NULL);
+	time_t startuptime = gettimer();
 	unsigned long msgs_total = 0;
 	unsigned long msgs_total_last = 0;
 	unsigned long msgs_combined = 0;
@@ -242,7 +243,7 @@ int main(int argc, char *argv[])
 	unsigned long msgs_combo = 0;
 	unsigned long msgs_other = 0;
 	unsigned long msgs_recovered = 0;
-	struct timeval timeinqueue = { 0, 0 };
+	struct timespec timeinqueue = { 0, 0 };
 
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
@@ -490,8 +491,7 @@ int main(int argc, char *argv[])
 	do {
 		fd_set fdread, fdwrite;
 		int maxfd;
-		struct timeval tmo;
-		struct timezone tz;
+		struct timespec tmo;
 		int n, idx;
 		conn_t *cwalk, *ctmp;
 		time_t ctime;
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
 		int combining = 0;
 
 		/* See if it is time for a status report */
-		if (proxyname && ((now = time(NULL)) >= (laststatus+300))) {
+		if (proxyname && ((now = gettimer()) >= (laststatus+300))) {
 			conn_t *stentry;
 			int ccount = 0;
 			unsigned long bufspace = 0;
@@ -514,9 +514,9 @@ int main(int argc, char *argv[])
 			stentry->state = P_REQ_READY;
 			stentry->csocket = stentry->ssocket = -1;
 			stentry->clientip = &stentry->caddr.sin_addr;
-			gettimeofday(&stentry->arrival, &tz);
+			getntimer(&stentry->arrival);
 			stentry->timelimit.tv_sec = stentry->arrival.tv_sec + timeout;
-			stentry->timelimit.tv_usec = stentry->arrival.tv_usec;
+			stentry->timelimit.tv_nsec = stentry->arrival.tv_nsec;
 			stentry->bufsize = BUFSZ_INC;
 			stentry->buf = (char *)malloc(stentry->bufsize);
 			stentry->next = chead;
@@ -537,7 +537,7 @@ int main(int argc, char *argv[])
 				avgtime = 0;
 			}
 			else {
-				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_usec/1000) / msgs_sent;
+				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_nsec/1000) / msgs_sent;
 			}
 
 			p = stentry->buf;
@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
 			/* Clear the summary collection totals */
 			laststatus = now;
 			msgs_total_last = msgs_total;
-			timeinqueue.tv_sec = timeinqueue.tv_usec = 0;
+			timeinqueue.tv_sec = timeinqueue.tv_nsec = 0;
 
 			stentry->buflen = strlen(stentry->buf);
 			stentry->bufp = stentry->buf + stentry->buflen;
@@ -650,11 +650,11 @@ int main(int argc, char *argv[])
 
 					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
 						msgs_status++;
-						gettimeofday(&cwalk->timelimit, &tz);
-						cwalk->timelimit.tv_usec += COMBO_DELAY;
-						if (cwalk->timelimit.tv_usec >= 1000000) {
+						getntimer(&cwalk->timelimit);
+						cwalk->timelimit.tv_nsec += COMBO_DELAY;
+						if (cwalk->timelimit.tv_nsec >= 1000000000) {
 							cwalk->timelimit.tv_sec++;
-							cwalk->timelimit.tv_usec -= 1000000;
+							cwalk->timelimit.tv_nsec -= 1000000000;
 						}
 
 						/*
@@ -687,11 +687,11 @@ int main(int argc, char *argv[])
 						cwalk->buflen = strlen(cwalk->buf);
 						cwalk->bufp = cwalk->buf + cwalk->buflen;
 
-						gettimeofday(&cwalk->timelimit, &tz);
-						cwalk->timelimit.tv_usec += COMBO_DELAY;
-						if (cwalk->timelimit.tv_usec >= 1000000) {
+						getntimer(&cwalk->timelimit);
+						cwalk->timelimit.tv_nsec += COMBO_DELAY;
+						if (cwalk->timelimit.tv_nsec >= 1000000000) {
 							cwalk->timelimit.tv_sec++;
-							cwalk->timelimit.tv_usec -= 1000000;
+							cwalk->timelimit.tv_nsec -= 1000000000;
 						}
 
 						currmsg = cwalk->buf+12; /* Skip pre-def. "combo\n" and message "combo\n" */
@@ -756,7 +756,7 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->bufpsave;
 				cwalk->buflen = cwalk->buflensave;
 
-				ctime = time(NULL);
+				ctime = gettimer();
 				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
 					dbgprintf("Delaying retry of connection\n");
 					break;
@@ -795,7 +795,7 @@ int main(int argc, char *argv[])
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
 					cwalk->state = P_REQ_SENDING;
 					cwalk->connectpending = 1;
-					gettimeofday(&cwalk->timelimit, &tz);
+					getntimer(&cwalk->timelimit);
 					cwalk->timelimit.tv_sec += timeout;
 					/* Fallthrough */
 				}
@@ -841,21 +841,21 @@ int main(int argc, char *argv[])
 				}
 
 				if (cwalk->arrival.tv_sec > 0) {
-					struct timeval departure;
+					struct timespec departure;
 
-					gettimeofday(&departure, &tz);
+					getntimer(&departure);
 					timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
-					if (departure.tv_usec >= cwalk->arrival.tv_usec) {
-						timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
+					if (departure.tv_nsec >= cwalk->arrival.tv_nsec) {
+						timeinqueue.tv_nsec += (departure.tv_nsec - cwalk->arrival.tv_nsec);
 					}
 					else {
 						timeinqueue.tv_sec--;
-						timeinqueue.tv_usec += (1000000 + departure.tv_usec - cwalk->arrival.tv_usec);
+						timeinqueue.tv_nsec += (1000000000 + departure.tv_nsec - cwalk->arrival.tv_nsec);
 					}
 
-					if (timeinqueue.tv_usec > 1000000) {
+					if (timeinqueue.tv_nsec > 1000000000) {
 						timeinqueue.tv_sec++;
-						timeinqueue.tv_usec -= 1000000;
+						timeinqueue.tv_nsec -= 1000000000;
 					}
 				}
 				else {
@@ -868,7 +868,7 @@ int main(int argc, char *argv[])
 				}
 				else {
 					cwalk->state = P_RESP_READING;
-					gettimeofday(&cwalk->timelimit, &tz);
+					getntimer(&cwalk->timelimit);
 					cwalk->timelimit.tv_sec += timeout;
 				}
 				/* Fallthrough */
@@ -884,7 +884,7 @@ int main(int argc, char *argv[])
 				cwalk->ssocket = -1;
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_RESP_SENDING;
-				gettimeofday(&cwalk->timelimit, &tz);
+				getntimer(&cwalk->timelimit);
 				cwalk->timelimit.tv_sec += timeout;
 				/* Fall through */
 
@@ -917,7 +917,7 @@ int main(int argc, char *argv[])
 					close(cwalk->ssocket); sockcount--;
 					cwalk->ssocket = -1;
 				}
-				cwalk->arrival.tv_sec = cwalk->arrival.tv_usec = 0;
+				cwalk->arrival.tv_sec = cwalk->arrival.tv_nsec = 0;
 				cwalk->bufp = cwalk->bufp; 
 				cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
@@ -932,7 +932,7 @@ int main(int argc, char *argv[])
 			  case P_REQ_COMBINING:
 				/* See if we can combine some "status" messages into a "combo" */
 				combining++;
-				gettimeofday(&tmo, &tz);
+				getntimer(&tmo);
 				if ((cwalk->buflen < MINIMUM_FOR_COMBO) && !overdue(&tmo, &cwalk->timelimit)) {
 					conn_t *cextra;
 
@@ -1022,21 +1022,21 @@ int main(int argc, char *argv[])
 		}
 		else {
 			static time_t lastlog = 0;
-			if ((now = time(NULL)) < (lastlog+30)) {
+			if ((now = gettimer()) < (lastlog+30)) {
 				lastlog = now;
 				errprintf("Squelching incoming connections, sockcount=%d\n", sockcount);
 			}
 		}
 
 		if (combining) {
-			tmo.tv_sec = 0; tmo.tv_usec = COMBO_DELAY;
+			tmo.tv_sec = 0; tmo.tv_nsec = COMBO_DELAY;
 		}
 		else {
-			tmo.tv_sec = 1; tmo.tv_usec = 0;
+			tmo.tv_sec = 1; tmo.tv_nsec = 0;
 		}
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
 		if (n <= 0) {
-			gettimeofday(&tmo, &tz);
+			getntimer(&tmo);
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				switch (cwalk->state) {
 				  case P_REQ_READING:
@@ -1094,7 +1094,7 @@ int main(int argc, char *argv[])
 							cwalk->sendtries--;
 							cwalk->state = P_REQ_CONNECTING;
 							cwalk->conntries = CONNECT_TRIES;
-							cwalk->conntime = time(NULL);
+							cwalk->conntime = gettimer();
 						}
 					}
 					break;
@@ -1141,7 +1141,7 @@ int main(int argc, char *argv[])
 				newconn->serverip = NULL;
 				newconn->conntries = 0;
 				newconn->sendtries = 0;
-				newconn->timelimit.tv_sec = newconn->timelimit.tv_usec = 0;
+				newconn->timelimit.tv_sec = newconn->timelimit.tv_nsec = 0;
 
 				/*
 				 * Why this ? Because we like to merge small status messages
@@ -1167,9 +1167,9 @@ int main(int argc, char *argv[])
 					sockcount++;
 					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 					newconn->state = P_REQ_READING;
-					gettimeofday(&newconn->arrival, &tz);
+					getntimer(&newconn->arrival);
 					newconn->timelimit.tv_sec = newconn->arrival.tv_sec + timeout;
-					newconn->timelimit.tv_usec = newconn->arrival.tv_usec;
+					newconn->timelimit.tv_nsec = newconn->arrival.tv_nsec;
 				}
 			}
 		}

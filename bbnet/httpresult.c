@@ -237,7 +237,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 			sprintf(urlmsg, "\nSeconds: %5d.%02d\n\n", 
 				(unsigned int)req->tcptest->totaltime.tv_sec, 
-				(unsigned int)req->tcptest->totaltime.tv_usec / 10000 );
+				(unsigned int)req->tcptest->totaltime.tv_nsec / 10000000 );
 			addtostatus(urlmsg);
 			xfree(urlmsg);
 		}

@@ -47,6 +47,7 @@ static char rcsid[] = "$Id: contest.c,v 1.88 2006-08-01 07:11:13 henrik Exp $";
 
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
 #define SSLSETUP_PENDING -1		/* Magic value for tcptest_t->sslrunning while handshaking */
+#define SLOWLIMSECS	  5		/* How long a socket may be inactive before deemed slow */
 
 /* See http://www.openssl.org/docs/apps/ciphers.html for cipher strings */
 char *ciphersmedium = "MEDIUM";	/* Must be formatted for openssl library */
@@ -153,17 +154,18 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	}
 
 	tcp_stats_total++;
-	newtest = (tcptest_t *) malloc(sizeof(tcptest_t));
+	newtest = (tcptest_t *) calloc(1, sizeof(tcptest_t));
 
 	newtest->tspec = (tspec ? strdup(tspec) : NULL);
 	newtest->fd = -1;
+	newtest->lastactive = 0;
 	newtest->bytesread = 0;
 	newtest->byteswritten = 0;
 	newtest->open = 0;
 	newtest->connres = -1;
 	newtest->errcode = CONTEST_ENOERROR;
-	newtest->duration.tv_sec = newtest->duration.tv_usec = 0;
-	newtest->totaltime.tv_sec = newtest->totaltime.tv_usec = 0;
+	newtest->duration.tv_sec = newtest->duration.tv_nsec = 0;
+	newtest->totaltime.tv_sec = newtest->totaltime.tv_nsec = 0;
 
 	memset(&newtest->addr, 0, sizeof(newtest->addr));
 	newtest->addr.sin_family = PF_INET;
@@ -232,12 +234,12 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 }
 
 
-static void get_connectiontime(tcptest_t *item, struct timeval *timestamp)
+static void get_connectiontime(tcptest_t *item, struct timespec *timestamp)
 {
 	tvdiff(&item->timestart, timestamp, &item->duration);
 }
 
-static void get_totaltime(tcptest_t *item, struct timeval *timestamp)
+static void get_totaltime(tcptest_t *item, struct timespec *timestamp)
 {
 	tvdiff(&item->timestart, timestamp, &item->totaltime);
 }
@@ -715,7 +717,8 @@ void do_tcp_tests(int timeout, int concurrency)
 {
 	int		selres;
 	fd_set		readfds, writefds;
-	struct timeval	tmo, timestamp, cutoff;
+	struct timespec	timestamp;
+	int 		absmaxconcurrency;
 
 	int		activesockets = 0; /* Number of allocated sockets */
 	int		pending = 0;	   /* Total number of tests */
@@ -730,7 +733,6 @@ void do_tcp_tests(int timeout, int concurrency)
 	char		msgbuf[4096];
 
 	struct rlimit lim;
-	struct timezone tz;
 
 	/* If timeout or concurrency are 0, set them to reasonable defaults */
 	if (timeout == 0) timeout = 10;	/* seconds */
@@ -739,24 +741,46 @@ void do_tcp_tests(int timeout, int concurrency)
 	 * Decide how many tests to run in parallel.
 	 * If no --concurrency set by user, default to (FD_SETSIZE / 4) - typically 256.
 	 * But never go above the ressource limit that is set, or above FD_SETSIZE.
+	 * And we save 10 fd's for stdio, libs etc.
 	 */
+	absmaxconcurrency = (FD_SETSIZE - 10);
+	getrlimit(RLIMIT_NOFILE, &lim); 
+	if ((lim.rlim_cur > 10) && ((lim.rlim_cur - 10) < absmaxconcurrency)) absmaxconcurrency = (lim.rlim_cur - 10);
+
 	if (concurrency == 0) concurrency = (FD_SETSIZE / 4);
-	getrlimit(RLIMIT_NOFILE, &lim); if (lim.rlim_cur < concurrency) concurrency = lim.rlim_cur;
-	if (concurrency > FD_SETSIZE) concurrency = FD_SETSIZE;
-	if (concurrency > 10) concurrency -= 10; /* Save 10 descriptors for stuff like stdin/stdout/stderr and shared libs */
+	if (concurrency > absmaxconcurrency) concurrency = absmaxconcurrency;
+
+	dbgprintf("Concurrency evaluation: rlim_cur=%lu, FD_SETSIZE=%d, absmax=%d, initial=%d\n", 
+		  lim.rlim_cur, FD_SETSIZE, absmaxconcurrency, concurrency);
 
 	/* How many tests to do ? */
 	for (item = thead; (item); item = item->next) pending++; 
 	firstactive = nextinqueue = thead;
-	dbgprintf("About to do %d TCP tests running %d in parallel\n", pending, concurrency);
+	dbgprintf("About to do %d TCP tests running %d in parallel, abs.max %d\n", 
+		  pending, concurrency, absmaxconcurrency);
 
 	while (pending > 0) {
+		int slowrunning, cclimit;
+		time_t slowtimestamp = gettimer() - SLOWLIMSECS;
+
 		/*
 		 * First, see if we need to allocate new sockets and initiate connections.
 		 */
-		sockok = 1;
-		while (sockok && nextinqueue && (activesockets < concurrency)) {
 
+		/*
+		 * We start by counting the number of tests where the latest activity
+		 * happened more than SLOWLIMSECS seconds ago. These are ignored when counting
+		 * how many more tests we can start concurrenly. But never exceed the absolute 
+		 * max. number of concurrently open sockets possible.
+		 */
+		for (item=firstactive, slowrunning = 0; (item != nextinqueue); item=item->next) {
+			if ((item->fd > -1) && (item->lastactive < slowtimestamp)) slowrunning++;
+		}
+		cclimit = concurrency + slowrunning; 
+		if (cclimit > absmaxconcurrency) cclimit = absmaxconcurrency;
+
+		sockok = 1;
+		while (sockok && nextinqueue && (activesockets < cclimit)) {
 			/*
 			 * We need to allocate a new socket that has O_NONBLOCK set.
 			 */
@@ -768,10 +792,10 @@ void do_tcp_tests(int timeout, int concurrency)
 					/*
 					 * Initiate the connection attempt ... 
 					 */
-					gettimeofday(&nextinqueue->timestart, &tz);
+					getntimer(&nextinqueue->timestart);
+					nextinqueue->lastactive = nextinqueue->timestart.tv_sec;
+					nextinqueue->cutoff = nextinqueue->timestart.tv_sec + timeout + 1;
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
-					cutoff.tv_sec = nextinqueue->timestart.tv_sec + timeout + 1;
-					cutoff.tv_usec = 0;
 
 					/*
 					 * Did it work ?
@@ -850,7 +874,8 @@ void do_tcp_tests(int timeout, int concurrency)
 		}
 
 		/* Ready to go - we have a bunch of connections being established */
-		dbgprintf("%d tests pending - %d active tests\n", pending, activesockets);
+		dbgprintf("%d tests pending - %d active tests, %d slow tests\n", 
+			  pending, activesockets, slowrunning);
 
 restartselect:
 		/*
@@ -894,27 +919,13 @@ restartselect:
 		/*
 		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
-		gettimeofday(&timestamp, &tz);
-		tvdiff(&timestamp, &cutoff, &tmo);
-		if ((tmo.tv_sec < 0) || (tmo.tv_usec < 0)) {
-			/*
-			 * This is actually OK, and it does happen occasionally.
-			 * It just means that we passed the cutoff-threshold.
-			 * So set selres=0 (timeout) without doing the select,
-			 * and we will act as correctly.
-			 */
-			dbgprintf("select timeout is < 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
-					tmo.tv_sec, tmo.tv_usec,
-					cutoff.tv_sec, cutoff.tv_usec,
-					timestamp.tv_sec, timestamp.tv_usec);
-			selres = 0;
-		}
-		else if (maxfd < 0) {
+		if (maxfd < 0) {
 			errprintf("select - no active fd's found, but pending is %d\n", pending);
 			selres = 0;
 		}
 		else {
-			dbgprintf("Doing select\n");
+			struct timeval tmo = { 1, 0 };
+			dbgprintf("Doing select with maxfd=%d\n", maxfd);
 			selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
 			dbgprintf("select returned %d\n", selres);
 		}
@@ -928,9 +939,7 @@ restartselect:
 			switch (selerr) {
 			   case EINTR : errprintf("select failed - EINTR\n"); goto restartselect;
 			   case EBADF : errprintf("select failed - EBADF\n"); break;
-			   case EINVAL: errprintf("select failed - EINVAL, maxfd=%d, tmo=%u.%06u\n", maxfd, 
-						(unsigned int)tmo.tv_sec, (unsigned int)tmo.tv_usec); 
-					break;
+			   case EINVAL: errprintf("select failed - EINVAL\n"); break;
 			   case ENOMEM: errprintf("select failed - ENOMEM\n"); break;
 			   default    : errprintf("Unknown select() error %d\n", selerr); break;
 			}
@@ -940,16 +949,17 @@ restartselect:
 			return;
 		}
 
+		/* selres == 0 (timeout) isn't special - just go through the list of active tests */
+
 		/* Fetch the timestamp so we can tell how long the connect took */
-		gettimeofday(&timestamp, &tz);
+		getntimer(&timestamp);
 
 		/* Now find out which connections had something happen to them */
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {		/* Only active sockets have this */
-				if ((selres == 0) || (timestamp.tv_sec >= cutoff.tv_sec)) {
+				if (timestamp.tv_sec > item->cutoff) {
 					/* 
-					 * Timeout on all active connection attempts.
-					 * Close all sockets.
+					 * Request timed out.
 					 */
 					if (item->readpending) {
 						/* Final read timeout - just shut this socket */
@@ -973,6 +983,8 @@ restartselect:
 						int do_talk = 1;
 						unsigned char *outbuf = NULL;
 						unsigned int outlen = 0;
+
+						item->lastactive = timestamp.tv_sec;
 
 						if (!item->open) {
 							/*
@@ -1090,6 +1102,8 @@ restartselect:
 						int wantmoredata = 0;
 						int datadone = 0;
 
+						item->lastactive = timestamp.tv_sec;
+
 						/*
 						 * We may be in the process of setting up an SSL connection
 						 */
@@ -1183,8 +1197,8 @@ void show_tcp_test_results(void)
 				inet_ntoa(item->addr.sin_addr), 
 				ntohs(item->addr.sin_port),
 				item->open, item->connres, item->errcode,
-				(unsigned int)item->duration.tv_sec, (unsigned int)item->duration.tv_usec,
-				(unsigned int)item->totaltime.tv_sec, (unsigned int)item->totaltime.tv_usec);
+				(unsigned int)item->duration.tv_sec, (unsigned int)(item->duration.tv_nsec/1000),
+				(unsigned int)item->totaltime.tv_sec, (unsigned int)(item->totaltime.tv_nsec/1000));
 
 		if (item->banner && (item->bannerbytes == strlen(item->banner))) {
 			printf("banner='%s' (%d bytes)",

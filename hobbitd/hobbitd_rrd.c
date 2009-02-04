@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
 
 		/* Parse the meta-data */
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < MAX_META)) {
 			metadata[metacount++] = p;

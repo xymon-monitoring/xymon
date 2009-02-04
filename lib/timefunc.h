@@ -16,10 +16,12 @@ extern char *timestamp;
 
 extern time_t getcurrenttime(time_t *retparm);
 #define time(X) getcurrenttime(X)
+extern time_t gettimer(void);
+extern void getntimer(struct timespec *tp);
 
 extern void init_timestamp(void);
 extern char *timespec_text(char *spec);
-extern struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result);
+extern struct timespec *tvdiff(struct timespec *tstart, struct timespec *tend, struct timespec *result);
 extern int within_sla(char *l, int defresult);
 extern char *check_downtime(char *hostname, char *testname);
 extern int periodcoversnow(char *tag);

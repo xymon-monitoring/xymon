@@ -1,6 +1,32 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.2.2    * * *
+           * * *   Release notes for Xymon 4.2.3    * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+
+Changes from 4.2.2 -> 4.2.3
+===========================
+* Xymon server-side modules could get out of sync in their
+  communication with the hobbitd daemon, logging lots of
+  "garbled data" to the logfile and not processing data.
+  (E.g. graphs would stop updating). Fix for hobbitd_channel 
+  module backported from trunk.
+* NCV module can now track negative numbers in the graphs.
+* Changed timing code in various modules to use the 
+  POSIX 2001.1 clock_gettime() routine, which is guaranteed
+  not to go backwards. This should fix various problems
+  that happened if the server time was adjusted backwards
+  either manuallly of through NTP.
+* Fixed various bugs in the DNS lookup code, which could
+  cause crashes of the network tests, especially when
+  doing multiple DNS tests.
+* Changed C-ARES to version 1.6.0. Dropped support for
+  older versions.
+* TCP network checks will now run more tests in parallel,
+  when there are network connections that are slow to
+  respond (e.g. because the server is unreachable). This
+  should speed up the time required to perform all 
+  network tests.
+* New "hostlist" webpage added, to generate spreadsheet-
+  formatted lists of the hosts in Xymon.
 
 Changes from 4.2.0 -> 4.2.2
 ===========================

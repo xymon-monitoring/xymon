@@ -35,7 +35,7 @@ typedef struct {
 
 	int    ldapcolor;		/* Final color reported */
 	char   *faileddeps;
-	struct timeval duration;
+	struct timespec duration;
 
 	char   *certinfo;               /* Data about SSL certificate */
 	time_t certexpires;             /* Expiry time for SSL cert */

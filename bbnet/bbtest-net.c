@@ -154,7 +154,7 @@ void dump_testitems(void)
 			printf("\tOpen        : %d\n", iwalk->open);
 			printf("\tBanner      : %s\n", textornull(STRBUF(iwalk->banner)));
 			printf("\tcertinfo    : %s\n", textornull(iwalk->certinfo));
-			printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_usec);
+			printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_nsec / 1000);
 			printf("\tbadtest     : %d:%d:%d\n", iwalk->badtest[0], iwalk->badtest[1], iwalk->badtest[2]);
 			printf("\tdowncount    : %d started %s", iwalk->downcount, ctime(&iwalk->downstart));
 			printf("\n");
@@ -340,7 +340,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->banner = newstrbuffer(0);
 	newtest->certinfo = NULL;
 	newtest->certexpires = 0;
-	newtest->duration.tv_sec = newtest->duration.tv_usec = -1;
+	newtest->duration.tv_sec = newtest->duration.tv_nsec = -1;
 	newtest->downcount = 0;
 	newtest->badtest[0] = newtest->badtest[1] = newtest->badtest[2] = 0;
 	newtest->next = NULL;
@@ -1636,7 +1636,7 @@ void send_results(service_t *service, int failgoesclear)
 
 		if (t->duration.tv_sec != -1) {
 			sprintf(msgtext, "\nSeconds: %u.%02u\n", 
-				(unsigned int)t->duration.tv_sec, (unsigned int)t->duration.tv_usec / 10000);
+				(unsigned int)t->duration.tv_sec, (unsigned int)t->duration.tv_nsec / 10000000);
 			addtostatus(msgtext);
 		}
 		addtostatus("\n\n");
@@ -2168,7 +2168,7 @@ int main(int argc, char *argv[])
 					t->certinfo = testresult->certinfo;
 					t->certexpires = testresult->certexpires;
 					t->duration.tv_sec = testresult->duration.tv_sec;
-					t->duration.tv_usec = testresult->duration.tv_usec;
+					t->duration.tv_nsec = testresult->duration.tv_nsec;
 
 					/* Binary data in banner ... */
 					for (i=0, p=STRBUF(t->banner); (i < STRBUFLEN(t->banner)); i++, p++) {
