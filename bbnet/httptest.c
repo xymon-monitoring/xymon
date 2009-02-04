@@ -26,80 +26,10 @@ static char rcsid[] = "$Id: httptest.c,v 1.87 2006-07-20 16:06:41 henrik Exp $";
 
 #include "bbtest-net.h"
 #include "contest.h"
+#include "httpcookies.h"
 #include "httptest.h"
 #include "dns.h"
 
-
-typedef struct cookielist_t {
-	char *host;
-	int  tailmatch;
-	char *path;
-	int  secure;
-	char *name;
-	char *value;
-	struct cookielist_t *next;
-} cookielist_t;
-
-static cookielist_t *cookiehead = NULL;
-
-static void load_cookies(void)
-{
-	static int loaded = 0;
-
-	char cookiefn[PATH_MAX];
-	FILE *fd;
-	char l[4096];
-	char *c_host, *c_path, *c_name, *c_value;
-	int c_tailmatch, c_secure;
-	time_t c_expire;
-	char *p;
-
-	if (loaded) return;
-	loaded = 1;
-
-	sprintf(cookiefn, "%s/etc/cookies", xgetenv("BBHOME"));
-	fd = fopen(cookiefn, "r");
-	if (fd == NULL) return;
-
-	c_host = c_path = c_name = c_value = NULL;
-	c_tailmatch = c_secure = 0;
-	c_expire = 0;
-
-	while (fgets(l, sizeof(l), fd)) {
-		p = strchr(l, '\n'); 
-		if (p) {
-			*p = '\0';
-			p--;
-			if ((p > l) && (*p == '\r')) *p = '\0';
-		}
-
-		if ((l[0] != '#') && strlen(l)) {
-			int fieldcount = 0;
-			p = strtok(l, "\t");
-			if (p) { fieldcount++; c_host = p; p = strtok(NULL, "\t"); }
-			if (p) { fieldcount++; c_tailmatch = (strcmp(p, "TRUE") == 0); p = strtok(NULL, "\t"); }
-			if (p) { fieldcount++; c_path = p; p = strtok(NULL, "\t"); }
-			if (p) { fieldcount++; c_secure = (strcmp(p, "TRUE") == 0); p = strtok(NULL, "\t"); }
-			if (p) { fieldcount++; c_expire = atol(p); p = strtok(NULL, "\t"); }
-			if (p) { fieldcount++; c_name = p; p = strtok(NULL, "\t"); }
-			if (p) { fieldcount++; c_value = p; p = strtok(NULL, "\t"); }
-			if ((fieldcount == 7) && (c_expire > time(NULL))) {
-				/* We have a valid cookie */
-				cookielist_t *ck = (cookielist_t *)malloc(sizeof(cookielist_t));
-				ck->host = strdup(c_host);
-				ck->tailmatch = c_tailmatch;
-				ck->path = strdup(c_path);
-				ck->secure = c_secure;
-				ck->name = strdup(c_name);
-				ck->value = strdup(c_value);
-				ck->next = cookiehead;
-				cookiehead = ck;
-			}
-		}
-	}
-
-	fclose(fd);
-}
 
 int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 {

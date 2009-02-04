@@ -52,6 +52,7 @@ extern struct rpcent *getrpcbyname(char *);
 #include "contest.h"
 #include "httptest.h"
 #include "httpresult.h"
+#include "httpcookies.h"
 #include "ldaptest.h"
 
 char *reqenv[] = {
@@ -2084,6 +2085,7 @@ int main(int argc, char *argv[])
 
 	svctree = rbtNew(name_compare);
 	testhosttree = rbtNew(name_compare);
+	cookietree = rbtNew(string_compare);
 	init_timestamp();
 	envcheck(reqenv);
 	fqdn = get_fqdn();
@@ -2324,6 +2326,9 @@ int main(int argc, char *argv[])
 		/* Save frequent-test list */
 		save_frequenttestlist(argc, argv);
 	}
+
+	/* Save session cookies - every time */
+	save_session_cookies();
 
 	shutdown_ldap_library();
 	add_timestamp("bbtest-net completed");

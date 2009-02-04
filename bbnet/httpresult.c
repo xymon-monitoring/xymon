@@ -24,6 +24,7 @@ static char rcsid[] = "$Id: httpresult.c,v 1.25 2006-07-20 16:06:41 henrik Exp $
 
 #include "bbtest-net.h"
 #include "contest.h"
+#include "httpcookies.h"
 #include "httpresult.h"
 
 static int statuscolor(testedhost_t *h, long status)
@@ -130,6 +131,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		/* Skip the data-reports for now */
 		if (t->senddata) continue;
+
+		/* Grab session cookies */
+		update_session_cookies(host->hostname, req->bburl.desturl->host, req->headers);
 
 		totalreports++;
 		if (req->bburl.okcodes || req->bburl.badcodes) {
