@@ -81,6 +81,8 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_DOWNTIME]            = "BBH_DOWNTIME";
 	bbh_item_key[BBH_SSLDAYS]              = "ssldays=";
 	bbh_item_name[BBH_SSLDAYS]             = "BBH_SSLDAYS";
+	bbh_item_key[BBH_SSLMINBITS]           = "sslbits=";
+	bbh_item_name[BBH_SSLMINBITS]          = "BBH_SSLMINBITS";
 	bbh_item_key[BBH_DEPENDS]              = "depends=";
 	bbh_item_name[BBH_DEPENDS]             = "BBH_DEPENDS";
 	bbh_item_key[BBH_BROWSER]              = "browser=";

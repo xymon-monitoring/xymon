@@ -169,6 +169,13 @@ enable this option to see which tests have large replies.
 .br
 Default: 0 (disabled).
 
+.IP --validity=N
+Make the test results valid for N minutes before they go purple. 
+By default test results are valid for 30 minutes; if you run bbtest-net
+less often than that, the results will go purple before the next run
+of bbtest-net. This option lets you change how long the status is 
+valid.
+
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
 .IP --checkresponse[=COLOR]
 When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 
@@ -248,6 +255,15 @@ Disables reporting of the SSL certificate check.
 Determines the number of days before an SSL certificate
 expires, where bbtest-net will generate a warning or
 alarm status for the SSL certificate column.
+
+.IP --sslbits=N
+Enables checking that the encryption supported by the
+SSL protocol uses an encryption key of at least N bits.
+E.g. to trigger an alert if your SSL-enabled website 
+supports less than 128 bits of encryption, use "--sslbits=128".
+Note: This can be enabled on a per-host basis using the
+"sslbits=N" setting in 
+.I bb-hosts(5)
 
 
 .SH DEBUGGING OPTIONS
