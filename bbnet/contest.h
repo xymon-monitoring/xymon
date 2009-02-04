@@ -76,6 +76,7 @@ typedef void (*f_callback_final)(void *privdata);
 
 typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
+	char *srcaddr;
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
 	int  fd;                        /* Socket filedescriptor */
 	time_t lastactive;
@@ -185,7 +186,7 @@ extern unsigned int tcp_stats_connects;
 extern char *init_tcp_services(void);
 extern int default_tcp_port(char *svcname);
 extern void dump_tcp_services(void);
-extern tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
+extern tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt, char *srcip,
 			    char *tspec, int silent, unsigned char *reqmsg, 
 			    void *priv, f_callback_data datacallback, f_callback_final finalcallback);
 extern void do_tcp_tests(int timeout, int concurrency);

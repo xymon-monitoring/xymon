@@ -319,7 +319,7 @@ testedhost_t *init_testedhost(char *hostname)
 	return newhost;
 }
 
-testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec, 
+testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, char *testspec, 
                           int dialuptest, int reversetest, int alwaystruetest, int silenttest,
 			  int sendasdata)
 {
@@ -335,6 +335,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *testspec
 	newtest->silenttest = silenttest;
 	newtest->senddata = sendasdata;
 	newtest->testspec = (testspec ? strdup(testspec) : NULL);
+	newtest->srcip = (srcip ? strdup(srcip) : NULL);
 	newtest->privdata = NULL;
 	newtest->open = 0;
 	newtest->banner = newstrbuffer(0);
@@ -444,6 +445,7 @@ void load_tests(void)
 		while (testspec) {
 			service_t *s = NULL;
 			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
+			char *srcip = NULL;
 			int alwaystruetest = (bbh_item(hwalk, BBH_FLAG_NOCLEAR) != NULL);
 
 			if (bbh_item_idx(testspec) == -1) {
@@ -597,6 +599,13 @@ void load_tests(void)
 					char *option;
 					RbtIterator handle;
 
+					/* See if there's a source IP */
+					srcip = strchr(testspec, '@');
+					if (srcip) {
+						*srcip = '\0';
+						srcip++;
+					}
+
 					/* Remove any trailing ":s", ":q", ":Q", ":portnumber" */
 					option = strchr(testspec, ':'); 
 					if (option) { 
@@ -656,7 +665,7 @@ void load_tests(void)
 					testitem_t *newtest;
 
 					anytests = 1;
-					newtest = init_testitem(h, s, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
+					newtest = init_testitem(h, s, srcip, testspec, dialuptest, reversetest, alwaystruetest, silenttest, sendasdata);
 					newtest->next = s->items;
 					s->items = newtest;
 
@@ -673,7 +682,7 @@ void load_tests(void)
 			testitem_t *newtest;
 
 			anytests = 1;
-			newtest = init_testitem(h, pingtest, NULL, ping_dialuptest, ping_reversetest, 1, 0, 0);
+			newtest = init_testitem(h, pingtest, NULL, NULL, ping_dialuptest, ping_reversetest, 1, 0, 0);
 			newtest->next = pingtest->items;
 			pingtest->items = newtest;
 			h->dodns = 1;
@@ -2120,7 +2129,8 @@ int main(int argc, char *argv[])
 				if (!t->host->dnserror) {
 					strcpy(tname, s->testname);
 					if (s->namelen) tname[s->namelen] = '\0';
-					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL, 
+					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
+									   t->srcip,
 									   NULL, t->silenttest, NULL, 
 									   NULL, NULL, NULL);
 				}

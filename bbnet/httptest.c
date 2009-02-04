@@ -674,14 +674,16 @@ void add_http_test(testitem_t *t)
 		httptest->tcptest = add_tcp_test(httptest->bburl.desturl->ip, 
 						 httptest->bburl.desturl->port, 
 						 httptest->bburl.desturl->scheme,
-						 sslopt, t->testspec, t->silenttest, grabstrbuffer(httprequest), 
+						 sslopt, NULL,
+						 t->testspec, t->silenttest, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 	else {
 		httptest->tcptest = add_tcp_test(httptest->bburl.proxyurl->ip, 
 						 httptest->bburl.proxyurl->port, 
 						 httptest->bburl.proxyurl->scheme,
-						 sslopt, t->testspec, t->silenttest, grabstrbuffer(httprequest), 
+						 sslopt, NULL,
+						 t->testspec, t->silenttest, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 }

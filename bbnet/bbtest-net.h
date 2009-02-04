@@ -133,6 +133,7 @@ typedef struct testitem_t {
 	int		alwaystrue;	/* "~testname" flag */
 	int		silenttest;	/* "testname:s" flag */
 	int             senddata;       /* For tests that merely generate a "data" report */
+	char		*srcip;
 
 	/* These data may be filled in from the test engine private data */
 	int		open;		/* Is the service open ? NB: Shows true state of service, ignores flags */
