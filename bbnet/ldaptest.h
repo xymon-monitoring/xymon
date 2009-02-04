@@ -39,6 +39,7 @@ typedef struct {
 
 	char   *certinfo;               /* Data about SSL certificate */
 	time_t certexpires;             /* Expiry time for SSL cert */
+	int    mincipherbits;
 } ldap_data_t;
 
 extern char *ldap_library_version;

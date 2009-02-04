@@ -171,6 +171,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 				strncpy(m1, p, sizeof(m1)-1);
 				m1[sizeof(m1)-1] = '\0';
+
+				/* Only show the first line of the HTTP status description */
+				p = strchr(m1, '\n'); if (p) *p = '\0';
 			}
 			else {
 				sprintf(m1, "HTTP error %ld", req->httpstatus);
@@ -189,7 +192,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		if (anydown) {
 			firsttest->downcount++; 
-			if(firsttest->downcount == 1) firsttest->downstart = time(NULL);
+			if(firsttest->downcount == 1) firsttest->downstart = getcurrenttime(NULL);
 		} 
 		else firsttest->downcount = 0;
 
@@ -205,8 +208,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		/* Send off the http status report */
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s", 
-			commafy(host->hostname), svcname, colorname(color), timestamp);
+		sprintf(msgline, "status+%d %s.%s %s %s", 
+			validity, commafy(host->hostname), svcname, colorname(color), timestamp);
 		addtostatus(msgline);
 		addtostrstatus(msgtext);
 		addtostatus("\n");
@@ -414,8 +417,8 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 
 		msgline = (char *)malloc(4096 + (2 * strlen(req->url)));
 		init_status(color);
-		sprintf(msgline, "status %s.%s %s %s: %s\n", 
-			commafy(host->hostname), conttest, colorname(color), timestamp, cause);
+		sprintf(msgline, "status+%d %s.%s %s %s: %s\n", 
+			validity, commafy(host->hostname), conttest, colorname(color), timestamp, cause);
 		addtostatus(msgline);
 
 		if (!got_data) {

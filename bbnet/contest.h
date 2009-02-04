@@ -109,6 +109,7 @@ typedef struct tcptest_t {
 	SSL  *ssldata;			/* SSL data (socket) pointer */
 	char *certinfo;			/* Certificate info (subject+expiretime) */
 	time_t certexpires;		/* Expiretime in time_t format */
+	int mincipherbits;              /* Bits in the weakest encryption supported */
 	int sslrunning;			/* Track state of an SSL session */
 	int sslagain;			/* SSL read/write needs more data */
 
