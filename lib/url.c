@@ -456,8 +456,8 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	static urlelem_t desturlbuf, proxyurlbuf;
 
 	char *inp, *p;
-	char *urlstart, *poststart, *expstart, *proxystart;
-	urlstart = poststart = expstart = proxystart = NULL;
+	char *urlstart, *poststart, *postcontenttype, *expstart, *proxystart, *okstart, *notokstart;
+	urlstart = poststart = postcontenttype = expstart = proxystart = okstart = notokstart = NULL;
 
 	/* If called with no buffer, use our own static one */
 	if (bburl == NULL) {
@@ -504,14 +504,35 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	} else if (strncmp(inp, "nopost=", 7) == 0) {
 		bburl->testtype = BBTEST_NOPOST;
 		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
+	} else if (strncmp(inp, "soap;", 5) == 0) {
+		bburl->testtype = BBTEST_SOAP;
+		urlstart = inp+5;
+	} else if (strncmp(inp, "soap=", 5) == 0) {
+		bburl->testtype = BBTEST_SOAP;
+		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+	} else if (strncmp(inp, "nosoap;", 7) == 0) {
+		bburl->testtype = BBTEST_NOSOAP;
+		urlstart = inp+7;
+	} else if (strncmp(inp, "nosoap=", 7) == 0) {
+		bburl->testtype = BBTEST_NOSOAP;
+		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
 	} else if (strncmp(inp, "type;", 5) == 0) {
 		bburl->testtype = BBTEST_TYPE;
 		urlstart = inp+5;
 	} else if (strncmp(inp, "type=", 5) == 0) {
 		bburl->testtype = BBTEST_TYPE;
 		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
-	}
-	else {
+	} else if (strncmp(inp, "httpstatus;", 11) == 0) {
+		bburl->testtype = BBTEST_STATUS;
+		urlstart = strchr(inp, ';') + 1;
+	} else if (strncmp(inp, "httpstatus=", 11) == 0) {
+		bburl->testtype = BBTEST_STATUS;
+		urlstart = gethttpcolumn(inp+11, &bburl->columnname);
+	} else if (strncmp(inp, "http=", 5) == 0) {
+		/* Plain URL test, but in separate column */
+		bburl->testtype = BBTEST_PLAIN;
+		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+	} else {
 		/* Plain URL test */
 		bburl->testtype = BBTEST_PLAIN;
 		urlstart = inp;
@@ -537,30 +558,68 @@ char *decode_url(char *testspec, bburl_t *bburl)
 
 	  case BBTEST_POST:
 	  case BBTEST_NOPOST:
+	  case BBTEST_SOAP:
 		  poststart = strchr(urlstart, ';');
 		  if (poststart) {
 			  *poststart = '\0';
 			  poststart++;
+
+			/* See if "poststart" points to a content-type */
+			if (strncasecmp(poststart, "(content-type=", 14) == 0) {
+				postcontenttype = poststart+14;
+				poststart = strchr(postcontenttype, ')');
+				if (poststart) {
+					*poststart = '\0';
+					poststart++;
+				}
+			}
+
+			if (poststart) {
 			  expstart = strchr(poststart, ';');
 			  if (expstart) {
 				  *expstart = '\0';
 				  expstart++;
 			  }
-			  else {
-				  if (bburl->testtype == BBTEST_NOPOST) {
+			}
+
+			if ((bburl->testtype == BBTEST_NOPOST) && (!expstart)) {
 			  		errprintf("content-check, but no content-data in '%s'\n", testspec);
 			  		bburl->testtype = BBTEST_PLAIN;
 				  }
 			  }
-		  }
 		  else {
 			  errprintf("post-check, but no post-data in '%s'\n", testspec);
 			  bburl->testtype = BBTEST_PLAIN;
 		  }
 		  break;
+
+	  case BBTEST_STATUS:
+		okstart = strchr(urlstart, ';');
+		if (okstart) {
+			*okstart = '\0';
+			okstart++;
+
+			notokstart = strchr(okstart, ';');
+			if (notokstart) {
+				*notokstart = '\0';
+				notokstart++;
+			}
+		}
+
+		if (okstart && (strlen(okstart) == 0)) okstart = NULL;
+		if (notokstart && (strlen(notokstart) == 0)) notokstart = NULL;
+
+		if (!okstart && !notokstart) {
+			errprintf("HTTP status check, but no OK/not-OK status codes in '%s'\n", testspec);
+			bburl->testtype = BBTEST_PLAIN;
+		}
+
+		if (okstart) bburl->okcodes = strdup(okstart);
+		if (notokstart) bburl->badcodes = strdup(notokstart);
 	}
 
 	if (poststart) getescapestring(poststart, &bburl->postdata, NULL);
+	if (postcontenttype) getescapestring(postcontenttype, &bburl->postcontenttype, NULL);
 	if (expstart)  getescapestring(expstart, &bburl->expdata, NULL);
 
 	p = strstr(urlstart, "/http://");

@@ -1282,7 +1282,7 @@ void show_tcp_test_results(void)
 		if (item->certinfo) {
 			printf(", certinfo='%s' (%u %s)", 
 				item->certinfo, (unsigned int)item->certexpires,
-				((item->certexpires > time(NULL)) ? "valid" : "expired"));
+				((item->certexpires > getcurrenttime(NULL)) ? "valid" : "expired"));
 		}
 		printf("\n");
 
@@ -1394,6 +1394,8 @@ int main(int argc, char *argv[])
 					(strncmp(argp, "nocont=", 7) == 0) ||
 					(strncmp(argp, "nopost;", 7) == 0) ||
 					(strncmp(argp, "nopost=", 7) == 0) ||
+					(strncmp(argp, "httpstatus;", 11) == 0) ||
+					(strncmp(argp, "httpstatus=", 11) == 0) ||
 					(strncmp(argp, "type;", 5) == 0)   ||
 					(strncmp(argp, "type=", 5) == 0) ) {
 

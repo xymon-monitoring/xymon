@@ -450,6 +450,7 @@ void add_http_test(testitem_t *t)
 
 	switch (httptest->bburl.testtype) {
 	  case BBTEST_PLAIN:
+	  case BBTEST_STATUS:
 		httptest->contentcheck = CONTENTCHECK_NONE;
 		break;
 
@@ -488,6 +489,7 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_POST:
+	  case BBTEST_SOAP:
 		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
@@ -497,6 +499,7 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_NOPOST:
+	  case BBTEST_NOSOAP:
 		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
@@ -590,11 +593,49 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "\r\n");
 
 	if (httptest->bburl.postdata) {
-		char contlenhdr[100];
+		char hdr[100];
+		int contlen = strlen(httptest->bburl.postdata);
 
-		sprintf(contlenhdr, "Content-Length: %d\r\n", strlen(httptest->bburl.postdata));
-		addtobuffer(httprequest, contlenhdr);
-		addtobuffer(httprequest, "Content-Type: application/x-www-form-urlencoded\r\n");
+		if (strncmp(httptest->bburl.postdata, "file:", 5) == 0) {
+			/* Load the POST data from a file */
+			FILE *pf = fopen(httptest->bburl.postdata+5, "r");
+			if (pf == NULL) {
+				errprintf("Cannot open POST data file %s\n", httptest->bburl.postdata+5);
+				xfree(httptest->bburl.postdata);
+				httptest->bburl.postdata = strdup("");
+				contlen = 0;
+			}
+			else {
+				struct stat st;
+
+				if (fstat(fileno(pf), &st) == 0) {
+					xfree(httptest->bburl.postdata);
+					httptest->bburl.postdata = (char *)malloc(st.st_size + 1);
+					fread(httptest->bburl.postdata, 1, st.st_size, pf);
+					*(httptest->bburl.postdata+st.st_size) = '\0';
+					contlen = st.st_size;
+				}
+				else {
+					errprintf("Cannot stat file %s\n", httptest->bburl.postdata+5);
+					httptest->bburl.postdata = strdup("");
+					contlen = 0;
+				}
+
+				fclose(pf);
+			}
+		}
+
+		addtobuffer(httprequest, "Content-type: ");
+		if      (httptest->bburl.postcontenttype) 
+			addtobuffer(httprequest, httptest->bburl.postcontenttype);
+		else if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) 
+			addtobuffer(httprequest, "application/soap+xml; charset=utf-8");
+		else 
+			addtobuffer(httprequest, "application/x-www-form-urlencoded");
+		addtobuffer(httprequest, "\r\n");
+
+		sprintf(hdr, "Content-Length: %d\r\n", contlen);
+		addtobuffer(httprequest, hdr);
 	}
 	{
 		char useragent[100];
@@ -655,6 +696,13 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "Accept: */*\r\n");
 	addtobuffer(httprequest, "Pragma: no-cache\r\n");
 
+	if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) {
+		/* Must provide a SOAPAction header */
+		addtobuffer(httprequest, "SOAPAction: ");
+		addtobuffer(httprequest, httptest->url);
+		addtobuffer(httprequest, "\r\n");
+	}
+	
 	/* The final blank line terminates the headers */
 	addtobuffer(httprequest, "\r\n");
 
