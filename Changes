@@ -1,3 +1,28 @@
+Changes from 4.2.2 -> 4.2.3 (04 Feb 2008)
+=========================================
+* Time-out code changed to use clock_gettime() with CLOCK_MONOTONIC
+* Bugfix for hobbitd/hobbitd_worker communication going out-of-sync
+  resulting in "garbled data" being logged and worker modules 
+  stopping.
+* NCV module now works with negative numbers.
+* Several bugfixes in DNS lookup code - could lead to crashes when
+  performing DNS tests.
+* Switch to C-ARES 1.6.0 - drop support for older versions.
+* Run more TCP tests in parallel by not waiting for very slow
+  connections to complete before starting new ones.
+* Merged new network tests from trunk: SOAP-over-HTTP,
+  SSL minimum cipher strength
+* Changed network test code to always report a validity period
+  for network tests, so it it possible to run network tests less
+  often than every 30 minutes (e.g. once an hour).
+* Make the content-type setting in HTTP POST tests configurable.
+* Make the source-address used for TCP tests configurable.
+* Make the acceptable HTTP result codes configurable.
+* Use and save HTTP session cookies.
+* Added "hostlist" web utility for spreadsheet-reporting of the
+  hosts in Hobbit.
+
+
 Changes from 4.2.0 -> 4.2.2 (01 Dec 2008)
 =========================================
 
