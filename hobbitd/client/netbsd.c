@@ -13,7 +13,7 @@
 static char netbsd_rcsid[] = "$Id: netbsd.c,v 1.17 2006-07-09 07:37:26 henrik Exp $";
 
 void handle_netbsd_client(char *hostname, char *clienttype, enum ostype_t os, 
-			  namelist_t *hinfo, char *sender, time_t timestamp, 
+			  void *hinfo, char *sender, time_t timestamp, 
 			  char *clientdata)
 {
 	char *timestr;

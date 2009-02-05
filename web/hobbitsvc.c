@@ -124,7 +124,7 @@ static int parse_query(void)
 
 void loadhostdata(char *hostname, char **ip, char **displayname)
 {
-	namelist_t *hinfo = NULL;
+	void *hinfo = NULL;
 
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 

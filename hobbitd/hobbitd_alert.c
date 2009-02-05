@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--test")) {
 			char *testhost = NULL, *testservice = NULL, *testpage = NULL, 
 			     *testcolor = "red", *testgroups = NULL;
-			namelist_t *hinfo;
+			void *hinfo;
 			int testdur = 0;
 			FILE *logfd = NULL;
 			activealerts_t *awalk = NULL;

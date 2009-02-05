@@ -13,7 +13,7 @@
 static char darwin_rcsid[] = "$Id: darwin.c,v 1.11 2006-07-09 07:37:26 henrik Exp $";
 
 void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os, 
-			  namelist_t *hinfo, char *sender, time_t timestamp, 
+			  void *hinfo, char *sender, time_t timestamp, 
 			  char *clientdata)
 {
 	char *timestr;

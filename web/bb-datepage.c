@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 			cookie = get_cookie("host");
 
 			if (cookie && *cookie) {
-				namelist_t *hinfo;
+				void *hinfo;
 
 				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 				hinfo = hostinfo(cookie);

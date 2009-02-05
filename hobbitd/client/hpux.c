@@ -13,7 +13,7 @@
 static char hpux_rcsid[] = "$Id: hpux.c,v 1.19 2006-07-09 07:37:26 henrik Exp $";
 
 void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os, 
-			namelist_t *hinfo, char *sender, time_t timestamp,
+			void *hinfo, char *sender, time_t timestamp,
 			char *clientdata)
 {
 	char *timestr;

@@ -420,7 +420,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 				scriptpid = fork();
 				if (scriptpid == 0) {
 					/* Setup all of the environment for a paging script */
-					namelist_t *hinfo;
+					void *hinfo;
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
 					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;

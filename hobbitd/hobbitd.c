@@ -603,7 +603,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					(int) log->acktime, msg);
 			}
 			else {
-				namelist_t *hi = hostinfo(hostname);
+				void *hi = hostinfo(hostname);
 				char *pagepath, *classname, *osname;
 
 				pagepath = (hi ? bbh_item(hi, BBH_PAGEPATH) : "");
@@ -1558,7 +1558,7 @@ void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
 void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 {
 	char *msgtext, *channelmsg;
-	namelist_t *hi;
+	void *hi;
 
 	dbgprintf("-> handle_notify\n");
 
@@ -1569,7 +1569,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 
 	/* Tell the pagers */
 	sprintf(channelmsg, "%s|%s|%s\n%s", 
-		hostname, (testname ? testname : ""), (hi ? hi->page->pagepath : ""), msgtext);
+		hostname, (testname ? testname : ""), (hi ? bbh_item(hi, BBH_PAGEPATH) : ""), msgtext);
 	posttochannel(pagechn, "notify", msg, sender, hostname, NULL, channelmsg);
 
 	xfree(channelmsg);
@@ -2124,7 +2124,7 @@ void setup_filter(char *buf, char *defaultfields,
 	dbgprintf("<- setup_filter: %s\n", buf);
 }
 
-int match_host_filter(namelist_t *hinfo, pcre *spage, pcre *shost, pcre *snet)
+int match_host_filter(void *hinfo, pcre *spage, pcre *shost, pcre *snet)
 {
 	char *match;
 
@@ -2158,7 +2158,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 	char *buf, *bufp;
 	int bufsz;
 	char *eoln;
-	namelist_t *hinfo = NULL;
+	void *hinfo = NULL;
 	char *acklist = NULL;
 	int needed, used;
 	enum boardfield_t f_type;
@@ -2254,7 +2254,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 }
 
 
-void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, namelist_t *hinfo)
+void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, void *hinfo)
 {
 	int f_idx;
 	char *buf, *bufp;
@@ -2817,7 +2817,7 @@ void do_message(conn_t *msg, char *origin)
 			firstlog = hwalk->logs;
 
 			if (hwalk->hosttype == H_NORMAL) {
-				namelist_t *hinfo = hostinfo(hwalk->hostname);
+				void *hinfo = hostinfo(hwalk->hostname);
 
 				if (!hinfo) {
 					errprintf("Hostname '%s' in tree, but no host-info\n", hwalk->hostname);
@@ -2896,7 +2896,7 @@ void do_message(conn_t *msg, char *origin)
 		bufp += sprintf(bufp, "<StatusBoard>\n");
 
 		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
-			namelist_t *hinfo;
+			void *hinfo;
 
 			hwalk = gettreeitem(rbhosts, hosthandle);
 			if (!hwalk) {
@@ -2965,7 +2965,7 @@ void do_message(conn_t *msg, char *origin)
 		 * Request for host configuration info
 		 *
 		 */
-		namelist_t *hinfo;
+		void *hinfo;
 		char *buf, *bufp;
 		int bufsz;
 		pcre *spage = NULL, *shost = NULL, *stest = NULL, *snet = NULL;
@@ -2991,7 +2991,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 		bufp = buf = (char *)malloc(bufsz);
 
-		for (hinfo = first_host(); (hinfo); hinfo = hinfo->next) {
+		for (hinfo = first_host(); (hinfo); hinfo = next_host(hinfo, 0)) {
 			if (!match_host_filter(hinfo, spage, shost, snet)) continue;
 			generate_hostinfo_outbuf(&buf, &bufp, &bufsz, hinfo);
 		}
@@ -3256,7 +3256,7 @@ void do_message(conn_t *msg, char *origin)
 				hname = NULL;
 			}
 			else {
-				namelist_t *hinfo = hostinfo(hname);
+				void *hinfo = hostinfo(hname);
 
 				handle_client(msg->buf, sender, hname, clientos, clientclass);
 
@@ -3785,7 +3785,7 @@ void check_purple_status(void)
 
 					/* Tests on dialup hosts go clear, not purple */
 					if (newcolor == COL_PURPLE) {
-						namelist_t *hinfo = hostinfo(hwalk->hostname);
+						void *hinfo = hostinfo(hwalk->hostname);
 						if (hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) newcolor = COL_CLEAR;
 					}
 

@@ -426,7 +426,7 @@ char *alttag(char *columnname, int color, int acked, int propagate, char *age)
 }
 
 
-static char *nameandcomment(namelist_t *host, char *hostname)
+static char *nameandcomment(void *host, char *hostname)
 {
 	static char *result = NULL;
 	char *cmt, *disp, *hname;
@@ -486,7 +486,7 @@ void setdoctarget(char *target)
 char *hostnamehtml(char *hostname, char *defaultlink)
 {
 	static char result[4096];
-	namelist_t *hinfo = hostinfo(hostname);
+	void *hinfo = hostinfo(hostname);
 	char *hostlinkurl;
 
 	if (!doctarget) doctarget = strdup("");

@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	struct sigaction sa;
-	namelist_t *hostwalk;
+	void *hostwalk;
 	time_t nexttimeout;
 
 	for (argi=1; (argi < argc); argi++) {
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
 			reloadtime = now + 600;
 
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-			for (hostwalk = first_host(); (hostwalk); hostwalk = hostwalk->next) {
+			for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk, 0)) {
 				char *hname;
 				clients_t *newclient;
 

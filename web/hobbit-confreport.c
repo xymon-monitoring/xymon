@@ -169,7 +169,7 @@ char *nkval(char *hname, char *tname, char *nkalerts)
 static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 {
 	int testi, rowcount, netcount;
-	namelist_t *hinfo = hostinfo(host->hostname);
+	void *hinfo = hostinfo(host->hostname);
 	char *dispname = NULL, *clientalias = NULL, *comment = NULL, *description = NULL, *pagepathtitle = NULL;
 	char *net = NULL, *nkalerts = NULL;
 	char *nktime = NULL, *downtime = NULL, *reporttime = NULL;
@@ -467,7 +467,7 @@ addtolist:
 	/* Do the alerts */
 	alert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 	alert->hostname = host->hostname;
-	alert->location = hinfo->page->pagepath;
+	alert->location = bbh_item(hinfo, BBH_PAGEPATH);
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
 		tname = strchr(nexthost, '|'); if (tname) { *tname = '\0'; tname++; }
 
 		if (nkonly) {
-			namelist_t *hinfo = hostinfo(hname);
+			void *hinfo = hostinfo(hname);
 			char *nkalerts = bbh_item(hinfo, BBH_NK);
 
 			if (newnkconfig) {

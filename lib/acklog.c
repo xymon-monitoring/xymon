@@ -79,7 +79,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		char ackedby[MAX_LINE_LEN], hosttest[MAX_LINE_LEN], color[10], ackmsg[MAX_LINE_LEN];
 		char ackfn[PATH_MAX];
 		char *testname;
-		namelist_t *hinfo;
+		void *hinfo;
 		int ok;
 
 		if (atol(l) >= cutoff) {

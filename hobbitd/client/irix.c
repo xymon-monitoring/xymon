@@ -13,7 +13,7 @@
 static char irix_rcsid[] = "$Id: irix.c,v 1.7 2006-07-09 20:30:32 henrik Exp $";
 
 void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os, 
-			namelist_t *hinfo, char *sender, time_t timestamp,
+			void *hinfo, char *sender, time_t timestamp,
 			char *clientdata)
 {
 	static pcre *memptn = NULL;

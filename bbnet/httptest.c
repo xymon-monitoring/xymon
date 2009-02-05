@@ -569,7 +569,7 @@ void add_http_test(testitem_t *t)
 	}
 	{
 		char useragent[100];
-		namelist_t *hinfo;
+		void *hinfo;
 		char *browser = NULL;
 
 		hinfo = hostinfo(t->host->hostname);

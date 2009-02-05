@@ -110,7 +110,7 @@ static char *stack_readdir(void)
 }
 
 
-static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
+static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta)
 {
 	static char *rrdlink = NULL;
 	static int rrdlinksize = 0;
@@ -120,12 +120,12 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 	hostdisplayname = bbh_item(host, BBH_DISPLAYNAME);
 	hostrrdgraphs = bbh_item(host, BBH_TRENDS);
 
-	dbgprintf("rrdlink_text: host %s, rrd %s\n", host->bbhostname, rrd->gdef->hobbitrrdname);
+	dbgprintf("rrdlink_text: host %s, rrd %s\n", bbh_item(host, BBH_HOSTNAME), rrd->gdef->hobbitrrdname);
 
 	/* If no rrdgraphs definition, include all with default links */
 	if (hostrrdgraphs == NULL) {
 		dbgprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
-		return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+		return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta);
 	}
 
@@ -141,7 +141,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 			dbgprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+			return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 						 HG_WITH_STALE_RRDS, wantmeta);
 		}
 		else {
@@ -193,7 +193,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 			myrrd->gdef->maxgraphs = 0;
 			myrrd->count = rrd->count;
 			myrrd->next = NULL;
-			partlink = hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
+			partlink = hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
 						     HG_WITH_STALE_RRDS, wantmeta);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
@@ -215,7 +215,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 	}
 	else {
 		/* It is included with the default graph */
-		return hobbit_graph_data(host->bbhostname, hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+		return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta);
 	}
 
@@ -225,7 +225,7 @@ static char *rrdlink_text(namelist_t *host, graph_t *rrd, hg_link_t wantmeta)
 
 char *generate_trends(char *hostname)
 {
-	namelist_t *myhost;
+	void *myhost;
 	char hostrrddir[PATH_MAX];
 	char *fn;
 	int anyrrds = 0;
@@ -249,14 +249,14 @@ char *generate_trends(char *hostname)
 		dbgprintf("Got RRD %s\n", fn);
 		anyrrds++;
 
-		for (rwalk = (graph_t *)myhost->data; (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
+		for (rwalk = (graph_t *)bbh_item(myhost, BBH_DATA); (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
 		if (rwalk == NULL) {
 			graph_t *newrrd = (graph_t *) malloc(sizeof(graph_t));
 
 			newrrd->gdef = graph;
 			newrrd->count = 1;
-			newrrd->next = (graph_t *)myhost->data;
-			myhost->data = (void *)newrrd;
+			newrrd->next = (graph_t *)bbh_item(myhost, BBH_DATA);
+			bbh_set_item(myhost, BBH_DATA, newrrd);
 			rwalk = newrrd;
 			dbgprintf("New rrd for host:%s, rrd:%s\n", hostname, graph->hobbitrrdname);
 		}
@@ -279,7 +279,7 @@ char *generate_trends(char *hostname)
 
 	graph = hobbitgraphs;
 	while (graph->hobbitrrdname) {
-		for (rwalk = (graph_t *)myhost->data; (rwalk && (rwalk->gdef->hobbitrrdname != graph->hobbitrrdname)); rwalk = rwalk->next) ;
+		for (rwalk = (graph_t *)bbh_item(myhost, BBH_DATA); (rwalk && (rwalk->gdef->hobbitrrdname != graph->hobbitrrdname)); rwalk = rwalk->next) ;
 		if (rwalk) {
 			int buflen;
 			char *onelink;

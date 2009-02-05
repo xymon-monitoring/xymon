@@ -279,7 +279,7 @@ int within_sla(char *timespec, int defresult)
 #ifndef CLIENTONLY
 char *check_downtime(char *hostname, char *testname)
 {
-	namelist_t *hinfo = hostinfo(hostname);
+	void *hinfo = hostinfo(hostname);
 	char *dtag;
 
 	if (hinfo == NULL) return NULL;
@@ -553,4 +553,25 @@ char *agestring(time_t secs)
 	*p = '\0';
 	return result;
 }
+
+time_t timestr2timet(char *s)
+{
+	/* Convert a string "YYYYMMDDHHMM" to time_t value */
+	struct tm tm;
+
+	if (strlen(s) != 12) {
+		errprintf("Invalid timestring in bb-hosts: '%s'\n", s);
+		return -1;
+	}
+
+	tm.tm_min = atoi(s+10); *(s+10) = '\0';
+	tm.tm_hour = atoi(s+8); *(s+8) = '\0';
+	tm.tm_mday = atoi(s+6); *(s+6) = '\0';
+	tm.tm_mon = atoi(s+4) - 1; *(s+4) = '\0';
+	tm.tm_year = atoi(s) - 1900; *(s+4) = '\0';
+	tm.tm_isdst = -1;
+	return mktime(&tm);
+}
+
+
 

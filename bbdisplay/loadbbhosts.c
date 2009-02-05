@@ -563,7 +563,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			curhost = NULL;
 		}
 		else if (sscanf(STRBUF(inbuf), "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
-			namelist_t *bbhost = NULL;
+			void *bbhost = NULL;
 			int dialup, nobb2, nktime = 1;
 			double warnpct = reportwarnlevel;
 			char *displayname, *clientalias, *comment, *description;
@@ -620,7 +620,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 			if (bbhost && (strlen(pgset) > 0)) {
 				/* Walk the clone-list and pick up the target pages for this host */
-				namelist_t *cwalk = bbhost;
+				void *cwalk = bbhost;
 				do {
 					bbval = bbh_item_walk(cwalk);
 					while (bbval) {
@@ -629,9 +629,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 						bbval = bbh_item_walk(NULL);
 					}
 
-					cwalk = cwalk->next;
+					cwalk = next_host(cwalk, 1);
 				} while (cwalk && 
-					 (strcmp(cwalk->bbhostname, bbhost->bbhostname) == 0) &&
+					 (strcmp(bbh_item(cwalk, BBH_HOSTNAME), bbh_item(bbhost, BBH_HOSTNAME)) == 0) &&
 					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );
 
 				/*

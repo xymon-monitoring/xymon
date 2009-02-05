@@ -97,7 +97,7 @@ static int downok(char *hostname, int nodownhosts)
 
 int main(int argc, char *argv[])
 { 
-	namelist_t *hostlist = NULL, *hwalk;
+	void *hwalk;
 	char *bbhostsfn = NULL;
 	char *netstring = NULL;
 	char *include2 = NULL;
@@ -161,8 +161,8 @@ int main(int argc, char *argv[])
 		exit(2);
 	}
 
-	hostlist = load_hostnames(bbhostsfn, include2, get_fqdn());
-	if (hostlist == NULL) {
+	load_hostnames(bbhostsfn, include2, get_fqdn());
+	if (first_host() == NULL) {
 		errprintf("Cannot load bb-hosts, or file is empty\n");
 		exit(3);
 	}
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 	p = xgetenv("BBLOCATION");
 	if (p && strlen(p)) netstring = strdup(p);
 
-	hwalk = hostlist;
+	hwalk = first_host();
 	wantedtags = newstrbuffer(0);
 	while (hwalk) {
 		char *curnet = bbh_item(hwalk, BBH_NET);
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		do { hwalk = hwalk->next; } while (hwalk && onlypreferredentry && (strcmp(curname, hwalk->bbhostname) == 0));
+		do { hwalk = next_host(hwalk, 1); } while (hwalk && onlypreferredentry && (strcmp(curname, bbh_item(hwalk, BBH_HOSTNAME)) == 0));
 	}
 
 	return 0;

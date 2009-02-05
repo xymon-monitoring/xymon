@@ -14,7 +14,7 @@
 static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.3 2006-08-03 09:50:23 henrik Exp $";
 
 void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os, 
-			  namelist_t *hinfo, char *sender, time_t timestamp,
+			  void *hinfo, char *sender, time_t timestamp,
 			  char *clientdata)
 {
         char *timestr;

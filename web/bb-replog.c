@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 	reportinfo_t repinfo;
 	int argi;
 	char *envarea = NULL;
-	namelist_t *hinfo;
+	void *hinfo;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {

@@ -207,7 +207,7 @@ static int fetch_status(char *hostname)
 
 static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 {
-	namelist_t *hi = hostinfo(hostname);
+	void *hi = hostinfo(hostname);
 	activealerts_t *alert;
 	char l[1024];
 	int i, rcount;
@@ -218,7 +218,7 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
-	alert->location = (hi ? hi->page->pagepath : "");
+	alert->location = (hi ? bbh_item(hi, BBH_PAGEPATH) : "");
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
@@ -598,9 +598,9 @@ char *generate_info(char *hostname)
 {
 	strbuffer_t *infobuf;
 	char l[MAX_LINE_LEN];
-	namelist_t *hostwalk;
+	void *hostwalk;
 	char *val;
-	namelist_t *clonewalk;
+	void *clonewalk;
 	int ping, first, gotstatus;
 	int alertcolors, alertinterval;
 
@@ -691,13 +691,13 @@ char *generate_info(char *hostname)
 		xgetenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 	addtobuffer(infobuf, l);
 
-	clonewalk = hostwalk->next;
-	while (clonewalk && (strcmp(hostname, clonewalk->bbhostname) == 0)) {
+	clonewalk = next_host(hostwalk, 1);
+	while (clonewalk && (strcmp(hostname, bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
 		val = bbh_item(clonewalk, BBH_PAGEPATH);
 		sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
 			xgetenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 		addtobuffer(infobuf, l);
-		clonewalk = clonewalk->next;
+		clonewalk = next_host(clonewalk, 1);
 	}
 	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");

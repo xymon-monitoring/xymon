@@ -172,7 +172,7 @@ void print_colheaders(FILE *output, RbtHandle rbcolumns)
 
 void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio, int firsthost)
 {
-	namelist_t *hinfo;
+	void *hinfo;
 	char *dispname, *ip, *key;
 	time_t now;
 	RbtIterator colhandle;

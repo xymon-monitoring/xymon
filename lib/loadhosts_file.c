@@ -5,14 +5,14 @@
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c,v 1.27 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid_file[] = "$Id: loadhosts_file.c 5819 2008-09-30 16:37:31Z storner $";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {
@@ -45,8 +45,9 @@ static int pagematch(pagelist_t *pg, char *name)
 	}
 }
 
-namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
+int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 {
+	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	static void *bbhfiles = NULL;
 	FILE *bbhosts;
 	int ip1, ip2, ip3, ip4, groupid, pageidx;
@@ -60,7 +61,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	if (bbhfiles) {
 		if (!stackfmodified(bbhfiles)){
 			dbgprintf("No files modified, skipping reload of %s\n", bbhostsfn);
-			return namehead;
+			return 1;
 		}
 		else {
 			stackfclist(&bbhfiles);
@@ -77,7 +78,7 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	pageidx = groupid = 0;
 
 	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
-	if (bbhosts == NULL) return NULL;
+	if (bbhosts == NULL) return -1;
 
 	inbuf = newstrbuffer(0);
 	htree = rbtNew(name_compare);
@@ -295,6 +296,6 @@ namelist_t *load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 
 	build_hosttree();
 
-	return namehead;
+	return 0;
 }
 
