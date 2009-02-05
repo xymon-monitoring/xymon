@@ -30,11 +30,11 @@ strbuffer_t *newstrbuffer(int initialsize)
 	
 	newbuf = calloc(1, sizeof(strbuffer_t));
 
-	if (initialsize) {
-		newbuf->s = (char *)malloc(initialsize);
-		*(newbuf->s) = '\0';
-		newbuf->sz = initialsize;
-	}
+	if (!initialsize) initialsize = 4096;
+
+	newbuf->s = (char *)malloc(initialsize);
+	*(newbuf->s) = '\0';
+	newbuf->sz = initialsize;
 
 	return newbuf;
 }

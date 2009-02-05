@@ -684,6 +684,9 @@ char **setup_commandargs(char *cmdline, char **cmd)
 
 long long str2ll(char *s, char **errptr)
 {
+#ifdef HAVE_STRTOLL
+	return strtoll(s, errptr, 10);
+#else
 	long long result = 0;
 	int negative = 0;
 	char *inp;
@@ -700,6 +703,7 @@ long long str2ll(char *s, char **errptr)
 	if (negative) result = -result;
 
 	return result;
+#endif
 }
 int checkalert(char *alertlist, char *testname)
 {

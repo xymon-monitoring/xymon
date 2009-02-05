@@ -44,6 +44,8 @@ int parse_color(char *colortext)
 	char inpcolor[10];
 	int n;
 
+	if (!colortext) return -1;
+
 	MEMDEFINE(inpcolor);
 
 	strncpy(inpcolor, colortext, 7);
@@ -83,6 +85,8 @@ int parse_color(char *colortext)
 
 int eventcolor(char *colortext)
 {
+	if (!colortext) return -1;
+
 	if 	(strcmp(colortext, "cl") == 0)	return COL_CLEAR;
 	else if (strcmp(colortext, "bl") == 0)	return COL_BLUE;
 	else if (strcmp(colortext, "pu") == 0)	return COL_PURPLE;

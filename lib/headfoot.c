@@ -962,15 +962,15 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 
 		else if (strcmp(t_start, "NKEDITWKDAYS") == 0) {
-			fprintf(output, wkdayselect('*', "All days", 1));
-			fprintf(output, wkdayselect('W', "Mon-Fri", 0));
-			fprintf(output, wkdayselect('1', "Monday", 0));
-			fprintf(output, wkdayselect('2', "Tuesday", 0));
-			fprintf(output, wkdayselect('3', "Wednesday", 0));
-			fprintf(output, wkdayselect('4', "Thursday", 0));
-			fprintf(output, wkdayselect('5', "Friday", 0));
-			fprintf(output, wkdayselect('6', "Saturday", 0));
-			fprintf(output, wkdayselect('0', "Sunday", 0));
+			fprintf(output, "%s", wkdayselect('*', "All days", 1));
+			fprintf(output, "%s", wkdayselect('W', "Mon-Fri", 0));
+			fprintf(output, "%s", wkdayselect('1', "Monday", 0));
+			fprintf(output, "%s", wkdayselect('2', "Tuesday", 0));
+			fprintf(output, "%s", wkdayselect('3', "Wednesday", 0));
+			fprintf(output, "%s", wkdayselect('4', "Thursday", 0));
+			fprintf(output, "%s", wkdayselect('5', "Friday", 0));
+			fprintf(output, "%s", wkdayselect('6', "Saturday", 0));
+			fprintf(output, "%s", wkdayselect('0', "Sunday", 0));
 		}
 
 		else if (strcmp(t_start, "NKEDITSTART") == 0) {
@@ -1120,6 +1120,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	struct  stat st;
 	char	*templatedata;
 	char	*hfpath;
+	int     have_pagepath = (hostenv_pagepath != NULL);
 
 	MEMDEFINE(filename);
 
@@ -1147,7 +1148,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	}
 	fd = -1;
 
-	hostenv_pagepath = strdup(hfpath);
+	if (!have_pagepath) hostenv_pagepath = strdup(hfpath);
 
 	while ((fd == -1) && strlen(hfpath)) {
 		char *p;
@@ -1182,7 +1183,10 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 			*p = '\0';
 		}
 	}
-	xfree(hfpath);
+
+	if (!have_pagepath) {
+		xfree(hfpath);
+	}
 
 	if (fd == -1) {
 		/* Fall back to default head/foot file. */
@@ -1252,11 +1256,11 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		inbuf[st.st_size] = '\0';
 		close(formfile);
 
-		headfoot(output, headertemplate, "", "header", color);
+		headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "header", color);
 		if (pretext) fprintf(output, "%s", pretext);
 		output_parsed(output, inbuf, color, seltime);
 		if (posttext) fprintf(output, "%s", posttext);
-		headfoot(output, headertemplate, "", "footer", color);
+		headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "footer", color);
 
 		xfree(inbuf);
 	}

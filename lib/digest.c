@@ -111,6 +111,7 @@ char *digest_done(digestctx_t *ctx)
 	*p = '\0';
 
 	xfree(md_value);
+	xfree(ctx->digestname);
 	xfree(ctx->mdctx);
 	xfree(ctx);
 
