@@ -134,14 +134,14 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	newconn->ctype = ctype;
 	newconn->savedata = ((ctype == C_SERVER) && (strncmp(STRBUF(req), "client ", 7) == 0));
 	newconn->action = C_WRITING;
-	newconn->tstamp = time(NULL);
+	newconn->tstamp = getcurrenttime(NULL);
 
 	/* Setup the address. */
 	newconn->caddr.sin_port = htons(portnum);
 	newconn->caddr.sin_family = AF_INET;
 	if (inet_aton(destip, (struct in_addr *)&newconn->caddr.sin_addr.s_addr) == 0) {
 		/* Bad IP. */
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 		if (debug || (newconn->client->nexterrortxt < now)) {
 			errprintf("Invalid client IP: %s (req %lu)\n", destip, newconn->seq);
 			newconn->client->nexterrortxt = now + errorloginterval;
@@ -171,7 +171,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	n = connect(newconn->sockfd, (struct sockaddr *)&newconn->caddr, sizeof(newconn->caddr)); 
 	if ((n == -1) && (errno != EINPROGRESS)) {
 		/* Immediate connect failure - drop it */
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 		if (debug || (newconn->client->nexterrortxt < now)) {
 			errprintf("Could not connect to %s (req %lu): %s\n", 
 				  addrstring(&newconn->caddr), newconn->seq, strerror(errno));
@@ -206,7 +206,7 @@ void senddata(conn_t *conn)
 
 	if (n == -1) {
 		/* Write failure. Also happens if connecting to peer fails */
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 		if (debug || (conn->client->nexterrortxt < now)) {
 			errprintf("Connection lost during connect/write to %s (req %lu): %s\n", 
 				  addrstring(&conn->caddr), conn->seq, strerror(errno));
@@ -281,7 +281,7 @@ void process_clientdata(conn_t *conn)
 				 */
 				char msgcachesection[100];
 
-				conn->client->suggestpoll = time(NULL) - (msgago % 300) + 300 + 10;
+				conn->client->suggestpoll = getcurrenttime(NULL) - (msgago % 300) + 300 + 10;
 				dbgprintf("Client %s (req %lu) received a client message %d secs ago, poll again at %lu\n",
 					addrstring(&conn->caddr), conn->seq, msgago,
 					conn->client->suggestpoll);
@@ -349,7 +349,7 @@ void grabdata(conn_t *conn)
         n = read(conn->sockfd, buf, sizeof(buf));
 	if (n == -1) {
 		/* Read failure */
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 		if (debug || (conn->client->nexterrortxt < now)) {
 			errprintf("Connection lost during read from %s (req %lu): %s\n", 
 				  addrstring(&conn->caddr), conn->seq, strerror(errno));
@@ -385,7 +385,7 @@ void grabdata(conn_t *conn)
 
 void set_polltime(clients_t *client)
 {
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	if ((client->suggestpoll > now) && (client->suggestpoll < (now + pollinterval))) {
 		/*
@@ -453,7 +453,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGUSR1, &sa, NULL);	/* SIGUSR1 triggers logging of active requests */
 
 	clients = rbtNew(name_compare);
-	nexttimeout = time(NULL) + 60;
+	nexttimeout = getcurrenttime(NULL) + 60;
 
 	{
 		/* Seed the random number generator */
@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
 		struct timeval tmo;
 		time_t now;
 		
-		now = time(NULL);
+		now = getcurrenttime(NULL);
 		if (now > reloadtime) {
 			/* Time to reload the bb-hosts file */
 			reloadtime = now + 600;
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		now = time(NULL);
+		now = getcurrenttime(NULL);
 		if (now > nexttimeout) {
 			/* Check for connections that have timed out */
 			nexttimeout = now + 60;
@@ -595,7 +595,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		now = time(NULL);
+		now = getcurrenttime(NULL);
 		if (now >= whentoqueue) {
 			/* Scan host-tree for clients we need to contact */
 			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {

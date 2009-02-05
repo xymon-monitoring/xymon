@@ -1542,7 +1542,7 @@ int check_file(void *hinfo, char *classname,
 
 	*filesize = fsize;
 
-	if (clock == 0) clock = time(NULL);
+	if (clock == 0) clock = getcurrenttime(NULL);
 	ctimedif = clock - ctime;
 	atimedif = clock - atime;
 	mtimedif = clock - mtime;

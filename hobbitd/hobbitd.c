@@ -321,7 +321,7 @@ char *generate_stats(void)
 {
 	static char *statsbuf = NULL;
 	static int statsbuflen = 0;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 	char *bufp;
 	int i, clients;
 	char bootuptxt[40];
@@ -714,14 +714,14 @@ void log_ghost(char *hostname, char *sender, char *msg)
 		gwalk = (ghostlist_t *)malloc(sizeof(ghostlist_t));
 		gwalk->name = strdup(hostname);
 		gwalk->sender = strdup(sender);
-		gwalk->tstamp = time(NULL);
+		gwalk->tstamp = getcurrenttime(NULL);
 		rbtInsert(rbghosts, gwalk->name, gwalk);
 	}
 	else {
 		gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 		if (gwalk->sender) xfree(gwalk->sender);
 		gwalk->sender = strdup(sender);
-		gwalk->tstamp = time(NULL);
+		gwalk->tstamp = getcurrenttime(NULL);
 	}
 
 	dbgprintf("<- log_ghost\n");
@@ -924,7 +924,7 @@ hobbitd_log_t *find_cookie(int cookie)
 	cookiehandle = rbtFind(rbcookies, (void *)cookie);
 	if (cookiehandle != rbtEnd(rbcookies)) {
 		result = gettreeitem(rbcookies, cookiehandle);
-		if (result->cookieexpires <= time(NULL)) result = NULL;
+		if (result->cookieexpires <= getcurrenttime(NULL)) result = NULL;
 	}
 
 	dbgprintf("<- find_cookie\n");
@@ -951,7 +951,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		   hobbitd_log_t *log, int newcolor, char *downcause)
 {
 	int validity = 30;	/* validity is counted in minutes */
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 	int msglen, issummary;
 	enum alertstate_t oldalertstatus, newalertstatus;
 
@@ -1168,7 +1168,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
 						hostname, log, NULL);
 			}
-			log->lastchange = time(NULL);
+			log->lastchange = getcurrenttime(NULL);
 		}
 	}
 
@@ -1335,7 +1335,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 				expires = DISABLED_UNTIL_OK;
 			}
 			else {
-				expires = 60*durationvalue(durstr) + time(NULL);
+				expires = 60*durationvalue(durstr) + getcurrenttime(NULL);
 			}
 
 			txtstart = msg->buf + (durstr + strlen(durstr) - firstline);
@@ -1459,7 +1459,7 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 
 	dbgprintf("->handle_ack\n");
 
-	log->acktime = time(NULL)+duration*60;
+	log->acktime = getcurrenttime(NULL)+duration*60;
 	if (log->validtime < log->acktime) log->validtime = log->acktime;
 
 	p = msg;
@@ -1609,7 +1609,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *clientos, char
 			else {
 				hwalk->clientmsg = strdup(msg);
 			}
-			hwalk->clientmsgtstamp = time(NULL);
+			hwalk->clientmsgtstamp = getcurrenttime(NULL);
 			hwalk->clientmsgposted = 0;
 		}
 	}
@@ -2327,7 +2327,7 @@ void do_message(conn_t *msg, char *origin)
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
 	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 
 	if (traceall || tracelist) {
 		int found = 0;
@@ -3402,7 +3402,7 @@ void save_checkpoint(void)
 	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk;
 	hobbitd_log_t *lwalk;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 	scheduletask_t *swalk;
 	ackinfo_t *awalk;
 	int iores = 0;
@@ -3537,7 +3537,7 @@ void load_checkpoint(char *fn)
 				item = gettok(NULL, "|\n"); i++;
 			}
 
-			if (newtask->id && (newtask->executiontime > time(NULL)) && newtask->sender && newtask->command) {
+			if (newtask->id && (newtask->executiontime > getcurrenttime(NULL)) && newtask->sender && newtask->command) {
 				newtask->next = schedulehead;
 				schedulehead = newtask;
 			}
@@ -3732,7 +3732,7 @@ void check_purple_status(void)
 	RbtIterator hosthandle;
 	hobbitd_hostlist_t *hwalk;
 	hobbitd_log_t *lwalk;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	dbgprintf("-> check_purple_status\n");
 	for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
@@ -3854,7 +3854,7 @@ int main(int argc, char *argv[])
 
 	MEMDEFINE(colnames);
 
-	boottime = time(NULL);
+	boottime = getcurrenttime(NULL);
 
 	/* Create our trees */
 	rbhosts = rbtNew(name_compare);
@@ -4085,9 +4085,9 @@ int main(int argc, char *argv[])
 		load_checkpoint(restartfn);
 	}
 
-	nextcheckpoint = time(NULL) + checkpointinterval;
-	nextpurpleupdate = time(NULL) + 600;	/* Wait 10 minutes the first time */
-	last_stats_time = time(NULL);	/* delay sending of the first status report until we're fully running */
+	nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
+	nextpurpleupdate = getcurrenttime(NULL) + 600;	/* Wait 10 minutes the first time */
+	last_stats_time = getcurrenttime(NULL);	/* delay sending of the first status report until we're fully running */
 
 
 	/* Set up a socket to listen for new connections */
@@ -4230,7 +4230,7 @@ int main(int argc, char *argv[])
 		fd_set fdread, fdwrite;
 		int maxfd, n;
 		conn_t *cwalk;
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 		int childstat;
 
 		/* Pickup any finished child processes to avoid zombies */
@@ -4283,7 +4283,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (do_purples && (now > nextpurpleupdate)) {
-			nextpurpleupdate = time(NULL) + 60;
+			nextpurpleupdate = getcurrenttime(NULL) + 60;
 			check_purple_status();
 		}
 
@@ -4467,7 +4467,7 @@ int main(int argc, char *argv[])
 		{
 			conn_t *tmp, *khead;
 
-			now = time(NULL);
+			now = getcurrenttime(NULL);
 			khead = NULL; cwalk = connhead;
 			while (cwalk) {
 				/* Check for connections that timeout */

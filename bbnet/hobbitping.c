@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
 
 	while (tries) {
 		int sendnow = SENDLIMIT;
-		time_t cutoff = time(NULL) + timeout + 1;
+		time_t cutoff = getcurrenttime(NULL) + timeout + 1;
 		sendidx = 0;
 
 		/* Change this on each iteration, so we dont mix packets from each round of pings */
@@ -498,7 +498,7 @@ int main(int argc, char *argv[])
 			}
 			else if (n == 0) {
 				/* Time out */
-				if ((time(NULL) >= cutoff) && (sendidx >= hostcount)) {
+				if ((getcurrenttime(NULL) >= cutoff) && (sendidx >= hostcount)) {
 					/* No more to send and the read timed out - so we're done */
 					pending = 0;
 				}
@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
 					sendnow--;
 
 					/* Adjust the cutoff time, so we wait TIMEOUT seconds for a response */
-					cutoff = time(NULL) + timeout + 1;
+					cutoff = getcurrenttime(NULL) + timeout + 1;
 				}
 
 				if (FD_ISSET(pingsocket, &readfds)) {

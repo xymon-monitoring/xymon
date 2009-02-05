@@ -391,8 +391,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 {
 	char	*t_start, *t_next;
 	char	savechar;
-	time_t	now = time(NULL);
-	time_t  yesterday = time(NULL) - 86400;
+	time_t	now = getcurrenttime(NULL);
+	time_t  yesterday = getcurrenttime(NULL) - 86400;
 	struct  tm *nowtm;
 
 	for (t_start = templatedata, t_next = strchr(t_start, '&'); (t_next); ) {
@@ -1204,7 +1204,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		templatedata[st.st_size] = '\0';
 		close(fd);
 
-		output_parsed(output, templatedata, bgcolor, time(NULL));
+		output_parsed(output, templatedata, bgcolor, getcurrenttime(NULL));
 
 		xfree(templatedata);
 	}
@@ -1222,7 +1222,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		read(fd, templatedata, st.st_size);
 		templatedata[st.st_size] = '\0';
 		close(fd);
-		output_parsed(output, templatedata, bgcolor, time(NULL));
+		output_parsed(output, templatedata, bgcolor, getcurrenttime(NULL));
 		xfree(templatedata);
 	}
 

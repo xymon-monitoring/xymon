@@ -1132,7 +1132,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 			lognkstatus, colorname(bb2page.color), timestamp, colorname(bb2page.color));
 		addtostatus(msgline);
 
-		if (nklog) fprintf(nklog, "%u\t%s", (unsigned int)time(NULL), colorname(bb2page.color));
+		if (nklog) fprintf(nklog, "%u\t%s", (unsigned int)getcurrenttime(NULL), colorname(bb2page.color));
 
 		for (hwalk = bb2page.hosts; hwalk; hwalk = hwalk->next) {
 			msgptr = msgline;

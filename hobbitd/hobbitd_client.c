@@ -1732,8 +1732,8 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (reloadconfig || (time(NULL) >= nextconfigload)) {
-			nextconfigload = time(NULL) + 600;
+		if (reloadconfig || (getcurrenttime(NULL) >= nextconfigload)) {
+			nextconfigload = getcurrenttime(NULL) + 600;
 			reloadconfig = 0;
 			if (!localmode) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			load_client_config(configfn);

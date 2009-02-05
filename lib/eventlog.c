@@ -104,7 +104,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	FILE *eventlog;
 	char eventlogfilename[PATH_MAX];
 	time_t firstevent = 0;
-	time_t lastevent = time(NULL);
+	time_t lastevent = getcurrenttime(NULL);
 	event_t	*eventhead, *walk;
 	struct stat st;
 	char l[MAX_LINE_LEN];
@@ -136,10 +136,10 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		}
 	}
 	else if (maxminutes) {
-		firstevent = time(NULL) - maxminutes*60;
+		firstevent = getcurrenttime(NULL) - maxminutes*60;
 	}
 	else {
-		firstevent = time(NULL) - 86400;
+		firstevent = getcurrenttime(NULL) - 86400;
 	}
 
 	if (totime) {
@@ -308,7 +308,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 
 		if (maxminutes)  { 
 			sprintf(title, "%d events received in the past %u minutes", 
-				count, (unsigned int)((time(NULL) - lasttoshow->eventtime) / 60));
+				count, (unsigned int)((getcurrenttime(NULL) - lasttoshow->eventtime) / 60));
 		}
 		else {
 			sprintf(title, "%d events received.", count);

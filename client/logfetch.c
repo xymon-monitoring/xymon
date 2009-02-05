@@ -454,7 +454,7 @@ void printfiledata(FILE *fd, char *fn, int domd5, int dosha1, int dormd160)
 	struct group *gr;
 	int staterror;
 	char linknam[PATH_MAX];
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	*linknam = '\0';
 	staterror = lstat(fn, &st);

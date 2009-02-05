@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 			}
 
 			if (reportstart < 788918400) reportstart = 788918400;
-			if (reportend > time(NULL)) reportend = time(NULL);
+			if (reportend > getcurrenttime(NULL)) reportend = getcurrenttime(NULL);
 
 			if (xgetenv("BBREPWARN")) reportwarnlevel = atof(xgetenv("BBREPWARN"));
 			if (xgetenv("BBREPGREEN")) reportgreenlevel = atof(xgetenv("BBREPGREEN"));

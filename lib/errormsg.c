@@ -39,7 +39,7 @@ void errprintf(const char *fmt, ...)
 	char msg[4096];
 	va_list args;
 
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	MEMDEFINE(timestr);
 	MEMDEFINE(msg);
@@ -80,7 +80,7 @@ void dbgprintf(const char *fmt, ...)
 
 	if (debug) {
 		char timestr[30];
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 
 		MEMDEFINE(timestr);
 
@@ -138,7 +138,7 @@ void traceprintf(const char *fmt, ...)
 
 	if (tracefd) {
 		char timestr[40];
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 
 		MEMDEFINE(timestr);
 

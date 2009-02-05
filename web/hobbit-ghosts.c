@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 		ghosttable = (ghost_t *)calloc(count+1, sizeof(ghost_t));
 
 		idx = count = 0;
-		tstamp = now = time(NULL);
+		tstamp = now = getcurrenttime(NULL);
 		bol = ghosts;
 		while (bol) {
 			name = sender = timestr = NULL;

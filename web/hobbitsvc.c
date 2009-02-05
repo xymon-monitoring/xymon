@@ -214,7 +214,7 @@ int do_request(void)
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
 		color = COL_GREEN;
-		logtime = time(NULL);
+		logtime = getcurrenttime(NULL);
 		strcpy(timesincechange, "0 minutes");
 
 		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
@@ -285,7 +285,7 @@ int do_request(void)
 		 */
 		color = parse_color(items[2]);
 		flags = strdup(items[3]);
-		logage = time(NULL) - atoi(items[4]);
+		logage = getcurrenttime(NULL) - atoi(items[4]);
 		timesincechange[0] = '\0'; p = timesincechange;
 		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
 		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));

@@ -762,7 +762,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * Match on pagespec, hostspec, svcspec, classspec, groupspec, colors, timespec, minduration, maxduration, sendrecovered
 	 */
 
-	time_t duration = (time(NULL) - alert->eventstart);
+	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
 	int result, cfid = 0;
 	char *pgname, *cfline = NULL;
 

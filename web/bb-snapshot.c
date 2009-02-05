@@ -94,7 +94,7 @@ void parse_query(void)
 	tmbuf.tm_isdst = -1;		/* Important! Or we mishandle DST periods */
 	starttime = mktime(&tmbuf);
 
-	if ((starttime == -1) || (starttime > time(NULL))) errormsg("Invalid parameters");
+	if ((starttime == -1) || (starttime > getcurrenttime(NULL))) errormsg("Invalid parameters");
 }
 
 
@@ -104,7 +104,7 @@ void cleandir(char *dirname)
 	struct dirent *d;
 	struct stat st;
 	char fn[PATH_MAX];
-	time_t killtime = time(NULL)-86400;
+	time_t killtime = getcurrenttime(NULL)-86400;
 
 	dir = opendir(dirname);
 	if (dir == NULL) return;
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 
 	sprintf(bbgentimeopt, "--snapshot=%u", (unsigned int)starttime);
 
-	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)time(NULL));
+	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
 	sprintf(outdir, "%s/%s", xgetenv("BBSNAP"), dirid);
 	if (mkdir(outdir, 0755) == -1) errormsg("Cannot create output directory");
 
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
-		sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)time(NULL));
+		sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("%s\n", htmldelim);

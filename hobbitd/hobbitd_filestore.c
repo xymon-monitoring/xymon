@@ -136,7 +136,7 @@ void update_htmlfile(char *fn, char *msg,
 
 void update_enable(char *fn, time_t expiretime)
 {
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	dbgprintf("Enable/disable file %s, time %d\n", fn, (int)expiretime);
 

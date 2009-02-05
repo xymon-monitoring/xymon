@@ -36,7 +36,7 @@ static void delete_old_cards(char *dirname)
 	DIR             *bbcards;
 	struct dirent   *d;
 	struct stat     st;
-	time_t		now = time(NULL);
+	time_t		now = getcurrenttime(NULL);
 	char		fn[PATH_MAX];
 
 	bbcards = opendir(dirname);

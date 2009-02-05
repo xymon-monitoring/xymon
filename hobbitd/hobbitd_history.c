@@ -45,7 +45,7 @@ void sig_handler(int signum)
 
 int main(int argc, char *argv[])
 {
-	time_t starttime = time(NULL);
+	time_t starttime = getcurrenttime(NULL);
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 
 				if (strcmp(oldcol, colorname(newcolor)) == 0) {
 					/* We wont update history unless the color did change. */
-					if ((time(NULL) - starttime) > 300) {
+					if ((getcurrenttime(NULL) - starttime) > 300) {
 						errprintf("Will not update %s - color unchanged (%s)\n", 
 							  statuslogfn, oldcol);
 					}

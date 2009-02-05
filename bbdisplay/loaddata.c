@@ -101,7 +101,7 @@ state_t *init_state(char *filename, logdata_t *log)
 	char		fullfn[PATH_MAX];
 	host_t		*host;
 	struct stat 	log_st;
-	time_t		now = time(NULL);
+	time_t		now = getcurrenttime(NULL);
 	time_t		histentry_start;
 	int		logexpired = 0;
 
@@ -299,7 +299,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 {
 	char l[MAX_LINE_LEN];
 	dispsummary_t *newsum = NULL;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	dbgprintf("init_displaysummary(%s)\n", textornull(fn));
 

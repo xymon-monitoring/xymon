@@ -350,7 +350,7 @@ int update_nkconfig(nkconf_t *rec)
 		ut.actime = st.st_atime;
 		ut.modtime = st.st_mtime;
 	}
-	else ut.actime = ut.modtime = time(NULL);
+	else ut.actime = ut.modtime = getcurrenttime(NULL);
 	fd = fopen(configfn, "r");
 	if (fd) {
 		bakfd = fopen(bakfn, "w");

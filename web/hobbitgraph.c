@@ -451,7 +451,7 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 
 	  case ACT_SELZOOM:
 	  case ACT_SHOWZOOM:
-		if (graphend == 0) gend = time(NULL); else gend = graphend;
+		if (graphend == 0) gend = getcurrenttime(NULL); else gend = graphend;
 		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
 
 		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=%d&amp;graph_width=%d\" alt=\"Zoom source image\"></td>\n",
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 
 	/* See what we want to do - i.e. get hostname, service and graph-type */
 	parse_query();
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 
 	/* Handle any commandline args */
 	for (argi=1; (argi < argc); argi++) {
@@ -743,7 +743,7 @@ int main(int argc, char *argv[])
 		int errofs, result;
 		int ovector[30];
 		struct stat st;
-		time_t now = time(NULL);
+		time_t now = getcurrenttime(NULL);
 
 		/* Scan the directory to see what RRD files are there that match */
 		dir = opendir("."); if (dir == NULL) errormsg("Unexpected error while accessing RRD directory");

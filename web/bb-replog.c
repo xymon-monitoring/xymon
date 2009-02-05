@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reporttime);
 	fclose(fd);
 
-	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)time(NULL), (int)getpid());
+	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (int)getpid());
 	sprintf(textrepfullfn, "%s/%s", xgetenv("BBREP"), textrepfn);
 	sprintf(textrepurl, "%s/%s", xgetenv("BBREPURL"), textrepfn);
 	textrep = fopen(textrepfullfn, "w");

@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	 * change.
 	 * We will look for the first 20 index numbers only.
 	 */
-	now = time(NULL);
+	now = getcurrenttime(NULL);
 	strftime(datestr, sizeof(datestr), "%Y-%m-%d", localtime(&now));
 	i = 0; fd = NULL;
 	while ((i < 20) && !fd) {

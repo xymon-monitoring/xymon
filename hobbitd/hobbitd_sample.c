@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 		else {
 			int i;
 
-			printf("Message # %d received at %d\n", seq, (int)time(NULL));
+			printf("Message # %d received at %d\n", seq, (int)getcurrenttime(NULL));
 			for (i=0; (metadata[i]); i++) {
 				printf("   Meta #%2d: %s\n", i, metadata[i]);
 			}

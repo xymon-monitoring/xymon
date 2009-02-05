@@ -278,7 +278,7 @@ static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
 
 	for (i = 0; i < testcount; i++) {
 		strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&tnames[i].lastchange));
-		logage = time(NULL) - tnames[i].lastchange;
+		logage = getcurrenttime(NULL) - tnames[i].lastchange;
 
 		addtobuffer(buf, "<tr>");
 
@@ -361,7 +361,7 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 {
 	int i;
 	char l[1024];
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 	int beginyear, endyear;
 	struct tm monthtm;
 	struct tm *nowtm;

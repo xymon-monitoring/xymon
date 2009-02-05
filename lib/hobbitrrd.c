@@ -48,7 +48,7 @@ static void rrd_setup(void)
 	hobbitgraph_t *grec;
 
 	/* Do nothing if we have been called within the past 5 minutes */
-	if ((setup_done + 300) >= time(NULL)) return;
+	if ((setup_done + 300) >= getcurrenttime(NULL)) return;
 
 
 	/* 
@@ -144,7 +144,7 @@ static void rrd_setup(void)
 	}
 	xfree(lenv);
 
-	setup_done = time(NULL);
+	setup_done = getcurrenttime(NULL);
 }
 
 
