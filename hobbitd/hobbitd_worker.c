@@ -209,7 +209,7 @@ startagain:
 		FD_ZERO(&fdread);
 		FD_SET(STDIN_FILENO, &fdread);
 
-		res = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
+		res = select(STDIN_FILENO+1, &fdread, NULL, NULL, (timeout ? &selecttmo : NULL));
 
 		if (res < 0) {
 			if ((errno == EAGAIN) || (errno == EINTR)) continue;
