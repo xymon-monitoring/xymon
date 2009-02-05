@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 			 * message with sequence number 0.
 			 * If you dont want a timeout, just pass a NULL for the timeout parameter.
 			 */
-			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
+			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
 			timeout->tv_sec = (atoi(argv[argi]+10));
 			timeout->tv_nsec = 0;
 		}
