@@ -1030,10 +1030,10 @@ int main(int argc, char *argv[])
 		}
 
 		if (combining) {
-			selecttmo.tv_sec = 0; selecttmo.tv_nsec = COMBO_DELAY;
+			selecttmo.tv_sec = 0; selecttmo.tv_usec = COMBO_DELAY;
 		}
 		else {
-			selecttmo.tv_sec = 1; selecttmo.tv_nsec = 0;
+			selecttmo.tv_sec = 1; selecttmo.tv_usec = 0;
 		}
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &selecttmo);
 		if (n <= 0) {
