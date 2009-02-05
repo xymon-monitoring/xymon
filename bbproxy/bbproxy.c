@@ -492,6 +492,7 @@ int main(int argc, char *argv[])
 		fd_set fdread, fdwrite;
 		int maxfd;
 		struct timespec tmo;
+		struct timeval selecttmo;
 		int n, idx;
 		conn_t *cwalk, *ctmp;
 		time_t ctime;
@@ -1029,12 +1030,12 @@ int main(int argc, char *argv[])
 		}
 
 		if (combining) {
-			tmo.tv_sec = 0; tmo.tv_nsec = COMBO_DELAY;
+			selecttmo.tv_sec = 0; selecttmo.tv_nsec = COMBO_DELAY;
 		}
 		else {
-			tmo.tv_sec = 1; tmo.tv_nsec = 0;
+			selecttmo.tv_sec = 1; selecttmo.tv_nsec = 0;
 		}
-		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
+		n = select(maxfd+1, &fdread, &fdwrite, NULL, &selecttmo);
 		if (n <= 0) {
 			getntimer(&tmo);
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
