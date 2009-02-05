@@ -91,9 +91,13 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	char *p, *outp, *nextline;
 	char hobbitdreq[1024];
 	int hobbitdresult;
+	sendreturn_t *sres;
 
+	sres = newsendreturnbuf(1, NULL);
 	sprintf(hobbitdreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
-	hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &logbuf, 1, BBTALK_TIMEOUT);
+	hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
+	logbuf = getsendreturnstr(sres, 1);
+	freesendreturnbuf(sres);
 	if ((hobbitdresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
 		errprintf("WML: Status not available\n");
 		return;

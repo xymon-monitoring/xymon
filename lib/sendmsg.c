@@ -415,7 +415,7 @@ retry_connect:
 	return BB_OK;
 }
 
-static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, char **respstr, int fullresponse, int timeout)
+static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, sendreturn_t *response)
 {
 	int allservers = 1, first = 1, result = BB_OK;
 	char *bbdlist, *rcpt;
@@ -468,8 +468,23 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, c
 
 		if (first) {
 			/* We grab the result from the first server */
-			oneres =  sendtobbd(rcpt, msg, respfd, respstr, fullresponse, timeout);
-			if (oneres == BB_OK) first = 0;
+			char *respstr = NULL;
+
+			if (response) {
+				oneres =  sendtobbd(rcpt, msg,
+						    response->respfd,
+						    (response->respstr ? &respstr : NULL),
+						    (response->respfd || response->respstr),
+						    timeout);
+			}
+			else {
+				oneres =  sendtobbd(rcpt, msg, NULL, NULL, 0, timeout);
+			}
+
+			if (oneres == BB_OK) {
+				if (response && response->respstr) addtobuffer(response->respstr, respstr);
+				first = 0;
+			}
 		}
 		else {
 			/* Secondary servers do not yield a response */
@@ -495,8 +510,53 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, FILE *respfd, c
 	return result;
 }
 
+sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd)
+{
+	sendreturn_t *result;
 
-int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse, int timeout)
+	result = (sendreturn_t *)calloc(1, sizeof(sendreturn_t));
+	result->fullresponse = fullresponse;
+	result->respfd = respfd;
+	if (!respfd) {
+		/* No response file, so return it in a strbuf */
+		result->respstr = newstrbuffer(0);
+	}
+	result->haveseenhttphdrs = 1;
+
+	return result;
+}
+
+void freesendreturnbuf(sendreturn_t *s)
+{
+	if (!s) return;
+	if (s->respstr) freestrbuffer(s->respstr);
+	xfree(s);
+}
+
+char *getsendreturnstr(sendreturn_t *s, int takeover)
+{
+	char *result = NULL;
+
+	if (!s) return NULL;
+	if (!s->respstr) return NULL;
+	result = STRBUF(s->respstr);
+	if (takeover) {
+		/*
+		 * We cannot leave respstr as NULL, because later calls 
+		 * to sendmessage() might re-use this sendreturn_t struct
+		 * and expect to get the data back. So allocate a new
+		 * responsebuffer for future use - if it isn't used, it
+		 * will be freed by freesendreturnbuf().
+		 */
+		s->respstr = newstrbuffer(0);
+	}
+
+	return result;
+}
+
+
+
+sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *response)
 {
 	static char *bbdisp = NULL;
 	int res = 0;
@@ -508,7 +568,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		return BB_EBADIP;
 	}
 
-	res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, respfd, respstr, fullresponse, timeout);
+	res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout, response);
 
 	if (res != BB_OK) {
 		char *statustext = "";
@@ -523,6 +583,7 @@ int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fu
 		  case BB_ESELFAILED    : statustext = "select(2) failed"; break;
 		  case BB_ETIMEOUT      : statustext = "timeout"; break;
 		  case BB_EWRITEERROR   : statustext = "write error"; break;
+		  case BB_EREADERROR    : statustext = "read error"; break;
 		  case BB_EBADURL       : statustext = "Bad URL"; break;
 		  default:                statustext = "Unknown error"; break;
 		};
@@ -600,7 +661,7 @@ static void combo_flush(void)
 		} while (p1 && p2);
 	}
 
-	sendmessage(STRBUF(bbmsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(bbmsg), NULL, BBTALK_TIMEOUT, NULL);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -611,7 +672,7 @@ static void meta_flush(void)
 		return;
 	}
 
-	sendmessage(STRBUF(metamsg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(metamsg), NULL, BBTALK_TIMEOUT, NULL);
 	meta_start();	/* Get ready for the next */
 }
 

@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	sendmessage(ackbuf, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(ackbuf, NULL, BBTALK_TIMEOUT, NULL);
 	return 0;
 }
 

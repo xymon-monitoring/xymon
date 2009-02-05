@@ -309,14 +309,20 @@ static void fetch_board(void)
 {
 	static int haveboard = 0;
 	char *walk, *eoln;
+	sendreturn_t *sres;
 
 	if (haveboard) return;
 
+	sres = newsendreturnbuf(1, NULL);
 	if (sendmessage("hobbitdboard fields=hostname,testname,disabletime,dismsg", 
-			NULL, NULL, &statusboard, 1, BBTALK_TIMEOUT) != BB_OK)
+			NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+		freesendreturnbuf(sres);
 		return;
+	}
 
 	haveboard = 1;
+	statusboard = getsendreturnstr(sres, 1);
+	freesendreturnbuf(sres);
 
 	hostnames = rbtNew(name_compare);
 	testnames = rbtNew(name_compare);
@@ -331,7 +337,7 @@ static void fetch_board(void)
 
 			hname = gettok(buf, "|");
 
-			if (hname && wanted_host(hname)) {
+			if (hname && wanted_host(hname) && hostinfo(hname)) {
 				newrec = (treerec_t *)malloc(sizeof(treerec_t));
 				newrec->name = strdup(hname);
 				newrec->flag = 0;
@@ -357,8 +363,14 @@ static void fetch_board(void)
 			walk = NULL;
 	}
 
-	if (sendmessage("schedule", NULL, NULL, &scheduleboard, 1, BBTALK_TIMEOUT) != BB_OK)
+	sres = newsendreturnbuf(1, NULL);
+	if (sendmessage("schedule", NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+		freesendreturnbuf(sres);
 		return;
+	}
+
+	scheduleboard = getsendreturnstr(sres, 1);
+	freesendreturnbuf(sres);
 }
 
 

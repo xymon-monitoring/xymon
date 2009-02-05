@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 	int  embedded = 0;
 	char *req, *board, *l;
 	int argi, res;
+	sendreturn_t *sres;
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
@@ -115,10 +116,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(pagefilter) + strlen(filter));
 	sprintf(req, "hobbitdboard fields=hostname,testname,color,msg %s %s",
 		pagefilter, filter);
-	res = sendmessage(req, server, NULL, &board, 1, BBTALK_TIMEOUT);
+	res = sendmessage(req, server, BBTALK_TIMEOUT, sres);
+	board = getsendreturnstr(sres, 1);
+	freesendreturnbuf(sres);
 
 	if (res != BB_OK) return 1;
 

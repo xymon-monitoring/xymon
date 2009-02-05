@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
 	char *updateparam = NULL;
 	int  removeself = 0;
 	int bbstat = 0;
+	sendreturn_t *sres;
 
 #ifdef BIG_SECURITY_HOLE
 	/* Immediately drop all root privs, we'll regain them later when needed */
@@ -205,16 +206,19 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	sres = newsendreturnbuf(1, tarpipefd);
 	newverreq = (char *)malloc(100+strlen(newversion));
 	sprintf(newverreq, "download %s.tar", newversion);
 	dbgprintf("Sending command to Hobbit: %s\n", newverreq);
-	if ((bbstat = sendmessage(newverreq, NULL, tarpipefd, NULL, 1, BBTALK_TIMEOUT)) != BB_OK) {
+	if ((bbstat = sendmessage(newverreq, NULL, BBTALK_TIMEOUT, sres)) != BB_OK) {
 		errprintf("Cannot fetch new client tarfile: Status %d\n", bbstat);
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
+		freesendreturnbuf(sres);
 		return 1;
 	}
 	else {
 		dbgprintf("Download command completed OK\n");
+		freesendreturnbuf(sres);
 	}
 
 	dbgprintf("Closing tar pipe\n");

@@ -28,17 +28,22 @@ static char *teststatus = NULL;
 static char *conncolumn = "conn";
 static char *testcolumn = NULL;
 
+
 static void load_hoststatus()
 {
 	int res;
 	char msg[1024];
+	sendreturn_t *sres;
 
 	sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", conncolumn);
-	res = sendmessage(msg, NULL, NULL, &connstatus, 1, BBTALK_TIMEOUT);
+	sres = newsendreturnbuf(1, NULL);
+	res = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
+	if (res == BB_OK) connstatus = getsendreturnstr(sres, 1);
 
 	if ((res == BB_OK) && testcolumn) {
 		sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", testcolumn);
-		res = sendmessage(msg, NULL, NULL, &teststatus, 1, BBTALK_TIMEOUT);
+		res = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
+		if (res == BB_OK) teststatus = getsendreturnstr(sres, 1);
 	}
 
 	if (res != BB_OK) {
@@ -46,7 +51,10 @@ static void load_hoststatus()
 		connstatus = NULL;
 		teststatus = NULL;
 	}
+
+	freesendreturnbuf(sres);
 }
+
 
 static int netok(char *netstring, char *curnet, int testuntagged)
 {

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit monitor library.                                                    */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2002-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -14,16 +14,26 @@
 #define BBTALK_TIMEOUT 15  /* Default timeout for a request going to bbd */
 #define PAGELEVELSDEFAULT "red purple"
 
-#define BB_OK			0
-#define BB_EBADIP		1
-#define BB_EIPUNKNOWN		2
-#define BB_ENOSOCKET 		3
-#define BB_ECANNOTDONONBLOCK	4
-#define BB_ECONNFAILED		5
-#define BB_ESELFAILED		6
-#define BB_ETIMEOUT		7
-#define BB_EWRITEERROR		8
-#define BB_EBADURL		9
+typedef enum {
+	BB_OK,
+	BB_EBADIP,
+	BB_EIPUNKNOWN,
+	BB_ENOSOCKET,
+	BB_ECANNOTDONONBLOCK,
+	BB_ECONNFAILED,
+	BB_ESELFAILED,
+	BB_ETIMEOUT,
+	BB_EWRITEERROR,
+	BB_EREADERROR,
+	BB_EBADURL 
+} sendresult_t;
+
+typedef struct sendreturn_t {
+	FILE *respfd;
+	strbuffer_t *respstr;
+	int fullresponse;
+	int haveseenhttphdrs;
+} sendreturn_t;
 
 extern int bbmsgcount;
 extern int bbstatuscount;
@@ -31,7 +41,10 @@ extern int bbnocombocount;
 extern int dontsendmessages;
 
 extern void setproxy(char *proxy);
-extern int sendmessage(char *msg, char *recipient, FILE *respfd, char **respstr, int fullresponse, int timeout);
+extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
+extern sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd);
+extern void freesendreturnbuf(sendreturn_t *s);
+extern char *getsendreturnstr(sendreturn_t *s, int takeover);
 
 extern void combo_start(void);
 extern void combo_end(void);

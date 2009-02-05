@@ -72,10 +72,15 @@ static int fetch_status(char *hostname)
 	char *walk;
 	int testsz;
 	int haveuname = 0;
+	sendreturn_t *sres;
 
+	sres = newsendreturnbuf(1, NULL);
 	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
-	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) != BB_OK) {
+	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 		return 1;
+	}
+	else {
+		statuslist = getsendreturnstr(sres, 1);
 	}
 
 	testsz = 10;
@@ -118,8 +123,11 @@ static int fetch_status(char *hostname)
 
 
 	sprintf(hobbitcmd, "schedule");
-	if (sendmessage(hobbitcmd, NULL, NULL, &statuslist, 1, BBTALK_TIMEOUT) != BB_OK) {
+	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 		return 1;
+	}
+	else {
+		statuslist = getsendreturnstr(sres, 1);
 	}
 
 	commaname = strdup(commafy(hostname));
@@ -164,8 +172,11 @@ static int fetch_status(char *hostname)
 		char *boln, *eoln;
 
 		sprintf(hobbitcmd, "clientlog %s section=uname,osversion,clientversion", hostname);
-		if (sendmessage(hobbitcmd, NULL, NULL, &clidata, 1, BBTALK_TIMEOUT) != BB_OK) {
+		if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 			return 1;
+		}
+		else {
+			clidata = getsendreturnstr(sres, 1);
 		}
 
 		boln = strstr(clidata, "[osversion]\n");
@@ -201,6 +212,8 @@ static int fetch_status(char *hostname)
 
 		xfree(clidata);
 	}
+
+	freesendreturnbuf(sres);
 
 	return 0;
 }

@@ -170,18 +170,23 @@ int do_request(void)
 		if (source == SRC_HOBBITD) {
 			char *hobbitdreq;
 			int hobbitdresult;
+			sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
 			hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
 			sprintf(hobbitdreq, "clientlog %s", hostname);
 			if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
 
-			hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
+			hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
 			if (hobbitdresult != BB_OK) {
 				char errtxt[4096];
 				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
 				errormsg(errtxt);
 				return 1;
 			}
+			else {
+				log = getsendreturnstr(sres, 1);
+			}
+			freesendreturnbuf(sres);
 		}
 		else if (source == SRC_HISTLOGS) {
 			char logfn[PATH_MAX];
@@ -226,9 +231,13 @@ int do_request(void)
 		int icount;
 		time_t logage, clntstamp;
 		char *sumline, *msg, *p;
+		sendreturn_t *sres;
 
 		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp", hostname, service);
-		hobbitdresult = sendmessage(hobbitdreq, NULL, NULL, &log, 1, BBTALK_TIMEOUT);
+		sres = newsendreturnbuf(1, NULL);
+		hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
+		if (hobbitdresult == BB_OK) log = getsendreturnstr(sres, 1);
+		freesendreturnbuf(sres);
 		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;

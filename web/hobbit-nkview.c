@@ -47,14 +47,21 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	time_t now;
 	char msg[1024];
 	int i;
+	sendreturn_t *sres;
 
 	sprintf(msg, "hobbitdboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", nkacklevel,colorname(mincolor));
 	for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
 
-	hobbitdresult = sendmessage(msg, NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+	sres = newsendreturnbuf(1, NULL);
+	hobbitdresult = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
 	if (hobbitdresult != BB_OK) {
+		freesendreturnbuf(sres);
 		errormsg("Unable to fetch current status\n");
 		return;
+	}
+	else {
+		board = getsendreturnstr(sres, 1);
+		freesendreturnbuf(sres);
 	}
 
 	now = getcurrenttime(NULL);

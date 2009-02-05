@@ -19,11 +19,13 @@ int main(int argc, char *argv[])
 {
 	int result = 1;
 	cgidata_t *cgidata = NULL;
+	sendreturn_t *sres;
 
 	cgidata = cgi_request();
 	if (cgidata) {
 		printf("Content-Type: application/octet-stream\n\n");
-		result = sendmessage(cgidata->value, "127.0.0.1", stdout, NULL, 1, BBTALK_TIMEOUT);
+		sres = newsendreturnbuf(1, stdout);
+		result = sendmessage(cgidata->value, "127.0.0.1", BBTALK_TIMEOUT, sres);
 	}
 
 	return result;

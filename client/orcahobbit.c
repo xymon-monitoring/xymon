@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		val = strtok_r(NULL, " \t\n", &vp);
 	}
 
-	sendmessage(STRBUF(msg), NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
 
 	return 0;
 }

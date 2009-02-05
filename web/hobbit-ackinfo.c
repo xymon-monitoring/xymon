@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 		bbmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackedby) + strlen(ackmsg));
 		sprintf(bbmsg, "ackinfo %s.%s\n%d\n%d\n%s\n%s\n",
 			hostname, testname, level, validity, ackedby, ackmsg);
-		res = sendmessage(bbmsg, NULL, NULL, NULL, 0, BBTALK_TIMEOUT);
+		res = sendmessage(bbmsg, NULL, BBTALK_TIMEOUT, NULL);
 	}
 	else {
 		bbmsg = (char *)malloc(4096);

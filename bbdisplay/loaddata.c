@@ -351,22 +351,50 @@ state_t *load_state(dispsummary_t **sumhead)
 	char		*nextline;
 	int		done;
 	logdata_t	log;
+	sendreturn_t	*sres;
 
 	dbgprintf("load_state()\n");
 
+	sres = newsendreturnbuf(1, NULL);
+
 	if (!reportstart && !snapshot) {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+		char *dumpfn = getenv("BOARDDUMP");
+
+		if (dumpfn) {
+			/* Debugging - read data from a dump file */
+			struct stat st;
+			FILE *fd;
+
+			hobbitdresult = BB_ETIMEOUT;
+			if (stat(dumpfn, &st) == 0) {
+				fd = fopen(dumpfn, "r");
+				if (fd) {
+					board = (char *)malloc(st.st_size + 1);
+					fread(board, 1, st.st_size, fd);
+					fclose(fd);
+					hobbitdresult = BB_OK;
+				}
+			}
+		}
+		else {
+			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, BBTALK_TIMEOUT, sres);
+			board = getsendreturnstr(sres, 1);
+		}
 	}
 	else {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, NULL, &board, 1, BBTALK_TIMEOUT);
+		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres);
+		board = getsendreturnstr(sres, 1);
 	}
+
+	freesendreturnbuf(sres);
+
 	if ((hobbitdresult != BB_OK) || (board == NULL) || (*board == '\0')) {
-		errprintf("hobbitd status-board not available\n");
+		errprintf("hobbitd status-board not available, code %d\n", hobbitdresult);
 		return NULL;
 	}
 
 	if (reportstart || snapshot) {
-		oldestentry = time(NULL);
+		oldestentry = getcurrenttime(NULL);
 		purplelog = NULL;
 		purplelogfn = NULL;
 	}

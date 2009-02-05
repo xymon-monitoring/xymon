@@ -34,8 +34,9 @@ int main(int argc, char *argv[])
 	char *recipient = NULL;
 	strbuffer_t *msg = newstrbuffer(0);
 	FILE *respfd = stdout;
-	char *response = NULL;
 	char *envarea = NULL;
+	sendreturn_t *sres;
+	int wantresponse = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -82,7 +83,7 @@ int main(int argc, char *argv[])
 			if (recipient == NULL) {
 				recipient = argv[argi];
 			}
-			else if (STRBUF(msg) == NULL) {
+			else if (STRBUFLEN(msg) == 0) {
 				msg = dupstrbuffer(argv[argi]);
 			}
 			else {
@@ -91,7 +92,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((recipient == NULL) || (STRBUF(msg) == NULL) || showhelp) {
+	if ((recipient == NULL) || (STRBUFLEN(msg) == 0) || showhelp) {
 		fprintf(stderr, "Hobbit version %s\n", VERSION);
 		fprintf(stderr, "Usage: %s [--debug] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
@@ -101,10 +102,11 @@ int main(int argc, char *argv[])
 
 	if (strcmp(STRBUF(msg), "-") == 0) {
 		strbuffer_t *inpline = newstrbuffer(0);
+		sres = newsendreturnbuf(0, NULL);
 
 		initfgets(stdin);
 		while (unlimfgets(inpline, stdin)) {
-			result = sendmessage(STRBUF(inpline), recipient, NULL, NULL, 0, timeout);
+			result = sendmessage(STRBUF(inpline), recipient, timeout, sres);
 			clearstrbuffer(inpline);
 		}
 
@@ -120,53 +122,29 @@ int main(int argc, char *argv[])
 		freestrbuffer(inpline);
 	}
 
-	if (strncmp(STRBUF(msg), "query ", 6) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 0, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "client ", 7) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "config ", 7) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "download ", 9) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "hobbitdboard", 12) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "hobbitdxboard", 13) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "schedule", 8) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "clientlog ", 10) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "hostinfo", 8) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "ping", 4) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "pullclient", 10) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
-	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) {
-		result = sendmessage(STRBUF(msg), recipient, respfd, (respfd ? NULL : &response), 1, timeout);
-	}
+	if      (strncmp(STRBUF(msg), "query ", 6) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "client ", 7) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "config ", 7) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "download ", 9) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "hobbitdboard", 12) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "hobbitdxboard", 13) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "schedule", 8) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "clientlog ", 10) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "hostinfo", 8) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "ping", 4) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "pullclient", 10) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
+	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;
 	else {
-		result = sendmessage(STRBUF(msg), recipient, NULL, NULL, 0, timeout);
+		wantresponse = 0;
 	}
 
-	if (response) printf("Buffered response is '%s'\n", response);
+	sres = newsendreturnbuf(wantresponse, respfd);
+	result = sendmessage(STRBUF(msg), recipient, timeout, sres);
+
+	if (sres->respstr) printf("Buffered response is '%s'\n", STRBUF(sres->respstr));
 
 	return result;
 }
