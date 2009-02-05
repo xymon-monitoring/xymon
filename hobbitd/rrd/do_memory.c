@@ -21,9 +21,6 @@ static char *memory_tpl           = NULL;
  */
 RbtHandle memhosts;
 int memhosts_init = 0;
-static int string_compare(void *a, void *b) {
-	return strcmp((char *)a, (char *)b);
-}
 
 static int get_mem_percent(char *l)
 {
