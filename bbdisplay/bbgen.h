@@ -218,6 +218,9 @@ typedef struct dispsummary_t {
 	struct dispsummary_t	*next;
 } dispsummary_t;
 
+enum tooltipuse_t { TT_BBONLY, TT_ALWAYS, TT_NEVER};
+
+extern enum tooltipuse_t tooltipuse;
 extern bbgen_page_t	*pagehead;
 extern state_t		*statehead;
 extern bbgen_col_t	*colhead, null_column;

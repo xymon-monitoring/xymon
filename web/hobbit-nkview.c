@@ -200,7 +200,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	fprintf(output, "</TD>\n");
 
 	/* Print the hostname with a link to the NK info page */
-	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL));
+	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, 0));
 
 	key = (char *)malloc(strlen(itm->hostname) + 1024);
 	for (colhandle = rbtBegin(columns); (colhandle != rbtEnd(columns)); colhandle = rbtNext(columns, colhandle)) {

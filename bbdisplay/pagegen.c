@@ -330,11 +330,18 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	int	columncount;
 	char	*bbskin;
 	int	rowcount = 0;
+	int     usetooltip = 0;
 
 	if (head == NULL)
 		return;
 
 	bbskin = strdup(xgetenv("BBSKIN"));
+
+	switch (tooltipuse) {
+	  case TT_BBONLY: usetooltip = (pagetype == PAGE_BB); break;
+	  case TT_ALWAYS: usetooltip = 1; break;
+	  case TT_NEVER:  usetooltip = 0; break;
+	}
 
 	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
 	genstatic = generate_static();
@@ -399,12 +406,14 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", columncount);
 			}
 
-			fprintf(output, "<TR>\n <TD NOWRAP><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
+			fprintf(output, "<TR class=line>\n <TD NOWRAP><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
 			if (maxrowsbeforeheading) rowcount = (rowcount + 1) % maxrowsbeforeheading;
 			else rowcount++;
 
 			fprintf(output, "%s", 
-				hostnamehtml(h->hostname, ((pagetype != PAGE_BB) ? hostpage_link(h) : NULL)) );
+				hostnamehtml(h->hostname, 
+					     ((pagetype != PAGE_BB) ? hostpage_link(h) : NULL), 
+					     usetooltip));
 
 			/* Then the columns. */
 			for (gc = groupcols; (gc); gc = gc->next) {

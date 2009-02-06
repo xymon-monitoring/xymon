@@ -32,6 +32,7 @@ extern char *alttag(char *columnname, int color, int acked, int propagate, char 
 
 extern void setdocurl(char *url);
 extern void setdoctarget(char *target);
-extern char *hostnamehtml(char *hostname, char *defaultlink);
+extern char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip);
+
 
 #endif
