@@ -63,6 +63,19 @@ typedef struct treerec_t {
 	int flag;
 } treerec_t;
 
+typedef struct listrec_t {
+	char *name, *val, *extra;
+	int selected;
+	struct listrec_t *next;
+} listrec_t;
+typedef struct listpool_t {
+	char *name;
+	struct listrec_t *listhead, *listtail;
+	struct listpool_t *next;
+} listpool_t;
+static listpool_t *listpoolhead = NULL;
+
+
 static void clearflags(RbtHandle tree)
 {
 	RbtIterator handle;
@@ -156,6 +169,56 @@ void sethostenv_filter(char *hostptn, char *pageptn, char *ipptn)
 	if (ipptn) {
 		ippattern_text = strdup(ipptn);
 		ippattern = pcre_compile(ipptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+	}
+}
+
+static listpool_t *find_listpool(char *listname)
+{
+	listpool_t *pool = NULL;
+	listrec_t *zombie;
+
+	if (!listname) listname = "";
+	for (pool = listpoolhead; (pool && strcmp(pool->name, listname)); pool = pool->next);
+	if (!pool) {
+		pool = (listpool_t *)calloc(1, sizeof(listpool_t));
+		pool->name = strdup(listname);
+		pool->next = listpoolhead;
+		listpoolhead = pool;
+	}
+
+	return pool;
+}
+
+void sethostenv_clearlist(char *listname)
+{
+	listpool_t *pool = NULL;
+	listrec_t *zombie;
+
+	pool = find_listpool(listname);
+	while (pool->listhead) {
+		zombie = pool->listhead;
+		pool->listhead = pool->listhead->next;
+
+		xfree(zombie->name); xfree(zombie->val); xfree(zombie);
+	}
+}
+
+void sethostenv_addtolist(char *listname, char *name, char *val, char *extra, int selected)
+{
+	listpool_t *pool = NULL;
+	listrec_t *newitem = (listrec_t *)calloc(1, sizeof(listrec_t));
+
+	pool = find_listpool(listname);
+	newitem->name = strdup(name);
+	newitem->val = strdup(val);
+	newitem->extra = (extra ? strdup(extra) : NULL);
+	newitem->selected = selected;
+	if (pool->listtail) {
+		pool->listtail->next = newitem;
+		pool->listtail = newitem;
+	}
+	else {
+		pool->listhead = pool->listtail = newitem;
 	}
 }
 
@@ -924,6 +987,16 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			if (!gotany) {
 				fprintf(output, "<tr><th align=center colspan=3><i>No tasks scheduled</i></th></tr>\n");
 			}
+		}
+
+		else if (strncmp(t_start, "GENERICLIST", strlen("GENERICLIST")) == 0) {
+			listpool_t *pool = find_listpool(t_start + strlen("GENERICLIST"));
+			listrec_t *walk;
+
+			for (walk = pool->listhead; (walk); walk = walk->next)
+				fprintf(output, "<OPTION VALUE=\"%s\" %s %s>%s</OPTION>\n", 
+					walk->val, (walk->selected ? "SELECTED" : ""), (walk->extra ? walk->extra : ""),
+					walk->name);
 		}
 
 		else if (strcmp(t_start, "NKACKTTPRIO") == 0) fprintf(output, "%d", nkackttprio);
