@@ -50,6 +50,8 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "osf") == 0)         result = OS_OSF;
 	else if (strcasecmp(osname, "osf1") == 0)        result = OS_OSF;
 	else if (strcasecmp(osname, "win32") == 0)       result = OS_WIN32;
+	else if (strcasecmp(osname, "hmdc") == 0)        result = OS_WIN32_HMDC;
+	else if (strcasecmp(osname, "bbwin") == 0)       result = OS_WIN32_BBWIN;
 	else if (strcasecmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
 	else if (strcasecmp(osname, "netbsd") == 0)      result = OS_NETBSD;
 	else if (strcasecmp(osname, "openbsd") == 0)     result = OS_OPENBSD;
@@ -69,7 +71,13 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "macosx") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "darwin") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "sco_sv") == 0)      result = OS_SCO_SV;
-	else if (strcasecmp(osname, "bbwin") == 0)      result = OS_WIN32_BBWIN;
+	else if (strcasecmp(osname, "netware_snmp") == 0) result = OS_NETWARE_SNMP;
+	else if (strcasecmp(osname, "zvm") == 0)         result = OS_ZVM;
+	else if (strcasecmp(osname, "zvse") == 0)        result = OS_ZVSE;
+	else if (strcasecmp(osname, "zos") == 0)         result = OS_ZOS;
+	else if (strcasecmp(osname, "snmpcollect") == 0) result = OS_SNMPCOLLECT;
+	else if (strcasecmp(osname, "gnu/kfreebsd") == 0) result = OS_GNUKFREEBSD;
+	else if (strcasecmp(osname, "gnu_kfreebsd") == 0) result = OS_GNUKFREEBSD;
 
 	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
 
@@ -85,6 +93,8 @@ char *osname(enum ostype_t os)
 		case OS_AIX: return "aix";
 		case OS_OSF: return "osf";
 		case OS_WIN32: return "win32";
+		case OS_WIN32_HMDC: return "hmdc";
+		case OS_WIN32_BBWIN: return "bbwin";
 		case OS_FREEBSD: return "freebsd";
 		case OS_NETBSD: return "netbsd";
 		case OS_OPENBSD: return "openbsd";
@@ -95,7 +105,12 @@ char *osname(enum ostype_t os)
 		case OS_IRIX: return "irix";
 		case OS_DARWIN: return "darwin";
 	        case OS_SCO_SV: return "sco_sv";
-		case OS_WIN32_BBWIN: return "bbwin";
+	        case OS_NETWARE_SNMP: return "netware_snmp";
+		case OS_ZVM: return "zvm";
+		case OS_ZVSE: return "zvse";
+		case OS_ZOS: return "zos";
+		case OS_SNMPCOLLECT: return "snmpcollect";
+		case OS_GNUKFREEBSD: return "gnu/kfreebsd";
 		case OS_UNKNOWN: return "unknown";
 	}
 
@@ -151,6 +166,14 @@ char *commafy(char *hostname)
 	for (p = strchr(s, '.'); (p); p = strchr(s, '.')) *p = ',';
 	return s;
 }
+
+void uncommafy(char *hostname)
+{
+	char *p;
+
+	p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+}
+
 
 
 char *skipword(char *l)
