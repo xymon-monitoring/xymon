@@ -23,6 +23,7 @@ extern hostlist_t *hostlistBegin(void);
 extern hostlist_t *hostlistNext(void);
 extern void add_to_hostlist(hostlist_t *rec);
 extern bbgen_col_t *find_or_create_column(char *testname, int create);
+extern int wantedcolumn(char *current, char *wanted);
 
 #endif
 

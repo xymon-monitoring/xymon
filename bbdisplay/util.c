@@ -233,3 +233,17 @@ bbgen_col_t *find_or_create_column(char *testname, int create)
 	return newcol;
 }
 
+
+int wantedcolumn(char *current, char *wanted)
+{
+	char *tag;
+	int result;
+
+	tag = (char *) malloc(strlen(current)+3);
+	sprintf(tag, "|%s|", current);
+	result = (strstr(wanted, tag) != NULL);
+
+	xfree(tag);
+	return result;
+}
+

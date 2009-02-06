@@ -124,6 +124,7 @@ typedef struct entry_t {
 	int	alert;
 	int	onwap;
 	int	propagate;
+	int	compacted;
 	char 	*sumurl;
 	char	*skin;
 	char	*testflags;

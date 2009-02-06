@@ -27,20 +27,6 @@ static char rcsid[] = "$Id: process.c,v 1.33 2006-07-20 16:06:41 henrik Exp $";
 #include "process.h"
 #include "util.h"
 
-static int wantedcolumn(char *current, char *wanted)
-{
-	char *tag;
-	int result;
-
-	tag = (char *) malloc(strlen(current)+3);
-	sprintf(tag, "|%s|", current);
-	result = (strstr(wanted, tag) != NULL);
-
-	xfree(tag);
-	return result;
-}
-
-
 void calc_hostcolors(char *bb2ignores)
 {
 	int		color, bb2color, bbnkcolor, oldage;

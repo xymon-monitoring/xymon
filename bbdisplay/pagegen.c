@@ -225,7 +225,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char
 		 */
 
 		for (e = h->entries; (e); e = e->next) {
-			if (interesting_column(pagetype, e->color, e->alert, e->column, onlycols, exceptcols)) {
+			if (!e->compacted && interesting_column(pagetype, e->color, e->alert, e->column, onlycols, exceptcols)) {
 				/* See where e->column should go in list */
 				collist_walk = head; 
 				while ( (collist_walk->next && 

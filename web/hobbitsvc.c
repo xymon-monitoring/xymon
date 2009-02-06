@@ -122,7 +122,7 @@ static int parse_query(void)
 	return 0;
 }
 
-void loadhostdata(char *hostname, char **ip, char **displayname)
+int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts)
 {
 	void *hinfo = NULL;
 
@@ -130,12 +130,15 @@ void loadhostdata(char *hostname, char **ip, char **displayname)
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
-		exit(1);
+		return 1;
 	}
 
 	*ip = bbh_item(hinfo, BBH_IP);
 	*displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
 	if (!(*displayname)) *displayname = hostname;
+	*compacts = bbh_item(hinfo, BBH_COMPACT);
+
+	return 0;
 }
 
 int do_request(void)
@@ -147,7 +150,7 @@ int do_request(void)
 	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
-	char *ip, *displayname;
+	char *ip, *displayname, *compacts;
 
 	if (parse_query() != 0) return 1;
 
@@ -209,7 +212,7 @@ int do_request(void)
 		restofmsg = (log ? log : strdup("<No data>\n"));
 	}
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
-		loadhostdata(hostname, &ip, &displayname);
+		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
 		ishtmlformatted = 1;
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
@@ -230,10 +233,31 @@ int do_request(void)
 		char *items[20];
 		int icount;
 		time_t logage, clntstamp;
-		char *sumline, *msg, *p;
+		char *sumline, *msg, *p, *compitem, *complist;
 		sendreturn_t *sres;
 
-		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp", hostname, service);
+		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
+
+		complist = NULL;
+		if (compacts && *compacts) {
+			compitem = strtok(compacts, ",");
+			while (compitem && !complist) {
+				p = strchr(compitem, '='); if (p) *p = '\0';
+				if (strcmp(service, compitem) == 0) complist = p+1;
+				compitem = strtok(NULL, ",");
+			}
+		}
+
+		if (!complist) {
+			/* FIXME : ,flapinfo,modifies after clntstamp */
+			sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp", hostname, service);
+		}
+		else {
+			sprintf(hobbitdreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
+		}
+
+		sres = newsendreturnbuf(1, NULL);
+
 		sres = newsendreturnbuf(1, NULL);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
 		if (hobbitdresult == BB_OK) log = getsendreturnstr(sres, 1);
@@ -243,73 +267,125 @@ int do_request(void)
 			return 1;
 		}
 
-		sumline = log; p = strchr(log, '\n'); *p = '\0';
-		msg = (p+1); p = strchr(msg, '\n');
-		if (!p) {
-			firstline = strdup(msg);
-			restofmsg = NULL;
+		if (!complist) {
+			sumline = log; p = strchr(log, '\n'); *p = '\0';
+			msg = (p+1); p = strchr(msg, '\n');
+			if (!p) {
+				firstline = strdup(msg);
+				restofmsg = NULL;
+			}
+			else { 
+				*p = '\0'; 
+				firstline = strdup(msg); 
+				restofmsg = (p+1);
+				*p = '\n'; 
+			}
+
+			memset(items, 0, sizeof(items));
+			p = gettok(sumline, "|"); icount = 0;
+			while (p && (icount < 20)) {
+				items[icount++] = p;
+				p = gettok(NULL, "|");
+			}
+
+			/*
+			 * hostname,		[0]
+			 * testname,		[1]
+			 * color,		[2]
+			 * flags,		[3]
+			 * lastchange,		[4]
+			 * logtime,		[5]
+			 * validtime,		[6]
+			 * acktime,		[7]
+			 * disabletime,		[8]
+			 * sender,		[9]
+			 * cookie,		[10]
+			 * ackmsg,		[11]
+			 * dismsg,		[12]
+			 * client,		[13]
+			 * acklist		[14]
+			 * BBH_IP		[15]
+			 * BBH_DISPLAYNAME	[16]
+			 * clienttstamp         [17]
+			 */
+			color = parse_color(items[2]);
+			flags = strdup(items[3]);
+			logage = getcurrenttime(NULL) - atoi(items[4]);
+			timesincechange[0] = '\0'; p = timesincechange;
+			if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
+			p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
+			logtime = atoi(items[5]);
+			if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
+			if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
+			sender = strdup(items[9]);
+
+			if (items[11] && strlen(items[11])) ackmsg = items[11];
+			if (ackmsg) nldecode(ackmsg);
+
+			if (items[12] && strlen(items[12])) dismsg = items[12];
+			if (dismsg) nldecode(dismsg);
+
+			if (items[13]) clientavail = (*items[13] == 'Y');
+
+			acklist = ((items[14] && *items[14]) ? strdup(items[14]) : NULL);
+
+			ip = (items[15] ? items[15] : "");
+			displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
+			clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
+
+			sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
+			sethostenv_refresh(60);
 		}
-		else { 
-			*p = '\0'; 
-			firstline = strdup(msg); 
-			restofmsg = (p+1);
-			*p = '\n'; 
+		else {
+			/* Compressed status display */
+			strbuffer_t *cmsg;
+			char *row, *p_row, *p_fld;
+			char *nonhistenv;
+			char l[2048];
+
+			color = COL_GREEN;
+
+			cmsg = newstrbuffer(0);
+			addtobuffer(cmsg, "<table width=\"80%\" summary=\"Compacted Status Info\">\n");
+
+			row = strtok_r(log, "\n", &p_row);
+			while (row) {
+				/* testname,color,lastchange */
+				char *testname, *itmcolor, *chgs;
+				time_t lastchange;
+				int icolor;
+
+				testname = strtok_r(row, "|", &p_fld);
+				itmcolor = strtok_r(NULL, "|", &p_fld);
+				chgs = strtok_r(NULL, "|", &p_fld);
+				lastchange = atoi(chgs);
+
+				icolor = parse_color(itmcolor);
+				if (icolor > color) color = icolor;
+
+				sprintf(l, "<tr><td align=left>&%s&nbsp;<a href=\"%s\">%s</a></td></tr>\n", 
+					itmcolor, hostsvcurl(hostname, testname, 1), testname);
+				addtobuffer(cmsg, l);
+				row = strtok_r(NULL, "\n", &p_row);
+			}
+
+			addtobuffer(cmsg, "</table>\n");
+			ishtmlformatted = 1;
+
+			sethostenv(displayname, ip, service, colorname(color), hostname);
+			sethostenv_refresh(60);
+			logtime = getcurrenttime(NULL);
+			strcpy(timesincechange, "0 minutes");
+
+			log = restofmsg = grabstrbuffer(cmsg);
+
+			sprintf(l, "%s Compressed status display\n", colorname(color));
+			firstline = strdup(l);
+
+			nonhistenv = (char *)malloc(10 + strlen(service));
+			sprintf(nonhistenv, "NONHISTS=%s", service);
+			putenv(nonhistenv);
 		}
-
-		memset(items, 0, sizeof(items));
-		p = gettok(sumline, "|"); icount = 0;
-		while (p && (icount < 20)) {
-			items[icount++] = p;
-			p = gettok(NULL, "|");
-		}
-
-		/*
-		 * hostname,		[0]
-		 * testname,		[1]
-		 * color,		[2]
-		 * flags,		[3]
-		 * lastchange,		[4]
-		 * logtime,		[5]
-		 * validtime,		[6]
-		 * acktime,		[7]
-		 * disabletime,		[8]
-		 * sender,		[9]
-		 * cookie,		[10]
-		 * ackmsg,		[11]
-		 * dismsg,		[12]
-		 * client,		[13]
-		 * acklist		[14]
-		 * BBH_IP		[15]
-		 * BBH_DISPLAYNAME	[16]
-		 * clienttstamp         [17]
-		 */
-		color = parse_color(items[2]);
-		flags = strdup(items[3]);
-		logage = getcurrenttime(NULL) - atoi(items[4]);
-		timesincechange[0] = '\0'; p = timesincechange;
-		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
-		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
-		logtime = atoi(items[5]);
-		if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
-		if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
-		sender = strdup(items[9]);
-
-		if (items[11] && strlen(items[11])) ackmsg = items[11];
-		if (ackmsg) nldecode(ackmsg);
-
-		if (items[12] && strlen(items[12])) dismsg = items[12];
-		if (dismsg) nldecode(dismsg);
-
-		if (items[13]) clientavail = (*items[13] == 'Y');
-
-		acklist = ((items[14] && *items[14]) ? strdup(items[14]) : NULL);
-
-		ip = (items[15] ? items[15] : "");
-		displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
-		clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
-
-		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
-		sethostenv_refresh(60);
 	}
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
@@ -328,7 +404,7 @@ int do_request(void)
 
 		if (!tstamp) errormsg("Invalid request");
 
-		loadhostdata(hostname, &ip, &displayname);
+		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';

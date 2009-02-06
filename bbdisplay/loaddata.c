@@ -45,6 +45,15 @@ int		colorcount_noprop[COL_COUNT] = { 0, };
 static time_t oldestentry;
 
 
+typedef struct compact_t {
+	char *compactname;
+	int color;
+	time_t fileage;
+	char *members;
+} compact_t;
+
+
+
 typedef struct logdata_t {
 	/* hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message */
 	char *hostname;
@@ -383,6 +392,84 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 	return newsum;
 }
 
+
+void generate_compactitems(state_t **topstate)
+{
+	void *bbh;
+	compact_t **complist = NULL;
+	int complistsz = 0;
+	hostlist_t 	*h;
+	entry_t		*e;
+	char *compacted;
+	char *tok1, *tok2, *savep1, *savep2;
+	compact_t *itm;
+	int i;
+	state_t *newstate;
+	time_t now = getcurrenttime(NULL);
+
+	for (h = hostlistBegin(); (h); h = hostlistNext()) {
+		bbh = hostinfo(h->hostentry->hostname);
+		compacted = bbh_item(bbh, BBH_COMPACT);
+		if (!compacted) continue;
+
+		tok1 = strtok_r(compacted, ",", &savep1);
+		while (tok1) {
+			char *members;
+
+			itm = (compact_t *)calloc(1, sizeof(compact_t));
+			itm->compactname = strdup(strtok_r(tok1, "=", &savep2));
+			members = strtok_r(NULL, "\n", &savep2);
+			itm->members = (char *)malloc(3 + strlen(members));
+			sprintf(itm->members, "|%s|", members);
+
+			if (complistsz == 0) {
+				complist = (compact_t **)calloc(2, sizeof(compact_t *));
+			}
+			else {
+				complist = (compact_t **)realloc(complist, (complistsz+2)*sizeof(compact_t *));
+			}
+
+			complist[complistsz++] = itm;
+			complist[complistsz] = NULL;
+
+			tok1 = strtok_r(NULL, ",", &savep1);
+		}
+
+		for (e = h->hostentry->entries; (e); e = e->next) {
+			for (i = 0; (i < complistsz); i++) {
+				if (wantedcolumn(e->column->name, complist[i]->members)) {
+					e->compacted = 1;
+					if (e->color > complist[i]->color) complist[i]->color = e->color;
+					if (e->fileage > complist[i]->fileage) complist[i]->fileage = e->fileage;
+				}
+			}
+		}
+
+		for (i = 0; (i < complistsz); i++) {
+			logdata_t log;
+			char fn[PATH_MAX];
+
+			memset(&log, 0, sizeof(log));
+			sprintf(fn, "%s.%s", commafy(h->hostentry->hostname), complist[i]->compactname);
+			log.hostname = h->hostentry->hostname;
+			log.testname = complist[i]->compactname;
+			log.color = complist[i]->color;
+			log.testflags = "";
+			log.lastchange = now - complist[i]->fileage;
+			log.logtime = getcurrenttime(NULL);
+			log.validtime = log.logtime + 300;
+			log.sender = "";
+			log.msg = "";
+			newstate = init_state(fn, &log);
+			if (newstate) {
+				newstate->next = *topstate;
+				*topstate = newstate;
+			}
+		}
+	}
+}
+
+
 state_t *load_state(dispsummary_t **sumhead)
 {
 	int hobbitdresult;
@@ -528,6 +615,8 @@ state_t *load_state(dispsummary_t **sumhead)
 		}
 		xfree(onelog);
 	}
+
+	generate_compactitems(&topstate);
 
 	if (reportstart) sethostenv_report(oldestentry, reportend, reportwarnlevel, reportgreenlevel);
 	if (purplelog) fclose(purplelog);
