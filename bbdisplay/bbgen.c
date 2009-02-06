@@ -554,10 +554,9 @@ int main(int argc, char *argv[])
 	if (xgetenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(xgetenv("BBSUBPAGEHTACCESS"));
 
 	/*
-	 * When doing alternate pagesets, disable some stuff:
-	 * No WML or RSS pages.
+	 * When doing embedded- or snapshot-pages, dont build the WML/RSS pages.
 	 */
-	if (pageset || embedded || snapshot) enable_wmlgen = wantrss = 0;
+	if (embedded || snapshot) enable_wmlgen = wantrss = 0;
 	if (embedded) {
 		egocolumn = htaccess = NULL;
 
@@ -630,7 +629,7 @@ int main(int argc, char *argv[])
 	if (reportstart && csvfile) {
 		csv_availability(csvfile, csvdelim);
 	}
-	else if (do_normal_pages) {
+	if (do_normal_pages) {
 		do_page_with_subs(pagehead, dispsums);
 	}
 	add_timestamp("Hobbit pagegen done");
@@ -689,8 +688,37 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "bbgen for Hobbit version %s\n", VERSION);
 		addtostatus(msgline);
 
-		sprintf(msgline, "\nStatistics:\n Hosts               : %5d\n Status messages     : %5d\n Purple messages     : %5d\n Pages               : %5d\n", 
-			hostcount, statuscount, purplecount, pagecount);
+		addtostatus("\nStatistics:\n");
+		sprintf(msgline, " Hosts                      : %5d\n", hostcount);
+		addtostatus(msgline);
+		sprintf(msgline, " Pages                      : %5d\n", pagecount);
+		addtostatus(msgline);
+		sprintf(msgline, " Status messages            : %5d\n", statuscount);
+		addtostatus(msgline);
+		sprintf(msgline, " - Red                      : %5d (%5.2f %%)\n",
+			colorcount[COL_RED], ((100.0 * colorcount[COL_RED]) / statuscount));
+		addtostatus(msgline);
+		sprintf(msgline, " - Red (non-propagating)    : %5d (%5.2f %%)\n",
+			colorcount_noprop[COL_RED], ((100.0 * colorcount_noprop[COL_RED]) / statuscount));
+		addtostatus(msgline);
+		sprintf(msgline, " - Yellow                   : %5d (%5.2f %%)\n",
+			colorcount[COL_YELLOW], ((100.0 * colorcount[COL_YELLOW]) / statuscount));
+		addtostatus(msgline);
+		sprintf(msgline, " - Yellow (non-propagating) : %5d (%5.2f %%)\n",
+			colorcount_noprop[COL_YELLOW], ((100.0 * colorcount_noprop[COL_YELLOW]) / statuscount));
+		addtostatus(msgline);
+		sprintf(msgline, " - Clear                    : %5d (%5.2f %%)\n",
+			colorcount[COL_CLEAR], ((100.0 * colorcount[COL_CLEAR]) / statuscount));
+		addtostatus(msgline);
+		sprintf(msgline, " - Green                    : %5d (%5.2f %%)\n",
+			colorcount[COL_GREEN], ((100.0 * colorcount[COL_GREEN]) / statuscount));
+		addtostatus(msgline);
+		sprintf(msgline, " - Purple                   : %5d (%5.2f %%)\n",
+			colorcount[COL_PURPLE], ((100.0 * colorcount[COL_PURPLE]) / statuscount));
+		addtostatus(msgline);
+		sprintf(msgline, " - Blue                     : %5d (%5.2f %%)\n",
+			colorcount[COL_BLUE], ((100.0 * colorcount[COL_BLUE]) / statuscount));
+
 		addtostatus(msgline);
 
 		if (errbuf) {

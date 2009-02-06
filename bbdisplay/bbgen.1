@@ -18,6 +18,14 @@ generates the overview webpages for the Xymon monitor. These are the webpages
 that show the overall status of your hosts, not the detailed status pages for 
 each test.
 
+Note: The data for the webpages is retrieved from the 
+.I hobbitd(8)
+daemon, and bbgen uses the values of the BBDISPLAY / BBDISPLAYS environment 
+variables to determine the network address where hobbitd can be reached. If
+you have more than one server listed in BBDISPLAYS, make sure the first one
+is the local hobbitd server - this is the one that bbgen will query for data.
+
+
 .SH OPTIONS
 bbgen has a large number of commandline options.  The options
 can be used to change the behaviour of bbgen and affect the web pages generated 
@@ -174,7 +182,7 @@ some of the more noisy tests, like "msgs".
 Only red status columns will be included on the NK page. By default,
 the NK page will contain hosts with red, yellow and clear status.
 .sp
-.IP "--bb2colors=COLOR[,COLOR]"
+.IP "--bb2-colors=COLOR[,COLOR]"
 Defines which colors cause a test to appear on the "All non-green"
 status page (a.k.a. the BB2 page). COLOR is red, yellow or purple.
 The default is to include all three.
@@ -346,7 +354,7 @@ The START parameter is the start-time for the report in Unix time_t
 format (seconds since Jan 1st 1970 00:00 UTC); END is the end-time for
 the report; DYNAMIC is 0 for a pre-built report and 1 for a dynamic
 (on-line) report; STYLE is "crit" to include only critical (red)
-events, "non-crit" to include all non-green events, and "all" to
+events, "nongr" to include all non-green events, and "all" to
 include all events.
 .sp
 .IP "--csv=FILENAME"
@@ -354,6 +362,20 @@ Used together with --reportopts, this causes bbgen to generate an
 availability report in the form of a comma-separated values (CSV) file.
 This format is commonly used for importing into spreadsheets for further
 processing.
+.br
+The CSV file includes Unix timestamps. To display these as human readable
+times in Excel, the formula \fB=C2/86400+DATEVALUE(1-jan-1970)\fR (if
+you have the Unix timestamp in the cell C2) can be used. The result cell 
+should be formatted as a date/time field. Note that the timestamps are in 
+UTC, so you may also need to handle local timezone and DST issues yourself.
+.sp
+.IP "--csvdelim=DELIMITER"
+By default, a comma is used to delimit fields in the CSV output. Some
+non-english spreadsheets use a different delimiter, typically semi-colon.
+To generate a CSV file with the proper delimiter, you can use this option
+to set the character used as delimiter. E.g. "--csvdelim=;" - note that 
+this normally should be in double quotes, to prevent the Unix shell from
+interpreting the delimiter character as a commandline delimiter.
 .sp
 .IP "--snapshot=TIME"
 Generate a snapshot of the Xymon pages, as they appeared at

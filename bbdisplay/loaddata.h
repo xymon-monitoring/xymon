@@ -18,8 +18,9 @@ extern char	*dialupskin;
 extern char	*reverseskin;
 extern time_t   recentgif_limit;
 
-extern int 	purplecount;
 extern char 	*purplelogfn;
+extern int      colorcount[];
+extern int      colorcount_noprop[];
 
 extern state_t *load_state(dispsummary_t **sumhead);
 
