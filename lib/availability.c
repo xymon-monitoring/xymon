@@ -372,7 +372,7 @@ static char *timename(char *timestring)
 
 int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *servicename, 
 			time_t fromtime, time_t totime, int for_history, 
-			double warnlevel, double greenlevel, char *reporttime)
+			double warnlevel, double greenlevel, int warnstops, char *reporttime)
 {
 	char l[MAX_LINE_LEN];
 	time_t starttime, duration;
@@ -393,6 +393,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 	}
 	repinfo->fullavailability = 0.0;
 	repinfo->reportavailability = 0.0;
+	repinfo->fullstops = 0;
+	repinfo->reportstops = 0;
 
 	if (reporttime) build_reportspecs(reporttime);
 
@@ -443,9 +445,11 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 			dbgprintf("In-range entry starting %lu lasting %lu color %d: %s", starttime, duration, color, l);
 			repinfo->count[color]++;
 			repinfo->fullduration[color] += duration;
+			if (color > COL_YELLOW) repinfo->fullstops++;
 			if (reporttime) {
 				sladuration = reportingduration(starttime, duration);
 				repinfo->reportduration[color] += sladuration;
+				if ((color > COL_YELLOW) && (sladuration > 0)) repinfo->reportstops++;
 			}
 
 			if (for_history || ((hostname != NULL) && (servicename != NULL))) {
@@ -502,6 +506,8 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 			if (repinfo->reportavailability > greenlevel) color = COL_GREEN;
 			else if (repinfo->reportavailability >= warnlevel) color = COL_YELLOW;
 			else color = COL_RED;
+
+			if ((warnstops >= 0) && (repinfo->reportstops > warnstops)) color = COL_RED;
 		}
 		else {
 			/* Reporting period has no match with REPORTTIME setting */
@@ -515,8 +521,11 @@ int parse_historyfile(FILE *fd, reportinfo_t *repinfo, char *hostname, char *ser
 		else if (repinfo->fullavailability >= warnlevel) color = COL_YELLOW;
 		else color = COL_RED;
 
+		if ((warnstops >= 0) && (repinfo->fullstops > warnstops)) color = COL_RED;
+
 		/* Copy the full percentages/durations to the SLA ones */
 		repinfo->reportavailability = repinfo->fullavailability;
+		repinfo->reportstops = repinfo->fullstops;
 		for (i=0; (i<COL_COUNT); i++) {
 			repinfo->reportduration[i] = repinfo->fullduration[i];
 			repinfo->reportpct[i] = repinfo->fullpct[i];
@@ -573,6 +582,7 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 time_t reportstart, reportend;
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
+int    warnstops = -1;
 
 int main(int argc, char *argv[])
 {
@@ -602,7 +612,7 @@ int main(int argc, char *argv[])
 	p = strrchr(hostsvc, '/'); host = p+1;
 	while ((p = strchr(host, ','))) *p = '.';
 
-	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, 0, reportwarnlevel, reportgreenlevel, NULL);
+	color = parse_historyfile(fd, &repinfo, host, svc, reportstart, reportend, 0, reportwarnlevel, reportgreenlevel, warnstops, NULL);
 
 	for (i=0; (i<COL_COUNT); i++) {
 		dbgprintf("Color %d: Count=%d, pct=%.2f\n", i, repinfo.count[i], repinfo.fullpct[i]);

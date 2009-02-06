@@ -563,6 +563,7 @@ void generate_history(FILE *htmlrep, 			/* output file */
 
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
+int    reportwarnstops = -1;
 
 char *hostname = "";
 char *service = "";
@@ -724,29 +725,29 @@ int main(int argc, char *argv[])
 	 * but doing it all in one go would be hideously complex.
 	 */
 	if (barsums & BARSUM_1D) {
-		parse_historyfile(fd, &repinfo1d, NULL, NULL, start1d, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo1d, NULL, NULL, start1d, req_endtime, 1, reportwarnlevel, reportgreenlevel, reportwarnstops, NULL);
 		log1d = save_replogs();
 	}
 
 	if (barsums & BARSUM_1W) {
-		parse_historyfile(fd, &repinfo1w, NULL, NULL, start1w, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo1w, NULL, NULL, start1w, req_endtime, 1, reportwarnlevel, reportgreenlevel, reportwarnstops, NULL);
 		log1w = save_replogs();
 	}
 
 	if (barsums & BARSUM_4W) {
-		parse_historyfile(fd, &repinfo4w, NULL, NULL, start4w, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo4w, NULL, NULL, start4w, req_endtime, 1, reportwarnlevel, reportgreenlevel, reportwarnstops, NULL);
 		log4w = save_replogs();
 	}
 
 	if (barsums & BARSUM_1Y) {
-		parse_historyfile(fd, &repinfo1y, NULL, NULL, start1y, req_endtime, 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &repinfo1y, NULL, NULL, start1y, req_endtime, 1, reportwarnlevel, reportgreenlevel, reportwarnstops, NULL);
 		log1y = save_replogs();
 	}
 
 	if (entrycount == 0) {
 		/* All entries - just rewind the history file and do all of them */
 		rewind(fd);
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, getcurrenttime(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, getcurrenttime(NULL), 1, reportwarnlevel, reportgreenlevel, reportwarnstops, NULL);
 		fclose(fd);
 	}
 	else {
@@ -755,7 +756,7 @@ int main(int argc, char *argv[])
 		sprintf(tailcmd, "tail -%d %s", entrycount, histlogfn);
 		fd = popen(tailcmd, "r");
 		if (fd == NULL) errormsg("Cannot run tail on the histfile");
-		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, getcurrenttime(NULL), 1, reportwarnlevel, reportgreenlevel, NULL);
+		parse_historyfile(fd, &dummyrep, NULL, NULL, 0, getcurrenttime(NULL), 1, reportwarnlevel, reportgreenlevel, reportwarnstops, NULL);
 		pclose(fd);
 	}
 

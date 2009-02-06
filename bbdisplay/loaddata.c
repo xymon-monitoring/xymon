@@ -262,6 +262,7 @@ state_t *init_state(char *filename, logdata_t *log)
 				reportstart, reportend, 0, 
 				(host ? host->reportwarnlevel : reportwarnlevel), 
 				reportgreenlevel,
+				(host ? host->reportwarnstops : reportwarnstops), 
 				(host ? host->reporttime : NULL));
 		newstate->entry->causes = (dynamicreport ? NULL : save_replogs());
 	}

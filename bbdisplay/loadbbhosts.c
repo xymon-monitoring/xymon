@@ -173,7 +173,7 @@ host_t *init_host(char *hostname, int issummary,
 		  char *displayname, char *clientalias,
 		  char *comment, char *description,
 		  int ip1, int ip2, int ip3, int ip4, 
-		  int dialup, double warnpct, char *reporttime,
+		  int dialup, double warnpct, int warnstops, char *reporttime,
 		  char *alerts, int nktime, char *waps,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests)
 {
@@ -195,6 +195,7 @@ host_t *init_host(char *hostname, int issummary,
 	newhost->oldage = 1;
 	newhost->dialup = dialup;
 	newhost->reportwarnlevel = warnpct;
+	newhost->reportwarnstops = warnstops;
 	newhost->reporttime = (reporttime ? strdup(reporttime) : NULL);
 	if (alerts && nktime) {
 		newhost->alerts = strdup(alerts);
@@ -569,6 +570,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			void *bbhost = NULL;
 			int dialup, nobb2, nktime = 1;
 			double warnpct = reportwarnlevel;
+			int warnstops = reportwarnstops;
 			char *displayname, *clientalias, *comment, *description;
 			char *alertlist, *onwaplist, *reporttime;
 			char *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
@@ -616,6 +618,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			comment = bbh_item(bbhost, BBH_COMMENT);
 			description = bbh_item(bbhost, BBH_DESCRIPTION);
 			bbval = bbh_item(bbhost, BBH_WARNPCT); if (bbval) warnpct = atof(bbval);
+			bbval = bbh_item(bbhost, BBH_WARNSTOPS); if (bbval) warnstops = atof(bbval);
 			reporttime = bbh_item(bbhost, BBH_REPORTTIME);
 
 			clientalias = bbh_item(bbhost, BBH_CLIENTALIAS);
@@ -665,7 +668,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					curhost = init_host(hostname, 0, displayname, clientalias,
 							    comment, description,
 							    ip1, ip2, ip3, ip4, dialup, 
-							    warnpct, reporttime,
+							    warnpct, warnstops, reporttime,
 							    alertlist, nktime, onwaplist,
 							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist);
 					if (curgroup != NULL) {
@@ -688,7 +691,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 					curhost = curhost->next = init_host(hostname, 0, displayname, clientalias,
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
-									    warnpct, reporttime,
+									    warnpct, warnstops, reporttime,
 									    alertlist, nktime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);
@@ -735,7 +738,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 						host_t *newhost = init_host(hostname, 0, displayname, clientalias,
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
-									    warnpct, reporttime,
+									    warnpct, warnstops, reporttime,
 									    alertlist, nktime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);

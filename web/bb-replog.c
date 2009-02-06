@@ -31,6 +31,7 @@ int style;
 int color;
 double reportgreenlevel = 99.995;
 double reportwarnlevel = 98.0;
+int    reportwarnstops = -1;
 cgidata_t *cgidata = NULL;
 
 static void errormsg(char *msg)
@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
 		errormsg("Cannot open history file");
 	}
 
-	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reporttime);
+	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reportwarnstops, reporttime);
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (int)getpid());
@@ -153,7 +154,7 @@ int main(int argc, char *argv[])
 	generate_replog(stdout, textrep, textrepurl, 
 			hostname, service, color, style, 
 			ip, displayname,
-			st, end, reportwarnlevel, reportgreenlevel, 
+			st, end, reportwarnlevel, reportgreenlevel, reportwarnstops, 
 			&repinfo);
 
 	if (textrep) fclose(textrep);

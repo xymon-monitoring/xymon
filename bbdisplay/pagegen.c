@@ -528,7 +528,8 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 									h->hostname, e->column->name, e->color, reportstyle,
 									h->ip, h->displayname,
 									reportstart, reportend,
-									reportwarnlevel, reportgreenlevel, e->repinfo);
+									reportwarnlevel, reportgreenlevel, reportwarnstops,
+									e->repinfo);
 								fclose(textrep);
 								fclose(htmlrep);
 							}
@@ -536,8 +537,16 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 							fprintf(output, "<A HREF=\"%s-%s%s\">\n", 
 								h->hostname, e->column->name, htmlextension);
 						}
-						fprintf(output, "<FONT SIZE=-1 COLOR=%s><B>%.2f</B></FONT></A>\n",
-							colorname(e->color), e->repinfo->reportavailability);
+
+						/* Only show #stops if we have this as an SLA parameter */
+						if (h->reportwarnstops >= 0) {
+							fprintf(output, "<FONT SIZE=-1 COLOR=%s><B>%.2f (%d)</B></FONT></A>\n",
+								colorname(e->color), e->repinfo->reportavailability, e->repinfo->reportstops);
+						}
+						else {
+							fprintf(output, "<FONT SIZE=-1 COLOR=%s><B>%.2f</B></FONT></A>\n",
+								colorname(e->color), e->repinfo->reportavailability);
+						}
 					}
 				}
 				fprintf(output, "</TD>\n");
@@ -614,7 +623,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 
 		if (newhost == NULL) {
 			/* New summary "host" */
-			newhost = init_host(s->row, 1, NULL, NULL, NULL, NULL, 0,0,0,0, 0, 0.0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
+			newhost = init_host(s->row, 1, NULL, NULL, NULL, NULL, 0,0,0,0, 0, 0.0, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
 			/* Insert into sorted host list */
 			if ((!sumhosts) || (strcmp(newhost->hostname, sumhosts->hostname) < 0)) {
