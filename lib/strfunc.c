@@ -126,6 +126,12 @@ void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext)
 	strbuf_addtobuffer(buf, STRBUF(newtext), STRBUFLEN(newtext));
 }
 
+void addtobufferraw(strbuffer_t *buf, char *newdata, int bytes)
+{
+	/* Add binary data to the buffer */
+	strbuf_addtobuffer(buf, newdata, bytes);
+}
+
 void strbufferchop(strbuffer_t *buf, int count)
 {
 	/* Remove COUNT characters from end of buffer */
@@ -147,5 +153,27 @@ void strbufferrecalc(strbuffer_t *buf)
 	}
 
 	buf->used = strlen(buf->s);
+}
+
+void strbuffergrow(strbuffer_t *buf, int bytes)
+{
+	if (buf == NULL) return;
+
+	buf->sz += bytes;
+	buf->s = (char *) realloc(buf->s, buf->sz);
+}
+
+void strbufferuse(strbuffer_t *buf, int bytes)
+{
+	if (buf == NULL) return;
+
+	if ((buf->used + bytes) < buf->sz) {
+		buf->used += bytes;
+	}
+	else {
+		errprintf("strbuffer: Attempt to use more than allocated (sz=%d, used=%d, growbytes=%d\n", 
+			  buf->sz, buf->used, bytes);
+	}
+	*(buf->s+buf->used) = '\0';
 }
 
