@@ -69,6 +69,7 @@ typedef struct strbuffer_t {
 #include "../lib/rmd160c.h"
 #include "../lib/sendmsg.h"
 #include "../lib/sha1.h"
+#include "../lib/sha2.h"
 #include "../lib/sig.h"
 #include "../lib/stackio.h"
 #include "../lib/strfunc.h"
