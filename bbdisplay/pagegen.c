@@ -307,8 +307,15 @@ void setup_htaccess(const char *pagepath)
 	}
 }
 
+static int host_t_compare(const void *v1, const void *v2)
+{
+	host_t **n1 = (host_t **)v1;
+	host_t **n2 = (host_t **)v2;
 
-void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
+	return strcmp((*n1)->hostname, (*n2)->hostname);
+}
+
+void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
 	 * This routine outputs the host part of a page or a group.
@@ -350,11 +357,27 @@ void do_hosts(host_t *head, char *onlycols, char *exceptcols, FILE *output, FILE
 		fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0 CELLPADDING=2>\n");
 
 		/* Generate the host rows */
+		if (sorthosts) {
+			int i, hcount = 0;
+			host_t **hlist;
+
+			for (h=head; (h); h=h->next) hcount++;
+			hlist = (host_t **) calloc((hcount+1), sizeof(host_t *));
+			for (h=head, i=0; (h); h=h->next, i++) hlist[i] = h;
+			qsort(hlist, hcount, sizeof(host_t *), host_t_compare);
+
+			for (h=head=hlist[0], i=1; (i <= hcount); i++) { 
+				h->next = hlist[i];
+				h = h->next;
+			}
+			xfree(hlist);
+		}
+
 		for (h = head; (h); h = h->next) {
 			/* If there is a host pretitle, show it. */
 			dbgprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
-			if (h->pretitle) {
+			if (h->pretitle && (pagetype == PAGE_BB)) {
 				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
 						columncount+1, xgetenv("MKBBTITLE"), h->pretitle);
 				rowcount = 0;
@@ -550,7 +573,7 @@ void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
-		do_hosts(g->hosts, g->onlycols, g->exceptcols, output, rssoutput, g->title, PAGE_BB, pagepath);
+		do_hosts(g->hosts, g->sorthosts, g->onlycols, g->exceptcols, output, rssoutput, g->title, PAGE_BB, pagepath);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -625,7 +648,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<CENTER>\n");
 	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0>\n");
 	fprintf(output, "<TR><TD>\n");
-	do_hosts(sumhosts, NULL, NULL, output, NULL, xgetenv("MKBBREMOTE"), 0, NULL);
+	do_hosts(sumhosts, 1, NULL, NULL, output, NULL, xgetenv("MKBBREMOTE"), 0, NULL);
 	fprintf(output, "</TD></TR>\n");
 	fprintf(output, "</TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -843,7 +866,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
-	do_hosts(page->hosts, NULL, NULL, output, rssoutput, "", PAGE_BB, pagepath);
+	do_hosts(page->hosts, 0, NULL, NULL, output, rssoutput, "", PAGE_BB, pagepath);
 	do_groups(page->groups, output, rssoutput, pagepath);
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
@@ -1077,7 +1100,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
 	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, NULL, NULL, output, rssoutput, "", summarytype, NULL);
+		do_hosts(bb2page.hosts, 0, NULL, NULL, output, rssoutput, "", summarytype, NULL);
 	}
 	else {
 		/* "All Monitored Systems OK */

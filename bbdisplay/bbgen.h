@@ -184,6 +184,7 @@ typedef struct group_t {
 	char	*onlycols;
 	char	*exceptcols;
 	struct host_t	*hosts;
+	int	sorthosts;
 	char	*pretitle;
 	struct group_t	*next;
 } group_t;
