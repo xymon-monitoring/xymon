@@ -125,6 +125,79 @@ int namematch(char *needle, char *haystack, pcre *pcrecode)
 	return result;
 }
 
+int patternmatch(char *datatosearch, char *pattern, pcre *pcrecode)
+{
+	if (pcrecode) {
+		/* Do regex matching. The regex has already been compiled for us. */
+		return matchregex(datatosearch, pcrecode);
+	}
+
+	if (strcmp(pattern, "*") == 0) {
+		/* Match anything */
+		return 1;
+	}
+
+	return (strstr(datatosearch, pattern) != NULL);
+}
+
+pcre **compile_exprs(char *id, const char **patterns, int count)
+{
+	pcre **result = NULL;
+	int i;
+
+	result = (pcre **)calloc(count, sizeof(pcre *));
+	for (i=0; (i < count); i++) {
+		result[i] = compileregex(patterns[i]);
+		if (!result[i]) {
+			errprintf("Internal error: %s pickdata PCRE-compile failed\n", id);
+			for (i=0; (i < count); i++) if (result[i]) pcre_free(result[i]);
+			xfree(result);
+			return NULL;
+		}
+	}
+
+	return result;
+}
+
+int pickdata(char *buf, pcre *expr, int dupok, ...)
+{
+	int res, i;
+	int ovector[30];
+	va_list ap;
+	char **ptr;
+	char w[100];
+
+	if (!expr) return 0;
+
+	res = pcre_exec(expr, NULL, buf, strlen(buf), 0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+	if (res < 0) return 0;
+
+	va_start(ap, dupok);
+
+	for (i=1; (i < res); i++) {
+		*w = '\0';
+		pcre_copy_substring(buf, ovector, res, i, w, sizeof(w));
+		ptr = va_arg(ap, char **);
+		if (dupok) {
+			if (*ptr) xfree(*ptr);
+			*ptr = strdup(w);
+		}
+		else {
+			if (*ptr == NULL) {
+				*ptr = strdup(w);
+			}
+			else {
+				errprintf("Internal error: Duplicate match ignored\n");
+			}
+		}
+	}
+
+	va_end(ap);
+
+	return 1;
+}
+
+
 int timematch(char *tspec)
 {
 	int result;
