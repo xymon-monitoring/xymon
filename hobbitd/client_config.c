@@ -1225,9 +1225,10 @@ void dump_client_config(void)
 	}
 }
 
-static c_rule_t *getrule(char *hostname, char *pagename, char *classname, ruletype_t ruletype)
+static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *hinfo, ruletype_t ruletype)
 {
 	static ruleset_t *rwalk = NULL;
+	char *holidayset;
 
 	if (hostname || pagename) {
 		rwalk = ruleset(hostname, pagename, classname); 
@@ -1236,9 +1237,11 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, rulety
 		rwalk = rwalk->next;
 	}
 
+	holidayset = (hinfo ? bbh_item(hinfo, BBH_HOLIDAYS) : NULL);
+
 	for (; (rwalk); rwalk = rwalk->next) {
 		if (rwalk->rule->ruletype != ruletype) continue;
-		if (rwalk->rule->timespec && !timematch(rwalk->rule->timespec)) continue;
+		if (rwalk->rule->timespec && !timematch(holidayset, rwalk->rule->timespec)) continue;
 
 		/* If we get here, then we have something that matches */
 		return rwalk->rule;
@@ -1260,7 +1263,7 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 	*loadyellow = 5.0;
 	*loadred = 10.0;
 
-	rule = getrule(hostname, pagename, classname, C_LOAD);
+	rule = getrule(hostname, pagename, classname, hinfo, C_LOAD);
 	if (rule) {
 		*loadyellow = rule->rule.load.warnlevel;
 		*loadred    = rule->rule.load.paniclevel;
@@ -1270,7 +1273,7 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 	*recentlimit = 3600;
 	*ancientlimit = -1;
 
-	rule = getrule(hostname, pagename, classname, C_UPTIME);
+	rule = getrule(hostname, pagename, classname, hinfo, C_UPTIME);
 	if (rule) {
 		*recentlimit  = rule->rule.uptime.recentlimit;
 		*ancientlimit = rule->rule.uptime.ancientlimit;
@@ -1278,7 +1281,7 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 	}
 
 	*maxclockdiff = -1;
-	rule = getrule(hostname, pagename, classname, C_CLOCK);
+	rule = getrule(hostname, pagename, classname, hinfo, C_CLOCK);
 	if (rule) {
 		*maxclockdiff = rule->rule.clock.maxdiff;
 	}
@@ -1305,9 +1308,9 @@ int get_disk_thresholds(void *hinfo, char *classname,
 	*ignored = 0;
 	*group = NULL;
 
-	rule = getrule(hostname, pagename, classname, C_DISK);
+	rule = getrule(hostname, pagename, classname, hinfo, C_DISK);
 	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
-		rule = getrule(NULL, NULL, NULL, C_DISK);
+		rule = getrule(NULL, NULL, NULL, hinfo, C_DISK);
 	}
 
 	if (rule) {
@@ -1340,7 +1343,7 @@ void get_memory_thresholds(void *hinfo, char *classname,
 	*actyellow = 90;
 	*actred = 97;
 
-	rule = getrule(hostname, pagename, classname, C_MEM);
+	rule = getrule(hostname, pagename, classname, hinfo, C_MEM);
 	while (rule) {
 		switch (rule->rule.mem.memtype) {
 		  case C_MEM_PHYS:
@@ -1365,7 +1368,7 @@ void get_memory_thresholds(void *hinfo, char *classname,
 			}
 			break;
 		}
-		rule = getrule(NULL, NULL, NULL, C_MEM);
+		rule = getrule(NULL, NULL, NULL, hinfo, C_MEM);
 	}
 }
 
@@ -1384,7 +1387,7 @@ int scan_log(void *hinfo, char *classname,
 	
 	nofile = (strncmp(logdata, "Cannot open logfile ", 20) == 0);
 
-	for (rule = getrule(hostname, pagename, classname, C_LOG); (rule); rule = getrule(NULL, NULL, NULL, C_LOG)) {
+	for (rule = getrule(hostname, pagename, classname, hinfo, C_LOG); (rule); rule = getrule(NULL, NULL, NULL, hinfo, C_LOG)) {
 		int anylines = 0;
 
 		/* First, check if the filename matches */
@@ -1547,7 +1550,7 @@ int check_file(void *hinfo, char *classname,
 	atimedif = clock - atime;
 	mtimedif = clock - mtime;
 
-	for (rwalk = getrule(hostname, pagename, classname, C_FILE); (rwalk); rwalk = getrule(NULL, NULL, NULL, C_FILE)) {
+	for (rwalk = getrule(hostname, pagename, classname, hinfo, C_FILE); (rwalk); rwalk = getrule(NULL, NULL, NULL, hinfo, C_FILE)) {
 		int rulecolor = COL_GREEN;
 
 		/* First, check if the filename matches */
@@ -1812,7 +1815,7 @@ int check_dir(void *hinfo, char *classname,
 		return COL_YELLOW;
 	}
 
-	for (rwalk = getrule(hostname, pagename, classname, C_DIR); (rwalk); rwalk = getrule(NULL, NULL, NULL, C_DIR)) {
+	for (rwalk = getrule(hostname, pagename, classname, hinfo, C_DIR); (rwalk); rwalk = getrule(NULL, NULL, NULL, hinfo, C_DIR)) {
 		int rulecolor = COL_GREEN;
 
 		/* First, check if the filename matches */
@@ -1869,7 +1872,7 @@ static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype,
 	hostname = bbh_item(hinfo, BBH_HOSTNAME);
 	pagename = bbh_item(hinfo, BBH_PAGEPATH);
 
-	rule = getrule(hostname, pagename, classname, ruletype);
+	rule = getrule(hostname, pagename, classname, hinfo, ruletype);
 	while (rule) {
 		mon_proc_t *newitem = (mon_proc_t *)calloc(1, sizeof(mon_proc_t));
 
@@ -1883,11 +1886,11 @@ static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype,
 		  case C_DISK : rule->rule.disk.dcount = 0; break;
 		  case C_PROC : rule->rule.proc.pcount = 0; break;
 		  case C_PORT : rule->rule.port.pcount = 0; break;
-		  case C_SVC : rule->rule.svc.scount = 0; break;
+                 case C_SVC : rule->rule.svc.scount = 0; break;
 		  default: break;
 		}
 
-		rule = getrule(NULL, NULL, NULL, ruletype);
+		rule = getrule(NULL, NULL, NULL, hinfo, ruletype);
 	}
 
 	*walk = *head;

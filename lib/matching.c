@@ -198,11 +198,11 @@ int pickdata(char *buf, pcre *expr, int dupok, ...)
 }
 
 
-int timematch(char *tspec)
+int timematch(char *holidaykey, char *tspec)
 {
 	int result;
 
-	result = within_sla(tspec, 0);
+	result = within_sla(holidaykey, tspec, 0);
 
 	return result;
 }

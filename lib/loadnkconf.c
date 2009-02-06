@@ -211,7 +211,7 @@ static int timecheck(time_t starttime, time_t endtime, char *nktime)
 
 	if (starttime && (now < starttime)) return 0;
 	if (endtime && (now > endtime)) return 0;
-	if ((nktime == NULL) || within_sla(nktime, 0)) return 1;
+	if ((nktime == NULL) || within_sla(NULL, nktime, 0)) return 1; /* FIXME */
 
 	return 0;
 }

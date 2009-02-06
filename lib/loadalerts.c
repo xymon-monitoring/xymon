@@ -765,6 +765,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
 	int result, cfid = 0;
 	char *pgname, *cfline = NULL;
+	void *hinfo = hostinfo(alert->hostname);
 
 	/* The top-level page needs a name - cannot match against an empty string */
 	pgname = alert->location; if (strlen(pgname) == 0) pgname = "/";
@@ -921,7 +922,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * some random system recovered ... not good. So apply
 	 * this check to all messages.
 	 */
-	if (crit && crit->timespec && !timematch(crit->timespec)) { 
+	if (crit && crit->timespec && !timematch(bbh_item(hinfo, BBH_HOLIDAYS), crit->timespec)) {
 		traceprintf("Failed '%s' (time criteria)\n", cfline);
 		if (!printmode) return 0; 
 	}

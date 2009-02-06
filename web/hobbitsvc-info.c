@@ -249,10 +249,86 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 		/* No alerts defined. */
 		addtobuffer(buf, "<tr><td colspan=9 align=center><b><i>No alerts defined</i></b></td></tr>\n");
 	}
+
 	addtobuffer(buf, "</table>\n");
 
 	xfree(alert);
+
 }
+
+static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
+{
+	void *hi = hostinfo(hostname);
+	char l[1024];
+	time_t now = getcurrenttime(NULL);
+	struct tm *tm;
+	int month, year;
+	int needreload = 0;
+	char *holidayset;
+
+	tm = localtime(&now);
+	year = tm->tm_year + 1900;
+	month = tm->tm_mon;
+
+	holidayset = bbh_item(hi, BBH_HOLIDAYS);
+
+	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", hostname);
+	addtobuffer(buf, l);
+
+	addtobuffer(buf, "<tr>");
+
+	/* In January+February, show last year's holidays */
+	if (month <= 1) {
+		needreload = 1;
+		load_holidays(year-1);
+		addtobuffer(buf, "<td><table>\n");
+		if (holidayset) {
+			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year-1, holidayset);
+		}
+		else {
+			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year-1);
+		}
+		addtobuffer(buf, l);
+		printholidays(holidayset, buf);
+		addtobuffer(buf, "</table></td>\n");
+	}
+
+	/* Show this year's holidays */
+	if (needreload) load_holidays(year);
+	addtobuffer(buf, "<td><table>\n");
+	if (holidayset) {
+		sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year, holidayset);
+	}
+	else {
+		sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year);
+	}
+	addtobuffer(buf, l);
+	printholidays(holidayset, buf);
+	addtobuffer(buf, "</table></td>\n");
+
+	/* In November+December, show next year's holidays */
+	if (month >= 10) {
+		needreload = 1;
+		load_holidays(year+1);
+		addtobuffer(buf, "<td><table>\n");
+		if (holidayset) {
+			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year+1, holidayset);
+		}
+		else {
+			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year+1);
+		}
+		addtobuffer(buf, l);
+		printholidays(holidayset, buf);
+		addtobuffer(buf, "</table></td>\n");
+	}
+
+	addtobuffer(buf, "</tr>\n");
+
+	addtobuffer(buf, "</table>\n");
+
+	if (needreload) load_holidays(0);
+}
+
 
 
 static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
@@ -611,9 +687,8 @@ char *generate_info(char *hostname)
 {
 	strbuffer_t *infobuf;
 	char l[MAX_LINE_LEN];
-	void *hostwalk;
+	void *hostwalk, *clonewalk;
 	char *val;
-	void *clonewalk;
 	int ping, first, gotstatus;
 	int alertcolors, alertinterval;
 
@@ -631,6 +706,7 @@ char *generate_info(char *hostname)
 
 		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
+		load_holidays(0);
 	}
 
 	/* Load links */
@@ -931,6 +1007,11 @@ char *generate_info(char *hostname)
 			addtobuffer(infobuf, "Alert configuration unavailable");
 		addtobuffer(infobuf, "</td></tr>\n");
 	}
+	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
+
+	addtobuffer(infobuf, "<tr><th align=left valign=top>Holidays</th><td align=left>\n");
+	generate_hobbit_holidayinfo(hostname, infobuf);
+	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	if (gotstatus && showenadis) {

@@ -601,7 +601,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			nobb2 = (bbh_item(bbhost, BBH_FLAG_NOBB2) != NULL);
 
 			alertlist = bbh_item(bbhost, BBH_NK);
-			bbval = bbh_item(bbhost, BBH_NKTIME); if (bbval) nktime = within_sla(bbval, 0);
+			bbval = bbh_item(bbhost, BBH_NKTIME); if (bbval) nktime = within_sla(bbh_item(bbhost, BBH_HOLIDAYS), bbval, 0);
 
 			onwaplist = bbh_item(bbhost, BBH_WML);
 			nopropyellowlist = bbh_item(bbhost, BBH_NOPROPYELLOW);

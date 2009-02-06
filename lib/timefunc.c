@@ -185,7 +185,7 @@ static int minutes(char *p)
 	}
 }
 
-int within_sla(char *timespec, int defresult)
+int within_sla(char *holidaykey, char *timespec, int defresult)
 {
 	/*
 	 *    timespec is of the form W:HHMM:HHMM[,W:HHMM:HHMM]*
@@ -196,6 +196,7 @@ int within_sla(char *timespec, int defresult)
 	time_t tnow;
 	struct tm *now;
 	int curtime;
+	int newwday;
 	char *onesla;
 
 	if (!timespec) return defresult;
@@ -203,6 +204,7 @@ int within_sla(char *timespec, int defresult)
 	tnow = getcurrenttime(NULL);
 	now = localtime(&tnow);
 	curtime = now->tm_hour*60+now->tm_min;
+	newwday = getweekdayorholiday(holidaykey, now);
 
 	onesla = timespec;
 	while (!found && onesla) {
@@ -222,11 +224,11 @@ int within_sla(char *timespec, int defresult)
 
 			  case 'W':
 			  case 'w':
-				if ((now->tm_wday >= 1) && (now->tm_wday <=5)) wdaymatch = 1;
+				if ((newwday >= 1) && (newwday <=5)) wdaymatch = 1;
 				break;
 
 			  case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-				if (*wday == (now->tm_wday+'0')) wdaymatch = 1;
+				if (*wday == (newwday+'0')) wdaymatch = 1;
 				break;
 
 			  case ':':
@@ -281,10 +283,12 @@ char *check_downtime(char *hostname, char *testname)
 {
 	void *hinfo = hostinfo(hostname);
 	char *dtag;
+	char *holkey;
 
 	if (hinfo == NULL) return NULL;
 
 	dtag = bbh_item(hinfo, BBH_DOWNTIME);
+	holkey = bbh_item(hinfo, BBH_HOLIDAYS);
 	if (dtag && *dtag) {
 		static char *downtag = NULL;
 		static unsigned char *cause = NULL;
@@ -316,7 +320,7 @@ char *check_downtime(char *hostname, char *testname)
 				getescapestring(s5, &cause, &causelen);
 			}
 
-			if (within_sla(timetxt, 0)) {
+			if (within_sla(holkey, timetxt, 0)) {
 				char *onesvc, *buf;
 
 				if (strcmp(s1, "*") == 0) return cause;

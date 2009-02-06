@@ -22,7 +22,7 @@ extern void getntimer(struct timespec *tp);
 extern void init_timestamp(void);
 extern char *timespec_text(char *spec);
 extern struct timespec *tvdiff(struct timespec *tstart, struct timespec *tend, struct timespec *result);
-extern int within_sla(char *l, int defresult);
+extern int within_sla(char *holidaykey, char *timespec, int defresult);
 extern char *check_downtime(char *hostname, char *testname);
 extern int periodcoversnow(char *tag);
 extern char *histlogtime(time_t histtime);
