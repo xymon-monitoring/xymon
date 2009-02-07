@@ -445,7 +445,7 @@ int main(int argc, char *argv[])
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			hinfo = hostinfo(testhost);
 			if (hinfo) {
-				testpage = strdup(bbh_item(hinfo, BBH_PAGEPATH));
+				testpage = strdup(bbh_item(hinfo, BBH_ALLPAGEPATHS));
 			}
 			else {
 				errprintf("Host not found in bb-hosts - assuming it is on the top page\n");

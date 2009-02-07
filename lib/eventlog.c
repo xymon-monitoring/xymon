@@ -224,18 +224,31 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			if (hostcheck && (hostcheck(hostname) == 0)) continue;
 
 			if (pageregexp) {
-				char *pagename = bbh_item(eventhost, BBH_PAGEPATH);
-				pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0, 
-						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				char *pagename;
+
+				pagename = bbh_item_multi(eventhost, BBH_PAGEPATH);
+				pagematch = 0;
+				while (!pagematch && pagename) {
+					pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0,
+								ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+					pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+				}
 			}
 			else
 				pagematch = 1;
 			if (!pagematch) continue;
 
 			if (expageregexp) {
-				char *pagename = bbh_item(eventhost, BBH_PAGEPATH);
-				pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0, 
-						ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+				char *pagename;
+
+				pagename = bbh_item_multi(eventhost, BBH_PAGEPATH);
+				pagematch = 0;
+				while (!pagematch && pagename) {
+					pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0,
+								ovector, (sizeof(ovector)/sizeof(int))) >= 0);
+					pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+				}
+
 			}
 			else
 				pagematch = 0;

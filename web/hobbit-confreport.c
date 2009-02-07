@@ -467,7 +467,7 @@ addtolist:
 	/* Do the alerts */
 	alert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 	alert->hostname = host->hostname;
-	alert->location = bbh_item(hinfo, BBH_PAGEPATH);
+	alert->location = bbh_item(hinfo, BBH_ALLPAGEPATHS);
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";

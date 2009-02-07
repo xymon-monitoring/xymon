@@ -231,7 +231,7 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
-	alert->location = (hi ? bbh_item(hi, BBH_PAGEPATH) : "");
+	alert->location = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";

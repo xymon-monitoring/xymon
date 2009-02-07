@@ -606,7 +606,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				void *hi = hostinfo(hostname);
 				char *pagepath, *classname, *osname;
 
-				pagepath = (hi ? bbh_item(hi, BBH_PAGEPATH) : "");
+				pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
 				classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
 				osname = (hi ? bbh_item(hi, BBH_OS) : "");
 				if (!classname) classname = "";
@@ -2130,8 +2130,17 @@ int match_host_filter(void *hinfo, pcre *spage, pcre *shost, pcre *snet)
 
 	match = bbh_item(hinfo, BBH_HOSTNAME);
 	if (shost && match && !matchregex(match, shost)) return 0;
-	match = bbh_item(hinfo, BBH_PAGEPATH);
-	if (spage && match && !matchregex(match, spage)) return 0;
+	if (spage) {
+		int matchres = 0;
+
+		match = bbh_item_multi(hinfo, BBH_PAGEPATH);
+		while (match && (matchres == 0)) {
+			if (match && matchregex(match, spage)) matchres = 1;
+			match = bbh_item_multi(NULL, BBH_PAGEPATH);
+		}
+
+		if (matchres == 0) return 0;
+	}
 	match = bbh_item(hinfo, BBH_NET);
 	if (snet  && match && !matchregex(match, snet))  return 0;
 

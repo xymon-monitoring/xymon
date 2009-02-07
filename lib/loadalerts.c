@@ -762,13 +762,16 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * Match on pagespec, hostspec, svcspec, classspec, groupspec, colors, timespec, minduration, maxduration, sendrecovered
 	 */
 
+	static char *pgnames = NULL;
+	int pgmatchres, pgexclres;
 	time_t duration = (getcurrenttime(NULL) - alert->eventstart);
 	int result, cfid = 0;
-	char *pgname, *cfline = NULL;
+	char *pgtok, *cfline = NULL;
 	void *hinfo = hostinfo(alert->hostname);
 
 	/* The top-level page needs a name - cannot match against an empty string */
-	pgname = alert->location; if (strlen(pgname) == 0) pgname = "/";
+	if (pgnames) xfree(pgnames);
+	pgnames = strdup((*alert->location == '\0') ? "/" : alert->location);
 
 	if (crit) { cfid = crit->cfid; cfline = crit->cfline; }
 	if (!cfid && rulecrit) cfid = rulecrit->cfid;
@@ -846,13 +849,25 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		if (grouplist) xfree(grouplist);
 	}
 
-	if (crit && crit->pagespec && !namematch(pgname, crit->pagespec, crit->pagespecre)) { 
-		traceprintf("Failed '%s' (pagename not in include list)\n", cfline);
-		return 0; 
+	pgmatchres = pgexclres = -1;
+	pgtok = strtok(pgnames, ",");
+	while (pgtok) {
+		if (crit && crit->pagespec && (pgmatchres != 1))
+			pgmatchres = (namematch(pgtok, crit->pagespec, crit->pagespecre) ? 1 : 0);
+
+		if (crit && crit->expagespec && (pgexclres != 1))
+			pgexclres = (namematch(pgtok, crit->expagespec, crit->expagespecre) ? 1 : 0);
+
+		pgtok = strtok(NULL, ",");
+
 	}
-	if (crit && crit->expagespec && namematch(pgname, crit->expagespec, crit->expagespecre)) { 
+	if (pgexclres == 1) {
 		traceprintf("Failed '%s' (pagename excluded)\n", cfline);
 		return 0; 
+	}
+	if (pgmatchres == 0) {
+		traceprintf("Failed '%s' (pagename not in include list)\n", cfline);
+		return 0;
 	}
 
 	if (crit && crit->hostspec && !namematch(alert->hostname, crit->hostspec, crit->hostspecre)) { 
