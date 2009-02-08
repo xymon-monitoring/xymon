@@ -20,7 +20,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef BBGEN_SSL
+#ifdef HAVE_OPENSSL
 
 /*
  * OpenSSL defs. We require OpenSSL 0.9.5 or later

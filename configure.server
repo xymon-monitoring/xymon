@@ -108,7 +108,7 @@ else
 	fi
 	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
 	then
-		SSLDEF="-DBBGEN_SSL"
+		SSLDEF="-DHAVE_OPENSSL=1"
 	else
 		SSLDEF=""
 	fi
