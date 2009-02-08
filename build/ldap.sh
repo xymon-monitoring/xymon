@@ -57,8 +57,8 @@
 		echo ""
 	else
 		cd build
-		OS=`uname -s` $MAKE -f Makefile.test-ldap clean
-		OS=`uname -s` LDAPINC="-I$LDAPINC" $MAKE -f Makefile.test-ldap test-compile
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ldap clean
+		OS=`uname -s | tr '[/]' '[_]'` LDAPINC="-I$LDAPINC" $MAKE -f Makefile.test-ldap test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found LDAP include files in $LDAPINC"
 		else
@@ -67,10 +67,13 @@
 			LDAPLIB=""
 		fi
 
-		OS=`uname -s` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link
+		OS=`uname -s | tr '[/]' '[_]'` LDAPLIB="-L$LDAPLIB" LDAPLBER="$LDAPLBER" $MAKE -f Makefile.test-ldap test-link
 		if [ $? -eq 0 ]; then
 			echo "Found LDAP libraries in $LDAPLIB"
-			LDAPVENDOR=`./test-ldap`
+			LDAPVENDOR=`./test-ldap vendor`
+			LDAPVERSION=`./test-ldap version`
+			LDAPCOMPILEFLAGS=`./test-ldap flags`
+			# echo "LDAP vendor is $LDAPVENDOR, version $LDAPVERSION"
 		else
 			echo "WARNING: LDAP library files found in $LDAPLIB, but link fails."
 			LDAPINC=""
@@ -78,7 +81,7 @@
 		fi
 
 
-		OS=`uname -s` $MAKE -f Makefile.test-ldap clean
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ldap clean
 		cd ..
 	fi
 

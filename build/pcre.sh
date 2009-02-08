@@ -46,8 +46,8 @@
 		exit 1
 	else
 		cd build
-		OS=`uname -s` $MAKE -f Makefile.test-pcre clean
-		OS=`uname -s` PCREINC="-I$PCREINC" $MAKE -f Makefile.test-pcre test-compile
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-pcre clean
+		OS=`uname -s | tr '[/]' '[_]'` PCREINC="-I$PCREINC" $MAKE -f Makefile.test-pcre test-compile
 		if [ $? -eq 0 ]; then
 			echo "Found PCRE include files in $PCREINC"
 		else
@@ -55,14 +55,14 @@
 			exit 1
 		fi
 
-		OS=`uname -s` PCRELIB="-L$PCRELIB" $MAKE -f Makefile.test-pcre test-link
+		OS=`uname -s | tr '[/]' '[_]'` PCRELIB="-L$PCRELIB" $MAKE -f Makefile.test-pcre test-link
 		if [ $? -eq 0 ]; then
 			echo "Found PCRE libraries in $PCRELIB"
 		else
 			echo "ERROR: PCRE library files found in $PCRELIB, but link fails."
 			exit 1
 		fi
-		OS=`uname -s` $MAKE -f Makefile.test-pcre clean
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-pcre clean
 		cd ..
 	fi
 

@@ -50,12 +50,15 @@
 				FPING="hobbitping"
 			fi
 		fi
+	elif test "$USEHOBBITPING" = "n"
+	then
+		echo "OK, will use '$FPING' for ping tests"
 	else
 		FPING="hobbitping"
 		USEHOBBITPING="y"
 	fi
 
-	if test "$USEHOBBITPING" = "y"
+	if test "$USEHOBBITPING" = "y" -o "$USERFPING" != ""
 	then
 		NOTOK=0
 	else
