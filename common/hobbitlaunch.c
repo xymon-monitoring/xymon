@@ -20,14 +20,16 @@ static char rcsid[] = "$Id: hobbitlaunch.c,v 1.41 2006-07-20 16:06:41 henrik Exp
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#include <signal.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
 #include <ctype.h>
+#include <regex.h>
 
 #include "libbbgen.h"
+
+#include <signal.h>
 
 /*
  * config file format:
@@ -54,9 +56,9 @@ typedef struct tasklist_t {
 	int disabled;
 	grouplist_t *group;
 	char *cmd;
-	int interval;
+	int interval, maxruntime;
 	char *logfile;
-	char *envfile, *envarea;
+	char *envfile, *envarea, *onhostptn;
 	pid_t pid;
 	time_t laststart;
 	int exitcode;
@@ -80,6 +82,7 @@ void update_task(tasklist_t *newtask)
 	int freeit = 1;
 	int logfilechanged = 0;
 	int envfilechanged = 0;
+	int disablechanged = 0;
 
 	for (twalk = taskhead; (twalk && (strcmp(twalk->key, newtask->key))); twalk = twalk->next);
 
@@ -113,6 +116,11 @@ void update_task(tasklist_t *newtask)
 		else {
 			envfilechanged = 0;
 		}
+
+		if (twalk->disabled != newtask->disabled)
+			disablechanged = 1;
+		else
+			disablechanged = 0;
 	}
 
 	if (newtask->cmd == NULL) {
@@ -128,22 +136,28 @@ void update_task(tasklist_t *newtask)
 		tasktail = newtask;
 		freeit = 0;
 	}
-	else if (strcmp(twalk->cmd, newtask->cmd) || logfilechanged || envfilechanged) {
+	else if (strcmp(twalk->cmd, newtask->cmd) || logfilechanged || envfilechanged || disablechanged) {
 		/* Task changed. */
 		xfree(twalk->cmd); 
 		if (twalk->logfile) xfree(twalk->logfile);
 		if (twalk->envfile) xfree(twalk->envfile);
 		if (twalk->envarea) xfree(twalk->envarea);
+		if (twalk->onhostptn) xfree(twalk->onhostptn);
 		twalk->cmd = strdup(newtask->cmd);
 		if (newtask->logfile) twalk->logfile = strdup(newtask->logfile); else twalk->logfile = NULL;
 		if (newtask->envfile) twalk->envfile = strdup(newtask->envfile); else twalk->envfile = NULL;
 		if (newtask->envarea) twalk->envarea = strdup(newtask->envarea); else twalk->envarea = NULL;
+		if (newtask->onhostptn) twalk->onhostptn = strdup(newtask->onhostptn); else twalk->onhostptn = NULL;
 
 		/* Must bounce the task */
 		twalk->cfload = 1;
 	}
 	else if (twalk->interval != newtask->interval) {
 		twalk->interval = newtask->interval;
+		twalk->cfload = 0;
+	}
+	else if (twalk->maxruntime != newtask->maxruntime) {
+		twalk->maxruntime = newtask->maxruntime;
 		twalk->cfload = 0;
 	}
 	else if (twalk->disabled != newtask->disabled) {
@@ -161,6 +175,7 @@ void update_task(tasklist_t *newtask)
 		if (newtask->logfile) xfree(newtask->logfile);
 		if (newtask->envfile) xfree(newtask->envfile);
 		if (newtask->envarea) xfree(newtask->envarea);
+		if (newtask->onhostptn) xfree(newtask->onhostptn);
 		xfree(newtask);
 	}
 }
@@ -172,6 +187,7 @@ void load_config(char *conffn)
 	FILE *fd;
 	strbuffer_t *inbuf;
 	char *p;
+	char myhostname[256];
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -186,6 +202,10 @@ void load_config(char *conffn)
 	}
 
 	errprintf("Loading tasklist configuration from %s\n", conffn);
+	if (gethostname(myhostname, sizeof(myhostname)) != 0) {
+		errprintf("Cannot get the local hostname, using 'localhost' (error: %s)\n", strerror(errno));
+		strcpy(myhostname, "localhost");
+	}
 
 	/* The cfload flag: -1=delete task, 0=old task unchanged, 1=new/changed task */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
@@ -231,7 +251,7 @@ void load_config(char *conffn)
 			int maxuse;
 			grouplist_t *gwalk;
 
-			p += 3;
+			p += 6;
 			p += strspn(p, " \t");
 			groupname = p;
 			p += strcspn(p, " \t");
@@ -259,6 +279,17 @@ void load_config(char *conffn)
 			  case 'm': curtask->interval *= 60; break;	/* Minutes */
 			  case 'h': curtask->interval *= 3600; break;	/* Hours */
 			  case 'd': curtask->interval *= 86400; break;	/* Days */
+			}
+		}
+		else if (curtask && (strncasecmp(p, "MAXTIME ", 8) == 0)) {
+			char *tspec;
+			p += 8;
+			curtask->maxruntime = atoi(p);
+			tspec = p + strspn(p, "0123456789");
+			switch (*tspec) {
+			  case 'm': curtask->maxruntime *= 60; break;	/* Minutes */
+			  case 'h': curtask->maxruntime *= 3600; break;	/* Hours */
+			  case 'd': curtask->maxruntime *= 86400; break;	/* Days */
 			}
 		}
 		else if (curtask && (strncasecmp(p, "LOGFILE ", 8) == 0)) {
@@ -290,6 +321,25 @@ void load_config(char *conffn)
 		else if (curtask && (strcasecmp(p, "DISABLED") == 0)) {
 			curtask->disabled = 1;
 		}
+		else if (curtask && (strncasecmp(p, "ONHOST ", 7) == 0)) {
+			regex_t cpattern;
+			int status;
+
+			p += 7;
+			p += strspn(p, " \t");
+
+			curtask->onhostptn = strdup(p);
+
+			/* Match the hostname against the pattern; if it doesnt match then disable the task */
+			status = regcomp(&cpattern, curtask->onhostptn, REG_EXTENDED|REG_ICASE|REG_NOSUB);
+			if (status == 0) {
+				status = regexec(&cpattern, myhostname, 0, NULL, 0);
+				if (status == REG_NOMATCH) curtask->disabled = 1;
+			}
+			else {
+				errprintf("ONHOST pattern '%s' is invalid\n", p);
+			}
+		}
 	}
 	if (curtask) update_task(curtask);
 	stackfclose(fd);
@@ -302,6 +352,7 @@ void load_config(char *conffn)
 			/* Kill the task, if active */
 			if (twalk->pid) {
 				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
 			/* And prepare to free this tasklist entry */
@@ -310,6 +361,7 @@ void load_config(char *conffn)
 			if (twalk->logfile) xfree(twalk->logfile);
 			if (twalk->envfile) xfree(twalk->envfile);
 			if (twalk->envarea) xfree(twalk->envarea);
+			if (twalk->onhostptn) xfree(twalk->onhostptn);
 			break;
 
 		  case 0:
@@ -320,6 +372,7 @@ void load_config(char *conffn)
 			/* Bounce the task, if it is active */
 			if (twalk->pid) {
 				dbgprintf("Killing task %s PID %d\n", twalk->key, (int)twalk->pid);
+				twalk->beingkilled = 1;
 				kill(twalk->pid, SIGTERM);
 			}
 			break;
@@ -437,12 +490,15 @@ int main(int argc, char *argv[])
 			for (twalk = taskhead; (twalk); twalk = twalk->next) {
 				printf("[%s]\n", twalk->key);
 				printf("\tCMD %s\n", twalk->cmd);
+				if (twalk->disabled) printf("\tDISABLED\n");
 				if (twalk->group)    printf("\tGROUP %s\n", twalk->group->groupname);
 				if (twalk->depends)  printf("\tNEEDS %s\n", twalk->depends->key);
 				if (twalk->interval) printf("\tINTERVAL %d\n", twalk->interval);
+				if (twalk->maxruntime) printf("\tMAXTIME %d\n", twalk->maxruntime);
 				if (twalk->logfile)  printf("\tLOGFILE %s\n", twalk->logfile);
 				if (twalk->envfile)  printf("\tENVFILE %s\n", twalk->envfile);
 				if (twalk->envarea)  printf("\tENVAREA %s\n", twalk->envarea);
+				if (twalk->onhostptn) printf("\tONHOST %s\n", twalk->onhostptn);
 				printf("\n");
 			}
 			return 0;
@@ -495,7 +551,7 @@ int main(int argc, char *argv[])
 
 	errprintf("hobbitlaunch starting\n");
 	while (running) {
-		time_t now = gettimer();
+		time_t now = getcurrenttime(NULL);
 
 		if (now >= nextcfgload) {
 			load_config(config);
@@ -528,7 +584,6 @@ int main(int argc, char *argv[])
 					twalk->exitcode = -WTERMSIG(status);
 					twalk->failcount++;
 					errprintf("Task %s terminated by signal %d\n", twalk->key, abs(twalk->exitcode));
-					twalk->failcount++;
 				}
 
 				if (twalk->group) twalk->group->currentuse--;
@@ -536,6 +591,7 @@ int main(int argc, char *argv[])
 				/* Tasks that depend on this task should be killed ... */
 				for (dwalk = taskhead; (dwalk); dwalk = dwalk->next) {
 					if ((dwalk->depends == twalk) && (dwalk->pid > 0)) {
+						dwalk->beingkilled = 1;
 						kill(dwalk->pid, SIGTERM);
 					}
 				}
@@ -631,6 +687,13 @@ int main(int argc, char *argv[])
 			}
 			else if (twalk->pid > 0) {
 				dbgprintf("Task %s active with PID %d\n", twalk->key, (int)twalk->pid);
+				if (twalk->maxruntime && ((now - twalk->laststart) > twalk->maxruntime)) {
+					errprintf("Killing hung task %s (PID %d) after %d seconds\n",
+						  twalk->key, (int)twalk->pid,
+						  (now - twalk->laststart));
+					kill(twalk->pid, (twalk->beingkilled ? SIGKILL : SIGTERM));
+					twalk->beingkilled = 1; /* Next time it's a real kill */
+				}
 			}
 		}
 

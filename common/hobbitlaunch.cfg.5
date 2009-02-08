@@ -38,6 +38,10 @@ An entry looks like this:
 .br
           INTERVAL 5m
 .br
+          ONHOST localhost
+.br
+          MAXTIME 10m
+.br
           LOGFILE /var/log/xymon/updateweb.log
 .sp
 The \fBkey\fR is enclosed in angle brackets, and must be unique
@@ -54,6 +58,18 @@ you use this to disable standard tasks, instead of removing them
 or commenting them out. Upgrades to Xymon will add standard
 tasks back into the file, so unless you have them listed as DISABLED
 then tasks may re-appear unexpectedly after an upgrade.
+
+The \fBONHOST\fR keyword tells hobbitlaunch that this task should
+only run on specific hosts. After the ONHOST keyword, you must
+provide a "regular expression"; if the hostname where hobbitlaunch
+runs matches this expression, then the task will run. If it doesn't
+match, then the task is treated as if it were DISABLED.
+
+The \fBMAXTIME\fR keyword sets a maximum time that the task may
+run; if exceeded, hobbitlaunch will kill the task. The time
+is in seconds by default, you can specify minutes, hours or
+days by adding an "m", "h" or "d" after the number. By default
+there is no upper limit on how long a taskmay run.
 
 The \fBNEEDS\fR instructs hobbitlaunch not to run this task unless
 the task defined by the NEEDS keyword is already running. This
