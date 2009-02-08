@@ -196,7 +196,7 @@ hobbitgraph_t *find_hobbit_graph(char *rrdname)
 
 static char *hobbit_graph_text(char *hostname, char *dispname, char *service, int bgcolor,
 			      hobbitgraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt,
-			      time_t starttime, time_t endtime)
+			      int locatorbased, time_t starttime, time_t endtime)
 {
 	static char *rrdurl = NULL;
 	static int rrdurlsize = 0;
@@ -207,6 +207,14 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 	char *cgiurl = xgetenv("CGIBINURL");
 
 	MEMDEFINE(rrdservicename);
+
+	if (locatorbased) {
+		char *qres = locator_query(hostname, ST_RRD, &cgiurl);
+		if (!qres) {
+			errprintf("Cannot find RRD files for host %s\n", hostname);
+			return "";
+		}
+	}
 
 	if (!gwidth) {
 		gwidth = atoi(xgetenv("RRDWIDTH"));
@@ -303,13 +311,58 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 
 char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 			hobbitgraph_t *graphdef, int itemcount,
-			hg_stale_rrds_t nostale, hg_link_t wantmeta,
+			hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
 			time_t starttime, time_t endtime)
 {
 	return hobbit_graph_text(hostname, dispname, 
 				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
 				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt),
-				 starttime, endtime);
+				 locatorbased, starttime, endtime);
 }
+
+
+rrdtpldata_t *setup_template(char *params[])
+{
+	int i;
+	rrdtpldata_t *result;
+	rrdtplnames_t *nam;
+	int dsindex = 1;
+
+	result = (rrdtpldata_t *)calloc(1, sizeof(rrdtpldata_t));
+	result->dsnames = rbtNew(string_compare);
+
+	for (i = 0; (params[i]); i++) {
+		if (strncasecmp(params[i], "DS:", 3) == 0) {
+			char *pname, *pend;
+
+			pname = params[i] + 3;
+			pend = strchr(pname, ':');
+			if (pend) {
+				int plen = (pend - pname);
+
+				nam = (rrdtplnames_t *)calloc(1, sizeof(rrdtplnames_t));
+				nam->idx = dsindex++;
+
+				if (result->template == NULL) {
+					result->template = (char *)malloc(plen + 1);
+					*result->template = '\0';
+					nam->dsnam = (char *)malloc(plen+1); strncpy(nam->dsnam, pname, plen); nam->dsnam[plen] = '\0';
+				}
+				else {
+					/* Hackish way of getting the colon delimiter */
+					pname--; plen++;
+					result->template = (char *)realloc(result->template, strlen(result->template) + plen + 1);
+					nam->dsnam = (char *)malloc(plen); strncpy(nam->dsnam, pname+1, plen-1); nam->dsnam[plen-1] = '\0';
+				}
+				strncat(result->template, pname, plen);
+
+				rbtInsert(result->dsnames, nam->dsnam, nam);
+			}
+		}
+	}
+
+	return result;
+}
+
 

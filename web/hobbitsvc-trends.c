@@ -126,7 +126,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	if (hostrrdgraphs == NULL) {
 		dbgprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
 		return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
-					 HG_WITH_STALE_RRDS, wantmeta, starttime, endtime);
+					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 	}
 
 	/* Find this rrd definition in the rrdgraphs */
@@ -142,7 +142,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 
 			/* Yes, return default link for this RRD */
 			return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
-						 HG_WITH_STALE_RRDS, wantmeta, starttime, endtime);
+						 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 		}
 		else {
 			dbgprintf("rrdlink_text: Default URL NOT included\n");
@@ -194,7 +194,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 			myrrd->count = rrd->count;
 			myrrd->next = NULL;
 			partlink = hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
-						     HG_WITH_STALE_RRDS, wantmeta, starttime, endtime);
+						     HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
 				rrdlink = (char *)realloc(rrdlink, rrdlinksize);
@@ -216,7 +216,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	else {
 		/* It is included with the default graph */
 		return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
-					 HG_WITH_STALE_RRDS, wantmeta, starttime, endtime);
+					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 	}
 
 	return "";

@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: hobbitsvc.c,v 1.73 2006-08-07 10:05:39 henrik Exp $"
 static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
+static int locatorbased = 0;
 
 /* CGI params */
 static char *hostname = NULL;
@@ -239,10 +240,26 @@ int do_request(void)
 		strcpy(timesincechange, "0 minutes");
 
 		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
-			time_t endtime = getcurrenttime(NULL);
+			if (locatorbased) {
+				char *cgiurl, *qres;
 
-			sethostenv_backsecs(backsecs);
-			log = restofmsg = generate_trends(hostname, endtime-backsecs, endtime);
+				qres = locator_query(hostname, ST_RRD, &cgiurl);
+				if (!qres) {
+					errprintf("Cannot find RRD files for host %s\n", hostname);
+				}
+				else {
+					/* Redirect browser to the real server */
+					fprintf(stdout, "Location: %s/bb-hostsvc.sh?HOST=%s&SERVICE=%s\n\n",
+						cgiurl, hostname, service);
+					return 0;
+				}
+			}
+			else {
+				time_t endtime = getcurrenttime(NULL);
+
+				sethostenv_backsecs(backsecs);
+				log = restofmsg = generate_trends(hostname, endtime-backsecs, endtime);
+			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
 			log = restofmsg = generate_info(hostname);
@@ -512,14 +529,29 @@ int do_request(void)
 	}
 	else {
 		if (clientid && (source == SRC_HISTLOGS)) {
-			char logfn[PATH_MAX];
-			struct stat st;
+			if (locatorbased) {
+				char *cgiurl, *qres;
 
-			sprintf(logfn, "%s/%s", hostdatadir, clientid);
-			clientavail = (stat(logfn, &st) == 0);
+				qres = locator_query(hostname, ST_HOSTDATA, &cgiurl);
+				if (!qres) {
+					errprintf("Cannot find hostdata files for host %s\n", hostname);
+				}
+				else {
+					clienturi = (char *)malloc(strlen(cgiurl) + 20 + strlen(hostname));
+					sprintf(clienturi, "%s/bb-hostsvc.sh?CLIENT=%s&amp;TIMEBUF=%s", 
+						cgiurl, hostname, clientid);
+				}
+			}
+			else {
+				char logfn[PATH_MAX];
+				struct stat st;
 
-			if (clientavail) {
-				sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
+				sprintf(logfn, "%s/%s", hostdatadir, clientid);
+				clientavail = (stat(logfn, &st) == 0);
+
+				if (clientavail) {
+					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
+				}
 			}
 		}
 
@@ -528,7 +560,7 @@ int do_request(void)
 			  displayname,
 			  service, 
 			  ip,
-		          color, 
+		          color,
 			  (sender ? sender : "Hobbit"), 
 			  (flags ? flags : ""),
 		          logtime, timesincechange, 
@@ -539,7 +571,7 @@ int do_request(void)
 		          (source == SRC_HISTLOGS), 
 			  wantserviceid, 
 			  ishtmlformatted,
-			  (source == SRC_HOBBITD),
+			  locatorbased,
 			  multigraphs, (clientavail ? clienturi : NULL),
 			  nkprio, nkttgroup, nkttextra,
 			  backsecs,
@@ -615,6 +647,11 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--locator=")) {
+			char *p = strchr(argv[argi], '=');
+			locator_init(p+1);
+			locatorbased = 1;
 		}
 	}
 

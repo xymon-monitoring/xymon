@@ -61,6 +61,7 @@ typedef struct strbuffer_t {
 #include "../lib/loadalerts.h"
 #include "../lib/loadhosts.h"
 #include "../lib/loadnkconf.h"
+#include "../lib/locator.h"
 #include "../lib/matching.h"
 #include "../lib/md5.h"
 #include "../lib/memory.h"

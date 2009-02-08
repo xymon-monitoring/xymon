@@ -366,6 +366,7 @@ static char *ftypestr(unsigned int ftype)
 	else if (ftype == S_IFCHR)  return "char";
 	else if (ftype == S_IFDIR)  return "dir";
 	else if (ftype == S_IFIFO)  return "fifo";
+	else if (ftype == S_IFLNK)  return "symlink";
 
 	return "";
 }
@@ -815,6 +816,7 @@ curtime, curtext, curgroup, cfid);
 						else if (strcasecmp(tok+5, "char") == 0) currule->rule.fcheck.ftype = S_IFCHR;
 						else if (strcasecmp(tok+5, "dir") == 0) currule->rule.fcheck.ftype = S_IFDIR;
 						else if (strcasecmp(tok+5, "fifo") == 0) currule->rule.fcheck.ftype = S_IFIFO;
+						else if (strcasecmp(tok+5, "symlink") == 0) currule->rule.fcheck.ftype = S_IFLNK;
 					}
 					else if (strncasecmp(tok, "size>", 5) == 0) {
 						currule->flags |= FCHK_MINSIZE;
@@ -1423,22 +1425,17 @@ int scan_log(void *hinfo, char *classname,
 		}
 
 		/* Next, check for a match anywhere in the data*/
-		dbgprintf("Looking for %s anywhere in the text\n", rule->rule.log.matchexp->pattern);
-		if (!namematch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp)) continue;
-		dbgprintf("Pattern found somewhere in the text\n");
+		if (!patternmatch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp)) continue;
 
 		/* Some data in there matches what we want. Look at each line. */
 		boln = logdata;
 		while (boln) {
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
-			if (namematch(boln, rule->rule.log.matchone->pattern, rule->rule.log.matchone->exp)) {
+			if (patternmatch(boln, rule->rule.log.matchone->pattern, rule->rule.log.matchone->exp)) {
 				dbgprintf("Line '%s' matches\n", boln);
 
 				/* It matches. But maybe we'll ignore it ? */
-				if (rule->rule.log.ignoreexp && namematch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp)) {
-					dbgprintf("IGNORED match in line '%s'\n", boln);
-				}
-				else {
+				if (!(rule->rule.log.ignoreexp && patternmatch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp))) {
 					/* We wants it ... */
 					dbgprintf("FOUND match in line '%s'\n", boln);
 					anylines++;
@@ -1458,6 +1455,7 @@ int scan_log(void *hinfo, char *classname,
 
 		/* We have a match */
 		if (anylines) {
+			dbgprintf("Log rule at line %d matched\n", rule->cfid);
 			if (rule->rule.log.color != COL_GREEN) addalertgroup(rule->groups);
 			if (rule->rule.log.color > result) result = rule->rule.log.color;
 		}
@@ -1477,7 +1475,7 @@ int check_file(void *hinfo, char *classname,
 	char *boln, *eoln;
 	char msgline[PATH_MAX];
 
-	int exists = 1, ftype = 0;
+	int exists = 1, ftype = 0, islink = 0;
 	off_t fsize = 0;
 	unsigned int fmode = 0, linkcount = 0;
 	int ownerid = -1, groupid = -1;
@@ -1508,6 +1506,7 @@ int check_file(void *hinfo, char *classname,
 				else if (strncmp(tstr, "(block-device", 13) == 0) ftype = S_IFBLK;
 				else if (strncmp(tstr, "(FIFO", 5) == 0) ftype = S_IFIFO;
 				else if (strncmp(tstr, "(socket", 7) == 0) ftype = S_IFSOCK;
+				else if (strstr(tstr, ", symlink -> ") == 0) islink = 1;
 			}
 		}
 		else if (strncmp(boln, "mode:", 5) == 0) {
@@ -1595,7 +1594,7 @@ int check_file(void *hinfo, char *classname,
 		}
 
 		if (rwalk->flags & FCHK_TYPE) {
-			if (rwalk->rule.fcheck.ftype != ftype) {
+			if ( ((rwalk->rule.fcheck.ftype == S_IFLNK) && !islink) || (rwalk->rule.fcheck.ftype != ftype) ) {
 				rulecolor = rwalk->rule.fcheck.color;
 				sprintf(msgline, "File is a %s - should be %s\n", 
 					ftypestr(ftype), ftypestr(rwalk->rule.fcheck.ftype));

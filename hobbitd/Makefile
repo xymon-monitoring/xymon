@@ -1,10 +1,11 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk
 CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
 
 HOBBITDOBJS   = hobbitd.o hobbitd_buffer.o hobbitd_ipc.o
 CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
+LOCATOROBJS   = hobbitd_locator.o
 SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
 FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o hobbitd_buffer.o
 HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o hobbitd_buffer.o
@@ -33,6 +34,9 @@ hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
 
 hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS) $(LIBRTDEF)
+
+hobbitd_locator: $(LOCATOROBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(LOCATOROBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
 hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)

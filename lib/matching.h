@@ -14,6 +14,7 @@
 /* The clients probably dont have the pcre headers */
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
 #include <pcre.h>
+#include <stdarg.h>
 
 extern pcre *compileregex(const char *pattern);
 extern pcre *multilineregex(const char *pattern);

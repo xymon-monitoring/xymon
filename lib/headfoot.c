@@ -63,6 +63,8 @@ typedef struct treerec_t {
 	int flag;
 } treerec_t;
 
+static int backdays = 0, backhours = 0, backmins = 0, backsecs = 0;
+
 typedef struct listrec_t {
 	char *name, *val, *extra;
 	int selected;
@@ -75,8 +77,6 @@ typedef struct listpool_t {
 } listpool_t;
 static listpool_t *listpoolhead = NULL;
 
-
-static int backdays = 0, backhours = 0, backmins = 0, backsecs = 0;
 
 static void clearflags(RbtHandle tree)
 {
@@ -1174,6 +1174,22 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 		}
 
+		else if (strncmp(t_start, "BACKDAYS", 8) == 0) {
+			fprintf(output, "%d", backdays);
+		}
+
+		else if (strncmp(t_start, "BACKHOURS", 9) == 0) {
+			fprintf(output, "%d", backhours);
+		}
+
+		else if (strncmp(t_start, "BACKMINS", 8) == 0) {
+			fprintf(output, "%d", backmins);
+		}
+
+		else if (strncmp(t_start, "BACKSECS", 8) == 0) {
+			fprintf(output, "%d", backsecs);
+		}
+
 		else if (strncmp(t_start, "EVENTLASTMONTHBEGIN", 19) == 0) {
 			time_t t = getcurrenttime(NULL);
 			struct tm *tm = localtime(&t);
@@ -1249,22 +1265,6 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			fprintf(output, "%s", eventreport_timestring(t));
 		}
 
-		else if (strncmp(t_start, "BACKDAYS", 8) == 0) {
-			fprintf(output, "%d", backdays);
-		}
-
-		else if (strncmp(t_start, "BACKHOURS", 9) == 0) {
-			fprintf(output, "%d", backhours);
-		}
-
-		else if (strncmp(t_start, "BACKMINS", 8) == 0) {
-			fprintf(output, "%d", backmins);
-		}
-
-		else if (strncmp(t_start, "BACKSECS", 8) == 0) {
-			fprintf(output, "%d", backsecs);
-		}
-
 		else if (*t_start && (savechar == ';')) {
 			/* A "&xxx;" is probably an HTML escape - output unchanged. */
 			fprintf(output, "&%s", t_start);
@@ -1303,7 +1303,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	struct  stat st;
 	char	*templatedata;
 	char	*hfpath;
-	int     have_pagepath = (hostenv_pagepath != NULL);
+	int	have_pagepath = (hostenv_pagepath != NULL);
 
 	MEMDEFINE(filename);
 
@@ -1366,10 +1366,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 			*p = '\0';
 		}
 	}
-
-	if (!have_pagepath) {
-		xfree(hfpath);
-	}
+	xfree(hfpath);
 
 	if (fd == -1) {
 		/* Fall back to default head/foot file. */
@@ -1413,7 +1410,10 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		xfree(templatedata);
 	}
 
-	xfree(hostenv_pagepath); hostenv_pagepath = NULL;
+	if (!have_pagepath) {
+		xfree(hostenv_pagepath); hostenv_pagepath = NULL;
+	}
+
 	xfree(bulletinfile);
 
 	MEMUNDEFINE(filename);

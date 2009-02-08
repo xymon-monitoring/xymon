@@ -141,7 +141,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       char *firstline, char *restofmsg, 
 		       time_t acktime, char *ackmsg, char *acklist,
 		       time_t disabletime, char *dismsg,
-		       int is_history, int wantserviceid, int htmlfmt, int hobbitd,
+		       int is_history, int wantserviceid, int htmlfmt, int locatorbased,
 		       char *multigraphs,
 		       char *linktoclient,
 		       char *nkprio, char *nkttgroup, char *nkttextra,
@@ -437,7 +437,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 		if (may_have_rrd) {
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
-			fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, now-graphtime, now));
+			fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 		}
 	}
 

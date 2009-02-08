@@ -118,6 +118,65 @@ void errormsg(char *msg)
 	exit(1);
 }
 
+void request_cacheflush(char *hostname)
+{
+	/* Build a cache-flush request, and send it to all of the $BBTMP/rrdctl.* sockets */
+	char *req, *bufp;
+	int bytesleft;
+	DIR *dir;
+	struct dirent *d;
+	int ctlsocket = -1;
+
+	req = (char *)malloc(strlen(hostname)+3);
+	sprintf(req, "/%s/", hostname);
+
+	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
+	if (ctlsocket == -1) {
+		errprintf("Cannot get socket: %s\n", strerror(errno));
+		return;
+	}
+	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
+
+	dir = opendir(xgetenv("BBTMP"));
+	while ((d = readdir(dir)) != NULL) {
+		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
+			struct sockaddr_un myaddr;
+			socklen_t myaddrsz = 0;
+			int n, sendfailed = 0;
+
+			memset(&myaddr, 0, sizeof(myaddr));
+			myaddr.sun_family = AF_UNIX;
+			sprintf(myaddr.sun_path, "%s/%s", xgetenv("BBTMP"), d->d_name);
+			myaddrsz = sizeof(myaddr);
+			bufp = req; bytesleft = strlen(req);
+			do {
+				n = sendto(ctlsocket, bufp, bytesleft, 0, (struct sockaddr *)&myaddr, myaddrsz);
+				if (n == -1) {
+					if (errno != EAGAIN) {
+						errprintf("Sendto failed: %s\n", strerror(errno));
+					}
+
+					sendfailed = 1;
+				}
+				else {
+					bytesleft -= n;
+					bufp += n;
+				}
+			} while ((!sendfailed) && (bytesleft > 0));
+		}
+	}
+	closedir(dir);
+	xfree(req);
+
+	/*
+	 * Sleep 0.3 secs to allow the cache flush to happen.
+	 * Note: It isn't guaranteed to happen in this time, but
+	 * there's a good chance that it will.
+	 */
+	usleep(300000);
+}
+
+
 void parse_query(void)
 {
 	cgidata_t *cgidata = NULL, *cwalk;
@@ -762,6 +821,13 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		rrddir = strdup(dnam);
 	}
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
+
+	/* Request an RRD cache flush from the hobbitd_rrd update daemon */
+	if (hostlist) {
+		int i;
+		for (i=0; (i < hostlistsize); i++) request_cacheflush(hostlist[i]);
+	}
+	else if (hostname) request_cacheflush(hostname);
 
 	/* What RRD files do we have matching this request? */
 	if (hostlist || (gdef->fnpat == NULL)) {
