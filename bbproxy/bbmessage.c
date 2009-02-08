@@ -4,7 +4,7 @@
 /* This CGI can gateway a Hobbit/BB message sent via HTTP PORT to a Hobbit    */
 /* server running on the local host.                                          */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
