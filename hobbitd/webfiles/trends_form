@@ -1,0 +1,65 @@
+<BR>
+
+<CENTER>
+  <TABLE WIDTH=80% BORDER=0 SUMMARY="Trends period">
+    <TR><TD BGCOLOR="#333333" ALIGN="CENTER">Trends period</TD></TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <BR>
+       <CENTER>
+
+       <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+          Days:&nbsp;<INPUT TYPE=TEXT NAME="backdays" SIZE=4 VALUE="&BACKDAYS">&nbsp;&nbsp;
+          Hours:&nbsp;<INPUT TYPE=TEXT NAME="backhours" SIZE=4 VALUE="&BACKHOURS">&nbsp;&nbsp;
+          Minutes:&nbsp;<INPUT TYPE=TEXT NAME="backmins" SIZE=4 VALUE="&BACKMINS">&nbsp;&nbsp;
+          Seconds:&nbsp;<INPUT TYPE=TEXT NAME="backsecs" SIZE=4 VALUE="&BACKSECS">&nbsp;&nbsp;
+          <INPUT TYPE="HIDDEN" NAME="HOST" VALUE="&BBHOST">
+          <INPUT TYPE="HIDDEN" NAME="SERVICE" VALUE="&BBSVC">
+          <INPUT TYPE="SUBMIT" NAME="Go" VALUE="Update" ALT="Update">
+       </FORM>
+
+       <TABLE>
+         <TR>
+           <TD>
+              <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+                 <INPUT TYPE=HIDDEN NAME="backdays" VALUE="2">
+                 <INPUT TYPE="HIDDEN" NAME="HOST" VALUE="&BBHOST">
+                 <INPUT TYPE="HIDDEN" NAME="SERVICE" VALUE="&BBSVC">
+                 <INPUT TYPE="SUBMIT" NAME="Go" VALUE="2 days" ALT="Update">
+              </FORM>
+           </TD>
+           <TD>
+              <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+                 <INPUT TYPE=HIDDEN NAME="backdays" VALUE="12">
+                 <INPUT TYPE="HIDDEN" NAME="HOST" VALUE="&BBHOST">
+                 <INPUT TYPE="HIDDEN" NAME="SERVICE" VALUE="&BBSVC">
+                 <INPUT TYPE="SUBMIT" NAME="Go" VALUE="12 days" ALT="Update">
+              </FORM>
+           </TD>
+           <TD>
+              <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+                 <INPUT TYPE=HIDDEN NAME="backdays" VALUE="48">
+                 <INPUT TYPE="HIDDEN" NAME="HOST" VALUE="&BBHOST">
+                 <INPUT TYPE="HIDDEN" NAME="SERVICE" VALUE="&BBSVC">
+                 <INPUT TYPE="SUBMIT" NAME="Go" VALUE="48 days" ALT="Update">
+              </FORM>
+           </TD>
+           <TD>
+              <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+                 <INPUT TYPE=HIDDEN NAME="backdays" VALUE="576">
+                 <INPUT TYPE="HIDDEN" NAME="HOST" VALUE="&BBHOST">
+                 <INPUT TYPE="HIDDEN" NAME="SERVICE" VALUE="&BBSVC">
+                 <INPUT TYPE="SUBMIT" NAME="Go" VALUE="576 days" ALT="Update">
+              </FORM>
+           </TD>
+         </TR>
+       </TABLE>
+
+       </CENTER>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR>
+

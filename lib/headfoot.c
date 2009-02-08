@@ -76,6 +76,8 @@ typedef struct listpool_t {
 static listpool_t *listpoolhead = NULL;
 
 
+static int backdays = 0, backhours = 0, backmins = 0, backsecs = 0;
+
 static void clearflags(RbtHandle tree)
 {
 	RbtIterator handle;
@@ -314,6 +316,15 @@ void sethostenv_nkclonelist_add(char *hostname)
 
 	p += (strlen(p) - 1);
 	if (*p == '=') *p = '\0';
+}
+
+
+void sethostenv_backsecs(int seconds)
+{
+	backdays = seconds / 86400; seconds -= backdays*86400;
+	backhours = seconds / 3600; seconds -= backhours*3600;
+	backmins = seconds / 60; seconds -= backmins*60;
+	backsecs = seconds;
 }
 
 
@@ -1236,6 +1247,22 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			tm->tm_isdst = -1;
 			t = mktime(tm);
 			fprintf(output, "%s", eventreport_timestring(t));
+		}
+
+		else if (strncmp(t_start, "BACKDAYS", 8) == 0) {
+			fprintf(output, "%d", backdays);
+		}
+
+		else if (strncmp(t_start, "BACKHOURS", 9) == 0) {
+			fprintf(output, "%d", backhours);
+		}
+
+		else if (strncmp(t_start, "BACKMINS", 8) == 0) {
+			fprintf(output, "%d", backmins);
+		}
+
+		else if (strncmp(t_start, "BACKSECS", 8) == 0) {
+			fprintf(output, "%d", backsecs);
 		}
 
 		else if (*t_start && (savechar == ';')) {

@@ -124,6 +124,7 @@ void update_htmlfile(char *fn, char *msg,
 			disabletime, dismsg,
 			0, 1, 0, 1, multigraphs, NULL, 
 			NULL, NULL, NULL,
+			0,
 			output);
 
 		fclose(output);

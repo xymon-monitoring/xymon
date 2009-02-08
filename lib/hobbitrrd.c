@@ -30,7 +30,7 @@ RbtHandle hobbitrrdtree;
 /* This is the information needed to generate links on the trends column page  */
 hobbitgraph_t *hobbitgraphs = NULL;
 
-static const char *hobbitlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbit graph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=hourly&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
+static const char *hobbitlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbitgraph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=custom&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
 
 static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&amp;graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
@@ -195,7 +195,8 @@ hobbitgraph_t *find_hobbit_graph(char *rrdname)
 
 
 static char *hobbit_graph_text(char *hostname, char *dispname, char *service, int bgcolor,
-			      hobbitgraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt)
+			      hobbitgraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt,
+			      time_t starttime, time_t endtime)
 {
 	static char *rrdurl = NULL;
 	static int rrdurlsize = 0;
@@ -203,6 +204,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 	char *svcurl;
 	int svcurllen, rrdparturlsize;
 	char rrdservicename[100];
+	char *cgiurl = xgetenv("CGIBINURL");
 
 	MEMDEFINE(rrdservicename);
 
@@ -228,9 +230,9 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 		strcpy(rrdservicename, graphdef->hobbitrrdname);
 	}
 
-	svcurllen = 2048                        + 
-		    strlen(xgetenv("CGIBINURL")) + 
-		    strlen(hostname)            + 
+	svcurllen = 2048                    + 
+		    strlen(cgiurl)          +
+		    strlen(hostname)        + 
 		    strlen(rrdservicename)  + 
 		    strlen(urlencode(dispname ? dispname : hostname));
 	svcurl = (char *) malloc(svcurllen);
@@ -262,13 +264,13 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 		do {
 			if (itemcount > 0) {
 				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
-					xgetenv("CGIBINURL"), hostname, rrdservicename, 
+					cgiurl, hostname, rrdservicename, 
 					gwidth, gheight,
 					first, step);
 			}
 			else {
 				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
-					xgetenv("CGIBINURL"), hostname, rrdservicename,
+					cgiurl, hostname, rrdservicename,
 					gwidth, gheight);
 			}
 
@@ -277,6 +279,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 
 			if (nostale == HG_WITHOUT_STALE_RRDS) strcat(svcurl, "&amp;nostale");
 			if (bgcolor != -1) sprintf(svcurl+strlen(svcurl), "&amp;color=%s", colorname(bgcolor));
+			sprintf(svcurl+strlen(svcurl), "&amp;graph_start=%d&amp;graph_end=%d", (int)starttime, (int)endtime);
 
 			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
@@ -300,11 +303,13 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 
 char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 			hobbitgraph_t *graphdef, int itemcount,
-			hg_stale_rrds_t nostale, hg_link_t wantmeta)
+			hg_stale_rrds_t nostale, hg_link_t wantmeta,
+			time_t starttime, time_t endtime)
 {
 	return hobbit_graph_text(hostname, dispname, 
 				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
-				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt));
+				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt),
+				 starttime, endtime);
 }
 

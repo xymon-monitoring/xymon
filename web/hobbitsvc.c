@@ -39,6 +39,7 @@ static char *tstamp = NULL;
 static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
 static char *clienturi = NULL;
+static int backsecs = 0;
 
 static char errortxt[1000];
 static char *hostdatadir = NULL;
@@ -100,8 +101,25 @@ static int parse_query(void)
 		else if (strcasecmp(cwalk->name, "NKTTEXTRA") == 0) {
 			nkttextra = strdup(cwalk->value);
 		}
+		else if ((strcmp(cwalk->name, "backsecs") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "backmins") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += 60*atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "backhours") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += 60*60*atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "backdays") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			backsecs += 24*60*60*atoi(cwalk->value);
+		}
 
 		cwalk = cwalk->next;
+	}
+
+	if (backsecs == 0) {
+		if (getenv("TRENDSECONDS")) backsecs = atoi(getenv("TRENDSECONDS"));
+		else backsecs = 48*60*60;
 	}
 
 	if (!hostname || !service) {
@@ -221,7 +239,10 @@ int do_request(void)
 		strcpy(timesincechange, "0 minutes");
 
 		if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
-			log = restofmsg = generate_trends(hostname);
+			time_t endtime = getcurrenttime(NULL);
+
+			sethostenv_backsecs(backsecs);
+			log = restofmsg = generate_trends(hostname, endtime-backsecs, endtime);
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
 			log = restofmsg = generate_info(hostname);
@@ -402,7 +423,7 @@ int do_request(void)
 		char *p, *unchangedstr, *receivedfromstr, *clientidstr, *hostnamedash;
 		int n;
 
-		if (!tstamp) errormsg("Invalid request");
+		if (!tstamp) { errormsg("Invalid request"); return 1; }
 
 		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
 		hostnamedash = strdup(hostname);
@@ -521,6 +542,7 @@ int do_request(void)
 			  (source == SRC_HOBBITD),
 			  multigraphs, (clientavail ? clienturi : NULL),
 			  nkprio, nkttgroup, nkttextra,
+			  backsecs,
 			  stdout);
 	}
 

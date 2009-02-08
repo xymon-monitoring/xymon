@@ -11,7 +11,7 @@
 #ifndef __HOBBITSVC_TRENDS_H__
 #define __HOBBITSVC_TRENDS_H__
 
-extern char *generate_trends(char *hostname);
+extern char *generate_trends(char *hostname, time_t starttime, time_t endtime);
 
 #endif
 

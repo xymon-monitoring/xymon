@@ -93,26 +93,38 @@ static void textwithcolorimg(char *msg, FILE *output)
 
 	restofmsg = msg;
 	do {
-		int color;
+		int color, acked, recent;
 
+		color = -1; acked = recent = 0;
 		p = strchr(restofmsg, '&');
 		if (p) {
 			*p = '\0';
 			fprintf(output, "%s", restofmsg);
 			*p = '&';
 
-			color = parse_color(p+1);
+			if (strncmp(p, "&red", 4) == 0) color = COL_RED;
+			else if (strncmp(p, "&yellow", 7) == 0) color = COL_YELLOW;
+			else if (strncmp(p, "&green", 6) == 0) color = COL_GREEN;
+			else if (strncmp(p, "&clear", 6) == 0) color = COL_CLEAR;
+			else if (strncmp(p, "&blue", 5) == 0) color = COL_BLUE;
+			else if (strncmp(p, "&purple", 7) == 0) color = COL_PURPLE;
+
 			if (color == -1) {
 				fprintf(output, "&");
 				restofmsg = p+1;
 			}
 			else {
+				acked = (strncmp(p + 1 + strlen(colorname(color)), "-acked", 6) == 0);
+				recent = (strncmp(p + 1 + strlen(colorname(color)), "-recent", 7) == 0);
+
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
-                                                        xgetenv("BBSKIN"), dotgiffilename(color, 0, 0),
+                                                        xgetenv("BBSKIN"), dotgiffilename(color, acked, !recent),
 							colorname(color),
                                                         xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 
 				restofmsg = p+1+strlen(colorname(color));
+				if (acked) restofmsg += 6;
+				if (recent) restofmsg += 7;
 			}
 		}
 		else {
@@ -133,12 +145,19 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       char *multigraphs,
 		       char *linktoclient,
 		       char *nkprio, char *nkttgroup, char *nkttextra,
+		       int graphtime,
 		       FILE *output)
 {
 	int linecount = 0;
 	hobbitrrd_t *rrd = NULL;
 	hobbitgraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
+	time_t now = getcurrenttime(NULL);
+
+	if (graphtime == 0) {
+		if (getenv("TRENDSECONDS")) graphtime = atoi(getenv("TRENDSECONDS"));
+		else graphtime = 48*60*60;
+	}
 
 	hostsvc_setup();
 	if (!displayname) displayname = hostname;
@@ -148,6 +167,29 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (is_history) tplfile = "histlog";
 	if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) tplfile = "info";
 	headfoot(output, tplfile, "", "header", color);
+
+	if (strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) {
+		int formfile;
+		char formfn[PATH_MAX];
+
+		sprintf(formfn, "%s/web/trends_form", xgetenv("BBHOME"));
+		formfile = open(formfn, O_RDONLY);
+
+		if (formfile >= 0) {
+			char *inbuf;
+			struct stat st;
+
+			fstat(formfile, &st);
+			inbuf = (char *) malloc(st.st_size + 1);
+			read(formfile, inbuf, st.st_size);
+			inbuf[st.st_size] = '\0';
+			close(formfile);
+
+			sethostenv_backsecs(graphtime);
+			output_parsed(output, inbuf, color, 0);
+			xfree(inbuf);
+		}
+	}
 
 	if (nkprio) {
 		int formfile;
@@ -395,7 +437,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 		if (may_have_rrd) {
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
-			fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK));
+			fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, now-graphtime, now));
 		}
 	}
 

@@ -39,7 +39,8 @@ extern hobbitrrd_t *find_hobbit_rrd(char *service, char *flags);
 extern hobbitgraph_t *find_hobbit_graph(char *rrdname);
 extern char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
 		hobbitgraph_t *graphdef, int itemcount, 
-		hg_stale_rrds_t nostale, hg_link_t wantmeta);
+		hg_stale_rrds_t nostale, hg_link_t wantmeta,
+		time_t starttime, time_t endtime);
 
 #endif
 

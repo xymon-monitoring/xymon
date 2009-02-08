@@ -27,6 +27,7 @@ extern void generate_html_log(char *hostname, char *displayname, char *service, 
 		       char *multigraphs,
 		       char *linktoclient,
 		       char *nkprio, char *nkttgroup, char *nkttextra,
+		       int graphtime,
 		       FILE *output);
 extern char *alttag(char *columnname, int color, int acked, int propagate, char *age);
 
