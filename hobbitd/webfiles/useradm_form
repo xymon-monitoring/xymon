@@ -1,0 +1,25 @@
+<CENTER>
+<FORM METHOD="POST" ACTION="&SCRIPT_NAME">
+   <TABLE SUMMARY="User Administration" BORDER=0>
+     <TR>
+          <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Username: </B><INPUT TYPE=TEXT NAME="USERNAME" VALUE="" SIZE=10 MAXLENGTH=10></FONT></TD>
+          <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Password: </B><INPUT TYPE=TEXT NAME="PASSWORD" VALUE="" SIZE=10 MAXLENGTH=20></FONT></TD>
+          <TD><INPUT TYPE="SUBMIT" NAME="SendCreate" VALUE="Create" ALT="Create User"></TD>
+     </TR>
+
+     <TR><TD COLSPAN=3><HR WIDTH="100%"></TD></TR>
+
+     <TR>
+        <TD>
+	   <SELECT NAME="USERLIST">
+	      &GENERICLIST
+	   </SELECT>
+	</TD>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+        <TD><INPUT TYPE="SUBMIT" NAME="SendDelete" VALUE="Delete" ALT="Delete User"></TD>
+     </TR>
+
+   </TABLE>
+</FORM>
+</CENTER>
+
