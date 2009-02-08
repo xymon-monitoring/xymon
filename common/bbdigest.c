@@ -28,8 +28,7 @@ int main(int argc, char *argv[])
 
 	if (argc < 2) {
 		printf("Usage: %s digestmethod [filename]\n", argv[0]);
-		printf("\"digestmethod\" is usually \"md5\" or \"sha1\"\n");
-		printf("Refer to the openssl help for more digestmethods\n");
+		printf("\"digestmethod\" is \"md5\", \"sha1\", \"sha256\", \"sha512\" or \"rmd160\"\n");
 		return 1;
 	}
 
