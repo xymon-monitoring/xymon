@@ -83,6 +83,10 @@ Default: 120 pixels.
 The default width (in pixels) of the RRD graph images.
 Default: 576 pixels.
 
+.IP TRENDSECONDS
+The graphs on the "trends" page show data for the past TRENDSECONDS
+seconds. Default: 172800 seconds, i.e. 48 hours.
+
 .IP HTMLCONTENTTYPE
 The Content-type reported by the CGI scripts that generate web pages.
 By default, this it "text/html". If you have on-line help texts in
@@ -94,6 +98,18 @@ E.g.
 .br
 for a Japanese character sets. Note: Some webservers will automatically
 add this, if configured to do so.
+
+.IP HOLIDAYS
+Defines the default set of holidays used if there is no "holidays" 
+tag for a host in the bb-hosts file. Holiday sets are defined in the
+.I hobbit-holidays.cfg(5)
+file. If not defined, only the default holidays (those defined outside
+a named holiday set) will be considered as holidays.
+
+.IP WEEKSTART
+Defines which day is the first day of the week. Set to "0" for Sunday,
+"1" for Monday. Default: 1 (Monday).
+
 
 .SH DIRECTORIES
 
@@ -613,6 +629,14 @@ timestamp - you can define the format using the controls in the
 .I strftime(3)
 routine. E.g. to have it show up as "2004-08-24 21:59:47 +0200"
 you would set BBDATEFORMAT="%Y-%m-%d %H:%M:%S %z"
+
+.IP HOLIDAYFORMAT
+How holiday dates are displayed. The default is "%d/%m" which
+show the day and month. American users may want to change this 
+to "%m/%d" to suit their preferred date-display style. This
+is a formatting string for the system
+.I strftime(3)
+routine, so any controls available for this routine may be used.
 
 .IP MKBB2COLREPEAT
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
