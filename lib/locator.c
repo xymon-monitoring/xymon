@@ -4,7 +4,7 @@
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for communicating with the Hobbit locator service.    */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

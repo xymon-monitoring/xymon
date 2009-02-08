@@ -5,7 +5,7 @@
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

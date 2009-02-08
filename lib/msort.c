@@ -7,7 +7,7 @@
 /* Based on http://en.wikipedia.org/wiki/Merge_sort pseudo code, adapted for  */
 /* use in a generic library routine.                                          */
 /*                                                                            */
-/* Copyright (C) 2007 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2009 Henrik Storner <henrik@storner.dk>                      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

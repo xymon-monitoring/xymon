@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This displays the "notification" log.                                      */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /* Host/test/color/start/end filtering code by Eric Schwimmer 2005            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -31,7 +31,7 @@ static char rcsid[] = "$Id: notifylog.c,v 1.2 2007/02/07 21:51:31 henrik Exp $";
 #include "libbbgen.h"
 
 typedef struct notification_t {
-	struct namelist_t *host;
+	void *host;
 	struct htnames_t *service;
 	time_t  eventtime;
 	char *recipient;
@@ -192,7 +192,7 @@ void do_notifylog(FILE *output,
 		char *hostname, *svcname, *p;
 		int itemsfound, pagematch, hostmatch, testmatch, rcptmatch;
 		notification_t *newrec;
-		struct namelist_t *eventhost;
+		void *eventhost;
 		struct htnames_t *eventcolumn;
 		int ovector[30];
 

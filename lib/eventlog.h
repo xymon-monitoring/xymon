@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit monitor library.                                                    */
 /*                                                                            */
-/* Copyright (C) 2002-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,7 +13,7 @@
 
 /* Format of records in the $BBHIST/allevents file */
 typedef struct event_t {
-	struct namelist_t *host;
+	void *host;
 	struct htnames_t *service;
 	time_t	eventtime;
 	time_t	changetime;

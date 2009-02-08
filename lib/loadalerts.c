@@ -5,7 +5,7 @@
 /* hobbit-alerts.cfg file which holds information about the Hobbit alert      */
 /* configuration.                                                             */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
