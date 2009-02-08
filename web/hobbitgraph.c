@@ -4,14 +4,14 @@
 /* This is a CGI script for generating graphs from the data stored in the     */
 /* RRD databases.                                                             */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hobbitgraph.c,v 1.51 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id: hobbitgraph.c 5819 2008-09-30 16:37:31Z storner $";
 
 #include <limits.h>
 #include <stdio.h>
@@ -22,6 +22,10 @@ static char rcsid[] = "$Id: hobbitgraph.c,v 1.51 2006-07-20 16:06:41 henrik Exp 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <fcntl.h>
 
 #include <pcre.h>
 #include <rrd.h>
@@ -44,6 +48,7 @@ static char rcsid[] = "$Id: hobbitgraph.c,v 1.51 2006-07-20 16:06:41 henrik Exp 
 unsigned char blankimg[] = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x04\x67\x41\x4d\x41\x00\x00\xb1\x8f\x0b\xfc\x61\x05\x00\x00\x00\x06\x62\x4b\x47\x44\x00\xff\x00\xff\x00\xff\xa0\xbd\xa7\x93\x00\x00\x00\x09\x70\x48\x59\x73\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd\x7e\xfc\x00\x00\x00\x07\x74\x49\x4d\x45\x07\xd1\x01\x14\x12\x21\x14\x7e\x4a\x3a\xd2\x00\x00\x00\x0d\x49\x44\x41\x54\x78\xda\x63\x60\x60\x60\x60\x00\x00\x00\x05\x00\x01\x7a\xa8\x57\x50\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82";
 #endif
 
+
 char *hostname = NULL;
 char **hostlist = NULL;
 int hostlistsize = 0;
@@ -53,13 +58,13 @@ char *period = NULL;
 time_t persecs = 0;
 char *gtype = NULL;
 char *glegend = NULL;
-enum {ACT_MENU, ACT_SELZOOM, ACT_SHOWZOOM, ACT_VIEW} action = ACT_VIEW;
+enum {ACT_MENU, ACT_SELZOOM, ACT_VIEW} action = ACT_VIEW;
 time_t graphstart = 0;
 time_t graphend = 0;
-int haveupper = 0;
 double upperlimit = 0.0;
-int havelower = 0;
+int haveupperlimit = 0;
 double lowerlimit = 0.0;
+int havelowerlimit = 0;
 int graphwidth = 0;
 int graphheight = 0;
 int ignorestalerrds = 0;
@@ -84,6 +89,7 @@ typedef struct gdef_t {
 	char *exfnpat;
 	char *title;
 	char *yaxis;
+	int  novzoom;
 	char **defs;
 	struct gdef_t *next;
 } gdef_t;
@@ -192,7 +198,6 @@ void parse_query(void)
 			if (cwalk->value) {
 				if      (strcmp(cwalk->value, "menu") == 0) action = ACT_MENU;
 				else if (strcmp(cwalk->value, "selzoom") == 0) action = ACT_SELZOOM;
-				else if (strcmp(cwalk->value, "showzoom") == 0) action = ACT_SHOWZOOM;
 				else if (strcmp(cwalk->value, "view") == 0) action = ACT_VIEW;
 			}
 		}
@@ -203,10 +208,10 @@ void parse_query(void)
 			if (cwalk->value) graphend = atoi(cwalk->value);
 		}
 		else if (strcmp(cwalk->name, "upper") == 0) {
-			if (cwalk->value) { upperlimit = atof(cwalk->value); haveupper = 1; }
+			if (cwalk->value) { upperlimit = atof(cwalk->value); haveupperlimit = 1; }
 		}
 		else if (strcmp(cwalk->name, "lower") == 0) {
-			if (cwalk->value) { lowerlimit = atof(cwalk->value); havelower = 1; }
+			if (cwalk->value) { lowerlimit = atof(cwalk->value); havelowerlimit = 1; }
 		}
 		else if (strcmp(cwalk->name, "graph_width") == 0) {
 			if (cwalk->value) graphwidth = atoi(cwalk->value);
@@ -281,21 +286,36 @@ void load_gdefs(char *fn)
 			alldefs = (char **)malloc((alldefcount+1) * sizeof(char *));
 			alldefidx = 0;
 		}
-		else if (strncmp(p, "FNPATTERN", 9) == 0) {
+		else if (strncasecmp(p, "FNPATTERN", 9) == 0) {
 			p += 9; p += strspn(p, " \t");
 			newitem->fnpat = strdup(p);
 		}
-		else if (strncmp(p, "EXFNPATTERN", 11) == 0) {
+		else if (strncasecmp(p, "EXFNPATTERN", 11) == 0) {
 			p += 11; p += strspn(p, " \t");
 			newitem->exfnpat = strdup(p);
 		}
-		else if (strncmp(p, "TITLE", 5) == 0) {
+		else if (strncasecmp(p, "TITLE", 5) == 0) {
 			p += 5; p += strspn(p, " \t");
 			newitem->title = strdup(p);
 		}
-		else if (strncmp(p, "YAXIS", 5) == 0) {
+		else if (strncasecmp(p, "YAXIS", 5) == 0) {
 			p += 5; p += strspn(p, " \t");
 			newitem->yaxis = strdup(p);
+		}
+		else if (strncasecmp(p, "NOVZOOM", 7) == 0) {
+			newitem->novzoom = 1;
+		}
+		else if (haveupperlimit && (strncmp(p, "-u ", 3) == 0)) {
+			continue;
+		}
+		else if (haveupperlimit && (strncmp(p, "-upper ", 7) == 0)) {
+			continue;
+		}
+		else if (havelowerlimit && (strncmp(p, "-l ", 3) == 0)) {
+			continue;
+		}
+		else if (havelowerlimit && (strncmp(p, "-lower ", 7) == 0)) {
+			continue;
 		}
 		else {
 			if (alldefidx == alldefcount) {
@@ -318,6 +338,53 @@ void load_gdefs(char *fn)
 
 	stackfclose(fd);
 	freestrbuffer(inbuf);
+}
+
+void lookup_meta(char *keybuf, char *rrdfn)
+{
+	FILE *fd;
+	char *metafn, *p;
+	int servicelen = strlen(service);
+	int keylen = strlen(keybuf);
+	char buf[1024];
+	int found;
+
+	p = strrchr(rrdfn, '/');
+	if (!p) {
+		metafn = strdup("rrd.meta");
+	}
+	else {
+		metafn = (char *)malloc(strlen(rrdfn) + 10);
+		*p = '\0';
+		sprintf(metafn, "%s/rrd.meta", rrdfn);
+		*p = '/';
+	}
+	fd = fopen(metafn, "r");
+	xfree(metafn);
+
+	if (!fd) return;
+
+	/* Find the first line that has our key and then whitespace */
+	found = 0;
+	while (!found && fgets(buf, sizeof(buf), fd)) {
+		found = ( (strncmp(buf, service, servicelen) == 0) &&
+			  (*(buf+servicelen) == ':') &&
+			  (strncmp(buf+servicelen+1, keybuf, keylen) == 0) && 
+			  isspace(*(buf+servicelen+1+keylen)) );
+	}
+	fclose(fd);
+
+	if (found) {
+		char *eoln, *val;
+
+		val = buf + servicelen + 1 + keylen;
+		val += strspn(val, " \t");
+
+		eoln = strchr(val, '\n');
+		if (eoln) *eoln = '\0';
+
+		if (strlen(val) > 0) strcpy(keybuf, val);
+	}
 }
 
 char *colon_escape(char *buf)
@@ -391,11 +458,29 @@ char *expand_tokens(char *tpl)
 			 */
 			if (rrddbs[rrdidx].rrdparam) {
 				char *p;
+				int outlen;
+
 				sprintf(outp, "%-*s", paramlen, colon_escape(rrddbs[rrdidx].rrdparam));
 				p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
-				outp += strlen(outp);
+				/* Watch out - legends cannot be too long */
+				outlen = strlen(outp); if (outlen > 100) outlen = 100;
+				outp += outlen; *outp = '\0';
 			}
 			inp += 10;
+		}
+		else if (strncmp(inp, "@RRDMETA@", 9) == 0) {
+			/* 
+			 * We do a colon-escape first, then change all commas to slashes as
+			 * this is a common mangling used by multiple backends (disk, http, iostat...)
+			 */
+			if (rrddbs[rrdidx].rrdparam) {
+				char *p;
+				sprintf(outp, "%s", colon_escape(rrddbs[rrdidx].rrdparam));
+				p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
+				lookup_meta(outp, rrddbs[rrdidx].rrdfn);
+			}
+			inp += 9;
+			outp += strlen(outp);
 		}
 		else if (strncmp(inp, "@RRDIDX@", 8) == 0) {
 			char numstr[10];
@@ -404,6 +489,45 @@ char *expand_tokens(char *tpl)
 			strcpy(outp, numstr);
 			inp += 8;
 			outp += strlen(outp);
+		}
+		else if (strncmp(inp, "@STACKIT@", 9) == 0) {
+			/* Contributed by Gildas Le Nadan <gn1@sanger.ac.uk> */
+
+			/* the STACK behavior changed between rrdtool 1.0.x
+			 * and 1.2.x, hence the ifdef:
+			 * - in 1.0.x, you replace the graph type (AREA|LINE)
+			 *  for the graph you want to stack with the  STACK
+			 *  keyword
+			 * - in 1.2.x, you add the STACK keyword at the end
+			 *  of the definition
+			 *
+			 * Please note that in both cases the first entry
+			 * mustn't contain the keyword STACK at all, so
+			 * we need a different treatment for the first rrdidx
+			 *
+			 * examples of hobbitgraph.cfg entries:
+			 *
+			 * - rrdtool 1.0.x
+			 * @STACKIT@:la@RRDIDX@#@COLOR@:@RRDPARAM@
+			 *
+			 * - rrdtool 1.2.x
+			 * AREA::la@RRDIDX@#@COLOR@:@RRDPARAM@:@STACKIT@
+			 */
+			char numstr[10];
+
+			if (rrdidx == 0) {
+#ifdef RRDTOOL12
+				strcpy(numstr, "");
+#else
+				sprintf(numstr, "AREA");
+#endif
+			}
+			else {
+				sprintf(numstr, "STACK");
+			}
+			strcpy(outp, numstr);
+			outp += strlen(outp);
+			inp += 9;
 		}
 		else if (strncmp(inp, "@SERVICE@", 9) == 0) {
 			strcpy(outp, service);
@@ -431,6 +555,19 @@ int rrd_name_compare(const void *v1, const void *v2)
 {
 	rrddb_t *r1 = (rrddb_t *)v1;
 	rrddb_t *r2 = (rrddb_t *)v2;
+	char *endptr;
+	long numkey1, numkey2;
+	int key1isnumber, key2isnumber;
+
+	/* See if the keys are all numeric; if yes, then do a numeric sort */
+	numkey1 = strtol(r1->key, &endptr, 10); key1isnumber = (*endptr == '\0');
+	numkey2 = strtol(r2->key, &endptr, 10); key2isnumber = (*endptr == '\0');
+
+	if (key1isnumber && key2isnumber) {
+		if (numkey1 < numkey2) return -1;
+		else if (numkey1 > numkey2) return 1;
+		else return 0;
+	}
 
 	return strcmp(r1->key, r2->key);
 }
@@ -450,12 +587,14 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 		break;
 
 	  case ACT_SELZOOM:
-	  case ACT_SHOWZOOM:
 		if (graphend == 0) gend = getcurrenttime(NULL); else gend = graphend;
 		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
 
-		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=%d&amp;graph_width=%d\" alt=\"Zoom source image\"></td>\n",
+		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=%d&amp;graph_width=%d&amp;",
 			uri, grtype, (int) gstart, (int) gend, graphheight, graphwidth);
+		if (haveupperlimit) fprintf(output, "&amp;upper=%f", upperlimit);
+		if (havelowerlimit) fprintf(output, "&amp;lower=%f", lowerlimit);
+		fprintf(output, "\" alt=\"Zoom source image\"></td>\n");
 		break;
 
 	  case ACT_VIEW:
@@ -465,74 +604,18 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 	fprintf(output, "</tr>\n");
 }
 
-int main(int argc, char *argv[])
+char *build_selfURI(void)
 {
-	char *rrddir = NULL;
-	char *gdeffn = NULL;
-	char *graphfn = "-";
-	char *envarea = NULL;
-
-	gdef_t *gdef = NULL, *gdefuser = NULL;
-	int wantsingle = 0;
-	char **rrdargs = NULL;
-
-	DIR *dir;
-	char **calcpr  = NULL;
-	int argi, pcount, argcount, rrdargcount, xsize, ysize, result;
-	double ymin, ymax;
-	time_t now;
-	char timestamp[100];
-	char graphtitle[1024];
-	char graphopt[30];
-	char heightopt[30];
-	char widthopt[30];
-
-	char *okuri, *p;
+	char *p, *result;
 	int urilen;
-
-	graphwidth = atoi(xgetenv("RRDWIDTH"));
-	graphheight = atoi(xgetenv("RRDHEIGHT"));
-
-	/* See what we want to do - i.e. get hostname, service and graph-type */
-	parse_query();
-	now = getcurrenttime(NULL);
-
-	/* Handle any commandline args */
-	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--rrddir=")) {
-			char *p = strchr(argv[argi], '=');
-			rrddir = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--config=")) {
-			char *p = strchr(argv[argi], '=');
-			gdeffn = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--save=") == 0) {
-			char *p = strchr(argv[argi], '=');
-			graphfn = strdup(p+1);
-		}
-	}
-
-	redirect_cgilog("hobbitgraph");
 
 	p = xgetenv("SCRIPT_NAME");
 	urilen = strlen(p);
 	if (hostlist) { int i; for (i = 0; (i < hostlistsize); i++) urilen += (strlen(hostlist[i]) + 10); }
-	okuri = (char *)malloc(urilen + 2048);
+	result = (char *)malloc(urilen + 2048);
 
-	strcpy(okuri, p);
-	p = strchr(okuri, '?'); if (p) *p = '\0'; else p = okuri + strlen(okuri);
+	strcpy(result, p);
+	p = strchr(result, '?'); if (p) *p = '\0'; else p = result + strlen(result);
 
 	if (hostlist) {
 		int i;
@@ -550,91 +633,60 @@ int main(int argc, char *argv[])
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
 	if (ignorestalerrds) p += sprintf(p, "&amp;nostale");
 
-	switch (action) {
-	  case ACT_MENU:
-		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-		sethostenv(displayname, "", service, colorname(bgcolor), hostname);
-		headfoot(stdout, "graphs", "", "header", bgcolor);
-
-		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
-
-		graph_link(stdout, okuri, "hourly",      48*60*60);
-		graph_link(stdout, okuri, "daily",    12*24*60*60);
-		graph_link(stdout, okuri, "weekly",   48*24*60*60);
-		graph_link(stdout, okuri, "monthly", 576*24*60*60);
-
-		fprintf(stdout, "</table>\n");
-
-		headfoot(stdout, "graphs", "", "footer", bgcolor);
-		return 0;
-
-	  case ACT_SELZOOM:
-		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-		sethostenv(displayname, "", service, colorname(bgcolor), hostname);
-		headfoot(stdout, "graphs", "", "header", bgcolor);
+	return result;
+}
 
 
-		fprintf(stdout, "  <div id='zoomBox' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; background:red; filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity:0.5'></div>\n");
-		fprintf(stdout, "  <div id='zoomSensitiveZone' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; cursor:crosshair; background:blue; filter:alpha(opacity=0); -moz-opacity:0; -khtml-opacity:0'></div>\n");
+void build_menu_page(char *selfURI, int backsecs)
+{
+	/* This is special-handled, because we just want to generate an HTML link page */
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+	sethostenv(displayname, "", service, colorname(bgcolor), hostname);
+	sethostenv_backsecs(backsecs);
 
-		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
-		graph_link(stdout, okuri, gtype, 0);
-		fprintf(stdout, "</table>\n");
+	headfoot(stdout, "graphs", "", "header", bgcolor);
 
-		{
-			char zoomjsfn[PATH_MAX];
-			struct stat st;
+	fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
 
-			sprintf(zoomjsfn, "%s/web/zoom.js", xgetenv("BBHOME"));
-			if (stat(zoomjsfn, &st) == 0) {
-				FILE *fd;
-				char *buf;
-				size_t n;
-				char *zoomrightoffsetmarker = "var cZoomBoxRightOffset = -";
-				char *zoomrightoffsetp;
+	graph_link(stdout, selfURI, "hourly",      48*60*60);
+	graph_link(stdout, selfURI, "daily",    12*24*60*60);
+	graph_link(stdout, selfURI, "weekly",   48*24*60*60);
+	graph_link(stdout, selfURI, "monthly", 576*24*60*60);
 
-				fd = fopen(zoomjsfn, "r");
-				if (fd) {
-					buf = (char *)malloc(st.st_size+1);
-					n = fread(buf, 1, st.st_size, fd);
-					fclose(fd);
+	fprintf(stdout, "</table>\n");
 
-#ifdef RRDTOOL12
-					zoomrightoffsetp = strstr(buf, zoomrightoffsetmarker);
-					if (zoomrightoffsetp) {
-						zoomrightoffsetp += strlen(zoomrightoffsetmarker);
-						memcpy(zoomrightoffsetp, "30", 2);
-					}
-#endif
-
-					fwrite(buf, 1, n, stdout);
-				}
-			}
-		}
+	headfoot(stdout, "graphs", "", "footer", bgcolor);
+}
 
 
-		headfoot(stdout, "graphs", "", "footer", bgcolor);
-		return 0;
+void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
+{
+	gdef_t *gdef = NULL, *gdefuser = NULL;
+	int wantsingle = 0;
+	DIR *dir;
+	time_t now = getcurrenttime(NULL);
 
-	  case ACT_SHOWZOOM:
-		fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-		sethostenv(displayname, "", service, colorname(bgcolor), hostname);
-		headfoot(stdout, "graphs", "", "header", bgcolor);
+	int argi, pcount;
 
-		fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
+	/* Options for rrd_graph() */
+	int  rrdargcount;
+	char **rrdargs = NULL;	/* The full argv[] table of string pointers to arguments */
+	char heightopt[30];	/* -h HEIGHT */
+	char widthopt[30];	/* -w WIDTH */
+	char upperopt[30];	/* -u MAX */
+	char loweropt[30];	/* -l MIN */
+	char startopt[30];	/* -s STARTTIME */
+	char endopt[30];	/* -e ENDTIME */
+	char graphtitle[1024];	/* --title TEXT */
+	char timestamp[50];	/* COMMENT with timestamp graph was generated */
 
-		graph_link(stdout, okuri, gtype, 0);
+	/* Return variables from rrd_graph() */
+	int result;
+	char **calcpr = NULL;
+	int xsize, ysize;
+	double ymin, ymax;
 
-		fprintf(stdout, "</table>\n");
-
-		headfoot(stdout, "graphs", "", "footer", bgcolor);
-		return 0;
-
-	  case ACT_VIEW:
-		break;
-	}
-
-	/* Find the config-file and load it */
+	/* Find the hobbitgraph.cfg file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
 		sprintf(fnam, "%s/etc/hobbitgraph.cfg", xgetenv("BBHOME"));
@@ -642,18 +694,8 @@ int main(int argc, char *argv[])
 	}
 	load_gdefs(gdeffn);
 
-	/* Determine the directory with the host RRD files, and go there. */
-	if (rrddir == NULL) {
-		char dnam[PATH_MAX];
 
-		if (hostlist) sprintf(dnam, "%s", xgetenv("BBRRDS"));
-		else sprintf(dnam, "%s/%s", xgetenv("BBRRDS"), hostname);
-
-		rrddir = strdup(dnam);
-	}
-	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
-
-
+	/* Determine the real service name. It might be a multi-service graph */
 	if (strchr(service, ':') || strchr(service, '.')) {
 		/*
 		 * service is "tcp:foo" - so use the "tcp" graph definition, but for a
@@ -692,7 +734,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	if (gdef == NULL) errormsg("Unknown graph requested");
-
 	if (hostlist && (gdef->fnpat == NULL)) {
 		char *multiname = (char *)malloc(strlen(gdef->name) + 7);
 		sprintf(multiname, "%s-multi", gdef->name);
@@ -700,6 +741,27 @@ int main(int argc, char *argv[])
 		if (gdef == NULL) errormsg("Unknown multi-graph requested");
 		xfree(multiname);
 	}
+
+
+	/*
+	 * If we're here only to collect the min/max values for the graph but it doesn't
+	 * allow vertical zoom, then there's no reason to waste anymore time.
+	 */
+	if ((action == ACT_SELZOOM) && gdef->novzoom) {
+		haveupperlimit = havelowerlimit = 0;
+		return;
+	}
+
+	/* Determine the directory with the host RRD files, and go there. */
+	if (rrddir == NULL) {
+		char dnam[PATH_MAX];
+
+		if (hostlist) sprintf(dnam, "%s", xgetenv("BBRRDS"));
+		else sprintf(dnam, "%s/%s", xgetenv("BBRRDS"), hostname);
+
+		rrddir = strdup(dnam);
+	}
+	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
 	/* What RRD files do we have matching this request? */
 	if (hostlist || (gdef->fnpat == NULL)) {
@@ -883,19 +945,22 @@ int main(int argc, char *argv[])
 		sprintf(graphtitle, "%s %s %s", displayname, gdef->title, glegend);
 	}
 
+	sprintf(heightopt, "-h%d", graphheight);
+	sprintf(widthopt, "-w%d", graphwidth);
+
 	/*
 	 * Setup the arguments for calling rrd_graph. 
-	 * There's 11 standard arguments, plus the 
+	 * There's up to 15 standard arguments, plus the 
 	 * graph-specific ones (which may be repeated if
 	 * there are multiple RRD-files to handle).
 	 */
-	sprintf(heightopt, "-h%d", graphheight);
-	sprintf(widthopt, "-w%d", graphwidth);
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	argcount = (15 + pcount*rrddbcount + 1); argi = 0;
-	rrdargs = (char **) calloc(argcount+1, sizeof(char *));
+	rrdargs = (char **) calloc(15 + pcount*rrddbcount + 1, sizeof(char *));
+
+
+	argi = 0;
 	rrdargs[argi++]  = "rrdgraph";
-	rrdargs[argi++]  = graphfn;
+	rrdargs[argi++]  = (action == ACT_VIEW) ? graphfn : "/dev/null";
 	rrdargs[argi++]  = "--title";
 	rrdargs[argi++]  = graphtitle;
 	rrdargs[argi++]  = widthopt;
@@ -903,31 +968,33 @@ int main(int argc, char *argv[])
 	rrdargs[argi++]  = "-v";
 	rrdargs[argi++]  = gdef->yaxis;
 	rrdargs[argi++]  = "-a";
-	rrdargs[argi++] = "PNG";
+	rrdargs[argi++]  = "PNG";
 
-	if (haveupper) {
-		sprintf(graphopt, "-u %f", upperlimit);
-		rrdargs[argi++] = strdup(graphopt);
+	if (haveupperlimit) {
+		sprintf(upperopt, "-u %f", upperlimit);
+		rrdargs[argi++] = upperopt;
 	}
-	if (havelower) {
-		sprintf(graphopt, "-l %f", lowerlimit);
-		rrdargs[argi++] = strdup(graphopt);
+	if (havelowerlimit) {
+		sprintf(loweropt, "-l %f", lowerlimit);
+		rrdargs[argi++] = loweropt;
 	}
-	if (haveupper || havelower) rrdargs[argi++] = "--rigid";
+	if (haveupperlimit || havelowerlimit) rrdargs[argi++] = "--rigid";
 
-	if (graphstart) sprintf(graphopt, "-s %u", (unsigned int) graphstart);
-	else sprintf(graphopt, "-s %s", period);
-	rrdargs[argi++] = strdup(graphopt);
+	if (graphstart) sprintf(startopt, "-s %u", (unsigned int) graphstart);
+	else sprintf(startopt, "-s %s", period);
+	rrdargs[argi++] = startopt;
 
 	if (graphend) {
-		sprintf(graphopt, "-e %u", (unsigned int) graphend);
-		rrdargs[argi++] = strdup(graphopt);
+		sprintf(endopt, "-e %u", (unsigned int) graphend);
+		rrdargs[argi++] = endopt;
 	}
 
 	for (rrdidx=0; (rrdidx < rrddbcount); rrdidx++) {
 		if ((firstidx == -1) || ((rrdidx >= firstidx) && (rrdidx <= lastidx))) {
 			int i;
-			for (i=0; (gdef->defs[i]); i++) rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
+			for (i=0; (gdef->defs[i]); i++) {
+				rrdargs[argi++] = strdup(expand_tokens(gdef->defs[i]));
+			}
 		}
 	}
 
@@ -945,7 +1012,7 @@ int main(int argc, char *argv[])
 	if (debug) { for (argi=0; (argi < rrdargcount); argi++) dbgprintf("%s\n", rrdargs[argi]); }
 
 	/* If sending to stdout, print the HTTP header first. */
-	if (strcmp(graphfn, "-") == 0) {
+	if ((action == ACT_VIEW) && (strcmp(graphfn, "-") == 0)) {
 		time_t expiretime = now + 300;
 		char expirehdr[100];
 
@@ -959,7 +1026,7 @@ int main(int argc, char *argv[])
 		if (rrddbcount == 0) {
 			/* No graph */
 			fwrite(blankimg, 1, sizeof(blankimg), stdout);
-			return 0;
+			return;
 		}
 #endif
 	}
@@ -968,6 +1035,16 @@ int main(int argc, char *argv[])
 	rrd_clear_error();
 #ifdef RRDTOOL12
 	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
+
+	/*
+	 * If we have neither the upper- nor lower-limits of the graph, AND we allow vertical 
+	 * zooming of this graph, then save the upper/lower limit values and flag that we have 
+	 * them. The values are then used for the zoom URL we construct later on.
+	 */
+	if (!haveupperlimit && !havelowerlimit) {
+		upperlimit = ymax; haveupperlimit = 1;
+		lowerlimit = ymin; havelowerlimit = 1;
+	}
 #else
 	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize);
 #endif
@@ -982,23 +1059,119 @@ int main(int argc, char *argv[])
 
 		errormsg(rrd_get_error());
 	}
+}
 
-	if (displayname != hostname) { xfree(displayname); displayname = NULL; }
-	if (hostname) { xfree(hostname); hostname = NULL; }
-	if (service) { xfree(service); service = NULL; }
-	if (gtype) { xfree(gtype); gtype = NULL; }
-	glegend = period = NULL; /* Dont free these - they are static strings in the program. */
-	for (argi=0; (argi < rrddbcount); argi++) {
-		if (rrddbs[argi].key) xfree(rrddbs[argi].key);
-		if (rrddbs[argi].rrdfn) xfree(rrddbs[argi].rrdfn);
-		if (rrddbs[argi].rrdparam) xfree(rrddbs[argi].rrdparam);
+void generate_zoompage(char *selfURI)
+{
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+	sethostenv(displayname, "", service, colorname(bgcolor), hostname);
+	headfoot(stdout, "graphs", "", "header", bgcolor);
+
+
+	fprintf(stdout, "  <div id='zoomBox' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; background:red; filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity:0.5'></div>\n");
+	fprintf(stdout, "  <div id='zoomSensitiveZone' style='position:absolute; overflow:none; left:0px; top:0px; width:0px; height:0px; visibility:visible; cursor:crosshair; background:blue; filter:alpha(opacity=0); -moz-opacity:0; -khtml-opacity:0'></div>\n");
+
+	fprintf(stdout, "<table align=\"center\" summary=\"Graphs\">\n");
+	graph_link(stdout, selfURI, gtype, 0);
+	fprintf(stdout, "</table>\n");
+
+	{
+		char zoomjsfn[PATH_MAX];
+		struct stat st;
+
+		sprintf(zoomjsfn, "%s/web/zoom.js", xgetenv("BBHOME"));
+		if (stat(zoomjsfn, &st) == 0) {
+			FILE *fd;
+			char *buf;
+			size_t n;
+			char *zoomrightoffsetmarker = "var cZoomBoxRightOffset = -";
+			char *zoomrightoffsetp;
+
+			fd = fopen(zoomjsfn, "r");
+			if (fd) {
+				buf = (char *)malloc(st.st_size+1);
+				n = fread(buf, 1, st.st_size, fd);
+				fclose(fd);
+
+#ifdef RRDTOOL12
+				zoomrightoffsetp = strstr(buf, zoomrightoffsetmarker);
+				if (zoomrightoffsetp) {
+					zoomrightoffsetp += strlen(zoomrightoffsetmarker);
+					memcpy(zoomrightoffsetp, "30", 2);
+				}
+#endif
+
+				fwrite(buf, 1, n, stdout);
+			}
+		}
 	}
-	xfree(rrddbs);
-	rrddbs = NULL;
-	coloridx = rrddbcount = rrddbsize = rrdidx = paramlen = 0;
 
-	gdef = gdefuser = NULL;
-	wantsingle = 0;
+
+	headfoot(stdout, "graphs", "", "footer", bgcolor);
+}
+
+
+int main(int argc, char *argv[])
+{
+	/* Command line settings */
+	int argi;
+	char *envarea = NULL;
+	char *rrddir  = NULL;		/* RRD files top-level directory */
+	char *gdeffn  = NULL;		/* hobbitgraph.cfg file */
+	char *graphfn = "-";		/* Output filename, default is stdout */
+
+	char *selfURI;
+
+	/* Setup defaults */
+	graphwidth = atoi(xgetenv("RRDWIDTH"));
+	graphheight = atoi(xgetenv("RRDHEIGHT"));
+
+	/* See what we want to do - i.e. get hostname, service and graph-type */
+	parse_query();
+
+	/* Handle any commandline args */
+	for (argi=1; (argi < argc); argi++) {
+		if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--env=")) {
+			char *p = strchr(argv[argi], '=');
+			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--area=")) {
+			char *p = strchr(argv[argi], '=');
+			envarea = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--rrddir=")) {
+			char *p = strchr(argv[argi], '=');
+			rrddir = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--config=")) {
+			char *p = strchr(argv[argi], '=');
+			gdeffn = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--save=") == 0) {
+			char *p = strchr(argv[argi], '=');
+			graphfn = strdup(p+1);
+		}
+	}
+
+	redirect_cgilog("hobbitgraph");
+
+	selfURI = build_selfURI();
+
+	if (action == ACT_MENU) {
+		build_menu_page(selfURI, graphend-graphstart);
+		return 0;
+	}
+
+	if ((action == ACT_VIEW) || !(haveupperlimit && havelowerlimit)) {
+		generate_graph(gdeffn, rrddir, graphfn);
+	}
+
+	if (action == ACT_SELZOOM) {
+		generate_zoompage(selfURI);
+	}
 
 	return 0;
 }
