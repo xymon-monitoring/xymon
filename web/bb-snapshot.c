@@ -5,7 +5,7 @@
 /* generated. A snapshot is a view of the Hobbit webpages from any time in    */
 /* the past, generated from the history logs.                                 */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

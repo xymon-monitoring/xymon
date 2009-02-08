@@ -5,7 +5,7 @@
 /* and then invokes bbgen to generate the report. When the report is ready,   */
 /* the user's browser is sent off to view the report.                         */
 /*                                                                            */
-/* Copyright (C) 2003-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

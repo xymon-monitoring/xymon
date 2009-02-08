@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit webpage generator tool.                                             */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 		time_t seltime;
 		struct tm *seltm;
 
-		seltime = time(NULL); seltm = localtime(&seltime);
+		seltime = getcurrenttime(NULL); seltm = localtime(&seltime);
 
                 /* Present the query form */
 		switch (frmtype) {

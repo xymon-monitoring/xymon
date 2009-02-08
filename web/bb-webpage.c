@@ -5,7 +5,7 @@
 /* standard Hobbit-like webpage without having to deal with headers and       */
 /* footers.                                                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
