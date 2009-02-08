@@ -5,7 +5,7 @@
 # This invokes hobbitlaunch, which in turn runs the Hobbit client and any    #
 # extensions configured.                                                     #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 # "status" section (C) Scott Smith 2006                                      #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
@@ -13,11 +13,11 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh,v 1.13 2006-07-14 21:25:19 henrik Exp $
+# $Id: runclient.sh 5819 2008-09-30 16:37:31Z storner $
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
-BBOSTYPE="`uname -s | tr '[A-Z]' '[a-z]'`"	# This systems operating system in lowercase
+BBOSTYPE="`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
 BBOSSCRIPT="hobbitclient-$BBOSTYPE.sh"
 
 # Commandline mods for the defaults
@@ -28,10 +28,10 @@ do
 	  	MACHINEDOTS="`echo $1 | sed -e 's/--hostname=//'`"
 		;;
 	  --os=*)
-	  	BBOSTYPE="`echo $1 | sed -e 's/--os=//' | tr '[A-Z]' '[a-z]'`"
+	  	BBOSTYPE="`echo $1 | sed -e 's/--os=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
 		;;
 	  --class=*)
-	        CONFIGCLASS="`echo $1 | sed -e 's/--class=//' | tr '[A-Z]' '[a-z]'`"
+	        CONFIGCLASS="`echo $1 | sed -e 's/--class=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
 		;;
 	  --help)
 	  	echo "Usage: $0 [--hostname=CLIENTNAME] [--os=rhel3|linux22] [--class=CLASSNAME] start|stop"
@@ -54,11 +54,7 @@ do
 	shift
 done
 
-OLDDIR="`pwd`"
-cd "`dirname $0`"
-HOBBITCLIENTHOME="`pwd`"
-cd "$OLDDIR"
-
+HOBBITCLIENTHOME="`dirname $0`"
 MACHINE="`echo $MACHINEDOTS | sed -e 's/\./,/g'`"
 
 export MACHINE MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME CONFIGCLASS

@@ -2,14 +2,14 @@
 #----------------------------------------------------------------------------#
 # Linux client for Hobbit                                                    #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-linux.sh,v 1.20 2006-07-09 19:25:19 henrik Exp $
+# $Id: hobbitclient-linux.sh 5819 2008-09-30 16:37:31Z storner $
 
 echo "[date]"
 date
@@ -42,7 +42,8 @@ uptime
 echo "[who]"
 who
 echo "[df]"
-df -Pl -x none -x tmpfs -x shmfs -x unknown -x iso9660 | sed -e '/^[^ 	][^ 	]*$/{
+EXCLUDES=`cat /proc/filesystems | grep nodev | awk '{print $2}' | xargs echo | sed -e 's! ! -x !g'`
+df -Pl -x iso9660 -x $EXCLUDES | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
@@ -61,8 +62,10 @@ echo "[ports]"
 netstat -ant 2>/dev/null
 echo "[ifstat]"
 /sbin/ifconfig
+# Report mdstat data if it exists
+if test -r /proc/mdstat; then echo "[mdstat]"; cat /proc/mdstat; fi
 echo "[ps]"
-ps -Aw -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
+ps -Aww -o pid,ppid,user,start,state,pri,pcpu,time,pmem,rsz,vsz,cmd
 
 # $TOP must be set, the install utility should do that for us if it exists.
 if test "$TOP" != ""

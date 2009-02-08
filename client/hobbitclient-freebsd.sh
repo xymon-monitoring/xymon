@@ -3,14 +3,14 @@
 #----------------------------------------------------------------------------#
 # FreeBSD client for Hobbit                                                  #
 #                                                                            #
-# Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient-freebsd.sh,v 1.17 2006-07-05 05:52:22 henrik Exp $
+# $Id: hobbitclient-freebsd.sh 5819 2008-09-30 16:37:31Z storner $
 
 echo "[date]"
 date
@@ -22,7 +22,7 @@ echo "[who]"
 who
 echo "[df]"
 # The sed stuff is to make sure lines are not split into two.
-df -H -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs | sed -e '/^[^ 	][^ 	]*$/{
+df -H -tnonfs,nullfs,cd9660,procfs,devfs,linprocfs,fdescfs | sed -e '/^[^ 	][^ 	]*$/{
 N
 s/[ 	]*\n[ 	]*/ /
 }'
@@ -32,6 +32,8 @@ echo "[meminfo]"
 $BBHOME/bin/freebsd-meminfo
 echo "[swapinfo]"
 swapinfo -k
+echo "[vmtotal]"
+sysctl vm.vmtotal
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"

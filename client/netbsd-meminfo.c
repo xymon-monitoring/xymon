@@ -2,14 +2,14 @@
 /* Hobbit memory information tool for NetBSD.                                 */
 /* This tool retrieves information about the total and free RAM.              */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: netbsd-meminfo.c,v 1.3 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id: netbsd-meminfo.c 6028 2008-12-15 13:10:17Z storner $";
 
 #include <sys/param.h>
 #include <sys/types.h>
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id: netbsd-meminfo.c,v 1.3 2006-05-03 21:12:33 henrik Ex
 int main(int argc, char *argv[])
 {
 	int hw_physmem[] = { CTL_HW, HW_PHYSMEM64 };
-	int64_t physmem;
+	int64 physmem;
 
 	int hw_pagesize[] = { CTL_HW, HW_PAGESIZE };
 	int pagesize;
