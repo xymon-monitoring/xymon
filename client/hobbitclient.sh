@@ -5,7 +5,7 @@
 # This invokes the OS-specific script to build a client message, and sends   #
 # if off to the Hobbit server.                                               #
 #                                                                            #
-# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #

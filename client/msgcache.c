@@ -8,7 +8,7 @@
 /* Any data provided in the "pullclient" request is saved, and passed as      */
 /* response to the first "client" command seen afterwards.                    */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

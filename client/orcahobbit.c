@@ -3,7 +3,7 @@
 /* This tool grabs the last reading from an ORCA logfile and formats it in    */
 /* NAME:VALUE format for the client message.                                  */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
