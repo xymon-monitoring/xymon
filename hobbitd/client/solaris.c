@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for Solaris                                          */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char solaris_rcsid[] = "$Id: solaris.c,v 1.18 2006-07-09 07:37:26 henrik Exp $";
+static char solaris_rcsid[] = "$Id: solaris.c 5819 2008-09-30 16:37:31Z storner $";
 
 void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			   void *hinfo, char *sender, time_t timestamp, 
@@ -32,6 +32,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *ifstatstr;
 	char *portsstr;
 	char *vmstatstr;
+	char *iostatdiskstr;
 
 	char fromline[1024];
 
@@ -55,8 +56,10 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	ifstatstr = getdata("ifstat");
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
+	iostatdiskstr = getdata("iostatdisk");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "avail", "capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "CMD", "COMMAND", psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 0, 1, 6, portsstr);
@@ -87,6 +90,22 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 					   memphystotal, (memphystotal - memphysfree), -1,
 					   (memswapused + memswapfree), memswapused);
 		}
+	}
+
+	if (iostatdiskstr) {
+		char msgline[1024];
+		strbuffer_t *msg = newstrbuffer(0);
+		char *p;
+
+		p = strchr(iostatdiskstr, '\n'); 
+		if (p) {
+			p++;
+			sprintf(msgline, "data %s.iostatdisk\n%s\n", commafy(hostname), osname(os));
+			addtobuffer(msg, msgline);
+			addtobuffer(msg, p);
+			sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+		}
+		freestrbuffer(msg);
 	}
 }
 

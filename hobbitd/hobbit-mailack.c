@@ -5,7 +5,7 @@
 /* incoming e-mails that are responses to alert mails that Hobbit has sent    */
 /* out. It was inspired by the functionality of the bb-mailack.sh.            */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

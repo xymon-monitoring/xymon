@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for HP-UX                                            */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hpux_rcsid[] = "$Id: hpux.c,v 1.19 2006-07-09 07:37:26 henrik Exp $";
+static char hpux_rcsid[] = "$Id: hpux.c 5819 2008-09-30 16:37:31Z storner $";
 
 void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os, 
 			void *hinfo, char *sender, time_t timestamp,
@@ -56,7 +56,8 @@ void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os,
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);

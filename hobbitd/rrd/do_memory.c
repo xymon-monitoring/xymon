@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char memory_rcsid[] = "$Id: do_memory.c,v 1.17 2006-05-30 07:14:15 henrik Exp $";
+static char memory_rcsid[] = "$Id: do_memory.c 5822 2008-10-01 13:28:07Z rsmrcina $";
 
-static char *memory_params[]      = { "rrdcreate", rrdfn, "DS:realmempct:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-static char *memory_tpl           = NULL;
+static char *memory_params[]      = { "DS:realmempct:GAUGE:600:0:U", NULL };
+static void *memory_tpl           = NULL;
 
 /*
  * Use the R/B tree to hold names of the hosts
@@ -33,26 +33,26 @@ static int get_mem_percent(char *l)
 	return atoi(p+1);
 }
 
-void do_memory_rrd_update(time_t tstamp, char *hostname, int physval, int swapval, int actval)
+void do_memory_rrd_update(time_t tstamp, char *hostname, char *testname, char *classname, char *pagepaths, int physval, int swapval, int actval)
 {
 	if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
 
-	sprintf(rrdfn, "memory.real.rrd");
+	setupfn2("%s.%s.rrd", "memory", "real");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, physval);
-	create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
-	sprintf(rrdfn, "memory.swap.rrd");
+	setupfn2("%s.%s.rrd", "memory", "swap");
 	sprintf(rrdvalues, "%d:%d", (int)tstamp, swapval);
-	create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 	if ((actval >= 0) && (actval <= 100)) {
-		sprintf(rrdfn, "memory.actual.rrd");
+		setupfn2("%s.%s.rrd", "memory", "actual");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, actval);
-		create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 	}
 }
 
-int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	char *phys = NULL;
 	char *swap = NULL;
@@ -68,6 +68,78 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			errprintf("Insert into memhosts failed\n");
 		}
 	}
+
+	if (strstr(msg, "z/OS Memory Map")) {
+		long j1, j2, j3;
+		int csautil, ecsautil, sqautil, esqautil;
+		char *p;
+
+		/* z/OS Memory Utilization:
+		 Area    Alloc     Used      HWM  Util
+		 CSA      3524     3034     3436   86.1
+		 ECSA    20172    19979    20014   99.0
+		 SQA      1540      222      399   14.4
+		 ESQA    13988     4436     4726   31.7  */
+	
+        	p = strstr(msg, "CSA ") + 4;
+        	if (p) {
+			sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &csautil);
+                	}
+
+        	p = strstr(msg, "ECSA ") + 5;
+        	if (p) {
+			sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &ecsautil);
+                	}
+
+        	p = strstr(msg, "SQA ") + 4;
+        	if (p) {
+			sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &sqautil);
+                	}
+
+        	p = strstr(msg, "ESQA ") + 5;
+        	if (p) {
+			sscanf(p, "%ld %ld %ld %d", &j1, &j2, &j3, &esqautil);
+                	}
+
+		if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
+
+		setupfn2("%s.%s.rrd", "memory", "CSA");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, csautil);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+
+		setupfn2("%s.%s.rrd", "memory", "ECSA");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, ecsautil);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+
+		setupfn2("%s.%s.rrd", "memory", "SQA");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, sqautil);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+
+		setupfn2("%s.%s.rrd", "memory", "ESQA");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, esqautil);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+
+		return 0;
+		}	  
+
+	if (strstr(msg, "z/VSE VSIZE Utilization")) {
+		char *p;
+		float pctused;
+
+        	p = strstr(msg, "Utilization ") + 12;
+        	if (p) {
+			sscanf(p, "%f%%", &pctused);
+                	}
+
+		if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
+
+		setupfn2("%s.%s.rrd", "memory", "vsize");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, (int)pctused);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+
+		return 0;
+
+		}	  
 
 	if (strstr(msg, "Total Cache Buffers")) {
 		/* Netware nwstat2bb memory report.
@@ -88,9 +160,9 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			p = strchr(p, ':');
 			if (p) {
 				val = atoi(p+1);
-				sprintf(rrdfn, "memory.tcb.rrd");
+				setupfn2("%s.%s.rrd", "memory", "tcb");
 				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-				create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 			}
 		}
 
@@ -99,9 +171,9 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			p = strchr(p, ':');
 			if (p) {
 				val = atoi(p+1);
-				sprintf(rrdfn, "memory.dcb.rrd");
+				setupfn2("%s.%s.rrd", "memory", "dcb");
 				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-				create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 			}
 		}
 
@@ -110,9 +182,9 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			p = strchr(p, ':');
 			if (p) {
 				val = atoi(p+1);
-				sprintf(rrdfn, "memory.ltch.rrd");
+				setupfn2("%s.%s.rrd", "memory", "ltch");
 				sprintf(rrdvalues, "%d:%d", (int)tstamp, val);
-				create_and_update_rrd(hostname, rrdfn, memory_params, memory_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 			}
 		}
 	}
@@ -141,7 +213,7 @@ int do_memory_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				if (eoln) *eoln = '\n';
 			}
 
-			do_memory_rrd_update(tstamp, hostname, physval, swapval, actval);
+			do_memory_rrd_update(tstamp, hostname, testname, classname, pagepaths, physval, swapval, actval);
 		}
 	}
 

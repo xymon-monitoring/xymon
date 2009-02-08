@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module for Devmon                                       */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2008 Buchan Milne                                            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -11,11 +11,11 @@
 
 static char devmon_rcsid[] = "$Id $";
 
-int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 #define MAXCOLS 20
 	char *devmon_params[MAXCOLS+7];
-	static char *devmon_tpl      = NULL;
+	static void *devmon_tpl      = NULL;
 
 	char *eoln, *curline;
 	static int ptnsetup = 0;
@@ -54,21 +54,15 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		/* DS:ds0:COUNTER:600:0:U DS:ds1:COUNTER:600:0:U */
 		if (!strncmp(curline, "DS:",3)) {
-			devmon_params[0] = "rrdcreate";
-		       	devmon_params[1] = rrdfn;
 			dbgprintf("Looking for DS defintions in %s\n",curline);
 			while ( numds < MAXCOLS) {
 				dbgprintf("Seeing if column %d that has %s is a DS\n",numds,columns[numds]);
 				if (strncmp(columns[numds],"DS:",3)) break;
-				devmon_params[numds+2] = xstrdup(columns[numds]);
+				devmon_params[numds] = xstrdup(columns[numds]);
 				numds++;
 			}
 			dbgprintf("Found %d DS definitions\n",numds);
-		       	devmon_params[numds+2] = rra1;
-			devmon_params[numds+3] = rra2;
-		        devmon_params[numds+4] = rra3;
-			devmon_params[numds+5] = rra4;
-			devmon_params[numds+6] = NULL;
+			devmon_params[numds] = NULL;
 
 			if (devmon_tpl == NULL) devmon_tpl = setup_template(devmon_params);
 			goto nextline;
@@ -93,10 +87,9 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			strcat(rrdvalues,dsval);
 		}
 		/* File names in the format if_load.eth0.0.rrd */
-		snprintf(rrdfn, sizeof(rrdfn)-1, "%s.%s.rrd", testname, ifname);
-		rrdfn[sizeof(rrdfn)-1] = '\0';
+		setupfn2("%s.%s.rrd", testname, ifname);
 		dbgprintf("Sending from devmon to RRD for %s %s: %s\n",testname,ifname,rrdvalues);
-		create_and_update_rrd(hostname, rrdfn, devmon_params, devmon_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, devmon_params, devmon_tpl);
 		if (ifname) { xfree(ifname); ifname = NULL; }
 
 		if (eoln) *eoln = '\n';

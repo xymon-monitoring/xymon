@@ -18,7 +18,7 @@
 /* cation between hobbitd and the worker modules - under no circumstances     */
 /* should the daemon be tasked with storing data to a low-bandwidth channel.  */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for FreeBSD                                          */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char freebsd_rcsid[] = "$Id: freebsd.c,v 1.19 2006-07-09 07:37:26 henrik Exp $";
+static char freebsd_rcsid[] = "$Id: freebsd.c 5819 2008-09-30 16:37:31Z storner $";
 
 void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os, 
 			   void *hinfo, char *sender, time_t timestamp,
@@ -61,7 +61,8 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	vmstatstr = getdata("vmstat");
 	vmtotalstr = getdata("vmtotal");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
@@ -91,31 +92,31 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 		memphysused = memphystotal - memphysfree;
 	}
 
-		if (swapinfostr) {
-			found++;
-			p = strchr(swapinfostr, '\n'); /* Skip the header line */
-			while (p) {
-				long stot, sused, sfree;
-				char *bol;
+	if (swapinfostr) {
+		found++;
+		p = strchr(swapinfostr, '\n'); /* Skip the header line */
+		while (p) {
+			long stot, sused, sfree;
+			char *bol;
 				
-				bol = p+1;
-				p = strchr(bol, '\n'); if (p) *p = '\0';
+			bol = p+1;
+			p = strchr(bol, '\n'); if (p) *p = '\0';
 
-				if (sscanf(bol, "%*s %ld %ld %ld", &stot, &sused, &sfree) == 3) {
-					memswaptotal += stot;
-					memswapused += sused;
-					memswapfree += sfree;
-				}
-
-				if (p) *p = '\n';
+			if (sscanf(bol, "%*s %ld %ld %ld", &stot, &sused, &sfree) == 3) {
+				memswaptotal += stot;
+				memswapused += sused;
+				memswapfree += sfree;
 			}
 
-			memswaptotal /= 1024; memswapused /= 1024; memswapfree /= 1024;
+			if (p) *p = '\n';
 		}
 
-		if (found >= 2) {
-			unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
-				   memphystotal, memphysused, -1, memswaptotal, memswapused);
-		}
+		memswaptotal /= 1024; memswapused /= 1024; memswapfree /= 1024;
+	}
+
+	if (found >= 2) {
+		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
+			   memphystotal, memphysused, -1, memswaptotal, memswapused);
+	}
 }
 

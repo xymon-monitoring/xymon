@@ -1,37 +1,35 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c,v 1.13 2006-08-03 06:11:57 henrik Exp $";
+static char sendmail_rcsid[] = "$Id: do_sendmail.c 5819 2008-09-30 16:37:31Z storner $";
 
-int do_sendmail_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_sendmail_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-	static char *sendmail_params_1[] = { "rrdcreate", rrdfn, 
-					     "DS:msgsfr:DERIVE:600:0:U",
+	static char *sendmail_params_1[] = { "DS:msgsfr:DERIVE:600:0:U",
 					     "DS:bytes_from:DERIVE:600:0:U",
 					     "DS:msgsto:DERIVE:600:0:U",
 					     "DS:bytes_to:DERIVE:600:0:U",
 					     "DS:msgsrej:DERIVE:600:0:U",
 					     "DS:msgsdis:DERIVE:600:0:U",
-					     rra1, rra2, rra3, rra4, NULL };
-	static char *sendmail_tpl_1      = NULL;
+					     NULL };
+	static void *sendmail_tpl_1      = NULL;
 
-	static char *sendmail_params_2[] = { "rrdcreate", rrdfn, 
-					     "DS:msgsfr:DERIVE:600:0:U",
+	static char *sendmail_params_2[] = { "DS:msgsfr:DERIVE:600:0:U",
 					     "DS:bytes_from:DERIVE:600:0:U",
 					     "DS:msgsto:DERIVE:600:0:U",
 					     "DS:bytes_to:DERIVE:600:0:U",
 					     "DS:msgsrej:DERIVE:600:0:U",
 					     "DS:msgsdis:DERIVE:600:0:U",
 					     "DS:msgsqur:DERIVE:600:0:U",
-					     rra1, rra2, rra3, rra4, NULL };
-	static char *sendmail_tpl_2      = NULL;
+					     NULL };
+	static void *sendmail_tpl_2      = NULL;
 
 	/*
 	 * The data we process is the output from the "mailstats" command.
@@ -117,10 +115,10 @@ gotdata:
 				int dscount, i;
 				char **dsnames = NULL;
 
-				setupfn("sendmail.%s.rrd", mailer);
+				setupfn2("%s.%s.rrd", "sendmail", mailer);
 
 				/* Get the RRD-file dataset count, so we can decide what to do */
-				dscount = rrddatasets(hostname, rrdfn, &dsnames);
+				dscount = rrddatasets(hostname, &dsnames);
 
 				if ((dscount > 0) && dsnames) {
 					/* Free the dsnames list */
@@ -134,11 +132,11 @@ gotdata:
 					/* We have an existing RRD without the msgsqur DS. */
 					/* Chop off the msgsqur item in rrdvalues */
 					p = strrchr(rrdvalues, ':'); if (p) *p = '\0';
-					create_and_update_rrd(hostname, rrdfn, sendmail_params_1, sendmail_tpl_1);
+					create_and_update_rrd(hostname, testname, classname, pagepaths, sendmail_params_1, sendmail_tpl_1);
 				}
 				else {
 					/* New format, or it does not exist: Use latest format */
-					create_and_update_rrd(hostname, rrdfn, sendmail_params_2, sendmail_tpl_2);
+					create_and_update_rrd(hostname, testname, classname, pagepaths, sendmail_params_2, sendmail_tpl_2);
 				}
 			}
 

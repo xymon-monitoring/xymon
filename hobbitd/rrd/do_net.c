@@ -1,22 +1,22 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id: do_net.c,v 1.15 2006-06-09 22:23:49 henrik Exp $";
+static char bbnet_rcsid[] = "$Id: do_net.c 5819 2008-09-30 16:37:31Z storner $";
 
-int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-	static char *bbnet_params[]       = { "rrdcreate", rrdfn, "DS:sec:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-	static char *bbnet_tpl            = NULL;
+	static char *bbnet_params[]       = { "DS:sec:GAUGE:600:0:U", NULL };
+	static void *bbnet_tpl            = NULL;
 
 	char *p;
-	float seconds;
+	float seconds = 0.0;
 
 	if (bbnet_tpl == NULL) bbnet_tpl = setup_template(bbnet_params);
 
@@ -43,9 +43,9 @@ int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 				if (strncmp(urlfn, "http://", 7) == 0) urlfn += 7;
 				p = urlfn; while ((p = strchr(p, '/')) != NULL) *p = ',';
-				setupfn("tcp.http.%s.rrd", urlfn);
+				setupfn3("%s.%s.%s.rrd", "tcp", "http", urlfn);
 				sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-				create_and_update_rrd(hostname, rrdfn, bbnet_params, bbnet_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
 				xfree(url); url = NULL;
 			}
 
@@ -74,9 +74,9 @@ int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		if (strncmp(tmod, "ms", 2) == 0) seconds = seconds / 1000.0;
 		else if (strncmp(tmod, "usec", 4) == 0) seconds = seconds / 1000000.0;
 
-		setupfn("tcp.%s.rrd", testname);
+		setupfn2("%s.%s.rrd", "tcp", testname);
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
-		return create_and_update_rrd(hostname, rrdfn, bbnet_params, bbnet_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
 	}
 	else {
 		/*
@@ -84,9 +84,9 @@ int do_net_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		 */
 		p = strstr(msg, "\nSeconds:");
 		if (p && (sscanf(p+1, "Seconds: %f", &seconds) == 1)) {
-			setupfn("tcp.%s.rrd", testname);
+			setupfn2("%s.%s.rrd", "tcp", testname);
 			sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-			return create_and_update_rrd(hostname, rrdfn, bbnet_params, bbnet_tpl);
+			return create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
 		}
 	}
 

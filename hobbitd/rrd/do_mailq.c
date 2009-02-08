@@ -1,19 +1,19 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mailq_rcsid[] = "$Id: do_mailq.c,v 1.15 2006-05-03 21:19:24 henrik Exp $";
+static char mailq_rcsid[] = "$Id: do_mailq.c 5819 2008-09-30 16:37:31Z storner $";
 
-int do_mailq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_mailq_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-	static char *mailq_params[]       = { "rrdcreate", rrdfn, "DS:mailq:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-	static char *mailq_tpl            = NULL;
+	static char *mailq_params[]       = { "DS:mailq:GAUGE:600:0:U", NULL };
+	static void *mailq_tpl            = NULL;
 
 	char	*p;
 	char    *inqueue, *outqueue;
@@ -47,13 +47,13 @@ int do_mailq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		p = inqueue + strcspn(inqueue, "0123456789"); inq = atoi(p);
 
 		/* Update RRD's */
-		sprintf(rrdfn, "mailqin.rrd");
+		setupfn("%s.rrd", "mailqin");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, inq);
-		create_and_update_rrd(hostname, rrdfn, mailq_params, mailq_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, mailq_params, mailq_tpl);
 
-		sprintf(rrdfn, "mailqout.rrd");
+		setupfn("%s.rrd", "mailqout");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, outq);
-		create_and_update_rrd(hostname, rrdfn, mailq_params, mailq_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, mailq_params, mailq_tpl);
 		return 0;
 
 	}
@@ -71,9 +71,9 @@ int do_mailq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 			mailq = atoi(valptr);
 
-			sprintf(rrdfn, "mailq.rrd");
+			setupfn("%s.rrd", "mailq");
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, mailq);
-			return create_and_update_rrd(hostname, rrdfn, mailq_params, mailq_tpl);
+			return create_and_update_rrd(hostname, testname, classname, pagepaths, mailq_params, mailq_tpl);
 		}
 	}
 

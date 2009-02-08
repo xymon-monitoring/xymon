@@ -1,19 +1,19 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbproxy_rcsid[] = "$Id: do_bbproxy.c,v 1.12 2006-06-09 22:23:49 henrik Exp $";
+static char bbproxy_rcsid[] = "$Id: do_bbproxy.c 5819 2008-09-30 16:37:31Z storner $";
 
-int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_bbproxy_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 { 
-	static char *bbproxy_params[]       = { "rrdcreate", rrdfn, "DS:runtime:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-	static char *bbproxy_tpl            = NULL;
+	static char *bbproxy_params[]       = { "DS:runtime:GAUGE:600:0:U", NULL };
+	static void *bbproxy_tpl            = NULL;
 
 	char	*p;
 	float	runtime;
@@ -23,13 +23,13 @@ int do_bbproxy_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	p = strstr(msg, "Average queue time");
 	if (p && (sscanf(p, "Average queue time : %f", &runtime) == 1)) {
 		if (strcmp("bbproxy", testname) != 0) {
-			setupfn("bbproxy.%s.rrd", testname);
+			setupfn2("%s.%s.rrd", "bbproxy", testname);
 		}
 		else {
-			strcpy(rrdfn, "bbproxy.rrd");
+			setupfn("%s.rrd", "bbproxy");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
-		return create_and_update_rrd(hostname, rrdfn, bbproxy_params, bbproxy_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, bbproxy_params, bbproxy_tpl);
 	}
 
 	return 0;

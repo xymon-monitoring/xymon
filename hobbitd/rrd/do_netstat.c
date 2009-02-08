@@ -1,18 +1,16 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2007 Francois Lacroix					      */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char netstat_rcsid[] = "$Id: do_netstat.c,v 1.26 2006-08-03 10:20:51 henrik Exp $";
+static char netstat_rcsid[] = "$Id: do_netstat.c 5822 2008-10-01 13:28:07Z rsmrcina $";
 
-static char *netstat_params[] = { "rrdcreate", rrdfn, 
-	                          "DS:udpInDatagrams:DERIVE:600:0:U", 
+static char *netstat_params[] = { "DS:udpInDatagrams:DERIVE:600:0:U", 
 	                          "DS:udpOutDatagrams:DERIVE:600:0:U", 
 	                          "DS:udpInErrors:DERIVE:600:0:U", 
 	                          "DS:tcpActiveOpens:DERIVE:600:0:U", 
@@ -28,8 +26,8 @@ static char *netstat_params[] = { "rrdcreate", rrdfn,
 	                          "DS:tcpInInorderPackets:DERIVE:600:0:U", 
 	                          "DS:tcpInUnorderPackets:DERIVE:600:0:U", 
 	                          "DS:tcpRetransPackets:DERIVE:600:0:U", 
-				  rra1, rra2, rra3, rra4, NULL };
-static char *netstat_tpl       = NULL;
+				  NULL };
+static void *netstat_tpl       = NULL;
 
 static char *udpreceived = NULL,
 	    *udpsent = NULL,
@@ -410,7 +408,7 @@ static int do_valbeforemarker(char *layout[], char *msg, char *outp)
 	return gotany;
 }
 
-int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
 	static pcre **netstat_osf_pcres = NULL;
@@ -503,12 +501,16 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	  case OS_LINUX22:
 	  case OS_LINUX:
 	  case OS_RHEL3:
+	  case OS_ZVM:
+	  case OS_ZVSE:
+	  case OS_ZOS:
 		/* These are of the form "<value> <marker" */
 		datapart = strstr(datapart, "\nTcp:");	/* Skip to the start of "Tcp" (udp comes after) */
 		if (datapart) havedata = do_valbeforemarker(netstat_linux_markers, datapart, outp);
 		break;
 
 	  case OS_SNMP:
+	  case OS_NETWARE_SNMP:
 		havedata = do_valbeforemarker(netstat_snmp_markers, datapart, outp);
 		break;
 
@@ -527,8 +529,8 @@ int do_netstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	}
 
 	if (havedata > 0) {
-		sprintf(rrdfn, "netstat.rrd");
-		return create_and_update_rrd(hostname, rrdfn, netstat_params, netstat_tpl);
+		setupfn("%s.rrd", "netstat");
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, netstat_params, netstat_tpl);
 	}
 	else {
 		return -1;

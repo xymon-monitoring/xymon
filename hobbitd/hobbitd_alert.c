@@ -5,7 +5,7 @@
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
 /* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -57,8 +57,12 @@ static char rcsid[] = "$Id: hobbitd_alert.c,v 1.86 2006-08-07 06:19:41 henrik Ex
 #include "hobbitd_worker.h"
 #include "do_alert.h"
 
-static volatile int running = 1;
-static volatile time_t nextcheckpoint = 0;
+
+
+
+static int running = 1;
+static time_t nextcheckpoint = 0;
+static int termsig = -1;
 
 RbtHandle hostnames;
 RbtHandle testnames;
@@ -217,6 +221,7 @@ void sig_handler(int signum)
 
 	  default:
 		  running = 0;
+		  termsig = signum;
 		  break;
 	}
 }
@@ -478,14 +483,20 @@ int main(int argc, char *argv[])
 			tracefn = strdup(strchr(argv[argi], '=')+1);
 			starttrace(tracefn);
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 		else {
 			errprintf("Unknown option '%s'\n", argv[argi]);
 		}
 	}
 
+	/* Do the network stuff if needed */
+	net_worker_run(ST_ALERT, LOC_SINGLESERVER, NULL);
+
 	if (checkfn) {
 		load_checkpoint(checkfn);
-		nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
+		nextcheckpoint = gettimer() + checkpointinterval;
 		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
@@ -529,15 +540,15 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *hostname = NULL, *testname = NULL;
 		struct timespec timeout;
-		time_t now;
+		time_t now, nowtimer;
 		int anytogo;
 		activealerts_t *awalk;
 		int childstat;
 
-		now = getcurrenttime(NULL);
-		if (checkfn && (now > nextcheckpoint)) {
+		nowtimer = gettimer();
+		if (checkfn && (nowtimer > nextcheckpoint)) {
 			dbgprintf("Saving checkpoint\n");
-			nextcheckpoint = now + checkpointinterval;
+			nextcheckpoint = nowtimer + checkpointinterval;
 			save_checkpoint(checkfn);
 
 			if (acklogfd) acklogfd = freopen(acklogfn, "a", acklogfd);
@@ -774,6 +785,7 @@ int main(int argc, char *argv[])
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
+			errprintf("Got a shutdown message\n");
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
@@ -799,8 +811,8 @@ int main(int argc, char *argv[])
 		 * do the full alert handling once every 10 secs - that lets us
 		 * combine a bunch of alerts into one transmission process.
 		 */
-		if (now < (lastxmit+10)) continue;
-		lastxmit = now;
+		if (nowtimer < (lastxmit+10)) continue;
+		lastxmit = nowtimer;
 
 		/* 
 		 * Loop through the activealerts list and see if anything is pending.
@@ -932,6 +944,10 @@ int main(int argc, char *argv[])
 
 	MEMUNDEFINE(notiflogfn);
 	MEMUNDEFINE(acklogfn);
+
+	if (termsig >= 0) {
+		errprintf("Terminated by signal %d\n", termsig);
+	}
 
 	return 0;
 }

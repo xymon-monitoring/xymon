@@ -10,17 +10,17 @@
 
 static char dbcheck_rcsid[] = "$Id: do_dbcheck.c,v 1.00 2006/05/31 20:28:44 henrik Rel $";
 
-int do_dbcheck_memreq_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_dbcheck_memreq_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *dbcheck_memreq_params[] = { "rrdcreate", rrdfn,
+static char *dbcheck_memreq_params[] = { 
                                      "DS:ResFree:GAUGE:600:0:U",
                                      "DS:ResAvgFree:GAUGE:600:0:U",
                                      "DS:ResUsed:GAUGE:600:0:U",
                                      "DS:ResAvgUsed:GAUGE:600:0:U",
                                      "DS:ReqFail:DERIVE:600:0:U",
                                      "DS:FailSize:GAUGE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *dbcheck_memreq_tpl      = NULL;
+                                     NULL };
+static void *dbcheck_memreq_tpl      = NULL;
 
 	unsigned long free=0,used=0,reqf=0,fsz=0;	
 	double avfr=0,avus=0;
@@ -49,16 +49,15 @@ static char *dbcheck_memreq_tpl      = NULL;
 			hostname, testname, reqf, fsz);
 		sprintf(rrdvalues, "%d:%ld:%f:%ld:%f:%ld:%ld",
 			(int) tstamp, free, avfr, used, avus, reqf,fsz);
-		sprintf(rrdfn, "%s.rrd",testname);
-		create_and_update_rrd(hostname, rrdfn, dbcheck_memreq_params, dbcheck_memreq_tpl);
+		setupfn("%s.rrd",testname);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_memreq_params, dbcheck_memreq_tpl);
 	}
 	return 0;
 }
 
-int do_dbcheck_hitcache_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_dbcheck_hitcache_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *dbcheck_hitcache_params[] = { "rrdcreate", rrdfn,
-                                     "DS:PinSQLArea:GAUGE:600:0:100",
+static char *dbcheck_hitcache_params[] = { "DS:PinSQLArea:GAUGE:600:0:100",
                                      "DS:PinTblProc:GAUGE:600:0:100",
                                      "DS:PinBody:GAUGE:600:0:100",
                                      "DS:PinTrigger:GAUGE:600:0:100",
@@ -68,8 +67,8 @@ static char *dbcheck_hitcache_params[] = { "rrdcreate", rrdfn,
                                      "DS:HitTrigger:GAUGE:600:0:100",
                                      "DS:BlBuffHit:GAUGE:600:0:100",
                                      "DS:RowCache:GAUGE:600:0:100",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *dbcheck_hitcache_tpl      = NULL;
+                                     NULL };
+static void *dbcheck_hitcache_tpl      = NULL;
 
 	static time_t starttime = 0;
 	double pinsql=0, pintbl=0, pinbody=0, pintrig=0, hitsql=0, hittbl=0, hitbody=0, hittrig=0, blbuff=0, rowchache=0;
@@ -78,7 +77,7 @@ static char *dbcheck_hitcache_tpl      = NULL;
 	
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "dbcheck.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd",testname);
 		if (dbcheck_hitcache_tpl == NULL) dbcheck_hitcache_tpl = setup_template(dbcheck_hitcache_params);
 		pinsql=get_double_data(msg,"PinSQLArea");
 		pintbl=get_double_data(msg,"PinTblProc");
@@ -99,24 +98,23 @@ static char *dbcheck_hitcache_tpl      = NULL;
 		sprintf(rrdvalues, "%d:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f",
 			(int) tstamp, pinsql, pintbl, pinbody, pintrig,
 			hitsql, hittbl, hitbody, hittrig, blbuff, rowchache);
-		create_and_update_rrd(hostname, rrdfn, dbcheck_hitcache_params, dbcheck_hitcache_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_hitcache_params, dbcheck_hitcache_tpl);
 	}
 	return 0;
 }
 
 
-int do_dbcheck_session_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_dbcheck_session_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 
-static char *dbcheck_session_params[] = { "rrdcreate", rrdfn,
-                                     "DS:MaxSession:GAUGE:600:0:U",
+static char *dbcheck_session_params[] = { "DS:MaxSession:GAUGE:600:0:U",
                                      "DS:CurrSession:GAUGE:600:0:U",
                                      "DS:SessUsedPct:GAUGE:600:0:100",
                                      "DS:MaxProcs:GAUGE:600:0:U",
                                      "DS:CurrProcs:GAUGE:600:0:U",
                                      "DS:ProcsUsedPct:GAUGE:600:0:100",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *dbcheck_session_tpl      = NULL;
+                                     NULL };
+static void *dbcheck_session_tpl      = NULL;
 
 	static time_t starttime = 0;
         unsigned long maxsess=0, currsess=0, maxproc=0, currproc=0 ;
@@ -126,7 +124,7 @@ static char *dbcheck_session_tpl      = NULL;
 	
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "dbcheck.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd",testname);
 		if (dbcheck_session_tpl == NULL) dbcheck_session_tpl = setup_template(dbcheck_session_params);
 		maxsess=get_long_data(msg, "MaxSession");
 		currsess=get_long_data(msg,"CurrSession");
@@ -140,18 +138,16 @@ static char *dbcheck_session_tpl      = NULL;
 		hostname, testname, maxproc, currproc, pctproc);
                         sprintf(rrdvalues, "%d:%ld:%ld:%5.2f:%ld:%ld:%5.2f",
                        	(int) tstamp, maxsess, currsess, pctsess, maxproc, currproc, pctproc);
-		create_and_update_rrd(hostname, rrdfn, dbcheck_session_params, dbcheck_session_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_session_params, dbcheck_session_tpl);
 	}
 	return 0;
 }
 
-int do_dbcheck_rb_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_dbcheck_rb_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 /* This check can be done in slow mode so put a long heartbeat */
-static char *dbcheck_rb_params[] = { "rrdcreate", rrdfn,
-                                        "DS:pct:GAUGE:28800:0:100",
-                                        rra1, rra2, rra3, rra4, NULL };
-static char *dbcheck_rb_tpl    = NULL;
+static char *dbcheck_rb_params[] = { "DS:pct:GAUGE:28800:0:100", NULL };
+static void *dbcheck_rb_tpl    = NULL;
 
         char *curline;
         char *eoln;
@@ -177,10 +173,10 @@ static char *dbcheck_rb_tpl    = NULL;
 			dbgprintf("dbcheck: host %s test %s line %s\n", hostname, testname, start);
 			execname=xmalloc(strlen(start));
                         if ( sscanf(start,"ROLLBACK percentage for %s is %f",execname,&pct) !=2) goto nextline;
-                        sprintf(rrdfn, "%s,%s.rrd",testname,execname);
+                        setupfn2("%s,%s.rrd",testname,execname);
                         dbgprintf("dbcheck: host %s test %s name %s pct %5.2f\n", hostname, testname, execname, pct);
                         sprintf(rrdvalues, "%d:%5.2f", (int) tstamp, pct);
-                        create_and_update_rrd(hostname, rrdfn, dbcheck_rb_params, dbcheck_rb_tpl);
+                        create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_rb_params, dbcheck_rb_tpl);
 nextline:
                         if (execname) { xfree(execname); execname = NULL; }
                         if (eoln) *(eoln)='\n';
@@ -190,15 +186,14 @@ nextline:
         return 0;
 }
 
-int do_dbcheck_invobj_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_dbcheck_invobj_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 /* This check can be done in slow mode so put a long heartbeat */
-static char *dbcheck_invobj_params[] = { "rrdcreate", rrdfn,
-                                        "DS:red:GAUGE:28800:0:U",
+static char *dbcheck_invobj_params[] = { "DS:red:GAUGE:28800:0:U",
                                         "DS:yellow:GAUGE:28800:0:U",
                                         "DS:green:GAUGE:28800:0:U",
-                                        rra1, rra2, rra3, rra4, NULL };
-static char *dbcheck_invobj_tpl    = NULL;
+                                        NULL };
+static void *dbcheck_invobj_tpl    = NULL;
 
         char *curline;
         char *eoln;
@@ -227,11 +222,11 @@ nextline:
                         if (eoln) *(eoln)='\n';
                         curline = (eoln ? (eoln+1) : NULL);
                 }
-                sprintf(rrdfn, "%s.rrd",testname);
+                setupfn("%s.rrd",testname);
                 dbgprintf("dbcheck: host %s test %s  red %ld yellow %ld green %ld\n", 
 			hostname, testname, red,yellow,green);
                 sprintf(rrdvalues, "%d:%ld:%ld:%ld", (int) tstamp, red,yellow,green);
-                        create_and_update_rrd(hostname, rrdfn, dbcheck_invobj_params, dbcheck_invobj_tpl);
+                        create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_invobj_params, dbcheck_invobj_tpl);
         }
         return 0;
 }

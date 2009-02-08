@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for IRIX                                             */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char irix_rcsid[] = "$Id: irix.c,v 1.7 2006-07-09 20:30:32 henrik Exp $";
+static char irix_rcsid[] = "$Id: irix.c 5819 2008-09-30 16:37:31Z storner $";
 
 void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os, 
 			void *hinfo, char *sender, time_t timestamp,
@@ -53,7 +53,8 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 	sarstr = getdata("sar");
 	portsstr = getdata("ports");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);

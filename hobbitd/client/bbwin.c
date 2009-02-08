@@ -3,7 +3,7 @@
 /*                                                                            */
 /* Client backend module for BBWin/Windoes client                             */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2007-2008 Francois Lacroix				      */
 /* Copyright (C) 2007-2008 Etienne Grignon <etienne.grignon@gmail.com>        */
 /*                                                                            */
@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbwin_rcsid[] = "$Id: bbwin.c,v 1.5 2008/01/14 21:20:28 henrik Exp $";
+static char bbwin_rcsid[] = "$Id: bbwin.c 5858 2008-10-08 09:04:35Z storner $";
 
 static void bbwin_uptime_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr,
@@ -181,53 +181,38 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
 
         if (clockstr) {
                 char *p;
+                struct timeval clockval;
 
                 p = strstr(clockstr, "epoch:");
-		if (!p) {
-			/* No "epoch" reported by client. Ignore it */
-		}
-		else {
-                	struct timeval clockval;
-			int fields;
+                if (p && (sscanf(p, "epoch: %ld.%ld", (long int *)&clockval.tv_sec, (long int *)&clockval.tv_usec) == 2)) {
+                        struct timeval clockdiff;
+                        struct timezone tz;
+                        int cachedelay = 0;
 
-			/* Clock may or may not contain decimal point (BBWin 0.12 does not). Graham Nayler */
-			fields = sscanf(p, "epoch: %ld.%ld", (long int *)&clockval.tv_sec, (long int *)&clockval.tv_usec);
+                        if (msgcachestr) {
+                                /* Message passed through msgcache, so adjust for the cache delay */
+                                p = strstr(msgcachestr, "Cachedelay:");
+                                if (p) cachedelay = atoi(p+11);
+                        }
 
-			if (fields == 0) {
-				dbgprintf("Failed to parse time '%s' from host %s\n", hostname);
-			}
-			else {
-				struct timeval clockdiff;
-				struct timezone tz;
-				int cachedelay = 0;
+                        gettimeofday(&clockdiff, &tz);
+                        clockdiff.tv_sec -= (clockval.tv_sec + cachedelay);
+                        clockdiff.tv_usec -= clockval.tv_usec;
+                        if (clockdiff.tv_usec < 0) {
+                                clockdiff.tv_usec += 1000000;
+                                clockdiff.tv_sec -= 1;
+                        }
 
-				if (msgcachestr) {
-					/* Message passed through msgcache, so adjust for the cache delay */
-					p = strstr(msgcachestr, "Cachedelay:");
-					if (p) cachedelay = atoi(p+11);
-				}
-
-				if (fields == 1) clockval.tv_usec = 0;
-
-				gettimeofday(&clockdiff, &tz);
-				clockdiff.tv_sec -= (clockval.tv_sec + cachedelay);
-				clockdiff.tv_usec -= clockval.tv_usec;
-				if (clockdiff.tv_usec < 0) {
-					clockdiff.tv_usec += 1000000;
-					clockdiff.tv_sec -= 1;
-				}
-
-				if ((maxclockdiff > 0) && (abs(clockdiff.tv_sec) > maxclockdiff)) {
-					if (clockcolor == COL_GREEN) clockcolor = COL_YELLOW;
-					sprintf(msgline, "&yellow System clock is %ld seconds off (max %ld)\n",
-							(long) clockdiff.tv_sec, (long) maxclockdiff);
-					addtobuffer(clockmsg, msgline);
-				}
-				else {
-					sprintf(msgline, "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
-					addtobuffer(clockmsg, msgline);
-				}
-			}
+                        if ((maxclockdiff > 0) && (abs(clockdiff.tv_sec) > maxclockdiff)) {
+                                if (clockcolor == COL_GREEN) clockcolor = COL_YELLOW;
+                                sprintf(msgline, "&yellow System clock is %ld seconds off (max %ld)\n",
+                                        (long) clockdiff.tv_sec, (long) maxclockdiff);
+                                addtobuffer(clockmsg, msgline);
+                        }
+                        else {
+                                sprintf(msgline, "System clock is %ld seconds off\n", (long) clockdiff.tv_sec);
+                                addtobuffer(clockmsg, msgline);
+                        }
                 }
         }
 
@@ -260,7 +245,6 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
 void bbwin_who_report(char *hostname, char *clientclass, enum ostype_t os,
                       void *hinfo, char *fromline, char *timestr, char *whostr)
 {
-        char *whockstr;
         int whocolor = COL_GREEN;
         char msgline[4096];
         strbuffer_t *whomsg;

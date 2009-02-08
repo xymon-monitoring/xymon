@@ -1,16 +1,16 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c,v 1.17 2006-07-20 16:06:41 henrik Exp $";
+static char external_rcsid[] = "$Id: do_external.c 5853 2008-10-07 10:16:10Z storner $";
 
-int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_external_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
 	pid_t childpid;
 
@@ -26,7 +26,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		strbuffer_t *inbuf;
 		char *p;
 		char **params = NULL;
-		int paridx = 1;
+		int paridx = 0;
 		pid_t mypid = getpid();
 		
 		MEMDEFINE(fn); MEMDEFINE(extcmd);
@@ -44,6 +44,24 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			exit(1) ;
 		}
 		if (fclose(fd)) errprintf("Error closing file %s: %s\n", fn, strerror(errno));
+
+		/* 
+		 * Disable the RRD update cache.
+		 * We cannot use the cache, because this child
+		 * process terminates without flushing the cache,
+		 * and it cannot feed the update-data back to the
+		 * parent process which owns the cache. So using
+		 * an external handler means the updates will be
+		 * sync'ed to disk immediately.
+		 *
+		 * NB: It is OK to do this now and not re-enable it,
+		 * since we're running in the external helper
+		 * child process - so this only affects the current
+		 * update.
+		 *
+		 * Thanks to Graham Nayler for the analysis.
+		 */
+		use_rrd_cache = 0;
 
 		inbuf = newstrbuffer(0);
 
@@ -64,14 +82,12 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					/* After doing one set of data, allow script to re-use the same DS defs */
 					if (strncasecmp(STRBUF(inbuf), "DS:", 3) == 0) {
 						/* New DS definitions, scratch the old ones */
-						pstate = R_DEFS;
-
 						if (params) {
-							for (paridx=2; (params[paridx] != NULL); paridx++) 
+							for (paridx=0; (params[paridx] != NULL); paridx++) 
 								xfree(params[paridx]);
+							xfree(params);
+							params = NULL;
 						}
-						xfree(params);
-						params = NULL;
 						pstate = R_DEFS;
 					}
 					else pstate = R_FN;
@@ -80,40 +96,32 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 				switch (pstate) {
 				  case R_DEFS:
 					if (params == NULL) {
-						params = (char **)calloc(8, sizeof(char *));
-						params[0] = "rrdcreate";
-						params[1] = rrdfn;
-						paridx = 1;
+						params = (char **)calloc(1, sizeof(char *));
+						paridx = 0;
 					}
 
 					if (strncasecmp(STRBUF(inbuf), "DS:", 3) == 0) {
 						/* Dataset definition */
-						paridx++;
-						params = (char **)realloc(params, (7 + paridx)*sizeof(char *));
 						params[paridx] = strdup(STRBUF(inbuf));
-						params[paridx+1] = NULL;
+						paridx++;
+						params = (char **)realloc(params, (1 + paridx)*sizeof(char *));
+						params[paridx] = NULL;
 						break;
 					}
 					else {
-						/* No more DS defs - put in the RRA's last. */
-						params[++paridx] = strdup(rra1);
-						params[++paridx] = strdup(rra2);
-						params[++paridx] = strdup(rra3);
-						params[++paridx] = strdup(rra4);
-						params[++paridx] = NULL;
+						/* No more DS defs */
 						pstate = R_FN;
 					}
 					/* Fall through */
 				  case R_FN:
-					strncpy(rrdfn, STRBUF(inbuf), sizeof(rrdfn)-1);
-					rrdfn[sizeof(rrdfn)-1] = '\0';
+					setupfn("%s", STRBUF(inbuf));
 					pstate = R_DATA;
 					break;
 
 				  case R_DATA:
 					snprintf(rrdvalues, sizeof(rrdvalues)-1, "%d:%s", (int)tstamp, STRBUF(inbuf));
 					rrdvalues[sizeof(rrdvalues)-1] = '\0';
-					create_and_update_rrd(hostname, rrdfn, params, NULL);
+					create_and_update_rrd(hostname, testname, classname, pagepaths, params, NULL);
 					pstate = R_NEXT;
 					break;
 
@@ -129,7 +137,7 @@ int do_external_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		}
 
 		if (params) {
-			for (paridx=2; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
+			for (paridx=0; (params[paridx] != NULL); paridx++) xfree(params[paridx]);
 			xfree(params);
 		}
 

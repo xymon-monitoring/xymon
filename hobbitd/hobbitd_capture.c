@@ -5,7 +5,7 @@
 /* or test, or data type. This is fed from the status- or data-channel, and   */
 /* simply logs the data received to a file.                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 			char *color = metadata[7];
 
 			/* See if we should handle the batched messages we've got */
-			if (batchcmd && ((lastmsgtime + batchtimeout) < getcurrenttime(NULL)) && (STRBUFLEN(batchbuf) > 0)) {
+			if (batchcmd && ((lastmsgtime + batchtimeout) < gettimer()) && (STRBUFLEN(batchbuf) > 0)) {
 				pid_t childpid = fork();
 				int childres = 0;
 
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 				if (!match) continue;
 			}
 
-			lastmsgtime = getcurrenttime(NULL);
+			lastmsgtime = gettimer();
 
 			if (batchcmd) {
 				addtobuffer(batchbuf, "## ");

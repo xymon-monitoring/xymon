@@ -5,7 +5,7 @@
 /* This file has routines that load the hobbitd_client configuration and      */
 /* finds the rules relevant for a particular test when applied.               */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* "PORT" handling (C) Mirko Saam                                             */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */

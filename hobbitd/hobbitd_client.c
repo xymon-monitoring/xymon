@@ -3,7 +3,7 @@
 /*                                                                            */
 /* Client backend module                                                      */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* "PORT" handling (C) Mirko Saam                                             */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -34,9 +34,12 @@ enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, 
 typedef struct sectlist_t {
 	char *sname;
 	char *sdata;
+	char *nextsectionrestoreptr, *sectdatarestoreptr;
+	char nextsectionrestoreval, sectdatarestoreval;
 	struct sectlist_t *next;
 } sectlist_t;
-sectlist_t *sections = NULL;
+static sectlist_t *defsecthead = NULL;
+
 int pslistinprocs = 1;
 int portlistinports = 1;
 int svclistinsvcs = 1;
@@ -47,28 +50,41 @@ int sendclearsvcs = 1;
 int localmode     = 0;
 int noreportcolor = COL_CLEAR;
 
-void splitmsg(char *clientdata)
+void nextsection_r_done(void *secthead)
+{
+	/* Free the old list */
+	sectlist_t *swalk, *stmp;
+
+	swalk = (sectlist_t *)secthead;
+	while (swalk) {
+		if (swalk->nextsectionrestoreptr) *swalk->nextsectionrestoreptr = swalk->nextsectionrestoreval;
+		if (swalk->sectdatarestoreptr) *swalk->sectdatarestoreptr = swalk->sectdatarestoreval;
+
+		stmp = swalk;
+		swalk = swalk->next;
+		xfree(stmp);
+	}
+}
+
+void splitmsg_r(char *clientdata, sectlist_t **secthead)
 {
 	char *cursection, *nextsection;
 	char *sectname, *sectdata;
 
-	/* Free the old list */
-	if (sections) {
-		sectlist_t *swalk, *stmp;
-
-		swalk = sections;
-		while (swalk) {
-			stmp = swalk;
-			swalk = swalk->next;
-			xfree(stmp);
-		}
-
-		sections = NULL;
-	}
-
 	if (clientdata == NULL) {
 		errprintf("Got a NULL client data message\n");
 		return;
+	}
+
+	if (secthead == NULL) {
+		errprintf("BUG: splitmsg_r called with NULL secthead\n");
+		return;
+	}
+
+	if (*secthead) {
+		errprintf("BUG: splitmsg_r called with non-empty secthead\n");
+		nextsection_r_done(*secthead);
+		*secthead = NULL;
 	}
 
 	/* Find the start of the first section */
@@ -80,11 +96,13 @@ void splitmsg(char *clientdata)
 	}
 
 	while (cursection) {
-		sectlist_t *newsect = (sectlist_t *)malloc(sizeof(sectlist_t));
+		sectlist_t *newsect = (sectlist_t *)calloc(1, sizeof(sectlist_t));
 
 		/* Find end of this section (i.e. start of the next section, if any) */
 		nextsection = strstr(cursection, "\n[");
 		if (nextsection) {
+			newsect->nextsectionrestoreptr = nextsection;
+			newsect->nextsectionrestoreval = *nextsection;
 			*nextsection = '\0';
 			nextsection++;
 		}
@@ -92,24 +110,70 @@ void splitmsg(char *clientdata)
 		/* Pick out the section name and data */
 		sectname = cursection+1;
 		sectdata = sectname + strcspn(sectname, "]\n");
-		*sectdata = '\0'; sectdata++; if (*sectdata == '\n') sectdata++;
+		newsect->sectdatarestoreptr = sectdata;
+		newsect->sectdatarestoreval = *sectdata;
+		*sectdata = '\0'; 
+		sectdata++; if (*sectdata == '\n') sectdata++;
 
 		/* Save the pointers in the list */
 		newsect->sname = sectname;
 		newsect->sdata = sectdata;
-		newsect->next = sections;
-		sections = newsect;
+		newsect->next = *secthead;
+		*secthead = newsect;
 
 		/* Next section, please */
 		cursection = nextsection;
 	}
 }
 
+void splitmsg(char *clientdata)
+{
+	if (defsecthead) {
+		/* Clean up after the previous message */
+		nextsection_r_done(defsecthead);
+		defsecthead = NULL;
+	}
+
+	splitmsg_r(clientdata, &defsecthead);
+}
+
+char *nextsection_r(char *clientdata, char **name, void **current, void **secthead)
+{
+	if (clientdata) {
+		*secthead = NULL;
+		splitmsg_r(clientdata, (sectlist_t **)secthead);
+		*current = *secthead;
+	}
+	else {
+		*current = (*current ? ((sectlist_t *)*current)->next : NULL);
+	}
+
+	if (*current) {
+		*name = ((sectlist_t *)*current)->sname;
+		return ((sectlist_t *)*current)->sdata;
+	}
+
+	return NULL;
+}
+
+char *nextsection(char *clientdata, char **name)
+{
+	static void *current = NULL;
+
+	if (clientdata && defsecthead) {
+		nextsection_r_done(defsecthead);
+		defsecthead = NULL;
+	}
+
+	return nextsection_r(clientdata, name, &current, (void **)&defsecthead);
+}
+
+
 char *getdata(char *sectionname)
 {
 	sectlist_t *swalk;
 
-	for (swalk = sections; (swalk && strcmp(swalk->sname, sectionname)); swalk = swalk->next) ;
+	for (swalk = defsecthead; (swalk && strcmp(swalk->sname, sectionname)); swalk = swalk->next) ;
 	if (swalk) return swalk->sdata;
 
 	return NULL;
@@ -168,7 +232,8 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     void *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *clockstr, char *msgcachestr,
-		     char *whostr, char *psstr, char *topstr)
+		     char *whostr, int usercount, 
+		     char *psstr, int pscount, char *topstr)
 {
 	char *p;
 	float load1, load5, load15;
@@ -263,6 +328,20 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 			sprintf(loadresult, "%.2f", load5);
 		}
 	}
+	else {
+		p = strstr(uptimestr, " load=");
+		if (p) {
+			char *lstart = p+6;
+			char savech;
+
+			p = lstart + strspn(lstart, "0123456789.");
+			savech = *p; *p = '\0';
+			load5 = atof(loadresult);
+			strcpy(loadresult, lstart);
+			*p = savech;
+			if (savech == '%') strcat(loadresult, "%");
+		}
+	}
 
 	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
 
@@ -329,8 +408,8 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		commafy(hostname), colorname(cpucolor), 
 		(timestr ? timestr : "<no timestamp data>"), 
 		myupstr, 
-		(whostr ? linecount(whostr) : 0), 
-		(psstr ? linecount(psstr)-1 : 0), 
+		(whostr ? linecount(whostr) : usercount), 
+		(psstr ? linecount(psstr)-1 : pscount), 
 		loadresult);
 	addtostatus(msgline);
 	if (STRBUFLEN(upmsg)) {
@@ -855,7 +934,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	if (!want_msgtype(hinfo, MSG_MSGS)) return;
 
-	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
+	for (swalk = defsecthead; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 
 	if (!swalk) {
 		old_msgs_report(hostname, hinfo, fromline, timestr, msgsstr);
@@ -960,7 +1039,7 @@ void msgs_report(char *hostname, char *clientclass, enum ostype_t os,
 	 * It's probably faster to re-walk the section list than
 	 * stuffing the full messages into a temporary buffer.
 	 */
-	for (swalk = sections; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
+	for (swalk = defsecthead; (swalk && strncmp(swalk->sname, "msgs:", 5)); swalk = swalk->next) ;
 	while (swalk) {
 		if (!localmode) {
 			sprintf(msgline, "\nFull log <a href=\"%s\">%s</a>\n", 
@@ -1009,7 +1088,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.filesizes\n", commafy(hostname));
 	addtobuffer(sizedata, msgline);
 
-	for (swalk = sections; (swalk); swalk = swalk->next) {
+	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
 		int trackit, anyrules;
 		char *sfn = NULL;
 		char *id = NULL;
@@ -1176,7 +1255,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.linecounts\n", commafy(hostname));
 	addtobuffer(countdata, msgline);
 
-	for (swalk = sections; (swalk); swalk = swalk->next) {
+	for (swalk = defsecthead; (swalk); swalk = swalk->next) {
 		if (strncmp(swalk->sname, "linecount:", 10) == 0) {
 			char *fn, *boln, *eoln, *id, *countstr;
 
@@ -1568,11 +1647,10 @@ void testmode(char *configfn)
 				fgets(s, sizeof(s), stdin); clean_instr(s);
 				if (*s == '@') {
 					fd = fopen(s+1, "r");
-					if (!fd) errprintf("Cannot open file %s\n", s+1);
 					while (fd && fgets(s, sizeof(s), fd)) {
-						addtobuffer(logdata, s);
+						if (*s) addtobuffer(logdata, s);
 					}
-					if (fd) fclose(fd);
+					fclose(fd);
 				}
 				else {
 					if (*s) addtobuffer(logdata, s);
@@ -1674,6 +1752,9 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
+		else if (strcmp(argv[argi], "--no-update") == 0) {
+			dontsendmessages = 1;
+		}
 		else if (strcmp(argv[argi], "--no-ps-listing") == 0) {
 			pslistinprocs = 0;
 		}
@@ -1708,7 +1789,15 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--test") == 0) {
 			testmode(configfn);
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 	}
+
+	save_errbuf = 0;
+
+	/* Do the network stuff if needed */
+	net_worker_run(ST_CLIENT, LOC_ROAMING, NULL);
 
 	/* Signals */
 	setup_signalhandler("hobbitd_client");
@@ -1717,23 +1806,23 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGCHLD, SIG_IGN);
 
-	save_errbuf = 0;
 	running = 1;
 
 	while (running) {
 		char *eoln, *restofmsg, *p;
 		char *metadata[MAX_META+1];
 		int metacount;
+		time_t nowtimer = gettimer();
 
 		msg = get_hobbitd_message(C_CLIENT, argv[0], &seq, NULL);
 		if (msg == NULL) {
-			errprintf("Failed to get a message, terminating\n");
+			if (!localmode) errprintf("Failed to get a message, terminating\n");
 			running = 0;
 			continue;
 		}
 
-		if (reloadconfig || (getcurrenttime(NULL) >= nextconfigload)) {
-			nextconfigload = getcurrenttime(NULL) + 600;
+		if (reloadconfig || (nowtimer >= nextconfigload)) {
+			nextconfigload = nowtimer + 600;
 			reloadconfig = 0;
 			if (!localmode) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			load_client_config(configfn);
@@ -1826,9 +1915,7 @@ int main(int argc, char *argv[])
                                 handle_win32_bbwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
                                 break;
 
-                          case OS_WIN32:
-                          case OS_SNMP:
-                          case OS_UNKNOWN:
+			  default:
                                 errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
                                 break;
 			}

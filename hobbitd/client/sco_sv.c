@@ -3,15 +3,15 @@
 /*                                                                            */
 /* Client backend module for SCO_SV                                           */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2006 Charles Goyard <cg@fsck.Fr>                             */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2008 Charles Goyard <cg@fsck.Fr>                        */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sco_sv_rcsid[] = "$Id: sco_sv.c,v 1.3 2006-08-03 09:50:23 henrik Exp $";
+static char sco_sv_rcsid[] = "$Id: sco_sv.c 5819 2008-09-30 16:37:31Z storner $";
 
 void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  void *hinfo, char *sender, time_t timestamp,
@@ -57,7 +57,8 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
         vmstatstr = getdata("vmstat");
         portsstr = getdata("ports");
 	
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Capacity", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", NULL, psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);

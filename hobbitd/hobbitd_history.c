@@ -6,7 +6,7 @@
 /* historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated to keep     */
 /* track of the status changes.                                               */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -45,7 +45,7 @@ void sig_handler(int signum)
 
 int main(int argc, char *argv[])
 {
-	time_t starttime = getcurrenttime(NULL);
+	time_t starttime = gettimer();
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 
 				if (strcmp(oldcol, colorname(newcolor)) == 0) {
 					/* We wont update history unless the color did change. */
-					if ((getcurrenttime(NULL) - starttime) > 300) {
+					if ((gettimer() - starttime) > 300) {
 						errprintf("Will not update %s - color unchanged (%s)\n", 
 							  statuslogfn, oldcol);
 					}

@@ -1,19 +1,19 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char la_rcsid[] = "$Id: do_la.c,v 1.25 2006-05-31 20:28:44 henrik Exp $";
+static char la_rcsid[] = "$Id: do_la.c 5819 2008-09-30 16:37:31Z storner $";
 
-int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-	static char *la_params[]          = { "rrdcreate", rrdfn, "DS:la:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-	static char *la_tpl               = NULL;
+	static char *la_params[]          = { "DS:la:GAUGE:600:0:U", NULL };
+	static void *la_tpl               = NULL;
 
 	static pcre *as400_exp = NULL;
 	static pcre *zVM_exp = NULL;
@@ -22,12 +22,12 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	char *p, *eoln = NULL;
 	int gotusers=0, gotprocs=0, gotload=0, gotclock=0;
 	int users=0, procs=0, load=0, clockdiff=0;
-	time_t now = time(NULL);
+	time_t now = getcurrenttime(NULL);
 
 	if (la_tpl == NULL) la_tpl = setup_template(la_params);
 	if (starttime == 0) starttime = now;
 
-	if (strstr(msg, "bb-xsnmp") || strstr(msg, "netapp.pl")) {
+	if (strstr(msg, "bb-xsnmp")) {
 		/*
 		 * bb-xsnmp.pl script output.
 		 *
@@ -52,13 +52,15 @@ int do_la_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		goto done_parsing;
 	}
-	else if (strstr(msg, "z/VM") || strstr(msg, "VSE/ESA") || strstr(msg, "z/VSE")) {
-		/* z/VM cpu message. Looks like this, from Rich Smrcina:
+	else if (strstr(msg, "z/VM") || strstr(msg, "VSE/ESA") || strstr(msg, "z/VSE") || strstr(msg, "z/OS")) {
+		/* z/VM cpu message. Looks like this, from Rich Smrcina (client config mode):
 		 * green 5 Apr 2005 20:07:34  CPU Utilization  7% z/VM Version 4 Release 4.0, service level 0402 (32-bit) AVGPROC-007% 01
-		 * VSE/ESA or z/VSE cpu message. Looks like this, from Rich Smrcina:
+		 * VSE/ESA or z/VSE cpu message.
 		 * VSE/ESA 2.7.2 cr IPLed on ...
 		 * or
 		 * z/VSE 3.1.1 cr IPLed on ...
+		 * In server (centralized) config mode or for z/OS (which is centralized config only)
+		 * the operating system name is part of the message (as in the tests above).
 		 */
 
 		int ovector[30];
@@ -181,27 +183,27 @@ done_parsing:
 	}
 
 	if (gotload) {
-		sprintf(rrdfn, "la.rrd");
+		setupfn("%s.rrd", "la");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, load);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	if (gotprocs) {
-		sprintf(rrdfn, "procs.rrd");
+		setupfn("%s.rrd", "procs");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, procs);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	if (gotusers) {
-		sprintf(rrdfn, "users.rrd");
+		setupfn("%s.rrd", "users");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, users);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	if (gotclock) {
-		sprintf(rrdfn, "clock.rrd");
+		setupfn("%s.rrd", "clock");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, clockdiff);
-		create_and_update_rrd(hostname, rrdfn, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
 	}
 
 	/*
@@ -254,7 +256,7 @@ done_parsing:
 			pagetotal = pagetotal / 100;
 			realuse = 100 - (physavail / phystotal);
 			swapuse = 100 - (pageavail / pagetotal);
-			do_memory_rrd_update(tstamp, hostname, realuse, swapuse, -1);
+			do_memory_rrd_update(tstamp, hostname, testname, classname, pagepaths, realuse, swapuse, -1);
 		}
 		else if (overflow) {
 			errprintf("Host %s cpu report overflows in memory usage calculation\n", hostname);

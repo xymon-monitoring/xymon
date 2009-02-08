@@ -1,19 +1,18 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id: do_hobbitd.c,v 1.10 2006-06-09 22:23:49 henrik Exp $";
+static char hobbitd_rcsid[] = "$Id: do_hobbitd.c 5819 2008-09-30 16:37:31Z storner $";
 
-int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_hobbitd_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
-	static char *hobbitd_params[] = { "rrdcreate", rrdfn, 
-					 "DS:inmessages:DERIVE:600:0:U", 
+	static char *hobbitd_params[] = { "DS:inmessages:DERIVE:600:0:U", 
 					 "DS:statusmessages:DERIVE:600:0:U", 
 					 "DS:combomessages:DERIVE:600:0:U", 
 					 "DS:pagemessages:DERIVE:600:0:U", 
@@ -36,8 +35,8 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 					 "DS:datachmsgs:DERIVE:600:0:U", 
 					 "DS:noteschmsgs:DERIVE:600:0:U", 
 					 "DS:enadischmsgs:DERIVE:600:0:U", 
-					 rra1, rra2, rra3, rra4, NULL };
-	static char *hobbitd_tpl       = NULL;
+					 NULL };
+	static void *hobbitd_tpl       = NULL;
 
 	struct {
 		char *marker;
@@ -99,14 +98,14 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 	if (gotany) {
 		if (strcmp("hobbitd", testname) != 0) {
-			setupfn("hobbitd.%s.rrd", testname);
+			setupfn2("%s.%s.rrd", "hobbitd", testname);
 		}
 		else {
-			strcpy(rrdfn, "hobbitd.rrd");
+			setupfn("%s.rrd", "hobbitd");
 		}
 
 		MEMUNDEFINE(valstr);
-		return create_and_update_rrd(hostname, rrdfn, hobbitd_params, hobbitd_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, hobbitd_params, hobbitd_tpl);
 	}
 
 	MEMUNDEFINE(valstr);

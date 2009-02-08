@@ -11,7 +11,7 @@
 /* This daemon provides the locator service. Tasks may register ID's and      */
 /* services, allowing others to lookup where they are located.                */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

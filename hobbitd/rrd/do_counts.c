@@ -3,16 +3,16 @@
 /*                                                                            */
 /* This module handles various "counts" messages.                             */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c,v 1.5 2006-06-09 22:23:49 henrik Exp $";
+static char counts_rcsid[] = "$Id: do_counts.c 5819 2008-09-30 16:37:31Z storner $";
 
-static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp, char *params[], char *tpl) 
+static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp, char *params[], char *tpl) 
 { 
 	char *boln, *eoln;
 
@@ -27,11 +27,10 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 			char *p;
 
 			for (p=strchr(fn, '/'); (p); p = strchr(p, '/')) *p = ',';
-			snprintf(rrdfn, sizeof(rrdfn)-1, "%s.%s.rrd", counttype, fn);
-			rrdfn[sizeof(rrdfn)-1] = '\0';
+			setupfn2("%s.%s.rrd", counttype, fn);
 
 			sprintf(rrdvalues, "%d:%s", (int)tstamp, countstr);
-			create_and_update_rrd(hostname, rrdfn, params, tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, params, tpl);
 		}
 
 		boln = (eoln ? eoln+1 : NULL);
@@ -40,22 +39,22 @@ static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, ch
 	return 0;
 }
 
-static char *counts_params[] = { "rrdcreate", rrdfn, "DS:count:GAUGE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-static char *counts_tpl      = NULL;
-static char *derive_params[] = { "rrdcreate", rrdfn, "DS:count:DERIVE:600:0:U", rra1, rra2, rra3, rra4, NULL };
-static char *derive_tpl      = NULL;
+static char *counts_params[] = { "DS:count:GAUGE:600:0:U", NULL };
+static void *counts_tpl      = NULL;
+static char *derive_params[] = { "DS:count:DERIVE:600:0:U", NULL };
+static void *derive_tpl      = NULL;
 
-int do_counts_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_counts_rrd(char *counttype, char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 {
 	if (counts_tpl == NULL) counts_tpl = setup_template(counts_params);
 
-	return do_one_counts_rrd(counttype, hostname, testname, msg, tstamp, counts_params, counts_tpl);
+	return do_one_counts_rrd(counttype, hostname, testname, classname, pagepaths, msg, tstamp, counts_params, counts_tpl);
 }
 
-int do_derives_rrd(char *counttype, char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_derives_rrd(char *counttype, char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 {
 	if (derive_tpl == NULL) derive_tpl = setup_template(derive_params);
 
-	return do_one_counts_rrd(counttype, hostname, testname, msg, tstamp, derive_params, derive_tpl);
+	return do_one_counts_rrd(counttype, hostname, testname, classname, pagepaths, msg, tstamp, derive_params, derive_tpl);
 }
 

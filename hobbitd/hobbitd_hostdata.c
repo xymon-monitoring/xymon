@@ -4,7 +4,7 @@
 /* This Hobbit worker module saves the client messages that arrive on the     */
 /* CLICHG channel, for use when looking at problems with a host.              */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -20,14 +20,40 @@ static char rcsid[] = "$Id: hobbitd_hostdata.c,v 1.5 2006-07-20 16:06:41 henrik 
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <signal.h>
 #include <limits.h>
 #include <errno.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
 
+#include <signal.h>
+
+
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
+
+
+static char *clientlogdir = NULL;
+
+void update_locator_hostdata(char *id)
+{
+	DIR *fd;
+	struct dirent *d;
+
+	fd = opendir(clientlogdir);
+	if (fd == NULL) {
+		errprintf("Cannot scan directory %s\n", clientlogdir);
+		return;
+	}
+
+	while ((d = readdir(fd)) != NULL) {
+		if (*(d->d_name) == '.') continue;
+		locator_register_host(d->d_name, ST_HOSTDATA, id);
+	}
+
+	closedir(fd);
+}
 
 
 int main(int argc, char *argv[])
@@ -35,7 +61,6 @@ int main(int argc, char *argv[])
 	char *msg;
 	int running;
 	int argi, seq;
-	char *clientlogdir = NULL;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -49,6 +74,9 @@ int main(int argc, char *argv[])
 			 */
 			debug = 1;
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 	}
 
 	if (clientlogdir == NULL) clientlogdir = xgetenv("CLIENTLOGS");
@@ -58,6 +86,10 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
+
+	/* Do the network stuff if needed */
+	net_worker_run(ST_HOSTDATA, LOC_STICKY, update_locator_hostdata);
+
 	setup_signalhandler("hobbitd_hostdata");
 
 	running = 1;
@@ -120,6 +152,10 @@ int main(int argc, char *argv[])
 			running = 0;
 			continue;
 		}
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			/* Ignored */
+			continue;
+		}
 
 		/*
 		 * A "logrotate" message is sent when the Hobbit logs are
@@ -149,6 +185,8 @@ int main(int argc, char *argv[])
 			sprintf(oldhostdir, "%s/%s", clientlogdir, metadata[3]);
 			sprintf(newhostdir, "%s/%s", clientlogdir, metadata[4]);
 			rename(oldhostdir, newhostdir);
+
+			if (net_worker_locatorbased()) locator_rename_host(metadata[3], metadata[4], ST_HOSTDATA);
 		}
 	}
 

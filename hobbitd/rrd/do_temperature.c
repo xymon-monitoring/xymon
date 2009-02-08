@@ -1,21 +1,20 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2004-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char temperature_rcsid[] = "$Id: do_temperature.c,v 1.11 2006-07-20 16:06:41 henrik Exp $";
+static char temperature_rcsid[] = "$Id: do_temperature.c 5819 2008-09-30 16:37:31Z storner $";
 
-int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp) 
+int do_temperature_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
-	static char *temperature_params[] = { "rrdcreate", rrdfn, 
-					      "DS:temperature:GAUGE:600:1:U",
-					      rra1, rra2, rra3, rra4, NULL };
-	static char *temperature_tpl      = NULL;
+	static char *temperature_params[] = { "DS:temperature:GAUGE:600:1:U",
+					      NULL };
+	static void *temperature_tpl      = NULL;
 
 	/* Sample input report:
 	Device             Temp(C)  Temp(F)
@@ -81,13 +80,11 @@ int do_temperature_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			tmpC = atoi(p);
 			while ((p > bol) && isspace((int)*p)) p--;
 
-			savech = *(p+1); *(p+1) = '\0'; setupfn("temperature.%s.rrd", bol); *(p+1) = savech;
-			while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
+			savech = *(p+1); *(p+1) = '\0'; 
+			setupfn2("%s.%s.rrd", "temperature", bol); *(p+1) = savech;
 
 			sprintf(rrdvalues, "%d:%d", (int)tstamp, tmpC);
-
-			dbgprintf("RRD %s, value %d\n", rrdfn, tmpC);
-			create_and_update_rrd(hostname, rrdfn, temperature_params, temperature_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, temperature_params, temperature_tpl);
 		}
 
 		if (comment) *comment = '(';

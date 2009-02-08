@@ -3,14 +3,14 @@
 /*                                                                            */
 /* Client backend module for AIX                                              */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char aix_rcsid[] = "$Id: aix.c,v 1.11 2006-07-09 07:37:26 henrik Exp $";
+static char aix_rcsid[] = "$Id: aix.c 5819 2008-09-30 16:37:31Z storner $";
 
 void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 		       void *hinfo, char *sender, time_t timestamp,
@@ -56,7 +56,8 @@ void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 	freememstr = getdata("freemem");
 	swapmemstr = getdata("swap");
 
-	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
+	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
+			whostr, 0, psstr, 0, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Free", "%Used", "Mounted", dfstr);
 	unix_procs_report(hostname, clienttype, os, hinfo, fromline, timestr, "COMMAND", "CMD", psstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);

@@ -10,10 +10,9 @@
 
 static char beastat_rcsid[] = "$Id: do_beastat.c,v 1.00 2006/05/31 20:28:44 henrik Rel $";
 
-int do_beastat_jta_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_beastat_jta_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *beastat_jta_params[] = { "rrdcreate", rrdfn,
-					"DS:ActiveTrans:GAUGE:600:0:U",
+static char *beastat_jta_params[] = { "DS:ActiveTrans:GAUGE:600:0:U",
 					"DS:SecondsActive:DERIVE:600:0:U",
 					"DS:TransAbandoned:DERIVE:600:0:U",
 					"DS:TransCommitted:DERIVE:600:0:U",
@@ -24,8 +23,8 @@ static char *beastat_jta_params[] = { "rrdcreate", rrdfn,
 					"DS:TransRBackTimeout:DERIVE:600:0:U",
 					"DS:TransRBack:DERIVE:600:0:U",
 					"DS:TransTotCount:DERIVE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *beastat_jta_tpl      = NULL;
+                                     NULL };
+static void *beastat_jta_tpl      = NULL;
 
 	static time_t starttime = 0;
 	unsigned long heapfree=0, heapsize=0;
@@ -37,7 +36,7 @@ static char *beastat_jta_tpl      = NULL;
 
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd",testname);
 		if (beastat_jta_tpl == NULL) beastat_jta_tpl = setup_template(beastat_jta_params);
 		acttrans=get_long_data(msg,"ActiveTransactionsTotalCount");
 		secact=get_long_data(msg,"SecondsActiveTotalCount");
@@ -59,19 +58,18 @@ static char *beastat_jta_tpl      = NULL;
 		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
 			(int) tstamp, acttrans, secact, trab, trcomm, trheur, trrbapp, 
 			trrbres, trrbsys, trrbto, trrb, trtot);
-		create_and_update_rrd(hostname, rrdfn, beastat_jta_params, beastat_jta_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jta_params, beastat_jta_tpl);
 	}
 	return 0;
 }
 
 
-int do_beastat_jvm_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_beastat_jvm_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *beastat_jvm_params[] = { "rrdcreate", rrdfn,
-                                     "DS:HeapFreeCurrent:GAUGE:600:0:U",
+static char *beastat_jvm_params[] = { "DS:HeapFreeCurrent:GAUGE:600:0:U",
                                      "DS:HeapSizeCurrent:GAUGE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *beastat_jvm_tpl      = NULL;
+                                     NULL };
+static void *beastat_jvm_tpl      = NULL;
 
 	static time_t starttime = 0;
 	unsigned long heapfree=0, heapsize=0;
@@ -81,7 +79,7 @@ static char *beastat_jvm_tpl      = NULL;
 
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd",testname);
 		if (beastat_jvm_tpl == NULL) beastat_jvm_tpl = setup_template(beastat_jvm_params);
 		heapfree=get_long_data(msg, "HeapFreeCurrent");
 		heapsize=get_long_data(msg,"HeapSizeCurrent");
@@ -89,23 +87,22 @@ static char *beastat_jvm_tpl      = NULL;
 			hostname, testname, heapfree, heapsize);
 		sprintf(rrdvalues, "%d:%ld:%ld",
 			(int) tstamp, heapfree, heapsize);
-		create_and_update_rrd(hostname, rrdfn, beastat_jvm_params, beastat_jvm_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jvm_params, beastat_jvm_tpl);
 	}
 	return 0;
 }
 
 
-int do_beastat_jms_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_beastat_jms_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *beastat_jms_params[] = { "rrdcreate", rrdfn,
-                                     "DS:CurrConn:GAUGE:600:0:U",
+static char *beastat_jms_params[] = { "DS:CurrConn:GAUGE:600:0:U",
                                      "DS:HighConn:GAUGE:600:0:U",
                                      "DS:TotalConn:DERIVE:600:0:U",
                                      "DS:CurrJMSSrv:GAUGE:600:0:U",
                                      "DS:HighJMSSrv:GAUGE:600:0:U",
                                      "DS:TotalJMSSrv:DERIVE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *beastat_jms_tpl      = NULL;
+                                     NULL };
+static void *beastat_jms_tpl      = NULL;
 
 	static time_t starttime = 0;
         unsigned long conncurr=0, connhigh=0, conntotal=0, jmscurr=0, jmshigh=0, jmstotal=0;
@@ -115,7 +112,7 @@ static char *beastat_jms_tpl      = NULL;
 
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd",testname);
 		if (beastat_jms_tpl == NULL) beastat_jms_tpl = setup_template(beastat_jms_params);
 		conncurr=get_long_data(msg, "ConnectionsCurrentCount");
 		connhigh=get_long_data(msg,"ConnectionsHighCount");
@@ -129,20 +126,19 @@ static char *beastat_jms_tpl      = NULL;
 			hostname, testname, jmscurr, jmshigh,jmstotal);
 		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld",
 			(int) tstamp, conncurr, connhigh, conntotal, jmscurr, jmshigh, jmstotal);
-		create_and_update_rrd(hostname, rrdfn, beastat_jms_params, beastat_jms_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jms_params, beastat_jms_tpl);
 	}
 	return 0;
 }
 
-int do_beastat_exec_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_beastat_exec_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *beastat_exec_params[] = { "rrdcreate", rrdfn,
-					"DS:ExecThrCurrIdleCnt:GAUGE:600:0:U",
+static char *beastat_exec_params[] = { "DS:ExecThrCurrIdleCnt:GAUGE:600:0:U",
 					"DS:ExecThrTotalCnt:GAUGE:600:0:U",
 					"DS:PendReqCurrCnt:GAUGE:600:0:U",
 					"DS:ServReqTotalCnt:DERIVE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
-static char *beastat_exec_tpl		= NULL;
+					NULL };
+static void *beastat_exec_tpl		= NULL;
 static char *checktest			= "Type=ExecuteQueueRuntime";
 
 	char *curline;
@@ -179,7 +175,7 @@ static char *checktest			= "Type=ExecuteQueueRuntime";
 			start=eoln+1;
 			if ((eoln = strstr(start,checktest))==NULL) eoln=strstr(start,"dbcheck.pl");
 			if (eoln)  *(--eoln)='\0';
-			sprintf(rrdfn, "%s,%s.rrd",testname,execname);
+			setupfn2("%s,%s.rrd",testname,execname);
 			currthr=get_long_data(start, "ExecuteThreadCurrentIdleCount");
 			totthr=get_long_data(start,"ExecuteThreadTotalCount");
 			currprq=get_long_data(start,"PendingRequestCurrentCount");
@@ -188,7 +184,7 @@ static char *checktest			= "Type=ExecuteQueueRuntime";
 				hostname, testname, execname, currthr, totthr, currprq, totservrq);
 			sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld",
 				(int) tstamp, currthr, totthr, currprq, totservrq);
-			create_and_update_rrd(hostname, rrdfn, beastat_exec_params, beastat_exec_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_exec_params, beastat_exec_tpl);
 			if (execname) { xfree(execname); execname = NULL; }
 nextline:
 			if (eoln) *(eoln)='\n';
@@ -198,10 +194,9 @@ nextline:
 	return 0;
 }
 
-int do_beastat_jdbc_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_beastat_jdbc_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *beastat_jdbc_params[] = { "rrdcreate", rrdfn,
-					"DS:ActConnAvgCnt:GAUGE:600:0:U",
+static char *beastat_jdbc_params[] = { "DS:ActConnAvgCnt:GAUGE:600:0:U",
 					"DS:ActConnCurrCnt:GAUGE:600:0:U",
 					"DS:ActConnHighCnt:GAUGE:600:0:U",
 					"DS:WtForConnCurrCnt:GAUGE:600:0:U",
@@ -217,8 +212,8 @@ static char *beastat_jdbc_params[] = { "rrdcreate", rrdfn,
 					"DS:ConnTotalCnt:DERIVE:600:0:U",
 					"DS:FailToReconnCnt:DERIVE:600:0:U",
 					"DS:WaitForConnHighCnt:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
-static char *beastat_jdbc_tpl		= NULL;
+					NULL };
+static void *beastat_jdbc_tpl		= NULL;
 static char *checktest			= "Type=JDBCConnectionPoolRuntime";
 
 	char *curline;
@@ -256,7 +251,7 @@ static char *checktest			= "Type=JDBCConnectionPoolRuntime";
 			start=eoln+1;
 			if ((eoln = strstr(start,checktest))==NULL) eoln=strstr(start,"dbcheck.pl");
 			if (eoln)  *(--eoln)='\0';
-			sprintf(rrdfn, "%s,%s.rrd",testname,execname);
+			setupfn2("%s,%s.rrd",testname,execname);
 			acac=get_long_data(start,"ActiveConnectionsAverageCount");
 			accc=get_long_data(start,"ActiveConnectionsCurrentCount");
 			achc=get_long_data(start,"ActiveConnectionsHighCount");
@@ -281,7 +276,7 @@ static char *checktest			= "Type=JDBCConnectionPoolRuntime";
 			sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
 				(int) tstamp, acac, accc, achc, wfccc, cdt, clpc, lcc, 
 				mc, na, nu, hna, hnu, wshc, ctc, ftrc, wfchc);
-			create_and_update_rrd(hostname, rrdfn, beastat_jdbc_params, beastat_jdbc_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, beastat_jdbc_params, beastat_jdbc_tpl);
 			if (execname) { xfree(execname); execname = NULL; }
 nextline:
 			if (eoln) *(eoln)='\n';

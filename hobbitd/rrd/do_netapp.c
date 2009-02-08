@@ -10,19 +10,18 @@
 
 static char netapp_rcsid[] = "$Id: do_netapp.c,v 1.00 2006/05/31 20:28:44 henrik Rel $";
 
-int do_netapp_stats_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netapp_stats_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *netapp_stats_params[] = { "rrdcreate", rrdfn,
-                                     "DS:NETread:GAUGE:600:0:U",
-                                     "DS:NETwrite:GAUGE:600:0:U",
-                                     "DS:DISKread:GAUGE:600:0:U",
-                                     "DS:DISKwrite:GAUGE:600:0:U",
-                                     "DS:TAPEread:GAUGE:600:0:U",
-                                     "DS:TAPEwrite:GAUGE:600:0:U",
-                                     "DS:FCPin:GAUGE:600:0:U",
-                                     "DS:FCPout:GAUGE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *netapp_stats_tpl      = NULL;
+static char *netapp_stats_params[] = { "DS:NETread:GAUGE:600:0:U",
+                                       "DS:NETwrite:GAUGE:600:0:U",
+                                       "DS:DISKread:GAUGE:600:0:U",
+                                       "DS:DISKwrite:GAUGE:600:0:U",
+                                       "DS:TAPEread:GAUGE:600:0:U",
+                                       "DS:TAPEwrite:GAUGE:600:0:U",
+                                       "DS:FCPin:GAUGE:600:0:U",
+                                       "DS:FCPout:GAUGE:600:0:U",
+                                        NULL };
+static void *netapp_stats_tpl      = NULL;
 
 	static time_t starttime = 0;
 	unsigned long netread=0, netwrite=0, diskread=0, diskwrite=0, taperead=0, tapewrite=0, fcpin=0, fcpout=0;
@@ -31,7 +30,7 @@ static char *netapp_stats_tpl      = NULL;
 	
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "netapp.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd", testname);
 		if (netapp_stats_tpl == NULL) netapp_stats_tpl = setup_template(netapp_stats_params);
 		netread=get_kb_data(msg, "NET_read");
 		netwrite=get_kb_data(msg,"NET_write");
@@ -52,25 +51,24 @@ static char *netapp_stats_tpl      = NULL;
 		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
 			(int) tstamp, netread, netwrite, diskread, diskwrite, 
 			taperead, tapewrite, fcpin, fcpout);
-		create_and_update_rrd(hostname, rrdfn, netapp_stats_params, netapp_stats_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_stats_params, netapp_stats_tpl);
 	}
 	return 0;
 }
 
 
-int do_netapp_cifs_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netapp_cifs_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *netapp_cifs_params[] = { "rrdcreate", rrdfn,
-                                     "DS:sessions:GAUGE:600:0:U",
-                                     "DS:openshares:GAUGE:600:0:U",
-                                     "DS:openfiles:GAUGE:600:0:U",
-                                     "DS:locks:GAUGE:600:0:U",
-                                     "DS:credentials:GAUGE:600:0:U",
-                                     "DS:opendirectories:GAUGE:600:0:U",
-                                     "DS:ChangeNotifies:GAUGE:600:0:U",
-                                     "DS:sessionsusingsecuri:GAUGE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *netapp_cifs_tpl      = NULL;
+static char *netapp_cifs_params[] = { "DS:sessions:GAUGE:600:0:U",
+                                      "DS:openshares:GAUGE:600:0:U",
+                                      "DS:openfiles:GAUGE:600:0:U",
+                                      "DS:locks:GAUGE:600:0:U",
+                                      "DS:credentials:GAUGE:600:0:U",
+                                      "DS:opendirectories:GAUGE:600:0:U",
+                                      "DS:ChangeNotifies:GAUGE:600:0:U",
+                                      "DS:sessionsusingsecuri:GAUGE:600:0:U",
+                                      NULL };
+static void *netapp_cifs_tpl      = NULL;
 
 	static time_t starttime = 0;
 	unsigned long sess=0, share=0, file=0, lock=0, cred=0, dir=0, change=0, secsess=0;
@@ -79,7 +77,7 @@ static char *netapp_cifs_tpl      = NULL;
 	
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "netapp.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd", testname);
 		if (netapp_cifs_tpl == NULL) netapp_cifs_tpl = setup_template(netapp_cifs_params);
 		sess=get_long_data(msg, "sessions");
 		share=get_long_data(msg,"open_shares");
@@ -99,23 +97,22 @@ static char *netapp_cifs_tpl      = NULL;
 			hostname, testname, change, secsess);
 		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld:%ld:%ld",
                       	(int) tstamp, sess, share, file, lock, cred, dir, change,secsess);
-		create_and_update_rrd(hostname, rrdfn, netapp_cifs_params, netapp_cifs_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_cifs_params, netapp_cifs_tpl);
 	}
 	return 0;
 }
 
 
-int do_netapp_ops_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netapp_ops_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *netapp_ops_params[] = { "rrdcreate", rrdfn,
-                                     "DS:NFSops:GAUGE:600:0:U",
+static char *netapp_ops_params[] = { "DS:NFSops:GAUGE:600:0:U",
                                      "DS:CIFSops:GAUGE:600:0:U",
                                      "DS:iSCSIops:GAUGE:600:0:U",
                                      "DS:HTTPops:GAUGE:600:0:U",
                                      "DS:FCPops:GAUGE:600:0:U",
                                      "DS:Totalops:GAUGE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *netapp_ops_tpl      = NULL;
+                                     NULL };
+static void *netapp_ops_tpl      = NULL;
 
 	static time_t starttime = 0;
 	unsigned long nfsops=0, cifsops=0, httpops=0, iscsiops=0, fcpops=0, totalops=0;
@@ -124,7 +121,7 @@ static char *netapp_ops_tpl      = NULL;
 	
 	if (starttime == 0) starttime = now;
 	if (strstr(msg, "netapp.pl")) {
-		sprintf(rrdfn, "%s.rrd",testname);
+		setupfn("%s.rrd",testname);
 		if (netapp_ops_tpl == NULL) netapp_ops_tpl = setup_template(netapp_ops_params);
 		nfsops=get_long_data(msg, "NFS_ops");
 		cifsops=get_long_data(msg,"CIFS_ops");
@@ -140,17 +137,15 @@ static char *netapp_ops_tpl      = NULL;
 			hostname, testname, iscsiops, totalops);
 		sprintf(rrdvalues, "%d:%ld:%ld:%ld:%ld:%ld:%ld",
                        	(int) tstamp, nfsops, cifsops, httpops, fcpops, iscsiops, totalops);
-		create_and_update_rrd(hostname, rrdfn, netapp_ops_params, netapp_ops_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_ops_params, netapp_ops_tpl);
 	}
 	return 0;
 }
 
-int do_netapp_snapmirror_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netapp_snapmirror_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *netapp_snapmirror_params[] = { "rrdcreate", rrdfn,
-                                     "DS:size:GAUGE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *netapp_snapmirror_tpl      = NULL;
+static char *netapp_snapmirror_params[] = { "DS:size:GAUGE:600:0:U", NULL };
+static void *netapp_snapmirror_tpl      = NULL;
 
         char *eoln, *curline, *start, *end;
 	static time_t starttime = 0;
@@ -176,10 +171,9 @@ static char *netapp_snapmirror_tpl      = NULL;
                 		dbgprintf("netapp: host %s test %s SNAPMIRROR %s size %lld\n",
                        			hostname, testname, curline, size);
 
-				snprintf(rrdfn, sizeof(rrdfn)-1, "%s,%s.rrd", testname, curline);
-				rrdfn[sizeof(rrdfn)-1] = '\0';
+				setupfn2("%s,%s.rrd", testname, curline);
 				sprintf(rrdvalues, "%d:%lld", (int)tstamp, size);
-				create_and_update_rrd(hostname, rrdfn, netapp_snapmirror_params, netapp_snapmirror_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_snapmirror_params, netapp_snapmirror_tpl);
 				*(--equalsign)='=';
 			}
 	                if (eoln) *eoln = '\n';
@@ -191,13 +185,10 @@ static char *netapp_snapmirror_tpl      = NULL;
 }
 
 
-int do_netapp_snaplist_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netapp_snaplist_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-static char *netapp_snaplist_params[] = { "rrdcreate", rrdfn,
-                                     "DS:youngsize:GAUGE:600:0:U",
-                                     "DS:oldsize:GAUGE:600:0:U",
-                                     rra1, rra2, rra3, rra4, NULL };
-static char *netapp_snaplist_tpl      = NULL;
+static char *netapp_snaplist_params[] = { "DS:youngsize:GAUGE:600:0:U", "DS:oldsize:GAUGE:600:0:U", NULL };
+static void *netapp_snaplist_tpl      = NULL;
 
         char *eoln, *curline, *start, *end;
 	static time_t starttime = 0;
@@ -230,10 +221,9 @@ static char *netapp_snaplist_tpl      = NULL;
                 	dbgprintf("netapp: host %s test %s vol  %s young %lld old %lld\n",
                        		hostname, testname, volname, young, old);
 
-			snprintf(rrdfn, sizeof(rrdfn)-1, "%s,%s.rrd", testname, volname);
-                        rrdfn[sizeof(rrdfn)-1] = '\0';
+			setupfn2("%s,%s.rrd", testname, volname);
                         sprintf(rrdvalues, "%d:%lld:%lld", (int)tstamp, young, old);
-                        create_and_update_rrd(hostname, rrdfn, netapp_snaplist_params, netapp_snaplist_tpl);
+                        create_and_update_rrd(hostname, testname, classname, pagepaths, netapp_snaplist_params, netapp_snaplist_tpl);
                 	if (volname) { xfree(volname); volname = NULL; }
 
 	                if (eoln) *eoln = '\n';
@@ -245,9 +235,9 @@ static char *netapp_snaplist_tpl      = NULL;
 	return 0;
 }
 
-int do_netapp_extratest_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *params[],char *varlist[])
+int do_netapp_extratest_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp, char *params[],char *varlist[])
 {
-static char *netapp_tpl      = NULL;
+static void *netapp_tpl      = NULL;
 
 	static time_t starttime = 0;
 	time_t now = time(NULL);
@@ -310,8 +300,7 @@ static char *netapp_tpl      = NULL;
 
 		dbgprintf("netapp: host %s test %s name  %s \n",
 			hostname, testname, volname);
-		snprintf(rrdfn, sizeof(rrdfn)-1, "%s,%s.rrd", testname, volname);
-		rrdfn[sizeof(rrdfn)-1] = '\0';
+		setupfn2("%s,%s.rrd", testname, volname);
 		for (i=0; varlist[i]; i++) {
 			val=columns[i];
 			if (val) {
@@ -322,7 +311,7 @@ static char *netapp_tpl      = NULL;
 			}
 		}
 
-                create_and_update_rrd(hostname, rrdfn, params, netapp_tpl);
+                create_and_update_rrd(hostname, testname, classname, pagepaths, params, netapp_tpl);
 
 		if (volname) { xfree(volname); volname = NULL; }
 
@@ -334,15 +323,12 @@ static char *netapp_tpl      = NULL;
 
 }
 
-int do_netapp_extrastats_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_netapp_extrastats_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 
-static char *netapp_qtree_params[] = { "rrdcreate", rrdfn,
-					"DS:nfs_ops:GAUGE:600:0:U",
-					"DS:cifs_ops:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+static char *netapp_qtree_params[] = { "DS:nfs_ops:GAUGE:600:0:U", "DS:cifs_ops:GAUGE:600:0:U", NULL };
 
-static char *netapp_aggregate_params[] = { "rrdcreate", rrdfn,
+static char *netapp_aggregate_params[] = {
 					"DS:total_transfers:GAUGE:600:0:U",
 					"DS:user_reads:GAUGE:600:0:U",
 					"DS:user_writes:GAUGE:600:0:U",
@@ -350,27 +336,23 @@ static char *netapp_aggregate_params[] = { "rrdcreate", rrdfn,
 					"DS:user_read_blocks:GAUGE:600:0:U",
 					"DS:user_write_blocks:GAUGE:600:0:U",
 					"DS:cp_read_blocks:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_iscsi_params[] = { "rrdcreate", rrdfn,
-					"DS:iscsi_ops:GAUGE:600:0:U",
+static char *netapp_iscsi_params[] = { "DS:iscsi_ops:GAUGE:600:0:U",
 					"DS:iscsi_write_data:GAUGE:600:0:U",
 					"DS:iscsi_read_data:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_fcp_params[] = { "rrdcreate", rrdfn,
-					"DS:fcp_ops:GAUGE:600:0:U",
+static char *netapp_fcp_params[] = { "DS:fcp_ops:GAUGE:600:0:U",
 					"DS:fcp_write_data:GAUGE:600:0:U",
 					"DS:fcp_read_data:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_cifs_params[] = { "rrdcreate", rrdfn,
-					"DS:cifs_ops:GAUGE:600:0:U",
+static char *netapp_cifs_params[] = { "DS:cifs_ops:GAUGE:600:0:U",
 					"DS:cifs_latency:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_volume_params[] = { "rrdcreate", rrdfn,
-					"DS:avg_latency:GAUGE:600:0:U",
+static char *netapp_volume_params[] = { "DS:avg_latency:GAUGE:600:0:U",
 					"DS:total_ops:GAUGE:600:0:U",
 					"DS:read_data:GAUGE:600:0:U",
 					"DS:read_latency:GAUGE:600:0:U",
@@ -380,10 +362,9 @@ static char *netapp_volume_params[] = { "rrdcreate", rrdfn,
 					"DS:write_ops:GAUGE:600:0:U",
 					"DS:other_latency:GAUGE:600:0:U",
 					"DS:other_ops:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_lun_params[] = { "rrdcreate", rrdfn,
-					"DS:read_ops:GAUGE:600:0:U",
+static char *netapp_lun_params[] = { "DS:read_ops:GAUGE:600:0:U",
 					"DS:write_ops:GAUGE:600:0:U",
 					"DS:other_ops:GAUGE:600:0:U",
 					"DS:read_data:GAUGE:600:0:U",
@@ -391,18 +372,16 @@ static char *netapp_lun_params[] = { "rrdcreate", rrdfn,
 					"DS:queue_full:GAUGE:600:0:U",
 					"DS:avg_latency:GAUGE:600:0:U",
 					"DS:total_ops:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_nfsv3_params[] = { "rrdcreate", rrdfn,
-					"DS:ops:GAUGE:600:0:U",
+static char *netapp_nfsv3_params[] = { "DS:ops:GAUGE:600:0:U",
 					"DS:read_latency:GAUGE:600:0:U",
 					"DS:read_ops:GAUGE:600:0:U",
 					"DS:write_latency:GAUGE:600:0:U",
 					"DS:write_ops:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_ifnet_params[] = { "rrdcreate", rrdfn,
-					"DS:recv_packets:GAUGE:600:0:U",
+static char *netapp_ifnet_params[] = { "DS:recv_packets:GAUGE:600:0:U",
 					"DS:recv_errors:GAUGE:600:0:U",
 					"DS:send_packets:GAUGE:600:0:U",
 					"DS:send_errors:GAUGE:600:0:U",
@@ -412,14 +391,11 @@ static char *netapp_ifnet_params[] = { "rrdcreate", rrdfn,
 					"DS:recv_mcasts:GAUGE:600:0:U",
 					"DS:send_mcasts:GAUGE:600:0:U",
 					"DS:recv_drop_packets:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_processor_params[] = { "rrdcreate", rrdfn,
-					"DS:proc_busy:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+static char *netapp_processor_params[] = { "DS:proc_busy:GAUGE:600:0:U", NULL };
 
-static char *netapp_disk_params[] = { "rrdcreate", rrdfn,
-					"DS:total_transfers:GAUGE:600:0:U",
+static char *netapp_disk_params[] = { "DS:total_transfers:GAUGE:600:0:U",
 					"DS:user_read_chain:GAUGE:600:0:U",
 					"DS:user_reads:GAUGE:600:0:U",
 					"DS:user_write_chain:GAUGE:600:0:U",
@@ -441,10 +417,9 @@ static char *netapp_disk_params[] = { "rrdcreate", rrdfn,
 					"DS:gar_write_latency:GAUGE:600:0:U",
 					"DS:gar_write_blocks:GAUGE:600:0:U",
 					"DS:disk_busy:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 
-static char *netapp_system_params[] = { "rrdcreate", rrdfn,
-					"DS:nfs_ops:GAUGE:600:0:U",
+static char *netapp_system_params[] = { "DS:nfs_ops:GAUGE:600:0:U",
 					"DS:cifs_ops:GAUGE:600:0:U",
 					"DS:http_ops:GAUGE:600:0:U",
 					"DS:dafs_ops:GAUGE:600:0:U",
@@ -460,7 +435,7 @@ static char *netapp_system_params[] = { "rrdcreate", rrdfn,
 					"DS:num_proc:GAUGE:600:0:U",
 					"DS:time:GAUGE:600:0:U",
 					"DS:uptime:GAUGE:600:0:U",
-					rra1, rra2, rra3, rra4, NULL };
+					NULL };
 static char *qtree_test[] = { "nfs_ops", "cifs_ops" ,NULL };
 static char *aggregate_test[] = { "total_transfers", "user_reads", "user_writes", "cp_reads", "user_read_blocks", "user_write_blocks", "cp_read_blocks" ,NULL };
 static char *iscsi_test[] = { "iscsi_ops", "iscsi_write_data", "iscsi_read_data" ,NULL };
@@ -488,12 +463,12 @@ static char *system_test[] = { "nfs_ops", "cifs_ops", "http_ops", "dafs_ops", "f
         volumestr = getdata("volume");
         lunstr = getdata("lun");
         diskstr = getdata("disk");
-	do_netapp_extratest_rrd(hostname,"xstatifnet",ifnetstr,tstamp,netapp_ifnet_params,ifnet_test);
-	do_netapp_extratest_rrd(hostname,"xstatqtree",qtreestr,tstamp,netapp_qtree_params,qtree_test);
-	do_netapp_extratest_rrd(hostname,"xstataggregate",aggregatestr,tstamp,netapp_aggregate_params,aggregate_test);
-	do_netapp_extratest_rrd(hostname,"xstatvolume",volumestr,tstamp,netapp_volume_params,volume_test);
-	do_netapp_extratest_rrd(hostname,"xstatlun",lunstr,tstamp,netapp_lun_params,lun_test);
-	do_netapp_extratest_rrd(hostname,"xstatdisk",diskstr,tstamp,netapp_disk_params,disk_test);
+	do_netapp_extratest_rrd(hostname,"xstatifnet",classname,pagepaths,ifnetstr,tstamp,netapp_ifnet_params,ifnet_test);
+	do_netapp_extratest_rrd(hostname,"xstatqtree",classname,pagepaths,qtreestr,tstamp,netapp_qtree_params,qtree_test);
+	do_netapp_extratest_rrd(hostname,"xstataggregate",classname,pagepaths,aggregatestr,tstamp,netapp_aggregate_params,aggregate_test);
+	do_netapp_extratest_rrd(hostname,"xstatvolume",classname,pagepaths,volumestr,tstamp,netapp_volume_params,volume_test);
+	do_netapp_extratest_rrd(hostname,"xstatlun",classname,pagepaths,lunstr,tstamp,netapp_lun_params,lun_test);
+	do_netapp_extratest_rrd(hostname,"xstatdisk",classname,pagepaths,diskstr,tstamp,netapp_disk_params,disk_test);
 
 	return 0;
 }

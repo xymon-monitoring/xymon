@@ -1,21 +1,19 @@
 /*----------------------------------------------------------------------------*/
 /* Hobbit RRD handler module.                                                 */
 /*                                                                            */
-/* Copyright (C) 2005-2006 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2007 Francois Lacroix					      */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c,v 1.8 2006-08-03 10:20:51 henrik Exp $";
+static char ifstat_rcsid[] = "$Id: do_ifstat.c 5819 2008-09-30 16:37:31Z storner $";
 
-static char *ifstat_params[] = { "rrdcreate", rrdfn, 
-	                         "DS:bytesSent:DERIVE:600:0:U", 
+static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 
-				 rra1, rra2, rra3, rra4, NULL };
-static char *ifstat_tpl       = NULL;
+				 NULL };
+static void *ifstat_tpl       = NULL;
 
 
 /* eth0   Link encap:                                                 */
@@ -57,8 +55,8 @@ static const char *ifstat_darwin_exprs[] = {
 /* dmfe:1:dmfe1:obytes64   0             */
 /* dmfe:1:dmfe1:rbytes64   0             */
 static const char *ifstat_solaris_exprs[] = {
-	"^[a-z]+:\\d+:([a-z0-9]+):obytes64\\s+(\\d+)",
-	"^[a-z]+:\\d+:([a-z0-9]+):rbytes64\\s+(\\d+)"
+	"^[a-z0-9]+:\\d+:([a-z0-9]+):obytes64\\s+(\\d+)",
+	"^[a-z0-9]+:\\d+:([a-z0-9]+):rbytes64\\s+(\\d+)"
 };
 
 /*
@@ -109,7 +107,7 @@ static const char *ifstat_bbwin_exprs[] = {
         "^([a-zA-Z0-9.:]+)\\s+([0-9]+)\\s+([0-9]+)"
 };
 
-int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
+int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 	static int pcres_compiled = 0;
 	static pcre **ifstat_linux_pcres = NULL;
@@ -149,8 +147,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 						 (sizeof(ifstat_hpux_exprs) / sizeof(ifstat_hpux_exprs[0])));
 		ifstat_sco_sv_pcres = compile_exprs("SCO_SV", ifstat_sco_sv_exprs, 
 						 (sizeof(ifstat_sco_sv_exprs) / sizeof(ifstat_sco_sv_exprs[0])));
-                ifstat_bbwin_pcres = compile_exprs("BBWIN", ifstat_bbwin_exprs, 
-                                                 (sizeof(ifstat_bbwin_exprs) / sizeof(ifstat_bbwin_exprs[0])));
+		ifstat_bbwin_pcres = compile_exprs("BBWIN", ifstat_bbwin_exprs, 
+						 (sizeof(ifstat_bbwin_exprs) / sizeof(ifstat_bbwin_exprs[0])));
 	}
 
 
@@ -186,6 +184,9 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		  case OS_LINUX22:
 		  case OS_LINUX:
 		  case OS_RHEL3:
+		  case OS_ZVM:
+		  case OS_ZVSE:
+		  case OS_ZOS:
 			if (pickdata(bol, ifstat_linux_pcres[0], 1, &ifname)) {
 				/*
 				 * Linux' netif aliases mess up things. 
@@ -258,21 +259,22 @@ int do_ifstat_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 			break;
 			
 		  case OS_WIN32_BBWIN:
-                        if (pickdata(bol, ifstat_bbwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
-                        break;
-			
+			if (pickdata(bol, ifstat_bbwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			break;
+
 		  case OS_OSF:
 		  case OS_IRIX:
 		  case OS_SNMP:
 		  case OS_WIN32:
+		  case OS_NETWARE_SNMP:
 		  case OS_UNKNOWN:
 			break;
 		}
 
 		if ((dmatch == 7) && ifname && rxstr && txstr) {
-			setupfn("ifstat.%s.rrd", ifname);
+			setupfn2("%s.%s.rrd", "ifstat", ifname);
 			sprintf(rrdvalues, "%d:%s:%s", (int)tstamp, txstr, rxstr);
-			create_and_update_rrd(hostname, rrdfn, ifstat_params, ifstat_tpl);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, ifstat_params, ifstat_tpl);
 			xfree(ifname); xfree(rxstr); xfree(txstr);
 			if (dummy) xfree(dummy);
 			ifname = rxstr = txstr = dummy = NULL;
