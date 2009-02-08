@@ -39,7 +39,7 @@ void errormsg(char *s)
 }
 
 
-void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
+int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 {
 	int hobbitdresult;
 	char *board = NULL;
@@ -57,7 +57,7 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	if (hobbitdresult != BB_OK) {
 		freesendreturnbuf(sres);
 		errormsg("Unable to fetch current status\n");
-		return;
+		return 1;
 	}
 	else {
 		board = getsendreturnstr(sres, 1);
@@ -105,7 +105,8 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 					if (ackbystr)    ackmsgstr = strtok(NULL, ":");
 				}
 
-				if ( (newitem->config->priority > maxprio)  ||
+				if ( (hostinfo(newitem->hostname) == NULL)  ||
+				     (newitem->config->priority > maxprio)  ||
 				     ((now - newitem->lastchange) > maxage) ||
 				     (newitem->color < mincolor)            ||
 				     (ackmsgstr && !wantacked)              ) {
@@ -127,6 +128,8 @@ void loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 
 		bol = (eol ? (eol+1) : NULL);
 	}
+
+	return 0;
 }
 
 
@@ -423,11 +426,15 @@ int main(int argc, char *argv[])
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 	load_nkconfig(NULL);
 	load_all_links();
-	loadstatus(maxprio, maxage, mincolor, wantacked);
-	use_recentgifs = 1;
-
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	generate_nkpage(stdout, "hobbitnk");
+
+	if (loadstatus(maxprio, maxage, mincolor, wantacked) == 0) {
+		use_recentgifs = 1;
+		generate_nkpage(stdout, "hobbitnk");
+	}
+	else {
+		fprintf(stdout, "Cannot load Hobbit status\n");
+	}
 
 	return 0;
 }
