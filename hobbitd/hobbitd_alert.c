@@ -470,6 +470,7 @@ int main(int argc, char *argv[])
 			testonly = 1;
 
 			load_alertconfig(configfn, alertcolors, alertinterval);
+			load_holidays(0);
 			send_alert(awalk, logfd);
 			return 0;
 		}
@@ -808,6 +809,7 @@ int main(int argc, char *argv[])
 		 * reason to fork a child process unless it is going to do something.
 		 */
 		configchanged = load_alertconfig(configfn, alertcolors, alertinterval);
+		configchanged += load_holidays(0);
 		anytogo = 0;
 		for (awalk = alistBegin(); (awalk); awalk = alistNext()) {
 			int anymatch = 0;

@@ -48,6 +48,32 @@ static repeat_t *rpthead = NULL;
 int include_configid = 0;  /* Whether to include the configuration file linenumber in alerts */
 int testonly = 0;	   /* Test mode, dont actually send out alerts */
 
+/* 
+ * This generates a unique ID for an event.
+ * The ID is an MD5 hash of the hostname, testname and the
+ * event start-time.
+ */
+static char *make_alertid(char *hostname, char *testname, time_t eventstart)
+{
+	static char result[33];
+	unsigned char id[16];
+	char *key;
+	void *md5handle;
+	int i, j;
+
+	key = (char *)malloc(strlen(hostname)+strlen(testname)+15);
+	sprintf(key, "%s|%s|%d", hostname, testname, (int)eventstart);
+
+	md5handle = (void *)malloc(myMD5_Size());
+	myMD5_Init(md5handle);
+	myMD5_Update(md5handle, key, strlen(key));
+	myMD5_Final(id, md5handle);
+
+	for (i=0, j=0; (i < 16); i++, j+=2) sprintf(result+j, "%02x", id[i]);
+	result[32] = '\0';
+	return result;
+}
+
 static int servicecode(char *testname)
 {
 	/*
@@ -424,6 +450,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					char *p;
 					int ip1=0, ip2=0, ip3=0, ip4=0;
 					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
+					char *alertid, *alertidenv;
 					int msglen;
 
 					cfidtxt = (char *)malloc(strlen("CFID=") + 10);
@@ -506,6 +533,11 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 						downsecsmsg = strdup("DOWNSECSMSG=");
 					}
 					putenv(downsecsmsg);
+
+					alertid = make_alertid(alert->hostname, alert->testname, alert->eventstart);
+					alertidenv = (char *)malloc(strlen("ALERTID=") + strlen(alertid) + 10);
+					sprintf(alertidenv, "ALERTID=%s", alertid);
+					putenv(alertidenv);
 
 					hinfo = hostinfo(alert->hostname);
 					if (hinfo) {
