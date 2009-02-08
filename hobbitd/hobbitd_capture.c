@@ -103,9 +103,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--batch-timeout=")) {
 			char *p = strchr(argv[argi], '=');
 			batchtimeout = atoi(p+1);
-			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
+			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
 			timeout->tv_sec = batchtimeout;
-			timeout->tv_usec = 0;
+			timeout->tv_nsec = 0;
 		}
 		else if (argnmatch(argv[argi], "--batch-command=")) {
 			char *p = strchr(argv[argi], '=');
