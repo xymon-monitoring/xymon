@@ -26,6 +26,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *dfstr;
 	char *meminfostr;
 	char *swapinfostr;
+	char *vmtotalstr;
 	char *msgsstr;
 	char *netstatstr;
 	char *ifstatstr;
@@ -34,6 +35,10 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	char *p;
 	char fromline[1024];
+
+	unsigned long memphystotal = 0, memphysfree = 0, memphysused = 0;
+	unsigned long memswaptotal = 0, memswapfree = 0, memswapused = 0;
+	int found = 0;
 
 	sprintf(fromline, "\nStatus message received from %s\n", sender);
 
@@ -54,6 +59,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	ifstatstr = getdata("ifstat");
 	portsstr = getdata("ports");
 	vmstatstr = getdata("vmstat");
+	vmtotalstr = getdata("vmtotal");
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, whostr, psstr, topstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Avail", "Capacity", "Mounted", dfstr);
@@ -68,19 +74,23 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
 	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
-	if (meminfostr && swapinfostr) {
-		unsigned long memphystotal, memphysfree, memphysused;
-		unsigned long memswaptotal, memswapfree, memswapused;
-		int found = 0;
-
-		memphystotal = memphysfree = memphysused = 0;
-		memswaptotal = memswapfree = memswapused = 0;
-
+	if (meminfostr) {
 		p = strstr(meminfostr, "Total:"); if (p) { memphystotal = atol(p+6); found++; }
+	}
+
+	if (vmtotalstr) {
+		p = strstr(vmtotalstr, "\nFree Memory Pages:");
+		if (p) {
+			memphysfree = atol(p + 18);
+			found++;
+		}
+	}
+
+	if ((found == 1) && meminfostr) {
 		p = strstr(meminfostr, "Free:");  if (p) { memphysfree  = atol(p+5); found++; }
 		memphysused = memphystotal - memphysfree;
+	}
 
-		memswaptotal = memswapfree = memswapused = 0;
 		if (swapinfostr) {
 			found++;
 			p = strchr(swapinfostr, '\n'); /* Skip the header line */
@@ -107,6 +117,5 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 			unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
-	}
 }
 
