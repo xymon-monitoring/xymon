@@ -185,11 +185,16 @@ int main(int argc, char *argv[])
 	hwalk = first_host();
 	wantedtags = newstrbuffer(0);
 	while (hwalk) {
+		char hostip[IP_ADDR_STRLEN];
 		char *curnet = bbh_item(hwalk, BBH_NET);
 		char *curname = bbh_item(hwalk, BBH_HOSTNAME);
 
-		/* Only look at the hosts whose NET: definition matches the wanted one */
-		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts)) {
+		/* 
+		 * Only look at the hosts whose NET: definition matches the wanted one.
+		 * Must also check if the host is currently down (not responding to ping).
+		 * And if the host is OK with knownhost(), because it may be time-limited.
+		 */
+		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts) && knownhost(curname, hostip, 1)) {
 			char *item;
 
 			clearstrbuffer(wantedtags);
