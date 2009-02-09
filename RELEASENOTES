@@ -1,6 +1,32 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.2.3    * * *
+           * * *   Release notes for Xymon 4.3.0    * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+
+Changes for 4.3.0
+==================
+Xymon 4.3.0 is the first release with new features after 
+the 4.2.0 release. Several large changes have been made
+throughout the entire codebase. Some highlights (see
+the Changes file for a longer list):
+
+* Worker modules (RRD, client-data parsers etc) can operate on
+  remote hosts from the hobbitd daemon, for load-sharing.
+* Support for defining holidays as non-working days in alerts and
+  SLA calculations.
+* Hosts which appear on multiple pages in the web display can
+  use any page they are on in the alerting rules and elsewhere.
+* Various new network tests: SOAP-over-HTTP, HTTP tests with
+  session cookies, SSL minimum encryption strength test.
+* New "compact" status display can group multiple statuses into
+  one on the webpage display.
+* Configurable periods for graphs on the trends page.
+* RRD files can be configured to maintain more data and/or
+  different data (e.g. MAX/MIN values)
+* SLA calculations now include the number of outages in addition
+  to the down-time.
+
+Several other changes for Xymon are planned in the coming months.
+
 
 Changes from 4.2.2 -> 4.2.3
 ===========================
