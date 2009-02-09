@@ -31,6 +31,7 @@ static char rcsid[] = "$Id: hobbitd_filestore.c,v 1.48 2006-07-20 16:06:41 henri
 #include "hobbitd_worker.h"
 
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
+static int locatorbased = 0;
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 
@@ -122,7 +123,7 @@ void update_htmlfile(char *fn, char *msg,
 			firstline, restofmsg, 
 			acktime, ackmsg, NULL,
 			disabletime, dismsg,
-			0, 1, 0, 1, multigraphs, NULL, 
+			0, 1, 0, locatorbased, multigraphs, NULL, 
 			NULL, NULL, NULL,
 			0,
 			output);
@@ -241,8 +242,10 @@ int main(int argc, char *argv[])
 			multigraphs = (char *)malloc(strlen(p+1) + 3);
 			sprintf(multigraphs, ",%s,", p+1);
 		}
-		else if (net_worker_option(argv[argi])) {
-			/* Handled in the subroutine */
+		else if (argnmatch(argv[argi], "--locator=")) {
+			char *p = strchr(argv[argi], '=');
+			locator_init(p+1);
+			locatorbased = 1;
 		}
 	}
 
