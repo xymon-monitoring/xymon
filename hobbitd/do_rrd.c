@@ -28,6 +28,10 @@ static char rcsid[] = "$Id: do_rrd.c,v 1.37 2006-08-03 10:20:51 henrik Exp $";
 #include "hobbitd_rrd.h"
 #include "do_rrd.h"
 
+#ifndef NAME_MAX
+#define NAME_MAX 255	/* Solaris doesn't define NAME_MAX, but ufs limit is 255 */
+#endif
+
 char *rrddir = NULL;
 int  log_double_updates = 1;
 int use_rrd_cache = 1;         /* Use the cache by default */
