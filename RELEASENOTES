@@ -11,11 +11,6 @@ where a number of DNS bugs were fixed - these could cause
 network tests (especially tests of DNS servers) to crash
 in 4.2.2.
 
-This release also marks the beginning of a series of
-releases leading up the the 5.0 release. New features
-will be added in coming 4.3 / 4.4 etc. versions releases
-throughout 2009.
-
 
 Changes from 4.2.0 -> 4.2.2
 ===========================
