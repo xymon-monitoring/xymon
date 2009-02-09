@@ -441,8 +441,6 @@ static void setup_ssl(tcptest_t *item)
 	X509 *peercert;
 	char *certcn, *certstart, *certend;
 	int err;
-	strbuffer_t *sslinfo;
-	char msglin[2048];
 
 	item->sslrunning = 1;
 
@@ -633,41 +631,18 @@ static void setup_ssl(tcptest_t *item)
 		return;
 	}
 
-	sslinfo = newstrbuffer(0);
-
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
 	certstart = strdup(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
 	certend = strdup(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
 
-	snprintf(msglin, sizeof(msglin),
+	item->certinfo = (char *) malloc(strlen(certcn)+strlen(certstart)+strlen(certend)+100);
+	sprintf(item->certinfo, 
 		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 
 		certcn, certstart, certend);
-	addtobuffer(sslinfo, msglin);
 	item->certexpires = sslcert_expiretime(certend);
 	xfree(certcn); xfree(certstart); xfree(certend);
+
 	X509_free(peercert);
-
-	/* We list the available ciphers in the SSL cert data */
-	{
-		int i;
-		STACK_OF(SSL_CIPHER) *sk;
-
-		addtobuffer(sslinfo, "\nAvailable ciphers:\n");
-		sk = SSL_get_ciphers(item->ssldata);
-		for (i=0; i<sk_SSL_CIPHER_num(sk); i++) {
-			int b1, b2;
-			char *cph;
-
-			b1 = SSL_CIPHER_get_bits(sk_SSL_CIPHER_value(sk,i), &b2);
-			cph = SSL_CIPHER_get_name(sk_SSL_CIPHER_value(sk,i));
-			snprintf(msglin, sizeof(msglin), "Cipher %d: %s (%d bits)\n", i, cph, b1);
-			addtobuffer(sslinfo, msglin);
-
-			if ((item->mincipherbits == 0) || (b1 < item->mincipherbits)) item->mincipherbits = b1;
-		}
-	}
-
-	item->certinfo = grabstrbuffer(sslinfo);
 }
 
 static int socket_write(tcptest_t *item, char *outbuf, int outlen)
@@ -696,7 +671,6 @@ static int socket_write(tcptest_t *item, char *outbuf, int outlen)
 static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 {
 	int res = 0;
-	char errtxt[1024];
 
 	if (item->svcinfo->flags & TCP_SSL) {
 		if (item->sslrunning) {
@@ -708,10 +682,6 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 				  case SSL_ERROR_WANT_WRITE:
 					  item->sslagain = 1;
 					  break;
-				  default:
-					  ERR_error_string(ERR_get_error(), errtxt);
-					  dbgprintf("SSL read error %s\n", errtxt);
-					  break;
 				}
 			}
 		}
@@ -720,14 +690,9 @@ static int socket_read(tcptest_t *item, char *inbuf, int inbufsize)
 			res = 0;
 		}
 	}
-	else {
-		res = read(item->fd, inbuf, inbufsize);
-		if (res < 0) {
-			dbgprintf("Read error %s\n", strerror(errno));
-		}
-	}
+	else res = read(item->fd, inbuf, inbufsize);
 
-	if (res > 0) item->bytesread += res;
+	item->bytesread += res;
 	return res;
 }
 
@@ -1282,7 +1247,7 @@ void show_tcp_test_results(void)
 		if (item->certinfo) {
 			printf(", certinfo='%s' (%u %s)", 
 				item->certinfo, (unsigned int)item->certexpires,
-				((item->certexpires > getcurrenttime(NULL)) ? "valid" : "expired"));
+				((item->certexpires > time(NULL)) ? "valid" : "expired"));
 		}
 		printf("\n");
 
@@ -1394,8 +1359,6 @@ int main(int argc, char *argv[])
 					(strncmp(argp, "nocont=", 7) == 0) ||
 					(strncmp(argp, "nopost;", 7) == 0) ||
 					(strncmp(argp, "nopost=", 7) == 0) ||
-					(strncmp(argp, "httpstatus;", 11) == 0) ||
-					(strncmp(argp, "httpstatus=", 11) == 0) ||
 					(strncmp(argp, "type;", 5) == 0)   ||
 					(strncmp(argp, "type=", 5) == 0) ) {
 

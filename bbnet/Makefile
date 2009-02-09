@@ -8,12 +8,12 @@ EXTENSIONS = bbretest-net.sh
 
 all: $(PROGRAMS) $(EXTENSIONS)
 
-NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o
 PINGTESTOBJS = hobbitping.o
 BEASTATOBJS = beastat.o
 
 bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 hobbitping: $(PINGTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)

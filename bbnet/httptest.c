@@ -26,10 +26,80 @@ static char rcsid[] = "$Id: httptest.c,v 1.87 2006-07-20 16:06:41 henrik Exp $";
 
 #include "bbtest-net.h"
 #include "contest.h"
-#include "httpcookies.h"
 #include "httptest.h"
 #include "dns.h"
 
+
+typedef struct cookielist_t {
+	char *host;
+	int  tailmatch;
+	char *path;
+	int  secure;
+	char *name;
+	char *value;
+	struct cookielist_t *next;
+} cookielist_t;
+
+static cookielist_t *cookiehead = NULL;
+
+static void load_cookies(void)
+{
+	static int loaded = 0;
+
+	char cookiefn[PATH_MAX];
+	FILE *fd;
+	char l[4096];
+	char *c_host, *c_path, *c_name, *c_value;
+	int c_tailmatch, c_secure;
+	time_t c_expire;
+	char *p;
+
+	if (loaded) return;
+	loaded = 1;
+
+	sprintf(cookiefn, "%s/etc/cookies", xgetenv("BBHOME"));
+	fd = fopen(cookiefn, "r");
+	if (fd == NULL) return;
+
+	c_host = c_path = c_name = c_value = NULL;
+	c_tailmatch = c_secure = 0;
+	c_expire = 0;
+
+	while (fgets(l, sizeof(l), fd)) {
+		p = strchr(l, '\n'); 
+		if (p) {
+			*p = '\0';
+			p--;
+			if ((p > l) && (*p == '\r')) *p = '\0';
+		}
+
+		if ((l[0] != '#') && strlen(l)) {
+			int fieldcount = 0;
+			p = strtok(l, "\t");
+			if (p) { fieldcount++; c_host = p; p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_tailmatch = (strcmp(p, "TRUE") == 0); p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_path = p; p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_secure = (strcmp(p, "TRUE") == 0); p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_expire = atol(p); p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_name = p; p = strtok(NULL, "\t"); }
+			if (p) { fieldcount++; c_value = p; p = strtok(NULL, "\t"); }
+			if ((fieldcount == 7) && (c_expire > time(NULL))) {
+				/* We have a valid cookie */
+				cookielist_t *ck = (cookielist_t *)malloc(sizeof(cookielist_t));
+				ck->host = strdup(c_host);
+				ck->tailmatch = c_tailmatch;
+				ck->path = strdup(c_path);
+				ck->secure = c_secure;
+				ck->name = strdup(c_name);
+				ck->value = strdup(c_value);
+				ck->next = cookiehead;
+				cookiehead = ck;
+			}
+		}
+	}
+
+	fclose(fd);
+}
 
 int tcp_http_data_callback(unsigned char *buf, unsigned int len, void *priv)
 {
@@ -380,7 +450,6 @@ void add_http_test(testitem_t *t)
 
 	switch (httptest->bburl.testtype) {
 	  case BBTEST_PLAIN:
-	  case BBTEST_STATUS:
 		httptest->contentcheck = CONTENTCHECK_NONE;
 		break;
 
@@ -419,7 +488,6 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_POST:
-	  case BBTEST_SOAP:
 		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
@@ -429,7 +497,6 @@ void add_http_test(testitem_t *t)
 		break;
 
 	  case BBTEST_NOPOST:
-	  case BBTEST_NOSOAP:
 		if (httptest->bburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
@@ -523,49 +590,11 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "\r\n");
 
 	if (httptest->bburl.postdata) {
-		char hdr[100];
-		int contlen = strlen(httptest->bburl.postdata);
+		char contlenhdr[100];
 
-		if (strncmp(httptest->bburl.postdata, "file:", 5) == 0) {
-			/* Load the POST data from a file */
-			FILE *pf = fopen(httptest->bburl.postdata+5, "r");
-			if (pf == NULL) {
-				errprintf("Cannot open POST data file %s\n", httptest->bburl.postdata+5);
-				xfree(httptest->bburl.postdata);
-				httptest->bburl.postdata = strdup("");
-				contlen = 0;
-			}
-			else {
-				struct stat st;
-
-				if (fstat(fileno(pf), &st) == 0) {
-					xfree(httptest->bburl.postdata);
-					httptest->bburl.postdata = (char *)malloc(st.st_size + 1);
-					fread(httptest->bburl.postdata, 1, st.st_size, pf);
-					*(httptest->bburl.postdata+st.st_size) = '\0';
-					contlen = st.st_size;
-				}
-				else {
-					errprintf("Cannot stat file %s\n", httptest->bburl.postdata+5);
-					httptest->bburl.postdata = strdup("");
-					contlen = 0;
-				}
-
-				fclose(pf);
-			}
-		}
-
-		addtobuffer(httprequest, "Content-type: ");
-		if      (httptest->bburl.postcontenttype) 
-			addtobuffer(httprequest, httptest->bburl.postcontenttype);
-		else if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) 
-			addtobuffer(httprequest, "application/soap+xml; charset=utf-8");
-		else 
-			addtobuffer(httprequest, "application/x-www-form-urlencoded");
-		addtobuffer(httprequest, "\r\n");
-
-		sprintf(hdr, "Content-Length: %d\r\n", contlen);
-		addtobuffer(httprequest, hdr);
+		sprintf(contlenhdr, "Content-Length: %d\r\n", strlen(httptest->bburl.postdata));
+		addtobuffer(httprequest, contlenhdr);
+		addtobuffer(httprequest, "Content-Type: application/x-www-form-urlencoded\r\n");
 	}
 	{
 		char useragent[100];
@@ -626,13 +655,6 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "Accept: */*\r\n");
 	addtobuffer(httprequest, "Pragma: no-cache\r\n");
 
-	if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) {
-		/* Must provide a SOAPAction header */
-		addtobuffer(httprequest, "SOAPAction: ");
-		addtobuffer(httprequest, httptest->url);
-		addtobuffer(httprequest, "\r\n");
-	}
-	
 	/* The final blank line terminates the headers */
 	addtobuffer(httprequest, "\r\n");
 

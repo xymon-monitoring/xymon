@@ -118,7 +118,6 @@ typedef struct testedhost_t {
 	/* The following is for the SSL certificate checks */
 	int  sslwarndays;
 	int  sslalarmdays;
-	int  mincipherbits;
 
 	/* For storing the test dependency tag. */
 	char *deptests;
@@ -141,7 +140,6 @@ typedef struct testitem_t {
 	strbuffer_t	*banner;
 	char		*certinfo;
 	time_t		certexpires;
-	int		mincipherbits;
 	struct timespec	duration;
 
 	/* For badTEST handling: Need to track downtime duration and poll count */
@@ -162,6 +160,5 @@ typedef struct dnstest_t {
 
 extern char *deptest_failed(testedhost_t *host, char *testname);
 
-extern int validity;
 #endif
 

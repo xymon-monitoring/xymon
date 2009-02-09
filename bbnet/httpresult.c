@@ -24,7 +24,6 @@ static char rcsid[] = "$Id: httpresult.c,v 1.25 2006-07-20 16:06:41 henrik Exp $
 
 #include "bbtest-net.h"
 #include "contest.h"
-#include "httpcookies.h"
 #include "httpresult.h"
 
 static int statuscolor(testedhost_t *h, long status)
@@ -68,39 +67,6 @@ static int statuscolor(testedhost_t *h, long status)
 }
 
 
-static int statuscolor_by_set(testedhost_t *h, long status, char *okcodes, char *badcodes)
-{
-	int result = -1;
-	char codestr[10];
-	pcre *ptn;
-
-	/* Use code 999 to indicate we could not fetch the URL */
-	sprintf(codestr, "%ld", (status ? status : 999));
-
-	if (okcodes) {
-		ptn = compileregex(okcodes);
-		if (matchregex(codestr, ptn)) result = COL_GREEN; else result = COL_RED;
-		freeregex(ptn);
-	}
-
-	if (badcodes) {
-		ptn = compileregex(badcodes);
-		if (matchregex(codestr, ptn)) result = COL_RED; else result = COL_GREEN;
-		freeregex(ptn);
-	}
-
-	if (result == -1) result = statuscolor(h, status);
-
-	dbgprintf("Host %s status %s [%s:%s] -> color %s\n", 
-		  h->hostname, codestr, 
-		  (okcodes ? okcodes : "<null>"),
-		  (badcodes ? badcodes : "<null>"),
-		  colorname(result));
-
-	return result;
-}
-
-
 void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firsttest,
 		       char *nonetpage, int failgoesclear)
 {
@@ -132,16 +98,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		/* Skip the data-reports for now */
 		if (t->senddata) continue;
 
-		/* Grab session cookies */
-		update_session_cookies(host->hostname, req->bburl.desturl->host, req->headers);
-
 		totalreports++;
-		if (req->bburl.okcodes || req->bburl.badcodes) {
-			req->httpcolor = statuscolor_by_set(host, req->httpstatus, req->bburl.okcodes, req->bburl.badcodes);
-		}
-		else {
-			req->httpcolor = statuscolor(host, req->httpstatus);
-		}
+		req->httpcolor = statuscolor(host, req->httpstatus);
 		if (req->httpcolor == COL_RED) anydown++;
 
 		/* Dialup hosts and dialup tests report red as clear */
@@ -200,12 +158,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			addtobuffer(msgtext, req->errorcause);
 		}
 		else if ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) {
-			char m1[100];
+			char m1[30];
 
-			if (req->bburl.okcodes || req->bburl.badcodes) {
-				sprintf(m1, "Unwanted HTTP status %ld", req->httpstatus);
-			}
-			else if (req->headers) {
+			if (req->headers) {
 				char *p = req->headers;
 
 				/* Skip past "HTTP/1.x 200 " and pick up the explanatory text, if any */
@@ -216,9 +171,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 				strncpy(m1, p, sizeof(m1)-1);
 				m1[sizeof(m1)-1] = '\0';
-
-				/* Only show the first line of the HTTP status description */
-				p = strchr(m1, '\n'); if (p) *p = '\0';
 			}
 			else {
 				sprintf(m1, "HTTP error %ld", req->httpstatus);
@@ -228,12 +180,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		}
 		else {
 			addtobuffer(msgtext, "OK");
-			if (req->bburl.okcodes || req->bburl.badcodes) {
-				char m1[100];
-
-				sprintf(m1, " (HTTP status %ld)", req->httpstatus);
-				addtobuffer(msgtext, m1);
-			}
 		}
 	}
 
@@ -243,7 +189,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		if (anydown) {
 			firsttest->downcount++; 
-			if(firsttest->downcount == 1) firsttest->downstart = getcurrenttime(NULL);
+			if(firsttest->downcount == 1) firsttest->downstart = time(NULL);
 		} 
 		else firsttest->downcount = 0;
 
@@ -259,8 +205,8 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		/* Send off the http status report */
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s", 
-			validity, commafy(host->hostname), svcname, colorname(color), timestamp);
+		sprintf(msgline, "status %s.%s %s %s", 
+			commafy(host->hostname), svcname, colorname(color), timestamp);
 		addtostatus(msgline);
 		addtostrstatus(msgtext);
 		addtostatus("\n");
@@ -281,12 +227,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				if (req->errorcause) addtostatus(req->errorcause);
 				else addtostatus("failed");
 			}
-			if (req->bburl.okcodes || req->bburl.badcodes) {
-				char m1[100];
-
-				sprintf(m1, " (HTTP status %ld)", req->httpstatus);
-				addtostatus(m1);
-			}
 			addtostatus("\n");
 
 			if (req->headers) {
@@ -301,68 +241,6 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 			addtostatus(urlmsg);
 			xfree(urlmsg);
 		}
-		addtostatus("\n\n");
-		finish_status();
-	}
-
-	/* Send of any HTTP status tests in separate columns */
-	for (t=firsttest; (t && (t->host == host)); t = t->next) {
-		int color;
-		char msgline[4096];
-		char *urlmsg;
-		http_data_t *req = (http_data_t *) t->privdata;
-
-		if ((t->senddata) || (!req->bburl.columnname) || (req->contentcheck != CONTENTCHECK_NONE)) continue;
-
-		/* Handle the "badtest" stuff */
-		color = req->httpcolor;
-		if ((color == COL_RED) && (t->downcount < t->badtest[2])) {
-			if      (t->downcount >= t->badtest[1]) color = COL_YELLOW;
-			else if (t->downcount >= t->badtest[0]) color = COL_CLEAR;
-			else                                    color = COL_GREEN;
-		}
-
-		if (nopage && (color == COL_RED)) color = COL_YELLOW;
-
-		/* Send off the http status report */
-		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s", 
-			validity, commafy(host->hostname), req->bburl.columnname, colorname(color), timestamp);
-		addtostatus(msgline);
-
-		addtostatus(" : ");
-		addtostatus(req->errorcause ? req->errorcause : "OK");
-		if (req->bburl.okcodes || req->bburl.badcodes) {
-			char m1[100];
-
-			sprintf(m1, " (HTTP status %ld)", req->httpstatus);
-			addtostatus(m1);
-		}
-		addtostatus("\n");
-
-		urlmsg = (char *)malloc(1024 + strlen(req->url));
-		sprintf(urlmsg, "\n&%s %s - ", colorname(req->httpcolor), req->url);
-		addtostatus(urlmsg);
-		xfree(urlmsg);
-
-		if (req->httpcolor == COL_GREEN) addtostatus("OK");
-		else {
-			if (req->errorcause) addtostatus(req->errorcause);
-			else addtostatus("failed");
-		}
-		addtostatus("\n");
-
-		if (req->headers) {
-			addtostatus("\n");
-			addtostatus(req->headers);
-		}
-		if (req->faileddeps) addtostatus(req->faileddeps);
-
-		sprintf(msgline, "\nSeconds: %5d.%02d\n\n", 
-			(unsigned int)req->tcptest->totaltime.tv_sec, 
-			(unsigned int)req->tcptest->totaltime.tv_nsec / 10000000 );
-		addtostatus(msgline);
-
 		addtostatus("\n\n");
 		finish_status();
 	}
@@ -536,8 +414,8 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 
 		msgline = (char *)malloc(4096 + (2 * strlen(req->url)));
 		init_status(color);
-		sprintf(msgline, "status+%d %s.%s %s %s: %s\n", 
-			validity, commafy(host->hostname), conttest, colorname(color), timestamp, cause);
+		sprintf(msgline, "status %s.%s %s %s: %s\n", 
+			commafy(host->hostname), conttest, colorname(color), timestamp, cause);
 		addtostatus(msgline);
 
 		if (!got_data) {
