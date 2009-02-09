@@ -241,6 +241,9 @@ int main(int argc, char *argv[])
 			multigraphs = (char *)malloc(strlen(p+1) + 3);
 			sprintf(multigraphs, ",%s,", p+1);
 		}
+		else if (net_worker_option(argv[argi])) {
+			/* Handled in the subroutine */
+		}
 	}
 
 	if (filedir == NULL) {
