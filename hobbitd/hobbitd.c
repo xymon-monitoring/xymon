@@ -460,6 +460,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	struct timezone tz;
 	int semerr = 0;
 	unsigned int bufsz = 1024*shbufsz(channel->channelid);
+	void *hi;
+	char *pagepath, *classname, *osname;
 
 	dbgprintf("-> posttochannel\n");
 
@@ -501,6 +503,12 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 		return;
 	}
 
+	/* Check if we failed to grab the semaphore */
+	if (n == -1) {
+		errprintf("Dropping message due to semaphore error\n");
+		return;
+	}
+
 	/* All clear, post the message */
 	if (channel->seq == 999999) channel->seq = 0;
 	channel->seq++;
@@ -508,9 +516,11 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	gettimeofday(&tstamp, &tz);
 	if (readymsg) {
 		n = snprintf(channel->channelbuf, (bufsz-5),
-			    "@@%s#%u|%d.%06d|%s|%s", 
-			    channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, sender,
-			    readymsg);
+			    "@@%s#%u/%s|%d.%06d|%s|%s", 
+			    channelmarker, channel->seq, 
+			    (hostname ? hostname : "*"), 
+			    (int) tstamp.tv_sec, (int) tstamp.tv_usec,
+			    sender, readymsg);
 		if (n > (bufsz-5)) {
 			char *p, *overmsg = readymsg;
 			*(overmsg+100) = '\0';
@@ -523,23 +533,41 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	else {
 		switch(channel->channelid) {
 		  case C_STATUS:
+			hi = hostinfo(hostname);
+			pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
+			classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
+			if (!classname) classname = "";
+
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-				sender, log->origin, hostname, log->test->name, 
-				(int) log->validtime, colnames[log->color], (log->testflags ? log->testflags : ""),
-				colnames[log->oldcolor], (int) log->lastchange); 
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%s|%d", 
+				channelmarker, channel->seq, hostname, 		/*  0 */
+				(int) tstamp.tv_sec, (int) tstamp.tv_usec,	/*  1 */
+				sender, 					/*  2 */
+				log->origin, 					/*  3 */
+				hostname, 					/*  4 */
+				log->test->name, 				/*  5 */
+				(int) log->validtime, 				/*  6 */
+				colnames[log->color], 				/*  7 */
+				(log->testflags ? log->testflags : ""),		/*  8 */
+				colnames[log->oldcolor], 			/*  9 */
+				(int) log->lastchange); 			/* 10 */
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 11+12 */
 					(int)log->acktime, nlencode(log->ackmsg));
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 13+14 */
 					(int)log->enabletime, nlencode(log->dismsg));
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 15 */
 					(int)log->host->clientmsgtstamp);
+			}
+			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", classname);	/* 16 */
+			}
+			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", pagepath);	/* 17 */
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
@@ -553,20 +581,27 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_STACHG:
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
-				sender, log->origin, hostname, log->test->name, 
-				(int) log->validtime, colnames[log->color], 
-				colnames[log->oldcolor], (int) log->lastchange);
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d", 
+				channelmarker, channel->seq, hostname, 		/*  0 */
+				(int) tstamp.tv_sec, (int) tstamp.tv_usec,	/*  1 */
+				sender,						/*  2 */ 
+				log->origin,					/*  3 */ 
+				hostname,					/*  4 */ 
+				log->test->name,				/*  5 */ 
+				(int) log->validtime,				/*  6 */ 
+				colnames[log->color],				/*  7 */ 
+				colnames[log->oldcolor],			/*  8 */ 
+				(int) log->lastchange)			/*  9 */;
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d|%s",	/* 10+11 */
 					(int)log->enabletime, nlencode(log->dismsg));
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", log->downtimeactive);
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 12 */
+						log->downtimeactive);
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 13 */
 						(int) log->host->clientmsgtstamp);
 			}
 			if (n < (bufsz-5)) {
@@ -581,8 +616,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_CLICHG:
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%d\n%s",
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
+				"@@%s#%u/%s|%d.%06d|%s|%s|%d\n%s",
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, (int) log->host->clientmsgtstamp, 
 				log->host->clientmsg);
 			if (n > (bufsz-5)) {
@@ -590,22 +625,19 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					sender, hostname, n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
-			log->host->clientmsgposted = 1;
 			break;
 
 		  case C_PAGE:
 			if (strcmp(channelmarker, "ack") == 0) {
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d\n%s", 
-					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d\n%s", 
+					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip,
 					(int) log->acktime, msg);
 			}
 			else {
-				void *hi = hostinfo(hostname);
-				char *pagepath, *classname, *osname;
-
+				hi = hostinfo(hostname);
 				pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
 				classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
 				osname = (hi ? bbh_item(hi, BBH_OS) : "");
@@ -613,8 +645,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				if (!osname) osname = "";
 
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
-					channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
+					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange,
@@ -637,8 +669,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 		  case C_NOTES:
 		  case C_USER:
 			n = snprintf(channel->channelbuf,  (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s\n%s", 
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int) tstamp.tv_usec, 
+				"@@%s#%u/%s|%d.%06d|%s|%s\n%s", 
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, msg);
 			if (n > (bufsz-5)) {
 				errprintf("Oversize notes/user msg from %s for %s truncated (n=%d, limit=%d)\n", 
@@ -649,8 +681,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 
 		  case C_ENADIS:
 			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u|%d.%06d|%s|%s|%s|%d",
-				channelmarker, channel->seq, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
+				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%d",
+				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
 				sender, hostname, log->test->name, (int) log->enabletime);
 			if (n > (bufsz-5)) {
 				errprintf("Oversize enadis msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
@@ -1263,22 +1295,32 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 
 void handle_data(char *msg, char *sender, char *origin, char *hostname, char *testname)
 {
+	void *hi;
 	char *chnbuf;
 	int buflen = 0;
+	char *classname, *pagepath;
 
 	dbgprintf("->handle_data\n");
+
+	hi = hostinfo(hostname);
+	classname = (hi ? bbh_item(hi, BBH_CLASS) : NULL);
+	pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
 
 	if (origin) buflen += strlen(origin); else dbgprintf("   origin is NULL\n");
 	if (hostname) buflen += strlen(hostname); else dbgprintf("  hostname is NULL\n");
 	if (testname) buflen += strlen(testname); else dbgprintf("  testname is NULL\n");
 	if (msg) buflen += strlen(msg); else dbgprintf("  msg is NULL\n");
+	if (classname) buflen += strlen(classname);
+	if (pagepath) buflen += strlen(pagepath);
 	buflen += 4;
 
 	chnbuf = (char *)malloc(buflen);
-	snprintf(chnbuf, buflen, "%s|%s|%s\n%s", 
+	snprintf(chnbuf, buflen, "%s|%s|%s|%s|%s\n%s",
 		 (origin ? origin : ""), 
 		 (hostname ? hostname : ""), 
 		 (testname ? testname : ""), 
+		 (classname ? classname : ""),
+		 (pagepath ? pagepath : ""),
 		 msg);
 
 	posttochannel(datachn, channelnames[C_DATA], msg, sender, hostname, NULL, chnbuf);
