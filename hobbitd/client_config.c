@@ -65,6 +65,27 @@ typedef struct c_mem_t {
 	int warnlevel, paniclevel;
 } c_mem_t;
 
+typedef struct c_zos_mem_t {
+	enum { C_MEM_CSA, C_MEM_ECSA, C_MEM_SQA, C_MEM_ESQA } zos_memtype;
+	int warnlevel, paniclevel;
+} c_zos_mem_t;
+
+typedef struct c_zvse_vsize_t {
+	int warnlevel, paniclevel;
+} c_zvse_vsize_t;
+
+typedef struct c_zvse_getvis_t {
+	exprlist_t *partid;
+	int warnlevel, paniclevel;
+	int anywarnlevel, anypaniclevel;
+} c_zvse_getvis_t;
+
+typedef struct c_cics_t {
+	exprlist_t *applid;  /* CICS Application Identifier */
+	int dsawarnlevel, dsapaniclevel;
+	int edsawarnlevel, edsapaniclevel;
+} c_cics_t;
+
 typedef struct c_proc_t {
 	exprlist_t *procexp;
 	int pmin, pmax, pcount;
@@ -76,6 +97,10 @@ typedef struct c_log_t {
 	exprlist_t *matchexp, *matchone, *ignoreexp;
 	int color;
 } c_log_t;
+
+typedef struct c_paging_t {
+	int warnlevel, paniclevel;
+} c_paging_t;
 
 #define FCHK_NOEXIST  (1 << 0)
 #define FCHK_TYPE     (1 << 1)
@@ -147,7 +172,7 @@ typedef struct c_svc_t {
 	int color;
 } c_svc_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC } ruletype_t;
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -167,12 +192,17 @@ typedef struct c_rule_t {
 		c_clock_t clock;
 		c_disk_t disk;
 		c_mem_t mem;
+		c_zos_mem_t zos_mem;
+		c_zvse_vsize_t zvse_vsize;
+		c_zvse_getvis_t zvse_getvis;
+		c_cics_t cics;
 		c_proc_t proc;
 		c_log_t log;
 		c_file_t fcheck;
 		c_dir_t dcheck;
 		c_port_t port;
-		c_svc_t svc;
+		c_svc_t	svc;
+		c_paging_t paging;
 	} rule;
 } c_rule_t;
 
@@ -455,6 +485,7 @@ int load_client_config(char *configfn)
 		if (tmp->timespec) xfree(tmp->timespec);
 		if (tmp->statustext) xfree(tmp->statustext);
 		if (tmp->rrdidstr) xfree(tmp->rrdidstr);
+
 		xfree(tmp);
 	}
 	rulehead = ruletail = NULL;
@@ -665,6 +696,88 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
+			else if (strcasecmp(tok, "MEMCSA") == 0) {
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.zos_mem.zos_memtype = C_MEM_CSA;
+				currule->rule.zos_mem.warnlevel = 90;
+				currule->rule.zos_mem.paniclevel = 95;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.warnlevel = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.paniclevel = atoi(tok);
+			}
+			else if (strcasecmp(tok, "MEMECSA") == 0) {
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.zos_mem.zos_memtype = C_MEM_ECSA;
+				currule->rule.zos_mem.warnlevel = 90;
+				currule->rule.zos_mem.paniclevel = 95;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.warnlevel = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.paniclevel = atoi(tok);
+			}
+			else if (strcasecmp(tok, "MEMSQA") == 0) {
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.zos_mem.zos_memtype = C_MEM_SQA;
+				currule->rule.zos_mem.warnlevel = 90;
+				currule->rule.zos_mem.paniclevel = 95;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.warnlevel = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.paniclevel = atoi(tok);
+			}
+			else if (strcasecmp(tok, "MEMESQA") == 0) {
+				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.zos_mem.zos_memtype = C_MEM_ESQA;
+				currule->rule.zos_mem.warnlevel = 90;
+				currule->rule.zos_mem.paniclevel = 95;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.warnlevel = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zos_mem.paniclevel = atoi(tok);
+			}
+                        else if (strcasecmp(tok, "CICS") == 0) {
+                                currule = setup_rule(C_CICS, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule->rule.cics.dsawarnlevel = 90;
+                                currule->rule.cics.dsapaniclevel = 95;
+                                currule->rule.cics.edsawarnlevel = 90;
+                                currule->rule.cics.edsapaniclevel = 95;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.cics.applid = setup_expr(tok, 0);
+
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+				if (strcasecmp(tok, "DSA") == 0) {
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.dsawarnlevel = atoi(tok);
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.dsapaniclevel = atoi(tok);
+					}
+				else if (strcasecmp(tok, "EDSA") == 0) {
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.edsawarnlevel = atoi(tok);
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.edsapaniclevel = atoi(tok);
+					}
+
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+				if (strcasecmp(tok, "DSA") == 0) {
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.dsawarnlevel = atoi(tok);
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.dsapaniclevel = atoi(tok);
+					}
+				else if (strcasecmp(tok, "EDSA") == 0) {
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.edsawarnlevel = atoi(tok);
+                                	tok = wstok(NULL); if (isqual(tok)) continue;
+                                	currule->rule.cics.edsapaniclevel = atoi(tok);
+					}
+                        }
 			else if (strcasecmp(tok, "PROC") == 0) {
 				int idx = 0;
 
@@ -1025,6 +1138,79 @@ curtime, curtext, curgroup, cfid);
 					}
 				} while (tok && (!isqual(tok)));
 			}
+			else if (strcasecmp(tok, "PAGING") == 0) {
+				currule = setup_rule(C_PAGING, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+
+				currule->rule.paging.warnlevel = 5;
+				currule->rule.paging.paniclevel = 10;
+
+				tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+				currule->rule.paging.warnlevel = atoi(tok);
+
+				tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+				currule->rule.paging.paniclevel = atoi(tok);
+			}
+			else if (strcasecmp(tok, "GETVIS") == 0) {
+                                currule = setup_rule(C_MEM_GETVIS, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.zvse_getvis.warnlevel =  90;
+				currule->rule.zvse_getvis.paniclevel = 95;
+				currule->rule.zvse_getvis.anywarnlevel =  90;
+				currule->rule.zvse_getvis.anypaniclevel = 95;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.zvse_getvis.partid = setup_expr(tok, 0);
+
+                               	tok = wstok(NULL); if (isqual(tok)) continue;
+                               	currule->rule.zvse_getvis.warnlevel = atoi(tok);
+                               	tok = wstok(NULL); if (isqual(tok)) continue;
+                               	currule->rule.zvse_getvis.paniclevel = atoi(tok);
+
+                               	tok = wstok(NULL); if (isqual(tok)) continue;
+                               	currule->rule.zvse_getvis.anywarnlevel = atoi(tok);
+                               	tok = wstok(NULL); if (isqual(tok)) continue;
+                               	currule->rule.zvse_getvis.anypaniclevel = atoi(tok);
+			}
+                        else if (strcasecmp(tok, "VSIZE") == 0) {
+                                currule = setup_rule(C_MEM_VSIZE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule->rule.zvse_vsize.warnlevel = 90;
+                                currule->rule.zvse_vsize.paniclevel = 95;
+
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zvse_vsize.warnlevel = atoi(tok);
+                                tok = wstok(NULL); if (isqual(tok)) continue;
+                                currule->rule.zvse_vsize.paniclevel = atoi(tok);
+                        }
+			else if (strcasecmp(tok, "SVC") == 0) {
+				int idx = 0;
+
+				currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+
+				currule->rule.svc.svcexp = NULL;
+				currule->rule.svc.startupexp = NULL;
+				currule->rule.svc.stateexp = NULL;
+				currule->rule.svc.state = NULL;
+				currule->rule.svc.startup = NULL; 
+				currule->rule.svc.color = COL_RED;
+
+				tok = wstok(NULL);
+				currule->rule.svc.svcexp = setup_expr(tok, 0);
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
+
+					if (strncasecmp(tok, "startup=", 8) == 0) {
+						currule->rule.svc.startupexp = setup_expr(tok+8, 0);
+					}
+					else if (strncasecmp(tok, "status=", 7) == 0) {
+						currule->rule.svc.stateexp = setup_expr(tok+7, 0);
+					}
+					else if (strncasecmp(tok, "col=", 4) == 0) {
+						currule->rule.svc.color = parse_color(tok+4);
+					}
+					else if (strncasecmp(tok, "color=", 6) == 0) {
+						currule->rule.svc.color = parse_color(tok+6);
+					}
+				} while (tok && (!isqual(tok)));
+			}
 			else {
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
 				unknowntok = 1; tok = NULL; continue;
@@ -1214,6 +1400,21 @@ void dump_client_config(void)
 			printf(" color=%s", colorname(rwalk->rule.port.color));
 			break;
 
+		  case C_PAGING:
+			printf("PAGING %d %d", rwalk->rule.paging.warnlevel, rwalk->rule.paging.paniclevel);
+			break;
+
+		  case C_MEM_VSIZE:
+			printf("z/VSE VSIZE %d %d", rwalk->rule.zvse_vsize.warnlevel, rwalk->rule.zvse_vsize.paniclevel);
+			break;
+
+		  case C_MEM_GETVIS:
+			break;
+
+		  case C_CICS:
+			printf("CICS: Appid:%s, DSA warning:%d, DSA panic:%d, EDSA warning%d, EDSA panic:%d", rwalk->rule.cics.applid->pattern, rwalk->rule.cics.dsawarnlevel, rwalk->rule.cics.dsapaniclevel, rwalk->rule.cics.edsawarnlevel, rwalk->rule.cics.edsapaniclevel);
+			break;
+
                   case C_SVC:
                         printf("SVC");
                         if (rwalk->rule.svc.svcexp)
@@ -1224,7 +1425,6 @@ void dump_client_config(void)
                                 printf(" startup=%s", rwalk->rule.svc.startupexp->pattern);
                         printf(" color=%s", colorname(rwalk->rule.svc.color));
                         break;
-
 		}
 
 		if (rwalk->flags & CHK_TRACKIT) {
@@ -1347,6 +1547,105 @@ int get_disk_thresholds(void *hinfo, char *classname,
 	return 0;
 }
 
+void get_cics_thresholds(void *hinfo, char *classname, char *appid,
+                        int *dsayel, int *dsared, int *edsayel, int *edsared)
+{
+        char *hostname, *pagename;
+        int result = 0;
+        c_rule_t *rule;
+
+        hostname = bbh_item(hinfo, BBH_HOSTNAME);
+        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+
+        *dsayel = 90;
+        *dsared = 95;
+        *edsayel = 90;
+        *edsared = 95;
+
+/* Get thresholds for CICS DSA */
+        rule = getrule(hostname, pagename, classname, hinfo, C_CICS);
+
+/* This is sort of cheating, because the while statement that follows should catch it
+   but it doesn't.  So if there is a way to solve the problem I welcome some tips...   */
+	if (!rule) {
+		return;
+		}
+
+        while (rule && !namematch(appid, rule->rule.cics.applid->pattern, rule->rule.cics.applid->exp)) {
+                rule = getrule(NULL, NULL, NULL, hinfo, C_CICS);
+        }
+
+        if (rule) {
+                *dsayel = rule->rule.cics.dsawarnlevel;
+                *dsared = rule->rule.cics.dsapaniclevel;
+                *edsayel = rule->rule.cics.edsawarnlevel;
+                *edsared = rule->rule.cics.edsapaniclevel;
+                result = rule->cfid;
+        }
+
+}
+
+void get_zvsevsize_thresholds(void *hinfo, char *classname,
+                        int *usedyel, int *usedred)
+{
+        char *hostname, *pagename;
+        int result = 0;
+        c_rule_t *rule;
+
+        hostname = bbh_item(hinfo, BBH_HOSTNAME);
+        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+
+        *usedyel = 90;
+        *usedred = 95;
+
+/* Get thresholds for z/VSE System Memory */
+        rule = getrule(hostname, pagename, classname, hinfo, C_MEM_VSIZE);
+
+        if (rule) {
+                *usedyel = rule->rule.zvse_vsize.warnlevel;
+                *usedred = rule->rule.zvse_vsize.paniclevel;
+                result = rule->cfid;
+        }
+}
+
+void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
+                        int *gv24yel, int *gv24red, int *gvanyyel, int *gvanyred)
+{
+        char *hostname, *pagename;
+        int result = 0;
+        c_rule_t *rule;
+
+        hostname = bbh_item(hinfo, BBH_HOSTNAME);
+        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+
+        *gv24yel = 90;
+        *gv24red = 95;
+        *gvanyyel = 90;
+        *gvanyred = 95;
+
+/* Get thresholds for z/VSE Partition Getvis */
+        rule = getrule(hostname, pagename, classname, hinfo, C_MEM_GETVIS);
+
+/* This is sort of cheating, because the while statement that follows should catch it
+   but it doesn't.  So if there is a way to solve the problem I welcome some tips...   */
+	if (!rule) {
+		return;
+		}
+
+        while (rule && !namematch(pid, rule->rule.zvse_getvis.partid->pattern, rule->rule.zvse_getvis.partid->exp)) {
+                rule = getrule(NULL, NULL, NULL, hinfo, C_MEM_GETVIS);
+        	}
+
+        if (rule) {
+                *gv24yel  = rule->rule.zvse_getvis.warnlevel;
+                *gv24red  = rule->rule.zvse_getvis.paniclevel;
+                *gvanyyel = rule->rule.zvse_getvis.anywarnlevel;
+                *gvanyred = rule->rule.zvse_getvis.anypaniclevel;
+                result = rule->cfid;
+        	}
+}
+
+
 void get_memory_thresholds(void *hinfo, char *classname,
 			   int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
 {
@@ -1391,6 +1690,85 @@ void get_memory_thresholds(void *hinfo, char *classname,
 		}
 		rule = getrule(NULL, NULL, NULL, hinfo, C_MEM);
 	}
+}
+
+void get_zos_memory_thresholds(void *hinfo, char *classname,
+                               int *csayellow, int *csared, int *ecsayellow, int *ecsared,
+			       int *sqayellow, int *sqared, int *esqayellow, int *esqared)
+{
+        char *hostname, *pagename;
+        c_rule_t *rule;
+        int gotcsa = 0, gotecsa = 0, gotsqa = 0, gotesqa = 0;
+
+        hostname = bbh_item(hinfo, BBH_HOSTNAME);
+        pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+
+        *csayellow = 90;
+        *csared = 95;
+        *ecsayellow = 90;
+        *ecsared = 95;
+        *sqayellow = 90;
+        *sqared = 95;
+        *esqayellow = 90;
+        *esqared = 95;
+
+        rule = getrule(hostname, pagename, classname, hinfo, C_MEM);
+        while (rule) {
+                switch (rule->rule.zos_mem.zos_memtype) {
+                  case C_MEM_CSA:
+                        if (!gotcsa) {
+                                *csayellow = rule->rule.zos_mem.warnlevel;
+                                *csared    = rule->rule.zos_mem.paniclevel;
+                                gotcsa     = 1;
+                        }
+                        break;
+                  case C_MEM_ECSA:
+                        if (!gotecsa) {
+                                *ecsayellow = rule->rule.zos_mem.warnlevel;
+                                *ecsared    = rule->rule.zos_mem.paniclevel;
+                                gotecsa     = 1;
+                        }
+                        break;
+                  case C_MEM_SQA:
+                        if (!gotsqa) {
+                                *sqayellow = rule->rule.zos_mem.warnlevel;
+                                *sqared    = rule->rule.zos_mem.paniclevel;
+                                gotsqa     = 1;
+                        }
+                        break;
+                  case C_MEM_ESQA:
+                        if (!gotesqa) {
+                                *esqayellow = rule->rule.zos_mem.warnlevel;
+                                *esqared    = rule->rule.zos_mem.paniclevel;
+                                gotesqa     = 1;
+                        }
+                        break;
+                }
+                rule = getrule(NULL, NULL, NULL, hinfo, C_MEM);
+        }
+
+}
+
+int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *pagingred)
+{
+	int result = 0;
+	char *hostname, *pagename;
+	c_rule_t *rule;
+
+	hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+
+	*pagingyellow = 5;
+	*pagingred = 10;
+
+	rule = getrule(hostname, pagename, classname, hinfo, C_PAGING);
+	if (rule) {
+		*pagingyellow = rule->rule.paging.warnlevel;
+		*pagingred    = rule->rule.paging.paniclevel;
+		result = rule->cfid;
+	}
+
+	return result;
 }
 
 int scan_log(void *hinfo, char *classname, 

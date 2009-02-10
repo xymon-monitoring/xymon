@@ -540,6 +540,13 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_counts.c"
 #include "rrd/do_trends.c"
 
+/* z/OS, z/VM, z/VME stuff */
+#include "rrd/do_paging.c"
+#include "rrd/do_mdc.c"
+#include "rrd/do_cics.c"
+#include "rrd/do_getvis.c"
+
+
 /*
  * From hobbit-perl-client http://sourceforge.net/projects/hobbit-perl-cl/
  * version 1.15 Oct. 17 2006 (downloaded on 2008-12-01).
@@ -602,6 +609,12 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
+	/* z/OS, z/VSE, z/VM from Rich Smrcina */
+	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "mdc") == 0)         res = do_mdc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "cics") == 0)        res = do_cics_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "getvis") == 0)      res = do_getvis_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/* 
 	 * These are from the hobbit-perl-client
