@@ -482,7 +482,10 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 			}
 
 			if (oneres == BB_OK) {
-				if (response && response->respstr) addtobuffer(response->respstr, respstr);
+				if (respstr && response && response->respstr) {
+					addtobuffer(response->respstr, respstr);
+					xfree(respstr);
+				}
 				first = 0;
 			}
 		}
