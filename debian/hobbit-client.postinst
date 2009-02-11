@@ -25,8 +25,8 @@ case "$1" in
         # Setup permissions for the newly created "hobbit" user to write
 	# data where he needs to.
 	# NB: Dont change the "tmp" directory, since it is a symlink to /tmp
-        cd /var/log/xymon; chown hobbit:hobbit .
-	cd /usr/lib/xymon/client; chown hobbit:hobbit logs; chmod 755 logs
+        cd /var/log/hobbit; chown hobbit:hobbit .
+	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs; chmod 755 logs
 
 	# Do the debconf stuff
 	db_get hobbit-client/HOBBITSERVERS

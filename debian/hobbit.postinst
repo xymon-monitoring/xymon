@@ -7,8 +7,8 @@ set -e
 
 # Substitute in the values from the debconf db.
 # Must remove the area-specific envs - debconf chokes on them.
-egrep "^[a-zA-Z0-9_]+=" /etc/xymon/hobbitserver.cfg >/etc/xymon/hobbitserver.cfg.dbinst
-CONFIGFILE=/etc/xymon/hobbitserver.cfg.dbinst
+egrep "^[a-zA-Z0-9_]+=" /etc/hobbit/hobbitserver.cfg >/etc/hobbit/hobbitserver.cfg.dbinst
+CONFIGFILE=/etc/hobbit/hobbitserver.cfg.dbinst
 . /usr/share/debconf/confmodule
 
 
@@ -29,12 +29,12 @@ case "$1" in
         # Setup permissions for the newly created "hobbit" user to write
 	# data where he needs to.
 	# And for the Apache-run CGI's to generate reports.
-        cd /var/log/xymon; chown hobbit:hobbit .
-	cd /var/lib/xymon; chown hobbit:hobbit . acks data disabled hist histlogs hostdata logs rrd tmp www
-	cd /var/lib/xymon/www; chown hobbit:hobbit . html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
-	cd /etc/xymon; chgrp www-data hobbit-nkview.cfg hobbit-nkview.cfg.bak; chmod g+w hobbit-nkview.cfg hobbit-nkview.cfg.bak
-	chown root /usr/lib/xymon/server/bin/hobbitping; chmod 4755 /usr/lib/xymon/server/bin/hobbitping
-	cd /usr/lib/xymon/client; chown hobbit:hobbit logs tmp; chmod u+w logs tmp
+        cd /var/log/hobbit; chown hobbit:hobbit .
+	cd /var/lib/hobbit; chown hobbit:hobbit . acks data disabled hist histlogs hostdata logs rrd tmp www
+	cd /var/lib/hobbit/www; chown hobbit:hobbit . html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
+	cd /etc/hobbit; chgrp www-data hobbit-nkview.cfg hobbit-nkview.cfg.bak; chmod g+w hobbit-nkview.cfg hobbit-nkview.cfg.bak
+	chown root /usr/lib/hobbit/server/bin/hobbitping; chmod 4755 /usr/lib/hobbit/server/bin/hobbitping
+	cd /usr/lib/hobbit/client; chown hobbit:hobbit logs tmp; chmod u+w logs tmp
 
 	# Do the debconf stuff
 	db_get hobbit/BBSERVERHOSTNAME
@@ -69,6 +69,6 @@ esac
 
 #DEBHELPER#
 
-rm -f /etc/xymon/hobbitserver.cfg.dbinst
+rm -f /etc/hobbit/hobbitserver.cfg.dbinst
 exit 0
 

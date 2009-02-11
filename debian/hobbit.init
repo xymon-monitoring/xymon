@@ -2,7 +2,7 @@
 #
 
 ### BEGIN INIT INFO
-# Provides:          xymon
+# Provides:          hobbit
 # Required-Start:    $network
 # Required-Stop:     $network
 # Default-Start:     2 3 4 5
@@ -13,7 +13,7 @@
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/lib/xymon/server/hobbit.sh
+DAEMON=/usr/lib/hobbit/server/hobbit.sh
 NAME=hobbit
 DESC=hobbit
 

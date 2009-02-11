@@ -1,7 +1,7 @@
 #
 #       Logrotate fragment for Hobbit.
 #
-/var/log/xymon/*.log {
+/var/log/hobbit/*.log {
         weekly
         compress
         delaycompress
