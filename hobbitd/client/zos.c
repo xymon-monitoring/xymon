@@ -3,7 +3,7 @@
 /*                                                                            */
 /* Client backend module for z/VSE, VSE/ESA and z/OS                          */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2006-2008 Rich Smrcina                                       */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */

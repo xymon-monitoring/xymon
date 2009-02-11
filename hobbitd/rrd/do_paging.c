@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This module handles "paging" messages.                                     */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2007-2008 Rich Smrcina                                       */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
