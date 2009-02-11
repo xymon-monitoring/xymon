@@ -1312,7 +1312,7 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 	if (msg) buflen += strlen(msg); else dbgprintf("  msg is NULL\n");
 	if (classname) buflen += strlen(classname);
 	if (pagepath) buflen += strlen(pagepath);
-	buflen += 4;
+	buflen += 6;
 
 	chnbuf = (char *)malloc(buflen);
 	snprintf(chnbuf, buflen, "%s|%s|%s|%s|%s\n%s",
