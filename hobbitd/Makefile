@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk
+PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
@@ -19,6 +19,7 @@ MAILACKOBJS   = hobbit-mailack.o
 TRIMHISTOBJS  = trimhistory.o
 FETCHOBJS     = hobbitfetch.o
 CONVERTNKOBJS = convertnk.o
+RRDCACHECTLOBJS = rrdcachectl.o
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
 
@@ -97,6 +98,9 @@ hobbitfetch: $(FETCHOBJS) $(LIBOBJS)
 
 convertnk: $(CONVERTNKOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CONVERTNKOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+
+rrdcachectl: $(RRDCACHECTLOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
 hobbit.sh: hobbit.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
