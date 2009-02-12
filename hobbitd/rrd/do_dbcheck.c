@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char dbcheck_rcsid[] = "$Id: do_dbcheck.c,v 1.00 2006/05/31 20:28:44 henrik Rel $";
+static char dbcheck_rcsid[] = "$Id$";
 
 int do_dbcheck_memreq_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {

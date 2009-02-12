@@ -40,7 +40,7 @@
  *   active alerts for this host.test combination.
  */
 
-static char rcsid[] = "$Id: hobbitd_alert.c,v 1.86 2006-08-07 06:19:41 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include <stdio.h>
 #include <string.h>

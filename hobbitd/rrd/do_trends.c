@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char trends_rcsid[] = "$Id: do_trends.c 5819 2008-09-30 16:37:31Z storner $";
+static char trends_rcsid[] = "$Id$";
 
 /* 
  * This module was inspired by a mail from Stef Coene:

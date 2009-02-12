@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sco_sv_rcsid[] = "$Id: sco_sv.c 5819 2008-09-30 16:37:31Z storner $";
+static char sco_sv_rcsid[] = "$Id$";
 
 void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os, 
 			  void *hinfo, char *sender, time_t timestamp,

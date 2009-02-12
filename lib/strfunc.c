@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: strfunc.c,v 1.7 2006-07-21 14:49:35 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include "config.h"
 

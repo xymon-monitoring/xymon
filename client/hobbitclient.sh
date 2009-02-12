@@ -12,7 +12,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: hobbitclient.sh 5819 2008-09-30 16:37:31Z storner $
+# $Id$
 
 # Must make sure the commands return standard (english) texts.
 LANG=C

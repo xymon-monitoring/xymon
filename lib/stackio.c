@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: stackio.c,v 1.20 2006-07-20 16:06:41 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include <sys/types.h>
 #include <sys/stat.h>

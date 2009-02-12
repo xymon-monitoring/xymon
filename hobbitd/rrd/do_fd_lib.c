@@ -12,7 +12,7 @@
   Some function used by do_netapp.pl do_beastat.pl and do_dbcheck.pl
 */
 
-static char fd_lib_rcs[] = "$Id: do_fd_lib.c,v 1.00 2006/05/31 20:28:44 henrik Rel $";
+static char fd_lib_rcs[] = "$Id$";
 
 unsigned long get_kb_data(char *msg,char *search)
 {

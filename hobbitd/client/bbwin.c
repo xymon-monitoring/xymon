@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbwin_rcsid[] = "$Id: bbwin.c 5858 2008-10-08 09:04:35Z storner $";
+static char bbwin_rcsid[] = "$Id$";
 
 static void bbwin_uptime_report(char *hostname, char *clientclass, enum ostype_t os,
                      void *hinfo, char *fromline, char *timestr,

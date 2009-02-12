@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ifstat_rcsid[] = "$Id: do_ifstat.c 5819 2008-09-30 16:37:31Z storner $";
+static char ifstat_rcsid[] = "$Id$";
 
 static char *ifstat_params[] = { "DS:bytesSent:DERIVE:600:0:U", 
 	                         "DS:bytesReceived:DERIVE:600:0:U", 

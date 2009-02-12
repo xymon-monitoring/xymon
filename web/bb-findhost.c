@@ -37,7 +37,7 @@
  *
  */
 
-static char rcsid[] = "$Id: bb-findhost.c,v 1.33 2006-07-11 17:18:22 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include <stdio.h>
 #include <string.h>

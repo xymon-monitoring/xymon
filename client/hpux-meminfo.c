@@ -9,7 +9,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: hpux-meminfo.c,v 1.4 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include <sys/pstat.h>
 #include <stdio.h>

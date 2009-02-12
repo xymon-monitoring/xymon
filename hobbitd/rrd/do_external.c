@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char external_rcsid[] = "$Id: do_external.c 5853 2008-10-07 10:16:10Z storner $";
+static char external_rcsid[] = "$Id$";
 
 int do_external_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 

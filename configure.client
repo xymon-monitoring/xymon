@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Configure script for Xymon CLIENT
-# $Id: configure.client,v 1.5 2006/08/07 15:38:05 henrik Rel $
+# $Id$
 
 echo ""
 echo "Configuration script for Xymon client"

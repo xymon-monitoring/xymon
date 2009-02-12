@@ -9,7 +9,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: openbsd-meminfo.c,v 1.3 2006-05-03 21:12:33 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include <sys/param.h>
 #include <sys/types.h>

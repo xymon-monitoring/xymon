@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char ncv_rcsid[] = "$Id: do_ncv.c 5819 2008-09-30 16:37:31Z storner $";
+static char ncv_rcsid[] = "$Id$";
 
 int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 

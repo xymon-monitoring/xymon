@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char counts_rcsid[] = "$Id: do_counts.c 5819 2008-09-30 16:37:31Z storner $";
+static char counts_rcsid[] = "$Id$";
 
 static int do_one_counts_rrd(char *counttype, char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp, char *params[], char *tpl) 
 { 

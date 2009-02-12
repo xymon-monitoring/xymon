@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char sendmail_rcsid[] = "$Id: do_sendmail.c 5819 2008-09-30 16:37:31Z storner $";
+static char sendmail_rcsid[] = "$Id$";
 
 int do_sendmail_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {

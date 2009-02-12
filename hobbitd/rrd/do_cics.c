@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char cics_rcsid[] = "$Id: do_cics.c,v 1.2 2007/07/24 08:45:01 henrik Exp $";
+static char cics_rcsid[] = "$Id$";
 
 static char *cicsntrans_params[]  = { "DS:numtrans:GAUGE:600:0:U", NULL };
 static char *cicsdsa_params[]  = { "DS:dsa:GAUGE:600:0:100", "DS:edsa:GAUGE:600:0:100", NULL };

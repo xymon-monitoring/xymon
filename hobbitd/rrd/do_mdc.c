@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char mdc_rcsid[] = "$Id: do_mdc.c,v 1.2 2007/07/24 08:45:01 henrik Exp $";
+static char mdc_rcsid[] = "$Id$";
 
 static char *mdc_params[]     = { "DS:reads:GAUGE:600:0:U", "DS:writes:GAUGE:600:0:U", NULL };
 static char *mdcpct_params[]  = { "DS:hitpct:GAUGE:600:0:100", NULL };

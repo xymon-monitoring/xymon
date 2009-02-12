@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char vmstat_rcsid[] = "$Id: do_vmstat.c 5888 2008-10-19 16:07:04Z storner $";
+static char vmstat_rcsid[] = "$Id$";
 
 typedef struct vmstat_layout_t {
 	int index;

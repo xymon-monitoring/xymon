@@ -13,7 +13,7 @@
 #                                                                            #
 #----------------------------------------------------------------------------#
 #
-# $Id: runclient.sh 5819 2008-09-30 16:37:31Z storner $
+# $Id$
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
