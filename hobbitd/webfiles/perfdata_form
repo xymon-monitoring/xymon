@@ -40,7 +40,7 @@
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>End time</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="ENDTIME" SIZE=40 VALUE=""></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 200800201)</FONT></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 20090201)</FONT></TD>
      </TR>
 
      <TR>
