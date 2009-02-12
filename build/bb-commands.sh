@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: bb-commands.sh,v 1.6 2006-06-21 05:50:38 henrik Exp $
+# $Id$
 
 # Script to pick up most of the commands used by BB extension scripts.
 # This is used during installation, to build a hobbitserver.cfg that
