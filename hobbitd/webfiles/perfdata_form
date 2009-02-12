@@ -32,16 +32,26 @@
      <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Start time</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="STARTTIME" SIZE=40 VALUE=""></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 20090115 )</FONT></TD>
+       <TD><INPUT TYPE=TEXT NAME="STARTTIME" ID="STARTTIME" SIZE=40 VALUE=""></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 2009/01/15 )</FONT></TD>
      </TR>
 
      <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>End time</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="ENDTIME" SIZE=40 VALUE=""></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 20090201)</FONT></TD>
+       <TD><INPUT TYPE=TEXT NAME="ENDTIME" ID="ENDTIME" SIZE=40 VALUE=""></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 2009/02/01 )</FONT></TD>
      </TR>
+
+     <tr>
+       <td colspan=2>&nbsp;</td>
+       <td colspan=2>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTLASTMONTHBEGIN'; document.getElementById('ENDTIME').value='&EVENTCURRMONTHBEGIN'; return false">Last&nbsp;month</button>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTCURRMONTHBEGIN'; document.getElementById('ENDTIME').value='&EVENTNOW'; return false">Current&nbsp;month</button>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTLASTWEEKBEGIN'; document.getElementById('ENDTIME').value='&EVENTCURRWEEKBEGIN'; return false">Last&nbsp;week</button>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTCURRWEEKBEGIN'; document.getElementById('ENDTIME').value='&EVENTNOW'; return false">Current&nbsp;week</button>
+       </td>
+     </tr>
 
      <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Format</B></FONT></TD>

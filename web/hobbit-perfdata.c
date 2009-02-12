@@ -32,7 +32,9 @@ char *exhostpattern = NULL;
 char *pagepattern = NULL;
 char *expagepattern = NULL;
 char *starttime = NULL;
+char *starttimedate = NULL, *starttimehm = NULL;
 char *endtime = NULL;
+char *endtimedate = NULL, *endtimehm = NULL;
 char *customrrd = NULL;
 char *customds = NULL;
 
@@ -104,8 +106,8 @@ int oneset(char *hostname, char *rrdname, char *starttime, char *endtime, char *
 	rrdargs[0] = "rrdfetch";
 	rrdargs[1] = rrdname;
 	rrdargs[2] = "AVERAGE";
-	rrdargs[3] = "-s"; rrdargs[4] = starttime; rrdargs[5] = "00:00";
-	rrdargs[6] = "-e"; rrdargs[7] = endtime; rrdargs[8] = "00:00";
+	rrdargs[3] = "-s"; rrdargs[4] = starttimedate; rrdargs[5] = starttimehm;
+	rrdargs[6] = "-e"; rrdargs[7] = endtimedate; rrdargs[8] = endtimehm;
 	rrdargs[9] = NULL;
 
 	optind = opterr = 0; rrd_clear_error();
@@ -275,6 +277,43 @@ int onehost(char *hostname, char *starttime, char *endtime)
 	return 0;
 }
 
+void format_rrdtime(char *t, char **tday, char **thm)
+{
+	int year, month, day, hour, min,sec;
+	int n, parseerror;
+	time_t now = getcurrenttime(NULL);
+	struct tm *nowtm = localtime(&now);
+
+	if (t == NULL) return;
+
+	/* Input is YYYY/MM/DD@HH:MM:SS or YYYYMMDD or MMDD */
+	parseerror = 0;
+	n = sscanf(t, "%d/%d/%d@%d:%d:%d", &year, &month, &day, &hour, &min, &sec);
+	switch (n) {
+	  case 6: break; /* Got all */
+	  case 5: sec = 0; break;
+	  case 4: min = sec = 0; break;
+	  case 3: hour = min = sec = 0; break;
+	  default: parseerror = 1; break;
+	}
+
+	parseerror = 0;
+	hour = min = sec = 0;
+	n = sscanf(t, "%d/%d/%d", &year, &month, &day);
+	switch (n) {
+	  case 3: break; /* Got all */
+	  case 2: day = month; month = year; year = nowtm->tm_year + 1900;
+	  default: parseerror = 1; break;
+	}
+
+	if (year < 100) year += 2000;
+
+	*tday = (char *)malloc(10);
+	sprintf(*tday, "%4d%02d%02d", year, month, day);
+	*thm = (char *)malloc(20);
+	sprintf(*thm, "%02d:%02d:%02d", hour, min, sec);
+}
+
 int main(int argc, char **argv)
 {
 	pcre *hostptn, *exhostptn, *pageptn, *expageptn;
@@ -322,6 +361,8 @@ int main(int argc, char **argv)
 
 		/* Parse CGI parameters */
 		parse_query();
+		format_rrdtime(starttime, &starttimedate, &starttimehm);
+		format_rrdtime(endtime, &endtimedate, &endtimehm);
 
 		switch (outform) {
 		  case O_XML:

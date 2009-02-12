@@ -1264,6 +1264,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			t = mktime(tm);
 			fprintf(output, "%s", eventreport_timestring(t));
 		}
+		else if (strncmp(t_start, "EVENTNOW", 8) == 0) {
+			time_t t = getcurrenttime(NULL);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
 
 		else if (*t_start && (savechar == ';')) {
 			/* A "&xxx;" is probably an HTML escape - output unchanged. */
