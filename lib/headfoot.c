@@ -455,6 +455,35 @@ static char *eventreport_timestring(time_t timestamp)
 	return result;
 }
 
+static void build_pagepath_dropdown(FILE *output)
+{
+	RbtHandle ptree;
+	void *hwalk;
+	RbtIterator handle;
+
+	ptree = rbtNew(string_compare);
+
+	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
+		char *path = bbh_item(hwalk, BBH_PAGEPATH);
+		char *ptext;
+
+		handle = rbtFind(ptree, path);
+		if (handle != rbtEnd(ptree)) continue;
+
+		ptext = bbh_item(hwalk, BBH_PAGEPATHTITLE);
+		rbtInsert(ptree, ptext, path);
+	}
+
+	for (handle = rbtBegin(ptree); (handle != rbtEnd(ptree)); handle = rbtNext(ptree, handle)) {
+		char *path, *ptext;
+
+		rbtKeyValue(ptree, handle, (void **)&ptext, (void **)&path);
+		fprintf(output, "<option value=\"%s\">%s</option>\n", path, ptext);
+	}
+
+	rbtDelete(ptree);
+}
+
 
 typedef struct distest_t {
 	char *name;
@@ -1267,6 +1296,10 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		else if (strncmp(t_start, "EVENTNOW", 8) == 0) {
 			time_t t = getcurrenttime(NULL);
 			fprintf(output, "%s", eventreport_timestring(t));
+		}
+
+		else if (strncmp(t_start, "PAGEPATH_DROPDOWN", 17) == 0) {
+			build_pagepath_dropdown(output);
 		}
 
 		else if (*t_start && (savechar == ';')) {

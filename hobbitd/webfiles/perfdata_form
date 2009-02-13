@@ -18,8 +18,13 @@
       <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" ID="PAGEMATCH" SIZE=40></TD>
+       <!-- <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD> -->
+       <td>
+          <select name="PATHLIST" ID="PATHLIST" onChange="document.getElementById('PAGEMATCH').value=document.getElementById('PATHLIST').value; return false">
+	  &PAGEPATH_DROPDOWN
+	  </select>
+       </td>
      </TR>
 
       <TR>

@@ -374,18 +374,19 @@ int main(int argc, char **argv)
 			break;
 
 		  case O_NONE:
+			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 			printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 			showform(stdout, "perfdata", "perfdata_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 			return 0;
 		}
 	}
 
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+
 	if (hostpattern) hostptn = compileregex(hostpattern);
 	if (exhostpattern) exhostptn = compileregex(exhostpattern);
 	if (pagepattern) pageptn = compileregex(pagepattern);
 	if (expagepattern) expageptn = compileregex(expagepattern);
-
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	switch (outform) {
 	  case O_XML:
