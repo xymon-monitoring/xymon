@@ -27,6 +27,12 @@ the Changes file for a longer list):
 
 Several other changes for Xymon are planned in the coming months.
 
+If you are upgrading from Xymon 4.2.x, you can copy the "Makefile"
+from your old setup and use that to build Xymon 4.3.0. You must make
+one change in the top-level Makefile: The "SSLFLAGS" setting must
+be changed from "-DBBGEN_SSL" to "-DHAVE_OPENSSL=1".
+
+
 
 Changes from 4.2.2 -> 4.2.3
 ===========================
