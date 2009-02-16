@@ -1293,6 +1293,25 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			t = mktime(tm);
 			fprintf(output, "%s", eventreport_timestring(t));
 		}
+		else if (strncmp(t_start, "EVENTYESTERDAY", 14) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+
+			tm->tm_mday -= 1;
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
+		else if (strncmp(t_start, "EVENTTODAY", 10) == 0) {
+			time_t t = getcurrenttime(NULL);
+			struct tm *tm = localtime(&t);
+
+			tm->tm_hour = tm->tm_min = tm->tm_sec = 0;
+			tm->tm_isdst = -1;
+			t = mktime(tm);
+			fprintf(output, "%s", eventreport_timestring(t));
+		}
 		else if (strncmp(t_start, "EVENTNOW", 8) == 0) {
 			time_t t = getcurrenttime(NULL);
 			fprintf(output, "%s", eventreport_timestring(t));
