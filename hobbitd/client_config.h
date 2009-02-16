@@ -48,6 +48,9 @@ extern void get_zvsevsize_thresholds(void *hinfo, char *classname,
 extern void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
                         int *gv24yel, int *gv24red, int *gvanyyel, int *gvanyred);
 
+extern void get_asid_thresholds(void *hinfo, char *classname,
+                                 int *maxyellow, int *maxred);
+
 extern int get_paging_thresholds(void *hinfo, char *classname, 
 				 int *pagingyellow, int *pagingred);
 

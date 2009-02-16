@@ -4,7 +4,7 @@
 /* Client backend module for z/VSE, VSE/ESA and z/OS                          */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2006-2008 Rich Smrcina                                       */
+/* Copyright (C) 2006-2009 Rich Smrcina                                       */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -532,6 +532,90 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
         clearstrbuffer(countdata);
 }
 
+void zos_maxuser_report(char *hostname, char *clientclass, enum ostype_t os,
+                     void *hinfo, char *fromline, char *timestr, char *maxuserstr)
+{
+        char *p;
+        char maxustr[256];
+	long maxusers, maxufree, maxuused, rsvtstrt, rsvtfree, rsvtused, rsvnonr, rsvnfree, rsvnused;
+	int maxyellow, maxred;
+	float maxutil, rsvtutil, rsvnutil;
+
+        int maxcolor = COL_GREEN;
+        char msgline[4096];
+        strbuffer_t *upmsg;
+
+        if (!maxuserstr) return;
+        /*
+         *  Looking for eyecatchers in message
+         */
+
+        p = strstr(maxuserstr, "Maxusers: ") + 9;
+        if (p) {
+                sscanf(p, "%ld Free: %ld", &maxusers, &maxufree);
+                }
+
+        p = strstr(maxuserstr, "RSVTSTRT: ") + 9;
+        if (p) {
+                sscanf(p, "%ld Free: %ld", &rsvtstrt, &rsvtfree);
+                }
+
+        p = strstr(maxuserstr, "RSVNONR: ") + 8;
+        if (p) {
+                sscanf(p, "%ld Free: %ld", &rsvnonr, &rsvnfree);
+                }
+
+	maxuused = maxusers - maxufree;
+	rsvtused = rsvtstrt - rsvtfree;
+	rsvnused = rsvnonr  - rsvnfree;
+
+	if ( maxuused == 0.0 )
+		maxutil = 0;
+	else
+        	maxutil  = ((float)maxuused / (float)maxusers) * 100;
+
+	if ( rsvtused == 0.0 )
+		rsvtutil = 0;
+	else
+        	rsvtutil = ((float)rsvtused / (float)rsvtstrt) * 100;
+
+	if ( rsvnused == 0.0 )
+		rsvnutil = 0;
+	else
+        	rsvnutil = ((float)rsvnused / (float)rsvnonr)  * 100;
+
+        get_asid_thresholds(hinfo, clientclass, &maxyellow, &maxred);
+
+        upmsg = newstrbuffer(0);
+
+        if ((int)maxutil > maxred) {
+                if (maxcolor < COL_RED) maxcolor = COL_RED;
+                addtobuffer(upmsg, "&red ASID (Maxuser) Utilization is CRITICAL\n");
+                }
+        else if ((int)maxutil > maxyellow) {
+                if (maxcolor < COL_YELLOW) maxcolor = COL_YELLOW;
+                addtobuffer(upmsg, "&yellow ASID (Maxuser) Utilization is HIGH\n");
+                }
+
+        *maxustr = '\0';
+        sprintf(maxustr, " Maxuser: %8ld  Free: %8ld  Used: %8ld  %3.1f\nRSVTSTRT: %8ld  Free: %8ld  Used: %8ld  %3.1f\n RSVNONR: %8ld  Free: %8ld  Used: %8ld  %3.1f\n",maxusers,maxufree,maxuused,maxutil,rsvtstrt,rsvtfree,rsvtused,rsvtutil,rsvnonr,rsvnfree,rsvnused,rsvnutil);
+
+        init_status(maxcolor);
+        sprintf(msgline, "status %s.maxuser %s %s\n%s",
+                commafy(hostname), colorname(maxcolor),
+                (timestr ? timestr : "<no timestamp data>"),
+                maxustr);
+        addtostatus(msgline);
+        if (STRBUFLEN(upmsg)) {
+                addtostrstatus(upmsg);
+                addtostatus("\n");
+        }
+
+        if (fromline && !localmode) addtostatus(fromline);
+        finish_status();
+
+        freestrbuffer(upmsg);
+}
 
 void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 void *hinfo, char *sender, time_t timestamp,
@@ -546,6 +630,7 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
         char *cicsstr;          /* z/OS CICS Information */
 	char *jobsstr;		/* z/OS Running jobs  */
 	char *memstr;		/* z/OS Memory Utilization  */
+	char *maxuserstr;	/* z/OS Maxuser */
 	char *portsstr;
 	char *ifstatstr;
 
@@ -564,6 +649,7 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
         cicsstr = getdata("cics");
 	jobsstr = getdata("jobs");
 	memstr = getdata("memory");
+	maxuserstr = getdata("maxuser");
 	portsstr = getdata("ports");
 	ifstatstr = getdata("ifstat");
 
@@ -572,6 +658,7 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
         zos_cics_report(hostname, clienttype, os, hinfo, fromline, timestr, cicsstr);
 	zos_jobs_report(hostname, clienttype, os, hinfo, fromline, timestr, jobsstr);
 	zos_memory_report(hostname, clienttype, os, hinfo, fromline, timestr, memstr);
+	zos_maxuser_report(hostname, clienttype, os, hinfo, fromline, timestr, maxuserstr);
 	unix_disk_report(hostname, clienttype, os, hinfo, fromline, timestr, "Available", "Cap", "Mounted", dfstr);
 	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);

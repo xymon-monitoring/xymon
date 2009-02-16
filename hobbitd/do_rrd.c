@@ -545,6 +545,7 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_mdc.c"
 #include "rrd/do_cics.c"
 #include "rrd/do_getvis.c"
+#include "rrd/do_asid.c"
 
 
 /*
@@ -615,6 +616,8 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "mdc") == 0)         res = do_mdc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "cics") == 0)        res = do_cics_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "getvis") == 0)      res = do_getvis_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "maxuser") == 0)     res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "nparts") == 0)      res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/* 
 	 * These are from the hobbit-perl-client
