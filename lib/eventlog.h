@@ -13,7 +13,7 @@
 
 /* Format of records in the $BBHIST/allevents file */
 typedef struct event_t {
-	void *host;
+	void    *host;
 	struct htnames_t *service;
 	time_t	eventtime;
 	time_t	changetime;
@@ -23,6 +23,20 @@ typedef struct event_t {
 	int	state;		/* 2=escalated, 1=recovered, 0=no change */
 	struct event_t *next;
 } event_t;
+
+typedef struct eventcount_t {
+	struct htnames_t *service;
+	unsigned long count;
+	struct eventcount_t *next;
+} eventcount_t;
+typedef struct countlist_t {
+	void *src; /* May be a pointer to a host or a service */
+	unsigned long total;
+	struct countlist_t *next;
+} countlist_t;
+
+typedef enum { S_NONE, S_HOST_BREAKDOWN, S_SERVICE_BREAKDOWN } eventsummary_t;
+typedef enum { COUNT_NONE, COUNT_EVENTS, COUNT_DURATION } countsummary_t;
 
 typedef int (*f_hostcheck)(char *hostname);
 
@@ -34,6 +48,8 @@ extern void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromti
 			char *hostmatch, char *exhostmatch, 
 			char *testmatch, char *extestmatch,
 			char *colormatch, int ignoredialups,
-			f_hostcheck hostcheck);
+			f_hostcheck hostcheck,
+			event_t **eventlist, countlist_t **hostcounts, countlist_t **servicecounts,
+			countsummary_t counttype, eventsummary_t sumtype, char *periodstring);
 
 #endif

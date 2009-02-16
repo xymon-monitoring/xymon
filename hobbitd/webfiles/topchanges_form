@@ -2,15 +2,7 @@
 <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
    <TABLE BORDER=0 SUMMARY="Eventlog time period">
      <TR>
-       <TD><TABLE BORDER=0>
-         <TR>
-           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Starting </B></FONT></TD>
-           <TD><INPUT TYPE=TEXT NAME="MAXTIME" SIZE=40></TD>
-           <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B> minutes ago </B>( Default 1440 )</FONT></TD> 
-         </TR>
-         <TR>
-           <TD COLSPAN=3 ALIGN=CENTER><FONT FACE="Arial, Helvetica" COLOR="silver"><B>&nbsp;- OR -&nbsp;</B></FONT></TD>
-         </TR>
+       <TD><TABLE BORDER=0 SUMMARY="Time criteria">
          <TR>
            <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD> 
            <TD><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40 ID="starttime"></TD>
@@ -39,13 +31,6 @@
 
    <TABLE BORDER=0 SUMMARY="Eventlog criteria">
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Max # of events</B></FONT></TD>
-       <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="MAXCOUNT" SIZE=40 VALUE=100></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( Default 100 )</FONT></TD>
-     </TR>
-
-     <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="HOSTMATCH" SIZE=40></TD>
@@ -59,7 +44,7 @@
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
      </TR>
 
-     <TR>
+      <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" ID="PAGEMATCH" SIZE=40></TD>
@@ -99,16 +84,51 @@
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Ignore dialup hosts</B></FONT></TD>
+        <td colspan=4>
+	  <table summary="Selection options" border=0><tr>
+	      <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Only Critical systems</B></FONT></TD>
+              <TD WIDTH=10>&nbsp;</TD>
+              <TD><INPUT TYPE=CHECKBOX NAME="ONLYCRITITCAL"></TD>
+              <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+
+	      <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Ignore dialup hosts</B></FONT></TD>
+              <TD WIDTH=10>&nbsp;</TD>
+              <TD><INPUT TYPE=CHECKBOX NAME="NODIALUPS"></TD>
+              <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+	  </tr></table>
+	</td>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Rank by</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=CHECKBOX NAME="NODIALUPS"></TD>
+       <TD>
+          <SELECT NAME="COUNTTYPE">
+	    <OPTION VALUE="events" SELECTED>Number of changes</OPTION>
+	    <OPTION VALUE="duration">Duration of red/yellow events</OPTION>
+	  </SELECT>
+       </TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Show top</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD>
+          <SELECT NAME="TOP">
+	    <OPTION VALUE="5">5</OPTION>
+	    <OPTION VALUE="10" SELECTED>10</OPTION>
+	    <OPTION VALUE="25">25</OPTION>
+	    <OPTION VALUE="50">50</OPTION>
+	  </SELECT>
+       </TD>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
      </TR>
 
      <TR>
         <TD COLSPAN=3 ALIGN=CENTER>
           <BR><BR>
-          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="View log" ALT="View log">
+          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="Show" ALT="Show">
         </TD>
      </TR>
    </TABLE>

@@ -15,7 +15,7 @@
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
      </TR>
 
-      <TR>
+     <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" ID="PAGEMATCH" SIZE=40></TD>
@@ -27,7 +27,7 @@
        </td>
      </TR>
 
-      <TR>
+     <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to skip</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="EXPAGEMATCH" SIZE=40></TD>

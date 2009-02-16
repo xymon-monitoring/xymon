@@ -111,6 +111,7 @@ int main(int argc, char *argv[])
 	}
 
 	redirect_cgilog("hobbit-notifylog");
+	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
@@ -123,7 +124,6 @@ int main(int argc, char *argv[])
 	}
 
 	parse_query();
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	/* Now generate the webpage */
 	headfoot(stdout, "notify", "", "header", COL_GREEN);

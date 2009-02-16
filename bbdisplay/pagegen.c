@@ -951,11 +951,18 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	while (p) {
 		/* Dont redo the eventlog or acklog things */
 		if (strcmp(p, "eventlog.sh") == 0) {
-			if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime,
-				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, host_exists);
+			if (bb2eventlog && !havedoneeventlog) {
+				do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime,
+				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
+				host_exists,
+				NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
+			}
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
 			if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
+		}
+		else if (strcmp(p, "summaries") == 0) {
+			do_summaries(dispsums, output);
 		}
 		else {
 			sprintf(extfn, "%s/ext/%s/%s", xgetenv("BBHOME"), family, p);
@@ -1129,7 +1136,12 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		do_bb2ext(output, "BBMKBB2EXT", "mkbb");
 
 		/* Dont redo the eventlog or acklog things */
-		if (bb2eventlog && !havedoneeventlog) do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, host_exists);
+		if (bb2eventlog && !havedoneeventlog) {
+			do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, 
+				    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
+				    host_exists,
+				    NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
+		}
 		if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
 	}
 

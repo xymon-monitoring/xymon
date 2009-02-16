@@ -30,6 +30,8 @@
         <button onclick="document.getElementById('starttime').value='&EVENTCURRYEARBEGIN'; document.getElementById('endtime').value=''; return false">This year</button>
         <button onclick="document.getElementById('starttime').value='&EVENTCURRMONTHBEGIN'; document.getElementById('endtime').value=''; return false">This month</button>
         <button onclick="document.getElementById('starttime').value='&EVENTCURRWEEKBEGIN'; document.getElementById('endtime').value=''; return false">This week</button>
+        <button onclick="document.getElementById('starttime').value='&EVENTYESTERDAY'; document.getElementById('endtime').value='&EVENTTODAY'; return false">Yesterday</button>
+        <button onclick="document.getElementById('starttime').value='&EVENTTODAY'; document.getElementById('endtime').value='&EVENTNOW'; return false">Today</button>
      </TD></TR>
    </TABLE>
 
@@ -57,14 +59,18 @@
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
      </TR>
 
-      <TR>
+     <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" ID="PAGEMATCH" SIZE=40></TD>
+       <td>
+          <select name="PATHLIST" ID="PATHLIST" onChange="document.getElementById('PAGEMATCH').value=document.getElementById('PATHLIST').value; return false">
+	  &PAGEPATH_DROPDOWN
+	  </select>
+       </td>
      </TR>
 
-      <TR>
+     <TR>
        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to skip</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
        <TD><INPUT TYPE=TEXT NAME="EXPAGEMATCH" SIZE=40></TD>
