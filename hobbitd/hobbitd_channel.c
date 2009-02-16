@@ -318,7 +318,6 @@ int addmessage(char *inbuf)
 			}
 			*hostend = '\0';
 			peerlocation = locator_query(hostname, locatorservice, NULL);
-			*hostend = '|';
 
 			/*
 			 * If we get no response, or an empty response, 
@@ -327,10 +326,11 @@ int addmessage(char *inbuf)
 			 */
 			if (!peerlocation || (*peerlocation == '\0')) {
 				errprintf("No response from locator for %s/%s, dropping it\n",
-					  locatorservice, hostname);
+					  servicetype_names[locatorservice], hostname);
 				return -1;
 			}
 
+			*hostend = '|';
 			phandle = rbtFind(peers, peerlocation);
 			if (phandle == rbtEnd(peers)) {
 				/* New peer - register it */
