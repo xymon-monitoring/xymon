@@ -526,6 +526,9 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports netstat for an unknown OS\n", hostname);
 		return -1;
+
+	  default:
+		return -1;
 	}
 
 	if (havedata > 0) {
