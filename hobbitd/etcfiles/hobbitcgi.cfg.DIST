@@ -51,3 +51,14 @@ CGI_ACK_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-pin"
 # hobbit-enadis.cgi options
 CGI_ENADIS_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
 
+# hobbit-hostlist options
+CGI_HOSTLIST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-notifylog options
+CGI_NOTIFYLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-perfdata options
+CGI_PERFDATA_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-topchanges options
+CGI_TOPCHANGE_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --top"
+# hobbit-useradm options
+CGI_USERADM_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
