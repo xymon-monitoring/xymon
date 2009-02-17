@@ -64,6 +64,8 @@ typedef struct treerec_t {
 } treerec_t;
 
 static int backdays = 0, backhours = 0, backmins = 0, backsecs = 0;
+static char hostenv_eventtimestart[20];
+static char hostenv_eventtimeend[20];
 
 typedef struct listrec_t {
 	char *name, *val, *extra;
@@ -327,6 +329,12 @@ void sethostenv_backsecs(int seconds)
 	backsecs = seconds;
 }
 
+void sethostenv_eventtime(time_t starttime, time_t endtime)
+{
+	*hostenv_eventtimestart = *hostenv_eventtimeend = '\0';
+	if (starttime) strftime(hostenv_eventtimestart, sizeof(hostenv_eventtimestart), "%Y/%m/%d@%H:%M:%S", localtime(&starttime));
+	if (endtime) strftime(hostenv_eventtimeend, sizeof(hostenv_eventtimeend), "%Y/%m/%d@%H:%M:%S", localtime(&endtime));
+}
 
 char *wkdayselect(char wkday, char *valtxt, int isdefault)
 {
@@ -1319,6 +1327,12 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 
 		else if (strncmp(t_start, "PAGEPATH_DROPDOWN", 17) == 0) {
 			build_pagepath_dropdown(output);
+		}
+		else if (strncmp(t_start, "EVENTSTARTTIME", 8) == 0) {
+			fprintf(output, "%s", hostenv_eventtimestart);
+		}
+		else if (strncmp(t_start, "EVENTENDTIME", 8) == 0) {
+			fprintf(output, "%s", hostenv_eventtimeend);
 		}
 
 		else if (*t_start && (savechar == ';')) {

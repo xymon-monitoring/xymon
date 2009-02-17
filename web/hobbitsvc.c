@@ -41,6 +41,7 @@ static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
 static char *clienturi = NULL;
 static int backsecs = 0;
+static time_t fromtime = 0, endtime = 0;
 
 static char errortxt[1000];
 static char *hostdatadir = NULL;
@@ -113,6 +114,12 @@ static int parse_query(void)
 		}
 		else if ((strcmp(cwalk->name, "backdays") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			backsecs += 24*60*60*atoi(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "FROMTIME") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			fromtime = eventreport_time(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "TOTIME") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			endtime = eventreport_time(cwalk->value);
 		}
 
 		cwalk = cwalk->next;
@@ -255,10 +262,17 @@ int do_request(void)
 				}
 			}
 			else {
-				time_t endtime = getcurrenttime(NULL);
+				if (endtime == 0) endtime = getcurrenttime(NULL);
 
-				sethostenv_backsecs(backsecs);
-				log = restofmsg = generate_trends(hostname, endtime-backsecs, endtime);
+				if (fromtime == 0) {
+					fromtime = endtime - backsecs;
+					sethostenv_backsecs(backsecs);
+				}
+				else {
+					sethostenv_eventtime(fromtime, endtime);
+				}
+
+				log = restofmsg = generate_trends(hostname, fromtime, endtime);
 			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
