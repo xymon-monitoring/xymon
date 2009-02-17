@@ -1016,12 +1016,12 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 	/*
 	 * Setup the arguments for calling rrd_graph. 
-	 * There's up to 15 standard arguments, plus the 
+	 * There's up to 16 standard arguments, plus the 
 	 * graph-specific ones (which may be repeated if
 	 * there are multiple RRD-files to handle).
 	 */
 	for (pcount = 0; (gdef->defs[pcount]); pcount++) ;
-	rrdargs = (char **) calloc(15 + pcount*rrddbcount + 1, sizeof(char *));
+	rrdargs = (char **) calloc(16 + pcount*rrddbcount + 1, sizeof(char *));
 
 
 	argi = 0;
