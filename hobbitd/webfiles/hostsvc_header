@@ -13,31 +13,6 @@
 <!-- The favicon image -->
 <link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
 
-<script language="JavaScript1.2" type="text/javascript">
-
-function validateInput(theform) {
-        if (theform.NOTE.value == null || theform.NOTE.value == "") {
-                alert("You must provide an acknowledgment text");
-                theform.NOTE.focus();
-                return false;
-        }
-
-	disableButtons(theform,true);
-	theform.submit();
-}
-
-function disableButtons(theform,action) {
-	if (document.all || document.getElementById) {
-		for (i = 0; i < theform.length; i++) {
-			var tempobj = theform.elements[i];
-			if (tempobj.type.toLowerCase() == "button")
-				tempobj.disabled = action;
-		}
-	}
-}
-
-</script>
-
 </HEAD>
 
 <BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
