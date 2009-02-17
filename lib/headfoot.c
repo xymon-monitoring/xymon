@@ -1509,11 +1509,11 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 		inbuf[st.st_size] = '\0';
 		close(formfile);
 
-		headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "header", color);
+		if (headertemplate) headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "header", color);
 		if (pretext) fprintf(output, "%s", pretext);
 		output_parsed(output, inbuf, color, seltime);
 		if (posttext) fprintf(output, "%s", posttext);
-		headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "footer", color);
+		if (headertemplate) headfoot(output, headertemplate, (hostenv_pagepath ? hostenv_pagepath : ""), "footer", color);
 
 		xfree(inbuf);
 	}
