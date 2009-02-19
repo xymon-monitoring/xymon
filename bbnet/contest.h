@@ -52,6 +52,7 @@ extern char *ssl_library_version;
 extern char *ciphershigh;
 extern char *ciphersmedium;
 extern unsigned int warnbytesread;
+extern int shuffletests;
 
 #define SSLVERSION_DEFAULT 0
 #define SSLVERSION_V2      1
@@ -78,6 +79,7 @@ typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	char *srcaddr;
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
+	long int randomizer;
 	int  fd;                        /* Socket filedescriptor */
 	time_t lastactive;
 	time_t cutoff;

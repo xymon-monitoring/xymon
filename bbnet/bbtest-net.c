@@ -1947,6 +1947,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-flags") == 0) {
 			dosendflags = 0;
 		}
+		else if (strcmp(argv[argi], "--shuffle") == 0) {
+			shuffletests = 1;
+		}
 
 		/* Options for PING tests */
 		else if (argnmatch(argv[argi], "--ping")) {

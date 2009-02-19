@@ -196,6 +196,15 @@ e.g. to pick different icons for reversed tests when
 generating the Xymon webpages. This option makes
 bbtest-net omit these flags from the status messages.
 
+.IP --shuffle
+By default, TCP tests run roughly in the order that the hosts
+are listed in the bb-hosts file. If you have many tests for
+one server, this may result in an exceptionally large
+load when Xymon is testing it because Xymon will perform
+a lot of tests at the same time. To avoid this, the
+\fB--shuffle\fR option reorders the sequence of tests
+so they are spread randomly across all of the servers
+tested.
 
 .SH OPTIONS FOR THE PING TEST
 Note: bbtest-net uses the program defined by the FPING

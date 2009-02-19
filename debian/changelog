@@ -1,4 +1,4 @@
-hobbit (4.3.0-0.20090211) unstable; urgency=low
+hobbit (4.3.0-1) unstable; urgency=low
 
   * Xymon version 4.3.0
 
@@ -13,6 +13,7 @@ hobbit (4.3.0-0.20090211) unstable; urgency=low
   * Worker modules (RRD, client-data parsers etc) can operate on
     remote hosts from the hobbitd daemon, for load-sharing.
   * Various bugfixes collected over time.
+  * New client support: z/OS, z/VSE and z/VM.
 
   Network test changes:
   * Merged new network tests from trunk: SOAP-over-HTTP,
@@ -36,6 +37,7 @@ hobbit (4.3.0-0.20090211) unstable; urgency=low
     for the common selections.
   * Ghost list report now lists possible candidates for a ghost,
     based on IP-address or unqualified hostname.
+  * Enhanced eventlog and top-changing hosts webpage
 
   Report changes
   * Number of outages as SLA parameter
@@ -44,7 +46,7 @@ hobbit (4.3.0-0.20090211) unstable; urgency=low
   * hobbitlaunch support for running tasks only on certain hosts,
     and for a maximum time.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Mon, 09 Feb 2009 11:36:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 16 Feb 2009 14:01:00 +0100
 
 hobbit (4.2.3-1) unstable; urgency=low
 

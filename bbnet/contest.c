@@ -63,6 +63,8 @@ unsigned int warnbytesread = 0;
 
 static tcptest_t *thead = NULL;
 
+int shuffletests = 0;
+
 static svcinfo_t svcinfo_http  = { "http", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP), 80 };
 static svcinfo_t svcinfo_https = { "https", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP|TCP_SSL), 443 };
 static ssloptions_t default_sslopt = { NULL, SSLVERSION_DEFAULT };
@@ -751,6 +753,25 @@ static void socket_shutdown(tcptest_t *item)
 #endif
 
 
+static int tcptest_compare(void **a, void **b)
+{
+	tcptest_t **tcpa = (tcptest_t **)a;
+	tcptest_t **tcpb = (tcptest_t **)b;
+
+	if ((*tcpa)->randomizer < (*tcpb)->randomizer) return -1;
+	else if ((*tcpa)->randomizer > (*tcpb)->randomizer) return 1;
+	else return 0;
+}
+static void * tcptest_getnext(void *a)
+{
+	return ((tcptest_t *)a)->next;
+}
+static void tcptest_setnext(void *a, void *newval)
+{
+	((tcptest_t *)a)->next = (tcptest_t *)newval;
+}
+
+
 void do_tcp_tests(int timeout, int concurrency)
 {
 	int		selres;
@@ -791,8 +812,20 @@ void do_tcp_tests(int timeout, int concurrency)
 	dbgprintf("Concurrency evaluation: rlim_cur=%lu, FD_SETSIZE=%d, absmax=%d, initial=%d\n", 
 		  lim.rlim_cur, FD_SETSIZE, absmaxconcurrency, concurrency);
 
+	if (shuffletests) {
+		struct timeval tv;
+		struct timezone tz;
+		gettimeofday(&tv, &tz);
+		srandom(tv.tv_usec);
+	}
+
 	/* How many tests to do ? */
-	for (item = thead; (item); item = item->next) pending++; 
+	for (item = thead; (item); item = item->next) {
+		if (shuffletests) item->randomizer = random();
+		pending++; 
+	}
+	if (shuffletests) thead = msort(thead, tcptest_compare, tcptest_getnext, tcptest_setnext);
+
 	firstactive = nextinqueue = thead;
 	dbgprintf("About to do %d TCP tests running %d in parallel, abs.max %d\n", 
 		  pending, concurrency, absmaxconcurrency);
