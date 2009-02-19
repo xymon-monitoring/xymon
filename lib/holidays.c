@@ -328,9 +328,12 @@ static void add_holiday(char *key, int year, holiday_t *newhol)
 	}
 }
 
-static int record_compare(void *a, void *b)
+static int record_compare(void **a, void **b)
 {
-	return (((holiday_t *)a)->yday < ((holiday_t *)b)->yday);
+	holiday_t **reca = (holiday_t **)a;
+	holiday_t **recb = (holiday_t **)b;
+
+	return ((*reca)->yday < (*recb)->yday);
 }
 
 static void * record_getnext(void *a)
