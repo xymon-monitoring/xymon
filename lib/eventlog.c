@@ -56,11 +56,13 @@ static char *string_time(time_t timestamp)
 	return result;
 }
 
-int record_compare(void *a, void *b)
+int record_compare(void **a, void **b)
 {
+	countlist_t **reca = (countlist_t **)a, **recb = (countlist_t **)b;
+
 	/* Sort the countlist_t records in reverse */
-	if (((countlist_t *)a)->total > ((countlist_t *)b)->total) return -1;
-	else if (((countlist_t *)a)->total < ((countlist_t *)b)->total) return 1;
+	if ( (*reca)->total > (*recb)->total )  return -1;
+	else if ( (*reca)->total < (*recb)->total ) return 1;
 	else return 0;
 }
 
