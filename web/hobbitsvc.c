@@ -309,8 +309,6 @@ int do_request(void)
 		}
 
 		sres = newsendreturnbuf(1, NULL);
-
-		sres = newsendreturnbuf(1, NULL);
 		hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
 		if (hobbitdresult == BB_OK) log = getsendreturnstr(sres, 1);
 		freesendreturnbuf(sres);
