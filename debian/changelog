@@ -1,6 +1,7 @@
 hobbit (4.2.3-1) unstable; urgency=low
 
   * Xymon version 4.2.3 release
+  * Fixed ACK cookie handling broken in 4.2.2, could crash hobbitd
   * Time-out code changed to use clock_gettime() with CLOCK_MONOTONIC
   * Bugfix for hobbitd/hobbitd_worker communication going out-of-sync
     resulting in "garbled data" being logged and worker modules 
@@ -14,7 +15,7 @@ hobbit (4.2.3-1) unstable; urgency=low
   * Added "hostlist" web utility for spreadsheet-reporting of the
     hosts in Hobbit.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Mon, 09 Feb 2009 10:46:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 22 Feb 2009 11:36:00 +0100
 
 hobbit (4.2.2-1) unstable; urgency=low
 
