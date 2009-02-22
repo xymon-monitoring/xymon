@@ -62,6 +62,9 @@ else
 fi
 echo ""; echo ""
 
+MAKE="$MAKE -s" . ./build/clock-gettime-librt.sh
+echo ""; echo ""
+
 echo "What userid will be running Xymon [xymon] ?"
 if test -z "$BBUSER"
 then
@@ -164,6 +167,7 @@ echo "# Xymon server IP-address"         >>Makefile
 echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
+echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
