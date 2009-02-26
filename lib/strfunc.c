@@ -118,7 +118,7 @@ static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
 
 void addtobuffer(strbuffer_t *buf, char *newtext)
 {
-	strbuf_addtobuffer(buf, newtext, strlen(newtext));
+	if (newtext) strbuf_addtobuffer(buf, newtext, strlen(newtext));
 }
 
 void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext)
