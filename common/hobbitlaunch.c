@@ -380,7 +380,7 @@ void load_config(char *conffn)
 	}
 
 	/* First clean out dead tasks at the start of the list */
-	while (taskhead->cfload == -1) {
+	while (taskhead && (taskhead->cfload == -1)) {
 		tasklist_t *tmp;
 
 		tmp = taskhead;
