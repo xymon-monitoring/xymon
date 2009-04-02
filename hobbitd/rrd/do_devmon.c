@@ -64,7 +64,7 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			dbgprintf("Found %d DS definitions\n",numds);
 			devmon_params[numds] = NULL;
 
-			if (devmon_tpl == NULL) devmon_tpl = setup_template(devmon_params);
+			devmon_tpl = setup_template(devmon_params);
 			goto nextline;
 		}
 
