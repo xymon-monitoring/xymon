@@ -32,6 +32,8 @@ static char rcsid[] = "$Id$";
 
 #include "hobbitd_worker.h"
 
+int rotatefiles = 0;
+
 void sig_handler(int signum)
 {
 	/*
@@ -39,6 +41,10 @@ void sig_handler(int signum)
 	 */
 	switch (signum) {
 	  case SIGCHLD:
+		  break;
+
+	  case SIGHUP:
+		  rotatefiles = 1;
 		  break;
 	}
 }
@@ -59,7 +65,11 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	char newcol2[3];
 	char oldcol2[3];
+	char alleventsfn[PATH_MAX];
+	char pidfn[PATH_MAX];
 
+	MEMDEFINE(pidfn);
+	MEMDEFINE(alleventsfn);
 	MEMDEFINE(newcol2);
 	MEMDEFINE(oldcol2);
 
@@ -98,19 +108,22 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	sprintf(pidfn, "%s/hobbitd_history.pid", xgetenv("BBSERVERLOGS"));
+	{
+		FILE *pidfd = fopen(pidfn, "w");
+		if (pidfd) {
+			fprintf(pidfd, "%d\n", getpid());
+			fclose(pidfd);
+		}
+	}
+
+	sprintf(alleventsfn, "%s/allevents", histdir);
 	if (save_allevents) {
-		char alleventsfn[PATH_MAX];
-
-		MEMDEFINE(alleventsfn);
-
-		sprintf(alleventsfn, "%s/allevents", histdir);
 		alleventsfd = fopen(alleventsfn, "a");
 		if (alleventsfd == NULL) {
 			errprintf("Cannot open the all-events file '%s'\n", alleventsfn);
 		}
 		setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
-
-		MEMUNDEFINE(alleventsfn);
 	}
 
 	/* For picking up lost children */
@@ -118,6 +131,7 @@ int main(int argc, char *argv[])
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {
@@ -136,6 +150,17 @@ int main(int argc, char *argv[])
 
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
+
+		if (rotatefiles && alleventsfd) {
+			fclose(alleventsfd);
+			alleventsfd = fopen(alleventsfn, "a");
+			if (alleventsfd == NULL) {
+				errprintf("Cannot re-open the all-events file '%s'\n", alleventsfn);
+			}
+			else {
+				setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+			}
+		}
 
 		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
 		if (msg == NULL) {
@@ -648,8 +673,12 @@ int main(int argc, char *argv[])
 
 	MEMUNDEFINE(newcol2);
 	MEMUNDEFINE(oldcol2);
+	MEMUNDEFINE(alleventsfn);
+	MEMUNDEFINE(pidfn);
 
 	fclose(alleventsfd);
+	unlink(pidfn);
+
 	return 0;
 }
 

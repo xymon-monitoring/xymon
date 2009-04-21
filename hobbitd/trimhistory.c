@@ -22,6 +22,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <utime.h>
 #include <limits.h>
+#include <signal.h>
 
 #include "libbbgen.h"
 
@@ -204,6 +205,22 @@ void trim_files(time_t cutoff)
 		}
 
 		trim_history(infd, outfd, fwalk->ftype, cutoff);
+		if (fwalk->ftype == F_ALLEVENTS) {
+			char pidfn[PATH_MAX];
+			FILE *fd;
+			long pid = -1;
+
+			sprintf(pidfn, "%s/hobbitd_history.pid", xgetenv("BBSERVERLOGS"));
+			fd = fopen(pidfn, "r");
+			if (fd) {
+				char l[100];
+				fgets(l, sizeof(l), fd);
+				fclose(fd);
+				pid = atol(l);
+			}
+
+			if (pid > 0) kill(pid, SIGHUP);
+		}
 
 		fclose(infd);
 		fclose(outfd);
