@@ -33,6 +33,19 @@ one change in the top-level Makefile: The "SSLFLAGS" setting must
 be changed from "-DBBGEN_SSL" to "-DHAVE_OPENSSL=1".
 
 
+NOTE: For users of the TRACKMAX feature present in 4.2.2 and
+later 4.2.x releases: This feature has been dropped. Instead,
+you should add a definition for the tests that you want to track
+max-values for to the hobbit-rrddefinitions.cfg file. E.g. to
+track max-values for the "mytest" status column:
+
+[mytest]
+	RRA:MAX:0.5:1:576
+	RRA:MAX:0.5:6:576
+	RRA:MAX:0.5:24:576
+	RRA:MAX:0.5:288:576
+
+
 
 Changes from 4.2.2 -> 4.2.3
 ===========================
