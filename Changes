@@ -1,5 +1,27 @@
 Changes from 4.3.0 beta 1 -> 4.3.0 beta 2 (24 Apr 2009)
 =======================================================
+* New "--shuffle" option for bbtest-net to run network tests
+  in a random order.
+* Client startup script now exports important environment variables,
+  so they are actually used in systems with a traditional shell.
+* hobbitlaunch no longer crashes if there are no tasks
+* Client configure script includes librt for clock_gettime()
+* New client support for mainframes: z/OS, z/VM, z/VSE
+* Enhanced eventlog and top-changing hosts webpages.
+* Revert debian package pathnames back to use "hobbit", so
+  updates from 4.2.x will actually work.
+* Ghostlist options in hobbitcgi.cfg had no effect because
+  of typo in setting name.
+* "data" messages could crash hobbitd.
+* Debug output from hobbitd_channel now logs only the relevant
+  data instead of the full message.
+* trimhistory now informs the history module to re-open the
+  "allevents" file after trimming it.
+* devmon template fix
+* New "rrdcachectl" utility included.
+* Fixed sorting routine (affected holiday list and others)
+* Fix generic crash in communications module between Xymon
+  programs, where an empty response message would crash caller.
 
 Changes from 4.2.3 -> 4.3.0 beta 1 (09 Feb 2009)
 ================================================
