@@ -1,6 +1,6 @@
-hobbit (4.3.0-1) unstable; urgency=low
+hobbit (4.3.0-0.beta2) unstable; urgency=low
 
-  * Xymon version 4.3.0
+  * Xymon version 4.3.0 BETA 2
 
   Core changes:
   * New API's for loadhosts and sendmessage, in preparation for
@@ -46,7 +46,7 @@ hobbit (4.3.0-1) unstable; urgency=low
   * hobbitlaunch support for running tasks only on certain hosts,
     and for a maximum time.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Mon, 16 Feb 2009 14:01:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 24 May 2009 10:39:00 +0200
 
 hobbit (4.2.3-1) unstable; urgency=low
 

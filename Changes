@@ -1,5 +1,8 @@
-Changes from 4.2.3 -> 4.3.0 (09 Feb 2008)
-=========================================
+Changes from 4.3.0 beta 1 -> 4.3.0 beta 2 (24 Apr 2009)
+=======================================================
+
+Changes from 4.2.3 -> 4.3.0 beta 1 (09 Feb 2009)
+================================================
 Core changes:
 * New API's for loadhosts and sendmessage, in preparation for
   the full 5.0 changes.
