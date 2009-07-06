@@ -235,16 +235,16 @@ int onehost(char *hostname, char *starttime, char *endtime)
 	}
 
 	/*
-	 * Memory data - use "actual" memory if present, otherwise report
-	 * the data from the "real" reading.
+	 * Report all memory data - it depends on the OS of the host which one
+	 * really is interesting (memory.actual.rrd for Linux, memory.real.rrd for
+	 * most of the other systems).
 	 */
 	if (stat("memory.actual.rrd", &st) == 0) {
-		oneset(hostname, "memory.actual.rrd", starttime, endtime, "realmempct", 0, "RAM");
+		oneset(hostname, "memory.actual.rrd", starttime, endtime, "realmempct", 0, "Virtual");
 	}
-	else {
+	if (stat("memory.real.rrd", &st) == 0) {
 		oneset(hostname, "memory.real.rrd", starttime, endtime, "realmempct", 0, "RAM");
 	}
-
 	if (stat("memory.swap.rrd", &st) == 0) {
 		oneset(hostname, "memory.swap.rrd", starttime, endtime, "realmempct", 0, "Swap");
 	}
