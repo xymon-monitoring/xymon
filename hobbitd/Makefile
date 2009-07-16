@@ -55,7 +55,7 @@ do_alert.o: do_alert.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ do_alert.c
 
 do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
-	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) -c -o $@ do_rrd.c
+	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) $(RRDDEF) -c -o $@ do_rrd.c
 
 hobbitd_capture.o: hobbitd_capture.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbitd_capture.c
