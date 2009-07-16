@@ -11,6 +11,7 @@
 static char rcsid[] = "$Id$";
 
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,6 +20,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
+#include <utime.h>
 
 #include <rrd.h>
 #include <pcre.h>
@@ -221,6 +223,15 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	for (pcount = 0; (updparams[pcount]); pcount++);
 	optind = opterr = 0; rrd_clear_error();
 	result = rrd_update(pcount, updparams);
+
+#if defined(LINUX) && defined(RRDTOOL12)
+	/*
+	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
+	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
+	 * So do an explicit timestamp update on the file here.
+	 */
+	utimes(filedir, NULL);
+#endif
 
 	/* Clear the cached data */
 	for (i=0; (i < cacheitem->valcount); i++) xfree(cacheitem->vals[i]);
