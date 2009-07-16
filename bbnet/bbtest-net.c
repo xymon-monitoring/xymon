@@ -1104,7 +1104,7 @@ int start_ping_service(service_t *service)
 		execvp(cmd, cmdargs);
 
 		/* Should never go here ... just kill the child */
-		fprintf(stderr, "hobbitping invocation failed: %s\n", strerror(errno));
+		fprintf(stderr, "Command '%s' failed: %s\n", cmd, strerror(errno));
 		exit(99);
 	}
 	else {
