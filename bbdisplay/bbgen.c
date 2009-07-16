@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
 	int		hobbitddump = 0;
 	char		*envarea = NULL;
 	int		do_normal_pages = 1;
+	int		do_nongreen_page = 1;
 
 	/* Setup standard header+footer (might be modified by option pageset) */
 	select_headers_and_footers("bb");
@@ -366,6 +367,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "--no-pages") == 0) {
 			do_normal_pages = 0;
+		}
+		else if (strcmp(argv[i], "--no-bb2") == 0) {
+			do_nongreen_page = 0;
 		}
 
 		else if (argnmatch(argv[i], "--noprop=")) {
@@ -655,8 +659,10 @@ int main(int argc, char *argv[])
 	}
 
 	/* The full summary page - bb2.html */
-	bb2_color = do_bb2_page(nssidebarfilename, PAGE_BB2);
-	add_timestamp("BB2 generation done");
+	if (do_nongreen_page) {
+		bb2_color = do_bb2_page(nssidebarfilename, PAGE_BB2);
+		add_timestamp("BB2 generation done");
+	}
 
 	/* Reduced summary (alerts) page - bbnk.html */
 	bbnk_color = do_bb2_page(NULL, PAGE_NK);
