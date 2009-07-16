@@ -590,6 +590,11 @@ int main(int argc, char *argv[])
 	}
 
 	statehead = load_state(&dispsums);
+	if (statehead == NULL) {
+		errprintf("Failed to load current Xymon status, aborting page-update\n");
+		return 0;
+	}
+
 	if (embedded || snapshot) dispsums = NULL;
 	add_timestamp("Load STATE done");
 
