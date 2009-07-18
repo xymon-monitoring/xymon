@@ -330,8 +330,12 @@ int main(int argc, char **argv)
 		}
 
 		hostpattern = argv[1];
-		starttime = argv[2];
-		endtime = argv[3];
+		if (strncmp(hostpattern, "--page=", 7) == 0) {
+			pagepattern = strchr(argv[1], '=') + 1;
+			hostpattern = NULL;
+		}
+		starttimedate = argv[2]; starttimehm = "00:00:00";
+		endtimedate = argv[3]; endtimehm = "00:00:00";
 		if (argc > 4) {
 			if (strncmp(argv[4], "--csv", 5) == 0) {
 				char *p;
