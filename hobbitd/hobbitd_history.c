@@ -49,6 +49,12 @@ void sig_handler(int signum)
 	}
 }
 
+typedef struct columndef_t {
+	char *name;
+	int saveit;
+} columndef_t;
+RbtHandle columndefs;
+
 int main(int argc, char *argv[])
 {
 	time_t starttime = gettimer();
@@ -59,7 +65,7 @@ int main(int argc, char *argv[])
 	int save_allevents = 1;
 	int save_hostevents = 1;
 	int save_statusevents = 1;
-	int save_histlogs = 1;
+	int save_histlogs = 1, defaultsaveop = 1;
 	FILE *alleventsfd = NULL;
 	int running = 1;
 	struct sigaction sa;
@@ -78,7 +84,7 @@ int main(int argc, char *argv[])
 
 	if (xgetenv("BBALLHISTLOG")) save_allevents = (strcmp(xgetenv("BBALLHISTLOG"), "TRUE") == 0);
 	if (xgetenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("BBHOSTHISTLOG"), "TRUE") == 0);
-	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strcmp(xgetenv("SAVESTATUSLOG"), "TRUE") == 0);
+	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--histdir=")) {
@@ -106,6 +112,38 @@ int main(int argc, char *argv[])
 	if (save_histlogs && (histlogdir == NULL)) {
 		errprintf("No history-log directory given, aborting\n");
 		return 1;
+	}
+
+	columndefs = rbtNew(string_compare);
+	{
+		char *defaultsave, *tok;
+		char *savelist;
+		columndef_t *newrec;
+
+		savelist = strdup(xgetenv("SAVESTATUSLOG"));
+		defaultsave = strtok(savelist, ","); 
+		/*
+		 * TRUE: Save everything by default; may list some that are not saved.
+		 * ONLY: Save nothing by default; may list some that are saved.
+		 * FALSE: Save nothing.
+		 */
+		defaultsaveop = (strcasecmp(defaultsave, "TRUE") == 0);
+		tok = strtok(NULL, ",");
+		while (tok) {
+			newrec = (columndef_t *)malloc(sizeof(columndef_t));
+			if (*tok == '!') {
+				newrec->saveit = 0;
+				newrec->name = strdup(tok+1);
+			}
+			else {
+				newrec->saveit = 1;
+				newrec->name = strdup(tok);
+			}
+			rbtInsert(columndefs, newrec->name, newrec);
+
+			tok = strtok(NULL, ",");
+		}
+		xfree(savelist);
 	}
 
 	sprintf(pidfn, "%s/hobbitd_history.pid", xgetenv("BBSERVERLOGS"));
@@ -182,6 +220,9 @@ int main(int argc, char *argv[])
 		}
 
 		if ((metacount > 9) && (strncmp(metadata[0], "@@stachg", 8) == 0)) {
+			RbtIterator handle;
+			columndef_t *saveit = NULL;
+
 			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp */
 			sscanf(metadata[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			hostname = metadata[4];
@@ -200,6 +241,17 @@ int main(int argc, char *argv[])
 			}
 
 			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+
+			handle = rbtFind(columndefs, testname);
+			if (handle == rbtEnd(columndefs)) {
+				saveit = (columndef_t *)malloc(sizeof(columndef_t));
+				saveit->name = strdup(testname);
+				saveit->saveit = defaultsaveop;
+				rbtInsert(columndefs, saveit->name, saveit);
+			}
+			else {
+				saveit = (columndef_t *) gettreeitem(columndefs, handle);
+			}
 
 			if (save_statusevents) {
 				char statuslogfn[PATH_MAX];
@@ -343,7 +395,7 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(timestamp);
 			}
 
-			if (save_histlogs) {
+			if (save_histlogs && saveit->saveit) {
 				char *hostdash;
 				char fname[PATH_MAX];
 				FILE *histlogfd;
