@@ -2479,6 +2479,8 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 {
 	char *result = NULL;
 
+	*color = COL_GREEN;
+	*count = 0;
 	if (*walk == NULL) return NULL;
 
 	switch (ruletype) {
@@ -2488,7 +2490,6 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*count = (*walk)->rule->rule.proc.pcount;
 		*lowlim = (*walk)->rule->rule.proc.pmin;
 		*uplim = (*walk)->rule->rule.proc.pmax;
-		*color = COL_GREEN;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.proc.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.proc.color;
 		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
@@ -2501,7 +2502,6 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*count = (*walk)->rule->rule.disk.dcount;
 		*lowlim = (*walk)->rule->rule.disk.dmin;
 		*uplim = (*walk)->rule->rule.disk.dmax;
-		*color = COL_GREEN;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.disk.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.disk.color;
 		if (group) *group = (*walk)->rule->groups;
@@ -2548,7 +2548,6 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*count = (*walk)->rule->rule.port.pcount;
 		*lowlim = (*walk)->rule->rule.port.pmin;
 		*uplim = (*walk)->rule->rule.port.pmax;
-		*color = COL_GREEN;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.port.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.port.color;
 		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
@@ -2601,7 +2600,6 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 				xfree((*walk)->rule->rule.svc.startup);
 		}
                 *count = (*walk)->rule->rule.svc.scount;
-		*color = COL_GREEN;
 		if (*count == 0) *color = (*walk)->rule->rule.svc.color;
                 if (group) *group = (*walk)->rule->groups;
                 break;

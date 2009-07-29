@@ -318,6 +318,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 	else *myupstr = '\0';
 
+	load5 = 0.0;
 	*loadresult = '\0';
 	p = strstr(uptimestr, "load average: ");
 	if (!p) p = strstr(uptimestr, "load averages: "); /* Many BSD's */
@@ -1401,7 +1402,8 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		/* Check the number found for each monitored port */
  		while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, &group)) != NULL) {
  			char limtxt[1024];
-			
+
+			*limtxt = '\0';
 			if (pmax == -1) {
 				if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
 				else if (pmin == 0) sprintf(limtxt, "none");
