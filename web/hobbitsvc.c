@@ -563,8 +563,7 @@ int do_request(void)
 				clientavail = (stat(logfn, &st) == 0);
 
 				if (clientavail) {
-					if (clienturi) xfree(clienturi);
-					clienturi = (char *)malloc(strlen(clienturi) + 20 + strlen(clientid));
+					clienturi = (char *)realloc(clienturi, strlen(clienturi) + 20 + strlen(clientid));
 					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
 				}
 			}
