@@ -243,6 +243,14 @@ the default becomes to run traceroute on all hosts where
 the ping test fails; you can then disable it on specific 
 hosts by putting a "notrace" tag on the host-entry.
 
+.IP --ping-tasks=N
+Spread the task of pinging the hosts over N processes. If you have
+a very large number of hosts the time it takes to ping all of them 
+can be substantial, even with the use of tools like fping or hobbitping
+that ping many hosts in parallel. This option causes bbtest-net to
+start N separate ping processes, the IP's that are being ping'ed will
+be divided evenly between these processes.
+
 
 .SH OPTIONS FOR HTTP (WEB) TESTS
 .IP --content=CONTENTTESTNAME 

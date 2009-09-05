@@ -55,6 +55,8 @@ extern struct rpcent *getrpcbyname(char *);
 #include "httpcookies.h"
 #include "ldaptest.h"
 
+#define DEFAULT_PING_CHILD_COUNT 1
+
 char *reqenv[] = {
 	"NONETPAGE",
 	"BBHOSTS",
@@ -83,6 +85,7 @@ int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert co
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
 int             mincipherbits = 0;		/* If weakest cipher is weaker than this # of buts, SSL cert column = red */
 int		validity = 30;
+int		pingchildcount = DEFAULT_PING_CHILD_COUNT;	/* How many ping processes to start */
 char		*location = "";			/* BBLOCATION value */
 int		hostcount = 0;
 int		testcount = 0;
@@ -98,6 +101,7 @@ int		dosendflags = 1;
 char		*pingcmd = NULL;
 char		pinglog[PATH_MAX];
 char		pingerrlog[PATH_MAX];
+pid_t		*pingpids;
 int		respcheck_color = COL_YELLOW;
 int		extcmdtimeout = 30;
 int		bigfailure = 0;
@@ -1035,7 +1039,7 @@ int start_ping_service(service_t *service)
 	char *cmd;
 	char **cmdargs;
 	int pfd[2];
-	int status;
+	int i;
 
 	/*
 	 * The idea here is to run ping in a separate process, in parallel
@@ -1050,6 +1054,8 @@ int start_ping_service(service_t *service)
 	 * The output is then picked up by the finish_ping_service().
 	 */
 
+	pingcount = 0;
+	pingpids = calloc(pingchildcount, sizeof(pid_t));
 	pingcmd = strdup(getenv_default("FPING", "hobbitping", NULL));
 	pingcmd = realloc(pingcmd, strlen(pingcmd)+5);
 	strcat(pingcmd, " -Ae");
@@ -1060,79 +1066,86 @@ int start_ping_service(service_t *service)
 	/* Setup command line and arguments */
 	cmdargs = setup_commandargs(pingcmd, &cmd);
 
-	/* Get a pipe FD */
-	status = pipe(pfd);
-	if (status == -1) {
-		errprintf("Could not create pipe for hobbitping\n");
-		return -1;
-	}
-
-	/* Now fork off the ping child-process */
-	status = fork();
-	if (status < 0) {
-		errprintf("Could not fork() the ping child\n");
-		return -1;
-	}
-	else if (status == 0) {
-		/*
-		 * child must have
-		 *  - stdin fed from the parent
-		 *  - stdout going to a file
-		 *  - stderr going to another file. This is important, as
-		 *    putting it together with stdout will wreak havoc when 
-		 *    we start parsing the output later on. We could just 
-		 *    dump it to /dev/null, but it might be useful to see
-		 *    what went wrong.
-		 */
-		int outfile, errfile;
-
-		outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		if (outfile == -1) errprintf("Cannot create file %s : %s\n", pinglog, strerror(errno));
-		errfile = open(pingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		if (errfile == -1) errprintf("Cannot create file %s : %s\n", pingerrlog, strerror(errno));
-
-		if ((outfile == -1) || (errfile == -1)) {
-			/* Ouch - cannot create our output files. Abort. */
-			exit(98);
+	for (i=0; (i < pingchildcount); i++) {
+		/* Get a pipe FD */
+		if (pipe(pfd) == -1) {
+			errprintf("Could not create pipe for hobbitping\n");
+			return -1;
 		}
 
-		status = dup2(pfd[0], STDIN_FILENO);
-		status = dup2(outfile, STDOUT_FILENO);
-		status = dup2(errfile, STDERR_FILENO);
-		close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
+		/* Now fork off the ping child-process */
+		pingpids[i] = fork();
 
-		execvp(cmd, cmdargs);
+		if (pingpids[i] < 0) {
+			errprintf("Could not fork() the ping child\n");
+			return -1;
+		}
+		else if (pingpids[i] == 0) {
+			/*
+			 * child must have
+			 *  - stdin fed from the parent
+			 *  - stdout going to a file
+			 *  - stderr going to another file. This is important, as
+			 *    putting it together with stdout will wreak havoc when 
+			 *    we start parsing the output later on. We could just 
+			 *    dump it to /dev/null, but it might be useful to see
+			 *    what went wrong.
+			 */
+			int outfile, errfile, status;
 
-		/* Should never go here ... just kill the child */
-		fprintf(stderr, "Command '%s' failed: %s\n", cmd, strerror(errno));
-		exit(99);
-	}
-	else {
-		/* parent */
-		char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
+			sprintf(pinglog+strlen(pinglog), ".%02d", i);
+			sprintf(pingerrlog+strlen(pingerrlog), ".%02d", i);
 
-		close(pfd[0]);
-		pingcount = 0;
+			outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+			if (outfile == -1) errprintf("Cannot create file %s : %s\n", pinglog, strerror(errno));
+			errfile = open(pingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+			if (errfile == -1) errprintf("Cannot create file %s : %s\n", pingerrlog, strerror(errno));
 
-		/* Feed the IP's to test to the child */
-		for (t=service->items; (t); t = t->next) {
-			if (!t->host->dnserror && !t->host->noping) {
-				sprintf(ip, "%s\n", ip_to_test(t->host));
-				status = write(pfd[1], ip, strlen(ip));
-				pingcount++;
-				if (t->host->extrapings) {
-					ipping_t *walk;
+			if ((outfile == -1) || (errfile == -1)) {
+				/* Ouch - cannot create our output files. Abort. */
+				exit(98);
+			}
 
-					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-						sprintf(ip, "%s\n", walk->ip);
-						status = write(pfd[1], ip, strlen(ip));
-						pingcount++;
+			status = dup2(pfd[0], STDIN_FILENO);
+			status = dup2(outfile, STDOUT_FILENO);
+			status = dup2(errfile, STDERR_FILENO);
+			close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
+
+			execvp(cmd, cmdargs);
+
+			/* Should never go here ... just kill the child */
+			fprintf(stderr, "Command '%s' failed: %s\n", cmd, strerror(errno));
+			exit(99);
+		}
+		else {
+			/* parent */
+			char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
+			int hnum, n;
+
+			close(pfd[0]);
+
+			/* Feed the IP's to test to the child */
+			for (t=service->items, hnum = 0; (t); t = t->next, hnum++) {
+				if ((hnum % pingchildcount) != i) continue;
+
+				if (!t->host->dnserror && !t->host->noping) {
+					sprintf(ip, "%s\n", ip_to_test(t->host));
+					n = write(pfd[1], ip, strlen(ip));
+					pingcount++;
+					if (t->host->extrapings) {
+						ipping_t *walk;
+
+						for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+							sprintf(ip, "%s\n", walk->ip);
+							n = write(pfd[1], ip, strlen(ip));
+							pingcount++;
+						}
 					}
 				}
 			}
-		}
 
-		close(pfd[1]);	/* This is when ping starts doing tests */
+			close(pfd[1]);	/* This is when ping starts doing tests */
+		}
 	}
 
 	return 0;
@@ -1147,101 +1160,109 @@ int finish_ping_service(service_t *service)
 	char		l[MAX_LINE_LEN];
 	char		pingip[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
-	int		pingstatus, failed = 0;
+	int		pingstatus, failed = 0, i;
+	char		fn[PATH_MAX];
+
+	/* Load status of previously failed tests */
+	load_ping_status();
 
 	/* 
 	 * Wait for the ping child to finish.
 	 * If we're lucky, it will be done already since it has run
 	 * while we were doing tcp tests.
 	 */
-	wait(&pingstatus);
-	switch (WEXITSTATUS(pingstatus)) {
-	  case 0: /* All hosts reachable */
-	  case 1: /* Some hosts unreachable */
-	  case 2: /* Some IP's not found (should not happen) */
-		break;
+	for (i = 0; (i < pingchildcount); i++) {
+		waitpid(pingpids[i], &pingstatus, 0);
+		switch (WEXITSTATUS(pingstatus)) {
+			case 0: /* All hosts reachable */
+			case 1: /* Some hosts unreachable */
+			case 2: /* Some IP's not found (should not happen) */
+				break;
 
-	  case 3: /* Bad command-line args, or not suid-root */
-		failed = 1;
-		errprintf("Execution of '%s' failed - program not suid root?\n", pingcmd);
-		break;
+			case 3: /* Bad command-line args, or not suid-root */
+				failed = 1;
+				errprintf("Execution of '%s' failed - program not suid root?\n", pingcmd);
+				break;
 
-	  case 98:
-		failed = 1;
-		errprintf("hobbitping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
-		break;
+			case 98:
+				failed = 1;
+				errprintf("hobbitping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
+				break;
 
-	  case 99:
-		failed = 1;
-		errprintf("Could not run the command '%s' (exec failed)\n", pingcmd);
-		break;
+			case 99:
+				failed = 1;
+				errprintf("Could not run the command '%s' (exec failed)\n", pingcmd);
+				break;
 
-	  default:
-		failed = 1;
-		errprintf("Execution of '%s' failed with error-code %d\n", 
-			pingcmd, WEXITSTATUS(pingstatus));
-	}
-
-	/* Load status of previously failed tests */
-	load_ping_status();
-
-	/* Open the new ping result file */
-	logfd = fopen(pinglog, "r");
-	if (logfd == NULL) { 
-		failed = 1;
-		errprintf("Cannot open ping output file %s\n", pinglog);
-	}
-
-	/* Copy error messages to the Hobbit logfile */
-	if (failed) {
-		FILE *errfd;
-		char buf[1024];
-			
-		errfd = fopen(pingerrlog, "r");
-		if (errfd && fgets(buf, sizeof(buf), errfd)) {
-			errprintf("%s", buf);
+			default:
+				failed = 1;
+				errprintf("Execution of '%s' failed with error-code %d\n", 
+						pingcmd, WEXITSTATUS(pingstatus));
 		}
-		if (errfd) fclose(errfd);
-	}
-	if (!debug) unlink(pingerrlog);
 
-	if (failed) {
-		/* Flag all ping tests as "undecided" */
-		bigfailure = 1;
-		for (t=service->items; (t); t = t->next) t->open = -1;
-		goto cleanup;
-	}
+		/* Open the new ping result file */
+		sprintf(fn, "%s.%02d", pinglog, i);
+		logfd = fopen(fn, "r");
+		if (logfd == NULL) { 
+			failed = 1;
+			errprintf("Cannot open ping output file %s\n", fn);
+		}
+		if (!debug) unlink(fn);	/* We have an open filehandle, so it's ok to delete the file now */
 
-	/* The test did run, and we have a result-file. Look at it. */
-	while (fgets(l, sizeof(l), logfd)) {
-		p = strchr(l, '\n'); if (p) *p = '\0';
-		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
+		/* Copy error messages to the Hobbit logfile */
+		sprintf(fn, "%s.%02d", pingerrlog, i);
+		if (failed) {
+			FILE *errfd;
+			char buf[1024];
 
-			sprintf(pingip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			errfd = fopen(fn, "r");
+			if (errfd && fgets(buf, sizeof(buf), errfd)) {
+				errprintf("%s", buf);
+			}
+			if (errfd) fclose(errfd);
+		}
+		if (!debug) unlink(fn);
 
-			/*
-			 * Need to loop through all testitems - there may be multiple entries for
-			 * the same IP-address.
-			 */
-			for (t=service->items; (t); t = t->next) {
-				if (strcmp(t->host->ip, pingip) == 0) {
-					if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
-					t->open = (strstr(l, "is alive") != NULL);
-					t->banner = dupstrbuffer(l);
-				}
+		if (failed) {
+			/* Flag all ping tests as "undecided" */
+			bigfailure = 1;
+			for (t=service->items; (t); t = t->next) t->open = -1;
+		}
+		else {
+			/* The test did run, and we have a result-file. Look at it. */
+			while (fgets(l, sizeof(l), logfd)) {
+				p = strchr(l, '\n'); if (p) *p = '\0';
+				if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 
-				if (t->host->extrapings) {
-					ipping_t *walk;
-					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-						if (strcmp(walk->ip, pingip) == 0) {
+					sprintf(pingip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+
+					/*
+					 * Need to loop through all testitems - there may be multiple entries for
+					 * the same IP-address.
+					 */
+					for (t=service->items; (t); t = t->next) {
+						if (strcmp(t->host->ip, pingip) == 0) {
 							if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
-							walk->open = (strstr(l, "is alive") != NULL);
-							walk->banner = dupstrbuffer(l);
+							t->open = (strstr(l, "is alive") != NULL);
+							t->banner = dupstrbuffer(l);
+						}
+
+						if (t->host->extrapings) {
+							ipping_t *walk;
+							for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+								if (strcmp(walk->ip, pingip) == 0) {
+									if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
+									walk->open = (strstr(l, "is alive") != NULL);
+									walk->banner = dupstrbuffer(l);
+								}
+							}
 						}
 					}
 				}
 			}
 		}
+
+		if (logfd) fclose(logfd);
 	}
 
 	/* 
@@ -1267,10 +1288,6 @@ int finish_ping_service(service_t *service)
 			}
 		}
 	}
-
-cleanup:
-	if (logfd) fclose(logfd);
-	if (!debug) unlink(pinglog);
 
 	return 0;
 }
@@ -1959,6 +1976,10 @@ int main(int argc, char *argv[])
 			}
 			else pingcolumn = "";
 		}
+		else if (argnmatch(argv[argi], "--ping-tasks=")) {
+			char *p = strchr(argv[argi], '=');
+			pingchildcount = atoi(p+1);
+		}
 		else if (strcmp(argv[argi], "--noping") == 0) {
 			pingcolumn = NULL;
 		}
@@ -2056,6 +2077,7 @@ int main(int argc, char *argv[])
 			printf("    --noping                    : Disable ping checking\n");
 			printf("    --trace                     : Run traceroute on all hosts where ping fails\n");
 			printf("    --notrace                   : Disable traceroute when ping fails (default)\n");
+			printf("    --ping-tasks=N              : Run N ping tasks in parallel (default N=1)\n");
 			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
 			printf("    --content=COLUMNNAME        : Define default columnname for CONTENT checks (content)\n");
 			printf("\nOptions for SSL certificate tests:\n");
