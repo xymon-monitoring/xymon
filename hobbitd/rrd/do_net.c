@@ -17,11 +17,14 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 
 	char *p;
 	float seconds = 0.0;
+	int do_default = 1;
 
 	if (bbnet_tpl == NULL) bbnet_tpl = setup_template(bbnet_params);
 
 	if (strcmp(testname, "http") == 0) {
 		char *line1, *url = NULL, *eoln;
+
+		do_default = 0;
 
 		line1 = msg;
 		while ((line1 = strchr(line1, '\n')) != NULL) {
@@ -60,6 +63,8 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		 */
 		char *tmod = "ms";
 
+		do_default = 0;
+
 		if ((p = strstr(msg, "time=")) != NULL) {
 			/* Standard ping, reports ".... time=0.2 ms" */
 			seconds = atof(p+5);
@@ -78,7 +83,60 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
 	}
-	else {
+	else if (strcmp(testname, "ntp") == 0) {
+		/*
+		 * sntp output: 
+		 *    2009 Nov 13 11:29:10.000313 + 0.038766 +/- 0.052900 secs
+		 * ntpdate output: 
+		 *    server 172.16.10.2, stratum 3, offset -0.040324, delay 0.02568
+		 *    13 Nov 11:29:06 ntpdate[7038]: adjust time server 172.16.10.2 offset -0.040324 sec
+		 */
+
+		char dataforntpstat[100];
+		char *offsetval = NULL;
+		char *msgcopy = strdup(msg);
+
+		if (strstr(msgcopy, "ntpdate") != NULL) {
+			/* Old-style "ntpdate" output */
+			char *p;
+
+			p = strstr(msgcopy, "offset ");
+			if (p) {
+				p += 7;
+				offsetval = strtok(p, " \r\n\t");
+			}
+		}
+		else if (strstr(msgcopy, " secs") != NULL) {
+			/* Probably new "sntp" output */
+			char *year, *month, *tm, *offsetdirection, *offset, *plusminus, *errorbound, *secs;
+
+			month = tm = offsetdirection = plusminus = errorbound = secs = NULL;
+			year = strtok(msgcopy, " ");
+			if (year) tm = strtok(NULL, " ");
+			if (tm) offsetdirection = strtok(NULL, " ");
+			if (offsetdirection) offset = strtok(NULL, " ");
+			if (offset) plusminus = strtok(NULL, " ");
+			if (plusminus) errorbound = strtok(NULL, " ");
+			if (errorbound) secs = strtok(NULL, " ");
+
+			if ( offsetdirection && ((strcmp(offsetdirection, "+") == 0) || (strcmp(offsetdirection, "-") == 0)) &&
+			     plusminuts && (strcmp(plusminus, "+/-") == 0) && 
+			     secs && (strcmp(secs, "secs") == 0) ) {
+				/* Looks sane */
+				sprintf(offsetval, "%s%s", offsetdirection, offset);
+			}
+		}
+		
+		if (offsetval) {
+			sprintf(dataforntpstat, "offset=%s", offset);
+			do_ntpstat_rrd(hostname, testname, classname, pagepaths, dataforntpstat, tstamp);
+		}
+
+		xfree(msgcopy);
+	}
+
+
+	if (do_default) {
 		/*
 		 * Normal network tests - pick up the "Seconds:" value
 		 */

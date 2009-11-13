@@ -1003,12 +1003,28 @@ void run_ntp_service(service_t *service)
 	char		cmd[1024];
 	char		*p;
 	char		cmdpath[PATH_MAX];
+	int		use_sntp = 0;
 
-	p = xgetenv("NTPDATE");
-	strcpy(cmdpath, (p ? p : "ntpdate"));
+	p = getenv("SNTP");	/* Plain "getenv" as we want to know if it's unset */
+	use_sntp = (p != NULL);
+
+	if (use_sntp) {
+		strcpy(cmdpath, p);
+	}
+	else {
+		p = xgetenv("NTPDATE");
+		strcpy(cmdpath, (p ? p : "ntpdate"));
+	}
+
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
-			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, ip_to_test(t->host));
+			if (use_sntp) {
+				sprintf(cmd, "%s -u -d %d %s 2>&1", cmdpath, extcmdtimeout-1, ip_to_test(t->host));
+			}
+			else {
+				sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, ip_to_test(t->host));
+			}
+
 			t->open = (run_command(cmd, "no server suitable for synchronization", t->banner, 1, extcmdtimeout) == 0);
 		}
 	}
