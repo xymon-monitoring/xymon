@@ -176,8 +176,8 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 					sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
 				}
 			}
-			
-			if (split_ncv && (paridx > 1)) {
+
+			if (split_ncv && (paridx > 0)) {
 				create_and_update_rrd(hostname, testname, classname, pagepaths, params, NULL);
 
 				/* We've created one RRD, so reset the params for the next one */
