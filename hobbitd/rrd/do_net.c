@@ -120,7 +120,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 			if (errorbound) secs = strtok(NULL, " ");
 
 			if ( offsetdirection && ((strcmp(offsetdirection, "+") == 0) || (strcmp(offsetdirection, "-") == 0)) &&
-			     plusminuts && (strcmp(plusminus, "+/-") == 0) && 
+			     plusminus && (strcmp(plusminus, "+/-") == 0) && 
 			     secs && (strcmp(secs, "secs") == 0) ) {
 				/* Looks sane */
 				sprintf(offsetval, "%s%s", offsetdirection, offset);
@@ -128,7 +128,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		}
 		
 		if (offsetval) {
-			sprintf(dataforntpstat, "offset=%s", offset);
+			sprintf(dataforntpstat, "offset=%s", offsetval);
 			do_ntpstat_rrd(hostname, testname, classname, pagepaths, dataforntpstat, tstamp);
 		}
 
