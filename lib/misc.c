@@ -69,6 +69,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "macosx") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "darwin") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "sco_sv") == 0)      result = OS_SCO_SV;
+	else if (strcasecmp(osname, "unixware") == 0)    result = OS_SCO_SV;
 	else if (strcasecmp(osname, "bbwin") == 0)      result = OS_WIN32_BBWIN;
 
 	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
