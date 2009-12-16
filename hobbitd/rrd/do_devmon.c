@@ -23,10 +23,14 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 	static pcre *exclpattern = NULL;
 	int in_devmon = 1;
 	int numds = 0;
+	char *rrdbasename;
+	int lineno = 0;
 
+	rrdbasename = NULL;
 	curline = msg;
 	while (curline)  {
-		char *fsline, *p;
+		char *fsline = NULL;
+		char *p;
 		char *columns[MAXCOLS];
 		int columncount;
 		char *ifname = NULL;
@@ -37,9 +41,16 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		int i;
 
 		eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+		lineno++;
 
-		if(!strncmp(curline, "<!--DEVMON",10)) {
+		if(!strncmp(curline, "<!--DEVMON RRD: ",16)) {
 			in_devmon = 0;
+			/*if(rrdbasename) {xfree(rrdbasename);rrdbasename = NULL;}*/
+			rrdbasename = strtok(curline+16," ");
+			if (rrdbasename == NULL) rrdbasename = xstrdup(testname);
+			dbgprintf("DEVMON: changing testname from %s to %s\n",testname,rrdbasename);
+			numds = 0;
+			if(devmon_tpl) {xfree(devmon_tpl);devmon_tpl= NULL;}
 			goto nextline;
 		}
 		if(in_devmon == 0 && !strncmp(curline, "-->",3)) {
@@ -76,7 +87,7 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 
 		dbgprintf("Found %d columns in devmon rrd data\n",columncount);
 		if (columncount > 2) {
-			dbgprintf("Skipping line, found %d (max 2) columns in devmon rrd data, space in repeater name?\n",columncount);
+			dbgprintf("Skipping line %d, found %d (max 2) columns in devmon rrd data, space in repeater name?\n",lineno,columncount);
 			goto nextline;
 		}
 
@@ -85,26 +96,34 @@ int do_devmon_rrd(char *hostname, char *testname, char *msg, time_t tstamp)
 		 */
 		ifname = xstrdup(columns[0]);
 		dsval = strtok(columns[1],":");
+		if (dsval == NULL) {
+			dbgprintf("Skipping line %d, line is malformed\n",lineno);
+			goto nextline;
+		}
 		sprintf(rrdvalues, "%d:", (int)tstamp);
 		strcat(rrdvalues,dsval);
 		for (i=1;i < numds;i++) {
 			dsval = strtok(NULL,":");
+			if (dsval == NULL) {
+				dbgprintf("Skipping line %d, %d tokens present, expecting %d\n",lineno,i,numds);
+				goto nextline;
+			}
 			strcat(rrdvalues,":");
 			strcat(rrdvalues,dsval);
 		}
 		/* File names in the format if_load.eth0.0.rrd */
-		snprintf(rrdfn, sizeof(rrdfn)-1, "%s.%s.rrd", testname, ifname);
+		snprintf(rrdfn, sizeof(rrdfn)-1, "%s.%s.rrd", rrdbasename, ifname);
 		rrdfn[sizeof(rrdfn)-1] = '\0';
-		dbgprintf("Sending from devmon to RRD for %s %s: %s\n",testname,ifname,rrdvalues);
+		dbgprintf("Sending from devmon to RRD for %s %s: %s\n",rrdbasename,ifname,rrdvalues);
 		create_and_update_rrd(hostname, rrdfn, devmon_params, devmon_tpl);
 		if (ifname) { xfree(ifname); ifname = NULL; }
 
 		if (eoln) *eoln = '\n';
-		xfree(fsline);
 
 nextline:
+		if (fsline) { xfree(fsline); fsline = NULL; }
 		curline = (eoln ? (eoln+1) : NULL);
 	}
-
+	if(devmon_tpl) {xfree(devmon_tpl);devmon_tpl= NULL;}
 	return 0;
 }
