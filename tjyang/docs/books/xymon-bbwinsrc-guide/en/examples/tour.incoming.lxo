@@ -1,9 +1,0 @@
-$ \textbf{cd hello-pull}
-$ \textbf{hg incoming ../my-hello}
-searching for changes
-changeset:   5:a3ce8b616f22
-tag:         tip
-user:        Bryan O'Sullivan <bos@serpentine.com>
-date:        Sun Mar 02 16:16:39 2008 +0000
-summary:     Added an extra line of output
-

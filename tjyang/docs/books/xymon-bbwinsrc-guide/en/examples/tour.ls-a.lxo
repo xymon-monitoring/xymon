@@ -1,3 +1,0 @@
-$ \textbf{cd hello}
-$ \textbf{ls -a}
-.  ..  .hg  Makefile  hello.c

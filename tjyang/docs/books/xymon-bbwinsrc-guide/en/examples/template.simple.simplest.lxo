@@ -1,2 +1,0 @@
-$ \textbf{hg log -r1 --template 'i saw a changeset\textbackslash{}n'}
-i saw a changeset

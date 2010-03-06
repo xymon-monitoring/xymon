@@ -1,5 +1,0 @@
-$ \textbf{hg init my-copy}
-$ \textbf{cd my-copy}
-$ \textbf{echo line > file}
-$ \textbf{hg add file}
-$ \textbf{hg commit -m 'Added a file'}

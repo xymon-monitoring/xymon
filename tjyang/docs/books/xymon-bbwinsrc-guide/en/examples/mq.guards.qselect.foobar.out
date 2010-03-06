@@ -1,8 +1,0 @@
-$ \textbf{hg qselect foo bar}
-number of unguarded, unapplied patches has changed from 0 to 2
-$ \textbf{hg qpop -a}
-abort: no patches applied
-$ \textbf{hg qpush -a}
-applying hello.patch
-applying goodbye.patch
-Now at: goodbye.patch

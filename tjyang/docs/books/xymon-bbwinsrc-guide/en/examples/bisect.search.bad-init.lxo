@@ -1,6 +1,0 @@
-$ \textbf{hg bisect --bad}
-hg bisect: option --bad not recognized
-hg bisect [help|init|reset|next|good|bad]
-
-bisect extension: dichotomic search in the DAG of changesets
-for subcommands see "hg bisect help"

@@ -1,4 +1,0 @@
-$ \textbf{ls}
-Makefile  hello.c
-$ \textbf{hg status}
-M hello.c

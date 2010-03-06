@@ -1,9 +1,0 @@
-$ \textbf{echo third change >> myfile}
-$ \textbf{hg commit -m 'third change'}
-$ \textbf{hg backout --merge -m 'back out second change' 1}
-reverting myfile
-changeset 3:6e62878a5774 backs out changeset 1:668580b3a0ad
-merging with changeset 2:e48885580852
-merging myfile
-0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-(branch merge, don't forget to commit)

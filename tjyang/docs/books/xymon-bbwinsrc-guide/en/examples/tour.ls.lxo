@@ -1,5 +1,0 @@
-$ \textbf{ls -l}
-total 4
-drwxrwxr-x 3 tjyang tjyang 4096 Mar  2 16:16 hello
-$ \textbf{ls hello}
-Makefile  hello.c

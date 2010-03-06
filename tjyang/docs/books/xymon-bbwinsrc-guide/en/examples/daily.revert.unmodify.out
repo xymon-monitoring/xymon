@@ -1,5 +1,0 @@
-$ \textbf{hg status}
-M file
-$ \textbf{hg revert file}
-$ \textbf{cat file}
-original content

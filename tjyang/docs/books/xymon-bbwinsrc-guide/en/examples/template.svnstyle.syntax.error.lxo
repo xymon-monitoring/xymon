@@ -1,2 +1,0 @@
-$ \textbf{hg log -r1 --style broken.style}
-abort: broken.style:1: parse error

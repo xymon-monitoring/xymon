@@ -1,9 +1,0 @@
-$ \textbf{hg qinit}
-$ \textbf{hg qnew hello.patch}
-$ \textbf{echo hello > hello}
-$ \textbf{hg add hello}
-$ \textbf{hg qrefresh}
-$ \textbf{hg qnew goodbye.patch}
-$ \textbf{echo goodbye > goodbye}
-$ \textbf{hg add goodbye}
-$ \textbf{hg qrefresh}

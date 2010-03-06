@@ -1,6 +1,0 @@
-$ \textbf{cd ..}
-$ \textbf{hg clone hello my-new-hello}
-2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-$ \textbf{cd my-new-hello}
-$ \textbf{sed -i '/printf/i\textbackslash{}\textbackslash{}tprintf("once more, hello.\textbackslash{}\textbackslash{}n");' hello.c}
-$ \textbf{hg commit -m 'A new hello for a new day.'}

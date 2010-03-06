@@ -1,3 +1,0 @@
-$ \textbf{hg status -X '**.py' src}
-? src/watcher/_watcher.c
-? src/xyzzy.txt

@@ -1,4 +1,0 @@
-digraph undo_simple {
-	"first change" -> "second change";
-	"second change" -> "back out\nsecond change";
-}

@@ -1,1 +1,0 @@
-$ \textbf{sed -i '/printf/a\textbackslash{}\textbackslash{}tprintf("hello again!\textbackslash{}\textbackslash{}n");' hello.c}

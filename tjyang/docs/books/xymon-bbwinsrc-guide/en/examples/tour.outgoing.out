@@ -1,9 +1,0 @@
-$ \textbf{cd my-hello}
-$ \textbf{hg outgoing ../hello-push}
-searching for changes
-changeset:   
-tag:         tip
-user:        Bryan O'Sullivan <bos@serpentine.com>
-
-summary:     Added an extra line of output
-

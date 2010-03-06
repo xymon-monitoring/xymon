@@ -1,6 +1,0 @@
-$ \textbf{rm file}
-$ \textbf{hg status}
-! file
-$ \textbf{hg revert file}
-$ \textbf{ls file}
-file

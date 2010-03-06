@@ -1,4 +1,0 @@
-$ \textbf{mkdir k}
-$ \textbf{hg copy a k}
-$ \textbf{ls k}
-a

@@ -1,2 +1,0 @@
-$ \textbf{hg status -I '*.in'}
-? MANIFEST.in

@@ -1,5 +1,0 @@
-$ \textbf{hg status}
-? file.orig
-$ \textbf{cat file.orig}
-original content
-unwanted change

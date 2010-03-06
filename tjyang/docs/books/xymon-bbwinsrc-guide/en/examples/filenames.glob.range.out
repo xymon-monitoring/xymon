@@ -1,3 +1,0 @@
-$ \textbf{hg status 'glob:**[nr-t]'}
-? MANIFEST.in
-? src/xyzzy.txt

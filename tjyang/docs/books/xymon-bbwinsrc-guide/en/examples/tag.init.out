@@ -1,5 +1,0 @@
-$ \textbf{hg init mytag}
-$ \textbf{cd mytag}
-$ \textbf{echo hello > myfile}
-$ \textbf{hg commit -A -m 'Initial commit'}
-adding myfile

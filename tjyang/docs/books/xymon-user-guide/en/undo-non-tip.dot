@@ -1,9 +1,0 @@
-digraph undo_non_tip {
-	"first change" -> "second change";
-	"second change" -> "third change";
-	backout [label="back out\nsecond change", shape=box];
-	"second change" -> backout;
-	merge [label="automated\nmerge", shape=box];
-	"third change" -> merge;
-	backout -> merge;
-}

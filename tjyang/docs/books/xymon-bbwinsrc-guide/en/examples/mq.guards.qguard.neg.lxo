@@ -1,3 +1,0 @@
-$ \textbf{hg qguard hello.patch -quux}
-$ \textbf{hg qguard hello.patch}
-hello.patch: -quux

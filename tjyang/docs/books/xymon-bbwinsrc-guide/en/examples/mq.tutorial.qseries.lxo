@@ -1,6 +1,0 @@
-$ \textbf{hg qseries}
-first.patch
-second.patch
-$ \textbf{hg qapplied}
-first.patch
-second.patch

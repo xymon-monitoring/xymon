@@ -1,4 +1,0 @@
-$ \textbf{hg revert a}
-$ \textbf{cat a}
-a
-$ \textbf{hg status}

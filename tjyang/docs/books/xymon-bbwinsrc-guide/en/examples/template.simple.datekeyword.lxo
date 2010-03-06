@@ -1,4 +1,0 @@
-$ \textbf{hg log -r1 --template 'date: \{date\}\textbackslash{}n'}
-date: 1204474596.00
-$ \textbf{hg log -r1 --template 'date: \{date|isodate\}\textbackslash{}n'}
-date: 2008-03-02 16:16 +0000

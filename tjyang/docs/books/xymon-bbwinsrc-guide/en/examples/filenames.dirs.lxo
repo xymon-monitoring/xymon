@@ -1,5 +1,0 @@
-$ \textbf{hg status src}
-? src/main.py
-? src/watcher/_watcher.c
-? src/watcher/watcher.py
-? src/xyzzy.txt

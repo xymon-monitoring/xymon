@@ -1,3 +1,0 @@
-$ \textbf{hg status 'glob:*.\{in,py\}'}
-? MANIFEST.in
-? setup.py

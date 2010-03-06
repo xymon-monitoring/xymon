@@ -1,7 +1,0 @@
-$ \textbf{grep printf hello.c}
-	printf("hello, world!\textbackslash{}");
-$ \textbf{hg update tip}
-1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-$ \textbf{grep printf hello.c}
-	printf("hello, world!\textbackslash{}");
-	printf("hello again!\textbackslash{}n");

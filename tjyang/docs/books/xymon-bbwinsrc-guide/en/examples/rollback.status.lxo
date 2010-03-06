@@ -1,9 +1,0 @@
-$ \textbf{hg status}
-? b
-$ \textbf{hg tip}
-changeset:   1:3cce73072f4a
-tag:         tip
-user:        Bryan O'Sullivan <bos@serpentine.com>
-date:        Sun Mar 02 16:16:35 2008 +0000
-summary:     Add file b
-

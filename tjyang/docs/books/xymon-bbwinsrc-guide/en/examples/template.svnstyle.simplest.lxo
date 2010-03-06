@@ -1,4 +1,0 @@
-$ \textbf{cat svn.style}
-changeset = "\{node|short\}\textbackslash{}n"
-$ \textbf{hg log -r1 --style svn.style}
-97f7ce1f0fb5

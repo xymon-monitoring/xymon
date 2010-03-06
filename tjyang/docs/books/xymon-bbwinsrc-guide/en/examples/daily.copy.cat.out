@@ -1,5 +1,0 @@
-$ \textbf{cat file}
-line
-new contents
-$ \textbf{cat ../my-copy/new-file}
-line

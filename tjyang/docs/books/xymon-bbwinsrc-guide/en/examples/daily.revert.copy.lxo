@@ -1,4 +1,0 @@
-$ \textbf{hg copy file new-file}
-$ \textbf{hg revert new-file}
-$ \textbf{hg status}
-? new-file

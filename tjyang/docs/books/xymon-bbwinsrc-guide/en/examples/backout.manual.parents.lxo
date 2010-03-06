@@ -1,8 +1,0 @@
-$ \textbf{hg parents}
-changeset:   3:30cd4bc76a4a
-tag:         tip
-parent:      1:668580b3a0ad
-user:        Bryan O'Sullivan <bos@serpentine.com>
-date:        Sun Mar 02 16:14:44 2008 +0000
-summary:     back out second change
-

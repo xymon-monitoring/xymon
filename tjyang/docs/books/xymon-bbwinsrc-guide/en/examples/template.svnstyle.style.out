@@ -1,3 +1,0 @@
-$ \textbf{cat svn.style}
-header = '------------------------------------------------------------------------\textbackslash{}n\textbackslash{}n'
-changeset = svn.template

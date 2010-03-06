@@ -1,7 +1,0 @@
-$ \textbf{hg init myrepo}
-$ \textbf{cd myrepo}
-$ \textbf{echo first change >> myfile}
-$ \textbf{hg add myfile}
-$ \textbf{hg commit -m 'first change'}
-$ \textbf{echo second change >> myfile}
-$ \textbf{hg commit -m 'second change'}

@@ -1,4 +1,0 @@
-$ \textbf{echo 'file 3, line 1' >> file3}
-$ \textbf{hg qnew add-file3.patch}
-$ \textbf{hg qnew -f add-file3.patch}
-abort: patch "add-file3.patch" already exists
