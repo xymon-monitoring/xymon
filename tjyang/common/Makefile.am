@@ -3,7 +3,7 @@
 ## gives unlimited permission to copy, distribute and modify it.
 #
 
-AM_CPPFLAGS = -I$(srcdir)/../lib -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(srcdir)/../lib -I/usr/include/pcre  -I$(srcdir)/../include
 bin_PROGRAMS = hobbitlaunch bbhostgrep bbhostshow bbdigest bb bbcmd 
 
 
