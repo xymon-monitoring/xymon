@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Configuration script for Xymon.
+# $Id: configure 6125 2009-02-12 13:09:34Z storner $
+
+BASEDIR="`dirname $0`"
+TARGET="$1"
+if test "$TARGET" != ""; then shift; fi
+
+# Make sure that all shell-scripts are executable.
+# Subversion has a habit of exporting without the
+# execute-bit set.
+chmod 755 $BASEDIR/configure* $BASEDIR/build/*.sh $BASEDIR/client/*.sh
+
+case "$TARGET" in
+  "--client")
+	$BASEDIR/configure.client $*
+	;;
+
+  "--server"|"")
+	$BASEDIR/configure.server $*
+	;;
+
+  "--help")
+  	echo "To configure a Xymon server: $0 --server"
+  	echo "To configure a Xymon client: $0 --client"
+	;;
+esac
+
+exit 0

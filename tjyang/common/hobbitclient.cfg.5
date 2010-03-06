@@ -1,0 +1,69 @@
+.TH HOBBITCLIENT.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+hobbitclient.cfg \- Xymon client environment variables
+
+.SH DESCRIPTION
+Xymon programs use multiple environment variables beside the
+normal set of variables.  For the Xymon client, the environment 
+definitions are stored in the ~xymon/client/etc/hobbitclient.cfg file. 
+Each line in this file is of the form \fBNAME=VALUE\fR and defines
+one environment variable NAME with the value VALUE.
+
+.SH SETTINGS
+.IP BBDISP
+The IP-address used to contact the Xymon server. Default:
+Chosen when the Xymon client was compiled.
+
+.IP BBDISPLAYS
+List of IP-adresses of Xymon servers. Data will be sent to
+all of the servers listed here. This setting is only used if 
+BBDISP=0.0.0.0.
+
+.IP BBPORT
+The portnumber for used to contact the Xymon server.
+Default: 1984.
+
+.IP BBHOME
+The Xymon client top-level directory. Default: The
+$HOBBITCLIENTHOME setting inherited from the "runclient.sh"
+script which starts the Xymon client.
+
+.IP BBCLIENTLOGS
+The directory for the Xymon clients' own logfiles. Default:
+$BBHOME/logs
+
+.IP BBTMP
+Directory used for temporary files. Default: $BBHOME/tmp/
+
+.IP BB
+Full path to the 
+.I bb(1)
+client program. Default: $BBHOME/bin/bb.
+
+.IP Commands
+Many extension scripts expect a series of environment variables to
+point at various system utilities. These are included in the file
+when the client is built.
+
+.SH INHERITED SETTINGS
+Some environment variables are inherited from the "runclient.sh"
+script which launches the Xymon client:
+
+.IP MACHINEDOTS
+The hostname of the local system. Default: Taken from "uname -n".
+
+.IP MACHINE
+The hostname of the local system, with dots replaced by commas.
+For compatibility with Big Brother extension scripts.
+
+.IP BBOSTYPE
+The operating system of the local system, in lowercase. Default:
+taken from "uname -s".
+
+.IP HOBBITCLIENTHOME
+The top-level directory for the Xymon client. Default: The location
+of the "runclient.sh" script.
+
+.SH "SEE ALSO"
+xymon(7)
+

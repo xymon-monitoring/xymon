@@ -1,0 +1,9 @@
+## Copyright (C) 2006 Free Software Foundation, Inc.
+## This Makefile.am is free software; the Free Software Foundation
+## gives unlimited permission to copy, distribute and modify it.
+#
+
+AM_CPPFLAGS = -I$(srcdir)/../lib -I${srcdir}/../include
+bin_PROGRAMS = demotool 
+demotool_SOURCES = demotool.c
+demotool_LDADD = ../lib/libxymon.la -lrt -lz

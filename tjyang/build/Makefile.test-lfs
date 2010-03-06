@@ -1,0 +1,13 @@
+include Makefile.$(OS)
+
+all: test-lfs-std test-lfs-lfs
+
+test-lfs-std:
+	@$(CC) -o test-lfs-std test-lfs.c
+
+test-lfs-lfs:
+	@$(CC) $(CFLAGS) -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -o test-lfs-lfs test-lfs.c
+
+clean:
+	@rm -f test-lfs-std test-lfs-lfs
+

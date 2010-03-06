@@ -1,0 +1,50 @@
+/*----------------------------------------------------------------------------*/
+/* Hobbit RRD handler module.                                                 */
+/*                                                                            */
+/* This module handles "cics" messages.                                       */
+/*                                                                            */
+/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2008 Rich Smrcina                                            */
+/*                                                                            */
+/* This program is released under the GNU General Public License (GPL),       */
+/* version 2. See the file "COPYING" for details.                             */
+/*                                                                            */
+/*----------------------------------------------------------------------------*/
+
+static char cics_rcsid[] = "$Id: do_cics.c 6125 2009-02-12 13:09:34Z storner $";
+
+static char *cicsntrans_params[]  = { "DS:numtrans:GAUGE:600:0:U", NULL };
+static char *cicsdsa_params[]  = { "DS:dsa:GAUGE:600:0:100", "DS:edsa:GAUGE:600:0:100", NULL };
+static char *cics_tpl      = NULL;
+
+int do_cics_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
+{ 
+	char *pr;
+	char *fn = NULL;
+	int numtrans;
+	float dsapct, edsapct;
+	char cicsappl[9], rrdfn[20];
+
+	pr=(strstr(msg, "Appl"));
+	if (!pr) {
+		return 0;
+		}
+	pr=(strstr(pr, "\n"));
+	if (pr) {
+		pr += 1;
+		pr = strtok(pr, "\n");
+		while (pr != NULL) {
+			sscanf(pr, "%s %d %f %f", cicsappl, &numtrans, &dsapct, &edsapct); 
+			sprintf(rrdfn, "cics.%-s.rrd", cicsappl);
+			setupfn(rrdfn, fn);
+			sprintf(rrdvalues, "%d:%d", (int)tstamp, numtrans);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, cicsntrans_params, cics_tpl);
+			sprintf(rrdfn, "dsa.%-s.rrd", cicsappl);
+			setupfn(rrdfn, fn);
+			sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, (int)dsapct, (int)edsapct);
+			create_and_update_rrd(hostname, testname, classname, pagepaths, cicsdsa_params, cics_tpl);
+			pr = strtok(NULL, "\n");
+			}
+	}
+	return 0;
+}

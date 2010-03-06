@@ -1,0 +1,22 @@
+HTTP/1.1 200 OK
+Date: Wed, 24 Aug 2005 12:26:36 GMT
+Server: Apache/2.0.54 (Debian GNU/Linux) PHP/4.3.10-15 mod_ssl/2.0.54 OpenSSL/0.9.7e
+Last-Modified: Mon, 02 May 2005 06:06:34 GMT
+ETag: "add-2f4-6d082e80"
+Accept-Ranges: bytes
+Content-Type: text/html; charset=ISO-8859-1
+
+<html>
+<head>
+  <title>This is the Demotool webpage</title>
+</head>
+
+<body bgcolor=#ffffff>
+  <h3>Welcome to the Demotool site!!</h3>
+
+  <p>This is a sample webpage returned by the demotool utility to show what Hobbit is like</p>
+
+
+</body>
+
+</html>

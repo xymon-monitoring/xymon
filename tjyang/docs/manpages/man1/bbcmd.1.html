@@ -1,0 +1,63 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BBCMD</TITLE>
+</HEAD><BODY>
+<H1>BBCMD</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bbcmd - Run a Xymon command with environment set
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>bbcmd --env=ENVFILE COMMAND</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/bbcmd.1.html">bbcmd</A>(1)</I>
+
+is a utility that can setup the Xymon environment variables
+as defined in a 
+<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+
+compatible environment definition file, and then execute a command
+with this environment in place. It is mostly used for testing
+extension scripts or in other situations where you need to run
+a single command with the environment in place.
+<P>
+The &quot;--env=ENVFILE&quot; option points bbcmd to the file where the 
+environment definitions are loaded from.
+<P>
+COMMAND is the command to execute after setting up the environment.
+<P>
+If you want to run multiple commands, it is often easiest to just
+use &quot;sh&quot; as the COMMAND - this gives you a sub-shell with the 
+environment defined globally.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:30 GMT, December 15, 2008
+</BODY>
+</HTML>

@@ -1,0 +1,147 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITLAUNCH.CFG</TITLE>
+</HEAD><BODY>
+<H1>HOBBITLAUNCH.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitlaunch.cfg - Task definitions for the hobbitlaunch utility
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>~xymon/server/etc/hobbitlaunch.cfg</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+The hobbitlaunch.cfg file holds the list of tasks that hobbitlaunch runs 
+to perform all of the tasks needed by the Xymon monitor.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>FILE FORMAT</H2>
+
+A task is defined by a <B>key</B>, a <B>command</B>, and optionally 
+also <B>interval</B>, <B>environment</B>, and <B>logfile</B>.
+<P>
+Blank lines and lines starting with a hash mark (#) are treated as 
+comments and ignored.  Long lines can be broken up by putting a 
+backslash at the end of the line and continuing the entry on the 
+next line.
+<P>
+An entry looks like this:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;[hobbitd]
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/hobbitserver.cfg
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CMD&nbsp;/usr/local/xymon/server/bin/hobbitd
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;[updateweb]
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/hobbitserver.cfg
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CMD&nbsp;/usr/local/xymon/server/bin/bbgen
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NEEDS&nbsp;hobbitd
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GROUP&nbsp;webupdates
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INTERVAL&nbsp;5m
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LOGFILE&nbsp;/var/log/xymon/updateweb.log
+<P>
+The <B>key</B> is enclosed in angle brackets, and must be unique
+for each task. You can choose your key-names as you like, they
+are only used internally in hobbitlaunch to identify each task.
+<P>
+The <B>command</B> is defined by the CMD keyword. This is
+the full command including any options you want to use for this 
+task. This is required for all tasks.
+<P>
+The <B>DISABLED</B> keyword means that this command is disabled.
+hobbitlaunch will not start this task. It is recommended that 
+you use this to disable standard tasks, instead of removing them
+or commenting them out. Upgrades to Xymon will add standard
+tasks back into the file, so unless you have them listed as DISABLED
+then tasks may re-appear unexpectedly after an upgrade.
+<P>
+The <B>NEEDS</B> instructs hobbitlaunch not to run this task unless
+the task defined by the NEEDS keyword is already running. This
+is used e.g. to delay the start of some application until the
+needed daemons have been started. The task that must be running
+is defined by its <B>key</B>.
+<P>
+The <B>GROUP</B> keyword can be used to limit the number of tasks 
+that may run simultaneously. E.g. if you are generating multiple
+pagesets of webpages, you dont want them to run at the same time.
+Putting them into a GROUP will cause hobbitlaunch to delay the start
+of new tasks, so that only one task will run per group. You can
+change the limit by defining the group before the tasks, with
+a &quot;GROUP groupname maxtasks&quot; line.
+<P>
+The <B>INTERVAL</B> keyword defines how often this command is
+executed. The example shows a command that runs every 5 minutes.
+If no interval is given, the task is only run once - this is
+useful for tasks that run continually as daemons - although
+if the task stops for some reason, then hobbitlaunch will attempt
+to restart it. Intervals can be specified in seconds (if you 
+just put a number there), or in minutes (5m), hours (2h), or
+days (1d).
+<P>
+The <B>ENVFILE</B> setting points to a file with definitions of
+environment variables. Before running the task, hobbitlaunch will
+setup all of the environment variables listed in this file.
+Since this is a per-task setting, you can use the same hobbitlaunch
+instance to run e.g. both the server- and client-side Xymon 
+tasks. If this option is not present, then the environment 
+defined to hobbitlaunch is used.
+<P>
+The <B>ENVAREA</B> setting modifies which environment variables
+are loaded, by picking up the ones that are defined for this
+specific &quot;area&quot;. See 
+<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+
+for information about environment areas.
+<P>
+The <B>LOGFILE</B> setting defines a logfile for the task.
+hobbitlaunch will start the task with stdout and stderr redirected
+to this file. If this option is not present, then the output
+goes to the same location as the hobbitlaunch output.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:30 GMT, December 15, 2008
+</BODY>
+</HTML>

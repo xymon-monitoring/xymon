@@ -1,0 +1,30 @@
+<CENTER>
+<FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+   <INPUT TYPE="HIDDEN" NAME="ACTION" VALUE="Ack">
+
+   <TABLE SUMMARY="Acknowledge input" BORDER=0>
+     <TR>
+          <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Estimated time to resolve issue: </B></FONT></TD>
+          <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><INPUT TYPE=TEXT NAME="DELAY" VALUE="60" SIZE=4 MAXLENGTH=4> minutes</FONT></TD>
+     </TR>
+
+     <TR>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Explanation/Cause of problem: </B></FONT></TD>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><INPUT TYPE=TEXT NAME="MESSAGE" SIZE=60 MAXLENGTH=80></FONT></TD>
+     </TR>
+
+     <TR>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Acknowledgment Code: </B></FONT></TD>
+        <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><INPUT TYPE=TEXT NAME="NUMBER" SIZE=7 MAXLENGTH=7></FONT></TD>
+     </TR>
+
+     <TR>
+        <TD COLSPAN=2 ALIGN=CENTER>
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="Send" ALT="Send">
+        </TD>
+     </TR>
+   </TABLE>
+</FORM>
+</CENTER>
+

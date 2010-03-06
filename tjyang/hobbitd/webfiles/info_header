@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Set-Cookie" CONTENT="pagepath=; path=/">
+<META HTTP-EQUIV="Set-Cookie" CONTENT="host=&BBHIKEY; path=/">
+<TITLE>Xymon - Host Information</TITLE>
+
+<!-- Styles for the menu bar -->
+<link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
+
+<!-- The favicon image -->
+<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+
+<script language="JavaScript" type="text/javascript">
+function setcheck(field,val) {
+        var length = eval(field.length);
+        if (length)
+                for (i = 0; i < length; i++)
+                        field[i].checked = val;
+        else
+                field.checked = val;
+}
+
+function mark4Disable(services) {
+	for(i=0; i<document.disableform.disabletest.length; i++) {
+		if (services.indexOf(',' + document.disableform.disabletest.options[i].value + ',') > -1) {
+			document.disableform.disabletest.options[i].selected = !document.disableform.disabletest.options[i].selected;
+		}
+	}
+}
+
+</script>
+
+<script language="JavaScript1.2" type="text/javascript">
+
+function validateDisable(theform) {
+	if (theform.disabletest.value == null || theform.disabletest.value == "") {
+		alert("You must select the Test(s) to disable!");
+		theform.disabletest.focus();
+		return false;
+	}
+
+	if (theform.cause.value == null || theform.cause.value == "") {
+		alert("You must fill in the Cause field!");
+		theform.cause.focus();
+		return false;
+	}
+
+	if (!(ispositive(theform.duration.value))) {
+		alert("Duration must be a positive integer.");
+		return false;
+	}
+
+	// fall through...
+	disableButtons(theform,true);
+	theform.submit();
+}
+
+function disableButtons(theform,action) {
+	if (document.all || document.getElementById) {
+		for (i = 0; i < theform.length; i++) {
+			var tempobj = theform.elements[i];
+			if (tempobj.type.toLowerCase() == "button")
+				tempobj.disabled = action;
+		}
+	}
+}
+
+function ispositive(inputVal) {
+	inputStr = inputVal.toString();
+	for (var i = 0; i < inputStr.length; i++) {
+		var oneChar = inputStr.charAt(i)
+		if (oneChar < "0" || oneChar > "9")
+			return false;
+	}
+	if (inputVal < 1)
+		return false;
+	return true;
+}
+
+</script>
+
+</HEAD>
+
+<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+
+<TABLE SUMMARY="Topline" WIDTH="100%">
+<TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
+<TR>
+  <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&HOBBITLOGO</B></FONT>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBHOST - Information</B></FONT></CENTER>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+  </TD>
+</TR>
+<TR>
+  <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
+</TR>
+</TABLE>
+<BR>
+

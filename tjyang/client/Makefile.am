@@ -1,0 +1,25 @@
+## Copyright (C) 2006 Free Software Foundation, Inc.
+## This Makefile.am is free software; the Free Software Foundation
+## gives unlimited permission to copy, distribute and modify it.
+#
+
+AM_CPPFLAGS = -I$(srcdir)/../lib -I$(srcdir)/../include
+#bin_PROGRAMS = hobbitlaunch logfetch clientupdate orcahobbit msgcache
+bin_PROGRAMS = logfetch clientupdate orcahobbit msgcache
+
+#hobbitlaunch_SOURCES = common/hobbitlaunch.c 
+#hobbitlaunch_LDADD = ../lib/libxymonclient.la
+
+logfetch_SOURCES = logfetch.c 
+logfetch_LDADD = ../lib/libxymonclient.la
+
+clientupdate_SOURCES = clientupdate.c 
+clientupdate_LDADD = ../lib/libxymonclient.la
+
+orcahobbit_SOURCES = orcahobbit.c 
+orcahobbit_LDADD = ../lib/libxymonclient.la
+
+msgcache_SOURCES = msgcache.c
+msgcache_LDADD = ../lib/libxymonclient.la
+
+

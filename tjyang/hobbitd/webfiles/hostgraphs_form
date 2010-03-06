@@ -1,0 +1,75 @@
+
+<BR>
+
+<CENTER>
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Metrics date specification">
+    <TR BGCOLOR="#000033">
+       <TD COLSPAN=2>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Metrics Report</B></FONT></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <BR>
+       <CENTER>
+
+       <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+          <SELECT NAME="start-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="start-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="start-yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <!-- If you need hour/minute/second selections, add SELECT lists here with
+	       the names "start-hour", "start-min" and "start-sec" -->
+
+          <FONT SIZE="+1" FACE="Arial, Helvetica">- to -</FONT>
+
+          <SELECT NAME="end-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="end-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="end-yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <!-- If you need hour/minute/second selections, add SELECT lists here with
+	       the names "end-hour", "end-min" and "end-sec" -->
+
+	  <br><br>
+
+	  <SELECT NAME=hostname MULTIPLE SIZE=15>
+	  &HOSTLIST
+	  </SELECT>
+
+	  <SELECT NAME=testname MULTIPLE SIZE=15>
+	  <option value="ALL" SELECTED>ALL</option>
+	  <option value="cpu">CPU load (Windows/Unix)</option>
+	  <option value="la1">CPU utilization (Unix)</option>
+	  <option value="disk">Disk</option>
+	  <option value="memory">RAM/Swap</option>
+	  <option value="conn">Ping times</option>
+	  </SELECT>
+
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="DoReport" VALUE="Generate Report" ALT="Generate Report">
+       </FORM>
+
+       </CENTER>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR><BR><BR>
+

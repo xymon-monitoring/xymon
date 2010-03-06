@@ -1,0 +1,37 @@
+#
+# The clientlaunch.cfg file is loaded by "hobbitlaunch".
+# It controls which of the Hobbit client-side modules to run, 
+# (both the main client "hobbitclient.sh" and any client-side
+# extensions); how often, and with which parameters, options 
+# and environment variables.
+#
+# Note: On the Hobbit *server* itself, this file is normally 
+#       NOT used. Instead, both the client- and server-tasks
+#       are controlled by the hobbitlaunch.cfg file.
+#
+
+# msgcache is used for passive clients, that cannot connect
+# directly to the Hobbit server. This is not the default
+# setup, so this task is normally disabled.
+[msgcache]
+	DISABLED
+	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	CMD $HOBBITCLIENTHOME/bin/msgcache --no-daemon --pidfile=$HOBBITCLIENTHOME/logs/msgcache.pid
+	LOGFILE $HOBBITCLIENTHOME/logs/msgcache.log
+
+# The main client task
+[client]
+	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	CMD $HOBBITCLIENTHOME/bin/hobbitclient.sh @CLIENTFLAGS@
+	LOGFILE $HOBBITCLIENTHOME/logs/hobbitclient.log
+	INTERVAL 5m
+
+# ORCA data collector. This is an experimental add-on module,
+# the data sent by this module are not processed by Hobbit 4.2.
+[orcadata]
+	DISABLED
+	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	CMD $HOBBITCLIENTHOME/bin/orcahobbit --orca=/usr/local/orca/orcallator
+	LOGFILE $HOBBITCLIENTHOME/logs/hobbitclient.log
+	INTERVAL 5m
+

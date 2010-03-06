@@ -1,0 +1,58 @@
+# This file is for Apache 1.3.x and Apache 2.0.x
+#
+# Add this to your Apache configuration, it makes
+# the Xymon webpages and cgi-scripts available in the
+# "@BBHOSTURL@" and "@BBCGIURL@" URLs.
+
+
+# NB: The "Alias" line below must NOT be used if you have
+#     the Xymon webfiles as the root URL. In that case,
+#     you should instead set this:
+#
+#          DocumentRoot @INSTALLWWWDIR@
+
+Alias @BBHOSTURL@/  "@INSTALLWWWDIR@/"
+<Directory "@INSTALLWWWDIR@">
+    Options Indexes FollowSymLinks Includes MultiViews
+    Order allow,deny
+    Allow from all
+</Directory>
+
+ScriptAlias @BBCGIURL@/ "@CGIDIR@/"
+<Directory "@CGIDIR@">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+</Directory>
+
+ScriptAlias @SECUREBBCGIURL@/ "@SECURECGIDIR@/"
+<Directory "@SECURECGIDIR@">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+
+    # Password file where users with access to these scripts are kept.
+    # Create it with "htpasswd -c @INSTALLETCDIR@/hobbitpasswd USERNAME"
+    # Add more users / change passwords with "htpasswd @INSTALLETCDIR@/hobbitpasswd USERNAME"
+    #
+    # You can also use a group file to restrict admin access to members of a
+    # group, instead of anyone who is logged in. In that case you must setup
+    # the "hobbitgroups" file, and change the "Require" settings to require
+    # a specific group membership. See the Apache docs for more details.
+
+    AuthUserFile @INSTALLETCDIR@/hobbitpasswd
+    AuthGroupFile @INSTALLETCDIR@/hobbitgroups
+    AuthType Basic
+    AuthName "Xymon Administration"
+
+    # "valid-user" restricts access to anyone who is logged in.
+    Require valid-user
+
+    # "group admins" restricts access to users who have logged in, AND
+    # are members of the "admins" group in hobbitgroups.
+    # Require group admins
+
+</Directory>
+
