@@ -119,7 +119,7 @@ AC_CHECK_LIB([z], [cos])
 # FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [cos])
 # FIXME: Replace `main' with a function in `-lpcre':
-AC_CHECK_LIB([pcre], [main])
+AC_CHECK_LIB(pcre,pcre_free)
 # FIXME: Replace `main' with a function in `-lrt':
 AC_CHECK_LIB(rt,clock_gettime)
 AC_CHECK_LIB(rrd,rrd_clear_error)
@@ -154,7 +154,6 @@ then
 	AC_MSG_WARN([Great, We have library realtime for clock_gettime!])
 fi
 #
-AC_CHECK_LIB(pcre,pcre_free)
 #
 
 #AC_CONFIG_FILES([Makefile
