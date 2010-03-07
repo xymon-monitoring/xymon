@@ -212,7 +212,7 @@ clientupdate_LDADD = ../lib/libxymonclient.la
 orcahobbit_SOURCES = orcahobbit.c 
 orcahobbit_LDADD = ../lib/libxymonclient.la
 msgcache_SOURCES = msgcache.c
-msgcache_LDADD = ../lib/libxymonclient.la 
+msgcache_LDADD = ../lib/libxymonclient.la   -lrt -lz -lsocket -lnsl
 all: all-am
 
 .SUFFIXES:
