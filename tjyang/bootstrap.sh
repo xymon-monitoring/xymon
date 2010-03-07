@@ -39,9 +39,8 @@ echo "Generating the configure script ..."
 
 autoreconf --install
 
-
-if [ $? = 0 ] ; then	# FreeBSD case
-./configure --prefix=/tmp/xymon 
-fi
-
+# if [ $? = 0 ] ; then	# FreeBSD case
+# ./configure --prefix=/tmp/xymon 
+# fi
+# 
 exit 0

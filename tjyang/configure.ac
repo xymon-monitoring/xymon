@@ -5,35 +5,48 @@
 # NAME                                                                       # 
 # configure.ac  used by bootstrap.sh                                         #
 #                                                                            #
-# REVISION HISTORY							     #
-#     03/04/2010    T.J. Yang   				             #
-#									     #
+# REVISION HISTORY                                                           #
+#     03/04/2010    T.J. Yang                                                #
 #                                                                            #
-# USAGE								             #
+#                                                                            #
+# USAGE                                                                      #
 #   bootstrap.sh to invoke configure.ac                                      #
-# DESCRIPTION								     #
-#   This autoconf script will create client and server "configure" script    #
+# DESCRIPTION                                                                #
+#   This autoconf script will create "configure" that accept --client and    #
+#   --server options like the original man-made configure script.            #
 #   it use automake to create Makefile from Makefile.am                      #
-#   and libtool to create make create libraries xymon needed		     #
+#   and libtool to create make create libraries xymon needed                 #
 #                                                                            #
-# RETURN CODE								     #
-#   SUCCESS (=0) - function completed sucessfully			     #
-#   ERROR   (=1) - error. 						     #
-#   WARNING (=2) - warning... something's not quite right, but it's	     #
-#                      not serious enough to prevent installation.	     #
-#									     #
-# LICENSE 								     #
-#									     #
+# RETURN CODE                                                                #
+#   SUCCESS (=0) - function completed sucessfully                            #
+#   ERROR   (=1) - error.                                                    #
+#   WARNING (=2) - warning... something's not quite right, but it's          #
+#                      not serious enough to prevent installation.           #
+#                                                                            #
+# LICENSE                                                                    #
+#                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
-#									     #
-#									     #
+#                                                                            #
+#                                                                            #
 # COPYRIGHT                                                                  #
 # Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
-#									     #
-#									     #
+#                                                                            #
+#                                                                            #
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
-#									     #
+MYERROR=1
+MYARGS=2
+
+
+# if [ $# -ne $ARGS ] 
+# then
+#     echo "Usage: $0  <client hostname> <ethernet address>"
+#     echo
+#     exit $ERROR
+# 
+# fi
+
+#                                                                             #
 #      checks for programs
 #      checks for libraries
 #      checks for header files
@@ -55,7 +68,6 @@ AC_CONFIG_HEADERS([config.h])
 clear
 # issue a welcome message
 AC_MSG_NOTICE([Configuring Xymon using GNU Autotool.])
-
 
 ## preserve any CFLAGS or LDFLAGS that may be set
 ## NOTE: This must be done before calling any macros that end up
@@ -151,7 +163,7 @@ AC_CHECK_FUNCS([alarm clock_gettime dup2 getcwd gethostbyname gethostname gettim
 
 if test "$ac_cv_header_rt_h" == yes
 then
-	AC_MSG_WARN([Great, We have library realtime for clock_gettime!])
+        AC_MSG_WARN([Great, We have library realtime for clock_gettime!])
 fi
 #
 #
@@ -202,9 +214,5 @@ AC_MSG_NOTICE( OS type  : $host_os)
 AC_MSG_NOTICE( Host CPU : $host_cpu)
 AC_MSG_NOTICE( build-cpu:vendor:os: $build_cpu : $build_vendor : $build_os :) 
 AC_MSG_NOTICE( host-cpu:vendor:os: $host_cpu : $host_vendor : $host_os :) 
-
-
-
-
 
 
