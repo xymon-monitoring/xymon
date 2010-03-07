@@ -539,7 +539,7 @@ configure:15626: result: yes
 configure:15645: checking for cos in -lz
 configure:15680: gcc -o conftest -g   conftest.c -lz   >&5
 conftest.c:43: warning: conflicting types for built-in function 'cos'
-/tmp/ccJKAe84.o: In function `main':
+/tmp/cclbnQsk.o: In function `main':
 /home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:47: undefined reference to `cos'
 collect2: ld returned 1 exit status
 configure:15687: $? = 1
@@ -1341,7 +1341,7 @@ configure:19439: $? = 0
 configure:19461: result: yes
 configure:19376: checking for pstat_getdynamic
 configure:19432: gcc -o conftest -g   conftest.c -lrrd -lrt -lpcre -lm  >&5
-/tmp/cc29Re5M.o: In function `main':
+/tmp/cc1Yng2R.o: In function `main':
 /home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:105: undefined reference to `pstat_getdynamic'
 collect2: ld returned 1 exit status
 configure:19439: $? = 1

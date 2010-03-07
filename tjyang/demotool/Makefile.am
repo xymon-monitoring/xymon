@@ -6,4 +6,4 @@
 AM_CPPFLAGS = -I$(srcdir)/../lib -I${srcdir}/../include
 bin_PROGRAMS = demotool 
 demotool_SOURCES = demotool.c
-demotool_LDADD = ../lib/libxymon.la -lrt -lz
+demotool_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl

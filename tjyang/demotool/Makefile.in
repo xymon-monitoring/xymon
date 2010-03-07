@@ -191,7 +191,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(srcdir)/../lib -I${srcdir}/../include
 demotool_SOURCES = demotool.c
-demotool_LDADD = ../lib/libxymon.la -lrt -lz
+demotool_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
 all: all-am
 
 .SUFFIXES:
