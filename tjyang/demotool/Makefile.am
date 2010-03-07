@@ -9,5 +9,6 @@ demotool_SOURCES = demotool.c
 demotool_LDADD = ../lib/libxymon.la -lrt -lz 
 # We need to addd libsocket when in OpenSoalris 
 if ON_OPENSOLARIS
+else
 demotool_LDADD += -lsocket -lnsl
 endif

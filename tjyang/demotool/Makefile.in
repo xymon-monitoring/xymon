@@ -38,7 +38,7 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = demotool$(EXEEXT)
 # We need to addd libsocket when in OpenSoalris 
-@ON_OPENSOLARIS_TRUE@am__append_1 = -lsocket -lnsl
+@ON_OPENSOLARIS_FALSE@am__append_1 = -lsocket -lnsl
 subdir = demotool
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
