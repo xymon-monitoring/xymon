@@ -192,11 +192,11 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 bbproxy_SOURCES = bbproxy.c 
 bbproxy_LDADD = ../lib/libxymon.la
 bbmessage_cgi_SOURCES = bbmessage.c
-bbmessage_cgi_LDADD = ../lib/libxymon.la
+bbmessage_cgi_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
 all: all-am
 
 .SUFFIXES:

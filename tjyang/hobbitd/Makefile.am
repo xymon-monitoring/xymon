@@ -9,14 +9,14 @@ hobbitfetch.8 hobbit-mailack.8 hobbitweb.5 trimhistory.8
 bin_SCRIPTS = hobbit.sh
 
 
-AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include 
+AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 #bin_PROGRAMS = 
 bin_PROGRAMS = hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore  hobbitd_history \
 hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture \
 hobbitfetch hobbit-mailack trimhistory bbcombotest convertnk rrdcachectl
 
 hobbitd_SOURCES = hobbitd.c hobbitd_buffer.c hobbitd_ipc.c
-hobbitd_LDADD = ../lib/libxymon.la
+hobbitd_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
 
 # converted from CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
 hobbitd_channel_SOURCES = hobbitd_channel.c hobbitd_buffer.c hobbitd_ipc.c

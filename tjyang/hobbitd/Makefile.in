@@ -309,9 +309,9 @@ hobbitd_filestore.8 hobbitd_history.8 hobbitd_hostdata.8 hobbitd_rrd.8 hobbitd_s
 hobbitfetch.8 hobbit-mailack.8 hobbitweb.5 trimhistory.8
 
 bin_SCRIPTS = hobbit.sh
-AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include 
+AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 hobbitd_SOURCES = hobbitd.c hobbitd_buffer.c hobbitd_ipc.c
-hobbitd_LDADD = ../lib/libxymon.la
+hobbitd_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
 
 # converted from CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
 hobbitd_channel_SOURCES = hobbitd_channel.c hobbitd_buffer.c hobbitd_ipc.c
