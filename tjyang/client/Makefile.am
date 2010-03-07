@@ -3,7 +3,7 @@
 ## gives unlimited permission to copy, distribute and modify it.
 #
 
-AM_CPPFLAGS = -I$(srcdir)/../lib -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(srcdir)/../lib -I$(srcdir)/../include -I/usr/include/pcre
 #bin_PROGRAMS = hobbitlaunch logfetch clientupdate orcahobbit msgcache
 bin_PROGRAMS = logfetch clientupdate orcahobbit msgcache
 
@@ -20,6 +20,6 @@ orcahobbit_SOURCES = orcahobbit.c
 orcahobbit_LDADD = ../lib/libxymonclient.la
 
 msgcache_SOURCES = msgcache.c
-msgcache_LDADD = ../lib/libxymonclient.la
+msgcache_LDADD = ../lib/libxymonclient.la 
 
 
