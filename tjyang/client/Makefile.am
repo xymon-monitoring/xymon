@@ -20,6 +20,11 @@ orcahobbit_SOURCES = orcahobbit.c
 orcahobbit_LDADD = ../lib/libxymonclient.la
 
 msgcache_SOURCES = msgcache.c
-msgcache_LDADD = ../lib/libxymonclient.la   -lrt -lz -lsocket -lnsl
+msgcache_LDADD = -lrt -lz ../lib/libxymonclient.la  
+
+# # We need to addd libsocket when in OpenSoalris 
+# if ON_OPENSOLARIS
+# msgcache_LDADD += -lsocket -lnsl
+# endif
 
 

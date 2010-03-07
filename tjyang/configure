@@ -794,6 +794,8 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 POW_LIB
 LIBOBJS
+ON_OPENSOLARIS_FALSE
+ON_OPENSOLARIS_TRUE
 CXXCPP
 OTOOL64
 OTOOL
@@ -908,7 +910,6 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_comp_mode
 enable_dependency_tracking
 enable_shared
 enable_static
@@ -916,6 +917,7 @@ with_pic
 enable_fast_install
 with_gnu_ld
 enable_libtool_lock
+with_compile_mode
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1571,11 +1573,10 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
- --with-comp-mode=<mode>
-Specify a compilation mode: client or server
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
+--with-compile-mode=<mode> Xymon compilation mode: client or server
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -2046,10 +2047,10 @@ ac_config_headers="$ac_config_headers config.h"
 
 #      information on the package
 #Clear scrren
-clear
+# clear
 # issue a welcome message
-{ $as_echo "$as_me:$LINENO: Configuring Xymon using GNU Autotool." >&5
-$as_echo "$as_me: Configuring Xymon using GNU Autotool." >&6;}
+{ $as_echo "$as_me:$LINENO: Configuring Xymon using GNU Autotool for ${host_os}" >&5
+$as_echo "$as_me: Configuring Xymon using GNU Autotool for ${host_os}" >&6;}
 
 ## preserve any CFLAGS or LDFLAGS that may be set
 ## NOTE: This must be done before calling any macros that end up
@@ -2063,27 +2064,12 @@ $as_echo "$as_me: Configuring Xymon using GNU Autotool." >&6;}
 #AC_SUBST(CONFIG_CFLAGS)
 #AC_SUBST(CONFIG_LDFLAGS)
 
-
-
-# Take augument of client or server.
-
-# Check whether --with-comp-mode was given.
-if test "${with_comp_mode+set}" = set; then
-  withval=$with_comp_mode; comp_mode=$withval
-else
-  comp_mode=client
-fi
-
-
-case "$comp_mode" in
-    client)
-    CFLAGS=-g
-    ;;
-    server | * )
-    CFLAGS=-O
-    ;;
-esac
-
+# ------------------------ PRE CHECK  ------------------------- #
+#AC_CHECK_PROGS([TAR],[tar gtar],[:])
+#if test "$TAR" = ":"
+#then
+#   AC_MSG_ERROR([Xymon needs tar]}
+#fi
 # ------------------------ HEADER  FILE DECLARATION ------------------------- #
 #
 
@@ -5351,13 +5337,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5354: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5340: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5357: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5343: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5360: output\"" >&5)
+  (eval echo "\"\$as_me:5346: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6552,7 +6538,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6555 "configure"' > conftest.$ac_ext
+  echo '#line 6541 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8911,11 +8897,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8914: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8900: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8918: \$? = $ac_status" >&5
+   echo "$as_me:8904: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9250,11 +9236,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9253: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9239: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9257: \$? = $ac_status" >&5
+   echo "$as_me:9243: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9355,11 +9341,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9358: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9344: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9362: \$? = $ac_status" >&5
+   echo "$as_me:9348: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9410,11 +9396,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9413: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9399: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9417: \$? = $ac_status" >&5
+   echo "$as_me:9403: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12213,7 +12199,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12216 "configure"
+#line 12202 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12309,7 +12295,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12312 "configure"
+#line 12298 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14329,11 +14315,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14332: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14318: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14336: \$? = $ac_status" >&5
+   echo "$as_me:14322: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14428,11 +14414,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14431: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14417: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14435: \$? = $ac_status" >&5
+   echo "$as_me:14421: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14480,11 +14466,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14483: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14469: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14487: \$? = $ac_status" >&5
+   echo "$as_me:14473: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16019,6 +16005,151 @@ _ACEOF
 fi
 
 
+# check opensolaris
+if test "${ac_cv_header__usr_include_pcre_pcre_h+set}" = set; then
+  { $as_echo "$as_me:$LINENO: checking for /usr/include/pcre/pcre.h" >&5
+$as_echo_n "checking for /usr/include/pcre/pcre.h... " >&6; }
+if test "${ac_cv_header__usr_include_pcre_pcre_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header__usr_include_pcre_pcre_h" >&5
+$as_echo "$ac_cv_header__usr_include_pcre_pcre_h" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking /usr/include/pcre/pcre.h usability" >&5
+$as_echo_n "checking /usr/include/pcre/pcre.h usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include </usr/include/pcre/pcre.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking /usr/include/pcre/pcre.h presence" >&5
+$as_echo_n "checking /usr/include/pcre/pcre.h presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include </usr/include/pcre/pcre.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: /usr/include/pcre/pcre.h: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: /usr/include/pcre/pcre.h: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ----------------------------------- ##
+## Report this to tjyang2001@gmail.com ##
+## ----------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for /usr/include/pcre/pcre.h" >&5
+$as_echo_n "checking for /usr/include/pcre/pcre.h... " >&6; }
+if test "${ac_cv_header__usr_include_pcre_pcre_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_header__usr_include_pcre_pcre_h=$ac_header_preproc
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header__usr_include_pcre_pcre_h" >&5
+$as_echo "$ac_cv_header__usr_include_pcre_pcre_h" >&6; }
+
+fi
+if test "x$ac_cv_header__usr_include_pcre_pcre_h" = x""yes; then
+  on_opensolaris=no
+fi
+
+
+ if test "$on_opensolaris"=yes; then
+  ON_OPENSOLARIS_TRUE=
+  ON_OPENSOLARIS_FALSE='#'
+else
+  ON_OPENSOLARIS_TRUE='#'
+  ON_OPENSOLARIS_FALSE=
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 { $as_echo "$as_me:$LINENO: checking for off_t" >&5
@@ -19479,11 +19610,72 @@ done
 
 if test "$ac_cv_header_rt_h" == yes
 then
-	{ $as_echo "$as_me:$LINENO: WARNING: Great, We have library realtime for clock_gettime!" >&5
+        { $as_echo "$as_me:$LINENO: WARNING: Great, We have library realtime for clock_gettime!" >&5
 $as_echo "$as_me: WARNING: Great, We have library realtime for clock_gettime!" >&2;}
 fi
 #
 #
+# Take augument of client or server.
+
+# Check whether --with-compile-mode was given.
+if test "${with_compile_mode+set}" = set; then
+  withval=$with_compile_mode; compile_mode=$withval
+else
+  compile_mode=client
+fi
+
+
+case "$compile_mode" in
+    client)
+    CFLAGS=-g
+    ;;
+    server | * )
+    CFLAGS=-O
+    ;;
+esac
+
+
+#
+case "${host_os}" in
+  freebsd*)
+    ac_default_prefix=/usr/local
+    CPPFLAGS=-I/usr/local/include
+    LDFLAGS=-L/usr/local/lib
+    ;;
+  openbsd*)
+    ac_default_prefix=/usr/local
+    if test ${prefix} = '/usr/local' || test ${prefix} = 'NONE'; then
+      if test ${sysconfdir} = '${prefix}/etc'; then
+         sysconfdir=/etc
+      fi
+      if test ${mandir} = '${prefix}/man'; then
+         mandir=/usr/share/man
+      fi
+    fi
+    CPPFLAGS=-I/usr/local/include
+    LDFLAGS=-L/usr/local/lib
+    ;;
+  darwin*)
+
+cat >>confdefs.h <<\_ACEOF
+#define AST_POLL_COMPAT 1
+_ACEOF
+
+    ;;
+  *)
+    ac_default_prefix=/usr
+    if test ${prefix} = '/usr' || test ${prefix} = 'NONE'; then
+       if test ${sysconfdir} = '${prefix}/etc'; then
+          sysconfdir=/etc
+       fi
+       if test ${mandir} = '${prefix}/man'; then
+          mandir=/usr/share/man
+       fi
+    fi
+  ;;
+esac
+
+
 
 #AC_CONFIG_FILES([Makefile
 #                 bbdisplay/Makefile
@@ -19632,6 +19824,13 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"am__fastdepCXX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ON_OPENSOLARIS_TRUE}" && test -z "${ON_OPENSOLARIS_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"ON_OPENSOLARIS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"ON_OPENSOLARIS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -22141,7 +22340,7 @@ fi
 
 
 if test "x${silent}" != "xyes" ; then
-
+echo ${silent}
 echo
 echo "  #     #  #     #  #     #  #######  #     # "
 echo "   #   #    #   #   ##   ##  #     #  ##    # "
@@ -22154,8 +22353,8 @@ echo
 
 fi
 
-{ $as_echo "$as_me:$LINENO: Xymon source code configured for: " >&5
-$as_echo "$as_me: Xymon source code configured for: " >&6;}
+{ $as_echo "$as_me:$LINENO: Xymon source code configured as $CLIENT_TYPE for: " >&5
+$as_echo "$as_me: Xymon source code configured as $CLIENT_TYPE for: " >&6;}
 { $as_echo "$as_me:$LINENO: OS type  : $host_os" >&5
 $as_echo "$as_me: OS type  : $host_os" >&6;}
 { $as_echo "$as_me:$LINENO: Host CPU : $host_cpu" >&5

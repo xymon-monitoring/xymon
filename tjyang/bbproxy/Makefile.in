@@ -37,6 +37,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bbproxy$(EXEEXT) bbmessage.cgi$(EXEEXT)
+@ON_OPENSOLARIS_FALSE@am__append_1 = -lsocket -lnsl
+@ON_OPENSOLARIS_FALSE@am__append_2 = -lsocket -lnsl
 subdir = bbproxy
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,10 +56,11 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_bbmessage_cgi_OBJECTS = bbmessage.$(OBJEXT)
 bbmessage_cgi_OBJECTS = $(am_bbmessage_cgi_OBJECTS)
-bbmessage_cgi_DEPENDENCIES = ../lib/libxymon.la
+am__DEPENDENCIES_1 =
+bbmessage_cgi_DEPENDENCIES = ../lib/libxymon.la $(am__DEPENDENCIES_1)
 am_bbproxy_OBJECTS = bbproxy.$(OBJEXT)
 bbproxy_OBJECTS = $(am_bbproxy_OBJECTS)
-bbproxy_DEPENDENCIES = ../lib/libxymon.la
+bbproxy_DEPENDENCIES = ../lib/libxymon.la $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -194,9 +197,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 bbproxy_SOURCES = bbproxy.c 
-bbproxy_LDADD = ../lib/libxymon.la
+bbproxy_LDADD = ../lib/libxymon.la $(am__append_1)
 bbmessage_cgi_SOURCES = bbmessage.c
-bbmessage_cgi_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
+bbmessage_cgi_LDADD = ../lib/libxymon.la -lrt -lz $(am__append_2)
 all: all-am
 
 .SUFFIXES:

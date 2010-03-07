@@ -181,7 +181,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /usr/local
+prefix = /tmp/xymon
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -194,7 +194,7 @@ top_builddir = ..
 top_srcdir = ..
 AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 bbgen_SOURCES = bbgen.c loadbbhosts.c loaddata.c bbconvert.c pagegen.c process.c wmlgen.c rssgen.c util.c debug.c csvreport.c
-bbgen_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
+bbgen_LDADD = ../lib/libxymon.la -lrt -lz
 all: all-am
 
 .SUFFIXES:
@@ -521,6 +521,12 @@ uninstall-am: uninstall-binPROGRAMS
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
+
+# We need to addd libsocket when in OpenSoalris 
+#if ON_OPENSOLARIS
+#bbgen_LDFLAGS = -lsocket -lnsl
+#endif
+#
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

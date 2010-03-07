@@ -43,6 +43,7 @@ bin_PROGRAMS = hobbitd$(EXEEXT) hobbitd_channel$(EXEEXT) \
 	hobbitd_capture$(EXEEXT) hobbitfetch$(EXEEXT) \
 	hobbit-mailack$(EXEEXT) trimhistory$(EXEEXT) \
 	bbcombotest$(EXEEXT) convertnk$(EXEEXT) rrdcachectl$(EXEEXT)
+#am__append_1 = -lsocket -lnsl
 subdir = hobbitd
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -72,7 +73,8 @@ hobbit_mailack_DEPENDENCIES = ../lib/libxymon.la
 am_hobbitd_OBJECTS = hobbitd.$(OBJEXT) hobbitd_buffer.$(OBJEXT) \
 	hobbitd_ipc.$(OBJEXT)
 hobbitd_OBJECTS = $(am_hobbitd_OBJECTS)
-hobbitd_DEPENDENCIES = ../lib/libxymon.la
+am__DEPENDENCIES_1 =
+hobbitd_DEPENDENCIES = ../lib/libxymon.la $(am__DEPENDENCIES_1)
 am_hobbitd_alert_OBJECTS = hobbitd_alert.$(OBJEXT) \
 	hobbitd_worker.$(OBJEXT) hobbitd_buffer.$(OBJEXT) \
 	do_alert.$(OBJEXT)
@@ -290,7 +292,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /usr/local
+prefix = /tmp/xymon
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -310,8 +312,9 @@ hobbitfetch.8 hobbit-mailack.8 hobbitweb.5 trimhistory.8
 
 bin_SCRIPTS = hobbit.sh
 AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
-hobbitd_SOURCES = hobbitd.c hobbitd_buffer.c hobbitd_ipc.c
-hobbitd_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
+hobbitd_SOURCES = hobbitd.c hobbitd_buffer.c hobbitd_ipc.c \
+	hobbitd_buffer.h hobbitd_ipc.h hobbitd_rrd.h hobbitd_worker.h
+hobbitd_LDADD = ../lib/libxymon.la -lrt -lz $(am__append_1)
 
 # converted from CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
 hobbitd_channel_SOURCES = hobbitd_channel.c hobbitd_buffer.c hobbitd_ipc.c

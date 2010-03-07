@@ -212,7 +212,7 @@ clientupdate_LDADD = ../lib/libxymonclient.la
 orcahobbit_SOURCES = orcahobbit.c 
 orcahobbit_LDADD = ../lib/libxymonclient.la
 msgcache_SOURCES = msgcache.c
-msgcache_LDADD = ../lib/libxymonclient.la   -lrt -lz -lsocket -lnsl
+msgcache_LDADD = -lrt -lz ../lib/libxymonclient.la  
 all: all-am
 
 .SUFFIXES:
@@ -541,6 +541,11 @@ uninstall-am: uninstall-binPROGRAMS
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
+
+# # We need to addd libsocket when in OpenSoalris 
+# if ON_OPENSOLARIS
+# msgcache_LDADD += -lsocket -lnsl
+# endif
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -37,6 +37,8 @@ POST_UNINSTALL = :
 build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
 bin_PROGRAMS = demotool$(EXEEXT)
+# We need to addd libsocket when in OpenSoalris 
+am__append_1 = -lsocket -lnsl
 subdir = demotool
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,7 +56,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_demotool_OBJECTS = demotool.$(OBJEXT)
 demotool_OBJECTS = $(am_demotool_OBJECTS)
-demotool_DEPENDENCIES = ../lib/libxymon.la
+am__DEPENDENCIES_1 =
+demotool_DEPENDENCIES = ../lib/libxymon.la $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -178,7 +181,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /usr/local
+prefix = /tmp/xymon
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -191,7 +194,7 @@ top_builddir = ..
 top_srcdir = ..
 AM_CPPFLAGS = -I$(srcdir)/../lib -I${srcdir}/../include
 demotool_SOURCES = demotool.c
-demotool_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
+demotool_LDADD = ../lib/libxymon.la -lrt -lz $(am__append_1)
 all: all-am
 
 .SUFFIXES:

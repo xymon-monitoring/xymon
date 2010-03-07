@@ -34,9 +34,10 @@
 #                                                                            #
 #                                                                            #
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
-MYERROR=1
-MYARGS=2
-
+# MYERROR=1
+# MYARGS=2
+# CLIENT_TYPE=client-central
+#
 
 # if [ $# -ne $ARGS ] 
 # then
@@ -65,9 +66,9 @@ AC_INIT([xymon], [4.3.0], [tjyang2001@gmail.com])
 AC_CONFIG_HEADERS([config.h])
 #      information on the package
 #Clear scrren
-clear
+# clear
 # issue a welcome message
-AC_MSG_NOTICE([Configuring Xymon using GNU Autotool.])
+AC_MSG_NOTICE([Configuring Xymon using GNU Autotool for ${host_os}])
 
 ## preserve any CFLAGS or LDFLAGS that may be set
 ## NOTE: This must be done before calling any macros that end up
@@ -81,22 +82,12 @@ AC_MSG_NOTICE([Configuring Xymon using GNU Autotool.])
 #AC_SUBST(CONFIG_CFLAGS)
 #AC_SUBST(CONFIG_LDFLAGS)
 
-
-
-# Take augument of client or server.
-AC_ARG_WITH(comp-mode,[ --with-comp-mode=<mode>
-Specify a compilation mode: client or server],
-[comp_mode=$withval],[comp_mode=client])
-
-case "$comp_mode" in
-    client)
-    CFLAGS=-g 
-    ;;
-    server | * )
-    CFLAGS=-O
-    ;;
-esac
-
+# ------------------------ PRE CHECK  ------------------------- #
+#AC_CHECK_PROGS([TAR],[tar gtar],[:])
+#if test "$TAR" = ":"  
+#then
+#   AC_MSG_ERROR([Xymon needs tar]}
+#fi
 # ------------------------ HEADER  FILE DECLARATION ------------------------- #
 # 
 AC_CONFIG_SRCDIR([lib/files.c])
@@ -136,7 +127,9 @@ AC_CHECK_LIB(pcre,pcre_free)
 AC_CHECK_LIB(rt,clock_gettime)
 AC_CHECK_LIB(rrd,rrd_clear_error)
 
-
+# check opensolaris
+AC_CHECK_HEADER([/usr/include/pcre/pcre.h],[on_opensolaris=no])
+AM_CONDITIONAL([ON_OPENSOLARIS],[test "$on_opensolaris"=yes])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
@@ -167,6 +160,57 @@ then
 fi
 #
 #
+# Take augument of client or server.
+AC_ARG_WITH(compile-mode,[--with-compile-mode=<mode> Xymon compilation mode: client or server],
+[compile_mode=$withval],[compile_mode=client])
+
+case "$compile_mode" in
+    client)
+    CFLAGS=-g 
+    ;;
+    server | * )
+    CFLAGS=-O
+    ;;
+esac
+
+
+# 
+case "${host_os}" in
+  freebsd*)
+    ac_default_prefix=/usr/local
+    CPPFLAGS=-I/usr/local/include
+    LDFLAGS=-L/usr/local/lib
+    ;;
+  openbsd*)
+    ac_default_prefix=/usr/local
+    if test ${prefix} = '/usr/local' || test ${prefix} = 'NONE'; then
+      if test ${sysconfdir} = '${prefix}/etc'; then
+         sysconfdir=/etc
+      fi
+      if test ${mandir} = '${prefix}/man'; then
+         mandir=/usr/share/man
+      fi
+    fi
+    CPPFLAGS=-I/usr/local/include
+    LDFLAGS=-L/usr/local/lib
+    ;;
+  darwin*)
+    AC_DEFINE([AST_POLL_COMPAT], 1, [Define to 1 if internal poll should be used.])
+    ;;
+  *)
+    ac_default_prefix=/usr
+    if test ${prefix} = '/usr' || test ${prefix} = 'NONE'; then
+       if test ${sysconfdir} = '${prefix}/etc'; then
+          sysconfdir=/etc
+       fi
+       if test ${mandir} = '${prefix}/man'; then
+          mandir=/usr/share/man
+       fi
+    fi
+  ;;
+esac 
+
+
 
 #AC_CONFIG_FILES([Makefile
 #                 bbdisplay/Makefile
@@ -196,7 +240,7 @@ hobbitd/Makefile])
 AC_OUTPUT
 
 if test "x${silent}" != "xyes" ; then
-
+echo ${silent}
 echo
 echo "  #     #  #     #  #     #  #######  #     # "
 echo "   #   #    #   #   ##   ##  #     #  ##    # "
@@ -209,7 +253,7 @@ echo
 
 fi
 
-AC_MSG_NOTICE(Xymon source code configured for: )
+AC_MSG_NOTICE(Xymon source code configured as $CLIENT_TYPE for: )
 AC_MSG_NOTICE( OS type  : $host_os)
 AC_MSG_NOTICE( Host CPU : $host_cpu)
 AC_MSG_NOTICE( build-cpu:vendor:os: $build_cpu : $build_vendor : $build_os :) 

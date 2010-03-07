@@ -37,6 +37,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = demotool$(EXEEXT)
+# We need to addd libsocket when in OpenSoalris 
+@ON_OPENSOLARIS_TRUE@am__append_1 = -lsocket -lnsl
 subdir = demotool
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,7 +56,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_demotool_OBJECTS = demotool.$(OBJEXT)
 demotool_OBJECTS = $(am_demotool_OBJECTS)
-demotool_DEPENDENCIES = ../lib/libxymon.la
+am__DEPENDENCIES_1 =
+demotool_DEPENDENCIES = ../lib/libxymon.la $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -191,7 +194,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(srcdir)/../lib -I${srcdir}/../include
 demotool_SOURCES = demotool.c
-demotool_LDADD = ../lib/libxymon.la -lrt -lz -lsocket -lnsl
+demotool_LDADD = ../lib/libxymon.la -lrt -lz $(am__append_1)
 all: all-am
 
 .SUFFIXES:

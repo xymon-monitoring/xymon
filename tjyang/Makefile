@@ -210,7 +210,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /usr/local
+prefix = /tmp/xymon
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -224,7 +224,9 @@ top_srcdir = .
 
 # What: list out the directories contains source code
 SUBDIRS = lib common demotool client bbdisplay bbproxy hobbitd examples docs
+#
 # What: include the file in m4 directory
+#  
 ACLOCAL_AMFLAGS = -I m4
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
