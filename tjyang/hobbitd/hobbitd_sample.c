@@ -27,8 +27,8 @@ static char rcsid[] = "$Id: hobbitd_sample.c 6125 2009-02-12 13:09:34Z storner $
 
 #include "libbbgen.h"
 #include "hobbitd_worker.h"
-
-#define MAX_META 20	/* The maximum number of meta-data items in a message */
+/** The maximum number of meta-data items in a  xymon message */
+#define MAX_META 20	
 
 
 int main(int argc, char *argv[])
@@ -38,17 +38,17 @@ int main(int argc, char *argv[])
 	int argi, seq;
 	struct timespec *timeout = NULL;
 
-	/* Handle program options. */
+	/** Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
-			/*
+		         /**
 			 * A global "debug" variable is available. If
 			 * it is set, then "dbgprintf()" outputs debug messages.
 			 */
 			debug = 1;
 		}
 		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
-			/*
+		         /**
 			 * You can have a timeout when waiting for new
 			 * messages. If it happens, you will get a "@@idle\n"
 			 * message with sequence number 0.
@@ -60,14 +60,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/*
+	/**
 	 * An "errprintf" routine prints an error message to stderr, including a timestamp.
 	 * The error-messages are saved in a string variable, unless you disable that. You
 	 * should do so for long-lived processes.
 	 */
 	save_errbuf = 0;
 
-	/*
+	/**
 	 * If your worker application fork()'s child processes, then
 	 * you should ignore or handle SIGCHLD properly, both to avoid
 	 * zombie's, and to prevent the SIGCHLD signal from interfering
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		/*
+		/**
 		 * get_hobbitd_message() gets the next message from the queue.
 		 * The message buffer is allocated and managed by the get_hobbitd_message()
 		 * routine, so you should NOT try to free or allocate it yourself.
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		/*
+		/**
 		 * Now we have a message. So do something with it.
 		 *
 		 * The first line of the message is always a '|' separated
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 		 * line, the content varies by channel.
 		 */
 
-		/* Split the message in the first line (with meta-data), and the rest */
+		/** Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
 		if (eoln) {
 			*eoln = '\0';
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 			restofmsg = "";
 		}
 
-		/* 
+		/** 
 		 * Now parse the meta-data into elements.
 		 * We use our own "gettok()" routine which works
 		 * like strtok(), but can handle empty elements.
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 		}
 		metadata[metacount] = NULL;
 
-		/*
+		/**
 		 * A "shutdown" message is sent when the master daemon
 		 * terminates. The child workers should shutdown also.
 		 */
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		/*
+		/**
 		 * A "logrotate" message is sent when the Hobbit logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		/*
+		/**
 		 * An "idle" message appears when get_hobbitd_message() 
 		 * exceeds the timeout setting (ie. you passed a timeout
 		 * value). This allows your worker module to perform
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 			printf("Got an 'idle' message\n");
 		}
 
-		/*
+		/**
 		 * The "drophost", "droptest", "renamehost" and "renametst"
 		 * indicates that a host/test was deleted or renamed. If the
 		 * worker module maintains some internal storage (in memory
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 				metadata[3], metadata[4], metadata[5]);
 		}
 
-		/*
+		/**
 		 * What happens next is up to the worker module.
 		 *
 		 * For this sample module, we'll just print out the data we got.

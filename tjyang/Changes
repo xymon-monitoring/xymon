@@ -4,10 +4,11 @@ Changes from 4.3.0 beta 2 -> 4.3.0 beta 3 (06 March 2010)
 * using autoconf,automake and libtool GNU build system.
 * configure.ac created.
 * demotool add back from trunk.
-* Adding more documentation in codes using format for doxygen
+* Revise  documentation stype in codes using doxygen format. 
 * rename availiablity.h into xymon_availiablity.h since it conflict with Availiablity.h in MaOS X 10.6.*.
-
-
+* use splint(lclint) to clean the code.
+* libbbgen -> libxymon, rename bbgen to xymon.  stay away from bb.
+* add docs/books/xymon-rtf that using latex to create manual/books
 
 Changes from 4.3.0 beta 1 -> 4.3.0 beta 2 (24 Apr 2009)
 =======================================================

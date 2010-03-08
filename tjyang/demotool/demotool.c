@@ -107,16 +107,17 @@
 /*									      */
 
 
-int  SUCCESS,debug = 0;
-int  ERROR   = 1;
+int  SUCCESS,debug = 0; /** Define SUCCESS as integer with value  of 1*/
+int  debug = 0;
+int  ERROR   = 1;       /** Define ERROR as integer with valle of 0  */
 int  WARNING = 2;
 
-/* Where we put demo configuration files */
+/**  Where we put demo configuration files */
 char *CONFIGDIR = "/tmp/democonf";  
 
 struct sockaddr_in srvaddr;
 
-volatile int reconfig = 1;         /* use volatile integer for speed ? */
+volatile int reconfig = 1;         /**  use volatile integer for speed ? */
 
 typedef struct netsvc_t {
 	int listenfd;
@@ -160,7 +161,7 @@ static char *path = NULL;
 
 char *nextservice(char *dirname, char *svc)
 {
-  /*  INPUT : dierctory path string name and service name.
+  /**   INPUT : dierctory path string name and service name.
       OUTPUT:
   */
 	struct stat st;
@@ -237,7 +238,7 @@ void addtobuffer(char **buf, int *bufsz, char *newtext)
 
 	strcat(*buf, newtext);
 }
-/* WHAT: */ 
+/**  WHAT: */ 
 char *clientdata(char *cpath)
 {
 	char *res = NULL;
@@ -474,7 +475,7 @@ void do_select(void)
 
 		if (nwalk->listenfd && FD_ISSET(nwalk->listenfd, &readfds)) {
 			while ((newfd = accept(nwalk->listenfd, NULL, 0)) > 0) {
-				/* Pick up a new connection */
+				/**  Pick up a new connection */
 				fcntl(newfd, F_SETFL, O_NONBLOCK);
 				active_t *newitem = (active_t *)malloc(sizeof(active_t));
 				newitem->fd = newfd;
@@ -571,16 +572,16 @@ int main(int argc, char *argv[])
   int showhelp = 0;
 
   memset(&srvaddr, 0, sizeof(srvaddr));
-  /* Xymon server port number */
+  /**  Xymon server port number */
   srvaddr.sin_port = htons(1984);   
   srvaddr.sin_family = AF_INET;
-  /* */
+  /**  */
   inet_aton("127.0.0.1", (struct in_addr *) &srvaddr.sin_addr.s_addr);
 
-  /* Handle program options. */
+  /**  Handle program options. */
 
   if (argc < 2){
-	     /* No more options - pickup recipient and msg */
+	     /**  No more options - pickup recipient and msg */
 	     showhelp=1;
   }
 
@@ -601,7 +602,7 @@ int main(int argc, char *argv[])
   	     inet_aton(p+1, (struct in_addr *) &srvaddr.sin_addr.s_addr);
   	}
 	else if (strcmp(argv[argi], "--debug") == 0) {
-	    /*
+	    /** 
 	     * A global "debug" variable is available. If
 	     */
 	    debug = 1;
