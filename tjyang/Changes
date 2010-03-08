@@ -2,6 +2,7 @@ Changes from 4.3.0 beta 2 -> 4.3.0 beta 3 (06 March 2010)
 =======================================================
 * add compression.c into this branch from trunk.
 * using autoconf,automake and libtool GNU build system.
+* put in i18n framework using hello.c as example.
 * configure.ac created.
 * demotool add back from trunk.
 * Revise  documentation stype in codes using doxygen format. 
