@@ -107,8 +107,8 @@
 /*									      */
 
 
-int  SUCCESS,debug = 0; /** Define SUCCESS as integer with value  of 1*/
-int  debug = 0;
+int  SUCCESS = 0; /** Define SUCCESS as integer with value  of 1*/
+int  debug = 0;   /** to print out more information when debug is 1 */
 int  ERROR   = 1;       /** Define ERROR as integer with valle of 0  */
 int  WARNING = 2;
 
