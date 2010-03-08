@@ -16,7 +16,7 @@
 #include "osdefs.h"
 
 #ifndef HAVE_SNPRINTF
-int snprintf(char *str, size_t size, const char *format, ...)
+int snprintf(char *str, size_t size, const char *format, /*args*/ ...)
 {
 	va_list args;
 

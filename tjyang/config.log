@@ -649,13 +649,18 @@ configure:18431: $? = 0
 configure:18445: result: yes
 configure:18478: checking for utime.h
 configure:18487: result: yes
-configure:18506: checking for cos in -lz
-configure:18541: gcc -o conftest -g -O2   conftest.c -lz   >&5
-conftest.c:46: warning: conflicting types for built-in function 'cos'
-/tmp/ccxh3QVm.o: In function `main':
-/home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:50: undefined reference to `cos'
+configure:18508: checking for snprintf in -lc
+configure:18543: gcc -o conftest -g -O2   conftest.c -lc   >&5
+conftest.c:46: warning: conflicting types for built-in function 'snprintf'
+configure:18550: $? = 0
+configure:18571: result: yes
+configure:18585: checking for cos in -lz
+configure:18620: gcc -o conftest -g -O2   conftest.c -lz  -lc  >&5
+conftest.c:47: warning: conflicting types for built-in function 'cos'
+/tmp/ccxuapLq.o: In function `main':
+/home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:51: undefined reference to `cos'
 collect2: ld returned 1 exit status
-configure:18548: $? = 1
+configure:18627: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -694,6 +699,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | /* end confdefs.h.  */
 | 
 | /* Override any GCC internal prototype to avoid an error.
@@ -710,28 +716,28 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:18569: result: no
-configure:18582: checking for cos in -lm
-configure:18617: gcc -o conftest -g -O2   conftest.c -lm   >&5
-conftest.c:46: warning: conflicting types for built-in function 'cos'
-configure:18624: $? = 0
-configure:18645: result: yes
-configure:18658: checking for pcre_free in -lpcre
-configure:18693: gcc -o conftest -g -O2   conftest.c -lpcre  -lm  >&5
-configure:18700: $? = 0
-configure:18721: result: yes
-configure:18734: checking for clock_gettime in -lrt
-configure:18769: gcc -o conftest -g -O2   conftest.c -lrt  -lpcre -lm  >&5
-configure:18776: $? = 0
-configure:18797: result: yes
-configure:18809: checking for rrd_clear_error in -lrrd
-configure:18844: gcc -o conftest -g -O2   conftest.c -lrrd  -lrt -lpcre -lm  >&5
-configure:18851: $? = 0
-configure:18872: result: yes
-configure:18895: checking /usr/include/pcre/pcre.h usability
-configure:18912: gcc -c -g -O2  conftest.c >&5
-conftest.c:76:36: error: /usr/include/pcre/pcre.h: No such file or directory
-configure:18919: $? = 1
+configure:18648: result: no
+configure:18661: checking for cos in -lm
+configure:18696: gcc -o conftest -g -O2   conftest.c -lm  -lc  >&5
+conftest.c:47: warning: conflicting types for built-in function 'cos'
+configure:18703: $? = 0
+configure:18724: result: yes
+configure:18737: checking for pcre_free in -lpcre
+configure:18772: gcc -o conftest -g -O2   conftest.c -lpcre  -lm -lc  >&5
+configure:18779: $? = 0
+configure:18800: result: yes
+configure:18813: checking for clock_gettime in -lrt
+configure:18848: gcc -o conftest -g -O2   conftest.c -lrt  -lpcre -lm -lc  >&5
+configure:18855: $? = 0
+configure:18876: result: yes
+configure:18888: checking for rrd_clear_error in -lrrd
+configure:18923: gcc -o conftest -g -O2   conftest.c -lrrd  -lrt -lpcre -lm -lc  >&5
+configure:18930: $? = 0
+configure:18951: result: yes
+configure:18974: checking /usr/include/pcre/pcre.h usability
+configure:18991: gcc -c -g -O2  conftest.c >&5
+conftest.c:77:36: error: /usr/include/pcre/pcre.h: No such file or directory
+configure:18998: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -770,6 +776,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -809,11 +816,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include </usr/include/pcre/pcre.h>
-configure:18933: result: no
-configure:18937: checking /usr/include/pcre/pcre.h presence
-configure:18952: gcc -E  conftest.c
-conftest.c:43:36: error: /usr/include/pcre/pcre.h: No such file or directory
-configure:18959: $? = 1
+configure:19012: result: no
+configure:19016: checking /usr/include/pcre/pcre.h presence
+configure:19031: gcc -E  conftest.c
+conftest.c:44:36: error: /usr/include/pcre/pcre.h: No such file or directory
+configure:19038: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -852,22 +859,23 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
 | #define HAVE_LIBRRD 1
 | /* end confdefs.h.  */
 | #include </usr/include/pcre/pcre.h>
-configure:18973: result: no
-configure:19006: checking for /usr/include/pcre/pcre.h
-configure:19013: result: no
-configure:19031: checking for off_t
-configure:19059: gcc -c -g -O2  conftest.c >&5
-configure:19066: $? = 0
-configure:19093: gcc -c -g -O2  conftest.c >&5
+configure:19052: result: no
+configure:19085: checking for /usr/include/pcre/pcre.h
+configure:19092: result: no
+configure:19110: checking for off_t
+configure:19138: gcc -c -g -O2  conftest.c >&5
+configure:19145: $? = 0
+configure:19172: gcc -c -g -O2  conftest.c >&5
 conftest.c: In function 'main':
-conftest.c:79: error: expected expression before ')' token
-configure:19100: $? = 1
+conftest.c:80: error: expected expression before ')' token
+configure:19179: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -906,6 +914,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -952,14 +961,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:19123: result: yes
-configure:19135: checking for pid_t
-configure:19163: gcc -c -g -O2  conftest.c >&5
-configure:19170: $? = 0
-configure:19197: gcc -c -g -O2  conftest.c >&5
+configure:19202: result: yes
+configure:19214: checking for pid_t
+configure:19242: gcc -c -g -O2  conftest.c >&5
+configure:19249: $? = 0
+configure:19276: gcc -c -g -O2  conftest.c >&5
 conftest.c: In function 'main':
-conftest.c:79: error: expected expression before ')' token
-configure:19204: $? = 1
+conftest.c:80: error: expected expression before ')' token
+configure:19283: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -998,6 +1007,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -1044,14 +1054,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:19227: result: yes
-configure:19239: checking for size_t
-configure:19267: gcc -c -g -O2  conftest.c >&5
-configure:19274: $? = 0
-configure:19301: gcc -c -g -O2  conftest.c >&5
+configure:19306: result: yes
+configure:19318: checking for size_t
+configure:19346: gcc -c -g -O2  conftest.c >&5
+configure:19353: $? = 0
+configure:19380: gcc -c -g -O2  conftest.c >&5
 conftest.c: In function 'main':
-conftest.c:79: error: expected expression before ')' token
-configure:19308: $? = 1
+conftest.c:80: error: expected expression before ')' token
+configure:19387: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -1090,6 +1100,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -1136,14 +1147,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:19331: result: yes
-configure:19343: checking for ssize_t
-configure:19371: gcc -c -g -O2  conftest.c >&5
-configure:19378: $? = 0
-configure:19405: gcc -c -g -O2  conftest.c >&5
+configure:19410: result: yes
+configure:19422: checking for ssize_t
+configure:19450: gcc -c -g -O2  conftest.c >&5
+configure:19457: $? = 0
+configure:19484: gcc -c -g -O2  conftest.c >&5
 conftest.c: In function 'main':
-conftest.c:79: error: expected expression before ')' token
-configure:19412: $? = 1
+conftest.c:80: error: expected expression before ')' token
+configure:19491: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -1182,6 +1193,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -1228,18 +1240,18 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:19435: result: yes
-configure:19447: checking for stdbool.h that conforms to C99
-configure:19542: gcc -c -g -O2  conftest.c >&5
-configure:19549: $? = 0
-configure:19564: result: yes
-configure:19566: checking for _Bool
-configure:19594: gcc -c -g -O2  conftest.c >&5
-configure:19601: $? = 0
-configure:19628: gcc -c -g -O2  conftest.c >&5
+configure:19514: result: yes
+configure:19526: checking for stdbool.h that conforms to C99
+configure:19621: gcc -c -g -O2  conftest.c >&5
+configure:19628: $? = 0
+configure:19643: result: yes
+configure:19645: checking for _Bool
+configure:19673: gcc -c -g -O2  conftest.c >&5
+configure:19680: $? = 0
+configure:19707: gcc -c -g -O2  conftest.c >&5
 conftest.c: In function 'main':
-conftest.c:79: error: expected expression before ')' token
-configure:19635: $? = 1
+conftest.c:80: error: expected expression before ')' token
+configure:19714: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -1278,6 +1290,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -1324,33 +1337,33 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:19658: result: yes
-configure:19677: checking for uid_t in sys/types.h
-configure:19700: result: yes
-configure:19716: checking for uint32_t
-configure:19747: gcc -c -g -O2  conftest.c >&5
-configure:19754: $? = 0
-configure:19775: result: yes
-configure:19793: checking for uint64_t
-configure:19824: gcc -c -g -O2  conftest.c >&5
-configure:19831: $? = 0
-configure:19852: result: yes
-configure:19870: checking for uint8_t
-configure:19901: gcc -c -g -O2  conftest.c >&5
-configure:19908: $? = 0
-configure:19929: result: yes
-configure:19953: checking for unistd.h
-configure:19960: result: yes
-configure:20099: checking for working chown
-configure:20142: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:20146: $? = 0
-configure:20152: ./conftest
-configure:20156: $? = 0
-configure:20175: result: yes
-configure:20201: checking vfork.h usability
-configure:20218: gcc -c -g -O2  conftest.c >&5
-conftest.c:80:19: error: vfork.h: No such file or directory
-configure:20225: $? = 1
+configure:19737: result: yes
+configure:19756: checking for uid_t in sys/types.h
+configure:19779: result: yes
+configure:19795: checking for uint32_t
+configure:19826: gcc -c -g -O2  conftest.c >&5
+configure:19833: $? = 0
+configure:19854: result: yes
+configure:19872: checking for uint64_t
+configure:19903: gcc -c -g -O2  conftest.c >&5
+configure:19910: $? = 0
+configure:19931: result: yes
+configure:19949: checking for uint8_t
+configure:19980: gcc -c -g -O2  conftest.c >&5
+configure:19987: $? = 0
+configure:20008: result: yes
+configure:20032: checking for unistd.h
+configure:20039: result: yes
+configure:20178: checking for working chown
+configure:20221: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:20225: $? = 0
+configure:20231: ./conftest
+configure:20235: $? = 0
+configure:20254: result: yes
+configure:20280: checking vfork.h usability
+configure:20297: gcc -c -g -O2  conftest.c >&5
+conftest.c:81:19: error: vfork.h: No such file or directory
+configure:20304: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -1389,6 +1402,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -1432,11 +1446,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <vfork.h>
-configure:20239: result: no
-configure:20243: checking vfork.h presence
-configure:20258: gcc -E  conftest.c
-conftest.c:47:19: error: vfork.h: No such file or directory
-configure:20265: $? = 1
+configure:20318: result: no
+configure:20322: checking vfork.h presence
+configure:20337: gcc -E  conftest.c
+conftest.c:48:19: error: vfork.h: No such file or directory
+configure:20344: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -1475,6 +1489,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -1485,136 +1500,136 @@ configure: failed program was:
 | #define HAVE_CHOWN 1
 | /* end confdefs.h.  */
 | #include <vfork.h>
-configure:20279: result: no
-configure:20312: checking for vfork.h
-configure:20321: result: no
-configure:20341: checking for fork
-configure:20397: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:70: warning: conflicting types for built-in function 'fork'
-configure:20404: $? = 0
-configure:20426: result: yes
-configure:20341: checking for vfork
-configure:20397: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:20404: $? = 0
-configure:20426: result: yes
-configure:20439: checking for working fork
-configure:20471: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:20475: $? = 0
-configure:20481: ./conftest
-configure:20485: $? = 0
-configure:20502: result: yes
-configure:20523: checking for working vfork
-configure:20664: result: yes
-configure:20695: checking for _LARGEFILE_SOURCE value needed for large files
-configure:20724: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:20731: $? = 0
-configure:20804: result: no
-configure:20827: checking whether lstat dereferences a symlink specified with a trailing slash
-configure:20863: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:20867: $? = 0
-configure:20873: ./conftest
-configure:20877: $? = 0
-configure:20901: result: yes
-configure:20925: checking for stdlib.h
-configure:20932: result: yes
-configure:21071: checking for GNU libc compatible malloc
-configure:21105: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:21109: $? = 0
-configure:21115: ./conftest
-configure:21119: $? = 0
-configure:21136: result: yes
-configure:21164: checking whether time.h and sys/time.h may both be included
-configure:21194: gcc -c -g -O2  conftest.c >&5
-configure:21201: $? = 0
-configure:21216: result: yes
-configure:21234: checking for sys/time.h
-configure:21241: result: yes
-configure:21234: checking for unistd.h
-configure:21241: result: yes
-configure:21391: checking for alarm
-configure:21447: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:21454: $? = 0
-configure:21476: result: yes
-configure:21504: checking for working mktime
-configure:21719: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:21723: $? = 0
-configure:21729: ./conftest
-configure:21733: $? = 0
-configure:21750: result: yes
-configure:21766: checking for stdlib.h
-configure:21773: result: yes
-configure:21912: checking for GNU libc compatible realloc
-configure:21946: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:21950: $? = 0
-configure:21956: ./conftest
-configure:21960: $? = 0
-configure:21977: result: yes
-configure:22005: checking for working strtod
-configure:22056: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22060: $? = 0
-configure:22066: ./conftest
-configure:22070: $? = 0
-configure:22087: result: yes
-configure:22259: checking for wait3 that fills in rusage
-configure:22315: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22319: $? = 0
-configure:22325: ./conftest
-configure:22329: $? = 0
-configure:22346: result: yes
-configure:22388: checking for alarm
-configure:22473: result: yes
-configure:22388: checking for clock_gettime
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for dup2
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for getcwd
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for gethostbyname
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for gethostname
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for gettimeofday
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for inet_ntoa
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for memmove
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:93: warning: conflicting types for built-in function 'memmove'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for memset
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:94: warning: conflicting types for built-in function 'memset'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for mkdir
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for pathconf
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for pstat_getdynamic
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-/tmp/ccKZtZex.o: In function `main':
-/home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:108: undefined reference to `pstat_getdynamic'
+configure:20358: result: no
+configure:20391: checking for vfork.h
+configure:20400: result: no
+configure:20420: checking for fork
+configure:20476: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:71: warning: conflicting types for built-in function 'fork'
+configure:20483: $? = 0
+configure:20505: result: yes
+configure:20420: checking for vfork
+configure:20476: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:20483: $? = 0
+configure:20505: result: yes
+configure:20518: checking for working fork
+configure:20550: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:20554: $? = 0
+configure:20560: ./conftest
+configure:20564: $? = 0
+configure:20581: result: yes
+configure:20602: checking for working vfork
+configure:20743: result: yes
+configure:20774: checking for _LARGEFILE_SOURCE value needed for large files
+configure:20803: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:20810: $? = 0
+configure:20883: result: no
+configure:20906: checking whether lstat dereferences a symlink specified with a trailing slash
+configure:20942: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:20946: $? = 0
+configure:20952: ./conftest
+configure:20956: $? = 0
+configure:20980: result: yes
+configure:21004: checking for stdlib.h
+configure:21011: result: yes
+configure:21150: checking for GNU libc compatible malloc
+configure:21184: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:21188: $? = 0
+configure:21194: ./conftest
+configure:21198: $? = 0
+configure:21215: result: yes
+configure:21243: checking whether time.h and sys/time.h may both be included
+configure:21273: gcc -c -g -O2  conftest.c >&5
+configure:21280: $? = 0
+configure:21295: result: yes
+configure:21313: checking for sys/time.h
+configure:21320: result: yes
+configure:21313: checking for unistd.h
+configure:21320: result: yes
+configure:21470: checking for alarm
+configure:21526: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:21533: $? = 0
+configure:21555: result: yes
+configure:21583: checking for working mktime
+configure:21798: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:21802: $? = 0
+configure:21808: ./conftest
+configure:21812: $? = 0
+configure:21829: result: yes
+configure:21845: checking for stdlib.h
+configure:21852: result: yes
+configure:21991: checking for GNU libc compatible realloc
+configure:22025: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22029: $? = 0
+configure:22035: ./conftest
+configure:22039: $? = 0
+configure:22056: result: yes
+configure:22084: checking for working strtod
+configure:22135: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22139: $? = 0
+configure:22145: ./conftest
+configure:22149: $? = 0
+configure:22166: result: yes
+configure:22338: checking for wait3 that fills in rusage
+configure:22394: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22398: $? = 0
+configure:22404: ./conftest
+configure:22408: $? = 0
+configure:22425: result: yes
+configure:22467: checking for alarm
+configure:22552: result: yes
+configure:22467: checking for clock_gettime
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for dup2
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for getcwd
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for gethostbyname
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for gethostname
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for gettimeofday
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for inet_ntoa
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for memmove
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:94: warning: conflicting types for built-in function 'memmove'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for memset
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:95: warning: conflicting types for built-in function 'memset'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for mkdir
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for pathconf
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for pstat_getdynamic
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+/tmp/ccy2M9gc.o: In function `main':
+/home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:109: undefined reference to `pstat_getdynamic'
 collect2: ld returned 1 exit status
-configure:22451: $? = 1
+configure:22530: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | #define PACKAGE_NAME "xymon"
@@ -1653,6 +1668,7 @@ configure: failed program was:
 | #define HAVE_SYS_TIME_H 1
 | #define HAVE_UNISTD_H 1
 | #define HAVE_UTIME_H 1
+| #define HAVE_LIBC 1
 | #define HAVE_LIBM 1
 | #define HAVE_LIBPCRE 1
 | #define HAVE_LIBRT 1
@@ -1727,80 +1743,80 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:22473: result: no
-configure:22388: checking for putenv
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for regcomp
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for rmdir
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for select
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for socket
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strcasecmp
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:102: warning: conflicting types for built-in function 'strcasecmp'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strchr
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:103: warning: conflicting types for built-in function 'strchr'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strcspn
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:104: warning: conflicting types for built-in function 'strcspn'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strdup
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:105: warning: conflicting types for built-in function 'strdup'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strerror
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strncasecmp
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:107: warning: conflicting types for built-in function 'strncasecmp'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strrchr
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:108: warning: conflicting types for built-in function 'strrchr'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strspn
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:109: warning: conflicting types for built-in function 'strspn'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strstr
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-conftest.c:110: warning: conflicting types for built-in function 'strstr'
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for strtol
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22388: checking for utime
-configure:22444: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm  >&5
-configure:22451: $? = 0
-configure:22473: result: yes
-configure:22718: creating ./config.status
+configure:22552: result: no
+configure:22467: checking for putenv
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for regcomp
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for rmdir
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for select
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for socket
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strcasecmp
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:103: warning: conflicting types for built-in function 'strcasecmp'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strchr
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:104: warning: conflicting types for built-in function 'strchr'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strcspn
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:105: warning: conflicting types for built-in function 'strcspn'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strdup
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:106: warning: conflicting types for built-in function 'strdup'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strerror
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strncasecmp
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:108: warning: conflicting types for built-in function 'strncasecmp'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strrchr
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:109: warning: conflicting types for built-in function 'strrchr'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strspn
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:110: warning: conflicting types for built-in function 'strspn'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strstr
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+conftest.c:111: warning: conflicting types for built-in function 'strstr'
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for strtol
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22467: checking for utime
+configure:22523: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc  >&5
+configure:22530: $? = 0
+configure:22552: result: yes
+configure:22797: creating ./config.status
 
 ## ---------------------- ##
 ## Running config.status. ##
@@ -1817,27 +1833,27 @@ generated by GNU Autoconf 2.63.  Invocation command line was
 
 on f12
 
-config.status:1151: creating Makefile
-config.status:1151: creating po/Makefile.in
-config.status:1151: creating lib/Makefile
-config.status:1151: creating common/Makefile
-config.status:1151: creating client/Makefile
-config.status:1151: creating demotool/Makefile
-config.status:1151: creating bbdisplay/Makefile
-config.status:1151: creating bbproxy/Makefile
-config.status:1151: creating docs/Makefile
-config.status:1151: creating examples/Makefile
-config.status:1151: creating hobbitd/Makefile
-config.status:1151: creating config.h
-config.status:1373: config.h is unchanged
-config.status:1425: executing po-directories commands
-config.status:1425: executing depfiles commands
-config.status:1425: executing libtool commands
-configure:25354: Xymon source code configured as  for: 
-configure:25356: OS type  : linux-gnu
-configure:25358: Host CPU : i686
-configure:25360: build-cpu:vendor:os: i686 : pc : linux-gnu :
-configure:25362: host-cpu:vendor:os: i686 : pc : linux-gnu :
+config.status:1152: creating Makefile
+config.status:1152: creating po/Makefile.in
+config.status:1152: creating lib/Makefile
+config.status:1152: creating common/Makefile
+config.status:1152: creating client/Makefile
+config.status:1152: creating demotool/Makefile
+config.status:1152: creating bbdisplay/Makefile
+config.status:1152: creating bbproxy/Makefile
+config.status:1152: creating docs/Makefile
+config.status:1152: creating examples/Makefile
+config.status:1152: creating hobbitd/Makefile
+config.status:1152: creating config.h
+config.status:1374: config.h is unchanged
+config.status:1426: executing po-directories commands
+config.status:1426: executing depfiles commands
+config.status:1426: executing libtool commands
+configure:25433: Xymon source code configured as  for: 
+configure:25435: OS type  : linux-gnu
+configure:25437: Host CPU : i686
+configure:25439: build-cpu:vendor:os: i686 : pc : linux-gnu :
+configure:25441: host-cpu:vendor:os: i686 : pc : linux-gnu :
 
 ## ---------------- ##
 ## Cache variables. ##
@@ -1940,6 +1956,7 @@ ac_cv_header_unistd_h=yes
 ac_cv_header_utime_h=yes
 ac_cv_header_vfork_h=no
 ac_cv_host=i686-pc-linux-gnu
+ac_cv_lib_c_snprintf=yes
 ac_cv_lib_m_cos=yes
 ac_cv_lib_pcre_pcre_free=yes
 ac_cv_lib_rrd_rrd_clear_error=yes
@@ -2066,7 +2083,7 @@ LDFLAGS=''
 LIBICONV='-liconv'
 LIBINTL=''
 LIBOBJS=''
-LIBS='-lrrd -lrt -lpcre -lm '
+LIBS='-lrrd -lrt -lpcre -lm -lc '
 LIBTOOL='$(SHELL) $(top_builddir)/libtool'
 LIPO=''
 LN_S='ln -s'
@@ -2197,6 +2214,7 @@ target_alias=''
 #define HAVE_SYS_TIME_H 1
 #define HAVE_UNISTD_H 1
 #define HAVE_UTIME_H 1
+#define HAVE_LIBC 1
 #define HAVE_LIBM 1
 #define HAVE_LIBPCRE 1
 #define HAVE_LIBRT 1

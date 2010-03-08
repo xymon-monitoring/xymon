@@ -123,7 +123,12 @@ AC_PROG_LIBTOOL
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h utime.h])
-#
+
+# AC_CHECK_HEADER([stdio.h],
+#                 [AC_DEFINE([HAVE_SNPRINTF])],
+#                 [AC_MSG_ERROR([Sorry, can't do anything for you])]))
+
+AC_CHECK_LIB([c], [snprintf])
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lz':
 AC_CHECK_LIB([z], [cos])

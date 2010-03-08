@@ -28,3 +28,6 @@ msgcache_LDADD = -lrt -lz ../lib/libxymonclient.la
 # endif
 
 
+bin_SCRIPTS  = hobbitclient-aix.sh	 hobbitclient-hp-ux.sh	hobbitclient-netbsd.sh	 hobbitclient-sco_sv.sh \
+runclient.sh hobbitclient-darwin.sh	 hobbitclient-irix.sh	hobbitclient-openbsd.sh  hobbitclient.sh \
+hobbitclient-freebsd.sh  hobbitclient-linux.sh	hobbitclient-osf1.sh	 hobbitclient-sunos.sh
