@@ -3,6 +3,12 @@
 #include "gettext.h"
 #define _(string) gettext (string)
 
+/**
+ * Print a Hello World string.
+ * \param take in nothing.
+ * \return Hello World string
+ */
+
 void say_hello (void)
 {
   puts ("Hello World!\n");
