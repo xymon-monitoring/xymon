@@ -5,6 +5,7 @@ Changes from 4.3.0 beta 2 -> 4.3.0 beta 3 (06 March 2010)
 * configure.ac created.
 * demotool add back from trunk.
 * Adding more documentation in codes using format for doxygen
+* rename availiablity.h into xymon_availiablity.h since it conflict with Availiablity.h in MaOS X 10.6.*.
 
 
 
