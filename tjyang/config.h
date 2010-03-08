@@ -4,17 +4,33 @@
 /* Define to 1 if internal poll should be used. */
 /* #undef AST_POLL_COMPAT */
 
+/* Define to 1 if translation of program messages to the user's native
+   language is requested. */
+#define ENABLE_NLS 1
+
 /* Define to 1 if you have the `alarm' function. */
 #define HAVE_ALARM 1
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
 
+/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
+   CoreFoundation framework. */
+/* #undef HAVE_CFLOCALECOPYCURRENT */
+
+/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+/* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
+
 /* Define to 1 if your system has a working `chown' function. */
 #define HAVE_CHOWN 1
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
+
+/* Define if the GNU dcgettext() function is already present or preinstalled.
+   */
+#define HAVE_DCGETTEXT 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
@@ -40,8 +56,14 @@
 /* Define to 1 if you have the `gethostname' function. */
 #define HAVE_GETHOSTNAME 1
 
+/* Define if the GNU gettext() function is already present or preinstalled. */
+#define HAVE_GETTEXT 1
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
+
+/* Define if you have the iconv() function and it works. */
+/* #undef HAVE_ICONV */
 
 /* Define to 1 if you have the `inet_ntoa' function. */
 #define HAVE_INET_NTOA 1
@@ -236,6 +258,12 @@
 
 /* Version number of package */
 #define VERSION "4.3.0"
+
+/* ONLY Configured for Xymon Client. */
+/* #undef XYMONCLIENT */
+
+/* ONLY Configured for Xymon Server. */
+/* #undef XYMONSERVER */
 
 /* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
 /* #undef _LARGEFILE_SOURCE */

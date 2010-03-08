@@ -42,10 +42,14 @@ bin_PROGRAMS = demotool$(EXEEXT)
 subdir = demotool
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
 	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
+	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -103,22 +107,34 @@ ECHO_T =
 EGREP = /bin/grep -E
 EXEEXT = 
 FGREP = /bin/grep -F
+GETTEXT_MACRO_VERSION = 0.17
+GMSGFMT = /usr/bin/msgfmt
+GMSGFMT_015 = /usr/bin/msgfmt
 GREP = /bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
+INTLLIBS = 
+INTL_MACOSX_LIBS = 
 LD = /usr/bin/ld
 LDFLAGS = 
+LIBICONV = -liconv
+LIBINTL = 
 LIBOBJS = 
 LIBS = -lrrd -lrt -lpcre -lm 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
+LTLIBICONV = -liconv
+LTLIBINTL = 
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /home/tjyang/hobbitmon/sandbox/tjyang/build-aux/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
+MSGFMT = /usr/bin/msgfmt
+MSGFMT_015 = /usr/bin/msgfmt
+MSGMERGE = /usr/bin/msgmerge
 NM = /usr/bin/nm -B
 NMEDIT = 
 OBJDUMP = objdump
@@ -132,13 +148,18 @@ PACKAGE_STRING = xymon 4.3.0
 PACKAGE_TARNAME = xymon
 PACKAGE_VERSION = 4.3.0
 PATH_SEPARATOR = :
+POSUB = po
 POW_LIB = 
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
+USE_NLS = yes
 VERSION = 4.3.0
+XGETTEXT = /usr/bin/xgettext
+XGETTEXT_015 = /usr/bin/xgettext
+XGETTEXT_EXTRA_OPTIONS = 
 abs_builddir = /home/tjyang/hobbitmon/sandbox/tjyang/demotool
 abs_srcdir = /home/tjyang/hobbitmon/sandbox/tjyang/demotool
 abs_top_builddir = /home/tjyang/hobbitmon/sandbox/tjyang

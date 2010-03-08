@@ -5,7 +5,8 @@ say.lo: say.c ../config.h /usr/include/stdio.h /usr/include/features.h \
  /usr/include/bits/types.h /usr/include/bits/typesizes.h \
  /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
  /usr/lib/gcc/i686-redhat-linux/4.4.3/include/stdarg.h \
- /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+ /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h gettext.h \
+ /usr/include/libintl.h /usr/include/string.h /usr/include/xlocale.h
 
 ../config.h:
 
@@ -38,3 +39,11 @@ say.lo: say.c ../config.h /usr/include/stdio.h /usr/include/features.h \
 /usr/include/bits/stdio_lim.h:
 
 /usr/include/bits/sys_errlist.h:
+
+gettext.h:
+
+/usr/include/libintl.h:
+
+/usr/include/string.h:
+
+/usr/include/xlocale.h:

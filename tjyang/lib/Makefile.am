@@ -14,8 +14,14 @@
 
 
 # libgen.h
-AM_CPPFLAGS = -I$(srcdir)/../include -I/usr/include/pcre
+AM_CPPFLAGS = -I$(srcdir)/../include -I/usr/include/pcre -DLOCALEDIR=\"$(localedir)\"
 lib_LTLIBRARIES = libxymon.la libxymonclient.la
+bin_PROGRAMS = hello
+hello_SOURCES = hello.c  gettext.h
+# say_hello is in libxymon.a
+# LDADD = ${LIBINTL) libxymon.la
+hello_LDADD = ../lib/libxymon.la 
+#LDADD = ${LIBINTL)
 libxymon_la_SOURCES = say.c osdefs.c acklog.c availability.c calc.c cgi.c cgiurls.c clientlocal.c color.c  digest.c encoding.c environ.c errormsg.c eventlog.c files.c headfoot.c hobbitrrd.c holidays.c htmllog.c ipaccess.c loadalerts.c loadhosts.c loadnkconf.c locator.c links.c matching.c md5.c memory.c misc.c msort.c netservices.c notifylog.c rbtr.c reportlog.c rmd160c.c sendmsg.c sha1.c sha2.c sig.c stackio.c strfunc.c suid.c timefunc.c timing.c \
 url.c compression.c
 

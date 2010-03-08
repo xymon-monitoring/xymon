@@ -59,6 +59,9 @@
 #      AC_CONFIG_FILES([file...])
 #      AC_OUTPUT
 #       Autoconf requirements
+
+AC_DEFINE([XYMONCLIENT], 1, [ONLY Configured for Xymon Client.])
+AC_DEFINE([XYMONSERVER], 1, [ONLY Configured for Xymon Server.])
 AC_PREREQ([2.61])
 #      AC_INIT(package, version, bug-report-address)
 AC_INIT([xymon], [4.3.0], [tjyang2001@gmail.com])
@@ -95,6 +98,11 @@ AC_CONFIG_SRCDIR([client/clientupdate.c])
 # ------------------------ HEADER  FILE DECLARATION ------------------------- #
 AC_CONFIG_AUX_DIR([build-aux])
 # Define a directory to hold M4 macros scripts.
+
+# 
+AM_GNU_GETTEXT_VERSION([0.17])
+AM_GNU_GETTEXT([external])
+#
 AC_CONFIG_MACRO_DIR([m4])
 # This is AutoMake macro, we pass on following error messages to automake.
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
@@ -225,7 +233,7 @@ esac
 #                 lib/Makefile
 #                 web/Makefile])
 #
-AC_CONFIG_FILES([Makefile 
+AC_CONFIG_FILES([Makefile  po/Makefile.in
 lib/Makefile 
 common/Makefile 
 client/Makefile 

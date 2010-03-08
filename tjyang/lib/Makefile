@@ -30,6 +30,7 @@
 # 
 
 
+
 pkgdatadir = $(datadir)/xymon
 pkgincludedir = $(includedir)/xymon
 pkglibdir = $(libdir)/xymon
@@ -48,6 +49,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
+bin_PROGRAMS = hello$(EXEEXT)
 
 # We need to addd libsocket when in OpenSoalris 
 #am__append_1 = -lsocket -lnsl
@@ -55,10 +57,14 @@ host_triplet = i686-pc-linux-gnu
 subdir = lib
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
 	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
+	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -86,7 +92,7 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(libdir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libxymon_la_LIBADD =
 am_libxymon_la_OBJECTS = say.lo osdefs.lo acklog.lo availability.lo \
@@ -112,6 +118,10 @@ libxymonclient_la_OBJECTS = $(am_libxymonclient_la_OBJECTS)
 libxymonclient_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libxymonclient_la_LDFLAGS) $(LDFLAGS) -o $@
+PROGRAMS = $(bin_PROGRAMS)
+am_hello_OBJECTS = hello.$(OBJEXT)
+hello_OBJECTS = $(am_hello_OBJECTS)
+hello_DEPENDENCIES = ../lib/libxymon.la
 DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -125,8 +135,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libxymon_la_SOURCES) $(libxymonclient_la_SOURCES)
-DIST_SOURCES = $(libxymon_la_SOURCES) $(libxymonclient_la_SOURCES)
+SOURCES = $(libxymon_la_SOURCES) $(libxymonclient_la_SOURCES) \
+	$(hello_SOURCES)
+DIST_SOURCES = $(libxymon_la_SOURCES) $(libxymonclient_la_SOURCES) \
+	$(hello_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -157,22 +169,34 @@ ECHO_T =
 EGREP = /bin/grep -E
 EXEEXT = 
 FGREP = /bin/grep -F
+GETTEXT_MACRO_VERSION = 0.17
+GMSGFMT = /usr/bin/msgfmt
+GMSGFMT_015 = /usr/bin/msgfmt
 GREP = /bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
+INTLLIBS = 
+INTL_MACOSX_LIBS = 
 LD = /usr/bin/ld
 LDFLAGS = 
+LIBICONV = -liconv
+LIBINTL = 
 LIBOBJS = 
 LIBS = -lrrd -lrt -lpcre -lm 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
+LTLIBICONV = -liconv
+LTLIBINTL = 
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /home/tjyang/hobbitmon/sandbox/tjyang/build-aux/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
+MSGFMT = /usr/bin/msgfmt
+MSGFMT_015 = /usr/bin/msgfmt
+MSGMERGE = /usr/bin/msgmerge
 NM = /usr/bin/nm -B
 NMEDIT = 
 OBJDUMP = objdump
@@ -186,13 +210,18 @@ PACKAGE_STRING = xymon 4.3.0
 PACKAGE_TARNAME = xymon
 PACKAGE_VERSION = 4.3.0
 PATH_SEPARATOR = :
+POSUB = po
 POW_LIB = 
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
+USE_NLS = yes
 VERSION = 4.3.0
+XGETTEXT = /usr/bin/xgettext
+XGETTEXT_015 = /usr/bin/xgettext
+XGETTEXT_EXTRA_OPTIONS = 
 abs_builddir = /home/tjyang/hobbitmon/sandbox/tjyang/lib
 abs_srcdir = /home/tjyang/hobbitmon/sandbox/tjyang/lib
 abs_top_builddir = /home/tjyang/hobbitmon/sandbox/tjyang
@@ -248,8 +277,13 @@ top_builddir = ..
 top_srcdir = ..
 
 # libgen.h
-AM_CPPFLAGS = -I$(srcdir)/../include -I/usr/include/pcre
+AM_CPPFLAGS = -I$(srcdir)/../include -I/usr/include/pcre -DLOCALEDIR=\"$(localedir)\"
 lib_LTLIBRARIES = libxymon.la libxymonclient.la
+hello_SOURCES = hello.c  gettext.h
+# say_hello is in libxymon.a
+# LDADD = ${LIBINTL) libxymon.la
+hello_LDADD = ../lib/libxymon.la 
+#LDADD = ${LIBINTL)
 libxymon_la_SOURCES = say.c osdefs.c acklog.c availability.c calc.c \
 	cgi.c cgiurls.c clientlocal.c color.c digest.c encoding.c \
 	environ.c errormsg.c eventlog.c files.c headfoot.c hobbitrrd.c \
@@ -347,6 +381,52 @@ libxymon.la: $(libxymon_la_OBJECTS) $(libxymon_la_DEPENDENCIES)
 	$(libxymon_la_LINK) -rpath $(libdir) $(libxymon_la_OBJECTS) $(libxymon_la_LIBADD) $(LIBS)
 libxymonclient.la: $(libxymonclient_la_OBJECTS) $(libxymonclient_la_DEPENDENCIES) 
 	$(libxymonclient_la_LINK) -rpath $(libdir) $(libxymonclient_la_OBJECTS) $(libxymonclient_la_LIBADD) $(LIBS)
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	test -z "$(bindir)" || $(MKDIR_P) "$(DESTDIR)$(bindir)"
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p || test -f $$p1; \
+	  then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	    } \
+	; done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' `; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(bindir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(bindir)" && rm -f $$files
+
+clean-binPROGRAMS:
+	@list='$(bin_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+hello$(EXEEXT): $(hello_OBJECTS) $(hello_DEPENDENCIES) 
+	@rm -f hello$(EXEEXT)
+	$(LINK) $(hello_OBJECTS) $(hello_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -369,6 +449,7 @@ include ./$(DEPDIR)/errormsg.Plo
 include ./$(DEPDIR)/eventlog.Plo
 include ./$(DEPDIR)/files.Plo
 include ./$(DEPDIR)/headfoot.Plo
+include ./$(DEPDIR)/hello.Po
 include ./$(DEPDIR)/hobbitrrd.Plo
 include ./$(DEPDIR)/holidays.Plo
 include ./$(DEPDIR)/htmllog.Plo
@@ -512,9 +593,11 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LTLIBRARIES)
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS)
+install-binPROGRAMS: install-libLTLIBRARIES
+
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -544,8 +627,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
+	clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -571,7 +654,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am: install-binPROGRAMS install-libLTLIBRARIES
 
 install-html: install-html-am
 
@@ -611,23 +694,24 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES
+uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLTLIBRARIES clean-libtool ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-libLTLIBRARIES
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
+	clean-generic clean-libLTLIBRARIES clean-libtool ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-binPROGRAMS \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-libLTLIBRARIES \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-libLTLIBRARIES
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

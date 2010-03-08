@@ -4,8 +4,10 @@
 
 
 # What: list out the directories contains source code
-SUBDIRS = lib common demotool client bbdisplay bbproxy hobbitd examples docs
+SUBDIRS = po lib common demotool client bbdisplay bbproxy hobbitd examples docs
 #
 # What: include the file in m4 directory
 #  
 ACLOCAL_AMFLAGS = -I m4
+
+EXTRA_DIST = m4/ChangeLog
