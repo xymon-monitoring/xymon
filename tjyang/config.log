@@ -662,7 +662,7 @@ configure:18657: result: yes
 configure:18671: checking for cos in -lz
 configure:18706: gcc -o conftest -g -O2   conftest.c -lz  -lc -lc  >&5
 conftest.c:48: warning: conflicting types for built-in function 'cos'
-/tmp/ccI0s2fa.o: In function `main':
+/tmp/ccjJcQhR.o: In function `main':
 /home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:52: undefined reference to `cos'
 collect2: ld returned 1 exit status
 configure:18713: $? = 1
@@ -1641,7 +1641,7 @@ configure:22616: $? = 0
 configure:22638: result: yes
 configure:22553: checking for pstat_getdynamic
 configure:22609: gcc -o conftest -g -O2   conftest.c -lrrd -lrt -lpcre -lm -lc -lc  >&5
-/tmp/cckX2MMX.o: In function `main':
+/tmp/ccYirPAr.o: In function `main':
 /home/tjyang/hobbitmon/sandbox/tjyang/conftest.c:110: undefined reference to `pstat_getdynamic'
 collect2: ld returned 1 exit status
 configure:22616: $? = 1
@@ -1861,6 +1861,7 @@ config.status:1155: creating docs/Makefile
 config.status:1155: creating examples/Makefile
 config.status:1155: creating hobbitd/Makefile
 config.status:1155: creating config.h
+config.status:1377: config.h is unchanged
 config.status:1429: executing po-directories commands
 config.status:1429: executing depfiles commands
 config.status:1429: executing libtool commands

@@ -218,7 +218,7 @@ case "${host_os}" in
     LDFLAGS=-L/tmp/xymon/lib
     ;;
   darwin10.2.0)
-    CPPFLAGS=-I/usr/include
+    CPPFLAGS=-I/opt/local/include
     LDFLAGS=-L/tmp/xymon/lib
     ;;
   *)
