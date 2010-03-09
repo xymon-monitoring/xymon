@@ -45,7 +45,7 @@ typedef struct strbuffer_t {
 #include "../lib/htmllog.h"
 #include "../lib/notifylog.h"
 #include "../lib/reportlog.h"
-#include "../lib/availability.h"
+#include "../lib/xymon_availability.h"
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
 #include "../lib/color.h"

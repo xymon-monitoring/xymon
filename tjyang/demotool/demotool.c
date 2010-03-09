@@ -586,7 +586,7 @@ int main(int argc, char *argv[])
   }
 
   if (showhelp) {
-    fprintf(stderr, "Xymon demotool version %s\n", VERSION);
+    fprintf(stderr, "Xymon version %s demotool \n", VERSION);
     fprintf(stderr, "Usage: %s  --srvip=192.168.1.2 [confdir=/tmp/demo] [--debug]\n", argv[0]);
     fprintf(stderr, " confdir default set to /tmp/demo.\n");
     return ERROR;

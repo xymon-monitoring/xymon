@@ -62,9 +62,22 @@
 
 AC_DEFINE([XYMONCLIENT], 1, [ONLY Configured for Xymon Client.])
 AC_DEFINE([XYMONSERVER], 1, [ONLY Configured for Xymon Server.])
-AC_PREREQ([2.61])
+AC_PREREQ([2.60])
 #      AC_INIT(package, version, bug-report-address)
 AC_INIT([xymon], [4.3.0], [tjyang2001@gmail.com])
+
+# preserve any CFLAGS or LDFLAGS that may be set
+# NOTE: This must be done before calling any macros that end up
+# calling AC_PROG_CC or the like, since they will set a default
+# set of CFLAGS ("-g -O2") if the user did not supply any, and
+# we don't want those default flags to be carried over into the
+# rest of the build system since we have other means of controlling
+# debugging symbol generation and optimization.
+CONFIG_CFLAGS="${CFLAGS}"
+CONFIG_LDFLAGS="${LDFLAGS}"
+AC_SUBST(CONFIG_CFLAGS)
+AC_SUBST(CONFIG_LDFLAGS)
+
 # All the checking will insert into config.h
 AC_CONFIG_HEADERS([config.h])
 #      information on the package
@@ -124,11 +137,8 @@ AC_PROG_LIBTOOL
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h utime.h])
 
-# AC_CHECK_HEADER([stdio.h],
-#                 [AC_DEFINE([HAVE_SNPRINTF])],
-#                 [AC_MSG_ERROR([Sorry, can't do anything for you])]))
-
 AC_CHECK_LIB([c], [snprintf])
+AC_CHECK_LIB([c], [vsnprintf])
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lz':
 AC_CHECK_LIB([z], [cos])
@@ -194,8 +204,8 @@ case "${host_os}" in
     CPPFLAGS=-I/usr/local/include
     LDFLAGS=-L/usr/local/lib
     ;;
-  openbsd*)
-    ac_default_prefix=/usr/local
+  linux-gnu*)
+    ac_default_prefix=/tmp/xymon
     if test ${prefix} = '/usr/local' || test ${prefix} = 'NONE'; then
       if test ${sysconfdir} = '${prefix}/etc'; then
          sysconfdir=/etc
@@ -205,10 +215,11 @@ case "${host_os}" in
       fi
     fi
     CPPFLAGS=-I/usr/local/include
-    LDFLAGS=-L/usr/local/lib
+    LDFLAGS=-L/tmp/xymon/lib
     ;;
-  darwin*)
-    AC_DEFINE([AST_POLL_COMPAT], 1, [Define to 1 if internal poll should be used.])
+  darwin10.2.0)
+    CPPFLAGS=-I/usr/include
+    LDFLAGS=-L/tmp/xymon/lib
     ;;
   *)
     ac_default_prefix=/usr
@@ -253,7 +264,7 @@ hobbitd/Makefile])
 AC_OUTPUT
 
 if test "x${silent}" != "xyes" ; then
-echo ${silent}
+echo ${host_os}
 echo
 echo "  #     #  #     #  #     #  #######  #     # "
 echo "   #   #    #   #   ##   ##  #     #  ##    # "

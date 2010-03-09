@@ -12,7 +12,7 @@
 #define __REPORTLOG_H__
 
 #include <stdio.h>
-#include "availability.h"
+#include "xymon_availability.h"
 
 #define STYLE_CRIT 0
 #define STYLE_NONGR 1

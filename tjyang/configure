@@ -888,6 +888,8 @@ INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
 SET_MAKE
+CONFIG_LDFLAGS
+CONFIG_CFLAGS
 target_alias
 host_alias
 build_alias
@@ -2070,6 +2072,19 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+# preserve any CFLAGS or LDFLAGS that may be set
+# NOTE: This must be done before calling any macros that end up
+# calling AC_PROG_CC or the like, since they will set a default
+# set of CFLAGS ("-g -O2") if the user did not supply any, and
+# we don't want those default flags to be carried over into the
+# rest of the build system since we have other means of controlling
+# debugging symbol generation and optimization.
+CONFIG_CFLAGS="${CFLAGS}"
+CONFIG_LDFLAGS="${LDFLAGS}"
+
 
 
 # All the checking will insert into config.h
@@ -8214,13 +8229,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:8217: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:8232: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8220: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:8235: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8223: output\"" >&5)
+  (eval echo "\"\$as_me:8238: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -9414,7 +9429,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 9417 "configure"' > conftest.$ac_ext
+  echo '#line 9432 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -11773,11 +11788,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11776: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11791: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11780: \$? = $ac_status" >&5
+   echo "$as_me:11795: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12112,11 +12127,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12115: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12130: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12119: \$? = $ac_status" >&5
+   echo "$as_me:12134: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12217,11 +12232,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12220: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12235: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12224: \$? = $ac_status" >&5
+   echo "$as_me:12239: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12272,11 +12287,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12275: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12290: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12279: \$? = $ac_status" >&5
+   echo "$as_me:12294: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15075,7 +15090,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 15078 "configure"
+#line 15093 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15171,7 +15186,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 15174 "configure"
+#line 15189 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -17191,11 +17206,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17194: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17209: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:17198: \$? = $ac_status" >&5
+   echo "$as_me:17213: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17290,11 +17305,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17293: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17308: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:17297: \$? = $ac_status" >&5
+   echo "$as_me:17312: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17342,11 +17357,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17345: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17360: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:17349: \$? = $ac_status" >&5
+   echo "$as_me:17364: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18500,10 +18515,6 @@ fi
 done
 
 
-# AC_CHECK_HEADER([stdio.h],
-#                 [AC_DEFINE([HAVE_SNPRINTF])],
-#                 [AC_MSG_ERROR([Sorry, can't do anything for you])]))
-
 
 { $as_echo "$as_me:$LINENO: checking for snprintf in -lc" >&5
 $as_echo_n "checking for snprintf in -lc... " >&6; }
@@ -18571,6 +18582,81 @@ fi
 { $as_echo "$as_me:$LINENO: result: $ac_cv_lib_c_snprintf" >&5
 $as_echo "$ac_cv_lib_c_snprintf" >&6; }
 if test "x$ac_cv_lib_c_snprintf" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBC 1
+_ACEOF
+
+  LIBS="-lc $LIBS"
+
+fi
+
+
+{ $as_echo "$as_me:$LINENO: checking for vsnprintf in -lc" >&5
+$as_echo_n "checking for vsnprintf in -lc... " >&6; }
+if test "${ac_cv_lib_c_vsnprintf+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char vsnprintf ();
+int
+main ()
+{
+return vsnprintf ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_c_vsnprintf=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_c_vsnprintf=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_c_vsnprintf" >&5
+$as_echo "$ac_cv_lib_c_vsnprintf" >&6; }
+if test "x$ac_cv_lib_c_vsnprintf" = x""yes; then
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBC 1
 _ACEOF
@@ -22597,8 +22683,8 @@ case "${host_os}" in
     CPPFLAGS=-I/usr/local/include
     LDFLAGS=-L/usr/local/lib
     ;;
-  openbsd*)
-    ac_default_prefix=/usr/local
+  linux-gnu*)
+    ac_default_prefix=/tmp/xymon
     if test ${prefix} = '/usr/local' || test ${prefix} = 'NONE'; then
       if test ${sysconfdir} = '${prefix}/etc'; then
          sysconfdir=/etc
@@ -22608,14 +22694,11 @@ case "${host_os}" in
       fi
     fi
     CPPFLAGS=-I/usr/local/include
-    LDFLAGS=-L/usr/local/lib
+    LDFLAGS=-L/tmp/xymon/lib
     ;;
-  darwin*)
-
-cat >>confdefs.h <<\_ACEOF
-#define AST_POLL_COMPAT 1
-_ACEOF
-
+  darwin10.2.0)
+    CPPFLAGS=-I/usr/include
+    LDFLAGS=-L/tmp/xymon/lib
     ;;
   *)
     ac_default_prefix=/usr
@@ -25417,7 +25500,7 @@ fi
 
 
 if test "x${silent}" != "xyes" ; then
-echo ${silent}
+echo ${host_os}
 echo
 echo "  #     #  #     #  #     #  #######  #     # "
 echo "   #   #    #   #   ##   ##  #     #  ##    # "

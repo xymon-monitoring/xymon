@@ -120,8 +120,10 @@ AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g
+CONFIG_CFLAGS = 
+CONFIG_LDFLAGS = 
 CPP = gcc -E
-CPPFLAGS = 
+CPPFLAGS = -I/usr/local/include
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
@@ -149,11 +151,11 @@ INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 INTLLIBS = 
 INTL_MACOSX_LIBS = 
 LD = /usr/bin/ld
-LDFLAGS = 
+LDFLAGS = -L/tmp/xymon/lib
 LIBICONV = -liconv
 LIBINTL = 
 LIBOBJS = 
-LIBS = -lrrd -lrt -lpcre -lm -lc 
+LIBS = -lrrd -lrt -lpcre -lm -lc -lc 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s

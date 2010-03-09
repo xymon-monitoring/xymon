@@ -12,7 +12,7 @@
 #define __CGIURLS_H__
 
 #include <time.h>
-#include "availability.h"
+#include "xymon_availability.h"
 
 extern char *hostsvcurl(char *hostname, char *service, int htmlformat);
 extern char *hostsvcclienturl(char *hostname, char *section);

@@ -85,12 +85,6 @@ check_for_app automake${MY_AM_VER}
 check_for_app aclocal${MY_AM_VER}
 
 echo "Generating the configure script ..."
-# not need anymore, since autoreconf --install  do
-# all the followings
-#aclocal${MY_AM_VER} 2>/dev/null
-#autoconf${MY_AC_VER}
-#autoheader${MY_AC_VER}
-#automake${MY_AM_VER} --add-missing --copy 2>/dev/null
 
 autoreconf --install
 
