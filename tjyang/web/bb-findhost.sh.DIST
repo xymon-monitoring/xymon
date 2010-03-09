@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the Hobbit CGI script interface to bb-findhost.CGI
-
-. @BBHOME@/etc/hobbitcgi.cfg
-
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-findhost.cgi $CGI_FINDHOST_OPTS
-

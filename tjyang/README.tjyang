@@ -1,9 +1,0 @@
-This branch is very diffrent in following ways.
-1. Autoconfiscated xymon source.
-2. doxygen to generate documenation from soucecode.
-3. xymon slides and books using latex.
-4. Use TWW tools to complete the xymon deployment lifecycle.
-   ie, download,compile,install,packaging,uploading to depot server and then deployment.   
-      This process is mostly digitized into XML language to be a repeatable process.
-5. An attempt to enclose bbwin src tree. 
-6. Some Xymon logo candidates. 

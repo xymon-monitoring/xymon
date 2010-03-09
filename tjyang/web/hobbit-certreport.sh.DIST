@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# This is the Hobbit CGI script interface to hobbit-statusreport.cgi
-# Through the options, it generates a report of the currently
-# about-to-expire SSL certificates.
-
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-statusreport.cgi --column=sslcert --filter=color=red,yellow --all --no-colors
-

@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Hobbit hobbit-useradm.cgi script
-
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-useradm.cgi $CGI_USERADM_OPTS
-

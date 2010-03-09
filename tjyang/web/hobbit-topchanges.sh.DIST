@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is the Hobbit CGI script to display the top-N changing hosts/statuses
-
-. @BBHOME@/etc/hobbitcgi.cfg
-
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-eventlog.cgi $CGI_TOPCHANGE_OPTS
