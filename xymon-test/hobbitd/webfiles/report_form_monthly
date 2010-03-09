@@ -1,0 +1,37 @@
+<BR>
+
+<CENTER>
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Report date specification">
+    <TR BGCOLOR="#000033">
+       <TD COLSPAN=2>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Xymon Monthly Availability Report</B></FONT></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <BR>
+       <CENTER>
+
+       <FORM METHOD="POST" ACTION="&SCRIPT_NAME">
+          <SELECT NAME="month">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="year">
+          &REPYEARLIST
+          </SELECT>
+
+          <INPUT TYPE="HIDDEN" NAME="type" VALUE="month">
+
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="View Report" ALT="View Report">
+       </FORM>
+
+       </CENTER>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR><BR><BR>
+

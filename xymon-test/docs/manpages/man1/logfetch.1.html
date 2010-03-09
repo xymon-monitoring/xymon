@@ -1,0 +1,103 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of LOGFETCH</TITLE>
+</HEAD><BODY>
+<H1>LOGFETCH</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+logfetch - Xymon client data collector
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>logfetch CONFIGFILE STATUSFILE</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>logfetch</B> is part of the Xymon client. It is responsible
+for collecting data from logfiles, and other file-related data,
+which is then sent to the Xymon server for analysis.
+<P>
+logfetch uses a configuration file, which is automatically
+retrieved from the Xymon server. There is no configuration
+done locally. The configuration file is usually stored in
+the <B>$BBHOME/tmp/logfetch.cfg</B> file, but editing this file has
+no effect since it is re-written with data from the Xymon 
+server each time the client runs.
+<P>
+logfetch stores information about what parts of the monitored
+logfiles have been processed already in the <B>$BBHOME/tmp/logfetch.status</B> 
+file. This file is an internal file used by logfetch, and should
+not be edited. If deleted, it will be re-created automatically.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>SECURITY</H2>
+
+logfetch needs read access to the logfiles it should monitor. If you 
+configure monitoring of files or directories through the &quot;file:&quot;
+and &quot;dir:&quot; entries in 
+<I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)</I>
+
+then logfetch will require at least read-acces to the directory
+where the file is located. If you request checksum calculation
+for a file, then it must be readable by the Xymon client user.
+<P>
+Do <B>NOT</B> install logfetch as suid-root. There is no
+way that logfetch can check whether the configuration file it uses
+has been tampered with, so installing logfetch with suid-root
+privileges could allow an attacker to read any file on the system
+by using a hand-crafted configuration file. In fact, logfetch will
+attempt to remove its own suid-root setup if it detects that it
+has been installed suid-root.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>DU<DD>
+Command used to collect information about the size of directories.
+By default, this is the command <B>du -k</B>. If the local
+du-command on the client does not recognize the &quot;-k&quot; option,
+you should set the DU environment variable in the 
+<B>$BBHOME/etc/hobbitclient.cfg</B> file to a command that
+does report directory sizes in kilobytes.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>FILES</H2>
+
+<DL COMPACT>
+<DT>$BBHOME/tmp/logfetch.cfg<DD>
+<DT>$BBHOME/tmp/logfetch.status<DD>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">SECURITY</A><DD>
+<DT><A HREF="#lbAF">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAG">FILES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:30 GMT, December 15, 2008
+</BODY>
+</HTML>

@@ -1,0 +1,134 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BB-HIST.CGI</TITLE>
+</HEAD><BODY>
+<H1>BB-HIST.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bb-hist.cgi - CGI program to display service history
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>bb-hist.cgi</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>bb-hist.cgi</B>
+is invoked as a CGI script via the bb-hist.sh CGI wrapper.
+It is passed a QUERY_STRING environment variable with the
+following parameters:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;HISTFILE&nbsp;(a&nbsp;Xymon&nbsp;service&nbsp;history&nbsp;file)
+<BR>&nbsp;&nbsp;&nbsp;ENTRIES&nbsp;(the&nbsp;number&nbsp;of&nbsp;entries&nbsp;to&nbsp;show)
+<BR>&nbsp;
+The following non-standard parameters are handled by the
+bbgen version of bb-hist.cgi:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;IP&nbsp;(IP&nbsp;address&nbsp;of&nbsp;host&nbsp;-&nbsp;for&nbsp;display&nbsp;purposes&nbsp;only)
+<BR>&nbsp;&nbsp;&nbsp;PIXELS&nbsp;(width&nbsp;of&nbsp;colorbar&nbsp;when&nbsp;in&nbsp;pixel-mode)
+<BR>&nbsp;&nbsp;&nbsp;ENDTIME&nbsp;(when&nbsp;the&nbsp;colorbar&nbsp;begins,&nbsp;a&nbsp;time_t&nbsp;value)
+<BR>&nbsp;&nbsp;&nbsp;BARSUMS&nbsp;(which&nbsp;colorbars&nbsp;and&nbsp;summaries&nbsp;to&nbsp;show)
+<P>
+bb-hist.cgi analyses the service history file for changes that have
+occurred within the past 24 hours, and build a colorbar
+showing the status of the service over this period of time.
+A statistics summary is also produced, listing the amount
+of time for each status (green, yellow, red, purple, blue, clear).
+<P>
+Finally, a summary of the last N events is given, with links to
+the actual event logs.
+<P>
+Unlike the standard bb-hist.sh script, bb-hist.cgi provides 
+a colorbar and statistics summaries also covering the past 
+1 week, 4 weeks and 1 year of data. Via links it is possible 
+to browse the entire history of the service at the requested
+interval.
+<P>
+Note that since the resolution of the display is limited,
+events may be too short to show up on a colorbar; also,
+the exact placement of an event may not fully match up 
+with the time-markers.
+<P>
+The graphs should correctly handle the display of months
+with different number of days, as well as the display of
+periods that involve beginning and end of Daylight Savings
+Time, if this occurs in your timezone.
+<P>
+All dates and times shown are in local time for the timezone
+defined on the BBDISPLAY server.
+<P>
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>PARAMETERS</H2>
+
+<DL COMPACT>
+<DT>HISTFILE<DD>
+Defines the host and service whose history is presented.
+<DT>ENTRIES<DD>
+The number of log-entries to show in the event log table.
+Default is 50; to view all log entries set this to &quot;ALL&quot;.
+<DT>IP<DD>
+The IP-address of the host. This is only used for the title
+of the document.
+<DT>PIXELS<DD>
+The width of the colorbar graph in pixels. If this is
+set to 0, a percentage-based graph will be shown, similar
+to the one provided by the standard bb-hist.sh script.
+Pixel-based graphs can have a higher resolution, but do
+not resize automatically to suit the size of a browser 
+window. The default value for this parameter is defined
+at compile-time; 960 is a good value for displays with
+a 1024x768 resolution.
+<DT>BARSUMS<DD>
+Defines which colorbars and summaries to show. This is
+a number made up from a bitmask. The 1-day graph uses the
+value &quot;1&quot;; the 1-week graph uses the value &quot;2&quot;; the 4-week
+graph uses the value &quot;4&quot; and the 1-year graph the value &quot;8&quot;.
+To show multiple graph, add the values - e.g. &quot;6&quot; will show
+the 1-week and 4-weeks graphs, whereas &quot;15&quot; will show all
+the graphs. The default is defined at compile-time.
+<DT>ENDTIME<DD>
+The history display by default ends with the current time.
+Setting the ENDTIME parameter causes it to end at the time
+specified - this is given as a Unix &quot;time_t&quot; value, i.e.
+as the number of seconds elapsed since Jan 1 1970 00:00 UTC.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--env=FILENAME<DD>
+Load the environment from FILENAME before executing the CGI.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">PARAMETERS</A><DD>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:31 GMT, December 15, 2008
+</BODY>
+</HTML>

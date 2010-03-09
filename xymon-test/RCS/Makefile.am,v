@@ -1,0 +1,33 @@
+head	1.1;
+access;
+symbols;
+locks
+	tjyang:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2010.03.06.00.21.47;	author tjyang;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@## Copyright (C) 2006 Free Software Foundation, Inc.
+## This Makefile.am is free software; the Free Software Foundation
+## gives unlimited permission to copy, distribute and modify it.
+
+
+# What: list out the directories contains source code
+SUBDIRS = lib common demotool client bbdisplay bbproxy hobbitd
+# What: include the file in m4 directory
+ACLOCAL_AMFLAGS = -I m4
+@

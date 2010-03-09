@@ -1,0 +1,166 @@
+README file for Xymon PDF reports 
+==================================
+
+
+What is it ?
+============
+
+Ok here it is, the new version of Xymon reports. The main objective of these scripts is to dynamically generate PDF reports of your servers from a web page. You have two web pages to obtain your reports. 
+
+One, named pdf.php, is for the simple graphs. On this you will have only 4 or 6 graphs and that's all. It's simple and clear. 
+
+The second, called analysis.php, is a bit more complex but, this time, you can write something and your text will appear under the graphs. With a little javascript you even can fill automatically the reports.
+
+
+Installation
+============
+
+* Get a copy of 'tcpdf' from http://www.tcpdf.org/ . At the time of writing, last version is 4.2.009. 
+
+* Unzip it somewhere ! Give your Webserver the authorization to access it (i.e, chown -R www-data:www-data /path/to/tcpdf/).
+
+* Then un-gzip the 'xymon_pdf.tar.gz' archive in a directory of your choice ($BBHOME/server/www/pdf for example). Give your Webserver the authorization to access it (i.e, chown -R www-data:www-data /path/to/pdf/).
+
+* Edit the 'include/config.inc.php' to match your configuration. You nearly have nothing to change, just two paths !
+
+* Edit 'class.report.inc.php' and/or 'class.analysis.inc.php' to change the logo appearing on top left of reports and text for footers/headers. By default, it's my company logo and it's very ugly. So please change it !
+
+* Edit '$BBHOME/server/www/menu/menu_items.js' and add two lines in 'Reports' section like these ones :
+
+(I have my scripts in $BBHOME/server/www/pdf)
+
+['Analysis PDF', '/xymon/pdf/analysis.php'],
+['Reports PDF', '/xymon/pdf/pdf.php']
+
+* Open a browser and go to 'pdf.php' or 'analysis.php' and try to generate a report... You will only see the document structure :(
+
+* You have to generate some images to include into reports. To do so, I wrote several shell scripts to generate these. All you have to do is configuring the 'scripts/config' to match your configuration.
+
+* Launch 'master.sh' from a command line or cron to periodically generate graphs.
+
+
+* Basically, you will only see FOUR graphes on the reports. I found that the Run-Queue Length and I/O wait rate are good indicators to detect a trouble on my systems. You can have these information with 'SAR'. It works on every Unix flavour and is more accurate than 'vmstat'. If you don't want to use 'sar', take the red pill ! Else take the blue pill...
+
+
+Red Pill
+--------
+* If you don't want to install 'sar' the two graphes representing 'run-queue length' and 'i/o wait rate' will be not displayed within the reports and analysis. The installation is over !
+
+
+Blue Pill
+---------
+* You take the blue pill, I will tell you the truth. I choose to include 6 graphes in the reports generated from 6 rrd (I will add more in the future). For me, these graphes are the most significant to understand if the server is in good health or not.
+
+# cpu      : CPU utilization (la.rrd)
+# memory   : Memory and Swap utilization (memory.*.rrd)
+# net	   : Network Traffic (netstat.rrd or ifstat.rrd)
+# iowait   : I/O wait rate (?)
+# runqueue : 'Real' CPU load (?)
+# vmstat   : CPU 'Utilization' (vmstat.rrd)
+
+* If you want to use 'sar', copy the 'bb-sar.sh' script from this archive in 'scripts/ext/' or download and install the 'bb-sar-0.9.tar.gz' script from deadcat.net (http://www.deadcat.net/viewfile.php?fileid=686) and install it to your Xymon clients 'ext/' directory. Don't waste your time with larrd part of the script it doesn't work (if you got it to work, please tell me !!). You must have a new test on your hobbit display called 'sar' with a lot of tests within. 
+
+* Copy the script 'extragraph.sh' from this archive in 'scripts/ext/' to your Xymon server 'ext/' diectory.
+
+* Ok, you'll find below the content of the script. This script has been successfully tested for Aix 4.2->5.3, HP-UX 10.20->11.23, Redhat AS Linux 2.1->4 and Solaris 6->10.
+
+* Watch out for the language used on your system !! All my systems are configured with english locale...
+
+#####################################################################################################
+#!/bin/sh
+
+HOSTNAME="$1"
+TESTNAME="$2"
+FNAME="$3"
+
+case "$TESTNAME"
+in
+   "sar")
+
+        if [ -z "$SARU" ]
+        then
+        SARU=`grep -iA 10 wio $FNAME |grep -i system |awk '{print $4}'`
+                if [ -z "$SARU" ]
+                then
+                SARU=`grep -iA 1 wio $FNAME | awk '{print $4}' | tail -1`
+                        if [ -z "$SARU" ]
+                        then
+                        SARU=`grep -iA 5 iowait $FNAME |grep -i average | awk '{print $6}'`
+                        fi
+                fi
+        fi
+
+        if [ -z "$SARQ" ]
+        then
+        SARQ=`grep -iA 9 runq $FNAME | grep system | sed 's/,/./g' | awk '{print $2}'`
+                if [ -z "$SARQ" ]
+                then
+                SARQ=`grep -iA 2 runq $FNAME | grep -i average | sed 's/,/./g' | awk '{print $2}'`
+                        if [ -z "$SARQ" ]
+                        then
+                        SARQ=`grep -iA 1 runq $FNAME | sed 's/,/./g' | awk '{print $2}' | tail -1`
+                        fi
+                fi
+        fi
+
+        echo "DS:sar_wio:GAUGE:600:0:100"
+        echo "DS:sar_rq:GAUGE:600:0:100"
+
+        echo "sar.rrd"
+        echo "$SARU:$SARQ"
+;;
+
+esac
+
+exit 0
+
+#####################################################################################################
+
+* Save this code and place it in the $BBHOME/server/ext/ directory of your hobbit server. I will call it script 'extragraph.sh' for the purpose of this documentation. 
+
+* Edit $BBHOME/server/etc/hobbitlaunch.cfg and add "--extra-script=$BBHOME/server/ext/extragraph.sh --extra-tests=sar" to the 'rrdstatus' and 'rrddata' definition. You should have : 
+
+[rrdstatus]
+        ENVFILE /Soft/hobbit/server/etc/hobbitserver.cfg
+        NEEDS hobbitd
+        CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/rrd-status.log hobbitd_rrd --rrddir=$BBVAR/rrd --extra-script=$BBHOME/server/ext/extragraph.sh --extra-tests=sar
+
+[rrddata]
+        ENVFILE /Soft/hobbit/server/etc/hobbitserver.cfg
+        NEEDS hobbitd
+        CMD hobbitd_channel --channel=data --log=$BBSERVERLOGS/rrd-data.log hobbitd_rrd --rrddir=$BBVAR/rrd --extra-script=$BBHOME/server/ext/extragraph.sh --extra-tests=sar
+
+* If you want graph in trends and sar test, add ",sar" to GRAPHS and TEST2RRD definitions in $BBHOME/server/etc/hobbitserver.cfg. 
+
+* You must add the correct definition in $BBHOME/server/etc/hobbitgraph.cfg :
+
+[sar]
+        TITLE Sar I/O
+        YAXIS %CPU
+        DEF:wio=sar.rrd:sar_wio:AVERAGE
+        DEF:rq=sar.rrd:sar_rq:AVERAGE
+        LINE2:wio#FF0000:I/O wait
+        COMMENT: %CPU
+        GPRINT:wio:LAST:cur \:%3.2lf
+        GPRINT:wio:MIN:min  \:%3.2lf
+        GPRINT:wio:AVERAGE:avg \:%3.2lf
+        GPRINT:wio:MAX:max \:%3.2lf \n
+        LINE2:rq#0000CC:Run-queue 
+        GPRINT:rq:LAST:cur \:%3.2lf
+        GPRINT:rq:MIN:min  \:%3.2lf
+        GPRINT:rq:AVERAGE:avg \:%3.2lf
+        GPRINT:rq:MAX:max \:%3.2lf \n
+
+* In a few minutes you should see a graph in 'trends' and 'sar' test. That's good ! If you don't see any graphs, something goes wrong :(
+
+* You should try again to launch 'master.sh' and generate a pdf report. This time it will show you 6 graphes !
+
+
+TODO
+====
+
+Feel free to contact me if something goes wrong or something is missing. Just tell me !
+
+
+Thomas Seglard - 2008 / Nov / 11
+(thoseg@gmail.com)

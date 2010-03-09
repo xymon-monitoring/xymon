@@ -1,0 +1,16 @@
+#
+#       Logrotate fragment for Hobbit.
+#
+/var/log/hobbit/*.log {
+        weekly
+        compress
+        delaycompress
+        rotate 5
+        missingok
+        nocreate
+        sharedscripts
+        postrotate
+                /etc/init.d/hobbit rotate
+        endscript
+}
+

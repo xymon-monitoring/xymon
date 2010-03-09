@@ -1,0 +1,40 @@
+#!/bin/bash
+
+HOSTNAME="$1"
+TESTNAME="$2"
+FNAME="$3"
+
+# For debugging purpose
+##
+#TMPLOG="/tmp/$1.$2.out"
+#echo "$1, $2, $3" > $TMPLOG
+#cat $3 >> $TMPLOG
+
+case "$TESTNAME"
+in
+   "sar")
+
+	if [ -z "$SARU" ]
+	then
+		SARU=$(grep -iA 5 iowait $FNAME | grep -Ei "average|moyenne" | awk '{print $6}' | sed 's/,/./g')
+	fi
+
+	if [ -z "$SARQ" ]
+	then
+		SARQ=$(grep -iA 1 runq $FNAME | tail -1 | awk '{print $2}')
+
+		if [ "$SARQ" == "AM" ] || [ "$SARQ" == "PM" ]
+		then
+			SARQ=$(grep -iA 1 runq $FNAME | tail -1 | awk '{print $3}')
+		fi
+	fi
+
+	echo "DS:sar_wio:GAUGE:600:0:100"
+	echo "DS:sar_rq:GAUGE:600:0:100"
+	echo "sar.rrd"
+	echo "$SARU:$SARQ"
+	;;
+
+esac
+
+exit 0

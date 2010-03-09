@@ -1,0 +1,28 @@
+.TH HOBBITD_SAMPLE 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+hobbitd_sample \- example of a hobbitd worker module
+.SH SYNOPSIS
+.B "hobbitd_channel --channel=status hobbitd_sample [options]"
+
+.SH DESCRIPTION
+hobbitd_sample is a worker module for hobbitd, and as such it is normally
+run via the
+.I hobbitd_channel(8)
+program. It receives messages from hobbitd via stdin, and simply displays
+these on stdout. It can be used with all types of hobbitd channels.
+
+hobbitd_sample is not designed to actually run, except as a demonstration.
+The purpose of this tool is to show how hobbitd worker modules can be
+implemented to handle different tasks that need to hook into the hobbitd
+processing.
+
+.SH OPTIONS
+.IP "--timeout=N"
+Read messages with a timeout of N seconds.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH "SEE ALSO"
+hobbitd_channel(8), hobbitd(8), xymon(7)
+

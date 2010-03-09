@@ -1,0 +1,297 @@
+#!/bin/sh
+# Report on sar statistics for following OS:
+# AIX
+# HP-UX
+# Red Hat Linux
+# Solaris
+#
+# Created:  August 8, 2003
+#
+# Modifications:
+#
+#    July 2005
+#    Add the HREF link for 'n' option in Red Hat Linux
+#
+# This program runs the sar command for 5 minutes
+#
+# SCRIPTS IN THE BBHOME/ext DIRECTORY ARE ONLY RUN IF 
+# THEY ARE DEFINED IN THE ENTRY FOR THE CURRENT HOST
+# LISTED IN THE ext/bb-bbexttab FILE.
+#
+
+# 
+# BBPROG SHOULD JUST CONTAIN THE NAME OF THIS FILE
+# USEFUL WHEN YOU GET ENVIRONMENT DUMPS TO LOCATE 
+# THE OFFENDING SCRIPT...
+#
+
+BBPROG=bb-sar.sh; export BBPROG
+
+#
+# TEST NAME: THIS WILL BECOME A COLUMN ON THE DISPLAY
+# IT SHOULD BE AS SHORT AS POSSIBLE TO SAVE SPACE...
+# NOTE YOU CAN ALSO CREATE A HELP FILE FOR YOUR TEST
+# WHICH SHOULD BE PUT IN www/help/$TEST.html.  IT WILL
+# BE LINKED INTO THE DISPLAY AUTOMATICALLY.
+#
+TEST="sar"
+
+#
+# BBHOME CAN BE SET MANUALLY WHEN TESTING.
+# OTHERWISE IT SHOULD BE SET FROM THE BB ENVIRONMENT
+#
+# BBHOME=/home/bb/bb; export BBHOME   # FOR TESTING
+
+if test "$BBHOME" = ""
+then
+        echo "BBHOME is not set... exiting"
+        exit 1
+fi
+
+if test ! "$BBTMP"                      # GET DEFINITIONS IF NEEDED
+then
+         # echo "*** LOADING BBDEF ***"
+        . $BBHOME/etc/bbdef.sh          # INCLUDE STANDARD DEFINITIONS
+fi
+
+#
+# NOW COLLECT SOME DATA
+
+HOST=`echo $MACHINE|$SED s/,/./g`
+
+# The following operating systems are supported:
+# aix, hpux, linux, solaris
+
+case $BBOSTYPE in
+   # Note: Not sure if sar output from Debian is same as from Red Hat; I don't have server to test.
+   linux | redhat | redhatES | debian )
+      SAR=/usr/bin/sar
+      RESULT=`$SAR -A -o $BBTMP/sar.$$ 300 1 > /dev/null`
+      LINE="
+        <hr>
+
+        [-u] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=u\"><b>CPU Utilization</b></A>
+        `$SAR -u -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-b] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=b\"><b>I/O and Transfer Rate Statistics<b></A>
+        `$SAR -b -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-d] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=d\"><b>Disk Activity</b></A>
+        `$SAR -d -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-q] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=q\"><b>Queue Length and Load Averages</b></A>
+        `$SAR -q -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-W] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=W\"><b>Swapping Statistics</b></A>
+        `$SAR -W -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-r] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=r\"><b>Memory and Swap Space Utilization Statistics</b></A>
+        `$SAR -r -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-R] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=R\"><b>Memory Statistics</b></A>
+        `$SAR -R -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-B] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=B\"><b>Paging Statistics</b></A>
+        `$SAR -B -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-c] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=c\"><b>Process Creation Activity</b></A>
+        `$SAR -c -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-w] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=w\"><b>System Switching Activity</b></A>
+        `$SAR -w -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-v] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=v\"><b>Status of Inode, File and Other Kernel Tables</b></A>
+        `$SAR -v -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-n] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=n\"><b>Network Statistics</b></A></b>
+        `$SAR -n ALL -f $BBTMP/sar.$$;`
+        <hr>
+
+          "
+
+      $RM -f $BBTMP/sar.$$
+      ;;
+   aix )
+      SAR=/usr/sbin/sar
+      # Note: we don't separate report on each cpu, not using -P option
+      # -P does not seem to work with -A.
+      RESULT=`$SAR -A -o $BBTMP/sar.$$ 300 1 > /dev/null`
+      LINE="
+        <hr>
+
+        [-u] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=u\"><b>CPU Utilization</b></A>
+        `$SAR -u -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-b] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=b\"><b>Buffer Activity<b></A>
+        `$SAR -b -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-d] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=d\"><b>Disk Activity</b></A>
+        `$SAR -d -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-q] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=q\"><b>Queue Statistics</b></A>
+        `$SAR -q -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-w] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=w\"><b>System Switching Activity</b></A>
+        `$SAR -w -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-c] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=c\"><b>System Calls</b></A>
+        `$SAR -c -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-a] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=a\"><b>Use of File Access Routines</b></A>
+        `$SAR -a -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-v] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=v\"><b>Status of Text, Process, Inode and File Tables </b></A>
+        `$SAR -v -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-m] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=m\"><b>Message and Semaphore Activity</b></A>
+        `$SAR -m -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-k] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=k\"><b>Kernel Process Activity</b></A>
+        `$SAR -k -f $BBTMP/sar.$$;`
+        <hr>
+
+          "
+      $RM -f $BBTMP/sar.$$
+      ;;
+   hpux )
+      SAR=/usr/bin/sar
+      RESULT=`$SAR -A -o $BBTMP/sar.$$ 300 1 > /dev/null`
+      LINE="
+        <hr>
+
+        [-u] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=u\"><b>CPU Utilization</b></A>
+        `$SAR -uM -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-b] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=b\"><b>Buffer Activity</b></A>
+        `$SAR -b -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-d] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=d\"><b>Disk Activity</b></A>
+        `$SAR -d -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-q] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=q\"><b>Average Queue Length and Percent of Time Occupied</b></A>
+        `$SAR -qM -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-w] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=w\"><b>System Swapping and Switching Activity</b></A>
+        `$SAR -w -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-c] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=c\"><b>System Calls</b></A>
+        `$SAR -c -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-a] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=a\"><b>Use of File Access Routines</b></A>
+        `$SAR -a -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-v] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=v\"><b>Status of Text, Process, Inode and File Tables </b></A>
+        `$SAR -v -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-m] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=m\"><b>Message and Semaphore Activity</b></A>
+        `$SAR -m -f $BBTMP/sar.$$;`
+        <hr>
+
+          "
+      $RM -f $BBTMP/sar.$$
+      ;;
+    solaris )
+      SAR=/usr/bin/sar
+      RESULT=`$SAR -A -o $BBTMP/sar.$$ 300 1 > /dev/null`
+      LINE="
+        <hr>
+
+        [-u] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=u\"><b>CPU Utilization</b></A>
+        `$SAR -u -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-b] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=b\"><b>Buffer Activity</b></A>
+        `$SAR -b -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-d] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=d\"><b>Disk Activity</b></A>
+        `$SAR -d -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-q] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=q\"><b>Average Queue Length and Percent of Time Occupied</b></A>
+        `$SAR -q -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-w] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=w\"><b>System Swapping and Switching Activity</b></A>
+        `$SAR -w -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-c] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=c\"><b>System Calls</b></A>
+        `$SAR -c -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-a] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=a\"><b>Use of File Access Routines</b></A>
+        `$SAR -a -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-v] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=v\"><b>Status of Text, Process, Inode and File Tables </b></A>
+        `$SAR -v -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-m] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=m\"><b>Message and Semaphore Activity</b></A>
+        `$SAR -m -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-g] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=g\"><b>Paging Activity</b></A>
+        `$SAR -g -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-k] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=k\"><b>Kernel Memory Allocation</b></A>
+        `$SAR -k -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-p] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=p\"><b>Paging Activity</b></A>
+        `$SAR -p -f $BBTMP/sar.$$;`
+        <hr>
+
+        [-r] <A HREF=\"/cgi-bin/sar-grapher.cgi?host=$HOST&option=r\"><b>Unused Memory Pages and Disk Blocks</b></A>
+        `$SAR -r -f $BBTMP/sar.$$;`
+        <hr>
+
+          "
+      $RM -f $BBTMP/sar.$$
+      ;;
+   * )
+      COLOR="clear"
+      STATUS="??? Unknown ???"
+      LINE="
+sar command not defined for this operating system ($BBOSTYPE)"
+      $BB $BBDISP "status $MACHINE.$TEST $COLOR `date` - $STATUS $LINE"
+      exit 1
+      ;;
+esac
+
+COLOR="green"
+STATUS="sar output"
+
+# NOW USE THE BB COMMAND TO SEND THE DATA ACROSS
+$BB $BBDISP "status $MACHINE.$TEST $COLOR `date` - $STATUS $LINE"
+

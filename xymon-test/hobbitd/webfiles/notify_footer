@@ -1,0 +1,24 @@
+<BR><BR>
+
+<TABLE SUMMARY="Bottomline" WIDTH="100%">
+<TR>
+  <TD> <HR WIDTH="100%"> </TD>
+</TR>
+<TR>
+  <TD ALIGN=RIGHT><FONT FACE="Arial, Helvetica" SIZE="-2" COLOR="silver"><B><A HREF="http://hobbitmon.sourceforge.net/" style="text-decoration: none">Xymon &HOBBITDREL</A></B></FONT></TD>
+</TR>
+</TABLE>
+
+
+<!-- menu script itself. you should not modify this file -->
+<script type="text/javascript" language="JavaScript" src="&BBMENUSKIN/menu.js"></script>
+<!-- items structure. menu hierarchy and links are stored there -->
+<script type="text/javascript" language="JavaScript" src="&BBMENUSKIN/menu_items.js"></script>
+<!-- files with geometry and styles structures -->
+<script type="text/javascript" language="JavaScript" src="&BBMENUSKIN/menu_tpl.js"></script>
+<script type="text/javascript" language="JavaScript">
+        new menu (MENU_ITEMS, MENU_POS);
+</script>
+
+</BODY>
+</HTML>

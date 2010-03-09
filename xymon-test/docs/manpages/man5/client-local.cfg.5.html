@@ -1,0 +1,224 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of CLIENT-LOCAL.CFG</TITLE>
+</HEAD><BODY>
+<H1>CLIENT-LOCAL.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+client-local.cfg - Local configuration settings for Xymon clients
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>~xymon/server/etc/client-local.cfg</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+The client-local.cfg file contains settings that are used by each 
+Xymon client when it runs on a monitored host. It provides a
+convenient way of configuring clients from a central location
+without having to setup special configuration maintenance tools on
+all clients.
+<P>
+The client-local.cfg file is currently used to configure what logfiles
+the client should fetch data from, to be used as the basis for the
+&quot;msgs&quot; status column; and to configure which files and directories
+are being monitored in the &quot;files&quot; status column.
+<P>
+Note that there is a dependency between the client-local.cfg file 
+and the 
+<I><A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)</I>
+
+file. When monitoring e.g. a logfile, you must first enter it into the 
+client-local.cfg file, to trigger the Xymon client into reporting any 
+data about the logfile. Next, you must configure hobbit-clients.cfg 
+so the Xymon server knows what to look for in the file data sent by 
+the client. So: client-local.cfg defines what raw data is collected 
+by the client, and hobbit-clients.cfg defines how to analyze them.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>PROPAGATION TO CLIENTS</H2>
+
+The client-local.cfg file resides on the Xymon server.
+<P>
+When clients connect to the Xymon server to send in their client
+data, they will receive part of this file back from the Xymon server.
+The configuration received by the client is then used the next time 
+the client runs.
+<P>
+This method of propagating the configuration means that there is a
+delay of up to two poll cycles (i.e. 5-10 minutes) from a configuration
+change is entered into the client-local.cfg file, and until you see
+the result in the status messages reported by the client.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>FILE FORMAT</H2>
+
+The file is divided into sections, delimited by &quot;[name]&quot; lines.
+A section name can be either an operating system identifier - 
+linux, solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin - 
+or a hostname. When deciding which section to send to a client,
+Xymon will first look for a section named after the hostname of
+the client; if such a section does not exist, it will look for
+a section named by the operating system of the client. So you
+can configure special configurations for individual hosts, and have
+a default configuration for all other hosts of a certain type.
+<P>
+Apart from the section delimiter, the file format is free-form, or
+rather it is defined by the tools that make use of the configuration.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>LOGFILE CONFIGURATION ENTRIES</H2>
+
+A logfile configuration entry looks like this:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;log:/var/log/messages:10240
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;ignore&nbsp;MARK
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;trigger&nbsp;Oops
+<P>
+The <B>log:FILENAME:SIZE</B> line defines the filename of the log, and the
+maximum amount of data (in bytes) to send to the Xymon server. FILENAME
+is usually an explicit full-path filename on the client. If it is enclosed
+in backticks, it is a command which the Xymon client runs and each line 
+of output from this command is then used as a filename. This allows
+scripting which files to monitor, e.g. if you have logfiles that are
+named with some sort of timestamp.
+<P>
+The <B>ignore PATTERN</B> line (optional) defines lines in the logfile which
+are ignored entirely, i.e. they are stripped from the logfile data before
+sending it to the Xymon server. It is used to remove completely unwanted
+&quot;noise&quot; entries from the logdata processed by Xymon. &quot;PATTERN&quot; is a regular
+expression.
+<P>
+The <B>trigger PATTERN</B> line (optional) is used only when there is more
+data in the log than the maximum size set in the &quot;log:FILENAME:SIZE&quot; line.
+The &quot;trigger&quot; pattern is then used to find particularly interesting lines
+in the logfile - these will always be sent to the Xymon server. After
+picking out the &quot;trigger&quot; lines, any remaining space up to the maximum size
+is filled in with the most recent entries from the logfile. &quot;PATTERN&quot; is
+a regular expression.
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>COUNTING LOGENTRIES</H2>
+
+A special type of log-handling is possible, where the number of lines matching
+a regular expressions are merely counted. This is <B>linecount:FILENAME</B>,
+followed by a number of lines of the form <B>ID:PATTERN</B>. E.g.
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;linecount:/var/log/messages
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;diskerrors:I/O&nbsp;error.*device.*hd
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;badlogins:Failed&nbsp;login
+<P>
+<P>
+<A NAME="lbAI">&nbsp;</A>
+<H2>FILE CONFIGURATION ENTRIES</H2>
+
+A file monitoring entry is used to watch the meta-data of a file: Owner,
+group, size, permissions, checksum etc. It looks like this:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;file:/var/log/messages[:HASH]
+<P>
+The <B>file:FILENAME</B> line defines the filename of the file to monitor.
+As with the &quot;log:&quot; entries, a filename enclosed in backticks means a 
+command which will generate the filenames dynamically. The optional 
+[:HASH] setting defines what type of hash to compute for the file: 
+<B>md5</B>, <B>sha1</B> or <B>rmd160</B>. By default, no hash is calculated.
+<BR>
+
+<B>NOTE:</B> If
+you want to check multiple files using a wildcard, you <B>must</B> use
+a command to generate the filenames. Putting wildcards directly into
+the <B>file:</B> entry will not work.
+<P>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>DIRECTORY CONFIGURATION ENTRIES</H2>
+
+A directory monitoring entry is used to watch the size of a directory 
+and any sub-directories. It looks like this:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;dir:DIRECTORYNAME
+<P>
+The <B>dir:DIRECTORYNAME</B> line defines the filename of the file to monitor.
+As with the &quot;log:&quot; entries, a filename enclosed in backticks means a 
+command which will generate the filenames dynamically. The Xymon client
+will run the
+<I><A HREF="../man1/du.1.html">du</A>(1)</I>
+
+command with the directoryname as parameter, and send the output back to the
+Xymon server.
+<BR>
+
+<B>NOTE:</B> If you want to check multiple directories using a 
+wildcard, you <B>must</B> use a command to generate the directory names. Putting 
+wildcards directly into the <B>dir:</B> entry will not work. E.g. use something
+like
+<BR>
+
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>dir:`find /var/log -maxdepth 1 -type d`<BR>
+<P>
+The &quot;du&quot; command used can be configured through the <B>DU</B> environment 
+variable. On some systems, by default <B>du</B> reports data in disk blocks
+instead of KB (e.g. Solaris). So you may want to configure the Xymon client
+to use a <B>du</B> command which reports data in KB, e.g. by setting
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;DU=&quot;du&nbsp;-k&quot;
+<BR>
+
+in the hobbitclient.cfg file.
+<P>
+<A NAME="lbAK">&nbsp;</A>
+<H2>NOTES</H2>
+
+The ability of the Xymon client to calculate file hashes and monitor those
+can be used for file integrity validation on a small scale. However, there is
+a significant processing overhead in calculating these every time the Xymon
+client runs, so this should not be considered a replacement for host-based
+intrusion detection systems such as Tripwire or AIDE.
+<P>
+Use of the directory monitoring on directory structures with a large number
+of files and/or sub-directories can be quite ressource-intensive.
+<P>
+<A NAME="lbAL">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5), <A HREF="../man8/hobbitd_client.8.html">hobbitd_client</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">PROPAGATION TO CLIENTS</A><DD>
+<DT><A HREF="#lbAF">FILE FORMAT</A><DD>
+<DT><A HREF="#lbAG">LOGFILE CONFIGURATION ENTRIES</A><DD>
+<DT><A HREF="#lbAH">COUNTING LOGENTRIES</A><DD>
+<DT><A HREF="#lbAI">FILE CONFIGURATION ENTRIES</A><DD>
+<DT><A HREF="#lbAJ">DIRECTORY CONFIGURATION ENTRIES</A><DD>
+<DT><A HREF="#lbAK">NOTES</A><DD>
+<DT><A HREF="#lbAL">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:30 GMT, December 15, 2008
+</BODY>
+</HTML>

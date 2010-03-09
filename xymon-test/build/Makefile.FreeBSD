@@ -1,0 +1,19 @@
+# bbgen compile-time settings for FreeBSD systems
+
+OSDEF = -DBSD
+
+# NETLIBS: None needed
+NETLIBS =
+
+# Compile flags for normal build
+CC = gcc
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(LFSDEF) $(OSDEF)
+RPATH = "-Wl,--rpath,"
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT -I/usr/local/include -L/usr/local/lib $(LFSDEF) $(OSDEF)
+
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+

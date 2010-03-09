@@ -1,0 +1,52 @@
+<table border=1 summary="NK info" align=center>
+<tr>
+<th align=center>Priority</th>
+<th align=center>Resolver group</th>
+<th align=center>Documentation</th>
+</tr>
+
+<tr>
+  <td align=center>&NKACKTTPRIO</td>
+  <td align=center>&NKACKTTGROUP</td>
+  <td align=center>
+     <a href="&NKACKINFOURL">Host info</a>
+     <br>
+     <a href="&NKACKDOCURL">Host docs</a>
+  </td>
+</tr>
+
+<tr>
+  <td colspan=3 align=center>&NKACKTTEXTRA</td>
+</tr>
+
+<tr>
+  <td colspan=3 align=center valign=middle>
+    <form method="POST" action="&SECURECGIBINURL/hobbit-ackinfo.sh">
+      <INPUT TYPE="TEXT" NAME="NOTE" VALUE="" MAXLENGTH=60 SIZE=60 tabindex="0">
+      &nbsp;&nbsp;Host-ack
+      <INPUT TYPE="CHECKBOX" NAME="ALLTESTS" VALUE="OFF">&nbsp;&nbsp;
+      <SELECT NAME="VALIDITY">
+         <OPTION VALUE="30">30 minutes</OPTION>
+         <OPTION VALUE="60">1 hour</OPTION>
+         <OPTION VALUE="120">2 hours</OPTION>
+         <OPTION VALUE="180">3 hours</OPTION>
+         <OPTION VALUE="360">6 hours</OPTION>
+         <OPTION VALUE="720">12 hours</OPTION>
+         <OPTION VALUE="1440" SELECTED>24 hours</OPTION>
+         <OPTION VALUE="2880">2 days</OPTION>
+         <OPTION VALUE="4320">3 days</OPTION>
+         <OPTION VALUE="5760">4 days</OPTION>
+         <OPTION VALUE="7200">5 days</OPTION>
+         <OPTION VALUE="10080">1 week</OPTION>
+         <OPTION VALUE="43200">4 weeks</OPTION>
+      </SELECT>
+      <INPUT TYPE="HIDDEN"   NAME="HOST"     VALUE="&BBHOST">
+      <INPUT TYPE="HIDDEN"   NAME="SERVICE"  VALUE="&BBSVC">
+      <INPUT TYPE="HIDDEN"   NAME="LEVEL"    VALUE="1">
+      <INPUT TYPE="SUBMIT"   NAME="ACK"      VALUE="Acknowledge">
+    </form>
+  </td>
+</tr>
+
+</table>
+
