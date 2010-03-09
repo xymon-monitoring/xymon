@@ -1794,6 +1794,14 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--test") == 0) {
 			testmode(configfn);
 		}
+
+                else if (strcmp(argv[argi],"--stdout")== 0 ) {
+                        /** Enable --stdout  so that bb messages will be dumped
+                            to stdout, instead of sending to BBDISP.
+                        */
+                        dump_stdout = 1;
+                        }
+
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
 		}
@@ -1943,6 +1951,14 @@ int main(int argc, char *argv[])
 			running = 0;
 			continue;
 		}
+
+                else if (strncmp(metadata[0], "@@eoclient", 10) == 0) {
+		        /** To enable xymon  client message backlog  */
+                        printf("DATA_COMPLETE\n");
+                        fflush(stdout);
+                        running = 1;
+                        continue;
+                }
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
 			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
