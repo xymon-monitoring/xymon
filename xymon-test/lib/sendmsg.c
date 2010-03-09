@@ -38,7 +38,8 @@ static char rcsid[] = "$Id: sendmsg.c 6125 2009-02-12 13:09:34Z storner $";
 
 /* These commands go to BBDISPLAYS */
 static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
-
+/** default not to dump xymon message to standard output. */
+int          dump_stdout  = 0;
 /* Stuff for combo message handling */
 int		bbmsgcount = 0;		/* Number of messages transmitted */
 int		bbstatuscount = 0;	/* Number of status items reported */
@@ -563,6 +564,18 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 {
 	static char *bbdisp = NULL;
 	int res = 0;
+
+        /** dumpstdout == 1
+         What: redirect the processed message to standard output.
+         Why : so we can intercept the message for xymon  client message caching ability.
+            This is to make xymon  client send backlog message when xymon  server was down.
+            The inserts of backlog hobbit message with old timestamp will be done in external perl code.
+        */
+        if ( dumpstdout == 1 ) {
+                 printf ("BGMSG\n%s\nEOMSG\n",msg);
+                 fflush(stdout);
+                 return BB_OK;
+         }
 
  	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = strdup(xgetenv("BBDISP"));
 	if (recipient == NULL) recipient = bbdisp;

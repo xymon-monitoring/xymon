@@ -61,5 +61,8 @@ extern void init_meta(char *metaname);
 extern void addtometa(char *p);
 extern void finish_meta(void);
 
+/** Integer variable for dumping processed xymon message to stdout */
+extern int dump_stdout;
+
 #endif
 
