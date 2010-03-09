@@ -21,15 +21,4 @@
 typedef unsigned int socklen_t;
 #endif
 
-/*
-#ifndef HAVE_SNPRINTF
-extern int snprintf(char *str, size_t size, const char *format, ...);
-#endif
-
-#ifndef HAVE_VSNPRINTF
-extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-#endif
-*/
-
-#endif
 

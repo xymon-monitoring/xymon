@@ -14,21 +14,4 @@
 #include <stdio.h>
 
 #include "osdefs.h"
-
-#ifndef HAVE_SNPRINTF
-int snprintf(char *str, size_t size, const char *format, /*args*/ ...)
-{
-	va_list args;
-
-	va_start(args, format);
-	return vsprintf(str, format, args);
-}
-#endif
-
-#ifndef HAVE_VSNPRINTF
-int vsnprintf(char *str, size_t size, const char *format, va_list args)
-{
-	return vsprintf(str, format, args);
-}
-#endif
-
+#include "config.h"
