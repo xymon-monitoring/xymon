@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML lang="en">
+<HEAD>
+ <LINK rel="StyleSheet" href="../BBWin.css">
+ <TITLE>Cpu</TITLE>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ <meta name="copyright" content="Copyright &copy; 2006 by Etienne Grignon. Licenced under GPL.">
+</HEAD>
+<BODY>
+ <H1>Cpu</H1>
+ <H3>Description</H3>
+<p>
+Cpu agent is used to monitor CPU Usage. 
+</p>
+<H3>Configuration</H3>
+<UL>
+ <LI class="OptionDirective"><b>setting</b> directive syntax :
+<p>
+<pre class="Config">
+&lt;setting name="" value="" /&gt;
+</pre>
+<LI class="OptionDirective">generic settings
+<p>
+<table class="OptionTable" cellSpacing="0" cellPadding="0" border="1" id="table1">
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		name
+		</td>
+		<td class="OptionTitle">
+		value
+		</td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		alwaysgreen
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Possible values are "true" or "false". If true, it will always send green status.
+		<b>Default is false</b>.
+		</td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		limit
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Limit is a numeric value. This will limit the number of lines of the process list
+		<b>Default is 0 which means to list all processus</b></td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		psmode
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Possible values are "true" or "false". If true, it will report all the processus ordered by cpu usage.
+		<b>Default is true</b></td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		testname
+		</td>
+		<td class="OptionValue" vAlign="top">
+		You can set the testname that will be sent to the monitoring server (column name in
+		the bbdisplay)
+		<b>Default is "cpu"</b></td>
+	</tr>
+
+</table>
+ <LI class="OptionDirective"><b>rules</b> directive syntax :
+<p>
+<pre class="Config">
+&lt;setting name="" rule="" alarmcolor="" comment=""/&gt;
+</pre>
+<p>
+If the name value is not one of the generic settings, then, cpu will understand that it is the cpu default rule.
+</p>
+<p>
+<table class="OptionTable" cellSpacing="0" cellPadding="0" border="1" id="table2">
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		delay
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Delay is numeric value. It allows to create an internal counter before sending alarms about cpu usage.
+		If delay is set to 4, it will wait 4 cpu runs before sending an alarm. If between 2 runs, the cpuusage 
+		come back to a value less than the warnlevel, then, the internal counter will be reset to 0.
+		This permits to refine cpu usage detection.
+		<b>Default value is 3</b></td>
+	</tr>
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		name
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Must be "default".
+		<br>
+		</td>
+	</tr>
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		paniclevel
+		</td>
+		<td class="OptionValue" vAlign="top">
+		It must be a numeric value. It will warn red if the value is reached.
+		<b>Default is 95%</b></td>
+	</tr>
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		warnlevel
+		</td>
+		<td class="OptionValue" vAlign="top">
+		It must be a numeric value. It will warn yellow if the value is reached.
+		<b>Default is 90%</b></td>
+	</tr>
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		uptime
+		</td>
+		<td class="OptionValue" vAlign="top">
+		This option is used to monitor the uptime via the cpu report like the original Big Brother client.
+		This option is not activated by default. To turn it on, you may specify the uptime setting with a time value
+		corresponding to the delay you want to warn for a reboot which has been done recently.
+		Unit is seconds. You can specify a unit after the numeric value : "m" for minutes,
+		"h" for hours, "d" for days.
+		</td>
+	</tr>
+</table>
+</UL>
+<H3>Examples</H3>
+<UL>
+ <LI>
+<p>
+<pre class="Config">
+&lt;cpu&gt;
+	&lt;setting name="alwaysgreen" value="false" /&gt;
+	&lt;setting name="default" warnlevel="90" paniclevel="95" delay="3" /&gt;
+&lt;/cpu&gt;
+</pre>
+</UL>
+<H3>Notes</H3>
+<UL>
+ <LI>Owner doesn't appear in the status report on Windows NT4
+</UL>
+</BODY>
+</HTML>

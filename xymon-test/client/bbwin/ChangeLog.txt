@@ -1,0 +1,209 @@
+ChangeLog file for BBWin
+==============================================================
+
+BBWin 0.12 Beta version -  June 6th 2008
+-------------------
+
+* Fix multiple bbdisplay with centralized mode
+* Send BBWin version (clientversion.cfg from etc folder)
+* Fix service names with spaces with centralized mode (replace spaces by underscore)
+
+
+BBWin 0.11 Preview version -  February 11th 2008
+-------------------
+
+* svcs centralized mode with autorestart option
+* new agent to be used with centralized mode : filesystem.dll
+  - file client-local.cfg implemented : support md5 and sha1 checksum algorythms
+  - dir client-local.cfg implemented
+  - logfile client-local.cfg implemented
+  - linecount client-local.cfg implemented
+  - back quoted for FILENAME and DIRECTORY implemented.
+* eventlog client-local.cfg implemented : msgs.dll
+* fix initialisation error on bbwinupdate agent
+* prevent loading bbwin.cfg agent configurations when centralized mode enabled
+* fix memory leak on bbwinupdate agent
+* fix memory leak on service BBWin.exe when centralized mode enabled
+* Use ip address instead of mac address for the graph title for network interfaces (ifstat)
+* multiple bbdisplay supported when centralized mode enabled
+* Who agent now use qwinsta executable output instead of native functions
+* Centralized Mode implemented directly in future hobbit 4.3 and with a patch for hobbit 4.2
+
+
+BBWin 0.10 Preview version -  December 30th 2007
+-------------------
+
++New Features
+* Msgs agent reports parts of description events when the message file contening the 
+  static string can't be found. It will reports as the Windows Event Viewer, just like this :
+  "The description for Event ID ( XXX ) in Source ( XXX ) cannot be found.
+  The local computer may not have the necessary registry information or message
+  DLL files to display messages from a remote computer. You may be able to use
+  the /AUXSOURCE= flag to retrieve this description; see Help and Support for details.
+  The following information is part of the event: XXXXX, XXXXX."
+* You can use environment variables in the bbwinupdate agent. Example :
+  <setting name="filename" value="bbwin\%COMPUTERNAME%.cfg" />
+* svcs services rules can be used with comments
+* disk agent can monitor free space from XX-rom drive and not only if a media is inserted.
+             (feature requested to monitor dvd-ram burning state)
+* disk agent can monitor volume mount points
+* Proxy access : BBWin can access to your hobbit server through a proxy (http proxy)
+  You can specify a user/password if you use http proxy basic authentification.
+* disk agent will alert you if a disk monitored with a custum rule disappear from the Server.
+  (Example : external usb harddrive turned off)
+* uptime agent : add max delay option to get alerts when servers are up for a too long time
+* who agent : report current connected users on the servers
+
+** Centralized mode for agents cpu, disk, memory, msgs, netstat, ports, procs, timediff, uptime
+** Centralized mode graphing network traffic
+** See the bbWin webpage 
+
+
+BBWin 0.9 Preview version - December 5th 2006
+-------------------
+
+
++ New Features
+* Msgs agent reports events username and you may filter event with user name
+* Msgs agent reports some statistics about each event log file. You can activate
+  an option which alert you when an event log is full. See the help chm file for details.
+* New BBWinUpdate agent : it used for the semi centralized mode. You can configure the agent
+  to download configurations updates from a central hobbit server.
+* First version of BBWin centralized mode implemented. Backend for hobbit not coded.
+  Look at the BBWin.cfg example in the doc folder or in the documentation
+
++ Updates
+* system uptime sometimes returns 0 seconds on the first query. BBWin now send 
+  a green status when this happens to avoid incorrect alerts.
+* msgs now formats description field in status so you don't have to scroll your window
+  to read a large event description
+* disk agent reported alerts on unrecognized disks (like disks part of cluster resources on
+  the inactive node of an MSCS cluster). These disks are now automatically ignored.
+* cluster.exe is more verbose when it check the Windows version
+* procs agent now is using rules with signs '+' or '-' because XML format doesn't accept
+  '<' sign in attributes ... However, the compatibility with '<' and '>' is preserved.
+* msgs summary option is removed. It is enabled by default and there is no use to disable it.
+
++ Bugs
+* limit option for cpu agent was wrong in the number of lines reported, it is fixed.
+* When an agent had no configuration in BBWin.cfg and if it was loaded, BBWin crashed, it is fixed.
+* msgs agent had a memory leak when an initialization was made to get event description. it is fixed.
+* wlbs script external had a bug to load the configuration file. it is fixed.
+* cpu agent were always missing one process in the ps report. it is fixed.
+* externals agent was crashing BBWin if its configuration was empty. it is fixed.
+
+
+
+BBWin 0.8 Preview version - 01 August 2006
+-------------------
+
++ New Features
+* svcs agent has now a delay setting which tell the agent to do not 
+  monitor the Windows services for a short time after the startup 
+  of the computer
+* Msgs agent have priority and count options
+* You may use environment variables for hostname and paths settings (registry and BBWin.cfg)
+* Cpu agent can monitor uptime like the original Big Brother client. It is off by default.
+* Cpu agent reports usage for each cpu
+* ext directory is now created at the installation so the tree really looks like hobbit tree.
+* hostname, logpath, binpath, etcpath, tmppath, extpath registry settings can be environment variables (e.g.: %VARNAME%)
+* default hostname is %COMPUTERNAME%
+
+
++ Updates
+* cpu agent on multi processor computers is now sending the correct cpu
+  usage
+* disk is now reporting correctly disk which had a size smaller than 1 mb
+* autoreload is now on by default
+* BBWin doesn't exits any more on errors
+* Msgs default delay for matchs rules may be overridden by a generic setting
+* Msgs now reports date with 24h time format
+
++ Important note :
+* A memory leak has been discovered in BBWin 0.7 due to a bug in the CRT library shipped
+with Visual C++ 2005. I'm forced to use the Visual ToolKit 2003 since not update
+is available yet for this bug. (SP1 public download not yet available)
+Here the page that explain the bug :
+http://forums.microsoft.com/MSDN/ShowPost.aspx?PostID=129031&SiteID=1&PageID=0
+http://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=98861
+
+
+
+BBWin 0.7 Preview version - 15 May 2006
+-------------------
+
+
++ New Features
+* Service:
+	- auto reload : a new option permit you to enable the auto reloading
+	for the BBWin.cfg file. (BBWin.cfg timestamp is checked every 5 seconds).
+	- bb pager : If you are using the pager feature from Big Brother servers,
+	you can enable the option to activate the alerts notifications.
+	Refer to the options : usepager, bbpager, and pagerlevels.
+* Agents :
+	- msgs (agent for the eventlog monitoring)
+* Documentation :
+	- The format is now chm instead of a big text file
+
+
++ Updates
+* BBWin + Agents : 	
+	- testname option is available for all agents (except externals) so
+	you can rename the column memory to mem for example if you need it
+	- procs agent rules can have an extra field "comment" so you can 
+	explain what is the process for if its name is not easy to understand
+	- cpu (improved, get the owner of the process and priority, it doesn't use psapi.dll anymore)
+			
+* BBWin + Tools : Migration tool can export the bbpagers and event log settings
+
+
+
+BBWin 0.6 Preview version - 19 April 2006
+-------------------
+
++ New Features
+* Agents: 
+	- svcs : monitor Windows Services
+
++ Updates
+* BBWin + Agents : 	resolve critical bug with the file configuration loading manager
+					which crashed the program
+
+
+
+BBWin 0.5 Preview version - 3 April 2006
+-------------------
+
++ New Features
+* second public version of BBWin
+* Agents:
+	- cpu (experimental)
+	- disk
+	- memory
+	- stats (netstat)
++ Tools:
+	- Migrate configuration from other BB Clients to the BBWin configuration file format
+
++ Updates
+* BBWin : update minor bug with the management of the timer configuration value
+* Agents :
+	- externals : can work with externals reports having lifetime
+	- uptime : updated to use performances counters without pdh library
+
+
+
+
+BBWin 0.4 Preview version - 15 March 2006
+-------------------
+
+* first public version of BBWin
+* Msi Installer
+* BBWin : core service
+* BBWinCmd : command line utility
+* Agents :
+	- externals
+	- procs
+	- uptime
+* Externals :
+	- wlbs
+	- cluster

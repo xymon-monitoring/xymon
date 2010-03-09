@@ -1,0 +1,81 @@
+
+Designer and Developer
+Etienne Grignon (etienne.grignon@gmail.com)
+
+BBWin Centralized Mode (Unix part)
+François Lacroix
+
+Richard Finegold (For the update of the MigrateBBntToBBWin.txt tool)
+
+
+---------
+
+Of course, BBWin would not exists if the hobbit project
+created and maintained by Henrik Stoerner did not exists.
+
+Please visit the hobbit project website :
+http://www.hswn.dk/hobbit/
+
+Some source code is directly from the hobbit source code.
+(digest part)
+
+
+I would like to thank some people. They helped me a lot in my work 
+and gave me a lot of nice ideas.
+
+Olivier Beau
+Erik Beauvalot
+David Bellanco
+Ahmed Bouhassoun
+Loïc Deschamps
+Cyrille Festeau
+Richard Fielder
+Joël Garcia
+Xavier Guillaume
+Phil Hammett
+Mourad Mekkaoui
+Stéphane Moriaud
+Steve Sanchez
+
+
+I also would like to thanks Steve Friedl (http://www.unixwiz.net) who helped me 
+by providing me excellent coding rules advises to improve the source code of BBWin.
+
+
+
+----------------------
+
+BBWin is developped thanks to many great tools such as :
+
+TinyXML (excellent xml library)
+	Used for all config parsing stuffs
+	http://www.grinninglizard.com/tinyxml/
+
+Boost Libraries (used in some agents)
+	http://www.boost.org/
+
+Wix Toolkit (used for the MSI installer)
+	Please note that it is the first Microsoft OpenSource project :)
+	http://sourceforge.net/projects/wix/
+	
+Some codes are from the very nice Code Projects website :
+	http://www.codeproject.com
+
+
+I also would like to thanks the authors of some books 
+that learned me a lot on programming and C++ :
+
+Bjarne Stroustrup : 	The C++ Programming Language
+						ISBN: 0201700735
+
+Noel Llopis	: 	C++ for Game Programmers 
+				ISBN: 1584502274
+				
+Steve McConnell :	Code Complete, Second Edition
+					ISBN: 0735619670
+
+
+Some french books :
+
+Claude Delannoy :	Programmer en langage C++
+					ASIN : 2212091389

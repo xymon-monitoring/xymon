@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML lang="en">
+<HEAD>
+ <LINK rel="StyleSheet" href="../BBWin.css">
+ <TITLE>Externals</TITLE>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ <meta name="copyright" content="Copyright &copy; 2006 by Etienne Grignon. Licenced under GPL.">
+</HEAD>
+<BODY>
+ <H1>Externals</H1>
+ <H3>Description</H3>
+<p>
+Externals agent is used to execute your externals scripts. (Your home made scripts to enhance 
+your monitoring).
+</p>
+<H3>Configuration</H3>
+<UL>
+ <LI class="OptionDirective"><b>setting</b> directive syntax :
+<p>
+<pre class="Config">
+&lt;setting name="" value="" /&gt;
+</pre>
+<LI class="OptionDirective">generic settings
+<p>
+<table class="OptionTable" cellSpacing="0" cellPadding="0" border="1" id="table1">
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		name
+		</td>
+		<td class="OptionTitle">
+		value
+		</td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		logstimer
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Time for the interval between the sending of the reports found in the tmp BBWin directory.
+		Default unit is seconds. You can specify a unit after the numeric value : "m" for minutes,
+		"h" for hours, "d" for days.
+		<b>Default is 30 seconds</b></td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		timer
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Default timer for the externals execution.
+		Default unit is seconds. You can specify a unit after the numeric value : "m" for minutes,
+		"h" for hours, "d" for days.
+		<b>Default is the value from BBWin configuration namespace.</b></td>
+	</tr>
+</table>
+ <LI class="OptionDirective"><b>load</b> directive syntax :
+<p>
+<pre class="Config">
+&lt;load name="" timer="" value=""/&gt;
+</pre>
+<p>
+If the name value is not one of the generic settings, then, cpu will understand that it is the cpu default rule.
+</p>
+<p>
+<table class="OptionTable" cellSpacing="0" cellPadding="0" border="1" id="table2">
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		name
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Name of the external. This setting is optionnal.
+		<br>
+		</td>
+	</tr>
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		timer
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Default timer for the externals execution.
+		Default unit is seconds. You can specify a unit after the numeric value : "m" for minutes,
+		"h" for hours, "d" for days.
+		<b>Default is the value from BBWin configuration namespace or from the timer general setting.</b></td>
+	</tr>
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		value
+		</td>
+		<td class="OptionValue" vAlign="top">
+		Command line to execute.
+		<b>This attribute is required.</b></td>
+	</tr>
+</table>
+</UL>
+<H3>Migrate Externals from BBNt</H3>
+<p>
+There are 2 ways to migrate your existing BB scripts made for bbnt to BBWin.
+<UL>
+<LI>
+Change the BBNt externals registry key value to the BBWin tmp directory path,
+then just run the scripts from BBWin.
+<LI>The second way consists to modify all your scripts to use the tmppath BBWin 
+registry key.
+</UL>
+<H3>Examples</H3>
+<p>
+</p>
+<UL>
+<LI>
+<pre class="Config">
+	&lt;externals&gt;
+	&lt;setting name="timer" value="3m" /&gt;
+	&lt;setting name="logstimer" value="60s" /&gt;
+	&lt;load value="cscript mybbscript.vbs" /&gt;
+	&lt;load value="memory.exe" /&gt;
+	&lt;load value="cscript wlbs.vbs" timer="15m" /&gt;
+	&lt;load value="cluster.exe" timer="90s" /&gt;
+	&lt;/externals&gt;
+</pre>
+<LI>Tmp directory will be checked every 60 seconds
+<LI>"cscript mybbscript.vbs" will be executed every 3 minutes
+<LI>"memory.exe will be executed every 3 minutes
+<LI>"cscript wlbs.vbs"  will be executed every 3 minutes
+<LI>cluster.exe will be executed every 90 seconds
+</UL>
+<H3>Notes</H3>
+<UL>
+ <LI>If you are running vbscript, you have to add "cscript " before the script path.
+ <LI>If you are running a cmd file, you have to add "cmd /c " before the file path.
+ <LI>The current directory for the bbwin service process is the BBWin bin path.
+</UL>
+</BODY>
+</HTML>

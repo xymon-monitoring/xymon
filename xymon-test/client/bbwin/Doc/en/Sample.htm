@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML lang="en">
+<HEAD>
+ <LINK rel="StyleSheet" href="../BBWin.css">
+ <TITLE>Sample</TITLE>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ <meta name="copyright" content="Copyright &copy; 2006 by Etienne Grignon. Licenced under GPL.">
+</HEAD>
+<BODY>
+ <H1>Sample</H1>
+ <H3>Description</H3>
+<p>
+Sample agent is an example for people who would like to develop their own agents.
+It may be used as an example or as a code base.
+It actually send a simple green status report with a short message. Testname and message
+can be configured via the BBWin.cfg
+</p>
+<H3>Configuration</H3>
+<UL>
+ <LI class="OptionDirective"><b>setting</b> directive syntax :
+<p>
+<pre class="Config">
+&lt;setting name="" value="" /&gt;
+</pre>
+<p>
+<table class="OptionTable" cellSpacing="0" cellPadding="0" border="1" id="table1">
+	<tr>
+		<td class="OptionTitle" vAlign="top" >
+		name
+		</td>
+		<td class="OptionTitle">
+		value
+		</td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		message
+		</td>
+		<td class="OptionValue" vAlign="top">
+		You can set the message that will be reported.
+		<b>Default is "this is a simple test"</b></td>
+	</tr>
+	<tr>
+		<td class="OptionValue" vAlign="top" >
+		testname
+		</td>
+		<td class="OptionValue" vAlign="top">
+		You can set the testname that will be sent to the monitoring server (column name in
+		the bbdisplay)
+		<b>Default is "sample"</b></td>
+	</tr>
+</table>
+</UL>
+<H3>Examples</H3>
+<UL>
+ <LI>Sample will report a green status with the name "hello" and it will contain the text "Hellow World"
+<p>
+<pre class="Config">
+&lt;sample&gt;
+	&lt;setting name="message" value="Hello World" /&gt;
+	&lt;setting name="testname" value="hello" /&gt;
+&lt;/sample&gt;
+</pre>
+</UL>
+<H3>Notes</H3>
+<UL>
+ <LI>This agent is not installed by default and is part of the BBWin Agent SDK
+</UL>
+</BODY>
+</HTML>

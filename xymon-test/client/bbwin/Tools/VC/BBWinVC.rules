@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="BBWin Custom Building Rules"
+	Version="8,00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="Events Messages Headers"
+			DisplayName="Building Events Messages Headers"
+			CommandLine="mc -A [inputs]"
+			Outputs="$(InputName).h"
+			FileExtensions="*.mc"
+			>
+			<Properties>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>

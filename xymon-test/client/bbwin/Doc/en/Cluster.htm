@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML lang="en">
+<HEAD>
+ <LINK rel="StyleSheet" href="../BBWin.css">
+ <TITLE>Cluster</TITLE>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ <meta name="copyright" content="Copyright &copy; 2006 by Etienne Grignon. Licenced under GPL.">
+</HEAD>
+<BODY>
+ <H1>Cluster</H1>
+ <H3>Description</H3>
+<p>
+External executable to monitor MSCS clusters. It will report alerts you when :
+<UL>
+	<LI> the active node has changed
+	<LI> one or may group ressources are not online on the active node
+</UL>
+<p>
+To be sure to get the alert of a node change, it will still report the alarm until you delete a flag file
+that was created when the cluster has moved to the other node.
+</p>
+<p>
+MSCS Cluster external report only yellow color.
+</p>
+<H3>Usage</H3>
+<p>
+Add the executable in a load directive for externals agent. It will generate a report as
+others externals scripts. There are no setting available for this external.
+</p>
+<H3>Examples</H3>
+<UL>
+ <LI>Here an example of report when the active node has changed :
+ <p>
+ <pre>
+
+<b>--- Windows Cluster State ---</b>
+<table border=1>
+<tr><td>Group Name</td><td>Current Node</td><td>State</td><td>Status</td></tr>
+
+<tr><td>Cluster Group</td><td>MYSERVERBDD02 (recently changed)</td><td>online</td><td><IMG SRC="../yellow.gif" ALT="yellow" HEIGHT="16" WIDTH="16" BORDER=0></td></tr>
+<tr><td>SQL</td><td>MYSERVERBDD02 (recently changed)</td><td>online</td><td><IMG SRC="../yellow.gif" ALT="yellow" HEIGHT="16" WIDTH="16" BORDER=0></td></tr>
+</table>
+
+
+<b>Important Notes :</b>
+
+WARNING !!! active node for group "Cluster Group" has changed. It was MYSERVERBDD01 and now it is MYSERVERBDD02.
+To suppress this warning, please connect to the server and execute the command : <i>erase "C:\WINNT\TEMP\NodeChanged_Cluster Group"</i>
+
+WARNING !!! active node for group "SQL" has changed. It was MYSERVERBDD01 and now it is MYSERVERBDD02.
+To suppress this warning, please connect to the server and execute the command : <i>erase "C:\WINNT\TEMP\NodeChanged_SQL"</i>
+
+</pre>
+</UL>
+
+<H3>Notes</H3>
+<UL>
+ <LI>Need Windows 2000 Advanced Server or Windows 2003
+ <LI>This external is not installed by default
+</UL>
+</BODY>
+</HTML>
