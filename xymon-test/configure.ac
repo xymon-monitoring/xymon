@@ -84,7 +84,10 @@ case "$compile_mode" in
     CFLAGS=-O
     ;;
 esac
-
+SED="TESTSED"
+TAR="TESTTAR"
+AC_SUBST([SED]) 
+AC_SUBST([TAR]) 
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
 # calling AC_PROG_CC or the like, since they will set a default
@@ -285,6 +288,7 @@ bbdisplay/Makefile
 bbproxy/Makefile 
 docs/Makefile 
 examples/Makefile 
+client/script.sh:client/script.in
 hobbitd/Makefile])
 
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
