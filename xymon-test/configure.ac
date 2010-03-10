@@ -3,14 +3,14 @@
 #----------------------------------------------------------------------------#
 #                                                                            #
 # NAME                                                                       # 
-# configure.ac  used by bootstrap.sh                                         #
+# configure.ac  used by autogen.sh                                         #
 #                                                                            #
 # REVISION HISTORY                                                           #
 #     03/04/2010    T.J. Yang                                                #
 #                                                                            #
 #                                                                            #
 # USAGE                                                                      #
-#   bootstrap.sh to invoke configure.ac                                      #
+#   autogen.sh to invoke configure.ac                                      #
 # DESCRIPTION                                                                #
 #   This autoconf script will create "configure" that accept --client and    #
 #   --server options like the original man-made configure script.            #
@@ -30,16 +30,11 @@
 #                                                                            #
 #                                                                            #
 # COPYRIGHT                                                                  #
-# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 #                                                                            #
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
 # MYERROR=1
-# MYARGS=2
-# CLIENT_TYPE=client-central
-#
 
-# if [ $# -ne $ARGS ] 
 # then
 #     echo "Usage: $0  <client hostname> <ethernet address>"
 #     echo
@@ -63,6 +58,32 @@
 AC_PREREQ([2.60])
 #      AC_INIT(package, version, bug-report-address)
 AC_INIT([xymon], [4.3.0], [tjyang2001@gmail.com])
+
+
+# Need to specify options of what kind of clients to configured for.
+# 1. LOCALCLIENT that need to build pcre software to process 
+#                local messages and only send in result. 
+# 2.
+# 3. SERVER
+
+MYARGS=0
+if test $# == $MYARGS; then
+ AC_MSG_ERROR([Use --help to see options to configure xymon client or server])
+fi
+
+#
+# Take augument of client or server.
+AC_ARG_WITH(compile-mode,[--with-compile-mode=<mode> Xymon compilation mode: client or server],
+[compile_mode=$withval],[compile_mode=client])
+
+case "$compile_mode" in
+    client)
+    CFLAGS=-g 
+    ;;
+    server | * )
+    CFLAGS=-O
+    ;;
+esac
 
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
@@ -141,7 +162,11 @@ AC_PROG_LIBTOOL
 
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h utime.h snprintf.h vsnprintf.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h \
+limits.h netdb.h netinet/in.h stdint.h \
+stdlib.h string.h strings.h sys/param.h \
+sys/socket.h sys/time.h unistd.h utime.h \
+snprintf.h vsnprintf.h])
 
 AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_LIB([c], [snprintf])
@@ -198,29 +223,19 @@ AC_FUNC_MKTIME
 AC_FUNC_REALLOC
 AC_FUNC_STRTOD
 AC_FUNC_WAIT3
-AC_CHECK_FUNCS([alarm clock_gettime dup2 getcwd gethostbyname gethostname gettimeofday inet_ntoa memmove memset mkdir pathconf pstat_getdynamic putenv regcomp rmdir select socket strcasecmp strchr strcspn strdup strerror strncasecmp strrchr strspn strstr strtol utime])
+AC_CHECK_FUNCS([alarm clock_gettime \
+dup2 getcwd gethostbyname gethostname \
+gettimeofday inet_ntoa memmove memset \
+mkdir pathconf pstat_getdynamic putenv \
+regcomp rmdir select socket strcasecmp \
+strchr strcspn strdup strerror strncasecmp \ 
+strrchr strspn strstr strtol utime])
 
 
 if test "$ac_cv_header_rt_h" == yes
 then
-        AC_MSG_WARN([Great, We have library realtime for clock_gettime!])
+    AC_MSG_WARN([Great, We have library realtime for clock_gettime!])
 fi
-#
-#
-# Take augument of client or server.
-AC_ARG_WITH(compile-mode,[--with-compile-mode=<mode> Xymon compilation mode: client or server],
-[compile_mode=$withval],[compile_mode=client])
-
-case "$compile_mode" in
-    client)
-    CFLAGS=-g 
-    ;;
-    server | * )
-    CFLAGS=-O
-    ;;
-esac
-
-
 # 
 case "${host_os}" in
   freebsd*)
@@ -259,21 +274,9 @@ case "${host_os}" in
 esac 
 
 
-
-#AC_CONFIG_FILES([Makefile
-#                 bbdisplay/Makefile
-#                 bbnet/Makefile
-#                 bbproxy/Makefile
-#                 build/Makefile
-#                 client/Makefile
-#                 common/Makefile
-#                 demotool/Makefile
-#                 docs/Makefile
-#                 hobbitd/Makefile
-#                 lib/Makefile
-#                 web/Makefile])
-#
-AC_CONFIG_FILES([Makefile  po/Makefile.in
+# web/Makefile]
+AC_CONFIG_FILES([Makefile 
+po/Makefile.in
 lib/Makefile 
 common/Makefile 
 client/Makefile 
@@ -283,6 +286,7 @@ bbproxy/Makefile
 docs/Makefile 
 examples/Makefile 
 hobbitd/Makefile])
+
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
 # What: The last macro to generate all the above Makefiles.
 AC_OUTPUT
