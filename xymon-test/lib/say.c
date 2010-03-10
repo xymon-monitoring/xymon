@@ -11,6 +11,6 @@
 
 void say_hello (void)
 {
-  puts ("Hello World!\n");
-  printf ("This is %s.\n", PACKAGE_STRING );
+  printf("Hello World!\n");
+  printf("This is %s.\n", PACKAGE_STRING );
 }
