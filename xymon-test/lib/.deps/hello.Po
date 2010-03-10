@@ -1,1 +1,35 @@
-# dummy
+hello.o: hello.c ../config.h /usr/include/locale.h \
+ /usr/include/features.h /usr/include/sys/cdefs.h \
+ /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-32.h \
+ /usr/lib/gcc/i686-redhat-linux/4.4.3/include/stddef.h \
+ /usr/include/bits/locale.h /usr/include/xlocale.h gettext.h \
+ /usr/include/libintl.h /usr/include/string.h say.h
+
+../config.h:
+
+/usr/include/locale.h:
+
+/usr/include/features.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/include/gnu/stubs-32.h:
+
+/usr/lib/gcc/i686-redhat-linux/4.4.3/include/stddef.h:
+
+/usr/include/bits/locale.h:
+
+/usr/include/xlocale.h:
+
+gettext.h:
+
+/usr/include/libintl.h:
+
+/usr/include/string.h:
+
+say.h:

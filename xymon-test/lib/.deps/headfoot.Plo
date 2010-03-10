@@ -1,156 +1,150 @@
-headfoot.lo headfoot.o: headfoot.c /usr/include/sys/types.h \
-  /usr/include/sys/appleapiopts.h /usr/include/sys/cdefs.h \
-  /usr/include/machine/types.h /usr/include/i386/types.h \
-  /usr/include/i386/_types.h /usr/include/sys/_types.h \
-  /usr/include/machine/_types.h /usr/include/machine/endian.h \
-  /usr/include/i386/endian.h /usr/include/sys/_endian.h \
-  /usr/include/libkern/_OSByteOrder.h \
-  /usr/include/libkern/i386/_OSByteOrder.h /usr/include/sys/_structs.h \
-  /usr/include/sys/stat.h /usr/include/Availability.h \
-  /usr/include/AvailabilityInternal.h \
-  /usr/lib/gcc/i686-apple-darwin10/4.2.1/include/limits.h \
-  /usr/lib/gcc/i686-apple-darwin10/4.2.1/include/syslimits.h \
-  /usr/include/limits.h /usr/include/machine/limits.h \
-  /usr/include/i386/limits.h /usr/include/i386/_limits.h \
-  /usr/include/sys/syslimits.h /usr/include/time.h /usr/include/_types.h \
-  /usr/include/_structs.h /usr/include/unistd.h /usr/include/sys/unistd.h \
-  /usr/include/sys/select.h /usr/include/sys/_select.h \
-  /usr/include/stdlib.h /usr/include/sys/wait.h /usr/include/sys/signal.h \
-  /usr/include/machine/signal.h /usr/include/i386/signal.h \
-  /usr/include/i386/_structs.h /usr/include/machine/_structs.h \
-  /usr/include/mach/i386/_structs.h /usr/include/sys/resource.h \
-  /usr/include/alloca.h /usr/include/stdio.h /usr/include/secure/_stdio.h \
-  /usr/include/secure/_common.h /usr/include/string.h \
-  /usr/include/secure/_string.h /usr/include/fcntl.h \
-  /usr/include/sys/fcntl.h /opt/local/include/pcre.h \
-  ../include/libbbgen.h ../include/version.h ../config.h \
-  ../include/../lib/osdefs.h ../config.h \
-  /usr/lib/gcc/i686-apple-darwin10/4.2.1/include/stdarg.h \
-  ../include/../lib/cgiurls.h ../include/../lib/xymon_availability.h \
-  ../include/../lib/color.h ../include/../lib/links.h \
-  ../include/../lib/acklog.h ../include/../lib/eventlog.h \
-  ../include/../lib/headfoot.h ../include/../lib/htmllog.h \
-  ../include/../lib/notifylog.h ../include/../lib/reportlog.h \
-  ../include/../lib/xymon_availability.h ../include/../lib/calc.h \
-  ../include/../lib/cgi.h ../include/../lib/color.h \
-  ../include/../lib/clientlocal.h ../include/../lib/digest.h \
-  ../include/../lib/encoding.h ../include/../lib/environ.h \
-  ../include/../lib/errormsg.h ../include/../lib/files.h \
-  ../include/../lib/hobbitrrd.h ../include/../lib/rbtr.h \
-  ../include/../lib/holidays.h ../include/../lib/ipaccess.h \
-  /usr/include/sys/socket.h /usr/include/machine/_param.h \
-  /usr/include/i386/_param.h /usr/include/netinet/in.h \
-  /usr/lib/gcc/i686-apple-darwin10/4.2.1/include/stdint.h \
-  /usr/include/netinet6/in6.h /usr/include/arpa/inet.h \
-  ../include/../lib/loadalerts.h ../include/../lib/loadhosts.h \
-  ../include/../lib/loadnkconf.h ../include/../lib/locator.h \
-  ../include/../lib/matching.h ../include/../lib/md5.h \
-  ../include/../lib/memory.h ../include/../lib/misc.h \
-  ../include/../lib/msort.h ../include/../lib/netservices.h \
-  ../include/../lib/rbtr.h ../include/../lib/rmd160c.h \
-  ../include/../lib/sendmsg.h ../include/../lib/sha1.h \
-  ../include/../lib/sha2.h ../include/../lib/sig.h \
-  ../include/../lib/stackio.h ../include/../lib/strfunc.h \
-  ../include/../lib/suid.h ../include/../lib/timefunc.h \
-  ../include/../lib/timing.h ../include/../lib/url.h ../include/version.h
+headfoot.lo: headfoot.c /usr/include/sys/types.h /usr/include/features.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \
+ /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h \
+ /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+ /usr/include/time.h \
+ /usr/lib/gcc/i686-redhat-linux/4.4.3/include/stddef.h \
+ /usr/include/endian.h /usr/include/bits/endian.h \
+ /usr/include/bits/byteswap.h /usr/include/sys/select.h \
+ /usr/include/bits/select.h /usr/include/bits/sigset.h \
+ /usr/include/bits/time.h /usr/include/sys/sysmacros.h \
+ /usr/include/bits/pthreadtypes.h /usr/include/sys/stat.h \
+ /usr/include/bits/stat.h \
+ /usr/lib/gcc/i686-redhat-linux/4.4.3/include/limits.h \
+ /usr/lib/gcc/i686-redhat-linux/4.4.3/include/syslimits.h \
+ /usr/include/limits.h /usr/include/bits/posix1_lim.h \
+ /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
+ /usr/include/bits/posix2_lim.h /usr/include/xlocale.h \
+ /usr/include/unistd.h /usr/include/bits/posix_opt.h \
+ /usr/include/bits/confname.h /usr/include/getopt.h /usr/include/stdlib.h \
+ /usr/include/alloca.h /usr/include/stdio.h /usr/include/libio.h \
+ /usr/include/_G_config.h /usr/include/wchar.h \
+ /usr/lib/gcc/i686-redhat-linux/4.4.3/include/stdarg.h \
+ /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
+ /usr/include/string.h /usr/include/fcntl.h /usr/include/bits/fcntl.h \
+ /usr/include/pcre.h ../include/libbbgen.h ../include/version.h \
+ ../config.h ../include/../lib/osdefs.h ../include/../lib/cgiurls.h \
+ ../include/../lib/xymon_availability.h ../include/../lib/color.h \
+ ../include/../lib/links.h ../include/../lib/acklog.h \
+ ../include/../lib/eventlog.h ../include/../lib/headfoot.h \
+ ../include/../lib/htmllog.h ../include/../lib/notifylog.h \
+ ../include/../lib/reportlog.h ../include/../lib/xymon_availability.h \
+ ../include/../lib/calc.h ../include/../lib/cgi.h \
+ ../include/../lib/color.h ../include/../lib/clientlocal.h \
+ ../include/../lib/digest.h ../include/../lib/encoding.h \
+ ../include/../lib/environ.h ../include/../lib/errormsg.h \
+ ../include/../lib/files.h ../include/../lib/hobbitrrd.h \
+ ../include/../lib/rbtr.h ../include/../lib/holidays.h \
+ ../include/../lib/ipaccess.h /usr/include/sys/socket.h \
+ /usr/include/sys/uio.h /usr/include/bits/uio.h \
+ /usr/include/bits/socket.h /usr/include/bits/sockaddr.h \
+ /usr/include/asm/socket.h /usr/include/asm/sockios.h \
+ /usr/include/netinet/in.h /usr/include/stdint.h \
+ /usr/include/bits/wchar.h /usr/include/bits/in.h \
+ /usr/include/arpa/inet.h ../include/../lib/loadalerts.h \
+ ../include/../lib/loadhosts.h ../include/../lib/loadnkconf.h \
+ ../include/../lib/locator.h ../include/../lib/matching.h \
+ ../include/../lib/md5.h ../include/../lib/memory.h \
+ ../include/../lib/misc.h ../include/../lib/msort.h \
+ ../include/../lib/netservices.h ../include/../lib/rbtr.h \
+ ../include/../lib/rmd160c.h ../include/../lib/sendmsg.h \
+ ../include/../lib/sha1.h ../include/../lib/sha2.h \
+ ../include/../lib/sig.h ../include/../lib/stackio.h \
+ ../include/../lib/strfunc.h ../include/../lib/suid.h \
+ ../include/../lib/timefunc.h ../include/../lib/timing.h \
+ ../include/../lib/url.h ../include/version.h
 
 /usr/include/sys/types.h:
 
-/usr/include/sys/appleapiopts.h:
+/usr/include/features.h:
 
 /usr/include/sys/cdefs.h:
 
-/usr/include/machine/types.h:
+/usr/include/bits/wordsize.h:
 
-/usr/include/i386/types.h:
+/usr/include/gnu/stubs.h:
 
-/usr/include/i386/_types.h:
+/usr/include/gnu/stubs-32.h:
 
-/usr/include/sys/_types.h:
+/usr/include/bits/types.h:
 
-/usr/include/machine/_types.h:
-
-/usr/include/machine/endian.h:
-
-/usr/include/i386/endian.h:
-
-/usr/include/sys/_endian.h:
-
-/usr/include/libkern/_OSByteOrder.h:
-
-/usr/include/libkern/i386/_OSByteOrder.h:
-
-/usr/include/sys/_structs.h:
-
-/usr/include/sys/stat.h:
-
-/usr/include/Availability.h:
-
-/usr/include/AvailabilityInternal.h:
-
-/usr/lib/gcc/i686-apple-darwin10/4.2.1/include/limits.h:
-
-/usr/lib/gcc/i686-apple-darwin10/4.2.1/include/syslimits.h:
-
-/usr/include/limits.h:
-
-/usr/include/machine/limits.h:
-
-/usr/include/i386/limits.h:
-
-/usr/include/i386/_limits.h:
-
-/usr/include/sys/syslimits.h:
+/usr/include/bits/typesizes.h:
 
 /usr/include/time.h:
 
-/usr/include/_types.h:
+/usr/lib/gcc/i686-redhat-linux/4.4.3/include/stddef.h:
 
-/usr/include/_structs.h:
+/usr/include/endian.h:
 
-/usr/include/unistd.h:
+/usr/include/bits/endian.h:
 
-/usr/include/sys/unistd.h:
+/usr/include/bits/byteswap.h:
 
 /usr/include/sys/select.h:
 
-/usr/include/sys/_select.h:
+/usr/include/bits/select.h:
+
+/usr/include/bits/sigset.h:
+
+/usr/include/bits/time.h:
+
+/usr/include/sys/sysmacros.h:
+
+/usr/include/bits/pthreadtypes.h:
+
+/usr/include/sys/stat.h:
+
+/usr/include/bits/stat.h:
+
+/usr/lib/gcc/i686-redhat-linux/4.4.3/include/limits.h:
+
+/usr/lib/gcc/i686-redhat-linux/4.4.3/include/syslimits.h:
+
+/usr/include/limits.h:
+
+/usr/include/bits/posix1_lim.h:
+
+/usr/include/bits/local_lim.h:
+
+/usr/include/linux/limits.h:
+
+/usr/include/bits/posix2_lim.h:
+
+/usr/include/xlocale.h:
+
+/usr/include/unistd.h:
+
+/usr/include/bits/posix_opt.h:
+
+/usr/include/bits/confname.h:
+
+/usr/include/getopt.h:
 
 /usr/include/stdlib.h:
-
-/usr/include/sys/wait.h:
-
-/usr/include/sys/signal.h:
-
-/usr/include/machine/signal.h:
-
-/usr/include/i386/signal.h:
-
-/usr/include/i386/_structs.h:
-
-/usr/include/machine/_structs.h:
-
-/usr/include/mach/i386/_structs.h:
-
-/usr/include/sys/resource.h:
 
 /usr/include/alloca.h:
 
 /usr/include/stdio.h:
 
-/usr/include/secure/_stdio.h:
+/usr/include/libio.h:
 
-/usr/include/secure/_common.h:
+/usr/include/_G_config.h:
+
+/usr/include/wchar.h:
+
+/usr/lib/gcc/i686-redhat-linux/4.4.3/include/stdarg.h:
+
+/usr/include/bits/stdio_lim.h:
+
+/usr/include/bits/sys_errlist.h:
 
 /usr/include/string.h:
 
-/usr/include/secure/_string.h:
-
 /usr/include/fcntl.h:
 
-/usr/include/sys/fcntl.h:
+/usr/include/bits/fcntl.h:
 
-/opt/local/include/pcre.h:
+/usr/include/pcre.h:
 
 ../include/libbbgen.h:
 
@@ -159,10 +153,6 @@ headfoot.lo headfoot.o: headfoot.c /usr/include/sys/types.h \
 ../config.h:
 
 ../include/../lib/osdefs.h:
-
-../config.h:
-
-/usr/lib/gcc/i686-apple-darwin10/4.2.1/include/stdarg.h:
 
 ../include/../lib/cgiurls.h:
 
@@ -214,15 +204,25 @@ headfoot.lo headfoot.o: headfoot.c /usr/include/sys/types.h \
 
 /usr/include/sys/socket.h:
 
-/usr/include/machine/_param.h:
+/usr/include/sys/uio.h:
 
-/usr/include/i386/_param.h:
+/usr/include/bits/uio.h:
+
+/usr/include/bits/socket.h:
+
+/usr/include/bits/sockaddr.h:
+
+/usr/include/asm/socket.h:
+
+/usr/include/asm/sockios.h:
 
 /usr/include/netinet/in.h:
 
-/usr/lib/gcc/i686-apple-darwin10/4.2.1/include/stdint.h:
+/usr/include/stdint.h:
 
-/usr/include/netinet6/in6.h:
+/usr/include/bits/wchar.h:
+
+/usr/include/bits/in.h:
 
 /usr/include/arpa/inet.h:
 

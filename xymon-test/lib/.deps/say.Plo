@@ -1,30 +1,49 @@
-say.lo say.o: say.c ../config.h /usr/include/stdio.h \
-  /usr/include/_types.h /usr/include/sys/_types.h \
-  /usr/include/sys/cdefs.h /usr/include/machine/_types.h \
-  /usr/include/i386/_types.h /usr/include/secure/_stdio.h \
-  /usr/include/secure/_common.h gettext.h /usr/include/string.h \
-  /usr/include/secure/_string.h
+say.lo: say.c ../config.h /usr/include/stdio.h /usr/include/features.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h \
+ /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h \
+ /usr/lib/gcc/i686-redhat-linux/4.4.3/include/stddef.h \
+ /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+ /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
+ /usr/lib/gcc/i686-redhat-linux/4.4.3/include/stdarg.h \
+ /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h gettext.h \
+ /usr/include/libintl.h /usr/include/string.h /usr/include/xlocale.h
 
 ../config.h:
 
 /usr/include/stdio.h:
 
-/usr/include/_types.h:
-
-/usr/include/sys/_types.h:
+/usr/include/features.h:
 
 /usr/include/sys/cdefs.h:
 
-/usr/include/machine/_types.h:
+/usr/include/bits/wordsize.h:
 
-/usr/include/i386/_types.h:
+/usr/include/gnu/stubs.h:
 
-/usr/include/secure/_stdio.h:
+/usr/include/gnu/stubs-32.h:
 
-/usr/include/secure/_common.h:
+/usr/lib/gcc/i686-redhat-linux/4.4.3/include/stddef.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/typesizes.h:
+
+/usr/include/libio.h:
+
+/usr/include/_G_config.h:
+
+/usr/include/wchar.h:
+
+/usr/lib/gcc/i686-redhat-linux/4.4.3/include/stdarg.h:
+
+/usr/include/bits/stdio_lim.h:
+
+/usr/include/bits/sys_errlist.h:
 
 gettext.h:
 
+/usr/include/libintl.h:
+
 /usr/include/string.h:
 
-/usr/include/secure/_string.h:
+/usr/include/xlocale.h:

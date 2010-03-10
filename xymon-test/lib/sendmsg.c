@@ -571,7 +571,7 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
             This is to make xymon  client send backlog message when xymon  server was down.
             The inserts of backlog hobbit message with old timestamp will be done in external perl code.
         */
-        if ( dumpstdout == 1 ) {
+        if ( dump_stdout == 1 ) {
                  printf ("BGMSG\n%s\nEOMSG\n",msg);
                  fflush(stdout);
                  return BB_OK;

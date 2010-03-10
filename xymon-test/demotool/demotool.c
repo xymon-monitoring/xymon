@@ -107,17 +107,17 @@
 /*									      */
 
 
-int  SUCCESS = 0; /** Define SUCCESS as integer with value  of 1*/
-int  debug = 0;   /** to print out more information when debug is 1 */
-int  ERROR   = 1;       /** Define ERROR as integer with valle of 0  */
-int  WARNING = 2;
+/*! to print out more information when debug is 1 */
+int  debug = 0;   
 
-/**  Where we put demo configuration files */
+
+/*!  Where we put demo configuration files */
 char *CONFIGDIR = "/tmp/democonf";  
 
 struct sockaddr_in srvaddr;
 
-volatile int reconfig = 1;         /**  use volatile integer for speed ? */
+/*!  use volatile integer for speed  */
+volatile int reconfig = 1;         
 
 typedef struct netsvc_t {
 	int listenfd;
@@ -159,11 +159,13 @@ static char *path = NULL;
 
 /* ---------------------------- FUNCTION DEFINITION --------------------------*/
 
+
+/*! INPUT : dierctory path string name and service name.
+ *  \param dirname
+ *  \param svc
+ *  \return result       */
 char *nextservice(char *dirname, char *svc)
 {
-  /**   INPUT : dierctory path string name and service name.
-      OUTPUT:
-  */
 	struct stat st;
 	char fn[PATH_MAX];
 	FILE *fd;
@@ -180,12 +182,12 @@ char *nextservice(char *dirname, char *svc)
 		do { dent = readdir(confdir); } while (dent && (*(dent->d_name) == '.'));
 
 		if (!dent) {
-			closedir(confdir);
-			free(path);
-			path = NULL;
-			confdir = NULL;
-			dent = NULL;
-			return NULL;
+		    closedir(confdir);
+		    free(path);
+		    path = NULL;
+		    confdir = NULL;
+		    dent = NULL;
+		    return NULL;
 		}
 
 		sprintf(fn, "%s/%s/%s", path, dent->d_name, svc);
@@ -199,6 +201,10 @@ char *nextservice(char *dirname, char *svc)
 	return result;
 }
 
+
+/*! service attributes:
+ *  \param attr
+ *  \return result           */
 char *svcattrib(char *attr)
 {
 	struct stat st;
@@ -224,6 +230,13 @@ char *svcattrib(char *attr)
 	return result;
 }
 
+
+/*! \brief Add to buffer
+ *   Details about buffer routine.
+ *  \param character buf
+ *  \param integer bufsz
+ *  \param characher newtext
+ *  \return result                   */
 void addtobuffer(char **buf, int *bufsz, char *newtext)
 {
 	if (*buf == NULL) {
@@ -238,7 +251,10 @@ void addtobuffer(char **buf, int *bufsz, char *newtext)
 
 	strcat(*buf, newtext);
 }
-/**  WHAT: */ 
+
+/*! Client Data
+ *  \param characher cpath
+ *  \return res                   */
 char *clientdata(char *cpath)
 {
 	char *res = NULL;
@@ -276,6 +292,10 @@ char *clientdata(char *cpath)
 	return res;
 }
 
+/*! time after
+ *  \param lim
+ *  \param now
+ *  \return tv_usec        */
 int timeafter(struct timeval *lim, struct timeval *now)
 {
 	if (now->tv_sec > lim->tv_sec) return 1;
@@ -283,6 +303,9 @@ int timeafter(struct timeval *lim, struct timeval *now)
 	return (now->tv_usec >= lim->tv_usec);
 }
 
+/*! Setup Listeners
+ *  \param No paraeters
+ *  \return SUCCESS       */
 void setuplisteners(void)
 {
 	netsvc_t *nwalk;
@@ -338,8 +361,13 @@ void setuplisteners(void)
 		free(lspec);
 		lspec = nextservice(NULL, "listen");
 	}
+	return SUCCESS;
 }
 
+
+/*! Setup Xymon Client
+ *  \param No paraeters
+ *  \return SUCCESS  */
 void setupclients(void)
 {
 	client_t *cwalk;
@@ -385,6 +413,7 @@ void setupclients(void)
 		free(cspec);
 		cspec = nextservice(NULL, "client");
 	}
+	return SUCCESS;
 }
 
 void do_select(void)

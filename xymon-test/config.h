@@ -3,7 +3,10 @@
 
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
-/* #undef ENABLE_NLS */
+#define ENABLE_NLS 1
+
+/* Define Constant SUCCESS = 1 */
+#define ERROR 1
 
 /* Define to 1 if you have the `alarm' function. */
 #define HAVE_ALARM 1
@@ -13,21 +16,21 @@
 
 /* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
-#define HAVE_CFLOCALECOPYCURRENT 1
+/* #undef HAVE_CFLOCALECOPYCURRENT */
 
 /* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
    the CoreFoundation framework. */
-#define HAVE_CFPREFERENCESCOPYAPPVALUE 1
+/* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
 
 /* Define to 1 if your system has a working `chown' function. */
 #define HAVE_CHOWN 1
 
 /* Define to 1 if you have the `clock_gettime' function. */
-/* #undef HAVE_CLOCK_GETTIME */
+#define HAVE_CLOCK_GETTIME 1
 
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
-/* #undef HAVE_DCGETTEXT */
+#define HAVE_DCGETTEXT 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
@@ -54,13 +57,13 @@
 #define HAVE_GETHOSTNAME 1
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
-/* #undef HAVE_GETTEXT */
+#define HAVE_GETTEXT 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
 
 /* Define if you have the iconv() function and it works. */
-#define HAVE_ICONV 1
+/* #undef HAVE_ICONV */
 
 /* Define to 1 if you have the `inet_ntoa' function. */
 #define HAVE_INET_NTOA 1
@@ -78,10 +81,10 @@
 #define HAVE_LIBPCRE 1
 
 /* Define to 1 if you have the `rrd' library (-lrrd). */
-/* #undef HAVE_LIBRRD */
+#define HAVE_LIBRRD 1
 
 /* Define to 1 if you have the `rt' library (-lrt). */
-/* #undef HAVE_LIBRT */
+#define HAVE_LIBRT 1
 
 /* Define to 1 if you have the `z' library (-lz). */
 #define HAVE_LIBZ 1
@@ -187,6 +190,9 @@
 /* Define to 1 if you have the <sys/param.h> header file. */
 #define HAVE_SYS_PARAM_H 1
 
+/* Define to 1 if you have the <sys/select.h> header file. */
+#define HAVE_SYS_SELECT_H 1
+
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #define HAVE_SYS_SOCKET_H 1
 
@@ -230,9 +236,13 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #define HAVE__BOOL 1
 
+/* Xymon local client: it will require pcre library to process the xymon
+   message locally. */
+#define LOCALCLIENT 1
+
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
-/* #undef LSTAT_FOLLOWS_SLASHED_SYMLINK */
+#define LSTAT_FOLLOWS_SLASHED_SYMLINK 1
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -253,14 +263,14 @@
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "xymon"
 
-/* Define to the home page for this package. */
-#define PACKAGE_URL ""
-
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "4.3.0"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
+
+/* Define Constant SUCCESS = 0 */
+#define SUCCESS 0
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
@@ -268,11 +278,14 @@
 /* Version number of package */
 #define VERSION "4.3.0"
 
+/* Define Constant WARNING = -2 */
+#define WARNING -2
+
 /* ONLY Configured for Xymon Client. */
-/* #undef XYMONCLIENT */
+#define XYMONCLIENT 1
 
 /* ONLY Configured for Xymon Server. */
-/* #undef XYMONSERVER */
+#define XYMONSERVER 1
 
 /* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
 /* #undef _LARGEFILE_SOURCE */

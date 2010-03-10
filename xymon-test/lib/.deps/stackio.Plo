@@ -22,11 +22,11 @@ stackio.lo: stackio.c /usr/include/sys/types.h /usr/include/features.h \
  /usr/include/bits/posix2_lim.h /usr/include/dirent.h \
  /usr/include/bits/dirent.h ../include/libbbgen.h ../include/version.h \
  ../config.h ../include/../lib/osdefs.h ../include/../lib/cgiurls.h \
- ../include/../lib/availability.h ../include/../lib/color.h \
+ ../include/../lib/xymon_availability.h ../include/../lib/color.h \
  ../include/../lib/links.h ../include/../lib/acklog.h \
  ../include/../lib/eventlog.h ../include/../lib/headfoot.h \
  ../include/../lib/htmllog.h ../include/../lib/notifylog.h \
- ../include/../lib/reportlog.h ../include/../lib/availability.h \
+ ../include/../lib/reportlog.h ../include/../lib/xymon_availability.h \
  ../include/../lib/calc.h ../include/../lib/cgi.h \
  ../include/../lib/color.h ../include/../lib/clientlocal.h \
  ../include/../lib/digest.h ../include/../lib/encoding.h \
@@ -146,7 +146,7 @@ stackio.lo: stackio.c /usr/include/sys/types.h /usr/include/features.h \
 
 ../include/../lib/cgiurls.h:
 
-../include/../lib/availability.h:
+../include/../lib/xymon_availability.h:
 
 ../include/../lib/color.h:
 
@@ -164,7 +164,7 @@ stackio.lo: stackio.c /usr/include/sys/types.h /usr/include/features.h \
 
 ../include/../lib/reportlog.h:
 
-../include/../lib/availability.h:
+../include/../lib/xymon_availability.h:
 
 ../include/../lib/calc.h:
 

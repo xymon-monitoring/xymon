@@ -16,12 +16,12 @@ timefunc.lo: timefunc.c ../config.h /usr/include/time.h \
  /usr/lib/gcc/i686-redhat-linux/4.4.3/include/stdarg.h \
  /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
  ../include/libbbgen.h ../include/version.h ../include/../lib/osdefs.h \
- ../include/../lib/cgiurls.h ../include/../lib/availability.h \
+ ../include/../lib/cgiurls.h ../include/../lib/xymon_availability.h \
  ../include/../lib/color.h ../include/../lib/links.h \
  ../include/../lib/acklog.h ../include/../lib/eventlog.h \
  ../include/../lib/headfoot.h ../include/../lib/htmllog.h \
  ../include/../lib/notifylog.h ../include/../lib/reportlog.h \
- ../include/../lib/availability.h ../include/../lib/calc.h \
+ ../include/../lib/xymon_availability.h ../include/../lib/calc.h \
  ../include/../lib/cgi.h ../include/../lib/color.h \
  ../include/../lib/clientlocal.h ../include/../lib/digest.h \
  ../include/../lib/encoding.h ../include/../lib/environ.h \
@@ -120,7 +120,7 @@ timefunc.lo: timefunc.c ../config.h /usr/include/time.h \
 
 ../include/../lib/cgiurls.h:
 
-../include/../lib/availability.h:
+../include/../lib/xymon_availability.h:
 
 ../include/../lib/color.h:
 
@@ -138,7 +138,7 @@ timefunc.lo: timefunc.c ../config.h /usr/include/time.h \
 
 ../include/../lib/reportlog.h:
 
-../include/../lib/availability.h:
+../include/../lib/xymon_availability.h:
 
 ../include/../lib/calc.h:
 

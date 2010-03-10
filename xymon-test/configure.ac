@@ -60,8 +60,6 @@
 #      AC_OUTPUT
 #       Autoconf requirements
 
-AC_DEFINE([XYMONCLIENT], 1, [ONLY Configured for Xymon Client.])
-AC_DEFINE([XYMONSERVER], 1, [ONLY Configured for Xymon Server.])
 AC_PREREQ([2.60])
 #      AC_INIT(package, version, bug-report-address)
 AC_INIT([xymon], [4.3.0], [tjyang2001@gmail.com])
@@ -77,6 +75,14 @@ CONFIG_CFLAGS="${CFLAGS}"
 CONFIG_LDFLAGS="${LDFLAGS}"
 AC_SUBST(CONFIG_CFLAGS)
 AC_SUBST(CONFIG_LDFLAGS)
+# Define some constants for C definsive programming.
+AC_DEFINE([SUCCESS],[0],[Define Constant SUCCESS = 0 ])
+AC_DEFINE([ERROR],[1],[Define Constant SUCCESS = 1 ])
+AC_DEFINE([WARNING],[-2],[Define Constant WARNING = -2 ])
+AC_DEFINE([LOCALCLIENT], [1], [Xymon local client: it will require pcre library to process the xymon message locally.])
+AC_DEFINE([XYMONCLIENT], 1, [ONLY Configured for Xymon Client.])
+AC_DEFINE([XYMONSERVER], 1, [ONLY Configured for Xymon Server.])
+
 
 # All the checking will insert into config.h
 AC_CONFIG_HEADERS([config.h])
@@ -137,16 +143,36 @@ AC_PROG_LIBTOOL
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h utime.h snprintf.h vsnprintf.h])
 
+AC_CHECK_HEADERS([sys/select.h])
 AC_CHECK_LIB([c], [snprintf])
 AC_CHECK_LIB([c], [vsnprintf])
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lz':
-AC_CHECK_LIB([z], [cos])
+AC_CHECK_LIB([z], [inflate])
+  
+# dnl ************************************************** 
+# dnl * zlib is neeeded for handling compressed xymon messages.
+# dnl ************************************************** 
+# AC_CHECK_LIB(z, inflate, 
+#              [Z_LIBS="-lz"; have_zlib=yes], 
+#              have_zlib=no) 
+# if test "x$have_zlib" != xyes; then 
+#     AC_CHECK_LIB(zlib, inflate, 
+#                  [Z_LIBS="-lzlib"; have_zlib=yes], 
+#                  have_zlib=no) 
+# fi 
+# if test x"$have_zlib" = xyes; then 
+#    AH_TEMPLATE([HAVE_ZLIB], [Whether zlib is installed, it's used for compressed iTunesCDB]) 
+#    AC_DEFINE_UNQUOTED(HAVE_ZLIB, 1) 
+# fi 
+# AC_SUBST(Z_LIBS) 
+# AM_CONDITIONAL(HAVE_ZLIB, test x"$have_zlib" = xyes) 
+# 
+
 # FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [cos])
 # FIXME: Replace `main' with a function in `-lpcre':
 AC_CHECK_LIB(pcre,pcre_free)
-# FIXME: Replace `main' with a function in `-lrt':
 AC_CHECK_LIB(rt,clock_gettime)
 AC_CHECK_LIB(rrd,rrd_clear_error)
 

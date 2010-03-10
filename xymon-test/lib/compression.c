@@ -18,7 +18,7 @@ static char rcsid[] = "$Id: compression.c 5858 2008-10-08 09:04:35Z storner $";
 #include <string.h>
 #include <stdlib.h>
 
-// #if defined(HOBBITZLIB)
+//#if defined(HOBBITZLIB)
 #include <zlib.h>
 //#endif
 

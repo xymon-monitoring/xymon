@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include "config.h"
 /* The clients probably dont have the pcre headers */
+
 #if defined(LOCALCLIENT)
 #include <pcre.h>
 

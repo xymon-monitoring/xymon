@@ -38,12 +38,12 @@ bbproxy.o: bbproxy.c ../config.h /usr/include/sys/time.h \
  /usr/include/asm/posix_types_32.h /usr/include/bits/sigstack.h \
  /usr/include/bits/sigthread.h ../include/version.h ../include/libbbgen.h \
  ../include/version.h ../include/../lib/osdefs.h \
- ../include/../lib/cgiurls.h ../include/../lib/availability.h \
+ ../include/../lib/cgiurls.h ../include/../lib/xymon_availability.h \
  ../include/../lib/color.h ../include/../lib/links.h \
  ../include/../lib/acklog.h ../include/../lib/eventlog.h \
  ../include/../lib/headfoot.h ../include/../lib/htmllog.h \
  ../include/../lib/notifylog.h ../include/../lib/reportlog.h \
- ../include/../lib/availability.h ../include/../lib/calc.h \
+ ../include/../lib/xymon_availability.h ../include/../lib/calc.h \
  ../include/../lib/cgi.h ../include/../lib/color.h \
  ../include/../lib/clientlocal.h ../include/../lib/digest.h \
  ../include/../lib/encoding.h ../include/../lib/environ.h \
@@ -235,7 +235,7 @@ bbproxy.o: bbproxy.c ../config.h /usr/include/sys/time.h \
 
 ../include/../lib/cgiurls.h:
 
-../include/../lib/availability.h:
+../include/../lib/xymon_availability.h:
 
 ../include/../lib/color.h:
 
@@ -253,7 +253,7 @@ bbproxy.o: bbproxy.c ../config.h /usr/include/sys/time.h \
 
 ../include/../lib/reportlog.h:
 
-../include/../lib/availability.h:
+../include/../lib/xymon_availability.h:
 
 ../include/../lib/calc.h:
 
