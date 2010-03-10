@@ -7,10 +7,11 @@ AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 bin_PROGRAMS = bbgen 
 
 bbgen_SOURCES = bbgen.c loadbbhosts.c loaddata.c bbconvert.c pagegen.c process.c wmlgen.c rssgen.c util.c debug.c csvreport.c
-bbgen_LDADD = ../lib/libxymon.la -lrt -lz
 
-# We need to addd libsocket when in OpenSoalris 
-#if ON_OPENSOLARIS
-#bbgen_LDFLAGS = -lsocket -lnsl
-#endif
-#
+
+
+if ON_OPENSOLARIS
+bbgen_LDADD = ../lib/libxymon.la -lz
+else
+bbgen_LDADD = ../lib/libxymon.la -lrt -lz
+endif

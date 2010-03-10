@@ -6,9 +6,11 @@
 AM_CPPFLAGS = -I$(srcdir)/../lib -I${srcdir}/../include
 bin_PROGRAMS = demotool 
 demotool_SOURCES = demotool.c
-demotool_LDADD = ../lib/libxymon.la -lrt -lz 
+
 # We need to addd libsocket when in OpenSoalris 
 if ON_OPENSOLARIS
+demotool_LDADD = ../lib/libxymon.la -lz 
 else
+demotool_LDADD = ../lib/libxymon.la -lrt -lz 
 demotool_LDADD += -lsocket -lnsl
 endif

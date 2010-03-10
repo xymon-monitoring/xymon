@@ -169,9 +169,7 @@ AC_CHECK_LIB([z], [inflate])
 # AM_CONDITIONAL(HAVE_ZLIB, test x"$have_zlib" = xyes) 
 # 
 
-# FIXME: Replace `main' with a function in `-lm':
 AC_CHECK_LIB([m], [cos])
-# FIXME: Replace `main' with a function in `-lpcre':
 AC_CHECK_LIB(pcre,pcre_free)
 AC_CHECK_LIB(rt,clock_gettime)
 AC_CHECK_LIB(rrd,rrd_clear_error)
@@ -245,7 +243,7 @@ case "${host_os}" in
     ;;
   darwin10.2.0)
     CPPFLAGS=-I/opt/local/include
-    LDFLAGS=-L/tmp/xymon/lib
+    LDFLAGS=-L/opt/local/lib 
     ;;
   *)
     ac_default_prefix=/usr
