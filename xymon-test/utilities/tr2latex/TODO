@@ -1,0 +1,8 @@
+- handling of tables
+- handling of tabs
+- handling of troff commands:
+  .bd
+  .nr
+  .pl
+  .ps
+  .ds
