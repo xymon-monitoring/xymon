@@ -108,7 +108,7 @@ AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g
-CONFIG_CFLAGS = 
+CONFIG_CFLAGS = -g
 CONFIG_LDFLAGS = 
 CPP = gcc -E
 CPPFLAGS = -I/usr/local/include
@@ -228,7 +228,7 @@ psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
-sysconfdir = ${prefix}/etc
+sysconfdir = /etc
 target_alias = 
 top_build_prefix = ../
 top_builddir = ..

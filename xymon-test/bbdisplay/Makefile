@@ -61,6 +61,7 @@ am_bbgen_OBJECTS = bbgen.$(OBJEXT) loadbbhosts.$(OBJEXT) \
 	process.$(OBJEXT) wmlgen.$(OBJEXT) rssgen.$(OBJEXT) \
 	util.$(OBJEXT) debug.$(OBJEXT) csvreport.$(OBJEXT)
 bbgen_OBJECTS = $(am_bbgen_OBJECTS)
+#bbgen_DEPENDENCIES = ../lib/libxymon.la
 bbgen_DEPENDENCIES = ../lib/libxymon.la
 DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
@@ -90,7 +91,7 @@ AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g
-CONFIG_CFLAGS = 
+CONFIG_CFLAGS = -g
 CONFIG_LDFLAGS = 
 CPP = gcc -E
 CPPFLAGS = -I/usr/local/include
@@ -210,14 +211,15 @@ psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
-sysconfdir = ${prefix}/etc
+sysconfdir = /etc
 target_alias = 
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
 AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 bbgen_SOURCES = bbgen.c loadbbhosts.c loaddata.c bbconvert.c pagegen.c process.c wmlgen.c rssgen.c util.c debug.c csvreport.c
-bbgen_LDADD = ../lib/libxymon.la -lrt -lz
+#bbgen_LDADD = ../lib/libxymon.la -lrt -lz
+bbgen_LDADD = ../lib/libxymon.la -lz
 all: all-am
 
 .SUFFIXES:
@@ -544,12 +546,6 @@ uninstall-am: uninstall-binPROGRAMS
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
-
-# We need to addd libsocket when in OpenSoalris 
-#if ON_OPENSOLARIS
-#bbgen_LDFLAGS = -lsocket -lnsl
-#endif
-#
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

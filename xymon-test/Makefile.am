@@ -4,7 +4,10 @@
 
 
 # What: list out the directories contains source code
-SUBDIRS = po lib common demotool client bbdisplay bbproxy hobbitd examples docs
+SUBDIRS = po lib common tools/demotool \
+tools/tr2latex \
+client bbdisplay bbproxy hobbitd examples docs 
+
 #
 # What: include the file in m4 directory
 #  

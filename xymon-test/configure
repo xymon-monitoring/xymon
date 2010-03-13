@@ -8,6 +8,8 @@
 # 2002, 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
 # This configure script is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
+#
+# "Xymon"
 ## --------------------- ##
 ## M4sh Initialization.  ##
 ## --------------------- ##
@@ -930,6 +932,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+with_compile_mode
 enable_nls
 with_gnu_ld
 enable_rpath
@@ -941,7 +944,6 @@ enable_static
 with_pic
 enable_fast_install
 enable_libtool_lock
-with_compile_mode
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1599,6 +1601,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+--with-compile-mode=<mode> Xymon compilation mode: client or server
   --with-gnu-ld           assume the C compiler uses GNU ld default=no
   --with-libiconv-prefix[=DIR]  search for libiconv in DIR/include and DIR/lib
   --without-libiconv-prefix     don't search for libiconv in includedir and libdir
@@ -1607,7 +1610,6 @@ Optional Packages:
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
---with-compile-mode=<mode> Xymon compilation mode: client or server
 
 Some influential environment variables:
   CC          C compiler command
@@ -1695,6 +1697,8 @@ Copyright (C) 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001,
 2002, 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
 This configure script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it.
+
+"Xymon"
 _ACEOF
   exit
 fi
@@ -2073,6 +2077,54 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
+# Need to specify options of what kind of clients to configured for.
+# 1. LOCALCLIENT that need to build pcre software to process
+#                local messages and only send in result.
+# 2.
+# 3. SERVER
+
+# MYARGS=0
+# if test $# == $MYARGS; then
+#  AC_MSG_ERROR([Use --help to see options to configure xymon client or server])
+# fi
+
+#
+# Take augument of client or server.
+
+# Check whether --with-compile-mode was given.
+if test "${with_compile_mode+set}" = set; then
+  withval=$with_compile_mode; compile_mode=$withval
+else
+  compile_mode=client
+fi
+
+
+case "$compile_mode" in
+    client)
+    CFLAGS=-g
+    ;;
+    server | * )
+    CFLAGS=-O
+    ;;
+esac
+# SED="TESTSED"
+# TAR="TESTTAR"
+# AC_SUBST([SED])
+# AC_SUBST([TAR])
+
+#      checks for programs
+#      checks for libraries
+#      checks for header files
+#      checks for types
+#      checks for structures
+#      checks for compiler characteristics
+#      checks for library functions
+#      checks for system services
+#      AC_CONFIG_FILES([file...])
+#      AC_OUTPUT
 
 
 # preserve any CFLAGS or LDFLAGS that may be set
@@ -8261,13 +8313,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:8264: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:8316: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8267: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:8319: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8270: output\"" >&5)
+  (eval echo "\"\$as_me:8322: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -9461,7 +9513,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 9464 "configure"' > conftest.$ac_ext
+  echo '#line 9516 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -11820,11 +11872,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11823: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11875: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11827: \$? = $ac_status" >&5
+   echo "$as_me:11879: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12159,11 +12211,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12162: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12214: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12166: \$? = $ac_status" >&5
+   echo "$as_me:12218: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12264,11 +12316,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12267: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12319: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12271: \$? = $ac_status" >&5
+   echo "$as_me:12323: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12319,11 +12371,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12322: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12374: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12326: \$? = $ac_status" >&5
+   echo "$as_me:12378: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15122,7 +15174,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 15125 "configure"
+#line 15177 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15218,7 +15270,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 15221 "configure"
+#line 15273 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -17238,11 +17290,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17241: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17293: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:17245: \$? = $ac_status" >&5
+   echo "$as_me:17297: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -17337,11 +17389,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17340: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17392: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:17344: \$? = $ac_status" >&5
+   echo "$as_me:17396: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17389,11 +17441,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:17392: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17444: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:17396: \$? = $ac_status" >&5
+   echo "$as_me:17448: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18398,7 +18450,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-for ac_header in arpa/inet.h fcntl.h limits.h netdb.h netinet/in.h stdint.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h utime.h snprintf.h vsnprintf.h
+for ac_header in arpa/inet.h fcntl.h \
+limits.h netdb.h netinet/in.h stdint.h \
+stdlib.h string.h strings.h sys/param.h \
+sys/socket.h sys/time.h unistd.h utime.h \
+snprintf.h vsnprintf.h
 do
 as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -18947,7 +19003,6 @@ fi
 # AM_CONDITIONAL(HAVE_ZLIB, test x"$have_zlib" = xyes)
 #
 
-# FIXME: Replace `main' with a function in `-lm':
 
 { $as_echo "$as_me:$LINENO: checking for cos in -lm" >&5
 $as_echo_n "checking for cos in -lm... " >&6; }
@@ -19023,7 +19078,6 @@ _ACEOF
 
 fi
 
-# FIXME: Replace `main' with a function in `-lpcre':
 
 { $as_echo "$as_me:$LINENO: checking for pcre_free in -lpcre" >&5
 $as_echo_n "checking for pcre_free in -lpcre... " >&6; }
@@ -22751,7 +22805,14 @@ fi
 
 
 
-for ac_func in alarm clock_gettime dup2 getcwd gethostbyname gethostname gettimeofday inet_ntoa memmove memset mkdir pathconf pstat_getdynamic putenv regcomp rmdir select socket strcasecmp strchr strcspn strdup strerror strncasecmp strrchr strspn strstr strtol utime
+
+for ac_func in alarm clock_gettime \
+dup2 getcwd gethostbyname gethostname \
+gettimeofday inet_ntoa memmove memset \
+mkdir pathconf pstat_getdynamic putenv \
+regcomp rmdir select socket strcasecmp \
+strchr strcspn strdup strerror strncasecmp \
+strrchr strspn strstr strtol utime
 do
 as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 { $as_echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -22855,31 +22916,9 @@ done
 
 if test "$ac_cv_header_rt_h" == yes
 then
-        { $as_echo "$as_me:$LINENO: WARNING: Great, We have library realtime for clock_gettime!" >&5
+    { $as_echo "$as_me:$LINENO: WARNING: Great, We have library realtime for clock_gettime!" >&5
 $as_echo "$as_me: WARNING: Great, We have library realtime for clock_gettime!" >&2;}
 fi
-#
-#
-# Take augument of client or server.
-
-# Check whether --with-compile-mode was given.
-if test "${with_compile_mode+set}" = set; then
-  withval=$with_compile_mode; compile_mode=$withval
-else
-  compile_mode=client
-fi
-
-
-case "$compile_mode" in
-    client)
-    CFLAGS=-g
-    ;;
-    server | * )
-    CFLAGS=-O
-    ;;
-esac
-
-
 #
 case "${host_os}" in
   freebsd*)
@@ -22902,7 +22941,7 @@ case "${host_os}" in
     ;;
   darwin10.2.0)
     CPPFLAGS=-I/opt/local/include
-    LDFLAGS=-L/tmp/xymon/lib
+    LDFLAGS=-L/opt/local/lib
     ;;
   *)
     ac_default_prefix=/usr
@@ -22918,21 +22957,9 @@ case "${host_os}" in
 esac
 
 
+# web/Makefile]
+ac_config_files="$ac_config_files Makefile po/Makefile.in lib/Makefile common/Makefile client/Makefile demotool/Makefile bbdisplay/Makefile bbproxy/Makefile docs/Makefile tools/tr2latex/Makefile examples/Makefile client/script.sh:client/script.in hobbitd/Makefile"
 
-#AC_CONFIG_FILES([Makefile
-#                 bbdisplay/Makefile
-#                 bbnet/Makefile
-#                 bbproxy/Makefile
-#                 build/Makefile
-#                 client/Makefile
-#                 common/Makefile
-#                 demotool/Makefile
-#                 docs/Makefile
-#                 hobbitd/Makefile
-#                 lib/Makefile
-#                 web/Makefile])
-#
-ac_config_files="$ac_config_files Makefile po/Makefile.in lib/Makefile common/Makefile client/Makefile demotool/Makefile bbdisplay/Makefile bbproxy/Makefile docs/Makefile examples/Makefile hobbitd/Makefile"
 
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
 # What: The last macro to generate all the above Makefiles.
@@ -23955,7 +23982,9 @@ do
     "bbdisplay/Makefile") CONFIG_FILES="$CONFIG_FILES bbdisplay/Makefile" ;;
     "bbproxy/Makefile") CONFIG_FILES="$CONFIG_FILES bbproxy/Makefile" ;;
     "docs/Makefile") CONFIG_FILES="$CONFIG_FILES docs/Makefile" ;;
+    "tools/tr2latex/Makefile") CONFIG_FILES="$CONFIG_FILES tools/tr2latex/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
+    "client/script.sh") CONFIG_FILES="$CONFIG_FILES client/script.sh:client/script.in" ;;
     "hobbitd/Makefile") CONFIG_FILES="$CONFIG_FILES hobbitd/Makefile" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

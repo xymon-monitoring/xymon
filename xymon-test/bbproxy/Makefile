@@ -38,7 +38,6 @@ build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
 bin_PROGRAMS = bbproxy$(EXEEXT) bbmessage.cgi$(EXEEXT)
 #am__append_1 = -lsocket -lnsl
-#am__append_2 = -lsocket -lnsl
 subdir = bbproxy
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -60,10 +59,11 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_bbmessage_cgi_OBJECTS = bbmessage.$(OBJEXT)
 bbmessage_cgi_OBJECTS = $(am_bbmessage_cgi_OBJECTS)
-am__DEPENDENCIES_1 =
-bbmessage_cgi_DEPENDENCIES = ../lib/libxymon.la $(am__DEPENDENCIES_1)
+#bbmessage_cgi_DEPENDENCIES = ../lib/libxymon.la
+bbmessage_cgi_DEPENDENCIES = ../lib/libxymon.la
 am_bbproxy_OBJECTS = bbproxy.$(OBJEXT)
 bbproxy_OBJECTS = $(am_bbproxy_OBJECTS)
+am__DEPENDENCIES_1 =
 bbproxy_DEPENDENCIES = ../lib/libxymon.la $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
@@ -93,7 +93,7 @@ AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g
-CONFIG_CFLAGS = 
+CONFIG_CFLAGS = -g
 CONFIG_LDFLAGS = 
 CPP = gcc -E
 CPPFLAGS = -I/usr/local/include
@@ -213,7 +213,7 @@ psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
-sysconfdir = ${prefix}/etc
+sysconfdir = /etc
 target_alias = 
 top_build_prefix = ../
 top_builddir = ..
@@ -222,7 +222,9 @@ AM_CPPFLAGS = -I$(srcdir)/../lib  -I$(srcdir)/../include  -I/usr/include/pcre
 bbproxy_SOURCES = bbproxy.c 
 bbproxy_LDADD = ../lib/libxymon.la $(am__append_1)
 bbmessage_cgi_SOURCES = bbmessage.c
-bbmessage_cgi_LDADD = ../lib/libxymon.la -lrt -lz $(am__append_2)
+#bbmessage_cgi_LDADD = ../lib/libxymon.la -lrt \
+#	-lz -lsocket -lnsl
+bbmessage_cgi_LDADD = ../lib/libxymon.la  -lz 
 all: all-am
 
 .SUFFIXES:

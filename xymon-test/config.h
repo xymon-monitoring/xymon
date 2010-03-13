@@ -233,6 +233,9 @@
 /* Define to 1 if `vfork' works. */
 #define HAVE_WORKING_VFORK 1
 
+/* Define to 1 if you have the `\' function. */
+/* #undef HAVE__ */
+
 /* Define to 1 if the system has the type `_Bool'. */
 #define HAVE__BOOL 1
 

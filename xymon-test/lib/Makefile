@@ -50,10 +50,6 @@ POST_UNINSTALL = :
 build_triplet = i686-pc-linux-gnu
 host_triplet = i686-pc-linux-gnu
 bin_PROGRAMS = hello$(EXEEXT)
-
-# We need to addd libsocket when in OpenSoalris 
-#am__append_1 = -lsocket -lnsl
-#am__append_2 = -lsocket -lnsl
 subdir = lib
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -95,8 +91,8 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libxymon_la_LIBADD =
-am_libxymon_la_OBJECTS = say.lo osdefs.lo acklog.lo availability.lo \
-	calc.lo cgi.lo cgiurls.lo clientlocal.lo color.lo digest.lo \
+am_libxymon_la_OBJECTS = say.lo acklog.lo availability.lo calc.lo \
+	cgi.lo cgiurls.lo clientlocal.lo color.lo digest.lo \
 	encoding.lo environ.lo errormsg.lo eventlog.lo files.lo \
 	headfoot.lo hobbitrrd.lo holidays.lo htmllog.lo ipaccess.lo \
 	loadalerts.lo loadhosts.lo loadnkconf.lo locator.lo links.lo \
@@ -109,7 +105,7 @@ libxymon_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libxymon_la_LDFLAGS) $(LDFLAGS) -o $@
 libxymonclient_la_LIBADD =
-am_libxymonclient_la_OBJECTS = osdefs.lo cgiurls.lo color.lo digest.lo \
+am_libxymonclient_la_OBJECTS = cgiurls.lo color.lo digest.lo \
 	encoding.lo environ.lo errormsg.lo holidays.lo ipaccess.lo \
 	loadhosts.lo md5.lo memory.lo misc.lo msort.lo rbtr.lo \
 	rmd160c.lo sendmsg.lo sha1.lo sha2.lo sig.lo stackio.lo \
@@ -152,7 +148,7 @@ AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g
-CONFIG_CFLAGS = 
+CONFIG_CFLAGS = -g
 CONFIG_LDFLAGS = 
 CPP = gcc -E
 CPPFLAGS = -I/usr/local/include
@@ -272,7 +268,7 @@ psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
-sysconfdir = ${prefix}/etc
+sysconfdir = /etc
 target_alias = 
 top_build_prefix = ../
 top_builddir = ..
@@ -286,34 +282,38 @@ hello_SOURCES = hello.c  gettext.h
 # LDADD = ${LIBINTL) libxymon.la
 hello_LDADD = ../lib/libxymon.la 
 #LDADD = ${LIBINTL)
-libxymon_la_SOURCES = say.c osdefs.c acklog.c availability.c calc.c \
-	cgi.c cgiurls.c clientlocal.c color.c digest.c encoding.c \
-	environ.c errormsg.c eventlog.c files.c headfoot.c hobbitrrd.c \
+libxymon_la_SOURCES = say.c acklog.c availability.c calc.c cgi.c \
+	cgiurls.c clientlocal.c color.c digest.c encoding.c environ.c \
+	errormsg.c eventlog.c files.c headfoot.c hobbitrrd.c \
 	holidays.c htmllog.c ipaccess.c loadalerts.c loadhosts.c \
 	loadnkconf.c locator.c links.c matching.c md5.c memory.c \
 	misc.c msort.c netservices.c notifylog.c rbtr.c reportlog.c \
 	rmd160c.c sendmsg.c sha1.c sha2.c sig.c stackio.c strfunc.c \
-	suid.c timefunc.c timing.c url.c compression.c say.h osdefs.h \
-	acklog.h availability.h calc.h cgi.h cgiurls.h clientlocal.h \
-	color.h digest.h encoding.h environ.h errormsg.h eventlog.h \
-	files.h headfoot.h hobbitrrd.h holidays.h htmllog.h ipaccess.h \
+	suid.c timefunc.c timing.c url.c compression.c say.h acklog.h \
+	availability.h calc.h cgi.h cgiurls.h clientlocal.h color.h \
+	digest.h encoding.h environ.h errormsg.h eventlog.h files.h \
+	headfoot.h hobbitrrd.h holidays.h htmllog.h ipaccess.h \
 	loadalerts.h loadhosts.h loadnkconf.h locator.h links.h \
 	matching.h md5.h memory.h misc.h msort.h netservices.h \
 	notifylog.h rbtr.h reportlog.h rmd160c.h sendmsg.h sha1.h \
 	sha2.h sig.h stackio.h strfunc.h suid.h timefunc.h timing.h \
 	url.h compression.h
-libxymonclient_la_SOURCES = osdefs.c cgiurls.c color.c digest.c \
-	encoding.c environ.c errormsg.c holidays.c ipaccess.c \
-	loadhosts.c md5.c memory.c misc.c msort.c rbtr.c rmd160c.c \
-	sendmsg.c sha1.c sha2.c sig.c stackio.c strfunc.c suid.c \
-	timefunc.c osdefs.h cgiurls.h color.h digest.h encoding.h \
-	environ.h errormsg.h holidays.h ipaccess.h loadhosts.h md5.h \
-	memory.h misc.h msort.h rbtr.h rmd160c.h sendmsg.h sha1.h \
-	sha2.h sig.h stackio.h strfunc.h suid.h timefunc.h
-libxymon_la_LDFLAGS = -lz -lrt -lpcre -version-info 0:0:0 \
-	$(am__append_1)
-libxymonclient_la_LDFLAGS = -lrt -lpcre -version-info 0:0:0 \
-	$(am__append_2)
+libxymonclient_la_SOURCES = cgiurls.c color.c digest.c encoding.c \
+	environ.c errormsg.c holidays.c ipaccess.c loadhosts.c md5.c \
+	memory.c misc.c msort.c rbtr.c rmd160c.c sendmsg.c sha1.c \
+	sha2.c sig.c stackio.c strfunc.c suid.c timefunc.c cgiurls.h \
+	color.h digest.h encoding.h environ.h errormsg.h holidays.h \
+	ipaccess.h loadhosts.h md5.h memory.h misc.h msort.h rbtr.h \
+	rmd160c.h sendmsg.h sha1.h sha2.h sig.h stackio.h strfunc.h \
+	suid.h timefunc.h
+
+# We need to addd libsocket when in OpenSoalris 
+#libxymon_la_LDFLAGS = -lz -lrt -lpcre \
+#	-version-info 0:0:0 -lsocket -lnsl
+libxymon_la_LDFLAGS = -lz  -lpcre -version-info 0:0:0 
+#libxymonclient_la_LDFLAGS = -lrt -lpcre \
+#	-version-info 0:0:0 -lsocket -lnsl
+libxymonclient_la_LDFLAGS = -lpcre -version-info 0:0:0 
 all: all-am
 
 .SUFFIXES:
@@ -468,7 +468,6 @@ include ./$(DEPDIR)/misc.Plo
 include ./$(DEPDIR)/msort.Plo
 include ./$(DEPDIR)/netservices.Plo
 include ./$(DEPDIR)/notifylog.Plo
-include ./$(DEPDIR)/osdefs.Plo
 include ./$(DEPDIR)/rbtr.Plo
 include ./$(DEPDIR)/reportlog.Plo
 include ./$(DEPDIR)/rmd160c.Plo

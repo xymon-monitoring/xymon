@@ -3,14 +3,14 @@
 #----------------------------------------------------------------------------#
 #                                                                            #
 # NAME                                                                       # 
-# configure.ac  used by autogen.sh                                         #
+# configure.ac  used by autogen.sh                                           #
 #                                                                            #
 # REVISION HISTORY                                                           #
 #     03/04/2010    T.J. Yang                                                #
 #                                                                            #
 #                                                                            #
 # USAGE                                                                      #
-#   autogen.sh to invoke configure.ac                                      #
+#   autogen.sh to invoke configure.ac                                        #
 # DESCRIPTION                                                                #
 #   This autoconf script will create "configure" that accept --client and    #
 #   --server options like the original man-made configure script.            #
@@ -33,43 +33,23 @@
 #                                                                            #
 #                                                                            #
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
-# MYERROR=1
 
-# then
-#     echo "Usage: $0  <client hostname> <ethernet address>"
-#     echo
-#     exit $ERROR
-# 
-# fi
-
-#                                                                             #
-#      checks for programs
-#      checks for libraries
-#      checks for header files
-#      checks for types
-#      checks for structures
-#      checks for compiler characteristics
-#      checks for library functions
-#      checks for system services
-#      AC_CONFIG_FILES([file...])
-#      AC_OUTPUT
-#       Autoconf requirements
-
+#      Autoconf requirements
 AC_PREREQ([2.60])
 #      AC_INIT(package, version, bug-report-address)
 AC_INIT([xymon], [4.3.0], [tjyang2001@gmail.com])
 
-
+AC_COPYRIGHT("Xymon")
 # Need to specify options of what kind of clients to configured for.
 # 1. LOCALCLIENT that need to build pcre software to process 
 #                local messages and only send in result. 
 # 2.
 # 3. SERVER
 
-MYARGS=0
-if test $# == $MYARGS; then
- AC_MSG_ERROR([Use --help to see options to configure xymon client or server])
-fi
+# MYARGS=0
+# if test $# == $MYARGS; then
+#  AC_MSG_ERROR([Use --help to see options to configure xymon client or server])
+# fi
 
 #
 # Take augument of client or server.
@@ -84,10 +64,23 @@ case "$compile_mode" in
     CFLAGS=-O
     ;;
 esac
-SED="TESTSED"
-TAR="TESTTAR"
-AC_SUBST([SED]) 
-AC_SUBST([TAR]) 
+# SED="TESTSED"
+# TAR="TESTTAR"
+# AC_SUBST([SED]) 
+# AC_SUBST([TAR]) 
+
+#      checks for programs
+#      checks for libraries
+#      checks for header files
+#      checks for types
+#      checks for structures
+#      checks for compiler characteristics
+#      checks for library functions
+#      checks for system services
+#      AC_CONFIG_FILES([file...])
+#      AC_OUTPUT
+
+
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
 # calling AC_PROG_CC or the like, since they will set a default
@@ -283,10 +276,11 @@ po/Makefile.in
 lib/Makefile 
 common/Makefile 
 client/Makefile 
-demotool/Makefile 
+tools/demotool/Makefile 
 bbdisplay/Makefile 
 bbproxy/Makefile 
 docs/Makefile 
+tools/tr2latex/Makefile 
 examples/Makefile 
 client/script.sh:client/script.in
 hobbitd/Makefile])
