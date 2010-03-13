@@ -1,4 +1,0 @@
-Filsystem          1024-blokke     Brugt   Tilbage Kapacitet Monteret på
-/dev/hda2             99511580  27342896  72168684      28% /
-procbususb               10240       108     10132       2% /proc/bus/usb
-/dev/hda3             47856164  44684240   3171924      94% /work
