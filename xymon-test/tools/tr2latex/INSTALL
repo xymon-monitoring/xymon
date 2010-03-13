@@ -1,0 +1,6 @@
+To compile tr2latex you need a C compiler and GNU make. Edit the
+Makefile to customize the installation paths. You should look at the
+TEXDIR variable to set your texmf-local directory and PREFIX to choose
+the base directory.
+
+Then use "make install" to compile and install tr2latex.
