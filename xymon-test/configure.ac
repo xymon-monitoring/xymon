@@ -64,10 +64,9 @@ case "$compile_mode" in
     CFLAGS=-O
     ;;
 esac
-# SED="TESTSED"
-# TAR="TESTTAR"
-# AC_SUBST([SED]) 
-# AC_SUBST([TAR]) 
+#
+SED="SED"
+AC_SUBST([SED]) 
 
 #      checks for programs
 #      checks for libraries
