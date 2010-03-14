@@ -1,10 +1,10 @@
 Name: hobbit
-Version: @VER@
+Version: @VERSION@
 Release: 1
 Group: Networking/Daemons
 URL: http://hobbitmon.sourceforge.net/
 License: GPL
-Source: hobbit-@VER@.tar.gz
+Source: hobbit-@VERSION@.tar.gz
 Source1: hobbit-init.d
 Source2: hobbit.logrotate
 Source3: hobbit-client.init
