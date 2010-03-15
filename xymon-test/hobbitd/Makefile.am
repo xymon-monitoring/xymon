@@ -42,14 +42,19 @@ hobbitd_history_SOURCES = hobbitd_history.c hobbitd_worker.c hobbitd_buffer.c
 hobbitd_history_LDADD = ../lib/libxymon.la
 
 
-# ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o hobbitd_buffer.o do_alert.o
 hobbitd_alert_SOURCES = hobbitd_alert.c hobbitd_worker.c hobbitd_buffer.c do_alert.c
 hobbitd_alert_LDADD = ../lib/libxymon.la
 
 
-# RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o hobbitd_buffer.o do_rrd.o
 hobbitd_rrd_SOURCES = hobbitd_rrd.c hobbitd_worker.c hobbitd_buffer.c do_rrd.c
 hobbitd_rrd_LDADD = ../lib/libxymon.la
+
+if ON_DARWIN
+    LDFLAGS +=-L/opt/local/lib 
+    hobbitd_rrd_LDADD += -lrrd 
+endif 
+
+
 
 
 # SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
