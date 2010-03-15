@@ -233,6 +233,8 @@ then
     AC_MSG_WARN([Great, We have library realtime for clock_gettime!])
 fi
 # 
+AM_CONDITIONAL(ON_DARWIN, [test "x-${host_os}" = "x-darwin10.2.0"])
+#
 case "${host_os}" in
   freebsd*)
     ac_default_prefix=/usr/local
@@ -253,7 +255,6 @@ case "${host_os}" in
     LDFLAGS=-L/tmp/xymon/lib
     ;;
   darwin10.2.0)
-    AM_CONDITIONAL(ON_DARWIN, [test "x-${host_os}" = "x-darwin10.2.0"])
     CPPFLAGS=-I/opt/local/include
     LDFLAGS=-L/opt/local/lib 
     ;;
