@@ -135,9 +135,10 @@ AC_CONFIG_SRCDIR([client/clientupdate.c])
 AC_CONFIG_AUX_DIR([build-aux])
 # Define a directory to hold M4 macros scripts.
 
-# 
-AM_GNU_GETTEXT_VERSION([0.17])
-AM_GNU_GETTEXT([external])
+# Opensoalris doesn't have autopoint in it's gettext implementation.
+#
+#AM_GNoU_GETTEXT_VERSION([0.17])
+#AM_GNU_GETTEXT([external])
 #
 AC_CONFIG_MACRO_DIR([m4])
 # This is AutoMake macro, we pass on following error messages to automake.
@@ -197,7 +198,7 @@ AC_CHECK_LIB(rrd,rrd_clear_error)
 
 # check opensolaris
 AC_CHECK_HEADER([/usr/include/pcre/pcre.h],[on_opensolaris=no])
-AM_CONDITIONAL([ON_OPENSOLARIS],[test "$on_opensolaris"=yes])
+#AM_CONDITIONAL([ON_OPENSOLARIS],[test "$on_opensolaris"=yes])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
@@ -234,6 +235,7 @@ then
 fi
 # 
 AM_CONDITIONAL(ON_DARWIN, [test "x-${host_os}" = "x-darwin10.2.0"])
+AM_CONDITIONAL(ON_OPENSOLARIS, [test "x-${host_os}" = "x-solaris2.11"])
 #
 case "${host_os}" in
   freebsd*)
@@ -272,9 +274,7 @@ case "${host_os}" in
 esac 
 
 
-# web/Makefile]
 AC_CONFIG_FILES([Makefile 
-po/Makefile
 lib/Makefile 
 common/Makefile 
 client/Makefile 
@@ -287,6 +287,8 @@ examples/Makefile
 hobbitd/Makefile
 package-sources/rpm/hobbit.spec:package-sources/rpm/hobbit.spec.in
 ])
+
+
 
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
 # What: The last macro to generate all the above Makefiles.
