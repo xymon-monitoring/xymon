@@ -65,8 +65,8 @@ case "$compile_mode" in
     ;;
 esac
 #
-SED="SED"
-AC_SUBST([SED]) 
+#VER=$(VERSION)
+#AC_SUBST([VER]) 
 
 #      checks for programs
 #      checks for libraries
@@ -92,6 +92,7 @@ CONFIG_LDFLAGS="${LDFLAGS}"
 AC_SUBST(CONFIG_CFLAGS)
 AC_SUBST(CONFIG_LDFLAGS)
 # Define some constants for C definsive programming.
+AC_DEFINE([VER],[4.3.0],[Define Constant SUCCESS = 0 ])
 AC_DEFINE([SUCCESS],[0],[Define Constant SUCCESS = 0 ])
 AC_DEFINE([ERROR],[1],[Define Constant SUCCESS = 1 ])
 AC_DEFINE([WARNING],[-2],[Define Constant WARNING = -2 ])
@@ -281,8 +282,9 @@ bbproxy/Makefile
 docs/Makefile 
 tools/tr2latex/Makefile 
 examples/Makefile 
-client/script.sh:client/script.in
-hobbitd/Makefile])
+hobbitd/Makefile
+package-sources/rpm/hobbit.spec:package-sources/rpm/hobbit.spec.in
+])
 
 # ------------------------ HEADER  FILE DECLARATION -------------------------#
 # What: The last macro to generate all the above Makefiles.
