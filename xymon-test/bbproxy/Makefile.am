@@ -14,9 +14,9 @@ bbmessage_cgi_SOURCES = bbmessage.c
 
 
 if ON_OPENSOLARIS
-bbmessage_cgi_LDADD = ../lib/libxymon.la  -lz 
-else 
 bbmessage_cgi_LDADD = ../lib/libxymon.la -lrt -lz 
 bbproxy_LDADD += -lsocket -lnsl
 bbmessage_cgi_LDADD +=  -lsocket -lnsl
+else 
+bbmessage_cgi_LDADD = ../lib/libxymon.la  -lz 
 endif

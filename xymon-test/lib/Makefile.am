@@ -44,7 +44,7 @@ endif
 
 # We need to addd libsocket when in OpenSoalris 
 if ON_OPENSOLARIS
-else
 libxymon_la_LDFLAGS += -lsocket -lnsl
 libxymonclient_la_LDFLAGS +=  -lsocket -lnsl
+else
 endif

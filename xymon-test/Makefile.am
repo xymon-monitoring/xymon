@@ -4,7 +4,7 @@
 
 
 # What: list out the directories contains source code
-SUBDIRS = po lib common tools/demotool \
+SUBDIRS = lib common tools/demotool \
 tools/tr2latex \
 client bbdisplay bbproxy hobbitd examples docs 
 
