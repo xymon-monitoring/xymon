@@ -274,7 +274,7 @@ esac
 
 # web/Makefile]
 AC_CONFIG_FILES([Makefile 
-po/Makefile.in
+po/Makefile
 lib/Makefile 
 common/Makefile 
 client/Makefile 
