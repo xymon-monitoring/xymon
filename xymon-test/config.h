@@ -1,10 +1,6 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if translation of program messages to the user's native
-   language is requested. */
-#define ENABLE_NLS 1
-
 /* Define Constant SUCCESS = 1 */
 #define ERROR 1
 
@@ -14,23 +10,11 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
 
-/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
-   CoreFoundation framework. */
-/* #undef HAVE_CFLOCALECOPYCURRENT */
-
-/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. */
-/* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
-
 /* Define to 1 if your system has a working `chown' function. */
 #define HAVE_CHOWN 1
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
-
-/* Define if the GNU dcgettext() function is already present or preinstalled.
-   */
-#define HAVE_DCGETTEXT 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
@@ -51,22 +35,16 @@
 #define HAVE_GETCWD 1
 
 /* Define to 1 if you have the `gethostbyname' function. */
-#define HAVE_GETHOSTBYNAME 1
+/* #undef HAVE_GETHOSTBYNAME */
 
 /* Define to 1 if you have the `gethostname' function. */
 #define HAVE_GETHOSTNAME 1
 
-/* Define if the GNU gettext() function is already present or preinstalled. */
-#define HAVE_GETTEXT 1
-
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1
 
-/* Define if you have the iconv() function and it works. */
-/* #undef HAVE_ICONV */
-
 /* Define to 1 if you have the `inet_ntoa' function. */
-#define HAVE_INET_NTOA 1
+/* #undef HAVE_INET_NTOA */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
@@ -140,7 +118,7 @@
 /* #undef HAVE_SNPRINTF_H */
 
 /* Define to 1 if you have the `socket' function. */
-#define HAVE_SOCKET 1
+/* #undef HAVE_SOCKET */
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #define HAVE_STDBOOL_H 1
@@ -225,7 +203,7 @@
 
 /* Define to 1 if you have the `wait3' system call. Deprecated, you should no
    longer depend upon `wait3'. */
-#define HAVE_WAIT3 1
+/* #undef HAVE_WAIT3 */
 
 /* Define to 1 if `fork' works. */
 #define HAVE_WORKING_FORK 1
@@ -277,6 +255,9 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
+
+/* Define Constant SUCCESS = 0 */
+#define VER 4.3.0
 
 /* Version number of package */
 #define VERSION "4.3.0"

@@ -799,11 +799,15 @@ ON_DARWIN_TRUE
 POW_LIB
 LIBOBJS
 CXXCPP
+OTOOL64
+OTOOL
+LIPO
 NMEDIT
 DSYMUTIL
 lt_ECHO
 RANLIB
 AR
+OBJDUMP
 NM
 ac_ct_DUMPBIN
 DUMPBIN
@@ -4679,8 +4683,8 @@ esac
 
 
 
-macro_version='2.2'
-macro_revision='1.2599'
+macro_version='2.2.6b'
+macro_revision='1.3017'
 
 
 
@@ -5199,7 +5203,6 @@ with_gnu_ld=$lt_cv_prog_gnu_ld
 
 
 
-
 { $as_echo "$as_me:$LINENO: checking for BSD- or MS-compatible name lister (nm)" >&5
 $as_echo_n "checking for BSD- or MS-compatible name lister (nm)... " >&6; }
 if test "${lt_cv_path_NM+set}" = set; then
@@ -5374,13 +5377,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5377: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5380: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5380: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5383: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5383: output\"" >&5)
+  (eval echo "\"\$as_me:5386: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5415,7 +5418,7 @@ else
     lt_cv_sys_max_cmd_len=-1;
     ;;
 
-  cygwin* | mingw*)
+  cygwin* | mingw* | cegcc*)
     # On Win9x/ME, this test blows up -- it succeeds, but takes
     # about 5 minutes as the teststring grows exponentially.
     # Worse, since 9x/ME are not pre-emptively multitasking,
@@ -5524,7 +5527,6 @@ max_cmd_len=$lt_cv_sys_max_cmd_len
 
 
 
-
 : ${CP="cp -f"}
 : ${MV="mv -f"}
 : ${RM="rm -f"}
@@ -5535,7 +5537,9 @@ $as_echo_n "checking whether the shell understands some XSI constructs... " >&6;
 xsi_shell=no
 ( _lt_dummy="a/b/c"
   test "${_lt_dummy##*/},${_lt_dummy%/*},"${_lt_dummy%"$_lt_dummy"}, \
-      = c,a/b,, ) >/dev/null 2>&1 \
+      = c,a/b,, \
+    && eval 'test $(( 1 + 1 )) -eq 2 \
+    && test "${#_lt_dummy}" -eq 5' ) >/dev/null 2>&1 \
   && xsi_shell=yes
 { $as_echo "$as_me:$LINENO: result: $xsi_shell" >&5
 $as_echo "$xsi_shell" >&6; }
@@ -5615,6 +5619,107 @@ esac
 
 
 
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}objdump", so it can be a program name with args.
+set dummy ${ac_tool_prefix}objdump; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_OBJDUMP+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$OBJDUMP"; then
+  ac_cv_prog_OBJDUMP="$OBJDUMP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_OBJDUMP="${ac_tool_prefix}objdump"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+OBJDUMP=$ac_cv_prog_OBJDUMP
+if test -n "$OBJDUMP"; then
+  { $as_echo "$as_me:$LINENO: result: $OBJDUMP" >&5
+$as_echo "$OBJDUMP" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_OBJDUMP"; then
+  ac_ct_OBJDUMP=$OBJDUMP
+  # Extract the first word of "objdump", so it can be a program name with args.
+set dummy objdump; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_ac_ct_OBJDUMP+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_OBJDUMP"; then
+  ac_cv_prog_ac_ct_OBJDUMP="$ac_ct_OBJDUMP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ac_ct_OBJDUMP="objdump"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_OBJDUMP=$ac_cv_prog_ac_ct_OBJDUMP
+if test -n "$ac_ct_OBJDUMP"; then
+  { $as_echo "$as_me:$LINENO: result: $ac_ct_OBJDUMP" >&5
+$as_echo "$ac_ct_OBJDUMP" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_OBJDUMP" = x; then
+    OBJDUMP="false"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:$LINENO: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    OBJDUMP=$ac_ct_OBJDUMP
+  fi
+else
+  OBJDUMP="$ac_cv_prog_OBJDUMP"
+fi
+
+test -z "$OBJDUMP" && OBJDUMP=objdump
+
+
+
+
+
+
+
+
 
 { $as_echo "$as_me:$LINENO: checking how to recognize dependent libraries" >&5
 $as_echo_n "checking how to recognize dependent libraries... " >&6; }
@@ -5667,6 +5772,12 @@ mingw* | pw32*)
     lt_cv_deplibs_check_method='file_magic file format pei*-i386(.*architecture: i386)?'
     lt_cv_file_magic_cmd='$OBJDUMP -f'
   fi
+  ;;
+
+cegcc)
+  # use the weaker test based on 'objdump'. See mingw*.
+  lt_cv_deplibs_check_method='file_magic file format pe-arm-.*little(.*architecture: arm)?'
+  lt_cv_file_magic_cmd='$OBJDUMP -f'
   ;;
 
 darwin* | rhapsody*)
@@ -6207,7 +6318,7 @@ case $host_os in
 aix*)
   symcode='[BCDT]'
   ;;
-cygwin* | mingw* | pw32*)
+cygwin* | mingw* | pw32* | cegcc*)
   symcode='[ABCDGISTW]'
   ;;
 hpux*)
@@ -6467,7 +6578,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6470 "configure"' > conftest.$ac_ext
+  echo '#line 6581 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6845,6 +6956,297 @@ else
   NMEDIT="$ac_cv_prog_NMEDIT"
 fi
 
+    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}lipo", so it can be a program name with args.
+set dummy ${ac_tool_prefix}lipo; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_LIPO+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$LIPO"; then
+  ac_cv_prog_LIPO="$LIPO" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_LIPO="${ac_tool_prefix}lipo"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+LIPO=$ac_cv_prog_LIPO
+if test -n "$LIPO"; then
+  { $as_echo "$as_me:$LINENO: result: $LIPO" >&5
+$as_echo "$LIPO" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_LIPO"; then
+  ac_ct_LIPO=$LIPO
+  # Extract the first word of "lipo", so it can be a program name with args.
+set dummy lipo; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_ac_ct_LIPO+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_LIPO"; then
+  ac_cv_prog_ac_ct_LIPO="$ac_ct_LIPO" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ac_ct_LIPO="lipo"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_LIPO=$ac_cv_prog_ac_ct_LIPO
+if test -n "$ac_ct_LIPO"; then
+  { $as_echo "$as_me:$LINENO: result: $ac_ct_LIPO" >&5
+$as_echo "$ac_ct_LIPO" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_LIPO" = x; then
+    LIPO=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:$LINENO: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    LIPO=$ac_ct_LIPO
+  fi
+else
+  LIPO="$ac_cv_prog_LIPO"
+fi
+
+    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}otool", so it can be a program name with args.
+set dummy ${ac_tool_prefix}otool; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_OTOOL+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$OTOOL"; then
+  ac_cv_prog_OTOOL="$OTOOL" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_OTOOL="${ac_tool_prefix}otool"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+OTOOL=$ac_cv_prog_OTOOL
+if test -n "$OTOOL"; then
+  { $as_echo "$as_me:$LINENO: result: $OTOOL" >&5
+$as_echo "$OTOOL" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_OTOOL"; then
+  ac_ct_OTOOL=$OTOOL
+  # Extract the first word of "otool", so it can be a program name with args.
+set dummy otool; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_ac_ct_OTOOL+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_OTOOL"; then
+  ac_cv_prog_ac_ct_OTOOL="$ac_ct_OTOOL" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ac_ct_OTOOL="otool"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_OTOOL=$ac_cv_prog_ac_ct_OTOOL
+if test -n "$ac_ct_OTOOL"; then
+  { $as_echo "$as_me:$LINENO: result: $ac_ct_OTOOL" >&5
+$as_echo "$ac_ct_OTOOL" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_OTOOL" = x; then
+    OTOOL=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:$LINENO: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    OTOOL=$ac_ct_OTOOL
+  fi
+else
+  OTOOL="$ac_cv_prog_OTOOL"
+fi
+
+    if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}otool64", so it can be a program name with args.
+set dummy ${ac_tool_prefix}otool64; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_OTOOL64+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$OTOOL64"; then
+  ac_cv_prog_OTOOL64="$OTOOL64" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_OTOOL64="${ac_tool_prefix}otool64"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+OTOOL64=$ac_cv_prog_OTOOL64
+if test -n "$OTOOL64"; then
+  { $as_echo "$as_me:$LINENO: result: $OTOOL64" >&5
+$as_echo "$OTOOL64" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_prog_OTOOL64"; then
+  ac_ct_OTOOL64=$OTOOL64
+  # Extract the first word of "otool64", so it can be a program name with args.
+set dummy otool64; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_ac_ct_OTOOL64+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$ac_ct_OTOOL64"; then
+  ac_cv_prog_ac_ct_OTOOL64="$ac_ct_OTOOL64" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_ac_ct_OTOOL64="otool64"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+ac_ct_OTOOL64=$ac_cv_prog_ac_ct_OTOOL64
+if test -n "$ac_ct_OTOOL64"; then
+  { $as_echo "$as_me:$LINENO: result: $ac_ct_OTOOL64" >&5
+$as_echo "$ac_ct_OTOOL64" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_ct_OTOOL64" = x; then
+    OTOOL64=":"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:$LINENO: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    OTOOL64=$ac_ct_OTOOL64
+  fi
+else
+  OTOOL64="$ac_cv_prog_OTOOL64"
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6867,14 +7269,20 @@ else
 	# by either setting the environment variable LT_MULTI_MODULE
 	# non-empty at configure time, or by adding -multi_module to the
 	# link flags.
+	rm -rf libconftest.dylib*
 	echo "int foo(void){return 1;}" > conftest.c
+	echo "$LTCC $LTCFLAGS $LDFLAGS -o libconftest.dylib \
+-dynamiclib -Wl,-single_module conftest.c" >&5
 	$LTCC $LTCFLAGS $LDFLAGS -o libconftest.dylib \
-	  -dynamiclib ${wl}-single_module conftest.c
-	if test -f libconftest.dylib; then
+	  -dynamiclib -Wl,-single_module conftest.c 2>conftest.err
+        _lt_result=$?
+	if test -f libconftest.dylib && test ! -s conftest.err && test $_lt_result = 0; then
 	  lt_cv_apple_cc_single_mod=yes
-	  rm -rf libconftest.dylib*
+	else
+	  cat conftest.err >&5
 	fi
-	rm conftest.c
+	rm -rf libconftest.dylib*
+	rm -f conftest.*
       fi
 fi
 { $as_echo "$as_me:$LINENO: result: $lt_cv_apple_cc_single_mod" >&5
@@ -8510,11 +8918,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8513: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8921: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8517: \$? = $ac_status" >&5
+   echo "$as_me:8925: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8564,19 +8972,25 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
       ;;
 
     amigaos*)
-      if test "$host_cpu" = m68k; then
-        # FIXME: we need at least 68020 code to build shared libraries, but
-        # adding the `-m68020' flag to GCC prevents building anything better,
-        # like `-m68040'.
-        lt_prog_compiler_pic='-m68020 -resident32 -malways-restore-a4'
-      fi
+      case $host_cpu in
+      powerpc)
+            # see comment about AmigaOS4 .so support
+            lt_prog_compiler_pic='-fPIC'
+        ;;
+      m68k)
+            # FIXME: we need at least 68020 code to build shared libraries, but
+            # adding the `-m68020' flag to GCC prevents building anything better,
+            # like `-m68040'.
+            lt_prog_compiler_pic='-m68020 -resident32 -malways-restore-a4'
+        ;;
+      esac
       ;;
 
     beos* | irix5* | irix6* | nonstopux* | osf3* | osf4* | osf5*)
       # PIC is the default for these OSes.
       ;;
 
-    mingw* | cygwin* | pw32* | os2*)
+    mingw* | cygwin* | pw32* | os2* | cegcc*)
       # This hack is so that the source file can tell whether it is being
       # built for inclusion in a dll (and should export symbols for example).
       # Although the cygwin gcc ignores -fPIC, still need this for old-style
@@ -8591,10 +9005,11 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
       ;;
 
     hpux*)
-      # PIC is the default for IA64 HP-UX and 64-bit HP-UX, but
-      # not for PA HP-UX.
+      # PIC is the default for 64-bit PA HP-UX, but not for 32-bit
+      # PA HP-UX.  On IA64 HP-UX, PIC is the default but the pic flag
+      # sets the default TLS model and affects inlining.
       case $host_cpu in
-      hppa*64*|ia64*)
+      hppa*64*)
 	# +Z the default
 	;;
       *)
@@ -8644,7 +9059,7 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
       fi
       ;;
 
-    mingw* | cygwin* | pw32* | os2*)
+    mingw* | cygwin* | pw32* | os2* | cegcc*)
       # This hack is so that the source file can tell whether it is being
       # built for inclusion in a dll (and should export symbols for example).
       lt_prog_compiler_pic='-DDLL_EXPORT'
@@ -8674,11 +9089,25 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
 
     linux* | k*bsd*-gnu)
       case $cc_basename in
-      icc* | ecc* | ifort*)
+      # old Intel for x86_64 which still supported -KPIC.
+      ecc*)
 	lt_prog_compiler_wl='-Wl,'
 	lt_prog_compiler_pic='-KPIC'
 	lt_prog_compiler_static='-static'
         ;;
+      # icc used to be incompatible with GCC.
+      # ICC 10 doesn't accept -KPIC any more.
+      icc* | ifort*)
+	lt_prog_compiler_wl='-Wl,'
+	lt_prog_compiler_pic='-fPIC'
+	lt_prog_compiler_static='-static'
+        ;;
+      # Lahey Fortran 8.1.
+      lf95*)
+	lt_prog_compiler_wl='-Wl,'
+	lt_prog_compiler_pic='--shared'
+	lt_prog_compiler_static='--static'
+	;;
       pgcc* | pgf77* | pgf90* | pgf95*)
         # Portland Group compilers (*not* the Pentium gcc compiler,
 	# which looks to be a dead project)
@@ -8828,11 +9257,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8831: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9260: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8835: \$? = $ac_status" >&5
+   echo "$as_me:9264: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8933,11 +9362,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8936: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9365: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8940: \$? = $ac_status" >&5
+   echo "$as_me:9369: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8988,11 +9417,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8991: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9420: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8995: \$? = $ac_status" >&5
+   echo "$as_me:9424: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9092,7 +9521,7 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   extract_expsyms_cmds=
 
   case $host_os in
-  cygwin* | mingw* | pw32*)
+  cygwin* | mingw* | pw32* | cegcc*)
     # FIXME: the MSVC++ port hasn't been tested in a loooong time
     # When not using gcc, we currently assume that we are using
     # Microsoft Visual C++.
@@ -9154,19 +9583,18 @@ _LT_EOF
       ;;
 
     amigaos*)
-      if test "$host_cpu" = m68k; then
-        archive_cmds='$RM $output_objdir/a2ixlibrary.data~$ECHO "#define NAME $libname" > $output_objdir/a2ixlibrary.data~$ECHO "#define LIBRARY_ID 1" >> $output_objdir/a2ixlibrary.data~$ECHO "#define VERSION $major" >> $output_objdir/a2ixlibrary.data~$ECHO "#define REVISION $revision" >> $output_objdir/a2ixlibrary.data~$AR $AR_FLAGS $lib $libobjs~$RANLIB $lib~(cd $output_objdir && a2ixlibrary -32)'
-        hardcode_libdir_flag_spec='-L$libdir'
-        hardcode_minus_L=yes
-      fi
-
-      # Samuel A. Falvo II <kc5tja@dolphin.openprojects.net> reports
-      # that the semantics of dynamic libraries on AmigaOS, at least up
-      # to version 4, is to share data among multiple programs linked
-      # with the same dynamic library.  Since this doesn't match the
-      # behavior of shared libraries on other platforms, we can't use
-      # them.
-      ld_shlibs=no
+      case $host_cpu in
+      powerpc)
+            # see comment about AmigaOS4 .so support
+            archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+            archive_expsym_cmds=''
+        ;;
+      m68k)
+            archive_cmds='$RM $output_objdir/a2ixlibrary.data~$ECHO "#define NAME $libname" > $output_objdir/a2ixlibrary.data~$ECHO "#define LIBRARY_ID 1" >> $output_objdir/a2ixlibrary.data~$ECHO "#define VERSION $major" >> $output_objdir/a2ixlibrary.data~$ECHO "#define REVISION $revision" >> $output_objdir/a2ixlibrary.data~$AR $AR_FLAGS $lib $libobjs~$RANLIB $lib~(cd $output_objdir && a2ixlibrary -32)'
+            hardcode_libdir_flag_spec='-L$libdir'
+            hardcode_minus_L=yes
+        ;;
+      esac
       ;;
 
     beos*)
@@ -9180,7 +9608,7 @@ _LT_EOF
       fi
       ;;
 
-    cygwin* | mingw* | pw32*)
+    cygwin* | mingw* | pw32* | cegcc*)
       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
       # as there is no search path for DLLs.
       hardcode_libdir_flag_spec='-L$libdir'
@@ -9246,6 +9674,9 @@ _LT_EOF
 	  tmp_addflag=' -i_dynamic -nofor_main' ;;
 	ifc* | ifort*)			# Intel Fortran compiler
 	  tmp_addflag=' -nofor_main' ;;
+	lf95*)				# Lahey Fortran 8.1
+	  whole_archive_flag_spec=
+	  tmp_sharedflag='--shared' ;;
 	xl[cC]*)			# IBM XL C 8.0 on PPC (deal with xlf below)
 	  tmp_sharedflag='-qmkshrobj'
 	  tmp_addflag= ;;
@@ -9477,6 +9908,7 @@ _LT_EOF
 	fi
       fi
 
+      export_dynamic_flag_spec='${wl}-bexpall'
       # It seems that -bexpall does not export symbols beginning with
       # underscore (_), so it is better to generate a list of symbols to export.
       always_export_symbols=yes
@@ -9633,20 +10065,25 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
       ;;
 
     amigaos*)
-      if test "$host_cpu" = m68k; then
-        archive_cmds='$RM $output_objdir/a2ixlibrary.data~$ECHO "#define NAME $libname" > $output_objdir/a2ixlibrary.data~$ECHO "#define LIBRARY_ID 1" >> $output_objdir/a2ixlibrary.data~$ECHO "#define VERSION $major" >> $output_objdir/a2ixlibrary.data~$ECHO "#define REVISION $revision" >> $output_objdir/a2ixlibrary.data~$AR $AR_FLAGS $lib $libobjs~$RANLIB $lib~(cd $output_objdir && a2ixlibrary -32)'
-        hardcode_libdir_flag_spec='-L$libdir'
-        hardcode_minus_L=yes
-      fi
-      # see comment about different semantics on the GNU ld section
-      ld_shlibs=no
+      case $host_cpu in
+      powerpc)
+            # see comment about AmigaOS4 .so support
+            archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+            archive_expsym_cmds=''
+        ;;
+      m68k)
+            archive_cmds='$RM $output_objdir/a2ixlibrary.data~$ECHO "#define NAME $libname" > $output_objdir/a2ixlibrary.data~$ECHO "#define LIBRARY_ID 1" >> $output_objdir/a2ixlibrary.data~$ECHO "#define VERSION $major" >> $output_objdir/a2ixlibrary.data~$ECHO "#define REVISION $revision" >> $output_objdir/a2ixlibrary.data~$AR $AR_FLAGS $lib $libobjs~$RANLIB $lib~(cd $output_objdir && a2ixlibrary -32)'
+            hardcode_libdir_flag_spec='-L$libdir'
+            hardcode_minus_L=yes
+        ;;
+      esac
       ;;
 
     bsdi[45]*)
       export_dynamic_flag_spec=-rdynamic
       ;;
 
-    cygwin* | mingw* | pw32*)
+    cygwin* | mingw* | pw32* | cegcc*)
       # When not using gcc, we currently assume that we are using
       # Microsoft Visual C++.
       # hardcode_libdir_flag_spec is actually meaningless, as there is
@@ -9677,7 +10114,11 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
   whole_archive_flag_spec=''
   link_all_deplibs=yes
   allow_undefined_flag="$_lt_dar_allow_undefined"
-  if test "$GCC" = "yes"; then
+  case $cc_basename in
+     ifort*) _lt_dar_can_shared=yes ;;
+     *) _lt_dar_can_shared=$GCC ;;
+  esac
+  if test "$_lt_dar_can_shared" = "yes"; then
     output_verbose_link_cmd=echo
     archive_cmds="\$CC -dynamiclib \$allow_undefined_flag -o \$lib \$libobjs \$deplibs \$compiler_flags -install_name \$rpath/\$soname \$verstring $_lt_dar_single_mod${_lt_dsymutil}"
     module_cmds="\$CC \$allow_undefined_flag -o \$lib -bundle \$libobjs \$deplibs \$compiler_flags${_lt_dsymutil}"
@@ -9769,7 +10210,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	  archive_cmds='$CC -shared ${wl}+h ${wl}$soname -o $lib $libobjs $deplibs $compiler_flags'
 	  ;;
 	ia64*)
-	  archive_cmds='$CC -shared ${wl}+h ${wl}$soname ${wl}+nodefaultrpath -o $lib $libobjs $deplibs $compiler_flags'
+	  archive_cmds='$CC -shared -fPIC ${wl}+h ${wl}$soname ${wl}+nodefaultrpath -o $lib $libobjs $deplibs $compiler_flags'
 	  ;;
 	*)
 	  archive_cmds='$CC -shared -fPIC ${wl}+h ${wl}$soname ${wl}+b ${wl}$install_libdir -o $lib $libobjs $deplibs $compiler_flags'
@@ -10477,13 +10918,18 @@ aix[4-9]*)
   ;;
 
 amigaos*)
-  if test "$host_cpu" = m68k; then
+  case $host_cpu in
+  powerpc)
+    # Since July 2007 AmigaOS4 officially supports .so libraries.
+    # When compiling the executable, add -use-dynld -Lsobjs: to the compileline.
+    library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
+    ;;
+  m68k)
     library_names_spec='$libname.ixlibrary $libname.a'
     # Create ${libname}_ixlibrary.a entries in /sys/libs.
     finish_eval='for lib in `ls $libdir/*.ixlibrary 2>/dev/null`; do libname=`$ECHO "X$lib" | $Xsed -e '\''s%^.*/\([^/]*\)\.ixlibrary$%\1%'\''`; test $RM /sys/libs/${libname}_ixlibrary.a; $show "cd /sys/libs && $LN_S $lib ${libname}_ixlibrary.a"; cd /sys/libs && $LN_S $lib ${libname}_ixlibrary.a || exit 1; done'
-  else
-    dynamic_linker=no
-  fi
+    ;;
+  esac
   ;;
 
 beos*)
@@ -10506,14 +10952,14 @@ bsdi[45]*)
   # libtool to hard-code these into programs
   ;;
 
-cygwin* | mingw* | pw32*)
+cygwin* | mingw* | pw32* | cegcc*)
   version_type=windows
   shrext_cmds=".dll"
   need_version=no
   need_lib_prefix=no
 
   case $GCC,$host_os in
-  yes,cygwin* | yes,mingw* | yes,pw32*)
+  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
     library_names_spec='$libname.dll.a'
     # DLL is installed to $(libdir)/../bin by postinstall_cmds
     postinstall_cmds='base_file=`basename \${file}`~
@@ -10536,7 +10982,7 @@ cygwin* | mingw* | pw32*)
       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
       sys_lib_search_path_spec="/usr/lib /lib/w32api /lib /usr/local/lib"
       ;;
-    mingw*)
+    mingw* | cegcc*)
       # MinGW DLLs use traditional 'lib' prefix
       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
       sys_lib_search_path_spec=`$CC -print-search-dirs | $GREP "^libraries:" | $SED -e "s/^libraries://" -e "s,=/,/,g"`
@@ -11009,7 +11455,7 @@ tpf*)
   version_type=linux
   need_lib_prefix=no
   need_version=no
-  library_name_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
   shlibpath_var=LD_LIBRARY_PATH
   shlibpath_overrides_runpath=no
   hardcode_into_libs=yes
@@ -11186,7 +11632,7 @@ else
     lt_cv_dlopen_self=yes
     ;;
 
-  mingw* | pw32*)
+  mingw* | pw32* | cegcc*)
     lt_cv_dlopen="LoadLibrary"
     lt_cv_dlopen_libs=
     ;;
@@ -11771,7 +12217,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11774 "configure"
+#line 12220 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11812,10 +12258,6 @@ else
 #  endif
 #endif
 
-#ifdef __cplusplus
-extern "C" void exit (int);
-#endif
-
 void fnord() { int i=42;}
 int main ()
 {
@@ -11831,7 +12273,7 @@ int main ()
   else
     puts (dlerror ());
 
-    exit (status);
+  return status;
 }
 _LT_EOF
   if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
@@ -11871,7 +12313,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11874 "configure"
+#line 12316 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11912,10 +12354,6 @@ else
 #  endif
 #endif
 
-#ifdef __cplusplus
-extern "C" void exit (int);
-#endif
-
 void fnord() { int i=42;}
 int main ()
 {
@@ -11931,7 +12369,7 @@ int main ()
   else
     puts (dlerror ());
 
-    exit (status);
+  return status;
 }
 _LT_EOF
   if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
@@ -12453,6 +12891,7 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
           fi
         fi
 
+        export_dynamic_flag_spec_CXX='${wl}-bexpall'
         # It seems that -bexpall does not export symbols beginning with
         # underscore (_), so it is better to generate a list of symbols to
 	# export.
@@ -12631,7 +13070,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
         esac
         ;;
 
-      cygwin* | mingw* | pw32*)
+      cygwin* | mingw* | pw32* | cegcc*)
         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
         # as there is no search path for DLLs.
         hardcode_libdir_flag_spec_CXX='-L$libdir'
@@ -12664,7 +13103,11 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
   whole_archive_flag_spec_CXX=''
   link_all_deplibs_CXX=yes
   allow_undefined_flag_CXX="$_lt_dar_allow_undefined"
-  if test "$GCC" = "yes"; then
+  case $cc_basename in
+     ifort*) _lt_dar_can_shared=yes ;;
+     *) _lt_dar_can_shared=$GCC ;;
+  esac
+  if test "$_lt_dar_can_shared" = "yes"; then
     output_verbose_link_cmd=echo
     archive_cmds_CXX="\$CC -dynamiclib \$allow_undefined_flag -o \$lib \$libobjs \$deplibs \$compiler_flags -install_name \$rpath/\$soname \$verstring $_lt_dar_single_mod${_lt_dsymutil}"
     module_cmds_CXX="\$CC \$allow_undefined_flag -o \$lib -bundle \$libobjs \$deplibs \$compiler_flags${_lt_dsymutil}"
@@ -13562,18 +14005,26 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
 	lt_prog_compiler_static_CXX='-Bstatic'
       fi
       ;;
+
     amigaos*)
-      if test "$host_cpu" = m68k; then
-        # FIXME: we need at least 68020 code to build shared libraries, but
-        # adding the `-m68020' flag to GCC prevents building anything better,
-        # like `-m68040'.
-        lt_prog_compiler_pic_CXX='-m68020 -resident32 -malways-restore-a4'
-      fi
+      case $host_cpu in
+      powerpc)
+            # see comment about AmigaOS4 .so support
+            lt_prog_compiler_pic_CXX='-fPIC'
+        ;;
+      m68k)
+            # FIXME: we need at least 68020 code to build shared libraries, but
+            # adding the `-m68020' flag to GCC prevents building anything better,
+            # like `-m68040'.
+            lt_prog_compiler_pic_CXX='-m68020 -resident32 -malways-restore-a4'
+        ;;
+      esac
       ;;
+
     beos* | irix5* | irix6* | nonstopux* | osf3* | osf4* | osf5*)
       # PIC is the default for these OSes.
       ;;
-    mingw* | cygwin* | os2* | pw32*)
+    mingw* | cygwin* | os2* | pw32* | cegcc*)
       # This hack is so that the source file can tell whether it is being
       # built for inclusion in a dll (and should export symbols for example).
       # Although the cygwin gcc ignores -fPIC, still need this for old-style
@@ -13599,10 +14050,11 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
       fi
       ;;
     hpux*)
-      # PIC is the default for IA64 HP-UX and 64-bit HP-UX, but
-      # not for PA HP-UX.
+      # PIC is the default for 64-bit PA HP-UX, but not for 32-bit
+      # PA HP-UX.  On IA64 HP-UX, PIC is the default but the pic flag
+      # sets the default TLS model and affects inlining.
       case $host_cpu in
-      hppa*64*|ia64*)
+      hppa*64*)
 	;;
       *)
 	lt_prog_compiler_pic_CXX='-fPIC'
@@ -13700,10 +14152,17 @@ $as_echo_n "checking for $compiler option to produce PIC... " >&6; }
 	    lt_prog_compiler_wl_CXX='--backend -Wl,'
 	    lt_prog_compiler_pic_CXX='-fPIC'
 	    ;;
-	  icpc* | ecpc* )
-	    # Intel C++
+	  ecpc* )
+	    # old Intel C++ for x86_64 which still supported -KPIC.
 	    lt_prog_compiler_wl_CXX='-Wl,'
 	    lt_prog_compiler_pic_CXX='-KPIC'
+	    lt_prog_compiler_static_CXX='-static'
+	    ;;
+	  icpc* )
+	    # Intel C++, used to be incompatible with GCC.
+	    # ICC 10 doesn't accept -KPIC any more.
+	    lt_prog_compiler_wl_CXX='-Wl,'
+	    lt_prog_compiler_pic_CXX='-fPIC'
 	    lt_prog_compiler_static_CXX='-static'
 	    ;;
 	  pgCC* | pgcpp*)
@@ -13874,11 +14333,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13877: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14336: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13881: \$? = $ac_status" >&5
+   echo "$as_me:14340: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13973,11 +14432,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13976: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14435: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13980: \$? = $ac_status" >&5
+   echo "$as_me:14439: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14025,11 +14484,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14028: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14487: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14032: \$? = $ac_status" >&5
+   echo "$as_me:14491: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14098,7 +14557,7 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   pw32*)
     export_symbols_cmds_CXX="$ltdll_cmds"
   ;;
-  cygwin* | mingw*)
+  cygwin* | mingw* | cegcc*)
     export_symbols_cmds_CXX='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[BCDGRS][ ]/s/.*[ ]\([^ ]*\)/\1 DATA/;/^.*[ ]__nm__/s/^.*[ ]__nm__\([^ ]*\)[ ][^ ]*/\1 DATA/;/^I[ ]/d;/^[AITW][ ]/s/.* //'\'' | sort | uniq > $export_symbols'
   ;;
   *)
@@ -14322,13 +14781,18 @@ aix[4-9]*)
   ;;
 
 amigaos*)
-  if test "$host_cpu" = m68k; then
+  case $host_cpu in
+  powerpc)
+    # Since July 2007 AmigaOS4 officially supports .so libraries.
+    # When compiling the executable, add -use-dynld -Lsobjs: to the compileline.
+    library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
+    ;;
+  m68k)
     library_names_spec='$libname.ixlibrary $libname.a'
     # Create ${libname}_ixlibrary.a entries in /sys/libs.
     finish_eval='for lib in `ls $libdir/*.ixlibrary 2>/dev/null`; do libname=`$ECHO "X$lib" | $Xsed -e '\''s%^.*/\([^/]*\)\.ixlibrary$%\1%'\''`; test $RM /sys/libs/${libname}_ixlibrary.a; $show "cd /sys/libs && $LN_S $lib ${libname}_ixlibrary.a"; cd /sys/libs && $LN_S $lib ${libname}_ixlibrary.a || exit 1; done'
-  else
-    dynamic_linker=no
-  fi
+    ;;
+  esac
   ;;
 
 beos*)
@@ -14351,14 +14815,14 @@ bsdi[45]*)
   # libtool to hard-code these into programs
   ;;
 
-cygwin* | mingw* | pw32*)
+cygwin* | mingw* | pw32* | cegcc*)
   version_type=windows
   shrext_cmds=".dll"
   need_version=no
   need_lib_prefix=no
 
   case $GCC,$host_os in
-  yes,cygwin* | yes,mingw* | yes,pw32*)
+  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
     library_names_spec='$libname.dll.a'
     # DLL is installed to $(libdir)/../bin by postinstall_cmds
     postinstall_cmds='base_file=`basename \${file}`~
@@ -14381,7 +14845,7 @@ cygwin* | mingw* | pw32*)
       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
       sys_lib_search_path_spec="/usr/lib /lib/w32api /lib /usr/local/lib"
       ;;
-    mingw*)
+    mingw* | cegcc*)
       # MinGW DLLs use traditional 'lib' prefix
       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
       sys_lib_search_path_spec=`$CC -print-search-dirs | $GREP "^libraries:" | $SED -e "s/^libraries://" -e "s,=/,/,g"`
@@ -14853,7 +15317,7 @@ tpf*)
   version_type=linux
   need_lib_prefix=no
   need_version=no
-  library_name_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
   shlibpath_var=LD_LIBRARY_PATH
   shlibpath_overrides_runpath=no
   hardcode_into_libs=yes
@@ -20315,6 +20779,7 @@ lt_SP2NL='`$ECHO "X$lt_SP2NL" | $Xsed -e "$delay_single_quote_subst"`'
 lt_NL2SP='`$ECHO "X$lt_NL2SP" | $Xsed -e "$delay_single_quote_subst"`'
 reload_flag='`$ECHO "X$reload_flag" | $Xsed -e "$delay_single_quote_subst"`'
 reload_cmds='`$ECHO "X$reload_cmds" | $Xsed -e "$delay_single_quote_subst"`'
+OBJDUMP='`$ECHO "X$OBJDUMP" | $Xsed -e "$delay_single_quote_subst"`'
 deplibs_check_method='`$ECHO "X$deplibs_check_method" | $Xsed -e "$delay_single_quote_subst"`'
 file_magic_cmd='`$ECHO "X$file_magic_cmd" | $Xsed -e "$delay_single_quote_subst"`'
 AR='`$ECHO "X$AR" | $Xsed -e "$delay_single_quote_subst"`'
@@ -20344,6 +20809,9 @@ lt_cv_prog_compiler_c_o='`$ECHO "X$lt_cv_prog_compiler_c_o" | $Xsed -e "$delay_s
 need_locks='`$ECHO "X$need_locks" | $Xsed -e "$delay_single_quote_subst"`'
 DSYMUTIL='`$ECHO "X$DSYMUTIL" | $Xsed -e "$delay_single_quote_subst"`'
 NMEDIT='`$ECHO "X$NMEDIT" | $Xsed -e "$delay_single_quote_subst"`'
+LIPO='`$ECHO "X$LIPO" | $Xsed -e "$delay_single_quote_subst"`'
+OTOOL='`$ECHO "X$OTOOL" | $Xsed -e "$delay_single_quote_subst"`'
+OTOOL64='`$ECHO "X$OTOOL64" | $Xsed -e "$delay_single_quote_subst"`'
 libext='`$ECHO "X$libext" | $Xsed -e "$delay_single_quote_subst"`'
 shrext_cmds='`$ECHO "X$shrext_cmds" | $Xsed -e "$delay_single_quote_subst"`'
 extract_expsyms_cmds='`$ECHO "X$extract_expsyms_cmds" | $Xsed -e "$delay_single_quote_subst"`'
@@ -20470,6 +20938,7 @@ LN_S \
 lt_SP2NL \
 lt_NL2SP \
 reload_flag \
+OBJDUMP \
 deplibs_check_method \
 file_magic_cmd \
 AR \
@@ -20493,6 +20962,9 @@ lt_cv_prog_compiler_c_o \
 need_locks \
 DSYMUTIL \
 NMEDIT \
+LIPO \
+OTOOL \
+OTOOL64 \
 shrext_cmds \
 export_dynamic_flag_spec \
 whole_archive_flag_spec \
@@ -21438,7 +21910,7 @@ done
 #! $SHELL
 
 # `$ECHO "$ofile" | sed 's%^.*/%%'` - Provide generalized library-building support services.
-# Generated automatically by $as_me (GNU $PACKAGE$TIMESTAMP) $VERSION
+# Generated automatically by $as_me ($PACKAGE$TIMESTAMP) $VERSION
 # Libtool was configured on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
@@ -21544,6 +22016,9 @@ NL2SP=$lt_lt_NL2SP
 reload_flag=$lt_reload_flag
 reload_cmds=$lt_reload_cmds
 
+# An object symbol dumper.
+OBJDUMP=$lt_OBJDUMP
+
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method=$lt_deplibs_check_method
 
@@ -21600,6 +22075,15 @@ DSYMUTIL=$lt_DSYMUTIL
 
 # Tool to change global to local symbols on Mac OS X.
 NMEDIT=$lt_NMEDIT
+
+# Tool to manipulate fat objects and archives on Mac OS X.
+LIPO=$lt_LIPO
+
+# ldd/readelf like tool for Mach-O binaries on Mac OS X.
+OTOOL=$lt_OTOOL
+
+# ldd/readelf like tool for 64 bit Mach-O binaries on Mac OS X 10.4.
+OTOOL64=$lt_OTOOL64
 
 # Old archive suffix (normally "a").
 libext=$libext
@@ -21855,6 +22339,7 @@ ltmain="$ac_aux_dir/ltmain.sh"
   case $xsi_shell in
   yes)
     cat << \_LT_EOF >> "$cfgfile"
+
 # func_dirname file append nondir_replacement
 # Compute the dirname of FILE.  If nonempty, add APPEND to the result,
 # otherwise set result to NONDIR_REPLACEMENT.
@@ -21922,10 +22407,31 @@ func_lo2o ()
     *)    func_lo2o_result=${1} ;;
   esac
 }
+
+# func_xform libobj-or-source
+func_xform ()
+{
+  func_xform_result=${1%.*}.lo
+}
+
+# func_arith arithmetic-term...
+func_arith ()
+{
+  func_arith_result=$(( $* ))
+}
+
+# func_len string
+# STRING may not start with a hyphen.
+func_len ()
+{
+  func_len_result=${#1}
+}
+
 _LT_EOF
     ;;
   *) # Bourne compatible functions.
     cat << \_LT_EOF >> "$cfgfile"
+
 # func_dirname file append nondir_replacement
 # Compute the dirname of FILE.  If nonempty, add APPEND to the result,
 # otherwise set result to NONDIR_REPLACEMENT.
@@ -21946,29 +22452,6 @@ func_basename ()
   func_basename_result=`$ECHO "X${1}" | $Xsed -e "$basename"`
 }
 
-# func_dirname_and_basename file append nondir_replacement
-# perform func_basename and func_dirname in a single function
-# call:
-#   dirname:  Compute the dirname of FILE.  If nonempty,
-#             add APPEND to the result, otherwise set result
-#             to NONDIR_REPLACEMENT.
-#             value returned in "$func_dirname_result"
-#   basename: Compute filename of FILE.
-#             value retuned in "$func_basename_result"
-# Implementation must be kept synchronized with func_dirname
-# and func_basename. For efficiency, we do not delegate to
-# those functions but instead duplicate the functionality here.
-func_dirname_and_basename ()
-{
-  # Extract subdirectory from the argument.
-  func_dirname_result=`$ECHO "X${1}" | $Xsed -e "$dirname"`
-  if test "X$func_dirname_result" = "X${1}"; then
-    func_dirname_result="${3}"
-  else
-    func_dirname_result="$func_dirname_result${2}"
-  fi
-  func_basename_result=`$ECHO "X${1}" | $Xsed -e "$basename"`
-}
 
 # func_stripname prefix suffix name
 # strip PREFIX and SUFFIX off of NAME.
@@ -22002,6 +22485,26 @@ func_lo2o ()
 {
   func_lo2o_result=`$ECHO "X${1}" | $Xsed -e "$lo2o"`
 }
+
+# func_xform libobj-or-source
+func_xform ()
+{
+  func_xform_result=`$ECHO "X${1}" | $Xsed -e 's/\.[^.]*$/.lo/'`
+}
+
+# func_arith arithmetic-term...
+func_arith ()
+{
+  func_arith_result=`expr "$@"`
+}
+
+# func_len string
+# STRING may not start with a hyphen.
+func_len ()
+{
+  func_len_result=`expr "$1" : ".*" 2>/dev/null || echo $max_cmd_len`
+}
+
 _LT_EOF
 esac
 
@@ -22026,6 +22529,7 @@ func_append ()
 {
   eval "$1=\$$1\$2"
 }
+
 _LT_EOF
     ;;
   esac
