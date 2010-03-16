@@ -285,6 +285,7 @@ tools/tr2latex/Makefile
 examples/Makefile 
 hobbitd/Makefile
 package-sources/rpm/hobbit.spec:package-sources/rpm/hobbit.spec.in
+client/clientversion.cfg:client/clientversion.cfg.in
 ])
 
 
