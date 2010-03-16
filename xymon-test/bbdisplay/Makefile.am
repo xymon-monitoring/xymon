@@ -9,9 +9,12 @@ bin_PROGRAMS = bbgen
 bbgen_SOURCES = bbgen.c loadbbhosts.c loaddata.c bbconvert.c pagegen.c process.c wmlgen.c rssgen.c util.c debug.c csvreport.c
 
 
+bbgen_LDADD = ../lib/libxymon.la
 
-if ON_OPENSOLARIS
-bbgen_LDADD = ../lib/libxymon.la -lz
+if ON_DARWIN
+bbgen_LDADD += -lz
 else
-bbgen_LDADD = ../lib/libxymon.la -lrt -lz
+bbgen_LDADD += -lrt -lz
 endif
+
+

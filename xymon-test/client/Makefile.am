@@ -24,10 +24,11 @@ msgcache_SOURCES = msgcache.c
 
 
 
+
+msgcache_LDADD = ../lib/libxymonclient.la  
 if ON_OPENSOLARIS
-msgcache_LDADD = -lz ../lib/libxymonclient.la  
+msgcache_LDADD += -lrt -lz 
 else
-msgcache_LDADD = -lrt -lz ../lib/libxymonclient.la  
 endif
 
 

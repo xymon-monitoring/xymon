@@ -198,7 +198,6 @@ AC_CHECK_LIB(rrd,rrd_clear_error)
 
 # check opensolaris
 AC_CHECK_HEADER([/usr/include/pcre/pcre.h],[on_opensolaris=no])
-#AM_CONDITIONAL([ON_OPENSOLARIS],[test "$on_opensolaris"=yes])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
