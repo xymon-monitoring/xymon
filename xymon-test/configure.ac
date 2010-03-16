@@ -137,7 +137,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 
 # Opensoalris doesn't have autopoint in it's gettext implementation.
 #
-#AM_GNoU_GETTEXT_VERSION([0.17])
+#AM_GNU_GETTEXT_VERSION([0.17])
 #AM_GNU_GETTEXT([external])
 #
 AC_CONFIG_MACRO_DIR([m4])
@@ -153,7 +153,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
-# AC_PROG_RANLIB
+AC_PROG_RANLIB
 
 # We want to use libtool for compiling and linking 
 

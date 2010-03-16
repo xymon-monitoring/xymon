@@ -17,14 +17,12 @@ hobbitfetch hobbit-mailack trimhistory bbcombotest convertnk rrdcachectl
 hobbitd_SOURCES = hobbitd.c hobbitd_buffer.c hobbitd_ipc.c
 hobbitd_SOURCES += hobbitd_buffer.h  hobbitd_ipc.h  hobbitd_rrd.h hobbitd_worker.h
 
-
-# if ON_OPENSOLARIS
-# hobbitd_LDADD = -lrrd ../lib/libxymon.la -lz 
-# else 
-# hobbitd_LDADD = -lrrd ../lib/libxymon.la -lrt -lz
-# hobbitd_LDADD += -lsocket -lnsl
-# endif
 hobbitd_LDADD = -lrrd ../lib/libxymon.la -lz 
+
+if ON_OPENSOLARIS
+hobbitd_LDADD += -L/usr/lib -lrrd
+endif
+
 
 hobbitd_channel_SOURCES = hobbitd_channel.c hobbitd_buffer.c hobbitd_ipc.c
 hobbitd_channel_LDADD = ../lib/libxymon.la
@@ -54,6 +52,10 @@ if ON_DARWIN
     hobbitd_rrd_LDADD += -lrrd 
 endif 
 
+if ON_OPENSOLARIS
+    LDFLAGS +=-L/usr/lib 
+    hobbitd_rrd_LDADD += -lrrd 
+endif 
 
 
 
