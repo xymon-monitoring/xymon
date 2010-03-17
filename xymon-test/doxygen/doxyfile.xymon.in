@@ -138,7 +138,7 @@ FILE_PATTERNS          = *.c \
                          *.mm \
                          *.dox \
                          *.py
-RECURSIVE              = NO
+RECURSIVE              = YES 
 EXCLUDE                = 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
@@ -284,4 +284,4 @@ DOT_CLEANUP            = YES
 #---------------------------------------------------------------------------
 # Configuration::additions related to the search engine   
 #---------------------------------------------------------------------------
-SEARCHENGINE           = NO
+SEARCHENGINE           = YES 
