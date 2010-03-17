@@ -1,34 +1,39 @@
-#-------------------------------------------------------------------------
-# Desc:	Doxyfile 1.4.6
-# Tabs:	3
-#
-# Copyright (c) 2007 Novell, Inc. All Rights Reserved.
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; version 2.1
-# of the License.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, contact Novell, Inc.
-#
-# To contact Novell about this file by physical or electronic mail, 
-# you may find current contact information at www.novell.com.
-#
-# $Id$
-#-------------------------------------------------------------------------
+#----------------------------------------------------------------------------#
+#     G N U    A U T O T O O L     S P E C I F I C A T I O N                 #
+#----------------------------------------------------------------------------#
+#                                                                            #
+# NAME                                                                       # 
+# doxfile.xymon.in                                                           #
+#                                                                            #
+# REVISION HISTORY                                                           #
+#     03/04/2010    T.J. Yang                                                #
+#                                                                            #
+#                                                                            #
+# USAGE                                                                      #
+#   put doxyfile.xymon.in in configure.ac to generate doxyfile.xymon.conf    #
+#   then use doxygen to generate html,latex(pdf) or RTF                      #
+#                                                                            #
+# DESCRIPTION                                                                #
+# doxyfile.xymon.in has some variables started circled with "@name@          #
+# Those variables will be replaced with when you run ./configure             #
+#                                                                            #
+# LICENSE                                                                    #
+#                                                                            #
+# This program is released under the GNU General Public License (GPL),       #
+# version 2. See the file "COPYING" for details.                             #
+#                                                                            #
+#                                                                            #
+# COPYRIGHT                                                                  #
+#                                                                            #
+#                                                                            #
+#----------------------------------------------------------------------------#
 
 #---------------------------------------------------------------------------
 # Project related configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = @PACKAGE_NAME@
 PROJECT_NUMBER         = @PACKAGE_VERSION@ 
-OUTPUT_DIRECTORY       = .
+OUTPUT_DIRECTORY       = /var/www/html/doxygen.out/xymon-sandbox
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
 USE_WINDOWS_ENCODING   = YES
@@ -105,7 +110,7 @@ WARN_LOGFILE           = doxywarn.txt
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = src/flaim.h
+INPUT                  = /home/tjyang/hobbitmon/sandbox/xymon-test
 FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \
