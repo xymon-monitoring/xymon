@@ -286,6 +286,7 @@ examples/Makefile
 hobbitd/Makefile
 package-sources/rpm/hobbit.spec:package-sources/rpm/hobbit.spec.in
 client/clientversion.cfg:client/clientversion.cfg.in
+doxygen/doxyfile.xymon.conf:doxygen/doxyfile.xymon.in
 ])
 
 
