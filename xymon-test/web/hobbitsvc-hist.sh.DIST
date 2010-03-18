@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the wrapper for hobbitsvc.cgi when viewing a 
-# a historical logfile.
-
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi $CGI_SVCHIST_OPTS --historical
-

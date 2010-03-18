@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is the Hobbit wrapper for the hostgraphs CGI
-
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-hostgraphs.cgi $CGI_HOSTGRAPHS_OPTS
-
