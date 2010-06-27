@@ -1,0 +1,156 @@
+top - 14:09:26 up 26 days, 13:28,  2 users,  load average: 0.17, 0.20, 0.27
+Tasks: 148 total,   2 running, 145 sleeping,   0 stopped,   1 zombie
+Cpu(s):  1.7%us,  0.3%sy,  1.0%ni, 96.7%id,  0.3%wa,  0.0%hi,  0.0%si,  0.0%st
+Mem:   1555860k total,  1500132k used,    55728k free,    45216k buffers
+Swap:  1004020k total,    17684k used,   986336k free,  1205916k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND                                                               
+    1 root      16   0  1764  532  448 S  0.0  0.0   0:01.53 init                                                                  
+    2 root      RT   0     0    0    0 S  0.0  0.0   0:00.00 migration/0                                                           
+    3 root      34  19     0    0    0 S  0.0  0.0   0:00.24 ksoftirqd/0                                                           
+    4 root      RT   0     0    0    0 S  0.0  0.0   0:00.00 watchdog/0                                                            
+    5 root      10  -5     0    0    0 S  0.0  0.0   0:05.43 events/0                                                              
+    6 root      10  -5     0    0    0 S  0.0  0.0   0:00.01 khelper                                                               
+    7 root      10  -5     0    0    0 S  0.0  0.0   0:00.01 kthread                                                               
+    9 root      10  -5     0    0    0 S  0.0  0.0   0:01.89 kblockd/0                                                             
+   10 root      20  -5     0    0    0 S  0.0  0.0   0:00.00 kacpid                                                                
+   11 root      20  -5     0    0    0 S  0.0  0.0   0:00.00 kacpi_notify                                                          
+  124 root      10  -5     0    0    0 S  0.0  0.0   0:00.00 kseriod                                                               
+  157 root      15   0     0    0    0 S  0.0  0.0   0:21.02 pdflush                                                               
+  159 root      15   0     0    0    0 S  0.0  0.0   0:27.35 kswapd0                                                               
+  160 root      19  -5     0    0    0 S  0.0  0.0   0:00.00 aio/0                                                                 
+ 1715 root      14  -5     0    0    0 S  0.0  0.0   0:00.00 ata/0                                                                 
+ 1795 root      16  -5     0    0    0 S  0.0  0.0   0:00.00 scsi_eh_0                                                             
+ 1796 root      16  -5     0    0    0 S  0.0  0.0   0:00.00 scsi_eh_1                                                             
+ 1825 root      10  -5     0    0    0 S  0.0  0.0   0:00.00 khubd                                                                 
+ 1838 root      10  -5     0    0    0 S  0.0  0.0   0:00.00 khpsbpkt                                                              
+ 1854 root      15   0     0    0    0 S  0.0  0.0   0:00.00 knodemgrd_0                                                           
+ 1982 root      10  -5     0    0    0 S  0.0  0.0   0:02.08 reiserfs/0                                                            
+ 2064 root      15   0  1728  544  468 S  0.0  0.0   0:00.00 logd                                                                  
+ 2228 root      12  -4  2736 1260  452 S  0.0  0.1   0:01.00 udevd                                                                 
+ 2960 root      13  -5     0    0    0 S  0.0  0.0   0:00.00 shpchpd                                                               
+ 3044 root      16  -5     0    0    0 S  0.0  0.0   0:00.00 kpsmoused                                                             
+ 3455 dhcp      14  -2  2520  840  504 S  0.0  0.1   0:00.09 dhclient3                                                             
+ 3791 daemon    15   0  1704  388  292 S  0.0  0.0   0:00.03 portmap                                                               
+ 3970 root      16   0  2672 1172  908 S  0.0  0.1   0:00.01 login                                                                 
+ 3971 root      16   0  1600  508  432 S  0.0  0.0   0:00.00 getty                                                                 
+ 3972 root      16   0  1600  508  432 S  0.0  0.0   0:00.00 getty                                                                 
+ 3973 root      16   0  1596  500  432 S  0.0  0.0   0:00.00 getty                                                                 
+ 3974 root      16   0  1596  504  432 S  0.0  0.0   0:00.00 getty                                                                 
+ 3975 root      16   0  1600  508  432 S  0.0  0.0   0:00.00 getty                                                                 
+ 4179 root      16   0  2200 1156  640 S  0.0  0.1   0:00.00 acpid                                                                 
+ 4305 root      15   0  1720  508  420 S  0.0  0.0   1:19.87 dd                                                                    
+ 4307 klog      16   0  2408 1288  384 S  0.0  0.1   0:17.28 klogd                                                                 
+ 4326 messageb  15   0  2176  856  640 S  0.0  0.1   0:01.24 dbus-daemon                                                           
+ 4341 haldaemo  16   0  7088 5556 1648 S  0.0  0.4   0:03.98 hald                                                                  
+ 4342 root      17   0  2912 1064  896 S  0.0  0.1   0:00.04 hald-runner                                                           
+ 4348 haldaemo  25   0  2020  804  692 S  0.0  0.1   0:00.00 hald-addon-acpi                                                       
+ 4355 haldaemo  15   0  2020  808  692 S  0.0  0.1   0:09.20 hald-addon-keyb                                                       
+ 4365 haldaemo  16   0  2028  916  788 S  0.0  0.1   0:19.21 hald-addon-stor                                                       
+ 4402 root      15   0  4176 1624 1168 S  0.0  0.1   0:00.98 openvpn                                                               
+ 4466 root      20   0 21924 2528 1448 S  0.0  0.2   0:00.00 slapd                                                                 
+ 4495 root      16   0  5584 2272 2056 S  0.0  0.1   0:01.03 apt-index-watch                                                       
+ 4646 root      16   0  1744  680  560 S  0.0  0.0   0:00.02 automount                                                             
+ 4654 root      16   0  1748  688  560 S  0.0  0.0   0:00.04 automount                                                             
+ 4709 root      25   0  1640  504  424 S  0.0  0.0   0:00.00 inetd                                                                 
+ 4726 ivman     16   0  4632 1640 1224 S  0.0  0.1   0:00.16 ivman                                                                 
+ 4767 root      10  -5     0    0    0 S  0.0  0.0   0:00.00 nfsd4                                                                 
+ 4768 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4769 root      25   0     0    0    0 S  0.0  0.0   0:00.00 lockd                                                                 
+ 4770 root      10  -5     0    0    0 S  0.0  0.0   0:30.16 rpciod/0                                                              
+ 4771 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4772 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4773 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4774 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4775 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4776 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4777 root      15   0     0    0    0 S  0.0  0.0   0:00.00 nfsd                                                                  
+ 4781 root      25   0  1788  284  176 S  0.0  0.0   0:00.00 rpc.mountd                                                            
+ 4857 root      15   0  4796 1620 1300 S  0.0  0.1   0:00.72 master                                                                
+ 4859 postfix   15   0  4844 1700 1372 S  0.0  0.1   0:00.21 qmgr                                                                  
+ 4893 root      16   0  4936 1064  728 S  0.0  0.1   0:00.02 sshd                                                                  
+ 4972 root      16   0  2684  660  520 S  0.0  0.0   0:00.00 kdm                                                                   
+ 4986 statd     15   0  1744  720  612 S  0.0  0.0   0:00.08 rpc.statd                                                             
+ 5009 root      25   0  2068  708  612 S  0.0  0.0   0:00.00 hcid                                                                  
+ 5015 root      25   0  1668  496  428 S  0.0  0.0   0:00.00 sdpd                                                                  
+ 5026 root      24   0  1828  468  384 S  0.0  0.0   0:00.00 hidd                                                                  
+ 5033 root      10 -10     0    0    0 S  0.0  0.0   0:00.00 krfcommd                                                              
+ 5046 root      15   0  1716  300  236 S  0.0  0.0   0:00.00 mdadm                                                                 
+ 5081 daemon    16   0  1852  468  348 S  0.0  0.0   0:00.00 atd                                                                   
+ 5111 root      16   0  2192  856  684 S  0.0  0.1   0:00.39 cron                                                                  
+ 5179 root      19   0  1452  164  104 S  0.0  0.0   0:00.00 vmnet-bridge                                                          
+ 5876 henrik    15   0  2564  444  288 S  0.0  0.0   0:00.15 gpg-agent                                                             
+ 5976 henrik    16   0  2684  464  340 S  0.0  0.0   0:00.00 axnet                                                                 
+17872 henrik    15   0  2560  444  288 S  0.0  0.0   0:00.13 gpg-agent                                                             
+ 3469 root      15   0     0    0    0 S  0.0  0.0   0:20.02 pdflush                                                               
+32003 hobbit    16   0  1908  444  348 S  0.0  0.0   0:05.14 hobbitlaunch                                                          
+32004 hobbit    16   0  4992 1324  844 S  0.0  0.1   0:17.56 hobbitd                                                               
+32005 hobbit    16   0  2176  540  444 S  0.0  0.0   0:00.00 hobbitd_channel                                                       
+32006 hobbit    16   0  2436  588  468 S  0.0  0.0   0:00.00 hobbitd_channel                                                       
+32007 hobbit    16   0  2176  604  504 S  0.0  0.0   0:00.41 hobbitd_channel                                                       
+32008 hobbit    15   0  2180  548  448 S  0.0  0.0   0:02.05 hobbitd_channel                                                       
+32009 hobbit    15   0  2176  512  432 S  0.0  0.0   0:00.21 hobbitd_channel                                                       
+32010 hobbit    15   0  2432  600  476 S  0.0  0.0   0:02.93 hobbitd_channel                                                       
+32015 hobbit    16   0  2320  696  508 S  0.0  0.0   0:00.03 hobbitd_history                                                       
+32016 hobbit    16   0  3896 1528  800 S  0.0  0.1   0:19.16 hobbitd_rrd                                                           
+32062 hobbit    16   0  2872 1480  712 S  0.0  0.1   0:01.24 hobbitd_client                                                        
+32063 hobbit    15   0  3896 1580  844 S  0.0  0.1   0:08.32 hobbitd_rrd                                                           
+32081 hobbit    16   0  2184  664  400 S  0.0  0.0   0:00.00 hobbitd_hostdat                                                       
+20945 henrik    15   0  2564  444  288 S  0.0  0.0   0:00.06 gpg-agent                                                             
+27371 root      16   0  407m  17m 7860 S  0.0  1.2   0:07.24 java                                                                  
+12564 henrik    16   0  3688 2044 1328 S  0.0  0.1   0:00.00 bash                                                                  
+ 4352 henrik    15   0  2564  444  288 S  0.0  0.0   0:00.04 gpg-agent                                                             
+10421 cupsys    25  10  4568 2032 1484 S  0.0  0.1   0:00.02 cupsd                                                                 
+24441 root      25  10  7984 2424 1504 S  0.0  0.2   0:00.03 apache2                                                               
+24442 www-data  25  10  7776 1796  872 S  0.0  0.1   0:00.04 apache2                                                               
+24443 www-data  34  10  224m 3624 1520 S  0.0  0.2   0:00.22 apache2                                                               
+24455 www-data  33  10  224m 3916 1564 S  0.0  0.3   0:00.19 apache2                                                               
+24540 root      25  10  2960  724  536 S  0.0  0.0   0:00.03 dirmngr                                                               
+24678 root      25  10  1648  572  460 S  0.0  0.0   0:00.07 syslogd                                                               
+29276 postfix   16   0  4808 1572 1272 S  0.0  0.1   0:00.00 pickup                                                                
+30177 hobbit    15   0  2424 1004  552 S  0.0  0.1   0:00.01 hobbitd_alert                                                         
+30326 root      15   0  150m  51m 5720 S  0.0  3.4   1:16.79 Xorg                                                                  
+30327 root      16   0  3660 1412 1108 S  0.0  0.1   0:00.00 kdm                                                                   
+30336 henrik    16   0  3312 1608 1112 S  0.0  0.1   0:00.08 startkde                                                              
+30407 henrik    15   0  2564  448  288 S  0.0  0.0   0:00.00 gpg-agent                                                             
+30416 henrik    15   0  4480  728  456 S  0.0  0.0   0:00.00 ssh-agent                                                             
+30417 henrik    15   0  4480  724  456 S  0.0  0.0   0:00.00 ssh-agent                                                             
+30420 henrik    16   0  2532  628  500 S  0.0  0.0   0:00.00 dbus-launch                                                           
+30421 henrik    24   0  2056  428  340 S  0.0  0.0   0:00.00 dbus-daemon                                                           
+30452 henrik    16   0  1448  140   80 S  0.0  0.0   0:00.00 start_kdeinit                                                         
+30453 henrik    16   0 24320 7692 6012 S  0.0  0.5   0:00.20 kdeinit                                                               
+30456 henrik    15   0 23856 3008 1736 S  0.0  0.2   0:00.06 dcopserver                                                            
+30458 henrik    15   0 26016 8732 7376 S  0.0  0.6   0:00.11 klauncher                                                             
+30460 henrik    15   0 30340  13m  11m S  0.0  0.9   0:00.83 kded                                                                  
+30466 henrik    15   0  1584  356  288 S  0.0  0.0   0:00.00 kwrapper                                                              
+30468 henrik    15   0 25568 9880 7884 S  0.0  0.6   0:00.10 ksmserver                                                             
+30469 henrik    15   0 28012  13m  10m S  0.0  0.9   0:02.76 kwin                                                                  
+30471 henrik    15   0 29840  15m  12m S  0.0  1.0   0:01.46 kdesktop                                                              
+30473 henrik    15   0 32264  17m  13m S  0.0  1.1   0:03.21 kicker                                                                
+30477 henrik    15   0 26460 8720 6788 S  0.0  0.6   0:00.05 kio_file                                                              
+30480 henrik   -51   0 21244 7724 5532 S  0.0  0.5   0:01.18 artsd                                                                 
+30489 henrik    15   0 25324 9536 7576 S  0.0  0.6   0:00.21 kaccess                                                               
+30492 henrik    15   0 29412  14m  11m S  0.0  1.0   0:00.30 kmix                                                                  
+30493 henrik    15   0 15276 9448 6684 S  0.0  0.6   0:01.32 gkrellm                                                               
+30498 henrik    15   0 26788 6140 4916 R  0.0  0.4   0:00.33 xmms                                                                  
+30501 henrik    15   0 13996 8456 4588 S  0.0  0.5   0:00.18 axmain                                                                
+30508 henrik    15   0  2864  292  112 S  0.0  0.0   0:00.00 applix                                                                
+30510 henrik    15   0 33268  12m 9956 S  0.0  0.8   0:00.17 knotify                                                               
+30516 henrik    15   0 30436  14m  10m S  0.0  0.9   0:03.36 adept_notifier                                                        
+30518 henrik    15   0 26404  11m 9324 S  0.0  0.7   0:00.22 klipper                                                               
+30520 henrik    15   0 30680  14m  11m S  0.0  0.9   0:00.48 korgac                                                                
+30727 henrik    16   0  3312 1604 1108 S  0.0  0.1   0:00.00 soffice                                                               
+30741 henrik    15   0  221m  98m  57m S  0.0  6.5   0:22.98 soffice.bin                                                           
+30813 henrik    15   0 32532  16m  12m S  0.0  1.1   0:03.87 konsole                                                               
+30814 henrik    15   0  3688 2080 1368 S  0.0  0.1   0:00.02 bash                                                                  
+30821 henrik    15   0  1588  620  468 S  0.0  0.0   0:00.07 demotool                                                              
+30822 henrik    15   0  123m  36m  19m S  0.0  2.4   0:41.66 firefox-bin                                                           
+30827 henrik    16   0  4500 2688 1928 S  0.0  0.2   0:00.11 gconfd-2                                                              
+30835 henrik    21   0     0    0    0 Z  0.0  0.0   0:00.00 netstat <defunct>                                                     
+30861 henrik    15   0  3700 2088 1372 S  0.0  0.1   0:00.06 bash                                                                  
+31302 henrik    15   0  3704 2096 1368 S  0.0  0.1   0:00.03 bash                                                                  
+31303 henrik    15   0  2252  916  744 S  0.0  0.1   0:00.00 less                                                                  
+31384 hobbit    21   0  2984 1372  900 S  0.0  0.1   0:00.00 sh                                                                    
+31386 hobbit    21   0  1848  560  476 S  0.0  0.0   0:00.00 vmstat                                                                
+31402 henrik    15   0  2240 1068  764 R  0.0  0.1   0:00.01 top                                                                   
+
