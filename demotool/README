@@ -1,8 +1,7 @@
 README file for Demotool
 ======================
- demotool will scan behave like xymon client but 
- getting system information  from /etc/hdemo directory 
- instead of running  local system command to get the information.
+ Instead of running local system command to get the system information.
+ demotool will scan /etc/hdemo/data directory that containts demo data.
 
 How to install
 --------------
