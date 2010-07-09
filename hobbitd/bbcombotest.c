@@ -213,7 +213,7 @@ static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 		sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
 		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, BBTALK_TIMEOUT, sres);
-		if ((hobbitdresult != BB_OK) || (board == NULL)) {
+		if (hobbitdresult != BB_OK) {
 			board = "";
 			*errptr += sprintf(*errptr, "Could not access hobbitd board, error %d\n", hobbitdresult);
 			return COL_CLEAR;
