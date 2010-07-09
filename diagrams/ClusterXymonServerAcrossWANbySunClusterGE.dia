@@ -28,10 +28,16 @@
           <dia:boolean val="true"/>
         </dia:attribute>
         <dia:attribute name="scaling">
-          <dia:real val="1"/>
+          <dia:real val="0.70552533864974976"/>
         </dia:attribute>
         <dia:attribute name="fitto">
-          <dia:boolean val="false"/>
+          <dia:boolean val="true"/>
+        </dia:attribute>
+        <dia:attribute name="fitwidth">
+          <dia:int val="1"/>
+        </dia:attribute>
+        <dia:attribute name="fitheight">
+          <dia:int val="1"/>
         </dia:attribute>
       </dia:composite>
     </dia:attribute>
@@ -65,22 +71,22 @@
   <dia:layer name="Background" visible="true" active="true">
     <dia:object type="Cisco - Cloud Gold" version="1" id="O0">
       <dia:attribute name="obj_pos">
-        <dia:point val="0.25,1.0005"/>
+        <dia:point val="0.2,1.4505"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="0.2495,1;7.1006,7.7005"/>
+        <dia:rectangle val="0.1995,1.45;8.9005,9.8005"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="0.25,1.0005"/>
+        <dia:point val="0.2,1.4505"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
-        <dia:real val="6.8500999569111016"/>
+        <dia:real val="8.6999999999999993"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
-        <dia:real val="6.6995000000000005"/>
+        <dia:real val="8.349499999999999"/>
       </dia:attribute>
       <dia:attribute name="line_width">
         <dia:real val="0.10000000000000001"/>
@@ -111,16 +117,16 @@
     <dia:group>
       <dia:object type="Network - General Computer (Tower)" version="1" id="O1">
         <dia:attribute name="obj_pos">
-          <dia:point val="2.28809,3.34"/>
+          <dia:point val="2.48809,4.64"/>
         </dia:attribute>
         <dia:attribute name="obj_bb">
-          <dia:rectangle val="2.28,3.3;3.45533,6.24513"/>
+          <dia:rectangle val="2.48,4.6;3.65533,7.54513"/>
         </dia:attribute>
         <dia:attribute name="meta">
           <dia:composite type="dict"/>
         </dia:attribute>
         <dia:attribute name="elem_corner">
-          <dia:point val="2.28809,3.34"/>
+          <dia:point val="2.48809,4.64"/>
         </dia:attribute>
         <dia:attribute name="elem_width">
           <dia:real val="1.1578947368421053"/>
@@ -159,7 +165,7 @@
               <dia:real val="0.80000000000000004"/>
             </dia:attribute>
             <dia:attribute name="pos">
-              <dia:point val="2.86704,5.99263"/>
+              <dia:point val="3.06704,7.29263"/>
             </dia:attribute>
             <dia:attribute name="color">
               <dia:color val="#000000"/>
@@ -181,10 +187,10 @@
       </dia:object>
       <dia:object type="Standard - Text" version="1" id="O2">
         <dia:attribute name="obj_pos">
-          <dia:point val="1.23,2.79"/>
+          <dia:point val="1.43,4.09"/>
         </dia:attribute>
         <dia:attribute name="obj_bb">
-          <dia:rectangle val="1.23,2.195;3.8775,2.9425"/>
+          <dia:rectangle val="1.43,3.495;4.0775,4.2425"/>
         </dia:attribute>
         <dia:attribute name="text">
           <dia:composite type="text">
@@ -198,7 +204,7 @@
               <dia:real val="0.80000000000000004"/>
             </dia:attribute>
             <dia:attribute name="pos">
-              <dia:point val="1.23,2.79"/>
+              <dia:point val="1.43,4.09"/>
             </dia:attribute>
             <dia:attribute name="color">
               <dia:color val="#000000"/>
@@ -215,16 +221,16 @@
     </dia:group>
     <dia:object type="Network - General Computer (Tower)" version="1" id="O3">
       <dia:attribute name="obj_pos">
-        <dia:point val="4.78809,3.44"/>
+        <dia:point val="5.73809,4.69"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="4.78,3.4;5.95533,6.34513"/>
+        <dia:rectangle val="5.73,4.65;6.90533,7.59513"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="4.78809,3.44"/>
+        <dia:point val="5.73809,4.69"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
         <dia:real val="1.1578947368421053"/>
@@ -263,7 +269,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="5.36704,6.09263"/>
+            <dia:point val="6.31704,7.34263"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -285,10 +291,10 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O4">
       <dia:attribute name="obj_pos">
-        <dia:point val="1.9,8.35"/>
+        <dia:point val="3.4,7.95"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="1.9,7.755;5.89,8.5025"/>
+        <dia:rectangle val="3.4,7.355;7.39,8.1025"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -302,7 +308,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="1.9,8.35"/>
+            <dia:point val="3.4,7.95"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -318,10 +324,10 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O5">
       <dia:attribute name="obj_pos">
-        <dia:point val="4.35,3"/>
+        <dia:point val="4.95,4.35"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="4.35,2.405;6.9975,3.1525"/>
+        <dia:rectangle val="4.95,3.755;7.5975,4.5025"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -335,7 +341,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="4.35,3"/>
+            <dia:point val="4.95,4.35"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -351,16 +357,16 @@
     </dia:object>
     <dia:object type="Cisco - Cloud Gold" version="1" id="O6">
       <dia:attribute name="obj_pos">
-        <dia:point val="9.7001,1.0505"/>
+        <dia:point val="15.5001,2.5505"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="9.6996,1.05;17.8005,7.1505"/>
+        <dia:rectangle val="15.4996,2.55;23.6005,8.6505"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="9.7001,1.0505"/>
+        <dia:point val="15.5001,2.5505"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
         <dia:real val="8.0998999999999999"/>
@@ -396,16 +402,16 @@
     </dia:object>
     <dia:object type="Network - General Computer (Tower)" version="1" id="O7">
       <dia:attribute name="obj_pos">
-        <dia:point val="11.4882,3.84"/>
+        <dia:point val="17.1382,4.59"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="11.4801,3.8;12.6554,6.74513"/>
+        <dia:rectangle val="17.1301,4.55;18.3054,7.49513"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="11.4882,3.84"/>
+        <dia:point val="17.1382,4.59"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
         <dia:real val="1.1578947368421053"/>
@@ -444,7 +450,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="12.0671,6.49263"/>
+            <dia:point val="17.7171,7.24263"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -466,16 +472,16 @@
     </dia:object>
     <dia:object type="Network - General Computer (Tower)" version="1" id="O8">
       <dia:attribute name="obj_pos">
-        <dia:point val="14.9882,3.84"/>
+        <dia:point val="20.8382,4.44"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="14.9801,3.8;16.1554,6.74513"/>
+        <dia:rectangle val="20.8301,4.4;22.0054,7.34513"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="14.9882,3.84"/>
+        <dia:point val="20.8382,4.44"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
         <dia:real val="1.1578947368421053"/>
@@ -514,7 +520,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="15.5671,6.49263"/>
+            <dia:point val="21.4171,7.09263"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -536,10 +542,10 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O9">
       <dia:attribute name="obj_pos">
-        <dia:point val="11.2001,8"/>
+        <dia:point val="9.7501,8.2"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="11.2001,7.405;16.3876,8.1525"/>
+        <dia:rectangle val="9.7501,7.605;14.9376,8.3525"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -553,7 +559,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="11.2001,8"/>
+            <dia:point val="9.7501,8.2"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -569,10 +575,10 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O10">
       <dia:attribute name="obj_pos">
-        <dia:point val="10.6501,3.45"/>
+        <dia:point val="16.6001,4.4"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="10.6501,2.855;13.2951,3.6025"/>
+        <dia:rectangle val="16.6001,3.805;19.2451,4.5525"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -586,7 +592,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="10.6501,3.45"/>
+            <dia:point val="16.6001,4.4"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -602,10 +608,10 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O11">
       <dia:attribute name="obj_pos">
-        <dia:point val="14.2501,3.5"/>
+        <dia:point val="20.1001,4.3"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="14.2501,2.905;16.8926,3.6525"/>
+        <dia:rectangle val="20.1001,3.705;22.7426,4.4525"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -619,7 +625,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="14.2501,3.5"/>
+            <dia:point val="20.1001,4.3"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -635,16 +641,16 @@
     </dia:object>
     <dia:object type="Cisco - Cloud Gold" version="1" id="O12">
       <dia:attribute name="obj_pos">
-        <dia:point val="0.5056,10.6505"/>
+        <dia:point val="4.2056,11.1005"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="0.5051,10.65;7.50988,16.7505"/>
+        <dia:rectangle val="4.2051,11.1;11.2099,17.2005"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="0.5056,10.6505"/>
+        <dia:point val="4.2056,11.1005"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
         <dia:real val="7.0037822569111086"/>
@@ -680,16 +686,16 @@
     </dia:object>
     <dia:object type="Cisco - Cloud Gold" version="1" id="O13">
       <dia:attribute name="obj_pos">
-        <dia:point val="3.6606,10.7505"/>
+        <dia:point val="7.9106,11.1005"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="3.6601,10.75;10.6649,16.8505"/>
+        <dia:rectangle val="7.9101,11.1;14.9149,17.2005"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="3.6606,10.7505"/>
+        <dia:point val="7.9106,11.1005"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
         <dia:real val="7.0037822569111086"/>
@@ -725,16 +731,16 @@
     </dia:object>
     <dia:object type="Cisco - Cloud Gold" version="1" id="O14">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.9656,10.7505"/>
+        <dia:point val="13.5156,10.9005"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="7.9651,10.75;14.9699,16.8505"/>
+        <dia:rectangle val="13.5151,10.9;20.5199,17.0005"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
-        <dia:point val="7.9656,10.7505"/>
+        <dia:point val="13.5156,10.9005"/>
       </dia:attribute>
       <dia:attribute name="elem_width">
         <dia:real val="7.0037822569111086"/>
@@ -770,15 +776,15 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O15">
       <dia:attribute name="obj_pos">
-        <dia:point val="4.3001,18.3"/>
+        <dia:point val="10.6001,19.15"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="4.3001,17.705;10.4426,18.4525"/>
+        <dia:rectangle val="10.6001,18.5363;22.3738,19.3399"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
           <dia:attribute name="string">
-            <dia:string>#Other Data centers#</dia:string>
+            <dia:string>#Xymon Clients in Other Data centers#</dia:string>
           </dia:attribute>
           <dia:attribute name="font">
             <dia:font family="sans" style="0" name="Helvetica"/>
@@ -787,7 +793,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="4.3001,18.3"/>
+            <dia:point val="10.6001,19.15"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -803,14 +809,14 @@
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O16">
       <dia:attribute name="obj_pos">
-        <dia:point val="9.55,4"/>
+        <dia:point val="15.5001,5.35076"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.98831,3.61154;9.60072,4.33507"/>
+        <dia:rectangle val="8.78825,4.80189;15.5516,5.52514"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="9.55,4"/>
-        <dia:point val="7.1001,3.96442"/>
+        <dia:point val="15.5001,5.35076"/>
+        <dia:point val="8.9,5.14439"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -825,19 +831,20 @@
         <dia:real val="0.5"/>
       </dia:attribute>
       <dia:connections>
+        <dia:connection handle="0" to="O6" connection="6"/>
         <dia:connection handle="1" to="O0" connection="8"/>
       </dia:connections>
     </dia:object>
     <dia:object type="Standard - Line" version="0" id="O17">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.1001,4.69963"/>
+        <dia:point val="8.9,6.06067"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="7.04946,4.31227;9.81189,5.03581"/>
+        <dia:rectangle val="8.84921,5.79463;15.6119,6.51815"/>
       </dia:attribute>
       <dia:attribute name="conn_endpoints">
-        <dia:point val="7.1001,4.69963"/>
-        <dia:point val="9.7001,4.66617"/>
+        <dia:point val="8.9,6.06067"/>
+        <dia:point val="15.5001,6.16617"/>
       </dia:attribute>
       <dia:attribute name="numcp">
         <dia:int val="1"/>
@@ -858,10 +865,10 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O18">
       <dia:attribute name="obj_pos">
-        <dia:point val="7.1,5.6"/>
+        <dia:point val="10.45,5.95"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="7.1,5.005;10.355,5.7525"/>
+        <dia:rectangle val="10.45,5.355;13.705,6.1025"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -875,7 +882,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="7.1,5.6"/>
+            <dia:point val="10.45,5.95"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
@@ -957,10 +964,10 @@
     </dia:object>
     <dia:object type="Standard - Text" version="1" id="O21">
       <dia:attribute name="obj_pos">
-        <dia:point val="6.45,1.4"/>
+        <dia:point val="10.05,3.45"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="6.45,0.805;10.4975,1.5525"/>
+        <dia:rectangle val="10.05,2.855;14.0975,3.6025"/>
       </dia:attribute>
       <dia:attribute name="text">
         <dia:composite type="text">
@@ -974,7 +981,7 @@
             <dia:real val="0.80000000000000004"/>
           </dia:attribute>
           <dia:attribute name="pos">
-            <dia:point val="6.45,1.4"/>
+            <dia:point val="10.05,3.45"/>
           </dia:attribute>
           <dia:attribute name="color">
             <dia:color val="#000000"/>
