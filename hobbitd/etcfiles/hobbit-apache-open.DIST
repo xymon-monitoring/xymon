@@ -1,12 +1,12 @@
 # This file is for Apache 1.3.x and Apache 2.0.x
 #
 # Add this to your Apache configuration, it makes
-# the Hobbit webpages and cgi-scripts available in the
+# the Xymon webpages and cgi-scripts available in the
 # "@BBHOSTURL@" and "@BBCGIURL@" URLs.
 
 
 # NB: The "Alias" line below must NOT be used if you have
-#     the Hobbit webfiles as the root URL. In that case,
+#     the Xymon webfiles as the root URL. In that case,
 #     you should instead set this:
 #
 #          DocumentRoot @INSTALLWWWDIR@

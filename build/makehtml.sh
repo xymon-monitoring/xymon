@@ -8,7 +8,7 @@ then
 	VERSION="Exp"
 fi
 
-cd ~/hobbit
+# cd ~/hobbit
 rm -f docs/*~ docs/manpages/index.html* docs/manpages/man1/* docs/manpages/man5/* docs/manpages/man7/* docs/manpages/man8/*
 
 for DIR in bbdisplay bbnet bbproxy common hobbitd web
@@ -21,7 +21,7 @@ do
 			then
 				NAME=`head -n 1 $FILE | awk '{print $2}'`;
 				SECTION=`head -n 1 $FILE | awk '{print $3}'`;
-				(echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Hobbit Monitor\""; tail -n +2 $FILE) | \
+				(echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 $FILE) | \
 				man2html -r - | tail -n +2 >docs/manpages/man$SECT/`basename $FILE`.html
 			fi
 		done
@@ -29,5 +29,5 @@ do
 done
 
 # Sourceforge update
-cd ~/hobbit/docs && rsync -av --rsh=ssh --exclude=RCS ./ storner@shell.sourceforge.net:/home/groups/h/ho/hobbitmon/htdocs/docs/
+# cd ~/hobbit/docs && rsync -av --rsh=ssh --exclude=RCS ./ storner@shell.sourceforge.net:/home/groups/h/ho/hobbitmon/htdocs/docs/
 

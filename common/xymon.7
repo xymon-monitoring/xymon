@@ -1,72 +1,78 @@
-.TH HOBBIT 7 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH XYMON 7 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-Hobbit \- introduction to the Hobbit Monitor
+Xymon \- introduction to Xymon
 
 .SH OVERVIEW
-Hobbit is a tool for monitoring the health of your networked servers 
+Xymon is a tool for monitoring the health of your networked servers 
 and the applications running on them.  It provides a simple, 
 intuitive way of checking the health of your systems from 
 a webbrowser, and can also alert you to any problems that 
 arise through alarms sent as e-mail, SMS messages, via a 
 pager or by other means.
 
-Hobbit is Open Source software, licensed under the GNU GPL.
-This means that you are free to use Hobbit as much as you like,
+Xymon is Open Source software, licensed under the GNU GPL.
+This means that you are free to use Xymon as much as you like,
 and you are free to re-distribute it and change it to suit 
 your specific needs. However, if you change it then you must make 
 your changes available to others on the same terms that you 
-received Hobbit originally. See the file COPYING in the Hobbit
+received Xymon originally. See the file COPYING in the Xymon
 source-archive for details.
 
-Hobbit initially began life as an enhancement to Big Brother called 
-"bbgen". Over a period of 5 years, Hobbit has evolved from a small
+Xymon was called "Hobbit" until November 2008, when it was renamed
+to Xymon. This was done because the name "Hobbit" is trademarked.
+The current release of Xymon is an interim version without all
+of the changes needed for a full renaming, so there are still
+quite a few references to the old "hobbit" name.
+
+Xymon initially began life as an enhancement to Big Brother called 
+"bbgen". Over a period of 5 years, Xymon has evolved from a small
 add-on to a full-fledged monitoring system with capabilities far
-exceeding what was in the original Big Brother package. Hobbit
+exceeding what was in the original Big Brother package. Xymon
 does still maintain some compatibility with Big Brother, so it
-is possible to migrate from Big Brother to Hobbit without too
+is possible to migrate from Big Brother to Xymon without too
 much trouble. 
 
-Migrating to Hobbit will give you a significant performance boost, 
-and provide you with much more advanced monitoring.  The Hobbit tools 
+Migrating to Xymon will give you a significant performance boost, 
+and provide you with much more advanced monitoring.  The Xymon tools 
 are designed for installations that need to monitor a large number 
 of hosts, with very little overhead on the monitoring server. 
-Monitoring of thousands of hosts with a single Hobbit server is 
+Monitoring of thousands of hosts with a single Xymon server is 
 possible - it was developed to handle just this task.
 
 .SH FEATURES
-These are some of the core features in Hobbit:
+These are some of the core features in Xymon:
 
 .IP "Monitoring of hosts and networks"
-Hobbit collects information about your systems in two ways: From
+Xymon collects information about your systems in two ways: From
 querying network services (Web, LDAP, DNS, Mail etc.), or from
-scripts that run either on the Hobbit server or on the systems 
-you monitor. The Hobbit package includes a \fbHobbit client\fR
+scripts that run either on the Xymon server or on the systems 
+you monitor. The Xymon package includes a \fbXymon client\fR
 which you can install on the servers you monitor; it collects
 data about the CPU-load, disk- and memory-utilisation, logfiles,
 network ports in use, file- and directory-information and more.
-All of the information is stored inside Hobbit, and you can define
+All of the information is stored inside Xymon, and you can define
 conditions that result in alerts, e.g. if a network service stops
 responding, or a disk fills up.
 
 
 .IP "Centralized configuration"
-All configuration of Hobbit is done on the Hobbit server. Even when
+All configuration of Xymon is done on the Xymon server. Even when
 monitoring hundreds or thousands of hosts, you can control their
-configuration centrally on the Hobbit server - so there is no need 
+configuration centrally on the Xymon server - so there is no need 
 for you to login to a system just to change e.g. which processes are
 monitored.
 
 
 .IP "Works on all major platforms"
-The Hobbit server works on all Unix-like systems, including Linux,
-Solaris, FreeBSD, AIX, HP-UX and others. The Hobbit client supports
+The Xymon server works on all Unix-like systems, including Linux,
+Solaris, FreeBSD, AIX, HP-UX and others. The Xymon client supports
 all major Unix platforms, and there are other Open Source projects
 - e.g. BBWin, see http://bbwin.sourceforge.net/ - providing support for 
 Microsoft Windows based systems.
 
 
 .IP "A simple, intuitive web-based front-end"
-"Green is good, red is bad". Using the Hobbit webpages is as simple
+"Green is good, red is bad". Using the Xymon webpages is as simple
 as that. The hosts you monitor can be grouped together in a way that
 makes sense in your organisation and presented in a tree-structure.
 The webpages use many techniques to convey information about the monitored
@@ -81,21 +87,21 @@ so information about your critical systems is just a click away.
 
 
 .IP "Integrated trend analysis, historical data and SLA reporting"
-Hobbit stores trend- and availability-information about everything 
+Xymon stores trend- and availability-information about everything 
 it monitors. So if you need to look at how your systems behave over
-time, Hobbit has all of the information you need: Whether is is response 
+time, Xymon has all of the information you need: Whether is is response 
 times of your webpages during peak hours, the CPU utilisation over the 
 past 4 weeks, or what the availability of a site was compared to the
-SLA - it's all there inside Hobbit. All measurements are tracked
+SLA - it's all there inside Xymon. All measurements are tracked
 and made available in time-based graphs.
 
-When you need to drill down into events that have occurred, Hobbit
+When you need to drill down into events that have occurred, Xymon
 provides a powerful tool for viewing the event history for each
 statuslog, with overviews of when problems have occurred during the
 past and easy-to-use zoom-in on the event.
 
 For SLA reporting, You can configure planned downtime, agreed service 
-availability level, service availability time and have Hobbit generate 
+availability level, service availability time and have Xymon generate 
 availability reports directly showing the actual availability measured 
 against the agreed SLA. Such reports of service availability can be 
 generated on-the-fly, or pre-generated e.g. for monthly reporting. 
@@ -116,21 +122,21 @@ on the NOC monitor page, and leave out the log-file check.
 
 
 .IP "Also for the techies"
-The Hobbit user-interface is simple, but engineers will also find
-lots of relevant information. E.g. the data that clients report to Hobbit
+The Xymon user-interface is simple, but engineers will also find
+lots of relevant information. E.g. the data that clients report to Xymon
 contain the raw output from a number of system commands.  That information 
-is available directly in Hobbit, so an administrator no longer needs to 
+is available directly in Xymon, so an administrator no longer needs to 
 login to a server to get an overview of how it is behaving - the very 
 commands they would normally run have alredy been performed, and the 
-results are on-line in Hobbit.
+results are on-line in Xymon.
 
 
 .IP "Easy to adapt to your needs"
-Hobbit includes a lot of tests in the core package, but there will
+Xymon includes a lot of tests in the core package, but there will
 always be something specific to your setup that you would like to
-watch. Hobbit allows you to write test scripts in your favourite
+watch. Xymon allows you to write test scripts in your favourite
 scripting language and have the results show up as regular status
-columns in Hobbit. You can trigger alerts from these, and even track
+columns in Xymon. You can trigger alerts from these, and even track
 trends in graphs just by a simple configuration setting.
 
 
@@ -152,11 +158,11 @@ certificates that are about to expire.
 
 .IP "Highly configurable alerts"
 You want to know when something breaks. But you don't want to get flooded
-with alerts all the time. Hobbit lets you define several criteria for
+with alerts all the time. Xymon lets you define several criteria for
 when to send out an alert, so you only get alerts when there is really
 something that needs your attention right away. While you are handling
-an incident, you can tell Hobbit about it so it stops sending more alerts,
-and so that everyone else can check with Hobbit and know that the problem
+an incident, you can tell Xymon about it so it stops sending more alerts,
+and so that everyone else can check with Xymon and know that the problem
 is being taken care of.
 
 
@@ -164,7 +170,7 @@ is being taken care of.
 If a single test is not enough, combination tests can be defined
 that combine the result of several tests to a single status-report.
 So if you need to monitor that at least 3 out of 5 servers are
-running at any time, Hobbit can do that for you and generate
+running at any time, Xymon can do that for you and generate
 the necessary availability report.
 
 Tests can also be configured to depend on each other, so that
@@ -173,31 +179,31 @@ the router - and not from the 200 hosts behind the router.
 
 
 .SH SECURITY
-All of the Hobbit server tools run under an unprivileged user account.
+All of the Xymon server tools run under an unprivileged user account.
 A single program - the
 .I hobbitping(1)
 network connectivity tester - must be installed setuid-root, but has
 been written so that it drops all root privileges immediately after
 performing the operation that requires root privileges.
 
-It is recommended that you setup a dedicated account for Hobbit.
+It is recommended that you setup a dedicated account for Xymon.
 
-Communications between the Hobbit server and Hobbit clients use the
-Big Brother TCP port 1984. If the Hobbit server is located behind
-a firewall, it must allow for inbound connections to the Hobbit 
-server on tcp port 1984. Normally, Hobbit clients - i.e. the servers
-you are monitoring - must be permitted to connect to the Hobbit server 
+Communications between the Xymon server and Xymon clients use the
+Big Brother TCP port 1984. If the Xymon server is located behind
+a firewall, it must allow for inbound connections to the Xymon 
+server on tcp port 1984. Normally, Xymon clients - i.e. the servers
+you are monitoring - must be permitted to connect to the Xymon server 
 on this port. However, if that is not possible due to firewall 
-policies, then Hobbit includes the
+policies, then Xymon includes the
 .I hobbitfetch(8)
 and
 .I msgcache(8)
 tools to allows for a pull-style way of collecting data, where it 
-is the Hobbit server that initiates connections to the clients.
+is the Xymon server that initiates connections to the clients.
 
-The Hobbit webpages are dynamically generated through CGI programs.
+The Xymon webpages are dynamically generated through CGI programs.
 
-Access to the Hobbit webpages is controlled through your webserver
+Access to the Xymon webpages is controlled through your webserver
 access controls, e.g. you can require a login through some form of
 HTTP authentication.
 
@@ -222,33 +228,33 @@ in configuration files. This library is required.
 .sp
 .BR OpenSSL
 This library is used for communication with SSL-enabled network services.
-Although optional, it is recommended that you install this for Hobbit
+Although optional, it is recommended that you install this for Xymon
 since many network tests do use SSL.
 .sp
 .BR OpenLDAP
 This library is used for testing LDAP servers. Use of this is optional.
 
-For more detailed information about Hobbit system requirements and
-how to install Hobbit, refer to the online documentation "Installing
-Hobbit" available from the Hobbit webserver (via the "Help" menu),
-or from the "docs/install.html" file in the Hobbit source archive.
+For more detailed information about Xymon system requirements and
+how to install Xymon, refer to the online documentation "Installing
+Xymon" available from the Xymon webserver (via the "Help" menu),
+or from the "docs/install.html" file in the Xymon source archive.
 
 
 .SH "SUPPORT and MAILING LISTS"
-hobbit@hswn.dk is an open mailing list for discussions about Hobbit.
+hobbit@hswn.dk is an open mailing list for discussions about Xymon.
 If you would like to participate, send an e-mail to \fBhobbit-subscribe@hswn.dk\fR
 to join the list.
 
 An archive of the mailing list is available at http://www.hswn.dk/hobbiton/
 
-If you just want to be notified of new releases of Hobbit, please
+If you just want to be notified of new releases of Xymon, please
 subscribe to the hobbit-announce mailing list. This is a moderated list,
-used only for announcing new Hobbit releases. To be added to the list, send
+used only for announcing new Xymon releases. To be added to the list, send
 an e-mail to \fBhobbit-announce-subscribe@hswn.dk\fR.
 
 
-.SH HOBBIT SERVER TOOLS
-These tools implement the core functionality of the Hobbit server:
+.SH XYMON SERVER TOOLS
+These tools implement the core functionality of the Xymon server:
 
 .I hobbitd(8)
 is the core daemon that collects all reports about the status of 
@@ -259,23 +265,23 @@ and hobbitd_rrd. There is also a hobbitd_filestore module for
 compatibility with Big Brother.
 
 .I hobbitd_channel(8)
-Implements the communication between the Hobbit daemon and the
-other Hobbit server modules.
+Implements the communication between the Xymon daemon and the
+other Xymon server modules.
 
 .I hobbitd_history(8)
-Stores historical data about the things that Hobbit monitors.
+Stores historical data about the things that Xymon monitors.
 
 .I hobbitd_rrd(8)
 Stores trend data, which is used to generate graphs of the data
-monitored by Hobbit.
+monitored by Xymon.
 
 .I hobbitd_alert(8)
 handles alerts. When a status changes to a critical state, this 
 module decides if an alert should be sent out, and to whom.
 
 .I hobbitd_client(8)
-handles data collected by the Hobbit clients, analyzes the data
-and feeds back several status updates to Hobbit to build the
+handles data collected by the Xymon clients, analyzes the data
+and feeds back several status updates to Xymon to build the
 view of the client status.
 
 .I hobbitd_hostdata(8)
@@ -285,7 +291,7 @@ client data, so that you can use this to view a snapshot of how
 the system state was just prior to it failing.
 
 
-.SH HOBBIT NETWORK TEST TOOLS
+.SH XYMON NETWORK TEST TOOLS
 These tools are used on servers that execute tests of network services.
 
 .I hobbitping(1)
@@ -296,25 +302,25 @@ runs the network service tests.
 
 .I bbretest-net.sh(1)
 is an extension script for re-doing failed network tests with a higher 
-frequency than the normal network tests. This allows Hobbit to pick up
+frequency than the normal network tests. This allows Xymon to pick up
 the recovery of a network service as soon as it happens, resulting in 
 less downtime being recorded.
 
 
-.SH HOBBIT TOOLS HANDLING THE WEB USER-INTERFACE
+.SH XYMON TOOLS HANDLING THE WEB USER-INTERFACE
 These tools take care of generating and updating the various
-Hobbit web-pages.
+Xymon web-pages.
 
 .I bbgen(1)
-takes care of updating the Hobbit webpages.
+takes care of updating the Xymon webpages.
 
 .I hobbitsvc.cgi(1)
 This CGI program generates an HTML view of a single status log.
-It is used to present the Hobbit status-logs.
+It is used to present the Xymon status-logs.
 
 .I hobbitgraph.cgi(1)
 This CGI program generates graphs of the trend-data collected
-by Hobbit.
+by Xymon.
 
 .I hobbit-hostgraphs.cgi(1)
 When you want to combine multiple graphs into one, this CGI lets
@@ -336,10 +342,10 @@ of time, for a single host or test, or for multiple systems.
 
 .I bb-ack.cgi(1)
 This CGI program allows a user to acknowledge an alert he received
-from Hobbit about a host that is in a critical state. Acknowledging
+from Xymon about a host that is in a critical state. Acknowledging
 an alert serves two purposes: First, it stops more alerts from being
 sent so the technicians are not bothered wit more alerts, and secondly
-it provides feedback to those looking at the Hobbit webpages that the
+it provides feedback to those looking at the Xymon webpages that the
 problem is being handled.
 
 .I hobbit-mailack(8)
@@ -353,13 +359,13 @@ also any outages do not affect the SLA calculations. So this tool
 is useful when systems are being brought down for maintenance.
 
 .I bb-findhost.cgi(1)
-is a CGI program that finds a given host in the Hobbit
-webpages. As your Hobbit installation grows, it can become
+is a CGI program that finds a given host in the Xymon
+webpages. As your Xymon installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
 
 .I bb-rep.cgi(1)
-This CGI program triggers the generation of Hobbit availability 
+This CGI program triggers the generation of Xymon availability 
 reports, using
 .I bbgen(1)
 as the reporting back-end engine.
@@ -369,7 +375,7 @@ This CGI program generates the detailed availability report for a
 particular host+service combination.
 
 .I bb-snapshot.cgi(1)
-is a CGI program to build the Hobbit webpages in a "snapshot"
+is a CGI program to build the Xymon webpages in a "snapshot"
 mode, showing the look of the webpages at a particular point 
 in time. It uses
 .I bbgen(1)
@@ -378,7 +384,7 @@ as the back-end engine.
 .I hobbit-statusreport.cgi(1)
 is a CGI program reporting test results for a single status but
 for several hosts. It is used to e.g. see which SSL certificates
-are about to expire, across all of the Hobbit webpages.
+are about to expire, across all of the Xymon webpages.
 
 .I bb-csvinfo.cgi(1)
 is a CGI program to present information about a host. The 
@@ -389,69 +395,69 @@ database program.
 
 .SH CLIENT-SIDE TOOLS
 .I logfetch(1)
-is a utility used by the Hobbit Unix client to collect
+is a utility used by the Xymon Unix client to collect
 information from logfiles on the client. It can also monitor various
 other file-related data, e.g. file metadata or directory sizes.
 
 .I clientupdate(1)
-Is used on Hobbit clients, to automatically update the client software
+Is used on Xymon clients, to automatically update the client software
 with new versions. Through this tool, updates of the client software
 can happen without an administrator having to logon to the server.
 
 .I msgcache(8)
-This tool acts as a mini Hobbit server to the client. It stores client
+This tool acts as a mini Xymon server to the client. It stores client
 data internally, so that the
 .I hobbitfetch(8)
-utility can pick it up later and send it to the Hobbit server. It
-is typically used on hosts that cannot contact the Hobbit server 
+utility can pick it up later and send it to the Xymon server. It
+is typically used on hosts that cannot contact the Xymon server 
 directly due to network- or firewall-restrictions.
 
 
-.SH HOBBIT COMMUNICATION TOOLS
-These tools are used for communications between the Hobbit server
-and the Hobbit clients. If there are no firewalls then they are not
+.SH XYMON COMMUNICATION TOOLS
+These tools are used for communications between the Xymon server
+and the Xymon clients. If there are no firewalls then they are not
 needed, but it may be necessary due to network or firewall issues
 to make use of them.
 
 .I bbproxy(8)
-is a proxy-server that forwards Hobbit messages between
-clients and the Hobbit server. The clients must be able to talk
-to the proxy, and the proxy must be able to talk to the Hobbit
+is a proxy-server that forwards Xymon messages between
+clients and the Xymon server. The clients must be able to talk
+to the proxy, and the proxy must be able to talk to the Xymon
 server.
 
 .I hobbitfetch(8)
 is used when the client is not able to make outbound connections
-to neither bbproxy nor the Hobbit server (typically, for clients
+to neither bbproxy nor the Xymon server (typically, for clients
 located in a DMZ network zone). Together with the
 .I msgcache(8)
-utility running on the client, the Hobbit server can contact the
+utility running on the client, the Xymon server can contact the
 clients and pick up their data.
 
 
 .SH OTHER TOOLS
 .I hobbitlaunch(8)
-is a program scheduler for Hobbit. It acts as a master program
-for running all of the Hobbit tools on a system. On the Hobbit
-server, it controls running all of the server tasks. On a Hobbit
+is a program scheduler for Xymon. It acts as a master program
+for running all of the Xymon tools on a system. On the Xymon
+server, it controls running all of the server tasks. On a Xymon
 client, it periodically launches the client to collect data
-and send them to the Hobbit server.
+and send them to the Xymon server.
 
 .I bb(1)
-is the tool used to communicate with the Hobbit server.
-It is used to send status reports to the Hobbit server,
-through the custom Hobbit/BB protocol, or via HTTP. It
-can be used to query the state of tests on the central Hobbit 
-server and retrieve Hobbit configuration files. The server-side 
+is the tool used to communicate with the Xymon server.
+It is used to send status reports to the Xymon server,
+through the custom Xymon/BB protocol, or via HTTP. It
+can be used to query the state of tests on the central Xymon 
+server and retrieve Xymon configuration files. The server-side 
 script 
 .I bbmessage.cgi(1) 
 used to receive messages sent via HTTP is also included.
 
 .I bbcmd(1)
-is a wrapper for the other Hobbit tools which sets up all
-of the environment variables used by Hobbit tools.
+is a wrapper for the other Xymon tools which sets up all
+of the environment variables used by Xymon tools.
 
 .I bbhostgrep(1)
-is a utility for use by Hobbit extension scripts. It
+is a utility for use by Xymon extension scripts. It
 allows an extension script to easily pick out the hosts that
 are relevant to a script, so it need not parse a huge
 bb-hosts file with lots of unwanted test-specifications.
@@ -466,15 +472,15 @@ is a utility to compute message digest values for use in
 content checks that use digests.
 
 .I bbcombotest(1)
-is an extension script for the Hobbit server,
+is an extension script for the Xymon server,
 allowing you to build complicated tests from simpler
-Hobbit test results. E.g. you can define a test that uses the results
+Xymon test results. E.g. you can define a test that uses the results
 from testing your webserver, database server and router to have a 
 single test showing the availability of your enterprise web
 application.
 
 .I trimhistory(8)
-is a tool to trim the Hobbit history logs. It will remove all
+is a tool to trim the Xymon history logs. It will remove all
 log entries and optionally also the individual status-logs for
 events that happened before a given time.
 
@@ -491,26 +497,26 @@ use of several external libraries for network tests, resulting in a
 significant performance improvement.
 
 With version 4.0 released on March 30 2005, the project was de-coupled 
-from Big Brother, and the name changed to Hobbit. This version was the 
-first full implementation of the Hobbit server, but it still used the
+from Big Brother, and the name changed to Xymon. This version was the 
+first full implementation of the Xymon server, but it still used the
 data collected by Big Brother clients for monitoring host metrics.
 
-Version 4.1 was released in July 2005 included a simple Hobbit client
+Version 4.1 was released in July 2005 included a simple Xymon client
 for Unix. Logfile monitoring was not implemented.
 
 Version 4.2 was released in July 2006, and includes a fully functional
-Hobbit client for Unix.
+Xymon client for Unix.
 
 
 .SH COPYRIGHT
-Hobbit is
+Xymon is
 .br
-  Copyright (C) 2002-2007, Henrik Storner <henrik@storner.dk> 
+  Copyright (C) 2002-2006, Henrik Storner <henrik@storner.dk> 
 .br
-Parts of the Hobbit sources are from public-domain or other freely
+Parts of the Xymon sources are from public-domain or other freely
 available sources. These are the the Red-Black tree implementation, and 
-the MD5-, SHA1-, SHA2- and RIPEMD160-implementations. Details of the license 
-for these is in the README file included with the Hobbit sources.
+the MD5-, SHA1- and RIPEMD160-implementations. Details of the license for
+these is in the README file included with the Xymon sources.
 All other files are released under the GNU General Public License version 2, 
 with the additional exemption that compiling, linking, and/or using OpenSSL 
 is allowed.  See the file COPYING for details.

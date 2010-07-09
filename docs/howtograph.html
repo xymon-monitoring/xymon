@@ -6,7 +6,7 @@
 <body>
 <h1>How to setup custom graphs</h1>
 This document walks you through the setup of custom graphs in
-your Hobbit installation. Although Hobbit comes with pre-defined
+your Xymon installation. Although Xymon comes with pre-defined
 setups for a lot of common types of graphs, it is also extensible
 allowing you to add your own tests. For many kinds of tests, it
 is nice to view them over a period of time in a graph - this 
@@ -14,10 +14,10 @@ document tells you how to do that.
 
 <h2>Make a script to collect the data</h2>
 <p>First create your test data. Typically, this is an extension
-script that sends in some data to Hobbit, using a <b>status</b> or
+script that sends in some data to Xymon, using a <b>status</b> or
 <b>data</b> command. If you use <b>status</b>, it will show up as a 
 separate column on the display, with a green/yellow/red color
-that can trigger alerts. If you use <b>data</b>, Hobbit just collects
+that can trigger alerts. If you use <b>data</b>, Xymon just collects
 the data into a graph - you must go to the <b>trends</b> column to
 see the graph. For this example, we'll use <b>status</b>.</p>
 
@@ -50,12 +50,12 @@ the ~hobbit/client/etc/clientlaunch.cfg to run it every 5 minutes:
 	        CMD /usr/lib/hobbit/client/ext/slab
 		INTERVAL 5m
 </tt></pre>
-(On the Hobbit server itself, you must add this to the file 
+(On the Xymon server itself, you must add this to the file 
 ~hobbit/server/etc/hobbitlaunch.cfg)
 
 
-<h2>Check that the script data arrives in Hobbit</h2>
-<p>After a few minutes, a <b>slab</b> column should appear on your Hobbit view
+<h2>Check that the script data arrives in Xymon</h2>
+<p>After a few minutes, a <b>slab</b> column should appear on your Xymon view
 of this host, with the data it reports. The output looks like this:
 
 <pre><tt>
@@ -67,14 +67,14 @@ of this host, with the data it reports. The output looks like this:
 
 <h2>Arrange for the data to be collected into an RRD file</h2>
 <p>This is obviously a name-colon-value formatted report, so we'll use the
-NCV module in Hobbit to handle it. Hobbit will find two datasets here:
+NCV module in Xymon to handle it. Xymon will find two datasets here:
 The first will be called <b>inodecache</b>, and the second <b>dentrycache</b>
-(note that Hobbit strips off any part of the name that is not a letter
-or a number; Hobbit also limits the length of the dataset name to 19 
+(note that Xymon strips off any part of the name that is not a letter
+or a number; Xymon also limits the length of the dataset name to 19 
 letters max. since RRD will not handle longer names).
 
-To enable this, on the Hobbit server edit the ~hobbit/server/etc/hobbitserver.cfg
-file. The TEST2RRD setting defines how Hobbit tests (status columns) map to RRD 
+To enable this, on the Xymon server edit the ~hobbit/server/etc/hobbitserver.cfg
+file. The TEST2RRD setting defines how Xymon tests (status columns) map to RRD 
 datafiles. So you add the new test to this setting, by adding <b>slab=ncv</b> at the
 end:
 
@@ -82,14 +82,14 @@ end:
 TEST2RRD=&quot;cpu=la,disk,&lt;...lots more stuff...&gt;,hobbitd,mysql=ncv,slab=ncv&quot;
 </tt></pre>
 
-<p><b>slab</b> is the status column name, and <b>=ncv</b> is a token that tells Hobbit
+<p><b>slab</b> is the status column name, and <b>=ncv</b> is a token that tells Xymon
 to send these data through the built-in NCV module.</p>
 
-<p>By default, the Hobbit NCV module expects data to be some sort of counter,
+<p>By default, the Xymon NCV module expects data to be some sort of counter,
 e.g. number of bytes sent over a network - it uses the RRD <b>DERIVE</b> datatype
 by default, which is for data that is continuously increasing in value. 
 Some data are not like that - the data in our test script is not - and for
-those data you'll have to make an extra setting to tell Hobbit what RRD data
+those data you'll have to make an extra setting to tell Xymon what RRD data
 type to use.  The RRDtool rrdcreate(1) man-page has a detailed description 
 of the various RRD datatypes. It is available online at 
 <a href="http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/doc/rrdcreate.en.html">
@@ -109,12 +109,12 @@ two datasets of type GAUGE instead of the default (DERIVE). The setting must
 be named NCV_&lt;columnname&gt;.</p>
 
 <p>The hobbitserver.cfg file is not reloaded automatically, so you must restart
-Hobbit after making these changes. Or at least, kill the hobbitd_rrd processes
+Xymon after making these changes. Or at least, kill the hobbitd_rrd processes
 (there are usually two) - hobbitlaunch will automatically restart them, and
 they will then pick up the new settings.</p>
 
 <h2>Check that the RRD collects data</h2>
-<p>The next time the <b>slab</b> status is updated, Hobbit will begin to collect
+<p>The next time the <b>slab</b> status is updated, Xymon will begin to collect
 the data. You can check this by looking for the <b>slab.rrd</b> file in the
 ~hobbit/data/rrd/HOSTNAME/ directory. If you want to check the data it
 collects, the <b>rrdtool dump ~hobbit/data/rrd/HOSTNAME/slab.rrd</b> will 
@@ -147,7 +147,7 @@ step is missing.</p>
 
 
 <h2>Setup a graph definition</h2>
-<p>The final step is to tell Hobbit how to create a graph from the data 
+<p>The final step is to tell Xymon how to create a graph from the data 
 in the RRD file. This is done in the ~hobbit/server/etc/hobbitgraph.cfg
 file.
 

@@ -1,13 +1,13 @@
-.TH CLIENT-LOCAL.CFG 5 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH CLIENT-LOCAL.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-client-local.cfg \- Local configuration settings for Hobbit clients
+client-local.cfg \- Local configuration settings for Xymon clients
 
 .SH SYNOPSIS
-.B ~hobbit/server/etc/client-local.cfg
+.B ~xymon/server/etc/client-local.cfg
 
 .SH DESCRIPTION
 The client-local.cfg file contains settings that are used by each 
-Hobbit client when it runs on a monitored host. It provides a
+Xymon client when it runs on a monitored host. It provides a
 convenient way of configuring clients from a central location
 without having to setup special configuration maintenance tools on
 all clients.
@@ -21,17 +21,17 @@ Note that there is a dependency between the client-local.cfg file
 and the 
 .I hobbit-clients.cfg(5)
 file. When monitoring e.g. a logfile, you must first enter it into the 
-client-local.cfg file, to trigger the Hobbit client into reporting any 
+client-local.cfg file, to trigger the Xymon client into reporting any 
 data about the logfile. Next, you must configure hobbit-clients.cfg 
-so the Hobbit server knows what to look for in the file data sent by 
+so the Xymon server knows what to look for in the file data sent by 
 the client. So: client-local.cfg defines what raw data is collected 
 by the client, and hobbit-clients.cfg defines how to analyze them.
 
 .SH PROPAGATION TO CLIENTS
-The client-local.cfg file resides on the Hobbit server.
+The client-local.cfg file resides on the Xymon server.
 
-When clients connect to the Hobbit server to send in their client
-data, they will receive part of this file back from the Hobbit server.
+When clients connect to the Xymon server to send in their client
+data, they will receive part of this file back from the Xymon server.
 The configuration received by the client is then used the next time 
 the client runs.
 
@@ -45,7 +45,7 @@ The file is divided into sections, delimited by "[name]" lines.
 A section name can be either an operating system identifier - 
 linux, solaris, hp-ux, aix, freebsd, openbsd, netbsd, darwin - 
 or a hostname. When deciding which section to send to a client,
-Hobbit will first look for a section named after the hostname of
+Xymon will first look for a section named after the hostname of
 the client; if such a section does not exist, it will look for
 a section named by the operating system of the client. So you
 can configure special configurations for individual hosts, and have
@@ -64,23 +64,23 @@ A logfile configuration entry looks like this:
     trigger Oops
 .sp
 The \fBlog:FILENAME:SIZE\fR line defines the filename of the log, and the
-maximum amount of data (in bytes) to send to the Hobbit server. FILENAME
+maximum amount of data (in bytes) to send to the Xymon server. FILENAME
 is usually an explicit full-path filename on the client. If it is enclosed
-in backticks, it is a command which the Hobbit client runs and each line 
+in backticks, it is a command which the Xymon client runs and each line 
 of output from this command is then used as a filename. This allows
 scripting which files to monitor, e.g. if you have logfiles that are
 named with some sort of timestamp.
 .sp
 The \fBignore PATTERN\fR line (optional) defines lines in the logfile which
 are ignored entirely, i.e. they are stripped from the logfile data before
-sending it to the Hobbit server. It is used to remove completely unwanted
-"noise" entries from the logdata processed by Hobbit. "PATTERN" is a regular
+sending it to the Xymon server. It is used to remove completely unwanted
+"noise" entries from the logdata processed by Xymon. "PATTERN" is a regular
 expression.
 .sp
 The \fBtrigger PATTERN\fR line (optional) is used only when there is more
 data in the log than the maximum size set in the "log:FILENAME:SIZE" line.
 The "trigger" pattern is then used to find particularly interesting lines
-in the logfile - these will always be sent to the Hobbit server. After
+in the logfile - these will always be sent to the Xymon server. After
 picking out the "trigger" lines, any remaining space up to the maximum size
 is filled in with the most recent entries from the logfile. "PATTERN" is
 a regular expression.
@@ -123,11 +123,11 @@ and any sub-directories. It looks like this:
 .sp
 The \fBdir:DIRECTORYNAME\fR line defines the filename of the file to monitor.
 As with the "log:" entries, a filename enclosed in backticks means a 
-command which will generate the filenames dynamically. The Hobbit client
+command which will generate the filenames dynamically. The Xymon client
 will run the
 .I du(1)
 command with the directoryname as parameter, and send the output back to the
-Hobbit server.
+Xymon server.
 .br
 \fBNOTE:\fR If you want to check multiple directories using a 
 wildcard, you \fBmust\fR use a command to generate the directory names. Putting 
@@ -138,7 +138,7 @@ like
 
 The "du" command used can be configured through the \fBDU\fR environment 
 variable. On some systems, by default \fBdu\fR reports data in disk blocks
-instead of KB (e.g. Solaris). So you may want to configure the Hobbit client
+instead of KB (e.g. Solaris). So you may want to configure the Xymon client
 to use a \fBdu\fR command which reports data in KB, e.g. by setting
 .br
     DU="du -k"
@@ -160,9 +160,9 @@ column.
 
 
 .SH NOTES
-The ability of the Hobbit client to calculate file hashes and monitor those
+The ability of the Xymon client to calculate file hashes and monitor those
 can be used for file integrity validation on a small scale. However, there is
-a significant processing overhead in calculating these every time the Hobbit
+a significant processing overhead in calculating these every time the Xymon
 client runs, so this should not be considered a replacement for host-based
 intrusion detection systems such as Tripwire or AIDE.
 
@@ -170,5 +170,5 @@ Use of the directory monitoring on directory structures with a large number
 of files and/or sub-directories can be quite ressource-intensive.
 
 .SH "SEE ALSO"
-hobbit-clients.cfg(5), hobbitd_client(8), hobbitd(8), hobbit(7)
+hobbit-clients.cfg(5), hobbitd_client(8), hobbitd(8), xymon(7)
 

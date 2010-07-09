@@ -5,7 +5,7 @@
       <td>
          <table width="100%">
             <tr><th align=left valign=top width="25%">Aliases</th><td>Names for this host other than the primary name, e.g. a hostname used by a client installed on the server</td></tr>
-            <tr><th align=left valign=top width="25%">Monitoring location</th><td>The location of this host on the Hobbit webpages</td></tr>
+            <tr><th align=left valign=top width="25%">Monitoring location</th><td>The location of this host on the Xymon webpages</td></tr>
             <tr><th align=left valign=top width="25%">Comment<br>Description</th><td>Explanatory text about the host</td></tr>
             <tr><th align=left valign=top width="25%">Planned downtime</th><td>Time of day/week when the host monitoring is disabled</td></tr>
             <tr><th align=left valign=top width="25%">SLA Reporting Period</th><td>Time of day/week where the status impacts the SLA availability calculation</td></tr>
@@ -15,7 +15,7 @@
    <tr><th align=left valign=top width="20%">Network tests</th>
       <td>
          <table width="100%">
-            <tr><th align=left valign=top width="25%">Service</th><td>Corresponds to the column-name on the Hobbit webpage</td></tr>
+            <tr><th align=left valign=top width="25%">Service</th><td>Corresponds to the column-name on the Xymon webpage</td></tr>
             <tr><th align=left valign=top width="25%">Critical</th><td>Whether this test appears on the Critical Systems view</td></tr>
             <tr><th align=left valign=top width="25%">C/Y/R limits</th><td>If set, this is the number of failures that must happen before the status changes to Clear/Yellow/Red</td></tr>
             <tr><th align=left valign=top width="25%">Specifics</th><td>Details about how this status is monitored</td></tr>
@@ -25,7 +25,7 @@
    <tr><th align=left valign=top width="20%">Local tests</th>
       <td>
          <table width="100%">
-            <tr><th align=left valign=top width="25%">Service</th><td>Corresponds to the column-name on the Hobbit webpage</td></tr>
+            <tr><th align=left valign=top width="25%">Service</th><td>Corresponds to the column-name on the Xymon webpage</td></tr>
             <tr><th align=left valign=top width="25%">Critical</th><td>Whether this test appears on the Critical view</td></tr>
             <tr><th align=left valign=top width="25%">C/Y/R limits</th><td>If set, this is the number of failures that must happen before the status changes to Clear/Yellow/Red</td></tr>
             <tr><th align=left valign=top width="25%">Configuration</th><td>Details about how this status is monitored. NOTE: The exact thresholds for each test are configured on the client, and may differ from that listed here.</td></tr>

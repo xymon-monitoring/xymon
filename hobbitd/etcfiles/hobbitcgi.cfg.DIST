@@ -1,4 +1,4 @@
-# This file is used to setup options for the various Hobbit
+# This file is used to setup options for the various Xymon
 # CGI programs. It is loaded by the hobbit-cgi/*.sh wrapper
 # scripts, and one environment variable is then passed to
 # the commandline used for each tool.

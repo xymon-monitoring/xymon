@@ -1,9 +1,9 @@
-Unix client for Hobbit
+Unix client for Xymon
 ======================
-As of version 4.1, Hobbit ships with a native client for
+As of version 4.1, Xymon ships with a native client for
 most Unix-based systems.
 
-The Hobbit client will generate status columns for:
+The Xymon client will generate status columns for:
 * cpu    : CPU utilisation
 * disk   : Filesystem (disk) utilisation
 * files  : File- and directory attributes and sizes
@@ -19,7 +19,7 @@ It will also feed data to generate some graphs:
 
 In the default setup, all configuration of disk thresholds, 
 load limits, which processes to monitor etc. is done on the 
-Hobbit server, NOT on the client. This is to allow centralized 
+Xymon server, NOT on the client. This is to allow centralized 
 configuration of the monitored systems.
 
 If you prefer to have the client configuration done locally
@@ -30,7 +30,7 @@ the central configuration. Note: The locally-configured
 client requires the PCRE libraries to be installed on the
 client host.
 
-The Hobbit client is released under the GNU GPL, version 2
+The Xymon client is released under the GNU GPL, version 2
 or later. See the file COPYING for details.
 
 
@@ -38,22 +38,22 @@ Installation
 ============
 Building the client package requires a working C compiler
 and GNU make on the target platform. None of the extra libraries
-needed for building Hobbit are used by the client - so a
+needed for building Xymon are used by the client - so a
 plain C compiler installation with GNU make is all that is 
 needed.
 
 To build the client:
 
-	- create a "hobbit" userid on the system
+	- create a "xymon" userid on the system
 	  (not required, but recommended).
-	- extract the Hobbit source archive
-	- cd to the hobbit-X.X directory
+	- extract the Xymon source archive
+	- cd to the xymon-X.X directory
 	- run "./configure --client; make"
 	- as root, run "make install"
 
 The client installation is kept entirely within
-the "hobbit" users' home-directory. All client-related
-files are in the ~hobbit/client/ directory. If convenient,
+the "xymon" users' home-directory. All client-related
+files are in the ~xymon/client/ directory. If convenient,
 this directory can be copied directly to other systems
 of the same type, so you need not build the client from
 source on all systems.
@@ -61,7 +61,7 @@ source on all systems.
 
 Running it
 ==========
-To start the client, su to the "hobbit" user, then run
+To start the client, su to the "xymon" user, then run
    $HOME/client/runclient.sh start
 
 You should arrange for your boot-time scripts to run this
@@ -70,14 +70,14 @@ command at startup.
 
 Client configuration
 ====================
-All of the normal configuration is done on the Hobbit SERVER.
+All of the normal configuration is done on the Xymon SERVER.
 See the hobbit-clients.cfg(5) and client-local.cfg(5) man-
-pages on the Hobbit server.
+pages on the Xymon server.
 
 
 Hostname detection
 ------------------
-The client reports to Hobbit using the hostname taken from
+The client reports to Xymon using the hostname taken from
 the "uname -n" command output. Whether this provides a fully
 qualified DNS name (myserver.foo.com) or a simple hostname
 (myserver) varies a lot. If your client gets it wrong, you
@@ -118,16 +118,16 @@ scripts for your client, you can add them to this file. The
 environment variables commonly used by Big Brother-based extensions 
 are made available by hobbitlaunch for the scripts, so in most
 cases extensions written for the Big Brother client will work 
-without modifications on Hobbit.
+without modifications on Xymon.
 
 Each script should have a separate section in the file, like the
 default one that runs the core client:
 
 [myextension]
-	ENVFILE /usr/lib/hobbit/client/etc/hobbitclient.cfg
-	CMD /usr/lib/hobbit/client/ext/myscript.sh
+	ENVFILE /usr/lib/xymon/client/etc/hobbitclient.cfg
+	CMD /usr/lib/xymon/client/ext/myscript.sh
 	INTERVAL 5m
-	LOGFILE /usr/lib/hobbit/client/logs/myscript.log
+	LOGFILE /usr/lib/xymon/client/logs/myscript.log
 
 See the hobbitlaunch.cfg(5) man-page for a full description 
 of this file.

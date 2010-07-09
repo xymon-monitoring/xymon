@@ -1,13 +1,13 @@
-.TH BB-SNAPSHOT.CGI 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH BB-SNAPSHOT.CGI 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-bb-snapshot.cgi \- CGI program to rebuild the Hobbit webpages for a specific point in time.
+bb-snapshot.cgi \- CGI program to rebuild the Xymon webpages for a specific point in time.
 .SH SYNOPSIS
 .B "bb-snapshot.cgi"
 
 .SH DESCRIPTION
 \fBbb-snapshot.cgi\fR
 is invoked as a CGI script via the bb-snapshot.sh CGI wrapper.
-It rebuilds the Hobbit web pages to the look they had 
+It rebuilds the Xymon web pages to the look they had 
 at a particular point in time, based upon the historical information
 logged about events.
 
@@ -47,7 +47,7 @@ program building the snapshot files.
 bbgen options passed by default to the bb-snapshot.cgi script. 
 This happens in the bb-snapshot.sh CGI wrapper script.
 .IP BBHOME
-Home directory of the Hobbit server files
+Home directory of the Xymon server files
 .IP BBSNAP
 Directory where generated snapshots are stored. This directory must
 be writable by the userid executing the CGI script, typically

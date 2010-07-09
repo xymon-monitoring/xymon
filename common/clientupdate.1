@@ -1,15 +1,15 @@
-.TH CLIENTUPDATE 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH CLIENTUPDATE 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-clientupdate \- Hobbit client update utility
+clientupdate \- Xymon client update utility
 .SH SYNOPSIS
 .B "clientupdate [options]"
 
 .SH DESCRIPTION
-\fBclientupdate\fR is part of the Hobbit client. It is responsible
+\fBclientupdate\fR is part of the Xymon client. It is responsible
 for updating an existing client installation from a central
-repository of client packages stored on the Hobbit server.
+repository of client packages stored on the Xymon server.
 
-When the Hobbit client sends a normal client report to the Hobbit
+When the Xymon client sends a normal client report to the Xymon
 server, the server responds with the section of the
 .I client-local.cfg(5)
 file that is relevant to this client. Included in this may be
@@ -25,7 +25,7 @@ Report the current clientversion.
 
 .IP "--update=NEWVERSION"
 Attempt to update the client to NEWVERSION by fetching this version
-of the client software from the Hobbit server.
+of the client software from the Xymon server.
 
 .IP "--reexec"
 Used internally during the update process, see \fBOPERATION\fR below.
@@ -54,14 +54,14 @@ but the clientupdate utility cannot delete or rename files.
 .IP "Package the client"
 When your new client software is ready, create a tar-file of the 
 new client. All files in the tar archive must have filenames 
-relative to the clients' $BBHOME (usually, ~hobbit/client/).
-Save the tarfile on the Hobbit server in 
-~hobbit/server/download/somefile.tar.  Dont compress it.
+relative to the clients' $BBHOME (usually, ~xymon/client/).
+Save the tarfile on the Xymon server in 
+~xymon/server/download/somefile.tar.  Dont compress it.
 It is recommended that you use some sort of operating-system 
 and version-numbering scheme for the filename, but you can choose 
 whatever filename suits you - the only requirement is that it must
 end with ".tar". The part of the filename preceding ".tar" is
-what Hobbit will use as the "clientversion" ID.
+what Xymon will use as the "clientversion" ID.
 
 .IP "Configure which hosts receive the new client"
 In the 
@@ -78,7 +78,7 @@ after at most 10 minutes. If you want to force an immediate
 reload, send a SIGHUP signal to the hobbitd process.
 
 .IP "Wait for the client to update"
-The next time the client contacts the Hobbit server to
+The next time the client contacts the Xymon server to
 send the client data, it will notice the new clientversion
 setting in client-local.cfg, and will run \fBclientupdate\fR
 to install the new client software. So when the client runs
@@ -97,14 +97,14 @@ step, the clientupdate utility automatically launches the next step
 by running the program from the file in $BBTMP.
 
 .IP "Update step"
-The second step downloads the new client software from the Hobbit server.
+The second step downloads the new client software from the Xymon server.
 The new software must be packed into a tar file, which clientupdate then
 unpacks into the $BBHOME directory.
 
 .SH "ENVIRONMENT VARIABLES"
-clientupdate uses several of the standard Hobbit environment
+clientupdate uses several of the standard Xymon environment
 variables, including \fBBBHOME\fR and \fBBBTMP\fR.
 
 .SH "SEE ALSO"
-hobbit(7), bb(1), client-local.cfg(5)
+xymon(7), bb(1), client-local.cfg(5)
 

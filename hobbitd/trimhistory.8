@@ -1,27 +1,27 @@
-.TH TRIMHISTORY 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH TRIMHISTORY 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-trimhistory \- Remove old Hobbit history-log entries
+trimhistory \- Remove old Xymon history-log entries
 .SH SYNOPSIS
 .B "trimhistory --cutoff=TIME [options]"
 
 .SH DESCRIPTION
 The \fBtrimhistory\fR tool is used to purge old entries from the
-Hobbit history logs. These logfiles accumulate information about all
+Xymon history logs. These logfiles accumulate information about all
 status changes that have occurred for any given service, host, or the
-entire Hobbit system, and is used to generate the event- and history-log
+entire Xymon system, and is used to generate the event- and history-log
 webpages.
 
-Purging old entries can be done while Hobbit is running, since the
+Purging old entries can be done while Xymon is running, since the
 tool takes care not to commit updates to a file if it changes mid-way
 through the operation. In that case, the update is aborted and the 
 existing logfile is left untouched.
 
 Optionally, this tool will also remove logfiles from hosts that are 
-no longer defined in the Hobbit 
+no longer defined in the Xymon 
 .I bb-hosts(5)
 file. As an extension, even logfiles from services can be removed, 
 if the service no longer has a valid status-report logged in the
-current Hobbit status.
+current Xymon status.
 
 .SH OPTIONS
 .IP "--cutoff=TIME"
@@ -49,7 +49,7 @@ file.
 
 .IP --dropsvcs
 Causes trimhistory to delete files from services that are not currently
-tracked by Hobbit. Normally these files would be left untouched if only
+tracked by Xymon. Normally these files would be left untouched if only
 the host exists.
 
 .IP --droplogs
@@ -71,7 +71,7 @@ Enable debugging output.
 
 .SH FILES
 .IP "$BBHIST/allevents"
-The eventlog of all events that have happened in Hobbit.
+The eventlog of all events that have happened in Xymon.
 
 .IP "$BBHIST/HOSTNAME"
 The per-host eventlogs.
@@ -91,9 +91,9 @@ The top-level directory for the historical status-log collections.
 
 .IP BBHOSTS
 The location of the bb-hosts file, holding the list of currently 
-known hosts in Hobbit.
+known hosts in Xymon.
 
 
 .SH "SEE ALSO"
-hobbit(7), bb-hosts(5)
+xymon(7), bb-hosts(5)
 

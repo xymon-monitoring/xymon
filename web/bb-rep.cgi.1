@@ -1,4 +1,4 @@
-.TH BB-REP.CGI 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH BB-REP.CGI 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 bb-rep.cgi \- CGI front-end to bbgen reporting
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ bb-rep.cgi \- CGI front-end to bbgen reporting
 .SH DESCRIPTION
 \fBbb-rep.cgi\fR
 is invoked as a CGI script via the bb-rep.sh CGI wrapper.
-It triggers the generation of a Hobbit availability
+It triggers the generation of a Xymon availability
 report for the timeperiod specified by the CGI paramaters.
 
 bb-rep.cgi is passed a QUERY_STRING environment variable with the
@@ -78,7 +78,7 @@ HTML template report request form
 bbgen options passed by default to the bb-rep.cgi. This 
 happens in the bb-rep.sh wrapper.
 .IP BBHOME
-Home directory of the Hobbit server installation
+Home directory of the Xymon server installation
 .IP BBREP
 Directory where generated reports are stored. This directory must
 be writable by the userid executing the CGI script, typically

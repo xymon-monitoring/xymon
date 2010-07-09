@@ -28,6 +28,13 @@ hobbit (4.3.0-0.20061124) unstable; urgency=low
 
  -- Henrik Stoerner <henrik@hswn.dk>  Fri, 24 Nov 2006 10:08:00 +0100
 
+hobbit (4.2.1-1) unstable; urgency=low
+
+  * Xymon version 4.2.1: 4.2.0 plus all-in-one patch
+  * Project renamed to "Xymon" - preliminary changes in
+    documents and web templates, but no filename changes.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Wed, 12 Sep 2008 13:56:00 +0100
 
 hobbit (4.2.0-2) unstable; urgency=low
 

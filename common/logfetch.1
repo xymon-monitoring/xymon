@@ -1,19 +1,19 @@
-.TH LOGFETCH 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH LOGFETCH 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-logfetch \- Hobbit client data collector
+logfetch \- Xymon client data collector
 .SH SYNOPSIS
 .B "logfetch CONFIGFILE STATUSFILE"
 
 .SH DESCRIPTION
-\fBlogfetch\fR is part of the Hobbit client. It is responsible
+\fBlogfetch\fR is part of the Xymon client. It is responsible
 for collecting data from logfiles, and other file-related data,
-which is then sent to the Hobbit server for analysis.
+which is then sent to the Xymon server for analysis.
 
 logfetch uses a configuration file, which is automatically
-retrieved from the Hobbit server. There is no configuration
+retrieved from the Xymon server. There is no configuration
 done locally. The configuration file is usually stored in
 the \fB$BBHOME/tmp/logfetch.cfg\fR file, but editing this file has
-no effect since it is re-written with data from the Hobbit 
+no effect since it is re-written with data from the Xymon 
 server each time the client runs.
 
 logfetch stores information about what parts of the monitored
@@ -28,7 +28,7 @@ and "dir:" entries in
 .I client-local.cfg(5)
 then logfetch will require at least read-acces to the directory
 where the file is located. If you request checksum calculation
-for a file, then it must be readable by the hobbit client user.
+for a file, then it must be readable by the Xymon client user.
 
 Do \fBNOT\fR install logfetch as suid-root. There is no
 way that logfetch can check whether the configuration file it uses
@@ -52,5 +52,5 @@ does report directory sizes in kilobytes.
 .IP $BBHOME/tmp/logfetch.status
 
 .SH "SEE ALSO"
-hobbit(7), hobbit-clients.cfg(5)
+xymon(7), hobbit-clients.cfg(5)
 

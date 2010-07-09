@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 REL=$1
 if [ "$REL" = "" ]; then

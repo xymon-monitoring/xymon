@@ -1,14 +1,14 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-	<title>Integrating MRTG data into Hobbit</title>
+	<title>Integrating MRTG data into Xymon</title>
 </head>
 <body>
-<h1>Integrating MRTG data into Hobbit</h1>
+<h1>Integrating MRTG data into Xymon</h1>
 <p>This document describes one way of integrating MRTG graphs into
-Hobbit. It's simple, doesn't require any additional scripts,
+Xymon. It's simple, doesn't require any additional scripts,
 and provides all of your MRTG graphs as part of the "trends"
-column that is already present for all hosts in Hobbit.</p>
+column that is already present for all hosts in Xymon.</p>
 
 <p>Another way of doing this is the 
 <a href="http://www.pleiades.com/mrtgbb/">bb-mrtg.pl script</a>.
@@ -16,25 +16,25 @@ This is an extension script that gives you some more
 options for controlling where the graphs show up, and also
 lets you generate alerts based on data collected by MRTG.</p>
 
-<h3>Simple Hobbit-MRTG support</h3>
+<h3>Simple Xymon-MRTG support</h3>
 <p>MRTG by default uses its own fileformat for the data files, and 
 continuously generates PNG- or GIF-images of the data. This is a 
 waste of ressources - most of the time, these images are never seen.
 This was in fact one of the reasons that RRDtool was developed, to
 separate the data-collection from the graph generation.</p>
 
-<p>Hobbit uses the RRDtool format for all of its data. You can configure 
+<p>Xymon uses the RRDtool format for all of its data. You can configure 
 MRTG to save data using the RRDtool data format, instead of the default 
 MRTG log-file format. This lets your MRTG save the data directly into the 
-Hobbit RRD directory, in the same format that all of the other Hobbit RRD 
-files use. You can then use the normal Hobbit graph tools to view the 
+Xymon RRD directory, in the same format that all of the other Xymon RRD 
+files use. You can then use the normal Xymon graph tools to view the 
 graphs.</p>
 
 <p>To configure MRTG to use the RRDtool format, you must setup the mrtg.cfg
 file like this at the top of the file:</p>
 
 <pre>
-# For Hobbit integration
+# For Xymon integration
 WorkDir: /usr/local/hobbit/data/rrd
 LogFormat: rrdtool
 </pre>
@@ -60,12 +60,12 @@ query the SNMP daemon on the router.</p>
 <p>The <tt><b>Directory[mrtg.myrouter.eth0]:&nbsp;myrouter.sample.com</b></tt> instructs MRTG to
 save the data file in this directory relative to the <b>WorkDir</b> directory, i.e. the final directory 
 for the RRD datafile will be <tt>/usr/local/hobbit/data/rrd/myrouter.sample.com</tt> which is
-where Hobbit expects all of the RRD-files for the myrouter.sample.com host to be. The
+where Xymon expects all of the RRD-files for the myrouter.sample.com host to be. The
 name of the RRD data-file will be <b>mrtg.myrouter.eth0.rrd</b> - i.e. the name of the target.</p>
 
 <p>The reason for naming the data file <b>mrtg.*.rrd</b> is that the hobbitgraph tool has a 
 built-in definition for generating graphs from this type of files. So if you stick to this
-naming convention, the graphs will automatically show up on the Hobbit "trends" page. If you
+naming convention, the graphs will automatically show up on the Xymon "trends" page. If you
 have more than one device that you collect data from, you'll need to modify this; you can use
 any name for the target as long as it is of the form <b>mrtg.*.DEVICE</b> - i.e. first "mrtg.", 
 then some random text (e.g. the hostname), then a dot and the device-name. The device-name is
@@ -78,7 +78,7 @@ you know your devices as. Note the MRTG converts this to lower-case.</p>
 MaxBytes settings, they are required - MRTG will not run without them:</p>
 
 <pre>
-# For Hobbit integration
+# For Xymon integration
 WorkDir: /var/lib/hobbit/rrd
 LogFormat: rrdtool
 
@@ -97,14 +97,14 @@ MaxBytes[mrtg.fenris.lan]: 1250000
 </pre>
 
 <p>With this setup, I have the MRTG graphs readily available on the "trends" page, together
-with all of the other Hobbit graphs.</p>
+with all of the other Xymon graphs.</p>
 
 <h3>Running the MRTG data collector from hobbitlaunch</h3>
 <p>Normally there is a cron job that runs the <tt>mrtg</tt> command every 5
 minutes to collect the MRTG data. But you can run it from hobbitlaunch - 
 this also has the benefit that the RRD files will be owned by the hobbit user.</p>
 
-<p>All that is needed is to add a section for MRTG to Hobbit's  hobbitlaunch.cfg 
+<p>All that is needed is to add a section for MRTG to Xymon's  hobbitlaunch.cfg 
 file. Mine looks like this:</p>
 <pre>
 [mrtg]

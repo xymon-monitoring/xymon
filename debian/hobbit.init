@@ -1,8 +1,19 @@
 #! /bin/sh
 #
 
+### BEGIN INIT INFO
+# Provides:          xymon
+# Required-Start:    $network
+# Required-Stop:     $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: The Xymon monitor
+# Description:       Xymon is a monitoring tool for monitoring 
+#                    servers and network applications.
+### END INIT INFO
+
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/lib/hobbit/server/hobbit.sh
+DAEMON=/usr/lib/xymon/server/hobbit.sh
 NAME=hobbit
 DESC=hobbit
 

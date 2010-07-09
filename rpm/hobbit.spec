@@ -9,7 +9,7 @@ Source1: hobbit-init.d
 Source2: hobbit.logrotate
 Source3: hobbit-client.init
 Source4: hobbit-client.default
-Summary: Hobbit network monitor
+Summary: Xymon network monitor
 BuildRoot: /tmp/hobbit-root
 #BuildRequires: openssl-devel
 #BuildRequires: pcre-devel
@@ -18,20 +18,20 @@ BuildRoot: /tmp/hobbit-root
 Conflicts: hobbit-client
 
 %description
-Hobbit is a system for monitoring your network servers and
-applications. This package contains the server side of the
-Hobbit package.
+Xymon (previously known as Hobbit) is a system for monitoring 
+your network servers and applications. This package contains 
+the server side of the Xymon package.
 
 %package client
-Summary: Hobbit client reporting data to the Hobbit server
+Summary: Xymon client reporting data to the Xymon server
 Group: Applications/System
 Conflicts: hobbit
 
 %description client
-This package contains a client for the Hobbit monitor. Clients
-report data about the local system to the monitor, allowing it
-to check on the status of the system load, filesystem utilisation,
-processes that must be running etc.
+This package contains a client for the Xymon (previously known
+as Hobbit) monitor. Clients report data about the local system to 
+the monitor, allowing it to check on the status of the system 
+load, filesystem utilisation, processes that must be running etc.
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -95,7 +95,7 @@ id hobbit 1>/dev/null 2>&1
 if [ $? -ne 0 ]
 then
    groupadd hobbit || true
-   useradd -g hobbit -c "Hobbit user" -d /usr/lib/hobbit hobbit
+   useradd -g hobbit -c "Xymon user" -d /usr/lib/hobbit hobbit
 fi
 if [ -e /var/log/hobbit/hobbitlaunch.pid -a -x /etc/init.d/hobbit ]
 then
@@ -107,7 +107,7 @@ id hobbit 1>/dev/null 2>&1
 if [ $? -ne 0 ]
 then
    groupadd hobbit || true
-   useradd -g hobbit -c "Hobbit user" -d /usr/lib/hobbit hobbit
+   useradd -g hobbit -c "Xymon user" -d /usr/lib/hobbit hobbit
 fi
 if [ -e /var/log/hobbit/clientlaunch.pid -a -x /etc/init.d/hobbit-client ]
 then

@@ -1,4 +1,4 @@
-.TH HOBBITD_HOSTDATA 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITD_HOSTDATA 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 hobbitd_hostdata \- hobbitd worker module for storing historical client data
 .SH SYNOPSIS
@@ -8,11 +8,11 @@ hobbitd_hostdata \- hobbitd worker module for storing historical client data
 hobbitd_hostdata is a worker module for hobbitd, and as such it is normally
 run via the
 .I hobbitd_channel(8)
-program. Whenever a status column in Hobbit changes to an alert
+program. Whenever a status column in Xymon changes to an alert
 state (usually red, yellow or purple), this module receives a copy
-of the latest Hobbit client data sent by the host, and stores it on
+of the latest Xymon client data sent by the host, and stores it on
 disk. This allows you to review all of the data collected by the
-Hobbit client on the server around the time that a problem occurred.
+Xymon client on the server around the time that a problem occurred.
 This can make troubleshooting incidents easier by providing a snapshot
 of the host status shortly before a problem became apparent.
 
@@ -25,5 +25,5 @@ All of the host data are stored in the $CLIENTLOGS directory,
 by default this is the $BBVAR/hostdata/ directory.
 
 .SH "SEE ALSO"
-hobbitd(8), hobbitd_channel(8), hobbit(7)
+hobbitd(8), hobbitd_channel(8), xymon(7)
 

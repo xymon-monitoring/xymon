@@ -1,4 +1,4 @@
-.TH HOBBITD_HISTORY 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITD_HISTORY 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 hobbitd_history \- hobbitd worker module for logging status changes 
 .SH SYNOPSIS
@@ -34,7 +34,7 @@ BBALLHISTLOGS=FALSE.
 .IP BBHOSTHISTLOG
 This environment variable controls if the $BBHIST/HOSTNAME
 logfile is updated. This file holds a list of all status changes seen
-for a single host, but is not used by any of the standard Hobbit
+for a single host, but is not used by any of the standard Xymon
 tools. If you do not want to save this, you can disable it by setting
 BBHOSTHISTLOG=FALSE.
 
@@ -42,12 +42,12 @@ BBHOSTHISTLOG=FALSE.
 This environment variable controls if the historical
 status-logs are saved whenever a status change occurs. These logfiles
 are stored in the $BBHISTLOGS directory, and are used for the detailed
-log-display of a status from the Hobbit "History" page. If you
+log-display of a status from the Xymon "History" page. If you
 do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
 
 .SH FILES
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-hobbitd_channel(8), hobbitd(8), hobbit(7)
+hobbitd_channel(8), hobbitd(8), xymon(7)
 

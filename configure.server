@@ -1,10 +1,10 @@
 #!/bin/sh
 
-# Configure script for Hobbit server
+# Configure script for Xymon server
 # $Id$
 
 echo ""
-echo "Configuration script for Hobbit"
+echo "Configuration script for Xymon"
 echo ""
 
 while test "$1" != ""
@@ -14,7 +14,7 @@ do
 	case "$OPT" in
 	  "--help")
 	  	cat <<EOF
-  To configure Hobbit, the following options are available:
+  To configure Xymon, the following options are available:
      --rrdinclude DIRECTORY   : Specify location of RRDtool include files
      --rrdlib DIRECTORY       : Specify location of RRDtool libraries
      --pcreinclude DIRECTORY  : Specify location of PCRE include files
@@ -71,7 +71,7 @@ then
 	exit 1
 fi
 
-echo "This script asks a few questions and builds a Makefile to compile Hobbit"
+echo "This script asks a few questions and builds a Makefile to compile Xymon"
 echo ""
 
 if test "$MAKE" = ""; then
@@ -81,12 +81,12 @@ echo "Checking your make-utility"
 MAKEVER=`$MAKE -version 2>&1 | head -n 1 | awk '{print $1 " " $2}'`
 if test "$MAKEVER" != "GNU Make"
 then
-	echo "GNU make is required to build Hobbit."
+	echo "GNU make is required to build Xymon."
 	echo "If it is available as \"gmake\", run configure as: 'MAKE=gmake $0'"
 	exit 1
 fi
 
-echo "Checking pre-requisites for building Hobbit"
+echo "Checking pre-requisites for building Xymon"
 echo ""
 . build/fping.sh
 echo ""; echo ""
@@ -105,7 +105,7 @@ then
 	SSLDEF=""
 else
 	echo ""
-	echo "Hobbit can use the OpenSSL library to test SSL-enabled services"
+	echo "Xymon can use the OpenSSL library to test SSL-enabled services"
 	echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
 	echo "library installed, I recommend that you enable this."
 	echo ""
@@ -131,7 +131,7 @@ then
 	LDAPDEF=""
 else
 	echo ""
-	echo "Hobbit can use your $LDAPVENDOR LDAP client library to test LDAP servers."
+	echo "Xymon can use your $LDAPVENDOR LDAP client library to test LDAP servers."
 	echo ""
 	echo "Do you want to be able to test LDAP servers (y) ?"
 	if test "$ENABLELDAP" = ""
@@ -179,17 +179,17 @@ echo ""; echo ""
 
 # Pre-requisites completed.
 
-echo "Setting up for a Hobbit server"
+echo "Setting up for a Xymon server"
 echo ""; echo ""
 
-echo "What userid will be running Hobbit [hobbit] ?"
+echo "What userid will be running Xymon [xymon] ?"
 if test -z "$BBUSER"
 then
 	read BBUSER
 fi
 if test -z "$BBUSER"
 then
-	BBUSER="hobbit"
+	BBUSER="xymon"
 fi
 
 if test -z "$BBTOPDIR"
@@ -224,7 +224,7 @@ else
 	HOMEDIR="$BBTOPDIR"
 fi
 
-echo "Where do you want the Hobbit installation [${HOMEDIR}] ?"
+echo "Where do you want the Xymon installation [${HOMEDIR}] ?"
 if test -z "$BBTOPDIR"
 then
 	read BBTOPDIR
@@ -235,13 +235,13 @@ then
 fi
 if test -d "$BBTOPDIR"
 then
-	echo "OK, will configure to use $BBTOPDIR as the Hobbit toplevel directory"
+	echo "OK, will configure to use $BBTOPDIR as the Xymon toplevel directory"
 else
 	echo "WARNING: $BBTOPDIR does not exist."
 fi
 echo ""; echo ""
 
-echo "What URL will you use for the Hobbit webpages [/hobbit] ? "
+echo "What URL will you use for the Xymon webpages [/xymon] ? "
 if test -z "$BBHOSTURL"
 then
 	read BBHOSTURL
@@ -249,17 +249,17 @@ fi
 
 if test -z "$BBHOSTURL"
 then
-	BBHOSTURL="/hobbit"
+	BBHOSTURL="/xmon"
 elif test "$BBHOSTURL" = "/"
 then
-	# For Hobbit as the root URL, we must clear this setting.
+	# For Xymon as the root URL, we must clear this setting.
 	# Otherwise, gifs, menus etc stop working because we generate
 	# URL's begining with "//"
 	BBHOSTURL=""
 fi
 echo ""; echo ""
 
-echo "Where to put the Hobbit CGI scripts [$BBTOPDIR/cgi-bin] ? "
+echo "Where to put the Xymon CGI scripts [$BBTOPDIR/cgi-bin] ? "
 echo "(Note: This is the filesystem directory - we will get to the URL shortly)"
 if test -z "$CGIDIR"
 then
@@ -271,7 +271,7 @@ then
 fi
 echo ""; echo ""
 
-echo "What is the URL for the Hobbit CGI directory [/hobbit-cgi] ? "
+echo "What is the URL for the Xymon CGI directory [/xymon-cgi] ? "
 echo "(Note: This is the URL - NOT the filesystem directory)"
 if test -z "$BBCGIURL"
 then
@@ -279,21 +279,21 @@ then
 fi
 if test -z "$BBCGIURL"
 then
-	BBCGIURL="/hobbit-cgi"
+	BBCGIURL="/xymon-cgi"
 fi
 echo ""; echo ""
 
 echo "********************** SECURITY NOTICE ****************************"
-echo "If your Hobbit server is accessible by outsiders, then you should"
+echo "If your Xymon server is accessible by outsiders, then you should"
 echo "restrict access to the CGI scripts that handle enable/disable of"
 echo "hosts, and acknowledging of alerts. The easiest way to do this is"
 echo "to put these in a separate CGI directory and require a password to"
 echo "access them."
-echo "Even if your Hobbit server is on a secured, internal network, you"
+echo "Even if your Xymon server is on a secured, internal network, you"
 echo "may want to have some operations (like disabling a host) be password-"
 echo "protected - that lets you see who disabled or acknowledged an alert."
 echo ""
-echo "Where to put the Hobbit Administration CGI scripts [$BBTOPDIR/cgi-secure] ? "
+echo "Where to put the Xymon Administration CGI scripts [$BBTOPDIR/cgi-secure] ? "
 echo "(Note: This is the filesystem directory - we will get to the URL shortly)"
 if test -z "$SECURECGIDIR"
 then
@@ -307,7 +307,7 @@ echo ""; echo ""
 
 if test "$CGIDIR" != "$SECURECGIDIR"
 then
-	echo "What is the URL for the Hobbit Administration CGI directory [/hobbit-seccgi] ? "
+	echo "What is the URL for the Xymon Administration CGI directory [/xymon-seccgi] ? "
 	echo "(Note: This is the URL - NOT the filesystem directory)"
 	if test -z "$SECUREBBCGIURL"
 	then
@@ -315,7 +315,7 @@ then
 	fi
 	if test -z "$SECUREBBCGIURL"
 	then
-		SECUREBBCGIURL="/hobbit-seccgi"
+		SECUREBBCGIURL="/xymon-seccgi"
 	fi
 else
 	SECUREBBCGIURL="$BBCGIURL"
@@ -326,8 +326,8 @@ echo "** Note that you may need to modify your webserver configuration."
 echo "** After installing, see $BBTOPDIR/server/etc/hobbit-apache.conf for an example configuration."
 echo ""; echo ""
 
-echo "To generate Hobbit availability reports, your webserver"
-echo "must have write-access to a directory below the Hobbit"
+echo "To generate Xymon availability reports, your webserver"
+echo "must have write-access to a directory below the Xymon"
 echo "top-level directory. I can set this up if you tell me"
 echo "what group-ID your webserver runs with. This is typically"
 echo "'nobody' or 'apache' or 'www-data'"
@@ -343,14 +343,14 @@ then
 fi
 echo ""; echo ""
 
-echo "Where to put the Hobbit logfiles [/var/log/hobbit] ? "
+echo "Where to put the Xymon logfiles [/var/log/xymon] ? "
 if test -z "$BBLOGDIR"
 then
 	read BBLOGDIR
 fi
 if test -z "$BBLOGDIR"
 then
-	BBLOGDIR=/var/log/hobbit
+	BBLOGDIR=/var/log/xymon
 fi
 echo ""; echo ""
 
@@ -385,7 +385,7 @@ if test "$BBVAR" = ""; then
 	BBVAR=$BBTOPDIR/data
 fi
 
-echo "Where should I install the Hobbit man-pages (/usr/local/man) ?"
+echo "Where should I install the Xymon man-pages (/usr/local/man) ?"
 if test -z "$MANROOT"
 then
 	read MANROOT
@@ -396,11 +396,11 @@ then
 fi
 echo ""; echo ""
 
-echo "# Toplevel Makefile for Hobbit"    > Makefile
+echo "# Toplevel Makefile for Xymon"    > Makefile
 
 echo "BUILDTOPDIR=\`pwd\`"               >>Makefile
 echo ""                                  >>Makefile
-echo "# configure settings for Hobbit"   >>Makefile
+echo "# configure settings for Xymon"   >>Makefile
 echo "#"                                 >>Makefile
 echo "# Toplevel dir"                    >>Makefile
 echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
@@ -419,20 +419,20 @@ echo "MANROOT = $MANROOT"                >>Makefile
 echo "# How to run fping or hobbitping"  >>Makefile
 echo "FPING = $FPING"                    >>Makefile
 echo ""                                  >>Makefile
-echo "# Username running hobbit"         >>Makefile
+echo "# Username running Xymon"          >>Makefile
 echo "BBUSER = $BBUSER"                  >>Makefile
-echo "# Hobbit server hostname"          >>Makefile
+echo "# Xymon server hostname"           >>Makefile
 echo "BBHOSTNAME = $BBHOSTNAME"          >>Makefile
-echo "# Hobbit server IP-address"        >>Makefile
+echo "# Xymon server IP-address"         >>Makefile
 echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
-echo "# Hobbit server OS"                >>Makefile
+echo "# Xymon server OS"                 >>Makefile
 echo "BBHOSTOS = $BBHOSTOS"              >>Makefile
 echo ""                                  >>Makefile
-echo "# URL for Hobbit webpages"         >>Makefile
+echo "# URL for Xymon webpages"          >>Makefile
 echo "BBHOSTURL = $BBHOSTURL"            >>Makefile
-echo "# URL for Hobbit CGIs"             >>Makefile
+echo "# URL for Xymon CGIs"              >>Makefile
 echo "BBCGIURL = $BBCGIURL"              >>Makefile
-echo "# URL for Hobbit Admin CGIs"       >>Makefile
+echo "# URL for Xymon Admin CGIs"        >>Makefile
 echo "SECUREBBCGIURL = $SECUREBBCGIURL"  >>Makefile
 echo "# Webserver group-ID"              >>Makefile
 echo "HTTPDGID=$HTTPDGID"                >>Makefile
@@ -544,7 +544,7 @@ echo "include build/Makefile.rules" >> Makefile
 echo "" >> Makefile
 
 echo ""; echo ""
-echo "Created Makefile with the necessary information to build Hobbit"
+echo "Created Makefile with the necessary information to build Xymon"
 echo "Some defaults are used, so do look at the Makefile before continuing."
 echo ""
 

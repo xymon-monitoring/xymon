@@ -1,4 +1,4 @@
-.TH MSGCACHE 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH MSGCACHE 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
 msgcache \- Cache client messages for later pickup by hobbitfetch
 
@@ -6,32 +6,32 @@ msgcache \- Cache client messages for later pickup by hobbitfetch
 .B "msgcache [options]"
 
 .SH DESCRIPTION
-\fBmsgcache\fR implements a Hobbit message cache. It is intended for use
-with clients which cannot deliver their data to the Hobbit server in
+\fBmsgcache\fR implements a Xymon message cache. It is intended for use
+with clients which cannot deliver their data to the Xymon server in
 the normal way. Instead of having the client tools connect to the 
-Hobbit server, msgcache runs locally and the client tools then
+Xymon server, msgcache runs locally and the client tools then
 deliver their data to the msgcache daemon. The msgcache daemon is
 then polled regularly by the
 .I hobbitfetch(8)
 utility, which collects the client messages stored by msgcache
-and forwards them to the Hobbit server.
+and forwards them to the Xymon server.
 
 \fBNOTE:\fR When using msgcache, the \fBBBDISP\fR setting for
 the clients should be \fBBBDISP=127.0.0.1\fR instead of pointing
-at the real Hobbit server.
+at the real Xymon server.
 
 .SH RESTRICTIONS
 Clients delivering their data to msgcache instead of the real
-Hobbit server will in general not notice this. Specifically,
-the client configuration data provided by the Hobbit server when
+Xymon server will in general not notice this. Specifically,
+the client configuration data provided by the Xymon server when
 a client delivers its data is forwarded through the hobbitfetch / 
 msgcache chain, so the normal centralized client configuration
 works.
 
 However, other commands which rely on clients communicating
-directly with the Hobbit server will not work. This includes
+directly with the Xymon server will not work. This includes
 the \fBconfig\fR and \fBquery\fR commands which clients may
-use to fetch configuration files and query the Hobbit server
+use to fetch configuration files and query the Xymon server
 for a current status.
 
 The \fBdownload\fR command also does not work with msgcache.
@@ -75,5 +75,5 @@ Log msgcache output to FILENAME.
 Enable debugging output.
 
 .SH "SEE ALSO"
-hobbitfetch(8), hobbit(7)
+hobbitfetch(8), xymon(7)
 

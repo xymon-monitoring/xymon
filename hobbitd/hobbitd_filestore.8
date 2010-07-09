@@ -1,6 +1,6 @@
-.TH HOBBITD_FILESTORE 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITD_FILESTORE 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-hobbitd_filestore \- hobbitd worker module for storing Hobbit data
+hobbitd_filestore \- hobbitd worker module for storing Xymon data
 .SH SYNOPSIS
 .B "hobbitd_channel --channel=status hobbitd_filestore --status [options]"
 .br
@@ -25,8 +25,8 @@ messages for more than one channel.
 .IP "--status"
 Incoming messages are "status" messages, they will be stored in the
 $BBLOGS/ directory. If you are using 
-.I hobbit(7)
-throughout your Hobbit server, you will not need to run this
+.I xymon(7)
+throughout your Xymon server, you will not need to run this
 module to save status messages, unless you have a third-party 
 add-on that reads the status-logs directly.
 This module is NOT needed to get trend graphs, you should run the 
@@ -45,7 +45,7 @@ module instead.
 Incoming messages are "notes" messages, they will be stored in the
 $BBNOTES directory. This modules is only needed if you want to 
 allow people to remotely update the notes-files available on the
-Hobbit webpages.
+Xymon webpages.
 
 .IP "--enadis"
 Incoming messages are enable/disable messages, they will update 
@@ -85,5 +85,5 @@ Enable debugging output.
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-hobbitd_channel(8), hobbitd_rrd(8), hobbitd(8), hobbit(7)
+hobbitd_channel(8), hobbitd_rrd(8), hobbitd(8), xymon(7)
 

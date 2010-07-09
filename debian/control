@@ -9,25 +9,27 @@ Package: hobbit
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: monitoring system for systems, networks and applications
- Hobbit is a network- and applications-monitoring system designed
- for use in large-scale networks. But it will also work just fine
- on a small network with just a few nodes. It is low-overhead and
- high-performance, with an easy to use web front-end. It handles
- monitoring of network services, and through client packages it
- can also be used to monitor server-specific items. Alerts can
- trigger when monitoring detects a problem, resulting in e-mails
- or calls to your pager or mobile phone.
+ Xymon (previously called Hobbit) is a network- and applications-
+ monitoring system designed for use in large-scale networks. But 
+ it will also work just fine on a small network with just a few 
+ nodes. It is low-overhead and high-performance, with an easy to
+ use web front-end. It handles monitoring of network services, 
+ and through client packages it can also be used to monitor server-
+ specific items.  Alerts can trigger when monitoring detects a 
+ problem, resulting in e-mails or calls to your pager or mobile 
+ phone.
  .
- Hobbit has a great deal of inspiration from the non-free Big Brother 
+ Xymon has a great deal of inspiration from the non-free Big Brother 
  package, but does not include any Big Brother code.
 
 Package: hobbit-client
 Architecture: any
 Conflicts: hobbit
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: client for the Hobbit network monitor
- Client data collection package for Hobbit. This gathers
- statistics and data from a single system and reports
- it to the Hobbit monitor. You should run this on all
- systems if you have a Hobbit server installed.
+Description: client for the Xymon network monitor
+ Client data collection package for Xymon (previously 
+ known as Hobbit). This gathers statistics and data from 
+ a single system and reports it to the Xymon monitor. 
+ You should run this on all systems if you have a Xymon 
+ server installed.
 

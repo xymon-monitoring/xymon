@@ -1,20 +1,20 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-	<title>Upgrading from Big Brother to Hobbit</title>
+	<title>Upgrading from Big Brother to Xymon</title>
 </head>
 
 <body>
 
-<h1>Upgrading from Big Brother to Hobbit</h1>
+<h1>Upgrading from Big Brother to Xymon</h1>
 <p>First, you should realize that this is not a fully automated
 proces. You will need to do some work yourself - especially with
 the handling of alerts.</p>
 
-<h3>First step: Install Hobbit</h3>
-<p>To begin, install Hobbit as described in the
-<a href="install.html">Hobbit installation guide</a>. I recommend
-that you configure Hobbit to use the same user-ID as your current
+<h3>First step: Install Xymon</h3>
+<p>To begin, install Xymon as described in the
+<a href="install.html">Xymon installation guide</a>. I recommend
+that you configure Xymon to use the same user-ID as your current
 Big Brother installation, but have it use a different directory
 for the server- and data-files. The default is to use <em>~/server</em> and
 <em>~/data</em> respectively, which is unlikely to clash with the
@@ -24,7 +24,7 @@ change the BBHOME and BBVAR settings near the top of the file.</p>
 
 <h3>Step two: Move the configuration files</h3>
 <p>A couple of configuration files can be copied directly from 
-Big Brother to Hobbit:</p>
+Big Brother to Xymon:</p>
 <ul>
 	<li>The <b>bb-hosts</b> file
 	<li>The <b>bb-services</b> file. You need only copy this if you 
@@ -39,32 +39,32 @@ Big Brother to Hobbit:</p>
 </ul>
 
 <p>The <em>bbwarnrules.cfg</em> and <em>bbwarnsetup.cfg</em> files
-cannot be copied over. Hobbit uses a very different configuration
+cannot be copied over. Xymon uses a very different configuration
 file for the alert configuration, so you will have to re-write your
-alert configuration for Hobbit. See the <a href="hobbit-alerts.html">Hobbit alert configuration</a>
-to learn how Hobbit alerts are configured.</p>
+alert configuration for Xymon. See the <a href="hobbit-alerts.html">Xymon alert configuration</a>
+to learn how Xymon alerts are configured.</p>
 
 <p>Any server-side extension-scripts can be copied from the $BBHOME/ext/
 directory to the ~/server/ext/ directory. You must also add entries for
-them to the Hobbit <em>hobbitlaunch.cfg</em> file. Beware that many
+them to the Xymon <em>hobbitlaunch.cfg</em> file. Beware that many
 scripts rely on environment variables that Big Brother defines, but which
-Hobbit does not define - in that case, you need to setup those environment
+Xymon does not define - in that case, you need to setup those environment
 variables in the <a href="manpages/man5/hobbitserver.cfg.5.html">hobbitserver.cfg</a> file. It is probably easiest to
-save this until you start running Hobbit, and can look at any error-output
+save this until you start running Xymon, and can look at any error-output
 from the scripts.</p>
 
 <p>If you have modified the webpage header- and footer-files in 
 $BBHOME/web/ then you can copy the modified files over directly to
-the ~/server/web/ directory. Note that Hobbit has a number of 
+the ~/server/web/ directory. Note that Xymon has a number of 
 header- and footer-files for the various CGI scripts that are not
 present in Big Brother, so you may need to setup a few extra 
-files to get a consistent look across your new Hobbit installation.</p>
+files to get a consistent look across your new Xymon installation.</p>
 
 
 <h3>Step three: Stop Big Brother</h3>
 <p>You are now going to move over the data files. To avoid confusion
 about files being updated by Big Brother while they are being moved
-over to Hobbit, I recommend that you stop Big Brother now.</p>
+over to Xymon, I recommend that you stop Big Brother now.</p>
 
 <h3>Step four: Move the history logs</h3>
 <p>You may want to save the historical logfiles and the history of your
@@ -76,20 +76,20 @@ them over with "cp -r" or "tar" instead of moving them.</p>
 
 <h3>Step five: Move the RRD files</h3>
 <p>The RRD files are used to generate the graphs, if you have installed
-the LARRD add-on to Big Brother. Hobbit has RRD support built-in, and it
+the LARRD add-on to Big Brother. Xymon has RRD support built-in, and it
 is obviously nice to keep the historical data that has been collected over
 time.</p>
 
 <p>The filesystem layout of the RRD files is different from Big Brother+LARRD
-to Hobbit. Instead of having all of the RRD files in one big directory, there
+to Xymon. Instead of having all of the RRD files in one big directory, there
 is a subdirectory for each host holding only the RRD files for data from that
 host. This is easier to manage, and also speeds up the graph generation when
 you have many hosts. Unfortunately, it makes migrating from Big Brother to
-Hobbit slightly more complicated.</p>
+Xymon slightly more complicated.</p>
 
-<p>In the Hobbit source-tree, you will find a script <em>hobbitd/moverrd.sh</em>.
+<p>In the Xymon source-tree, you will find a script <em>hobbitd/moverrd.sh</em>.
 This script moves or copies the RRD files from the Big Brother+LARRD structure
-into the Hobbit structure. You must edit a couple of settings at the beginning
+into the Xymon structure. You must edit a couple of settings at the beginning
 of the file, especially to set the correct directory where Big Brother stores
 your current RRD files (the SRCDIR setting). By default the script <i>copies</i>
 the files over to the new structure, if you would rather just move them then
@@ -99,14 +99,14 @@ change to "OP" setting to "mv".</p>
 that relate to a host currently in the bb-hosts file to the new directory 
 structure.</p>
 
-<h3>Step 6: Start Hobbit</h3>
-<p>Start Hobbit with the <tt>~/server/hobbit.sh start</tt> command. Look 
+<h3>Step 6: Start Xymon</h3>
+<p>Start Xymon with the <tt>~/server/hobbit.sh start</tt> command. Look 
 at the logfiles in the <tt>/var/log/hobbit</tt> directory (or elsewhere, if
-you did not choose the default logfile directory when configuring Hobbit) and
+you did not choose the default logfile directory when configuring Xymon) and
 fix any problems that show up.</p>
 
 <p>Look at the webpages generated. For the first few minutes, there will be
 some missing columns and icons for each host, since it takes some time for
-all of the tests to report a status to the new Hobbit daemon. After 5-10
+all of the tests to report a status to the new Xymon daemon. After 5-10
 minutes all of the standard tests should appear.</p>
 

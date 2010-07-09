@@ -1,18 +1,18 @@
-.TH HOBBITPING 1 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITPING 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-hobbitping \- Hobbit ping tool
+hobbitping \- Xymon ping tool
 .SH SYNOPSIS
 .B "hobbitping [--retries=N] [--timeout=N] [IP-adresses]"
 
 .SH DESCRIPTION
 .I hobbitping(1)
 is used for ping testing of the hosts monitored by the
-.I hobbit(7)
+.I xymon(7)
 monitoring system. It reads a list of IP adresses from stdin,
 and performs a "ping" check to see if these hosts are alive.
 It is normally invoked by the
 .I bbtest-net(1)
-utility, which performs all of the Hobbit network tests.
+utility, which performs all of the Xymon network tests.
 
 Optionally, if a list of IP-adresses is passed as commandline
 arguments, it will ping those IP's instead of reading them 
@@ -89,5 +89,5 @@ the hosts going out, which might be necessary for ping to work.
 Enable debug output. This prints out all packets sent and received.
 
 .SH "SEE ALSO"
-hobbit(7), bbtest-net(1), fping(1)
+xymon(7), bbtest-net(1), fping(1)
 

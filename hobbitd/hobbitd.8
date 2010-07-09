@@ -1,11 +1,11 @@
-.TH HOBBITD 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH HOBBITD 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
 .SH NAME
-hobbitd \- Master network daemon for a Hobbit server
+hobbitd \- Master network daemon for a Xymon server
 .SH SYNOPSIS
 .B "hobbitd [options]"
 
 .SH DESCRIPTION
-hobbitd is the core daemon in the Hobbit Monitor.
+hobbitd is the core daemon in the Xymon Monitor.
 It is designed to handle monitoring of a large number of hosts, 
 with a strong focus on being a high-speed, low-overhead implementation 
 of a Big Brother compatible server.
@@ -26,7 +26,7 @@ in the hobbitlaunch.cfg file.
 
 .SH OPTIONS
 .IP "--bbhosts=FILENAME"
-Specifies the path to the Hobbit bb-hosts file. This is used
+Specifies the path to the Xymon bb-hosts file. This is used
 to check if incoming status messages refer to known hosts; depending
 on the "--ghosts" option, messages for unknown hosts may be dropped.
 If this option is omitted, the default path used is set by the BBHOSTS
@@ -109,7 +109,7 @@ commands to hobbitd.
 By default, any host can send status-updates. If this option is used, 
 then status-updates are accepted only if they are sent by one of the 
 IP-adresses listed here, or if they are sent from the IP-address of the 
-host that the updates pertains to (this is to allow Hobbit clients to send in their
+host that the updates pertains to (this is to allow Xymon clients to send in their
 own status updates, without having to list all clients here). So typically
 you will need to list your BBNET servers here.
 
@@ -145,7 +145,7 @@ by
 .I bbgen(1)
 and
 .I bbcombotest(1)
-to retrieve the state of the Hobbit system so they can generate the Hobbit webpages.
+to retrieve the state of the Xymon system so they can generate the Xymon webpages.
 
 \fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
@@ -157,7 +157,7 @@ Controls which hosts may send administrative commands to hobbitd. These
 commands are the "drop" and "rename" commands. Access to these should be 
 restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
-a system compromise from the Hobbit monitor.
+a system compromise from the Xymon monitor.
 
 \fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
@@ -166,7 +166,7 @@ include the address of a server running bbproxy in the list of allowed addresses
 
 .IP "--no-download"
 Disable the "download" and "config" commands which can be used by clients
-to pull files from the Hobbit server. The use of these may be seen as a 
+to pull files from the Xymon server. The use of these may be seen as a 
 security risk since they allow file downloads.
 
 .IP "--debug"
@@ -209,7 +209,7 @@ avoid being flooded with alerts when a status flip-flops between
 e.g yellow and red, or green and yellow.
 
 .SH CHANNELS
-A lot of functionality in the Hobbit server is delegated to "worker modules"
+A lot of functionality in the Xymon server is delegated to "worker modules"
 that are fed various events from hobbitd via a "channel". Programs access a
 channel using IPC mechanisms - specifically, shared memory and semaphores -
 or by using an instance of the
@@ -218,7 +218,7 @@ intermediate program. hobbitd_channel enables access to a channel via a
 simple file I/O interface.
 
 A skeleton program for hooking into a hobbitd channel is provided as
-part of Hobbit in the
+part of Xymon in the
 .I hobbitd_sample(8)
 program.
 
@@ -249,14 +249,14 @@ being disabled or enabled.
 .sp
 .BR client
 This channel is fed the contents of the client messages sent
-by Hobbit clients installed on the monitored servers.
+by Xymon clients installed on the monitored servers.
 .sp
 .BR clichg
 This channel is fed the contents of a host client messages,
 whenever a status for that host goes red, yellow or purple.
 
 Information about the data stream passed on these channels is
-in the Hobbit source-tree, see the "hobbitd/new-daemon.txt" file.
+in the Xymon source-tree, see the "hobbitd/new-daemon.txt" file.
 
 .SH SIGNALS
 .IP SIGHUP
@@ -276,5 +276,5 @@ If ghost-handling is enabled via the "--ghosts" option, the bb-hosts
 file is read to determine the names of all known hosts.
 
 .SH "SEE ALSO"
-hobbit(7), hobbitserver.cfg(5).
+xymon(7), hobbitserver.cfg(5).
 

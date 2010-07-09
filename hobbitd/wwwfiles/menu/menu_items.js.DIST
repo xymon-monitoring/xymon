@@ -22,15 +22,15 @@ var MENU_ITEMS = [
 		['Edit critical systems', '@SECUREBBCGIURL@/hobbit-nkedit.sh'],
 	],
         ['Help', null, null,
-		['About Hobbit', '@BBHOSTURL@/help/about.html'],
-		['Installing Hobbit', '@BBHOSTURL@/help/install.html'],
+		['About Xymon', '@BBHOSTURL@/help/about.html'],
+		['Installing Xymon', '@BBHOSTURL@/help/install.html'],
 		['Configuring Monitoring', '@BBHOSTURL@/help/hobbit-config.html'],
 		['Configuring Alerts', '@BBHOSTURL@/help/hobbit-alerts.html'],
 		['Critical systems', '@BBHOSTURL@/help/criticalsystems.html'],
 		['Known problems', '@BBHOSTURL@/help/known-issues.html'],
 		['Tips and Tricks', '@BBHOSTURL@/help/hobbit-tips.html'],
 		['Custom graphs', '@BBHOSTURL@/help/howtograph.html'],
-		['Hobbit man-pages', '@BBHOSTURL@/help/manpages/'],
+		['Xymon man-pages', '@BBHOSTURL@/help/manpages/'],
         ],
 ];
 
