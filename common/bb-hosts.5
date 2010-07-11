@@ -286,7 +286,8 @@ netstat3 graphs. Instead of the combined tcp graphs showing
 all services, there will be three: One for each of
 the http, conn and smtp services.
 
-.IP DOWNTIME=[columns:]day:starttime:endtime:cause[,day:starttime:endtime:cause]
+.IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
+.IP DOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]
 This tag can be used to ignore failed checks during
 specific times of the day - e.g. if you run services that
 are only monitored e.g. Mon-Fri 8am-5pm, or you always 
