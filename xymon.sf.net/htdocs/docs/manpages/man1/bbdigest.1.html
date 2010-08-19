@@ -1,0 +1,78 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BBDIGEST</TITLE>
+</HEAD><BODY>
+<H1>BBDIGEST</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 11 Jan 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bbdigest - calculate message digests
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>bbdigest md5|sha1|rmd160 [filename]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/bbdigest.1.html">bbdigest</A>(1)</I>
+
+is a utility to calculate message digests for a file or
+document. It is used when defining HTTP- or FTP-based
+content checks, where 
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+checks that a URL returns a specific document; instead
+of having to compare the entire document, the comparison
+is done against a pre-computed message digest value 
+using the MD5, RIPEMD160, SHA1 or any of the SHA2 (SHA-512,
+SHA-256, SHA-384, SHA-224) message digest algorithms.
+<P>
+The optional <B>filename</B> parameter is the input
+file whose message digest should be calculated; if no
+filename is given, the data is read from standard input.
+<P>
+bbdigest outputs a string containing the digest algorithm
+and the computed message digest. This is in a format
+suitable for use in the
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
+definition of a content check.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>EXAMPLE</H2>
+
+<P>
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;bbdigest&nbsp;md5&nbsp;index.html
+<BR>&nbsp;&nbsp;&nbsp;md5:88b81b110a85c83db56a939caa2e2cf6
+<P>
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;curl&nbsp;-s&nbsp;<A HREF="http://www.foo.com/">http://www.foo.com/</A>&nbsp;|&nbsp;bbdigest&nbsp;sha1
+<BR>&nbsp;&nbsp;&nbsp;sha1:e5c69784cb971680e2c7380138e04021a20a45a2
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">EXAMPLE</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 16:21:46 GMT, January 11, 2008
+</BODY>
+</HTML>

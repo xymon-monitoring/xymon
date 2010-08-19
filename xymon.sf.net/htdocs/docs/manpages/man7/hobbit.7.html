@@ -1,0 +1,658 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBIT</TITLE>
+</HEAD><BODY>
+<H1>HOBBIT</H1>
+Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version Exp: 11 Jan 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+Hobbit - introduction to the Hobbit Monitor
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>OVERVIEW</H2>
+
+Hobbit is a tool for monitoring the health of your networked servers 
+and the applications running on them.  It provides a simple, 
+intuitive way of checking the health of your systems from 
+a webbrowser, and can also alert you to any problems that 
+arise through alarms sent as e-mail, SMS messages, via a 
+pager or by other means.
+<P>
+Hobbit is Open Source software, licensed under the GNU GPL.
+This means that you are free to use Hobbit as much as you like,
+and you are free to re-distribute it and change it to suit 
+your specific needs. However, if you change it then you must make 
+your changes available to others on the same terms that you 
+received Hobbit originally. See the file COPYING in the Hobbit
+source-archive for details.
+<P>
+Hobbit initially began life as an enhancement to Big Brother called 
+&quot;bbgen&quot;. Over a period of 5 years, Hobbit has evolved from a small
+add-on to a full-fledged monitoring system with capabilities far
+exceeding what was in the original Big Brother package. Hobbit
+does still maintain some compatibility with Big Brother, so it
+is possible to migrate from Big Brother to Hobbit without too
+much trouble. 
+<P>
+Migrating to Hobbit will give you a significant performance boost, 
+and provide you with much more advanced monitoring.  The Hobbit tools 
+are designed for installations that need to monitor a large number 
+of hosts, with very little overhead on the monitoring server. 
+Monitoring of thousands of hosts with a single Hobbit server is 
+possible - it was developed to handle just this task.
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>FEATURES</H2>
+
+These are some of the core features in Hobbit:
+<P>
+<DL COMPACT>
+<DT>Monitoring of hosts and networks<DD>
+Hobbit collects information about your systems in two ways: From
+querying network services (Web, LDAP, DNS, Mail etc.), or from
+scripts that run either on the Hobbit server or on the systems 
+you monitor. The Hobbit package includes a Hobbit client
+which you can install on the servers you monitor; it collects
+data about the CPU-load, disk- and memory-utilisation, logfiles,
+network ports in use, file- and directory-information and more.
+All of the information is stored inside Hobbit, and you can define
+conditions that result in alerts, e.g. if a network service stops
+responding, or a disk fills up.
+<P>
+<P>
+<DT>Centralized configuration<DD>
+All configuration of Hobbit is done on the Hobbit server. Even when
+monitoring hundreds or thousands of hosts, you can control their
+configuration centrally on the Hobbit server - so there is no need 
+for you to login to a system just to change e.g. which processes are
+monitored.
+<P>
+<P>
+<DT>Works on all major platforms<DD>
+The Hobbit server works on all Unix-like systems, including Linux,
+Solaris, FreeBSD, AIX, HP-UX and others. The Hobbit client supports
+all major Unix platforms, and there are other Open Source projects
+- e.g. BBWin, see <A HREF="http://bbwin.sourceforge.net/">http://bbwin.sourceforge.net/</A> - providing support for 
+Microsoft Windows based systems.
+<P>
+<P>
+<DT>A simple, intuitive web-based front-end<DD>
+&quot;Green is good, red is bad&quot;. Using the Hobbit webpages is as simple
+as that. The hosts you monitor can be grouped together in a way that
+makes sense in your organisation and presented in a tree-structure.
+The webpages use many techniques to convey information about the monitored
+systems, e.g. different icons can be used for recently changed statuses;
+links to subpages can be listed in multiple columns; different icons
+can be used for dialup-tests or reverse-tests; selected columns
+can be dropped or unconditionally included on the webpages to
+eliminate unwanted information, or always include certain information;
+user-friendly names can be shown for hosts regardless of their true
+hostname. You can also have automatic links to on-line documentation, 
+so information about your critical systems is just a click away.
+<P>
+<P>
+<DT>Integrated trend analysis, historical data and SLA reporting<DD>
+Hobbit stores trend- and availability-information about everything 
+it monitors. So if you need to look at how your systems behave over
+time, Hobbit has all of the information you need: Whether is is response 
+times of your webpages during peak hours, the CPU utilisation over the 
+past 4 weeks, or what the availability of a site was compared to the
+SLA - it's all there inside Hobbit. All measurements are tracked
+and made available in time-based graphs.
+<P>
+When you need to drill down into events that have occurred, Hobbit
+provides a powerful tool for viewing the event history for each
+statuslog, with overviews of when problems have occurred during the
+past and easy-to-use zoom-in on the event.
+<P>
+For SLA reporting, You can configure planned downtime, agreed service 
+availability level, service availability time and have Hobbit generate 
+availability reports directly showing the actual availability measured 
+against the agreed SLA. Such reports of service availability can be 
+generated on-the-fly, or pre-generated e.g. for monthly reporting. 
+<P>
+<P>
+<DT>Role-based views<DD>
+You can have multiple different views of the same hosts for different
+parts of the organisation, e.g. one view for the hardware group,
+and another view for the webmasters - all of them fed by the same
+test tools.
+<P>
+If you have a dedicated Network Operations Centre, you can configure 
+precisely which alerts will appear on their monitors - e.g. a simple 
+anomaly in the system logfile need not trigger a call to 3rd-level 
+support at 2 AM, but if the on-line shop goes down you do want someone
+to respond immediately.  So you put the webcheck for the on-line shop 
+on the NOC monitor page, and leave out the log-file check.
+<P>
+<P>
+<DT>Also for the techies<DD>
+The Hobbit user-interface is simple, but engineers will also find
+lots of relevant information. E.g. the data that clients report to Hobbit
+contain the raw output from a number of system commands.  That information 
+is available directly in Hobbit, so an administrator no longer needs to 
+login to a server to get an overview of how it is behaving - the very 
+commands they would normally run have alredy been performed, and the 
+results are on-line in Hobbit.
+<P>
+<P>
+<DT>Easy to adapt to your needs<DD>
+Hobbit includes a lot of tests in the core package, but there will
+always be something specific to your setup that you would like to
+watch. Hobbit allows you to write test scripts in your favourite
+scripting language and have the results show up as regular status
+columns in Hobbit. You can trigger alerts from these, and even track
+trends in graphs just by a simple configuration setting.
+<P>
+<P>
+<DT>Real network service tests<DD>
+The network test tool knows how to test most commonly used protocols,
+including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
+many more. When checking websites, it is possible to not only check
+that the webserver is responding, but also that the response looks
+correct by matching the response against a pre-defined pattern or a
+checksum. So you can test that a network service is really working
+and supplying the data you expect - not just that the service is
+running.
+<P>
+Protocols that use SSL encryption such as https-websites are fully supported, 
+and while checking such services the network tester will automatically run a 
+check of the validity of the SSL server certificate, and warn about 
+certificates that are about to expire.
+<P>
+<P>
+<DT>Highly configurable alerts<DD>
+You want to know when something breaks. But you don't want to get flooded
+with alerts all the time. Hobbit lets you define several criteria for
+when to send out an alert, so you only get alerts when there is really
+something that needs your attention right away. While you are handling
+an incident, you can tell Hobbit about it so it stops sending more alerts,
+and so that everyone else can check with Hobbit and know that the problem
+is being taken care of.
+<P>
+<P>
+<DT>Combined super-tests and test interdependencies<DD>
+If a single test is not enough, combination tests can be defined
+that combine the result of several tests to a single status-report.
+So if you need to monitor that at least 3 out of 5 servers are
+running at any time, Hobbit can do that for you and generate
+the necessary availability report.
+<P>
+Tests can also be configured to depend on each other, so that
+when a critical router goes down you will get alerts only for
+the router - and not from the 200 hosts behind the router.
+<P>
+<P>
+</DL>
+<A NAME="lbAE">&nbsp;</A>
+<H2>SECURITY</H2>
+
+All of the Hobbit server tools run under an unprivileged user account.
+A single program - the
+<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+
+network connectivity tester - must be installed setuid-root, but has
+been written so that it drops all root privileges immediately after
+performing the operation that requires root privileges.
+<P>
+It is recommended that you setup a dedicated account for Hobbit.
+<P>
+Communications between the Hobbit server and Hobbit clients use the
+Big Brother TCP port 1984. If the Hobbit server is located behind
+a firewall, it must allow for inbound connections to the Hobbit 
+server on tcp port 1984. Normally, Hobbit clients - i.e. the servers
+you are monitoring - must be permitted to connect to the Hobbit server 
+on this port. However, if that is not possible due to firewall 
+policies, then Hobbit includes the
+<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+
+and
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+tools to allows for a pull-style way of collecting data, where it 
+is the Hobbit server that initiates connections to the clients.
+<P>
+The Hobbit webpages are dynamically generated through CGI programs.
+<P>
+Access to the Hobbit webpages is controlled through your webserver
+access controls, e.g. you can require a login through some form of
+HTTP authentication.
+<P>
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>DEMONSTRATION SITE</H2>
+
+A site running this software can be seen at <A HREF="http://www.hswn.dk/hobbit/">http://www.hswn.dk/hobbit/</A>
+<P>
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>PREREQUISITES AND INSTALLATION</H2>
+
+You will need a Unix-like system (Linux, Solaris, HP-UX, AIX,
+FreeBSD, Mac OS X or similar) with a webserver installed. You
+will also need a C compiler and som additional libraries, but
+many systems come with the required development tools and 
+libraries pre-installed. The required libraries are:
+<P>
+<B>RRDtool</B>
+
+This library is used to store and present trend-data. It is required.
+<P>
+<B>libpcre</B>
+
+This library is used for advanced pattern-matching of text strings
+in configuration files. This library is required.
+<P>
+<B>OpenSSL</B>
+
+This library is used for communication with SSL-enabled network services.
+Although optional, it is recommended that you install this for Hobbit
+since many network tests do use SSL.
+<P>
+<B>OpenLDAP</B>
+
+This library is used for testing LDAP servers. Use of this is optional.
+<P>
+For more detailed information about Hobbit system requirements and
+how to install Hobbit, refer to the online documentation &quot;Installing
+Hobbit&quot; available from the Hobbit webserver (via the &quot;Help&quot; menu),
+or from the &quot;docs/install.html&quot; file in the Hobbit source archive.
+<P>
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SUPPORT and MAILING LISTS</H2>
+
+<A HREF="mailto:hobbit@hswn.dk">hobbit@hswn.dk</A> is an open mailing list for discussions about Hobbit.
+If you would like to participate, send an e-mail to <B><A HREF="mailto:hobbit-subscribe@hswn.dk">hobbit-subscribe@hswn.dk</A></B>
+to join the list.
+<P>
+An archive of the mailing list is available at <A HREF="http://www.hswn.dk/hobbiton/">http://www.hswn.dk/hobbiton/</A>
+<P>
+If you just want to be notified of new releases of Hobbit, please
+subscribe to the hobbit-announce mailing list. This is a moderated list,
+used only for announcing new Hobbit releases. To be added to the list, send
+an e-mail to <B><A HREF="mailto:hobbit-announce-subscribe@hswn.dk">hobbit-announce-subscribe@hswn.dk</A></B>.
+<P>
+<P>
+<A NAME="lbAI">&nbsp;</A>
+<H2>HOBBIT SERVER TOOLS</H2>
+
+These tools implement the core functionality of the Hobbit server:
+<P>
+<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+
+is the core daemon that collects all reports about the status of 
+your hosts. It uses a number of helper modules to
+implement certain tasks such as updating logfiles and sending
+out alerts: hobbitd_client, hobbitd_history, hobbitd_alert
+and hobbitd_rrd. There is also a hobbitd_filestore module for
+compatibility with Big Brother.
+<P>
+<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+
+Implements the communication between the Hobbit daemon and the
+other Hobbit server modules.
+<P>
+<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+
+Stores historical data about the things that Hobbit monitors.
+<P>
+<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+
+Stores trend data, which is used to generate graphs of the data
+monitored by Hobbit.
+<P>
+<I><A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8)</I>
+
+handles alerts. When a status changes to a critical state, this 
+module decides if an alert should be sent out, and to whom.
+<P>
+<I><A HREF="../man8/hobbitd_client.8.html">hobbitd_client</A>(8)</I>
+
+handles data collected by the Hobbit clients, analyzes the data
+and feeds back several status updates to Hobbit to build the
+view of the client status.
+<P>
+<I><A HREF="../man8/hobbitd_hostdata.8.html">hobbitd_hostdata</A>(8)</I>
+
+stores historical client data when something breaks. E.g. when a
+webpage stops responding hobbitd_hostdata will save the latest
+client data, so that you can use this to view a snapshot of how
+the system state was just prior to it failing.
+<P>
+<P>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>HOBBIT NETWORK TEST TOOLS</H2>
+
+These tools are used on servers that execute tests of network services.
+<P>
+<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+
+performs network connectivity (ping) tests.
+<P>
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+runs the network service tests.
+<P>
+<I><A HREF="../man1/bbretest-net.sh.1.html">bbretest-net.sh</A>(1)</I>
+
+is an extension script for re-doing failed network tests with a higher 
+frequency than the normal network tests. This allows Hobbit to pick up
+the recovery of a network service as soon as it happens, resulting in 
+less downtime being recorded.
+<P>
+<P>
+<A NAME="lbAK">&nbsp;</A>
+<H2>HOBBIT TOOLS HANDLING THE WEB USER-INTERFACE</H2>
+
+These tools take care of generating and updating the various
+Hobbit web-pages.
+<P>
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+takes care of updating the Hobbit webpages.
+<P>
+<I><A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1)</I>
+
+This CGI program generates an HTML view of a single status log.
+It is used to present the Hobbit status-logs.
+<P>
+<I><A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1)</I>
+
+This CGI program generates graphs of the trend-data collected
+by Hobbit.
+<P>
+<I><A HREF="../man1/hobbit-hostgraphs.cgi.1.html">hobbit-hostgraphs.cgi</A>(1)</I>
+
+When you want to combine multiple graphs into one, this CGI lets
+you combine graphs so you can e.g. compare the load on all of the
+nodes in your server farm.
+<P>
+<I><A HREF="../man1/hobbit-nkview.cgi.1.html">hobbit-nkview.cgi</A>(1)</I>
+
+Generates the Critical Systems view, based on the currently critical
+systems and the configuration of what systems and services you want to 
+monitor when.
+<P>
+<I><A HREF="../man1/bb-hist.cgi.1.html">bb-hist.cgi</A>(1)</I>
+
+This CGI program generates a webpage with the most recent history 
+of a particular host+service combination.
+<P>
+<I><A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1)</I>
+
+This CGI lets you view a log of events that have happened over a period 
+of time, for a single host or test, or for multiple systems.
+<P>
+<I><A HREF="../man1/bb-ack.cgi.1.html">bb-ack.cgi</A>(1)</I>
+
+This CGI program allows a user to acknowledge an alert he received
+from Hobbit about a host that is in a critical state. Acknowledging
+an alert serves two purposes: First, it stops more alerts from being
+sent so the technicians are not bothered wit more alerts, and secondly
+it provides feedback to those looking at the Hobbit webpages that the
+problem is being handled.
+<P>
+<I><A HREF="../man8/hobbit-mailack.8.html">hobbit-mailack</A>(8)</I>
+
+is a tool for processing acknowledgements sent via e-mail, e.g. as a 
+response to an e-mail alert.
+<P>
+<I><A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8)</I>
+
+is a CGI program to disable or re-enable hosts or individual tests.
+When disabling a host or test, you stop alarms from being sent and
+also any outages do not affect the SLA calculations. So this tool
+is useful when systems are being brought down for maintenance.
+<P>
+<I><A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1)</I>
+
+is a CGI program that finds a given host in the Hobbit
+webpages. As your Hobbit installation grows, it can become
+difficult to remember exactly which page a host is on; this CGI
+script lets you find hosts easily.
+<P>
+<I><A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1)</I>
+
+This CGI program triggers the generation of Hobbit availability 
+reports, using
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+as the reporting back-end engine.
+<P>
+<I><A HREF="../man1/bb-replog.cgi.1.html">bb-replog.cgi</A>(1)</I>
+
+This CGI program generates the detailed availability report for a 
+particular host+service combination.
+<P>
+<I><A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1)</I>
+
+is a CGI program to build the Hobbit webpages in a &quot;snapshot&quot;
+mode, showing the look of the webpages at a particular point 
+in time. It uses
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+as the back-end engine.
+<P>
+<I><A HREF="../man1/hobbit-statusreport.cgi.1.html">hobbit-statusreport.cgi</A>(1)</I>
+
+is a CGI program reporting test results for a single status but
+for several hosts. It is used to e.g. see which SSL certificates
+are about to expire, across all of the Hobbit webpages.
+<P>
+<I><A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1)</I>
+
+is a CGI program to present information about a host. The 
+information is pulled from a CSV (Comma Separated Values)
+file, which is easily exported from any spreadsheet or
+database program.
+<P>
+<P>
+<A NAME="lbAL">&nbsp;</A>
+<H2>CLIENT-SIDE TOOLS</H2>
+
+<I><A HREF="../man1/logfetch.1.html">logfetch</A>(1)</I>
+
+is a utility used by the Hobbit Unix client to collect
+information from logfiles on the client. It can also monitor various
+other file-related data, e.g. file metadata or directory sizes.
+<P>
+<I><A HREF="../man1/clientupdate.1.html">clientupdate</A>(1)</I>
+
+Is used on Hobbit clients, to automatically update the client software
+with new versions. Through this tool, updates of the client software
+can happen without an administrator having to logon to the server.
+<P>
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+This tool acts as a mini Hobbit server to the client. It stores client
+data internally, so that the
+<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+
+utility can pick it up later and send it to the Hobbit server. It
+is typically used on hosts that cannot contact the Hobbit server 
+directly due to network- or firewall-restrictions.
+<P>
+<P>
+<A NAME="lbAM">&nbsp;</A>
+<H2>HOBBIT COMMUNICATION TOOLS</H2>
+
+These tools are used for communications between the Hobbit server
+and the Hobbit clients. If there are no firewalls then they are not
+needed, but it may be necessary due to network or firewall issues
+to make use of them.
+<P>
+<I><A HREF="../man8/bbproxy.8.html">bbproxy</A>(8)</I>
+
+is a proxy-server that forwards Hobbit messages between
+clients and the Hobbit server. The clients must be able to talk
+to the proxy, and the proxy must be able to talk to the Hobbit
+server.
+<P>
+<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+
+is used when the client is not able to make outbound connections
+to neither bbproxy nor the Hobbit server (typically, for clients
+located in a DMZ network zone). Together with the
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+utility running on the client, the Hobbit server can contact the
+clients and pick up their data.
+<P>
+<P>
+<A NAME="lbAN">&nbsp;</A>
+<H2>OTHER TOOLS</H2>
+
+<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+
+is a program scheduler for Hobbit. It acts as a master program
+for running all of the Hobbit tools on a system. On the Hobbit
+server, it controls running all of the server tasks. On a Hobbit
+client, it periodically launches the client to collect data
+and send them to the Hobbit server.
+<P>
+<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+
+is the tool used to communicate with the Hobbit server.
+It is used to send status reports to the Hobbit server,
+through the custom Hobbit/BB protocol, or via HTTP. It
+can be used to query the state of tests on the central Hobbit 
+server and retrieve Hobbit configuration files. The server-side 
+script 
+<I><A HREF="../man1/bbmessage.cgi.1.html">bbmessage.cgi</A>(1) </I>
+
+used to receive messages sent via HTTP is also included.
+<P>
+<I><A HREF="../man1/bbcmd.1.html">bbcmd</A>(1)</I>
+
+is a wrapper for the other Hobbit tools which sets up all
+of the environment variables used by Hobbit tools.
+<P>
+<I><A HREF="../man1/bbhostgrep.1.html">bbhostgrep</A>(1)</I>
+
+is a utility for use by Hobbit extension scripts. It
+allows an extension script to easily pick out the hosts that
+are relevant to a script, so it need not parse a huge
+bb-hosts file with lots of unwanted test-specifications.
+<P>
+<I><A HREF="../man1/bbhostshow.1.html">bbhostshow</A>(1)</I>
+
+is a utility to dump the full
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
+file following any &quot;include&quot; statements.
+<P>
+<I><A HREF="../man1/bbdigest.1.html">bbdigest</A>(1)</I>
+
+is a utility to compute message digest values for use in
+content checks that use digests.
+<P>
+<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+
+is an extension script for the Hobbit server,
+allowing you to build complicated tests from simpler
+Hobbit test results. E.g. you can define a test that uses the results
+from testing your webserver, database server and router to have a 
+single test showing the availability of your enterprise web
+application.
+<P>
+<I><A HREF="../man8/trimhistory.8.html">trimhistory</A>(8)</I>
+
+is a tool to trim the Hobbit history logs. It will remove all
+log entries and optionally also the individual status-logs for
+events that happened before a given time.
+<P>
+<P>
+<A NAME="lbAO">&nbsp;</A>
+<H2>VERSIONS</H2>
+
+Version 1 of bbgen was relased in November 2002, and optimized the
+webpage generation on Big Brother servers.
+<P>
+Version 2 of bbgen was released in April 2003, and added a tool
+for performing network tests.
+<P>
+Version 3 of bbgen was released in September 2004, and eliminated the 
+use of several external libraries for network tests, resulting in a 
+significant performance improvement.
+<P>
+With version 4.0 released on March 30 2005, the project was de-coupled 
+from Big Brother, and the name changed to Hobbit. This version was the 
+first full implementation of the Hobbit server, but it still used the
+data collected by Big Brother clients for monitoring host metrics.
+<P>
+Version 4.1 was released in July 2005 included a simple Hobbit client
+for Unix. Logfile monitoring was not implemented.
+<P>
+Version 4.2 was released in July 2006, and includes a fully functional
+Hobbit client for Unix.
+<P>
+<P>
+<A NAME="lbAP">&nbsp;</A>
+<H2>COPYRIGHT</H2>
+
+Hobbit is
+<BR>
+
+<BR>&nbsp;&nbsp;Copyright&nbsp;(C)&nbsp;2002-2007,&nbsp;Henrik&nbsp;Storner&nbsp;&lt;<A HREF="mailto:henrik@storner.dk">henrik@storner.dk</A>&gt;&nbsp;
+<BR>
+
+Parts of the Hobbit sources are from public-domain or other freely
+available sources. These are the the Red-Black tree implementation, and 
+the MD5-, SHA1-, SHA2- and RIPEMD160-implementations. Details of the license 
+for these is in the README file included with the Hobbit sources.
+All other files are released under the GNU General Public License version 2, 
+with the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.  See the file COPYING for details.
+<P>
+<P>
+<A NAME="lbAQ">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8), <A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8), <A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8), 
+<A HREF="../man8/hobbitd_client.8.html">hobbitd_client</A>(8), <A HREF="../man8/hobbitd_hostdata.8.html">hobbitd_hostdata</A>(8), 
+<A HREF="../man1/hobbitping.1.html">hobbitping</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/bbretest-net.sh.1.html">bbretest-net.sh</A>(1), 
+<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1), <A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1), <A HREF="../man1/hobbit-hostgraphs.cgi.1.html">hobbit-hostgraphs.cgi</A>(1), <A HREF="../man1/hobbit-nkview.cgi.1.html">hobbit-nkview.cgi</A>(1), 
+<A HREF="../man1/bb-hist.cgi.1.html">bb-hist.cgi</A>(1), <A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1), 
+<A HREF="../man1/bb-ack.cgi.1.html">bb-ack.cgi</A>(1), <A HREF="../man8/hobbit-mailack.8.html">hobbit-mailack</A>(8), <A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8), <A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1), 
+<A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1), <A HREF="../man1/bb-replog.cgi.1.html">bb-replog.cgi</A>(1), <A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1), <A HREF="../man1/hobbit-statusreport.cgi.1.html">hobbit-statusreport.cgi</A>(1), <A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1), 
+<A HREF="../man1/logfetch.1.html">logfetch</A>(1), <A HREF="../man1/clientupdate.1.html">clientupdate</A>(1), <A HREF="../man8/msgcache.8.html">msgcache</A>(8), 
+<A HREF="../man8/bbproxy.8.html">bbproxy</A>(8), <A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8), 
+<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man1/bb.1.html">bb</A>(1), <A HREF="../man1/bbmessage.cgi.1.html">bbmessage.cgi</A>(1), <A HREF="../man1/bbcmd.1.html">bbcmd</A>(1), <A HREF="../man1/bbhostgrep.1.html">bbhostgrep</A>(1), <A HREF="../man1/bbhostshow.1.html">bbhostshow</A>(1), 
+<A HREF="../man1/bbdigest.1.html">bbdigest</A>(1), <A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1), <A HREF="../man8/trimhistory.8.html">trimhistory</A>(8),
+<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5),
+<A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5),
+<A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">OVERVIEW</A><DD>
+<DT><A HREF="#lbAD">FEATURES</A><DD>
+<DT><A HREF="#lbAE">SECURITY</A><DD>
+<DT><A HREF="#lbAF">DEMONSTRATION SITE</A><DD>
+<DT><A HREF="#lbAG">PREREQUISITES AND INSTALLATION</A><DD>
+<DT><A HREF="#lbAH">SUPPORT and MAILING LISTS</A><DD>
+<DT><A HREF="#lbAI">HOBBIT SERVER TOOLS</A><DD>
+<DT><A HREF="#lbAJ">HOBBIT NETWORK TEST TOOLS</A><DD>
+<DT><A HREF="#lbAK">HOBBIT TOOLS HANDLING THE WEB USER-INTERFACE</A><DD>
+<DT><A HREF="#lbAL">CLIENT-SIDE TOOLS</A><DD>
+<DT><A HREF="#lbAM">HOBBIT COMMUNICATION TOOLS</A><DD>
+<DT><A HREF="#lbAN">OTHER TOOLS</A><DD>
+<DT><A HREF="#lbAO">VERSIONS</A><DD>
+<DT><A HREF="#lbAP">COPYRIGHT</A><DD>
+<DT><A HREF="#lbAQ">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 16:21:46 GMT, January 11, 2008
+</BODY>
+</HTML>

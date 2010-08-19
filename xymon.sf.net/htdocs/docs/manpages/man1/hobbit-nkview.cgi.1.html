@@ -1,0 +1,95 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBIT-NKVIEW.CGI</TITLE>
+</HEAD><BODY>
+<H1>HOBBIT-NKVIEW.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 11 Jan 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbit-nkview.cgi - Hobbit Critical Systems view CGI
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>hobbit-nkview.cgi</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>hobbit-nkview.cgi</B> is invoked as a CGI script via the 
+hobbit-nkview.sh CGI wrapper.
+<P>
+hobbit-nkview.cgi matches the current critical statuses against the
+<I><A HREF="../man5/hobbit-nkview.cfg.5.html">hobbit-nkview.cfg</A>(5)</I>
+
+file, and generates the &quot;Critical Systems&quot; view. 
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>RELATION TO BBNK PAGE</H2>
+
+This view is a replacement for the statically generated &quot;bbnk&quot; page 
+provided in versions of Hobbit prior to version 4.2. Although the 
+&quot;bbnk&quot; pages are supported throughout Hobbit 4.x, it is recommended 
+that You switch to the newer Critical Systems view provided by this CGI.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--nkacklevel=NUMBER<DD>
+Sets the acknowledgment level for acknowledgments sent via the
+<I><A HREF="../man1/hobbit-ackinfo.cgi.1.html">hobbit-ackinfo.cgi</A>(1)</I>
+
+page. Note that this may be overridden by the configuration of the
+hobbit-ackinfo.cgi utility.
+<P>
+<DT>--env=FILENAME<DD>
+Loads the environment defined in FILENAME before executing the CGI script.
+<P>
+<DT>--area=NAME<DD>
+Load environment variables for a specific area. NB: if used,
+this option must appear before any --env=FILENAME option.
+<P>
+<DT>--debug<DD>
+Enables debugging output.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>BBHOME<DD>
+Used to locate the template files for the generated web pages.
+<P>
+<DT>QUERY_STRING<DD>
+Contains the parameters for the CGI script.
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/hobbit-ackinfo.cgi.1.html">hobbit-ackinfo.cgi</A>(1), <A HREF="../man7/hobbit.7.html">hobbit</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">RELATION TO BBNK PAGE</A><DD>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 16:21:47 GMT, January 11, 2008
+</BODY>
+</HTML>

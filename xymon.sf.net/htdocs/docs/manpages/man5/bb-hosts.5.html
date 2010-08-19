@@ -1,0 +1,1522 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BB-HOSTS</TITLE>
+</HEAD><BODY>
+<H1>BB-HOSTS</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 11 Jan 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bb-hosts - Main Hobbit configuration file
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<DL COMPACT>
+<DT>bb-hosts<DD>
+<P>
+</DL>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+The
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
+file is the most important configuration file for all of the
+Hobbit programs.  This file contains the full list of 
+all the systems monitored by Hobbit, including the set 
+of tests and other configuration items stored for each host.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>FILE FORMAT</H2>
+
+Each line of the file defines a host. Blank lines and lines
+starting with a hash mark (#) are treated as comments and ignored.
+Long lines can be broken up by putting a backslash at the end of 
+the line and continuing the entry on the next line.
+<P>
+The format of an entry in the bb-hosts file is as follows:
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;IP-address&nbsp;hostname&nbsp;#&nbsp;tag1&nbsp;tag2&nbsp;...
+<P>
+The IP-address and hostname are mandatory; all of the tags are optional.
+Listing a host with only IP-address and hostname will cause a network
+test to be executed for the host - the connectivity test is enabled
+by default, but no other tests.
+<P>
+The optional tags are then used to define which tests are 
+relevant for the host, and also to set e.g. the time-interval used
+for availability reporting by
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+<P>
+An example of setting up the bb-hosts file is in the Hobbit on-line 
+documentation (from the Help menu, choose &quot;Configuring Monitoring&quot;).
+The following describes the possible settings in a bb-hosts
+file supported by Hobbit.
+<P>
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>TAGS RECOGNIZED BY ALL TOOLS</H2>
+
+<P>
+<DL COMPACT>
+<DT>include filename<DD>
+This tag is used to include another file into the bb-hosts
+file at run-time, allowing for a large bb-hosts file to be
+split up into more manageable pieces.
+<P>
+The &quot;filename&quot; argument should point to a file that uses the
+same syntax as bb-hosts. The filename can be an absolute 
+filename (if it begins with a '/'), or a relative filename -
+relative filenames are prefixed with the directory where
+the main bb-hosts file is located (usually $BBHOME/etc/).
+<P>
+You can nest include tags, i.e. a file that is included 
+from the main bb-hosts file can itself include other files.
+<P>
+<DT>dispinclude filename<DD>
+Acts like the &quot;include&quot; tag, but only on the BBDISPLAY server.
+Can be used e.g. to put a group of hosts on multiple subpages,
+without having to repeat the host definitions.
+<P>
+<DT>netinclude filename<DD>
+Acts like the &quot;include&quot; tag, but only on the BBNET server.
+<P>
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>GENERAL PER-HOST OPTIONS </H2>
+
+<DL COMPACT>
+<DT>noclear<DD>
+Controls whether stale status messages go purple or clear when
+a host is down. Normally, when a host is down the client statuses
+(&quot;cpu&quot;, &quot;disk&quot;, &quot;memory&quot; etc) will stop updating - this would usually
+make them go &quot;purple&quot; which can trigger alerts. To avoid that, Hobbit
+checks if the &quot;conn&quot; test has failed, and if that is true then the
+other tests will go &quot;clear&quot; instead of purple so you only get alerts
+for the &quot;conn&quot; test. If you do want the stale statuses to go purple,
+you can use the &quot;noclear&quot; tag to override this behaviour.
+<P>
+Note that &quot;noclear&quot; also affects the behaviour of network tests; 
+see below.
+<P>
+<DT>prefer<DD>
+When a single host is defined multiple time in the bb-hosts file,
+bbgen tries to guess which definition is the best to use for
+the information used on the &quot;info&quot; column, or for the NOPROPRED
+and other bbgen-specific settings. Host definitions that have
+a &quot;noconn&quot; tag or an IP of 0.0.0.0 get lower priority.
+<P>
+By using the &quot;prefer&quot; tag you tell bbgen that this host definition
+should be used.
+<P>
+Note: This only applies to hosts that are defined multiple
+times in the bb-hosts file, although it will not hurt to add it
+on other hosts as well.
+<P>
+<P>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>BBGEN DISPLAY OPTIONS</H2>
+
+These tags are processed by the 
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+tool when generating the Hobbit webpages or reports.
+<P>
+<DL COMPACT>
+<DT>page NAME [Page-title]<DD>
+This defines a page at the level below the entry page. All
+hosts following the &quot;page&quot; directive appear on this page, until 
+a new &quot;page&quot;, &quot;subpage&quot; or &quot;subparent&quot; line is found.
+<P>
+<DT>subpage NAME [Page-title]<DD>
+This defines a subpage in the second level below the entry page.
+You must have a previous &quot;page&quot; line to hook this subpage to.
+<P>
+<DT>subparent parentpage newpage [Page-title]<DD>
+This is used to define subpages in whatever levels you may
+wish. Just like the standard &quot;subpage&quot; tag, &quot;subparent&quot; defines a
+new Hobbit webpage; however with &quot;subparent&quot; you explicitly
+list which page it should go as a subpage to. You can pick
+any page as the parent - pages, subpages or even other
+subparent pages. So this allows you to define any tree
+structure of pages that you like.
+<P>
+E.g. with this in bb-hosts:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;page&nbsp;USA&nbsp;United&nbsp;States
+<BR>&nbsp;&nbsp;&nbsp;subpage&nbsp;NY&nbsp;New&nbsp;York
+<BR>&nbsp;&nbsp;&nbsp;subparent&nbsp;NY&nbsp;manhattan&nbsp;Manhattan&nbsp;data&nbsp;centers
+<BR>&nbsp;&nbsp;&nbsp;subparent&nbsp;manhattan&nbsp;wallstreet&nbsp;Wall&nbsp;Street&nbsp;center
+<P>
+you get this hierarchy of pages:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;USA&nbsp;(United&nbsp;States)
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NY&nbsp;(New&nbsp;York)
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;manhattan&nbsp;(Manhattan&nbsp;data&nbsp;centers)
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wallstreet&nbsp;(Wall&nbsp;Street&nbsp;center)
+<P>
+Note: The parent page must be defined before you define
+the subparent. If not, the page will not be generated,
+and you get a message in the log file.
+<P>
+Note: bbgen is case-sensitive, when trying to match the
+name of the parent page.
+<P>
+The inspiration for this came from Craig Cook's mkbb.pl
+script, and I am grateful to Craig for suggesting that
+I implement it in bbgen. The idea to explicitly list
+the parent page in the &quot;subparent&quot; tag was what made
+it easy to implement.
+<P>
+<DT>group [group-title]<DD>
+<DT>group-compress [group-title]<DD>
+Defines a group of hosts, that appear together on the webpage,
+with a single header-line listing all of the columns. Hosts
+following the &quot;group&quot; line appear inside the group, until a
+new &quot;group&quot; or page-line is found. The two group-directives
+are handled identically by Hobbit and bbgen, but both forms
+are allowed for backwards compatibility.
+<P>
+<DT>group-sorted [group-title]<DD>
+Same as the &quot;group&quot; line, but will sort the hosts inside the
+group so they appear in strict lexicographic order.
+<P>
+<DT>group-only COLUMN1|COLUMN2|COLUMN3 [group-title]<DD>
+Same as the &quot;group&quot; and &quot;group-compress&quot; lines, but includes
+only the columns explicitly listed in the group. Any columns
+not listed will be ignored for these hosts.
+<P>
+<DT>group-except COLUMN1|COLUMN2|COLUMN3 [group-title]<DD>
+Same as the &quot;group-only&quot; lines, but includes all columns EXCEPT
+those explicitly listed in the group. Any columns listed will 
+be ignored for these hosts - all other columns are shown.
+<P>
+<DT>title Page, group or host title text<DD>
+The &quot;title&quot; tag is used to put custom headings into the
+pages generated by bbgen, in front of page/subpage links,
+groups or hosts.
+<P>
+The title tag operates on the next item in the bb-hosts
+file following the title tag.
+<P>
+If a title tag precedes a host entry, the title is 
+shown just before the host is listed on the status
+page. The column headings present for the host will
+be repeated just after the heading.
+<P>
+If a title tag precedes a group entry, the title is
+show just before the group on the status page. 
+<P>
+If a title tag precedes a page/subpage/subparent
+entry, the title text replaces the normal &quot;Pages hosted
+locally&quot; heading normally inserted by Hobbit. This
+appears on the page that links to the subpages,
+not on the subpage itself. To get a custom heading on
+the subpage, you may want to use the &quot;--pagetext-heading&quot;
+when running
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+<P>
+<DT>NAME:hostname<DD>
+Overrides the default hostname used on the overview web pages.
+If &quot;hostname&quot; contains spaces, it must be enclosed in double
+quotes, e.g. NAME:&quot;R&amp;D Oracle Server&quot;
+<P>
+<DT>CLIENT:hostname<DD>
+Defines an alias for a host, which will be used when identifying
+status messages. This is typically used to accomodate a local
+client that sends in status reports with a different hostname,
+e.g. if you use hostnames with domains in your Hobbit configuration,
+but the client is a silly Window box that does not include the
+hostname. Or vice versa. Whatever the reason, this can be used
+to match status reports with the hosts you define in your
+bb-hosts file. It causes incoming status reports with the
+specified hostname to be filed using the hostname defined in
+bb-hosts.
+<P>
+<DT>NOCOLUMNS:column[,column]<DD>
+Used to drop certain of the status columns generated by the
+Hobbit client. <B>column</B> is one of <B>cpu</B>, <B>disk</B>,
+<B>files</B>, <B>memory</B>, <B>msgs</B>, <B>ports</B>, <B>procs</B>.
+This setting stops these columns from being updated for the 
+host. Note: If the columns already exist, you must use the
+<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+
+utility to <B>drop</B> them, or they will go purple.
+<P>
+<DT>COMMENT:Host comment<DD>
+Adds a small text after the hostname on the webpage. This can
+be used to describe the host, without completely changing its
+display-name as the NAME: tag does. If the comment includes
+whitespace, it must be in double-quotes, e.g. COMMENT:&quot;Sun webserver&quot;
+<P>
+<DT>DESCR:Hosttype:Description<DD>
+Define some informational text about the host. The &quot;Hosttype&quot;
+is a text describing the type of this device - &quot;router&quot;, &quot;switch&quot;,
+&quot;hub&quot;, &quot;server&quot; etc. The &quot;Description&quot; is an informational
+text that will be shown on the &quot;Info&quot; column page; this can
+e.g. be used to store information about the physical location
+of the device, contact persons etc. If the text contain whitespace,
+you must enclose it in double-quotes, e.g.  DESCR:&quot;switch:4th floor Marketing switch&quot;
+<P>
+<DT>CLASS:Classname<DD>
+Force the host to belong to a specific class. Class-names are used
+when configuring log-file monitoring (they can be used as references in
+<I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)</I>
+
+and
+<I><A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)</I>
+
+to group logfile checks). Normally, class-names are controlled on the 
+client by starting the Hobbit client with the &quot;--class=Classname&quot; option.
+If you specify it in the bb-hosts file on the Hobbit server, it overrides
+any classname that the client reports.
+<P>
+<DT>dialup<DD>
+The keyword &quot;dialup&quot; for a host means that it is OK for it to be
+off-line - this should not trigger an alert. All network tests
+will go &quot;clear&quot; upon failure, and any missing reports from e.g.
+cpu- and disk-status will not go purple when they are not updated.
+<P>
+<DT>nobb2<DD>
+Ignore this host on the BB2 page. Even if it has an active alert,
+it will not be included in the BB2 page. This also removes the
+host from the event-log display.
+<P>
+<DT>nodisp<DD>
+Ignore this host completely when generating the Hobbit webpages.
+Can be useful for monitoring a host without having it show up on
+the webpages, e.g. because it is not yet in production use. Or for
+hiding a host that is shown only on a second pageset.
+<P>
+<DT>TRENDS:[*,][![graph,...]]<DD>
+Defines the RRD graphs to include in the &quot;trends&quot; column
+generated by bbgen.  This option syntax is complex.
+<BR>
+
+If this option is not present, bbgen provides graphs
+matching the standard set of RRD files: la, disk, memory, 
+users, vmstat, iostat, netstat, tcp, bind, apache, sendmail
+<BR>
+
+* If this option is specified, the list of graphs to
+include start out as being empty (no graphs).
+<BR>
+
+* To include all default graphs, use an asterisk.  E.g. &quot;TRENDS:*&quot;
+<BR>
+
+* To exclude a certain graph, speficy it prefixed with '!'. E.g. 
+to see all graphs except users: &quot;TRENDS:*,!users&quot;
+<BR>
+
+* The netstat, vmstat and tcp graphs have many &quot;subgraphs&quot;.
+Which of these are shown can be speficied like this:
+&quot;TRENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn&quot;
+This will show all graphs, but instead of the normal 
+netstat graph, there will be two: The netstat2 and
+netstat3 graphs. Instead of the combined tcp graphs showing
+all services, there will be three: One for each of
+the http, conn and smtp services.
+<P>
+<DT>DOWNTIME=[columns:]day:starttime:endtime:cause[,day:starttime:endtime:cause]<DD>
+This tag can be used to ignore failed checks during
+specific times of the day - e.g. if you run services that
+are only monitored e.g. Mon-Fri 8am-5pm, or you always 
+reboot a server every Monday between 5 and 6 pm.
+<P>
+The timespecification consists of
+<P>
+<B>day:</B>
+
+<B>W</B> means Mon-Fri (&quot;weekdays&quot;), <B>*</B> means all days, <B>0</B> .. <B>6</B> = Sunday .. Saturday. 
+Listing multiple days is possible, e.g. &quot;60&quot; is valid meaning &quot;Saturday and Sunday&quot;.
+<P>
+<B>starttime:</B>
+
+Time to start showing errors, must be in 24-hour clock format as HHMM hours/minutes. 
+E.g. for 8 am enter &quot;0800&quot;, for 9.30 pm enter &quot;2130&quot;
+<P>
+<B>endtime:</B>
+
+Time to stop showing errors.
+<P>
+If necessary, multiple periods can be specified. E.g. to
+monitor a site 24x7, except between noon and 1 pm, use
+DOWNTIME=*:0000:1159,*:1300:2359
+<P>
+The interval between starttime and endtime may cross midnight, e.g. <B>*:2330:0200</B>
+would be valid and have the same effect as <B>*:2330:2400,*:0000:0200</B>.
+<P>
+What happens is that if a test fails during the specified time, 
+it is reported with status BLUE instead of yellow or red. Thus 
+you can still see when the service was unavailable, but alarms 
+will not be triggered and the downtime is not counted in the 
+availability calculations generated by the Hobbit reports.
+<P>
+The &quot;columns&quot; setting is optional - it may be a comma-separated
+list of status columns in which case the DOWNTIME setting only applies
+to these columns.
+<P>
+The &quot;cause&quot; string (optional) is a text that will be displayed on 
+the status web page to explain thy the system is down.
+<P>
+<DT>SLA=day:starttime:endtime[,day:starttime:endtime]<DD>
+This tag is now deprecated. Use the DOWNTIME tag instead.
+<P>
+This tag works the opposite of the DOWNTIME tag - you use 
+it to specify the periods of the day that the service should be 
+green. Failures OUTSIDE the SLA interval are reported as blue.
+<P>
+<DT>holidays=HOLIDAYSETNAME<DD>
+Define which set of holidays to use for a host. Holiday sets are
+defined in the
+<I><A HREF="../man5/hobbit-holidays.cfg.5.html">hobbit-holidays.cfg</A>(5)</I>
+
+configuration file. If omitted, the set given in the HOLIDAYS
+setting in the
+<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+
+file is used.
+<P>
+<P>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>HOBBIT TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE</H2>
+
+<B>NOTE:</B> The &quot;NK&quot; set of tags is deprecated. They will
+be supported for Hobbit 4.x, but will be dropped in version 5.
+It is recommended that you move your critical systems
+view to the
+<I><A HREF="../man1/hobbit-nkview.cgi.1.html">hobbit-nkview.cgi</A>(1)</I>
+
+viewer, which has a separate configuration tool,
+<I><A HREF="../man1/hobbit-nkedit.cgi.1.html">hobbit-nkedit.cgi</A>(1)</I>
+
+with more facilities than the NK tags in bb-hosts.
+<P>
+bbgen will create three sets of pages: The main page bb.html,
+the all-non-green-statuses page (bb2.html), and a specially
+reduced version of bb2.html with only selected tests (bbnk.html).
+This page includes selected tests that currently have a red
+or yellow status.
+<P>
+<DL COMPACT>
+<DT>NK:testname[,testname]<DD>
+Define the tests that you want included on the bbnk page.
+E.g. if you have a host where you only want to see the 
+http tests on bbnk.html, you specify it as
+<P>
+<BR>&nbsp;&nbsp;12.34.56.78&nbsp;&nbsp;<A HREF="http://www.acme.com">www.acme.com</A>&nbsp;&nbsp;#&nbsp;<A HREF="http://www.acme.com/">http://www.acme.com/</A>&nbsp;NK:http
+<P>
+If you want multiple tests for a host to show up on the
+bbnk.html page, specify all the tests separated by commas.
+The test names correspond to the column names (e.g. 
+https tests are covered by an &quot;NK:http&quot; tag).
+<P>
+<DT>NKTIME=day:starttime:endtime[,day:starttime:endtime]<DD>
+This tag limits the time when an active alert is presented
+on the NK webpage.
+<P>
+By default, tests with a red or yellow status that are listed
+in the &quot;NK:testname&quot; tag will appear on the NK page. However,
+you may not want the test to be shown outside of normal
+working hours - if, for example, the host is not being
+serviced during week-ends.
+<P>
+You can then use the NKTIME tag to define the time periods
+where the alert will show up on the NK page. The NKTIME syntax
+is identical to the one used for DOWNTIME specification.
+<P>
+<P>
+</DL>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>HOBBIT TAGS FOR THE WML (WAP) CARDS</H2>
+
+If bbgen is run with the &quot;--wml&quot; option, it will generate a
+set of WAP-format output &quot;cards&quot; that can be viewed with a
+WAP-capable device, e.g. a PDA or cell-phone.
+<P>
+<DL COMPACT>
+<DT>WML:[+|-]testname[,[+|-]testname]<DD>
+This tag determines which tests for this hosts are included
+in the WML (WAP) page. Syntax is identical to the NK: tag.  
+<P>
+The default set of WML tests are taken from the --wml
+commandline option.  If no &quot;WML:&quot; tag is specified, the 
+&quot;NK:&quot; tag is used if present.
+<P>
+<P>
+</DL>
+<A NAME="lbAK">&nbsp;</A>
+<H2>HOBBIT STATUS PROPAGATION OPTIONS</H2>
+
+These tags affect how a status propagates upwards from a single
+test to the page and higher. This can also be done with the 
+command-line options --nopropyellow and --nopropred, but the tags 
+apply to individual hosts, whereas the command line options are global.
+<P>
+<DL COMPACT>
+<DT>NOPROPRED:[+|-]testname[,[+|-]testname]<DD>
+This tag is used to inhibit a yellow or red status from
+propagating upwards - i.e. from a test status color to
+the (sub)page status color, and further on to bb.html
+or bb2.html
+<P>
+If a host-specific tag begins with a '-' or a '+', the
+host-specific tags are removed/added to the default 
+setting from the command-line option. If the host-specific
+tag does not begin with a '+' or a '-', the default setting
+is ignored for this host and the NOPROPRED applies to the
+tests given with this tag.
+<P>
+E.g.: bbgen runs with &quot;--nopropred=ftp,smtp&quot;.
+&quot;NOPROPRED:+dns,-smtp&quot; gives a NOPROPRED setting of &quot;ftp,dns&quot;
+(dns is added to the default, ftp is removed).
+&quot;NOPROPRED:dns&quot; gives a setting of &quot;dns&quot; only (the default
+is ignored).
+<P>
+Note: If you set use the &quot;--nopropred=*&quot; commandline
+option to disable propagation of all alerts, you cannot use
+the &quot;+&quot; and &quot;-&quot; methods to add or remove from the wildcard
+setting. In that case, do not use the &quot;+&quot; or &quot;-&quot; setting,
+but simply list the required tests that you want to keep
+from propagating.
+<P>
+<DT>NOPROPYELLOW:[+|-]testname[,[+|-]testname]<DD>
+Similar to NOPROPRED: tag, but applies to propagating a yellow
+status upwards.
+<P>
+<DT>NOPROPPURPLE:[+|-]testname[,[+|-]testname]<DD>
+Similar to NOPROPRED: tag, but applies to propagating a purple
+status upwards.
+<P>
+<DT>NOPROPACK:[+|-]testname[,[+|-]testname]<DD>
+Similar to NOPROPRED: tag, but applies to propagating an 
+acknowledged status upwards.
+<P>
+<P>
+</DL>
+<A NAME="lbAL">&nbsp;</A>
+<H2>HOBBIT AVAILABILITY REPORT OPTIONS</H2>
+
+These options affect the way the Hobbit availability
+reports are processed (see
+<I><A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1)</I>
+
+for details about availability reports).
+<P>
+<DL COMPACT>
+<DT>REPORTTIME=day:starttime:endtime[,day:starttime:endtime]<DD>
+This tag defines the time interval where you measure uptime
+of a service for reporting purposes.
+<P>
+When bbgen generates a report, it computes the availability
+of each service - i.e. the percentage of time that the 
+service is reported as available (meaning: not red).
+<P>
+By default, this calculation is done on a 24x7 basis, so
+no matter when an outage occurs, it counts as downtime.
+<P>
+The REPORTTIME tag allows you to specify a period of time
+other than 24x7 for the service availability calculation.
+If you have systems where you only guarantee availability
+from e.g. 7 AM to 8 PM on weekdays, you can use
+<BR>
+
+<BR>&nbsp;&nbsp;REPORTTIME=W:0700:2000
+<BR>
+
+and the availability calculation will only be performed
+for the service with measurements from this time interval.
+<P>
+The syntax for REPORTTIME is the same as the one used
+by the DOWNTIME parameter.
+<P>
+When REPORTTIME is specified, the availability calculation
+happens like this:
+<P>
+* Only measurements done during the given time period is used for the calculation.
+<BR>
+
+* &quot;blue&quot; time reduces the length of the report interval,
+so if you are generating a report for a 10-hour period 
+and there are 20 minutes of &quot;blue&quot; time, then the
+availability calculation will consider the reporting 
+period to be 580 minutes (10 hours minus 20 minutes).
+This allows you to have scheduled downtime during the
+REPORTTIME interval without hurting your availability;
+this is (I believe) the whole idea of the downtime being
+&quot;planned&quot;.
+<BR>
+
+* &quot;red&quot; and &quot;clear&quot; status counts as downtime; &quot;yellow&quot;
+and &quot;green&quot; count as uptime. &quot;purple&quot; time is ignored.
+<P>
+The availability calculation correctly handles status changes
+that cross into/out of a REPORTTIME interval.
+<P>
+If no REPORTTIME is given, the standard 24x7 calculation is used.
+<P>
+<DT>WARNPCT:percentage<DD>
+BB's reporting facility uses a computed availability threshold
+to color services green (100% available), yellow (above threshold,
+but less than 100%), or red (below threshold) in the reports.
+<P>
+This option allows you to set the threshold value on a host-by-host
+basis, instead of using a global setting for all hosts. The
+threshold is defined as the percentage of the time that the host
+must be available, e.g. &quot;WARNPCT:98.5&quot; if you want the threshold to
+be at 98.5%
+<P>
+<P>
+</DL>
+<A NAME="lbAM">&nbsp;</A>
+<H2>NETWORK TEST SETTINGS</H2>
+
+<DL COMPACT>
+<DT>testip<DD>
+By default, Hobbit will perform a name lookup of the hostname
+to get the IP address it will use for network tests. This tag
+causes Hobbit to use the IP listed in the bb-hosts file.
+<P>
+<DT>NET:location<DD>
+This tag defines the host as being tested from a specific location.
+If bbtest-net sees that the environment variable BBLOCATION
+is set, it will only test the hosts that have a matching
+&quot;NET:location&quot; tag in the bb-hosts file. So this tag is useful
+if you have more than one BBNET system, but you still want
+to keep a consolidated bb-hosts file for all your systems.
+<P>
+Note: The &quot;--test-untagged&quot; option modifies this behaviour,
+see
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+<P>
+<DT>noclear<DD>
+Some network tests depend on others. E.g. if the host does not
+respond to ping, then there's a good chance that the entire host 
+is down and all network tests will fail. Or if the http server
+is down, then any web content checks are also likely to fail.
+To avoid floods of alerts, the default behaviour is for bbtest-net
+to change the status of these tests that fail because of another
+problem to &quot;clear&quot; instead of &quot;red&quot;. The &quot;noclear&quot; tag disables this
+behaviour and causes all failing tests to be reported with their
+true color.
+<P>
+This behaviour can also be implemented on a per-test basis by 
+putting the &quot;~&quot; flag on any network test.
+<P>
+Note that &quot;noclear&quot; also affects whether stale status messages
+from e.g. a client on the host go purple or clear when the
+host is down; see the &quot;noclear&quot; description in the 
+&quot;GENERAL PER-HOST OPTIONS&quot; section above.
+<P>
+<P>
+<DT>nosslcert<DD>
+Disables the standard check of any SSL certificates for
+this host. By default, if an SSL-enabled service is tested,
+a second test result is generated with information about 
+the SSL certificate - this tag disables the SSL certificate
+checks for the host.
+<P>
+<DT>ssldays=WARNDAYS:ALARMDAYS<DD>
+Define the number of days before an SSL certificate expires,
+in which the sslcert status shows a warning (yellow) or
+alarm (red) status. These default to the values from the
+&quot;--sslwarndays&quot; and &quot;--sslalarmdays&quot; options for the
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+tool; the values specified in the &quot;ssldays&quot; tag overrides
+the default.
+<P>
+<DT>depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]<DD>
+This tag allows you to define dependencies betweeen tests.
+If &quot;testA&quot; for the current host depends on &quot;test1&quot; for host &quot;host1&quot;
+and test &quot;test2&quot; for &quot;host2&quot;, this can be defined with
+<P>
+<BR>&nbsp;&nbsp;&nbsp;depends=(testA:host1/test1,host2/test2)
+<P>
+When deciding the color to report for testA, if either host1/test1
+failed or host2/test2 failed, if testA has failed also then the color 
+of testA will be &quot;clear&quot; instead of red or yellow.
+<P>
+Since all tests are actually run before the dependencies are evaluated,
+you can use any host/test in the dependency - regardless of the actual
+sequence that the hosts are listed, or the tests run. It is also valid
+to use tests from the same host that the dependency is for. E.g.
+<P>
+<BR>&nbsp;&nbsp;&nbsp;1.2.3.4&nbsp;&nbsp;foo&nbsp;#&nbsp;<A HREF="http://foo/">http://foo/</A>&nbsp;webmin&nbsp;depends=(webmin:foo/http)
+<P>
+is valid; if both the http and the webmin tests fail, then webmin
+will be reported as clear.
+<P>
+Note: The &quot;depends&quot; tag is evaluated on the BBNET server while
+running the network tests. It can therefore only refer to other
+network tests that are handled by the same BBNET server - there
+is currently no way to use the e.g. the status of locally
+run tests (disk, cpu, msgs) or network tests from other BBNET
+servers in a dependency definition. Such dependencies are
+silently ignored.
+<P>
+<DT>badTEST[-weekdays-starttime-endtime]:x:y:z<DD>
+Normally when a network test fails, the status changes to
+red immediately.  With a &quot;badTEST:x:y:z&quot; tag this behaviour changes:
+<BR>
+
+* While &quot;z&quot; or more successive tests fail, the column goes RED.
+<BR>
+
+* While &quot;y&quot; or more successive tests fail, but fewer than &quot;z&quot;, the column goes YELLOW.
+<BR>
+
+* While &quot;x&quot; or more successive tests fail, but fewer than &quot;y&quot;, the column goes CLEAR.
+<BR>
+
+* While fewer than &quot;x&quot; successive tests fail, the column stays GREEN.
+<P>
+The optional timespecification can be used to limit this
+&quot;badTEST&quot; setting to a particular time of day, e.g. to 
+require a longer period of downtime before raising an
+alarm during out-of-office hours. The time-specification
+uses:
+<BR>
+
+* Weekdays: The weekdays this badTEST tag applies, from
+0 (Sunday) through 6 (Saturday). Putting &quot;W&quot; here counts
+as &quot;12345&quot;, i.e. all working days. Putting &quot;*&quot; here 
+counts as all days of the week, equivalent to &quot;0123456&quot;.
+<BR>
+
+* starttime and endtime are specified using 24-hour clocks,
+e.g. &quot;badTEST-W-0900-2000&quot; is valid for working days
+between 9 AM (09:00) and 8 PM (20:00).
+<P>
+When using multiple badTEST tags, the LAST one specified
+with a matching time-spec is used.
+<P>
+Note: The &quot;TEST&quot; is replaced by the name of the test, e.g.
+<P>
+<BR>&nbsp;12.34.56.78&nbsp;&nbsp;<A HREF="http://www.foo.com">www.foo.com</A>&nbsp;&nbsp;#&nbsp;<A HREF="http://www.foo.com/">http://www.foo.com/</A>&nbsp;badhttp:1:2:4
+<P>
+defines a http test that goes &quot;clear&quot; after the first failure,
+&quot;yellow&quot; after two successive failures, and &quot;red&quot; after four
+successive failures.
+<P>
+For the other network tests, use &quot;badftp&quot;, &quot;badssh&quot; etc.
+<P>
+<P>
+</DL>
+<A NAME="lbAN">&nbsp;</A>
+<H2>CONNECTIVITY (PING) TEST</H2>
+
+These tags affect the behaviour of the bbtest-net connectivity
+test.
+<P>
+<DL COMPACT>
+<DT>noping<DD>
+Disables the ping-test, but will keep the &quot;conn&quot; column
+on the web display with a notice that it has been disabled.
+<P>
+<DT>noconn<DD>
+Disables the ping-test, and does not put a &quot;conn&quot; column
+on the web display.
+<P>
+<DT>conn<DD>
+The &quot;conn&quot; test (which does a ping of the host) is enabled
+for all hosts by default, and normally you just want to
+disable it using &quot;noconn&quot; or &quot;noping&quot;. However, on the 
+rare occasion where you may want to check that a host is
+NOT up, you can specify it as an explicit test, and use
+the normal test modifiers, e.g. &quot;!conn&quot; will be green 
+when the host is NOT up, and red if it does appear on
+the network.
+<P>
+The actual name of the tag - &quot;conn&quot; by default - depends
+on the &quot;--ping=TESTNAME&quot; option for bbtest-net, as that
+decides the testname for the connectivity test.
+<P>
+<DT>conn={best,|worst,}IP1[,IP2...]<DD>
+This adds additional IP-adresses that are pinged during the
+normal &quot;conn&quot; test. So the normal &quot;conn&quot; test must be enabled
+(the default) before this tag has any effect. The IP-adresses
+listed here are pinged in addition to the main IP-address.
+<P>
+When multiple IP's are pinged, you can choose if ALL IP's
+must respond (the &quot;worst&quot; method), or AT LEAST one IP
+must respond (the &quot;best&quot; setting). All of the IP's are 
+reported in a single &quot;conn&quot; status, whose color is determined
+from the result of pinging the IP's and the best/worst setting.
+The default method is &quot;best&quot; - so it will report green if 
+just one of the IP's respond to ping.
+<P>
+<DT>badconn[-weekdays-starttime-endtime]:x:y:z<DD>
+This is taken directly from the &quot;fping.sh&quot; connectivity-
+testing script, and is used by bbtest-net when it runs
+with ping testing enabled (the default). See the description
+of the &quot;badTEST&quot; tag.
+<P>
+<DT>route:router1,router2,....<DD>
+This tag is taken from the &quot;fping.sh&quot; script, and is used
+by bbtest-net when run with the &quot;--ping&quot; option to enable
+ping testing.
+<P>
+The router1,router2,... is a comma-separated list of hosts
+elsewhere in the bb-hosts file. You cannot have any spaces
+in the list - separate hosts with commas.
+<P>
+This tag changes the color reported for a ping check that
+fails, when one or more of the hosts in the &quot;route&quot; list
+is also down. A &quot;red&quot; status becomes &quot;yellow&quot; - other colors
+are unchanged. The status message will include information 
+about the hosts in the router-list that are down, to aid
+tracking down which router is the root cause of the problem.
+<P>
+Note: Internally, the ping test will still be handled as
+&quot;failed&quot;, and therefore any other tests run for this host
+will report a status of &quot;clear&quot;.
+<P>
+<DT>route_LOCATION:router1,router2,...<DD>
+If the BBLOCATION environment variable is defined, a tag
+of &quot;route_BBLOCATION:&quot; is recognized by bbtest-net with 
+the same effect as the normal &quot;route:&quot; tag (see above).
+This allows you to have different route: tags for each
+BBNET server. The actual text for the tag then must
+match the value you have for the BBLOCATION setting.
+E.g. with BBLOCATION=dmz, the tag becomes &quot;route_dmz:&quot;
+<P>
+<DT>trace<DD>
+If the connectivity test fails, run a &quot;traceroute&quot;
+and include the output from this in the status message
+from the failed connectivity test. Note: For this to
+work, you may have to define the TRACEROUTE environment
+variable, see 
+<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+
+<P>
+<DT>notrace<DD>
+Similar to the &quot;trace&quot; option, this disables the running
+of a traceroute for the host after a failed connectivity
+test. It is only used if running traceroute is made the
+default via the --trace option.
+<P>
+</DL>
+<A NAME="lbAO">&nbsp;</A>
+<H2>SIMPLE NETWORK TESTS</H2>
+
+These tests perform a simple network test of a service by connecting
+to the port and possibly checking that a banner is shown by the
+server.
+<P>
+How these tests operate are configured in the
+<I><A HREF="../man5/bb-services.5.html">bb-services</A>(5)</I>
+
+configuration file, which controls which port to use for the service,
+whether to send any data to the service, whether to check for
+a response from the service etc.
+<P>
+You can modify the behaviour of these tests on a per-test basis by
+adding one or more modifiers to the test: <B>:NUMBER</B> changes the
+port number from the default to the one you specify for this test.
+E.g. to test ssh running on port 8022, specify the test as <B>ssh:8022</B>.
+<P>
+<B>:s</B> makes the test silent, i.e. it does not send any data to
+the service. E.g. to do a silent test of an smtp server, enter
+<B>smtp:s</B>.
+<P>
+You can combine these two: <B>ftp:8021:s</B> is valid.
+<P>
+If you must test a service from a multi-homed host (i.e. using a
+specific source IP-address instead of the one your operating system
+provides), you can use the modifier &quot;@IPADDRESS&quot; at the end of the
+test specification, <B>after</B> any other modifiers or port number.
+&quot;IPADDRESS&quot; must be a valid dotted IP-address (not hostname) which
+is assigned to the host running the network tests.
+<P>
+The name of the test also determines the columnname that the test 
+result will appear with in the Hobbit webpages.
+<P>
+By prefixing a test with &quot;!&quot; it becomes a reverse test: Hobbit will 
+expect the service NOT to be available, and send a green status if
+it does NOT respond. If a connection to the service succeeds, the
+status will go red.
+<P>
+By prefixing a test with &quot;?&quot; errors will be reported with a &quot;clear&quot;
+status instead of red. This is known as a test for a &quot;dialup&quot; service,
+and allows you to run tests of hosts that are not always online, 
+without getting alarms while they are off-line.
+<P>
+<DL COMPACT>
+<DT>ftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp<DD>
+These tags are for testing services offering the FTP, Secure Shell (ssh), 
+SMTP, POP3, IMAP, NNTP, rsync, CLAM antivirus daemon (clamd), Oracle TNS
+listener (oratns), qmail QMTP and QMQP protocols.
+<P>
+<DT>ftps telnets smtps pop3s imaps nntps<DD>
+These tags are for testing of the SSL-tunneled versions of
+the standard ftp, telnet, smtp, pop3, imap and nntp protocols. 
+If Hobbit was configured with support for SSL, you can test these
+services like any other network service - bbtest-net will
+setup an SSL-encrypted session while testing the service.
+The server certificate is validated and information about
+it sent in the &quot;sslcert&quot; column. Note that smtps does not
+have a standard portnumber assignment, so you will need to enter
+this into the bb-services file or your /etc/services file.
+<P>
+<DT>bbd<DD>
+Test that a Big Brother compatible daemon is running. This check
+works both for the Hobbit
+<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+
+daemon, and the original Big Brother bbd daemon.
+<P>
+<P>
+</DL>
+<A NAME="lbAP">&nbsp;</A>
+<H2>DNS SERVER TESTS</H2>
+
+These tags are used to setup monitoring of DNS servers.
+<P>
+<DL COMPACT>
+<DT>dns<DD>
+Simple DNS test. It will attempt to lookup the A record for
+the hostname of the DNS server.
+<P>
+<DT>dig<DD>
+This is an alias for the &quot;dns&quot; test. In bbtest-net, the &quot;dns&quot;
+and &quot;dig&quot; tests are handled identically, so all of the facilities
+for testing described for the &quot;dns&quot; test are also available for
+the &quot;dig&quot; test.
+<P>
+<DT>dns=hostname<DD>
+<DT>dns=TYPE:lookup[,TYPE:lookup...]<DD>
+The default DNS tests will attempt a DNS lookup
+of the DNS' servers own hostname. You can specify the hostname
+to lookup on a DNS server by listing it on each test.
+<P>
+The second form of the test allows you to perform multiple 
+queries of the DNS server, requesting different types of
+DNS records. The TYPE defines the type of DNS data: A (IP-address),
+MX (Mail eXchanger), PTR (reverse), CNAME (alias), SOA (Start-Of-Authority), 
+NS (Name Server) are among the more common ones used. The
+&quot;lookup&quot; is the query. E.g. to lookup the MX records for the
+&quot;foo.com&quot; domain, you would use &quot;dns=mx:foo.com&quot;. Or to lookup
+the nameservers for the &quot;bar.org&quot; domain, &quot;dns=ns:bar.org&quot;. 
+You can list multiple lookups, separated by commas. For the
+test to end up with a green status, all lookups must succeed.
+<P>
+<P>
+</DL>
+<A NAME="lbAQ">&nbsp;</A>
+<H2>OTHER NETWORK TESTS</H2>
+
+<DL COMPACT>
+<DT>ntp<DD>
+Check for a running NTP (Network Time Protocol) server on this
+host. This test uses the &quot;ntpdate&quot; utility to check for a
+NTP server - you should either have ntpdate in your PATH, or
+set the location of the ntpdate program in $BBHOME/etc/bbsys.local
+<P>
+<DT>rpc[=rpcservice1,rpcservice2,...]<DD>
+Check for one or more available RPC services. This check is indirect
+in that it only queries the RPC Portmapper on the host, not the
+actual service. 
+<P>
+If only &quot;rpc&quot; is given, the test only verifies that the portmapper
+is available on the remote host. If you want to check that one or
+more RPC services are registered with the portmapper, list the 
+names of the desired RPC services after the equals-sign. E.g. for
+a working NFS server the &quot;mount&quot;, &quot;nlockmgr&quot; and &quot;nfs&quot; services
+must be available; this can be checked with &quot;rpc=mount,nlockmgr,nfs&quot;.
+<P>
+This test uses the rpcinfo tool for the actual test; if this tool
+is not available in the PATH of bbtest-net, you must define the
+RPCINFO environment variable to point at this tool. See
+<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+
+<P>
+<P>
+</DL>
+<A NAME="lbAR">&nbsp;</A>
+<H2>HTTP TESTS</H2>
+
+Simple testing of a http URL is done simply by putting the
+URL into the bb-hosts file. Note that this only applies to
+URL's that begin with &quot;http:&quot; or &quot;https:&quot;.
+<P>
+The following items describe more advanced forms of http
+URL's.
+<P>
+<DL COMPACT>
+<DT>Basic Authentication with username/password<DD>
+If the URL requires authentication in the form of a
+username and password, it is most likely using the
+HTTP &quot;Basic&quot; authentication. bbtest-net support this,
+and you can provide the username and password either 
+by embedding them in the URL e.g.
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://USERNAME:PASSWORD@www.sample.com/">http://USERNAME:PASSWORD@www.sample.com/</A>
+<BR>
+
+or by putting the username and password into the ~/.netrc
+file (see
+<I><A HREF="../man1/ftp.1.html">ftp</A>(1)</I>
+
+for details).
+<P>
+<DT>Authentication with SSL client certificates<DD>
+An SSL client certificate can be used for authentication.
+To use this, the client certificate must be stored in a
+PEM-formatted file together with the client certificate
+key, in the $BBHOME/certs/ directory. The URL is then given as
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://CERT:FILENAME@www.sample.com/">http://CERT:FILENAME@www.sample.com/</A>
+<BR>
+
+The &quot;CERT:&quot; part is literal - i.e. you write C-E-R-T-colon
+and then the filename of the PEM-formatted certificate.
+<BR>
+
+A PEM-formatted certificate file can be generated based on
+certificates stored in Microsoft Internet Explorer and
+OpenSSL. Do as follows:
+<BR>
+
+From the MSIE Tools-Options menu, pick the Content tab,
+click on Certificates, choose the Personal tab, select the
+certificate and click Export. Make sure you export the
+private key also. In the Export File Format, choose
+PKCS 12 (.PFX), check the &quot;Include all certificates&quot; 
+checkbox and uncheck the &quot;Enable strong protection&quot;.
+Provide a temporary password for the exported file,
+and select a filename for the PFX-file.
+<BR>
+
+Now run &quot;openssl pkcs12 -in file.pfx -out file.pem&quot;. When
+prompted for the &quot;Import Password&quot;, provide the temporary
+password you gave when exporting the certificate. Then
+provide a &quot;PEM pass phrase&quot; (twice) when prompted for one.
+<BR>
+
+The file.pem file is the one you should use in the FILENAME
+field in the URL - this file must be kept in $BBHOME/certs/.
+The PEM pass phrase must be put into a file named the
+same as the certificate, but with extension &quot;.pass&quot;. E.g.
+if you have the PEM certificate in $BBHOME/certs/client.pem,
+you must put the pass phrase into the $BBHOME/certs/client.pass
+file. Make sure to protect this file with Unix permissions,
+so that only the user running Hobbit can read it.
+<P>
+<DT>Forcing an HTTP or SSL version<DD>
+Some SSL sites will only allow you to connect, if you use
+specific &quot;dialects&quot; of HTTP or SSL. Normally this is auto-negotiated,
+but experience shows that this fails on some systems.
+<P>
+bbtest-net can be told to use specific dialects, by adding
+one or more &quot;dialect names&quot; to the URL scheme, i.e. the
+&quot;http&quot; or &quot;https&quot; in the URL:
+<P>
+* &quot;2&quot;,  e.g. https2://<A HREF="http://www.sample.com">www.sample.com</A>/ : use only SSLv2
+<BR>
+
+* &quot;3&quot;,  e.g. https3://<A HREF="http://www.sample.com">www.sample.com</A>/ : use only SSLv3
+<BR>
+
+* &quot;m&quot;,  e.g. <A HREF="httpsm://www.sample.com/">httpsm://www.sample.com/</A> : use only 128-bit ciphers
+<BR>
+
+* &quot;h&quot;,  e.g. <A HREF="httpsh://www.sample.com/">httpsh://www.sample.com/</A> : use only &gt;128-bit ciphers
+<BR>
+
+* &quot;10&quot;, e.g. http10://<A HREF="http://www.sample.com">www.sample.com</A>/ : use HTTP 1.0
+<BR>
+
+* &quot;11&quot;, e.g. http11://<A HREF="http://www.sample.com">www.sample.com</A>/ : use HTTP 1.1
+<P>
+These can be combined where it makes sense, e.g to force
+SSLv2 and HTTP 1.0 you would use &quot;https210&quot;.
+<P>
+<DT>Testing sites by IP-address<DD>
+bbtest-net ignores the &quot;testip&quot; tag normally used to force a 
+test to use the IP-address from the bb-hosts file instead of
+the hostname, when it performs http and https tests.
+<P>
+The reason for this is that it interacts badly with virtual
+hosts, especially if these are IP-based as is common with
+https-websites.
+<P>
+Instead the IP-address to connect to can be overridden by 
+specifying it as:
+<P>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT><A HREF="http://www.sample.com=1.2.3.4/index.html">http://www.sample.com=1.2.3.4/index.html</A><BR>
+<P>
+The &quot;=1.2.3.4&quot; will case bbtest-net to run the test against
+the IP-address &quot;1.2.3.4&quot;, but still trying to access a virtual
+website with the name &quot;<A HREF="http://www.sample.com">www.sample.com</A>&quot;.
+<P>
+The &quot;=ip.address.of.host&quot; must be the last part of the hostname,
+so if you need to combine this with e.g. an explicit portnumber,
+it should be done as
+<P>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT><A HREF="http://www.sample.com:3128=1.2.3.4/index.html">http://www.sample.com:3128=1.2.3.4/index.html</A><BR>
+<P>
+<DT>HTTP Testing via proxy<DD>
+bbtest-net supports the Big Brother syntax for
+specifying an HTTP proxy to use when performing http 
+tests. This syntax just joins the proxy- and the target-URL
+into one, e.g.
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://webproxy.sample.com:3128/http://www.foo.com/">http://webproxy.sample.com:3128/http://www.foo.com/</A>
+<BR>
+
+would be the syntax for testing the <A HREF="http://www.foo.com">www.foo.com</A> website
+via the proxy running on &quot;webproxy.sample.com&quot; port 3128.
+<P>
+If the proxy portnumber is not specified, the default 
+HTTP portnumber (80) is used.
+<P>
+If your proxy requires authentication, you can specify the
+username and password inside the proxy-part of the URL, e.g.
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://fred:Wilma1@webproxy.sample.com:3128/http://www.foo.com/">http://fred:Wilma1@webproxy.sample.com:3128/http://www.foo.com/</A>
+<BR>
+
+will authenticate to the proxy using a username of &quot;fred&quot; and
+a password of &quot;Wilma1&quot;, before requesting the proxy to fetch
+the <A HREF="http://www.foo.com">www.foo.com</A> homepage.
+<P>
+Note that it is not possible to test https-sites via a proxy,
+nor is it possible to use https for connecting to the proxy 
+itself.
+<P>
+<DT>cont[=COLUMN];URL;[expected_data_regexp|#digesttype:digest]<DD>
+This tag is used to specify a http/https check, where 
+it is also checked that specific content is present in
+the server response.
+<P>
+If the URL itself includes a semi-colon, this must be
+escaped as '%3B' to avoid confusion over which semicolon
+is part of the URL, and which semicolon acts as a delimiter.
+<P>
+The data that must be returned can be specified either
+as a regular expression (except that &lt;space&gt; is not allowed)
+or as a message digest (typically using an MD5 sum or 
+SHA-1 hash).
+<P>
+The regex is pre-processed for backslash &quot;\&quot; escape
+sequences. So you can really put any character in this
+string by escaping it first:
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Newline&nbsp;(LF,&nbsp;ASCII&nbsp;10&nbsp;decimal)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;\r&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Carriage&nbsp;return&nbsp;(CR,&nbsp;ASCII&nbsp;13&nbsp;decimal)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAB&nbsp;(ASCII&nbsp;8&nbsp;decimal)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;\\&nbsp;&nbsp;&nbsp;&nbsp;Backslash&nbsp;(ASCII&nbsp;92&nbsp;decimal)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;\XX&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;character&nbsp;with&nbsp;ASCII&nbsp;hex-value&nbsp;XX
+<BR>
+
+<P>
+If you must have whitespace in the regex, use the
+[[:space:]] syntax, e.g. if you want to test for 
+the string &quot;All is OK&quot;, use &quot;All[[:space:]]is[[:space:]]OK&quot;.
+Note that this may depend on your particular implementation 
+of the regex functions found in your C library. Thanks to 
+Charles Goyard for this tip.
+<P>
+Note: If you are migrating from the &quot;cont2.sh&quot; script,
+you must change the '_' used as wildcards by cont2.sh 
+into '.' which is the regular-expression wildcard character.
+<P>
+Message digests can use different algorithms: &quot;md5&quot;, &quot;sha1&quot;,
+&quot;sha256&quot;, &quot;sha512&quot; or &quot;rmd160&quot;. The digest is calculated on 
+the data portion of the response from the server, i.e. HTTP 
+headers are not included in the digest (as they change from 
+one request to the next). Note that the md5 and sha1 hash
+algorithms are no longer considered cryptographically safe.
+<P>
+The expected digest value can be computed with the
+<I><A HREF="../man1/bbdigest.1.html">bbdigest</A>(1)</I>
+
+utility.
+<P>
+&quot;cont&quot; tags in bb-hosts result in two status reports: One
+status with the &quot;http&quot; check, and another with the &quot;content&quot; 
+check.
+<P>
+As with normal URL's, the extended syntax described above
+can be used e.g. when testing SSL sites that require the use of 
+SSLv2 or strong ciphers.
+<P>
+The column name for the result of the content check is by default
+called &quot;content&quot; - you can change the default with the &quot;--content=NAME&quot;
+option to bbtest-net. See 
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+for a description of this option.
+<P>
+If more than one content check is present for a host, the first
+content check is reported in the column &quot;content&quot;, the second is
+reported in the column &quot;content1&quot;, the third in &quot;content2&quot; etc.
+<P>
+You can also specify the columnname directly in the test
+specification, by writing it as &quot;cont=COLUMN;<A HREF="http://...">http://...</A>&quot;.
+Column-names cannot include whitespace or semi-colon.
+<P>
+The content-check status by default includes the full URL
+that was requested, and the HTML data returned by the server.
+You can hide the HTML data on a per-host (not per-test) basis 
+by adding the <B>HIDEHTTP</B> tag to the host entry.
+<P>
+<DT>content=URL<DD>
+This syntax is deprecated. You should use the &quot;cont&quot;
+tag instead, see above.
+<P>
+<DT>post[=COLUMN];URL;form-data;[expected_data_regexp|#digesttype:digest]<DD>
+This tag can be used to test web pages, that use an input
+form. Data can be posted to the form by specifying them 
+in the form-data field, and the result can be checked
+as if it was a normal content check (see above for a description
+of the cont-tag and the restrictions on how the URL must be writen).
+<P>
+The form-data field by default is in the &quot;application/x-www-form-urlencoded&quot;
+format, which is the most commonly used format for web forms.
+<P>
+E.g. if you have a web form defined like this:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&lt;form&nbsp;action=&quot;/cgi-bin/form.cgi&quot;&nbsp;method=&quot;post&quot;&gt;
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Given&nbsp;name&lt;input&nbsp;type=&quot;text&quot;&nbsp;name=&quot;givenname&quot;&gt;&lt;/p&gt;
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;p&gt;Surname&lt;input&nbsp;type=&quot;text&quot;&nbsp;name=&quot;surname&quot;&gt;&lt;/p&gt;
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;input&nbsp;type=&quot;submit&quot;&nbsp;value=&quot;Send&quot;&gt;
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&lt;/form&gt;
+<P>
+and you want to post the value &quot;John&quot; to the first field
+and &quot;Doe Jr.&quot; to the second field, then the formdata field
+would be
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;givenname=John&amp;surname=Doe\x20Jr.
+<P>
+Note that any spaces in the input value is replaced with '+'.
+<P>
+If your form-data requires a different content-type, you can specify 
+it by beginning the form-data with <B>(content-type=TYPE)</B>, 
+e.g. &quot;(content-type=text/xml)&quot; followed by the POST data. Note
+that as with normal forms, the POST data should be specified using
+escape-sequences for reserved characters: &quot;space&quot; should be 
+entered as &quot;\x20&quot;, double quote as &quot;\x22&quot;, newline as &quot;\n&quot;,
+carriage-return as &quot;\r&quot;, TAB as &quot;\t&quot;, backslash as &quot;\\&quot;.
+Any byte value can be entered using &quot;\xNN&quot; with NN being
+the hexadecimal value, e.g. &quot;\x20&quot; is the space character.
+<P>
+The [expected_data_regexp|#digesttype:digest] is the expected
+data returned from the server in response to the POST.
+See the &quot;cont;&quot; tag above for details. If you are only interested 
+in knowing if it is possible to submit the form (but don't care 
+about the data), this can be an empty string - but the ';' at the 
+end is required.
+<P>
+<DT>nocont[=COLUMN];URL;forbidden_data_regexp<DD>
+This tag works just like &quot;cont&quot; tag, but reverses the test. 
+It is green when the &quot;forbidden_data_regexp&quot; is NOT found in
+the response, and red when it IS found. So it can be used to 
+watch for data that should NOT be present in the response,
+e.g. a server error message.
+<P>
+<DT>nopost[=COLUMN];URL;form-data;expected_data_regexp<DD>
+This tag works just like &quot;post&quot; tag, but reverses the test. 
+It is green when the &quot;forbidden_data_regexp&quot; is NOT found in
+the response, and red when it IS found. So it can be used to 
+watch for data that should NOT be present in the response,
+e.g. a server error message.
+<P>
+<DT>type[=COLUMN];URL;expected_content_type<DD>
+This is a variant of the content check - instead of checking
+the content data, it checks the type of the data as given by 
+the HTTP Content-Type: header. This can used to check if a
+URL returns e.g. a PDF file, regardless of what is inside the
+PDF file.
+<P>
+<DT>httpstatus[=COLUMN];URL;okstatusexpr;notokstatusexpr<DD>
+This is used to explicitly test for certain HTTP statuscodes
+returned when the URL is requested. The <B>okstatusexpr</B> and
+<B>nokokstatusexpr</B> expressions are Perl-compatible regular
+expressions, e.g. &quot;2..|302&quot; will match all OK codes and the
+redirect (302) status code. If the URL cannot be retrived, 
+the status is &quot;999&quot;.
+<P>
+<DT>HIDEHTTP<DD>
+The status display for HTTP checks usually includes the URL,
+and for content checks also the actual data from the webpage.
+If you would like to hide these from view, then the HIDEHTTP
+tag will keep this information from showing up on the status
+webpages.
+<P>
+<DT>browser=BROWSERNAME<DD>
+By default, Hobbit sends an HTTP &quot;User-Agent&quot; header identifying
+it a &quot;Hobbit&quot;. Some websites require that you use a specific
+browser, typically Internet Explorer. To cater for testing of
+such sites, this tag can be used to modify the data sent in the
+User-Agent header.
+<BR>
+
+E.g. to perform an HTTP test with Hobbit masquerading as an Internet
+Explorer 6.0 browser, use <B>browser=&quot;Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)&quot;</B>.
+If you do not know what the User-Agent header should be, open up
+the browser that works with this particular site, and open the
+URL &quot;javascript:document.writeln(navigator.userAgent)&quot; (just copy this
+into the &quot;Open URL&quot; dialog. The text that shows up is what the browser
+sends as the User-Agent header.
+<P>
+</DL>
+<A NAME="lbAS">&nbsp;</A>
+<H2>LDAP (DIRECTORY SERVER) TESTS</H2>
+
+<DL COMPACT>
+<DT>ldap<DD>
+<DT>ldaps<DD>
+Simple check for an LDAP service. This check merely looks for
+any service running on the ldap/ldaps service port, but does
+not perform any actual LDAP transaction.
+<P>
+<DT><A HREF="ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]">ldap://hostport/dn[?attrs[?scope[?filter[?exts]]]]</A><DD>
+Check for an LDAP service by performing an LDAP request. This
+tag is in the form of an LDAP URI (cf. RFC 2255). This type of
+LDAP test requires that
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+was built with support for LDAP, e.g. via the OpenLDAP library.
+The components of the LDAP URI are:
+<PRE>
+  <I>hostport</I> is a host name with an optional &quot;:portnumber&quot;
+  <I>dn</I> is the search base
+  <I>attrs</I> is a comma separated list of attributes to request
+  <I>scope</I> is one of these three strings:
+    base one sub (default=base)
+  <I>filter</I> is filter
+  <I>exts</I> are recognized set of LDAP and/or API extensions.
+</PRE>
+
+<P>
+<DT><A HREF="ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]">ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]</A><DD>
+LDAP service check using LDAPv3 and STARTTLS for talking to
+an LDAP server that requires TLS encryption. See
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+for a discussion of the different ways of running LDAP servers
+with SSL/TLS, and which of these are supported by bbtest-net.
+<P>
+<DT>ldaplogin=username:password<DD>
+Define a username and password to use when binding to the LDAP
+server for ldap URI tests. If not specified, bbtest-net will
+attempt an anonymous bind.
+<P>
+<DT>ldapyellowfail<DD>
+Used with an LDAP URL test. If the LDAP query fails during the 
+search of the directory, the ldap status is normally reported
+as &quot;red&quot; (alarm). This tag reduces a search failure to a 
+&quot;yellow&quot; (warning) status.
+<P>
+</DL>
+<A NAME="lbAT">&nbsp;</A>
+<H2>PERFORMANCE MONITORING TESTS</H2>
+
+<DL COMPACT>
+<DT>apache[=URL]<DD>
+If you are running an Apache webserver, adding this tag makes
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+collect performance statistics from the Apache webserver by
+querying the URL <B><A HREF="http://IP.ADDRESS.OF.HOST/server-status?auto">http://IP.ADDRESS.OF.HOST/server-status?auto</A></B>.
+The response is sent as a data-report and processed by the Hobbit
+hobbitd_rrd module into an RRD file and an &quot;apache&quot; graph. If
+your webserver requires e.g. authentication, or runs on a different
+URL for the server-status, you can provide the full URL needed to 
+fetch the server-status page, e.g. 
+<B>apache=<A HREF="http://LOGIN:PASSWORD@10.0.0.1/server-status?auto">http://LOGIN:PASSWORD@10.0.0.1/server-status?auto</A></B> 
+for a password protected server-status page, or
+<B>apache=<A HREF="http://10.0.0.1:8080/apache/server-status?auto">http://10.0.0.1:8080/apache/server-status?auto</A></B> 
+for a server listening on port 8080 and with a different path
+to the server-status page.
+<P>
+Note that you need to enable the server-status URL in your
+Apache configuration. The following configuration is needed:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&lt;Location&nbsp;/server-status&gt;
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SetHandler&nbsp;server-status
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Order&nbsp;deny,allow
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Deny&nbsp;from&nbsp;all
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow&nbsp;from&nbsp;127.0.0.1
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&lt;/Location&gt;
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;ExtendedStatus&nbsp;On
+<P>
+Change &quot;127.0.0.1&quot; to the IP-address of the server that runs your
+network tests.
+<P>
+</DL>
+<A NAME="lbAU">&nbsp;</A>
+<H2>DEFAULT HOST</H2>
+
+If you have certain tags that you want to apply to all hosts, you can
+define a host name &quot;.default.&quot; and put the tags on that host. Note that
+per-host definitions will override the default ones.
+<P>
+<B>NOTE:</B> The &quot;.default.&quot; host entry will only accept the following
+tags - others are silently ignored: NOCOLUMNS, COMMENT, DESCR, CLASS, 
+dialup, testip, nobb2, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
+NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, REPORTTIME, WARNPCT, NET, noclear, 
+nosslcert, ssldays, DOWNTIME, depends, noping, noconn, trace, notrace, 
+HIDEHTTP, browser, pulldata. Specifically, note that network tests,
+&quot;badTEST&quot; settings, and alternate pageset relations cannot be listed on 
+the &quot;.default.&quot; host.
+<P>
+<A NAME="lbAV">&nbsp;</A>
+<H2>SENDING SUMMARIES TO REMOTE HOBBIT SERVERS</H2>
+
+<DL COMPACT>
+<DT>summary ROW.COLUMN IP URL<DD>
+If you have multiple Hobbit servers, the &quot;summary&quot; directive lets you 
+form a hierarchy of servers by sending the overall status of this server
+to a remote Hobbit server, which then displays this in a special summary
+section. E.g. if your offices are spread over three locations, you can 
+have a Hobbit server at each office. These branch-office Hobbits have
+a &quot;summary&quot; definition in their bb-hosts file that makes them report
+the overall status of their branch Hobbit to the central Hobbit server
+you maintain at the corporate headquarters.
+<P>
+Multiple &quot;summary&quot; definitions are allowed.
+<P>
+The ROW.COLUMN setting defines how this summary is presented on the
+server that receives the summary. The ROW text will be used as the
+heading for a summary line, and the COLUMN defines the name of the
+column where this summary is shown - like the hostname and testname
+used in the normal displays. The IP is the IP-address of the <B>remote</B> 
+(upstream) Hobbit server, where this summary is sent). The URL is the
+URL of your <B>local</B> Hobbit server.
+<P>
+The URL need not be that of your Hobbit server's main page - it could
+be the URL of a subpage on the local Hobbit server. Hobbit will report
+the summary using the color of the page found at the URL you specify.
+E.g. on your corporate Hobbit server you want a summary from the
+Las Vegas office - but you would like to know both what the overall 
+status is, and what is the status of the servers on the critical
+Sales department back-office servers in Las Vegas. So you configure
+the Las Vegas Hobbit server to send <B>two</B> summaries:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;summary&nbsp;Vegas.All&nbsp;10.0.1.1&nbsp;<A HREF="http://vegas.foo.com/hobbit/">http://vegas.foo.com/hobbit/</A>
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;summary&nbsp;Vegas.Sales&nbsp;10.0.1.1&nbsp;<A HREF="http://vegas.foo.com/hobbit/sales/">http://vegas.foo.com/hobbit/sales/</A>
+<P>
+<P>
+This gives you one summary line for Baltimore, with two columns: An
+&quot;All&quot; column showing the overall status, and a &quot;Sales&quot; column showing
+the status of the &quot;sales&quot; page on the Baltimore Hobbit server.
+<P>
+Note: Pages defined using alternate pageset definitions cannot be used,
+the URL must point to a webpage from the default set of Hobbit webpages.
+<P>
+<P>
+</DL>
+<A NAME="lbAW">&nbsp;</A>
+<H2>OTHER TAGS</H2>
+
+<DL COMPACT>
+<DT>pulldata[=[IP][:port]]<DD>
+This option is recognized by the
+<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+
+utility, and causes it to poll the host for client data. The optional
+IP-address and port-number can be used if the client-side
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+daemon is listening on a non-standard IP-address or port-number.
+<P>
+<P>
+</DL>
+<A NAME="lbAX">&nbsp;</A>
+<H2>FILES</H2>
+
+<B>~hobbit/server/etc/bb-hosts</B>
+
+<P>
+<A NAME="lbAY">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/bbdigest.1.html">bbdigest</A>(1), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man7/hobbit.7.html">hobbit</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
+<DT><A HREF="#lbAF">TAGS RECOGNIZED BY ALL TOOLS</A><DD>
+<DT><A HREF="#lbAG">GENERAL PER-HOST OPTIONS </A><DD>
+<DT><A HREF="#lbAH">BBGEN DISPLAY OPTIONS</A><DD>
+<DT><A HREF="#lbAI">HOBBIT TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE</A><DD>
+<DT><A HREF="#lbAJ">HOBBIT TAGS FOR THE WML (WAP) CARDS</A><DD>
+<DT><A HREF="#lbAK">HOBBIT STATUS PROPAGATION OPTIONS</A><DD>
+<DT><A HREF="#lbAL">HOBBIT AVAILABILITY REPORT OPTIONS</A><DD>
+<DT><A HREF="#lbAM">NETWORK TEST SETTINGS</A><DD>
+<DT><A HREF="#lbAN">CONNECTIVITY (PING) TEST</A><DD>
+<DT><A HREF="#lbAO">SIMPLE NETWORK TESTS</A><DD>
+<DT><A HREF="#lbAP">DNS SERVER TESTS</A><DD>
+<DT><A HREF="#lbAQ">OTHER NETWORK TESTS</A><DD>
+<DT><A HREF="#lbAR">HTTP TESTS</A><DD>
+<DT><A HREF="#lbAS">LDAP (DIRECTORY SERVER) TESTS</A><DD>
+<DT><A HREF="#lbAT">PERFORMANCE MONITORING TESTS</A><DD>
+<DT><A HREF="#lbAU">DEFAULT HOST</A><DD>
+<DT><A HREF="#lbAV">SENDING SUMMARIES TO REMOTE HOBBIT SERVERS</A><DD>
+<DT><A HREF="#lbAW">OTHER TAGS</A><DD>
+<DT><A HREF="#lbAX">FILES</A><DD>
+<DT><A HREF="#lbAY">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 16:21:46 GMT, January 11, 2008
+</BODY>
+</HTML>

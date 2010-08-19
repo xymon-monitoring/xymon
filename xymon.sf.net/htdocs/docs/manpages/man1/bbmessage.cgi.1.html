@@ -1,0 +1,67 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BBMESSAGE.CGI</TITLE>
+</HEAD><BODY>
+<H1>BBMESSAGE.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp:  5 Jun 2006<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bbmessage.cgi - CGI program receiving Hobbit messages sent over HTTP
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>bbmessage.cgi</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>bbmessage.cgi</B>
+is invoked as a CGI script. The purpose of this CGI is to 
+forward incoming Hobbit status-messages sent via HTTP
+to the local Hobbit daemon running on the same server as the web
+server. This allows for sending messages via 
+HTTP from clients and network-test programs. It is thus
+the server-side component of the 
+<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+
+client for tunnelling Hobbit traffic over HTTP.
+<P>
+The CGI expects to be invoked from an HTTP &quot;POST&quot; request,
+with the POST-data being the status-message.
+<B>bbmessage.cgi</B>
+simply collects all of the POST data, and send it off as
+a message to the bbd daemon running on IP 127.0.0.1. This
+destination IP currently cannot be changed, except by
+changing the sendmsg.c C source-file.
+<P>
+The CGI will return any output provided by the bbd daemon
+back to the requestor as the response to the HTTP POST,
+so this allows for the bbgen protocol extensions &quot;query&quot;
+and &quot;config&quot;.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/bb.1.html">bb</A>(1), <A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man7/hobbit.7.html">hobbit</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 14:55:17 GMT, June 05, 2006
+</BODY>
+</HTML>

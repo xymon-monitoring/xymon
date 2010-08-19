@@ -1,0 +1,841 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITSERVER.CFG</TITLE>
+</HEAD><BODY>
+<H1>HOBBITSERVER.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 11 Jan 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitserver.cfg - Hobbit environment variables
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+Hobbit programs use multiple environment variables beside the
+normal set of variables.  The environment definitions
+are stored in the ~hobbit/server/etc/hobbitserver.cfg file. 
+Each line in this file is of the form <B>NAME=VALUE</B> and defines
+one environment variable NAME with the value VALUE.
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>ENVIRONMENT AREAS</H2>
+
+In some cases it may be useful to have different values for an environment
+variable, depending on where it is used. This is possible by defining
+variables with an associated &quot;area&quot;. Such definitions have the form
+<B>AREA/NAME=VALUE</B>.
+<P>
+E.g. to define a special setup of the BBDISPLAY variable when it is used
+by an application in the &quot;management&quot; area, you would do this:
+<DL COMPACT>
+<DT><DD>
+<PRE>
+  BBDISP=&quot;127.0.0.1&quot;            # Default definition
+  management/BBDISP=&quot;10.1.0.5&quot;  # Definition in the &quot;management&quot; area
+</PRE>
+
+</DL>
+<P>
+
+Areas are invoked by using the &quot;--area&quot; option for all tools, or via the 
+ENVAREA setting in the
+<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+
+file.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>GENERAL SETTINGS</H2>
+
+<P>
+<DL COMPACT>
+<DT>BBSERVERHOSTNAME<DD>
+The fully-qualified hostname of the server that is running Hobbit.
+<P>
+<DT>BBSERVERWWWNAME<DD>
+The hostname used to access this servers' web-pages, used to construct
+URL's in the Hobbit webpages. Default is the BBSERVERHOSTNAME.
+<P>
+<DT>BBSERVERIP<DD>
+The public IP-address of the server that is running Hobbit.
+<P>
+<DT>BBSERVEROS<DD>
+A name identifying the operating system of the Hobbit server. The 
+known names are currently &quot;linux&quot;, &quot;freebsd&quot;, &quot;solaris&quot;, &quot;hpux&quot;,
+&quot;aix&quot; and &quot;osf&quot;.
+<P>
+<DT>FQDN<DD>
+If set to TRUE, Hobbit will use fully-qualified hostnames throughout.
+If set to FALSE, hostnames are stripped of their domain-part before
+being processed. It is <B>highly recommended</B> that you keep this
+set to TRUE. Default: TRUE.
+<P>
+<DT>BBLOGSTATUS<DD>
+Controls how the HTML page for a status log is generated. If set to
+DYNAMIC, the HTML logs are generated on-demand by the 
+<I><A HREF="../man1/bb-hostsvc.cgi.1.html">bb-hostsvc.cgi</A>(1)</I>
+
+script. If set to STATIC, you must activate the
+<I><A HREF="../man8/hobbitd_filestore.8.html">hobbitd_filestore</A>(8)</I>
+
+module (through an entry in the
+<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+
+file) to create and store the HTML logs whenever a status update is
+received. Setting &quot;BBLOGSTATUS=STATIC&quot; is <B>discouraged</B> since the
+I/O load on the Hobbit server will increase significantly.
+<P>
+<DT>PINGCOLUMN<DD>
+Defines the name of the column for &quot;ping&quot; test status. The data from
+the &quot;ping&quot; test is used internally by Hobbit, so it must be defined
+here so all of the Hobbit tools know which column to watch for this 
+data. The default setting is PINGCOLUMN=conn.
+<P>
+<DT>INFOCOLUMN<DD>
+Defines the name of the column for the &quot;info&quot; pages.
+<P>
+<DT>TRENDSCOLUMN<DD>
+Defines the name of the column for the RRD graph pages.
+<P>
+<DT>RRDHEIGHT<DD>
+The default height (in pixels) of the RRD graph images.
+Default: 120 pixels.
+<P>
+<DT>RRDWIDTH<DD>
+The default width (in pixels) of the RRD graph images.
+Default: 576 pixels.
+<P>
+<DT>TRENDSECONDS<DD>
+The graphs on the &quot;trends&quot; page show data for the past TRENDSECONDS
+seconds. Default: 172800 seconds, i.e. 48 hours.
+<P>
+<DT>HTMLCONTENTTYPE<DD>
+The Content-type reported by the CGI scripts that generate web pages.
+By default, this it &quot;text/html&quot;. If you have on-line help texts in
+character sets other than the ISO-8859-1 (western european) character
+set, it may be necessary to modify this to include a character set.
+E.g.
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;HTMLCONTENTTYPE=&quot;text/html;&nbsp;charset=euc-jp&quot;
+<BR>
+
+for a Japanese character sets. Note: Some webservers will automatically
+add this, if configured to do so.
+<P>
+<DT>HOLIDAYS<DD>
+Defines the default set of holidays used if there is no &quot;holidays&quot; 
+tag for a host in the bb-hosts file. Holiday sets are defined in the
+<I><A HREF="../man5/hobbit-holidays.cfg.5.html">hobbit-holidays.cfg</A>(5)</I>
+
+file. If not defined, only the default holidays (those defined outside
+a named holiday set) will be considered as holidays.
+<P>
+<DT>WEEKSTART<DD>
+Defines which day is the first day of the week. Set to &quot;0&quot; for Sunday,
+&quot;1&quot; for Monday. Default: 1 (Monday).
+<P>
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>DIRECTORIES</H2>
+
+<P>
+<DL COMPACT>
+<DT>BBSERVERROOT<DD>
+The top-level directory for the Hobbit installation. The default 
+is the home-directory for the user running Hobbit.
+<P>
+<DT>BBSERVERLOGS<DD>
+The directory for the Hobbit's own logfiles (NOT the status-logs
+from the monitored hosts).
+<P>
+<DT>BBHOME<DD>
+The Hobbit server directory, where programs and configurations are kept.
+Default: $BBSERVERROOT/server/ .
+<P>
+<DT>BBTMP<DD>
+Directory used for temporary files. Default: $BBHOME/tmp/
+<P>
+<DT>BBWWW<DD>
+Directory for Hobbit webfiles. The $BBWEB URL must map to this directory.
+Default: $BBHOME/www/
+<P>
+<DT>BBNOTES<DD>
+Directory for Hobbit notes-files. The $BBNOTESSKIN URL must map to this directory.
+Default: $BBHOME/www/notes/
+<P>
+<DT>BBREP<DD>
+Directory for Hobbit availability reports. The $BBREPURL URL must map to this directory.
+Note also that your webserver must have write-access to this directory, if you want to
+use the 
+<I><A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1)</I>
+
+CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
+<P>
+<DT>BBSNAP<DD>
+Directory for Hobbit snapshots. The $BBSNAPURL URL must map to this directory.
+Note also that your webserver must have write-access to this directory, if you want to
+use the 
+<I><A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1)</I>
+
+CGI script to generate snapshots on-demand. Default: $BBHOME/www/snap/
+<P>
+<DT>BBVAR<DD>
+Directory for all data stored about the monitored items. 
+Default: $BBSERVERROOT/data/
+<P>
+<DT>BBLOGS<DD>
+Directory for storing the raw status-logs. Not used unless
+&quot;hobbitd_filestore --status&quot; is running, which is <B>discouraged</B>
+since it increases the load on the Hobbit server significantly.
+Default: $BBVAR/logs/
+<P>
+<DT>BBHTML<DD>
+Directory for storing HTML status-logs. Not used unless
+&quot;hobbitd_filestore --status --html&quot; is running, which is <B>discouraged</B>
+since it increases the load on the Hobbit server significantly.
+Default: $BBHOME/www/html/
+<P>
+<DT>BBHIST<DD>
+Directory for storing the history of monitored items.
+Default: $BBVAR/hist/
+<P>
+<DT>BBHISTLOGS<DD>
+Directory for storing the detailed status-log of historical events.
+Default: $BBVAR/histlogs/
+<P>
+<DT>BBACKS<DD>
+Directory for storing information about alerts that have been acknowledged.
+Default: $BBVAR/acks/
+<P>
+<DT>BBDISABLED<DD>
+Directory for storing information about tests that have been disabled.
+Default: $BBVAR/disabled/
+<P>
+<DT>BBDATA<DD>
+Directory for storing incoming &quot;data&quot; messages.
+Default: $BBVAR/data/
+<P>
+<DT>BBRRDS<DD>
+Top-level directory for storing RRD files (the databases with
+trend-information used to generate graphs).
+Default: $BBVAR/rrd/
+<P>
+<DT>CLIENTLOGS<DD>
+Directory for storing the data sent by a Hobbit client around the
+time a status changes to a warning (yellow) or critical (red) state.
+Used by the
+<I><A HREF="../man8/hobbitd_hostdata.8.html">hobbitd_hostdata</A>(8)</I>
+
+module.
+Default: $BBVAR/hostdata/
+<P>
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SYSTEM FILES</H2>
+
+<P>
+<DL COMPACT>
+<DT>BBHOSTS<DD>
+Full path to the Hobbit
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
+configuration file. Default: $BBHOME/etc/bb-hosts.
+<P>
+<DT>BB<DD>
+Full path to the 
+<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+
+client program. Default: $BBHOME/bin/bb.
+<P>
+<DT>BBGEN<DD>
+Full path to the
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+webpage generator program. Default: $BBHOME/bin/bbgen.
+<P>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>URLS</H2>
+
+<DL COMPACT>
+<DT>BBSERVERWWWURL<DD>
+The root URL for the Hobbit webpages, without the hostname. This
+URL must be mapped to the ~/server/www/ directory in your webserver
+configuration. See the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+<P>
+<DT>BBSERVERCGIURL<DD>
+The root URL for the Hobbit CGI-scripts, without the hostname. This
+directory must be mapped to the ~/cgi-bin/ directory in your webserver
+configuration, and must be flagged as holding executable scripts. See
+the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+<P>
+<DT>BBWEBHOST<DD>
+Initial part of the Hobbit URL, including just the protocol and the
+hostname, e.g. &quot;<A HREF="http://www.foo.com">http://www.foo.com</A>&quot;
+<P>
+<DT>BBWEBHOSTURL<DD>
+Prefix for all of the static Hobbit webpages, e.g. &quot;<A HREF="http://www.foo.com/hobbit">http://www.foo.com/hobbit</A>&quot;
+<P>
+<DT>BBWEBHTMLLOGS<DD>
+URL prefix for the static HTML status-logs generated when BBLOGSTATUS=STATIC.
+Note that this setting is <B>discouraged</B> so this setting should not be used.
+<P>
+<DT>BBWEB<DD>
+URL prefix (without hostname) of the Hobbit webpages. E.g. &quot;/hobbit&quot;.
+<P>
+<DT>BBSKIN<DD>
+URL prefix (without hostname) of the Hobbit graphics. E.g. &quot;/hobbit/gifs&quot;.
+<P>
+<DT>BBHELPSKIN<DD>
+URL prefix (without hostname) of the Hobbit on-line help files. E.g &quot;/hobbit/help&quot;.
+<P>
+<DT>BBMENUSKIN<DD>
+URL prefix (without hostname) of the Hobbit menu files. E.g &quot;/hobbit/menu&quot;.
+<P>
+<DT>BBNOTESSKIN<DD>
+URL prefix (without hostname) of the Hobbit on-line notes files. E.g &quot;/hobbit/notes&quot;.
+<P>
+<DT>BBREPURL<DD>
+URL prefix (without hostname) of the Hobbit availability reports. E.g. &quot;/hobbit/rep&quot;.
+<P>
+<DT>BBSNAPURL<DD>
+URL prefix (without hostname) of the Hobbit snapshots. E.g. &quot;/hobbit/snap&quot;.
+<P>
+<DT>BBWAP<DD>
+URL prefix (without hostname) of the Hobbit WAP/WML files. E.g. &quot;/hobbit/wml&quot;.
+<P>
+<DT>CGIBINURL<DD>
+URL prefix (without hostname) of the Hobbit CGI-scripts. Default: $BBSERVERCGIURL .
+<P>
+<DT>COLUMNDOCURL<DD>
+Format string used to build a link to the documentation for a column heading.
+Default: &quot;$CGIBINURL/hobbitcolumn.sh?%s&quot;, which causes links to use the
+<I><A HREF="../man1/hobbitcolumn.sh.1.html">hobbitcolumn.sh</A>(1)</I>
+
+script to document a column.
+<P>
+<P>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>SETTINGS FOR SENDING MESSAGES TO HOBBIT</H2>
+
+<DL COMPACT>
+<DT>BBDISP<DD>
+The IP-address used to contact the
+<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+
+service. Used by clients and the tools that perform network tests.
+Default: $BBSERVERIP
+<P>
+<DT>BBDISPLAYS<DD>
+List of IP-adresses. Clients and network test tools will try to
+send status reports to a Hobbit server running on each of these
+adresses. This setting is only used if BBDISP=0.0.0.0.
+<P>
+<DT>PAGELEVELS<DD>
+Compatibility setting for Big Brother: List of colors that are 
+considered &quot;critical&quot; and therefore will trigger an alert. Not
+used by Hobbit.
+<P>
+<DT>BBPAGE<DD>
+Compatibility setting for Big Brother: This is the IP-address of
+the server where a BBPAGER service is running. It is not used by Hobbit.
+<P>
+<DT>BBPAGERS<DD>
+Compatibility setting for Big Brother: List of servers running the
+BBPAGER service, used if BBPAGE=0.0.0.0. It is not used by Hobbit.
+<P>
+<DT>BBPORT<DD>
+The portnumber for used to contact the
+<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+
+service. Used by clients and the tools that perform network tests.
+Default: 1984.
+<P>
+<DT>DOCOMBO<DD>
+Compatibility setting for Big Brother. Controls whether so send 
+combo-messages or not. Ignored by Hobbit.
+<P>
+<DT>BBMAXMSGSPERCOMBO<DD>
+The maximum number of status messages to combine into one
+combo message. You may need to lower this number of your
+BBDISPLAY server has trouble keeping up with the incoming
+status messages from bbtest-net.  Default: 100.
+<P>
+<DT>BBSLEEPBETWEENMSGS<DD>
+Length of a pause introduced between each successive transmission
+of a combo-message by bbtest-net. You may have to increase this
+value to give your BBDISPLAY server time to process one combo
+message before the next one arrives. This number defines how
+many microseconds to wait between the messages.
+Default: 0 (send messages as quickly as possible).
+<P>
+<P>
+</DL>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>HOBBITD SETTINGS</H2>
+
+<P>
+<DL COMPACT>
+<DT>ALERTCOLORS<DD>
+Comma-separated list of the colors that may trigger an alert-message.
+The default is &quot;red,yellow,purple&quot;. Note that alerts may further be
+generated or suppresed based on the configuration in the
+<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+
+file.
+<P>
+<DT>OKCOLORS<DD>
+Comma-separated list of the colors that may trigger a recovery-message.
+The default is &quot;green,clear,blue&quot;.
+<P>
+<DT>ALERTREPEAT<DD>
+How often alerts get repeated while a status is in an alert state.
+This is the default setting, which may be changed in the 
+<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+
+file.
+<P>
+<DT>BBGHOSTS<DD>
+Controls how status messages from unknown hosts (i.e. hosts not
+listed in the bb-hosts file) are handled.
+<P>
+<B>BBGHOSTS=1:</B>
+
+Causes the status report to be silently discarded. This is the
+default behaviour in Hobbit.
+<P>
+<B>BBGHOSTS=2:</B>
+
+Discards the status report, but keep track of the hostname
+and report it on the hobbitd status page.
+<P>
+When BBGHOSTS is set to 1 or 2, the hostnames in incoming 
+status-messages is matched without any case-sensitivity,
+unlike normal Big Brother which is case-sensitive in
+hostnames. So with BBGHOSTS set to 1 or 2, &quot;WWW.FOO.COM&quot;
+and &quot;<A HREF="http://www.foo.com">www.foo.com</A>&quot; are considered to be the same host.
+If necessary, the incoming hostname will be changed
+to match the way it is written in the bb-hosts file,
+changing case as needed.
+<P>
+<DT>MAXMSG_STATUS<DD>
+The maximum size of a &quot;status&quot; message in kB, default: 256.
+Status messages are the ones that end up as columns on the 
+web display. The default size should be adequate in most
+cases, but some extension scripts can generate very large
+status messages - close to 1024 kB. You should only change
+this if you see messages in the hobbitd log file about status
+messages being truncated.
+<P>
+<DT>MAXMSG_CLIENT<DD>
+The maximum size of a &quot;client&quot; message in kB, default: 512.
+&quot;client&quot; messages are generated by the Hobbit client, and often
+include large process-listings. You should only change
+this if you see messages in the hobbitd log file about client
+messages being truncated.
+<P>
+<DT>MAXMSG_DATA<DD>
+The maximum size of a &quot;data&quot; message in kB, default: 256.
+&quot;data&quot; messages are typically used for client reports of
+e.g. netstat or vmstat data. You should only change this
+setting if you see messages in the hobbitd log file about
+data messages being truncated.
+<P>
+<DT>MAXMSG_NOTES<DD>
+The maximum size of a &quot;notes&quot; message in kB, default: 256.
+&quot;notes&quot; messages provide a way for uploading documentation
+about a host to Hobbit; it is not enabled by default. If you 
+want to upload large documents, you may need to change this
+setting.
+<P>
+<DT>MAXMSG_STACHG<DD>
+The maximum size of a &quot;status change&quot; message in kB, default: 
+Current value of the MAXMSG_STATUS setting.  Status-change 
+messages occur when a status changes color. There is no 
+reason to change this setting.
+<P>
+<DT>MAXMSG_PAGE<DD>
+The maximum size of a &quot;page&quot; message in kB, default: 
+Current value of the MAXMSG_STATUS setting. &quot;page&quot; messages
+are alerts, and include the status message that triggers the
+alert. There is no reason to change this setting.
+<P>
+<DT>MAXMSG_ENADIS<DD>
+The maximum size of an &quot;enadis&quot; message in kB, default: 32.
+&quot;enadis&quot; are small messages used when enabling or disabling
+hosts and tests, so the default size should be adequate.
+<P>
+<DT>MAXMSG_CLICHG<DD>
+The maximum size of a &quot;client change&quot; message in kB, default: 
+Current value of the MAXMSG_CLIENT setting.  Client-change 
+messages occur when a status changes color to one of the
+alert-colors, usually red, yellow and purple. There is no 
+reason to change this setting.
+<P>
+<P>
+</DL>
+<A NAME="lbAK">&nbsp;</A>
+<H2>HOBBITD_HISTORY SETTINGS</H2>
+
+<P>
+<DL COMPACT>
+<DT>BBALLHISTLOG<DD>
+If set to TRUE,
+<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+
+will update the $BBHIST/allevents file logging all changes to
+a status. The allevents file is used by the
+<I><A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1)</I>
+
+tool to show the list of recent events on the BB2 webpage.
+<P>
+<DT>BBHOSTHISTLOG<DD>
+If set to TRUE,
+<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+
+will update the host-specific eventlog that keeps record
+of all status changes for a host. This logfile is not used
+by any Hobbit tool.
+<P>
+<DT>SAVESTATUSLOG<DD>
+If set to TRUE,
+<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+
+will save historical detailed status-logs to the $BBHISTLOGS
+directory.
+<P>
+<P>
+</DL>
+<A NAME="lbAL">&nbsp;</A>
+<H2>HOBBITD_ALERT SETTINGS</H2>
+
+<P>
+<DL COMPACT>
+<DT>MAIL<DD>
+Command used to send alerts via e-mail, including a &quot;Subject:&quot;
+header in the mail. Default: &quot;mail -s&quot;
+<P>
+<DT>MAILC<DD>
+Command used to send alerts via e-mail in a form that does not
+have a &quot;Subject&quot; in the mail. Default: &quot;mail&quot;
+<P>
+<DT>SVCCODES<DD>
+Maps status-columns to numeric service-codes. The numeric codes are
+used when sending an alert using a script, where the numeric code of
+the service is provided in the BBSVCNUM variable.
+<P>
+<P>
+</DL>
+<A NAME="lbAM">&nbsp;</A>
+<H2>HOBBITD_RRD SETTINGS</H2>
+
+<P>
+<DL COMPACT>
+<DT>TEST2RRD<DD>
+List of &quot;COLUMNNAME[=RRDSERVICE]&quot; settings, that define which
+status- and data-messages have a corresponding RRD graph. You will 
+normally not need to modify this, unless you have added a
+custom TCP-based test to the bb-services file, and want to collect data about
+the response-time, OR if you are using the
+<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+
+external script mechanism to collect data from custom tests. 
+Note: All TCP tests are automatically added.
+<P>
+This is also used by the 
+<I><A HREF="../man1/bb-hostsvc.cgi.1.html">bb-hostsvc.cgi</A>(1) </I>
+
+script to determine if the detailed status view of a test should 
+include a graph.
+<P>
+<DT>GRAPHS<DD>
+List of the RRD databases, that should be shown as a graph on
+the &quot;trends&quot; column.
+<P>
+<DT>NORRDDISKS<DD>
+This is used to disable the tracking of certain filesystems. By default
+all filesystems reported by a client are tracked. In some cases you may want 
+to disable this for certain filesystems, e.g. database filesystems since they
+are always completely full. This setting is a regular expression that is matched
+against the filesystem name (the Unix mount-point, or the Windows disk-letter) -
+if the filesystem name matches this expression, then it will not be tracked
+by Hobbit.
+<BR>
+
+Note: Setting this does not affect filesystems that are already being tracked
+by Hobbit - to remove them, you must remove the RRD files for the unwanted filesystems
+from the ~hobbit/data/rrd/HOSTNAME/ directory.
+<P>
+<DT>RRDDISKS<DD>
+This is used to enable tracking of only selected filesystems (see the NORRDDISKS
+setting above). By default all filesystems are being tracked, setting this changes 
+that default so that only those filesystems that match this pattern will be 
+tracked.
+<P>
+<P>
+</DL>
+<A NAME="lbAN">&nbsp;</A>
+<H2>BBTEST-NET NETWORK TEST SETTINGS</H2>
+
+<P>
+<DL COMPACT>
+<DT>BBLOCATION<DD>
+If this variable is defined, then only the hosts that have been tagged
+with &quot;NET:$BBLOCATION&quot; will be tested by the bbtest-net tool.
+<P>
+<DT>CONNTEST<DD>
+If set to TRUE, the connectivity (ping) test will be performed.
+<P>
+<DT>IPTEST_2_CLEAR_ON_FAILED_CONN<DD>
+If set to TRUE, then failing network tests go CLEAR if the conn-test fails.
+<P>
+<DT>NONETPAGE<DD>
+List of network services (separated with &lt;space&gt;) that should go yellow
+upon failure instead of red.
+<P>
+<DT>BBROUTERTEXT<DD>
+When using the &quot;router&quot; or &quot;depends&quot; tags for a host, a failure
+status will include text that an &quot;Intermediate router is down&quot;.
+With todays network topologies, the router could be a switch or
+another network device; if you define this environment variable
+the word &quot;router&quot; will be replaced with whatever you put into
+the variable. So to inform the users that an intermediate switch
+or router is down, use BBROUTERTEXT=&quot;switch or router&quot;.  This can 
+also be set on a per-host basis using the &quot;DESCR:hosttype:description&quot;
+tag in the 
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
+file.
+<P>
+<DT>NETFAILTEXT<DD>
+When a network test fails, the status message reports &quot;SERVICENAME
+not OK&quot;. The &quot;not OK&quot; message can be changed via this variable, e.g.
+you can change it to &quot;FAILED&quot; or customize it as you like.
+<P>
+<DT>FPING<DD>
+The command used to run the
+<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+
+tool for the connectivity test. (The name FPING is due to the fact that
+the &quot;fping&quot; utility was used until Hobbit version 4.2). This may include 
+suid-root wrappers and hobbitping options.
+Default: &quot;hobbitping&quot;
+<P>
+<DT>TRACEROUTE<DD>
+Defines the location of the &quot;traceroute&quot; tool and
+any options needed to run it. traceroute it used by
+the connectivity test when the ping test fails; if
+requested via the &quot;trace&quot; tag, the TRACEROUTE command
+is executed to try to determine the point in the
+network that is causing the problem. By default the
+command executed is &quot;traceroute -n -q 2 -w 2 -m 15&quot;
+(no DNS lookup, max. 2 probes, wait 2 seconds per hop,
+max 15 hops).
+<P>
+If you have the
+<I><A HREF="../man8/mtr.8.html">mtr</A>(8)</I>
+
+tool installed - available from <A HREF="http://www.bitwizard.nl/mtr/">http://www.bitwizard.nl/mtr/</A> - I
+strongly recommend using this instead. The recommended
+setting for mtr is &quot;/usr/sbin/mtr -c 2 -n --report&quot; (the
+exact path to the mtr utility may be different on your 
+system).  Note that mtr needs to be installed suid-root 
+on most systems.
+<P>
+<DT>NTPDATE<DD>
+Defines the 
+<I><A HREF="../man1/ntpdate.1.html">ntpdate</A>(1)</I>
+
+program used for the &quot;ntp&quot; test.  
+Default: &quot;ntpdate&quot;
+<P>
+<DT>RPCINFO<DD>
+Defines the
+<I><A HREF="../man8/rpcinfo.8.html">rpcinfo</A>(8)</I>
+
+program used for &quot;rpc&quot; tests.
+Default: &quot;rpcinfo&quot;
+<P>
+<P>
+</DL>
+<A NAME="lbAO">&nbsp;</A>
+<H2>BBGEN WEBPAGE GENERATOR SETTINGS</H2>
+
+<P>
+<DL COMPACT>
+<DT>HOBBITLOGO<DD>
+HTML code that is inserted on all standard headers. The default is to add
+the text &quot;Hobbit&quot; in the upper-left corner of the page, but you can easily 
+replace this with e.g. a company logo. If you do, I suggest that you keep 
+it at about 30-35 pixels high, and 100-150 pixels wide.
+<P>
+<DT>MKBBLOCAL<DD>
+The string &quot;Pages hosted locally&quot; that appears above all of the pages
+linked from the main Hobbit webpage.
+<P>
+<DT>MKBBSUBLOCAL<DD>
+The string &quot;Subpages hosted locally&quot; that appears above all of the sub-pages
+linked from pages below the main Hobbit webpage.
+<P>
+<DT>MKBBREMOTE<DD>
+The string &quot;Remote status display&quot; that appears about the summary
+statuses displayed on the min Hobbit webpage.
+<P>
+<DT>MKBBTITLE<DD>
+HTML tags designed to go in a &lt;FONT&gt; tag, to choose the font for 
+titles of the webpages.
+<P>
+<DT>MKBBROWFONT<DD>
+HTML tags designed to go in a &lt;FONT&gt; tag, to choose the font for 
+row headings (hostnames) on the webpages.
+<P>
+<DT>MKBBCOLFONT<DD>
+HTML tags designed to go in a &lt;FONT&gt; tag, to chose the font for
+column headings (test names) on the webpages.
+<P>
+<DT>MKBBACKFONT<DD>
+HTML tags designed to go in a &lt;FONT&gt; tag, to chose the font for
+the acknowledgement text displayed on the status-log HTML page
+for an acknowledged status.
+<P>
+<DT>ACKUNTILMSG<DD>
+When displaying the detailed status of an acknowledged test,
+Hobbit will include the time that the acknowledge expires
+using the print-format defined in this setting. You can define
+the timeformat using the controls in your systems
+<I><A HREF="../man3/strftime.3.html">strftime</A>(3)</I>
+
+routine, and add the text suitable for your setup.
+<P>
+<DT>BBDATEFORMAT<DD>
+On webpages generated by bbgen, the default header includes
+the current date and time. Normally this looks like &quot;Tue Aug 24
+21:59:47 2004&quot;. The BBDATEFORMAT controls the format of this
+timestamp - you can define the format using the controls in the 
+<I><A HREF="../man3/strftime.3.html">strftime</A>(3)</I>
+
+routine. E.g. to have it show up as &quot;2004-08-24 21:59:47 +0200&quot;
+you would set BBDATEFORMAT=&quot;%Y-%m-%d %H:%M:%S %z&quot;
+<P>
+<DT>HOLIDAYFORMAT<DD>
+How holiday dates are displayed. The default is &quot;%d/%m&quot; which
+show the day and month. American users may want to change this 
+to &quot;%m/%d&quot; to suit their preferred date-display style. This
+is a formatting string for the system
+<I><A HREF="../man3/strftime.3.html">strftime</A>(3)</I>
+
+routine, so any controls available for this routine may be used.
+<P>
+<DT>MKBB2COLREPEAT<DD>
+Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
+the maximum number of rows before repeating the column headings
+on a webpage. This sets the default value for the 
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+&quot;--maxrows&quot; option; if the command-line option is also specifed,
+then it overrides this environment variable. Note that unlike
+Jeff's patch, bbgen implements this for both the bb2.html page
+and all other pages (bb.html, subpages, bbnk.html). 
+<P>
+<DT>SUMMARY_SET_BKG<DD>
+If set to TRUE, then summaries will affect the color of the
+main Hobbit webpage. Default: FALSE.
+<P>
+<DT>DOTHEIGHT<DD>
+The height (in pixels) of the icons showing the color of a status.
+Default: 16, which matches the default icons.
+<P>
+<DT>DOTWIDTH<DD>
+The width (in pixels) of the icons showing the color of a status.
+Default: 16, which matches the default icons.
+<P>
+<DT>CLIENTSVCS<DD>
+List of the status logs fed by data from the Hobbit client. These
+status logs will - if there are Hobbit client data available for
+the host - include a link to the raw data sent by the client.
+Default: cpu,disk,memory,procs,svcs.
+<P>
+<DT>BBRSSTITLE<DD>
+If defined, this is the title of the RSS/RDF documents generated when
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+is invoked with the &quot;--rss&quot; option. The default value is &quot;Hobbit Alerts&quot;.
+<P>
+<DT>WMLMAXCHARS<DD>
+Maximum size of a WAP/WML output &quot;card&quot; when generating these.
+Default: 1500.
+<P>
+<DT>BBMKBB2EXT<DD>
+List of scripts to run as extensions to the BB2 page. Note that
+two scripts, &quot;eventlog.sh&quot; and &quot;acklog.sh&quot; are handled specially:
+They are handled internally by bbgen, but the script names must
+be listed in this variable for this function to be enabled.
+<P>
+<DT>BBHISTEXT<DD>
+List of scripts to run as extensions to a history page.
+<P>
+<DT>BBREPWARN<DD>
+Default threshold for listing the availability as &quot;critical&quot; (red) when
+generating the availability report. This can be set on a per-host basis
+with the WARNPCT setting in
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5).</I>
+
+Default: 97 (percent)
+<P>
+<DT>BBGENREPOPTS<DD>
+Default bbgen options used for reports. This will typically include
+such options as &quot;--subpagecolumns&quot;, and also &quot;--ignorecolumns&quot; if 
+you wish to exclude certain tests from reports by default.
+<P>
+<DT>BBGENSNAPOPTS<DD>
+Default bbgen options used by snapshots. This should be identical to
+the options you normally used when building Hobbit webpages.
+<P>
+</DL>
+<A NAME="lbAP">&nbsp;</A>
+<H2>FILES</H2>
+
+<B>~hobbit/server/etc/hobbitserver.cfg</B>
+
+<P>
+<A NAME="lbAQ">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man7/hobbit.7.html">hobbit</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAD">ENVIRONMENT AREAS</A><DD>
+<DT><A HREF="#lbAE">GENERAL SETTINGS</A><DD>
+<DT><A HREF="#lbAF">DIRECTORIES</A><DD>
+<DT><A HREF="#lbAG">SYSTEM FILES</A><DD>
+<DT><A HREF="#lbAH">URLS</A><DD>
+<DT><A HREF="#lbAI">SETTINGS FOR SENDING MESSAGES TO HOBBIT</A><DD>
+<DT><A HREF="#lbAJ">HOBBITD SETTINGS</A><DD>
+<DT><A HREF="#lbAK">HOBBITD_HISTORY SETTINGS</A><DD>
+<DT><A HREF="#lbAL">HOBBITD_ALERT SETTINGS</A><DD>
+<DT><A HREF="#lbAM">HOBBITD_RRD SETTINGS</A><DD>
+<DT><A HREF="#lbAN">BBTEST-NET NETWORK TEST SETTINGS</A><DD>
+<DT><A HREF="#lbAO">BBGEN WEBPAGE GENERATOR SETTINGS</A><DD>
+<DT><A HREF="#lbAP">FILES</A><DD>
+<DT><A HREF="#lbAQ">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 16:21:46 GMT, January 11, 2008
+</BODY>
+</HTML>

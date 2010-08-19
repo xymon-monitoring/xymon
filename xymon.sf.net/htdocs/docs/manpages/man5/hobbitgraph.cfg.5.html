@@ -1,0 +1,190 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITGRAPH.CFG</TITLE>
+</HEAD><BODY>
+<H1>HOBBITGRAPH.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 11 Jan 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitgraph.cfg - Configuration of the hobbitgraph CGI
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>$BBHOME/etc/hobbitgraph.cfg</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1)</I>
+
+uses the configuration file $BBHOME/etc/hobbitgraph.cfg to
+build graphs from the RRD files collected by Hobbit.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>FILE FORMAT</H2>
+
+Each definition of a graph type begins with a &quot;[SERVICE]&quot; indicator,
+this is the name passed as the &quot;service&quot; parameter to 
+<I><A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1).</I>
+
+If the service name passed to hobbitgraph.cgi is not found, it will
+attempt to match the service name to a graph via the TEST2RRD environment
+variable. So calling hobbitgraph.cgi with &quot;service=cpu&quot; or &quot;service=la&quot;
+will end up producing the same graph.
+<P>
+A graph definition needs to have a TITLE and a YAXIS setting. These are
+texts shown as the title of the graph, and the YAXIS heading respectively.
+(The X-axis is always time-based).
+<P>
+If a fixed set of RRD files are used for the graph, you just write those
+in the RRDtool definitions. Note that Hobbit keeps all RRD files for a host 
+in a separate directory per host, so you need not worry about the hostname 
+being part of the RRD filename.
+<P>
+For graphs that use multiple RRD files as input, you specify a filename
+pattern in the FNPATTERN statement, and optionally a pattern of files
+to exclude from the graph with EXFNPATTERN (see &quot;[tcp]&quot; for an example).
+When FNPATTERN is used, you can use &quot;@RRDFN@&quot; in the RRDtool definitions
+to pick up each filename. &quot;@RRDIDX@&quot; is an index (starting at 0) for each
+file in the set. &quot;@RRDPARAM@&quot; contains the first word extracted from the
+pattern of files (see e.g. &quot;[memory]&quot; how this is used). &quot;@RRDMETA@&quot; by default
+works like &quot;@RRDPARAM@&quot;, but if you create a file called <B>rrd.meta</B> in the 
+hosts rrd directory, it will lookup a legend in this file. &quot;@COLOR@&quot; picks
+a new color for each graph automatically.
+<P>
+The remainder of the lines in each definition are passed directly to the
+RRDtool rrd_graph() routine.
+<P>
+The following is an example of how the &quot;la&quot; (cpu) graph is defined. This
+is a simple definition that uses a single RRD-file, la.rrd:
+<P>
+[la]
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TITLE&nbsp;CPU&nbsp;Load
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YAXIS&nbsp;Load
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DEF:avg=la.rrd:la:AVERAGE
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CDEF:la=avg,100,/
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AREA:la#00CC00:CPU&nbsp;Load&nbsp;Average
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:LAST:&nbsp;:&nbsp;%5.1lf&nbsp;(cur)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:MAX:&nbsp;:&nbsp;%5.1lf&nbsp;(max)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:MIN:&nbsp;:&nbsp;%5.1lf&nbsp;(min)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:la:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)<P>
+<P>
+Here is an example of a graph that uses multiple RRD-files, determined
+automatically at run-time via the FNPATTERN setting. Note how it uses
+the @RRDIDX@ to define a unique RRD parameter per input-file, and the
+@COLOR@ and @RRDPARAM@ items to pick unique colors and a matching text
+for the graph legend:
+<P>
+[disk]
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FNPATTERN&nbsp;disk(.*).rrd
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TITLE&nbsp;Disk&nbsp;Utilization
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;YAXIS&nbsp;%&nbsp;Full
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DEF:p@RRDIDX@=@RRDFN@:pct:AVERAGE
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LINE2:p@RRDIDX@#@COLOR@:@RRDPARAM@
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-u&nbsp;100
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-l&nbsp;0
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:LAST:&nbsp;:&nbsp;%5.1lf&nbsp;(cur)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:MAX:&nbsp;:&nbsp;%5.1lf&nbsp;(max)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:MIN:&nbsp;:&nbsp;%5.1lf&nbsp;(min)
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPRINT:p@RRDIDX@:AVERAGE:&nbsp;:&nbsp;%5.1lf&nbsp;(avg)<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>ADVANCED GRAPH  TITLES</H2>
+
+Normally the title of a graph is a static text defined in
+the hobbitgraph.cfg file. However, there may be situations where
+you want to use different titles for the same type of graph, e.g.
+if you are incorporating RRD files from MRTG into Hobbit. In that
+case you can setup the TITLE definition so that it runs a custom
+script to determine the graph title. Like this:
+<P>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>TITLE exec:/usr/local/bin/graphitle<BR>
+<P>
+The <B>/usr/local/bin/graphtitle</B> command is then called with 
+the hostname, the graphtype, the period string, and all of the 
+RRD files used as parameters. The script must generate one line of output,
+which is then used as the title of the graph.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>ENVIRONMENT</H2>
+
+<B>TEST2RRD</B>
+
+Maps service names to graph definitions.
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>NOTES</H2>
+
+Most of the RRD graph definitions shipped with Hobbit have been ported 
+from the definitions in the <B>larrd-grapher.cgi</B> CGI from LARRD 0.43c.
+<P>
+<A NAME="lbAI">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man1/rrdtool.1.html">rrdtool</A>(1), <A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
+<DT><A HREF="#lbAF">ADVANCED GRAPH  TITLES</A><DD>
+<DT><A HREF="#lbAG">ENVIRONMENT</A><DD>
+<DT><A HREF="#lbAH">NOTES</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 16:21:47 GMT, January 11, 2008
+</BODY>
+</HTML>

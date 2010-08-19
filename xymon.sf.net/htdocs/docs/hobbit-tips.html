@@ -1,0 +1,334 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<title>Hobbit Tips and Tricks</title>
+</head>
+<body>
+<h1>Hobbit Tips and Tricks</h1>
+
+<p>Here you will find out how to do some common questions
+raised with Hobbit.</p>
+<ul>
+	<li><a href="#icons">What do the different red/yellow/green icons mean ?</a></li>
+	<li><a href="#noclient">Client side tests are missing</a></li>
+	<li><a href="#clientnames">Clients using odd hostnames</a></li>
+	<li><a href="#droprename">Where are the bbmv/bbrm commands?</a></li>
+	<li><a href="#droptest">How do I delete a test status ?</a></li>
+	<li><a href="#drophost">How do I delete a host ?</a></li>
+	<li><a href="#renamehost">How do I rename a host ?</a></li>
+	<li><a href="#apachetest">I cannot get the Apache graphs to work</a></li>
+	<li><a href="#mrtg">How can I add MRTG graphs to the Hobbit webpages?</a></li>
+	<li><a href="#updatefreq">Updating more frequently</a></li>
+	<li><a href="#fahrenheit">I want my temperature graphs to show Fahrenheit</a></li>
+	<li><a href="#nohtmllink">How do I remove the HTML links from the alert messages?</a></li>
+	<li><a href="#mancgi">I cannot see the the man-pages on the web</a></li>
+	<li><a href="#mailnosubj">My alert emails come without a subject</a></li>
+	<li><a href="#snmptraps">Does Hobbit support receiving SNMP traps?</a></li>
+	<li><a href="#scripts">How can I create a custom test script?</a></li>
+</ul>
+<hr>
+
+<h3><a name="icons">What do the little red/yellow/green icons mean ?</a></h3>
+<table align="center" border=1 summary="Hobbit status icons">
+	<tr><th align=left valign=top>Color</th><td>Recently changed</td><td>Last change &gt; 24 hours</td></tr>
+	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="/hobbit/gifs/green-recent.gif" alt="Green - recently changed"></td><td align=center><img src="/hobbit/gifs/green.gif" alt="Green"></td></tr>
+	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="/hobbit/gifs/yellow-recent.gif" alt="Yellow - recently changed"></td><td align=center><img src="/hobbit/gifs/yellow.gif" alt="Yellow"></td></tr>
+	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="/hobbit/gifs/red-recent.gif" alt="Red - recently changed"></td><td align=center><img src="/hobbit/gifs/red.gif" alt="Red"></td></tr>
+	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="/hobbit/gifs/clear-recent.gif" alt="Clear - recently changed"></td><td align=center><img src="/hobbit/gifs/clear.gif" alt="Clear"></td></tr>
+	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="/hobbit/gifs/purple-recent.gif" alt="Purple - recently changed"></td><td align=center><img src="/hobbit/gifs/purple.gif" alt="Purple"></td></tr>
+	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="/hobbit/gifs/blue-recent.gif" alt="Blue - recently changed"></td><td align=center><img src="/hobbit/gifs/blue.gif" alt="Blue"></td></tr>
+</table>
+<hr>
+
+<h3><a name="noclient">My client-side tests dont show up on the webpages</a></h3>
+<p>Did you install a client ? The Hobbit client package is installed
+automatically only on the Hobbit server - on other systems, you must
+build the client package by running Hobbit's configure-script with
+the <tt>&quot;--client&quot;</tt> option and build the client package on the hosts you
+want to monitor.</p>
+
+<p>If you did install a client, then the two most probable causes for 
+this are:</p>
+<ul>
+	<li>The client is using another hostname than what is in the bb-hosts file.<br>
+	Hobbit only cares about the hosts that are in the bb-hosts file, and
+	discards status-reports from unknown hosts. If you check the "hobbitd"
+	column on the webserver display for the Hobbit server, you will see 
+	a report about these unknown hosts.<br>
+	Either reconfigure the client to use the same hostname as is in the
+	bb-hosts file, or add a <tt>CLIENT:clienthostname</tt> tag in the
+	bb-hosts file so Hobbit knows what host matches the client hostname.
+	The Hobbit client can be started with a <tt>&quot;--hostname=MYHOSTNAME&quot;</tt>
+	option to explicitly define the hostname that the client uses when
+	reporting data to Hobbit.</li>
+
+	<li>A firewall is blocking the client access to the Hobbit server.<br>
+	Clients must be able to connect to the Hobbit server on TCP port 1984
+	to send their status reports. If this port is blocked by a firewall,
+	client status reports will not show up.<br>
+	If possible, open up the firewall to allow this access. Alternatively,
+	you may setup a proxy using the <em>bbproxy</em> tool (part of Hobbit)
+	to forward status messages from a protected network to the Hobbit
+	server.<br>
+	Other methods are also possible, e.g. <em>bbfetch</em> (available from
+	the <a href="http://www.deadcat.net/">www.deadcat.net</a> archive.
+</ul>
+
+<hr>
+<h3><a name="clientnames">My silly clients are using a hostname different from the one in bb-hosts</a></h3>
+<p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the bb-hosts file,
+or re-configure the client to use the proper hostname.</p>
+
+
+<hr>
+<h3><a name="droprename">Where are the bbrm and bbmv commands from Big Brother ?</a></h3>
+<p>They have been integrated into the Hobbit network daemon. See
+the next three questions.</p>
+
+
+<hr>
+<h3><a name="droptest">I accidentally added an 'ftp' check. Now I cannot get it off the webpage!</a></h3>
+<p>Use the command</p>
+<pre>
+    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME ftp"
+</pre>
+<p>to permanenly remove all traces of a test. Note that you need the quotes
+around the &quot;drop HOSTNAME ftp&quot;.</p>
+
+
+<hr>
+<h3><a name="drophost">So how do I get rid of an entire host in Hobbit?</a></h3>
+<p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command</p>
+<pre>
+    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
+</pre>
+<p>to permanenly remove all traces of a host. Note that you need the quotes
+around the &quot;drop HOSTNAME&quot;.</p>
+
+<hr>
+<h3><a name="renamehost">How do I rename a host in the Hobbit display?</a></h3>
+<p>First, change the ~/server/etc/bb-hosts file so it has the new name.
+Then to move your historical data over to the new name, run</p>
+<pre>
+    ~/server/bin/bb 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
+</pre>
+
+
+<hr>
+<h3><a name="apachetest">Getting the Apache performance graphs</a></h3>
+<p>Charles Jones provided this recipe on the Hobbit mailing list:</p>
+<pre><tt>
+From: Charles Jones
+Date: Sun, 06 Feb 2005 21:28:19 -0700
+Subject: Re: [hobbit] Apache tag
+
+Okay, first you must make the indicated addition to your apache
+httpd.conf (or you can make a hobbit.conf in apaches conf.d directory).
+[ed: See the bb-hosts man-page for the "apache" description]
+
+Then, you must restart apache for the change to take effect
+(/etc/init.d/httpd restart).
+
+Then, manually test the server-stats url to make sure it's working, by
+using your browser and going to
+http://your.server.com/server-status?auto  (you can also go to
+http://your.server.com/server-status/ to get some nice extended apache
+performance info).  You should get back something like this:
+
+Total Accesses: 131577
+Total kBytes: 796036
+CPULoad: 1.0401
+Uptime: 21595
+ReqPerSec: 6.09294
+BytesPerSec: 37746.7
+BytesPerReq: 6195.16
+BusyWorkers: 43
+IdleWorkers: 13
+
+Scoreboard: RR__RWR___RR_R_RR_RRRRRRRRR_RRRRRRR__RRR_RRRRCRRRRR_RRRR........................................................................................................................................................................................................
+
+Now, assuming you are getting back the server-status info, time to make
+sure your bb-hosts is correctly configured to collect and graph the
+data.  Heres what I have in mine:
+
+1.2.3.4    my.server.com  # conn ssh http://1.2.3.4 apache=http://1.2.3.4/server-status?auto TRENDS:*,apache:apache|apache1|apache2|apache3
+
+ From what you said of your setup, I'm guessing your only problem is
+ using the wrong url for the apache tag (you used
+ "apache=http://192.168.1.25/hobbit/" which just won't work - that's the
+ kind of URL you would use for the http tag).
+
+ Hope this helped.
+
+ -Charles
+</tt></pre>
+
+
+<hr>
+<h3><a name="mrtg">How can I add MRTG graphs to the Hobbit webpages?</a></h3>
+<p>There is <a href="hobbit-mrtg.html">a special document</a> for this, describing how you can configure
+MRTG to save data in a format that Hobbit can handle natively.</p>
+
+<hr>
+<h3><a name="updatefreq">I need the web-pages to update more frequently</a></h3>
+<p>The ~/server/etc/hobbitlaunch.cfg defines the update
+interval for all of the Hobbit programs. The default is for
+network tests to run every 5 minutes, and webpage updates to
+happen once a minute.</p>
+<p>Note that if you run the <em>bbretest-net.sh</em> tool
+on your network test server (this is the default for a new
+Hobbit server), then network tests that fail 
+will run every minute for up to 30 minutes after the initial
+failure, so usually there is little need to change the update
+interval for your network tests.</p>
+
+<hr>
+<h3><a name="fahrenheit">I want my temperature graphs in Fahrenheit</a></h3>
+<p>Edit the file server/etc/hobbitgraph.cfg, and change the <b>[temperature]</b>
+definition from the default one to the one below that shows Fahrenheit graphs.</p>
+
+<hr>
+<h3><a name="nohtmllink">How do I remove the HTML links from the alert messages?</a></h3>
+<p>Configure your alerts in server/etc/hobbit-alerts.cfg to use <tt>FORMAT=PLAIN</tt>
+instead of TEXT.</p>
+
+<hr>
+<h3><a name="mancgi">I cannot see the man-pages on the web</a></h3>
+<p>A common Apache configuration mistakenly believes any filename containing
+".cgi" is a CGI-script, so it refuses to present the man-pages for the CGI
+scripts. Stephen Beaudry found the solution:</p>
+<pre>
+   This occurs because by default, apache associates the cgi-script
+   handler with any filename containing ".cgi".  I fixed this on my server
+   by changing the following line in my httpd.conf
+
+   AddHandler cgi-script .cgi     -&gt;to-&gt;    AddHandler cgi-script .cgi$
+</pre>
+
+<hr>
+<h3><a name="mailnosubj">My alert emails come without a subject</a></h3>
+<p>Hobbit by default uses the system <b>mail</b> command to send out messages.
+The mail-command in Solaris and HP-UX does not understand the "-s SUBJECT" syntax that Hobbit uses.
+So you get mails with no subject. The solution is to change the MAIL setting in
+etc/hobbitserver.cfg to use the <b>mailx</b> command instead. Hobbit needs to be
+restarted after this change.</p>
+
+<hr>
+<h3><a name="snmptraps">Does Hobbit support receiving SNMP traps?</a></h3>
+<p>Not directly, but there is other Open Source software available that can
+handle SNMP traps. A very elegant method of feeding traps into Hobbit has been
+described in <a href="http://cerebro.victoriacollege.edu/hobbit-trap.html">this
+article</a> by Andy Farrior.</p>
+
+<hr>
+<h3><a name="scripts">How can I create a custom test script?</a></h3>
+<p>Anything that can be automated via a script or a custom program can
+be added into Hobbit. A lot of extension scripts are available for
+Big Brother at the <a href="http://www.deadcat.net/">www.deadcat.net archive</a>,
+and these will typically work without modifications if you run them in
+Hobbit. Sometimes a few minor tweaks are needed - the Hobbit mailing list
+can help you if you dont know how to go about that.</p>
+<p>But if you have something unique you need to test, writing an extension
+script is pretty simple. You need to figure out some things:</p>
+<ul>
+  <li>What name will you use for the column?
+  <li>How will you test it?
+  <li>What criteria should decide if the test goes red, yellow or green?
+  <li>What extra data from the test will you include in the status message ?
+</ul>
+
+<p>A simple <b>client-side</b> extension script looks like this:</p>
+<pre><tt>
+   #!/bin/sh
+
+   COLUMN=mytest	# Name of the column
+   COLOR=green		# By default, everything is OK
+   MSG="Bad stuff status"
+
+   # Do whatever you need to test for something
+   # As an example, go red if /tmp/badstuff exists.
+   if test -f /tmp/badstuff
+   then
+      COLOR=red
+      MSG="${MSG}
+ 
+      `cat /tmp/badstuff`
+      "
+   else
+      MSG="${MSG}
+
+      All is OK
+      "
+   fi
+
+   # Tell Hobbit about it
+   $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+
+   ${MSG}
+   "
+
+   exit 0
+</tt></pre>
+
+<p>You will notice that some environment variables are pre-defined:
+BB, BBDISP, MACHINE are all provided by Hobbit when you run your script via
+hobbitlaunch. Also note how the MSG variable is used to build the status
+message - it starts out with just the "Bad stuff status", then you add
+data to the message when we decided what the status is.</p>
+
+<p>To run this, save your script in the ~hobbit/client/ext/ directory 
+(i.e. in the ext/ directory off where you installed the Hobbit client),
+then add a new section to the ~hobbit/client/etc/clientlaunch.cfg file
+like this:</p>
+
+<pre><tt>
+   [myscript]
+	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	CMD $HOBBITCLIENTHOME/ext/myscript.sh
+	LOGFILE $HOBBITCLIENTHOME/logs/myscript.log
+	INTERVAL 5m
+</tt></pre>
+
+<br><br>
+
+<p><b>Server-side scripts</b> look almost the same, but they will
+typically use the <a href="manpages/man1/bbhostgrep.1.html">bbhostgrep</a>
+utility to pick out hosts in the bb-hosts file that have a special tag 
+defined, and then send one status message for each of those hosts. 
+Like this:</p>
+<pre><tt>
+   #!/bin/sh
+
+   BBHTAG=foo           # What we put in bb-hosts to trigger this test
+   COLUMN=$BBHTAG	# Name of the column, often same as tag in bb-hosts
+
+   $BBHOME/bin/bbhostgrep $BBHTAG | while read L
+   do
+      set $L	# To get one line of output from bbhostgrep
+
+      HOSTIP="$1"
+      MACHINEDOTS="$2"
+      MACHINE=`echo $2 | $SED -e's/\./,/g'`
+
+      COLOR=green
+      MSG="$BBHTAG status for host $MACHINEDOTS"
+
+      #... do the test, perhaps modify COLOR and MSG
+
+      $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+
+      ${MSG}
+      "
+    done
+
+    exit 0
+</tt></pre>
+
+<p>Note that for server side tests, you need to loop over the list
+of hosts found in the bb-hosts file, and send one status message for
+each host. Other than that, it is just like the client-side tests.</p>
+
+<hr>
+
+</body>
+</html>

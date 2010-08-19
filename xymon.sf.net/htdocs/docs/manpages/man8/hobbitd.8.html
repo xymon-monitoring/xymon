@@ -1,0 +1,358 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITD</TITLE>
+</HEAD><BODY>
+<H1>HOBBITD</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 11 Jan 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitd - Master network daemon for a Hobbit server
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>hobbitd [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+hobbitd is the core daemon in the Hobbit Monitor.
+It is designed to handle monitoring of a large number of hosts, 
+with a strong focus on being a high-speed, low-overhead implementation 
+of a Big Brother compatible server.
+<P>
+To achieve this, hobbitd stores all information about the state
+of the monitored systems in memory, instead of storing it in
+the host filesystem. A number of plug-ins can be enabled to
+enhance the basic operation; e.g. a set of plugins are provided
+to implement persistent storage in a way that is compatible 
+with the Big Brother daemon. However, even with these
+plugins enabled, hobbitd still performs much faster than the
+standard bbd daemon.
+<P>
+hobbitd is normally started and controlled by the
+<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+
+tool, and the command used to invoke hobbitd should therefore be
+in the hobbitlaunch.cfg file.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--bbhosts=FILENAME<DD>
+Specifies the path to the Hobbit bb-hosts file. This is used
+to check if incoming status messages refer to known hosts; depending
+on the &quot;--ghosts&quot; option, messages for unknown hosts may be dropped.
+If this option is omitted, the default path used is set by the BBHOSTS
+environment variable.
+<P>
+<DT>--checkpoint-file=FILENAME<DD>
+With regular intervals, hobbitd will dump all of its internal state 
+to this check-point file. It is also dumped when hobbitd terminates,
+or when it receives a SIGUSR1 signal.
+<P>
+<DT>--checkpoint-interval=N<DD>
+Specifies the interval (in seconds) between dumps to the check-point
+file. The default is 900 seconds (15 minutes).
+<P>
+<DT>--restart=FILENAME<DD>
+Specifies an existing file containing a previously generated hobbitd 
+checkpoint. When starting up, hobbitd will restore its internal state
+from the information in this file. You can use the same filename for
+&quot;--checkpoint-file&quot; and &quot;--restart&quot;.
+<P>
+<DT>--ghosts={allow|drop|log}<DD>
+How to handle status messages from unknown hosts. The &quot;allow&quot; setting
+accepts all status messages, regardless of whether the host is known
+in the bb-hosts file or not. &quot;drop&quot; silently ignores reports from unknown 
+hosts. &quot;log&quot; works like drop, but logs the event in the hobbitd output file.
+The default is &quot;allow&quot;, unless the BBGHOSTS environment variable is set.
+<P>
+<DT>--no-purple<DD>
+Prevent status messages from going purple when they are no longer valid.
+Unlike the standard bbd daemon, purple-handling is done by hobbitd.
+<P>
+<DT>--listen=IP[:PORT]<DD>
+Specifies the IP-address and port where hobbitd will listen for incoming
+connections. By default, hobbitd listens on IP 0.0.0.0 (i.e. all IP-
+adresses available on the host) and port 1984.
+<P>
+<DT>--daemon<DD>
+hobbitd is normally started by 
+<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+
+
+it will then detach from the terminal and continue running as a background
+task.
+<P>
+<DT>--timeout=N<DD>
+Set the timeout used for incoming connections. If a status has not been
+received more than N seconds after the connection was accepted, then
+the connection is dropped and any status message is discarded.
+Default: 10 seconds.
+<P>
+<DT>--env=FILENAME<DD>
+Loads the content of FILENAME as environment settings before starting
+hobbitd. This is mostly used when running as a stand-alone daemon; if
+hobbitd is started by hobbitlaunch, the environment settings are controlled
+by the hobbitlaunch hobbitlaunch.cfg file.
+<P>
+<DT>--pidfile=FILENAME<DD>
+hobbitd writes the process-ID it is running with to this file.
+This is for use in automated startup scripts. The default file is
+$BBSERVERLOGS/hobbitd.pid.
+<P>
+<DT>--log=FILENAME<DD>
+Redirect all output from hobbitd to FILENAME.
+<P>
+<DT>--store-clientlogs[=[!]COLUMN]<DD>
+Determines which status columns can cause a client message to be
+broadcast to the CLICHG channel. By default, no client messages 
+are pushed to the CLICHG channel. If this option is specified with
+no parameter list, all status columns that go into an alert state
+will trigger the client data to be sent to the CLICHG channel. If
+a paramater list is added to this option, only those status columns
+listed in the list will cause the client data to be sent to the
+CLICHG channel. Several column names can be listed, separated by
+commas. If all columns are given as &quot;!COLUMNNAME&quot;, then all status
+columns except those listed will cause the client data to be sent.
+<P>
+<DT>--status-senders=IP[/MASK][,IP/MASK]<DD>
+Controls which hosts may send &quot;status&quot;, &quot;combo&quot;, &quot;config&quot; and &quot;query&quot;
+commands to hobbitd.
+<P>
+By default, any host can send status-updates. If this option is used, 
+then status-updates are accepted only if they are sent by one of the 
+IP-adresses listed here, or if they are sent from the IP-address of the 
+host that the updates pertains to (this is to allow Hobbit clients to send in their
+own status updates, without having to list all clients here). So typically
+you will need to list your BBNET servers here.
+<P>
+The format of this option is a list of IP-adresses, optionally with a
+network mask in the form of the number of bits. E.g. if you want to 
+accept status-updates from the host 172.16.10.2, you would use
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;--status-senders=172.16.10.2
+<BR>
+
+whereas if you want to accept status updates from both 172.16.10.2 and
+from all of the hosts on the 10.0.2.* network (a 24-bit IP network), you
+would use
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;--status-senders=172.16.10.2,10.0.2.0/24
+<P>
+<DT>--maint-senders=IP[/MASK][,IP/MASK]<DD>
+Controls which hosts may send maintenance commands to hobbitd. Maintenance
+commands are the &quot;enable&quot;, &quot;disable&quot;, &quot;ack&quot; and &quot;notes&quot; commands. Format
+of this option is as for the --status-senders option. It is strongly
+recommended that you use this to restrict access to these commands, so
+that monitoring of a host cannot be disabled by a rogue user - e.g. to
+hide a system compromise from the monitoring system.
+<P>
+<B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
+are of little use, since the messages will appear to originate from the
+proxy server address. It is therefore strongly recommended that you do NOT
+include the address of a server running bbproxy in the list of allowed addresses.
+<P>
+<DT>--www-senders=IP[/MASK][,IP/MASK]<DD>
+Controls which hosts may send commands to retrieve the state of hobbitd. These
+are the &quot;hobbitdlog&quot;, &quot;hobbitdboard&quot; and &quot;hobbitdxboard&quot; commands, which are used
+by
+<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+
+and
+<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+
+to retrieve the state of the Hobbit system so they can generate the Hobbit webpages.
+<P>
+<B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
+are of little use, since the messages will appear to originate from the
+proxy server address. It is therefore strongly recommended that you do NOT
+include the address of a server running bbproxy in the list of allowed addresses.
+<P>
+<DT>--admin-senders=IP[/MASK][,IP/MASK]<DD>
+Controls which hosts may send administrative commands to hobbitd. These
+commands are the &quot;drop&quot; and &quot;rename&quot; commands. Access to these should be 
+restricted, since they provide an un-authenticated means of completely
+disabling monitoring of a host, and can be used to remove all traces of e.g.
+a system compromise from the Hobbit monitor.
+<P>
+<B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
+are of little use, since the messages will appear to originate from the
+proxy server address. It is therefore strongly recommended that you do NOT
+include the address of a server running bbproxy in the list of allowed addresses.
+<P>
+<DT>--no-download<DD>
+Disable the &quot;download&quot; and &quot;config&quot; commands which can be used by clients
+to pull files from the Hobbit server. The use of these may be seen as a 
+security risk since they allow file downloads.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+<DT>--dbghost=HOSTNAME<DD>
+For troubleshooting problems with a specific host, it may be useful to track
+the exact communications from a single host. This option causes hobbitd to
+dump all traffic from a single host to the file &quot;/tmp/hobbitd.dbg&quot;.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>HOW ALERTS TRIGGER</H2>
+
+When a status arrives, hobbitd matches the old and new color against
+the &quot;alert&quot; colors (from the &quot;ALERTCOLORS&quot; setting) and the &quot;OK&quot; colors 
+(from the &quot;OKCOLORS&quot; setting). The old and new color falls into one of three
+categories:
+<P>
+<B>OK:</B>
+
+The color is one of the &quot;OK&quot; colors (e.g. &quot;green&quot;).
+<P>
+<B>ALERT:</B>
+
+The color is one of the &quot;alert&quot; colors (e.g. &quot;red&quot;).
+<P>
+<B>UNDECIDED:</B>
+
+The color is neither an &quot;alert&quot; color nor an &quot;OK&quot; color (e.g. &quot;yellow&quot;).
+<P>
+If the new status shows an ALERT state, then a message to the
+<I><A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8) </I>
+
+module is triggered. This may be a repeat of a previous alert, but 
+<I><A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8)</I>
+
+will handle that internally, and only send alert messages with the
+interval configured in 
+<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5).</I>
+
+<P>
+If the status goes from a not-OK state (ALERT or UNDECIDED) to OK, 
+and there is a record of having been in a ALERT state previously, 
+then a recovery message is triggered.
+<P>
+The use of the OK, ALERT and UNDECIDED states make it possible to
+avoid being flooded with alerts when a status flip-flops between
+e.g yellow and red, or green and yellow.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>CHANNELS</H2>
+
+A lot of functionality in the Hobbit server is delegated to &quot;worker modules&quot;
+that are fed various events from hobbitd via a &quot;channel&quot;. Programs access a
+channel using IPC mechanisms - specifically, shared memory and semaphores -
+or by using an instance of the
+<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+
+intermediate program. hobbitd_channel enables access to a channel via a
+simple file I/O interface.
+<P>
+A skeleton program for hooking into a hobbitd channel is provided as
+part of Hobbit in the
+<I><A HREF="../man8/hobbitd_sample.8.html">hobbitd_sample</A>(8)</I>
+
+program.
+<P>
+The following channels are provided by hobbitd:
+<P>
+<B>status</B>
+
+This channel is fed the contents of all incoming &quot;status&quot; and
+&quot;summary&quot; messages.
+<P>
+<B>stachg</B>
+
+This channel is fed information about tests that change status,
+i.e. the color of the status-log changes.
+<P>
+<B>page</B>
+
+This channel is fed information about tests where the color changes
+between an alert color and a non-alert color. It also receives 
+information about &quot;ack&quot; messages.
+<P>
+<B>data</B>
+
+This channel is fed information about all &quot;data&quot; messages.
+<P>
+<B>notes</B>
+
+This channel is fed information about all &quot;notes&quot; messages.
+<P>
+<B>enadis</B>
+
+This channel is fed information about hosts or tests that are
+being disabled or enabled.
+<P>
+<B>client</B>
+
+This channel is fed the contents of the client messages sent
+by Hobbit clients installed on the monitored servers.
+<P>
+<B>clichg</B>
+
+This channel is fed the contents of a host client messages,
+whenever a status for that host goes red, yellow or purple.
+<P>
+Information about the data stream passed on these channels is
+in the Hobbit source-tree, see the &quot;hobbitd/new-daemon.txt&quot; file.
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SIGNALS</H2>
+
+<DL COMPACT>
+<DT>SIGHUP<DD>
+Re-read the bb-hosts configuration file.
+<P>
+<DT>SIGUSR1<DD>
+Force an immediate dump of the checkpoint file.
+<P>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>BUGS</H2>
+
+Timeout of incoming connections are not strictly enforced. The check
+for a timeout only triggers during the normal network handling loop,
+so a connection that should timeout after N seconds may persist until
+some activity happens on another (unrelated) connection.
+<P>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>FILES</H2>
+
+If ghost-handling is enabled via the &quot;--ghosts&quot; option, the bb-hosts
+file is read to determine the names of all known hosts.
+<P>
+<A NAME="lbAK">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man7/hobbit.7.html">hobbit</A>(7), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5).
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">HOW ALERTS TRIGGER</A><DD>
+<DT><A HREF="#lbAG">CHANNELS</A><DD>
+<DT><A HREF="#lbAH">SIGNALS</A><DD>
+<DT><A HREF="#lbAI">BUGS</A><DD>
+<DT><A HREF="#lbAJ">FILES</A><DD>
+<DT><A HREF="#lbAK">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 16:21:46 GMT, January 11, 2008
+</BODY>
+</HTML>
