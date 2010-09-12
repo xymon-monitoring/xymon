@@ -1,4 +1,19 @@
-﻿# -----------------------------------------------------------------------------------
+﻿# ###################################################################################
+# 
+# Xymon client for Windows
+#
+# This is a client implementation for Windows systems that support the
+# Powershell scripting language.
+#
+# Copyright (C) 2010 Henrik Storner <henrik@hswn.dk>
+# Copyright (C) 2010 David Baldwin
+#
+# This program is released under the GNU General Public License (GPL),
+# version 2. See the file "COPYING" for details.
+#
+# ###################################################################################
+
+# -----------------------------------------------------------------------------------
 # User configurable settings
 # -----------------------------------------------------------------------------------
 
@@ -12,6 +27,7 @@ $clientlower = 1  		# 0 = case unmodified, 1 = lowercase converted
 $xymonclientconfig = "C:\TEMP\xymonconfig.ps1"
 # -----------------------------------------------------------------------------------
 
+$XymonClientVersion = "$Id: $"
 
 function XymonInit
 {
@@ -534,6 +550,8 @@ function XymonReportConfig
 	$script:loopinterval
 	""; "slowscanrate"
 	$script:slowscanrate
+	""; "Version"
+	$XymonClientVersion
 }
 
 ##### Main code #####
