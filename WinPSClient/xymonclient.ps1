@@ -27,7 +27,7 @@ $clientlower = 1  		# 0 = case unmodified, 1 = lowercase converted
 $xymonclientconfig = "C:\TEMP\xymonconfig.ps1"
 # -----------------------------------------------------------------------------------
 
-$XymonClientVersion = "$Id: $"
+$XymonClientVersion = "$Id$"
 
 function XymonInit
 {
