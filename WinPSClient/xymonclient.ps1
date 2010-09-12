@@ -98,7 +98,6 @@ function XymonCollectInfo
 	$script:numvcpus = 0
 	foreach ($cpu in $cpuinfo) { 
 		$script:totalload += $cpu.LoadPercentage
-		$script:numcpus  += 1
 		$script:numcores += $cpu.NumberOfCores
 		$script:numvcpus += $cpu.NumberOfLogicalProcessors
 	}
@@ -135,8 +134,8 @@ function XymonCollectInfo
 
 function WMIProp($class)
 {
-	$wmidata = gwmi -class $class
-	$props = ($wmidata | gm -MemberType Property | Sort-Object -Property Name | ? { $_.Name -notlike "__*" })
+	$wmidata = Get-WmiObject -Class $class
+	$props = ($wmidata | Get-Member -MemberType Property | Sort-Object -Property Name | where { $_.Name -notlike "__*" })
 	foreach ($p in $props) {
 		$p.Name + " : " + $wmidata.($p.Name)
 	}
@@ -262,15 +261,24 @@ function XymonCpu
 function XymonDisk
 {
 	"[disk]"
-	"Filesystem".PadRight(15) + "1K-blocks".PadLeft(9) + " " + "Used".PadLeft(9) + " " + "Avail".PadLeft(9) + " " + "Capacity".PadLeft(9) + " " + "Mounted".PadRight(10) + "Summary(Total\Avail)"
+	"Filesystem".PadRight(15) + "1K-blocks".PadLeft(9) + " " + "Used".PadLeft(9) + " " + "Avail".PadLeft(9) + " " + "Capacity".PadLeft(9) + " " + "Mounted".PadRight(10) + "Summary(Total\Avail GB)"
 	foreach ($d in $disks) {
 		$diskletter = ($d.DeviceId).Trim(":")
-		$diskused = ($d.Size - $d.FreeSpace)
+		[uint32]$diskusedKB = ([uint32]($d.Size/1KB)) - ([uint32]($d.FreeSpace/1KB))	# PS ver 1 doesnt support subtraction uint64's
+		[uint32]$disksizeKB = [uint32]($d.size/1KB)
+
 		$dsKB = "{0:F0}" -f ($d.Size / 1KB); $dsGB = "{0:F2}" -f ($d.Size / 1GB)
-		$duKB = "{0:F0}" -f ($diskused / 1KB); $duGB = "{0:F2}" -f ($diskused / 1GB); $duPCT = "{0:N0}" -f (100*($diskused/$d.Size))
-		$dfKB = "{0:F0}" -f ($d.Freesize / 1KB); $dfGB = "{0:F2}" -f ($d.FreeSpace / 1GB)
+		$duKB = "{0:F0}" -f ($diskusedKB); $duGB = "{0:F2}" -f ($diskusedKB / 1KB);
+		$dfKB = "{0:F0}" -f ($d.FreeSpace / 1KB); $dfGB = "{0:F2}" -f ($d.FreeSpace / 1GB)
 		
-		$diskletter.PadRight(15) + $dsKB.PadLeft(9) + " " + $duKB.PadLeft(9) + " " + $dsKB.PadLeft(9) + " " + ($duPCT + "`%").PadLeft(9) + " " + ("/FIXED/" + $diskletter).PadRight(10) + $dsGB + "`\" + $dfGB
+		if ($d.Size -gt 0) {
+			$duPCT = "{0:N0}" -f (100*($diskusedKB/$disksizeKB))
+		}
+		else {
+			$duPCT = 0
+		}
+
+		$diskletter.PadRight(15) + $dsKB.PadLeft(9) + " " + $duKB.PadLeft(9) + " " + $dfKB.PadLeft(9) + " " + ($duPCT + "`%").PadLeft(9) + " " + ("/FIXED/" + $diskletter).PadRight(10) + $dsGB + "`\" + $dfGB
 	}
 }
 
@@ -561,7 +569,10 @@ while ($running -eq $true) {
 	$clout += XymonPorts | Out-String
 	$clout += XymonIPConfig | Out-String
 	$clout += XymonRoute | Out-String
-#	$clout += XymonIfstat | Out-String
+# BBWIn uses "GetIfTable" which grabs the MIB-2 interfaces.
+# This is an IPHLPAPI function that does not exist in Powershell
+# Dont know if it is accessible via .NET somehow.
+#	$clout += XymonIfstat | Out-String	
 	$clout += XymonSvcs | Out-String
 	$clout += XymonUptime | Out-String
 	$clout += XymonWho | Out-String
