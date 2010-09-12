@@ -86,21 +86,21 @@ function XymonProcsCPUUtilisation
 		$script:XymonProcsCpuTStart = (Get-Date).Ticks
 	}
 	
-	Get-Process | foreach {
-		$thisp = $XymonProcsCpu[$_.Id]
-		
-		if ($thisp -eq $null -and $_.Id -ne 0) {
+	$allprocs = Get-Process
+	foreach ($p in $allprocs) {
+		$thisp = $XymonProcsCpu[$p.Id]
+		if ($thisp -eq $null -and $p.Id -ne 0) {
 			# New process - create an entry in the curprocs table
 			# We use static values here, because some get-process entries have null values
 			# for the tick-count (The "SYSTEM" and "Idle" processes).
-			$script:XymonProcsCpu += @{ $_.Id = @($null, 0, 0, $false) }
-			$thisp = $XymonProcsCpu[$_.Id]
+			$script:XymonProcsCpu += @{ $p.Id = @($null, 0, 0, $false) }
+			$thisp = $XymonProcsCpu[$p.Id]
 		}
 
 		$thisp[3] = $true
-		$thisp[2] = $_.TotalProcessorTime.Ticks - $thisp[1]
-		$thisp[1] = $_.TotalProcessorTime.Ticks
-		$thisp[0] = $_
+		$thisp[2] = $p.TotalProcessorTime.Ticks - $thisp[1]
+		$thisp[1] = $p.TotalProcessorTime.Ticks
+		$thisp[0] = $p
 	}
 }
 
@@ -376,7 +376,7 @@ function XymonSvcs
 function XymonProcs
 {
 	"[procs]"
-	"PID".PadRight(8)+"Name"
+	"PID".PadRight(8) + "User".PadRight(35) + "    WorkingSet   " + "    VirtualMem   " + "     PagedMem    " + "     NPS " + " Handles " + " %CPU" + " Name"
 	foreach ($p in $procs) {
 		if ($svcprocs[($p.Id)] -ne $null) {
 			$procname = "Service:" + $svcprocs[($p.Id)]
@@ -384,7 +384,26 @@ function XymonProcs
 		else {
 			$procname = $p.Name
 		}
-		([string]$p.Id).PadRight(8) + $procname
+
+		$thiswmip = Get-WmiObject -Class Win32_Process | where { $_.ProcessId -eq $p.Id }
+		$owner = ($thiswmip.getowner()).Domain + "\" + ($thiswmip.GetOwner().user)
+		if ($owner.length -gt 32) { $owner = $owner.substring(0, 32) }
+
+		$pws     = ("{0:F0}" -f ($p.WorkingSet / 1KB)).PadLeft(8) + "/" + ("{0:F0}" -f ($p.PeakWorkingSet / 1KB)).PadRight(8)
+		$pvmem   = ("{0:F0}" -f ($p.VirtualMemorySize / 1KB)).PadLeft(8) + "/" + ("{0:F0}" -f ($p.PeakVirtualMemorySize / 1KB)).PadRight(8)
+		$ppgmem  = ("{0:F0}" -f ($p.PagedMemorySize / 1KB)).PadLeft(8) + "/" + ("{0:F0}" -f ($p.PeakPagedMemorySize / 1KB)).PadRight(8)
+		$pnpgmem = ("{0:F0}" -f ($p.NonPagedSystemMemorySize / 1KB)).PadLeft(8) + " "
+		$phandle = " " + ("{0:F0}" -f $p.HandleCount).PadLeft(7) + " "
+		
+		$thisp = $XymonProcsCpu[$p.Id]
+		if ($XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null) {
+			$pcpu = ("{0:F0}" -f (([int](10000*($thisp[2] / $XymonProcsCpuElapsed))) / 100)).PadLeft(5)
+		}
+		else {
+			$pcpu = "-".PadLeft(5)
+		}
+
+		([string]$p.Id).PadRight(8) + $owner.PadRight(35) + $pws + $pvmem + $ppgmem + $pnpgmem + $phandle + $pcpu + " " + $procname
 	}
 }
 
