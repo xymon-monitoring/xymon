@@ -718,12 +718,14 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 	}
 }
 
-void dump_alertconfig(void)
+void dump_alertconfig(int showlines)
 {
 	rule_t *rulewalk;
 	recip_t *recipwalk;
 
 	for (rulewalk = rulehead; (rulewalk); rulewalk = rulewalk->next) {
+		if (showlines) printf("%5d\t", rulewalk->cfid);
+
 		dump_criteria(rulewalk->criteria, 0);
 		printf("\n");
 

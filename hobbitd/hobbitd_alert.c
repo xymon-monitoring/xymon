@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--dump-config")) {
 			load_alertconfig(configfn, alertcolors, alertinterval);
-			dump_alertconfig();
+			dump_alertconfig(1);
 			return 0;
 		}
 		else if (argnmatch(argv[argi], "--cfid")) {

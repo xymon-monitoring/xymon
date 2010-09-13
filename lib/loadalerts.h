@@ -89,7 +89,7 @@ typedef struct recip_t {
 } recip_t;
 
 extern int load_alertconfig(char *configfn, int alertcolors, int alertinterval);
-extern void dump_alertconfig(void);
+extern void dump_alertconfig(int showlinenumbers);
 
 extern int stoprulefound;
 extern recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch, time_t *nexttime);
