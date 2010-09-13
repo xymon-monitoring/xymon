@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
 	char *batchcmd = NULL;
 	strbuffer_t *batchbuf = NULL;
 	time_t lastmsgtime = 0;
+	int hostnameitem = 4, testnameitem = 5, coloritem = 7;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -66,6 +67,11 @@ int main(int argc, char *argv[])
 			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
 			timeout->tv_sec = (atoi(argv[argi]+10));
 			timeout->tv_nsec = 0;
+		}
+		else if (strcmp(argv[argi], "--client") == 0) {
+			hostnameitem = 3;
+			testnameitem = 4;
+			errprintf("Expecting to be fed from 'client' channel\n");
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
@@ -234,9 +240,9 @@ int main(int argc, char *argv[])
 		else {
 			int ovector[30];
 			int match, i;
-			char *hostname = metadata[4];
-			char *testname = metadata[5];
-			char *color = metadata[7];
+			char *hostname = metadata[hostnameitem];
+			char *testname = metadata[testnameitem];
+			char *color = metadata[coloritem];
 
 			/* See if we should handle the batched messages we've got */
 			if (batchcmd && ((lastmsgtime + batchtimeout) < gettimer()) && (STRBUFLEN(batchbuf) > 0)) {
