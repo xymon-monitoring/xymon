@@ -243,14 +243,14 @@ endif
 
 	mkdir -p $(INSTALLROOT)$(BBVAR)/histlogs
 ifndef PKGBUILD
-	chown $(BBUSER) $(INSTALLROOT)$(BBVAR)/histlogs
-	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBVAR)/histlogs
+	chown $(BBUSER) $(INSTALLROOT)$(BBVAR)/histlogs || echo "Warning: Could not set owner on the histlogs directory"
+	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBVAR)/histlogs || echo "Warning: Could not set group on the histlogs directory"
 endif
 
 	mkdir -p $(INSTALLROOT)$(BBVAR)/hostdata
 ifndef PKGBUILD
-	chown $(BBUSER) $(INSTALLROOT)$(BBVAR)/hostdata
-	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBVAR)/hostdata
+	chown $(BBUSER) $(INSTALLROOT)$(BBVAR)/hostdata || echo "Warning: Could not set owner on the hostdata directory"
+	chgrp `$(IDTOOL) -g $(BBUSER)` $(INSTALLROOT)$(BBVAR)/hostdata || echo "Warning: Could not set group on the hostdata directory"
 endif
 
 	mkdir -p $(INSTALLROOT)$(BBVAR)/logs
