@@ -24,7 +24,7 @@ elif [ -f /etc/redhat-release ]; then
 elif [ -f /etc/gentoo-release ]; then
 	cat /etc/gentoo-release
 elif [ -f /etc/debian_version ]; then
-	echo -n "Debian "
+	echo -en "Debian "
 	cat /etc/debian_version
 elif [ -f /etc/S?SE-release ]; then
 	egrep -i "^suse|^opensuse" /etc/S?SE-release
