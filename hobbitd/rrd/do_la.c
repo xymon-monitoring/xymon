@@ -14,6 +14,8 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 {
 	static char *la_params[]          = { "DS:la:GAUGE:600:0:U", NULL };
 	static void *la_tpl               = NULL;
+	static char *clock_params[]       = { "DS:la:GAUGE:600:U:U", NULL }; /* "la" is a misnomer, but to stay compatiable with existing RRD files */
+	static void *clock_tpl            = NULL;
 
 	static pcre *as400_exp = NULL;
 	static pcre *zVM_exp = NULL;
@@ -25,6 +27,7 @@ int do_la_rrd(char *hostname, char *testname, char *classname, char *pagepaths, 
 	time_t now = getcurrenttime(NULL);
 
 	if (la_tpl == NULL) la_tpl = setup_template(la_params);
+	if (clock_tpl == NULL) clock_tpl = setup_template(clock_params);
 	if (starttime == 0) starttime = now;
 
 	if (strstr(msg, "bb-xsnmp")) {
@@ -203,7 +206,7 @@ done_parsing:
 	if (gotclock) {
 		setupfn("%s.rrd", "clock");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, clockdiff);
-		create_and_update_rrd(hostname, testname, classname, pagepaths, la_params, la_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, clock_params, clock_tpl);
 	}
 
 	/*
