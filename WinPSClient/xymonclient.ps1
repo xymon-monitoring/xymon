@@ -23,6 +23,8 @@ $xymonservers = @( "xymonhost" )	# List your Xymon servers here
 # Params for default clientname
 $clientfqdn = 1   		# 0 = unqualified, 1 = fully-qualified
 $clientlower = 1  		# 0 = case unmodified, 1 = lowercase converted
+$clientbbwinmembug = 1  # 0 = report correctly, 1 = page and virtual switched
+$clientremotecfg = 0  	# 0 = don't run remote config, 1 = run remote config
 
 $xymonclientconfig = "C:\TEMP\xymonconfig.ps1"
 # -----------------------------------------------------------------------------------
@@ -310,8 +312,13 @@ function XymonMemory
 	"[memory]"
 	"memory    Total    Used"
 	"physical: $phystotal $physused"
-	"virtual: $virttotal $virtused"
-	"page: $pagetotal $pageused"
+	if($clientbbwinmembug -eq 0) {  	# 0 = report correctly, 1 = page and virtual switched
+		"virtual: $virttotal $virtused"
+		"page: $pagetotal $pageused"
+	} else {
+		"virtual: $pagetotal $pageused"
+		"page: $virttotal $virtused"
+	}
 }
 
 function XymonMsgs
@@ -326,7 +333,7 @@ function XymonMsgs
 
 		$oldpref = $ErrorActionPreference
 		$ErrorActionPreference = "silentlycontinue"
-		$logentries = Get-EventLog -LogName $log.Log -asBaseObject -After $since -newest 100 -EntryType Error,Warning
+		$logentries = Get-EventLog -LogName $log.Log -asBaseObject -newest 100 | where {$_.TimeGenerated -gt $since -and ($_.EntryType -eq "Error" -or $_.EntryType -eq "Warning") }
 		$ErrorActionPreference = $oldpref
 	
 		"[msgs:eventlog_$l]"
@@ -609,7 +616,7 @@ while ($running -eq $true) {
 # BBWIn uses "GetIfTable" which grabs the MIB-2 interfaces.
 # This is an IPHLPAPI function that does not exist in Powershell
 # Dont know if it is accessible via .NET somehow.
-#	$clout += XymonIfstat | Out-String	
+#	$clout += XymonIfstat | Out-String
 	$clout += XymonSvcs | Out-String
 	$clout += XymonUptime | Out-String
 	$clout += XymonWho | Out-String
@@ -627,8 +634,8 @@ while ($running -eq $true) {
 	$clout += XymonReportConfig | Out-String
 	
 	$newconfig = XymonSend $clout $xymonservers
-	XymonClientConfig $newconfig
-
+	if ($clientremotecfg -ne 0) { XymonClientConfig $newconfig }
+	else { $newconfig } # output to console for debugging
 	$delay = ($loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
 	if ($delay -gt 0) { sleep $delay }
 }
