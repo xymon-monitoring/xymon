@@ -531,6 +531,22 @@ static int rrddatasets(char *hostname, char ***dsnames)
 
 #include "rrd/do_memory.c"	/* Must go before do_la.c */
 #include "rrd/do_la.c"
+
+/*
+ * From hobbit-perl-client http://sourceforge.net/projects/hobbit-perl-cl/
+ * version 1.15 Oct. 17 2006 (downloaded on 2008-12-01).
+ *
+ * Include file for netapp.pl dbcheck.pl and beastat.pl scripts
+ * do_fd_lib.c contains some function used by the other library
+ *
+ * Must go before "do_disk.c"
+ */
+#include "rrd/do_fd_lib.c"
+#include "rrd/do_netapp.c"
+#include "rrd/do_beastat.c"
+#include "rrd/do_dbcheck.c"
+
+
 #include "rrd/do_disk.c"
 #include "rrd/do_netstat.c"
 #include "rrd/do_vmstat.c"
@@ -558,18 +574,6 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_getvis.c"
 #include "rrd/do_asid.c"
 
-
-/*
- * From hobbit-perl-client http://sourceforge.net/projects/hobbit-perl-cl/
- * version 1.15 Oct. 17 2006 (downloaded on 2008-12-01).
- *
- * Include file for netapp.pl dbcheck.pl and beastat.pl scripts
- * do_fd_lib.c contains some function used by the other library
- */
-#include "rrd/do_fd_lib.c"
-#include "rrd/do_netapp.c"
-#include "rrd/do_beastat.c"
-#include "rrd/do_dbcheck.c"
 
 /*
  * From devmon http://sourceforge.net/projects/devmon/
