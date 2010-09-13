@@ -33,6 +33,20 @@ typedef struct strbuffer_t {
 #include "config.h"
 #include "../lib/osdefs.h"
 
+#ifdef XYMONWINCLIENT
+#include "../lib/strfunc.h"
+#include "../lib/errormsg.h"
+#include "../lib/environ.h"
+#include "../lib/stackio.h"
+#include "../lib/timefunc.h"
+#include "../lib/memory.h"
+#include "../lib/sendmsg.h"
+#include "../lib/holidays.h"
+#include "../lib/rbtr.h"
+#include "../lib/msort.h"
+#include "../lib/misc.h"
+#else
+
 /* Defines CGI URL's */
 #include "../lib/cgiurls.h"
 #include "../lib/links.h"
@@ -80,6 +94,7 @@ typedef struct strbuffer_t {
 #include "../lib/timefunc.h"
 #include "../lib/timing.h"
 #include "../lib/url.h"
+#endif
 
 #endif
 

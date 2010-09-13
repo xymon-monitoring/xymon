@@ -51,6 +51,25 @@ bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
 ../client/bbdigest: $(DIGESTOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
 
+
+bb.exe: bb.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
+	$(CC) $(CFLAGS) -c bb.c 
+	$(CC) $(CFLAGS) -DBBTOPDIR=\"$(BBTOPDIR)\" -DBBLOGDIR=\"$(BBLOGDIR)\" -DBBHOSTNAME=\"$(BBHOSTNAME)\" -DBBHOSTIP=\"$(BBHOSTIP)\" -DBBHOSTOS=\"$(BBHOSTOS)\" -DBUILD_HOME=\"$(BBTOPDIR)/client\" -c ../lib/environ.c
+	$(CC) $(CFLAGS) -c ../lib/strfunc.c 
+	$(CC) $(CFLAGS) -c ../lib/errormsg.c
+	$(CC) $(CFLAGS) -c ../lib/stackio.c 
+	$(CC) $(CFLAGS) -c ../lib/timefunc.c 
+	$(CC) $(CFLAGS) -c ../lib/memory.c 
+	$(CC) $(CFLAGS) -c ../lib/sendmsg.c 
+	$(CC) $(CFLAGS) -c ../lib/holidays.c 
+	$(CC) $(CFLAGS) -c ../lib/rbtr.c 
+	$(CC) $(CFLAGS) -c ../lib/msort.c
+	$(CC) $(CFLAGS) -c ../lib/misc.c
+	ar cr bbwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
+	ranlib bbwin32.a || echo ""
+	$(CC) -o $@ bb.o bbwin32.a
+
+
 ################################################
 # Default compilation rules
 ################################################
