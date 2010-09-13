@@ -26,15 +26,12 @@ static char *beastat_jta_params[] = { "DS:ActiveTrans:GAUGE:600:0:U",
                                      NULL };
 static void *beastat_jta_tpl      = NULL;
 
-	static time_t starttime = 0;
 	unsigned long heapfree=0, heapsize=0;
 	unsigned long acttrans=0, secact=0, trab=0, trcomm=0, trheur=0, totot=0;
 	unsigned long trrbapp=0, trrbres=0, trrbsys=0, trrbto=0, trrb=0, trtot=0;
-	time_t now = time(NULL);
 	
 	dbgprintf("beastat: host %s test %s\n",hostname, testname);
 
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
 		setupfn("%s.rrd",testname);
 		if (beastat_jta_tpl == NULL) beastat_jta_tpl = setup_template(beastat_jta_params);
@@ -71,13 +68,10 @@ static char *beastat_jvm_params[] = { "DS:HeapFreeCurrent:GAUGE:600:0:U",
                                      NULL };
 static void *beastat_jvm_tpl      = NULL;
 
-	static time_t starttime = 0;
 	unsigned long heapfree=0, heapsize=0;
-	time_t now = time(NULL);
 	
 	dbgprintf("beastat: host %s test %s\n",hostname, testname);
 
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
 		setupfn("%s.rrd",testname);
 		if (beastat_jvm_tpl == NULL) beastat_jvm_tpl = setup_template(beastat_jvm_params);
@@ -104,13 +98,10 @@ static char *beastat_jms_params[] = { "DS:CurrConn:GAUGE:600:0:U",
                                      NULL };
 static void *beastat_jms_tpl      = NULL;
 
-	static time_t starttime = 0;
         unsigned long conncurr=0, connhigh=0, conntotal=0, jmscurr=0, jmshigh=0, jmstotal=0;
-	time_t now = time(NULL);
 	
 	dbgprintf("beastat: host %s test %s\n",hostname, testname);
 
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
 		setupfn("%s.rrd",testname);
 		if (beastat_jms_tpl == NULL) beastat_jms_tpl = setup_template(beastat_jms_params);
@@ -143,11 +134,8 @@ static char *checktest			= "Type=ExecuteQueueRuntime";
 
 	char *curline;
 	char *eoln;		
-	static time_t starttime = 0;
-	time_t now = time(NULL);
 	dbgprintf("beastat: host %s test %s\n",hostname, testname);
 
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
 		if (beastat_exec_tpl == NULL) beastat_exec_tpl = setup_template(beastat_exec_params);
 /*
@@ -218,11 +206,8 @@ static char *checktest			= "Type=JDBCConnectionPoolRuntime";
 
 	char *curline;
 	char *eoln;		
-	static time_t starttime = 0;
-	time_t now = time(NULL);
 	dbgprintf("beastat: host %s test %s\n",hostname, testname);
 
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "beastat.pl")) {
 		if (beastat_jdbc_tpl == NULL) beastat_jdbc_tpl = setup_template(beastat_jdbc_params);
 /*

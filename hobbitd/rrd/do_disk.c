@@ -21,6 +21,9 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	static pcre *inclpattern = NULL;
 	static pcre *exclpattern = NULL;
 
+	if (strstr(msg, "netapp.pl")) return do_netapp_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	if (strstr(msg, "dbcheck.pl")) return do_dbcheck_tablespace_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
 	if (disk_tpl == NULL) disk_tpl = setup_template(disk_params);
 
 	if (!ptnsetup) {

@@ -25,10 +25,7 @@ static void *dbcheck_memreq_tpl      = NULL;
 	unsigned long free=0,used=0,reqf=0,fsz=0;	
 	double avfr=0,avus=0;
 	char *start,*end;
-	static time_t starttime = 0;
-	time_t now = time(NULL);
 	dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "dbcheck.pl")) {
 		if (dbcheck_memreq_tpl == NULL) dbcheck_memreq_tpl = setup_template(dbcheck_memreq_params);
                 if ((start=strstr(msg, "<!--"))==NULL) return 0;
@@ -70,12 +67,9 @@ static char *dbcheck_hitcache_params[] = { "DS:PinSQLArea:GAUGE:600:0:100",
                                      NULL };
 static void *dbcheck_hitcache_tpl      = NULL;
 
-	static time_t starttime = 0;
 	double pinsql=0, pintbl=0, pinbody=0, pintrig=0, hitsql=0, hittbl=0, hitbody=0, hittrig=0, blbuff=0, rowchache=0;
-	time_t now = time(NULL);
 	dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 	
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "dbcheck.pl")) {
 		setupfn("%s.rrd",testname);
 		if (dbcheck_hitcache_tpl == NULL) dbcheck_hitcache_tpl = setup_template(dbcheck_hitcache_params);
@@ -116,13 +110,10 @@ static char *dbcheck_session_params[] = { "DS:MaxSession:GAUGE:600:0:U",
                                      NULL };
 static void *dbcheck_session_tpl      = NULL;
 
-	static time_t starttime = 0;
         unsigned long maxsess=0, currsess=0, maxproc=0, currproc=0 ;
 	double pctsess=0, pctproc=0;
-	time_t now = time(NULL);
 	dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 	
-	if (starttime == 0) starttime = now;
 	if (strstr(msg, "dbcheck.pl")) {
 		setupfn("%s.rrd",testname);
 		if (dbcheck_session_tpl == NULL) dbcheck_session_tpl = setup_template(dbcheck_session_params);
@@ -151,11 +142,8 @@ static void *dbcheck_rb_tpl    = NULL;
 
         char *curline;
         char *eoln;
-        static time_t starttime = 0;
-        time_t now = time(NULL);
         dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 
-        if (starttime == 0) starttime = now;
         if (strstr(msg, "dbcheck.pl")) {
                 if (dbcheck_rb_tpl == NULL) dbcheck_rb_tpl = setup_template(dbcheck_rb_params);
                 curline=strstr(msg, "Rollback Checking");
@@ -198,11 +186,8 @@ static void *dbcheck_invobj_tpl    = NULL;
         char *curline;
         char *eoln;
 	unsigned long yellow=0,red=0,green=0;
-        static time_t starttime = 0;
-        time_t now = time(NULL);
         dbgprintf("dbcheck: host %s test %s\n",hostname, testname);
 
-        if (starttime == 0) starttime = now;
         if (strstr(msg, "dbcheck.pl")) {
                 if (dbcheck_invobj_tpl == NULL) dbcheck_invobj_tpl = setup_template(dbcheck_invobj_params);
                 curline=strstr(msg, "Invalid Object Checking");
@@ -230,4 +215,145 @@ nextline:
         }
         return 0;
 }
+
+int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
+{
+       static char *tablespace_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
+       static char *tablespace_tpl      = NULL;
+
+       char *eoln, *curline;
+       static int ptnsetup = 0;
+       static pcre *inclpattern = NULL;
+       static pcre *exclpattern = NULL;
+
+       if (tablespace_tpl == NULL) tablespace_tpl = setup_template(tablespace_params);
+
+       if (!ptnsetup) {
+               const char *errmsg;
+               int errofs;
+               char *ptn;
+
+               ptnsetup = 1;
+               ptn = getenv("RRDDISKS");
+               if (ptn && strlen(ptn)) {
+                       inclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+                       if (!inclpattern) errprintf("PCRE compile of RRDDISKS='%s' failed, error %s, offset %d\n",
+                                                   ptn, errmsg, errofs);
+               }
+               ptn = getenv("NORRDDISKS");
+               if (ptn && strlen(ptn)) {
+                       exclpattern = pcre_compile(ptn, PCRE_CASELESS, &errmsg, &errofs, NULL);
+                       if (!exclpattern) errprintf("PCRE compile of NORRDDISKS='%s' failed, error %s, offset %d\n",
+                                                   ptn, errmsg, errofs);
+               }
+       }
+
+       /*
+        * Francesco Duranti noticed that if we use the "/group" option
+        * when sending the status message, this tricks the parser to
+        * create an extra filesystem called "/group". So skip the first
+        * line - we never have any disk reports there anyway.
+        */
+       curline = strchr(msg, '\n'); if (curline) curline++;
+       /* FD: For dbcheck.pl move after the Header */
+       curline=strstr(curline, "TableSpace/DBSpace");
+       if (curline) {
+               eoln = strchr(curline, '\n');
+               curline = (eoln ? (eoln+1) : NULL);
+       }
+
+       while (curline)  {
+               char *fsline, *p;
+               char *columns[20];
+               int columncount;
+               char *diskname = NULL;
+               int pused = -1;
+               int wanteddisk = 1;
+               long long aused = 0;
+               /* FD: Using double instead of long long because we can have decimal on Netapp and DbCheck */
+               double dused = 0;
+               /* FD: used to add a column if the filesystem is named "snap reserve" for netapp.pl */
+               int snapreserve=0;
+
+               eoln = strchr(curline, '\n'); if (eoln) *eoln = '\0';
+
+               /* FD: Exit if doing DBCHECK and the end of the tablespaces are reached */
+               if (strstr(eoln+1, "dbcheck.pl") == (eoln+1)) break;
+
+               /* red/yellow filesystems show up twice */
+               if (*curline == '&') goto nextline;
+               if ((strstr(curline, " red ") || strstr(curline, " yellow "))) goto nextline;
+
+               for (columncount=0; (columncount<20); columncount++) columns[columncount] = "";
+               fsline = xstrdup(curline); columncount = 0; p = strtok(fsline, " ");
+               while (p && (columncount < 20)) { columns[columncount++] = p; p = strtok(NULL, " "); }
+
+               /* FD: Check TableSpace from dbcheck.pl */
+               /* FD: Add an initial "/" to TblSpace Name so they're reported in the trends column */
+               diskname=xmalloc(strlen(columns[0])+2);
+               sprintf(diskname,"/%s",columns[0]);
+               p = strchr(columns[4], '%'); if (p) *p = ' ';
+               pused = atoi(columns[4]);
+               p = columns[2] + strspn(columns[2], "0123456789.");
+               /* FD: Using double instead of long long because we can have decimal */
+               dused = str2ll(columns[2], NULL);
+               /* FD: dbspace report contains M/G/T
+                  Convert to KB if there's a modifier after the numbers
+               */
+               if (*p == 'M') dused *= 1024;
+               else if (*p == 'G') dused *= (1024*1024);
+               else if (*p == 'T') dused *= (1024*1024*1024);
+               aused=(long long)dused;
+
+
+               /* Check include/exclude patterns */
+               wanteddisk = 1;
+               if (exclpattern) {
+                       int ovector[30];
+                       int result;
+
+                       result = pcre_exec(exclpattern, NULL, diskname, strlen(diskname),
+                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+
+                       wanteddisk = (result < 0);
+               }
+               if (wanteddisk && inclpattern) {
+                       int ovector[30];
+                       int result;
+
+                       result = pcre_exec(inclpattern, NULL, diskname, strlen(diskname),
+                                          0, 0, ovector, (sizeof(ovector)/sizeof(int)));
+
+                       wanteddisk = (result >= 0);
+               }
+
+               if (wanteddisk && diskname && (pused != -1)) {
+                       p = diskname; while ((p = strchr(p, '/')) != NULL) { *p = ','; }
+                       if (strcmp(diskname, ",") == 0) {
+                               diskname = xrealloc(diskname, 6);
+                               strcpy(diskname, ",root");
+                       }
+
+                       /*
+                        * Use testname here.
+                        * The disk-handler also gets data from NetAPP inode- and qtree-messages,
+                        * that are virtually identical to the disk-messages. So lets just handle
+                        * all of it by using the testname as part of the filename.
+                        */
+                       setupfn2("%s%s.rrd", testname,diskname);
+                       sprintf(rrdvalues, "%d:%d:%lld", (int)tstamp, pused, aused);
+                       create_and_update_rrd(hostname, testname, classname, pagepaths, tablespace_params, tablespace_tpl);
+               }
+               if (diskname) { xfree(diskname); diskname = NULL; }
+
+               if (eoln) *eoln = '\n';
+               xfree(fsline);
+
+nextline:
+               curline = (eoln ? (eoln+1) : NULL);
+       }
+
+       return 0;
+}
+
 
