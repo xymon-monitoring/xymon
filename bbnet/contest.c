@@ -645,6 +645,7 @@ static void setup_ssl(tcptest_t *item)
 		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 
 		certcn, certstart, certend);
 	addtobuffer(sslinfo, msglin);
+	item->certsubject = strdup(certcn);
 	item->certexpires = sslcert_expiretime(certend);
 	xfree(certcn); xfree(certstart); xfree(certend);
 	X509_free(peercert);
