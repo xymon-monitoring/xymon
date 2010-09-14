@@ -383,7 +383,7 @@ function XymonSvcs
 function XymonProcs
 {
 	"[procs]"
-	"PID".PadRight(8) + "User".PadRight(35) + "    WorkingSet   " + "    VirtualMem   " + "     PagedMem    " + "     NPS " + " Handles " + " %CPU" + " Name"
+	"{0,8} {1,-35} {2,-17} {3,-17} {4,-17} {5,8} {6,-7} {7,5} {8}" -f "PID", "User", "WorkingSet/Peak", "VirtualMem/Peak", "PagedMem/Peak", "NPS", "Handles", "%CPU", "Name"
 	foreach ($p in $procs) {
 		if ($svcprocs[($p.Id)] -ne $null) {
 			$procname = "Service:" + $svcprocs[($p.Id)]
@@ -393,24 +393,25 @@ function XymonProcs
 		}
 
 		$thiswmip = Get-WmiObject -Class Win32_Process | where { $_.ProcessId -eq $p.Id }
-		$owner = ($thiswmip.getowner()).Domain + "\" + ($thiswmip.GetOwner().user)
+		if(	$thiswmip -ne $null ) { # short-lived process could possibly be gone
+			$owner = ($thiswmip.getowner()).Domain + "\" + ($thiswmip.GetOwner().user)
+		} else { $owner = "NA" }
+		if ($owner -eq "\") { $owner = "SYSTEM" }
 		if ($owner.length -gt 32) { $owner = $owner.substring(0, 32) }
 
-		$pws     = ("{0:F0}" -f ($p.WorkingSet / 1KB)).PadLeft(8) + "/" + ("{0:F0}" -f ($p.PeakWorkingSet / 1KB)).PadRight(8)
-		$pvmem   = ("{0:F0}" -f ($p.VirtualMemorySize / 1KB)).PadLeft(8) + "/" + ("{0:F0}" -f ($p.PeakVirtualMemorySize / 1KB)).PadRight(8)
-		$ppgmem  = ("{0:F0}" -f ($p.PagedMemorySize / 1KB)).PadLeft(8) + "/" + ("{0:F0}" -f ($p.PeakPagedMemorySize / 1KB)).PadRight(8)
-		$pnpgmem = ("{0:F0}" -f ($p.NonPagedSystemMemorySize / 1KB)).PadLeft(8) + " "
-		$phandle = " " + ("{0:F0}" -f $p.HandleCount).PadLeft(7) + " "
-		
+		$pws     = "{0,8:F0}/{1,-8:F0}" -f ($p.WorkingSet64 / 1KB), ($p.PeakWorkingSet64 / 1KB)
+		$pvmem   = "{0,8:F0}/{1,-8:F0}" -f ($p.VirtualMemorySize64 / 1KB), ($p.PeakVirtualMemorySize64 / 1KB)
+		$ppgmem  = "{0,8:F0}/{1,-8:F0}" -f ($p.PagedMemorySize64 / 1KB), ($p.PeakPagedMemorySize64 / 1KB)
+		$pnpgmem = "{0,8:F0}" -f ($p.NonPagedSystemMemorySize64 / 1KB)
+			
 		$thisp = $XymonProcsCpu[$p.Id]
 		if ($XymonProcsCpuElapsed -gt 0 -and $thisp -ne $null) {
-			$pcpu = ("{0:F0}" -f (([int](10000*($thisp[2] / $XymonProcsCpuElapsed))) / 100)).PadLeft(5)
-		}
-		else {
-			$pcpu = "-".PadLeft(5)
+			$pcpu = "{0,5:F0}" -f (([int](10000*($thisp[2] / $XymonProcsCpuElapsed))) / 100)
+		} else {
+			$pcpu = "{0,5}" -f "-"
 		}
 
-		([string]$p.Id).PadRight(8) + $owner.PadRight(35) + $pws + $pvmem + $ppgmem + $pnpgmem + $phandle + $pcpu + " " + $procname
+		"{0,8} {1,-35} {2} {3} {4} {5} {6,7:F0} {7} {8}" -f $p.Id, $owner, $pws, $pvmem, $ppgmem, $pnpgmem, $p.HandleCount, $pcpu, $procname
 	}
 }
 
@@ -420,6 +421,11 @@ function XymonWho
 	query session
 }
 
+function XymonUsers
+{
+	"[users]"
+	query user
+}
 
 function XymonWMIOperatingSystem
 {
@@ -580,6 +586,42 @@ function XymonReportConfig
 	$XymonClientVersion
 }
 
+function XymonClientSections {
+	XymonDate
+	XymonClock
+	XymonUname
+	XymonCpu
+	XymonDisk
+	XymonMemory
+	XymonEventLogs
+	#XymonMsgs
+	XymonProcs
+	XymonNetstat
+	XymonPorts
+	XymonIPConfig
+	XymonRoute
+# BBWIn uses "GetIfTable" which grabs the MIB-2 interfaces.
+# This is an IPHLPAPI function that does not exist in Powershell
+# Dont know if it is accessible via .NET somehow.
+#	XymonIfstat
+	XymonSvcs
+	XymonUptime
+	XymonWho
+	XymonUsers
+
+	XymonWMIOperatingSystem
+	XymonWMIComputerSystem
+	XymonWMIBIOS
+	XymonWMIProcessor
+	XymonWMIMemory
+	XymonWMILogicalDisk
+
+	$XymonWMIQuickFixEngineeringCache
+	$XymonWMIProductCache
+
+	XymonReportConfig
+}
+
 ##### Main code #####
 XymonInit
 
@@ -599,39 +641,7 @@ while ($running -eq $true) {
 	XymonCollectInfo
 
 	$clout = "client " + $clientname + ".bbwin win32" | Out-String
-
-	$clout += XymonDate | Out-String
-	$clout += XymonClock | Out-String
-	$clout += XymonUname | Out-String
-	$clout += XymonCpu | Out-String
-	$clout += XymonDisk | Out-String
-	$clout += XymonMemory | Out-String
-	$clout += XymonEventLogs | Out-String
-	$clout += XymonMsgs | Out-String
-	$clout += XymonProcs | Out-String
-	$clout += XymonNetstat | Out-String
-	$clout += XymonPorts | Out-String
-	$clout += XymonIPConfig | Out-String
-	$clout += XymonRoute | Out-String
-# BBWIn uses "GetIfTable" which grabs the MIB-2 interfaces.
-# This is an IPHLPAPI function that does not exist in Powershell
-# Dont know if it is accessible via .NET somehow.
-#	$clout += XymonIfstat | Out-String
-	$clout += XymonSvcs | Out-String
-	$clout += XymonUptime | Out-String
-	$clout += XymonWho | Out-String
-
-	$clout += XymonWMIOperatingSystem | Out-String
-	$clout += XymonWMIComputerSystem | Out-String
-	$clout += XymonWMIBIOS | Out-String
-	$clout += XymonWMIProcessor | Out-String
-	$clout += XymonWMIMemory | Out-String
-	$clout += XymonWMILogicalDisk | Out-String
-
-	$clout += $XymonWMIQuickFixEngineeringCache | Out-String
-	$clout += $XymonWMIProductCache | Out-String
-
-	$clout += XymonReportConfig | Out-String
+	$clout += XymonClientSections | Out-String
 	
 	$newconfig = XymonSend $clout $xymonservers
 	if ($clientremotecfg -ne 0) { XymonClientConfig $newconfig }
