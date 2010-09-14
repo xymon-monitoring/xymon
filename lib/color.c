@@ -78,6 +78,10 @@ int parse_color(char *colortext)
 		MEMUNDEFINE(inpcolor);
 		return COL_PURPLE;
 	}
+	else if (strncasecmp(inpcolor, "client ", 7) == 0) {
+		MEMUNDEFINE(inpcolor);
+		return COL_CLIENT;
+	}
 
 	MEMUNDEFINE(inpcolor);
 	return -1;

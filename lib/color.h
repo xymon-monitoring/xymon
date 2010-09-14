@@ -17,6 +17,7 @@
 #define COL_PURPLE 	3
 #define COL_YELLOW	4
 #define COL_RED		5
+#define COL_CLIENT	99
 #define COL_COUNT       (COL_RED+1)
 
 extern int use_recentgifs;
