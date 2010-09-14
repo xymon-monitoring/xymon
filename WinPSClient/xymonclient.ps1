@@ -594,7 +594,7 @@ function XymonClientSections {
 	XymonDisk
 	XymonMemory
 	XymonEventLogs
-	#XymonMsgs
+	XymonMsgs
 	XymonProcs
 	XymonNetstat
 	XymonPorts
