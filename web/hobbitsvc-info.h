@@ -15,6 +15,6 @@ extern int showenadis;
 extern int usejsvalidation;
 extern int newnkconfig;
 
-extern char *generate_info(char *hostname);
+extern char *generate_info(char *hostname, char *nkconfigfn);
 
 #endif

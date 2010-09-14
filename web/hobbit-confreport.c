@@ -645,6 +645,7 @@ int main(int argc, char *argv[])
 	int hostcount = 0, maxtests = 0;
 	time_t now = getcurrenttime(NULL);
 	sendreturn_t *sres;
+	char *nkconfigfn = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -668,12 +669,16 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
 			newnkconfig = 0;
 		}
+		else if (argnmatch(argv[argi], "--nkconfig=")) {
+			char *p = strchr(argv[argi], '=');
+			nkconfigfn = strdup(p+1);
+		}
 	}
 
 	redirect_cgilog("hobbit-confreport");
 
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	load_nkconfig(NULL);
+	load_nkconfig(nkconfigfn);
 
 	/* Setup the filter we use for the report */
 	cookie = get_cookie("pagepath"); if (cookie && *cookie) pagepattern = strdup(cookie);

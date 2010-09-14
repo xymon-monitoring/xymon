@@ -399,6 +399,7 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
+	char *nkconfig = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -416,6 +417,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			nkacklevel = atoi(p+1);
 		}
+		else if (argnmatch(argv[argi], "--nkconfig=")) {
+			char *p = strchr(argv[argi], '=');
+			nkconfig = strdup(p+1);
+		}
 	}
 
 	redirect_cgilog("hobbit-nkview");
@@ -424,7 +429,7 @@ int main(int argc, char *argv[])
 
 	parse_query();
 	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	load_nkconfig(NULL);
+	load_nkconfig(nkconfig);
 	load_all_links();
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 

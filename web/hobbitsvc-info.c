@@ -683,7 +683,7 @@ static void generate_hobbit_scheduled(char *hostname, strbuffer_t *buf)
 }
 
 
-char *generate_info(char *hostname)
+char *generate_info(char *hostname, char *nkconfigfn)
 {
 	strbuffer_t *infobuf;
 	char l[MAX_LINE_LEN];
@@ -814,7 +814,7 @@ char *generate_info(char *hostname)
 		nkconf_t *nkrec;
 		int firstrec = 1;
 
-		load_nkconfig(NULL);
+		load_nkconfig(nkconfigfn);
 		for (i=0; (i < testcount); i++) {
 			key = (char *)malloc(strlen(hostname) + strlen(tnames[i].name) + 2);
 			sprintf(key, "%s|%s", hostname, tnames[i].name);

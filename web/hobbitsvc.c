@@ -32,6 +32,7 @@ static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
+static char *nkconfigfn = NULL;
 
 /* CGI params */
 static char *hostname = NULL;
@@ -276,7 +277,7 @@ int do_request(void)
 			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
-			log = restofmsg = generate_info(hostname);
+			log = restofmsg = generate_info(hostname, nkconfigfn);
 		}
 	}
 	else if (source == SRC_HOBBITD) {
@@ -666,6 +667,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			locator_init(p+1);
 			locatorbased = 1;
+		}
+		else if (argnmatch(argv[argi], "--nkconfig=")) {
+			char *p = strchr(argv[argi], '=');
+			nkconfigfn = strdup(p+1);
 		}
 	}
 
