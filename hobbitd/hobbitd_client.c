@@ -1491,6 +1491,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/zvm.c"
 #include "client/zvse.c"
 #include "client/zos.c"
+#include "client/mqcollect.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1960,6 +1961,10 @@ int main(int argc, char *argv[])
 
 			  case OS_ZOS:
 				handle_zos_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_MQCOLLECT:
+				handle_mqcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  default:

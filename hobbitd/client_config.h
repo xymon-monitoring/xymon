@@ -80,5 +80,8 @@ extern int clear_svc_counts(void *hinfo, char *classname);
 extern void add_svc_count(char *spname, char *tpname, char *stname);
 extern char *check_svc_count(int *pcount, int *pcolor, char **group);
 
+extern void get_mqqueue_thresholds(void *hinfo, char *classname, char *qmgrname, char *qname, int *warnlen, int *critlen, int *warnage, int *critage, char **trackit);
+extern int get_mqchannel_params(void *hinfo, char *classname, char *qmgrname, char *chnname, char *chnstatus, int *color);
+
 #endif
 
