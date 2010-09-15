@@ -413,7 +413,7 @@ char *generate_stats(void)
 			bufp = statsbuf + strlen(statsbuf);
 		}
 
-		bufp += sprintf(bufp, "\n\nLatest errormessages:\n%s\n", errbuf);
+		bufp += sprintf(bufp, "\n\nLatest error messages:\n%s\n", errbuf);
 	}
 
 	MEMUNDEFINE(bootuptxt);
