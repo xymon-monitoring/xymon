@@ -2,7 +2,7 @@ Name: hobbit
 Version: @VER@
 Release: 1
 Group: Networking/Daemons
-URL: http://hobbitmon.sourceforge.net/
+URL: http://xymon.sourceforge.net/
 License: GPL
 Source: hobbit-@VER@.tar.gz
 Source1: hobbit-init.d
