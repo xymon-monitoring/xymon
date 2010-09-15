@@ -161,22 +161,7 @@ function WMIProp($class)
 
 function UnixDate([System.DateTime] $t)
 {
-	$DayNames = "","Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
-	$MonthNames = "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-	
-	$res = ""
-	$res += $DayNames[$t.DayOfWeek.value__] + " "
-	$res += $MonthNames[$t.Month] + " "
-	$res += [string]$t.Day + " "
-	if ($t.Hour -lt 10) { $res += "0" + [string]$t.Hour } else { $res += [string]$t.Hour }
-	$res += ":"
-	if ($t.Minute -lt 10) { $res += "0" + [string]$t.Minute } else { $res += [string]$t.Minute }
-	$res += ":"
-	if ($t.Second -lt 10) { $res += "0" + [string]$t.Second } else { $res += [string]$t.Second }
-	$res += " "
-	$res += [string]$t.Year
-
-	$res
+	$t.ToString("ddd dd MMM HH:mm:ss yyyy")
 }
 
 function pad($s, $maxlen)
@@ -212,7 +197,7 @@ function XymonDate
 
 function XymonClock
 {
-	$epoch = (($localdatetime.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000) - $osinfo.CurrentTimeZone*60
+	$epoch = [int](($localdatetime.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000) - $osinfo.CurrentTimeZone*60
 
 	"[clock]"
 	"epoch: " + $epoch
@@ -279,7 +264,7 @@ function XymonCpu
 function XymonDisk
 {
 	"[disk]"
-	"Filesystem".PadRight(15) + "1K-blocks".PadLeft(9) + " " + "Used".PadLeft(9) + " " + "Avail".PadLeft(9) + " " + "Capacity".PadLeft(9) + " " + "Mounted".PadRight(10) + "Summary(Total\Avail GB)"
+	"{0,-15} {1,9} {2,9} {3,9} {4,9} {5,10} {6}" -f "Filesystem", "1K-blocks", "Used", "Avail", "Capacity", "Mounted", "Summary(Total\Avail GB)"
 	foreach ($d in $disks) {
 		$diskletter = ($d.DeviceId).Trim(":")
 		[uint32]$diskusedKB = ([uint32]($d.Size/1KB)) - ([uint32]($d.FreeSpace/1KB))	# PS ver 1 doesnt support subtraction uint64's
@@ -290,13 +275,13 @@ function XymonDisk
 		$dfKB = "{0:F0}" -f ($d.FreeSpace / 1KB); $dfGB = "{0:F2}" -f ($d.FreeSpace / 1GB)
 		
 		if ($d.Size -gt 0) {
-			$duPCT = "{0:N0}" -f (100*($diskusedKB/$disksizeKB))
+			$duPCT = $diskusedKB/$disksizeKB
 		}
 		else {
 			$duPCT = 0
 		}
 
-		$diskletter.PadRight(15) + $dsKB.PadLeft(9) + " " + $duKB.PadLeft(9) + " " + $dfKB.PadLeft(9) + " " + ($duPCT + "`%").PadLeft(9) + " " + ("/FIXED/" + $diskletter).PadRight(10) + $dsGB + "`\" + $dfGB
+		"{0,-15} {1,9} {2,9} {3,9} {4,9:0%} {5,10} {6}" -f $diskletter, $dsKB, $duKB, $dfKB, $duPCT, "/FIXED/$diskletter", $dsGB + "\" + $dfGB
 	}
 }
 
@@ -366,7 +351,8 @@ function XymonRoute
 function XymonNetstat
 {
 	"[netstat]"
-	netstat -s
+	$pref=""
+	netstat -s | ?{$_ -match "=|(\w+) Statistics for"} | %{ if($_.contains("=")) {("$pref$_").REPLACE(" ","")}else{$pref=$matches[1].ToLower();""}}
 }
 
 function XymonSvcs
@@ -587,8 +573,6 @@ function XymonReportConfig
 }
 
 function XymonClientSections {
-	XymonDate
-	XymonClock
 	XymonUname
 	XymonCpu
 	XymonDisk
@@ -641,7 +625,11 @@ while ($running -eq $true) {
 	XymonCollectInfo
 
 	$clout = "client " + $clientname + ".bbwin win32" | Out-String
-	$clout += XymonClientSections | Out-String
+	$clsecs = XymonClientSections | Out-String
+	$localdatetime = Get-Date
+	$clout += XymonDate | Out-String
+	$clout += XymonClock | Out-String
+	$clout +=  $clsecs
 	
 	$newconfig = XymonSend $clout $xymonservers
 	if ($clientremotecfg -ne 0) { XymonClientConfig $newconfig }
