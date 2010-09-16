@@ -72,6 +72,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
+		else if (strcmp(argv[argi], "--response") == 0) {
+			wantresponse = 1;
+		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
 		}
@@ -137,9 +140,6 @@ int main(int argc, char *argv[])
 	else if (strncmp(STRBUF(msg), "pullclient", 10) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;
-	else {
-		wantresponse = 0;
-	}
 
 	sres = newsendreturnbuf(wantresponse, respfd);
 	result = sendmessage(STRBUF(msg), recipient, timeout, sres);

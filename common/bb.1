@@ -29,6 +29,11 @@ server.
 Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
+.IP "--response"
+The bb utility normally knows when to expect a response 
+from the server, so this option is not required. However,
+it will cause any response from the server to be displayed.
+
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
