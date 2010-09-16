@@ -27,6 +27,7 @@ $clientbbwinmembug = 1  # 0 = report correctly, 1 = page and virtual switched
 $clientremotecfg = 0  	# 0 = don't run remote config, 1 = run remote config
 
 $xymonclientconfig = "C:\TEMP\xymonconfig.ps1"
+$xymonclientlog = "C:\TEMP\xymonclient.log"
 # -----------------------------------------------------------------------------------
 
 $XymonClientVersion = "$Id$"
@@ -37,8 +38,9 @@ function XymonInit
 	$script:wantedlogs = "Application",  "System", "Security"
 	$script:maxlogage = 60
 
-	$script:loopinterval = 300
+	$script:loopinterval = 300 # seconds
 	$script:slowscanrate = 12
+	$script:havequerycmd = (get-command -ErrorAction:SilentlyContinue query) -ne $null
 
 	if ($cpuinfo -ne $null) 	{ Remove-Variable cpuinfo }
 	if ($totalload -ne $null)	{ Remove-Variable totalload }
@@ -62,9 +64,10 @@ function XymonInit
 	if ($XymonProcsCpuElapsed -ne $null) 	{ Remove-Variable XymonProcsElapsed }
 	
 	if ($clientname -eq $null -or $clientname -eq "") {
-		$script:clientname  = $env:computername
-		if ($clientfqdn -and ($env:userdnsdomain -ne $null)) { 
-			$script:clientname += "." + $env:userdnsdomain
+		$ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
+		$script:clientname  = $ipProperties.HostName
+		if ($clientfqdn -and ($ipProperties.DomainName -ne $null)) { 
+			$script:clientname += "." + $ipProperties.DomainName
 		}
 		if ($clientlower) { $script:clientname = $clientname.ToLower() }
 	}
@@ -308,7 +311,7 @@ function XymonMemory
 
 function XymonMsgs
 {
-	$since = (Get-Date).AddMinutes(-($logmaxage))
+	$since = (Get-Date).AddMinutes(-($maxlogage))
 	if ($wantedlogs -eq $null) {
 		$wantedlogs = "Application", "System", "Security"
 	}
@@ -316,10 +319,7 @@ function XymonMsgs
 	foreach ($l in $wantedlogs) {
 		$log = Get-EventLog -List | where { $_.Log -eq $l }
 
-		$oldpref = $ErrorActionPreference
-		$ErrorActionPreference = "silentlycontinue"
-		$logentries = Get-EventLog -LogName $log.Log -asBaseObject -newest 100 | where {$_.TimeGenerated -gt $since -and ($_.EntryType -eq "Error" -or $_.EntryType -eq "Warning") }
-		$ErrorActionPreference = $oldpref
+		$logentries = Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"}
 	
 		"[msgs:eventlog_$l]"
 		if ($logentries -ne $null) {
@@ -403,14 +403,18 @@ function XymonProcs
 
 function XymonWho
 {
-	"[who]"
-	query session
+	if( $havequerycmd) {
+		"[who]"
+		query session
+	}
 }
 
 function XymonUsers
 {
-	"[users]"
-	query user
+	if( $havequerycmd) {
+		"[users]"
+		query user
+	}
 }
 
 function XymonWMIOperatingSystem
@@ -558,18 +562,10 @@ function XymonClientConfig($cfglines)
 function XymonReportConfig
 {
 	"[XymonConfig]"
-	""; "wanteddisks"
-	$script:wanteddisks
-	""; "wantedlogs"
-	$script:wantedlogs
-	""; "maxlogage"
-	$script:maxlogage
-	""; "loopinterval"
-	$script:loopinterval
-	""; "slowscanrate"
-	$script:slowscanrate
-	""; "Version"
-	$XymonClientVersion
+	foreach($v in @("wanteddisks", "wantedlogs", "maxlogage", "loopinterval", "slowscanrate", "Version", "clientname", "clientbbwinmembug", "clientremotecfg" )) {
+		""; "$v"
+		Invoke-Expression "`$$v"
+	}
 }
 
 function XymonClientSections {
@@ -631,9 +627,11 @@ while ($running -eq $true) {
 	$clout += XymonClock | Out-String
 	$clout +=  $clsecs
 	
+	Get-Date >> $xymonclientlog
+	XymonReportConfig >> $xymonclientlog
 	$newconfig = XymonSend $clout $xymonservers
 	if ($clientremotecfg -ne 0) { XymonClientConfig $newconfig }
-	else { $newconfig } # output to console for debugging
+	else { $newconfig >> $xymonclientlog}
 	$delay = ($loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
 	if ($delay -gt 0) { sleep $delay }
 }
