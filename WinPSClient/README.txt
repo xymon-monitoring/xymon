@@ -25,8 +25,9 @@ c:\Xymon\xymonclient.ps1
 	# $clientname  = "winxptest"
 	$xymonserver = @( "xymonhost" )
 
-Modify the "172.16.10.2" IP-address to be the address
-of your Xymon server.
+Modify the "xymonhost" IP-address to be the address of your Xymon server.
+Multiple servers can be used - comma separated list. TCP port 1984 is
+standard or enter host:port format if using other than 1984.
 
 By default the client sends data using the system hostname.
 If you want it to report using a different name, you can
@@ -58,7 +59,7 @@ http://www.microsoft.com/downloads/en/details.aspx?familyid=9d467a69-57ff-4ae7-9
    Double-click the new "Application" entry, and enter the following in 
    the "Value" field:
 
-	c:\windows\system32\windowspowershell\v1.0\powershell.exe c:\xymon\xymonclient.ps1
+        c:\windows\system32\windowspowershell\v1.0\powershell.exe -nonInteractive -ExecutionPolicy Unrestricted -File c:\Xymon\xymonclient.ps1
 
    Close the registry editor.
 
@@ -68,7 +69,7 @@ http://www.microsoft.com/downloads/en/details.aspx?familyid=9d467a69-57ff-4ae7-9
 NOTE: The "C:\Program Files" directory may be different, if you
 have installed Windows on another disk, and/or if you are running
 a non-english version of Windows. Adjust the commands to match
-your local settings.
+your local settings. The "Value" field cannot contain variables (e.g. %SYSTEMROOT%)
 
 
 For more information, refer to the Microsoft documentation for
