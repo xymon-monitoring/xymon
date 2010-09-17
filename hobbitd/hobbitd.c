@@ -439,7 +439,7 @@ char *generate_stats(void)
 	}
 
 	if (errbuf) {
-		addtobuffer(statsbuf, "\n\nLatest errormessages:\n");
+		addtobuffer(statsbuf, "\n\nLatest error messages:\n");
 		addtobuffer(statsbuf, errbuf);
 		addtobuffer(statsbuf, "\n");
 	}
