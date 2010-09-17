@@ -170,7 +170,7 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts)
 
 int do_request(void)
 {
-	int color = 0;
+	int color = 0, flapping = 0;
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
 	char *log = NULL, *firstline = NULL, *sender = NULL, *clientid = NULL, *flags = NULL;	/* These are free'd */
@@ -283,7 +283,7 @@ int do_request(void)
 	else if (source == SRC_HOBBITD) {
 		char hobbitdreq[1024];
 		int hobbitdresult;
-		char *items[20];
+		char *items[25];
 		int icount;
 		time_t logage, clntstamp;
 		char *sumline, *msg, *p, *compitem, *complist;
@@ -302,8 +302,7 @@ int do_request(void)
 		}
 
 		if (!complist) {
-			/* FIXME : ,flapinfo,modifies after clntstamp */
-			sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp", hostname, service);
+			sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo", hostname, service);
 		}
 		else {
 			sprintf(hobbitdreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
@@ -358,6 +357,7 @@ int do_request(void)
 			 * BBH_IP		[15]
 			 * BBH_DISPLAYNAME	[16]
 			 * clienttstamp         [17]
+			 * flapping		[18]
 			 */
 			color = parse_color(items[2]);
 			flags = strdup(items[3]);
@@ -383,6 +383,7 @@ int do_request(void)
 			ip = (items[15] ? items[15] : "");
 			displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
 			clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
+			flapping = (items[18] ? (*items[18] == '1') : 0);
 
 			sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 			sethostenv_refresh(60);
@@ -550,8 +551,7 @@ int do_request(void)
 					errprintf("Cannot find hostdata files for host %s\n", hostname);
 				}
 				else {
-					if (clienturi) xfree(clienturi);
-					clienturi = (char *)malloc(strlen(cgiurl) + 40 + strlen(hostname) + strlen(clientid));
+					clienturi = (char *)malloc(strlen(cgiurl) + 20 + strlen(hostname));
 					sprintf(clienturi, "%s/bb-hostsvc.sh?CLIENT=%s&amp;TIMEBUF=%s", 
 						cgiurl, hostname, clientid);
 				}
@@ -564,7 +564,6 @@ int do_request(void)
 				clientavail = (stat(logfn, &st) == 0);
 
 				if (clientavail) {
-					clienturi = (char *)realloc(clienturi, strlen(clienturi) + 20 + strlen(clientid));
 					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
 				}
 			}
@@ -575,7 +574,7 @@ int do_request(void)
 			  displayname,
 			  service, 
 			  ip,
-		          color,
+		          color, flapping,
 			  (sender ? sender : "Hobbit"), 
 			  (flags ? flags : ""),
 		          logtime, timesincechange, 

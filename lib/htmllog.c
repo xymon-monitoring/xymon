@@ -136,9 +136,9 @@ static void textwithcolorimg(char *msg, FILE *output)
 
 
 void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
-		       int color, char *sender, char *flags, 
+		       int color, int flapping, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
-		       char *firstline, char *restofmsg, 
+		       char *firstline, char *restofmsg,
 		       time_t acktime, char *ackmsg, char *acklist,
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int locatorbased,
@@ -268,12 +268,15 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output, "<br><br><a name=\"begindata\">&nbsp;</a>\n");
 
+	if (flapping) fprintf(output, "<CENTER><B>WARNING: Flapping status</B></CENTER>\n");
+
 	if (histlocation == HIST_TOP) {
 		historybutton(cgibinurl, hostname, service, ip, displayname,
 			      (is_history ? "Full History" : "HISTORY"), output);
 	}
 
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY=\"Detail Status\">\n");
+
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 
 	if (disabletime != 0) {
