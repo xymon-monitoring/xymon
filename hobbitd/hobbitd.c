@@ -291,6 +291,7 @@ typedef struct boardfields_t {
 #define BOARDFIELDS_MAX 50
 boardfield_t boardfields[BOARDFIELDS_MAX+1];
 
+/* Statistics counters */
 unsigned long msgs_total = 0;
 unsigned long msgs_total_last = 0;
 time_t last_stats_time = 0;
@@ -328,15 +329,14 @@ void update_statistics(char *cmd)
 
 char *generate_stats(void)
 {
-	static char *statsbuf = NULL;
-	static int statsbuflen = 0;
+	static strbuffer_t *statsbuf = NULL;
 	time_t now = getcurrenttime(NULL);
-	char *bufp;
 	int i, clients;
 	char bootuptxt[40];
 	char uptimetxt[40];
 	RbtHandle ghandle;
 	time_t uptime = (now - boottime);
+	char msgline[2048];
 
 	dbgprintf("-> generate_stats\n");
 
@@ -344,76 +344,79 @@ char *generate_stats(void)
 	MEMDEFINE(uptimetxt);
 
 	if (statsbuf == NULL) {
-		statsbuflen = 8192;
-		statsbuf = (char *)malloc(statsbuflen);
+		statsbuf = newstrbuffer(8192);
 	}
-	bufp = statsbuf;
+	else {
+		clearstrbuffer(statsbuf);
+	}
 
 	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottime));
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
-	bufp += sprintf(bufp, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
-			xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
-	bufp += sprintf(bufp, "Incoming messages      : %10ld\n", msgs_total);
+	sprintf(msgline, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
+		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
+	addtobuffer(statsbuf, msgline);
+	sprintf(msgline, "Incoming messages      : %10ld\n", msgs_total);
+	addtobuffer(statsbuf, msgline);
 	i = 0;
 	while (hobbitd_stats[i].cmd) {
-		bufp += sprintf(bufp, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
+		sprintf(msgline, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
+		addtobuffer(statsbuf, msgline);
 		i++;
 	}
-	bufp += sprintf(bufp, "- %-20s : %10ld\n", "Bogus/Timeouts ", hobbitd_stats[i].count);
+	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Timeouts ", hobbitd_stats[i].count);
+	addtobuffer(statsbuf, msgline);
 
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
-		bufp += sprintf(bufp, "Incoming messages/sec  : %10ld (average last %d seconds)\n", 
+		sprintf(msgline, "Incoming messages/sec  : %10ld (average last %d seconds)\n", 
 			((msgs_total - msgs_total_last) / (now - last_stats_time)), 
 			(int)(now - last_stats_time));
+		addtobuffer(statsbuf, msgline);
 	}
 	msgs_total_last = msgs_total;
 
-	bufp += sprintf(bufp, "\n");
+	addtobuffer(statsbuf, "\n");
 	clients = semctl(statuschn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "status channel messages: %10ld (%d readers)\n", statuschn->msgcount, clients);
+	sprintf(msgline, "status channel messages: %10ld (%d readers)\n", statuschn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(stachgchn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "stachg channel messages: %10ld (%d readers)\n", stachgchn->msgcount, clients);
+	sprintf(msgline, "stachg channel messages: %10ld (%d readers)\n", stachgchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(pagechn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "page   channel messages: %10ld (%d readers)\n", pagechn->msgcount, clients);
+	sprintf(msgline, "page   channel messages: %10ld (%d readers)\n", pagechn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(datachn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "data   channel messages: %10ld (%d readers)\n", datachn->msgcount, clients);
+	sprintf(msgline, "data   channel messages: %10ld (%d readers)\n", datachn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(noteschn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "notes  channel messages: %10ld (%d readers)\n", noteschn->msgcount, clients);
+	sprintf(msgline, "notes  channel messages: %10ld (%d readers)\n", noteschn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(enadischn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "enadis channel messages: %10ld (%d readers)\n", enadischn->msgcount, clients);
+	sprintf(msgline, "enadis channel messages: %10ld (%d readers)\n", enadischn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(clientchn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "client channel messages: %10ld (%d readers)\n", clientchn->msgcount, clients);
+	sprintf(msgline, "client channel messages: %10ld (%d readers)\n", clientchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 	clients = semctl(clichgchn->semid, CLIENTCOUNT, GETVAL);
-	bufp += sprintf(bufp, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
+	sprintf(msgline, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
+	addtobuffer(statsbuf, msgline);
 
 	ghandle = rbtBegin(rbghosts);
-	if (ghandle != rbtEnd(rbghosts)) bufp += sprintf(bufp, "\n\nGhost reports:\n");
+	if (ghandle != rbtEnd(rbghosts)) addtobuffer(statsbuf, "\n\nGhost reports:\n");
 	for (; (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
 		ghostlist_t *gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 
 		/* Skip records older than 10 minutes */
 		if (gwalk->tstamp < (now - 600)) continue;
-
-		if ((statsbuflen - (bufp - statsbuf)) < 512) {
-			/* Less than 512 bytes left in buffer - expand it */
-			statsbuflen += 4096;
-			statsbuf = (char *)realloc(statsbuf, statsbuflen);
-			bufp = statsbuf + strlen(statsbuf);
-		}
-
-		bufp += sprintf(bufp, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
+		sprintf(msgline, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
+		addtobuffer(statsbuf, msgline);
 	}
 
 	if (errbuf) {
-		if ((strlen(statsbuf) + strlen(errbuf) + 1024) > statsbuflen) {
-			statsbuflen = strlen(statsbuf) + strlen(errbuf) + 1024;
-			statsbuf = (char *)realloc(statsbuf, statsbuflen);
-			bufp = statsbuf + strlen(statsbuf);
-		}
-
-		bufp += sprintf(bufp, "\n\nLatest error messages:\n%s\n", errbuf);
+		addtobuffer(statsbuf, "\n\nLatest errormessages:\n");
+		addtobuffer(statsbuf, errbuf);
+		addtobuffer(statsbuf, "\n");
 	}
 
 	MEMUNDEFINE(bootuptxt);
@@ -421,8 +424,9 @@ char *generate_stats(void)
 
 	dbgprintf("<- generate_stats\n");
 
-	return statsbuf;
+	return STRBUF(statsbuf);
 }
+
 
 char *totalclientmsg(clientmsg_list_t *msglist)
 {
@@ -885,7 +889,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		hostname = hosttest;
 		testname = strrchr(hosttest, '.');
 		if (testname) { *testname = '\0'; testname++; }
-		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+		uncommafy(hostname);	/* For BB agent compatibility */
 
 		knownname = knownhost(hostname, hostip, ghosthandling);
 		if (knownname == NULL) {
@@ -1123,7 +1127,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 
 		if ((oldalertstatus != A_OK) && (newalertstatus == A_OK)) {
 			/* The status recovered. Set the "clearack" timer */
-			time_t cleartime = getcurrenttime(NULL) + ACKCLEARDELAY;
+			time_t cleartime = now + ACKCLEARDELAY;
 			for (awalk = log->acklist; (awalk); awalk = awalk->next) awalk->cleartime = cleartime;
 		}
 		else if ((oldalertstatus == A_OK) && (newalertstatus != A_OK)) {
@@ -1433,7 +1437,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 		*p = '\0';
 		tname = (p+1);
 	}
-	p = hosttest; while ((p = strchr(p, ',')) != NULL) *p = '.';
+	uncommafy(hosttest);
 	hname = knownhost(hosttest, hostip, ghosthandling);
 	if (hname == NULL) goto done;
 
@@ -1639,7 +1643,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 
 	/* Tell the pagers */
 	sprintf(channelmsg, "%s|%s|%s\n%s", 
-		hostname, (testname ? testname : ""), (hi ? bbh_item(hi, BBH_PAGEPATH) : ""), msgtext);
+		hostname, (testname ? testname : ""), (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : ""), msgtext);
 	posttochannel(pagechn, "notify", msg, sender, hostname, NULL, channelmsg);
 
 	xfree(channelmsg);
@@ -1967,7 +1971,7 @@ done:
 }
 
 
-unsigned char *get_filecache(char *fn)
+unsigned char *get_filecache(char *fn, long *len)
 {
 	RbtIterator handle;
 	filecache_t *item;
@@ -1981,6 +1985,7 @@ unsigned char *get_filecache(char *fn)
 
 	result = (unsigned char *)malloc(item->len);
 	memcpy(result, item->fdata, item->len);
+	*len = item->len;
 
 	return result;
 }
@@ -2057,11 +2062,12 @@ int get_binary(char *fn, conn_t *msg)
 	int fd;
 	struct stat st;
 	unsigned char *result;
+	long flen;
 
 	dbgprintf("-> get_binary %s\n", fn);
 	sprintf(fullfn, "%s/download/%s", xgetenv("BBHOME"), fn);
 
-	result = get_filecache(fullfn);
+	result = get_filecache(fullfn, &flen);
 	if (!result) {
 		fd = open(fullfn, O_RDONLY);
 		if (fd == -1) {
@@ -2080,12 +2086,18 @@ int get_binary(char *fn, conn_t *msg)
 				close(fd);
 				return -1;
 			}
-		}
 
-		add_filecache(fullfn, result, st.st_size);
+			flen = st.st_size;
+			add_filecache(fullfn, result, flen);
+		}
+		else {
+			errprintf("Impossible - cannot fstat() an open file ..\n");
+			close(fd);
+			return -1;
+		}
 	}
 
-	msg->buflen = st.st_size;
+	msg->buflen = flen;
 	msg->buf = result;
 	msg->bufp = msg->buf + msg->buflen;
 
@@ -2172,7 +2184,7 @@ void setup_filter(char *buf, char *defaultfields,
 			hname = tok;
 			tname = strrchr(tok, '.');
 			if (tname) { *tname = '\0'; tname++; }
-			s = hname; while ((s = strchr(s, ',')) != NULL) *s = '.';
+			uncommafy(hname);
 			hname = knownhost(hname, hostip, ghosthandling);
 
 			if (hname && tname) {
@@ -2612,11 +2624,9 @@ void do_message(conn_t *msg, char *origin)
 
 		btest = strrchr(bhost, '.');
 		if (btest) {
-			char *p;
-
 			*btest = '\0';
 			hostname = strdup(bhost);
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			uncommafy(hostname);	/* For BB compatibility */
 			*btest = '.';
 			testname = strdup(btest+1);
 
@@ -2660,54 +2670,56 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if ((strncmp(msg->buf, "notes", 5) == 0) || (strncmp(msg->buf, "usermsg", 7) == 0)) {
-		char *hostname, *bhost, *ehost, *p;
-		char savechar;
+		char *id = NULL;
 
-		bhost = msg->buf + strcspn(msg->buf, " \t\r\n"); bhost += strspn(bhost, " \t");
-		ehost = bhost + strcspn(bhost, " \t\r\n");
-		savechar = *ehost; *ehost = '\0';
-		hostname = strdup(bhost);
-		*ehost = savechar;
+		{
+			/* Get the message ID */
+			char *bid, *eid;
+			char savechar;
 
-		p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
-		if (*hostname == '\0') { errprintf("Invalid notes/user message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
+			bid = msg->buf + strcspn(msg->buf, " \t\r\n"); bid += strspn(bid, " \t");
+			eid = bid + strcspn(bid, " \t\r\n");
+			savechar = *eid; *eid = '\0';
+			id = strdup(bid);
+			*eid = savechar;
 
-		if (hostname) {
-			char *hname, hostip[IP_ADDR_STRLEN];
-
-			MEMDEFINE(hostip);
-
-			hname = knownhost(hostname, hostip, ghosthandling);
-			if (hname == NULL) {
-				log_ghost(hostname, sender, msg->buf);
-			}
-			else {
-				if (*msg->buf == 'n') {
-					/* "notes" message */
-					if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
-						/* Invalid sender */
-						errprintf("Invalid notes message - sender %s not allowed for host %s\n", sender, hostname);
-					}
-					else {
-						handle_notes(msg->buf, sender, hostname);
-					}
-				}
-				else if (*msg->buf == 'u') {
-					/* "usermsg" message */
-					if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) {
-						/* Invalid sender */
-						errprintf("Invalid user message - sender %s not allowed for host %s\n", sender, hostname);
-					}
-					else {
-						handle_usermsg(msg->buf, sender, hostname);
-					}
-				}
-			}
-
-			xfree(hostname);
-
-			MEMUNDEFINE(hostip);
+			uncommafy(id);	/* For BB compatibility */
 		}
+
+		/* 
+		 * We dont validate the ID, because "notes" may also send messages
+		 * for documenting pages or column-names. And the "usermsg" stuff can be
+		 * anything in the "ID" field. So we just insist that there IS an ID.
+		 */
+		if (*id) {
+			if (*msg->buf == 'n') {
+				/* "notes" message */
+				if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+					/* Invalid sender */
+					errprintf("Invalid notes message - sender %s not allowed for host %s\n", 
+						  sender, id);
+				}
+				else {
+					handle_notes(msg->buf, sender, id);
+				}
+			}
+			else if (*msg->buf == 'u') {
+				/* "usermsg" message */
+				if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) {
+					/* Invalid sender */
+					errprintf("Invalid user message - sender %s not allowed for host %s\n", 
+						  sender, id);
+				}
+				else {
+					handle_usermsg(msg->buf, sender, id);
+				}
+			}
+		}
+		else {
+			errprintf("Invalid notes/user message from %s - blank ID\n", sender); 
+		}
+
+		xfree(id);
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
 		handle_enadis(1, msg, sender);
@@ -3033,18 +3045,27 @@ void do_message(conn_t *msg, char *origin)
 		bufp += sprintf(bufp, "<StatusBoard>\n");
 
 		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
-			void *hinfo;
-
 			hwalk = gettreeitem(rbhosts, hosthandle);
 			if (!hwalk) {
 				errprintf("host-tree has a record with no data\n");
 				continue;
 			}
 
-			hinfo = hostinfo(hwalk->hostname);
+			/* If there is a hostname filter, drop the "summary" 'hosts' */
+			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
 
-			/* Host/pagename filter */
-			if (!match_host_filter(hinfo, spage, shost, snet)) continue;
+			if (hwalk->hosttype == H_NORMAL) {
+				void *hinfo;
+				hinfo = hostinfo(hwalk->hostname);
+
+				if (!hinfo) {
+					errprintf("Hostname '%s' in tree, but no host-info\n", hwalk->hostname);
+					continue;
+				}
+
+				/* Host/pagename filter */
+				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
+			}
 
 			for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 				char *eoln;
@@ -3374,7 +3395,8 @@ void do_message(conn_t *msg, char *origin)
 		if (hostname) {
 			clientos = strrchr(hostname, '.'); 
 			if (clientos) { *clientos = '\0'; clientos++; }
-			p = hostname; while ((p = strchr(p, ',')) != NULL) *p = '.';
+			uncommafy(hostname);
+
 			/* Only the default client (which has no collector-ID) can set the client class */
 			if (!collectorid) clientclass = strtok(NULL, " \t");
 		}
@@ -3905,12 +3927,13 @@ void check_purple_status(void)
 				}
 				else {
 					int newcolor = COL_PURPLE;
+					void *hinfo = hostinfo(hwalk->hostname);
 
 					/*
 					 * See if this is a host where the "conn" test shows it is down.
 					 * If yes, then go CLEAR, instead of PURPLE.
 					 */
-					if (hwalk->pinglog) {
+					if (hwalk->pinglog && hinfo && (bbh_item(hinfo, BBH_FLAG_NOCLEAR) == NULL)) {
 						switch (hwalk->pinglog->color) {
 						  case COL_RED:
 						  case COL_YELLOW:
@@ -3926,9 +3949,8 @@ void check_purple_status(void)
 					}
 
 					/* Tests on dialup hosts go clear, not purple */
-					if (newcolor == COL_PURPLE) {
-						void *hinfo = hostinfo(hwalk->hostname);
-						if (hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) newcolor = COL_CLEAR;
+					if ((newcolor == COL_PURPLE) && hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) {
+						newcolor = COL_CLEAR;
 					}
 
 					handle_status(lwalk->message, "hobbitd", 
