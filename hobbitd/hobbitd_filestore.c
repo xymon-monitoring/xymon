@@ -25,6 +25,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <signal.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include "libbbgen.h"
 
@@ -355,7 +356,7 @@ int main(int argc, char *argv[])
 			/* @@notes|timestamp|sender|hostname */
 			hostname = metadata[3];
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
-			sprintf(logfn, "%s/%s", filedir, hostname);
+			sprintf(logfn, "%s/%s", basename(filedir), hostname);
 			expiretime = 0;
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}
@@ -454,6 +455,9 @@ int main(int argc, char *argv[])
 				freopen(fn, "a", stderr);
 			}
 			continue;
+		}
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			/* Ignored */
 		}
 		else {
 			errprintf("Dropping message type %s, metacount=%d\n", metadata[0], metacount);
