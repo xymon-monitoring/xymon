@@ -370,6 +370,18 @@ string.
 To cancel an previously scheduled command, \fB"schedule cancel JOBID"\fR can be
 used. JOBID is a number provided as the first item in the output from the schedule list.
 
+.IP "notes FILENAME"
+The message text will be stored in $BBHOME/notes/FILENAME which is then used as
+hyperlinks from hostnames or column names. This requires that the "bbnotes" 
+task is enabled in hobbitlaunch.cfg (it is disabled by default). FILENAME 
+cannot contain any directory path - these are stripped automatically.
+
+.IP "usermsg ID"
+These messages will be relayed directly to modules listening on the "user"
+channel of the Xymon daemon. This is intended for custom communication
+between client-side modules and the Xymon server.
+
+
 .SH EXAMPLE
 
 Send a normal status message to the BBDISPLAY server, using the
