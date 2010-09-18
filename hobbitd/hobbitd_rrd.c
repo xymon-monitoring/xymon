@@ -306,6 +306,7 @@ int main(int argc, char *argv[])
 		if (reloadtime < now) {
 			/* Reload configuration files */
 			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_client_config(NULL);
 			reloadtime = now + 600;
 		}
 

@@ -402,6 +402,37 @@ number of active SSH connections, and warn if there are more than 5.
 .br
         PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
 .sp
+.SH DS - RRD based status override
+.sp
+.BR "DS column filename:dataset rules COLOR=colorname TEXT=explanation"
+.sp
+"column" is the statuscolumn that will be modified. "filename" is
+the name of the RRD file holding the data you use for comparison.
+"dataset" is the name of the dataset in the RRD file - the "rrdtool info"
+command is useful when determining these.
+"rules" determine when to apply the override. You can use
+">", ">=", "<" or "<=" to compare the current measurement
+value against one or more thresholds. "explanation" is a text
+that will be shown to explain the override - you can use some
+placeholders in the text: "&N" is replaced with the name of the
+dataset, "&V" is replaced with the current value, "&L" is replaced
+by the low threshold, "&U" is replaced with the upper threshold.
+.sp
+NOTE: This rule uses the \fbraw\fR data value from a client
+to examine the rules. So this type of test is only really
+suitable for datasets that are of the "GAUGE" type. It cannot
+be used meaningfully for datasets that use "COUNTER" or
+"DERIVE" - e.g. the datasets that are used to capture network
+packet traffic - because the data stored in the RRD for
+COUNTER-based datasets undergo a transformation (calculation)
+when going into the RRD. Xymon does not have direct access to
+the calculated data.
+.sp
+Example: Flag "conn" status a yellow if responsetime exceeds
+100 msec.
+.br
+	DS tcp.conn.rrd:sec >0.1 COLOR=yellow TEXT="Response time &V exceeds &U seconds"
+.sp
 .SH MQ Series SETTINGS
 .sp
 .BR "MQ_QUEUE queuename [age-warning=N] [age-critical=N] [depth-warning=N] [depth-critical=N]"

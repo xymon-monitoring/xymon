@@ -174,7 +174,7 @@ int do_request(void)
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
 	char *log = NULL, *firstline = NULL, *sender = NULL, *clientid = NULL, *flags = NULL;	/* These are free'd */
-	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL;	/* These are just used */
+	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL, *modifiers = NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
 	char *ip, *displayname, *compacts;
@@ -302,7 +302,7 @@ int do_request(void)
 		}
 
 		if (!complist) {
-			sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo", hostname, service);
+			sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
 		}
 		else {
 			sprintf(hobbitdreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
@@ -358,6 +358,7 @@ int do_request(void)
 			 * BBH_DISPLAYNAME	[16]
 			 * clienttstamp         [17]
 			 * flapping		[18]
+			 * modifiers		[19]
 			 */
 			color = parse_color(items[2]);
 			flags = strdup(items[3]);
@@ -384,6 +385,7 @@ int do_request(void)
 			displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
 			clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
 			flapping = (items[18] ? (*items[18] == '1') : 0);
+			modifiers = (items[19] && *(items[19])) ? items[19] : NULL;
 
 			sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 			sethostenv_refresh(60);
@@ -580,6 +582,7 @@ int do_request(void)
 		          logtime, timesincechange, 
 		          (firstline ? firstline : ""), 
 			  (restofmsg ? restofmsg : ""), 
+			  modifiers,
 			  acktime, ackmsg, acklist,
 			  disabletime, dismsg,
 		          (source == SRC_HISTLOGS), 

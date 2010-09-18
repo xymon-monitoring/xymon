@@ -381,6 +381,25 @@ These messages will be relayed directly to modules listening on the "user"
 channel of the Xymon daemon. This is intended for custom communication
 between client-side modules and the Xymon server.
 
+.IP "modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE"
+Modify the color of a specific status, without generating a complete
+status message. This is for backend processors (e.g. RRD graphs)
+that can override the color of a status based on some criteria
+determined outside the normal flow of a status. E.g. the normal
+"conn" status may appear to be green since it merely checks on
+whether a host can be ping'ed or not; the RRD handler can then
+use a "modify" command to override this is the actual ping
+responsetime exceeds a given threshold. (See the "DS" configuration
+setting in 
+.I hobbit-clients.cfg(5)
+for how to do this). SOURCE is some identification of the module
+that generates the "modify" message - future modifications must
+use the same source. There may be several sources that modify
+the same status (the most severe status then becomes the actual
+color of the status). CAUSE is a one-line text string explaining
+the reason for overriding the normal status color - it will be
+displayed on the status webpage.
+
 
 .SH EXAMPLE
 

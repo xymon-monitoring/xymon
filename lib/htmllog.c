@@ -138,7 +138,7 @@ static void textwithcolorimg(char *msg, FILE *output)
 void generate_html_log(char *hostname, char *displayname, char *service, char *ip, 
 		       int color, int flapping, char *sender, char *flags, 
 		       time_t logtime, char *timesincechange, 
-		       char *firstline, char *restofmsg,
+		       char *firstline, char *restofmsg, char *modifiers,
 		       time_t acktime, char *ackmsg, char *acklist,
 		       time_t disabletime, char *dismsg,
 		       int is_history, int wantserviceid, int htmlfmt, int locatorbased,
@@ -300,6 +300,20 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		if (dismsg) {
 			fprintf(output, "<TR><TD><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
 			fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
+		}
+
+		if (modifiers) {
+			nldecode(modifiers);
+			fprintf(output, "<TR><TD>");
+			txt = strtok(modifiers, "\n");
+			while (txt) {
+				fprintf(output, "<H3>");
+				textwithcolorimg(txt, output);
+				fprintf(output, "</H3>");
+				txt = strtok(NULL, "\n");
+				if (txt) fprintf(output, "<br>");
+			}
+			fprintf(output, "\n");
 		}
 
 		fprintf(output, "<TR><TD>");

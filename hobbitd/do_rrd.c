@@ -29,6 +29,7 @@ static char rcsid[] = "$Id$";
 
 #include "hobbitd_rrd.h"
 #include "do_rrd.h"
+#include "client_config.h"
 
 #ifndef NAME_MAX
 #define NAME_MAX 255	/* Solaris doesn't define NAME_MAX, but ufs limit is 255 */
@@ -358,6 +359,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 			return 1;
 		}
 	}
+
+	/*
+	 * Match the RRD data against any DS client-configuration modifiers.
+	 */
+	modifymsg = check_rrdds_thresholds(hostname, classname, pagepaths, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
+	if (modifymsg) sendmessage(modifymsg, NULL, BBTALK_TIMEOUT, NULL);
 
 	/*
 	 * See if we want the data to go to an external handler.

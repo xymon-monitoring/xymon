@@ -54,6 +54,8 @@ extern void get_asid_thresholds(void *hinfo, char *classname,
 extern int get_paging_thresholds(void *hinfo, char *classname, 
 				 int *pagingyellow, int *pagingred);
 
+extern char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, RbtHandle valnames, char *vals);
+
 
 extern int scan_log(void *hinfo, char *classname, 
 		    char *logname, char *logdata, char *section, strbuffer_t *summarybuf);
