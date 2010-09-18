@@ -303,15 +303,17 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 
 		if (modifiers) {
+			char *modtxt;
+
 			nldecode(modifiers);
 			fprintf(output, "<TR><TD>");
-			txt = strtok(modifiers, "\n");
-			while (txt) {
+			modtxt = strtok(modifiers, "\n");
+			while (modtxt) {
 				fprintf(output, "<H3>");
-				textwithcolorimg(txt, output);
+				textwithcolorimg(modtxt, output);
 				fprintf(output, "</H3>");
-				txt = strtok(NULL, "\n");
-				if (txt) fprintf(output, "<br>");
+				modtxt = strtok(NULL, "\n");
+				if (modtxt) fprintf(output, "<br>");
 			}
 			fprintf(output, "\n");
 		}
