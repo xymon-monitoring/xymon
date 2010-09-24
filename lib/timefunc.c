@@ -453,6 +453,13 @@ int durationvalue(char *dur)
 
 	int result = 0;
 	char *startofval;
+	char *endpos;
+	char savedelim;
+
+	/* Make sure we only process the first token, dont go past whitespace or some other delimiter */
+	endpos = dur + strspn(dur, "01234567890mhdw");
+	savedelim = *endpos;
+	*endpos = '\0';
 
 	startofval = dur;
 
@@ -468,15 +475,19 @@ int durationvalue(char *dur)
 		*p = modifier;
 
 		switch (modifier) {
-		  case 'm': break;			/* minutes */
-		  case 'h': oneval *= 60; break;	/* hours */
-		  case 'd': oneval *= 1440; break;	/* days */
-		  case 'w': oneval *= 10080; break;	/* weeks */
+		  case '\0': break;			/* No delimiter = minutes */
+		  case 'm' : break;			/* minutes */
+		  case 'h' : oneval *= 60; break;	/* hours */
+		  case 'd' : oneval *= 1440; break;	/* days */
+		  case 'w' : oneval *= 10080; break;	/* weeks */
 		}
 
 		result += oneval;
 		startofval = ((*p) ? p+1 : NULL);
 	}
+
+	/* Restore the saved delimiter */
+	*endpos = savedelim;
 
 	return result;
 }
