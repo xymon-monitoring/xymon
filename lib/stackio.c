@@ -417,12 +417,14 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 	result = unlimfgets(buffer, fdhead->fd);
 
 	if (result) {
-		if ( (strncmp(STRBUF(buffer), "include ", 8) == 0) ||
-		     (extraincl && (strncmp(STRBUF(buffer), extraincl, strlen(extraincl)) == 0)) ) {
-			char *newfn, *eol;
+		char *bufpastwhitespace = STRBUF(buffer) + strspn(STRBUF(buffer), " \t");
 
-			eol = strchr(STRBUF(buffer), '\n'); if (eol) *eol = '\0';
-			newfn = STRBUF(buffer) + strcspn(STRBUF(buffer), " \t");
+		if ( (strncmp(bufpastwhitespace, "include ", 8) == 0) ||
+		     (extraincl && (strncmp(bufpastwhitespace, extraincl, strlen(extraincl)) == 0)) ) {
+			char *newfn, *eol, eolchar;
+
+			eol = strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
+			newfn = bufpastwhitespace + strcspn(bufpastwhitespace, " \t");
 			newfn += strspn(newfn, " \t");
 		
 			if (*newfn && (stackfopen(newfn, "r", (void **)fdhead->listhead) != NULL))
@@ -430,15 +432,15 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 			else {
 				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", 
 					  newfn, STRBUF(buffer));
-				if (eol) *eol = '\n';
+				if (eol) *eol = eolchar;
 				return result;
 			}
 		}
-		else if (strncmp(STRBUF(buffer), "directory ", 10) == 0) {
-			char *dirfn, *eol;
+		else if (strncmp(bufpastwhitespace, "directory ", 10) == 0) {
+			char *dirfn, *eol, eolchar;
 
-			eol = strchr(STRBUF(buffer), '\n'); if (eol) *eol = '\0';
-			dirfn = STRBUF(buffer) + 9;
+			eol = strcspn(bufpastwhitespace, "\r\n"); if (eol) { eolchar = *eol; *eol = '\0'; }
+			dirfn = bufpastwhitespace + 9;
 			dirfn += strspn(dirfn, " \t");
 
 			if (*dirfn) addtofnlist(dirfn, (void **)fdhead->listhead);
@@ -455,7 +457,7 @@ char *stackfgets(strbuffer_t *buffer, char *extraincl)
 				errprintf("WARNING: Cannot open include file '%s', line was:%s\n", fnlist->name, buffer);
 				fnlist = fnlist->next;
 				xfree(tmp->name); xfree(tmp);
-				if (eol) *eol = '\n';
+				if (eol) *eol = eolchar;
 				return result;
 			}
 			else {
