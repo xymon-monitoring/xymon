@@ -346,7 +346,7 @@ void grabdata(conn_t *conn)
 	char buf[8192];
 
 	/* Read data from a peer connection (client or server) */
-        n = read(conn->sockfd, buf, sizeof(buf));
+        n = read(conn->sockfd, buf, sizeof(buf)-1);
 	if (n == -1) {
 		/* Read failure */
 		time_t now = gettimer();
