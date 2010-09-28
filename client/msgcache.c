@@ -97,7 +97,7 @@ void grabdata(conn_t *conn)
 	int pollid = 0;
 
 	/* Get data from the connection socket - we know there is some */
-	n = read(conn->sockfd, buf, sizeof(buf));
+	n = read(conn->sockfd, buf, sizeof(buf)-1);
 	if (n <= -1) {
 		/* Read failure */
 		errprintf("Connection lost during read: %s\n", strerror(errno));
