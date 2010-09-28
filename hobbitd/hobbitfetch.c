@@ -98,11 +98,13 @@ void sigmisc_handler(int signum)
 	}
 }
 
-char *addrstring(struct sockaddr_in *addr)
+char *addrstring(struct sockaddr_in *addr, int includeport)
 {
+	int n;
 	static char res[100];
 
-	sprintf(res, "%s:%d", inet_ntoa(addr->sin_addr), ntohs(addr->sin_port));
+	n = sprintf(res, "%s", inet_ntoa(addr->sin_addr));
+	if (includeport) sprintf(res+n, ":%d", ntohs(addr->sin_port));
 	return res;
 }
 
@@ -164,7 +166,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 
 		snprintf(dbgmsg, sizeof(dbgmsg), "%s\n", STRBUF(req));
 		dbgprintf("Queuing request %lu to %s for %s: '%s'\n", 
-			connseq, addrstring(&newconn->caddr), client->hostname, dbgmsg);
+			connseq, addrstring(&newconn->caddr, 1), client->hostname, dbgmsg);
 	}
 
 	/* All set ... start the connection */
@@ -174,7 +176,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 		time_t now = gettimer();
 		if (debug || (newconn->client->nexterrortxt < now)) {
 			errprintf("Could not connect to %s (req %lu): %s\n", 
-				  addrstring(&newconn->caddr), newconn->seq, strerror(errno));
+				  addrstring(&newconn->caddr, 1), newconn->seq, strerror(errno));
 			newconn->client->nexterrortxt = now + errorloginterval;
 		}
 
@@ -209,13 +211,13 @@ void senddata(conn_t *conn)
 		time_t now = gettimer();
 		if (debug || (conn->client->nexterrortxt < now)) {
 			errprintf("Connection lost during connect/write to %s (req %lu): %s\n", 
-				  addrstring(&conn->caddr), conn->seq, strerror(errno));
+				  addrstring(&conn->caddr, 1), conn->seq, strerror(errno));
 			conn->client->nexterrortxt = now + errorloginterval;
 		}
 		flag_cleanup(conn);
 	}
 	else if (n >= 0) {
-		dbgprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr), conn->seq);
+		dbgprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr, 1), conn->seq);
 		conn->sentbytes += n;
 		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) {
 			/* Everything has been sent, so switch to READ mode */
@@ -264,7 +266,7 @@ void process_clientdata(conn_t *conn)
 			if ((msgbytes <= 0) || ((msgbegin + msgbytes) - STRBUF(conn->msgbuf)) > STRBUFLEN(conn->msgbuf)) {
 				/* Someone is playing games with us */
 				errprintf("Invalid message data from %s (req %lu): Current offset %d, msgbytes %d, msglen %d\n",
-					  addrstring(&conn->caddr), conn->seq,
+					  addrstring(&conn->caddr, 1), conn->seq,
 					  (msgbegin - STRBUF(conn->msgbuf)), msgbytes, STRBUFLEN(conn->msgbuf));
 				return;
 			}
@@ -283,13 +285,13 @@ void process_clientdata(conn_t *conn)
 
 				conn->client->suggestpoll = gettimer() - (msgago % 300) + 300 + 10;
 				dbgprintf("Client %s (req %lu) received a client message %d secs ago, poll again at %lu\n",
-					addrstring(&conn->caddr), conn->seq, msgago,
+					addrstring(&conn->caddr, 1), conn->seq, msgago,
 					conn->client->suggestpoll);
 
 				/* Add a section to the client message with cache delay info */
 				snprintf(msgcachesection, sizeof(msgcachesection),
 					 "[msgcache]\nCachedelay: %d\n[proxy]\nClientIP:%s", 
-					 msgago, addrstring(&conn->caddr));
+					 msgago, addrstring(&conn->caddr, 0));
 				addtobuffer(req, msgcachesection);
 			}
 			else if ( (strncmp(msgbegin, "status", 6) == 0) ||
@@ -298,7 +300,7 @@ void process_clientdata(conn_t *conn)
 
 				/* Add a line to the message showing where it came from */
 				sprintf(sourcemsg, "\nStatus message received from %s\n", 
-					addrstring(&conn->caddr));
+					addrstring(&conn->caddr, 0));
 				addtobuffer(req, sourcemsg);
 			}
 
@@ -311,7 +313,7 @@ void process_clientdata(conn_t *conn)
 		}
 		else {
 			errprintf("Garbled pullclient response from %s (req %lu), token %s\n",
-				  addrstring(&conn->caddr), conn->seq, mptr);
+				  addrstring(&conn->caddr, 1), conn->seq, mptr);
 			mptr = NULL;
 		}
 	}
@@ -352,7 +354,7 @@ void grabdata(conn_t *conn)
 		time_t now = gettimer();
 		if (debug || (conn->client->nexterrortxt < now)) {
 			errprintf("Connection lost during read from %s (req %lu): %s\n", 
-				  addrstring(&conn->caddr), conn->seq, strerror(errno));
+				  addrstring(&conn->caddr, 1), conn->seq, strerror(errno));
 			conn->client->nexterrortxt = now + errorloginterval;
 		}
 		flag_cleanup(conn);
@@ -360,14 +362,14 @@ void grabdata(conn_t *conn)
 	else if (n > 0) {
 		/* Save the data */
 		dbgprintf("Got %d bytes of data from %s (req %lu)\n", 
-			n, addrstring(&conn->caddr), conn->seq);
+			n, addrstring(&conn->caddr, 1), conn->seq);
 		buf[n] = '\0';
 		addtobuffer(conn->msgbuf, buf);
 	}
 	else if (n == 0) {
 		/* Done reading. Process the data. */
 		dbgprintf("Done reading data from %s (req %lu)\n", 
-			addrstring(&conn->caddr), conn->seq);
+			addrstring(&conn->caddr, 1), conn->seq);
 		shutdown(conn->sockfd, SHUT_RDWR);
 		flag_cleanup(conn);
 
@@ -504,7 +506,7 @@ int main(int argc, char *argv[])
 				if ((connwalk->tstamp + 60) < now) {
 					if (debug || (connwalk->client->nexterrortxt < now)) {
 						errprintf("Timeout while talking to %s (req %lu): Aborting session\n",
-							  addrstring(&connwalk->caddr), connwalk->seq);
+							  addrstring(&connwalk->caddr, 1), connwalk->seq);
 						connwalk->client->nexterrortxt = now + errorloginterval;
 					}
 					flag_cleanup(connwalk);
@@ -556,7 +558,7 @@ int main(int argc, char *argv[])
 
 				/* Purge the zombie */
 				dbgprintf("Request completed: req %lu, peer %s, action was %d, type was %d\n", 
-					zombie->seq, addrstring(&zombie->caddr), 
+					zombie->seq, addrstring(&zombie->caddr, 1), 
 					zombie->action, zombie->ctype);
 				close(zombie->sockfd);
 				freestrbuffer(zombie->msgbuf);
@@ -590,7 +592,7 @@ int main(int argc, char *argv[])
 					 localtime(&connwalk->tstamp));
 
 				errprintf("Request %lu: state %s/%s, peer %s, started %s (%lu secs ago)\n",
-					  connwalk->seq, ctypestr, actionstr, addrstring(&connwalk->caddr),
+					  connwalk->seq, ctypestr, actionstr, addrstring(&connwalk->caddr, 1),
 					  timestr, (now - connwalk->tstamp));
 			}
 		}
