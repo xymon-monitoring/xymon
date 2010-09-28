@@ -82,7 +82,7 @@ void do_rss_header(FILE *fd)
 		fprintf(fd, "  <image>\n");
 		fprintf(fd, "    <url>%s/gifs/bblogo.gif</url>\n", xgetenv("BBWEBHOSTURL"));
 		fprintf(fd, "    <title>Hobbit</title>\n");
-		fprintf(fd, "    <link>http://hobbitmon.sourceforge.net/</link>\n");
+		fprintf(fd, "    <link>http://xymon.sourceforge.net/</link>\n");
 		fprintf(fd, "  </image>\n");
 		break;
 	  case RSS10:

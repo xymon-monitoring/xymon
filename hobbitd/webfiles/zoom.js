@@ -3,7 +3,7 @@
 /*
  This code was taken from the "Cacti" project by Henrik Storner, and
  modified slightly for use with the "Hobbit" monitor project
- (see hobbitmon.sourceforge.net)
+ (see xymon.sourceforge.net)
 
  The original copyright notice follows.
 
