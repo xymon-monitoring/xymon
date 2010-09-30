@@ -1268,8 +1268,15 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * the wrong hostname.
 		 */
 		if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
+			/*
+			 * There are a few exceptions:
+			 * - if sender is "hobbitd", then this is an internal update, e.g. a status going purple.
+			 * - if the host has "pulldata" enabled, then the sender shows up as the host doing the
+			 *   data collection, so it does not make sense to check it (thanks to Cade Robinson).
+			 */
 			if ( (strcmp(log->sender, "hobbitd") != 0) && (strcmp(sender, "hobbitd") != 0) )  {
-				log_multisrc(log, sender);
+				void *hinfo = hostinfo(hostname);
+				if (bbh_item(hinfo, BBH_FLAG_PULLDATA) == NULL) log_multisrc(log, sender);
 			}
 		}
 		strncpy(log->sender, sender, sizeof(log->sender)-1);
