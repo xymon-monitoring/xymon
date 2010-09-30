@@ -35,6 +35,13 @@ Defines the directory where the RRD-files are stored. hobbitd_rrd
 will use the location pointed to by the BBRRDS environment if this
 option is not present.
 
+.IP "--no-cache"
+hobbitd_rrd by default caches updates to the RRD files, to reduce
+the disk I/O needed for storing the RRD data. Data is collected for
+a 30 minute period before being committed to disk in one update.
+This option disables caching of the data, so that data is stored
+on disk immediately.
+
 .IP "--extra-script=FILENAME"
 Defines the script that is run to get the RRD data for tests that are not
 built into hobbitd_rrd. You must also specify which tests are handled
