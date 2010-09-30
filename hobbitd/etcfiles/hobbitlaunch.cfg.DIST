@@ -117,14 +117,14 @@
 # "bbproxy" is the Xymon proxy server that allows you to forward status messages
 # from a protected network to your Xymon server. It is not enabled by default,
 # since it would conflict with the hobbitd task.
-# If you need to run this, then disabled hobbitd and the hobbitd-modules
-# above, then enable this. Make sure you enter the IP-address of your 
+# If you need to run this, disable hobbitd and the hobbitd-modules
+# above and enable this. Make sure you enter the IP-address of your 
 # Xymon server in the command-line, so that the proxy knows where to forward
 # status messages.
 [bbproxy]
 	DISABLED
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
-	CMD $BBHOME/bin/bbproxy --hobbitd --bbdisplay=YOUR.HOBBIT.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
+	CMD $BBHOME/bin/bbproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
 	LOGFILE $BBSERVERLOGS/bbproxy.log
 
 
