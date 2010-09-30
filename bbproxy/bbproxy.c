@@ -224,9 +224,6 @@ int main(int argc, char *argv[])
 	struct sockaddr_in laddr;
 	struct sockaddr_in bbdispaddr[MAX_SERVERS];
 	int bbdispcount = 0;
-	struct sockaddr_in bbpageraddr[MAX_SERVERS];
-	int bbpagercount = 0;
-	int usehobbitd = 0;
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
@@ -239,7 +236,6 @@ int main(int argc, char *argv[])
 	unsigned long msgs_merged = 0;
 	unsigned long msgs_delivered = 0;
 	unsigned long msgs_status = 0;
-	unsigned long msgs_page = 0;
 	unsigned long msgs_combo = 0;
 	unsigned long msgs_other = 0;
 	unsigned long msgs_recovered = 0;
@@ -270,7 +266,7 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 		}
-		else if (argnmatch(argv[opt], "--bbdisplay=")) {
+		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--bbdisplay=")) {
 			char *ips, *ip1;
 			int port1;
 
@@ -295,35 +291,6 @@ int main(int argc, char *argv[])
 				ip1 = strtok(NULL, ",");
 			}
 			xfree(ips);
-		}
-		else if (argnmatch(argv[opt], "--bbpager=")) {
-			char *ips, *ip1;
-			int port1;
-
-			ips = strdup(strchr(argv[opt], '=')+1);
-
-			ip1 = strtok(ips, ",");
-			while (ip1) {
-				char *p; 
-				p = strchr(ip1, ':');
-				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
-
-				memset(&bbpageraddr[bbpagercount], 0, sizeof(bbpageraddr[bbpagercount]));
-				bbpageraddr[bbpagercount].sin_port = htons(port1);
-				bbpageraddr[bbpagercount].sin_family = AF_INET;
-				if (inet_aton(ip1, (struct in_addr *) &bbpageraddr[bbpagercount].sin_addr.s_addr) == 0) {
-					errprintf("Invalid remote address %s\n", ip1);
-				}
-				else {
-					bbpagercount++;
-				}
-				if (p) *p = ':';
-				ip1 = strtok(NULL, ",");
-			}
-			xfree(ips);
-		}
-		else if (strcmp(argv[opt], "--hobbitd") == 0) {
-			usehobbitd = 1;
 		}
 		else if (argnmatch(argv[opt], "--timeout=")) {
 			char *p = strchr(argv[opt], '=');
@@ -381,10 +348,8 @@ int main(int argc, char *argv[])
 			printf("bbproxy version %s\n", VERSION);
 			printf("\nOptions:\n");
 			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
-			printf("\t--bbdisplay=IP[:port]       : BBDISPLAY server address and portnumber\n");
-			printf("\t--bbpager=IP[:port]         : BBPAGER server address and portnumber\n");
-			printf("\t--hobbitd                   : Modify behaviour to use hobbitd features\n");
-			printf("\t--report=[HOST.]SERVICE     : Sends a BB status message about proxy activity\n");
+			printf("\t--server=IP[:port]          : Xymon server address and portnumber\n");
+			printf("\t--report=[HOST.]SERVICE     : Sends a status message about proxy activity\n");
 			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
 			printf("\t--lqueue=N                  : Listen-queue size\n");
 			printf("\t--daemon                    : Run as a daemon\n");
@@ -398,19 +363,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (bbdispcount == 0) {
-		errprintf("No BBDISPLAY address given - aborting\n");
+		errprintf("No Xymon server address given - aborting\n");
 		return 1;
-	}
-
-	if (bbpagercount == 0) {
-		int i;
-
-		for (i = 0; (i < bbdispcount); i++) {
-			memcpy(&bbpageraddr[i], &bbdispaddr[i], sizeof(bbpageraddr[i]));
-			bbpageraddr[i].sin_port = bbdispaddr[i].sin_port;
-			bbpageraddr[i].sin_family = bbdispaddr[i].sin_family;
-			bbpagercount++;
-		}
 	}
 
 	/* Set up a socket to listen for new connections */
@@ -448,12 +402,7 @@ int main(int argc, char *argv[])
 		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbdispcount); i++) {
 			p += sprintf(p, "%s:%d ", inet_ntoa(bbdispaddr[i].sin_addr), ntohs(bbdispaddr[i].sin_port));
 		}
-		errprintf("Sending to BBDISPLAY(s) %s\n", srvrs);
-
-		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbpagercount); i++) {
-			p += sprintf(p, "%s:%d ", inet_ntoa(bbpageraddr[i].sin_addr), ntohs(bbpageraddr[i].sin_port));
-		}
-		errprintf("Sending to BBPAGER(s) %s\n", srvrs);
+		errprintf("Sending to Xymon server(s) %s\n", srvrs);
 	}
 
 	if (daemonize) {
@@ -542,13 +491,13 @@ int main(int argc, char *argv[])
 			}
 
 			p = stentry->buf;
-			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nbbproxy for Hobbit version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nbbproxy for Hobbit version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 				proxyname, timestamp, runtime_s, VERSION,
 				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 				msgs_delivered,
 				msgs_combo, 
 				msgs_status, msgs_merged, msgs_combined, 
-				msgs_page, msgs_other,
+				msgs_other,
 				ccount, bufspace / 1024);
 			p += sprintf(p, "\nTimeout/failure details\n");
 			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
@@ -612,7 +561,7 @@ int main(int argc, char *argv[])
 				 */
 				if (strncmp(cwalk->buf+6, "client", 6) == 0) {
 					/*
-					 * "client" messages go to all bbdisplay servers, but
+					 * "client" messages go to all Xymon servers, but
 					 * we will only pass back the response from one of them
 					 * (the last one).
 					 */
@@ -620,7 +569,7 @@ int main(int argc, char *argv[])
 					msgs_other++;
 					cwalk->snum = bbdispcount;
 
-					if (usehobbitd && ((cwalk->buflen + 40 ) < cwalk->bufsize)) {
+					if ((cwalk->buflen + 40 ) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
 								"\n[proxy]\nClientIP:%s\n", 
 								inet_ntoa(*cwalk->clientip));
@@ -634,7 +583,7 @@ int main(int argc, char *argv[])
 				         (strncmp(cwalk->buf+6, "download", 8) == 0)) {
 					/* 
 					 * These requests get a response back, but send no data.
-					 * Send these to the last of the BBDISPLAY servers only.
+					 * Send these to the last of the Xymon servers only.
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
@@ -665,7 +614,7 @@ int main(int argc, char *argv[])
 						cwalk->buflen = strlen(cwalk->buf);
 						cwalk->bufp = cwalk->buf + cwalk->buflen;
 
-						if (usehobbitd && ((cwalk->buflen + 50 ) < cwalk->bufsize)) {
+						if ((cwalk->buflen + 50 ) < cwalk->bufsize) {
 							int n = sprintf(cwalk->bufp, 
 									"\nStatus message received from %s\n", 
 									inet_ntoa(*cwalk->clientip));
@@ -705,14 +654,9 @@ int main(int argc, char *argv[])
 							memcpy(ctmp, cwalk, sizeof(conn_t));
 							ctmp->bufsize = BUFSZ_INC*(((6 + strlen(currmsg) + 50) / BUFSZ_INC) + 1);
 							ctmp->buf = (char *)malloc(ctmp->bufsize);
-							if (usehobbitd) {
-								ctmp->buflen = sprintf(ctmp->buf, 
-									"combo\n%s\nStatus message received from %s\n", 
-									currmsg, inet_ntoa(*cwalk->clientip));
-							}
-							else {
-								ctmp->buflen = sprintf(ctmp->buf, "combo\n%s", currmsg);
-							}
+							ctmp->buflen = sprintf(ctmp->buf, 
+								"combo\n%s\nStatus message received from %s\n", 
+								currmsg, inet_ntoa(*cwalk->clientip));
 							ctmp->bufp = ctmp->buf + ctmp->buflen;
 							ctmp->state = P_REQ_COMBINING;
 							ctmp->next = chead;
@@ -726,15 +670,9 @@ int main(int argc, char *argv[])
 						break;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
-						if (usehobbitd) {
-							/* hobbitd has no use for page requests */
-							cwalk->state = P_CLEANUP;
-							break;
-						}
-						else {
-							cwalk->snum = bbpagercount;
-							msgs_page++;
-						}
+						/* hobbitd has no use for page requests */
+						cwalk->state = P_CLEANUP;
+						break;
 					}
 					else {
 						msgs_other++;
@@ -780,17 +718,11 @@ int main(int argc, char *argv[])
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				if (strncmp(cwalk->buf, "page", 4) == 0) {
-					int idx = (bbpagercount - cwalk->snum);
-					n = connect(cwalk->ssocket, (struct sockaddr *)&bbpageraddr[idx], sizeof(bbpageraddr[idx]));
-					cwalk->serverip = &bbpageraddr[idx].sin_addr;
-					dbgprintf("Connecting to BBPAGER at %s\n", inet_ntoa(*cwalk->serverip));
-				}
-				else {
+				{
 					int idx = (bbdispcount - cwalk->snum);
 					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr[idx], sizeof(bbdispaddr[idx]));
 					cwalk->serverip = &bbdispaddr[idx].sin_addr;
-					dbgprintf("Connecting to BBDISPLAY at %s\n", inet_ntoa(*cwalk->serverip));
+					dbgprintf("Connecting to Xymon server at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {

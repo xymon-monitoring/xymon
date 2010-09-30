@@ -3,11 +3,11 @@
 .SH NAME
 bbproxy \- Xymon message proxy
 .SH SYNOPSIS
-.B "bbproxy [options] --bbdisplay=$BBDISP"
+.B "bbproxy [options] --server=$BBDISP"
 
 .SH DESCRIPTION
 .I bbproxy(8)
-is a proxy for forwarding Big Brother messages from one
+is a proxy for forwarding Xymon messages from one
 server to another. It will typically be needed if you have
 clients behind a firewall, so they cannot send status
 messages to the Xymon server directly.
@@ -34,28 +34,17 @@ to be delayed for up to 0.25 seconds before being sent off
 to the Xymon server.
 
 .SH OPTIONS
-.IP "--bbdisplay=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
+.IP "--server=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
-standard Big Brother port number. If you have setup the normal
-Big Brother environment, you can use "--bbdisplay=$BBDISP". Up
+standard Xymon port number. If you have setup the normal
+Xymon environment, you can use "--server=$BBDISP". Up
 to 3 servers can be specified; incoming messages are sent to
 all of them (except "config", "query" and "download" messages, 
 which go to the LAST server only). If you have Xymon clients
 sending their data via this proxy, note that the clients will
 receive their configuration data from the LAST of the servers
 listed here.  This option is required.
-
-.IP "--bbpager=SERVERIP[:PORT][,SERVER2IP[:PORT]]"
-\fBDEPRECATED\fR - this option is only present for compatibility 
-with servers running Big Brother, and will be removed soon.
-Specifies the IP-address and optional portnumber where incoming
-"page" messages are forwarded to. The default portnumber is 1984, 
-the standard Big Brother port number. If you have setup the normal
-Big Brother environment, you can use "--bbpager=$BBPAGE". Up
-to 3 servers can be specified; incoming messages are sent to
-all of them. If this option is omitted, "page" messages are sent 
-to the servers listed in --bbdisplay.
 
 .IP "--listen=LOCALIP[:PORT]"
 Specifies the IP-adress where bbproxy listens for incoming 
@@ -70,9 +59,9 @@ aborted due to a timeout. Default: 10 seconds.
 .IP "--report=[PROXYHOSTNAME.]BBSERVICE"
 If given, this option causes bbproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
-have set the standard Big Brother environment, you can use
+have set the standard Xymon environment, you can use
 "--report=bbproxy" to have bbproxy report its status to a
-"bbproxy" column in Big Brother. The default for PROXYHOSTNAME
+"bbproxy" column in Xymon. The default for PROXYHOSTNAME
 is the $MACHINE environment variable, i.e. the hostname of the
 server running bbproxy. See REPORT OUTPUT below for an 
 explanation of the report contents.
@@ -132,9 +121,6 @@ The "Messages merged" is the number of "status" messages
 that were merged into a combo message, the "Resulting combos"
 is the number of "combo" messages that resulted from the
 merging.
-
-.IP "Incoming - Page messages"
-The number of "page" messages received from a client.
 
 .IP "Incoming - Other messages"
 The number of other messages (data, notes, ack, query, ...)
