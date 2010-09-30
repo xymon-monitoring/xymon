@@ -163,7 +163,7 @@ void handle_mqcollect_client(char *hostname, char *clienttype, enum ostype_t os,
 			if (chnstatus) xfree(chnstatus);
 
 			if (strncmp(bol, "AMQ8409:", 8) == 0) pstate = PARSING_QL;
-			if (strncmp(bol, "AMQ8450:", 8) == 0) pstate = PARSING_QS;
+			else if (strncmp(bol, "AMQ8450:", 8) == 0) pstate = PARSING_QS;
 			else if (strncmp(bol, "AMQ8417:", 8) == 0) pstate = PARSING_CHS;
 			else pstate = PARSER_FLOAT;
 		}
