@@ -167,15 +167,31 @@ function UnixDate([System.DateTime] $t)
 	$t.ToString("ddd dd MMM HH:mm:ss yyyy")
 }
 
-function pad($s, $maxlen)
+function filesize($file,$clsize=4KB)
 {
-	if ($s.Length -gt $maxlen) {
-		$s.Substring(0, $maxlen)
-	}
-	else {
-		$s.Padright($maxlen)
-	}
+    return [math]::floor((($_.Length -1)/$clsize + 1) * $clsize/1KB)
 }
+
+function du([string]$dir,[int]$clsize=0)
+{
+    if($clsize -eq 0) {
+        $drive = "{0}:" -f [string](get-item $dir | %{ $_.psdrive })
+        $clsize = [int](Get-WmiObject win32_Volume | ? { $_.DriveLetter -eq $drive }).BlockSize
+        if($clsize -eq 0 -or $clsize -eq $null) { $clsize = 4096 } # default in case not found
+    }
+    $sum = 0
+    $dulist = ""
+    get-childitem $dir -Force | % {
+        if( $_.Attributes -like "*Directory*" ) {
+           $dulist += du ("{0}\{1}" -f [string]$dir,$_.Name) $clsize | out-string
+           $sum += $dulist.Split("`n")[-2].Split("`t")[0] # get size for subdir
+        } else { 
+           $sum += filesize $_ $clsize
+        }
+    }
+    "$dulist$sum`t$dir"
+}
+
 
 function XymonPrintProcess($pobj, $name, $pct)
 {
@@ -330,6 +346,14 @@ function XymonMsgs
 	}
 }
 
+function XymonDir
+{
+	$script:clientlocalcfg | ? { $_ -match "^dir:(.*)" } | % {
+        "[dir:$($matches[1])]"
+	    du $matches[1]
+    }
+}
+
 function XymonPorts
 {
 	"[ports]"
@@ -380,7 +404,10 @@ function XymonProcs
 
 		$thiswmip = Get-WmiObject -Class Win32_Process | where { $_.ProcessId -eq $p.Id }
 		if(	$thiswmip -ne $null ) { # short-lived process could possibly be gone
-			$owner = ($thiswmip.getowner()).Domain + "\" + ($thiswmip.GetOwner().user)
+			$saveerractpref = $ErrorActionPreference
+            $ErrorActionPreference = "SilentlyContinue"
+            $owner = ($thiswmip.getowner()).Domain + "\" + ($thiswmip.GetOwner().user)
+            $ErrorActionPreference = $saveerractpref
 		} else { $owner = "NA" }
 		if ($owner -eq "\") { $owner = "SYSTEM" }
 		if ($owner.length -gt 32) { $owner = $owner.substring(0, 32) }
@@ -432,11 +459,12 @@ function XymonWMIQuickFixEngineering
 function XymonWMIProduct
 {
 	"[WMI:Win32_Product]"
-	"Name".PadRight(45) + "   " + "Version".PadRight(15) + "   " + "Vendor".PadRight(30)
-	"----".PadRight(45) + "   " + "-------".PadRight(15) + "   " + "------".PadRight(30)
-	Get-WmiObject -Class Win32_Product | Sort-Object Name | 
+	$fmt = "{0,-70} {1,-15} {2}"
+	$fmt -f "Name", "Version", "Vendor"
+    $fmt -f "----", "-------", "------"
+    Get-WmiObject -Class Win32_Product | Sort-Object Name | 
 		foreach {
-			(pad $_.Name 45) + "   " + (pad $_.Version 15) + "   " + (pad $_.Vendor 30)
+			$fmt -f $_.Name, $_.Version, $_.Vendor
 		}
 }
 
@@ -552,17 +580,17 @@ function XymonClientConfig($cfglines)
 	if ($cfglines -eq $null -or $cfglines -eq "") { exit }
 
 	# Convert to Windows-style linebreaks
-	$cfgwinformat = $cfglines.Split("`n")
-	$cfgwinformat >$xymonclientconfig
+	$script:clientlocalcfg = $cfglines.Split("`n")
+	$clientlocalcfg >$xymonclientconfig
 
 	# Source the new config
-	. $xymonclientconfig
+	if ($clientremotecfg -ne 0) { . $xymonclientconfig }
 }
 
 function XymonReportConfig
 {
 	"[XymonConfig]"
-	foreach($v in @("wanteddisks", "wantedlogs", "maxlogage", "loopinterval", "slowscanrate", "Version", "clientname", "clientbbwinmembug", "clientremotecfg" )) {
+	foreach($v in @("wanteddisks", "wantedlogs", "maxlogage", "loopinterval", "slowscanrate", "Version", "clientname", "clientbbwinmembug", "clientremotecfg", "clientlocalcfg" )) {
 		""; "$v"
 		Invoke-Expression "`$$v"
 	}
@@ -585,6 +613,7 @@ function XymonClientSections {
 # Dont know if it is accessible via .NET somehow.
 #	XymonIfstat
 	XymonSvcs
+	XymonDir
 	XymonUptime
 	XymonWho
 	XymonUsers
@@ -630,8 +659,7 @@ while ($running -eq $true) {
 	Get-Date >> $xymonclientlog
 	XymonReportConfig >> $xymonclientlog
 	$newconfig = XymonSend $clout $xymonservers
-	if ($clientremotecfg -ne 0) { XymonClientConfig $newconfig }
-	else { $newconfig >> $xymonclientlog}
+	XymonClientConfig $newconfig
 	$delay = ($loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
 	if ($delay -gt 0) { sleep $delay }
 }
