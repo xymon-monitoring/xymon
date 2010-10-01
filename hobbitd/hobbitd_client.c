@@ -1488,6 +1488,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/irix.c"
 #include "client/sco_sv.c"
 #include "client/bbwin.c"
+#include "client/powershell.c"	/* Must go after client/bbwin.c */
 #include "client/zvm.c"
 #include "client/zvse.c"
 #include "client/zos.c"
@@ -1950,6 +1951,10 @@ int main(int argc, char *argv[])
                           case OS_WIN32_BBWIN:
                                 handle_win32_bbwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
                                 break;
+
+			  case OS_WIN_POWERSHELL:
+				handle_powershell_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
 
 			  case OS_ZVM:
 				handle_zvm_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
