@@ -10,7 +10,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char powershell_rcsid[] = "$Id: bbwin.c 6125 2009-02-12 13:09:34Z storner $";
+static char powershell_rcsid[] = "$Id$";
 
 void handle_powershell_client(char *hostname, char *clienttype, enum ostype_t os, 
 			 void *hinfo, char *sender, time_t timestamp,
