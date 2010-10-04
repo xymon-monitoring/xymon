@@ -74,6 +74,8 @@ CLOCK 15
 .sp
 .BR "DISK filesystem warnlevel paniclevel"
 .BR "DISK filesystem IGNORE"
+.BR "INODE filesystem warnlevel paniclevel"
+.BR "INODE filesystem IGNORE"
 .sp
 If the utilization of "filesystem" is reported to exceed "warnlevel"
 or "paniclevel", the "disk" status will go yellow or red, respectively.
@@ -91,8 +93,15 @@ devices, backup-disks and similar hardware.
 "/usr" or "/home". A filesystem-name that begins with "%" is interpreted
 as a Perl-compatible regular expression; e.g. "%^/oracle.*/" will match
 any filesystem whose mountpoint begins with "/oracle".
+
+"INODE" works identical to "DISK", but uses the count of i-nodes in
+the filesystem instead of the amount of disk space. This requires
+a 4.3.x or later Xymon client.
 .sp
-Defaults: warnlevel=90%, paniclevel=95%
+Defaults DISK: warnlevel=90%, paniclevel=95%
+.BR
+Defaults INODE: warnlevel=70%, paniclevel=90%
+
 
 .SH MEMORY STATUS COLUMN SETTINGS
 .sp

@@ -60,6 +60,15 @@ typedef struct c_disk_t {
 	int ignored;
 } c_disk_t;
 
+typedef struct c_inode_t {
+	exprlist_t *fsexp;
+	long warnlevel, paniclevel;
+	int abswarn, abspanic;
+	int imin, imax, icount;
+	int color;
+	int ignored;
+} c_inode_t;
+
 typedef struct c_mem_t {
 	enum { C_MEM_PHYS, C_MEM_SWAP, C_MEM_ACT } memtype;
 	int warnlevel, paniclevel;
@@ -203,7 +212,7 @@ typedef struct c_mq_channel_t {
 	exprlist_t *qmgrname, *chnname, *warnstates, *alertstates;
 } c_mq_channel_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_RRDDS, C_MQ_QUEUE, C_MQ_CHANNEL } ruletype_t;
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_INODE, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_RRDDS, C_MQ_QUEUE, C_MQ_CHANNEL } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -222,6 +231,7 @@ typedef struct c_rule_t {
 		c_uptime_t uptime;
 		c_clock_t clock;
 		c_disk_t disk;
+		c_inode_t inode;
 		c_mem_t mem;
 		c_zos_mem_t zos_mem;
 		c_zvse_vsize_t zvse_vsize;
@@ -707,6 +717,51 @@ int load_client_config(char *configfn)
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.color = parse_color(tok);
 			}
+			else if (strcasecmp(tok, "INODE") == 0) {
+				currule = setup_rule(C_INODE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.inode.abswarn = 0;
+				currule->rule.inode.warnlevel = 70;
+				currule->rule.inode.abspanic = 0;
+				currule->rule.inode.paniclevel = 90;
+				currule->rule.inode.imin = 0;
+				currule->rule.inode.imax = -1;
+				currule->rule.inode.color = COL_RED;
+				currule->rule.inode.ignored = 0;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.fsexp = setup_expr(tok, 0);
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				if (strcasecmp(tok, "ignore") == 0) {
+					currule->rule.inode.ignored = 1;
+					tok = wstok(NULL);
+					continue;
+				}
+				currule->rule.inode.warnlevel = atol(tok);
+				switch (*(tok + strspn(tok, "0123456789"))) {
+				  case 'U':
+				  case 'u': currule->rule.inode.abswarn = 1; break;
+				  case '%': currule->rule.inode.abswarn = 0; break;
+				  default : currule->rule.inode.abswarn = (currule->rule.inode.warnlevel > 200 ? 1 : 0); break;
+				}
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.paniclevel = atol(tok);
+				switch (*(tok + strspn(tok, "0123456789"))) {
+				  case 'U':
+				  case 'u': currule->rule.inode.abspanic = 1; break;
+				  case '%': currule->rule.inode.abspanic = 0; break;
+				  default : currule->rule.inode.abspanic = (currule->rule.inode.paniclevel > 200 ? 1 : 0); break;
+				}
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.imin = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.imax = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.color = parse_color(tok);
+			}
+
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 				currule->rule.mem.memtype = C_MEM_PHYS;
@@ -1501,6 +1556,17 @@ void dump_client_config(void)
 			}
 			break;
 
+		  case C_INODE:
+			printf("INODE %s", rwalk->rule.inode.fsexp->pattern);
+			if (rwalk->rule.inode.ignored)
+				printf("IGNORE");
+			else {
+				printf(" %lu%c", rwalk->rule.inode.warnlevel, (rwalk->rule.inode.abswarn ? 'U' : '%'));
+				printf(" %lu%c", rwalk->rule.inode.paniclevel, (rwalk->rule.inode.abspanic  ? 'U' : '%'));
+				printf(" %d %d %s", rwalk->rule.inode.imin, rwalk->rule.inode.imax, colorname(rwalk->rule.inode.color));
+			}
+			break;
+
 		  case C_MEM:
 			switch (rwalk->rule.mem.memtype) {
 			  case C_MEM_PHYS: printf("MEMREAL"); break;
@@ -1815,6 +1881,43 @@ int get_disk_thresholds(void *hinfo, char *classname,
 		*paniclevel = rule->rule.disk.paniclevel;
 		*abspanic = rule->rule.disk.abspanic;
 		*ignored = rule->rule.disk.ignored;
+		*group = rule->groups;
+		return rule->cfid;
+	}
+
+	return 0;
+}
+
+int get_inode_thresholds(void *hinfo, char *classname, 
+		char *fsname, 
+		long *warnlevel, long *paniclevel, 
+		int *abswarn, int *abspanic,
+		int *ignored, char **group)
+{
+	char *hostname, *pagename;
+	c_rule_t *rule;
+
+	hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+
+	*warnlevel = 70;
+	*paniclevel = 90;
+	*abswarn = 0;
+	*abspanic = 0;
+	*ignored = 0;
+	*group = NULL;
+
+	rule = getrule(hostname, pagename, classname, hinfo, C_INODE);
+	while (rule && !namematch(fsname, rule->rule.inode.fsexp->pattern, rule->rule.inode.fsexp->exp)) {
+		rule = getrule(NULL, NULL, NULL, hinfo, C_INODE);
+	}
+
+	if (rule) {
+		*warnlevel = rule->rule.inode.warnlevel;
+		*abswarn = rule->rule.inode.abswarn;
+		*paniclevel = rule->rule.inode.paniclevel;
+		*abspanic = rule->rule.inode.abspanic;
+		*ignored = rule->rule.inode.ignored;
 		*group = rule->groups;
 		return rule->cfid;
 	}
@@ -2789,9 +2892,10 @@ static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype,
 		count++;
 		switch (rule->ruletype) {
 		  case C_DISK : rule->rule.disk.dcount = 0; break;
+		  case C_INODE: rule->rule.inode.icount = 0; break;
 		  case C_PROC : rule->rule.proc.pcount = 0; break;
 		  case C_PORT : rule->rule.port.pcount = 0; break;
-                 case C_SVC : rule->rule.svc.scount = 0; break;
+		  case C_SVC  : rule->rule.svc.scount = 0; break;
 		  default: break;
 		}
 
@@ -2836,6 +2940,16 @@ static void add_count(char *pname, mon_proc_t *head)
 					pwalk->rule->rule.disk.dcount++;
 			}
 			break;
+
+		  case C_INODE:
+			if (!pwalk->rule->rule.inode.fsexp->exp) {
+				if (strstr(pname, pwalk->rule->rule.inode.fsexp->pattern))
+					pwalk->rule->rule.inode.icount++;
+			}
+			else {
+				if (namematch(pname, pwalk->rule->rule.inode.fsexp->pattern, pwalk->rule->rule.inode.fsexp->exp))
+					pwalk->rule->rule.inode.icount++;
+			}
 
 		  default: break;
 		}
@@ -2937,6 +3051,17 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*uplim = (*walk)->rule->rule.disk.dmax;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.disk.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.disk.color;
+		if (group) *group = (*walk)->rule->groups;
+		break;
+
+	  case C_INODE:
+		result = (*walk)->rule->rule.inode.fsexp->pattern;
+		*count = (*walk)->rule->rule.inode.icount;
+		*lowlim = (*walk)->rule->rule.inode.imin;
+		*uplim = (*walk)->rule->rule.inode.imax;
+		*color = COL_GREEN;
+		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.inode.color;
+		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.inode.color;
 		if (group) *group = (*walk)->rule->groups;
 		break;
 
@@ -3047,6 +3172,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 
 static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
 static mon_proc_t *dhead = NULL, *dtail = NULL, *dmonwalk = NULL;
+static mon_proc_t *ihead = NULL, *itail = NULL, *imonwalk = NULL;
 static mon_proc_t *porthead = NULL, *porttail = NULL, *portmonwalk = NULL;
 static mon_proc_t *svchead = NULL, *svctail = NULL, *svcmonwalk = NULL;
 
@@ -3058,6 +3184,11 @@ int clear_process_counts(void *hinfo, char *classname)
 int clear_disk_counts(void *hinfo, char *classname)
 {
 	return clear_counts(hinfo, classname, C_DISK, &dhead, &dtail, &dmonwalk);
+}
+
+int clear_inode_counts(void *hinfo, char *classname)
+{
+	return clear_counts(hinfo, classname, C_INODE, &ihead, &itail, &imonwalk);
 }
 
 int clear_port_counts(void *hinfo, char *classname)
@@ -3080,6 +3211,11 @@ void add_disk_count(char *dname)
 	add_count(dname, dhead);
 }
 
+void add_inode_count(char *iname)
+{
+	add_count(iname, ihead);
+}
+
 void add_port_count(char *localstr, char *foreignstr, char *stname)
 {
 	add_count3(localstr, foreignstr, stname, porthead);
@@ -3098,6 +3234,11 @@ char *check_process_count(int *count, int *lowlim, int *uplim, int *color, char 
 char *check_disk_count(int *count, int *lowlim, int *uplim, int *color, char **group)
 {
 	return check_count(count, C_DISK, lowlim, uplim, color, &dmonwalk, NULL, NULL, group);
+}
+
+char *check_inode_count(int *count, int *lowlim, int *uplim, int *color, char **group)
+{
+	return check_count(count, C_INODE, lowlim, uplim, color, &imonwalk, NULL, NULL, group);
 }
 
 char *check_port_count(int *count, int *lowlim, int *uplim, int *color, char **id, int *trackit, char **group)

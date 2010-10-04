@@ -30,6 +30,12 @@ extern int get_disk_thresholds(void *hinfo, char *classname,
 				int *abswarn, int *abspanic,
 				int *ignored, char **group);
 
+extern int get_inode_thresholds(void *hinfo, char *classname,
+				char *fsname,
+				long *warnlevel, long *paniclevel,
+				int *abswarn, int *abspanic,
+				int *ignored, char **group);
+
 extern void get_memory_thresholds(void *hhinfo, char *classname,
 				  int *physyellow, int *physred, 
 				  int *swapyellow, int *swapred, 
@@ -73,6 +79,10 @@ extern char *check_process_count(int *pcount, int *lowlim, int *uplim, int *pcol
 extern int clear_disk_counts(void *hinfo, char *classname);
 extern void add_disk_count(char *dname);
 extern char *check_disk_count(int *dcount, int *lowlim, int *uplim, int *dcolor, char **group);
+
+extern int clear_inode_counts(void *hinfo, char *classname);
+extern void add_inode_count(char *iname);
+extern char *check_inode_count(int *icount, int *lowlim, int *uplim, int *icolor, char **group);
 
 extern int clear_port_counts(void *hinfo, char *classname);
 extern void add_port_count(char *spname, char *tpname, char *stname);

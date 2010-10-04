@@ -29,7 +29,7 @@ static char rcsid[] = "$Id$";
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
-enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_SVCS, MSG_WHO, MSG_LAST };
+enum msgtype_t { MSG_CPU, MSG_DISK, MSG_INODE, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_SVCS, MSG_WHO, MSG_LAST };
 
 typedef struct sectlist_t {
 	char *sname;
@@ -212,6 +212,7 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 			while (tok) {
 				if      (strcmp(tok, "cpu") == 0) currset |= (1 << MSG_CPU);
 				else if (strcmp(tok, "disk") == 0) currset |= (1 << MSG_DISK);
+				else if (strcmp(tok, "inode") == 0) currset |= (1 << MSG_INODE);
 				else if (strcmp(tok, "files") == 0) currset |= (1 << MSG_FILES);
 				else if (strcmp(tok, "memory") == 0) currset |= (1 << MSG_MEMORY);
 				else if (strcmp(tok, "msgs") == 0) currset |= (1 << MSG_MSGS);
@@ -612,6 +613,190 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 		commafy(hostname), colorname(diskcolor), 
 		(timestr ? timestr : "<No timestamp data>"), 
 		((diskcolor == COL_GREEN) ? "OK" : "NOT ok"));
+	addtostatus(msgline);
+
+	/* And add the info about what's wrong */
+	if (STRBUFLEN(monmsg)) {
+		addtostrstatus(monmsg);
+		addtostatus("\n");
+	}
+
+	/* And the full df output */
+	addtostrstatus(dfstr_filtered);
+
+	if (fromline && !localmode) addtostatus(fromline);
+	finish_status();
+
+	freestrbuffer(monmsg);
+	freestrbuffer(dfstr_filtered);
+}
+
+void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
+		      void *hinfo, char *fromline, char *timestr, 
+		      char *freehdr, char *capahdr, char *mnthdr, char *dfstr)
+{
+	int inodecolor = COL_GREEN;
+
+	int ichecks = 0;
+	int freecol = -1;
+	int capacol = -1;
+	int mntcol  = -1;
+	char *p, *bol, *nl;
+	char msgline[4096];
+	strbuffer_t *monmsg, *dfstr_filtered;
+	char *iname;
+	int imin, imax, icount, icolor;
+	char *group;
+
+	if (!want_msgtype(hinfo, MSG_INODE)) return;
+	if (!dfstr) return;
+
+	dbgprintf("Inode check host %s\n", hostname);
+
+	monmsg = newstrbuffer(0);
+	dfstr_filtered = newstrbuffer(0);
+	ichecks = clear_inode_counts(hinfo, clientclass);
+	clearalertgroups();
+
+	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
+	while (bol) {
+		int ignored = 0;
+
+		nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+
+		if ((capacol == -1) && (mntcol == -1) && (freecol == -1)) {
+			/* First line: Check the header and find the columns we want */
+			p = strdup(bol);
+			freecol = selectcolumn(p, freehdr);
+			strcpy(p, bol);
+			capacol = selectcolumn(p, capahdr);
+			strcpy(p, bol);
+			mntcol = selectcolumn(p, mnthdr);
+			xfree(p);
+			dbgprintf("Inode check: header '%s', columns %d and %d\n", bol, freecol, capacol, mntcol);
+		}
+		else {
+			char *fsname = NULL, *levelstr = NULL;
+			int abswarn, abspanic;
+			long levelpct = -1, levelabs = -1, warnlevel, paniclevel;
+
+			p = strdup(bol);
+			fsname = getcolumn(p, mntcol); 
+			if (fsname) {
+				char *msgp = msgline;
+
+				add_inode_count(fsname);
+				get_inode_thresholds(hinfo, clientclass, fsname, 
+						    &warnlevel, &paniclevel, 
+						    &abswarn, &abspanic, 
+						    &ignored, &group);
+
+				strcpy(p, bol);
+				levelstr = getcolumn(p, freecol); if (levelstr) levelabs = atol(levelstr);
+				strcpy(p, bol);
+				levelstr = getcolumn(p, capacol); if (levelstr) levelpct = atol(levelstr);
+
+				dbgprintf("Inode check: FS='%s' level %ld%%/%ldU (thresholds: %lu/%lu, abs: %d/%d)\n",
+					fsname, levelpct, levelabs, 
+					warnlevel, paniclevel, abswarn, abspanic);
+
+				if (ignored) {
+					/* Forget about this one */
+				}
+				else if ( (abspanic && (levelabs <= paniclevel)) || 
+				     (!abspanic && (levelpct >= paniclevel)) ) {
+					if (inodecolor < COL_RED) inodecolor = COL_RED;
+
+					msgp += sprintf(msgp, "&red <!-- ID=%s --> %s ", fsname, fsname);
+
+					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
+					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+
+					msgp += sprintf(msgp, " has reached the PANIC level ");
+
+					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
+					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
+
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
+				}
+				else if ( (abswarn && (levelabs <= warnlevel)) || 
+				          (!abswarn && (levelpct >= warnlevel)) ) {
+					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
+
+					msgp += sprintf(msgp, "&yellow <!-- ID=%s --> %s ", fsname, fsname);
+
+					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
+					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+
+					msgp += sprintf(msgp, " has reached the WARNING level ");
+
+					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
+					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
+
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
+				} else {
+					msgp += sprintf(msgp, "&green <!-- ID=%s --> %s OK\n", fsname, fsname);
+					addtobuffer(monmsg, msgline);
+				}
+			}
+
+			xfree(p);
+		}
+
+		if (!ignored) {
+			addtobuffer(dfstr_filtered, bol);
+			addtobuffer(dfstr_filtered, "\n");
+		}
+		if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+	}
+
+	if ((capacol == -1) && (mntcol == -1)) {
+		/* If this happens, we havent found our headers so no filesystems have been processed */
+		inodecolor = COL_YELLOW;
+		sprintf(msgline, "&red Expected strings (%s and %s) not found in df output\n", 
+			capahdr, mnthdr);
+		addtobuffer(monmsg, msgline);
+
+		errprintf("Host %s (%s) sent incomprehensible inode report - missing columnheaders '%s' and '%s'\n%s\n",
+			  hostname, osname(os), capahdr, mnthdr, dfstr);
+	}
+
+	/* Check for filesystems that must (not) exist */
+	while ((iname = check_inode_count(&icount, &imin, &imax, &icolor, &group)) != NULL) {
+		char limtxt[1024];
+
+		*limtxt = '\0';
+
+		if (imax == -1) {
+			if (imin > 0) sprintf(limtxt, "%d or more", imin);
+			else if (imin == 0) sprintf(limtxt, "none");
+		}
+		else {
+			if (imin > 0) sprintf(limtxt, "between %d and %d", imin, imax);
+			else if (imin == 0) sprintf(limtxt, "at most %d", imax);
+		}
+
+		if (icolor != COL_GREEN) {
+			if (icolor > inodecolor) inodecolor = icolor;
+			sprintf(msgline, "&%s <!-- ID=%s -->Filesystem %s (found %d, req. %s)\n",
+				colorname(icolor), iname, iname, icount, limtxt);
+			addtobuffer(monmsg, msgline);
+			addalertgroup(group);
+		}
+	}
+
+	/* Now we know the result, so generate a status message */
+	init_status(inodecolor);
+	group = getalertgroups();
+	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	addtostatus(msgline);
+
+	sprintf(msgline, "%s.inode %s %s - Filesystems %s\n",
+		commafy(hostname), colorname(inodecolor), 
+		(timestr ? timestr : "<No timestamp data>"), 
+		((inodecolor == COL_GREEN) ? "OK" : "NOT ok"));
 	addtostatus(msgline);
 
 	/* And add the info about what's wrong */
