@@ -44,6 +44,14 @@ An entry looks like this:
 .br
           LOGFILE /var/log/xymon/updateweb.log
 .sp
+    [monthlyreport]
+.br
+          ENVFILE /usr/local/xymon/server/etc/hobbitserver.cfg
+.br
+          CMD /usr/local/xymon/server/ext/monthlyreport.sh
+.br
+          CRONDATE 30 4 1 * *
+.sp
 The \fBkey\fR is enclosed in angle brackets, and must be unique
 for each task. You can choose your key-names as you like, they
 are only used internally in hobbitlaunch to identify each task.
@@ -94,6 +102,16 @@ to restart it. Intervals can be specified in seconds (if you
 just put a number there), or in minutes (5m), hours (2h), or
 days (1d).
 
+The \fBCRONDATE\fR keyword is used for tasks that must run at
+regular intervals or at a specific time. The time specification
+is identical to the one used by cron in
+.I crontab(5)
+entries, i.e. a sequence of numbers for minute, hour, day-of-month, 
+month and day-of-week. Three-letter abbreviations in english can
+be used for the month and day-of-week fields. An asterisk is a
+wildcard. So in the example above, this job would run once a
+month, at 4:30 AM on the 1st day of the month.
+
 The \fBENVFILE\fR setting points to a file with definitions of
 environment variables. Before running the task, hobbitlaunch will
 setup all of the environment variables listed in this file.
@@ -114,5 +132,5 @@ to this file. If this option is not present, then the output
 goes to the same location as the hobbitlaunch output.
 
 .SH "SEE ALSO"
-hobbitlaunch(8), hobbitd(8), xymon(7)
+hobbitlaunch(8), hobbitd(8), crontab(5), xymon(7)
 

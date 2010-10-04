@@ -65,6 +65,8 @@ typedef struct tasklist_t {
 	int failcount;
 	int cfload;	/* Used while reloading a configuration */
 	int beingkilled;
+	char *cronstr; /* pointer to cron string */
+	void *crondate; /* pointer to cron date-time structure */
 	struct tasklist_t *depends;
 	struct tasklist_t *next;
 } tasklist_t;
@@ -83,6 +85,7 @@ void update_task(tasklist_t *newtask)
 	int logfilechanged = 0;
 	int envfilechanged = 0;
 	int disablechanged = 0;
+	int cronstrchanged = 0;
 
 	for (twalk = taskhead; (twalk && (strcmp(twalk->key, newtask->key))); twalk = twalk->next);
 
@@ -105,6 +108,16 @@ void update_task(tasklist_t *newtask)
 		}
 		else {
 			envfilechanged = 0;
+		}
+
+		if (twalk->cronstr && newtask->cronstr) {
+			cronstrchanged = strcmp(twalk->cronstr, newtask->cronstr);
+		}
+		else if (twalk->cronstr || newtask->cronstr) {
+			cronstrchanged = 1;
+		}
+		else {
+			cronstrchanged = 0;
 		}
 
 		if (twalk->envarea && newtask->envarea) {
@@ -136,18 +149,33 @@ void update_task(tasklist_t *newtask)
 		tasktail = newtask;
 		freeit = 0;
 	}
-	else if (strcmp(twalk->cmd, newtask->cmd) || logfilechanged || envfilechanged || disablechanged) {
+	else if (strcmp(twalk->cmd, newtask->cmd) || logfilechanged || envfilechanged || disablechanged || cronstrchanged) {
 		/* Task changed. */
 		xfree(twalk->cmd); 
 		if (twalk->logfile) xfree(twalk->logfile);
 		if (twalk->envfile) xfree(twalk->envfile);
 		if (twalk->envarea) xfree(twalk->envarea);
 		if (twalk->onhostptn) xfree(twalk->onhostptn);
+		if (twalk->cronstr) xfree(twalk->cronstr);
+		if (twalk->crondate) crondatefree(twalk->crondate);
 		twalk->cmd = strdup(newtask->cmd);
 		if (newtask->logfile) twalk->logfile = strdup(newtask->logfile); else twalk->logfile = NULL;
 		if (newtask->envfile) twalk->envfile = strdup(newtask->envfile); else twalk->envfile = NULL;
 		if (newtask->envarea) twalk->envarea = strdup(newtask->envarea); else twalk->envarea = NULL;
 		if (newtask->onhostptn) twalk->onhostptn = strdup(newtask->onhostptn); else twalk->onhostptn = NULL;
+		if (newtask->cronstr) {
+			twalk->cronstr = strdup(newtask->cronstr);
+			twalk->crondate = parse_cron_time(twalk->cronstr);
+			if (!twalk->crondate) {
+				errprintf("Can't parse cron date: %s->%s", twalk->key, twalk->cronstr);
+				twalk->disabled = 1;
+			}
+			twalk->interval = -1;
+		}
+		else {
+			twalk->cronstr = NULL;
+			twalk->crondate = NULL;
+		}
 
 		/* Must bounce the task */
 		twalk->cfload = 1;
@@ -176,6 +204,8 @@ void update_task(tasklist_t *newtask)
 		if (newtask->envfile) xfree(newtask->envfile);
 		if (newtask->envarea) xfree(newtask->envarea);
 		if (newtask->onhostptn) xfree(newtask->onhostptn);
+		if (newtask->cronstr) xfree(newtask->cronstr);
+		if (newtask->crondate) crondatefree(newtask->crondate);
 		xfree(newtask);
 	}
 }
@@ -281,6 +311,16 @@ void load_config(char *conffn)
 			  case 'd': curtask->interval *= 86400; break;	/* Days */
 			}
 		}
+		else if (curtask && (strncasecmp(p, "CRONDATE ", 9) == 0)) {
+			p+= 9;
+			curtask->cronstr = strdup(p);
+			curtask->crondate = parse_cron_time(curtask->cronstr);
+			if (!curtask->crondate) {
+				errprintf("Can't parse cron date: %s->%s", curtask->key, curtask->cronstr);
+				curtask->disabled = 1;
+			}
+			curtask->interval = -1; /* disable interval */
+		}
 		else if (curtask && (strncasecmp(p, "MAXTIME ", 8) == 0)) {
 			char *tspec;
 			p += 8;
@@ -362,6 +402,8 @@ void load_config(char *conffn)
 			if (twalk->envfile) xfree(twalk->envfile);
 			if (twalk->envarea) xfree(twalk->envarea);
 			if (twalk->onhostptn) xfree(twalk->onhostptn);
+			if (twalk->cronstr) xfree(twalk->cronstr);
+			if (twalk->crondate) crondatefree(twalk->crondate);
 			break;
 
 		  case 0:
@@ -490,15 +532,16 @@ int main(int argc, char *argv[])
 			for (twalk = taskhead; (twalk); twalk = twalk->next) {
 				printf("[%s]\n", twalk->key);
 				printf("\tCMD %s\n", twalk->cmd);
-				if (twalk->disabled) printf("\tDISABLED\n");
-				if (twalk->group)    printf("\tGROUP %s\n", twalk->group->groupname);
-				if (twalk->depends)  printf("\tNEEDS %s\n", twalk->depends->key);
-				if (twalk->interval) printf("\tINTERVAL %d\n", twalk->interval);
-				if (twalk->maxruntime) printf("\tMAXTIME %d\n", twalk->maxruntime);
-				if (twalk->logfile)  printf("\tLOGFILE %s\n", twalk->logfile);
-				if (twalk->envfile)  printf("\tENVFILE %s\n", twalk->envfile);
-				if (twalk->envarea)  printf("\tENVAREA %s\n", twalk->envarea);
-				if (twalk->onhostptn) printf("\tONHOST %s\n", twalk->onhostptn);
+				if (twalk->disabled)     printf("\tDISABLED\n");
+				if (twalk->group)        printf("\tGROUP %s\n", twalk->group->groupname);
+				if (twalk->depends)      printf("\tNEEDS %s\n", twalk->depends->key);
+				if (twalk->interval > 0) printf("\tINTERVAL %d\n", twalk->interval);
+				if (twalk->cronstr)      printf("\tCRONDATE %s\n", twalk->cronstr);
+				if (twalk->maxruntime)   printf("\tMAXTIME %d\n", twalk->maxruntime);
+				if (twalk->logfile)      printf("\tLOGFILE %s\n", twalk->logfile);
+				if (twalk->envfile)      printf("\tENVFILE %s\n", twalk->envfile);
+				if (twalk->envarea)      printf("\tENVAREA %s\n", twalk->envarea);
+				if (twalk->onhostptn)    printf("\tONHOST %s\n", twalk->onhostptn);
 				printf("\n");
 			}
 			return 0;
@@ -601,9 +644,13 @@ int main(int argc, char *argv[])
 		/* See what new tasks need to get going */
 		dbgprintf("\n");
 		dbgprintf("Starting tasklist scan\n");
+		crongettime();
 		for (twalk = taskhead; (twalk); twalk = twalk->next) {
-			if ((twalk->pid == 0) && !twalk->disabled && (now >= (twalk->laststart + twalk->interval))) {
-
+			if ( (twalk->pid == 0) && !twalk->disabled && 
+			       ( ((twalk->interval >= 0) && (now >= (twalk->laststart + twalk->interval))) || /* xymon interval condition */
+			         (twalk->crondate && ((twalk->laststart + 55) < now) && cronmatch(twalk->crondate)) /* cron date */
+			       ) 
+			   ) {
 				if (twalk->depends && ((twalk->depends->pid == 0) || (twalk->depends->laststart > (now - 5)))) {
 					dbgprintf("Postponing start of %s due to %s not yet running\n",
 						twalk->key, twalk->depends->key);
