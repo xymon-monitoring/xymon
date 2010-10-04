@@ -229,6 +229,26 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 	return ((currset & (1 << msg)) == 0);
 }
 
+char *nocolon(char *txt)
+{
+	static char *result = NULL;
+	char *p;
+	/*
+	 * This function changes all colons in "txt" to semi-colons.
+	 * This is needed because some of the data messages we use 
+	 * for reporting things like file- and directory-sizes, or
+	 * linecounts in files, use a colon-delimited string that
+	 * is sent to the RRD module, and this breaks for the Windows
+	 * Powershell client where filenames may contain a colon.
+	 */
+
+	if (result) xfree(result);
+	result = strdup(txt);
+
+	p = result; while ((p = strchr(p, ':')) != NULL) *p = ';';
+	return result;
+}
+
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     void *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *clockstr, char *msgcachestr,
@@ -1104,9 +1124,9 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", id, sz);
+				sprintf(msgline, "%s:%lld\n", nocolon(id), sz);
 #else
-				sprintf(msgline, "%s:%ld\n", id, sz);
+				sprintf(msgline, "%s:%ld\n", nocolon(id), sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -1121,9 +1141,9 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", id, sz);
+				sprintf(msgline, "%s:%lld\n", nocolon(id), sz);
 #else
-				sprintf(msgline, "%s:%ld\n", id, sz);
+				sprintf(msgline, "%s:%ld\n", nocolon(id), sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -1143,7 +1163,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 			if (trackit) {
 				/* Save the size data for later DATA message to track directory sizes */
 				if (id == NULL) id = sfn;
-				sprintf(msgline, "%s:%lu\n", id, sz);
+				sprintf(msgline, "%s:%lu\n", nocolon(id), sz);
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
 			}
@@ -1272,7 +1292,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 				countstr = (id ? strtok(NULL, "\n") : NULL);
 				if (id && countstr) {
 					countstr += strspn(countstr, "\t ");
-					sprintf(msgline, "%s#%s:%s\n", fn, id, countstr);
+					sprintf(msgline, "%s#%s:%s\n", nocolon(fn), id, countstr);
 					addtobuffer(countdata, msgline);
 				}
 
