@@ -594,7 +594,7 @@ int main(int argc, char *argv[])
 		if (metacount > 4) testname = metadata[4];
 
 		if ((metacount > 10) && (strncmp(metadata[0], "@@page", 6) == 0)) {
-			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie|osname|classname|grouplist */
+			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie|osname|classname|grouplist|modifiers */
 
 			int newcolor, newalertstatus, oldalertstatus;
 
@@ -679,7 +679,15 @@ int main(int argc, char *argv[])
 			if (awalk->groups) xfree(awalk->groups);
 			awalk->groups    = (metadata[14] ? strdup(metadata[14]) : NULL);
 			if (awalk->pagemessage) xfree(awalk->pagemessage);
-			awalk->pagemessage = strdup(restofmsg);
+			if (metadata[15]) {
+				/* Modifiers are more interesting than the message itself */
+				awalk->pagemessage = (char *)malloc(strlen(awalk->hostname) + strlen(awalk->testname) + strlen(colorname(awalk->color)) + strlen(metadata[15]) + strlen(restofmsg) + 10);
+				sprintf(awalk->pagemessage, "%s:%s %s\n%s\n%s",
+					awalk->hostname, awalk->testname, colorname(awalk->color), metadata[15], restofmsg);
+			}
+			else {
+				awalk->pagemessage = strdup(restofmsg);
+			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@ack", 5) == 0)) {
  			/* @@ack|timestamp|sender|hostname|testname|hostip|expiretime */

@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *p;
 		char *statusdata = "";
-		char *hostname, *hostnamecommas, *testname, *dismsg;
+		char *hostname, *hostnamecommas, *testname, *dismsg, *modifiers;
 		time_t tstamp, lastchg, disabletime, clienttstamp;
 		int tstamp_i, lastchg_i;
 		int newcolor, oldcolor;
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 			RbtIterator handle;
 			columndef_t *saveit = NULL;
 
-			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp */
+			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp|modifiers */
 			sscanf(metadata[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			hostname = metadata[4];
 			testname = metadata[5];
@@ -234,6 +234,7 @@ int main(int argc, char *argv[])
 			dismsg   = metadata[11];
 			downtimeactive = (atoi(metadata[12]) > 0);
 			clienttstamp = atoi(metadata[13]);
+			modifiers = metadata[14];
 
 			if (newcolor == -1) {
 				errprintf("Bad message: newcolor is unknown '%s'\n", metadata[7]);
@@ -420,6 +421,7 @@ int main(int argc, char *argv[])
 					 */
 					int txtcolor = parse_color(statusdata);
 					char *origstatus = statusdata;
+					char *eoln, *restofdata;
 
 					if (txtcolor != -1) {
 						fprintf(histlogfd, "%s", colorname(newcolor));
@@ -439,7 +441,27 @@ int main(int argc, char *argv[])
 						statusdata = origstatus;
 					}
 
-					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
+					restofdata = statusdata;
+					if (modifiers && *modifiers) {
+						char *modtxt;
+
+						/* We must finish writing the first line before putting in the modifiers */
+						eoln = strchr(restofdata, '\n');
+						if (eoln) {
+							restofdata = eoln+1;
+							*eoln = '\0';
+							fprintf(histlogfd, "%s\n", statusdata);
+						}
+
+						nldecode(modifiers);
+						modtxt = strtok(modifiers, "\n");
+						while (modtxt) {
+							fprintf(histlogfd, "%s\n", modtxt);
+							modtxt = strtok(NULL, "\n");
+						}
+					}
+
+					fwrite(restofdata, strlen(restofdata), 1, histlogfd);
 					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
 					fprintf(histlogfd, "Message received from %s\n", metadata[2]);
 					if (clienttstamp) fprintf(histlogfd, "Client data ID %d\n", (int) clienttstamp);
@@ -709,6 +731,9 @@ int main(int argc, char *argv[])
 
 				MEMUNDEFINE(newstatuslogfn); MEMUNDEFINE(statuslogfn);
 			}
+		}
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			/* Nothing */
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;

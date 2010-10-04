@@ -640,6 +640,19 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 					(int)log->flapping);
 			}
 			if (n < (bufsz-5)) {
+				modifier_t *mwalk;
+
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
+				mwalk = log->modifiers;						/* 19 */
+				while ((n < (bufsz-5)) && mwalk) {
+					if (mwalk->valid > 0) {
+						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
+								nlencode(mwalk->cause));
+					}
+					mwalk = mwalk->next;
+				}
+			}
+			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
 			}
 			if (n > (bufsz-5)) {
@@ -680,7 +693,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
 				mwalk = log->modifiers;						/* 14 */
 				while ((n < (bufsz-5)) && mwalk) {
-					if (mwalk->valid) {
+					if (mwalk->valid > 0) {
 						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
 								nlencode(mwalk->cause));
 					}
@@ -728,14 +741,31 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				if (!osname) osname = "";
 
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
+					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s", 
 					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange[0],
 					pagepath, log->cookie, osname, classname, 
-					(log->grouplist ? log->grouplist : ""),
-					msg);
+					(log->grouplist ? log->grouplist : ""));
+
+				if (n < (bufsz-5)) {
+					modifier_t *mwalk;
+
+					n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
+					mwalk = log->modifiers;
+					while ((n < (bufsz-5)) && mwalk) {
+						if (mwalk->valid > 0) {
+							n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
+									nlencode(mwalk->cause));
+						}
+						mwalk = mwalk->next;
+					}
+				}
+
+				if (n < (bufsz-5)) {
+					n += snprintf(channel->channelbuf+n, (bufsz-5), "\n%s", msg);
+				}
 			}
 			if (n > (bufsz-5)) {
 				errprintf("Oversize page/ack/notify msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
@@ -1132,17 +1162,26 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		modifier_t *mwalk;
 		int mcolor = -1;
 
-		for (mwalk = log->modifiers; (mwalk); mwalk = mwalk->next) {
-			if (mwalk->valid <= 0) continue;
-
+		mwalk = log->modifiers;
+		while (mwalk) {
 			mwalk->valid--;
-			if (mwalk->valid == 0) {
-				/* Modifier no longer valid */
-				if (mwalk->cause) xfree(mwalk->cause);
-				continue;
-			}
+			if (mwalk->valid <= 0) {
+				modifier_t *zombie;
 
-			if (mwalk->color > mcolor) mcolor = mwalk->color;
+				/* Modifier no longer valid */
+				zombie = mwalk;
+				if (zombie->source) xfree(zombie->source);
+				if (zombie->cause) xfree(zombie->cause);
+
+				/* Remove this modifier from the list. Make sure log->modifiers is updated */
+				if (mwalk == log->modifiers) log->modifiers = mwalk->next;
+				mwalk = mwalk->next;
+				xfree(zombie);
+			}
+			else {
+				if (mwalk->color > mcolor) mcolor = mwalk->color;
+				mwalk = mwalk->next;
+			}
 		}
 
 		/* If there was an active modifier, this overrides the current "newcolor" status value */
@@ -1517,14 +1556,7 @@ void handle_modify(char *msg, hobbitd_log_t *log, int color)
 		/* Got all tokens - find the modifier, if this is just an update */
 		for (mwalk = log->modifiers; (mwalk && strcmp(mwalk->source, sourcename)); mwalk = mwalk->next);
 
-		if (color == -1) {
-			/* An invalid color means "cancel the current modifier" */
-			if (mwalk) {
-				mwalk->valid = 0;
-				if (mwalk->cause) xfree(mwalk->cause);
-			}
-		}
-		else {
+		if ((color >= 0) && (color < COL_COUNT)) {
 			if (!mwalk) {
 				/* New modifier record */
 				mwalk = (modifier_t *)calloc(1, sizeof(modifier_t));
@@ -1553,7 +1585,7 @@ void handle_modify(char *msg, hobbitd_log_t *log, int color)
 		 * is different than the original status color, we trigger a change.
 		 */
 		for (newcolor=color, mwalk=log->modifiers; (mwalk); mwalk = mwalk->next) {
-			if (!mwalk->valid) continue;
+			if (mwalk->valid <= 0) continue;
 			if (mwalk->color > newcolor) newcolor = mwalk->color;
 		}
 
@@ -2047,6 +2079,7 @@ void free_log_t(hobbitd_log_t *zombie)
 		modtmp = modwalk;
 		modwalk = modwalk->next;
 
+		if (modtmp->source) xfree(modtmp->source);
 		if (modtmp->cause) xfree(modtmp->cause);
 		xfree(modtmp);
 	}
@@ -2583,7 +2616,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		  case F_MODIFIERS:
 			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
-				if (!mwalk->valid) continue;
+				if (mwalk->valid <= 0) continue;
 				needed += 3+2*strlen(mwalk->cause);
 			}
 			break;
@@ -2652,7 +2685,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		  case F_MODIFIERS:
 			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
-				if (!mwalk->valid) continue;
+				if (mwalk->valid <= 0) continue;
 				bufp += sprintf(bufp, "%s", nlencode(mwalk->cause));
 			}
 			break;
