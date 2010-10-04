@@ -72,6 +72,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "macosx") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "darwin") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "sco_sv") == 0)      result = OS_SCO_SV;
+	else if (strcasecmp(osname, "unixware") == 0)    result = OS_SCO_SV;
 	else if (strcasecmp(osname, "netware_snmp") == 0) result = OS_NETWARE_SNMP;
 	else if (strcasecmp(osname, "zvm") == 0)         result = OS_ZVM;
 	else if (strcasecmp(osname, "zvse") == 0)        result = OS_ZVSE;
