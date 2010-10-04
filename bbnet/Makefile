@@ -5,8 +5,9 @@ DNSFLAGS = -I./c-ares
 
 PROGRAMS = bbtest-net hobbitping beastat
 EXTENSIONS = bbretest-net.sh
+DBGTOOLS = contest
 
-all: $(PROGRAMS) $(EXTENSIONS)
+all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
 PINGTESTOBJS = hobbitping.o
@@ -62,8 +63,8 @@ beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
-contest: contest.c
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o ./libcares.a ../lib/libbbgen.a
+contest: contest.c $(LIBOBJS)
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
 ################################################
 # Default compilation rules
@@ -76,7 +77,7 @@ contest: contest.c
 	chmod 755 $@
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) contest
+	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 
 install: install-bin install-ext install-config install-man
