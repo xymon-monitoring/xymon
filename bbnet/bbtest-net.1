@@ -176,6 +176,12 @@ less often than that, the results will go purple before the next run
 of bbtest-net. This option lets you change how long the status is 
 valid.
 
+.IP --source-ip=IPADDRESS
+On multi-homed hosts, this option can be used to explicitly
+select the source IP address used for the network tests.
+"IPADDRESS" must be a valid IP-address on the host running
+bbtest-net.
+
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
 .IP --checkresponse[=COLOR]
 When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 

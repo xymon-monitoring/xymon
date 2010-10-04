@@ -105,6 +105,7 @@ pid_t		*pingpids;
 int		respcheck_color = COL_YELLOW;
 int		extcmdtimeout = 30;
 int		bigfailure = 0;
+char		*defaultsourceip = NULL;
 
 void dump_hostlist(void)
 {
@@ -343,7 +344,12 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	newtest->silenttest = silenttest;
 	newtest->senddata = sendasdata;
 	newtest->testspec = (testspec ? strdup(testspec) : NULL);
-	newtest->srcip = (srcip ? strdup(srcip) : NULL);
+	if (srcip)
+		newtest->srcip = strdup(srcip);
+	else if (defaultsourceip)
+		newtest->srcip = defaultsourceip;
+	else
+		newtest->srcip = NULL;
 	newtest->privdata = NULL;
 	newtest->open = 0;
 	newtest->banner = newstrbuffer(0);
@@ -556,7 +562,8 @@ void load_tests(void)
 					}
 					else {
 						s = httptest;
-						add_url_to_dns_queue(testspec);
+						if (!url.desturl->ip)
+							add_url_to_dns_queue(testspec);
 					}
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
@@ -1982,6 +1989,15 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--shuffle") == 0) {
 			shuffletests = 1;
+		}
+		else if (argnmatch(argv[argi], "--source-ip=")) {
+			char *p = strchr(argv[argi], '=');
+			struct in_addr aa;
+			p++;
+			if (inet_aton(p, &aa))
+				defaultsourceip = strdup(p);
+			else
+				errprintf("Invalid source ip address '%s'\n", argv[argi]);
 		}
 
 		/* Options for PING tests */
