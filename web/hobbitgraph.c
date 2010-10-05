@@ -739,8 +739,6 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	char graphtitle[1024];	/* --title TEXT */
 	char timestamp[50];	/* COMMENT with timestamp graph was generated */
 
-	struct timeval t_start, t_end;
-
 	/* Return variables from rrd_graph() */
 	int result;
 	char **calcpr = NULL;
@@ -1102,10 +1100,6 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/* All set - generate the graph */
 	rrd_clear_error();
 
-#ifdef GRAPHTIME_TEST
-	if (debug) gettimeofday(&t_start, NULL);
-#endif
-
 #ifdef RRDTOOL12
 	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize, NULL, &ymin, &ymax);
 
@@ -1120,17 +1114,6 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 #else
 	result = rrd_graph(rrdargcount, rrdargs, &calcpr, &xsize, &ysize);
-#endif
-
-#ifdef GRAPHTIME_TEST
-	gettimeofday(&t_end, NULL);
-	t_end.tv_sec -= t_start.tv_sec;
-	t_end.tv_usec -= t_start.tv_usec;
-	if (t_end.tv_usec < 0) {
-		t_end.tv_usec += 1000000;
-		t_end.tv_sec--;
-	}
-	fprintf(stderr, "Graphtime: %2d.%06d\n", t_end.tv_sec, t_end.tv_usec);
 #endif
 
 	/* Was it OK ? */
