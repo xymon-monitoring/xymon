@@ -2001,16 +2001,17 @@ int main(int argc, char *argv[])
 		}
 
 		/* Options for PING tests */
+		else if (argnmatch(argv[argi], "--ping-tasks=")) {
+			/* Note: must check for this before checking "--ping" option */
+			char *p = strchr(argv[argi], '=');
+			pingchildcount = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--ping")) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
 				p++; pingcolumn = p;
 			}
 			else pingcolumn = "";
-		}
-		else if (argnmatch(argv[argi], "--ping-tasks=")) {
-			char *p = strchr(argv[argi], '=');
-			pingchildcount = atoi(p+1);
 		}
 		else if (strcmp(argv[argi], "--noping") == 0) {
 			pingcolumn = NULL;
