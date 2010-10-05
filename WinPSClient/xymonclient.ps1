@@ -37,6 +37,7 @@ function XymonInit
 	$script:wanteddisks = @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
 	$script:wantedlogs = "Application",  "System", "Security"
 	$script:maxlogage = 60
+    $script:clientlocalcfg = ""
 
 	$script:loopinterval = 300 # seconds
 	$script:slowscanrate = 12
@@ -379,6 +380,17 @@ function XymonNetstat
 	netstat -s | ?{$_ -match "=|(\w+) Statistics for"} | %{ if($_.contains("=")) {("$pref$_").REPLACE(" ","")}else{$pref=$matches[1].ToLower();""}}
 }
 
+function XymonIfstat
+{
+	"[ifstat]"
+    [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | %{
+        $ad = $_.GetIPv4Statistics() | select BytesSent, BytesReceived
+        $ip = $_.GetIPProperties().UnicastAddresses | select Address
+        $ad | add-member -MemberType noteproperty -Name Address -Value $ip.Address.ToString()
+        "{0} {1} {2}" -f $ad.Address,$ad.BytesReceived,$ad.BytesSent
+    }  
+}
+
 function XymonSvcs
 {
 	"[svcs]"
@@ -608,10 +620,7 @@ function XymonClientSections {
 	XymonPorts
 	XymonIPConfig
 	XymonRoute
-# BBWIn uses "GetIfTable" which grabs the MIB-2 interfaces.
-# This is an IPHLPAPI function that does not exist in Powershell
-# Dont know if it is accessible via .NET somehow.
-#	XymonIfstat
+	XymonIfstat
 	XymonSvcs
 	XymonDir
 	XymonUptime
