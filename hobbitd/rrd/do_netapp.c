@@ -464,7 +464,7 @@ static char *system_test[] = { "nfs_ops", "cifs_ops", "http_ops", "dafs_ops", "f
 int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
        static char *netapp_disk_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
-       static char *netapp_disk_tpl      = NULL;
+       static rrdtpldata_t *netapp_disk_tpl      = NULL;
 
        char *eoln, *curline;
        static int ptnsetup = 0;
@@ -472,7 +472,7 @@ int do_netapp_disk_rrd(char *hostname, char *testname, char *classname, char *pa
        static pcre *exclpattern = NULL;
        int newdfreport;
 
-	newdfreport=strstr(msg,"netappnewdf");
+	newdfreport = (strstr(msg,"netappnewdf") != NULL);
 
        if (netapp_disk_tpl == NULL) netapp_disk_tpl = setup_template(netapp_disk_params);
 

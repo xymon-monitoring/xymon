@@ -219,7 +219,7 @@ nextline:
 int do_dbcheck_tablespace_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
        static char *tablespace_params[] = { "DS:pct:GAUGE:600:0:U", "DS:used:GAUGE:600:0:U", NULL };
-       static char *tablespace_tpl      = NULL;
+       static rrdtpldata_t *tablespace_tpl      = NULL;
 
        char *eoln, *curline;
        static int ptnsetup = 0;
