@@ -84,6 +84,7 @@ typedef struct strbuffer_t {
 #include "../lib/msort.h"
 #include "../lib/netservices.h"
 #include "../lib/rbtr.h"
+#include "../lib/readmib.h"
 #include "../lib/rmd160c.h"
 #include "../lib/sendmsg.h"
 #include "../lib/sha1.h"

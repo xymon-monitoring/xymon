@@ -1698,6 +1698,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/zvse.c"
 #include "client/zos.c"
 #include "client/mqcollect.c"
+#include "client/snmpcollect.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1999,6 +2000,7 @@ int main(int argc, char *argv[])
 			tok = strtok(lp, ","); i = 0; collectors = (char **)calloc(1, sizeof(char *));
 			while (tok) {
 				collectors = (char **)realloc(collectors, (i+2)*sizeof(char *));
+				if (strcasecmp(tok, "default") == 0) tok = "";
 				collectors[i++] = tok; collectors[i] = NULL;
 				tok = strtok(NULL, ",");
 			}
@@ -2171,6 +2173,10 @@ int main(int argc, char *argv[])
 
 			  case OS_ZOS:
 				handle_zos_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_SNMPCOLLECT:
+				handle_snmpcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_MQCOLLECT:

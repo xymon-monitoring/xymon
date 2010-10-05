@@ -574,6 +574,9 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_counts.c"
 #include "rrd/do_trends.c"
 
+#include "rrd/do_ifmib.c"
+#include "rrd/do_snmpmib.c"
+
 /* z/OS, z/VM, z/VME stuff */
 #include "rrd/do_paging.c"
 #include "rrd/do_mdc.c"
@@ -632,6 +635,9 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
+	else if (strcmp(id, "ifmib") == 0)       res = do_ifmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (is_snmpmib_rrd(id))             res = do_snmpmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	/* z/OS, z/VSE, z/VM from Rich Smrcina */
 	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, classname, pagepaths, msg, tstamp);

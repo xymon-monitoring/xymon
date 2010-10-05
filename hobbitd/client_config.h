@@ -60,6 +60,10 @@ extern void get_asid_thresholds(void *hinfo, char *classname,
 extern int get_paging_thresholds(void *hinfo, char *classname, 
 				 int *pagingyellow, int *pagingred);
 
+extern int check_mibvals(void *hinfo, char *classname, 
+			 char *mibname, char *keyname, char *mibdata,
+		  	 strbuffer_t *summarybuf, int *anyrules);
+
 extern char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, RbtHandle valnames, char *vals);
 
 

@@ -186,6 +186,28 @@ typedef struct c_svc_t {
 	int color;
 } c_svc_t;
 
+#define MIBCHK_MINVALUE  (1 << 0)
+#define MIBCHK_MAXVALUE  (1 << 1)
+#define MIBCHK_MATCH     (1 << 2)
+typedef struct c_mibval_t {
+	exprlist_t *mibvalexp;  /* Key composed of the mib name and the value name */
+	exprlist_t *keyexp;     /* Match pattern for the mib table key */
+	int color;
+	long minval, maxval;
+	exprlist_t *matchexp;
+
+	/*
+	 * For optimization, we build a tree of c_rule_t pointers, indexed by a key
+	 * which is combined from the mib-, key- and value-names. This tree is updated
+	 * and/or used whenever an actual lookup happens for the thresholds.
+	 * So when doing a lookup, we first check to see if the combination is in the
+	 * tree; if not, then we scan the list by matching against the keyexp pattern
+	 * and update the tree with the result.
+	 */
+	int havetree;
+	RbtHandle valdeftree;
+} c_mibval_t;
+
 #define RRDDSCHK_GT     (1 << 0)
 #define RRDDSCHK_GE     (1 << 1)
 #define RRDDSCHK_LT     (1 << 2)
@@ -212,7 +234,7 @@ typedef struct c_mq_channel_t {
 	exprlist_t *qmgrname, *chnname, *warnstates, *alertstates;
 } c_mq_channel_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_INODE, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_RRDDS, C_MQ_QUEUE, C_MQ_CHANNEL } ruletype_t;
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_INODE, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_RRDDS, C_MQ_QUEUE, C_MQ_CHANNEL, C_MIBVAL } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -245,6 +267,7 @@ typedef struct c_rule_t {
 		c_port_t port;
 		c_svc_t	svc;
 		c_paging_t paging;
+		c_mibval_t mibval;
 		c_rrdds_t rrdds;
 		c_mq_queue_t mqqueue;
 		c_mq_channel_t mqchannel;
@@ -532,6 +555,10 @@ int load_client_config(char *configfn)
 		if (tmp->rrdidstr) xfree(tmp->rrdidstr);
 
 		switch (tmp->ruletype) {
+		  case C_MIBVAL:
+			if (tmp->rule.mibval.havetree) rbtDelete(tmp->rule.mibval.valdeftree);
+			break;
+
 		  case C_RRDDS:
 			if (tmp->rule.rrdds.rrdds) xfree(tmp->rule.rrdds.rrdds);
 			if (tmp->rule.rrdds.column) xfree(tmp->rule.rrdds.column);
@@ -1342,6 +1369,41 @@ curtime, curtext, curgroup, cfid);
 					}
 				} while (tok && (!isqual(tok)));
 			}
+			else if (strcasecmp(tok, "MIB") == 0) {
+				currule = setup_rule(C_MIBVAL, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.mibval.mibvalexp = NULL;
+				currule->rule.mibval.keyexp = NULL;
+				currule->rule.mibval.color = COL_RED;
+				currule->rule.mibval.minval = -1;
+				currule->rule.mibval.maxval = -1;
+				currule->rule.mibval.matchexp = NULL;
+
+				tok = wstok(NULL);
+				currule->rule.mibval.mibvalexp = setup_expr(tok, 0);
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, "key=", 4) == 0) {
+						currule->rule.mibval.keyexp = setup_expr(tok+4, 0);
+					}
+					else if (strncasecmp(tok, "max=", 4) == 0) {
+						currule->flags |= MIBCHK_MAXVALUE;
+						currule->rule.mibval.maxval = atol(tok+4);
+					}
+					else if (strncasecmp(tok, "min=", 4) == 0) {
+						currule->flags |= MIBCHK_MINVALUE;
+						currule->rule.mibval.minval = atol(tok+4);
+					}
+					else if (strncasecmp(tok, "match=", 6) == 0) {
+						currule->flags |= MIBCHK_MATCH;
+						currule->rule.mibval.matchexp = setup_expr(tok+6, 0);
+					}
+					else if (strncasecmp(tok, "color=", 6) == 0) {
+						int col = parse_color(tok+6);
+						if (col != -1) currule->rule.mibval.color = col;
+					}
+				} while (tok && (!isqual(tok)));
+			}
 			else if (strcasecmp(tok, "DS") == 0) {
 				char *key, *ds, *column;
 
@@ -1725,6 +1787,21 @@ void dump_client_config(void)
                                 printf(" startup=%s", rwalk->rule.svc.startupexp->pattern);
                         printf(" color=%s", colorname(rwalk->rule.svc.color));
                         break;
+
+		  case C_MIBVAL:
+			printf("MIB");
+			if (rwalk->rule.mibval.mibvalexp)
+				printf(" %s", rwalk->rule.mibval.mibvalexp->pattern);
+			if (rwalk->rule.mibval.keyexp)
+				printf(" key=%s", rwalk->rule.mibval.keyexp->pattern);
+			if (rwalk->flags & MIBCHK_MINVALUE) 
+				printf(" min=%ld", rwalk->rule.mibval.minval);
+			if (rwalk->flags & MIBCHK_MAXVALUE) 
+				printf(" max=%ld", rwalk->rule.mibval.maxval);
+			if (rwalk->flags & MIBCHK_MATCH) 
+				printf(" match=%s", rwalk->rule.mibval.matchexp->pattern);
+			printf(" color=%s", colorname(rwalk->rule.mibval.color));
+			break;
 
 		  case C_RRDDS:
 			printf("DS %s %s:%s", rwalk->rule.rrdds.column,
@@ -2183,6 +2260,226 @@ int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *
 	}
 
 	return result;
+}
+
+int get_mibval_thresholds(void *hinfo, char *classname, 
+			  char *mibname, char *keyname, char *valname,
+			  long *minval, long *maxval, void **matchexp, int *color, char **group)
+{
+	static RbtHandle mibnametree;
+	static int have_mibnametree = 0;
+	char *hostname, *pagename, *mibkeyval_id;
+	c_rule_t *rule;
+	RbtIterator namhandle, valdefhandle;
+	RbtHandle valdeftree;
+
+	if (!have_mibnametree) {
+		mibnametree = rbtNew(name_compare);
+		have_mibnametree = 1;
+	}
+
+	hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+
+	/* Any potential rules at all ? */
+	rule = getrule(hostname, pagename, classname, hinfo, C_MIBVAL);
+	if (!rule) return -1;
+
+	*minval = LONG_MIN;
+	*maxval = LONG_MAX;
+	*matchexp = NULL;
+	*color = COL_GREEN;
+	*group = NULL;
+
+	/* 
+	 * Configuration rules are indexed by three items:
+	 * - the MIB Name
+	 * - the MIB Key
+	 * - the Value Name
+	 *
+	 * The MIB- and Value-names are static, so we combine these into
+	 * a single key which is referenced directly in the configuration.
+	 * This is the pattern listed as the first MIB criteria in the config,
+	 * stored in the "mibvalexp" field.
+	 * For the MIB Keys we want to use a regex (so the config can refer to
+	 * all "eth.*" interfaces), so when searching for a rule we must walk
+	 * the list of potential rules for this MIB+Value name, and match the
+	 * actual key value against the pattern.
+	 *
+	 * So all in all rules are keyed with the MIB+Key+Name strings as
+	 * a unique key. Hence, to speed things up we gradually build a tree
+	 * with this key, which points directly to the rule for this item.
+	 * This is the "valdeftree" tree.
+	 *
+	 * TODO: A further optimization would be to somehow keep
+	 * track of how many single MIB variables have a configuration rule,
+	 * to avoid scanning for a configuration for variables when all config
+	 * items have been used in a message. I cannot tell right away if this
+	 * is possible - perhaps by counting the number of configuration cache
+	 * hits while processing a message, and for the next message from the 
+	 * same source then only process data until this count has been done?
+	 *
+	 * Finally, for optimising memory usage, the MIB+Key+Name strings
+	 * are not duplicated for each key; instead we have a separate token-
+	 * tree (mibnametree) which holds these.
+	 */
+
+	/* Setup the key and find/insert it into the mibnametree */
+	mibkeyval_id = (char *)malloc(strlen(mibname) + (keyname ? strlen(keyname) : 0) + strlen(valname) + 3);
+	sprintf(mibkeyval_id, "%s!%s!%s", mibname, (keyname ? keyname : ""), valname);
+	namhandle = rbtFind(mibnametree, mibkeyval_id);
+	if (namhandle == rbtEnd(mibnametree)) {
+		rbtInsert(mibnametree, mibkeyval_id, mibkeyval_id);
+	}
+	else {
+		xfree(mibkeyval_id); /* Discard our copy - we now use the tree value */
+		mibkeyval_id = (char *)gettreeitem(mibnametree, namhandle);
+	}
+
+	/* Create the rule tree (if it does not exist); look up the ruleset */
+	if (!rule->rule.mibval.havetree) {
+		rule->rule.mibval.havetree = 1;
+		valdeftree = rule->rule.mibval.valdeftree = rbtNew(name_compare);
+		valdefhandle = rbtEnd(rule->rule.mibval.valdeftree);
+	}
+	else {
+		valdeftree = rule->rule.mibval.valdeftree;
+		valdefhandle = rbtFind(valdeftree, mibkeyval_id);
+	}
+
+	if (valdefhandle == rbtEnd(valdeftree)) {
+		/* 
+		 * Ruleset not in the tree. 
+		 * Scan the configuration set for a rule matching this 
+		 * MIB+Value name, and where the keyname matches.
+		 * Then insert the result into the tree (even if there is no
+		 * rule matching at all - we also cache the negative lookups!
+		 */
+		int found = 0;
+		char *mibval_id = (char *)malloc(strlen(mibname) + strlen(valname) + 2);
+		sprintf(mibval_id, "%s:%s", mibname, valname);
+
+		while (rule && !found) {
+			found = namematch(mibval_id, rule->rule.mibval.mibvalexp->pattern, rule->rule.mibval.mibvalexp->exp);
+			if (found && keyname && rule->rule.mibval.keyexp)
+				found = namematch(keyname, rule->rule.mibval.keyexp->pattern, rule->rule.mibval.keyexp->exp);
+			if (!found) rule = getrule(NULL, NULL, NULL, hinfo, C_MIBVAL);
+		}
+
+		rbtInsert(valdeftree, mibkeyval_id, rule);
+
+		xfree(mibval_id);
+	}
+	else {
+		/* Found the rule */
+		rule = (c_rule_t *)gettreeitem(valdeftree, valdefhandle);
+	}
+
+	if (rule) {
+		*color = rule->rule.mibval.color;
+		*group = rule->groups;
+		if (rule->flags & MIBCHK_MINVALUE) *minval = rule->rule.mibval.minval;
+		if (rule->flags & MIBCHK_MAXVALUE) *maxval = rule->rule.mibval.maxval;
+		if (rule->flags & MIBCHK_MATCH) *matchexp = rule->rule.mibval.matchexp;
+	}
+
+	return (rule ? rule->cfid : 0);
+}
+
+
+int check_mibvals(void *hinfo, char *classname, 
+		  char *mibname, char *keyname, char *mibdata,
+		  strbuffer_t *summarybuf, int *anyrules)
+{
+	char *bol, *eoln, *dnam, *dval, *delimp, delim;
+	long minval, maxval, actval;
+	void *matchexp;
+	int rulecolor, color = COL_GREEN;
+	char msgline[MAX_LINE_LEN];
+	char *group;
+
+	/* 
+	 * Scan a single section of MIB data - without the [key] line - 
+	 * and check all values against the configured limits.
+	 */
+	*anyrules = 1;
+	bol = mibdata;
+	while (bol && *anyrules) {
+		eoln = strchr(bol, '\n'); if (eoln) *eoln = '\0';
+		dnam = bol + strspn(bol, " \t");
+		delimp = dnam + strcspn(dnam, " ="); delim = *delimp; *delimp = '\0';
+		dval = delimp + 1; dval += strspn(dval, " ="); actval = atol(dval);
+
+		switch (get_mibval_thresholds(hinfo, classname, mibname, keyname, dnam, &minval, &maxval, &matchexp, &rulecolor, &group)) {
+		  case -1:
+			/* This means: No rules at all for this host. So just drop all further processing */
+			*anyrules = 0;
+			break;
+
+		  case 0:
+			/* No rules for this key/value, but there might be for others */
+			break;
+
+		  default:
+			if (actval < minval) {
+				if (keyname)
+					sprintf(msgline, "&%s %s:%s %ld (minimum: %ld)\n",
+						colorname(rulecolor), keyname, dnam, actval, minval);
+				else 
+					sprintf(msgline, "&%s %s %ld (minimum: %ld)\n",
+						colorname(rulecolor), dnam, actval, minval);
+				addtobuffer(summarybuf, msgline);
+				if (rulecolor > color) color = rulecolor;
+				if (group) addalertgroup(group);
+			}
+
+			if (actval > maxval) {
+				if (keyname)
+					sprintf(msgline, "&%s %s:%s %ld (maximum: %ld)\n",
+						colorname(rulecolor), keyname, dnam, actval, maxval);
+				else 
+					sprintf(msgline, "&%s %s %ld (maximum: %ld)\n",
+						colorname(rulecolor), dnam, actval, maxval);
+				addtobuffer(summarybuf, msgline);
+				if (rulecolor > color) color = rulecolor;
+				if (group) addalertgroup(group);
+			}
+
+			if (matchexp) {
+				if (!namematch(dval, ((exprlist_t *)matchexp)->pattern, ((exprlist_t *)matchexp)->exp)) {
+					if (rulecolor > color) color = rulecolor;
+					if (group) addalertgroup(group);
+
+					if (keyname)
+						sprintf(msgline, "&%s %s:%s %s (expected: %s)\n",
+								colorname(rulecolor), keyname, dnam, dval, ((exprlist_t *)matchexp)->pattern);
+					else 
+						sprintf(msgline, "&%s %s %s (expected: %s)\n",
+								colorname(rulecolor), dnam, dval, ((exprlist_t *)matchexp)->pattern);
+				}
+				else {
+					if (keyname) 
+						sprintf(msgline, "&green %s:%s %s\n", keyname, dnam, dval);
+					else
+						sprintf(msgline, "&green %s %s\n", dnam, dval);
+				}
+
+				addtobuffer(summarybuf, msgline);
+			}
+			break;
+		}
+
+		*delimp = delim;
+		if (eoln) {
+			*eoln = '\n';
+			bol = eoln + 1;
+		}
+		else {
+			bol = NULL;
+		}
+	}
+
+	return color;
 }
 
 int scan_log(void *hinfo, char *classname, 
