@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of BBTEST-NET</TITLE>
 </HEAD><BODY>
 <H1>BBTEST-NET</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -206,6 +206,19 @@ enable this option to see which tests have large replies.
 
 Default: 0 (disabled).
 <P>
+<DT>--validity=N<DD>
+Make the test results valid for N minutes before they go purple. 
+By default test results are valid for 30 minutes; if you run bbtest-net
+less often than that, the results will go purple before the next run
+of bbtest-net. This option lets you change how long the status is 
+valid.
+<P>
+<DT>--source-ip=IPADDRESS<DD>
+On multi-homed hosts, this option can be used to explicitly
+select the source IP address used for the network tests.
+&quot;IPADDRESS&quot; must be a valid IP-address on the host running
+bbtest-net.
+<P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
 <H2>OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES</H2>
@@ -231,6 +244,15 @@ e.g. to pick different icons for reversed tests when
 generating the Xymon webpages. This option makes
 bbtest-net omit these flags from the status messages.
 <P>
+<DT>--shuffle<DD>
+By default, TCP tests run roughly in the order that the hosts
+are listed in the bb-hosts file. If you have many tests for
+one server, this may result in an exceptionally large
+load when Xymon is testing it because Xymon will perform
+a lot of tests at the same time. To avoid this, the
+<B>--shuffle</B> option reorders the sequence of tests
+so they are spread randomly across all of the servers
+tested.
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -278,6 +300,14 @@ the default becomes to run traceroute on all hosts where
 the ping test fails; you can then disable it on specific 
 hosts by putting a &quot;notrace&quot; tag on the host-entry.
 <P>
+<DT>--ping-tasks=N<DD>
+Spread the task of pinging the hosts over N processes. If you have
+a very large number of hosts the time it takes to ping all of them 
+can be substantial, even with the use of tools like fping or hobbitping
+that ping many hosts in parallel. This option causes bbtest-net to
+start N separate ping processes, the IP's that are being ping'ed will
+be divided evenly between these processes.
+<P>
 <P>
 </DL>
 <A NAME="lbAH">&nbsp;</A>
@@ -307,6 +337,16 @@ Disables reporting of the SSL certificate check.
 Determines the number of days before an SSL certificate
 expires, where bbtest-net will generate a warning or
 alarm status for the SSL certificate column.
+<P>
+<DT>--sslbits=N<DD>
+Enables checking that the encryption supported by the
+SSL protocol uses an encryption key of at least N bits.
+E.g. to trigger an alert if your SSL-enabled website 
+supports less than 128 bits of encryption, use &quot;--sslbits=128&quot;.
+Note: This can be enabled on a per-host basis using the
+&quot;sslbits=N&quot; setting in 
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
 <P>
 <P>
 </DL>
@@ -684,6 +724,6 @@ runs, and read by bbretest-net.sh.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:29 GMT, December 15, 2008
+Time: 15:16:57 GMT, October 05, 2010
 </BODY>
 </HTML>

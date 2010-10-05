@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITSERVER.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOBBITSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -107,6 +107,10 @@ Default: 120 pixels.
 The default width (in pixels) of the RRD graph images.
 Default: 576 pixels.
 <P>
+<DT>TRENDSECONDS<DD>
+The graphs on the &quot;trends&quot; page show data for the past TRENDSECONDS
+seconds. Default: 172800 seconds, i.e. 48 hours.
+<P>
 <DT>HTMLCONTENTTYPE<DD>
 The Content-type reported by the CGI scripts that generate web pages.
 By default, this it &quot;text/html&quot;. If you have on-line help texts in
@@ -120,6 +124,19 @@ E.g.
 
 for a Japanese character sets. Note: Some webservers will automatically
 add this, if configured to do so.
+<P>
+<DT>HOLIDAYS<DD>
+Defines the default set of holidays used if there is no &quot;holidays&quot; 
+tag for a host in the bb-hosts file. Holiday sets are defined in the
+<I><A HREF="../man5/hobbit-holidays.cfg.5.html">hobbit-holidays.cfg</A>(5)</I>
+
+file. If not defined, only the default holidays (those defined outside
+a named holiday set) will be considered as holidays.
+<P>
+<DT>WEEKSTART<DD>
+Defines which day is the first day of the week. Set to &quot;0&quot; for Sunday,
+&quot;1&quot; for Monday. Default: 1 (Monday).
+<P>
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
@@ -707,6 +724,15 @@ timestamp - you can define the format using the controls in the
 routine. E.g. to have it show up as &quot;2004-08-24 21:59:47 +0200&quot;
 you would set BBDATEFORMAT=&quot;%Y-%m-%d %H:%M:%S %z&quot;
 <P>
+<DT>HOLIDAYFORMAT<DD>
+How holiday dates are displayed. The default is &quot;%d/%m&quot; which
+show the day and month. American users may want to change this 
+to &quot;%m/%d&quot; to suit their preferred date-display style. This
+is a formatting string for the system
+<I><A HREF="../man3/strftime.3.html">strftime</A>(3)</I>
+
+routine, so any controls available for this routine may be used.
+<P>
 <DT>MKBB2COLREPEAT<DD>
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
@@ -810,6 +836,6 @@ the options you normally used when building Xymon webpages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:30 GMT, December 15, 2008
+Time: 15:16:57 GMT, October 05, 2010
 </BODY>
 </HTML>

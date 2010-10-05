@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITD_RRD</TITLE>
 </HEAD><BODY>
 <H1>HOBBITD_RRD</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -54,6 +54,13 @@ Enable debugging output.
 Defines the directory where the RRD-files are stored. hobbitd_rrd
 will use the location pointed to by the BBRRDS environment if this
 option is not present.
+<P>
+<DT>--no-cache<DD>
+hobbitd_rrd by default caches updates to the RRD files, to reduce
+the disk I/O needed for storing the RRD data. Data is collected for
+a 30 minute period before being committed to disk in one update.
+This option disables caching of the data, so that data is stored
+on disk immediately.
 <P>
 <DT>--extra-script=FILENAME<DD>
 Defines the script that is run to get the RRD data for tests that are not
@@ -472,6 +479,6 @@ reporting.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:30 GMT, December 15, 2008
+Time: 15:16:57 GMT, October 05, 2010
 </BODY>
 </HTML>

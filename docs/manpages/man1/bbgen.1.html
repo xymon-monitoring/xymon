@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of BBGEN</TITLE>
 </HEAD><BODY>
 <H1>BBGEN</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -38,6 +38,15 @@ bbgen - Xymon webpage generator
 generates the overview webpages for the Xymon monitor. These are the webpages
 that show the overall status of your hosts, not the detailed status pages for 
 each test.
+<P>
+Note: The data for the webpages is retrieved from the 
+<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+
+daemon, and bbgen uses the values of the BBDISPLAY / BBDISPLAYS environment 
+variables to determine the network address where hobbitd can be reached. If
+you have more than one server listed in BBDISPLAYS, make sure the first one
+is the local hobbitd server - this is the one that bbgen will query for data.
+<P>
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>OPTIONS</H2>
@@ -191,6 +200,16 @@ tests.
 <DT>--reverseskin=URL<DD>
 Same as &quot;--dialupskin&quot;, but for reverse tests (tests with '!' in front).
 <P>
+<DT>--tooltips=[always,never,main]<DD>
+Determines which pages use tooltips to show the description of the host
+(from the COMMENT entry in the
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
+file). If set to <B>always</B>, tooltips are used on all pages. If set to
+<B>never</B>, tooltips are never used. If set to <B>main</B>, tooltips are
+used on the main pages, but not on the BB2 (all non-green) or NK (critical
+systems) pages.
+<P>
 </DL>
 <A NAME="lbAH">&nbsp;</A>
 <H2>COLUMN SELECTION OPTIONS</H2>
@@ -208,7 +227,7 @@ some of the more noisy tests, like &quot;msgs&quot;.
 Only red status columns will be included on the NK page. By default,
 the NK page will contain hosts with red, yellow and clear status.
 <P>
-<DT>--bb2colors=COLOR[,COLOR]<DD>
+<DT>--bb2-colors=COLOR[,COLOR]<DD>
 Defines which colors cause a test to appear on the &quot;All non-green&quot;
 status page (a.k.a. the BB2 page). COLOR is red, yellow or purple.
 The default is to include all three.
@@ -221,6 +240,9 @@ Deprecated, use &quot;--bb2colors&quot; instead.
 <P>
 <DT>--bb2-ignoredialups<DD>
 Ignore all dialup hosts on the BB2 page, including the BB2 eventlog.
+<P>
+<DT>--no-bb2<DD>
+Do not generate the &quot;All non-green&quot; page.
 <P>
 <DT>--includecolumns=test[,test]<DD>
 Always include these columns on bb2 page Will include certain columns on 
@@ -418,7 +440,7 @@ The START parameter is the start-time for the report in Unix time_t
 format (seconds since Jan 1st 1970 00:00 UTC); END is the end-time for
 the report; DYNAMIC is 0 for a pre-built report and 1 for a dynamic
 (on-line) report; STYLE is &quot;crit&quot; to include only critical (red)
-events, &quot;non-crit&quot; to include all non-green events, and &quot;all&quot; to
+events, &quot;nongr&quot; to include all non-green events, and &quot;all&quot; to
 include all events.
 <P>
 <DT>--csv=FILENAME<DD>
@@ -426,6 +448,21 @@ Used together with --reportopts, this causes bbgen to generate an
 availability report in the form of a comma-separated values (CSV) file.
 This format is commonly used for importing into spreadsheets for further
 processing.
+<BR>
+
+The CSV file includes Unix timestamps. To display these as human readable
+times in Excel, the formula <B>=C2/86400+DATEVALUE(1-jan-1970)</B> (if
+you have the Unix timestamp in the cell C2) can be used. The result cell 
+should be formatted as a date/time field. Note that the timestamps are in 
+UTC, so you may also need to handle local timezone and DST issues yourself.
+<P>
+<DT>--csvdelim=DELIMITER<DD>
+By default, a comma is used to delimit fields in the CSV output. Some
+non-english spreadsheets use a different delimiter, typically semi-colon.
+To generate a CSV file with the proper delimiter, you can use this option
+to set the character used as delimiter. E.g. &quot;--csvdelim=;&quot; - note that 
+this normally should be in double quotes, to prevent the Unix shell from
+interpreting the delimiter character as a commandline delimiter.
 <P>
 <DT>--snapshot=TIME<DD>
 Generate a snapshot of the Xymon pages, as they appeared at
@@ -785,6 +822,6 @@ utility is used to calculate the start- and end-time parameters.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:29 GMT, December 15, 2008
+Time: 15:16:57 GMT, October 05, 2010
 </BODY>
 </HTML>

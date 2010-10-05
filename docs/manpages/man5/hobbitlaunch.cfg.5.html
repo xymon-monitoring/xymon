@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITLAUNCH.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOBBITLAUNCH.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -62,7 +62,24 @@ An entry looks like this:
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INTERVAL&nbsp;5m
 <BR>
 
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ONHOST&nbsp;localhost
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MAXTIME&nbsp;10m
+<BR>
+
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LOGFILE&nbsp;/var/log/xymon/updateweb.log
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;[monthlyreport]
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/hobbitserver.cfg
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CMD&nbsp;/usr/local/xymon/server/ext/monthlyreport.sh
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CRONDATE&nbsp;30&nbsp;4&nbsp;1&nbsp;*&nbsp;*
 <P>
 The <B>key</B> is enclosed in angle brackets, and must be unique
 for each task. You can choose your key-names as you like, they
@@ -78,6 +95,18 @@ you use this to disable standard tasks, instead of removing them
 or commenting them out. Upgrades to Xymon will add standard
 tasks back into the file, so unless you have them listed as DISABLED
 then tasks may re-appear unexpectedly after an upgrade.
+<P>
+The <B>ONHOST</B> keyword tells hobbitlaunch that this task should
+only run on specific hosts. After the ONHOST keyword, you must
+provide a &quot;regular expression&quot;; if the hostname where hobbitlaunch
+runs matches this expression, then the task will run. If it doesn't
+match, then the task is treated as if it were DISABLED.
+<P>
+The <B>MAXTIME</B> keyword sets a maximum time that the task may
+run; if exceeded, hobbitlaunch will kill the task. The time
+is in seconds by default, you can specify minutes, hours or
+days by adding an &quot;m&quot;, &quot;h&quot; or &quot;d&quot; after the number. By default
+there is no upper limit on how long a taskmay run.
 <P>
 The <B>NEEDS</B> instructs hobbitlaunch not to run this task unless
 the task defined by the NEEDS keyword is already running. This
@@ -102,6 +131,17 @@ to restart it. Intervals can be specified in seconds (if you
 just put a number there), or in minutes (5m), hours (2h), or
 days (1d).
 <P>
+The <B>CRONDATE</B> keyword is used for tasks that must run at
+regular intervals or at a specific time. The time specification
+is identical to the one used by cron in
+<I><A HREF="../man5/crontab.5.html">crontab</A>(5)</I>
+
+entries, i.e. a sequence of numbers for minute, hour, day-of-month, 
+month and day-of-week. Three-letter abbreviations in english can
+be used for the month and day-of-week fields. An asterisk is a
+wildcard. So in the example above, this job would run once a
+month, at 4:30 AM on the 1st day of the month.
+<P>
 The <B>ENVFILE</B> setting points to a file with definitions of
 environment variables. Before running the task, hobbitlaunch will
 setup all of the environment variables listed in this file.
@@ -125,7 +165,7 @@ goes to the same location as the hobbitlaunch output.
 <A NAME="lbAF">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man5/crontab.5.html">crontab</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -142,6 +182,6 @@ goes to the same location as the hobbitlaunch output.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:30 GMT, December 15, 2008
+Time: 15:16:57 GMT, October 05, 2010
 </BODY>
 </HTML>
