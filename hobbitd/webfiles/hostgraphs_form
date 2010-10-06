@@ -59,6 +59,7 @@
 	  <option value="disk">Disk</option>
 	  <option value="memory">RAM/Swap</option>
 	  <option value="conn">Ping times</option>
+	  <option value="netstat3">Network connections</option>
 	  </SELECT>
 
           <BR><BR>
