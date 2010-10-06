@@ -49,7 +49,7 @@ split up into more manageable pieces.
 The "filename" argument should point to a file that uses the
 same syntax as bb-hosts. The filename can be an absolute 
 filename (if it begins with a '/'), or a relative filename -
-relative filenames are prefixed with the directory where
+relative file names are prefixed with the directory where
 the main bb-hosts file is located (usually $BBHOME/etc/).
 
 You can nest include tags, i.e. a file that is included 
@@ -57,7 +57,7 @@ from the main bb-hosts file can itself include other files.
 
 .IP "dispinclude filename"
 Acts like the "include" tag, but only on the BBDISPLAY server.
-Can be used e.g. to put a group of hosts on multiple subpages,
+Can be used e.g. to put a group of hosts on multiple sub-pages,
 without having to repeat the host definitions.
 
 .IP "netinclude filename"
@@ -83,9 +83,9 @@ make them go "purple" which can trigger alerts. To avoid that, Xymon
 checks if the "conn" test has failed, and if that is true then the
 other tests will go "clear" instead of purple so you only get alerts
 for the "conn" test. If you do want the stale statuses to go purple,
-you can use the "noclear" tag to override this behaviour.
+you can use the "noclear" tag to override this behavior.
 
-Note that "noclear" also affects the behaviour of network tests;
+Note that "noclear" also affects the behavior of network tests;
 see below.
 
 .IP prefer
@@ -114,15 +114,15 @@ hosts following the "page" directive appear on this page, until
 a new "page", "subpage" or "subparent" line is found.
 
 .IP "subpage NAME [Page-title]"
-This defines a subpage in the second level below the entry page.
-You must have a previous "page" line to hook this subpage to.
+This defines a sub-page in the second level below the entry page.
+You must have a previous "page" line to hook this sub-page to.
 
 .IP "subparent parentpage newpage [Page-title]"
-This is used to define subpages in whatever levels you may
+This is used to define sub-pages in whatever levels you may
 wish. Just like the standard "subpage" tag, "subparent" defines a
-new Xymon webpage; however with "subparent" you explicitly
-list which page it should go as a subpage to. You can pick
-any page as the parent - pages, subpages or even other
+new Xymon web page; however with "subparent" you explicitly
+list which page it should go as a sub-page to. You can pick
+any page as the parent - pages, sub-pages or even other
 subparent pages. So this allows you to define any tree
 structure of pages that you like.
 
@@ -155,7 +155,7 @@ it easy to implement.
 
 .IP "group [group-title]"
 .IP "group-compress [group-title]"
-Defines a group of hosts, that appear together on the webpage,
+Defines a group of hosts, that appear together on the web page,
 with a single header-line listing all of the columns. Hosts
 following the "group" line appear inside the group, until a
 new "group" or page-line is found. The two group-directives
@@ -195,9 +195,9 @@ show just before the group on the status page.
 If a title tag precedes a page/subpage/subparent
 entry, the title text replaces the normal "Pages hosted
 locally" heading normally inserted by Xymon. This
-appears on the page that links to the subpages,
-not on the subpage itself. To get a custom heading on
-the subpage, you may want to use the "--pagetext-heading"
+appears on the page that links to the sub-pages,
+not on the sub-page itself. To get a custom heading on
+the sub-page, you may want to use the "--pagetext-heading"
 when running
 .I bbgen(1)
 
@@ -208,11 +208,11 @@ quotes, e.g. NAME:"R&D Oracle Server"
 
 .IP CLIENT:hostname
 Defines an alias for a host, which will be used when identifying
-status messages. This is typically used to accomodate a local
+status messages. This is typically used to accommodate a local
 client that sends in status reports with a different hostname,
 e.g. if you use hostnames with domains in your Xymon configuration,
 but the client is a silly Window box that does not include the
-hostname. Or vice versa. Whatever the reason, this can be used
+hostname. Or vice-versa. Whatever the reason, this can be used
 to match status reports with the hosts you define in your
 bb-hosts file. It causes incoming status reports with the
 specified hostname to be filed using the hostname defined in
@@ -228,10 +228,10 @@ host. Note: If the columns already exist, you must use the
 utility to \fBdrop\fR them, or they will go purple.
 
 .IP "COMMENT:Host comment"
-Adds a small text after the hostname on the webpage. This can
+Adds a small text after the hostname on the web page. This can
 be used to describe the host, without completely changing its
 display-name as the NAME: tag does. If the comment includes
-whitespace, it must be in double-quotes, e.g. COMMENT:"Sun webserver"
+whitespace, it must be in double-quotes, e.g. COMMENT:"Sun web server"
 
 .IP "DESCR:Hosttype:Description"
 Define some informational text about the host. The "Hosttype"
@@ -248,10 +248,10 @@ when configuring log-file monitoring (they can be used as references in
 .I client-local.cfg(5)
 and
 .I hobbit-clients.cfg(5)
-to group logfile checks). Normally, class-names are controlled on the 
+to group log file checks). Normally, class-names are controlled on the 
 client by starting the Xymon client with the "--class=Classname" option.
 If you specify it in the bb-hosts file on the Xymon server, it overrides
-any classname that the client reports.
+any class name that the client reports.
 
 .IP dialup
 The keyword "dialup" for a host means that it is OK for it to be
@@ -283,11 +283,11 @@ include start out as being empty (no graphs).
 .br
 * To include all default graphs, use an asterisk.  E.g. "TRENDS:*"
 .br
-* To exclude a certain graph, speficy it prefixed with '!'. E.g. 
+* To exclude a certain graph, specify it prefixed with '!'. E.g. 
 to see all graphs except users: "TRENDS:*,!users"
 .br
 * The netstat, vmstat and tcp graphs have many "subgraphs".
-Which of these are shown can be speficied like this:
+Which of these are shown can be specified like this:
 "TRENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn"
 This will show all graphs, but instead of the normal 
 netstat graph, there will be two: The netstat2 and
@@ -297,7 +297,7 @@ the http, conn and smtp services.
 .br
 .IP "COMPACT:COLUMN=COLUMN1,COLUMN2,COLUMN3[;ditto]"
 Collapses a series of statuses into a single column on
-the overview webpage.
+the overview web page.
 
 .SH XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE
 \fBNOTE:\fR The "NK" set of tags is deprecated. They will
@@ -329,7 +329,7 @@ https tests are covered by an "NK:http" tag).
 
 .IP NKTIME=day:starttime:endtime[,day:starttime:endtime]
 This tag limits the time when an active alert is presented
-on the NK webpage.
+on the NK web page.
 
 By default, tests with a red or yellow status that are listed
 in the "NK:testname" tag will appear on the NK page. However,
@@ -340,7 +340,7 @@ serviced during week-ends.
 You can then use the NKTIME tag to define the time periods
 where the alert will show up on the NK page. 
 
-The timespecification consists of
+The time specification consists of
 .sp
 .BR day-of-week:
 \fBW\fR means Mon-Fri ("weekdays"), \fB*\fR means all days, \fB0\fR .. \fB6\fR = Sunday .. Saturday. 
@@ -357,7 +357,7 @@ If necessary, multiple periods can be specified. E.g. to
 monitor a site 24x7, except between noon and 1 pm, use
 NKTIME=*:0000:1159,*:1300:2359
 
-The interval between starttime and endtime may cross midnight, e.g. \fB*:2330:0200\fR
+The interval between start time and end time may cross midnight, e.g. \fB*:2330:0200\fR
 would be valid and have the same effect as \fB*:2330:2400,*:0000:0200\fR.
 
 
@@ -371,7 +371,7 @@ This tag determines which tests for this hosts are included
 in the WML (WAP) page. Syntax is identical to the NK: tag.  
 
 The default set of WML tests are taken from the --wml
-commandline option.  If no "WML:" tag is specified, the 
+command line option.  If no "WML:" tag is specified, the 
 "NK:" tag is used if present.
 
 .SH XYMON STATUS PROPAGATION OPTIONS
@@ -399,7 +399,7 @@ E.g.: bbgen runs with "--nopropred=ftp,smtp".
 "NOPROPRED:dns" gives a setting of "dns" only (the default
 is ignored).
 
-Note: If you set use the "--nopropred=*" commandline
+Note: If you set use the "--nopropred=*" command line
 option to disable propagation of all alerts, you cannot use
 the "+" and "-" methods to add or remove from the wildcard
 setting. In that case, do not use the "+" or "-" setting,
@@ -539,7 +539,7 @@ tool; the values specified in the "ssldays" tag overrides
 the default.
 
 .IP "sslbits=MINIMUMKEYBITS"
-Enable checking of the encryption strengt of the SSL protocol
+Enable checking of the encryption strength of the SSL protocol
 offered by the server. If the server offers encryption using
 a key with fewer than MINIMUMKEYBITS bits, the "sslcert"
 test will go red. E.g. to check that your server only uses
@@ -575,7 +575,7 @@ it to specify the periods of the day that the service should be
 green. Failures OUTSIDE the SLA interval are reported as blue.
 
 .IP depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]
-This tag allows you to define dependencies betweeen tests.
+This tag allows you to define dependencies between tests.
 If "testA" for the current host depends on "test1" for host "host1"
 and test "test2" for "host2", this can be defined with
 
@@ -615,7 +615,7 @@ red immediately.  With a "badTEST:x:y:z" tag this behaviour changes:
 .br
 * While fewer than "x" successive tests fail, the column stays GREEN.
 
-The optional timespecification can be used to limit this
+The optional time specification can be used to limit this
 "badTEST" setting to a particular time of day, e.g. to 
 require a longer period of downtime before raising an
 alarm during out-of-office hours. The time-specification
@@ -626,7 +626,7 @@ uses:
 as "12345", i.e. all working days. Putting "*" here 
 counts as all days of the week, equivalent to "0123456".
 .br
-* starttime and endtime are specified using 24-hour clocks,
+* start time and end time are specified using 24-hour clocks,
 e.g. "badTEST-W-0900-2000" is valid for working days
 between 9 AM (09:00) and 8 PM (20:00).
 
@@ -762,7 +762,7 @@ test specification, \fBafter\fR any other modifiers or port number.
 "IPADDRESS" must be a valid dotted IP-address (not hostname) which
 is assigned to the host running the network tests.
 
-The name of the test also determines the columnname that the test 
+The name of the test also determines the column name that the test 
 result will appear with in the Xymon webpages.
 
 By prefixing a test with "!" it becomes a reverse test: Xymon will 
@@ -777,7 +777,7 @@ without getting alarms while they are off-line.
 
 .IP "ftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp"
 These tags are for testing services offering the FTP, Secure Shell (ssh), 
-SMTP, POP3, IMAP, NNTP, rsync, CLAM antivirus daemon (clamd), Oracle TNS
+SMTP, POP3, IMAP, NNTP, rsync, CLAM anti-virus daemon (clamd), Oracle TNS
 listener (oratns), qmail QMTP and QMQP protocols.
 
 .IP "ftps telnets smtps pop3s imaps nntps"
@@ -788,7 +788,7 @@ services like any other network service - bbtest-net will
 setup an SSL-encrypted session while testing the service.
 The server certificate is validated and information about
 it sent in the "sslcert" column. Note that smtps does not
-have a standard portnumber assignment, so you will need to enter
+have a standard port number assignment, so you will need to enter
 this into the bb-services file or your /etc/services file.
 
 .IP bbd
@@ -841,9 +841,9 @@ Check for one or more available RPC services. This check is indirect
 in that it only queries the RPC Portmapper on the host, not the
 actual service. 
 
-If only "rpc" is given, the test only verifies that the portmapper
+If only "rpc" is given, the test only verifies that the port mapper
 is available on the remote host. If you want to check that one or
-more RPC services are registered with the portmapper, list the 
+more RPC services are registered with the port mapper, list the 
 names of the desired RPC services after the equals-sign. E.g. for
 a working NFS server the "mount", "nlockmgr" and "nfs" services
 must be available; this can be checked with "rpc=mount,nlockmgr,nfs".
@@ -957,7 +957,7 @@ the IP-address "1.2.3.4", but still trying to access a virtual
 website with the name "www.sample.com".
 
 The "=ip.address.of.host" must be the last part of the hostname,
-so if you need to combine this with e.g. an explicit portnumber,
+so if you need to combine this with e.g. an explicit port number,
 it should be done as
 
 	http://www.sample.com:3128=1.2.3.4/index.html
@@ -973,8 +973,8 @@ into one, e.g.
 would be the syntax for testing the www.foo.com website
 via the proxy running on "webproxy.sample.com" port 3128.
 
-If the proxy portnumber is not specified, the default 
-HTTP portnumber (80) is used.
+If the proxy port number is not specified, the default 
+HTTP port number (80) is used.
 
 If your proxy requires authentication, you can specify the
 username and password inside the proxy-part of the URL, e.g.
@@ -1058,7 +1058,7 @@ If more than one content check is present for a host, the first
 content check is reported in the column "content", the second is
 reported in the column "content1", the third in "content2" etc.
 
-You can also specify the columnname directly in the test
+You can also specify the column name directly in the test
 specification, by writing it as "cont=COLUMN;http://...".
 Column-names cannot include whitespace or semi-colon.
 
@@ -1095,7 +1095,7 @@ E.g. if you have a web form defined like this:
    </form>
 
 and you want to post the value "John" to the first field
-and "Doe Jr." to the second field, then the formdata field
+and "Doe Jr." to the second field, then the form data field
 would be
 
     givenname=John&surname=Doe+Jr.
@@ -1168,12 +1168,12 @@ This is used to explicitly test for certain HTTP statuscodes
 returned when the URL is requested. The \fBokstatusexpr\fR and
 \fBnokokstatusexpr\fR expressions are Perl-compatible regular
 expressions, e.g. "2..|302" will match all OK codes and the
-redirect (302) status code. If the URL cannot be retrived,
+redirect (302) status code. If the URL cannot be retrieved,
 the status is "999".
 
 .IP HIDEHTTP
 The status display for HTTP checks usually includes the URL,
-and for content checks also the actual data from the webpage.
+and for content checks also the actual data from the web page.
 If you would like to hide these from view, then the HIDEHTTP
 tag will keep this information from showing up on the status
 webpages.
@@ -1237,13 +1237,13 @@ as "red" (alarm). This tag reduces a search failure to a
 
 .SH PERFORMANCE MONITORING TESTS
 .IP apache[=URL]
-If you are running an Apache webserver, adding this tag makes
+If you are running an Apache web server, adding this tag makes
 .I bbtest-net(1)
-collect performance statistics from the Apache webserver by
+collect performance statistics from the Apache web server by
 querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server-status?auto\fR.
 The response is sent as a data-report and processed by the Xymon
 hobbitd_rrd module into an RRD file and an "apache" graph. If
-your webserver requires e.g. authentication, or runs on a different
+your web server requires e.g. authentication, or runs on a different
 URL for the server-status, you can provide the full URL needed to 
 fetch the server-status page, e.g. 
 \fBapache=http://LOGIN:PASSWORD@10.0.0.1/server-status?auto\fR 
@@ -1308,7 +1308,7 @@ used in the normal displays. The IP is the IP-address of the \fBremote\fR
 URL of your \fBlocal\fR Xymon server.
 
 The URL need not be that of your Xymon server's main page - it could
-be the URL of a subpage on the local Xymon server. Xymon will report
+be the URL of a sub-page on the local Xymon server. Xymon will report
 the summary using the color of the page found at the URL you specify.
 E.g. on your corporate Xymon server you want a summary from the
 Las Vegas office - but you would like to know both what the overall 
@@ -1326,7 +1326,7 @@ This gives you one summary line for Baltimore, with two columns: An
 the status of the "sales" page on the Baltimore Xymon server.
 
 Note: Pages defined using alternate pageset definitions cannot be used,
-the URL must point to a webpage from the default set of Xymon webpages.
+the URL must point to a web page from the default set of Xymon webpages.
 
 
 .SH OTHER TAGS
