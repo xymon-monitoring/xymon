@@ -6,6 +6,7 @@ var MENU_ITEMS = [
 	],
 	['Reports', null, null,
 		['Event log Report', '@BBCGIURL@/bb-eventlog.sh'],
+		['Top Changes', '@BBCGIURL@/hobbit-topchanges.sh'],
 		['Availability Report', '@BBCGIURL@/bb-rep.sh'],
 		['Snapshot Report', '@BBCGIURL@/bb-snapshot.sh'],
 		['Config Report', '@BBCGIURL@/hobbit-confreport.sh'],
