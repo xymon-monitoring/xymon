@@ -149,6 +149,7 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 	int haveseenhttphdrs = 1;
 	int respstrsz = 0;
 	int respstrlen = 0;
+	int result = BB_OK;
 
 	if (dontsendmessages && !respfd && !respstr) {
 		printf("%s\n", message);
@@ -228,6 +229,9 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 
 		if ((posturl == NULL) || (posthost == NULL)) {
 			errprintf("Unable to parse HTTP recipient\n");
+			if (posturl) xfree(posturl);
+			if (posthost) xfree(posthost);
+			if (rcptip) xfree(rcptip);
 			return BB_EBADURL;
 		}
 
@@ -257,11 +261,15 @@ static int sendtobbd(char *recipient, char *message, FILE *respfd, char **respst
 			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
 			strcpy(hostip, inet_ntoa(addr));
 
-			if (inet_aton(hostip, &addr) == 0) return BB_EBADIP;
+			if (inet_aton(hostip, &addr) == 0) {
+				result = BB_EBADIP;
+				goto done;
+			}
 		}
 		else {
 			errprintf("Cannot determine IP address of message recipient %s\n", rcptip);
-			return BB_EIPUNKNOWN;
+			result = BB_EIPUNKNOWN;
+			goto done;
 		}
 	}
 
@@ -275,15 +283,15 @@ retry_connect:
 
 	/* Get a non-blocking socket */
 	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (sockfd == -1) return BB_ENOSOCKET;
+	if (sockfd == -1) { result = BB_ENOSOCKET; goto done; }
 	res = fcntl(sockfd, F_SETFL, O_NONBLOCK);
-	if (res != 0) return BB_ECANNOTDONONBLOCK;
+	if (res != 0) { result = BB_ECANNOTDONONBLOCK; goto done; }
 
 	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if ((res == -1) && (errno != EINPROGRESS)) {
-		close(sockfd);
 		errprintf("connect to bbd failed - %s\n", strerror(errno));
-		return BB_ECONNFAILED;
+		result = BB_ECONNFAILED;
+		goto done;
 	}
 
 	rdone = ((respfd == NULL) && (respstr == NULL));
@@ -297,9 +305,8 @@ retry_connect:
 		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
 		if (res == -1) {
 			errprintf("Select failure while sending to bbd@%s:%d!\n", rcptip, rcptport);
-			shutdown(sockfd, SHUT_RDWR);
-			close(sockfd);
-			return BB_ESELFAILED;
+			result = BB_ESELFAILED;
+			goto done;
 		}
 		else if (res == 0) {
 			/* Timeout! */
@@ -313,7 +320,8 @@ retry_connect:
 				goto retry_connect;	/* Yuck! */
 			}
 
-			return BB_ETIMEOUT;
+			result = BB_ETIMEOUT;
+			goto done;
 		}
 		else {
 			if (!isconnected) {
@@ -325,11 +333,10 @@ retry_connect:
 				dbgprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
 				if (!isconnected) {
-					shutdown(sockfd, SHUT_RDWR);
-					close(sockfd);
 					errprintf("Could not connect to bbd@%s:%d - %s\n", 
 						  rcptip, rcptport, strerror(connres));
-					return BB_ECONNFAILED;
+					result = BB_ECONNFAILED;
+					goto done;
 				}
 			}
 
@@ -393,9 +400,9 @@ retry_connect:
 				/* Send some data */
 				res = write(sockfd, msgptr, strlen(msgptr));
 				if (res == -1) {
-					shutdown(sockfd, SHUT_RDWR); close(sockfd);
 					errprintf("Write error while sending message to bbd@%s:%d\n", rcptip, rcptport);
-					return BB_EWRITEERROR;
+					result = BB_EWRITEERROR;
+					goto done;
 				}
 				else {
 					dbgprintf("Sent %d bytes\n", res);
@@ -407,12 +414,13 @@ retry_connect:
 		}
 	}
 
+done:
 	dbgprintf("Closing connection\n");
 	shutdown(sockfd, SHUT_RDWR);
 	close(sockfd);
 	xfree(rcptip);
 	if (httpmessage) xfree(httpmessage);
-	return BB_OK;
+	return result;
 }
 
 static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, sendreturn_t *response)

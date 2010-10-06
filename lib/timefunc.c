@@ -330,6 +330,9 @@ char *check_downtime(char *hostname, char *testname)
 					if (strcmp(onesvc, testname) == 0) return cause;
 					onesvc = strtok_r(NULL, ",", &buf);
 				}
+
+				/* If we didn't use the "cause" we just created, it must be freed */
+				if (cause) xfree(cause);
 			}
 		} while (*p);
 	}

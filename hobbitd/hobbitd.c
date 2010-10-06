@@ -1994,6 +1994,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 					ctail->next = NULL;
 				}
 			}
+			hwalk->clientmsgs = chead;
 		}
 	}
 
@@ -3072,6 +3073,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
+		xfree(conffn);
 	}
 	else if (allow_downloads && (strncmp(msg->buf, "download", 8) == 0)) {
 		char *fn, *p;
@@ -3086,6 +3088,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
+		xfree(fn);
 	}
 	else if (strncmp(msg->buf, "flush filecache", 15) == 0) {
 		flush_filecache();
