@@ -71,10 +71,8 @@ void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
 	if (realmemstr && freememstr && swapmemstr) {
-		long memphystotal, memphysused, memphysfree, memswaptotal, memswappct;
+		long memphystotal = 0, memphysfree = 0, memswaptotal = 0, memswappct = 0;
 		char *p;
-
-		memphystotal = memphysused = memswaptotal = memswappct = 0;
 
 		if (strncmp(realmemstr, "realmem ", 8) == 0) memphystotal = atoi(realmemstr+8) / 1024;
 		if (sscanf(freememstr, "%*d %*d %*d %ld", &memphysfree) == 1) memphysfree /= 256;
