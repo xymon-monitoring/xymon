@@ -131,5 +131,7 @@ void handle_osf_client(char *hostname, char *clienttype, enum ostype_t os,
 				   phystotal, (phystotal - physfree), -1, 
 				   swaptotal, (swaptotal - swapfree));
 	}
+
+	splitmsg_done();
 }
 

@@ -119,5 +119,7 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				   memphystotal, memphysused, memactused, memswaptotal, memswapused);
 	}
+
+	splitmsg_done();
 }
 

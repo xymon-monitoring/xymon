@@ -708,5 +708,7 @@ void handle_zvse_client(char *hostname, char *clienttype, enum ostype_t os,
   	unix_ports_report(hostname, clienttype, os, hinfo, fromline, timestr, 3, 4, 5, portsstr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 
+
+	splitmsg_done();
 }
 

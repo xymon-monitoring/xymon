@@ -664,5 +664,7 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
 
+
+	splitmsg_done();
 }
 

@@ -470,4 +470,6 @@ void handle_win32_bbwin_client(char *hostname, char *clienttype, enum ostype_t o
                 unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
                                    memphystotal, memphysused, memactused, memswaptotal, memswapused);
         }
+
+	splitmsg_done();
 }

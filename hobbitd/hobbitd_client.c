@@ -126,12 +126,28 @@ void splitmsg_r(char *clientdata, sectlist_t **secthead)
 	}
 }
 
-void splitmsg(char *clientdata)
+void splitmsg_done(void)
 {
+	/*
+	 * NOTE: This MUST be called when we're doing using a message,
+	 * and BEFORE the next message is read. If called after the
+	 * next message is read, the restore-pointers in the "defsecthead"
+	 * list will point to data inside the NEW message, and 
+	 * if the buffer-usage happens to be setup correctly, then
+	 * this will write semi-random data over the new message.
+	 */
 	if (defsecthead) {
 		/* Clean up after the previous message */
 		nextsection_r_done(defsecthead);
 		defsecthead = NULL;
+	}
+}
+
+void splitmsg(char *clientdata)
+{
+	if (defsecthead) {
+		errprintf("BUG: splitmsg_done() was not called on previous message - data corruption possible.\n");
+		splitmsg_done();
 	}
 
 	splitmsg_r(clientdata, &defsecthead);

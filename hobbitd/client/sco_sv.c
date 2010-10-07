@@ -104,4 +104,6 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				   memphystotal, (memphystotal - memphysfree), -1, memswaptotal, (memswaptotal - memswapfree));
 	}
+
+	splitmsg_done();
 }

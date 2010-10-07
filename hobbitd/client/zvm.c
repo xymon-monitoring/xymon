@@ -397,5 +397,6 @@ void handle_zvm_client(char *hostname, char *clienttype, enum ostype_t os,
 	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 
-}
 
+	splitmsg_done();
+}

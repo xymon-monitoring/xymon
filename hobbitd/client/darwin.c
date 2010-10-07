@@ -97,5 +97,7 @@ void handle_darwin_client(char *hostname, char *clienttype, enum ostype_t os,
 			}
 		}
 	}
+
+	splitmsg_done();
 }
 

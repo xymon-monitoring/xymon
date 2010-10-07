@@ -86,5 +86,7 @@ void handle_aix_client(char *hostname, char *clienttype, enum ostype_t os,
 				memphystotal, (memphystotal - memphysfree), -1,
 				memswaptotal, ((memswaptotal * memswappct) / 100));
 	}
+
+	splitmsg_done();
 }
 

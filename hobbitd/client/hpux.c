@@ -92,5 +92,7 @@ void handle_hpux_client(char *hostname, char *clienttype, enum ostype_t os,
 				   memphystotal, memphysused, -1, memswaptotal, memswapused);
 		}
 	}
+
+	splitmsg_done();
 }
 

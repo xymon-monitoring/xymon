@@ -107,5 +107,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 		}
 		freestrbuffer(msg);
 	}
+
+	splitmsg_done();
 }
 
