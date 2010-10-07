@@ -34,47 +34,18 @@ If you want it to report using a different name, you can
 set this explicitly in the "clientname". Uncomment the line,
 and change "winxptest" to the hostname you want to use.
 
-If you want to run it as a service (and you probably do),
-then you must use the "Instsrv.exe" and "SrvAny.exe"
-utilities from the Windows Resource Kit Tools. 
-You can download this from Microsoft:
+Installing as service
+=====================
 
-http://www.microsoft.com/downloads/en/details.aspx?familyid=9d467a69-57ff-4ae7-96ee-b18c4790cffd&displaylang=en
+To install the script to run as a service run:
 
-1) Install the Resource Kit Tools. 
+./xymonclient.ps1 install
 
-2) From a command window (i.e. "cmd.exe") run:
+To start or stop the service run:
 
-	"C:\Program Files\Windows Resource Kits\Tools\Instsrv.exe" XymonClient "C:\Program Files\Windows Resource Kits\Tools\Srvany.exe"
+./xymonclient.ps1 start|stop
 
-3) Run the registry editor RegEdit32 and find the key 
-
-	HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\XymonClient
-
-   From the Edit menu, click "Add Key", name the new key "Parameters".
-
-   Select the "Parameters" key. Then from the Edit menu, click "Add String". 
-   Name the new string "Application".
-
-   Double-click the new "Application" entry, and enter the following in 
-   the "Value" field:
-
-        c:\windows\system32\windowspowershell\v1.0\powershell.exe -nonInteractive -ExecutionPolicy Unrestricted -File c:\Xymon\xymonclient.ps1
-
-   Close the registry editor.
-
-4) From the Windows Service manager, select the "XymonClient" service and start it.
-
-
-NOTE: The "C:\Program Files" directory may be different, if you
-have installed Windows on another disk, and/or if you are running
-a non-english version of Windows. Adjust the commands to match
-your local settings. The "Value" field cannot contain variables (e.g. %SYSTEMROOT%)
-
-
-For more information, refer to the Microsoft documentation for
-instsrv.exe and srvany.exe in their KB article 137890:
-http://support.microsoft.com/kb/137890
+The Windows Service manager can also be used to manage the "XymonPSClient" service.
 
 
 Uninstalling the service

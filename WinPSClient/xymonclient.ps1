@@ -364,7 +364,7 @@ function XymonPorts
 function XymonIpconfig
 {
 	"[ipconfig]"
-	ipconfig /all
+	ipconfig /all | %{ $_.split("`n") } | ?{ $_ -match "\S" }  # for some reason adds blankline between each line
 }
 
 function XymonRoute
@@ -454,6 +454,23 @@ function XymonUsers
 		"[users]"
 		query user
 	}
+}
+
+function XymonIISSites
+{
+	"[iis_sites]"
+    $objSites = [adsi]("IIS://localhost/W3SVC")
+    foreach ($objChild in $objSites.Psbase.children | where {$_.KeyType -eq "IIsWebServer"} ) {
+        ""
+        $objChild.servercomment
+        $objChild.path
+        if($objChild.path -match "\/W3SVC\/(\d+)") { "SiteID: "+$matches[1] }
+        foreach ($prop in @("LogFileDirectory","LogFileLocaltimeRollover","LogFileTruncateSize","ServerAutoStart","ServerBindings","ServerState","SecureBindings" )) {
+            if( $($objChild | gm -Name $prop ) -ne $null) {
+                "{0} {1}" -f $prop,$objChild.$prop.ToString()
+            }
+        }
+    }
 }
 
 function XymonWMIOperatingSystem
@@ -596,7 +613,7 @@ function XymonClientConfig($cfglines)
 	$clientlocalcfg >$xymonclientconfig
 
 	# Source the new config
-	if ($clientremotecfg -ne 0) { . $xymonclientconfig }
+	if ($clientremotecfg -ne 0 -and (test-path -PathType Leaf $xymonclientconfig) ) { . $xymonclientconfig }
 }
 
 function XymonReportConfig
@@ -626,6 +643,7 @@ function XymonClientSections {
 	XymonUptime
 	XymonWho
 	XymonUsers
+	XymonIISSites
 
 	XymonWMIOperatingSystem
 	XymonWMIComputerSystem
@@ -640,7 +658,32 @@ function XymonClientSections {
 	XymonReportConfig
 }
 
+function XymonClientInstall
+{
+	$newsvc = New-Service XymonPSClient c:\Xymon\XymonPSClient.exe -DisplayName "Xymon Powershell Client" -StartupType Automatic -Description "Reports to Xymon monitoring server client data gathered by powershell script"
+	$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters Application "c:\windows\system32\windowspowershell\v1.0\powershell.exe"
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File c:\Xymon\xymonclient.ps1"
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters "Application Default" "c:\Xymon"
+}
 ##### Main code #####
+$ret = 0
+# check for install/start/stop for service management
+if($args -eq "Install") {
+	XymonClientInstall
+	$ret=1
+}
+if($args -eq "Start") {
+	start-service XymonPSClient
+	$ret=1
+}
+if($args -eq "Stop") {
+	stop-service XymonPSClient
+	$ret=1
+}
+if($ret) {return}
+
+# assume no other args, so run as normal
 XymonInit
 
 $running = $true
