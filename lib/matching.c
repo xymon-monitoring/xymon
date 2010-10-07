@@ -73,6 +73,8 @@ int namematch(char *needle, char *haystack, pcre *pcrecode)
 	char *match;
 	int result = 0;
 
+	if ((needle == NULL) || (*needle == '\0')) return 0;
+
 	if (pcrecode) {
 		/* Do regex matching. The regex has already been compiled for us. */
 		return matchregex(needle, pcrecode);
