@@ -44,6 +44,7 @@ function XymonInit
 	$script:loopinterval = 300 # seconds
 	$script:slowscanrate = 12
 	$script:havequerycmd = (get-command -ErrorAction:SilentlyContinue query) -ne $null
+	$script:haveqwinstacmd = (get-command -ErrorAction:SilentlyContinue qwinsta) -ne $null
 
 	if ($cpuinfo -ne $null) 	{ Remove-Variable cpuinfo }
 	if ($totalload -ne $null)	{ Remove-Variable totalload }
@@ -170,6 +171,12 @@ function UnixDate([System.DateTime] $t)
 	$t.ToString("ddd dd MMM HH:mm:ss yyyy")
 }
 
+function epochTime([System.DateTime] $t)
+{
+		[int](($t.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000) - $osinfo.CurrentTimeZone*60
+
+}
+
 function filesize($file,$clsize=4KB)
 {
     return [math]::floor((($_.Length -1)/$clsize + 1) * $clsize/1KB)
@@ -219,7 +226,7 @@ function XymonDate
 
 function XymonClock
 {
-	$epoch = [int](($localdatetime.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000) - $osinfo.CurrentTimeZone*60
+	$epoch = epochTime $localdatetime
 
 	"[clock]"
 	"epoch: " + $epoch
@@ -444,9 +451,9 @@ function XymonProcs
 
 function XymonWho
 {
-	if( $havequerycmd) {
+	if( $haveqwinstacmd) {
 		"[who]"
-		query session
+		qwinsta.exe /counter
 	}
 }
 
