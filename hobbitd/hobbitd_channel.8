@@ -41,6 +41,17 @@ This option is required. The following channels are available:
 .br
 "enadis" receives information about hosts being disabled or enabled.
 
+.IP "--filter=EXPRESSION"
+EXPRESSION is a Perl-compatible regular expression. hobbitd_channel will match 
+the first line of each message against this expression, and silently drops any
+message that does not match the expression. Especially useful for custom 
+worker modules and during testing, to limit the amount of data that the module
+must process.
+.br
+Note that messages for "logrotate", "shutdown", "drophost", "renamehost",
+"droptest" and "renametest" are always forwarded by hobbitd_channel, whether
+they match the filter or not.
+
 .IP "--daemon"
 hobbitd_channel is normally started by 
 .I hobbitlaunch(8)

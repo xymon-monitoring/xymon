@@ -419,6 +419,8 @@ int main(int argc, char *argv[])
 	char *pidfile = NULL;
 	char *envarea = NULL;
 	int cnid = -1;
+	pcre *msgfilter = NULL;
+	pcre *stdfilter = NULL;
 
 	int argi;
 	struct sigaction sa;
@@ -471,6 +473,16 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--service=")) {
 			char *p = strchr(argv[argi], '=');
 			locatorservice = get_servicetype(p+1);
+		}
+		else if (argnmatch(argv[argi], "--filter=")) {
+			char *p = strchr(argv[argi], '=');
+			msgfilter = compileregex(p+1);
+			if (!msgfilter) {
+				errprintf("Invalid filter (bad expression): %s\n", p+1);
+			}
+			else {
+				stdfilter = compileregex("^@@(logrotate|shutdown|drophost|droptest|renamehost|renametest)");
+			}
 		}
 		else {
 			char *childcmd;
@@ -567,7 +579,11 @@ int main(int argc, char *argv[])
 			 * GOCLIENT went high, and so we got alerted about a new
 			 * message arriving. Copy the message to our own buffer queue.
 			 */
-			char *inbuf = strdup(channel->channelbuf);
+			char *inbuf = NULL;
+
+			if (!msgfilter || matchregex(channel->channelbuf, msgfilter) || matchregex(channel->channelbuf, stdfilter)) {
+				inbuf = strdup(channel->channelbuf);
+			}
 
 			/* 
 			 * Now we have safely stored the new message in our buffer.
@@ -604,21 +620,23 @@ int main(int argc, char *argv[])
 				errprintf("Tried to down BOARDBUSY: %s\n", strerror(errno));
 			}
 
-			/*
-			 * See if they want us to rotate logs. We pass this on to
-			 * the worker module as well, but must handle our own logfile.
-			 */
-			if (strncmp(inbuf, "@@logrotate", 11) == 0) {
-				freopen(logfn, "a", stdout);
-				freopen(logfn, "a", stderr);
-			}
+			if (inbuf) {
+				/*
+				 * See if they want us to rotate logs. We pass this on to
+				 * the worker module as well, but must handle our own logfile.
+				 */
+				if (strncmp(inbuf, "@@logrotate", 11) == 0) {
+					freopen(logfn, "a", stdout);
+					freopen(logfn, "a", stderr);
+				}
 
-			/*
-			 * Put the new message on our outbound queue.
-			 */
-			if (addmessage(inbuf) != 0) {
-				/* Failed to queue message, free the buffer */
-				xfree(inbuf);
+				/*
+				 * Put the new message on our outbound queue.
+				 */
+				if (addmessage(inbuf) != 0) {
+					/* Failed to queue message, free the buffer */
+					xfree(inbuf);
+				}
 			}
 		}
 		else {
