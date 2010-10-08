@@ -26,8 +26,10 @@ $clientlower = 1  		# 0 = case unmodified, 1 = lowercase converted
 $clientbbwinmembug = 1  # 0 = report correctly, 1 = page and virtual switched
 $clientremotecfg = 0  	# 0 = don't run remote config, 1 = run remote config
 
-$xymonclientconfig = "C:\TEMP\xymonconfig.ps1"
-$xymonclientlog = "C:\TEMP\xymonclient.log"
+$xymonsvcname = "XymonPSClient"
+$xymondir = (get-item $MyInvocation.InvocationName).DirectoryName
+$xymonclientconfig = "$env:TEMP\xymonconfig.ps1"
+$xymonclientlog = "$env:TEMP\xymonclient.log"
 # -----------------------------------------------------------------------------------
 
 $XymonClientVersion = "$Id$"
@@ -487,14 +489,19 @@ function XymonWMIQuickFixEngineering
 
 function XymonWMIProduct
 {
-	"[WMI:Win32_Product]"
-	$fmt = "{0,-70} {1,-15} {2}"
-	$fmt -f "Name", "Version", "Vendor"
-    $fmt -f "----", "-------", "------"
-    Get-WmiObject -Class Win32_Product | Sort-Object Name | 
+    # run as job, since Win32_Product WMI dies on some systems (e.g. XP)
+	$job = Get-WmiObject -Class Win32_Product -AsJob | wait-job
+	if($job.State -eq "Completed") {
+		"[WMI:Win32_Product]"
+		$fmt = "{0,-70} {1,-15} {2}"
+		$fmt -f "Name", "Version", "Vendor"
+		$fmt -f "----", "-------", "------"
+		receive-job $job | Sort-Object Name | 
 		foreach {
 			$fmt -f $_.Name, $_.Version, $_.Vendor
 		}
+	}
+	remove-job $job
 }
 
 function XymonWMIComputerSystem
@@ -660,11 +667,11 @@ function XymonClientSections {
 
 function XymonClientInstall
 {
-	$newsvc = New-Service XymonPSClient c:\Xymon\XymonPSClient.exe -DisplayName "Xymon Powershell Client" -StartupType Automatic -Description "Reports to Xymon monitoring server client data gathered by powershell script"
-	$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters Application "c:\windows\system32\windowspowershell\v1.0\powershell.exe"
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File c:\Xymon\xymonclient.ps1"
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\XymonPSClient\Parameters "Application Default" "c:\Xymon"
+	$newsvc = New-Service $xymonsvcname $xymondir\XymonPSClient.exe -DisplayName "Xymon Powershell Client" -StartupType Automatic -Description "Reports to Xymon monitoring server client data gathered by powershell script"
+	$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters Application "$PSHOME\powershell.exe"
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File $MyInvocation.InvocationName"
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
 }
 ##### Main code #####
 $ret = 0
@@ -674,11 +681,11 @@ if($args -eq "Install") {
 	$ret=1
 }
 if($args -eq "Start") {
-	start-service XymonPSClient
+	if((get-service $xymonsvcname).Status -ne "Running") { start-service $xymonsvcname }
 	$ret=1
 }
 if($args -eq "Stop") {
-	stop-service XymonPSClient
+	if((get-service $xymonsvcname).Status -eq "Running") { stop-service $xymonsvcname }
 	$ret=1
 }
 if($ret) {return}
