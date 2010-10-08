@@ -5,8 +5,12 @@ DNSFLAGS = -I./c-ares
 
 PROGRAMS = bbtest-net hobbitping beastat
 EXTENSIONS = bbretest-net.sh
+SNMPPROGRAMS = hobbit-snmpcollect
 DBGTOOLS = contest
 
+ifeq ($(DOSNMP),yes)
+PROGRAMS += $(SNMPPROGRAMS)
+endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
@@ -65,6 +69,13 @@ beastat.o: beastat.c
 
 contest: contest.c $(LIBOBJS)
 	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+
+
+hobbit-snmpcollect: hobbit-snmpcollect.o $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ hobbit-snmpcollect.o `net-snmp-config --libs` ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+
+hobbit-snmpcollect.o: hobbit-snmpcollect.c
+	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ hobbit-snmpcollect.c
 
 ################################################
 # Default compilation rules

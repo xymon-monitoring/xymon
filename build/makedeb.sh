@@ -28,6 +28,6 @@ cd $BASEDIR
 find debian | egrep -v "RCS|pkg|\.svn" | cpio -pdvmu $BASEDIR/debbuild/hobbit-$REL/
 
 cd debbuild/hobbit-$REL
-dpkg-buildpackage -rfakeroot
+dpkg-buildpackage -rfakeroot -kA6EDAB79
 mv ../hobbit*$REL*.{deb,dsc,changes} ../../debian/pkg/
 
