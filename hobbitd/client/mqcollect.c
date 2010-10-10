@@ -72,6 +72,7 @@ void handle_mqcollect_client(char *hostname, char *clienttype, enum ostype_t os,
 		if (strncmp(bol, qmline, strlen(qmline)) == 0) {
 			char *p;
 
+			if (qmid) xfree(qmid);
 			qmid = strdup(bol+strlen(qmline));
 			p = strrchr(qmid, '.'); if (p) *p = '\0';
 		}
