@@ -1,0 +1,64 @@
+# This file is used to setup options for the various Xymon
+# CGI programs. It is loaded by the hobbit-cgi/*.sh wrapper
+# scripts, and one environment variable is then passed to
+# the commandline used for each tool.
+
+# bb-csvinfo.cgi
+CGI_CSVINFO_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbitcolumn.sh (uses bb-csvinfo.cgi)
+CGI_HOBBITCOLUMN_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --color=purple --hffile=columndoc"
+# bb-findhost.cgi
+CGI_FINDHOST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
+# hobbitsvc.cgi options for a normal (current) status display
+CGI_SVC_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-svcid --history=top"
+
+# bb-hist.cgi options (service history overview)
+CGI_HIST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-svcid"
+# hobbitsvc.cgi options for a historical status display
+CGI_SVCHIST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-svcid"
+
+# hobbitgraph.cgi options
+CGI_HOBBITGRAPH_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
+# hobbitgraph.cgi options
+CGI_HOSTGRAPHS_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
+# hobbit-confreport.cgi options
+CGI_HOBBITCONFREPORT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
+# bb-datepage.cgi options
+CGI_DATEPAGE_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --url=/hobbit/periodic"
+# bb-rep.cgi options
+CGI_REP_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# bb-replog.cgi options
+CGI_REPLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# bb-snapshot.cgi options
+CGI_SNAPSHOT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# bb-eventlog.cgi options
+CGI_EVENTLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-nkview.cgi options
+CGI_NKVIEW_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-nkedit.cgi options
+CGI_NKEDIT_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-ackinfo.cgi options
+CGI_ACKINFO_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+#hobbit-ghosts.cgi options
+CGI_GHOSTS_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
+# bb-ack.cgi options
+CGI_ACK_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --no-pin"
+# hobbit-enadis.cgi options
+CGI_ENADIS_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+
+# hobbit-hostlist options
+CGI_HOSTLIST_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-notifylog options
+CGI_NOTIFYLOG_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-perfdata options
+CGI_PERFDATA_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+# hobbit-topchanges options
+CGI_TOPCHANGE_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg --top"
+# hobbit-useradm options
+CGI_USERADM_OPTS="--env=@BBHOME@/etc/hobbitserver.cfg"
+

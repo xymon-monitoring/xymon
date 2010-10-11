@@ -1,0 +1,90 @@
+<CENTER>
+<FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+   <TABLE BORDER=0 SUMMARY="Host selection form">
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="HOST" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXHOST" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" ID="PAGEMATCH" SIZE=40></TD>
+       <!-- <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD> -->
+       <td>
+          <select name="PATHLIST" ID="PATHLIST" onChange="document.getElementById('PAGEMATCH').value=document.getElementById('PATHLIST').value; return false">
+	  &PAGEPATH_DROPDOWN
+	  </select>
+       </td>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to skip</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="EXPAGEMATCH" SIZE=40></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Start time</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="STARTTIME" ID="STARTTIME" SIZE=40 VALUE=""></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 2009/01/15 )</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>End time</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="ENDTIME" ID="ENDTIME" SIZE=40 VALUE=""></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: 2009/02/01 )</FONT></TD>
+     </TR>
+
+     <tr>
+       <td colspan=2>&nbsp;</td>
+       <td colspan=2>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTLASTMONTHBEGIN'; document.getElementById('ENDTIME').value='&EVENTCURRMONTHBEGIN'; return false">Last&nbsp;month</button>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTCURRMONTHBEGIN'; document.getElementById('ENDTIME').value='&EVENTNOW'; return false">Current&nbsp;month</button>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTLASTWEEKBEGIN'; document.getElementById('ENDTIME').value='&EVENTCURRWEEKBEGIN'; return false">Last&nbsp;week</button>
+           <button onclick="document.getElementById('STARTTIME').value='&EVENTCURRWEEKBEGIN'; document.getElementById('ENDTIME').value='&EVENTNOW'; return false">Current&nbsp;week</button>
+       </td>
+     </tr>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Format</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><SELECT NAME="FORMAT"><option value=";" selected>CSV</option><option value="XML">XML</option></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Custom RRD filename</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="CUSTOMRRD" SIZE=40 VALUE=""></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Custom dataset</B></FONT></TD>
+       <TD WIDTH=10>&nbsp;</TD>
+       <TD><INPUT TYPE=TEXT NAME="CUSTOMDS" SIZE=40 VALUE=""></TD>
+       <TD><FONT FACE="Arial, Helvetica" COLOR="silver">&nbsp;</FONT></TD>
+     </TR>
+
+     <TR>
+        <TD COLSPAN=3 ALIGN=CENTER>
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="View log" ALT="View log">
+        </TD>
+     </TR>
+   </TABLE>
+</FORM>
+</CENTER>

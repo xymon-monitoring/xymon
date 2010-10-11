@@ -1,0 +1,64 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BB-EVENTLOG.CGI</TITLE>
+</HEAD><BODY>
+<H1>BB-EVENTLOG.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bb-eventlog.cgi - CGI program to report the Xymon eventlog
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>bb-eventlog.cgi</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>bb-eventlog.cgi</B>
+is invoked as a CGI script via the bb-eventlog.sh CGI wrapper.
+Based on the parameters it receives, it generates the
+Xymon event log for a period. This log shows all status
+changes that have occurred for all hosts and services.
+<P>
+bb-eventlog.cgi is passed a QUERY_STRING environment variable 
+with the following parameters:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;MAXTIME&nbsp;(maximum&nbsp;minutes&nbsp;to&nbsp;go&nbsp;back&nbsp;in&nbsp;the&nbsp;log)
+<BR>&nbsp;&nbsp;&nbsp;MAXCOUNT&nbsp;(maximum&nbsp;number&nbsp;of&nbsp;events&nbsp;to&nbsp;report)
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--env=FILENAME<DD>
+Loads the environment defined in FILENAME before executing the CGI script.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:31 GMT, December 15, 2008
+</BODY>
+</HTML>

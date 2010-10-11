@@ -1,0 +1,122 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of MSGCACHE</TITLE>
+</HEAD><BODY>
+<H1>MSGCACHE</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.2.2: 15 Dec 2008<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+msgcache - Cache client messages for later pickup by hobbitfetch
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>msgcache [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>msgcache</B> implements a Xymon message cache. It is intended for use
+with clients which cannot deliver their data to the Xymon server in
+the normal way. Instead of having the client tools connect to the 
+Xymon server, msgcache runs locally and the client tools then
+deliver their data to the msgcache daemon. The msgcache daemon is
+then polled regularly by the
+<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+
+utility, which collects the client messages stored by msgcache
+and forwards them to the Xymon server.
+<P>
+<B>NOTE:</B> When using msgcache, the <B>BBDISP</B> setting for
+the clients should be <B>BBDISP=127.0.0.1</B> instead of pointing
+at the real Xymon server.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>RESTRICTIONS</H2>
+
+Clients delivering their data to msgcache instead of the real
+Xymon server will in general not notice this. Specifically,
+the client configuration data provided by the Xymon server when
+a client delivers its data is forwarded through the hobbitfetch / 
+msgcache chain, so the normal centralized client configuration
+works.
+<P>
+However, other commands which rely on clients communicating
+directly with the Xymon server will not work. This includes
+the <B>config</B> and <B>query</B> commands which clients may
+use to fetch configuration files and query the Xymon server
+for a current status.
+<P>
+The <B>download</B> command also does not work with msgcache.
+This means that the automatic client update facility will
+not work for clients communicating via msgcache.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--listen=IPADDRESS[:PORT]<DD>
+Defines the IP-address and portnumber where msgcache listens for 
+incoming connections. By default, msgcache listens for connections
+on all network interfaces, port 1984.
+<P>
+<DT>--server=IPADDRESS[,IPADDRESS]<DD>
+Restricts which servers are allowed to pick up the cached messages.
+By default anyone can contact the msgcache utility and request all
+of the cached messages. This option allows only the listed servers
+to request the cached messages.
+<P>
+<DT>--max-age=N<DD>
+Defines how long cached messages are kept. If the message has not 
+been picked up with N seconds after being delivered to msgcache,
+it is silently discarded. Default: N=600 seconds (10 minutes).
+<P>
+<DT>--daemon<DD>
+Run as a daemon, i.e. msgcache will detach from the terminal and
+run as a background task
+<P>
+<DT>--no-daemon<DD>
+Run as a foreground task. This option must be used when msgcache
+is started by
+<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+
+which is the normal way of running msgcache.
+<P>
+<DT>--pidfile=FILENAME<DD>
+Store the process ID of the msgcache task in FILENAME.
+<P>
+<DT>--logfile=FILENAME<DD>
+Log msgcache output to FILENAME.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">RESTRICTIONS</A><DD>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 12:54:30 GMT, December 15, 2008
+</BODY>
+</HTML>

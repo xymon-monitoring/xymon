@@ -1,0 +1,51 @@
+<BR>
+
+<CENTER>
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Snapshot selection">
+    <TR BGCOLOR="#000033">
+       <TD COLSPAN=2>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Xymon Snapshot Report</B></FONT></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <BR>
+       <CENTER>
+
+       <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+          <SELECT NAME="mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <SELECT NAME="hour">
+          &REPHOURLIST
+          </SELECT>
+
+          <SELECT NAME="min">
+          &REPMINLIST
+          </SELECT>
+
+          <SELECT NAME="sec">
+          &REPSECLIST
+          </SELECT>
+
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="SUB" VALUE="Generate Report" ALT="Generate Report">
+       </FORM>
+
+       </CENTER>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR><BR><BR>
+

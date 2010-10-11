@@ -1,0 +1,28 @@
+# bbgen compile-time settings for a HP-UX system
+
+OSDEF = -DHPUX
+
+# NETLIBS: You may need to add -lresolv or similar to pick up network libraries
+NETLIBS = -lnsl
+
+# Compile flags for normal build
+# NOTE: HP-UX built-in compiler is horribly broken and will not compile Hobbit.
+# So you should use the GNU compiler, gcc.
+CC = gcc
+# NOTE: Some HP-UX 11i systems have a severely broken set of include files. This
+# will typically show up when compiling the "bbnet/bbtest-net.c" where it bombs with
+#   bbtest-net.c: In function 'send_rpcinfo_results':
+#   bbtest-net.c:1794: warning: assignment makes pointer from integer without a cast
+#   bbtest-net.c:1801: error: dereferencing pointer to incomplete type
+#   bbtest-net.c:1813: error: dereferencing pointer to incomplete type
+#   bbtest-net.c:1818: error: dereferencing pointer to incomplete type
+# If that happens, try adding -DBROKEN_HPUX_NETDB at the end of the CFLAGS line below. 
+CFLAGS = -g -O -D_REENTRANT  $(LFSDEF) $(OSDEF)
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mailx"
+

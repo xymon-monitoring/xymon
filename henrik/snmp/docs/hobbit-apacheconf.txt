@@ -1,0 +1,45 @@
+# This file is for Apache 1.3.x and Apache 2.0.x
+#
+# Add this to your Apache configuration, it makes
+# the Hobbit webpages and cgi-scripts available in the
+# "/hobbit" and "/hobbit-cgi" URLs.
+
+
+# NB: The "Alias" line below must NOT be used if you have
+#     the Hobbit webfiles as the root URL. In that case,
+#     you should instead set this:
+#
+#          DocumentRoot /usr/local/hobbit/server/www/
+
+Alias /hobbit/  "/usr/local/hobbit/server/www/"
+<Directory "/usr/local/hobbit/server/www/">
+    Options Indexes FollowSymLinks Includes MultiViews
+    Order allow,deny
+    Allow from all
+</Directory>
+
+ScriptAlias /hobbit-cgi/ "/usr/local/hobbit/cgi-bin/"
+<Directory "/usr/local/hobbit/cgi-bin">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+</Directory>
+
+ScriptAlias /hobbit-seccgi/ "/usr/local/hobbit/cgi-secure/"
+<Directory "/usr/local/hobbit/cgi-secure">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+
+    # Password file where users with access to these scripts are kept.
+    # Create it with "htpasswd -c /usr/local/hobbit/server/etc/hobbitpasswd USERNAME"
+    # Add more users / change passwords with "htpasswd /usr/local/hobbit/server/etc/hobbitpasswd USERNAME"
+
+    AuthUserFile /usr/local/hobbit/server/etc/hobbitpasswd
+    AuthType Basic
+    AuthName "Hobbit Administration"
+    Require valid-user
+</Directory>
+

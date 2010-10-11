@@ -1,0 +1,195 @@
+# bb-service
+#
+# $Id$
+#
+# This file defines the way TCP services are tested by bbtest-net
+# (part of the bbgen toolkit).
+#
+# A service definition looks like this:
+#     [NAME]
+#        send "HELLO"
+#        expect "OK"
+#        options banner,ssl,telnet
+#        port PORTNUMBER
+#
+# The NAME is the name of the test, and of the TCP service. If
+# multiple tests share a common definition (e.g. ssh, ssh1, ssh2)
+# then these may be given as "[NAME1|NAME2|NAME3]"
+#
+# If the send-string is defined, this data is sent to the service
+# immediately after a connect.
+#
+# If the expect-string is defined, any data returned by the service is 
+# matched against this. If it matches, the status will be green; if it
+# does not match, the status will turn yellow. Only if the service does
+# not respond at all will the status go red. If a expect-string is not 
+# defined, the status will always be green if it is possible to connect 
+# to the service.
+#
+# The options can include "banner" (to grab the banner from the 
+# service), "telnet" (telnet options are to be negotiated), and
+# "ssl" (perform an SSL/TLS handshake and pick up the SSL certificate).
+#
+# The "port" is the TCP port used for this service. This OVERRIDES
+# any port number listed in /etc/services - but this also means that
+# you need not define "unusual" port-numbers in /etc/services. 
+# Of course, you can always define your test in bb-hosts to use a 
+# specific portnumber.
+#
+# The send/expect string definitions must be in double quotes.
+# The sequences "\r", "\n", "\t" and "\xNN" are recognized and
+# converted into a carriage-return (ASCII 13), line-feed (ASCII 10),
+# TAB (ASCII 8), and any byte respectively (NN=hex value).
+
+[ftp]
+   send "quit\r\n"
+   expect "220"
+   options banner
+   port 21
+
+[ftps]
+   send "quit\r\n"
+   expect "220"
+   options ssl,banner
+   port 990
+
+[ssh|ssh1|ssh2]
+   send "SSH-2.0-OpenSSH_4.1\r\n"
+   expect "SSH"
+   options banner
+   port 22
+
+[telnet]
+   options banner,telnet
+   port 23
+
+[telnets]
+   options ssl,banner,telnet
+   port 992
+
+[smtp]
+   send "mail\r\nquit\r\n"
+   expect "220"
+   options banner
+   port 25
+
+[smtps]
+   send "mail\r\nquit\r\n"
+   expect "220"
+   options ssl,banner
+#  No default port-number assignment for smtps - nonstandard according to IANA
+
+[pop2|pop-2]
+   send "quit\r\n"
+   expect "+OK"
+   options banner
+   port 109
+
+[pop|pop3|pop-3]
+   send "quit\r\n"
+   expect "+OK"
+   options banner
+   port 110
+
+[pop3s]
+   send "quit\r\n"
+   expect "+OK"
+   options ssl,banner
+   port 995
+
+[imap|imap2|imap4]
+   send "ABC123 LOGOUT\r\n"
+   expect "* OK"
+   options banner
+   port 143
+
+[imap3]
+   send "ABC123 LOGOUT\r\n"
+   expect "* OK"
+   options banner
+   port 220
+
+[imaps]
+   send "ABC123 LOGOUT\r\n"
+   expect "* OK"
+   options ssl,banner
+   port 993
+
+[nntp]
+   send "quit\r\n"
+   expect "200"
+   options banner
+   port 119
+
+[nntps]
+   send "quit\r\n"
+   expect "200"
+   options ssl,banner
+   port 563
+
+[ldap]
+   port 389
+
+[ldaps]
+   options ssl
+   port 636
+
+[rsync]
+   expect "@RSYNCD"
+   options banner
+   port 873
+
+[bbd]
+   send "dummy"
+   port 1984
+
+# The AV scanning daemon from the ClamAV antivirus package
+[clamd]
+   send "PING\n"
+   expect "PONG"
+   options banner
+   port 3310
+
+# SpamAssassin spamd
+[spamd]
+   send "PING SPAMC/Hobbit\n"
+   expect "SPAMD"
+   options banner
+   port 783
+
+# From http://www.mail-archive.com/whatsup_forum@list.ipswitch.com/msg06678.html
+[oratns]
+   send "\x00\x57\x00\x00\x01\x00\x00\x00\x01\x36\x01\x2C\x00\x00\x08\x00\x7F\xFF\xA3\x0A\x00\x00\x01\x00\x00\x1D\x00\x3A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00(CONNECT_DATA=(COMMAND=ping))"
+   options banner
+   port 1521
+
+# qmail "Quick Mail Transfer Protocol"
+[qmtp]
+   port 209
+
+# qmail "Quick Mail Queuing Protocol"
+[qmqp]
+   port 628
+
+# vnc "Virtual Network Computing" - method from bb-vnc.tar.gz
+# From Richard Finegold
+[vnc]
+   send "RFB 000.000\r\n"
+   expect "RFB "
+   options banner
+   port 5900
+
+# CUPS print server. It answers to HTTP requests.
+[cupsd]
+   send "GET /printers\r\n"
+   expect "HTTP/1.1 200 OK"
+   port 631
+
+# AJP (Apache JServ Protocol) 1.3 - sends an AJP "ping" request.
+# Ref: http://tomcat.apache.org/connectors-doc/common/ajpv13a.html
+# From Charles Goyard
+[ajp13]
+   send "\x12\x34\x00\x01\x0a"
+   expect "\x41\x42\x00\x01\x09"
+   port 8009
+
