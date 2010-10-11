@@ -232,8 +232,11 @@ function XymonClock
 	"epoch: " + $epoch
 	"local: " + (UnixDate $localdatetime)
 	"UTC: " + (UnixDate $localdatetime.AddMinutes(-$osinfo.CurrentTimeZone))
-	"NTP server: " + (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters').NtpServer
-	"Time Synchronisation type:" + (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters').Type
+	$timesource = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters').Type
+	"Time Synchronisation type: " + $timesource
+	if ($timesource -eq "NTP") {
+		"NTP server: " + (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters').NtpServer
+	}
 }
 
 function XymonUptime
