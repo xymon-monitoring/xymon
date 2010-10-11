@@ -2028,6 +2028,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			contenttestname = strdup(p+1);
 		}
+		else if (strcmp(argv[argi], "--bb-proxy-syntax") == 0) {
+			/* Obey the Big Brother format for http proxy listed as part of the URL */
+			obeybbproxysyntax = 1;
+		}
 
 		/* Options for SSL certificates */
 		else if (argnmatch(argv[argi], "--ssl=")) {

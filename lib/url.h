@@ -11,6 +11,8 @@
 #ifndef __URL_H__
 #define __URL_H__
 
+extern int obeybbproxysyntax;
+
 typedef struct urlelem_t {
 	char *origform;
 	char *scheme;

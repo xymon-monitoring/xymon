@@ -264,7 +264,13 @@ Determines the name of the column Xymon displays for content checks.
 The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
 scripts earlier, you may want to use "--content=cont" to report content
 checks using the same test name as these scripts do.
-
+.IP --bb-proxy-syntax
+Adhere to the Big Brother syntax for a URL, which allows specifying 
+a HTTP proxy as part of a URL. See \fB"HTTP Testing via proxy"\fR in the
+.I bb-hosts(5) 
+file for details. Beginning with Xymon 4.3.0, this behaviour is disabled
+by default since URL's that include other URL's are now much more
+common. This option restores the old Big Brother-compatible behaviour.
 
 .SH OPTIONS FOR SSL CERTIFICATE TESTS
 .IP --ssl=SSLCERTTESTNAME

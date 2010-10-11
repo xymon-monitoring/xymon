@@ -963,6 +963,11 @@ it should be done as
 	http://www.sample.com:3128=1.2.3.4/index.html
 
 .IP "HTTP Testing via proxy"
+\fBNOTE:\fR This is not enabled by default. You must
+add the "--bb-proxy-syntax" option when running
+.I bbtest-net(1)
+if you want to use this.
+
 bbtest-net supports the Big Brother syntax for
 specifying an HTTP proxy to use when performing http 
 tests. This syntax just joins the proxy- and the target-URL

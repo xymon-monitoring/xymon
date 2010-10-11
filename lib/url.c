@@ -22,6 +22,8 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
+int obeybbproxysyntax = 0;	/* Big Brother can put proxy-spec in a URL, with "http://proxy/bla;http://target/foo" */
+
 /* This is used for loading a .netrc file with hostnames and authentication tokens. */
 typedef struct loginlist_t {
 	char *host;
@@ -622,13 +624,18 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	if (postcontenttype) getescapestring(postcontenttype, &bburl->postcontenttype, NULL);
 	if (expstart)  getescapestring(expstart, &bburl->expdata, NULL);
 
-	p = strstr(urlstart, "/http://");
-	if (!p)
-		p = strstr(urlstart, "/https://");
-	if (p) {
-		proxystart = urlstart;
-		urlstart = (p+1);
-		*p = '\0';
+	if (obeybbproxysyntax) {
+		/*
+		 * Ye olde Big Brother syntax for using a proxy on per-URL basis.
+		 */
+		p = strstr(urlstart, "/http://");
+		if (!p)
+			p = strstr(urlstart, "/https://");
+		if (p) {
+			proxystart = urlstart;
+			urlstart = (p+1);
+			*p = '\0';
+		}
 	}
 
 	parse_url(urlstart, bburl->desturl);
