@@ -227,6 +227,17 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				xfree(ifname); xfree(txstr); xfree(rxstr); xfree(dummy);
 				dmatch = 0;
 			}
+
+			if (ifname && strcmp(ifname, "mac") == 0) {
+				/* Ignore "mac" entries - these are for sub-devices for multiple nic's aggregated into one */
+				xfree(ifname); xfree(txstr);
+				dmatch = 0;
+			}
+			if (dummy && strcmp(dummy, "mac") == 0) {
+				/* Ignore "mac" entries - these are for sub-devices for multiple nic's aggregated into one */
+				xfree(dummy); xfree(rxstr);
+				dmatch = 0;
+			}
 			break;
 
 		  case OS_AIX: 
