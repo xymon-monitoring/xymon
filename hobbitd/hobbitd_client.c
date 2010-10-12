@@ -623,8 +623,8 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			capahdr, mnthdr);
 		addtobuffer(monmsg, msgline);
 
-		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n%s\n",
-			  hostname, osname(os), capahdr, mnthdr, dfstr);
+		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n",
+			  hostname, osname(os), capahdr, mnthdr);
 	}
 
 	/* Check for filesystems that must (not) exist */
