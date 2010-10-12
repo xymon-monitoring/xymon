@@ -35,8 +35,9 @@ static char rcsid[] = "$Id$";
 #define NAME_MAX 255	/* Solaris doesn't define NAME_MAX, but ufs limit is 255 */
 #endif
 
+extern int seq;	/* from hobbitd_rrd.c */
+
 char *rrddir = NULL;
-int  log_double_updates = 1;
 int use_rrd_cache = 1;         /* Use the cache by default */
 
 static int  processorfd = 0;
@@ -64,6 +65,8 @@ typedef struct updcacheitem_t {
 	rrdtpldata_t *tpl;
 	int valcount;
 	char *vals[CACHESZ];
+	int updseq[CACHESZ];
+	time_t updtime[CACHESZ];
 } updcacheitem_t;
 
 static RbtHandle flushtree;
@@ -218,8 +221,15 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 
 	/* Setup the parameter list with all of the cached and new readings */
 	for (i=0; (i < cacheitem->valcount); i++) updparams[4+i] = cacheitem->vals[i];
-	updparams[4+cacheitem->valcount] = newdata;
-	updparams[4+cacheitem->valcount+1] = NULL;
+
+	if (newdata) {
+		updparams[4+cacheitem->valcount] = newdata;
+		updparams[4+cacheitem->valcount+1] = NULL;
+	}
+	else {
+		/* No new data - happens when flushing the cache */
+		updparams[4+cacheitem->valcount] = NULL;
+	}
 
 	for (pcount = 0; (updparams[pcount]); pcount++);
 	optind = opterr = 0; rrd_clear_error();
@@ -235,7 +245,11 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 #endif
 
 	/* Clear the cached data */
-	for (i=0; (i < cacheitem->valcount); i++) xfree(cacheitem->vals[i]);
+	for (i=0; (i < cacheitem->valcount); i++) {
+		cacheitem->updseq[i] = 0;
+		cacheitem->updtime[i] = 0;
+		xfree(cacheitem->vals[i]);
+	}
 	cacheitem->valcount = 0;
 
 	return result;
@@ -251,6 +265,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	updcacheitem_t *cacheitem = NULL;
 	int pollinterval;
 	char *modifymsg;
+	time_t updtime = 0;
 
 	/* Reset the RRD poll interval */
 	pollinterval = rrdinterval;
@@ -360,6 +375,53 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		}
 	}
 
+	updtime = atoi(rrdvalues);
+	if (cacheitem->valcount > 0) {
+		/* Check for duplicate updates */
+
+		if (cacheitem->updseq[cacheitem->valcount-1] == seq) {
+			/*
+			 * This is usually caused by a configuration error, 
+			 * e.g. two PORT settings in hobbit-clients.cfg that
+			 * use the same TRACK string.
+			 * Can also be two web checks using the same URL, but
+			 * with different POST data.
+			 */
+			dbgprintf("%s/%s: Error - ignored duplicate update for message sequence %d\n", hostname, rrdfn, seq);
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return 0;
+		}
+		else if (cacheitem->updtime[cacheitem->valcount-1] > updtime) {
+			dbgprintf("%s/%s: Error - RRD time goes backwards: Now=%d, previous=%d\n", hostname, rrdfn, (int) updtime, (int)cacheitem->updtime[cacheitem->valcount-1]);
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return 0;
+		}
+		else if (cacheitem->updtime[cacheitem->valcount-1] == updtime) {
+			int identical = (strcmp(rrdvalues, cacheitem->vals[cacheitem->valcount-1]) == 0);
+
+			if (!identical) {
+				int i;
+
+				errprintf("%s/%s: Bug - duplicate RRD data with same timestamp %d, different data\n", 
+					  hostname, rrdfn, (int) updtime);
+
+				for (i=0; (i < cacheitem->valcount); i++) 
+					dbgprintf("Val %d: Seq %d: %s\n", i, cacheitem->updseq[i], cacheitem->vals[i]);
+				dbgprintf("NewVal: Seq %d: %s\n", seq, rrdvalues);
+			}
+			else {
+				dbgprintf("%s/%s: Ignored duplicate (and identical) update timestamped %d\n", hostname, rrdfn, (int) updtime);
+			}
+
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return 0;
+		}
+	}
+
+
 	/*
 	 * Match the RRD data against any DS client-configuration modifiers.
 	 */
@@ -395,9 +457,8 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 */
 	if (use_rrd_cache && (++callcounter < CACHESZ)) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
-			/* 
-			 * There's room for caching this update.
-			 */ 
+			cacheitem->updseq[cacheitem->valcount] = seq;
+			cacheitem->updtime[cacheitem->valcount] = updtime;
 			cacheitem->vals[cacheitem->valcount] = strdup(rrdvalues);
 			cacheitem->valcount += 1;
 			MEMUNDEFINE(filedir);
@@ -412,7 +473,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
-		if (log_double_updates || (strncmp(msg, "illegal attempt", 15) != 0)) {
+		if (strncmp(msg, "illegal attempt", 15) == 0) {
+			dbgprintf("RRD error updating %s from %s: %s\n", 
+				  filedir, (senderip ? senderip : "unknown"), msg);
+		}
+		else {
 			errprintf("RRD error updating %s from %s: %s\n", 
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}

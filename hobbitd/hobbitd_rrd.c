@@ -41,6 +41,7 @@ static char rcsid[] = "$Id$";
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
+int seq = 0;
 static int running = 1;
 static time_t reloadtime = 0;
 
@@ -179,7 +180,7 @@ char **get_rrd_definition(char *key, int *count)
 int main(int argc, char *argv[])
 {
 	char *msg;
-	int argi, seq;
+	int argi;
 	struct sigaction sa;
 	char *exthandler = NULL;
 	char *extids = NULL;

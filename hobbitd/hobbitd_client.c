@@ -50,6 +50,38 @@ int sendclearsvcs = 1;
 int localmode     = 0;
 int noreportcolor = COL_CLEAR;
 
+typedef struct updinfo_t {
+	char *hostname;
+	time_t updtime;
+	int updseq;
+} updinfo_t;
+static RbtHandle updinfotree;
+
+int add_updateinfo(char *hostname, int seq, time_t tstamp)
+{
+	RbtIterator handle;
+	updinfo_t *itm;
+
+	handle = rbtFind(updinfotree, hostname);
+	if (handle == rbtEnd(updinfotree)) {
+		itm = (updinfo_t *)calloc(1, sizeof(updinfo_t));
+		itm->hostname = strdup(hostname);
+		rbtInsert(updinfotree, itm->hostname, itm);
+	}
+	else {
+		itm = (updinfo_t *)gettreeitem(updinfotree, handle);
+	}
+
+	if (itm->updtime == tstamp) {
+		dbgprintf("%s: Duplicate client message at time %d, seq %d, lastseq %d\n", hostname, (int) tstamp, seq, itm->updseq);
+		return 1;
+	}
+
+	itm->updtime = tstamp;
+	itm->updseq = seq;
+	return 0;
+}
+
 void nextsection_r_done(void *secthead)
 {
 	/* Free the old list */
@@ -2056,6 +2088,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGCHLD, SIG_IGN);
 
+	updinfotree = rbtNew(name_compare);
 	running = 1;
 
 	while (running) {
@@ -2122,6 +2155,9 @@ int main(int argc, char *argv[])
 
 			/* Default clientclass to the OS name */
 			if (!clientclass || (*clientclass == '\0')) clientclass = clientos;
+
+			/* Check for duplicates */
+			if (add_updateinfo(hostname, seq, timestamp) != 0) continue;
 
 			combo_start();
 			switch (os) {

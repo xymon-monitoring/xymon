@@ -189,7 +189,7 @@ int pickdata(char *buf, pcre *expr, int dupok, ...)
 				*ptr = strdup(w);
 			}
 			else {
-				errprintf("Internal error: Duplicate match ignored\n");
+				dbgprintf("Internal error: Duplicate match ignored\n");
 			}
 		}
 	}
