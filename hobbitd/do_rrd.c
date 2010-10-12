@@ -473,7 +473,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
-		if (strncmp(msg, "illegal attempt", 15) == 0) {
+		if (strstr(msg, "(minimum one second step)") != NULL) {
 			dbgprintf("RRD error updating %s from %s: %s\n", 
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
