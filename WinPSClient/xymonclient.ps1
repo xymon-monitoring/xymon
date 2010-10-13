@@ -34,13 +34,33 @@ $xymonclientlog = "$env:TEMP\xymonclient.log"
 
 $XymonClientVersion = "$Id$"
 
+function SetIfNot($obj,$key,$value)
+{
+    if($obj.$key -eq $null) { $obj | Add-Member -MemberType noteproperty -Name $key -Value $value }
+}
+
 function XymonInit
 {
+	# Get reg key first, then override if not set
+	$script:XymonSettings = Get-ItemProperty  -ErrorAction:SilentlyContinue HKLM:\SOFTWARE\XymonPSClient
+	if($script:XymonSettings -eq $null) {
+		$script:XymonSettings = New-Object Object
+	} else { # any special handling for settings from reg keys
+		if($XymonSettings.servers -match " ") {
+			$XymonSettings.servers = $XymonSettings.servers.Split(" ")
+		}
+	}
+	SetIfNot $XymonSettings servers $xymonservers # List your Xymon servers here
 	$script:wanteddisks = @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
 	$script:wantedlogs = "Application",  "System", "Security"
 	$script:maxlogage = 60
     $script:clientlocalcfg = ""
 
+	
+	$script:HaveCmd = @{}
+	foreach($cmd in "query","qwinsta") {
+		$script:HaveCmd.$cmd = (get-command -ErrorAction:SilentlyContinue $cmd) -ne $null
+	}
 	$script:loopinterval = 300 # seconds
 	$script:slowscanrate = 12
 	$script:havequerycmd = (get-command -ErrorAction:SilentlyContinue query) -ne $null
@@ -173,7 +193,7 @@ function UnixDate([System.DateTime] $t)
 
 function epochTime([System.DateTime] $t)
 {
-		[int](($t.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000) - $osinfo.CurrentTimeZone*60
+		[uint32](($t.Ticks - ([DateTime] "1/1/1970 00:00:00").Ticks) / 10000000) - $osinfo.CurrentTimeZone*60
 
 }
 
@@ -237,6 +257,8 @@ function XymonClock
 	if ($timesource -eq "NTP") {
 		"NTP server: " + (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters').NtpServer
 	}
+	$w32qs = w32tm /query /status  # will not run on 2003, XP or earlier
+	if($?) { $w32qs }
 }
 
 function XymonUptime
@@ -363,8 +385,38 @@ function XymonDir
 {
 	$script:clientlocalcfg | ? { $_ -match "^dir:(.*)" } | % {
         "[dir:$($matches[1])]"
-	    du $matches[1]
+		if(test-path $matches[1] -PathType Container) { du $matches[1] }
+		elseif(test-path $matches[1]) {"ERROR: The path specified is not a directory." }
+		else { "ERROR: The system cannot find the path specified." }
     }
+}
+
+function XymonFileCheck
+{
+    # don't implement hashing yet - don't even check for it...
+    $script:clientlocalcfg | ? { $_ -match "^file:(.*)$" } | % {
+        "[file:$($matches[1])]"
+		if(test-path $matches[1]) {
+			$fh = get-item $matches[1]
+			if(test-path $matches[1] -PathType Leaf) {
+				"type:100000 (file)"
+			} else {
+				"type:40000 (directory)"
+			}
+			"mode:{0} (not implemented)" -f $(if($fh.IsReadOnly) {555} else {777})
+			"linkcount:1"
+			"owner:0 ({0})" -f $fh.GetAccessControl().Owner
+			"group:0 ({0})" -f $fh.GetAccessControl().Group
+			if(test-path $matches[1] -PathType Leaf) { "size:{0}" -f $fh.length }
+			"atime:{0} ({1})" -f (epochTime $fh.LastAccessTimeUtc),$fh.LastAccessTime.ToString("yyyy/MM/dd-HH:mm:ss")
+			"ctime:{0} ({1})" -f (epochTime $fh.CreationTimeUtc),$fh.CreationTime.ToString("yyyy/MM/dd-HH:mm:ss")
+			"mtime:{0} ({1})" -f (epochTime $fh.LastWriteTimeUtc),$fh.LastWriteTime.ToString("yyyy/MM/dd-HH:mm:ss")
+			if(test-path $matches[1] -PathType Leaf) {
+				"FileVersion:{0}" -f $fh.VersionInfo.FileVersion
+				"FileDescription:{0}" -f $fh.VersionInfo.FileDescription
+			}
+		} else { "ERROR: The system cannot find the path specified." }
+    }   
 }
 
 function XymonPorts
@@ -395,12 +447,12 @@ function XymonNetstat
 function XymonIfstat
 {
 	"[ifstat]"
-    [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | %{
+    [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces() | ?{$_.OperationalStatus -eq "Up"} | %{
         $ad = $_.GetIPv4Statistics() | select BytesSent, BytesReceived
         $ip = $_.GetIPProperties().UnicastAddresses | select Address
-        $ad | add-member -MemberType noteproperty -Name Address -Value $ip.Address.ToString()
-        "{0} {1} {2}" -f $ad.Address,$ad.BytesReceived,$ad.BytesSent
-    }  
+		# some interfaces have multiple IPs, so iterate over them reporting same stats
+        $ip | %{ "{0} {1} {2}" -f $_.Address.IPAddressToString,$ad.BytesReceived,$ad.BytesSent }
+    }
 }
 
 function XymonSvcs
@@ -454,7 +506,7 @@ function XymonProcs
 
 function XymonWho
 {
-	if( $haveqwinstacmd) {
+	if( $HaveCmd.qwinsta) {
 		"[who]"
 		qwinsta.exe /counter
 	}
@@ -462,7 +514,7 @@ function XymonWho
 
 function XymonUsers
 {
-	if( $havequerycmd) {
+	if( $HaveCmd.query) {
 		"[users]"
 		query user
 	}
@@ -636,6 +688,11 @@ function XymonClientConfig($cfglines)
 function XymonReportConfig
 {
 	"[XymonConfig]"
+	"XymonSettings"
+	$XymonSettings
+	""
+	"HaveCmd"
+	$HaveCmd
 	foreach($v in @("wanteddisks", "wantedlogs", "maxlogage", "loopinterval", "slowscanrate", "Version", "clientname", "clientbbwinmembug", "clientremotecfg", "clientlocalcfg" )) {
 		""; "$v"
 		Invoke-Expression "`$$v"
@@ -657,6 +714,7 @@ function XymonClientSections {
 	XymonIfstat
 	XymonSvcs
 	XymonDir
+	XymonFileCheck
 	XymonUptime
 	XymonWho
 	XymonUsers
@@ -684,6 +742,7 @@ function XymonClientInstall
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
 }
 ##### Main code #####
+XymonInit
 $ret = 0
 # check for install/start/stop for service management
 if($args -eq "Install") {
@@ -701,7 +760,6 @@ if($args -eq "Stop") {
 if($ret) {return}
 
 # assume no other args, so run as normal
-XymonInit
 
 $running = $true
 $loopcount = ($slowscanrate - 1)
@@ -727,7 +785,7 @@ while ($running -eq $true) {
 	
 	Get-Date >> $xymonclientlog
 	XymonReportConfig >> $xymonclientlog
-	$newconfig = XymonSend $clout $xymonservers
+	$newconfig = XymonSend $clout $XymonSettings.servers
 	XymonClientConfig $newconfig
 	$delay = ($loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
 	if ($delay -gt 0) { sleep $delay }
