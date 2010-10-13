@@ -167,6 +167,8 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_FLAG_HIDEHTTP]       = "BBH_FLAG_HIDEHTTP";
 	bbh_item_key[BBH_FLAG_PULLDATA]        = "PULLDATA";
 	bbh_item_name[BBH_FLAG_PULLDATA]       = "BBH_FLAG_PULLDATA";
+	bbh_item_key[BBH_FLAG_MULTIHOMED]      = "MULTIHOMED";
+	bbh_item_name[BBH_FLAG_MULTIHOMED]     = "BBH_MULTIHOMED";
 	bbh_item_key[BBH_LDAPLOGIN]            = "ldaplogin=";
 	bbh_item_name[BBH_LDAPLOGIN]           = "BBH_LDAPLOGIN";
 	bbh_item_key[BBH_CLASS]                = "CLASS:";

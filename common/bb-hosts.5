@@ -102,6 +102,15 @@ Note: This only applies to hosts that are defined multiple
 times in the bb-hosts file, although it will not hurt to add it
 on other hosts as well.
 
+.IP multihomed
+Tell Xymon that data from the host can arrive from multiple IP-adresses.
+By default, Xymon will warn if it sees data for one host coming from
+different IP-adresses, because this usually indicates a mis-configuration
+of the hostname on at least one of the servers involved. Some hosts
+with multiple IP-adresses may use different IP's for sending data to
+Xymon, however. This tag disables the check of source IP when receiving
+data.
+
 
 .SH BBGEN DISPLAY OPTIONS
 These tags are processed by the 

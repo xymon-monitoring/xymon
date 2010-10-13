@@ -1312,10 +1312,13 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			 * - if sender is "hobbitd", then this is an internal update, e.g. a status going purple.
 			 * - if the host has "pulldata" enabled, then the sender shows up as the host doing the
 			 *   data collection, so it does not make sense to check it (thanks to Cade Robinson).
+			 * - some multi-homed hosts use a random IP for sending us data.
 			 */
 			if ( (strcmp(log->sender, "hobbitd") != 0) && (strcmp(sender, "hobbitd") != 0) )  {
 				void *hinfo = hostinfo(hostname);
-				if (bbh_item(hinfo, BBH_FLAG_PULLDATA) == NULL) log_multisrc(log, sender);
+				if ((bbh_item(hinfo, BBH_FLAG_PULLDATA) == NULL) && (bbh_item(hinfo, BBH_FLAG_MULTIHOMED) == NULL)) {
+					log_multisrc(log, sender);
+				}
 			}
 		}
 		strncpy(log->sender, sender, sizeof(log->sender)-1);
