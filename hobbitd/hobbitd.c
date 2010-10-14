@@ -3155,7 +3155,8 @@ void do_message(conn_t *msg, char *origin)
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->name);
-				log->message = strdup("");
+				log->message = strdup("No data");
+				log->msgsz = strlen(log->message) + 1;
 			}
 
 			bufsz = 1024 + strlen(log->message);
@@ -3191,7 +3192,8 @@ void do_message(conn_t *msg, char *origin)
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->name);
-				log->message = strdup("");
+				log->message = strdup("No data");
+				log->msgsz = strlen(log->message) + 1;
 			}
 
 			bufsz = 4096 + strlen(log->message);
@@ -3330,7 +3332,8 @@ void do_message(conn_t *msg, char *origin)
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
-					lwalk->message = strdup("");
+					lwalk->message = strdup("No data");
+					lwalk->msgsz = strlen(lwalk->message) + 1;
 				}
 
 				generate_outbuf(&buf, &bufp, &bufsz, hwalk, lwalk, acklevel);
@@ -3413,7 +3416,8 @@ void do_message(conn_t *msg, char *origin)
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
-					lwalk->message = strdup("");
+					lwalk->message = strdup("No data");
+					lwalk->msgsz = strlen(lwalk->message) + 1;
 				}
 
 				eoln = strchr(lwalk->message, '\n');
