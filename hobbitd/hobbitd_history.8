@@ -44,6 +44,8 @@ status-logs are saved whenever a status change occurs. These logfiles
 are stored in the $BBHISTLOGS directory, and are used for the detailed
 log-display of a status from the Xymon "History" page. If you
 do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
+If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
+If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
 
 .SH FILES
 This module does not rely on any configuration files.
