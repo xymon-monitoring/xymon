@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--debug", 7) == 0) {
 			char *delim = strchr(argv[argi], '=');
 			debug = 1;
-			if (delim) set_debugfile(delim+1);
+			if (delim) set_debugfile(delim+1, 0);
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
 			if (pingsocket >= 0) close(pingsocket);

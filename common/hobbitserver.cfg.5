@@ -199,6 +199,14 @@ Used by the
 module.
 Default: $BBVAR/hostdata/
 
+.IP XYMONCGILOGDIR
+Directory where debug output from CGI applications are stored. If not
+specified, it defaults to $BBSERVERLOGS, but this is often a directory
+that is not writable by the userid running the CGI applications. It
+is therefore recommended when using "--debug" on CGI applications that
+you create a separate directory owned by the user running your webserver,
+and point XYMONCGILOGDIR to this directory.
+
 
 .SH SYSTEM FILES
 

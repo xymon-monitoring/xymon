@@ -20,7 +20,7 @@ extern int debug;
 extern void errprintf(const char *fmt, ...);
 extern void dbgprintf(const char *fmt, ...);
 extern void flush_errbuf(void);
-extern void set_debugfile(char *fn);
+extern void set_debugfile(char *fn, int appendtofile);
 
 extern void starttrace(const char *fn);
 extern void stoptrace(void);

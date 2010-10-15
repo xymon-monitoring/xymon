@@ -76,9 +76,8 @@ void errprintf(const char *fmt, ...)
 
 void dbgprintf(const char *fmt, ...)
 {
-	va_list args;
-
 	if (debug) {
+		va_list args;
 		char timestr[30];
 		time_t now = getcurrenttime(NULL);
 
@@ -88,7 +87,7 @@ void dbgprintf(const char *fmt, ...)
 
 		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
 			 localtime(&now));
-		fprintf(debugfd, "%s ", timestr);
+		fprintf(debugfd, "%d %s ", (int)getpid(), timestr);
 
 		va_start(args, fmt);
 		vfprintf(debugfd, fmt, args);
@@ -106,11 +105,14 @@ void flush_errbuf(void)
 }
 
 
-void set_debugfile(char *fn)
+void set_debugfile(char *fn, int appendtofile)
 {
 	if (debugfd && (debugfd != stdout)) fclose(debugfd);
 
-	if (fn) debugfd = fopen(fn, "w");
+	if (fn) {
+		debugfd = fopen(fn, (appendtofile ? "a" : "w"));
+		if (debugfd == NULL) errprintf("Cannot open debug log %s\n", fn);
+	}
 
 	if (!debugfd) debugfd = stdout;
 }
@@ -157,9 +159,19 @@ void traceprintf(const char *fmt, ...)
 void redirect_cgilog(char *cginame)
 {
 	char logfn[PATH_MAX];
+	char *cgilogdir;
+	
+	cgilogdir = getenv("XYMONCGILOGDIR");
+	if (cgilogdir == NULL) cgilogdir = xgetenv("BBSERVERLOGS");
 
 	if (cginame) errappname = strdup(cginame);
-	sprintf(logfn, "%s/cgierror.log", xgetenv("BBSERVERLOGS"));
+	sprintf(logfn, "%s/cgierror.err", cgilogdir);
 	freopen(logfn, "a", stderr);
+
+	/* If debugging, setup the debug logfile */
+	if (debug) {
+		sprintf(logfn, "%s/%s.dbg", cginame, (errappname ? errappname : "cgi"));
+		set_debugfile(logfn, 1);
+	}
 }
 
