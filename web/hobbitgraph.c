@@ -1196,7 +1196,7 @@ int main(int argc, char *argv[])
 	/* See what we want to do - i.e. get hostname, service and graph-type */
 	parse_query();
 
-	/* Handle any commandline args */
+	/* Handle any command-line args */
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;

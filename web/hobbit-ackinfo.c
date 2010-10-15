@@ -46,11 +46,11 @@ static void parse_query(void)
 			ackmsg = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "LEVEL") == 0) {
-			/* Commandline may override this */
+			/* Command line may override this */
 			if (level == -1) level = atoi(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "VALIDITY") == 0) {
-			/* Commandline may override this */
+			/* Command line may override this */
 			if (validity == -1) validity = atoi(cwalk->value);
 		}
 

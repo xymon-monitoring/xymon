@@ -1344,7 +1344,7 @@ NOTE: If you are upgrading from 4.1.1, you MUST change the
 
 Post-RC1 fixes:
 * Linux client now runs ps with "-w" to get more of the
-  commandline.
+  command line.
 * Disk status reports from clients are now processed with
   sed to make sure each mounted filesystem appears on a
   single line.
@@ -1452,7 +1452,7 @@ Server improvements:
   is running on the host.
 
 Client improvements:
-* The "runclient.sh" script now accepts two commandline options:
+* The "runclient.sh" script now accepts two command-line options:
   "--hostname=CLIENT.HOST.NAME" lets you override the default
   hostname that the client uses when it reports data to Hobbit;
   "--os=OSNAME" lets you override the operating system name for
@@ -1802,7 +1802,7 @@ Improvements:
 * Graphs can now get their title from a script, instead of
   using a static string in hobbitgraph.cfg. This lets you 
   e.g. pick up the graphtitle from the mrtg.cfg.
-* All CGI's now pick up commandline options from a new
+* All CGI's now pick up command-line options from a new
   configuration file, hobbitcgi.cfg. This is to ease
   packaging and make sure the CGI's can be updated without
   losing local configurations.
@@ -2572,7 +2572,7 @@ RRD graphs:
 
 Alerting:
 * The default repeat-interval for alerts can be set as a 
-  commandline option.
+  command-line option.
 
 * A new option to hobbitd, --okcolors=COLOR, allows you
   to specify what color(s) will trigger a "recovered"

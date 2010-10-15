@@ -10,7 +10,7 @@ bbgen \- Xymon webpage generator
 .br
 .B "bbgen [options] [output-directory]"
 .br
-(See the OPTIONS section for a description of the available commandline options).
+(See the OPTIONS section for a description of the available command-line options).
 
 .SH DESCRIPTION
 \fBbbgen\fR
@@ -27,14 +27,14 @@ is the local hobbitd server - this is the one that bbgen will query for data.
 
 
 .SH OPTIONS
-bbgen has a large number of commandline options.  The options
+bbgen has a large number of command-line options.  The options
 can be used to change the behaviour of bbgen and affect the web pages generated 
 by it.
 
 .SH GENERAL OPTIONS
 .sp
 .IP "--help or -?"
-Provide a summary of available commandline options.
+Provide a summary of available command-line options.
 .sp
 .IP "--version"
 Prints the version number of bbgen
@@ -387,7 +387,7 @@ non-english spreadsheets use a different delimiter, typically semi-colon.
 To generate a CSV file with the proper delimiter, you can use this option
 to set the character used as delimiter. E.g. "--csvdelim=;" - note that 
 this normally should be in double quotes, to prevent the Unix shell from
-interpreting the delimiter character as a commandline delimiter.
+interpreting the delimiter character as a command-line delimiter.
 .sp
 .IP "--snapshot=TIME"
 Generate a snapshot of the Xymon pages, as they appeared at
@@ -525,7 +525,7 @@ or
 .I bb-replog.cgi(1)
 scripts in $BBHOME/bin/
 
-You can use bbgen commandline options when generating reports,
+You can use bbgen command-line options when generating reports,
 e.g. to exclude certain types of tests (e.g. "--ignorecolumns=msgs") 
 from the reports, to specify the name of the trends- and info-
 columns that should not be in the report, or to format the report 

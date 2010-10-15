@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 
 	/*
 	 * We need to set these variables up AFTER we have put them into the bbgen_argv[] array.
-	 * We cannot do it before, because we need the environment that the the commandline options 
+	 * We cannot do it before, because we need the environment that the command-line options 
 	 * might provide.
 	 */
 	if (xgetenv("BBGEN")) sprintf(bbgencmd, "%s", xgetenv("BBGEN"));

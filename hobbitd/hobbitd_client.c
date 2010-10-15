@@ -999,7 +999,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (eol) *eol = '\n';
 
 	if (debug) {
-		if (cmdofs >= 0) dbgprintf("Host %s: Found ps commandline at offset %d\n", hostname, cmdofs);
+		if (cmdofs >= 0) dbgprintf("Host %s: Found ps command line at offset %d\n", hostname, cmdofs);
 		else dbgprintf("Host %s: None of the headings found\n", hostname);
 	}
 

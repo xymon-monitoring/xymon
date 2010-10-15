@@ -20,7 +20,7 @@ MACHINEDOTS="`uname -n`"			# This systems hostname
 BBOSTYPE="`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
 BBOSSCRIPT="hobbitclient-$BBOSTYPE.sh"
 
-# Commandline mods for the defaults
+# Command-line mods for the defaults
 while test "$1" != ""
 do
 	case "$1" in

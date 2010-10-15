@@ -1,7 +1,7 @@
 # This file is used to setup options for the various Xymon
 # CGI programs. It is loaded by the hobbit-cgi/*.sh wrapper
 # scripts, and one environment variable is then passed to
-# the commandline used for each tool.
+# the command line used for each tool.
 
 # NOTE: This file is parsed by the shell interpreter.
 # So the usual "include" and "directory" definitions 

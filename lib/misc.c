@@ -609,7 +609,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 static void clean_cmdarg(char *l)
 {
 	/*
-	 * This routine sanitizes commandline argument, stripping off whitespace,
+	 * This routine sanitizes command-line argument, stripping off whitespace,
 	 * removing comments and un-escaping \-escapes and quotes.
 	 */
 	char *p, *outp;
@@ -650,7 +650,7 @@ char **setup_commandargs(char *cmdline, char **cmd)
 	 * Good grief - argument parsing is complex!
 	 *
 	 * This routine takes a command-line, picks out any environment settings
-	 * that are in the commandline, and splits up the remainder into the
+	 * that are in the command line, and splits up the remainder into the
 	 * actual command to run, and the arguments.
 	 *
 	 * It handles quotes, hyphens and escapes.

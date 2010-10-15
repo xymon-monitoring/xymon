@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 #include "hobbitsvc-info.h"
 #include "hobbitsvc-trends.h"
 
-/* Commandline params */
+/* Command-line params */
 static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";

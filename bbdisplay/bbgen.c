@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 	init_timestamp();
 	fqdn = get_fqdn();
 
-	/* Setup values from env. vars that may be overridden via commandline options */
+	/* Setup values from env. vars that may be overridden via command-line options */
 	if (xgetenv("MKBB2COLREPEAT")) {
 		int i = atoi(xgetenv("MKBB2COLREPEAT"));
 

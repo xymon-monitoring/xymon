@@ -89,7 +89,7 @@ char *nextip(int argc, char *argv[], FILE *fd)
 	static char buf[4096];
 
 	if (argi == 0) {
-		/* Check if there are any commandline IP's */
+		/* Check if there are any command-line IP's */
 		struct sockaddr_in ina;
 
 		for (argi=1; ((argi < argc) && (inet_aton(argv[argi], &ina.sin_addr) == 0)); argi++) ;

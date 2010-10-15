@@ -36,7 +36,7 @@ static bea_idx_t *bea_idxhead = NULL;
 static char msgline[MAX_LINE_LEN];
 static int statuscolor = COL_GREEN;
 
-/* Set with environment or commandline options */
+/* Set with environment or command-line options */
 static char *location = "";		/* BBLOCATION value */
 static int testuntagged = 0;
 static int default_port = 161;
