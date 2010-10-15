@@ -15,7 +15,6 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 {
 #define MAXCOLS 20
 	char *devmon_params[MAXCOLS+7];
-	static void *devmon_tpl      = NULL;
 
 	char *eoln, *curline;
 	static int ptnsetup = 0;
@@ -50,7 +49,6 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			if (rrdbasename == NULL) rrdbasename = xstrdup(testname);
 			dbgprintf("DEVMON: changing testname from %s to %s\n",testname,rrdbasename);
 			numds = 0;
-			if(devmon_tpl) {xfree(devmon_tpl);devmon_tpl= NULL;}
 			goto nextline;
 		}
 		if(in_devmon == 0 && !strncmp(curline, "-->",3)) {
@@ -75,7 +73,6 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			dbgprintf("Found %d DS definitions\n",numds);
 			devmon_params[numds] = NULL;
 
-			if (devmon_tpl == NULL) devmon_tpl = setup_template(devmon_params);
 			goto nextline;
 		}
 
@@ -108,7 +105,7 @@ int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		/* File names in the format if_load.eth0.0.rrd */
 		setupfn2("%s.%s.rrd", rrdbasename, ifname);
 		dbgprintf("Sending from devmon to RRD for %s %s: %s\n",rrdbasename,ifname,rrdvalues);
-		create_and_update_rrd(hostname, testname, classname, pagepaths, devmon_params, devmon_tpl);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, devmon_params, NULL);
 		if (ifname) { xfree(ifname); ifname = NULL; }
 
 		if (eoln) *eoln = '\n';
@@ -117,7 +114,6 @@ nextline:
 		if (fsline) { xfree(fsline); fsline = NULL; }
 		curline = (eoln ? (eoln+1) : NULL);
 	}
-	if(devmon_tpl) {xfree(devmon_tpl);devmon_tpl= NULL;}
 
 	return 0;
 }
