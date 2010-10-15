@@ -312,7 +312,7 @@ char *init_tcp_services(void)
 
 	if (debug) {
 		dump_tcp_services();
-		printf("BBNETSVCS set to : %s\n", bbnetsvcs);
+		dbgprintf("BBNETSVCS set to : %s\n", bbnetsvcs);
 	}
 
 	MEMUNDEFINE(filename);
@@ -323,18 +323,18 @@ void dump_tcp_services(void)
 {
 	int i;
 
-	printf("Service list dump\n");
+	dbgprintf("Service list dump\n");
 	for (i=0; (svcinfo[i].svcname); i++) {
-		printf(" Name      : %s\n", svcinfo[i].svcname);
-		printf("   Sendtext: %s\n", binview(svcinfo[i].sendtxt, svcinfo[i].sendlen));
-		printf("   Sendlen : %d\n", svcinfo[i].sendlen);
-		printf("   Exp.text: %s\n", binview(svcinfo[i].exptext, svcinfo[i].explen));
-		printf("   Exp.len : %d\n", svcinfo[i].explen);
-		printf("   Exp.ofs : %d\n", svcinfo[i].expofs);
-		printf("   Flags   : %d\n", svcinfo[i].flags);
-		printf("   Port    : %d\n", svcinfo[i].port);
+		dbgprintf(" Name      : %s\n", svcinfo[i].svcname);
+		dbgprintf("   Sendtext: %s\n", binview(svcinfo[i].sendtxt, svcinfo[i].sendlen));
+		dbgprintf("   Sendlen : %d\n", svcinfo[i].sendlen);
+		dbgprintf("   Exp.text: %s\n", binview(svcinfo[i].exptext, svcinfo[i].explen));
+		dbgprintf("   Exp.len : %d\n", svcinfo[i].explen);
+		dbgprintf("   Exp.ofs : %d\n", svcinfo[i].expofs);
+		dbgprintf("   Flags   : %d\n", svcinfo[i].flags);
+		dbgprintf("   Port    : %d\n", svcinfo[i].port);
 	}
-	printf("\n");
+	dbgprintf("\n");
 }
 
 int default_tcp_port(char *svcname)
