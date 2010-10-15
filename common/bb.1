@@ -34,6 +34,12 @@ The bb utility normally knows when to expect a response
 from the server, so this option is not required. However,
 it will cause any response from the server to be displayed.
 
+.IP "--merge"
+Merge the command line message text with the data provided
+on standard input, and send the result to the Xymon server.
+The message text provided on the command line becomes the
+first line of the merged message.
+
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the

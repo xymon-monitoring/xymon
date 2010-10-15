@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	FILE *respfd = stdout;
 	char *envarea = NULL;
 	sendreturn_t *sres;
-	int wantresponse = 0;
+	int wantresponse = 0, mergeinput = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -72,6 +72,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
+		else if (strcmp(argv[argi], "--merge") == 0) {
+			mergeinput = 1;
+		}
 		else if (strcmp(argv[argi], "--response") == 0) {
 			wantresponse = 1;
 		}
@@ -97,7 +100,7 @@ int main(int argc, char *argv[])
 
 	if ((recipient == NULL) || (STRBUFLEN(msg) == 0) || showhelp) {
 		fprintf(stderr, "Hobbit version %s\n", VERSION);
-		fprintf(stderr, "Usage: %s [--debug] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
+		fprintf(stderr, "Usage: %s [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");
 		return 1;
@@ -116,10 +119,16 @@ int main(int argc, char *argv[])
 		return result;
 	}
 
-	if (strcmp(STRBUF(msg), "@") == 0) {
+	if (mergeinput || (strcmp(STRBUF(msg), "@") == 0)) {
 		strbuffer_t *inpline = newstrbuffer(0);
 
-		clearstrbuffer(msg);
+		if (mergeinput) 
+			/* Must add a new-line before the rest of the message */
+			addtostrbuffer(msg, "\n");
+		else
+			/* Clear input buffer, we'll read it all from stdin */
+			clearstrbuffer(msg);
+
 		initfgets(stdin);
 		while (unlimfgets(inpline, stdin)) addtostrbuffer(msg, inpline);
 		freestrbuffer(inpline);
