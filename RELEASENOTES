@@ -9,6 +9,11 @@ the 4.2.0 release. Several large changes have been made
 throughout the entire codebase. Some highlights (see
 the Changes file for a longer list):
 
+* Data going into graphs can now be used to alter a status,
+  e.g. to trigger an alert from the response time of a network
+  service.
+* Tasks in hobbitlaunch can be be configured to run at specific
+  time of day using a cron-style syntax for when they must run.
 * Worker modules (RRD, client-data parsers etc) can operate on
   remote hosts from the hobbitd daemon, for load-sharing.
 * Support for defining holidays as non-working days in alerts and
