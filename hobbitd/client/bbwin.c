@@ -184,10 +184,27 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
                 struct timeval clockval;
 
                 p = strstr(clockstr, "epoch:");
-                if (p && (sscanf(p, "epoch: %ld.%ld", (long int *)&clockval.tv_sec, (long int *)&clockval.tv_usec) == 2)) {
+		if (!p) {
+			/* No epoch reported */
+		}
+		else {
                         struct timeval clockdiff;
                         struct timezone tz;
                         int cachedelay = 0;
+
+			/* The clock may be reported with a decimal part. But not always */
+			p += 6; /* Skip "epoch:" */
+			clockval.tv_sec = atol(p);
+
+			/* See if there's a decimal part */
+			p += strspn(p, "0123456789");
+			if (*p == '.') {
+				p++;
+				clockval.tv_usec = atol(p);
+			}
+			else {
+				clockval.tv_usec = 0;
+			}
 
                         if (msgcachestr) {
                                 /* Message passed through msgcache, so adjust for the cache delay */
