@@ -47,7 +47,7 @@ ifndef INSTALLWWWDIR
 INSTALLWWWDIR = $(BBHOME)/www
 endif
 
-ARESVER = 1.6.0
+ARESVER = 1.7.3
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
 
