@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
 <HTML>
 <HEAD>
 <META HTTP-EQUIV="REFRESH" CONTENT="&BBREFRESH">
@@ -8,7 +8,7 @@
 <TITLE>&BBCOLOR : Xymon - &BBSVC status for &BBHOST (&BBIP) @ &BBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
-<link rel="stylesheet" type="text/css" href="&BBMENUSKIN/menu.css">
+<link rel="stylesheet" type="text/css" href="&BBMENUSKIN/xymonmenu.css">
 
 <!-- The favicon image -->
 <link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
@@ -16,6 +16,8 @@
 </HEAD>
 
 <BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+
+&XYMONMENU
 
 <TABLE SUMMARY="Topline" WIDTH="100%">
 <TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->

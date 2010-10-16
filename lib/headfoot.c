@@ -58,6 +58,8 @@ static pcre *ippattern = NULL;
 static RbtHandle hostnames;
 static RbtHandle testnames;
 
+static strbuffer_t *xymonmenu = NULL;
+
 typedef struct treerec_t {
 	char *name;
 	int flag;
@@ -492,6 +494,66 @@ static void build_pagepath_dropdown(FILE *output)
 	rbtDelete(ptree);
 }
 
+void load_xymonmenu(void)
+{
+	strbuffer_t *menudata;
+	char *envstart, *envend, *outpos;
+
+	menudata = newstrbuffer(0);
+	if (getenv("XYMONMENU") != NULL) {
+		addtobuffer(menudata, getenv("XYMONMENU"));
+	}
+	else {
+		char fn[PATH_MAX];
+		FILE *fd;
+		strbuffer_t *inbuf = newstrbuffer(0);
+
+		sprintf(fn, "%s/etc/xymonmenu.cfg", xgetenv("BBHOME"));
+		fd = stackfopen(fn, "r", NULL);
+		if (fd != NULL) {
+			while (stackfgets(inbuf, NULL)) addtostrbuffer(menudata, inbuf);
+			stackfclose(fd);
+		}
+
+		freestrbuffer(inbuf);
+	}
+
+	/* Output the menu data, but expand any environment variables along the way */
+	xymonmenu = newstrbuffer(0);
+	outpos = STRBUF(menudata);
+	while (*outpos) {
+		envstart = strchr(outpos, '$');
+		if (envstart) {
+			char savechar;
+			char *envval = NULL;
+
+			*envstart = '\0';
+			addtobuffer(xymonmenu, outpos);
+
+			envstart++;
+			envend = envstart + strspn(envstart, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+			savechar = *envend; *envend = '\0';
+			if (*envstart) envval = xgetenv(envstart);
+
+			*envend = savechar;
+			outpos = envend;
+
+			if (envval) {
+				addtobuffer(xymonmenu, envval);
+			}
+			else {
+				addtobuffer(xymonmenu, "$");
+				addtobuffer(xymonmenu, envstart);
+			}
+		}
+		else {
+			addtobuffer(xymonmenu, outpos);
+			outpos += strlen(outpos);
+		}
+	}
+
+	freestrbuffer(menudata);
+}
 
 typedef struct distest_t {
 	char *name;
@@ -1333,6 +1395,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		}
 		else if (strncmp(t_start, "EVENTENDTIME", 8) == 0) {
 			fprintf(output, "%s", hostenv_eventtimeend);
+		}
+
+		else if (strncmp(t_start, "XYMONMENU", 9) == 0) {
+			if (xymonmenu == NULL) load_xymonmenu();
+			fprintf(output, "%s", STRBUF(xymonmenu));
 		}
 
 		else if (*t_start && (savechar == ';')) {

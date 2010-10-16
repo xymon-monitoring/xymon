@@ -153,9 +153,7 @@ chkconfig --del hobbit-client
 %attr(-, hobbit, hobbit) /var/lib/hobbit
 %attr(775, hobbit, apache) %dir /var/lib/hobbit/www/rep
 %attr(775, hobbit, apache) %dir /var/lib/hobbit/www/snap
-%attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_items.js
-%attr(644, root, root) %config /var/lib/hobbit/www/menu/menu_tpl.js
-%attr(644, root, root) %config /var/lib/hobbit/www/menu/menu.css
+%attr(644, root, root) %config /var/lib/hobbit/www/menu/xymonmenu.css
 %attr(755, hobbit, hobbit) %dir /usr/lib/hobbit/client/ext
 %attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg
 %attr(664, hobbit, apache) %config /etc/hobbit/hobbit-nkview.cfg.bak
