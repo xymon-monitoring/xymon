@@ -1,8 +1,6 @@
 #!/bin/sh
 
-# This is the Hobbit CGI script to select a pre-generated report.
+# This is the wrapper for the web certificate ordering CGI
 
-. /usr/lib/hobbit/server/etc/hobbitcgi.cfg
-
- exec /home/henrik/hobbit/web/webcert.cgi henrik@hswn.dk
+exec /usr/local/bin/webcert.cgi ssladmin@example.com
 

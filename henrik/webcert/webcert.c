@@ -8,24 +8,36 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: webcert.c,v 1.5 2007/08/22 13:23:27 henrik Exp $";
+static char rcsid[] = "$Id: webcert.c,v 1.1 2009/01/26 09:34:16 henrik Exp hstoerne $";
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
+#include <libgen.h>
+#include <time.h>
 
 #include "libbbgen.h"
 
+char *certdir = "/var/ca/requests";
+char *opensslcnf = "/var/ca/openssl.cnf";
+char *rootcert = "/var/ca/private/CAcert.pem";
 char *email = NULL;
+char *adminrealm = "CERTMGR";
 char *phone = NULL;
 char *costcode = NULL;
+char *artemis = NULL;
 char *validity = NULL;
 char *servertype = NULL;
 char *csrdata = NULL;
 int  internalcert = 0;
+enum { ADM_NONE, ADM_VIEWPENDING, ADM_MOVETOPROCESSING, ADM_VIEWPROCESSING, ADM_MOVETODONE, ADM_VIEWDONE, ADM_VIEWREQUEST } adminaction = ADM_NONE;
+char *adminid = NULL;
 
 static void errormsg(char *msg)
 {
@@ -46,17 +58,145 @@ void parse_query(void)
 		 * cwalk->name points to the name of the setting.
 		 * cwakl->value points to the value (may be an empty string).
 		 */
+		char *val = cwalk->value + strspn(cwalk->value, " \t");
 
-		if (strcmp(cwalk->name, "email") == 0) email = strdup(cwalk->value);
-		else if (strcmp(cwalk->name, "phone") == 0) phone = strdup(cwalk->value);
-		else if (strcmp(cwalk->name, "costcode") == 0) costcode = strdup(cwalk->value);
-		else if (strcmp(cwalk->name, "servertype") == 0) servertype = strdup(cwalk->value);
-		else if (strcmp(cwalk->name, "validity") == 0) validity = strdup(cwalk->value);
-		else if (strcmp(cwalk->name, "csrtext") == 0) csrdata = strdup(cwalk->value);
+		if (!val) { /* Do nothing */ }
+		else if (strcmp(cwalk->name, "email") == 0) email = strdup(val);
+		else if (strcmp(cwalk->name, "phone") == 0) phone = strdup(val);
+		else if (strcmp(cwalk->name, "costcode") == 0) costcode = strdup(val);
+		else if (strcmp(cwalk->name, "artemis") == 0) artemis = strdup(val);
+		else if (strcmp(cwalk->name, "servertype") == 0) servertype = strdup(val);
+		else if (strcmp(cwalk->name, "validity") == 0) validity = strdup(val);
+		else if (strcmp(cwalk->name, "csrtext") == 0) csrdata = strdup(val);
 		else if (strcmp(cwalk->name, "internalcert") == 0) internalcert = 1;
+		else if (strcmp(cwalk->name, "viewpending") == 0) adminaction = ADM_VIEWPENDING;
+		else if (strcmp(cwalk->name, "viewprocessing") == 0) adminaction = ADM_VIEWPROCESSING;
+		else if (strcmp(cwalk->name, "viewdone") == 0) adminaction = ADM_VIEWDONE;
+		else if (strcmp(cwalk->name, "viewrequest") == 0) {
+			adminaction = ADM_VIEWREQUEST;
+			adminid = strdup(val);
+		}
+		else if (strcmp(cwalk->name, "movetoprocessing") == 0) {
+			adminaction = ADM_MOVETOPROCESSING;
+			adminid = strdup(val);
+		}
+		else if (strcmp(cwalk->name, "movetodone") == 0) {
+			adminaction = ADM_MOVETODONE;
+			adminid = strdup(val);
+		}
 
 		cwalk = cwalk->next;
 	}
+}
+
+
+void showreqlist(char *dir, char *title, char *action, char *actiontitle)
+{
+	DIR *d;
+	struct dirent *de;
+	char dirname[PATH_MAX];
+	char *bgcols[] = { "#333333", "#000033", NULL };
+	int idx = 0;
+
+	if ((strcmp(dir, "new") != 0) && (strcmp(dir, "cur") != 0) && (strcmp(dir, "done") != 0)) return;
+
+	sprintf(dirname, "%s/%s", certdir, dir);
+	d = opendir(dirname);
+	if (d == NULL) return;
+
+	chdir(dirname);
+
+	headfoot(stdout, "webcert", "", "header", COL_BLUE);
+	fprintf(stdout, "<center>\n");
+	fprintf(stdout, "<table>\n");
+
+	fprintf(stdout, "<h3>%s</h3>\n", title);
+	while ((de = readdir(d)) != NULL) {
+		struct stat st;
+		char timestamp[20];
+
+		if (*de->d_name == '.') continue;
+		stat(de->d_name, &st);
+		if (!S_ISREG(st.st_mode)) continue;
+
+		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M", localtime(&st.st_mtime));
+		fprintf(stdout, "<tr BGCOLOR=\"%s\"><td><a href=\"%s?viewrequest=%s/%s\">%s</a></td><td width=\"10px\">&nbsp;</td><td>%s</td>",
+			bgcols[idx], getenv("SCRIPT_NAME"), dir, de->d_name, de->d_name, timestamp);
+
+		if (action) {
+			fprintf(stdout, "<td width=\"10px\">&nbsp;</td><td><a href=\"%s?%s=%s\">%s</a></td>",
+				getenv("SCRIPT_NAME"), action, de->d_name, actiontitle);
+		}
+
+		fprintf(stdout, "<tr>\n");
+
+		idx++; if (bgcols[idx] == NULL) idx = 0;
+	}
+
+	fprintf(stdout, "</table>\n");
+	fprintf(stdout, "</center>\n");
+	headfoot(stdout, "webcert", "", "footer", COL_BLUE);
+}
+
+
+void showrequest(char *id)
+{
+	char fn[PATH_MAX];
+	FILE *fd;
+	char buf[4096];
+	int n;
+	char *d;
+	
+	strncpy(buf, id, sizeof(buf));
+	d = dirname(buf);
+	if ((strcmp(d, "new") != 0) && (strcmp(d, "cur") != 0) && (strcmp(d, "done") != 0)) return;
+
+	sprintf(fn, "%s/%s/%s", certdir, d, basename(id));
+	fd = fopen(fn, "r");
+	if (fd == NULL) return;
+
+	headfoot(stdout, "webcert", "", "header", COL_BLUE);
+	fprintf(stdout, "<pre>\n");
+
+	while ((n = fread(buf, 1, sizeof(buf), fd)) > 0) fwrite(buf, 1, n, stdout);
+	fclose(fd);
+
+	fprintf(stdout, "</pre>\n");
+	headfoot(stdout, "webcert", "", "footer", COL_BLUE);
+}
+
+
+void moverequest(char *olddir, char *newdir, char *adminid, char *logcomment)
+{
+	char oldfn[PATH_MAX], newfn[PATH_MAX];
+	FILE *fd;
+	time_t now = getcurrenttime(NULL);
+	char timestamp[30];
+
+	sprintf(oldfn, "%s/%s/%s", certdir, olddir, adminid);
+	sprintf(newfn, "%s/%s/%s", certdir, newdir, adminid);
+	rename(oldfn, newfn);
+
+	fd = fopen(newfn, "a");
+	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+	fprintf(fd, "%s: %s\n", logcomment, timestamp);
+	fclose(fd);
+}
+
+
+int checkaccess(void)
+{
+	if (adminrealm == NULL) return 1; /* No access control */
+
+	if ((getenv("REMOTE_USER") == NULL) || (strcmp(getenv("REMOTE_USER"), "anon") == 0)) {
+		fprintf(stdout, "Status: 401 Unauthorized\n");
+		fprintf(stdout, "WWW-authenticate: Basic realm=\"%s\"\n", adminrealm);
+		fprintf(stdout, "Content-type: text/plain\n\n");
+		fprintf(stdout, "Authorization required.\nUse login \"anon\" (no password) to request a certificate.\n");
+		return 0;
+	}
+
+	return 1;
 }
 
 int main(int argc, char *argv[])
@@ -89,6 +229,21 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--certdir=")) {
+			char *p = strchr(argv[argi], '=');
+			certdir = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--rootcert=")) {
+			char *p = strchr(argv[argi], '=');
+			rootcert = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--realm=")) {
+			char *p = strchr(argv[argi], '=');
+			adminrealm = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--noauth") == 0) {
+			adminrealm = NULL;
+		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
@@ -100,17 +255,62 @@ int main(int argc, char *argv[])
 
 	parse_query();
 
-	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 	if (cgi_method == CGI_GET) {
-		showform(stdout, hffile, "webcert_form", bgcolor, 0, NULL, NULL);
+		switch (adminaction) {
+		  case ADM_NONE:
+			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+			showform(stdout, hffile, "webcert_form", bgcolor, 0, NULL, NULL);
+			break;
+
+		  case ADM_VIEWPENDING:
+			if (!checkaccess()) return 0;
+			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+			showreqlist("new", "Pending requests", "movetoprocessing", "Set ordered");
+			break;
+
+		  case ADM_VIEWPROCESSING:
+			if (!checkaccess()) return 0;
+			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+			showreqlist("cur", "Requests being processed", "movetodone", "Set completed");
+			break;
+
+		  case ADM_VIEWDONE:
+			if (!checkaccess()) return 0;
+			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+			showreqlist("done", "Completed requests", NULL, NULL);
+			break;
+
+		  case ADM_VIEWREQUEST:
+			if (!checkaccess()) return 0;
+			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+			showrequest(adminid);
+			break;
+
+		  case ADM_MOVETOPROCESSING:
+			if (!checkaccess()) return 0;
+			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+			moverequest("new", "cur", adminid, "Ordered");
+			showreqlist("new", "Pending requests", "movetoprocessing", "Set ordered");
+			break;
+
+		  case ADM_MOVETODONE:
+			if (!checkaccess()) return 0;
+			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
+			moverequest("cur", "done", adminid, "Completed");
+			showreqlist("cur", "Requests being processed", "movetodone", "Set completed");
+			break;
+		}
+
 		return 0;
 	}
 
+	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 	if (internalcert) {
-		email = "none@sslcert.csc.com";
+		email = "none@sslcert.xymon.com";
 		phone = "0";
 		costcode = "0";
+		artemis = "";
 		servertype = "internal";
 	}
 
@@ -134,6 +334,7 @@ int main(int argc, char *argv[])
 
 	if (!phone) addtobuffer(errortxt, "Phonenumber missing!<br>");
 	if (!costcode) addtobuffer(errortxt, "Costcode missing!<br>");
+	if (!artemis) artemis = "";
 	if (!servertype) addtobuffer(errortxt, "Servertype missing!<br>");
 	if (!validity || (atoi(validity) <= 0)) addtobuffer(errortxt, "Validity invalid!<br>");
 	if (!csrdata) {
@@ -241,8 +442,8 @@ int main(int argc, char *argv[])
 		char certfn[PATH_MAX];
 
 		sprintf(certfn, "/tmp/cert.%d", getpid());
-		sprintf(cmd, "(echo y; echo y) | openssl ca -policy policy_anything -out %s -config /var/ca/openssl.cnf -days %d -infiles %s", 
-			certfn, atoi(validity)*365, csrfn );
+		sprintf(cmd, "(echo y; echo y) | openssl ca -policy policy_anything -out %s -config %s -days %d -infiles %s", 
+			certfn, opensslcnf, atoi(validity)*365, csrfn );
 		pfd = popen(cmd, "r");
 		while (pfd && fgets(buf, sizeof(buf), pfd)) ;
 		if (pfd && (pclose(pfd) == 0)) {
@@ -257,7 +458,7 @@ int main(int argc, char *argv[])
 
 				addtobuffer(mbuf, "Issuer (CA) Certificate:\n");
 				addtobuffer(mbuf, "************************\n");
-				fd = fopen("/var/ca/private/CAcert.pem", "r");
+				fd = fopen(rootcert, "r");
 				if (fd) {
 					while (fgets(buf, sizeof(buf), fd)) addtobuffer(mbuf, buf);
 					addtobuffer(mbuf, "\n");
@@ -304,6 +505,11 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "</pre>\n");
 
 	if (!internalcert) {
+		FILE *fd;
+		char fn[PATH_MAX];
+		char timestamp[30];
+		time_t now = getcurrenttime(NULL);
+
 		/* The "mail" utility uses REPLYTO environment */
 		replytoenv = (char *)malloc(strlen("REPLYTO=") + strlen(mailaddr) + 1);
 		sprintf(replytoenv, "REPLYTO=%s", email);
@@ -311,12 +517,31 @@ int main(int argc, char *argv[])
 
 		sprintf(cmd, "%s \"Certrequest %s\" '%s'", xgetenv("MAIL"), cn, mailaddr);
 		pfd = popen(cmd, "w");
-		fprintf(pfd, "%s", STRBUF(mbuf));
-		if (fclose(pfd) == 0) {
-			fprintf(stdout, "Request submitted OK<br>");
+		if (pfd != NULL) {
+			fprintf(pfd, "%s", STRBUF(mbuf));
+			if (fclose(pfd) == 0) {
+				fprintf(stdout, "Request submitted OK<br>");
+			}
+			else {
+				fprintf(stdout, "Request FAILED - could not send mail<br>");
+			}
 		}
 		else {
-			fprintf(stdout, "Request FAILED - could not send mail<br>");
+			fprintf(stdout, "Could not submit request - please contact %s\n", mailaddr);
+		}
+
+		/* Save the request in the "new requests folder" */
+		sprintf(fn, "%s/new/%s", certdir, cn);
+		fd = fopen(fn, "w");
+		if (fd) {
+			fprintf(fd, "%s", STRBUF(mbuf));
+
+			strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+			fprintf(fd, "\n\nOrdertime: %s\n", timestamp);
+			fclose(fd);
+		}
+		else {
+			errprintf("Cannot create file %s: %s\n", fn, strerror(errno));
 		}
 	}
 

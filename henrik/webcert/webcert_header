@@ -24,6 +24,15 @@
 <TR>
   <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
 </TR>
+<TR>
+  <td colspan=3 align=center>
+     <form method=GET action="&SCRIPT_NAME">
+       <input type=submit name="viewpending" value="View pending">
+       <input type=submit name="viewprocessing" value="View orders">
+       <input type=submit name="viewdone" value="View completed">
+     </form>
+  </td>
+</TR>
 </TABLE>
 <BR>
 

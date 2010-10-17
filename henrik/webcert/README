@@ -1,0 +1,58 @@
+Webcert tool
+============
+
+This is a tool to help with ordering and processing SSL certificates.
+It is intended for use by a group of people who receive orders for
+SSL certificates, pass them on to the Certificate Authority (Verisign,
+Thawte, Comodo ...), and then return the issued certificates to
+the requestor once they have been received.
+
+An extra feature is that the tool can issue certificates automatically
+using a local CA to sign the certificate.
+
+It uses various bits and pieces from the Xymon library.
+
+
+Setup
+-----
+1) Create a directory where the requests will be stored:
+     # mkdir /var/ca
+     # mkdir /var/ca/{newcerts,private,requests}
+     # mkdir /var/ca/requests/{new,cur,done}
+     # chown -R www-data:www-data /var/ca
+
+2) Setup the local CA (run these commands as the user owning /var/ca):
+   Note: This creates a CA whose root certificate is UN-encrypted. Dont do
+   this on a system where security matters.
+     $ cd /var/ca
+     $ openssl req -new -x509 -keyout private/CAkey.rsa -out private/CAcert.pem
+     Generating a 1024 bit RSA private key
+     ..........++++++
+     .++++++
+     writing new private key to 'private/CAkey.rsa'
+     Enter PEM pass phrase: <enter your passphrase>
+     Verifying - Enter PEM pass phrase: <enter your passphrase again>
+     -----
+     You are about to be asked to enter information that will be incorporated
+     into your certificate request.
+     What you are about to enter is what is called a Distinguished Name or a DN.
+     There are quite a few fields but you can leave some blank
+     For some fields there will be a default value,
+     If you enter '.', the field will be left blank.
+     -----
+     Country Name (2 letter code) [AU]:DK
+     State or Province Name (full name) [Some-State]:Copenhagen
+     Locality Name (eg, city) []:Vanloese
+     Organization Name (eg, company) [Internet Widgits Pty Ltd]:Storner Consult
+     Organizational Unit Name (eg, section) []:Certificates Section
+     Common Name (eg, YOUR name) []:Storner Consult Certificates
+     Email Address []: 
+     $ openssl rsa -in private/CAkey.rsa -out private/CAkey.pem
+     Enter pass phrase for private/CAkey.rsa: <enter your passphrase>
+     writing RSA key
+     $ echo "01" >serial
+     $ touch index.txt
+
+3) Copy the "openssl.cnf" file from the source directory to /var/ca
+
+
