@@ -1,0 +1,64 @@
+<FONT FACE="Arial, Helvetica" COLOR="silver">
+<CENTER>
+<FORM METHOD="POST" ACTION="&SCRIPT_NAME">
+   <TABLE SUMMARY="Certificate request data" BORDER=0>
+     <TR>
+          <TD><b>Your e-mail address</b></TD>
+          <TD><INPUT TYPE=TEXT NAME="email" VALUE="" SIZE=40 MAXLENGTH=40></TD>
+     </TR>
+
+     <TR>
+          <TD><b>Your telephone number</b></TD>
+          <TD><INPUT TYPE=TEXT NAME="phone" VALUE="" SIZE=40 MAXLENGTH=40></TD>
+     </TR>
+
+     <TR>
+        <TD valign=top><B>WBS code (CSC DK) / Cost center (Airline)</B></TD>
+        <TD><INPUT TYPE=TEXT NAME="costcode" SIZE=10 MAXLENGTH=100></TD>
+     </TR>
+
+     <TR>
+        <TD valign=top><b>Validity period</b></td>
+	<td>
+	   <input name=validity type=radio value="1">&nbsp;1&nbsp;year
+	   <input name=validity type=radio value="2" checked>&nbsp;2&nbsp;years
+	</td>
+     </TR>
+
+     <TR>
+        <TD valign=top><B>Internal certificate</B></TD>
+	<td><INPUT TYPE=CHECKBOX NAME="internalcert"></td>
+     </TR>
+
+     <TR>
+        <td valign=top><B>Server type</b></td>
+	<td>
+	    <SELECT NAME="servertype">
+	      <option value="accelerator" selected>Bluecoat, Alteon</option>
+	      <option value="microsoft">MS IIS</option>
+	      <option value="apache">Apache</option>
+	      <option value="ibmhttp">IBM HTTP</option>
+	      <option value="iplanet">iPlanet / SunOne</option>
+	      <option value="lotus">Notes/Domino</option>
+	      <option value="F5">F5 BigIP</option>
+	      <option value="other">Other</option>
+	    </SELECT>
+	</td>
+     </TR>
+
+     <TR>
+        <TD valign=top><B>CSR data<br>(Including the <br>&quot;BEGIN CERTIFICATE REQUEST&quot; .... <br>&quot;END CERTIFICATE REQUEST&quot; lines)</B></TD>
+	<td><textarea name="csrtext" cols="55" rows="16"></textarea></td>
+     </TR>
+
+     <TR>
+        <TD COLSPAN=2 ALIGN=CENTER>
+          <BR><BR>
+          <INPUT TYPE="SUBMIT" NAME="Send" VALUE="Send" ALT="Send">
+        </TD>
+     </TR>
+   </TABLE>
+</FORM>
+</CENTER>
+</FONT>
+
