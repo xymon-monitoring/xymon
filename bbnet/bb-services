@@ -193,3 +193,10 @@
    expect "\x41\x42\x00\x01\x09"
    port 8009
 
+# Microsoft Terminal Services / Remote Desktop Protocol
+# From Chris Wopat (http://www.hswn.dk/hobbiton/2010/01/msg00039.html)
+[rdp]
+	port 3389
+	send "\x03\x00\x00\x1e\x19\xe0\x00\x00\x00\x00\x00Cookie: mstshash=\r\n"
+	expect "\x03\x00\x00\x0b\x06\xd0"
+
