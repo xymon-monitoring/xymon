@@ -1,0 +1,70 @@
+This is a couple of tools used at CSC/Copenhagen for managing 
+SMS notifications by our helpdesk staff. There are two programs:
+
+1) smsqueue looks at the spool directory /var/spool/smsgui
+   and calls /usr/local/bin/handleguisms to transmit an SMS
+   when it is due.
+2) smsadmin.cgi is a web-interface using some Xymon library
+   routines for managing the spool directory (adding new
+   SMS's, deleting old ones, handling recipient lists etc).
+
+The spool directory must be writable by the userid running
+your webserver.
+
+Access to the tool is controlled by the webserver.
+
+The spool directory has the following structure:
+
+  /var/spool/smsgui
+     user1/		<-- one directory per user
+     user2/
+       active/		<-- holds the active sms's
+         smsNNNNN/		<-- unique, per message
+	   endtime
+	   info
+	   lastxmit
+	   log
+	   message
+	   recips
+	   repeat
+       old/		<-- holds the old sms's
+       recips/		<-- holds recipient lists
+           recip1
+	   recip2
+
+
+Contents of the smsXXXXX directory
+----------------------------------
+The "endtime" file is timestamped in the future - this is
+when the SMS will automatically be removed from the active
+list. The file contents is the original lifetime in seconds.
+
+"info" is a text summary of the sms, shown in the web UI.
+
+"lastxmit" is empty, the timestamp tells when the SMS was last
+sent.
+
+"log" is a text log of events that have happened with this
+SMS (created, sent, modified, ...)
+
+"message" is the contents of the SMS.
+
+"recips" is the name of the recipient, it points to a file in 
+the "recips/" directory.
+
+"repeat" is how often the SMS is repeated, in minutes. If
+this value is negative, the message has been suspended.
+
+
+Contents of the recips directory
+--------------------------------
+Each file holds a list of SMS recipients, in the form
+   PhoneNumber Description
+If the phonenumber is "%", then the description is a pointer
+to another list, so you can have lists inside lists.
+
+The filename is the name of the recipient list. This is what
+an SMS's "recips" file points to.
+
+
+
