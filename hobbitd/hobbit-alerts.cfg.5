@@ -92,9 +92,13 @@ The recipients are listed after the initial rule. The following keywords can be 
 .sp
 .BR "MAIL address[,address]"
 Recipient who receives an e-mail alert. This takes one parameter, the e-mail address.
+The strings "&host&", "&service&" and "&color&" in an address will be replaced with
+the hostname, service and color of the alert, respectively.
 .sp
 .BR "SCRIPT /path/to/script recipientID"
 Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.
+The strings "&host&", "&service&" and "&color&" in the recipientID will be replaced with
+the hostname, service and color of the alert, respectively.
 .sp
 .BR "IGNORE"
 This is used to define a recipient that does NOT trigger any alerts, and also terminates the

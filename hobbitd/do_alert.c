@@ -141,6 +141,49 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 	return walk;
 }
 
+static char *message_recipient(char *reciptext, char *hostname, char *svcname, char *colorname)
+{
+	static char *result = NULL;
+	char *inpos, *p;
+
+	if (result) xfree(result);
+	result = (char *)malloc(strlen(reciptext) + strlen(hostname) + strlen(svcname) + strlen(colorname) + 1);
+	*result = '\0';
+
+	inpos = reciptext;
+	do {
+		p = strchr(inpos, '&');
+		if (p) {
+			*p = '\0';
+			strcat(result, inpos);
+			*p = '&';
+			p++;
+			if (strncasecmp(p, "HOST&", 5) == 0) {
+				strcat(result, hostname);
+				inpos = p + 5;
+			}
+			else if (strncasecmp(p, "SERVICE&", 8) == 0) {
+				strcat(result, svcname);
+				inpos = p + 8;
+			}
+			else if (strncasecmp(p, "COLOR&", 6) == 0) {
+				strcat(result, colorname);
+				inpos = p + 6;
+			}
+			else {
+				strcat(result, "&");
+				inpos = p;
+			}
+		}
+		else {
+			strcat(result, inpos);
+			inpos = NULL;
+		}
+	} while (inpos && *inpos);
+
+	return result;
+}
+
 static char *message_subject(activealerts_t *alert, recip_t *recip)
 {
 	static char subj[250];
@@ -383,11 +426,13 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			{
 				char cmd[32768];
 				char *mailsubj;
+				char *mailrecip;
 				FILE *mailpipe;
 
 				MEMDEFINE(cmd);
 
 				mailsubj = message_subject(alert, recip);
+				mailrecip = message_recipient(recip->recipient, alert->hostname, alert->testname, colorname(alert->color));
 
 				if (mailsubj) {
 					if (xgetenv("MAIL")) 
@@ -403,7 +448,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					else 
 						sprintf(cmd, "mail ");
 				}
-				strcat(cmd, recip->recipient);
+				strcat(cmd, mailrecip);
 
 				traceprintf("Mail alert with command '%s'\n", cmd);
 				if (testonly) { MEMUNDEFINE(cmd); break; }
@@ -416,7 +461,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 						init_timestamp();
 						fprintf(logfd, "%s %s.%s (%s) %s[%d] %ld %d",
 							timestamp, alert->hostname, alert->testname,
-							alert->ip, recip->recipient, recip->cfid,
+							alert->ip, mailrecip, recip->cfid,
 							(long)now, servicecode(alert->testname));
 						if (alert->state == A_RECOVERED) {
 							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
@@ -439,10 +484,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 		  case M_SCRIPT:
 			{
 				pid_t scriptpid;
+				char *scriptrecip;
 
 				traceprintf("Script alert with command '%s' and recipient %s\n", recip->scriptname, recip->recipient);
 				if (testonly) break;
 
+				scriptrecip = message_recipient(recip->recipient, alert->hostname, alert->testname, colorname(alert->color));
 				scriptpid = fork();
 				if (scriptpid == 0) {
 					/* Setup all of the environment for a paging script */
@@ -472,8 +519,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					sprintf(ackcode, "ACKCODE=%d", alert->cookie);
 					putenv(ackcode);
 
-					rcpt = (char *)malloc(strlen("RCPT=") + strlen(recip->recipient) + 1);
-					sprintf(rcpt, "RCPT=%s", recip->recipient);
+					rcpt = (char *)malloc(strlen("RCPT=") + strlen(scriptrecip) + 1);
+					sprintf(rcpt, "RCPT=%s", scriptrecip);
 					putenv(rcpt);
 
 					bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname) + 1);
@@ -579,7 +626,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 						init_timestamp();
 						fprintf(logfd, "%s %s.%s (%s) %s %ld %d",
 							timestamp, alert->hostname, alert->testname,
-							alert->ip, recip->recipient, (long)now, 
+							alert->ip, scriptrecip, (long)now, 
 							servicecode(alert->testname));
 						if (alert->state == A_RECOVERED) {
 							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
