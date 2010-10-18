@@ -30,19 +30,19 @@
             <TD COLSPAN=3 ALIGN=CENTER><FONT FACE="Arial, Helvetica" COLOR="silver"><B>&nbsp;- OR -&nbsp;</B></FONT></TD>
 	 </TR>
          <TR>
-	   <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD>
-	   <TD><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40 ID="starttime" VALUE="&EVENTSTARTTIME" onchange="document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return false"></TD>
-	   <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD>
+	   <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40 ID="starttime" VALUE="&EVENTSTARTTIME" onchange="document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return false"></TD>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
 	 </TR>
 	 <TR>
-	   <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>To: </B></FONT></TD>
-	   <TD><INPUT TYPE=TEXT NAME="TOTIME" SIZE=40 ID="endtime" VALUE="&EVENTENDTIME" onchange="document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return false"></TD>
-	   <TD><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>To: </B></FONT></TD>
+	   <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="TOTIME" SIZE=40 ID="endtime" VALUE="&EVENTENDTIME" onchange="document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return false"></TD>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
 	 </TR>
 
          <TR>
-	   <TD>Show last</TD>
-	   <TD COLSPAN=2>
+	   <TD ALIGN=LEFT>Show last</TD>
+	   <TD COLSPAN=2 ALIGN=LEFT>
               <button onclick="document.getElementById('backdays').value='2'; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return true">2 days</button>
               <button onclick="document.getElementById('backdays').value='12'; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return true">12 days</button>
               <button onclick="document.getElementById('backdays').value='48'; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return true">48 days</button>
@@ -51,8 +51,8 @@
          </TR>
 
          <TR>
-	   <TD>Show last</TD>
-	   <TD COLSPAN=2>
+	   <TD ALIGN=LEFT>Show last</TD>
+	   <TD COLSPAN=2 ALIGN=LEFT>
               <button onclick="document.getElementById('starttime').value='&EVENTLASTYEARBEGIN'; document.getElementById('endtime').value='&EVENTCURRYEARBEGIN'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">year</button>
               <button onclick="document.getElementById('starttime').value='&EVENTLASTMONTHBEGIN'; document.getElementById('endtime').value='&EVENTCURRMONTHBEGIN'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">month</button>
               <button onclick="document.getElementById('starttime').value='&EVENTLASTWEEKBEGIN'; document.getElementById('endtime').value='&EVENTCURRWEEKBEGIN'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">week</button>
@@ -61,8 +61,8 @@
          </TR>
 
 	 <TR>
-	   <TD>Show this</TD>
-	   <TD COLSPAN=2>
+	   <TD ALIGN=LEFT>Show this</TD>
+	   <TD COLSPAN=2 ALIGN=LEFT>
               <button onclick="document.getElementById('starttime').value='&EVENTCURRYEARBEGIN'; document.getElementById('endtime').value=''; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">year</button>
               <button onclick="document.getElementById('starttime').value='&EVENTCURRMONTHBEGIN'; document.getElementById('endtime').value=''; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">month</button>
               <button onclick="document.getElementById('starttime').value='&EVENTCURRWEEKBEGIN'; document.getElementById('endtime').value=''; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">week</button>
