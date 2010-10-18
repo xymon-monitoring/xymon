@@ -553,7 +553,7 @@ int do_request(void)
 					errprintf("Cannot find hostdata files for host %s\n", hostname);
 				}
 				else {
-					clienturi = (char *)malloc(strlen(cgiurl) + 20 + strlen(hostname));
+					clienturi = (char *)realloc(clienturi, strlen(cgiurl) + 40 + strlen(hostname) + strlen(clientid));
 					sprintf(clienturi, "%s/bb-hostsvc.sh?CLIENT=%s&amp;TIMEBUF=%s", 
 						cgiurl, hostname, clientid);
 				}
@@ -566,6 +566,7 @@ int do_request(void)
 				clientavail = (stat(logfn, &st) == 0);
 
 				if (clientavail) {
+					clienturi = (char *)realloc(clienturi, strlen(clienturi) + 14 + strlen(clientid));
 					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
 				}
 			}
