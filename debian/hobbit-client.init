@@ -15,7 +15,7 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/lib/hobbit/client/runclient.sh
 NAME=hobbitclient
-DESC=hobbitclient
+DESC=xymonclient
 
 test -x $DAEMON || exit 0
 

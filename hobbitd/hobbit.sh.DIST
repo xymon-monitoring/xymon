@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# Startup script for the Hobbit monitor
+# Startup script for Xymon
 #
 # This starts the "hobbitlaunch" tool, which in turn starts
-# all of the other Hobbit server programs.
+# all of the other Xymon server programs.
 
 case "`uname -s`" in
    "SunOS")
@@ -16,7 +16,7 @@ esac
 
 if test `$ID -un` != @BBUSER@
 then
-	echo "Hobbit must be started as the @BBUSER@ user"
+	echo "Xymon must be started as the @BBUSER@ user"
 	exit 1
 fi
 
@@ -27,7 +27,7 @@ case "$1" in
 		kill -0 `cat @BBLOGDIR@/hobbitlaunch.pid`
 		if test $? -eq 0
 		then
-			echo "Hobbit appears to be running, doing restart"
+			echo "Xymon appears to be running, doing restart"
 			$0 stop
 		else
 			rm -f @BBLOGDIR@/hobbitlaunch.pid
@@ -35,16 +35,16 @@ case "$1" in
 	fi
 
 	@RUNTIMEDEFS@ @BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/hobbitlaunch.cfg --env=@BBHOME@/etc/hobbitserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
-	echo "Hobbit started"
+	echo "Xymon started"
 	;;
 
    "stop")
 	if test -s @BBLOGDIR@/hobbitlaunch.pid
 	then
 		kill -TERM `cat @BBLOGDIR@/hobbitlaunch.pid`
-		echo "Hobbit stopped"
+		echo "Xymon stopped"
 	else
-		echo "Hobbit is not running"
+		echo "Xymon is not running"
 	fi
 	rm -f @BBLOGDIR@/hobbitlaunch.pid
 	;;
@@ -55,13 +55,13 @@ case "$1" in
 		kill -0 `cat @BBLOGDIR@/hobbitlaunch.pid`
 		if test $? -eq 0
 		then
-			echo "Hobbit (hobbitlaunch) running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
+			echo "Xymon (hobbitlaunch) running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
 		else
-			echo "Hobbit not running, removing stale PID file"
+			echo "Xymon not running, removing stale PID file"
 			rm -f @BBLOGDIR@/hobbitlaunch.pid
 		fi
 	else
-		echo "Hobbit (hobbitlaunch) does not appear to be running"
+		echo "Xymon (hobbitlaunch) does not appear to be running"
 	fi
 	;;
 

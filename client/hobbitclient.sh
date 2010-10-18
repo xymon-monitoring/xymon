@@ -1,9 +1,9 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# Hobbit client main script.                                                 #
+# Xymon client main script.                                                  #
 #                                                                            #
 # This invokes the OS-specific script to build a client message, and sends   #
-# if off to the Hobbit server.                                               #
+# if off to the Xymon server.                                                #
 #                                                                            #
 # Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #

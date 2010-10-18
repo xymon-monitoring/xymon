@@ -1,8 +1,8 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# Hobbit client bootup script.                                               #
+# Xymon client bootup script.                                                #
 #                                                                            #
-# This invokes hobbitlaunch, which in turn runs the Hobbit client and any    #
+# This invokes hobbitlaunch, which in turn runs the Xymon client and any     #
 # extensions configured.                                                     #
 #                                                                            #
 # Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    #
@@ -72,25 +72,25 @@ case "$CMD" in
 	fi
 
   	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
-		echo "Hobbit client already running, re-starting it"
+		echo "Xymon client already running, re-starting it"
 		$0 --hostname="$MACHINEDOTS" stop
 		rm -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	fi
 
 	$HOBBITCLIENTHOME/bin/hobbitlaunch --config=$HOBBITCLIENTHOME/etc/clientlaunch.cfg --log=$HOBBITCLIENTHOME/logs/clientlaunch.log --pidfile=$HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	if test $? -eq 0; then
-		echo "Hobbit client for $BBOSTYPE started on $MACHINEDOTS"
+		echo "Xymon client for $BBOSTYPE started on $MACHINEDOTS"
 	else
-		echo "Hobbit client startup failed"
+		echo "Xymon client startup failed"
 	fi
 	;;
 
   "stop")
   	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		kill `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
-		echo "Hobbit client stopped"
+		echo "Xymon client stopped"
 	else
-		echo "Hobbit client not running"
+		echo "Xymon client not running"
 	fi
 	;;
 
@@ -98,7 +98,7 @@ case "$CMD" in
   	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		$0 --hostname="$MACHINEDOTS" stop
 	else
-		echo "Hobbit client not running, continuing to start it"
+		echo "Xymon client not running, continuing to start it"
 	fi
 
 	$0 --hostname="$MACHINEDOTS" --os="$BBOSTYPE" start
@@ -110,13 +110,13 @@ case "$CMD" in
 		kill -0 `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
 		if test $? -eq 0
 		then
-			echo "Hobbit client (clientlaunch) running with PID `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`"
+			echo "Xymon client (clientlaunch) running with PID `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`"
 		else
-			echo "Hobbit client not running, removing stale PID file"
+			echo "Xymon client not running, removing stale PID file"
 			rm -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 		fi
 	else
-		echo "Hobbit client (clientlaunch) does not appear to be running"
+		echo "Xymon client (clientlaunch) does not appear to be running"
 	fi
 	;;
 

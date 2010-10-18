@@ -15,7 +15,7 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/lib/hobbit/server/hobbit.sh
 NAME=hobbit
-DESC=hobbit
+DESC=Xymon
 
 test -x $DAEMON || exit 0
 
