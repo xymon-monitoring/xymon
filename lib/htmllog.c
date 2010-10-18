@@ -280,12 +280,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 
 	if (disabletime != 0) {
-		fprintf(output, "<TR><TD><H3>Disabled until %s</H3></TD></TR>\n", 
+		fprintf(output, "<TR><TD ALIGN=LEFT><H3>Disabled until %s</H3></TD></TR>\n", 
 			(disabletime == -1 ? "OK" : ctime(&disabletime)));
-		fprintf(output, "<TR><TD><PRE>%s</PRE></TD></TR>\n", dismsg);
-		fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
+		fprintf(output, "<TR><TD ALIGN=LEFT><PRE>%s</PRE></TD></TR>\n", dismsg);
+		fprintf(output, "<TR><TD ALIGN=LEFT><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 
-		fprintf(output, "<TR><TD>");
+		fprintf(output, "<TR><TD ALIGN=LEFT>");
 		if (strlen(firstline)) {
 			fprintf(output, "<H3>");
 			textwithcolorimg(firstline, output);
@@ -298,15 +298,15 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		char *txt = skipword(firstline);
 
 		if (dismsg) {
-			fprintf(output, "<TR><TD><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
-			fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
+			fprintf(output, "<TR><TD ALIGN=LEFT><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
+			fprintf(output, "<TR><TD ALIGN=LEFT><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 		}
 
 		if (modifiers) {
 			char *modtxt;
 
 			nldecode(modifiers);
-			fprintf(output, "<TR><TD>");
+			fprintf(output, "<TR><TD ALIGN=LEFT>");
 			modtxt = strtok(modifiers, "\n");
 			while (modtxt) {
 				fprintf(output, "<H3>");
@@ -318,7 +318,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			fprintf(output, "\n");
 		}
 
-		fprintf(output, "<TR><TD>");
+		fprintf(output, "<TR><TD ALIGN=LEFT>");
 		if (strlen(txt)) {
 			fprintf(output, "<H3>");
 			textwithcolorimg(txt, output);

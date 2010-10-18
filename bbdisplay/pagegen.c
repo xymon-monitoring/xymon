@@ -406,7 +406,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", columncount);
 			}
 
-			fprintf(output, "<TR class=line>\n <TD NOWRAP><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
+			fprintf(output, "<TR class=line>\n <TD NOWRAP ALIGN=LEFT><A NAME=\"%s\">&nbsp;</A>\n", h->hostname);
 			if (maxrowsbeforeheading) rowcount = (rowcount + 1) % maxrowsbeforeheading;
 			else rowcount++;
 
@@ -720,7 +720,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 			sprintf(pagelink, "%s/%s/%s/%s%s", xgetenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
 
 			linkurl = hostlink(p->name);
-			fprintf(output, "<TD><FONT %s>", xgetenv("MKBBROWFONT"));
+			fprintf(output, "<TD ALIGN=LEFT><FONT %s>", xgetenv("MKBBROWFONT"));
 			if (linkurl) {
 				fprintf(output, "<A HREF=\"%s\">%s</A>", linkurl, p->title);
 			}

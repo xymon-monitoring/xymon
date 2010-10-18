@@ -39,31 +39,31 @@
 
    <TABLE BORDER=0 SUMMARY="Notification criteria">
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Max # of notifications</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Max&nbsp;#&nbsp;of&nbsp;notifications</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="MAXCOUNT" SIZE=40 VALUE=100></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( Default 100 )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="MAXCOUNT" SIZE=40 VALUE=100></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( Default 100 )</FONT></TD>
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to match</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts&nbsp;to&nbsp;match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="HOSTMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="HOSTMATCH" SIZE=40></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts to skip</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Hosts&nbsp;to&nbsp;skip</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="EXHOSTMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="EXHOSTMATCH" SIZE=40></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^host.*$ )</FONT></TD>
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to match</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages&nbsp;to&nbsp;match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="PAGEMATCH" ID="PAGEMATCH" SIZE=40></TD>
-       <td>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="PAGEMATCH" ID="PAGEMATCH" SIZE=40></TD>
+       <td ALIGN=LEFT>
           <select name="PATHLIST" ID="PATHLIST" onChange="document.getElementById('PAGEMATCH').value=document.getElementById('PATHLIST').value; return false">
 	  &PAGEPATH_DROPDOWN
 	  </select>
@@ -71,38 +71,38 @@
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages to skip</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Pages&nbsp;to&nbsp;skip</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="EXPAGEMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="EXPAGEMATCH" SIZE=40></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: ^webservers/.*$ )</FONT></TD>
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests to match</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests&nbsp;to&nbsp;match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="TESTMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="TESTMATCH" SIZE=40></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests to skip</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Tests&nbsp;to&nbsp;skip</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="EXTESTMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="EXTESTMATCH" SIZE=40></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: cpu|vmstat )</FONT></TD>
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients to match</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients&nbsp;to&nbsp;match</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="RCPTMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="RCPTMATCH" SIZE=40></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
      </TR>
 
      <TR>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients to skip</B></FONT></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>Recipients&nbsp;to&nbsp;skip</B></FONT></TD>
        <TD WIDTH=10>&nbsp;</TD>
-       <TD><INPUT TYPE=TEXT NAME="EXRCPTMATCH" SIZE=40></TD>
-       <TD><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
+       <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="EXRCPTMATCH" SIZE=40></TD>
+       <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"> ( ex: admin@test.com )</FONT></TD>
      </TR>
 
      <TR>
