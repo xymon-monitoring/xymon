@@ -63,8 +63,6 @@ function XymonInit
 	}
 	$script:loopinterval = 300 # seconds
 	$script:slowscanrate = 12
-	$script:havequerycmd = (get-command -ErrorAction:SilentlyContinue query) -ne $null
-	$script:haveqwinstacmd = (get-command -ErrorAction:SilentlyContinue qwinsta) -ne $null
 
 	if ($cpuinfo -ne $null) 	{ Remove-Variable cpuinfo }
 	if ($totalload -ne $null)	{ Remove-Variable totalload }
@@ -675,7 +673,7 @@ function XymonSend($msg, $servers)
 
 function XymonClientConfig($cfglines)
 {
-	if ($cfglines -eq $null -or $cfglines -eq "") { exit }
+	if ($cfglines -eq $null -or $cfglines -eq "") { return }
 
 	# Convert to Windows-style linebreaks
 	$script:clientlocalcfg = $cfglines.Split("`n")
