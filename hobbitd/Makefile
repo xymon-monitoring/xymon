@@ -128,6 +128,7 @@ cfgfiles:
 	cat etcfiles/hobbit-alerts.cfg.DIST | sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g' | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >etcfiles/hobbit-alerts.cfg
 	cat etcfiles/hobbitlaunch.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g' >etcfiles/hobbitlaunch.cfg
 	cat etcfiles/hobbitcgi.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbitcgi.cfg
+	cat wwwfiles/menu/menu_items.js.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' | sed -e 's!@BBCGIURL@!$(BBCGIURL)!g' | sed -e 's!@SECUREBBCGIURL@!$(SECUREBBCGIURL)!g' >wwwfiles/menu/menu_items.js
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -135,6 +136,7 @@ cfgfiles:
 clean:
 	rm -f $(PROGRAMS) *.o *~ client/*~ rrd/*~
 	rm -f etcfiles/hobbit-apache.conf etcfiles/hobbitserver.cfg etcfiles/bb-hosts etcfiles/hobbit-alerts.cfg etcfiles/hobbitlaunch.cfg etcfiles/hobbitcgi.cfg
+	rm -f wwwfiles/menu/menu_items.js
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
 install: install-bin install-man install-cfg install-obsoleted
@@ -155,7 +157,7 @@ install-cfg:
 	cd etcfiles; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
 	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitgraph.cfg
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
-	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg"; echo "hobbit-clients.cfg"; echo "bbcombotest.cfg"; echo "client-local.cfg"; echo "hobbit-holidays.cfg"; echo "hobbit-rrddefinitions.cfg"; echo hobbit-snmpmibs.cfg; echo xymonmenu.cfg) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
+	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg"; echo "hobbit-clients.cfg"; echo "bbcombotest.cfg"; echo "client-local.cfg"; echo "hobbit-holidays.cfg"; echo "hobbit-rrddefinitions.cfg"; echo hobbit-snmpmibs.cfg) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
 	cd etcfiles; cp -fp hobbit-apache.conf $(INSTALLROOT)$(INSTALLETCDIR)/hobbit-apache.conf
 	cd $(INSTALLROOT)$(BBHOME); rm -f hobbit.sh; ln -sf bin/hobbit.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWWWDIR)/ ../../build/md5.dat
