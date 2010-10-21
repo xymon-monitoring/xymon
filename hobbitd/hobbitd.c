@@ -2723,7 +2723,10 @@ void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, void *hi
 		switch (boardfields[f_idx].field) {
 		  case F_HOSTINFO:
 			infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
-			if (infostr) needed += strlen(infostr);
+			if (infostr) {
+				if (boardfields[f_idx].bbhfield != BBH_RAW) infostr = nlencode(infostr);
+				needed += strlen(infostr);
+			}
 			break;
 
 		  default: break;
