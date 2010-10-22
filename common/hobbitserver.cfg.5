@@ -110,6 +110,21 @@ a named holiday set) will be considered as holidays.
 Defines which day is the first day of the week. Set to "0" for Sunday,
 "1" for Monday. Default: 1 (Monday).
 
+.IP XYMONBODYHEADER
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_header templates. If this is set to a value
+beginning with "file:", then the contents of the specified file is
+included. Default: "file:$BBHOME/etc/xymonmenu.cfg"
+
+.IP XYMONBODYFOOTER
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_footer templates. If this is set to a value
+beginning with "file:", then the contents of the specified file is
+included. Default: Empty.
+
+.IP XYMONBODYMENUCSS
+URL for the Xymon menu CSS file. Default: "$BBMENUSKIN/xymonmenu.css"
+
 
 .SH DIRECTORIES
 

@@ -58,8 +58,6 @@ static pcre *ippattern = NULL;
 static RbtHandle hostnames;
 static RbtHandle testnames;
 
-static strbuffer_t *xymonmenu = NULL;
-
 typedef struct treerec_t {
 	char *name;
 	int flag;
@@ -80,6 +78,11 @@ typedef struct listpool_t {
 	struct listpool_t *next;
 } listpool_t;
 static listpool_t *listpoolhead = NULL;
+
+typedef struct bodystorage_t {
+	char *id;
+	strbuffer_t *txt;
+} bodystorage_t;
 
 
 static void clearflags(RbtHandle tree)
@@ -494,33 +497,58 @@ static void build_pagepath_dropdown(FILE *output)
 	rbtDelete(ptree);
 }
 
-void load_xymonmenu(void)
+char *xymonbody(char *id)
 {
-	strbuffer_t *menudata;
-	char *envstart, *envend, *outpos;
+	static RbtHandle bodystorage;
+	static int firsttime = 1;
+	RbtIterator handle;
+	bodystorage_t *bodyelement;
 
-	menudata = newstrbuffer(0);
-	if (getenv("XYMONMENU") != NULL) {
-		addtobuffer(menudata, getenv("XYMONMENU"));
+	strbuffer_t *rawdata, *parseddata;
+	char *envstart, *envend, *outpos;
+	char *idtag, *idval;
+	int idtaglen;
+
+	if (firsttime) {
+		bodystorage = rbtNew(string_compare);
+		firsttime = 0;
 	}
-	else {
-		char fn[PATH_MAX];
+
+	idtaglen = strspn(id, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	idtag = (char *)malloc(idtaglen + 1);
+	strncpy(idtag, id, idtaglen);
+	*(idtag+idtaglen) = '\0';
+
+	handle = rbtFind(bodystorage, idtag);
+	if (handle != rbtEnd(bodystorage)) {
+		bodyelement = (bodystorage_t *)gettreeitem(bodystorage, handle);
+		xfree(idtag);
+		return STRBUF(bodyelement->txt);
+	}
+
+	rawdata = newstrbuffer(0);
+	idval = xgetenv(idtag);
+	if (idval == NULL) return "";
+
+	if (strncmp(idval, "file:", 5) == 0) {
 		FILE *fd;
 		strbuffer_t *inbuf = newstrbuffer(0);
 
-		sprintf(fn, "%s/etc/xymonmenu.cfg", xgetenv("BBHOME"));
-		fd = stackfopen(fn, "r", NULL);
+		fd = stackfopen(idval+5, "r", NULL);
 		if (fd != NULL) {
-			while (stackfgets(inbuf, NULL)) addtostrbuffer(menudata, inbuf);
+			while (stackfgets(inbuf, NULL)) addtostrbuffer(rawdata, inbuf);
 			stackfclose(fd);
 		}
 
 		freestrbuffer(inbuf);
 	}
+	else {
+		addtobuffer(rawdata, idval);
+	}
 
-	/* Output the menu data, but expand any environment variables along the way */
-	xymonmenu = newstrbuffer(0);
-	outpos = STRBUF(menudata);
+	/* Output the body data, but expand any environment variables along the way */
+	parseddata = newstrbuffer(0);
+	outpos = STRBUF(rawdata);
 	while (*outpos) {
 		envstart = strchr(outpos, '$');
 		if (envstart) {
@@ -528,7 +556,7 @@ void load_xymonmenu(void)
 			char *envval = NULL;
 
 			*envstart = '\0';
-			addtobuffer(xymonmenu, outpos);
+			addtobuffer(parseddata, outpos);
 
 			envstart++;
 			envend = envstart + strspn(envstart, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
@@ -539,20 +567,27 @@ void load_xymonmenu(void)
 			outpos = envend;
 
 			if (envval) {
-				addtobuffer(xymonmenu, envval);
+				addtobuffer(parseddata, envval);
 			}
 			else {
-				addtobuffer(xymonmenu, "$");
-				addtobuffer(xymonmenu, envstart);
+				addtobuffer(parseddata, "$");
+				addtobuffer(parseddata, envstart);
 			}
 		}
 		else {
-			addtobuffer(xymonmenu, outpos);
+			addtobuffer(parseddata, outpos);
 			outpos += strlen(outpos);
 		}
 	}
 
-	freestrbuffer(menudata);
+	freestrbuffer(rawdata);
+
+	bodyelement = (bodystorage_t *)calloc(1, sizeof(bodystorage_t));
+	bodyelement->id = idtag;
+	bodyelement->txt = parseddata;
+	rbtInsert(bodystorage, bodyelement->id, bodyelement);
+
+	return STRBUF(bodyelement->txt);
 }
 
 typedef struct distest_t {
@@ -1397,9 +1432,9 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			fprintf(output, "%s", hostenv_eventtimeend);
 		}
 
-		else if (strncmp(t_start, "XYMONMENU", 9) == 0) {
-			if (xymonmenu == NULL) load_xymonmenu();
-			fprintf(output, "%s", STRBUF(xymonmenu));
+		else if (strncmp(t_start, "XYMONBODY", 9) == 0) {
+			char *bodytext = xymonbody(t_start);
+			fprintf(output, "%s", bodytext);
 		}
 
 		else if (*t_start && (savechar == ';')) {

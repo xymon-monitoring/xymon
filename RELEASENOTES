@@ -60,6 +60,34 @@ another URL as part of the URL path. If you need the Big Brother
 behaviour, add "--bb-proxy-syntax" to your invocations of 
 bbtest-net.
 
+BBGHOSTS setting removed
+------------------------
+Setting BBGHOSTS in the hobbitserver.cfg file no longer has any
+effect. Instead, you must use the "--ghosts" option for hobbitd.
+The default ghost handling has also been changed from "ignore"
+to "log".
+
+bbproxy: Alert support for Big Brother servers removed
+------------------------------------------------------
+The bbproxy tool no longer supports forwarding "page"
+messages. This means that if you are forwarding messages
+from an old Big Brother client to a Big Brother server
+that is sending out alerts, then these alerts will be
+dropped. Status updates will be forwarded, only alerts
+triggered from the Big Brother server are affected.
+
+Webpage menu: New menu code
+---------------------------
+The Javascript-based menu code ("Tigra") has been replaced
+with a menu based on CSS/HTML4. This means that any menu
+customization will have to be manually transferred to the
+new menu definition file, ~xymon/server/etc/xymonmenu.cfg.
+The new menu-system is known NOT to work with Internet
+Explorer 6 (IE 7 and newer are fine). If you must have a
+menu system that works with the ancient browsers, then the
+old Tigra menu can be downloaded from
+http://xymon.svn.sourceforge.net/viewvc/xymon/sandbox/tigramenu/?view=tar
+together with instructions for using it with Xymon 4.3.0.
 
 
 Changes from 4.2.2 -> 4.2.3
