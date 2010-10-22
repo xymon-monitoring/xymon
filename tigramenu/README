@@ -1,0 +1,36 @@
+Tigra Menu system for Xymon
+===========================
+
+Xymon versions prior to 4.3.0 used the Tigra menu system from
+http://www.softcomplex.com/products/tigra_menu/
+
+Since the licensing for this was always a bit unclear, this
+menu system was removed from Xymon 4.3.0. Instead, a menu
+based on CSS and HTML 4 was added.
+
+However, this does not work with Internet Explorer 6. So if
+you must use this very old and insecure browser, then you
+can install the Tigra menu system instead of the default
+Xymon menu.
+
+To do so:
+
+1) Copy all of the files in www/menu/ to your ~xymon/server/www/menu/
+   directory. Note that the "tigramenu_items.js" file contains
+   URL's that may be different in your Xymon installation, so adapt
+   this as needed. Any custom menus go into this file.
+
+2) Copy web/tigramenu_footer to your ~xymon/server/web/ directory.
+
+3) Modify these settings in hobbitserver.cfg (if not present, just
+   add these lines):
+      XYMONBODYHEADER=""
+      XYMONBODYFOOTER="file:$BBHOME/web/tigramenu_footer"
+      XYMONBODYMENUCSS="$BBMENUSKIN/tigramenu.css"
+
+4) Restart Xymon
+
+
+Henrik Storner
+2010-Oct-22
+

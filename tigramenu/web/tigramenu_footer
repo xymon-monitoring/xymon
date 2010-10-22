@@ -1,0 +1,10 @@
+<!-- menu script itself. you should not modify this file -->
+<script type="text/javascript" language="JavaScript" src="$BBMENUSKIN/tigramenu.js"></script>
+<!-- items structure. menu hierarchy and links are stored there -->
+<script type="text/javascript" language="JavaScript" src="$BBMENUSKIN/tigramenu_items.js"></script>
+<!-- files with geometry and styles structures -->
+<script type="text/javascript" language="JavaScript" src="$BBMENUSKIN/tigramenu_tpl.js"></script>
+<script type="text/javascript" language="JavaScript">
+        new menu (MENU_ITEMS, MENU_POS);
+</script>
+
