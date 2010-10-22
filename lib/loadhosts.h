@@ -77,8 +77,10 @@ enum bbh_item_t {
 	BBH_LAST
 };
 
+enum ghosthandling_t { GH_ALLOW, GH_IGNORE, GH_LOG, GH_MATCH };
+
 extern int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn);
-extern char *knownhost(char *filename, char *hostip, int ghosthandling);
+extern char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling);
 extern int knownloghost(char *logdir);
 extern void *hostinfo(char *hostname);
 extern void *localhostinfo(char *hostname);

@@ -216,7 +216,7 @@ enum alertstate_t { A_OK, A_ALERT, A_UNDECIDED };
 typedef struct ghostlist_t {
 	char *name;
 	char *sender;
-	time_t tstamp;
+	time_t tstamp, matchtime;
 } ghostlist_t;
 RbtHandle rbghosts;
 
@@ -227,12 +227,12 @@ typedef struct multisrclist_t {
 } multisrclist_t;
 RbtHandle rbmultisrc;
 
-int ghosthandling = -1;
+enum ghosthandling_t ghosthandling = GH_LOG;
 
 char *checkpointfn = NULL;
 FILE *dbgfd = NULL;
 char *dbghost = NULL;
-time_t boottime;
+time_t boottimer = 0;
 int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
@@ -354,11 +354,13 @@ char *generate_stats(void)
 {
 	static strbuffer_t *statsbuf = NULL;
 	time_t now = getcurrenttime(NULL);
+	time_t nowtimer = gettimer();
 	int i, clients;
 	char bootuptxt[40];
 	char uptimetxt[40];
 	RbtHandle ghandle;
-	time_t uptime = (now - boottime);
+	time_t uptime = (nowtimer - boottimer);
+	time_t boottstamp = (now - uptime);
 	char msgline[2048];
 
 	dbgprintf("-> generate_stats\n");
@@ -373,7 +375,7 @@ char *generate_stats(void)
 		clearstrbuffer(statsbuf);
 	}
 
-	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottime));
+	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottstamp));
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
@@ -431,7 +433,7 @@ char *generate_stats(void)
 		ghostlist_t *gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 
 		/* Skip records older than 10 minutes */
-		if (gwalk->tstamp < (now - 600)) continue;
+		if (gwalk->tstamp < (nowtimer - 600)) continue;
 		sprintf(msgline, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
 		addtobuffer(statsbuf, msgline);
 	}
@@ -442,7 +444,7 @@ char *generate_stats(void)
 		multisrclist_t *mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, ghandle);
 
 		/* Skip records older than 10 minutes */
-		if (mwalk->tstamp < (now - 600)) continue;
+		if (mwalk->tstamp < (nowtimer - 600)) continue;
 		sprintf(msgline, "  %-25s reported by %s and %s\n", mwalk->id, mwalk->senders[0], mwalk->senders[1]);
 		addtobuffer(statsbuf, msgline);
 	}
@@ -466,13 +468,13 @@ char *totalclientmsg(clientmsg_list_t *msglist)
 {
 	static strbuffer_t *result = NULL;
 	clientmsg_list_t *mwalk;
-	time_t now = getcurrenttime(NULL);
+	time_t nowtimer = gettimer();
 
 	if (!result) result = newstrbuffer(10240);
 
 	clearstrbuffer(result);
 	for (mwalk = msglist; (mwalk); mwalk = mwalk->next) {
-		if ((mwalk->timestamp + MAX_SUBCLIENT_LIFETIME) < now) continue; /* Expired data */
+		if ((mwalk->timestamp + MAX_SUBCLIENT_LIFETIME) < nowtimer) continue; /* Expired data */
 		addtobuffer(result, "\n[collector:");
 		addtobuffer(result, mwalk->collectorid);
 		addtobuffer(result, "]\n");
@@ -528,6 +530,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	unsigned int bufsz = 1024*shbufsz(channel->channelid);
 	void *hi;
 	char *pagepath, *classname, *osname;
+	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	dbgprintf("-> posttochannel\n");
 
@@ -627,7 +630,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 15 */
-					(int)log->host->clientmsgtstamp);
+					(int)(log->host->clientmsgtstamp + timeroffset));
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", classname);	/* 16 */
@@ -685,7 +688,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 13 */
-						(int) log->host->clientmsgtstamp);
+						(int) (log->host->clientmsgtstamp + timeroffset));
 			}
 			if (n < (bufsz-5)) {
 				modifier_t *mwalk;
@@ -714,7 +717,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			n = snprintf(channel->channelbuf, (bufsz-5),
 				"@@%s#%u/%s|%d.%06d|%s|%s|%d\n%s",
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
-				sender, hostname, (int) log->host->clientmsgtstamp, 
+				sender, hostname, (int) (log->host->clientmsgtstamp + timeroffset), 
 				totalclientmsg(log->host->clientmsgs));
 			if (n > (bufsz-5)) {
 				errprintf("Oversize clichg msg from %s for %s truncated (n=%d, limit=%d)\n", 
@@ -839,10 +842,12 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 }
 
 
-void log_ghost(char *hostname, char *sender, char *msg)
+char *log_ghost(char *hostname, char *sender, char *msg)
 {
 	RbtHandle ghandle;
 	ghostlist_t *gwalk;
+	char *result = NULL;
+	time_t nowtimer = gettimer();
 
 	dbgprintf("-> log_ghost\n");
 
@@ -852,24 +857,61 @@ void log_ghost(char *hostname, char *sender, char *msg)
 		fflush(dbgfd);
 	}
 
-	if ((hostname == NULL) || (sender == NULL)) return;
+	if ((hostname == NULL) || (sender == NULL)) return NULL;
 
 	ghandle = rbtFind(rbghosts, hostname);
-	if (ghandle == rbtEnd(rbghosts)) {
-		gwalk = (ghostlist_t *)malloc(sizeof(ghostlist_t));
-		gwalk->name = strdup(hostname);
-		gwalk->sender = strdup(sender);
-		gwalk->tstamp = getcurrenttime(NULL);
-		rbtInsert(rbghosts, gwalk->name, gwalk);
+	gwalk = (ghandle != rbtEnd(rbghosts)) ? (ghostlist_t *)gettreeitem(rbghosts, ghandle) : NULL;
+
+	if ((gwalk == NULL) || ((gwalk->matchtime + 600) < nowtimer)) {
+		int found = 0;
+
+		if (ghosthandling == GH_MATCH) {
+			/* See if we can find this host just by ignoring domains */
+			char *hostnodom, *p;
+			void *hrec;
+
+			hostnodom = strdup(hostname);
+			p = strchr(hostnodom, '.'); if (p) *p = '\0';
+			for (hrec = first_host(); (hrec && !found); hrec = next_host(hrec, 0)) {
+				char *candname;
+			
+				candname = bbh_item(hrec, BBH_HOSTNAME);
+				p = strchr(candname, '.'); if (p) *p = '\0';
+				found = (strcasecmp(hostnodom, candname) == 0);
+				if (p) *p = '.';
+	
+				if (found) {
+					result = candname;
+					bbh_set_item(hrec, BBH_CLIENTALIAS, hostname);
+					errprintf("Matched ghost '%s' to host '%s'\n", hostname, result);
+				}
+			}
+		}
+
+		if (!found) {
+			if (gwalk == NULL) {
+				gwalk = (ghostlist_t *)calloc(1, sizeof(ghostlist_t));
+				gwalk->name = strdup(hostname);
+				gwalk->sender = strdup(sender);
+				gwalk->tstamp = gwalk->matchtime = nowtimer;
+				rbtInsert(rbghosts, gwalk->name, gwalk);
+			}
+			else {
+				if (gwalk->sender) xfree(gwalk->sender);
+				gwalk->sender = strdup(sender);
+				gwalk->tstamp = gwalk->matchtime = nowtimer;
+			}
+		}
 	}
 	else {
-		gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 		if (gwalk->sender) xfree(gwalk->sender);
 		gwalk->sender = strdup(sender);
-		gwalk->tstamp = getcurrenttime(NULL);
+		gwalk->tstamp = nowtimer;
 	}
 
 	dbgprintf("<- log_ghost\n");
+
+	return result;
 }
 
 void log_multisrc(hobbitd_log_t *log, char *newsender)
@@ -887,14 +929,14 @@ void log_multisrc(hobbitd_log_t *log, char *newsender)
 		gwalk->id = strdup(id);
 		gwalk->senders[0] = strdup(log->sender);
 		gwalk->senders[1] = strdup(newsender);
-		gwalk->tstamp = getcurrenttime(NULL);
+		gwalk->tstamp = gettimer();
 		rbtInsert(rbmultisrc, gwalk->id, gwalk);
 	}
 	else {
 		gwalk = (multisrclist_t *)gettreeitem(rbghosts, ghandle);
 		xfree(gwalk->senders[0]); gwalk->senders[0] = strdup(log->sender);
 		xfree(gwalk->senders[1]); gwalk->senders[1] = strdup(newsender);
-		gwalk->tstamp = getcurrenttime(NULL);
+		gwalk->tstamp = gettimer();
 	}
 
 	dbgprintf("<- log_multisrc\n");
@@ -1002,8 +1044,8 @@ void get_hts(char *msg, char *sender, char *origin,
 
 		knownname = knownhost(hostname, hostip, ghosthandling);
 		if (knownname == NULL) {
-			log_ghost(hostname, sender, msg);
-			goto done;
+			knownname = log_ghost(hostname, sender, msg);
+			if (knownname == NULL) goto done;
 		}
 		hostname = knownname;
 	}
@@ -1970,7 +2012,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 				cwalk->msg = strdup(msg);
 			}
 
-			hwalk->clientmsgtstamp = cwalk->timestamp = getcurrenttime(NULL);
+			hwalk->clientmsgtstamp = cwalk->timestamp = gettimer();
 
 			/* Purge any outdated client sub-messages */
 			chead = ctail = NULL;
@@ -2586,6 +2628,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 	enum boardfield_t f_type;
 	modifier_t *mwalk;
 	time_t now = getcurrenttime(NULL);
+	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	buf = *outbuf;
 	bufp = *outpos;
@@ -2666,7 +2709,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_DISMSG: if (lwalk->dismsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->dismsg)); break;
 		  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
 		  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsgs ? "Y" : "N")); break;
-		  case F_CLIENTTSTAMP: bufp += sprintf(bufp, "%ld", (hwalk->clientmsgs ? (long) hwalk->clientmsgtstamp : 0)); break;
+		  case F_CLIENTTSTAMP: bufp += sprintf(bufp, "%ld", (hwalk->clientmsgs ? (long) (hwalk->clientmsgtstamp + timeroffset) : 0)); break;
 		  case F_ACKLIST: if (acklist) bufp += sprintf(bufp, "%s", nlencode(acklist)); break;
 
 		  case F_HOSTINFO:
@@ -2764,7 +2807,7 @@ void do_message(conn_t *msg, char *origin)
 	char *downcause;
 	char sender[IP_ADDR_STRLEN];
 	char *grouplist;
-	time_t now;
+	time_t now, timeroffset;
 	char *msgfrom;
 
 	nesting++;
@@ -2782,6 +2825,7 @@ void do_message(conn_t *msg, char *origin)
 	msg->doingwhat = NOTALK;
 	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
 	now = getcurrenttime(NULL);
+	timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	if (traceall || tracelist) {
 		int found = 0;
@@ -2986,7 +3030,11 @@ void do_message(conn_t *msg, char *origin)
 			hname = knownhost(hostname, hostip, ghosthandling);
 
 			if (hname == NULL) {
-				log_ghost(hostname, sender, msg->buf);
+				hname = log_ghost(hostname, sender, msg->buf);
+			}
+
+			if (hname == NULL) {
+				/* Ignore it */
 			}
 			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
 				/* Invalid sender */
@@ -3754,7 +3802,11 @@ void do_message(conn_t *msg, char *origin)
 			hname = knownhost(hostname, hostip, ghosthandling);
 
 			if (hname == NULL) {
-				log_ghost(hostname, sender, msg->buf);
+				hname = log_ghost(hostname, sender, msg->buf);
+			}
+
+			if (hname == NULL) {
+				/* Ignore it */
 			}
 			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
 				/* Invalid sender */
@@ -3874,7 +3926,7 @@ void do_message(conn_t *msg, char *origin)
 			for (ghandle = rbtBegin(rbghosts); (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
 				gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 				snprintf(msgline, sizeof(msgline), "%s|%s|%ld\n", 
-					 gwalk->name, gwalk->sender, (long int)gwalk->tstamp);
+					 gwalk->name, gwalk->sender, (long int)(gwalk->tstamp + timeroffset));
 				addtobuffer(resp, msgline);
 			}
 
@@ -3899,7 +3951,7 @@ void do_message(conn_t *msg, char *origin)
 			for (mhandle = rbtBegin(rbmultisrc); (mhandle != rbtEnd(rbmultisrc)); mhandle = rbtNext(rbmultisrc, mhandle)) {
 				mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, mhandle);
 				snprintf(msgline, sizeof(msgline), "%s|%s|%s|%ld\n", 
-					 mwalk->id, mwalk->senders[0], mwalk->senders[1], (long int)mwalk->tstamp);
+					 mwalk->id, mwalk->senders[0], mwalk->senders[1], (long int)(mwalk->tstamp + timeroffset));
 				addtobuffer(resp, msgline);
 			}
 
@@ -4388,7 +4440,7 @@ int main(int argc, char *argv[])
 
 	MEMDEFINE(colnames);
 
-	boottime = getcurrenttime(NULL);
+	boottimer = gettimer();
 
 	/* Create our trees */
 	rbhosts = rbtNew(name_compare);
@@ -4457,9 +4509,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--ghosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
-			if (strcmp(p, "allow") == 0) ghosthandling = 0;
-			else if (strcmp(p, "drop") == 0) ghosthandling = 1;
-			else if (strcmp(p, "log") == 0) ghosthandling = 2;
+			if (strcmp(p, "allow") == 0) ghosthandling = GH_ALLOW;
+			else if (strcmp(p, "drop") == 0) ghosthandling = GH_IGNORE;
+			else if (strcmp(p, "log") == 0) ghosthandling = GH_LOG;
+			else if (strcmp(p, "match") == 0) ghosthandling = GH_MATCH;
 		}
 		else if (argnmatch(argv[argi], "--no-purple")) {
 			do_purples = 0;
@@ -4601,12 +4654,7 @@ int main(int argc, char *argv[])
 			listenport = 1984;
 	}
 
-	if (ghosthandling == -1) {
-		if (xgetenv("BBGHOSTS")) ghosthandling = atoi(xgetenv("BBGHOSTS"));
-		else ghosthandling = 0;
-	}
-
-	if (ghosthandling && (bbhostsfn == NULL)) {
+	if ((ghosthandling != GH_ALLOW) && (bbhostsfn == NULL)) {
 		errprintf("No bb-hosts file specified, required when using ghosthandling\n");
 		exit(1);
 	}

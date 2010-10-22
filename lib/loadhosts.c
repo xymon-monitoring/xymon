@@ -326,12 +326,13 @@ static void build_hosttree(void)
 
 #include "loadhosts_file.c"
 
-char *knownhost(char *hostname, char *hostip, int ghosthandling)
+char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling)
 {
 	/*
-	 * ghosthandling = 0 : Default BB method (case-sensitive, no logging, keep ghosts)
-	 * ghosthandling = 1 : Case-insensitive, no logging, drop ghosts
-	 * ghosthandling = 2 : Case-insensitive, log ghosts, drop ghosts
+	 * ghosthandling = GH_ALLOW  : Default BB method (case-sensitive, no logging, keep ghosts)
+	 * ghosthandling = GH_IGNORE : Case-insensitive, no logging, drop ghosts
+	 * ghosthandling = GH_LOG    : Case-insensitive, log ghosts, drop ghosts
+	 * ghosthandling = GH_MATCH  : Like GH_LOG, but try to match unknown names against known hosts
 	 */
 	RbtIterator hosthandle;
 	namelist_t *walk = NULL;
@@ -370,7 +371,7 @@ char *knownhost(char *hostname, char *hostip, int ghosthandling)
 	}
 
 	/* If default method, just say yes */
-	if (ghosthandling == 0) return result;
+	if (ghosthandling == GH_ALLOW) return result;
 
 	/* Allow all summaries */
 	if (strcmp(hostname, "summary") == 0) return result;
@@ -663,6 +664,12 @@ void bbh_set_item(void *hostin, enum bbh_item_t item, void *value)
 		host->data = value;
 		break;
 
+	  case BBH_CLIENTALIAS:
+		if (host->clientname && (host->bbhostname != host->clientname)) xfree(host->clientname);
+		host->clientname = strdup((char *)value);
+		rbtInsert(rbclients, host->clientname, host);
+		break;
+
 	  default:
 		break;
 	}
@@ -706,7 +713,7 @@ int main(int argc, char *argv[])
 		char hostip[IP_ADDR_STRLEN];
 
 handlehost:
-		hname = knownhost(argv[argi], hostip, 1);
+		hname = knownhost(argv[argi], hostip, GH_IGNORE);
 		if (hname == NULL) {
 			printf("Unknown host '%s'\n", argv[argi]);
 			continue;

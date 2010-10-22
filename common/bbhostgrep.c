@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 		 * Must also check if the host is currently down (not responding to ping).
 		 * And if the host is OK with knownhost(), because it may be time-limited.
 		 */
-		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts) && knownhost(curname, hostip, 1)) {
+		if (netok(netstring, curnet, testuntagged) && downok(curname, nodownhosts) && knownhost(curname, hostip, GH_IGNORE)) {
 			char *item;
 
 			clearstrbuffer(wantedtags);

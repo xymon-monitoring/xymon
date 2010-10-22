@@ -47,12 +47,14 @@ checkpoint. When starting up, hobbitd will restore its internal state
 from the information in this file. You can use the same filename for
 "--checkpoint-file" and "--restart".
 
-.IP "--ghosts={allow|drop|log}"
+.IP "--ghosts={allow|drop|log|match}"
 How to handle status messages from unknown hosts. The "allow" setting
 accepts all status messages, regardless of whether the host is known
 in the bb-hosts file or not. "drop" silently ignores reports from unknown 
 hosts. "log" works like drop, but logs the event in the hobbitd output file.
-The default is "allow", unless the BBGHOSTS environment variable is set.
+"match" will try to match the name of the unknown host reporting with 
+the known names by ignoring any domain-names - if a match is found, then
+a temporary client alias is automatically generated. The default is "log". 
 
 .IP "--no-purple"
 Prevent status messages from going purple when they are no longer valid.

@@ -43,7 +43,6 @@ const static struct {
 	{ "BBPAGERS", "" },
 	{ "FQDN", "TRUE" },
 	{ "USEHOBBITD", "TRUE" },
-	{ "BBGHOSTS", "1" },
 	{ "PAGELEVELS", "red yellow purple" },
 	{ "PURPLEDELAY", "30" },
 	{ "BBLOGSTATUS", "DYNAMIC" },

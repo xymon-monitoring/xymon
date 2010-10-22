@@ -34,8 +34,6 @@ BBPORT="1984"			# Portnumber where hobbitd/bbd listens
 BBDISP="$BBSERVERIP"		# IP of a single hobbit/bbd server
 BBDISPLAYS=""			# IP of multiple hobbit/bbd servers. If used, BBDISP must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
-BBGHOSTS="1"                    # How to handle status messages from unknown hosts.
-                                # 0=accept message, 1=discard message, 2=discard message and log the event
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Xymon, unless you run hobbitd_filestore --status --html
 
@@ -46,6 +44,8 @@ TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
 BBMAXMSGSPERCOMBO="100"         # How many individual messages to combine in a combo-message. 0=unlimited.
 BBSLEEPBETWEENMSGS="0"          # Delay between sending each combo message, in milliseconds.
 
+# HOLIDAYS="us"			# Default set of holidays (pointer to section in hobbit-holidays.cfg)
+# HOLIDAYFORMAT="%m/%d/%y"	# Format for printing holiday dates. Default is %d/%m/%y (day/month/year).
 
 # Specific to this host
 BBOSTYPE="$BBSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.

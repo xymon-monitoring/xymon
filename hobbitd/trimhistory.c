@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
 	while ((hent = readdir(histdir)) != NULL) {
 		char *hostname = NULL;
 		char hostip[IP_ADDR_STRLEN];
-		int ghosthandling = 1;
+		enum ghosthandling_t ghosthandling = GH_IGNORE;
 
 		if (stat(hent->d_name, &st) == -1) {
 			errprintf("Odd entry %s - cannot stat: %s\n", hent->d_name, strerror(errno));
