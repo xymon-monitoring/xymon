@@ -767,7 +767,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				}
 
 				if (n < (bufsz-5)) {
-					n += snprintf(channel->channelbuf+n, (bufsz-5), "\n%s", msg);
+					n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
 				}
 			}
 			if (n > (bufsz-5)) {
