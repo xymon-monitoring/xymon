@@ -213,14 +213,14 @@ static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
 		sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
 		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, BBTALK_TIMEOUT, sres);
+		board = getsendreturnstr(sres, 1);
+
 		if ((hobbitdresult != BB_OK) || (board == NULL)) {
 			board = "";
 			*errptr += sprintf(*errptr, "Could not access hobbitd board, error %d\n", hobbitdresult);
 			return COL_CLEAR;
 		}
-		else {
-			board = getsendreturnstr(sres, 1);
-		}
+
 		freesendreturnbuf(sres);
 	}
 
@@ -458,7 +458,8 @@ int update_combotests(int showeval, int cleanexpr)
 			addtostatus(msgline);
 
 			for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
-				sprintf(msgline, "&%s %s\n", colorname(vwalk->color), vwalk->symbol);
+				sprintf(msgline, "&%s <a href=\"%s/bb-hostsvc.sh?HOST=%s&amp;SERVICE=%s\">%s</a>\n",
+					colorname(vwalk->color), xgetenv("CGIBINURL"), gethname(vwalk->symbol), gettname(vwalk->symbol), vwalk->symbol);
 				addtostatus(msgline);
 			}
 
