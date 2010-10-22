@@ -300,10 +300,10 @@ else {
 
 
  divObject = document.getElementById(cZoomBoxName);
- divObject.style.left = this.zoomBoxLeft;
- divObject.style.top = this.zoomBoxTop;
- divObject.style.width = this.zoomBoxWidth;
- divObject.style.height = this.zoomBoxHeight;
+ divObject.style.left = this.zoomBoxLeft + "px";
+ divObject.style.top = this.zoomBoxTop + "px";
+ divObject.style.width = this.zoomBoxWidth + "px";
+ divObject.style.height = this.zoomBoxHeight + "px";
 
 
  this.zoomSensitiveZoneLeft = this.zoomBoxLeft - cZoomSensitiveZoneOffset;
@@ -314,10 +314,10 @@ else {
  this.zoomSensitiveZoneHeight = this.zoomSensitiveZoneBottom - this.zoomSensitiveZoneTop;
 
  divObject = document.getElementById(cZoomSensitiveZoneName);
- divObject.style.left = this.zoomSensitiveZoneLeft;
- divObject.style.top = this.zoomSensitiveZoneTop;
- divObject.style.width = this.zoomSensitiveZoneWidth;
- divObject.style.height = this.zoomSensitiveZoneHeight;
+ divObject.style.left = this.zoomSensitiveZoneLeft + "px";
+ divObject.style.top = this.zoomSensitiveZoneTop + "px";
+ divObject.style.width = this.zoomSensitiveZoneWidth + "px";
+ divObject.style.height = this.zoomSensitiveZoneHeight + "px";
 }
 
 /*++++++++++++++++++++++  zoomGraphObjDrawSelection  ++++++++++++++++++++++++*/
