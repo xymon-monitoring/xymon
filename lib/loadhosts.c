@@ -257,6 +257,7 @@ static void initialize_hostlist(void)
 
 		namehead = namehead->next;
 
+		/* clientname should not be freed, since it's just a pointer into the elems-array */
 		if (walk->bbhostname) xfree(walk->bbhostname);
 		if (walk->groupid) xfree(walk->groupid);
 		if (walk->classname) xfree(walk->classname);
@@ -665,7 +666,12 @@ void bbh_set_item(void *hostin, enum bbh_item_t item, void *value)
 		break;
 
 	  case BBH_CLIENTALIAS:
-		if (host->clientname && (host->bbhostname != host->clientname)) xfree(host->clientname);
+		/*
+		 * FIXME: Small mem. leak here - we should run "rebuildhosttree", but that is heavy.
+		 * Doing this "free" kills the tree structure, since we free one of the keys.
+		 *
+		 * if (host->clientname && (host->bbhostname != host->clientname) && (host->clientname != bbh_find_item(host, BBH_CLIENTALIAS)) xfree(host->clientname);
+		 */
 		host->clientname = strdup((char *)value);
 		rbtInsert(rbclients, host->clientname, host);
 		break;
