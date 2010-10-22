@@ -265,6 +265,7 @@ static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
 	int month, year;
 	int needreload = 0;
 	char *holidayset;
+	char yeartxt[10];
 
 	tm = localtime(&now);
 	year = tm->tm_year + 1900;
@@ -277,50 +278,56 @@ static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
 
 	addtobuffer(buf, "<tr>");
 
-	/* In January+February, show last year's holidays */
-	if (month <= 1) {
-		needreload = 1;
-		load_holidays(year-1);
-		addtobuffer(buf, "<td><table>\n");
-		if (holidayset) {
-			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year-1, holidayset);
-		}
-		else {
-			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year-1);
-		}
-		addtobuffer(buf, l);
-		printholidays(holidayset, buf);
-		addtobuffer(buf, "</table></td>\n");
+
+	addtobuffer(buf, "<td><table>\n");
+
+	switch (month) {
+	  case 0: case 1: case 2:
+		sprintf(yeartxt, "%d/%d", year-1, year);
+		break;
+
+	  case 9: case 10: case 11:
+		sprintf(yeartxt, "%d/%d", year, year+1);
+		break;
+
+	  default:
+		sprintf(yeartxt, "%d", year);
+		break;
 	}
 
-	/* Show this year's holidays */
-	if (needreload) load_holidays(year);
-	addtobuffer(buf, "<td><table>\n");
 	if (holidayset) {
-		sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year, holidayset);
+		sprintf(l, "<tr><th colspan=2>Holidays %s (%s)</th></tr>\n", yeartxt, holidayset);
 	}
 	else {
-		sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year);
+		sprintf(l, "<tr><th colspan=2>Holidays %s</th></tr>\n", yeartxt);
 	}
 	addtobuffer(buf, l);
-	printholidays(holidayset, buf);
-	addtobuffer(buf, "</table></td>\n");
 
-	/* In November+December, show next year's holidays */
-	if (month >= 10) {
-		needreload = 1;
-		load_holidays(year+1);
-		addtobuffer(buf, "<td><table>\n");
-		if (holidayset) {
-			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year+1, holidayset);
-		}
-		else {
-			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year+1);
-		}
-		addtobuffer(buf, l);
-		printholidays(holidayset, buf);
-		addtobuffer(buf, "</table></td>\n");
+
+	/* In January+February+March, show last year's holidays in October+November+December */
+	if (month <= 2) {
+		load_holidays(year-1);
+		printholidays(holidayset, buf, 9, 11);
+		load_holidays(year);
 	}
+
+	if (month >= 9) {
+		/* 
+		 * In October thru December, skip the first half 
+		 * of this year from the display. Instead, show
+		 * holidays in first half of next year.
+		 */
+		printholidays(holidayset, buf, 6, 11);
+
+		load_holidays(year+1);
+		printholidays(holidayset, buf, 0, 5);
+		load_holidays(year);
+	}
+	else {
+		printholidays(holidayset, buf, 0, 11);
+	}
+
+	addtobuffer(buf, "</table></td>\n");
 
 	addtobuffer(buf, "</tr>\n");
 

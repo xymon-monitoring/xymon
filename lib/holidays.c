@@ -567,7 +567,7 @@ char *isholiday(char *key, int dayinyear)
 }
 
 
-void printholidays(char *key, strbuffer_t *buf)
+void printholidays(char *key, strbuffer_t *buf, int mfirst, int mlast)
 {
 	int day;
 	char *fmt;
@@ -595,9 +595,11 @@ void printholidays(char *key, strbuffer_t *buf)
 			tm.tm_hour = 12; tm.tm_min = 0; tm.tm_sec = 0;
 			tm.tm_isdst = -1;
 			t = mktime(&tm);
-			strftime(dstr, sizeof(dstr), fmt, localtime(&t));
-			sprintf(oneh, "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
-			addtobuffer(buf, oneh);
+			if ((tm.tm_mon >= mfirst) && (tm.tm_mon <= mlast)) {
+				strftime(dstr, sizeof(dstr), fmt, localtime(&t));
+				sprintf(oneh, "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
+				addtobuffer(buf, oneh);
+			}
 		}
 	}
 }

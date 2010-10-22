@@ -28,7 +28,7 @@ typedef struct holiday_t {
 extern int load_holidays(int year);
 extern int getweekdayorholiday(char *key, struct tm *t);
 extern char *isholiday(char *key, int dayinyear);
-extern void printholidays(char *key, strbuffer_t *buf);
+extern void printholidays(char *key, strbuffer_t *buf, int mfirst, int mlast);
 
 #endif
 
