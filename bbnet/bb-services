@@ -140,8 +140,9 @@
    port 873
 
 [bbd]
-   send "ping"
-   expect "hobbitd"
+#   send "ping"
+#   expect "hobbitd"
+   send "dummy"
    port 1984
 
 # The AV scanning daemon from the ClamAV antivirus package
