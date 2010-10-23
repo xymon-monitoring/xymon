@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit CGI for reporting performance statisticsc from the RRD data         */
+/* Xymon CGI for reporting performance statisticsc from the RRD data          */
 /*                                                                            */
 /* Copyright (C) 2008-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

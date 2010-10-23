@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit status-log viewer CGI.                                              */
+/* Xymon status-log viewer CGI.                                               */
 /*                                                                            */
 /* This CGI tool shows an HTML version of a status log.                       */
 /*                                                                            */
@@ -578,7 +578,7 @@ int do_request(void)
 			  service, 
 			  ip,
 		          color, flapping,
-			  (sender ? sender : "Hobbit"), 
+			  (sender ? sender : "Xymon"), 
 			  (flags ? flags : ""),
 		          logtime, timesincechange, 
 		          (firstline ? firstline : ""), 

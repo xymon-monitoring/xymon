@@ -1,5 +1,5 @@
 #
-#       Logrotate fragment for Hobbit.
+#       Logrotate fragment for Xymon.
 #
 /var/log/hobbit/*.log {
         weekly

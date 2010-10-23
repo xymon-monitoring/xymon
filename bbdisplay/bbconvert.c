@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit checkpoint file generator.                                          */
+/* Xymon checkpoint file generator.                                           */
 /*                                                                            */
-/* This file contains code to generate a Hobbit style "checkpoint" file from  */
+/* This file contains code to generate a Xymon style "checkpoint" file from   */
 /* the current BB-style status data. It is used by bbgen's hobbitddump option */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */

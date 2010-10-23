@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This file contains code to build the acknowledgement log shown on the      */
 /* "all non-green" page.                                                      */
@@ -115,7 +115,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			}
 			*p1 = '\0';
 
-			/* Hobbit uses \n in the ack message, for the "acked by" data. Cut it off. */
+			/* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
 			nldecode(ackmsg); p = strchr(ackmsg, '\n'); 
 			if (p) {
 				if (strncmp(p, "\nAcked by:", 10) == 0) hobbitdacker = p+10;

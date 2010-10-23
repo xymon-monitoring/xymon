@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit CGI for generating the Hobbit NK page                               */
+/* Xymon CGI for generating the Xymon NK page                                 */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
 		generate_nkpage(stdout, "hobbitnk");
 	}
 	else {
-		fprintf(stdout, "Cannot load Hobbit status\n");
+		fprintf(stdout, "Cannot load Xymon status\n");
 	}
 
 	return 0;

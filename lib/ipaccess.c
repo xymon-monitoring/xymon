@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Hobbit, responsible for loading the host-,    */
+/* This is a library module for Xymon, responsible for loading the host-,     */
 /* page-, and column-links defined in the BB directory structure.             */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */

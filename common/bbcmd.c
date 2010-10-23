@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit application launcher.                                               */
+/* Xymon application launcher.                                                */
 /*                                                                            */
-/* This is used to launch a single Hobbit application, with the environment   */
+/* This is used to launch a single Xymon application, with the environment    */
 /* that would normally be established by hobbitlaunch.                        */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 			envarea = strdup(p+1);
 		}
 		else if ((argcount == 0) && (strcmp(argv[argi], "--version") == 0)) {
-			fprintf(stdout, "Hobbit version %s\n", VERSION);
+			fprintf(stdout, "Xymon version %s\n", VERSION);
 			return 0;
 		}
 		else {

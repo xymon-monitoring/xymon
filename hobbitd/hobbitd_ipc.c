@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This module implements the setup/teardown of the hobbitd communications    */
 /* channel, using standard System V IPC mechanisms: Shared memory and         */

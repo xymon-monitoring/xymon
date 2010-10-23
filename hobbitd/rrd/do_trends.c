@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* This module handles custom "trends" data.                                  */
 /*                                                                            */
@@ -28,7 +28,7 @@ static char trends_rcsid[] = "$Id$";
  * <rrd file name> <ds name> <number> <options>
  * -----------------------------------------------------------------------------
  *
- * Instead of a dedicated Hobbit channel for this, I decided to use the 
+ * Instead of a dedicated Xymon channel for this, I decided to use the 
  * existing "data" message type. To use this, send a "data" message to 
  * hobbit formatted like this:
  *

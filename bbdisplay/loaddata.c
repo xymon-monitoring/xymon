@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* This file contains code to load the current Hobbit status data.            */
+/* This file contains code to load the current Xymon status data.             */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

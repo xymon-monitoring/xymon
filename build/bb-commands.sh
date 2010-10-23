@@ -20,7 +20,7 @@ findbin() {
 
 echo ""
 echo "# The following defines a bunch of commands that BB extensions expect to be present."
-echo "# Hobbit does not use them, but they are provided here so if you use BB extension"
+echo "# Xymon does not use them, but they are provided here so if you use BB extension"
 echo "# scripts, then they will hopefully run without having to do a lot of tweaking."
 echo ""
 for CMD in uptime awk cat cp cut date egrep expr find grep head id ln ls mv rm sed sort tail top touch tr uniq who
@@ -37,7 +37,7 @@ echo "WCC=\"${PGM}\""
 
 # DFCMD is an alias for DF
 PGM=`findbin df | head -n 1`
-echo "# DF,DFCMD and PS are for compatibility only, NOT USED by the Hobbit client"
+echo "# DF,DFCMD and PS are for compatibility only, NOT USED by the Xymon client"
 echo "DF=\"${PGM} -Pk\""
 echo "DFCMD=\"${PGM} -Pk\""
 echo "PS=\"ps ax\""

@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This file is part of the Hobbit monitor library, but was taken from the    */
-/* "mutt" source archive and adapted for use in Hobbit. According to the      */
+/* This file is part of the Xymon monitor library, but was taken from the     */
+/* "mutt" source archive and adapted for use in Xymon. According to the       */
 /* copyright notice in the "mutt" version, this file is public domain.        */
 /*----------------------------------------------------------------------------*/
 
@@ -209,7 +209,7 @@ unsigned char c;
 }
 
 /*
- * Not part of the original file. Added for use with Hobbit,
+ * Not part of the original file. Added for use with Xymon,
  * to avoid namespace-pollution when compiled with OpenSSL.
  */
 

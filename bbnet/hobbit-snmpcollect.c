@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor SNMP data collection tool                                   */
+/* Xymon monitor SNMP data collection tool                                    */
 /*                                                                            */
 /* Copyright (C) 2007-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -45,7 +45,7 @@ typedef struct keyrecord_t {
 
 /* A host and the OID's we will be polling */
 typedef struct req_t {
-	char *hostname;				/* Hostname used for reporting to Hobbit */
+	char *hostname;				/* Hostname used for reporting to Xymon */
 	char *hostip[10];			/* Hostname(s) or IP(s) used for testing. Max 10 IP's */
 	int hostipidx;				/* Index into hostip[] for the active IP we use */
 	long version;				/* SNMP version to use */

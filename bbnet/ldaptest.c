@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of an LDAP service.                  */
 /*                                                                            */

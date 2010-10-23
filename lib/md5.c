@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This file is part of the Hobbit monitor library, but was written by        */
+/* This file is part of the Xymon monitor library, but was written by         */
 /* Peter Deutsch and released under the GNU GPL.                              */
 /*----------------------------------------------------------------------------*/
 
@@ -59,7 +59,7 @@
  */
 
 /************ HOBBIT SPECIFIC MODIFICATION *****************/
-/* For Hobbit: Moved these definitions from md5.h into here */
+/* For Xymon: Moved these definitions from md5.h into here */
 typedef unsigned char md5_byte_t; /* 8-bit byte */
 typedef unsigned int md5_word_t; /* 32-bit word */
 
@@ -399,7 +399,7 @@ md5_finish(md5_state_t *pms, md5_byte_t digest[16])
 	digest[i] = (md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
 }
 
-/* Added for use with Hobbit */
+/* Added for use with Xymon */
 int  myMD5_Size(void) { return sizeof(md5_state_t); }
 void myMD5_Init(void *pms) { md5_init((md5_state_t *)pms); }
 void myMD5_Update(void *pms, unsigned char *data, int nbytes) { md5_append((md5_state_t *)pms, (md5_byte_t *)data, nbytes); }

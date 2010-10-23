@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit status report generator.                                            */
+/* Xymon status report generator.                                             */
 /*                                                                            */
 /* This is a CGI program to generate a simple HTML table with a summary of    */
 /* all FOO statuses for a group of hosts.                                     */

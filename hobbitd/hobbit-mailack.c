@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit mail-acknowledgment filter.                                         */
+/* Xymon mail-acknowledgment filter.                                          */
 /*                                                                            */
-/* This program runs from the Hobbit users' .procmailrc file, and processes   */
-/* incoming e-mails that are responses to alert mails that Hobbit has sent    */
+/* This program runs from the Xymon users' .procmailrc file, and processes    */
+/* incoming e-mails that are responses to alert mails that Xymon has sent     */
 /* out. It was inspired by the functionality of the bb-mailack.sh.            */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 				/* Some systems cannot generate a subject. Allow them to ack
 				 * via text in the message body. */
 				subjectline = (char *)malloc(1024);
-				snprintf(subjectline, 1023, "Subject: Hobbit [%s]", STRBUF(inbuf)+4);
+				snprintf(subjectline, 1023, "Subject: Xymon [%s]", STRBUF(inbuf)+4);
 			}
 			else if (*STRBUF(inbuf) && !firsttxtline) {
 				/* Save the first line of the message body, but ignore blank lines */
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile(".*(Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 1\n");
 		return 2;

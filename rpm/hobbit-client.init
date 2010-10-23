@@ -7,7 +7,7 @@
 # description: hobbit is a network monitoring tool that allows \
 # you to monitor hosts and services. This client reports local \
 # system statistics (cpu-, memory-, disk-utilisation etc) \
-# to the Hobbit server.
+# to the Xymon server.
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/lib/hobbit/client/runclient.sh

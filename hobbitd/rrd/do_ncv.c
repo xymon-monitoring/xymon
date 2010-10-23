@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* This module handles any message with data in the form                      */
 /*     NAME: VALUE                                                            */

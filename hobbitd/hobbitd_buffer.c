@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This module contains a shared routine to find the size of a shared memory  */
-/* buffer used for one of the Hobbit communications-channels.                 */
+/* buffer used for one of the Xymon communications-channels.                  */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

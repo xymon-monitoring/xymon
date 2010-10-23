@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* Copyright (C) 2004-2006 Francesco Duranti <fduranti@q8.it>                 */
 /*                                                                            */

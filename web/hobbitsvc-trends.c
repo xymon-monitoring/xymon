@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD graph overview generator.                                       */
+/* Xymon RRD graph overview generator.                                        */
 /*                                                                            */
 /* This is a standalone tool for generating data for the trends column.       */
 /* All of the data stored in RRD files for a host end up as graphs. Some of   */

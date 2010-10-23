@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit backend script for disabling/enabling tests.                        */
+/* Xymon backend script for disabling/enabling tests.                         */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

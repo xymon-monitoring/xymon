@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Xymon webpage generator tool.                                              */
 /*                                                                            */
 /* This tool creates an overview page of several graphs.                      */
 /*                                                                            */

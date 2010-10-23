@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is used to implement message digest functions (MD5, SHA1 etc.)        */
 /*                                                                            */

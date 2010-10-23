@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.    .                                                */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This is a hobbitd worker module for the "stachg" channel.                  */
 /* This module implements the file-based history logging, and keeps the       */

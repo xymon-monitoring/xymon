@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor BEA statistics tool.                                        */
+/* Xymon monitor BEA statistics tool.                                         */
 /*                                                                            */
 /* This is used to collect statistics from a BEA Weblogic server              */
 /*                                                                            */

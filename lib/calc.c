@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

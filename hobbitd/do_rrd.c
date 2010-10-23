@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

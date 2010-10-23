@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This is a hobbitd worker module, it should be run off hobbitd_channel.     */
 /*                                                                            */

@@ -16,7 +16,7 @@ endif
 # Compile flags for debugging
 # CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
 
-# By default, Hobbit uses a static library for common code.
+# By default, Xymon uses a static library for common code.
 # To save some diskspace and run-time memory, you can use a
 # shared library by un-commenting this.
 # HOBBITLIBRARY=libhobbit.so

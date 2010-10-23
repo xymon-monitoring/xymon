@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit general CSV info viewer.                                            */
+/* Xymon general CSV info viewer.                                             */
 /*                                                                            */
 /* This is a CGI script for a generic presentation of information stored in   */
 /* a comma-separated file (CSV), e.g. via an export from a spreadsheet or DB. */
-/* It is also used for the Hobbit column-name links, to provide information   */
+/* It is also used for the Xymon column-name links, to provide information    */
 /* about what each column header means and what kind of test is run.          */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */

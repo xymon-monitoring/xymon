@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit hostlist report generator.                                          */
+/* Xymon hostlist report generator.                                           */
 /*                                                                            */
 /* Copyright (C) 2007-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* Hobbitd worker module, to capture status messages for a particulr host     */
+/* hobbitd worker module, to capture status messages for a particulr host     */
 /* or test, or data type. This is fed from the status- or data-channel, and   */
 /* simply logs the data received to a file.                                   */
 /*                                                                            */
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * A "logrotate" message is sent when the Hobbit logs are
+		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
 		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This tool generates the report status log for a single status, with the    */
 /* availability percentages etc needed for a report-mode view.                */

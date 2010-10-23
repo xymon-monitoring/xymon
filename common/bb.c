@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit communications tool.                                                */
+/* Xymon communications tool.                                                 */
 /*                                                                            */
-/* This is used to send a single message using the Hobbit/BB protocol to the  */
-/* Hobbit server.                                                             */
+/* This is used to send a single message using the Xymon/BB protocol to the   */
+/* Xymon server.                                                              */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 			showhelp = 1;
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
-			fprintf(stdout, "Hobbit version %s\n", VERSION);
+			fprintf(stdout, "Xymon version %s\n", VERSION);
 			return 0;
 		}
 		else if (strcmp(argv[argi], "--str") == 0) {
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	}
 
 	if ((recipient == NULL) || (STRBUFLEN(msg) == 0) || showhelp) {
-		fprintf(stderr, "Hobbit version %s\n", VERSION);
+		fprintf(stderr, "Xymon version %s\n", VERSION);
 		fprintf(stderr, "Usage: %s [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");

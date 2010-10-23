@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit WML generator.                                                      */
+/* Xymon WML generator.                                                       */
 /*                                                                            */
 /* This file contains code to generate the WAP/WML documents showing the      */
-/* Hobbit status.                                                             */
+/* Xymon status.                                                              */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -78,7 +78,7 @@ static void wml_header(FILE *output, char *cardid, int idpart)
 	fprintf(output, "<head>\n");
 	fprintf(output, "<meta http-equiv=\"Cache-Control\" content=\"max-age=0\"/>\n");
 	fprintf(output, "</head>\n");
-	fprintf(output, "<card id=\"%s%d\" title=\"Hobbit\">\n", cardid, idpart);
+	fprintf(output, "<card id=\"%s%d\" title=\"Xymon\">\n", cardid, idpart);
 }
 
 

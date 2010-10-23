@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit bb-hosts file grep'er                                               */
+/* Xymon bb-hosts file grep'er                                                */
 /*                                                                            */
 /* This tool will pick out the hosts from a bb-hosts file that has one of the */
 /* tags given on the command line. This allows an extension script to deal    */
@@ -47,7 +47,7 @@ static void load_hoststatus()
 	}
 
 	if (res != BB_OK) {
-		errprintf("Cannot fetch Hobbit status, ignoring --no-down\n");
+		errprintf("Cannot fetch Xymon status, ignoring --no-down\n");
 		connstatus = NULL;
 		teststatus = NULL;
 	}

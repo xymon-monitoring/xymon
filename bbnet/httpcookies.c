@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* Copyright (C) 2008-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

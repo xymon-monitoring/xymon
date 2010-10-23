@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Xymon webpage generator tool.                                              */
 /*                                                                            */
 /* This file contains code to generate RSS/RDF format output of alerts.       */
 /* It is heavily influenced by Jeff Stoner's bb_content-feed script.          */
@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 char *rssversion = "0.91";
 int  rsscolorlimit = COL_RED;
 int  nssidebarcolorlimit = COL_RED;
-char *rsstitle = "Hobbit Critical Alerts";
+char *rsstitle = "Xymon Critical Alerts";
 
 #define RSS091 0
 #define RSS092 1
@@ -81,7 +81,7 @@ void do_rss_header(FILE *fd)
 		fprintf(fd, "  <description>Last updated on %s</description>\n", timestamp);
 		fprintf(fd, "  <image>\n");
 		fprintf(fd, "    <url>%s/gifs/bblogo.gif</url>\n", xgetenv("BBWEBHOSTURL"));
-		fprintf(fd, "    <title>Hobbit</title>\n");
+		fprintf(fd, "    <title>Xymon</title>\n");
 		fprintf(fd, "    <link>http://xymon.sourceforge.net/</link>\n");
 		fprintf(fd, "  </image>\n");
 		break;
@@ -238,7 +238,7 @@ void do_netscape_sidebar(char *nssidebarfilename, host_t *hosts)
 	fprintf(fd, "<HTML>\n");
 	fprintf(fd, "  <HEAD>\n");
 	fprintf(fd, "    <TITLE>%s</TITLE>\n", rsstitle);
-	fprintf(fd, "    <META NAME=\"Generator\" CONTENT=\"bbgen - generator for Hobbit\">\n");
+	fprintf(fd, "    <META NAME=\"Generator\" CONTENT=\"bbgen - generator for Xymon\">\n");
 	fprintf(fd, "    <META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d; URL=%s/%s\">\n",
 		ttlvalue, xgetenv("BBWEBHOSTURL"), nssidebarfilename);
 	fprintf(fd, "  </HEAD>\n");

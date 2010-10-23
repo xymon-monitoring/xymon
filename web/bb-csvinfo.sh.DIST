@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This is the Hobbit CGI wrapper for the bb-csvinfo.cgi program.
+# This is the Xymon CGI wrapper for the bb-csvinfo.cgi program.
 
 . @BBHOME@/etc/hobbitcgi.cfg
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* This file contains code to generate the HTML for the Hobbit overview       */
+/* This file contains code to generate the HTML for the Xymon overview        */
 /* webpages.                                                                  */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */

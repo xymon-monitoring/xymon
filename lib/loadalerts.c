@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Hobbit, responsible for loading the           */
-/* hobbit-alerts.cfg file which holds information about the Hobbit alert      */
+/* This is a library module for Xymon, responsible for loading the            */
+/* hobbit-alerts.cfg file which holds information about the Xymon alert       */
 /* configuration.                                                             */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */

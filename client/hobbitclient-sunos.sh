@@ -1,8 +1,8 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# Solaris client for Hobbit                                                  #
+# Solaris client for Xymon                                                   #
 #                                                                            #
-# Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #

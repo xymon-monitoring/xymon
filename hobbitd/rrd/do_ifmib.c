@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

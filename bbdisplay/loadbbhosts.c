@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
 /* This file contains code to load the page-structure from the bb-hosts file. */
 /*                                                                            */

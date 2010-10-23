@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Xymon webpage generator tool.                                              */
 /*                                                                            */
 /* This is a generic webpage generator, that allows scripts to output a       */
-/* standard Hobbit-like webpage without having to deal with headers and       */
+/* standard Xymon-like webpage without having to deal with headers and        */
 /* footers.                                                                   */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */

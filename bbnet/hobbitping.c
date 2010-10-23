@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* This is an implementation of a fast "ping" program, for use with Hobbit.   */
+/* This is an implementation of a fast "ping" program, for use with Xymon.    */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -351,7 +351,7 @@ void show_results(void)
 
 	/*
 	 * Print out the results. Format is identical to "fping -Ae" so we can use
-	 * it directly in Hobbit without changing the bbtest-net code.
+	 * it directly in Xymon without changing the bbtest-net code.
 	 */
 	for (idx = 0; (idx < hostcount); idx++) {
 		if (hosts[idx]->received > 0) {

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit eventlog generator tool.                                            */
+/* Xymon eventlog generator tool.                                             */
 /*                                                                            */
 /* This displays the "eventlog" found on the "All non-green status" page.     */
 /* It also implements a CGI tool to show an eventlog for a given period of    */

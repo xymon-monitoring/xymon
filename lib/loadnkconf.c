@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Hobbit, responsible for loading the           */
+/* This is a library module for Xymon, responsible for loading the            */
 /* hobbit-nkview.cfg file.                                                    */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */

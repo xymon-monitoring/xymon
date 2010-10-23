@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains environment variable handling routines.                        */
@@ -108,14 +108,14 @@ const static struct {
 	{ "GRAPHS", "la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
 	{ "SUMMARY_SET_BKG", "FALSE" },
 	{ "BBMKBB2EXT", "eventlog.sh acklog.sh" },
-	{ "BBREL", "Hobbit" },
+	{ "BBREL", "Xymon" },
 	{ "BBRELDATE", "" },
 	{ "DOTHEIGHT", "16" },
 	{ "DOTWIDTH", "16" },
 	{ "RRDHEIGHT", "120" },
 	{ "RRDWIDTH", "576" },
 	{ "COLUMNDOCURL", "$CGIBINURL/hobbitcolumn.sh?%s" },
-	{ "HOBBITLOGO", "Hobbit" },
+	{ "HOBBITLOGO", "Xymon" },
 	{ "MKBBLOCAL", "<B><I>Pages Hosted Locally</I></B>" },
 	{ "MKBBREMOTE", "<B><I>Remote Status Display</I></B>" },
 	{ "MKBBSUBLOCAL", "<B><I>Subpages Hosted Locally</I></B>" },
@@ -124,7 +124,7 @@ const static struct {
 	{ "MKBBROWFONT", "SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"" },
 	{ "MKBBTITLE", "COLOR=\"ivory\" SIZE=\"+1\"" },
 	{ "BBDATEFORMAT", "%a %b %d %H:%M:%S %Y" },
-	{ "BBRSSTITLE", "Hobbit Alerts" },
+	{ "BBRSSTITLE", "Xymon Alerts" },
 	{ "ACKUNTILMSG", "Next update at: %H:%M %Y-%m-%d" },
 	{ "WMLMAXCHARS", "1500"	},
 	{ "BBREPWARN", "97" },

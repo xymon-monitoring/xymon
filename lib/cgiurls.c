@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
-/* It contains routines for generating the Hobbit CGI URL's                   */
+/* It contains routines for generating the Xymon CGI URL's                    */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

@@ -22,7 +22,7 @@
 
 	if test "$USEHOBBITPING" = ""
 	then
-		echo "Hobbit has a built-in ping utility (hobbitping)"
+		echo "Xymon has a built-in ping utility (hobbitping)"
 		echo "However, it is not yet fully stable and therefore it"
 		echo "may be best to use the external fping utility instead."
 		if test "$FPING" = ""
@@ -32,7 +32,7 @@
 			read USEHOBBITPING
 			if test "$USEHOBBITPING" = "n"
 			then
-				echo "What command should Hobbit use to run fping ?"
+				echo "What command should Xymon use to run fping ?"
 				read FPING
 			else
 				USEHOBBITPING="y"
@@ -84,7 +84,7 @@
 			echo "If fping is not suid-root, you may want to use an suid-root wrapper"
 			echo "like 'sudo' to run fping."
 			echo ""
-			echo "Hobbit needs the fping utility. What command should it use to run fping ?"
+			echo "Xymon needs the fping utility. What command should it use to run fping ?"
 			read FPING
 		fi
 	done

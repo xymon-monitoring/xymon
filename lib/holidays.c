@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains routines for handling holidays.                                */
 /*                                                                            */
 /* Copyright (C) 2006-2008 Michael Nagel                                      */
-/* Modifications for Hobbit (C) 2007-2009 Henrik Storner <henrik@hswn.dk>     */
+/* Modifications for Xymon (C) 2007-2009 Henrik Storner <henrik@hswn.dk>      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

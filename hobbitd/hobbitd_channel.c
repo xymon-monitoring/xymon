@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This module receives messages from one channel of the Hobbit master daemon.*/
+/* This module receives messages from one channel of the Xymon master daemon. */
 /* These messages are then forwarded to the actual worker process via stdin;  */
 /* the worker process can process the messages without having to care about   */
 /* the tricky details in the hobbitd/hobbitd_channel communications.          */

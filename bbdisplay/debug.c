@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
 /* Debugging code for dumping various data in bbgen.                          */
 /*                                                                            */

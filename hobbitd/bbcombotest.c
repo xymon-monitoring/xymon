@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit combination test tool.                                              */
+/* Xymon combination test tool.                                               */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

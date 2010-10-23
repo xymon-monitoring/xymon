@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of HTTP service.                     */
 /*                                                                            */
@@ -516,9 +516,9 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			if (nopage && (color == COL_RED)) color = COL_YELLOW;
 		}
 		else {
-			/* This only happens upon internal errors in Hobbit test system */
+			/* This only happens upon internal errors in Xymon test system */
 			color = statuscolor(t->host, req->contstatus);
-			strcpy(cause, "Internal Hobbit error");
+			strcpy(cause, "Internal Xymon error");
 		}
 
 		/* Send the content status message */

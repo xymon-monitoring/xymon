@@ -1,13 +1,13 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-	<title>Hobbit Tips and Tricks</title>
+	<title>Xymon Tips and Tricks</title>
 </head>
 <body>
-<h1>Hobbit Tips and Tricks</h1>
+<h1>Xymon Tips and Tricks</h1>
 
 <p>Here you will find out how to do some common questions
-raised with Hobbit.</p>
+raised with Xymon.</p>
 <ul>
 	<li><a href="#icons">What do the different red/yellow/green icons mean ?</a></li>
 	<li><a href="#noclient">Client side tests are missing</a></li>
@@ -17,19 +17,19 @@ raised with Hobbit.</p>
 	<li><a href="#drophost">How do I delete a host ?</a></li>
 	<li><a href="#renamehost">How do I rename a host ?</a></li>
 	<li><a href="#apachetest">I cannot get the Apache graphs to work</a></li>
-	<li><a href="#mrtg">How can I add MRTG graphs to the Hobbit webpages?</a></li>
+	<li><a href="#mrtg">How can I add MRTG graphs to the Xymon webpages?</a></li>
 	<li><a href="#updatefreq">Updating more frequently</a></li>
 	<li><a href="#fahrenheit">I want my temperature graphs to show Fahrenheit</a></li>
 	<li><a href="#nohtmllink">How do I remove the HTML links from the alert messages?</a></li>
 	<li><a href="#mancgi">I cannot see the the man-pages on the web</a></li>
 	<li><a href="#mailnosubj">My alert emails come without a subject</a></li>
-	<li><a href="#snmptraps">Does Hobbit support receiving SNMP traps?</a></li>
+	<li><a href="#snmptraps">Does Xymon support receiving SNMP traps?</a></li>
 	<li><a href="#scripts">How can I create a custom test script?</a></li>
 </ul>
 <hr>
 
 <h3><a name="icons">What do the little red/yellow/green icons mean ?</a></h3>
-<table align="center" border=1 summary="Hobbit status icons">
+<table align="center" border=1 summary="Xymon status icons">
 	<tr><th align=left valign=top>Color</th><td>Recently changed</td><td>Last change &gt; 24 hours</td></tr>
 	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@BBHOSTURL@/gifs/green-recent.gif" alt="Green - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/green.gif" alt="Green"></td></tr>
 	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@BBHOSTURL@/gifs/yellow-recent.gif" alt="Yellow - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/yellow.gif" alt="Yellow"></td></tr>
@@ -41,9 +41,9 @@ raised with Hobbit.</p>
 <hr>
 
 <h3><a name="noclient">My client-side tests dont show up on the webpages</a></h3>
-<p>Did you install a client ? The Hobbit client package is installed
-automatically only on the Hobbit server - on other systems, you must
-build the client package by running Hobbit's configure-script with
+<p>Did you install a client ? The Xymon client package is installed
+automatically only on the Xymon server - on other systems, you must
+build the client package by running Xymon's configure-script with
 the <tt>&quot;--client&quot;</tt> option and build the client package on the hosts you
 want to monitor.</p>
 
@@ -51,24 +51,24 @@ want to monitor.</p>
 this are:</p>
 <ul>
 	<li>The client is using another hostname than what is in the bb-hosts file.<br>
-	Hobbit only cares about the hosts that are in the bb-hosts file, and
+	Xymon only cares about the hosts that are in the bb-hosts file, and
 	discards status-reports from unknown hosts. If you check the "hobbitd"
-	column on the webserver display for the Hobbit server, you will see 
+	column on the webserver display for the Xymon server, you will see 
 	a report about these unknown hosts.<br>
 	Either reconfigure the client to use the same hostname as is in the
 	bb-hosts file, or add a <tt>CLIENT:clienthostname</tt> tag in the
-	bb-hosts file so Hobbit knows what host matches the client hostname.
-	The Hobbit client can be started with a <tt>&quot;--hostname=MYHOSTNAME&quot;</tt>
+	bb-hosts file so Xymon knows what host matches the client hostname.
+	The Xymon client can be started with a <tt>&quot;--hostname=MYHOSTNAME&quot;</tt>
 	option to explicitly define the hostname that the client uses when
-	reporting data to Hobbit.</li>
+	reporting data to Xymon.</li>
 
-	<li>A firewall is blocking the client access to the Hobbit server.<br>
-	Clients must be able to connect to the Hobbit server on TCP port 1984
+	<li>A firewall is blocking the client access to the Xymon server.<br>
+	Clients must be able to connect to the Xymon server on TCP port 1984
 	to send their status reports. If this port is blocked by a firewall,
 	client status reports will not show up.<br>
 	If possible, open up the firewall to allow this access. Alternatively,
-	you may setup a proxy using the <em>bbproxy</em> tool (part of Hobbit)
-	to forward status messages from a protected network to the Hobbit
+	you may setup a proxy using the <em>bbproxy</em> tool (part of Xymon)
+	to forward status messages from a protected network to the Xymon
 	server.<br>
 	Other methods are also possible, e.g. <em>bbfetch</em> (available from
 	the <a href="http://www.deadcat.net/">www.deadcat.net</a> archive.
@@ -82,7 +82,7 @@ or re-configure the client to use the proper hostname.</p>
 
 <hr>
 <h3><a name="droprename">Where are the bbrm and bbmv commands from Big Brother ?</a></h3>
-<p>They have been integrated into the Hobbit network daemon. See
+<p>They have been integrated into the Xymon network daemon. See
 the next three questions.</p>
 
 
@@ -97,7 +97,7 @@ around the &quot;drop HOSTNAME ftp&quot;.</p>
 
 
 <hr>
-<h3><a name="drophost">So how do I get rid of an entire host in Hobbit?</a></h3>
+<h3><a name="drophost">So how do I get rid of an entire host in Xymon?</a></h3>
 <p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
@@ -106,7 +106,7 @@ around the &quot;drop HOSTNAME ftp&quot;.</p>
 around the &quot;drop HOSTNAME&quot;.</p>
 
 <hr>
-<h3><a name="renamehost">How do I rename a host in the Hobbit display?</a></h3>
+<h3><a name="renamehost">How do I rename a host in the Xymon display?</a></h3>
 <p>First, change the ~/server/etc/bb-hosts file so it has the new name.
 Then to move your historical data over to the new name, run</p>
 <pre>
@@ -116,7 +116,7 @@ Then to move your historical data over to the new name, run</p>
 
 <hr>
 <h3><a name="apachetest">Getting the Apache performance graphs</a></h3>
-<p>Charles Jones provided this recipe on the Hobbit mailing list:</p>
+<p>Charles Jones provided this recipe on the Xymon mailing list:</p>
 <pre><tt>
 From: Charles Jones
 Date: Sun, 06 Feb 2005 21:28:19 -0700
@@ -165,19 +165,19 @@ data.  Heres what I have in mine:
 
 
 <hr>
-<h3><a name="mrtg">How can I add MRTG graphs to the Hobbit webpages?</a></h3>
+<h3><a name="mrtg">How can I add MRTG graphs to the Xymon webpages?</a></h3>
 <p>There is <a href="hobbit-mrtg.html">a special document</a> for this, describing how you can configure
-MRTG to save data in a format that Hobbit can handle natively.</p>
+MRTG to save data in a format that Xymon can handle natively.</p>
 
 <hr>
 <h3><a name="updatefreq">I need the web-pages to update more frequently</a></h3>
 <p>The ~/server/etc/hobbitlaunch.cfg defines the update
-interval for all of the Hobbit programs. The default is for
+interval for all of the Xymon programs. The default is for
 network tests to run every 5 minutes, and webpage updates to
 happen once a minute.</p>
 <p>Note that if you run the <em>bbretest-net.sh</em> tool
 on your network test server (this is the default for a new
-Hobbit server), then network tests that fail 
+Xymon server), then network tests that fail 
 will run every minute for up to 30 minutes after the initial
 failure, so usually there is little need to change the update
 interval for your network tests.</p>
@@ -207,26 +207,26 @@ scripts. Stephen Beaudry found the solution:</p>
 
 <hr>
 <h3><a name="mailnosubj">My alert emails come without a subject</a></h3>
-<p>Hobbit by default uses the system <b>mail</b> command to send out messages.
-The mail-command in Solaris and HP-UX does not understand the "-s SUBJECT" syntax that Hobbit uses.
+<p>Xymon by default uses the system <b>mail</b> command to send out messages.
+The mail-command in Solaris and HP-UX does not understand the "-s SUBJECT" syntax that Xymon uses.
 So you get mails with no subject. The solution is to change the MAIL setting in
-etc/hobbitserver.cfg to use the <b>mailx</b> command instead. Hobbit needs to be
+etc/hobbitserver.cfg to use the <b>mailx</b> command instead. Xymon needs to be
 restarted after this change.</p>
 
 <hr>
-<h3><a name="snmptraps">Does Hobbit support receiving SNMP traps?</a></h3>
+<h3><a name="snmptraps">Does Xymon support receiving SNMP traps?</a></h3>
 <p>Not directly, but there is other Open Source software available that can
-handle SNMP traps. A very elegant method of feeding traps into Hobbit has been
+handle SNMP traps. A very elegant method of feeding traps into Xymon has been
 described in <a href="http://cerebro.victoriacollege.edu/hobbit-trap.html">this
 article</a> by Andy Farrior.</p>
 
 <hr>
 <h3><a name="scripts">How can I create a custom test script?</a></h3>
 <p>Anything that can be automated via a script or a custom program can
-be added into Hobbit. A lot of extension scripts are available for
+be added into Xymon. A lot of extension scripts are available for
 Big Brother at the <a href="http://www.deadcat.net/">www.deadcat.net archive</a>,
 and these will typically work without modifications if you run them in
-Hobbit. Sometimes a few minor tweaks are needed - the Hobbit mailing list
+Xymon. Sometimes a few minor tweaks are needed - the Xymon mailing list
 can help you if you dont know how to go about that.</p>
 <p>But if you have something unique you need to test, writing an extension
 script is pretty simple. You need to figure out some things:</p>
@@ -261,7 +261,7 @@ script is pretty simple. You need to figure out some things:</p>
       "
    fi
 
-   # Tell Hobbit about it
+   # Tell Xymon about it
    $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
 
    ${MSG}
@@ -271,14 +271,14 @@ script is pretty simple. You need to figure out some things:</p>
 </tt></pre>
 
 <p>You will notice that some environment variables are pre-defined:
-BB, BBDISP, MACHINE are all provided by Hobbit when you run your script via
+BB, BBDISP, MACHINE are all provided by Xymon when you run your script via
 hobbitlaunch. Also note how the MSG variable is used to build the status
 message - it starts out with just the "Bad stuff status", then you add
 data to the message when we decided what the status is.</p>
 
-<p>To run this, save your script in the ~hobbit/client/ext/ directory 
-(i.e. in the ext/ directory off where you installed the Hobbit client),
-then add a new section to the ~hobbit/client/etc/clientlaunch.cfg file
+<p>To run this, save your script in the ~xymon/client/ext/ directory 
+(i.e. in the ext/ directory off where you installed the Xymon client),
+then add a new section to the ~xymon/client/etc/clientlaunch.cfg file
 like this:</p>
 
 <pre><tt>

@@ -6,7 +6,7 @@ OSDEF = -DHPUX
 NETLIBS = -lnsl
 
 # Compile flags for normal build
-# NOTE: HP-UX built-in compiler is horribly broken and will not compile Hobbit.
+# NOTE: HP-UX built-in compiler is horribly broken and will not compile Xymon.
 # So you should use the GNU compiler, gcc.
 CC = gcc
 # NOTE: Some HP-UX 11i systems have a severely broken set of include files. This

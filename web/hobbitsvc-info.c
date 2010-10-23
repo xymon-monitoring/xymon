@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit "info" column generator.                                            */
+/* Xymon "info" column generator.                                             */
 /*                                                                            */
 /* This is a standalone tool for generating data for the "info" column data.  */
 /* This extracts all of the static configuration info about a host contained  */
-/* in Hobbit, and displays it on one webpage.                                 */
+/* in Xymon, and displays it on one webpage.                                  */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

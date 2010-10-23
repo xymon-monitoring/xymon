@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module for z/VSE, VSE/ESA and z/OS                          */
 /*                                                                            */

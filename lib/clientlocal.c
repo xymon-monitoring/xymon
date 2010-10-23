@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Hobbit, responsible for loading the           */
+/* This is a library module for Xymon, responsible for loading the            */
 /* client-local.cfg file into memory and finding the proper host entry.       */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */

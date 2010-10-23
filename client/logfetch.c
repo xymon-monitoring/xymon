@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit client logfile collection tool.                                     */
+/* Xymon client logfile collection tool.                                      */
 /* This tool retrieves data from logfiles. If run continuously, it will pick  */
 /* out the data stored in the logfile over the past 6 runs (30 minutes with   */
-/* the default Hobbit client polling frequency) and send these data to stdout */
+/* the default Xymon client polling frequency) and send these data to stdout  */
 /* for inclusion in the hobbit "client" message.                              */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit application launcher.                                               */
+/* Xymon application launcher.                                                */
 /*                                                                            */
-/* This is used to launch various parts of the Hobbit system. Some programs   */
+/* This is used to launch various parts of the Xymon system. Some programs    */
 /* start up once and keep running, other must run at various intervals.       */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */

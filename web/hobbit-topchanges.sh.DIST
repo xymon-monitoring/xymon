@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This is the Hobbit CGI script to display the top-N changing hosts/statuses
+# This is the Xymon CGI script to display the top-N changing hosts/statuses
 
 . @BBHOME@/etc/hobbitcgi.cfg
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This is the Hobbit wrapper for the bb-replog.cgi tool.
+# This is the Xymon wrapper for the bb-replog.cgi tool.
 
 . @BBHOME@/etc/hobbitcgi.cfg
 

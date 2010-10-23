@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit alert acknowledgment CGI tool.                                      */
+/* Xymon alert acknowledgment CGI tool.                                       */
 /*                                                                            */
 /* This is a CGI script for handling acknowledgments of alerts.               */
 /* If called with no CGI query, it will present the acknowledgment form;      */
 /* if called with a proper CGI query string it will send an ack-message to    */
-/* the Hobbit daemon.                                                         */
+/* the Xymon daemon.                                                          */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

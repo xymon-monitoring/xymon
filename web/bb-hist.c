@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit history viewer.                                                     */
+/* Xymon history viewer.                                                      */
 /*                                                                            */
 /* This is a CGI tool used to view the history of a status log.               */
 /*                                                                            */

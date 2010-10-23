@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit CGI tool to generate a report of the Hobbit configuration           */
+/* Xymon CGI tool to generate a report of the Xymon configuration             */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -554,7 +554,7 @@ void print_columndocs(void)
 
 	fprintf(stdout, "<p style=\"page-break-before: always\">\n"); 
 	fprintf(stdout, "<table width=\"100%%\" border=1 summary=\"Column descriptions\">\n");
-	fprintf(stdout, "<tr><th colspan=2>Hobbit column descriptions</th></tr>\n");
+	fprintf(stdout, "<tr><th colspan=2>Xymon column descriptions</th></tr>\n");
 	for (i=0; (i<ccount); i++) {
 		if (clist[i]->used) {
 			fprintf(stdout, "<tr><td align=left valign=top>%s</td><td>%s</td></tr>\n",
@@ -719,17 +719,17 @@ int main(int argc, char *argv[])
 	sres = newsendreturnbuf(1, NULL);
 
 	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
-		errormsg("Cannot contact the Hobbit server\n");
+		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	respbuf = getsendreturnstr(sres, 1);
 	if (sendmessage(procscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
-		errormsg("Cannot contact the Hobbit server\n");
+		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	procsbuf = getsendreturnstr(sres, 1);
 	if (sendmessage(svcscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
-		errormsg("Cannot contact the Hobbit server\n");
+		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	svcsbuf = getsendreturnstr(sres, 1);
@@ -816,7 +816,7 @@ int main(int argc, char *argv[])
 	headfoot(stdout, "confreport", "", "header", COL_BLUE);
 
 	fprintf(stdout, "<table width=\"100%%\" border=0>\n");
-	fprintf(stdout, "<tr><th align=center colspan=2><font size=\"+2\">Hobbit configuration Report</font></th></tr>\n");
+	fprintf(stdout, "<tr><th align=center colspan=2><font size=\"+2\">Xymon configuration Report</font></th></tr>\n");
 	fprintf(stdout, "<tr><th valign=top align=left>Date</th><td>%s</td></tr>\n", ctime(&now));
 	fprintf(stdout, "<tr><th valign=top align=left>%d hosts included</th><td>\n", hostcount);
 	for (hosti=0; (hosti < hostcount); hosti++) {

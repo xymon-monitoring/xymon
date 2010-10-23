@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This is the Hobbit wrapper for the hostlist CGI
+# This is the Xymon wrapper for the hostlist CGI
 
 . @BBHOME@/etc/hobbitcgi.cfg
 @RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-hostlist.cgi $CGI_HOSTLIST_OPTS

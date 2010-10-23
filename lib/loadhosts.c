@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Hobbit, responsible for loading the bb-hosts  */
+/* This is a library module for Xymon, responsible for loading the bb-hosts   */
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
@@ -218,7 +218,7 @@ static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 	while (host->elems[i] && strncasecmp(host->elems[i], bbh_item_key[item], strlen(bbh_item_key[item]))) i++;
 	result = (host->elems[i] ? (host->elems[i] + strlen(bbh_item_key[item])) : NULL);
 
-	/* Handle the LARRD: tag in Hobbit 4.0.4 and earlier */
+	/* Handle the LARRD: tag in Xymon 4.0.4 and earlier */
 	if (!result && (item == BBH_TRENDS)) {
 		i = 0;
 		while (host->elems[i] && strncasecmp(host->elems[i], "LARRD:", 6)) i++;

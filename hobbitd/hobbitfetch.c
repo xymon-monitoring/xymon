@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor                                                             */
+/* Xymon monitor                                                              */
 /*                                                                            */
 /* This is used to pull client data from the client "msgcache" daemon         */
 /*                                                                            */
@@ -232,7 +232,7 @@ void senddata(conn_t *conn)
 void process_clientdata(conn_t *conn)
 {
 	/* 
-	 * Handle data we received while talking to the Hobbit client.
+	 * Handle data we received while talking to the Xymon client.
 	 * This will be a list of messages we must send to the server.
 	 * Each of the messages are pushed to the server through
 	 * new C_SERVER requests.
@@ -322,7 +322,7 @@ void process_clientdata(conn_t *conn)
 void process_serverdata(conn_t *conn)
 {
 	/*
-	 * Handle data we received while talking to the Hobbit server.
+	 * Handle data we received while talking to the Xymon server.
 	 * We only handle the "client" message response.
 	 */
 

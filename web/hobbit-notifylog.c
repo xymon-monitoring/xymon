@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit notification log viewer                                             */
+/* Xymon notification log viewer                                              */
 /*                                                                            */
 /* Copyright (C) 2007-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

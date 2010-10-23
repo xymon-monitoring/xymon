@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit CGI for sending in an "ackinfo" message.                            */
+/* Xymon CGI for sending in an "ackinfo" message.                             */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

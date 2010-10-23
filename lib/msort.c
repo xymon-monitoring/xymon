@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
 /* It contains a "mergesort" implementation for sorting linked lists.         */

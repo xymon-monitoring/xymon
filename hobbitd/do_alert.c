@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This is part of the hobbitd_alert worker module.                           */
 /* This module implements the standard hobbitd alerting function. It loads    */
@@ -208,19 +208,19 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	switch (alert->state) {
 	  case A_PAGING:
 	  case A_ACKED:
-		subjfmt = (include_configid ? "Hobbit [%d] %s:%s %s [cfid:%d]" :  "Hobbit [%d] %s:%s %s");
+		subjfmt = (include_configid ? "Xymon [%d] %s:%s %s [cfid:%d]" :  "Xymon [%d] %s:%s %s");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->cookie, alert->hostname, alert->testname, sev, recip->cfid);
 		break;
 
 	  case A_NOTIFY:
-		subjfmt = (include_configid ? "Hobbit %s:%s NOTICE [cfid:%d]" :  "Hobbit %s:%s NOTICE");
+		subjfmt = (include_configid ? "Xymon %s:%s NOTICE [cfid:%d]" :  "Xymon %s:%s NOTICE");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->hostname, alert->testname, recip->cfid);
 		break;
 
 	  case A_RECOVERED:
-		subjfmt = (include_configid ? "Hobbit %s:%s recovered [cfid:%d]" :  "Hobbit %s:%s recovered");
+		subjfmt = (include_configid ? "Xymon %s:%s recovered [cfid:%d]" :  "Xymon %s:%s recovered");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->hostname, alert->testname, recip->cfid);
 		break;

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
 /* Various utility functions specific to bbgen. Generally useful code is      */
 /* in the library.                                                            */

@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit memory information tool for NetBSD.                                 */
+/* Xymon memory information tool for NetBSD.                                  */
 /* This tool retrieves information about the total and free RAM.              */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */

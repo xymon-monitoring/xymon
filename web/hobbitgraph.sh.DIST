@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This is the Hobbit CGI script interface to hobbitgraph.cgi
+# This is the Xymon CGI script interface to hobbitgraph.cgi
 #
 # Install this script in your webservers' cgi-bin directory
 

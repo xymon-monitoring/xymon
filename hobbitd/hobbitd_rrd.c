@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This is a hobbitd worker module for the "status" and "data" channels.      */
 /* This module maintains the RRD database-files, updating them as new         */

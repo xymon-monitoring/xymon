@@ -1,4 +1,4 @@
-# Hobbit main Makefile
+# Xymon main Makefile
 #
 # This file is included from the Makefile created by the "configure" script
 
@@ -150,13 +150,13 @@ install-servermsg:
 	@echo ""
 	@echo "Installation complete."
 	@echo ""
-	@echo "You must configure your webserver for the Hobbit webpages and CGI-scripts."
+	@echo "You must configure your webserver for the Xymon webpages and CGI-scripts."
 	@echo "A sample Apache configuration is in ${BBHOME}/etc/hobbit-apache.conf"
 	@echo "If you have your Administration CGI scripts in a separate directory,"
 	@echo "then you must also setup the password-file with the htpasswd command."
 	@echo ""
-	@echo "To start Hobbit, as the $(BBUSER) user run '${BBHOME}/bin/hobbit.sh start'"
-	@echo "To view the Hobbit webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"
+	@echo "To start Xymon, as the $(BBUSER) user run '${BBHOME}/bin/hobbit.sh start'"
+	@echo "To view the Xymon webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"
 
 install-dirs:
 	mkdir -p $(INSTALLROOT)$(BBHOME) $(INSTALLROOT)$(BBHOME)/download $(INSTALLROOT)$(BBVAR)
@@ -315,7 +315,7 @@ install-clientmsg:
 	@echo ""
 	@echo "Installation complete."
 	@echo ""
-	@echo "To start the Hobbit client, as the $(BBUSER) user run '${BBHOME}/runclient.sh start'"
+	@echo "To start the Xymon client, as the $(BBUSER) user run '${BBHOME}/runclient.sh start'"
 
 install-localclient:
 	BBHOME="$(BBTOPDIR)/client" INSTALLROOT="$(INSTALLROOT)" BBUSER="$(BBUSER)" LOCALCLIENT="$(LOCALCLIENT)" $(MAKE) -C client install-localclient

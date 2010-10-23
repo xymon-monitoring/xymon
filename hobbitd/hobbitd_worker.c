@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This is a small library for hobbitd worker modules, to read a new message  */
 /* from the hobbitd_channel process, and also do the decoding of messages     */

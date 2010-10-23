@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit host finder.                                                        */
+/* Xymon host finder.                                                         */
 /*                                                                            */
-/* This is a CGI script to find hosts in the Hobbit webpages without knowing  */
+/* This is a CGI script to find hosts in the Xymon webpages without knowing   */
 /* their full name. When you have 1200+ hosts split on 60+ pages, it can be   */
 /* tiresome to do a manual search to find a host ...                          */
 /*                                                                            */
@@ -67,7 +67,7 @@ int	dojump     = 0;				/* If set and there is only one page, go directly to it *
 void errormsg(char *msg)
 {
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	printf("<html><head><title>Hobbit FindHost Error</title></head>\n");
+	printf("<html><head><title>Xymon FindHost Error</title></head>\n");
 	printf("<body><BR><BR><BR>%s</body></html>\n", msg);
 	exit(1);
 }

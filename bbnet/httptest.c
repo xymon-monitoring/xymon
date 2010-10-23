@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of HTTP service.                     */
 /*                                                                            */
@@ -579,7 +579,7 @@ void add_http_test(testitem_t *t)
 			sprintf(useragent, "User-Agent: %s\r\n", browser);
 		}
 		else {
-			sprintf(useragent, "User-Agent: Hobbit bbtest-net/%s\r\n", VERSION);
+			sprintf(useragent, "User-Agent: Xymon bbtest-net/%s\r\n", VERSION);
 		}
 
 		addtobuffer(httprequest, useragent);

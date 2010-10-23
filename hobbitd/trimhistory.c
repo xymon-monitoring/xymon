@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit history log trimming tool.                                          */
+/* Xymon history log trimming tool.                                           */
 /*                                                                            */
 /* This tool trims the history-logs of old entries.                           */
 /*                                                                            */

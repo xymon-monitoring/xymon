@@ -1,18 +1,18 @@
 #!/usr/bin/perl -w
 
 #*----------------------------------------------------------------------------*/
-#* Hobbit client message processor.                                           */
+#* Xymon client message processor.                                            */
 #*                                                                            */
 #* This perl program shows how to create a server-side module using the       */
-#* data sent by the Hobbit clients. This program is fed data from the         */
-#* Hobbit "client" channel via the hobbitd_channel program; each client       */
+#* data sent by the Xymon clients. This program is fed data from the          */
+#* Xymon "client" channel via the hobbitd_channel program; each client        */
 #* message is processed by looking at the [who] section and generates         */
 #* a "login" status that goes red when an active "root" login is found.       */
 #*                                                                            */
 #* Written 2007-Jan-28 by Henrik Storner <henrik@hswn.dk>                     */
 #*                                                                            */
 #* This program is in the public domain, and may be used freely for           */
-#* creating your own Hobbit server-side modules.                              */
+#* creating your own Xymon server-side modules.                               */
 #*                                                                            */
 #*----------------------------------------------------------------------------*/
 
@@ -105,7 +105,7 @@ sub processmessage {
 		$statusmsg = "&green No root login active\n\n" . $sections{"who"};
 	}
 
-	# Build the command we use to send a status to the Hobbit daemon
+	# Build the command we use to send a status to the Xymon daemon
 	$cmd = $bb . " " . $bbdisp . " \"status " . $hostname . "." . $hobbitcolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
 
 	# And send the message

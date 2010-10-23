@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit "snapshot" CGI front-end.                                           */
+/* Xymon "snapshot" CGI front-end.                                            */
 /*                                                                            */
 /* This is a CGI front-end that lets the user pick which snapshot view is     */
-/* generated. A snapshot is a view of the Hobbit webpages from any time in    */
+/* generated. A snapshot is a view of the Xymon webpages from any time in     */
 /* the past, generated from the history logs.                                 */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */

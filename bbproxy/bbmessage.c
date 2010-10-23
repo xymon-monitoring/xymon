@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit CGI proxy.                                                          */
+/* Xymon CGI proxy.                                                           */
 /*                                                                            */
-/* This CGI can gateway a Hobbit/BB message sent via HTTP PORT to a Hobbit    */
+/* This CGI can gateway a Xymon message sent via HTTP PORT to a Xymon         */
 /* server running on the local host.                                          */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@hswn.dk>                    */

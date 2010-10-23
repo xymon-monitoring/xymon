@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD graph generator.                                                */
+/* Xymon RRD graph generator.                                                 */
 /*                                                                            */
 /* This is a CGI script for generating graphs from the data stored in the     */
 /* RRD databases.                                                             */

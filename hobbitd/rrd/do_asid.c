@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* This module handles combined z/OS and z/VSE ASID and NPARTS messages.      */
 /*                                                                            */

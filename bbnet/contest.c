@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of a TCP service.                    */
 /*                                                                            */
@@ -255,7 +255,7 @@ static int do_telnet_options(tcptest_t *item)
 	 * Handle telnet options.
 	 *
 	 * This code was taken from the sources for "netcat" version 1.10
-	 * by "Hobbit" <hobbit@avian.org>.
+	 * by "Xymon" <hobbit@avian.org>.
 	 */
 
 	unsigned char *obuf;

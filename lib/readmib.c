@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor SNMP data collection tool                                   */
+/* Xymon monitor SNMP data collection tool                                    */
 /*                                                                            */
 /* Copyright (C) 2007-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

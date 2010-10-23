@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit ORCA data collector.                                                */
+/* Xymon ORCA data collector.                                                 */
 /* This tool grabs the last reading from an ORCA logfile and formats it in    */
 /* NAME:VALUE format for the client message.                                  */
 /*                                                                            */

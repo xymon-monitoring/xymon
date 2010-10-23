@@ -153,7 +153,7 @@
 
 # SpamAssassin spamd
 [spamd]
-   send "PING SPAMC/Hobbit\n"
+   send "PING SPAMC/Xymon\n"
    expect "SPAMD"
    options banner
    port 783

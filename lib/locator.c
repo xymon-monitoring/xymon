@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
-/* It contains routines for communicating with the Hobbit locator service.    */
+/* It contains routines for communicating with the Xymon locator service.     */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

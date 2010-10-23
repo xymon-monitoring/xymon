@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* This is the main program for generating Hobbit overview webpages, showing  */
-/* the status of hosts in a Hobbit system.                                    */
+/* This is the main program for generating Xymon overview webpages, showing   */
+/* the status of hosts in a Xymon system.                                     */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -41,7 +41,7 @@ state_t		*statehead = NULL;			/* Head of list of all state entries */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
-int		fqdn = 1;				/* Hobbit FQDN setting */
+int		fqdn = 1;				/* Xymon FQDN setting */
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
 		}
 
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
-			printf("bbgen for Hobbit version %s\n\n", VERSION);
+			printf("bbgen for Xymon version %s\n\n", VERSION);
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
@@ -481,8 +481,8 @@ int main(int argc, char *argv[])
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
-			printf("    --reportopts=ST:END:DYN:STL : Run in Hobbit Reporting mode\n");
-			printf("    --csv=FILENAME              : For Hobbit Reporting, output CSV file\n");
+			printf("    --reportopts=ST:END:DYN:STL : Run in Xymon Reporting mode\n");
+			printf("    --csv=FILENAME              : For Xymon Reporting, output CSV file\n");
 			printf("    --csvdelim=CHARACTER        : Delimiter in CSV file output (default: comma)\n");
 			printf("    --snapshot=TIME             : Snapshot mode\n");
 			printf("\nPage layout options:\n");
@@ -644,14 +644,14 @@ int main(int argc, char *argv[])
 	}
 
 	/* The main page - bb.html and pages/subpages thereunder */
-	add_timestamp("Hobbit pagegen start");
+	add_timestamp("Xymon pagegen start");
 	if (reportstart && csvfile) {
 		csv_availability(csvfile, csvdelim);
 	}
 	if (do_normal_pages) {
 		do_page_with_subs(pagehead, dispsums);
 	}
-	add_timestamp("Hobbit pagegen done");
+	add_timestamp("Xymon pagegen done");
 
 	if (reportstart) {
 		/* Reports end here */
@@ -706,7 +706,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbgen for Hobbit version %s\n", VERSION);
+		sprintf(msgline, "bbgen for Xymon version %s\n", VERSION);
 		addtostatus(msgline);
 
 		addtostatus("\nStatistics:\n");

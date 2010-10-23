@@ -2,17 +2,17 @@
 
 # This script moves or copies rrd files from the flat "all files
 # in a single directory" structure used by the traditional LARRD
-# tool, to the "one directory per host" structure used by Hobbit
+# tool, to the "one directory per host" structure used by Xymon
 
 # You need to run this tool once, to migrate your RRD files and
-# historical data to Hobbit.
+# historical data to Xymon.
 #
 # Set these variables to match your local setup
 
 # The directory where Big Brother+LARRD has your RRD files currently
 SRCDIR=/usr/local/bb/bbvar/rrd
 
-# These are the Hobbit directories and filenames
+# These are the Xymon directories and filenames
 BBHOME=@BBHOME@
 BBHOSTS=$BBHOME/etc/bb-hosts
 DSTDIR=@BBVAR@/rrd		# Where the files should end up.

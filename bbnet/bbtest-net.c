@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -646,7 +646,7 @@ void load_tests(void)
 						 * "SERVICE_PORT" so we can merge tests for this service+port
 						 * combination for multiple hosts.
 						 *
-						 * According to Hobbit docs, this type of services must be in
+						 * According to Xymon docs, this type of services must be in
 						 * BBNETSVCS - so it is known already.
 						 */
 						int specialport = 0;
@@ -1232,7 +1232,7 @@ int finish_ping_service(service_t *service)
 		}
 		if (!debug) unlink(fn);	/* We have an open filehandle, so it's ok to delete the file now */
 
-		/* Copy error messages to the Hobbit logfile */
+		/* Copy error messages to the Xymon logfile */
 		sprintf(fn, "%s.%02d", pingerrlog, i);
 		if (failed) {
 			FILE *errfd;
@@ -1331,7 +1331,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		 */
 		if (test->open == -1) {
 			/* Failed to run the ping utility. */
-			strcpy(cause, "Hobbit system failure");
+			strcpy(cause, "Xymon system failure");
 			return COL_CLEAR;
 		}
 		else if (test->host->noping) { 
@@ -1645,7 +1645,7 @@ void send_results(service_t *service, int failgoesclear)
 					  }
 					  else if (t->open == -1) {
 						  strcat(msgline, ": System failure of the ping test");
-						  strcat(msgtext, "Hobbit system error\n");
+						  strcat(msgtext, "Xymon system error\n");
 					  }
 					  /* "clear" due to badconn: no extra text */
 				  }

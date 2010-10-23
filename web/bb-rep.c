@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit report generation front-end.                                        */
+/* Xymon report generation front-end.                                         */
 /*                                                                            */
 /* This is a front-end CGI that lets the user select reporting parameters,    */
 /* and then invokes bbgen to generate the report. When the report is ready,   */

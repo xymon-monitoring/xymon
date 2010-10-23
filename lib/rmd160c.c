@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This file is part of the Hobbit monitor library, but was taken from the    */
+/* This file is part of the Xymon monitor library, but was taken from the     */
 /* FreeBSD sources. It was originally written by Eric Young, and is NOT       */
 /* licensed under the GPL. Please adhere the original copyright notice below. */
 /*----------------------------------------------------------------------------*/
@@ -545,7 +545,7 @@ unsigned long *l;
 	}
 #endif
 
-/* Added for Hobbit - not part of the original file */
+/* Added for Xymon - not part of the original file */
 int  myRIPEMD160_Size(void) { return sizeof(RIPEMD160_CTX); }
 void myRIPEMD160_Init(void *c) { RIPEMD160_Init((RIPEMD160_CTX *)c); }
 void myRIPEMD160_Update(void *c, unsigned char *in, int len) {RIPEMD160_Update((RIPEMD160_CTX *)c, in, len); }

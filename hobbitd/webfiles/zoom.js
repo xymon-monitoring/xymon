@@ -2,7 +2,7 @@
 <!--
 /*
  This code was taken from the "Cacti" project by Henrik Storner, and
- modified slightly for use with the "Hobbit" monitor project
+ modified slightly for use with the "Xymon" monitor project
  (see xymon.sourceforge.net)
 
  The original copyright notice follows.

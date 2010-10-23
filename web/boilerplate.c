@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Xymon webpage generator tool.                                             */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

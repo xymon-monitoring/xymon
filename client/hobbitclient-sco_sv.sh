@@ -1,8 +1,8 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# SCO_SV client for Hobbit                                                   #
+# SCO_SV client for Xymon                                                    #
 #                                                                            #
-# Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
 # Copyright (C) 2006 Charles Goyard <cg@fsck.fr>                             #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #

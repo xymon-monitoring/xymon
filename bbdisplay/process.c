@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
 /* This file contains to to calculate the "color" of hosts and pages, and     */
 /* handle summary transmission.                                               */

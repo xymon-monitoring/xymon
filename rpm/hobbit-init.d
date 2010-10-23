@@ -1,7 +1,7 @@
 #! /bin/sh
 #
 # hobbit          This shell script takes care of starting and stopping
-#                 hobbit(the Hobbit network monitor)
+#                 hobbit(the Xymon network monitor)
 #
 # chkconfig: 2345 80 20
 # description: hobbit is a network monitoring tool that allows \

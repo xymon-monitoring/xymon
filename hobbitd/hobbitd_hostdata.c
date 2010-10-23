@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This Hobbit worker module saves the client messages that arrive on the     */
+/* This Xymon worker module saves the client messages that arrive on the      */
 /* CLICHG channel, for use when looking at problems with a host.              */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * A "logrotate" message is sent when the Hobbit logs are
+		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
 		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.

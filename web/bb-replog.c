@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit report-mode statuslog viewer.                                       */
+/* Xymon report-mode statuslog viewer.                                        */
 /*                                                                            */
 /* This tool generates the report status log for a single status, with the    */
 /* availability percentages etc needed for a report-mode view.                */

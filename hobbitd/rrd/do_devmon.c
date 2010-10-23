@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module for Devmon                                       */
+/* Xymon RRD handler module for Devmon                                        */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2008 Buchan Milne                                            */

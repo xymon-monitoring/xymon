@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit client update tool.                                                 */
+/* Xymon client update tool.                                                  */
 /*                                                                            */
 /* This tool is used to fetch the current client version from the config-file */
 /* saved in etc/clientversion.cfg. The client script compares this with the   */
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 	sres = newsendreturnbuf(1, tarpipefd);
 	newverreq = (char *)malloc(100+strlen(newversion));
 	sprintf(newverreq, "download %s.tar", newversion);
-	dbgprintf("Sending command to Hobbit: %s\n", newverreq);
+	dbgprintf("Sending command to Xymon: %s\n", newverreq);
 	if ((bbstat = sendmessage(newverreq, NULL, BBTALK_TIMEOUT, sres)) != BB_OK) {
 		errprintf("Cannot fetch new client tarfile: Status %d\n", bbstat);
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));

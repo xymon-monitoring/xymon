@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit service locator daemon                                              */
+/* Xymon service locator daemon                                               */
 /*                                                                            */
 /* hobbitd_channel allows you to distribute data across multiple servers, eg. */
 /* have several servers handling the RRD updates - for performance and/or     */
 /* resilience purposes.                                                       */
 /* For this to work, there must be a way of determining which server handles  */
 /* a particular task for some ID - e.g. which server holds the RRD files for  */
-/* host "foo" - so Hobbit sends data and requests to the right place.         */
+/* host "foo" - so Xymon sends data and requests to the right place.          */
 /*                                                                            */
 /* This daemon provides the locator service. Tasks may register ID's and      */
 /* services, allowing others to lookup where they are located.                */
@@ -713,7 +713,7 @@ int main(int argc, char *argv[])
 		freopen(logfile, "a", stderr);
 	}
 
-	errprintf("Hobbit locator version %s starting\n", VERSION);
+	errprintf("Xymon locator version %s starting\n", VERSION);
 	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
 
 	if (daemonize) {

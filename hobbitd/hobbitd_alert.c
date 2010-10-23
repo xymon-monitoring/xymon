@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This is the main alert module for hobbitd. It receives alert messages,     */
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*
- * Information from the Hobbit docs about "page" modules:
+ * Information from the Xymon docs about "page" modules:
  *
  *   page
  *   ----

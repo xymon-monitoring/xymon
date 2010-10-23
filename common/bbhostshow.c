@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit bb-hosts file viewer                                                */
+/* Xymon bb-hosts file viewer                                                 */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

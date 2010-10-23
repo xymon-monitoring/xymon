@@ -1,4 +1,4 @@
-# Hobbit - BBNET Makefile
+# Xymon - BBNET Makefile
 
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares

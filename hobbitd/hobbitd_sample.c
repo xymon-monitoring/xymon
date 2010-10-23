@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Sample hobbitd worker module. This module shows how to get messages from   */
 /* one of the hobbitd channels. Worker modules subscribe to a channel and can */
 /* use the channel data to implement various types of storage (files, DB) of  */
-/* the Hobbit data, or they can implement actions such as alerting via        */
+/* the Xymon data, or they can implement actions such as alerting via         */
 /* pager, e-mail, SNMP trap or .... In fact, a worker module can do anything  */
 /* without the master hobbit daemon having to care about what goes on in the  */
 /* workers.                                                                   */
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * A "logrotate" message is sent when the Hobbit logs are
+		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
 		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.

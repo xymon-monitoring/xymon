@@ -1,18 +1,18 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* This is the master daemon, hobbitd.                                        */
 /*                                                                            */
 /* This is a daemon that implements the Big Brother network protocol, with    */
-/* additional protocol items implemented for Hobbit.                          */
+/* additional protocol items implemented for Xymon.                           */
 /*                                                                            */
-/* This daemon maintains the full state of the Hobbit system in memory,       */
+/* This daemon maintains the full state of the Xymon system in memory,        */
 /* eliminating the need for file-based storage of e.g. status logs. The web   */
 /* frontend programs (bbgen, bbcombotest, bb-hostsvc.cgi etc) can retrieve    */
-/* current statuslogs from this daemon to build the Hobbit webpages. However, */
+/* current statuslogs from this daemon to build the Xymon webpages. However,  */
 /* a "plugin" mechanism is also implemented to allow "worker modules" to      */
 /* pickup various types of events that occur in the system. This allows       */
-/* such modules to e.g. maintain the standard Hobbit file-based storage, or   */
+/* such modules to e.g. maintain the standard Xymon file-based storage, or    */
 /* implement history logging or RRD database updates. This plugin mechanism   */
 /* uses System V IPC mechanisms for a high-performance/low-latency communi-   */
 /* cation between hobbitd and the worker modules - under no circumstances     */
@@ -178,7 +178,7 @@ int	flapthreshold = 600;	/* Seconds - if more than LASTCHANGESZ changes during t
 #define RECEIVING 1
 #define RESPONDING 2
 
-/* This struct describes an active connection with a Hobbit client */
+/* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
 	int sock;			/* Communications socket */
 	struct sockaddr_in addr;	/* Client source address */
@@ -379,8 +379,8 @@ char *generate_stats(void)
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
-	sprintf(msgline, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
-		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
+	sprintf(msgline, "status %s.hobbitd %s\nStatistics for Xymon daemon\nVersion: %s\nUp since %s (%s)\n\n",
+		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), VERSION, bootuptxt, uptimetxt);
 	addtobuffer(statsbuf, msgline);
 	sprintf(msgline, "Incoming messages      : %10ld\n", msgs_total);
 	addtobuffer(statsbuf, msgline);
