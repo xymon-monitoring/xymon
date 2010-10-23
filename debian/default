@@ -1,16 +1,16 @@
-# Configure the Hobbit client settings.
+# Configure the Xymon client settings.
 
-# You MUST set the list of Hobbit servers that this
+# You MUST set the list of Xymon servers that this
 # client reports to.
 # It is good to use IP-adresses here instead of DNS 
 # names - DNS might not work if there's a problem.
 #
-# E.g. (a single Hobbit server)
-#   HOBBITSERVERS="192.168.1.1" 
+# E.g. (a single Xymon server)
+#   XYMONSERVERS="192.168.1.1" 
 # or (multiple servers)
-#   HOBBITSERVERS="10.0.0.1 192.168.1.1" 
+#   XYMONSERVERS="10.0.0.1 192.168.1.1" 
 
-HOBBITSERVERS=""
+XYMONSERVERS=""
 
 # The defaults usually suffice for the rest of this file, 
 # but you can tweak the hostname that the client reports 
