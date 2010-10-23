@@ -10,24 +10,24 @@ BASEDIR=`pwd`
 cd $BASEDIR
 
 rm -rf debbuild
-mkdir -p $BASEDIR/debbuild/hobbit-$REL
+mkdir -p $BASEDIR/debbuild/xymon-$REL
 for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd web include lib client demotool
 do
-        find $f/ | egrep -v "RCS|\.svn" | cpio -pdvmu $BASEDIR/debbuild/hobbit-$REL/
+        find $f/ | egrep -v "RCS|\.svn" | cpio -pdvmu $BASEDIR/debbuild/xymon-$REL/
 done
-cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT RELEASENOTES $BASEDIR/debbuild/hobbit-$REL/
-find $BASEDIR/debbuild/hobbit-$REL -type d|xargs chmod 755
+cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT RELEASENOTES $BASEDIR/debbuild/xymon-$REL/
+find $BASEDIR/debbuild/xymon-$REL -type d|xargs chmod 755
 
 cd debbuild
-pushd hobbit-$REL
-make -f $HOME/hobbit/Makefile.home distclean
+pushd xymon-$REL
+make -f ../../Makefile distclean
 popd
-tar zcf hobbit-$REL.tar.gz hobbit-$REL
+tar zcf xymon-$REL.tar.gz xymon-$REL
 
 cd $BASEDIR
-find debian | egrep -v "RCS|pkg|\.svn" | cpio -pdvmu $BASEDIR/debbuild/hobbit-$REL/
+find debian | egrep -v "RCS|pkg|\.svn" | cpio -pdvmu $BASEDIR/debbuild/xymon-$REL/
 
-cd debbuild/hobbit-$REL
+cd debbuild/xymon-$REL
 dpkg-buildpackage -rfakeroot -kA6EDAB79
-mv ../hobbit*$REL*.{deb,dsc,changes} ../../debian/pkg/
+#mv ../xymon*$REL*.{deb,dsc,changes} ../../debian/pkg/
 
