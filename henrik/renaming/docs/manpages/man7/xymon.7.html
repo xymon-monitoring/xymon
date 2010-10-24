@@ -3,13 +3,13 @@
 <HTML><HEAD><TITLE>Man page of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-Xymon - introduction to Xymon
+Xymon - Introduction to Xymon
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>OVERVIEW</H2>
@@ -17,7 +17,7 @@ Xymon - introduction to Xymon
 Xymon is a tool for monitoring the health of your networked servers 
 and the applications running on them.  It provides a simple, 
 intuitive way of checking the health of your systems from 
-a webbrowser, and can also alert you to any problems that 
+a web browser, and can also alert you to any problems that 
 arise through alarms sent as e-mail, SMS messages, via a 
 pager or by other means.
 <P>
@@ -62,7 +62,7 @@ querying network services (Web, LDAP, DNS, Mail etc.), or from
 scripts that run either on the Xymon server or on the systems 
 you monitor. The Xymon package includes a Xymon client
 which you can install on the servers you monitor; it collects
-data about the CPU-load, disk- and memory-utilisation, logfiles,
+data about the CPU-load, disk- and memory-utilization, log files,
 network ports in use, file- and directory-information and more.
 All of the information is stored inside Xymon, and you can define
 conditions that result in alerts, e.g. if a network service stops
@@ -86,14 +86,14 @@ Microsoft Windows based systems.
 <P>
 <P>
 <DT>A simple, intuitive web-based front-end<DD>
-&quot;Green is good, red is bad&quot;. Using the Xymon webpages is as simple
+&quot;Green is good, red is bad&quot;. Using the Xymon web pages is as simple
 as that. The hosts you monitor can be grouped together in a way that
 makes sense in your organisation and presented in a tree-structure.
-The webpages use many techniques to convey information about the monitored
+The web pages use many techniques to convey information about the monitored
 systems, e.g. different icons can be used for recently changed statuses;
-links to subpages can be listed in multiple columns; different icons
-can be used for dialup-tests or reverse-tests; selected columns
-can be dropped or unconditionally included on the webpages to
+links to sub-pages can be listed in multiple columns; different icons
+can be used for dial-up-tests or reverse-tests; selected columns
+can be dropped or unconditionally included on the web pages to
 eliminate unwanted information, or always include certain information;
 user-friendly names can be shown for hosts regardless of their true
 hostname. You can also have automatic links to on-line documentation, 
@@ -103,15 +103,15 @@ so information about your critical systems is just a click away.
 <DT>Integrated trend analysis, historical data and SLA reporting<DD>
 Xymon stores trend- and availability-information about everything 
 it monitors. So if you need to look at how your systems behave over
-time, Xymon has all of the information you need: Whether is is response 
-times of your webpages during peak hours, the CPU utilisation over the 
+time, Xymon has all of the information you need: Whether it is response 
+times of your web pages during peak hours, the CPU utilization over the 
 past 4 weeks, or what the availability of a site was compared to the
 SLA - it's all there inside Xymon. All measurements are tracked
 and made available in time-based graphs.
 <P>
 When you need to drill down into events that have occurred, Xymon
 provides a powerful tool for viewing the event history for each
-statuslog, with overviews of when problems have occurred during the
+status log, with overviews of when problems have occurred during the
 past and easy-to-use zoom-in on the event.
 <P>
 For SLA reporting, You can configure planned downtime, agreed service 
@@ -127,11 +127,11 @@ parts of the organisation, e.g. one view for the hardware group,
 and another view for the webmasters - all of them fed by the same
 test tools.
 <P>
-If you have a dedicated Network Operations Centre, you can configure 
+If you have a dedicated Network Operations Center, you can configure 
 precisely which alerts will appear on their monitors - e.g. a simple 
-anomaly in the system logfile need not trigger a call to 3rd-level 
+anomaly in the system log file need not trigger a call to 3rd-level 
 support at 2 AM, but if the on-line shop goes down you do want someone
-to respond immediately.  So you put the webcheck for the on-line shop 
+to respond immediately.  So you put the web-check for the on-line shop 
 on the NOC monitor page, and leave out the log-file check.
 <P>
 <P>
@@ -141,14 +141,14 @@ lots of relevant information. E.g. the data that clients report to Xymon
 contain the raw output from a number of system commands.  That information 
 is available directly in Xymon, so an administrator no longer needs to 
 login to a server to get an overview of how it is behaving - the very 
-commands they would normally run have alredy been performed, and the 
+commands they would normally run have already been performed, and the 
 results are on-line in Xymon.
 <P>
 <P>
 <DT>Easy to adapt to your needs<DD>
 Xymon includes a lot of tests in the core package, but there will
 always be something specific to your setup that you would like to
-watch. Xymon allows you to write test scripts in your favourite
+watch. Xymon allows you to write test scripts in your favorite
 scripting language and have the results show up as regular status
 columns in Xymon. You can trigger alerts from these, and even track
 trends in graphs just by a simple configuration setting.
@@ -158,13 +158,13 @@ trends in graphs just by a simple configuration setting.
 The network test tool knows how to test most commonly used protocols,
 including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
 many more. When checking websites, it is possible to not only check
-that the webserver is responding, but also that the response looks
+that the web server is responding, but also that the response looks
 correct by matching the response against a pre-defined pattern or a
-checksum. So you can test that a network service is really working
+check-sum. So you can test that a network service is really working
 and supplying the data you expect - not just that the service is
 running.
 <P>
-Protocols that use SSL encryption such as https-websites are fully supported, 
+Protocols that use SSL encryption such as https web sites are fully supported, 
 and while checking such services the network tester will automatically run a 
 check of the validity of the SSL server certificate, and warn about 
 certificates that are about to expire.
@@ -180,7 +180,7 @@ and so that everyone else can check with Xymon and know that the problem
 is being taken care of.
 <P>
 <P>
-<DT>Combined super-tests and test interdependencies<DD>
+<DT>Combined super-tests and test inter-dependencies<DD>
 If a single test is not enough, combination tests can be defined
 that combine the result of several tests to a single status-report.
 So if you need to monitor that at least 3 out of 5 servers are
@@ -221,9 +221,9 @@ and
 tools to allows for a pull-style way of collecting data, where it 
 is the Xymon server that initiates connections to the clients.
 <P>
-The Xymon webpages are dynamically generated through CGI programs.
+The Xymon web pages are dynamically generated through CGI programs.
 <P>
-Access to the Xymon webpages is controlled through your webserver
+Access to the Xymon web pages is controlled through your web server
 access controls, e.g. you can require a login through some form of
 HTTP authentication.
 <P>
@@ -231,15 +231,15 @@ HTTP authentication.
 <A NAME="lbAF">&nbsp;</A>
 <H2>DEMONSTRATION SITE</H2>
 
-A site running this software can be seen at <A HREF="http://www.hswn.dk/hobbit/">http://www.hswn.dk/hobbit/</A>
+A site running this software can be seen at <A HREF="http://www.xymon.com/">http://www.xymon.com/</A>
 <P>
 <P>
 <A NAME="lbAG">&nbsp;</A>
 <H2>PREREQUISITES AND INSTALLATION</H2>
 
 You will need a Unix-like system (Linux, Solaris, HP-UX, AIX,
-FreeBSD, Mac OS X or similar) with a webserver installed. You
-will also need a C compiler and som additional libraries, but
+FreeBSD, Mac OS X or similar) with a web server installed. You
+will also need a C compiler and some additional libraries, but
 many systems come with the required development tools and 
 libraries pre-installed. The required libraries are:
 <P>
@@ -263,24 +263,24 @@ since many network tests do use SSL.
 This library is used for testing LDAP servers. Use of this is optional.
 <P>
 For more detailed information about Xymon system requirements and
-how to install Xymon, refer to the online documentation &quot;Installing
-Xymon&quot; available from the Xymon webserver (via the &quot;Help&quot; menu),
+how to install Xymon, refer to the on-line documentation &quot;Installing
+Xymon&quot; available from the Xymon web server (via the &quot;Help&quot; menu),
 or from the &quot;docs/install.html&quot; file in the Xymon source archive.
 <P>
 <P>
 <A NAME="lbAH">&nbsp;</A>
 <H2>SUPPORT and MAILING LISTS</H2>
 
-<A HREF="mailto:hobbit@hswn.dk">hobbit@hswn.dk</A> is an open mailing list for discussions about Xymon.
-If you would like to participate, send an e-mail to <B><A HREF="mailto:hobbit-subscribe@hswn.dk">hobbit-subscribe@hswn.dk</A></B>
+<A HREF="mailto:xymon@xymon.com">xymon@xymon.com</A> is an open mailing list for discussions about Xymon.
+If you would like to participate, send an e-mail to <B><A HREF="mailto:xymon-subscribe@xymon.com">xymon-subscribe@xymon.com</A></B>
 to join the list.
 <P>
-An archive of the mailing list is available at <A HREF="http://www.hswn.dk/hobbiton/">http://www.hswn.dk/hobbiton/</A>
+An archive of the mailing list is available at <A HREF="http://www.xymon.com/archive/">http://www.xymon.com/archive/</A>
 <P>
 If you just want to be notified of new releases of Xymon, please
-subscribe to the hobbit-announce mailing list. This is a moderated list,
+subscribe to the xymon-announce mailing list. This is a moderated list,
 used only for announcing new Xymon releases. To be added to the list, send
-an e-mail to <B><A HREF="mailto:hobbit-announce-subscribe@hswn.dk">hobbit-announce-subscribe@hswn.dk</A></B>.
+an e-mail to <B><A HREF="mailto:xymon-announce-subscribe@xymon.com">xymon-announce-subscribe@xymon.com</A></B>.
 <P>
 <P>
 <A NAME="lbAI">&nbsp;</A>
@@ -292,7 +292,7 @@ These tools implement the core functionality of the Xymon server:
 
 is the core daemon that collects all reports about the status of 
 your hosts. It uses a number of helper modules to
-implement certain tasks such as updating logfiles and sending
+implement certain tasks such as updating log files and sending
 out alerts: hobbitd_client, hobbitd_history, hobbitd_alert
 and hobbitd_rrd. There is also a hobbitd_filestore module for
 compatibility with Big Brother.
@@ -325,7 +325,7 @@ view of the client status.
 <I><A HREF="../man8/hobbitd_hostdata.8.html">hobbitd_hostdata</A>(8)</I>
 
 stores historical client data when something breaks. E.g. when a
-webpage stops responding hobbitd_hostdata will save the latest
+web page stops responding hobbitd_hostdata will save the latest
 client data, so that you can use this to view a snapshot of how
 the system state was just prior to it failing.
 <P>
@@ -359,7 +359,7 @@ Xymon web-pages.
 <P>
 <I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
 
-takes care of updating the Xymon webpages.
+takes care of updating the Xymon web pages.
 <P>
 <I><A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1)</I>
 
@@ -385,7 +385,7 @@ monitor when.
 <P>
 <I><A HREF="../man1/bb-hist.cgi.1.html">bb-hist.cgi</A>(1)</I>
 
-This CGI program generates a webpage with the most recent history 
+This CGI program generates a web page with the most recent history 
 of a particular host+service combination.
 <P>
 <I><A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1)</I>
@@ -399,12 +399,12 @@ This CGI program allows a user to acknowledge an alert he received
 from Xymon about a host that is in a critical state. Acknowledging
 an alert serves two purposes: First, it stops more alerts from being
 sent so the technicians are not bothered wit more alerts, and secondly
-it provides feedback to those looking at the Xymon webpages that the
+it provides feedback to those looking at the Xymon web pages that the
 problem is being handled.
 <P>
 <I><A HREF="../man8/hobbit-mailack.8.html">hobbit-mailack</A>(8)</I>
 
-is a tool for processing acknowledgements sent via e-mail, e.g. as a 
+is a tool for processing acknowledgments sent via e-mail, e.g. as a 
 response to an e-mail alert.
 <P>
 <I><A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8)</I>
@@ -417,7 +417,7 @@ is useful when systems are being brought down for maintenance.
 <I><A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1)</I>
 
 is a CGI program that finds a given host in the Xymon
-webpages. As your Xymon installation grows, it can become
+web pages. As your Xymon installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
 <P>
@@ -436,8 +436,8 @@ particular host+service combination.
 <P>
 <I><A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1)</I>
 
-is a CGI program to build the Xymon webpages in a &quot;snapshot&quot;
-mode, showing the look of the webpages at a particular point 
+is a CGI program to build the Xymon web pages in a &quot;snapshot&quot;
+mode, showing the look of the web pages at a particular point 
 in time. It uses
 <I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
 
@@ -447,7 +447,7 @@ as the back-end engine.
 
 is a CGI program reporting test results for a single status but
 for several hosts. It is used to e.g. see which SSL certificates
-are about to expire, across all of the Xymon webpages.
+are about to expire, across all of the Xymon web pages.
 <P>
 <I><A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1)</I>
 
@@ -463,8 +463,8 @@ database program.
 <I><A HREF="../man1/logfetch.1.html">logfetch</A>(1)</I>
 
 is a utility used by the Xymon Unix client to collect
-information from logfiles on the client. It can also monitor various
-other file-related data, e.g. file metadata or directory sizes.
+information from log files on the client. It can also monitor various
+other file-related data, e.g. file meta-data or directory sizes.
 <P>
 <I><A HREF="../man1/clientupdate.1.html">clientupdate</A>(1)</I>
 
@@ -542,12 +542,12 @@ of the environment variables used by Xymon tools.
 is a utility for use by Xymon extension scripts. It
 allows an extension script to easily pick out the hosts that
 are relevant to a script, so it need not parse a huge
-bb-hosts file with lots of unwanted test-specifications.
+hosts.cfg file with lots of unwanted test-specifications.
 <P>
-<I><A HREF="../man1/bbhostshow.1.html">bbhostshow</A>(1)</I>
+<I><A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1)</I>
 
 is a utility to dump the full
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file following any &quot;include&quot; statements.
 <P>
@@ -561,7 +561,7 @@ content checks that use digests.
 is an extension script for the Xymon server,
 allowing you to build complicated tests from simpler
 Xymon test results. E.g. you can define a test that uses the results
-from testing your webserver, database server and router to have a 
+from testing your web server, database server and router to have a 
 single test showing the availability of your enterprise web
 application.
 <P>
@@ -575,8 +575,8 @@ events that happened before a given time.
 <A NAME="lbAO">&nbsp;</A>
 <H2>VERSIONS</H2>
 
-Version 1 of bbgen was relased in November 2002, and optimized the
-webpage generation on Big Brother servers.
+Version 1 of bbgen was released in November 2002, and optimized the
+web page generation on Big Brother servers.
 <P>
 Version 2 of bbgen was released in April 2003, and added a tool
 for performing network tests.
@@ -591,7 +591,7 @@ first full implementation of the Xymon server, but it still used the
 data collected by Big Brother clients for monitoring host metrics.
 <P>
 Version 4.1 was released in July 2005 included a simple Xymon client
-for Unix. Logfile monitoring was not implemented.
+for Unix. Log file monitoring was not implemented.
 <P>
 Version 4.2 was released in July 2006, and includes a fully functional
 Xymon client for Unix.
@@ -603,7 +603,7 @@ Xymon client for Unix.
 Xymon is
 <BR>
 
-<BR>&nbsp;&nbsp;Copyright&nbsp;(C)&nbsp;2002-2009&nbsp;Henrik&nbsp;Storner&nbsp;&lt;<A HREF="mailto:henrik@storner.dk">henrik@storner.dk</A>&gt;&nbsp;
+<BR>&nbsp;&nbsp;Copyright&nbsp;(C)&nbsp;2002-2010&nbsp;Henrik&nbsp;Storner&nbsp;&lt;<A HREF="mailto:henrik@storner.dk">henrik@storner.dk</A>&gt;&nbsp;
 <BR>
 
 Parts of the Xymon sources are from public-domain or other freely
@@ -627,11 +627,11 @@ is allowed.  See the file COPYING for details.
 <A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1), <A HREF="../man1/bb-replog.cgi.1.html">bb-replog.cgi</A>(1), <A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1), <A HREF="../man1/hobbit-statusreport.cgi.1.html">hobbit-statusreport.cgi</A>(1), <A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1), 
 <A HREF="../man1/logfetch.1.html">logfetch</A>(1), <A HREF="../man1/clientupdate.1.html">clientupdate</A>(1), <A HREF="../man8/msgcache.8.html">msgcache</A>(8), 
 <A HREF="../man8/bbproxy.8.html">bbproxy</A>(8), <A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8), 
-<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man1/bb.1.html">bb</A>(1), <A HREF="../man1/bbmessage.cgi.1.html">bbmessage.cgi</A>(1), <A HREF="../man1/bbcmd.1.html">bbcmd</A>(1), <A HREF="../man1/bbhostgrep.1.html">bbhostgrep</A>(1), <A HREF="../man1/bbhostshow.1.html">bbhostshow</A>(1), 
+<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man1/bb.1.html">bb</A>(1), <A HREF="../man1/bbmessage.cgi.1.html">bbmessage.cgi</A>(1), <A HREF="../man1/bbcmd.1.html">bbcmd</A>(1), <A HREF="../man1/bbhostgrep.1.html">bbhostgrep</A>(1), <A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1), 
 <A HREF="../man1/bbdigest.1.html">bbdigest</A>(1), <A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1), <A HREF="../man8/trimhistory.8.html">trimhistory</A>(8),
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5),
-<A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5),
-<A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5),
+<A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5),
+<A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)
 <P>
 <P>
 
@@ -659,6 +659,6 @@ is allowed.  See the file COPYING for details.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:10 GMT, October 24, 2010
 </BODY>
 </HTML>

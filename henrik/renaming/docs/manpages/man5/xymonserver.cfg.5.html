@@ -1,22 +1,22 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITSERVER.CFG</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONSERVER.CFG</TITLE>
 </HEAD><BODY>
-<H1>HOBBITSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMONSERVER.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitserver.cfg - Xymon environment variables
+xymonserver.cfg - Xymon environment variables
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
 Xymon programs use multiple environment variables beside the
 normal set of variables.  The environment definitions
-are stored in the ~Xymon/server/etc/hobbitserver.cfg file. 
+are stored in the ~Xymon/server/etc/xymonserver.cfg file. 
 Each line in this file is of the form <B>NAME=VALUE</B> and defines
 one environment variable NAME with the value VALUE.
 <P>
@@ -42,7 +42,7 @@ by an application in the &quot;management&quot; area, you would do this:
 
 Areas are invoked by using the &quot;--area&quot; option for all tools, or via the 
 ENVAREA setting in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file.
 <P>
@@ -81,7 +81,7 @@ script. If set to STATIC, you must activate the
 <I><A HREF="../man8/hobbitd_filestore.8.html">hobbitd_filestore</A>(8)</I>
 
 module (through an entry in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file) to create and store the HTML logs whenever a status update is
 received. Setting &quot;BBLOGSTATUS=STATIC&quot; is <B>discouraged</B> since the
@@ -127,8 +127,8 @@ add this, if configured to do so.
 <P>
 <DT>HOLIDAYS<DD>
 Defines the default set of holidays used if there is no &quot;holidays&quot; 
-tag for a host in the bb-hosts file. Holiday sets are defined in the
-<I><A HREF="../man5/hobbit-holidays.cfg.5.html">hobbit-holidays.cfg</A>(5)</I>
+tag for a host in the hosts.cfg file. Holiday sets are defined in the
+<I><A HREF="../man5/holidays.cfg.5.html">holidays.cfg</A>(5)</I>
 
 file. If not defined, only the default holidays (those defined outside
 a named holiday set) will be considered as holidays.
@@ -136,6 +136,21 @@ a named holiday set) will be considered as holidays.
 <DT>WEEKSTART<DD>
 Defines which day is the first day of the week. Set to &quot;0&quot; for Sunday,
 &quot;1&quot; for Monday. Default: 1 (Monday).
+<P>
+<DT>XYMONBODYHEADER<DD>
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_header templates. If this is set to a value
+beginning with &quot;file:&quot;, then the contents of the specified file is
+included. Default: &quot;file:$BBHOME/etc/xymonmenu.cfg&quot;
+<P>
+<DT>XYMONBODYFOOTER<DD>
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_footer templates. If this is set to a value
+beginning with &quot;file:&quot;, then the contents of the specified file is
+included. Default: Empty.
+<P>
+<DT>XYMONBODYMENUCSS<DD>
+URL for the Xymon menu CSS file. Default: &quot;$BBMENUSKIN/xymonmenu.css&quot;
 <P>
 <P>
 </DL>
@@ -233,6 +248,14 @@ Used by the
 module.
 Default: $BBVAR/hostdata/
 <P>
+<DT>XYMONCGILOGDIR<DD>
+Directory where debug output from CGI applications are stored. If not
+specified, it defaults to $BBSERVERLOGS, but this is often a directory
+that is not writable by the userid running the CGI applications. It
+is therefore recommended when using &quot;--debug&quot; on CGI applications that
+you create a separate directory owned by the user running your webserver,
+and point XYMONCGILOGDIR to this directory.
+<P>
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -240,11 +263,11 @@ Default: $BBVAR/hostdata/
 
 <P>
 <DL COMPACT>
-<DT>BBHOSTS<DD>
+<DT>HOSTSCFG<DD>
 Full path to the Xymon
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
-configuration file. Default: $BBHOME/etc/bb-hosts.
+configuration file. Default: $BBHOME/etc/hosts.cfg.
 <P>
 <DT>BB<DD>
 Full path to the 
@@ -387,7 +410,7 @@ Default: 0 (send messages as quickly as possible).
 Comma-separated list of the colors that may trigger an alert-message.
 The default is &quot;red,yellow,purple&quot;. Note that alerts may further be
 generated or suppresed based on the configuration in the
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 file.
 <P>
@@ -398,13 +421,13 @@ The default is &quot;green,clear,blue&quot;.
 <DT>ALERTREPEAT<DD>
 How often alerts get repeated while a status is in an alert state.
 This is the default setting, which may be changed in the 
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 file.
 <P>
 <DT>BBGHOSTS<DD>
 Controls how status messages from unknown hosts (i.e. hosts not
-listed in the bb-hosts file) are handled.
+listed in the hosts.cfg file) are handled.
 <P>
 <B>BBGHOSTS=1:</B>
 
@@ -422,7 +445,7 @@ unlike normal Big Brother which is case-sensitive in
 hostnames. So with BBGHOSTS set to 1 or 2, &quot;WWW.FOO.COM&quot;
 and &quot;<A HREF="http://www.foo.com">www.foo.com</A>&quot; are considered to be the same host.
 If necessary, the incoming hostname will be changed
-to match the way it is written in the bb-hosts file,
+to match the way it is written in the hosts.cfg file,
 changing case as needed.
 <P>
 <DT>MAXMSG_STATUS<DD>
@@ -610,7 +633,7 @@ the variable. So to inform the users that an intermediate switch
 or router is down, use BBROUTERTEXT=&quot;switch or router&quot;.  This can 
 also be set on a per-host basis using the &quot;DESCR:hosttype:description&quot;
 tag in the 
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file.
 <P>
@@ -785,7 +808,7 @@ List of scripts to run as extensions to a history page.
 Default threshold for listing the availability as &quot;critical&quot; (red) when
 generating the availability report. This can be set on a per-host basis
 with the WARNPCT setting in
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5).</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5).</I>
 
 Default: 97 (percent)
 <P>
@@ -802,7 +825,7 @@ the options you normally used when building Xymon webpages.
 <A NAME="lbAP">&nbsp;</A>
 <H2>FILES</H2>
 
-<B>~xymon/server/etc/hobbitserver.cfg</B>
+<B>~xymon/server/etc/xymonserver.cfg</B>
 
 <P>
 <A NAME="lbAQ">&nbsp;</A>
@@ -836,6 +859,6 @@ the options you normally used when building Xymon webpages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:10 GMT, October 24, 2010
 </BODY>
 </HTML>

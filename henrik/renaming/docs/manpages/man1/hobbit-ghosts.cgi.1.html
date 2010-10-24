@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBIT-GHOSTS.CGI</TITLE>
 </HEAD><BODY>
 <H1>HOBBIT-GHOSTS.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -24,7 +24,7 @@ is invoked as a CGI script via the hobbit-ghosts.sh CGI wrapper.
 <P>
 It generates a listing of the Xymon clients that have reported data
 to the Xymon server, but are not listed in the
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file. Data from these clients - called &quot;ghosts&quot; - are ignored, 
 since Xymon does not know which webpage to present the data on.
@@ -34,9 +34,9 @@ the IP-address where the report came from, and how long ago the
 report arrived.
 <P>
 By far the most common reason for hosts showing up here is that
-the client uses a hostname without a DNS domain, but the bb-hosts
+the client uses a hostname without a DNS domain, but the hosts.cfg
 file uses the hostname with the DNS domain. Or vice versa. You can
-then use a <B>CLIENT</B> setting in the bb-hosts file to match the
+then use a <B>CLIENT</B> setting in the hosts.cfg file to match the
 two hostnames together.
 <P>
 <A NAME="lbAE">&nbsp;</A>
@@ -50,7 +50,7 @@ Loads the environment defined in FILENAME before executing the CGI script.
 <A NAME="lbAF">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
 <P>
 <P>
 
@@ -67,6 +67,6 @@ Loads the environment defined in FILENAME before executing the CGI script.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:11 GMT, October 24, 2010
 </BODY>
 </HTML>

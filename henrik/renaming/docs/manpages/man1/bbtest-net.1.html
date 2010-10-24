@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of BBTEST-NET</TITLE>
 </HEAD><BODY>
 <H1>BBTEST-NET</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -37,11 +37,11 @@ bbtest-net - Xymon network test tool
 <I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
 
 handles the network tests of hosts defined in the Xymon configuration
-file, bb-hosts. It is normally run at regular intervals by 
+file, hosts.cfg. It is normally run at regular intervals by 
 <I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
 
 via an entry in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file.
 <P>
@@ -133,13 +133,13 @@ reported as being down.
 <BR>
 
 With &quot;--dns=ip&quot; bbtest-net will never do a DNS lookup;
-it will use the IP adresse specified in bb-hosts for
+it will use the IP adresse specified in hosts.cfg for
 the tests. Thus, this setting is equivalent to having
 the &quot;testip&quot; tag on all hosts. Note that http tests
 will ignore this setting and still perform a DNS
 lookup for the hostname given in the URL; see the
 &quot;bbtest-net tags for HTTP tests&quot; section in
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 <P>
 <DT>--no-ares<DD>
@@ -246,7 +246,7 @@ bbtest-net omit these flags from the status messages.
 <P>
 <DT>--shuffle<DD>
 By default, TCP tests run roughly in the order that the hosts
-are listed in the bb-hosts file. If you have many tests for
+are listed in the hosts.cfg file. If you have many tests for
 one server, this may result in an exceptionally large
 load when Xymon is testing it because Xymon will perform
 a lot of tests at the same time. To avoid this, the
@@ -264,7 +264,7 @@ the
 <I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
 
 utility. See
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
 
 for a description of how to customize this, e.g. if you
 need to run it with &quot;sudo&quot; or a similar tool.
@@ -274,7 +274,7 @@ need to run it with &quot;sudo&quot; or a similar tool.
 Enables bbtest-net's ping test. The column name used for
 ping test results is defined by the PINGCOLUMN environment 
 variable in 
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5).</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5).</I>
 
 <BR>
 
@@ -293,7 +293,7 @@ Enable/disable the use of traceroute when a ping-test fails.
 Performing a traceroute for failed ping tests is a slow
 operation, so the default is not to do any traceroute, unless
 it is requested on a per-host basis via the &quot;trace&quot; tag in the 
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5) </I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5) </I>
 
 entry for each host. The &quot;--trace&quot; option changes this, so 
 the default becomes to run traceroute on all hosts where
@@ -319,7 +319,14 @@ Determines the name of the column Xymon displays for content checks.
 The default is &quot;content&quot;.  If you have used the &quot;cont.sh&quot; or &quot;cont2.sh&quot; 
 scripts earlier, you may want to use &quot;--content=cont&quot; to report content
 checks using the same test name as these scripts do.
-<P>
+<DT>--bb-proxy-syntax<DD>
+Adhere to the Big Brother syntax for a URL, which allows specifying 
+a HTTP proxy as part of a URL. See <B>&quot;HTTP Testing via proxy&quot;</B> in the
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5) </I>
+
+file for details. Beginning with Xymon 4.3.0, this behaviour is disabled
+by default since URL's that include other URL's are now much more
+common. This option restores the old Big Brother-compatible behaviour.
 <P>
 </DL>
 <A NAME="lbAI">&nbsp;</A>
@@ -345,7 +352,7 @@ E.g. to trigger an alert if your SSL-enabled website
 supports less than 128 bits of encryption, use &quot;--sslbits=128&quot;.
 Note: This can be enabled on a per-host basis using the
 &quot;sslbits=N&quot; setting in 
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 <P>
 <P>
@@ -427,11 +434,11 @@ limitations in your operating system C library.
 <H2>LDAP TESTS</H2>
 
 ldap testing can be done in two ways. If you just put an &quot;ldap&quot; or
-&quot;ldaps&quot; tag in bb-hosts, a simple test is performed that just verifies
+&quot;ldaps&quot; tag in hosts.cfg, a simple test is performed that just verifies
 that it is possible to establish a connection to the port running 
 the ldap service (389 for ldap, 636 for ldaps).
 <P>
-Instead you can put an LDAP URI in bb-hosts. This will cause 
+Instead you can put an LDAP URI in hosts.cfg. This will cause 
 bbtest-net to initiate a full-blown LDAP session with the server,
 and do an LDAP search for the objects defined by the URI. This
 requires that bbtest-net was built with LDAP support, and relies
@@ -462,7 +469,7 @@ Example:
 All &quot;bind&quot; operations to LDAP servers use simple authentication.
 Kerberos and SASL are not supported. If your LDAP server requires 
 a username/password, use the &quot;ldaplogin&quot; tag to specify this, cf. 
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5) </I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5) </I>
 
 If no username/password information is provided, an anonymous
 bind will be attempted. 
@@ -502,16 +509,16 @@ in the &quot;sslcert&quot; column.
 
 If you have more than one system running network tests - e.g. if your network
 is separated by firewalls - then is is problematic to maintain
-multiple bb-hosts files for each of the systems.
+multiple hosts.cfg files for each of the systems.
 bbtest-net supports the NET:location tag in
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 to distinguish 
 between hosts that should be tested from different network
 locations. If you set the environment variable BBLOCATION
 e.g. to &quot;dmz&quot; before running bbtest-net, then it will only
-test hosts that have a &quot;NET:dmz&quot; tag in bb-hosts. This allows
-you to keep all of your hosts in the same bb-hosts file, but
+test hosts that have a &quot;NET:dmz&quot; tag in hosts.cfg. This allows
+you to keep all of your hosts in the same hosts.cfg file, but
 test different sets of hosts by different BBNET systems.
 <P>
 <P>
@@ -519,7 +526,7 @@ test different sets of hosts by different BBNET systems.
 <H2>BBTEST-NET INTERNALS</H2>
 
 bbtest-net first reads the bb-services file to see which network tests
-are defined. It then scans the bb-hosts file, and collects information
+are defined. It then scans the hosts.cfg file, and collects information
 about the TCP service tests that need to be tested. It picks out only
 the tests that were listed in the bb-services file, plus the &quot;dns&quot;,
 &quot;dig&quot; and &quot;ntp&quot; tests - those tests that bb-network.sh would normally 
@@ -565,7 +572,7 @@ standard bb-network.sh script.
 <DT>BBLOCATION<DD>
 Defines the network segment where bbtest-net is currently running.
 This is used to filter out only the entries in the
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file that have a matching &quot;NET:LOCATION&quot; tag, and execute the
 tests for only those hosts.
@@ -599,7 +606,7 @@ Command used to run the
 <I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1) </I>
 
 utility. Used by bbtest-net for connectivity (ping) testing.  See 
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
 
 for more information about how to customize the program that is
 executed to do ping tests.
@@ -693,7 +700,7 @@ runs, and read by bbretest-net.sh.
 <A NAME="lbAS">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/bb-services.5.html">bb-services</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man1/hobbitping.1.html">hobbitping</A>(1),
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/bb-services.5.html">bb-services</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/hobbitping.1.html">hobbitping</A>(1),
 <A HREF="../man1/curl.1.html">curl</A>(1), <A HREF="../man1/ftp.1.html">ftp</A>(1), <A HREF="../man1/fping.1.html">fping</A>(1), <A HREF="../man1/ntpdate.1.html">ntpdate</A>(1), <A HREF="../man8/rpcinfo.8.html">rpcinfo</A>(8)
 <P>
 <P>
@@ -724,6 +731,6 @@ runs, and read by bbretest-net.sh.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:10 GMT, October 24, 2010
 </BODY>
 </HTML>

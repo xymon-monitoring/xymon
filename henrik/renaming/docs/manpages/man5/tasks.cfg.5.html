@@ -1,26 +1,26 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITLAUNCH.CFG</TITLE>
+<HTML><HEAD><TITLE>Man page of TASKS.CFG</TITLE>
 </HEAD><BODY>
-<H1>HOBBITLAUNCH.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>TASKS.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitlaunch.cfg - Task definitions for the hobbitlaunch utility
+tasks.cfg - Task definitions for the hobbitlaunch utility
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>~xymon/server/etc/hobbitlaunch.cfg</B>
+<B>~xymon/server/etc/tasks.cfg</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-The hobbitlaunch.cfg file holds the list of tasks that hobbitlaunch runs 
+The tasks.cfg file holds the list of tasks that hobbitlaunch runs 
 to perform all of the tasks needed by the Xymon monitor.
 <P>
 <A NAME="lbAE">&nbsp;</A>
@@ -39,7 +39,7 @@ An entry looks like this:
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;[hobbitd]
 <BR>
 
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/hobbitserver.cfg
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/xymonserver.cfg
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CMD&nbsp;/usr/local/xymon/server/bin/hobbitd
@@ -47,7 +47,7 @@ An entry looks like this:
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;[updateweb]
 <BR>
 
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/hobbitserver.cfg
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/xymonserver.cfg
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CMD&nbsp;/usr/local/xymon/server/bin/bbgen
@@ -73,7 +73,7 @@ An entry looks like this:
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;[monthlyreport]
 <BR>
 
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/hobbitserver.cfg
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENVFILE&nbsp;/usr/local/xymon/server/etc/xymonserver.cfg
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CMD&nbsp;/usr/local/xymon/server/ext/monthlyreport.sh
@@ -153,7 +153,7 @@ defined to hobbitlaunch is used.
 The <B>ENVAREA</B> setting modifies which environment variables
 are loaded, by picking up the ones that are defined for this
 specific &quot;area&quot;. See 
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
 
 for information about environment areas.
 <P>
@@ -182,6 +182,6 @@ goes to the same location as the hobbitlaunch output.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:10 GMT, October 24, 2010
 </BODY>
 </HTML>

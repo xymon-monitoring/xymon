@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITD_HISTORY</TITLE>
 </HEAD><BODY>
 <H1>HOBBITD_HISTORY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -66,6 +66,8 @@ status-logs are saved whenever a status change occurs. These logfiles
 are stored in the $BBHISTLOGS directory, and are used for the detailed
 log-display of a status from the Xymon &quot;History&quot; page. If you
 do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
+If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
+If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -95,6 +97,6 @@ This module does not rely on any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:11 GMT, October 24, 2010
 </BODY>
 </HTML>

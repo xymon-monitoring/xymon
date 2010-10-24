@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITD_CHANNEL</TITLE>
 </HEAD><BODY>
 <H1>HOBBITD_CHANNEL</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -69,12 +69,24 @@ This option is required. The following channels are available:
 
 &quot;enadis&quot; receives information about hosts being disabled or enabled.
 <P>
+<DT>--filter=EXPRESSION<DD>
+EXPRESSION is a Perl-compatible regular expression. hobbitd_channel will match 
+the first line of each message against this expression, and silently drops any
+message that does not match the expression. Especially useful for custom 
+worker modules and during testing, to limit the amount of data that the module
+must process.
+<BR>
+
+Note that messages for &quot;logrotate&quot;, &quot;shutdown&quot;, &quot;drophost&quot;, &quot;renamehost&quot;,
+&quot;droptest&quot; and &quot;renametest&quot; are always forwarded by hobbitd_channel, whether
+they match the filter or not.
+<P>
 <DT>--daemon<DD>
 hobbitd_channel is normally started by 
 <I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
 
 as a task defined in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file. If you are not using hobbitlaunch, then starting hobbitd_channel with this
 option causes it to run as a stand-alone background task.
@@ -89,7 +101,7 @@ Loads the environment variables defined in FILENAME before starting hobbitd_chan
 This is normally used only when running as a stand-alone daemon; if hobbitd_channel
 is started by hobbitlaunch, then the environment is controlled by the task definition 
 in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file.
 <P>
@@ -126,6 +138,6 @@ This program does not use any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:11 GMT, October 24, 2010
 </BODY>
 </HTML>

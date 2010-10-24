@@ -1,28 +1,28 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BB-HOSTS</TITLE>
+<HTML><HEAD><TITLE>Man page of HOSTS.CFG</TITLE>
 </HEAD><BODY>
-<H1>BB-HOSTS</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>HOSTS.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bb-hosts - Main Xymon configuration file
+hosts.cfg - Main Xymon configuration file
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
 <DL COMPACT>
-<DT>bb-hosts<DD>
+<DT>hosts.cfg<DD>
 <P>
 </DL>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
 The
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file is the most important configuration file for all of the
 Xymon programs.  This file contains the full list of 
@@ -37,7 +37,7 @@ starting with a hash mark (#) are treated as comments and ignored.
 Long lines can be broken up by putting a backslash at the end of 
 the line and continuing the entry on the next line.
 <P>
-The format of an entry in the bb-hosts file is as follows:
+The format of an entry in the hosts.cfg file is as follows:
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;IP-address&nbsp;hostname&nbsp;#&nbsp;tag1&nbsp;tag2&nbsp;...
@@ -53,9 +53,9 @@ for availability reporting by
 <I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
 
 <P>
-An example of setting up the bb-hosts file is in the Xymon on-line 
+An example of setting up the hosts.cfg file is in the Xymon on-line 
 documentation (from the Help menu, choose &quot;Configuring Monitoring&quot;).
-The following describes the possible settings in a bb-hosts
+The following describes the possible settings in a hosts.cfg
 file supported by Xymon.
 <P>
 <P>
@@ -65,22 +65,22 @@ file supported by Xymon.
 <P>
 <DL COMPACT>
 <DT>include filename<DD>
-This tag is used to include another file into the bb-hosts
-file at run-time, allowing for a large bb-hosts file to be
+This tag is used to include another file into the hosts.cfg
+file at run-time, allowing for a large hosts.cfg file to be
 split up into more manageable pieces.
 <P>
 The &quot;filename&quot; argument should point to a file that uses the
-same syntax as bb-hosts. The filename can be an absolute 
+same syntax as hosts.cfg. The filename can be an absolute 
 filename (if it begins with a '/'), or a relative filename -
-relative filenames are prefixed with the directory where
-the main bb-hosts file is located (usually $BBHOME/etc/).
+relative file names are prefixed with the directory where
+the main hosts.cfg file is located (usually $BBHOME/etc/).
 <P>
 You can nest include tags, i.e. a file that is included 
-from the main bb-hosts file can itself include other files.
+from the main hosts.cfg file can itself include other files.
 <P>
 <DT>dispinclude filename<DD>
 Acts like the &quot;include&quot; tag, but only on the BBDISPLAY server.
-Can be used e.g. to put a group of hosts on multiple subpages,
+Can be used e.g. to put a group of hosts on multiple sub-pages,
 without having to repeat the host definitions.
 <P>
 <DT>netinclude filename<DD>
@@ -116,7 +116,7 @@ Note that &quot;noclear&quot; also affects the behaviour of network tests;
 see below.
 <P>
 <DT>prefer<DD>
-When a single host is defined multiple time in the bb-hosts file,
+When a single host is defined multiple time in the hosts.cfg file,
 bbgen tries to guess which definition is the best to use for
 the information used on the &quot;info&quot; column, or for the NOPROPRED
 and other bbgen-specific settings. Host definitions that have
@@ -126,8 +126,17 @@ By using the &quot;prefer&quot; tag you tell bbgen that this host definition
 should be used.
 <P>
 Note: This only applies to hosts that are defined multiple
-times in the bb-hosts file, although it will not hurt to add it
+times in the hosts.cfg file, although it will not hurt to add it
 on other hosts as well.
+<P>
+<DT>multihomed<DD>
+Tell Xymon that data from the host can arrive from multiple IP-adresses.
+By default, Xymon will warn if it sees data for one host coming from
+different IP-adresses, because this usually indicates a mis-configuration
+of the hostname on at least one of the servers involved. Some hosts
+with multiple IP-adresses may use different IP's for sending data to
+Xymon, however. This tag disables the check of source IP when receiving
+data.
 <P>
 <P>
 </DL>
@@ -146,19 +155,19 @@ hosts following the &quot;page&quot; directive appear on this page, until
 a new &quot;page&quot;, &quot;subpage&quot; or &quot;subparent&quot; line is found.
 <P>
 <DT>subpage NAME [Page-title]<DD>
-This defines a subpage in the second level below the entry page.
-You must have a previous &quot;page&quot; line to hook this subpage to.
+This defines a sub-page in the second level below the entry page.
+You must have a previous &quot;page&quot; line to hook this sub-page to.
 <P>
 <DT>subparent parentpage newpage [Page-title]<DD>
-This is used to define subpages in whatever levels you may
+This is used to define sub-pages in whatever levels you may
 wish. Just like the standard &quot;subpage&quot; tag, &quot;subparent&quot; defines a
-new Xymon webpage; however with &quot;subparent&quot; you explicitly
-list which page it should go as a subpage to. You can pick
-any page as the parent - pages, subpages or even other
+new Xymon web page; however with &quot;subparent&quot; you explicitly
+list which page it should go as a sub-page to. You can pick
+any page as the parent - pages, sub-pages or even other
 subparent pages. So this allows you to define any tree
 structure of pages that you like.
 <P>
-E.g. with this in bb-hosts:
+E.g. with this in hosts.cfg:
 <P>
 <BR>&nbsp;&nbsp;&nbsp;page&nbsp;USA&nbsp;United&nbsp;States
 <BR>&nbsp;&nbsp;&nbsp;subpage&nbsp;NY&nbsp;New&nbsp;York
@@ -187,7 +196,7 @@ it easy to implement.
 <P>
 <DT>group [group-title]<DD>
 <DT>group-compress [group-title]<DD>
-Defines a group of hosts, that appear together on the webpage,
+Defines a group of hosts, that appear together on the web page,
 with a single header-line listing all of the columns. Hosts
 following the &quot;group&quot; line appear inside the group, until a
 new &quot;group&quot; or page-line is found. The two group-directives
@@ -213,7 +222,7 @@ The &quot;title&quot; tag is used to put custom headings into the
 pages generated by bbgen, in front of page/subpage links,
 groups or hosts.
 <P>
-The title tag operates on the next item in the bb-hosts
+The title tag operates on the next item in the hosts.cfg
 file following the title tag.
 <P>
 If a title tag precedes a host entry, the title is 
@@ -227,9 +236,9 @@ show just before the group on the status page.
 If a title tag precedes a page/subpage/subparent
 entry, the title text replaces the normal &quot;Pages hosted
 locally&quot; heading normally inserted by Xymon. This
-appears on the page that links to the subpages,
-not on the subpage itself. To get a custom heading on
-the subpage, you may want to use the &quot;--pagetext-heading&quot;
+appears on the page that links to the sub-pages,
+not on the sub-page itself. To get a custom heading on
+the sub-page, you may want to use the &quot;--pagetext-heading&quot;
 when running
 <I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
 
@@ -241,15 +250,15 @@ quotes, e.g. NAME:&quot;R&amp;D Oracle Server&quot;
 <P>
 <DT>CLIENT:hostname<DD>
 Defines an alias for a host, which will be used when identifying
-status messages. This is typically used to accomodate a local
+status messages. This is typically used to accommodate a local
 client that sends in status reports with a different hostname,
 e.g. if you use hostnames with domains in your Xymon configuration,
 but the client is a silly Window box that does not include the
-hostname. Or vice versa. Whatever the reason, this can be used
+hostname. Or vice-versa. Whatever the reason, this can be used
 to match status reports with the hosts you define in your
-bb-hosts file. It causes incoming status reports with the
+hosts.cfg file. It causes incoming status reports with the
 specified hostname to be filed using the hostname defined in
-bb-hosts.
+hosts.cfg.
 <P>
 <DT>NOCOLUMNS:column[,column]<DD>
 Used to drop certain of the status columns generated by the
@@ -262,10 +271,10 @@ host. Note: If the columns already exist, you must use the
 utility to <B>drop</B> them, or they will go purple.
 <P>
 <DT>COMMENT:Host comment<DD>
-Adds a small text after the hostname on the webpage. This can
+Adds a small text after the hostname on the web page. This can
 be used to describe the host, without completely changing its
 display-name as the NAME: tag does. If the comment includes
-whitespace, it must be in double-quotes, e.g. COMMENT:&quot;Sun webserver&quot;
+whitespace, it must be in double-quotes, e.g. COMMENT:&quot;Sun web server&quot;
 <P>
 <DT>DESCR:Hosttype:Description<DD>
 Define some informational text about the host. The &quot;Hosttype&quot;
@@ -282,12 +291,12 @@ when configuring log-file monitoring (they can be used as references in
 <I><A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)</I>
 
 and
-<I><A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)</I>
+<I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
 
-to group logfile checks). Normally, class-names are controlled on the 
+to group log file checks). Normally, class-names are controlled on the 
 client by starting the Xymon client with the &quot;--class=Classname&quot; option.
-If you specify it in the bb-hosts file on the Xymon server, it overrides
-any classname that the client reports.
+If you specify it in the hosts.cfg file on the Xymon server, it overrides
+any class name that the client reports.
 <P>
 <DT>dialup<DD>
 The keyword &quot;dialup&quot; for a host means that it is OK for it to be
@@ -323,12 +332,12 @@ include start out as being empty (no graphs).
 * To include all default graphs, use an asterisk.  E.g. &quot;TRENDS:*&quot;
 <BR>
 
-* To exclude a certain graph, speficy it prefixed with '!'. E.g. 
+* To exclude a certain graph, specify it prefixed with '!'. E.g. 
 to see all graphs except users: &quot;TRENDS:*,!users&quot;
 <BR>
 
 * The netstat, vmstat and tcp graphs have many &quot;subgraphs&quot;.
-Which of these are shown can be speficied like this:
+Which of these are shown can be specified like this:
 &quot;TRENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn&quot;
 This will show all graphs, but instead of the normal 
 netstat graph, there will be two: The netstat2 and
@@ -339,7 +348,7 @@ the http, conn and smtp services.
 
 <DT>COMPACT:COLUMN=COLUMN1,COLUMN2,COLUMN3[;ditto]<DD>
 Collapses a series of statuses into a single column on
-the overview webpage.
+the overview web page.
 <P>
 </DL>
 <A NAME="lbAI">&nbsp;</A>
@@ -354,7 +363,7 @@ view to the
 viewer, which has a separate configuration tool,
 <I><A HREF="../man1/hobbit-nkedit.cgi.1.html">hobbit-nkedit.cgi</A>(1)</I>
 
-with more facilities than the NK tags in bb-hosts.
+with more facilities than the NK tags in hosts.cfg.
 <P>
 bbgen will create three sets of pages: The main page bb.html,
 the all-non-green-statuses page (bb2.html), and a specially
@@ -377,7 +386,7 @@ https tests are covered by an &quot;NK:http&quot; tag).
 <P>
 <DT>NKTIME=day:starttime:endtime[,day:starttime:endtime]<DD>
 This tag limits the time when an active alert is presented
-on the NK webpage.
+on the NK web page.
 <P>
 By default, tests with a red or yellow status that are listed
 in the &quot;NK:testname&quot; tag will appear on the NK page. However,
@@ -388,7 +397,7 @@ serviced during week-ends.
 You can then use the NKTIME tag to define the time periods
 where the alert will show up on the NK page. 
 <P>
-The timespecification consists of
+The time specification consists of
 <P>
 <B>day-of-week:</B>
 
@@ -408,7 +417,7 @@ If necessary, multiple periods can be specified. E.g. to
 monitor a site 24x7, except between noon and 1 pm, use
 NKTIME=*:0000:1159,*:1300:2359
 <P>
-The interval between starttime and endtime may cross midnight, e.g. <B>*:2330:0200</B>
+The interval between start time and end time may cross midnight, e.g. <B>*:2330:0200</B>
 would be valid and have the same effect as <B>*:2330:2400,*:0000:0200</B>.
 <P>
 <P>
@@ -426,7 +435,7 @@ This tag determines which tests for this hosts are included
 in the WML (WAP) page. Syntax is identical to the NK: tag.  
 <P>
 The default set of WML tests are taken from the --wml
-command-line option.  If no &quot;WML:&quot; tag is specified, the 
+command line option.  If no &quot;WML:&quot; tag is specified, the 
 &quot;NK:&quot; tag is used if present.
 <P>
 </DL>
@@ -458,7 +467,7 @@ E.g.: bbgen runs with &quot;--nopropred=ftp,smtp&quot;.
 &quot;NOPROPRED:dns&quot; gives a setting of &quot;dns&quot; only (the default
 is ignored).
 <P>
-Note: If you set use the &quot;--nopropred=*&quot; command-line
+Note: If you set use the &quot;--nopropred=*&quot; command line
 option to disable propagation of all alerts, you cannot use
 the &quot;+&quot; and &quot;-&quot; methods to add or remove from the wildcard
 setting. In that case, do not use the &quot;+&quot; or &quot;-&quot; setting,
@@ -559,17 +568,17 @@ be at 98.5%
 <P>
 <DL COMPACT>
 <DT>testip<DD>
-By default, Hobbit will perform a name lookup of the hostname
+By default, Xymon will perform a name lookup of the hostname
 to get the IP address it will use for network tests. This tag
-causes Hobbit to use the IP listed in the bb-hosts file.
+causes Xymon to use the IP listed in the hosts.cfg file.
 <P>
 <DT>NET:location<DD>
 This tag defines the host as being tested from a specific location.
 If bbtest-net sees that the environment variable BBLOCATION
 is set, it will only test the hosts that have a matching
-&quot;NET:location&quot; tag in the bb-hosts file. So this tag is useful
+&quot;NET:location&quot; tag in the hosts.cfg file. So this tag is useful
 if you have more than one BBNET system, but you still want
-to keep a consolidated bb-hosts file for all your systems.
+to keep a consolidated hosts.cfg file for all your systems.
 <P>
 Note: The &quot;--test-untagged&quot; option modifies this behaviour,
 see
@@ -613,7 +622,7 @@ tool; the values specified in the &quot;ssldays&quot; tag overrides
 the default.
 <P>
 <DT>sslbits=MINIMUMKEYBITS<DD>
-Enable checking of the encryption strengt of the SSL protocol
+Enable checking of the encryption strength of the SSL protocol
 offered by the server. If the server offers encryption using
 a key with fewer than MINIMUMKEYBITS bits, the &quot;sslcert&quot;
 test will go red. E.g. to check that your server only uses
@@ -649,7 +658,7 @@ it to specify the periods of the day that the service should be
 green. Failures OUTSIDE the SLA interval are reported as blue.
 <P>
 <DT>depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]<DD>
-This tag allows you to define dependencies betweeen tests.
+This tag allows you to define dependencies between tests.
 If &quot;testA&quot; for the current host depends on &quot;test1&quot; for host &quot;host1&quot;
 and test &quot;test2&quot; for &quot;host2&quot;, this can be defined with
 <P>
@@ -693,7 +702,7 @@ red immediately.  With a &quot;badTEST:x:y:z&quot; tag this behaviour changes:
 
 * While fewer than &quot;x&quot; successive tests fail, the column stays GREEN.
 <P>
-The optional timespecification can be used to limit this
+The optional time specification can be used to limit this
 &quot;badTEST&quot; setting to a particular time of day, e.g. to 
 require a longer period of downtime before raising an
 alarm during out-of-office hours. The time-specification
@@ -706,7 +715,7 @@ as &quot;12345&quot;, i.e. all working days. Putting &quot;*&quot; here
 counts as all days of the week, equivalent to &quot;0123456&quot;.
 <BR>
 
-* starttime and endtime are specified using 24-hour clocks,
+* start time and end time are specified using 24-hour clocks,
 e.g. &quot;badTEST-W-0900-2000&quot; is valid for working days
 between 9 AM (09:00) and 8 PM (20:00).
 <P>
@@ -780,7 +789,7 @@ by bbtest-net when run with the &quot;--ping&quot; option to enable
 ping testing.
 <P>
 The router1,router2,... is a comma-separated list of hosts
-elsewhere in the bb-hosts file. You cannot have any spaces
+elsewhere in the hosts.cfg file. You cannot have any spaces
 in the list - separate hosts with commas.
 <P>
 This tag changes the color reported for a ping check that
@@ -809,7 +818,7 @@ and include the output from this in the status message
 from the failed connectivity test. Note: For this to
 work, you may have to define the TRACEROUTE environment
 variable, see 
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
 
 <P>
 <DT>notrace<DD>
@@ -851,7 +860,7 @@ test specification, <B>after</B> any other modifiers or port number.
 &quot;IPADDRESS&quot; must be a valid dotted IP-address (not hostname) which
 is assigned to the host running the network tests.
 <P>
-The name of the test also determines the columnname that the test 
+The name of the test also determines the column name that the test 
 result will appear with in the Xymon webpages.
 <P>
 By prefixing a test with &quot;!&quot; it becomes a reverse test: Xymon will 
@@ -867,7 +876,7 @@ without getting alarms while they are off-line.
 <DL COMPACT>
 <DT>ftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp<DD>
 These tags are for testing services offering the FTP, Secure Shell (ssh), 
-SMTP, POP3, IMAP, NNTP, rsync, CLAM antivirus daemon (clamd), Oracle TNS
+SMTP, POP3, IMAP, NNTP, rsync, CLAM anti-virus daemon (clamd), Oracle TNS
 listener (oratns), qmail QMTP and QMQP protocols.
 <P>
 <DT>ftps telnets smtps pop3s imaps nntps<DD>
@@ -878,7 +887,7 @@ services like any other network service - bbtest-net will
 setup an SSL-encrypted session while testing the service.
 The server certificate is validated and information about
 it sent in the &quot;sslcert&quot; column. Note that smtps does not
-have a standard portnumber assignment, so you will need to enter
+have a standard port number assignment, so you will need to enter
 this into the bb-services file or your /etc/services file.
 <P>
 <DT>bbd<DD>
@@ -940,9 +949,9 @@ Check for one or more available RPC services. This check is indirect
 in that it only queries the RPC Portmapper on the host, not the
 actual service. 
 <P>
-If only &quot;rpc&quot; is given, the test only verifies that the portmapper
+If only &quot;rpc&quot; is given, the test only verifies that the port mapper
 is available on the remote host. If you want to check that one or
-more RPC services are registered with the portmapper, list the 
+more RPC services are registered with the port mapper, list the 
 names of the desired RPC services after the equals-sign. E.g. for
 a working NFS server the &quot;mount&quot;, &quot;nlockmgr&quot; and &quot;nfs&quot; services
 must be available; this can be checked with &quot;rpc=mount,nlockmgr,nfs&quot;.
@@ -950,7 +959,7 @@ must be available; this can be checked with &quot;rpc=mount,nlockmgr,nfs&quot;.
 This test uses the rpcinfo tool for the actual test; if this tool
 is not available in the PATH of bbtest-net, you must define the
 RPCINFO environment variable to point at this tool. See
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
 
 <P>
 <P>
@@ -959,7 +968,7 @@ RPCINFO environment variable to point at this tool. See
 <H2>HTTP TESTS</H2>
 
 Simple testing of a http URL is done simply by putting the
-URL into the bb-hosts file. Note that this only applies to
+URL into the hosts.cfg file. Note that this only applies to
 URL's that begin with &quot;http:&quot; or &quot;https:&quot;.
 <P>
 The following items describe more advanced forms of http
@@ -1058,7 +1067,7 @@ SSLv2 and HTTP 1.0 you would use &quot;https210&quot;.
 <P>
 <DT>Testing sites by IP-address<DD>
 bbtest-net ignores the &quot;testip&quot; tag normally used to force a 
-test to use the IP-address from the bb-hosts file instead of
+test to use the IP-address from the hosts.cfg file instead of
 the hostname, when it performs http and https tests.
 <P>
 The reason for this is that it interacts badly with virtual
@@ -1075,12 +1084,18 @@ the IP-address &quot;1.2.3.4&quot;, but still trying to access a virtual
 website with the name &quot;<A HREF="http://www.sample.com">www.sample.com</A>&quot;.
 <P>
 The &quot;=ip.address.of.host&quot; must be the last part of the hostname,
-so if you need to combine this with e.g. an explicit portnumber,
+so if you need to combine this with e.g. an explicit port number,
 it should be done as
 <P>
 <TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT><A HREF="http://www.sample.com:3128=1.2.3.4/index.html">http://www.sample.com:3128=1.2.3.4/index.html</A><BR>
 <P>
 <DT>HTTP Testing via proxy<DD>
+<B>NOTE:</B> This is not enabled by default. You must
+add the &quot;--bb-proxy-syntax&quot; option when running
+<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+
+if you want to use this.
+<P>
 bbtest-net supports the Big Brother syntax for
 specifying an HTTP proxy to use when performing http 
 tests. This syntax just joins the proxy- and the target-URL
@@ -1093,8 +1108,8 @@ into one, e.g.
 would be the syntax for testing the <A HREF="http://www.foo.com">www.foo.com</A> website
 via the proxy running on &quot;webproxy.sample.com&quot; port 3128.
 <P>
-If the proxy portnumber is not specified, the default 
-HTTP portnumber (80) is used.
+If the proxy port number is not specified, the default 
+HTTP port number (80) is used.
 <P>
 If your proxy requires authentication, you can specify the
 username and password inside the proxy-part of the URL, e.g.
@@ -1169,7 +1184,7 @@ The expected digest value can be computed with the
 
 utility.
 <P>
-&quot;cont&quot; tags in bb-hosts result in two status reports: One
+&quot;cont&quot; tags in hosts.cfg result in two status reports: One
 status with the &quot;http&quot; check, and another with the &quot;content&quot; 
 check.
 <P>
@@ -1188,7 +1203,7 @@ If more than one content check is present for a host, the first
 content check is reported in the column &quot;content&quot;, the second is
 reported in the column &quot;content1&quot;, the third in &quot;content2&quot; etc.
 <P>
-You can also specify the columnname directly in the test
+You can also specify the column name directly in the test
 specification, by writing it as &quot;cont=COLUMN;<A HREF="http://...">http://...</A>&quot;.
 Column-names cannot include whitespace or semi-colon.
 <P>
@@ -1229,7 +1244,7 @@ E.g. if you have a web form defined like this:
 <BR>&nbsp;&nbsp;&nbsp;&lt;/form&gt;
 <P>
 and you want to post the value &quot;John&quot; to the first field
-and &quot;Doe Jr.&quot; to the second field, then the formdata field
+and &quot;Doe Jr.&quot; to the second field, then the form data field
 would be
 <P>
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;givenname=John&amp;surname=Doe+Jr.
@@ -1302,12 +1317,12 @@ This is used to explicitly test for certain HTTP statuscodes
 returned when the URL is requested. The <B>okstatusexpr</B> and
 <B>nokokstatusexpr</B> expressions are Perl-compatible regular
 expressions, e.g. &quot;2..|302&quot; will match all OK codes and the
-redirect (302) status code. If the URL cannot be retrived,
+redirect (302) status code. If the URL cannot be retrieved,
 the status is &quot;999&quot;.
 <P>
 <DT>HIDEHTTP<DD>
 The status display for HTTP checks usually includes the URL,
-and for content checks also the actual data from the webpage.
+and for content checks also the actual data from the web page.
 If you would like to hide these from view, then the HIDEHTTP
 tag will keep this information from showing up on the status
 webpages.
@@ -1383,14 +1398,14 @@ as &quot;red&quot; (alarm). This tag reduces a search failure to a
 
 <DL COMPACT>
 <DT>apache[=URL]<DD>
-If you are running an Apache webserver, adding this tag makes
+If you are running an Apache web server, adding this tag makes
 <I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
 
-collect performance statistics from the Apache webserver by
+collect performance statistics from the Apache web server by
 querying the URL <B><A HREF="http://IP.ADDRESS.OF.HOST/server-status?auto">http://IP.ADDRESS.OF.HOST/server-status?auto</A></B>.
 The response is sent as a data-report and processed by the Xymon
 hobbitd_rrd module into an RRD file and an &quot;apache&quot; graph. If
-your webserver requires e.g. authentication, or runs on a different
+your web server requires e.g. authentication, or runs on a different
 URL for the server-status, you can provide the full URL needed to 
 fetch the server-status page, e.g. 
 <B>apache=<A HREF="http://LOGIN:PASSWORD@10.0.0.1/server-status?auto">http://LOGIN:PASSWORD@10.0.0.1/server-status?auto</A></B> 
@@ -1452,7 +1467,7 @@ form a hierarchy of servers by sending the overall status of this server
 to a remote Xymon server, which then displays this in a special summary
 section. E.g. if your offices are spread over three locations, you can 
 have a Xymon server at each office. These branch-office Xymon have
-a &quot;summary&quot; definition in their bb-hosts file that makes them report
+a &quot;summary&quot; definition in their hosts.cfg file that makes them report
 the overall status of their branch Xymon to the central Xymon server
 you maintain at the corporate headquarters.
 <P>
@@ -1467,7 +1482,7 @@ used in the normal displays. The IP is the IP-address of the <B>remote</B>
 URL of your <B>local</B> Xymon server.
 <P>
 The URL need not be that of your Xymon server's main page - it could
-be the URL of a subpage on the local Xymon server. Xymon will report
+be the URL of a sub-page on the local Xymon server. Xymon will report
 the summary using the color of the page found at the URL you specify.
 E.g. on your corporate Xymon server you want a summary from the
 Las Vegas office - but you would like to know both what the overall 
@@ -1486,7 +1501,7 @@ This gives you one summary line for Baltimore, with two columns: An
 the status of the &quot;sales&quot; page on the Baltimore Xymon server.
 <P>
 Note: Pages defined using alternate pageset definitions cannot be used,
-the URL must point to a webpage from the default set of Xymon webpages.
+the URL must point to a web page from the default set of Xymon webpages.
 <P>
 <P>
 </DL>
@@ -1509,13 +1524,13 @@ daemon is listening on a non-standard IP-address or port-number.
 <A NAME="lbAX">&nbsp;</A>
 <H2>FILES</H2>
 
-<B>~xymon/server/etc/bb-hosts</B>
+<B>~xymon/server/etc/hosts.cfg</B>
 
 <P>
 <A NAME="lbAY">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/bbdigest.1.html">bbdigest</A>(1), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/bbdigest.1.html">bbdigest</A>(1), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -1551,6 +1566,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:10 GMT, October 24, 2010
 </BODY>
 </HTML>

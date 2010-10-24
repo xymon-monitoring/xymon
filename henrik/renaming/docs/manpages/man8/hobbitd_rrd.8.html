@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITD_RRD</TITLE>
 </HEAD><BODY>
 <H1>HOBBITD_RRD</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -86,7 +86,7 @@ listed here, but in the TEST2RRD environment variable - see below.
 <DT>TEST2RRD<DD>
 Defines the mapping between a status-log columnname and the corresponding
 RRD database format. This is normally defined in the 
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
 
 file.
 <P>
@@ -153,7 +153,7 @@ recorded in the &quot;tcp&quot; RRD.
 <DT>apache<DD>
 Apache server performance metrics, taken from the &quot;apache&quot; data
 report. See the description of the <B>apache</B> keyword in 
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 for details.
 <P>
@@ -226,7 +226,7 @@ of the data-items you want to track.
 <P>
 To enable the ncv module for a status, add a &quot;COLUMNNAME=ncv&quot; to the 
 TEST2RRD setting and the COLUMNNAME to the GRAPHS setting in
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
 
 , then restart Xymon. Xymon will now send
 all status-messages for the column COLUMNNAME through the hobbitd_rrd
@@ -244,7 +244,7 @@ E.g. if you are using the bb-mysqlstatus script from <A HREF="http://www.deadcat
 collect data about your MySQL server, it generates a report in the column 
 called &quot;mysql&quot;. One data item is the average number of queries/second,
 which must be logged in the RRD file as type &quot;GAUGE&quot;. To do that, add
-the following to hobbitserver.cfg:
+the following to xymonserver.cfg:
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;NCV_mysql=&quot;Queriespersecondavg:GAUGE&quot;&nbsp;
@@ -295,7 +295,7 @@ reports for a given test, you should consider implementing it in C
 and including it in the hobbitd_rrd tool.
 <P>
 Apart from writing the script, You must also add a section to
-<I><A HREF="../man5/hobbitgraph.cfg.5.html">hobbitgraph.cfg</A>(5)</I>
+<I><A HREF="../man5/graphs.cfg.5.html">graphs.cfg</A>(5)</I>
 
 so that
 <I><A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1)</I>
@@ -304,7 +304,7 @@ knows how to generate the graph from the data stored in the RRD file.
 To make the graphs actually show up on the status-page and/or the
 &quot;trends&quot; page, add the name of the new graph to the TEST2RRD and/or 
 GRAPHS setting in
-<I><A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5).</I>
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5).</I>
 
 <P>
 The script is invoked for each message that arrives, where the test-name
@@ -457,7 +457,7 @@ reporting.
 <A NAME="lbAK">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -479,6 +479,6 @@ reporting.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:11 GMT, October 24, 2010
 </BODY>
 </HTML>

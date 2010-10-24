@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITLAUNCH</TITLE>
 </HEAD><BODY>
 <H1>HOBBITLAUNCH</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -42,20 +42,20 @@ from all components logged to a single file.
 Loads the environment from FILENAME before starting other tools.
 The environment defined by FILENAME is the default, it can be
 overridden by the ENVFILE option in 
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 <P>
 <DT>--config=FILENAME<DD>
 This option defines the file that hobbitlaunch scans for tasks it
 must launch. A description of this file is in 
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
-The default tasklist is /etc/hobbitlaunch.cfg
+The default tasklist is /etc/tasks.cfg
 <P>
 <DT>--log=FILENAME<DD>
 Defines the logfile where hobbitlaunch logs information about
 failures to launch tasks and other data about the operation of
-hobbitlaunch. Logs from individual tasks are defined in the hobbitlaunch.cfg
+hobbitlaunch. Logs from individual tasks are defined in the tasks.cfg
 file. By default this is logged to stdout.
 <P>
 <DT>--pidfile=FILENAME<DD>
@@ -67,7 +67,7 @@ Logs the launch of all tasks to the logfile. Note that the logfile
 may become quite large if you enable this.
 <P>
 <DT>--dump<DD>
-Just dump the contents of the hobbitlaunch.cfg file after parsing it.
+Just dump the contents of the tasks.cfg file after parsing it.
 Used for debugging.
 <P>
 <DT>--debug<DD>
@@ -99,7 +99,7 @@ and restarted with the new definition.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -117,6 +117,6 @@ and restarted with the new definition.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:10 GMT, October 24, 2010
 </BODY>
 </HTML>

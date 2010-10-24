@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBIT-MAILACK</TITLE>
 </HEAD><BODY>
 <H1>HOBBIT-MAILACK</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -59,7 +59,7 @@ the xymon-users home-directory with the following contents:
 DEFAULT=$HOME/Mailbox
 LOGFILE=$HOME/procmail.log
 :0
-| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/hobbitserver.cfg
+| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/xymonserver.cfg
 </PRE>
 
 <P>
@@ -72,7 +72,7 @@ directly from a <B>.qmail</B> file. Setup the xymon-users .qmail file like this:
 <DL COMPACT>
 <DT><DD>
 <PRE>
-| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/hobbitserver.cfg
+| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/xymonserver.cfg
 </PRE>
 
 <P>
@@ -82,7 +82,7 @@ directly from a <B>.qmail</B> file. Setup the xymon-users .qmail file like this:
 
 <DL COMPACT>
 <DT>--env=FILENAME<DD>
-Load environment from FILENAME, usually hobbitserver.cfg.
+Load environment from FILENAME, usually xymonserver.cfg.
 <P>
 <DT>--debug<DD>
 Dont send a message to hobbitd, but dump the message to
@@ -112,6 +112,6 @@ stdout.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:11 GMT, October 24, 2010
 </BODY>
 </HTML>

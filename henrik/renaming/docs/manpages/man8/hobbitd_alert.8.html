@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITD_ALERT</TITLE>
 </HEAD><BODY>
 <H1>HOBBITD_ALERT</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -28,7 +28,7 @@ channel via stdin, and uses these to send out alerts about failed
 and recovered hosts and services.
 <P>
 The operation of this module is controlled by the
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 file. This file holds the definition of rules and recipients,
 that determine who gets alerts, how often, for what servers etc.
@@ -39,9 +39,9 @@ that determine who gets alerts, how often, for what servers etc.
 <DL COMPACT>
 <DT>--config=FILENAME<DD>
 Sets the filename for the 
-<I>hobbit-alerts.cfg</I>
+<I>alerts.cfg</I>
 
-file. The default value is &quot;etc/hobbit-alerts.cfg&quot; below the Xymon
+file. The default value is &quot;etc/alerts.cfg&quot; below the Xymon
 server directory.
 <P>
 <DT>--dump-config<DD>
@@ -58,7 +58,7 @@ Defines how often (in seconds) the checkpoint-file is saved.
 <P>
 <DT>--cfid<DD>
 If this option is present, alert messages will include a line with
-&quot;cfid:N&quot; where N is the linenumber in the hobbit-alerts.cfg file that
+&quot;cfid:N&quot; where N is the linenumber in the alerts.cfg file that
 caused this message to be sent. This can be useful to track down
 problems with duplicate alerts.
 <P>
@@ -82,7 +82,7 @@ The SECONDS parameter is the duration of the alert in seconds.
 
 <B>--group=GROUPNAME</B>
 
-The GROUPNAME paramater is a groupid string from the hobbit-clients.cfg
+The GROUPNAME paramater is a groupid string from the analysis.cfg
 file.
 <BR>
 
@@ -106,7 +106,7 @@ alert state, and records the <B>timestamp</B> when this event started,
 and adds the alert to the list statuses that may potentially trigger
 one or more alert messages.
 <P>
-This list is then matched against the hobbit-alerts.cfg configuration.
+This list is then matched against the alerts.cfg configuration.
 This happens at least once a minute, but may happen more often. E.g.
 when status first goes into an alert state, this will always trigger
 the matching to happen.
@@ -161,13 +161,13 @@ out email alerts.
 <H2>FILES</H2>
 
 <DL COMPACT>
-<DT>~xymon/server/etc/hobbit-alerts.cfg<DD>
+<DT>~xymon/server/etc/alerts.cfg<DD>
 <P>
 </DL>
 <A NAME="lbAI">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -187,6 +187,6 @@ out email alerts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:11 GMT, October 24, 2010
 </BODY>
 </HTML>

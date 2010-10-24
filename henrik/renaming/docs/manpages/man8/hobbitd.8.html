@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOBBITD</TITLE>
 </HEAD><BODY>
 <H1>HOBBITD</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -37,17 +37,17 @@ hobbitd is normally started and controlled by the
 <I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
 
 tool, and the command used to invoke hobbitd should therefore be
-in the hobbitlaunch.cfg file.
+in the tasks.cfg file.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>OPTIONS</H2>
 
 <DL COMPACT>
-<DT>--bbhosts=FILENAME<DD>
-Specifies the path to the Xymon bb-hosts file. This is used
+<DT>--hosts=FILENAME<DD>
+Specifies the path to the Xymon hosts.cfg file. This is used
 to check if incoming status messages refer to known hosts; depending
 on the &quot;--ghosts&quot; option, messages for unknown hosts may be dropped.
-If this option is omitted, the default path used is set by the BBHOSTS
+If this option is omitted, the default path used is set by the HOSTSCFG
 environment variable.
 <P>
 <DT>--checkpoint-file=FILENAME<DD>
@@ -65,12 +65,14 @@ checkpoint. When starting up, hobbitd will restore its internal state
 from the information in this file. You can use the same filename for
 &quot;--checkpoint-file&quot; and &quot;--restart&quot;.
 <P>
-<DT>--ghosts={allow|drop|log}<DD>
+<DT>--ghosts={allow|drop|log|match}<DD>
 How to handle status messages from unknown hosts. The &quot;allow&quot; setting
 accepts all status messages, regardless of whether the host is known
-in the bb-hosts file or not. &quot;drop&quot; silently ignores reports from unknown 
+in the hosts.cfg file or not. &quot;drop&quot; silently ignores reports from unknown 
 hosts. &quot;log&quot; works like drop, but logs the event in the hobbitd output file.
-The default is &quot;allow&quot;, unless the BBGHOSTS environment variable is set.
+&quot;match&quot; will try to match the name of the unknown host reporting with 
+the known names by ignoring any domain-names - if a match is found, then
+a temporary client alias is automatically generated. The default is &quot;log&quot;. 
 <P>
 <DT>--no-purple<DD>
 Prevent status messages from going purple when they are no longer valid.
@@ -99,7 +101,7 @@ Default: 10 seconds.
 Loads the content of FILENAME as environment settings before starting
 hobbitd. This is mostly used when running as a stand-alone daemon; if
 hobbitd is started by hobbitlaunch, the environment settings are controlled
-by the hobbitlaunch hobbitlaunch.cfg file.
+by the hobbitlaunch tasks.cfg file.
 <P>
 <DT>--pidfile=FILENAME<DD>
 hobbitd writes the process-ID it is running with to this file.
@@ -230,7 +232,7 @@ module is triggered. This may be a repeat of a previous alert, but
 
 will handle that internally, and only send alert messages with the
 interval configured in 
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5).</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5).</I>
 
 <P>
 If the status goes from a not-OK state (ALERT or UNDECIDED) to OK, 
@@ -308,7 +310,7 @@ in the Xymon source-tree, see the &quot;hobbitd/new-daemon.txt&quot; file.
 
 <DL COMPACT>
 <DT>SIGHUP<DD>
-Re-read the bb-hosts configuration file.
+Re-read the hosts.cfg configuration file.
 <P>
 <DT>SIGUSR1<DD>
 Force an immediate dump of the checkpoint file.
@@ -325,13 +327,13 @@ some activity happens on another (unrelated) connection.
 <A NAME="lbAJ">&nbsp;</A>
 <H2>FILES</H2>
 
-If ghost-handling is enabled via the &quot;--ghosts&quot; option, the bb-hosts
+If ghost-handling is enabled via the &quot;--ghosts&quot; option, the hosts.cfg
 file is read to determine the names of all known hosts.
 <P>
 <A NAME="lbAK">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5).
+<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5).
 <P>
 <P>
 
@@ -353,6 +355,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:51:11 GMT, October 24, 2010
 </BODY>
 </HTML>
