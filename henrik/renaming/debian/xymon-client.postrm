@@ -1,0 +1,44 @@
+#! /bin/sh
+# postrm script for xymon
+#
+# see: dh_installdeb(1)
+
+set -e
+
+# summary of how this script can be called:
+#        * <postrm> `remove'
+#        * <postrm> `purge'
+#        * <old-postrm> `upgrade' <new-version>
+#        * <new-postrm> `failed-upgrade' <old-version>
+#        * <new-postrm> `abort-install'
+#        * <new-postrm> `abort-install' <old-version>
+#        * <new-postrm> `abort-upgrade' <old-version>
+#        * <disappearer's-postrm> `disappear' <r>overwrit>r> <new-version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+# Before deluser so debconf still works
+#DEBHELPER#
+
+case "$1" in
+	purge|disappear)
+	rm -rf /var/lib/xymon /var/log/xymon /var/run/xymon /etc/xymon \
+		/etc/default/xymon-client
+	if test -x /usr/sbin/deluser ; then
+		deluser xymon || true
+	fi
+	if test -x /usr/sbin/delgroup ; then
+		delgroup --only-if-empty xymon || true
+	fi
+	;;
+
+	remove|upgrade|failed-upgrade|abort-install|abort-upgrade)
+	;;
+
+	*)
+	echo "postrm called with unknown argument \`$1'" >&2
+	exit 1
+	;;
+esac
+
+exit 0

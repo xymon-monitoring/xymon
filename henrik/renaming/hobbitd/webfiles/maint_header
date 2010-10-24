@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<HTML>
+<HEAD>
+
+<TITLE>Xymon - Maintenance</TITLE>
+
+<!-- Styles for the menu bar -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
+
+<!-- The favicon image -->
+<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+
+<!--
+ * Stuff for the enable/disable page.
+ *
+ * This JavaScript has been copied from the "maint.pl"
+ * script by Tom Schmidt, released under the "Artistic" license.
+ -->
+<script language="JavaScript" type="text/javascript">
+&JSHOSTLIST
+
+function updateOptions(arrayName) {
+	var selectedHosts = 0;
+	for (var i = 0; i < window.document.selectionform.hostname.options.length; i++)
+		if (window.document.selectionform.hostname.options[i].selected)
+			selectedHosts++;
+	if (selectedHosts == 1)
+		swapOptions(arrayName);
+	else
+		swapOptions("ALL");
+}
+
+function swapOptions(arrayName) {
+	var i = 0;
+	while (window.document.selectionform.disabletest.options.length > 0)
+		window.document.selectionform.disabletest.options[0] = null;
+
+	var NewOptions = hosts[arrayName];
+	for (i = 0, len = NewOptions.length; i < len; i++)
+		window.document.selectionform.disabletest.options[i] = new Option(NewOptions[i]);
+}
+
+function setcheck(field,val) {
+        var length = eval(field.length);
+        if (length)
+                for (i = 0; i < length; i++)
+                        field[i].checked = val;
+        else
+                field.checked = val;
+}
+
+</script>
+
+<script language="JavaScript1.2" type="text/javascript">
+
+function isInternetExplorer() {
+	if (window.navigator.appName.indexOf("Internet Explorer") != -1) return true;
+	else return false;
+}
+
+function validateDisable(theform) {
+	if (theform.hostname.value == null || theform.hostname.value == "") {
+		alert("You must select the Host(s) to disable!");
+		theform.hostname.focus();
+		return false;
+	}
+	// Next validation works on Mozilla, but does not work on MSIE browser
+	if (! isInternetExplorer()) {
+		if (theform.disabletest.value == null || theform.disabletest.value == "") {
+			alert("You must select the Test(s) to disable!");
+			theform.disabletest.focus();
+			return false;
+		}
+	}
+
+	if (theform.cause.value == null || theform.cause.value == "") {
+		alert("You must fill in the Cause field!");
+		theform.cause.focus();
+		return false;
+	}
+
+	if (!(ispositive(theform.duration.value))) {
+		alert("Duration must be a positive integer.");
+		return false;
+	}
+
+	var selectedhost=theform.hostname.options[theform.hostname.options.selectedIndex].value;
+	if ((selectedhost == "ALL") && !(confirm("Do you really want to disable ALL Hosts?  This could take a while."))) {
+		return false;
+	}
+
+	// fall through...
+	disableButtons(theform,true);
+	theform.submit();
+}
+
+function disableButtons(theform,action) {
+	if (document.all || document.getElementById) {
+		for (i = 0; i < theform.length; i++) {
+			var tempobj = theform.elements[i];
+			if (tempobj.type.toLowerCase() == "button")
+				tempobj.disabled = action;
+		}
+	}
+}
+
+function ispositive(inputVal) {
+	inputStr = inputVal.toString();
+	for (var i = 0; i < inputStr.length; i++) {
+		var oneChar = inputStr.charAt(i)
+		if (oneChar < "0" || oneChar > "9")
+			return false;
+	}
+	if (inputVal < 1)
+		return false;
+	return true;
+}
+
+</script>
+
+</HEAD>
+
+<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+
+&XYMONBODYHEADER
+
+<TABLE SUMMARY="Topline" WIDTH="100%">
+<TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
+<TR>
+  <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&HOBBITLOGO</B></FONT>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Maintenance</B></FONT></CENTER>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+  </TD>
+</TR>
+<TR>
+  <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
+</TR>
+</TABLE>
+<BR>
+

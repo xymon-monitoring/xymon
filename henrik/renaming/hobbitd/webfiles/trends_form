@@ -1,0 +1,82 @@
+<BR>
+
+<CENTER>
+  <TABLE WIDTH=80% BORDER=0 SUMMARY="Trends period">
+    <TR><TD BGCOLOR="#333333" ALIGN="CENTER">Trends period</TD></TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <BR>
+       <CENTER>
+
+       <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+          <INPUT TYPE="HIDDEN" NAME="HOST" VALUE="&BBHOST">
+          <INPUT TYPE="HIDDEN" NAME="SERVICE" VALUE="&BBSVC">
+
+       <TABLE>
+         <TR>
+	    <TD COLSPAN=3>
+	       <table border=0>
+	         <tr>
+                   <td>Days:&nbsp;<INPUT TYPE=TEXT NAME="backdays" SIZE=4 VALUE="&BACKDAYS" ID="backdays" onchange="document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return false"></td>
+                   <td>Hours:&nbsp;<INPUT TYPE=TEXT NAME="backhours" SIZE=4 VALUE="&BACKHOURS" ID="backhours" onchange="document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return false"></td>
+                   <td>Minutes:&nbsp;<INPUT TYPE=TEXT NAME="backmins" SIZE=4 VALUE="&BACKMINS" ID="backmins" onchange="document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return false"></td>
+                   <td>Seconds:&nbsp;<INPUT TYPE=TEXT NAME="backsecs" SIZE=4 VALUE="&BACKSECS" ID="backsecs" onchange="document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return false"></td>
+                   <td><INPUT TYPE="SUBMIT" NAME="Go" VALUE="Update" ALT="Update"></td>
+		 </tr>
+	       </table>
+	    </TD>
+         </TR>
+	 <TR>
+            <TD COLSPAN=3 ALIGN=CENTER><FONT FACE="Arial, Helvetica" COLOR="silver"><B>&nbsp;- OR -&nbsp;</B></FONT></TD>
+	 </TR>
+         <TR>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>From: </B></FONT></TD>
+	   <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="FROMTIME" SIZE=40 ID="starttime" VALUE="&EVENTSTARTTIME" onchange="document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return false"></TD>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+	 </TR>
+	 <TR>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver"><B>To: </B></FONT></TD>
+	   <TD ALIGN=LEFT><INPUT TYPE=TEXT NAME="TOTIME" SIZE=40 ID="endtime" VALUE="&EVENTENDTIME" onchange="document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return false"></TD>
+	   <TD ALIGN=LEFT><FONT FACE="Arial, Helvetica" COLOR="silver">(ccyy/mm/dd@hh:mm:ss)</FONT></TD>
+	 </TR>
+
+         <TR>
+	   <TD ALIGN=LEFT>Show last</TD>
+	   <TD COLSPAN=2 ALIGN=LEFT>
+              <button onclick="document.getElementById('backdays').value='2'; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return true">2 days</button>
+              <button onclick="document.getElementById('backdays').value='12'; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return true">12 days</button>
+              <button onclick="document.getElementById('backdays').value='48'; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return true">48 days</button>
+              <button onclick="document.getElementById('backdays').value='576'; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; document.getElementById('starttime').value=''; document.getElementById('endtime').value=''; return true">576 days</button>
+	   </TD>
+         </TR>
+
+         <TR>
+	   <TD ALIGN=LEFT>Show last</TD>
+	   <TD COLSPAN=2 ALIGN=LEFT>
+              <button onclick="document.getElementById('starttime').value='&EVENTLASTYEARBEGIN'; document.getElementById('endtime').value='&EVENTCURRYEARBEGIN'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">year</button>
+              <button onclick="document.getElementById('starttime').value='&EVENTLASTMONTHBEGIN'; document.getElementById('endtime').value='&EVENTCURRMONTHBEGIN'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">month</button>
+              <button onclick="document.getElementById('starttime').value='&EVENTLASTWEEKBEGIN'; document.getElementById('endtime').value='&EVENTCURRWEEKBEGIN'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">week</button>
+              <button onclick="document.getElementById('starttime').value='&EVENTYESTERDAY'; document.getElementById('endtime').value='&EVENTTODAY'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">Yesterday</button>
+	    </TD>
+         </TR>
+
+	 <TR>
+	   <TD ALIGN=LEFT>Show this</TD>
+	   <TD COLSPAN=2 ALIGN=LEFT>
+              <button onclick="document.getElementById('starttime').value='&EVENTCURRYEARBEGIN'; document.getElementById('endtime').value=''; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">year</button>
+              <button onclick="document.getElementById('starttime').value='&EVENTCURRMONTHBEGIN'; document.getElementById('endtime').value=''; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">month</button>
+              <button onclick="document.getElementById('starttime').value='&EVENTCURRWEEKBEGIN'; document.getElementById('endtime').value=''; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">week</button>
+              <button onclick="document.getElementById('starttime').value='&EVENTTODAY'; document.getElementById('endtime').value='&EVENTNOW'; document.getElementById('backdays').value=''; document.getElementById('backhours').value=''; document.getElementById('backmins').value=''; document.getElementById('backsecs').value=''; return true">Today</button>
+	    </TD>
+         </TR>
+       </TABLE>
+       </FORM>
+
+       </CENTER>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR>
+

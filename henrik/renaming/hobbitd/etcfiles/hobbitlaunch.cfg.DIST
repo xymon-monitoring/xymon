@@ -1,0 +1,206 @@
+#
+# The hobbitlaunch.cfg file is loaded by "hobbitlaunch".
+# It controls which of the Xymon modules to run, how often, and
+# with which parameters, options and environment variables.
+#
+
+# This is the main Xymon daemon. This must be running on at least
+# one server in your setup. If you are setting up a server to do
+# just network tests or run bbproxy, it is OK to disable this (then
+# you also need to remove the "NEEDS hobbitd" lines for the tasks
+# you want to run).
+[hobbitd]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	CMD hobbitd --pidfile=$BBSERVERLOGS/hobbitd.pid --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP --store-clientlogs=!msgs
+
+
+# "bbstatus" saves status-logs in text- and html-format, like the old Big Brother 
+# daemon does. Unless you are using add-ons that directly access the log-files, you 
+# will not need to run this module, and it is recommended that you keep it disabled
+# since storing the raw logs on disk can cause a significant load on your server.
+
+[bbstatus]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/status.log hobbitd_filestore --status --html
+
+
+# "bbhistory" keeps track of the status changes that happen, in a manner that is
+# compatible with the Big Brother history logs. You probably do want to run this.
+
+[bbhistory]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=stachg --log=$BBSERVERLOGS/history.log hobbitd_history
+
+
+# "hostdata" stores the Xymon client messages on disk when some status for a host
+# changes. This lets you access a lot of data collected from a host around the time
+# when a problem occurred. However, it may use a significant amount of disk space
+# if you have lots of Xymon clients.
+# Note: The --store-clientlogs option for the [hobbitd] provides control over
+#       which status-changes will cause a client message to be stored.
+[hostdata]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=clichg --log=$BBSERVERLOGS/hostdata.log hobbitd_hostdata
+
+
+# "bbdata" saves information sent using the BB "data" protocol, like the old Big Brother 
+# daemon does. Unless you are using add-ons that directly access the data-files, you 
+# will not need to run this module, and it is recommended that you keep it disabled
+# since storing the raw data on disk can cause a significant load on your BB server.
+# RRD graphs uses data-files, but since RRD is handled by the hobbitd_rrd module, you do
+# not need to run the "bbdata" module to get RRD graphs.
+
+[bbdata]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/data.log hobbitd_filestore --data
+
+
+# "bbnotes" saves web note-files, that are sent using the BB "notes" protocol. This is
+# disabled by default; if you use the BB "notes" protocol, then you should enable this.
+
+[bbnotes]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=notes  --log=$BBSERVERLOGS/notes.log hobbitd_filestore --notes
+
+
+# "bbenadis" updates the files used to indicate that a host or test has been enabled or disabled.
+# Unless you are running server side scripts that look at these files, you do not need this.
+
+[bbenadis]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=enadis --log=$BBSERVERLOGS/enadis.log hobbitd_filestore --enadis
+
+
+# "bbpage" sends out alerts. Note that this module is NOT compatible with the old Big Brother
+# system - it uses a different configuration file to determine how alerts get sent. If you want
+# alerts to go out via pager, e-mail or some other means, then you must run this module.
+
+[bbpage]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=page  --log=$BBSERVERLOGS/page.log hobbitd_alert --checkpoint-file=$BBTMP/alert.chk --checkpoint-interval=600
+
+
+# "rrdstatus" updates RRD files with information that arrives as "status" messages.
+# If you want RRD graphs of your monitoring data, then you want to run this.
+
+[rrdstatus]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/rrd-status.log hobbitd_rrd --rrddir=$BBVAR/rrd
+
+# "rrddata" updates RRD files with information that arrives as "data" messages.
+# If you want RRD graphs of your monitoring BB data, then you want to run this.
+
+[rrddata]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/rrd-data.log hobbitd_rrd --rrddir=$BBVAR/rrd
+
+# The client back-end module. You need this if you are running the Xymon client on any system.
+[clientdata]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD hobbitd_channel --channel=client --log=$BBSERVERLOGS/clientdata.log hobbitd_client
+
+
+# "bbproxy" is the Xymon proxy server that allows you to forward status messages
+# from a protected network to your Xymon server. It is not enabled by default,
+# since it would conflict with the hobbitd task.
+# If you need to run this, disable hobbitd and the hobbitd-modules
+# above and enable this. Make sure you enter the IP-address of your 
+# Xymon server in the command-line, so that the proxy knows where to forward
+# status messages.
+[bbproxy]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	CMD $BBHOME/bin/bbproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
+	LOGFILE $BBSERVERLOGS/bbproxy.log
+
+
+# "hobbitfetch" is used when you have clients that cannot connect to your Xymon server,
+# but the Xymon server can connect to the client. Normally the clients will initiate
+# a connection to the Xymon server to deliver the data they collect, but this is
+# forbidden in some firewall setups. By enabling the hobbitfetch task, hosts that have
+# the "pulldata" tag in the bb-hosts file will be polled by hobbitfetch for their data.
+#
+# NOTE: On the clients you must enable the "msgcache" task, since this is what 
+#       hobbitfetch is talking to.
+[hobbitfetch]
+	DISABLED
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	CMD $BBHOME/bin/hobbitfetch --server=YOUR.HOBBIT.SERVER.IP --no-daemon --pidfile=$BBSERVERLOGS/hobbitfetch.pid
+	LOGFILE $BBSERVERLOGS/hobbitfetch.log
+
+
+# "bbdisplay" runs the bbgen tool to generate the Xymon webpages from the status information that
+# has been received. Big Brother updated the webpages once every 5 minutes. The default here is to
+# run it every minute for faster updates, but you can change it if you have a highly loaded server
+# and dont need updates that often.
+
+[bbdisplay]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	GROUP generators
+	CMD bbgen $BBGENOPTS --report
+	LOGFILE $BBSERVERLOGS/bb-display.log
+	INTERVAL 1m
+
+# bbcombotest is an extension script for the Xymon display server. It generates
+# status messages that are combined from the status of one or more normal statuses.
+# It is controlled via the bbcombotest.cfg file.
+[bbcombotest]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD $BBHOME/bin/bbcombotest
+	LOGFILE $BBSERVERLOGS/bbcombotest.log
+	INTERVAL 5m
+
+# "bbnet" runs the bbtest-net tool to perform the network based tests - i.e. http, smtp, ssh, dns and
+# all of the various network protocols we need to test.
+
+[bbnet]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD bbtest-net --report --ping --checkresponse
+	LOGFILE $BBSERVERLOGS/bb-network.log
+	INTERVAL 5m
+
+
+# "bbretest" picks up the tests that the normal network test consider "failed", and re-does those
+# tests more often. This enables Big Brother to pick up a recovered network service faster than
+# if it were tested only by the "bbnet" task (which only runs every 5 minutes). So if you have
+# servers with very high availability guarantees, running this task will make your availability
+# reports look much better.
+
+[bbretest]
+	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	NEEDS hobbitd
+	CMD $BBHOME/ext/bbretest-net.sh
+	LOGFILE $BBSERVERLOGS/bb-retest.log
+	INTERVAL 1m
+
+
+# "hobbitclient" runs the Xymon client. The client is installed automatically
+# when you install a Xymon server (presumably, you do want to monitor the 
+# Xymon server ?), but there's no need to have two hobbitlaunch instances
+# running at the same time. So we'll just run it from here.
+# Note: If you are using another client package, you should disable this one.
+
+[hobbitclient]
+	ENVFILE @BBTOPDIR@/client/etc/hobbitclient.cfg
+	NEEDS hobbitd
+	CMD @BBTOPDIR@/client/bin/hobbitclient.sh
+	LOGFILE $BBSERVERLOGS/hobbitclient.log
+	INTERVAL 5m
+

@@ -1,0 +1,73 @@
+#! /bin/sh
+# postinst script for xymon
+#
+# see: dh_installdeb(1)
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+#
+
+. /usr/share/debconf/confmodule
+
+set -e
+
+case "$1" in
+    configure)
+	getent group xymon > /dev/null || addgroup --system xymon
+	getent passwd xymon > /dev/null || adduser --system \
+		--home /var/run/xymon --no-create-home \
+		--ingroup xymon --disabled-password --disabled-login \
+		--gecos "Xymon System Monitor" xymon
+
+	test -d /var/run/xymon || mkdir /var/run/xymon
+	chown xymon:xymon /var/run/xymon
+	test -d /var/lib/xymon/tmp || mkdir /var/lib/xymon/tmp
+	chown xymon:xymon /var/lib/xymon/tmp
+	test -d /var/log/xymon || mkdir /var/log/xymon
+	chown xymon:adm /var/log/xymon ; chmod 2755 /var/log/xymon
+
+	# Do the debconf stuff
+	db_get xymon-client/XYMONSERVERS
+	XYMONSERVERS="$RET"
+	db_get xymon-client/CLIENTHOSTNAME
+	CLIENTHOSTNAME="$RET"
+	db_stop
+
+	# Update configuration file
+	CONFIGFILE=/etc/default/xymon-client
+	test -e $CONFIGFILE || cp /usr/share/xymon/xymon-client.default $CONFIGFILE
+	if grep -q "^XYMONSERVERS=" $CONFIGFILE ; then
+		sed -i -e "s/^XYMONSERVERS=.*/XYMONSERVERS=\"$XYMONSERVERS\"/" \
+			$CONFIGFILE
+	else
+		echo "XYMONSERVERS=\"$XYMONSERVERS\"" >> $CONFIGFILE
+	fi
+	if grep -q "^CLIENTHOSTNAME=" $CONFIGFILE ; then
+		sed -i -e "s/^CLIENTHOSTNAME=.*/CLIENTHOSTNAME=\"$CLIENTHOSTNAME\"/" \
+			$CONFIGFILE
+	else
+		echo "CLIENTHOSTNAME=\"$CLIENTHOSTNAME\"" >> $CONFIGFILE
+	fi
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+
+    ;;
+
+    *)
+	echo "postinst called with unknown argument \`$1'" >&2
+	exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

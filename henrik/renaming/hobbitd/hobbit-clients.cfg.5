@@ -1,0 +1,615 @@
+.TH HOBBIT-CLIENTS.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+hobbit-clients.cfg \- Configuration file for the hobbitd_client module
+
+.SH SYNOPSIS
+.B ~Xymon/server/etc/hobbit-clients.cfg
+
+.SH DESCRIPTION
+The hobbit-clients.cfg file controls what color is assigned to
+the status-messages that are generated from the Xymon client
+data - typically the cpu, disk, memory, procs- and msgs-columns. Color
+is decided on the basis of some \fBsettings\fR defined in this file;
+settings apply to specific hosts through a set of \fBrules\fR.
+
+Note: This file is only used on the Xymon server - it is not
+used by the Xymon client, so there is no need to distribute
+it to your client systems.
+
+.SH FILE FORMAT
+Blank lines and lines starting with a hash mark (#) are treated as 
+comments and ignored. 
+
+
+.SH CPU STATUS COLUMN SETTINGS
+.sp
+.BR "LOAD warnlevel paniclevel"
+.sp
+If the system load exceeds "warnlevel" or "paniclevel", the "cpu"
+status will go yellow or red, respectively. These are decimal
+numbers.
+.sp
+Defaults: warnlevel=5.0, paniclevel=10.0
+.sp
+.BR "UP bootlimit toolonglimit"
+.sp
+The cpu status goes yellow if the system has been up for less than
+"bootlimit" time, or longer than "toolonglimit". The time is in
+minutes, or you can add h/d/w for hours/days/weeks - eg. "2h" for
+two hours, or "4w" for 4 weeks.
+.sp
+Defaults: bootlimit=1h, toolonglimit=-1 (infinite).
+.sp
+.sp
+.BR "CLOCK max.offset"
+.sp
+The cpu status goes yellow if the system clock on the client
+differs more than "max.offset" seconds from that of the Xymon
+server. Note that this is not a particularly accurate test, since 
+it is affected by network delays between the client and the server,
+and the load on both systems. You should therefore not rely on this
+being accurate to more than +/- 5 seconds, but it will let you
+catch a client clock that goes completely wrong. The default is
+NOT to check the system clock.
+.br
+\fBNOTE:\fR Correct operation of this test obviously requires that
+the system clock of the Xymon server is correct. You should therefore
+make sure that the Xymon server is synchronized to the real clock,
+e.g. by using NTP.
+
+.sp
+Example: Go yellow if the load average exceeds 5, and red if it
+exceeds 10. Also, go yellow for 10 minutes after a reboot, and after 
+4 weeks uptime. Finally, check that the system clock is at most
+15 seconds offset from the clock of the Xymon system.
+.IP
+.nf
+LOAD 5 10
+UP 10m 4w
+CLOCK 15
+.fi
+.LP
+
+.SH DISK STATUS COLUMN SETTINGS
+.sp
+.BR "DISK filesystem warnlevel paniclevel"
+.br
+.BR "DISK filesystem IGNORE"
+.br
+.BR "INODE filesystem warnlevel paniclevel"
+.br
+.BR "INODE filesystem IGNORE"
+.sp
+If the utilization of "filesystem" is reported to exceed "warnlevel"
+or "paniclevel", the "disk" status will go yellow or red, respectively.
+"warnlevel" and "paniclevel" are either the percentage used, or the 
+space available as reported by the local "df" command on the host.
+For the latter type of check, the "warnlevel" must be followed by the
+letter "U", e.g. "1024U".
+
+The special keyword "IGNORE" causes this filesystem to be ignored
+completely, i.e. it will not appear in the "disk" status column and
+it will not be tracked in a graph. This is useful for e.g. removable
+devices, backup-disks and similar hardware.
+
+"filesystem" is the mount-point where the filesystem is mounted, e.g.
+"/usr" or "/home". A filesystem-name that begins with "%" is interpreted
+as a Perl-compatible regular expression; e.g. "%^/oracle.*/" will match
+any filesystem whose mountpoint begins with "/oracle".
+
+"INODE" works identical to "DISK", but uses the count of i-nodes in
+the filesystem instead of the amount of disk space. This requires
+a 4.3.x or later Xymon client.
+.sp
+Defaults DISK: warnlevel=90%, paniclevel=95%
+.BR
+Defaults INODE: warnlevel=70%, paniclevel=90%
+
+
+.SH MEMORY STATUS COLUMN SETTINGS
+.sp
+.BR "MEMPHYS warnlevel paniclevel"
+.br
+.BR "MEMACT warnlevel paniclevel"
+.br
+.BR "MEMSWAP warnlevel paniclevel"
+.sp
+If the memory utilization exceeds the "warnlevel" or "paniclevel", the
+"memory" status will change to yellow or red, respectively.
+Note: The words "PHYS", "ACT" and "SWAP" are also recognized.
+.sp
+Example: Go yellow if more than 20% swap is used, and red if
+more than 40% swap is used or the actual memory utilisation exceeds
+90%. Dont alert on physical memory usage.
+.IP
+.nf
+MEMSWAP 20 40
+MEMACT 90 90
+MEMPHYS 101 101
+.fi
+.LP
+Defaults:
+.IP
+.nf
+MEMPHYS warnlevel=100 paniclevel=101 (i.e. it will never go red).
+MEMSWAP warnlevel=50 paniclevel=80
+MEMACT  warnlevel=90 paniclevel=97
+.fi
+.LP
+
+.SH PROCS STATUS COLUMN SETTINGS
+.sp
+.BR "PROC processname minimumcount maximumcount color [TRACK=id] [TEXT=text]"
+.sp
+The "ps" listing sent by the client will be scanned for how many
+processes containing "processname" are running, and this is then
+matched against the min/max settings defined here. If the running
+count is outside the thresholds, the color of the "procs" status
+changes to "color".
+.sp
+To check for a process that must NOT be running: Set minimum and
+maximum to 0.
+.sp
+"processname" can be a simple string, in which case this string must
+show up in the "ps" listing as a command. The scanner will find
+a ps-listing of e.g. "/usr/sbin/cron" if you only specify "processname"
+as "cron".
+"processname" can also be a Perl-compatiable regular expression, e.g.
+"%java.*inst[0123]" can be used to find entries in the ps-listing for
+"java -Xmx512m inst2" and "java -Xmx256 inst3". In that case,
+"processname" must begin with "%" followed by the regular expression.
+Note that Xymon defaults to case-insensitive pattern matching; if that
+is not what you want, put "(?-i)" between the "%" and the regular
+expression to turn this off. E.g. "%(?-i)HTTPD" will match the
+word HTTPD only when it is upper-case.
+.br
+If "processname" contains whitespace (blanks or TAB), you must enclose
+the full string in double quotes - including the "%" if you use regular
+expression matching. E.g.
+.sp
+    PROC "%hobbitd_channel --channel=data.*hobbitd_rrd" 1 1 yellow
+.sp
+or
+.sp
+    PROC "java -DCLASSPATH=/opt/java/lib" 2 5
+.sp
+You can have multiple "PROC" entries for the same host, all of the
+checks are merged into the "procs" status and the most severe
+check defines the color of the status.
+.sp
+The optional \fBTRACK=id\fR setting causes Xymon to track the number of
+processes found in an RRD file, and put this into a graph which is shown
+on the "procs" status display. The \fBid\fR setting is a simple text string 
+which will be used as the legend for the graph, and also as part of the
+RRD filename. It is recommended that you use only letters and digits for
+the ID.
+.br
+Note that the process counts which are tracked are only performed once 
+when the client does a poll cycle - i.e. the counts represent snapshots
+of the system state, not an average value over the client poll cycle.
+Therefore there may be peaks or dips in the actual process counts which
+will not show up in the graphs, because they happen while the Xymon client
+is not doing any polling.
+.sp
+The optional \fBTEXT=text\fR setting is used in the summary of the "procs"
+status. Normally, the summary will show the "processname" to identify the
+process and the related count and limits. But this may be a regular
+expression which is not easily recognizable, so if defined, the \fBtext\fR 
+setting string will be used instead. This only affects the "procs" status
+display - it has no effect on how the rule counts or recognizes processes
+in the "ps" output.
+.sp
+Example: Check that "cron" is running:
+.br
+	PROC cron
+.sp
+Example: Check that at least 5 "httpd" processes are running, but not more than 20:
+.br
+	PROC httpd 5 20
+.sp
+Defaults:
+.br
+	mincount=1, maxcount=-1 (unlimited), color="red".
+.br
+	Note that no processes are checked by default.
+
+.SH MSGS STATUS COLUMN SETTINGS
+.sp
+.BR "LOG logfilename pattern [COLOR=color] [IGNORE=excludepattern]"
+.sp
+The Xymon client extracts interesting lines from one or 
+more logfiles - see the
+.I client-local.cfg(5)
+man-page for information about how to configure which
+logs a client should look at.
+.sp
+The \fBLOG\fR setting determine how these extracts of log entries
+are processed, and what warnings or alerts trigger as a result.
+.sp
+"logfilename" is the name of the logfile. Only logentries from this filename 
+will be matched against this rule.  Note that "logfilename" can be a regular 
+expression (if prefixed with a '%' character).
+.sp
+"pattern" is a string or regular expression. If the logfile data matches 
+"pattern", it will trigger the "msgs" column to change color. If
+no "color" parameter is present, the default is to go "red" when
+the pattern is matched. To match against a regular expression, "pattern"
+must begin with a '%' sign - e.g "%WARNING|NOTICE" will match any lines
+containing either of these two words.
+Note that Xymon defaults to case-insensitive pattern matching; if that
+is not what you want, put "(?-i)" between the "%" and the regular
+expression to turn this off. E.g. "%(?-i)WARNING" will match the
+word WARNING only when it is upper-case.
+.sp
+"excludepattern" is a string or regular expression that can be used to 
+filter out any unwanted strings that happen to match "pattern".
+.sp
+Example: Trigger a red alert when the string "ERROR" appears in the "/var/adm/syslog" file:
+.br
+	LOG /var/adm/syslog ERROR
+.sp
+Example: Trigger a yellow warning on all occurrences of the word "WARNING"
+or "NOTICE" in the "daemon.log" file, except those from the "lpr" system:
+.br
+	LOG /var/log/daemon.log %WARNING|NOTICE COLOR=yellow IGNORE=lpr
+.sp
+Defaults:
+.br
+	color="red", no "excludepattern".
+.sp
+Note that no logfiles are checked by default. Any log data reported by a client 
+will just show up on the "msgs" column with status OK (green).
+
+
+.SH FILES STATUS COLUMN SETTINGS
+.sp
+.BR "FILE filename [color] [things to check] [TRACK]"
+.sp
+.BR "DIR directoryname [color] [size<MAXSIZE] [size>MINSIZE] [TRACK]"
+.sp
+These entries control the status of the "files" column. They allow you to
+check on various data for files and directories.
+
+\fBfilename\fR and \fBdirectoryname\fR are names of files or directories,
+with a full path. You can use a regular expression to match the names of
+files and directories reported by the client, if you prefix the expression
+with a '%' character.
+
+\fBcolor\fR is the color that triggers when one or more of the checks fail.
+
+The \fBTRACK\fR keyword causes the size of the file or directory to be tracked
+in an RRD file, and presented in a graph on the "files" status display.
+
+For files, you can check one or more of the following:
+.IP "noexist"
+triggers a warning if the file exists. By default,
+a warning is triggered for files that have a FILE entry, but
+which do not exist.
+.IP "type=TYPE"
+where TYPE is one of "file", "dir", "char", "block",
+"fifo", or "socket". Triggers warning if the file is not of the
+specified type.
+.IP "ownerid=OWNER"
+triggers a warning if the owner does not match what is listed here.
+OWNER is specified either with the numeric uid, or the user name.
+.IP "groupid=GROUP"
+triggers a warning if the group does not match what is listed here.
+GROUP is specified either with the numeric gid, or the group name.
+.IP "mode=MODE"
+triggers a warning if the file permissions are not
+as listed. MODE is written in the standard octal notation, e.g.
+"644" for the rw-r--r-- permissions.
+.IP "size<MAX.SIZE and size>MIN.SIZE"
+triggers a warning it the file size is greater than MAX.SIZE or 
+less than MIN.SIZE, respectively. For filesizes, you can use the
+letters "K", "M", "G" or "T" to indicate that the filesize is in
+Kilobytes, Megabytes, Gigabytes or Terabytes, respectively. If there
+is no such modifier, Kilobytes is assumed. E.g. to warn if a file 
+grows larger than 1MB, use \fBsize<1024M\fR.
+.IP "mtime>MIN.MTIME mtime<MAX.MTIME"
+checks how long ago the file was last modified (in seconds). E.g. 
+to check if a file was updated within the past 10 minutes (600 
+seconds): \fBmtime<600\fR. Or to check that a file has NOT been updated 
+in the past 24 hours: \fBmtime>86400\fR.
+.IP "mtime=TIMESTAMP"
+checks if a file was last modified at TIMESTAMP.  TIMESTAMP is a unix epoch 
+time (seconds since midnight Jan 1 1970 UTC).
+.IP "ctime>MIN.CTIME, ctime<MAX.CTIME, ctime=TIMESTAMP"
+acts as the mtime checks, but for the ctime timestamp (when the directory
+entry of the file was last changed, eg. by chown, chgrp or chmod).
+.IP "md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM"
+trigger a warning if the file checksum using the MD5, SHA1 or RMD160 
+message digest algorithms do not match the one configured here. Note: 
+The "file" entry in the
+.I client-local.cfg(5)
+file must specify which algorithm to use.
+
+.LP
+For directories, you can check one or more of the following:
+.IP "size<MAX.SIZE and size>MIN.SIZE"
+triggers a warning it the directory size is greater than MAX.SIZE or 
+less than MIN.SIZE, respectively. Directory sizes are reported in 
+whatever unit the \fBdu\fR command on the client uses - often KB 
+or diskblocks - so MAX.SIZE and MIN.SIZE must be given in the same
+unit.
+
+.LP
+Experience shows that it can be difficult to get these rules right.
+Especially when defining minimum/maximum values for file sizes, when
+they were last modified etc. The one thing you must remember when
+setting up these checks is that the rules describe criteria that must 
+be met - only when they are met will the status be green.
+
+So "mtime<600" means "the difference between current time and the mtime
+of the file must be less than 600 seconds - if not, the file status will
+go red".
+
+
+.SH PORTS STATUS COLUMN SETTINGS
+.sp
+.BR "PORT criteria [MIN=mincount] [MAX=maxcount] [COLOR=color] [TRACK=id] [TEXT=displaytext]"
+.sp
+The "netstat" listing sent by the client will be scanned for how many
+sockets match the \fBcriteria\fR listed.  The criteria you can use are:
+.IP "LOCAL=addr"
+"addr" is a (partial) local address specification in the format used on
+the output from netstat.
+.IP "EXLOCAL=addr"
+Exclude certain local adresses from the rule.
+.IP "REMOTE=addr"
+"addr" is a (partial) remote address specification in the format used on
+the output from netstat.
+.IP "EXREMOTE=addr"
+Exclude certain remote adresses from the rule.
+.IP "STATE=state"
+Causes only the sockets in the specified state to be included, "state"
+is usually LISTEN or ESTABLISHED but can be any socket state reported by
+the clients "netstat" command.
+.IP "EXSTATE=state"
+Exclude certain states from the rule.
+.LP
+"addr" is typically "10.0.0.1:80" for the IP 10.0.0.1, port 80. 
+Or "*:80" for any local address, port 80. Note that the Xymon clients 
+normally report only the numeric data for IP-adresses and port-numbers, 
+so you must specify the port number (e.g. "80") instead of the service 
+name ("www").
+.br
+"addr" and "state" can also be a Perl-compatiable regular expression, e.g.
+"LOCAL=%[.:](80|443)" can be used to find entries in the netstat local port for
+both http (port 80) and https (port 443). In that case, portname or state must
+begin with "%" followed by the reg.expression.
+.sp
+The socket count found is then matched against the min/max settings defined
+here. If the count is outside the thresholds, the color of the "ports"
+status changes to "color".  To check for a socket that must NOT exist: Set 
+minimum and maximum to 0.
+.sp
+The optional \fBTRACK=id\fR setting causes Xymon to track the number of
+sockets found in an RRD file, and put this into a graph which is shown
+on the "ports" status display. The \fBid\fR setting is a simple text string 
+which will be used as the legend for the graph, and also as part of the
+RRD filename. It is recommended that you use only letters and digits for
+the ID.
+.br
+Note that the sockets counts which are tracked are only performed once 
+when the client does a poll cycle - i.e. the counts represent snapshots
+of the system state, not an average value over the client poll cycle.
+Therefore there may be peaks or dips in the actual sockets counts which
+will not show up in the graphs, because they happen while the Xymon client
+is not doing any polling.
+.sp
+The \fBTEXT=displaytext\fR option affects how the port appears on the
+"ports" status page. By default, the port is listed with the
+local/remote/state rules as identification, but this may be somewhat
+difficult to understand. You can then use e.g. "TEXT=Secure Shell" to make
+these ports appear with the name "Secure Shell" instead.
+.sp
+Defaults: mincount=1, maxcount=-1 (unlimited), color="red".
+Note: No ports are checked by default.
+.sp
+Example: Check that the SSH daemon is listening on port 22. Track the
+number of active SSH connections, and warn if there are more than 5.
+.br
+        PORT LOCAL=%[.:]22$ STATE=LISTEN "TEXT=SSH listener"
+.br
+        PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
+.sp
+.SH DS - RRD based status override
+.sp
+.BR "DS column filename:dataset rules COLOR=colorname TEXT=explanation"
+.sp
+"column" is the statuscolumn that will be modified. "filename" is
+the name of the RRD file holding the data you use for comparison.
+"dataset" is the name of the dataset in the RRD file - the "rrdtool info"
+command is useful when determining these.
+"rules" determine when to apply the override. You can use
+">", ">=", "<" or "<=" to compare the current measurement
+value against one or more thresholds. "explanation" is a text
+that will be shown to explain the override - you can use some
+placeholders in the text: "&N" is replaced with the name of the
+dataset, "&V" is replaced with the current value, "&L" is replaced
+by the low threshold, "&U" is replaced with the upper threshold.
+.sp
+NOTE: This rule uses the \fbraw\fR data value from a client
+to examine the rules. So this type of test is only really
+suitable for datasets that are of the "GAUGE" type. It cannot
+be used meaningfully for datasets that use "COUNTER" or
+"DERIVE" - e.g. the datasets that are used to capture network
+packet traffic - because the data stored in the RRD for
+COUNTER-based datasets undergo a transformation (calculation)
+when going into the RRD. Xymon does not have direct access to
+the calculated data.
+.sp
+Example: Flag "conn" status a yellow if responsetime exceeds
+100 msec.
+.br
+	DS tcp.conn.rrd:sec >0.1 COLOR=yellow TEXT="Response time &V exceeds &U seconds"
+.sp
+.SH MQ Series SETTINGS
+.sp
+.BR "MQ_QUEUE queuename [age-warning=N] [age-critical=N] [depth-warning=N] [depth-critical=N]"
+.br
+.BR "MQ_CHANNEL channelname [warning=PATTERN] [alert=PATTERN]"
+.sp
+This is a set of checks for checking the health of IBM MQ message-queues.
+It requires the "mq.sh" or similar collector module to run on a node with
+access to the MQ "Queue Manager" so it can report the status of queues
+and channels.
+.sp
+The MQ_QUEUE setting checks the health of a single queue: You can warn 
+(yellow) or alert (red) based on the depth of the queue, and/or the
+age of the oldest entry in the queue. These values are taken directly
+from the output generated by the "runmqsc" utility.
+.sp
+The MQ_CHANNEL setting checks the health of a single MQ channel: You
+can warn or alert based on the reported status of the channel. The
+PATTERN is a normal pattern, i.e. either a list of status keywords,
+or a regular expression pattern.
+.sp
+.SH CHANGING THE DEFAULT SETTINGS
+If you would like to use different defaults for the settings described above, 
+then you can define the new defaults after a DEFAULT line. E.g. this would
+explicitly define all of the default settings:
+.IP
+.nf
+DEFAULT
+	UP      1h
+	LOAD    5.0 10.0
+	DISK    * 90 95
+	MEMPHYS 100 101
+	MEMSWAP 50 80
+	MEMACT  90 97
+.fi
+.LP
+
+.SH RULES TO SELECT HOSTS
+All of the settings can be applied to a group of hosts, by preceding them with
+rules. A rule defines of one of more filters using these keywords (note that
+this is identical to the rule definitions used in the
+.I hobbit-alerts.cfg(5)
+file).
+
+.BR "PAGE=targetstring"
+Rule matching an alert by the name of the page in BB. "targetstring" is the path of
+the page as defined in the bb-hosts file. E.g. if you have this setup:
+.IP
+.nf
+page servers All Servers
+subpage web Webservers
+10.0.0.1 www1.foo.com
+subpage db Database servers
+10.0.0.2 db1.foo.com
+.fi
+.LP
+Then the "All servers" page is found with \fBPAGE=servers\fR, the 
+"Webservers" page is \fBPAGE=servers/web\fR and the "Database servers"
+page is \fBPAGE=servers/db\fR. Note that you can also use regular expressions 
+to specify the page name, e.g. \fBPAGE=%.*/db\fR would find the "Database
+servers" page regardless of where this page was placed in the hierarchy.
+
+The top-level page has a the fixed name \fB/\fR, e.g. \fBPAGE=/\fR would 
+match all hosts on the Xymon frontpage. If you need it in a regular
+expression, use \fBPAGE=%^/\fR to avoid matching the forward-slash
+present in subpage-names.
+
+.BR "EXPAGE=targetstring"
+Rule excluding a host if the pagename matches.
+
+.BR "HOST=targetstring"
+Rule matching a host by the hostname.
+"targetstring" is either a comma-separated list of hostnames (from the bb-hosts file),
+"*" to indicate "all hosts", or a Perl-compatible regular expression.
+E.g. "HOST=dns.foo.com,www.foo.com" identifies two specific hosts;
+"HOST=%www.*.foo.com EXHOST=www-test.foo.com" matches all hosts with a name
+beginning with "www", except the "www-test" host.
+
+.BR "EXHOST=targetstring"
+Rule excluding a host by matching the hostname.
+
+.BR "CLASS=classname"
+Rule match by the client class-name. You specify the class-name 
+for a host when starting the client through the "--class=NAME"
+option to the runclient.sh script. If no class is specified, the
+host by default goes into a class named by the operating system.
+
+.BR "EXCLASS=classname"
+Exclude all hosts belonging to "classname" from this rule.
+
+.BR "TIME=timespecification"
+Rule matching by the time-of-day. This is specified as the DOWNTIME 
+time specification in the bb-hosts file.  E.g. "TIME=W:0800:2200"
+applied to a rule will make this rule active only on week-days between
+8AM and 10PM.
+
+.SH DIRECTING ALERTS TO GROUPS
+For some tests - e.g. "procs" or "msgs" - the right group of people
+to alert in case of a failure may be different, depending on which 
+of the client rules actually detected a problem. E.g. if you have
+PROCS rules for a host checking both "httpd" and "sshd" processes,
+then the Web admins should handle httpd-failures, whereas "sshd"
+failures are handled by the Unix admins.
+
+To handle this, all rules can have a "GROUP=groupname" setting.
+When a rule with this setting triggers a yellow or red status,
+the groupname is passed on to the Xymon alerts module, so you
+can use it in the alert rule definitions in 
+.I hobbit-alerts.cfg(5)
+to direct alerts to the correct group of people.
+
+.SH RULES: APPLYING SETTINGS TO SELECTED HOSTS
+Rules must be placed after the settings, e.g.
+.IP
+.nf
+LOAD 8.0 12.0  HOST=db.foo.com TIME=*:0800:1600
+.fi
+.LP
+
+If you have multiple settings that you want to apply the same rules to,
+you can write the rules *only* on one line, followed by the settings. E.g.
+.IP
+.nf
+HOST=%db.*.foo.com TIME=W:0800:1600
+	LOAD 8.0 12.0
+	DISK /db  98 100
+	PROC mysqld 1
+.fi
+.LP
+will apply the three settings to all of the "db" hosts on week-days between 8AM
+and 4PM. This can be combined with per-settings rule, in which case the
+per-settings rule overrides the general rule; e.g.
+.IP
+.nf
+HOST=%.*.foo.com
+	LOAD 7.0 12.0 HOST=bax.foo.com
+	LOAD 3.0 8.0
+.fi
+.LP
+will result in the load-limits being 7.0/12.0 for the "bax.foo.com" host,
+and 3.0/8.0 for all other foo.com hosts.
+
+The entire file is evaluated from the top to bottom, and the first
+match found is used. So you should put the specific settings first, and
+the generic ones last.
+
+
+.SH NOTES
+For the LOG, FILE and DIR checks, it is necessary also to configure the actual 
+file- and directory-names in the
+.I client-local.cfg(5)
+file. If the filenames are not listed there, the clients will not collect
+any data about these files/directories, and the settings in the 
+hobbit-clients.cfg file will be silently ignored.
+
+The ability to compute file checksums with MD5, SHA1 or RMD160 should not be
+used for general-purpose file integrity checking, since the overhead of calculating
+these on a large number of files can be significant. If you need this, look at
+tools designed for this purpose - e.g. Tripwire or AIDE.
+
+At the time of writing (april 2006), the SHA-1 and RMD160 algorithms are considered
+cryptographically safe. The MD5 algorithm has been shown to have some weaknesses, and
+is not considered strong enough when a high level of security is required.
+
+
+.SH "SEE ALSO"
+hobbitd_client(8), client-local.cfg(5), hobbitd(8), xymon(7)
+

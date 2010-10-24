@@ -1,0 +1,143 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BBCOMBOTEST.CFG</TITLE>
+</HEAD><BODY>
+<H1>BBCOMBOTEST.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bbcombotest.cfg - Configuration of bbcombotest tool
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>$BBHOME/etc/bbcombotest.cfg</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+
+uses it's own configuration file, $BBHOME/etc/bbcombotest.cfg
+Each line in this file defines a combined test.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>FILE FORMAT</H2>
+
+Each line of the file defines a new combined test. Blank lines and lines
+starting with a hash mark (#) are treated as comments and ignored.
+<P>
+The configuration file uses the hostnames and testnames
+that are already used in your Xymon bb-hosts file. These are
+then combined using normal logical operators - &quot;||&quot; for &quot;or&quot;, &quot;&amp;&amp;&quot; for
+&quot;and&quot; etc.
+<P>
+A simple test - e.g. &quot;Web1.http&quot; - results in the value &quot;1&quot; if 
+the &quot;http&quot; test for server &quot;Web1&quot; is green, yellow or clear. It yields the 
+value &quot;0&quot; if it is red, purple or blue.
+<P>
+Apart from the logical operations, you can also do integer arithmetic
+and comparisons. E.g. the following is valid:
+<P>
+WebCluster.http = (Web1.http + Web2.http + Web3.http) &gt;= 2
+<P>
+This test is green if two or more of the http tests for Web1, Web2 and Web3
+are green.
+<P>
+The full range of operators are:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Add
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Subtract
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Multiply
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Divide
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Modulo
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bit-wise&nbsp;&quot;or&quot;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&amp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bit-wise&nbsp;&quot;and&quot;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;||&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Logical&nbsp;&quot;or&quot;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&amp;&amp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Logical&nbsp;&quot;and&quot;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Greater&nbsp;than
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Less&nbsp;than
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&gt;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Greater&nbsp;than&nbsp;or&nbsp;equal
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Less&nbsp;than&nbsp;or&nbsp;equal
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;==&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Equal
+<P>
+There is currently no support for a &quot;not&quot; operator. If you need it,
+use the transcription &quot;(host.test == 0)&quot; instead of &quot;!host.test&quot;.
+<P>
+NB: All operators have EQUAL PRECEDENCE. If you need something evaluated
+in a specific order, use parentheses to group the expressions together.
+<P>
+If the expression comes out as &quot;0&quot;, the combined test goes red. If it comes 
+out as non-zero, the combined test is green.
+<P>
+Note: If the expression involves hostnames with a character that is also
+an operator - e.g. if you have a host &quot;t1-router-newyork.foo.com&quot; with a
+dash in the hostname - then the operator-character must be escaped with
+a backslash '\' in the expression, or it will be interpreted as an operator. 
+E.g. like this:
+<P>
+<BR>&nbsp;nyc.conn&nbsp;=&nbsp;(t1\-router\-nyc.conn&nbsp;||&nbsp;backup\-router\-nyc.conn)
+<P>
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>EXAMPLE</H2>
+
+WebCluster.http = (Web1.http || Web2.http)
+<BR>
+
+AppSrvCluster.procs = (AppSrv1.conn &amp;&amp; AppSrv1.procs) || (AppSrv2.conn &amp;&amp; AppSrv2.procs)
+<BR>
+
+Customer.cluster = WebCluster.http &amp;&amp; AppSrvCluster.procs
+<BR>
+
+<P>
+The first line defines a new test, with hostname &quot;WebCluster&quot; and the 
+columnname &quot;http&quot;. It will be green if the http test on either the
+&quot;Web1&quot; or the &quot;Web2&quot; server is green.
+<P>
+The second line defines a &quot;procs&quot; test for the &quot;AppSrvCluster&quot; host.
+Each of the AppSrv1 and AppSrv2 hosts is checked for &quot;conn&quot; (ping)
+and their &quot;procs&quot; test. On each host, both of these must be green,
+but the combined test is green if that condition is fulfilled on
+just one of the hosts.
+<P>
+The third line uses the two first tests to build a &quot;double combined&quot;
+test, defining a test that shows the overall health of the system.
+<P>
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>FILES</H2>
+
+<B>$BBHOME/etc/bbcombotest.cfg</B>
+
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">FILE FORMAT</A><DD>
+<DT><A HREF="#lbAF">EXAMPLE</A><DD>
+<DT><A HREF="#lbAG">FILES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 15:16:57 GMT, October 05, 2010
+</BODY>
+</HTML>

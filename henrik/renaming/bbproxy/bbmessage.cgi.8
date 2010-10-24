@@ -1,0 +1,44 @@
+.TH BBMESSAGE.CGI 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+
+.SH NAME
+bbmessage.cgi \- CGI utility used for proxying Xymon data over HTTP
+.SH SYNOPSIS
+.B "bbmessage.cgi"
+
+.SH DESCRIPTION
+.I bbmessage.cgi(8)
+is the server-side utility receiving Xymon messages sent by the
+.I bb(1)
+utility over an HTTP transport. The \fBbb\fR utility normally sends
+data over a dedicated TCP protocol, but it may use HTTP to go through
+proxies or through restrictive firewalls. In that case, the webserver
+must have this CGI utility installed, which takes care of receiving the
+message via HTTP, and forwards it to a local Xymon server through the
+normal Xymon transport.
+
+The CGI expects to be invoked from an HTTP "POST" request,
+with the POST-data being the status-message.
+\fBbbmessage.cgi\fR
+simply collects all of the POST data, and send it off as
+a message to the Xymon daemon running on IP 127.0.0.1. This
+destination IP currently cannot be changed.
+
+The CGI will return any output provided by the Xymon daemon
+back to the requestor as the response to the HTTP POST,
+so this allows for all normal Xymon commands to work.
+
+.SH SECURITY
+\fBbbmesage.cgi\fR will only send data to a Xymon server through the
+loopback interface, i.e. IP-address 127.0.0.1.
+
+Access to the CGI should be restricted through webserver access controls,
+since the CGI provides no authentication at all to validate incoming
+messages.
+
+If possible, consider using the
+.I bbproxy(8)
+utility instead for native proxying of Xymon data between networks.
+
+.SH "SEE ALSO"
+bb(1), bbproxy(8), xymon(7)
+

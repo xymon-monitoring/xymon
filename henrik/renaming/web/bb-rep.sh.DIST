@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# This it the Xymon wrapper for the bb-rep.cgi tool
+
+. @BBHOME@/etc/hobbitserver.cfg
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-rep.cgi $CGI_REP_OPTS $BBGENREPOPTS
+

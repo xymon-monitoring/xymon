@@ -1,0 +1,551 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BB</TITLE>
+</HEAD><BODY>
+<H1>BB</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bb - Xymon client communication program
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>bb [options] RECIPIENT message</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+
+is the client program used to communicate with a
+Xymon server. It is frequently used by Xymon
+client systems to send in status messages and pager
+alerts on local tests.
+<P>
+In Xymon, the bb program is also used for administrative
+purposes, e.g. to rename or delete hosts, or to disable
+hosts that are down for longer periods of time.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS AND PARAMETERS</H2>
+
+<DL COMPACT>
+<DT>--debug<DD>
+Enable debugging. This prints out details about how the
+connection to the BBDISPLAY server is being established.
+<P>
+<DT>--proxy=<A HREF="http://PROXYSERVER:PROXYPORT/">http://PROXYSERVER:PROXYPORT/</A><DD>
+When sending the status messages via HTTP, use this server
+as an HTTP proxy instead of connecting directly to the BBDISPLAY
+server.
+<P>
+<DT>--timeout=N<DD>
+Specifies the timeout for connecting to the Xymon server, in
+seconds. The default is 5 seconds.
+<P>
+<DT>--response<DD>
+The bb utility normally knows when to expect a response 
+from the server, so this option is not required. However,
+it will cause any response from the server to be displayed.
+<P>
+<DT>RECIPIENT<DD>
+The <B>RECIPIENT</B> parameter defines which server receives
+the message. If RECIPIENT is given as &quot;0.0.0.0&quot;, then the
+message is sent to all of the servers listed in the BBDISPLAYS
+or BBPAGERS environment variable (for &quot;status&quot; and &quot;page&quot; messages,
+respectively). 
+<P>
+Usually, a client will use &quot;$BBDISP&quot; for the <B>RECIPIENT</B> 
+parameter, as this is defined for the client scripts
+to automatically contain the correct value.
+<P>
+The <B>RECIPIENT</B> parameter may be a URL for a webserver
+that has the bbmessage.cgi or similar script installed. This
+tunnels the Xymon messages to the BBDISPLAY server 
+using standard HTTP protocol. The 
+<I><A HREF="../man8/bbmessage.cgi.8.html">bbmessage.cgi</A>(8)</I>
+
+CGI tool (included in Xymon) must be installed on the webserver 
+for the HTTP transport to work.
+<BR>
+
+<P>
+<DT>MESSAGE<DD>
+The <B>message</B> parameter is the message to be sent across
+to the Xymon server. Messages must be enclosed in quotes,
+but by doing so they can span multiple lines. The maximum size
+of a message is defined by the maximum allowed length of your
+shell's command-line, and is typically 8-32 KB. 
+<P>
+If you need to send longer status messages, you can specify &quot;@&quot; 
+as the message: bb will then read the status message from its
+stdin.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>XYMON MESSAGE SYNTAX</H2>
+
+<P>
+This section lists the most commonly used messages in the Xymon
+protocol.
+<P>
+Each message must begin with one of the Xymon commands. Where
+a HOSTNAME is specified, it must have any dots in the hostname changed
+to commas if the Xymon FQDN setting is enabled (which is the default).
+So the host &quot;<A HREF="http://www.foo.com">www.foo.com</A>&quot;, for example, would report as &quot;www,foo,com&quot;.
+<P>
+<DL COMPACT>
+<DT>status[+LIFETIME][/group:GROUP] HOSTNAME.TESTNAME COLOR &lt;additional text&gt;<DD>
+This sends in a status message for a single test (column) on a single host.
+TESTNAME is the name of the column where this test will show up; any
+name is valid except that using dots in the testname will not work.
+COLOR must be one of the valid colors: &quot;green&quot;, &quot;yellow&quot;, &quot;red&quot; or &quot;clear&quot;.
+The colors &quot;blue&quot; and &quot;purple&quot; - although valid colors - should not be sent in a
+status message, as these are handled specially by the Xymon server.
+As a special case (for supporting older clients), &quot;client&quot; can be
+used as the name of the color. This causes the status message to be
+handled by Xymon as a &quot;client&quot; data message, and the TESTNAME
+parameter is used as the &quot;collector id&quot;.
+<BR>
+
+The &quot;additional text&quot; normally includes a local timestamp and a summary
+of the test result on the first line. Any lines following the first one
+are free-form, and can include any information that may be useful to
+diagnose the problem being reported.
+<BR>
+
+The LIFETIME defines how long this status is valid after being received
+by the Xymon server. The default is 30 minutes, but you can set any
+period you like. E.g. for a custom test that runs once an hour, you will
+want to set this to at least 60 minutes - otherwise the status will go
+purple after 30 minutes. It is a good idea to set the LIFETIME to
+slightly longer than the interval between your tests, to allow for variations
+in the time it takes your test to complete. The LIFETIME is in minutes,
+unless you add an &quot;h&quot; (hours), &quot;d&quot; (days) or &quot;w&quot; (weeks) immediately after
+the number, e.g. &quot;status+5h&quot; for a status that is valid for 5 hours.
+<BR>
+
+The GROUP option is used to direct alerts from the status to a specific group.
+It is currently used for status generated from the Xymon clients' data,
+e.g. to direct alerts for a &quot;procs&quot; status to different people, depending on
+exactly which process is down.
+<P>
+<DT>notify HOSTNAME.TESTNAME &lt;message text&gt;<DD>
+This triggers an informational message to be sent to those who 
+receive alerts for this HOSTNAME+TESTNAME combination, 
+according to the rules defined in
+<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+
+This is used by the 
+<I><A HREF="../man1/hobbit-enadis.cgi.1.html">hobbit-enadis.cgi</A>(1)</I>
+
+tool to notify people about hosts being disabled or 
+enabled, but can also serve as a general way of notifying 
+server administrators.
+<P>
+<DT>data HOSTNAME.DATANAME&lt;newline&gt;&lt;additional text&gt;<DD>
+The &quot;data&quot; message allows tools to send data about a host, without
+it appearing as a column on the Xymon webpages. This
+is used, for example, to report statistics about a host, e.g. vmstat data, which
+does not in itself represent something that has a red, yellow or
+green identity. It is used by RRD bottom-feeder modules, among
+others. In Xymon, data messages are by default processed only by the
+<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+
+module. If you want to handle data-messages using an external application,
+you may want to enable the 
+<I><A HREF="../man8/hobbitd_filestore.8.html">hobbitd_filestore</A>(8)</I>
+
+module for data-messages, to store data-messages in a format compatible
+with how the Big Brother daemon does.
+<P>
+<DT>disable HOSTNAME.TESTNAME DURATION &lt;additional text&gt;<DD>
+Disables a specific test for DURATION minutes. This will cause the
+status of this test to be listed as &quot;blue&quot; on the BBDISPLAY server,
+and no alerts for this host/test will be generated. If DURATION is
+given as a number followed by s/m/h/d, it is interpreted as being
+in seconds/minutes/hours/days respectively.
+
+To disable all tests for a host, use an asterisk &quot;*&quot; for TESTNAME.
+<P>
+<DT>enable HOSTNAME.TESTNAME<DD>
+Re-enables a test that had been disabled.
+<P>
+<DT>query HOSTNAME.TESTNAME<DD>
+Query the BBDISPLAY server for the latest status reported for this
+particular test. If the host/test status is known, the response is
+the first line of the status report - the current color will be the
+first word on the line. Additional lines of text that might be 
+present on the status message cannot be retrieved.
+<BR>
+
+This allows any Xymon client to determine the status of a particular
+test, whether it is one pertaining to the host where the client
+is running, some other host, or perhaps the result of a combined
+test from multiple hosts managed by
+<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+
+This will typically be useful to Xymon client extension scripts, that
+need to determine the status of other hosts, for example, to decide if an
+automatic recovery action should be initiated.
+<P>
+<DT>config FILENAME<DD>
+Retrieve one of the Xymon configuration files from the
+server. This command allows a client to pull files from the
+$BBHOME/etc/ directory on the server, allowing for semi-automatic
+updates of the client configuration. Since the configuration files 
+are designed to have a common file for the configuration of all hosts 
+in the system - and this is in fact the recommended way of configuring 
+your clients - this makes it easier to keep the configuration 
+files synchronized.
+<P>
+<DT>drop HOSTNAME<DD>
+Removes all data stored about the host HOSTNAME. It is assumed that you
+have already deleted the host from the bb-hosts configuration file.
+<P>
+<DT>drop HOSTNAME TESTNAME<DD>
+Remove data about a single test (column).
+<P>
+<DT>rename OLDHOSTNAME NEWHOSTNAME<DD>
+Rename all data for a host that has had its name changed. You should do this
+before changing the hostname in the bb-hosts configuration file.
+<P>
+<DT>rename HOSTNAME OLDTESTNAME NEWTESTNAME<DD>
+Rename data about a single test (column).
+<P>
+<DT>hobbitdlog HOSTNAME.TESTNAME<DD>
+Retrieve the Xymon status-log for a single test. The first line of the
+response contains a series of fields separated by a pipe-sign:
+<P>
+<B>hostname</B>
+
+The name of the host
+<P>
+<B>testname</B>
+
+The name of the test
+<P>
+<B>color</B>
+
+Status color (green, yellow, red, blue, clear, purple)
+<P>
+<B>testflags</B>
+
+For network tests, the flags indicating details about the test (used by bbgen).
+<P>
+<B>lastchange</B>
+
+Unix timestamp when the status color last changed.
+<P>
+<B>logtime</B>
+
+Unix timestamp when the log message was received.
+<P>
+<B>validtime</B>
+
+Unix timestamp when the log message is no longer valid (it goes purple at this time).
+<P>
+<B>acktime</B>
+
+Either -1 or Unix timestamp when an active acknowledgement expires.
+<P>
+<B>disabletime</B>
+
+Either -1 or Unix timestamp when the status is no longer disabled.
+<P>
+<B>sender</B>
+
+IP address where the status was received from.
+<P>
+<B>cookie</B>
+
+Either -1 or the cookie value used to acknowledge an alert.
+<P>
+<B>ackmsg</B>
+
+Empty or the acknowledgment message sent when the status was acknowledged.
+Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
+<P>
+<B>dismsg</B>
+
+Empty or the message sent when the status was disabled.
+Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
+<P>
+After the first line comes the full status log in plain text format.
+<P>
+<DT>hobbitdxlog HOSTNAME.TESTNAME<DD>
+Retrieves an XML string containing the status log as with the 
+&quot;hobbitdlog&quot; command.
+<P>
+<DT>hobbitdboard [CRITERIA] [fields=FIELDLIST]<DD>
+Retrieves a summary of the status of all known tests available to
+the Xymon daemon. 
+<P>
+By default - if no CRITERIA is provided - it returns one line for all 
+status messages that are found in Xymon. You can filter the response
+by selecting a page, a host, a test or a color - wildcards are not 
+supported, so you can pick only one page, host, test or color. 
+<P>
+<B>page=PAGEPATH</B>
+
+Include only tests from hosts found on the PAGEPATH page in the bb-hosts
+file.
+<P>
+<B>host=HOSTNAME</B>
+
+Include only tests from the host HOSTNAME
+<P>
+<B>test=TESTNAME</B>
+
+Include only tests with the testname TESTNAME
+<P>
+<B>color=COLORNAME</B>
+
+Include only tests where the status color is COLORNAME
+<P>
+You can filter on, for example, both a hostname and a testname. 
+<P>
+The response is one line for each status that matches the CRITERIA,
+or all statuses if no criteria is specified. The line is composed of
+a number of fields, separated by a pipe-sign. You can select which
+fields to retrieve by listing them in the FIELDLIST. The following
+fields are available:
+<P>
+<B>hostname</B>
+
+The name of the host
+<P>
+<B>testname</B>
+
+The name of the test
+<P>
+<B>color</B>
+
+Status color (green, yellow, red, blue, clear, purple)
+<P>
+<B>flags</B>
+
+For network tests, the flags indicating details about the test (used by bbgen).
+<P>
+<B>lastchange</B>
+
+Unix timestamp when the status color last changed.
+<P>
+<B>logtime</B>
+
+Unix timestamp when the log message was received.
+<P>
+<B>validtime</B>
+
+Unix timestamp when the log message is no longer valid (it goes purple at this time).
+<P>
+<B>acktime</B>
+
+Either -1 or Unix timestamp when an active acknowledgement expires.
+<P>
+<B>disabletime</B>
+
+Either -1 or Unix timestamp when the status is no longer disabled.
+<P>
+<B>sender</B>
+
+IP address where the status was received from.
+<P>
+<B>cookie</B>
+
+Either -1 or the cookie value used to acknowledge an alert.
+<P>
+<B>line1</B>
+
+First line of status log.
+<P>
+<B>ackmsg</B>
+
+Empty (if no acknowledgement is active), or the text of the acknowledge
+message.
+<P>
+<B>dismsg</B>
+
+Empty (if the status is currently enabled), or the text of the disable message.
+<P>
+<B>msg</B>
+
+The full text of the current status message.
+<P>
+The ackmsg, dismsg and msg fields have certain characters encoded: Newline
+is &quot;\n&quot;, TAB is &quot;\t&quot;, carriage return is &quot;\r&quot;, a pipe-sign is &quot;\p&quot;, 
+and a backslash is &quot;\\&quot;.
+<P>
+If the &quot;fields&quot; parameter is omitted, a default set of
+hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
+is used.
+<P>
+<DT>hobbitdxboard<DD>
+Retrieves an XML string with the summary of all status logs
+as for the &quot;hobbitdboard&quot; command.
+<P>
+<DT>download FILENAME<DD>
+Download a file from the Xymon server's download directory.
+<P>
+<DT>client[/COLLECTORID] HOSTNAME.OSTYPE [HOSTCLASS]<DD>
+Used to send a &quot;client&quot; message to the Xymon server. Client messages
+are generated by the Xymon client; when sent to the Xymon server they
+are matched against the rules in the
+<I><A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)</I>
+
+configuration file, and status messages are generated for the client-side
+tests.
+The COLLECTORID is used when sending client-data that are additions
+to the standard client data. The data will be concatenated with the
+normal client data.
+<P>
+<DT>clientlog HOSTNAME [section=SECTIONNAME[,SECTIONNAME...]]<DD>
+Retrieves the current raw client message last sent by HOSTNAME. The optional
+&quot;section&quot; filter is used to select specific sections of the client data.
+<P>
+<DT>ping<DD>
+Attempts to contact the Xymon server. If successful, the Xymon server version ID
+is reported.
+<P>
+<DT>pullclient<DD>
+This message is used when fetching client data via the &quot;pull&quot; mechanism implemented by
+<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+
+and
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+for clients that cannot connect directly to the Xymon server.
+<P>
+<DT>ghostlist<DD>
+Report a list of <B>ghost</B> clients seen by the Xymon server. Ghosts are systems
+that report data to the Xymon server, but are not listed in the bb-hosts file.
+<P>
+<DT>schedule [TIMESTAMP COMMAND]<DD>
+Schedules a command sent to the Xymon server for execution at a later time. E.g.
+used to schedule disabling of a host or service at sometime in the future. COMMAND
+is a complete Xymon command such as the ones listed above. TIMESTAMP is the
+Unix epoch time when the command will be executed.
+<BR>
+
+If no parameters are given, the currently scheduled tasks are listed in the response.
+The response is one line per scheduled command, with the job-id, the time when the
+command will be executed, the IP address from which this was sent, and the full command
+string.
+<BR>
+
+To cancel a previously scheduled command, <B>&quot;schedule cancel JOBID&quot;</B> can be
+used. JOBID is a number provided as the first item in the output from the schedule list.
+<P>
+<DT>notes FILENAME<DD>
+The message text will be stored in $BBHOME/notes/FILENAME which is then used as
+hyperlinks from hostnames or column names. This requires that the &quot;bbnotes&quot; 
+task is enabled in hobbitlaunch.cfg (it is disabled by default). FILENAME 
+cannot contain any directory path - these are stripped automatically.
+<P>
+<DT>usermsg ID<DD>
+These messages will be relayed directly to modules listening on the &quot;user&quot;
+channel of the Xymon daemon. This is intended for custom communication
+between client-side modules and the Xymon server.
+<P>
+<DT>modify HOSTNAME.TESTNAME COLOR SOURCE CAUSE<DD>
+Modify the color of a specific status, without generating a complete
+status message. This is for backend processors (e.g. RRD graphs)
+that can override the color of a status based on some criteria
+determined outside the normal flow of a status. E.g. the normal
+&quot;conn&quot; status may appear to be green since it merely checks on
+whether a host can be ping'ed or not; the RRD handler can then
+use a &quot;modify&quot; command to override this is the actual ping
+responsetime exceeds a given threshold. (See the &quot;DS&quot; configuration
+setting in 
+<I><A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)</I>
+
+for how to do this). SOURCE is some identification of the module
+that generates the &quot;modify&quot; message - future modifications must
+use the same source. There may be several sources that modify
+the same status (the most severe status then becomes the actual
+color of the status). CAUSE is a one-line text string explaining
+the reason for overriding the normal status color - it will be
+displayed on the status webpage.
+<P>
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLE</H2>
+
+<P>
+Send a normal status message to the BBDISPLAY server, using the
+standard Xymon protocol on TCP port 1984:
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$BB&nbsp;$BBDISP&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
+<P>
+Send the same status message, but using HTTP protocol via the
+webserver's bbmessage.cgi script:
+<BR>
+
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$BB&nbsp;<A HREF="http://bb.foo.com/cgi-bin/bbmessage.cgi">http://bb.foo.com/cgi-bin/bbmessage.cgi</A>&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
+<P>
+Use &quot;query&quot; message to determine the color of the &quot;www&quot; test, and
+restart Apache if it is red:
+<BR>
+
+<P>
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;WWW=`$BB&nbsp;$BBDISP&nbsp;&quot;query&nbsp;www,foo,com.www&quot;&nbsp;|&nbsp;awk&nbsp;'{print&nbsp;$1}'`
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;&quot;$WWW&quot;&nbsp;=&nbsp;&quot;red&quot;&nbsp;];&nbsp;then&nbsp;/etc/init.d/apache&nbsp;restart;&nbsp;fi
+<P>
+Use &quot;config&quot; message to update the local bb-dftab file (but only
+if we get a response):
+<BR>
+
+<P>
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$BB&nbsp;$BBDISP&nbsp;&quot;config&nbsp;bb-dftab&quot;&nbsp;&gt;/tmp/bb-dftab.new
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;-s&nbsp;/tmp/bb-dftab.new&nbsp;];&nbsp;then&nbsp;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;/tmp/bb-dftab.new&nbsp;$BBHOME/etc/bb-dftab
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fi
+<P>
+Send a very large status message that has been built in the
+file &quot;statusmsg.txt&quot;. Instead of providing it on the command-line, 
+pass it via stdin to the bb command:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;cat&nbsp;statusmsg.txt&nbsp;|&nbsp;$BB&nbsp;$BBDISP&nbsp;&quot;@&quot;
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>NOTES</H2>
+
+This man-page describes the bb client program provided
+as part of Xymon. This implementation provides features 
+not present in the standard Big Brother bb client - 
+specifically, the support for sending messages over HTTP, 
+and many commands such as &quot;query&quot; and &quot;config&quot; are not part 
+of the bb client shipped with Big Brother.
+<P>
+<A NAME="lbAI">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1), <A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS AND PARAMETERS</A><DD>
+<DT><A HREF="#lbAF">XYMON MESSAGE SYNTAX</A><DD>
+<DT><A HREF="#lbAG">EXAMPLE</A><DD>
+<DT><A HREF="#lbAH">NOTES</A><DD>
+<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 15:16:57 GMT, October 05, 2010
+</BODY>
+</HTML>

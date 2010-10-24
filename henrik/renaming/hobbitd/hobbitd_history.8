@@ -1,0 +1,55 @@
+.TH HOBBITD_HISTORY 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+hobbitd_history \- hobbitd worker module for logging status changes 
+.SH SYNOPSIS
+.B "hobbitd_channel --channel=stachg hobbitd_history [options]"
+
+.SH DESCRIPTION
+hobbitd_history is a worker module for hobbitd, and as such it is normally
+run via the
+.I hobbitd_channel(8)
+program. It receives hobbitd status-change messages from the "stachg" 
+channel via stdin, and uses these to update the history logfiles in a manner 
+that is compatible with the standard Big Brother daemon, bbd.
+
+.SH OPTIONS
+.IP "--histdir=DIRECTORY"
+The directory for the history files. If not specified, the
+directory given by the BBHIST environment is used.
+
+.IP "--histlogdir=DIRECTORY"
+The directory for the historical status-logs. If not specified, the
+directory given by the BBHISTLOGS environment is used.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH ENVIRONMENT
+.IP BBALLHISTLOG
+This environment variable controls if the $BBHIST/allevents
+logfile is updated. This file is used by the event-log display on the
+BB2 html page. If you do not use this, you can disable it by setting
+BBALLHISTLOGS=FALSE.
+
+.IP BBHOSTHISTLOG
+This environment variable controls if the $BBHIST/HOSTNAME
+logfile is updated. This file holds a list of all status changes seen
+for a single host, but is not used by any of the standard Xymon
+tools. If you do not want to save this, you can disable it by setting
+BBHOSTHISTLOG=FALSE.
+
+.IP SAVESTATUSLOG
+This environment variable controls if the historical
+status-logs are saved whenever a status change occurs. These logfiles
+are stored in the $BBHISTLOGS directory, and are used for the detailed
+log-display of a status from the Xymon "History" page. If you
+do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
+If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
+If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
+
+.SH FILES
+This module does not rely on any configuration files.
+
+.SH "SEE ALSO"
+hobbitd_channel(8), hobbitd(8), xymon(7)
+

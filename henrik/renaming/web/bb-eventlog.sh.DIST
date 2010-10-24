@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the Xymon CGI script to display the eventlog
+
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-eventlog.cgi $CGI_EVENTLOG_OPTS
+

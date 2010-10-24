@@ -1,0 +1,24 @@
+# Xymon compile-time settings for Darwin (Mac OS X)
+#
+
+OSDEF = -DDarwin
+
+# NETLIBS: You may need to add -lresolv or similar to pick up network libraries
+NETLIBS =
+
+# Compile flags for normal build
+CC = gcc
+CFLAGS = -g -O -Wall -Wno-unused -D_REENTRANT -DBIND_8_COMPAT=1 $(LFSDEF) $(OSDEF)
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -D_REENTRANT -DBIND_8_COMPAT=1 $(LFSDEF) $(OSDEF)
+
+# Extra environment settings for runtime stuff.
+# E.g. RUNTIMEDEFS="LD_LIBRARY_PATH=\"/opt/lib\"" to use 
+# runtime libraries located in /opt/lib
+RUNTIMEDEFS = 
+
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+

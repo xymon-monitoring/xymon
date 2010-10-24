@@ -1,0 +1,4 @@
+xymon: package-contains-empty-directory usr/lib/xymon/server/download/
+#446982
+xymon: possibly-insecure-handling-of-tmp-files-in-maintainer-script preinst:30
+xymon: setuid-binary usr/lib/hobbit/server/bin/hobbitping 4755 root/root

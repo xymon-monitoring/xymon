@@ -1,0 +1,197 @@
+* New bbd implements a combined BBDISPLAY+BBPAGER. Running a separate
+  BBPAGER is not supported.
+
+* "disable" messages sets the internal status color "blue" and logs info
+  about the cause and duration.
+
+* "enable" messages simply clears the flag, so new messages are accepted.
+
+* bbd sets up a number of channels:
+  - "status" : Receives the contents of all "status" and "summary
+               messages.
+  - "stachg" : Receives notice of all status messages where the color
+               changes from the previous status.
+  - "page"   : Receives notice of all status messages where the color changes
+               between a non-alert color and an alert color, or when it
+	       changes from one alert-color to another. Also receives
+	       notice of "ack" messages.
+  - "data"   : Receives all "data" messages.
+  - "notes"  : Receives all "notes" messages.
+  - "enadis" : Receives all "enable" and "disable" messages.
+
+* A number of "worker" tasks run to handle I/O and other heavy tasks:
+  - statuslog: Subscribes to "status". Updates bbvar/logs/ files.
+  - htmllog  : Subscribes to "status". Updates bb/www/html/ files.
+  - history  : Subscribes to "stachg". Updates bbvar/hist/allevents,
+               bbvar/hist/{HOST,HOST.TEST}, bbvar/histlogs/HOST/TEST/*
+  - datalog  : Subscribes to "data". Updates bbvar/data/ files.
+  - infolog  : Subscribes to "notes". Updates bbvar/notes/ files.
+  - enalog   : Subscribes to "enadis". Updates bbvar/disabled/ files.
+  - alert    : Subscribes to "page". Sends out alerts.
+  - larrd*2  : Subscribes to "status" and "data". Updates LARRD RRD's.
+
+* Channel protocols
+
+  status
+  ------
+  @@status|timestamp|sender|origin|hostname|testname|expiretime|color|flags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage
+  <status message>
+  @@
+
+  stachg
+  ------
+  @@stachg|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime
+  <new status message>
+  @@
+
+  page
+  ----
+  @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie
+  <message>
+  @@
+
+  @@ack|timestamp|sender|hostname|testname|hostip|expiretime
+  <ack message>
+  @@
+
+  Note that "page" modules get messages whenever the alert-state of a test
+  changes. I.e. a message is generated whenever a test goes from a color
+  that is non-alerting to a color that is alerting, or vice versa.
+
+  How does the pager know when a test is disabled ? It will get a "page"
+  message with color=blue, if the old color of the test was in an alert
+  state. (If it wasn't, the pager module does not need to know that the
+  test has been disabled). It should then clear any stored info about
+  active alerts for this host.test combination.
+
+  data
+  ----
+  @@data|timestamp|origin|sender|hostname|testname
+  <message>
+  @@
+
+  notes
+  -----
+  @@notes|timestamp|sender|hostname
+  <message>
+  @@
+
+  enadis
+  -----
+  @@enadis|timestamp|sender|hostname|testname|expiretime
+  @@
+
+  "expiretime" is 0 for an "enable" message, >0 for a
+  "disable" message.
+
+  All channels
+  ------------
+  @@drophost|timestamp|sender|hostname
+  @@droptest|timestamp|sender|hostname|testname
+  @@renamehost|timestamp|sender|hostname|newhostname
+  @@renametest|timestamp|sender|hostname|oldtestname|newtestname
+  @@shutdown|timestamp|sender
+
+
+* Simplified "ack" protocol.
+  - bbd issues a "cookie" when a test goes into an alert state. The
+    cookie is valid for as long as the status message is valid (default:
+    30 minutes). When it expires, a new cookie is issued if the status
+    is still an alert-state. The cookie applies to the status log and
+    is indifferent about who receives alerts.
+  - Cookies are random 6-digit numbers. bbd keeps track of issued 
+    cookies and what host.test combination they relate to.
+  - "bbgendack cookie duration [ack message]" checks the cookie, and
+    if valid the ack-flag is set on that status-log. This message is
+    forwarded on the "page" channel so alert-modules know if the
+    status has been ack'ed.
+  - A negative cookie acts as an acknowledge of all pending alerts for
+    the host.
+  - The old "ack ack_event" message is supported.
+
+* "bbgendlog HOST.TEST" request returns the current status-log for a 
+   host.test combination.
+
+  hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|ackmsg|dismsg
+  message
+
+* "bbgendboard" request returns 1 line per statuslog with a summary of the
+  status, i.e. all information except the text part of the status log.
+  Also yiels the "meta" information such as sender, time since last status
+  change etc. Anything that was previously determined by scanning the files
+  in bbvar/logs/
+
+  hostname|testname|color|testflags|lastchange|logtime|validtime|acktime|disabletime|sender|cookie|1st line of message
+
+* "bbgenddrop HOSTNAME [TESTNAME]" drops all information about a host, 
+  or a host.test combination. This propagates a "drophost" / "droptest"
+  message to all workers, so they can delete permanent storage. This
+  will enable a simple "bbrm" implementation.
+
+* "bbgendrename OLDHOSTNAME NEWHOSTNAME" renames a host. This propagates
+  a "renamehost" message to all workers.
+
+* "bbgendrename HOSTNAME OLDTEST NEWTEST" renames a test. This propagates
+  a "renametest" message to all workers.
+
+* Master/worker communications
+  - Uses a single shmem segment as a bulletin board for new messages.
+  - Communication synchronized with two semaphores: BOARDBUSY and GOCLIENT.
+  - Number of clients found via registering on a CLIENTCOUNT semaphore
+    (clients up this when registering, and down it when they terminate).
+  - Sequence of events is as follows:
+               MASTER                    CLIENT 1            CLIENT 2
+       Wait BOARDBUSY = 0          Down GOCLIENT          Down GOCLIENT
+       <message arrives>           (block until > 0)      (block until > 0)
+       Up BOARDBUSY (+CLIENTCOUNT)
+       Up GOCLIENT (+CLIENTCOUNT)
+				   Copy message           Copy message
+				   Wait GOCLIENT=0        Wait GOCLIENT=0
+                                   Down BOARDBUSY         Down BOARDBUSY
+
+     The client wait (GOCLIENT=0) is necessary to prevent one client
+     from snatching a message on behalf of the other clients (looping with
+     the same message multiple times).
+
+* Environment settings - bbd_filestore
+  - BBLOGS : Default "--dir" when run with --status
+  - BBDATA : Default "--dir" when run with --data
+  - BBNOTES: Default "--dir" when run with --notes
+
+* Environment settings - bbd_history
+  - BBALLHISTLOG  : If TRUE, the "allevents" file is updated.
+  - BBHOSTHISTLOG : If TRUE, the "hostname" host events file is updated
+  - BBHIST        : Directory for the allevents, host- and status-event logs
+  - SAVESTATUSLOG : If TRUE, the historical full status log is stored
+  - BBHISTLOGS    : Top level directory for the historical full status logs
+
+* Environment settings - bbd_net
+  - BBGHOSTS      : Default "--ghosts" value
+  - BBHOSTS       : Default "--bbhosts" value
+
+* Environment settings - bb-hostsvc.cgi
+  - LARRDS        : Comma-separated list of statuses that have a LARRD graph
+  - NONHISTS      : Comma-separated list of statuses with no History button
+  - USEBBGEND     : If TRUE, get log via the bbgend net-interface instead of files.
+  - CGIBINURL
+  - BBWEB
+  - BBLOGS
+  - BBHISTLOGS
+  - BBSKIN
+  - DOTHEIGHT
+  - DOTWIDTH
+
+* bbgend_larrd : Not compatible with
+  - vmstat  : All OS ?
+  - netstat : Linux, snmpnetstat, Win32
+
+* Implement a new "streaming" protocol that uses a persistent TCP
+  connection to receive messages. The format is kept as-is, and a
+  NUL byte is used to separate one message from the next.
+
+* Use bbproxy to receive messages in "legacy" (non-streaming) format. 
+  bbproxy then implements the client-side part of the new streaming 
+  protocol.
+
+* The new bbd only accepts stream messages.
+

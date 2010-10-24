@@ -1,0 +1,151 @@
+Bugfixes
+--------
+* From: <Stewart_Larsen@doh.state.fl.us>
+  Date: Mon, 10 Jan 2005 15:06:36 -0500
+  Subject: {bb} Bbgen depends not working for conn tests
+    10.0.0.1     host1.domain.com #   depends=(conn:host2.domain.com/conn)
+    10.0.0.2     host2.domain.com #
+  Both hosts have red connectivity.  My understanding is that since host2
+  can't be pinged, host1's conn test should be clear, not red. Is this
+  right?
+
+  Analysis: "depends" is not evaluated for "conn" tests, 
+  only the "router" setting is. Simple fix would be to
+  change "conn" dependencies into router tags on the fly,
+  or implement "depends" throughout and treat "route"
+  as a special-case of depends.
+
+* SMTP network check violates the SMTP protocol by sending
+  commands before the banner has appeared. Some servers 
+  recognize this as a spam-client, and refuses with a status
+  554, causing a red status.
+  The correct fix would be to implement a full expect-send
+  engine for the TCP tests (would help with other things also).
+
+* Make a common vmstat RRD layout, to allow for systems that
+  grow more advanced. Use this to add Solaris I/O wait data.
+  AIX also needs it. Will break compatibility with existing
+  RRD files, unless we look at what datasets exist and drop
+  data that cannot be stored.
+  For AIX (bug-report Nov.10-14-16 2006 from Andy France):
+  > There's a mix of "cpu_w" and "cpu_wait" definitions in the Xymon RRD
+  > module, depending on what operating system the vmstat data comes from.
+  > But all of the graph definitions in hobbitgraph.cfg use the cpu_wait
+  > definition.
+  Also, postponed from the 4.2 release:
+  o vmstat columns on HP-UX 11.0 are different from 11.11i. Marco Avvissano March 10.
+  o vmstat columns differ between various Red Hat Enterprise versions.
+  o sar data parsing for IRIX client instead of vmstat data.
+
+* A host cannot be configured to appear on multiple pages of an
+  alternate pageset. Configuring this will cause it to appear
+  twice on each page. Fixing this requires a complete re-design
+  of how alternate pagesets are built, and probably also quite
+  a bit of work on the internal datastructures in bbgen.
+
+
+Things I must remember to look at
+---------------------------------
+* IIS6Check: Log performance data in graphs.
+
+* Scott Walters suggest larger RRA's for graphs:
+  "I think 3 RRAs is good.  A month of 5m samples, 2 years 
+  of 1 hour samples, and 7 years of one day samples.
+  This doesn't address keeping the MAXs, but is worth 
+  considering as a blanket change for all RRDs.
+  You could then generate *real* 9AM-5PM Load avareage 
+  reports for the last year Monday - Friday."
+  It will require re-generating all of the RRD's.
+
+* configuration file for NCV.
+  - filter out unwanted lines
+  - more flexible DS configuration than the env settings
+
+* Create a new hobbitd worker module off the stachg channel.
+  This will dynamically receive status updates, and therefore
+  it can have the full status of each PAGE without having to
+  load the hobbitd board (should do so regularly just in case).
+  This can be used to switch the overview pages to a CGI tool
+  instead of generating the static pages. NB: Must be able to
+  handle multiple page setups - or should we just have one
+  worker per setup with different config files ?
+* "cpu" status determined by the non-idle time reported by
+  vmstat, instead of the rather meaningless load average.
+* hobbitd_client process/disk alarms to different people depending
+  on *which* process/disk is in error.
+* process checks that relate to a group of host (process "foo"
+  must exist on at least X of these Y nodes: HostA, HostB, HostC.
+* Configuration of which graph(s) to show by default, including 
+  limiting it to e.g. one of the 7 disk graphs. Ref. mail from
+  Charles Jones 15-feb-2005.
+  What we really want to do is customize on a per host/test
+  basis which graphs appear for which tests. So this means some
+  way of customizing hobbitsvc.cgi to include specific graphs.
+* Something similar to larrd-graphs.cgi for picking out a bunch
+  of graphs to show on one page.
+* Move all of the bbtest-net "badFOO" etc. stuff away from bbtest-net
+  and into hobbitd.
+* On Fri, Aug 05, 2005 at 09:39:15AM +0200, Thomas Bergauer wrote:
+  2. the NOPROP(RED|YELLOW|..) command in the BB-hosts file works as
+  announced, but I am looking for a possibility to tell NOPROP a "level"
+  of propagation. This means that an alarm should propagate to its
+  sub-page, but not further up to the main page.
+* Dialog-style network tests. Currently when we connect, we immediately
+  blast all of the SEND string to the remote end, which in many cases
+  is a protocol violation (e.g. SMTP servers may refuse us because
+  we send data before seeing their "220" greeting). Should do this
+  right and also cater for multiple http exchanges to follow redirects.
+* Better dependencies between tests. If you have multiple http tests
+  for one host, be able to make them depend on each other - also such
+  that one http test depends on another on the same host. And direct alerts 
+  for one URL to one group, and for another URL to a different group 
+  (like GROUP in client handling).
+  See http://www.hswn.dk/hobbiton/2006/06/msg00210.html
+* Better selection of which graphs go with what statuses. 
+* Easy way of grouping hosts for multi-graphs.
+
+
+Improvements
+------------
+* hobbitgraph.cgi change to make zoom work in two dimensions. 
+  Requires RRDtool 1.2.x.
+* More reports: Check out bb-reports on deadcat
+* Multi-line macros in hobbit-alerts.cfg
+* Allow for regex's in the TCP response match code.
+* Merging of alerts based on some criteria, e.g. merge all
+  purple alerts for a host into one message.
+* Implement "--follow" in the new HTTP tester.
+* https proxying (proxy CONNECT protocol)
+* Optionally hide the URL and content output from HTTP/content
+  checks for "security reasons". Marco Avvisano, 20-sep-2004.
+* Set a "BASE" URL in the content status message, so the web
+  page we show will link back to the original page for images etc.
+* Provide a way of sending http status-messages with individual
+  test (column) names for each URL - apparently, Big Sister does
+  this. Suggested by Darshan Purandare. Repeated by Scott Walker.
+* Provide a way for a "cont" check to NOT be included in the
+  "http" column. Suggested by Kim Scarborough.
+* Allow for enable/disable of TCP response check per host/service.
+* Use the "acked" gif for subpage/page/etc. links when there
+  are only acked tests on the page. Marco Avvisano.
+* Handle "summary" pages for alternate pagesets. Need to find a way
+  of detecting what color a page has when it was NOT generated by
+  the current pageset (allowing for summaries across pagesets).
+* Improve the history colorbars in cases where there are many
+  shortlived statuses. They should not automatically be given 1
+  pixel each, as that will cause the history graph to be *very*
+  wide.
+* Display-only tags should work on duplicate host-entries in bb-hosts,
+  e.g. you should be able to put a "NAME:foo" tag on a host and have it
+  show up with different names for the same host.
+
+Various ideas that have appeared on the BB mailing list
+-------------------------------------------------------
+* A report generater capable of displaying for a certain time frame:
+  1) List of the top XX "host.service" state changes.  This is to help us
+     understand what is barking the most in our environment and focus efforts
+     on fixing chronic issues rather than band aiding.
+  2) List of lowest XX "Availablity" for host.service.
+  And since I am throwing things out, how about embedding a 13 week rolling
+  availability into the status/history page?
+  Scott Walters, "Reporting based on history", Sep 9 2004

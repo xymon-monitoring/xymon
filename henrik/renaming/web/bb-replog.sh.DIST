@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the Xymon wrapper for the bb-replog.cgi tool.
+
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-replog.cgi $CGI_REPLOG_OPTS
+

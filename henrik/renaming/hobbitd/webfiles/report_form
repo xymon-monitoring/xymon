@@ -1,0 +1,61 @@
+<BR>
+
+<CENTER>
+  <TABLE WIDTH=80% BORDER=0 CELLSPACING=5 SUMMARY="Report date specification">
+    <TR BGCOLOR="#000033">
+       <TD COLSPAN=2>
+           <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1"><B>Xymon Availability Report</B></FONT></CENTER>
+       </TD>
+    </TR>
+    <TR>
+       <TD BGCOLOR="#333333">
+       <BR>
+       <CENTER>
+
+       <FORM METHOD="GET" ACTION="&SCRIPT_NAME">
+          <SELECT NAME="start-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="start-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="start-yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <FONT SIZE="+1" FACE="Arial, Helvetica">- to -</FONT>
+
+          <SELECT NAME="end-mon">
+          &REPMONLIST
+          </SELECT>
+
+          <SELECT NAME="end-day">
+          &REPDAYLIST
+          </SELECT>
+
+          <SELECT NAME="end-yr">
+          &REPYEARLIST
+          </SELECT>
+
+          <SELECT NAME="style">
+          <OPTION VALUE="crit" SELECTED>Display only critical events
+          <OPTION VALUE="nongr">Display non-green events
+          <OPTION VALUE="all">Display all events
+          </SELECT>
+
+          <BR><BR>
+	  <INPUT TYPE="HIDDEN" NAME="csvdelim" VALUE=",">
+          <INPUT TYPE="SUBMIT" NAME="DoReport" VALUE="Generate Report" ALT="Generate Report">
+          <INPUT TYPE="SUBMIT" NAME="DoCSV" VALUE="Generate spreadsheet" ALT="Generate spreadsheet file">
+       </FORM>
+
+       </CENTER>
+       </TD>
+      </TR>
+   </TABLE>
+</CENTER>
+
+<BR><BR><BR>
+

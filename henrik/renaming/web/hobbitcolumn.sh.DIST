@@ -1,0 +1,10 @@
+#!/bin/sh
+
+QS="${QUERY_STRING}"
+QUERY_STRING="db=columndoc.csv&key=${QS}"
+export QUERY_STRING
+
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-csvinfo.cgi $CGI_HOBBITCOLUMN_OPTS
+

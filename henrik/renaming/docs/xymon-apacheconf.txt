@@ -1,0 +1,45 @@
+# This file is for Apache 1.3.x and Apache 2.0.x
+#
+# Add this to your Apache configuration, it makes
+# the Xymon webpages and cgi-scripts available in the
+# "/xymon" and "/xymon-cgi" URLs.
+
+
+# NB: The "Alias" line below must NOT be used if you have
+#     the Xymon webfiles as the root URL. In that case,
+#     you should instead set this:
+#
+#          DocumentRoot /usr/local/xymon/server/www/
+
+Alias /xymon/  "/usr/local/xymon/server/www/"
+<Directory "/usr/local/xymon/server/www/">
+    Options Indexes FollowSymLinks Includes MultiViews
+    Order allow,deny
+    Allow from all
+</Directory>
+
+ScriptAlias /xymon-cgi/ "/usr/local/xymon/cgi-bin/"
+<Directory "/usr/local/xymon/cgi-bin">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+</Directory>
+
+ScriptAlias /xymon-seccgi/ "/usr/local/xymon/cgi-secure/"
+<Directory "/usr/local/xymon/cgi-secure">
+    AllowOverride None
+    Options ExecCGI Includes
+    Order allow,deny
+    Allow from all
+
+    # Password file where users with access to these scripts are kept.
+    # Create it with "htpasswd -c /usr/local/xymon/server/etc/xymonpasswd USERNAME"
+    # Add more users / change passwords with "htpasswd /usr/local/xymon/server/etc/xymonpasswd USERNAME"
+
+    AuthUserFile /usr/local/xymon/server/etc/xymonpasswd
+    AuthType Basic
+    AuthName "Xymon Administration"
+    Require valid-user
+</Directory>
+

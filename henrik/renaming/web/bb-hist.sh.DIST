@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the Xymon wrapper for the bb-hist.cgi tool
+
+. @BBHOME@/etc/hobbitcgi.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-hist.cgi $CGI_HIST_OPTS
+

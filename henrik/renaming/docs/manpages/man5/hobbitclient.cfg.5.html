@@ -1,0 +1,109 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITCLIENT.CFG</TITLE>
+</HEAD><BODY>
+<H1>HOBBITCLIENT.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitclient.cfg - Xymon client environment variables
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+Xymon programs use multiple environment variables beside the
+normal set of variables.  For the Xymon client, the environment 
+definitions are stored in the ~xymon/client/etc/hobbitclient.cfg file. 
+Each line in this file is of the form <B>NAME=VALUE</B> and defines
+one environment variable NAME with the value VALUE.
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>SETTINGS</H2>
+
+<DL COMPACT>
+<DT>BBDISP<DD>
+The IP-address used to contact the Xymon server. Default:
+Chosen when the Xymon client was compiled.
+<P>
+<DT>BBDISPLAYS<DD>
+List of IP-adresses of Xymon servers. Data will be sent to
+all of the servers listed here. This setting is only used if 
+BBDISP=0.0.0.0.
+<P>
+<DT>BBPORT<DD>
+The portnumber for used to contact the Xymon server.
+Default: 1984.
+<P>
+<DT>BBHOME<DD>
+The Xymon client top-level directory. Default: The
+$HOBBITCLIENTHOME setting inherited from the &quot;runclient.sh&quot;
+script which starts the Xymon client.
+<P>
+<DT>BBCLIENTLOGS<DD>
+The directory for the Xymon clients' own logfiles. Default:
+$BBHOME/logs
+<P>
+<DT>BBTMP<DD>
+Directory used for temporary files. Default: $BBHOME/tmp/
+<P>
+<DT>BB<DD>
+Full path to the 
+<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+
+client program. Default: $BBHOME/bin/bb.
+<P>
+<DT>Commands<DD>
+Many extension scripts expect a series of environment variables to
+point at various system utilities. These are included in the file
+when the client is built.
+<P>
+</DL>
+<A NAME="lbAE">&nbsp;</A>
+<H2>INHERITED SETTINGS</H2>
+
+Some environment variables are inherited from the &quot;runclient.sh&quot;
+script which launches the Xymon client:
+<P>
+<DL COMPACT>
+<DT>MACHINEDOTS<DD>
+The hostname of the local system. Default: Taken from &quot;uname -n&quot;.
+<P>
+<DT>MACHINE<DD>
+The hostname of the local system, with dots replaced by commas.
+For compatibility with Big Brother extension scripts.
+<P>
+<DT>BBOSTYPE<DD>
+The operating system of the local system, in lowercase. Default:
+taken from &quot;uname -s&quot;.
+<P>
+<DT>HOBBITCLIENTHOME<DD>
+The top-level directory for the Xymon client. Default: The location
+of the &quot;runclient.sh&quot; script.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAD">SETTINGS</A><DD>
+<DT><A HREF="#lbAE">INHERITED SETTINGS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 15:16:57 GMT, October 05, 2010
+</BODY>
+</HTML>

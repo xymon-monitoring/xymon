@@ -1,0 +1,16 @@
+# bbgen compile-time settings for Darwin systems
+# Contributed by "Marc"
+
+# NETLIBS: None needed
+NETLIBS =
+
+# Compile flags for normal build
+CC = cc
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT -D_BSD_SOCKLEN_T_=int $(LFSDEF) $(OSDEF)
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"

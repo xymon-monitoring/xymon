@@ -1,0 +1,67 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITD_SAMPLE</TITLE>
+</HEAD><BODY>
+<H1>HOBBITD_SAMPLE</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitd_sample - example of a hobbitd worker module
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>hobbitd_channel --channel=status hobbitd_sample [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+hobbitd_sample is a worker module for hobbitd, and as such it is normally
+run via the
+<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+
+program. It receives messages from hobbitd via stdin, and simply displays
+these on stdout. It can be used with all types of hobbitd channels.
+<P>
+hobbitd_sample is not designed to actually run, except as a demonstration.
+The purpose of this tool is to show how hobbitd worker modules can be
+implemented to handle different tasks that need to hook into the hobbitd
+processing.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--timeout=N<DD>
+Read messages with a timeout of N seconds.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 15:16:57 GMT, October 05, 2010
+</BODY>
+</HTML>

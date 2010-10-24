@@ -1,0 +1,103 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of BB-FINDHOST.CGI</TITLE>
+</HEAD><BODY>
+<H1>BB-FINDHOST.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+bb-findhost.cgi - Xymon CGI script to find hosts
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>bb-findhost.cgi?host=REGEX</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>bb-findhost.cgi</B>
+is invoked as a CGI script via the bb-findhost.sh CGI wrapper.
+<P>
+bb-findhost.cgi is passed a QUERY_STRING environment variable with the
+&quot;host=REGEX&quot; parameter. The REGEX is a Posix regular expression (see
+<I><A HREF="../man7/regex.7.html">regex</A>(7)</I>
+
+) describing the hostnames to look for.  A trailing wildcard is assumed on all 
+hostnames - e.g. requesting the hostname &quot;www&quot; will match any host whose 
+name begins with &quot;www&quot;.
+<P>
+It then produces a single web page, listing all of the hosts that
+matched any of the hostnames, with links to the Xymon webpages
+where they are located.
+<P>
+The output page lists hosts in the order they appear in the
+<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+
+file.
+<P>
+A sample web page implementing the search facility is included
+with bbgen, you access it via the URL /bb/help/bb-findhost.html.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--env=FILENAME<DD>
+Loads the environment from FILENAME before executing the CGI.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>FILES</H2>
+
+<DL COMPACT>
+<DT>$BBHOME/web/findhost_header<DD>
+HTML header file for the generated web page
+<P>
+<DT>$BBHOME/web/findhost_footer<DD>
+HTML footer file for the generated web page
+<P>
+<DT>$BBHOME/web/findhost_form<DD>
+Query form displayed when bb-findhost.cgi is called with no parameters.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>BBHOSTS<DD>
+bb-findhost.cgi uses the BBHOSTS environment variable to find the
+bb-hosts file listing all known hosts and their page locations.
+<P>
+<DT>BBHOME<DD>
+Used to locate the template files for the generated web pages.
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">FILES</A><DD>
+<DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 15:16:57 GMT, October 05, 2010
+</BODY>
+</HTML>

@@ -1,0 +1,26 @@
+.TH BB-EVENTLOG.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+bb-eventlog.cgi \- CGI program to report the Xymon eventlog
+.SH SYNOPSIS
+.B "bb-eventlog.cgi"
+
+.SH DESCRIPTION
+\fBbb-eventlog.cgi\fR
+is invoked as a CGI script via the bb-eventlog.sh CGI wrapper.
+Based on the parameters it receives, it generates the
+Xymon event log for a period. This log shows all status
+changes that have occurred for all hosts and services.
+
+bb-eventlog.cgi is passed a QUERY_STRING environment variable 
+with the following parameters:
+
+   MAXTIME (maximum minutes to go back in the log)
+   MAXCOUNT (maximum number of events to report)
+
+.SH OPTIONS
+.IP "--env=FILENAME"
+Loads the environment defined in FILENAME before executing the CGI script.
+
+.SH "SEE ALSO"
+bb-hosts(5), hobbitserver.cfg(5)
+

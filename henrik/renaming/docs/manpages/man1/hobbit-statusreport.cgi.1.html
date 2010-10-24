@@ -1,0 +1,130 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBIT-STATUSREPORT.CGI</TITLE>
+</HEAD><BODY>
+<H1>HOBBIT-STATUSREPORT.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbit-statusreport.cgi - CGI program to report a status for a group of servers
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>hobbit-statusreport.cgi --column=COLUMNNAME [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>hobbit-statusreport.cgi</B> is a CGI tool to generate a simple HTML
+report showing the current status of a single column for a group of
+Xymon hosts.
+<P>
+E.g. You can use this report to get an overview of all of the SSL 
+certificates that are about to expire.
+<P>
+The generated webpage is a simple HTML table, suitable for copying
+into other documents or e-mail.
+<P>
+hobbit-statusreport.cgi runs as a CGI program, invoked by your webserver.
+It is normally run via a wrapper shell-script in the CGI directory for Xymon.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>EXAMPLES</H2>
+
+The Xymon installation includes two web report scripts using this
+CGI tool: The <B>hobbit-certreport.sh</B> script generates a list of
+SSL server certificates that are yellow or red (i.e. they will expire
+soon); and the <B>hobbit-nongreen.sh</B> script generates a report
+of all statuses that are currently non-green. These can be accessed
+from a web browser through a URL referencing the script in the
+Xymon CGI directory (e.g. &quot;/xymon-cgi/xymon-nongreen.sh&quot;).
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--column=COLUMNNAME<DD>
+Report the status of the COLUMNNAME column.
+<P>
+<DT>--all<DD>
+Report the status for all hosts known to Xymon. By default,
+this tool reports only on the hosts found on the current page
+from where the CGI was invoked (by looking at the &quot;pagepath&quot;
+cookie).
+<P>
+<DT>--filter=CRITERIA<DD>
+Only report on statuses that match the CRITERIA setting. See the
+<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+
+man-page - in the &quot;hobbitdboard&quot; command description - for 
+details about specifying filters.
+<P>
+<DT>--heading=HTML<DD>
+Defines the webpage heading - i.e. the &quot;title&quot; tag in the generated
+HTML code.
+<P>
+<DT>--show-column<DD>
+Include the column name in the display.
+<P>
+<DT>--show-colors<DD>
+Show the status color on the generated webpage. The default is 
+to not show the status color.
+<P>
+<DT>--no-colors<DD>
+Do not include text showing the current color of each status in
+the report. This is the default.
+<P>
+<DT>--show-summary<DD>
+Show only a summary of the important lines in the status message.
+By default, the entire status message appears in the generated 
+HTML code. This option causes the first non-blank line of the status
+message to be shown, and also any lines beginning with &quot;&amp;COLOR&quot; which
+is used by many status messages to point out lines of interest 
+(non-green lines only, though).
+<P>
+<DT>--show-message<DD>
+Show the entire message on the webpage. This is the default.
+<P>
+<DT>--link<DD>
+Include HTML links to the host &quot;info&quot; page, and the status page.
+<P>
+<DT>--embedded<DD>
+Only generate the HTML table, not a full webpage. This can be used
+to embed the status report into an external webpage.
+<P>
+<DT>--env=FILENAME<DD>
+Load the environment from FILENAME before executing the CGI.
+<P>
+<DT>--area=NAME<DD>
+Load environment variables for a specific area. NB: if used,
+this option must appear before any --env=FILENAME option.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">EXAMPLES</A><DD>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 15:16:57 GMT, October 05, 2010
+</BODY>
+</HTML>

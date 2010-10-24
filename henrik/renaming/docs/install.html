@@ -1,0 +1,232 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<title>Installing Xymon</title>
+</head>
+
+<body>
+<h1>Installing Xymon</h1>
+
+<p>This describes how to setup a Xymon server for monitoring your systems.
+It assumes that you are setting up a full Xymon server - i.e. either you
+do not have a Big Brother server, or you will replace it completely with
+Xymon.</p>
+
+<p>Note to Big Brother users: Although some of the Xymon tools have evolved 
+from the bbgen toolkit that was used on top of a Big Brother server installation, 
+the Xymon versions of these tools now require that you run Xymon - not 
+Big Brother. If you are migrating from Big Brother to Xymon, then you should 
+follow the <a href="bb-to-xymon.html">migration guide</a>.</p>
+
+<h2>Prerequisites - before you install Xymon</h2>
+<p>There are a few things you should check before you begin to install Xymon.
+Dont be scared of the number of items here - it is likely that you already have
+most or all of it in place.</p>
+
+<h4>A webbrowser capable of handling HTML 4, JavaScript and CSS</h4>
+<p>This includes most browsers available today - Internet Explorer 5 or
+later, all Mozilla/Firefox versions, Konqueror, Netscape 6 and several others. 
+The old Netscape 4.x browsers are known NOT to work.</p>
+
+<h4>A Unix-like operating system</h4>
+<p>Xymon is written for Unix-based systems, e.g. Linux, FreeBSD, or Solaris.
+It will probably work on any Unix-like system that supports the Unix System V
+IPC mechanisms (shared memory, semaphores) - that should be just about anything
+Unix-like you are likely to have.</p>
+
+<h4>Sufficient SYSV IPC ressources on your system</h4>
+<p>Xymon uses 8 shared memory segments, ranging in size from 32 KB to 512 KB (2336 KB
+total) in the default configuration; and 8 sets of 3 semaphores. Experience shows that 
+some systems need tuning to provide the necessary IPC ressources that Xymon uses. 
+Specifically, when installing on Solaris you must increase the "shmseg" kernel parameter 
+from the default 6 to at least 8. Since other programs on your system may also use shared 
+memory, a higher value may be required.  See <a href="http://www.xymon.com/archive/2005/08/msg00183.html">http://www.xymon.com/archive/2005/08/msg00183.html</a> for more information about these issues.</p>
+
+<h4>A webserver</h4>
+<p>Xymon is designed with a web-based front-end. So you should have a webserver
+such as <a href="http://httpd.apache.org/">Apache</a> running on the server where
+you install Xymon.</p>
+
+<h4>A working C compiler, GNU make.</h4>
+<p>Xymon is written in C, so you need a working C compiler, e.g. <a href="http://gcc.gnu.org/">gcc</a>. 
+You will also need a "make" utility - many systems have one by default, but you need to use the
+<a href="http://directory.fsf.org/make.html">GNU make</a> utility. On some systems,
+this is pre-installed as "gmake" or "gnumake". The configure-script checks this for you.</p>
+
+<p><b>HP-UX users</b> should note that the HP-supplied C compiler is known to mis-compile the
+lib/environ.c file, and produces an output file lib/environ.o of length 0 bytes.
+HP-UX users on the Xymon mailing list agree that the default C compiler shipped with
+HP-UX should not be used to compile Xymon - it is only for re-building the HP-UX kernel.
+The GNU C compiler works fine on HP-UX. More details in 
+<a href="http://www.xymon.com/archive/2005/06/msg00079.html">this e-mail</a> from
+the Xymon mailing list.</p>
+
+<h4>PCRE, RRDtool, libpng, OpenSSL, OpenLDAP libraries.</h4>
+<p>Xymon relies on a number of Open-Source libraries - these must be installed
+before you start building Xymon. On many systems you already have these 
+pre-installed - they are commonly installed by default on Linux systems, and
+FreeBSD has all of them in the "ports" collection.</p>
+
+<p>Note: Although many systems have these libraries pre-installed, they often
+include only the run-time libraries and not the files that are needed to compile
+and build programs such as Xymon. So if you think you have all of these libraries
+installed but Xymon will not build, do check that you have the development
+files installed as well. Often these are in packages called "something<em>-dev</em>".</p>
+
+<ul>
+	<li>PCRE - Perl Compatible Regular Expression library - is a library 
+	for matching text-strings. It is available from
+	<a href="http://www.pcre.org/">http://www.pcre.org/</a></li>
+
+	<li>RRDtool is a library for handling the Round-Robin Databases used
+	to hold the historical data Xymon gathers. It is available from 
+	<a href="http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/">http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/</a>.
+	Xymon is known to work with RRDtool 1.0.x - if you prefer to use the
+	newer RRDtool 1.2.x, make sure you use at least version 1.2.2.</li>
+
+	<li>libpng is a library for generating images in the PNG format. It
+	is used by RRDtool (and hence Xymon). You can find it at
+	<a href="http://www.libpng.org/pub/png/libpng.html">http://www.libpng.org/pub/png/libpng.html</a></li>
+
+	<li>OpenSSL is a library for communicating with network services, that
+	use SSL encryption - e.g. secure websites. Although this library is
+	not absolutely required for Xymon, I strongly recommend that you install
+	it because sooner or later you will probably need it anyway. It is 
+	available from <a href="http://www.openssl.org/">http://www.openssl.org/</a>.
+	Note: If you are building on Solaris, you should check that you have a
+	random-data generator, either the prngd daemon (available on 
+	<a href="http://www.sunfreeware.com/">Sun Freeware</a>) or the Solaris 
+	/dev/random driver from Solaris patch 112438.</li>
+
+	<li>OpenLDAP is used to query LDAP directory servers. If you would like
+	to test that your directory server is up and running, you will need this
+	library. It is available from <a href="http://www.openldap.org/">http://www.openldap.org/</a></li>
+</ul>
+
+<p>The configure-script will attempt to locate all of these libraries on 
+your system, and complain if the required ones are missing.</p>
+
+
+<h4>A "xymon" userid on your system</h4>
+<p>A core element of Xymon is a network daemon. To keep your system secure and
+limit the amount of damage that can be done if someone finds a security problem
+in Xymon, I strongly recommend that you create a dedicated userid for the Xymon
+programs. This user should <em>not</em> be a member of any other groups on your
+system.</p>
+
+<p>Xymon will install the <u>hobbitping</u> tool as <b>setuid-root</b>(only on
+the Xymon server). This program requires root privileges to be able to perform
+network &quot;ping&quot; tests. It will drop root privileges immediately after 
+obtaining the network socket needed for this, and will not run with root
+privileges at all while handling network traffic or doing file I/O. </p>
+
+
+<h2>Building Xymon</h2>
+<p>After unpacking Xymon from the tar-file, run the <tt>configure</tt> script.
+This script asks a series of questions, but all of the questions have a reasonable
+default response. So if you are in doubt about what to answer, use the default 
+setting. You can <a href="configure.txt">see what it looks like</a>.</p>
+
+<p>When the configure script finishes, it tells you to run <tt>make</tt> to 
+build the Xymon programs. If your default "make" tool is not GNU make, you 
+should use the command for running GNU make instead, e.g. <tt>gmake</tt>.
+You will now see a lot of commands being run to build the programs, it usually
+takes a minute or two.</p>
+<p>When it is finished, you finish the installation by running <tt>make install</tt>.</p>
+
+<p>The first time you run <tt>make install</tt>, besides installing the Xymon programs 
+it also creates the default directory structure used by Xymon, and installs an 
+initial set of configuration files that you can use as the basis for setting up 
+monitoring of your entire network.</p>
+
+<p>It is safe to run <tt>make install</tt> when upgrading a Xymon server. It installs the 
+programs, adds new template-files that were not present in your previous version,
+and updates your configuration files with any new sections that have been added.
+Any changes you have made yourself are preserved.</p>
+
+<h2>Configuring your webserver</h2>
+<p>Xymon uses a web-based front-end. So you need to configure your webserver so
+that it knows where the Xymon webpages can be found, and what CGI scripts can
+run as part of Xymon. This usually means adding a few lines to your webserver
+configuration that sets up a URL which points at the <em>~/server/www/</em> directory,
+and which tells your webserver that the <em>~/cgi-bin/</em> directory holds CGI
+scripts that the webserver should run when they are requested.</p>
+
+<p>If you are using the Apache webserver, you will find the necessary additions
+to the Apache configuration in <em>~/server/etc/xymon-apache.conf</em> - 
+it looks like <a href="xymon-apacheconf.txt">this</a>. After changing the webserver 
+configuration, you probably need to restart the webserver.</p>
+
+<a name="htpasswd">
+<p>If you configured Xymon to put the Administration CGI scripts into a separate
+directory (recommended for better security), you will also need to setup the
+password-file that controls access to this directory. Use the <tt>htpasswd</tt>
+command both to create the password file and to add or delete users:<br>
+<pre><tt>
+	# /usr/sbin/htpasswd -c /usr/local/xymon/server/etc/hobbitpasswd admin
+	New password:
+	Re-type new password:
+	Adding password for user admin
+	#
+</tt></pre>
+<p>The <b>-c</b> option should only be used the first time, to create the password
+file. See the Apache documentation for details about how to use htpasswd.</p>
+
+<h2>Starting Xymon</h2>
+<p>You can now login as the "xymon" user, and run the command <tt>./server/xymon.sh start</tt>
+to start Xymon. After a few seconds, it should have started and you now have the following
+processes running: <br><img src="xymonprocs.png" alt="Xymon processes"></p>
+<p>Quite a few, but all of them controlled by the master <tt>hobbitlaunch</tt> process.
+A quick run-down of what each of them does:</p>
+<ul>
+	<li><tt>hobbitd</tt> is the network daemon that receives status updates from
+	the clients and the network test tool. It also provides the current status of
+	all your systems to the tool that generates the webpages.</li>
+	<li><tt>hobbitd_channel</tt> provides the communication between hobbitd and 
+	all of the helper modules that implement other server-based functions.</li>
+	<li><tt>hobbitd_history</tt> takes care of recording the history of status
+	changes for each item you monitor. This is used to track what has happened
+	with a single status over time - when it was red, when it was green, what the
+	error reported at 2:51 AM last Friday looked like. The history file format is
+	compatible with the format used by the Big Brother package.</li>
+	<li><tt>hobbitd_filestore</tt> stores files with information about the current
+	status of the systems monitored by Xymon. There may be several of these
+	running, but normally you will only need the one that stores information about
+	hosts that have been disabled, which is the one you see here.</li>
+	<li><tt>hobbitd_alert</tt> takes care of sending out alerts when your servers
+	begin to report a critical status.</li>
+	<li><tt>hobbitd_rrd</tt> updates the RRD database files with the numeric data
+	collected from the status reports, to track e.g. how the disk utilization of
+	a server changes over time. There are two of these processes, because the
+	data can arrive in two different ways.</li>
+</ul>
+<p>After a couple of minutes, you should have data available for the Xymon server itself.
+If you open a webbrowser with the Xymon URL - usually http://your.server/xymon/ - you
+should see something like this:<br><img src="xymonmain.png" alt="Xymon main window"></p>
+<p>Each of the little faces indicate an item that is being monitored for this host. Here
+you see the default set of items that the Xymon installation sets up for a Xymon server:</p>
+<ul>
+	<li><em>bbd</em> is the availability of the Xymon network daemon.</li>
+	<li><em>bbgen</em> is the status of the bbgen tool, which updates the webpages.</li>
+	<li><em>bbtest</em> is the status of the bbtest-net network tester that performs
+	all of the network tests you configure in Xymon.</li>
+	<li><em>conn</em> is a simple &quot;ping&quot; test of the host.</li>
+	<li><em>hobbitd</em> is the status of the Xymon daemon, with statistics about
+	how many monitored items are being tracked.</li>
+	<li><em>http</em> is the status of the HTTP-server running on the Xymon server.</li>
+	<li><em>info</em> contains information about how the host is configured in Xymon,
+	such as what IP-address it has, what network tests are being run against this
+	host etc.</li>
+	<li><em>trends</em> is a collection of the various RRD graphs available for this host.</li>
+</ul>
+<p>You can click on each of the green icons to see a more detailed status.</p>
+
+<h2>Next steps</h2>
+<p>Congratulations, you now have a running Xymon server!</p>
+<p>The next step is to configure it to monitor your servers and applications, and to set up
+the alerts to send you e-mail, call a pager, or send an SMS in case of trouble. For that, see
+the <a href="xymon-config.html">Xymon configuration guide</a>.</p>
+
+</body>
+</html>
+

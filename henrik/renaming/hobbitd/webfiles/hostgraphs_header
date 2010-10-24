@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<HTML>
+<HEAD>
+
+<TITLE>Xymon - Metrics Report</TITLE>
+
+<!-- Styles for the menu bar -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
+
+<!-- The favicon image -->
+<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+
+</HEAD>
+
+<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+
+&XYMONBODYHEADER
+
+<TABLE SUMMARY="Topline" WIDTH="100%">
+<TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
+<TR>
+  <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&HOBBITLOGO</B></FONT>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Metrics Report</B></FONT></CENTER>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+  </TD>
+</TR>
+<TR>
+  <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
+</TR>
+</TABLE>
+<BR>
+

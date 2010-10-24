@@ -1,0 +1,592 @@
+.TH BBTEST-NET 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+bbtest-net \- Xymon network test tool
+.SH SYNOPSIS
+.B "bbtest-net -?"
+.br
+.B "bbtest-net --help"
+.br
+.B "bbtest-net --version"
+.br
+.B "bbtest-net [options]"
+.br
+(See the OPTIONS section for a description of the available command-line options).
+
+.SH DESCRIPTION
+.I bbtest-net(1)
+handles the network tests of hosts defined in the Xymon configuration
+file, bb-hosts. It is normally run at regular intervals by 
+.I hobbitlaunch(8)
+via an entry in the
+.I hobbitlaunch.cfg(5)
+file.
+
+bbtest-net does all of the normal tests of TCP-based network
+services (telnet, ftp, ssh, smtp, pop, imap ....) - i.e. 
+all of the services listed as BBNETSVCS in bbdef.sh. For
+these tests, a completely new and very speedy service-
+checker has been implemented.
+
+bbtest-net has built-in support for testing SSL-enabled
+protocols, e.g. imaps, pop3s, nntps, telnets, if SSL-support
+was enabled when configuring bbgen. The full list of known
+tests is found in the
+.I bb-services(5)
+file in $BBHOME/etc/bb-services.
+
+In addition, it implements the "dns" and "dig" tests for
+testing DNS servers. This is done in the same way as 
+bb-network.sh does it. 
+
+bbtest-net also implements a check for NTP servers - this test 
+is called "ntp". If you want to use it, you must define the
+NTPDATE environment variable to point at the location of your
+.I ntpdate(1)
+program.
+
+Note: bbtest-net performs the connectivity test (ping) based on the
+hostname, unless the host is tagged with "testip" or the 
+"--dns=ip" option is used. So the target of the connectivity
+test can be determined by your /etc/hosts file or DNS.
+
+
+.SH GENERAL OPTIONS
+
+.IP --timeout=N
+Determines the timeout (in seconds) for each
+service that is tested. For TCP tests (those from BBNETSVCS),
+if the connection to the service does not succeed within N 
+seconds, the service is reported as being down. For HTTP
+tests, this is the absolute limit for the entire request
+to the webserver (the time needed to connect to the server,
+plus the time it takes the server to respond to the request).
+Default: 10 seconds
+
+.IP --conntimeout=N
+This option is deprecated, and will be ignored. Use the
+--timeout option instead.
+
+.IP --cmdtimeout=N
+This option sets a timeout for the external commands used for
+testing of NTP and RPC services, and to perform traceroute.
+
+.IP --concurrency=N 
+Determines the number of network tests that
+run in parallel. Default is operating system dependent,
+but will usually be 256. If bbtest-net begins to complain 
+about not being able to get a "socket", try running
+bbtest-net with a lower value like 50 or 100.
+
+.IP "--dns-timeout=N (default: 30 seconds)"
+bbtest-net will timeout all DNS lookups after N seconds.
+Any pending DNS lookups are regarded as failed, i.e. the
+network tests that depend on this DNS lookup will report
+an error.
+.br
+Note: If you use the --no-ares option, timeout of DNS
+lookups cannot be controlled by bbtest-net.
+
+.IP --dns-max-all=N
+Same as "--dns-timeout=N". The "--dns-max-all" option is 
+deprecated and should not be used.
+
+.IP --dns=[ip|only|standard]
+Determines how bbtest-net finds the IP adresses of the hosts to test. 
+By default (the "standard"), bbtest-net does a DNS lookup of the hostname 
+to determine the IP address, unless the host has the "testip" 
+tag, or the DNS lookup fails.
+.br
+With "--dns=only" bbtest-net will ONLY do the DNS lookup;
+it it fails, then all services on that host will be 
+reported as being down.
+.br
+With "--dns=ip" bbtest-net will never do a DNS lookup;
+it will use the IP adresse specified in bb-hosts for
+the tests. Thus, this setting is equivalent to having
+the "testip" tag on all hosts. Note that http tests
+will ignore this setting and still perform a DNS
+lookup for the hostname given in the URL; see the
+"bbtest-net tags for HTTP tests" section in
+.I bb-hosts(5)
+
+.IP --no-ares
+Disable the ARES resolver built into bbtest-net. This makes
+bbtest-net resolve hostnames using your system resolver
+function. You should only use this as a last resort if bbtest-net
+cannot resolve the hostnames you use in the normal way (via DNS
+or /etc/hosts). One reason for using this would be if you need to 
+resolve hostnames via NIS/NIS+ (a.k.a. Yellow Pages).
+.br
+The system resolver function does not provide a mechanism for
+controlling timeouts of the hostname lookups, so if your
+DNS or NIS server is down, bbtest-net can take a very long time
+to run. The --dns-timeout option is effectively disabled when
+using this option.
+
+.IP --dnslog=FILENAME
+Log failed hostname lookups to the file FILENAME. FILENAME should 
+be a full pathname.
+
+.IP --report[=COLUMNNAME]
+With this option, bbtest-net will send a status message with details 
+of how many hosts were processed, how many tests were generated, 
+any errors that occurred during the run, and some timing statistics. 
+The default columnname is "bbtest".
+
+.IP --test-untagged
+When using the BBLOCATION environment variable to test
+only hosts on a particular network segment, bbtest-net
+will ignore hosts that do not have any "NET:x" tag.
+So only hosts that have a NET:$BBLOCATION tag will be 
+tested.
+.br
+With this option, hosts with no NET: tag are included
+in the test, so that all hosts that either have a
+matching NET: tag, or no NET: tag at all are tested.
+
+.IP --frequenttestlimit=N
+Used with the
+.I bbretest-net.sh(1)
+bbgen extension. This option determines how long failed tests
+remain in the frequent-test queue. The default is 1800
+seconds (30 minutes).
+
+.IP --timelimit=N
+Causes bbtest-net to generate a warning if the run-time
+of bbtest-net exceeds N seconds. By default N is set to
+the value of BBSLEEP, so a warning triggers if the
+network tests cannot complete in the time given for one
+cycle of the BBNET server. Apart from the warning, this 
+option has no effect, i.e. it will not terminate bbtest-net
+prematurely. So to eliminate any such warnings, use this
+option with a very high value of N.
+
+.IP --huge=N
+Warn if the response from a TCP test is more than N bytes.
+If you see from the bbtest status report that you are
+transferring large amounts of data for your tests, you can
+enable this option to see which tests have large replies.
+.br
+Default: 0 (disabled).
+
+.IP --validity=N
+Make the test results valid for N minutes before they go purple. 
+By default test results are valid for 30 minutes; if you run bbtest-net
+less often than that, the results will go purple before the next run
+of bbtest-net. This option lets you change how long the status is 
+valid.
+
+.IP --source-ip=IPADDRESS
+On multi-homed hosts, this option can be used to explicitly
+select the source IP address used for the network tests.
+"IPADDRESS" must be a valid IP-address on the host running
+bbtest-net.
+
+.SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
+.IP --checkresponse[=COLOR]
+When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 
+IMAP, NNTP and rsync), bbtest-net will look for a valid service-specific
+"OK" response. If another reponse is seen, this will cause
+the test to report a warning (yellow) status. Without this
+option, the response from the service is ignored.
+.br
+The optional color-name is used to select a color other than
+yellow for the status message when the response is wrong.
+E.g. "--checkresponse=red" will cause a "red" status message
+to be sent when the service does not respond as expected.
+
+.IP --no-flags
+By default, bbtest-net sends some extra information in the
+status messages, called "flags". These are used by bbgen
+e.g. to pick different icons for reversed tests when
+generating the Xymon webpages. This option makes
+bbtest-net omit these flags from the status messages.
+
+.IP --shuffle
+By default, TCP tests run roughly in the order that the hosts
+are listed in the bb-hosts file. If you have many tests for
+one server, this may result in an exceptionally large
+load when Xymon is testing it because Xymon will perform
+a lot of tests at the same time. To avoid this, the
+\fB--shuffle\fR option reorders the sequence of tests
+so they are spread randomly across all of the servers
+tested.
+
+.SH OPTIONS FOR THE PING TEST
+Note: bbtest-net uses the program defined by the FPING
+environment to execute ping-tests - by default, that is
+the
+.I hobbitping(1)
+utility. See
+.I hobbitserver.cfg(5)
+for a description of how to customize this, e.g. if you
+need to run it with "sudo" or a similar tool.
+
+.IP --ping
+Enables bbtest-net's ping test. The column name used for
+ping test results is defined by the PINGCOLUMN environment 
+variable in 
+.I hobbitserver.cfg(5).
+.br
+If not specifed, bbtest-net uses the CONNTEST environment
+variable to determine if it should perform the ping test
+or not. So if you prefer to use another tool to implement 
+ping checks, either set the CONNTEST environment variable 
+to false, or run bbtest-net with the "--noping".
+
+.IP --noping
+Disable the connectivity test.
+
+.IP "--trace"
+.IP "--notrace"
+Enable/disable the use of traceroute when a ping-test fails.
+Performing a traceroute for failed ping tests is a slow
+operation, so the default is not to do any traceroute, unless
+it is requested on a per-host basis via the "trace" tag in the 
+.I bb-hosts(5) 
+entry for each host. The "--trace" option changes this, so 
+the default becomes to run traceroute on all hosts where
+the ping test fails; you can then disable it on specific 
+hosts by putting a "notrace" tag on the host-entry.
+
+.IP --ping-tasks=N
+Spread the task of pinging the hosts over N processes. If you have
+a very large number of hosts the time it takes to ping all of them 
+can be substantial, even with the use of tools like fping or hobbitping
+that ping many hosts in parallel. This option causes bbtest-net to
+start N separate ping processes, the IP's that are being ping'ed will
+be divided evenly between these processes.
+
+
+.SH OPTIONS FOR HTTP (WEB) TESTS
+.IP --content=CONTENTTESTNAME 
+Determines the name of the column Xymon displays for content checks. 
+The default is "content".  If you have used the "cont.sh" or "cont2.sh" 
+scripts earlier, you may want to use "--content=cont" to report content
+checks using the same test name as these scripts do.
+.IP --bb-proxy-syntax
+Adhere to the Big Brother syntax for a URL, which allows specifying 
+a HTTP proxy as part of a URL. See \fB"HTTP Testing via proxy"\fR in the
+.I bb-hosts(5) 
+file for details. Beginning with Xymon 4.3.0, this behaviour is disabled
+by default since URL's that include other URL's are now much more
+common. This option restores the old Big Brother-compatible behaviour.
+
+.SH OPTIONS FOR SSL CERTIFICATE TESTS
+.IP --ssl=SSLCERTTESTNAME
+Determines the name of the column Xymon displays for the SSL certificate checks.
+The default is "sslcert".
+.IP --no-ssl
+Disables reporting of the SSL certificate check.
+
+.IP --sslwarn=N
+.IP --sslalarm=N
+Determines the number of days before an SSL certificate
+expires, where bbtest-net will generate a warning or
+alarm status for the SSL certificate column.
+
+.IP --sslbits=N
+Enables checking that the encryption supported by the
+SSL protocol uses an encryption key of at least N bits.
+E.g. to trigger an alert if your SSL-enabled website 
+supports less than 128 bits of encryption, use "--sslbits=128".
+Note: This can be enabled on a per-host basis using the
+"sslbits=N" setting in 
+.I bb-hosts(5)
+
+
+.SH DEBUGGING OPTIONS
+.IP --no-update
+Don't send any status updates to the BBDISPLAY server. Instead,
+all messages are dumped to stdout.
+
+.IP --timing
+Causes bbtest-net to collect information about
+the time spent in different parts of the program.
+The information is printed on stdout just before
+the program ends. Note that this information is also
+included in the status report sent with the "--report"
+option.
+
+.IP --debug
+Dumps a bunch of status about the tests as they
+progress to stdout.
+
+.IP --dump[=before|=after|=both]
+Dumps internal memory structures before and/or after the
+tests have executed.
+
+
+.SH INFORMATIONAL OPTIONS
+.IP "--help or -?"
+Provide a summary of available command-line options.
+
+.IP "--version"
+Prints the version number of bbtest-net
+
+.IP --services
+Dump the list of defined TCP services bbtest-net knows
+how to test. Do not run any tests.
+
+
+.SH USING COOKIES IN WEB TESTS
+If the file $BBHOME/etc/cookies exist, cookies will be read from
+this file and sent along with the HTTP requests when checking
+websites. This file is in the Netscape Cookie format, see
+http://www.netscape.com/newsref/std/cookie_spec.html for details
+on this format. The
+.I curl(1)
+utility can output a file in this format if run with the "--cookie-jar FILENAME"
+option.
+
+
+.SH ABOUT SSL CERTIFICATE CHECKS
+When bbtest-net tests services that use SSL- or TLS-based protocols,
+it will check that the server certificate has not expired. This check
+happens automatically for https (secure web), pop3s, imaps, nntps
+and all other SSL-enabled services (except ldap, see LDAP TESTS 
+below).
+
+All certificates found for a host are reported in one status message.
+
+Note: On most systems, the end-date of the certificate is limited to
+Jan 19th, 2038. If your certificate is valid after this date, bbtest-net
+will report it as valid only until Jan 19, 2038. This is due to
+limitations in your operating system C library.
+
+
+.SH LDAP TESTS
+ldap testing can be done in two ways. If you just put an "ldap" or
+"ldaps" tag in bb-hosts, a simple test is performed that just verifies
+that it is possible to establish a connection to the port running 
+the ldap service (389 for ldap, 636 for ldaps).
+
+Instead you can put an LDAP URI in bb-hosts. This will cause 
+bbtest-net to initiate a full-blown LDAP session with the server,
+and do an LDAP search for the objects defined by the URI. This
+requires that bbtest-net was built with LDAP support, and relies
+on an existing LDAP library to be installed.  It has been tested 
+with OpenLDAP 2.0.26 (from Red Hat 9) and 2.1.22.  The Solaris 8 
+system ldap library has also been confirmed to work for un-encrypted 
+(plain ldap) access.
+
+The format of LDAP URI's is defined in RFC 2255. LDAP URLs look like this:
+.nf
+
+  \fBldap://\fP\fIhostport\fP\fB/\fP\fIdn\fP[\fB?\fP\fIattrs\fP[\fB?\fP\fIscope\fP[\fB?\fP\fIfilter\fP[\fB?\fP\fIexts\fP]]]]
+
+where:
+  \fIhostport\fP is a host name with an optional ":portnumber"
+  \fIdn\fP is the search base
+  \fIattrs\fP is a comma separated list of attributes to request
+  \fIscope\fP is one of these three strings:
+    base one sub (default=base)
+  \fIfilter\fP is filter
+  \fIexts\fP are recognized set of LDAP and/or API extensions.
+
+Example:
+  ldap://ldap.example.net/dc=example,dc=net?cn,sn?sub?(cn=*)
+.fi
+.sp
+All "bind" operations to LDAP servers use simple authentication.
+Kerberos and SASL are not supported. If your LDAP server requires 
+a username/password, use the "ldaplogin" tag to specify this, cf. 
+.I bb-hosts(5) 
+If no username/password information is provided, an anonymous
+bind will be attempted. 
+
+SSL support requires both a client library and an LDAP server that support LDAPv3; 
+it uses the LDAP "STARTTLS" protocol request after establishing a connection to 
+the standard (non-encrypted) LDAP port (usually port 389). It has only been
+tested with OpenSSL 2.x, and probably will not work with any other LDAP library.
+
+The older LDAPv2 experimental method of tunnelling normal LDAP traffic through an 
+SSL connection - ldaps, running on port 636 - is not supported, unless someone 
+can explain how to get the OpenLDAP library to support it. This method was never
+formally described in an RFC, and implementations of it are non-standard.
+
+For a discussion of the various ways of running encrypted ldap, see
+.br
+http://www.openldap.org/lists/openldap-software/200305/msg00079.html
+.br
+http://www.openldap.org/lists/openldap-software/200305/msg00084.html
+.br
+http://www.openldap.org/lists/openldap-software/200201/msg00042.html
+.br
+http://www.openldap.org/lists/openldap-software/200206/msg00387.html
+
+When testing LDAP URI's, all of the communications are handled 
+by the ldap library. Therefore, it is not possible to obtain the 
+SSL certificate used by the LDAP server, and it will not show up 
+in the "sslcert" column.
+
+
+.SH USING MULTIPLE NETWORK TEST SYSTEMS
+If you have more than one system running network tests - e.g. if your network
+is separated by firewalls - then is is problematic to maintain
+multiple bb-hosts files for each of the systems.
+bbtest-net supports the NET:location tag in
+.I bb-hosts(5)
+to distinguish 
+between hosts that should be tested from different network
+locations. If you set the environment variable BBLOCATION
+e.g. to "dmz" before running bbtest-net, then it will only
+test hosts that have a "NET:dmz" tag in bb-hosts. This allows
+you to keep all of your hosts in the same bb-hosts file, but
+test different sets of hosts by different BBNET systems.
+
+
+.SH BBTEST-NET INTERNALS
+bbtest-net first reads the bb-services file to see which network tests
+are defined. It then scans the bb-hosts file, and collects information
+about the TCP service tests that need to be tested. It picks out only
+the tests that were listed in the bb-services file, plus the "dns",
+"dig" and "ntp" tests - those tests that bb-network.sh would normally 
+use the "bbnet" tool to test.
+
+It then runs two tasks in parallel: First, a separate process is
+started to run the "hobbitping" tool for the connectivity tests. While 
+hobbitping is busy doing the "ping" checks, bbtest-net runs all of the
+TCP-based network tests.
+
+All of the TCP-based service checks are handled by a connection
+tester written specifically for this purpose. It uses only standard
+Unix-style network programming, but relies on the Unix "select(2)" 
+system-call to handle many simultaneous connections happening in 
+parallel. Exactly how many parallel connections are being used 
+depends on your operating system - the default is FD_SETSIZE/4,
+which amounts to 256 on many Unix systems.
+
+You can choose the number of concurrent connections with the
+"--concurrency=N" option to bbtest-net.
+
+Connection attempts timeout after 10 seconds - this can be
+changed with the "--timeout=N" option.
+
+Both of these settings play a part in deciding how long the testing
+takes. A conservative estimate for doing N TCP tests is:
+
+   (1 + (N / concurrency)) * timeout
+
+In real life it will probably be less, as the above formula is for
+every test to require a timeout. Since the most normal use of BB
+is to check for services that are active, you should have a lot
+less timeouts.
+
+The "ntp" and "rpcinfo" checks rely on external programs to 
+do each test. Thus, they perform only marginally better than the
+standard bb-network.sh script. 
+
+.SH ENVIRONMENT VARIABLES
+.IP BBLOCATION
+Defines the network segment where bbtest-net is currently running.
+This is used to filter out only the entries in the
+.I bb-hosts(5)
+file that have a matching "NET:LOCATION" tag, and execute the
+tests for only those hosts.
+
+.IP BBMAXMSGSPERCOMBO 
+Defines the maximum number of status messages that can be sent in 
+one combo message. Default is 0 - no limit.
+.br
+In practice, the maximum size of a single Xymon message
+sets a limit - the default value for the maximum message
+size is 32 KB, but that will easily accomodate 100 status
+messages per transmission. So if you want to experiment
+with this setting, I suggest starting with a value of 10.
+
+.IP BBSLEEPBETWEENMSGS
+Defines a a delay (in microseconds) after each 
+message is transmitted to the BBDISPLAY server. The default 
+is 0, i.e.  send the messages as fast as possible.
+This gives your BBDISPLAY server some time to process the
+message before the next message comes in. Depending on
+the speed of your BBDISPLAY server, it may be necessary
+to set this value to half a second or even 1 or 2 seconds.
+Note that the value is specified in MICROseconds, so to
+define a delay of half a second, this must be set to
+the value "500000"; a delay of 1 second is achieved by
+setting this to "1000000" (one million).
+
+.IP FPING
+Command used to run the 
+.I hobbitping(1) 
+utility. Used by bbtest-net for connectivity (ping) testing.  See 
+.I hobbitserver.cfg(5)
+for more information about how to customize the program that is
+executed to do ping tests.
+
+.IP TRACEROUTE
+Location of the 
+.I traceroute(8)
+utility, or an equivalent tool e.g.
+.I mtr(8).
+Optionally used when a connectivity test fails to pinpoint the
+network location that is causing the failure.
+
+.IP NTPDATE
+Location of the 
+.I ntpdate(1) 
+utility. Used by bbtest-net when checking the "ntp" service.
+
+.IP RPCINFO
+Location of the 
+.I rpcinfo(8) 
+utility. Used by bbtest-net for the "rpc" service checks.
+
+.SH FILES
+.IP "~/server/etc/bb-services"
+This file contains definitions of TCP services that bbtest-net
+can test. Definitions for a default set of common services is built
+into bbtest-net, but these can be overridden or supplemented by
+defining services in the bb-services file. See 
+.I bb-services(5)
+for details on this file.
+
+.IP "$BBHOME/etc/netrc - authentication data for password-protected webs"
+If you have password-protected sites, you can put the usernames and 
+passwords for these here. They will then get picked up automatically
+when running your network tests.  This works for web-sites that use 
+the "Basic" authentication scheme in HTTP.
+See 
+.I ftp(1)
+for details - a sample entry would look like this
+.br
+   machine www.acme.com login fred password Wilma1
+.br
+Note that the machine-name must be the name you use in the
+http://machinename/ URL setting - it need not be the one you
+use for the system-name in Xymon.
+
+.sp
+.IP "$BBHOME/etc/cookies"
+This file may contain website cookies, in the Netscape HTTP
+Cookie format. If a website requires a static cookie to be 
+present in order for the check to complete, then you can add
+this cookie to this file, and it will be sent along with the 
+HTTP request. To get the cookies into this file, you can use
+the "curl --cookie-jar FILE" to request the URL that sets
+the cookie.
+.sp
+.IP "$BBTMP/*.status - test status summary"
+Each time bbtest-net runs, if any tests fail (i.e. they result
+in a red status) then they will be listed in a file name
+TESTNAME.[LOCATION].status. The LOCATION part may be null. This
+file is used to determine how long the failure has lasted, which
+in turn decides if this test should be included in the tests done by
+.I bbretest-net.sh(1)
+.br
+It is also used internally by bbtest-net when determining the
+color for tests that use the "badconn" or "badTESTNAME" tags.
+.sp
+.IP $BBTMP/frequenttests.[LOCATION]
+This file contains the hostnames of those hosts that should be
+retested by the
+.I bbretest-net.sh(1)
+test tool. It is updated only by bbtest-net during the normal
+runs, and read by bbretest-net.sh.
+
+.SH "SEE ALSO"
+bb-hosts(5), bb-services(5), hobbitserver.cfg(5), hobbitping(1),
+curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
+

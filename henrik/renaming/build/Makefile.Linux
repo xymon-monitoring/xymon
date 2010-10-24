@@ -1,0 +1,27 @@
+# bbgen compile-time settings for LINUX systems
+
+OSDEF = -DLINUX
+
+# NETLIBS: None needed on Linux
+NETLIBS =
+
+# Compile flags for normal build
+CC = gcc
+CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+ifndef PKGBUILD
+RPATH = -Wl,--rpath,
+endif
+
+# Compile flags for debugging
+# CFLAGS = -g -DDEBUG -Wall -D_REENTRANT $(LFSDEF) $(OSDEF)
+
+# By default, Xymon uses a static library for common code.
+# To save some diskspace and run-time memory, you can use a
+# shared library by un-commenting this.
+# HOBBITLIBRARY=libhobbit.so
+
+# Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
+# Typically, this will be "mail" or "mailx"
+MAILPROGRAM="mail"
+

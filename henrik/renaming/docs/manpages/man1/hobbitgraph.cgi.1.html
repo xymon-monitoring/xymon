@@ -1,0 +1,168 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOBBITGRAPH.CGI</TITLE>
+</HEAD><BODY>
+<H1>HOBBITGRAPH.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hobbitgraph.cgi - CGI to generate Xymon trend graphs
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>hobbitgraph [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>hobbitgraph.cgi</B>
+is invoked as a CGI script via the hobbitgraph.sh CGI wrapper.
+<P>
+hobbitgraph.cgi is passed a QUERY_STRING environment variable with the
+following parameters:
+<P>
+<B>host</B>
+
+Name of the host to generate a graph for
+<P>
+<B>service</B>
+
+Name of the service to generate a graph for
+<P>
+<B>disp</B>
+
+Display-name of the host, used on the generated graphs instead of hostname.
+<P>
+<B>graph</B>
+
+Can be &quot;hourly&quot;, &quot;daily&quot;, &quot;weekly&quot; or &quot;monthly&quot; to select the time period
+that the graph covers.
+<P>
+<B>first</B>
+
+Used to split multi-graphs into multiple graphs. This causes hobbitgraph.cgi
+to generate only the graphs starting with the &quot;first'th&quot; graph and continuing
+for &quot;count&quot;.
+<P>
+<B>count</B>
+
+Number of graphs in a multi-graph.
+<P>
+<B>upper</B>
+
+Set the upper limit of the graph. See
+<I><A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)</I>
+
+for a description of the &quot;-u&quot; option.
+<P>
+<B>lower</B>
+
+Set the lower limit of the graph. See
+<I><A HREF="../man1/rrdgraph.1.html">rrdgraph</A>(1)</I>
+
+for a description of the &quot;-l&quot; option.
+<P>
+<B>graph_start</B>
+
+Set the starttime of the graph. This is used in zoom-mode.
+<P>
+<B>graph_end</B>
+
+Set the end-time of the graph. This is used in zoom-mode.
+<P>
+<B>action=menu</B>
+
+Generate an HTML page with links to 4 graphs, representing the
+hourly, weekly, monthly and yearly graphs. Doesn't actually generate
+any graphs, only the HTML that links to the graphs.
+<P>
+<B>action=selzoom</B>
+
+Generate an HTML page with link to single graph, and with JavaScript code 
+that lets the user select part of the graph for a zoom-operation. The 
+JavaScript invokes hobbitgraph.cgi with &quot;action=showzoom&quot; to generate the
+zoomed graph webpage.
+<P>
+<B>action=showzoom</B>
+
+Generate HTML with a link to the zoomed graph image. This link goes to
+an &quot;action=view&quot; invocation of hobbitgraph.cgi.
+<P>
+<B>action=view</B>
+
+Generate a single graph image.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--config=FILENAME<DD>
+Loads the graph configuration file from FILENAME. If not specified,
+the file $BBHOME/etc/hobbitgraph.cfg is used. See the
+<I><A HREF="../man5/hobbitgraph.cfg.5.html">hobbitgraph.cfg</A>(5)</I>
+
+for details about this file.
+<P>
+<DT>--env=FILENAME<DD>
+Loads the environment settings defined in FILENAME before executing
+the CGI.
+<P>
+<DT>--rrddir=DIRECTORY<DD>
+The top-level directory for the RRD files. If not specified, the
+directory given by the BBRRDS environment is used.
+<P>
+<DT>--save=FILENAME<DD>
+Instead of returning the image via the CGI interface (i.e. on stdout),
+save the generated image to FILENAME.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>ENVIRONMENT</H2>
+
+<P>
+<B>QUERY_STRING</B>
+
+Provided by the webserver CGI interface, this decides what graph
+to generate.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>FILES</H2>
+
+<P>
+<B>hobbitgraph.cfg:</B>
+
+The configuration file determining how graphs are generated from
+RRD files.
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man5/hobbitgraph.cfg.5.html">hobbitgraph.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man1/rrdtool.1.html">rrdtool</A>(1)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">ENVIRONMENT</A><DD>
+<DT><A HREF="#lbAG">FILES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 15:16:57 GMT, October 05, 2010
+</BODY>
+</HTML>
