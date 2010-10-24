@@ -67,7 +67,7 @@
 #    EXSERVICE - rule excluding an alert by matching the hostname.
 #    GROUP     - rule matching an alert by the group ID.
 #                (Group ID's are associated with a status through the
-#                 hobbit-clients.cfg configuration).
+#                 analysis.cfg configuration).
 #    EXGROUP   - rule excluding an alert by matching the group ID.
 #    COLOR     - rule matching an alert by color. Can be "red",
 #                "yellow", or "purple".
