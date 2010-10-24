@@ -191,16 +191,16 @@
 	INTERVAL 1m
 
 
-# "hobbitclient" runs the Xymon client. The client is installed automatically
+# "xymonclient" runs the Xymon client. The client is installed automatically
 # when you install a Xymon server (presumably, you do want to monitor the 
 # Xymon server ?), but there's no need to have two xymonlaunch instances
 # running at the same time. So we'll just run it from here.
 # Note: If you are using another client package, you should disable this one.
 
-[hobbitclient]
-	ENVFILE @BBTOPDIR@/client/etc/hobbitclient.cfg
+[xymonclient]
+	ENVFILE @BBTOPDIR@/client/etc/xymonclient.cfg
 	NEEDS hobbitd
 	CMD @BBTOPDIR@/client/bin/hobbitclient.sh
-	LOGFILE $BBSERVERLOGS/hobbitclient.log
+	LOGFILE $BBSERVERLOGS/xymonclient.log
 	INTERVAL 5m
 
