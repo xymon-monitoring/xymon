@@ -1,13 +1,13 @@
 .TH HOBBITGRAPH.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbitgraph.cfg \- Configuration of the hobbitgraph CGI
+graphs.cfg \- Configuration of the hobbitgraph CGI
 
 .SH SYNOPSIS
-.B $BBHOME/etc/hobbitgraph.cfg
+.B $BBHOME/etc/graphs.cfg
 
 .SH DESCRIPTION
 .I hobbitgraph.cgi(1)
-uses the configuration file $BBHOME/etc/hobbitgraph.cfg to
+uses the configuration file $BBHOME/etc/graphs.cfg to
 build graphs from the RRD files collected by Xymon.
 
 .SH FILE FORMAT
@@ -96,7 +96,7 @@ for the graph legend:
 
 .SH ADVANCED GRAPH  TITLES
 Normally the title of a graph is a static text defined in
-the hobbitgraph.cfg file. However, there may be situations where
+the graphs.cfg file. However, there may be situations where
 you want to use different titles for the same type of graph, e.g.
 if you are incorporating RRD files from MRTG into Xymon. In that
 case you can setup the TITLE definition so that it runs a custom

@@ -184,7 +184,7 @@ interval for your network tests.</p>
 
 <hr>
 <h3><a name="fahrenheit">I want my temperature graphs in Fahrenheit</a></h3>
-<p>Edit the file server/etc/hobbitgraph.cfg, and change the <b>[temperature]</b>
+<p>Edit the file server/etc/graphs.cfg, and change the <b>[temperature]</b>
 definition from the default one to the one below that shows Fahrenheit graphs.</p>
 
 <hr>

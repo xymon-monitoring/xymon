@@ -564,7 +564,7 @@ char *expand_tokens(char *tpl)
 			 * mustn't contain the keyword STACK at all, so
 			 * we need a different treatment for the first rrdidx
 			 *
-			 * examples of hobbitgraph.cfg entries:
+			 * examples of graphs.cfg entries:
 			 *
 			 * - rrdtool 1.0.x
 			 * @STACKIT@:la@RRDIDX@#@COLOR@:@RRDPARAM@
@@ -745,10 +745,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	int xsize, ysize;
 	double ymin, ymax;
 
-	/* Find the hobbitgraph.cfg file and load it */
+	/* Find the graphs.cfg file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
-		sprintf(fnam, "%s/etc/hobbitgraph.cfg", xgetenv("BBHOME"));
+		sprintf(fnam, "%s/etc/graphs.cfg", xgetenv("BBHOME"));
 		gdeffn = strdup(fnam);
 	}
 	load_gdefs(gdeffn);
@@ -881,7 +881,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		if (!pat) {
 			char msg[8192];
 
-			snprintf(msg, sizeof(msg), "hobbitgraph.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
+			snprintf(msg, sizeof(msg), "graphs.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
 				 gdef->fnpat, errmsg, errofs);
 			errormsg(msg);
 		}
@@ -891,7 +891,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 				char msg[8192];
 
 				snprintf(msg, sizeof(msg), 
-					 "hobbitgraph.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
+					 "graphs.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
 					 gdef->exfnpat, errmsg, errofs);
 				errormsg(msg);
 			}
@@ -1184,7 +1184,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	char *rrddir  = NULL;		/* RRD files top-level directory */
-	char *gdeffn  = NULL;		/* hobbitgraph.cfg file */
+	char *gdeffn  = NULL;		/* graphs.cfg file */
 	char *graphfn = "-";		/* Output filename, default is stdout */
 
 	char *selfURI;

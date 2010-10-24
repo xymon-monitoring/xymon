@@ -30,7 +30,7 @@ Bugfixes
   For AIX (bug-report Nov.10-14-16 2006 from Andy France):
   > There's a mix of "cpu_w" and "cpu_wait" definitions in the Xymon RRD
   > module, depending on what operating system the vmstat data comes from.
-  > But all of the graph definitions in hobbitgraph.cfg use the cpu_wait
+  > But all of the graph definitions in graphs.cfg use the cpu_wait
   > definition.
   Also, postponed from the 4.2 release:
   o vmstat columns on HP-UX 11.0 are different from 11.11i. Marco Avvissano March 10.

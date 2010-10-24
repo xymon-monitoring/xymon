@@ -69,8 +69,8 @@ Generate a single graph image.
 .SH OPTIONS
 .IP "--config=FILENAME"
 Loads the graph configuration file from FILENAME. If not specified,
-the file $BBHOME/etc/hobbitgraph.cfg is used. See the
-.I hobbitgraph.cfg(5)
+the file $BBHOME/etc/graphs.cfg is used. See the
+.I graphs.cfg(5)
 for details about this file.
 
 .IP "--env=FILENAME"
@@ -96,10 +96,10 @@ to generate.
 
 .SH FILES
 .sp
-.BR hobbitgraph.cfg:
+.BR graphs.cfg:
 The configuration file determining how graphs are generated from
 RRD files.
 
 .SH "SEE ALSO"
-hobbitgraph.cfg(5), xymon(7), rrdtool(1)
+graphs.cfg(5), xymon(7), rrdtool(1)
 
