@@ -98,7 +98,7 @@ static void load_rrddefs(void)
 
 	rrddeftree = rbtNew(name_compare);
 
-	sprintf(fn, "%s/etc/hobbit-rrddefinitions.cfg", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/rrddefinitions.cfg", xgetenv("BBHOME"));
 	fd = stackfopen(fn, "r", NULL);
 	if (fd == NULL) goto loaddone;
 
