@@ -12,8 +12,7 @@ detailed rationale for Xymon is in the docs/about.html file.
 NOTE: On Nov 10 2008, Hobbit was officially renamed to
 "Xymon". The name "Hobbit" is trademarked, and therefore
 cannot be used without permission from the trademark
-holders. The 4.2.1 release is an interim version where
-the name change has not been fully implemented.
+holders. 
 
 
 How to install
@@ -41,7 +40,7 @@ package.
 
 License
 -------
-Xymon is copyrighted (C) 2002-2006 by Henrik Storner.
+Xymon is copyrighted (C) 2002-2010 by Henrik Storner.
 
 Xymon is Open Source software, made available under the 
 GNU General Public License (GPL) version 2, with the explicit 
@@ -84,7 +83,7 @@ There is an open mailing list for discussing Xymon, asking
 questions about how to use Xymon, reporting bugs etc. You
 can subscribe to the list by sending an e-mail to
 
-   hobbit-subscribe@hswn.dk
+   xymon-subscribe@xymon.com
 
 Please note that mail sent from adresses that are not subscribed
 to the list need to go through a moderator approval, and therefore
@@ -94,9 +93,9 @@ may not show up on the list for some time.
 Updates
 -------
 If you want to be notified of future updates, please subscribe
-to the hobbit-announce mailing list. Send an email to
+to the xymon-announce mailing list. Send an email to
 
-   hobbit-announce-subscribe@hswn.dk
+   xymon-announce-subscribe@xymon.com
 
 to be added to the mailing list. This is a moderated list, used
 only for announcing new Xymon releases.
