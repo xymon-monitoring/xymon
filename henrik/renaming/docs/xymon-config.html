@@ -29,13 +29,13 @@ directory. If you look at this directory, you will see these files:</p>
 	scripts will work.<br>The initial configuration of hobbitserver.cfg is setup by the 
 	<tt>configure</tt> script when you install Xymon, and in most cases you will 
 	not need to change it.</li>
-	<li><a href="manpages/man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</a> is the configuration file for the <tt>hobbitlaunch</tt>
+	<li><a href="manpages/man5/tasks.cfg.5.html">tasks.cfg</a> is the configuration file for the <tt>hobbitlaunch</tt>
 	tool. hobbitlaunch is the master program in Xymon, it is the only program you start
-	to run the Xymon server. hobbitlaunch reads the hobbitlaunch.cfg file, and starts
+	to run the Xymon server. hobbitlaunch reads the tasks.cfg file, and starts
 	the programs listed here to run the server. Some of the programs may run as daemons,
 	some of the programs may run at regular intervals. If you want to use some of the
 	advanced options for the <tt>bbgen</tt> or <tt>bbtest-net</tt> programs, you change
-	the hobbitlaunch.cfg file to add these options to the command line.</li>
+	the tasks.cfg file to add these options to the command line.</li>
 	<li><a href="manpages/man5/graphs.cfg.5.html">graphs.cfg</a> is a configuration file for the <tt>hobbitgraph CGI</tt>.
 	It defines how the graphs are generated from the data in the RRD files.</li>
 	<li><a href="manpages/man5/bb-services.5.html">bb-services</a> is a configuration file for the <tt>bbtest-net</tt> program.

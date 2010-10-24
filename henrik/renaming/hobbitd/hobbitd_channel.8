@@ -56,7 +56,7 @@ they match the filter or not.
 hobbitd_channel is normally started by 
 .I hobbitlaunch(8)
 as a task defined in the
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 file. If you are not using hobbitlaunch, then starting hobbitd_channel with this
 option causes it to run as a stand-alone background task.
 
@@ -70,7 +70,7 @@ Loads the environment variables defined in FILENAME before starting hobbitd_chan
 This is normally used only when running as a stand-alone daemon; if hobbitd_channel
 is started by hobbitlaunch, then the environment is controlled by the task definition 
 in the
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 file.
 
 .IP "--log=FILENAME"

@@ -25,7 +25,7 @@ by an application in the "management" area, you would do this:
 .LP
 Areas are invoked by using the "--area" option for all tools, or via the 
 ENVAREA setting in the
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 file.
 
 .SH GENERAL SETTINGS
@@ -58,7 +58,7 @@ DYNAMIC, the HTML logs are generated on-demand by the
 script. If set to STATIC, you must activate the
 .I hobbitd_filestore(8)
 module (through an entry in the
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 file) to create and store the HTML logs whenever a status update is
 received. Setting "BBLOGSTATUS=STATIC" is \fBdiscouraged\fR since the
 I/O load on the Xymon server will increase significantly.

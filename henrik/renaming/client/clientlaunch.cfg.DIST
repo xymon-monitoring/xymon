@@ -7,7 +7,7 @@
 #
 # Note: On the Xymon *server* itself, this file is normally 
 #       NOT used. Instead, both the client- and server-tasks
-#       are controlled by the hobbitlaunch.cfg file.
+#       are controlled by the tasks.cfg file.
 #
 
 # msgcache is used for passive clients, that cannot connect

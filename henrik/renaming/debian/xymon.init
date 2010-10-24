@@ -39,7 +39,7 @@ case "$1" in
 	log_daemon_msg "Starting $DESC" "$NAME"
 	start-stop-daemon --exec $DAEMON --chuid xymon --umask 022 --start \
 		-- \
-		--config=/etc/xymon/hobbitlaunch.cfg \
+		--config=/etc/xymon/tasks.cfg \
 		--env=/etc/xymon/hobbitserver.cfg \
 		--log=/var/log/xymon/hobbitlaunch.log \
 		--pidfile=$PIDFILE

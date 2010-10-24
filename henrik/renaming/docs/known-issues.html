@@ -63,7 +63,7 @@ it will typically run up to 256 tests concurrently. This may be more
 than your network test server or network infrastructure can handle; if
 you see sporadic timeouts of network tests or the graphs show increased
 responsetimes, you can lower the number of concurrent tests by adding
-the "--concurrency=N" option to bbtest-net in the <tt>~/server/etc/hobbitlaunch.cfg</tt>
+the "--concurrency=N" option to bbtest-net in the <tt>~/server/etc/tasks.cfg</tt>
 file. This has been especially important for sites doing many
 http checks, since these typically have much more traffic going on
 while testing than simple TCP services such as smtp.</p>

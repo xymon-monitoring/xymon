@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
 	int argi;
 	int daemonize = 1;
 	int verbose = 0;
-	char *config = "/etc/hobbitlaunch.cfg";
+	char *config = "/etc/tasks.cfg";
 	char *logfn = NULL;
 	char *pidfn = NULL;
 	pid_t cpid;

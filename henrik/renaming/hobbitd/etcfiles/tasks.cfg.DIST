@@ -1,5 +1,5 @@
 #
-# The hobbitlaunch.cfg file is loaded by "hobbitlaunch".
+# The tasks.cfg file is loaded by "hobbitlaunch".
 # It controls which of the Xymon modules to run, how often, and
 # with which parameters, options and environment variables.
 #

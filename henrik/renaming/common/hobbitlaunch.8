@@ -24,18 +24,18 @@ from all components logged to a single file.
 Loads the environment from FILENAME before starting other tools.
 The environment defined by FILENAME is the default, it can be
 overridden by the ENVFILE option in 
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 
 .IP "--config=FILENAME"
 This option defines the file that hobbitlaunch scans for tasks it
 must launch. A description of this file is in 
-.I hobbitlaunch.cfg(5)
-The default tasklist is /etc/hobbitlaunch.cfg
+.I tasks.cfg(5)
+The default tasklist is /etc/tasks.cfg
 
 .IP "--log=FILENAME"
 Defines the logfile where hobbitlaunch logs information about
 failures to launch tasks and other data about the operation of
-hobbitlaunch. Logs from individual tasks are defined in the hobbitlaunch.cfg
+hobbitlaunch. Logs from individual tasks are defined in the tasks.cfg
 file. By default this is logged to stdout.
 
 .IP "--pidfile=FILENAME"
@@ -47,7 +47,7 @@ Logs the launch of all tasks to the logfile. Note that the logfile
 may become quite large if you enable this.
 
 .IP "--dump"
-Just dump the contents of the hobbitlaunch.cfg file after parsing it.
+Just dump the contents of the tasks.cfg file after parsing it.
 Used for debugging.
 
 .IP "--debug"
@@ -74,5 +74,5 @@ definition file, or the logfile was changed, then the task is stopped
 and restarted with the new definition.
 
 .SH "SEE ALSO"
-hobbitlaunch.cfg(5), xymon(7)
+tasks.cfg(5), xymon(7)
 

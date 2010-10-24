@@ -129,7 +129,7 @@ default one that runs the core client:
 	INTERVAL 5m
 	LOGFILE /usr/lib/xymon/client/logs/myscript.log
 
-See the hobbitlaunch.cfg(5) man-page for a full description 
+See the tasks.cfg(5) man-page for a full description 
 of this file.
 
 
