@@ -1,12 +1,12 @@
 # bbgen - common tools
 #
 
-PROGRAMS = xymongrep bbdigest bb xymoncmd xymonlaunch xymoncfg
-CLIENTPROGRAMS = ../client/bb ../client/xymonlaunch ../client/xymoncmd ../client/xymongrep ../client/xymoncfg ../client/bbdigest
+PROGRAMS = xymongrep xymondigest bb xymoncmd xymonlaunch xymoncfg
+CLIENTPROGRAMS = ../client/bb ../client/xymonlaunch ../client/xymoncmd ../client/xymongrep ../client/xymoncfg ../client/xymondigest
 
 HOSTGREPOBJS = xymongrep.o
 HOSTSHOWOBJS = xymoncfg.o
-DIGESTOBJS   = bbdigest.o
+DIGESTOBJS   = xymondigest.o
 BBOBJS       = bb.o
 LAUNCHOBJS   = xymonlaunch.o
 CMDOBJS      = xymoncmd.o
@@ -45,10 +45,10 @@ xymoncmd: $(CMDOBJS) ../lib/libbbgen.a
 ../client/xymoncmd: $(CMDOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
 
-bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
+xymondigest: $(DIGESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-../client/bbdigest: $(DIGESTOBJS) ../lib/hobbitclient.a
+../client/xymondigest: $(DIGESTOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
 
 
