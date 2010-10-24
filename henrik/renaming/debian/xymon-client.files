@@ -1,7 +1,7 @@
 usr/share/man/man1/bb.1
 usr/share/man/man1/xymoncmd.1
 usr/share/man/man1/bbdigest.1
-usr/share/man/man1/bbhostgrep.1
+usr/share/man/man1/xymongrep.1
 usr/share/man/man1/xymoncfg.1
 usr/share/man/man5/clientlaunch.cfg.5
 usr/share/man/man1/clientupdate.1

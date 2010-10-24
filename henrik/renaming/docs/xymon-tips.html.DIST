@@ -292,7 +292,7 @@ like this:</p>
 <br><br>
 
 <p><b>Server-side scripts</b> look almost the same, but they will
-typically use the <a href="manpages/man1/bbhostgrep.1.html">bbhostgrep</a>
+typically use the <a href="manpages/man1/xymongrep.1.html">xymongrep</a>
 utility to pick out hosts in the hosts.cfg file that have a special tag 
 defined, and then send one status message for each of those hosts. 
 Like this:</p>
@@ -302,9 +302,9 @@ Like this:</p>
    BBHTAG=foo           # What we put in hosts.cfg to trigger this test
    COLUMN=$BBHTAG	# Name of the column, often same as tag in hosts.cfg
 
-   $BBHOME/bin/bbhostgrep $BBHTAG | while read L
+   $BBHOME/bin/xymongrep $BBHTAG | while read L
    do
-      set $L	# To get one line of output from bbhostgrep
+      set $L	# To get one line of output from xymongrep
 
       HOSTIP="$1"
       MACHINEDOTS="$2"

@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 			if (p) testcolumn = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("bbhostgrep version %s\n", VERSION);
+			printf("xymongrep version %s\n", VERSION);
 			exit(0);
 		}
 		else if (strcmp(argv[argi], "--bbnet") == 0) {

@@ -1,10 +1,10 @@
 # bbgen - common tools
 #
 
-PROGRAMS = bbhostgrep bbdigest bb xymoncmd xymonlaunch xymoncfg
-CLIENTPROGRAMS = ../client/bb ../client/xymonlaunch ../client/xymoncmd ../client/bbhostgrep ../client/xymoncfg ../client/bbdigest
+PROGRAMS = xymongrep bbdigest bb xymoncmd xymonlaunch xymoncfg
+CLIENTPROGRAMS = ../client/bb ../client/xymonlaunch ../client/xymoncmd ../client/xymongrep ../client/xymoncfg ../client/bbdigest
 
-HOSTGREPOBJS = bbhostgrep.o
+HOSTGREPOBJS = xymongrep.o
 HOSTSHOWOBJS = xymoncfg.o
 DIGESTOBJS   = bbdigest.o
 BBOBJS       = bb.o
@@ -15,10 +15,10 @@ all: $(PROGRAMS)
 
 client: $(CLIENTPROGRAMS)
 
-bbhostgrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
+xymongrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-../client/bbhostgrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
+../client/xymongrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymoncfg: $(HOSTSHOWOBJS) ../lib/libbbgen.a

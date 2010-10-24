@@ -17,7 +17,7 @@ ifeq ($(OSTYPE),openbsd)
 endif
 
 PROGRAMS=xymonlaunch logfetch clientupdate orcahobbit msgcache
-COMMONTOOLS=bb xymoncmd bbhostgrep xymoncfg bbdigest
+COMMONTOOLS=bb xymoncmd xymongrep xymoncfg bbdigest
 
 all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
