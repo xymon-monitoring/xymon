@@ -806,7 +806,7 @@ int main(int argc, char *argv[])
 	/* Load alert config */
 	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
 	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
-	sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
+	sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("BBHOME"));
 	load_alertconfig(configfn, alertcolors, alertinterval);
 	load_columndocs();
 

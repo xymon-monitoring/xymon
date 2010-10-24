@@ -486,7 +486,7 @@ DEFAULT
 All of the settings can be applied to a group of hosts, by preceding them with
 rules. A rule defines of one of more filters using these keywords (note that
 this is identical to the rule definitions used in the
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 file).
 
 .BR "PAGE=targetstring"
@@ -553,7 +553,7 @@ To handle this, all rules can have a "GROUP=groupname" setting.
 When a rule with this setting triggers a yellow or red status,
 the groupname is passed on to the Xymon alerts module, so you
 can use it in the alert rule definitions in 
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 to direct alerts to the correct group of people.
 
 .SH RULES: APPLYING SETTINGS TO SELECTED HOSTS

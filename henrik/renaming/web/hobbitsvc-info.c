@@ -711,7 +711,7 @@ char *generate_info(char *hostname, char *nkconfigfn)
 	{
 		char configfn[PATH_MAX];
 
-		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
+		sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("BBHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
 		load_holidays(0);
 	}

@@ -13,15 +13,15 @@ channel via stdin, and uses these to send out alerts about failed
 and recovered hosts and services.
 
 The operation of this module is controlled by the
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 file. This file holds the definition of rules and recipients,
 that determine who gets alerts, how often, for what servers etc.
 
 .SH OPTIONS
 .IP "--config=FILENAME"
 Sets the filename for the 
-.I hobbit-alerts.cfg
-file. The default value is "etc/hobbit-alerts.cfg" below the Xymon
+.I alerts.cfg
+file. The default value is "etc/alerts.cfg" below the Xymon
 server directory.
 
 .IP "--dump-config"
@@ -38,7 +38,7 @@ Defines how often (in seconds) the checkpoint-file is saved.
 
 .IP "--cfid"
 If this option is present, alert messages will include a line with
-"cfid:N" where N is the linenumber in the hobbit-alerts.cfg file that
+"cfid:N" where N is the linenumber in the alerts.cfg file that
 caused this message to be sent. This can be useful to track down
 problems with duplicate alerts.
 
@@ -75,7 +75,7 @@ alert state, and records the \fBtimestamp\fR when this event started,
 and adds the alert to the list statuses that may potentially trigger
 one or more alert messages.
 
-This list is then matched against the hobbit-alerts.cfg configuration.
+This list is then matched against the alerts.cfg configuration.
 This happens at least once a minute, but may happen more often. E.g.
 when status first goes into an alert state, this will always trigger
 the matching to happen.
@@ -123,8 +123,8 @@ add the mail recipients to form the command line used for sending
 out email alerts.
 
 .SH FILES
-.IP "~xymon/server/etc/hobbit-alerts.cfg"
+.IP "~xymon/server/etc/alerts.cfg"
 
 .SH "SEE ALSO"
-hobbit-alerts.cfg(5), hobbitd(8), hobbitd_channel(8), xymon(7)
+alerts.cfg(5), hobbitd(8), hobbitd_channel(8), xymon(7)
 

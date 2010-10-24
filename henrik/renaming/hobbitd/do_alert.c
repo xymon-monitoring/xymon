@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This is part of the hobbitd_alert worker module.                           */
 /* This module implements the standard hobbitd alerting function. It loads    */
-/* the alert configuration from hobbit-alerts.cfg, and incoming alerts are    */
+/* the alert configuration from alerts.cfg, and incoming alerts are           */
 /* then sent according to the rules defined.                                  */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */

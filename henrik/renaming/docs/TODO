@@ -110,7 +110,7 @@ Improvements
 * hobbitgraph.cgi change to make zoom work in two dimensions. 
   Requires RRDtool 1.2.x.
 * More reports: Check out bb-reports on deadcat
-* Multi-line macros in hobbit-alerts.cfg
+* Multi-line macros in alerts.cfg
 * Allow for regex's in the TCP response match code.
 * Merging of alerts based on some criteria, e.g. merge all
   purple alerts for a host into one message.
