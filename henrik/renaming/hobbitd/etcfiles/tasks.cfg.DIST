@@ -158,7 +158,7 @@
 
 # bbcombotest is an extension script for the Xymon display server. It generates
 # status messages that are combined from the status of one or more normal statuses.
-# It is controlled via the bbcombotest.cfg file.
+# It is controlled via the combo.cfg file.
 [bbcombotest]
 	ENVFILE @BBHOME@/etc/hobbitserver.cfg
 	NEEDS hobbitd

@@ -133,7 +133,7 @@ static void loadtests(void)
 		 * Why this ? Because I goofed and released a version using bbcombotests.cfg,
 		 * and you shouldn't break peoples' setups when fixing silly bugs.
 		 */
-		sprintf(fn, "%s/etc/bbcombotest.cfg", xgetenv("BBHOME"));
+		sprintf(fn, "%s/etc/combo.cfg", xgetenv("BBHOME"));
 		if (stat(fn, &st) == -1) sprintf(fn, "%s/etc/bbcombotests.cfg", xgetenv("BBHOME"));
 	}
 	if ((stat(fn, &st) == 0) && (st.st_mtime == lastupdate)) return;
@@ -141,7 +141,7 @@ static void loadtests(void)
 
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
-		errprintf("Cannot open %s/bbcombotest.cfg\n", xgetenv("BBHOME"));
+		errprintf("Cannot open %s/combo.cfg\n", xgetenv("BBHOME"));
 		*fn = '\0';
 		return;
 	}
