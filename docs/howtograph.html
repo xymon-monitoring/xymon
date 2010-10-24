@@ -23,7 +23,7 @@ see the graph. For this example, we'll use <b>status</b>.</p>
 
 <p>So we create an extension script. Here is an example script; 
 it picks two numbers out of the Linux kernel's memory statistics,
-and reports these to hobbit.
+and reports these to Xymon.
 
 <pre><tt>
 	#!/bin/sh
@@ -41,17 +41,17 @@ and reports these to hobbit.
 </tt></pre>
 
 <h2>Get hobbitlaunch to run the script</h2>
-<p>Save this script in ~hobbit/client/ext/slab, and add a section to
-the ~hobbit/client/etc/clientlaunch.cfg to run it every 5 minutes:
+<p>Save this script in ~xymon/client/ext/slab, and add a section to
+the ~xymon/client/etc/clientlaunch.cfg to run it every 5 minutes:
 
 <pre><tt>
 	[slabinfo]
-        	ENVFILE /usr/lib/hobbit/client/etc/hobbitclient.cfg
-	        CMD /usr/lib/hobbit/client/ext/slab
+        	ENVFILE /usr/lib/xymon/client/etc/hobbitclient.cfg
+	        CMD /usr/lib/xymon/client/ext/slab
 		INTERVAL 5m
 </tt></pre>
 (On the Xymon server itself, you must add this to the file 
-~hobbit/server/etc/hobbitlaunch.cfg)
+~xymon/server/etc/hobbitlaunch.cfg)
 
 
 <h2>Check that the script data arrives in Xymon</h2>
@@ -73,7 +73,7 @@ The first will be called <b>inodecache</b>, and the second <b>dentrycache</b>
 or a number; Xymon also limits the length of the dataset name to 19 
 letters max. since RRD will not handle longer names).
 
-To enable this, on the Xymon server edit the ~hobbit/server/etc/hobbitserver.cfg
+To enable this, on the Xymon server edit the ~xymon/server/etc/hobbitserver.cfg
 file. The TEST2RRD setting defines how Xymon tests (status columns) map to RRD 
 datafiles. So you add the new test to this setting, by adding <b>slab=ncv</b> at the
 end:
@@ -116,8 +116,8 @@ they will then pick up the new settings.</p>
 <h2>Check that the RRD collects data</h2>
 <p>The next time the <b>slab</b> status is updated, Xymon will begin to collect
 the data. You can check this by looking for the <b>slab.rrd</b> file in the
-~hobbit/data/rrd/HOSTNAME/ directory. If you want to check the data it
-collects, the <b>rrdtool dump ~hobbit/data/rrd/HOSTNAME/slab.rrd</b> will 
+~xymon/data/rrd/HOSTNAME/ directory. If you want to check the data it
+collects, the <b>rrdtool dump ~xymon/data/rrd/HOSTNAME/slab.rrd</b> will 
 tell you what it got:
 
 <pre><tt>
@@ -142,13 +142,13 @@ current value-----&gt;	&lt;last_ds&gt; 330624 &lt;/last_ds&gt;
 </tt></pre>
 
 <p>If you go and look at the status page for the <b>slab</b> column, you should
-not see any graph yet, but a link to <b>hobbit graph ncv:slab</b>. One final
+not see any graph yet, but a link to <b>xymon graph ncv:slab</b>. One final
 step is missing.</p>
 
 
 <h2>Setup a graph definition</h2>
 <p>The final step is to tell Xymon how to create a graph from the data 
-in the RRD file. This is done in the ~hobbit/server/etc/hobbitgraph.cfg
+in the RRD file. This is done in the ~xymon/server/etc/hobbitgraph.cfg
 file.
 
 <pre><tt>
@@ -205,7 +205,7 @@ status page in your browser, and the graph should show up.</p>
 <h2>Add the graph to the collection of graphs on the trends column</h2>
 <p>If you want the graph included with the other graphs on the <b>trends</b>
 column, you must add it to the GRAPHS setting in the
-~hobbit/server/etc/hobbitserver.cfg file.</p>
+~xymon/server/etc/hobbitserver.cfg file.</p>
 
 <pre><tt>
 	GRAPHS=&quot;la,disk,&lt;... lots more ...&gt;,bbproxy,hobbitd,slab&quot;

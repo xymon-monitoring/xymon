@@ -35,7 +35,7 @@ file like this at the top of the file:</p>
 
 <pre>
 # For Xymon integration
-WorkDir: /usr/local/hobbit/data/rrd
+WorkDir: /usr/local/xymon/data/rrd
 LogFormat: rrdtool
 </pre>
 
@@ -59,7 +59,7 @@ query the SNMP daemon on the router.</p>
 
 <p>The <tt><b>Directory[mrtg.myrouter.eth0]:&nbsp;myrouter.sample.com</b></tt> instructs MRTG to
 save the data file in this directory relative to the <b>WorkDir</b> directory, i.e. the final directory 
-for the RRD datafile will be <tt>/usr/local/hobbit/data/rrd/myrouter.sample.com</tt> which is
+for the RRD datafile will be <tt>/usr/local/xymon/data/rrd/myrouter.sample.com</tt> which is
 where Xymon expects all of the RRD-files for the myrouter.sample.com host to be. The
 name of the RRD data-file will be <b>mrtg.myrouter.eth0.rrd</b> - i.e. the name of the target.</p>
 
@@ -79,7 +79,7 @@ MaxBytes settings, they are required - MRTG will not run without them:</p>
 
 <pre>
 # For Xymon integration
-WorkDir: /var/lib/hobbit/rrd
+WorkDir: /var/lib/xymon/rrd
 LogFormat: rrdtool
 
 # The external interface on my router
@@ -102,7 +102,7 @@ with all of the other Xymon graphs.</p>
 <h3>Running the MRTG data collector from hobbitlaunch</h3>
 <p>Normally there is a cron job that runs the <tt>mrtg</tt> command every 5
 minutes to collect the MRTG data. But you can run it from hobbitlaunch - 
-this also has the benefit that the RRD files will be owned by the hobbit user.</p>
+this also has the benefit that the RRD files will be owned by the xymon user.</p>
 
 <p>All that is needed is to add a section for MRTG to Xymon's  hobbitlaunch.cfg 
 file. Mine looks like this:</p>
@@ -115,7 +115,7 @@ file. Mine looks like this:</p>
 
 <p>Some Linux distributions setup MRTG with the expectation that it will always
 be run by the root user. So you may have to change permissions on some files and
-directories e.g. to permit the hobbit user to read the mrtg.cfg file. Check the
+directories e.g. to permit the xymon user to read the mrtg.cfg file. Check the
 mrtg.log file for errors.</p>
 
 </body>

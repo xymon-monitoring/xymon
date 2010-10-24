@@ -16,7 +16,7 @@ Xymon.</p>
 from the bbgen toolkit that was used on top of a Big Brother server installation, 
 the Xymon versions of these tools now require that you run Xymon - not 
 Big Brother. If you are migrating from Big Brother to Xymon, then you should 
-follow the <a href="bb-to-hobbit.html">migration guide</a>.</p>
+follow the <a href="bb-to-xymon.html">migration guide</a>.</p>
 
 <h2>Prerequisites - before you install Xymon</h2>
 <p>There are a few things you should check before you begin to install Xymon.
@@ -40,7 +40,7 @@ total) in the default configuration; and 8 sets of 3 semaphores. Experience show
 some systems need tuning to provide the necessary IPC ressources that Xymon uses. 
 Specifically, when installing on Solaris you must increase the "shmseg" kernel parameter 
 from the default 6 to at least 8. Since other programs on your system may also use shared 
-memory, a higher value may be required.  See <a href="http://www.hswn.dk/hobbiton/2005/08/msg00183.html">http://www.hswn.dk/hobbiton/2005/08/msg00183.html</a> for more information about these issues.</p>
+memory, a higher value may be required.  See <a href="http://www.xymon.com/archive/2005/08/msg00183.html">http://www.xymon.com/archive/2005/08/msg00183.html</a> for more information about these issues.</p>
 
 <h4>A webserver</h4>
 <p>Xymon is designed with a web-based front-end. So you should have a webserver
@@ -55,10 +55,10 @@ this is pre-installed as "gmake" or "gnumake". The configure-script checks this 
 
 <p><b>HP-UX users</b> should note that the HP-supplied C compiler is known to mis-compile the
 lib/environ.c file, and produces an output file lib/environ.o of length 0 bytes.
-HP-UX users on the hobbit mailing list agree that the default C compiler shipped with
+HP-UX users on the Xymon mailing list agree that the default C compiler shipped with
 HP-UX should not be used to compile Xymon - it is only for re-building the HP-UX kernel.
 The GNU C compiler works fine on HP-UX. More details in 
-<a href="http://www.hswn.dk/hobbiton/2005/06/msg00079.html">this e-mail</a> from
+<a href="http://www.xymon.com/archive/2005/06/msg00079.html">this e-mail</a> from
 the Xymon mailing list.</p>
 
 <h4>PCRE, RRDtool, libpng, OpenSSL, OpenLDAP libraries.</h4>
@@ -153,8 +153,8 @@ and which tells your webserver that the <em>~/cgi-bin/</em> directory holds CGI
 scripts that the webserver should run when they are requested.</p>
 
 <p>If you are using the Apache webserver, you will find the necessary additions
-to the Apache configuration in <em>~/server/etc/hobbit-apache.conf</em> - 
-it looks like <a href="hobbit-apacheconf.txt">this</a>. After changing the webserver 
+to the Apache configuration in <em>~/server/etc/xymon-apache.conf</em> - 
+it looks like <a href="xymon-apacheconf.txt">this</a>. After changing the webserver 
 configuration, you probably need to restart the webserver.</p>
 
 <a name="htpasswd">
@@ -163,7 +163,7 @@ directory (recommended for better security), you will also need to setup the
 password-file that controls access to this directory. Use the <tt>htpasswd</tt>
 command both to create the password file and to add or delete users:<br>
 <pre><tt>
-	# /usr/sbin/htpasswd -c /usr/local/hobbit/server/etc/hobbitpasswd admin
+	# /usr/sbin/htpasswd -c /usr/local/xymon/server/etc/hobbitpasswd admin
 	New password:
 	Re-type new password:
 	Adding password for user admin
@@ -173,9 +173,9 @@ command both to create the password file and to add or delete users:<br>
 file. See the Apache documentation for details about how to use htpasswd.</p>
 
 <h2>Starting Xymon</h2>
-<p>You can now login as the "hobbit" user, and run the command <tt>./server/xymon.sh start</tt>
+<p>You can now login as the "xymon" user, and run the command <tt>./server/xymon.sh start</tt>
 to start Xymon. After a few seconds, it should have started and you now have the following
-processes running: <br><img src="hobbitprocs.png" alt="Xymon processes"></p>
+processes running: <br><img src="xymonprocs.png" alt="Xymon processes"></p>
 <p>Quite a few, but all of them controlled by the master <tt>hobbitlaunch</tt> process.
 A quick run-down of what each of them does:</p>
 <ul>
@@ -201,8 +201,8 @@ A quick run-down of what each of them does:</p>
 	data can arrive in two different ways.</li>
 </ul>
 <p>After a couple of minutes, you should have data available for the Xymon server itself.
-If you open a webbrowser with the Xymon URL - usually http://your.server/hobbit/ - you
-should see something like this:<br><img src="hobbitmain.png" alt="Xymon main window"></p>
+If you open a webbrowser with the Xymon URL - usually http://your.server/xymon/ - you
+should see something like this:<br><img src="xymonmain.png" alt="Xymon main window"></p>
 <p>Each of the little faces indicate an item that is being monitored for this host. Here
 you see the default set of items that the Xymon installation sets up for a Xymon server:</p>
 <ul>
@@ -225,7 +225,7 @@ you see the default set of items that the Xymon installation sets up for a Xymon
 <p>Congratulations, you now have a running Xymon server!</p>
 <p>The next step is to configure it to monitor your servers and applications, and to set up
 the alerts to send you e-mail, call a pager, or send an SMS in case of trouble. For that, see
-the <a href="hobbit-config.html">Xymon configuration guide</a>.</p>
+the <a href="xymon-config.html">Xymon configuration guide</a>.</p>
 
 </body>
 </html>

@@ -45,7 +45,7 @@ directory. If you look at this directory, you will see these files:</p>
 <h1>Setting up monitoring of hosts</h1>
 <p>The <a href="manpages/man5/bb-hosts.5.html">bb-hosts</a> file defines which hosts Xymon monitors. When you install Xymon,
 a simple configuration is setup that just lists the Xymon server:<br>
-<img src="hobbit-bbhosts.png" alt="Simple Xymon bb-hosts file"></p>
+<img src="xymon-bbhosts.png" alt="Simple Xymon bb-hosts file"></p>
 
 <p>There are a few things to notice here:</p>
 <ul>
@@ -152,14 +152,14 @@ it is running on automatically, but it is not uncommon for the name
 it finds to be different from what you've put into bb-hosts. So if
 you know that the client is running but no data appears, check that
 the hostname used by the Xymon client is the one you expect. See
-<a href="hobbit-tips.html#noclient">this FAQ item</a> for details.</p>
+<a href="xymon-tips.html#noclient">this FAQ item</a> for details.</p>
 
 <p>With the Xymon client running and reporting data into Xymon, you
 should see the cpu-, disk-, memory- and procs-columns appear. The color
 of these status columns is determined by settings in the 
 <a href="manpages/man5/hobbit-clients.cfg.5.html"> hobbit-clients.cfg</a>
 configuration file. Here is an example of how to setup a host:</p>
-<p><img src="hobbit-clients.png"></p>
+<p><img src="xymon-clients.png"></p>
 
 <p>As you can see, there's first a definition of what hosts the
 following criteria applies to. Here, it is only a single host:

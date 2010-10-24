@@ -123,7 +123,7 @@ Date: Sun, 06 Feb 2005 21:28:19 -0700
 Subject: Re: [hobbit] Apache tag
 
 Okay, first you must make the indicated addition to your apache
-httpd.conf (or you can make a hobbit.conf in apaches conf.d directory).
+httpd.conf (or you can make a xymon.conf in apaches conf.d directory).
 [ed: See the bb-hosts man-page for the "apache" description]
 
 Then, you must restart apache for the change to take effect
@@ -155,7 +155,7 @@ data.  Heres what I have in mine:
 
  From what you said of your setup, I'm guessing your only problem is
  using the wrong url for the apache tag (you used
- "apache=http://192.168.1.25/hobbit/" which just won't work - that's the
+ "apache=http://192.168.1.25/xymon/" which just won't work - that's the
  kind of URL you would use for the http tag).
 
  Hope this helped.
@@ -166,7 +166,7 @@ data.  Heres what I have in mine:
 
 <hr>
 <h3><a name="mrtg">How can I add MRTG graphs to the Xymon webpages?</a></h3>
-<p>There is <a href="hobbit-mrtg.html">a special document</a> for this, describing how you can configure
+<p>There is <a href="xymon-mrtg.html">a special document</a> for this, describing how you can configure
 MRTG to save data in a format that Xymon can handle natively.</p>
 
 <hr>

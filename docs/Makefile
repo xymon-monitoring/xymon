@@ -1,8 +1,8 @@
 all:
-	cat hobbit-tips.html.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' >hobbit-tips.html
+	cat xymon-tips.html.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' >xymon-tips.html
 
 clean:
-	rm -f hobbit-tips.html *~
+	rm -f xymon-tips.html *~
 
 install:
 	mkdir -p $(INSTALLROOT)$(INSTALLWWWDIR)/help/manpages
