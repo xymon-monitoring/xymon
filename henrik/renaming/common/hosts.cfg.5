@@ -734,7 +734,7 @@ and include the output from this in the status message
 from the failed connectivity test. Note: For this to
 work, you may have to define the TRACEROUTE environment
 variable, see 
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 
 .IP "notrace"
 Similar to the "trace" option, this disables the running
@@ -860,7 +860,7 @@ must be available; this can be checked with "rpc=mount,nlockmgr,nfs".
 This test uses the rpcinfo tool for the actual test; if this tool
 is not available in the PATH of bbtest-net, you must define the
 RPCINFO environment variable to point at this tool. See
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 
 
 .SH HTTP TESTS
@@ -1357,5 +1357,5 @@ daemon is listening on a non-standard IP-address or port-number.
 .BR ~xymon/server/etc/hosts.cfg
 
 .SH "SEE ALSO"
-bbgen(1), bbtest-net(1), bbdigest(1), hobbitserver.cfg(5), xymon(7)
+bbgen(1), bbtest-net(1), bbdigest(1), xymonserver.cfg(5), xymon(7)
 

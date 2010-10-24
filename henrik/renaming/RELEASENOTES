@@ -62,7 +62,7 @@ bbtest-net.
 
 BBGHOSTS setting removed
 ------------------------
-Setting BBGHOSTS in the hobbitserver.cfg file no longer has any
+Setting BBGHOSTS in the xymonserver.cfg file no longer has any
 effect. Instead, you must use the "--ghosts" option for hobbitd.
 The default ghost handling has also been changed from "ignore"
 to "log".
@@ -229,7 +229,7 @@ configuration files, in order to make full use of these enhance-
 ments. These notes describe what changes to perform.
 
 
-hobbitserver.cfg
+xymonserver.cfg
 ----------------
 Several new status columns are being reported by the Xymon client,
 and these have associated graphs. In order for them to show up
@@ -246,7 +246,7 @@ hobbitping utility is still somewhat experimental, so if you
 run into problems with the connectivity tests, it is advised that
 you use fping instead.
 
-The following settings in hobbitserver.cfg are no longer used
+The following settings in xymonserver.cfg are no longer used
 and may be deleted: BBPAGE, BBPAGERS, USEHOBBITD, PAGELEVELS,
 PURPLEDELAY, BBREL, BBRELDATE, CLIENTSVCS.
 
@@ -262,15 +262,15 @@ Five new CGI programs have been added in Xymon 4.2. To ensure
 they are invoked correctly, add these lines to your hobbitcgi.cfg file:
 
 # hobbitgraph.cgi options
-CGI_HOSTGRAPHS_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
+CGI_HOSTGRAPHS_OPTS="--env=/home/hobbit/server/etc/xymonserver.cfg"
 # hobbit-nkview.cgi options
-CGI_NKVIEW_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
+CGI_NKVIEW_OPTS="--env=/home/hobbit/server/etc/xymonserver.cfg"
 # hobbit-nkedit.cgi options
-CGI_NKEDIT_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
+CGI_NKEDIT_OPTS="--env=/home/hobbit/server/etc/xymonserver.cfg"
 # hobbit-ackinfo.cgi options
-CGI_ACKINFO_OPTS="--env=/home/hobbit/server/etc/hobbitserver.cfg"
+CGI_ACKINFO_OPTS="--env=/home/hobbit/server/etc/xymonserver.cfg"
 #hobbit-ghosts.cgi options
-CGI_GHOSTS_OPT="--env=/home/hobbit/etc/hobbitserver.cfg"
+CGI_GHOSTS_OPT="--env=/home/hobbit/etc/xymonserver.cfg"
 
 (Replace "/home/hobbit" with the top-level directory of your
 Xymon server installation).
@@ -311,7 +311,7 @@ changes are needed:
   # Note: The --store-clientlogs option for the [hobbitd] provides control over
   #       which status-changes will cause a client message to be stored.
   [hostdata]
-         ENVFILE $BBHOME/etc/hobbitserver.cfg
+         ENVFILE $BBHOME/etc/xymonserver.cfg
          NEEDS hobbitd
          CMD hobbitd_channel --channel=clichg --log=$BBSERVERLOGS/hostdata.log hobbitd_hostdata
 
@@ -328,7 +328,7 @@ Add this to your hobbitlaunch.cfg file:
   # NOTE: On the clients you must enable the "msgcache" task, since this is what
   #       hobbitfetch is talking to.
   [hobbitfetch]
-         ENVFILE $BBHOME/etc/hobbitserver.cfg
+         ENVFILE $BBHOME/etc/xymonserver.cfg
          CMD $BBHOME/bin/hobbitfetch --server=YOUR.HOBBIT.SERVER.IP --no-daemon --pidfile=$BBSERVERLOGS/hobbitfetch.pid
          LOGFILE $BBSERVERLOGS/hobbitfetch.log
 

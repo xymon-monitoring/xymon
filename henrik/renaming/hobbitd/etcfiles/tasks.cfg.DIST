@@ -10,7 +10,7 @@
 # you also need to remove the "NEEDS hobbitd" lines for the tasks
 # you want to run).
 [hobbitd]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	CMD hobbitd --pidfile=$BBSERVERLOGS/hobbitd.pid --restart=$BBTMP/hobbitd.chk --checkpoint-file=$BBTMP/hobbitd.chk --checkpoint-interval=600 --log=$BBSERVERLOGS/hobbitd.log --admin-senders=127.0.0.1,$BBSERVERIP --store-clientlogs=!msgs
 
 
@@ -21,7 +21,7 @@
 
 [bbstatus]
 	DISABLED
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/status.log hobbitd_filestore --status --html
 
@@ -30,7 +30,7 @@
 # compatible with the Big Brother history logs. You probably do want to run this.
 
 [bbhistory]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=stachg --log=$BBSERVERLOGS/history.log hobbitd_history
 
@@ -42,7 +42,7 @@
 # Note: The --store-clientlogs option for the [hobbitd] provides control over
 #       which status-changes will cause a client message to be stored.
 [hostdata]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=clichg --log=$BBSERVERLOGS/hostdata.log hobbitd_hostdata
 
@@ -56,7 +56,7 @@
 
 [bbdata]
 	DISABLED
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/data.log hobbitd_filestore --data
 
@@ -66,7 +66,7 @@
 
 [bbnotes]
 	DISABLED
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=notes  --log=$BBSERVERLOGS/notes.log hobbitd_filestore --notes
 
@@ -76,7 +76,7 @@
 
 [bbenadis]
 	DISABLED
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=enadis --log=$BBSERVERLOGS/enadis.log hobbitd_filestore --enadis
 
@@ -86,7 +86,7 @@
 # alerts to go out via pager, e-mail or some other means, then you must run this module.
 
 [bbpage]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=page  --log=$BBSERVERLOGS/page.log hobbitd_alert --checkpoint-file=$BBTMP/alert.chk --checkpoint-interval=600
 
@@ -95,7 +95,7 @@
 # If you want RRD graphs of your monitoring data, then you want to run this.
 
 [rrdstatus]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=status --log=$BBSERVERLOGS/rrd-status.log hobbitd_rrd --rrddir=$BBVAR/rrd
 
@@ -103,13 +103,13 @@
 # If you want RRD graphs of your monitoring BB data, then you want to run this.
 
 [rrddata]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=data   --log=$BBSERVERLOGS/rrd-data.log hobbitd_rrd --rrddir=$BBVAR/rrd
 
 # The client back-end module. You need this if you are running the Xymon client on any system.
 [clientdata]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD hobbitd_channel --channel=client --log=$BBSERVERLOGS/clientdata.log hobbitd_client
 
@@ -123,7 +123,7 @@
 # status messages.
 [bbproxy]
 	DISABLED
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	CMD $BBHOME/bin/bbproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
 	LOGFILE $BBSERVERLOGS/bbproxy.log
 
@@ -138,7 +138,7 @@
 #       hobbitfetch is talking to.
 [hobbitfetch]
 	DISABLED
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	CMD $BBHOME/bin/hobbitfetch --server=YOUR.HOBBIT.SERVER.IP --no-daemon --pidfile=$BBSERVERLOGS/hobbitfetch.pid
 	LOGFILE $BBSERVERLOGS/hobbitfetch.log
 
@@ -149,7 +149,7 @@
 # and dont need updates that often.
 
 [bbdisplay]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	GROUP generators
 	CMD bbgen $BBGENOPTS --report
@@ -160,7 +160,7 @@
 # status messages that are combined from the status of one or more normal statuses.
 # It is controlled via the combo.cfg file.
 [bbcombotest]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD $BBHOME/bin/bbcombotest
 	LOGFILE $BBSERVERLOGS/bbcombotest.log
@@ -170,7 +170,7 @@
 # all of the various network protocols we need to test.
 
 [bbnet]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD bbtest-net --report --ping --checkresponse
 	LOGFILE $BBSERVERLOGS/bb-network.log
@@ -184,7 +184,7 @@
 # reports look much better.
 
 [bbretest]
-	ENVFILE @BBHOME@/etc/hobbitserver.cfg
+	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS hobbitd
 	CMD $BBHOME/ext/bbretest-net.sh
 	LOGFILE $BBSERVERLOGS/bb-retest.log

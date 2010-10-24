@@ -38,7 +38,7 @@ the xymon-users home-directory with the following contents:
 DEFAULT=$HOME/Mailbox
 LOGFILE=$HOME/procmail.log
 :0
-| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/hobbitserver.cfg
+| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/xymonserver.cfg
 .fi
 
 .SH USE WITH QMAIL
@@ -46,12 +46,12 @@ If you are using Qmail to deliver mail locally, you can run hobbit-mailack
 directly from a \fB.qmail\fR file. Setup the xymon-users .qmail file like this:
 .IP
 .nf
-| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/hobbitserver.cfg
+| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/xymonserver.cfg
 .fi
 
 .SH OPTIONS
 .IP "--env=FILENAME"
-Load environment from FILENAME, usually hobbitserver.cfg.
+Load environment from FILENAME, usually xymonserver.cfg.
 
 .IP "--debug"
 Dont send a message to hobbitd, but dump the message to

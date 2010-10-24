@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	if (!envfile) {
 		struct stat st;
 
-		sprintf(envfn, "%s/etc/hobbitserver.cfg", xgetenv("BBHOME"));
+		sprintf(envfn, "%s/etc/xymonserver.cfg", xgetenv("BBHOME"));
 		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/hobbitclient.cfg", xgetenv("BBHOME"));
 		errprintf("Using default environment file %s\n", envfn);
 

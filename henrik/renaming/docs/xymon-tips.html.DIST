@@ -210,7 +210,7 @@ scripts. Stephen Beaudry found the solution:</p>
 <p>Xymon by default uses the system <b>mail</b> command to send out messages.
 The mail-command in Solaris and HP-UX does not understand the "-s SUBJECT" syntax that Xymon uses.
 So you get mails with no subject. The solution is to change the MAIL setting in
-etc/hobbitserver.cfg to use the <b>mailx</b> command instead. Xymon needs to be
+etc/xymonserver.cfg to use the <b>mailx</b> command instead. Xymon needs to be
 restarted after this change.</p>
 
 <hr>

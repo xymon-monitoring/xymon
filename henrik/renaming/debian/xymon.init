@@ -40,7 +40,7 @@ case "$1" in
 	start-stop-daemon --exec $DAEMON --chuid xymon --umask 022 --start \
 		-- \
 		--config=/etc/xymon/tasks.cfg \
-		--env=/etc/xymon/hobbitserver.cfg \
+		--env=/etc/xymon/xymonserver.cfg \
 		--log=/var/log/xymon/hobbitlaunch.log \
 		--pidfile=$PIDFILE
 	log_end_msg $?

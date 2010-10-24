@@ -1,5 +1,5 @@
 /*
- * Merge the current hobbitserver.cfg file with a new template. New entries are added,
+ * Merge the current xymonserver.cfg file with a new template. New entries are added,
  * and existing ones are copied over from the current setup.
  */
 #include <stdio.h>

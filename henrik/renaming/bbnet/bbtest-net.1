@@ -218,7 +218,7 @@ environment to execute ping-tests - by default, that is
 the
 .I hobbitping(1)
 utility. See
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 for a description of how to customize this, e.g. if you
 need to run it with "sudo" or a similar tool.
 
@@ -226,7 +226,7 @@ need to run it with "sudo" or a similar tool.
 Enables bbtest-net's ping test. The column name used for
 ping test results is defined by the PINGCOLUMN environment 
 variable in 
-.I hobbitserver.cfg(5).
+.I xymonserver.cfg(5).
 .br
 If not specifed, bbtest-net uses the CONNTEST environment
 variable to determine if it should perform the ping test
@@ -512,7 +512,7 @@ setting this to "1000000" (one million).
 Command used to run the 
 .I hobbitping(1) 
 utility. Used by bbtest-net for connectivity (ping) testing.  See 
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 for more information about how to customize the program that is
 executed to do ping tests.
 
@@ -587,6 +587,6 @@ test tool. It is updated only by bbtest-net during the normal
 runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
-hosts.cfg(5), bb-services(5), hobbitserver.cfg(5), hobbitping(1),
+hosts.cfg(5), bb-services(5), xymonserver.cfg(5), hobbitping(1),
 curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
 

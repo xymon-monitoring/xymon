@@ -7,7 +7,7 @@
 # So the usual "include" and "directory" definitions 
 # will not work in this file.
 
-HOBBITENV=@BBHOME@/etc/hobbitserver.cfg
+HOBBITENV=@BBHOME@/etc/xymonserver.cfg
 
 # bb-csvinfo.cgi
 CGI_CSVINFO_OPTS="--env=$HOBBITENV"

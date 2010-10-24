@@ -73,7 +73,7 @@ The first will be called <b>inodecache</b>, and the second <b>dentrycache</b>
 or a number; Xymon also limits the length of the dataset name to 19 
 letters max. since RRD will not handle longer names).
 
-To enable this, on the Xymon server edit the ~xymon/server/etc/hobbitserver.cfg
+To enable this, on the Xymon server edit the ~xymon/server/etc/xymonserver.cfg
 file. The TEST2RRD setting defines how Xymon tests (status columns) map to RRD 
 datafiles. So you add the new test to this setting, by adding <b>slab=ncv</b> at the
 end:
@@ -98,7 +98,7 @@ of the various RRD datatypes. It is available online at
 <p>Our test script provides data that goes up and down in value
 (it is the number of bytes of memory used for a Linux kernel bufffer), and
 for that kind of data we'll use the RRD <b>GAUGE</b> datatype. So we add an extra
-setting to hobbitserver.cfg:</p>
+setting to xymonserver.cfg:</p>
 
 <pre><tt>
 	NCV_slab=&quot;inodecache:GAUGE,dentrycache:GAUGE&quot;
@@ -108,7 +108,7 @@ setting to hobbitserver.cfg:</p>
 two datasets of type GAUGE instead of the default (DERIVE). The setting must
 be named NCV_&lt;columnname&gt;.</p>
 
-<p>The hobbitserver.cfg file is not reloaded automatically, so you must restart
+<p>The xymonserver.cfg file is not reloaded automatically, so you must restart
 Xymon after making these changes. Or at least, kill the hobbitd_rrd processes
 (there are usually two) - hobbitlaunch will automatically restart them, and
 they will then pick up the new settings.</p>
@@ -205,7 +205,7 @@ status page in your browser, and the graph should show up.</p>
 <h2>Add the graph to the collection of graphs on the trends column</h2>
 <p>If you want the graph included with the other graphs on the <b>trends</b>
 column, you must add it to the GRAPHS setting in the
-~xymon/server/etc/hobbitserver.cfg file.</p>
+~xymon/server/etc/xymonserver.cfg file.</p>
 
 <pre><tt>
 	GRAPHS=&quot;la,disk,&lt;... lots more ...&gt;,bbproxy,hobbitd,slab&quot;
@@ -224,7 +224,7 @@ you must delete any existing RRD files - the RRD datatype is defined
 when the RRD file is created, and cannot be changed on the fly.</p>
 
 <h3>No graph on the status page, but OK on the trends page</h3>
-<p>Make sure you have <b>ncv</b> listed in the GRAPHS setting in hobbitserver.cfg. 
+<p>Make sure you have <b>ncv</b> listed in the GRAPHS setting in xymonserver.cfg. 
 (Don't ask why - just take my word that it must be there).</p>
 
 </body>

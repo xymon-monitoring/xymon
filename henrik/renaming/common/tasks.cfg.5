@@ -22,13 +22,13 @@ An entry looks like this:
 .sp
     [hobbitd]
 .br
-          ENVFILE /usr/local/xymon/server/etc/hobbitserver.cfg
+          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
 .br
           CMD /usr/local/xymon/server/bin/hobbitd
 .sp
     [updateweb]
 .br
-          ENVFILE /usr/local/xymon/server/etc/hobbitserver.cfg
+          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
 .br
           CMD /usr/local/xymon/server/bin/bbgen
 .br
@@ -46,7 +46,7 @@ An entry looks like this:
 .sp
     [monthlyreport]
 .br
-          ENVFILE /usr/local/xymon/server/etc/hobbitserver.cfg
+          ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
 .br
           CMD /usr/local/xymon/server/ext/monthlyreport.sh
 .br
@@ -123,7 +123,7 @@ defined to hobbitlaunch is used.
 The \fBENVAREA\fR setting modifies which environment variables
 are loaded, by picking up the ones that are defined for this
 specific "area". See 
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 for information about environment areas.
 
 The \fBLOGFILE\fR setting defines a logfile for the task.

@@ -62,7 +62,7 @@ listed here, but in the TEST2RRD environment variable - see below.
 .IP TEST2RRD
 Defines the mapping between a status-log columnname and the corresponding
 RRD database format. This is normally defined in the 
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 file.
 
 .IP BBRRDS
@@ -193,7 +193,7 @@ of the data-items you want to track.
 
 To enable the ncv module for a status, add a "COLUMNNAME=ncv" to the 
 TEST2RRD setting and the COLUMNNAME to the GRAPHS setting in
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 , then restart Xymon. Xymon will now send
 all status-messages for the column COLUMNNAME through the hobbitd_rrd
 ncv-handler.
@@ -210,7 +210,7 @@ E.g. if you are using the bb-mysqlstatus script from www.deadcat.net to
 collect data about your MySQL server, it generates a report in the column 
 called "mysql". One data item is the average number of queries/second,
 which must be logged in the RRD file as type "GAUGE". To do that, add
-the following to hobbitserver.cfg:
+the following to xymonserver.cfg:
 .br
     NCV_mysql="Queriespersecondavg:GAUGE" 
 .br
@@ -260,7 +260,7 @@ knows how to generate the graph from the data stored in the RRD file.
 To make the graphs actually show up on the status-page and/or the
 "trends" page, add the name of the new graph to the TEST2RRD and/or 
 GRAPHS setting in
-.I hobbitserver.cfg(5).
+.I xymonserver.cfg(5).
 
 The script is invoked for each message that arrives, where the test-name
 matches one of the testnames given in the "--extra-tests" option. The
@@ -384,5 +384,5 @@ reporting.
 
 
 .SH "SEE ALSO"
-hobbitd_channel(8), hobbitd(8), hobbitserver.cfg(5), xymon(7)
+hobbitd_channel(8), hobbitd(8), xymonserver.cfg(5), xymon(7)
 
