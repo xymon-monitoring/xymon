@@ -1,4 +1,4 @@
-PROGRAMS = hobbit.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk rrdcachectl
+PROGRAMS = xymon.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/hobbitd_client
 
 LIBOBJS = ../lib/libbbgen.a
@@ -102,7 +102,7 @@ convertnk: $(CONVERTNKOBJS) $(LIBOBJS)
 rrdcachectl: $(RRDCACHECTLOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(RRDCACHECTLOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
-hobbit.sh: hobbit.sh.DIST
+xymon.sh: xymon.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
@@ -157,7 +157,7 @@ install-cfg:
 	cd etcfiles; ../../build/merge-lines columndoc.csv $(INSTALLROOT)$(INSTALLETCDIR)/columndoc.csv
 	cd etcfiles; (echo "bb-hosts"; echo "hobbit-alerts.cfg"; echo "hobbit-clients.cfg"; echo "bbcombotest.cfg"; echo "client-local.cfg"; echo "hobbit-holidays.cfg"; echo "hobbit-rrddefinitions.cfg"; echo hobbit-snmpmibs.cfg; echo xymonmenu.cfg) | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLETCDIR)/
 	cd etcfiles; cp -fp xymon-apache.conf $(INSTALLROOT)$(INSTALLETCDIR)/xymon-apache.conf
-	cd $(INSTALLROOT)$(BBHOME); rm -f hobbit.sh; ln -sf bin/hobbit.sh .
+	cd $(INSTALLROOT)$(BBHOME); rm -f xymon.sh; ln -sf bin/xymon.sh .
 	cd wwwfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWWWDIR)/ ../../build/md5.dat
 	cd webfiles; find . | grep -v RCS | grep -v DIST | ../../build/setup-newfiles $(INSTALLROOT)$(INSTALLWEBDIR)/ ../../build/md5.dat
 	touch $(INSTALLROOT)$(INSTALLETCDIR)/hobbit-nkview.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbit-nkview.cfg.bak
