@@ -155,7 +155,7 @@ install-servermsg:
 	@echo "If you have your Administration CGI scripts in a separate directory,"
 	@echo "then you must also setup the password-file with the htpasswd command."
 	@echo ""
-	@echo "To start Xymon, as the $(BBUSER) user run '${BBHOME}/bin/hobbit.sh start'"
+	@echo "To start Xymon, as the $(BBUSER) user run '${BBHOME}/bin/xymon.sh start'"
 	@echo "To view the Xymon webpages, go to http://${BBHOSTNAME}${BBHOSTURL}"
 
 install-dirs:
