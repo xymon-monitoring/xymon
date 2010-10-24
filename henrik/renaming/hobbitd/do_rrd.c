@@ -382,7 +382,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		if (cacheitem->updseq[cacheitem->valcount-1] == seq) {
 			/*
 			 * This is usually caused by a configuration error, 
-			 * e.g. two PORT settings in hobbit-clients.cfg that
+			 * e.g. two PORT settings in analysis.cfg that
 			 * use the same TRACK string.
 			 * Can also be two web checks using the same URL, but
 			 * with different POST data.

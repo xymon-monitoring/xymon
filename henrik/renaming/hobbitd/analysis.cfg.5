@@ -1,12 +1,12 @@
 .TH HOBBIT-CLIENTS.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbit-clients.cfg \- Configuration file for the hobbitd_client module
+analysis.cfg \- Configuration file for the hobbitd_client module
 
 .SH SYNOPSIS
-.B ~Xymon/server/etc/hobbit-clients.cfg
+.B ~Xymon/server/etc/analysis.cfg
 
 .SH DESCRIPTION
-The hobbit-clients.cfg file controls what color is assigned to
+The analysis.cfg file controls what color is assigned to
 the status-messages that are generated from the Xymon client
 data - typically the cpu, disk, memory, procs- and msgs-columns. Color
 is decided on the basis of some \fBsettings\fR defined in this file;
@@ -598,7 +598,7 @@ file- and directory-names in the
 .I client-local.cfg(5)
 file. If the filenames are not listed there, the clients will not collect
 any data about these files/directories, and the settings in the 
-hobbit-clients.cfg file will be silently ignored.
+analysis.cfg file will be silently ignored.
 
 The ability to compute file checksums with MD5, SHA1 or RMD160 should not be
 used for general-purpose file integrity checking, since the overhead of calculating

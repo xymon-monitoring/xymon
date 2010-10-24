@@ -17,7 +17,7 @@ directory. If you look at this directory, you will see these files:</p>
 	you are checking, what subpage in the Xymon web-pages this host is shown on etc.
 	The name of the file - "hosts.cfg" - was chosen so it is compatible with the
 	Big Brother system which uses the same filename and file format.</li>
-	<li><a href="manpages/man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</a> is the configuration file for data reported by the Xymon clients installed on the hosts you are monitoring. This defines the color of the cpu-, disk-, memory- and procs-columns, based on the information that is sent to Xymon by the clients.</li>
+	<li><a href="manpages/man5/analysis.cfg.5.html">analysis.cfg</a> is the configuration file for data reported by the Xymon clients installed on the hosts you are monitoring. This defines the color of the cpu-, disk-, memory- and procs-columns, based on the information that is sent to Xymon by the clients.</li>
 	<li><a href="manpages/man5/alerts.cfg.5.html">alerts.cfg</a> holds the alerting configuration. In this file,
 	you setup the rules for sending out alerts about services going down: Who gets
 	the alert, how is it sent, how often, whether to send alerts 24x7 or only between
@@ -157,7 +157,7 @@ the hostname used by the Xymon client is the one you expect. See
 <p>With the Xymon client running and reporting data into Xymon, you
 should see the cpu-, disk-, memory- and procs-columns appear. The color
 of these status columns is determined by settings in the 
-<a href="manpages/man5/hobbit-clients.cfg.5.html"> hobbit-clients.cfg</a>
+<a href="manpages/man5/analysis.cfg.5.html"> analysis.cfg</a>
 configuration file. Here is an example of how to setup a host:</p>
 <p><img src="xymon-clients.png"></p>
 
@@ -166,7 +166,7 @@ following criteria applies to. Here, it is only a single host:
 voodoo.hswn.dk - but you can use various filters on hostnames,
 pagenames and time of day to determine what the thresholds should
 be for each of the criteria monitored with the client data.
-The <a href="manpages/man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</a>
+The <a href="manpages/man5/analysis.cfg.5.html">analysis.cfg</a>
 man-page describes this in detail.</p>
 <p>After the host filter comes the criteria used to determine the
 color of each of the status columns.</p>
@@ -263,7 +263,7 @@ color of each of the status columns.</p>
 </table>
 
 <h3>More about logfile monitoring</h3>
-<p>Configuring the LOG entries in the hobbit-clients.cfg file is only one half of
+<p>Configuring the LOG entries in the analysis.cfg file is only one half of
 the configuration - you also need to tell the Xymon client running on the 
 monitored system that it must send in some data from that logfile in the
 first place. For that, you must configure the

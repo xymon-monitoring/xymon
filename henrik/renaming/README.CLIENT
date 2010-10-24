@@ -71,7 +71,7 @@ command at startup.
 Client configuration
 ====================
 All of the normal configuration is done on the Xymon SERVER.
-See the hobbit-clients.cfg(5) and client-local.cfg(5) man-
+See the analysis.cfg(5) and client-local.cfg(5) man-
 pages on the Xymon server.
 
 

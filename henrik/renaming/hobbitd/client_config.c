@@ -524,7 +524,7 @@ int load_client_config(char *configfn)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-clients.cfg", xgetenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/analysis.cfg", xgetenv("BBHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
