@@ -6,17 +6,20 @@
 # names - DNS might not work if there's a problem.
 #
 # E.g. (a single Xymon server)
-#   HOBBITSERVERS="192.168.1.1" 
+#   XYMONSERVERS="192.168.1.1" 
 # or (multiple servers)
-#   HOBBITSERVERS="10.0.0.1 192.168.1.1" 
+#   XYMONSERVERS="10.0.0.1 192.168.1.1" 
 
-HOBBITSERVERS=""
+XYMONSERVERS=""
 
 # The defaults usually suffice for the rest of this file, 
 # but you can tweak the hostname that the client reports 
-# data with, and the OS name used (typically needed only on 
-# RHEL or RHAS servers).
-
+# data with.
 # CLIENTHOSTNAME=""
+
+# Red Hat EL version 3 uses a different vmstat layout
+# than all other Linux versions. So for a client running this
+# particular OS, set CLIENTOS as below.
+# Do NOT set this on any other Red Hat version.
 # CLIENTOS="rhel3"
 

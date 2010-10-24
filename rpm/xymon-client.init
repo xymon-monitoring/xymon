@@ -1,0 +1,79 @@
+#! /bin/sh
+#
+# xymon-client    This shell script takes care of starting and stopping
+#                 the Xymon client.
+#
+# chkconfig: 2345 80 20
+# description: Xymon is a network monitoring tool that allows \
+# you to monitor hosts and services. This client reports local \
+# system statistics (cpu-, memory-, disk-utilisation etc) \
+# to the Xymon server.
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/lib/xymon/client/runclient.sh
+NAME=xymon-client
+DESC=xymon-client
+
+test -x $DAEMON || exit 0
+
+CMD="$1"
+
+# Include xymon-client defaults if available
+DMNOPTS=""
+if [ -f /etc/default/xymon-client ] ; then
+	. /etc/default/xymon-client
+else
+	echo "Installation failure - missing /etc/default/xymon-client"
+	exit 1
+fi
+
+if [ "$XYMONSERVERS" = "" ]; then
+	echo "Please configure HOBBITSERVERS in /etc/default/xymon-client"
+	exit 1
+fi
+
+set $XYMONSERVERS
+if [ $# -eq 1 ]; then
+	echo "BBDISP=\"$XYMONSERVERS\"" >/var/run/xymonclient-runtime.cfg
+	echo "BBDISPLAYS=\"\"" >>/var/run/xymonclient-runtime.cfg
+else
+	echo "BBDISP=\"0.0.0.0\"" >/var/run/xymonclient-runtime.cfg
+	echo "BBDISPLAYS=\"$XYMONSERVERS\"" >>/var/run/xymonclient-runtime.cfg
+fi
+
+if [ "$CLIENTHOSTNAME" != "" ]; then
+	DMNOPTS="${DMNOPTS} --hostname=${CLIENTHOSTNAME}"
+fi
+if [ "$CLIENTOS" != "" ]; then
+	DMNOPTS="${DMNOPTS} --os=${CLIENTOS}"
+fi
+
+set -e
+
+case "$CMD" in
+  start)
+	echo -n "Starting $DESC: "
+	su -c "$DAEMON $DMNOPTS start" - xymon
+	echo "$NAME."
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+	su -c "$DAEMON stop" - xymon
+	echo "$NAME."
+	;;
+  restart)
+	echo -n "Restarting $DESC: "
+	su -c "$DAEMON stop" - xymon
+	su -c "$DAEMON $DMNOPTS start" - xymon
+	echo "$NAME."
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	# echo "Usage: $N {start|stop|restart}" >&2
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
+
