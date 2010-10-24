@@ -19,11 +19,11 @@ endif
 PROGRAMS=hobbitlaunch logfetch clientupdate orcahobbit msgcache
 COMMONTOOLS=bb bbcmd bbhostgrep xymoncfg bbdigest
 
-all: $(PROGRAMS) $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
+all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
-hobbitclient.cfg: hobbitclient.cfg.DIST
-	cat hobbitclient.cfg.DIST | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
-	../build/bb-commands.sh >>hobbitclient.cfg
+xymonclient.cfg: xymonclient.cfg.DIST
+	cat xymonclient.cfg.DIST | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >xymonclient.cfg
+	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST
 ifeq ($(LOCALCLIENT),yes)
@@ -69,7 +69,7 @@ install:
 	chmod ugo+x $(INSTALLROOT)$(BBHOME)/bin/*
 
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg
-	../build/merge-lines hobbitclient.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitclient.cfg
+	../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(BBHOME)/etc/xymonclient.cfg
 ifndef PKGBUILD
 	chown -R $(BBUSER) $(INSTALLROOT)$(BBHOME)
 endif
@@ -81,5 +81,5 @@ ifndef PKGBUILD
 endif
 
 clean:
-	rm -f $(PROGRAMS) $(COMMONTOOLS) hobbitd_client hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
+	rm -f $(PROGRAMS) $(COMMONTOOLS) hobbitd_client xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
 
