@@ -3,26 +3,26 @@
 <HTML><HEAD><TITLE>Man page of BBHOSTSHOW</TITLE>
 </HEAD><BODY>
 <H1>BBHOSTSHOW</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bbhostshow - output the full bb-hosts file
+xymoncfg - output the full hosts.cfg file
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bbhostshow [--bbdisp] [--bbnet] [filename]</B>
+<B>xymoncfg [--bbdisp] [--bbnet] [filename]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man1/bbhostshow.1.html">bbhostshow</A>(1)</I>
+<I><A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1)</I>
 
-dumps the full bb-hosts file to stdout. It follows &quot;include&quot;
-tags in the bb-hosts files, and prints the full contents
+dumps the full hosts.cfg file to stdout. It follows &quot;include&quot;
+tags in the hosts.cfg files, and prints the full contents
 as seen by the
 <I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
 
@@ -31,19 +31,19 @@ and
 
 utilities.
 <P>
-If no filename is given, bbhostshow displays the file pointed
-to by the BBHOSTS environment variable.
+If no filename is given, xymoncfg displays the file pointed
+to by the HOSTSCFG environment variable.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>OPTIONS</H2>
 
 <DL COMPACT>
 <DT>--bbdisp<DD>
-Show the bb-hosts file following include statements as a
+Show the hosts.cfg file following include statements as a
 BBDISPLAY server would.
 <P>
 <DT>--bbnet<DD>
-Show the bb-hosts file following include statements as a
+Show the hosts.cfg file following include statements as a
 BBNET server would.
 <P>
 <P>
@@ -52,9 +52,9 @@ BBNET server would.
 <H2>ENVIRONMENT VARIABLES</H2>
 
 <DL COMPACT>
-<DT>BBHOSTS<DD>
+<DT>HOSTSCFG<DD>
 Filename for the
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file.
 <P>
@@ -62,7 +62,7 @@ file.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
 <P>
 
 <HR>
@@ -79,6 +79,6 @@ file.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 14:54:20 GMT, October 24, 2010
 </BODY>
 </HTML>
