@@ -2,6 +2,6 @@
 
 # This is the Xymon wrapper for the hostgraphs CGI
 
-. @BBHOME@/etc/hobbitcgi.cfg
+. @BBHOME@/etc/cgioptions.cfg
 @RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-hostgraphs.cgi $CGI_HOSTGRAPHS_OPTS
 

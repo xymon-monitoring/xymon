@@ -127,14 +127,14 @@ cfgfiles:
 	cat etcfiles/hosts.cfg.DIST | sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g' | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >etcfiles/hosts.cfg
 	cat etcfiles/alerts.cfg.DIST | sed -e 's!@BBHOSTNAME@!$(BBHOSTNAME)!g' | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >etcfiles/alerts.cfg
 	cat etcfiles/hobbitlaunch.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBTOPDIR@!$(BBTOPDIR)!g' >etcfiles/hobbitlaunch.cfg
-	cat etcfiles/hobbitcgi.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/hobbitcgi.cfg
+	cat etcfiles/cgioptions.cfg.DIST | sed -e 's!@BBHOME@!$(BBHOME)!g' >etcfiles/cgioptions.cfg
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f $(PROGRAMS) *.o *~ client/*~ rrd/*~
-	rm -f etcfiles/xymon-apache.conf etcfiles/hobbitserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/hobbitlaunch.cfg etcfiles/hobbitcgi.cfg
+	rm -f etcfiles/xymon-apache.conf etcfiles/hobbitserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/hobbitlaunch.cfg etcfiles/cgioptions.cfg
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
 install: install-bin install-man install-cfg install-obsoleted
@@ -150,7 +150,7 @@ install-man:
 
 install-cfg:
 	cd etcfiles; ../../build/merge-lines hobbitserver.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitserver.cfg LARRDCOLUMN=TRENDSCOLUMN LARRDS=TEST2RRD
-	cd etcfiles; ../../build/merge-lines hobbitcgi.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitcgi.cfg
+	cd etcfiles; ../../build/merge-lines cgioptions.cfg $(INSTALLROOT)$(INSTALLETCDIR)/cgioptions.cfg
 	cd etcfiles; ../../build/merge-sects hobbitlaunch.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitlaunch.cfg larrdstatus=rrdstatus larrddata=rrddata
 	cd etcfiles; ../../build/merge-sects client-local.cfg $(INSTALLROOT)$(INSTALLETCDIR)/client-local.cfg
 	cd etcfiles; ../../build/merge-sects hobbitgraph.cfg $(INSTALLROOT)$(INSTALLETCDIR)/hobbitgraph.cfg

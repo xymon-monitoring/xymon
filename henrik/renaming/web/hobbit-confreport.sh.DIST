@@ -4,6 +4,6 @@
 #
 # Install this script in your webservers' cgi-bin directory
 
-. @BBHOME@/etc/hobbitcgi.cfg
+. @BBHOME@/etc/cgioptions.cfg
 @RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-confreport.cgi $CGI_HOBBITCONFREPORT_OPTS
 
