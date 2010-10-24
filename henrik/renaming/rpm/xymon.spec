@@ -97,7 +97,7 @@ then
    groupadd xymon || true
    useradd -g xymon -c "Xymon user" -d /usr/lib/xymon xymon
 fi
-if [ -e /var/log/xymon/hobbitlaunch.pid -a -x /etc/init.d/xymon ]
+if [ -e /var/log/xymon/xymonlaunch.pid -a -x /etc/init.d/xymon ]
 then
 	/etc/init.d/xymon stop || true
 fi
@@ -123,7 +123,7 @@ chkconfig --add xymon-client
 
 
 %preun
-if [ -e /var/log/xymon/hobbitlaunch.pid -a -x /etc/init.d/xymon ]
+if [ -e /var/log/xymon/xymonlaunch.pid -a -x /etc/init.d/xymon ]
 then
 	/etc/init.d/xymon stop || true
 fi

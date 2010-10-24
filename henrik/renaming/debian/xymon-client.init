@@ -15,7 +15,7 @@
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON="/usr/lib/xymon/client/bin/hobbitlaunch"
+DAEMON="/usr/lib/xymon/client/bin/xymonlaunch"
 NAME=xymonclient
 DESC="Xymon Client"
 PIDFILE="/var/run/xymon/clientlaunch.pid"

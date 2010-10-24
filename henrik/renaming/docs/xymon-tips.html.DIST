@@ -272,7 +272,7 @@ script is pretty simple. You need to figure out some things:</p>
 
 <p>You will notice that some environment variables are pre-defined:
 BB, BBDISP, MACHINE are all provided by Xymon when you run your script via
-hobbitlaunch. Also note how the MSG variable is used to build the status
+xymonlaunch. Also note how the MSG variable is used to build the status
 message - it starts out with just the "Bad stuff status", then you add
 data to the message when we decided what the status is.</p>
 

@@ -585,14 +585,14 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	setup_signalhandler("hobbitlaunch");
+	setup_signalhandler("xymonlaunch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 
-	errprintf("hobbitlaunch starting\n");
+	errprintf("xymonlaunch starting\n");
 	while (running) {
 		time_t now = gettimer();
 

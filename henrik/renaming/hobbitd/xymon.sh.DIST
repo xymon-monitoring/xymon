@@ -2,7 +2,7 @@
 
 # Startup script for Xymon
 #
-# This starts the "hobbitlaunch" tool, which in turn starts
+# This starts the "xymonlaunch" tool, which in turn starts
 # all of the other Xymon server programs.
 
 case "`uname -s`" in
@@ -22,57 +22,57 @@ fi
 
 case "$1" in
    "start")
-	if test -s @BBLOGDIR@/hobbitlaunch.pid
+	if test -s @BBLOGDIR@/xymonlaunch.pid
 	then
-		kill -0 `cat @BBLOGDIR@/hobbitlaunch.pid`
+		kill -0 `cat @BBLOGDIR@/xymonlaunch.pid`
 		if test $? -eq 0
 		then
 			echo "Xymon appears to be running, doing restart"
 			$0 stop
 		else
-			rm -f @BBLOGDIR@/hobbitlaunch.pid
+			rm -f @BBLOGDIR@/xymonlaunch.pid
 		fi
 	fi
 
-	@RUNTIMEDEFS@ @BBHOME@/bin/hobbitlaunch --config=@BBHOME@/etc/tasks.cfg --env=@BBHOME@/etc/xymonserver.cfg --log=@BBLOGDIR@/hobbitlaunch.log --pidfile=@BBLOGDIR@/hobbitlaunch.pid
+	@RUNTIMEDEFS@ @BBHOME@/bin/xymonlaunch --config=@BBHOME@/etc/tasks.cfg --env=@BBHOME@/etc/xymonserver.cfg --log=@BBLOGDIR@/xymonlaunch.log --pidfile=@BBLOGDIR@/xymonlaunch.pid
 	echo "Xymon started"
 	;;
 
    "stop")
-	if test -s @BBLOGDIR@/hobbitlaunch.pid
+	if test -s @BBLOGDIR@/xymonlaunch.pid
 	then
-		kill -TERM `cat @BBLOGDIR@/hobbitlaunch.pid`
+		kill -TERM `cat @BBLOGDIR@/xymonlaunch.pid`
 		echo "Xymon stopped"
 	else
 		echo "Xymon is not running"
 	fi
-	rm -f @BBLOGDIR@/hobbitlaunch.pid
+	rm -f @BBLOGDIR@/xymonlaunch.pid
 	;;
 
    "status")
-	if test -s @BBLOGDIR@/hobbitlaunch.pid
+	if test -s @BBLOGDIR@/xymonlaunch.pid
 	then
-		kill -0 `cat @BBLOGDIR@/hobbitlaunch.pid`
+		kill -0 `cat @BBLOGDIR@/xymonlaunch.pid`
 		if test $? -eq 0
 		then
-			echo "Xymon (hobbitlaunch) running with PID `cat @BBLOGDIR@/hobbitlaunch.pid`"
+			echo "Xymon (xymonlaunch) running with PID `cat @BBLOGDIR@/xymonlaunch.pid`"
 		else
 			echo "Xymon not running, removing stale PID file"
-			rm -f @BBLOGDIR@/hobbitlaunch.pid
+			rm -f @BBLOGDIR@/xymonlaunch.pid
 		fi
 	else
-		echo "Xymon (hobbitlaunch) does not appear to be running"
+		echo "Xymon (xymonlaunch) does not appear to be running"
 	fi
 	;;
 
    "restart")
-	if test -s @BBLOGDIR@/hobbitlaunch.pid
+	if test -s @BBLOGDIR@/xymonlaunch.pid
 	then
 		$0 stop
 		sleep 10
 		$0 start
 	else
-		echo "hobbitlaunch does not appear to be running, starting it"
+		echo "xymonlaunch does not appear to be running, starting it"
 		$0 start
 	fi
 	;;

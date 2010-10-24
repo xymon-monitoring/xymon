@@ -16,7 +16,7 @@ ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
 
-PROGRAMS=hobbitlaunch logfetch clientupdate orcahobbit msgcache
+PROGRAMS=xymonlaunch logfetch clientupdate orcahobbit msgcache
 COMMONTOOLS=bb xymoncmd bbhostgrep xymoncfg bbdigest
 
 all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)

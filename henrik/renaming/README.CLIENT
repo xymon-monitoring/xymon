@@ -112,11 +112,11 @@ To override the default, start the client using the
 
 Extension scripts
 -----------------
-The file client/etc/clientlaunch.cfg configures the "hobbitlaunch"
+The file client/etc/clientlaunch.cfg configures the "xymonlaunch"
 used to run the client scripts. If you need to run extension
 scripts for your client, you can add them to this file. The 
 environment variables commonly used by Big Brother-based extensions 
-are made available by hobbitlaunch for the scripts, so in most
+are made available by xymonlaunch for the scripts, so in most
 cases extensions written for the Big Brother client will work 
 without modifications on Xymon.
 

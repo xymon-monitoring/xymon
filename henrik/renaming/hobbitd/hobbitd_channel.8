@@ -54,10 +54,10 @@ they match the filter or not.
 
 .IP "--daemon"
 hobbitd_channel is normally started by 
-.I hobbitlaunch(8)
+.I xymonlaunch(8)
 as a task defined in the
 .I tasks.cfg(5)
-file. If you are not using hobbitlaunch, then starting hobbitd_channel with this
+file. If you are not using xymonlaunch, then starting hobbitd_channel with this
 option causes it to run as a stand-alone background task.
 
 .IP "--pidfile=FILENAME"
@@ -68,7 +68,7 @@ scripts.
 .IP "--env=FILENAME"
 Loads the environment variables defined in FILENAME before starting hobbitd_channel.
 This is normally used only when running as a stand-alone daemon; if hobbitd_channel
-is started by hobbitlaunch, then the environment is controlled by the task definition 
+is started by xymonlaunch, then the environment is controlled by the task definition 
 in the
 .I tasks.cfg(5)
 file.

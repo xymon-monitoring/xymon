@@ -1,5 +1,5 @@
 #
-# The tasks.cfg file is loaded by "hobbitlaunch".
+# The tasks.cfg file is loaded by "xymonlaunch".
 # It controls which of the Xymon modules to run, how often, and
 # with which parameters, options and environment variables.
 #
@@ -193,7 +193,7 @@
 
 # "hobbitclient" runs the Xymon client. The client is installed automatically
 # when you install a Xymon server (presumably, you do want to monitor the 
-# Xymon server ?), but there's no need to have two hobbitlaunch instances
+# Xymon server ?), but there's no need to have two xymonlaunch instances
 # running at the same time. So we'll just run it from here.
 # Note: If you are using another client package, you should disable this one.
 

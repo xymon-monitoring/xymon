@@ -14,7 +14,7 @@
 # Requires Xymon server ver. 4.3.0
 #
 #
-# Called from hobbitlaunch with
+# Called from xymonlaunch with
 #
 #     CMD $BBHOME/ext/mq.sh QUEUEMGR1 [QUEUEMGR2...]
 #

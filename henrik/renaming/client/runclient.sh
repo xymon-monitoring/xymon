@@ -2,7 +2,7 @@
 #----------------------------------------------------------------------------#
 # Xymon client bootup script.                                                #
 #                                                                            #
-# This invokes hobbitlaunch, which in turn runs the Xymon client and any     #
+# This invokes xymonlaunch, which in turn runs the Xymon client and any      #
 # extensions configured.                                                     #
 #                                                                            #
 # Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #

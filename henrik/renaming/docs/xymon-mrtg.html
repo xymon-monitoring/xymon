@@ -99,9 +99,9 @@ MaxBytes[mrtg.fenris.lan]: 1250000
 <p>With this setup, I have the MRTG graphs readily available on the "trends" page, together
 with all of the other Xymon graphs.</p>
 
-<h3>Running the MRTG data collector from hobbitlaunch</h3>
+<h3>Running the MRTG data collector from xymonlaunch</h3>
 <p>Normally there is a cron job that runs the <tt>mrtg</tt> command every 5
-minutes to collect the MRTG data. But you can run it from hobbitlaunch - 
+minutes to collect the MRTG data. But you can run it from xymonlaunch - 
 this also has the benefit that the RRD files will be owned by the xymon user.</p>
 
 <p>All that is needed is to add a section for MRTG to Xymon's  tasks.cfg 

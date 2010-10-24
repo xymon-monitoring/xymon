@@ -40,7 +40,7 @@ and reports these to Xymon.
 	exit 0
 </tt></pre>
 
-<h2>Get hobbitlaunch to run the script</h2>
+<h2>Get xymonlaunch to run the script</h2>
 <p>Save this script in ~xymon/client/ext/slab, and add a section to
 the ~xymon/client/etc/clientlaunch.cfg to run it every 5 minutes:
 
@@ -110,7 +110,7 @@ be named NCV_&lt;columnname&gt;.</p>
 
 <p>The xymonserver.cfg file is not reloaded automatically, so you must restart
 Xymon after making these changes. Or at least, kill the hobbitd_rrd processes
-(there are usually two) - hobbitlaunch will automatically restart them, and
+(there are usually two) - xymonlaunch will automatically restart them, and
 they will then pick up the new settings.</p>
 
 <h2>Check that the RRD collects data</h2>

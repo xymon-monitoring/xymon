@@ -1,5 +1,5 @@
 #
-# The clientlaunch.cfg file is loaded by "hobbitlaunch".
+# The clientlaunch.cfg file is loaded by "xymonlaunch".
 # It controls which of the Xymon client-side modules to run, 
 # (both the main client "hobbitclient.sh" and any client-side
 # extensions); how often, and with which parameters, options 

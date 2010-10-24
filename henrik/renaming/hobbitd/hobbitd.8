@@ -20,7 +20,7 @@ plugins enabled, hobbitd still performs much faster than the
 standard bbd daemon.
 
 hobbitd is normally started and controlled by the
-.I hobbitlaunch(8)
+.I xymonlaunch(8)
 tool, and the command used to invoke hobbitd should therefore be
 in the tasks.cfg file.
 
@@ -67,8 +67,8 @@ adresses available on the host) and port 1984.
 
 .IP "--daemon"
 hobbitd is normally started by 
-.I hobbitlaunch(8)
-. If you do not want to use hobbitlaunch, you can start hobbitd with this option;
+.I xymonlaunch(8)
+. If you do not want to use xymonlaunch, you can start hobbitd with this option;
 it will then detach from the terminal and continue running as a background
 task.
 
@@ -81,8 +81,8 @@ Default: 10 seconds.
 .IP "--env=FILENAME"
 Loads the content of FILENAME as environment settings before starting
 hobbitd. This is mostly used when running as a stand-alone daemon; if
-hobbitd is started by hobbitlaunch, the environment settings are controlled
-by the hobbitlaunch tasks.cfg file.
+hobbitd is started by xymonlaunch, the environment settings are controlled
+by the xymonlaunch tasks.cfg file.
 
 .IP "--pidfile=FILENAME"
 hobbitd writes the process-ID it is running with to this file.

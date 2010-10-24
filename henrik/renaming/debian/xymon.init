@@ -2,7 +2,7 @@
 
 # Startup script for the Xymon monitor
 #
-# This starts the "hobbitlaunch" tool, which in turn starts
+# This starts the "xymonlaunch" tool, which in turn starts
 # all of the other Xymon server programs.
 
 ### BEGIN INIT INFO
@@ -17,8 +17,8 @@
 #                    (Also monitors the local host.)
 ### END INIT INFO
 
-PIDFILE=/var/run/xymon/hobbitlaunch.pid
-DAEMON=/usr/lib/xymon/server/bin/hobbitlaunch
+PIDFILE=/var/run/xymon/xymonlaunch.pid
+DAEMON=/usr/lib/xymon/server/bin/xymonlaunch
 NAME="hobbitd"
 DESC="Xymon Server"
 
@@ -41,7 +41,7 @@ case "$1" in
 		-- \
 		--config=/etc/xymon/tasks.cfg \
 		--env=/etc/xymon/xymonserver.cfg \
-		--log=/var/log/xymon/hobbitlaunch.log \
+		--log=/var/log/xymon/xymonlaunch.log \
 		--pidfile=$PIDFILE
 	log_end_msg $?
 	;;
@@ -58,7 +58,7 @@ case "$1" in
 		kill -0 `cat $PIDFILE`
 		if test $? -eq 0
 		then
-			echo "Xymon (hobbitlaunch) running with PID `cat $PIDFILE`"
+			echo "Xymon (xymonlaunch) running with PID `cat $PIDFILE`"
 			exit 0
 		else
 			echo "Xymon not running, removing stale PID file"
@@ -66,7 +66,7 @@ case "$1" in
 			exit 1
 		fi
 	else
-		echo "Xymon (hobbitlaunch) does not appear to be running"
+		echo "Xymon (xymonlaunch) does not appear to be running"
 		exit 3
 	fi
 	;;
@@ -78,7 +78,7 @@ case "$1" in
 		sleep 1
 		$0 start
 	else
-		log_action_msg "hobbitlaunch does not appear to be running, starting it"
+		log_action_msg "xymonlaunch does not appear to be running, starting it"
 		$0 start
 	fi
 	;;

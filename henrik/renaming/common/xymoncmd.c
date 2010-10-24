@@ -2,7 +2,7 @@
 /* Xymon application launcher.                                                */
 /*                                                                            */
 /* This is used to launch a single Xymon application, with the environment    */
-/* that would normally be established by hobbitlaunch.                        */
+/* that would normally be established by xymonlaunch.                         */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

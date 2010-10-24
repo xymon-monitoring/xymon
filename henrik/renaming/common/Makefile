@@ -1,14 +1,14 @@
 # bbgen - common tools
 #
 
-PROGRAMS = bbhostgrep bbdigest bb xymoncmd hobbitlaunch xymoncfg
-CLIENTPROGRAMS = ../client/bb ../client/hobbitlaunch ../client/xymoncmd ../client/bbhostgrep ../client/xymoncfg ../client/bbdigest
+PROGRAMS = bbhostgrep bbdigest bb xymoncmd xymonlaunch xymoncfg
+CLIENTPROGRAMS = ../client/bb ../client/xymonlaunch ../client/xymoncmd ../client/bbhostgrep ../client/xymoncfg ../client/bbdigest
 
 HOSTGREPOBJS = bbhostgrep.o
 HOSTSHOWOBJS = xymoncfg.o
 DIGESTOBJS   = bbdigest.o
 BBOBJS       = bb.o
-LAUNCHOBJS   = hobbitlaunch.o
+LAUNCHOBJS   = xymonlaunch.o
 CMDOBJS      = xymoncmd.o
 
 all: $(PROGRAMS)
@@ -33,10 +33,10 @@ bb: $(BBOBJS) ../lib/libbbgen.a
 ../client/bb: $(BBOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
 
-hobbitlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
+xymonlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a $(LIBRTDEF)
 
-../client/hobbitlaunch: $(LAUNCHOBJS) ../lib/hobbitclient.a
+../client/xymonlaunch: $(LAUNCHOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
 
 xymoncmd: $(CMDOBJS) ../lib/libbbgen.a
