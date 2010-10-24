@@ -9,7 +9,7 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/etc"  # PATH setting for the client scripts
 # You normally dont need to modify anything below here
 BBPORT="1984"                   # Portnumber where hobbitd listens
 BBHOME="$HOBBITCLIENTHOME"      # Directory for the Xymon client files
-BB="$BBHOME/bin/bb"             # The Xymon client "bb" utility
+BB="$BBHOME/bin/xymon"          # The Xymon client "xymon" utility
 BBTMP="$BBHOME/tmp"             # Where we may store temporary files.
 BBCLIENTLOGS="$BBHOME/logs"     # Where we store the client logfiles
 

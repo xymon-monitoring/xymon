@@ -70,7 +70,7 @@ const static struct {
 	{ "BBHOME", BUILD_HOME },
 	{ "BBTMP", "$BBHOME/tmp" },
 	{ "HOSTSCFG", "$BBHOME/etc/hosts.cfg" },
-	{ "BB", "$BBHOME/bin/bb" },
+	{ "BB", "$BBHOME/bin/xymon" },
 	{ "BBGEN", "$BBHOME/bin/bbgen" },
 	{ "BBVAR", "$BBSERVERROOT/data" },
 	{ "BBACKS", "$BBVAR/acks" },

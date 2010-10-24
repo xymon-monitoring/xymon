@@ -71,7 +71,7 @@ SECURECGIBINURL="$BBSERVERSECURECGIURL"		# URL prefix for the secured Xymon CGI-
 BBHOME="@BBHOME@"				# The Xymon server directory, where programs and configurations go. 
 BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
 HOSTSCFG="$BBHOME/etc/hosts.cfg"		# The hosts.cfg file
-BB="$BBHOME/bin/bb"				# The 'bb' client program
+BB="$BBHOME/bin/xymon"				# The 'xymon' client program
 BBGEN="$BBHOME/bin/bbgen"			# The bbgen program
 
 # Server specific directories

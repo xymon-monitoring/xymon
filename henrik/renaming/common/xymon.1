@@ -1,8 +1,8 @@
 .TH BB 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bb \- Xymon client communication program
+xymon \- Xymon client communication program
 .SH SYNOPSIS
-.B "bb [options] RECIPIENT message"
+.B "xymon [options] RECIPIENT message"
 
 .SH DESCRIPTION
 .I bb(1)
@@ -11,7 +11,7 @@ Xymon server. It is frequently used by Xymon
 client systems to send in status messages and pager
 alerts on local tests.
 
-In Xymon, the bb program is also used for administrative
+In Xymon, the xymon program is also used for administrative
 purposes, e.g. to rename or delete hosts, or to disable
 hosts that are down for longer periods of time.
 
@@ -30,7 +30,7 @@ Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
 .IP "--response"
-The bb utility normally knows when to expect a response 
+The xymon utility normally knows when to expect a response 
 from the server, so this option is not required. However,
 it will cause any response from the server to be displayed.
 
@@ -68,7 +68,7 @@ of a message is defined by the maximum allowed length of your
 shell\(aqs command-line, and is typically 8-32 KB. 
 
 If you need to send longer status messages, you can specify "@" 
-as the message: bb will then read the status message from its
+as the message: xymon will then read the status message from its
 stdin.
 
 .SH XYMON MESSAGE SYNTAX
@@ -437,17 +437,9 @@ if we get a response):
 
 Send a very large status message that has been built in the
 file "statusmsg.txt". Instead of providing it on the command-line, 
-pass it via stdin to the bb command:
+pass it via stdin to the xymon command:
 
    $ cat statusmsg.txt | $BB $BBDISP "@"
-
-.SH NOTES
-This man-page describes the bb client program provided
-as part of Xymon. This implementation provides features 
-not present in the standard Big Brother bb client - 
-specifically, the support for sending messages over HTTP, 
-and many commands such as "query" and "config" are not part 
-of the bb client shipped with Big Brother.
 
 .SH "SEE ALSO"
 bbcombotest(1), hosts.cfg(5), xymonserver.cfg(5), xymon(7)

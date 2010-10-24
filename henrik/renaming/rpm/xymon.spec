@@ -75,7 +75,7 @@ rm -rf $RPM_BUILD_ROOT
 	mkdir -p $RPM_BUILD_ROOT/etc/default
 	cp %{SOURCE4} $RPM_BUILD_ROOT/etc/default/xymon-client
 	mkdir -p $RPM_BUILD_ROOT/usr/bin
-	cd $RPM_BUILD_ROOT/usr/bin && ln -sf ../lib/xymon/server/bin/{bb,xymoncmd} .
+	cd $RPM_BUILD_ROOT/usr/bin && ln -sf ../lib/xymon/server/bin/{xymon,xymoncmd} .
 	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 	mv $RPM_BUILD_ROOT/etc/xymon/xymon-apache.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/
 	rmdir $RPM_BUILD_ROOT/usr/lib/xymon/client/tmp

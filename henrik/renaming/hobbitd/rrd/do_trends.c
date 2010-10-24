@@ -21,10 +21,10 @@ static char trends_rcsid[] = "$Id$";
  * Subject: Re: [hobbit] hobbit monitoring
  * 
  * Just wondering, how hard would it be to create an extra channel for trending?
- * So you can use the bb client to send "numbers" to the hobbit server together
+ * So you can use the xymon client to send "numbers" to the hobbit server together
  * with some extra control information.
  * 
- * bb <bb server> trends <server name>
+ * xymon <xymon server> trends <server name>
  * <rrd file name> <ds name> <number> <options>
  * -----------------------------------------------------------------------------
  *

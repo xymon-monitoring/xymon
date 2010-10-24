@@ -599,7 +599,7 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 		  default:                statustext = "Unknown error"; break;
 		};
 
-		errprintf("Whoops ! bb failed to send message - %s\n", statustext, res);
+		errprintf("Whoops ! Failed to send message - %s\n", statustext, res);
 	}
 
 	/* Give it a break */

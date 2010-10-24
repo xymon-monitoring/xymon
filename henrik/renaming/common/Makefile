@@ -1,13 +1,13 @@
 # bbgen - common tools
 #
 
-PROGRAMS = xymongrep xymondigest bb xymoncmd xymonlaunch xymoncfg
-CLIENTPROGRAMS = ../client/bb ../client/xymonlaunch ../client/xymoncmd ../client/xymongrep ../client/xymoncfg ../client/xymondigest
+PROGRAMS = xymongrep xymondigest xymon xymoncmd xymonlaunch xymoncfg
+CLIENTPROGRAMS = ../client/xymon ../client/xymonlaunch ../client/xymoncmd ../client/xymongrep ../client/xymoncfg ../client/xymondigest
 
 HOSTGREPOBJS = xymongrep.o
 HOSTSHOWOBJS = xymoncfg.o
 DIGESTOBJS   = xymondigest.o
-BBOBJS       = bb.o
+BBOBJS       = xymon.o
 LAUNCHOBJS   = xymonlaunch.o
 CMDOBJS      = xymoncmd.o
 
@@ -27,10 +27,10 @@ xymoncfg: $(HOSTSHOWOBJS) ../lib/libbbgen.a
 ../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
 
-bb: $(BBOBJS) ../lib/libbbgen.a
+xymon: $(BBOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-../client/bb: $(BBOBJS) ../lib/hobbitclient.a
+../client/xymon: $(BBOBJS) ../lib/hobbitclient.a
 	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymonlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
@@ -52,8 +52,8 @@ xymondigest: $(DIGESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
 
 
-bb.exe: bb.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
-	$(CC) $(CFLAGS) -c bb.c 
+xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
+	$(CC) $(CFLAGS) -c xymon.c 
 	$(CC) $(CFLAGS) -DBBTOPDIR=\"$(BBTOPDIR)\" -DBBLOGDIR=\"$(BBLOGDIR)\" -DBBHOSTNAME=\"$(BBHOSTNAME)\" -DBBHOSTIP=\"$(BBHOSTIP)\" -DBBHOSTOS=\"$(BBHOSTOS)\" -DBUILD_HOME=\"$(BBTOPDIR)/client\" -c ../lib/environ.c
 	$(CC) $(CFLAGS) -c ../lib/strfunc.c 
 	$(CC) $(CFLAGS) -c ../lib/errormsg.c
@@ -67,7 +67,7 @@ bb.exe: bb.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.
 	$(CC) $(CFLAGS) -c ../lib/misc.c
 	ar cr bbwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
 	ranlib bbwin32.a || echo ""
-	$(CC) -o $@ bb.o bbwin32.a
+	$(CC) -o $@ xymon.o bbwin32.a
 
 
 ################################################

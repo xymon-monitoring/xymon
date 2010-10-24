@@ -90,7 +90,7 @@ the next three questions.</p>
 <h3><a name="droptest">I accidentally added an 'ftp' check. Now I cannot get it off the webpage!</a></h3>
 <p>Use the command</p>
 <pre>
-    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME ftp"
+    ~/server/bin/xymon 127.0.0.1 "drop HOSTNAME ftp"
 </pre>
 <p>to permanenly remove all traces of a test. Note that you need the quotes
 around the &quot;drop HOSTNAME ftp&quot;.</p>
@@ -100,7 +100,7 @@ around the &quot;drop HOSTNAME ftp&quot;.</p>
 <h3><a name="drophost">So how do I get rid of an entire host in Xymon?</a></h3>
 <p>First, remove the host from the ~/server/etc/hosts.cfg file. Then use the command</p>
 <pre>
-    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
+    ~/server/bin/xymon 127.0.0.1 "drop HOSTNAME"
 </pre>
 <p>to permanenly remove all traces of a host. Note that you need the quotes
 around the &quot;drop HOSTNAME&quot;.</p>
@@ -110,7 +110,7 @@ around the &quot;drop HOSTNAME&quot;.</p>
 <p>First, change the ~/server/etc/hosts.cfg file so it has the new name.
 Then to move your historical data over to the new name, run</p>
 <pre>
-    ~/server/bin/bb 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
+    ~/server/bin/xymon 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
 </pre>
 
 

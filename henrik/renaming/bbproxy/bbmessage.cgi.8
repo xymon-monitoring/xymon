@@ -9,7 +9,7 @@ bbmessage.cgi \- CGI utility used for proxying Xymon data over HTTP
 .I bbmessage.cgi(8)
 is the server-side utility receiving Xymon messages sent by the
 .I bb(1)
-utility over an HTTP transport. The \fBbb\fR utility normally sends
+utility over an HTTP transport. The \fBxymon\fR utility normally sends
 data over a dedicated TCP protocol, but it may use HTTP to go through
 proxies or through restrictive firewalls. In that case, the webserver
 must have this CGI utility installed, which takes care of receiving the
@@ -40,5 +40,5 @@ If possible, consider using the
 utility instead for native proxying of Xymon data between networks.
 
 .SH "SEE ALSO"
-bb(1), bbproxy(8), xymon(7)
+xymon(1), bbproxy(8), xymon(7)
 
