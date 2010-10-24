@@ -748,7 +748,7 @@ to the port and possibly checking that a banner is shown by the
 server.
 
 How these tests operate are configured in the
-.I bb-services(5)
+.I protocols.cfg(5)
 configuration file, which controls which port to use for the service,
 whether to send any data to the service, whether to check for
 a response from the service etc.
@@ -798,7 +798,7 @@ setup an SSL-encrypted session while testing the service.
 The server certificate is validated and information about
 it sent in the "sslcert" column. Note that smtps does not
 have a standard port number assignment, so you will need to enter
-this into the bb-services file or your /etc/services file.
+this into the protocols.cfg file or your /etc/services file.
 
 .IP bbd
 Test that a Big Brother compatible daemon is running. This check

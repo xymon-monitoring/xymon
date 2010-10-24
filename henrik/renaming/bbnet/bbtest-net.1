@@ -31,8 +31,8 @@ bbtest-net has built-in support for testing SSL-enabled
 protocols, e.g. imaps, pop3s, nntps, telnets, if SSL-support
 was enabled when configuring bbgen. The full list of known
 tests is found in the
-.I bb-services(5)
-file in $BBHOME/etc/bb-services.
+.I protocols.cfg(5)
+file in $BBHOME/etc/protocols.cfg.
 
 In addition, it implements the "dns" and "dig" tests for
 testing DNS servers. This is done in the same way as 
@@ -437,10 +437,10 @@ test different sets of hosts by different BBNET systems.
 
 
 .SH BBTEST-NET INTERNALS
-bbtest-net first reads the bb-services file to see which network tests
+bbtest-net first reads the protocols.cfg file to see which network tests
 are defined. It then scans the hosts.cfg file, and collects information
 about the TCP service tests that need to be tested. It picks out only
-the tests that were listed in the bb-services file, plus the "dns",
+the tests that were listed in the protocols.cfg file, plus the "dns",
 "dig" and "ntp" tests - those tests that bb-network.sh would normally 
 use the "bbnet" tool to test.
 
@@ -535,12 +535,12 @@ Location of the
 utility. Used by bbtest-net for the "rpc" service checks.
 
 .SH FILES
-.IP "~/server/etc/bb-services"
+.IP "~/server/etc/protocols.cfg"
 This file contains definitions of TCP services that bbtest-net
 can test. Definitions for a default set of common services is built
 into bbtest-net, but these can be overridden or supplemented by
-defining services in the bb-services file. See 
-.I bb-services(5)
+defining services in the protocols.cfg file. See 
+.I protocols.cfg(5)
 for details on this file.
 
 .IP "$BBHOME/etc/netrc - authentication data for password-protected webs"
@@ -587,6 +587,6 @@ test tool. It is updated only by bbtest-net during the normal
 runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
-hosts.cfg(5), bb-services(5), xymonserver.cfg(5), hobbitping(1),
+hosts.cfg(5), protocols.cfg(5), xymonserver.cfg(5), hobbitping(1),
 curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
 

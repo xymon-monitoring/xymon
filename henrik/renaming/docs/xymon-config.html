@@ -38,7 +38,7 @@ directory. If you look at this directory, you will see these files:</p>
 	the tasks.cfg file to add these options to the command line.</li>
 	<li><a href="manpages/man5/graphs.cfg.5.html">graphs.cfg</a> is a configuration file for the <tt>hobbitgraph CGI</tt>.
 	It defines how the graphs are generated from the data in the RRD files.</li>
-	<li><a href="manpages/man5/bb-services.5.html">bb-services</a> is a configuration file for the <tt>bbtest-net</tt> program.
+	<li><a href="manpages/man5/protocols.cfg.5.html">protocols.cfg</a> is a configuration file for the <tt>bbtest-net</tt> program.
 	It defines how network services are checked.</li>
 </ul>
 
@@ -70,7 +70,7 @@ extra keywords thrown in:</p>
 	report to the Xymon server with the information about this service.
 	So you'll get a (hopefully!) green icon on the Xymon webpage for
 	this host, showing the status of the bbd network service.<br>
-	Network services are defined in the <em>bb-services</em> file, so
+	Network services are defined in the <em>protocols.cfg</em> file, so
 	this file must have an entry for <tt>bbd</tt> defining what TCP
 	port to check, and possibly also what data to send to the service and
 	what to expect as a response.</li>

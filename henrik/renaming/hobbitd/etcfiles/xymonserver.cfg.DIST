@@ -125,7 +125,7 @@ RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 # about. You will normally not need to modify this, unless you have added a
 # script to pick up RRD data from custom tests (the hobbitd_larrd --extra-script
 # and --extra-tests options).
-# Note that network tests defined in the bb-services file are automatically
+# Note that network tests defined in the protocols.cfg file are automatically
 # included.
 # The format here is "COLUMN=RRDSERVICE". If you leave out the "=RRDSERVICE"
 # part, it is assumed to be the same as the COLUMN value.

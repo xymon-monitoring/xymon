@@ -100,8 +100,8 @@ install-ext: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 install-config:
-	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/bb-services
-	../build/merge-sects bb-services $(INSTALLROOT)$(INSTALLETCDIR)/bb-services
+	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5

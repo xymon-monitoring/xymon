@@ -2,7 +2,7 @@
 /* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module, part of libbbgen.                                */
-/* It contains routines for parsing the bb-services file.                     */
+/* It contains routines for parsing the protocols.cfg file.                   */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -135,7 +135,7 @@ char *init_tcp_services(void)
 	if (xgetenv("BBHOME")) {
 		sprintf(filename, "%s/etc/", xgetenv("BBHOME"));
 	}
-	strcat(filename, "bb-services");
+	strcat(filename, "protocols.cfg");
 
 	if ((stat(filename, &st) == 0) && bbnetsvcs) {
 		/* See if we have already run and the file is unchanged - if so just pickup the result */
