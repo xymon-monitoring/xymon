@@ -96,8 +96,8 @@ install-client: build install-clean
 	cd $C/usr/lib/xymon/client && mv etc/* $C/etc/xymon && rmdir etc && ln -s ../../../../etc/xymon etc
 	cd $C/usr/lib/xymon/client && rmdir logs && ln -s ../../../../var/log/xymon logs
 	cd $C/usr/lib/xymon/client && rmdir tmp && ln -s ../../../../var/lib/xymon/tmp
-	# the only command needed in /usr/bin is bbcmd, its PATH includes our private .../bin
-	cd $C/usr/bin && ln -s ../lib/xymon/client/bin/bbcmd bbcmd
+	# the only command needed in /usr/bin is xymoncmd, its PATH includes our private .../bin
+	cd $C/usr/bin && ln -s ../lib/xymon/client/bin/xymoncmd xymoncmd
 	cp debian/xymon-client.default.dist $C/usr/share/xymon/xymon-client.default
 	# dynamic list of installed client extensions
 	echo "include /var/run/xymon/clientlaunch-include.cfg" >> \

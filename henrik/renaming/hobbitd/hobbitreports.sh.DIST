@@ -2,12 +2,12 @@
 
 # Pre-generate periodic Xymon reports
 #
-# This would typically run via cron and bbcmd. A sample crontab
+# This would typically run via cron and xymoncmd. A sample crontab
 # to generate daily, weekly and monthly reports would be:
 #
-#     10 0 * * * @BBHOME@/bin/bbcmd --env=@BBHOME@/etc/xymonserver.cfg hobbitreports.sh daily
-#     10 1 * * 1 @BBHOME@/bin/bbcmd --env=@BBHOME@/etc/xymonserver.cfg hobbitreports.sh weekly
-#     10 2 1 * * @BBHOME@/bin/bbcmd --env=@BBHOME@/etc/xymonserver.cfg hobbitreports.sh monthly
+#     10 0 * * * @BBHOME@/bin/xymoncmd --env=@BBHOME@/etc/xymonserver.cfg hobbitreports.sh daily
+#     10 1 * * 1 @BBHOME@/bin/xymoncmd --env=@BBHOME@/etc/xymonserver.cfg hobbitreports.sh weekly
+#     10 2 1 * * @BBHOME@/bin/xymoncmd --env=@BBHOME@/etc/xymonserver.cfg hobbitreports.sh monthly
 #
 # I.e. daily reports run each day at 0:10 AM, weekly reports run 
 # on Monday morning at 1:10 AM, monthly reports run on the first of 

@@ -1387,7 +1387,7 @@ int main(int argc, char *argv[])
 			if (concurrency < 0) concurrency = 0;
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
-			printf("Run with\n~hobbit/server/bin/bbcmd ./contest --debug 172.16.10.2/25/smtp\n");
+			printf("Run with\n~xymon/server/bin/xymoncmd ./contest --debug 172.16.10.2/25/smtp\n");
 			printf("I.e. IP/PORTNUMBER/TESTSPEC\n");
 			return 0;
 		}

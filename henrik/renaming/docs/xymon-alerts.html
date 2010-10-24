@@ -111,7 +111,7 @@ This particular expression matches "www.foo.com", "intranet.foo.com", "support.f
 <p>If you want to test how your alert configuration handles a specific host, you can run hobbitd_alert in <b>test</b> mode - you give it a hostname and servicename as input, and it will go through the configuration and tell you which rules match and who gets an alert.</p>
 <pre><tt>
 	osiris:~ $ cd server/
-	osiris:~/server $ ./bin/bbcmd hobbitd_alert --test osiris.hswn.dk cpu
+	osiris:~/server $ ./bin/xymoncmd hobbitd_alert --test osiris.hswn.dk cpu
 	Matching host:service:page 'osiris.hswn.dk:cpu:' against rule line 109:Matched
 	    *** Match with 'HOST=*' ***
 	Matching host:service:page 'osiris.hswn.dk:cpu:' against rule line 110:Matched

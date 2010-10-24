@@ -1,11 +1,11 @@
-.TH BBCMD 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMONCMD 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bbcmd \- Run a Xymon command with environment set
+xymoncmd \- Run a Xymon command with environment set
 .SH SYNOPSIS
-.B "bbcmd [--env=ENVFILE COMMAND|--version|--debug]"
+.B "xymoncmd [--env=ENVFILE COMMAND|--version|--debug]"
 
 .SH DESCRIPTION
-.I bbcmd(1)
+.I xymoncmd(1)
 is a utility that can setup the Xymon environment variables as defined in a 
 .I hobbitlaunch(8)
 compatible environment definition file, and then execute a command
@@ -13,7 +13,7 @@ with this environment in place. It is mostly used for testing
 extension scripts or in other situations where you need to run
 a single command with the environment in place.
 
-The "--env=ENVFILE" option points bbcmd to the file where the 
+The "--env=ENVFILE" option points xymoncmd to the file where the 
 environment definitions are loaded from.
 
 COMMAND is the command to execute after setting up the environment.
@@ -22,9 +22,9 @@ If you want to run multiple commands, it is often easiest to just
 use "sh" as the COMMAND - this gives you a sub-shell with the 
 environment defined globally.
 
-The "--debug" option print out more detail steps of bbcmd execution.
+The "--debug" option print out more detail steps of xymoncmd execution.
 
-The "--version" option print out version number of bbcmd.
+The "--version" option print out version number of xymoncmd.
 .SH "SEE ALSO"
 hobbitlaunch(8), xymon(7)
 
