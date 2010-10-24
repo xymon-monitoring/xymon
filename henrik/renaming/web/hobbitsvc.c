@@ -153,7 +153,7 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts)
 {
 	void *hinfo = NULL;
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");

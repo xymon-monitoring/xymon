@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* This file contains code to load the page-structure from the bb-hosts file. */
+/* This file holds code to load the page-structure from the hosts.cfg file.   */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -429,7 +429,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	char	*p;
 	int	fqdn = get_fqdn();
 
-	load_hostnames(xgetenv("BBHOSTS"), "dispinclude", fqdn);
+	load_hostnames(xgetenv("HOSTSCFG"), "dispinclude", fqdn);
 
 	dbgprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
 
@@ -437,9 +437,9 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	 * load_hostnames() picks up the hostname definitions, but not the page
 	 * layout. So we will scan the file again, this time doing the layout.
 	 */
-	bbhosts = stackfopen(xgetenv("BBHOSTS"), "r", NULL);
+	bbhosts = stackfopen(xgetenv("HOSTSCFG"), "r", NULL);
 	if (bbhosts == NULL) {
-		errprintf("Cannot open the BBHOSTS file '%s'\n", xgetenv("BBHOSTS"));
+		errprintf("Cannot open the HOSTSCFG file '%s'\n", xgetenv("HOSTSCFG"));
 		return NULL;
 	}
 
@@ -644,7 +644,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 				 * HACK: Check if the pageset tag is present at all in the host
 				 * entry. If it isn't, then drop this incarnation of the host.
 				 *
-				 * Without this, the following bb-hosts file will have the
+				 * Without this, the following hosts.cfg file will have the
 				 * www.hswn.dk host listed twice on the alternate pageset:
 				 *
 				 * adminpage nyc NYC

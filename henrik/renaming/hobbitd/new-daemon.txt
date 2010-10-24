@@ -167,7 +167,7 @@
 
 * Environment settings - bbd_net
   - BBGHOSTS      : Default "--ghosts" value
-  - BBHOSTS       : Default "--bbhosts" value
+  - HOSTSCFG      : Default "--hosts" value
 
 * Environment settings - bb-hostsvc.cgi
   - LARRDS        : Comma-separated list of statuses that have a LARRD graph

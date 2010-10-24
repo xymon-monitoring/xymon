@@ -677,7 +677,7 @@ int main(int argc, char *argv[])
 
 	redirect_cgilog("hobbit-confreport");
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_nkconfig(nkconfigfn);
 
 	/* Setup the filter we use for the report */

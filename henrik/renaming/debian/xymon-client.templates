@@ -15,6 +15,6 @@ Default:
 Description: Client hostname:
  Please enter the host name used by the Xymon client when sending
  reports to the Xymon server. This name must match
- the name used in the bb-hosts file on the Xymon
+ the name used in the hosts.cfg file on the Xymon
  server.
 

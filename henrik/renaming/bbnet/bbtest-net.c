@@ -59,7 +59,7 @@ extern struct rpcent *getrpcbyname(char *);
 
 char *reqenv[] = {
 	"NONETPAGE",
-	"BBHOSTS",
+	"HOSTSCFG",
 	"BBTMP",
 	"BBHOME",
 	"BB",
@@ -392,9 +392,9 @@ void load_tests(void)
 	void *hwalk;
 	testedhost_t *h;
 
-	load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn());
 	if (first_host() == NULL) {
-		errprintf("Cannot load bb-hosts\n");
+		errprintf("Cannot load file %s\n", xgetenv("HOSTSCFG"));
 		return;
 	}
 
@@ -792,7 +792,7 @@ void load_tests(void)
 
 			res = rbtInsert(testhosttree, h->hostname, h);
 			if (res == RBT_STATUS_DUPLICATE_KEY) {
-				errprintf("Host %s appears twice in bb-hosts! This may cause strange results\n", h->hostname);
+				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
 			strcpy(h->ip, bbh_item(hwalk, BBH_IP));

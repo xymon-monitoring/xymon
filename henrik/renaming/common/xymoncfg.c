@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Xymon bb-hosts file viewer                                                 */
+/* Xymon config file viewer                                                   */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 
 int main(int argc, char *argv[])
 { 
-	FILE *bbhosts;
+	FILE *cfgfile;
 	char *fn = NULL;
 	strbuffer_t *inbuf;
 	int argi;
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--version") == 0) {
-			printf("bbhostshow version %s\n", VERSION);
+			printf("xymoncfg version %s\n", VERSION);
 			exit(0);
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
@@ -48,16 +48,16 @@ int main(int argc, char *argv[])
 	}
 
 	if (!fn || (strlen(fn) == 0)) {
-		fn = getenv("BBHOSTS");
+		fn = getenv("HOSTSCFG");
 		if (!fn) {
-			errprintf("Environment variable BBHOSTS is not set - aborting\n");
+			errprintf("Environment variable HOSTSCFG is not set - aborting\n");
 			exit(2);
 		}
 	}
 
-	bbhosts = stackfopen(fn, "r", NULL);
-	if (bbhosts == NULL) {
-		printf("Cannot open the BBHOSTS file '%s'\n", fn);
+	cfgfile = stackfopen(fn, "r", NULL);
+	if (cfgfile == NULL) {
+		printf("Cannot open file '%s'\n", fn);
 		exit(1);
 	}
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 		printf("%s", STRBUF(inbuf));
 	}
 
-	stackfclose(bbhosts);
+	stackfclose(cfgfile);
 	freestrbuffer(inbuf);
 	return 0;
 }

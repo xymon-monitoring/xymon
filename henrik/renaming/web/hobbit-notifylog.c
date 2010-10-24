@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 	}
 
 	redirect_cgilog("hobbit-notifylog");
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 

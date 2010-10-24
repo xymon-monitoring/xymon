@@ -20,14 +20,14 @@ server to collect data from the clients.
 
 hobbitfetch will only collect data from clients that have the
 \fBpulldata\fR tag listed in the
-.I bb-hosts(5)
-file. The IP-address listed in the bb-hosts file must be correct,
+.I hosts.cfg(5)
+file. The IP-address listed in the hosts.cfg file must be correct,
 since this is the IP-address where hobbitfetch will attempt to contact
 the client.  If the msgcache daemon is running on a non-standard 
 IP-address or portnumber, you can specify the portnumber as in
 \fBpulldata=192.168.1.2:8084\fR for contacting the msgcache daemon 
 using IP 192.168.1.2 port 8084. If the IP-address is omitted, the
-default IP in the bb-hosts file is used. If the port number is
+default IP in the hosts.cfg file is used. If the port number is
 omitted, the portnumber from the BBPORT setting in
 .I hobbitserver.cfg(5)
 is used (normally, this is port 1984).

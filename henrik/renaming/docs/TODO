@@ -135,7 +135,7 @@ Improvements
   shortlived statuses. They should not automatically be given 1
   pixel each, as that will cause the history graph to be *very*
   wide.
-* Display-only tags should work on duplicate host-entries in bb-hosts,
+* Display-only tags should work on duplicate host-entries in hosts.cfg,
   e.g. you should be able to put a "NAME:foo" tag on a host and have it
   show up with different names for the same host.
 

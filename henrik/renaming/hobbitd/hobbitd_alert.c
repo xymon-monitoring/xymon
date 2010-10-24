@@ -447,13 +447,13 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			hinfo = hostinfo(testhost);
 			if (hinfo) {
 				testpage = strdup(bbh_item(hinfo, BBH_ALLPAGEPATHS));
 			}
 			else {
-				errprintf("Host not found in bb-hosts - assuming it is on the top page\n");
+				errprintf("Host not found in hosts.cfg - assuming it is on the top page\n");
 				testpage = "";
 			}
 

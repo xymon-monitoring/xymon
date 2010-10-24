@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 /* dnslookup values */
-#define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
+#define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from hosts.cfg */
 #define DNS_ONLY        1	/* DNS only - if it fails, report service down */
 #define IP_ONLY         2	/* IP only - dont do DNS lookups */
 

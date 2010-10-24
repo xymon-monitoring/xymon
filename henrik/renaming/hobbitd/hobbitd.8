@@ -25,11 +25,11 @@ tool, and the command used to invoke hobbitd should therefore be
 in the hobbitlaunch.cfg file.
 
 .SH OPTIONS
-.IP "--bbhosts=FILENAME"
-Specifies the path to the Xymon bb-hosts file. This is used
+.IP "--hosts=FILENAME"
+Specifies the path to the Xymon hosts.cfg file. This is used
 to check if incoming status messages refer to known hosts; depending
 on the "--ghosts" option, messages for unknown hosts may be dropped.
-If this option is omitted, the default path used is set by the BBHOSTS
+If this option is omitted, the default path used is set by the HOSTSCFG
 environment variable.
 
 .IP "--checkpoint-file=FILENAME"
@@ -50,7 +50,7 @@ from the information in this file. You can use the same filename for
 .IP "--ghosts={allow|drop|log|match}"
 How to handle status messages from unknown hosts. The "allow" setting
 accepts all status messages, regardless of whether the host is known
-in the bb-hosts file or not. "drop" silently ignores reports from unknown 
+in the hosts.cfg file or not. "drop" silently ignores reports from unknown 
 hosts. "log" works like drop, but logs the event in the hobbitd output file.
 "match" will try to match the name of the unknown host reporting with 
 the known names by ignoring any domain-names - if a match is found, then
@@ -262,7 +262,7 @@ in the Xymon source-tree, see the "hobbitd/new-daemon.txt" file.
 
 .SH SIGNALS
 .IP SIGHUP
-Re-read the bb-hosts configuration file.
+Re-read the hosts.cfg configuration file.
 
 .IP SIGUSR1
 Force an immediate dump of the checkpoint file.
@@ -274,7 +274,7 @@ so a connection that should timeout after N seconds may persist until
 some activity happens on another (unrelated) connection.
 
 .SH FILES
-If ghost-handling is enabled via the "--ghosts" option, the bb-hosts
+If ghost-handling is enabled via the "--ghosts" option, the hosts.cfg
 file is read to determine the names of all known hosts.
 
 .SH "SEE ALSO"

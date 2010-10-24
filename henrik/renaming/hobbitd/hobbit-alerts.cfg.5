@@ -25,7 +25,7 @@ A rule consists of one of more filters using these keywords:
 .sp
 .BR "PAGE=targetstring"
 Rule matching an alert by the name of the page in BB. This is the path of
-the page as defined in the bb-hosts file. E.g. if you have this setup:
+the page as defined in the hosts.cfg file. E.g. if you have this setup:
 .IP
 .nf
 page servers All Servers
@@ -72,7 +72,7 @@ setting in the hobbit-clients.cfg file.
 Rule matching an alert by color. Can be "red", "yellow", or "purple". The forms "!red", "!yellow" and "!purple" can also be used to NOT send an alert if the color is the specified one.
 .sp
 .BR "TIME=timespecification"
-Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file.
+Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file.
 .sp
 .BR "DURATION>time, DURATION<time"
 Rule matcing an alert if the event has lasted longer/shorter than the given duration. E.g. DURATION>1h (lasted longer than 1 hour) or DURATION<30 (only sends alerts the first 30 minutes). The duration is specified as a number, optionally followed by 'm' (minutes, default), 'h' (hours) or 'd' (days).

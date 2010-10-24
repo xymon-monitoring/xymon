@@ -59,7 +59,7 @@ char *reqenv[] = {
 "BBHIST",
 "BBHISTLOGS",
 "BBHOME",
-"BBHOSTS",
+"HOSTSCFG",
 "BBLOGS",
 "BBLOGSTATUS",
 "BBNOTES",
@@ -538,7 +538,7 @@ int main(int argc, char *argv[])
 		printf("Command: bbgen");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment BBHOSTS='%s'\n", textornull(xgetenv("BBHOSTS")));
+		printf("Environment HOSTSCFG='%s'\n", textornull(xgetenv("HOSTSCFG")));
 		printf("\n");
 	}
 
@@ -585,7 +585,7 @@ int main(int argc, char *argv[])
 	load_all_links();
 	add_timestamp("Load links done");
 	pagehead = load_bbhosts(pageset);
-	add_timestamp("Load bbhosts done");
+	add_timestamp("Load hosts.cfg done");
 
 	if (!embedded) {
 		/* Remove old acknowledgements */

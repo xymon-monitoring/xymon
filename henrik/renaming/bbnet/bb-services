@@ -33,7 +33,7 @@
 # The "port" is the TCP port used for this service. This OVERRIDES
 # any port number listed in /etc/services - but this also means that
 # you need not define "unusual" port-numbers in /etc/services. 
-# Of course, you can always define your test in bb-hosts to use a 
+# Of course, you can always define your test in hosts.cfg to use a 
 # specific portnumber.
 #
 # The send/expect string definitions must be in double quotes.

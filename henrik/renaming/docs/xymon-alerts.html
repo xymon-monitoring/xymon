@@ -72,14 +72,14 @@ fills up during the night.</p>
 <h3><a name="keywords">Keywords in rules and recipients</a></h3>
 <p>These are the keywords for setting up rules:</p>
 <table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
-	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the bb-hosts file.</td></tr>
+	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the hosts.cfg file.</td></tr>
 	<tr><th align="left" valign="top">EXPAGE</th><td>rule excluding an alert if the pagename matches.</td></tr>
 	<tr><th align="left" valign="top">HOST</th><td>rule matching an alert by the hostname.</td></tr>
 	<tr><th align="left" valign="top">EXHOST</th><td>rule excluding an alert by matching the hostname.</td></tr>
 	<tr><th align="left" valign="top">SERVICE</th><td>rule matching an alert by the service name.</td></tr>
 	<tr><th align="left" valign="top">EXSERVICE</th><td>rule excluding an alert by matching the hostname.</td></tr>
 	<tr><th align="left" valign="top">COLOR</th><td>rule matching an alert by color. Can be "red", "yellow", or "purple".</td></tr>
-	<tr><th align="left" valign="top">TIME</th><td>rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file (see bb-hosts(5)).</td></tr>
+	<tr><th align="left" valign="top">TIME</th><td>rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file (see hosts.cfg(5)).</td></tr>
 	<tr><th align="left" valign="top">DURATION</th><td>Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. <em>DURATION&gt;10m</em> (lasted longer than 10 minutes) or <em>DURATION&lt;2h</em> (only sends alerts the first 2 hours). Unless explicitly stated, this is in minutes - you can use 'm', 'h', 'd' for 'minutes', 'hours' and 'days' respectively.</td></tr>
 	<tr><th align="left" valign="top">UNMATCHED</th><td>This keyword on a recipient means that he will only get an alert, if no other alerts have been sent. So you can use it e.g. when setting up alerts to specific people for some services, then after those you add a recipient with the UNMATCHED keyword who will only get those alerts that were not sent anyone else. You can also use it to setup a "catch-all" alert recipient, use the UNMATHED keyword on a recipient at the end of the hobbit-alerts.cfg file.</td></tr>
 	<tr><th align="left" valign="top">RECOVERED</th><td>Rule matches if the alert has recovered from an alert state.</td></tr>

@@ -32,7 +32,7 @@ two-digit number of the month (01..12). DAY is the number of the
 day in the month (01..31). WEEK is the ISO 8601:1988 week-number 
 (01..53). PAGEPATH is the current value of the "pagepath" cookie
 if set; if it is not set but the "host" cookie is set, then this
-host is looked up in the bb-hosts file and the page where this host
+host is looked up in the hosts.cfg file and the page where this host
 is found is used for PAGEPATH. These two cookies are set by the 
 default web-header templates supplied with Xymon.
 
@@ -76,5 +76,5 @@ Used to locate the template files for the generated web pages.
 Contains the parameters for the CGI script.
 
 .SH "SEE ALSO"
-bbgen(1), bb-hosts(5), hobbitserver.cfg(5)
+bbgen(1), hosts.cfg(5), hobbitserver.cfg(5)
 

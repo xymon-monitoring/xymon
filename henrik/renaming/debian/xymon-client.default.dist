@@ -16,6 +16,6 @@ XYMONSERVERS=""
 
 # Hostname used by the client for its reports.
 # Must match the name for this host in the Xymon servers'
-# bb-hosts file.
+# hosts.cfg file.
 
 CLIENTHOSTNAME=""

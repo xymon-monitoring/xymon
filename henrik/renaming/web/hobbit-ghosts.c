@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	parse_query();
 
 	switch (outform) {

@@ -178,14 +178,14 @@ files synchronized.
 
 .IP "drop HOSTNAME"
 Removes all data stored about the host HOSTNAME. It is assumed that you
-have already deleted the host from the bb-hosts configuration file.
+have already deleted the host from the hosts.cfg configuration file.
 
 .IP "drop HOSTNAME TESTNAME"
 Remove data about a single test (column).
 
 .IP "rename OLDHOSTNAME NEWHOSTNAME"
 Rename all data for a host that has had its name changed. You should do this
-before changing the hostname in the bb-hosts configuration file.
+before changing the hostname in the hosts.cfg configuration file.
 
 .IP "rename HOSTNAME OLDTESTNAME NEWTESTNAME"
 Rename data about a single test (column).
@@ -251,7 +251,7 @@ by selecting a page, a host, a test or a color - wildcards are not
 supported, so you can pick only one page, host, test or color. 
 .sp
 .BR page=PAGEPATH
-Include only tests from hosts found on the PAGEPATH page in the bb-hosts
+Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
 file.
 .sp
 .BR host=HOSTNAME
@@ -360,7 +360,7 @@ for clients that cannot connect directly to the Xymon server.
 
 .IP "ghostlist"
 Report a list of \fBghost\fR clients seen by the Xymon server. Ghosts are systems
-that report data to the Xymon server, but are not listed in the bb-hosts file.
+that report data to the Xymon server, but are not listed in the hosts.cfg file.
 
 .IP "schedule [TIMESTAMP COMMAND]"
 Schedules a command sent to the Xymon server for execution at a later time. E.g.
@@ -450,5 +450,5 @@ and many commands such as "query" and "config" are not part
 of the bb client shipped with Big Brother.
 
 .SH "SEE ALSO"
-bbcombotest(1), bb-hosts(5), hobbitserver.cfg(5), xymon(7)
+bbcombotest(1), hosts.cfg(5), hobbitserver.cfg(5), xymon(7)
 

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Xymon bb-hosts file grep'er                                                */
+/* Xymon hosts.cfg file grep'er                                               */
 /*                                                                            */
-/* This tool will pick out the hosts from a bb-hosts file that has one of the */
-/* tags given on the command line. This allows an extension script to deal    */
-/* with only the relevant parts of the bb-hosts file, instead of having to    */
-/* parse the entire file.                                                     */
+/* This tool will pick out the hosts from a hosts.cfg file that has one of    */
+/* the tags given on the command line. This allows an extension script to     */
+/* deal with only the relevant parts of the hosts.cfg file, instead of        */
+/* having to parse the entire file.                                           */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -106,7 +106,7 @@ static int downok(char *hostname, int nodownhosts)
 int main(int argc, char *argv[])
 { 
 	void *hwalk;
-	char *bbhostsfn = NULL;
+	char *hostsfn = NULL;
 	char *netstring = NULL;
 	char *include2 = NULL;
 	int extras = 1;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 	lookv = (char **)malloc(argc*sizeof(char *));
 	lookc = 0;
 
-	bbhostsfn = xgetenv("BBHOSTS");
+	hostsfn = xgetenv("HOSTSCFG");
 	conncolumn = xgetenv("PINGCOLUMN");
 
 	for (argi=1; (argi < argc); argi++) {
@@ -154,8 +154,8 @@ int main(int argc, char *argv[])
 			include2 = "dispinclude";
 			onlypreferredentry = 1;
 		}
-		else if (argnmatch(argv[argi], "--bbhosts=")) {
-			bbhostsfn = strchr(argv[argi], '=') + 1;
+		else if (argnmatch(argv[argi], "--hosts=")) {
+			hostsfn = strchr(argv[argi], '=') + 1;
 		}
 		else {
 			lookv[lookc] = strdup(argv[argi]);
@@ -164,14 +164,14 @@ int main(int argc, char *argv[])
 	}
 	lookv[lookc] = NULL;
 
-	if ((bbhostsfn == NULL) || (strlen(bbhostsfn) == 0)) {
-		errprintf("Environment variable BBHOSTS is not set - aborting\n");
+	if ((hostsfn == NULL) || (strlen(hostsfn) == 0)) {
+		errprintf("Environment variable HOSTSCFG is not set - aborting\n");
 		exit(2);
 	}
 
-	load_hostnames(bbhostsfn, include2, get_fqdn());
+	load_hostnames(hostsfn, include2, get_fqdn());
 	if (first_host() == NULL) {
-		errprintf("Cannot load bb-hosts, or file is empty\n");
+		errprintf("Cannot load %s, or file is empty\n", hostsfn);
 		exit(3);
 	}
 

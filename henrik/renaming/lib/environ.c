@@ -69,7 +69,7 @@ const static struct {
 	{ "CGIBINURL", "$BBSERVERCGIURL" },
 	{ "BBHOME", BUILD_HOME },
 	{ "BBTMP", "$BBHOME/tmp" },
-	{ "BBHOSTS", "$BBHOME/etc/bb-hosts" },
+	{ "HOSTSCFG", "$BBHOME/etc/hosts.cfg" },
 	{ "BB", "$BBHOME/bin/bb" },
 	{ "BBGEN", "$BBHOME/bin/bbgen" },
 	{ "BBVAR", "$BBSERVERROOT/data" },

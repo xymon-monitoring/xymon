@@ -132,7 +132,7 @@
 # but the Xymon server can connect to the client. Normally the clients will initiate
 # a connection to the Xymon server to deliver the data they collect, but this is
 # forbidden in some firewall setups. By enabling the hobbitfetch task, hosts that have
-# the "pulldata" tag in the bb-hosts file will be polled by hobbitfetch for their data.
+# the "pulldata" tag in the hosts.cfg file will be polled by hobbitfetch for their data.
 #
 # NOTE: On the clients you must enable the "msgcache" task, since this is what 
 #       hobbitfetch is talking to.

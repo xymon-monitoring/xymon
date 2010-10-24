@@ -1,0 +1,37 @@
+.TH BBHOSTSHOW 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+xymoncfg \- output the full hosts.cfg file
+.SH SYNOPSIS
+.B "xymoncfg [--bbdisp] [--bbnet] [filename]"
+
+.SH DESCRIPTION
+.I xymoncfg(1)
+dumps the full hosts.cfg file to stdout. It follows "include"
+tags in the hosts.cfg files, and prints the full contents
+as seen by the
+.I bbgen(1)
+and
+.I bbtest-net(1)
+utilities.
+
+If no filename is given, xymoncfg displays the file pointed
+to by the HOSTSCFG environment variable.
+
+.SH OPTIONS
+.IP "--bbdisp"
+Show the hosts.cfg file following include statements as a
+BBDISPLAY server would.
+
+.IP "--bbnet"
+Show the hosts.cfg file following include statements as a
+BBNET server would.
+
+
+.SH ENVIRONMENT VARIABLES
+.IP HOSTSCFG
+Filename for the
+.I hosts.cfg(5)
+file.
+
+.SH "SEE ALSO"
+hosts.cfg(5), hobbitserver.cfg(5)

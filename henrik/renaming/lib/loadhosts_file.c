@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Xymon, responsible for loading the bb-hosts   */
+/* This is a library module for Xymon, responsible for loading the hosts.cfg  */
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
@@ -45,11 +45,11 @@ static int pagematch(pagelist_t *pg, char *name)
 	}
 }
 
-int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
+int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 {
 	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	static void *bbhfiles = NULL;
-	FILE *bbhosts;
+	FILE *hosts;
 	int ip1, ip2, ip3, ip4, groupid, pageidx;
 	char hostname[4096];
 	strbuffer_t *inbuf;
@@ -60,7 +60,7 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	/* First check if there were no modifications at all */
 	if (bbhfiles) {
 		if (!stackfmodified(bbhfiles)){
-			dbgprintf("No files modified, skipping reload of %s\n", bbhostsfn);
+			dbgprintf("No files modified, skipping reload of %s\n", hostsfn);
 			return 1;
 		}
 		else {
@@ -77,8 +77,8 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	curpage = curtoppage = pgtail = pghead;
 	pageidx = groupid = 0;
 
-	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
-	if (bbhosts == NULL) return -1;
+	hosts = stackfopen(hostsfn, "r", &bbhfiles);
+	if (hosts == NULL) return -1;
 
 	inbuf = newstrbuffer(0);
 	htree = rbtNew(name_compare);
@@ -287,7 +287,7 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			MEMUNDEFINE(downtime);
 		}
 	}
-	stackfclose(bbhosts);
+	stackfclose(hosts);
 	freestrbuffer(inbuf);
 	rbtDelete(htree);
 

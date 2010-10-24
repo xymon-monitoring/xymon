@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 
 	cgidata = cgi_request();
 	parse_query();
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
         if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
 		return 1;

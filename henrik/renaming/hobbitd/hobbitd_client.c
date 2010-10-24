@@ -1776,7 +1776,7 @@ void testmode(char *configfn)
 	char s[4096];
 	int cfid;
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_client_config(configfn);
 	*hostname = '\0';
 	*clientclass = '\0';
@@ -1796,7 +1796,7 @@ void testmode(char *configfn)
 				exit(0);
 			}
 			else if (strcmp(hostname, "!") == 0) {
-				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+				load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 				load_client_config(configfn);
 				*hostname = '\0';
 			}
@@ -2107,7 +2107,7 @@ int main(int argc, char *argv[])
 		if (reloadconfig || (nowtimer >= nextconfigload)) {
 			nextconfigload = nowtimer + 600;
 			reloadconfig = 0;
-			if (!localmode) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			if (!localmode) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			load_client_config(configfn);
 		}
 

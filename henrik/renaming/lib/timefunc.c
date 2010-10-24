@@ -578,7 +578,7 @@ time_t timestr2timet(char *s)
 	struct tm tm;
 
 	if (strlen(s) != 12) {
-		errprintf("Invalid timestring in bb-hosts: '%s'\n", s);
+		errprintf("Invalid timestring: '%s'\n", s);
 		return -1;
 	}
 

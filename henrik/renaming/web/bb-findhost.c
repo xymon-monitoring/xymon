@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	}
 
 	outbuf = newstrbuffer(0);
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	hostwalk = first_host();
 	while (hostwalk) {
 		/* 

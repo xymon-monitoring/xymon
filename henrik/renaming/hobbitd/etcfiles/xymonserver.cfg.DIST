@@ -16,7 +16,7 @@ BBSERVERSECURECGIURL="@SECUREBBCGIURL@"	# The URL for the secured Xymon CGI scri
 
 # BBLOCATION="foo"			# The network location, makes bbtest-net test only hosts with NET:foo
 					# You only need to set this if you have multiple network test servers with
-					# a shared bb-hosts file.
+					# a shared hosts.cfg file.
 
 # Make sure the path includes the directories where you have fping, mail and (optionally) ntpdate installed,
 # as well as the BBHOME/bin directory where all of the Xymon programs reside.
@@ -70,7 +70,7 @@ SECURECGIBINURL="$BBSERVERSECURECGIURL"		# URL prefix for the secured Xymon CGI-
 # Locations of system-wide files and directories
 BBHOME="@BBHOME@"				# The Xymon server directory, where programs and configurations go. 
 BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
-BBHOSTS="$BBHOME/etc/bb-hosts"			# The bb-hosts file
+HOSTSCFG="$BBHOME/etc/hosts.cfg"		# The hosts.cfg file
 BB="$BBHOME/bin/bb"				# The 'bb' client program
 BBGEN="$BBHOME/bin/bbgen"			# The bbgen program
 
@@ -107,7 +107,7 @@ IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go C
 NONETPAGE=""					# Network tests that go YELLOW upon failure
 FPING="@FPING@"					# Path and options for the ping program.
 NTPDATE="ntpdate"				# Path to the 'ntpdate' program
-TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in bb-hosts.
+TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in hosts.cfg .
 BBROUTERTEXT="router"				# What to call a failing intermediate network device.
 NETFAILTEXT="not OK"				# Text indicating a network test failed
 
@@ -184,4 +184,8 @@ BBGENSNAPOPTS="$BBGENOPTS"			# bbgen(1) options used when generating snapshots.
 
 # For the bb-hist CGI 
 BBHISTEXT=""					# What extensions to run on history pages.
+
+
+##### Compatibility settings #####
+BBHOSTS="$HOSTSCFG"
 

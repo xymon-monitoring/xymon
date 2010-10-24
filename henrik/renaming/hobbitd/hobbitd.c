@@ -2156,7 +2156,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		/*
 		 * We pass drop- and rename-messages to the workers, whether 
 		 * we know about this host or not. It could be that the drop command
-		 * arrived after we had already re-loaded the bb-hosts file, and 
+		 * arrived after we had already re-loaded the hosts.cfg file, and 
 		 * so the host is no longer known by us - but there is still some
 		 * data stored about it that needs to be cleaned up.
 		 */
@@ -2204,7 +2204,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 	/*
 	 * Now clean up our internal state info, if there is any.
-	 * NB: knownhost() may return NULL, if the bb-hosts file was re-loaded before
+	 * NB: knownhost() may return NULL, if the hosts.cfg file was re-loaded before
 	 * we got around to cleaning up a host.
 	 */
 	canonhostname = knownhost(hostname, hostip, ghosthandling);
@@ -4420,7 +4420,7 @@ int main(int argc, char *argv[])
 	conn_t *connhead = NULL, *conntail=NULL;
 	char *listenip = "0.0.0.0";
 	int listenport = 0;
-	char *bbhostsfn = NULL;
+	char *hostsfn = NULL;
 	char *restartfn = NULL;
 	char *logfn = NULL;
 	int checkpointinterval = 900;
@@ -4490,9 +4490,9 @@ int main(int argc, char *argv[])
 			else
 				conn_timeout = newconn_timeout;
 		}
-		else if (argnmatch(argv[argi], "--bbhosts=")) {
+		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			bbhostsfn = strdup(p);
+			hostsfn = strdup(p);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -4634,7 +4634,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
-			printf("\t--bbhosts=FILENAME            : The bb-hosts file\n");
+			printf("\t--hosts=FILENAME              : The hosts.cfg file\n");
 			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
 			return 1;
 		}
@@ -4643,8 +4643,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (xgetenv("BBHOSTS") && (bbhostsfn == NULL)) {
-		bbhostsfn = strdup(xgetenv("BBHOSTS"));
+	if (xgetenv("HOSTSCFG") && (hostsfn == NULL)) {
+		hostsfn = strdup(xgetenv("HOSTSCFG"));
 	}
 
 	if (listenport == 0) {
@@ -4654,13 +4654,13 @@ int main(int argc, char *argv[])
 			listenport = 1984;
 	}
 
-	if ((ghosthandling != GH_ALLOW) && (bbhostsfn == NULL)) {
-		errprintf("No bb-hosts file specified, required when using ghosthandling\n");
+	if ((ghosthandling != GH_ALLOW) && (hostsfn == NULL)) {
+		errprintf("No hosts.cfg file specified, required when using ghosthandling\n");
 		exit(1);
 	}
 
 	errprintf("Loading hostnames\n");
-	load_hostnames(bbhostsfn, NULL, get_fqdn());
+	load_hostnames(hostsfn, NULL, get_fqdn());
 	load_clientconfig();
 
 	if (restartfn) {
@@ -4802,7 +4802,7 @@ int main(int argc, char *argv[])
 		 * - send out our heartbeat signal;
 		 * - pick up children to avoid zombies;
 		 * - rotate logs, if we have been asked to;
-		 * - re-load the bb-hosts configuration if needed;
+		 * - re-load the hosts.cfg configuration if needed;
 		 * - check for stale status-logs that must go purple;
 		 * - inject our own statistics message.
 		 * - save the checkpoint file;
@@ -4833,11 +4833,11 @@ int main(int argc, char *argv[])
 			posttochannel(clientchn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
 		}
 
-		if (reloadconfig && bbhostsfn) {
+		if (reloadconfig && hostsfn) {
 			RbtIterator hosthandle;
 
 			reloadconfig = 0;
-			load_hostnames(bbhostsfn, NULL, get_fqdn());
+			load_hostnames(hostsfn, NULL, get_fqdn());
 
 			/* Scan our list of hosts and weed out those we do not know about any more */
 			hosthandle = rbtBegin(rbhosts);
@@ -4880,7 +4880,7 @@ int main(int argc, char *argv[])
 			buf = generate_stats();
 			get_hts(buf, "hobbitd", "", &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 			if (!h || !t || !log) {
-				errprintf("hobbitd servername MACHINE='%s' not listed in bb-hosts, dropping hobbitd status\n",
+				errprintf("hobbitd servername MACHINE='%s' not listed in hosts.cfg, dropping hobbitd status\n",
 					  xgetenv("MACHINE"));
 			}
 			else {

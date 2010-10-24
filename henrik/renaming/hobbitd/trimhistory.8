@@ -18,7 +18,7 @@ existing logfile is left untouched.
 
 Optionally, this tool will also remove logfiles from hosts that are 
 no longer defined in the Xymon 
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file. As an extension, even logfiles from services can be removed, 
 if the service no longer has a valid status-report logged in the
 current Xymon status.
@@ -44,7 +44,7 @@ must exist.
 
 .IP --drop
 Causes trimhistory to delete files from hosts that are not listed in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 .IP --dropsvcs
@@ -89,11 +89,11 @@ The directory holding all history logs.
 .IP BBHISTLOGS
 The top-level directory for the historical status-log collections.
 
-.IP BBHOSTS
-The location of the bb-hosts file, holding the list of currently 
+.IP HOSTSCFG
+The location of the hosts.cfg file, holding the list of currently 
 known hosts in Xymon.
 
 
 .SH "SEE ALSO"
-xymon(7), bb-hosts(5)
+xymon(7), hosts.cfg(5)
 

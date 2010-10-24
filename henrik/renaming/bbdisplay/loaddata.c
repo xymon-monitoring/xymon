@@ -323,7 +323,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		host->entries = newstate->entry;
 
 		/* There may be multiple host entries, if a host is
-		 * listed in several locations in bb-hosts (for display purposes).
+		 * listed in several locations in hosts.cfg (for display purposes).
 		 * This is handled by updating ALL of the cloned host records.
 		 * Bug reported by Bluejay Adametz of Fuji.
 		 */
@@ -335,7 +335,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		for (l=l->clones; (l); l = l->clones) l->hostentry->entries = host->entries;
 	}
 	else {
-		/* No host for this test - must be missing from bb-hosts */
+		/* No host for this test - must be missing from hosts.cfg */
 		newstate->entry->next = NULL;
 	}
 

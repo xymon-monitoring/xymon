@@ -128,7 +128,7 @@ typedef struct testitem_t {
 	struct testedhost_t *host;	/* Pointer to testedhost_t record for this host */
 	struct service_t *service;	/* Pointer to service_t record for the service to test */
 
-	char		*testspec;      /* Pointer to the raw testspec in bb-hosts */
+	char		*testspec;      /* Pointer to the raw testspec in hosts.cfg */
 	int		reverse;	/* "!testname" flag */
 	int		dialup;		/* "?testname" flag */
 	int		alwaystrue;	/* "~testname" flag */

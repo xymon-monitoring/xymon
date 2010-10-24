@@ -15,7 +15,7 @@ bbtest-net \- Xymon network test tool
 .SH DESCRIPTION
 .I bbtest-net(1)
 handles the network tests of hosts defined in the Xymon configuration
-file, bb-hosts. It is normally run at regular intervals by 
+file, hosts.cfg. It is normally run at regular intervals by 
 .I hobbitlaunch(8)
 via an entry in the
 .I hobbitlaunch.cfg(5)
@@ -101,13 +101,13 @@ it it fails, then all services on that host will be
 reported as being down.
 .br
 With "--dns=ip" bbtest-net will never do a DNS lookup;
-it will use the IP adresse specified in bb-hosts for
+it will use the IP adresse specified in hosts.cfg for
 the tests. Thus, this setting is equivalent to having
 the "testip" tag on all hosts. Note that http tests
 will ignore this setting and still perform a DNS
 lookup for the hostname given in the URL; see the
 "bbtest-net tags for HTTP tests" section in
-.I bb-hosts(5)
+.I hosts.cfg(5)
 
 .IP --no-ares
 Disable the ARES resolver built into bbtest-net. This makes
@@ -204,7 +204,7 @@ bbtest-net omit these flags from the status messages.
 
 .IP --shuffle
 By default, TCP tests run roughly in the order that the hosts
-are listed in the bb-hosts file. If you have many tests for
+are listed in the hosts.cfg file. If you have many tests for
 one server, this may result in an exceptionally large
 load when Xymon is testing it because Xymon will perform
 a lot of tests at the same time. To avoid this, the
@@ -243,7 +243,7 @@ Enable/disable the use of traceroute when a ping-test fails.
 Performing a traceroute for failed ping tests is a slow
 operation, so the default is not to do any traceroute, unless
 it is requested on a per-host basis via the "trace" tag in the 
-.I bb-hosts(5) 
+.I hosts.cfg(5) 
 entry for each host. The "--trace" option changes this, so 
 the default becomes to run traceroute on all hosts where
 the ping test fails; you can then disable it on specific 
@@ -267,7 +267,7 @@ checks using the same test name as these scripts do.
 .IP --bb-proxy-syntax
 Adhere to the Big Brother syntax for a URL, which allows specifying 
 a HTTP proxy as part of a URL. See \fB"HTTP Testing via proxy"\fR in the
-.I bb-hosts(5) 
+.I hosts.cfg(5) 
 file for details. Beginning with Xymon 4.3.0, this behaviour is disabled
 by default since URL's that include other URL's are now much more
 common. This option restores the old Big Brother-compatible behaviour.
@@ -292,7 +292,7 @@ E.g. to trigger an alert if your SSL-enabled website
 supports less than 128 bits of encryption, use "--sslbits=128".
 Note: This can be enabled on a per-host basis using the
 "sslbits=N" setting in 
-.I bb-hosts(5)
+.I hosts.cfg(5)
 
 
 .SH DEBUGGING OPTIONS
@@ -357,11 +357,11 @@ limitations in your operating system C library.
 
 .SH LDAP TESTS
 ldap testing can be done in two ways. If you just put an "ldap" or
-"ldaps" tag in bb-hosts, a simple test is performed that just verifies
+"ldaps" tag in hosts.cfg, a simple test is performed that just verifies
 that it is possible to establish a connection to the port running 
 the ldap service (389 for ldap, 636 for ldaps).
 
-Instead you can put an LDAP URI in bb-hosts. This will cause 
+Instead you can put an LDAP URI in hosts.cfg. This will cause 
 bbtest-net to initiate a full-blown LDAP session with the server,
 and do an LDAP search for the objects defined by the URI. This
 requires that bbtest-net was built with LDAP support, and relies
@@ -391,7 +391,7 @@ Example:
 All "bind" operations to LDAP servers use simple authentication.
 Kerberos and SASL are not supported. If your LDAP server requires 
 a username/password, use the "ldaplogin" tag to specify this, cf. 
-.I bb-hosts(5) 
+.I hosts.cfg(5) 
 If no username/password information is provided, an anonymous
 bind will be attempted. 
 
@@ -424,21 +424,21 @@ in the "sslcert" column.
 .SH USING MULTIPLE NETWORK TEST SYSTEMS
 If you have more than one system running network tests - e.g. if your network
 is separated by firewalls - then is is problematic to maintain
-multiple bb-hosts files for each of the systems.
+multiple hosts.cfg files for each of the systems.
 bbtest-net supports the NET:location tag in
-.I bb-hosts(5)
+.I hosts.cfg(5)
 to distinguish 
 between hosts that should be tested from different network
 locations. If you set the environment variable BBLOCATION
 e.g. to "dmz" before running bbtest-net, then it will only
-test hosts that have a "NET:dmz" tag in bb-hosts. This allows
-you to keep all of your hosts in the same bb-hosts file, but
+test hosts that have a "NET:dmz" tag in hosts.cfg. This allows
+you to keep all of your hosts in the same hosts.cfg file, but
 test different sets of hosts by different BBNET systems.
 
 
 .SH BBTEST-NET INTERNALS
 bbtest-net first reads the bb-services file to see which network tests
-are defined. It then scans the bb-hosts file, and collects information
+are defined. It then scans the hosts.cfg file, and collects information
 about the TCP service tests that need to be tested. It picks out only
 the tests that were listed in the bb-services file, plus the "dns",
 "dig" and "ntp" tests - those tests that bb-network.sh would normally 
@@ -481,7 +481,7 @@ standard bb-network.sh script.
 .IP BBLOCATION
 Defines the network segment where bbtest-net is currently running.
 This is used to filter out only the entries in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file that have a matching "NET:LOCATION" tag, and execute the
 tests for only those hosts.
 
@@ -587,6 +587,6 @@ test tool. It is updated only by bbtest-net during the normal
 runs, and read by bbretest-net.sh.
 
 .SH "SEE ALSO"
-bb-hosts(5), bb-services(5), hobbitserver.cfg(5), hobbitping(1),
+hosts.cfg(5), bb-services(5), hobbitserver.cfg(5), hobbitping(1),
 curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
 

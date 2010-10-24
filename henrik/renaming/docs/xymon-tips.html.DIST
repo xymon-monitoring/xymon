@@ -50,14 +50,14 @@ want to monitor.</p>
 <p>If you did install a client, then the two most probable causes for 
 this are:</p>
 <ul>
-	<li>The client is using another hostname than what is in the bb-hosts file.<br>
-	Xymon only cares about the hosts that are in the bb-hosts file, and
+	<li>The client is using another hostname than what is in the hosts.cfg file.<br>
+	Xymon only cares about the hosts that are in the hosts.cfg file, and
 	discards status-reports from unknown hosts. If you check the "hobbitd"
 	column on the webserver display for the Xymon server, you will see 
 	a report about these unknown hosts.<br>
 	Either reconfigure the client to use the same hostname as is in the
-	bb-hosts file, or add a <tt>CLIENT:clienthostname</tt> tag in the
-	bb-hosts file so Xymon knows what host matches the client hostname.
+	hosts.cfg file, or add a <tt>CLIENT:clienthostname</tt> tag in the
+	hosts.cfg file so Xymon knows what host matches the client hostname.
 	The Xymon client can be started with a <tt>&quot;--hostname=MYHOSTNAME&quot;</tt>
 	option to explicitly define the hostname that the client uses when
 	reporting data to Xymon.</li>
@@ -75,8 +75,8 @@ this are:</p>
 </ul>
 
 <hr>
-<h3><a name="clientnames">My silly clients are using a hostname different from the one in bb-hosts</a></h3>
-<p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the bb-hosts file,
+<h3><a name="clientnames">My silly clients are using a hostname different from the one in hosts.cfg</a></h3>
+<p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the hosts.cfg file,
 or re-configure the client to use the proper hostname.</p>
 
 
@@ -98,7 +98,7 @@ around the &quot;drop HOSTNAME ftp&quot;.</p>
 
 <hr>
 <h3><a name="drophost">So how do I get rid of an entire host in Xymon?</a></h3>
-<p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command</p>
+<p>First, remove the host from the ~/server/etc/hosts.cfg file. Then use the command</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
 </pre>
@@ -107,7 +107,7 @@ around the &quot;drop HOSTNAME&quot;.</p>
 
 <hr>
 <h3><a name="renamehost">How do I rename a host in the Xymon display?</a></h3>
-<p>First, change the ~/server/etc/bb-hosts file so it has the new name.
+<p>First, change the ~/server/etc/hosts.cfg file so it has the new name.
 Then to move your historical data over to the new name, run</p>
 <pre>
     ~/server/bin/bb 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
@@ -124,7 +124,7 @@ Subject: Re: [hobbit] Apache tag
 
 Okay, first you must make the indicated addition to your apache
 httpd.conf (or you can make a xymon.conf in apaches conf.d directory).
-[ed: See the bb-hosts man-page for the "apache" description]
+[ed: See the hosts.cfg man-page for the "apache" description]
 
 Then, you must restart apache for the change to take effect
 (/etc/init.d/httpd restart).
@@ -148,7 +148,7 @@ IdleWorkers: 13
 Scoreboard: RR__RWR___RR_R_RR_RRRRRRRRR_RRRRRRR__RRR_RRRRCRRRRR_RRRR........................................................................................................................................................................................................
 
 Now, assuming you are getting back the server-status info, time to make
-sure your bb-hosts is correctly configured to collect and graph the
+sure your hosts.cfg is correctly configured to collect and graph the
 data.  Heres what I have in mine:
 
 1.2.3.4    my.server.com  # conn ssh http://1.2.3.4 apache=http://1.2.3.4/server-status?auto TRENDS:*,apache:apache|apache1|apache2|apache3
@@ -293,14 +293,14 @@ like this:</p>
 
 <p><b>Server-side scripts</b> look almost the same, but they will
 typically use the <a href="manpages/man1/bbhostgrep.1.html">bbhostgrep</a>
-utility to pick out hosts in the bb-hosts file that have a special tag 
+utility to pick out hosts in the hosts.cfg file that have a special tag 
 defined, and then send one status message for each of those hosts. 
 Like this:</p>
 <pre><tt>
    #!/bin/sh
 
-   BBHTAG=foo           # What we put in bb-hosts to trigger this test
-   COLUMN=$BBHTAG	# Name of the column, often same as tag in bb-hosts
+   BBHTAG=foo           # What we put in hosts.cfg to trigger this test
+   COLUMN=$BBHTAG	# Name of the column, often same as tag in hosts.cfg
 
    $BBHOME/bin/bbhostgrep $BBHTAG | while read L
    do
@@ -325,7 +325,7 @@ Like this:</p>
 </tt></pre>
 
 <p>Note that for server side tests, you need to loop over the list
-of hosts found in the bb-hosts file, and send one status message for
+of hosts found in the hosts.cfg file, and send one status message for
 each host. Other than that, it is just like the client-side tests.</p>
 
 <hr>

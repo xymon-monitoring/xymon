@@ -63,7 +63,7 @@
 
   bbgen_page_t structure holds data about one BB page - the first record in this list
   represents the top-level bb.html page. Other pages in the list are defined
-  using the bb-hosts "page" directive and access via the page->next link.
+  using the hosts.cfg "page" directive and access via the page->next link.
 
   subpages are stored in bbgen_page_t structures also. Accessible via the "subpages"
   link from a page.

@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
 	setdocurl(hostsvcurl("%s", xgetenv("INFOCOLUMN"), 1));
 
 	parse_query();
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_nkconfig(nkconfig);
 	load_all_links();
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));

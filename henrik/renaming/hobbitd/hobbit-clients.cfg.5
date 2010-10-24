@@ -491,7 +491,7 @@ file).
 
 .BR "PAGE=targetstring"
 Rule matching an alert by the name of the page in BB. "targetstring" is the path of
-the page as defined in the bb-hosts file. E.g. if you have this setup:
+the page as defined in the hosts.cfg file. E.g. if you have this setup:
 .IP
 .nf
 page servers All Servers
@@ -517,7 +517,7 @@ Rule excluding a host if the pagename matches.
 
 .BR "HOST=targetstring"
 Rule matching a host by the hostname.
-"targetstring" is either a comma-separated list of hostnames (from the bb-hosts file),
+"targetstring" is either a comma-separated list of hostnames (from the hosts.cfg file),
 "*" to indicate "all hosts", or a Perl-compatible regular expression.
 E.g. "HOST=dns.foo.com,www.foo.com" identifies two specific hosts;
 "HOST=%www.*.foo.com EXHOST=www-test.foo.com" matches all hosts with a name
@@ -537,7 +537,7 @@ Exclude all hosts belonging to "classname" from this rule.
 
 .BR "TIME=timespecification"
 Rule matching by the time-of-day. This is specified as the DOWNTIME 
-time specification in the bb-hosts file.  E.g. "TIME=W:0800:2200"
+time specification in the hosts.cfg file.  E.g. "TIME=W:0800:2200"
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
 

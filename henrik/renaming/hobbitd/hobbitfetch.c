@@ -476,10 +476,10 @@ int main(int argc, char *argv[])
 		
 		now = gettimer();
 		if (now > reloadtime) {
-			/* Time to reload the bb-hosts file */
+			/* Time to reload the hosts.cfg file */
 			reloadtime = now + 600;
 
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk, 0)) {
 				char *hname;
 				clients_t *newclient;

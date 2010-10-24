@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {

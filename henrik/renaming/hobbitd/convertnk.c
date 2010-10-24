@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 {
 	void *walk;
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	for (walk = first_host(); (walk); walk=next_host(walk, 0)) {
 		char *nk, *nktime, *tok;

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Xymon, responsible for loading the bb-hosts   */
+/* This is a library module for Xymon, responsible for loading the hosts.cfg  */
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
@@ -32,7 +32,7 @@ typedef struct pagelist_t {
 
 typedef struct namelist_t {
 	char ip[IP_ADDR_STRLEN];
-	char *bbhostname;	/* Name for item 2 of bb-hosts */
+	char *bbhostname;	/* Name for item 2 of hosts.cfg */
 	char *logname;		/* Name of the host directory in BBHISTLOGS (underscores replaces dots). */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
@@ -44,7 +44,7 @@ typedef struct namelist_t {
 	char *osname;
 	struct namelist_t *next;
 
-	char *rawentry;		/* The raw bb-hosts entry for this host. */
+	char *rawentry;		/* The raw hosts.cfg entry for this host. */
 	char *allelems;		/* Storage for data pointed to by elems */
 	char **elems;		/* List of pointers to the elements of the entry */
 
@@ -398,7 +398,7 @@ void *hostinfo(char *hostname)
 	namelist_t *result = NULL;
 	time_t now = getcurrenttime(NULL);
 
-	if (!configloaded) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	if (!configloaded) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	hosthandle = rbtFind(rbhosts, hostname);
 	if (hosthandle != rbtEnd(rbhosts)) {

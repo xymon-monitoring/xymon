@@ -1,6 +1,6 @@
 .TH BBHOSTGREP 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bbhostgrep \- pick out lines in bb-hosts
+bbhostgrep \- pick out lines in hosts.cfg
 .SH SYNOPSIS
 .B "bbhostgrep --help"
 .br
@@ -11,20 +11,20 @@ bbhostgrep \- pick out lines in bb-hosts
 .SH DESCRIPTION
 .I bbhostgrep(1)
 is for use by extension scripts that need to pick out the entries 
-in a bb-hosts file that are relevant to the script.
+in a hosts.cfg file that are relevant to the script.
 
 The utility accepts test names as parameters, and will then
-parse the bb-hosts file and print out the host entries that
+parse the hosts.cfg file and print out the host entries that
 have at least one of the wanted tests specified. Tags may be
 given with a trailing asterisk '*', e.g. "bbhostgrep http*"
 is needed to find all http and https tags.
 
 The bbhostgrep utility supports the use of "include" directives
-inside the bb-hosts file, and will find matching tags in all
+inside the hosts.cfg file, and will find matching tags in all
 included files.
 
 If the DOWNTIME or SLA tags are used in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file, these are interpreted relative to the current time. 
 bbhostgrep then outputs a "INSIDESLA" or "OUTSIDESLA" tag
 for easier use by scripts that want to check if the current
@@ -57,15 +57,15 @@ This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
 
 .IP "--bbdisp"
-Search the bb-hosts file following include statements as a
+Search the hosts.cfg file following include statements as a
 BBDISPLAY server would.
 
 .IP "--bbnet"
-Search the bb-hosts file following include statements as a
+Search the hosts.cfg file following include statements as a
 BBNET server would.
 
 .SH EXAMPLE
-If your bb-hosts file looks like this
+If your hosts.cfg file looks like this
 
    192.168.1.1   www.test.com  # ftp telnet !oracle
    192.168.1.2   db1.test.com  # oracle
@@ -93,10 +93,10 @@ location that the script currently executes on.
 
 .SH USE IN EXTENSION SCRIPTS
 To integrate bbhostgrep into an existing script, look for
-the line in the script that grep's in the $BBHOSTS file. 
+the line in the script that grep's in the $HOSTSCFG file. 
 Typically it will look somewhat like this:
 
-   $GREP -i "^[0-9].*#.*TESTNAME" $BBHOSTS | ... code to handle test
+   $GREP -i "^[0-9].*#.*TESTNAME" $HOSTSCFG | ... code to handle test
 
 Instead of the grep, we will use bbhostgrep. It then becomes
 
@@ -106,17 +106,17 @@ which is simpler, less error-prone and more efficient.
 
 .SH ENVIRONMENT VARIABLES
 .IP BBLOCATION
-If set, bbhostgrep outputs only lines from bb-hosts that have
+If set, bbhostgrep outputs only lines from hosts.cfg that have
 a matching NET:$BBLOCATION setting.
 .sp
-.IP BBHOSTS
+.IP HOSTSCFG
 Filename for the Xymon
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 .SH FILES
-.IP $BBHOSTS
-The Xymon bb-hosts file
+.IP $HOSTSCFG
+The Xymon hosts.cfg file
 
 .SH "SEE ALSO"
-bb-hosts(5), hobbitserver.cfg(5)
+hosts.cfg(5), hobbitserver.cfg(5)

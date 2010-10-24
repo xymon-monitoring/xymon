@@ -172,7 +172,7 @@ Same as "--dialupskin", but for reverse tests (tests with '!' in front).
 .IP "--tooltips=[always,never,main]"
 Determines which pages use tooltips to show the description of the host
 (from the COMMENT entry in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file). If set to \fBalways\fR, tooltips are used on all pages. If set to
 \fBnever\fR, tooltips are never used. If set to \fBmain\fR, tooltips are
 used on the main pages, but not on the BB2 (all non-green) or NK (critical
@@ -224,7 +224,7 @@ have the entire page green. It is useful for tests that need not cause an alarm,
 but where you still want to know the actual status.
 These options set global defaults for all hosts; you can use the NOPROPRED
 and NOPROPYELLOW tags in the 
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file to apply similar limits on a per-host basis.
 .sp
 .IP "--nopropyellow=test[,test] or --noprop=test[,test]
@@ -269,7 +269,7 @@ files contain the hosts that have a RED or YELLOW status on tests
 specified.  This option can define the default tests to include - 
 the defaults can be overridden or amended using the "WML:" or "NK:" 
 tags in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file. If no tests are specified, all tests will be included.
 .sp
 .IP "--nstab=FILENAME"
@@ -422,7 +422,7 @@ webpages.  Group A wants to have the hosts grouped by the client,
 they belong to. This is how you have Xymon set up - the default pageset.
 Now group B wants to have the hosts grouped by operating system - 
 let us call it the "os" set.  Then you would add the page layout to 
-bb-hosts like this:
+hosts.cfg like this:
 .sp
 ospage    win          Microsoft Windows
 .br
@@ -446,10 +446,10 @@ and unix.html), and from e.g. the win.html page there are
 subpages win-nt4.html and win-xp.html
 .br
 The syntax is identical to the normal "page" and "subpage"
-directives in bb-hosts, but the directive is prefixed with
+directives in hosts.cfg, but the directive is prefixed with
 the pageset name. Dont put any hosts in-between the page
 and subpage directives - just add all the directives at
-the top of the bb-hosts file.
+the top of the hosts.cfg file.
 .br
 How do you add hosts to the pages, then ? Simple - just put
 a tag "OS:win-xp" on the host definition line. The "OS" 
@@ -554,7 +554,7 @@ for the hosts to define the service period, and optionally a
 "WARNPCT:level" tag to define the agreed availability.
 
 Note: See 
-.I bb-hosts(5)
+.I hosts.cfg(5)
 for the exact syntax of these options.
 
 "REPORTTIME:timespec" specifies the time of day when the service
@@ -595,7 +595,7 @@ the SLA period ends). The total time included in the report is
 15 hours (7am - 10pm) except the 5 minutes blue = 53700 seconds.
 So the SLA availability is 53280/53700 = 99,22%
 
-The "WARNPCT:level" tag is supported in the bb-hosts file, to set
+The "WARNPCT:level" tag is supported in the hosts.cfg file, to set
 the availability threshold on a host-by-host basis. This threshold
 determines whether a test is reported as green, yellow or red in
 the reports. A default value can be set for all hosts with the via 
@@ -676,6 +676,6 @@ Note how the
 utility is used to calculate the start- and end-time parameters.
 
 .SH "SEE ALSO"
-bb-hosts(5), hobbitserver.cfg(5), hobbitlaunch.cfg(5), bb-rep.cgi(1), 
+hosts.cfg(5), hobbitserver.cfg(5), hobbitlaunch.cfg(5), bb-rep.cgi(1), 
 bb-snapshot.cgi(1), xymon(7)
 

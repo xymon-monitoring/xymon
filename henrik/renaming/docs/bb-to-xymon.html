@@ -26,7 +26,7 @@ change the BBHOME and BBVAR settings near the top of the file.</p>
 <p>A couple of configuration files can be copied directly from 
 Big Brother to Xymon:</p>
 <ul>
-	<li>The <b>bb-hosts</b> file
+	<li>The <b>bb-hosts</b> file, must be renamed to <b>hosts.cfg</b>
 	<li>The <b>bb-services</b> file. You need only copy this if you 
 	have used bbgen before, and added custom network tests to the
 	bb-services file.</li>
@@ -96,7 +96,7 @@ the files over to the new structure, if you would rather just move them then
 change to "OP" setting to "mv".</p>
 
 <p>After setting up the script, run it and it should copy all of the RRD-files
-that relate to a host currently in the bb-hosts file to the new directory 
+that relate to a host currently in the hosts.cfg file to the new directory 
 structure.</p>
 
 <h3>Step 6: Start Xymon</h3>

@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 			if (cookie && *cookie) {
 				void *hinfo;
 
-				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+				load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 				hinfo = hostinfo(cookie);
 				if (hinfo) {
 					pagepath = bbh_item(hinfo, BBH_PAGEPATH);

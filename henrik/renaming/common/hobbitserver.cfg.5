@@ -101,7 +101,7 @@ add this, if configured to do so.
 
 .IP HOLIDAYS
 Defines the default set of holidays used if there is no "holidays" 
-tag for a host in the bb-hosts file. Holiday sets are defined in the
+tag for a host in the hosts.cfg file. Holiday sets are defined in the
 .I hobbit-holidays.cfg(5)
 file. If not defined, only the default holidays (those defined outside
 a named holiday set) will be considered as holidays.
@@ -225,10 +225,10 @@ and point XYMONCGILOGDIR to this directory.
 
 .SH SYSTEM FILES
 
-.IP BBHOSTS
+.IP HOSTSCFG
 Full path to the Xymon
-.I bb-hosts(5)
-configuration file. Default: $BBHOME/etc/bb-hosts.
+.I hosts.cfg(5)
+configuration file. Default: $BBHOME/etc/hosts.cfg.
 
 .IP BB
 Full path to the 
@@ -369,7 +369,7 @@ file.
 
 .IP BBGHOSTS
 Controls how status messages from unknown hosts (i.e. hosts not
-listed in the bb-hosts file) are handled.
+listed in the hosts.cfg file) are handled.
 .sp
 .BR BBGHOSTS=1:
 Causes the status report to be silently discarded. This is the
@@ -385,7 +385,7 @@ unlike normal Big Brother which is case-sensitive in
 hostnames. So with BBGHOSTS set to 1 or 2, "WWW.FOO.COM"
 and "www.foo.com" are considered to be the same host.
 If necessary, the incoming hostname will be changed
-to match the way it is written in the bb-hosts file,
+to match the way it is written in the hosts.cfg file,
 changing case as needed.
 
 .IP MAXMSG_STATUS
@@ -550,7 +550,7 @@ the variable. So to inform the users that an intermediate switch
 or router is down, use BBROUTERTEXT="switch or router".  This can 
 also be set on a per-host basis using the "DESCR:hosttype:description"
 tag in the 
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 .IP NETFAILTEXT
@@ -711,7 +711,7 @@ List of scripts to run as extensions to a history page.
 Default threshold for listing the availability as "critical" (red) when
 generating the availability report. This can be set on a per-host basis
 with the WARNPCT setting in
-.I bb-hosts(5).
+.I hosts.cfg(5).
 Default: 97 (percent)
 
 .IP BBGENREPOPTS

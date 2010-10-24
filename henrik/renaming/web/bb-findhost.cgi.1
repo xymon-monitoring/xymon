@@ -20,7 +20,7 @@ matched any of the hostnames, with links to the Xymon webpages
 where they are located.
 
 The output page lists hosts in the order they appear in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 A sample web page implementing the search facility is included
@@ -41,13 +41,13 @@ HTML footer file for the generated web page
 Query form displayed when bb-findhost.cgi is called with no parameters.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP BBHOSTS
-bb-findhost.cgi uses the BBHOSTS environment variable to find the
-bb-hosts file listing all known hosts and their page locations.
+.IP HOSTSCFG
+bb-findhost.cgi uses the HOSTSCFG environment variable to find the
+hosts.cfg file listing all known hosts and their page locations.
 
 .IP BBHOME
 Used to locate the template files for the generated web pages.
 
 .SH "SEE ALSO"
-bbgen(1), bb-hosts(5), hobbitserver.cfg(5)
+bbgen(1), hosts.cfg(5), hobbitserver.cfg(5)
 

@@ -209,9 +209,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-        load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
+        load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn());
         if (first_host() == NULL) {
-                errprintf("Cannot load bb-hosts\n");
+                errprintf("Cannot load file %s\n", xgetenv("HOSTSCFG"));
                 return 1;
         }
 

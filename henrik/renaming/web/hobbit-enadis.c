@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 	if (action == ACT_FILTER) {
 		/* Present the query form */
 
-		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
 		sethostenv_filter(hostpattern, pagepattern, ippattern);
 		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
