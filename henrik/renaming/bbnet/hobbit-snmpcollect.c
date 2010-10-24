@@ -538,7 +538,7 @@ void stophosts(void)
 /* 
  * This routine loads MIB files, and computes the key-OID values.
  * We defer this until the mib-definition is actually being referred to 
- * in hobbit-snmphosts.cfg, because lots of MIB's are not being used
+ * in snmphosts.cfg, because lots of MIB's are not being used
  * (and probably do not exist on the host where we're running) and
  * to avoid spending a lot of time to load MIB's that are not used.
  */
@@ -814,7 +814,7 @@ void readconfig(char *cfgfn, int verbose)
 			continue;
 		}
 		else {
-			errprintf("Unknown MIB (not in hobbit-snmpmibs.cfg): '%s'\n", bot);
+			errprintf("Unknown MIB (not in snmpmibs.cfg): '%s'\n", bot);
 		}
 	}
 
@@ -1088,7 +1088,7 @@ int main (int argc, char **argv)
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
-		sprintf(configfn, "%s/etc/hobbit-snmphosts.cfg", xgetenv("BBHOME"));
+		sprintf(configfn, "%s/etc/snmphosts.cfg", xgetenv("BBHOME"));
 	}
 	readconfig(configfn, mibcheck);
 	if (cfgcheck) return 0;

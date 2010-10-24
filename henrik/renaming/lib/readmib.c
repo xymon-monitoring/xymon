@@ -87,8 +87,8 @@ int readmibs(char *cfgfn, int verbose)
 	if (fn) xfree(fn);
 	fn = cfgfn;
 	if (!fn) {
-		fn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/hobbit-snmpmibs.cfg") + 1);
-		sprintf(fn, "%s/etc/hobbit-snmpmibs.cfg", xgetenv("BBHOME"));
+		fn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/snmpmibs.cfg") + 1);
+		sprintf(fn, "%s/etc/snmpmibs.cfg", xgetenv("BBHOME"));
 	}
 
 	cfgfd = stackfopen(fn, "r", &cfgfiles);
