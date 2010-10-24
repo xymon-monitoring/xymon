@@ -266,7 +266,7 @@ Xymon client. <B>column</B> is one of <B>cpu</B>, <B>disk</B>,
 <B>files</B>, <B>memory</B>, <B>msgs</B>, <B>ports</B>, <B>procs</B>.
 This setting stops these columns from being updated for the 
 host. Note: If the columns already exist, you must use the
-<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
 
 utility to <B>drop</B> them, or they will go purple.
 <P>
@@ -836,7 +836,7 @@ to the port and possibly checking that a banner is shown by the
 server.
 <P>
 How these tests operate are configured in the
-<I><A HREF="../man5/bb-services.5.html">bb-services</A>(5)</I>
+<I><A HREF="../man5/protocols.cfg.5.html">protocols.cfg</A>(5)</I>
 
 configuration file, which controls which port to use for the service,
 whether to send any data to the service, whether to check for
@@ -888,7 +888,7 @@ setup an SSL-encrypted session while testing the service.
 The server certificate is validated and information about
 it sent in the &quot;sslcert&quot; column. Note that smtps does not
 have a standard port number assignment, so you will need to enter
-this into the bb-services file or your /etc/services file.
+this into the protocols.cfg file or your /etc/services file.
 <P>
 <DT>bbd<DD>
 Test that a Big Brother compatible daemon is running. This check
@@ -1180,7 +1180,7 @@ the server, i.e. HTTP headers are not included in the
 digest (as they change from one request to the next).
 <P>
 The expected digest value can be computed with the
-<I><A HREF="../man1/bbdigest.1.html">bbdigest</A>(1)</I>
+<I><A HREF="../man1/xymondigest.1.html">xymondigest</A>(1)</I>
 
 utility.
 <P>
@@ -1530,7 +1530,7 @@ daemon is listening on a non-standard IP-address or port-number.
 <A NAME="lbAY">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/bbdigest.1.html">bbdigest</A>(1), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/xymondigest.1.html">xymondigest</A>(1), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -1566,6 +1566,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:10 GMT, October 24, 2010
+Time: 20:27:53 GMT, October 24, 2010
 </BODY>
 </HTML>

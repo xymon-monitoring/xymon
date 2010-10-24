@@ -9,24 +9,24 @@ Section: User Commands  (1)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#in
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bb - Xymon client communication program
+xymon - Xymon client communication program
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bb [options] RECIPIENT message</B>
+<B>xymon [options] RECIPIENT message</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
 
 is the client program used to communicate with a
 Xymon server. It is frequently used by Xymon
 client systems to send in status messages and pager
 alerts on local tests.
 <P>
-In Xymon, the bb program is also used for administrative
+In Xymon, the xymon program is also used for administrative
 purposes, e.g. to rename or delete hosts, or to disable
 hosts that are down for longer periods of time.
 <P>
@@ -48,7 +48,7 @@ Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 <P>
 <DT>--response<DD>
-The bb utility normally knows when to expect a response 
+The xymon utility normally knows when to expect a response 
 from the server, so this option is not required. However,
 it will cause any response from the server to be displayed.
 <P>
@@ -88,7 +88,7 @@ of a message is defined by the maximum allowed length of your
 shell's command-line, and is typically 8-32 KB. 
 <P>
 If you need to send longer status messages, you can specify &quot;@&quot; 
-as the message: bb will then read the status message from its
+as the message: xymon will then read the status message from its
 stdin.
 <P>
 </DL>
@@ -515,21 +515,11 @@ if we get a response):
 <P>
 Send a very large status message that has been built in the
 file &quot;statusmsg.txt&quot;. Instead of providing it on the command-line, 
-pass it via stdin to the bb command:
+pass it via stdin to the xymon command:
 <P>
 <BR>&nbsp;&nbsp;&nbsp;$&nbsp;cat&nbsp;statusmsg.txt&nbsp;|&nbsp;$BB&nbsp;$BBDISP&nbsp;&quot;@&quot;
 <P>
 <A NAME="lbAH">&nbsp;</A>
-<H2>NOTES</H2>
-
-This man-page describes the bb client program provided
-as part of Xymon. This implementation provides features 
-not present in the standard Big Brother bb client - 
-specifically, the support for sending messages over HTTP, 
-and many commands such as &quot;query&quot; and &quot;config&quot; are not part 
-of the bb client shipped with Big Brother.
-<P>
-<A NAME="lbAI">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
 <A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
@@ -545,13 +535,12 @@ of the bb client shipped with Big Brother.
 <DT><A HREF="#lbAE">OPTIONS AND PARAMETERS</A><DD>
 <DT><A HREF="#lbAF">XYMON MESSAGE SYNTAX</A><DD>
 <DT><A HREF="#lbAG">EXAMPLE</A><DD>
-<DT><A HREF="#lbAH">NOTES</A><DD>
-<DT><A HREF="#lbAI">SEE ALSO</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
 </DL>
 <HR>
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:10 GMT, October 24, 2010
+Time: 20:27:53 GMT, October 24, 2010
 </BODY>
 </HTML>

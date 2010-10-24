@@ -1,26 +1,26 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BB-SERVICES</TITLE>
+<HTML><HEAD><TITLE>Man page of PROTOCOLS.CFG</TITLE>
 </HEAD><BODY>
-<H1>BB-SERVICES</H1>
+<H1>PROTOCOLS.CFG</H1>
 Section: File Formats (5)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bb-services - Configuration of TCP network services
+protocols.cfg - Configuration of TCP network services
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>$BBHOME/etc/bb-services</B>
+<B>$BBHOME/etc/protocols.cfg</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>bb-services</B> contains definitions of how 
+<B>protocols.cfg</B> contains definitions of how 
 <I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
 
 should test a TCP-based network service (i.e. all common
@@ -33,7 +33,7 @@ SSL- or telnet-style handshaking to be tested.
 <A NAME="lbAE">&nbsp;</A>
 <H2>FILE FORMAT</H2>
 
-bb-services is a text file. A simple service definition for
+protocols.cfg is a text file. A simple service definition for
 the SMTP service would be this:
 <BR>
 
@@ -57,7 +57,7 @@ to the service. It will then expect a response beginning with &quot;220&quot;.
 Any data returned by the service (a so-called &quot;banner&quot;) will be recorded 
 and included in the status message.
 <P>
-The full set of commands available for the bb-services file are:
+The full set of commands available for the protocols.cfg file are:
 <P>
 <DL COMPACT>
 <DT>[NAME]<DD>
@@ -107,7 +107,7 @@ Defines test options. The possible options are
 <A NAME="lbAF">&nbsp;</A>
 <H2>FILES</H2>
 
-<B>$BBHOME/etc/bb-services</B>
+<B>$BBHOME/etc/protocols.cfg</B>
 
 <P>
 <A NAME="lbAG">&nbsp;</A>
@@ -131,6 +131,6 @@ Defines test options. The possible options are
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:10 GMT, October 24, 2010
+Time: 20:27:53 GMT, October 24, 2010
 </BODY>
 </HTML>

@@ -38,7 +38,7 @@ bbtest-net - Xymon network test tool
 
 handles the network tests of hosts defined in the Xymon configuration
 file, hosts.cfg. It is normally run at regular intervals by 
-<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
 
 via an entry in the
 <I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
@@ -55,9 +55,9 @@ bbtest-net has built-in support for testing SSL-enabled
 protocols, e.g. imaps, pop3s, nntps, telnets, if SSL-support
 was enabled when configuring bbgen. The full list of known
 tests is found in the
-<I><A HREF="../man5/bb-services.5.html">bb-services</A>(5)</I>
+<I><A HREF="../man5/protocols.cfg.5.html">protocols.cfg</A>(5)</I>
 
-file in $BBHOME/etc/bb-services.
+file in $BBHOME/etc/protocols.cfg.
 <P>
 In addition, it implements the &quot;dns&quot; and &quot;dig&quot; tests for
 testing DNS servers. This is done in the same way as 
@@ -525,10 +525,10 @@ test different sets of hosts by different BBNET systems.
 <A NAME="lbAP">&nbsp;</A>
 <H2>BBTEST-NET INTERNALS</H2>
 
-bbtest-net first reads the bb-services file to see which network tests
+bbtest-net first reads the protocols.cfg file to see which network tests
 are defined. It then scans the hosts.cfg file, and collects information
 about the TCP service tests that need to be tested. It picks out only
-the tests that were listed in the bb-services file, plus the &quot;dns&quot;,
+the tests that were listed in the protocols.cfg file, plus the &quot;dns&quot;,
 &quot;dig&quot; and &quot;ntp&quot; tests - those tests that bb-network.sh would normally 
 use the &quot;bbnet&quot; tool to test.
 <P>
@@ -638,12 +638,12 @@ utility. Used by bbtest-net for the &quot;rpc&quot; service checks.
 <H2>FILES</H2>
 
 <DL COMPACT>
-<DT>~/server/etc/bb-services<DD>
+<DT>~/server/etc/protocols.cfg<DD>
 This file contains definitions of TCP services that bbtest-net
 can test. Definitions for a default set of common services is built
 into bbtest-net, but these can be overridden or supplemented by
-defining services in the bb-services file. See 
-<I><A HREF="../man5/bb-services.5.html">bb-services</A>(5)</I>
+defining services in the protocols.cfg file. See 
+<I><A HREF="../man5/protocols.cfg.5.html">protocols.cfg</A>(5)</I>
 
 for details on this file.
 <P>
@@ -700,7 +700,7 @@ runs, and read by bbretest-net.sh.
 <A NAME="lbAS">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/bb-services.5.html">bb-services</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/hobbitping.1.html">hobbitping</A>(1),
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/protocols.cfg.5.html">protocols.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/hobbitping.1.html">hobbitping</A>(1),
 <A HREF="../man1/curl.1.html">curl</A>(1), <A HREF="../man1/ftp.1.html">ftp</A>(1), <A HREF="../man1/fping.1.html">fping</A>(1), <A HREF="../man1/ntpdate.1.html">ntpdate</A>(1), <A HREF="../man8/rpcinfo.8.html">rpcinfo</A>(8)
 <P>
 <P>
@@ -731,6 +731,6 @@ runs, and read by bbretest-net.sh.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:10 GMT, October 24, 2010
+Time: 20:27:53 GMT, October 24, 2010
 </BODY>
 </HTML>

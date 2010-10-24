@@ -9,7 +9,7 @@ Section: File Formats (5)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#inde
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-tasks.cfg - Task definitions for the hobbitlaunch utility
+tasks.cfg - Task definitions for the xymonlaunch utility
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
@@ -20,7 +20,7 @@ tasks.cfg - Task definitions for the hobbitlaunch utility
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-The tasks.cfg file holds the list of tasks that hobbitlaunch runs 
+The tasks.cfg file holds the list of tasks that xymonlaunch runs 
 to perform all of the tasks needed by the Xymon monitor.
 <P>
 <A NAME="lbAE">&nbsp;</A>
@@ -83,32 +83,32 @@ An entry looks like this:
 <P>
 The <B>key</B> is enclosed in angle brackets, and must be unique
 for each task. You can choose your key-names as you like, they
-are only used internally in hobbitlaunch to identify each task.
+are only used internally in xymonlaunch to identify each task.
 <P>
 The <B>command</B> is defined by the CMD keyword. This is
 the full command including any options you want to use for this 
 task. This is required for all tasks.
 <P>
 The <B>DISABLED</B> keyword means that this command is disabled.
-hobbitlaunch will not start this task. It is recommended that 
+xymonlaunch will not start this task. It is recommended that 
 you use this to disable standard tasks, instead of removing them
 or commenting them out. Upgrades to Xymon will add standard
 tasks back into the file, so unless you have them listed as DISABLED
 then tasks may re-appear unexpectedly after an upgrade.
 <P>
-The <B>ONHOST</B> keyword tells hobbitlaunch that this task should
+The <B>ONHOST</B> keyword tells xymonlaunch that this task should
 only run on specific hosts. After the ONHOST keyword, you must
-provide a &quot;regular expression&quot;; if the hostname where hobbitlaunch
+provide a &quot;regular expression&quot;; if the hostname where xymonlaunch
 runs matches this expression, then the task will run. If it doesn't
 match, then the task is treated as if it were DISABLED.
 <P>
 The <B>MAXTIME</B> keyword sets a maximum time that the task may
-run; if exceeded, hobbitlaunch will kill the task. The time
+run; if exceeded, xymonlaunch will kill the task. The time
 is in seconds by default, you can specify minutes, hours or
 days by adding an &quot;m&quot;, &quot;h&quot; or &quot;d&quot; after the number. By default
 there is no upper limit on how long a taskmay run.
 <P>
-The <B>NEEDS</B> instructs hobbitlaunch not to run this task unless
+The <B>NEEDS</B> instructs xymonlaunch not to run this task unless
 the task defined by the NEEDS keyword is already running. This
 is used e.g. to delay the start of some application until the
 needed daemons have been started. The task that must be running
@@ -117,7 +117,7 @@ is defined by its <B>key</B>.
 The <B>GROUP</B> keyword can be used to limit the number of tasks 
 that may run simultaneously. E.g. if you are generating multiple
 pagesets of webpages, you dont want them to run at the same time.
-Putting them into a GROUP will cause hobbitlaunch to delay the start
+Putting them into a GROUP will cause xymonlaunch to delay the start
 of new tasks, so that only one task will run per group. You can
 change the limit by defining the group before the tasks, with
 a &quot;GROUP groupname maxtasks&quot; line.
@@ -126,7 +126,7 @@ The <B>INTERVAL</B> keyword defines how often this command is
 executed. The example shows a command that runs every 5 minutes.
 If no interval is given, the task is only run once - this is
 useful for tasks that run continually as daemons - although
-if the task stops for some reason, then hobbitlaunch will attempt
+if the task stops for some reason, then xymonlaunch will attempt
 to restart it. Intervals can be specified in seconds (if you 
 just put a number there), or in minutes (5m), hours (2h), or
 days (1d).
@@ -143,12 +143,12 @@ wildcard. So in the example above, this job would run once a
 month, at 4:30 AM on the 1st day of the month.
 <P>
 The <B>ENVFILE</B> setting points to a file with definitions of
-environment variables. Before running the task, hobbitlaunch will
+environment variables. Before running the task, xymonlaunch will
 setup all of the environment variables listed in this file.
-Since this is a per-task setting, you can use the same hobbitlaunch
+Since this is a per-task setting, you can use the same xymonlaunch
 instance to run e.g. both the server- and client-side Xymon 
 tasks. If this option is not present, then the environment 
-defined to hobbitlaunch is used.
+defined to xymonlaunch is used.
 <P>
 The <B>ENVAREA</B> setting modifies which environment variables
 are loaded, by picking up the ones that are defined for this
@@ -158,14 +158,14 @@ specific &quot;area&quot;. See
 for information about environment areas.
 <P>
 The <B>LOGFILE</B> setting defines a logfile for the task.
-hobbitlaunch will start the task with stdout and stderr redirected
+xymonlaunch will start the task with stdout and stderr redirected
 to this file. If this option is not present, then the output
-goes to the same location as the hobbitlaunch output.
+goes to the same location as the xymonlaunch output.
 <P>
 <A NAME="lbAF">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man5/crontab.5.html">crontab</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man5/crontab.5.html">crontab</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -182,6 +182,6 @@ goes to the same location as the hobbitlaunch output.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:10 GMT, October 24, 2010
+Time: 20:27:53 GMT, October 24, 2010
 </BODY>
 </HTML>
