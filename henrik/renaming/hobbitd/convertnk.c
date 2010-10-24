@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Xymon utility to convert the deprecated NK tags to a hobbit-nkview.cfg     */
+/* Xymon utility to convert the deprecated NK tags to a critical.cfg          */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

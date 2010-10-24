@@ -2,7 +2,7 @@
 /* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module for Xymon, responsible for loading the            */
-/* hobbit-nkview.cfg file.                                                    */
+/* critical.cfg file.                                                         */
 /*                                                                            */
 /* Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

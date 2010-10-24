@@ -1,13 +1,13 @@
 .TH HOBBIT-NKVIEW.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbit-nkview.cfg \- Configuration of the hobbitgraph CGI
+critical.cfg \- Configuration of the hobbitgraph CGI
 
 .SH SYNOPSIS
-.B $BBHOME/etc/hobbit-nkview.cfg
+.B $BBHOME/etc/critical.cfg
 
 .SH DESCRIPTION
-.I hobbit-nkview.cgi(1)
-uses the configuration file $BBHOME/etc/hobbit-nkview.cfg to
+.I critical.cgi(1)
+uses the configuration file $BBHOME/etc/critical.cfg to
 determine which of the statuses currently in a red or yellow state
 should appear on the Critical Systems view.
 
@@ -22,7 +22,7 @@ Typically, this means it must have a group-ownership matching your
 webserver userid, and group-write permissions (mode 664).
 
 When editing the file with the web front-end, a backup file is created.
-Therefore the hobbit-nkview.cfg.bak file should have identical permissions.
+Therefore the critical.cfg.bak file should have identical permissions.
 
 .SH "SEE ALSO"
 hobbit-nkview.cgi(1), hobbit-nkedit.cgi(1)

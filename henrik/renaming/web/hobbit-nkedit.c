@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Xymon CGI for administering the hobbit-nkview.cfg file                     */
+/* Xymon CGI for administering the critical.cfg file                          */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */

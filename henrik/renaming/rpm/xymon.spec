@@ -155,8 +155,8 @@ chkconfig --del xymon-client
 %attr(775, xymon, apache) %dir /var/lib/xymon/www/snap
 %attr(644, root, root) %config /var/lib/xymon/www/menu/xymonmenu.css
 %attr(755, xymon, xymon) %dir /usr/lib/xymon/client/ext
-%attr(664, xymon, apache) %config /etc/xymon/hobbit-nkview.cfg
-%attr(664, xymon, apache) %config /etc/xymon/hobbit-nkview.cfg.bak
+%attr(664, xymon, apache) %config /etc/xymon/critical.cfg
+%attr(664, xymon, apache) %config /etc/xymon/critical.cfg.bak
 %attr(4750, root, xymon) /usr/lib/xymon/server/bin/hobbitping
 %attr(750, root, xymon) /usr/lib/xymon/client/bin/logfetch
 %attr(750, root, xymon) /usr/lib/xymon/client/bin/clientupdate

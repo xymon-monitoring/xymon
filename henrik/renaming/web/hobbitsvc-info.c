@@ -815,7 +815,7 @@ char *generate_info(char *hostname, char *nkconfigfn)
 	}
 
 	if (newnkconfig) {
-		/* Load the hobbit-nkview.cfg file and get the alerts for this host */
+		/* Load the critical.cfg file and get the alerts for this host */
 		int i;
 		char *key;
 		nkconf_t *nkrec;

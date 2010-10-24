@@ -9,7 +9,7 @@ hobbit-nkview.cgi \- Xymon Critical Systems view CGI
 hobbit-nkview.sh CGI wrapper.
 
 hobbit-nkview.cgi matches the current critical statuses against the
-.I hobbit-nkview.cfg(5)
+.I critical.cfg(5)
 file, and generates the "Critical Systems" view. 
 
 .SH RELATION TO BBNK PAGE
@@ -38,7 +38,7 @@ Enables debugging output.
 .IP "--nkconfig=FILENAME"
 Use FILENAME as the configuration file for the Critical 
 Systems information. The default is to load this from
-$BBHOME/etc/hobbit-nkview.cfg
+$BBHOME/etc/critical.cfg
 
 .SH "ENVIRONMENT VARIABLES"
 .IP BBHOME

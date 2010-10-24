@@ -2,7 +2,7 @@
 /* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module for Xymon, responsible for loading the            */
-/* hobbit-nkview.cfg file.                                                    */
+/* critical.cfg file.                                                         */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#define DEFAULTCONFIG "etc/hobbit-nkview.cfg"
+#define DEFAULTCONFIG "etc/critical.cfg"
 
 static RbtHandle rbconf;
 static char *defaultfn = NULL;

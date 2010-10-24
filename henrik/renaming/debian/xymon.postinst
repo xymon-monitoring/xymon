@@ -28,7 +28,7 @@ case "$1" in
 
 	cd /var/lib/xymon; chown xymon:xymon . acks data disabled hist histlogs hostdata logs rrd tmp www
 	cd /var/lib/xymon/www; chown xymon:xymon html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
-	cd /etc/xymon; chgrp www-data hobbit-nkview.cfg hobbit-nkview.cfg.bak; chmod g+w hobbit-nkview.cfg hobbit-nkview.cfg.bak
+	cd /etc/xymon; chgrp www-data critical.cfg critical.cfg.bak; chmod g+w critical.cfg critical.cfg.bak
 
 	if ! test -e /etc/xymon/hosts.cfg ; then
 		if test -e /etc/default/xymon-client ; then
