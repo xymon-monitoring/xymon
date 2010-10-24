@@ -44,7 +44,7 @@ TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
 BBMAXMSGSPERCOMBO="100"         # How many individual messages to combine in a combo-message. 0=unlimited.
 BBSLEEPBETWEENMSGS="0"          # Delay between sending each combo message, in milliseconds.
 
-# HOLIDAYS="us"			# Default set of holidays (pointer to section in hobbit-holidays.cfg)
+# HOLIDAYS="us"			# Default set of holidays (pointer to section in holidays.cfg)
 # HOLIDAYFORMAT="%m/%d/%y"	# Format for printing holiday dates. Default is %d/%m/%y (day/month/year).
 
 # Specific to this host
