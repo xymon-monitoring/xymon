@@ -502,7 +502,7 @@ causes Xymon to use the IP listed in the hosts.cfg file.
 
 .IP NET:location
 This tag defines the host as being tested from a specific location.
-If bbtest-net sees that the environment variable BBLOCATION
+If xymonnet sees that the environment variable BBLOCATION
 is set, it will only test the hosts that have a matching
 "NET:location" tag in the hosts.cfg file. So this tag is useful
 if you have more than one BBNET system, but you still want
@@ -510,14 +510,14 @@ to keep a consolidated hosts.cfg file for all your systems.
 
 Note: The "--test-untagged" option modifies this behaviour,
 see
-.I bbtest-net(1)
+.I xymonnet(1)
 
 .IP noclear
 Some network tests depend on others. E.g. if the host does not
 respond to ping, then there's a good chance that the entire host 
 is down and all network tests will fail. Or if the http server
 is down, then any web content checks are also likely to fail.
-To avoid floods of alerts, the default behaviour is for bbtest-net
+To avoid floods of alerts, the default behaviour is for xymonnet
 to change the status of these tests that fail because of another
 problem to "clear" instead of "red". The "noclear" tag disables this
 behaviour and causes all failing tests to be reported with their
@@ -543,7 +543,7 @@ Define the number of days before an SSL certificate expires,
 in which the sslcert status shows a warning (yellow) or
 alarm (red) status. These default to the values from the
 "--sslwarndays" and "--sslalarmdays" options for the
-.I bbtest-net(1)
+.I xymonnet(1)
 tool; the values specified in the "ssldays" tag overrides
 the default.
 
@@ -654,7 +654,7 @@ For the other network tests, use "badftp", "badssh" etc.
 
 
 .SH CONNECTIVITY (PING) TEST
-These tags affect the behaviour of the bbtest-net connectivity
+These tags affect the behaviour of the xymonnet connectivity
 test.
 
 .IP noping
@@ -676,7 +676,7 @@ when the host is NOT up, and red if it does appear on
 the network.
 
 The actual name of the tag - "conn" by default - depends
-on the "--ping=TESTNAME" option for bbtest-net, as that
+on the "--ping=TESTNAME" option for xymonnet, as that
 decides the testname for the connectivity test.
 
 .IP "conn={best,|worst,}IP1[,IP2...]"
@@ -695,13 +695,13 @@ just one of the IP's respond to ping.
 
 .IP badconn[-weekdays-starttime-endtime]:x:y:z
 This is taken directly from the "fping.sh" connectivity-
-testing script, and is used by bbtest-net when it runs
+testing script, and is used by xymonnet when it runs
 with ping testing enabled (the default). See the description
 of the "badTEST" tag.
 
 .IP route:router1,router2,....
 This tag is taken from the "fping.sh" script, and is used
-by bbtest-net when run with the "--ping" option to enable
+by xymonnet when run with the "--ping" option to enable
 ping testing.
 
 The router1,router2,... is a comma-separated list of hosts
@@ -721,7 +721,7 @@ will report a status of "clear".
 
 .IP route_LOCATION:router1,router2,...
 If the BBLOCATION environment variable is defined, a tag
-of "route_BBLOCATION:" is recognized by bbtest-net with 
+of "route_BBLOCATION:" is recognized by xymonnet with 
 the same effect as the normal "route:" tag (see above).
 This allows you to have different route: tags for each
 BBNET server. The actual text for the tag then must
@@ -793,7 +793,7 @@ listener (oratns), qmail QMTP and QMQP protocols.
 These tags are for testing of the SSL-tunneled versions of
 the standard ftp, telnet, smtp, pop3, imap and nntp protocols. 
 If Xymon was configured with support for SSL, you can test these
-services like any other network service - bbtest-net will
+services like any other network service - xymonnet will
 setup an SSL-encrypted session while testing the service.
 The server certificate is validated and information about
 it sent in the "sslcert" column. Note that smtps does not
@@ -815,7 +815,7 @@ Simple DNS test. It will attempt to lookup the A record for
 the hostname of the DNS server.
 
 .IP dig
-This is an alias for the "dns" test. In bbtest-net, the "dns"
+This is an alias for the "dns" test. In xymonnet, the "dns"
 and "dig" tests are handled identically, so all of the facilities
 for testing described for the "dns" test are also available for
 the "dig" test.
@@ -858,7 +858,7 @@ a working NFS server the "mount", "nlockmgr" and "nfs" services
 must be available; this can be checked with "rpc=mount,nlockmgr,nfs".
 
 This test uses the rpcinfo tool for the actual test; if this tool
-is not available in the PATH of bbtest-net, you must define the
+is not available in the PATH of xymonnet, you must define the
 RPCINFO environment variable to point at this tool. See
 .I xymonserver.cfg(5)
 
@@ -874,7 +874,7 @@ URL's.
 .IP "Basic Authentication with username/password"
 If the URL requires authentication in the form of a
 username and password, it is most likely using the
-HTTP "Basic" authentication. bbtest-net support this,
+HTTP "Basic" authentication. xymonnet support this,
 and you can provide the username and password either 
 by embedding them in the URL e.g.
 .br
@@ -928,7 +928,7 @@ Some SSL sites will only allow you to connect, if you use
 specific "dialects" of HTTP or SSL. Normally this is auto-negotiated,
 but experience shows that this fails on some systems.
 
-bbtest-net can be told to use specific dialects, by adding
+xymonnet can be told to use specific dialects, by adding
 one or more "dialect names" to the URL scheme, i.e. the
 "http" or "https" in the URL:
 
@@ -948,7 +948,7 @@ These can be combined where it makes sense, e.g to force
 SSLv2 and HTTP 1.0 you would use "https210".
 
 .IP "Testing sites by IP-address"
-bbtest-net ignores the "testip" tag normally used to force a 
+xymonnet ignores the "testip" tag normally used to force a 
 test to use the IP-address from the hosts.cfg file instead of
 the hostname, when it performs http and https tests.
 
@@ -961,7 +961,7 @@ specifying it as:
 
 	http://www.sample.com=1.2.3.4/index.html
 
-The "=1.2.3.4" will case bbtest-net to run the test against
+The "=1.2.3.4" will case xymonnet to run the test against
 the IP-address "1.2.3.4", but still trying to access a virtual
 website with the name "www.sample.com".
 
@@ -974,10 +974,10 @@ it should be done as
 .IP "HTTP Testing via proxy"
 \fBNOTE:\fR This is not enabled by default. You must
 add the "--bb-proxy-syntax" option when running
-.I bbtest-net(1)
+.I xymonnet(1)
 if you want to use this.
 
-bbtest-net supports the Big Brother syntax for
+xymonnet supports the Big Brother syntax for
 specifying an HTTP proxy to use when performing http 
 tests. This syntax just joins the proxy- and the target-URL
 into one, e.g.
@@ -1064,8 +1064,8 @@ SSLv2 or strong ciphers.
 
 The column name for the result of the content check is by default
 called "content" - you can change the default with the "--content=NAME"
-option to bbtest-net. See 
-.I bbtest-net(1)
+option to xymonnet. See 
+.I xymonnet(1)
 for a description of this option.
 
 If more than one content check is present for a host, the first
@@ -1218,7 +1218,7 @@ not perform any actual LDAP transaction.
 Check for an LDAP service by performing an LDAP request. This
 tag is in the form of an LDAP URI (cf. RFC 2255). This type of
 LDAP test requires that
-.I bbtest-net(1)
+.I xymonnet(1)
 was built with support for LDAP, e.g. via the OpenLDAP library.
 The components of the LDAP URI are:
 .nf
@@ -1234,13 +1234,13 @@ The components of the LDAP URI are:
 .IP ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]
 LDAP service check using LDAPv3 and STARTTLS for talking to
 an LDAP server that requires TLS encryption. See
-.I bbtest-net(1)
+.I xymonnet(1)
 for a discussion of the different ways of running LDAP servers
-with SSL/TLS, and which of these are supported by bbtest-net.
+with SSL/TLS, and which of these are supported by xymonnet.
 
 .IP ldaplogin=username:password
 Define a username and password to use when binding to the LDAP
-server for ldap URI tests. If not specified, bbtest-net will
+server for ldap URI tests. If not specified, xymonnet will
 attempt an anonymous bind.
 
 .IP ldapyellowfail
@@ -1252,7 +1252,7 @@ as "red" (alarm). This tag reduces a search failure to a
 .SH PERFORMANCE MONITORING TESTS
 .IP apache[=URL]
 If you are running an Apache web server, adding this tag makes
-.I bbtest-net(1)
+.I xymonnet(1)
 collect performance statistics from the Apache web server by
 querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server-status?auto\fR.
 The response is sent as a data-report and processed by the Xymon
@@ -1357,5 +1357,5 @@ daemon is listening on a non-standard IP-address or port-number.
 .BR ~xymon/server/etc/hosts.cfg
 
 .SH "SEE ALSO"
-bbgen(1), bbtest-net(1), xymondigest(1), xymonserver.cfg(5), xymon(7)
+bbgen(1), xymonnet(1), xymondigest(1), xymonserver.cfg(5), xymon(7)
 

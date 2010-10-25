@@ -35,7 +35,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "contest.h"
 #include "httptest.h"
 #include "dns.h"
@@ -321,7 +321,7 @@ char *ssl_library_version = NULL;
  */
 static void setup_ssl(tcptest_t *item)
 {
-	errprintf("SSL test, but bbtest-net was built without SSL support\n");
+	errprintf("SSL test, but xymonnet was built without SSL support\n");
 	item->sslrunning = 0;
 	item->errcode = CONTEST_ESSL;
 }

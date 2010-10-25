@@ -14,7 +14,7 @@ BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the Xymon webpages
 BBSERVERCGIURL="@BBCGIURL@"		# The URL for the Xymon CGI scripts.
 BBSERVERSECURECGIURL="@SECUREBBCGIURL@"	# The URL for the secured Xymon CGI scripts.
 
-# BBLOCATION="foo"			# The network location, makes bbtest-net test only hosts with NET:foo
+# BBLOCATION="foo"			# The network location, makes xymonnet test only hosts with NET:foo
 					# You only need to set this if you have multiple network test servers with
 					# a shared hosts.cfg file.
 
@@ -101,7 +101,7 @@ ALERTCOLORS="red,yellow,purple"			# Colors that may trigger an alert message
 OKCOLORS="green,blue,clear"			# Colors that may trigger a recovery message
 ALERTREPEAT="30"				# The default interval between repeated alert-messages (in minutes)
 
-# For bbtest-net
+# For xymonnet
 CONNTEST="TRUE"					# Should we 'ping' hosts ?
 IPTEST_2_CLEAR_ON_FAILED_CONN="TRUE"		# If TRUE, then failing network tests go CLEAR if conn-test fails.
 NONETPAGE=""					# Network tests that go YELLOW upon failure

@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include "version.h"
 #include "libbbgen.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "contest.h"
 #include "httpcookies.h"
 #include "httptest.h"
@@ -579,7 +579,7 @@ void add_http_test(testitem_t *t)
 			sprintf(useragent, "User-Agent: %s\r\n", browser);
 		}
 		else {
-			sprintf(useragent, "User-Agent: Xymon bbtest-net/%s\r\n", VERSION);
+			sprintf(useragent, "User-Agent: Xymon xymonnet/%s\r\n", VERSION);
 		}
 
 		addtobuffer(httprequest, useragent);

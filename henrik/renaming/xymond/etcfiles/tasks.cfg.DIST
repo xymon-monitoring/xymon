@@ -166,27 +166,27 @@
 	LOGFILE $BBSERVERLOGS/combostatus.log
 	INTERVAL 5m
 
-# "bbnet" runs the bbtest-net tool to perform the network based tests - i.e. http, smtp, ssh, dns and
+# "xymonnet" runs the xymonnet tool to perform the network based tests - i.e. http, smtp, ssh, dns and
 # all of the various network protocols we need to test.
 
-[bbnet]
+[xymonnet]
 	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS xymond
-	CMD bbtest-net --report --ping --checkresponse
+	CMD xymonnet --report --ping --checkresponse
 	LOGFILE $BBSERVERLOGS/bb-network.log
 	INTERVAL 5m
 
 
-# "bbretest" picks up the tests that the normal network test consider "failed", and re-does those
+# "xymonnetagain" picks up the tests that the normal network test consider "failed", and re-does those
 # tests more often. This enables Big Brother to pick up a recovered network service faster than
 # if it were tested only by the "bbnet" task (which only runs every 5 minutes). So if you have
 # servers with very high availability guarantees, running this task will make your availability
 # reports look much better.
 
-[bbretest]
+[xymonnetagain]
 	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS xymond
-	CMD $BBHOME/ext/bbretest-net.sh
+	CMD $BBHOME/ext/xymonnet-again.sh
 	LOGFILE $BBSERVERLOGS/bb-retest.log
 	INTERVAL 1m
 

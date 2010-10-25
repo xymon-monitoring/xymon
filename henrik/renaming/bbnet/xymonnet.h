@@ -23,7 +23,7 @@
 enum toolid_t { TOOL_CONTEST, TOOL_DNS, TOOL_NTP, TOOL_FPING, TOOL_HTTP, TOOL_LDAP, TOOL_RPCINFO };
 
 /*
- * Structure of the bbtest-net in-memory records
+ * Structure of the xymonnet in-memory records
  *
  *  +->service_t
  *  |      testname

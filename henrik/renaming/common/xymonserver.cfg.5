@@ -337,11 +337,11 @@ combo-messages or not. Ignored by Xymon.
 The maximum number of status messages to combine into one
 combo message. You may need to lower this number of your
 BBDISPLAY server has trouble keeping up with the incoming
-status messages from bbtest-net.  Default: 100.
+status messages from xymonnet.  Default: 100.
 
 .IP BBSLEEPBETWEENMSGS
 Length of a pause introduced between each successive transmission
-of a combo-message by bbtest-net. You may have to increase this
+of a combo-message by xymonnet. You may have to increase this
 value to give your BBDISPLAY server time to process one combo
 message before the next one arrives. This number defines how
 many microseconds to wait between the messages.
@@ -524,11 +524,11 @@ that default so that only those filesystems that match this pattern will be
 tracked.
 
 
-.SH BBTEST-NET NETWORK TEST SETTINGS
+.SH XYMONNET NETWORK TEST SETTINGS
 
 .IP BBLOCATION
 If this variable is defined, then only the hosts that have been tagged
-with "NET:$BBLOCATION" will be tested by the bbtest-net tool.
+with "NET:$BBLOCATION" will be tested by the xymonnet tool.
 
 .IP CONNTEST
 If set to TRUE, the connectivity (ping) test will be performed.
@@ -560,11 +560,11 @@ you can change it to "FAILED" or customize it as you like.
 
 .IP FPING
 The command used to run the
-.I hobbitping(1)
+.I xymonping(1)
 tool for the connectivity test. (The name FPING is due to the fact that
 the "fping" utility was used until Xymon version 4.2). This may include 
-suid-root wrappers and hobbitping options.
-Default: "hobbitping"
+suid-root wrappers and xymonping options.
+Default: "xymonping"
 
 .IP TRACEROUTE
 Defines the location of the "traceroute" tool and

@@ -351,7 +351,7 @@ void show_results(void)
 
 	/*
 	 * Print out the results. Format is identical to "fping -Ae" so we can use
-	 * it directly in Xymon without changing the bbtest-net code.
+	 * it directly in Xymon without changing the xymonnet code.
 	 */
 	for (idx = 0; (idx < hostcount); idx++) {
 		if (hosts[idx]->received > 0) {

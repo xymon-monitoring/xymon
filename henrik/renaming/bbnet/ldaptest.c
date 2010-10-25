@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "ldaptest.h"
 
 #define BBGEN_LDAP_OK 		0

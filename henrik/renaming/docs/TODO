@@ -83,7 +83,7 @@ Things I must remember to look at
   way of customizing hobbitsvc.cgi to include specific graphs.
 * Something similar to larrd-graphs.cgi for picking out a bunch
   of graphs to show on one page.
-* Move all of the bbtest-net "badFOO" etc. stuff away from bbtest-net
+* Move all of the xymonnet "badFOO" etc. stuff away from xymonnet
   and into xymond.
 * On Fri, Aug 05, 2005 at 09:39:15AM +0200, Thomas Bergauer wrote:
   2. the NOPROP(RED|YELLOW|..) command in the BB-hosts file works as

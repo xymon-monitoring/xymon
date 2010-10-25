@@ -50,20 +50,20 @@ Javascript validation on the "info" page - and edit the file
 from the input-tag near the end of that file.</p>
 
 <h3><a name="dnserror">DNS error reported for network tests</a></h3>
-<p>The bbtest-net network tester uses the built-in ARES library for
+<p>The xymonnet network tester uses the built-in ARES library for
 DNS lookups. There have been reports that this library fails on
 some systems; one confirmed case is on "OSF1 V5.1". So if you 
 suddenly get a lot of failed network tests that report "DNS error",
-try running bbtest-net with the "--no-ares" option to use the
+try running xymonnet with the "--no-ares" option to use the
 standard DNS lookups instead.</p>
 
 <h3><a name="netfail">Network tests fail sporadically, or report long reponsetimes</a></h3>
-<p>The bbtest-net network tester runs many tests in parallel; by default
+<p>The xymonnet network tester runs many tests in parallel; by default
 it will typically run up to 256 tests concurrently. This may be more
 than your network test server or network infrastructure can handle; if
 you see sporadic timeouts of network tests or the graphs show increased
 responsetimes, you can lower the number of concurrent tests by adding
-the "--concurrency=N" option to bbtest-net in the <tt>~/server/etc/tasks.cfg</tt>
+the "--concurrency=N" option to xymonnet in the <tt>~/server/etc/tasks.cfg</tt>
 file. This has been especially important for sites doing many
 http checks, since these typically have much more traffic going on
 while testing than simple TCP services such as smtp.</p>

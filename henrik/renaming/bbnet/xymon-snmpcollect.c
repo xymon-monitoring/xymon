@@ -1077,10 +1077,10 @@ int main (int argc, char **argv)
 		}
 	}
 
-	add_timestamp("hobbit_snmpcollect startup");
+	add_timestamp("xymon-snmpcollect startup");
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
-	init_snmp("hobbit_snmpcollect");
+	init_snmp("xymon-snmpcollect");
 	snmp_mib_toggle_options("e");	/* Like -Pe: Dont show MIB parsing errors */
 	snmp_out_toggle_options("qn");	/* Like -Oqn: OID's printed as numbers, values printed without type */
 

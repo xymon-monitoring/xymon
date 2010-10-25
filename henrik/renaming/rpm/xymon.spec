@@ -157,7 +157,7 @@ chkconfig --del xymon-client
 %attr(755, xymon, xymon) %dir /usr/lib/xymon/client/ext
 %attr(664, xymon, apache) %config /etc/xymon/critical.cfg
 %attr(664, xymon, apache) %config /etc/xymon/critical.cfg.bak
-%attr(4750, root, xymon) /usr/lib/xymon/server/bin/hobbitping
+%attr(4750, root, xymon) /usr/lib/xymon/server/bin/xymonping
 %attr(750, root, xymon) /usr/lib/xymon/client/bin/logfetch
 %attr(750, root, xymon) /usr/lib/xymon/client/bin/clientupdate
 

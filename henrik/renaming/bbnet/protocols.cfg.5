@@ -7,7 +7,7 @@ protocols.cfg \- Configuration of TCP network services
 
 .SH DESCRIPTION
 \fBprotocols.cfg\fR contains definitions of how 
-.I bbtest-net(1)
+.I xymonnet(1)
 should test a TCP-based network service (i.e. all common
 network services except HTTP and DNS).
 For each service, a simple dialogue can be defined to
@@ -30,7 +30,7 @@ the SMTP service would be this:
 .br
 .sp
 This defines a service called "smtp". When the connection is
-first established, bbtest-net will send the string "mail\\r\\nquit\\r\\n"
+first established, xymonnet will send the string "mail\\r\\nquit\\r\\n"
 to the service. It will then expect a response beginning with "220".
 Any data returned by the service (a so-called "banner") will be recorded 
 and included in the status message.
@@ -49,7 +49,7 @@ separating each service-name with a pipe-sign.
 Defines the strings to send to the service after a connection is
 established, and the response that is expected. Either of these
 may be omitted, in which case
-.I bbtest-net(1)
+.I xymonnet(1)
 will simply not send any data, or match a response against anything.
 
 The send- and expect-strings use standard escaping for non-printable
@@ -61,7 +61,7 @@ of the byte.
 .IP "port NUMBER"
 Define the default TCP port-number for this service. If no portnumber
 is defined,
-.I bbtest-net(1)
+.I xymonnet(1)
 will attempt to lookup the portnumber in the standard /etc/services 
 file.
 
@@ -79,5 +79,5 @@ Defines test options. The possible options are
 .BR $BBHOME/etc/protocols.cfg
 
 .SH "SEE ALSO"
-bbtest-net(1)
+xymonnet(1)
 

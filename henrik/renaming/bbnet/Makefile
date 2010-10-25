@@ -3,9 +3,9 @@
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-PROGRAMS = bbtest-net hobbitping beastat
-EXTENSIONS = bbretest-net.sh
-SNMPPROGRAMS = hobbit-snmpcollect
+PROGRAMS = xymonnet xymonping beastat
+EXTENSIONS = xymonnet-again.sh
+SNMPPROGRAMS = xymon-snmpcollect
 DBGTOOLS = contest
 
 ifeq ($(DOSNMP),yes)
@@ -13,18 +13,18 @@ PROGRAMS += $(SNMPPROGRAMS)
 endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
-NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
-PINGTESTOBJS = hobbitping.o
+NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
-bbtest-net: $(NETTESTOBJS) ../lib/libbbgen.a
+xymonnet: $(NETTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitping: $(PINGTESTOBJS) ../lib/libbbgen.a
+xymonping: $(PINGTESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-bbtest-net.o: bbtest-net.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
+xymonnet.o: xymonnet.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
 
 ldaptest.o: ldaptest.c
 	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
@@ -71,11 +71,11 @@ contest: contest.c $(LIBOBJS)
 	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
 
-hobbit-snmpcollect: hobbit-snmpcollect.o $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ hobbit-snmpcollect.o `net-snmp-config --libs` ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+xymon-snmpcollect: xymon-snmpcollect.o $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbit-snmpcollect.o: hobbit-snmpcollect.c
-	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ hobbit-snmpcollect.c
+xymon-snmpcollect.o: xymon-snmpcollect.c
+	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ xymon-snmpcollect.c
 
 ################################################
 # Default compilation rules

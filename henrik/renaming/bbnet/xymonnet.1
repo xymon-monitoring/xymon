@@ -1,19 +1,19 @@
-.TH BBTEST-NET 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMONNET 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bbtest-net \- Xymon network test tool
+xymonnet \- Xymon network test tool
 .SH SYNOPSIS
-.B "bbtest-net -?"
+.B "xymonnet -?"
 .br
-.B "bbtest-net --help"
+.B "xymonnet --help"
 .br
-.B "bbtest-net --version"
+.B "xymonnet --version"
 .br
-.B "bbtest-net [options]"
+.B "xymonnet [options]"
 .br
 (See the OPTIONS section for a description of the available command-line options).
 
 .SH DESCRIPTION
-.I bbtest-net(1)
+.I xymonnet(1)
 handles the network tests of hosts defined in the Xymon configuration
 file, hosts.cfg. It is normally run at regular intervals by 
 .I xymonlaunch(8)
@@ -21,13 +21,13 @@ via an entry in the
 .I tasks.cfg(5)
 file.
 
-bbtest-net does all of the normal tests of TCP-based network
+xymonnet does all of the normal tests of TCP-based network
 services (telnet, ftp, ssh, smtp, pop, imap ....) - i.e. 
 all of the services listed as BBNETSVCS in bbdef.sh. For
 these tests, a completely new and very speedy service-
 checker has been implemented.
 
-bbtest-net has built-in support for testing SSL-enabled
+xymonnet has built-in support for testing SSL-enabled
 protocols, e.g. imaps, pop3s, nntps, telnets, if SSL-support
 was enabled when configuring bbgen. The full list of known
 tests is found in the
@@ -38,13 +38,13 @@ In addition, it implements the "dns" and "dig" tests for
 testing DNS servers. This is done in the same way as 
 bb-network.sh does it. 
 
-bbtest-net also implements a check for NTP servers - this test 
+xymonnet also implements a check for NTP servers - this test 
 is called "ntp". If you want to use it, you must define the
 NTPDATE environment variable to point at the location of your
 .I ntpdate(1)
 program.
 
-Note: bbtest-net performs the connectivity test (ping) based on the
+Note: xymonnet performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with "testip" or the 
 "--dns=ip" option is used. So the target of the connectivity
 test can be determined by your /etc/hosts file or DNS.
@@ -73,53 +73,53 @@ testing of NTP and RPC services, and to perform traceroute.
 .IP --concurrency=N 
 Determines the number of network tests that
 run in parallel. Default is operating system dependent,
-but will usually be 256. If bbtest-net begins to complain 
+but will usually be 256. If xymonnet begins to complain 
 about not being able to get a "socket", try running
-bbtest-net with a lower value like 50 or 100.
+xymonnet with a lower value like 50 or 100.
 
 .IP "--dns-timeout=N (default: 30 seconds)"
-bbtest-net will timeout all DNS lookups after N seconds.
+xymonnet will timeout all DNS lookups after N seconds.
 Any pending DNS lookups are regarded as failed, i.e. the
 network tests that depend on this DNS lookup will report
 an error.
 .br
 Note: If you use the --no-ares option, timeout of DNS
-lookups cannot be controlled by bbtest-net.
+lookups cannot be controlled by xymonnet.
 
 .IP --dns-max-all=N
 Same as "--dns-timeout=N". The "--dns-max-all" option is 
 deprecated and should not be used.
 
 .IP --dns=[ip|only|standard]
-Determines how bbtest-net finds the IP adresses of the hosts to test. 
-By default (the "standard"), bbtest-net does a DNS lookup of the hostname 
+Determines how xymonnet finds the IP adresses of the hosts to test. 
+By default (the "standard"), xymonnet does a DNS lookup of the hostname 
 to determine the IP address, unless the host has the "testip" 
 tag, or the DNS lookup fails.
 .br
-With "--dns=only" bbtest-net will ONLY do the DNS lookup;
+With "--dns=only" xymonnet will ONLY do the DNS lookup;
 it it fails, then all services on that host will be 
 reported as being down.
 .br
-With "--dns=ip" bbtest-net will never do a DNS lookup;
+With "--dns=ip" xymonnet will never do a DNS lookup;
 it will use the IP adresse specified in hosts.cfg for
 the tests. Thus, this setting is equivalent to having
 the "testip" tag on all hosts. Note that http tests
 will ignore this setting and still perform a DNS
 lookup for the hostname given in the URL; see the
-"bbtest-net tags for HTTP tests" section in
+"xymonnet tags for HTTP tests" section in
 .I hosts.cfg(5)
 
 .IP --no-ares
-Disable the ARES resolver built into bbtest-net. This makes
-bbtest-net resolve hostnames using your system resolver
-function. You should only use this as a last resort if bbtest-net
+Disable the ARES resolver built into xymonnet. This makes
+xymonnet resolve hostnames using your system resolver
+function. You should only use this as a last resort if xymonnet
 cannot resolve the hostnames you use in the normal way (via DNS
 or /etc/hosts). One reason for using this would be if you need to 
 resolve hostnames via NIS/NIS+ (a.k.a. Yellow Pages).
 .br
 The system resolver function does not provide a mechanism for
 controlling timeouts of the hostname lookups, so if your
-DNS or NIS server is down, bbtest-net can take a very long time
+DNS or NIS server is down, xymonnet can take a very long time
 to run. The --dns-timeout option is effectively disabled when
 using this option.
 
@@ -128,14 +128,14 @@ Log failed hostname lookups to the file FILENAME. FILENAME should
 be a full pathname.
 
 .IP --report[=COLUMNNAME]
-With this option, bbtest-net will send a status message with details 
+With this option, xymonnet will send a status message with details 
 of how many hosts were processed, how many tests were generated, 
 any errors that occurred during the run, and some timing statistics. 
 The default columnname is "bbtest".
 
 .IP --test-untagged
 When using the BBLOCATION environment variable to test
-only hosts on a particular network segment, bbtest-net
+only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
 So only hosts that have a NET:$BBLOCATION tag will be 
 tested.
@@ -146,18 +146,18 @@ matching NET: tag, or no NET: tag at all are tested.
 
 .IP --frequenttestlimit=N
 Used with the
-.I bbretest-net.sh(1)
+.I xymonnet-again.sh(1)
 bbgen extension. This option determines how long failed tests
 remain in the frequent-test queue. The default is 1800
 seconds (30 minutes).
 
 .IP --timelimit=N
-Causes bbtest-net to generate a warning if the run-time
-of bbtest-net exceeds N seconds. By default N is set to
+Causes xymonnet to generate a warning if the run-time
+of xymonnet exceeds N seconds. By default N is set to
 the value of BBSLEEP, so a warning triggers if the
 network tests cannot complete in the time given for one
 cycle of the BBNET server. Apart from the warning, this 
-option has no effect, i.e. it will not terminate bbtest-net
+option has no effect, i.e. it will not terminate xymonnet
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
 
@@ -171,21 +171,21 @@ Default: 0 (disabled).
 
 .IP --validity=N
 Make the test results valid for N minutes before they go purple. 
-By default test results are valid for 30 minutes; if you run bbtest-net
+By default test results are valid for 30 minutes; if you run xymonnet
 less often than that, the results will go purple before the next run
-of bbtest-net. This option lets you change how long the status is 
+of xymonnet. This option lets you change how long the status is 
 valid.
 
 .IP --source-ip=IPADDRESS
 On multi-homed hosts, this option can be used to explicitly
 select the source IP address used for the network tests.
 "IPADDRESS" must be a valid IP-address on the host running
-bbtest-net.
+xymonnet.
 
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
 .IP --checkresponse[=COLOR]
 When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 
-IMAP, NNTP and rsync), bbtest-net will look for a valid service-specific
+IMAP, NNTP and rsync), xymonnet will look for a valid service-specific
 "OK" response. If another reponse is seen, this will cause
 the test to report a warning (yellow) status. Without this
 option, the response from the service is ignored.
@@ -196,11 +196,11 @@ E.g. "--checkresponse=red" will cause a "red" status message
 to be sent when the service does not respond as expected.
 
 .IP --no-flags
-By default, bbtest-net sends some extra information in the
+By default, xymonnet sends some extra information in the
 status messages, called "flags". These are used by bbgen
 e.g. to pick different icons for reversed tests when
 generating the Xymon webpages. This option makes
-bbtest-net omit these flags from the status messages.
+xymonnet omit these flags from the status messages.
 
 .IP --shuffle
 By default, TCP tests run roughly in the order that the hosts
@@ -213,26 +213,26 @@ so they are spread randomly across all of the servers
 tested.
 
 .SH OPTIONS FOR THE PING TEST
-Note: bbtest-net uses the program defined by the FPING
+Note: xymonnet uses the program defined by the FPING
 environment to execute ping-tests - by default, that is
 the
-.I hobbitping(1)
+.I xymonping(1)
 utility. See
 .I xymonserver.cfg(5)
 for a description of how to customize this, e.g. if you
 need to run it with "sudo" or a similar tool.
 
 .IP --ping
-Enables bbtest-net's ping test. The column name used for
+Enables xymonnet's ping test. The column name used for
 ping test results is defined by the PINGCOLUMN environment 
 variable in 
 .I xymonserver.cfg(5).
 .br
-If not specifed, bbtest-net uses the CONNTEST environment
+If not specifed, xymonnet uses the CONNTEST environment
 variable to determine if it should perform the ping test
 or not. So if you prefer to use another tool to implement 
 ping checks, either set the CONNTEST environment variable 
-to false, or run bbtest-net with the "--noping".
+to false, or run xymonnet with the "--noping".
 
 .IP --noping
 Disable the connectivity test.
@@ -252,8 +252,8 @@ hosts by putting a "notrace" tag on the host-entry.
 .IP --ping-tasks=N
 Spread the task of pinging the hosts over N processes. If you have
 a very large number of hosts the time it takes to ping all of them 
-can be substantial, even with the use of tools like fping or hobbitping
-that ping many hosts in parallel. This option causes bbtest-net to
+can be substantial, even with the use of tools like fping or xymonping
+that ping many hosts in parallel. This option causes xymonnet to
 start N separate ping processes, the IP's that are being ping'ed will
 be divided evenly between these processes.
 
@@ -282,7 +282,7 @@ Disables reporting of the SSL certificate check.
 .IP --sslwarn=N
 .IP --sslalarm=N
 Determines the number of days before an SSL certificate
-expires, where bbtest-net will generate a warning or
+expires, where xymonnet will generate a warning or
 alarm status for the SSL certificate column.
 
 .IP --sslbits=N
@@ -301,7 +301,7 @@ Don't send any status updates to the BBDISPLAY server. Instead,
 all messages are dumped to stdout.
 
 .IP --timing
-Causes bbtest-net to collect information about
+Causes xymonnet to collect information about
 the time spent in different parts of the program.
 The information is printed on stdout just before
 the program ends. Note that this information is also
@@ -322,10 +322,10 @@ tests have executed.
 Provide a summary of available command-line options.
 
 .IP "--version"
-Prints the version number of bbtest-net
+Prints the version number of xymonnet
 
 .IP --services
-Dump the list of defined TCP services bbtest-net knows
+Dump the list of defined TCP services xymonnet knows
 how to test. Do not run any tests.
 
 
@@ -341,7 +341,7 @@ option.
 
 
 .SH ABOUT SSL CERTIFICATE CHECKS
-When bbtest-net tests services that use SSL- or TLS-based protocols,
+When xymonnet tests services that use SSL- or TLS-based protocols,
 it will check that the server certificate has not expired. This check
 happens automatically for https (secure web), pop3s, imaps, nntps
 and all other SSL-enabled services (except ldap, see LDAP TESTS 
@@ -350,7 +350,7 @@ below).
 All certificates found for a host are reported in one status message.
 
 Note: On most systems, the end-date of the certificate is limited to
-Jan 19th, 2038. If your certificate is valid after this date, bbtest-net
+Jan 19th, 2038. If your certificate is valid after this date, xymonnet
 will report it as valid only until Jan 19, 2038. This is due to
 limitations in your operating system C library.
 
@@ -362,9 +362,9 @@ that it is possible to establish a connection to the port running
 the ldap service (389 for ldap, 636 for ldaps).
 
 Instead you can put an LDAP URI in hosts.cfg. This will cause 
-bbtest-net to initiate a full-blown LDAP session with the server,
+xymonnet to initiate a full-blown LDAP session with the server,
 and do an LDAP search for the objects defined by the URI. This
-requires that bbtest-net was built with LDAP support, and relies
+requires that xymonnet was built with LDAP support, and relies
 on an existing LDAP library to be installed.  It has been tested 
 with OpenLDAP 2.0.26 (from Red Hat 9) and 2.1.22.  The Solaris 8 
 system ldap library has also been confirmed to work for un-encrypted 
@@ -425,19 +425,19 @@ in the "sslcert" column.
 If you have more than one system running network tests - e.g. if your network
 is separated by firewalls - then is is problematic to maintain
 multiple hosts.cfg files for each of the systems.
-bbtest-net supports the NET:location tag in
+xymonnet supports the NET:location tag in
 .I hosts.cfg(5)
 to distinguish 
 between hosts that should be tested from different network
 locations. If you set the environment variable BBLOCATION
-e.g. to "dmz" before running bbtest-net, then it will only
+e.g. to "dmz" before running xymonnet, then it will only
 test hosts that have a "NET:dmz" tag in hosts.cfg. This allows
 you to keep all of your hosts in the same hosts.cfg file, but
 test different sets of hosts by different BBNET systems.
 
 
-.SH BBTEST-NET INTERNALS
-bbtest-net first reads the protocols.cfg file to see which network tests
+.SH XYMONNET INTERNALS
+xymonnet first reads the protocols.cfg file to see which network tests
 are defined. It then scans the hosts.cfg file, and collects information
 about the TCP service tests that need to be tested. It picks out only
 the tests that were listed in the protocols.cfg file, plus the "dns",
@@ -445,8 +445,8 @@ the tests that were listed in the protocols.cfg file, plus the "dns",
 use the "bbnet" tool to test.
 
 It then runs two tasks in parallel: First, a separate process is
-started to run the "hobbitping" tool for the connectivity tests. While 
-hobbitping is busy doing the "ping" checks, bbtest-net runs all of the
+started to run the "xymonping" tool for the connectivity tests. While 
+xymonping is busy doing the "ping" checks, xymonnet runs all of the
 TCP-based network tests.
 
 All of the TCP-based service checks are handled by a connection
@@ -458,7 +458,7 @@ depends on your operating system - the default is FD_SETSIZE/4,
 which amounts to 256 on many Unix systems.
 
 You can choose the number of concurrent connections with the
-"--concurrency=N" option to bbtest-net.
+"--concurrency=N" option to xymonnet.
 
 Connection attempts timeout after 10 seconds - this can be
 changed with the "--timeout=N" option.
@@ -479,7 +479,7 @@ standard bb-network.sh script.
 
 .SH ENVIRONMENT VARIABLES
 .IP BBLOCATION
-Defines the network segment where bbtest-net is currently running.
+Defines the network segment where xymonnet is currently running.
 This is used to filter out only the entries in the
 .I hosts.cfg(5)
 file that have a matching "NET:LOCATION" tag, and execute the
@@ -510,8 +510,8 @@ setting this to "1000000" (one million).
 
 .IP FPING
 Command used to run the 
-.I hobbitping(1) 
-utility. Used by bbtest-net for connectivity (ping) testing.  See 
+.I xymonping(1) 
+utility. Used by xymonnet for connectivity (ping) testing.  See 
 .I xymonserver.cfg(5)
 for more information about how to customize the program that is
 executed to do ping tests.
@@ -527,18 +527,18 @@ network location that is causing the failure.
 .IP NTPDATE
 Location of the 
 .I ntpdate(1) 
-utility. Used by bbtest-net when checking the "ntp" service.
+utility. Used by xymonnet when checking the "ntp" service.
 
 .IP RPCINFO
 Location of the 
 .I rpcinfo(8) 
-utility. Used by bbtest-net for the "rpc" service checks.
+utility. Used by xymonnet for the "rpc" service checks.
 
 .SH FILES
 .IP "~/server/etc/protocols.cfg"
-This file contains definitions of TCP services that bbtest-net
+This file contains definitions of TCP services that xymonnet
 can test. Definitions for a default set of common services is built
-into bbtest-net, but these can be overridden or supplemented by
+into xymonnet, but these can be overridden or supplemented by
 defining services in the protocols.cfg file. See 
 .I protocols.cfg(5)
 for details on this file.
@@ -569,24 +569,24 @@ the "curl --cookie-jar FILE" to request the URL that sets
 the cookie.
 .sp
 .IP "$BBTMP/*.status - test status summary"
-Each time bbtest-net runs, if any tests fail (i.e. they result
+Each time xymonnet runs, if any tests fail (i.e. they result
 in a red status) then they will be listed in a file name
 TESTNAME.[LOCATION].status. The LOCATION part may be null. This
 file is used to determine how long the failure has lasted, which
 in turn decides if this test should be included in the tests done by
-.I bbretest-net.sh(1)
+.I xymonnet-again.sh(1)
 .br
-It is also used internally by bbtest-net when determining the
+It is also used internally by xymonnet when determining the
 color for tests that use the "badconn" or "badTESTNAME" tags.
 .sp
 .IP $BBTMP/frequenttests.[LOCATION]
 This file contains the hostnames of those hosts that should be
 retested by the
-.I bbretest-net.sh(1)
-test tool. It is updated only by bbtest-net during the normal
-runs, and read by bbretest-net.sh.
+.I xymonnet-again.sh(1)
+test tool. It is updated only by xymonnet during the normal
+runs, and read by xymonnet-again.sh.
 
 .SH "SEE ALSO"
-hosts.cfg(5), protocols.cfg(5), xymonserver.cfg(5), hobbitping(1),
+hosts.cfg(5), protocols.cfg(5), xymonserver.cfg(5), xymonping(1),
 curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
 

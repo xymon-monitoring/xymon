@@ -413,7 +413,7 @@ echo "# Where to put logfiles"           >>Makefile
 echo "BBLOGDIR = $BBLOGDIR"              >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
-echo "# How to run fping or hobbitping"  >>Makefile
+echo "# How to run fping or xymonping"   >>Makefile
 echo "FPING = $FPING"                    >>Makefile
 echo ""                                  >>Makefile
 echo "# Username running Xymon"          >>Makefile

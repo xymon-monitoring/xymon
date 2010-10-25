@@ -34,11 +34,11 @@ directory. If you look at this directory, you will see these files:</p>
 	to run the Xymon server. xymonlaunch reads the tasks.cfg file, and starts
 	the programs listed here to run the server. Some of the programs may run as daemons,
 	some of the programs may run at regular intervals. If you want to use some of the
-	advanced options for the <tt>bbgen</tt> or <tt>bbtest-net</tt> programs, you change
+	advanced options for the <tt>bbgen</tt> or <tt>xymonnet</tt> programs, you change
 	the tasks.cfg file to add these options to the command line.</li>
 	<li><a href="manpages/man5/graphs.cfg.5.html">graphs.cfg</a> is a configuration file for the <tt>hobbitgraph CGI</tt>.
 	It defines how the graphs are generated from the data in the RRD files.</li>
-	<li><a href="manpages/man5/protocols.cfg.5.html">protocols.cfg</a> is a configuration file for the <tt>bbtest-net</tt> program.
+	<li><a href="manpages/man5/protocols.cfg.5.html">protocols.cfg</a> is a configuration file for the <tt>xymonnet</tt> program.
 	It defines how network services are checked.</li>
 </ul>
 
@@ -65,7 +65,7 @@ extra keywords thrown in:</p>
 	but puts them in the hosts.cfg file to avoid problems if you mix 
 	Xymon and Big Brother modules.</li>
 	<li><em>bbd</em> is the name of a <i>network test</i>. This keyword
-	causes the Xymon network-tester <tt>bbtest-net</tt> to check if 
+	causes the Xymon network-tester <tt>xymonnet</tt> to check if 
 	the bbd network service is running on this host, and send a status
 	report to the Xymon server with the information about this service.
 	So you'll get a (hopefully!) green icon on the Xymon webpage for

@@ -175,7 +175,7 @@ MRTG to save data in a format that Xymon can handle natively.</p>
 interval for all of the Xymon programs. The default is for
 network tests to run every 5 minutes, and webpage updates to
 happen once a minute.</p>
-<p>Note that if you run the <em>bbretest-net.sh</em> tool
+<p>Note that if you run the <em>xymonnet-again.sh</em> tool
 on your network test server (this is the default for a new
 Xymon server), then network tests that fail 
 will run every minute for up to 30 minutes after the initial

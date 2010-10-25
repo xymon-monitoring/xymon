@@ -22,13 +22,13 @@
 
 	if test "$USEXYMONPING" = ""
 	then
-		echo "Xymon has a built-in ping utility (hobbitping)"
+		echo "Xymon has a built-in ping utility (xymongpin)"
 		echo "However, it is not yet fully stable and therefore it"
 		echo "may be best to use the external fping utility instead."
 		if test "$FPING" = ""
 		then
 			echo "I could not find fping on your system"
-			echo "Do you want to use hobbitping [Y/n] ?"
+			echo "Do you want to use xymongpin [Y/n] ?"
 			read USEXYMONPING
 			if test "$USEXYMONPING" = "n"
 			then
@@ -36,8 +36,8 @@
 				read FPING
 			else
 				USEXYMONPING="y"
-				echo "OK, I will use hobbitping."
-				FPING="hobbitping"
+				echo "OK, I will use xymongpin."
+				FPING="xymongpin"
 			fi
 		else
 			echo "I found fping in $FPING"
@@ -46,15 +46,15 @@
 			if test "$USEFPING" = "n"
 			then
 				USEXYMONPING="y"
-				echo "OK, I will use hobbitping instead."
-				FPING="hobbitping"
+				echo "OK, I will use xymongpin instead."
+				FPING="xymongpin"
 			fi
 		fi
 	elif test "$USEXYMONPING" = "n"
 	then
 		echo "OK, will use '$FPING' for ping tests"
 	else
-		FPING="hobbitping"
+		FPING="xymongpin"
 		USEXYMONPING="y"
 	fi
 

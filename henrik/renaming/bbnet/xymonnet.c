@@ -47,7 +47,7 @@ extern struct rpcent *getrpcbyname(char *);
 #include "libbbgen.h"
 #include "version.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "dns.h"
 #include "contest.h"
 #include "httptest.h"
@@ -830,7 +830,7 @@ char *ip_to_test(testedhost_t *h)
 		else {
 			/* Cannot resolve hostname */
 			h->dnserror = 1;
-			errprintf("bbtest-net: Cannot resolve IP for host %s\n", h->hostname);
+			errprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
 		}
 	}
 
@@ -1073,13 +1073,13 @@ int start_ping_service(service_t *service)
 	 *      for the process to finish.
 	 *
 	 * Therefore this slightly more complex solution, which in essence
-	 * forks a new process running "hobbitping 2>&1 1>$BBTMP/ping.$$"
+	 * forks a new process running "xymonping 2>&1 1>$BBTMP/ping.$$"
 	 * The output is then picked up by the finish_ping_service().
 	 */
 
 	pingcount = 0;
 	pingpids = calloc(pingchildcount, sizeof(pid_t));
-	pingcmd = strdup(getenv_default("FPING", "hobbitping", NULL));
+	pingcmd = strdup(getenv_default("FPING", "xymonping", NULL));
 	pingcmd = realloc(pingcmd, strlen(pingcmd)+5);
 	strcat(pingcmd, " -Ae");
 
@@ -1092,7 +1092,7 @@ int start_ping_service(service_t *service)
 	for (i=0; (i < pingchildcount); i++) {
 		/* Get a pipe FD */
 		if (pipe(pfd) == -1) {
-			errprintf("Could not create pipe for hobbitping\n");
+			errprintf("Could not create pipe for xymonping\n");
 			return -1;
 		}
 
@@ -1209,7 +1209,7 @@ int finish_ping_service(service_t *service)
 
 			case 98:
 				failed = 1;
-				errprintf("hobbitping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
+				errprintf("xymonping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
 				break;
 
 			case 99:
@@ -2086,14 +2086,14 @@ int main(int argc, char *argv[])
 			servicedumponly = 1;
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("bbtest-net version %s\n", VERSION);
+			printf("xymonnet version %s\n", VERSION);
 			if (ssl_library_version) printf("SSL library : %s\n", ssl_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
 			printf("\n");
 			return 0;
 		}
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
-			printf("bbtest-net version %s\n\n", VERSION);
+			printf("xymonnet version %s\n\n", VERSION);
 			printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
 			printf("General options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
@@ -2102,7 +2102,7 @@ int main(int argc, char *argv[])
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
 			printf("    --no-ares                   : Use the system resolver library for hostname lookups\n");
 			printf("    --dnslog=FILENAME           : Log failed hostname lookups to file FILENAME\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymonnet\n");
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
 			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
@@ -2164,7 +2164,7 @@ int main(int argc, char *argv[])
 
 	if (debug) {
 		int i;
-		printf("Command: bbtest-net");
+		printf("Command: xymonnet");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
 		printf("Environment BBLOCATION='%s'\n", textornull(xgetenv("BBLOCATION")));
@@ -2173,7 +2173,7 @@ int main(int argc, char *argv[])
 		printf("\n");
 	}
 
-	add_timestamp("bbtest-net startup");
+	add_timestamp("xymonnet startup");
 
 	load_services();
 	if (servicedumponly) {
@@ -2367,7 +2367,7 @@ int main(int argc, char *argv[])
 	/*
 	 * The list of hosts to test frequently because of a failure must
 	 * be saved - it is then picked up by the frequent-test ext script
-	 * that runs bbtest-net again with the frequent-test hosts as
+	 * that runs xymonnet again with the frequent-test hosts as
 	 * parameter.
 	 *
 	 * Should the retest itself update the frequent-test file ? It
@@ -2393,7 +2393,7 @@ int main(int argc, char *argv[])
 	save_session_cookies();
 
 	shutdown_ldap_library();
-	add_timestamp("bbtest-net completed");
+	add_timestamp("xymonnet completed");
 
 	if (dumpdata & 2) { dump_hostlist(); dump_testitems(); }
 
@@ -2415,7 +2415,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbtest-net version %s\n", VERSION);
+		sprintf(msgline, "xymonnet version %s\n", VERSION);
 		addtostatus(msgline);
 		if (ssl_library_version) {
 			sprintf(msgline, "SSL library : %s\n", ssl_library_version);

@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "contest.h"
 #include "httpcookies.h"
 #include "httpresult.h"

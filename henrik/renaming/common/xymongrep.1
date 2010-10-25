@@ -37,7 +37,7 @@ from the output.
 
 .IP "--test-untagged"
 When using the BBLOCATION environment variable to test
-only hosts on a particular network segment, bbtest-net
+only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
 So only hosts that have a NET:$BBLOCATION tag will be
 tested.
@@ -87,7 +87,7 @@ If your extension scripts use more than one tag, just list
 all of the interesting tags on the command line.
 
 xymongrep also supports the "NET:location" tag used by 
-bbtest-net, so if your script performs network checks then 
+xymonnet, so if your script performs network checks then 
 it will see only the hosts that are relevant for the test
 location that the script currently executes on.
 

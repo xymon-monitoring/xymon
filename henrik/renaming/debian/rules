@@ -75,7 +75,7 @@ install-server: build install-clean
 	# We depend on the -client package
 	rm -rf $S/usr/lib/xymon/client
 	# This needs root
-	chmod 4755 $S/usr/lib/xymon/server/bin/hobbitping
+	chmod 4755 $S/usr/lib/xymon/server/bin/xymonping
 	mv $S/etc/xymon/xymon-apache.conf \
 		$S/etc/apache2/conf.d/xymon
 	# Make xymonserver.cfg use the settings we have configured during installation
@@ -144,7 +144,7 @@ binary-arch: build install-server install-client
 	dh_link -a
 	dh_strip -a
 	dh_compress -a
-	dh_fixperms -a -Xbin/hobbitping
+	dh_fixperms -a -Xbin/xymonping
 	dh_installdeb -a
 	dh_shlibdeps -a
 	dh_gencontrol -a

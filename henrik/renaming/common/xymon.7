@@ -181,7 +181,7 @@ the router - and not from the 200 hosts behind the router.
 .SH SECURITY
 All of the Xymon server tools run under an unprivileged user account.
 A single program - the
-.I hobbitping(1)
+.I xymonping(1)
 network connectivity tester - must be installed setuid-root, but has
 been written so that it drops all root privileges immediately after
 performing the operation that requires root privileges.
@@ -294,13 +294,13 @@ the system state was just prior to it failing.
 .SH XYMON NETWORK TEST TOOLS
 These tools are used on servers that execute tests of network services.
 
-.I hobbitping(1)
+.I xymonping(1)
 performs network connectivity (ping) tests.
 
-.I bbtest-net(1)
+.I xymonnet(1)
 runs the network service tests.
 
-.I bbretest-net.sh(1)
+.I xymonnet-again.sh(1)
 is an extension script for re-doing failed network tests with a higher 
 frequency than the normal network tests. This allows Xymon to pick up
 the recovery of a network service as soon as it happens, resulting in 
@@ -525,7 +525,7 @@ is allowed.  See the file COPYING for details.
 .SH "SEE ALSO"
 xymond(8), xymond_channel(8), xymond_history(8), xymond_rrd(8), xymond_alert(8), 
 xymond_client(8), xymond_hostdata(8), 
-hobbitping(1), bbtest-net(1), bbretest-net.sh(1), 
+xymonping(1), xymonnet(1), xymonnet-again.sh(1), 
 bbgen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
 bb-hist.cgi(1), bb-eventlog.cgi(1), 
 bb-ack.cgi(1), xymon-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 

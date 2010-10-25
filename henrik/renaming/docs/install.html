@@ -114,7 +114,7 @@ in Xymon, I strongly recommend that you create a dedicated userid for the Xymon
 programs. This user should <em>not</em> be a member of any other groups on your
 system.</p>
 
-<p>Xymon will install the <u>hobbitping</u> tool as <b>setuid-root</b>(only on
+<p>Xymon will install the <u>xymonping</u> tool as <b>setuid-root</b>(only on
 the Xymon server). This program requires root privileges to be able to perform
 network &quot;ping&quot; tests. It will drop root privileges immediately after 
 obtaining the network socket needed for this, and will not run with root
@@ -208,7 +208,7 @@ you see the default set of items that the Xymon installation sets up for a Xymon
 <ul>
 	<li><em>bbd</em> is the availability of the Xymon network daemon.</li>
 	<li><em>bbgen</em> is the status of the bbgen tool, which updates the webpages.</li>
-	<li><em>bbtest</em> is the status of the bbtest-net network tester that performs
+	<li><em>bbtest</em> is the status of the xymonnet network tester that performs
 	all of the network tests you configure in Xymon.</li>
 	<li><em>conn</em> is a simple &quot;ping&quot; test of the host.</li>
 	<li><em>hobbitd</em> is the status of the Xymon daemon, with statistics about
