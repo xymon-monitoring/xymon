@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 
 		if (mergeinput) 
 			/* Must add a new-line before the rest of the message */
-			addtostrbuffer(msg, "\n");
+			addtobuffer(msg, "\n");
 		else
 			/* Clear input buffer, we'll read it all from stdin */
 			clearstrbuffer(msg);
