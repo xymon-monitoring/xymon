@@ -822,7 +822,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	}
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
-	/* Request an RRD cache flush from the hobbitd_rrd update daemon */
+	/* Request an RRD cache flush from the xymond_rrd update daemon */
 	if (hostlist) {
 		int i;
 		for (i=0; (i < hostlistsize); i++) request_cacheflush(hostlist[i]);

@@ -28,7 +28,7 @@ else
 fi
 
 if [ "$XYMONSERVERS" = "" ]; then
-	echo "Please configure HOBBITSERVERS in /etc/default/xymon-client"
+	echo "Please configure XYMONSERVERS in /etc/default/xymon-client"
 	exit 1
 fi
 

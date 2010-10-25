@@ -104,12 +104,12 @@ setting to xymonserver.cfg:</p>
 	NCV_slab=&quot;inodecache:GAUGE,dentrycache:GAUGE&quot;
 </tt></pre>
 
-<p>This tells the hobbitd_rrd module that it should create an RRD file with
+<p>This tells the xymond_rrd module that it should create an RRD file with
 two datasets of type GAUGE instead of the default (DERIVE). The setting must
 be named NCV_&lt;columnname&gt;.</p>
 
 <p>The xymonserver.cfg file is not reloaded automatically, so you must restart
-Xymon after making these changes. Or at least, kill the hobbitd_rrd processes
+Xymon after making these changes. Or at least, kill the xymond_rrd processes
 (there are usually two) - xymonlaunch will automatically restart them, and
 they will then pick up the new settings.</p>
 

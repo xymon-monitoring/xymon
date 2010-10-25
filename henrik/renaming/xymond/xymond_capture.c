@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* hobbitd worker module, to capture status messages for a particulr host     */
+/* xymond worker module, to capture status messages for a particulr host      */
 /* or test, or data type. This is fed from the status- or data-channel, and   */
 /* simply logs the data received to a file.                                   */
 /*                                                                            */
@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 
 #include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
@@ -133,10 +133,10 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout);
+		msg = get_xymond_message(C_LAST, argv[0], &seq, timeout);
 		if (msg == NULL) {
 			/*
-			 * get_hobbitd_message will return NULL if hobbitd_channel closes
+			 * get_xymond_message will return NULL if xymond_channel closes
 			 * the input pipe. We should shutdown when that happens.
 			 */
 			running = 0;
@@ -189,10 +189,10 @@ int main(int argc, char *argv[])
 		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
-		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.
+		 * provided in the XYMONDHANNEL_LOGFILENAME environment.
 		 */
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * An "idle" message appears when get_hobbitd_message() 
+		 * An "idle" message appears when get_xymond_message() 
 		 * exceeds the timeout setting (ie. you passed a timeout
 		 * value). This allows your worker module to perform
 		 * some internal processing even though no messages arrive.

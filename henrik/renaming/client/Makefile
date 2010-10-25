@@ -75,11 +75,11 @@ ifndef PKGBUILD
 endif
 
 install-localclient:
-	cp -fp hobbitd_client $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp xymond_client $(INSTALLROOT)$(BBHOME)/bin/
 ifndef PKGBUILD
-	chown $(BBUSER) $(INSTALLROOT)$(BBHOME)/bin/hobbitd_client
+	chown $(BBUSER) $(INSTALLROOT)$(BBHOME)/bin/xymond_client
 endif
 
 clean:
-	rm -f $(PROGRAMS) $(COMMONTOOLS) hobbitd_client xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
+	rm -f $(PROGRAMS) $(COMMONTOOLS) xymond_client xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
 

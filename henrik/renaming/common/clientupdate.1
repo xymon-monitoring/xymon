@@ -36,7 +36,7 @@ the running clientupdate utility to delete itself - it is used
 during the update to purge a temporary copy of the clientupdate
 utility that is installed in $BBTMP.
 
-.SH USING CLIENTUPDATE IN HOBBIT
+.SH USING CLIENTUPDATE IN XYMON
 To manage updating clients without having to logon to each server,
 you can use the clientupdate utility. This is how you setup the
 release of a new client version.
@@ -72,10 +72,10 @@ tar-file. So if you have packaged the new client into the
 file \fBlinux.v2.tar\fR, then the corresponding 
 entry in client-local.cfg would be \fBclientversion:linux.v2\fR.
 
-.IP "Wait for hobbitd to reload client-local.cfg"
-hobbitd will automatically reload the client-local.cfg file
+.IP "Wait for xymond to reload client-local.cfg"
+xymond will automatically reload the client-local.cfg file
 after at most 10 minutes. If you want to force an immediate
-reload, send a SIGHUP signal to the hobbitd process.
+reload, send a SIGHUP signal to the xymond process.
 
 .IP "Wait for the client to update"
 The next time the client contacts the Xymon server to

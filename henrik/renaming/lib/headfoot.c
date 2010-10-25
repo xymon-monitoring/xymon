@@ -1479,10 +1479,10 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 
 	MEMDEFINE(filename);
 
-	if (xgetenv("HOBBITDREL") == NULL) {
-		char *hobbitdrel = (char *)malloc(12+strlen(VERSION));
-		sprintf(hobbitdrel, "HOBBITDREL=%s", VERSION);
-		putenv(hobbitdrel);
+	if (xgetenv("XYMONDREL") == NULL) {
+		char *xymondrel = (char *)malloc(12+strlen(VERSION));
+		sprintf(xymondrel, "XYMONDREL=%s", VERSION);
+		putenv(xymondrel);
 	}
 
 	/*

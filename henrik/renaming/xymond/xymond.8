@@ -1,27 +1,27 @@
-.TH HOBBITD 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMOND 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbitd \- Master network daemon for a Xymon server
+xymond \- Master network daemon for a Xymon server
 .SH SYNOPSIS
-.B "hobbitd [options]"
+.B "xymond [options]"
 
 .SH DESCRIPTION
-hobbitd is the core daemon in the Xymon Monitor.
+xymond is the core daemon in the Xymon Monitor.
 It is designed to handle monitoring of a large number of hosts, 
 with a strong focus on being a high-speed, low-overhead implementation 
 of a Big Brother compatible server.
 
-To achieve this, hobbitd stores all information about the state
+To achieve this, xymond stores all information about the state
 of the monitored systems in memory, instead of storing it in
 the host filesystem. A number of plug-ins can be enabled to
 enhance the basic operation; e.g. a set of plugins are provided
 to implement persistent storage in a way that is compatible 
 with the Big Brother daemon. However, even with these
-plugins enabled, hobbitd still performs much faster than the
+plugins enabled, xymond still performs much faster than the
 standard bbd daemon.
 
-hobbitd is normally started and controlled by the
+xymond is normally started and controlled by the
 .I xymonlaunch(8)
-tool, and the command used to invoke hobbitd should therefore be
+tool, and the command used to invoke xymond should therefore be
 in the tasks.cfg file.
 
 .SH OPTIONS
@@ -33,8 +33,8 @@ If this option is omitted, the default path used is set by the HOSTSCFG
 environment variable.
 
 .IP "--checkpoint-file=FILENAME"
-With regular intervals, hobbitd will dump all of its internal state 
-to this check-point file. It is also dumped when hobbitd terminates,
+With regular intervals, xymond will dump all of its internal state 
+to this check-point file. It is also dumped when xymond terminates,
 or when it receives a SIGUSR1 signal.
 
 .IP "--checkpoint-interval=N"
@@ -42,8 +42,8 @@ Specifies the interval (in seconds) between dumps to the check-point
 file. The default is 900 seconds (15 minutes).
 
 .IP "--restart=FILENAME"
-Specifies an existing file containing a previously generated hobbitd 
-checkpoint. When starting up, hobbitd will restore its internal state
+Specifies an existing file containing a previously generated xymond 
+checkpoint. When starting up, xymond will restore its internal state
 from the information in this file. You can use the same filename for
 "--checkpoint-file" and "--restart".
 
@@ -51,24 +51,24 @@ from the information in this file. You can use the same filename for
 How to handle status messages from unknown hosts. The "allow" setting
 accepts all status messages, regardless of whether the host is known
 in the hosts.cfg file or not. "drop" silently ignores reports from unknown 
-hosts. "log" works like drop, but logs the event in the hobbitd output file.
+hosts. "log" works like drop, but logs the event in the xymond output file.
 "match" will try to match the name of the unknown host reporting with 
 the known names by ignoring any domain-names - if a match is found, then
 a temporary client alias is automatically generated. The default is "log". 
 
 .IP "--no-purple"
 Prevent status messages from going purple when they are no longer valid.
-Unlike the standard bbd daemon, purple-handling is done by hobbitd.
+Unlike the standard bbd daemon, purple-handling is done by xymond.
 
 .IP "--listen=IP[:PORT]"
-Specifies the IP-address and port where hobbitd will listen for incoming
-connections. By default, hobbitd listens on IP 0.0.0.0 (i.e. all IP-
+Specifies the IP-address and port where xymond will listen for incoming
+connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
 adresses available on the host) and port 1984.
 
 .IP "--daemon"
-hobbitd is normally started by 
+xymond is normally started by 
 .I xymonlaunch(8)
-. If you do not want to use xymonlaunch, you can start hobbitd with this option;
+. If you do not want to use xymonlaunch, you can start xymond with this option;
 it will then detach from the terminal and continue running as a background
 task.
 
@@ -80,17 +80,17 @@ Default: 10 seconds.
 
 .IP "--env=FILENAME"
 Loads the content of FILENAME as environment settings before starting
-hobbitd. This is mostly used when running as a stand-alone daemon; if
-hobbitd is started by xymonlaunch, the environment settings are controlled
+xymond. This is mostly used when running as a stand-alone daemon; if
+xymond is started by xymonlaunch, the environment settings are controlled
 by the xymonlaunch tasks.cfg file.
 
 .IP "--pidfile=FILENAME"
-hobbitd writes the process-ID it is running with to this file.
+xymond writes the process-ID it is running with to this file.
 This is for use in automated startup scripts. The default file is
-$BBSERVERLOGS/hobbitd.pid.
+$BBSERVERLOGS/xymond.pid.
 
 .IP "--log=FILENAME"
-Redirect all output from hobbitd to FILENAME.
+Redirect all output from xymond to FILENAME.
 
 .IP "--store-clientlogs[=[!]COLUMN]"
 Determines which status columns can cause a client message to be
@@ -106,7 +106,7 @@ columns except those listed will cause the client data to be sent.
 
 .IP "--status-senders=IP[/MASK][,IP/MASK]"
 Controls which hosts may send "status", "combo", "config" and "query"
-commands to hobbitd.
+commands to xymond.
 
 By default, any host can send status-updates. If this option is used, 
 then status-updates are accepted only if they are sent by one of the 
@@ -128,7 +128,7 @@ would use
     --status-senders=172.16.10.2,10.0.2.0/24
 
 .IP "--maint-senders=IP[/MASK][,IP/MASK]"
-Controls which hosts may send maintenance commands to hobbitd. Maintenance
+Controls which hosts may send maintenance commands to xymond. Maintenance
 commands are the "enable", "disable", "ack" and "notes" commands. Format
 of this option is as for the --status-senders option. It is strongly
 recommended that you use this to restrict access to these commands, so
@@ -141,12 +141,12 @@ proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running bbproxy in the list of allowed addresses.
 
 .IP "--www-senders=IP[/MASK][,IP/MASK]"
-Controls which hosts may send commands to retrieve the state of hobbitd. These
+Controls which hosts may send commands to retrieve the state of xymond. These
 are the "hobbitdlog", "hobbitdboard" and "hobbitdxboard" commands, which are used
 by
 .I bbgen(1)
 and
-.I bbcombotest(1)
+.I combostatus(1)
 to retrieve the state of the Xymon system so they can generate the Xymon webpages.
 
 \fBNote:\fR If messages are sent through a proxy, the IP-address restrictions
@@ -155,7 +155,7 @@ proxy server address. It is therefore strongly recommended that you do NOT
 include the address of a server running bbproxy in the list of allowed addresses.
 
 .IP "--admin-senders=IP[/MASK][,IP/MASK]"
-Controls which hosts may send administrative commands to hobbitd. These
+Controls which hosts may send administrative commands to xymond. These
 commands are the "drop" and "rename" commands. Access to these should be 
 restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
@@ -176,11 +176,11 @@ Enable debugging output.
 
 .IP "--dbghost=HOSTNAME"
 For troubleshooting problems with a specific host, it may be useful to track
-the exact communications from a single host. This option causes hobbitd to
-dump all traffic from a single host to the file "/tmp/hobbitd.dbg".
+the exact communications from a single host. This option causes xymond to
+dump all traffic from a single host to the file "/tmp/xymond.dbg".
 
 .SH HOW ALERTS TRIGGER
-When a status arrives, hobbitd matches the old and new color against
+When a status arrives, xymond matches the old and new color against
 the "alert" colors (from the "ALERTCOLORS" setting) and the "OK" colors 
 (from the "OKCOLORS" setting). The old and new color falls into one of three
 categories:
@@ -195,9 +195,9 @@ The color is one of the "alert" colors (e.g. "red").
 The color is neither an "alert" color nor an "OK" color (e.g. "yellow").
 
 If the new status shows an ALERT state, then a message to the
-.I hobbitd_alert(8) 
+.I xymond_alert(8) 
 module is triggered. This may be a repeat of a previous alert, but 
-.I hobbitd_alert(8)
+.I xymond_alert(8)
 will handle that internally, and only send alert messages with the
 interval configured in 
 .I alerts.cfg(5).
@@ -212,19 +212,19 @@ e.g yellow and red, or green and yellow.
 
 .SH CHANNELS
 A lot of functionality in the Xymon server is delegated to "worker modules"
-that are fed various events from hobbitd via a "channel". Programs access a
+that are fed various events from xymond via a "channel". Programs access a
 channel using IPC mechanisms - specifically, shared memory and semaphores -
 or by using an instance of the
-.I hobbitd_channel(8)
-intermediate program. hobbitd_channel enables access to a channel via a
+.I xymond_channel(8)
+intermediate program. xymond_channel enables access to a channel via a
 simple file I/O interface.
 
-A skeleton program for hooking into a hobbitd channel is provided as
+A skeleton program for hooking into a xymond channel is provided as
 part of Xymon in the
-.I hobbitd_sample(8)
+.I xymond_sample(8)
 program.
 
-The following channels are provided by hobbitd:
+The following channels are provided by xymond:
 .sp
 .BR status
 This channel is fed the contents of all incoming "status" and
@@ -258,7 +258,7 @@ This channel is fed the contents of a host client messages,
 whenever a status for that host goes red, yellow or purple.
 
 Information about the data stream passed on these channels is
-in the Xymon source-tree, see the "hobbitd/new-daemon.txt" file.
+in the Xymon source-tree, see the "xymond/new-daemon.txt" file.
 
 .SH SIGNALS
 .IP SIGHUP

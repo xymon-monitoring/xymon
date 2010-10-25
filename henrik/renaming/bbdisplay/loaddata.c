@@ -472,7 +472,7 @@ void generate_compactitems(state_t **topstate)
 
 state_t *load_state(dispsummary_t **sumhead)
 {
-	int hobbitdresult;
+	int 		xymondresult;
 	char		fn[PATH_MAX];
 	state_t		*newstate, *topstate;
 	dispsummary_t	*newsum, *topsum;
@@ -494,31 +494,31 @@ state_t *load_state(dispsummary_t **sumhead)
 			struct stat st;
 			FILE *fd;
 
-			hobbitdresult = BB_ETIMEOUT;
+			xymondresult = BB_ETIMEOUT;
 			if (stat(dumpfn, &st) == 0) {
 				fd = fopen(dumpfn, "r");
 				if (fd) {
 					board = (char *)malloc(st.st_size + 1);
 					fread(board, 1, st.st_size, fd);
 					fclose(fd);
-					hobbitdresult = BB_OK;
+					xymondresult = BB_OK;
 				}
 			}
 		}
 		else {
-			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, BBTALK_TIMEOUT, sres);
+			xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, BBTALK_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
 		}
 	}
 	else {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres);
+		xymondresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 	}
 
 	freesendreturnbuf(sres);
 
-	if ((hobbitdresult != BB_OK) || (board == NULL) || (*board == '\0')) {
-		errprintf("hobbitd status-board not available, code %d\n", hobbitdresult);
+	if ((xymondresult != BB_OK) || (board == NULL) || (*board == '\0')) {
+		errprintf("xymond status-board not available, code %d\n", xymondresult);
 		return NULL;
 	}
 

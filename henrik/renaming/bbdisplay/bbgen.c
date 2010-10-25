@@ -32,7 +32,6 @@ static char rcsid[] = "$Id$";
 #include "pagegen.h"
 #include "wmlgen.h"
 #include "rssgen.h"
-#include "bbconvert.h"
 #include "csvreport.h"
 
 /* Global vars */
@@ -100,7 +99,6 @@ int main(int argc, char *argv[])
 	char		*csvfile = NULL;
 	char		csvdelim = ',';
 	int		embedded = 0;
-	int		hobbitddump = 0;
 	char		*envarea = NULL;
 	int		do_normal_pages = 1;
 	int		do_nongreen_page = 1;
@@ -133,9 +131,6 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[i], "--area=")) {
 			char *lp = strchr(argv[i], '=');
 			envarea = strdup(lp+1);
-		}
-		else if (argnmatch(argv[i], "--hobbitddump")) {
-			hobbitddump = 1;
 		}
 
 		else if (argnmatch(argv[i], "--ignorecolumns=")) {
@@ -601,11 +596,6 @@ int main(int argc, char *argv[])
 
 	if (embedded || snapshot) dispsums = NULL;
 	add_timestamp("Load STATE done");
-
-	if (hobbitddump) {
-		dump_hobbitdchk();
-		return 0;
-	}
 
 	/* Calculate colors of hosts and pages */
 	calc_hostcolors(bb2ignorecolumns);

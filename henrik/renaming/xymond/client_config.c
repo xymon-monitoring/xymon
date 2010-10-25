@@ -2,7 +2,7 @@
 /* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module                                                      */
-/* This file has routines that load the hobbitd_client configuration and      */
+/* This file has routines that load the xymond_client configuration and       */
 /* finds the rules relevant for a particular test when applied.               */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */

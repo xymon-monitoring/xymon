@@ -128,14 +128,7 @@ static void loadtests(void)
 		*fn = '\0';
 	}
 
-	if (*fn == '\0') {
-		/* 
-		 * Why this ? Because I goofed and released a version using bbcombotests.cfg,
-		 * and you shouldn't break peoples' setups when fixing silly bugs.
-		 */
-		sprintf(fn, "%s/etc/combo.cfg", xgetenv("BBHOME"));
-		if (stat(fn, &st) == -1) sprintf(fn, "%s/etc/bbcombotests.cfg", xgetenv("BBHOME"));
-	}
+	sprintf(fn, "%s/etc/combo.cfg", xgetenv("BBHOME"));
 	if ((stat(fn, &st) == 0) && (st.st_mtime == lastupdate)) return;
 	lastupdate = st.st_mtime;
 
@@ -202,22 +195,22 @@ static void loadtests(void)
 	freestrbuffer(inbuf);
 }
 
-static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
+static int getxymondvalue(char *hostname, char *testname, char **errptr)
 {
 	static char *board = NULL;
-	int hobbitdresult;
+	int xymondresult;
 	int result = COL_CLEAR;
 	char *pattern, *found, *colstr;
 
 	if (board == NULL) {
 		sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, BBTALK_TIMEOUT, sres);
+		xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, BBTALK_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 
-		if ((hobbitdresult != BB_OK) || (board == NULL)) {
+		if ((xymondresult != BB_OK) || (board == NULL)) {
 			board = "";
-			*errptr += sprintf(*errptr, "Could not access hobbitd board, error %d\n", hobbitdresult);
+			*errptr += sprintf(*errptr, "Could not access xymond board, error %d\n", xymondresult);
 			return COL_CLEAR;
 		}
 
@@ -262,7 +255,7 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 		return walk->result;
 	}
 
-	*color = gethobbitdvalue(hostname, testname, &errptr);
+	*color = getxymondvalue(hostname, testname, &errptr);
 
 	/* Save error messages */
 	if (strlen(errtext) > 0) {

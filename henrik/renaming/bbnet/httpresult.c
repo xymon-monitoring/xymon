@@ -566,7 +566,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			addtostatus("\nNo output received from server\n\n");
 		}
 		else if (!host->hidehttp) {
-			/* Dont flood hobbitd with data */
+			/* Dont flood xymond with data */
 			if (req->outlen > MAX_CONTENT_DATA) {
 				*(req->output + MAX_CONTENT_DATA) = '\0';
 				req->outlen = MAX_CONTENT_DATA;

@@ -7,64 +7,64 @@
 # So the usual "include" and "directory" definitions 
 # will not work in this file.
 
-HOBBITENV=@BBHOME@/etc/xymonserver.cfg
+XYMONENV=@BBHOME@/etc/xymonserver.cfg
 
 # bb-csvinfo.cgi
-CGI_CSVINFO_OPTS="--env=$HOBBITENV"
+CGI_CSVINFO_OPTS="--env=$XYMONENV"
 # hobbitcolumn.sh (uses bb-csvinfo.cgi)
-CGI_HOBBITCOLUMN_OPTS="--env=$HOBBITENV --color=purple --hffile=columndoc"
+CGI_HOBBITCOLUMN_OPTS="--env=$XYMONENV --color=purple --hffile=columndoc"
 # bb-findhost.cgi
-CGI_FINDHOST_OPTS="--env=$HOBBITENV"
+CGI_FINDHOST_OPTS="--env=$XYMONENV"
 
 # hobbitsvc.cgi options for a normal (current) status display
-CGI_SVC_OPTS="--env=$HOBBITENV --no-svcid --history=top"
+CGI_SVC_OPTS="--env=$XYMONENV --no-svcid --history=top"
 
 # bb-hist.cgi options (service history overview)
-CGI_HIST_OPTS="--env=$HOBBITENV --no-svcid"
+CGI_HIST_OPTS="--env=$XYMONENV --no-svcid"
 # hobbitsvc.cgi options for a historical status display
-CGI_SVCHIST_OPTS="--env=$HOBBITENV --no-svcid"
+CGI_SVCHIST_OPTS="--env=$XYMONENV --no-svcid"
 
 # hobbitgraph.cgi options
-CGI_HOBBITGRAPH_OPTS="--env=$HOBBITENV"
+CGI_HOBBITGRAPH_OPTS="--env=$XYMONENV"
 
 # hobbitgraph.cgi options
-CGI_HOSTGRAPHS_OPTS="--env=$HOBBITENV"
+CGI_HOSTGRAPHS_OPTS="--env=$XYMONENV"
 
 # hobbit-confreport.cgi options
-CGI_HOBBITCONFREPORT_OPTS="--env=$HOBBITENV"
+CGI_HOBBITCONFREPORT_OPTS="--env=$XYMONENV"
 
 # bb-datepage.cgi options
-CGI_DATEPAGE_OPTS="--env=$HOBBITENV --url=/xymon/periodic"
+CGI_DATEPAGE_OPTS="--env=$XYMONENV --url=/xymon/periodic"
 # bb-rep.cgi options
-CGI_REP_OPTS="--env=$HOBBITENV"
+CGI_REP_OPTS="--env=$XYMONENV"
 # bb-replog.cgi options
-CGI_REPLOG_OPTS="--env=$HOBBITENV"
+CGI_REPLOG_OPTS="--env=$XYMONENV"
 # bb-snapshot.cgi options
-CGI_SNAPSHOT_OPTS="--env=$HOBBITENV"
+CGI_SNAPSHOT_OPTS="--env=$XYMONENV"
 # bb-eventlog.cgi options
-CGI_EVENTLOG_OPTS="--env=$HOBBITENV"
+CGI_EVENTLOG_OPTS="--env=$XYMONENV"
 # hobbit-nkview.cgi options
-CGI_NKVIEW_OPTS="--env=$HOBBITENV"
+CGI_NKVIEW_OPTS="--env=$XYMONENV"
 # hobbit-nkedit.cgi options
-CGI_NKEDIT_OPTS="--env=$HOBBITENV"
+CGI_NKEDIT_OPTS="--env=$XYMONENV"
 # hobbit-ackinfo.cgi options
-CGI_ACKINFO_OPTS="--env=$HOBBITENV"
+CGI_ACKINFO_OPTS="--env=$XYMONENV"
 #hobbit-ghosts.cgi options
-CGI_GHOSTS_OPTS="--env=$HOBBITENV"
+CGI_GHOSTS_OPTS="--env=$XYMONENV"
 
 # bb-ack.cgi options
-CGI_ACK_OPTS="--env=$HOBBITENV --no-pin"
+CGI_ACK_OPTS="--env=$XYMONENV --no-pin"
 # hobbit-enadis.cgi options
-CGI_ENADIS_OPTS="--env=$HOBBITENV"
+CGI_ENADIS_OPTS="--env=$XYMONENV"
 
 # hobbit-hostlist options
-CGI_HOSTLIST_OPTS="--env=$HOBBITENV"
+CGI_HOSTLIST_OPTS="--env=$XYMONENV"
 # hobbit-notifylog options
-CGI_NOTIFYLOG_OPTS="--env=$HOBBITENV"
+CGI_NOTIFYLOG_OPTS="--env=$XYMONENV"
 # hobbit-perfdata options
-CGI_PERFDATA_OPTS="--env=$HOBBITENV"
+CGI_PERFDATA_OPTS="--env=$XYMONENV"
 # hobbit-topchanges options
-CGI_TOPCHANGE_OPTS="--env=$HOBBITENV --top"
+CGI_TOPCHANGE_OPTS="--env=$XYMONENV --top"
 # hobbit-useradm options
-CGI_USERADM_OPTS="--env=$HOBBITENV"
+CGI_USERADM_OPTS="--env=$XYMONENV"
 

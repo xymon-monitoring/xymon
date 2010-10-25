@@ -34,9 +34,9 @@ static char rcsid[] = "$Id$";
 /*
  * config file format:
  *
- * [hobbitd]
- * 	CMD hobbitd --no-daemon
- * 	LOGFILE /var/log/hobbitd.log
+ * [xymond]
+ * 	CMD xymond --no-daemon
+ * 	LOGFILE /var/log/xymond.log
  *
  * [bbdisplay]
  * 	CMD bb-display.sh

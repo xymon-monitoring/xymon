@@ -26,7 +26,7 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 
 #include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 
 #include <signal.h>
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 	/* Do the network stuff if needed */
 	net_worker_run(ST_HOSTDATA, LOC_STICKY, update_locator_hostdata);
 
-	setup_signalhandler("hobbitd_hostdata");
+	setup_signalhandler("xymond_hostdata");
 
 	running = 1;
 	while (running) {
@@ -98,10 +98,10 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		msg = get_hobbitd_message(C_CLICHG, "hobbitd_hostdata", &seq, NULL);
+		msg = get_xymond_message(C_CLICHG, "xymond_hostdata", &seq, NULL);
 		if (msg == NULL) {
 			/*
-			 * get_hobbitd_message will return NULL if hobbitd_channel closes
+			 * get_xymond_message will return NULL if xymond_channel closes
 			 * the input pipe. We should shutdown when that happens.
 			 */
 			running = 0;
@@ -161,10 +161,10 @@ int main(int argc, char *argv[])
 		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
-		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.
+		 * provided in the XYMONCHANNEL_LOGFILENAME environment.
 		 */
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

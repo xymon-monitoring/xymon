@@ -37,7 +37,7 @@ load, filesystem utilisation, processes that must be running etc.
 rm -rf $RPM_BUILD_ROOT
 
 %setup
-	USEHOBBITPING=y \
+	USEXYMONPING=y \
         ENABLESSL=y \
         ENABLELDAP=y \
         ENABLELDAPSSL=y \

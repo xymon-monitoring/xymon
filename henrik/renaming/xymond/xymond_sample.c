@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* Sample hobbitd worker module. This module shows how to get messages from   */
-/* one of the hobbitd channels. Worker modules subscribe to a channel and can */
+/* Sample xymond worker module. This module shows how to get messages from    */
+/* one of the xymond channels. Worker modules subscribe to a channel and can  */
 /* use the channel data to implement various types of storage (files, DB) of  */
 /* the Xymon data, or they can implement actions such as alerting via         */
 /* pager, e-mail, SNMP trap or .... In fact, a worker module can do anything  */
@@ -26,7 +26,7 @@ static char rcsid[] = "$Id$";
 #include <signal.h>
 
 #include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 		int metacount;
 
 		/*
-		 * get_hobbitd_message() gets the next message from the queue.
-		 * The message buffer is allocated and managed by the get_hobbitd_message()
+		 * get_xymond_message() gets the next message from the queue.
+		 * The message buffer is allocated and managed by the get_xymond_message()
 		 * routine, so you should NOT try to free or allocate it yourself.
 		 *
 		 * All messages have a sequence number ranging from 1-999999.
@@ -101,19 +101,19 @@ int main(int argc, char *argv[])
 		 * sequence number of the message returned.
 		 *
 		 * The fourth parameter is optional; you can pass a filled-in (struct
-		 * timeval) here, which then defines the maximum time get_hobbitd_message()
-		 * will wait for a new message. get_hobbitd_message() does not modify
+		 * timeval) here, which then defines the maximum time get_xymond_message()
+		 * will wait for a new message. get_xymond_message() does not modify
 		 * the content of the timeout parameter.
 		 * 
 		 *
-		 * get_hobbitd_message() does not return until a message is ready,
+		 * get_xymond_message() does not return until a message is ready,
 		 * or the timeout setting expires, or the channel is closed.
 		 */
 
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout);
+		msg = get_xymond_message(C_LAST, argv[0], &seq, timeout);
 		if (msg == NULL) {
 			/*
-			 * get_hobbitd_message will return NULL if hobbitd_channel closes
+			 * get_xymond_message will return NULL if xymond_channel closes
 			 * the input pipe. We should shutdown when that happens.
 			 */
 			running = 0;
@@ -166,10 +166,10 @@ int main(int argc, char *argv[])
 		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
-		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.
+		 * provided in the XYMONCHANNEL_LOGFILENAME environment.
 		 */
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * An "idle" message appears when get_hobbitd_message() 
+		 * An "idle" message appears when get_xymond_message() 
 		 * exceeds the timeout setting (ie. you passed a timeout
 		 * value). This allows your worker module to perform
 		 * some internal processing even though no messages arrive.

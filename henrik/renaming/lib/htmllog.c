@@ -418,7 +418,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				/* Old BB clients do not send in df's header line */
 				int header = (strchr(firstline, '/') == NULL);
 
-				/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
+				/* Count how many lines are in the status message. This is needed by xymond_graph later */
 				linecount = 0; p = restofmsg;
 				do {
 					/* First skip all whitespace and blank lines */

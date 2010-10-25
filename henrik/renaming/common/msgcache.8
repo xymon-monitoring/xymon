@@ -1,6 +1,6 @@
 .TH MSGCACHE 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-msgcache \- Cache client messages for later pickup by hobbitfetch
+msgcache \- Cache client messages for later pickup by xymonfetch
 
 .SH SYNOPSIS
 .B "msgcache [options]"
@@ -12,7 +12,7 @@ the normal way. Instead of having the client tools connect to the
 Xymon server, msgcache runs locally and the client tools then
 deliver their data to the msgcache daemon. The msgcache daemon is
 then polled regularly by the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 utility, which collects the client messages stored by msgcache
 and forwards them to the Xymon server.
 
@@ -24,7 +24,7 @@ at the real Xymon server.
 Clients delivering their data to msgcache instead of the real
 Xymon server will in general not notice this. Specifically,
 the client configuration data provided by the Xymon server when
-a client delivers its data is forwarded through the hobbitfetch / 
+a client delivers its data is forwarded through the xymonfetch / 
 msgcache chain, so the normal centralized client configuration
 works.
 
@@ -75,5 +75,5 @@ Log msgcache output to FILENAME.
 Enable debugging output.
 
 .SH "SEE ALSO"
-hobbitfetch(8), xymon(7)
+xymonfetch(8), xymon(7)
 

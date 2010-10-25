@@ -20,7 +20,7 @@
 		FPING="$USERFPING"
 	fi
 
-	if test "$USEHOBBITPING" = ""
+	if test "$USEXYMONPING" = ""
 	then
 		echo "Xymon has a built-in ping utility (hobbitping)"
 		echo "However, it is not yet fully stable and therefore it"
@@ -29,13 +29,13 @@
 		then
 			echo "I could not find fping on your system"
 			echo "Do you want to use hobbitping [Y/n] ?"
-			read USEHOBBITPING
-			if test "$USEHOBBITPING" = "n"
+			read USEXYMONPING
+			if test "$USEXYMONPING" = "n"
 			then
 				echo "What command should Xymon use to run fping ?"
 				read FPING
 			else
-				USEHOBBITPING="y"
+				USEXYMONPING="y"
 				echo "OK, I will use hobbitping."
 				FPING="hobbitping"
 			fi
@@ -45,20 +45,20 @@
 			read USEFPING
 			if test "$USEFPING" = "n"
 			then
-				USEHOBBITPING="y"
+				USEXYMONPING="y"
 				echo "OK, I will use hobbitping instead."
 				FPING="hobbitping"
 			fi
 		fi
-	elif test "$USEHOBBITPING" = "n"
+	elif test "$USEXYMONPING" = "n"
 	then
 		echo "OK, will use '$FPING' for ping tests"
 	else
 		FPING="hobbitping"
-		USEHOBBITPING="y"
+		USEXYMONPING="y"
 	fi
 
-	if test "$USEHOBBITPING" = "y" -o "$USERFPING" != ""
+	if test "$USEXYMONPING" = "y" -o "$USERFPING" != ""
 	then
 		NOTOK=0
 	else
@@ -72,10 +72,10 @@
 		RC=$?
 		if test $RC -eq 0; then
 			echo "OK, will use '$FPING' for ping tests"
-			echo "NOTE: If you are using an suid-root wrapper, make sure the 'hobbit'"
+			echo "NOTE: If you are using an suid-root wrapper, make sure the 'xymond'"
 			echo "      user is also allowed to run fping without having to enter passwords."
 			echo "      For 'sudo', add something like this to your 'sudoers' file:"
-			echo "      hobbit: ALL=(ALL) NOPASSWD: /usr/local/sbin/fping"
+			echo "      xymon: ALL=(ALL) NOPASSWD: /usr/local/sbin/fping"
 			echo ""
 			NOTOK=0
 		else

@@ -1,14 +1,14 @@
-.TH HOBBITD_HISTORY 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMOND_HISTORY 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbitd_history \- hobbitd worker module for logging status changes 
+xymond_history \- xymond worker module for logging status changes 
 .SH SYNOPSIS
-.B "hobbitd_channel --channel=stachg hobbitd_history [options]"
+.B "xymond_channel --channel=stachg xymond_history [options]"
 
 .SH DESCRIPTION
-hobbitd_history is a worker module for hobbitd, and as such it is normally
+xymond_history is a worker module for xymond, and as such it is normally
 run via the
-.I hobbitd_channel(8)
-program. It receives hobbitd status-change messages from the "stachg" 
+.I xymond_channel(8)
+program. It receives xymond status-change messages from the "stachg" 
 channel via stdin, and uses these to update the history logfiles in a manner 
 that is compatible with the standard Big Brother daemon, bbd.
 
@@ -51,5 +51,5 @@ If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST
 This module does not rely on any configuration files.
 
 .SH "SEE ALSO"
-hobbitd_channel(8), hobbitd(8), xymon(7)
+xymond_channel(8), xymond(8), xymon(7)
 

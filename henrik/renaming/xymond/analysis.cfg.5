@@ -1,6 +1,6 @@
 .TH ANALYSIS.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-analysis.cfg \- Configuration file for the hobbitd_client module
+analysis.cfg \- Configuration file for the xymond_client module
 
 .SH SYNOPSIS
 .B ~Xymon/server/etc/analysis.cfg
@@ -167,7 +167,7 @@ If "processname" contains whitespace (blanks or TAB), you must enclose
 the full string in double quotes - including the "%" if you use regular
 expression matching. E.g.
 .sp
-    PROC "%hobbitd_channel --channel=data.*hobbitd_rrd" 1 1 yellow
+    PROC "%xymond_channel --channel=data.*xymond_rrd" 1 1 yellow
 .sp
 or
 .sp
@@ -611,5 +611,5 @@ is not considered strong enough when a high level of security is required.
 
 
 .SH "SEE ALSO"
-hobbitd_client(8), client-local.cfg(5), hobbitd(8), xymon(7)
+xymond_client(8), client-local.cfg(5), xymond(8), xymon(7)
 

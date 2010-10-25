@@ -131,10 +131,10 @@ is used, for example, to report statistics about a host, e.g. vmstat data, which
 does not in itself represent something that has a red, yellow or
 green identity. It is used by RRD bottom-feeder modules, among
 others. In Xymon, data messages are by default processed only by the
-.I hobbitd_rrd(8)
+.I xymond_rrd(8)
 module. If you want to handle data-messages using an external application,
 you may want to enable the 
-.I hobbitd_filestore(8)
+.I xymond_filestore(8)
 module for data-messages, to store data-messages in a format compatible
 with how the Big Brother daemon does.
 
@@ -161,7 +161,7 @@ This allows any Xymon client to determine the status of a particular
 test, whether it is one pertaining to the host where the client
 is running, some other host, or perhaps the result of a combined
 test from multiple hosts managed by
-.I bbcombotest(1)
+.I combostatus(1)
 This will typically be useful to Xymon client extension scripts, that
 need to determine the status of other hosts, for example, to decide if an
 automatic recovery action should be initiated.
@@ -353,7 +353,7 @@ is reported.
 
 .IP "pullclient"
 This message is used when fetching client data via the "pull" mechanism implemented by
-.I hobbitfetch(8)
+.I xymonfetch(8)
 and
 .I msgcache(8)
 for clients that cannot connect directly to the Xymon server.
@@ -442,5 +442,5 @@ pass it via stdin to the xymon command:
    $ cat statusmsg.txt | $BB $BBDISP "@"
 
 .SH "SEE ALSO"
-bbcombotest(1), hosts.cfg(5), xymonserver.cfg(5), xymon(7)
+combostatus(1), hosts.cfg(5), xymonserver.cfg(5), xymon(7)
 

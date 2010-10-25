@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOSTS.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOSTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -893,7 +893,7 @@ this into the protocols.cfg file or your /etc/services file.
 <DT>bbd<DD>
 Test that a Big Brother compatible daemon is running. This check
 works both for the Xymon
-<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
 
 daemon, and the original Big Brother bbd daemon.
 <P>
@@ -1404,7 +1404,7 @@ If you are running an Apache web server, adding this tag makes
 collect performance statistics from the Apache web server by
 querying the URL <B><A HREF="http://IP.ADDRESS.OF.HOST/server-status?auto">http://IP.ADDRESS.OF.HOST/server-status?auto</A></B>.
 The response is sent as a data-report and processed by the Xymon
-hobbitd_rrd module into an RRD file and an &quot;apache&quot; graph. If
+xymond_rrd module into an RRD file and an &quot;apache&quot; graph. If
 your web server requires e.g. authentication, or runs on a different
 URL for the server-status, you can provide the full URL needed to 
 fetch the server-status page, e.g. 
@@ -1511,7 +1511,7 @@ the URL must point to a web page from the default set of Xymon webpages.
 <DL COMPACT>
 <DT>pulldata[=[IP][:port]]<DD>
 This option is recognized by the
-<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
 utility, and causes it to poll the host for client data. The optional
 IP-address and port-number can be used if the client-side
@@ -1566,6 +1566,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 20:27:53 GMT, October 24, 2010
+Time: 15:52:01 GMT, October 25, 2010
 </BODY>
 </HTML>

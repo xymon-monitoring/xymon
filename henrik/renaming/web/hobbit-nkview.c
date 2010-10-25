@@ -41,7 +41,7 @@ void errormsg(char *s)
 
 int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 {
-	int hobbitdresult;
+	int xymondresult;
 	char *board = NULL;
 	char *bol, *eol;
 	time_t now;
@@ -53,8 +53,8 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
 
 	sres = newsendreturnbuf(1, NULL);
-	hobbitdresult = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
-	if (hobbitdresult != BB_OK) {
+	xymondresult = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
+	if (xymondresult != BB_OK) {
 		freesendreturnbuf(sres);
 		errormsg("Unable to fetch current status\n");
 		return 1;

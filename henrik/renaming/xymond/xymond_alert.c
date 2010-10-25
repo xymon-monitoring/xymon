@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is the main alert module for hobbitd. It receives alert messages,     */
+/* This is the main alert module for xymond. It receives alert messages,      */
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
 /* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
@@ -54,7 +54,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 #include "do_alert.h"
 
 
@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
 			}
 
 			if ((testhost == NULL) || (testservice == NULL)) {
-				printf("Usage: hobbitd_alert --test HOST SERVICE [options]\n");
+				printf("Usage: xymond_alert --test HOST SERVICE [options]\n");
 				printf("Possible options:\n\t[--duration=SECONDS]\n\t[--color=COLOR]\n\t[--group=GROUPNAME]\n\t[--time=TIMESPEC]\n");
 
 				return 1;
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
 		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
-	setup_signalhandler("hobbitd_alert");
+	setup_signalhandler("xymond_alert");
 	/* Need to handle these ourselves, so we can shutdown and save state-info */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
 		}
 
 		timeout.tv_sec = 60; timeout.tv_nsec = 0;
-		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout);
+		msg = get_xymond_message(C_PAGE, "xymond_alert", &seq, &timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -797,7 +797,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

@@ -84,7 +84,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 		if (atol(l) >= cutoff) {
 			int c_used;
-			char *p, *p1, *hobbitdacker = NULL;
+			char *p, *p1, *xymondacker = NULL;
 
 			sscanf(l, "%u\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
 				(time_t *)&acks[num].acktime, &acks[num].acknum,
@@ -118,7 +118,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
 			nldecode(ackmsg); p = strchr(ackmsg, '\n'); 
 			if (p) {
-				if (strncmp(p, "\nAcked by:", 10) == 0) hobbitdacker = p+10;
+				if (strncmp(p, "\nAcked by:", 10) == 0) xymondacker = p+10;
 				*p = '\0';
 			}
 
@@ -158,8 +158,8 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					if (p > ackerp) *p = '\0';
 					acks[num].ackedby = strdup(ackerp);
 				}
-				else if (hobbitdacker) {
-					acks[num].ackedby = strdup(hobbitdacker);
+				else if (xymondacker) {
+					acks[num].ackedby = strdup(xymondacker);
 				}
 				else {
 					acks[num].ackedby = "";

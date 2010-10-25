@@ -19,7 +19,7 @@ endif
 # By default, Xymon uses a static library for common code.
 # To save some diskspace and run-time memory, you can use a
 # shared library by un-commenting this.
-# HOBBITLIBRARY=libhobbit.so
+# XYMONLIBRARY=libhobbit.so
 
 # Mail program: This must support "CMD -s SUBJECT ADDRESS" to send out a mail with a subject
 # Typically, this will be "mail" or "mailx"

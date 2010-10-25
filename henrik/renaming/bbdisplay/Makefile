@@ -2,7 +2,7 @@
 #
 
 PROGRAMS = bbgen
-GENOBJS = bbgen.o loadbbhosts.o loaddata.o bbconvert.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
+GENOBJS = bbgen.o loadbbhosts.o loaddata.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
 
 all: $(PROGRAMS)
 

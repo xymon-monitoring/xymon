@@ -1,23 +1,23 @@
-PROGRAMS = xymon.sh hobbitd hobbitd_channel hobbitd_locator hobbitd_filestore hobbitd_history hobbitd_alert hobbitd_rrd hobbitd_sample hobbitd_client hobbitd_hostdata hobbitd_capture hobbitfetch hobbit-mailack trimhistory bbcombotest hobbitreports.sh moverrd.sh convertnk rrdcachectl
-CLIENTPROGRAMS = ../client/hobbitd_client
+PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_rrd xymond_sample xymond_client xymond_hostdata xymond_capture xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
+CLIENTPROGRAMS = ../client/xymond_client
 
 LIBOBJS = ../lib/libbbgen.a
 
-HOBBITDOBJS   = hobbitd.o hobbitd_buffer.o hobbitd_ipc.o
-CHANNELOBJS   = hobbitd_channel.o hobbitd_buffer.o hobbitd_ipc.o
-LOCATOROBJS   = hobbitd_locator.o
-SAMPLEOBJS    = hobbitd_sample.o    hobbitd_worker.o hobbitd_buffer.o
-FILESTOREOBJS = hobbitd_filestore.o hobbitd_worker.o hobbitd_buffer.o
-HISTORYOBJS   = hobbitd_history.o   hobbitd_worker.o hobbitd_buffer.o
-ALERTOBJS     = hobbitd_alert.o     hobbitd_worker.o hobbitd_buffer.o do_alert.o
-RRDOBJS       = hobbitd_rrd.o       hobbitd_worker.o hobbitd_buffer.o do_rrd.o client_config.o
-HOSTDATAOBJS  = hobbitd_hostdata.o  hobbitd_worker.o hobbitd_buffer.o
-CAPTUREOBJS   = hobbitd_capture.o   hobbitd_worker.o hobbitd_buffer.o
-CLIENTOBJS    = hobbitd_client.o    hobbitd_worker.o hobbitd_buffer.o client_config.o
-COMBOTESTOBJS = bbcombotest.o
-MAILACKOBJS   = hobbit-mailack.o
+XYMONDOBJS    = xymond.o xymond_buffer.o xymond_ipc.o
+CHANNELOBJS   = xymond_channel.o xymond_buffer.o xymond_ipc.o
+LOCATOROBJS   = xymond_locator.o
+SAMPLEOBJS    = xymond_sample.o    xymond_worker.o xymond_buffer.o
+FILESTOREOBJS = xymond_filestore.o xymond_worker.o xymond_buffer.o
+HISTORYOBJS   = xymond_history.o   xymond_worker.o xymond_buffer.o
+ALERTOBJS     = xymond_alert.o     xymond_worker.o xymond_buffer.o do_alert.o
+RRDOBJS       = xymond_rrd.o       xymond_worker.o xymond_buffer.o do_rrd.o client_config.o
+HOSTDATAOBJS  = xymond_hostdata.o  xymond_worker.o xymond_buffer.o
+CAPTUREOBJS   = xymond_capture.o   xymond_worker.o xymond_buffer.o
+CLIENTOBJS    = xymond_client.o    xymond_worker.o xymond_buffer.o client_config.o
+COMBOTESTOBJS = combostatus.o
+MAILACKOBJS   = xymon-mailack.o
 TRIMHISTOBJS  = trimhistory.o
-FETCHOBJS     = hobbitfetch.o
+FETCHOBJS     = xymonfetch.o
 CONVERTNKOBJS = convertnk.o
 RRDCACHECTLOBJS = rrdcachectl.o
 
@@ -30,25 +30,25 @@ all: $(PROGRAMS) cfgfiles
 
 client: $(CLIENTPROGRAMS)
 
-hobbitd: $(HOBBITDOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOBBITDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymond: $(XYMONDOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(XYMONDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_channel: $(CHANNELOBJS) $(LIBOBJS)
+xymond_channel: $(CHANNELOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CHANNELOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_locator: $(LOCATOROBJS) $(LIBOBJS)
+xymond_locator: $(LOCATOROBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(LOCATOROBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_filestore: $(FILESTOREOBJS) $(LIBOBJS)
+xymond_filestore: $(FILESTOREOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(FILESTOREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_history: $(HISTORYOBJS) $(LIBOBJS)
+xymond_history: $(HISTORYOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HISTORYOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_alert: $(ALERTOBJS) $(LIBOBJS)
+xymond_alert: $(ALERTOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(ALERTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_rrd: $(RRDOBJS) $(LIBOBJS)
+xymond_rrd: $(RRDOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(RRDOBJS) $(LIBOBJS) $(RRDLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 do_alert.o: do_alert.c
@@ -57,43 +57,43 @@ do_alert.o: do_alert.c
 do_rrd.o: do_rrd.c do_rrd.h rrd/*.c
 	$(CC) $(CFLAGS) $(RRDINCDIR) $(PCREINCDIR) $(RRDDEF) -c -o $@ do_rrd.c
 
-hobbitd_capture.o: hobbitd_capture.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbitd_capture.c
+xymond_capture.o: xymond_capture.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymond_capture.c
 
-hobbitd_sample: $(SAMPLEOBJS) $(LIBOBJS)
+xymond_sample: $(SAMPLEOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(SAMPLEOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_capture: $(CAPTUREOBJS) $(LIBOBJS)
+xymond_capture: $(CAPTUREOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
+xymond_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
+xymond_client: $(CLIENTOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-../client/hobbitd_client: $(CLIENTOBJS) ../lib/xymonclient.a
+../client/xymond_client: $(CLIENTOBJS) ../lib/xymonclient.a
 	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/xymonclient.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitd_client.o: hobbitd_client.c client/*.c
-	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c
+xymond_client.o: xymond_client.c client/*.c
+	$(CC) $(CFLAGS) -c -o $@ xymond_client.c
 
-bbcombotest.o: bbcombotest.c
+combostatus.o: combostatus.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
-bbcombotest: $(COMBOTESTOBJS) $(LIBOBJS)
+combostatus: $(COMBOTESTOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(COMBOTESTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbit-mailack.o: hobbit-mailack.c
-	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ hobbit-mailack.c
+xymon-mailack.o: xymon-mailack.c
+	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ xymon-mailack.c
 
-hobbit-mailack: $(MAILACKOBJS) $(LIBOBJS)
+xymon-mailack: $(MAILACKOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(MAILACKOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 trimhistory: $(TRIMHISTOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TRIMHISTOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitfetch: $(FETCHOBJS) $(LIBOBJS)
+xymonfetch: $(FETCHOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(FETCHOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
 
 convertnk: $(CONVERTNKOBJS) $(LIBOBJS)
@@ -106,7 +106,7 @@ xymon.sh: xymon.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@BBLOGDIR@!$(BBLOGDIR)!g' | sed -e 's!@BBUSER@!$(BBUSER)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-hobbitreports.sh: hobbitreports.sh.DIST
+xymonreports.sh: xymonreports.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' >$@
 	chmod 755 $@
 
@@ -137,7 +137,7 @@ clean:
 	rm -f etcfiles/xymon-apache.conf etcfiles/xymonserver.cfg etcfiles/hosts.cfg etcfiles/alerts.cfg etcfiles/tasks.cfg etcfiles/cgioptions.cfg
 	(find etcfiles/ -name "*~"; find wwwfiles/ -name "*~"; find webfiles/ -name "*~") | xargs rm -f
 
-install: install-bin install-man install-cfg install-obsoleted
+install: install-bin install-man install-cfg
 
 install-bin:
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
@@ -172,8 +172,5 @@ ifndef PKGBUILD
 	chmod 4755 $(INSTALLROOT)$(INSTALLBINDIR)/hobbitping || echo "Could not make hobbitping suid-root, continuing"
 endif
 
-install-obsoleted:
-	if test -f $(INSTALLROOT)$(INSTALLBINDIR)/hobbitd_larrd; then rm -f $(INSTALLROOT)$(INSTALLBINDIR)/hobbitd_larrd; fi
-	cd $(INSTALLROOT)$(INSTALLBINDIR) && ln -s hobbitd_rrd hobbitd_larrd
 
 

@@ -1,20 +1,20 @@
-.TH HOBBITD_CLIENT 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMOND_CLIENT 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbitd_client \- hobbitd worker module for client data
+xymond_client \- xymond worker module for client data
 .SH SYNOPSIS
-.B "hobbitd_channel --channel=client hobbitd_client [options]"
+.B "xymond_channel --channel=client xymond_client [options]"
 
 .SH DESCRIPTION
-hobbitd_client is a worker module for hobbitd, and as such it is normally
+xymond_client is a worker module for xymond, and as such it is normally
 run via the
-.I hobbitd_channel(8)
-program. It receives hobbitd client messages sent from systems that
+.I xymond_channel(8)
+program. It receives xymond client messages sent from systems that
 have the the Xymon client installed, and use the client data to
 generate the Xymon status messages for the cpu-, disk-, memory- and
 procs-columns. It also feeds Xymon data messages with the netstat-
 and vmstat-data collected by the client.
 
-When generating these status messages from the client data, hobbitd_client
+When generating these status messages from the client data, xymond_client
 will use the configuration rules defined in the 
 .I analysis.cfg(5)
 file to determine the color of each status message.
@@ -31,17 +31,17 @@ options instead.
 .IP "--no-clear-msgs"
 If there are no logfile checks, the "msgs" column will show a "clear"
 status. If you would rather avoid having a "msgs" column, this option
-causes hobbitd_client to not send in a clear "msgs" status.
+causes xymond_client to not send in a clear "msgs" status.
 
 .IP "--no-clear-files"
 If there are no file checks, the "files" column will show a "clear"
 status. If you would rather avoid having a "files" column, this option
-causes hobbitd_client to not send in a clear "files" status.
+causes xymond_client to not send in a clear "files" status.
 
 .IP "--no-clear-ports"
 If there are no port checks, the "ports" column will show a "clear"
 status. If you would rather avoid having a "ports" column, this option
-causes hobbitd_client to not send in a clear "ports" status.
+causes xymond_client to not send in a clear "ports" status.
 
 .IP "--no-ps-listing"
 Normally the "procs" status message includes the full process-listing
@@ -68,7 +68,7 @@ Starts an interactive session where you can test the analysis.cfg
 configuration.
 
 .IP "--collectors=COLLECTOR1[,COLLECTOR2,...]
-Limit the set of collector modules that hobbitd_client will handle. This
+Limit the set of collector modules that xymond_client will handle. This
 is not normally used except for running experimental versions of the
 program.
 
@@ -79,5 +79,5 @@ Enable debugging output.
 .IP "~xymon/server/etc/analysis.cfg"
 
 .SH "SEE ALSO"
-analysis.cfg(5), hobbitd(8), hobbitd_channel(8), xymon(7)
+analysis.cfg(5), xymond(8), xymond_channel(8), xymon(7)
 

@@ -89,16 +89,16 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	char *msg = NULL, *logbuf = NULL;
 	char l[MAX_LINE_LEN], lineout[MAX_LINE_LEN];
 	char *p, *outp, *nextline;
-	char hobbitdreq[1024];
-	int hobbitdresult;
+	char xymondreq[1024];
+	int xymondresult;
 	sendreturn_t *sres;
 
 	sres = newsendreturnbuf(1, NULL);
-	sprintf(hobbitdreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
-	hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
+	sprintf(xymondreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
+	xymondresult = sendmessage(xymondreq, NULL, BBTALK_TIMEOUT, sres);
 	logbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
-	if ((hobbitdresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
+	if ((xymondresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
 		errprintf("WML: Status not available\n");
 		return;
 	}

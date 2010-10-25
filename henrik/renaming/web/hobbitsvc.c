@@ -198,18 +198,18 @@ int do_request(void)
 
 	if (outform == FRM_CLIENT) {
 		if (source == SRC_HOBBITD) {
-			char *hobbitdreq;
-			int hobbitdresult;
+			char *xymondreq;
+			int xymondresult;
 			sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-			hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
-			sprintf(hobbitdreq, "clientlog %s", hostname);
-			if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
+			xymondreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
+			sprintf(xymondreq, "clientlog %s", hostname);
+			if (service && *service) sprintf(xymondreq + strlen(xymondreq), " section=%s", service);
 
-			hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
-			if (hobbitdresult != BB_OK) {
+			xymondresult = sendmessage(xymondreq, NULL, BBTALK_TIMEOUT, sres);
+			if (xymondresult != BB_OK) {
 				char errtxt[4096];
-				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
+				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", xymondreq, xymondresult);
 				errormsg(errtxt);
 				return 1;
 			}
@@ -281,8 +281,8 @@ int do_request(void)
 		}
 	}
 	else if (source == SRC_HOBBITD) {
-		char hobbitdreq[1024];
-		int hobbitdresult;
+		char xymondreq[1024];
+		int xymondresult;
 		char *items[25];
 		int icount;
 		time_t logage, clntstamp;
@@ -302,17 +302,17 @@ int do_request(void)
 		}
 
 		if (!complist) {
-			sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			sprintf(xymondreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
 		}
 		else {
-			sprintf(hobbitdreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
+			sprintf(xymondreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
 		}
 
 		sres = newsendreturnbuf(1, NULL);
-		hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
-		if (hobbitdresult == BB_OK) log = getsendreturnstr(sres, 1);
+		xymondresult = sendmessage(xymondreq, NULL, BBTALK_TIMEOUT, sres);
+		if (xymondresult == BB_OK) log = getsendreturnstr(sres, 1);
 		freesendreturnbuf(sres);
-		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+		if ((xymondresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;
 		}
@@ -620,9 +620,6 @@ int main(int argc, char *argv[])
 	for (argi = 1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--historical") == 0) {
 			source = SRC_HISTLOGS;
-		}
-		else if (strcmp(argv[argi], "--hobbitd") == 0) {
-			source = SRC_HOBBITD;
 		}
 		else if (strncmp(argv[argi], "--history=", 10) == 0) {
 			char *val = strchr(argv[argi], '=')+1;

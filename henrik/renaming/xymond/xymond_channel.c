@@ -4,7 +4,7 @@
 /* This module receives messages from one channel of the Xymon master daemon. */
 /* These messages are then forwarded to the actual worker process via stdin;  */
 /* the worker process can process the messages without having to care about   */
-/* the tricky details in the hobbitd/hobbitd_channel communications.          */
+/* the tricky details in the xymond/xymond_channel communications.            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -38,7 +38,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#include "hobbitd_ipc.h"
+#include "xymond_ipc.h"
 
 #include <signal.h>
 
@@ -46,7 +46,7 @@ static char rcsid[] = "$Id$";
 #define MSGTIMEOUT 30	/* Seconds */
 
 
-/* Our in-memory queue of messages received from hobbitd via IPC. One queue per peer. */
+/* Our in-memory queue of messages received from xymond via IPC. One queue per peer. */
 typedef struct hobbit_msg_t {
 	time_t tstamp;  /* When did the message arrive */
 	char *buf;	/* The message data */
@@ -78,7 +78,7 @@ typedef struct hobbit_peer_t {
 
 RbtHandle peers;
 
-hobbitd_channel_t *channel = NULL;
+xymond_channel_t *channel = NULL;
 char *logfn = NULL;
 int locatorbased = 0;
 enum locator_servicetype_t locatorservice = ST_MAX;
@@ -216,7 +216,7 @@ void openconnection(hobbit_peer_t *peer)
 			/* The channel handler child */
 			if (logfn) {
 				char *logfnenv = (char *)malloc(strlen(logfn) + 30);
-				sprintf(logfnenv, "HOBBITCHANNEL_LOGFILENAME=%s", logfn);
+				sprintf(logfnenv, "XYMONCHANNEL_LOGFILENAME=%s", logfn);
 				putenv(logfnenv);
 			}
 
@@ -301,7 +301,7 @@ int addmessage(char *inbuf)
 	if (locatorbased) {
 		char *hostname, *hostend, *peerlocation;
 
-		/* hobbitd sends us messages with the KEY in the first field, between a '/' and a '|' */
+		/* xymond sends us messages with the KEY in the first field, between a '/' and a '|' */
 		hostname = inbuf + strcspn(inbuf, "/|\r\n");
 		if (*hostname != '/') {
 			errprintf("No key field in message, dropping it\n");
@@ -537,7 +537,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Catch signals */
-	setup_signalhandler("hobbitd_channel");
+	setup_signalhandler("xymond_channel");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
@@ -546,7 +546,7 @@ int main(int argc, char *argv[])
 	signal(SIGALRM, SIG_IGN);
 
 	/* Switch stdout/stderr to the logfile, if one was specified */
-	freopen("/dev/null", "r", stdin);	/* hobbitd_channel's stdin is not used */
+	freopen("/dev/null", "r", stdin);	/* xymond_channel's stdin is not used */
 	if (logfn) {
 		freopen(logfn, "a", stdout);
 		freopen(logfn, "a", stderr);

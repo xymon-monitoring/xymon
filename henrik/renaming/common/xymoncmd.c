@@ -65,7 +65,7 @@ static void hobbit_default_envs(char *envfn)
 		putenv(evar);
 	}
 
-	if (getenv("HOBBITCLIENTHOME") == NULL) {
+	if (getenv("XYMONCLIENTHOME") == NULL) {
 		homedir = strdup(envfn);
 		p = strrchr(homedir, '/');
 		if (p) {
@@ -75,7 +75,7 @@ static void hobbit_default_envs(char *envfn)
 				if (strcmp(p, "/etc") == 0) {
 					*p = '\0';
 					evar = (char *)malloc(20 + strlen(homedir));
-					sprintf(evar, "HOBBITCLIENTHOME=%s", homedir);
+					sprintf(evar, "XYMONCLIENTHOME=%s", homedir);
 					putenv(evar);
 				}
 			}

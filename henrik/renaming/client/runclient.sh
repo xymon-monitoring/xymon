@@ -54,30 +54,30 @@ do
 	shift
 done
 
-HOBBITCLIENTHOME="`dirname $0`"
-export MACHINEDOTS BBOSTYPE BBOSSCRIPT HOBBITCLIENTHOME CONFIGCLASS
+XYMONCLIENTHOME="`dirname $0`"
+export MACHINEDOTS BBOSTYPE BBOSSCRIPT XYMONCLIENTHOME CONFIGCLASS
 
 MACHINE="`echo $MACHINEDOTS | sed -e 's/\./,/g'`"
 export MACHINE
 
 case "$CMD" in
   "start")
-  	if test ! -w $HOBBITCLIENTHOME/logs; then
-		echo "Cannot write to the $HOBBITCLIENTHOME/logs directory"
+  	if test ! -w $XYMONCLIENTHOME/logs; then
+		echo "Cannot write to the $XYMONCLIENTHOME/logs directory"
 		exit 1
 	fi
-  	if test ! -w $HOBBITCLIENTHOME/tmp; then
-		echo "Cannot write to the $HOBBITCLIENTHOME/tmp directory"
+  	if test ! -w $XYMONCLIENTHOME/tmp; then
+		echo "Cannot write to the $XYMONCLIENTHOME/tmp directory"
 		exit 1
 	fi
 
-  	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+  	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		echo "Xymon client already running, re-starting it"
 		$0 --hostname="$MACHINEDOTS" stop
-		rm -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+		rm -f $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	fi
 
-	$HOBBITCLIENTHOME/bin/hobbitlaunch --config=$HOBBITCLIENTHOME/etc/clientlaunch.cfg --log=$HOBBITCLIENTHOME/logs/clientlaunch.log --pidfile=$HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+	$XYMONCLIENTHOME/bin/hobbitlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log --pidfile=$XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	if test $? -eq 0; then
 		echo "Xymon client for $BBOSTYPE started on $MACHINEDOTS"
 	else
@@ -86,8 +86,8 @@ case "$CMD" in
 	;;
 
   "stop")
-  	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
-		kill `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
+  	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+		kill `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
 		echo "Xymon client stopped"
 	else
 		echo "Xymon client not running"
@@ -95,7 +95,7 @@ case "$CMD" in
 	;;
 
   "restart")
-  	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
+  	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid; then
 		$0 --hostname="$MACHINEDOTS" stop
 	else
 		echo "Xymon client not running, continuing to start it"
@@ -105,15 +105,15 @@ case "$CMD" in
 	;;
 
   "status")
-	if test -s $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+	if test -s $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	then
-		kill -0 `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
+		kill -0 `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`
 		if test $? -eq 0
 		then
-			echo "Xymon client (clientlaunch) running with PID `cat $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`"
+			echo "Xymon client (clientlaunch) running with PID `cat $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid`"
 		else
 			echo "Xymon client not running, removing stale PID file"
-			rm -f $HOBBITCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+			rm -f $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 		fi
 	else
 		echo "Xymon client (clientlaunch) does not appear to be running"

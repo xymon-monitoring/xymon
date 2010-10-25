@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 
 #include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 #include "client_config.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
@@ -2082,7 +2082,7 @@ int main(int argc, char *argv[])
 	net_worker_run(ST_CLIENT, LOC_ROAMING, NULL);
 
 	/* Signals */
-	setup_signalhandler("hobbitd_client");
+	setup_signalhandler("xymond_client");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
@@ -2097,7 +2097,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		time_t nowtimer = gettimer();
 
-		msg = get_hobbitd_message(C_CLIENT, argv[0], &seq, NULL);
+		msg = get_xymond_message(C_CLIENT, argv[0], &seq, NULL);
 		if (msg == NULL) {
 			if (!localmode) errprintf("Failed to get a message, terminating\n");
 			running = 0;
@@ -2247,7 +2247,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

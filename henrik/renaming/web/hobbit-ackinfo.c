@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "Content-type: %s\n", xgetenv("HTMLCONTENTTYPE"));
 	fprintf(stdout, "Location: %s\n", getenv("HTTP_REFERER"));
 	fprintf(stdout, "\n");
-	fprintf(stdout, "Sent to hobbitd:\n%s\n", bbmsg);
+	fprintf(stdout, "Sent to xymond:\n%s\n", bbmsg);
 
 	return 0;
 }

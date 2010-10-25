@@ -78,11 +78,11 @@ case "$1" in
 	;;
 
    "reload")
-	if test -s @BBLOGDIR@/hobbitd.pid
+	if test -s @BBLOGDIR@/xymond.pid
 	then
-		kill -HUP `cat @BBLOGDIR@/hobbitd.pid`
+		kill -HUP `cat @BBLOGDIR@/xymond.pid`
 	else
-		echo "hobbitd not running (no PID file)"
+		echo "xymond not running (no PID file)"
 	fi
 	;;
 

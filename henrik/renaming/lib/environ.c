@@ -24,7 +24,7 @@ const static struct {
 	char *name;
 	char *val;
 } hobbitenv[] = {
-	{ "HOBBITDREL", VERSION },
+	{ "XYMONDREL", VERSION },
 	{ "BBSERVERROOT", BBTOPDIR },
 	{ "BBSERVERLOGS", BBLOGDIR },
 	{ "BBSERVERHOSTNAME", BBHOSTNAME },
@@ -42,7 +42,6 @@ const static struct {
 	{ "BBPAGE", "$BBSERVERIP" },
 	{ "BBPAGERS", "" },
 	{ "FQDN", "TRUE" },
-	{ "USEHOBBITD", "TRUE" },
 	{ "PAGELEVELS", "red yellow purple" },
 	{ "PURPLEDELAY", "30" },
 	{ "BBLOGSTATUS", "DYNAMIC" },
@@ -115,7 +114,7 @@ const static struct {
 	{ "RRDHEIGHT", "120" },
 	{ "RRDWIDTH", "576" },
 	{ "COLUMNDOCURL", "$CGIBINURL/hobbitcolumn.sh?%s" },
-	{ "HOBBITLOGO", "Xymon" },
+	{ "XYMONLOGO", "Xymon" },
 	{ "MKBBLOCAL", "<B><I>Pages Hosted Locally</I></B>" },
 	{ "MKBBREMOTE", "<B><I>Remote Status Display</I></B>" },
 	{ "MKBBSUBLOCAL", "<B><I>Subpages Hosted Locally</I></B>" },

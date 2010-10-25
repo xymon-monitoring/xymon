@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon service locator daemon                                               */
 /*                                                                            */
-/* hobbitd_channel allows you to distribute data across multiple servers, eg. */
+/* xymond_channel allows you to distribute data across multiple servers, eg.  */
 /* have several servers handling the RRD updates - for performance and/or     */
 /* resilience purposes.                                                       */
 /* For this to work, there must be a way of determining which server handles  */
@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	setup_signalhandler("hobbitd_locator");
+	setup_signalhandler("xymond_locator");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);

@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of BB</TITLE>
 </HEAD><BODY>
 <H1>BB</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -160,11 +160,11 @@ is used, for example, to report statistics about a host, e.g. vmstat data, which
 does not in itself represent something that has a red, yellow or
 green identity. It is used by RRD bottom-feeder modules, among
 others. In Xymon, data messages are by default processed only by the
-<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
 
 module. If you want to handle data-messages using an external application,
 you may want to enable the 
-<I><A HREF="../man8/hobbitd_filestore.8.html">hobbitd_filestore</A>(8)</I>
+<I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
 
 module for data-messages, to store data-messages in a format compatible
 with how the Big Brother daemon does.
@@ -193,7 +193,7 @@ This allows any Xymon client to determine the status of a particular
 test, whether it is one pertaining to the host where the client
 is running, some other host, or perhaps the result of a combined
 test from multiple hosts managed by
-<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+<I><A HREF="../man1/combostatus.1.html">combostatus</A>(1)</I>
 
 This will typically be useful to Xymon client extension scripts, that
 need to determine the status of other hosts, for example, to decide if an
@@ -419,7 +419,7 @@ is reported.
 <P>
 <DT>pullclient<DD>
 This message is used when fetching client data via the &quot;pull&quot; mechanism implemented by
-<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
 and
 <I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
@@ -522,7 +522,7 @@ pass it via stdin to the xymon command:
 <A NAME="lbAH">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man1/combostatus.1.html">combostatus</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -541,6 +541,6 @@ pass it via stdin to the xymon command:
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 20:27:53 GMT, October 24, 2010
+Time: 15:52:01 GMT, October 25, 2010
 </BODY>
 </HTML>

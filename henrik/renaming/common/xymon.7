@@ -195,7 +195,7 @@ server on tcp port 1984. Normally, Xymon clients - i.e. the servers
 you are monitoring - must be permitted to connect to the Xymon server 
 on this port. However, if that is not possible due to firewall 
 policies, then Xymon includes the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 and
 .I msgcache(8)
 tools to allows for a pull-style way of collecting data, where it 
@@ -256,37 +256,37 @@ an e-mail to \fBxymon-announce-subscribe@xymon.com\fR.
 .SH XYMON SERVER TOOLS
 These tools implement the core functionality of the Xymon server:
 
-.I hobbitd(8)
+.I xymond(8)
 is the core daemon that collects all reports about the status of 
 your hosts. It uses a number of helper modules to
 implement certain tasks such as updating log files and sending
-out alerts: hobbitd_client, hobbitd_history, hobbitd_alert
-and hobbitd_rrd. There is also a hobbitd_filestore module for
+out alerts: xymond_client, xymond_history, xymond_alert
+and xymond_rrd. There is also a xymond_filestore module for
 compatibility with Big Brother.
 
-.I hobbitd_channel(8)
+.I xymond_channel(8)
 Implements the communication between the Xymon daemon and the
 other Xymon server modules.
 
-.I hobbitd_history(8)
+.I xymond_history(8)
 Stores historical data about the things that Xymon monitors.
 
-.I hobbitd_rrd(8)
+.I xymond_rrd(8)
 Stores trend data, which is used to generate graphs of the data
 monitored by Xymon.
 
-.I hobbitd_alert(8)
+.I xymond_alert(8)
 handles alerts. When a status changes to a critical state, this 
 module decides if an alert should be sent out, and to whom.
 
-.I hobbitd_client(8)
+.I xymond_client(8)
 handles data collected by the Xymon clients, analyzes the data
 and feeds back several status updates to Xymon to build the
 view of the client status.
 
-.I hobbitd_hostdata(8)
+.I xymond_hostdata(8)
 stores historical client data when something breaks. E.g. when a
-web page stops responding hobbitd_hostdata will save the latest
+web page stops responding xymond_hostdata will save the latest
 client data, so that you can use this to view a snapshot of how
 the system state was just prior to it failing.
 
@@ -348,7 +348,7 @@ sent so the technicians are not bothered wit more alerts, and secondly
 it provides feedback to those looking at the Xymon web pages that the
 problem is being handled.
 
-.I hobbit-mailack(8)
+.I xymon-mailack(8)
 is a tool for processing acknowledgments sent via e-mail, e.g. as a 
 response to an e-mail alert.
 
@@ -407,7 +407,7 @@ can happen without an administrator having to logon to the server.
 .I msgcache(8)
 This tool acts as a mini Xymon server to the client. It stores client
 data internally, so that the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 utility can pick it up later and send it to the Xymon server. It
 is typically used on hosts that cannot contact the Xymon server 
 directly due to network- or firewall-restrictions.
@@ -425,7 +425,7 @@ clients and the Xymon server. The clients must be able to talk
 to the proxy, and the proxy must be able to talk to the Xymon
 server.
 
-.I hobbitfetch(8)
+.I xymonfetch(8)
 is used when the client is not able to make outbound connections
 to neither bbproxy nor the Xymon server (typically, for clients
 located in a DMZ network zone). Together with the
@@ -471,7 +471,7 @@ file following any "include" statements.
 is a utility to compute message digest values for use in
 content checks that use digests.
 
-.I bbcombotest(1)
+.I combostatus(1)
 is an extension script for the Xymon server,
 allowing you to build complicated tests from simpler
 Xymon test results. E.g. you can define a test that uses the results
@@ -523,17 +523,17 @@ is allowed.  See the file COPYING for details.
 
 
 .SH "SEE ALSO"
-hobbitd(8), hobbitd_channel(8), hobbitd_history(8), hobbitd_rrd(8), hobbitd_alert(8), 
-hobbitd_client(8), hobbitd_hostdata(8), 
+xymond(8), xymond_channel(8), xymond_history(8), xymond_rrd(8), xymond_alert(8), 
+xymond_client(8), xymond_hostdata(8), 
 hobbitping(1), bbtest-net(1), bbretest-net.sh(1), 
 bbgen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
 bb-hist.cgi(1), bb-eventlog.cgi(1), 
-bb-ack.cgi(1), hobbit-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 
+bb-ack.cgi(1), xymon-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 
 bb-rep.cgi(1), bb-replog.cgi(1), bb-snapshot.cgi(1), hobbit-statusreport.cgi(1), bb-csvinfo.cgi(1), 
 logfetch(1), clientupdate(1), msgcache(8), 
-bbproxy(8), hobbitfetch(8), 
+bbproxy(8), xymonfetch(8), 
 xymonlaunch(8), xymon(1), bbmessage.cgi(1), xymoncmd(1), xymongrep(1), xymoncfg(1), 
-xymondigest(1), bbcombotest(1), trimhistory(8),
+xymondigest(1), combostatus(1), trimhistory(8),
 hosts.cfg(5), tasks.cfg(5), xymonserver.cfg(5),
 alerts.cfg(5),
 analysis.cfg(5), client-local.cfg(5)

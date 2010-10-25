@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is a hobbitd worker module for the "stachg" channel.                  */
+/* This is a xymond worker module for the "stachg" channel.                   */
 /* This module implements the file-based history logging, and keeps the       */
 /* historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated to keep     */
 /* track of the status changes.                                               */
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 
 int rotatefiles = 0;
 
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 		xfree(savelist);
 	}
 
-	sprintf(pidfn, "%s/hobbitd_history.pid", xgetenv("BBSERVERLOGS"));
+	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("BBSERVERLOGS"));
 	{
 		FILE *pidfd = fopen(pidfn, "w");
 		if (pidfd) {
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("hobbitd_history");
+	setup_signalhandler("xymond_history");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
+		msg = get_xymond_message(C_STACHG, "xymond_history", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -274,12 +274,12 @@ int main(int argc, char *argv[])
 
 				if (logexists) {
 					/*
-					 * There is a fair chance hobbitd has not been
+					 * There is a fair chance xymond has not been
 					 * running all the time while this system was monitored.
 					 * So get the time of the latest status change from the file,
 					 * instead of relying on the "lastchange" value we get
-					 * from hobbitd. This is also needed when migrating from 
-					 * standard bbd to hobbitd.
+					 * from xymond. This is also needed when migrating from 
+					 * standard bbd to xymond.
 					 */
 					off_t pos = -1;
 					char l[1024];
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
 			running = 0;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

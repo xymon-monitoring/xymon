@@ -179,23 +179,23 @@ processes running: <br><img src="xymonprocs.png" alt="Xymon processes"></p>
 <p>Quite a few, but all of them controlled by the master <tt>xymonlaunch</tt> process.
 A quick run-down of what each of them does:</p>
 <ul>
-	<li><tt>hobbitd</tt> is the network daemon that receives status updates from
+	<li><tt>xymond</tt> is the network daemon that receives status updates from
 	the clients and the network test tool. It also provides the current status of
 	all your systems to the tool that generates the webpages.</li>
-	<li><tt>hobbitd_channel</tt> provides the communication between hobbitd and 
+	<li><tt>xymond_channel</tt> provides the communication between xymond and 
 	all of the helper modules that implement other server-based functions.</li>
-	<li><tt>hobbitd_history</tt> takes care of recording the history of status
+	<li><tt>xymond_history</tt> takes care of recording the history of status
 	changes for each item you monitor. This is used to track what has happened
 	with a single status over time - when it was red, when it was green, what the
 	error reported at 2:51 AM last Friday looked like. The history file format is
 	compatible with the format used by the Big Brother package.</li>
-	<li><tt>hobbitd_filestore</tt> stores files with information about the current
+	<li><tt>xymond_filestore</tt> stores files with information about the current
 	status of the systems monitored by Xymon. There may be several of these
 	running, but normally you will only need the one that stores information about
 	hosts that have been disabled, which is the one you see here.</li>
-	<li><tt>hobbitd_alert</tt> takes care of sending out alerts when your servers
+	<li><tt>xymond_alert</tt> takes care of sending out alerts when your servers
 	begin to report a critical status.</li>
-	<li><tt>hobbitd_rrd</tt> updates the RRD database files with the numeric data
+	<li><tt>xymond_rrd</tt> updates the RRD database files with the numeric data
 	collected from the status reports, to track e.g. how the disk utilization of
 	a server changes over time. There are two of these processes, because the
 	data can arrive in two different ways.</li>

@@ -1,15 +1,15 @@
-.TH BBCOMBOTEST 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH COMBOSTATUS 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bbcombotest \- Xymon combination test tool
+combostatus \- Xymon combination test tool
 .SH SYNOPSIS
-.B "bbcombotest --help"
+.B "combostatus --help"
 .br
-.B "bbcombotest --version"
+.B "combostatus --version"
 .br
-.B "bbcombotest [--debug] [--quiet]"
+.B "combostatus [--debug] [--quiet]"
 
 .SH DESCRIPTION
-\fBbbcombotest\fR
+\fBcombostatus\fR
 is a Xymon extension script that runs on the BBDISPLAY server. 
 It combines the results of one or more of the normal
 Xymon test results into a combined test result, using
@@ -25,14 +25,14 @@ But other uses are possible.
 
 .SH OPTIONS
 .IP "--quiet"
-Normally, the test status sent by bbcombotest includes information
+Normally, the test status sent by combostatus includes information
 about the underlying test results used to determine the current
 value of the combined test. "--quiet" eliminates this information
 from the test status page.
 
 .IP "--debug"
 Provide debugging output for use in troubleshooting problems with
-bbcombotest.
+combostatus.
 
 .IP "--no-update"
 Dont send any status messages - instead, the result of the combotests
@@ -41,9 +41,9 @@ is simply dumped to stdout. Useful for debugging.
 
 .SH FILES
 .IP $BBHOME/etc/combo.cfg
-Configuration file for bbcombotest, where the combined tests are defined
+Configuration file for combostatus, where the combined tests are defined
 .IP $BBHOME/etc/tasks.cfg
-Configuration file controlling when bbcombotest is run.
+Configuration file controlling when combostatus is run.
 
 .SH "SEE ALSO"
 combo.cfg(5), hosts.cfg(5), xymonserver.cfg(5), tasks.cfg(5)

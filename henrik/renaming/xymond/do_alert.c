@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is part of the hobbitd_alert worker module.                           */
-/* This module implements the standard hobbitd alerting function. It loads    */
+/* This is part of the xymond_alert worker module.                            */
+/* This module implements the standard xymond alerting function. It loads     */
 /* the alert configuration from alerts.cfg, and incoming alerts are           */
 /* then sent according to the rules defined.                                  */
 /*                                                                            */
@@ -667,7 +667,7 @@ time_t next_alert(activealerts_t *alert)
 	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, &r_next)) != NULL)) {
 		found = 1;
 		/* 
-		 * This runs in the parent hobbitd_alert proces, so we must create
+		 * This runs in the parent xymond_alert proces, so we must create
 		 * a repeat-record here - or all alerts will get repeated every minute.
 		 */
 		rpt = find_repeatinfo(alert, recip, 1);

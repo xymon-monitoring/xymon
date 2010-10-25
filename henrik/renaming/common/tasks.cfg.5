@@ -20,11 +20,11 @@ next line.
 
 An entry looks like this:
 .sp
-    [hobbitd]
+    [xymond]
 .br
           ENVFILE /usr/local/xymon/server/etc/xymonserver.cfg
 .br
-          CMD /usr/local/xymon/server/bin/hobbitd
+          CMD /usr/local/xymon/server/bin/xymond
 .sp
     [updateweb]
 .br
@@ -32,7 +32,7 @@ An entry looks like this:
 .br
           CMD /usr/local/xymon/server/bin/bbgen
 .br
-          NEEDS hobbitd
+          NEEDS xymond
 .br
           GROUP webupdates
 .br
@@ -132,5 +132,5 @@ to this file. If this option is not present, then the output
 goes to the same location as the xymonlaunch output.
 
 .SH "SEE ALSO"
-xymonlaunch(8), hobbitd(8), crontab(5), xymon(7)
+xymonlaunch(8), xymond(8), crontab(5), xymon(7)
 

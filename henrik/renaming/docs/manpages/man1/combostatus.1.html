@@ -1,33 +1,33 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BBCOMBOTEST</TITLE>
+<HTML><HEAD><TITLE>Man page of COMBOSTATUS</TITLE>
 </HEAD><BODY>
-<H1>BBCOMBOTEST</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>COMBOSTATUS</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bbcombotest - Xymon combination test tool
+combostatus - Xymon combination test tool
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bbcombotest --help</B>
+<B>combostatus --help</B>
 
 <BR>
 
-<B>bbcombotest --version</B>
+<B>combostatus --version</B>
 
 <BR>
 
-<B>bbcombotest [--debug] [--quiet]</B>
+<B>combostatus [--debug] [--quiet]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>bbcombotest</B>
+<B>combostatus</B>
 is a Xymon extension script that runs on the BBDISPLAY server. 
 It combines the results of one or more of the normal
 Xymon test results into a combined test result, using
@@ -46,14 +46,14 @@ But other uses are possible.
 
 <DL COMPACT>
 <DT>--quiet<DD>
-Normally, the test status sent by bbcombotest includes information
+Normally, the test status sent by combostatus includes information
 about the underlying test results used to determine the current
 value of the combined test. &quot;--quiet&quot; eliminates this information
 from the test status page.
 <P>
 <DT>--debug<DD>
 Provide debugging output for use in troubleshooting problems with
-bbcombotest.
+combostatus.
 <P>
 <DT>--no-update<DD>
 Dont send any status messages - instead, the result of the combotests
@@ -66,9 +66,9 @@ is simply dumped to stdout. Useful for debugging.
 
 <DL COMPACT>
 <DT>$BBHOME/etc/combo.cfg<DD>
-Configuration file for bbcombotest, where the combined tests are defined
+Configuration file for combostatus, where the combined tests are defined
 <DT>$BBHOME/etc/tasks.cfg<DD>
-Configuration file controlling when bbcombotest is run.
+Configuration file controlling when combostatus is run.
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -92,6 +92,6 @@ Configuration file controlling when bbcombotest is run.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:10 GMT, October 24, 2010
+Time: 15:52:01 GMT, October 25, 2010
 </BODY>
 </HTML>

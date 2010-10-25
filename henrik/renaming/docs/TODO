@@ -61,17 +61,17 @@ Things I must remember to look at
   - filter out unwanted lines
   - more flexible DS configuration than the env settings
 
-* Create a new hobbitd worker module off the stachg channel.
+* Create a new xymond worker module off the stachg channel.
   This will dynamically receive status updates, and therefore
   it can have the full status of each PAGE without having to
-  load the hobbitd board (should do so regularly just in case).
+  load the xymond board (should do so regularly just in case).
   This can be used to switch the overview pages to a CGI tool
   instead of generating the static pages. NB: Must be able to
   handle multiple page setups - or should we just have one
   worker per setup with different config files ?
 * "cpu" status determined by the non-idle time reported by
   vmstat, instead of the rather meaningless load average.
-* hobbitd_client process/disk alarms to different people depending
+* xymond_client process/disk alarms to different people depending
   on *which* process/disk is in error.
 * process checks that relate to a group of host (process "foo"
   must exist on at least X of these Y nodes: HostA, HostB, HostC.
@@ -84,7 +84,7 @@ Things I must remember to look at
 * Something similar to larrd-graphs.cgi for picking out a bunch
   of graphs to show on one page.
 * Move all of the bbtest-net "badFOO" etc. stuff away from bbtest-net
-  and into hobbitd.
+  and into xymond.
 * On Fri, Aug 05, 2005 at 09:39:15AM +0200, Thomas Bergauer wrote:
   2. the NOPROP(RED|YELLOW|..) command in the BB-hosts file works as
   announced, but I am looking for a possibility to tell NOPROP a "level"

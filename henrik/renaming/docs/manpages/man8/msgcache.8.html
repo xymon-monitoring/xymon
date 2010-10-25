@@ -3,13 +3,13 @@
 <HTML><HEAD><TITLE>Man page of MSGCACHE</TITLE>
 </HEAD><BODY>
 <H1>MSGCACHE</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-msgcache - Cache client messages for later pickup by hobbitfetch
+msgcache - Cache client messages for later pickup by xymonfetch
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
@@ -26,7 +26,7 @@ the normal way. Instead of having the client tools connect to the
 Xymon server, msgcache runs locally and the client tools then
 deliver their data to the msgcache daemon. The msgcache daemon is
 then polled regularly by the
-<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
 utility, which collects the client messages stored by msgcache
 and forwards them to the Xymon server.
@@ -41,7 +41,7 @@ at the real Xymon server.
 Clients delivering their data to msgcache instead of the real
 Xymon server will in general not notice this. Specifically,
 the client configuration data provided by the Xymon server when
-a client delivers its data is forwarded through the hobbitfetch / 
+a client delivers its data is forwarded through the xymonfetch / 
 msgcache chain, so the normal centralized client configuration
 works.
 <P>
@@ -99,7 +99,7 @@ Enable debugging output.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -117,6 +117,6 @@ Enable debugging output.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 20:27:53 GMT, October 24, 2010
+Time: 15:52:01 GMT, October 25, 2010
 </BODY>
 </HTML>

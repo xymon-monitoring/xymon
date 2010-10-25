@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -213,7 +213,7 @@ server on tcp port 1984. Normally, Xymon clients - i.e. the servers
 you are monitoring - must be permitted to connect to the Xymon server 
 on this port. However, if that is not possible due to firewall 
 policies, then Xymon includes the
-<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
 and
 <I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
@@ -288,44 +288,44 @@ an e-mail to <B><A HREF="mailto:xymon-announce-subscribe@xymon.com">xymon-announ
 
 These tools implement the core functionality of the Xymon server:
 <P>
-<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
 
 is the core daemon that collects all reports about the status of 
 your hosts. It uses a number of helper modules to
 implement certain tasks such as updating log files and sending
-out alerts: hobbitd_client, hobbitd_history, hobbitd_alert
-and hobbitd_rrd. There is also a hobbitd_filestore module for
+out alerts: xymond_client, xymond_history, xymond_alert
+and xymond_rrd. There is also a xymond_filestore module for
 compatibility with Big Brother.
 <P>
-<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
 
 Implements the communication between the Xymon daemon and the
 other Xymon server modules.
 <P>
-<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
 
 Stores historical data about the things that Xymon monitors.
 <P>
-<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
 
 Stores trend data, which is used to generate graphs of the data
 monitored by Xymon.
 <P>
-<I><A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8)</I>
+<I><A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8)</I>
 
 handles alerts. When a status changes to a critical state, this 
 module decides if an alert should be sent out, and to whom.
 <P>
-<I><A HREF="../man8/hobbitd_client.8.html">hobbitd_client</A>(8)</I>
+<I><A HREF="../man8/xymond_client.8.html">xymond_client</A>(8)</I>
 
 handles data collected by the Xymon clients, analyzes the data
 and feeds back several status updates to Xymon to build the
 view of the client status.
 <P>
-<I><A HREF="../man8/hobbitd_hostdata.8.html">hobbitd_hostdata</A>(8)</I>
+<I><A HREF="../man8/xymond_hostdata.8.html">xymond_hostdata</A>(8)</I>
 
 stores historical client data when something breaks. E.g. when a
-web page stops responding hobbitd_hostdata will save the latest
+web page stops responding xymond_hostdata will save the latest
 client data, so that you can use this to view a snapshot of how
 the system state was just prior to it failing.
 <P>
@@ -402,7 +402,7 @@ sent so the technicians are not bothered wit more alerts, and secondly
 it provides feedback to those looking at the Xymon web pages that the
 problem is being handled.
 <P>
-<I><A HREF="../man8/hobbit-mailack.8.html">hobbit-mailack</A>(8)</I>
+<I><A HREF="../man8/xymon-mailack.8.html">xymon-mailack</A>(8)</I>
 
 is a tool for processing acknowledgments sent via e-mail, e.g. as a 
 response to an e-mail alert.
@@ -476,7 +476,7 @@ can happen without an administrator having to logon to the server.
 
 This tool acts as a mini Xymon server to the client. It stores client
 data internally, so that the
-<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
 utility can pick it up later and send it to the Xymon server. It
 is typically used on hosts that cannot contact the Xymon server 
@@ -498,7 +498,7 @@ clients and the Xymon server. The clients must be able to talk
 to the proxy, and the proxy must be able to talk to the Xymon
 server.
 <P>
-<I><A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8)</I>
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
 is used when the client is not able to make outbound connections
 to neither bbproxy nor the Xymon server (typically, for clients
@@ -556,7 +556,7 @@ file following any &quot;include&quot; statements.
 is a utility to compute message digest values for use in
 content checks that use digests.
 <P>
-<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+<I><A HREF="../man1/combostatus.1.html">combostatus</A>(1)</I>
 
 is an extension script for the Xymon server,
 allowing you to build complicated tests from simpler
@@ -618,17 +618,17 @@ is allowed.  See the file COPYING for details.
 <A NAME="lbAQ">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8), <A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8), <A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8), 
-<A HREF="../man8/hobbitd_client.8.html">hobbitd_client</A>(8), <A HREF="../man8/hobbitd_hostdata.8.html">hobbitd_hostdata</A>(8), 
+<A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond_history.8.html">xymond_history</A>(8), <A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8), <A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8), 
+<A HREF="../man8/xymond_client.8.html">xymond_client</A>(8), <A HREF="../man8/xymond_hostdata.8.html">xymond_hostdata</A>(8), 
 <A HREF="../man1/hobbitping.1.html">hobbitping</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/bbretest-net.sh.1.html">bbretest-net.sh</A>(1), 
 <A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1), <A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1), <A HREF="../man1/hobbit-hostgraphs.cgi.1.html">hobbit-hostgraphs.cgi</A>(1), <A HREF="../man1/hobbit-nkview.cgi.1.html">hobbit-nkview.cgi</A>(1), 
 <A HREF="../man1/bb-hist.cgi.1.html">bb-hist.cgi</A>(1), <A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1), 
-<A HREF="../man1/bb-ack.cgi.1.html">bb-ack.cgi</A>(1), <A HREF="../man8/hobbit-mailack.8.html">hobbit-mailack</A>(8), <A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8), <A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1), 
+<A HREF="../man1/bb-ack.cgi.1.html">bb-ack.cgi</A>(1), <A HREF="../man8/xymon-mailack.8.html">xymon-mailack</A>(8), <A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8), <A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1), 
 <A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1), <A HREF="../man1/bb-replog.cgi.1.html">bb-replog.cgi</A>(1), <A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1), <A HREF="../man1/hobbit-statusreport.cgi.1.html">hobbit-statusreport.cgi</A>(1), <A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1), 
 <A HREF="../man1/logfetch.1.html">logfetch</A>(1), <A HREF="../man1/clientupdate.1.html">clientupdate</A>(1), <A HREF="../man8/msgcache.8.html">msgcache</A>(8), 
-<A HREF="../man8/bbproxy.8.html">bbproxy</A>(8), <A HREF="../man8/hobbitfetch.8.html">hobbitfetch</A>(8), 
+<A HREF="../man8/bbproxy.8.html">bbproxy</A>(8), <A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8), 
 <A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8), <A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man1/bbmessage.cgi.1.html">bbmessage.cgi</A>(1), <A HREF="../man1/xymoncmd.1.html">xymoncmd</A>(1), <A HREF="../man1/xymongrep.1.html">xymongrep</A>(1), <A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1), 
-<A HREF="../man1/xymondigest.1.html">xymondigest</A>(1), <A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1), <A HREF="../man8/trimhistory.8.html">trimhistory</A>(8),
+<A HREF="../man1/xymondigest.1.html">xymondigest</A>(1), <A HREF="../man1/combostatus.1.html">combostatus</A>(1), <A HREF="../man8/trimhistory.8.html">trimhistory</A>(8),
 <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5),
 <A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5),
 <A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)
@@ -659,6 +659,6 @@ is allowed.  See the file COPYING for details.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 20:27:53 GMT, October 24, 2010
+Time: 15:52:01 GMT, October 25, 2010
 </BODY>
 </HTML>

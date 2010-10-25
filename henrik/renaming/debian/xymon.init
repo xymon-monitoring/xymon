@@ -19,7 +19,7 @@
 
 PIDFILE=/var/run/xymon/xymonlaunch.pid
 DAEMON=/usr/lib/xymon/server/bin/xymonlaunch
-NAME="hobbitd"
+NAME="xymond"
 DESC="Xymon Server"
 
 test -x $DAEMON || exit 0
@@ -87,10 +87,10 @@ case "$1" in
 	if test -s $PIDFILE
 	then
 		create_includefiles
-		log_action_msg "Reloading hobbitd config"
-		kill -HUP `cat /var/run/xymon/hobbitd.pid`
+		log_action_msg "Reloading xymond config"
+		kill -HUP `cat /var/run/xymon/xymond.pid`
 	else
-		log_action_msg "hobbitd not running (no PID file)"
+		log_action_msg "xymond not running (no PID file)"
 	fi
 	;;
 

@@ -670,7 +670,7 @@ int main(int argc, char *argv[])
 						break;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
-						/* hobbitd has no use for page requests */
+						/* xymond has no use for page requests */
 						cwalk->state = P_CLEANUP;
 						break;
 					}

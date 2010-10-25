@@ -72,7 +72,7 @@
 	fi
 
 	if test -z "$RRDINC" -o -z "$RRDLIB"; then
-		echo "RRDtool include- or library-files not found. These are REQUIRED for hobbitd"
+		echo "RRDtool include- or library-files not found. These are REQUIRED for xymond"
 		echo "RRDtool can be found at http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/"
 		echo "If you have RRDtool installed, use the \"--rrdinclude DIR\" and \"--rrdlib DIR\""
 		echo "options to configure to specify where they are."

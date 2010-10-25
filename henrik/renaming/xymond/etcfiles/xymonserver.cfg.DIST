@@ -2,7 +2,7 @@
 #
 BBSERVERROOT="@BBTOPDIR@"		# Where Xymon is installed - holds the server and bbvar sub-dirs.
 BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The hobbit user must have write-access here.
-HOBBITCLIENTHOME="@BBTOPDIR@/client"    # BBHOME directory for the client
+XYMONCLIENTHOME="@BBTOPDIR@/client"     # BBHOME directory for the client
 
 
 BBSERVERHOSTNAME="@BBHOSTNAME@"		# The hostname of your server
@@ -30,12 +30,12 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
 ##### Normally you do not need to modify anything below this point #####
 
 # General settings
-BBPORT="1984"			# Portnumber where hobbitd/bbd listens
+BBPORT="1984"			# Portnumber where xymond/bbd listens
 BBDISP="$BBSERVERIP"		# IP of a single hobbit/bbd server
 BBDISPLAYS=""			# IP of multiple hobbit/bbd servers. If used, BBDISP must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
-				# Use DYNAMIC with Xymon, unless you run hobbitd_filestore --status --html
+				# Use DYNAMIC with Xymon, unless you run xymond_filestore --status --html
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 INFOCOLUMN="info"		# Column where the info-pages are reported.
@@ -76,24 +76,24 @@ BBGEN="$BBHOME/bin/bbgen"			# The bbgen program
 
 # Server specific directories
 BBVAR="@BBVAR@"					# The bbvar directory holds all monitoring data
-BBACKS="$BBVAR/acks"				# Acknowledge event info stored here (hobbitd_alert)
-BBDATA="$BBVAR/data"				# Data files go here (hobbitd_filestore --data)
-BBDISABLED="$BBVAR/disabled"			# Enabled/disabled flags are stored here (hobbitd_filestore --enadis)
-BBHIST="$BBVAR/hist"				# History logs are stored here (hobbitd_history)
-BBHISTLOGS="$BBVAR/histlogs"			# Historical detail status-loge are stored here (hobbitd_history)
-BBLOGS="$BBVAR/logs"				# Status logs go here (hobbitd_filestore --status). Not needed by Xymon.
+BBACKS="$BBVAR/acks"				# Acknowledge event info stored here (xymond_alert)
+BBDATA="$BBVAR/data"				# Data files go here (xymond_filestore --data)
+BBDISABLED="$BBVAR/disabled"			# Enabled/disabled flags are stored here (xymond_filestore --enadis)
+BBHIST="$BBVAR/hist"				# History logs are stored here (xymond_history)
+BBHISTLOGS="$BBVAR/histlogs"			# Historical detail status-loge are stored here (xymond_history)
+BBLOGS="$BBVAR/logs"				# Status logs go here (xymond_filestore --status). Not needed by Xymon.
 BBWWW="$BBHOME/www"				# The directory for Xymon webpage files.
-BBHTML="$BBWWW/html"				# HTML status logs go here (hobbitd_filestore --status --html)
-BBNOTES="$BBWWW/notes"				# For notes-files (hobbitd_filestore --notes)
+BBHTML="$BBWWW/html"				# HTML status logs go here (xymond_filestore --status --html)
+BBNOTES="$BBWWW/notes"				# For notes-files (xymond_filestore --notes)
 BBREP="$BBWWW/rep"				# Top-level directory for Xymon reports.
 BBSNAP="$BBWWW/snap"				# Top-level directory for Xymon snapshots.
 
-# For the hobbitd_history module
+# For the xymond_history module
 BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the bb2 webpage)
 BBHOSTHISTLOG="TRUE"				# Save a log of all events for a host (not used by any tool currently)
 SAVESTATUSLOG="TRUE"				# Save the detailed status log each time the status changes.
 
-# For the hobbitd_alert module
+# For the xymond_alert module
 MAILC="@MAILPROGRAM@"				# Command used to send an e-mail with no subject
 MAIL="$MAILC -s"				# Command used to send an e-mail with a subject
 SVCCODES="disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:723,ftp:721,pop:810,pop3:810,pop-3:810,ssh:722,imap:843,ssh1:722,ssh2:722,imap2:843,imap3:843,imap4:843,pop2:809,pop-2:809,nntp:819,test:901"
@@ -123,7 +123,7 @@ RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 
 # TEST2RRD defines the status- and data-messages you want to collect RRD data
 # about. You will normally not need to modify this, unless you have added a
-# script to pick up RRD data from custom tests (the hobbitd_larrd --extra-script
+# script to pick up RRD data from custom tests (the xymond_rrd --extra-script
 # and --extra-tests options).
 # Note that network tests defined in the protocols.cfg file are automatically
 # included.
@@ -158,7 +158,7 @@ COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-
 HTMLCONTENTTYPE="text/html"                     # You can add charset options here.
 
 # Fonts and texts
-HOBBITLOGO="Xymon"                             # HTML inserted on all header pages at top-left corner.
+XYMONLOGO="Xymon"                               # HTML inserted on all header pages at top-left corner.
 MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"
 MKBBREMOTE="<B><I>Remote Status Display</I></B>"
 MKBBSUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"

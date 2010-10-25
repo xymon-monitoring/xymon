@@ -58,7 +58,7 @@
   1999-05-03 lpd Original version.
  */
 
-/************ HOBBIT SPECIFIC MODIFICATION *****************/
+/************ XYMON SPECIFIC MODIFICATION *****************/
 /* For Xymon: Moved these definitions from md5.h into here */
 typedef unsigned char md5_byte_t; /* 8-bit byte */
 typedef unsigned int md5_word_t; /* 32-bit word */
@@ -69,7 +69,7 @@ typedef struct md5_state_s {
     md5_word_t abcd[4];		/* digest buffer */
     md5_byte_t buf[64];		/* accumulate block */
 } md5_state_t;
-/************ END HOBBIT SPECIFIC MODIFICATION *****************/
+/************ END XYMON SPECIFIC MODIFICATION *****************/
 
 #include <string.h>
 

@@ -8,11 +8,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char hobbitd_rcsid[] = "$Id$";
+static char xymond_rcsid[] = "$Id$";
 
-int do_hobbitd_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
+int do_xymond_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
-	static char *hobbitd_params[] = { "DS:inmessages:DERIVE:600:0:U", 
+	static char *xymond_params[] = { "DS:inmessages:DERIVE:600:0:U", 
 					 "DS:statusmessages:DERIVE:600:0:U", 
 					 "DS:combomessages:DERIVE:600:0:U", 
 					 "DS:pagemessages:DERIVE:600:0:U", 
@@ -36,12 +36,12 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *classname, char *pagepa
 					 "DS:noteschmsgs:DERIVE:600:0:U", 
 					 "DS:enadischmsgs:DERIVE:600:0:U", 
 					 NULL };
-	static void *hobbitd_tpl       = NULL;
+	static void *xymond_tpl        = NULL;
 
 	struct {
 		char *marker;
 		unsigned long val;
-	} hobbitd_data[] = {
+	} xymond_data[] = {
 		{ "\nIncoming messages", 0 },
 		{ "\n- status", 0 },
 		{ "\n- combo", 0 },
@@ -74,19 +74,19 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *classname, char *pagepa
 
 	MEMDEFINE(valstr);
 
-	if (hobbitd_tpl == NULL) hobbitd_tpl = setup_template(hobbitd_params);
+	if (xymond_tpl == NULL) xymond_tpl = setup_template(xymond_params);
 
 	sprintf(rrdvalues, "%d", (int)tstamp);
 	i = 0;
-	while (hobbitd_data[i].marker) {
-		p = strstr(msg, hobbitd_data[i].marker);
+	while (xymond_data[i].marker) {
+		p = strstr(msg, xymond_data[i].marker);
 		if (p) {
 			if (*p == '\n') p++;
 			p += strcspn(p, ":\r\n");
 			if (*p == ':') {
-				hobbitd_data[i].val = atol(p+1);
+				xymond_data[i].val = atol(p+1);
 				gotany++;
-				sprintf(valstr, ":%lu", hobbitd_data[i].val);
+				sprintf(valstr, ":%lu", xymond_data[i].val);
 				strcat(rrdvalues, valstr);
 			}
 			else strcat(rrdvalues, ":U");
@@ -105,7 +105,7 @@ int do_hobbitd_rrd(char *hostname, char *testname, char *classname, char *pagepa
 		}
 
 		MEMUNDEFINE(valstr);
-		return create_and_update_rrd(hostname, testname, classname, pagepaths, hobbitd_params, hobbitd_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymond_params, xymond_tpl);
 	}
 
 	MEMUNDEFINE(valstr);

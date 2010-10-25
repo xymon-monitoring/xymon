@@ -1,29 +1,29 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITD_ALERT</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMOND_ALERT</TITLE>
 </HEAD><BODY>
-<H1>HOBBITD_ALERT</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMOND_ALERT</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitd_alert - hobbitd worker module for sending out alerts
+xymond_alert - xymond worker module for sending out alerts
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitd_channel --channel=page hobbitd_alert [options]</B>
+<B>xymond_channel --channel=page xymond_alert [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-hobbitd_alert is a worker module for hobbitd, and as such it is normally
+xymond_alert is a worker module for xymond, and as such it is normally
 run via the
-<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
 
-program. It receives hobbitd page- and ack-messages from the &quot;page&quot; 
+program. It receives xymond page- and ack-messages from the &quot;page&quot; 
 channel via stdin, and uses these to send out alerts about failed 
 and recovered hosts and services.
 <P>
@@ -49,8 +49,8 @@ Dumps the configuration after parsing it. May be useful to track
 down problems with configuration file errors.
 <P>
 <DT>--checkpoint-file=FILENAME<DD>
-File where the current state of the hobbitd_alert module is saved. 
-When starting up, hobbitd_alert will also read this file to restore
+File where the current state of the xymond_alert module is saved. 
+When starting up, xymond_alert will also read this file to restore
 the previous state.
 <P>
 <DT>--checkpoint-interval=N<DD>
@@ -97,10 +97,10 @@ Enable debugging output.
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
-<H2>HOW HOBBIT DECIDES WHEN TO SEND ALERTS</H2>
+<H2>HOW XYMON DECIDES WHEN TO SEND ALERTS</H2>
 
-The hobbitd_alert module is responsible for sending out all alerts.
-When a status first goes to one of the ALERTCOLORS, hobbitd_alert
+The xymond_alert module is responsible for sending out all alerts.
+When a status first goes to one of the ALERTCOLORS, xymond_alert
 is notified of this change. It notes that the status is now in an
 alert state, and records the <B>timestamp</B> when this event started,
 and adds the alert to the list statuses that may potentially trigger
@@ -111,21 +111,21 @@ This happens at least once a minute, but may happen more often. E.g.
 when status first goes into an alert state, this will always trigger
 the matching to happen.
 <P>
-When scanning the configuration, hobbitd_alert looks at all of the
+When scanning the configuration, xymond_alert looks at all of the
 configuration rules. It also checks the DURATION setting against
 how long time has elapsed since the event started - i.e. against
-the timestamp logged when hobbitd_alert first heard of this event.
+the timestamp logged when xymond_alert first heard of this event.
 <P>
 When an alert recipient is found, the alert is sent and it is recorded
 when this recipient is due for his next alert message, based on the
-REPEAT setting defined for this recipient. The next time hobbitd_alert
+REPEAT setting defined for this recipient. The next time xymond_alert
 scans the configuration for what alerts to send, it will still find
 this recipient because all of the configuration rules are fulfilled,
 but an alert message will not be generated until the repeat interval
 has elapsed.
 <P>
 It can happen that a status first goes yellow and triggers an alert,
-and later it goes red - e.g. a disk filling up. In that case, hobbitd_alert
+and later it goes red - e.g. a disk filling up. In that case, xymond_alert
 clears the internal timer for when the next (repeat) alert is due
 for all recipients. You generally want to be told when something that
 has been in a warning state becomes critical, so in that case the REPEAT 
@@ -135,7 +135,7 @@ multiple times, only the first transition from yellow-&gt;red causes this
 override.
 <P>
 When an status recovers, a recovery message may be sent - depending
-on the configuration - and then hobbitd_alert forgets everything about
+on the configuration - and then xymond_alert forgets everything about
 this status. So the next time it goes into an alert state, the entire
 process starts all over again.
 <P>
@@ -146,13 +146,13 @@ process starts all over again.
 <DL COMPACT>
 <DT>MAIL<DD>
 The first part of a command line used to send out an e-mail with a 
-subject, typically set to &quot;/usr/bin/mail -s&quot; . hobbitd_alert will add
+subject, typically set to &quot;/usr/bin/mail -s&quot; . xymond_alert will add
 the subject and the mail recipients to form the command line used
 for sending out email alerts.
 <P>
 <DT>MAILC<DD>
 The first part of a command line used to send out an e-mail without
-a subject. Typically this will be &quot;/usr/bin/mail&quot;. hobbitd_alert will
+a subject. Typically this will be &quot;/usr/bin/mail&quot;. xymond_alert will
 add the mail recipients to form the command line used for sending
 out email alerts.
 <P>
@@ -167,7 +167,7 @@ out email alerts.
 <A NAME="lbAI">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -178,7 +178,7 @@ out email alerts.
 <DT><A HREF="#lbAC">SYNOPSIS</A><DD>
 <DT><A HREF="#lbAD">DESCRIPTION</A><DD>
 <DT><A HREF="#lbAE">OPTIONS</A><DD>
-<DT><A HREF="#lbAF">HOW HOBBIT DECIDES WHEN TO SEND ALERTS</A><DD>
+<DT><A HREF="#lbAF">HOW XYMON DECIDES WHEN TO SEND ALERTS</A><DD>
 <DT><A HREF="#lbAG">ENVIRONMENT</A><DD>
 <DT><A HREF="#lbAH">FILES</A><DD>
 <DT><A HREF="#lbAI">SEE ALSO</A><DD>
@@ -187,6 +187,6 @@ out email alerts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:11 GMT, October 24, 2010
+Time: 15:52:01 GMT, October 25, 2010
 </BODY>
 </HTML>

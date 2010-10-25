@@ -320,7 +320,7 @@ fi
 echo ""; echo ""
 
 echo "** Note that you may need to modify your webserver configuration."
-echo "** After installing, see $BBTOPDIR/server/etc/hobbit-apache.conf for an example configuration."
+echo "** After installing, see $BBTOPDIR/server/etc/xymon-apache.conf for an example configuration."
 echo ""; echo ""
 
 echo "To generate Xymon availability reports, your webserver"

@@ -803,7 +803,7 @@ this into the protocols.cfg file or your /etc/services file.
 .IP bbd
 Test that a Big Brother compatible daemon is running. This check
 works both for the Xymon
-.I hobbitd(8)
+.I xymond(8)
 daemon, and the original Big Brother bbd daemon.
 
 
@@ -1256,7 +1256,7 @@ If you are running an Apache web server, adding this tag makes
 collect performance statistics from the Apache web server by
 querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server-status?auto\fR.
 The response is sent as a data-report and processed by the Xymon
-hobbitd_rrd module into an RRD file and an "apache" graph. If
+xymond_rrd module into an RRD file and an "apache" graph. If
 your web server requires e.g. authentication, or runs on a different
 URL for the server-status, you can provide the full URL needed to 
 fetch the server-status page, e.g. 
@@ -1346,7 +1346,7 @@ the URL must point to a web page from the default set of Xymon webpages.
 .SH OTHER TAGS
 .IP pulldata[=[IP][:port]]
 This option is recognized by the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 utility, and causes it to poll the host for client data. The optional
 IP-address and port-number can be used if the client-side
 .I msgcache(8)

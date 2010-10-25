@@ -1,35 +1,35 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITD_CLIENT</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMOND_CLIENT</TITLE>
 </HEAD><BODY>
-<H1>HOBBITD_CLIENT</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 24 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMOND_CLIENT</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitd_client - hobbitd worker module for client data
+xymond_client - xymond worker module for client data
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitd_channel --channel=client hobbitd_client [options]</B>
+<B>xymond_channel --channel=client xymond_client [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-hobbitd_client is a worker module for hobbitd, and as such it is normally
+xymond_client is a worker module for xymond, and as such it is normally
 run via the
-<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
 
-program. It receives hobbitd client messages sent from systems that
+program. It receives xymond client messages sent from systems that
 have the the Xymon client installed, and use the client data to
 generate the Xymon status messages for the cpu-, disk-, memory- and
 procs-columns. It also feeds Xymon data messages with the netstat-
 and vmstat-data collected by the client.
 <P>
-When generating these status messages from the client data, hobbitd_client
+When generating these status messages from the client data, xymond_client
 will use the configuration rules defined in the 
 <I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
 
@@ -50,17 +50,17 @@ options instead.
 <DT>--no-clear-msgs<DD>
 If there are no logfile checks, the &quot;msgs&quot; column will show a &quot;clear&quot;
 status. If you would rather avoid having a &quot;msgs&quot; column, this option
-causes hobbitd_client to not send in a clear &quot;msgs&quot; status.
+causes xymond_client to not send in a clear &quot;msgs&quot; status.
 <P>
 <DT>--no-clear-files<DD>
 If there are no file checks, the &quot;files&quot; column will show a &quot;clear&quot;
 status. If you would rather avoid having a &quot;files&quot; column, this option
-causes hobbitd_client to not send in a clear &quot;files&quot; status.
+causes xymond_client to not send in a clear &quot;files&quot; status.
 <P>
 <DT>--no-clear-ports<DD>
 If there are no port checks, the &quot;ports&quot; column will show a &quot;clear&quot;
 status. If you would rather avoid having a &quot;ports&quot; column, this option
-causes hobbitd_client to not send in a clear &quot;ports&quot; status.
+causes xymond_client to not send in a clear &quot;ports&quot; status.
 <P>
 <DT>--no-ps-listing<DD>
 Normally the &quot;procs&quot; status message includes the full process-listing
@@ -88,7 +88,7 @@ Starts an interactive session where you can test the analysis.cfg
 configuration.
 <P>
 <DT>--collectors=COLLECTOR1[,COLLECTOR2,...]<DD>
-Limit the set of collector modules that hobbitd_client will handle. This
+Limit the set of collector modules that xymond_client will handle. This
 is not normally used except for running experimental versions of the
 program.
 <P>
@@ -106,7 +106,7 @@ Enable debugging output.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -124,6 +124,6 @@ Enable debugging output.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 14:51:11 GMT, October 24, 2010
+Time: 15:52:01 GMT, October 25, 2010
 </BODY>
 </HTML>

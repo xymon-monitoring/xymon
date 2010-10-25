@@ -210,7 +210,7 @@ void trim_files(time_t cutoff)
 			FILE *fd;
 			long pid = -1;
 
-			sprintf(pidfn, "%s/hobbitd_history.pid", xgetenv("BBSERVERLOGS"));
+			sprintf(pidfn, "%s/xymond_history.pid", xgetenv("BBSERVERLOGS"));
 			fd = fopen(pidfn, "r");
 			if (fd) {
 				char l[100];

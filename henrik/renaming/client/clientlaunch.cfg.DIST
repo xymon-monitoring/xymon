@@ -15,23 +15,23 @@
 # setup, so this task is normally disabled.
 [msgcache]
 	DISABLED
-	ENVFILE $HOBBITCLIENTHOME/etc/xymonclient.cfg
-	CMD $HOBBITCLIENTHOME/bin/msgcache --no-daemon --pidfile=$HOBBITCLIENTHOME/logs/msgcache.pid
-	LOGFILE $HOBBITCLIENTHOME/logs/msgcache.log
+	ENVFILE $XYMONCLIENTHOME/etc/xymonclient.cfg
+	CMD $XYMONCLIENTHOME/bin/msgcache --no-daemon --pidfile=$XYMONCLIENTHOME/logs/msgcache.pid
+	LOGFILE $XYMONCLIENTHOME/logs/msgcache.log
 
 # The main client task
 [client]
-	ENVFILE $HOBBITCLIENTHOME/etc/xymonclient.cfg
-	CMD $HOBBITCLIENTHOME/bin/xymonclient.sh @CLIENTFLAGS@
-	LOGFILE $HOBBITCLIENTHOME/logs/xymonclient.log
+	ENVFILE $XYMONCLIENTHOME/etc/xymonclient.cfg
+	CMD $XYMONCLIENTHOME/bin/xymonclient.sh @CLIENTFLAGS@
+	LOGFILE $XYMONCLIENTHOME/logs/xymonclient.log
 	INTERVAL 5m
 
 # ORCA data collector. This is an experimental add-on module,
 # the data sent by this module are not processed by Xymon 4.2.
 [orcadata]
 	DISABLED
-	ENVFILE $HOBBITCLIENTHOME/etc/xymonclient.cfg
-	CMD $HOBBITCLIENTHOME/bin/orcahobbit --orca=/usr/local/orca/orcallator
-	LOGFILE $HOBBITCLIENTHOME/logs/xymonclient.log
+	ENVFILE $XYMONCLIENTHOME/etc/xymonclient.cfg
+	CMD $XYMONCLIENTHOME/bin/orcahobbit --orca=/usr/local/orca/orcallator
+	LOGFILE $XYMONCLIENTHOME/logs/xymonclient.log
 	INTERVAL 5m
 

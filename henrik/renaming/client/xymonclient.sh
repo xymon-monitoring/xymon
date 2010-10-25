@@ -64,7 +64,7 @@ $BBHOME/bin/logfetch --clock >> $MSGTMPFILE
 
 if test "$LOCALMODE" = "yes"; then
 	echo "@@" >> $MSGTMPFILE
-	$BBHOME/bin/hobbitd_client --local --config=$BBHOME/etc/localclient.cfg <$MSGTMPFILE
+	$BBHOME/bin/xymond_client --local --config=$BBHOME/etc/localclient.cfg <$MSGTMPFILE
 else
 	$BB $BBDISP "@" < $MSGTMPFILE >$LOGFETCHCFG.tmp
 	if test -f $LOGFETCHCFG.tmp

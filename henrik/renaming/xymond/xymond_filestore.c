@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is a hobbitd worker module, it should be run off hobbitd_channel.     */
+/* This is a xymond worker module, it should be run off xymond_channel.       */
 /*                                                                            */
 /* This module implements the traditional Big Brother filebased storage of    */
 /* incoming status messages to the bbvar/logs/, bbvar/data/, bb/www/notes/    */
@@ -29,7 +29,7 @@ static char rcsid[] = "$Id$";
 
 #include "libbbgen.h"
 
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("hobbitd_filestore");
+	setup_signalhandler("xymond_filestore");
 	signal(SIGPIPE, SIG_DFL);
 
 	if (onlytests) dbgprintf("Storing tests '%s' only\n", onlytests);
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 
 		MEMDEFINE(logfn);
 
-		msg = get_hobbitd_message(chnid, "filestore", &seq, NULL);
+		msg = get_xymond_message(chnid, "filestore", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			MEMUNDEFINE(logfn);
@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
 			running = 0;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

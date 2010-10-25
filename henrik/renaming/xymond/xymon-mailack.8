@@ -1,15 +1,15 @@
-.TH HOBBIT-MAILACK 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMON-MAILACK 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbit-mailack \- permit acknowledging alerts via e-mail
+xymon-mailack \- permit acknowledging alerts via e-mail
 .SH SYNOPSIS
-.B "hobbit-mailack --env=FILENAME [--debug]"
+.B "xymon-mailack --env=FILENAME [--debug]"
 
 .SH DESCRIPTION
-hobbit-mailack normally runs as an input mail-filter for the
+xymon-mailack normally runs as an input mail-filter for the
 hobbit user, e.g. by being called from the xymon users' 
 .I procmailrc(5)
-file. hobbit-mailack recognizes e-mails that are replies to 
-.I hobbitd_alert(8)
+file. xymon-mailack recognizes e-mails that are replies to 
+.I xymond_alert(8)
 mail alerts, and converts the reply mail into an acknowledge
 message that is sent to the Xymon system. This permits an
 administrator to acknowledge an alert via e-mail.
@@ -31,22 +31,22 @@ text in the mail (a "delay=N" line is ignored when looking for the
 message text).
 
 .SH USE WITH PROCMAIL
-To setup hobbit-mailack, create a \fB.procmailrc\fR file in
+To setup xymon-mailack, create a \fB.procmailrc\fR file in
 the xymon-users home-directory with the following contents:
 .IP
 .nf
 DEFAULT=$HOME/Mailbox
 LOGFILE=$HOME/procmail.log
 :0
-| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/xymonserver.cfg
+| $HOME/server/bin/xymon-mailack --env=$HOME/server/etc/xymonserver.cfg
 .fi
 
 .SH USE WITH QMAIL
-If you are using Qmail to deliver mail locally, you can run hobbit-mailack
+If you are using Qmail to deliver mail locally, you can run xymon-mailack
 directly from a \fB.qmail\fR file. Setup the xymon-users .qmail file like this:
 .IP
 .nf
-| $HOME/server/bin/hobbit-mailack --env=$HOME/server/etc/xymonserver.cfg
+| $HOME/server/bin/xymon-mailack --env=$HOME/server/etc/xymonserver.cfg
 .fi
 
 .SH OPTIONS
@@ -54,9 +54,9 @@ directly from a \fB.qmail\fR file. Setup the xymon-users .qmail file like this:
 Load environment from FILENAME, usually xymonserver.cfg.
 
 .IP "--debug"
-Dont send a message to hobbitd, but dump the message to
+Dont send a message to xymond, but dump the message to
 stdout.
 
 .SH "SEE ALSO"
-hobbitd_alert(8), hobbitd(8), xymon(7)
+xymond_alert(8), xymond(8), xymon(7)
 

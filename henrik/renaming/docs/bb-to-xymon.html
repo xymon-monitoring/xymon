@@ -35,7 +35,7 @@ Big Brother to Xymon:</p>
 	have setup HTTP tests that require cookies.</li>
 	<li>The <b>bbcombotests.cfg</b> file. You may not have this
 	file - it is only present if you have used bbgen before and
-	have setup the bbcombotest tool.</li>
+	have setup the bbcombotest tool. Copy it to <b>combo.cfg</b>.</li>
 </ul>
 
 <p>The <em>bbwarnrules.cfg</em> and <em>bbwarnsetup.cfg</em> files
@@ -87,7 +87,7 @@ host. This is easier to manage, and also speeds up the graph generation when
 you have many hosts. Unfortunately, it makes migrating from Big Brother to
 Xymon slightly more complicated.</p>
 
-<p>In the Xymon source-tree, you will find a script <em>hobbitd/moverrd.sh</em>.
+<p>In the Xymon source-tree, you will find a script <em>xymond/moverrd.sh</em>.
 This script moves or copies the RRD files from the Big Brother+LARRD structure
 into the Xymon structure. You must edit a couple of settings at the beginning
 of the file, especially to set the correct directory where Big Brother stores
