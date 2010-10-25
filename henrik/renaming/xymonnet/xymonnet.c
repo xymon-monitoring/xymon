@@ -553,7 +553,7 @@ void load_tests(void)
 					  argnmatch(testspec, "type=")        )      {
 
 					/* HTTP test. */
-					bburl_t url;
+					weburl_t url;
 
 					decode_url(testspec, &url);
 					if (url.desturl->parseerror || (url.proxyurl && url.proxyurl->parseerror)) {
@@ -576,7 +576,7 @@ void load_tests(void)
 
 					userurl = strchr(testspec, '='); 
 					if (userurl) {
-						bburl_t url;
+						weburl_t url;
 						userurl++;
 
 						decode_url(userurl, &url);
@@ -647,7 +647,7 @@ void load_tests(void)
 						 * combination for multiple hosts.
 						 *
 						 * According to Xymon docs, this type of services must be in
-						 * BBNETSVCS - so it is known already.
+						 * XYMONNETSVCS - so it is known already.
 						 */
 						int specialport = 0;
 						char *specialname;

@@ -10,7 +10,7 @@ NETLIBS = -lnsl
 # So you should use the GNU compiler, gcc.
 CC = gcc
 # NOTE: Some HP-UX 11i systems have a severely broken set of include files. This
-# will typically show up when compiling the "bbnet/xymonnet.c" where it bombs with
+# will typically show up when compiling the "xymonnet/xymonnet.c" where it bombs with
 #   xymonnet.c: In function 'send_rpcinfo_results':
 #   xymonnet.c:1794: warning: assignment makes pointer from integer without a cast
 #   xymonnet.c:1801: error: dereferencing pointer to incomplete type

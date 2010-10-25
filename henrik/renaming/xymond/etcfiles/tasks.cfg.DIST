@@ -173,13 +173,13 @@
 	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS xymond
 	CMD xymonnet --report --ping --checkresponse
-	LOGFILE $BBSERVERLOGS/bb-network.log
+	LOGFILE $BBSERVERLOGS/xymonnet.log
 	INTERVAL 5m
 
 
 # "xymonnetagain" picks up the tests that the normal network test consider "failed", and re-does those
-# tests more often. This enables Big Brother to pick up a recovered network service faster than
-# if it were tested only by the "bbnet" task (which only runs every 5 minutes). So if you have
+# tests more often. This enables Xymon to pick up a recovered network service faster than
+# if it were tested only by the "xymonnet" task (which only runs every 5 minutes). So if you have
 # servers with very high availability guarantees, running this task will make your availability
 # reports look much better.
 
@@ -187,7 +187,7 @@
 	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS xymond
 	CMD $BBHOME/ext/xymonnet-again.sh
-	LOGFILE $BBSERVERLOGS/bb-retest.log
+	LOGFILE $BBSERVERLOGS/xymonnetagain.log
 	INTERVAL 1m
 
 

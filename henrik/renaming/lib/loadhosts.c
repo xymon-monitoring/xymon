@@ -155,8 +155,6 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_FLAG_TESTIP]         = "BBH_FLAG_TESTIP";
 	bbh_item_key[BBH_FLAG_BBDISPLAY]       = "BBDISPLAY";
 	bbh_item_name[BBH_FLAG_BBDISPLAY]      = "BBH_FLAG_BBDISPLAY";
-	bbh_item_key[BBH_FLAG_BBNET]           = "BBNET";
-	bbh_item_name[BBH_FLAG_BBNET]          = "BBH_FLAG_BBNET";
 	bbh_item_key[BBH_FLAG_BBPAGER]         = "BBPAGER";
 	bbh_item_name[BBH_FLAG_BBPAGER]        = "BBH_FLAG_BBPAGER";
 	bbh_item_key[BBH_FLAG_LDAPFAILYELLOW]  = "ldapyellowfail";

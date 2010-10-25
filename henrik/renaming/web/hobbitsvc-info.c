@@ -982,8 +982,8 @@ char *generate_info(char *hostname, char *nkconfigfn)
 		     (strncmp(val, "nopost=", 7) == 0)  ||
 		     (strncmp(val, "nopost;", 7) == 0) ) {
 
-			bburl_t bburl;
-			char *urlstring = decode_url(val, &bburl);
+			weburl_t weburl;
+			char *urlstring = decode_url(val, &weburl);
 
 			if (first) {
 				addtobuffer(infobuf, "<tr><th align=left>Content checks:</th><td align=left>\n");
@@ -996,7 +996,7 @@ char *generate_info(char *hostname, char *nkconfigfn)
 			sprintf(l, "&nbsp; %s return %s'%s'", 
 					((strncmp(val, "no", 2) == 0) ? "cannot" : "must"), 
 					((strncmp(val, "type;", 5) == 0) ? "content-type " : ""),
-					bburl.expdata);
+					weburl.expdata);
 			addtobuffer(infobuf, l);
 			addtobuffer(infobuf, "<br>\n");
 		}

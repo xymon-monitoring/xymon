@@ -153,7 +153,7 @@ typedef struct {
 
 	char		*url;			/* URL to request, stripped of BB'isms */
 	int		parsestatus;
-	bburl_t		bburl;
+	weburl_t	weburl;
 
 	int		gotheaders;
 	int		contlen;

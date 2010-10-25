@@ -1,4 +1,4 @@
-# Xymon - BBNET Makefile
+# Xymon - xymonnet Makefile
 
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares

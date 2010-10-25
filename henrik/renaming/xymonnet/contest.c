@@ -1369,7 +1369,7 @@ int main(int argc, char *argv[])
 	int timeout = 0;
 	int concurrency = 0;
 
-	if (xgetenv("BBNETSVCS") == NULL) putenv("BBNETSVCS=");
+	if (xgetenv("XYMONNETSVCS") == NULL) putenv("XYMONNETSVCS=");
 	init_tcp_services();
 
 	for (argi=1; (argi<argc); argi++) {

@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 			printf("xymongrep version %s\n", VERSION);
 			exit(0);
 		}
-		else if (strcmp(argv[argi], "--bbnet") == 0) {
+		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet"))) {
 			include2 = "netinclude";
 			onlypreferredentry = 0;
 		}

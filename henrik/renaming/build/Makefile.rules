@@ -22,9 +22,9 @@ else
 	INSTALLTARGETS = install-client install-clientmsg
 endif
 else
-	BUILDTARGETS = lib-build common-build bbdisplay-build bbnet-build bbproxy-build docs-build build-build xymond-build web-build client
+	BUILDTARGETS = lib-build common-build bbdisplay-build xymonnet-build bbproxy-build docs-build build-build xymond-build web-build client
 	CLIENTTARGETS = lib-client common-client build-build
-	INSTALLTARGETS = install-bbdisplay install-bbnet install-bbproxy install-man install-xymond install-web install-docs install-client install-servermsg
+	INSTALLTARGETS = install-bbdisplay install-xymonnet install-bbproxy install-man install-xymond install-web install-docs install-client install-servermsg
 	CFLAGS += $(PCREINCDIR)
 endif
 
@@ -85,8 +85,8 @@ bbdisplay-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" NETLIBS="$(NETLIBS)" LIBRTDEF="$(LIBRTDEF)" BBHOME="$(BBHOME)" BBVAR="$(BBVAR)" HISTGRAPHDEF="$(HISTGRAPHDEF)" RUNTIMEDEFS="$(RUNTIMEDEFS)" PCREINCDIR="$(PCREINCDIR)" PCRELIBS="$(PCRELIBS)" $(MAKE) -C bbdisplay all
 
 
-bbnet-build: lib-build common-build
-	CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" DOSNMP="$(DOSNMP)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" ARESVER="$(ARESVER)" RUNTIMEDEFS="$(RUNTIMEDEFS)" PCREINCDIR="$(PCREINCDIR)" PCRELIBS="$(PCRELIBS)" LIBRTDEF="$(LIBRTDEF)" $(MAKE) -C bbnet all
+xymonnet-build: lib-build common-build
+	CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" RPATHOPT="$(RPATHOPT)" SSLFLAGS="$(SSLFLAGS)" SSLINCDIR="$(SSLINCDIR)" SSLLIBS="$(SSLLIBS)" LDAPFLAGS="$(LDAPFLAGS)" LDAPINCDIR="$(LDAPINCDIR)" LDAPLIBS="$(LDAPLIBS)" DOSNMP="$(DOSNMP)" NETLIBS="$(NETLIBS)" BBHOME="$(BBHOME)" ARESVER="$(ARESVER)" RUNTIMEDEFS="$(RUNTIMEDEFS)" PCREINCDIR="$(PCREINCDIR)" PCRELIBS="$(PCRELIBS)" LIBRTDEF="$(LIBRTDEF)" $(MAKE) -C xymonnet all
 
 bbproxy-build: lib-build common-build
 	CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" RPATHOPT="$(RPATHOPT)" NETLIBS="$(NETLIBS)" LIBRTDEF="$(LIBRTDEF)" BBHOME="$(BBHOME)" $(MAKE) -C bbproxy all
@@ -118,18 +118,18 @@ win32: include/config.h
 #####################
 distclean: allclean
 	rm -f Makefile
-	rm -rf bbnet/c-ares
+	rm -rf xymonnet/c-ares
 	rm -rf debbuild rpmbuild
 
 allclean: clean
-	(cd bbnet/c-ares && $(MAKE) clean) || true
+	(cd xymonnet/c-ares && $(MAKE) clean) || true
 
 clean:
 	$(MAKE) -C build clean
 	$(MAKE) -C lib clean
 	$(MAKE) -C common clean
 	$(MAKE) -C bbdisplay clean
-	$(MAKE) DOSNMP="$(DOSNMP)" -C bbnet clean
+	$(MAKE) DOSNMP="$(DOSNMP)" -C xymonnet clean
 	$(MAKE) -C bbproxy clean
 	$(MAKE) -C xymond clean
 	$(MAKE) -C web clean
@@ -277,8 +277,8 @@ install-bbdisplay: install-common
 install-bbdisplay-nocgi: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C bbdisplay install-nocgi
 
-install-bbnet: install-common
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" ARESVER="$(ARESVER)" DOSNMP="$(DOSNMP)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" PKGBUILD="$(PKGBUILD)" $(MAKE) -C bbnet install
+install-xymonnet: install-common
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" ARESVER="$(ARESVER)" DOSNMP="$(DOSNMP)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" PKGBUILD="$(PKGBUILD)" $(MAKE) -C xymonnet install
 
 install-bbproxy: install-common
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" INSTALLBINDIR="$(INSTALLBINDIR)" INSTALLETCDIR="$(INSTALLETCDIR)" INSTALLEXTDIR="$(INSTALLEXTDIR)" INSTALLTMPDIR="$(INSTALLTMPDIR)" INSTALLWEBDIR="$(INSTALLWEBDIR)" INSTALLWWWDIR="$(INSTALLWWWDIR)" $(MAKE) -C bbproxy install
@@ -294,7 +294,7 @@ install-web: install-common
 install-man:
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C common install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" CGIDIR="$(CGIDIR)" SECURECGIDIR="$(SECURECGIDIR)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbdisplay install-man
-	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbnet install-man
+	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C xymonnet install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C bbproxy install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C xymond install-man
 	BBHOME="$(BBHOME)" MANROOT="$(MANROOT)" INSTALLROOT="$(INSTALLROOT)" $(MAKE) -C web install-man

@@ -116,7 +116,7 @@ static char *binview(unsigned char *buf, int buflen)
 
 char *init_tcp_services(void)
 {
-	static char *bbnetsvcs = NULL;
+	static char *xymonnetsvcs = NULL;
 	static time_t lastupdate = 0;
 
 	char filename[PATH_MAX];
@@ -137,9 +137,9 @@ char *init_tcp_services(void)
 	}
 	strcat(filename, "protocols.cfg");
 
-	if ((stat(filename, &st) == 0) && bbnetsvcs) {
+	if ((stat(filename, &st) == 0) && xymonnetsvcs) {
 		/* See if we have already run and the file is unchanged - if so just pickup the result */
-		if (st.st_mtime == lastupdate) return bbnetsvcs;
+		if (st.st_mtime == lastupdate) return xymonnetsvcs;
 
 		/* File has changed - reload configuration. But clean up first so we dont leak memory. */
 		if (svcinfo != default_svcinfo) {
@@ -152,20 +152,20 @@ char *init_tcp_services(void)
 			svcinfo = default_svcinfo;
 		}
 
-		xfree(bbnetsvcs); bbnetsvcs = NULL;
+		xfree(xymonnetsvcs); xymonnetsvcs = NULL;
 	}
 
-	if (xgetenv("BBNETSVCS") == NULL) {
-		putenv("BBNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
+	if (xgetenv("XYMONNETSVCS") == NULL) {
+		putenv("XYMONNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
 	}
 
 	fd = fopen(filename, "r");
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
-		bbnetsvcs = strdup(xgetenv("BBNETSVCS"));
+		xymonnetsvcs = strdup(xgetenv("XYMONNETSVCS"));
 
 		MEMUNDEFINE(filename);
-		return bbnetsvcs;
+		return xymonnetsvcs;
 	}
 
 	lastupdate = st.st_mtime;
@@ -293,30 +293,30 @@ char *init_tcp_services(void)
 		xfree(walk);
 	}
 
-	searchstring = strdup(xgetenv("BBNETSVCS"));
-	bbnetsvcs = (char *) malloc(strlen(xgetenv("BBNETSVCS")) + svcnamebytes + 1);
-	strcpy(bbnetsvcs, xgetenv("BBNETSVCS"));
+	searchstring = strdup(xgetenv("XYMONNETSVCS"));
+	xymonnetsvcs = (char *) malloc(strlen(xgetenv("XYMONNETSVCS")) + svcnamebytes + 1);
+	strcpy(xymonnetsvcs, xgetenv("XYMONNETSVCS"));
 	for (i=0; (svcinfo[i].svcname); i++) {
 		char *p;
 
-		strcpy(searchstring, xgetenv("BBNETSVCS"));
+		strcpy(searchstring, xgetenv("XYMONNETSVCS"));
 		p = strtok(searchstring, " ");
 		while (p && (strcmp(p, svcinfo[i].svcname) != 0)) p = strtok(NULL, " ");
 
 		if (p == NULL) {
-			strcat(bbnetsvcs, " ");
-			strcat(bbnetsvcs, svcinfo[i].svcname);
+			strcat(xymonnetsvcs, " ");
+			strcat(xymonnetsvcs, svcinfo[i].svcname);
 		}
 	}
 	xfree(searchstring);
 
 	if (debug) {
 		dump_tcp_services();
-		dbgprintf("BBNETSVCS set to : %s\n", bbnetsvcs);
+		dbgprintf("XYMONNETSVCS set to : %s\n", xymonnetsvcs);
 	}
 
 	MEMUNDEFINE(filename);
-	return bbnetsvcs;
+	return xymonnetsvcs;
 }
 
 void dump_tcp_services(void)

@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBTEST_NET_H__
-#define __BBTEST_NET_H__
+#ifndef __XYMONNET_H__
+#define __XYMONNET_H__
 
 #include <sys/time.h>
 

@@ -6,7 +6,7 @@ xymongrep \- pick out lines in hosts.cfg
 .br
 .B "xymongrep --version"
 .br
-.B "xymongrep [--noextras] [--test-untagged] [--bbdisp] [--bbnet] TAG [TAG...]"
+.B "xymongrep [--noextras] [--test-untagged] [--bbdisp] [--net] TAG [TAG...]"
 
 .SH DESCRIPTION
 .I xymongrep(1)
@@ -60,9 +60,9 @@ where the custom test is disabled.
 Search the hosts.cfg file following include statements as a
 BBDISPLAY server would.
 
-.IP "--bbnet"
-Search the hosts.cfg file following include statements as a
-BBNET server would.
+.IP "--net"
+Search the hosts.cfg file following include statements as 
+when running xymonnet.
 
 .SH EXAMPLE
 If your hosts.cfg file looks like this

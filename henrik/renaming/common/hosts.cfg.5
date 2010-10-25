@@ -56,12 +56,12 @@ You can nest include tags, i.e. a file that is included
 from the main hosts.cfg file can itself include other files.
 
 .IP "dispinclude filename"
-Acts like the "include" tag, but only on the BBDISPLAY server.
+Acts like the "include" tag, but only for the bbgen tool.
 Can be used e.g. to put a group of hosts on multiple sub-pages,
 without having to repeat the host definitions.
 
 .IP "netinclude filename"
-Acts like the "include" tag, but only on the BBNET server.
+Acts like the "include" tag, but only for the xymonnet tool.
 
 .IP "directory directoryname"
 This tag is used to include all files in the named directory.
@@ -505,8 +505,9 @@ This tag defines the host as being tested from a specific location.
 If xymonnet sees that the environment variable BBLOCATION
 is set, it will only test the hosts that have a matching
 "NET:location" tag in the hosts.cfg file. So this tag is useful
-if you have more than one BBNET system, but you still want
-to keep a consolidated hosts.cfg file for all your systems.
+if you have more than one system running network tests, but you 
+still want to keep a consolidated hosts.cfg file for all your 
+systems.
 
 Note: The "--test-untagged" option modifies this behaviour,
 see
@@ -604,11 +605,11 @@ to use tests from the same host that the dependency is for. E.g.
 is valid; if both the http and the webmin tests fail, then webmin
 will be reported as clear.
 
-Note: The "depends" tag is evaluated on the BBNET server while
+Note: The "depends" tag is evaluated by xymonnet while
 running the network tests. It can therefore only refer to other
-network tests that are handled by the same BBNET server - there
+network tests that are handled by the same server - there
 is currently no way to use the e.g. the status of locally
-run tests (disk, cpu, msgs) or network tests from other BBNET
+run tests (disk, cpu, msgs) or network tests from other
 servers in a dependency definition. Such dependencies are
 silently ignored.
 
@@ -724,7 +725,7 @@ If the BBLOCATION environment variable is defined, a tag
 of "route_BBLOCATION:" is recognized by xymonnet with 
 the same effect as the normal "route:" tag (see above).
 This allows you to have different route: tags for each
-BBNET server. The actual text for the tag then must
+server running xymonnet. The actual text for the tag then must
 match the value you have for the BBLOCATION setting.
 E.g. with BBLOCATION=dmz, the tag becomes "route_dmz:"
 

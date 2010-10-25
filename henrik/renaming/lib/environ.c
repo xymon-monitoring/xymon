@@ -136,7 +136,7 @@ const static struct {
 	{ "BBHTACCESS", "" },
 	{ "BBPAGEHTACCESS", "" },
 	{ "BBSUBPAGEHTACCESS", "" },
-	{ "BBNETSVCS", "smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp" },
+	{ "XYMONNETSVCS", "smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp" },
 	{ "HTMLCONTENTTYPE", "text/html" },
 	{ "HOLIDAYFORMAT", "%d/%m" },
 	{ "WEEKSTART", "1" },

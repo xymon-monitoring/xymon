@@ -23,7 +23,7 @@ file.
 
 xymonnet does all of the normal tests of TCP-based network
 services (telnet, ftp, ssh, smtp, pop, imap ....) - i.e. 
-all of the services listed as BBNETSVCS in bbdef.sh. For
+all of the services listed in protocols.cfg. For
 these tests, a completely new and very speedy service-
 checker has been implemented.
 
@@ -35,8 +35,7 @@ tests is found in the
 file in $BBHOME/etc/protocols.cfg.
 
 In addition, it implements the "dns" and "dig" tests for
-testing DNS servers. This is done in the same way as 
-bb-network.sh does it. 
+testing DNS servers.
 
 xymonnet also implements a check for NTP servers - this test 
 is called "ntp". If you want to use it, you must define the
@@ -54,7 +53,7 @@ test can be determined by your /etc/hosts file or DNS.
 
 .IP --timeout=N
 Determines the timeout (in seconds) for each
-service that is tested. For TCP tests (those from BBNETSVCS),
+service that is tested. For TCP tests (those from XYMONNETSVCS),
 if the connection to the service does not succeed within N 
 seconds, the service is reported as being down. For HTTP
 tests, this is the absolute limit for the entire request
@@ -156,7 +155,7 @@ Causes xymonnet to generate a warning if the run-time
 of xymonnet exceeds N seconds. By default N is set to
 the value of BBSLEEP, so a warning triggers if the
 network tests cannot complete in the time given for one
-cycle of the BBNET server. Apart from the warning, this 
+cycle of the xymonnet task. Apart from the warning, this 
 option has no effect, i.e. it will not terminate xymonnet
 prematurely. So to eliminate any such warnings, use this
 option with a very high value of N.
@@ -433,7 +432,8 @@ locations. If you set the environment variable BBLOCATION
 e.g. to "dmz" before running xymonnet, then it will only
 test hosts that have a "NET:dmz" tag in hosts.cfg. This allows
 you to keep all of your hosts in the same hosts.cfg file, but
-test different sets of hosts by different BBNET systems.
+test different sets of hosts by different systems running
+xymonnet.
 
 
 .SH XYMONNET INTERNALS
@@ -441,8 +441,7 @@ xymonnet first reads the protocols.cfg file to see which network tests
 are defined. It then scans the hosts.cfg file, and collects information
 about the TCP service tests that need to be tested. It picks out only
 the tests that were listed in the protocols.cfg file, plus the "dns",
-"dig" and "ntp" tests - those tests that bb-network.sh would normally 
-use the "bbnet" tool to test.
+"dig" and "ntp" tests.
 
 It then runs two tasks in parallel: First, a separate process is
 started to run the "xymonping" tool for the connectivity tests. While 
@@ -474,8 +473,7 @@ is to check for services that are active, you should have a lot
 less timeouts.
 
 The "ntp" and "rpcinfo" checks rely on external programs to 
-do each test. Thus, they perform only marginally better than the
-standard bb-network.sh script. 
+do each test.
 
 .SH ENVIRONMENT VARIABLES
 .IP BBLOCATION

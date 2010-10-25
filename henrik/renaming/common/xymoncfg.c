@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 			printf("Usage:\n%s [filename]\n", argv[0]);
 			exit(0);
 		}
-		else if (strcmp(argv[argi], "--bbnet") == 0) {
+		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet"))) {
 			include2 = "netinclude";
 		}
 		else if (strcmp(argv[argi], "--bbdisp") == 0) {

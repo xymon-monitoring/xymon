@@ -452,9 +452,9 @@ static char *gethttpcolumn(char *inp, char **name)
  * Un-escape data in the post- and expect-data.
  * Parse the URL.
  */
-char *decode_url(char *testspec, bburl_t *bburl)
+char *decode_url(char *testspec, weburl_t *weburl)
 {
-	static bburl_t bburlbuf;
+	static weburl_t weburlbuf;
 	static urlelem_t desturlbuf, proxyurlbuf;
 
 	char *inp, *p;
@@ -462,91 +462,91 @@ char *decode_url(char *testspec, bburl_t *bburl)
 	urlstart = poststart = postcontenttype = expstart = proxystart = okstart = notokstart = NULL;
 
 	/* If called with no buffer, use our own static one */
-	if (bburl == NULL) {
-		memset(&bburlbuf, 0, sizeof(bburl_t));
+	if (weburl == NULL) {
+		memset(&weburlbuf, 0, sizeof(weburl_t));
 		memset(&desturlbuf, 0, sizeof(urlelem_t));
 		memset(&proxyurlbuf, 0, sizeof(urlelem_t));
 
-		bburl = &bburlbuf;
-		bburl->desturl = &desturlbuf;
-		bburl->proxyurl = NULL;
+		weburl = &weburlbuf;
+		weburl->desturl = &desturlbuf;
+		weburl->proxyurl = NULL;
 	}
 	else {
-		memset(bburl, 0, sizeof(bburl_t));
-		bburl->desturl = (urlelem_t*) calloc(1, sizeof(urlelem_t));
-		bburl->proxyurl = NULL;
+		memset(weburl, 0, sizeof(weburl_t));
+		weburl->desturl = (urlelem_t*) calloc(1, sizeof(urlelem_t));
+		weburl->proxyurl = NULL;
 	}
 
 	inp = strdup(testspec);
 
 	if (strncmp(inp, "content=", 8) == 0) {
-		bburl->testtype = BBTEST_CONTENT;
+		weburl->testtype = WEBTEST_CONTENT;
 		urlstart = inp+8;
 	} else if (strncmp(inp, "cont;", 5) == 0) {
-		bburl->testtype = BBTEST_CONT;
+		weburl->testtype = WEBTEST_CONT;
 		urlstart = inp+5;
 	} else if (strncmp(inp, "cont=", 5) == 0) {
-		bburl->testtype = BBTEST_CONT;
-		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+		weburl->testtype = WEBTEST_CONT;
+		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
 	} else if (strncmp(inp, "nocont;", 7) == 0) {
-		bburl->testtype = BBTEST_NOCONT;
+		weburl->testtype = WEBTEST_NOCONT;
 		urlstart = inp+7;
 	} else if (strncmp(inp, "nocont=", 7) == 0) {
-		bburl->testtype = BBTEST_NOCONT;
-		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
+		weburl->testtype = WEBTEST_NOCONT;
+		urlstart = gethttpcolumn(inp+7, &weburl->columnname);
 	} else if (strncmp(inp, "post;", 5) == 0) {
-		bburl->testtype = BBTEST_POST;
+		weburl->testtype = WEBTEST_POST;
 		urlstart = inp+5;
 	} else if (strncmp(inp, "post=", 5) == 0) {
-		bburl->testtype = BBTEST_POST;
-		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+		weburl->testtype = WEBTEST_POST;
+		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
 	} else if (strncmp(inp, "nopost;", 7) == 0) {
-		bburl->testtype = BBTEST_NOPOST;
+		weburl->testtype = WEBTEST_NOPOST;
 		urlstart = inp+7;
 	} else if (strncmp(inp, "nopost=", 7) == 0) {
-		bburl->testtype = BBTEST_NOPOST;
-		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
+		weburl->testtype = WEBTEST_NOPOST;
+		urlstart = gethttpcolumn(inp+7, &weburl->columnname);
 	} else if (strncmp(inp, "soap;", 5) == 0) {
-		bburl->testtype = BBTEST_SOAP;
+		weburl->testtype = WEBTEST_SOAP;
 		urlstart = inp+5;
 	} else if (strncmp(inp, "soap=", 5) == 0) {
-		bburl->testtype = BBTEST_SOAP;
-		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+		weburl->testtype = WEBTEST_SOAP;
+		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
 	} else if (strncmp(inp, "nosoap;", 7) == 0) {
-		bburl->testtype = BBTEST_NOSOAP;
+		weburl->testtype = WEBTEST_NOSOAP;
 		urlstart = inp+7;
 	} else if (strncmp(inp, "nosoap=", 7) == 0) {
-		bburl->testtype = BBTEST_NOSOAP;
-		urlstart = gethttpcolumn(inp+7, &bburl->columnname);
+		weburl->testtype = WEBTEST_NOSOAP;
+		urlstart = gethttpcolumn(inp+7, &weburl->columnname);
 	} else if (strncmp(inp, "type;", 5) == 0) {
-		bburl->testtype = BBTEST_TYPE;
+		weburl->testtype = WEBTEST_TYPE;
 		urlstart = inp+5;
 	} else if (strncmp(inp, "type=", 5) == 0) {
-		bburl->testtype = BBTEST_TYPE;
-		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+		weburl->testtype = WEBTEST_TYPE;
+		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
 	} else if (strncmp(inp, "httpstatus;", 11) == 0) {
-		bburl->testtype = BBTEST_STATUS;
+		weburl->testtype = WEBTEST_STATUS;
 		urlstart = strchr(inp, ';') + 1;
 	} else if (strncmp(inp, "httpstatus=", 11) == 0) {
-		bburl->testtype = BBTEST_STATUS;
-		urlstart = gethttpcolumn(inp+11, &bburl->columnname);
+		weburl->testtype = WEBTEST_STATUS;
+		urlstart = gethttpcolumn(inp+11, &weburl->columnname);
 	} else if (strncmp(inp, "http=", 5) == 0) {
 		/* Plain URL test, but in separate column */
-		bburl->testtype = BBTEST_PLAIN;
-		urlstart = gethttpcolumn(inp+5, &bburl->columnname);
+		weburl->testtype = WEBTEST_PLAIN;
+		urlstart = gethttpcolumn(inp+5, &weburl->columnname);
 	} else {
 		/* Plain URL test */
-		bburl->testtype = BBTEST_PLAIN;
+		weburl->testtype = WEBTEST_PLAIN;
 		urlstart = inp;
 	}
 
-	switch (bburl->testtype) {
-	  case BBTEST_PLAIN:
+	switch (weburl->testtype) {
+	  case WEBTEST_PLAIN:
 		  break;
 
-	  case BBTEST_CONT:
-	  case BBTEST_NOCONT:
-	  case BBTEST_TYPE:
+	  case WEBTEST_CONT:
+	  case WEBTEST_NOCONT:
+	  case WEBTEST_TYPE:
 		  expstart = strchr(urlstart, ';');
 		  if (expstart) {
 			  *expstart = '\0';
@@ -554,13 +554,13 @@ char *decode_url(char *testspec, bburl_t *bburl)
 		  }
 		  else {
 			  errprintf("content-check, but no content-data in '%s'\n", testspec);
-			  bburl->testtype = BBTEST_PLAIN;
+			  weburl->testtype = WEBTEST_PLAIN;
 		  }
 		  break;
 
-	  case BBTEST_POST:
-	  case BBTEST_NOPOST:
-	  case BBTEST_SOAP:
+	  case WEBTEST_POST:
+	  case WEBTEST_NOPOST:
+	  case WEBTEST_SOAP:
 		  poststart = strchr(urlstart, ';');
 		  if (poststart) {
 			  *poststart = '\0';
@@ -584,18 +584,18 @@ char *decode_url(char *testspec, bburl_t *bburl)
 			  }
 			}
 
-			if ((bburl->testtype == BBTEST_NOPOST) && (!expstart)) {
+			if ((weburl->testtype == WEBTEST_NOPOST) && (!expstart)) {
 			  		errprintf("content-check, but no content-data in '%s'\n", testspec);
-			  		bburl->testtype = BBTEST_PLAIN;
+			  		weburl->testtype = WEBTEST_PLAIN;
 				  }
 			  }
 		  else {
 			  errprintf("post-check, but no post-data in '%s'\n", testspec);
-			  bburl->testtype = BBTEST_PLAIN;
+			  weburl->testtype = WEBTEST_PLAIN;
 		  }
 		  break;
 
-	  case BBTEST_STATUS:
+	  case WEBTEST_STATUS:
 		okstart = strchr(urlstart, ';');
 		if (okstart) {
 			*okstart = '\0';
@@ -613,16 +613,16 @@ char *decode_url(char *testspec, bburl_t *bburl)
 
 		if (!okstart && !notokstart) {
 			errprintf("HTTP status check, but no OK/not-OK status codes in '%s'\n", testspec);
-			bburl->testtype = BBTEST_PLAIN;
+			weburl->testtype = WEBTEST_PLAIN;
 		}
 
-		if (okstart) bburl->okcodes = strdup(okstart);
-		if (notokstart) bburl->badcodes = strdup(notokstart);
+		if (okstart) weburl->okcodes = strdup(okstart);
+		if (notokstart) weburl->badcodes = strdup(notokstart);
 	}
 
-	if (poststart) getescapestring(poststart, &bburl->postdata, NULL);
-	if (postcontenttype) getescapestring(postcontenttype, &bburl->postcontenttype, NULL);
-	if (expstart)  getescapestring(expstart, &bburl->expdata, NULL);
+	if (poststart) getescapestring(poststart, &weburl->postdata, NULL);
+	if (postcontenttype) getescapestring(postcontenttype, &weburl->postcontenttype, NULL);
+	if (expstart)  getescapestring(expstart, &weburl->expdata, NULL);
 
 	if (obeybbproxysyntax) {
 		/*
@@ -638,22 +638,22 @@ char *decode_url(char *testspec, bburl_t *bburl)
 		}
 	}
 
-	parse_url(urlstart, bburl->desturl);
+	parse_url(urlstart, weburl->desturl);
 	if (proxystart) {
-		if (bburl == &bburlbuf) {
+		if (weburl == &weburlbuf) {
 			/* We use our own static buffers */
-			bburl->proxyurl = &proxyurlbuf;
+			weburl->proxyurl = &proxyurlbuf;
 		}
 		else {
 			/* User allocated buffers */
-			bburl->proxyurl = (urlelem_t *)malloc(sizeof(urlelem_t));
+			weburl->proxyurl = (urlelem_t *)malloc(sizeof(urlelem_t));
 		}
 
-		parse_url(proxystart, bburl->proxyurl);
+		parse_url(proxystart, weburl->proxyurl);
 	}
 
 	xfree(inp);
 
-	return bburl->desturl->origform;
+	return weburl->desturl->origform;
 }
  

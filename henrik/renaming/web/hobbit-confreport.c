@@ -230,7 +230,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	itm = bbh_item_walk(hinfo);
 	while (itm) {
 		char *visdata = NULL, *colname = NULL, *expdata = NULL;
-		bburl_t bu;
+		weburl_t bu;
 		int dialuptest = 0, reversetest = 0, alwaystruetest = 0, httpextra = 0;
 
 		if (*itm == '?') { dialuptest=1;     itm++; }

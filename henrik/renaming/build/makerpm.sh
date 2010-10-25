@@ -32,7 +32,7 @@ cp rpm/xymon-client.init rpmbuild/SOURCES/
 cp rpm/xymon-client.default rpmbuild/SOURCES/
 
 mkdir -p rpmbuild/xymon-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs xymond web include lib client demotool
+for f in bbdisplay xymonnet bbpatches bbproxy build common contrib docs xymond web include lib client demotool
 do
         find $f/ | egrep -v "RCS|.svn" | cpio -pdvmu $BASEDIR/rpmbuild/xymon-$REL/
 done

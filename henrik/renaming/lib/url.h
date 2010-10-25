@@ -25,11 +25,11 @@ typedef struct urlelem_t {
 	int parseerror;
 } urlelem_t;
 
-enum bbtesttype_t { 
-	BBTEST_PLAIN, BBTEST_CONTENT, BBTEST_CONT, BBTEST_NOCONT, BBTEST_POST, BBTEST_NOPOST, BBTEST_TYPE, BBTEST_STATUS, BBTEST_SOAP, BBTEST_NOSOAP,
+enum webtesttype_t { 
+	WEBTEST_PLAIN, WEBTEST_CONTENT, WEBTEST_CONT, WEBTEST_NOCONT, WEBTEST_POST, WEBTEST_NOPOST, WEBTEST_TYPE, WEBTEST_STATUS, WEBTEST_SOAP, WEBTEST_NOSOAP,
 };
 
-typedef struct bburl_t {
+typedef struct weburl_t {
 	int testtype;
 	char *columnname;
 	struct urlelem_t *desturl;
@@ -39,7 +39,7 @@ typedef struct bburl_t {
 	unsigned char *expdata;
 	unsigned char *okcodes;
 	unsigned char *badcodes;
-} bburl_t;
+} weburl_t;
 
 extern char *urlunescape(char *url);
 extern char *urldecode(char *envvar);
@@ -47,7 +47,7 @@ extern char *urlencode(char *s);
 extern int urlvalidate(char *query, char *validchars);
 extern char *cleanurl(char *url);
 extern void parse_url(char *inputurl, urlelem_t *url);
-extern char *decode_url(char *testspec, bburl_t *bburl);
+extern char *decode_url(char *testspec, weburl_t *bburl);
 
 #endif
 

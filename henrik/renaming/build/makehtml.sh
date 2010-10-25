@@ -11,7 +11,7 @@ fi
 # cd ~/hobbit
 rm -f docs/*~ docs/manpages/index.html* docs/manpages/man1/* docs/manpages/man5/* docs/manpages/man7/* docs/manpages/man8/*
 
-for DIR in bbdisplay bbnet bbproxy common xymond web
+for DIR in bbdisplay xymonnet bbproxy common xymond web
 do
 	for SECT in 1 5 7 8
 	do
