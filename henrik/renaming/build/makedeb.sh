@@ -11,7 +11,7 @@ cd $BASEDIR
 
 rm -rf debbuild
 mkdir -p $BASEDIR/debbuild/xymon-$REL
-for f in bbdisplay xymonnet bbpatches bbproxy build common contrib docs xymond web include lib client demotool
+for f in bbdisplay xymonnet bbpatches xymonproxy build common contrib docs xymond web include lib client demotool
 do
         find $f/ | egrep -v "RCS|\.svn" | cpio -pdvmu $BASEDIR/debbuild/xymon-$REL/
 done

@@ -1,8 +1,8 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BBMESSAGE.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONCGIMSG.CGI</TITLE>
 </HEAD><BODY>
-<H1>BBMESSAGE.CGI</H1>
+<H1>XYMONCGIMSG.CGI</H1>
 Section: Maintenance Commands (8)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
@@ -10,17 +10,17 @@ Section: Maintenance Commands (8)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HRE
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bbmessage.cgi - CGI utility used for proxying Xymon data over HTTP
+xymoncgimsg.cgi - CGI utility used for proxying Xymon data over HTTP
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bbmessage.cgi</B>
+<B>xymoncgimsg.cgi</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man8/bbmessage.cgi.8.html">bbmessage.cgi</A>(8)</I>
+<I><A HREF="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</A>(8)</I>
 
 is the server-side utility receiving Xymon messages sent by the
 <I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
@@ -34,7 +34,7 @@ normal Xymon transport.
 <P>
 The CGI expects to be invoked from an HTTP &quot;POST&quot; request,
 with the POST-data being the status-message.
-<B>bbmessage.cgi</B>
+<B>xymoncgimsg.cgi</B>
 simply collects all of the POST data, and send it off as
 a message to the Xymon daemon running on IP 127.0.0.1. This
 destination IP currently cannot be changed.
@@ -46,7 +46,7 @@ so this allows for all normal Xymon commands to work.
 <A NAME="lbAE">&nbsp;</A>
 <H2>SECURITY</H2>
 
-<B>bbmesage.cgi</B> will only send data to a Xymon server through the
+<B>xymoncgimsg.cgi</B> will only send data to a Xymon server through the
 loopback interface, i.e. IP-address 127.0.0.1.
 <P>
 Access to the CGI should be restricted through webserver access controls,

@@ -1,16 +1,16 @@
-# bbproxy Makefile
+# xymonproxy Makefile
 
-PROGRAMS = bbproxy bbmessage.cgi
+PROGRAMS = xymonproxy xymoncgimsg.cgi
 
-PROXYOBJS = bbproxy.o
-BBCGIOBJS = bbmessage.o
+PROXYOBJS = xymonproxy.o
+BBCGIOBJS = xymoncgimsg.o
 
 all: $(PROGRAMS)
 
-bbproxy: $(PROXYOBJS)
+xymonproxy: $(PROXYOBJS)
 	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-bbmessage.cgi: $(BBCGIOBJS) ../lib/libbbgen.a
+xymoncgimsg.cgi: $(BBCGIOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
 ################################################

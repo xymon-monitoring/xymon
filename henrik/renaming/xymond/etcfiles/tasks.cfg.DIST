@@ -6,7 +6,7 @@
 
 # This is the main Xymon daemon. This must be running on at least
 # one server in your setup. If you are setting up a server to do
-# just network tests or run bbproxy, it is OK to disable this (then
+# just network tests or run xymonproxy, it is OK to disable this (then
 # you also need to remove the "NEEDS xymond" lines for the tasks
 # you want to run).
 [xymond]
@@ -114,18 +114,18 @@
 	CMD xymond_channel --channel=client --log=$BBSERVERLOGS/clientdata.log xymond_client
 
 
-# "bbproxy" is the Xymon proxy server that allows you to forward status messages
+# "xymonproxy" is the Xymon proxy server that allows you to forward status messages
 # from a protected network to your Xymon server. It is not enabled by default,
 # since it would conflict with the xymond task.
 # If you need to run this, disable xymond and the xymond-modules
 # above and enable this. Make sure you enter the IP-address of your 
 # Xymon server in the command-line, so that the proxy knows where to forward
 # status messages.
-[bbproxy]
+[xymonproxy]
 	DISABLED
 	ENVFILE @BBHOME@/etc/xymonserver.cfg
-	CMD $BBHOME/bin/bbproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/bbproxy.pid
-	LOGFILE $BBSERVERLOGS/bbproxy.log
+	CMD $BBHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$BBSERVERLOGS/xymonproxy.pid
+	LOGFILE $BBSERVERLOGS/xymonproxy.log
 
 
 # "xymonfetch" is used when you have clients that cannot connect to your Xymon server,

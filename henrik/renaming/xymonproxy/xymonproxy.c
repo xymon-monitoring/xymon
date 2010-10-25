@@ -215,9 +215,9 @@ int main(int argc, char *argv[])
 	int daemonize = 1;
 	int timeout = 10;
 	int listenq = 512;
-	char *pidfile = "/var/run/bbproxy.pid";
+	char *pidfile = "/var/run/xymonproxy.pid";
 	char *proxyname = NULL;
-	char *proxynamesvc = "bbproxy";
+	char *proxynamesvc = "xymonproxy";
 
 	int sockcount = 0;
 	int lsocket;
@@ -341,11 +341,11 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 		else if (strcmp(argv[opt], "--version") == 0) {
-			printf("bbproxy version %s\n", VERSION);
+			printf("xymonproxy version %s\n", VERSION);
 			return 0;
 		}
 		else if (strcmp(argv[opt], "--help") == 0) {
-			printf("bbproxy version %s\n", VERSION);
+			printf("xymonproxy version %s\n", VERSION);
 			printf("\nOptions:\n");
 			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
 			printf("\t--server=IP[:port]          : Xymon server address and portnumber\n");
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
 		freopen(logfile, "a", stderr);
 	}
 
-	errprintf("bbproxy version %s starting\n", VERSION);
+	errprintf("xymonproxy version %s starting\n", VERSION);
 	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
 	{
 		int i;
@@ -491,7 +491,7 @@ int main(int argc, char *argv[])
 			}
 
 			p = stentry->buf;
-			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nbbproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 				proxyname, timestamp, runtime_s, VERSION,
 				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 				msgs_delivered,

@@ -596,7 +596,7 @@ static int rrddatasets(char *hostname, char ***dsnames)
 /* Include all of the sub-modules. */
 #include "rrd/do_bbgen.c"
 #include "rrd/do_bbtest.c"
-#include "rrd/do_bbproxy.c"
+#include "rrd/do_xymonproxy.c"
 #include "rrd/do_xymond.c"
 #include "rrd/do_citrix.c"
 #include "rrd/do_ntpstat.c"
@@ -669,7 +669,8 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 
 	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbproxy") == 0)     res = do_bbproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbproxy") == 0)     res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonproxy") == 0)  res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "hobbitd") == 0)     res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "xymond") == 0)      res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "citrix") == 0)      res = do_citrix_rrd(hostname, testname, classname, pagepaths, msg, tstamp);

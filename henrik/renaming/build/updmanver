@@ -12,7 +12,7 @@ fi
 
 # cd $HOME/xymon || exit 1
 
-for DIR in bbdisplay xymonnet bbproxy common xymond web
+for DIR in bbdisplay xymonnet xymonproxy common xymond web
 do
    pushd $DIR
 

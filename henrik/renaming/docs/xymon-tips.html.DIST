@@ -67,7 +67,7 @@ this are:</p>
 	to send their status reports. If this port is blocked by a firewall,
 	client status reports will not show up.<br>
 	If possible, open up the firewall to allow this access. Alternatively,
-	you may setup a proxy using the <em>bbproxy</em> tool (part of Xymon)
+	you may setup a proxy using the <em>xymonproxy</em> tool (part of Xymon)
 	to forward status messages from a protected network to the Xymon
 	server.<br>
 	Other methods are also possible, e.g. <em>bbfetch</em> (available from

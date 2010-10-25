@@ -48,7 +48,7 @@ procs;The <b>procs</b> column shows the status of select processes that are expe
 svcs;The <b>svcs</b> column shows the status of select system services that are expected to run on the system.;
 msgs;The <b>msgs</b> column monitors system log-files or the Event log for warnings or critical errors.;
 bbgen;The <b>bbgen</b> column shows the status of the Xymon bbgen task. This task is responsible for updating the webpages you see when looking at the Xymon status view.;
-bbproxy;The <b>bbproxy</b> column shows the status of the Xymon bbproxy task. bbproxy is used to forward Xymon status-reports from one part of the network to another, so a failure of this task may result in servers that are not being monitored.;
+bbproxy;The <b>bbproxy</b> column shows the status of the Xymon xymonproxy task. xymonproxy is used to forward Xymon status-reports from one part of the network to another, so a failure of this task may result in servers that are not being monitored.;
 bbtest;The <b>bbtest</b> column shows the status of the Xymon network-service monitoring task. This task is responsible for testing all of the network services being monitored. ;
 hobbitd;The <b>hobbitd</b> column shows the status of the central Xymon daemon.;
 info;The <b>info</b> column shows static information about how this host is configured in the Xymon system.;
