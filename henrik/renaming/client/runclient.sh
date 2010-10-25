@@ -18,7 +18,7 @@
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
 BBOSTYPE="`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
-BBOSSCRIPT="hobbitclient-$BBOSTYPE.sh"
+BBOSSCRIPT="xymonclient-$BBOSTYPE.sh"
 
 # Command-line mods for the defaults
 while test "$1" != ""

@@ -33,16 +33,16 @@ else
 endif
 
 logfetch: logfetch.c
-	$(CC) $(CFLAGS) -o $@ logfetch.c ../lib/hobbitclient.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ logfetch.c ../lib/xymonclient.a $(LIBRTDEF)
 
 clientupdate: clientupdate.c
-	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 orcahobbit: orcahobbit.c
-	$(CC) $(CFLAGS) -o $@ orcahobbit.c ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ orcahobbit.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 msgcache: msgcache.c
-	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c
@@ -65,7 +65,7 @@ install:
 	if test ! -d $(INSTALLROOT)$(BBHOME)/ext ; then mkdir -p $(INSTALLROOT)$(BBHOME)/ext ; fi
 	if test ! -f $(INSTALLROOT)$(BBHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(BBHOME)/etc/ ; fi
 	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
-	cp -fp $(PROGRAMS) hobbitclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
 	chmod ugo+x $(INSTALLROOT)$(BBHOME)/bin/*
 
 	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg

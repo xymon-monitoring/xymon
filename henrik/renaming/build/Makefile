@@ -9,7 +9,7 @@ merge-sects: merge-sects.c
 	$(CC) -o $@ $(CFLAGS) $<
 
 setup-newfiles: setup-newfiles.c
-	$(CC) -o $@ $(CFLAGS) $(RPATHOPT) $< ../lib/hobbitclient.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+	$(CC) -o $@ $(CFLAGS) $(RPATHOPT) $< ../lib/xymonclient.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 clean:
 	rm -f $(TOOLS) testfile *.o *~

@@ -200,7 +200,7 @@
 [xymonclient]
 	ENVFILE @BBTOPDIR@/client/etc/xymonclient.cfg
 	NEEDS hobbitd
-	CMD @BBTOPDIR@/client/bin/hobbitclient.sh
+	CMD @BBTOPDIR@/client/bin/xymonclient.sh
 	LOGFILE $BBSERVERLOGS/xymonclient.log
 	INTERVAL 5m
 

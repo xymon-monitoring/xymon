@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 		struct stat st;
 
 		sprintf(envfn, "%s/etc/xymonserver.cfg", xgetenv("BBHOME"));
-		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/hobbitclient.cfg", xgetenv("BBHOME"));
+		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/xymonclient.cfg", xgetenv("BBHOME"));
 		errprintf("Using default environment file %s\n", envfn);
 
 		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */

@@ -124,7 +124,7 @@ Each script should have a separate section in the file, like the
 default one that runs the core client:
 
 [myextension]
-	ENVFILE /usr/lib/xymon/client/etc/hobbitclient.cfg
+	ENVFILE /usr/lib/xymon/client/etc/xymonclient.cfg
 	CMD /usr/lib/xymon/client/ext/myscript.sh
 	INTERVAL 5m
 	LOGFILE /usr/lib/xymon/client/logs/myscript.log

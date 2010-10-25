@@ -283,7 +283,7 @@ like this:</p>
 
 <pre><tt>
    [myscript]
-	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
+	ENVFILE $HOBBITCLIENTHOME/etc/xymonclient.cfg
 	CMD $HOBBITCLIENTHOME/ext/myscript.sh
 	LOGFILE $HOBBITCLIENTHOME/logs/myscript.log
 	INTERVAL 5m

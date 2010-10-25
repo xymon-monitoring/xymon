@@ -244,8 +244,8 @@ int main(int argc, char *argv[])
 	}
 
 	/* Make sure these have execute permissions */
-	dbgprintf("Setting execute permissions on hobbitclient.sh and clientupdate tools\n");
-	chmod("bin/hobbitclient.sh", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
+	dbgprintf("Setting execute permissions on xymonclient.sh and clientupdate tools\n");
+	chmod("bin/xymonclient.sh", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
 	chmod("bin/clientupdate", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
 
 	/*

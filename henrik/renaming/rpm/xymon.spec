@@ -82,9 +82,9 @@ rm -rf $RPM_BUILD_ROOT
 	cd $RPM_BUILD_ROOT/usr/lib/xymon/client && ln -sf /tmp tmp
 	rmdir $RPM_BUILD_ROOT/usr/lib/xymon/client/logs
 	cd $RPM_BUILD_ROOT/usr/lib/xymon/client && ln -sf ../../../../var/log/xymon logs
-	mv $RPM_BUILD_ROOT/usr/lib/xymon/client/etc/hobbitclient.cfg /tmp/hobbitclient.cfg.$$
-	cat /tmp/hobbitclient.cfg.$$ | sed -e 's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$RPM_BUILD_ROOT/usr/lib/xymon/client/etc/hobbitclient.cfg
-	rm /tmp/hobbitclient.cfg.$$
+	mv $RPM_BUILD_ROOT/usr/lib/xymon/client/etc/xymonclient.cfg /tmp/xymonclient.cfg.$$
+	cat /tmp/xymonclient.cfg.$$ | sed -e 's!^BBDISP=.*!include /var/run/xymonclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$RPM_BUILD_ROOT/usr/lib/xymon/client/etc/xymonclient.cfg
+	rm /tmp/xymonclient.cfg.$$
 
 %clean
 rm -rf $RPM_BUILD_ROOT

@@ -72,8 +72,8 @@ hobbitd_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
 hobbitd_client: $(CLIENTOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CLIENTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-../client/hobbitd_client: $(CLIENTOBJS) ../lib/hobbitclient.a
-	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/hobbitclient.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+../client/hobbitd_client: $(CLIENTOBJS) ../lib/xymonclient.a
+	$(CC) -o $@ $(RPATHOPT) $(CLIENTOBJS) ../lib/xymonclient.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 hobbitd_client.o: hobbitd_client.c client/*.c
 	$(CC) $(CFLAGS) -c -o $@ hobbitd_client.c

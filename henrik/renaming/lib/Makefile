@@ -11,9 +11,9 @@ endif
 
 CFLAGS += -I. -I../include 
 
-all: test-endianness libbbgen.a hobbitclient.a loadhosts stackio availability md5 sha1 rmd160 locator
+all: test-endianness libbbgen.a xymonclient.a loadhosts stackio availability md5 sha1 rmd160 locator
 
-client: test-endianness hobbitclient.a
+client: test-endianness xymonclient.a
 
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
@@ -22,9 +22,9 @@ libbbgen.a: $(BBGENLIBOBJS)
 	ar cr libbbgen.a $(BBGENLIBOBJS)
 	ranlib libbbgen.a || echo ""
 
-hobbitclient.a: $(CLIENTLIBOBJS)
-	ar cr hobbitclient.a $(CLIENTLIBOBJS)
-	ranlib hobbitclient.a || echo ""
+xymonclient.a: $(CLIENTLIBOBJS)
+	ar cr xymonclient.a $(CLIENTLIBOBJS)
+	ranlib xymonclient.a || echo ""
 
 loadhosts.o: loadhosts.c loadhosts_file.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c

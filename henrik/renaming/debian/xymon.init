@@ -27,7 +27,7 @@ test -x $DAEMON || exit 0
 . /lib/lsb/init-functions
 . /usr/share/xymon/init-common.sh
 
-# Include hobbitclient defaults if available
+# Include xymonclient defaults if available
 if [ -f /etc/default/xymon-client ] ; then
 	. /etc/default/xymon-client
 fi

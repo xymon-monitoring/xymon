@@ -29,7 +29,7 @@ if test $# -ge 1; then
 fi
 
 if test "$BBOSSCRIPT" = ""; then
-	BBOSSCRIPT="hobbitclient-`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`.sh"
+	BBOSSCRIPT="xymonclient-`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`.sh"
 fi
 
 MSGFILE="$BBTMP/msg.$MACHINEDOTS.txt"

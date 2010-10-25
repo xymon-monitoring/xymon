@@ -18,38 +18,38 @@ client: $(CLIENTPROGRAMS)
 xymongrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-../client/xymongrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymongrep: $(HOSTGREPOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymoncfg: $(HOSTSHOWOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libbbgen.a $(LIBRTDEF)
 
-../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
+../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
 xymon: $(BBOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-../client/xymon: $(BBOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymon: $(BBOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymonlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a $(LIBRTDEF)
 
-../client/xymonlaunch: $(LAUNCHOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
+../client/xymonlaunch: $(LAUNCHOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
 xymoncmd: $(CMDOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a $(LIBRTDEF)
 
-../client/xymoncmd: $(CMDOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
+../client/xymoncmd: $(CMDOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
 xymondigest: $(DIGESTOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
 
-../client/xymondigest: $(DIGESTOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymondigest: $(DIGESTOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 
 xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
