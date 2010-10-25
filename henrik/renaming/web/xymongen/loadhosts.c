@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 #include "loadbbhosts.h"
 
@@ -35,7 +35,7 @@ char	*null_text = "";
 
 /* List definition to search for page records */
 typedef struct bbpagelist_t {
-	struct bbgen_page_t *pageentry;
+	struct xymongen_page_t *pageentry;
 	struct bbpagelist_t *next;
 } bbpagelist_t;
 
@@ -49,7 +49,7 @@ char    *nopropreddefault = NULL;
 char    *noproppurpledefault = NULL;
 char    *nopropackdefault = NULL;
 
-void addtopagelist(bbgen_page_t *page)
+void addtopagelist(xymongen_page_t *page)
 {
 	bbpagelist_t *newitem;
 
@@ -112,9 +112,9 @@ char *build_noprop(char *defset, char *specset)
 	return result;	/* This may be an empty string */
 }
 
-bbgen_page_t *init_page(char *name, char *title)
+xymongen_page_t *init_page(char *name, char *title)
 {
-	bbgen_page_t *newpage = (bbgen_page_t *) calloc(1, sizeof(bbgen_page_t));
+	xymongen_page_t *newpage = (xymongen_page_t *) calloc(1, sizeof(xymongen_page_t));
 
 	pagecount++;
 	dbgprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
@@ -314,7 +314,7 @@ void getnamelink(char *l, char **name, char **link)
 }
 
 
-void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, char **name, char **link)
+void getparentnamelink(char *l, xymongen_page_t *toppage, xymongen_page_t **parent, char **name, char **link)
 {
 	/* "subparent NAME PARENTNAME title-or-link" splitup */
 	char *p;
@@ -413,7 +413,7 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 }
 
 
-bbgen_page_t *load_bbhosts(char *pgset)
+xymongen_page_t *load_bbhosts(char *pgset)
 {
 	FILE 	*bbhosts;
 	strbuffer_t *inbuf;
@@ -421,7 +421,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols, *exceptcols;
 	char 	hostname[MAX_LINE_LEN];
-	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
+	xymongen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
 	group_t *curgroup;
 	host_t	*curhost;
 	char	*curtitle;
@@ -512,7 +512,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			addtopagelist(cursubpage);
 		}
 		else if (strncmp(STRBUF(inbuf), subparenttag, strlen(subparenttag)) == 0) {
-			bbgen_page_t *parentpage, *walk;
+			xymongen_page_t *parentpage, *walk;
 
 			getparentnamelink(STRBUF(inbuf), toppage, &parentpage, &name, &link);
 			if (parentpage == NULL) {

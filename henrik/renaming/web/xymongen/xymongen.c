@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 
 #include "version.h"
 
-#include "bbgen.h"
+#include "xymngen.h"
 #include "util.h"
 #include "debug.h"
 #include "loadbbhosts.h"
@@ -35,7 +35,7 @@ static char rcsid[] = "$Id$";
 #include "csvreport.h"
 
 /* Global vars */
-bbgen_page_t	*pagehead = NULL;			/* Head of page list */
+xymongen_page_t	*pagehead = NULL;			/* Head of page list */
 state_t		*statehead = NULL;			/* Head of list of all state entries */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
@@ -90,7 +90,7 @@ NULL };
 int main(int argc, char *argv[])
 {
 	char		*pagedir;
-	bbgen_page_t 	*p;
+	xymongen_page_t 	*p;
 	dispsummary_t	*s;
 	int		i;
 	char		*pageset = NULL;
@@ -452,13 +452,13 @@ int main(int argc, char *argv[])
 			dontsendmessages = 1;
 		}
 		else if (strcmp(argv[i], "--version") == 0) {
-			printf("bbgen version %s\n", VERSION);
+			printf("xymongen version %s\n", VERSION);
 			printf("\n");
 			exit(0);
 		}
 
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
-			printf("bbgen for Xymon version %s\n\n", VERSION);
+			printf("xymongen for Xymon version %s\n\n", VERSION);
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
@@ -475,7 +475,7 @@ int main(int argc, char *argv[])
 			printf("    --docurl=documentation-URL  : Hostnames link to a general (dynamic) web page for docs\n");
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymongen\n");
 			printf("    --reportopts=ST:END:DYN:STL : Run in Xymon Reporting mode\n");
 			printf("    --csv=FILENAME              : For Xymon Reporting, output CSV file\n");
 			printf("    --csvdelim=CHARACTER        : Delimiter in CSV file output (default: comma)\n");
@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
 
 	if (debug) {
 		int i;
-		printf("Command: bbgen");
+		printf("Command: xymongen");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
 		printf("Environment HOSTSCFG='%s'\n", textornull(xgetenv("HOSTSCFG")));
@@ -543,7 +543,7 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 
 	/* Catch a SEGV fault */
-	setup_signalhandler("bbgen");
+	setup_signalhandler("xymongen");
 
 	/* Set umask to 0022 so that the generated HTML pages have world-read access */
 	umask(0022);
@@ -696,7 +696,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbgen for Xymon version %s\n", VERSION);
+		sprintf(msgline, "xymongen for Xymon version %s\n", VERSION);
 		addtostatus(msgline);
 
 		addtostatus("\nStatistics:\n");

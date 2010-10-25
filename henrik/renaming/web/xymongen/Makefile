@@ -1,12 +1,12 @@
-# Makefile for bbgen - bbdisplay programs
+# Makefile for xymongen
 #
 
-PROGRAMS = bbgen
-GENOBJS = bbgen.o loadbbhosts.o loaddata.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
+PROGRAMS = xymongen
+GENOBJS = xymongen.o loadhosts.o loaddata.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
 
 all: $(PROGRAMS)
 
-bbgen: $(GENOBJS) ../lib/libbbgen.a
+xymongen: $(GENOBJS) ../lib/libbbgen.a
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 

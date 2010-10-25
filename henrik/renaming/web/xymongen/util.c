@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* Various utility functions specific to bbgen. Generally useful code is      */
+/* Various utility functions specific to xymongen. Generally useful code is   */
 /* in the library.                                                            */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <utime.h>
 #include <unistd.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
@@ -37,10 +37,10 @@ char *hostpage_link(host_t *host)
 
 	static char pagelink[PATH_MAX];
 	char tmppath[PATH_MAX];
-	bbgen_page_t *pgwalk;
+	xymongen_page_t *pgwalk;
 
-	if (host->parent && (strlen(((bbgen_page_t *)host->parent)->name) > 0)) {
-		sprintf(pagelink, "%s%s", ((bbgen_page_t *)host->parent)->name, htmlextension);
+	if (host->parent && (strlen(((xymongen_page_t *)host->parent)->name) > 0)) {
+		sprintf(pagelink, "%s%s", ((xymongen_page_t *)host->parent)->name, htmlextension);
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
 				sprintf(tmppath, "%s/%s", pgwalk->name, pagelink);
@@ -62,9 +62,9 @@ char *hostpage_name(host_t *host)
 
 	static char pagename[PATH_MAX];
 	char tmpname[PATH_MAX];
-	bbgen_page_t *pgwalk;
+	xymongen_page_t *pgwalk;
 
-	if (host->parent && (strlen(((bbgen_page_t *)host->parent)->name) > 0)) {
+	if (host->parent && (strlen(((xymongen_page_t *)host->parent)->name) > 0)) {
 		pagename[0] = '\0';
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
@@ -204,9 +204,9 @@ hostlist_t *hostlistNext(void)
 	}
 }
 
-bbgen_col_t *find_or_create_column(char *testname, int create)
+xymongen_col_t *find_or_create_column(char *testname, int create)
 {
-	bbgen_col_t *newcol = NULL;
+	xymongen_col_t *newcol = NULL;
 	RbtIterator handle;
 
 	dbgprintf("find_or_create_column(%s)\n", textornull(testname));
@@ -217,12 +217,12 @@ bbgen_col_t *find_or_create_column(char *testname, int create)
 	}
 
 	handle = rbtFind(columntree, testname);
-	if (handle != rbtEnd(columntree)) newcol = (bbgen_col_t *)gettreeitem(columntree, handle);
+	if (handle != rbtEnd(columntree)) newcol = (xymongen_col_t *)gettreeitem(columntree, handle);
 
 	if (newcol == NULL) {
 		if (!create) return NULL;
 
-		newcol = (bbgen_col_t *) calloc(1, sizeof(bbgen_col_t));
+		newcol = (xymongen_col_t *) calloc(1, sizeof(xymongen_col_t));
 		newcol->name = strdup(testname);
 		newcol->listname = (char *)malloc(strlen(testname)+1+2); 
 		sprintf(newcol->listname, ",%s,", testname);

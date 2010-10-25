@@ -18,7 +18,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 #include "rssgen.h"
 
@@ -238,7 +238,7 @@ void do_netscape_sidebar(char *nssidebarfilename, host_t *hosts)
 	fprintf(fd, "<HTML>\n");
 	fprintf(fd, "  <HEAD>\n");
 	fprintf(fd, "    <TITLE>%s</TITLE>\n", rsstitle);
-	fprintf(fd, "    <META NAME=\"Generator\" CONTENT=\"bbgen - generator for Xymon\">\n");
+	fprintf(fd, "    <META NAME=\"Generator\" CONTENT=\"xymongen - generator for Xymon\">\n");
 	fprintf(fd, "    <META HTTP-EQUIV=\"Refresh\" CONTENT=\"%d; URL=%s/%s\">\n",
 		ttlvalue, xgetenv("BBWEBHOSTURL"), nssidebarfilename);
 	fprintf(fd, "  </HEAD>\n");

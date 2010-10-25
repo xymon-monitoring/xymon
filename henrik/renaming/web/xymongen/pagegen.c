@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 #include "loadbbhosts.h"
 #include "rssgen.h"
@@ -73,7 +73,7 @@ void select_headers_and_footers(char *prefix)
 }
 
 
-int interesting_column(int pagetype, int color, int alert, bbgen_col_t *column, char *onlycols, char *exceptcols)
+int interesting_column(int pagetype, int color, int alert, xymongen_col_t *column, char *onlycols, char *exceptcols)
 {
 	/*
 	 * Decides if a given column is to be included on a page.
@@ -185,7 +185,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char
 
 		char *p1 = onlycols;
 		char *p2;
-		bbgen_col_t *col;
+		xymongen_col_t *col;
 
 		collist_walk = head;
 		do {
@@ -672,14 +672,14 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "</CENTER>\n");
 }
 
-void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
+void do_page_subpages(FILE *output, xymongen_page_t *subs, char *pagepath)
 {
 	/*
 	 * This routine does NOT generate subpages!
 	 * Instead, it generates the LINKS to the subpages below any given page.
 	 */
 
-	bbgen_page_t	*p;
+	xymongen_page_t	*p;
 	int	currentcolumn;
 	char	pagelink[PATH_MAX];
 	char    *linkurl;
@@ -758,7 +758,7 @@ void do_page_subpages(FILE *output, bbgen_page_t *subs, char *pagepath)
 }
 
 
-void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
+void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 {
 	FILE	*output = NULL;
 	FILE	*rssoutput = NULL;
@@ -791,7 +791,7 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 		}
 		else {
 			char tmppath[PATH_MAX];
-			bbgen_page_t *pgwalk;
+			xymongen_page_t *pgwalk;
 	
 			for (pgwalk = page; (pgwalk); pgwalk = pgwalk->parent) {
 				if (strlen(pgwalk->name)) {
@@ -916,9 +916,9 @@ void do_one_page(bbgen_page_t *page, dispsummary_t *sums, int embedded)
 }
 
 
-void do_page_with_subs(bbgen_page_t *curpage, dispsummary_t *sums)
+void do_page_with_subs(xymongen_page_t *curpage, dispsummary_t *sums)
 {
-	bbgen_page_t *levelpage;
+	xymongen_page_t *levelpage;
 
 	for (levelpage = curpage; (levelpage); levelpage = levelpage->next) {
 		do_one_page(levelpage, sums, 0);
@@ -981,7 +981,7 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 
 int do_bb2_page(char *nssidebarfilename, int summarytype)
 {
-	bbgen_page_t	bb2page;
+	xymongen_page_t	bb2page;
 	FILE		*output = NULL;
 	FILE		*rssoutput = NULL;
 	char		filename[PATH_MAX];

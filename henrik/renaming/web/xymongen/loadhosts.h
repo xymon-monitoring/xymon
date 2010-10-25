@@ -14,7 +14,7 @@
 extern int hostcount;
 extern int pagecount;
 
-extern bbgen_page_t *load_bbhosts(char *pgset);
+extern xymongen_page_t *load_bbhosts(char *pgset);
 
 /* Needed by the summary handling */
 extern host_t *init_host(char *hostname, int issummary,

@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 #include "loadbbhosts.h"
 #include "loaddata.h"
@@ -35,7 +35,7 @@ char		*dialupskin = NULL;			/* BBSKIN used for dialup tests */
 char		*reverseskin = NULL;			/* BBSKIN used for reverse tests */
 time_t		recentgif_limit = 86400;		/* Limit for recent-gifs display, in seconds */
 
-bbgen_col_t   	null_column = { "", NULL };		/* Null column */
+xymongen_col_t 	null_column = { "", NULL };		/* Null column */
 
 char		*purplelogfn = NULL;
 static FILE	*purplelog = NULL;

@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "wmlgen.h"
 #include "util.h"
 

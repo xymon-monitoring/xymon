@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <sys/wait.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "process.h"
 #include "util.h"
 
@@ -68,9 +68,9 @@ void calc_hostcolors(char *bb2ignores)
 }
 
 
-void calc_pagecolors(bbgen_page_t *phead)
+void calc_pagecolors(xymongen_page_t *phead)
 {
-	bbgen_page_t 	*p, *toppage;
+	xymongen_page_t 	*p, *toppage;
 	group_t *g;
 	host_t  *h;
 	int	color, oldage;
@@ -222,8 +222,8 @@ void send_summaries(summary_t *sumhead)
 			 * Specific page - find it in the page tree.
 			 */
 			char *p, *pg;
-			bbgen_page_t *pgwalk;
-			bbgen_page_t *sourcepg = NULL;
+			xymongen_page_t *pgwalk;
+			xymongen_page_t *sourcepg = NULL;
 			char *urlcopy = strdup(suburl);
 
 			/*
