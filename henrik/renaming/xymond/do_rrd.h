@@ -19,7 +19,7 @@ extern char *rrddir;
 extern char *trackmax;
 extern int use_rrd_cache;
 extern void setup_exthandler(char *handlerpath, char *ids);
-extern void update_rrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, char *sender, hobbitrrd_t *ldef, char *classname, char *pagepaths);
+extern void update_rrd(char *hostname, char *testname, char *restofmsg, time_t tstamp, char *sender, xymonrrd_t *ldef, char *classname, char *pagepaths);
 extern void rrdcacheflushall(void);
 extern void rrdcacheflushhost(char *hostname);
 extern void setup_extprocessor(char *cmd);

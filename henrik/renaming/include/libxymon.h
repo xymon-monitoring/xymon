@@ -70,7 +70,7 @@ typedef struct strbuffer_t {
 #include "../lib/environ.h"
 #include "../lib/errormsg.h"
 #include "../lib/files.h"
-#include "../lib/hobbitrrd.h"
+#include "../lib/xymonrrd.h"
 #include "../lib/holidays.h"
 #include "../lib/ipaccess.h"
 #include "../lib/loadalerts.h"

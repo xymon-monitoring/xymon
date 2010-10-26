@@ -785,9 +785,9 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			gdef = gdefuser;
 		}
 		else {
-			hobbitrrd_t *ldef = find_hobbit_rrd(service, NULL);
+			xymonrrd_t *ldef = find_xymon_rrd(service, NULL);
 			if (ldef) {
-				for (gdef = gdefs; (gdef && strcmp(ldef->hobbitrrdname, gdef->name)); gdef = gdef->next) ;
+				for (gdef = gdefs; (gdef && strcmp(ldef->xymonrrdname, gdef->name)); gdef = gdef->next) ;
 				wantsingle = 1;
 			}
 		}

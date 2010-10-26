@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 typedef struct graph_t {
-	hobbitgraph_t *gdef;
+	xymongraph_t *gdef;
 	int count;
 	struct graph_t *next;
 } graph_t;
@@ -120,17 +120,17 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	hostdisplayname = bbh_item(host, BBH_DISPLAYNAME);
 	hostrrdgraphs = bbh_item(host, BBH_TRENDS);
 
-	dbgprintf("rrdlink_text: host %s, rrd %s\n", bbh_item(host, BBH_HOSTNAME), rrd->gdef->hobbitrrdname);
+	dbgprintf("rrdlink_text: host %s, rrd %s\n", bbh_item(host, BBH_HOSTNAME), rrd->gdef->xymonrrdname);
 
 	/* If no rrdgraphs definition, include all with default links */
 	if (hostrrdgraphs == NULL) {
 		dbgprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
-		return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+		return xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 	}
 
 	/* Find this rrd definition in the rrdgraphs */
-	graphdef = strstr(hostrrdgraphs, rrd->gdef->hobbitrrdname);
+	graphdef = strstr(hostrrdgraphs, rrd->gdef->xymonrrdname);
 
 	/* If not found ... */
 	if (graphdef == NULL) {
@@ -141,7 +141,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 			dbgprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+			return xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 						 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 		}
 		else {
@@ -167,7 +167,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 
 	*rrdlink = '\0';
 
-	p = graphdef + strlen(rrd->gdef->hobbitrrdname);
+	p = graphdef + strlen(rrd->gdef->xymonrrdname);
 	if (*p == ':') {
 		/* There is an explicit list of graphs to add for this RRD. */
 		char savechar;
@@ -176,7 +176,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 		char *partlink;
 
 		myrrd = (graph_t *) malloc(sizeof(graph_t));
-		myrrd->gdef = (hobbitgraph_t *) calloc(1, sizeof(hobbitgraph_t));
+		myrrd->gdef = (xymongraph_t *) calloc(1, sizeof(xymongraph_t));
 
 		/* First, null-terminate this graph definition so we only look at the active RRD */
 		enddef = strchr(graphdef, ',');
@@ -188,12 +188,12 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 			if (p == NULL) p = graphdef + strlen(graphdef);	/* Ends at end of string */
 			savechar = *p; *p = '\0'; 
 
-			myrrd->gdef->hobbitrrdname = graphdef;
-			myrrd->gdef->hobbitpartname = NULL;
+			myrrd->gdef->xymonrrdname = graphdef;
+			myrrd->gdef->xymonpartname = NULL;
 			myrrd->gdef->maxgraphs = 0;
 			myrrd->count = rrd->count;
 			myrrd->next = NULL;
-			partlink = hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
+			partlink = xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
 						     HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
@@ -215,7 +215,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	}
 	else {
 		/* It is included with the default graph */
-		return hobbit_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+		return xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 	}
 
@@ -229,7 +229,7 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 	char hostrrddir[PATH_MAX];
 	char *fn;
 	int anyrrds = 0;
-	hobbitgraph_t *graph;
+	xymongraph_t *graph;
 	graph_t *rwalk;
 	char *allrrdlinks = NULL, *allrrdlinksend;
 	unsigned int allrrdlinksize = 0;
@@ -244,7 +244,7 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 	while ((fn = stack_readdir())) {
 		/* Check if the filename ends in ".rrd", and we know how to handle this RRD */
 		if ((strlen(fn) <= 4) || (strcmp(fn+strlen(fn)-4, ".rrd") != 0)) continue;
-		graph = find_hobbit_graph(fn); if (!graph) continue;
+		graph = find_xymon_graph(fn); if (!graph) continue;
 
 		dbgprintf("Got RRD %s\n", fn);
 		anyrrds++;
@@ -258,14 +258,14 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 			newrrd->next = (graph_t *)bbh_item(myhost, BBH_DATA);
 			bbh_set_item(myhost, BBH_DATA, newrrd);
 			rwalk = newrrd;
-			dbgprintf("New rrd for host:%s, rrd:%s\n", hostname, graph->hobbitrrdname);
+			dbgprintf("New rrd for host:%s, rrd:%s\n", hostname, graph->xymonrrdname);
 		}
 		else {
 			rwalk->count++;
 
 			dbgprintf("Extra RRD for host %s, rrd %s   count:%d\n", 
 				hostname, 
-				rwalk->gdef->hobbitrrdname, rwalk->count);
+				rwalk->gdef->xymonrrdname, rwalk->count);
 		}
 	}
 	stack_closedir();
@@ -277,9 +277,9 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 	*allrrdlinks = '\0';
 	allrrdlinksend = allrrdlinks;
 
-	graph = hobbitgraphs;
-	while (graph->hobbitrrdname) {
-		for (rwalk = (graph_t *)bbh_item(myhost, BBH_DATA); (rwalk && (rwalk->gdef->hobbitrrdname != graph->hobbitrrdname)); rwalk = rwalk->next) ;
+	graph = xymongraphs;
+	while (graph->xymonrrdname) {
+		for (rwalk = (graph_t *)bbh_item(myhost, BBH_DATA); (rwalk && (rwalk->gdef->xymonrrdname != graph->xymonrrdname)); rwalk = rwalk->next) ;
 		if (rwalk) {
 			int buflen;
 			char *onelink;

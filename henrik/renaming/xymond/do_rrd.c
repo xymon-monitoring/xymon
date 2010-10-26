@@ -657,14 +657,14 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_devmon.c"
 
 
-void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef, char *classname, char *pagepaths)
+void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, xymonrrd_t *ldef, char *classname, char *pagepaths)
 {
 	int res = 0;
 	char *id;
 
 	MEMDEFINE(rrdvalues);
 
-	if (ldef) id = ldef->hobbitrrdname; else id = testname;
+	if (ldef) id = ldef->xymonrrdname; else id = testname;
 	senderip = sender;
 
 	if      (strcmp(id, "bbgen") == 0)       res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);

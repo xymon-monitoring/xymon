@@ -149,8 +149,8 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       FILE *output)
 {
 	int linecount = 0;
-	hobbitrrd_t *rrd = NULL;
-	hobbitgraph_t *graph = NULL;
+	xymonrrd_t *rrd = NULL;
+	xymongraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
 	time_t now = getcurrenttime(NULL);
 
@@ -368,12 +368,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	/* trends stuff here */
 	if (!is_history) {
-		rrd = find_hobbit_rrd(service, flags);
+		rrd = find_xymon_rrd(service, flags);
 		if (rrd) {
-			graph = find_hobbit_graph(rrd->hobbitrrdname);
+			graph = find_xymon_graph(rrd->xymonrrdname);
 			if (graph == NULL) {
 				errprintf("Setup error: Service %s has a graph %s, but no graph-definition\n",
-					  service, rrd->hobbitrrdname);
+					  service, rrd->xymonrrdname);
 			}
 		}
 	}
@@ -397,7 +397,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 
 			/* Not all devmon statuses have graphs, so try to avoid generating graph links unless there is one */
-			if (strncmp(rrd->hobbitrrdname,"devmon",6) == 0) may_have_rrd=0;
+			if (strncmp(rrd->xymonrrdname,"devmon",6) == 0) may_have_rrd=0;
 
 			/* 
 			 * Some reports (disk) use the number of lines as a rough measure for how many
@@ -456,7 +456,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 		if (may_have_rrd) {
 			fprintf(output, "<!-- linecount=%d -->\n", linecount);
-			fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+			fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
 		}
 	}
 

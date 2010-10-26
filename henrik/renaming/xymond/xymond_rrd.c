@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *p;
 		char *hostname = NULL, *testname = NULL, *sender = NULL, *classname = NULL, *pagepaths = NULL;
-		hobbitrrd_t *ldef = NULL;
+		xymonrrd_t *ldef = NULL;
 		time_t tstamp;
 		int childstat;
                 ssize_t n;
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 				testname = metadata[5];
 				classname = (metadata[17] ? metadata[17] : "");
 				pagepaths = (metadata[18] ? metadata[18] : "");
-				ldef = find_hobbit_rrd(testname, metadata[8]);
+				ldef = find_xymon_rrd(testname, metadata[8]);
 				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 				break;
 
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 			testname = metadata[5];
 			classname = (metadata[6] ? metadata[6] : "");
 			pagepaths = (metadata[7] ? metadata[7] : "");
-			ldef = find_hobbit_rrd(testname, "");
+			ldef = find_xymon_rrd(testname, "");
 			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
