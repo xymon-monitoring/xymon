@@ -17,7 +17,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static char *hostname = NULL;
 static char *testname = NULL;

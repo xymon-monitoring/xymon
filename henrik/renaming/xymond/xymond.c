@@ -8,7 +8,7 @@
 /*                                                                            */
 /* This daemon maintains the full state of the Xymon system in memory,        */
 /* eliminating the need for file-based storage of e.g. status logs. The web   */
-/* frontend programs (bbgen, combostatus, bb-hostsvc.cgi etc) can retrieve    */
+/* frontend programs (xymongen, combostatus, hostsvc.cgi etc) can retrieve    */
 /* current statuslogs from this daemon to build the Xymon webpages. However,  */
 /* a "plugin" mechanism is also implemented to allow "worker modules" to      */
 /* pickup various types of events that occur in the system. This allows       */
@@ -54,7 +54,7 @@ static char rcsid[] = "$Id$";
 #include <sys/shm.h>
 #include <sys/wait.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include "xymond_buffer.h"
 #include "xymond_ipc.h"

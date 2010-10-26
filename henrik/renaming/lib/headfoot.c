@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for handling header- and footer-files.                */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 /* Stuff for headfoot - variables we can set dynamically */

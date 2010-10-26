@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <netdb.h>
 #include <sys/time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <ares.h>
 #include <ares_version.h>

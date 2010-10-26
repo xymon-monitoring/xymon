@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <sys/time.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { A_SELECT, A_GENERATE } action = A_SELECT;
 

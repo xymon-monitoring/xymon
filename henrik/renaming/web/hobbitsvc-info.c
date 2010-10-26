@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int showenadis = 1;
 int usejsvalidation = 1;

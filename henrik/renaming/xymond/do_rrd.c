@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 #include <rrd.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include "xymond_rrd.h"
 #include "do_rrd.h"
@@ -594,8 +594,8 @@ static int rrddatasets(char *hostname, char ***dsnames)
 }
 
 /* Include all of the sub-modules. */
-#include "rrd/do_bbgen.c"
-#include "rrd/do_bbtest.c"
+#include "rrd/do_xymongen.c"
+#include "rrd/do_xymonnet.c"
 #include "rrd/do_xymonproxy.c"
 #include "rrd/do_xymond.c"
 #include "rrd/do_citrix.c"
@@ -667,8 +667,10 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	if (ldef) id = ldef->hobbitrrdname; else id = testname;
 	senderip = sender;
 
-	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	if      (strcmp(id, "bbgen") == 0)       res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymongen") == 0)    res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbtest") == 0)      res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonnet") == 0)    res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "bbproxy") == 0)     res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "xymonproxy") == 0)  res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "hobbitd") == 0)     res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);

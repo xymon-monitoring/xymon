@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 #include <sys/time.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "xymond_worker.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */

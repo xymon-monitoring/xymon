@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <utime.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define DEFAULTCONFIG "etc/critical.cfg"
 

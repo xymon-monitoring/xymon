@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 char *stylenames[3] = { "crit", "nongr", "all" };
 

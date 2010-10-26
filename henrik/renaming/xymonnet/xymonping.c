@@ -37,7 +37,7 @@ static char rcsid[] = "$Id$";
 
 #include <stdio.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define PING_PACKET_SIZE 64
 #define PING_MINIMUM_SIZE ICMP_MINLEN

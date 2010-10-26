@@ -34,7 +34,7 @@ static char rcsid[] = "$Id$";
 #define S_ISSOCK(m)   (((m) & S_IFMT) == C_ISSOCK)
 #endif
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* Is it ok for these to be hardcoded ? */
 #define MAXCHECK   102400   /* When starting, dont look at more than 100 KB of data */

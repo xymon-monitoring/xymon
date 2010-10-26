@@ -8,17 +8,17 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbtest_rcsid[] = "$Id$";
+static char xymonnet_rcsid[] = "$Id$";
 
-int do_bbtest_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
+int do_xymonnet_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 { 
-	static char *bbtest_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
-	static void *bbtest_tpl      = NULL;
+	static char *xymonnet_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
+	static void *xymonnet_tpl      = NULL;
 
 	char	*p;
 	float	runtime;
 
-	if (bbtest_tpl == NULL) bbtest_tpl = setup_template(bbtest_params);
+	if (xymonnet_tpl == NULL) xymonnet_tpl = setup_template(xymonnet_params);
 
 	p = strstr(msg, "TIME TOTAL");
 	if (p && (sscanf(p, "TIME TOTAL %f", &runtime) == 1)) {
@@ -29,7 +29,7 @@ int do_bbtest_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			setupfn("%s.rrd", "bbtest");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
-		return create_and_update_rrd(hostname, testname, classname, pagepaths, bbtest_params, bbtest_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 	}
 
 	return 0;

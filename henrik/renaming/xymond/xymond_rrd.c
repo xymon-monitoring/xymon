@@ -29,7 +29,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "xymond_worker.h"
 
 #include "xymond_rrd.h"

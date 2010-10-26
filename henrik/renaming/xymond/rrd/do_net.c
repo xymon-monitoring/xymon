@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char xymonnet_rcsid[] = "$Id$";
+static char do_net_rcsid[] = "$Id$";
 
 int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {

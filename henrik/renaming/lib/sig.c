@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for handling of signals and crashes.                  */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* Data used while crashing - cannot depend on the stack being usable */
 static char signal_bbcmd[PATH_MAX];
@@ -49,7 +49,7 @@ static void sigsegv_handler(int signum)
 	 * If the fork fails, then just attempt to exec() the BB command
 	 */
 	if (fork() <= 0) {
-		execl(signal_bbcmd, "bbgen-signal", signal_bbdisp, signal_msg, NULL);
+		execl(signal_bbcmd, "xymon-signal", signal_bbdisp, signal_msg, NULL);
 	}
 
 	/* Dump core and abort */

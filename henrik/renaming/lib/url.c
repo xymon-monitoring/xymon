@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for URL parsing and mangling.                         */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <sys/param.h>
 #include <netdb.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int obeybbproxysyntax = 0;	/* Big Brother can put proxy-spec in a URL, with "http://proxy/bla;http://target/foo" */
 

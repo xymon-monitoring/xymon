@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 #include "hobbitsvc-info.h"
 #include "hobbitsvc-trends.h"

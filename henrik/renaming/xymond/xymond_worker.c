@@ -37,7 +37,7 @@ static char rcsid[] = "$Id$";
 #include <sys/resource.h>
 #include <sys/wait.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include "xymond_ipc.h"
 #include "xymond_worker.h"

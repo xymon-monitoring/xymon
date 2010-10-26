@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 
 /* token's are the pre-processor macros we expand while parsing the config file */

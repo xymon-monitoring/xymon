@@ -51,7 +51,7 @@ static char rcsid[] = "$Id$";
 /*[wm] For the POSIX regex support*/
 #include <regex.h> 
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* Global vars */
 

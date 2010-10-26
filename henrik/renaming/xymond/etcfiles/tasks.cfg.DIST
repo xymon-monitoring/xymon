@@ -143,17 +143,17 @@
 	LOGFILE $BBSERVERLOGS/xymonfetch.log
 
 
-# "bbdisplay" runs the bbgen tool to generate the Xymon webpages from the status information that
+# "xymongen" runs the xymongen tool to generate the Xymon webpages from the status information that
 # has been received. Big Brother updated the webpages once every 5 minutes. The default here is to
 # run it every minute for faster updates, but you can change it if you have a highly loaded server
 # and dont need updates that often.
 
-[bbdisplay]
+[xymongen]
 	ENVFILE @BBHOME@/etc/xymonserver.cfg
 	NEEDS xymond
 	GROUP generators
-	CMD bbgen $BBGENOPTS --report
-	LOGFILE $BBSERVERLOGS/bb-display.log
+	CMD xymongen $BBGENOPTS --report
+	LOGFILE $BBSERVERLOGS/xymongen.log
 	INTERVAL 1m
 
 # combostatus is an extension script for the Xymon display server. It generates

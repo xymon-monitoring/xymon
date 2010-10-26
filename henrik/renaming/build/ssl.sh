@@ -37,7 +37,7 @@
 
 	if test -z "$OSSLINC" -o -z "$OSSLLIB"; then
 		echo "OpenSSL include- or library-files not found."
-		echo "Although you can use Xymon and bbgen without OpenSSL, you will not"
+		echo "Although you can use Xymon without OpenSSL, you will not"
 		echo "be able to run network tests of SSL-enabled services, e.g. https."
 		echo "So installing OpenSSL is recommended."
 		echo "OpenSSL can be found at http://www.openssl.org/"

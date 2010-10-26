@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for working with RRD graphs.                          */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 /* This is for mapping a status-name -> RRD file */

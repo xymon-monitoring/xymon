@@ -311,7 +311,7 @@ less downtime being recorded.
 These tools take care of generating and updating the various
 Xymon web-pages.
 
-.I bbgen(1)
+.I xymongen(1)
 takes care of updating the Xymon web pages.
 
 .I hobbitsvc.cgi(1)
@@ -367,7 +367,7 @@ script lets you find hosts easily.
 .I bb-rep.cgi(1)
 This CGI program triggers the generation of Xymon availability 
 reports, using
-.I bbgen(1)
+.I xymongen(1)
 as the reporting back-end engine.
 
 .I bb-replog.cgi(1)
@@ -378,7 +378,7 @@ particular host+service combination.
 is a CGI program to build the Xymon web pages in a "snapshot"
 mode, showing the look of the web pages at a particular point 
 in time. It uses
-.I bbgen(1)
+.I xymongen(1)
 as the back-end engine.
 
 .I hobbit-statusreport.cgi(1)
@@ -497,16 +497,20 @@ use of several external libraries for network tests, resulting in a
 significant performance improvement.
 
 With version 4.0 released on March 30 2005, the project was de-coupled 
-from Big Brother, and the name changed to Xymon. This version was the 
-first full implementation of the Xymon server, but it still used the
+from Big Brother, and the name changed to Hobbit. This version was the 
+first full implementation of the Hobbit server, but it still used the
 data collected by Big Brother clients for monitoring host metrics.
 
-Version 4.1 was released in July 2005 included a simple Xymon client
+Version 4.1 was released in July 2005 included a simple client
 for Unix. Log file monitoring was not implemented.
 
 Version 4.2 was released in July 2006, and includes a fully functional
-Xymon client for Unix.
+client for Unix.
 
+Version 4.3 was released in November 2010, and implemented the renaming
+of the project to Xymon. This name was already introduced in 2008 with
+a patch version of 4.2, but with version 4.3.0 this change of names
+was fully implemented.
 
 .SH COPYRIGHT
 Xymon is
@@ -526,7 +530,7 @@ is allowed.  See the file COPYING for details.
 xymond(8), xymond_channel(8), xymond_history(8), xymond_rrd(8), xymond_alert(8), 
 xymond_client(8), xymond_hostdata(8), 
 xymonping(1), xymonnet(1), xymonnet-again.sh(1), 
-bbgen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
+xymongen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
 bb-hist.cgi(1), bb-eventlog.cgi(1), 
 bb-ack.cgi(1), xymon-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 
 bb-rep.cgi(1), bb-replog.cgi(1), bb-snapshot.cgi(1), hobbit-statusreport.cgi(1), bb-csvinfo.cgi(1), 

@@ -52,7 +52,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include "xymond_worker.h"
 #include "do_alert.h"

@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct pagelist_t {
 	char *pagepath;
@@ -153,10 +153,6 @@ static void bbh_item_list_setup(void)
 	bbh_item_name[BBH_FLAG_DIALUP]         = "BBH_FLAG_DIALUP";
 	bbh_item_key[BBH_FLAG_TESTIP]          = "testip";
 	bbh_item_name[BBH_FLAG_TESTIP]         = "BBH_FLAG_TESTIP";
-	bbh_item_key[BBH_FLAG_BBDISPLAY]       = "BBDISPLAY";
-	bbh_item_name[BBH_FLAG_BBDISPLAY]      = "BBH_FLAG_BBDISPLAY";
-	bbh_item_key[BBH_FLAG_BBPAGER]         = "BBPAGER";
-	bbh_item_name[BBH_FLAG_BBPAGER]        = "BBH_FLAG_BBPAGER";
 	bbh_item_key[BBH_FLAG_LDAPFAILYELLOW]  = "ldapyellowfail";
 	bbh_item_name[BBH_FLAG_LDAPFAILYELLOW] = "BBH_FLAG_LDAPFAILYELLOW";
 	bbh_item_key[BBH_FLAG_NOCLEAR]         = "NOCLEAR";

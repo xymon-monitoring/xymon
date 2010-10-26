@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for timehandling.                                     */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #ifdef time
 #undef time

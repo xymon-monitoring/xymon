@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* -----------------  struct's used for the host/requests we need to do ---------------- */
 /* List of the OID's we will request */

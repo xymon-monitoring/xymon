@@ -21,17 +21,17 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include "xymonnet.h"
 #include "ldaptest.h"
 
-#define BBGEN_LDAP_OK 		0
-#define BBGEN_LDAP_INITFAIL	10
-#define BBGEN_LDAP_TLSFAIL	11
-#define BBGEN_LDAP_BINDFAIL	20
-#define BBGEN_LDAP_TIMEOUT	30
-#define BBGEN_LDAP_SEARCHFAILED	40
+#define XYMON_LDAP_OK 		0
+#define XYMON_LDAP_INITFAIL	10
+#define XYMON_LDAP_TLSFAIL	11
+#define XYMON_LDAP_BINDFAIL	20
+#define XYMON_LDAP_TIMEOUT	30
+#define XYMON_LDAP_SEARCHFAILED	40
 
 char *ldap_library_version = NULL;
 
@@ -39,7 +39,7 @@ static volatile int connect_timeout = 0;
 
 int init_ldap_library(void)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 	char versionstring[100];
 
 	/* Doesnt really do anything except define the version-number string */
@@ -52,14 +52,14 @@ int init_ldap_library(void)
 
 void shutdown_ldap_library(void)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 	/* No-op for LDAP */
 #endif
 }
 
 int add_ldap_test(testitem_t *t)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 	ldap_data_t *req;
 	LDAPURLDesc *ludp;
 	char *urltotest;
@@ -80,7 +80,7 @@ int add_ldap_test(testitem_t *t)
 	req = (ldap_data_t *) t->privdata;
 	req->ldapdesc = (void *) ludp;
 	req->usetls = (strncmp(urltotest, "ldaps:", 6) == 0);
-#ifdef BBGEN_LDAP_USESTARTTLS
+#ifdef XYMON_LDAP_USESTARTTLS
 	if (req->usetls && (ludp->lud_port == LDAPS_PORT)) {
 		dbgprintf("Forcing port %d for ldaps with STARTTLS\n", LDAP_PORT );
 		ludp->lud_port = LDAP_PORT;
@@ -107,7 +107,7 @@ static void ldap_alarmhandler(int signum)
 
 void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 	ldap_data_t *req;
 	testitem_t *t;
 	struct timespec starttime;
@@ -138,7 +138,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		if( (ld = ldap_init(ludp->lud_host, ludp->lud_port)) == NULL ) {
 			dbgprintf("ldap_init failed\n");
-			req->ldapstatus = BBGEN_LDAP_INITFAIL;
+			req->ldapstatus = XYMON_LDAP_INITFAIL;
 			continue;
 		}
 
@@ -182,20 +182,20 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 				protocol = LDAP_VERSION2;
 				if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_SUCCESS) {
 					req->output = strdup(ldap_err2string(rc));
-					req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+					req->ldapstatus = XYMON_LDAP_TLSFAIL;
 				}
 				continue;
 			}
 		}
 #endif
 
-#ifdef BBGEN_LDAP_USESTARTTLS
+#ifdef XYMON_LDAP_USESTARTTLS
 		if (req->usetls) {
 			dbgprintf("Trying to enable TLS for session\n");
 			if ((rc = ldap_start_tls_s(ld, NULL, NULL)) != LDAP_SUCCESS) {
 				dbgprintf("ldap_start_tls failed\n");
 				req->output = strdup(ldap_err2string(rc));
-				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+				req->ldapstatus = XYMON_LDAP_TLSFAIL;
 				continue;
 			}
 		}
@@ -212,7 +212,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		/* Did we connect? */
 		if (connect_timeout || (msgID == -1)) {
-			req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+			req->ldapstatus = XYMON_LDAP_BINDFAIL;
 			req->output = "Cannot connect to server";
 			continue;
 		}
@@ -228,7 +228,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			dbgprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
 			if(rc == -1) {
 				finished = 1;
-				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+				req->ldapstatus = XYMON_LDAP_BINDFAIL;
 
 				if (result == NULL) {
 					errprintf("LDAP library problem - NULL result returned\n");
@@ -242,7 +242,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			}
 			else if (rc == 0) {
 				finished = 1;
-				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+				req->ldapstatus = XYMON_LDAP_BINDFAIL;
 				req->output = strdup("Connection timeout");
 				ldap_unbind(ld);
 			}
@@ -250,14 +250,14 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 				finished = 1;
 				if (result == NULL) {
 					errprintf("LDAP library problem - got a NULL resultcode for status %d\n", rc);
-					req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+					req->ldapstatus = XYMON_LDAP_BINDFAIL;
 					req->output = strdup("LDAP library problem: ldap_result2error returned a NULL result for status %d\n");
 					ldap_unbind(ld);
 				}
 				else {
 					rc2 = ldap_result2error(ld, result, 1);
 					if(rc2 != LDAP_SUCCESS) {
-						req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+						req->ldapstatus = XYMON_LDAP_BINDFAIL;
 						req->output = strdup(ldap_err2string(rc));
 						ldap_unbind(ld);
 					}
@@ -274,13 +274,13 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &ldaptimeout, &result);
 
 		if(rc == LDAP_TIMEOUT) {
-			req->ldapstatus = BBGEN_LDAP_TIMEOUT;
+			req->ldapstatus = XYMON_LDAP_TIMEOUT;
 			req->output = strdup(ldap_err2string(rc));
 	  		ldap_unbind(ld);
 			continue;
 		}
 		if( rc != LDAP_SUCCESS ) {
-			req->ldapstatus = BBGEN_LDAP_SEARCHFAILED;
+			req->ldapstatus = XYMON_LDAP_SEARCHFAILED;
 			req->output = strdup(ldap_err2string(rc));
 	  		ldap_unbind(ld);
 			continue;
@@ -324,7 +324,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 			addtobuffer(response, "\n");
 		}
-		req->ldapstatus = BBGEN_LDAP_OK;
+		req->ldapstatus = XYMON_LDAP_OK;
 		req->output = grabstrbuffer(response);
 		tvdiff(&starttime, &endtime, &req->duration);
 
@@ -339,16 +339,16 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 static int statuscolor(testedhost_t *host, int ldapstatus)
 {
 	switch (ldapstatus) {
-	  case BBGEN_LDAP_OK:
+	  case XYMON_LDAP_OK:
 		return COL_GREEN;
 
-	  case BBGEN_LDAP_INITFAIL:
-	  case BBGEN_LDAP_TLSFAIL:
-	  case BBGEN_LDAP_BINDFAIL:
-	  case BBGEN_LDAP_TIMEOUT:
+	  case XYMON_LDAP_INITFAIL:
+	  case XYMON_LDAP_TLSFAIL:
+	  case XYMON_LDAP_BINDFAIL:
+	  case XYMON_LDAP_TIMEOUT:
 		return COL_RED;
 
-	  case BBGEN_LDAP_SEARCHFAILED:
+	  case XYMON_LDAP_SEARCHFAILED:
 		return (host->ldapsearchfailyellow ? COL_YELLOW : COL_RED);
 	}
 
@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
 	item.testspec = urlunescape(argv[argi]);
 
 	host.firstldap = &item;
-	host.hostname = "ldaptest.bbgen";
+	host.hostname = "ldaptest.xymon";
 	host.ldapuser = NULL;
 	host.ldappasswd = NULL;
 

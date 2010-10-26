@@ -29,7 +29,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define MAX_ALERTMSG_SCRIPTS 4096
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for sending and receiving data to/from the BB daemon  */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -32,11 +32,11 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define BBSENDRETRIES 2
 
-/* These commands go to BBDISPLAYS */
+/* These commands go to all Xymon servers */
 static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 
 /* Stuff for combo message handling */
@@ -436,7 +436,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 	 *
 	 * "schedule" is special - when scheduling an action there is no response, but 
 	 * when it is the blank "schedule" command there will be a response. So a 
-	 * schedule action goes to all BBDISPLAYS, the blank "schedule" goes to a single
+	 * schedule action goes to all Xymon servers, the blank "schedule" goes to a single
 	 * server.
 	 */
 

@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 
 #include "xymongen.h"
 #include "util.h"
-#include "loadbbhosts.h"
+#include "loadlayout.h"
 #include "rssgen.h"
 #include "pagegen.h"
 

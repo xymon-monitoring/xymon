@@ -15,7 +15,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "httpcookies.h"
 
 cookielist_t *cookiehead = NULL;

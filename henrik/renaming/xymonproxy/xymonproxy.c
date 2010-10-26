@@ -34,7 +34,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum phase_t {
 	P_IDLE, 

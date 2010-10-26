@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { ACT_NONE, ACT_FILTER, ACT_ENABLE, ACT_DISABLE, ACT_SCHED_DISABLE, ACT_SCHED_CANCEL } action = ACT_NONE;
 int hostcount = 0;

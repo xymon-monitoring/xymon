@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 time_t starttime = 0;
 cgidata_t *cgidata = NULL;
@@ -134,10 +134,10 @@ int main(int argc, char *argv[])
 {
 	char dirid[PATH_MAX];
 	char outdir[PATH_MAX];
-	char bbgencmd[PATH_MAX];
+	char xymongencmd[PATH_MAX];
 	char bbwebenv[PATH_MAX];
-	char bbgentimeopt[100];
-	char *bbgen_argv[20];
+	char xymongentimeopt[100];
+	char *xymongen_argv[20];
 	pid_t childpid;
 	int childstat;
 	char htmldelim[20];
@@ -148,8 +148,8 @@ int main(int argc, char *argv[])
 	int usemultipart = 1;
 
 	newargi = 0;
-	bbgen_argv[newargi++] = bbgencmd;
-	bbgen_argv[newargi++] = bbgentimeopt;
+	xymongen_argv[newargi++] = xymongencmd;
+	xymongen_argv[newargi++] = xymongentimeopt;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -161,11 +161,11 @@ int main(int argc, char *argv[])
 			envarea = strdup(p+1);
 		}
 		else {
-			bbgen_argv[newargi++] = argv[argi];
+			xymongen_argv[newargi++] = argv[argi];
 		}
 	}
-	bbgen_argv[newargi++] = outdir;
-	bbgen_argv[newargi++] = NULL;
+	xymongen_argv[newargi++] = outdir;
+	xymongen_argv[newargi++] = NULL;
 
 	redirect_cgilog("bb-snapshot");
 
@@ -187,13 +187,13 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-	 * Need to set these up AFTER putting them into bbgen_argv, since we
+	 * Need to set these up AFTER putting them into xymongen_argv, since we
 	 * need to have option parsing done first.
 	 */
-	if (xgetenv("BBGEN")) sprintf(bbgencmd, "%s", xgetenv("BBGEN"));
-	else sprintf(bbgencmd, "%s/bin/bbgen", xgetenv("BBHOME"));
+	if (xgetenv("BBGEN")) sprintf(xymongencmd, "%s", xgetenv("BBGEN"));
+	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("BBHOME"));
 
-	sprintf(bbgentimeopt, "--snapshot=%u", (unsigned int)starttime);
+	sprintf(xymongentimeopt, "--snapshot=%u", (unsigned int)starttime);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
 	sprintf(outdir, "%s/%s", xgetenv("BBSNAP"), dirid);
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	/* Go do the report */
 	childpid = fork();
 	if (childpid == 0) {
-		execv(bbgencmd, bbgen_argv);
+		execv(xymongencmd, xymongen_argv);
 	}
 	else if (childpid > 0) {
 		wait(&childstat);

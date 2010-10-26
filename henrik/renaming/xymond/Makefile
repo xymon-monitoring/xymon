@@ -1,7 +1,7 @@
 PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_rrd xymond_sample xymond_client xymond_hostdata xymond_capture xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/xymond_client
 
-LIBOBJS = ../lib/libbbgen.a
+LIBOBJS = ../lib/libxymon.a
 
 XYMONDOBJS    = xymond.o xymond_buffer.o xymond_ipc.o
 CHANNELOBJS   = xymond_channel.o xymond_buffer.o xymond_ipc.o

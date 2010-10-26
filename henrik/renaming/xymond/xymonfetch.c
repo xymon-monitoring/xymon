@@ -35,7 +35,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 volatile int running = 1;
 volatile time_t reloadtime = 0;

@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "client_config.h"
 
 typedef struct exprlist_t {

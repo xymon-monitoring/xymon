@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <dirent.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct hostlist_t {
 	char *hostname;

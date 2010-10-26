@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for timing program execution.                         */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <sys/time.h>
 #include <stdio.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int timing = 0;
 

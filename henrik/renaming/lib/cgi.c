@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for handling CGI requests.                            */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define MAX_REQ_SIZE (1024*1024)
 

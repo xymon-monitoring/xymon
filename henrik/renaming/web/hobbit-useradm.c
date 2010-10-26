@@ -15,7 +15,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <sys/wait.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static void errormsg(char *msg)
 {

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains string handling routines.                                      */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 #define BUFSZINCREMENT 4096

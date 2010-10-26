@@ -30,21 +30,21 @@ using a 24-hour clock.
 
 All of the processing involved in generating the report is done 
 by invoking 
-.I bbgen(1)
+.I xymongen(1)
 with the proper "--snapshot" option.
 
 .SH OPTIONS
 .IP "--env=FILENAME"
 Load environment from FILENAME before executing the CGI.
 
-.IP "bbgen-options"
+.IP "xymongen-options"
 All options except "--env" are passed on to the 
-.I bbgen(1)
+.I xymongen(1)
 program building the snapshot files.
 
 .SH ENVIRONMENT VARIABLES
 .IP BBGENSNAPOPTS
-bbgen options passed by default to the bb-snapshot.cgi script. 
+xymongen options passed by default to the bb-snapshot.cgi script. 
 This happens in the bb-snapshot.sh CGI wrapper script.
 .IP BBHOME
 Home directory of the Xymon server files
@@ -58,5 +58,5 @@ Default: $BBWEB/snap
 
 
 .SH "SEE ALSO"
-bbgen(1), hosts.cfg(5), xymonserver.cfg(5)
+xymongen(1), hosts.cfg(5), xymonserver.cfg(5)
 

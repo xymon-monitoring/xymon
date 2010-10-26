@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains environment variable handling routines.                        */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -18,7 +18,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 const static struct {
 	char *name;
@@ -70,7 +70,7 @@ const static struct {
 	{ "BBTMP", "$BBHOME/tmp" },
 	{ "HOSTSCFG", "$BBHOME/etc/hosts.cfg" },
 	{ "BB", "$BBHOME/bin/xymon" },
-	{ "BBGEN", "$BBHOME/bin/bbgen" },
+	{ "BBGEN", "$BBHOME/bin/xymongen" },
 	{ "BBVAR", "$BBSERVERROOT/data" },
 	{ "BBACKS", "$BBVAR/acks" },
 	{ "BBDATA", "$BBVAR/data" },

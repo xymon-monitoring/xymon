@@ -32,15 +32,15 @@ you have a CSV-formatted file with information about the hosts stored
 as $BBHOME/etc/hostinfo.csv, and the hostname is in the first column
 of the file.
 
-.IP "Use with the bbgen --docurl"
+.IP "Use with the xymongen --docurl"
 The --docurl option to
-.I bbgen(1)
+.I xymongen(1)
 sets up all of the hostnames on your Xymon webpages to act as links to
-a CGI script. To invoke the bb-csvinfo CGI script, run bbgen with the
+a CGI script. To invoke the bb-csvinfo CGI script, run xymongen with the
 option
 .sp
    --docurl=/cgi-bin/bb-csvinfo.sh?db=hostinfo.csv&key=%s
 
 .SH "SEE ALSO"
-hosts.cfg(5), xymonserver.cfg(5), bbgen(1)
+hosts.cfg(5), xymonserver.cfg(5), xymongen(1)
 

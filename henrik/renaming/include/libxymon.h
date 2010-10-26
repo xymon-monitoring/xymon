@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __LIBBBGEN_H__
-#define __LIBBBGEN_H__
+#ifndef __LIBXYMON_H__
+#define __LIBXYMON_H__
 
 #include <stdio.h>
 #include <time.h>

@@ -13,7 +13,7 @@
 
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 extern char *rrddir;
 extern char *trackmax;

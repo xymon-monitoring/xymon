@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define CLIENTVERSIONFILE "etc/clientversion.cfg"
 #define INPROGRESSFILE "tmp/.inprogress.update"

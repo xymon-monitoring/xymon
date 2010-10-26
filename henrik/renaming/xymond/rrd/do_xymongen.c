@@ -8,15 +8,15 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbgen_rcsid[] = "$Id$";
+static char xymon_rcsid[] = "$Id$";
 
-int do_bbgen_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
+int do_xymongen_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp) 
 { 
-	static char *bbgen_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
-	static void *bbgen_tpl      = NULL;
-	static char *bbgen2_params[] = { "DS:hostcount:GAUGE:600:0:U", "DS:statuscount:GAUGE:600:0:U", NULL };
-	static void *bbgen2_tpl      = NULL;
-	static char *bbgen3_params[] = { "DS:redcount:GAUGE:600:0:U", "DS:rednopropcount:GAUGE:600:0:U",
+	static char *xymon_params[] = { "DS:runtime:GAUGE:600:0:U", NULL };
+	static void *xymon_tpl      = NULL;
+	static char *xymon2_params[] = { "DS:hostcount:GAUGE:600:0:U", "DS:statuscount:GAUGE:600:0:U", NULL };
+	static void *xymon2_tpl      = NULL;
+	static char *xymon3_params[] = { "DS:redcount:GAUGE:600:0:U", "DS:rednopropcount:GAUGE:600:0:U",
 					 "DS:yellowcount:GAUGE:600:0:U", "DS:yellownopropcount:GAUGE:600:0:U",
 					 "DS:greencount:GAUGE:600:0:U",
 					 "DS:purplecount:GAUGE:600:0:U",
@@ -29,7 +29,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *classname, char *pagepath
 					 "DS:clearpct:GAUGE:600:0:100",
 					 "DS:bluepct:GAUGE:600:0:100",
 					NULL };
-	static void *bbgen3_tpl      = NULL;
+	static void *xymon3_tpl      = NULL;
 
 	char	*p, *bol, *eoln;
 	float	runtime;
@@ -39,9 +39,9 @@ int do_bbgen_rrd(char *hostname, char *testname, char *classname, char *pagepath
 	double	pctredcount, pctrednopropcount, pctyellowcount, pctyellownopropcount,
 		pctgreencount, pctpurplecount, pctclearcount, pctbluecount;
 
-	if (bbgen_tpl == NULL) bbgen_tpl = setup_template(bbgen_params);
-	if (bbgen2_tpl == NULL) bbgen2_tpl = setup_template(bbgen2_params);
-	if (bbgen3_tpl == NULL) bbgen3_tpl = setup_template(bbgen3_params);
+	if (xymon_tpl == NULL) xymon_tpl = setup_template(xymon_params);
+	if (xymon2_tpl == NULL) xymon2_tpl = setup_template(xymon2_params);
+	if (xymon3_tpl == NULL) xymon3_tpl = setup_template(xymon3_params);
 
 	runtime = 0.0;
 	hostcount = statuscount = 0;
@@ -117,7 +117,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *classname, char *pagepath
 		setupfn("%s.rrd", "bbgen");
 	}
 	sprintf(rrdvalues, "%d:%.2f", (int)tstamp, runtime);
-	create_and_update_rrd(hostname, testname, classname, pagepaths, bbgen_params, bbgen_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, xymon_params, xymon_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
@@ -127,7 +127,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *classname, char *pagepath
 		setupfn("%s.rrd", "hobbit");
 	}
 	sprintf(rrdvalues, "%d:%d:%d", (int)tstamp, hostcount, statuscount);
-	create_and_update_rrd(hostname, testname, classname, pagepaths, bbgen2_params, bbgen2_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, xymon2_params, xymon2_tpl);
 
 
 	if (strcmp("bbgen", testname) != 0) {
@@ -142,7 +142,7 @@ int do_bbgen_rrd(char *hostname, char *testname, char *classname, char *pagepath
 		greencount, purplecount, clearcount, bluecount,
 		pctredcount, pctrednopropcount, pctyellowcount, pctyellownopropcount,
 		pctgreencount, pctpurplecount, pctclearcount, pctbluecount);
-	create_and_update_rrd(hostname, testname, classname, pagepaths, bbgen3_params, bbgen3_tpl);
+	create_and_update_rrd(hostname, testname, classname, pagepaths, xymon3_params, xymon3_tpl);
 
 
 	return 0;

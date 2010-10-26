@@ -13,7 +13,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static RbtHandle mibdefs;				/* Holds the list of MIB definitions */
 static RbtIterator nexthandle;

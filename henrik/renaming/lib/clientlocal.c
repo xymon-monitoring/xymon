@@ -17,7 +17,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static strbuffer_t *clientconfigs = NULL;
 static RbtHandle rbconfigs;

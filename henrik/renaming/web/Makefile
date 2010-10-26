@@ -2,7 +2,7 @@ PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi 
 CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-confreport-critical.sh hobbit-nkview.sh hobbit-certreport.sh hobbit-nongreen.sh hobbit-hostgraphs.sh hobbit-ghosts.sh hobbit-notifylog.sh hobbit-hostlist.sh hobbit-perfdata.sh hobbit-topchanges.sh
 SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh hobbit-nkedit.sh hobbit-ackinfo.sh hobbit-useradm.sh
 
-LIBOBJS = ../lib/libbbgen.a
+LIBOBJS = ../lib/libxymon.a
 
 HISTOBJS        = bb-hist.o
 EVENTLOGOBJS    = bb-eventlog.o
@@ -39,35 +39,35 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS)
 
-bb-hist.cgi: $(HISTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-hist.cgi: $(HISTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-rep.cgi: $(REPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-rep.cgi: $(REPOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-replog.cgi: $(REPLOGOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-replog.cgi: $(REPLOGOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-snapshot.cgi: $(SNAPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-snapshot.cgi: $(SNAPOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-ack.cgi: $(ACKCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-ack.cgi: $(ACKCGIOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-webpage: $(WEBPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-webpage: $(WEBPAGEOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 hobbitgraph.o: hobbitgraph.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<

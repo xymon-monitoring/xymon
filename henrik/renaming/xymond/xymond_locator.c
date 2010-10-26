@@ -44,7 +44,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <signal.h>
 

@@ -23,10 +23,10 @@ static char rcsid[] = "$Id$";
 
 #include "version.h"
 
-#include "xymngen.h"
+#include "xymongen.h"
 #include "util.h"
 #include "debug.h"
-#include "loadbbhosts.h"
+#include "loadlayout.h"
 #include "loaddata.h"
 #include "process.h"
 #include "pagegen.h"

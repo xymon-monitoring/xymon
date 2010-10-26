@@ -1,4 +1,4 @@
-# bbgen - common tools
+# Xymon - common tools
 #
 
 PROGRAMS = xymongrep xymondigest xymon xymoncmd xymonlaunch xymoncfg
@@ -15,38 +15,38 @@ all: $(PROGRAMS)
 
 client: $(CLIENTPROGRAMS)
 
-xymongrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymongrep: $(HOSTGREPOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ../client/xymongrep: $(HOSTGREPOBJS) ../lib/xymonclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
-xymoncfg: $(HOSTSHOWOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libbbgen.a $(LIBRTDEF)
+xymoncfg: $(HOSTSHOWOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libxymon.a $(LIBRTDEF)
 
 ../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/xymonclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
-xymon: $(BBOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymon: $(BBOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ../client/xymon: $(BBOBJS) ../lib/xymonclient.a
 	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
-xymonlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a $(LIBRTDEF)
+xymonlaunch: $(LAUNCHOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libxymon.a $(LIBRTDEF)
 
 ../client/xymonlaunch: $(LAUNCHOBJS) ../lib/xymonclient.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
-xymoncmd: $(CMDOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a $(LIBRTDEF)
+xymoncmd: $(CMDOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libxymon.a $(LIBRTDEF)
 
 ../client/xymoncmd: $(CMDOBJS) ../lib/xymonclient.a
 	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
-xymondigest: $(DIGESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymondigest: $(DIGESTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ../client/xymondigest: $(DIGESTOBJS) ../lib/xymonclient.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)

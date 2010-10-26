@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 
 #include "xymongen.h"
 #include "util.h"
-#include "loadbbhosts.h"
+#include "loadlayout.h"
 
 #define MAX_TARGETPAGES_PER_HOST 10
 

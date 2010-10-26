@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #ifdef HAVE_RPCENT_H
 #include <rpc/rpcent.h>
@@ -44,7 +44,7 @@ struct rpcent {
 extern struct rpcent *getrpcbyname(char *);
 #endif
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 #include "xymonnet.h"
@@ -525,11 +525,11 @@ void load_tests(void)
 					/*
 					 * LDAP test. This uses ':' a lot, so save it here.
 					 */
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 					s = ldaptest;
 					add_url_to_dns_queue(testspec);
 #else
-					errprintf("ldap test requested, but bbgen was built with no ldap support\n");
+					errprintf("ldap test requested, but xymonnet was built with no ldap support\n");
 #endif
 				}
 				else if ((strcmp(testspec, "http") == 0) || (strcmp(testspec, "https") == 0)) {
@@ -2108,7 +2108,7 @@ int main(int argc, char *argv[])
 			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
 			printf("\nOptions for simple TCP service tests:\n");
 			printf("    --checkresponse             : Check response from known services\n");
-			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
+			printf("    --no-flags                  : Dont send extra xymonnet test flags\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
 			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
 			printf("    --noping                    : Disable ping checking\n");

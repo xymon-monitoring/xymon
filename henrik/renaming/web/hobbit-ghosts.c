@@ -14,7 +14,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { S_NAME, S_SENDER, S_TIME } sorttype = S_NAME;
 char *sortstring = "name";

@@ -10,11 +10,11 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBGEN_H_
-#define __BBGEN_H_
+#ifndef _XYMONGEN_H_
+#define _XYMONGEN_H_
 
 #include <time.h>
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* Structure defs for xymongen */
 

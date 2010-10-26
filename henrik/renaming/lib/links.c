@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <dirent.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* Info-link definitions. */
 typedef struct link_t {

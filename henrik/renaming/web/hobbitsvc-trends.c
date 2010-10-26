@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <utime.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct graph_t {
 	hobbitgraph_t *gdef;

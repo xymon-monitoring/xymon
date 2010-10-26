@@ -28,7 +28,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 240;	/* Default: for the past 4 hours */

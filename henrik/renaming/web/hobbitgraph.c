@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 #include <pcre.h>
 #include <rrd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"

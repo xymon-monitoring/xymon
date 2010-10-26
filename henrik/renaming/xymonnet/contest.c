@@ -33,7 +33,7 @@ static char rcsid[] = "$Id$";
 #include <netdb.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include "xymonnet.h"
 #include "contest.h"
@@ -392,7 +392,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	return strlen(buf);
 }
 
-static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
+static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 {
 	static char result[256];
 	char *asn1_string;
@@ -638,8 +638,8 @@ static void setup_ssl(tcptest_t *item)
 	sslinfo = newstrbuffer(0);
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
-	certstart = strdup(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
-	certend = strdup(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
+	certstart = strdup(xymon_ASN1_UTCTIME(X509_get_notBefore(peercert)));
+	certend = strdup(xymon_ASN1_UTCTIME(X509_get_notAfter(peercert)));
 
 	snprintf(msglin, sizeof(msglin),
 		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 

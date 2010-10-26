@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <rrd.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { O_NONE, O_XML, O_CSV } outform = O_NONE;
 char csvdelim = ',';

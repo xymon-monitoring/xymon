@@ -1,4 +1,4 @@
-# bbgen compile-time settings for a HP-UX system
+# Xymon compile-time settings for a HP-UX system
 
 OSDEF = -DHPUX
 

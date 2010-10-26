@@ -11,7 +11,7 @@
 #ifndef __CLIENT_CONFIG_H__
 #define __CLIENT_CONFIG_H__
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 extern int load_client_config(char *configfn);
 extern void dump_client_config(void);

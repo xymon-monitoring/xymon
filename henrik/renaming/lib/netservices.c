@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for parsing the protocols.cfg file.                   */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /*
  * Services we know how to handle:

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for matching names and expressions                    */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static pcre *compileregex_opts(const char *pattern, int flags)
 {

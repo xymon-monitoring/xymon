@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SRCDIRS="bbdisplay xymonnet xymonproxy build client common contrib docs xymond web include lib debian rpm demotool"
+SRCDIRS="xymongen xymonnet xymonproxy build client common contrib docs xymond web include lib debian rpm demotool"
 
 case "$1" in
 	"tag"|"untag"|"release")

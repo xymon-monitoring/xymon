@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum ftype_t { F_HOSTHISTORY, F_SERVICEHISTORY, F_ALLEVENTS, F_DROPIT, F_PURGELOGS };
 typedef struct filelist_t {

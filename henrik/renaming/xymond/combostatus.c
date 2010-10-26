@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct value_t {
 	char *symbol;

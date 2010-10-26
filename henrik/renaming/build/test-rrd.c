@@ -6,13 +6,13 @@ int main(int argc, char *argv[])
 {
 	char *rrdargs[] = {
 		"rrdgraph",
-		"bbgen.png",
+		"xymongen.png",
 		"-s", "e - 48d",
-		"--title", "bbgen runtime last 48 days",
+		"--title", "xymongen runtime last 48 days",
 		"-w576",
 		"-v", "Seconds",
 		"-a", "PNG",
-		"DEF:rt=bbgen.rrd:runtime:AVERAGE",
+		"DEF:rt=xymongen.rrd:runtime:AVERAGE",
 		"AREA:rt#00CCCC:Run Time",
 		"COMMENT: Timestamp",
 		NULL

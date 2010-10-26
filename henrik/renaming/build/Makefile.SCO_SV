@@ -1,4 +1,4 @@
-# bbgen compile-time settings for SCO_SV (tested on SCO_SV 5.0.5 i386)
+# Xymon compile-time settings for SCO_SV (tested on SCO_SV 5.0.5 i386)
 
 OSDEF = -DSCO_SV
 

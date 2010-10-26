@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 
 #include "xymongen.h"
 #include "util.h"
-#include "loadbbhosts.h"
+#include "loadlayout.h"
 #include "loaddata.h"
 
 int		statuscount = 0;

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains miscellaneous routines.                                        */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -31,7 +31,7 @@ static char rcsid[] = "$Id$";
 #endif
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 enum ostype_t get_ostype(char *osname)

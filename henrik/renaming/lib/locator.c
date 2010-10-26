@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for communicating with the Xymon locator service.     */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -31,7 +31,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <signal.h>
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for generating HTML version of a status log.          */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 #include "htmllog.h"
@@ -44,7 +44,7 @@ static void hostsvc_setup(void)
 	if (setup_done) return;
 
 	getenv_default("NONHISTS", "info,trends,graphs", NULL);
-	getenv_default("BBREL", "bbgen", NULL);
+	getenv_default("BBREL", "Xymon", NULL);
 	getenv_default("BBRELDATE", VERSION, NULL);
 	getenv_default("CGIBINURL", "/cgi-bin", &cgibinurl);
 	getenv_default("MKBBACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);

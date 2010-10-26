@@ -52,7 +52,7 @@ BBOSTYPE="$BBSERVEROS"		# Hosttype (operating system). Not used by server-side, 
 MACHINEDOTS="$BBSERVERHOSTNAME"	# This systems hostname
 MACHINEADDR="$BBSERVERIP"	# This systems IP-address
 
-# URL's generated/used by bbgen
+# URL's generated/used by xymongen
 BBWEBHOST="http://$BBSERVERWWWNAME"		# Just the host part of the URL - http://www.foo.com
 BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static Xymon pages - http://www.foo.com/bb
 BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the Xymon HTML logs (only if BBLOGSTATUS=STATIC)
@@ -72,7 +72,7 @@ BBHOME="@BBHOME@"				# The Xymon server directory, where programs and configurat
 BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
 HOSTSCFG="$BBHOME/etc/hosts.cfg"		# The hosts.cfg file
 BB="$BBHOME/bin/xymon"				# The 'xymon' client program
-BBGEN="$BBHOME/bin/bbgen"			# The bbgen program
+BBGEN="$BBHOME/bin/xymongen"			# The xymongen program
 
 # Server specific directories
 BBVAR="@BBVAR@"					# The bbvar directory holds all monitoring data
@@ -144,10 +144,10 @@ GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,
 # RRDDISKS=""		# Only track these filesystems
 
 
-############################################################
-# These determine some parts of how bbgen generates webpages
-############################################################
-BBGENOPTS="--recentgifs --subpagecolumns=2"     # Standard options for bbgen.
+###############################################################
+# These determine some parts of how xymongen generates webpages
+###############################################################
+BBGENOPTS="--recentgifs --subpagecolumns=2"     # Standard options for xymongen.
 SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB webpage ?
 BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the BB2 page.
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
@@ -176,11 +176,11 @@ WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
 # For BB reports
 BBREPWARN="97"					# Default availability causing yellow status on availability report.
 BBREPGREEN="99.995"				# Default availability causing green status on availability report.
-BBGENREPOPTS="$BBGENOPTS"			# bbgen(1) options used when generating availability reports.
+BBGENREPOPTS="$BBGENOPTS"			# xymongen(1) options used when generating availability reports.
 BBREPEXT=""					# What extensions to run on report pages.
 
 # For BB snapshots
-BBGENSNAPOPTS="$BBGENOPTS"			# bbgen(1) options used when generating snapshots.
+BBGENSNAPOPTS="$BBGENOPTS"			# xymongen(1) options used when generating snapshots.
 
 # For the bb-hist CGI 
 BBHISTEXT=""					# What extensions to run on history pages.

@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static void hobbit_default_envs(char *envfn)
 {

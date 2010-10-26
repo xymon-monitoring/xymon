@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains a "mergesort" implementation for sorting linked lists.         */
 /*                                                                            */
 /* Based on http://en.wikipedia.org/wiki/Merge_sort pseudo code, adapted for  */
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #if 0
 static void *merge(void *left, void *right, 

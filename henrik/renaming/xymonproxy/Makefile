@@ -8,10 +8,10 @@ BBCGIOBJS = xymoncgimsg.o
 all: $(PROGRAMS)
 
 xymonproxy: $(PROXYOBJS)
-	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-xymoncgimsg.cgi: $(BBCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymoncgimsg.cgi: $(BBCGIOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ################################################
 # Default compilation rules

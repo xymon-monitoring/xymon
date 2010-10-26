@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "xymond_worker.h"
 #include "client_config.h"
 

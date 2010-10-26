@@ -29,7 +29,7 @@ checker has been implemented.
 
 xymonnet has built-in support for testing SSL-enabled
 protocols, e.g. imaps, pop3s, nntps, telnets, if SSL-support
-was enabled when configuring bbgen. The full list of known
+was enabled when configuring xymonnet. The full list of known
 tests is found in the
 .I protocols.cfg(5)
 file in $BBHOME/etc/protocols.cfg.
@@ -146,7 +146,7 @@ matching NET: tag, or no NET: tag at all are tested.
 .IP --frequenttestlimit=N
 Used with the
 .I xymonnet-again.sh(1)
-bbgen extension. This option determines how long failed tests
+Xymon extension. This option determines how long failed tests
 remain in the frequent-test queue. The default is 1800
 seconds (30 minutes).
 
@@ -196,7 +196,7 @@ to be sent when the service does not respond as expected.
 
 .IP --no-flags
 By default, xymonnet sends some extra information in the
-status messages, called "flags". These are used by bbgen
+status messages, called "flags". These are used by xymongen
 e.g. to pick different icons for reversed tests when
 generating the Xymon webpages. This option makes
 xymonnet omit these flags from the status messages.
@@ -296,7 +296,7 @@ Note: This can be enabled on a per-host basis using the
 
 .SH DEBUGGING OPTIONS
 .IP --no-update
-Don't send any status updates to the BBDISPLAY server. Instead,
+Don't send any status updates to the Xymon server. Instead,
 all messages are dumped to stdout.
 
 .IP --timing
@@ -495,11 +495,11 @@ with this setting, I suggest starting with a value of 10.
 
 .IP BBSLEEPBETWEENMSGS
 Defines a a delay (in microseconds) after each 
-message is transmitted to the BBDISPLAY server. The default 
+message is transmitted to the Xymon server. The default 
 is 0, i.e.  send the messages as fast as possible.
-This gives your BBDISPLAY server some time to process the
+This gives your Xymon server some time to process the
 message before the next message comes in. Depending on
-the speed of your BBDISPLAY server, it may be necessary
+the speed of your Xymon server, it may be necessary
 to set this value to half a second or even 1 or 2 seconds.
 Note that the value is specified in MICROseconds, so to
 define a delay of half a second, this must be set to

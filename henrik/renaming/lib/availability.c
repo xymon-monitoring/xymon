@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct {
 	int dow;

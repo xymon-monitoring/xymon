@@ -2,8 +2,8 @@
 /* Xymon report generation front-end.                                         */
 /*                                                                            */
 /* This is a front-end CGI that lets the user select reporting parameters,    */
-/* and then invokes bbgen to generate the report. When the report is ready,   */
-/* the user's browser is sent off to view the report.                         */
+/* and then invokes xymongen to generate the report. When the report is       */
+/* ready, the user's browser is sent off to view the report.                  */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 #include <signal.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 char *reqenv[] = {
 "BBHOME",
@@ -189,10 +189,10 @@ int main(int argc, char *argv[])
 	char dirid[PATH_MAX];
 	char outdir[PATH_MAX];
 	char bbwebenv[PATH_MAX];
-	char bbgencmd[PATH_MAX];
-	char bbgentimeopt[100];
+	char xymongencmd[PATH_MAX];
+	char xymongentimeopt[100];
 	char csvdelimopt[100];
-	char *bbgen_argv[20];
+	char *xymongen_argv[20];
 	pid_t childpid;
 	int childstat;
 	char htmldelim[20];
@@ -204,8 +204,8 @@ int main(int argc, char *argv[])
 	int usemultipart = 1;
 
 	newargi = 0;
-	bbgen_argv[newargi++] = bbgencmd;
-	bbgen_argv[newargi++] = bbgentimeopt;
+	xymongen_argv[newargi++] = xymongencmd;
+	xymongen_argv[newargi++] = xymongentimeopt;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 			cleanupoldreps = 0;
 		}
 		else {
-			bbgen_argv[newargi++] = argv[argi];
+			xymongen_argv[newargi++] = argv[argi];
 		}
 	}
 
@@ -245,31 +245,31 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	/*
-	 * We need to set these variables up AFTER we have put them into the bbgen_argv[] array.
+	 * We need to set these variables up AFTER we have put them into the xymongen_argv[] array.
 	 * We cannot do it before, because we need the environment that the command-line options 
 	 * might provide.
 	 */
-	if (xgetenv("BBGEN")) sprintf(bbgencmd, "%s", xgetenv("BBGEN"));
-	else sprintf(bbgencmd, "%s/bin/bbgen", xgetenv("BBHOME"));
+	if (xgetenv("BBGEN")) sprintf(xymongencmd, "%s", xgetenv("BBGEN"));
+	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("BBHOME"));
 
-	sprintf(bbgentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
+	sprintf(xymongentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
 	if (!csvoutput) {
 		sprintf(outdir, "%s/%s", xgetenv("BBREP"), dirid);
 		mkdir(outdir, 0755);
-		bbgen_argv[newargi++] = outdir;
+		xymongen_argv[newargi++] = outdir;
 		sprintf(bbwebenv, "BBWEB=%s/%s", xgetenv("BBREPURL"), dirid);
 		putenv(bbwebenv);
 	}
 	else {
 		sprintf(outdir, "--csv=%s/%s.csv", xgetenv("BBREP"), dirid);
-		bbgen_argv[newargi++] = outdir;
+		xymongen_argv[newargi++] = outdir;
 		sprintf(csvdelimopt, "--csvdelim=%c", csvdelim);
-		bbgen_argv[newargi++] = csvdelimopt;
+		xymongen_argv[newargi++] = csvdelimopt;
 	}
 
-	bbgen_argv[newargi++] = NULL;
+	xymongen_argv[newargi++] = NULL;
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
 	/* Go do the report */
 	childpid = fork();
 	if (childpid == 0) {
-		execv(bbgencmd, bbgen_argv);
+		execv(xymongencmd, xymongen_argv);
 	}
 	else if (childpid > 0) {
 		wait(&childstat);

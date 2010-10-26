@@ -18,7 +18,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static char selfurl[PATH_MAX];
 static time_t req_endtime = 0;

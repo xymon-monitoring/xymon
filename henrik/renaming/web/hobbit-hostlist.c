@@ -14,7 +14,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 cgidata_t *cgidata = NULL;
 char *pagefilter = NULL;

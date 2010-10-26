@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {

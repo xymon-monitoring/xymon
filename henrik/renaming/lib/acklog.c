@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int havedoneacklog = 0;
 

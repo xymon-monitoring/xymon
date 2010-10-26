@@ -7,5 +7,5 @@ test-link:
 	@$(CC) $(CFLAGS) $(RRDDEF) $(RRDLIB) -o test-rrd test-rrd.o -lrrd $(PNGLIB)
 
 clean:
-	@rm -f test-rrd.o test-rrd bbgen.png
+	@rm -f test-rrd.o test-rrd xymongen.png
 

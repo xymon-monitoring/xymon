@@ -80,7 +80,7 @@ ETIME=`$GNUDATE +%s --date "$EDAY $EMON $EYEAR 23:59:59"`
 
 # Create the output directory
 mkdir -p $REPORTTOPDIR/$REPDIR || exit 1
-BBWEB=$REPORTTOPURL/$REPDIR $BBHOME/bin/bbgen --reportopts=$STIME:$ETIME:0:nongr $BBGENREPOPTS $REPORTTOPDIR/$REPDIR
+BBWEB=$REPORTTOPURL/$REPDIR $BBHOME/bin/xymongen --reportopts=$STIME:$ETIME:0:nongr $BBGENREPOPTS $REPORTTOPDIR/$REPDIR
 
 exit 0
 

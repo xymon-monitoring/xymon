@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static char *connstatus = NULL;
 static char *teststatus = NULL;

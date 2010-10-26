@@ -28,7 +28,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct notification_t {
 	void *host;

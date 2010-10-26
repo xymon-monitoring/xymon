@@ -17,11 +17,11 @@ NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
-xymonnet: $(NETTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libbbgen.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymonnet: $(NETTESTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libxymon.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-xymonping: $(PINGTESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymonping: $(PINGTESTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 xymonnet.o: xymonnet.c
 	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
@@ -60,19 +60,19 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
 	touch c-ares/configure
 
-beastat: $(BEASTATOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) ../lib/libbbgen.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+beastat: $(BEASTATOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
 contest: contest.c $(LIBOBJS)
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 
 xymon-snmpcollect: xymon-snmpcollect.o $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` ../lib/libbbgen.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` ../lib/libxymon.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
 xymon-snmpcollect.o: xymon-snmpcollect.c
 	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ xymon-snmpcollect.c

@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 typedef struct bea_idx_t {

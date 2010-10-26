@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 static enum { FRM_NONE, FRM_MONTH, FRM_WEEK, FRM_DAY } frmtype = FRM_NONE;

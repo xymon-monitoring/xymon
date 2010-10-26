@@ -41,7 +41,7 @@ Bugfixes
   alternate pageset. Configuring this will cause it to appear
   twice on each page. Fixing this requires a complete re-design
   of how alternate pagesets are built, and probably also quite
-  a bit of work on the internal datastructures in bbgen.
+  a bit of work on the internal datastructures in xymongen.
 
 
 Things I must remember to look at

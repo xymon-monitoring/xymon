@@ -104,7 +104,7 @@ Disable the acknowledgement log normally displayed on the BB2 page.
 .sp
 .IP "--nklog[=NK log column]"
 This generates a text-based log of what is shown on the bbnk.html
-status page, and sends a status message for the BBDISPLAY server itself
+status page, and sends a status message for the Xymon server itself
 reflecting the color of the NK status page. This allows you to track
 when problems have appeared on the bbnk status page. The logfile is
 stored in $BBHOME/nkstatus.log
@@ -512,7 +512,7 @@ This generates the pages. There are some important options used here:
   headers and footers for each pageset. If you just want 
   to use the normal template, you can omit this option.
 
-.SH USING BBGEN FOR REPORTS
+.SH USING XYMONGEN FOR REPORTS
 xymongen reporting is implemented via drop-in replacements for the
 standard Xymon reporting scripts (bb-rep.sh and bb-replog.sh) installed 
 in your webservers cgi-bin directory.

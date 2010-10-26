@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 static cgidata_t *cgidata = NULL;

@@ -9,8 +9,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __LIBBBGEN_OSDEFS_H__
-#define __LIBBBGEN_OSDEFS_H__
+#ifndef __LIBXYMON_OSDEFS_H__
+#define __LIBXYMON_OSDEFS_H__
 
 #include "config.h"
 

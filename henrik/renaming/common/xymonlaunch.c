@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <regex.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <signal.h>
 
@@ -38,8 +38,8 @@ static char rcsid[] = "$Id$";
  * 	CMD xymond --no-daemon
  * 	LOGFILE /var/log/xymond.log
  *
- * [bbdisplay]
- * 	CMD bb-display.sh
+ * [xymongen]
+ * 	CMD xymongen
  * 	INTERVAL 5m
  */
 
