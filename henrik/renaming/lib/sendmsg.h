@@ -35,7 +35,7 @@ typedef struct sendreturn_t {
 	int haveseenhttphdrs;
 } sendreturn_t;
 
-extern int bbmsgcount;
+extern int xymonmsgcount;
 extern int bbstatuscount;
 extern int bbnocombocount;
 extern int dontsendmessages;

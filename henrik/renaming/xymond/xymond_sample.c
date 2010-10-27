@@ -6,7 +6,7 @@
 /* use the channel data to implement various types of storage (files, DB) of  */
 /* the Xymon data, or they can implement actions such as alerting via         */
 /* pager, e-mail, SNMP trap or .... In fact, a worker module can do anything  */
-/* without the master hobbit daemon having to care about what goes on in the  */
+/* without the master Xymon daemon having to care about what goes on in the   */
 /* workers.                                                                   */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */

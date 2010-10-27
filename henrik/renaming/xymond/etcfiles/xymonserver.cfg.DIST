@@ -1,7 +1,7 @@
 # NB : Even though it might look like a shell-script, it is NOT.
 #
 BBSERVERROOT="@BBTOPDIR@"		# Where Xymon is installed - holds the server and bbvar sub-dirs.
-BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The hobbit user must have write-access here.
+BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The xymon user must have write-access here.
 XYMONCLIENTHOME="@BBTOPDIR@/client"     # BBHOME directory for the client
 
 
@@ -31,8 +31,8 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
 
 # General settings
 BBPORT="1984"			# Portnumber where xymond/bbd listens
-BBDISP="$BBSERVERIP"		# IP of a single hobbit/bbd server
-BBDISPLAYS=""			# IP of multiple hobbit/bbd servers. If used, BBDISP must be 0.0.0.0
+BBDISP="$BBSERVERIP"		# IP of a single Xymon server
+BBDISPLAYS=""			# IP of multiple Xymon servers. If used, BBDISP must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
 BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Xymon, unless you run xymond_filestore --status --html

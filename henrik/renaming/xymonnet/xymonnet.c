@@ -2427,7 +2427,7 @@ int main(int argc, char *argv[])
 		}
 
 		sprintf(msgline, "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n Status messages       : %8d\n Alert status msgs     : %8d\n Transmissions         : %8d\n", 
-			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
+			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, xymonmsgcount);
 		addtostatus(msgline);
 		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %8d\n # succesful           : %8d\n # failed              : %8d\n # calls to dnsresolve : %8d\n",
 			dns_stats_total, dns_stats_success, dns_stats_failed, dns_stats_lookups);

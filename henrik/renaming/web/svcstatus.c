@@ -28,7 +28,7 @@ static char rcsid[] = "$Id$";
 #include "svcstatus-trends.h"
 
 /* Command-line params */
-static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
+static enum { SRC_XYMOND, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_XYMOND;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
@@ -197,7 +197,7 @@ int do_request(void)
 	}
 
 	if (outform == FRM_CLIENT) {
-		if (source == SRC_HOBBITD) {
+		if (source == SRC_XYMOND) {
 			char *xymondreq;
 			int xymondresult;
 			sendreturn_t *sres = newsendreturnbuf(1, NULL);
@@ -280,7 +280,7 @@ int do_request(void)
 			log = restofmsg = generate_info(hostname, nkconfigfn);
 		}
 	}
-	else if (source == SRC_HOBBITD) {
+	else if (source == SRC_XYMOND) {
 		char xymondreq[1024];
 		int xymondresult;
 		char *items[25];

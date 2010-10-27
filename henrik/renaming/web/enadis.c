@@ -181,7 +181,7 @@ void parse_cgi(void)
 
 void do_one_host(char *hostname, char *fullmsg, char *username)
 {
-	char hobbitcmd[4096];
+	char xymoncmd[4096];
 	int i, result;
 
 	switch (action) {
@@ -189,12 +189,12 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < enablecount); i++) {
 			if (preview) result = 0;
 			else {
-				sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest[i]);
-				result = sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
-				sprintf(hobbitcmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
+				sprintf(xymoncmd, "enable %s.%s", commafy(hostname), enabletest[i]);
+				result = sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
+				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
 					commafy(hostname), enabletest[i], 
 					hostname, enabletest[i], username);
-				sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
+				sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
 			}
 
 			if (preview) {
@@ -208,13 +208,13 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < disablecount); i++) {
 			if (preview) result = 0;
 			else {
-				sprintf(hobbitcmd, "disable %s.%s %d %s", 
+				sprintf(xymoncmd, "disable %s.%s %d %s", 
 					commafy(hostname), disabletest[i], duration*scale, fullmsg);
-				result = sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
-				sprintf(hobbitcmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
+				result = sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
+				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
 					commafy(hostname), disabletest[i], 
 					hostname, disabletest[i], username, duration*scale, fullmsg);
-				result = sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
+				result = sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
 			}
 
 			if (preview) {
@@ -226,9 +226,9 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 
 	  case ACT_SCHED_DISABLE:
 		for (i=0; (i < disablecount); i++) {
-			sprintf(hobbitcmd, "schedule %d disable %s.%s %d %s", 
+			sprintf(xymoncmd, "schedule %d disable %s.%s %d %s", 
 				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
-			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL));
+			result = (preview ? 0 : sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL));
 
 			if (preview) {
 				printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
@@ -238,8 +238,8 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		break;
 
 	  case ACT_SCHED_CANCEL:
-		sprintf(hobbitcmd, "schedule cancel %d", cancelid);
-		result = (preview ? 0 : sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL));
+		sprintf(xymoncmd, "schedule cancel %d", cancelid);
+		result = (preview ? 0 : sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL));
 
 		if (preview) {
 			printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));

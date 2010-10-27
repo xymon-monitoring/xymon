@@ -68,15 +68,15 @@ static int fetch_status(char *hostname)
 {
 	char *commaname;
 	char *statuslist = NULL;
-	char *hobbitcmd = (char *)malloc(1024 + strlen(hostname));
+	char *xymoncmd = (char *)malloc(1024 + strlen(hostname));
 	char *walk;
 	int testsz;
 	int haveuname = 0;
 	sendreturn_t *sres;
 
 	sres = newsendreturnbuf(1, NULL);
-	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
-	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	sprintf(xymoncmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
+	if (sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 		return 1;
 	}
 	else {
@@ -122,8 +122,8 @@ static int fetch_status(char *hostname)
 	if (statuslist) xfree(statuslist); statuslist = NULL;
 
 
-	sprintf(hobbitcmd, "schedule");
-	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	sprintf(xymoncmd, "schedule");
+	if (sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 		return 1;
 	}
 	else {
@@ -171,8 +171,8 @@ static int fetch_status(char *hostname)
 		char *clidata = NULL;
 		char *boln, *eoln;
 
-		sprintf(hobbitcmd, "clientlog %s section=uname,osversion,clientversion", hostname);
-		if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+		sprintf(xymoncmd, "clientlog %s section=uname,osversion,clientversion", hostname);
+		if (sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
 			return 1;
 		}
 		else {
@@ -218,7 +218,7 @@ static int fetch_status(char *hostname)
 	return 0;
 }
 
-static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
+static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 {
 	void *hi = hostinfo(hostname);
 	activealerts_t *alert;
@@ -256,7 +256,7 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 
 }
 
-static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
+static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 {
 	void *hi = hostinfo(hostname);
 	char l[1024];
@@ -338,7 +338,7 @@ static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
 
 
 
-static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
+static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 {
 	char msgline[4096];
 	char datestr[100];
@@ -440,7 +440,7 @@ static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
 	freestrbuffer(servBlue);
 }
 
-static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
+static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 {
 	int i;
 	char l[1024];
@@ -574,7 +574,7 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "</form>\n");
 }
 
-static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
+static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 {
 	int i;
 	char l[1024];
@@ -641,7 +641,7 @@ static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
 }
 
 
-static void generate_hobbit_scheduled(char *hostname, strbuffer_t *buf)
+static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 {
 	char l[1024];
 	sched_t *swalk;
@@ -1009,7 +1009,7 @@ char *generate_info(char *hostname, char *nkconfigfn)
 	if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
 		addtobuffer(infobuf, "<tr><th align=left valign=top>Alerting:</th><td align=left>\n");
 		if (gotstatus) 
-			generate_hobbit_alertinfo(hostname, infobuf);
+			generate_xymon_alertinfo(hostname, infobuf);
 		else
 			addtobuffer(infobuf, "Alert configuration unavailable");
 		addtobuffer(infobuf, "</td></tr>\n");
@@ -1017,30 +1017,30 @@ char *generate_info(char *hostname, char *nkconfigfn)
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	addtobuffer(infobuf, "<tr><th align=left valign=top>Holidays</th><td align=left>\n");
-	generate_hobbit_holidayinfo(hostname, infobuf);
+	generate_xymon_holidayinfo(hostname, infobuf);
 	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	if (gotstatus && showenadis) {
 		int i, anydisabled = 0;
 
-		generate_hobbit_statuslist(hostname, infobuf);
+		generate_xymon_statuslist(hostname, infobuf);
 		addtobuffer(infobuf, "<tr><th align=left valign=top>Disable tests</th><td align=left>\n");
-		generate_hobbit_disable(hostname, infobuf);
+		generate_xymon_disable(hostname, infobuf);
 		addtobuffer(infobuf, "</td></tr>\n");
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		for (i=0; (i < testcount); i++) anydisabled = (anydisabled || (tnames[i].distime != 0));
 		if (anydisabled) {
 			addtobuffer(infobuf, "<tr><th align=left valign=top>Enable tests</th><td align=left>\n");
-			generate_hobbit_enable(hostname, infobuf);
+			generate_xymon_enable(hostname, infobuf);
 			addtobuffer(infobuf, "</td></tr>\n");
 			addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 		}
 
 		if (schedtasks) {
 			addtobuffer(infobuf, "<tr><th align=left valign=top>Scheduled tasks</th><td align=left>\n");
-			generate_hobbit_scheduled(hostname, infobuf);
+			generate_xymon_scheduled(hostname, infobuf);
 			addtobuffer(infobuf, "</td></tr>\n");
 			addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 		}

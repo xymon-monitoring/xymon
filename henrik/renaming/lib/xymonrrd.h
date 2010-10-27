@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __HOBBITRRD_H__
-#define __HOBBITRRD_H__
+#ifndef __XYMONRRD_H__
+#define __XYMONRRD_H__
 
 #include <time.h>
 #include "rbtr.h"

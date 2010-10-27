@@ -50,7 +50,7 @@ typedef struct namelist_t {
 
 	/* 
 	 * The following are pre-parsed elements from the "rawentry".
-	 * These are pre-parsed because they are used by the hobbit daemon, so
+	 * These are pre-parsed because they are used by the xymon daemon, so
 	 * fast access to them is an optimization.
 	 */
 	char *clientname;	/* CLIENT: tag - host alias */

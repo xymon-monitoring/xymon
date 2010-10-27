@@ -100,14 +100,14 @@ Things I must remember to look at
   that one http test depends on another on the same host. And direct alerts 
   for one URL to one group, and for another URL to a different group 
   (like GROUP in client handling).
-  See http://www.hswn.dk/hobbiton/2006/06/msg00210.html
+  See http://www.xymon.com/archive/2006/06/msg00210.html
 * Better selection of which graphs go with what statuses. 
 * Easy way of grouping hosts for multi-graphs.
 
 
 Improvements
 ------------
-* hobbitgraph.cgi change to make zoom work in two dimensions. 
+* showgraph.cgi change to make zoom work in two dimensions. 
   Requires RRDtool 1.2.x.
 * More reports: Check out bb-reports on deadcat
 * Multi-line macros in alerts.cfg

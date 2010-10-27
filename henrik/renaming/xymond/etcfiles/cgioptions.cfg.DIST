@@ -1,5 +1,5 @@
 # This file is used to setup options for the various Xymon
-# CGI programs. It is loaded by the hobbit-cgi/*.sh wrapper
+# CGI programs. It is loaded by the ~xymon/cgi-bin/*.sh wrapper
 # scripts, and one environment variable is then passed to
 # the command line used for each tool.
 

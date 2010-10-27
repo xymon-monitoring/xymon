@@ -40,11 +40,11 @@ static char rcsid[] = "$Id$";
 static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 
 /* Stuff for combo message handling */
-int		bbmsgcount = 0;		/* Number of messages transmitted */
+int		xymonmsgcount = 0;	/* Number of messages transmitted */
 int		bbstatuscount = 0;	/* Number of status items reported */
 int		bbnocombocount = 0;	/* Number of status items reported outside combo msgs */
-static int	bbmsgqueued;		/* Anything in the buffer ? */
-static strbuffer_t *bbmsg = NULL;	/* Complete combo message buffer */
+static int	xymonmsgqueued;		/* Anything in the buffer ? */
+static strbuffer_t *xymonmsg = NULL;	/* Complete combo message buffer */
 static strbuffer_t *msgbuf = NULL;	/* message buffer for one status message */
 static int	msgcolor;		/* color of status message in msgbuf */
 static int      maxmsgspercombo = 100;	/* 0 = no limit. 100 is a reasonable default. */
@@ -604,7 +604,7 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 
 	/* Give it a break */
 	if (sleepbetweenmsgs) usleep(sleepbetweenmsgs);
-	bbmsgcount++;
+	xymonmsgcount++;
 	return res;
 }
 
@@ -632,10 +632,10 @@ void combo_start(void)
 {
 	combo_params();
 
-	if (bbmsg == NULL) bbmsg = newstrbuffer(0);
-	clearstrbuffer(bbmsg);
-	addtobuffer(bbmsg, "combo\n");
-	bbmsgqueued = 0;
+	if (xymonmsg == NULL) xymonmsg = newstrbuffer(0);
+	clearstrbuffer(xymonmsg);
+	addtobuffer(xymonmsg, "combo\n");
+	xymonmsgqueued = 0;
 }
 
 void meta_start(void)
@@ -648,8 +648,8 @@ void meta_start(void)
 static void combo_flush(void)
 {
 
-	if (!bbmsgqueued) {
-		dbgprintf("Flush, but bbmsg is empty\n");
+	if (!xymonmsgqueued) {
+		dbgprintf("Flush, but xymonmsg is empty\n");
 		return;
 	}
 
@@ -657,7 +657,7 @@ static void combo_flush(void)
 		char *p1, *p2;
 
 		dbgprintf("Flushing combo message\n");
-		p1 = p2 = STRBUF(bbmsg);
+		p1 = p2 = STRBUF(xymonmsg);
 
 		do {
 			p2++;
@@ -672,7 +672,7 @@ static void combo_flush(void)
 		} while (p1 && p2);
 	}
 
-	sendmessage(STRBUF(bbmsg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(xymonmsg), NULL, BBTALK_TIMEOUT, NULL);
 	combo_start();	/* Get ready for the next */
 }
 
@@ -690,17 +690,17 @@ static void meta_flush(void)
 static void combo_add(strbuffer_t *buf)
 {
 	/* Check if there is room for the message + 2 newlines */
-	if (maxmsgspercombo && (bbmsgqueued >= maxmsgspercombo)) {
+	if (maxmsgspercombo && (xymonmsgqueued >= maxmsgspercombo)) {
 		/* Nope ... flush buffer */
 		combo_flush();
 	}
 	else {
 		/* Yep ... add delimiter before new status (but not before the first!) */
-		if (bbmsgqueued) addtobuffer(bbmsg, "\n\n");
+		if (xymonmsgqueued) addtobuffer(xymonmsg, "\n\n");
 	}
 
-	addtostrbuffer(bbmsg, buf);
-	bbmsgqueued++;
+	addtostrbuffer(xymonmsg, buf);
+	xymonmsgqueued++;
 }
 
 static void meta_add(strbuffer_t *buf)
@@ -722,7 +722,7 @@ static void meta_add(strbuffer_t *buf)
 void combo_end(void)
 {
 	combo_flush();
-	dbgprintf("%d status messages merged into %d transmissions\n", bbstatuscount, bbmsgcount);
+	dbgprintf("%d status messages merged into %d transmissions\n", bbstatuscount, xymonmsgcount);
 }
 
 void meta_end(void)

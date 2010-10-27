@@ -47,21 +47,21 @@ static char rcsid[] = "$Id$";
 
 
 /* Our in-memory queue of messages received from xymond via IPC. One queue per peer. */
-typedef struct hobbit_msg_t {
+typedef struct xymon_msg_t {
 	time_t tstamp;  /* When did the message arrive */
 	char *buf;	/* The message data */
 	char *bufp;	/* Next char to send */
 	int buflen;	/* How many bytes left to send */
-	struct hobbit_msg_t *next;
-} hobbit_msg_t;
+	struct xymon_msg_t *next;
+} xymon_msg_t;
 
 
 /* Our list of peers we send data to */
-typedef struct hobbit_peer_t {
+typedef struct xymon_peer_t {
 	char *peername;
 
 	enum { P_DOWN, P_UP, P_FAILED } peerstatus;
-	hobbit_msg_t *msghead, *msgtail;	/* Message queue */
+	xymon_msg_t *msghead, *msgtail;	/* Message queue */
 
 	enum { P_LOCAL, P_NET } peertype;
 	int peersocket;				/* File descriptor receiving the data */
@@ -74,7 +74,7 @@ typedef struct hobbit_peer_t {
 	char *childcmd;				/* Command and arguments for the child process */
 	char **childargs;
 	pid_t childpid;				/* PID of the running worker child */
-} hobbit_peer_t;
+} xymon_peer_t;
 
 RbtHandle peers;
 
@@ -90,7 +90,7 @@ static int pendingcount = 0;
 
 void addnetpeer(char *peername)
 {
-	hobbit_peer_t *newpeer;
+	xymon_peer_t *newpeer;
 	struct in_addr addr;
 	char *oneip;
 	int peerport = 0;
@@ -130,7 +130,7 @@ void addnetpeer(char *peername)
 
 	if (peerport == 0) peerport = atoi(xgetenv("BBPORT"));
 
-	newpeer = calloc(1, sizeof(hobbit_peer_t));
+	newpeer = calloc(1, sizeof(xymon_peer_t));
 	newpeer->peername = strdup(peername);
 	newpeer->peerstatus = P_DOWN;
 	newpeer->peertype = P_NET;
@@ -147,14 +147,14 @@ done:
 
 void addlocalpeer(char *childcmd, char **childargs)
 {
-	hobbit_peer_t *newpeer;
+	xymon_peer_t *newpeer;
 	int i, count;
 
 	dbgprintf("Adding local peer using command %s\n", childcmd);
 
 	for (count=0; (childargs[count]); count++) ;
 
-	newpeer = (hobbit_peer_t *)calloc(1, sizeof(hobbit_peer_t));
+	newpeer = (xymon_peer_t *)calloc(1, sizeof(xymon_peer_t));
 	newpeer->peername = strdup("");
 	newpeer->peerstatus = P_DOWN;
 	newpeer->peertype = P_LOCAL;
@@ -166,7 +166,7 @@ void addlocalpeer(char *childcmd, char **childargs)
 }
 
 
-void openconnection(hobbit_peer_t *peer)
+void openconnection(xymon_peer_t *peer)
 {
 	int n;
 	int pfd[2];
@@ -244,9 +244,9 @@ void openconnection(hobbit_peer_t *peer)
 
 
 
-void flushmessage(hobbit_peer_t *peer)
+void flushmessage(xymon_peer_t *peer)
 {
-	hobbit_msg_t *zombie;
+	xymon_msg_t *zombie;
 
 	zombie = peer->msghead;
 
@@ -258,11 +258,11 @@ void flushmessage(hobbit_peer_t *peer)
 	pendingcount--;
 }
 
-static void addmessage_onepeer(hobbit_peer_t *peer, char *inbuf, int inlen)
+static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, int inlen)
 {
-	hobbit_msg_t *newmsg;
+	xymon_msg_t *newmsg;
 
-	newmsg = (hobbit_msg_t *) calloc(1, sizeof(hobbit_msg_t));
+	newmsg = (xymon_msg_t *) calloc(1, sizeof(xymon_msg_t));
 	newmsg->tstamp = gettimer();
 	newmsg->buf = newmsg->bufp = inbuf;
 	newmsg->buflen = inlen;
@@ -294,7 +294,7 @@ static void addmessage_onepeer(hobbit_peer_t *peer, char *inbuf, int inlen)
 int addmessage(char *inbuf)
 {
 	RbtIterator phandle;
-	hobbit_peer_t *peer;
+	xymon_peer_t *peer;
 	int bcastmsg = 0;
 	int inlen = strlen(inbuf);
 
@@ -345,7 +345,7 @@ int addmessage(char *inbuf)
 
 	if (bcastmsg) {
 		for (phandle = rbtBegin(peers); (phandle != rbtEnd(peers)); phandle = rbtNext(peers, phandle)) {
-			peer = (hobbit_peer_t *)gettreeitem(peers, phandle);
+			peer = (xymon_peer_t *)gettreeitem(peers, phandle);
 
 			addmessage_onepeer(peer, inbuf, inlen);
 		}
@@ -355,7 +355,7 @@ int addmessage(char *inbuf)
 			errprintf("No peer found to handle message, dropping it\n");
 			return -1;
 		}
-		peer = (hobbit_peer_t *)gettreeitem(peers, phandle);
+		peer = (xymon_peer_t *)gettreeitem(peers, phandle);
 
 		addmessage_onepeer(peer, inbuf, inlen);
 	}
@@ -363,7 +363,7 @@ int addmessage(char *inbuf)
 	return 0;
 }
 
-void shutdownconnection(hobbit_peer_t *peer)
+void shutdownconnection(xymon_peer_t *peer)
 {
 	if (peer->peerstatus != P_UP) return;
 
@@ -663,11 +663,11 @@ int main(int argc, char *argv[])
 		 */
 		for (handle = rbtBegin(peers); (handle != rbtEnd(peers)); handle = rbtNext(peers, handle)) {
 			int canwrite = 1, hasfailed = 0;
-			hobbit_peer_t *pwalk;
+			xymon_peer_t *pwalk;
 			time_t msgtimeout = gettimer() - MSGTIMEOUT;
 			int flushcount = 0;
 
-			pwalk = (hobbit_peer_t *) gettreeitem(peers, handle);
+			pwalk = (xymon_peer_t *) gettreeitem(peers, handle);
 			if (pwalk->msghead == NULL) continue; /* Ignore peers with nothing queued */
 
 			switch (pwalk->peerstatus) {
@@ -752,7 +752,7 @@ int main(int argc, char *argv[])
 
 	/* Close peer connections */
 	for (handle = rbtBegin(peers); (handle != rbtEnd(peers)); handle = rbtNext(peers, handle)) {
-		hobbit_peer_t *pwalk = (hobbit_peer_t *) gettreeitem(peers, handle);
+		xymon_peer_t *pwalk = (xymon_peer_t *) gettreeitem(peers, handle);
 		shutdownconnection(pwalk);
 	}
 

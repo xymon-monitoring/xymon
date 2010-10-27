@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	else if ( (nopin && (cgi_method == CGI_POST)) || (!nopin && (cgidata != NULL)) ) {
-		char *bbmsg;
+		char *xymonmsg;
 		char *acking_user = "";
 		acklist_t *awalk;
 		char msgline[4096];
@@ -340,9 +340,9 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			bbmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
-			sprintf(bbmsg, "hobbitdack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
-			if (sendmessage(bbmsg, NULL, BBTALK_TIMEOUT, NULL) == BB_OK) {
+			xymonmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
+			sprintf(xymonmsg, "hobbitdack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
+			if (sendmessage(xymonmsg, NULL, BBTALK_TIMEOUT, NULL) == BB_OK) {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 
 						awalk->hostname, awalk->testname);
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 			}
 
 			addtobuffer(response, msgline);
-			xfree(bbmsg);
+			xfree(xymonmsg);
 		}
 
 		if (count == 0) addtobuffer(response, "<b>No acks requested</b>\n");

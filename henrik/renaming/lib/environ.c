@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 const static struct {
 	char *name;
 	char *val;
-} hobbitenv[] = {
+} xymonenv[] = {
 	{ "XYMONDREL", VERSION },
 	{ "BBSERVERROOT", BBTOPDIR },
 	{ "BBSERVERLOGS", BBLOGDIR },
@@ -164,8 +164,8 @@ char *xgetenv(const char *name)
 	}
 
 	if (result == NULL) {
-		for (i=0; (hobbitenv[i].name && (strcmp(hobbitenv[i].name, name) != 0)); i++) ;
-		if (hobbitenv[i].name) result = expand_env(hobbitenv[i].val);
+		for (i=0; (xymonenv[i].name && (strcmp(xymonenv[i].name, name) != 0)); i++) ;
+		if (xymonenv[i].name) result = expand_env(xymonenv[i].val);
 		if (result == NULL) {
 			errprintf("xgetenv: Cannot find value for variable %s\n", name);
 			return NULL;

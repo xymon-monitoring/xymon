@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-static void hobbit_default_envs(char *envfn)
+static void xymon_default_envs(char *envfn)
 {
 	FILE *fd;
 	char buf[1024];
@@ -127,12 +127,12 @@ int main(int argc, char *argv[])
 		errprintf("Using default environment file %s\n", envfn);
 
 		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
-		hobbit_default_envs(envfn);
+		xymon_default_envs(envfn);
 		loadenv(envfn, envarea);
 	}
 	else {
 		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
-		hobbit_default_envs(envfile);
+		xymon_default_envs(envfile);
 		loadenv(envfile, envarea);
 	}
 

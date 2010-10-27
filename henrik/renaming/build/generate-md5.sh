@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# cd ~/hobbit
+# cd ~/xymon/trunk
 
 WEBLIST=`(cd xymond; find webfiles -type f) | egrep -v "RCS|\.svn" | xargs echo`
 WWWLIST=`(cd xymond; find wwwfiles -type f) | egrep -v "RCS|\.svn" | xargs echo`

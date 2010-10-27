@@ -65,13 +65,13 @@ else
 fi
 
 # vmstat and iostat (iostat -d provides a cpu utilisation with I/O wait number)
-nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
-nohup sh -c "iostat -c 300 2 1>$BBTMP/hobbit_iostatcpu.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_iostatcpu.$MACHINEDOTS.$$ $BBTMP/hobbit_iostatcpu.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
-nohup sh -c "iostat -dxsrP 300 2 1>$BBTMP/hobbit_iostatdisk.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_iostatdisk.$MACHINEDOTS.$$ $BBTMP/hobbit_iostatdisk.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "vmstat 300 2 1>$BBTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/xymon_vmstat.$MACHINEDOTS.$$ $BBTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "iostat -c 300 2 1>$BBTMP/xymon_iostatcpu.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/xymon_iostatcpu.$MACHINEDOTS.$$ $BBTMP/xymon_iostatcpu.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "iostat -dxsrP 300 2 1>$BBTMP/xymon_iostatdisk.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/xymon_iostatdisk.$MACHINEDOTS.$$ $BBTMP/xymon_iostatdisk.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
-if test -f $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; then echo "[iostatcpu]"; cat $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; rm -f $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; fi
-if test -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; then echo "[iostatdisk]"; cat $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; rm -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; fi
+if test -f $BBTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/xymon_vmstat.$MACHINEDOTS; rm -f $BBTMP/xymon_vmstat.$MACHINEDOTS; fi
+if test -f $BBTMP/xymon_iostatcpu.$MACHINEDOTS; then echo "[iostatcpu]"; cat $BBTMP/xymon_iostatcpu.$MACHINEDOTS; rm -f $BBTMP/xymon_iostatcpu.$MACHINEDOTS; fi
+if test -f $BBTMP/xymon_iostatdisk.$MACHINEDOTS; then echo "[iostatdisk]"; cat $BBTMP/xymon_iostatdisk.$MACHINEDOTS; rm -f $BBTMP/xymon_iostatdisk.$MACHINEDOTS; fi
 
 exit
 

@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
 	if (passfile == NULL) {
 		passfile = (char *)malloc(strlen(xgetenv("BBHOME")) + 20);
-		sprintf(passfile, "%s/etc/hobbitpasswd", xgetenv("BBHOME"));
+		sprintf(passfile, "%s/etc/xymonpasswd", xgetenv("BBHOME"));
 	}
 
 	switch (parse_query()) {

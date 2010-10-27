@@ -7,7 +7,7 @@
 /*                                                                            */
 /* The concept is to use a shared memory segment for each "channel" that      */
 /* xymond supports. This memory segment is used to pass a single xymond       */
-/* message between the hobbit master daemon, and the xymond_channel workers.  */
+/* message between the xymond master daemon, and the xymond_channel workers.  */
 /* Two semaphores are used to synchronize between the master daemon and the   */
 /* workers, i.e. the workers wait for a semaphore to go up indicating that a  */
 /* new message has arrived, and the master daemon then waits for the other    */

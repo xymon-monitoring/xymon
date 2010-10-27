@@ -18,10 +18,10 @@ static char trends_rcsid[] = "$Id$";
  * ---------------------------------------------------------------------------
  * Date: Wed, 17 Jan 2007 14:04:29 +0100
  * From: Stef Coene
- * Subject: Re: [hobbit] hobbit monitoring
+ * Subject: Re: [xymon] xymon monitoring
  * 
  * Just wondering, how hard would it be to create an extra channel for trending?
- * So you can use the xymon client to send "numbers" to the hobbit server together
+ * So you can use the xymon client to send "numbers" to the xymon server together
  * with some extra control information.
  * 
  * xymon <xymon server> trends <server name>
@@ -30,7 +30,7 @@ static char trends_rcsid[] = "$Id$";
  *
  * Instead of a dedicated Xymon channel for this, I decided to use the 
  * existing "data" message type. To use this, send a "data" message to 
- * hobbit formatted like this:
+ * xymon formatted like this:
  *
  *    data $MACHINE.trends
  *    [filename.rrd]

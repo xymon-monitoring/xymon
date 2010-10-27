@@ -80,7 +80,7 @@ then
 	if test "`uname -s`" = "Darwin"
 	then
 		# Use "dscl" for locating user information. From Isaac Vetter
-		# http://www.hswn.dk/hobbiton/2008/02/msg00173.html
+		# http://www.xymon.com/archive/2008/02/msg00173.html
 		USERDATA="`dscl . -list /Users  | grep $BBUSER`"
 		if test "$USERDATA" != ""
 		then
@@ -184,7 +184,7 @@ else
 	echo "If this fails, change the compile settings in Makefile"
 	echo ""
 	echo "I would appreciate it if you send the changes to"
-	echo "hobbit-owner@hswn.dk so I can include it in the next version."
+	echo "xymon-owner@xymon.com so I can include it in the next version."
 	echo ""
 fi
 echo "" >>Makefile
