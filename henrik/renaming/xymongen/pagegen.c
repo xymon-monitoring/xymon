@@ -67,9 +67,9 @@ static int hostblkidx = 0;
 
 void select_headers_and_footers(char *prefix)
 {
-	hf_prefix[PAGE_BB]  = (char *) malloc(strlen(prefix)+1); sprintf(hf_prefix[PAGE_BB],  "%s",   prefix);
-	hf_prefix[PAGE_BB2] = (char *) malloc(strlen(prefix)+2); sprintf(hf_prefix[PAGE_BB2], "%s2",  prefix);
-	hf_prefix[PAGE_NK]  = (char *) malloc(strlen(prefix)+3); sprintf(hf_prefix[PAGE_NK],  "%snk", prefix);
+	hf_prefix[PAGE_BB]  = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_BB],  "%snormal",   prefix);
+	hf_prefix[PAGE_BB2] = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_BB2], "%snongreen",  prefix);
+	hf_prefix[PAGE_NK]  = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_NK],  "%scritical", prefix);
 }
 
 

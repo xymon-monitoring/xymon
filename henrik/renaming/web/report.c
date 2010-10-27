@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 		/* It's ok with these hardcoded values, as they are not used for this page */
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
 		sethostenv_report(starttime, endtime, 97.0, 99.995);
-		headfoot(stdout, "bbrep", "", "header", COL_BLUE);
+		headfoot(stdout, "repnormal", "", "header", COL_BLUE);
 
 		strftime(startstr, sizeof(startstr), "%b %d %Y", localtime(&starttime));
 		strftime(endstr, sizeof(endstr), "%b %d %Y", localtime(&endtime));

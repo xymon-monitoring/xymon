@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	int		do_nongreen_page = 1;
 
 	/* Setup standard header+footer (might be modified by option pageset) */
-	select_headers_and_footers("bb");
+	select_headers_and_footers("std");
 
 	bb_color = bb2_color = bbnk_color = -1;
 	pagedir = NULL;
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
 			if ((reportwarnlevel < 0.0) || (reportwarnlevel > 100.0)) reportwarnlevel = 97.0;
 			if ((reportgreenlevel < 0.0) || (reportgreenlevel > 100.0)) reportgreenlevel = 99.995;
 
-			select_headers_and_footers("bbrep");
+			select_headers_and_footers("rep");
 			sethostenv_report(reportstart, reportend, reportwarnlevel, reportgreenlevel);
 		}
 		else if (argnmatch(argv[i], "--csv="))  {
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			snapshot = atol(lp+1);
-			select_headers_and_footers("bbsnap");
+			select_headers_and_footers("snap");
 			sethostenv_snapshot(snapshot);
 		}
 
