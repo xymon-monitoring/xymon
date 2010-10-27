@@ -54,7 +54,7 @@ set to TRUE. Default: TRUE.
 .IP BBLOGSTATUS
 Controls how the HTML page for a status log is generated. If set to
 DYNAMIC, the HTML logs are generated on-demand by the 
-.I bb-hostsvc.cgi(1)
+.I svcstatus.cgi(1)
 script. If set to STATIC, you must activate the
 .I xymond_filestore(8)
 module (through an entry in the
@@ -155,14 +155,14 @@ Default: $BBHOME/www/notes/
 Directory for Xymon availability reports. The $BBREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
 
 .IP BBSNAP
 Directory for Xymon snapshots. The $BBSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-.I bb-snapshot.cgi(1)
+.I snapshot.cgi(1)
 CGI script to generate snapshots on-demand. Default: $BBHOME/www/snap/
 
 .IP BBVAR
@@ -450,7 +450,7 @@ If set to TRUE,
 .I xymond_history(8)
 will update the $BBHIST/allevents file logging all changes to
 a status. The allevents file is used by the
-.I bb-eventlog.cgi(1)
+.I eventlog.cgi(1)
 tool to show the list of recent events on the BB2 webpage.
 
 .IP BBHOSTHISTLOG
@@ -496,7 +496,7 @@ external script mechanism to collect data from custom tests.
 Note: All TCP tests are automatically added.
 
 This is also used by the 
-.I bb-hostsvc.cgi(1) 
+.I svcstatus.cgi(1) 
 script to determine if the detailed status view of a test should 
 include a graph.
 

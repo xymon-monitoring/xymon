@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# This is the Xymon CGI script interface to findhost.CGI
+
+. @BBHOME@/etc/cgioptions.cfg
+
+@RUNTIMEDEFS@ exec @BBHOME@/bin/findhost.cgi $CGI_FINDHOST_OPTS
+

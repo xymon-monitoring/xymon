@@ -314,7 +314,7 @@ Xymon web-pages.
 .I xymongen(1)
 takes care of updating the Xymon web pages.
 
-.I hobbitsvc.cgi(1)
+.I svcstatus.cgi(1)
 This CGI program generates an HTML view of a single status log.
 It is used to present the Xymon status-logs.
 
@@ -332,15 +332,15 @@ Generates the Critical Systems view, based on the currently critical
 systems and the configuration of what systems and services you want to 
 monitor when.
 
-.I bb-hist.cgi(1)
+.I history.cgi(1)
 This CGI program generates a web page with the most recent history 
 of a particular host+service combination.
 
-.I bb-eventlog.cgi(1)
+.I eventlog.cgi(1)
 This CGI lets you view a log of events that have happened over a period 
 of time, for a single host or test, or for multiple systems.
 
-.I bb-ack.cgi(1)
+.I ack.cgi(1)
 This CGI program allows a user to acknowledge an alert he received
 from Xymon about a host that is in a critical state. Acknowledging
 an alert serves two purposes: First, it stops more alerts from being
@@ -358,23 +358,23 @@ When disabling a host or test, you stop alarms from being sent and
 also any outages do not affect the SLA calculations. So this tool
 is useful when systems are being brought down for maintenance.
 
-.I bb-findhost.cgi(1)
+.I findhost.cgi(1)
 is a CGI program that finds a given host in the Xymon
 web pages. As your Xymon installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
 
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 This CGI program triggers the generation of Xymon availability 
 reports, using
 .I xymongen(1)
 as the reporting back-end engine.
 
-.I bb-replog.cgi(1)
+.I reportlog.cgi(1)
 This CGI program generates the detailed availability report for a 
 particular host+service combination.
 
-.I bb-snapshot.cgi(1)
+.I snapshot.cgi(1)
 is a CGI program to build the Xymon web pages in a "snapshot"
 mode, showing the look of the web pages at a particular point 
 in time. It uses
@@ -386,7 +386,7 @@ is a CGI program reporting test results for a single status but
 for several hosts. It is used to e.g. see which SSL certificates
 are about to expire, across all of the Xymon web pages.
 
-.I bb-csvinfo.cgi(1)
+.I csvinfo.cgi(1)
 is a CGI program to present information about a host. The 
 information is pulled from a CSV (Comma Separated Values)
 file, which is easily exported from any spreadsheet or
@@ -530,10 +530,10 @@ is allowed.  See the file COPYING for details.
 xymond(8), xymond_channel(8), xymond_history(8), xymond_rrd(8), xymond_alert(8), 
 xymond_client(8), xymond_hostdata(8), 
 xymonping(1), xymonnet(1), xymonnet-again.sh(1), 
-xymongen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
-bb-hist.cgi(1), bb-eventlog.cgi(1), 
-bb-ack.cgi(1), xymon-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 
-bb-rep.cgi(1), bb-replog.cgi(1), bb-snapshot.cgi(1), hobbit-statusreport.cgi(1), bb-csvinfo.cgi(1), 
+xymongen(1), svcstatus.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
+history.cgi(1), eventlog.cgi(1), 
+ack.cgi(1), xymon-mailack(8), hobbit-enadis.cgi(8), findhost.cgi(1), 
+report.cgi(1), reportlog.cgi(1), snapshot.cgi(1), hobbit-statusreport.cgi(1), csvinfo.cgi(1), 
 logfetch(1), clientupdate(1), msgcache(8), 
 xymonproxy(8), xymonfetch(8), 
 xymonlaunch(8), xymon(1), bbmessage.cgi(1), xymoncmd(1), xymongrep(1), xymoncfg(1), 

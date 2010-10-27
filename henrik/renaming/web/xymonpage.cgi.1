@@ -1,0 +1,30 @@
+.TH XYMONPAGE 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+xymonpage \- Utility to show a webpage using header and footer
+.SH SYNOPSIS
+.B "xymonpage [options]"
+
+.SH DESCRIPTION
+\fBxymonpage\fR is a tool to generate a webpage in the Xymon style,
+with a standard header- and footer as well as a Xymon background.
+The data to present on the webpage, apart from the header and
+footer, are passed to xymonpage in stdin. The generated webpage
+is printed to stdout.
+
+.SH OPTIONS
+.IP "--env=FILENAME"
+Loads the environment defined in FILENAME before executing the CGI script.
+
+.IP "--hffile=PREFIX"
+Use the header- and footer-files in $BBHOME/web/PREFIX_header and PREFIX_footer.
+If not specified, bb_header and bb_footer are used.
+
+.IP "--color=COLOR"
+Set the background color of the generated webpage to COLOR. Default: Blue
+
+.IP "--debug"
+Enable debugging output.
+
+.SH "SEE ALSO"
+hobbit(7)
+

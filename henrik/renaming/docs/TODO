@@ -80,7 +80,7 @@ Things I must remember to look at
   Charles Jones 15-feb-2005.
   What we really want to do is customize on a per host/test
   basis which graphs appear for which tests. So this means some
-  way of customizing hobbitsvc.cgi to include specific graphs.
+  way of customizing svcstatus.cgi to include specific graphs.
 * Something similar to larrd-graphs.cgi for picking out a bunch
   of graphs to show on one page.
 * Move all of the xymonnet "badFOO" etc. stuff away from xymonnet

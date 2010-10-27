@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# This it the Xymon wrapper for the bb-rep.cgi tool
-
-. @BBHOME@/etc/xymonserver.cfg
-. @BBHOME@/etc/cgioptions.cfg
-
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-rep.cgi $CGI_REP_OPTS $BBGENREPOPTS
-

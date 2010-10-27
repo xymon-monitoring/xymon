@@ -130,7 +130,7 @@ RRDWIDTH="576"		# The RRD's contain 576 data points, so this is a good value
 # The format here is "COLUMN=RRDSERVICE". If you leave out the "=RRDSERVICE"
 # part, it is assumed to be the same as the COLUMN value.
 #
-# This is also used by the bb-hostsvc.cgi script to determine if the detailed
+# This is also used by the svcstatus.cgi script to determine if the detailed
 # status view of a test should include a graph.
 TEST2RRD="cpu=la,disk,inode,qtree,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,mailq,nmailq=mailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd,files,procs=processes,ports,clock,lines,ops,stats,cifs,JVM,JMS,HitCache,Session,JDBCConn,ExecQueue,JTA,TblSpace,RollBack,MemReq,InvObj,snapmirr,snaplist,snapshot,if_load=devmon,temp=devmon,paging,mdc,mdchitpct,cics,dsa,getvis,maxuser,nparts"
 
@@ -182,7 +182,7 @@ BBREPEXT=""					# What extensions to run on report pages.
 # For BB snapshots
 BBGENSNAPOPTS="$BBGENOPTS"			# xymongen(1) options used when generating snapshots.
 
-# For the bb-hist CGI 
+# For the history CGI 
 BBHISTEXT=""					# What extensions to run on history pages.
 
 

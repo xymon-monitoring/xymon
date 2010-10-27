@@ -1,0 +1,62 @@
+.TH SNAPSHOT.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+snapshot.cgi \- CGI program to rebuild the Xymon webpages for a specific point in time.
+.SH SYNOPSIS
+.B "snapshot.cgi"
+
+.SH DESCRIPTION
+\fBsnapshot.cgi\fR
+is invoked as a CGI script via the snapshot.sh CGI wrapper.
+It rebuilds the Xymon web pages to the look they had 
+at a particular point in time, based upon the historical information
+logged about events.
+
+snapshot.cgi is passed a QUERY_STRING environment variable with the
+following parameters:
+
+   mon (Start month of the snapshot)
+   day (Start day-of-month of the snapshot)
+   yr  (Start year of the snapshot)
+   hour (Start hour of the snapshot)
+   min  (Start minute of the snapshot)
+   sec  (Start second of the snapshot)
+
+The "month" parameters must be specified as the three-letter
+english month name abbreviation: Jan, Feb, Mar ...
+
+"day" must be in the range 1..31; "yr" must be specified 
+including century (e.g. "2003"). "hour" must be specified 
+using a 24-hour clock.
+
+All of the processing involved in generating the report is done 
+by invoking 
+.I xymongen(1)
+with the proper "--snapshot" option.
+
+.SH OPTIONS
+.IP "--env=FILENAME"
+Load environment from FILENAME before executing the CGI.
+
+.IP "xymongen-options"
+All options except "--env" are passed on to the 
+.I xymongen(1)
+program building the snapshot files.
+
+.SH ENVIRONMENT VARIABLES
+.IP BBGENSNAPOPTS
+xymongen options passed by default to the snapshot.cgi script. 
+This happens in the snapshot.sh CGI wrapper script.
+.IP BBHOME
+Home directory of the Xymon server files
+.IP BBSNAP
+Directory where generated snapshots are stored. This directory must
+be writable by the userid executing the CGI script, typically
+"www", "apache" or "nobody". Default: $BBHOME/www/snap/
+.IP BBSNAPURL
+The URL prefix to use when accessing the reports via a browser.
+Default: $BBWEB/snap
+
+
+.SH "SEE ALSO"
+xymongen(1), hosts.cfg(5), xymonserver.cfg(5)
+

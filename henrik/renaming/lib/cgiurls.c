@@ -38,7 +38,7 @@ char *hostsvcurl(char *hostname, char *service, int htmlformat)
 			     strlen(service));
 	
 	sprintf(url, 
-		(htmlformat ? "%s/bb-hostsvc.sh?HOST=%s&amp;SERVICE=%s" : "%s/bb-hostsvc.sh?HOST=%s&SERVICE=%s"), 
+		(htmlformat ? "%s/svcstatus.sh?HOST=%s&amp;SERVICE=%s" : "%s/svcstatus.sh?HOST=%s&SERVICE=%s"), 
 		cgibinurl, hostname, service);
 
 	return url;
@@ -56,7 +56,7 @@ char *hostsvcclienturl(char *hostname, char *section)
 			     strlen(cgibinurl) + 
 			     strlen(hostname) + 
 			     (section ? strlen(section) : 0));
-	n = sprintf(url, "%s/bb-hostsvc.sh?CLIENT=%s", cgibinurl, hostname);
+	n = sprintf(url, "%s/svcstatus.sh?CLIENT=%s", cgibinurl, hostname);
 
 	if (section) sprintf(url+n, "&amp;SECTION=%s", section);
 
@@ -71,7 +71,7 @@ char *histcgiurl(char *hostname, char *service)
 	if (!cgibinurl) cgibinurl = xgetenv("CGIBINURL");
 
 	url = (char *)malloc(1024 + strlen(cgibinurl) + strlen(hostname) + strlen(service));
-	sprintf(url, "%s/bb-hist.sh?HISTFILE=%s.%s", cgibinurl, commafy(hostname), service);
+	sprintf(url, "%s/history.sh?HISTFILE=%s.%s", cgibinurl, commafy(hostname), service);
 
 	return url;
 }
@@ -83,14 +83,14 @@ char *histlogurl(char *hostname, char *service, time_t histtime, char *histtime_
 	if (url) xfree(url);
 	if (!cgibinurl) cgibinurl = xgetenv("CGIBINURL");
 
-	/* cgi-bin/bb-histlog.sh?HOST=SLS-P-CE1.slsdomain.sls.dk&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
+	/* cgi-bin/historylog.sh?HOST=foo.sample.com&SERVICE=msgs&TIMEBUF=Fri_Nov_7_16:01:08_2002 */
 	url = (char *)malloc(1024 + strlen(cgibinurl) + strlen(hostname) + strlen(service));
 	if (!histtime_txt) {
-		sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",
+		sprintf(url, "%s/historylog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",
 			xgetenv("CGIBINURL"), hostname, service, histlogtime(histtime));
 	}
 	else {
-		sprintf(url, "%s/bb-histlog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",
+		sprintf(url, "%s/historylog.sh?HOST=%s&amp;SERVICE=%s&amp;TIMEBUF=%s",
 			xgetenv("CGIBINURL"), hostname, service, histtime_txt);
 	}
 
@@ -108,7 +108,7 @@ char *replogurl(char *hostname, char *service, int color,
 	if (!cgibinurl) cgibinurl = xgetenv("CGIBINURL");
 
 	url = (char *)malloc(4096 + strlen(cgibinurl) + strlen(hostname) + strlen(service));
-	sprintf(url, "%s/bb-replog.sh?HOST=%s&amp;SERVICE=%s&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%u&amp;END=%u&amp;RED=%.2f&amp;YEL=%.2f&amp;GRE=%.2f&amp;PUR=%.2f&amp;CLE=%.2f&amp;BLU=%.2f&amp;STYLE=%s&amp;FSTATE=%s&amp;REDCNT=%d&amp;YELCNT=%d&amp;GRECNT=%d&amp;PURCNT=%d&amp;CLECNT=%d&amp;BLUCNT=%d&amp;WARNPCT=%.2f&amp;RECENTGIFS=%d",
+	sprintf(url, "%s/reportlog.sh?HOST=%s&amp;SERVICE=%s&amp;COLOR=%s&amp;PCT=%.2f&amp;ST=%u&amp;END=%u&amp;RED=%.2f&amp;YEL=%.2f&amp;GRE=%.2f&amp;PUR=%.2f&amp;CLE=%.2f&amp;BLU=%.2f&amp;STYLE=%s&amp;FSTATE=%s&amp;REDCNT=%d&amp;YELCNT=%d&amp;GRECNT=%d&amp;PURCNT=%d&amp;CLECNT=%d&amp;BLUCNT=%d&amp;WARNPCT=%.2f&amp;RECENTGIFS=%d",
 		cgibinurl, 
 		hostname, service,
 		colorname(color), repinfo->fullavailability, 

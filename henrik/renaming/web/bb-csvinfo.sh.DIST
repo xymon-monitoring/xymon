@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon CGI wrapper for the bb-csvinfo.cgi program.
-
-. @BBHOME@/etc/cgioptions.cfg
-
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-csvinfo.cgi $CGI_CSVINFO_OPTS
-

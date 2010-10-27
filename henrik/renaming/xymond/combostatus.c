@@ -451,7 +451,7 @@ int update_combotests(int showeval, int cleanexpr)
 			addtostatus(msgline);
 
 			for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
-				sprintf(msgline, "&%s <a href=\"%s/bb-hostsvc.sh?HOST=%s&amp;SERVICE=%s\">%s</a>\n",
+				sprintf(msgline, "&%s <a href=\"%s/svcstatus.sh?HOST=%s&amp;SERVICE=%s\">%s</a>\n",
 					colorname(vwalk->color), xgetenv("CGIBINURL"), gethname(vwalk->symbol), gettname(vwalk->symbol), vwalk->symbol);
 				addtostatus(msgline);
 			}

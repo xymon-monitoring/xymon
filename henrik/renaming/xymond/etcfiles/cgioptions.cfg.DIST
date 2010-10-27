@@ -9,19 +9,19 @@
 
 XYMONENV=@BBHOME@/etc/xymonserver.cfg
 
-# bb-csvinfo.cgi
+# csvinfo.cgi
 CGI_CSVINFO_OPTS="--env=$XYMONENV"
-# hobbitcolumn.sh (uses bb-csvinfo.cgi)
+# hobbitcolumn.sh (uses csvinfo.cgi)
 CGI_HOBBITCOLUMN_OPTS="--env=$XYMONENV --color=purple --hffile=columndoc"
-# bb-findhost.cgi
+# findhost.cgi
 CGI_FINDHOST_OPTS="--env=$XYMONENV"
 
-# hobbitsvc.cgi options for a normal (current) status display
+# svcstatus.cgi options for a normal (current) status display
 CGI_SVC_OPTS="--env=$XYMONENV --no-svcid --history=top"
 
-# bb-hist.cgi options (service history overview)
+# history.cgi options (service history overview)
 CGI_HIST_OPTS="--env=$XYMONENV --no-svcid"
-# hobbitsvc.cgi options for a historical status display
+# svcstatus.cgi options for a historical status display
 CGI_SVCHIST_OPTS="--env=$XYMONENV --no-svcid"
 
 # hobbitgraph.cgi options
@@ -33,15 +33,15 @@ CGI_HOSTGRAPHS_OPTS="--env=$XYMONENV"
 # hobbit-confreport.cgi options
 CGI_HOBBITCONFREPORT_OPTS="--env=$XYMONENV"
 
-# bb-datepage.cgi options
+# datepage.cgi options
 CGI_DATEPAGE_OPTS="--env=$XYMONENV --url=/xymon/periodic"
-# bb-rep.cgi options
+# report.cgi options
 CGI_REP_OPTS="--env=$XYMONENV"
-# bb-replog.cgi options
+# reportlog.cgi options
 CGI_REPLOG_OPTS="--env=$XYMONENV"
-# bb-snapshot.cgi options
+# snapshot.cgi options
 CGI_SNAPSHOT_OPTS="--env=$XYMONENV"
-# bb-eventlog.cgi options
+# eventlog.cgi options
 CGI_EVENTLOG_OPTS="--env=$XYMONENV"
 # hobbit-nkview.cgi options
 CGI_NKVIEW_OPTS="--env=$XYMONENV"
@@ -52,7 +52,7 @@ CGI_ACKINFO_OPTS="--env=$XYMONENV"
 #hobbit-ghosts.cgi options
 CGI_GHOSTS_OPTS="--env=$XYMONENV"
 
-# bb-ack.cgi options
+# ack.cgi options
 CGI_ACK_OPTS="--env=$XYMONENV --no-pin"
 # hobbit-enadis.cgi options
 CGI_ENADIS_OPTS="--env=$XYMONENV"

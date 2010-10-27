@@ -1,22 +1,22 @@
-PROGRAMS = bb-hist.cgi bb-eventlog.cgi bb-rep.cgi bb-replog.cgi bb-snapshot.cgi bb-findhost.cgi bb-csvinfo.cgi bb-ack.cgi bb-webpage bb-datepage.cgi hobbitgraph.cgi hobbitsvc.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi boilerplate.cgi hobbit-hostgraphs.cgi hobbit-ghosts.cgi hobbit-notifylog.cgi hobbit-hostlist.cgi hobbit-perfdata.cgi hobbit-useradm.cgi
-CGISCRIPTS = bb-hist.sh bb-eventlog.sh bb-rep.sh bb-replog.sh bb-snapshot.sh bb-findhost.sh bb-csvinfo.sh hobbitcolumn.sh bb-datepage.sh hobbitgraph.sh bb-hostsvc.sh bb-histlog.sh hobbit-confreport.sh hobbit-confreport-critical.sh hobbit-nkview.sh hobbit-certreport.sh hobbit-nongreen.sh hobbit-hostgraphs.sh hobbit-ghosts.sh hobbit-notifylog.sh hobbit-hostlist.sh hobbit-perfdata.sh hobbit-topchanges.sh
-SECCGISCRIPTS = bb-ack.sh hobbit-enadis.sh hobbit-nkedit.sh hobbit-ackinfo.sh hobbit-useradm.sh
+PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi hobbitgraph.cgi svcstatus.cgi hobbit-enadis.cgi hobbit-confreport.cgi hobbit-nkview.cgi hobbit-nkedit.cgi hobbit-ackinfo.cgi hobbit-statusreport.cgi boilerplate.cgi hobbit-hostgraphs.cgi hobbit-ghosts.cgi hobbit-notifylog.cgi hobbit-hostlist.cgi hobbit-perfdata.cgi hobbit-useradm.cgi
+CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh hobbitcolumn.sh datepage.sh hobbitgraph.sh svcstatus.sh historylog.sh hobbit-confreport.sh hobbit-confreport-critical.sh hobbit-nkview.sh hobbit-certreport.sh hobbit-nongreen.sh hobbit-hostgraphs.sh hobbit-ghosts.sh hobbit-notifylog.sh hobbit-hostlist.sh hobbit-perfdata.sh hobbit-topchanges.sh
+SECCGISCRIPTS = acknowledge.sh hobbit-enadis.sh hobbit-nkedit.sh hobbit-ackinfo.sh hobbit-useradm.sh
 
 LIBOBJS = ../lib/libxymon.a
 
-HISTOBJS        = bb-hist.o
-EVENTLOGOBJS    = bb-eventlog.o
-REPOBJS         = bb-rep.o
-REPLOGOBJS      = bb-replog.o
-SNAPOBJS        = bb-snapshot.o
-FINDHOSTOBJS    = bb-findhost.o
-CSVINFOOBJS     = bb-csvinfo.o
-ACKCGIOBJS      = bb-ack.o
-WEBPAGEOBJS     = bb-webpage.o
-DATEPAGEOBJS    = bb-datepage.o
+HISTOBJS        = history.o
+EVENTLOGOBJS    = eventlog.o
+REPOBJS         = report.o
+REPLOGOBJS      = reportlog.o
+SNAPOBJS        = snapshot.o
+FINDHOSTOBJS    = findhost.o
+CSVINFOOBJS     = csvinfo.o
+ACKCGIOBJS      = acknowledge.o
+WEBPAGEOBJS     = xymonpage.o
+DATEPAGEOBJS    = datepage.o
 
 HOBBITGRAPHOBJS = hobbitgraph.o
-HOBBITSVCOBJS   = hobbitsvc.o hobbitsvc-info.o hobbitsvc-trends.o
+SVCSTATUSOBJS   = svcstatus.o svcstatus-info.o svcstatus-trends.o
 HOBBITENADISOBJS= hobbit-enadis.o
 NKVIEWOBJS      = hobbit-nkview.o
 NKEDITOBJS      = hobbit-nkedit.o
@@ -39,34 +39,34 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS)
 
-bb-hist.cgi: $(HISTOBJS) ../lib/libxymon.a
+history.cgi: $(HISTOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libxymon.a
+eventlog.cgi: $(EVENTLOGOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-rep.cgi: $(REPOBJS) ../lib/libxymon.a
+report.cgi: $(REPOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-replog.cgi: $(REPLOGOBJS) ../lib/libxymon.a
+reportlog.cgi: $(REPLOGOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-snapshot.cgi: $(SNAPOBJS) ../lib/libxymon.a
+snapshot.cgi: $(SNAPOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-findhost.cgi: $(FINDHOSTOBJS) ../lib/libxymon.a
+findhost.cgi: $(FINDHOSTOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libxymon.a
+csvinfo.cgi: $(CSVINFOOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-ack.cgi: $(ACKCGIOBJS) ../lib/libxymon.a
+acknowledge.cgi: $(ACKCGIOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-webpage: $(WEBPAGEOBJS) ../lib/libxymon.a
+xymonpage: $(WEBPAGEOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-bb-datepage.cgi: $(DATEPAGEOBJS) ../lib/libxymon.a
+datepage.cgi: $(DATEPAGEOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 hobbitgraph.o: hobbitgraph.c
@@ -76,8 +76,8 @@ hobbitgraph.o: hobbitgraph.c
 hobbitgraph.cgi: $(HOBBITGRAPHOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOBBITGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitsvc.cgi: $(HOBBITSVCOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(HOBBITSVCOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+svcstatus.cgi: $(SVCSTATUSOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(SVCSTATUSOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 hobbit-enadis.cgi: $(HOBBITENADISOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(HOBBITENADISOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
@@ -126,39 +126,39 @@ hobbit-useradm.cgi: $(USERADMOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(USERADMOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 
-bb-ack.sh: bb-ack.sh.DIST
+acknowledge.sh: acknowledge.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-csvinfo.sh: bb-csvinfo.sh.DIST
+csvinfo.sh: csvinfo.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-datepage.sh: bb-datepage.sh.DIST
+datepage.sh: datepage.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-eventlog.sh: bb-eventlog.sh.DIST
+eventlog.sh: eventlog.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-findhost.sh: bb-findhost.sh.DIST
+findhost.sh: findhost.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-hist.sh: bb-hist.sh.DIST
+history.sh: history.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-rep.sh: bb-rep.sh.DIST
+report.sh: report.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-replog.sh: bb-replog.sh.DIST
+reportlog.sh: reportlog.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-snapshot.sh: bb-snapshot.sh.DIST
+snapshot.sh: snapshot.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
@@ -170,7 +170,7 @@ hobbitgraph.sh: hobbitgraph.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-hostsvc.sh: hobbitsvc.sh.DIST
+svcstatus.sh: svcstatus.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
@@ -190,7 +190,7 @@ hobbit-enadis.sh: hobbit-enadis.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
-bb-histlog.sh: hobbitsvc-hist.sh.DIST
+historylog.sh: svcstatus-hist.sh.DIST
 	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 

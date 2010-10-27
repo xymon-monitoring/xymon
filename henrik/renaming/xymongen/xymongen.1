@@ -360,7 +360,7 @@ warnings also, use "--rsslimit=yellow".
 .SH OPTIONS USED BY CGI FRONT-ENDS
 .IP "--reportopts=START:END:DYNAMIC:STYLE"
 Invoke xymongen in report-generation mode. This is normally used by the
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 CGI script, but may also be used directly when pre-generating reports.
 The START parameter is the start-time for the report in Unix time_t
 format (seconds since Jan 1st 1970 00:00 UTC); END is the end-time for
@@ -393,7 +393,7 @@ interpreting the delimiter character as a command-line delimiter.
 Generate a snapshot of the Xymon pages, as they appeared at
 TIME. TIME is given as seconds since Jan 1st 1970 00:00 UTC. Normally
 used via the
-.I bb-snapshot.cgi(1)
+.I snapshot.cgi(1)
 CGI script.
 
 .SH DEBUGGING OPTIONS
@@ -514,15 +514,15 @@ This generates the pages. There are some important options used here:
 
 .SH USING XYMONGEN FOR REPORTS
 xymongen reporting is implemented via drop-in replacements for the
-standard Xymon reporting scripts (bb-rep.sh and bb-replog.sh) installed 
+standard Xymon reporting scripts (report.sh and reportlog.sh) installed 
 in your webservers cgi-bin directory.
 
 These two shell script have been replaced with two very small
 shell-scripts, that merely setup the Xymon environment variables,
 and invoke the 
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 or
-.I bb-replog.cgi(1)
+.I reportlog.cgi(1)
 scripts in $BBHOME/bin/
 
 You can use xymongen command-line options when generating reports,
@@ -540,7 +540,7 @@ These should be automatically cleaned up - as new reports are
 generated, the old ones get removed.
 
 After installing, try generating a report. You will probably see that
-the links in the upper left corner (to bb-ack.html, bb2.html etc.)
+the links in the upper left corner (to ack.html, bb2.html etc.)
 no longer works. To fix these, change your $BBHOME/web/bbrep_header
 file so these links do not refer to "&BBWEB" but to the normal 
 URL prefix for your Xymon pages.
@@ -605,7 +605,7 @@ The level is given as a percentage, e.g. "WARNPCT:98.5"
 
 .SH PRE-GENERATED REPORTS
 Normally, xymongen produce reports that link to dynamically generated
-webpages with the detailed status of a test (via the bb-replog.sh
+webpages with the detailed status of a test (via the reportlog.sh
 CGI script).
 
 It is possible to have xymongen produce a report without these
@@ -676,6 +676,6 @@ Note how the
 utility is used to calculate the start- and end-time parameters.
 
 .SH "SEE ALSO"
-hosts.cfg(5), xymonserver.cfg(5), tasks.cfg(5), bb-rep.cgi(1), 
-bb-snapshot.cgi(1), xymon(7)
+hosts.cfg(5), xymonserver.cfg(5), tasks.cfg(5), report.cgi(1), 
+snapshot.cgi(1), xymon(7)
 

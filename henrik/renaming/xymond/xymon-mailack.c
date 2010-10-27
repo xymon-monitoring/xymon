@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This program runs from the Xymon users' .procmailrc file, and processes    */
 /* incoming e-mails that are responses to alert mails that Xymon has sent     */
-/* out. It was inspired by the functionality of the bb-mailack.sh.            */
+/* out.                                                                       */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

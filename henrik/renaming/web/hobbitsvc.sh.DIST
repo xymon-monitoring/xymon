@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon hobbitsvc.cgi script
-
-. @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi $CGI_SVC_OPTS
-
