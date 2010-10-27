@@ -16,7 +16,7 @@ ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
 
-PROGRAMS=xymonlaunch logfetch clientupdate orcahobbit msgcache
+PROGRAMS=xymonlaunch logfetch clientupdate orcaxymon msgcache
 COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
 
 all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
@@ -38,8 +38,8 @@ logfetch: logfetch.c
 clientupdate: clientupdate.c
 	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
-orcahobbit: orcahobbit.c
-	$(CC) $(CFLAGS) -o $@ orcahobbit.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+orcaxymon: orcaxymon.c
+	$(CC) $(CFLAGS) -o $@ orcaxymon.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 msgcache: msgcache.c
 	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
