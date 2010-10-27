@@ -1,25 +1,25 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBIT-STATUSREPORT.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of STATUSREPORT.CGI</TITLE>
 </HEAD><BODY>
-<H1>HOBBIT-STATUSREPORT.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>STATUSREPORT.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbit-statusreport.cgi - CGI program to report a status for a group of servers
+statusreport.cgi - CGI program to report a status for a group of servers
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbit-statusreport.cgi --column=COLUMNNAME [options]</B>
+<B>statusreport.cgi --column=COLUMNNAME [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>hobbit-statusreport.cgi</B> is a CGI tool to generate a simple HTML
+<B>statusreport.cgi</B> is a CGI tool to generate a simple HTML
 report showing the current status of a single column for a group of
 Xymon hosts.
 <P>
@@ -29,16 +29,16 @@ certificates that are about to expire.
 The generated webpage is a simple HTML table, suitable for copying
 into other documents or e-mail.
 <P>
-hobbit-statusreport.cgi runs as a CGI program, invoked by your webserver.
+statusreport.cgi runs as a CGI program, invoked by your webserver.
 It is normally run via a wrapper shell-script in the CGI directory for Xymon.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>EXAMPLES</H2>
 
 The Xymon installation includes two web report scripts using this
-CGI tool: The <B>hobbit-certreport.sh</B> script generates a list of
+CGI tool: The <B>certreport.sh</B> script generates a list of
 SSL server certificates that are yellow or red (i.e. they will expire
-soon); and the <B>hobbit-nongreen.sh</B> script generates a report
+soon); and the <B>nongreen.sh</B> script generates a report
 of all statuses that are currently non-green. These can be accessed
 from a web browser through a URL referencing the script in the
 Xymon CGI directory (e.g. &quot;/xymon-cgi/xymon-nongreen.sh&quot;).
@@ -125,6 +125,6 @@ this option must appear before any --env=FILENAME option.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

@@ -1,26 +1,26 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BB-REPLOG.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of REPORTLOG.CGI</TITLE>
 </HEAD><BODY>
-<H1>BB-REPLOG.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>REPORTLOG.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bb-replog.cgi - CGI program to report service availability log
+reportlog.cgi - CGI program to report service availability log
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bb-replog.cgi</B>
+<B>reportlog.cgi</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>bb-replog.cgi</B>
-is invoked as a CGI script via the bb-replog.sh CGI wrapper.
+<B>reportlog.cgi</B>
+is invoked as a CGI script via the reportlog.sh CGI wrapper.
 Based on the parameters it receives, it generates an
 availability report for a specific host-service combination
 for the requested time-period. The availability report 
@@ -30,11 +30,11 @@ the period listing the status changes that have occurred to
 allow for drill-down to the test reports that indicate a
 problem. Access to the individual historical status logs
 go via the
-<I><A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1)</I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
 
 CGI script.
 <P>
-bb-replog.cgi is passed a QUERY_STRING environment variable 
+reportlog.cgi is passed a QUERY_STRING environment variable 
 with the following parameters:
 <P>
 <BR>&nbsp;&nbsp;&nbsp;HOSTSVC&nbsp;(the&nbsp;host&nbsp;and&nbsp;service&nbsp;to&nbsp;report&nbsp;on)
@@ -43,7 +43,7 @@ with the following parameters:
 <BR>&nbsp;&nbsp;&nbsp;END&nbsp;(endtime&nbsp;in&nbsp;seconds&nbsp;since&nbsp;1-1-1970&nbsp;00:00&nbsp;UTC)
 <P>
 The following non-standard parameters are handled by the
-bbgen version of bb-hist.cgi:
+Xymon version of history.cgi:
 <P>
 <BR>&nbsp;&nbsp;&nbsp;IP&nbsp;(IP&nbsp;address&nbsp;of&nbsp;host&nbsp;-&nbsp;for&nbsp;display&nbsp;purposes&nbsp;only)
 <BR>&nbsp;&nbsp;&nbsp;REPORTTIME&nbsp;(the&nbsp;REPORTTIME:&nbsp;setting&nbsp;for&nbsp;this&nbsp;host)
@@ -69,7 +69,7 @@ Loads environment from FILENAME before executing the CGI.
 <A NAME="lbAF">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)
 <P>
 <P>
 
@@ -86,6 +86,6 @@ Loads environment from FILENAME before executing the CGI.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

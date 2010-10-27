@@ -1,9 +1,9 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITD</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
-<H1>HOBBITD</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMOND</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -132,7 +132,7 @@ then status-updates are accepted only if they are sent by one of the
 IP-adresses listed here, or if they are sent from the IP-address of the 
 host that the updates pertains to (this is to allow Xymon clients to send in their
 own status updates, without having to list all clients here). So typically
-you will need to list your BBNET servers here.
+you will need to list your servers running network tests here.
 <P>
 The format of this option is a list of IP-adresses, optionally with a
 network mask in the form of the number of bits. E.g. if you want to 
@@ -160,13 +160,13 @@ hide a system compromise from the monitoring system.
 <B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running bbproxy in the list of allowed addresses.
+include the address of a server running xymonproxy in the list of allowed addresses.
 <P>
 <DT>--www-senders=IP[/MASK][,IP/MASK]<DD>
 Controls which hosts may send commands to retrieve the state of xymond. These
 are the &quot;hobbitdlog&quot;, &quot;hobbitdboard&quot; and &quot;hobbitdxboard&quot; commands, which are used
 by
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 and
 <I><A HREF="../man1/combostatus.1.html">combostatus</A>(1)</I>
@@ -176,7 +176,7 @@ to retrieve the state of the Xymon system so they can generate the Xymon webpage
 <B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running bbproxy in the list of allowed addresses.
+include the address of a server running xymonproxy in the list of allowed addresses.
 <P>
 <DT>--admin-senders=IP[/MASK][,IP/MASK]<DD>
 Controls which hosts may send administrative commands to xymond. These
@@ -188,7 +188,7 @@ a system compromise from the Xymon monitor.
 <B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running bbproxy in the list of allowed addresses.
+include the address of a server running xymonproxy in the list of allowed addresses.
 <P>
 <DT>--no-download<DD>
 Disable the &quot;download&quot; and &quot;config&quot; commands which can be used by clients
@@ -355,6 +355,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

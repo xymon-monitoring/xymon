@@ -1,9 +1,9 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BB</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMON</TITLE>
 </HEAD><BODY>
-<H1>BB</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMON</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -36,11 +36,11 @@ hosts that are down for longer periods of time.
 <DL COMPACT>
 <DT>--debug<DD>
 Enable debugging. This prints out details about how the
-connection to the BBDISPLAY server is being established.
+connection to the Xymon server is being established.
 <P>
 <DT>--proxy=<A HREF="http://PROXYSERVER:PROXYPORT/">http://PROXYSERVER:PROXYPORT/</A><DD>
 When sending the status messages via HTTP, use this server
-as an HTTP proxy instead of connecting directly to the BBDISPLAY
+as an HTTP proxy instead of connecting directly to the Xymon
 server.
 <P>
 <DT>--timeout=N<DD>
@@ -62,8 +62,7 @@ first line of the merged message.
 The <B>RECIPIENT</B> parameter defines which server receives
 the message. If RECIPIENT is given as &quot;0.0.0.0&quot;, then the
 message is sent to all of the servers listed in the BBDISPLAYS
-or BBPAGERS environment variable (for &quot;status&quot; and &quot;page&quot; messages,
-respectively). 
+environment variable.
 <P>
 Usually, a client will use &quot;$BBDISP&quot; for the <B>RECIPIENT</B> 
 parameter, as this is defined for the client scripts
@@ -71,8 +70,8 @@ to automatically contain the correct value.
 <P>
 The <B>RECIPIENT</B> parameter may be a URL for a webserver
 that has the bbmessage.cgi or similar script installed. This
-tunnels the Xymon messages to the BBDISPLAY server 
-using standard HTTP protocol. The 
+tunnels the Xymon messages to the Xymon server using standard 
+HTTP protocol. The 
 <I><A HREF="../man8/bbmessage.cgi.8.html">bbmessage.cgi</A>(8)</I>
 
 CGI tool (included in Xymon) must be installed on the webserver 
@@ -147,7 +146,7 @@ according to the rules defined in
 <I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 This is used by the 
-<I><A HREF="../man1/hobbit-enadis.cgi.1.html">hobbit-enadis.cgi</A>(1)</I>
+<I><A HREF="../man1/enadis.cgi.1.html">enadis.cgi</A>(1)</I>
 
 tool to notify people about hosts being disabled or 
 enabled, but can also serve as a general way of notifying 
@@ -171,7 +170,7 @@ with how the Big Brother daemon does.
 <P>
 <DT>disable HOSTNAME.TESTNAME DURATION &lt;additional text&gt;<DD>
 Disables a specific test for DURATION minutes. This will cause the
-status of this test to be listed as &quot;blue&quot; on the BBDISPLAY server,
+status of this test to be listed as &quot;blue&quot; on the Xymon server,
 and no alerts for this host/test will be generated. If DURATION is
 given as a number followed by s/m/h/d, it is interpreted as being
 in seconds/minutes/hours/days respectively.
@@ -182,7 +181,7 @@ To disable all tests for a host, use an asterisk &quot;*&quot; for TESTNAME.
 Re-enables a test that had been disabled.
 <P>
 <DT>query HOSTNAME.TESTNAME<DD>
-Query the BBDISPLAY server for the latest status reported for this
+Query the Xymon server for the latest status reported for this
 particular test. If the host/test status is known, the response is
 the first line of the status report - the current color will be the
 first word on the line. Additional lines of text that might be 
@@ -241,7 +240,7 @@ Status color (green, yellow, red, blue, clear, purple)
 <P>
 <B>testflags</B>
 
-For network tests, the flags indicating details about the test (used by bbgen).
+For network tests, the flags indicating details about the test (used by xymongen).
 <P>
 <B>lastchange</B>
 
@@ -335,7 +334,7 @@ Status color (green, yellow, red, blue, clear, purple)
 <P>
 <B>flags</B>
 
-For network tests, the flags indicating details about the test (used by bbgen).
+For network tests, the flags indicating details about the test (used by xymongen).
 <P>
 <B>lastchange</B>
 
@@ -483,7 +482,7 @@ displayed on the status webpage.
 <H2>EXAMPLE</H2>
 
 <P>
-Send a normal status message to the BBDISPLAY server, using the
+Send a normal status message to the Xymon server, using the
 standard Xymon protocol on TCP port 1984:
 <BR>
 
@@ -541,6 +540,6 @@ pass it via stdin to the xymon command:
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -198,7 +198,7 @@ the router - and not from the 200 hosts behind the router.
 
 All of the Xymon server tools run under an unprivileged user account.
 A single program - the
-<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
 
 network connectivity tester - must be installed setuid-root, but has
 been written so that it drops all root privileges immediately after
@@ -335,15 +335,15 @@ the system state was just prior to it failing.
 
 These tools are used on servers that execute tests of network services.
 <P>
-<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
 
 performs network connectivity (ping) tests.
 <P>
-<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
 
 runs the network service tests.
 <P>
-<I><A HREF="../man1/bbretest-net.sh.1.html">bbretest-net.sh</A>(1)</I>
+<I><A HREF="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</A>(1)</I>
 
 is an extension script for re-doing failed network tests with a higher 
 frequency than the normal network tests. This allows Xymon to pick up
@@ -357,43 +357,43 @@ less downtime being recorded.
 These tools take care of generating and updating the various
 Xymon web-pages.
 <P>
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 takes care of updating the Xymon web pages.
 <P>
-<I><A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1)</I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
 
 This CGI program generates an HTML view of a single status log.
 It is used to present the Xymon status-logs.
 <P>
-<I><A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1)</I>
+<I><A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1)</I>
 
 This CGI program generates graphs of the trend-data collected
 by Xymon.
 <P>
-<I><A HREF="../man1/hobbit-hostgraphs.cgi.1.html">hobbit-hostgraphs.cgi</A>(1)</I>
+<I><A HREF="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</A>(1)</I>
 
 When you want to combine multiple graphs into one, this CGI lets
 you combine graphs so you can e.g. compare the load on all of the
 nodes in your server farm.
 <P>
-<I><A HREF="../man1/hobbit-nkview.cgi.1.html">hobbit-nkview.cgi</A>(1)</I>
+<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
 
 Generates the Critical Systems view, based on the currently critical
 systems and the configuration of what systems and services you want to 
 monitor when.
 <P>
-<I><A HREF="../man1/bb-hist.cgi.1.html">bb-hist.cgi</A>(1)</I>
+<I><A HREF="../man1/history.cgi.1.html">history.cgi</A>(1)</I>
 
 This CGI program generates a web page with the most recent history 
 of a particular host+service combination.
 <P>
-<I><A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1)</I>
+<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
 
 This CGI lets you view a log of events that have happened over a period 
 of time, for a single host or test, or for multiple systems.
 <P>
-<I><A HREF="../man1/bb-ack.cgi.1.html">bb-ack.cgi</A>(1)</I>
+<I><A HREF="../man1/ack.cgi.1.html">ack.cgi</A>(1)</I>
 
 This CGI program allows a user to acknowledge an alert he received
 from Xymon about a host that is in a critical state. Acknowledging
@@ -407,49 +407,49 @@ problem is being handled.
 is a tool for processing acknowledgments sent via e-mail, e.g. as a 
 response to an e-mail alert.
 <P>
-<I><A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8)</I>
+<I><A HREF="../man8/enadis.cgi.8.html">enadis.cgi</A>(8)</I>
 
 is a CGI program to disable or re-enable hosts or individual tests.
 When disabling a host or test, you stop alarms from being sent and
 also any outages do not affect the SLA calculations. So this tool
 is useful when systems are being brought down for maintenance.
 <P>
-<I><A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1)</I>
+<I><A HREF="../man1/findhost.cgi.1.html">findhost.cgi</A>(1)</I>
 
 is a CGI program that finds a given host in the Xymon
 web pages. As your Xymon installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
 <P>
-<I><A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1)</I>
+<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
 
 This CGI program triggers the generation of Xymon availability 
 reports, using
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 as the reporting back-end engine.
 <P>
-<I><A HREF="../man1/bb-replog.cgi.1.html">bb-replog.cgi</A>(1)</I>
+<I><A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1)</I>
 
 This CGI program generates the detailed availability report for a 
 particular host+service combination.
 <P>
-<I><A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1)</I>
+<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
 
 is a CGI program to build the Xymon web pages in a &quot;snapshot&quot;
 mode, showing the look of the web pages at a particular point 
 in time. It uses
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 as the back-end engine.
 <P>
-<I><A HREF="../man1/hobbit-statusreport.cgi.1.html">hobbit-statusreport.cgi</A>(1)</I>
+<I><A HREF="../man1/statusreport.cgi.1.html">statusreport.cgi</A>(1)</I>
 
 is a CGI program reporting test results for a single status but
 for several hosts. It is used to e.g. see which SSL certificates
 are about to expire, across all of the Xymon web pages.
 <P>
-<I><A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1)</I>
+<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
 
 is a CGI program to present information about a host. The 
 information is pulled from a CSV (Comma Separated Values)
@@ -491,7 +491,7 @@ and the Xymon clients. If there are no firewalls then they are not
 needed, but it may be necessary due to network or firewall issues
 to make use of them.
 <P>
-<I><A HREF="../man8/bbproxy.8.html">bbproxy</A>(8)</I>
+<I><A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8)</I>
 
 is a proxy-server that forwards Xymon messages between
 clients and the Xymon server. The clients must be able to talk
@@ -501,7 +501,7 @@ server.
 <I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
 
 is used when the client is not able to make outbound connections
-to neither bbproxy nor the Xymon server (typically, for clients
+to neither xymonproxy nor the Xymon server (typically, for clients
 located in a DMZ network zone). Together with the
 <I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
 
@@ -586,16 +586,20 @@ use of several external libraries for network tests, resulting in a
 significant performance improvement.
 <P>
 With version 4.0 released on March 30 2005, the project was de-coupled 
-from Big Brother, and the name changed to Xymon. This version was the 
-first full implementation of the Xymon server, but it still used the
+from Big Brother, and the name changed to Hobbit. This version was the 
+first full implementation of the Hobbit server, but it still used the
 data collected by Big Brother clients for monitoring host metrics.
 <P>
-Version 4.1 was released in July 2005 included a simple Xymon client
+Version 4.1 was released in July 2005 included a simple client
 for Unix. Log file monitoring was not implemented.
 <P>
 Version 4.2 was released in July 2006, and includes a fully functional
-Xymon client for Unix.
+client for Unix.
 <P>
+Version 4.3 was released in November 2010, and implemented the renaming
+of the project to Xymon. This name was already introduced in 2008 with
+a patch version of 4.2, but with version 4.3.0 this change of names
+was fully implemented.
 <P>
 <A NAME="lbAP">&nbsp;</A>
 <H2>COPYRIGHT</H2>
@@ -620,13 +624,13 @@ is allowed.  See the file COPYING for details.
 
 <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond_history.8.html">xymond_history</A>(8), <A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8), <A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8), 
 <A HREF="../man8/xymond_client.8.html">xymond_client</A>(8), <A HREF="../man8/xymond_hostdata.8.html">xymond_hostdata</A>(8), 
-<A HREF="../man1/hobbitping.1.html">hobbitping</A>(1), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/bbretest-net.sh.1.html">bbretest-net.sh</A>(1), 
-<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1), <A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1), <A HREF="../man1/hobbit-hostgraphs.cgi.1.html">hobbit-hostgraphs.cgi</A>(1), <A HREF="../man1/hobbit-nkview.cgi.1.html">hobbit-nkview.cgi</A>(1), 
-<A HREF="../man1/bb-hist.cgi.1.html">bb-hist.cgi</A>(1), <A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1), 
-<A HREF="../man1/bb-ack.cgi.1.html">bb-ack.cgi</A>(1), <A HREF="../man8/xymon-mailack.8.html">xymon-mailack</A>(8), <A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8), <A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1), 
-<A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1), <A HREF="../man1/bb-replog.cgi.1.html">bb-replog.cgi</A>(1), <A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1), <A HREF="../man1/hobbit-statusreport.cgi.1.html">hobbit-statusreport.cgi</A>(1), <A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1), 
+<A HREF="../man1/xymonping.1.html">xymonping</A>(1), <A HREF="../man1/xymonnet.1.html">xymonnet</A>(1), <A HREF="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</A>(1), 
+<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1), <A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1), <A HREF="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</A>(1), <A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1), 
+<A HREF="../man1/history.cgi.1.html">history.cgi</A>(1), <A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1), 
+<A HREF="../man1/ack.cgi.1.html">ack.cgi</A>(1), <A HREF="../man8/xymon-mailack.8.html">xymon-mailack</A>(8), <A HREF="../man8/enadis.cgi.8.html">enadis.cgi</A>(8), <A HREF="../man1/findhost.cgi.1.html">findhost.cgi</A>(1), 
+<A HREF="../man1/report.cgi.1.html">report.cgi</A>(1), <A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1), <A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1), <A HREF="../man1/statusreport.cgi.1.html">statusreport.cgi</A>(1), <A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1), 
 <A HREF="../man1/logfetch.1.html">logfetch</A>(1), <A HREF="../man1/clientupdate.1.html">clientupdate</A>(1), <A HREF="../man8/msgcache.8.html">msgcache</A>(8), 
-<A HREF="../man8/bbproxy.8.html">bbproxy</A>(8), <A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8), 
+<A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8), <A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8), 
 <A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8), <A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man1/bbmessage.cgi.1.html">bbmessage.cgi</A>(1), <A HREF="../man1/xymoncmd.1.html">xymoncmd</A>(1), <A HREF="../man1/xymongrep.1.html">xymongrep</A>(1), <A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1), 
 <A HREF="../man1/xymondigest.1.html">xymondigest</A>(1), <A HREF="../man1/combostatus.1.html">combostatus</A>(1), <A HREF="../man8/trimhistory.8.html">trimhistory</A>(8),
 <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5),
@@ -659,6 +663,6 @@ is allowed.  See the file COPYING for details.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

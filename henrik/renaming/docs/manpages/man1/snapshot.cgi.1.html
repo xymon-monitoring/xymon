@@ -1,31 +1,31 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BB-SNAPSHOT.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of SNAPSHOT.CGI</TITLE>
 </HEAD><BODY>
-<H1>BB-SNAPSHOT.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>SNAPSHOT.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bb-snapshot.cgi - CGI program to rebuild the Xymon webpages for a specific point in time.
+snapshot.cgi - CGI program to rebuild the Xymon webpages for a specific point in time.
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bb-snapshot.cgi</B>
+<B>snapshot.cgi</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>bb-snapshot.cgi</B>
-is invoked as a CGI script via the bb-snapshot.sh CGI wrapper.
+<B>snapshot.cgi</B>
+is invoked as a CGI script via the snapshot.sh CGI wrapper.
 It rebuilds the Xymon web pages to the look they had 
 at a particular point in time, based upon the historical information
 logged about events.
 <P>
-bb-snapshot.cgi is passed a QUERY_STRING environment variable with the
+snapshot.cgi is passed a QUERY_STRING environment variable with the
 following parameters:
 <P>
 <BR>&nbsp;&nbsp;&nbsp;mon&nbsp;(Start&nbsp;month&nbsp;of&nbsp;the&nbsp;snapshot)
@@ -44,7 +44,7 @@ using a 24-hour clock.
 <P>
 All of the processing involved in generating the report is done 
 by invoking 
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 with the proper &quot;--snapshot&quot; option.
 <P>
@@ -55,9 +55,9 @@ with the proper &quot;--snapshot&quot; option.
 <DT>--env=FILENAME<DD>
 Load environment from FILENAME before executing the CGI.
 <P>
-<DT>bbgen-options<DD>
+<DT>xymongen-options<DD>
 All options except &quot;--env&quot; are passed on to the 
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 program building the snapshot files.
 <P>
@@ -67,8 +67,8 @@ program building the snapshot files.
 
 <DL COMPACT>
 <DT>BBGENSNAPOPTS<DD>
-bbgen options passed by default to the bb-snapshot.cgi script. 
-This happens in the bb-snapshot.sh CGI wrapper script.
+xymongen options passed by default to the snapshot.cgi script. 
+This happens in the snapshot.sh CGI wrapper script.
 <DT>BBHOME<DD>
 Home directory of the Xymon server files
 <DT>BBSNAP<DD>
@@ -84,7 +84,7 @@ Default: $BBWEB/snap
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
+<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
 <P>
 <P>
 
@@ -102,6 +102,6 @@ Default: $BBWEB/snap
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

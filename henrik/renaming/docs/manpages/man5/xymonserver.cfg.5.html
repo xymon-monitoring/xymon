@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONSERVER.CFG</TITLE>
 </HEAD><BODY>
 <H1>XYMONSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -75,7 +75,7 @@ set to TRUE. Default: TRUE.
 <DT>BBLOGSTATUS<DD>
 Controls how the HTML page for a status log is generated. If set to
 DYNAMIC, the HTML logs are generated on-demand by the 
-<I><A HREF="../man1/bb-hostsvc.cgi.1.html">bb-hostsvc.cgi</A>(1)</I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
 
 script. If set to STATIC, you must activate the
 <I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
@@ -186,7 +186,7 @@ Default: $BBHOME/www/notes/
 Directory for Xymon availability reports. The $BBREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-<I><A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1)</I>
+<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
 
 CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
 <P>
@@ -194,7 +194,7 @@ CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
 Directory for Xymon snapshots. The $BBSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-<I><A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1)</I>
+<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
 
 CGI script to generate snapshots on-demand. Default: $BBHOME/www/snap/
 <P>
@@ -277,9 +277,9 @@ client program. Default: $BBHOME/bin/xymon.
 <P>
 <DT>BBGEN<DD>
 Full path to the
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
-webpage generator program. Default: $BBHOME/bin/bbgen.
+webpage generator program. Default: $BBHOME/bin/xymongen.
 <P>
 <P>
 </DL>
@@ -290,13 +290,13 @@ webpage generator program. Default: $BBHOME/bin/bbgen.
 <DT>BBSERVERWWWURL<DD>
 The root URL for the Xymon webpages, without the hostname. This
 URL must be mapped to the ~/server/www/ directory in your webserver
-configuration. See the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+configuration. See the sample Apache configuration in ~/server/etc/xymon-apache.conf.
 <P>
 <DT>BBSERVERCGIURL<DD>
 The root URL for the Xymon CGI-scripts, without the hostname. This
 directory must be mapped to the ~/cgi-bin/ directory in your webserver
 configuration, and must be flagged as holding executable scripts. See
-the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+the sample Apache configuration in ~/server/etc/xymon-apache.conf.
 <P>
 <DT>BBWEBHOST<DD>
 Initial part of the Xymon URL, including just the protocol and the
@@ -338,15 +338,15 @@ URL prefix (without hostname) of the Xymon CGI-scripts. Default: $BBSERVERCGIURL
 <P>
 <DT>COLUMNDOCURL<DD>
 Format string used to build a link to the documentation for a column heading.
-Default: &quot;$CGIBINURL/hobbitcolumn.sh?%s&quot;, which causes links to use the
-<I><A HREF="../man1/hobbitcolumn.sh.1.html">hobbitcolumn.sh</A>(1)</I>
+Default: &quot;$CGIBINURL/columndoc.sh?%s&quot;, which causes links to use the
+<I><A HREF="../man1/columndoc.sh.1.html">columndoc.sh</A>(1)</I>
 
 script to document a column.
 <P>
 <P>
 </DL>
 <A NAME="lbAI">&nbsp;</A>
-<H2>SETTINGS FOR SENDING MESSAGES TO HOBBIT</H2>
+<H2>SETTINGS FOR SENDING MESSAGES TO XYMON</H2>
 
 <DL COMPACT>
 <DT>BBDISP<DD>
@@ -389,11 +389,11 @@ combo-messages or not. Ignored by Xymon.
 The maximum number of status messages to combine into one
 combo message. You may need to lower this number of your
 BBDISPLAY server has trouble keeping up with the incoming
-status messages from bbtest-net.  Default: 100.
+status messages from xymonnet.  Default: 100.
 <P>
 <DT>BBSLEEPBETWEENMSGS<DD>
 Length of a pause introduced between each successive transmission
-of a combo-message by bbtest-net. You may have to increase this
+of a combo-message by xymonnet. You may have to increase this
 value to give your BBDISPLAY server time to process one combo
 message before the next one arrives. This number defines how
 many microseconds to wait between the messages.
@@ -402,7 +402,7 @@ Default: 0 (send messages as quickly as possible).
 <P>
 </DL>
 <A NAME="lbAJ">&nbsp;</A>
-<H2>HOBBITD SETTINGS</H2>
+<H2>XYMOND SETTINGS</H2>
 
 <P>
 <DL COMPACT>
@@ -515,7 +515,7 @@ If set to TRUE,
 
 will update the $BBHIST/allevents file logging all changes to
 a status. The allevents file is used by the
-<I><A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1)</I>
+<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
 
 tool to show the list of recent events on the BB2 webpage.
 <P>
@@ -573,7 +573,7 @@ external script mechanism to collect data from custom tests.
 Note: All TCP tests are automatically added.
 <P>
 This is also used by the 
-<I><A HREF="../man1/bb-hostsvc.cgi.1.html">bb-hostsvc.cgi</A>(1) </I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1) </I>
 
 script to determine if the detailed status view of a test should 
 include a graph.
@@ -605,13 +605,13 @@ tracked.
 <P>
 </DL>
 <A NAME="lbAN">&nbsp;</A>
-<H2>BBTEST-NET NETWORK TEST SETTINGS</H2>
+<H2>XYMONNET NETWORK TEST SETTINGS</H2>
 
 <P>
 <DL COMPACT>
 <DT>BBLOCATION<DD>
 If this variable is defined, then only the hosts that have been tagged
-with &quot;NET:$BBLOCATION&quot; will be tested by the bbtest-net tool.
+with &quot;NET:$BBLOCATION&quot; will be tested by the xymonnet tool.
 <P>
 <DT>CONNTEST<DD>
 If set to TRUE, the connectivity (ping) test will be performed.
@@ -644,12 +644,12 @@ you can change it to &quot;FAILED&quot; or customize it as you like.
 <P>
 <DT>FPING<DD>
 The command used to run the
-<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
 
 tool for the connectivity test. (The name FPING is due to the fact that
 the &quot;fping&quot; utility was used until Xymon version 4.2). This may include 
-suid-root wrappers and hobbitping options.
-Default: &quot;hobbitping&quot;
+suid-root wrappers and xymonping options.
+Default: &quot;xymonping&quot;
 <P>
 <DT>TRACEROUTE<DD>
 Defines the location of the &quot;traceroute&quot; tool and
@@ -689,11 +689,11 @@ Default: &quot;rpcinfo&quot;
 <P>
 </DL>
 <A NAME="lbAO">&nbsp;</A>
-<H2>BBGEN WEBPAGE GENERATOR SETTINGS</H2>
+<H2>XYMONGEN WEBPAGE GENERATOR SETTINGS</H2>
 
 <P>
 <DL COMPACT>
-<DT>HOBBITLOGO<DD>
+<DT>XYMONLOGO<DD>
 HTML code that is inserted on all standard headers. The default is to add
 the text &quot;Xymon&quot; in the upper-left corner of the page, but you can easily 
 replace this with e.g. a company logo. If you do, I suggest that you keep 
@@ -738,7 +738,7 @@ the timeformat using the controls in your systems
 routine, and add the text suitable for your setup.
 <P>
 <DT>BBDATEFORMAT<DD>
-On webpages generated by bbgen, the default header includes
+On webpages generated by xymongen, the default header includes
 the current date and time. Normally this looks like &quot;Tue Aug 24
 21:59:47 2004&quot;. The BBDATEFORMAT controls the format of this
 timestamp - you can define the format using the controls in the 
@@ -760,11 +760,11 @@ routine, so any controls available for this routine may be used.
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
 on a webpage. This sets the default value for the 
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 &quot;--maxrows&quot; option; if the command-line option is also specifed,
 then it overrides this environment variable. Note that unlike
-Jeff's patch, bbgen implements this for both the bb2.html page
+Jeff's patch, xymongen implements this for both the bb2.html page
 and all other pages (bb.html, subpages, bbnk.html). 
 <P>
 <DT>SUMMARY_SET_BKG<DD>
@@ -787,7 +787,7 @@ Default: cpu,disk,memory,procs,svcs.
 <P>
 <DT>BBRSSTITLE<DD>
 If defined, this is the title of the RSS/RDF documents generated when
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 is invoked with the &quot;--rss&quot; option. The default value is &quot;Xymon Alerts&quot;.
 <P>
@@ -798,7 +798,7 @@ Default: 1500.
 <DT>BBMKBB2EXT<DD>
 List of scripts to run as extensions to the BB2 page. Note that
 two scripts, &quot;eventlog.sh&quot; and &quot;acklog.sh&quot; are handled specially:
-They are handled internally by bbgen, but the script names must
+They are handled internally by xymongen, but the script names must
 be listed in this variable for this function to be enabled.
 <P>
 <DT>BBHISTEXT<DD>
@@ -813,12 +813,12 @@ with the WARNPCT setting in
 Default: 97 (percent)
 <P>
 <DT>BBGENREPOPTS<DD>
-Default bbgen options used for reports. This will typically include
+Default xymongen options used for reports. This will typically include
 such options as &quot;--subpagecolumns&quot;, and also &quot;--ignorecolumns&quot; if 
 you wish to exclude certain tests from reports by default.
 <P>
 <DT>BBGENSNAPOPTS<DD>
-Default bbgen options used by snapshots. This should be identical to
+Default xymongen options used by snapshots. This should be identical to
 the options you normally used when building Xymon webpages.
 <P>
 </DL>
@@ -845,13 +845,13 @@ the options you normally used when building Xymon webpages.
 <DT><A HREF="#lbAF">DIRECTORIES</A><DD>
 <DT><A HREF="#lbAG">SYSTEM FILES</A><DD>
 <DT><A HREF="#lbAH">URLS</A><DD>
-<DT><A HREF="#lbAI">SETTINGS FOR SENDING MESSAGES TO HOBBIT</A><DD>
-<DT><A HREF="#lbAJ">HOBBITD SETTINGS</A><DD>
+<DT><A HREF="#lbAI">SETTINGS FOR SENDING MESSAGES TO XYMON</A><DD>
+<DT><A HREF="#lbAJ">XYMOND SETTINGS</A><DD>
 <DT><A HREF="#lbAK">XYMOND_HISTORY SETTINGS</A><DD>
 <DT><A HREF="#lbAL">XYMOND_ALERT SETTINGS</A><DD>
 <DT><A HREF="#lbAM">XYMOND_RRD SETTINGS</A><DD>
-<DT><A HREF="#lbAN">BBTEST-NET NETWORK TEST SETTINGS</A><DD>
-<DT><A HREF="#lbAO">BBGEN WEBPAGE GENERATOR SETTINGS</A><DD>
+<DT><A HREF="#lbAN">XYMONNET NETWORK TEST SETTINGS</A><DD>
+<DT><A HREF="#lbAO">XYMONGEN WEBPAGE GENERATOR SETTINGS</A><DD>
 <DT><A HREF="#lbAP">FILES</A><DD>
 <DT><A HREF="#lbAQ">SEE ALSO</A><DD>
 </DL>
@@ -859,6 +859,6 @@ the options you normally used when building Xymon webpages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

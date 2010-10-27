@@ -1,9 +1,9 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BBHOSTSHOW</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONCFG</TITLE>
 </HEAD><BODY>
-<H1>BBHOSTSHOW</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMONCFG</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -13,7 +13,7 @@ xymoncfg - output the full hosts.cfg file
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>xymoncfg [--bbdisp] [--bbnet] [filename]</B>
+<B>xymoncfg [--bbdisp] [--net] [filename]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
@@ -24,10 +24,10 @@ xymoncfg - output the full hosts.cfg file
 dumps the full hosts.cfg file to stdout. It follows &quot;include&quot;
 tags in the hosts.cfg files, and prints the full contents
 as seen by the
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 and
-<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
 
 utilities.
 <P>
@@ -40,11 +40,11 @@ to by the HOSTSCFG environment variable.
 <DL COMPACT>
 <DT>--bbdisp<DD>
 Show the hosts.cfg file following include statements as a
-BBDISPLAY server would.
+Xymon server would.
 <P>
-<DT>--bbnet<DD>
-Show the hosts.cfg file following include statements as a
-BBNET server would.
+<DT>--net<DD>
+Show the hosts.cfg file following include statements as done
+when runnine xymonnet.
 <P>
 <P>
 </DL>
@@ -79,6 +79,6 @@ file.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

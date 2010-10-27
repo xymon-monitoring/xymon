@@ -1,28 +1,28 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BB-FINDHOST.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of FINDHOST.CGI</TITLE>
 </HEAD><BODY>
-<H1>BB-FINDHOST.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 25 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>FINDHOST.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bb-findhost.cgi - Xymon CGI script to find hosts
+findhost.cgi - Xymon CGI script to find hosts
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bb-findhost.cgi?host=REGEX</B>
+<B>findhost.cgi?host=REGEX</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>bb-findhost.cgi</B>
-is invoked as a CGI script via the bb-findhost.sh CGI wrapper.
+<B>findhost.cgi</B>
+is invoked as a CGI script via the findhost.sh CGI wrapper.
 <P>
-bb-findhost.cgi is passed a QUERY_STRING environment variable with the
+findhost.cgi is passed a QUERY_STRING environment variable with the
 &quot;host=REGEX&quot; parameter. The REGEX is a Posix regular expression (see
 <I><A HREF="../man7/regex.7.html">regex</A>(7)</I>
 
@@ -40,7 +40,7 @@ The output page lists hosts in the order they appear in the
 file.
 <P>
 A sample web page implementing the search facility is included
-with bbgen, you access it via the URL /bb/help/bb-findhost.html.
+with xymongen, you access it via the URL /bb/help/findhost.html.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>OPTIONS</H2>
@@ -61,7 +61,7 @@ HTML header file for the generated web page
 HTML footer file for the generated web page
 <P>
 <DT>$BBHOME/web/findhost_form<DD>
-Query form displayed when bb-findhost.cgi is called with no parameters.
+Query form displayed when findhost.cgi is called with no parameters.
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -69,7 +69,7 @@ Query form displayed when bb-findhost.cgi is called with no parameters.
 
 <DL COMPACT>
 <DT>HOSTSCFG<DD>
-bb-findhost.cgi uses the HOSTSCFG environment variable to find the
+findhost.cgi uses the HOSTSCFG environment variable to find the
 hosts.cfg file listing all known hosts and their page locations.
 <P>
 <DT>BBHOME<DD>
@@ -79,7 +79,7 @@ Used to locate the template files for the generated web pages.
 <A NAME="lbAH">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/bbgen.1.html">bbgen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
+<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
 <P>
 <P>
 
@@ -98,6 +98,6 @@ Used to locate the template files for the generated web pages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:52:01 GMT, October 25, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>
