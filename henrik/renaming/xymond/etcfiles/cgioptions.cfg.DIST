@@ -11,7 +11,7 @@ XYMONENV=@BBHOME@/etc/xymonserver.cfg
 
 # csvinfo.cgi
 CGI_CSVINFO_OPTS="--env=$XYMONENV"
-# hobbitcolumn.sh (uses csvinfo.cgi)
+# columndoc.sh (uses csvinfo.cgi)
 CGI_HOBBITCOLUMN_OPTS="--env=$XYMONENV --color=purple --hffile=columndoc"
 # findhost.cgi
 CGI_FINDHOST_OPTS="--env=$XYMONENV"
@@ -24,13 +24,13 @@ CGI_HIST_OPTS="--env=$XYMONENV --no-svcid"
 # svcstatus.cgi options for a historical status display
 CGI_SVCHIST_OPTS="--env=$XYMONENV --no-svcid"
 
-# hobbitgraph.cgi options
+# showgraph.cgi options
 CGI_HOBBITGRAPH_OPTS="--env=$XYMONENV"
 
-# hobbitgraph.cgi options
+# showgraph.cgi options
 CGI_HOSTGRAPHS_OPTS="--env=$XYMONENV"
 
-# hobbit-confreport.cgi options
+# confreport.cgi options
 CGI_HOBBITCONFREPORT_OPTS="--env=$XYMONENV"
 
 # datepage.cgi options
@@ -43,28 +43,28 @@ CGI_REPLOG_OPTS="--env=$XYMONENV"
 CGI_SNAPSHOT_OPTS="--env=$XYMONENV"
 # eventlog.cgi options
 CGI_EVENTLOG_OPTS="--env=$XYMONENV"
-# hobbit-nkview.cgi options
+# criticalview.cgi options
 CGI_NKVIEW_OPTS="--env=$XYMONENV"
-# hobbit-nkedit.cgi options
+# criticaleditor.cgi options
 CGI_NKEDIT_OPTS="--env=$XYMONENV"
-# hobbit-ackinfo.cgi options
+# ackinfo.cgi options
 CGI_ACKINFO_OPTS="--env=$XYMONENV"
-#hobbit-ghosts.cgi options
+#ghostlist.cgi options
 CGI_GHOSTS_OPTS="--env=$XYMONENV"
 
 # ack.cgi options
 CGI_ACK_OPTS="--env=$XYMONENV --no-pin"
-# hobbit-enadis.cgi options
+# enadis.cgi options
 CGI_ENADIS_OPTS="--env=$XYMONENV"
 
-# hobbit-hostlist options
+# hostlist options
 CGI_HOSTLIST_OPTS="--env=$XYMONENV"
-# hobbit-notifylog options
+# notifications options
 CGI_NOTIFYLOG_OPTS="--env=$XYMONENV"
-# hobbit-perfdata options
+# perfdata options
 CGI_PERFDATA_OPTS="--env=$XYMONENV"
-# hobbit-topchanges options
+# topchanges options
 CGI_TOPCHANGE_OPTS="--env=$XYMONENV --top"
-# hobbit-useradm options
+# useradm options
 CGI_USERADM_OPTS="--env=$XYMONENV"
 

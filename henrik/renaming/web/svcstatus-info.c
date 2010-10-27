@@ -455,7 +455,7 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 	beginyear = nowtm->tm_year + 1900;
 	endyear = nowtm->tm_year + 1900 + 5;
 
-	sprintf(l, "<form name=\"disableform\" method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+	sprintf(l, "<form name=\"disableform\" method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, l);
 	sprintf(l, "<table summary=\"%s disable\" border=1>\n", hostname);
 	addtobuffer(buf, l);
@@ -609,7 +609,7 @@ static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
-		sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 		addtobuffer(buf, l);
 		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
 		addtobuffer(buf, l);
@@ -625,7 +625,7 @@ static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><td>ALL</td><td>&nbsp;</td><td>&nbsp;</td>\n");
 
 	addtobuffer(buf, "<td>");
-	sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+	sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, l);
 	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
 	addtobuffer(buf, l);
@@ -673,7 +673,7 @@ static void generate_hobbit_scheduled(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
-		sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 		addtobuffer(buf, l);
 		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
 		addtobuffer(buf, l);

@@ -1,0 +1,88 @@
+.TH STATUSREPORT.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+statusreport.cgi \- CGI program to report a status for a group of servers
+.SH SYNOPSIS
+.B "statusreport.cgi --column=COLUMNNAME [options]"
+
+.SH DESCRIPTION
+\fBstatusreport.cgi\fR is a CGI tool to generate a simple HTML
+report showing the current status of a single column for a group of
+Xymon hosts.
+
+E.g. You can use this report to get an overview of all of the SSL 
+certificates that are about to expire.
+
+The generated webpage is a simple HTML table, suitable for copying
+into other documents or e-mail.
+
+statusreport.cgi runs as a CGI program, invoked by your webserver.
+It is normally run via a wrapper shell-script in the CGI directory for Xymon.
+
+.SH EXAMPLES
+The Xymon installation includes two web report scripts using this
+CGI tool: The \fBcertreport.sh\fR script generates a list of
+SSL server certificates that are yellow or red (i.e. they will expire
+soon); and the \fBnongreen.sh\fR script generates a report
+of all statuses that are currently non-green. These can be accessed
+from a web browser through a URL referencing the script in the
+Xymon CGI directory (e.g. "/xymon-cgi/xymon-nongreen.sh").
+
+.SH OPTIONS
+.IP "--column=COLUMNNAME"
+Report the status of the COLUMNNAME column.
+
+.IP "--all"
+Report the status for all hosts known to Xymon. By default,
+this tool reports only on the hosts found on the current page
+from where the CGI was invoked (by looking at the "pagepath"
+cookie).
+
+.IP "--filter=CRITERIA"
+Only report on statuses that match the CRITERIA setting. See the
+.I xymon(1)
+man-page - in the "hobbitdboard" command description - for 
+details about specifying filters.
+
+.IP "--heading=HTML"
+Defines the webpage heading - i.e. the "title" tag in the generated
+HTML code.
+
+.IP "--show-column"
+Include the column name in the display.
+
+.IP "--show-colors"
+Show the status color on the generated webpage. The default is 
+to not show the status color.
+
+.IP "--no-colors"
+Do not include text showing the current color of each status in
+the report. This is the default.
+
+.IP "--show-summary"
+Show only a summary of the important lines in the status message.
+By default, the entire status message appears in the generated 
+HTML code. This option causes the first non-blank line of the status
+message to be shown, and also any lines beginning with "&COLOR" which
+is used by many status messages to point out lines of interest 
+(non-green lines only, though).
+
+.IP "--show-message"
+Show the entire message on the webpage. This is the default.
+
+.IP "--link"
+Include HTML links to the host "info" page, and the status page.
+
+.IP "--embedded"
+Only generate the HTML table, not a full webpage. This can be used
+to embed the status report into an external webpage.
+
+.IP "--env=FILENAME"
+Load the environment from FILENAME before executing the CGI.
+
+.IP "--area=NAME"
+Load environment variables for a specific area. NB: if used,
+this option must appear before any --env=FILENAME option.
+
+.SH "SEE ALSO"
+xymon(7)
+

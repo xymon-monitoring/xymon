@@ -21,7 +21,7 @@
 
 my $bb;
 my $bbdisp;
-my $hobbitcolumn = "login";
+my $statuscolumn = "login";
 
 my $hostname = "";
 my $msgtxt = "";
@@ -106,7 +106,7 @@ sub processmessage {
 	}
 
 	# Build the command we use to send a status to the Xymon daemon
-	$cmd = $bb . " " . $bbdisp . " \"status " . $hostname . "." . $hobbitcolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
+	$cmd = $bb . " " . $bbdisp . " \"status " . $hostname . "." . $statuscolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
 
 	# And send the message
 	system $cmd;

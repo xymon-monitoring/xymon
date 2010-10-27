@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon hobbit-enadis script
-
-. @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-enadis.cgi $CGI_ENADIS_OPTS
-

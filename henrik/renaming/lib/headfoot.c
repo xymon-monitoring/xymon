@@ -234,7 +234,7 @@ void sethostenv_addtolist(char *listname, char *name, char *val, char *extra, in
 static int nkackttprio = 0;
 static char *nkackttgroup = NULL;
 static char *nkackttextra = NULL;
-static char *nkackinfourl = NULL;
+static char *ackinfourl = NULL;
 static char *nkackdocurl = NULL;
 
 void sethostenv_nkack(int nkprio, char *nkttgroup, char *nkttextra, char *infourl, char *docurl)
@@ -242,7 +242,7 @@ void sethostenv_nkack(int nkprio, char *nkttgroup, char *nkttextra, char *infour
 	nkackttprio = nkprio;
 	if (nkackttgroup) xfree(nkackttgroup); nkackttgroup = strdup((nkttgroup && *nkttgroup) ? nkttgroup : "&nbsp;");
 	if (nkackttextra) xfree(nkackttextra); nkackttextra = strdup((nkttextra && *nkttextra) ? nkttextra : "&nbsp;");
-	if (nkackinfourl) xfree(nkackinfourl); nkackinfourl = strdup(infourl);
+	if (ackinfourl) xfree(ackinfourl); ackinfourl = strdup(infourl);
 	if (nkackdocurl) xfree(nkackdocurl); nkackdocurl = strdup((docurl && *docurl) ? docurl : "");
 }
 
@@ -999,7 +999,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				for (hwalk = dhosts; (hwalk); hwalk = hwalk->next) {
 					fprintf(output, "<TR>");
 					fprintf(output, "<TD>");
-					fprintf(output,"<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n",
+					fprintf(output,"<form method=\"post\" action=\"%s/enadis.sh\">\n",
 						xgetenv("SECURECGIBINURL"));
 
 					fprintf(output, "<table summary=\"%s disabled tests\" width=\"100%%\">\n", 
@@ -1116,7 +1116,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						fprintf(output, "</TD>\n");
 
 						fprintf(output, "<td>\n");
-						fprintf(output, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n",
+						fprintf(output, "<form method=\"post\" action=\"%s/enadis.sh\">\n",
 							xgetenv("SECURECGIBINURL"));
 						fprintf(output, "<input name=canceljob type=hidden value=\"%d\">\n", 
 							id);
@@ -1155,7 +1155,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		else if (strcmp(t_start, "NKACKTTPRIO") == 0) fprintf(output, "%d", nkackttprio);
 		else if (strcmp(t_start, "NKACKTTGROUP") == 0) fprintf(output, "%s", nkackttgroup);
 		else if (strcmp(t_start, "NKACKTTEXTRA") == 0) fprintf(output, "%s", nkackttextra);
-		else if (strcmp(t_start, "NKACKINFOURL") == 0) fprintf(output, "%s", nkackinfourl);
+		else if (strcmp(t_start, "NKACKINFOURL") == 0) fprintf(output, "%s", ackinfourl);
 		else if (strcmp(t_start, "NKACKDOCURL") == 0) fprintf(output, "%s", nkackdocurl);
 
 		else if (strcmp(t_start, "NKEDITUPDINFO") == 0) {

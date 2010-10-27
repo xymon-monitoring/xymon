@@ -152,7 +152,7 @@ SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB 
 BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the BB2 page.
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
-COLUMNDOCURL="$CGIBINURL/hobbitcolumn.sh?%s"	# URL formatting string for column-links
+COLUMNDOCURL="$CGIBINURL/columndoc.sh?%s"	# URL formatting string for column-links
 
 # HTML content
 HTMLCONTENTTYPE="text/html"                     # You can add charset options here.

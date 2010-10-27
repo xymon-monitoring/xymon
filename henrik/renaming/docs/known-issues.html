@@ -43,7 +43,7 @@ about the bug:</p>
 <h3><a name="jsval">Internet Explorer complains about Javascript errors in Enable/Disable</a></h3>
 <p>This happens for some, but works for most people. One workaround
 is to disable the Javascript validation code in the enable/disable
-function: Edit ~xymon/cgi-bin/hobbit-enadis.sh script and add the 
+function: Edit ~xymon/cgi-bin/enadis.sh script and add the 
 option "--no-jsvalidation" to the hobbisvc.cgi command - this disables
 Javascript validation on the "info" page - and edit the file 
 ~xymon/server/web/maint_form so you remove the text 'onClick="validateDisable(this.form)"'

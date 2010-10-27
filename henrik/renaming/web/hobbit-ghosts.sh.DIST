@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is the Xymon wrapper for the ghosts CGI
-
-. @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-ghosts.cgi $CGI_GHOSTS_OPTS
-

@@ -272,13 +272,13 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
 			if (itemcount > 0) {
-				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
+				sprintf(svcurl, "%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
 					cgiurl, hostname, rrdservicename, 
 					gwidth, gheight,
 					first, step);
 			}
 			else {
-				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
+				sprintf(svcurl, "%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
 					cgiurl, hostname, rrdservicename,
 					gwidth, gheight);
 			}

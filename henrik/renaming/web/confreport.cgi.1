@@ -1,0 +1,58 @@
+.TH CONFREPORT.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.SH NAME
+confreport.cgi \- Xymon Configuration report
+.SH SYNOPSIS
+.B "confreport.cgi"
+
+.SH DESCRIPTION
+\fBconfreport.cgi\fR is invoked as a CGI script via the 
+confreport.sh CGI wrapper.
+
+\fBconfreport.cgi\fR provides a plain HTML (Web) report of
+the Xymon configuration for a group of hosts; which hosts are included
+is determined by the hosts available on the webpage from where the CGI
+script is invoked.
+
+The configuration report include the hostnames, a list of the statuses
+monitored for each host, and if applicable any configuration settings
+affecting these. Alerts that may be triggered by status changes are also
+included.
+
+The report is plain HTML without any images included, and therefore suitable
+for inclusion into e-mails or other documents that may be accessed outside
+the Xymon system.
+
+.SH OPTIONS
+.IP "--critical"
+Report only on the statuses that are configured to show up on the
+\fBCritical Systems\fR view.
+
+.IP "--old-nk-config"
+Use the deprecated \fBNK\fR tag in hosts.cfg to determine if tests
+appear on the Critical Systems view.
+
+.IP "--env=FILENAME"
+Loads the environment defined in FILENAME before executing the CGI script.
+
+.IP "--area=NAME"
+Load environment variables for a specific area. NB: if used,
+this option must appear before any --env=FILENAME option.
+
+.IP "--debug"
+Enables debugging output.
+
+.IP "--nkconfig=FILENAME"
+Use FILENAME as the configuration file for the Critical 
+Systems information. The default is to load this from
+$BBHOME/etc/critical.cfg
+
+.SH BUGS
+Client-side configuration done in the 
+.I analysis.cfg(5)
+is not currently reflected in the report.
+
+Critical Systems view configuration is not reflected in the report.
+
+.SH "SEE ALSO"
+hosts.cfg(5), alerts.cfg(5), analysis.cfg(5), xymon(7)
+

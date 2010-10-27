@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# This is a wrapper for the Xymon criticaleditor.cgi script
+
+. @BBHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @BBHOME@/bin/criticaleditor.cgi $CGI_NKEDIT_OPTS
+

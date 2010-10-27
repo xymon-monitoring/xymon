@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon hobbit-nkedit.cgi script
-
-. @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-nkedit.cgi $CGI_NKEDIT_OPTS
-

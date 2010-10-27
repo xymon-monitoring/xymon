@@ -1071,7 +1071,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	MEMDEFINE(codes);
 
 	if (printmode == 2) {
-		/* For print-out usage - e.g. hobbit-confreport.cgi */
+		/* For print-out usage - e.g. confreport.cgi */
 		normalfont = "COLOR=\"#000000\" FACE=\"Tahoma, Arial, Helvetica\"";
 		stopfont = "COLOR=\"#FF0000\" FACE=\"Tahoma, Arial, Helvetica\"";
 	}

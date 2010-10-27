@@ -1,6 +1,6 @@
 .TH CRITICAL.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-critical.cfg \- Configuration of the hobbitgraph CGI
+critical.cfg \- Configuration of the showgraph CGI
 
 .SH SYNOPSIS
 .B $BBHOME/etc/critical.cfg
@@ -12,7 +12,7 @@ determine which of the statuses currently in a red or yellow state
 should appear on the Critical Systems view.
 
 This file should not be edited manually. It is maintained by the
-.I hobbit-nkeedit.cgi(1)
+.I criticaleditor.cgi(1)
 utility via a web-based frontend.
 
 .SH FILE PERMISSIONS
@@ -25,5 +25,5 @@ When editing the file with the web front-end, a backup file is created.
 Therefore the critical.cfg.bak file should have identical permissions.
 
 .SH "SEE ALSO"
-hobbit-nkview.cgi(1), hobbit-nkedit.cgi(1)
+criticalview.cgi(1), criticaleditor.cgi(1)
 

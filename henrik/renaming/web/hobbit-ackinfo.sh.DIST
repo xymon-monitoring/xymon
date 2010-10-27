@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# This is a wrapper for the Xymon hobbit-ackinfo.cgi script
-
-. @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-ackinfo.cgi $CGI_ACKINFO_OPTS
-

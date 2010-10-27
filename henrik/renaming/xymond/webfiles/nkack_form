@@ -21,7 +21,7 @@
 
 <tr>
   <td colspan=3 align=center valign=middle>
-    <form method="POST" action="&SECURECGIBINURL/hobbit-ackinfo.sh">
+    <form method="POST" action="&SECURECGIBINURL/ackinfo.sh">
       <INPUT TYPE="TEXT" NAME="NOTE" VALUE="" MAXLENGTH=60 SIZE=60 tabindex="0">
       &nbsp;&nbsp;Host-ack
       <INPUT TYPE="CHECKBOX" NAME="ALLTESTS" VALUE="OFF">&nbsp;&nbsp;

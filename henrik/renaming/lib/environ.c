@@ -113,7 +113,7 @@ const static struct {
 	{ "DOTWIDTH", "16" },
 	{ "RRDHEIGHT", "120" },
 	{ "RRDWIDTH", "576" },
-	{ "COLUMNDOCURL", "$CGIBINURL/hobbitcolumn.sh?%s" },
+	{ "COLUMNDOCURL", "$CGIBINURL/columndoc.sh?%s" },
 	{ "XYMONLOGO", "Xymon" },
 	{ "MKBBLOCAL", "<B><I>Pages Hosted Locally</I></B>" },
 	{ "MKBBREMOTE", "<B><I>Remote Status Display</I></B>" },

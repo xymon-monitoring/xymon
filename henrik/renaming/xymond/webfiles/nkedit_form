@@ -12,7 +12,7 @@
        <BR>
        <CENTER>
 
-       <FORM METHOD="GET" ACTION="hobbit-nkedit.sh">
+       <FORM METHOD="GET" ACTION="criticaleditor.sh">
           <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host lookup">
 	     <TR>
 	        <TD>Host:&nbsp;<INPUT NAME="HOSTNAME" TYPE="TEXT" SIZE=30 VALUE="&BBHOST"></TD>
