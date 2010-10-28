@@ -1,68 +1,52 @@
 ﻿function XymonSend($msg, $servers)
 {
 	$saveresponse = 1	# Only on the first server
-
+	$outputbuffer = ""
 	$ASCIIEncoder = New-Object System.Text.ASCIIEncoding
 
 	foreach ($srv in $servers) {
 		$srvparams = $srv.Split(":")
-		$srvip = $srvparams[0]
+		# allow for server names that may resolve to multiple A records
+		$srvIPs = $srvparams[0] | %{[system.net.dns]::GetHostAddresses($_)} | %{ $_.IPAddressToString}
 		if ($srvparams.Count -gt 1) {
 			$srvport = $srvparams[1]
-		}
-		else {
+		} else {
 			$srvport = 1984
 		}
+		foreach ($srvip in $srvIPs) {
 
-		try {
-			$socket = new-object System.Net.Sockets.TcpClient($srvip, $srvport)
+			$saveerractpref = $ErrorActionPreference
+			$ErrorActionPreference = "SilentlyContinue"
+			$socket = new-object System.Net.Sockets.TcpClient
+			$socket.Connect($srvip, $srvport)
+            $ErrorActionPreference = $saveerractpref
+			if(! $? -or ! $socket.Connected ) {
+				$errmsg = $Error[0].Exception
+				Write-Error -Category OpenError "Cannot connect to host $srv ($srvip) : $errmsg"
+				continue;
+			}
+			$socket.sendTimeout = 500
+			$socket.NoDelay = $true
+
+			$stream = $socket.GetStream()
+			
+			$sent = 0
+			foreach ($line in $msg) {
+				# Convert data to ASCII instead of UTF, and to Unix line breaks
+				$sent += $socket.Client.Send($ASCIIEncoder.GetBytes($line.Replace("`r","") + "`n"))
+			}
+
+			if ($saveresponse-- -gt 0) {
+				$socket.Client.Shutdown(1)	# Signal to Xymon we're done writing.
+
+				$s = new-object system.io.StreamReader($stream,"ASCII")
+
+				start-sleep -m 200  # wait for data to buffer
+				$outputBuffer = $s.ReadToEnd()
+			}
+
+			$socket.Close()
 		}
-		catch {
-			$errmsg = $Error[0].Exception
-			Write-Error "Cannot connect to host $srv : $errmsg"
-			continue;
-		}
-
-		$stream = $socket.GetStream() 
-		
-		foreach ($line in $msg)
-		{
-			# Convert data to ASCII instead of UTF, and to Unix line breaks
-			$sent += $socket.Client.Send($ASCIIEncoder.GetBytes($line.Replace("`r","") + "`n"))
-		}
-
-		if ($saveresponse) {
-			$socket.Client.Shutdown(1)	# Signal to Xymon we're done writing.
-
-		    $buffer = new-object System.Byte[] 4096
-			$encoding = new-object System.Text.AsciiEncoding
-			$outputBuffer = ""
-
-    		do {
-        		## Allow data to buffer for a bit
-        		start-sleep -m 200
-
-        		## Read what data is available
-        		$foundmore = $false
-        		$stream.ReadTimeout = 1000
-
-        		do {
-            		try {
-                		$read = $stream.Read($buffer, 0, 1024)
-
-                		if ($read -gt 0) {
-                    		$foundmore = $true
-                    		$outputBuffer += ($encoding.GetString($buffer, 0, $read))
-                		}
-					}
-					catch { 
-						$foundMore = $false; $read = 0
-					}
-        		} while ($read -gt 0)
-    		} while ($foundmore)
-		}
-
-		$socket.Close()
 	}
 
 	$outputbuffer
