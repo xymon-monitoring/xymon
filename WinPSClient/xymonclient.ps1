@@ -63,8 +63,8 @@ function XymonInit
 	# Params for various client options
 	SetIfNot $XymonSettings clientbbwinmembug 1 # 0 = report correctly, 1 = page and virtual switched
 	SetIfNot $XymonSettings clientremotecfgexec 0 # 0 = don't run remote config, 1 = run remote config
-	SetIfNot $XymonSettings clientconfigfile "$env:TEMP\xymonconfig1.ps1" # path for saved client-local.cfg section from server
-	SetIfNot $XymonSettings clientlogfile "$env:TEMP\xymonclient1.log" # path for logfile
+	SetIfNot $XymonSettings clientconfigfile "$env:TEMP\xymonconfig.cfg" # path for saved client-local.cfg section from server
+	SetIfNot $XymonSettings clientlogfile "$env:TEMP\xymonclient.log" # path for logfile
 	SetIfNot $XymonSettings loopinterval 300 # seconds to repeat client reporting loop
 	SetIfNot $XymonSettings maxlogage 60 # minutes age for event log reporting
 	SetIfNot $XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
@@ -780,12 +780,16 @@ function XymonClientSections {
 	XymonReportConfig
 }
 
-function XymonClientInstall
+function XymonClientInstall([string]$scriptname)
 {
-	$newsvc = New-Service $xymonsvcname $xymondir\XymonPSClient.exe -DisplayName "Xymon Powershell Client" -StartupType Automatic -Description "Reports to Xymon monitoring server client data gathered by powershell script"
-	$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters
+	if((Get-Service -ea:SilentlyContinue $xymonsvcname) -eq $null) {
+		$newsvc = New-Service $xymonsvcname $xymondir\XymonPSClient.exe -DisplayName "Xymon Powershell Client" -StartupType Automatic -Description "Reports to Xymon monitoring server client data gathered by powershell script"
+	}
+	if((Get-Item -ea:SilentlyContinue HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters) -eq $null) {
+		$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters
+	}
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters Application "$PSHOME\powershell.exe"
-	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File $MyInvocation.InvocationName"
+	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File $scriptname"
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
 }
 ##### Main code #####
@@ -793,7 +797,7 @@ XymonInit
 $ret = 0
 # check for install/start/stop for service management
 if($args -eq "Install") {
-	XymonClientInstall
+	XymonClientInstall (Resolve-Path $MyInvocation.InvocationName)
 	$ret=1
 }
 if($args -eq "Start") {
