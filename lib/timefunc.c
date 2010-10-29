@@ -97,6 +97,7 @@ char *timespec_text(char *spec)
 	static strbuffer_t *result = NULL;
 	char *sCopy;
 	char *sItem;
+	char *itmstbuf;
 
 	if (result == NULL) result = newstrbuffer(0);
 	clearstrbuffer(result);
@@ -120,11 +121,35 @@ char *timespec_text(char *spec)
 	}
 
 	sCopy = strdup(spec);
-	sItem = strtok(sCopy, ",");
+	sItem = strtok_r(sCopy, ",", &itmstbuf);
 	while (sItem) {
+		char *tok, *onebuf, *e1, *e2, *e3, *e4, *e5;
+		char *days, *starttime, *endtime, *columns, *cause;
 		char *oneday, *dtext;
-		int daysdone = 0, firstday = 1;
-		oneday = sItem;
+		int daysdone = 0, firstday = 1, ecount;
+
+		e1 = e2 = e3 = e4 = e5 = NULL; ecount = 0;
+		e1 = strtok_r(sItem, ":", &onebuf);
+		if (e1) { ecount++; e2 = strtok_r(NULL, ":", &onebuf); }
+		if (e2) { ecount++; e3 = strtok_r(NULL, ":", &onebuf); }
+		if (e3) { ecount++; e4 = strtok_r(NULL, ":", &onebuf); }
+		if (e4) { ecount++; e5 = strtok_r(NULL, ":", &onebuf); }
+ 		if (e5) { ecount++; }
+
+		if (ecount == 3) {
+			/* Old format: e1=day, e2 = starttime, e3 = endtime */
+			days = e1; starttime = e2; endtime = e3; columns = NULL; cause = NULL;
+		}
+		else if (ecount == 5) {
+			columns = e1; days = e2; starttime = e3; endtime = e4; cause = e5;
+		}
+		else {
+			addtobuffer(result, "[Malformed timespec]");
+			sItem = NULL;
+			continue;
+		}
+
+		oneday = days;
 
 		while (!daysdone) {
 			switch (*oneday) {
@@ -141,12 +166,25 @@ char *timespec_text(char *spec)
 			}
 
 			if (!firstday) addtobuffer(result, "/");
+
 			addtobuffer(result, dtext);
 			oneday++;
 			firstday = 0;
 		}
 
-		sItem = strtok(NULL, ",");
+		addtobuffer(result, ":"); addtobuffer(result, starttime);
+		addtobuffer(result, ":"); addtobuffer(result, endtime);
+		if (columns) { 
+			addtobuffer(result, " (status:"); 
+			if (strcmp(columns, "*") == 0)
+				addtobuffer(result, "All");
+			else
+				addtobuffer(result, columns); 
+			addtobuffer(result, ")");
+		}
+		if (cause) { addtobuffer(result, " (cause:"); addtobuffer(result, cause); addtobuffer(result, ")"); }
+
+		sItem = strtok_r(NULL, ",", &itmstbuf);
 		if (sItem) addtobuffer(result, ", ");
 	}
 	xfree(sCopy);
