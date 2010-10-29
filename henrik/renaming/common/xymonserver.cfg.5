@@ -9,6 +9,11 @@ are stored in the ~Xymon/server/etc/xymonserver.cfg file.
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
+You can also append data to existing variables, using the
+syntax \fBNAME+=VALUE\fR. VALUE is then appended to the existing
+value of the NAME variable. If NAME has not been defined, then
+this acts as if it were a normal definition.
+
 .SH ENVIRONMENT AREAS
 In some cases it may be useful to have different values for an environment
 variable, depending on where it is used. This is possible by defining
