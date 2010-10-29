@@ -35,39 +35,45 @@ function SetIfNot($obj,$key,$value)
 function XymonInit
 {
 	# Get reg key first, then override if not set
-	$script:XymonSettings = Get-ItemProperty  -ErrorAction:SilentlyContinue HKLM:\SOFTWARE\XymonPSClient
+	if([System.IntPtr]::Size -eq 8) { # detect if we're running as 64 or 32 bit
+		$script:XymonSettings = Get-ItemProperty -ErrorAction:SilentlyContinue HKLM:\SOFTWARE\Wow6432Node\XymonPSClient
+	} else {
+		$script:XymonSettings = Get-ItemProperty -ErrorAction:SilentlyContinue HKLM:\SOFTWARE\XymonPSClient
+	}
 	if($script:XymonSettings -eq $null) {
 		$script:XymonSettings = New-Object Object
-	} else { # any special handling for settings from reg keys
-		if($XymonSettings.servers -match " ") {
-			$XymonSettings.servers = $XymonSettings.servers.Split(" ")
+	} else {
+		# any special handling for settings from reg keys
+		if($script:XymonSettings.servers -match " ") {
+			$script:XymonSettings.servers = $script:XymonSettings.servers.Split(" ")
 		}
 	}
-	SetIfNot $XymonSettings servers $xymonservers # List your Xymon servers here
-	# SetIfNot $XymonSettings clientname "winxptest"	# Define this to override the default client hostname
+	SetIfNot $script:XymonSettings servers $xymonservers # List your Xymon servers here
+	# SetIfNot $script:XymonSettings clientname "winxptest"	# Define this to override the default client hostname
 
 	# Params for default clientname
-	SetIfNot $XymonSettings clientfqdn 1 # 0 = unqualified, 1 = fully-qualified
-	SetIfNot $XymonSettings clientlower 1 # 0 = unqualified, 1 = fully-qualified
-	if ($XymonSettings.clientname -eq $null -or $XymonSettings.clientname -eq "") { # set name based on rules
+	SetIfNot $script:XymonSettings clientfqdn 1 # 0 = unqualified, 1 = fully-qualified
+	SetIfNot $script:XymonSettings clientlower 1 # 0 = unqualified, 1 = fully-qualified
+	if ($script:XymonSettings.clientname -eq $null -or $script:XymonSettings.clientname -eq "") { # set name based on rules
 		$ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 		$clname  = $ipProperties.HostName
-		if ($XymonSettings.clientfqdn -and ($ipProperties.DomainName -ne $null)) { 
+		if ($script:XymonSettings.clientfqdn -and ($ipProperties.DomainName -ne $null)) { 
 			$clname += "." + $ipProperties.DomainName
 		}
-		if ($XymonSettings.clientlower) { $clname = $clname.ToLower() }
-		if($XymonSettings.clientname -eq "") {$XymonSettings.clientname = $clname }
-		else {SetIfNot $XymonSettings clientname $clname}
+		if ($script:XymonSettings.clientlower) { $clname = $clname.ToLower() }
+		if($script:XymonSettings.clientname -eq "") {$script:XymonSettings.clientname = $clname }
+		else {SetIfNot $script:XymonSettings clientname $clname}
 	}
 
 	# Params for various client options
-	SetIfNot $XymonSettings clientbbwinmembug 1 # 0 = report correctly, 1 = page and virtual switched
-	SetIfNot $XymonSettings clientremotecfgexec 0 # 0 = don't run remote config, 1 = run remote config
-	SetIfNot $XymonSettings clientconfigfile "$env:TEMP\xymonconfig.cfg" # path for saved client-local.cfg section from server
-	SetIfNot $XymonSettings clientlogfile "$env:TEMP\xymonclient.log" # path for logfile
-	SetIfNot $XymonSettings loopinterval 300 # seconds to repeat client reporting loop
-	SetIfNot $XymonSettings maxlogage 60 # minutes age for event log reporting
-	SetIfNot $XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
+	SetIfNot $script:XymonSettings clientbbwinmembug 1 # 0 = report correctly, 1 = page and virtual switched
+	SetIfNot $script:XymonSettings clientremotecfgexec 0 # 0 = don't run remote config, 1 = run remote config
+	SetIfNot $script:XymonSettings clientconfigfile "$env:TEMP\xymonconfig.cfg" # path for saved client-local.cfg section from server
+	SetIfNot $script:XymonSettings clientlogfile "$env:TEMP\xymonclient.log" # path for logfile
+	SetIfNot $script:XymonSettings loopinterval 300 # seconds to repeat client reporting loop
+	SetIfNot $script:XymonSettings maxlogage 60 # minutes age for event log reporting
+	SetIfNot $script:XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
+	SetIfNot $script:XymonSettings reportevt 1 # scan eventlog and report (can be very slow)
 
 	$script:wanteddisks = @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
 	$script:wantedlogs = "Application",  "System", "Security"
@@ -88,10 +94,10 @@ function XymonInit
 	if ((get-variable -erroraction SilentlyContinue "clientname") -eq $null -or $script:clientname -eq "") {
 		$ipProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 		$script:clientname  = $ipProperties.HostName
-		if ($XymonSettings.clientfqdn -and ($ipProperties.DomainName -ne $null)) { 
+		if ($script:XymonSettings.clientfqdn -and ($ipProperties.DomainName -ne $null)) { 
 			$script:clientname += "." + $ipProperties.DomainName
 		}
-		if ($XymonSettings.clientlower) { $script:clientname = $clientname.ToLower() }
+		if ($script:XymonSettings.clientlower) { $script:clientname = $clientname.ToLower() }
 	}
 }
 
@@ -350,7 +356,7 @@ function XymonMemory
 	"[memory]"
 	"memory    Total    Used"
 	"physical: $phystotal $physused"
-	if($XymonSettings.clientbbwinmembug -eq 0) {  	# 0 = report correctly, 1 = page and virtual switched
+	if($script:XymonSettings.clientbbwinmembug -eq 0) {  	# 0 = report correctly, 1 = page and virtual switched
 		"virtual: $virttotal $virtused"
 		"page: $pagetotal $pageused"
 	} else {
@@ -361,7 +367,8 @@ function XymonMemory
 
 function XymonMsgs
 {
-	$since = (Get-Date).AddMinutes(-($XymonSettings.maxlogage))
+	if($script:XymonSettings.reportevt -eq 0) {return}
+	$since = (Get-Date).AddMinutes(-($script:XymonSettings.maxlogage))
 	if ($wantedlogs -eq $null) {
 		$wantedlogs = "Application", "System", "Security"
 	}
@@ -725,17 +732,17 @@ function XymonClientConfig($cfglines)
 
 	# Convert to Windows-style linebreaks
 	$script:clientlocalcfg = $cfglines.Split("`n")
-	$clientlocalcfg >$XymonSettings.clientconfigfile
+	$clientlocalcfg >$script:XymonSettings.clientconfigfile
 
 	# Source the new config
-	if ($XymonSettings.clientremotecfgexec -ne 0 -and (test-path -PathType Leaf $XymonSettings.clientconfigfile) ) { . $XymonSettings.clientconfigfile }
+	if ($script:XymonSettings.clientremotecfgexec -ne 0 -and (test-path -PathType Leaf $script:XymonSettings.clientconfigfile) ) { . $script:XymonSettings.clientconfigfile }
 }
 
 function XymonReportConfig
 {
 	"[XymonConfig]"
 	"XymonSettings"
-	$XymonSettings
+	$script:XymonSettings
 	""
 	"HaveCmd"
 	$HaveCmd
@@ -788,6 +795,15 @@ function XymonClientInstall([string]$scriptname)
 	if((Get-Item -ea:SilentlyContinue HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters) -eq $null) {
 		$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters
 	}
+	if([System.IntPtr]::Size -eq 8) { # detect if we're running as 64 or 32 bit
+		if((Get-Item -ea:SilentlyContinue HKLM:\SOFTWARE\Wow6432Node\XymonPSClient) -eq $null) {
+			$cfgitm = New-Item HKLM:\SOFTWARE\Wow6432Node\XymonPSClient
+		}
+	} else {
+		if((Get-Item -ea:SilentlyContinue HKLM:\SOFTWARE\XymonPSClient) -eq $null) {
+			$cfgitm = New-Item HKLM:\SOFTWARE\XymonPSClient
+		}
+	}
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters Application "$PSHOME\powershell.exe"
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File $scriptname"
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
@@ -813,13 +829,13 @@ if($ret) {return}
 # assume no other args, so run as normal
 
 $running = $true
-$loopcount = ($XymonSettings.slowscanrate - 1)
+$loopcount = ($script:XymonSettings.slowscanrate - 1)
 
 while ($running -eq $true) {
 	$starttime = Get-Date
 	
 	$loopcount++; 
-	if ($loopcount -eq $XymonSettings.slowscanrate) { 
+	if ($loopcount -eq $script:XymonSettings.slowscanrate) { 
 		$loopcount = 0
 		$XymonWMIQuickFixEngineeringCache = XymonWMIQuickFixEngineering
 		$XymonWMIProductCache = XymonWMIProduct
@@ -835,10 +851,10 @@ while ($running -eq $true) {
 	$clout += XymonClock | Out-String
 	$clout +=  $clsecs
 	
-	Get-Date >> $XymonSettings.clientlogfile
-	XymonReportConfig >> $XymonSettings.clientlogfile
-	$newconfig = XymonSend $clout $XymonSettings.servers
+	Get-Date > $script:XymonSettings.clientlogfile  # restart logfile because it gets large!
+	XymonReportConfig >> $script:XymonSettings.clientlogfile
+	$newconfig = XymonSend $clout $script:XymonSettings.servers
 	XymonClientConfig $newconfig
-	$delay = ($XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
+	$delay = ($script:XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
 	if ($delay -gt 0) { sleep $delay }
 }
