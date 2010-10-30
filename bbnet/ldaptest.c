@@ -60,23 +60,23 @@ void shutdown_ldap_library(void)
 int add_ldap_test(testitem_t *t)
 {
 #ifdef BBGEN_LDAP
+	testitem_t *basecheck;
 	ldap_data_t *req;
 	LDAPURLDesc *ludp;
 	char *urltotest;
+	int badurl;
+
+	basecheck = (testitem_t *)t->privdata;
 
 	/* 
 	 * t->testspec containts the full testspec
 	 * We need to remove any URL-encoding.
 	 */
 	urltotest = urlunescape(t->testspec);
-
-	if (ldap_url_parse(urltotest, &ludp) != 0) {
-		errprintf("Invalid LDAP URL %s\n", t->testspec);
-		return 1;
-	}
+	badurl = (ldap_url_parse(urltotest, &ludp) != 0);
 
 	/* Allocate the private data and initialize it */
-	t->privdata = (void *) malloc(sizeof(ldap_data_t)); 
+	t->privdata = (void *) calloc(1, sizeof(ldap_data_t)); 
 	req = (ldap_data_t *) t->privdata;
 	req->ldapdesc = (void *) ludp;
 	req->usetls = (strncmp(urltotest, "ldaps:", 6) == 0);
@@ -93,7 +93,28 @@ int add_ldap_test(testitem_t *t)
 	req->duration.tv_sec = req->duration.tv_nsec = 0;
 	req->certinfo = NULL;
 	req->certexpires = 0;
+	req->skiptest = 0;
 #endif
+
+	if (badurl) {
+		errprintf("Invalid LDAP URL %s\n", t->testspec);
+		req->skiptest = 1;
+		req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+		req->output = "Cannot parse LDAP URL";
+	}
+
+	/*
+	 * At this point, the plain TCP checks have already run.
+	 * So we know from the test found in t->privdata whether
+	 * the LDAP port is open.
+	 * If it is not open, then dont run this check.
+	 */
+	if (basecheck->open == 0) {
+		/* Cannot connect to LDAP port. */
+		req->skiptest = 1;
+		req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+		req->output = "Cannot connect to server";
+	}
 
 	return 0;
 }
@@ -128,6 +149,8 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		char		buf[MAX_LINE_LEN];
 
 		req = (ldap_data_t *) t->privdata;
+		if (req->skiptest) continue;
+
 		ludp = (LDAPURLDesc *) req->ldapdesc;
 
 		getntimer(&starttime);

@@ -335,7 +335,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	testitem_t *newtest;
 
 	testcount++;
-	newtest = (testitem_t *) malloc(sizeof(testitem_t));
+	newtest = (testitem_t *) calloc(1, sizeof(testitem_t));
 	newtest->host = host;
 	newtest->service = service;
 	newtest->dialup = dialuptest;
@@ -359,6 +359,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	newtest->duration.tv_sec = newtest->duration.tv_nsec = -1;
 	newtest->downcount = 0;
 	newtest->badtest[0] = newtest->badtest[1] = newtest->badtest[2] = 0;
+	newtest->internal = 0;
 	newtest->next = NULL;
 
 	return newtest;
@@ -693,7 +694,29 @@ void load_tests(void)
 					s->items = newtest;
 
 					if (s == httptest) h->firsthttp = newtest;
-					else if (s == ldaptest) h->firstldap = newtest;
+					else if (s == ldaptest) {
+						RbtIterator handle;
+						service_t *s2 = NULL;
+						testitem_t *newtest2;
+
+						h->firstldap = newtest;
+
+						/* 
+						 * Add a plain tcp-connect test for the LDAP service.
+						 * We don't want the LDAP library to run amok and do 
+						 * time-consuming connect retries if the service
+						 * is down.
+						 */
+						handle = rbtFind(svctree, "ldap");
+						s2 = ((handle == rbtEnd(svctree)) ? NULL : (service_t *)gettreeitem(svctree, handle));
+						if (s2) {
+							newtest2 = init_testitem(h, s2, NULL, "ldap", 0, 0, 0, 0, 1);
+							newtest2->internal = 1;
+							newtest2->next = s2->items;
+							s2->items = newtest2;
+							newtest->privdata = newtest2;
+						}
+					}
 				}
 			}
 
@@ -1551,6 +1574,8 @@ void send_results(service_t *service, int failgoesclear)
 	for (t=service->items; (t); t = t->next) {
 		char flags[10];
 		int i;
+
+		if (t->internal) continue;
 
 		i = 0;
 		flags[i++] = (t->open ? 'O' : 'o');
