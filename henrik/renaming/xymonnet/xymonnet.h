@@ -152,6 +152,7 @@ typedef struct testitem_t {
 	/* Each test engine has its own data */
 	void		*privdata;	/* Private data use by test tool */
 
+	int		internal;	/* For internal use, not to be reported back to Xymon server */
 	struct testitem_t *next;
 } testitem_t;
 

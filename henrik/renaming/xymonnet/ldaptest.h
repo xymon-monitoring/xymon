@@ -30,6 +30,7 @@ typedef struct {
 	void   *ldapdesc;		/* Result from ldap_url_parse() */
 	int    usetls;
 
+	int    skiptest;		/* Skip check if failed TCP connect */
 	int    ldapstatus;		/* Status from library of the ldap transaction */
 	char   *output;                 /* Output from ldap query */
 
