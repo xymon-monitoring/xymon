@@ -143,6 +143,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		int		rc, finished;
 		int		msgID = -1;
 		struct timeval	ldaptimeout;
+		struct timeval	openldaptimeout;
 		LDAPMessage	*result;
 		LDAPMessage	*e;
 		strbuffer_t	*response;
@@ -167,10 +168,17 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		/* 
 		 * There is apparently no standard way of defining a network
-		 * timeout for the initial connection setup. OpenLDAP does
-		 * have an undocumented ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &tv)
-		 * but this is a) undocumented, and b) non-portable.
-		 * 
+		 * timeout for the initial connection setup. 
+		 */
+#if (LDAP_VENDOR == OpenLDAP) && defined(LDAP_OPT_NETWORK_TIMEOUT)
+		/* 
+		 * OpenLDAP has an undocumented ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &tv)
+		 */
+		openldaptimeout.tv_sec = querytimeout;
+		openldaptimeout.tv_usec = 0;
+		ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &openldaptimeout);
+#else
+		/*
 		 * So using an alarm() to interrupt any pending operations
 		 * seems to be the least insane way of doing this.
 		 *
@@ -181,6 +189,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		connect_timeout = 0;
 		signal(SIGALRM, ldap_alarmhandler);
 		alarm(querytimeout);
+#endif
 
 		/*
 		 * This is completely undocumented in the OpenLDAP docs.
