@@ -102,8 +102,8 @@ int main(int argc, char *argv[])
 	req = malloc(1024 + strlen(fields) + strlen(testfilter) + strlen(pagefilter));
 	sprintf(req, "hobbitdboard fields=%s test=%s page=%s",
 		fields, testfilter, pagefilter);
-	res = sendmessage(req, NULL, BBTALK_TIMEOUT, sres);
-	if (res != BB_OK) return 1;
+	res = sendmessage(req, NULL, XYMON_TIMEOUT, sres);
+	if (res != XYMONSEND_OK) return 1;
 	board = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 

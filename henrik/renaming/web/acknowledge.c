@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 
 			sres = newsendreturnbuf(1, NULL);
 
-			if (sendmessage(cmd, NULL, BBTALK_TIMEOUT, sres) == BB_OK) {
+			if (sendmessage(cmd, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
 				char *bol, *eoln;
 				int first = 1;
 
@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 
 			xymonmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
 			sprintf(xymonmsg, "hobbitdack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
-			if (sendmessage(xymonmsg, NULL, BBTALK_TIMEOUT, NULL) == BB_OK) {
+			if (sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL) == XYMONSEND_OK) {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 
 						awalk->hostname, awalk->testname);

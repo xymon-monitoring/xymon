@@ -144,7 +144,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int is_history, int wantserviceid, int htmlfmt, int locatorbased,
 		       char *multigraphs,
 		       char *linktoclient,
-		       char *nkprio, char *nkttgroup, char *nkttextra,
+		       char *prio, char *ttgroup, char *ttextra,
 		       int graphtime,
 		       FILE *output)
 {
@@ -191,11 +191,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 	}
 
-	if (nkprio) {
+	if (prio) {
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/nkack_form", xgetenv("BBHOME"));
+		sprintf(formfn, "%s/web/critack_form", xgetenv("BBHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -208,7 +208,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			inbuf[st.st_size] = '\0';
 			close(formfile);
 
-			sethostenv_nkack(atoi(nkprio), nkttgroup, nkttextra, 
+			sethostenv_critack(atoi(prio), ttgroup, ttextra, 
 				 hostsvcurl(hostname, xgetenv("INFOCOLUMN"), 1), hostlink(hostname));
 
 			output_parsed(output, inbuf, color, 0);
@@ -567,7 +567,7 @@ char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 	 *
 	 * else if a host has a direct notes-link, use that.
 	 *
-	 * else if no direct link and we are doing a BB2/BBNK page, 
+	 * else if no direct link and we are doing a nongreen/critical page, 
 	 * provide a link to the main page with this host (there
 	 * may be links to documentation in some page-title).
 	 *

@@ -27,25 +27,25 @@ static char rcsid[] = "$Id$";
 #include "process.h"
 #include "util.h"
 
-void calc_hostcolors(char *bb2ignores)
+void calc_hostcolors(char *nongreenignores)
 {
-	int		color, bb2color, bbnkcolor, oldage;
+	int		color, nongreencolor, criticalcolor, oldage;
 	hostlist_t 	*h, *cwalk;
 	entry_t		*e;
 
 	for (h = hostlistBegin(); (h); h = hostlistNext()) {
-		color = bb2color = bbnkcolor = 0; oldage = 1;
+		color = nongreencolor = criticalcolor = 0; oldage = 1;
 
 		for (e = h->hostentry->entries; (e); e = e->next) {
 			if (e->propagate && (e->color > color)) color = e->color;
 			oldage &= e->oldage;
 
-			if (e->propagate && (e->color > bb2color) && (strstr(bb2ignores, e->column->listname) == NULL)) {
-				bb2color = e->color;
+			if (e->propagate && (e->color > nongreencolor) && (strstr(nongreenignores, e->column->listname) == NULL)) {
+				nongreencolor = e->color;
 			}
 
-			if (e->propagate && e->alert && (e->color > bbnkcolor)) {
-				bbnkcolor = e->color;
+			if (e->propagate && e->alert && (e->color > criticalcolor)) {
+				criticalcolor = e->color;
 			}
 		}
 
@@ -53,15 +53,15 @@ void calc_hostcolors(char *bb2ignores)
 		if ((color == COL_CLEAR) || (color == COL_BLUE)) color = COL_GREEN;
 
 		h->hostentry->color = color;
-		h->hostentry->bb2color = bb2color;
-		h->hostentry->bbnkcolor = bbnkcolor;
+		h->hostentry->nongreencolor = nongreencolor;
+		h->hostentry->criticalcolor = criticalcolor;
 		h->hostentry->oldage = oldage;
 
 		/* Need to update the clones also */
 		for (cwalk = h->clones; (cwalk); cwalk = cwalk->clones) {
 			cwalk->hostentry->color = color;
-			cwalk->hostentry->bb2color = bb2color;
-			cwalk->hostentry->bbnkcolor = bbnkcolor;
+			cwalk->hostentry->nongreencolor = nongreencolor;
+			cwalk->hostentry->criticalcolor = criticalcolor;
 			cwalk->hostentry->oldage = oldage;
 		}
 	}
@@ -212,11 +212,11 @@ void send_summaries(summary_t *sumhead)
 
 		dbgprintf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);
 
-		if      (strcmp(suburl, "bb.html") == 0) summarycolor = bb_color;
-		else if (strcmp(suburl, "index.html") == 0) summarycolor = bb_color;
-		else if (strcmp(suburl, "") == 0) summarycolor = bb_color;
-		else if (strcmp(suburl, "bb2.html") == 0) summarycolor = bb2_color;
-		else if (strcmp(suburl, "bbnk.html") == 0) summarycolor = bbnk_color;
+		if      (strcmp(suburl, "xymon.html") == 0) summarycolor = xymon_color;
+		else if (strcmp(suburl, "index.html") == 0) summarycolor = xymon_color;
+		else if (strcmp(suburl, "") == 0) summarycolor = xymon_color;
+		else if (strcmp(suburl, "nongreen.html") == 0) summarycolor = nongreen_color;
+		else if (strcmp(suburl, "critical.html") == 0) summarycolor = critical_color;
 		else {
 			/* 
 			 * Specific page - find it in the page tree.
@@ -262,7 +262,7 @@ void send_summaries(summary_t *sumhead)
 		summsg = (char *)malloc(1024 + strlen(s->name) + strlen(s->url) + strlen(timestamp));
 		sprintf(summsg, "summary summary.%s %s %s %s",
 			s->name, colorname(summarycolor), s->url, timestamp);
-		sendmessage(summsg, s->receiver, BBTALK_TIMEOUT, NULL);
+		sendmessage(summsg, s->receiver, XYMON_TIMEOUT, NULL);
 		xfree(summsg);
 	}
 }

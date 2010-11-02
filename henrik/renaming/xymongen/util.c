@@ -49,7 +49,7 @@ char *hostpage_link(host_t *host)
 		}
 	}
 	else {
-		sprintf(pagelink, "bb%s", htmlextension);
+		sprintf(pagelink, "xymon%s", htmlextension);
 	}
 
 	return pagelink;

@@ -51,10 +51,10 @@ parameter, as this is defined for the client scripts
 to automatically contain the correct value.
 
 The \fBRECIPIENT\fR parameter may be a URL for a webserver
-that has the bbmessage.cgi or similar script installed. This
+that has the xymoncgimsg.cgi or similar script installed. This
 tunnels the Xymon messages to the Xymon server using standard 
 HTTP protocol. The 
-.I bbmessage.cgi(8)
+.I xymoncgimsg.cgi(8)
 CGI tool (included in Xymon) must be installed on the webserver 
 for the HTTP transport to work.
 .br
@@ -377,7 +377,7 @@ used. JOBID is a number provided as the first item in the output from the schedu
 
 .IP "notes FILENAME"
 The message text will be stored in $BBHOME/notes/FILENAME which is then used as
-hyperlinks from hostnames or column names. This requires that the "bbnotes" 
+hyperlinks from hostnames or column names. This requires that the "storenotes" 
 task is enabled in tasks.cfg (it is disabled by default). FILENAME 
 cannot contain any directory path - these are stripped automatically.
 
@@ -414,9 +414,9 @@ standard Xymon protocol on TCP port 1984:
    $ $BB $BBDISP "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Send the same status message, but using HTTP protocol via the
-webserver\(aqs bbmessage.cgi script:
+webserver\(aqs xymoncgimsg.cgi script:
 .br
-   $ $BB http://bb.foo.com/cgi-bin/bbmessage.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
+   $ $BB http://bb.foo.com/cgi-bin/xymoncgimsg.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Use "query" message to determine the color of the "www" test, and
 restart Apache if it is red:
@@ -425,13 +425,13 @@ restart Apache if it is red:
    $ WWW=\(ga$BB $BBDISP "query www,foo,com.www" | awk \(aq{print $1}\(aq\(ga
    $ if [ "$WWW" = "red" ]; then /etc/init.d/apache restart; fi
 
-Use "config" message to update the local bb-dftab file (but only
+Use "config" message to update a local mytest.cfg file (but only
 if we get a response):
 .br
 
-   $ $BB $BBDISP "config bb-dftab" >/tmp/bb-dftab.new
-   $ if [ -s /tmp/bb-dftab.new ]; then 
-       mv /tmp/bb-dftab.new $BBHOME/etc/bb-dftab
+   $ $BB $BBDISP "config mytest.cfg" >/tmp/mytest.cfg.new
+   $ if [ -s /tmp/mytest.cfg.new ]; then 
+       mv /tmp/mytest.cfg.new $BBHOME/etc/mytest.cfg
      fi
 
 Send a very large status message that has been built in the

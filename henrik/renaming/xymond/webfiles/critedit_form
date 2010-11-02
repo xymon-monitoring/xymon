@@ -24,7 +24,7 @@
 	     </TR>
 
              <TR>
-	        <TD COLSPAN=3 ALIGN=CENTER>Last update by:&nbsp;&NKEDITUPDINFO</TD>
+	        <TD COLSPAN=3 ALIGN=CENTER>Last update by:&nbsp;&CRITEDITUPDINFO</TD>
              </TR>
 	  </TABLE>
 
@@ -34,7 +34,7 @@
 		<TD>
 		   Priority:&nbsp;
 		   <SELECT NAME="PRIORITY">
-		   &NKEDITPRIOLIST
+		   &CRITEDITPRIOLIST
 		   </SELECT>
 		</TD>
              </TR>
@@ -44,16 +44,16 @@
              <TR>
 	        <TD>Monitoring time:</TD>
 		<TD COLSPAN=2>
-		   <SELECT NAME="NKWKDAYS" MULTIPLE SIZE=3>
-		   &NKEDITWKDAYS
+		   <SELECT NAME="CRITWKDAYS" MULTIPLE SIZE=3>
+		   &CRITEDITWKDAYS
 		   </SELECT>
 		   &nbsp; from &nbsp;
-		   <SELECT NAME="NKSTARTHOUR">
-		   &NKEDITSTART
+		   <SELECT NAME="CRITSTARTHOUR">
+		   &CRITEDITSTART
 		   </SELECT>
 		   &nbsp; to &nbsp;
-		   <SELECT NAME="NKENDHOUR">
-		   &NKEDITEND
+		   <SELECT NAME="CRITENDHOUR">
+		   &CRITEDITEND
 		   </SELECT>
 		</TD>
              </TR>
@@ -62,17 +62,17 @@
 	        <TD>Start monitoring</TD>
 		<TD COLSPAN=2>
 		   <SELECT NAME="start-day">
-                   &NKEDITDAYLIST1
+                   &CRITEDITDAYLIST1
                    </SELECT>
                    &nbsp;
 
 		   <SELECT NAME="start-mon">
-                   &NKEDITMONLIST1
+                   &CRITEDITMONLIST1
                    </SELECT>
 
                    &nbsp;
 		   <SELECT NAME="start-yr">
-                   &NKEDITYEARLIST1
+                   &CRITEDITYEARLIST1
                    </SELECT>
 		</TD>
              </TR>
@@ -81,17 +81,17 @@
 	        <TD>Stop monitoring</TD>
 		<TD COLSPAN=2>
 		   <SELECT NAME="end-day">
-                   &NKEDITDAYLIST2
+                   &CRITEDITDAYLIST2
                    </SELECT>
 
                    &nbsp;
 		   <SELECT NAME="end-mon">
-                   &NKEDITMONLIST2
+                   &CRITEDITMONLIST2
                    </SELECT>
 
                    &nbsp;
 		   <SELECT NAME="end-yr">
-                   &NKEDITYEARLIST2
+                   &CRITEDITYEARLIST2
                    </SELECT>
 		</TD>
              </TR>
@@ -99,10 +99,10 @@
              <TR><TD COLSPAN=3>&nbsp;</TD></TR>
 
              <TR>
-	        <TD COLSPAN=2>Resolver group:&nbsp;<INPUT NAME="GROUP" TYPE="TEXT" SIZE=20 VALUE="&NKEDITGROUP"></TD>
+	        <TD COLSPAN=2>Resolver group:&nbsp;<INPUT NAME="GROUP" TYPE="TEXT" SIZE=20 VALUE="&CRITEDITGROUP"></TD>
 	      </TR>
 	      <TR>
-	        <TD COLSPAN=3>Instruction:&nbsp;<INPUT NAME="EXTRA" TYPE="TEXT" SIZE=80 VALUE="&NKEDITEXTRA"></TD>
+	        <TD COLSPAN=3>Instruction:&nbsp;<INPUT NAME="EXTRA" TYPE="TEXT" SIZE=80 VALUE="&CRITEDITEXTRA"></TD>
              </TR>
 
              <TR><TD COLSPAN=3>&nbsp;</TD></TR>
@@ -125,13 +125,13 @@
 	     <TR>
 	        <TD>
 		   Clones&nbsp;of&nbsp;this&nbsp;host:
-		   <SELECT NAME="NKEDITCLONELIST" MULTIPLE SIZE=5>
-		     &NKEDITCLONELIST
+		   <SELECT NAME="CRITEDITCLONELIST" MULTIPLE SIZE=5>
+		     &CRITEDITCLONELIST
 		   </SELECT>
 		</TD>
 		<TD VALIGN=TOP>
 		   Clone&nbsp;this&nbsp;host&nbsp;to:
-		   <INPUT NAME="NKEDITADDCLONES" TYPE="TEXT" SIZE=50>
+		   <INPUT NAME="CRITEDITADDCLONES" TYPE="TEXT" SIZE=50>
 		 </TD>
 	     </TR>
 	     <TR>

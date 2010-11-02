@@ -34,26 +34,25 @@ static char rcsid[] = "$Id$";
 int  subpagecolumns = 1;
 int  hostsbeforepages = 0;
 char *includecolumns = NULL;
-char *bb2ignorecolumns = "";
-int  bb2nodialups = 0;
-int  sort_grouponly_items = 0; /* Standard BB behaviour: Dont sort group-only items */
+char *nongreenignorecolumns = "";
+int  nongreennodialups = 0;
+int  sort_grouponly_items = 0; /* Standard Xymon behaviour: Dont sort group-only items */
 char *rssextension = ".rss"; /* Filename extension for generated RSS files */
 char *defaultpagetitle = NULL;
 int  pagetitlelinks = 0;
 int  pagetextheadings = 0;
 int  underlineheadings = 1;
 int  maxrowsbeforeheading = 0;
-int  bb2eventlog = 1;
-int  bb2acklog = 1;
-int  bb2eventlogmaxcount = 100;
-int  bb2eventlogmaxtime = 240;
-int  bb2acklogmaxcount = 25;
-int  bb2acklogmaxtime = 240;
-char *lognkstatus = NULL;
-int  nkonlyreds = 0;
-char *nkackname = "NK";
+int  nongreeneventlog = 1;
+int  nongreenacklog = 1;
+int  nongreeneventlogmaxcount = 100;
+int  nongreeneventlogmaxtime = 240;
+int  nongreenacklogmaxcount = 25;
+int  nongreenacklogmaxtime = 240;
+char *logcritstatus = NULL;
+int  critonlyreds = 0;
 int  wantrss = 0;
-int  bb2colors = ((1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE));
+int  nongreencolors = ((1 << COL_RED) | (1 << COL_YELLOW) | (1 << COL_PURPLE));
 
 /* Format strings for htaccess files */
 char *htaccess = NULL;
@@ -61,15 +60,15 @@ char *bbhtaccess = NULL;
 char *bbpagehtaccess = NULL;
 char *bbsubpagehtaccess = NULL;
 
-char *hf_prefix[3];            /* header/footer prefixes for BB, BB2, BBNK pages*/
+char *hf_prefix[3];            /* header/footer prefixes for xymon, nongreen, critical pages*/
 
 static int hostblkidx = 0;
 
 void select_headers_and_footers(char *prefix)
 {
-	hf_prefix[PAGE_BB]  = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_BB],  "%snormal",   prefix);
-	hf_prefix[PAGE_BB2] = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_BB2], "%snongreen",  prefix);
-	hf_prefix[PAGE_NK]  = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_NK],  "%scritical", prefix);
+	hf_prefix[PAGE_NORMAL]  = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_NORMAL],  "%snormal",   prefix);
+	hf_prefix[PAGE_NONGREEN] = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_NONGREEN], "%snongreen",  prefix);
+	hf_prefix[PAGE_CRITICAL]  = (char *) malloc(strlen(prefix)+10); sprintf(hf_prefix[PAGE_CRITICAL],  "%scritical", prefix);
 }
 
 
@@ -79,8 +78,8 @@ int interesting_column(int pagetype, int color, int alert, xymongen_col_t *colum
 	 * Decides if a given column is to be included on a page.
 	 */
 
-	if (pagetype == PAGE_BB) {
-		/* Fast-path the BB page. */
+	if (pagetype == PAGE_NORMAL) {
+		/* Fast-path the Xymon page. */
 
 		int result = 1;
 
@@ -110,9 +109,9 @@ int interesting_column(int pagetype, int color, int alert, xymongen_col_t *colum
 		return result;
 	}
 
-	/* pagetype is now known NOT to be PAGE_BB */
+	/* pagetype is now known NOT to be PAGE_NORMAL */
 
-	/* TRENDS and INFO columns are always included on non-BB pages */
+	/* TRENDS and INFO columns are always included on non-Xymon pages */
 	if (strcmp(column->name, xgetenv("INFOCOLUMN")) == 0) return 1;
 	if (strcmp(column->name, xgetenv("TRENDSCOLUMN")) == 0) return 1;
 
@@ -126,23 +125,23 @@ int interesting_column(int pagetype, int color, int alert, xymongen_col_t *colum
 	}
 
 	switch (pagetype) {
-	  case PAGE_BB2:
+	  case PAGE_NONGREEN:
 		  /* Include all non-green tests */
-		  if (( (1 << color) & bb2colors ) != 0) {
-			return (strstr(bb2ignorecolumns, column->listname) == NULL);
+		  if (( (1 << color) & nongreencolors ) != 0) {
+			return (strstr(nongreenignorecolumns, column->listname) == NULL);
 		  }
 		  else return 0;
 
-	  case PAGE_NK:
+	  case PAGE_CRITICAL:
 		  /* Include only RED or YELLOW tests with "alert" property set. 
 		   * Even then, the "conn" test is included only when RED.
 		   */
 		if (alert) {
 			if (color == COL_RED)  return 1;
-			if (nkonlyreds) return 0;
+			if (critonlyreds) return 0;
 			if ( (color == COL_YELLOW) || (color == COL_CLEAR) ) {
 				if (strcmp(column->name, xgetenv("PINGCOLUMN")) == 0) return 0;
-				if (lognkstatus && (strcmp(column->name, lognkstatus) == 0)) return 0;
+				if (logcritstatus && (strcmp(column->name, logcritstatus) == 0)) return 0;
 				return 1;
 			}
 		}
@@ -158,7 +157,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char
 	 * Build a list of all the columns that are in use by
 	 * any host in the hostlist passed as parameter.
 	 * The column list will be sorted by column name, except 
-	 * when doing a "group-only" and the standard BB behaviour.
+	 * when doing a "group-only" and the standard Xymon behaviour.
 	 */
 
 	col_list_t	*head;
@@ -175,7 +174,7 @@ col_list_t *gen_column_list(host_t *hostlist, int pagetype, char *onlycols, char
 	if (!sort_grouponly_items && (onlycols != NULL)) {
 
 		/* 
-		 * This is the original BB handling of "group-only". 
+		 * This is the original handling of "group-only". 
 		 * All items are included, whether there are any test data
 		 * for a column or not. The order given in the group-only
 		 * directive is maintained.
@@ -338,7 +337,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	bbskin = strdup(xgetenv("BBSKIN"));
 
 	switch (tooltipuse) {
-	  case TT_BBONLY: usetooltip = (pagetype == PAGE_BB); break;
+	  case TT_BBONLY: usetooltip = (pagetype == PAGE_NORMAL); break;
 	  case TT_ALWAYS: usetooltip = 1; break;
 	  case TT_NEVER:  usetooltip = 0; break;
 	}
@@ -384,7 +383,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 			/* If there is a host pretitle, show it. */
 			dbgprintf("Host:%s, pretitle:%s\n", h->hostname, textornull(h->pretitle));
 
-			if (h->pretitle && (pagetype == PAGE_BB)) {
+			if (h->pretitle && (pagetype == PAGE_NORMAL)) {
 				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
 						columncount+1, xgetenv("MKBBTITLE"), h->pretitle);
 				rowcount = 0;
@@ -412,7 +411,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 
 			fprintf(output, "%s", 
 				hostnamehtml(h->hostname, 
-					     ((pagetype != PAGE_BB) ? hostpage_link(h) : NULL), 
+					     ((pagetype != PAGE_NORMAL) ? hostpage_link(h) : NULL), 
 					     usetooltip));
 
 			/* Then the columns. */
@@ -591,7 +590,7 @@ void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
 
-		do_hosts(g->hosts, g->sorthosts, g->onlycols, g->exceptcols, output, rssoutput, g->title, PAGE_BB, pagepath);
+		do_hosts(g->hosts, g->sorthosts, g->onlycols, g->exceptcols, output, rssoutput, g->title, PAGE_NORMAL, pagepath);
 	}
 	fprintf(output, "\n</CENTER>\n");
 }
@@ -783,8 +782,8 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 			char	indexfilename[PATH_MAX];
 
 			/* top level page */
-			sprintf(filename, "bb%s", htmlextension);
-			sprintf(rssfilename, "bb%s", rssextension);
+			sprintf(filename, "xymon%s", htmlextension);
+			sprintf(rssfilename, "xymon%s", rssextension);
 			sprintf(indexfilename, "index%s", htmlextension);
 			unlink(indexfilename); symlink(filename, indexfilename);
 			dbgprintf("Symlinking %s -> %s\n", filename, indexfilename);
@@ -866,7 +865,7 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 
 	setup_htaccess(pagepath);
 
-	headfoot(output, hf_prefix[PAGE_BB], pagepath, "header", page->color);
+	headfoot(output, hf_prefix[PAGE_NORMAL], pagepath, "header", page->color);
 	do_rss_header(rssoutput);
 
 	if (pagetextheadings && page->title && strlen(page->title)) {
@@ -884,7 +883,7 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
-	do_hosts(page->hosts, 0, NULL, NULL, output, rssoutput, "", PAGE_BB, pagepath);
+	do_hosts(page->hosts, 0, NULL, NULL, output, rssoutput, "", PAGE_NORMAL, pagepath);
 	do_groups(page->groups, output, rssoutput, pagepath);
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
@@ -896,7 +895,7 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	/* Extension scripts */
 	do_bbext(output, "BBMKBBEXT", "mkbb");
 
-	headfoot(output, hf_prefix[PAGE_BB], pagepath, "footer", page->color);
+	headfoot(output, hf_prefix[PAGE_NORMAL], pagepath, "footer", page->color);
 	do_rss_footer(rssoutput);
 
 	if (!embedded) {
@@ -927,10 +926,10 @@ void do_page_with_subs(xymongen_page_t *curpage, dispsummary_t *sums)
 }
 
 
-static void do_bb2ext(FILE *output, char *extenv, char *family)
+static void do_nongreenext(FILE *output, char *extenv, char *family)
 {
 	/*
-	 * Do the BB2 page extensions. Since we have built-in
+	 * Do the non-green page extensions. Since we have built-in
 	 * support for eventlog.sh and acklog.sh, we cannot
 	 * use the standard do_bbext() routine.
 	 */
@@ -951,15 +950,15 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	while (p) {
 		/* Dont redo the eventlog or acklog things */
 		if (strcmp(p, "eventlog.sh") == 0) {
-			if (bb2eventlog && !havedoneeventlog) {
-				do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime,
-				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
+			if (nongreeneventlog && !havedoneeventlog) {
+				do_eventlog(output, nongreeneventlogmaxcount, nongreeneventlogmaxtime,
+				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, nongreennodialups, 
 				host_exists,
 				NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
 			}
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
-			if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
+			if (nongreenacklog && !havedoneacklog) do_acklog(output, nongreenacklogmaxcount, nongreenacklogmaxtime);
 		}
 		else if (strcmp(p, "summaries") == 0) {
 			do_summaries(dispsums, output);
@@ -979,9 +978,9 @@ static void do_bb2ext(FILE *output, char *extenv, char *family)
 	xfree(bbexts);
 }
 
-int do_bb2_page(char *nssidebarfilename, int summarytype)
+int do_nongreen_page(char *nssidebarfilename, int summarytype)
 {
-	xymongen_page_t	bb2page;
+	xymongen_page_t	nongreenpage;
 	FILE		*output = NULL;
 	FILE		*rssoutput = NULL;
 	char		filename[PATH_MAX];
@@ -990,13 +989,13 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	char		tmprssfilename[PATH_MAX];
 	hostlist_t 	*h;
 
-	/* Build a "page" with the hosts that should be included in bb2 page */
-	bb2page.name = bb2page.title = "";
-	bb2page.color = COL_GREEN;
-	bb2page.subpages = NULL;
-	bb2page.groups = NULL;
-	bb2page.hosts = NULL;
-	bb2page.next = NULL;
+	/* Build a "page" with the hosts that should be included in nongreen page */
+	nongreenpage.name = nongreenpage.title = "";
+	nongreenpage.color = COL_GREEN;
+	nongreenpage.subpages = NULL;
+	nongreenpage.groups = NULL;
+	nongreenpage.hosts = NULL;
+	nongreenpage.next = NULL;
 
 	for (h=hostlistBegin(); (h); h=hostlistNext()) {
 		entry_t	*e;
@@ -1011,26 +1010,26 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		 * We dont care if individual COLUMNS are included if the 
 		 * host shows up - some columns are always included, e.g.
 		 * the info- and trends-columns, but we dont want that to
-		 * trigger a host being on the bb2 page!
+		 * trigger a host being on the nongreen page!
 		 */
 		switch (summarytype) {
-		  case PAGE_BB2:
-			/* Normal BB2 page */
-			if (h->hostentry->nobb2 || (bb2nodialups && h->hostentry->dialup)) 
+		  case PAGE_NONGREEN:
+			/* Normal non-green page */
+			if (h->hostentry->nonongreen || (nongreennodialups && h->hostentry->dialup)) 
 				useit = 0;
 			else
-				useit = (( (1 << h->hostentry->bb2color) & bb2colors ) != 0);
+				useit = (( (1 << h->hostentry->nongreencolor) & nongreencolors ) != 0);
 			break;
 
-		  case PAGE_NK:
-			/* The NK page */
+		  case PAGE_CRITICAL:
+			/* The Critical page */
 			for (useit=0, e=h->hostentry->entries; (e && !useit); e=e->next) {
 				if (e->alert && !e->acked) {
 					if (e->color == COL_RED) {
 						useit = 1;
 					}
 					else {
-						if (!nkonlyreds) {
+						if (!critonlyreds) {
 							useit = ((e->color == COL_YELLOW) && (strcmp(e->column->name, xgetenv("PINGCOLUMN")) != 0));
 						}
 					}
@@ -1043,11 +1042,11 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 			host_t *newhost, *walk;
 
 			switch (summarytype) {
-			  case PAGE_BB2:
-				if (h->hostentry->bb2color > bb2page.color) bb2page.color = h->hostentry->bb2color;
+			  case PAGE_NONGREEN:
+				if (h->hostentry->nongreencolor > nongreenpage.color) nongreenpage.color = h->hostentry->nongreencolor;
 				break;
-			  case PAGE_NK:
-				if (h->hostentry->bbnkcolor > bb2page.color) bb2page.color = h->hostentry->bbnkcolor;
+			  case PAGE_CRITICAL:
+				if (h->hostentry->criticalcolor > nongreenpage.color) nongreenpage.color = h->hostentry->criticalcolor;
 				break;
 			}
 
@@ -1058,21 +1057,21 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 			newhost->next = NULL;
 
 			/* Insert into sorted host list */
-			if ((!bb2page.hosts) || (strcmp(newhost->hostname, bb2page.hosts->hostname) < 0)) {
+			if ((!nongreenpage.hosts) || (strcmp(newhost->hostname, nongreenpage.hosts->hostname) < 0)) {
 				/* Empty list, or new entry goes before list head item */
-				newhost->next = bb2page.hosts;
-				bb2page.hosts = newhost;
+				newhost->next = nongreenpage.hosts;
+				nongreenpage.hosts = newhost;
 			}
 			else {
 				/* Walk list until we find element that goes after new item */
-				for (walk = bb2page.hosts; 
+				for (walk = nongreenpage.hosts; 
 				      (walk->next && (strcmp(newhost->hostname, ((host_t *)walk->next)->hostname) > 0)); 
 				      walk = walk->next) ;
 
 				/* "walk" points to element before the new item.
 				 *
-		 		 * Check for duplicate hosts. We can have a host on two normal BB
-		 		 * pages, but in the BB2 page we want it only once.
+		 		 * Check for duplicate hosts. We can have a host on two normal Xymon
+		 		 * pages, but in the non-green page we want it only once.
 		 		 */
 				if (strcmp(walk->hostname, newhost->hostname) == 0) {
 					/* Duplicate at start of list */
@@ -1092,13 +1091,13 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	}
 
 	switch (summarytype) {
-	  case PAGE_BB2:
-		sprintf(filename, "bb2%s", htmlextension);
-		sprintf(rssfilename, "bb2%s", rssextension);
+	  case PAGE_NONGREEN:
+		sprintf(filename, "nongreen%s", htmlextension);
+		sprintf(rssfilename, "nongreen%s", rssextension);
 		break;
-	  case PAGE_NK:
-		sprintf(filename, "bbnk%s", htmlextension);
-		sprintf(rssfilename, "bbnk%s", rssextension);
+	  case PAGE_CRITICAL:
+		sprintf(filename, "critical%s", htmlextension);
+		sprintf(rssfilename, "critical%s", rssextension);
 		break;
 	}
 
@@ -1106,7 +1105,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 	output = fopen(tmpfilename, "w");
 	if (output == NULL) {
 		errprintf("Cannot create file %s: %s\n", tmpfilename, strerror(errno));
-		return bb2page.color;
+		return nongreenpage.color;
 	}
 
 	if (wantrss) {
@@ -1114,39 +1113,39 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		rssoutput = fopen(tmprssfilename, "w");
 		if (rssoutput == NULL) {
 			errprintf("Cannot create RSS file %s: %s\n", tmpfilename, strerror(errno));
-			return bb2page.color;
+			return nongreenpage.color;
 		}
 	}
 
-	headfoot(output, hf_prefix[summarytype], "", "header", bb2page.color);
+	headfoot(output, hf_prefix[summarytype], "", "header", nongreenpage.color);
 	do_rss_header(rssoutput);
 
 	fprintf(output, "<center>\n");
 	fprintf(output, "\n<A NAME=begindata>&nbsp;</A> \n<A NAME=\"hosts-blk\">&nbsp;</A>\n");
 
-	if (bb2page.hosts) {
-		do_hosts(bb2page.hosts, 0, NULL, NULL, output, rssoutput, "", summarytype, NULL);
+	if (nongreenpage.hosts) {
+		do_hosts(nongreenpage.hosts, 0, NULL, NULL, output, rssoutput, "", summarytype, NULL);
 	}
 	else {
 		/* "All Monitored Systems OK */
 		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
 	}
 
-	if ((snapshot == 0) && (summarytype == PAGE_BB2)) {
-		do_bb2ext(output, "BBMKBB2EXT", "mkbb");
+	if ((snapshot == 0) && (summarytype == PAGE_NONGREEN)) {
+		do_nongreenext(output, "BBMKBB2EXT", "mkbb");
 
 		/* Dont redo the eventlog or acklog things */
-		if (bb2eventlog && !havedoneeventlog) {
-			do_eventlog(output, bb2eventlogmaxcount, bb2eventlogmaxtime, 
-				    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, bb2nodialups, 
+		if (nongreeneventlog && !havedoneeventlog) {
+			do_eventlog(output, nongreeneventlogmaxcount, nongreeneventlogmaxtime, 
+				    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, nongreennodialups, 
 				    host_exists,
 				    NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
 		}
-		if (bb2acklog && !havedoneacklog) do_acklog(output, bb2acklogmaxcount, bb2acklogmaxtime);
+		if (nongreenacklog && !havedoneacklog) do_acklog(output, nongreenacklogmaxcount, nongreenacklogmaxtime);
 	}
 
 	fprintf(output, "</center>\n");
-	headfoot(output, hf_prefix[summarytype], "", "footer", bb2page.color);
+	headfoot(output, hf_prefix[summarytype], "", "footer", nongreenpage.color);
 	do_rss_footer(rssoutput);
 
 	fclose(output);
@@ -1161,9 +1160,9 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		}
 	}
 
-	if (nssidebarfilename) do_netscape_sidebar(nssidebarfilename, bb2page.hosts);
+	if (nssidebarfilename) do_netscape_sidebar(nssidebarfilename, nongreenpage.hosts);
 
-	if (lognkstatus && (summarytype == PAGE_NK)) {
+	if (logcritstatus && (summarytype == PAGE_CRITICAL)) {
 		host_t *hwalk;
 		entry_t *ewalk;
 		char *msgptr;
@@ -1172,29 +1171,29 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		char nklogfn[PATH_MAX];
 		char svcspace;
 
-		sprintf(nklogfn, "%s/nkstatus.log", xgetenv("BBSERVERLOGS"));
+		sprintf(nklogfn, "%s/criticalstatus.log", xgetenv("BBSERVERLOGS"));
 		nklog = fopen(nklogfn, "a");
 		if (nklog == NULL) {
-			errprintf("Cannot log NK status to %s: %s\n", nklogfn, strerror(errno));
+			errprintf("Cannot log Critical status to %s: %s\n", nklogfn, strerror(errno));
 		}
 
 		init_timestamp();
 		combo_start();
-		init_status(bb2page.color);
-		sprintf(msgline, "status %s.%s %s %s NK page %s\n\n", xgetenv("MACHINE"), 
-			lognkstatus, colorname(bb2page.color), timestamp, colorname(bb2page.color));
+		init_status(nongreenpage.color);
+		sprintf(msgline, "status %s.%s %s %s Critical page %s\n\n", xgetenv("MACHINE"), 
+			logcritstatus, colorname(nongreenpage.color), timestamp, colorname(nongreenpage.color));
 		addtostatus(msgline);
 
-		if (nklog) fprintf(nklog, "%u\t%s", (unsigned int)getcurrenttime(NULL), colorname(bb2page.color));
+		if (nklog) fprintf(nklog, "%u\t%s", (unsigned int)getcurrenttime(NULL), colorname(nongreenpage.color));
 
-		for (hwalk = bb2page.hosts; hwalk; hwalk = hwalk->next) {
+		for (hwalk = nongreenpage.hosts; hwalk; hwalk = hwalk->next) {
 			msgptr = msgline;
 			msgptr += sprintf(msgline, "&%s %s :", colorname(hwalk->color), hwalk->hostname);
 			if (nklog) fprintf(nklog, "\t%s ", hwalk->hostname);
 			svcspace = '(';
 
 			for (ewalk = hwalk->entries; (ewalk); ewalk = ewalk->next) {
-				if ((summarytype == PAGE_BB2) || (ewalk->alert)) {
+				if ((summarytype == PAGE_NONGREEN) || (ewalk->alert)) {
 					if ((ewalk->color == COL_RED) || (ewalk->color == COL_YELLOW)) {
 						msgptr += sprintf(msgptr, "%s", ewalk->column->name);
 						if (nklog) fprintf(nklog, "%c%s:%s", svcspace, ewalk->column->name, colorname(ewalk->color));
@@ -1220,7 +1219,7 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		/* Free temporary hostlist */
 		host_t *h1, *h2;
 
-		h1 = bb2page.hosts;
+		h1 = nongreenpage.hosts;
 		while (h1) {
 			h2 = h1;
 			h1 = h1->next;
@@ -1228,5 +1227,5 @@ int do_bb2_page(char *nssidebarfilename, int summarytype)
 		}
 	}
 
-	return bb2page.color;
+	return nongreenpage.color;
 }

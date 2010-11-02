@@ -32,7 +32,7 @@ static enum { SRC_XYMOND, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_XYMOND;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
-static char *nkconfigfn = NULL;
+static char *critconfigfn = NULL;
 
 /* CGI params */
 static char *hostname = NULL;
@@ -206,8 +206,8 @@ int do_request(void)
 			sprintf(xymondreq, "clientlog %s", hostname);
 			if (service && *service) sprintf(xymondreq + strlen(xymondreq), " section=%s", service);
 
-			xymondresult = sendmessage(xymondreq, NULL, BBTALK_TIMEOUT, sres);
-			if (xymondresult != BB_OK) {
+			xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
+			if (xymondresult != XYMONSEND_OK) {
 				char errtxt[4096];
 				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", xymondreq, xymondresult);
 				errormsg(errtxt);
@@ -277,7 +277,7 @@ int do_request(void)
 			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
-			log = restofmsg = generate_info(hostname, nkconfigfn);
+			log = restofmsg = generate_info(hostname, critconfigfn);
 		}
 	}
 	else if (source == SRC_XYMOND) {
@@ -309,10 +309,10 @@ int do_request(void)
 		}
 
 		sres = newsendreturnbuf(1, NULL);
-		xymondresult = sendmessage(xymondreq, NULL, BBTALK_TIMEOUT, sres);
-		if (xymondresult == BB_OK) log = getsendreturnstr(sres, 1);
+		xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
+		if (xymondresult == XYMONSEND_OK) log = getsendreturnstr(sres, 1);
 		freesendreturnbuf(sres);
-		if ((xymondresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+		if ((xymondresult != XYMONSEND_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;
 		}
@@ -657,8 +657,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-jsvalidation") == 0) {
 			usejsvalidation = 0;
 		}
-		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
-			newnkconfig = 0;
+		else if (strcmp(argv[argi], "--old-critical-config") == 0) {
+			newcritconfig = 0;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -668,9 +668,9 @@ int main(int argc, char *argv[])
 			locator_init(p+1);
 			locatorbased = 1;
 		}
-		else if (argnmatch(argv[argi], "--nkconfig=")) {
+		else if (argnmatch(argv[argi], "--critical-config=")) {
 			char *p = strchr(argv[argi], '=');
-			nkconfigfn = strdup(p+1);
+			critconfigfn = strdup(p+1);
 		}
 	}
 

@@ -7,7 +7,7 @@ CLIENTPROGRAMS = ../client/xymon ../client/xymonlaunch ../client/xymoncmd ../cli
 HOSTGREPOBJS = xymongrep.o
 HOSTSHOWOBJS = xymoncfg.o
 DIGESTOBJS   = xymondigest.o
-BBOBJS       = xymon.o
+XYMONOBJS    = xymon.o
 LAUNCHOBJS   = xymonlaunch.o
 CMDOBJS      = xymoncmd.o
 
@@ -27,11 +27,11 @@ xymoncfg: $(HOSTSHOWOBJS) ../lib/libxymon.a
 ../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/xymonclient.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
-xymon: $(BBOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymon: $(XYMONOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-../client/xymon: $(BBOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymon: $(XYMONOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymonlaunch: $(LAUNCHOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libxymon.a $(LIBRTDEF)
@@ -65,9 +65,9 @@ xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/st
 	$(CC) $(CFLAGS) -c ../lib/rbtr.c 
 	$(CC) $(CFLAGS) -c ../lib/msort.c
 	$(CC) $(CFLAGS) -c ../lib/misc.c
-	ar cr bbwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
-	ranlib bbwin32.a || echo ""
-	$(CC) -o $@ xymon.o bbwin32.a
+	ar cr xymonwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
+	ranlib xymonwin32.a || echo ""
+	$(CC) -o $@ xymon.o xymonwin32.a
 
 
 ################################################

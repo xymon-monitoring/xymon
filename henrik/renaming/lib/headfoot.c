@@ -231,95 +231,95 @@ void sethostenv_addtolist(char *listname, char *name, char *val, char *extra, in
 	}
 }
 
-static int nkackttprio = 0;
-static char *nkackttgroup = NULL;
-static char *nkackttextra = NULL;
+static int critackttprio = 0;
+static char *critackttgroup = NULL;
+static char *critackttextra = NULL;
 static char *ackinfourl = NULL;
-static char *nkackdocurl = NULL;
+static char *critackdocurl = NULL;
 
-void sethostenv_nkack(int nkprio, char *nkttgroup, char *nkttextra, char *infourl, char *docurl)
+void sethostenv_critack(int prio, char *ttgroup, char *ttextra, char *infourl, char *docurl)
 {
-	nkackttprio = nkprio;
-	if (nkackttgroup) xfree(nkackttgroup); nkackttgroup = strdup((nkttgroup && *nkttgroup) ? nkttgroup : "&nbsp;");
-	if (nkackttextra) xfree(nkackttextra); nkackttextra = strdup((nkttextra && *nkttextra) ? nkttextra : "&nbsp;");
+	critackttprio = prio;
+	if (critackttgroup) xfree(critackttgroup); critackttgroup = strdup((ttgroup && *ttgroup) ? ttgroup : "&nbsp;");
+	if (critackttextra) xfree(critackttextra); critackttextra = strdup((ttextra && *ttextra) ? ttextra : "&nbsp;");
 	if (ackinfourl) xfree(ackinfourl); ackinfourl = strdup(infourl);
-	if (nkackdocurl) xfree(nkackdocurl); nkackdocurl = strdup((docurl && *docurl) ? docurl : "");
+	if (critackdocurl) xfree(critackdocurl); critackdocurl = strdup((docurl && *docurl) ? docurl : "");
 }
 
-static char *nkeditupdinfo = NULL;
-static int nkeditprio = -1;
-static char *nkeditgroup = NULL;
-static time_t nkeditstarttime = 0;
-static time_t nkeditendtime = 0;
-static char *nkeditextra = NULL;
-static char *nkeditslawkdays = NULL;
-static char *nkeditslastart = NULL;
-static char *nkeditslaend = NULL;
-static char **nkeditclonelist = NULL;
-static int nkeditclonesize = 0;
+static char *criteditupdinfo = NULL;
+static int criteditprio = -1;
+static char *criteditgroup = NULL;
+static time_t criteditstarttime = 0;
+static time_t criteditendtime = 0;
+static char *criteditextra = NULL;
+static char *criteditslawkdays = NULL;
+static char *criteditslastart = NULL;
+static char *criteditslaend = NULL;
+static char **criteditclonelist = NULL;
+static int criteditclonesize = 0;
 
-void sethostenv_nkedit(char *updinfo, int prio, char *group, time_t starttime, time_t endtime, char *nktime, char *extra)
+void sethostenv_critedit(char *updinfo, int prio, char *group, time_t starttime, time_t endtime, char *crittime, char *extra)
 {
 	char *p;
 
-	if (nkeditupdinfo) xfree(nkeditupdinfo);
-	nkeditupdinfo = strdup(updinfo);
+	if (criteditupdinfo) xfree(criteditupdinfo);
+	criteditupdinfo = strdup(updinfo);
 
-	nkeditprio = prio;
-	nkeditstarttime = starttime;
-	nkeditendtime = endtime;
+	criteditprio = prio;
+	criteditstarttime = starttime;
+	criteditendtime = endtime;
 
-	if (nkeditgroup) xfree(nkeditgroup);
-	nkeditgroup = strdup(group ? group : "");
+	if (criteditgroup) xfree(criteditgroup);
+	criteditgroup = strdup(group ? group : "");
 
-	if (nkeditextra) xfree(nkeditextra);
-	nkeditextra = strdup(extra ? extra : "");
+	if (criteditextra) xfree(criteditextra);
+	criteditextra = strdup(extra ? extra : "");
 
-	if (nkeditslawkdays) xfree(nkeditslawkdays);
-	nkeditslawkdays = nkeditslastart = nkeditslaend = NULL;
+	if (criteditslawkdays) xfree(criteditslawkdays);
+	criteditslawkdays = criteditslastart = criteditslaend = NULL;
 
-	if (nktime) {
-		nkeditslawkdays = strdup(nktime);
-		p = strchr(nkeditslawkdays, ':');
+	if (crittime) {
+		criteditslawkdays = strdup(crittime);
+		p = strchr(criteditslawkdays, ':');
 		if (p) {
 			*p = '\0';
-			nkeditslastart = p+1;
+			criteditslastart = p+1;
 
-			p = strchr(nkeditslastart, ':');
+			p = strchr(criteditslastart, ':');
 			if (p) {
 				*p = '\0';
-				nkeditslaend = p+1;
+				criteditslaend = p+1;
 			}
 		}
 
-		if (nkeditslawkdays && (!nkeditslastart || !nkeditslaend)) {
-			xfree(nkeditslawkdays);
-			nkeditslawkdays = nkeditslastart = nkeditslaend = NULL;
+		if (criteditslawkdays && (!criteditslastart || !criteditslaend)) {
+			xfree(criteditslawkdays);
+			criteditslawkdays = criteditslastart = criteditslaend = NULL;
 		}
 	}
 }
 
-void sethostenv_nkclonelist_clear(void)
+void sethostenv_critclonelist_clear(void)
 {
 	int i;
 
-	if (nkeditclonelist) {
-		for (i=0; (nkeditclonelist[i]); i++) xfree(nkeditclonelist[i]);
-		xfree(nkeditclonelist);
+	if (criteditclonelist) {
+		for (i=0; (criteditclonelist[i]); i++) xfree(criteditclonelist[i]);
+		xfree(criteditclonelist);
 	}
-	nkeditclonelist = malloc(sizeof(char *));
-	nkeditclonelist[0] = NULL;
-	nkeditclonesize = 0;
+	criteditclonelist = malloc(sizeof(char *));
+	criteditclonelist[0] = NULL;
+	criteditclonesize = 0;
 }
 
-void sethostenv_nkclonelist_add(char *hostname)
+void sethostenv_critclonelist_add(char *hostname)
 {
 	char *p;
 
-	nkeditclonelist = (char **)realloc(nkeditclonelist, (nkeditclonesize + 2)*sizeof(char *));
-	nkeditclonelist[nkeditclonesize] = strdup(hostname);
-	p = nkeditclonelist[nkeditclonesize];
-	nkeditclonelist[++nkeditclonesize] = NULL;
+	criteditclonelist = (char **)realloc(criteditclonelist, (criteditclonesize + 2)*sizeof(char *));
+	criteditclonelist[criteditclonesize] = strdup(hostname);
+	p = criteditclonelist[criteditclonesize];
+	criteditclonelist[++criteditclonesize] = NULL;
 
 	p += (strlen(p) - 1);
 	if (*p == '=') *p = '\0';
@@ -346,12 +346,12 @@ char *wkdayselect(char wkday, char *valtxt, int isdefault)
 	static char result[100];
 	char *selstr;
 
-	if (!nkeditslawkdays) {
+	if (!criteditslawkdays) {
 		if (isdefault) selstr = "SELECTED";
 		else selstr = "";
 	}
 	else {
-		if (strchr(nkeditslawkdays, wkday)) selstr = "SELECTED";
+		if (strchr(criteditslawkdays, wkday)) selstr = "SELECTED";
 		else selstr = "";
 	}
 
@@ -402,7 +402,7 @@ static void fetch_board(void)
 
 	sres = newsendreturnbuf(1, NULL);
 	if (sendmessage("hobbitdboard fields=hostname,testname,disabletime,dismsg", 
-			NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+			NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		freesendreturnbuf(sres);
 		return;
 	}
@@ -451,7 +451,7 @@ static void fetch_board(void)
 	}
 
 	sres = newsendreturnbuf(1, NULL);
-	if (sendmessage("schedule", NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	if (sendmessage("schedule", NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		freesendreturnbuf(sres);
 		return;
 	}
@@ -1152,42 +1152,42 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					walk->name);
 		}
 
-		else if (strcmp(t_start, "NKACKTTPRIO") == 0) fprintf(output, "%d", nkackttprio);
-		else if (strcmp(t_start, "NKACKTTGROUP") == 0) fprintf(output, "%s", nkackttgroup);
-		else if (strcmp(t_start, "NKACKTTEXTRA") == 0) fprintf(output, "%s", nkackttextra);
-		else if (strcmp(t_start, "NKACKINFOURL") == 0) fprintf(output, "%s", ackinfourl);
-		else if (strcmp(t_start, "NKACKDOCURL") == 0) fprintf(output, "%s", nkackdocurl);
+		else if (strcmp(t_start, "CRITACKTTPRIO") == 0) fprintf(output, "%d", critackttprio);
+		else if (strcmp(t_start, "CRITACKTTGROUP") == 0) fprintf(output, "%s", critackttgroup);
+		else if (strcmp(t_start, "CRITACKTTEXTRA") == 0) fprintf(output, "%s", critackttextra);
+		else if (strcmp(t_start, "CRITACKINFOURL") == 0) fprintf(output, "%s", ackinfourl);
+		else if (strcmp(t_start, "CRITACKDOCURL") == 0) fprintf(output, "%s", critackdocurl);
 
-		else if (strcmp(t_start, "NKEDITUPDINFO") == 0) {
-			fprintf(output, "%s", nkeditupdinfo);
+		else if (strcmp(t_start, "CRITEDITUPDINFO") == 0) {
+			fprintf(output, "%s", criteditupdinfo);
 		}
 
-		else if (strcmp(t_start, "NKEDITPRIOLIST") == 0) {
+		else if (strcmp(t_start, "CRITEDITPRIOLIST") == 0) {
 			int i;
 			char *selstr;
 
 			for (i=1; (i <= 3); i++) {
-				selstr = ((i == nkeditprio) ? "SELECTED" : "");
+				selstr = ((i == criteditprio) ? "SELECTED" : "");
 				fprintf(output, "<option value=\"%d\" %s>%d</option>\n", i, selstr, i);
 			}
 		}
 
-		else if (strcmp(t_start, "NKEDITCLONELIST") == 0) {
+		else if (strcmp(t_start, "CRITEDITCLONELIST") == 0) {
 			int i;
-			for (i=0; (nkeditclonelist[i]); i++) 
+			for (i=0; (criteditclonelist[i]); i++) 
 				fprintf(output, "<option value=\"%s\">%s</option>\n", 
-					nkeditclonelist[i], nkeditclonelist[i]);
+					criteditclonelist[i], criteditclonelist[i]);
 		}
 
-		else if (strcmp(t_start, "NKEDITGROUP") == 0) {
-			fprintf(output, "%s", nkeditgroup);
+		else if (strcmp(t_start, "CRITEDITGROUP") == 0) {
+			fprintf(output, "%s", criteditgroup);
 		}
 
-		else if (strcmp(t_start, "NKEDITEXTRA") == 0) {
-			fprintf(output, "%s", nkeditextra);
+		else if (strcmp(t_start, "CRITEDITEXTRA") == 0) {
+			fprintf(output, "%s", criteditextra);
 		}
 
-		else if (strcmp(t_start, "NKEDITWKDAYS") == 0) {
+		else if (strcmp(t_start, "CRITEDITWKDAYS") == 0) {
 			fprintf(output, "%s", wkdayselect('*', "All days", 1));
 			fprintf(output, "%s", wkdayselect('W', "Mon-Fri", 0));
 			fprintf(output, "%s", wkdayselect('1', "Monday", 0));
@@ -1199,30 +1199,30 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			fprintf(output, "%s", wkdayselect('0', "Sunday", 0));
 		}
 
-		else if (strcmp(t_start, "NKEDITSTART") == 0) {
+		else if (strcmp(t_start, "CRITEDITSTART") == 0) {
 			int i, curr;
 			char *selstr;
 
-			curr = (nkeditslastart ? (atoi(nkeditslastart) / 100) : 0);
+			curr = (criteditslastart ? (atoi(criteditslastart) / 100) : 0);
 			for (i=0; (i <= 23); i++) {
 				selstr = ((i == curr) ? "SELECTED" : "");
 				fprintf(output, "<option value=\"%02i00\" %s>%02i:00</option>\n", i, selstr, i);
 			}
 		}
 
-		else if (strcmp(t_start, "NKEDITEND") == 0) {
+		else if (strcmp(t_start, "CRITEDITEND") == 0) {
 			int i, curr;
 			char *selstr;
 
-			curr = (nkeditslaend ? (atoi(nkeditslaend) / 100) : 24);
+			curr = (criteditslaend ? (atoi(criteditslaend) / 100) : 24);
 			for (i=1; (i <= 24); i++) {
 				selstr = ((i == curr) ? "SELECTED" : "");
 				fprintf(output, "<option value=\"%02i00\" %s>%02i:00</option>\n", i, selstr, i);
 			}
 		}
 
-		else if (strncmp(t_start, "NKEDITDAYLIST", 13) == 0) {
-			time_t t = ((*(t_start+13) == '1') ? nkeditstarttime : nkeditendtime);
+		else if (strncmp(t_start, "CRITEDITDAYLIST", 13) == 0) {
+			time_t t = ((*(t_start+13) == '1') ? criteditstarttime : criteditendtime);
 			char *defstr = ((*(t_start+13) == '1') ? "Now" : "Never");
 			int i;
 			char *selstr;
@@ -1239,8 +1239,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 		}
 
-		else if (strncmp(t_start, "NKEDITMONLIST", 13) == 0) {
-			time_t t = ((*(t_start+13) == '1') ? nkeditstarttime : nkeditendtime);
+		else if (strncmp(t_start, "CRITEDITMONLIST", 13) == 0) {
+			time_t t = ((*(t_start+13) == '1') ? criteditstarttime : criteditendtime);
 			char *defstr = ((*(t_start+13) == '1') ? "Now" : "Never");
 			int i;
 			char *selstr;
@@ -1267,8 +1267,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 		}
 
-		else if (strncmp(t_start, "NKEDITYEARLIST", 14) == 0) {
-			time_t t = ((*(t_start+14) == '1') ? nkeditstarttime : nkeditendtime);
+		else if (strncmp(t_start, "CRITEDITYEARLIST", 14) == 0) {
+			time_t t = ((*(t_start+14) == '1') ? criteditstarttime : criteditendtime);
 			char *defstr = ((*(t_start+14) == '1') ? "Now" : "Never");
 			int i;
 			char *selstr;
@@ -1487,13 +1487,13 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 
 	/*
 	 * "pagepath" is the relative path for this page, e.g. 
-	 * - for "bb.html" it is ""
+	 * - for the top-level page it is ""
 	 * - for a page, it is "pagename/"
 	 * - for a subpage, it is "pagename/subpagename/"
 	 *
-	 * BB allows header/footer files named bb_PAGE_header or bb_PAGE_SUBPAGE_header
+	 * We allow header/footer files named template_PAGE_header or template_PAGE_SUBPAGE_header
 	 * so we need to scan for an existing file - starting with the
-	 * most detailed one, and working up towards the standard "web/bb_TYPE" file.
+	 * most detailed one, and working up towards the standard "web/template_TYPE" file.
 	 */
 
 	hfpath = strdup(pagepath); 

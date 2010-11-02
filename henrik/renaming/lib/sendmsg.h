@@ -11,21 +11,21 @@
 #ifndef __SENDMSG_H_
 #define __SENDMSG_H_
 
-#define BBTALK_TIMEOUT 15  /* Default timeout for a request going to bbd */
+#define XYMON_TIMEOUT 15  /* Default timeout for a request going to Xymon server */
 #define PAGELEVELSDEFAULT "red purple"
 
 typedef enum {
-	BB_OK,
-	BB_EBADIP,
-	BB_EIPUNKNOWN,
-	BB_ENOSOCKET,
-	BB_ECANNOTDONONBLOCK,
-	BB_ECONNFAILED,
-	BB_ESELFAILED,
-	BB_ETIMEOUT,
-	BB_EWRITEERROR,
-	BB_EREADERROR,
-	BB_EBADURL 
+	XYMONSEND_OK,
+	XYMONSEND_EBADIP,
+	XYMONSEND_EIPUNKNOWN,
+	XYMONSEND_ENOSOCKET,
+	XYMONSEND_ECANNOTDONONBLOCK,
+	XYMONSEND_ECONNFAILED,
+	XYMONSEND_ESELFAILED,
+	XYMONSEND_ETIMEOUT,
+	XYMONSEND_EWRITEERROR,
+	XYMONSEND_EREADERROR,
+	XYMONSEND_EBADURL 
 } sendresult_t;
 
 typedef struct sendreturn_t {
@@ -36,8 +36,8 @@ typedef struct sendreturn_t {
 } sendreturn_t;
 
 extern int xymonmsgcount;
-extern int bbstatuscount;
-extern int bbnocombocount;
+extern int xymonstatuscount;
+extern int xymonnocombocount;
 extern int dontsendmessages;
 
 extern void setproxy(char *proxy);

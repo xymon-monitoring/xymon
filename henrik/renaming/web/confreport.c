@@ -45,8 +45,8 @@ static char *pingplus = "conn=";
 static char *coldelim = ";";
 static coltext_t *chead = NULL;
 static int ccount = 0;
-static int nkonly = 0;
-static int newnkconfig = 1;
+static int criticalonly = 0;
+static int newcritconfig = 1;
 
 void errormsg(char *msg)
 {
@@ -133,33 +133,33 @@ static void print_disklist(char *hostname)
 	closedir(d);
 }
 
-char *nkval(char *hname, char *tname, char *nkalerts)
+char *criticalval(char *hname, char *tname, char *alerts)
 {
 	static char *result = NULL;
 
 	if (result) xfree(result);
 
-	if (newnkconfig) {
+	if (newcritconfig) {
 		char *key;
-		nkconf_t *nkrec;
+		critconf_t *critrec;
 
 		key = (char *)malloc(strlen(hname) + strlen(tname) + 2);
 		sprintf(key, "%s|%s", hname, tname);
-		nkrec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
-		if (!nkrec) {
+		critrec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
+		if (!critrec) {
 			result = strdup("No");
 		}
 		else {
 			char *tspec;
 
-			tspec = (nkrec->nktime ? timespec_text(nkrec->nktime) : "24x7");
+			tspec = (critrec->crittime ? timespec_text(critrec->crittime) : "24x7");
 			result = (char *)malloc(strlen(tspec) + 30);
-			sprintf(result, "%s&nbsp;prio&nbsp;%d", tspec, nkrec->priority);
+			sprintf(result, "%s&nbsp;prio&nbsp;%d", tspec, critrec->priority);
 		}
 		xfree(key);
 	}
 	else {
-		result = strdup((checkalert(nkalerts, tname) ? "Yes" : "No"));
+		result = strdup((checkalert(alerts, tname) ? "Yes" : "No"));
 	}
 
 	return result;
@@ -171,8 +171,8 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	int testi, rowcount, netcount;
 	void *hinfo = hostinfo(host->hostname);
 	char *dispname = NULL, *clientalias = NULL, *comment = NULL, *description = NULL, *pagepathtitle = NULL;
-	char *net = NULL, *nkalerts = NULL;
-	char *nktime = NULL, *downtime = NULL, *reporttime = NULL;
+	char *net = NULL, *alerts = NULL;
+	char *crittime = NULL, *downtime = NULL, *reporttime = NULL;
 	char *itm;
 	tag_t *taghead = NULL;
 	int contidx = 0, haveping = 0;
@@ -192,8 +192,8 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	comment = bbh_item(hinfo, BBH_COMMENT);
 	description = bbh_item(hinfo, BBH_DESCRIPTION); 
 	net = bbh_item(hinfo, BBH_NET);
-	nkalerts = bbh_item(hinfo, BBH_NK);
-	nktime = bbh_item(hinfo, BBH_NKTIME); if (!nktime) nktime = "24x7"; else nktime = strdup(timespec_text(nktime));
+	alerts = bbh_item(hinfo, BBH_NK);
+	crittime = bbh_item(hinfo, BBH_NKTIME); if (!crittime) crittime = "24x7"; else crittime = strdup(timespec_text(crittime));
 	downtime = bbh_item(hinfo, BBH_DOWNTIME); if (downtime) downtime = strdup(timespec_text(downtime));
 	reporttime = bbh_item(hinfo, BBH_REPORTTIME); if (!reporttime) reporttime = "24x7"; else reporttime = strdup(timespec_text(reporttime));
 
@@ -202,7 +202,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	if (dispname || clientalias) rowcount++;
 	if (comment) rowcount++;
 	if (description) rowcount++;
-	if (!newnkconfig && nktime) rowcount++;
+	if (!newcritconfig && crittime) rowcount++;
 	if (downtime) rowcount++;
 	if (reporttime) rowcount++;
 
@@ -221,7 +221,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	if (pagepathtitle) fprintf(stdout, "<tr><td>Monitoring location: %s</td></tr>\n", pagepathtitle);
 	if (comment) fprintf(stdout, "<tr><td>Comment: %s</td></tr>\n", comment);
 	if (description) fprintf(stdout, "<tr><td>Description: %s</td></tr>\n", description);
-	if (!newnkconfig && nktime) fprintf(stdout, "<tr><td>NK monitoring period: %s</td></tr>\n", nktime);
+	if (!newcritconfig && crittime) fprintf(stdout, "<tr><td>Critical monitoring period: %s</td></tr>\n", crittime);
 	if (downtime) fprintf(stdout, "<tr><td>Planned downtime: %s</td></tr>\n", downtime);
 	if (reporttime) fprintf(stdout, "<tr><td>SLA Reporting Period: %s</td></tr>\n", reporttime);
 
@@ -367,7 +367,7 @@ addtolist:
 		fprintf(stdout, "</th>\n");
 
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s network tests\">\n", host->hostname);
-		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>NK</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Specifics</th></tr>\n");
+		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>Critical</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Specifics</th></tr>\n");
 	}
 	for (testi = 0, netcount = 0; (testi < testcount); testi++) {
 		tag_t *twalk;
@@ -378,7 +378,7 @@ addtolist:
 		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
 		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
-		fprintf(stdout, "<td valign=top>%s</td>", nkval(host->hostname, testnames[testi]->name, nkalerts));
+		fprintf(stdout, "<td valign=top>%s</td>", criticalval(host->hostname, testnames[testi]->name, alerts));
 
 		fprintf(stdout, "<td valign=top>");
 		if (twalk->b1 || twalk->b2 || twalk->b3) {
@@ -407,7 +407,7 @@ addtolist:
 		fprintf(stdout, "<tr>\n");
 		fprintf(stdout, "<th align=left valign=top>Local tests</th>\n");
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s local tests\">\n", host->hostname);
-		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>NK</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Configuration <i>(NB: Thresholds on client may differ)</i></th></tr>\n");
+		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>Critical</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Configuration <i>(NB: Thresholds on client may differ)</i></th></tr>\n");
 	}
 	for (testi = 0; (testi < testcount); testi++) {
 		tag_t *twalk;
@@ -418,7 +418,7 @@ addtolist:
 		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
 		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
-		fprintf(stdout, "<td valign=top>%s</td>", nkval(host->hostname, testnames[testi]->name, nkalerts));
+		fprintf(stdout, "<td valign=top>%s</td>", criticalval(host->hostname, testnames[testi]->name, alerts));
 		fprintf(stdout, "<td valign=top>-/-/-</td>");
 
 		/* Make up some default configuration data */
@@ -645,7 +645,7 @@ int main(int argc, char *argv[])
 	int hostcount = 0, maxtests = 0;
 	time_t now = getcurrenttime(NULL);
 	sendreturn_t *sres;
-	char *nkconfigfn = NULL;
+	char *critconfigfn = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -664,21 +664,21 @@ int main(int argc, char *argv[])
 			coldelim = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--critical") == 0) {
-			nkonly = 1;
+			criticalonly = 1;
 		}
-		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
-			newnkconfig = 0;
+		else if (strcmp(argv[argi], "--old-critical-config") == 0) {
+			newcritconfig = 0;
 		}
-		else if (argnmatch(argv[argi], "--nkconfig=")) {
+		else if (argnmatch(argv[argi], "--critical-config=")) {
 			char *p = strchr(argv[argi], '=');
-			nkconfigfn = strdup(p+1);
+			critconfigfn = strdup(p+1);
 		}
 	}
 
 	redirect_cgilog("confreport");
 
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
-	load_nkconfig(nkconfigfn);
+	load_critconfig(critconfigfn);
 
 	/* Setup the filter we use for the report */
 	cookie = get_cookie("pagepath"); if (cookie && *cookie) pagepattern = strdup(cookie);
@@ -718,17 +718,17 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 
-	if (sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	respbuf = getsendreturnstr(sres, 1);
-	if (sendmessage(procscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	if (sendmessage(procscmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	procsbuf = getsendreturnstr(sres, 1);
-	if (sendmessage(svcscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	if (sendmessage(svcscmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
@@ -751,14 +751,14 @@ int main(int argc, char *argv[])
 		hname = nexthost;
 		tname = strchr(nexthost, '|'); if (tname) { *tname = '\0'; tname++; }
 
-		if (nkonly) {
+		if (criticalonly) {
 			void *hinfo = hostinfo(hname);
-			char *nkalerts = bbh_item(hinfo, BBH_NK);
+			char *alerts = bbh_item(hinfo, BBH_NK);
 
-			if (newnkconfig) {
-				if (strcmp(nkval(hname, tname, nkalerts), "No") == 0 ) wanted = 0;
+			if (newcritconfig) {
+				if (strcmp(criticalval(hname, tname, alerts), "No") == 0 ) wanted = 0;
 			} else {
-				if (!nkalerts) wanted = 0;
+				if (!alerts) wanted = 0;
 			}
 		}
 
@@ -823,7 +823,7 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "%s ", allhosts[hosti]->hostname);
 	}
 	fprintf(stdout, "</td></tr>\n");
-	if (nkonly) {
+	if (criticalonly) {
 		fprintf(stdout, "<tr><th valign=top align=left>Filter</th><td>Only data for the &quot;Critical Systems&quot; view reported</td></tr>\n");
 	}
 	fprintf(stdout, "</table>\n");

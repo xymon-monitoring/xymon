@@ -29,7 +29,7 @@ char *reqenv[] = {
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *hffile = "bb";
+	char *hffile = "stdnormal";
 	int bgcolor = COL_BLUE;
 	char inbuf[8192];
 	int n;

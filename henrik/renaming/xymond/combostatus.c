@@ -205,10 +205,10 @@ static int getxymondvalue(char *hostname, char *testname, char **errptr)
 	if (board == NULL) {
 		sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-		xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, BBTALK_TIMEOUT, sres);
+		xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, XYMON_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 
-		if ((xymondresult != BB_OK) || (board == NULL)) {
+		if ((xymondresult != XYMONSEND_OK) || (board == NULL)) {
 			board = "";
 			*errptr += sprintf(*errptr, "Could not access xymond board, error %d\n", xymondresult);
 			return COL_CLEAR;

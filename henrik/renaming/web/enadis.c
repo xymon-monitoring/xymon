@@ -190,16 +190,16 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 			if (preview) result = 0;
 			else {
 				sprintf(xymoncmd, "enable %s.%s", commafy(hostname), enabletest[i]);
-				result = sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
+				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
 				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
 					commafy(hostname), enabletest[i], 
 					hostname, enabletest[i], username);
-				sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
+				sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
 			}
 
 			if (preview) {
 				printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
-					hostname, enabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+					hostname, enabletest[i], ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
@@ -210,16 +210,16 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 			else {
 				sprintf(xymoncmd, "disable %s.%s %d %s", 
 					commafy(hostname), disabletest[i], duration*scale, fullmsg);
-				result = sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
+				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
 				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
 					commafy(hostname), disabletest[i], 
 					hostname, disabletest[i], username, duration*scale, fullmsg);
-				result = sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL);
+				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
 			}
 
 			if (preview) {
 				printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
-					hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+					hostname, disabletest[i], ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
@@ -228,21 +228,21 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < disablecount); i++) {
 			sprintf(xymoncmd, "schedule %d disable %s.%s %d %s", 
 				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
-			result = (preview ? 0 : sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL));
+			result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
 
 			if (preview) {
 				printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
-					hostname, disabletest[i], ctime(&schedtime), ((result == BB_OK) ? "OK" : "Failed"));
+					hostname, disabletest[i], ctime(&schedtime), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
 
 	  case ACT_SCHED_CANCEL:
 		sprintf(xymoncmd, "schedule cancel %d", cancelid);
-		result = (preview ? 0 : sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, NULL));
+		result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
 
 		if (preview) {
-			printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));
+			printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 		}
 		break;
 

@@ -32,7 +32,7 @@ typedef struct pagelist_t {
 
 typedef struct namelist_t {
 	char ip[IP_ADDR_STRLEN];
-	char *bbhostname;	/* Name for item 2 of hosts.cfg */
+	char *hostname;	/* Name for item 2 of hosts.cfg */
 	char *logname;		/* Name of the host directory in BBHISTLOGS (underscores replaces dots). */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
@@ -219,7 +219,7 @@ static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
 		result = (host->elems[i] ? (host->elems[i] + 6) : NULL);
 	}
 
-	if (result || !host->defaulthost || (strcasecmp(host->bbhostname, ".default.") == 0)) {
+	if (result || !host->defaulthost || (strcasecmp(host->hostname, ".default.") == 0)) {
 		if (bbh_item_isflag[item]) {
 			return (result ? bbh_item_key[item] : NULL);
 		}
@@ -236,7 +236,7 @@ static void initialize_hostlist(void)
 		namelist_t *walk = defaulthost;
 		defaulthost = defaulthost->defaulthost;
 
-		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->hostname) xfree(walk->hostname);
 		if (walk->groupid) xfree(walk->groupid);
 		if (walk->classname) xfree(walk->classname);
 		if (walk->osname) xfree(walk->osname);
@@ -252,7 +252,7 @@ static void initialize_hostlist(void)
 		namehead = namehead->next;
 
 		/* clientname should not be freed, since it's just a pointer into the elems-array */
-		if (walk->bbhostname) xfree(walk->bbhostname);
+		if (walk->hostname) xfree(walk->hostname);
 		if (walk->groupid) xfree(walk->groupid);
 		if (walk->classname) xfree(walk->classname);
 		if (walk->osname) xfree(walk->osname);
@@ -294,7 +294,7 @@ static void build_hosttree(void)
 	hosttree_exists = 1;
 
 	for (walk = namehead; (walk); walk = walk->next) {
-		status = rbtInsert(rbhosts, walk->bbhostname, walk);
+		status = rbtInsert(rbhosts, walk->hostname, walk);
 		if (walk->clientname) rbtInsert(rbclients, walk->clientname, walk);
 
 		switch (status) {
@@ -358,7 +358,7 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 		 * Force our version of the hostname. Done here so CLIENT works always.
 		 */
 		strcpy(hostip, walk->ip);
-		result = strdup(walk->bbhostname);
+		result = strdup(walk->hostname);
 	}
 	else {
 		*hostip = '\0';
@@ -380,7 +380,7 @@ int knownloghost(char *logdir)
 	namelist_t *walk = NULL;
 
 	/* Find the host */
-	/* Must do the linear string search, since the tree is indexed by the bbhostname, not logname */
+	/* Must do the linear string search, since the tree is indexed by the hostname, not logname */
 	for (walk = namehead; (walk && (strcasecmp(walk->logname, logdir) != 0)); walk = walk->next);
 
 	return (walk != NULL);
@@ -419,8 +419,8 @@ void *localhostinfo(char *hostname)
 
 	strcpy(result->ip, "127.0.0.1");
 
-	if (result->bbhostname) xfree(result->bbhostname);
-	result->bbhostname = strdup(hostname);
+	if (result->hostname) xfree(result->hostname);
+	result->hostname = strdup(hostname);
 
 	if (result->logname) xfree(result->logname);
 
@@ -477,7 +477,7 @@ char *bbh_item(void *hostin, enum bbh_item_t item)
 		  break;
 
 	  case BBH_HOSTNAME: 
-		  return host->bbhostname;
+		  return host->hostname;
 
 	  case BBH_PAGENAME:
 		  p = strrchr(host->page->pagepath, '/');
@@ -502,7 +502,7 @@ char *bbh_item(void *hostin, enum bbh_item_t item)
 	  case BBH_ALLPAGEPATHS:
 		  if (rawtxt) clearstrbuffer(rawtxt);
 		  hwalk = host;
-		  while (hwalk && (strcmp(hwalk->bbhostname, host->bbhostname) == 0)) {
+		  while (hwalk && (strcmp(hwalk->hostname, host->hostname) == 0)) {
 			if (STRBUFLEN(rawtxt) > 0) addtobuffer(rawtxt, ",");
 			addtobuffer(rawtxt, hwalk->page->pagepath);
 			hwalk = hwalk->next;
@@ -516,8 +516,8 @@ char *bbh_item(void *hostin, enum bbh_item_t item)
 		  p = bbh_find_item(host, item);
 		  if (p) {
 			if (result) xfree(result);
-			result = (char *)malloc(strlen(p) + strlen(host->bbhostname) + 1);
-			sprintf(result, p, host->bbhostname);
+			result = (char *)malloc(strlen(p) + strlen(host->hostname) + 1);
+			sprintf(result, p, host->hostname);
 		  	return result;
 		  }
 		  else
@@ -635,7 +635,7 @@ void *next_host(void *currenthost, int wantclones)
 	walk = (namelist_t *)currenthost;
 	do {
 		walk = walk->next;
-	} while (walk && (strcmp(((namelist_t *)currenthost)->bbhostname, walk->bbhostname) == 0));
+	} while (walk && (strcmp(((namelist_t *)currenthost)->hostname, walk->hostname) == 0));
 
 	return walk;
 }
@@ -664,7 +664,7 @@ void bbh_set_item(void *hostin, enum bbh_item_t item, void *value)
 		 * FIXME: Small mem. leak here - we should run "rebuildhosttree", but that is heavy.
 		 * Doing this "free" kills the tree structure, since we free one of the keys.
 		 *
-		 * if (host->clientname && (host->bbhostname != host->clientname) && (host->clientname != bbh_find_item(host, BBH_CLIENTALIAS)) xfree(host->clientname);
+		 * if (host->clientname && (host->hostname != host->clientname) && (host->clientname != bbh_find_item(host, BBH_CLIENTALIAS)) xfree(host->clientname);
 		 */
 		host->clientname = strdup((char *)value);
 		rbtInsert(rbclients, host->clientname, host);
@@ -689,7 +689,7 @@ char *bbh_item_multi(void *hostin, enum bbh_item_t item)
 		curhost = keyhost = host;
 	else {
 		curhost = curhost->next;
-		if (!curhost || (strcmp(curhost->bbhostname, keyhost->bbhostname) != 0))
+		if (!curhost || (strcmp(curhost->hostname, keyhost->hostname) != 0))
 			curhost = keyhost = NULL; /* End of hostlist */
 	}
 
@@ -726,7 +726,7 @@ handlehost:
 		if (h == NULL) { printf("Host %s not found\n", argv[argi]); continue; }
 
 		val = bbh_item_walk(h);
-		printf("Entry for host %s\n", h->bbhostname);
+		printf("Entry for host %s\n", h->hostname);
 		while (val) {
 			printf("\t%s\n", val);
 			val = bbh_item_walk(NULL);

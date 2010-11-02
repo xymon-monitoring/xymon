@@ -1137,7 +1137,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	freestrbuffer(monmsg);
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1492,7 +1492,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(greendata);
 	}
 
-	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(sizedata);
 }
 
@@ -1534,7 +1534,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 	}
 
-	if (anydata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anydata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1552,7 +1552,7 @@ void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, netstatstr);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1570,7 +1570,7 @@ void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, ifstatstr);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1597,7 +1597,7 @@ void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, p+1);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1724,7 +1724,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(monmsg);
 	}
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 

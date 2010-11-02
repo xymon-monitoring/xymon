@@ -1,4 +1,4 @@
-<table border=1 summary="NK info" align=center>
+<table border=1 summary="Critical info" align=center>
 <tr>
 <th align=center>Priority</th>
 <th align=center>Resolver group</th>
@@ -6,17 +6,17 @@
 </tr>
 
 <tr>
-  <td align=center>&NKACKTTPRIO</td>
-  <td align=center>&NKACKTTGROUP</td>
+  <td align=center>&CRITACKTTPRIO</td>
+  <td align=center>&CRITACKTTGROUP</td>
   <td align=center>
-     <a href="&NKACKINFOURL">Host info</a>
+     <a href="&CRITACKINFOURL">Host info</a>
      <br>
-     <a href="&NKACKDOCURL">Host docs</a>
+     <a href="&CRITACKDOCURL">Host docs</a>
   </td>
 </tr>
 
 <tr>
-  <td colspan=3 align=center>&NKACKTTEXTRA</td>
+  <td colspan=3 align=center>&CRITACKTTEXTRA</td>
 </tr>
 
 <tr>

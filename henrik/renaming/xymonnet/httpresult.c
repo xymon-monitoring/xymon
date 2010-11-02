@@ -380,7 +380,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		msg = (char *)malloc(1024 + strlen(host->hostname) + strlen(req->weburl.columnname) + strlen(data));
 		sprintf(msg, "data %s.%s\n%s", commafy(host->hostname), req->weburl.columnname, data);
-		sendmessage(msg, NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
 		xfree(msg);
 	}
 

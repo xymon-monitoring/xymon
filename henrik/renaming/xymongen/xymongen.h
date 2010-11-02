@@ -36,8 +36,8 @@
      next     |         next               ip                  |
       ^       +------------------------>   color               |
       |                                    oldage              |
-      |                                    bb2color            |
-      |                                    bbnkcolor           |
+      |                                    nongreencolor       |
+      |                                    criticalcolor       |
       +---------------------------------   parent              |
                                            alerts              |
                                            waps                |
@@ -88,9 +88,9 @@
   state_t is a simple 1-dimensional list of all tests (entry_t records).
 */
 
-#define PAGE_BB		0
-#define PAGE_BB2	1
-#define PAGE_NK		2
+#define PAGE_NORMAL	0
+#define PAGE_NONGREEN	1
+#define PAGE_CRITICAL	2
 
 
 /* Max number of purple messages in one run */
@@ -154,8 +154,8 @@ typedef struct host_t {
 	int	dialup;
 	struct entry_t	*entries;
 	int	color;		/* Calculated */
-	int	bb2color;	/* Calculated */
-	int	bbnkcolor;	/* Calculated */
+	int	nongreencolor;	/* Calculated */
+	int	criticalcolor;	/* Calculated */
 	int     oldage;
 	char	*alerts;
 	int	nktime;
@@ -171,7 +171,7 @@ typedef struct host_t {
 	double  reportwarnlevel;
 	int	reportwarnstops;
 	char	*reporttime;
-	int     nobb2;
+	int     nonongreen;
 	struct host_t	*next;
 } host_t;
 
@@ -228,7 +228,7 @@ extern state_t		*statehead;
 extern xymongen_col_t	*colhead, null_column;
 extern summary_t	*sumhead;
 extern dispsummary_t	*dispsums;
-extern int		bb_color, bb2_color, bbnk_color;
+extern int		xymon_color, nongreen_color, critical_color;
 extern time_t		reportstart, reportend;
 extern double           reportwarnlevel, reportgreenlevel;
 extern int		reportwarnstops;

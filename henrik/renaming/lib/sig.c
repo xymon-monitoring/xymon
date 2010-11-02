@@ -26,10 +26,10 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 /* Data used while crashing - cannot depend on the stack being usable */
-static char signal_bbcmd[PATH_MAX];
-static char signal_bbdisp[1024];
+static char signal_xymoncmd[PATH_MAX];
+static char signal_xymondserver[1024];
 static char signal_msg[1024];
-static char signal_bbtmp[PATH_MAX];
+static char signal_tmpdir[PATH_MAX];
 
 
 static void sigsegv_handler(int signum)
@@ -49,11 +49,11 @@ static void sigsegv_handler(int signum)
 	 * If the fork fails, then just attempt to exec() the BB command
 	 */
 	if (fork() <= 0) {
-		execl(signal_bbcmd, "xymon-signal", signal_bbdisp, signal_msg, NULL);
+		execl(signal_xymoncmd, "xymon-signal", signal_xymondserver, signal_msg, NULL);
 	}
 
 	/* Dump core and abort */
-	chdir(signal_bbtmp);
+	chdir(signal_tmpdir);
 	abort();
 }
 
@@ -76,9 +76,9 @@ void setup_signalhandler(char *programname)
 	struct rlimit lim;
 	struct sigaction sa;
 
-	MEMDEFINE(signal_bbcmd);
-	MEMDEFINE(signal_bbdisp);
-	MEMDEFINE(signal_bbtmp);
+	MEMDEFINE(signal_xymoncmd);
+	MEMDEFINE(signal_xymondserver);
+	MEMDEFINE(signal_tmpdir);
 	MEMDEFINE(signal_msg);
 
 	memset(&sa, 0, sizeof(sa));
@@ -98,9 +98,9 @@ void setup_signalhandler(char *programname)
 	 * Used inside signal-handler. Must be setup in
 	 * advance.
 	 */
-	strcpy(signal_bbcmd, xgetenv("BB"));
-	strcpy(signal_bbdisp, xgetenv("BBDISP"));
-	strcpy(signal_bbtmp, xgetenv("BBTMP"));
+	strcpy(signal_xymoncmd, xgetenv("BB"));
+	strcpy(signal_xymondserver, xgetenv("BBDISP"));
+	strcpy(signal_tmpdir, xgetenv("BBTMP"));
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
 		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "BBDISPLAY"), programname);
 

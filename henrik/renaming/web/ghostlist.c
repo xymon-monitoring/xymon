@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 
-	if (sendmessage("ghostlist", NULL, BBTALK_TIMEOUT, sres) == BB_OK) {
+	if (sendmessage("ghostlist", NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
 		char *bol, *eoln, *name, *sender, *timestr;
 		time_t tstamp, now;
 		int count, idx;

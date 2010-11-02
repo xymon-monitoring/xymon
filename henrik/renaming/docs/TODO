@@ -86,7 +86,7 @@ Things I must remember to look at
 * Move all of the xymonnet "badFOO" etc. stuff away from xymonnet
   and into xymond.
 * On Fri, Aug 05, 2005 at 09:39:15AM +0200, Thomas Bergauer wrote:
-  2. the NOPROP(RED|YELLOW|..) command in the BB-hosts file works as
+  2. the NOPROP(RED|YELLOW|..) command in the hosts.cfg file works as
   announced, but I am looking for a possibility to tell NOPROP a "level"
   of propagation. This means that an alarm should propagate to its
   sub-page, but not further up to the main page.

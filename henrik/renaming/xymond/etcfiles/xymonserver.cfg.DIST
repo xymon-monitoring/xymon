@@ -89,7 +89,7 @@ BBREP="$BBWWW/rep"				# Top-level directory for Xymon reports.
 BBSNAP="$BBWWW/snap"				# Top-level directory for Xymon snapshots.
 
 # For the xymond_history module
-BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the bb2 webpage)
+BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the all nongreen webpage)
 BBHOSTHISTLOG="TRUE"				# Save a log of all events for a host (not used by any tool currently)
 SAVESTATUSLOG="TRUE"				# Save the detailed status log each time the status changes.
 
@@ -149,7 +149,7 @@ GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,
 ###############################################################
 BBGENOPTS="--recentgifs --subpagecolumns=2"     # Standard options for xymongen.
 SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB webpage ?
-BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the BB2 page.
+BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the All non-green page.
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 COLUMNDOCURL="$CGIBINURL/columndoc.sh?%s"	# URL formatting string for column-links

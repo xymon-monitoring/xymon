@@ -16,7 +16,7 @@
 
 /* This is for mapping a service -> an RRD file */
 typedef struct {
-   char *bbsvcname;
+   char *svcname;
    char *xymonrrdname;
 } xymonrrd_t;
 

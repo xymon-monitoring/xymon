@@ -36,7 +36,7 @@ static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphL
 
 
 /*
- * Define the mapping between BB columns and RRD graphs.
+ * Define the mapping between Xymon columns and RRD graphs.
  * Normally they are identical, but some RRD's use different names.
  */
 static void rrd_setup(void)
@@ -55,12 +55,12 @@ static void rrd_setup(void)
 	/* 
 	 * Must free any old data first.
 	 * NB: These lists are NOT null-terminated ! 
-	 *     Stop when bbsvcname becomes a NULL.
+	 *     Stop when svcname becomes a NULL.
 	 */
 	lrec = xymonrrds;
-	while (lrec && lrec->bbsvcname) {
-		if (lrec->xymonrrdname != lrec->bbsvcname) xfree(lrec->xymonrrdname);
-		xfree(lrec->bbsvcname);
+	while (lrec && lrec->svcname) {
+		if (lrec->xymonrrdname != lrec->svcname) xfree(lrec->xymonrrdname);
+		xfree(lrec->svcname);
 		lrec++;
 	}
 	if (xymonrrds) {
@@ -100,13 +100,13 @@ static void rrd_setup(void)
 		p = strchr(ldef, '=');
 		if (p) {
 			*p = '\0'; 
-			lrec->bbsvcname = strdup(ldef);
+			lrec->svcname = strdup(ldef);
 			lrec->xymonrrdname = strdup(p+1);
 		}
 		else {
-			lrec->bbsvcname = lrec->xymonrrdname = strdup(ldef);
+			lrec->svcname = lrec->xymonrrdname = strdup(ldef);
 		}
-		rbtInsert(xymonrrdtree, lrec->bbsvcname, lrec);
+		rbtInsert(xymonrrdtree, lrec->svcname, lrec);
 
 		ldef = strtok(NULL, ",");
 		lrec++;

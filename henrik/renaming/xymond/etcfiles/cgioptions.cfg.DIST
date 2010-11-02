@@ -44,9 +44,9 @@ CGI_SNAPSHOT_OPTS="--env=$XYMONENV"
 # eventlog.cgi options
 CGI_EVENTLOG_OPTS="--env=$XYMONENV"
 # criticalview.cgi options
-CGI_NKVIEW_OPTS="--env=$XYMONENV"
+CGI_CRITVIEW_OPTS="--env=$XYMONENV"
 # criticaleditor.cgi options
-CGI_NKEDIT_OPTS="--env=$XYMONENV"
+CGI_CRITEDIT_OPTS="--env=$XYMONENV"
 # ackinfo.cgi options
 CGI_ACKINFO_OPTS="--env=$XYMONENV"
 #ghostlist.cgi options

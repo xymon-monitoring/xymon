@@ -426,7 +426,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * Match the RRD data against any DS client-configuration modifiers.
 	 */
 	modifymsg = check_rrdds_thresholds(hostname, classname, pagepaths, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
-	if (modifymsg) sendmessage(modifymsg, NULL, BBTALK_TIMEOUT, NULL);
+	if (modifymsg) sendmessage(modifymsg, NULL, XYMON_TIMEOUT, NULL);
 
 	/*
 	 * See if we want the data to go to an external handler.

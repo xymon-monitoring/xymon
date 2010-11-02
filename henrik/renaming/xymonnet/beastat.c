@@ -165,7 +165,7 @@ void send_data(void *host, char *beadomain, char *databuf, char **items)
 			addtobuffer(msgbuf, msgline);
 		}
 
-		sendmessage(STRBUF(msgbuf), NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(STRBUF(msgbuf), NULL, XYMON_TIMEOUT, NULL);
 		clearstrbuffer(msgbuf);
 	}
 

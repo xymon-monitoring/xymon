@@ -2,7 +2,7 @@
 /* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module for Xymon, responsible for loading the host-,     */
-/* page-, and column-links defined in the BB directory structure.             */
+/* page-, and column-links present in www/notes and www/help.                 */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -76,21 +76,21 @@ static link_t *init_link(char *filename, char *urlprefix)
 
 static void load_links(char *directory, char *urlprefix)
 {
-	DIR		*bblinks;
+	DIR		*linkdir;
 	struct dirent 	*d;
 	char		fn[PATH_MAX];
 
 	dbgprintf("load_links(%s, %s)\n", textornull(directory), textornull(urlprefix));
 
-	bblinks = opendir(directory);
-	if (!bblinks) {
+	linkdir = opendir(directory);
+	if (!linkdir) {
 		errprintf("Cannot read links in directory %s\n", directory);
 		return;
 	}
 
 	MEMDEFINE(fn);
 
-	while ((d = readdir(bblinks))) {
+	while ((d = readdir(linkdir))) {
 		link_t *newlink;
 
 		if (*(d->d_name) == '.') continue;
@@ -99,7 +99,7 @@ static void load_links(char *directory, char *urlprefix)
 		newlink = init_link(fn, urlprefix);
 		rbtInsert(linkstree, newlink->key, newlink);
 	}
-	closedir(bblinks);
+	closedir(linkdir);
 
 	MEMUNDEFINE(fn);
 }

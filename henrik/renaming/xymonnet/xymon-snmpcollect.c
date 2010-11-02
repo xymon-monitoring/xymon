@@ -921,7 +921,7 @@ void sendresult(void)
 			if (havemsg) {
 				sprintf(msgline, "\n.<!-- linecount=%d -->\n", itemcount);
 				addtobuffer(clientmsg, msgline);
-				sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
+				sendmessage(STRBUF(clientmsg), NULL, XYMON_TIMEOUT, NULL);
 			}
 			clearstrbuffer(clientmsg);
 			havemsg = 0;
@@ -991,7 +991,7 @@ void sendresult(void)
 	}
 
 	if (havemsg) {
-		sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(STRBUF(clientmsg), NULL, XYMON_TIMEOUT, NULL);
 	}
 	
 	freestrbuffer(clientmsg);

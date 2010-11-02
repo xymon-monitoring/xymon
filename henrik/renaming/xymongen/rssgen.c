@@ -125,7 +125,7 @@ void do_rss_item(FILE *fd, host_t *h, entry_t *e)
 		break;
 
 	  case RSS10:
-		fprintf(fd, "  <item rdf:about=\"%s/bb2%s\">\n", xgetenv("BBWEBHOSTURL"), htmlextension);
+		fprintf(fd, "  <item rdf:about=\"%s/nongreen%s\">\n", xgetenv("BBWEBHOSTURL"), htmlextension);
 		break;
 	}
 

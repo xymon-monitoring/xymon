@@ -103,7 +103,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			sprintf(msgline, "data %s.iostatdisk\n%s\n", commafy(hostname), osname(os));
 			addtobuffer(msg, msgline);
 			addtobuffer(msg, p);
-			sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+			sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 		}
 		freestrbuffer(msg);
 	}

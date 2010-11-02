@@ -269,8 +269,8 @@ will go "clear" upon failure, and any missing reports from e.g.
 cpu- and disk-status will not go purple when they are not updated.
 
 .IP nobb2
-Ignore this host on the BB2 page. Even if it has an active alert,
-it will not be included in the BB2 page. This also removes the
+Ignore this host on the "All non-green" page. Even if it has an active alert,
+it will not be included in the 2All non-green" page. This also removes the
 host from the event-log display.
 
 .IP nodisp
@@ -318,21 +318,21 @@ viewer, which has a separate configuration tool,
 .I criticaleditor.cgi(1)
 with more facilities than the NK tags in hosts.cfg.
 
-xymongen will create three sets of pages: The main page bb.html,
-the all-non-green-statuses page (bb2.html), and a specially
-reduced version of bb2.html with only selected tests (bbnk.html).
+xymongen will create three sets of pages: The main page xymon.html,
+the all-non-green-statuses page (nongreen.html), and a specially
+reduced version of nongreen.html with only selected tests (critical.html).
 This page includes selected tests that currently have a red
 or yellow status.
 
 .IP NK:testname[,testname]
-Define the tests that you want included on the bbnk page.
+Define the tests that you want included on the critical page.
 E.g. if you have a host where you only want to see the 
-http tests on bbnk.html, you specify it as
+http tests on critical.html, you specify it as
 
   12.34.56.78  www.acme.com  # http://www.acme.com/ NK:http
 
 If you want multiple tests for a host to show up on the
-bbnk.html page, specify all the tests separated by commas.
+critical.html page, specify all the tests separated by commas.
 The test names correspond to the column names (e.g. 
 https tests are covered by an "NK:http" tag).
 
@@ -392,8 +392,8 @@ apply to individual hosts, whereas the command line options are global.
 .IP NOPROPRED:[+|-]testname[,[+|-]testname]
 This tag is used to inhibit a yellow or red status from
 propagating upwards - i.e. from a test status color to
-the (sub)page status color, and further on to bb.html
-or bb2.html
+the (sub)page status color, and further on to xymon.html
+or nongreen.html
 
 If a host-specific tag begins with a '-' or a '+', the
 host-specific tags are removed/added to the default 

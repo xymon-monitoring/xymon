@@ -13,8 +13,8 @@
 
 extern int showenadis;
 extern int usejsvalidation;
-extern int newnkconfig;
+extern int newcritconfig;
 
-extern char *generate_info(char *hostname, char *nkconfigfn);
+extern char *generate_info(char *hostname, char *critconfigfn);
 
 #endif

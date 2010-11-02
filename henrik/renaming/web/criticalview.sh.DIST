@@ -3,5 +3,5 @@
 # This is a wrapper for the Xymon criticalview.cgi script
 
 . @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/criticalview.cgi $CGI_NKVIEW_OPTS
+@RUNTIMEDEFS@ exec @BBHOME@/bin/criticalview.cgi $CGI_CRITVIEW_OPTS
 

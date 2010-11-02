@@ -95,10 +95,10 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 
 	sres = newsendreturnbuf(1, NULL);
 	sprintf(xymondreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
-	xymondresult = sendmessage(xymondreq, NULL, BBTALK_TIMEOUT, sres);
+	xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 	logbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
-	if ((xymondresult != BB_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
+	if ((xymondresult != XYMONSEND_OK) || (logbuf == NULL) || (strlen(logbuf) == 0)) {
 		errprintf("WML: Status not available\n");
 		return;
 	}
@@ -124,7 +124,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 
 	wml_header(fd, "name", 1);
 	fprintf(fd, "<p align=\"center\">\n");
-	fprintf(fd, "<anchor title=\"BB\">Host<go href=\"%s.wml\"/></anchor><br/>\n", host->hostname);
+	fprintf(fd, "<anchor title=\"XYMON\">Host<go href=\"%s.wml\"/></anchor><br/>\n", host->hostname);
 	fprintf(fd, "%s</p>\n", timestamp);
 	fprintf(fd, "<p align=\"left\" mode=\"nowrap\">\n");
 	fprintf(fd, "<b>%s.%s</b><br/></p><p mode=\"nowrap\">\n", host->hostname, entry->column->name);
@@ -246,13 +246,13 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 
 void do_wml_cards(char *webdir)
 {
-	FILE		*bb2fd, *hostfd;
-	char		bb2fn[PATH_MAX], hostfn[PATH_MAX];
+	FILE		*nongreenfd, *hostfd;
+	char		nongreenfn[PATH_MAX], hostfn[PATH_MAX];
 	hostlist_t	*h;
 	entry_t		*t;
-	int		bb2wapcolor;
+	int		nongreenwapcolor;
 	long		wmlmaxchars = 1500;
-	int		bb2part = 1;
+	int		nongreenpart = 1;
 
 	/* Determine where the WML files go */
 	sprintf(wmldir, "%s/wml", webdir);
@@ -276,7 +276,7 @@ void do_wml_cards(char *webdir)
 
 	/* 
 	 * Find all the test entries that belong on the WAP page,
-	 * and calculate the color for the bb2 wap page.
+	 * and calculate the color for the nongreen wap page.
 	 *
 	 * We want only tests that have the "onwap" flag set, i.e.
 	 * tests given in the "WAP:test,..." for this host (of the
@@ -285,7 +285,7 @@ void do_wml_cards(char *webdir)
 	 * At the same time, generate the WML card for the tests,
 	 * corresponding to the HTML file for the test logfile.
 	 */
-	bb2wapcolor = COL_GREEN;
+	nongreenwapcolor = COL_GREEN;
 	for (h = hostlistBegin(); (h); h = hostlistNext()) {
 		h->hostentry->wapcolor = COL_GREEN;
 		for (t = h->hostentry->entries; (t); t = t->next) {
@@ -301,33 +301,33 @@ void do_wml_cards(char *webdir)
 			if (t->onwap && (t->color > h->hostentry->wapcolor)) h->hostentry->wapcolor = t->color;
 		}
 
-		/* Update the bb2wapcolor */
+		/* Update the nongreenwapcolor */
 		if ( (h->hostentry->wapcolor == COL_RED) || (h->hostentry->wapcolor == COL_YELLOW) ) {
-			if (h->hostentry->wapcolor > bb2wapcolor) bb2wapcolor = h->hostentry->wapcolor;
+			if (h->hostentry->wapcolor > nongreenwapcolor) nongreenwapcolor = h->hostentry->wapcolor;
 		}
 	}
 
-	/* Start the BB2 WML card */
-	sprintf(bb2fn, "%s/bb2.wml.tmp", wmldir);
-	bb2fd = fopen(bb2fn, "w");
-	if (bb2fd == NULL) {
-		errprintf("Cannot open BB2 WML file %s\n", bb2fn);
+	/* Start the non-green WML card */
+	sprintf(nongreenfn, "%s/nongreen.wml.tmp", wmldir);
+	nongreenfd = fopen(nongreenfn, "w");
+	if (nongreenfd == NULL) {
+		errprintf("Cannot open non-green WML file %s\n", nongreenfn);
 		return;
 	}
 
-	/* Standard BB2 wap header */
-	wml_header(bb2fd, "card", bb2part);
-	fprintf(bb2fd, "<p align=\"center\" mode=\"nowrap\">\n");
-	fprintf(bb2fd, "%s</p>\n", timestamp);
-	fprintf(bb2fd, "<p align=\"center\" mode=\"nowrap\">\n");
-	fprintf(bb2fd, "Summary Status<br/><b>%s</b><br/><br/>\n", colorname(bb2wapcolor));
+	/* Standard non-green wap header */
+	wml_header(nongreenfd, "card", nongreenpart);
+	fprintf(nongreenfd, "<p align=\"center\" mode=\"nowrap\">\n");
+	fprintf(nongreenfd, "%s</p>\n", timestamp);
+	fprintf(nongreenfd, "<p align=\"center\" mode=\"nowrap\">\n");
+	fprintf(nongreenfd, "Summary Status<br/><b>%s</b><br/><br/>\n", colorname(nongreenwapcolor));
 
 	/* All green ? Just say so */
-	if (bb2wapcolor == COL_GREEN) {
-		fprintf(bb2fd, "All is OK<br/>\n");
+	if (nongreenwapcolor == COL_GREEN) {
+		fprintf(nongreenfd, "All is OK<br/>\n");
 	}
 
-	/* Now loop through the hostlist again, and generate the bb2wap links and host pages */
+	/* Now loop through the hostlist again, and generate the nongreen WAP links and host pages */
 	for (h = hostlistBegin(); (h); h = hostlistNext()) {
 		if (h->hostentry->anywaps) {
 
@@ -341,7 +341,7 @@ void do_wml_cards(char *webdir)
 
 			wml_header(hostfd, "name", 1);
 			fprintf(hostfd, "<p align=\"center\">\n");
-			fprintf(hostfd, "<anchor title=\"BB\">Overall<go href=\"bb2.wml\"/></anchor><br/>\n");
+			fprintf(hostfd, "<anchor title=\"XYMON\">Overall<go href=\"nongreen.wml\"/></anchor><br/>\n");
 			fprintf(hostfd, "%s</p>\n", timestamp);
 			fprintf(hostfd, "<p align=\"left\" mode=\"nowrap\">\n");
 			fprintf(hostfd, "<b>%s</b><br/><br/>\n", h->hostentry->hostname);
@@ -359,8 +359,8 @@ void do_wml_cards(char *webdir)
 			fprintf(hostfd, "\n</p> </card> </wml>\n");
 			fclose(hostfd);
 
-			/* Create the link from the bb2 wap card to the host card */
-			fprintf(bb2fd, "<b><anchor title=\"%s\">%s<go href=\"%s.wml\"/></anchor></b> %s<br/>\n", 
+			/* Create the link from the nongreen wap card to the host card */
+			fprintf(nongreenfd, "<b><anchor title=\"%s\">%s<go href=\"%s.wml\"/></anchor></b> %s<br/>\n", 
 				h->hostentry->hostname, wml_colorname(h->hostentry->wapcolor), 
 				h->hostentry->hostname, h->hostentry->hostname);
 
@@ -369,44 +369,44 @@ void do_wml_cards(char *webdir)
 			 * So if the card grows larger than WMLMAXCHARS, split it into 
 			 * multiple files and link from one file to the next.
 			 */
-			if (ftello(bb2fd) >= wmlmaxchars) {
-				char oldbb2fn[PATH_MAX];
+			if (ftello(nongreenfd) >= wmlmaxchars) {
+				char oldnongreenfn[PATH_MAX];
 
-				/* WML link is from the bb2fn except leading wmldir+'/' */
-				strcpy(oldbb2fn, bb2fn+strlen(wmldir)+1);
+				/* WML link is from the nongreenfd except leading wmldir+'/' */
+				strcpy(oldnongreenfn, nongreenfn+strlen(wmldir)+1);
 
-				bb2part++;
+				nongreenpart++;
 
-				fprintf(bb2fd, "<br /><b><anchor title=\"Next\">Next<go href=\"bb2-%d.wml\"/></anchor></b>\n", bb2part);
-				fprintf(bb2fd, "</p> </card> </wml>\n");
-				fclose(bb2fd);
+				fprintf(nongreenfd, "<br /><b><anchor title=\"Next\">Next<go href=\"nongreen-%d.wml\"/></anchor></b>\n", nongreenpart);
+				fprintf(nongreenfd, "</p> </card> </wml>\n");
+				fclose(nongreenfd);
 
-				/* Start a new BB2 WML card */
-				sprintf(bb2fn, "%s/bb2-%d.wml", wmldir, bb2part);
-				bb2fd = fopen(bb2fn, "w");
-				if (bb2fd == NULL) {
-					errprintf("Cannot open BB2 WML file %s\n", bb2fn);
+				/* Start a new Nongreen WML card */
+				sprintf(nongreenfn, "%s/nongreen-%d.wml", wmldir, nongreenpart);
+				nongreenfd = fopen(nongreenfn, "w");
+				if (nongreenfd == NULL) {
+					errprintf("Cannot open Nongreen WML file %s\n", nongreenfd);
 					return;
 				}
-				wml_header(bb2fd, "card", bb2part);
-				fprintf(bb2fd, "<p align=\"center\">\n");
-				fprintf(bb2fd, "<anchor title=\"Prev\">Previous<go href=\"%s\"/></anchor><br/>\n", oldbb2fn);
-				fprintf(bb2fd, "%s</p>\n", timestamp);
-				fprintf(bb2fd, "<p align=\"center\" mode=\"nowrap\">\n");
-				fprintf(bb2fd, "Summary Status<br/><b>%s</b><br/><br/>\n", colorname(bb2wapcolor));
+				wml_header(nongreenfd, "card", nongreenpart);
+				fprintf(nongreenfd, "<p align=\"center\">\n");
+				fprintf(nongreenfd, "<anchor title=\"Prev\">Previous<go href=\"%s\"/></anchor><br/>\n", oldnongreenfn);
+				fprintf(nongreenfd, "%s</p>\n", timestamp);
+				fprintf(nongreenfd, "<p align=\"center\" mode=\"nowrap\">\n");
+				fprintf(nongreenfd, "Summary Status<br/><b>%s</b><br/><br/>\n", colorname(nongreenwapcolor));
 			}
 		}
 	}
 
-	fprintf(bb2fd, "</p> </card> </wml>\n");
-	fclose(bb2fd);
+	fprintf(nongreenfd, "</p> </card> </wml>\n");
+	fclose(nongreenfd);
 
 	if (chdir(wmldir) == 0) {
 		/* Rename the top-level file into place now */
-		rename("bb2.wml.tmp", "bb2.wml");
+		rename("nongreen.wml.tmp", "nongreen.wml");
 
-		/* Make sure there is the index.wml file pointing to bb2.wml */
-		symlink("bb2.wml", "index.wml");
+		/* Make sure there is the index.wml file pointing to nongreen.wml */
+		symlink("nongreen.wml", "index.wml");
 	}
 
 	return;

@@ -6,7 +6,7 @@ xymongrep \- pick out lines in hosts.cfg
 .br
 .B "xymongrep --version"
 .br
-.B "xymongrep [--noextras] [--test-untagged] [--bbdisp] [--net] TAG [TAG...]"
+.B "xymongrep [--noextras] [--test-untagged] [--web] [--net] TAG [TAG...]"
 
 .SH DESCRIPTION
 .I xymongrep(1)
@@ -56,9 +56,9 @@ host is ignored and will not be included in the output.
 This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
 
-.IP "--bbdisp"
+.IP "--web"
 Search the hosts.cfg file following include statements as a
-Xymon server would.
+Xymon web-server would.
 
 .IP "--net"
 Search the hosts.cfg file following include statements as 

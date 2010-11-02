@@ -185,7 +185,7 @@ static void zvm_mdc_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	        sprintf(msgline, "data %s.mdc\n%s\n%d:%d:%d\n", commafy(hostname), osname(os), mdcreads, mdcwrites, mdchitpct);
         	addtobuffer(msg, msgline);
-		sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
         	}
 
         freestrbuffer(msg);
@@ -350,7 +350,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
 
         freestrbuffer(monmsg);
 
-        if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+        if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
         clearstrbuffer(countdata);
 }
 

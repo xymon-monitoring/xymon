@@ -494,30 +494,30 @@ state_t *load_state(dispsummary_t **sumhead)
 			struct stat st;
 			FILE *fd;
 
-			xymondresult = BB_ETIMEOUT;
+			xymondresult = XYMONSEND_ETIMEOUT;
 			if (stat(dumpfn, &st) == 0) {
 				fd = fopen(dumpfn, "r");
 				if (fd) {
 					board = (char *)malloc(st.st_size + 1);
 					fread(board, 1, st.st_size, fd);
 					fclose(fd);
-					xymondresult = BB_OK;
+					xymondresult = XYMONSEND_OK;
 				}
 			}
 		}
 		else {
-			xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, BBTALK_TIMEOUT, sres);
+			xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, XYMON_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
 		}
 	}
 	else {
-		xymondresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres);
+		xymondresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, XYMON_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 	}
 
 	freesendreturnbuf(sres);
 
-	if ((xymondresult != BB_OK) || (board == NULL) || (*board == '\0')) {
+	if ((xymondresult != XYMONSEND_OK) || (board == NULL) || (*board == '\0')) {
 		errprintf("xymond status-board not available, code %d\n", xymondresult);
 		return NULL;
 	}

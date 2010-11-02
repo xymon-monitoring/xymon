@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet"))) {
 			include2 = "netinclude";
 		}
-		else if (strcmp(argv[argi], "--bbdisp") == 0) {
+		else if ((strcmp(argv[argi], "--web") == 0) || (strcmp(argv[argi], "--bbdisp") == 0)) {
 			include2 = "dispinclude";
 		}
 		else if (*argv[argi] != '-') {

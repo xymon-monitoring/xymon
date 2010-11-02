@@ -37,16 +37,16 @@ static void load_hoststatus()
 
 	sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", conncolumn);
 	sres = newsendreturnbuf(1, NULL);
-	res = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
-	if (res == BB_OK) connstatus = getsendreturnstr(sres, 1);
+	res = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
+	if (res == XYMONSEND_OK) connstatus = getsendreturnstr(sres, 1);
 
-	if ((res == BB_OK) && testcolumn) {
+	if ((res == XYMONSEND_OK) && testcolumn) {
 		sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", testcolumn);
-		res = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
-		if (res == BB_OK) teststatus = getsendreturnstr(sres, 1);
+		res = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
+		if (res == XYMONSEND_OK) teststatus = getsendreturnstr(sres, 1);
 	}
 
-	if (res != BB_OK) {
+	if (res != XYMONSEND_OK) {
 		errprintf("Cannot fetch Xymon status, ignoring --no-down\n");
 		connstatus = NULL;
 		teststatus = NULL;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 			include2 = "netinclude";
 			onlypreferredentry = 0;
 		}
-		else if (strcmp(argv[argi], "--bbdisp") == 0) {
+		else if ((strcmp(argv[argi], "--web") == 0) || (strcmp(argv[argi], "--bbdisp") == 0)) {
 			include2 = "dispinclude";
 			onlypreferredentry = 1;
 		}

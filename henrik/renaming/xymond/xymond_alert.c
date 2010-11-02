@@ -273,7 +273,7 @@ void load_checkpoint(char *filename)
 
 	sprintf(statuscmd, "hobbitdboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
 	sres = newsendreturnbuf(1, NULL);
-	sendmessage(statuscmd, NULL, BBTALK_TIMEOUT, sres);
+	sendmessage(statuscmd, NULL, XYMON_TIMEOUT, sres);
 	statusbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 

@@ -34,7 +34,7 @@ static char rcsid[] = "$Id$";
 
 int showenadis = 1;
 int usejsvalidation = 1;
-int newnkconfig = 1;
+int newcritconfig = 1;
 
 typedef struct hinf_t {
 	char *name;
@@ -76,7 +76,7 @@ static int fetch_status(char *hostname)
 
 	sres = newsendreturnbuf(1, NULL);
 	sprintf(xymoncmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
-	if (sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}
 	else {
@@ -123,7 +123,7 @@ static int fetch_status(char *hostname)
 
 
 	sprintf(xymoncmd, "schedule");
-	if (sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}
 	else {
@@ -172,7 +172,7 @@ static int fetch_status(char *hostname)
 		char *boln, *eoln;
 
 		sprintf(xymoncmd, "clientlog %s section=uname,osversion,clientversion", hostname);
-		if (sendmessage(xymoncmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+		if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 			return 1;
 		}
 		else {
@@ -690,7 +690,7 @@ static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 }
 
 
-char *generate_info(char *hostname, char *nkconfigfn)
+char *generate_info(char *hostname, char *critconfigfn)
 {
 	strbuffer_t *infobuf;
 	char l[MAX_LINE_LEN];
@@ -814,21 +814,21 @@ char *generate_info(char *hostname, char *nkconfigfn)
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 	}
 
-	if (newnkconfig) {
+	if (newcritconfig) {
 		/* Load the critical.cfg file and get the alerts for this host */
 		int i;
 		char *key;
-		nkconf_t *nkrec;
+		critconf_t *nkrec;
 		int firstrec = 1;
 
-		load_nkconfig(nkconfigfn);
+		load_critconfig(critconfigfn);
 		for (i=0; (i < testcount); i++) {
 			key = (char *)malloc(strlen(hostname) + strlen(tnames[i].name) + 2);
 			sprintf(key, "%s|%s", hostname, tnames[i].name);
-			nkrec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
+			nkrec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
 			if (!nkrec) continue;
 			if (firstrec) {
-				addtobuffer(infobuf, "<tr><th align=left>NK alerts:</th>");
+				addtobuffer(infobuf, "<tr><th align=left>Critical alerts:</th>");
 				firstrec = 0;
 			}
 			else {
@@ -838,8 +838,8 @@ char *generate_info(char *hostname, char *nkconfigfn)
 			sprintf(l, "<td align=left>%s:", tnames[i].name);
 			addtobuffer(infobuf, l);
 
-			if (nkrec->nktime && *nkrec->nktime) {
-				sprintf(l, " %s", timespec_text(nkrec->nktime));
+			if (nkrec->crittime && *nkrec->crittime) {
+				sprintf(l, " %s", timespec_text(nkrec->crittime));
 				addtobuffer(infobuf, l);
 			}
 			else addtobuffer(infobuf, " 24x7");
@@ -858,7 +858,7 @@ char *generate_info(char *hostname, char *nkconfigfn)
 	else {
 		val = bbh_item(hostwalk, BBH_NK);
 		if (val) {
-			sprintf(l, "<tr><th align=left>NK Alerts:</th><td align=left>%s", val); 
+			sprintf(l, "<tr><th align=left>Critical Alerts:</th><td align=left>%s", val); 
 			addtobuffer(infobuf, l);
 
 			val = bbh_item(hostwalk, BBH_NKTIME);
@@ -871,7 +871,7 @@ char *generate_info(char *hostname, char *nkconfigfn)
 			addtobuffer(infobuf, "</td></tr>\n");
 		}
 		else {
-			addtobuffer(infobuf, "<tr><th align=left>NK alerts:</th><td align=left>None</td></tr>\n");
+			addtobuffer(infobuf, "<tr><th align=left>Critical alerts:</th><td align=left>None</td></tr>\n");
 		}
 	}
 

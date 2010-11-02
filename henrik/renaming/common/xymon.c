@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 
 int main(int argc, char *argv[])
 {
-	int timeout = BBTALK_TIMEOUT;
+	int timeout = XYMON_TIMEOUT;
 	int result = 1;
 	int argi;
 	int showhelp = 0;

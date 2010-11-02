@@ -174,7 +174,7 @@ host_t *init_host(char *hostname, int issummary,
 		  char *comment, char *description,
 		  int ip1, int ip2, int ip3, int ip4, 
 		  int dialup, double warnpct, int warnstops, char *reporttime,
-		  char *alerts, int nktime, char *waps,
+		  char *alerts, int crittime, char *waps,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests)
 {
 	host_t 		*newhost = (host_t *) calloc(1, sizeof(host_t));
@@ -197,7 +197,7 @@ host_t *init_host(char *hostname, int issummary,
 	newhost->reportwarnlevel = warnpct;
 	newhost->reportwarnstops = warnstops;
 	newhost->reporttime = (reporttime ? strdup(reporttime) : NULL);
-	if (alerts && nktime) {
+	if (alerts && crittime) {
 		newhost->alerts = strdup(alerts);
 	}
 	else {
@@ -257,7 +257,7 @@ host_t *init_host(char *hostname, int issummary,
 	}
 
 	newhost->parent = NULL;
-	newhost->nobb2 = 0;
+	newhost->nonongreen = 0;
 	newhost->next = NULL;
 
 	/* Summary hosts don't go into the host list */
@@ -413,9 +413,9 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 }
 
 
-xymongen_page_t *load_bbhosts(char *pgset)
+xymongen_page_t *load_layout(char *pgset)
 {
-	FILE 	*bbhosts;
+	FILE 	*hostsfile;
 	strbuffer_t *inbuf;
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
@@ -431,14 +431,14 @@ xymongen_page_t *load_bbhosts(char *pgset)
 
 	load_hostnames(xgetenv("HOSTSCFG"), "dispinclude", fqdn);
 
-	dbgprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
+	dbgprintf("load_layout(pgset=%s)\n", textornull(pgset));
 
 	/*
 	 * load_hostnames() picks up the hostname definitions, but not the page
 	 * layout. So we will scan the file again, this time doing the layout.
 	 */
-	bbhosts = stackfopen(xgetenv("HOSTSCFG"), "r", NULL);
-	if (bbhosts == NULL) {
+	hostsfile = stackfopen(xgetenv("HOSTSCFG"), "r", NULL);
+	if (hostsfile == NULL) {
 		errprintf("Cannot open the HOSTSCFG file '%s'\n", xgetenv("HOSTSCFG"));
 		return NULL;
 	}
@@ -465,7 +465,7 @@ xymongen_page_t *load_bbhosts(char *pgset)
 	while (stackfgets(inbuf, "dispinclude")) {
 		sanitize_input(inbuf, 0, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
-		dbgprintf("load_bbhosts: -- got line '%s'\n", STRBUF(inbuf));
+		dbgprintf("load_layout: -- got line '%s'\n", STRBUF(inbuf));
 
 		if (strncmp(STRBUF(inbuf), pagetag, strlen(pagetag)) == 0) {
 			getnamelink(STRBUF(inbuf), &name, &link);
@@ -568,7 +568,7 @@ xymongen_page_t *load_bbhosts(char *pgset)
 		}
 		else if (sscanf(STRBUF(inbuf), "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			void *bbhost = NULL;
-			int dialup, nobb2, nktime = 1;
+			int dialup, nonongreen, crittime = 1;
 			double warnpct = reportwarnlevel;
 			int warnstops = reportwarnstops;
 			char *displayname, *clientalias, *comment, *description;
@@ -603,10 +603,10 @@ xymongen_page_t *load_bbhosts(char *pgset)
 			targetpagecount = 0;
 
 			dialup = (bbh_item(bbhost, BBH_FLAG_DIALUP) != NULL);
-			nobb2 = (bbh_item(bbhost, BBH_FLAG_NOBB2) != NULL);
+			nonongreen = (bbh_item(bbhost, BBH_FLAG_NOBB2) != NULL);
 
 			alertlist = bbh_item(bbhost, BBH_NK);
-			bbval = bbh_item(bbhost, BBH_NKTIME); if (bbval) nktime = within_sla(bbh_item(bbhost, BBH_HOLIDAYS), bbval, 0);
+			bbval = bbh_item(bbhost, BBH_NKTIME); if (bbval) crittime = within_sla(bbh_item(bbhost, BBH_HOLIDAYS), bbval, 0);
 
 			onwaplist = bbh_item(bbhost, BBH_WML);
 			nopropyellowlist = bbh_item(bbhost, BBH_NOPROPYELLOW);
@@ -669,7 +669,7 @@ xymongen_page_t *load_bbhosts(char *pgset)
 							    comment, description,
 							    ip1, ip2, ip3, ip4, dialup, 
 							    warnpct, warnstops, reporttime,
-							    alertlist, nktime, onwaplist,
+							    alertlist, crittime, onwaplist,
 							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist);
 					if (curgroup != NULL) {
 						curgroup->hosts = curhost;
@@ -692,13 +692,13 @@ xymongen_page_t *load_bbhosts(char *pgset)
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, warnstops, reporttime,
-									    alertlist, nktime, onwaplist,
+									    alertlist, crittime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);
 				}
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
-				curhost->nobb2 = nobb2;
+				curhost->nonongreen = nonongreen;
 			}
 			else if (targetpagecount) {
 
@@ -739,7 +739,7 @@ xymongen_page_t *load_bbhosts(char *pgset)
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, warnstops, reporttime,
-									    alertlist, nktime, onwaplist,
+									    alertlist, crittime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);
 
@@ -801,7 +801,7 @@ xymongen_page_t *load_bbhosts(char *pgset)
 		}
 	}
 
-	stackfclose(bbhosts);
+	stackfclose(hostsfile);
 	freestrbuffer(inbuf);
 
 	return toppage;

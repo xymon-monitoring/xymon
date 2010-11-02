@@ -99,7 +99,7 @@ int add_ldap_test(testitem_t *t)
 	if (badurl) {
 		errprintf("Invalid LDAP URL %s\n", t->testspec);
 		req->skiptest = 1;
-		req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+		req->ldapstatus = XYMON_LDAP_BINDFAIL;
 		req->output = "Cannot parse LDAP URL";
 	}
 
@@ -112,7 +112,7 @@ int add_ldap_test(testitem_t *t)
 	if (basecheck->open == 0) {
 		/* Cannot connect to LDAP port. */
 		req->skiptest = 1;
-		req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+		req->ldapstatus = XYMON_LDAP_BINDFAIL;
 		req->output = "Cannot connect to server";
 	}
 

@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 	newverreq = (char *)malloc(100+strlen(newversion));
 	sprintf(newverreq, "download %s.tar", newversion);
 	dbgprintf("Sending command to Xymon: %s\n", newverreq);
-	if ((bbstat = sendmessage(newverreq, NULL, BBTALK_TIMEOUT, sres)) != BB_OK) {
+	if ((bbstat = sendmessage(newverreq, NULL, XYMON_TIMEOUT, sres)) != XYMONSEND_OK) {
 		errprintf("Cannot fetch new client tarfile: Status %d\n", bbstat);
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		freesendreturnbuf(sres);

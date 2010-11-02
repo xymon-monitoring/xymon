@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Xymon, responsible for loading the host-,     */
-/* page-, and column-links defined in the BB directory structure.             */
+/* This is a library module for Xymon, implementing IP-address based access   */
+/* controls.                                                                  */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

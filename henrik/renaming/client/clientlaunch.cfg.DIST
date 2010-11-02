@@ -26,12 +26,3 @@
 	LOGFILE $XYMONCLIENTHOME/logs/xymonclient.log
 	INTERVAL 5m
 
-# ORCA data collector. This is an experimental add-on module,
-# the data sent by this module are not processed by Xymon 4.2.
-[orcadata]
-	DISABLED
-	ENVFILE $XYMONCLIENTHOME/etc/xymonclient.cfg
-	CMD $XYMONCLIENTHOME/bin/orcahobbit --orca=/usr/local/orca/orcallator
-	LOGFILE $XYMONCLIENTHOME/logs/xymonclient.log
-	INTERVAL 5m
-
