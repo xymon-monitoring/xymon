@@ -96,7 +96,7 @@ char *timespec_text(char *spec)
 	static char *wkdays = NULL;
 	static strbuffer_t *result = NULL;
 	char *sCopy;
-	char *sItem;
+	char *p;
 
 	if (result == NULL) result = newstrbuffer(0);
 	clearstrbuffer(result);
@@ -119,12 +119,35 @@ char *timespec_text(char *spec)
 		sprintf(wkdays, "%s-%s", daynames[1], daynames[5]);
 	}
 
-	sCopy = strdup(spec);
-	sItem = strtok(sCopy, ",");
-	while (sItem) {
+
+	p = sCopy = strdup(spec);
+	do {
+		char *s1, *s2, *s3, *s4, *s5;
+		char *days, *starttime, *endtime, *columns, *cause;
 		char *oneday, *dtext;
-		int daysdone = 0, firstday = 1;
-		oneday = sItem;
+		int daysdone = 0, firstday = 1, ecount, causelen;
+
+		/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
+
+		s1 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+		s2 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+		s3 = p; p += strcspn(p, ":;,"); 
+		if ((*p == ',') || (*p == ';') || (*p == '\0')) { 
+			if (*p != '\0') { *p = '\0'; p++; }
+			days = s1; starttime = s2; endtime = s3;
+			columns = "*";
+			cause = strdup("Planned downtime");
+		}
+		else if (*p == ':') {
+			*p = '\0'; p++; 
+			s4 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+			s5 = p; p += strcspn(p, ",;"); if (*p != '\0') { *p = '\0'; p++; }
+			days = s2; starttime = s3; endtime = s4;
+			columns = s1;
+			getescapestring(s5, &cause, &causelen);
+		}
+
+		oneday = days;
 
 		while (!daysdone) {
 			switch (*oneday) {
@@ -141,14 +164,31 @@ char *timespec_text(char *spec)
 			}
 
 			if (!firstday) addtobuffer(result, "/");
+
 			addtobuffer(result, dtext);
 			oneday++;
 			firstday = 0;
 		}
 
-		sItem = strtok(NULL, ",");
-		if (sItem) addtobuffer(result, ", ");
-	}
+		addtobuffer(result, ":"); addtobuffer(result, starttime);
+
+		addtobuffer(result, ":"); addtobuffer(result, endtime);
+
+		addtobuffer(result, " (status:"); 
+		if (strcmp(columns, "*") == 0)
+			addtobuffer(result, "All");
+		else
+			addtobuffer(result, columns); 
+		addtobuffer(result, ")");
+
+		if (cause) { 
+			addtobuffer(result, " (cause:"); 
+			addtobuffer(result, cause); 
+			addtobuffer(result, ")");
+			xfree(cause);
+		}
+	} while (*p);
+
 	xfree(sCopy);
 
 	return STRBUF(result);
