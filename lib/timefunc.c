@@ -96,8 +96,7 @@ char *timespec_text(char *spec)
 	static char *wkdays = NULL;
 	static strbuffer_t *result = NULL;
 	char *sCopy;
-	char *sItem;
-	char *itmstbuf;
+	char *p;
 
 	if (result == NULL) result = newstrbuffer(0);
 	clearstrbuffer(result);
@@ -120,33 +119,32 @@ char *timespec_text(char *spec)
 		sprintf(wkdays, "%s-%s", daynames[1], daynames[5]);
 	}
 
-	sCopy = strdup(spec);
-	sItem = strtok_r(sCopy, ",", &itmstbuf);
-	while (sItem) {
-		char *tok, *onebuf, *e1, *e2, *e3, *e4, *e5;
+
+	p = sCopy = strdup(spec);
+	do {
+		char *s1, *s2, *s3, *s4, *s5;
 		char *days, *starttime, *endtime, *columns, *cause;
 		char *oneday, *dtext;
-		int daysdone = 0, firstday = 1, ecount;
+		int daysdone = 0, firstday = 1, ecount, causelen;
 
-		e1 = e2 = e3 = e4 = e5 = NULL; ecount = 0;
-		e1 = strtok_r(sItem, ":", &onebuf);
-		if (e1) { ecount++; e2 = strtok_r(NULL, ":", &onebuf); }
-		if (e2) { ecount++; e3 = strtok_r(NULL, ":", &onebuf); }
-		if (e3) { ecount++; e4 = strtok_r(NULL, ":", &onebuf); }
-		if (e4) { ecount++; e5 = strtok_r(NULL, ":", &onebuf); }
- 		if (e5) { ecount++; }
+		/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
 
-		if (ecount == 3) {
-			/* Old format: e1=day, e2 = starttime, e3 = endtime */
-			days = e1; starttime = e2; endtime = e3; columns = NULL; cause = NULL;
+		s1 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+		s2 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+		s3 = p; p += strcspn(p, ":;,"); 
+		if ((*p == ',') || (*p == ';') || (*p == '\0')) { 
+			if (*p != '\0') { *p = '\0'; p++; }
+			days = s1; starttime = s2; endtime = s3;
+			columns = "*";
+			cause = strdup("Planned downtime");
 		}
-		else if (ecount == 5) {
-			columns = e1; days = e2; starttime = e3; endtime = e4; cause = e5;
-		}
-		else {
-			addtobuffer(result, "[Malformed timespec]");
-			sItem = NULL;
-			continue;
+		else if (*p == ':') {
+			*p = '\0'; p++; 
+			s4 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+			s5 = p; p += strcspn(p, ",;"); if (*p != '\0') { *p = '\0'; p++; }
+			days = s2; starttime = s3; endtime = s4;
+			columns = s1;
+			getescapestring(s5, &cause, &causelen);
 		}
 
 		oneday = days;
@@ -173,20 +171,24 @@ char *timespec_text(char *spec)
 		}
 
 		addtobuffer(result, ":"); addtobuffer(result, starttime);
-		addtobuffer(result, ":"); addtobuffer(result, endtime);
-		if (columns) { 
-			addtobuffer(result, " (status:"); 
-			if (strcmp(columns, "*") == 0)
-				addtobuffer(result, "All");
-			else
-				addtobuffer(result, columns); 
-			addtobuffer(result, ")");
-		}
-		if (cause) { addtobuffer(result, " (cause:"); addtobuffer(result, cause); addtobuffer(result, ")"); }
 
-		sItem = strtok_r(NULL, ",", &itmstbuf);
-		if (sItem) addtobuffer(result, ", ");
-	}
+		addtobuffer(result, ":"); addtobuffer(result, endtime);
+
+		addtobuffer(result, " (status:"); 
+		if (strcmp(columns, "*") == 0)
+			addtobuffer(result, "All");
+		else
+			addtobuffer(result, columns); 
+		addtobuffer(result, ")");
+
+		if (cause) { 
+			addtobuffer(result, " (cause:"); 
+			addtobuffer(result, cause); 
+			addtobuffer(result, ")");
+			xfree(cause);
+		}
+	} while (*p);
+
 	xfree(sCopy);
 
 	return STRBUF(result);
