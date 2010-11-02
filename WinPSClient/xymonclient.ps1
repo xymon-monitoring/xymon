@@ -26,6 +26,8 @@ $xymondir = (get-item $MyInvocation.InvocationName).DirectoryName
 # -----------------------------------------------------------------------------------
 
 $XymonClientVersion = "$Id$"
+# detect if we're running as 64 or 32 bit
+$XymonRegKey = $(if([System.IntPtr]::Size -eq 8) { "HKLM:\SOFTWARE\Wow6432Node\XymonPSClient" } else { "HKLM:\SOFTWARE\XymonPSClient" })
 
 function SetIfNot($obj,$key,$value)
 {
@@ -35,11 +37,7 @@ function SetIfNot($obj,$key,$value)
 function XymonInit
 {
 	# Get reg key first, then override if not set
-	if([System.IntPtr]::Size -eq 8) { # detect if we're running as 64 or 32 bit
-		$script:XymonSettings = Get-ItemProperty -ErrorAction:SilentlyContinue HKLM:\SOFTWARE\Wow6432Node\XymonPSClient
-	} else {
-		$script:XymonSettings = Get-ItemProperty -ErrorAction:SilentlyContinue HKLM:\SOFTWARE\XymonPSClient
-	}
+	$script:XymonSettings = Get-ItemProperty -ErrorAction:SilentlyContinue $XymonRegKey
 	if($script:XymonSettings -eq $null) {
 		$script:XymonSettings = New-Object Object
 	} else {
@@ -467,7 +465,7 @@ function XymonLogCheckFile([string]$file,$sizemax=0)
     $s = get-item $file
     $nowpos = $f.length
 	$savepos = 0
-	if($script:logfilepos.$($file) -ne $null) { $savepos = $script:logfilepos.$($file) }
+	if($script:logfilepos.$($file) -ne $null) { $savepos = $script:logfilepos.$($file)[0] }
 	if($nowpos -lt $savepos) {$savepos = 0} # log file rolled over??
     #"Save: {0}  Len: {1} Diff: {2} Max: {3} Write: {4}" -f $savepos,$nowpos, ($nowpos-$savepos),$sizemax,$s.LastWriteTime
     if($nowpos -gt $savepos) { # must be some more content to check
@@ -483,7 +481,12 @@ function XymonLogCheckFile([string]$file,$sizemax=0)
 		if($buf -ne $null) { $buf }
 		#"Save2: {0}  Pos: {1} Blen: {2} Len: {3} Enc($charsize): {4}" -f $savepos,$f.Position,$buf.length,$nowpos,$enc.EncodingName
     }
-	$script:logfilepos.$($file) = $nowpos # save for next loop
+	if($script:logfilepos.$($file) -ne $null) {
+		$script:logfilepos.$($file) = $script:logfilepos.$($file)[1..6]
+	} else {
+		$script:logfilepos.$($file) = @(0,0,0,0,0,0) # save for next loop
+	}
+	$script:logfilepos.$($file) += $nowpos # save for next loop
 }
 
 function XymonPorts
@@ -795,34 +798,49 @@ function XymonClientInstall([string]$scriptname)
 	if((Get-Item -ea:SilentlyContinue HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters) -eq $null) {
 		$newitm = New-Item HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters
 	}
-	if([System.IntPtr]::Size -eq 8) { # detect if we're running as 64 or 32 bit
-		if((Get-Item -ea:SilentlyContinue HKLM:\SOFTWARE\Wow6432Node\XymonPSClient) -eq $null) {
-			$cfgitm = New-Item HKLM:\SOFTWARE\Wow6432Node\XymonPSClient
-		}
-	} else {
-		if((Get-Item -ea:SilentlyContinue HKLM:\SOFTWARE\XymonPSClient) -eq $null) {
-			$cfgitm = New-Item HKLM:\SOFTWARE\XymonPSClient
-		}
+	if((Get-Item -ea:SilentlyContinue $XymonRegKey) -eq $null) {
+		$cfgitm = New-Item $XymonRegKey
 	}
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters Application "$PSHOME\powershell.exe"
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Parameters" "-nonInteractive -ExecutionPolicy Unrestricted -File $scriptname"
 	Set-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$xymonsvcname\Parameters "Application Default" $xymondir
 }
+
 ##### Main code #####
 XymonInit
 $ret = 0
-# check for install/start/stop for service management
+# check for install/set/unset/config/start/stop for service management
 if($args -eq "Install") {
 	XymonClientInstall (Resolve-Path $MyInvocation.InvocationName)
 	$ret=1
 }
+if($args[0] -eq "set") {
+	if($args.count -eq 3) {
+		$cfgitm = Set-ItemProperty $XymonRegKey $args[1] $args[2]
+	} else {
+		"Error: need 2 args to SET"
+	}
+	return
+}
+if($args[0] -eq "unset") {
+	if($args.count -eq 2) {
+		$cfgitm = Remove-ItemProperty $XymonRegKey $args[1]
+	} else {
+		"Error: need property to UNSET"
+	}
+	return
+}
+if($args[0] -eq "config") {
+	Get-ItemProperty $XymonRegKey | select * -exclude PS* | fl
+	return
+}
 if($args -eq "Start") {
 	if((get-service $xymonsvcname).Status -ne "Running") { start-service $xymonsvcname }
-	$ret=1
+	return
 }
 if($args -eq "Stop") {
 	if((get-service $xymonsvcname).Status -eq "Running") { stop-service $xymonsvcname }
-	$ret=1
+	return
 }
 if($ret) {return}
 
