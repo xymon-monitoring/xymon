@@ -607,6 +607,8 @@ function XymonIISSites
 			}
 		}
 	}
+	clear-variable objChild
+	clear-variable objSites
 }
 
 function XymonWMIOperatingSystem
@@ -751,8 +753,12 @@ function XymonReportConfig
 	$HaveCmd
 	foreach($v in @("wanteddisks", "wantedlogs", "XymonClientVersion", "clientname" )) {
 		""; "$v"
-		Invoke-Expression "`$$v"
+		(Get-Variable $v).Value
 	}
+	"[XymonPSClientInfo]"
+	get-process -id $PID
+	"[XymonPSClientThreadStats]"
+	(get-process -id $PID).Threads
 }
 
 function XymonClientSections {
@@ -775,7 +781,6 @@ function XymonClientSections {
 	XymonUptime
 	XymonWho
 	XymonUsers
-	XymonIISSites
 
 	XymonWMIOperatingSystem
 	XymonWMIComputerSystem
@@ -784,6 +789,7 @@ function XymonClientSections {
 	XymonWMIMemory
 	XymonWMILogicalDisk
 
+	$XymonIISSitesCache
 	$XymonWMIQuickFixEngineeringCache
 	$XymonWMIProductCache
 
@@ -857,7 +863,7 @@ while ($running -eq $true) {
 		$loopcount = 0
 		$XymonWMIQuickFixEngineeringCache = XymonWMIQuickFixEngineering
 		$XymonWMIProductCache = XymonWMIProduct
-		[GC]::Collect()
+		$XymonIISSitesCache = XymonIISSites
 	}
 
 	XymonCollectInfo
@@ -874,5 +880,6 @@ while ($running -eq $true) {
 	$newconfig = XymonSend $clout $script:XymonSettings.servers
 	XymonClientConfig $newconfig
 	$delay = ($script:XymonSettings.loopinterval - (Get-Date).Subtract($starttime).TotalSeconds)
+	[GC]::Collect() # run every time
 	if ($delay -gt 0) { sleep $delay }
 }
