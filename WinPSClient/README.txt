@@ -47,22 +47,54 @@ To start or stop the service run:
 
 The Windows Service manager can also be used to manage the "XymonPSClient" service.
 
+Client configuration
+====================
+Client configuration can be controlled by registry keys as detailed. These are
+stored in HKLM:\SOFTWARE\XymonPSClient on 32-bit systems and 
+HKLM:\SOFTWARE\Wow6432Node\XymonPSClient (32-bit universe) on 64-bit
+(note %NAME% is environment variable)
+
+Name                : default (comment)
+clientfqdn          : 1 (add default domain name to client name)
+clientlower         : 1 (force client name to lowercase)
+clientname          : %COMPUTERNAME%
+clientbbwinmembug   : 1
+clientremotecfgexec : 0 (execute client-local.cfg section as PS script)
+clientconfigfile    : %TEMP%\xymonconfig.cfg (file to save client-local.cfg section)
+clientlogfile       : %TEMP%\xymonclient.log (basic debugging info)
+loopinterval        : 300  (seconds)
+maxlogage           : 60  (minutes - for event log)
+slowscanrate        : 72   (number of cycles before refresh slow changing but expensive to obtain data)
+servers             : xymonhost (server to report to - space delimited if multiple values)
+reportevt           : 1 (report from event logs - can be slow when auditing enabled)
+
+Note: if "servers" is a DNS name with multiple A records, client will attempt to report to all IP addresses.
+
+To set a value:
+
+./xymonclient.ps1 set NAME VALUE
+e.g.
+./xymonclient.ps1 set servers "192.168.1.10 192.168.1.12"
+
+To unset/clear a value:
+
+./xymonclient.ps1 unset NAME
+
+To show config:
+
+./xymonclient.ps1 config
 
 Uninstalling the service
 ========================
 
 To remove the service, first make sure it has been stopped. From a
-commandline windows (cmd.exe), run:
+powershell run:
 
-	net stop XymonClient
+	stop-service XymonPSClient
 
-You can then either use "InstSrv.exe" from the Resource Kit:
+then use the "sc" utility:
 
-	C:\Program Files\Windows Resource Kits\Tools\instsrv.exe XymonClient REMOVE
-
-or the "sc" utility:
-
-	sc delete XymonClient
+	sc.exe delete XymonPSClient
 
 
 Talking to the Xymon Server
