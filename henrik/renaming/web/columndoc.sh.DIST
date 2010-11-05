@@ -6,5 +6,5 @@ export QUERY_STRING
 
 . @BBHOME@/etc/cgioptions.cfg
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/csvinfo.cgi $CGI_HOBBITCOLUMN_OPTS
+@RUNTIMEDEFS@ exec @BBHOME@/bin/csvinfo.cgi $CGI_COLUMNDOC_OPTS
 

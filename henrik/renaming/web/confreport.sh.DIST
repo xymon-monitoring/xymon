@@ -5,5 +5,5 @@
 # Install this script in your webservers' cgi-bin directory
 
 . @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/confreport.cgi $CGI_HOBBITCONFREPORT_OPTS
+@RUNTIMEDEFS@ exec @BBHOME@/bin/confreport.cgi $CGI_CONFREPORT_OPTS
 

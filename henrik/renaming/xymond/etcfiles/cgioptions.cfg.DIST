@@ -12,7 +12,7 @@ XYMONENV=@BBHOME@/etc/xymonserver.cfg
 # csvinfo.cgi
 CGI_CSVINFO_OPTS="--env=$XYMONENV"
 # columndoc.sh (uses csvinfo.cgi)
-CGI_HOBBITCOLUMN_OPTS="--env=$XYMONENV --color=purple --hffile=columndoc"
+CGI_COLUMNDOC_OPTS="--env=$XYMONENV --color=purple --hffile=columndoc"
 # findhost.cgi
 CGI_FINDHOST_OPTS="--env=$XYMONENV"
 
@@ -25,13 +25,13 @@ CGI_HIST_OPTS="--env=$XYMONENV --no-svcid"
 CGI_SVCHIST_OPTS="--env=$XYMONENV --no-svcid"
 
 # showgraph.cgi options
-CGI_HOBBITGRAPH_OPTS="--env=$XYMONENV"
+CGI_SHOWGRAPH_OPTS="--env=$XYMONENV"
 
 # showgraph.cgi options
 CGI_HOSTGRAPHS_OPTS="--env=$XYMONENV"
 
 # confreport.cgi options
-CGI_HOBBITCONFREPORT_OPTS="--env=$XYMONENV"
+CGI_CONFREPORT_OPTS="--env=$XYMONENV"
 
 # datepage.cgi options
 CGI_DATEPAGE_OPTS="--env=$XYMONENV --url=/xymon/periodic"
