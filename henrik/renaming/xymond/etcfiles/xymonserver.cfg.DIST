@@ -1,6 +1,6 @@
 # NB : Even though it might look like a shell-script, it is NOT.
 #
-XYMONSERVERROOT="@XYMONTOPDIR@"			# Where Xymon is installed - holds the server and bbvar sub-dirs.
+XYMONSERVERROOT="@XYMONTOPDIR@"			# Where Xymon is installed
 XYMONSERVERLOGS="@XYMONLOGDIR@"			# Directory for server logs. The xymon user must have write-access here.
 XYMONCLIENTHOME="@XYMONTOPDIR@/client"		# XYMONHOME directory for the client
 
@@ -30,7 +30,7 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@XYMONHOME@/b
 ##### Normally you do not need to modify anything below this point #####
 
 # General settings
-XYMONDPORT="1984"		# Portnumber where xymond/bbd listens
+XYMONDPORT="1984"		# Portnumber where xymond listens
 XYMSRV="$XYMONSERVERIP"		# IP of a single Xymon server
 XYMSERVERS=""			# IP of multiple Xymon servers. If used, XYMSRV must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
@@ -54,7 +54,7 @@ MACHINEADDR="$XYMONSERVERIP"		# This systems IP-address
 
 # URL's generated/used by xymongen
 XYMONWEBHOST="http://$XYMONSERVERWWWNAME"	# Just the host part of the URL - http://www.foo.com
-XYMONWEBHOSTURL="$XYMONWEBHOST$XYMONSERVERWWWURL"	# Prefix for all static Xymon pages - http://www.foo.com/bb
+XYMONWEBHOSTURL="$XYMONWEBHOST$XYMONSERVERWWWURL"	# Prefix for all static Xymon pages - http://www.foo.com/xymon
 XYMONWEBHTMLLOGS="$XYMONWEBHOSTURL/html"	# Prefix for the Xymon HTML logs (only if XYMONLOGSTATUS=STATIC)
 XYMONWEB="$XYMONSERVERWWWURL"			# Xymon URL prefix without the host part
 XYMONSKIN="$XYMONSERVERWWWURL/gifs"		# Xymon URL prefix for the GIF files
@@ -75,7 +75,7 @@ XYMON="$XYMONHOME/bin/xymon"			# The 'xymon' client program
 XYMONGEN="$XYMONHOME/bin/xymongen"		# The xymongen program
 
 # Server specific directories
-XYMONVAR="@XYMONVAR@"				# The bbvar directory holds all monitoring data
+XYMONVAR="@XYMONVAR@"				# The xymonvar directory holds all monitoring data
 XYMONACKDIR="$XYMONVAR/acks"			# Acknowledge event info stored here (xymond_alert)
 XYMONDATADIR="$XYMONVAR/data"			# Data files go here (xymond_filestore --data)
 XYMONDISABLEDDIR="$XYMONVAR/disabled"		# Enabled/disabled flags are stored here (xymond_filestore --enadis)

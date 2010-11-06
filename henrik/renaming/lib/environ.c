@@ -35,6 +35,7 @@ const static struct {
 	{ "XYMONSERVERCGIURL", "/xymon-cgi" },
 	{ "XYMONSERVERSECCGIURL", "/xymon-cgisecure" },
 	{ "XYMONNETWORK", "" },
+	{ "BBLOCATION", "" },
 	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:"BUILD_HOME"/bin" },
 	{ "XYMONDPORT", "1984" },
 	{ "XYMSRV", "$XYMONSERVERIP" },
