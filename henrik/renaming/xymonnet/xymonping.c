@@ -498,10 +498,6 @@ int main(int argc, char *argv[])
 			}
 			else if (n == 0) {
 				/* Time out */
-				if ((getcurrenttime(NULL) >= cutoff) && (sendidx >= hostcount)) {
-					/* No more to send and the read timed out - so we're done */
-					pending = 0;
-				}
 				sendnow = SENDLIMIT;
 			}
 			else {
@@ -520,6 +516,11 @@ int main(int argc, char *argv[])
 					pending -= count;
 					sendnow += count; if (sendnow > SENDLIMIT) sendnow = SENDLIMIT;
 				}
+			}
+
+			/* See if we have hit the timeout */
+			if ((getcurrenttime(NULL) >= cutoff) && (sendidx >= hostcount)) {
+				pending = 0;
 			}
 		}
 
