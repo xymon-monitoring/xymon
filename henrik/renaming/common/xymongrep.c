@@ -180,6 +180,7 @@ int main(int argc, char *argv[])
 
 	/* Each network test tagged with NET:locationname */
 	p = xgetenv("XYMONNETWORK");
+	if ((p == NULL) || (strlen(p) == 0)) p = xgetenv("BBLOCATION");
 	if (p && strlen(p)) netstring = strdup(p);
 
 	hwalk = first_host();

@@ -2178,7 +2178,11 @@ int main(int argc, char *argv[])
 	/* Setup SEGV handler */
 	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
 
-	if (xgetenv("XYMONNETWORK")) location = strdup(xgetenv("XYMONNETWORK"));
+	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
+		location = strdup(xgetenv("XYMONNETWORK"));
+	else if (xgetenv("BBLOCATION") && (strlen(xgetenv("BBLOCATION")) > 0))
+		location = strdup(xgetenv("BBLOCATION"));
+
 	if (pingcolumn && (strlen(pingcolumn) == 0)) pingcolumn = xgetenv("PINGCOLUMN");
 	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
@@ -2190,7 +2194,7 @@ int main(int argc, char *argv[])
 		printf("Command: xymonnet");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment XYMONNETWORK='%s'\n", textornull(xgetenv("XYMONNETWORK")));
+		printf("Environment XYMONNETWORK='%s'\n", textornull(location));
 		printf("Environment CONNTEST='%s'\n", textornull(xgetenv("CONNTEST")));
 		printf("Environment IPTEST_2_CLEAR_ON_FAILED_CONN='%s'\n", textornull(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")));
 		printf("\n");

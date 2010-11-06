@@ -215,7 +215,10 @@ int main(int argc, char *argv[])
                 return 1;
         }
 
-        if (xgetenv("XYMONNETWORK")) location = strdup(xgetenv("XYMONNETWORK"));
+	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
+		location = strdup(xgetenv("XYMONNETWORK"));
+	else if (xgetenv("BBLOCATION") && (strlen(xgetenv("BBLOCATION")) > 0))
+		location = strdup(xgetenv("BBLOCATION"));
 
 	init_timestamp();
 	combo_start();
