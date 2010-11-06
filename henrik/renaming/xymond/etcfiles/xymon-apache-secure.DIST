@@ -2,7 +2,7 @@
 #
 # Add this to your Apache configuration, it makes
 # the Xymon webpages and cgi-scripts available in the
-# "@BBHOSTURL@" and "@BBCGIURL@" URLs.
+# "@XYMONHOSTURL@" and "@XYMONCGIURL@" URLs.
 
 
 # NB: The "Alias" line below must NOT be used if you have
@@ -11,14 +11,14 @@
 #
 #          DocumentRoot @INSTALLWWWDIR@
 
-Alias @BBHOSTURL@/  "@INSTALLWWWDIR@/"
+Alias @XYMONHOSTURL@/  "@INSTALLWWWDIR@/"
 <Directory "@INSTALLWWWDIR@">
     Options Indexes FollowSymLinks Includes MultiViews
     Order allow,deny
     Allow from all
 </Directory>
 
-ScriptAlias @BBCGIURL@/ "@CGIDIR@/"
+ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
@@ -26,7 +26,7 @@ ScriptAlias @BBCGIURL@/ "@CGIDIR@/"
     Allow from all
 </Directory>
 
-ScriptAlias @SECUREBBCGIURL@/ "@SECURECGIDIR@/"
+ScriptAlias @SECUREXYMONCGIURL@/ "@SECURECGIDIR@/"
 <Directory "@SECURECGIDIR@">
     AllowOverride None
     Options ExecCGI Includes

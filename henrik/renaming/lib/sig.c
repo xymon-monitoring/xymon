@@ -46,7 +46,7 @@ static void sigsegv_handler(int signum)
 
 	/* 
 	 * Try to fork a child to send in an alarm message.
-	 * If the fork fails, then just attempt to exec() the BB command
+	 * If the fork fails, then just attempt to exec() the XYMON command
 	 */
 	if (fork() <= 0) {
 		execl(signal_xymoncmd, "xymon-signal", signal_xymondserver, signal_msg, NULL);
@@ -91,18 +91,18 @@ void setup_signalhandler(char *programname)
 	lim.rlim_cur = RLIM_INFINITY;
 	setrlimit(RLIMIT_CORE, &lim);
 
-	if (xgetenv("BB") == NULL) return;
-	if (xgetenv("BBDISP") == NULL) return;
+	if (xgetenv("XYMON") == NULL) return;
+	if (xgetenv("XYMSRV") == NULL) return;
 
 	/*
 	 * Used inside signal-handler. Must be setup in
 	 * advance.
 	 */
-	strcpy(signal_xymoncmd, xgetenv("BB"));
-	strcpy(signal_xymondserver, xgetenv("BBDISP"));
-	strcpy(signal_tmpdir, xgetenv("BBTMP"));
+	strcpy(signal_xymoncmd, xgetenv("XYMON"));
+	strcpy(signal_xymondserver, xgetenv("XYMSRV"));
+	strcpy(signal_tmpdir, xgetenv("XYMONTMP"));
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
-		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "BBDISPLAY"), programname);
+		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "XYMSERVERS"), programname);
 
 	sigaction(SIGSEGV, &sa, NULL);
 	sigaction(SIGILL, &sa, NULL);

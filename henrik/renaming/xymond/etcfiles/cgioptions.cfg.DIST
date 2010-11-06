@@ -7,7 +7,7 @@
 # So the usual "include" and "directory" definitions 
 # will not work in this file.
 
-XYMONENV=@BBHOME@/etc/xymonserver.cfg
+XYMONENV=@XYMONHOME@/etc/xymonserver.cfg
 
 # csvinfo.cgi
 CGI_CSVINFO_OPTS="--env=$XYMONENV"

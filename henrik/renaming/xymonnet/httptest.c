@@ -388,7 +388,7 @@ void add_http_test(testitem_t *t)
 		{
 			FILE *contentfd;
 			char contentfn[PATH_MAX];
-			sprintf(contentfn, "%s/content/%s.substring", xgetenv("BBHOME"), commafy(t->host->hostname));
+			sprintf(contentfn, "%s/content/%s.substring", xgetenv("XYMONHOME"), commafy(t->host->hostname));
 			contentfd = fopen(contentfn, "r");
 			if (contentfd) {
 				char l[MAX_LINE_LEN];

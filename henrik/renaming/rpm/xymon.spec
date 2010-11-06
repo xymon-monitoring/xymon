@@ -41,18 +41,18 @@ rm -rf $RPM_BUILD_ROOT
         ENABLESSL=y \
         ENABLELDAP=y \
         ENABLELDAPSSL=y \
-        BBUSER=xymon \
-        BBTOPDIR=/usr/lib/xymon \
-        BBVAR=/var/lib/xymon \
-        BBHOSTURL=/xymon \
+        XYMONUSER=xymon \
+        XYMONTOPDIR=/usr/lib/xymon \
+        XYMONVAR=/var/lib/xymon \
+        XYMONHOSTURL=/xymon \
         CGIDIR=/usr/lib/xymon/cgi-bin \
-        BBCGIURL=/xymon-cgi \
+        XYMONCGIURL=/xymon-cgi \
         SECURECGIDIR=/usr/lib/xymon/cgi-secure \
-        SECUREBBCGIURL=/xymon-seccgi \
+        SECUREXYMONCGIURL=/xymon-seccgi \
         HTTPDGID=apache \
-        BBLOGDIR=/var/log/xymon \
-        BBHOSTNAME=localhost \
-        BBHOSTIP=127.0.0.1 \
+        XYMONLOGDIR=/var/log/xymon \
+        XYMONHOSTNAME=localhost \
+        XYMONHOSTIP=127.0.0.1 \
         MANROOT=/usr/share/man \
         INSTALLBINDIR=/usr/lib/xymon/server/bin \
         INSTALLETCDIR=/etc/xymon \
@@ -83,7 +83,7 @@ rm -rf $RPM_BUILD_ROOT
 	rmdir $RPM_BUILD_ROOT/usr/lib/xymon/client/logs
 	cd $RPM_BUILD_ROOT/usr/lib/xymon/client && ln -sf ../../../../var/log/xymon logs
 	mv $RPM_BUILD_ROOT/usr/lib/xymon/client/etc/xymonclient.cfg /tmp/xymonclient.cfg.$$
-	cat /tmp/xymonclient.cfg.$$ | sed -e 's!^BBDISP=.*!include /var/run/xymonclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$RPM_BUILD_ROOT/usr/lib/xymon/client/etc/xymonclient.cfg
+	cat /tmp/xymonclient.cfg.$$ | sed -e 's!^XYMSRV=.*!include /var/run/xymonclient-runtime.cfg!' | grep -v "^XYMSERVERS=" >$RPM_BUILD_ROOT/usr/lib/xymon/client/etc/xymonclient.cfg
 	rm /tmp/xymonclient.cfg.$$
 
 %clean

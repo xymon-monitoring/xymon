@@ -237,7 +237,7 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 	myhost = hostinfo(hostname);
 	if (!myhost) return NULL;
 
-	sprintf(hostrrddir, "%s/%s", xgetenv("BBRRDS"), hostname);
+	sprintf(hostrrddir, "%s/%s", xgetenv("XYMONRRDS"), hostname);
 	chdir(hostrrddir);
 	stack_opendir(".");
 

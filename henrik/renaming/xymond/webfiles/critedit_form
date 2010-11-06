@@ -15,8 +15,8 @@
        <FORM METHOD="GET" ACTION="criticaleditor.sh">
           <TABLE BORDER=0 WIDTH="80%" SUMMARY="Host lookup">
 	     <TR>
-	        <TD>Host:&nbsp;<INPUT NAME="HOSTNAME" TYPE="TEXT" SIZE=30 VALUE="&BBHOST"></TD>
-		<TD>Test:&nbsp;<INPUT NAME="SERVICE" TYPE="TEXT" SIZE=10 VALUE="&BBSVC"></TD>
+	        <TD>Host:&nbsp;<INPUT NAME="HOSTNAME" TYPE="TEXT" SIZE=30 VALUE="&XYMWEBHOST"></TD>
+		<TD>Test:&nbsp;<INPUT NAME="SERVICE" TYPE="TEXT" SIZE=10 VALUE="&XYMWEBSVC"></TD>
 		<TD>
 		   <INPUT TYPE="SUBMIT" NAME="Find" VALUE="Search" ALT="Find record">
 		   <INPUT TYPE="SUBMIT" NAME="Next" VALUE="Next" ALT="Next record">

@@ -61,10 +61,10 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	xymond_channel_t *newch;
 	unsigned int bufsz;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
-	char *bbh = xgetenv("BBHOME");
+	char *bbh = xgetenv("XYMONHOME");
 
 	if ( (bbh == NULL) || (stat(bbh, &st) == -1) ) {
-		errprintf("BBHOME not defined, or points to invalid directory - cannot continue.\n");
+		errprintf("XYMONHOME not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
 

@@ -124,17 +124,17 @@ static void loadtests(void)
 	strbuffer_t *inbuf;
 
 	if (!fn) {
-		fn = (char *)malloc(1024 + strlen(xgetenv("BBHOME")));
+		fn = (char *)malloc(1024 + strlen(xgetenv("XYMONHOME")));
 		*fn = '\0';
 	}
 
-	sprintf(fn, "%s/etc/combo.cfg", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/combo.cfg", xgetenv("XYMONHOME"));
 	if ((stat(fn, &st) == 0) && (st.st_mtime == lastupdate)) return;
 	lastupdate = st.st_mtime;
 
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
-		errprintf("Cannot open %s/combo.cfg\n", xgetenv("BBHOME"));
+		errprintf("Cannot open %s/combo.cfg\n", xgetenv("XYMONHOME"));
 		*fn = '\0';
 		return;
 	}

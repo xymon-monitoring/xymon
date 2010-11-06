@@ -34,11 +34,11 @@ fi
 
 set $XYMONSERVERS
 if [ $# -eq 1 ]; then
-	echo "BBDISP=\"$XYMONSERVERS\"" >/var/run/xymonclient-runtime.cfg
-	echo "BBDISPLAYS=\"\"" >>/var/run/xymonclient-runtime.cfg
+	echo "XYMSRV=\"$XYMONSERVERS\"" >/var/run/xymonclient-runtime.cfg
+	echo "XYMSERVERS=\"\"" >>/var/run/xymonclient-runtime.cfg
 else
-	echo "BBDISP=\"0.0.0.0\"" >/var/run/xymonclient-runtime.cfg
-	echo "BBDISPLAYS=\"$XYMONSERVERS\"" >>/var/run/xymonclient-runtime.cfg
+	echo "XYMSRV=\"0.0.0.0\"" >/var/run/xymonclient-runtime.cfg
+	echo "XYMSERVERS=\"$XYMONSERVERS\"" >>/var/run/xymonclient-runtime.cfg
 fi
 
 if [ "$CLIENTHOSTNAME" != "" ]; then

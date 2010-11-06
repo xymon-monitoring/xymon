@@ -174,7 +174,7 @@ void print_colheaders(FILE *output, RbtHandle rbcolumns)
 
 		fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
 		fprintf(output, " <A HREF=\"%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n",
-			columnlink(colname), xgetenv("MKBBCOLFONT"), colname);
+			columnlink(colname), xgetenv("XYMONPAGECOLFONT"), colname);
 	}
 	fprintf(output, "</TR>\n");
 	fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", colcount);
@@ -197,7 +197,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	/* Print the priority */
 	fprintf(output, "<TD ALIGN=LEFT VALIGN=TOP WIDTH=25%% NOWRAP>");
 	if (firsthost) 
-		fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("MKBBROWFONT"), prio);
+		fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("XYMONPAGEROWFONT"), prio);
 	else 
 		fprintf(output, "&nbsp;");
 	fprintf(output, "</TD>\n");
@@ -243,7 +243,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 					prio, 
 					htmlgroupstr, htmlextrastr);
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s %s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-					xgetenv("BBSKIN"), 
+					xgetenv("XYMONSKIN"), 
 					dotgiffilename(column->color, (column->acktime > 0), (age > oldlimit)),
 					colorname(column->color), htmlalttag, htmlackstr,
 					xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));

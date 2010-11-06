@@ -98,7 +98,7 @@ static void load_rrddefs(void)
 
 	rrddeftree = rbtNew(name_compare);
 
-	sprintf(fn, "%s/etc/rrddefinitions.cfg", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/rrddefinitions.cfg", xgetenv("XYMONHOME"));
 	fd = stackfopen(fn, "r", NULL);
 	if (fd == NULL) goto loaddone;
 
@@ -219,8 +219,8 @@ int main(int argc, char *argv[])
 
 	save_errbuf = 0;
 
-	if ((rrddir == NULL) && xgetenv("BBRRDS")) {
-		rrddir = strdup(xgetenv("BBRRDS"));
+	if ((rrddir == NULL) && xgetenv("XYMONRRDS")) {
+		rrddir = strdup(xgetenv("XYMONRRDS"));
 	}
 
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%d", xgetenv("BBTMP"), getpid());
+	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%d", xgetenv("XYMONTMP"), getpid());
 	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);

@@ -119,21 +119,21 @@ void load_all_links(void)
 	if (helpskin) { xfree(helpskin); helpskin = NULL; }
 	if (columndocurl) { xfree(columndocurl); columndocurl = NULL; }
 
-	if (xgetenv("BBNOTESSKIN")) notesskin = strdup(xgetenv("BBNOTESSKIN"));
+	if (xgetenv("XYMONNOTESSKIN")) notesskin = strdup(xgetenv("XYMONNOTESSKIN"));
 	else { 
-		notesskin = (char *) malloc(strlen(xgetenv("BBWEB")) + strlen("/notes") + 1);
-		sprintf(notesskin, "%s/notes", xgetenv("BBWEB"));
+		notesskin = (char *) malloc(strlen(xgetenv("XYMONWEB")) + strlen("/notes") + 1);
+		sprintf(notesskin, "%s/notes", xgetenv("XYMONWEB"));
 	}
 
-	if (xgetenv("BBHELPSKIN")) helpskin = strdup(xgetenv("BBHELPSKIN"));
+	if (xgetenv("XYMONHELPSKIN")) helpskin = strdup(xgetenv("XYMONHELPSKIN"));
 	else { 
-		helpskin = (char *) malloc(strlen(xgetenv("BBWEB")) + strlen("/help") + 1);
-		sprintf(helpskin, "%s/help", xgetenv("BBWEB"));
+		helpskin = (char *) malloc(strlen(xgetenv("XYMONWEB")) + strlen("/help") + 1);
+		sprintf(helpskin, "%s/help", xgetenv("XYMONWEB"));
 	}
 
 	if (xgetenv("COLUMNDOCURL")) columndocurl = strdup(xgetenv("COLUMNDOCURL"));
 
-	strcpy(dirname, xgetenv("BBNOTES"));
+	strcpy(dirname, xgetenv("XYMONNOTESDIR"));
 	load_links(dirname, notesskin);
 
 	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */

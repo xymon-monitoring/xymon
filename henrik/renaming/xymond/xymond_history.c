@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
-	if (xgetenv("BBALLHISTLOG")) save_allevents = (strcmp(xgetenv("BBALLHISTLOG"), "TRUE") == 0);
-	if (xgetenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("BBHOSTHISTLOG"), "TRUE") == 0);
+	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
+	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
 	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -98,16 +98,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (xgetenv("BBHIST") && (histdir == NULL)) {
-		histdir = strdup(xgetenv("BBHIST"));
+	if (xgetenv("XYMONHISTDIR") && (histdir == NULL)) {
+		histdir = strdup(xgetenv("XYMONHISTDIR"));
 	}
 	if (histdir == NULL) {
 		errprintf("No history directory given, aborting\n");
 		return 1;
 	}
 
-	if (save_histlogs && (histlogdir == NULL) && xgetenv("BBHISTLOGS")) {
-		histlogdir = strdup(xgetenv("BBHISTLOGS"));
+	if (save_histlogs && (histlogdir == NULL) && xgetenv("XYMONHISTLOGS")) {
+		histlogdir = strdup(xgetenv("XYMONHISTLOGS"));
 	}
 	if (save_histlogs && (histlogdir == NULL)) {
 		errprintf("No history-log directory given, aborting\n");
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 		xfree(savelist);
 	}
 
-	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("BBSERVERLOGS"));
+	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
 	{
 		FILE *pidfd = fopen(pidfn, "w");
 		if (pidfd) {

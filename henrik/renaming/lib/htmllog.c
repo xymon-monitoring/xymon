@@ -44,17 +44,15 @@ static void hostsvc_setup(void)
 	if (setup_done) return;
 
 	getenv_default("NONHISTS", "info,trends,graphs", NULL);
-	getenv_default("BBREL", "Xymon", NULL);
-	getenv_default("BBRELDATE", VERSION, NULL);
 	getenv_default("CGIBINURL", "/cgi-bin", &cgibinurl);
-	getenv_default("MKBBACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);
-	getenv_default("MKBBCOLFONT", "COLOR=\"#87a9e5\" SIZE=-1\"", &colfont);
-	getenv_default("MKBBROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
-	getenv_default("BBWEB", "/bb", NULL);
+	getenv_default("XYMONPAGEACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);
+	getenv_default("XYMONPAGECOLFONT", "COLOR=\"#87a9e5\" SIZE=-1\"", &colfont);
+	getenv_default("XYMONPAGEROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
+	getenv_default("XYMONWEB", "/bb", NULL);
 	{
-		char *dbuf = malloc(strlen(xgetenv("BBWEB")) + 6);
-		sprintf(dbuf, "%s/gifs", xgetenv("BBWEB"));
-		getenv_default("BBSKIN", dbuf, NULL);
+		char *dbuf = malloc(strlen(xgetenv("XYMONWEB")) + 6);
+		sprintf(dbuf, "%s/gifs", xgetenv("XYMONWEB"));
+		getenv_default("XYMONSKIN", dbuf, NULL);
 		xfree(dbuf);
 	}
 
@@ -118,7 +116,7 @@ static void textwithcolorimg(char *msg, FILE *output)
 				recent = (strncmp(p + 1 + strlen(colorname(color)), "-recent", 7) == 0);
 
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
-                                                        xgetenv("BBSKIN"), dotgiffilename(color, acked, !recent),
+                                                        xgetenv("XYMONSKIN"), dotgiffilename(color, acked, !recent),
 							colorname(color),
                                                         xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 
@@ -172,7 +170,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/trends_form", xgetenv("BBHOME"));
+		sprintf(formfn, "%s/web/trends_form", xgetenv("XYMONHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -195,7 +193,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/critack_form", xgetenv("BBHOME"));
+		sprintf(formfn, "%s/web/critack_form", xgetenv("XYMONHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -576,21 +574,21 @@ char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 	if (documentationurl) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
 			urldoclink(documentationurl, hostname),
-			doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			doctarget, xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else if ((hostlinkurl = hostlink(hostname)) != NULL) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
-			hostlinkurl, doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			hostlinkurl, doctarget, xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else if (defaultlink) {
 		/* Provide a link to the page where this host lives */
 		snprintf(result, sizeof(result), "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>",
-			xgetenv("BBWEB"), defaultlink, doctarget,
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			xgetenv("XYMONWEB"), defaultlink, doctarget,
+			xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else {
 		snprintf(result, sizeof(result), "<FONT %s>%s</FONT>",
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 
 	return result;

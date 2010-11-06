@@ -61,7 +61,7 @@
                                                                 next
 
 
-  xymongen_page_t structure holds data about one BB page - the first record in this list
+  xymongen_page_t structure holds data about one Xymon page - the first record in this list
   represents the top-level bb.html page. Other pages in the list are defined
   using the hosts.cfg "page" directive and access via the page->next link.
 
@@ -79,7 +79,7 @@
   hostlist_t is a simple 1-dimensional list of all the hosts, for easier
   traversal of the host list.
 
-  entry_t holds the data for a given test (basically, a file in $BBLOGS).
+  entry_t holds the data for a given test (basically, a file in $XYMONRAWSTATUSDIR).
   test-names are not stored directly, but in the linked "xymongen_col_t" list.
   "age" is the "Status unchanged in X" text from the logfile. "oldage" is
   a boolean indicating if "age" is more than 1 day. "alert" means this 
@@ -220,7 +220,7 @@ typedef struct dispsummary_t {
 	struct dispsummary_t	*next;
 } dispsummary_t;
 
-enum tooltipuse_t { TT_BBONLY, TT_ALWAYS, TT_NEVER};
+enum tooltipuse_t { TT_STDONLY, TT_ALWAYS, TT_NEVER};
 
 extern enum tooltipuse_t tooltipuse;
 extern xymongen_page_t	*pagehead;

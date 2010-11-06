@@ -3,15 +3,15 @@
 PROGRAMS = xymonproxy xymoncgimsg.cgi
 
 PROXYOBJS = xymonproxy.o
-BBCGIOBJS = xymoncgimsg.o
+MSGCGIOBJS = xymoncgimsg.o
 
 all: $(PROGRAMS)
 
 xymonproxy: $(PROXYOBJS)
 	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-xymoncgimsg.cgi: $(BBCGIOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymoncgimsg.cgi: $(MSGCGIOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(MSGCGIOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ################################################
 # Default compilation rules

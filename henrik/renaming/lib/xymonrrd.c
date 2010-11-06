@@ -250,7 +250,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 			 strlen(fmt)        +
 			 3*svcurllen        +
 			 strlen(rrdservicename) +
-			 strlen(xgetenv("BBSKIN"));
+			 strlen(xgetenv("XYMONSKIN"));
 
 	if (rrdurl == NULL) {
 		rrdurlsize = rrdparturlsize;
@@ -290,7 +290,7 @@ static char *xymon_graph_text(char *hostname, char *dispname, char *service, int
 			if (bgcolor != -1) sprintf(svcurl+strlen(svcurl), "&amp;color=%s", colorname(bgcolor));
 			sprintf(svcurl+strlen(svcurl), "&amp;graph_start=%d&amp;graph_end=%d", (int)starttime, (int)endtime);
 
-			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
+			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("XYMONSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);

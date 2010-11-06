@@ -31,9 +31,9 @@ my $cursection = "";
 sub processmessage;
 
 
-# Get the BB and BBDISP environment settings.
-$bb = $ENV{"BB"} || die "BB not defined";
-$bbdisp = $ENV{"BBDISP"} || die "BBDISP not defined";
+# Get the XYMON and XYMSRV environment settings.
+$bb = $ENV{"XYMON"} || die "XYMON not defined";
+$bbdisp = $ENV{"XYMSRV"} || die "XYMSRV not defined";
 
 
 # Main routine. 

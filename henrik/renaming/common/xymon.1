@@ -43,10 +43,10 @@ first line of the merged message.
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
-message is sent to all of the servers listed in the BBDISPLAYS
+message is sent to all of the servers listed in the XYMSERVERS
 environment variable.
 
-Usually, a client will use "$BBDISP" for the \fBRECIPIENT\fR 
+Usually, a client will use "$XYMSRV" for the \fBRECIPIENT\fR 
 parameter, as this is defined for the client scripts
 to automatically contain the correct value.
 
@@ -168,7 +168,7 @@ automatic recovery action should be initiated.
 .IP "config FILENAME"
 Retrieve one of the Xymon configuration files from the
 server. This command allows a client to pull files from the
-$BBHOME/etc/ directory on the server, allowing for semi-automatic
+$XYMONHOME/etc/ directory on the server, allowing for semi-automatic
 updates of the client configuration. Since the configuration files 
 are designed to have a common file for the configuration of all hosts 
 in the system - and this is in fact the recommended way of configuring 
@@ -376,7 +376,7 @@ To cancel a previously scheduled command, \fB"schedule cancel JOBID"\fR can be
 used. JOBID is a number provided as the first item in the output from the schedule list.
 
 .IP "notes FILENAME"
-The message text will be stored in $BBHOME/notes/FILENAME which is then used as
+The message text will be stored in $XYMONHOME/notes/FILENAME which is then used as
 hyperlinks from hostnames or column names. This requires that the "storenotes" 
 task is enabled in tasks.cfg (it is disabled by default). FILENAME 
 cannot contain any directory path - these are stripped automatically.
@@ -411,34 +411,34 @@ displayed on the status webpage.
 Send a normal status message to the Xymon server, using the
 standard Xymon protocol on TCP port 1984:
 .br
-   $ $BB $BBDISP "status www,foo,com.http green \(gadate\(ga Web OK"
+   $ $XYMON $XYMSRV "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Send the same status message, but using HTTP protocol via the
 webserver\(aqs xymoncgimsg.cgi script:
 .br
-   $ $BB http://bb.foo.com/cgi-bin/xymoncgimsg.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
+   $ $XYMON http://bb.foo.com/cgi-bin/xymoncgimsg.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Use "query" message to determine the color of the "www" test, and
 restart Apache if it is red:
 .br
 
-   $ WWW=\(ga$BB $BBDISP "query www,foo,com.www" | awk \(aq{print $1}\(aq\(ga
+   $ WWW=\(ga$XYMON $XYMSRV "query www,foo,com.www" | awk \(aq{print $1}\(aq\(ga
    $ if [ "$WWW" = "red" ]; then /etc/init.d/apache restart; fi
 
 Use "config" message to update a local mytest.cfg file (but only
 if we get a response):
 .br
 
-   $ $BB $BBDISP "config mytest.cfg" >/tmp/mytest.cfg.new
+   $ $XYMON $XYMSRV "config mytest.cfg" >/tmp/mytest.cfg.new
    $ if [ -s /tmp/mytest.cfg.new ]; then 
-       mv /tmp/mytest.cfg.new $BBHOME/etc/mytest.cfg
+       mv /tmp/mytest.cfg.new $XYMONHOME/etc/mytest.cfg
      fi
 
 Send a very large status message that has been built in the
 file "statusmsg.txt". Instead of providing it on the command-line, 
 pass it via stdin to the xymon command:
 
-   $ cat statusmsg.txt | $BB $BBDISP "@"
+   $ cat statusmsg.txt | $XYMON $XYMSRV "@"
 
 .SH "SEE ALSO"
 combostatus(1), hosts.cfg(5), xymonserver.cfg(5), xymon(7)

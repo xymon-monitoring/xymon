@@ -22,7 +22,7 @@ COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
 all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
 xymonclient.cfg: xymonclient.cfg.DIST
-	cat xymonclient.cfg.DIST | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >xymonclient.cfg
+	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' >xymonclient.cfg
 	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST
@@ -57,27 +57,27 @@ netbsd-meminfo: netbsd-meminfo.c
 	$(CC) -o $@ netbsd-meminfo.c
 
 install:
-	if test ! -d $(INSTALLROOT)$(BBHOME)     ; then mkdir -p $(INSTALLROOT)$(BBHOME)     ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/bin ; then mkdir -p $(INSTALLROOT)$(BBHOME)/bin ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/etc ; then mkdir -p $(INSTALLROOT)$(BBHOME)/etc ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(BBHOME)/tmp ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/logs; then mkdir -p $(INSTALLROOT)$(BBHOME)/logs; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/ext ; then mkdir -p $(INSTALLROOT)$(BBHOME)/ext ; fi
-	if test ! -f $(INSTALLROOT)$(BBHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(BBHOME)/etc/ ; fi
-	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
-	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
-	chmod ugo+x $(INSTALLROOT)$(BBHOME)/bin/*
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)     ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)     ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/bin ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/bin ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/etc ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/etc ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/tmp ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/logs; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/logs; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext ; fi
+	if test ! -f $(INSTALLROOT)$(XYMONHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/ ; fi
+	cp -fp runclient.sh $(INSTALLROOT)$(XYMONHOME)
+	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(XYMONHOME)/bin/
+	chmod ugo+x $(INSTALLROOT)$(XYMONHOME)/bin/*
 
-	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg
-	../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(BBHOME)/etc/xymonclient.cfg
+	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(XYMONHOME)/etc/clientlaunch.cfg
+	../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/xymonclient.cfg
 ifndef PKGBUILD
-	chown -R $(BBUSER) $(INSTALLROOT)$(BBHOME)
+	chown -R $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)
 endif
 
 install-localclient:
-	cp -fp xymond_client $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp xymond_client $(INSTALLROOT)$(XYMONHOME)/bin/
 ifndef PKGBUILD
-	chown $(BBUSER) $(INSTALLROOT)$(BBHOME)/bin/xymond_client
+	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)/bin/xymond_client
 endif
 
 clean:

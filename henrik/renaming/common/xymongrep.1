@@ -36,10 +36,10 @@ Remove the "testip", "dialup", "INSIDESLA" and "OUTSIDESLA" tags
 from the output.
 
 .IP "--test-untagged"
-When using the BBLOCATION environment variable to test
+When using the XYMONNETWORK environment variable to test
 only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
-So only hosts that have a NET:$BBLOCATION tag will be
+So only hosts that have a NET:$XYMONNETWORK tag will be
 tested.
 .br
 With this option, hosts with no NET: tag are included
@@ -100,14 +100,14 @@ Typically it will look somewhat like this:
 
 Instead of the grep, we will use xymongrep. It then becomes
 
-   $BBHOME/bin/xymongrep TESTNAME | ... code to handle test
+   $XYMONHOME/bin/xymongrep TESTNAME | ... code to handle test
 
 which is simpler, less error-prone and more efficient.
 
 .SH ENVIRONMENT VARIABLES
-.IP BBLOCATION
+.IP XYMONNETWORK
 If set, xymongrep outputs only lines from hosts.cfg that have
-a matching NET:$BBLOCATION setting.
+a matching NET:$XYMONNETWORK setting.
 .sp
 .IP HOSTSCFG
 Filename for the Xymon

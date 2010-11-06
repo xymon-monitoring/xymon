@@ -128,7 +128,7 @@ void addnetpeer(char *peername)
 		}
 	}
 
-	if (peerport == 0) peerport = atoi(xgetenv("BBPORT"));
+	if (peerport == 0) peerport = atoi(xgetenv("XYMONDPORT"));
 
 	newpeer = calloc(1, sizeof(xymon_peer_t));
 	newpeer->peername = strdup(peername);

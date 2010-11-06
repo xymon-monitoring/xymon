@@ -239,7 +239,7 @@ void process_clientdata(conn_t *conn)
 	 */
 
 	char *mptr, *databegin, *msgbegin;
-	int portnum = atoi(xgetenv("BBPORT"));
+	int portnum = atoi(xgetenv("XYMONDPORT"));
 
 	databegin = strchr(STRBUF(conn->msgbuf), '\n');
 	if (!databegin || (STRBUFLEN(conn->msgbuf) == 0)) {
@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
 				pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
 
 				ip = strchr(pullstr, '=');
-				port = atoi(xgetenv("BBPORT"));
+				port = atoi(xgetenv("XYMONDPORT"));
 
 				if (!ip) {
 					ip = strdup(bbh_item(hostwalk, BBH_IP));

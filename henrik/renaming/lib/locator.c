@@ -240,7 +240,7 @@ int locator_init(char *ipport)
 		portnum = atoi(p+1);
 	}
 	else {
-		portnum = atoi(xgetenv("BBPORT"));
+		portnum = atoi(xgetenv("XYMONDPORT"));
 	}
 
 	memset(&myaddr, 0, sizeof(myaddr));

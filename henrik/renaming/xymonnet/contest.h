@@ -151,7 +151,7 @@ typedef struct tcptest_t {
 typedef struct {
 	tcptest_t	*tcptest;
 
-	char		*url;			/* URL to request, stripped of BB'isms */
+	char		*url;			/* URL to request, stripped of configuration artefacts */
 	int		parsestatus;
 	weburl_t	weburl;
 

@@ -33,7 +33,7 @@ static int havecolumntree = 0;
 
 char *hostpage_link(host_t *host)
 {
-	/* Provide a link to the page where this host lives, relative to BBWEB */
+	/* Provide a link to the page where this host lives, relative to XYMONWEB */
 
 	static char pagelink[PATH_MAX];
 	char tmppath[PATH_MAX];

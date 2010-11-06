@@ -13,20 +13,20 @@
 SRCDIR=/usr/local/bb/bbvar/rrd
 
 # These are the Xymon directories and filenames
-BBHOME=@BBHOME@
-HOSTSCFG=$BBHOME/etc/hosts.cfg
-DSTDIR=@BBVAR@/rrd		# Where the files should end up.
+XYMONHOME=@XYMONHOME@
+HOSTSCFG=$XYMONHOME/etc/hosts.cfg
+DSTDIR=@XYMONVAR@/rrd		# Where the files should end up.
 
 OP="cp -f"			# Set to "mv" to move files instead of copying
 
 # You should not need to modify anything below here.
 
-export SRCDIR BBHOME HOSTSCFG DSTDIR OP
+export SRCDIR XYMONHOME HOSTSCFG DSTDIR OP
 
 
 cd $SRCDIR || (echo "Cannot go to $SRCDIR"; exit 0)
 
-$BBHOME/bin/xymoncfg |grep "^[0-9]" | awk '{print $2}' | \
+$XYMONHOME/bin/xymoncfg |grep "^[0-9]" | awk '{print $2}' | \
 while read HOST
 do
 	HOSTC=`echo $HOST | sed 's/\./,/g'`

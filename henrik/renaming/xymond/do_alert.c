@@ -284,7 +284,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 
 		if (recip->format == ALERTFORM_TEXT) {
 			sprintf(info, "See %s%s\n", 
-				xgetenv("BBWEBHOST"), 
+				xgetenv("XYMONWEBHOST"), 
 				hostsvcurl(alert->hostname, alert->testname, 0));
 			addtobuffer(buf, info);
 		}
@@ -343,7 +343,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(buf, msg_data(alert->pagemessage));
 		addtobuffer(buf, "\n");
 		sprintf(info, "See %s%s\n", 
-			xgetenv("BBWEBHOST"),
+			xgetenv("XYMONWEBHOST"),
 			hostsvcurl(alert->hostname, alert->testname, 0));
 		addtobuffer(buf, info);
 		MEMUNDEFINE(info);

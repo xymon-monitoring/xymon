@@ -102,8 +102,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (passfile == NULL) {
-		passfile = (char *)malloc(strlen(xgetenv("BBHOME")) + 20);
-		sprintf(passfile, "%s/etc/xymonpasswd", xgetenv("BBHOME"));
+		passfile = (char *)malloc(strlen(xgetenv("XYMONHOME")) + 20);
+		sprintf(passfile, "%s/etc/xymonpasswd", xgetenv("XYMONHOME"));
 	}
 
 	switch (parse_query()) {

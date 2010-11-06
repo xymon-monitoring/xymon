@@ -686,7 +686,7 @@ int main(int argc, char *argv[])
 					/* Exec the task */
 					char *cmd;
 					char **cmdargs = NULL;
-					static char bbsleepenv[20];
+					static char tasksleepenv[20],bbsleepenv[20];
 
 					/* Setup environment */
 					if (twalk->envfile) {
@@ -696,9 +696,10 @@ int main(int argc, char *argv[])
 						loadenv(expand_env(twalk->envfile), twalk->envarea);
 					}
 
-					/* Setup BBSLEEP to match the interval */
-					sprintf(bbsleepenv, "BBSLEEP=%d", twalk->interval);
-					putenv(bbsleepenv);
+					/* Setup TASKSLEEP to match the interval */
+					sprintf(tasksleepenv, "TASKSLEEP=%d", twalk->interval);
+					sprintf(bbsleepenv, "BBSLEEP=%d", twalk->interval);	/* For compatibility */
+					putenv(tasksleepenv); putenv(bbsleepenv);
 
 					/* Setup command line and arguments */
 					cmdargs = setup_commandargs(twalk->cmd, &cmd);
@@ -714,7 +715,7 @@ int main(int argc, char *argv[])
 					}
 
 					/* Go! */
-					dbgprintf("%s -> Running '%s', BBHOME=%s\n", twalk->key, cmd, xgetenv("BBHOME"));
+					dbgprintf("%s -> Running '%s', XYMONHOME=%s\n", twalk->key, cmd, xgetenv("XYMONHOME"));
 					execvp(cmd, cmdargs);
 
 					/* Should never go here */

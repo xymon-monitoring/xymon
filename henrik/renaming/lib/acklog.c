@@ -45,11 +45,11 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	cutoff = ( (maxminutes) ? (getcurrenttime(NULL) - maxminutes*60) : 0);
 	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
 
-	sprintf(acklogfilename, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
+	sprintf(acklogfilename, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 	acklog = fopen(acklogfilename, "r");
 	if (!acklog) {
 		/* BB compatible naming */
-		sprintf(acklogfilename, "%s/acklog", xgetenv("BBACKS"));
+		sprintf(acklogfilename, "%s/acklog", xgetenv("XYMONACKDIR"));
 		acklog = fopen(acklogfilename, "r");
 	}
 	if (!acklog) {
@@ -125,7 +125,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Show only the first 30 characters in message */
 			if (strlen(ackmsg) > 30) ackmsg[30] = '\0';
 
-			sprintf(ackfn, "%s/ack.%s", xgetenv("BBACKS"), hosttest);
+			sprintf(ackfn, "%s/ack.%s", xgetenv("XYMONACKDIR"), hosttest);
 
 			testname = strrchr(hosttest, '.');
 			if (testname) {
@@ -208,7 +208,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 			if (acks[num].color != -1) {
    				fprintf(output, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\"></TD>\n", 
-					xgetenv("BBSKIN"), 
+					xgetenv("XYMONSKIN"), 
 					dotgiffilename(acks[num].color, acks[num].ackvalid, 1));
 			}
 			else

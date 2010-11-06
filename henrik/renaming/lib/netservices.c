@@ -132,8 +132,8 @@ char *init_tcp_services(void)
 	MEMDEFINE(filename);
 
 	filename[0] = '\0';
-	if (xgetenv("BBHOME")) {
-		sprintf(filename, "%s/etc/", xgetenv("BBHOME"));
+	if (xgetenv("XYMONHOME")) {
+		sprintf(filename, "%s/etc/", xgetenv("XYMONHOME"));
 	}
 	strcat(filename, "protocols.cfg");
 

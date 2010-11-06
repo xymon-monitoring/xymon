@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	sprintf(dbfn, "%s/etc/%s", xgetenv("BBHOME"), srcdb);
+	sprintf(dbfn, "%s/etc/%s", xgetenv("XYMONHOME"), srcdb);
 	db = fopen(dbfn, "r");
 	if (db == NULL) {
 		char msg[PATH_MAX];

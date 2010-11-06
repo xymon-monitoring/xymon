@@ -2,6 +2,6 @@
 
 # This is the Xymon wrapper for the ghostlist CGI
 
-. @BBHOME@/etc/cgioptions.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/ghostlist.cgi $CGI_GHOSTS_OPTS
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/ghostlist.cgi $CGI_GHOSTS_OPTS
 

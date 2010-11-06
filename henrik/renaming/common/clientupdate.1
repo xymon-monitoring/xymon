@@ -15,7 +15,7 @@ server, the server responds with the section of the
 file that is relevant to this client. Included in this may be
 a "clientversion" value. The clientversion received from the server
 is compared against the current clientversion installed on the client, 
-as determined by the contents of the $BBHOME/etc/clientversion.cfg
+as determined by the contents of the $XYMONHOME/etc/clientversion.cfg
 file. If the two versions are not identical, clientupdate is
 launched to update the client installation.
 
@@ -34,7 +34,7 @@ Used internally during the update process, see \fBOPERATION\fR below.
 Used internally during the update process. This option causes
 the running clientupdate utility to delete itself - it is used
 during the update to purge a temporary copy of the clientupdate
-utility that is installed in $BBTMP.
+utility that is installed in $XYMONTMP.
 
 .SH USING CLIENTUPDATE IN XYMON
 To manage updating clients without having to logon to each server,
@@ -42,7 +42,7 @@ you can use the clientupdate utility. This is how you setup the
 release of a new client version.
 
 .IP "Create the new client"
-Setup the new client $BBHOME directory, e.g. by copying an existing
+Setup the new client $XYMONHOME directory, e.g. by copying an existing
 client installation to an empty directory and modifying it for your
 needs. It is a good idea to delete all files in the tmp/ and logs/
 directories, since there is no need to copy these over to all of
@@ -54,7 +54,7 @@ but the clientupdate utility cannot delete or rename files.
 .IP "Package the client"
 When your new client software is ready, create a tar-file of the 
 new client. All files in the tar archive must have file names 
-relative to the clients' $BBHOME (usually, ~xymon/client/).
+relative to the clients' $XYMONHOME (usually, ~xymon/client/).
 Save the tar file on the Xymon server in 
 ~xymon/server/download/somefile.tar.  Don't compress it.
 It is recommended that you use some sort of operating-system 
@@ -90,20 +90,20 @@ the next time, it will use the new client software.
 .IP "Re-exec step"
 The first step is when clientupdate is first invoked from the xymonclient.sh 
 script with the "--re-exec" option. This step copies the clientupdate
-program from $BBHOME/bin/ to a temporary file in the $BBTMP directory.
+program from $XYMONHOME/bin/ to a temporary file in the $XYMONTMP directory.
 This is to avoid conflicts when the update procedure installs a new
 version of the clientupdate utility itself. Upon completion of this
 step, the clientupdate utility automatically launches the next step
-by running the program from the file in $BBTMP.
+by running the program from the file in $XYMONTMP.
 
 .IP "Update step"
 The second step downloads the new client software from the Xymon server.
 The new software must be packed into a tar file, which clientupdate then
-unpacks into the $BBHOME directory.
+unpacks into the $XYMONHOME directory.
 
 .SH "ENVIRONMENT VARIABLES"
 clientupdate uses several of the standard Xymon environment
-variables, including \fBBBHOME\fR and \fBBBTMP\fR.
+variables, including \fBXYMONHOME\fR and \fBXYMONTMP\fR.
 
 .SH "SEE ALSO"
 xymon(7), xymon(1), client-local.cfg(5)

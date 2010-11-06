@@ -622,17 +622,17 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		t_next += strspn(t_next, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
 		savechar = *t_next; *t_next = '\0';
 
-		if (strcmp(t_start, "BBDATE") == 0) {
-			char *bbdatefmt = xgetenv("BBDATEFORMAT");
+		if ((strcmp(t_start, "XYMWEBDATE") == 0) || (strcmp(t_start, "BBDATE") == 0)) {
+			char *datefmt = xgetenv("XYMONDATEFORMAT");
 			char datestr[100];
 
 			MEMDEFINE(datestr);
 
 			/*
-			 * If no BBDATEFORMAT setting, use a format string that
+			 * If no XYMONDATEFORMAT setting, use a format string that
 			 * produces output similar to that from ctime()
 			 */
-			if (bbdatefmt == NULL) bbdatefmt = "%a %b %d %H:%M:%S %Y\n";
+			if (datefmt == NULL) datefmt = "%a %b %d %H:%M:%S %Y\n";
 
 			if (hostenv_reportstart != 0) {
 				char starttime[20], endtime[20];
@@ -649,34 +649,43 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				MEMUNDEFINE(starttime); MEMUNDEFINE(endtime);
 			}
 			else if (hostenv_snapshot != 0) {
-				strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&hostenv_snapshot));
+				strftime(datestr, sizeof(datestr), datefmt, localtime(&hostenv_snapshot));
 				fprintf(output, "%s", datestr);
 			}
 			else {
-				strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&now));
+				strftime(datestr, sizeof(datestr), datefmt, localtime(&now));
 				fprintf(output, "%s", datestr);
 			}
 
 			MEMUNDEFINE(datestr);
 		}
 
-		else if (strcmp(t_start, "BBBACKGROUND") == 0)  {
+		else if ((strcmp(t_start, "XYMWEBBACKGROUND") == 0) || (strcmp(t_start, "BBBACKGROUND") == 0)) {
 			fprintf(output, "%s", colorname(bgcolor));
 		}
-		else if (strcmp(t_start, "BBCOLOR") == 0)       fprintf(output, "%s", hostenv_color);
-		else if (strcmp(t_start, "BBSVC") == 0)         fprintf(output, "%s", hostenv_svc);
-		else if (strcmp(t_start, "BBHOST") == 0)        fprintf(output, "%s", hostenv_host);
-		else if (strcmp(t_start, "BBHIKEY") == 0)       fprintf(output, "%s", (hostenv_hikey ? hostenv_hikey : hostenv_host));
-		else if (strcmp(t_start, "BBIP") == 0)          fprintf(output, "%s", hostenv_ip);
-		else if (strcmp(t_start, "BBIPNAME") == 0) {
-			if (strcmp(hostenv_ip, "0.0.0.0") == 0) fprintf(output, "%s", hostenv_host);
+		else if ((strcmp(t_start, "XYMWEBCOLOR") == 0) || (strcmp(t_start, "BBCOLOR") == 0))
+			fprintf(output, "%s", hostenv_color);
+		else if ((strcmp(t_start, "XYMWEBSVC") == 0) || (strcmp(t_start, "BBSVC") == 0))
+			fprintf(output, "%s", hostenv_svc);
+		else if ((strcmp(t_start, "XYMWEBHOST") == 0) || (strcmp(t_start, "BBHOST") == 0))
+			fprintf(output, "%s", hostenv_host);
+		else if ((strcmp(t_start, "XYMWEBHIKEY") == 0) || (strcmp(t_start, "BBHIKEY") == 0))
+			fprintf(output, "%s", (hostenv_hikey ? hostenv_hikey : hostenv_host));
+		else if ((strcmp(t_start, "XYMWEBIP") == 0) || (strcmp(t_start, "BBIP") == 0))
+			fprintf(output, "%s", hostenv_ip);
+		else if ((strcmp(t_start, "XYMWEBIPNAME") == 0) || (strcmp(t_start, "BBIPNAME") == 0)) {
+			if (strcmp(hostenv_ip, "0.0.0.0") == 0)  fprintf(output, "%s", hostenv_host);
 			else fprintf(output, "%s", hostenv_ip);
 		}
-		else if (strcmp(t_start, "BBREPWARN") == 0)     fprintf(output, "%s", hostenv_repwarn);
-		else if (strcmp(t_start, "BBREPPANIC") == 0)    fprintf(output, "%s", hostenv_reppanic);
-		else if (strcmp(t_start, "LOGTIME") == 0) 	fprintf(output, "%s", (hostenv_logtime ? hostenv_logtime : ""));
-		else if (strcmp(t_start, "BBREFRESH") == 0)     fprintf(output, "%d", hostenv_refresh);
-		else if (strcmp(t_start, "BBPAGEPATH") == 0)    fprintf(output, "%s", (hostenv_pagepath ? hostenv_pagepath : ""));
+		else if ((strcmp(t_start, "XYMONREPWARN") == 0) || (strcmp(t_start, "BBREPWARN") == 0))
+			fprintf(output, "%s", hostenv_repwarn);
+		else if ((strcmp(t_start, "XYMONREPPANIC") == 0) || (strcmp(t_start, "BBREPPANIC") == 0))
+			fprintf(output, "%s", hostenv_reppanic);
+		else if (strcmp(t_start, "LOGTIME") == 0) 	 fprintf(output, "%s", (hostenv_logtime ? hostenv_logtime : ""));
+		else if ((strcmp(t_start, "XYMWEBREFRESH") == 0) || (strcmp(t_start, "BBREFRESH") == 0))
+			fprintf(output, "%d", hostenv_refresh);
+		else if ((strcmp(t_start, "XYMWEBPAGEPATH") == 0) || (strcmp(t_start, "BBPAGEPATH") == 0))
+			fprintf(output, "%s", (hostenv_pagepath ? hostenv_pagepath : ""));
 
 		else if (strcmp(t_start, "REPMONLIST") == 0) {
 			int i;
@@ -1513,7 +1522,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 			sprintf(filename, "%s/", hostenv_templatedir);
 		}
 		else {
-			sprintf(filename, "%s/web/", xgetenv("BBHOME"));
+			sprintf(filename, "%s/web/", xgetenv("XYMONHOME"));
 		}
 
 		p = strchr(hfpath, '/'); elemstart = hfpath;
@@ -1546,7 +1555,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 			sprintf(filename, "%s/%s_%s", hostenv_templatedir, template, head_or_foot);
 		}
 		else {
-			sprintf(filename, "%s/web/%s_%s", xgetenv("BBHOME"), template, head_or_foot);
+			sprintf(filename, "%s/web/%s_%s", xgetenv("XYMONHOME"), template, head_or_foot);
 		}
 
 		dbgprintf("Trying header/footer file '%s'\n", filename);
@@ -1569,8 +1578,8 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 	}
 
 	/* Check for bulletin files */
-	bulletinfile = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/web/bulletin_") + strlen(head_or_foot)+1);
-	sprintf(bulletinfile, "%s/web/bulletin_%s", xgetenv("BBHOME"), head_or_foot);
+	bulletinfile = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/web/bulletin_") + strlen(head_or_foot)+1);
+	sprintf(bulletinfile, "%s/web/bulletin_%s", xgetenv("XYMONHOME"), head_or_foot);
 	fd = open(bulletinfile, O_RDONLY);
 	if (fd != -1) {
 		fstat(fd, &st);
@@ -1598,7 +1607,7 @@ void showform(FILE *output, char *headertemplate, char *formtemplate, int color,
 	int formfile;
 	char formfn[PATH_MAX];
 
-	sprintf(formfn, "%s/web/%s", xgetenv("BBHOME"), formtemplate);
+	sprintf(formfn, "%s/web/%s", xgetenv("XYMONHOME"), formtemplate);
 	formfile = open(formfn, O_RDONLY);
 
 	if (formfile >= 0) {

@@ -1,12 +1,12 @@
 #
 # The alerts.cfg file controls who receives alerts
-# when a status in the BB system goes into a critical
+# when a status in the XYmon system goes into a critical
 # state (usually: red, yellow or purple).
 #
 # This file is made up from RULES and RECIPIENTS.
 #
 # A RULE is a filter made from the PAGE where a host
-# is located in BB; the HOST name, the SERVICE name,
+# is located in XYmon; the HOST name, the SERVICE name,
 # the COLOR of the status, the TIME of day, and the
 # DURATION of the event.
 #
@@ -57,7 +57,7 @@
 #
 # The following keywords are recognized:
 #    PAGE      - rule matching an alert by the name of the
-#                page in BB. This is the name following
+#                page in XYmon. This is the name following
 #                the "page", "subpage" or "subparent" keyword
 #                in the hosts.cfg file.
 #    EXPAGE    - rule excluding an alert if the pagename matches.

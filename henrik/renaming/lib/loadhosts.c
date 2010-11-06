@@ -33,7 +33,7 @@ typedef struct pagelist_t {
 typedef struct namelist_t {
 	char ip[IP_ADDR_STRLEN];
 	char *hostname;	/* Name for item 2 of hosts.cfg */
-	char *logname;		/* Name of the host directory in BBHISTLOGS (underscores replaces dots). */
+	char *logname;		/* Name of the host directory in XYMONHISTLOGS (underscores replaces dots). */
 	int preference;		/* For host with multiple entries, mark if we have the preferred one */
 	pagelist_t *page;	/* Host location in the page/subpage/subparent tree */
 	void *data;		/* Misc. data supplied by the user of this library function */

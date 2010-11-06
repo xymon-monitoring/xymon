@@ -347,7 +347,7 @@ void load_state(void)
 	char *tname, *sname, *sconfweight, *sactweight, *ssticky, *sextra, *hname;
 	enum locator_servicetype_t stype;
 
-	tmpdir = xgetenv("BBTMP"); if (!tmpdir) tmpdir = "/tmp";
+	tmpdir = xgetenv("XYMONTMP"); if (!tmpdir) tmpdir = "/tmp";
 	fn = (char *)malloc(strlen(tmpdir) + 100);
 
 	sprintf(fn, "%s/locator.servers.chk", tmpdir);
@@ -409,7 +409,7 @@ void save_state(void)
 	FILE *fd;
 	int tidx;
 
-	tmpdir = xgetenv("BBTMP"); if (!tmpdir) tmpdir = "/tmp";
+	tmpdir = xgetenv("XYMONTMP"); if (!tmpdir) tmpdir = "/tmp";
 	fn = (char *)malloc(strlen(tmpdir) + 100);
 
 	sprintf(fn, "%s/locator.servers.chk", tmpdir);

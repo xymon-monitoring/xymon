@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 			sprintf(msgline, "<td align=left> %s </td>\n", displayname ? displayname : hostname);
 			addtobuffer(outbuf, msgline);
 			sprintf(oneurl, "%s/%s/#%s",
-				xgetenv("BBWEB"), bbh_item(hostwalk, BBH_PAGEPATH), hostname);
+				xgetenv("XYMONWEB"), bbh_item(hostwalk, BBH_PAGEPATH), hostname);
 			sprintf(msgline, "<td align=left> <a href=\"%s\">%s</a>\n",
 				oneurl, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 			addtobuffer(outbuf, msgline);
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 			clonewalk = next_host(hostwalk, 1);
 			while (clonewalk && (strcmp(bbh_item(hostwalk, BBH_HOSTNAME), bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
 				sprintf(msgline, "<br><a href=\"%s/%s/#%s\">%s</a>\n",
-					xgetenv("BBWEB"), 
+					xgetenv("XYMONWEB"), 
 					bbh_item(clonewalk, BBH_PAGEPATH),
 					bbh_item(clonewalk, BBH_HOSTNAME),
 					bbh_item(clonewalk, BBH_PAGEPATHTITLE));
@@ -242,12 +242,12 @@ int main(int argc, char *argv[])
 	
 	if (dojump) {
 		if (gotany == 1) {
-			printf("Location: %s%s\n\n", xgetenv("BBWEBHOST"), oneurl);
+			printf("Location: %s%s\n\n", xgetenv("XYMONWEBHOST"), oneurl);
 			return 0;
 		}
 		else if ((gotany > 1) && (gotonepage == OP_YES)) {
 			printf("Location: %s%s/%s/\n\n", 
-			       xgetenv("BBWEBHOST"), xgetenv("BBWEB"), onepage);
+			       xgetenv("XYMONWEBHOST"), xgetenv("XYMONWEB"), onepage);
 			return 0;
 		}
 	}

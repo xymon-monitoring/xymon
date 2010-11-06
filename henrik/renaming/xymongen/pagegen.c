@@ -334,15 +334,15 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 	if (head == NULL)
 		return;
 
-	bbskin = strdup(xgetenv("BBSKIN"));
+	bbskin = strdup(xgetenv("XYMONSKIN"));
 
 	switch (tooltipuse) {
-	  case TT_BBONLY: usetooltip = (pagetype == PAGE_NORMAL); break;
+	  case TT_STDONLY: usetooltip = (pagetype == PAGE_NORMAL); break;
 	  case TT_ALWAYS: usetooltip = 1; break;
 	  case TT_NEVER:  usetooltip = 0; break;
 	}
 
-	/* Generate static or dynamic links (from BBLOGSTATUS) ? */
+	/* Generate static or dynamic links (from XYMONLOGSTATUS) ? */
 	genstatic = generate_static();
 
 	if (hostblkidx == 0) fprintf(output, "<A NAME=hosts-blk>&nbsp;</A>\n\n");
@@ -385,7 +385,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 
 			if (h->pretitle && (pagetype == PAGE_NORMAL)) {
 				fprintf(output, "<tr><td colspan=%d align=center valign=middle><br><font %s>%s</font></td></tr>\n", 
-						columncount+1, xgetenv("MKBBTITLE"), h->pretitle);
+						columncount+1, xgetenv("XYMONPAGETITLE"), h->pretitle);
 				rowcount = 0;
 			}
 
@@ -394,13 +394,13 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 				fprintf(output, "<TR>");
 
 				fprintf(output, "<TD VALIGN=MIDDLE ROWSPAN=2><CENTER><FONT %s>%s</FONT></CENTER></TD>\n", 
-					xgetenv("MKBBTITLE"), (strlen(grouptitle) ? grouptitle : "&nbsp;"));
+					xgetenv("XYMONPAGETITLE"), (strlen(grouptitle) ? grouptitle : "&nbsp;"));
 
 				for (gc=groupcols; (gc); gc = gc->next) {
 					fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
 					fprintf(output, " <A HREF=\"%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
 						columnlink(gc->column->name), 
-						xgetenv("MKBBCOLFONT"), gc->column->name);
+						xgetenv("XYMONPAGECOLFONT"), gc->column->name);
 				}
 				fprintf(output, "</TR> \n<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", columncount);
 			}
@@ -462,7 +462,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 						 * they are always generated dynamically.
 						 */
 						fprintf(output, "<A HREF=\"%s/html/%s.%s.html\">",
-							xgetenv("BBWEB"), h->hostname, e->column->name);
+							xgetenv("XYMONWEB"), h->hostname, e->column->name);
 						do_rss_item(rssoutput, h, e);
 					}
 					else {
@@ -507,7 +507,7 @@ void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FIL
 							sprintf(textrepfn, "%savail-%s-%s.txt",
 								pagepath, h->hostname, e->column->name);
 							sprintf(textrepurl, "%s/%s", 
-								xgetenv("BBWEB"), textrepfn);
+								xgetenv("XYMONWEB"), textrepfn);
 
 							htmlrep = fopen(htmlrepfn, "w");
 							if (!htmlrep) {
@@ -585,7 +585,7 @@ void do_groups(group_t *head, FILE *output, FILE *rssoutput, char *pagepath)
 	for (g = head; (g); g = g->next) {
 		if (g->hosts && g->pretitle) {
 			fprintf(output, "<CENTER><TABLE BORDER=0>\n");
-			fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", xgetenv("MKBBTITLE"), g->pretitle);
+			fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", xgetenv("XYMONPAGETITLE"), g->pretitle);
 			if (underlineheadings) fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
 			fprintf(output, "</TABLE></CENTER>\n");
 		}
@@ -665,7 +665,7 @@ void do_summaries(dispsummary_t *sums, FILE *output)
 	fprintf(output, "<CENTER>\n");
 	fprintf(output, "<TABLE SUMMARY=\"Summary Block\" BORDER=0>\n");
 	fprintf(output, "<TR><TD>\n");
-	do_hosts(sumhosts, 1, NULL, NULL, output, NULL, xgetenv("MKBBREMOTE"), 0, NULL);
+	do_hosts(sumhosts, 1, NULL, NULL, output, NULL, xgetenv("XYMONPAGEREMOTE"), 0, NULL);
 	fprintf(output, "</TD></TR>\n");
 	fprintf(output, "</TABLE>\n");
 	fprintf(output, "</CENTER>\n");
@@ -700,7 +700,7 @@ void do_page_subpages(FILE *output, xymongen_page_t *subs, char *pagepath)
 				}
 
 				fprintf(output, "<TR><TD COLSPAN=%d><CENTER> \n<FONT %s>\n", 
-						(2*subpagecolumns + (subpagecolumns - 1)), xgetenv("MKBBTITLE"));
+						(2*subpagecolumns + (subpagecolumns - 1)), xgetenv("XYMONPAGETITLE"));
 				fprintf(output, "   <br>%s\n", p->pretitle);
 				fprintf(output, "</FONT></CENTER></TD></TR>\n");
 
@@ -716,10 +716,10 @@ void do_page_subpages(FILE *output, xymongen_page_t *subs, char *pagepath)
 
 			if (currentcolumn == 0) fprintf(output, "<TR>\n");
 
-			sprintf(pagelink, "%s/%s/%s/%s%s", xgetenv("BBWEB"), pagepath, p->name, p->name, htmlextension);
+			sprintf(pagelink, "%s/%s/%s/%s%s", xgetenv("XYMONWEB"), pagepath, p->name, p->name, htmlextension);
 
 			linkurl = hostlink(p->name);
-			fprintf(output, "<TD ALIGN=LEFT><FONT %s>", xgetenv("MKBBROWFONT"));
+			fprintf(output, "<TD ALIGN=LEFT><FONT %s>", xgetenv("XYMONPAGEROWFONT"));
 			if (linkurl) {
 				fprintf(output, "<A HREF=\"%s\">%s</A>", linkurl, p->title);
 			}
@@ -733,7 +733,7 @@ void do_page_subpages(FILE *output, xymongen_page_t *subs, char *pagepath)
 
 			fprintf(output, "<TD><CENTER><A HREF=\"%s\">", cleanurl(pagelink));
 			fprintf(output, "<IMG SRC=\"%s/%s\" WIDTH=\"%s\" HEIGHT=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>", 
-				xgetenv("BBSKIN"), dotgiffilename(p->color, 0, ((reportstart > 0) ? 1 : p->oldage)), 
+				xgetenv("XYMONSKIN"), dotgiffilename(p->color, 0, ((reportstart > 0) ? 1 : p->oldage)), 
 				xgetenv("DOTWIDTH"), xgetenv("DOTHEIGHT"),
 				colorname(p->color), colorname(p->color));
 			fprintf(output, "</CENTER></TD>\n");
@@ -771,7 +771,7 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	char	*mkbblocal;
 
 	getcwd(curdir, sizeof(curdir));
-	mkbblocal = strdup(xgetenv((page->parent ? "MKBBSUBLOCAL" : "MKBBLOCAL")));
+	mkbblocal = strdup(xgetenv((page->parent ? "XYMONPAGESUBLOCAL" : "XYMONPAGELOCAL")));
 
 	pagepath[0] = '\0';
 	if (embedded) {
@@ -871,7 +871,7 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	if (pagetextheadings && page->title && strlen(page->title)) {
 		fprintf(output, "<CENTER><TABLE BORDER=0>\n");
 		fprintf(output, "  <TR><TD><CENTER><FONT %s>%s</FONT></CENTER></TD></TR>\n", 
-			xgetenv("MKBBTITLE"), page->title);
+			xgetenv("XYMONPAGETITLE"), page->title);
 		if (underlineheadings) fprintf(output, "  <TR><TD><HR WIDTH=\"100%%\"></TD></TR>\n");
 		fprintf(output, "</TABLE></CENTER>\n");
 	}
@@ -893,7 +893,7 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	/* Extension scripts */
-	do_bbext(output, "BBMKBBEXT", "mkbb");
+	do_bbext(output, "XYMONSTDEXT", "mkbb");
 
 	headfoot(output, hf_prefix[PAGE_NORMAL], pagepath, "footer", page->color);
 	do_rss_footer(rssoutput);
@@ -964,7 +964,7 @@ static void do_nongreenext(FILE *output, char *extenv, char *family)
 			do_summaries(dispsums, output);
 		}
 		else {
-			sprintf(extfn, "%s/ext/%s/%s", xgetenv("BBHOME"), family, p);
+			sprintf(extfn, "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p);
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
 				while (fgets(buf, sizeof(buf), inpipe)) 
@@ -1132,7 +1132,7 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype)
 	}
 
 	if ((snapshot == 0) && (summarytype == PAGE_NONGREEN)) {
-		do_nongreenext(output, "BBMKBB2EXT", "mkbb");
+		do_nongreenext(output, "XYMONNONGREENEXT", "mkbb");
 
 		/* Dont redo the eventlog or acklog things */
 		if (nongreeneventlog && !havedoneeventlog) {
@@ -1171,7 +1171,7 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype)
 		char nklogfn[PATH_MAX];
 		char svcspace;
 
-		sprintf(nklogfn, "%s/criticalstatus.log", xgetenv("BBSERVERLOGS"));
+		sprintf(nklogfn, "%s/criticalstatus.log", xgetenv("XYMONSERVERLOGS"));
 		nklog = fopen(nklogfn, "a");
 		if (nklog == NULL) {
 			errprintf("Cannot log Critical status to %s: %s\n", nklogfn, strerror(errno));

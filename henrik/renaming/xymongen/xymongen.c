@@ -49,40 +49,36 @@ double		reportgreenlevel = 99.995;
 int		reportwarnstops = -1;
 int		reportstyle = STYLE_CRIT;
 int		dynamicreport = 1;
-enum tooltipuse_t tooltipuse = TT_BBONLY;
+enum tooltipuse_t tooltipuse = TT_STDONLY;
 
 char *reqenv[] = {
-"BB",
-"BBACKS",
-"BBDISP",
-"BBHIST",
-"BBHISTLOGS",
-"BBHOME",
+"XYMONACKDIR",
+"XYMONHISTDIR",
+"XYMONHISTLOGS",
+"XYMONHOME",
 "HOSTSCFG",
-"BBLOGS",
-"BBLOGSTATUS",
-"BBNOTES",
-"BBREL",
-"BBRELDATE",
-"BBREP",
-"BBREPURL",
-"BBSKIN",
-"BBTMP",
-"BBVAR",
-"BBWEB",
-"BBWEBHOST",
-"BBWEBHOSTURL",
+"XYMONRAWSTATUSDIR",
+"XYMONLOGSTATUS",
+"XYMONNOTESDIR",
+"XYMONREPDIR",
+"XYMONREPURL",
+"XYMONSKIN",
+"XYMONTMP",
+"XYMONVAR",
+"XYMONWEB",
+"XYMONWEBHOST",
+"XYMONWEBHOSTURL",
 "CGIBINURL",
 "DOTHEIGHT",
 "DOTWIDTH",
 "MACHINE",
 "MACHINEADDR",
-"MKBBCOLFONT",
-"MKBBLOCAL",
-"MKBBSUBLOCAL",
-"MKBBREMOTE",
-"MKBBROWFONT",
-"MKBBTITLE",
+"XYMONPAGECOLFONT",
+"XYMONPAGELOCAL",
+"XYMONPAGESUBLOCAL",
+"XYMONPAGEREMOTE",
+"XYMONPAGEROWFONT",
+"XYMONPAGETITLE",
 "PURPLEDELAY",
 NULL };
 
@@ -112,8 +108,8 @@ int main(int argc, char *argv[])
 	fqdn = get_fqdn();
 
 	/* Setup values from env. vars that may be overridden via command-line options */
-	if (xgetenv("MKBB2COLREPEAT")) {
-		int i = atoi(xgetenv("MKBB2COLREPEAT"));
+	if (xgetenv("XYMONPAGECOLREPEAT")) {
+		int i = atoi(xgetenv("XYMONPAGECOLREPEAT"));
 
 		if (i > 0) maxrowsbeforeheading = i;
 	}
@@ -252,8 +248,8 @@ int main(int argc, char *argv[])
 			if (reportstart < 788918400) reportstart = 788918400;
 			if (reportend > getcurrenttime(NULL)) reportend = getcurrenttime(NULL);
 
-			if (xgetenv("BBREPWARN")) reportwarnlevel = atof(xgetenv("BBREPWARN"));
-			if (xgetenv("BBREPGREEN")) reportgreenlevel = atof(xgetenv("BBREPGREEN"));
+			if (xgetenv("XYMONREPWARN")) reportwarnlevel = atof(xgetenv("XYMONREPWARN"));
+			if (xgetenv("XYMONREPGREEN")) reportgreenlevel = atof(xgetenv("XYMONREPGREEN"));
 
 			if ((reportwarnlevel < 0.0) || (reportwarnlevel > 100.0)) reportwarnlevel = 97.0;
 			if ((reportgreenlevel < 0.0) || (reportgreenlevel > 100.0)) reportgreenlevel = 99.995;
@@ -416,15 +412,15 @@ int main(int argc, char *argv[])
 			lp++;
 			if (strcmp(lp, "always") == 0) tooltipuse = TT_ALWAYS;
 			else if (strcmp(lp, "never") == 0) tooltipuse = TT_NEVER;
-			else tooltipuse = TT_BBONLY;
+			else tooltipuse = TT_STDONLY;
 		}
 
 		else if (argnmatch(argv[i], "--purplelog=")) {
 			char *lp = strchr(argv[i], '=');
 			if (*(lp+1) == '/') purplelogfn = strdup(lp+1);
 			else {
-				purplelogfn = (char *) malloc(strlen(xgetenv("BBHOME"))+1+strlen(lp+1)+1);
-				sprintf(purplelogfn, "%s/%s", xgetenv("BBHOME"), (lp+1));
+				purplelogfn = (char *) malloc(strlen(xgetenv("XYMONHOME"))+1+strlen(lp+1)+1);
+				sprintf(purplelogfn, "%s/%s", xgetenv("XYMONHOME"), (lp+1));
 			}
 		}
 		else if (argnmatch(argv[i], "--report=") || (strcmp(argv[i], "--report") == 0)) {
@@ -550,18 +546,18 @@ int main(int argc, char *argv[])
 	umask(0022);
 
 	if (pagedir == NULL) {
-		if (xgetenv("BBWWW")) {
-			pagedir = strdup(xgetenv("BBWWW"));
+		if (xgetenv("XYMONWWWDIR")) {
+			pagedir = strdup(xgetenv("XYMONWWWDIR"));
 		}
 		else {
-			pagedir = (char *) malloc(strlen(xgetenv("BBHOME"))+5);
-			sprintf(pagedir, "%s/www", xgetenv("BBHOME"));
+			pagedir = (char *) malloc(strlen(xgetenv("XYMONHOME"))+5);
+			sprintf(pagedir, "%s/www", xgetenv("XYMONHOME"));
 		}
 	}
 
-	if (xgetenv("BBHTACCESS")) bbhtaccess = strdup(xgetenv("BBHTACCESS"));
-	if (xgetenv("BBPAGEHTACCESS")) bbpagehtaccess = strdup(xgetenv("BBPAGEHTACCESS"));
-	if (xgetenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(xgetenv("BBSUBPAGEHTACCESS"));
+	if (xgetenv("XYMONHTACCESS")) bbhtaccess = strdup(xgetenv("XYMONHTACCESS"));
+	if (xgetenv("XYMONPAGEHTACCESS")) bbpagehtaccess = strdup(xgetenv("XYMONPAGEHTACCESS"));
+	if (xgetenv("XYMONSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(xgetenv("XYMONSUBPAGEHTACCESS"));
 
 	/*
 	 * When doing embedded- or snapshot-pages, dont build the WML/RSS pages.
@@ -610,7 +606,7 @@ int main(int argc, char *argv[])
 
 	if (xgetenv("SUMMARY_SET_BKG") && (strcmp(xgetenv("SUMMARY_SET_BKG"), "TRUE") == 0)) {
 		/*
-		 * Displayed summaries affect the BB page only, 
+		 * Displayed summaries affect the Xymon page only, 
 		 * but should not go into the color we report to
 		 * others.
 		 */
@@ -683,12 +679,12 @@ int main(int argc, char *argv[])
 	if (egocolumn) {
 		char msgline[4096];
 		char *timestamps;
-		long bbsleep = (xgetenv("BBSLEEP") ? atol(xgetenv("BBSLEEP")) : 300);
+		long bbsleep = (xgetenv("TASKSLEEP") ? atol(xgetenv("TASKSLEEP")) : 300);
 		int color;
 
 		/* Go yellow if it runs for too long */
 		if (total_runtime() > bbsleep) {
-			errprintf("WARNING: Runtime %ld longer than BBSLEEP (%ld)\n", total_runtime(), bbsleep);
+			errprintf("WARNING: Runtime %ld longer than TASKSLEEP (%ld)\n", total_runtime(), bbsleep);
 		}
 		color = (errbuf ? COL_YELLOW : COL_GREEN);
 

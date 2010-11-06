@@ -372,7 +372,7 @@ int load_holidays(int year)
 		year -= 1900;
 	}
 
-	sprintf(fn, "%s/etc/holidays.cfg", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/holidays.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configholidays) {

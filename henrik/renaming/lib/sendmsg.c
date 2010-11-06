@@ -102,12 +102,12 @@ static void setup_transport(char *recipient)
 	}
 	else {
 		/* 
-		 * Non-HTTP transport - lookup portnumber in both BBPORT env.
+		 * Non-HTTP transport - lookup portnumber in both XYMONDPORT env.
 		 * and the "bbd" entry from /etc/services.
 		 */
 		default_port = 1984;
 
-		if (xgetenv("BBPORT")) bbdportnumber = atoi(xgetenv("BBPORT"));
+		if (xgetenv("XYMONDPORT")) bbdportnumber = atoi(xgetenv("XYMONDPORT"));
 	
 	
 		/* Next is /etc/services "bbd" entry */
@@ -460,7 +460,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 	}
 
 	if (allservers && !morercpts) {
-		errprintf("No recipients listed! BBDISP was %s, BBDISPLAYS %s\n",
+		errprintf("No recipients listed! XYMSRV was %s, XYMSERVERS %s\n",
 			  onercpt, textornull(morercpts));
 		return XYMONSEND_EBADIP;
 	}
@@ -572,14 +572,14 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 	static char *bbdisp = NULL;
 	int res = 0;
 
- 	if ((bbdisp == NULL) && xgetenv("BBDISP")) bbdisp = strdup(xgetenv("BBDISP"));
+ 	if ((bbdisp == NULL) && xgetenv("XYMSRV")) bbdisp = strdup(xgetenv("XYMSRV"));
 	if (recipient == NULL) recipient = bbdisp;
 	if (recipient == NULL) {
 		errprintf("No recipient for message\n");
 		return XYMONSEND_EBADIP;
 	}
 
-	res = sendtomany((recipient ? recipient : bbdisp), xgetenv("BBDISPLAYS"), msg, timeout, response);
+	res = sendtomany((recipient ? recipient : bbdisp), xgetenv("XYMSERVERS"), msg, timeout, response);
 
 	if (res != XYMONSEND_OK) {
 		char *statustext = "";
@@ -618,14 +618,14 @@ static void combo_params(void)
 
 	issetup = 1;
 
-	if (xgetenv("BBMAXMSGSPERCOMBO")) maxmsgspercombo = atoi(xgetenv("BBMAXMSGSPERCOMBO"));
+	if (xgetenv("MAXMSGSPERCOMBO")) maxmsgspercombo = atoi(xgetenv("MAXMSGSPERCOMBO"));
 	if (maxmsgspercombo == 0) {
 		/* Force it to 100 */
-		dbgprintf("BBMAXMSGSPERCOMBO is 0, setting it to 100\n");
+		dbgprintf("MAXMSGSPERCOMBO is 0, setting it to 100\n");
 		maxmsgspercombo = 100;
 	}
 
-	if (xgetenv("BBSLEEPBETWEENMSGS")) sleepbetweenmsgs = atoi(xgetenv("BBSLEEPBETWEENMSGS"));
+	if (xgetenv("SLEEPBETWEENMSGS")) sleepbetweenmsgs = atoi(xgetenv("SLEEPBETWEENMSGS"));
 }
 
 void combo_start(void)

@@ -168,13 +168,13 @@ void delete_old_acks(void)
 	time_t		now = getcurrenttime(NULL);
 	char		fn[PATH_MAX];
 
-	bbacks = opendir(xgetenv("BBACKS"));
+	bbacks = opendir(xgetenv("XYMONACKDIR"));
 	if (!bbacks) {
-		errprintf("No BBACKS! Cannot cd to directory %s\n", xgetenv("BBACKS"));
+		errprintf("No XYMONACKDIR! Cannot cd to directory %s\n", xgetenv("XYMONACKDIR"));
 		return;
         }
 
-	chdir(xgetenv("BBACKS"));
+	chdir(xgetenv("XYMONACKDIR"));
 	while ((d = readdir(bbacks))) {
 		strcpy(fn, d->d_name);
 		if (strncmp(fn, "ack.", 4) == 0) {
@@ -206,8 +206,8 @@ void send_summaries(summary_t *sumhead)
 			p = strchr(suburl, '/');	/* Find next '/' */
 			if (p) suburl = p;
 		}
-		if (strncmp(suburl, xgetenv("BBWEB"), strlen(xgetenv("BBWEB"))) == 0) 
-			suburl += strlen(xgetenv("BBWEB"));
+		if (strncmp(suburl, xgetenv("XYMONWEB"), strlen(xgetenv("XYMONWEB"))) == 0) 
+			suburl += strlen(xgetenv("XYMONWEB"));
 		if (*suburl == '/') suburl++;
 
 		dbgprintf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);

@@ -210,8 +210,8 @@ int onehost(char *hostname, char *starttime, char *endtime)
 	DIR *d;
 	struct dirent *de;
 
-	if ((chdir(xgetenv("BBRRDS")) == -1) || (chdir(hostname) == -1)) {
-		errprintf("Cannot cd to %s/%s\n", xgetenv("BBRRDS"), hostname);
+	if ((chdir(xgetenv("XYMONRRDS")) == -1) || (chdir(hostname) == -1)) {
+		errprintf("Cannot cd to %s/%s\n", xgetenv("XYMONRRDS"), hostname);
 		return 1;
 	}
 

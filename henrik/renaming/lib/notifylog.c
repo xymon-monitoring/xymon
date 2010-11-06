@@ -154,7 +154,7 @@ void do_notifylog(FILE *output,
 	if (rcptregex && *rcptregex) rcptregexp = pcre_compile(rcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (exrcptregex && *exrcptregex) exrcptregexp = pcre_compile(exrcptregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
-	sprintf(notifylogfilename, "%s/notifications.log", xgetenv("BBSERVERLOGS"));
+	sprintf(notifylogfilename, "%s/notifications.log", xgetenv("XYMONSERVERLOGS"));
 	notifylog = fopen(notifylogfilename, "r");
 
 	if (notifylog && (stat(notifylogfilename, &st) == 0)) {

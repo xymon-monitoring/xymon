@@ -81,8 +81,8 @@ int main(int argc, char *argv[])
 
 	if (clientlogdir == NULL) clientlogdir = xgetenv("CLIENTLOGS");
 	if (clientlogdir == NULL) {
-		clientlogdir = (char *)malloc(strlen(xgetenv("BBVAR")) + 10);
-		sprintf(clientlogdir, "%s/hostdata", xgetenv("BBVAR"));
+		clientlogdir = (char *)malloc(strlen(xgetenv("XYMONVAR")) + 10);
+		sprintf(clientlogdir, "%s/hostdata", xgetenv("XYMONVAR"));
 	}
 
 	save_errbuf = 0;

@@ -1,26 +1,26 @@
 # NB : Even though it might look like a shell-script, it is NOT.
 #
-BBSERVERROOT="@BBTOPDIR@"		# Where Xymon is installed - holds the server and bbvar sub-dirs.
-BBSERVERLOGS="@BBLOGDIR@"		# Directory for server logs. The xymon user must have write-access here.
-XYMONCLIENTHOME="@BBTOPDIR@/client"     # BBHOME directory for the client
+XYMONSERVERROOT="@XYMONTOPDIR@"			# Where Xymon is installed - holds the server and bbvar sub-dirs.
+XYMONSERVERLOGS="@XYMONLOGDIR@"			# Directory for server logs. The xymon user must have write-access here.
+XYMONCLIENTHOME="@XYMONTOPDIR@/client"		# XYMONHOME directory for the client
 
 
-BBSERVERHOSTNAME="@BBHOSTNAME@"		# The hostname of your server
-BBSERVERIP="@BBHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
-BBSERVEROS="@BBHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
+XYMONSERVERHOSTNAME="@XYMONHOSTNAME@"		# The hostname of your server
+XYMONSERVERIP="@XYMONHOSTIP@"			# The IP-address of your server. Use the real one, not 127.0.0.1 .
+XYMONSERVEROS="@XYMONHOSTOS@"			# The operating system of your server. linux,freebsd,solaris,hpux,aix,osf
 
-BBSERVERWWWNAME="@BBHOSTNAME@"		# The name used for this hosts' webserver
-BBSERVERWWWURL="@BBHOSTURL@"		# The top URL for the Xymon webpages
-BBSERVERCGIURL="@BBCGIURL@"		# The URL for the Xymon CGI scripts.
-BBSERVERSECURECGIURL="@SECUREBBCGIURL@"	# The URL for the secured Xymon CGI scripts.
+XYMONSERVERWWWNAME="@XYMONHOSTNAME@"		# The name used for this hosts' webserver
+XYMONSERVERWWWURL="@XYMONHOSTURL@"		# The top URL for the Xymon webpages
+XYMONSERVERCGIURL="@XYMONCGIURL@"		# The URL for the Xymon CGI scripts.
+XYMONSERVERSECURECGIURL="@SECUREXYMONCGIURL@"	# The URL for the secured Xymon CGI scripts.
 
-# BBLOCATION="foo"			# The network location, makes xymonnet test only hosts with NET:foo
-					# You only need to set this if you have multiple network test servers with
-					# a shared hosts.cfg file.
+# XYMONNETWORK="foo"				# The network location, makes xymonnet test only hosts with NET:foo
+						# You only need to set this if you have multiple network test servers with
+						# a shared hosts.cfg file.
 
 # Make sure the path includes the directories where you have fping, mail and (optionally) ntpdate installed,
-# as well as the BBHOME/bin directory where all of the Xymon programs reside.
-PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
+# as well as the XYMONHOME/bin directory where all of the Xymon programs reside.
+PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@XYMONHOME@/bin"
 
 # Some systems need extra settings e.g. to locate run-time libraries.
 # You can add these extra settings here:
@@ -30,67 +30,67 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@BBHOME@/bin"
 ##### Normally you do not need to modify anything below this point #####
 
 # General settings
-BBPORT="1984"			# Portnumber where xymond/bbd listens
-BBDISP="$BBSERVERIP"		# IP of a single Xymon server
-BBDISPLAYS=""			# IP of multiple Xymon servers. If used, BBDISP must be 0.0.0.0
+XYMONDPORT="1984"		# Portnumber where xymond/bbd listens
+XYMSRV="$XYMONSERVERIP"		# IP of a single Xymon server
+XYMSERVERS=""			# IP of multiple Xymon servers. If used, XYMSRV must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
-BBLOGSTATUS="DYNAMIC"		# Are HTML status logs statically or dynamically generated?
+XYMONLOGSTATUS="DYNAMIC"	# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Xymon, unless you run xymond_filestore --status --html
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 INFOCOLUMN="info"		# Column where the info-pages are reported.
 TRENDSCOLUMN="trends"		# Column where the RRD graphs are reported.
 
-BBMAXMSGSPERCOMBO="100"         # How many individual messages to combine in a combo-message. 0=unlimited.
-BBSLEEPBETWEENMSGS="0"          # Delay between sending each combo message, in milliseconds.
+MAXMSGSPERCOMBO="100"           # How many individual messages to combine in a combo-message. 0=unlimited.
+SLEEPBETWEENMSGS="0"            # Delay between sending each combo message, in milliseconds.
 
 # HOLIDAYS="us"			# Default set of holidays (pointer to section in holidays.cfg)
 # HOLIDAYFORMAT="%m/%d/%y"	# Format for printing holiday dates. Default is %d/%m/%y (day/month/year).
 
 # Specific to this host
-BBOSTYPE="$BBSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
-MACHINEDOTS="$BBSERVERHOSTNAME"	# This systems hostname
-MACHINEADDR="$BBSERVERIP"	# This systems IP-address
+SERVEROSTYPE="$XYMONSERVEROS"		# Hosttype (operating system). Not used by server-side, but clients use this.
+MACHINEDOTS="$XYMONSERVERHOSTNAME"	# This systems hostname
+MACHINEADDR="$XYMONSERVERIP"		# This systems IP-address
 
 # URL's generated/used by xymongen
-BBWEBHOST="http://$BBSERVERWWWNAME"		# Just the host part of the URL - http://www.foo.com
-BBWEBHOSTURL="$BBWEBHOST$BBSERVERWWWURL"	# Prefix for all static Xymon pages - http://www.foo.com/bb
-BBWEBHTMLLOGS="$BBWEBHOSTURL/html"		# Prefix for the Xymon HTML logs (only if BBLOGSTATUS=STATIC)
-BBWEB="$BBSERVERWWWURL"				# Xymon URL prefix without the host part
-BBSKIN="$BBSERVERWWWURL/gifs"			# Xymon URL prefix for the GIF files
-BBHELPSKIN="$BBSERVERWWWURL/help"               # Xymon URL prefix for the online help files.
-BBNOTESSKIN="$BBSERVERWWWURL/notes"             # Xymon URL prefix for the online notes-files.
-BBMENUSKIN="$BBSERVERWWWURL/menu"               # Xymon URL prefix for the webpage menu files.
-BBREPURL="$BBSERVERWWWURL/rep"			# Xymon URL prefix for the Xymon availability reports
-BBSNAPURL="$BBSERVERWWWURL/snap"		# Xymon URL prefix for the Xymon snapshots
-BBWAP="$BBSERVERWWWURL/wml"			# Xymon URL prefix for the WAP/WML files.
-CGIBINURL="$BBSERVERCGIURL"			# URL prefix for the Xymon CGI-scripts - /cgi-bin
-SECURECGIBINURL="$BBSERVERSECURECGIURL"		# URL prefix for the secured Xymon CGI-scripts - /cgi-secure
+XYMONWEBHOST="http://$XYMONSERVERWWWNAME"	# Just the host part of the URL - http://www.foo.com
+XYMONWEBHOSTURL="$XYMONWEBHOST$XYMONSERVERWWWURL"	# Prefix for all static Xymon pages - http://www.foo.com/bb
+XYMONWEBHTMLLOGS="$XYMONWEBHOSTURL/html"	# Prefix for the Xymon HTML logs (only if XYMONLOGSTATUS=STATIC)
+XYMONWEB="$XYMONSERVERWWWURL"			# Xymon URL prefix without the host part
+XYMONSKIN="$XYMONSERVERWWWURL/gifs"		# Xymon URL prefix for the GIF files
+XYMONHELPSKIN="$XYMONSERVERWWWURL/help"         # Xymon URL prefix for the online help files.
+XYMONNOTESSKIN="$XYMONSERVERWWWURL/notes"       # Xymon URL prefix for the online notes-files.
+XYMONMENUSKIN="$XYMONSERVERWWWURL/menu"         # Xymon URL prefix for the webpage menu files.
+XYMONREPURL="$XYMONSERVERWWWURL/rep"		# Xymon URL prefix for the Xymon availability reports
+XYMONSNAPURL="$XYMONSERVERWWWURL/snap"		# Xymon URL prefix for the Xymon snapshots
+XYMONWAP="$XYMONSERVERWWWURL/wml"		# Xymon URL prefix for the WAP/WML files.
+CGIBINURL="$XYMONSERVERCGIURL"			# URL prefix for the Xymon CGI-scripts - /cgi-bin
+SECURECGIBINURL="$XYMONSERVERSECURECGIURL"	# URL prefix for the secured Xymon CGI-scripts - /cgi-secure
 
 # Locations of system-wide files and directories
-BBHOME="@BBHOME@"				# The Xymon server directory, where programs and configurations go. 
-BBTMP="$BBHOME/tmp"				# Directory used for temporary files.
-HOSTSCFG="$BBHOME/etc/hosts.cfg"		# The hosts.cfg file
-BB="$BBHOME/bin/xymon"				# The 'xymon' client program
-BBGEN="$BBHOME/bin/xymongen"			# The xymongen program
+XYMONHOME="@XYMONHOME@"				# The Xymon server directory, where programs and configurations go. 
+XYMONTMP="$XYMONHOME/tmp"			# Directory used for temporary files.
+HOSTSCFG="$XYMONHOME/etc/hosts.cfg"		# The hosts.cfg file
+XYMON="$XYMONHOME/bin/xymon"			# The 'xymon' client program
+XYMONGEN="$XYMONHOME/bin/xymongen"		# The xymongen program
 
 # Server specific directories
-BBVAR="@BBVAR@"					# The bbvar directory holds all monitoring data
-BBACKS="$BBVAR/acks"				# Acknowledge event info stored here (xymond_alert)
-BBDATA="$BBVAR/data"				# Data files go here (xymond_filestore --data)
-BBDISABLED="$BBVAR/disabled"			# Enabled/disabled flags are stored here (xymond_filestore --enadis)
-BBHIST="$BBVAR/hist"				# History logs are stored here (xymond_history)
-BBHISTLOGS="$BBVAR/histlogs"			# Historical detail status-loge are stored here (xymond_history)
-BBLOGS="$BBVAR/logs"				# Status logs go here (xymond_filestore --status). Not needed by Xymon.
-BBWWW="$BBHOME/www"				# The directory for Xymon webpage files.
-BBHTML="$BBWWW/html"				# HTML status logs go here (xymond_filestore --status --html)
-BBNOTES="$BBWWW/notes"				# For notes-files (xymond_filestore --notes)
-BBREP="$BBWWW/rep"				# Top-level directory for Xymon reports.
-BBSNAP="$BBWWW/snap"				# Top-level directory for Xymon snapshots.
+XYMONVAR="@XYMONVAR@"				# The bbvar directory holds all monitoring data
+XYMONACKDIR="$XYMONVAR/acks"			# Acknowledge event info stored here (xymond_alert)
+XYMONDATADIR="$XYMONVAR/data"			# Data files go here (xymond_filestore --data)
+XYMONDISABLEDDIR="$XYMONVAR/disabled"		# Enabled/disabled flags are stored here (xymond_filestore --enadis)
+XYMONHISTDIR="$XYMONVAR/hist"			# History logs are stored here (xymond_history)
+XYMONHISTLOGS="$XYMONVAR/histlogs"		# Historical detail status-loge are stored here (xymond_history)
+XYMONRAWSTATUSDIR="$XYMONVAR/logs"		# Status logs go here (xymond_filestore --status). Not needed by Xymon.
+XYMONWWWDIR="$XYMONHOME/www"			# The directory for Xymon webpage files.
+XYMONHTMLSTATUSDIR="$XYMONWWWDIR/html"		# HTML status logs go here (xymond_filestore --status --html)
+XYMONNOTESDIR="$XYMONWWWDIR/notes"		# For notes-files (xymond_filestore --notes)
+XYMONREPDIR="$XYMONWWWDIR/rep"			# Top-level directory for Xymon reports.
+XYMONSNAPDIR="$XYMONWWWDIR/snap"		# Top-level directory for Xymon snapshots.
 
 # For the xymond_history module
-BBALLHISTLOG="TRUE"				# Save a common log of all events (used for the all nongreen webpage)
-BBHOSTHISTLOG="TRUE"				# Save a log of all events for a host (not used by any tool currently)
+XYMONALLHISTLOG="TRUE"				# Save a common log of all events (used for the all nongreen webpage)
+XYMONHOSTHISTLOG="TRUE"				# Save a log of all events for a host (not used by any tool currently)
 SAVESTATUSLOG="TRUE"				# Save the detailed status log each time the status changes.
 
 # For the xymond_alert module
@@ -108,14 +108,14 @@ NONETPAGE=""					# Network tests that go YELLOW upon failure
 FPING="@FPING@"					# Path and options for the ping program.
 NTPDATE="ntpdate"				# Path to the 'ntpdate' program
 TRACEROUTE="traceroute"                         # How to do traceroute on failing ping tests. Requires "trace" in hosts.cfg .
-BBROUTERTEXT="router"				# What to call a failing intermediate network device.
+XYMONROUTERTEXT="router"			# What to call a failing intermediate network device.
 NETFAILTEXT="not OK"				# Text indicating a network test failed
 
 
 # Settings for the RRD graphs
 
 # Top level directory for the RRD files
-BBRRDS="$BBVAR/rrd"
+XYMONRRDS="$XYMONVAR/rrd"
 
 # Size of the generated graph images
 RRDHEIGHT="120"
@@ -147,9 +147,9 @@ GRAPHS="la,disk,inode,qtree,files,processes,memory,users,vmstat,iostat,tcp.http,
 ###############################################################
 # These determine some parts of how xymongen generates webpages
 ###############################################################
-BBGENOPTS="--recentgifs --subpagecolumns=2"     # Standard options for xymongen.
-SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the BB webpage ?
-BBMKBB2EXT="eventlog.sh acklog.sh"		# What extensions to have on the All non-green page.
+XYMONGENOPTS="--recentgifs --subpagecolumns=2"	# Standard options for xymongen.
+SUMMARY_SET_BKG="FALSE"				# Do summaries affect the background color of the Standard webpage ?
+XYMONNONGREENEXT="eventlog.sh acklog.sh"	# What extensions to have on the All non-green page.
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 COLUMNDOCURL="$CGIBINURL/columndoc.sh?%s"	# URL formatting string for column-links
@@ -159,33 +159,108 @@ HTMLCONTENTTYPE="text/html"                     # You can add charset options he
 
 # Fonts and texts
 XYMONLOGO="Xymon"                               # HTML inserted on all header pages at top-left corner.
-MKBBLOCAL="<B><I>Pages Hosted Locally</I></B>"
-MKBBREMOTE="<B><I>Remote Status Display</I></B>"
-MKBBSUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"
-MKBBACKFONT="COLOR=\"#33ebf4\" SIZE=\"-1\""	# Size and color of the 'Current acknowledgement...' text in the html log.
-MKBBCOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headings text
-MKBBROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
-MKBBTITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the BB titles (the old "ivory" is invalid HTML)
-BBDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
-BBRSSTITLE="Xymon Alerts"			# Title for the RSS and WML outputs.
+XYMONPAGELOCAL="<B><I>Pages Hosted Locally</I></B>"
+XYMONPAGEREMOTE="<B><I>Remote Status Display</I></B>"
+XYMONPAGESUBLOCAL="<B><I>Subpages Hosted Locally</I></B>"
+XYMONPAGEACKFONT="COLOR=\"#33ebf4\" SIZE=\"-1\""	# Size and color of the 'Current acknowledgement...' text in the html log.
+XYMONPAGECOLFONT="COLOR=\"#87a9e5\" SIZE=\"-1\""	# Size and color of the column headings text
+XYMONPAGEROWFONT="SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\""   # Size,color,font of text in each row (hostname)
+XYMONPAGETITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the Xymon titles
+XYMONDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
+XYMONRSSTITLE="Xymon Alerts"			# Title for the RSS and WML outputs.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
 
 # For WML output
 WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
 
-# For BB reports
-BBREPWARN="97"					# Default availability causing yellow status on availability report.
-BBREPGREEN="99.995"				# Default availability causing green status on availability report.
-BBGENREPOPTS="$BBGENOPTS"			# xymongen(1) options used when generating availability reports.
-BBREPEXT=""					# What extensions to run on report pages.
+# For Xymon reports
+XYMONREPWARN="97"				# Default availability causing yellow status on availability report.
+XYMONREPGREEN="99.995"				# Default availability causing green status on availability report.
+XYMONGENREPOPTS="$XYMONGENOPTS"			# xymongen(1) options used when generating availability reports.
+XYMONREPEXT=""					# What extensions to run on report pages.
 
-# For BB snapshots
-BBGENSNAPOPTS="$BBGENOPTS"			# xymongen(1) options used when generating snapshots.
+# For Xymon snapshots
+XYMONGENSNAPOPTS="$XYMONGENOPTS"		# xymongen(1) options used when generating snapshots.
 
 # For the history CGI 
-BBHISTEXT=""					# What extensions to run on history pages.
+XYMONHISTEXT=""					# What extensions to run on history pages.
 
 
 ##### Compatibility settings #####
+BBSERVERROOT="$XYMONSERVERROOT"
+BBSERVERHOSTNAME="$XYMONSERVERHOSTNAME"
+BBSERVERIP="$XYMONSERVERIP"
+BBSERVEROS="$XYMONSERVEROS"
+BBSERVERWWWNAME="$XYMONSERVERWWWNAME"
+BBSERVERWWWURL="$XYMONSERVERWWWURL"
+BBSERVERCGIURL="$XYMONSERVERCGIURL"
+BBSERVERSECURECGIURL="$XYMONSERVERSECURECGIURL
+
+BB="$XYMON"
+BBDISP="$XYMSRV"
+BBDISPLAYS="$XYMSERVERS"
+BBPAGE="$BBDISP"
+BBPAGERS="$BBDISPLAYS"
+BBREL="Xymon"
+BBRELDATE=""
+BBOSTYPE="$SERVEROSTYPE"
+BBMAXMSGSPERCOMBO="$MAXMSGSPERCOMBO"
+BBSLEEPBETWEENMSGS="$SLEEPBETWEENMSGS"
+
+BBLOGSTATUS="$XYMONLOGSTATUS"
+BBLOGS="$XYMONRAWSTATUSDIR"
+BBDISABLED="$XYMONDISABLEDDIR"
+BBDATA="$XYMONDATADIR"
+BBACKS="$XYMONACKDIR"
+BBVAR="$XYMONVAR"
+
 BBHOSTS="$HOSTSCFG"
+BBHOME="$XYMONHOME"
+BBSKIN="$XYMONSKIN"
+BBWEBHOST="$XYMONWEBHOST"
+BBWEBHOSTURL="$XYMONWEBHOSTURL"
+BBWEBHTMLLOGS="$XYMONWEBHTMLLOGS"
+BBHELPSKIN="$XYMONHELPSKIN"
+BBWEB="$XYMONWEB"
+BBTMP="$XYMONTMP"
+BBNOTES="$XYMONNOTESDIR"
+BBNOTESSKIN="$XYMONNOTESSKIN"
+BBMENUSKIN="$XYMONMENUSKIN"
+BBWAP="$XYMONWAP"
+
+MKBBLOCAL="$XYMONPAGELOCAL"
+MKBBREMOTE="$XYMONPAGEREMOTE"
+MKBBSUBLOCAL="$XYMONPAGESUBLOCAL"
+MKBBACKFONT="$XYMONPAGEACKFONT"
+MKBBCOLFONT="$XYMONPAGECOLFONT"
+MKBBROWFONT="$XYMONPAGEROWFONT"
+MKBBTITLE="$XYMONPAGETITLE"
+BBDATEFORMAT="$XYMONDATEFORMAT"
+BBRSSTITLE="$XYMONRSSTITLE"
+BBROUTERTEXT="$XYMONROUTERTEXT"
+
+BBSERVERLOGS="$XYMONSERVERLOGS"
+BBRRDS="$XYMONRRDS"
+BBWWW="$XYMONWWWDIR"
+BBHTML="$XYMONHTMLSTATUSDIR"
+
+BBREP="$XYMONREPDIR"
+BBREPURL="$XYMONREPURL"
+BBREPWARN="$XYMONREPWARN"
+BBREPPANIC="$XYMONREPGREEN"
+BBREPEXT="$XYMONREPEXT"
+
+BBSNAP="$XYMONSNAPDIR"
+BBSNAPURL="$XYMONSNAPURL"
+
+BBGEN="$XYMONGEN"
+BBGENOPTS="$XYMONGENOPTS"
+BBGENREPOPTS="$XYMONGENREPOPTS"
+BBGENSNAPOPTS="$XYMONGENSNAPOPTS"
+
+BBHIST="$XYMONHISTDIR"
+BBHISTLOGS="$XYMONHISTLOGS"
+BBALLHISTLOG="$XYMONALLHISTLOG"
+BBHOSTHISTLOG="$XYMONHOSTHISTLOG"
+BBHISTEXT="$XYMONHISTEXT"
 

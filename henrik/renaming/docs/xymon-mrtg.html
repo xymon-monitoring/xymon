@@ -40,7 +40,7 @@ LogFormat: rrdtool
 </pre>
 
 <p>Note that the <tt>WorkDir</tt> setting points to the top-level RRD directory,
-i.e. the one defined via the BBRRDS setting in xymonserver.cfg. The 
+i.e. the one defined via the XYMONRRDS setting in xymonserver.cfg. The 
 <tt>Logformat:&nbsp;rrdtool</tt> makes MRTG save data using the RRDtool data format.</p>
 
 <p>Each of the network interfaces you monitor have a target-definition in the
@@ -108,9 +108,9 @@ this also has the benefit that the RRD files will be owned by the xymon user.</p
 file. Mine looks like this:</p>
 <pre>
 [mrtg]
-	CMD /usr/bin/mrtg --lock-file $BBSERVERLOGS/mrtg.lock /etc/mrtg.cfg
+	CMD /usr/bin/mrtg --lock-file $XYMONSERVERLOGS/mrtg.lock /etc/mrtg.cfg
 	INTERVAL 5m
-	LOGFILE $BBSERVERLOGS/mrtg.log
+	LOGFILE $XYMONSERVERLOGS/mrtg.log
 </pre>
 
 <p>Some Linux distributions setup MRTG with the expectation that it will always

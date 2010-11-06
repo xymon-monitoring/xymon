@@ -50,9 +50,9 @@ then
 fi
 
 # vmstat and iostat do not exist on irix. SAR is your only option at this time. 
-nohup sh -c "sar 300 2 1>$BBTMP/xymon_sar.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/xymon_sar.$MACHINEDOTS.$$ $BBTMP/xymon_sar.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "sar 300 2 1>$XYMONTMP/xymon_sar.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_sar.$MACHINEDOTS.$$ $XYMONTMP/xymon_sar.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/xymon_sar.$MACHINEDOTS; then echo "[sar]"; cat $BBTMP/xymon_sar.$MACHINEDOTS; rm -f $BBTMP/xymon_sar.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_sar.$MACHINEDOTS; then echo "[sar]"; cat $XYMONTMP/xymon_sar.$MACHINEDOTS; rm -f $XYMONTMP/xymon_sar.$MACHINEDOTS; fi
 
 exit
 

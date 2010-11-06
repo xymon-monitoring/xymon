@@ -116,7 +116,7 @@ static void print_disklist(char *hostname)
 	struct dirent *de;
 	char *p;
 
-	sprintf(dirname, "%s/%s", xgetenv("BBRRDS"), hostname);
+	sprintf(dirname, "%s/%s", xgetenv("XYMONRRDS"), hostname);
 	d = opendir(dirname);
 	if (!d) return;
 
@@ -513,7 +513,7 @@ void load_columndocs(void)
 	FILE *fd;
 	strbuffer_t *inbuf;
 
-	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("XYMONHOME"));
 	fd = fopen(fn, "r"); if (!fd) return;
 
 	inbuf = newstrbuffer(0);
@@ -806,7 +806,7 @@ int main(int argc, char *argv[])
 	/* Load alert config */
 	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
 	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
-	sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("BBHOME"));
+	sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 	load_alertconfig(configfn, alertcolors, alertinterval);
 	load_columndocs();
 

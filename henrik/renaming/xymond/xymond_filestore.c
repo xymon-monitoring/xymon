@@ -199,27 +199,27 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[argi], "--status") == 0) {
 			role = ROLE_STATUS;
 			chnid = C_STATUS;
-			if (!filedir) filedir = xgetenv("BBLOGS");
+			if (!filedir) filedir = xgetenv("XYMONRAWSTATUSDIR");
 		}
 		else if (strcmp(argv[argi], "--html") == 0) {
 			role = ROLE_STATUS;
 			chnid = C_STATUS;
-			if (!htmldir) htmldir = xgetenv("BBHTML");
+			if (!htmldir) htmldir = xgetenv("XYMONHTMLSTATUSDIR");
 		}
 		else if (strcmp(argv[argi], "--data") == 0) {
 			role = ROLE_DATA;
 			chnid = C_DATA;
-			if (!filedir) filedir = xgetenv("BBDATA");
+			if (!filedir) filedir = xgetenv("XYMONDATADIR");
 		}
 		else if (strcmp(argv[argi], "--notes") == 0) {
 			role = ROLE_NOTES;
 			chnid = C_NOTES;
-			if (!filedir) filedir = xgetenv("BBNOTES");
+			if (!filedir) filedir = xgetenv("XYMONNOTESDIR");
 		}
 		else if (strcmp(argv[argi], "--enadis") == 0) {
 			role = ROLE_ENADIS;
 			chnid = C_ENADIS;
-			if (!filedir) filedir = xgetenv("BBDISABLED");
+			if (!filedir) filedir = xgetenv("XYMONDISABLEDDIR");
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;

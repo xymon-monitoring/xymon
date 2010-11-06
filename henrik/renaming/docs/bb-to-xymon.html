@@ -20,7 +20,7 @@ for the server- and data-files. The default is to use <em>~/server</em> and
 <em>~/data</em> respectively, which is unlikely to clash with the
 directories where you have Big Brother installed. If you do need to
 change the directories, you must edit the top-level Makefile and
-change the BBHOME and BBVAR settings near the top of the file.</p>
+change the XYMONHOME and XYMONVAR settings near the top of the file.</p>
 
 <h3>Step two: Move the configuration files</h3>
 <p>A couple of configuration files can be copied directly from 
@@ -44,7 +44,7 @@ file for the alert configuration, so you will have to re-write your
 alert configuration for Xymon. See the <a href="xymon-alerts.html">Xymon alert configuration</a>
 to learn how Xymon alerts are configured.</p>
 
-<p>Any server-side extension-scripts can be copied from the $BBHOME/ext/
+<p>Any server-side extension-scripts can be copied from the $XYMONHOME/ext/
 directory to the ~/server/ext/ directory. You must also add entries for
 them to the Xymon <em>tasks.cfg</em> file. Beware that many
 scripts rely on environment variables that Big Brother defines, but which
@@ -54,7 +54,7 @@ save this until you start running Xymon, and can look at any error-output
 from the scripts.</p>
 
 <p>If you have modified the webpage header- and footer-files in 
-$BBHOME/web/ then you can copy the modified files over directly to
+$XYMONHOME/web/ then you can copy the modified files over directly to
 the ~/server/web/ directory. Note that Xymon has a number of 
 header- and footer-files for the various CGI scripts that are not
 present in Big Brother, so you may need to setup a few extra 
@@ -68,9 +68,9 @@ over to Xymon, I recommend that you stop Big Brother now.</p>
 
 <h3>Step four: Move the history logs</h3>
 <p>You may want to save the historical logfiles and the history of your
-status changes. To do that, move all of the files or directories in the <em>$BBVAR/hist/</em>
+status changes. To do that, move all of the files or directories in the <em>$XYMONVAR/hist/</em>
 to the <em>~/data/hist/</em> directory, and all of the files or directories in
-<em>$BBVAR/histlogs/</em> to the <em>~/data/histlogs/</em> directory.
+<em>$XYMONVAR/histlogs/</em> to the <em>~/data/histlogs/</em> directory.
 If you prefer to keep them in the Big Brother directory, you can copy
 them over with "cp -r" or "tar" instead of moving them.</p>
 

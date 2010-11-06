@@ -31,8 +31,8 @@ void load_clientconfig(void)
 	char *sectstart;
 
 	if (!configfn) {
-		configfn = (char *)malloc(strlen(xgetenv("BBHOME"))+ strlen("/etc/client-local.cfg") + 1);
-		sprintf(configfn, "%s/etc/client-local.cfg", xgetenv("BBHOME"));
+		configfn = (char *)malloc(strlen(xgetenv("XYMONHOME"))+ strlen("/etc/client-local.cfg") + 1);
+		sprintf(configfn, "%s/etc/client-local.cfg", xgetenv("XYMONHOME"));
 	}
 
 	/* First check if there were no modifications at all */

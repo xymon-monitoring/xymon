@@ -30,9 +30,9 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 char *reqenv[] = {
-"BBHOME",
-"BBREP",
-"BBREPURL",
+"XYMONHOME",
+"XYMONREPDIR",
+"XYMONREPURL",
 NULL };
 
 char *style = "";
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 {
 	char dirid[PATH_MAX];
 	char outdir[PATH_MAX];
-	char bbwebenv[PATH_MAX];
+	char xymonwebenv[PATH_MAX];
 	char xymongencmd[PATH_MAX];
 	char xymongentimeopt[100];
 	char csvdelimopt[100];
@@ -249,21 +249,21 @@ int main(int argc, char *argv[])
 	 * We cannot do it before, because we need the environment that the command-line options 
 	 * might provide.
 	 */
-	if (xgetenv("BBGEN")) sprintf(xymongencmd, "%s", xgetenv("BBGEN"));
-	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("BBHOME"));
+	if (xgetenv("XYMONGEN")) sprintf(xymongencmd, "%s", xgetenv("XYMONGEN"));
+	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("XYMONHOME"));
 
 	sprintf(xymongentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
 	if (!csvoutput) {
-		sprintf(outdir, "%s/%s", xgetenv("BBREP"), dirid);
+		sprintf(outdir, "%s/%s", xgetenv("XYMONREPDIR"), dirid);
 		mkdir(outdir, 0755);
 		xymongen_argv[newargi++] = outdir;
-		sprintf(bbwebenv, "BBWEB=%s/%s", xgetenv("BBREPURL"), dirid);
-		putenv(bbwebenv);
+		sprintf(xymonwebenv, "XYMONWEB=%s/%s", xgetenv("XYMONREPURL"), dirid);
+		putenv(xymonwebenv);
 	}
 	else {
-		sprintf(outdir, "--csv=%s/%s.csv", xgetenv("BBREP"), dirid);
+		sprintf(outdir, "--csv=%s/%s.csv", xgetenv("XYMONREPDIR"), dirid);
 		xymongen_argv[newargi++] = outdir;
 		sprintf(csvdelimopt, "--csvdelim=%c", csvdelim);
 		xymongen_argv[newargi++] = csvdelimopt;
@@ -301,20 +301,20 @@ int main(int argc, char *argv[])
 	else if (childpid > 0) {
 		wait(&childstat);
 
-		/* Ignore SIGHUP so we dont get killed during cleanup of BBREP */
+		/* Ignore SIGHUP so we dont get killed during cleanup of XYMONREPDIR */
 		signal(SIGHUP, SIG_IGN);
 
 		if (WIFEXITED(childstat) && (WEXITSTATUS(childstat) != 0) ) {
 			char msg[4096];
 
 			if (usemultipart) printf("--%s\n\n", htmldelim);
-			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", xgetenv("BBHOME"), (int)getgid());
+			sprintf(msg, "Could not generate report.<br>\nCheck that the %s/www/rep/ directory has permissions '-rwxrwxr-x' (775)<br>\n and that is is set to group %d", xgetenv("XYMONHOME"), (int)getgid());
 			errormsg(msg);
 		}
 		else {
 			/* Send the browser off to the report */
 			if (usemultipart) {
-				printf("Done...Report is <A HREF=\"%s/%s/%s\">here</a>.</P></BODY></HTML>\n", xgetenv("BBREPURL"), dirid, suburl);
+				printf("Done...Report is <A HREF=\"%s/%s/%s\">here</a>.</P></BODY></HTML>\n", xgetenv("XYMONREPURL"), dirid, suburl);
 				fflush(stdout);
 				printf("--%s\n\n", htmldelim);
 			}
@@ -322,21 +322,21 @@ int main(int argc, char *argv[])
 			printf("<HTML><HEAD>\n");
 			if (!csvoutput) {
 				printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s/%s\"\n", 
-					xgetenv("BBREPURL"), dirid, suburl);
+					xgetenv("XYMONREPURL"), dirid, suburl);
 				printf("</HEAD><BODY>Report is available <a href=\"%s/%s/%s\">here</a></BODY></HTML>\n",
-					xgetenv("BBREPURL"), dirid, suburl);
+					xgetenv("XYMONREPURL"), dirid, suburl);
 			}
 			else {
 				printf("<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0; URL=%s/%s.csv\"\n", 
-					xgetenv("BBREPURL"), dirid);
+					xgetenv("XYMONREPURL"), dirid);
 				printf("</HEAD><BODY>Report is available <a href=\"%s/%s.csv\">here</a></BODY></HTML>\n",
-					xgetenv("BBREPURL"), dirid);
+					xgetenv("XYMONREPURL"), dirid);
 			}
 			if (usemultipart) printf("\n--%s\n", htmldelim);
 			fflush(stdout);
 		}
 
-		if (cleanupoldreps) cleandir(xgetenv("BBREP"));
+		if (cleanupoldreps) cleandir(xgetenv("XYMONREPDIR"));
 	}
 	else {
 		if (usemultipart) printf("--%s\n\n", htmldelim);

@@ -190,7 +190,7 @@ int do_request(void)
 			sprintf(hostdatadir, "%s/%s", s, hostname);
 		}
 		else {
-			s = xgetenv("BBVAR");
+			s = xgetenv("XYMONVAR");
 			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
 			sprintf(hostdatadir, "%s/hostdata/%s", s, hostname);
 		}
@@ -462,7 +462,7 @@ int do_request(void)
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
-		sprintf(logfn, "%s/%s/%s/%s", xgetenv("BBHISTLOGS"), hostnamedash, service, tstamp);
+		sprintf(logfn, "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, tstamp);
 		xfree(hostnamedash);
 		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 		sethostenv_histlog(tstamp);

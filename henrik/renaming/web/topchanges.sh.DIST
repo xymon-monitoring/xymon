@@ -2,6 +2,6 @@
 
 # This is the Xymon CGI script to display the top-N changing hosts/statuses
 
-. @BBHOME@/etc/cgioptions.cfg
+. @XYMONHOME@/etc/cgioptions.cfg
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/eventlog.cgi $CGI_TOPCHANGE_OPTS
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/eventlog.cgi $CGI_TOPCHANGE_OPTS

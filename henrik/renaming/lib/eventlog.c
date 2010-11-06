@@ -581,7 +581,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (extestregex && *extestregex) extestregexp = pcre_compile(extestregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (colrregex && *colrregex) colrregexp = pcre_compile(colrregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
-	sprintf(eventlogfilename, "%s/allevents", xgetenv("BBHIST"));
+	sprintf(eventlogfilename, "%s/allevents", xgetenv("XYMONHISTDIR"));
 	eventlog = fopen(eventlogfilename, "r");
 
 	if (eventlog && (stat(eventlogfilename, &st) == 0)) {
@@ -808,15 +808,15 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(hostname, ewalk->service->name, ewalk->changetime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
-				xgetenv("BBSKIN"), dotgiffilename(ewalk->oldcolor, 0, 0), 
+				xgetenv("XYMONSKIN"), dotgiffilename(ewalk->oldcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
 				colorname(ewalk->oldcolor), colorname(ewalk->oldcolor));
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
-				xgetenv("BBSKIN"));
+				xgetenv("XYMONSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(hostname, ewalk->service->name, ewalk->eventtime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A></TD>\n", 
-				xgetenv("BBSKIN"), dotgiffilename(ewalk->newcolor, 0, 0), 
+				xgetenv("XYMONSKIN"), dotgiffilename(ewalk->newcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
 				colorname(ewalk->newcolor), colorname(ewalk->newcolor));
 			fprintf(output, "</TR>\n");

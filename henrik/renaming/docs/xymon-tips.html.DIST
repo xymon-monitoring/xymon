@@ -31,12 +31,12 @@ raised with Xymon.</p>
 <h3><a name="icons">What do the little red/yellow/green icons mean ?</a></h3>
 <table align="center" border=1 summary="Xymon status icons">
 	<tr><th align=left valign=top>Color</th><td>Recently changed</td><td>Last change &gt; 24 hours</td></tr>
-	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@BBHOSTURL@/gifs/green-recent.gif" alt="Green - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/green.gif" alt="Green"></td></tr>
-	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@BBHOSTURL@/gifs/yellow-recent.gif" alt="Yellow - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/yellow.gif" alt="Yellow"></td></tr>
-	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="@BBHOSTURL@/gifs/red-recent.gif" alt="Red - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/red.gif" alt="Red"></td></tr>
-	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="@BBHOSTURL@/gifs/clear-recent.gif" alt="Clear - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/clear.gif" alt="Clear"></td></tr>
-	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@BBHOSTURL@/gifs/purple-recent.gif" alt="Purple - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/purple.gif" alt="Purple"></td></tr>
-	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@BBHOSTURL@/gifs/blue-recent.gif" alt="Blue - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/blue.gif" alt="Blue"></td></tr>
+	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@XYMONHOSTURL@/gifs/green-recent.gif" alt="Green - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/green.gif" alt="Green"></td></tr>
+	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@XYMONHOSTURL@/gifs/yellow-recent.gif" alt="Yellow - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/yellow.gif" alt="Yellow"></td></tr>
+	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="@XYMONHOSTURL@/gifs/red-recent.gif" alt="Red - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/red.gif" alt="Red"></td></tr>
+	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="@XYMONHOSTURL@/gifs/clear-recent.gif" alt="Clear - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/clear.gif" alt="Clear"></td></tr>
+	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@XYMONHOSTURL@/gifs/purple-recent.gif" alt="Purple - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/purple.gif" alt="Purple"></td></tr>
+	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@XYMONHOSTURL@/gifs/blue-recent.gif" alt="Blue - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/blue.gif" alt="Blue"></td></tr>
 </table>
 <hr>
 
@@ -262,7 +262,7 @@ script is pretty simple. You need to figure out some things:</p>
    fi
 
    # Tell Xymon about it
-   $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+   $XYMON $XYMSRV "status $MACHINE.$COLUMN $COLOR `date`
 
    ${MSG}
    "
@@ -271,7 +271,7 @@ script is pretty simple. You need to figure out some things:</p>
 </tt></pre>
 
 <p>You will notice that some environment variables are pre-defined:
-BB, BBDISP, MACHINE are all provided by Xymon when you run your script via
+XYMON, XYMSRV, MACHINE are all provided by Xymon when you run your script via
 xymonlaunch. Also note how the MSG variable is used to build the status
 message - it starts out with just the "Bad stuff status", then you add
 data to the message when we decided what the status is.</p>
@@ -299,10 +299,10 @@ Like this:</p>
 <pre><tt>
    #!/bin/sh
 
-   BBHTAG=foo           # What we put in hosts.cfg to trigger this test
-   COLUMN=$BBHTAG	# Name of the column, often same as tag in hosts.cfg
+   HOSTTAG=foo          # What we put in hosts.cfg to trigger this test
+   COLUMN=$HOSTTAG	# Name of the column, often same as tag in hosts.cfg
 
-   $BBHOME/bin/xymongrep $BBHTAG | while read L
+   $XYMONHOME/bin/xymongrep $HOSTTAG | while read L
    do
       set $L	# To get one line of output from xymongrep
 
@@ -311,11 +311,11 @@ Like this:</p>
       MACHINE=`echo $2 | $SED -e's/\./,/g'`
 
       COLOR=green
-      MSG="$BBHTAG status for host $MACHINEDOTS"
+      MSG="$HOSTTAG status for host $MACHINEDOTS"
 
       #... do the test, perhaps modify COLOR and MSG
 
-      $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+      $XYMON $XYMSRV "status $MACHINE.$COLUMN $COLOR `date`
 
       ${MSG}
       "

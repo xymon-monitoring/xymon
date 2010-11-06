@@ -49,7 +49,7 @@ static void xymon_default_envs(char *envfn)
 
 	xgetenv("MACHINE");
 
-	if (getenv("BBOSTYPE") == NULL) {
+	if (getenv("SERVEROSTYPE") == NULL) {
 		char *p;
 
 		fd = popen("uname -s", "r");
@@ -61,7 +61,7 @@ static void xymon_default_envs(char *envfn)
 		for (p=buf; (*p); p++) *p = (char) tolower((int)*p);
 
 		evar = (char *)malloc(strlen(buf) + 10);
-		sprintf(evar, "BBOSTYPE=%s", buf);
+		sprintf(evar, "SERVEROSTYPE=%s", buf);
 		putenv(evar);
 	}
 
@@ -122,16 +122,16 @@ int main(int argc, char *argv[])
 	if (!envfile) {
 		struct stat st;
 
-		sprintf(envfn, "%s/etc/xymonserver.cfg", xgetenv("BBHOME"));
-		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/xymonclient.cfg", xgetenv("BBHOME"));
+		sprintf(envfn, "%s/etc/xymonserver.cfg", xgetenv("XYMONHOME"));
+		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/xymonclient.cfg", xgetenv("XYMONHOME"));
 		errprintf("Using default environment file %s\n", envfn);
 
-		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
+		/* Make sure SERVEROSTYPE, MACHINEDOTS and MACHINE are setup for our child */
 		xymon_default_envs(envfn);
 		loadenv(envfn, envarea);
 	}
 	else {
-		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
+		/* Make sure SERVEROSTYPE, MACHINEDOTS and MACHINE are setup for our child */
 		xymon_default_envs(envfile);
 		loadenv(envfile, envarea);
 	}

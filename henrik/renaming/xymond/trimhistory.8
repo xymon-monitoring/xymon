@@ -37,7 +37,7 @@ entries prior to Oct. 1st 2004:
     trimhistory --cutoff=`date +%s --date="1 Oct 2004"`
 
 .IP "--outdir=DIRECTORY"
-Normally, files in the BBHIST directory are replaced. This option causes
+Normally, files in the XYMONHISTDIR directory are replaced. This option causes
 trimhistory to save the shortened history logfiles to another directory,
 so you can verify that the operation works as intended. The output directory
 must exist.
@@ -53,7 +53,7 @@ tracked by Xymon. Normally these files would be left untouched if only
 the host exists.
 
 .IP --droplogs
-Process the BBHISTLOGS directory also, and delete status-logs from events
+Process the XYMONHISTLOGS directory also, and delete status-logs from events
 prior to the cut-off time. Note that this can dramatically increase the
 processing time, since there are often lots and lots of files to process.
 
@@ -70,23 +70,23 @@ Enable debugging output.
 
 
 .SH FILES
-.IP "$BBHIST/allevents"
+.IP "$XYMONHISTDIR/allevents"
 The eventlog of all events that have happened in Xymon.
 
-.IP "$BBHIST/HOSTNAME"
+.IP "$XYMONHISTDIR/HOSTNAME"
 The per-host eventlogs.
 
-.IP "$BBHIST/HOSTNAME.SERVICE"
+.IP "$XYMONHISTDIR/HOSTNAME.SERVICE"
 The per-service eventlogs.
 
-.IP "$BBHISTLOGS/*/*"
+.IP "$XYMONHISTLOGS/*/*"
 The historical status-logs.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP BBHIST
+.IP XYMONHISTDIR
 The directory holding all history logs.
 
-.IP BBHISTLOGS
+.IP XYMONHISTLOGS
 The top-level directory for the historical status-log collections.
 
 .IP HOSTSCFG

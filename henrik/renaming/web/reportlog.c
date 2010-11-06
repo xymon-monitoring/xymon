@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 	displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
 	if (!displayname) displayname = hostname;
 
-	sprintf(histlogfn, "%s/%s.%s", xgetenv("BBHIST"), commafy(hostname), service);
+	sprintf(histlogfn, "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
 	if (fd == NULL) {
 		errormsg("Cannot open history file");
@@ -144,8 +144,8 @@ int main(int argc, char *argv[])
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (int)getpid());
-	sprintf(textrepfullfn, "%s/%s", xgetenv("BBREP"), textrepfn);
-	sprintf(textrepurl, "%s/%s", xgetenv("BBREPURL"), textrepfn);
+	sprintf(textrepfullfn, "%s/%s", xgetenv("XYMONREPDIR"), textrepfn);
+	sprintf(textrepurl, "%s/%s", xgetenv("XYMONREPURL"), textrepfn);
 	textrep = fopen(textrepfullfn, "w");
 
 	/* Now generate the webpage */

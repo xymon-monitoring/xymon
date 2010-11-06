@@ -12,5 +12,5 @@
 #
 # You need to define at least the Xymon server itself here.
 
-@BBHOSTIP@   @BBHOSTNAME@      # bbd http://@BBHOSTNAME@/
+@XYMONHOSTIP@   @XYMONHOSTNAME@      # bbd http://@XYMONHOSTNAME@/
 

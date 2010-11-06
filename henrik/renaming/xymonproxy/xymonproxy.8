@@ -3,7 +3,7 @@
 .SH NAME
 xymonproxy \- Xymon message proxy
 .SH SYNOPSIS
-.B "xymonproxy [options] --server=$BBDISP"
+.B "xymonproxy [options] --server=$XYMSRV"
 
 .SH DESCRIPTION
 .I xymonproxy(8)
@@ -38,7 +38,7 @@ to the Xymon server.
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
-Xymon environment, you can use "--server=$BBDISP". Up
+Xymon environment, you can use "--server=$XYMSRV". Up
 to 3 servers can be specified; incoming messages are sent to
 all of them (except "config", "query" and "download" messages, 
 which go to the LAST server only). If you have Xymon clients
@@ -56,7 +56,7 @@ will be used.
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
-.IP "--report=[PROXYHOSTNAME.]BBSERVICE"
+.IP "--report=[PROXYHOSTNAME.]SERVICE"
 If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use

@@ -32,7 +32,7 @@ protocols, e.g. imaps, pop3s, nntps, telnets, if SSL-support
 was enabled when configuring xymonnet. The full list of known
 tests is found in the
 .I protocols.cfg(5)
-file in $BBHOME/etc/protocols.cfg.
+file in $XYMONHOME/etc/protocols.cfg.
 
 In addition, it implements the "dns" and "dig" tests for
 testing DNS servers.
@@ -133,10 +133,10 @@ any errors that occurred during the run, and some timing statistics.
 The default columnname is "bbtest".
 
 .IP --test-untagged
-When using the BBLOCATION environment variable to test
+When using the XYMONNETWORK environment variable to test
 only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
-So only hosts that have a NET:$BBLOCATION tag will be 
+So only hosts that have a NET:$XYMONNETWORK tag will be 
 tested.
 .br
 With this option, hosts with no NET: tag are included
@@ -153,7 +153,7 @@ seconds (30 minutes).
 .IP --timelimit=N
 Causes xymonnet to generate a warning if the run-time
 of xymonnet exceeds N seconds. By default N is set to
-the value of BBSLEEP, so a warning triggers if the
+the value of TASKSLEEP, so a warning triggers if the
 network tests cannot complete in the time given for one
 cycle of the xymonnet task. Apart from the warning, this 
 option has no effect, i.e. it will not terminate xymonnet
@@ -329,7 +329,7 @@ how to test. Do not run any tests.
 
 
 .SH USING COOKIES IN WEB TESTS
-If the file $BBHOME/etc/cookies exist, cookies will be read from
+If the file $XYMONHOME/etc/cookies exist, cookies will be read from
 this file and sent along with the HTTP requests when checking
 websites. This file is in the Netscape Cookie format, see
 http://www.netscape.com/newsref/std/cookie_spec.html for details
@@ -428,7 +428,7 @@ xymonnet supports the NET:location tag in
 .I hosts.cfg(5)
 to distinguish 
 between hosts that should be tested from different network
-locations. If you set the environment variable BBLOCATION
+locations. If you set the environment variable XYMONNETWORK
 e.g. to "dmz" before running xymonnet, then it will only
 test hosts that have a "NET:dmz" tag in hosts.cfg. This allows
 you to keep all of your hosts in the same hosts.cfg file, but
@@ -468,7 +468,7 @@ takes. A conservative estimate for doing N TCP tests is:
    (1 + (N / concurrency)) * timeout
 
 In real life it will probably be less, as the above formula is for
-every test to require a timeout. Since the most normal use of BB
+every test to require a timeout. Since the most normal use of Xymon
 is to check for services that are active, you should have a lot
 less timeouts.
 
@@ -476,14 +476,14 @@ The "ntp" and "rpcinfo" checks rely on external programs to
 do each test.
 
 .SH ENVIRONMENT VARIABLES
-.IP BBLOCATION
+.IP XYMONNETWORK
 Defines the network segment where xymonnet is currently running.
 This is used to filter out only the entries in the
 .I hosts.cfg(5)
 file that have a matching "NET:LOCATION" tag, and execute the
 tests for only those hosts.
 
-.IP BBMAXMSGSPERCOMBO 
+.IP MAXMSGSPERCOMBO 
 Defines the maximum number of status messages that can be sent in 
 one combo message. Default is 0 - no limit.
 .br
@@ -493,7 +493,7 @@ size is 32 KB, but that will easily accomodate 100 status
 messages per transmission. So if you want to experiment
 with this setting, I suggest starting with a value of 10.
 
-.IP BBSLEEPBETWEENMSGS
+.IP SLEEPBETWEENMSGS
 Defines a a delay (in microseconds) after each 
 message is transmitted to the Xymon server. The default 
 is 0, i.e.  send the messages as fast as possible.
@@ -541,7 +541,7 @@ defining services in the protocols.cfg file. See
 .I protocols.cfg(5)
 for details on this file.
 
-.IP "$BBHOME/etc/netrc - authentication data for password-protected webs"
+.IP "$XYMONHOME/etc/netrc - authentication data for password-protected webs"
 If you have password-protected sites, you can put the usernames and 
 passwords for these here. They will then get picked up automatically
 when running your network tests.  This works for web-sites that use 
@@ -557,7 +557,7 @@ http://machinename/ URL setting - it need not be the one you
 use for the system-name in Xymon.
 
 .sp
-.IP "$BBHOME/etc/cookies"
+.IP "$XYMONHOME/etc/cookies"
 This file may contain website cookies, in the Netscape HTTP
 Cookie format. If a website requires a static cookie to be 
 present in order for the check to complete, then you can add
@@ -566,7 +566,7 @@ HTTP request. To get the cookies into this file, you can use
 the "curl --cookie-jar FILE" to request the URL that sets
 the cookie.
 .sp
-.IP "$BBTMP/*.status - test status summary"
+.IP "$XYMONTMP/*.status - test status summary"
 Each time xymonnet runs, if any tests fail (i.e. they result
 in a red status) then they will be listed in a file name
 TESTNAME.[LOCATION].status. The LOCATION part may be null. This
@@ -577,7 +577,7 @@ in turn decides if this test should be included in the tests done by
 It is also used internally by xymonnet when determining the
 color for tests that use the "badconn" or "badTESTNAME" tags.
 .sp
-.IP $BBTMP/frequenttests.[LOCATION]
+.IP $XYMONTMP/frequenttests.[LOCATION]
 This file contains the hostnames of those hosts that should be
 retested by the
 .I xymonnet-again.sh(1)

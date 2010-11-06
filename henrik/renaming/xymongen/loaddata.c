@@ -31,8 +31,8 @@ static char rcsid[] = "$Id$";
 int		statuscount = 0;
 
 char		*ignorecolumns = NULL;			/* Columns that will be ignored totally */
-char		*dialupskin = NULL;			/* BBSKIN used for dialup tests */
-char		*reverseskin = NULL;			/* BBSKIN used for reverse tests */
+char		*dialupskin = NULL;			/* XYMONSKIN used for dialup tests */
+char		*reverseskin = NULL;			/* XYMONSKIN used for reverse tests */
 time_t		recentgif_limit = 86400;		/* Limit for recent-gifs display, in seconds */
 
 xymongen_col_t 	null_column = { "", NULL };		/* Null column */
@@ -156,7 +156,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		if (strcmp(p, xgetenv("TRENDSCOLUMN")) == 0) return NULL;
 
 		/*
-		 * When doing reports, we are scanning the BBHIST directory. It may
+		 * When doing reports, we are scanning the XYMONHISTDIR directory. It may
 		 * contain files that are named as a host only (no test-name).
 		 * Skip those.
 		 */
@@ -169,7 +169,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		logexpired = (log->validtime < now);
 	}
 	else {
-		sprintf(fullfn, "%s/%s", xgetenv("BBHIST"), filename);
+		sprintf(fullfn, "%s/%s", xgetenv("XYMONHISTDIR"), filename);
 
 		/* Check that we can access this file */
 		if ( (stat(fullfn, &log_st) == -1)       || 

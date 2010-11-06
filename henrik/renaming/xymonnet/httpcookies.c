@@ -105,7 +105,7 @@ void save_session_cookies(void)
 	RbtIterator h;
 	hcookie_t *itm;
 
-	sprintf(cookiefn, "%s/etc/cookies.session", xgetenv("BBHOME"));
+	sprintf(cookiefn, "%s/etc/cookies.session", xgetenv("XYMONHOME"));
 	fd = fopen(cookiefn, "w");
 	if (fd == NULL) return;
 
@@ -182,10 +182,10 @@ void load_cookies(void)
 {
 	char cookiefn[PATH_MAX];
 
-	sprintf(cookiefn, "%s/etc/cookies", xgetenv("BBHOME"));
+	sprintf(cookiefn, "%s/etc/cookies", xgetenv("XYMONHOME"));
 	load_cookies_one(cookiefn);
 
-	sprintf(cookiefn, "%s/etc/cookies.session", xgetenv("BBHOME"));
+	sprintf(cookiefn, "%s/etc/cookies.session", xgetenv("XYMONHOME"));
 	load_cookies_one(cookiefn);
 }
 

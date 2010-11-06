@@ -372,7 +372,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	 * Private key passphrases are stored in the file named same as the
 	 * certificate itself, but with extension ".pass"
 	 */
-	sprintf(passfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
+	sprintf(passfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
 	p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
 	strcpy(p, ".pass");
 
@@ -514,7 +514,7 @@ static void setup_ssl(tcptest_t *item)
 			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
 			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);
 
-			sprintf(certfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
+			sprintf(certfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
 			status = SSL_CTX_use_certificate_chain_file(item->sslctx, certfn);
 			if (status == 1) {
 				status = SSL_CTX_use_PrivateKey_file(item->sslctx, certfn, SSL_FILETYPE_PEM);

@@ -173,8 +173,8 @@ static void load_netrc(void)
 
 	MEMDEFINE(netrcfn);
 
-	/* Look for $BBHOME/etc/netrc first, then the default ~/.netrc */
-	sprintf(netrcfn, "%s/etc/netrc", xgetenv("BBHOME"));
+	/* Look for $XYMONHOME/etc/netrc first, then the default ~/.netrc */
+	sprintf(netrcfn, "%s/etc/netrc", xgetenv("XYMONHOME"));
 	fd = fopen(netrcfn, "r");
 	/* Can HOME be undefined ? Yes, on Solaris when started during boot */
 	if ((fd == NULL) && getenv("HOME")) {
@@ -399,7 +399,7 @@ void parse_url(char *inputurl, urlelem_t *url)
 		if (walk) url->auth = walk->auth;
 	}
 
-	/* Build the canonical form of this URL, free from all BB'isms */
+	/* Build the canonical form of this URL, free from all config artefacts */
 	canonurllen = 1;
 	canonurllen += strlen(url->scheme)+3;	/* Add room for the "://" */
 	canonurllen += strlen(url->host);
@@ -446,7 +446,7 @@ static char *gethttpcolumn(char *inp, char **name)
 
 
 /* 
- * Split a BB test-specification with a URL and optional 
+ * Split a test-specification with a URL and optional 
  * post-data/expect-data/expect-type data into the URL itself 
  * and the other elements.
  * Un-escape data in the post- and expect-data.

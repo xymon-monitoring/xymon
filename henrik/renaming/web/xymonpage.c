@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include "version.h"
 
 char *reqenv[] = {
-	"BBHOME",
+	"XYMONHOME",
 	NULL
 };
 

@@ -347,7 +347,7 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 	strbuffer_t *servRed, *servYellow, *servPurple, *servBlue;
 	time_t logage;
 
-	bbdatefmt = xgetenv("BBDATEFORMAT");
+	bbdatefmt = xgetenv("XYMONDATEFORMAT");
 
 	servRed = newstrbuffer(0);
 	servYellow = newstrbuffer(0);
@@ -366,7 +366,7 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "<tr>");
 
 		sprintf(msgline, "<td><img src=\"%s/%s\" height=\"%s\" width=\"%s\" border=0 alt=\"%s status\"> %s</td>",
-			xgetenv("BBSKIN"), dotgiffilename(tnames[i].color, 0, 1),
+			xgetenv("XYMONSKIN"), dotgiffilename(tnames[i].color, 0, 1),
 			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"),
 			colorname(tnames[i].color), tnames[i].name);
 		addtobuffer(buf, msgline);
@@ -711,7 +711,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 	{
 		char configfn[PATH_MAX];
 
-		sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("BBHOME"));
+		sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
 		load_holidays(0);
 	}
@@ -778,20 +778,20 @@ char *generate_info(char *hostname, char *critconfigfn)
 	val = hostlink(hostname);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Notes:</th><td align=left><a href=\"%s\">%s%s</a>\n", 
-			val, xgetenv("BBWEBHOST"), val);
+			val, xgetenv("XYMONWEBHOST"), val);
 		addtobuffer(infobuf, l);
 	}
 
 	val = bbh_item(hostwalk, BBH_PAGEPATH);
 	sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s/\">%s</a>\n", 
-		xgetenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+		xgetenv("XYMONWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
 	addtobuffer(infobuf, l);
 
 	clonewalk = next_host(hostwalk, 1);
 	while (clonewalk && (strcmp(hostname, bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
 		val = bbh_item(clonewalk, BBH_PAGEPATH);
 		sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
-			xgetenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+			xgetenv("XYMONWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
 		addtobuffer(infobuf, l);
 		clonewalk = next_host(clonewalk, 1);
 	}
@@ -891,7 +891,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 		addtobuffer(infobuf, "</td></tr>\n");
 
 		val = bbh_item(hostwalk, BBH_WARNPCT);
-		if (val == NULL) val = xgetenv("BBREPWARN");
+		if (val == NULL) val = xgetenv("XYMONREPWARN");
 		if (val == NULL) val = "(not set)";
 
 		sprintf(l, "<tr><th align=left>SLA Availability:</th><td align=left>%s</td></tr>\n", val); 

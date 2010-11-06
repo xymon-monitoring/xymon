@@ -162,7 +162,7 @@ void redirect_cgilog(char *cginame)
 	char *cgilogdir;
 	
 	cgilogdir = getenv("XYMONCGILOGDIR");
-	if (cgilogdir == NULL) cgilogdir = xgetenv("BBSERVERLOGS");
+	if (cgilogdir == NULL) cgilogdir = xgetenv("XYMONSERVERLOGS");
 
 	if (cginame) errappname = strdup(cginame);
 	sprintf(logfn, "%s/cgierror.err", cgilogdir);

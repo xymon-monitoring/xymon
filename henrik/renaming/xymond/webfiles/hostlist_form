@@ -3,7 +3,7 @@
 <form name="listparams" method="post" action="&SCRIPT_NAME">
 <input name=csvdelim type=hidden value=";">
 
-<tr><th valign=top align=left>Page</td><td><input type=text name=page size=50 maxlength=80 value="&BBPAGEPATH"></td></tr>
+<tr><th valign=top align=left>Page</td><td><input type=text name=page size=50 maxlength=80 value="&XYMWEBPAGEPATH"></td></tr>
 <tr><td colspan=2><hr></td></tr>
 <tr><th valign=top align=left>Select</td>
     <td>

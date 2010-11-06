@@ -81,9 +81,9 @@ then
 fi
 
 # vmstat
-nohup sh -c "vmstat 300 2 1>$BBTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/xymon_vmstat.$MACHINEDOTS.$$ $BBTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "vmstat 300 2 1>$XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ $XYMONTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/xymon_vmstat.$MACHINEDOTS; rm -f $BBTMP/xymon_vmstat.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $XYMONTMP/xymon_vmstat.$MACHINEDOTS; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; fi
 
 exit
 

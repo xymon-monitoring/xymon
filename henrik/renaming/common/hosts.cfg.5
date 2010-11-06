@@ -50,7 +50,7 @@ The "filename" argument should point to a file that uses the
 same syntax as hosts.cfg. The filename can be an absolute 
 filename (if it begins with a '/'), or a relative filename -
 relative file names are prefixed with the directory where
-the main hosts.cfg file is located (usually $BBHOME/etc/).
+the main hosts.cfg file is located (usually $XYMONHOME/etc/).
 
 You can nest include tags, i.e. a file that is included 
 from the main hosts.cfg file can itself include other files.
@@ -482,7 +482,7 @@ that cross into/out of a REPORTTIME interval.
 If no REPORTTIME is given, the standard 24x7 calculation is used.
 
 .IP WARNPCT:percentage
-BB's reporting facility uses a computed availability threshold
+Xymon's reporting facility uses a computed availability threshold
 to color services green (100% available), yellow (above threshold,
 but less than 100%), or red (below threshold) in the reports.
 
@@ -502,7 +502,7 @@ causes Xymon to use the IP listed in the hosts.cfg file.
 
 .IP NET:location
 This tag defines the host as being tested from a specific location.
-If xymonnet sees that the environment variable BBLOCATION
+If xymonnet sees that the environment variable XYMONNETWORK
 is set, it will only test the hosts that have a matching
 "NET:location" tag in the hosts.cfg file. So this tag is useful
 if you have more than one system running network tests, but you 
@@ -721,13 +721,13 @@ Note: Internally, the ping test will still be handled as
 will report a status of "clear".
 
 .IP route_LOCATION:router1,router2,...
-If the BBLOCATION environment variable is defined, a tag
-of "route_BBLOCATION:" is recognized by xymonnet with 
+If the XYMONNETWORK environment variable is defined, a tag
+of "route_XYMONNETWORK:" is recognized by xymonnet with 
 the same effect as the normal "route:" tag (see above).
 This allows you to have different route: tags for each
 server running xymonnet. The actual text for the tag then must
-match the value you have for the BBLOCATION setting.
-E.g. with BBLOCATION=dmz, the tag becomes "route_dmz:"
+match the value you have for the XYMONNETWORK setting.
+E.g. with XYMONNETWORK=dmz, the tag becomes "route_dmz:"
 
 .IP "trace"
 If the connectivity test fails, run a "traceroute"
@@ -844,7 +844,7 @@ test to end up with a green status, all lookups must succeed.
 Check for a running NTP (Network Time Protocol) server on this
 host. This test uses the "ntpdate" utility to check for a
 NTP server - you should either have ntpdate in your PATH, or
-set the location of the ntpdate program in $BBHOME/etc/bbsys.local
+set the location of the ntpdate program in $XYMONHOME/etc/bbsys.local
 
 .IP rpc[=rpcservice1,rpcservice2,...]
 Check for one or more available RPC services. This check is indirect
@@ -890,7 +890,7 @@ for details).
 An SSL client certificate can be used for authentication.
 To use this, the client certificate must be stored in a
 PEM-formatted file together with the client certificate
-key, in the $BBHOME/certs/ directory. The URL is then given as
+key, in the $XYMONHOME/certs/ directory. The URL is then given as
 .br
     http://CERT:FILENAME@www.sample.com/
 .br
@@ -916,11 +916,11 @@ password you gave when exporting the certificate. Then
 provide a "PEM pass phrase" (twice) when prompted for one.
 .br
 The file.pem file is the one you should use in the FILENAME
-field in the URL - this file must be kept in $BBHOME/certs/.
+field in the URL - this file must be kept in $XYMONHOME/certs/.
 The PEM pass phrase must be put into a file named the
 same as the certificate, but with extension ".pass". E.g.
-if you have the PEM certificate in $BBHOME/certs/client.pem,
-you must put the pass phrase into the $BBHOME/certs/client.pass
+if you have the PEM certificate in $XYMONHOME/certs/client.pem,
+you must put the pass phrase into the $XYMONHOME/certs/client.pass
 file. Make sure to protect this file with Unix permissions,
 so that only the user running Xymon can read it.
 

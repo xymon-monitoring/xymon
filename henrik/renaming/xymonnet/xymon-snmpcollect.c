@@ -626,7 +626,7 @@ void readconfig(char *cfgfn, int verbose)
 	strbuffer_t *inbuf;
 
 	struct req_t *reqitem = NULL;
-	int bbsleep = atoi(xgetenv("BBSLEEP"));
+	int tasksleep = atoi(xgetenv("TASKSLEEP"));
 
 	mibdef_t *mib;
 
@@ -663,15 +663,15 @@ void readconfig(char *cfgfn, int verbose)
 			/*
 			 * See if we're running a non-standard interval.
 			 * If yes, then process only the records that match
-			 * this BBSLEEP setting.
+			 * this TASKSLEEP setting.
 			 */
-			if (bbsleep != 300) {
+			if (tasksleep != 300) {
 				/* Non-default interval. Skip the host if it HASN'T got an interval setting */
 				if (!intvl) continue;
 
 				/* Also skip the hosts that have an interval different from the current */
 				*intvl = '\0';	/* Clip the interval from the hostname */
-				if (atoi(intvl+1) != bbsleep) continue;
+				if (atoi(intvl+1) != tasksleep) continue;
 			}
 			else {
 				/* Default interval. Skip the host if it HAS an interval setting */
@@ -939,7 +939,7 @@ void sendresult(void)
 
 			sprintf(msgline, "\n[%s]\nInterval=%d\nActiveIP=%s\n\n",
 				mib->mibname,
-				atoi(xgetenv("BBSLEEP")),
+				atoi(xgetenv("TASKSLEEP")),
 				rwalk->hostip[rwalk->hostipidx]);
 			addtobuffer(mib->resultbuf, msgline);
 		}
@@ -1088,7 +1088,7 @@ int main (int argc, char **argv)
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
-		sprintf(configfn, "%s/etc/snmphosts.cfg", xgetenv("BBHOME"));
+		sprintf(configfn, "%s/etc/snmphosts.cfg", xgetenv("XYMONHOME"));
 	}
 	readconfig(configfn, mibcheck);
 	if (cfgcheck) return 0;

@@ -8,11 +8,11 @@
 <link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
 
 <!-- The favicon image -->
-<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+<link rel="shortcut icon" href="&XYMONSKIN/favicon-&XYMWEBBACKGROUND.ico">
 
 </HEAD>
 
-<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+<BODY BGCOLOR="&XYMWEBBACKGROUND" BACKGROUND="&XYMONSKIN/bkg-&XYMWEBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
 
 &XYMONBODYHEADER
 
@@ -26,7 +26,7 @@
     <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Snapshot Report</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
-   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMWEBDATE</B></FONT>
   </TD>
 </TR>
 <TR>

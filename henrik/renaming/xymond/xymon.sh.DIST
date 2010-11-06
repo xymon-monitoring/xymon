@@ -14,51 +14,51 @@ case "`uname -s`" in
 	;;
 esac
 
-if test `$ID -un` != @BBUSER@
+if test `$ID -un` != @XYMONUSER@
 then
-	echo "Xymon must be started as the @BBUSER@ user"
+	echo "Xymon must be started as the @XYMONUSER@ user"
 	exit 1
 fi
 
 case "$1" in
    "start")
-	if test -s @BBLOGDIR@/xymonlaunch.pid
+	if test -s @XYMONLOGDIR@/xymonlaunch.pid
 	then
-		kill -0 `cat @BBLOGDIR@/xymonlaunch.pid`
+		kill -0 `cat @XYMONLOGDIR@/xymonlaunch.pid`
 		if test $? -eq 0
 		then
 			echo "Xymon appears to be running, doing restart"
 			$0 stop
 		else
-			rm -f @BBLOGDIR@/xymonlaunch.pid
+			rm -f @XYMONLOGDIR@/xymonlaunch.pid
 		fi
 	fi
 
-	@RUNTIMEDEFS@ @BBHOME@/bin/xymonlaunch --config=@BBHOME@/etc/tasks.cfg --env=@BBHOME@/etc/xymonserver.cfg --log=@BBLOGDIR@/xymonlaunch.log --pidfile=@BBLOGDIR@/xymonlaunch.pid
+	@RUNTIMEDEFS@ @XYMONHOME@/bin/xymonlaunch --config=@XYMONHOME@/etc/tasks.cfg --env=@XYMONHOME@/etc/xymonserver.cfg --log=@XYMONLOGDIR@/xymonlaunch.log --pidfile=@XYMONLOGDIR@/xymonlaunch.pid
 	echo "Xymon started"
 	;;
 
    "stop")
-	if test -s @BBLOGDIR@/xymonlaunch.pid
+	if test -s @XYMONLOGDIR@/xymonlaunch.pid
 	then
-		kill -TERM `cat @BBLOGDIR@/xymonlaunch.pid`
+		kill -TERM `cat @XYMONLOGDIR@/xymonlaunch.pid`
 		echo "Xymon stopped"
 	else
 		echo "Xymon is not running"
 	fi
-	rm -f @BBLOGDIR@/xymonlaunch.pid
+	rm -f @XYMONLOGDIR@/xymonlaunch.pid
 	;;
 
    "status")
-	if test -s @BBLOGDIR@/xymonlaunch.pid
+	if test -s @XYMONLOGDIR@/xymonlaunch.pid
 	then
-		kill -0 `cat @BBLOGDIR@/xymonlaunch.pid`
+		kill -0 `cat @XYMONLOGDIR@/xymonlaunch.pid`
 		if test $? -eq 0
 		then
-			echo "Xymon (xymonlaunch) running with PID `cat @BBLOGDIR@/xymonlaunch.pid`"
+			echo "Xymon (xymonlaunch) running with PID `cat @XYMONLOGDIR@/xymonlaunch.pid`"
 		else
 			echo "Xymon not running, removing stale PID file"
-			rm -f @BBLOGDIR@/xymonlaunch.pid
+			rm -f @XYMONLOGDIR@/xymonlaunch.pid
 		fi
 	else
 		echo "Xymon (xymonlaunch) does not appear to be running"
@@ -66,7 +66,7 @@ case "$1" in
 	;;
 
    "restart")
-	if test -s @BBLOGDIR@/xymonlaunch.pid
+	if test -s @XYMONLOGDIR@/xymonlaunch.pid
 	then
 		$0 stop
 		sleep 10
@@ -78,16 +78,16 @@ case "$1" in
 	;;
 
    "reload")
-	if test -s @BBLOGDIR@/xymond.pid
+	if test -s @XYMONLOGDIR@/xymond.pid
 	then
-		kill -HUP `cat @BBLOGDIR@/xymond.pid`
+		kill -HUP `cat @XYMONLOGDIR@/xymond.pid`
 	else
 		echo "xymond not running (no PID file)"
 	fi
 	;;
 
    "rotate")
-   	for PIDFILE in @BBLOGDIR@/*.pid
+   	for PIDFILE in @XYMONLOGDIR@/*.pid
 	do
 		kill -HUP `cat $PIDFILE`
 	done

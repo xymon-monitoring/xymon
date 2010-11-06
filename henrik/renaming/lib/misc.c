@@ -431,8 +431,8 @@ int get_fqdn(void)
 
 int generate_static(void)
 {
-	getenv_default("BBLOGSTATUS", "STATIC", NULL);
-	return (strcmp(xgetenv("BBLOGSTATUS"), "STATIC") == 0);
+	getenv_default("XYMONLOGSTATUS", "STATIC", NULL);
+	return (strcmp(xgetenv("XYMONLOGSTATUS"), "STATIC") == 0);
 }
 
 
@@ -588,7 +588,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		/* Dont redo the eventlog or acklog things */
 		if ((strcmp(p, "eventlog.sh") != 0) &&
 		    (strcmp(p, "acklog.sh") != 0)) {
-			sprintf(extfn, "%s/ext/%s/%s", xgetenv("BBHOME"), family, p);
+			sprintf(extfn, "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p);
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
 				initfgets(inpipe);

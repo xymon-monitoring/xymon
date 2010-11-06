@@ -16,11 +16,11 @@ create_includefiles ()
 
 	set -- $XYMONSERVERS
 	if [ $# -eq 1 ]; then
-		echo "BBDISP=\"$XYMONSERVERS\""
-		echo "BBDISPLAYS=\"\""
+		echo "XYMSRV=\"$XYMONSERVERS\""
+		echo "XYMSERVERS=\"\""
 	else
-		echo "BBDISP=\"0.0.0.0\""
-		echo "BBDISPLAYS=\"$XYMONSERVERS\""
+		echo "XYMSRV=\"0.0.0.0\""
+		echo "XYMSERVERS=\"$XYMONSERVERS\""
 	fi > /var/run/xymon/bbdisp-runtime.cfg
 
 	for cfg in /etc/xymon/clientlaunch.d/*.cfg ; do

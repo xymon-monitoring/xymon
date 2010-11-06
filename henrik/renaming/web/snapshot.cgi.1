@@ -43,18 +43,18 @@ All options except "--env" are passed on to the
 program building the snapshot files.
 
 .SH ENVIRONMENT VARIABLES
-.IP BBGENSNAPOPTS
+.IP XYMONGENSNAPOPTS
 xymongen options passed by default to the snapshot.cgi script. 
 This happens in the snapshot.sh CGI wrapper script.
-.IP BBHOME
+.IP XYMONHOME
 Home directory of the Xymon server files
-.IP BBSNAP
+.IP XYMONSNAPDIR
 Directory where generated snapshots are stored. This directory must
 be writable by the userid executing the CGI script, typically
-"www", "apache" or "nobody". Default: $BBHOME/www/snap/
-.IP BBSNAPURL
+"www", "apache" or "nobody". Default: $XYMONHOME/www/snap/
+.IP XYMONSNAPURL
 The URL prefix to use when accessing the reports via a browser.
-Default: $BBWEB/snap
+Default: $XYMONWEB/snap
 
 
 .SH "SEE ALSO"

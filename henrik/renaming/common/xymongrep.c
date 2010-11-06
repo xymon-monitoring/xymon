@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 	if (nodownhosts) load_hoststatus();
 
 	/* Each network test tagged with NET:locationname */
-	p = xgetenv("BBLOCATION");
+	p = xgetenv("XYMONNETWORK");
 	if (p && strlen(p)) netstring = strdup(p);
 
 	hwalk = first_host();

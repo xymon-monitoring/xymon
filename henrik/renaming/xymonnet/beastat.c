@@ -37,7 +37,7 @@ static char msgline[MAX_LINE_LEN];
 static int statuscolor = COL_GREEN;
 
 /* Set with environment or command-line options */
-static char *location = "";		/* BBLOCATION value */
+static char *location = "";		/* XYMONNETWORK value */
 static int testuntagged = 0;
 static int default_port = 161;
 static char *default_community = "public";
@@ -83,8 +83,8 @@ int wanted_host(void *host, char *netstring)
 {
 	char *netlocation = bbh_item(host, BBH_NET);
 
-	return ((strlen(netstring) == 0) ||                                /* No BBLOCATION = do all */
-		(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* BBLOCATION && matching NET: tag */
+	return ((strlen(netstring) == 0) ||                                /* No XYMONNETWORK = do all */
+		(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* XYMONNETWORK && matching NET: tag */
 		(testuntagged && (netlocation == NULL)));                  /* No NET: tag for this host */
 }
 
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
                 return 1;
         }
 
-        if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
+        if (xgetenv("XYMONNETWORK")) location = strdup(xgetenv("XYMONNETWORK"));
 
 	init_timestamp();
 	combo_start();

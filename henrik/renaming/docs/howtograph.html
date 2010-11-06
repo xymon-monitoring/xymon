@@ -32,7 +32,7 @@ and reports these to Xymon.
 	   egrep "^dentry_cache|^inode_cache" | \
 	      awk '{print $1 " : " $3*$4}' &gt;/tmp/slab.txt
 
-	$BB $BBDISP "status $MACHINE.slab green `date`
+	$XYMON $XYMSRV "status $MACHINE.slab green `date`
 
 	`cat /tmp/slab.txt`
 	"

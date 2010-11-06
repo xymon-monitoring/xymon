@@ -510,10 +510,10 @@ int main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
 
-	if (xgetenv("BBSERVERLOGS")) {
-		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
+	if (xgetenv("XYMONSERVERLOGS")) {
+		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 		acklogfd = fopen(acklogfn, "a");
-		sprintf(notiflogfn, "%s/notifications.log", xgetenv("BBSERVERLOGS"));
+		sprintf(notiflogfn, "%s/notifications.log", xgetenv("XYMONSERVERLOGS"));
 		notiflogfd = fopen(notiflogfn, "a");
 	}
 

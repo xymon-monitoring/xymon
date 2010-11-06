@@ -535,9 +535,9 @@ int main(int argc, char *argv[])
 		argi++;
 	}
 
-	/* For testing, dont crash in sendmsg when no BBDISP defined */
+	/* For testing, dont crash in sendmsg when no XYMSRV defined */
 	dontsendmessages = 1;
-	if (xgetenv("BBDISP") == NULL) putenv("BBDISP=127.0.0.1");
+	if (xgetenv("XYMSRV") == NULL) putenv("XYMSRV=127.0.0.1");
 
 	memset(&item, 0, sizeof(item));
 	memset(&host, 0, sizeof(host));

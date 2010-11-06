@@ -139,8 +139,8 @@ Improvements
   e.g. you should be able to put a "NAME:foo" tag on a host and have it
   show up with different names for the same host.
 
-Various ideas that have appeared on the BB mailing list
--------------------------------------------------------
+Various ideas that have appeared on the mailing lists
+-----------------------------------------------------
 * A report generater capable of displaying for a certain time frame:
   1) List of the top XX "host.service" state changes.  This is to help us
      understand what is barking the most in our environment and focus efforts

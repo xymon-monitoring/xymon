@@ -17,8 +17,8 @@
 
 # Default settings for this client
 MACHINEDOTS="`uname -n`"			# This systems hostname
-BBOSTYPE="`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
-BBOSSCRIPT="xymonclient-$BBOSTYPE.sh"
+SERVEROSTYPE="`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"	# This systems operating system in lowercase
+XYMONOSSCRIPT="xymonclient-$SERVEROSTYPE.sh"
 
 # Command-line mods for the defaults
 while test "$1" != ""
@@ -28,7 +28,7 @@ do
 	  	MACHINEDOTS="`echo $1 | sed -e 's/--hostname=//'`"
 		;;
 	  --os=*)
-	  	BBOSTYPE="`echo $1 | sed -e 's/--os=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
+	  	SERVEROSTYPE="`echo $1 | sed -e 's/--os=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
 		;;
 	  --class=*)
 	        CONFIGCLASS="`echo $1 | sed -e 's/--class=//' | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`"
@@ -55,7 +55,7 @@ do
 done
 
 XYMONCLIENTHOME="`dirname $0`"
-export MACHINEDOTS BBOSTYPE BBOSSCRIPT XYMONCLIENTHOME CONFIGCLASS
+export MACHINEDOTS SERVEROSTYPE XYMONOSSCRIPT XYMONCLIENTHOME CONFIGCLASS
 
 MACHINE="`echo $MACHINEDOTS | sed -e 's/\./,/g'`"
 export MACHINE
@@ -79,7 +79,7 @@ case "$CMD" in
 
 	$XYMONCLIENTHOME/bin/hobbitlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log --pidfile=$XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	if test $? -eq 0; then
-		echo "Xymon client for $BBOSTYPE started on $MACHINEDOTS"
+		echo "Xymon client for $SERVEROSTYPE started on $MACHINEDOTS"
 	else
 		echo "Xymon client startup failed"
 	fi
@@ -101,7 +101,7 @@ case "$CMD" in
 		echo "Xymon client not running, continuing to start it"
 	fi
 
-	$0 --hostname="$MACHINEDOTS" --os="$BBOSTYPE" start
+	$0 --hostname="$MACHINEDOTS" --os="$SERVEROSTYPE" start
 	;;
 
   "status")

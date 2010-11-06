@@ -2,17 +2,17 @@
 <HTML>
 <HEAD>
 <META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2001 00:00:00 GMT">
-<TITLE>&BBBACKGROUND : Xymon - Performance data @ &BBDATE</TITLE>
+<TITLE>&XYMWEBBACKGROUND : Xymon - Performance data @ &XYMWEBDATE</TITLE>
 
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
 
 <!-- The favicon image -->
-<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+<link rel="shortcut icon" href="&XYMONSKIN/favicon-&XYMWEBBACKGROUND.ico">
 
 </HEAD>
 
-<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+<BODY BGCOLOR="&XYMWEBBACKGROUND" BACKGROUND="&XYMONSKIN/bkg-&XYMWEBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
 
 &XYMONBODYHEADER
 
@@ -26,7 +26,7 @@
     <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Performance data</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
-   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMWEBDATE</B></FONT>
   </TD>
 </TR>
 <TR>

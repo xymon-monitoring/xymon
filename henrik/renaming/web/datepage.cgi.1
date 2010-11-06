@@ -41,7 +41,7 @@ default web-header templates supplied with Xymon.
 This specifies the initial part of the final URL. This option is required.
 
 .IP "--hffile=FILENAME"
-Specifies the template files (from $BBHOME/web/) to use. The default is 
+Specifies the template files (from $XYMONHOME/web/) to use. The default is 
 "--hffile=report".
 
 .IP "--color=COLOR"
@@ -53,23 +53,23 @@ Loads the environment defined in FILENAME before executing the CGI script.
 .IP "--debug"
 Enables debugging output.
 
-.IP "$BBHOME/web/report_form_daily"
+.IP "$XYMONHOME/web/report_form_daily"
 HTML form template for the date selection form when type=daily.
 
-.IP "$BBHOME/web/report_form_weekly"
+.IP "$XYMONHOME/web/report_form_weekly"
 HTML form template for the date selection form when type=weekly.
 
-.IP "$BBHOME/web/report_form_monthly"
+.IP "$XYMONHOME/web/report_form_monthly"
 HTML form template for the date selection form when type=monthly.
 
-.IP "$BBHOME/web/report_header"
+.IP "$XYMONHOME/web/report_header"
 HTML header file for the generated web page
 
-.IP "$BBHOME/web/report_footer"
+.IP "$XYMONHOME/web/report_footer"
 HTML footer file for the generated web page
 
 .SH "ENVIRONMENT VARIABLES"
-.IP BBHOME
+.IP XYMONHOME
 Used to locate the template files for the generated web pages.
 
 .IP QUERY_STRING

@@ -57,10 +57,10 @@ int main(int argc, char *argv[])
 	drop_root_and_removesuid(argv[0]);
 #endif
 
-	versionfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(CLIENTVERSIONFILE) + 2);
-	sprintf(versionfn, "%s/%s", xgetenv("BBHOME"), CLIENTVERSIONFILE);
-	inprogressfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(INPROGRESSFILE) + 2);
-	sprintf(inprogressfn, "%s/%s", xgetenv("BBHOME"), INPROGRESSFILE);
+	versionfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen(CLIENTVERSIONFILE) + 2);
+	sprintf(versionfn, "%s/%s", xgetenv("XYMONHOME"), CLIENTVERSIONFILE);
+	inprogressfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen(INPROGRESSFILE) + 2);
+	sprintf(inprogressfn, "%s/%s", xgetenv("XYMONHOME"), INPROGRESSFILE);
 
 	versionfd = fopen(versionfn, "r");
 	if (versionfd) {
@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
 		*version = '\0';
 	}
 
-	if (chdir(xgetenv("BBHOME")) != 0) {
-		errprintf("Cannot chdir to BBHOME\n");
+	if (chdir(xgetenv("XYMONHOME")) != 0) {
+		errprintf("Cannot chdir to XYMONHOME\n");
 		return 1;
 	}
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 			srcfd = fopen(srcfn, "r"); cperr = errno;
 
 			sprintf(tmpfn, "%s/.update.%s.%ld.tmp", 
-				xgetenv("BBTMP"), xgetenv("MACHINEDOTS"), (long)getcurrenttime(NULL));
+				xgetenv("XYMONTMP"), xgetenv("MACHINEDOTS"), (long)getcurrenttime(NULL));
 
 			dbgprintf("Starting update by copying %s to %s\n", srcfn, tmpfn);
 
