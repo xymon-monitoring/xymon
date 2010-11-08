@@ -9,7 +9,7 @@ Changes from 4.3.0 beta 2 -> 4.3.0 beta 3 (15 Nov 2010)
   if the response-time of a network test is longer than
   expected, even though the service is responding. Also
   works for custom tests that feed data into graphs.
-  (see hobbit-clients.cfg "DS" definition). This uses a
+  (see analysis.cfg "DS" definition). This uses a
   new xymond command, "modify".
 * Clients can now use several modules to send "client"
   data to the Xymon server, all of which are passed to
@@ -102,7 +102,7 @@ xymond_client:
 * Test for any data going into graphs triggering a "modify" of
   a status if the value is outside limits.
 * Mangle filenames with a colon (i.e. Windows filenames) when
-  passing them to other status-messages, e.g. hobbitd_rrd.
+  passing them to other status-messages, e.g. xymond_rrd.
 * Detect/discard duplicated update-messages and discard them.
 
 xymond_history:
@@ -151,7 +151,7 @@ IBM MQ:
 * New collector module and sub-client.
 
 CGI applications:
-* New XYMONCGILOGDIR setting in hobbitserver.cfg sets a
+* New XYMONCGILOGDIR setting in xymonserver.cfg sets a
   directory where CGI debug output is stored.
 
 BEA/NetApp/Database add-on:

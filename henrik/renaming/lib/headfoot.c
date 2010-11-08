@@ -401,7 +401,7 @@ static void fetch_board(void)
 	if (haveboard) return;
 
 	sres = newsendreturnbuf(1, NULL);
-	if (sendmessage("hobbitdboard fields=hostname,testname,disabletime,dismsg", 
+	if (sendmessage("xymondboard fields=hostname,testname,disabletime,dismsg", 
 			NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		freesendreturnbuf(sres);
 		return;

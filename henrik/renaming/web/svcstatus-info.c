@@ -75,7 +75,7 @@ static int fetch_status(char *hostname)
 	sendreturn_t *sres;
 
 	sres = newsendreturnbuf(1, NULL);
-	sprintf(xymoncmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
+	sprintf(xymoncmd, "xymondboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
 	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}

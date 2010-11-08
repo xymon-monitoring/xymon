@@ -308,7 +308,7 @@ static void count_duration(time_t fromtime, time_t totime,
 	 * color has been since the start of the event-period.
 	 */
 	bdata = newsendreturnbuf(1, NULL);
-	if (sendmessage("hobbitdboard fields=hostname,testname,color,lastchange", NULL, XYMON_TIMEOUT, bdata) == XYMONSEND_OK) {
+	if (sendmessage("xymondboard fields=hostname,testname,color,lastchange", NULL, XYMON_TIMEOUT, bdata) == XYMONSEND_OK) {
 		char *bol, *eol;
 		char *hname, *tname;
 		int color;

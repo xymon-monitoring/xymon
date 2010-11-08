@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
 			if (lp) {
 				egocolumn = strdup(lp+1);
 			}
-			else egocolumn = "bbgen";
+			else egocolumn = "xymongen";
 			timing = 1;
 		}
 		else if ( argnmatch(argv[i], "--criticallog=") || (strcmp(argv[i], "--criticallog") == 0) || 

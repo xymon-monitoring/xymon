@@ -1975,7 +1975,7 @@ int main(int argc, char *argv[])
 			if (p) {
 				egocolumn = strdup(p+1);
 			}
-			else egocolumn = "bbtest";
+			else egocolumn = "xymonnet";
 			timing = 1;
 		}
 		else if (strcmp(argv[argi], "--test-untagged") == 0) {

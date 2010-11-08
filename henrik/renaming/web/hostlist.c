@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(fields) + strlen(testfilter) + strlen(pagefilter));
-	sprintf(req, "hobbitdboard fields=%s test=%s page=%s",
+	sprintf(req, "xymondboard fields=%s test=%s page=%s",
 		fields, testfilter, pagefilter);
 	res = sendmessage(req, NULL, XYMON_TIMEOUT, sres);
 	if (res != XYMONSEND_OK) return 1;

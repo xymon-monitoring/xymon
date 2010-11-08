@@ -56,7 +56,7 @@ int validstatus(char *hname, char *tname)
 		sendreturn_t *sres;
 
 		sres = newsendreturnbuf(1, NULL);
-		if (sendmessage("hobbitdboard fields=hostname,testname", NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
+		if (sendmessage("xymondboard fields=hostname,testname", NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 			errprintf("Cannot get list of host/test combinations\n");
 			exit(1);
 		}

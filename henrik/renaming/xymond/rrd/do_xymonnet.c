@@ -22,11 +22,11 @@ int do_xymonnet_rrd(char *hostname, char *testname, char *classname, char *pagep
 
 	p = strstr(msg, "TIME TOTAL");
 	if (p && (sscanf(p, "TIME TOTAL %f", &runtime) == 1)) {
-		if (strcmp("bbtest", testname) != 0) {
-			setupfn2("%s.%s.rrd", "bbtest", testname);
+		if (strcmp("xymonnet", testname) != 0) {
+			setupfn2("%s.%s.rrd", "xymonnet", testname);
 		}
 		else {
-			setupfn("%s.rrd", "bbtest");
+			setupfn("%s.rrd", "xymonnet");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);

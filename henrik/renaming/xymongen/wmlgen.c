@@ -94,7 +94,7 @@ static void generate_wml_statuscard(host_t *host, entry_t *entry)
 	sendreturn_t *sres;
 
 	sres = newsendreturnbuf(1, NULL);
-	sprintf(xymondreq, "hobbitdlog %s.%s", host->hostname, entry->column->name);
+	sprintf(xymondreq, "xymondlog %s.%s", host->hostname, entry->column->name);
 	xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 	logbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);

@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(pagefilter) + strlen(filter));
-	sprintf(req, "hobbitdboard fields=hostname,testname,color,msg %s %s",
+	sprintf(req, "xymondboard fields=hostname,testname,color,msg %s %s",
 		pagefilter, filter);
 	res = sendmessage(req, server, XYMON_TIMEOUT, sres);
 	board = getsendreturnstr(sres, 1);

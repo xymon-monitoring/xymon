@@ -255,8 +255,8 @@ xymond_statistics_t xymond_stats[] = {
 	{ "ack", 0 },
 	{ "config", 0 },
 	{ "query", 0 },
-	{ "hobbitdboard", 0 },
-	{ "hobbitdlog", 0 },
+	{ "xymondboard", 0 },
+	{ "xymondlog", 0 },
 	{ "drop", 0 },
 	{ "rename", 0 },
 	{ "dummy", 0 },
@@ -379,7 +379,7 @@ char *generate_stats(void)
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
-	sprintf(msgline, "status %s.hobbitd %s\nStatistics for Xymon daemon\nVersion: %s\nUp since %s (%s)\n\n",
+	sprintf(msgline, "status %s.xymond %s\nStatistics for Xymon daemon\nVersion: %s\nUp since %s (%s)\n\n",
 		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), VERSION, bootuptxt, uptimetxt);
 	addtobuffer(statsbuf, msgline);
 	sprintf(msgline, "Incoming messages      : %10ld\n", msgs_total);
@@ -3182,10 +3182,10 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdlog ", 11) == 0) {
+	else if ((strncmp(msg->buf, "xymondlog ", 10) == 0) || (strncmp(msg->buf, "hobbitdlog ", 11) == 0)) {
 		/* 
 		 * Request for a single status log
-		 * hobbitdlog HOST.TEST [fields=FIELDLIST]
+		 * xymondlog HOST.TEST [fields=FIELDLIST]
 		 *
 		 */
 
@@ -3228,10 +3228,10 @@ void do_message(conn_t *msg, char *origin)
 
 		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
-	else if (strncmp(msg->buf, "hobbitdxlog ", 12) == 0) {
+	else if ((strncmp(msg->buf, "xymondxlog ", 11) == 0) || (strncmp(msg->buf, "hobbitdxlog ", 12) == 0)) {
 		/* 
 		 * Request for a single status log in XML format
-		 * hobbitdxlog HOST.TEST
+		 * xymondxlog HOST.TEST
 		 *
 		 */
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
@@ -3297,7 +3297,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdboard", 12) == 0) {
+	else if ((strncmp(msg->buf, "xymondboard", 11) == 0) || (strncmp(msg->buf, "hobbitdboard", 12) == 0)) {
 		/* 
 		 * Request for a summmary of all known status logs
 		 *
@@ -3402,7 +3402,7 @@ void do_message(conn_t *msg, char *origin)
 
 		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
-	else if (strncmp(msg->buf, "hobbitdxboard", 13) == 0) {
+	else if ((strncmp(msg->buf, "xymondxboard", 12) == 0) || (strncmp(msg->buf, "hobbitdxboard", 13) == 0)) {
 		/* 
 		 * Request for a summmary of all known status logs in XML format
 		 *
@@ -3560,8 +3560,8 @@ void do_message(conn_t *msg, char *origin)
 		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 
-	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
-		/* hobbitdack COOKIE DURATION TEXT */
+	else if ((strncmp(msg->buf, "xymondack", 9) == 0) || (strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
+		/* xymondack COOKIE DURATION TEXT */
 		char *p;
 		int cookie, duration;
 		char durstr[100];
@@ -3576,7 +3576,8 @@ void do_message(conn_t *msg, char *origin)
 		 * we will accept an "ack ack_event" message. This allows us
 		 * to work with existing acknowledgement scripts.
 		 */
-		if (strncmp(msg->buf, "hobbitdack", 10) == 0) p = msg->buf + 10;
+		if (strncmp(msg->buf, "xymondack", 9) == 0) p = msg->buf + 9;
+		else if (strncmp(msg->buf, "hobbitdack", 10) == 0) p = msg->buf + 10;
 		else if (strncmp(msg->buf, "ack ack_event", 13) == 0) p = msg->buf + 13;
 		else p = msg->buf;
 
@@ -4024,7 +4025,7 @@ void save_checkpoint(void)
 				lwalk->acktime = 0;
 			}
 			flush_acklist(lwalk, 0);
-			iores = fprintf(fd, "@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
+			iores = fprintf(fd, "@@XYMONDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
 				lwalk->origin, hwalk->hostname, lwalk->test->name, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
@@ -4040,7 +4041,7 @@ void save_checkpoint(void)
 			if (iores >= 0) iores = fprintf(fd, "\n");
 
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
-				iores = fprintf(fd, "@@HOBBITDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
+				iores = fprintf(fd, "@@XYMONDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
 						hwalk->hostname, lwalk->test->name,
 			 			(int)awalk->received, (int)awalk->validuntil, (int)awalk->cleartime,
 						awalk->level, awalk->ackedby, awalk->msg);
@@ -4049,7 +4050,7 @@ void save_checkpoint(void)
 	}
 
 	for (swalk = schedulehead; (swalk && (iores >= 0)); swalk = swalk->next) {
-		iores = fprintf(fd, "@@HOBBITDCHK-V1|.task.|%d|%d|%s|%s\n", 
+		iores = fprintf(fd, "@@XYMONDCHK-V1|.task.|%d|%d|%s|%s\n", 
 			swalk->id, (int)swalk->executiontime, swalk->sender, nlencode(swalk->command));
 	}
 
@@ -4108,7 +4109,7 @@ void load_checkpoint(char *fn)
 		cookie = -1;
 		err = 0;
 
-		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
+		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.task.|", 22) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0)) {
 			scheduletask_t *newtask = (scheduletask_t *)calloc(1, sizeof(scheduletask_t));
 
 			item = gettok(STRBUF(inbuf), "|\n"); i = 0;
@@ -4138,7 +4139,7 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
-		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.acklist.|", 26) == 0) {
+		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.acklist.|", 25) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.acklist.|", 26) == 0)) {
 			xymond_log_t *log = NULL;
 			ackinfo_t *newack = (ackinfo_t *)calloc(1, sizeof(ackinfo_t));
 
@@ -4186,12 +4187,12 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
-		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.", 17) == 0) continue;
+		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.", 16) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.", 17) == 0)) continue;
 
 		item = gettok(STRBUF(inbuf), "|\n"); i = 0;
 		while (item && !err) {
 			switch (i) {
-			  case 0: err = ((strcmp(item, "@@HOBBITDCHK-V1") != 0) && (strcmp(item, "@@BBGENDCHK-V1") != 0)); break;
+			  case 0: err = ((strcmp(item, "@@XYMONDCHK-V1") != 0) && (strcmp(item, "@@HOBBITDCHK-V1") != 0) && (strcmp(item, "@@BBGENDCHK-V1") != 0)); break;
 			  case 1: originname = item; break;
 			  case 2: if (strlen(item)) hostname = item; else err=1; break;
 			  case 3: if (strlen(item)) testname = item; else err=1; break;
@@ -4553,7 +4554,7 @@ int main(int argc, char *argv[])
 			adminsenders = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--www-senders=")) {
-			/* Who is allowed to send us "hobbitdboard", "hobbitdlog"  messages */
+			/* Who is allowed to send us "xymondboard", "xymondlog"  messages */
 			char *p = strchr(argv[argi], '=');
 			wwwsenders = getsenderlist(p+1);
 		}

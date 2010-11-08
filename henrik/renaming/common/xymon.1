@@ -189,7 +189,7 @@ before changing the hostname in the hosts.cfg configuration file.
 .IP "rename HOSTNAME OLDTESTNAME NEWTESTNAME"
 Rename data about a single test (column).
 
-.IP "hobbitdlog HOSTNAME.TESTNAME"
+.IP "xymondlog HOSTNAME.TESTNAME"
 Retrieve the Xymon status-log for a single test. The first line of the
 response contains a series of fields separated by a pipe-sign:
 .sp
@@ -236,11 +236,11 @@ Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
 .sp
 After the first line comes the full status log in plain text format.
 
-.IP "hobbitdxlog HOSTNAME.TESTNAME"
+.IP "xymondxlog HOSTNAME.TESTNAME"
 Retrieves an XML string containing the status log as with the 
-"hobbitdlog" command.
+"xymondlog" command.
 
-.IP "hobbitdboard [CRITERIA] [fields=FIELDLIST]"
+.IP "xymondboard [CRITERIA] [fields=FIELDLIST]"
 Retrieves a summary of the status of all known tests available to
 the Xymon daemon. 
 
@@ -324,9 +324,9 @@ If the "fields" parameter is omitted, a default set of
 hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
 is used.
 
-.IP "hobbitdxboard"
+.IP "xymondxboard"
 Retrieves an XML string with the summary of all status logs
-as for the "hobbitdboard" command.
+as for the "xymondboard" command.
 
 .IP "download FILENAME"
 Download a file from the Xymon server\(aqs download directory.

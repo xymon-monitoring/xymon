@@ -54,9 +54,9 @@ int do_xymond_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		{ "\n- ack", 0 },
 		{ "\n- config", 0 },
 		{ "\n- query", 0 },
-		{ "\n- hobbitdboard", 0 },
-		{ "\n- hobbitdlist", 0 },
-		{ "\n- hobbitdlog", 0 },
+		{ "\n- xymondboard", 0 },
+		{ "\n- xymondlist", 0 },
+		{ "\n- xymondlog", 0 },
 		{ "\n- drop", 0 },
 		{ "\n- rename", 0 },
 		{ "\nstatus channel messages", 0 },
@@ -97,11 +97,11 @@ int do_xymond_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	}
 
 	if (gotany) {
-		if (strcmp("hobbitd", testname) != 0) {
-			setupfn2("%s.%s.rrd", "hobbitd", testname);
+		if (strcmp("xymond", testname) != 0) {
+			setupfn2("%s.%s.rrd", "xymond", testname);
 		}
 		else {
-			setupfn("%s.rrd", "hobbitd");
+			setupfn("%s.rrd", "xymond");
 		}
 
 		MEMUNDEFINE(valstr);

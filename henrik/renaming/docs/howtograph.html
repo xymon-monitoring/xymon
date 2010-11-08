@@ -79,7 +79,7 @@ datafiles. So you add the new test to this setting, by adding <b>slab=ncv</b> at
 end:
 
 <pre><tt>
-TEST2RRD=&quot;cpu=la,disk,&lt;...lots more stuff...&gt;,hobbitd,mysql=ncv,slab=ncv&quot;
+TEST2RRD=&quot;cpu=la,disk,&lt;...lots more stuff...&gt;,xymond,mysql=ncv,slab=ncv&quot;
 </tt></pre>
 
 <p><b>slab</b> is the status column name, and <b>=ncv</b> is a token that tells Xymon
@@ -208,7 +208,7 @@ column, you must add it to the GRAPHS setting in the
 ~xymon/server/etc/xymonserver.cfg file.</p>
 
 <pre><tt>
-	GRAPHS=&quot;la,disk,&lt;... lots more ...&gt;,bbproxy,hobbitd,slab&quot;
+	GRAPHS=&quot;la,disk,&lt;... lots more ...&gt;,xymonproxy,xymond,slab&quot;
 </tt></pre>
 Save the file, and when you click on the <b>trends</b> column you should
 see the slab graph at the bottom of the page.

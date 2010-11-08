@@ -271,7 +271,7 @@ void load_checkpoint(char *filename)
 	fd = fopen(filename, "r");
 	if (fd == NULL) return;
 
-	sprintf(statuscmd, "hobbitdboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
+	sprintf(statuscmd, "xymondboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
 	sres = newsendreturnbuf(1, NULL);
 	sendmessage(statuscmd, NULL, XYMON_TIMEOUT, sres);
 	statusbuf = getsendreturnstr(sres, 1);

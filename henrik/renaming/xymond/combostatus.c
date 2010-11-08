@@ -205,7 +205,7 @@ static int getxymondvalue(char *hostname, char *testname, char **errptr)
 	if (board == NULL) {
 		sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-		xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, XYMON_TIMEOUT, sres);
+		xymondresult = sendmessage("xymondboard fields=hostname,testname,color", NULL, XYMON_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 
 		if ((xymondresult != XYMONSEND_OK) || (board == NULL)) {

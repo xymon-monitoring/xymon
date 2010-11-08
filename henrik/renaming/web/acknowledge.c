@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 
 			cmd = (char *)malloc(1024);
-			strcpy(cmd, "hobbitdboard color=red,yellow fields=hostname,testname,cookie");
+			strcpy(cmd, "xymondboard color=red,yellow fields=hostname,testname,cookie");
 
 			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 			}
 
 			xymonmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
-			sprintf(xymonmsg, "hobbitdack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
+			sprintf(xymonmsg, "xymondack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
 			if (sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL) == XYMONSEND_OK) {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 

@@ -49,7 +49,7 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	int i;
 	sendreturn_t *sres;
 
-	sprintf(msg, "hobbitdboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", critacklevel,colorname(mincolor));
+	sprintf(msg, "xymondboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", critacklevel,colorname(mincolor));
 	for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
 
 	sres = newsendreturnbuf(1, NULL);

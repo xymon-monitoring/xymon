@@ -189,3 +189,28 @@ hosts.cfg tags
 ==============
 The "nobb2" tag has been deprecated. Use "nonongreen" instead.
 
+Xymon internal statuses
+=======================
+bbgen				xymongen
+bbtest				xymonnet
+hobbitd				xymond
+bbproxy				xymonproxy
+
+Xymon internal RRD files
+========================
+bbgen.rrd			xymongen.rrd
+bbtest.rrd			xymonnet.rrd
+hobbit.rrd			xymon.rrd
+hobbit2.rrd			xymon2.rrd
+hobbitd.rrd			xymond.rrd
+bbproxy.rrd			xymonproxy.rrd
+
+Xymon network-daemon commands
+=============================
+hobbitdboard			xymondboard
+hobbitdxboard			xymondxboard
+hobbitdlog			xymondlog
+hobbitdxlog			xymondxlog
+hobbitdack			xymondack
+
+

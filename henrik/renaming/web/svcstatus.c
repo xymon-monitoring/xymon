@@ -302,10 +302,10 @@ int do_request(void)
 		}
 
 		if (!complist) {
-			sprintf(xymondreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			sprintf(xymondreq, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
 		}
 		else {
-			sprintf(xymondreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
+			sprintf(xymondreq, "xymondboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
 		}
 
 		sres = newsendreturnbuf(1, NULL);

@@ -506,12 +506,12 @@ state_t *load_state(dispsummary_t **sumhead)
 			}
 		}
 		else {
-			xymondresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, XYMON_TIMEOUT, sres);
+			xymondresult = sendmessage("xymondboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, XYMON_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
 		}
 	}
 	else {
-		xymondresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, XYMON_TIMEOUT, sres);
+		xymondresult = sendmessage("xymondboard fields=hostname,testname", NULL, XYMON_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 	}
 

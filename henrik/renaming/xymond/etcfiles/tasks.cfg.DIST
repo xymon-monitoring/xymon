@@ -87,7 +87,7 @@
 [xymonproxy]
 	DISABLED
 	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
-	CMD $XYMONHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.bbproxy --no-daemon --pidfile=$XYMONSERVERLOGS/xymonproxy.pid
+	CMD $XYMONHOME/bin/xymonproxy --server=YOUR.XYMON.SERVER.IP --report=$MACHINE.xymonproxy --no-daemon --pidfile=$XYMONSERVERLOGS/xymonproxy.pid
 	LOGFILE $XYMONSERVERLOGS/xymonproxy.log
 
 

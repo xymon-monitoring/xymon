@@ -22,11 +22,11 @@ int do_xymonproxy_rrd(char *hostname, char *testname, char *classname, char *pag
 
 	p = strstr(msg, "Average queue time");
 	if (p && (sscanf(p, "Average queue time : %f", &runtime) == 1)) {
-		if (strcmp("bbproxy", testname) != 0) {
-			setupfn2("%s.%s.rrd", "bbproxy", testname);
+		if (strcmp("xymonproxy", testname) != 0) {
+			setupfn2("%s.%s.rrd", "xymonproxy", testname);
 		}
 		else {
-			setupfn("%s.rrd", "bbproxy");
+			setupfn("%s.rrd", "xymonproxy");
 		}
 		sprintf(rrdvalues, "%d:%.2f", (int) tstamp, runtime);
 		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonproxy_params, xymonproxy_tpl);

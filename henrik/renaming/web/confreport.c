@@ -690,11 +690,11 @@ int main(int argc, char *argv[])
 		procscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
 		svcscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
 
-		sprintf(xymoncmd, "hobbitdboard page=^%s$|^%s/.+ fields=hostname,testname", 
+		sprintf(xymoncmd, "xymondboard page=^%s$|^%s/.+ fields=hostname,testname", 
 			pagepattern, pagepattern);
-		sprintf(procscmd,  "hobbitdboard page=^%s$|^%s/.+ test=procs fields=hostname,msg",
+		sprintf(procscmd,  "xymondboard page=^%s$|^%s/.+ test=procs fields=hostname,msg",
 			pagepattern, pagepattern);
-		sprintf(svcscmd,   "hobbitdboard page=^%s$|^%s/.+ test=svcs fields=hostname,msg",
+		sprintf(svcscmd,   "xymondboard page=^%s$|^%s/.+ test=svcs fields=hostname,msg",
 			pagepattern, pagepattern);
 	}
 	else if (hostpattern) {
@@ -702,18 +702,18 @@ int main(int argc, char *argv[])
 		procscmd = (char *)malloc(strlen(hostpattern) + 1024);
 		svcscmd = (char *)malloc(strlen(hostpattern) + 1024);
 
-		sprintf(xymoncmd, "hobbitdboard host=^%s$ fields=hostname,testname", hostpattern);
-		sprintf(procscmd,  "hobbitdboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
-		sprintf(svcscmd,   "hobbitdboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
+		sprintf(xymoncmd, "xymondboard host=^%s$ fields=hostname,testname", hostpattern);
+		sprintf(procscmd,  "xymondboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
+		sprintf(svcscmd,   "xymondboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
 	}
 	else {
 		xymoncmd = (char *)malloc(1024);
 		procscmd = (char *)malloc(1024);
 		svcscmd = (char *)malloc(1024);
 
-		sprintf(xymoncmd, "hobbitdboard fields=hostname,testname");
-		sprintf(procscmd,  "hobbitdboard test=procs fields=hostname,msg");
-		sprintf(svcscmd,   "hobbitdboard test=svcs fields=hostname,msg");
+		sprintf(xymoncmd, "xymondboard fields=hostname,testname");
+		sprintf(procscmd,  "xymondboard test=procs fields=hostname,msg");
+		sprintf(svcscmd,   "xymondboard test=svcs fields=hostname,msg");
 	}
 
 	sres = newsendreturnbuf(1, NULL);

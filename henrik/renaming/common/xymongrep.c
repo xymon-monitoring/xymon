@@ -35,13 +35,13 @@ static void load_hoststatus()
 	char msg[1024];
 	sendreturn_t *sres;
 
-	sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", conncolumn);
+	sprintf(msg, "xymondboard fields=hostname,testname,color test=%s", conncolumn);
 	sres = newsendreturnbuf(1, NULL);
 	res = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
 	if (res == XYMONSEND_OK) connstatus = getsendreturnstr(sres, 1);
 
 	if ((res == XYMONSEND_OK) && testcolumn) {
-		sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", testcolumn);
+		sprintf(msg, "xymondboard fields=hostname,testname,color test=%s", testcolumn);
 		res = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
 		if (res == XYMONSEND_OK) teststatus = getsendreturnstr(sres, 1);
 	}

@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	if (firsttxtline == NULL) firsttxtline = "<No cause specified>";
 	ackbuf = (char *)malloc(4096 + strlen(firsttxtline) + (fromline ? strlen(fromline) : 0));
 	p = ackbuf;
-	p += sprintf(p, "hobbitdack %s %d %s", cookie, duration, firsttxtline);
+	p += sprintf(p, "xymondack %s %d %s", cookie, duration, firsttxtline);
 	if (fromline) {
 		p += sprintf(p, "\nAcked by: %s", fromline);
 	}

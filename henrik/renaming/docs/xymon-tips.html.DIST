@@ -52,7 +52,7 @@ this are:</p>
 <ul>
 	<li>The client is using another hostname than what is in the hosts.cfg file.<br>
 	Xymon only cares about the hosts that are in the hosts.cfg file, and
-	discards status-reports from unknown hosts. If you check the "hobbitd"
+	discards status-reports from unknown hosts. If you check the "xymond"
 	column on the webserver display for the Xymon server, you will see 
 	a report about these unknown hosts.<br>
 	Either reconfigure the client to use the same hostname as is in the
