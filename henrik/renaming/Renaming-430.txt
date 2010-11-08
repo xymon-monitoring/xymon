@@ -1,0 +1,187 @@
+This documents all of the renaming that has happened between
+the 4.3.0-beta2 and 4.3.0-beta3 releases of Xymon.
+
+Configuration files
+===================
+bb-hosts			hosts.cfg
+bbcombotest.cfg			combo.cfg
+hobbit-alerts.cfg		alerts.cfg
+hobbitcgi.cfg			cgioptions.cfg
+hobbit-nkview.cfg		critical.cfg
+hobbit-rrddefinitions.cfg	rrddefinitions.cfg
+hobbitgraph.cfg			graphs.cfg
+hobbit-holidays.cfg		holidays.cfg
+hobbit-clients.cfg		analysis.cfg
+hobbit-snmpmibs.cfg		snmpmibs.cfg
+hobbitlaunch.cfg		tasks.cfg
+hobbitserver.cfg		xymonserver.cfg
+hobbitclient.cfg		xymonclient.cfg
+bb-services			protocols.cfg
+
+Common programs
+===============
+bb				xymon
+bbcmd				xymoncmd
+hobbitlaunch			xymonlaunch
+bbhostgrep			xymongrep
+bbhostshow			xymoncfg
+bbdigest			xymondigest
+
+Client programs
+===============
+hobbitclient*			xymonclient*
+orcahobbit			orcaxymon
+
+Xymon server programs
+=====================
+hobbitd				xymond
+hobbitd_alert			xymond_alert
+hobbitd_capture			xymond_capture
+hobbitd_channel			xymond_channel
+hobbitd_client			xymond_client
+hobbitd_filestore		xymond_filestore
+hobbitd_history			xymond_history
+hobbitd_hostdata		xymond_hostdata
+hobbitd_locator			xymond_locator
+hobbitd_rrd			xymond_rrd
+hobbitd_sample			xymond_sample
+hobbitfetch			xymonfetch
+hobbit-mailack			xymon-mailack
+bbcombotest			combostatus
+
+Net test tools
+==============
+bbtest-net			xymonnet
+bbretest-net.sh			xymonnet-again.sh
+hobbitping			xymonping
+hobbit-snmpcollect		xymon-snmpcollect
+
+Proxy tools
+===========
+bbproxy				xymonproxy
+bbmessage.cgi			xymoncgimsg.cgi
+
+Web tools
+=========
+bbgen				xymongen
+bb-ack.cgi			ack.cgi
+bb-csvinfo.cgi			csvinfo.cgi
+bb-datepage.cgi			datepage.cgi
+bb-eventlog.cgi			eventlog.cgi
+bb-findhost.cgi			findhost.cgi
+bb-hist.cgi			history.cgi
+bb-histlog.cgi			historylog.cgi
+bb-hostsvc.sh			svcstatus.sh
+bb-rep.cgi			report.cgi
+bb-replog.cgi			reportlog.cgi
+bb-snapshot.cgi			snapshot.cgi
+bb-webpage.cgi			xymonpage.cgi
+hobbit-ackinfo.cgi		ackinfo.cgi
+hobbit-certreport.sh		certreport.sh
+hobbit-confreport.cgi		confreport.cgi
+hobbit-enadis.cgi		enadis.cgi
+hobbit-ghosts.cgi		ghostlist.cgi
+hobbit-hostgraphs.cgi		hostgraphs.cgi
+hobbit-hostlist.cgi		hostlist.cgi
+hobbit-nkedit.cgi		criticaleditor.cgi
+hobbit-nkview.cgi		criticalview.cgi
+hobbit-nongreen.sh		nongreen.sh
+hobbit-notifylog.cgi		notifications.cgi
+hobbit-perfdata.cgi		perfdata.cgi
+hobbit-statusreport.cgi		statusreport.cgi
+hobbit-topchanges.sh		topchanges.sh
+hobbit-useradm.cgi		useradm.cgi
+hobbitcolumn.sh			columndoc.sh
+hobbitgraph.cgi			showgraph.cgi
+
+Templates
+=========
+bb				stdnormal
+bb2				stdnongreen
+bbnk				stdcritical
+bbsnap				snapnormal
+bbsnap2				snapnongreen
+bbsnapnk			snapcritical
+bbrep				repnormal
+hobbitnk			critical
+nkack				critack
+nkedit				critedit
+
+Web pages
+=========
+bb.html				xymon.html
+bb2.html			nongreen.html
+bbnk.html			critical.html
+
+CGI option variables
+====================
+CGI_HOBBITCOLUMN_OPTS		CGI_COLUMNDOC_OPTS
+CGI_HOBBITGRAPH_OPTS		CGI_SHOWGRAPH_OPTS
+CGI_HOBBITCONFREPORT_OPTS	CGI_CONFREPORT_OPTS
+
+Configuration settings (in xymonserver.cfg)
+===========================================
+BB				XYMON
+BBACKS				XYMONACKDIR
+BBALLHISTLOG			XYMONALLHISTLOG
+BBDATA				XYMONDATADIR
+BBDATEFORMAT			XYMONDATEFORMAT
+BBDISABLED			XYMONDISABLEDDIR
+BBDISPLAYS			XYMSERVERS
+BBDISP				XYMSRV
+BBGENOPTS			XYMONGENOPTS
+BBGENREPOPTS			XYMONGENREPOPTS
+BBGENSNAPOPTS			XYMONGENSNAPOPTS
+BBGEN				XYMONGEN
+BBHELPSKIN			XYMONHELPSKIN
+BBHISTEXT			XYMONHISTEXT
+BBHISTLOGS			XYMONHISTLOGS
+BBHIST				XYMONHISTDIR
+BBHOME				XYMONHOME
+BBHOSTHISTLOG			XYMONHOSTHISTLOG
+BBHOSTS				HOSTSCFG
+BBHTML				XYMONHTMLSTATUSDIR
+BBLOGSTATUS			XYMONLOGSTATUS
+BBLOGS				XYMONRAWSTATUSDIR
+BBMAXMSGSPERCOMBO		MAXMSGSPERCOMBO
+BBMENUSKIN			XYMONMENUSKIN
+BBNOTESSKIN			XYMONNOTESSKIN
+BBNOTES				XYMONNOTESDIR
+BBOSTYPE			SERVEROSTYPE
+BBREPEXT			XYMONREPEXT
+BBREPPANIC			XYMONREPGREEN
+BBREPURL			XYMONREPURL
+BBREPWARN			XYMONREPWARN
+BBREP				XYMONREPDIR
+BBROUTERTEXT			XYMONROUTERTEXT
+BBRRDS				XYMONRRDS
+BBRSSTITLE			XYMONRSSTITLE
+BBSERVERCGIURL			XYMONSERVERCGIURL
+BBSERVERHOSTNAME		XYMONSERVERHOSTNAME
+BBSERVERIP			XYMONSERVERIP
+BBSERVERLOGS			XYMONSERVERLOGS
+BBSERVEROS			XYMONSERVEROS
+BBSERVERROOT			XYMONSERVERROOT
+BBSERVERSECURECGIURL		XYMONSERVERSECURECGIURL
+BBSERVERWWWNAME			XYMONSERVERWWWNAME
+BBSERVERWWWURL			XYMONSERVERWWWURL
+BBSKIN				XYMONSKIN
+BBSLEEPBETWEENMSGS		SLEEPBETWEENMSGS
+BBSNAPURL			XYMONSNAPURL
+BBSNAP				XYMONSNAPDIR
+BBTMP				XYMONTMP
+BBVAR				XYMONVAR
+BBWAP				XYMONWAP
+BBWEBHOSTURL			XYMONWEBHOSTURL
+BBWEBHOST			XYMONWEBHOST
+BBWEBHTMLLOGS			XYMONWEBHTMLLOGS
+BBWEB				XYMONWEB
+BBWWW				XYMONWWWDIR
+MKBBACKFONT			XYMONPAGEACKFONT
+MKBBCOLFONT			XYMONPAGECOLFONT
+MKBBLOCAL			XYMONPAGELOCAL
+MKBBREMOTE			XYMONPAGEREMOTE
+MKBBROWFONT			XYMONPAGEROWFONT
+MKBBSUBLOCAL			XYMONPAGESUBLOCAL
+MKBBTITLE			XYMONPAGETITLE
+
