@@ -495,10 +495,10 @@ static char *nameandcomment(void *host, char *hostname, int usetooltip)
 	/* For summary "hosts", we have no hinfo record. */
 	if (!host) return hostname;
 
-	hname = bbh_item(host, BBH_HOSTNAME);
-	disp = bbh_item(host, BBH_DISPLAYNAME);
-	cmt = bbh_item(host, BBH_COMMENT); if (!cmt) cmt = bbh_item(host, BBH_DESCRIPTION);
-	if (!cmt && usetooltip) cmt = bbh_item(host, BBH_IP);
+	hname = xmh_item(host, XMH_HOSTNAME);
+	disp = xmh_item(host, XMH_DISPLAYNAME);
+	cmt = xmh_item(host, XMH_COMMENT); if (!cmt) cmt = xmh_item(host, XMH_DESCRIPTION);
+	if (!cmt && usetooltip) cmt = xmh_item(host, XMH_IP);
 
 	if (disp == NULL) disp = hname;
 

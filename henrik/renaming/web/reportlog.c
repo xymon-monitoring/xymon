@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
 		errormsg("No such host");
 		return 1;
 	}
-	ip = bbh_item(hinfo, BBH_IP);
-	displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
+	ip = xmh_item(hinfo, XMH_IP);
+	displayname = xmh_item(hinfo, XMH_DISPLAYNAME);
 	if (!displayname) displayname = hostname;
 
 	sprintf(histlogfn, "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);

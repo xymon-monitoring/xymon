@@ -61,173 +61,175 @@ typedef struct namelist_t {
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
 static namelist_t *defaulthost = NULL;
-static const char *bbh_item_key[BBH_LAST];
-static const char *bbh_item_name[BBH_LAST];
-static int bbh_item_isflag[BBH_LAST];
+static const char *xmh_item_key[XMH_LAST];
+static const char *xmh_item_name[XMH_LAST];
+static int xmh_item_isflag[XMH_LAST];
 static int configloaded = 0;
 static RbtHandle rbhosts;
 static RbtHandle rbclients;
 
-static void bbh_item_list_setup(void)
+static void xmh_item_list_setup(void)
 {
 	static int setupdone = 0;
 	int i;
-	enum bbh_item_t bi;
+	enum xmh_item_t bi;
 
 	if (setupdone) return;
 
 	/* Doing it this way makes sure the index matches the value */
 	setupdone = 1;
-	memset(bbh_item_key, 0, sizeof(bbh_item_key));
-	memset(bbh_item_name, 0, sizeof(bbh_item_key));
-	memset(bbh_item_isflag, 0, sizeof(bbh_item_isflag));
-	bbh_item_key[BBH_NET]                  = "NET:";
-	bbh_item_name[BBH_NET]                 = "BBH_NET";
-	bbh_item_key[BBH_DISPLAYNAME]          = "NAME:";
-	bbh_item_name[BBH_DISPLAYNAME]         = "BBH_DISPLAYNAME";
-	bbh_item_key[BBH_CLIENTALIAS]          = "CLIENT:";
-	bbh_item_name[BBH_CLIENTALIAS]         = "BBH_CLIENTALIAS";
-	bbh_item_key[BBH_COMMENT]              = "COMMENT:";
-	bbh_item_name[BBH_COMMENT]             = "BBH_COMMENT";
-	bbh_item_key[BBH_DESCRIPTION]          = "DESCR:";
-	bbh_item_name[BBH_DESCRIPTION]         = "BBH_DESCRIPTION";
-	bbh_item_key[BBH_DOCURL]               = "DOC:";
-	bbh_item_name[BBH_DOCURL]              = "BBH_DOCURL";
-	bbh_item_key[BBH_NK]                   = "NK:";
-	bbh_item_name[BBH_NK]                  = "BBH_NK";
-	bbh_item_key[BBH_NKTIME]               = "NKTIME=";
-	bbh_item_name[BBH_NKTIME]              = "BBH_NKTIME";
-	bbh_item_key[BBH_TRENDS]               = "TRENDS:";
-	bbh_item_name[BBH_TRENDS]              = "BBH_TRENDS";
-	bbh_item_key[BBH_WML]                  = "WML:";
-	bbh_item_name[BBH_WML]                 = "BBH_WML";
-	bbh_item_key[BBH_NOPROP]               = "NOPROP:";
-	bbh_item_name[BBH_NOPROP]              = "BBH_NOPROP";
-	bbh_item_key[BBH_NOPROPRED]            = "NOPROPRED:";
-	bbh_item_name[BBH_NOPROPRED]           = "BBH_NOPROPRED";
-	bbh_item_key[BBH_NOPROPYELLOW]         = "NOPROPYELLOW:";
-	bbh_item_name[BBH_NOPROPYELLOW]        = "BBH_NOPROPYELLOW";
-	bbh_item_key[BBH_NOPROPPURPLE]         = "NOPROPPURPLE:";
-	bbh_item_name[BBH_NOPROPPURPLE]        = "BBH_NOPROPPURPLE";
-	bbh_item_key[BBH_NOPROPACK]            = "NOPROPACK:";
-	bbh_item_name[BBH_NOPROPACK]           = "BBH_NOPROPACK";
-	bbh_item_key[BBH_REPORTTIME]           = "REPORTTIME=";
-	bbh_item_name[BBH_REPORTTIME]          = "BBH_REPORTTIME";
-	bbh_item_key[BBH_WARNPCT]              = "WARNPCT:";
-	bbh_item_name[BBH_WARNPCT]             = "BBH_WARNPCT";
-	bbh_item_key[BBH_WARNSTOPS]            = "WARNSTOPS:";
-	bbh_item_name[BBH_WARNSTOPS]           = "BBH_WARNSTOPS";
-	bbh_item_key[BBH_DOWNTIME]             = "DOWNTIME=";
-	bbh_item_name[BBH_DOWNTIME]            = "BBH_DOWNTIME";
-	bbh_item_key[BBH_SSLDAYS]              = "ssldays=";
-	bbh_item_name[BBH_SSLDAYS]             = "BBH_SSLDAYS";
-	bbh_item_key[BBH_SSLMINBITS]           = "sslbits=";
-	bbh_item_name[BBH_SSLMINBITS]          = "BBH_SSLMINBITS";
-	bbh_item_key[BBH_DEPENDS]              = "depends=";
-	bbh_item_name[BBH_DEPENDS]             = "BBH_DEPENDS";
-	bbh_item_key[BBH_BROWSER]              = "browser=";
-	bbh_item_name[BBH_BROWSER]             = "BBH_BROWSER";
-	bbh_item_key[BBH_HOLIDAYS]             = "holidays=";
-	bbh_item_name[BBH_HOLIDAYS]            = "BBH_HOLIDAYS";
-	bbh_item_key[BBH_FLAG_NOINFO]          = "noinfo";
-	bbh_item_name[BBH_FLAG_NOINFO]         = "BBH_FLAG_NOINFO";
-	bbh_item_key[BBH_FLAG_NOTRENDS]        = "notrends";
-	bbh_item_name[BBH_FLAG_NOTRENDS]       = "BBH_FLAG_NOTRENDS";
-	bbh_item_key[BBH_FLAG_NODISP]          = "nodisp";
-	bbh_item_name[BBH_FLAG_NODISP]         = "BBH_FLAG_NODISP";
-	bbh_item_key[BBH_FLAG_NOBB2]           = "nobb2";
-	bbh_item_name[BBH_FLAG_NOBB2]          = "BBH_FLAG_NOBB2";
-	bbh_item_key[BBH_FLAG_PREFER]          = "prefer";
-	bbh_item_name[BBH_FLAG_PREFER]         = "BBH_FLAG_PREFER";
-	bbh_item_key[BBH_FLAG_NOSSLCERT]       = "nosslcert";
-	bbh_item_name[BBH_FLAG_NOSSLCERT]      = "BBH_FLAG_NOSSLCERT";
-	bbh_item_key[BBH_FLAG_TRACE]           = "trace";
-	bbh_item_name[BBH_FLAG_TRACE]          = "BBH_FLAG_TRACE";
-	bbh_item_key[BBH_FLAG_NOTRACE]         = "notrace";
-	bbh_item_name[BBH_FLAG_NOTRACE]        = "BBH_FLAG_NOTRACE";
-	bbh_item_key[BBH_FLAG_NOCONN]          = "noconn";
-	bbh_item_name[BBH_FLAG_NOCONN]         = "BBH_FLAG_NOCONN";
-	bbh_item_key[BBH_FLAG_NOPING]          = "noping";
-	bbh_item_name[BBH_FLAG_NOPING]         = "BBH_FLAG_NOPING";
-	bbh_item_key[BBH_FLAG_DIALUP]          = "dialup";
-	bbh_item_name[BBH_FLAG_DIALUP]         = "BBH_FLAG_DIALUP";
-	bbh_item_key[BBH_FLAG_TESTIP]          = "testip";
-	bbh_item_name[BBH_FLAG_TESTIP]         = "BBH_FLAG_TESTIP";
-	bbh_item_key[BBH_FLAG_LDAPFAILYELLOW]  = "ldapyellowfail";
-	bbh_item_name[BBH_FLAG_LDAPFAILYELLOW] = "BBH_FLAG_LDAPFAILYELLOW";
-	bbh_item_key[BBH_FLAG_NOCLEAR]         = "NOCLEAR";
-	bbh_item_name[BBH_FLAG_NOCLEAR]        = "BBH_FLAG_NOCLEAR";
-	bbh_item_key[BBH_FLAG_HIDEHTTP]        = "HIDEHTTP";
-	bbh_item_name[BBH_FLAG_HIDEHTTP]       = "BBH_FLAG_HIDEHTTP";
-	bbh_item_key[BBH_FLAG_PULLDATA]        = "PULLDATA";
-	bbh_item_name[BBH_FLAG_PULLDATA]       = "BBH_FLAG_PULLDATA";
-	bbh_item_key[BBH_FLAG_MULTIHOMED]      = "MULTIHOMED";
-	bbh_item_name[BBH_FLAG_MULTIHOMED]     = "BBH_MULTIHOMED";
-	bbh_item_key[BBH_LDAPLOGIN]            = "ldaplogin=";
-	bbh_item_name[BBH_LDAPLOGIN]           = "BBH_LDAPLOGIN";
-	bbh_item_key[BBH_CLASS]                = "CLASS:";
-	bbh_item_name[BBH_CLASS]               = "BBH_CLASS";
-	bbh_item_key[BBH_OS]                   = "OS:";
-	bbh_item_name[BBH_OS]                  = "BBH_OS";
-	bbh_item_key[BBH_NOCOLUMNS]            = "NOCOLUMNS:";
-	bbh_item_name[BBH_NOCOLUMNS]           = "BBH_NOCOLUMNS";
-	bbh_item_key[BBH_NOTBEFORE]            = "NOTBEFORE:";
-	bbh_item_name[BBH_NOTBEFORE]           = "BBH_NOTBEFORE";
-	bbh_item_key[BBH_NOTAFTER]             = "NOTAFTER:";
-	bbh_item_name[BBH_NOTAFTER]            = "BBH_NOTAFTER";
-	bbh_item_key[BBH_COMPACT]              = "COMPACT:";
-	bbh_item_name[BBH_COMPACT]             = "BBH_COMPACT";
+	memset(xmh_item_key, 0, sizeof(xmh_item_key));
+	memset(xmh_item_name, 0, sizeof(xmh_item_key));
+	memset(xmh_item_isflag, 0, sizeof(xmh_item_isflag));
+	xmh_item_key[XMH_NET]                  = "NET:";
+	xmh_item_name[XMH_NET]                 = "XMH_NET";
+	xmh_item_key[XMH_DISPLAYNAME]          = "NAME:";
+	xmh_item_name[XMH_DISPLAYNAME]         = "XMH_DISPLAYNAME";
+	xmh_item_key[XMH_CLIENTALIAS]          = "CLIENT:";
+	xmh_item_name[XMH_CLIENTALIAS]         = "XMH_CLIENTALIAS";
+	xmh_item_key[XMH_COMMENT]              = "COMMENT:";
+	xmh_item_name[XMH_COMMENT]             = "XMH_COMMENT";
+	xmh_item_key[XMH_DESCRIPTION]          = "DESCR:";
+	xmh_item_name[XMH_DESCRIPTION]         = "XMH_DESCRIPTION";
+	xmh_item_key[XMH_DOCURL]               = "DOC:";
+	xmh_item_name[XMH_DOCURL]              = "XMH_DOCURL";
+	xmh_item_key[XMH_NK]                   = "NK:";
+	xmh_item_name[XMH_NK]                  = "XMH_NK";
+	xmh_item_key[XMH_NKTIME]               = "NKTIME=";
+	xmh_item_name[XMH_NKTIME]              = "XMH_NKTIME";
+	xmh_item_key[XMH_TRENDS]               = "TRENDS:";
+	xmh_item_name[XMH_TRENDS]              = "XMH_TRENDS";
+	xmh_item_key[XMH_WML]                  = "WML:";
+	xmh_item_name[XMH_WML]                 = "XMH_WML";
+	xmh_item_key[XMH_NOPROP]               = "NOPROP:";
+	xmh_item_name[XMH_NOPROP]              = "XMH_NOPROP";
+	xmh_item_key[XMH_NOPROPRED]            = "NOPROPRED:";
+	xmh_item_name[XMH_NOPROPRED]           = "XMH_NOPROPRED";
+	xmh_item_key[XMH_NOPROPYELLOW]         = "NOPROPYELLOW:";
+	xmh_item_name[XMH_NOPROPYELLOW]        = "XMH_NOPROPYELLOW";
+	xmh_item_key[XMH_NOPROPPURPLE]         = "NOPROPPURPLE:";
+	xmh_item_name[XMH_NOPROPPURPLE]        = "XMH_NOPROPPURPLE";
+	xmh_item_key[XMH_NOPROPACK]            = "NOPROPACK:";
+	xmh_item_name[XMH_NOPROPACK]           = "XMH_NOPROPACK";
+	xmh_item_key[XMH_REPORTTIME]           = "REPORTTIME=";
+	xmh_item_name[XMH_REPORTTIME]          = "XMH_REPORTTIME";
+	xmh_item_key[XMH_WARNPCT]              = "WARNPCT:";
+	xmh_item_name[XMH_WARNPCT]             = "XMH_WARNPCT";
+	xmh_item_key[XMH_WARNSTOPS]            = "WARNSTOPS:";
+	xmh_item_name[XMH_WARNSTOPS]           = "XMH_WARNSTOPS";
+	xmh_item_key[XMH_DOWNTIME]             = "DOWNTIME=";
+	xmh_item_name[XMH_DOWNTIME]            = "XMH_DOWNTIME";
+	xmh_item_key[XMH_SSLDAYS]              = "ssldays=";
+	xmh_item_name[XMH_SSLDAYS]             = "XMH_SSLDAYS";
+	xmh_item_key[XMH_SSLMINBITS]           = "sslbits=";
+	xmh_item_name[XMH_SSLMINBITS]          = "XMH_SSLMINBITS";
+	xmh_item_key[XMH_DEPENDS]              = "depends=";
+	xmh_item_name[XMH_DEPENDS]             = "XMH_DEPENDS";
+	xmh_item_key[XMH_BROWSER]              = "browser=";
+	xmh_item_name[XMH_BROWSER]             = "XMH_BROWSER";
+	xmh_item_key[XMH_HOLIDAYS]             = "holidays=";
+	xmh_item_name[XMH_HOLIDAYS]            = "XMH_HOLIDAYS";
+	xmh_item_key[XMH_FLAG_NOINFO]          = "noinfo";
+	xmh_item_name[XMH_FLAG_NOINFO]         = "XMH_FLAG_NOINFO";
+	xmh_item_key[XMH_FLAG_NOTRENDS]        = "notrends";
+	xmh_item_name[XMH_FLAG_NOTRENDS]       = "XMH_FLAG_NOTRENDS";
+	xmh_item_key[XMH_FLAG_NODISP]          = "nodisp";
+	xmh_item_name[XMH_FLAG_NODISP]         = "XMH_FLAG_NODISP";
+	xmh_item_key[XMH_FLAG_NONONGREEN]      = "nonongreen";
+	xmh_item_name[XMH_FLAG_NONONGREEN]     = "XMH_FLAG_NONONGREEN";
+	xmh_item_key[XMH_FLAG_NOBB2]           = "nobb2";
+	xmh_item_name[XMH_FLAG_NOBB2]          = "XMH_FLAG_NOBB2";
+	xmh_item_key[XMH_FLAG_PREFER]          = "prefer";
+	xmh_item_name[XMH_FLAG_PREFER]         = "XMH_FLAG_PREFER";
+	xmh_item_key[XMH_FLAG_NOSSLCERT]       = "nosslcert";
+	xmh_item_name[XMH_FLAG_NOSSLCERT]      = "XMH_FLAG_NOSSLCERT";
+	xmh_item_key[XMH_FLAG_TRACE]           = "trace";
+	xmh_item_name[XMH_FLAG_TRACE]          = "XMH_FLAG_TRACE";
+	xmh_item_key[XMH_FLAG_NOTRACE]         = "notrace";
+	xmh_item_name[XMH_FLAG_NOTRACE]        = "XMH_FLAG_NOTRACE";
+	xmh_item_key[XMH_FLAG_NOCONN]          = "noconn";
+	xmh_item_name[XMH_FLAG_NOCONN]         = "XMH_FLAG_NOCONN";
+	xmh_item_key[XMH_FLAG_NOPING]          = "noping";
+	xmh_item_name[XMH_FLAG_NOPING]         = "XMH_FLAG_NOPING";
+	xmh_item_key[XMH_FLAG_DIALUP]          = "dialup";
+	xmh_item_name[XMH_FLAG_DIALUP]         = "XMH_FLAG_DIALUP";
+	xmh_item_key[XMH_FLAG_TESTIP]          = "testip";
+	xmh_item_name[XMH_FLAG_TESTIP]         = "XMH_FLAG_TESTIP";
+	xmh_item_key[XMH_FLAG_LDAPFAILYELLOW]  = "ldapyellowfail";
+	xmh_item_name[XMH_FLAG_LDAPFAILYELLOW] = "XMH_FLAG_LDAPFAILYELLOW";
+	xmh_item_key[XMH_FLAG_NOCLEAR]         = "NOCLEAR";
+	xmh_item_name[XMH_FLAG_NOCLEAR]        = "XMH_FLAG_NOCLEAR";
+	xmh_item_key[XMH_FLAG_HIDEHTTP]        = "HIDEHTTP";
+	xmh_item_name[XMH_FLAG_HIDEHTTP]       = "XMH_FLAG_HIDEHTTP";
+	xmh_item_key[XMH_FLAG_PULLDATA]        = "PULLDATA";
+	xmh_item_name[XMH_FLAG_PULLDATA]       = "XMH_FLAG_PULLDATA";
+	xmh_item_key[XMH_FLAG_MULTIHOMED]      = "MULTIHOMED";
+	xmh_item_name[XMH_FLAG_MULTIHOMED]     = "XMH_MULTIHOMED";
+	xmh_item_key[XMH_LDAPLOGIN]            = "ldaplogin=";
+	xmh_item_name[XMH_LDAPLOGIN]           = "XMH_LDAPLOGIN";
+	xmh_item_key[XMH_CLASS]                = "CLASS:";
+	xmh_item_name[XMH_CLASS]               = "XMH_CLASS";
+	xmh_item_key[XMH_OS]                   = "OS:";
+	xmh_item_name[XMH_OS]                  = "XMH_OS";
+	xmh_item_key[XMH_NOCOLUMNS]            = "NOCOLUMNS:";
+	xmh_item_name[XMH_NOCOLUMNS]           = "XMH_NOCOLUMNS";
+	xmh_item_key[XMH_NOTBEFORE]            = "NOTBEFORE:";
+	xmh_item_name[XMH_NOTBEFORE]           = "XMH_NOTBEFORE";
+	xmh_item_key[XMH_NOTAFTER]             = "NOTAFTER:";
+	xmh_item_name[XMH_NOTAFTER]            = "XMH_NOTAFTER";
+	xmh_item_key[XMH_COMPACT]              = "COMPACT:";
+	xmh_item_name[XMH_COMPACT]             = "XMH_COMPACT";
 
-	bbh_item_name[BBH_IP]                  = "BBH_IP";
-	bbh_item_name[BBH_CLIENTALIAS]         = "BBH_CLIENTALIAS";
-	bbh_item_name[BBH_HOSTNAME]            = "BBH_HOSTNAME";
-	bbh_item_name[BBH_PAGENAME]            = "BBH_PAGENAME";
-	bbh_item_name[BBH_PAGEPATH]            = "BBH_PAGEPATH";
-	bbh_item_name[BBH_PAGETITLE]           = "BBH_PAGETITLE";
-	bbh_item_name[BBH_PAGEPATHTITLE]       = "BBH_PAGEPATHTITLE";
-	bbh_item_name[BBH_ALLPAGEPATHS]        = "BBH_ALLPAGEPATHS";
-	bbh_item_name[BBH_GROUPID]             = "BBH_GROUPID";
-	bbh_item_name[BBH_PAGEINDEX]           = "BBH_PAGEINDEX";
-	bbh_item_name[BBH_RAW]                 = "BBH_RAW";
+	xmh_item_name[XMH_IP]                  = "XMH_IP";
+	xmh_item_name[XMH_CLIENTALIAS]         = "XMH_CLIENTALIAS";
+	xmh_item_name[XMH_HOSTNAME]            = "XMH_HOSTNAME";
+	xmh_item_name[XMH_PAGENAME]            = "XMH_PAGENAME";
+	xmh_item_name[XMH_PAGEPATH]            = "XMH_PAGEPATH";
+	xmh_item_name[XMH_PAGETITLE]           = "XMH_PAGETITLE";
+	xmh_item_name[XMH_PAGEPATHTITLE]       = "XMH_PAGEPATHTITLE";
+	xmh_item_name[XMH_ALLPAGEPATHS]        = "XMH_ALLPAGEPATHS";
+	xmh_item_name[XMH_GROUPID]             = "XMH_GROUPID";
+	xmh_item_name[XMH_PAGEINDEX]           = "XMH_PAGEINDEX";
+	xmh_item_name[XMH_RAW]                 = "XMH_RAW";
 
-	i = 0; while (bbh_item_key[i]) i++;
-	if (i != BBH_IP) {
-		errprintf("ERROR: Setup failure in bbh_item_key position %d\n", i);
+	i = 0; while (xmh_item_key[i]) i++;
+	if (i != XMH_IP) {
+		errprintf("ERROR: Setup failure in xmh_item_key position %d\n", i);
 	}
 
-	for (bi = 0; (bi < BBH_LAST); bi++) 
-		if (bbh_item_name[bi]) bbh_item_isflag[bi] = (strncmp(bbh_item_name[bi], "BBH_FLAG_", 9) == 0);
+	for (bi = 0; (bi < XMH_LAST); bi++) 
+		if (xmh_item_name[bi]) xmh_item_isflag[bi] = (strncmp(xmh_item_name[bi], "XMH_FLAG_", 9) == 0);
 }
 
 
-static char *bbh_find_item(namelist_t *host, enum bbh_item_t item)
+static char *xmh_find_item(namelist_t *host, enum xmh_item_t item)
 {
 	int i;
 	char *result;
 
-	if (item == BBH_LAST) return NULL;	/* Unknown item requested */
+	if (item == XMH_LAST) return NULL;	/* Unknown item requested */
 
-	bbh_item_list_setup();
+	xmh_item_list_setup();
 	i = 0;
-	while (host->elems[i] && strncasecmp(host->elems[i], bbh_item_key[item], strlen(bbh_item_key[item]))) i++;
-	result = (host->elems[i] ? (host->elems[i] + strlen(bbh_item_key[item])) : NULL);
+	while (host->elems[i] && strncasecmp(host->elems[i], xmh_item_key[item], strlen(xmh_item_key[item]))) i++;
+	result = (host->elems[i] ? (host->elems[i] + strlen(xmh_item_key[item])) : NULL);
 
 	/* Handle the LARRD: tag in Xymon 4.0.4 and earlier */
-	if (!result && (item == BBH_TRENDS)) {
+	if (!result && (item == XMH_TRENDS)) {
 		i = 0;
 		while (host->elems[i] && strncasecmp(host->elems[i], "LARRD:", 6)) i++;
 		result = (host->elems[i] ? (host->elems[i] + 6) : NULL);
 	}
 
 	if (result || !host->defaulthost || (strcasecmp(host->hostname, ".default.") == 0)) {
-		if (bbh_item_isflag[item]) {
-			return (result ? bbh_item_key[item] : NULL);
+		if (xmh_item_isflag[item]) {
+			return (result ? xmh_item_key[item] : NULL);
 		}
 		else
 			return result;
 	}
 	else
-		return bbh_find_item(host->defaulthost, item);
+		return xmh_find_item(host->defaulthost, item);
 }
 
 static void initialize_hostlist(void)
@@ -309,11 +311,11 @@ static void build_hosttree(void)
 			break;
 		}
 
-		tstr = bbh_item(walk, BBH_NOTBEFORE);
+		tstr = xmh_item(walk, XMH_NOTBEFORE);
 		walk->notbefore = (tstr ? timestr2timet(tstr) : 0);
 		if (walk->notbefore == -1) walk->notbefore = 0;
 
-		tstr = bbh_item(walk, BBH_NOTAFTER);
+		tstr = xmh_item(walk, XMH_NOTAFTER);
 		walk->notafter = (tstr ? timestr2timet(tstr) : INT_MAX);
 		if (walk->notafter == -1) walk->notafter = INT_MAX;
 	}
@@ -444,7 +446,7 @@ void *localhostinfo(char *hostname)
 	return result;
 }
 
-char *bbh_item(void *hostin, enum bbh_item_t item)
+char *xmh_item(void *hostin, enum xmh_item_t item)
 {
 	static char *result;
 	static char intbuf[10];
@@ -460,46 +462,46 @@ char *bbh_item(void *hostin, enum bbh_item_t item)
 	if (host == NULL) return NULL;
 
 	switch (item) {
-	  case BBH_CLIENTALIAS: 
+	  case XMH_CLIENTALIAS: 
 		  return host->clientname;
 
-	  case BBH_IP:
+	  case XMH_IP:
 		  return host->ip;
 
-	  case BBH_CLASS:
+	  case XMH_CLASS:
 		  if (host->classname) return host->classname;
-		  else return bbh_find_item(host, item);
+		  else return xmh_find_item(host, item);
 		  break;
 
-	  case BBH_OS:
+	  case XMH_OS:
 		  if (host->osname) return host->osname;
-		  else return bbh_find_item(host, item);
+		  else return xmh_find_item(host, item);
 		  break;
 
-	  case BBH_HOSTNAME: 
+	  case XMH_HOSTNAME: 
 		  return host->hostname;
 
-	  case BBH_PAGENAME:
+	  case XMH_PAGENAME:
 		  p = strrchr(host->page->pagepath, '/');
 		  if (p) return (p+1); else return host->page->pagepath;
 
-	  case BBH_PAGEPATH:
+	  case XMH_PAGEPATH:
 		  return host->page->pagepath;
 
-	  case BBH_PAGETITLE:
+	  case XMH_PAGETITLE:
 		  p = strrchr(host->page->pagetitle, '/');
 		  if (p) return (p+1);
 		  /* else: Fall through */
 
-	  case BBH_PAGEPATHTITLE:
+	  case XMH_PAGEPATHTITLE:
 		  if (strlen(host->page->pagetitle)) return host->page->pagetitle;
 		  return "Top Page";
 
-	  case BBH_PAGEINDEX:
+	  case XMH_PAGEINDEX:
 		  sprintf(intbuf, "%d", host->pageindex);
 		  return intbuf;
 
-	  case BBH_ALLPAGEPATHS:
+	  case XMH_ALLPAGEPATHS:
 		  if (rawtxt) clearstrbuffer(rawtxt);
 		  hwalk = host;
 		  while (hwalk && (strcmp(hwalk->hostname, host->hostname) == 0)) {
@@ -509,11 +511,11 @@ char *bbh_item(void *hostin, enum bbh_item_t item)
 		  }
 		  return STRBUF(rawtxt);
 
-	  case BBH_GROUPID:
+	  case XMH_GROUPID:
 		  return host->groupid;
 
-	  case BBH_DOCURL:
-		  p = bbh_find_item(host, item);
+	  case XMH_DOCURL:
+		  p = xmh_find_item(host, item);
 		  if (p) {
 			if (result) xfree(result);
 			result = (char *)malloc(strlen(p) + strlen(host->hostname) + 1);
@@ -523,7 +525,7 @@ char *bbh_item(void *hostin, enum bbh_item_t item)
 		  else
 			return NULL;
 
-	  case BBH_DOWNTIME:
+	  case XMH_DOWNTIME:
 		  if (host->downtime)
 			  return host->downtime;
 		  else if (host->defaulthost)
@@ -531,32 +533,38 @@ char *bbh_item(void *hostin, enum bbh_item_t item)
 		  else
 			  return NULL;
 
-	  case BBH_RAW:
+	  case XMH_RAW:
 		  if (rawtxt) clearstrbuffer(rawtxt);
-		  p = bbh_item_walk(host);
+		  p = xmh_item_walk(host);
 		  while (p) {
 			  addtobuffer(rawtxt, nlencode(p));
-			  p = bbh_item_walk(NULL);
+			  p = xmh_item_walk(NULL);
 			  if (p) addtobuffer(rawtxt, "|");
 		  }
 		  return STRBUF(rawtxt);
 
-	  case BBH_HOLIDAYS:
-		  p = bbh_find_item(host, item);
+	  case XMH_HOLIDAYS:
+		  p = xmh_find_item(host, item);
 		  if (!p) p = getenv("HOLIDAYS");
 		  return p;
 
-	  case BBH_DATA:
+	  case XMH_DATA:
 		  return host->data;
 
+	  case XMH_FLAG_NONONGREEN:
+	  case XMH_FLAG_NOBB2:
+		  p = xmh_find_item(host, XMH_FLAG_NONONGREEN);
+		  if (p == NULL) p = xmh_find_item(host, XMH_FLAG_NOBB2);
+		  return p;
+
 	  default:
-		  return bbh_find_item(host, item);
+		  return xmh_find_item(host, item);
 	}
 
 	return NULL;
 }
 
-char *bbh_custom_item(void *hostin, char *key)
+char *xmh_custom_item(void *hostin, char *key)
 {
 	int i;
 	namelist_t *host = (namelist_t *)hostin;
@@ -567,26 +575,26 @@ char *bbh_custom_item(void *hostin, char *key)
 	return host->elems[i];
 }
 
-enum bbh_item_t bbh_key_idx(char *item)
+enum xmh_item_t xmh_key_idx(char *item)
 {
-	enum bbh_item_t i;
+	enum xmh_item_t i;
 
-	bbh_item_list_setup();
+	xmh_item_list_setup();
 
-	i = 0; while (bbh_item_name[i] && strcmp(bbh_item_name[i], item)) i++;
-	return (bbh_item_name[i] ? i : BBH_LAST);
+	i = 0; while (xmh_item_name[i] && strcmp(xmh_item_name[i], item)) i++;
+	return (xmh_item_name[i] ? i : XMH_LAST);
 }
 
-char *bbh_item_byname(void *hostin, char *item)
+char *xmh_item_byname(void *hostin, char *item)
 {
-	enum bbh_item_t i;
+	enum xmh_item_t i;
 	namelist_t *host = (namelist_t *)hostin;
 
-	i = bbh_key_idx(item);
-	return ((i == -1) ? NULL : bbh_item(host, i));
+	i = xmh_key_idx(item);
+	return ((i == -1) ? NULL : xmh_item(host, i));
 }
 
-char *bbh_item_walk(void *hostin)
+char *xmh_item_walk(void *hostin)
 {
 	static int idx = -1;
 	static namelist_t *curhost = NULL;
@@ -602,19 +610,19 @@ char *bbh_item_walk(void *hostin)
 	return result;
 }
 
-int bbh_item_idx(char *value)
+int xmh_item_idx(char *value)
 {
 	int i;
 
-	bbh_item_list_setup();
+	xmh_item_list_setup();
 	i = 0;
-	while (bbh_item_key[i] && strncmp(bbh_item_key[i], value, strlen(bbh_item_key[i]))) i++;
-	return (bbh_item_key[i] ? i : -1);
+	while (xmh_item_key[i] && strncmp(xmh_item_key[i], value, strlen(xmh_item_key[i]))) i++;
+	return (xmh_item_key[i] ? i : -1);
 }
 
-char *bbh_item_id(enum bbh_item_t idx)
+char *xmh_item_id(enum xmh_item_t idx)
 {
-	if ((idx >= 0) && (idx < BBH_LAST)) return bbh_item_name[idx];
+	if ((idx >= 0) && (idx < XMH_LAST)) return xmh_item_name[idx];
 	return NULL;
 }
 
@@ -640,31 +648,31 @@ void *next_host(void *currenthost, int wantclones)
 	return walk;
 }
 
-void bbh_set_item(void *hostin, enum bbh_item_t item, void *value)
+void xmh_set_item(void *hostin, enum xmh_item_t item, void *value)
 {
 	namelist_t *host = (namelist_t *)hostin;
 
 	switch (item) {
-	  case BBH_CLASS:
+	  case XMH_CLASS:
 		if (host->classname) xfree(host->classname);
 		host->classname = strdup((char *)value);
 		break;
 
-	  case BBH_OS:
+	  case XMH_OS:
 		if (host->osname) xfree(host->osname);
 		host->osname = strdup((char *)value);
 		break;
 
-	  case BBH_DATA:
+	  case XMH_DATA:
 		host->data = value;
 		break;
 
-	  case BBH_CLIENTALIAS:
+	  case XMH_CLIENTALIAS:
 		/*
 		 * FIXME: Small mem. leak here - we should run "rebuildhosttree", but that is heavy.
 		 * Doing this "free" kills the tree structure, since we free one of the keys.
 		 *
-		 * if (host->clientname && (host->hostname != host->clientname) && (host->clientname != bbh_find_item(host, BBH_CLIENTALIAS)) xfree(host->clientname);
+		 * if (host->clientname && (host->hostname != host->clientname) && (host->clientname != xmh_find_item(host, XMH_CLIENTALIAS)) xfree(host->clientname);
 		 */
 		host->clientname = strdup((char *)value);
 		rbtInsert(rbclients, host->clientname, host);
@@ -676,12 +684,12 @@ void bbh_set_item(void *hostin, enum bbh_item_t item, void *value)
 }
 
 
-char *bbh_item_multi(void *hostin, enum bbh_item_t item)
+char *xmh_item_multi(void *hostin, enum xmh_item_t item)
 {
 	namelist_t *host = (namelist_t *)hostin;
 	static namelist_t *keyhost = NULL, *curhost = NULL;
 
-	if (item == BBH_LAST) return NULL;
+	if (item == XMH_LAST) return NULL;
 
 	if ((host == NULL) && (keyhost == NULL)) return NULL; /* Programmer failure */
 
@@ -693,7 +701,7 @@ char *bbh_item_multi(void *hostin, enum bbh_item_t item)
 			curhost = keyhost = NULL; /* End of hostlist */
 	}
 
-	return bbh_item(curhost, item);
+	return xmh_item(curhost, item);
 }
 
 #ifdef STANDALONE
@@ -725,11 +733,11 @@ handlehost:
 
 		if (h == NULL) { printf("Host %s not found\n", argv[argi]); continue; }
 
-		val = bbh_item_walk(h);
+		val = xmh_item_walk(h);
 		printf("Entry for host %s\n", h->hostname);
 		while (val) {
 			printf("\t%s\n", val);
-			val = bbh_item_walk(NULL);
+			val = xmh_item_walk(NULL);
 		}
 
 		do {
@@ -742,17 +750,17 @@ handlehost:
 				goto handlehost;
 			}
 			else if (*s == '>') {
-				val = bbh_item_multi(h, BBH_PAGEPATH);
+				val = xmh_item_multi(h, XMH_PAGEPATH);
 				while (val) {
 					printf("\t%s value is: '%s'\n", s, val);
-					val = bbh_item_multi(NULL, BBH_PAGEPATH);
+					val = xmh_item_multi(NULL, XMH_PAGEPATH);
 				}
 			}
 			else if (strncmp(s, "set ", 4) == 0) {
-				bbh_set_item(h, BBH_DATA, strdup(s+4));
+				xmh_set_item(h, XMH_DATA, strdup(s+4));
 			}
 			else if (*s) {
-				val = bbh_item_byname(h, s);
+				val = xmh_item_byname(h, s);
 				if (val) printf("\t%s value is: '%s'\n", s, val);
 				else printf("\t%s not found\n", s);
 			}

@@ -141,7 +141,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Unknown host ? */
 			hinfo = hostinfo(hosttest);
 			if (!hinfo) ok = 0;
-			if (hinfo && bbh_item(hinfo, BBH_FLAG_NOBB2)) ok = 0;
+			if (hinfo && xmh_item(hinfo, XMH_FLAG_NONONGREEN)) ok = 0;
 
 			if (ok) {
 				char *ackerp;

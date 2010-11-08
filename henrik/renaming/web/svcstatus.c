@@ -160,10 +160,10 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts)
 		return 1;
 	}
 
-	*ip = bbh_item(hinfo, BBH_IP);
-	*displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
+	*ip = xmh_item(hinfo, XMH_IP);
+	*displayname = xmh_item(hinfo, XMH_DISPLAYNAME);
 	if (!(*displayname)) *displayname = hostname;
-	*compacts = bbh_item(hinfo, BBH_COMPACT);
+	*compacts = xmh_item(hinfo, XMH_COMPACT);
 
 	return 0;
 }
@@ -302,7 +302,7 @@ int do_request(void)
 		}
 
 		if (!complist) {
-			sprintf(xymondreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			sprintf(xymondreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
 		}
 		else {
 			sprintf(xymondreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
@@ -354,8 +354,8 @@ int do_request(void)
 			 * dismsg,		[12]
 			 * client,		[13]
 			 * acklist		[14]
-			 * BBH_IP		[15]
-			 * BBH_DISPLAYNAME	[16]
+			 * XMH_IP		[15]
+			 * XMH_DISPLAYNAME	[16]
 			 * clienttstamp         [17]
 			 * flapping		[18]
 			 * modifiers		[19]

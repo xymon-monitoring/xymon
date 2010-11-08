@@ -189,8 +189,8 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 
 	now = getcurrenttime(NULL);
 	hinfo = hostinfo(itm->hostname);
-	dispname = bbh_item(hinfo, BBH_DISPLAYNAME);
-	ip = bbh_item(hinfo, BBH_IP);
+	dispname = xmh_item(hinfo, XMH_DISPLAYNAME);
+	ip = xmh_item(hinfo, XMH_IP);
 
 	fprintf(output, "<TR>\n");
 

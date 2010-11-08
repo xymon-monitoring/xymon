@@ -301,7 +301,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "client", F_CLIENT },
 	{ "clntstamp", F_CLIENTTSTAMP },
 	{ "acklist", F_ACKLIST },
-	{ "BBH_", F_HOSTINFO },
+	{ "XMH_", F_HOSTINFO },
 	{ "flapinfo", F_FLAPINFO },
 	{ "stats", F_STATS },
 	{ "modifiers", F_MODIFIERS },
@@ -309,7 +309,7 @@ boardfieldnames_t boardfieldnames[] = {
 };
 typedef struct boardfields_t {
 	enum boardfield_t field;
-	enum bbh_item_t bbhfield;
+	enum xmh_item_t xmhfield;
 } boardfield_t;
 #define BOARDFIELDS_MAX 50
 boardfield_t boardfields[BOARDFIELDS_MAX+1];
@@ -603,8 +603,8 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 		switch(channel->channelid) {
 		  case C_STATUS:
 			hi = hostinfo(hostname);
-			pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
-			classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
+			pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
+			classname = (hi ? xmh_item(hi, XMH_CLASS) : "");
 			if (!classname) classname = "";
 
 			n = snprintf(channel->channelbuf, (bufsz-5),
@@ -737,9 +737,9 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			}
 			else {
 				hi = hostinfo(hostname);
-				pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
-				classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
-				osname = (hi ? bbh_item(hi, BBH_OS) : "");
+				pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
+				classname = (hi ? xmh_item(hi, XMH_CLASS) : "");
+				osname = (hi ? xmh_item(hi, XMH_OS) : "");
 				if (!classname) classname = "";
 				if (!osname) osname = "";
 
@@ -875,14 +875,14 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 			for (hrec = first_host(); (hrec && !found); hrec = next_host(hrec, 0)) {
 				char *candname;
 			
-				candname = bbh_item(hrec, BBH_HOSTNAME);
+				candname = xmh_item(hrec, XMH_HOSTNAME);
 				p = strchr(candname, '.'); if (p) *p = '\0';
 				found = (strcasecmp(hostnodom, candname) == 0);
 				if (p) *p = '.';
 	
 				if (found) {
 					result = candname;
-					bbh_set_item(hrec, BBH_CLIENTALIAS, hostname);
+					xmh_set_item(hrec, XMH_CLIENTALIAS, hostname);
 					errprintf("Matched ghost '%s' to host '%s'\n", hostname, result);
 				}
 			}
@@ -1358,7 +1358,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			 */
 			if ( (strcmp(log->sender, "xymond") != 0) && (strcmp(sender, "xymond") != 0) )  {
 				void *hinfo = hostinfo(hostname);
-				if ((bbh_item(hinfo, BBH_FLAG_PULLDATA) == NULL) && (bbh_item(hinfo, BBH_FLAG_MULTIHOMED) == NULL)) {
+				if ((xmh_item(hinfo, XMH_FLAG_PULLDATA) == NULL) && (xmh_item(hinfo, XMH_FLAG_MULTIHOMED) == NULL)) {
 					log_multisrc(log, sender);
 				}
 			}
@@ -1655,8 +1655,8 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 	dbgprintf("->handle_data\n");
 
 	hi = hostinfo(hostname);
-	classname = (hi ? bbh_item(hi, BBH_CLASS) : NULL);
-	pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
+	classname = (hi ? xmh_item(hi, XMH_CLASS) : NULL);
+	pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
 
 	if (origin) buflen += strlen(origin); else dbgprintf("   origin is NULL\n");
 	if (hostname) buflen += strlen(hostname); else dbgprintf("  hostname is NULL\n");
@@ -1963,7 +1963,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 
 	/* Tell the pagers */
 	sprintf(channelmsg, "%s|%s|%s\n%s", 
-		hostname, (testname ? testname : ""), (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : ""), msgtext);
+		hostname, (testname ? testname : ""), (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : ""), msgtext);
 	posttochannel(pagechn, "notify", msg, sender, hostname, NULL, channelmsg);
 
 	xfree(channelmsg);
@@ -2546,33 +2546,35 @@ void setup_filter(char *buf, char *defaultfields,
 	tok = strtok(s, ",");
 	while (tok) {
 		enum boardfield_t fieldid = F_LAST;
-		enum bbh_item_t bbhfieldid = BBH_LAST;
+		enum xmh_item_t xmhfieldid = XMH_LAST;
 		int validfield = 1;
 
-		if (strncmp(tok, "BBH_", 4) == 0) {
+		if (strncmp(tok, "BBH_", 4) == 0) memmove(tok, "XMH_", 4);	/* For compatibility */
+
+		if (strncmp(tok, "XMH_", 4) == 0) {
 			fieldid = F_HOSTINFO;
-			bbhfieldid = bbh_key_idx(tok);
-			validfield = (bbhfieldid != BBH_LAST);
+			xmhfieldid = xmh_key_idx(tok);
+			validfield = (xmhfieldid != XMH_LAST);
 		}
 		else {
 			int i;
 			for (i=0; (boardfieldnames[i].name && strcmp(tok, boardfieldnames[i].name)); i++) ;
 			if (boardfieldnames[i].name) {
 				fieldid = boardfieldnames[i].id;
-				bbhfieldid = BBH_LAST;
+				xmhfieldid = XMH_LAST;
 			}
 		}
 
 		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX) && validfield) {
 			boardfields[idx].field = fieldid;
-			boardfields[idx].bbhfield = bbhfieldid;
+			boardfields[idx].xmhfield = xmhfieldid;
 			idx++;
 		}
 
 		tok = strtok(NULL, ",");
 	}
 	boardfields[idx].field = F_NONE;
-	boardfields[idx].bbhfield = BBH_LAST;
+	boardfields[idx].xmhfield = XMH_LAST;
 
 	xfree(s);
 
@@ -2583,20 +2585,20 @@ int match_host_filter(void *hinfo, pcre *spage, pcre *shost, pcre *snet)
 {
 	char *match;
 
-	match = bbh_item(hinfo, BBH_HOSTNAME);
+	match = xmh_item(hinfo, XMH_HOSTNAME);
 	if (shost && match && !matchregex(match, shost)) return 0;
 	if (spage) {
 		int matchres = 0;
 
-		match = bbh_item_multi(hinfo, BBH_PAGEPATH);
+		match = xmh_item_multi(hinfo, XMH_PAGEPATH);
 		while (match && (matchres == 0)) {
 			if (match && matchregex(match, spage)) matchres = 1;
-			match = bbh_item_multi(NULL, BBH_PAGEPATH);
+			match = xmh_item_multi(NULL, XMH_PAGEPATH);
 		}
 
 		if (matchres == 0) return 0;
 	}
-	match = bbh_item(hinfo, BBH_NET);
+	match = xmh_item(hinfo, XMH_NET);
 	if (snet  && match && !matchregex(match, snet))  return 0;
 
 	return 1;
@@ -2652,7 +2654,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_HOSTINFO:
 			if (!hinfo) hinfo = hostinfo(hwalk->hostname);
 			if (hinfo) {
-				char *infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
+				char *infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
 				if (infostr) needed += strlen(infostr);
 			}
 			break;
@@ -2714,7 +2716,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		  case F_HOSTINFO:
 			if (hinfo) {	/* hinfo has been set above while scanning for the needed bufsize */
-				char *infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
+				char *infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
 				if (infostr) bufp += sprintf(bufp, "%s", infostr);
 			}
 			break;
@@ -2765,9 +2767,9 @@ void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, void *hi
 
 		switch (boardfields[f_idx].field) {
 		  case F_HOSTINFO:
-			infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
+			infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
 			if (infostr) {
-				if (boardfields[f_idx].bbhfield != BBH_RAW) infostr = nlencode(infostr);
+				if (boardfields[f_idx].xmhfield != XMH_RAW) infostr = nlencode(infostr);
 				needed += strlen(infostr);
 			}
 			break;
@@ -3368,11 +3370,11 @@ void do_message(conn_t *msg, char *origin)
 				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
 
 				/* Handle NOINFO and NOTRENDS here */
-				if (!bbh_item(hinfo, BBH_FLAG_NOINFO)) {
+				if (!xmh_item(hinfo, XMH_FLAG_NOINFO)) {
 					infologrec.next = firstlog;
 					firstlog = &infologrec;
 				}
-				if (!bbh_item(hinfo, BBH_FLAG_NOTRENDS)) {
+				if (!xmh_item(hinfo, XMH_FLAG_NOTRENDS)) {
 					rrdlogrec.next = firstlog;
 					firstlog = &rrdlogrec;
 				}
@@ -3528,7 +3530,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
-			     "BBH_HOSTNAME,BBH_IP,BBH_RAW",
+			     "XMH_HOSTNAME,XMH_IP,XMH_RAW",
 			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
 			     &chspage, &chshost, &chsnet, &chstest);
 
@@ -3819,17 +3821,17 @@ void do_message(conn_t *msg, char *origin)
 				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
 
 				if (hinfo) {
-					if (clientos) bbh_set_item(hinfo, BBH_OS, clientos);
+					if (clientos) xmh_set_item(hinfo, XMH_OS, clientos);
 					if (clientclass) {
 						/*
 						 * If the client sends an explicit class,
 						 * save it for later use unless there is an
-						 * explicit override (BBH_CLASS is alread set).
+						 * explicit override (XMH_CLASS is alread set).
 						 */
-						char *forcedclass = bbh_item(hinfo, BBH_CLASS);
+						char *forcedclass = xmh_item(hinfo, XMH_CLASS);
 
 						if (!forcedclass) 
-							bbh_set_item(hinfo, BBH_CLASS, clientclass);
+							xmh_set_item(hinfo, XMH_CLASS, clientclass);
 						else 
 							clientclass = forcedclass;
 					}
@@ -4355,7 +4357,7 @@ void check_purple_status(void)
 					 * See if this is a host where the "conn" test shows it is down.
 					 * If yes, then go CLEAR, instead of PURPLE.
 					 */
-					if (hwalk->pinglog && hinfo && (bbh_item(hinfo, BBH_FLAG_NOCLEAR) == NULL)) {
+					if (hwalk->pinglog && hinfo && (xmh_item(hinfo, XMH_FLAG_NOCLEAR) == NULL)) {
 						switch (hwalk->pinglog->color) {
 						  case COL_RED:
 						  case COL_YELLOW:
@@ -4371,7 +4373,7 @@ void check_purple_status(void)
 					}
 
 					/* Tests on dialup hosts go clear, not purple */
-					if ((newcolor == COL_PURPLE) && hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) {
+					if ((newcolor == COL_PURPLE) && hinfo && xmh_item(hinfo, XMH_FLAG_DIALUP)) {
 						newcolor = COL_CLEAR;
 					}
 

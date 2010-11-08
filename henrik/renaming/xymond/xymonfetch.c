@@ -484,9 +484,9 @@ int main(int argc, char *argv[])
 				char *hname;
 				clients_t *newclient;
 
-				if (!bbh_item(hostwalk, BBH_FLAG_PULLDATA)) continue;
+				if (!xmh_item(hostwalk, XMH_FLAG_PULLDATA)) continue;
 
-				hname = bbh_item(hostwalk, BBH_HOSTNAME);
+				hname = xmh_item(hostwalk, XMH_HOSTNAME);
 				handle = rbtFind(clients, hname);
 				if (handle == rbtEnd(clients)) {
 					newclient = (clients_t *)calloc(1, sizeof(clients_t));
@@ -613,13 +613,13 @@ int main(int argc, char *argv[])
 
 				/* Deleted hosts stay in our tree - but should disappear from the known hosts */
 				hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
-				pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
+				pullstr = xmh_item(hostwalk, XMH_FLAG_PULLDATA); if (!pullstr) continue;
 
 				ip = strchr(pullstr, '=');
 				port = atoi(xgetenv("XYMONDPORT"));
 
 				if (!ip) {
-					ip = strdup(bbh_item(hostwalk, BBH_IP));
+					ip = strdup(xmh_item(hostwalk, XMH_IP));
 				}
 				else {
 					/* There is an explicit IP setting in the pulldata tag */
@@ -633,7 +633,7 @@ int main(int argc, char *argv[])
 					if (*ip == '\0') {
 						/* No IP given, just a port number */
 						xfree(ip);
-						ip = strdup(bbh_item(hostwalk, BBH_IP));
+						ip = strdup(xmh_item(hostwalk, XMH_IP));
 					}
 				}
 

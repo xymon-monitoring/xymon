@@ -231,7 +231,7 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
-	alert->location = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
+	alert->location = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
@@ -271,7 +271,7 @@ static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 	year = tm->tm_year + 1900;
 	month = tm->tm_mon;
 
-	holidayset = bbh_item(hi, BBH_HOLIDAYS);
+	holidayset = xmh_item(hi, XMH_HOLIDAYS);
 
 	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", hostname);
 	addtobuffer(buf, l);
@@ -724,7 +724,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 
 	addtobuffer(infobuf, "<table width=\"100%\" summary=\"Host Information\">\n");
 
-	val = bbh_item(hostwalk, BBH_DISPLAYNAME);
+	val = xmh_item(hostwalk, XMH_DISPLAYNAME);
 	if (val && (strcmp(val, hostname) != 0)) {
 		sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s (%s)</td></tr>\n", 
 			val, hostname);
@@ -734,7 +734,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 	}
 	addtobuffer(infobuf, l);
 
-	val = bbh_item(hostwalk, BBH_CLIENTALIAS);
+	val = xmh_item(hostwalk, XMH_CLIENTALIAS);
 	if (val && (strcmp(val, hostname) != 0)) {
 		sprintf(l, "<tr><th align=left>Client alias:</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
@@ -750,7 +750,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_IP);
+	val = xmh_item(hostwalk, XMH_IP);
 	if (strcmp(val, "0.0.0.0") == 0) {
 		struct in_addr addr;
 		struct hostent *hent;
@@ -769,7 +769,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 	sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", val);
 	addtobuffer(infobuf, l);
 
-	val = bbh_item(hostwalk, BBH_DOCURL);
+	val = xmh_item(hostwalk, XMH_DOCURL);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Documentation:</th><td align=left><a href=\"%s\">%s</a>\n", val, val);
 		addtobuffer(infobuf, l);
@@ -782,23 +782,23 @@ char *generate_info(char *hostname, char *critconfigfn)
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_PAGEPATH);
+	val = xmh_item(hostwalk, XMH_PAGEPATH);
 	sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s/\">%s</a>\n", 
-		xgetenv("XYMONWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+		xgetenv("XYMONWEB"), val, xmh_item(hostwalk, XMH_PAGEPATHTITLE));
 	addtobuffer(infobuf, l);
 
 	clonewalk = next_host(hostwalk, 1);
-	while (clonewalk && (strcmp(hostname, bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
-		val = bbh_item(clonewalk, BBH_PAGEPATH);
+	while (clonewalk && (strcmp(hostname, xmh_item(clonewalk, XMH_HOSTNAME)) == 0)) {
+		val = xmh_item(clonewalk, XMH_PAGEPATH);
 		sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
-			xgetenv("XYMONWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+			xgetenv("XYMONWEB"), val, xmh_item(clonewalk, XMH_PAGEPATHTITLE));
 		addtobuffer(infobuf, l);
 		clonewalk = next_host(clonewalk, 1);
 	}
 	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-	val = bbh_item(hostwalk, BBH_DESCRIPTION);
+	val = xmh_item(hostwalk, XMH_DESCRIPTION);
 	if (val) {
 		char *delim;
 
@@ -856,12 +856,12 @@ char *generate_info(char *hostname, char *critconfigfn)
 		}
 	}
 	else {
-		val = bbh_item(hostwalk, BBH_NK);
+		val = xmh_item(hostwalk, XMH_NK);
 		if (val) {
 			sprintf(l, "<tr><th align=left>Critical Alerts:</th><td align=left>%s", val); 
 			addtobuffer(infobuf, l);
 
-			val = bbh_item(hostwalk, BBH_NKTIME);
+			val = xmh_item(hostwalk, XMH_NKTIME);
 			if (val) {
 				sprintf(l, " (%s)", val);
 				addtobuffer(infobuf, l);
@@ -875,7 +875,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 		}
 	}
 
-	val = bbh_item(hostwalk, BBH_DOWNTIME);
+	val = xmh_item(hostwalk, XMH_DOWNTIME);
 	if (val) {
 		char *s = timespec_text(val);
 		addtobuffer(infobuf, "<tr><th align=left>Planned downtime:</th><td align=left>");
@@ -883,14 +883,14 @@ char *generate_info(char *hostname, char *critconfigfn)
 		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
-	val = bbh_item(hostwalk, BBH_REPORTTIME);
+	val = xmh_item(hostwalk, XMH_REPORTTIME);
 	if (val) {
 		char *s = timespec_text(val);
 		addtobuffer(infobuf, "<tr><th align=left>SLA report period:</th><td align=left>");
 		addtobuffer(infobuf, s);
 		addtobuffer(infobuf, "</td></tr>\n");
 
-		val = bbh_item(hostwalk, BBH_WARNPCT);
+		val = xmh_item(hostwalk, XMH_WARNPCT);
 		if (val == NULL) val = xgetenv("XYMONREPWARN");
 		if (val == NULL) val = "(not set)";
 
@@ -898,48 +898,48 @@ char *generate_info(char *hostname, char *critconfigfn)
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPYELLOW);
+	val = xmh_item(hostwalk, XMH_NOPROPYELLOW);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed warnings (yellow):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPRED);
+	val = xmh_item(hostwalk, XMH_NOPROPRED);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed alarms (red):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPPURPLE);
+	val = xmh_item(hostwalk, XMH_NOPROPPURPLE);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed alarms (purple):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPACK);
+	val = xmh_item(hostwalk, XMH_NOPROPACK);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed alarms (acked):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-	val = bbh_item(hostwalk, BBH_NET);
+	val = xmh_item(hostwalk, XMH_NET);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Tested from network:</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	if (bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
+	if (xmh_item(hostwalk, XMH_FLAG_DIALUP)) {
 		addtobuffer(infobuf, "<tr><td colspan=2 align=left>Host downtime does not trigger alarms (dialup host)</td></tr>\n");
 	}
 
 	sprintf(l, "<tr><th align=left>Network tests use:</th><td align=left>%s</td></tr>\n", 
-		(bbh_item(hostwalk, BBH_FLAG_TESTIP) ? "IP-address" : "Hostname"));
+		(xmh_item(hostwalk, XMH_FLAG_TESTIP) ? "IP-address" : "Hostname"));
 	addtobuffer(infobuf, l);
 
 	ping = 1;
-	if (bbh_item(hostwalk, BBH_FLAG_NOPING)) ping = 0;
-	if (bbh_item(hostwalk, BBH_FLAG_NOCONN)) ping = 0;
+	if (xmh_item(hostwalk, XMH_FLAG_NOPING)) ping = 0;
+	if (xmh_item(hostwalk, XMH_FLAG_NOCONN)) ping = 0;
 	sprintf(l, "<tr><th align=left>Checked with ping:</th><td align=left>%s</td></tr>\n", (ping ? "Yes" : "No"));
 	addtobuffer(infobuf, l);
 
@@ -947,7 +947,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	first = 1;
-	val = bbh_item_walk(hostwalk);
+	val = xmh_item_walk(hostwalk);
 	while (val) {
 		if (*val == '~') val++;
 
@@ -962,12 +962,12 @@ char *generate_info(char *hostname, char *critconfigfn)
 			sprintf(l, "<a href=\"%s\">%s</a><br>\n", urlstring, urlstring);
 			addtobuffer(infobuf, l);
 		}
-		val = bbh_item_walk(NULL);
+		val = xmh_item_walk(NULL);
 	}
 	if (!first) addtobuffer(infobuf, "</td></tr>\n");
 
 	first = 1;
-	val = bbh_item_walk(hostwalk);
+	val = xmh_item_walk(hostwalk);
 	while (val) {
 		if (*val == '~') val++;
 
@@ -1001,12 +1001,12 @@ char *generate_info(char *hostname, char *critconfigfn)
 			addtobuffer(infobuf, "<br>\n");
 		}
 
-		val = bbh_item_walk(NULL);
+		val = xmh_item_walk(NULL);
 	}
 	if (!first) addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-	if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
+	if (!xmh_item(hostwalk, XMH_FLAG_DIALUP)) {
 		addtobuffer(infobuf, "<tr><th align=left valign=top>Alerting:</th><td align=left>\n");
 		if (gotstatus) 
 			generate_xymon_alertinfo(hostname, infobuf);
@@ -1047,11 +1047,11 @@ char *generate_info(char *hostname, char *critconfigfn)
 	}
 
 	addtobuffer(infobuf, "<tr><th align=left>Other tags:</th><td align=left>");
-	val = bbh_item_walk(hostwalk);
+	val = xmh_item_walk(hostwalk);
 	while (val) {
 		if (*val == '~') val++;
 
-		if ( (bbh_item_idx(val) == -1)          &&
+		if ( (xmh_item_idx(val) == -1)          &&
 		     (strncmp(val, "http", 4)    != 0)  &&
 		     (strncmp(val, "cont;", 5)   != 0)  &&
 		     (strncmp(val, "cont=", 5)   != 0)  &&
@@ -1067,7 +1067,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 			addtobuffer(infobuf, l);
 		}
 
-		val = bbh_item_walk(NULL);
+		val = xmh_item_walk(NULL);
 	}
 	addtobuffer(infobuf, "</td></tr>\n</table>\n");
 

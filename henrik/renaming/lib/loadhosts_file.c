@@ -279,9 +279,9 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				}
 			}
 
-			newitem->clientname = bbh_find_item(newitem, BBH_CLIENTALIAS);
+			newitem->clientname = xmh_find_item(newitem, XMH_CLIENTALIAS);
 			if (newitem->clientname == NULL) newitem->clientname = newitem->hostname;
-			newitem->downtime = bbh_find_item(newitem, BBH_DOWNTIME);
+			newitem->downtime = xmh_find_item(newitem, XMH_DOWNTIME);
 
 			MEMUNDEFINE(clientname);
 			MEMUNDEFINE(downtime);

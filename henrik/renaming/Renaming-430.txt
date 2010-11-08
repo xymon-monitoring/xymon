@@ -185,3 +185,7 @@ MKBBROWFONT			XYMONPAGEROWFONT
 MKBBSUBLOCAL			XYMONPAGESUBLOCAL
 MKBBTITLE			XYMONPAGETITLE
 
+hosts.cfg tags
+==============
+The "nobb2" tag has been deprecated. Use "nonongreen" instead.
+

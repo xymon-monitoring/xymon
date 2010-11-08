@@ -366,7 +366,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 
 int wanted_host(void *host, char *netstring)
 {
-	char *netlocation = bbh_item(host, BBH_NET);
+	char *netlocation = xmh_item(host, XMH_NET);
 
 	if (selectedcount == 0)
 		return ((strlen(netstring) == 0) || 				   /* No XYMONNETWORK = do all */
@@ -377,7 +377,7 @@ int wanted_host(void *host, char *netstring)
 		int i;
 
 		for (i=0; (i < selectedcount); i++) {
-			if (strcmp(selectedhosts[i], bbh_item(host, BBH_HOSTNAME)) == 0) return 1;
+			if (strcmp(selectedhosts[i], xmh_item(host, XMH_HOSTNAME)) == 0) return 1;
 		}
 	}
 
@@ -410,38 +410,38 @@ void load_tests(void)
 
 		if (!wanted_host(hwalk, location)) continue;
 
-		h = init_testedhost(bbh_item(hwalk, BBH_HOSTNAME));
+		h = init_testedhost(xmh_item(hwalk, XMH_HOSTNAME));
 
-		p = bbh_custom_item(hwalk, "badconn:");
+		p = xmh_custom_item(hwalk, "badconn:");
 		if (p) sscanf(p+strlen("badconn:"), "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 
-		p = bbh_custom_item(hwalk, "route:");
+		p = xmh_custom_item(hwalk, "route:");
 		if (p) h->routerdeps = p + strlen("route:");
 		if (routestring) {
-			p = bbh_custom_item(hwalk, routestring);
+			p = xmh_custom_item(hwalk, routestring);
 			if (p) h->routerdeps = p + strlen(routestring);
 		}
 
-		if (bbh_item(hwalk, BBH_FLAG_NOCONN)) h->noconn = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOPING)) h->noping = 1;
-		if (bbh_item(hwalk, BBH_FLAG_TRACE)) h->dotrace = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOTRACE)) h->dotrace = 0;
-		if (bbh_item(hwalk, BBH_FLAG_TESTIP)) h->testip = 1;
-		if (bbh_item(hwalk, BBH_FLAG_DIALUP)) h->dialup = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOSSLCERT)) h->nosslcert = 1;
-		if (bbh_item(hwalk, BBH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
-		if (bbh_item(hwalk, BBH_FLAG_HIDEHTTP)) h->hidehttp = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOCONN)) h->noconn = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOPING)) h->noping = 1;
+		if (xmh_item(hwalk, XMH_FLAG_TRACE)) h->dotrace = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOTRACE)) h->dotrace = 0;
+		if (xmh_item(hwalk, XMH_FLAG_TESTIP)) h->testip = 1;
+		if (xmh_item(hwalk, XMH_FLAG_DIALUP)) h->dialup = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOSSLCERT)) h->nosslcert = 1;
+		if (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
+		if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) h->hidehttp = 1;
 
-		p = bbh_item(hwalk, BBH_SSLDAYS);
+		p = xmh_item(hwalk, XMH_SSLDAYS);
 		if (p) sscanf(p, "%d:%d", &h->sslwarndays, &h->sslalarmdays);
 
-		p = bbh_item(hwalk, BBH_SSLMINBITS);
+		p = xmh_item(hwalk, XMH_SSLMINBITS);
 		if (p) h->mincipherbits = atoi(p);
 
-		p = bbh_item(hwalk, BBH_DEPENDS);
+		p = xmh_item(hwalk, XMH_DEPENDS);
 		if (p) h->deptests = p;
 
-		p = bbh_item(hwalk, BBH_LDAPLOGIN);
+		p = xmh_item(hwalk, XMH_LDAPLOGIN);
 		if (p) {
 			h->ldapuser = strdup(p);
 			h->ldappasswd = (strchr(h->ldapuser, ':'));
@@ -451,21 +451,21 @@ void load_tests(void)
 			}
 		}
 
-		p = bbh_item(hwalk, BBH_DESCRIPTION);
+		p = xmh_item(hwalk, XMH_DESCRIPTION);
 		if (p) {
 			h->hosttype = strdup(p);
 			p = strchr(h->hosttype, ':');
 			if (p) *p = '\0';
 		}
 
-		testspec = bbh_item_walk(hwalk);
+		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
 			service_t *s = NULL;
 			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
 			char *srcip = NULL;
-			int alwaystruetest = (bbh_item(hwalk, BBH_FLAG_NOCLEAR) != NULL);
+			int alwaystruetest = (xmh_item(hwalk, XMH_FLAG_NOCLEAR) != NULL);
 
-			if (bbh_item_idx(testspec) == -1) {
+			if (xmh_item_idx(testspec) == -1) {
 
 				/* Test prefixes:
 				 * - '?' denotes dialup test, i.e. report failures as clear.
@@ -590,7 +590,7 @@ void load_tests(void)
 						}
 					}
 					else {
-						char *ip = bbh_item(hwalk, BBH_IP);
+						char *ip = xmh_item(hwalk, XMH_IP);
 						statusurl = (char *)malloc(strlen(deffmt) + strlen(ip) + 1);
 						sprintf(statusurl, deffmt, ip);
 						s = httptest;
@@ -718,7 +718,7 @@ void load_tests(void)
 				}
 			}
 
-			testspec = bbh_item_walk(NULL);
+			testspec = xmh_item_walk(NULL);
 		}
 
 		if (pingtest && !h->noconn) {
@@ -742,7 +742,7 @@ void load_tests(void)
 		 * So after parsing the badFOO tag, we must find the testitem_t
 		 * record created earlier for this test (it may not exist).
 		 */
-		testspec = bbh_item_walk(hwalk);
+		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
 			char *testname, *timespec, *badcounts;
 			int badclear, badyellow, badred;
@@ -752,7 +752,7 @@ void load_tests(void)
 
 			if (strncmp(testspec, "bad", 3) != 0) {
 				/* Not a bad* tag - skip it */
-				testspec = bbh_item_walk(NULL);
+				testspec = xmh_item_walk(NULL);
 				continue;
 			}
 
@@ -797,7 +797,7 @@ void load_tests(void)
 				}
 			}
 
-			testspec = bbh_item_walk(NULL);
+			testspec = xmh_item_walk(NULL);
 		}
 
 
@@ -816,7 +816,7 @@ void load_tests(void)
 				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
-			strcpy(h->ip, bbh_item(hwalk, BBH_IP));
+			strcpy(h->ip, xmh_item(hwalk, XMH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {

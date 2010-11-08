@@ -26,14 +26,14 @@ int main(int argc, char *argv[])
 	for (walk = first_host(); (walk); walk=next_host(walk, 0)) {
 		char *nk, *nktime, *tok;
 
-		nk = bbh_item(walk, BBH_NK); if (!nk) continue;
-		nktime = bbh_item(walk, BBH_NKTIME);
+		nk = xmh_item(walk, XMH_NK); if (!nk) continue;
+		nktime = xmh_item(walk, XMH_NKTIME);
 
 		nk = strdup(nk);
 
 		tok = strtok(nk, ",");
 		while (tok) {
-			char *hostname = bbh_item(walk, BBH_HOSTNAME);
+			char *hostname = xmh_item(walk, XMH_HOSTNAME);
 			char *startstr = "", *endstr = "", *ttgroup = "", *ttextra = "", *updinfo = "Migrated";
 			int priority = 2;
 

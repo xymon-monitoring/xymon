@@ -187,8 +187,8 @@ int main(int argc, char *argv[])
 	wantedtags = newstrbuffer(0);
 	while (hwalk) {
 		char hostip[IP_ADDR_STRLEN];
-		char *curnet = bbh_item(hwalk, BBH_NET);
-		char *curname = bbh_item(hwalk, BBH_HOSTNAME);
+		char *curnet = xmh_item(hwalk, XMH_NET);
+		char *curname = xmh_item(hwalk, XMH_HOSTNAME);
 
 		/* 
 		 * Only look at the hosts whose NET: definition matches the wanted one.
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 			char *item;
 
 			clearstrbuffer(wantedtags);
-			for (item = bbh_item_walk(hwalk); (item); item = bbh_item_walk(NULL)) {
+			for (item = xmh_item_walk(hwalk); (item); item = xmh_item_walk(NULL)) {
 				int i;
 				char *realitem = item + strspn(item, "!~?");
 
@@ -226,16 +226,16 @@ int main(int argc, char *argv[])
 			}
 
 			if (STRBUF(wantedtags) && (*STRBUF(wantedtags) != '\0') && extras) {
-				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) addtobuffer(wantedtags, " dialup");
-				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) addtobuffer(wantedtags, " testip");
+				if (xmh_item(hwalk, XMH_FLAG_DIALUP)) addtobuffer(wantedtags, " dialup");
+				if (xmh_item(hwalk, XMH_FLAG_TESTIP)) addtobuffer(wantedtags, " testip");
 			}
 
 			if (STRBUF(wantedtags) && *STRBUF(wantedtags)) {
-				printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), STRBUF(wantedtags));
+				printf("%s %s #%s\n", xmh_item(hwalk, XMH_IP), xmh_item(hwalk, XMH_HOSTNAME), STRBUF(wantedtags));
 			}
 		}
 
-		do { hwalk = next_host(hwalk, 1); } while (hwalk && onlypreferredentry && (strcmp(curname, bbh_item(hwalk, BBH_HOSTNAME)) == 0));
+		do { hwalk = next_host(hwalk, 1); } while (hwalk && onlypreferredentry && (strcmp(curname, xmh_item(hwalk, XMH_HOSTNAME)) == 0));
 	}
 
 	return 0;

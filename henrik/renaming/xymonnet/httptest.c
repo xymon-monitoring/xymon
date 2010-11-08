@@ -573,7 +573,7 @@ void add_http_test(testitem_t *t)
 		char *browser = NULL;
 
 		hinfo = hostinfo(t->host->hostname);
-		if (hinfo) browser = bbh_item(hinfo, BBH_BROWSER);
+		if (hinfo) browser = xmh_item(hinfo, XMH_BROWSER);
 
 		if (browser) {
 			sprintf(useragent, "User-Agent: %s\r\n", browser);

@@ -596,48 +596,48 @@ xymongen_page_t *load_layout(char *pgset)
 
 			/* Check for no-display hosts - they are ignored. */
 			/* But only when we're building the default pageset */
-			if ((strlen(pgset) == 0) && (bbh_item(bbhost, BBH_FLAG_NODISP) != NULL)) continue;
+			if ((strlen(pgset) == 0) && (xmh_item(bbhost, XMH_FLAG_NODISP) != NULL)) continue;
 
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
 			targetpagecount = 0;
 
-			dialup = (bbh_item(bbhost, BBH_FLAG_DIALUP) != NULL);
-			nonongreen = (bbh_item(bbhost, BBH_FLAG_NOBB2) != NULL);
+			dialup = (xmh_item(bbhost, XMH_FLAG_DIALUP) != NULL);
+			nonongreen = (xmh_item(bbhost, XMH_FLAG_NONONGREEN) != NULL);
 
-			alertlist = bbh_item(bbhost, BBH_NK);
-			bbval = bbh_item(bbhost, BBH_NKTIME); if (bbval) crittime = within_sla(bbh_item(bbhost, BBH_HOLIDAYS), bbval, 0);
+			alertlist = xmh_item(bbhost, XMH_NK);
+			bbval = xmh_item(bbhost, XMH_NKTIME); if (bbval) crittime = within_sla(xmh_item(bbhost, XMH_HOLIDAYS), bbval, 0);
 
-			onwaplist = bbh_item(bbhost, BBH_WML);
-			nopropyellowlist = bbh_item(bbhost, BBH_NOPROPYELLOW);
-			if (nopropyellowlist == NULL) nopropyellowlist = bbh_item(bbhost, BBH_NOPROP);
-			nopropredlist = bbh_item(bbhost, BBH_NOPROPRED);
-			noproppurplelist = bbh_item(bbhost, BBH_NOPROPPURPLE);
-			nopropacklist = bbh_item(bbhost, BBH_NOPROPACK);
-			displayname = bbh_item(bbhost, BBH_DISPLAYNAME);
-			comment = bbh_item(bbhost, BBH_COMMENT);
-			description = bbh_item(bbhost, BBH_DESCRIPTION);
-			bbval = bbh_item(bbhost, BBH_WARNPCT); if (bbval) warnpct = atof(bbval);
-			bbval = bbh_item(bbhost, BBH_WARNSTOPS); if (bbval) warnstops = atof(bbval);
-			reporttime = bbh_item(bbhost, BBH_REPORTTIME);
+			onwaplist = xmh_item(bbhost, XMH_WML);
+			nopropyellowlist = xmh_item(bbhost, XMH_NOPROPYELLOW);
+			if (nopropyellowlist == NULL) nopropyellowlist = xmh_item(bbhost, XMH_NOPROP);
+			nopropredlist = xmh_item(bbhost, XMH_NOPROPRED);
+			noproppurplelist = xmh_item(bbhost, XMH_NOPROPPURPLE);
+			nopropacklist = xmh_item(bbhost, XMH_NOPROPACK);
+			displayname = xmh_item(bbhost, XMH_DISPLAYNAME);
+			comment = xmh_item(bbhost, XMH_COMMENT);
+			description = xmh_item(bbhost, XMH_DESCRIPTION);
+			bbval = xmh_item(bbhost, XMH_WARNPCT); if (bbval) warnpct = atof(bbval);
+			bbval = xmh_item(bbhost, XMH_WARNSTOPS); if (bbval) warnstops = atof(bbval);
+			reporttime = xmh_item(bbhost, XMH_REPORTTIME);
 
-			clientalias = bbh_item(bbhost, BBH_CLIENTALIAS);
-			if (bbhost && (strcmp(bbh_item(bbhost, BBH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
+			clientalias = xmh_item(bbhost, XMH_CLIENTALIAS);
+			if (bbhost && (strcmp(xmh_item(bbhost, XMH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
 
 			if (bbhost && (strlen(pgset) > 0)) {
 				/* Walk the clone-list and pick up the target pages for this host */
 				void *cwalk = bbhost;
 				do {
-					bbval = bbh_item_walk(cwalk);
+					bbval = xmh_item_walk(cwalk);
 					while (bbval) {
 						if (strncasecmp(bbval, hosttag, strlen(hosttag)) == 0)
 							targetpagelist[targetpagecount++] = strdup(bbval+strlen(hosttag));
-						bbval = bbh_item_walk(NULL);
+						bbval = xmh_item_walk(NULL);
 					}
 
 					cwalk = next_host(cwalk, 1);
 				} while (cwalk && 
-					 (strcmp(bbh_item(cwalk, BBH_HOSTNAME), bbh_item(bbhost, BBH_HOSTNAME)) == 0) &&
+					 (strcmp(xmh_item(cwalk, XMH_HOSTNAME), xmh_item(bbhost, XMH_HOSTNAME)) == 0) &&
 					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );
 
 				/*

@@ -110,11 +110,11 @@ void find_candidate(ghost_t *rec)
 
 	for (hrec = first_host(), found = 0; (hrec && !found); hrec = next_host(hrec, 0)) {
 		/* Check the IP */
-		found = (strcmp(rec->sender, bbh_item(hrec, BBH_IP)) == 0);
+		found = (strcmp(rec->sender, xmh_item(hrec, XMH_IP)) == 0);
 
 		if (!found) {
 			/* Check if hostnames w/o domain match */
-			hname = bbh_item(hrec, BBH_HOSTNAME);
+			hname = xmh_item(hrec, XMH_HOSTNAME);
 			if ((tdelim = strchr(hname, '.')) != NULL) *tdelim = '\0';
 			found = (strcasecmp(ghostnofqdn, hname) == 0);
 			if (tdelim) *tdelim = '.';
@@ -248,8 +248,8 @@ int main(int argc, char *argv[])
 
 				if (ghosttable[idx].candidate) {
 					fprintf(stdout, "<td align=left><a href=\"%s\">%s</a></td>",
-						hostsvcurl(bbh_item(ghosttable[idx].candidate, BBH_HOSTNAME), xgetenv("INFOCOLUMN"), 1),
-						bbh_item(ghosttable[idx].candidate, BBH_HOSTNAME));
+						hostsvcurl(xmh_item(ghosttable[idx].candidate, XMH_HOSTNAME), xgetenv("INFOCOLUMN"), 1),
+						xmh_item(ghosttable[idx].candidate, XMH_HOSTNAME));
 				}
 				else {
 					fprintf(stdout, "<td>&nbsp;</td>");

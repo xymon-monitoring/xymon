@@ -327,8 +327,8 @@ char *check_downtime(char *hostname, char *testname)
 
 	if (hinfo == NULL) return NULL;
 
-	dtag = bbh_item(hinfo, BBH_DOWNTIME);
-	holkey = bbh_item(hinfo, BBH_HOLIDAYS);
+	dtag = xmh_item(hinfo, XMH_DOWNTIME);
+	holkey = xmh_item(hinfo, XMH_HOLIDAYS);
 	if (dtag && *dtag) {
 		static char *downtag = NULL;
 		static unsigned char *cause = NULL;

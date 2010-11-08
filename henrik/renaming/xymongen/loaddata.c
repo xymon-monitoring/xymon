@@ -109,7 +109,7 @@ int unwantedcolumn(char *hostname, char *testname)
 	hinfo = hostinfo(hostname);
 	if (!hinfo) return 1;
 
-	nc = bbh_item(hinfo, BBH_NOCOLUMNS);
+	nc = xmh_item(hinfo, XMH_NOCOLUMNS);
 	if (!nc) return 0;
 
 	nc = strdup(nc);
@@ -395,7 +395,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 
 void generate_compactitems(state_t **topstate)
 {
-	void *bbh;
+	void *xmh;
 	compact_t **complist = NULL;
 	int complistsz = 0;
 	hostlist_t 	*h;
@@ -408,8 +408,8 @@ void generate_compactitems(state_t **topstate)
 	time_t now = getcurrenttime(NULL);
 
 	for (h = hostlistBegin(); (h); h = hostlistNext()) {
-		bbh = hostinfo(h->hostentry->hostname);
-		compacted = bbh_item(bbh, BBH_COMPACT);
+		xmh = hostinfo(h->hostentry->hostname);
+		compacted = xmh_item(xmh, XMH_COMPACT);
 		if (!compacted) continue;
 
 		tok1 = strtok_r(compacted, ",", &savep1);

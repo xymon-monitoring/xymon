@@ -375,14 +375,14 @@ static void *wanted_host(char *hostname)
 	}
 
 	if (pagepattern && hinfo) {
-		char *pname = bbh_item(hinfo, BBH_PAGEPATH);
+		char *pname = xmh_item(hinfo, XMH_PAGEPATH);
 		result = pcre_exec(pagepattern, NULL, pname, strlen(pname), 0, 0,
 				ovector, (sizeof(ovector)/sizeof(int)));
 		if (result < 0) return NULL;
 	}
 
 	if (ippattern && hinfo) {
-		char *hostip = bbh_item(hinfo, BBH_IP);
+		char *hostip = xmh_item(hinfo, XMH_IP);
 		result = pcre_exec(ippattern, NULL, hostip, strlen(hostip), 0, 0,
 				ovector, (sizeof(ovector)/sizeof(int)));
 		if (result < 0) return NULL;
@@ -477,13 +477,13 @@ static void build_pagepath_dropdown(FILE *output)
 	ptree = rbtNew(string_compare);
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
-		char *path = bbh_item(hwalk, BBH_PAGEPATH);
+		char *path = xmh_item(hwalk, XMH_PAGEPATH);
 		char *ptext;
 
 		handle = rbtFind(ptree, path);
 		if (handle != rbtEnd(ptree)) continue;
 
-		ptext = bbh_item(hwalk, BBH_PAGEPATHTITLE);
+		ptext = xmh_item(hwalk, XMH_PAGEPATHTITLE);
 		rbtInsert(ptree, ptext, path);
 	}
 
@@ -1303,10 +1303,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 		}
 
-		else if (hostenv_hikey && (strncmp(t_start, "BBH_", 4) == 0)) {
+		else if (hostenv_hikey && ( (strncmp(t_start, "XMH_", 4) == 0) || (strncmp(t_start, "BBH_", 4) == 0) )) {
 			void *hinfo = hostinfo(hostenv_hikey);
 			if (hinfo) {
-				char *s = bbh_item_byname(hinfo, t_start);
+				char *s;
+
+				if (strncmp(t_start, "BBH_", 4) == 0) memmove(t_start, "XMH_", 4); /* For compatibility */
+				s = xmh_item_byname(hinfo, t_start);
 
 				if (!s) {
 					fprintf(output, "&%s", t_start);

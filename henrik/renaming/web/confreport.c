@@ -183,19 +183,19 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	fprintf(stdout, "<p style=\"page-break-before: always\">\n"); 
 	fprintf(stdout, "<table width=\"100%%\" border=1 summary=\"%s configuration\">\n", host->hostname);
 
-	pagepathtitle = bbh_item(hinfo, BBH_PAGEPATHTITLE);
+	pagepathtitle = xmh_item(hinfo, XMH_PAGEPATHTITLE);
 	if (!pagepathtitle || (strlen(pagepathtitle) == 0)) pagepathtitle = "Top page";
-	dispname = bbh_item(hinfo, BBH_DISPLAYNAME); 
+	dispname = xmh_item(hinfo, XMH_DISPLAYNAME); 
 	if (dispname && (strcmp(dispname, host->hostname) == 0)) dispname = NULL;
-	clientalias = bbh_item(hinfo, BBH_CLIENTALIAS); 
+	clientalias = xmh_item(hinfo, XMH_CLIENTALIAS); 
 	if (clientalias && (strcmp(clientalias, host->hostname) == 0)) clientalias = NULL;
-	comment = bbh_item(hinfo, BBH_COMMENT);
-	description = bbh_item(hinfo, BBH_DESCRIPTION); 
-	net = bbh_item(hinfo, BBH_NET);
-	alerts = bbh_item(hinfo, BBH_NK);
-	crittime = bbh_item(hinfo, BBH_NKTIME); if (!crittime) crittime = "24x7"; else crittime = strdup(timespec_text(crittime));
-	downtime = bbh_item(hinfo, BBH_DOWNTIME); if (downtime) downtime = strdup(timespec_text(downtime));
-	reporttime = bbh_item(hinfo, BBH_REPORTTIME); if (!reporttime) reporttime = "24x7"; else reporttime = strdup(timespec_text(reporttime));
+	comment = xmh_item(hinfo, XMH_COMMENT);
+	description = xmh_item(hinfo, XMH_DESCRIPTION); 
+	net = xmh_item(hinfo, XMH_NET);
+	alerts = xmh_item(hinfo, XMH_NK);
+	crittime = xmh_item(hinfo, XMH_NKTIME); if (!crittime) crittime = "24x7"; else crittime = strdup(timespec_text(crittime));
+	downtime = xmh_item(hinfo, XMH_DOWNTIME); if (downtime) downtime = strdup(timespec_text(downtime));
+	reporttime = xmh_item(hinfo, XMH_REPORTTIME); if (!reporttime) reporttime = "24x7"; else reporttime = strdup(timespec_text(reporttime));
 
 	rowcount = 1;
 	if (pagepathtitle) rowcount++;
@@ -209,7 +209,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	fprintf(stdout, "<tr>\n");
 	fprintf(stdout, "<th rowspan=%d align=left width=\"25%%\" valign=top>Basics</th>\n", rowcount);
 	fprintf(stdout, "<th align=center>%s (%s)</th>\n", 
-		(dispname ? dispname : host->hostname), bbh_item(hinfo, BBH_IP));
+		(dispname ? dispname : host->hostname), xmh_item(hinfo, XMH_IP));
 	fprintf(stdout, "</tr>\n");
 
 	if (dispname || clientalias) {
@@ -227,7 +227,7 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 
 
 	/* Build a list of the network tests */
-	itm = bbh_item_walk(hinfo);
+	itm = xmh_item_walk(hinfo);
 	while (itm) {
 		char *visdata = NULL, *colname = NULL, *expdata = NULL;
 		weburl_t bu;
@@ -321,10 +321,10 @@ addtolist:
 			}
 		}
 
-		itm = bbh_item_walk(NULL);
+		itm = xmh_item_walk(NULL);
 	}
 
-	if (!haveping && !bbh_item(hinfo, BBH_FLAG_NOCONN)) {
+	if (!haveping && !xmh_item(hinfo, XMH_FLAG_NOCONN)) {
 		for (testi = 0; (testi < testcount); testi++) {
 			if (strcmp(testnames[testi]->name, pingcolumn) == 0) {
 				tag_t *newitem = (tag_t *)calloc(1, sizeof(tag_t));
@@ -336,7 +336,7 @@ addtolist:
 	}
 
 	/* Add the "badFOO" settings */
-	itm = bbh_item_walk(hinfo);
+	itm = xmh_item_walk(hinfo);
 	while (itm) {
 		if (strncmp(itm, "bad", 3) == 0) {
 			char *tname, *p;
@@ -357,7 +357,7 @@ addtolist:
 			}
 		}
 
-		itm = bbh_item_walk(NULL);
+		itm = xmh_item_walk(NULL);
 	}
 
 	if (taghead) {
@@ -467,7 +467,7 @@ addtolist:
 	/* Do the alerts */
 	alert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 	alert->hostname = host->hostname;
-	alert->location = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	alert->location = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
@@ -753,7 +753,7 @@ int main(int argc, char *argv[])
 
 		if (criticalonly) {
 			void *hinfo = hostinfo(hname);
-			char *alerts = bbh_item(hinfo, BBH_NK);
+			char *alerts = xmh_item(hinfo, XMH_NK);
 
 			if (newcritconfig) {
 				if (strcmp(criticalval(hname, tname, alerts), "No") == 0 ) wanted = 0;

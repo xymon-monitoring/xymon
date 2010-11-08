@@ -211,12 +211,12 @@ void do_notifylog(FILE *output,
 		if (pageregexp) {
 			char *pagename;
 
-			pagename = bbh_item_multi(eventhost, BBH_PAGEPATH);
+			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
 			pagematch = 0;
 			while (!pagematch && pagename) {
 			pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0, 
 					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
-				pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 			}
 		}
 		else
@@ -226,12 +226,12 @@ void do_notifylog(FILE *output,
 		if (expageregexp) {
 			char *pagename;
 
-			pagename = bbh_item_multi(eventhost, BBH_PAGEPATH);
+			pagename = xmh_item_multi(eventhost, XMH_PAGEPATH);
 			pagematch = 0;
 			while (!pagematch && pagename) {
 			pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0, 
 					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
-				pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+				pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 			}
 		}
 		else
@@ -318,7 +318,7 @@ void do_notifylog(FILE *output,
 		fprintf(output, "<TR BGCOLOR=\"#333333\"><TH>Time</TH><TH>Host</TH><TH>Service</TH><TH>Recipient</TH></TR>\n");
 
 		for (walk=head; (walk != lasttoshow->next); walk=walk->next) {
-			char *hostname = bbh_item(walk->host, BBH_HOSTNAME);
+			char *hostname = xmh_item(walk->host, XMH_HOSTNAME);
 
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
 			bgcolor = ((bgcolor + 1) % 2);

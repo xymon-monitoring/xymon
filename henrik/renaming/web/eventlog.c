@@ -180,14 +180,14 @@ void show_topchanges(FILE *output,
 		for (i=0, cwalk=hostcounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
 				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
-					bbh_item(cwalk->src, BBH_HOSTNAME), 
+					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
-					bbh_item(cwalk->src, BBH_HOSTNAME), 
+					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 				if (STRBUFLEN(s) > 0) addtobuffer(s, "|"); 
 				addtobuffer(s, "^");
-				addtobuffer(s, bbh_item(cwalk->src, BBH_HOSTNAME));
+				addtobuffer(s, xmh_item(cwalk->src, XMH_HOSTNAME));
 				addtobuffer(s, "$");
 			}
 			else {

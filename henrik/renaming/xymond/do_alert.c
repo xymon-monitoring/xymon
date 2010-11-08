@@ -588,12 +588,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 					hinfo = hostinfo(alert->hostname);
 					if (hinfo) {
-						enum bbh_item_t walk;
+						enum xmh_item_t walk;
 						char *itm, *id, *bbhenv;
 
-						for (walk = 0; (walk < BBH_LAST); walk++) {
-							itm = bbh_item(hinfo, walk);
-							id = bbh_item_id(walk);
+						for (walk = 0; (walk < XMH_LAST); walk++) {
+							itm = xmh_item(hinfo, walk);
+							id = xmh_item_id(walk);
 							if (itm && id) {
 								bbhenv = (char *)malloc(strlen(id) + strlen(itm) + 2);
 								sprintf(bbhenv, "%s=%s", id, itm);

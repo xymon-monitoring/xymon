@@ -117,15 +117,15 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	char *graphdef, *p;
 	char *hostdisplayname, *hostrrdgraphs;
 
-	hostdisplayname = bbh_item(host, BBH_DISPLAYNAME);
-	hostrrdgraphs = bbh_item(host, BBH_TRENDS);
+	hostdisplayname = xmh_item(host, XMH_DISPLAYNAME);
+	hostrrdgraphs = xmh_item(host, XMH_TRENDS);
 
-	dbgprintf("rrdlink_text: host %s, rrd %s\n", bbh_item(host, BBH_HOSTNAME), rrd->gdef->xymonrrdname);
+	dbgprintf("rrdlink_text: host %s, rrd %s\n", xmh_item(host, XMH_HOSTNAME), rrd->gdef->xymonrrdname);
 
 	/* If no rrdgraphs definition, include all with default links */
 	if (hostrrdgraphs == NULL) {
 		dbgprintf("rrdlink_text: Standard URL (no rrdgraphs)\n");
-		return xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+		return xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 	}
 
@@ -141,7 +141,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 			dbgprintf("rrdlink_text: Default URL included\n");
 
 			/* Yes, return default link for this RRD */
-			return xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+			return xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 						 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 		}
 		else {
@@ -193,7 +193,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 			myrrd->gdef->maxgraphs = 0;
 			myrrd->count = rrd->count;
 			myrrd->next = NULL;
-			partlink = xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
+			partlink = xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, myrrd->gdef, myrrd->count, 
 						     HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 			if ((strlen(rrdlink) + strlen(partlink) + 1) >= rrdlinksize) {
 				rrdlinksize += strlen(partlink) + 4096;
@@ -215,7 +215,7 @@ static char *rrdlink_text(void *host, graph_t *rrd, hg_link_t wantmeta, time_t s
 	}
 	else {
 		/* It is included with the default graph */
-		return xymon_graph_data(bbh_item(host, BBH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
+		return xymon_graph_data(xmh_item(host, XMH_HOSTNAME), hostdisplayname, NULL, -1, rrd->gdef, rrd->count, 
 					 HG_WITH_STALE_RRDS, wantmeta, 0, starttime, endtime);
 	}
 
@@ -249,14 +249,14 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 		dbgprintf("Got RRD %s\n", fn);
 		anyrrds++;
 
-		for (rwalk = (graph_t *)bbh_item(myhost, BBH_DATA); (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
+		for (rwalk = (graph_t *)xmh_item(myhost, XMH_DATA); (rwalk && (rwalk->gdef != graph)); rwalk = rwalk->next) ;
 		if (rwalk == NULL) {
 			graph_t *newrrd = (graph_t *) malloc(sizeof(graph_t));
 
 			newrrd->gdef = graph;
 			newrrd->count = 1;
-			newrrd->next = (graph_t *)bbh_item(myhost, BBH_DATA);
-			bbh_set_item(myhost, BBH_DATA, newrrd);
+			newrrd->next = (graph_t *)xmh_item(myhost, XMH_DATA);
+			xmh_set_item(myhost, XMH_DATA, newrrd);
 			rwalk = newrrd;
 			dbgprintf("New rrd for host:%s, rrd:%s\n", hostname, graph->xymonrrdname);
 		}
@@ -279,7 +279,7 @@ char *generate_trends(char *hostname, time_t starttime, time_t endtime)
 
 	graph = xymongraphs;
 	while (graph->xymonrrdname) {
-		for (rwalk = (graph_t *)bbh_item(myhost, BBH_DATA); (rwalk && (rwalk->gdef->xymonrrdname != graph->xymonrrdname)); rwalk = rwalk->next) ;
+		for (rwalk = (graph_t *)xmh_item(myhost, XMH_DATA); (rwalk && (rwalk->gdef->xymonrrdname != graph->xymonrrdname)); rwalk = rwalk->next) ;
 		if (rwalk) {
 			int buflen;
 			char *onelink;

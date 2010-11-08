@@ -253,7 +253,7 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 
 		currhost = hinfo;
 		currset = 0;
-		val = bbh_item(currhost, BBH_NOCOLUMNS);
+		val = xmh_item(currhost, XMH_NOCOLUMNS);
 		if (val) {
 			val = strdup(val);
 			tok = strtok(val, ",");
@@ -1790,7 +1790,7 @@ void testmode(char *configfn)
 
 			if (strlen(hostname) == 0) {
 				hinfo = oldhinfo;
-				if (hinfo) strcpy(hostname, bbh_item(hinfo, BBH_HOSTNAME));
+				if (hinfo) strcpy(hostname, xmh_item(hinfo, XMH_HOSTNAME));
 			}
 			else if (strcmp(hostname, ".") == 0) {
 				exit(0);
@@ -1802,7 +1802,7 @@ void testmode(char *configfn)
 			}
 			else if (strcmp(hostname, "?") == 0) {
 				dump_client_config();
-				if (oldhinfo) strcpy(hostname, bbh_item(oldhinfo, BBH_HOSTNAME));
+				if (oldhinfo) strcpy(hostname, xmh_item(oldhinfo, XMH_HOSTNAME));
 			}
 			else {
 				hinfo = hostinfo(hostname);

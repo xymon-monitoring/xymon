@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			hinfo = hostinfo(testhost);
 			if (hinfo) {
-				testpage = strdup(bbh_item(hinfo, BBH_ALLPAGEPATHS));
+				testpage = strdup(xmh_item(hinfo, XMH_ALLPAGEPATHS));
 			}
 			else {
 				errprintf("Host not found in hosts.cfg - assuming it is on the top page\n");
