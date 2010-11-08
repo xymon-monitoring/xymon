@@ -303,7 +303,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "</FONT></CENTER><BR><BR>\n");
 
 	/* XYMONREPEXT extensions */
-	do_bbext(htmlrep, "XYMONREPEXT", "rep");
+	do_extensions(htmlrep, "XYMONREPEXT", "rep");
 
 	fprintf(htmlrep, "</CENTER>\n");
 

@@ -62,9 +62,9 @@ int load_critconfig(char *fn)
 	/* Setup the default configuration filename */
 	if (!fn) {
 		if (!defaultfn) {
-			char *bbhome = xgetenv("XYMONHOME");
-			defaultfn = (char *)malloc(strlen(bbhome) + strlen(DEFAULTCONFIG) + 2);
-			sprintf(defaultfn, "%s/%s", bbhome, DEFAULTCONFIG);
+			char *xymonhome = xgetenv("XYMONHOME");
+			defaultfn = (char *)malloc(strlen(xymonhome) + strlen(DEFAULTCONFIG) + 2);
+			sprintf(defaultfn, "%s/%s", xymonhome, DEFAULTCONFIG);
 		}
 		fn = defaultfn;
 	}

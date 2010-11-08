@@ -3,8 +3,8 @@
 /*                                                                            */
 /* This is a xymond worker module for the "stachg" channel.                   */
 /* This module implements the file-based history logging, and keeps the       */
-/* historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated to keep     */
-/* track of the status changes.                                               */
+/* historical logfiles in $XYMONVAR/hist/ and $XYMONVAR/histlogs/ updated     */
+/* to keep track of the status changes.                                       */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -557,7 +557,7 @@ int main(int argc, char *argv[])
 
 				MEMDEFINE(statuslogfn);
 
-				/* Remove bbvar/hist/host,name.* */
+				/* Remove $XYMONVAR/hist/host,name.* */
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				hostlead = malloc(strlen(hostname) + 2);
 				strcpy(hostlead, hostnamecommas); strcat(hostlead, ".");

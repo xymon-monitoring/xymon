@@ -33,27 +33,27 @@ static char wmldir[PATH_MAX];
 
 static void delete_old_cards(char *dirname)
 {
-	DIR             *bbcards;
+	DIR             *xymoncards;
 	struct dirent   *d;
 	struct stat     st;
 	time_t		now = getcurrenttime(NULL);
 	char		fn[PATH_MAX];
 
-	bbcards = opendir(dirname);
-	if (!bbcards) {
+	xymoncards = opendir(dirname);
+	if (!xymoncards) {
 		errprintf("Cannot read directory %s\n", dirname);
 		return;
         }
 
 	chdir(dirname);
-	while ((d = readdir(bbcards))) {
+	while ((d = readdir(xymoncards))) {
 		strcpy(fn, d->d_name);
 		stat(fn, &st);
 		if ((fn[0] != '.') && S_ISREG(st.st_mode) && (st.st_mtime < (now-3600))) {
 			unlink(fn);
 		}
 	}
-	closedir(bbcards);
+	closedir(xymoncards);
 }
 
 static char *wml_colorname(int color)

@@ -162,20 +162,20 @@ void calc_pagecolors(xymongen_page_t *phead)
 
 void delete_old_acks(void)
 {
-	DIR             *bbacks;
+	DIR             *xymonacks;
 	struct dirent   *d;
 	struct stat     st;
 	time_t		now = getcurrenttime(NULL);
 	char		fn[PATH_MAX];
 
-	bbacks = opendir(xgetenv("XYMONACKDIR"));
-	if (!bbacks) {
+	xymonacks = opendir(xgetenv("XYMONACKDIR"));
+	if (!xymonacks) {
 		errprintf("No XYMONACKDIR! Cannot cd to directory %s\n", xgetenv("XYMONACKDIR"));
 		return;
         }
 
 	chdir(xgetenv("XYMONACKDIR"));
-	while ((d = readdir(bbacks))) {
+	while ((d = readdir(xymonacks))) {
 		strcpy(fn, d->d_name);
 		if (strncmp(fn, "ack.", 4) == 0) {
 			stat(fn, &st);
@@ -184,7 +184,7 @@ void delete_old_acks(void)
 			}
 		}
 	}
-	closedir(bbacks);
+	closedir(xymonacks);
 }
 
 void send_summaries(summary_t *sumhead)

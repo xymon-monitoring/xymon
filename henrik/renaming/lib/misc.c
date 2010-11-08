@@ -560,14 +560,14 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 }
 
 
-void do_bbext(FILE *output, char *extenv, char *family)
+void do_extensions(FILE *output, char *extenv, char *family)
 {
 	/*
 	 * Extension scripts. These are ad-hoc, and implemented as a
 	 * simple pipe. So we do a fork here ...
 	 */
 
-	char *bbexts, *p;
+	char *exts, *p;
 	FILE *inpipe;
 	char extfn[PATH_MAX];
 	strbuffer_t *inbuf;
@@ -580,8 +580,8 @@ void do_bbext(FILE *output, char *extenv, char *family)
 
 	MEMDEFINE(extfn);
 
-	bbexts = strdup(p);
-	p = strtok(bbexts, "\t ");
+	exts = strdup(p);
+	p = strtok(exts, "\t ");
 	inbuf = newstrbuffer(0);
 
 	while (p) {
@@ -600,7 +600,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		p = strtok(NULL, "\t ");
 	}
 
-	xfree(bbexts);
+	xfree(exts);
 
 	MEMUNDEFINE(extfn);
 	MEMUNDEFINE(buf);

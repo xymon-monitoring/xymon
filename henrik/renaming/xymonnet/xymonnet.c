@@ -2146,7 +2146,7 @@ int main(int argc, char *argv[])
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
 			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
 			printf("\nDebugging options:\n");
-			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
+			printf("    --no-update                 : Send status messages to stdout instead of to Xymon\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
@@ -2176,7 +2176,7 @@ int main(int argc, char *argv[])
 	fqdn = get_fqdn();
 
 	/* Setup SEGV handler */
-	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
+	setup_signalhandler(egocolumn ? egocolumn : "xymonnet");
 
 	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
 		location = strdup(xgetenv("XYMONNETWORK"));

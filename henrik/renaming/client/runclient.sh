@@ -77,7 +77,7 @@ case "$CMD" in
 		rm -f $XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	fi
 
-	$XYMONCLIENTHOME/bin/hobbitlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log --pidfile=$XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
+	$XYMONCLIENTHOME/bin/xymonlaunch --config=$XYMONCLIENTHOME/etc/clientlaunch.cfg --log=$XYMONCLIENTHOME/logs/clientlaunch.log --pidfile=$XYMONCLIENTHOME/logs/clientlaunch.$MACHINEDOTS.pid
 	if test $? -eq 0; then
 		echo "Xymon client for $SERVEROSTYPE started on $MACHINEDOTS"
 	else

@@ -19,8 +19,8 @@
 # $Id: xymond_rootlogin.pl 5819 2008-09-30 16:37:31Z storner $
 
 
-my $bb;
-my $bbdisp;
+my $xymon;
+my $xymsrv;
 my $statuscolumn = "login";
 
 my $hostname = "";
@@ -32,8 +32,8 @@ sub processmessage;
 
 
 # Get the XYMON and XYMSRV environment settings.
-$bb = $ENV{"XYMON"} || die "XYMON not defined";
-$bbdisp = $ENV{"XYMSRV"} || die "XYMSRV not defined";
+$xymon = $ENV{"XYMON"} || die "XYMON not defined";
+$xymsrv = $ENV{"XYMSRV"} || die "XYMSRV not defined";
 
 
 # Main routine. 
@@ -106,7 +106,7 @@ sub processmessage {
 	}
 
 	# Build the command we use to send a status to the Xymon daemon
-	$cmd = $bb . " " . $bbdisp . " \"status " . $hostname . "." . $statuscolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
+	$cmd = $xymon . " " . $xymsrv . " \"status " . $hostname . "." . $statuscolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
 
 	# And send the message
 	system $cmd;

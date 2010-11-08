@@ -34,12 +34,12 @@ time_t	snapshot = 0;				/* Set if we are doing a snapshot */
 char	*null_text = "";
 
 /* List definition to search for page records */
-typedef struct bbpagelist_t {
+typedef struct xymonpagelist_t {
 	struct xymongen_page_t *pageentry;
-	struct bbpagelist_t *next;
-} bbpagelist_t;
+	struct xymonpagelist_t *next;
+} xymonpagelist_t;
 
-static bbpagelist_t *pagelisthead = NULL;
+static xymonpagelist_t *pagelisthead = NULL;
 int	pagecount = 0;
 int	hostcount = 0;
 
@@ -51,9 +51,9 @@ char    *nopropackdefault = NULL;
 
 void addtopagelist(xymongen_page_t *page)
 {
-	bbpagelist_t *newitem;
+	xymonpagelist_t *newitem;
 
-	newitem = (bbpagelist_t *) calloc(1, sizeof(bbpagelist_t));
+	newitem = (xymonpagelist_t *) calloc(1, sizeof(xymonpagelist_t));
 	newitem->pageentry = page;
 	newitem->next = pagelisthead;
 	pagelisthead = newitem;
@@ -319,7 +319,7 @@ void getparentnamelink(char *l, xymongen_page_t *toppage, xymongen_page_t **pare
 	/* "subparent NAME PARENTNAME title-or-link" splitup */
 	char *p;
 	char *parentname;
-	bbpagelist_t *walk;
+	xymonpagelist_t *walk;
 
 	dbgprintf("getnamelink(%s, ...)\n", textornull(l));
 
@@ -567,7 +567,7 @@ xymongen_page_t *load_layout(char *pgset)
 			curhost = NULL;
 		}
 		else if (sscanf(STRBUF(inbuf), "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
-			void *bbhost = NULL;
+			void *xymonhost = NULL;
 			int dialup, nonongreen, crittime = 1;
 			double warnpct = reportwarnlevel;
 			int warnstops = reportwarnstops;
@@ -576,7 +576,7 @@ xymongen_page_t *load_layout(char *pgset)
 			char *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
-			char *bbval;
+			char *hval;
 
 			/* Check for ".default." hosts - they are ignored. */
 			if (*hostname == '.') continue;
@@ -588,56 +588,56 @@ xymongen_page_t *load_layout(char *pgset)
 			}
 
 			/* Get the info */
-			bbhost = hostinfo(hostname);
-			if (bbhost == NULL) {
+			xymonhost = hostinfo(hostname);
+			if (xymonhost == NULL) {
 				errprintf("Confused - hostname '%s' cannot be found. Ignored\n", hostname);
 				continue;
 			}
 
 			/* Check for no-display hosts - they are ignored. */
 			/* But only when we're building the default pageset */
-			if ((strlen(pgset) == 0) && (xmh_item(bbhost, XMH_FLAG_NODISP) != NULL)) continue;
+			if ((strlen(pgset) == 0) && (xmh_item(xymonhost, XMH_FLAG_NODISP) != NULL)) continue;
 
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
 			targetpagecount = 0;
 
-			dialup = (xmh_item(bbhost, XMH_FLAG_DIALUP) != NULL);
-			nonongreen = (xmh_item(bbhost, XMH_FLAG_NONONGREEN) != NULL);
+			dialup = (xmh_item(xymonhost, XMH_FLAG_DIALUP) != NULL);
+			nonongreen = (xmh_item(xymonhost, XMH_FLAG_NONONGREEN) != NULL);
 
-			alertlist = xmh_item(bbhost, XMH_NK);
-			bbval = xmh_item(bbhost, XMH_NKTIME); if (bbval) crittime = within_sla(xmh_item(bbhost, XMH_HOLIDAYS), bbval, 0);
+			alertlist = xmh_item(xymonhost, XMH_NK);
+			hval = xmh_item(xymonhost, XMH_NKTIME); if (hval) crittime = within_sla(xmh_item(xymonhost, XMH_HOLIDAYS), hval, 0);
 
-			onwaplist = xmh_item(bbhost, XMH_WML);
-			nopropyellowlist = xmh_item(bbhost, XMH_NOPROPYELLOW);
-			if (nopropyellowlist == NULL) nopropyellowlist = xmh_item(bbhost, XMH_NOPROP);
-			nopropredlist = xmh_item(bbhost, XMH_NOPROPRED);
-			noproppurplelist = xmh_item(bbhost, XMH_NOPROPPURPLE);
-			nopropacklist = xmh_item(bbhost, XMH_NOPROPACK);
-			displayname = xmh_item(bbhost, XMH_DISPLAYNAME);
-			comment = xmh_item(bbhost, XMH_COMMENT);
-			description = xmh_item(bbhost, XMH_DESCRIPTION);
-			bbval = xmh_item(bbhost, XMH_WARNPCT); if (bbval) warnpct = atof(bbval);
-			bbval = xmh_item(bbhost, XMH_WARNSTOPS); if (bbval) warnstops = atof(bbval);
-			reporttime = xmh_item(bbhost, XMH_REPORTTIME);
+			onwaplist = xmh_item(xymonhost, XMH_WML);
+			nopropyellowlist = xmh_item(xymonhost, XMH_NOPROPYELLOW);
+			if (nopropyellowlist == NULL) nopropyellowlist = xmh_item(xymonhost, XMH_NOPROP);
+			nopropredlist = xmh_item(xymonhost, XMH_NOPROPRED);
+			noproppurplelist = xmh_item(xymonhost, XMH_NOPROPPURPLE);
+			nopropacklist = xmh_item(xymonhost, XMH_NOPROPACK);
+			displayname = xmh_item(xymonhost, XMH_DISPLAYNAME);
+			comment = xmh_item(xymonhost, XMH_COMMENT);
+			description = xmh_item(xymonhost, XMH_DESCRIPTION);
+			hval = xmh_item(xymonhost, XMH_WARNPCT); if (hval) warnpct = atof(hval);
+			hval = xmh_item(xymonhost, XMH_WARNSTOPS); if (hval) warnstops = atof(hval);
+			reporttime = xmh_item(xymonhost, XMH_REPORTTIME);
 
-			clientalias = xmh_item(bbhost, XMH_CLIENTALIAS);
-			if (bbhost && (strcmp(xmh_item(bbhost, XMH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
+			clientalias = xmh_item(xymonhost, XMH_CLIENTALIAS);
+			if (xymonhost && (strcmp(xmh_item(xymonhost, XMH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
 
-			if (bbhost && (strlen(pgset) > 0)) {
+			if (xymonhost && (strlen(pgset) > 0)) {
 				/* Walk the clone-list and pick up the target pages for this host */
-				void *cwalk = bbhost;
+				void *cwalk = xymonhost;
 				do {
-					bbval = xmh_item_walk(cwalk);
-					while (bbval) {
-						if (strncasecmp(bbval, hosttag, strlen(hosttag)) == 0)
-							targetpagelist[targetpagecount++] = strdup(bbval+strlen(hosttag));
-						bbval = xmh_item_walk(NULL);
+					hval = xmh_item_walk(cwalk);
+					while (hval) {
+						if (strncasecmp(hval, hosttag, strlen(hosttag)) == 0)
+							targetpagelist[targetpagecount++] = strdup(hval+strlen(hosttag));
+						hval = xmh_item_walk(NULL);
 					}
 
 					cwalk = next_host(cwalk, 1);
 				} while (cwalk && 
-					 (strcmp(xmh_item(cwalk, XMH_HOSTNAME), xmh_item(bbhost, XMH_HOSTNAME)) == 0) &&
+					 (strcmp(xmh_item(cwalk, XMH_HOSTNAME), xmh_item(xymonhost, XMH_HOSTNAME)) == 0) &&
 					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );
 
 				/*
@@ -650,10 +650,10 @@ xymongen_page_t *load_layout(char *pgset)
 				 * adminpage nyc NYC
 				 *
 				 * 127.0.0.1   localhost      # bbd http://localhost/ CLIENT:osiris
-				 * 172.16.10.2 www.hswn.dk    # http://www.hswn.dk/ ADMIN:nyc ssh noinfo
+				 * 172.16.10.2 www.xymon.com  # http://www.xymon.com/ ADMIN:nyc ssh noinfo
 				 *
 				 * page superdome Superdome
-				 * 172.16.10.2 www.hswn.dk # noconn
+				 * 172.16.10.2 www.xymon.com # noconn
 				 *
 				 */
 				if (strstr(STRBUF(inbuf), hosttag) == NULL) targetpagecount = 0;
@@ -709,7 +709,7 @@ xymongen_page_t *load_layout(char *pgset)
 
 					char savechar;
 					int wantedgroup = 0;
-					bbpagelist_t *targetpage = NULL;
+					xymonpagelist_t *targetpage = NULL;
 
 					/* Put the host into the page specified by the PGSET: tag */
 					p = strchr(targetpagename, ',');
@@ -783,7 +783,7 @@ xymongen_page_t *load_layout(char *pgset)
 			}
 		}
 		else if (strncmp(STRBUF(inbuf), summarytag, strlen(summarytag)) == 0) {
-			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
+			/* summary row.column      IP-ADDRESS-OF-PARENT    http://xymon.com/ */
 			char sumname[MAX_LINE_LEN];
 			char receiver[MAX_LINE_LEN];
 			char url[MAX_LINE_LEN];

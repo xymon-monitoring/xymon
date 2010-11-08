@@ -47,7 +47,7 @@ extern char *urlencode(char *s);
 extern int urlvalidate(char *query, char *validchars);
 extern char *cleanurl(char *url);
 extern void parse_url(char *inputurl, urlelem_t *url);
-extern char *decode_url(char *testspec, weburl_t *bburl);
+extern char *decode_url(char *testspec, weburl_t *weburl);
 
 #endif
 

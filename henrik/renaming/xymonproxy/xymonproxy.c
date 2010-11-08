@@ -222,8 +222,8 @@ int main(int argc, char *argv[])
 	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
-	struct sockaddr_in bbdispaddr[MAX_SERVERS];
-	int bbdispcount = 0;
+	struct sockaddr_in xymonserveraddr[MAX_SERVERS];
+	int xymonservercount = 0;
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 		}
-		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--bbdisplay=")) {
+		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--xymonserverlay=")) {
 			char *ips, *ip1;
 			int port1;
 
@@ -278,14 +278,14 @@ int main(int argc, char *argv[])
 				p = strchr(ip1, ':');
 				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
 
-				memset(&bbdispaddr[bbdispcount], 0, sizeof(bbdispaddr[bbdispcount]));
-				bbdispaddr[bbdispcount].sin_port = htons(port1);
-				bbdispaddr[bbdispcount].sin_family = AF_INET;
-				if (inet_aton(ip1, (struct in_addr *) &bbdispaddr[bbdispcount].sin_addr.s_addr) == 0) {
+				memset(&xymonserveraddr[xymonservercount], 0, sizeof(xymonserveraddr[xymonservercount]));
+				xymonserveraddr[xymonservercount].sin_port = htons(port1);
+				xymonserveraddr[xymonservercount].sin_family = AF_INET;
+				if (inet_aton(ip1, (struct in_addr *) &xymonserveraddr[xymonservercount].sin_addr.s_addr) == 0) {
 					errprintf("Invalid remote address %s\n", ip1);
 				}
 				else {
-					bbdispcount++;
+					xymonservercount++;
 				}
 				if (p) *p = ':';
 				ip1 = strtok(NULL, ",");
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (bbdispcount == 0) {
+	if (xymonservercount == 0) {
 		errprintf("No Xymon server address given - aborting\n");
 		return 1;
 	}
@@ -399,8 +399,8 @@ int main(int argc, char *argv[])
 		char *p;
 		char srvrs[500];
 
-		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbdispcount); i++) {
-			p += sprintf(p, "%s:%d ", inet_ntoa(bbdispaddr[i].sin_addr), ntohs(bbdispaddr[i].sin_port));
+		for (i=0, srvrs[0] = '\0', p=srvrs; (i<xymonservercount); i++) {
+			p += sprintf(p, "%s:%d ", inet_ntoa(xymonserveraddr[i].sin_addr), ntohs(xymonserveraddr[i].sin_port));
 		}
 		errprintf("Sending to Xymon server(s) %s\n", srvrs);
 	}
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
-					cwalk->snum = bbdispcount;
+					cwalk->snum = xymonservercount;
 
 					if ((cwalk->buflen + 40 ) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
 						close(cwalk->csocket); sockcount--;
 						cwalk->csocket = -1;
 					}
-					cwalk->snum = bbdispcount;
+					cwalk->snum = xymonservercount;
 
 					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
 						msgs_status++;
@@ -719,9 +719,9 @@ int main(int argc, char *argv[])
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
 				{
-					int idx = (bbdispcount - cwalk->snum);
-					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr[idx], sizeof(bbdispaddr[idx]));
-					cwalk->serverip = &bbdispaddr[idx].sin_addr;
+					int idx = (xymonservercount - cwalk->snum);
+					n = connect(cwalk->ssocket, (struct sockaddr *)&xymonserveraddr[idx], sizeof(xymonserveraddr[idx]));
+					cwalk->serverip = &xymonserveraddr[idx].sin_addr;
 					dbgprintf("Connecting to Xymon server at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 

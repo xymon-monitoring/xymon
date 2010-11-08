@@ -553,7 +553,7 @@ void generate_history(FILE *htmlrep, 			/* output file */
 	fprintf(htmlrep, "<BR><BR>\n");
 
 	/* XYMONHISTEXT extensions */
-	do_bbext(htmlrep, "XYMONHISTEXT", "hist");
+	do_extensions(htmlrep, "XYMONHISTEXT", "hist");
 
 	fprintf(htmlrep, "</CENTER>\n");
 

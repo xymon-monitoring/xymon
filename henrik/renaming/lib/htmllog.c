@@ -48,7 +48,7 @@ static void hostsvc_setup(void)
 	getenv_default("XYMONPAGEACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);
 	getenv_default("XYMONPAGECOLFONT", "COLOR=\"#87a9e5\" SIZE=-1\"", &colfont);
 	getenv_default("XYMONPAGEROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
-	getenv_default("XYMONWEB", "/bb", NULL);
+	getenv_default("XYMONWEB", "/xymon", NULL);
 	{
 		char *dbuf = malloc(strlen(xgetenv("XYMONWEB")) + 6);
 		sprintf(dbuf, "%s/gifs", xgetenv("XYMONWEB"));

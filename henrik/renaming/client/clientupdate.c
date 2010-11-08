@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	char *newverreq;
 	char *updateparam = NULL;
 	int  removeself = 0;
-	int bbstat = 0;
+	int talkstat = 0;
 	sendreturn_t *sres;
 
 #ifdef BIG_SECURITY_HOLE
@@ -210,8 +210,8 @@ int main(int argc, char *argv[])
 	newverreq = (char *)malloc(100+strlen(newversion));
 	sprintf(newverreq, "download %s.tar", newversion);
 	dbgprintf("Sending command to Xymon: %s\n", newverreq);
-	if ((bbstat = sendmessage(newverreq, NULL, XYMON_TIMEOUT, sres)) != XYMONSEND_OK) {
-		errprintf("Cannot fetch new client tarfile: Status %d\n", bbstat);
+	if ((talkstat = sendmessage(newverreq, NULL, XYMON_TIMEOUT, sres)) != XYMONSEND_OK) {
+		errprintf("Cannot fetch new client tarfile: Status %d\n", talkstat);
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		freesendreturnbuf(sres);
 		return 1;
@@ -222,8 +222,8 @@ int main(int argc, char *argv[])
 	}
 
 	dbgprintf("Closing tar pipe\n");
-	if ((bbstat = pclose(tarpipefd)) != 0) {
-		errprintf("Upgrade failed, tar exited with status %d\n", bbstat);
+	if ((talkstat = pclose(tarpipefd)) != 0) {
+		errprintf("Upgrade failed, tar exited with status %d\n", talkstat);
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		return 1;
 	}

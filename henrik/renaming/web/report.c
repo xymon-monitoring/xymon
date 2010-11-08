@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
-		sprintf(htmldelim, "bbrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
+		sprintf(htmldelim, "xymonrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("--%s\n", htmldelim);

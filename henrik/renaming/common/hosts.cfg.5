@@ -844,7 +844,7 @@ test to end up with a green status, all lookups must succeed.
 Check for a running NTP (Network Time Protocol) server on this
 host. This test uses the "ntpdate" utility to check for a
 NTP server - you should either have ntpdate in your PATH, or
-set the location of the ntpdate program in $XYMONHOME/etc/bbsys.local
+set the location of the ntpdate program in $XYMONHOME/etc/xymonserver.cfg
 
 .IP rpc[=rpcservice1,rpcservice2,...]
 Check for one or more available RPC services. This check is indirect
@@ -1294,7 +1294,7 @@ per-host definitions will override the default ones.
 
 \fBNOTE:\fR The ".default." host entry will only accept the following
 tags - others are silently ignored: NOCOLUMNS, COMMENT, DESCR, CLASS, 
-dialup, testip, nobb2, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
+dialup, testip, nonongreen, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
 NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, REPORTTIME, WARNPCT, NET, noclear, 
 nosslcert, ssldays, DOWNTIME, depends, noping, noconn, trace, notrace, 
 HIDEHTTP, browser, pulldata. Specifically, note that network tests,

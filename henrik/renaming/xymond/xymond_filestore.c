@@ -4,8 +4,8 @@
 /* This is a xymond worker module, it should be run off xymond_channel.       */
 /*                                                                            */
 /* This module implements the traditional Big Brother filebased storage of    */
-/* incoming status messages to the bbvar/logs/, bbvar/data/, bb/www/notes/    */
-/* and bbvar/disabled/ directories.                                           */
+/* incoming status messages to the $XYMONVAR/logs/, $XYMONVAR/data/,          */
+/* $XYMONWWWDIR/notes/ and $XYMONVAR/disabled/ directories.                   */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */

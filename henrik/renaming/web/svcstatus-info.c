@@ -343,11 +343,11 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 	char msgline[4096];
 	char datestr[100];
 	int i, btncount;
-	char *bbdatefmt;
+	char *xymondatefmt;
 	strbuffer_t *servRed, *servYellow, *servPurple, *servBlue;
 	time_t logage;
 
-	bbdatefmt = xgetenv("XYMONDATEFORMAT");
+	xymondatefmt = xgetenv("XYMONDATEFORMAT");
 
 	servRed = newstrbuffer(0);
 	servYellow = newstrbuffer(0);
@@ -360,7 +360,7 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><th>Service</th><th>Since</th><th>Duration</th></tr>\n");
 
 	for (i = 0; i < testcount; i++) {
-		strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&tnames[i].lastchange));
+		strftime(datestr, sizeof(datestr), xymondatefmt, localtime(&tnames[i].lastchange));
 		logage = getcurrenttime(NULL) - tnames[i].lastchange;
 
 		addtobuffer(buf, "<tr>");

@@ -61,9 +61,9 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	xymond_channel_t *newch;
 	unsigned int bufsz;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
-	char *bbh = xgetenv("XYMONHOME");
+	char *xymonhome = xgetenv("XYMONHOME");
 
-	if ( (bbh == NULL) || (stat(bbh, &st) == -1) ) {
+	if ( (xymonhome == NULL) || (stat(xymonhome, &st) == -1) ) {
 		errprintf("XYMONHOME not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
@@ -71,10 +71,10 @@ xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	bufsz = 1024*shbufsz(chnid);
 	dbgprintf("Setting up %s channel (id=%d)\n", channelnames[chnid], chnid);
 
-	dbgprintf("calling ftok('%s',%d)\n", bbh, chnid);
-	key = ftok(bbh, chnid);
+	dbgprintf("calling ftok('%s',%d)\n", xymonhome, chnid);
+	key = ftok(xymonhome, chnid);
 	if (key == -1) {
-		errprintf("Could not generate shmem key based on %s: %s\n", bbh, strerror(errno));
+		errprintf("Could not generate shmem key based on %s: %s\n", xymonhome, strerror(errno));
 		return NULL;
 	}
 	dbgprintf("ftok() returns: 0x%X\n", key);

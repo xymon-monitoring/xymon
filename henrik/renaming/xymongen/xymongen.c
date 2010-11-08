@@ -555,9 +555,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (xgetenv("XYMONHTACCESS")) bbhtaccess = strdup(xgetenv("XYMONHTACCESS"));
-	if (xgetenv("XYMONPAGEHTACCESS")) bbpagehtaccess = strdup(xgetenv("XYMONPAGEHTACCESS"));
-	if (xgetenv("XYMONSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(xgetenv("XYMONSUBPAGEHTACCESS"));
+	if (xgetenv("XYMONHTACCESS")) xymonhtaccess = strdup(xgetenv("XYMONHTACCESS"));
+	if (xgetenv("XYMONPAGEHTACCESS")) xymonpagehtaccess = strdup(xgetenv("XYMONPAGEHTACCESS"));
+	if (xgetenv("XYMONSUBPAGEHTACCESS")) xymonsubpagehtaccess = strdup(xgetenv("XYMONSUBPAGEHTACCESS"));
 
 	/*
 	 * When doing embedded- or snapshot-pages, dont build the WML/RSS pages.
@@ -598,7 +598,7 @@ int main(int argc, char *argv[])
 	calc_hostcolors(nongreenignorecolumns);
 	calc_pagecolors(pagehead);
 
-	/* Topmost page (background color for bb.html) */
+	/* Topmost page (background color for xymon.html) */
 	for (p=pagehead; (p); p = p->next) {
 		if (p->color > pagehead->color) pagehead->color = p->color;
 	}
@@ -679,12 +679,12 @@ int main(int argc, char *argv[])
 	if (egocolumn) {
 		char msgline[4096];
 		char *timestamps;
-		long bbsleep = (xgetenv("TASKSLEEP") ? atol(xgetenv("TASKSLEEP")) : 300);
+		long tasksleep = (xgetenv("TASKSLEEP") ? atol(xgetenv("TASKSLEEP")) : 300);
 		int color;
 
 		/* Go yellow if it runs for too long */
-		if (total_runtime() > bbsleep) {
-			errprintf("WARNING: Runtime %ld longer than TASKSLEEP (%ld)\n", total_runtime(), bbsleep);
+		if (total_runtime() > tasksleep) {
+			errprintf("WARNING: Runtime %ld longer than TASKSLEEP (%ld)\n", total_runtime(), tasksleep);
 		}
 		color = (errbuf ? COL_YELLOW : COL_GREEN);
 
