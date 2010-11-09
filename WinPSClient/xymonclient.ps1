@@ -141,7 +141,6 @@ function UserSessionCount
 	$s = 0
 	get-wmiobject win32_session | ?{ 2,10 -eq $_.LogonType} | ?{$q -eq $_.logonid} | %{
 		$z = $_.logonid
-		$d = "{0}" -f $_.ConvertToDateTime($_.StartTime)
 		get-wmiobject win32_sessionprocess | ?{ $_.Antecedent -like "*LogonId=`"$z`"*" } | %{
 			if($_.Dependent -match "Handle=`"(\d+)`"") {
 				get-wmiobject win32_process -filter "processid='$($matches[1])'" }
