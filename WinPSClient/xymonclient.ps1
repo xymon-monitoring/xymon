@@ -135,6 +135,20 @@ function XymonProcsCPUUtilisation
 	}
 }
 
+function UserSessionCount
+{
+	$q = get-wmiobject win32_logonsession | %{ $_.logonid}
+	$s = 0
+	get-wmiobject win32_session | ?{ 2,10 -eq $_.LogonType} | ?{$q -eq $_.logonid} | %{
+		$z = $_.logonid
+		$d = "{0}" -f $_.ConvertToDateTime($_.StartTime)
+		get-wmiobject win32_sessionprocess | ?{ $_.Antecedent -like "*LogonId=`"$z`"*" } | %{
+			if($_.Dependent -match "Handle=`"(\d+)`"") {
+				get-wmiobject win32_process -filter "processid='$($matches[1])'" }
+		} | select -first 1 | %{ $s++ }
+	}
+	$s
+}
 
 function XymonCollectInfo
 {
@@ -175,7 +189,7 @@ function XymonCollectInfo
 	$script:localdatetime = $osinfo.ConvertToDateTime($osinfo.LocalDateTime)
 	$script:uptime = $localdatetime - $osinfo.ConvertToDateTime($osinfo.LastBootUpTime)
 
-	$script:usercount = 0	# FIXME
+	$script:usercount = UserSessionCount
 
 	XymonProcsCPUUtilisation
 }
@@ -281,7 +295,7 @@ function XymonUname
 function XymonCpu
 {
 	"[cpu]"
-	"up: " + ([string]$uptime.Days) + " days, " + $usercount + " users, " + $procs.count + " procs, load=" + ([string]$totalload) + "`%"
+	"up: {0} days, {1} users, {2} procs, load={3}%" -f [string]$uptime.Days, $usercount, $procs.count, [string]$totalload
 	""
 	"CPU states:"
 	"`ttotal`t" + ([string]$totalload) + "`%"
