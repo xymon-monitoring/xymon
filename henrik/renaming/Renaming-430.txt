@@ -72,10 +72,11 @@ bb-findhost.cgi			findhost.cgi
 bb-hist.cgi			history.cgi
 bb-histlog.cgi			historylog.cgi
 bb-hostsvc.sh			svcstatus.sh
+bb-message.cgi			xymoncgimsg.cgi
 bb-rep.cgi			report.cgi
 bb-replog.cgi			reportlog.cgi
 bb-snapshot.cgi			snapshot.cgi
-bb-webpage.cgi			xymonpage.cgi
+bb-webpage			xymonpage
 hobbit-ackinfo.cgi		ackinfo.cgi
 hobbit-certreport.sh		certreport.sh
 hobbit-confreport.cgi		confreport.cgi
@@ -93,6 +94,8 @@ hobbit-topchanges.sh		topchanges.sh
 hobbit-useradm.cgi		useradm.cgi
 hobbitcolumn.sh			columndoc.sh
 hobbitgraph.cgi			showgraph.cgi
+hobbitsvc.cgi			svcstatus.cgi
+hobbitreports.sh		xymonreports.sh
 
 Templates
 =========
