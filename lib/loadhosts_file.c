@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Xymon, responsible for loading the bb-hosts   */
+/* This is a library module for Xymon, responsible for loading the hosts.cfg  */
 /* file and keeping track of what hosts are known, their aliases and planned  */
 /* downtime settings etc.                                                     */
 /*                                                                            */
@@ -45,11 +45,11 @@ static int pagematch(pagelist_t *pg, char *name)
 	}
 }
 
-int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
+int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 {
 	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
-	static void *bbhfiles = NULL;
-	FILE *bbhosts;
+	static void *hostfiles = NULL;
+	FILE *hosts;
 	int ip1, ip2, ip3, ip4, groupid, pageidx;
 	char hostname[4096];
 	strbuffer_t *inbuf;
@@ -58,14 +58,14 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	RbtHandle htree;
 
 	/* First check if there were no modifications at all */
-	if (bbhfiles) {
-		if (!stackfmodified(bbhfiles)){
-			dbgprintf("No files modified, skipping reload of %s\n", bbhostsfn);
+	if (hostfiles) {
+		if (!stackfmodified(hostfiles)){
+			dbgprintf("No files modified, skipping reload of %s\n", hostsfn);
 			return 1;
 		}
 		else {
-			stackfclist(&bbhfiles);
-			bbhfiles = NULL;
+			stackfclist(&hostfiles);
+			hostfiles = NULL;
 		}
 	}
 
@@ -77,8 +77,8 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 	curpage = curtoppage = pgtail = pghead;
 	pageidx = groupid = 0;
 
-	bbhosts = stackfopen(bbhostsfn, "r", &bbhfiles);
-	if (bbhosts == NULL) return -1;
+	hosts = stackfopen(hostsfn, "r", &hostfiles);
+	if (hosts == NULL) return -1;
 
 	inbuf = newstrbuffer(0);
 	htree = rbtNew(name_compare);
@@ -176,9 +176,9 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			newitem->groupid = strdup(groupidstr);
 			newitem->pageindex = pageidx++;
 
-			newitem->bbhostname = strdup(hostname);
+			newitem->hostname = strdup(hostname);
 			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
-			newitem->logname = strdup(newitem->bbhostname);
+			newitem->logname = strdup(newitem->hostname);
 			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
 			newitem->page = curpage;
 			newitem->defaulthost = defaulthost;
@@ -240,8 +240,8 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 			newitem->elems[elemidx] = NULL;
 
 			/* See if this host is defined before */
-			handle = rbtFind(htree, newitem->bbhostname);
-			if (strcasecmp(newitem->bbhostname, ".default.") == 0) {
+			handle = rbtFind(htree, newitem->hostname);
+			if (strcasecmp(newitem->hostname, ".default.") == 0) {
 				/* The pseudo DEFAULT host */
 				newitem->next = NULL;
 				defaulthost = newitem;
@@ -255,7 +255,7 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 					nametail->next = newitem;
 					nametail = newitem;
 				}
-				rbtInsert(htree, newitem->bbhostname, newitem);
+				rbtInsert(htree, newitem->hostname, newitem);
 			}
 			else {
 				/* Find the existing record - compare the record pointer instead of the name */
@@ -279,15 +279,15 @@ int load_hostnames(char *bbhostsfn, char *extrainclude, int fqdn)
 				}
 			}
 
-			newitem->clientname = bbh_find_item(newitem, BBH_CLIENTALIAS);
-			if (newitem->clientname == NULL) newitem->clientname = newitem->bbhostname;
-			newitem->downtime = bbh_find_item(newitem, BBH_DOWNTIME);
+			newitem->clientname = xmh_find_item(newitem, XMH_CLIENTALIAS);
+			if (newitem->clientname == NULL) newitem->clientname = newitem->hostname;
+			newitem->downtime = xmh_find_item(newitem, XMH_DOWNTIME);
 
 			MEMUNDEFINE(clientname);
 			MEMUNDEFINE(downtime);
 		}
 	}
-	stackfclose(bbhosts);
+	stackfclose(hosts);
 	freestrbuffer(inbuf);
 	rbtDelete(htree);
 

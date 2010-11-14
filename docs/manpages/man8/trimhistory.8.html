@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of TRIMHISTORY</TITLE>
 </HEAD><BODY>
 <H1>TRIMHISTORY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -32,7 +32,7 @@ existing logfile is left untouched.
 <P>
 Optionally, this tool will also remove logfiles from hosts that are 
 no longer defined in the Xymon 
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file. As an extension, even logfiles from services can be removed, 
 if the service no longer has a valid status-report logged in the
@@ -64,7 +64,7 @@ must exist.
 <P>
 <DT>--drop<DD>
 Causes trimhistory to delete files from hosts that are not listed in the
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file.
 <P>
@@ -118,8 +118,8 @@ The directory holding all history logs.
 <DT>BBHISTLOGS<DD>
 The top-level directory for the historical status-log collections.
 <P>
-<DT>BBHOSTS<DD>
-The location of the bb-hosts file, holding the list of currently 
+<DT>HOSTSCFG<DD>
+The location of the hosts.cfg file, holding the list of currently 
 known hosts in Xymon.
 <P>
 <P>
@@ -127,7 +127,7 @@ known hosts in Xymon.
 <A NAME="lbAH">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)
+<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)
 <P>
 <P>
 
@@ -146,6 +146,6 @@ known hosts in Xymon.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

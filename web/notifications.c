@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 1440;	/* Default: for the past 24 hours */
@@ -110,8 +110,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("hobbit-notifylog");
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	redirect_cgilog("notifications");
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 

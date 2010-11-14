@@ -1,36 +1,36 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITLAUNCH</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONLAUNCH</TITLE>
 </HEAD><BODY>
-<H1>HOBBITLAUNCH</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMONLAUNCH</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitlaunch - Master program to launch other Xymon programs
+xymonlaunch - Master program to launch other Xymon programs
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitlaunch [options]</B>
+<B>xymonlaunch [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
 
 is the main program that controls the execution and scheduling of 
 all of the components in the Xymon system.
 <P>
-hobbitlaunch allows the administrator to add, remove or change the set of
+xymonlaunch allows the administrator to add, remove or change the set of
 Xymon applications and extensions without restarting Xymon -
-hobbitlaunch will automatically notice any changes in the set of tasks,
+xymonlaunch will automatically notice any changes in the set of tasks,
 and change the scheduling of activities accordingly.
 <P>
-hobbitlaunch also allows the administrator to setup specific logfiles for
+xymonlaunch also allows the administrator to setup specific logfiles for
 each component of the Xymon system, instead of getting output
 from all components logged to a single file.
 <P>
@@ -42,24 +42,24 @@ from all components logged to a single file.
 Loads the environment from FILENAME before starting other tools.
 The environment defined by FILENAME is the default, it can be
 overridden by the ENVFILE option in 
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 <P>
 <DT>--config=FILENAME<DD>
-This option defines the file that hobbitlaunch scans for tasks it
+This option defines the file that xymonlaunch scans for tasks it
 must launch. A description of this file is in 
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
-The default tasklist is /etc/hobbitlaunch.cfg
+The default tasklist is /etc/tasks.cfg
 <P>
 <DT>--log=FILENAME<DD>
-Defines the logfile where hobbitlaunch logs information about
+Defines the logfile where xymonlaunch logs information about
 failures to launch tasks and other data about the operation of
-hobbitlaunch. Logs from individual tasks are defined in the hobbitlaunch.cfg
+xymonlaunch. Logs from individual tasks are defined in the tasks.cfg
 file. By default this is logged to stdout.
 <P>
 <DT>--pidfile=FILENAME<DD>
-Filename which hobbitlaunch saves its own process-ID to. Commonly used by
+Filename which xymonlaunch saves its own process-ID to. Commonly used by
 automated start/stop scripts.
 <P>
 <DT>--verbose<DD>
@@ -67,29 +67,29 @@ Logs the launch of all tasks to the logfile. Note that the logfile
 may become quite large if you enable this.
 <P>
 <DT>--dump<DD>
-Just dump the contents of the hobbitlaunch.cfg file after parsing it.
+Just dump the contents of the tasks.cfg file after parsing it.
 Used for debugging.
 <P>
 <DT>--debug<DD>
 Enable debugging output while running.
 <P>
 <DT>--no-daemon<DD>
-hobbitlaunch normally detaches from the controlling tty and runs as a
+xymonlaunch normally detaches from the controlling tty and runs as a
 background task. This option keeps it running in the foreground.
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
 <H2>STARTING TASKS</H2>
 
-hobbitlaunch will read the configuration file and start all of the tasks
+xymonlaunch will read the configuration file and start all of the tasks
 listed there.
 <P>
 If a task completes abnormally (i.e. terminated by a signal or with
-a non-zero exit status), then hobbitlaunch will attempt to restart it
+a non-zero exit status), then xymonlaunch will attempt to restart it
 5 times. If it still will not run, then the task is disabled for 10
-minutes. This will be logged to the hobbitlaunch logfile.
+minutes. This will be logged to the xymonlaunch logfile.
 <P>
-If the configuration file changes, hobbitlaunch will re-read it and 
+If the configuration file changes, xymonlaunch will re-read it and 
 notice any changes. If a running task was removed from the configuration,
 then the task is stopped. If a new task was added, it will be started.
 If the command used for a task changed, or it was given a new environment
@@ -99,7 +99,7 @@ and restarted with the new definition.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -117,6 +117,6 @@ and restarted with the new definition.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

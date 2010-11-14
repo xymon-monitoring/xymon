@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { ACT_NONE, ACT_FILTER, ACT_ENABLE, ACT_DISABLE, ACT_SCHED_DISABLE, ACT_SCHED_CANCEL } action = ACT_NONE;
 int hostcount = 0;
@@ -181,7 +181,7 @@ void parse_cgi(void)
 
 void do_one_host(char *hostname, char *fullmsg, char *username)
 {
-	char hobbitcmd[4096];
+	char xymoncmd[4096];
 	int i, result;
 
 	switch (action) {
@@ -189,17 +189,17 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < enablecount); i++) {
 			if (preview) result = 0;
 			else {
-				sprintf(hobbitcmd, "enable %s.%s", commafy(hostname), enabletest[i]);
-				result = sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
-				sprintf(hobbitcmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
+				sprintf(xymoncmd, "enable %s.%s", commafy(hostname), enabletest[i]);
+				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
+				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
 					commafy(hostname), enabletest[i], 
 					hostname, enabletest[i], username);
-				sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
+				sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
 			}
 
 			if (preview) {
 				printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
-					hostname, enabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+					hostname, enabletest[i], ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
@@ -208,41 +208,41 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < disablecount); i++) {
 			if (preview) result = 0;
 			else {
-				sprintf(hobbitcmd, "disable %s.%s %d %s", 
+				sprintf(xymoncmd, "disable %s.%s %d %s", 
 					commafy(hostname), disabletest[i], duration*scale, fullmsg);
-				result = sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
-				sprintf(hobbitcmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
+				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
+				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been DISABLED by %s for %d minutes\n%s", 
 					commafy(hostname), disabletest[i], 
 					hostname, disabletest[i], username, duration*scale, fullmsg);
-				result = sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL);
+				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
 			}
 
 			if (preview) {
 				printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
-					hostname, disabletest[i], ((result == BB_OK) ? "OK" : "Failed"));
+					hostname, disabletest[i], ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
 
 	  case ACT_SCHED_DISABLE:
 		for (i=0; (i < disablecount); i++) {
-			sprintf(hobbitcmd, "schedule %d disable %s.%s %d %s", 
+			sprintf(xymoncmd, "schedule %d disable %s.%s %d %s", 
 				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
-			result = (preview ? 0 : sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL));
+			result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
 
 			if (preview) {
 				printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
-					hostname, disabletest[i], ctime(&schedtime), ((result == BB_OK) ? "OK" : "Failed"));
+					hostname, disabletest[i], ctime(&schedtime), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
 
 	  case ACT_SCHED_CANCEL:
-		sprintf(hobbitcmd, "schedule cancel %d", cancelid);
-		result = (preview ? 0 : sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, NULL));
+		sprintf(xymoncmd, "schedule cancel %d", cancelid);
+		result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
 
 		if (preview) {
-			printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == BB_OK) ? "OK" : "Failed"));
+			printf("<tr><td>Canceling job <b>%d</b> : %s</td></tr>\n", cancelid, ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 		}
 		break;
 
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("hobbit-enadis");
+	redirect_cgilog("enadis");
 
 	parse_cgi();
 	if (debug) preview = 1;
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 	if (action == ACT_FILTER) {
 		/* Present the query form */
 
-		load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 		sethostenv("", "", "", colorname(COL_BLUE), NULL);
 		sethostenv_filter(hostpattern, pagepattern, ippattern);
 		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));

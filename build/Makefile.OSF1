@@ -1,4 +1,4 @@
-# bbgen compile-time settings for a OSF/1 system
+# Xymon compile-time settings for a OSF/1 system
 #
 
 OSDEF = -DOSF

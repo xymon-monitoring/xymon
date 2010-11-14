@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for time-specs in CRON format.                        */
 /*                                                                            */
 /* Copyright (C) 2010 Henrik Storner <henrik@storner.dk>                      */

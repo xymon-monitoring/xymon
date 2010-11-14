@@ -43,7 +43,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <netdb.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <ares.h>
 #include <ares_dns.h>

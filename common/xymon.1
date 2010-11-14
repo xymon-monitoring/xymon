@@ -1,28 +1,28 @@
-.TH BB 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMON 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bb \- Xymon client communication program
+xymon \- Xymon client communication program
 .SH SYNOPSIS
-.B "bb [options] RECIPIENT message"
+.B "xymon [options] RECIPIENT message"
 
 .SH DESCRIPTION
-.I bb(1)
+.I xymon(1)
 is the client program used to communicate with a
 Xymon server. It is frequently used by Xymon
 client systems to send in status messages and pager
 alerts on local tests.
 
-In Xymon, the bb program is also used for administrative
+In Xymon, the xymon program is also used for administrative
 purposes, e.g. to rename or delete hosts, or to disable
 hosts that are down for longer periods of time.
 
 .SH OPTIONS AND PARAMETERS
 .IP "--debug"
 Enable debugging. This prints out details about how the
-connection to the BBDISPLAY server is being established.
+connection to the Xymon server is being established.
 
 .IP "--proxy=http://PROXYSERVER:PROXYPORT/"
 When sending the status messages via HTTP, use this server
-as an HTTP proxy instead of connecting directly to the BBDISPLAY
+as an HTTP proxy instead of connecting directly to the Xymon
 server.
 
 .IP "--timeout=N"
@@ -30,7 +30,7 @@ Specifies the timeout for connecting to the Xymon server, in
 seconds. The default is 5 seconds.
 
 .IP "--response"
-The bb utility normally knows when to expect a response 
+The xymon utility normally knows when to expect a response 
 from the server, so this option is not required. However,
 it will cause any response from the server to be displayed.
 
@@ -43,19 +43,18 @@ first line of the merged message.
 .IP "RECIPIENT"
 The \fBRECIPIENT\fR parameter defines which server receives
 the message. If RECIPIENT is given as "0.0.0.0", then the
-message is sent to all of the servers listed in the BBDISPLAYS
-or BBPAGERS environment variable (for "status" and "page" messages,
-respectively). 
+message is sent to all of the servers listed in the XYMSERVERS
+environment variable.
 
-Usually, a client will use "$BBDISP" for the \fBRECIPIENT\fR 
+Usually, a client will use "$XYMSRV" for the \fBRECIPIENT\fR 
 parameter, as this is defined for the client scripts
 to automatically contain the correct value.
 
 The \fBRECIPIENT\fR parameter may be a URL for a webserver
-that has the bbmessage.cgi or similar script installed. This
-tunnels the Xymon messages to the BBDISPLAY server 
-using standard HTTP protocol. The 
-.I bbmessage.cgi(8)
+that has the xymoncgimsg.cgi or similar script installed. This
+tunnels the Xymon messages to the Xymon server using standard 
+HTTP protocol. The 
+.I xymoncgimsg.cgi(8)
 CGI tool (included in Xymon) must be installed on the webserver 
 for the HTTP transport to work.
 .br
@@ -68,7 +67,7 @@ of a message is defined by the maximum allowed length of your
 shell\(aqs command-line, and is typically 8-32 KB. 
 
 If you need to send longer status messages, you can specify "@" 
-as the message: bb will then read the status message from its
+as the message: xymon will then read the status message from its
 stdin.
 
 .SH XYMON MESSAGE SYNTAX
@@ -117,9 +116,9 @@ exactly which process is down.
 This triggers an informational message to be sent to those who 
 receive alerts for this HOSTNAME+TESTNAME combination, 
 according to the rules defined in
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 This is used by the 
-.I hobbit-enadis.cgi(1)
+.I enadis.cgi(1)
 tool to notify people about hosts being disabled or 
 enabled, but can also serve as a general way of notifying 
 server administrators.
@@ -131,16 +130,16 @@ is used, for example, to report statistics about a host, e.g. vmstat data, which
 does not in itself represent something that has a red, yellow or
 green identity. It is used by RRD bottom-feeder modules, among
 others. In Xymon, data messages are by default processed only by the
-.I hobbitd_rrd(8)
+.I xymond_rrd(8)
 module. If you want to handle data-messages using an external application,
 you may want to enable the 
-.I hobbitd_filestore(8)
+.I xymond_filestore(8)
 module for data-messages, to store data-messages in a format compatible
 with how the Big Brother daemon does.
 
 .IP "disable HOSTNAME.TESTNAME DURATION <additional text>"
 Disables a specific test for DURATION minutes. This will cause the
-status of this test to be listed as "blue" on the BBDISPLAY server,
+status of this test to be listed as "blue" on the Xymon server,
 and no alerts for this host/test will be generated. If DURATION is
 given as a number followed by s/m/h/d, it is interpreted as being
 in seconds/minutes/hours/days respectively.
@@ -153,7 +152,7 @@ To disable all tests for a host, use an asterisk "*" for TESTNAME.
 Re-enables a test that had been disabled.
 
 .IP "query HOSTNAME.TESTNAME"
-Query the BBDISPLAY server for the latest status reported for this
+Query the Xymon server for the latest status reported for this
 particular test. If the host/test status is known, the response is
 the first line of the status report - the current color will be the
 first word on the line. Additional lines of text that might be 
@@ -163,7 +162,7 @@ This allows any Xymon client to determine the status of a particular
 test, whether it is one pertaining to the host where the client
 is running, some other host, or perhaps the result of a combined
 test from multiple hosts managed by
-.I bbcombotest(1)
+.I combostatus(1)
 This will typically be useful to Xymon client extension scripts, that
 need to determine the status of other hosts, for example, to decide if an
 automatic recovery action should be initiated.
@@ -171,7 +170,7 @@ automatic recovery action should be initiated.
 .IP "config FILENAME"
 Retrieve one of the Xymon configuration files from the
 server. This command allows a client to pull files from the
-$BBHOME/etc/ directory on the server, allowing for semi-automatic
+$XYMONHOME/etc/ directory on the server, allowing for semi-automatic
 updates of the client configuration. Since the configuration files 
 are designed to have a common file for the configuration of all hosts 
 in the system - and this is in fact the recommended way of configuring 
@@ -180,19 +179,19 @@ files synchronized.
 
 .IP "drop HOSTNAME"
 Removes all data stored about the host HOSTNAME. It is assumed that you
-have already deleted the host from the bb-hosts configuration file.
+have already deleted the host from the hosts.cfg configuration file.
 
 .IP "drop HOSTNAME TESTNAME"
 Remove data about a single test (column).
 
 .IP "rename OLDHOSTNAME NEWHOSTNAME"
 Rename all data for a host that has had its name changed. You should do this
-before changing the hostname in the bb-hosts configuration file.
+before changing the hostname in the hosts.cfg configuration file.
 
 .IP "rename HOSTNAME OLDTESTNAME NEWTESTNAME"
 Rename data about a single test (column).
 
-.IP "hobbitdlog HOSTNAME.TESTNAME"
+.IP "xymondlog HOSTNAME.TESTNAME"
 Retrieve the Xymon status-log for a single test. The first line of the
 response contains a series of fields separated by a pipe-sign:
 .sp
@@ -206,7 +205,7 @@ The name of the test
 Status color (green, yellow, red, blue, clear, purple)
 .sp
 .BR testflags
-For network tests, the flags indicating details about the test (used by bbgen).
+For network tests, the flags indicating details about the test (used by xymongen).
 .sp
 .BR lastchange
 Unix timestamp when the status color last changed.
@@ -239,11 +238,11 @@ Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
 .sp
 After the first line comes the full status log in plain text format.
 
-.IP "hobbitdxlog HOSTNAME.TESTNAME"
+.IP "xymondxlog HOSTNAME.TESTNAME"
 Retrieves an XML string containing the status log as with the 
-"hobbitdlog" command.
+"xymondlog" command.
 
-.IP "hobbitdboard [CRITERIA] [fields=FIELDLIST]"
+.IP "xymondboard [CRITERIA] [fields=FIELDLIST]"
 Retrieves a summary of the status of all known tests available to
 the Xymon daemon. 
 
@@ -253,7 +252,7 @@ by selecting a page, a host, a test or a color - wildcards are not
 supported, so you can pick only one page, host, test or color. 
 .sp
 .BR page=PAGEPATH
-Include only tests from hosts found on the PAGEPATH page in the bb-hosts
+Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
 file.
 .sp
 .BR host=HOSTNAME
@@ -283,7 +282,7 @@ The name of the test
 Status color (green, yellow, red, blue, clear, purple)
 .sp
 .BR flags
-For network tests, the flags indicating details about the test (used by bbgen).
+For network tests, the flags indicating details about the test (used by xymongen).
 .sp
 .BR lastchange
 Unix timestamp when the status color last changed.
@@ -327,9 +326,9 @@ If the "fields" parameter is omitted, a default set of
 hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
 is used.
 
-.IP "hobbitdxboard"
+.IP "xymondxboard"
 Retrieves an XML string with the summary of all status logs
-as for the "hobbitdboard" command.
+as for the "xymondboard" command.
 
 .IP "download FILENAME"
 Download a file from the Xymon server\(aqs download directory.
@@ -338,7 +337,7 @@ Download a file from the Xymon server\(aqs download directory.
 Used to send a "client" message to the Xymon server. Client messages
 are generated by the Xymon client; when sent to the Xymon server they
 are matched against the rules in the
-.I hobbit-clients.cfg(5)
+.I analysis.cfg(5)
 configuration file, and status messages are generated for the client-side
 tests.
 The COLLECTORID is used when sending client-data that are additions
@@ -355,14 +354,14 @@ is reported.
 
 .IP "pullclient"
 This message is used when fetching client data via the "pull" mechanism implemented by
-.I hobbitfetch(8)
+.I xymonfetch(8)
 and
 .I msgcache(8)
 for clients that cannot connect directly to the Xymon server.
 
 .IP "ghostlist"
 Report a list of \fBghost\fR clients seen by the Xymon server. Ghosts are systems
-that report data to the Xymon server, but are not listed in the bb-hosts file.
+that report data to the Xymon server, but are not listed in the hosts.cfg file.
 
 .IP "schedule [TIMESTAMP COMMAND]"
 Schedules a command sent to the Xymon server for execution at a later time. E.g.
@@ -379,9 +378,9 @@ To cancel a previously scheduled command, \fB"schedule cancel JOBID"\fR can be
 used. JOBID is a number provided as the first item in the output from the schedule list.
 
 .IP "notes FILENAME"
-The message text will be stored in $BBHOME/notes/FILENAME which is then used as
-hyperlinks from hostnames or column names. This requires that the "bbnotes" 
-task is enabled in hobbitlaunch.cfg (it is disabled by default). FILENAME 
+The message text will be stored in $XYMONHOME/notes/FILENAME which is then used as
+hyperlinks from hostnames or column names. This requires that the "storenotes" 
+task is enabled in tasks.cfg (it is disabled by default). FILENAME 
 cannot contain any directory path - these are stripped automatically.
 
 .IP "usermsg ID"
@@ -399,7 +398,7 @@ whether a host can be ping'ed or not; the RRD handler can then
 use a "modify" command to override this is the actual ping
 responsetime exceeds a given threshold. (See the "DS" configuration
 setting in 
-.I hobbit-clients.cfg(5)
+.I analysis.cfg(5)
 for how to do this). SOURCE is some identification of the module
 that generates the "modify" message - future modifications must
 use the same source. There may be several sources that modify
@@ -411,46 +410,38 @@ displayed on the status webpage.
 
 .SH EXAMPLE
 
-Send a normal status message to the BBDISPLAY server, using the
+Send a normal status message to the Xymon server, using the
 standard Xymon protocol on TCP port 1984:
 .br
-   $ $BB $BBDISP "status www,foo,com.http green \(gadate\(ga Web OK"
+   $ $XYMON $XYMSRV "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Send the same status message, but using HTTP protocol via the
-webserver\(aqs bbmessage.cgi script:
+webserver\(aqs xymoncgimsg.cgi script:
 .br
-   $ $BB http://bb.foo.com/cgi-bin/bbmessage.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
+   $ $XYMON http://bb.foo.com/cgi-bin/xymoncgimsg.cgi "status www,foo,com.http green \(gadate\(ga Web OK"
 
 Use "query" message to determine the color of the "www" test, and
 restart Apache if it is red:
 .br
 
-   $ WWW=\(ga$BB $BBDISP "query www,foo,com.www" | awk \(aq{print $1}\(aq\(ga
+   $ WWW=\(ga$XYMON $XYMSRV "query www,foo,com.www" | awk \(aq{print $1}\(aq\(ga
    $ if [ "$WWW" = "red" ]; then /etc/init.d/apache restart; fi
 
-Use "config" message to update the local bb-dftab file (but only
+Use "config" message to update a local mytest.cfg file (but only
 if we get a response):
 .br
 
-   $ $BB $BBDISP "config bb-dftab" >/tmp/bb-dftab.new
-   $ if [ -s /tmp/bb-dftab.new ]; then 
-       mv /tmp/bb-dftab.new $BBHOME/etc/bb-dftab
+   $ $XYMON $XYMSRV "config mytest.cfg" >/tmp/mytest.cfg.new
+   $ if [ -s /tmp/mytest.cfg.new ]; then 
+       mv /tmp/mytest.cfg.new $XYMONHOME/etc/mytest.cfg
      fi
 
 Send a very large status message that has been built in the
 file "statusmsg.txt". Instead of providing it on the command-line, 
-pass it via stdin to the bb command:
+pass it via stdin to the xymon command:
 
-   $ cat statusmsg.txt | $BB $BBDISP "@"
-
-.SH NOTES
-This man-page describes the bb client program provided
-as part of Xymon. This implementation provides features 
-not present in the standard Big Brother bb client - 
-specifically, the support for sending messages over HTTP, 
-and many commands such as "query" and "config" are not part 
-of the bb client shipped with Big Brother.
+   $ cat statusmsg.txt | $XYMON $XYMSRV "@"
 
 .SH "SEE ALSO"
-bbcombotest(1), bb-hosts(5), hobbitserver.cfg(5), xymon(7)
+combostatus(1), hosts.cfg(5), xymonserver.cfg(5), xymon(7)
 

@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __HOBBITSVC_TRENDS_H__
-#define __HOBBITSVC_TRENDS_H__
+#ifndef __SVCSTATUS_TRENDS_H__
+#define __SVCSTATUS_TRENDS_H__
 
 extern char *generate_trends(char *hostname, time_t starttime, time_t endtime);
 

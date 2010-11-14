@@ -11,7 +11,7 @@
 #ifndef __EVENTLOG_H_
 #define __EVENTLOG_H_
 
-/* Format of records in the $BBHIST/allevents file */
+/* Format of records in the $XYMONHISTDIR/allevents file */
 typedef struct event_t {
 	void    *host;
 	struct htnames_t *service;

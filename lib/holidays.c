@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for handling holidays.                                */
 /*                                                                            */
 /* Copyright (C) 2006-2008 Michael Nagel                                      */
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 
 static int holidays_like_weekday = -1;
@@ -372,7 +372,7 @@ int load_holidays(int year)
 		year -= 1900;
 	}
 
-	sprintf(fn, "%s/etc/hobbit-holidays.cfg", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/holidays.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configholidays) {

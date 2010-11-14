@@ -23,8 +23,8 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <limits.h>
 
-#include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "libxymon.h"
+#include "xymond_worker.h"
 #include "client_config.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
@@ -253,7 +253,7 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 
 		currhost = hinfo;
 		currset = 0;
-		val = bbh_item(currhost, BBH_NOCOLUMNS);
+		val = xmh_item(currhost, XMH_NOCOLUMNS);
 		if (val) {
 			val = strdup(val);
 			tok = strtok(val, ",");
@@ -1137,7 +1137,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	freestrbuffer(monmsg);
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1492,7 +1492,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(greendata);
 	}
 
-	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(sizedata);
 }
 
@@ -1534,7 +1534,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 	}
 
-	if (anydata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anydata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1552,7 +1552,7 @@ void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, netstatstr);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1570,7 +1570,7 @@ void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, ifstatstr);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1597,7 +1597,7 @@ void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, p+1);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1724,7 +1724,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(monmsg);
 	}
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1776,7 +1776,7 @@ void testmode(char *configfn)
 	char s[4096];
 	int cfid;
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_client_config(configfn);
 	*hostname = '\0';
 	*clientclass = '\0';
@@ -1790,19 +1790,19 @@ void testmode(char *configfn)
 
 			if (strlen(hostname) == 0) {
 				hinfo = oldhinfo;
-				if (hinfo) strcpy(hostname, bbh_item(hinfo, BBH_HOSTNAME));
+				if (hinfo) strcpy(hostname, xmh_item(hinfo, XMH_HOSTNAME));
 			}
 			else if (strcmp(hostname, ".") == 0) {
 				exit(0);
 			}
 			else if (strcmp(hostname, "!") == 0) {
-				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+				load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 				load_client_config(configfn);
 				*hostname = '\0';
 			}
 			else if (strcmp(hostname, "?") == 0) {
 				dump_client_config();
-				if (oldhinfo) strcpy(hostname, bbh_item(oldhinfo, BBH_HOSTNAME));
+				if (oldhinfo) strcpy(hostname, xmh_item(oldhinfo, XMH_HOSTNAME));
 			}
 			else {
 				hinfo = hostinfo(hostname);
@@ -2082,7 +2082,7 @@ int main(int argc, char *argv[])
 	net_worker_run(ST_CLIENT, LOC_ROAMING, NULL);
 
 	/* Signals */
-	setup_signalhandler("hobbitd_client");
+	setup_signalhandler("xymond_client");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
@@ -2097,7 +2097,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		time_t nowtimer = gettimer();
 
-		msg = get_hobbitd_message(C_CLIENT, argv[0], &seq, NULL);
+		msg = get_xymond_message(C_CLIENT, argv[0], &seq, NULL);
 		if (msg == NULL) {
 			if (!localmode) errprintf("Failed to get a message, terminating\n");
 			running = 0;
@@ -2107,7 +2107,7 @@ int main(int argc, char *argv[])
 		if (reloadconfig || (nowtimer >= nextconfigload)) {
 			nextconfigload = nowtimer + 600;
 			reloadconfig = 0;
-			if (!localmode) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			if (!localmode) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			load_client_config(configfn);
 		}
 
@@ -2247,7 +2247,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

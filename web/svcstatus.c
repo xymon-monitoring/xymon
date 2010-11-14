@@ -22,17 +22,17 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
-#include "hobbitsvc-info.h"
-#include "hobbitsvc-trends.h"
+#include "svcstatus-info.h"
+#include "svcstatus-trends.h"
 
 /* Command-line params */
-static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
+static enum { SRC_XYMOND, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_XYMOND;
 static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
-static char *nkconfigfn = NULL;
+static char *critconfigfn = NULL;
 
 /* CGI params */
 static char *hostname = NULL;
@@ -153,17 +153,17 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts)
 {
 	void *hinfo = NULL;
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
 		return 1;
 	}
 
-	*ip = bbh_item(hinfo, BBH_IP);
-	*displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
+	*ip = xmh_item(hinfo, XMH_IP);
+	*displayname = xmh_item(hinfo, XMH_DISPLAYNAME);
 	if (!(*displayname)) *displayname = hostname;
-	*compacts = bbh_item(hinfo, BBH_COMPACT);
+	*compacts = xmh_item(hinfo, XMH_COMPACT);
 
 	return 0;
 }
@@ -190,26 +190,26 @@ int do_request(void)
 			sprintf(hostdatadir, "%s/%s", s, hostname);
 		}
 		else {
-			s = xgetenv("BBVAR");
+			s = xgetenv("XYMONVAR");
 			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
 			sprintf(hostdatadir, "%s/hostdata/%s", s, hostname);
 		}
 	}
 
 	if (outform == FRM_CLIENT) {
-		if (source == SRC_HOBBITD) {
-			char *hobbitdreq;
-			int hobbitdresult;
+		if (source == SRC_XYMOND) {
+			char *xymondreq;
+			int xymondresult;
 			sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-			hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
-			sprintf(hobbitdreq, "clientlog %s", hostname);
-			if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
+			xymondreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
+			sprintf(xymondreq, "clientlog %s", hostname);
+			if (service && *service) sprintf(xymondreq + strlen(xymondreq), " section=%s", service);
 
-			hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
-			if (hobbitdresult != BB_OK) {
+			xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
+			if (xymondresult != XYMONSEND_OK) {
 				char errtxt[4096];
-				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
+				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", xymondreq, xymondresult);
 				errormsg(errtxt);
 				return 1;
 			}
@@ -257,7 +257,7 @@ int do_request(void)
 				}
 				else {
 					/* Redirect browser to the real server */
-					fprintf(stdout, "Location: %s/bb-hostsvc.sh?HOST=%s&SERVICE=%s\n\n",
+					fprintf(stdout, "Location: %s/svcstatus.sh?HOST=%s&SERVICE=%s\n\n",
 						cgiurl, hostname, service);
 					return 0;
 				}
@@ -277,12 +277,12 @@ int do_request(void)
 			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
-			log = restofmsg = generate_info(hostname, nkconfigfn);
+			log = restofmsg = generate_info(hostname, critconfigfn);
 		}
 	}
-	else if (source == SRC_HOBBITD) {
-		char hobbitdreq[1024];
-		int hobbitdresult;
+	else if (source == SRC_XYMOND) {
+		char xymondreq[1024];
+		int xymondresult;
 		char *items[25];
 		int icount;
 		time_t logage, clntstamp;
@@ -302,17 +302,17 @@ int do_request(void)
 		}
 
 		if (!complist) {
-			sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			sprintf(xymondreq, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
 		}
 		else {
-			sprintf(hobbitdreq, "hobbitdboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
+			sprintf(xymondreq, "xymondboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
 		}
 
 		sres = newsendreturnbuf(1, NULL);
-		hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
-		if (hobbitdresult == BB_OK) log = getsendreturnstr(sres, 1);
+		xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
+		if (xymondresult == XYMONSEND_OK) log = getsendreturnstr(sres, 1);
 		freesendreturnbuf(sres);
-		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+		if ((xymondresult != XYMONSEND_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;
 		}
@@ -354,8 +354,8 @@ int do_request(void)
 			 * dismsg,		[12]
 			 * client,		[13]
 			 * acklist		[14]
-			 * BBH_IP		[15]
-			 * BBH_DISPLAYNAME	[16]
+			 * XMH_IP		[15]
+			 * XMH_DISPLAYNAME	[16]
 			 * clienttstamp         [17]
 			 * flapping		[18]
 			 * modifiers		[19]
@@ -462,7 +462,7 @@ int do_request(void)
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
-		sprintf(logfn, "%s/%s/%s/%s", xgetenv("BBHISTLOGS"), hostnamedash, service, tstamp);
+		sprintf(logfn, "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, tstamp);
 		xfree(hostnamedash);
 		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 		sethostenv_histlog(tstamp);
@@ -554,7 +554,7 @@ int do_request(void)
 				}
 				else {
 					clienturi = (char *)realloc(clienturi, strlen(cgiurl) + 40 + strlen(hostname) + strlen(clientid));
-					sprintf(clienturi, "%s/bb-hostsvc.sh?CLIENT=%s&amp;TIMEBUF=%s", 
+					sprintf(clienturi, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
 						cgiurl, hostname, clientid);
 				}
 			}
@@ -621,9 +621,6 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[argi], "--historical") == 0) {
 			source = SRC_HISTLOGS;
 		}
-		else if (strcmp(argv[argi], "--hobbitd") == 0) {
-			source = SRC_HOBBITD;
-		}
 		else if (strncmp(argv[argi], "--history=", 10) == 0) {
 			char *val = strchr(argv[argi], '=')+1;
 
@@ -660,8 +657,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-jsvalidation") == 0) {
 			usejsvalidation = 0;
 		}
-		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
-			newnkconfig = 0;
+		else if (strcmp(argv[argi], "--old-critical-config") == 0) {
+			newcritconfig = 0;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -671,13 +668,13 @@ int main(int argc, char *argv[])
 			locator_init(p+1);
 			locatorbased = 1;
 		}
-		else if (argnmatch(argv[argi], "--nkconfig=")) {
+		else if (argnmatch(argv[argi], "--critical-config=")) {
 			char *p = strchr(argv[argi], '=');
-			nkconfigfn = strdup(p+1);
+			critconfigfn = strdup(p+1);
 		}
 	}
 
-	redirect_cgilog("hobbitsvc");
+	redirect_cgilog("svcstatus");
 
 	*errortxt = '\0';
 	hostname = service = tstamp = NULL;

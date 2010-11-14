@@ -2,7 +2,7 @@
 /* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module for Xymon, responsible for loading the            */
-/* hobbit-nkview.cfg file.                                                    */
+/* critical.cfg file.                                                         */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -23,9 +23,9 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <utime.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#define DEFAULTCONFIG "etc/hobbit-nkview.cfg"
+#define DEFAULTCONFIG "etc/critical.cfg"
 
 static RbtHandle rbconf;
 static char *defaultfn = NULL;
@@ -44,15 +44,15 @@ static void flushrec(void *k1, void *k2)
 	}
 	else {
 		/* Full record */
-		nkconf_t *rec = (nkconf_t *)k2;
-		if (rec->nktime)  xfree(rec->nktime);
+		critconf_t *rec = (critconf_t *)k2;
+		if (rec->crittime)  xfree(rec->crittime);
 		if (rec->ttgroup) xfree(rec->ttgroup);
 		if (rec->ttextra) xfree(rec->ttextra);
 	}
 	xfree(key);
 }
 
-int load_nkconfig(char *fn)
+int load_critconfig(char *fn)
 {
 	static void *configfiles = NULL;
 	static int firsttime = 1;
@@ -62,9 +62,9 @@ int load_nkconfig(char *fn)
 	/* Setup the default configuration filename */
 	if (!fn) {
 		if (!defaultfn) {
-			char *bbhome = xgetenv("BBHOME");
-			defaultfn = (char *)malloc(strlen(bbhome) + strlen(DEFAULTCONFIG) + 2);
-			sprintf(defaultfn, "%s/%s", bbhome, DEFAULTCONFIG);
+			char *xymonhome = xgetenv("XYMONHOME");
+			defaultfn = (char *)malloc(strlen(xymonhome) + strlen(DEFAULTCONFIG) + 2);
+			sprintf(defaultfn, "%s/%s", xymonhome, DEFAULTCONFIG);
 		}
 		fn = defaultfn;
 	}
@@ -109,7 +109,7 @@ int load_nkconfig(char *fn)
 		/* Clone record: Host  =HOST */
 		char *ehost, *eservice, *estart, *eend, *etime, *ttgroup, *ttextra, *updinfo;
 		int ttprio = 0;
-		nkconf_t *newitem;
+		critconf_t *newitem;
 		RbtStatus status;
 		int idx = 0;
 
@@ -132,12 +132,12 @@ int load_nkconfig(char *fn)
 			ttextra = gettok(NULL, "|\n");
 			updinfo = gettok(NULL, "|\n");
 
-			newitem = (nkconf_t *)malloc(sizeof(nkconf_t));
+			newitem = (critconf_t *)malloc(sizeof(critconf_t));
 			newitem->key = (char *)malloc(strlen(ehost) + strlen(eservice) + 15);
 			sprintf(newitem->key, "%s|%s", ehost, eservice);
 			newitem->starttime= ((estart && *estart) ? atoi(estart) : 0);
 			newitem->endtime  = ((eend && *eend) ? atoi(eend) : 0);
-			newitem->nktime   = ((etime && *etime) ? strdup(etime) : NULL);
+			newitem->crittime = ((etime && *etime) ? strdup(etime) : NULL);
 			newitem->priority = ttprio;
 			newitem->ttgroup  = strdup(ttgroup);
 			newitem->ttextra  = strdup(ttextra);
@@ -205,29 +205,29 @@ static RbtHandle findrec(char *key)
 	return handle;
 }
 
-static int timecheck(time_t starttime, time_t endtime, char *nktime)
+static int timecheck(time_t starttime, time_t endtime, char *crittime)
 {
 	time_t now = getcurrenttime(NULL);
 
 	if (starttime && (now < starttime)) return 0;
 	if (endtime && (now > endtime)) return 0;
-	if ((nktime == NULL) || within_sla(NULL, nktime, 0)) return 1; /* FIXME */
+	if ((crittime == NULL) || within_sla(NULL, crittime, 0)) return 1; /* FIXME */
 
 	return 0;
 }
 
-nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
+critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 {
 	static RbtHandle handle;
 	static char *realkey = NULL;
 	void *k1, *k2;
-	nkconf_t *result = NULL;
+	critconf_t *result = NULL;
 	int isclone;
 
 	if (resultkey) *resultkey = NULL;
 
 	switch (flags) {
-	  case NKCONF_TIMEFILTER:
+	  case CRITCONF_TIMEFILTER:
 		handle = findrec(key);
 		/* We may have hit a cloned record, so use the real key for further searches */
 		if (handle != rbtEnd(rbconf)) {
@@ -237,20 +237,20 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 
 		while (handle != rbtEnd(rbconf)) {
 			rbtKeyValue(rbconf, handle, &k1, &k2);
-			result = (nkconf_t *)k2;
-			if (timecheck(result->starttime, result->endtime, result->nktime)) return result;
+			result = (critconf_t *)k2;
+			if (timecheck(result->starttime, result->endtime, result->crittime)) return result;
 
 			/* Go to the next */
 			handle = rbtNext(rbconf, handle);
 			if (handle != rbtEnd(rbconf)) {
 				rbtKeyValue(rbconf, handle, &k1, &k2);
-				if (strncmp(realkey, ((nkconf_t *)k2)->key, strlen(realkey)) != 0) handle=rbtEnd(rbconf);
+				if (strncmp(realkey, ((critconf_t *)k2)->key, strlen(realkey)) != 0) handle=rbtEnd(rbconf);
 			}
 		}
 		realkey = NULL;
 		break;
 
-	  case NKCONF_FIRSTMATCH:
+	  case CRITCONF_FIRSTMATCH:
 		handle = findrec(key);
 		realkey = NULL;
 		if (handle != rbtEnd(rbconf)) {
@@ -259,7 +259,7 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 		}
 		break;
 
-	  case NKCONF_FIRST:
+	  case CRITCONF_FIRST:
 		realkey = NULL;
 		handle = rbtBegin(rbconf);
 		if (handle == rbtEnd(rbconf)) return NULL;
@@ -272,7 +272,7 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 		break;
 
 
-	  case NKCONF_NEXT:
+	  case CRITCONF_NEXT:
 		if (!realkey || (handle == rbtEnd(rbconf))) return NULL;
 		isclone = 1;
 		while (isclone && (handle != rbtEnd(rbconf))) {
@@ -285,17 +285,17 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 		}
 		break;
 
-	  case NKCONF_RAW_FIRST:
+	  case CRITCONF_RAW_FIRST:
 		handle = rbtBegin(rbconf);
 		realkey = NULL;
 		break;
 
-	  case NKCONF_RAW_NEXT:
+	  case CRITCONF_RAW_NEXT:
 		handle = rbtNext(rbconf, handle);
 		realkey = NULL;
 		break;
 
-	  case NKCONF_FIRSTHOSTMATCH:
+	  case CRITCONF_FIRSTHOSTMATCH:
 		do {
 			int found = 0;
 			char *delim;
@@ -325,12 +325,12 @@ nkconf_t *get_nkconfig(char *key, int flags, char **resultkey)
 
 	rbtKeyValue(rbconf, handle, &k1, &k2);
 	if (resultkey) *resultkey = (char *)k1;
-	result = (nkconf_t *)k2;
+	result = (critconf_t *)k2;
 
 	return result;
 }
 
-int update_nkconfig(nkconf_t *rec)
+int update_critconfig(critconf_t *rec)
 {
 	char *bakfn;
 	FILE *bakfd;
@@ -391,7 +391,7 @@ int update_nkconfig(nkconf_t *rec)
 			fprintf(fd, "%s|=%s\n", hostname, pointsto);
 		}
 		else {
-			nkconf_t *onerec = (nkconf_t *)k2;
+			critconf_t *onerec = (critconf_t *)k2;
 			char startstr[20], endstr[20];
 
 			*startstr = *endstr = '\0';
@@ -401,7 +401,7 @@ int update_nkconfig(nkconf_t *rec)
 			fprintf(fd, "%s|%s|%s|%s|%d|%s|%s|%s\n",
 				onekey, 
 				startstr, endstr,
-				(onerec->nktime ? onerec->nktime : ""),
+				(onerec->crittime ? onerec->crittime : ""),
 				onerec->priority, 
 				(onerec->ttgroup ? onerec->ttgroup : ""), 
 				(onerec->ttextra ? onerec->ttextra : ""),
@@ -416,7 +416,7 @@ int update_nkconfig(nkconf_t *rec)
 	return result;
 }
 
-void addclone_nkconfig(char *origin, char *newclone)
+void addclone_critconfig(char *origin, char *newclone)
 {
 	char *newkey;
 	RbtHandle handle;
@@ -424,11 +424,11 @@ void addclone_nkconfig(char *origin, char *newclone)
 	newkey = (char *)malloc(strlen(newclone) + 2);
 	sprintf(newkey, "%s=", newclone);
 	handle = rbtFind(rbconf, newkey);
-	if (handle != rbtEnd(rbconf)) dropclone_nkconfig(newclone);
+	if (handle != rbtEnd(rbconf)) dropclone_critconfig(newclone);
 	rbtInsert(rbconf, newkey, strdup(origin));
 }
 
-void dropclone_nkconfig(char *drop)
+void dropclone_critconfig(char *drop)
 {
 	RbtHandle handle;
 	char *key;
@@ -448,7 +448,7 @@ void dropclone_nkconfig(char *drop)
 	xfree(key);
 }
 
-int delete_nkconfig(char *dropkey, int evenifcloned)
+int delete_critconfig(char *dropkey, int evenifcloned)
 {
 	RbtHandle handle;
 	void *k1, *k2;

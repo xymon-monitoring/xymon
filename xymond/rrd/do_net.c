@@ -8,18 +8,18 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char bbnet_rcsid[] = "$Id$";
+static char do_net_rcsid[] = "$Id$";
 
 int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
-	static char *bbnet_params[]       = { "DS:sec:GAUGE:600:0:U", NULL };
-	static void *bbnet_tpl            = NULL;
+	static char *xymonnet_params[]       = { "DS:sec:GAUGE:600:0:U", NULL };
+	static void *xymonnet_tpl            = NULL;
 
 	char *p;
 	float seconds = 0.0;
 	int do_default = 1;
 
-	if (bbnet_tpl == NULL) bbnet_tpl = setup_template(bbnet_params);
+	if (xymonnet_tpl == NULL) xymonnet_tpl = setup_template(xymonnet_params);
 
 	if (strcmp(testname, "http") == 0) {
 		char *line1, *url = NULL, *eoln;
@@ -48,7 +48,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 				p = urlfn; while ((p = strchr(p, '/')) != NULL) *p = ',';
 				setupfn3("%s.%s.%s.rrd", "tcp", "http", urlfn);
 				sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-				create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 				xfree(url); url = NULL;
 			}
 
@@ -81,7 +81,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 
 		setupfn2("%s.%s.rrd", "tcp", testname);
 		sprintf(rrdvalues, "%d:%.6f", (int)tstamp, seconds);
-		return create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
+		return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 	}
 	else if (strcmp(testname, "ntp") == 0) {
 		/*
@@ -144,7 +144,7 @@ int do_net_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 		if (p && (sscanf(p+1, "Seconds: %f", &seconds) == 1)) {
 			setupfn2("%s.%s.rrd", "tcp", testname);
 			sprintf(rrdvalues, "%d:%.2f", (int)tstamp, seconds);
-			return create_and_update_rrd(hostname, testname, classname, pagepaths, bbnet_params, bbnet_tpl);
+			return create_and_update_rrd(hostname, testname, classname, pagepaths, xymonnet_params, xymonnet_tpl);
 		}
 	}
 

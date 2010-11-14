@@ -27,19 +27,19 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <regex.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <signal.h>
 
 /*
  * config file format:
  *
- * [hobbitd]
- * 	CMD hobbitd --no-daemon
- * 	LOGFILE /var/log/hobbitd.log
+ * [xymond]
+ * 	CMD xymond --no-daemon
+ * 	LOGFILE /var/log/xymond.log
  *
- * [bbdisplay]
- * 	CMD bb-display.sh
+ * [xymongen]
+ * 	CMD xymongen
  * 	INTERVAL 5m
  */
 
@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
 	int argi;
 	int daemonize = 1;
 	int verbose = 0;
-	char *config = "/etc/hobbitlaunch.cfg";
+	char *config = "/etc/tasks.cfg";
 	char *logfn = NULL;
 	char *pidfn = NULL;
 	pid_t cpid;
@@ -585,14 +585,14 @@ int main(int argc, char *argv[])
 	}
 
 	save_errbuf = 0;
-	setup_signalhandler("hobbitlaunch");
+	setup_signalhandler("xymonlaunch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 
-	errprintf("hobbitlaunch starting\n");
+	errprintf("xymonlaunch starting\n");
 	while (running) {
 		time_t now = gettimer();
 
@@ -686,7 +686,7 @@ int main(int argc, char *argv[])
 					/* Exec the task */
 					char *cmd;
 					char **cmdargs = NULL;
-					static char bbsleepenv[20];
+					static char tasksleepenv[20],bbsleepenv[20];
 
 					/* Setup environment */
 					if (twalk->envfile) {
@@ -696,9 +696,10 @@ int main(int argc, char *argv[])
 						loadenv(expand_env(twalk->envfile), twalk->envarea);
 					}
 
-					/* Setup BBSLEEP to match the interval */
-					sprintf(bbsleepenv, "BBSLEEP=%d", twalk->interval);
-					putenv(bbsleepenv);
+					/* Setup TASKSLEEP to match the interval */
+					sprintf(tasksleepenv, "TASKSLEEP=%d", twalk->interval);
+					sprintf(bbsleepenv, "BBSLEEP=%d", twalk->interval);	/* For compatibility */
+					putenv(tasksleepenv); putenv(bbsleepenv);
 
 					/* Setup command line and arguments */
 					cmdargs = setup_commandargs(twalk->cmd, &cmd);
@@ -714,7 +715,7 @@ int main(int argc, char *argv[])
 					}
 
 					/* Go! */
-					dbgprintf("%s -> Running '%s', BBHOME=%s\n", twalk->key, cmd, xgetenv("BBHOME"));
+					dbgprintf("%s -> Running '%s', XYMONHOME=%s\n", twalk->key, cmd, xgetenv("XYMONHOME"));
 					execvp(cmd, cmdargs);
 
 					/* Should never go here */

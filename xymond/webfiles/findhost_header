@@ -8,7 +8,7 @@
 <link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
 
 <!-- The favicon image -->
-<link rel="shortcut icon" href="&BBSKIN/favicon-&BBBACKGROUND.ico">
+<link rel="shortcut icon" href="&XYMONSKIN/favicon-&XYMWEBBACKGROUND.ico">
 
 <script type="text/javascript">
    function my_setfocus()
@@ -22,7 +22,7 @@
 
 </HEAD>
 
-<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44" onLoad="my_setfocus();">
+<BODY BGCOLOR="&XYMWEBBACKGROUND" BACKGROUND="&XYMONSKIN/bkg-&XYMWEBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44" onLoad="my_setfocus();">
 
 &XYMONBODYHEADER
 
@@ -30,13 +30,13 @@
 <TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
-    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&HOBBITLOGO</B></FONT>
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMONLOGO</B></FONT>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
     <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Find Host</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
-   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMWEBDATE</B></FONT>
   </TD>
 </TR>
 <TR>

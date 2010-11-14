@@ -1,32 +1,32 @@
-.TH HOBBIT-HOSTGRAPHS.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH HOSTGRAPHS.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbit-hostgraphs.cgi \- CGI program to show multiple graphs
+hostgraphs.cgi \- CGI program to show multiple graphs
 .SH SYNOPSIS
-.B "hobbit-hostgraph.cgi"
+.B "hostgraph.cgi"
 
 .SH DESCRIPTION
-\fBhobbit-hostgraph.cgi\fR
-is invoked as a CGI script via the hobbit-hostgraph.sh CGI wrapper.
+\fBhostgraph.cgi\fR
+is invoked as a CGI script via the hostgraph.sh CGI wrapper.
 
 If no parameters are provided when invoked, it will present a form
 where the user can select a time period, one or more hosts, and a
 set of graphs.
 
 The parameters selected by the user are passed to a second invocation
-of hobbit-hostgraph.cgi, and result in a webpage showing a list of
+of hostgraph.cgi, and result in a webpage showing a list of
 graph images based on the trend data stored about the hosts.
 
-If multiple graph-types are selected, hobbit-hostgraph.cgi will display
+If multiple graph-types are selected, hostgraph.cgi will display
 a list of graphs, with one graph per type.
 
-If multiple hosts are selected, hobbit-hostgraph.cgi will attempt to
+If multiple hosts are selected, hostgraph.cgi will attempt to
 display a multi-host graph for each type where the graphs for all
 hosts are overlayed in a single image, allowing for easy comparison
 of the hosts.
 
 The hostlist uses the PAGEPATH cookie provided by Xymon webpages to
 select the list of hosts to present. Only the hosts visible on the
-page where hobbit-hostgraph.cgi is invoked from will be visible.
+page where hostgraph.cgi is invoked from will be visible.
 
 The resulting graph page can be bookmarked, but the bookmark
 also fixates the time period shown.
@@ -47,5 +47,5 @@ and does not adjust to which graphs are available.
 If the tool is invoked directly, all hosts defined in Xymon will be listed.
 
 .SH "SEE ALSO"
-bb-hosts(5), hobbitserver.cfg(5)
+hosts.cfg(5), xymonserver.cfg(5)
 

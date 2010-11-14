@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 #include <pcre.h>
 #include <rrd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define HOUR_GRAPH  "e-48h"
 #define DAY_GRAPH   "e-12d"
@@ -120,7 +120,7 @@ void errormsg(char *msg)
 
 void request_cacheflush(char *hostname)
 {
-	/* Build a cache-flush request, and send it to all of the $BBTMP/rrdctl.* sockets */
+	/* Build a cache-flush request, and send it to all of the $XYMONTMP/rrdctl.* sockets */
 	char *req, *bufp;
 	int bytesleft;
 	DIR *dir;
@@ -137,7 +137,7 @@ void request_cacheflush(char *hostname)
 	}
 	fcntl(ctlsocket, F_SETFL, O_NONBLOCK);
 
-	dir = opendir(xgetenv("BBTMP"));
+	dir = opendir(xgetenv("XYMONTMP"));
 	while ((d = readdir(dir)) != NULL) {
 		if (strncmp(d->d_name, "rrdctl.", 7) == 0) {
 			struct sockaddr_un myaddr;
@@ -146,7 +146,7 @@ void request_cacheflush(char *hostname)
 
 			memset(&myaddr, 0, sizeof(myaddr));
 			myaddr.sun_family = AF_UNIX;
-			sprintf(myaddr.sun_path, "%s/%s", xgetenv("BBTMP"), d->d_name);
+			sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONTMP"), d->d_name);
 			myaddrsz = sizeof(myaddr);
 			bufp = req; bytesleft = strlen(req);
 			do {
@@ -564,7 +564,7 @@ char *expand_tokens(char *tpl)
 			 * mustn't contain the keyword STACK at all, so
 			 * we need a different treatment for the first rrdidx
 			 *
-			 * examples of hobbitgraph.cfg entries:
+			 * examples of graphs.cfg entries:
 			 *
 			 * - rrdtool 1.0.x
 			 * @STACKIT@:la@RRDIDX@#@COLOR@:@RRDPARAM@
@@ -642,7 +642,7 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\" alt=\"%s graph\"></td>\n",
 			uri, grtype, grtype);
 		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom&amp;color=%s\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
-			uri, grtype, colorname(bgcolor), getenv("BBSKIN"));
+			uri, grtype, colorname(bgcolor), getenv("XYMONSKIN"));
 		break;
 
 	  case ACT_SELZOOM:
@@ -745,10 +745,10 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	int xsize, ysize;
 	double ymin, ymax;
 
-	/* Find the hobbitgraph.cfg file and load it */
+	/* Find the graphs.cfg file and load it */
 	if (gdeffn == NULL) {
 		char fnam[PATH_MAX];
-		sprintf(fnam, "%s/etc/hobbitgraph.cfg", xgetenv("BBHOME"));
+		sprintf(fnam, "%s/etc/graphs.cfg", xgetenv("XYMONHOME"));
 		gdeffn = strdup(fnam);
 	}
 	load_gdefs(gdeffn);
@@ -777,7 +777,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	/*
 	 * Lookup which RRD file corresponds to the service-name, and how we handle this graph.
 	 * We first lookup the service name in the graph definition list.
-	 * If that fails, then we try mapping it via the BB service -> RRD map.
+	 * If that fails, then we try mapping it via the servicename -> RRD map.
 	 */
 	for (gdef = gdefs; (gdef && strcmp(service, gdef->name)); gdef = gdef->next) ;
 	if (gdef == NULL) {
@@ -785,9 +785,9 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			gdef = gdefuser;
 		}
 		else {
-			hobbitrrd_t *ldef = find_hobbit_rrd(service, NULL);
+			xymonrrd_t *ldef = find_xymon_rrd(service, NULL);
 			if (ldef) {
-				for (gdef = gdefs; (gdef && strcmp(ldef->hobbitrrdname, gdef->name)); gdef = gdef->next) ;
+				for (gdef = gdefs; (gdef && strcmp(ldef->xymonrrdname, gdef->name)); gdef = gdef->next) ;
 				wantsingle = 1;
 			}
 		}
@@ -815,14 +815,14 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 	if (rrddir == NULL) {
 		char dnam[PATH_MAX];
 
-		if (hostlist) sprintf(dnam, "%s", xgetenv("BBRRDS"));
-		else sprintf(dnam, "%s/%s", xgetenv("BBRRDS"), hostname);
+		if (hostlist) sprintf(dnam, "%s", xgetenv("XYMONRRDS"));
+		else sprintf(dnam, "%s/%s", xgetenv("XYMONRRDS"), hostname);
 
 		rrddir = strdup(dnam);
 	}
 	if (chdir(rrddir)) errormsg("Cannot access RRD directory");
 
-	/* Request an RRD cache flush from the hobbitd_rrd update daemon */
+	/* Request an RRD cache flush from the xymond_rrd update daemon */
 	if (hostlist) {
 		int i;
 		for (i=0; (i < hostlistsize); i++) request_cacheflush(hostlist[i]);
@@ -881,7 +881,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 		if (!pat) {
 			char msg[8192];
 
-			snprintf(msg, sizeof(msg), "hobbitgraph.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
+			snprintf(msg, sizeof(msg), "graphs.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
 				 gdef->fnpat, errmsg, errofs);
 			errormsg(msg);
 		}
@@ -891,7 +891,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 				char msg[8192];
 
 				snprintf(msg, sizeof(msg), 
-					 "hobbitgraph.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
+					 "graphs.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
 					 gdef->exfnpat, errmsg, errofs);
 				errormsg(msg);
 			}
@@ -1146,7 +1146,7 @@ void generate_zoompage(char *selfURI)
 		char zoomjsfn[PATH_MAX];
 		struct stat st;
 
-		sprintf(zoomjsfn, "%s/web/zoom.js", xgetenv("BBHOME"));
+		sprintf(zoomjsfn, "%s/web/zoom.js", xgetenv("XYMONHOME"));
 		if (stat(zoomjsfn, &st) == 0) {
 			FILE *fd;
 			char *buf;
@@ -1184,7 +1184,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	char *rrddir  = NULL;		/* RRD files top-level directory */
-	char *gdeffn  = NULL;		/* hobbitgraph.cfg file */
+	char *gdeffn  = NULL;		/* graphs.cfg file */
 	char *graphfn = "-";		/* Output filename, default is stdout */
 
 	char *selfURI;
@@ -1223,7 +1223,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("hobbitgraph");
+	redirect_cgilog("showgraph");
 
 	selfURI = build_selfURI();
 

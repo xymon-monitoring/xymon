@@ -41,7 +41,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 volatile int keeprunning = 1;
 char *client_response = NULL;		/* The latest response to a "client" message */
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 		else if (strcmp(argv[opt], "--version") == 0) {
-			printf("bbproxy version %s\n", VERSION);
+			printf("xymonproxy version %s\n", VERSION);
 			return 0;
 		}
 	}

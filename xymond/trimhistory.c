@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum ftype_t { F_HOSTHISTORY, F_SERVICEHISTORY, F_ALLEVENTS, F_DROPIT, F_PURGELOGS };
 typedef struct filelist_t {
@@ -56,7 +56,7 @@ int validstatus(char *hname, char *tname)
 		sendreturn_t *sres;
 
 		sres = newsendreturnbuf(1, NULL);
-		if (sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+		if (sendmessage("xymondboard fields=hostname,testname", NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 			errprintf("Cannot get list of host/test combinations\n");
 			exit(1);
 		}
@@ -67,7 +67,7 @@ int validstatus(char *hname, char *tname)
 			char fname[PATH_MAX];
 			FILE *fd;
 
-			sprintf(fname, "%s/board.dbg", xgetenv("BBTMP"));
+			sprintf(fname, "%s/board.dbg", xgetenv("XYMONTMP"));
 			fd = fopen(fname, "w");
 			if (fd) {
 				fwrite(board, strlen(board), 1, fd);
@@ -210,7 +210,7 @@ void trim_files(time_t cutoff)
 			FILE *fd;
 			long pid = -1;
 
-			sprintf(pidfn, "%s/hobbitd_history.pid", xgetenv("BBSERVERLOGS"));
+			sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
 			fd = fopen(pidfn, "r");
 			if (fd) {
 				char l[100];
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (chdir(xgetenv("BBHIST")) == -1) {
+	if (chdir(xgetenv("XYMONHISTDIR")) == -1) {
 		errprintf("Cannot cd to history directory: %s\n", strerror(errno));
 		return 1;
 	}
@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
 
 	flhead = NULL;  /* Dirty - we should clean it up properly - but I dont care */
 	totalitems = 0;
-	if (chdir(xgetenv("BBHISTLOGS")) == -1) {
+	if (chdir(xgetenv("XYMONHISTLOGS")) == -1) {
 		errprintf("Cannot cd to historical statuslogs directory: %s\n", strerror(errno));
 		return 1;
 	}

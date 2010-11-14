@@ -181,7 +181,7 @@ the router - and not from the 200 hosts behind the router.
 .SH SECURITY
 All of the Xymon server tools run under an unprivileged user account.
 A single program - the
-.I hobbitping(1)
+.I xymonping(1)
 network connectivity tester - must be installed setuid-root, but has
 been written so that it drops all root privileges immediately after
 performing the operation that requires root privileges.
@@ -195,7 +195,7 @@ server on tcp port 1984. Normally, Xymon clients - i.e. the servers
 you are monitoring - must be permitted to connect to the Xymon server 
 on this port. However, if that is not possible due to firewall 
 policies, then Xymon includes the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 and
 .I msgcache(8)
 tools to allows for a pull-style way of collecting data, where it 
@@ -256,37 +256,37 @@ an e-mail to \fBxymon-announce-subscribe@xymon.com\fR.
 .SH XYMON SERVER TOOLS
 These tools implement the core functionality of the Xymon server:
 
-.I hobbitd(8)
+.I xymond(8)
 is the core daemon that collects all reports about the status of 
 your hosts. It uses a number of helper modules to
 implement certain tasks such as updating log files and sending
-out alerts: hobbitd_client, hobbitd_history, hobbitd_alert
-and hobbitd_rrd. There is also a hobbitd_filestore module for
+out alerts: xymond_client, xymond_history, xymond_alert
+and xymond_rrd. There is also a xymond_filestore module for
 compatibility with Big Brother.
 
-.I hobbitd_channel(8)
+.I xymond_channel(8)
 Implements the communication between the Xymon daemon and the
 other Xymon server modules.
 
-.I hobbitd_history(8)
+.I xymond_history(8)
 Stores historical data about the things that Xymon monitors.
 
-.I hobbitd_rrd(8)
+.I xymond_rrd(8)
 Stores trend data, which is used to generate graphs of the data
 monitored by Xymon.
 
-.I hobbitd_alert(8)
+.I xymond_alert(8)
 handles alerts. When a status changes to a critical state, this 
 module decides if an alert should be sent out, and to whom.
 
-.I hobbitd_client(8)
+.I xymond_client(8)
 handles data collected by the Xymon clients, analyzes the data
 and feeds back several status updates to Xymon to build the
 view of the client status.
 
-.I hobbitd_hostdata(8)
+.I xymond_hostdata(8)
 stores historical client data when something breaks. E.g. when a
-web page stops responding hobbitd_hostdata will save the latest
+web page stops responding xymond_hostdata will save the latest
 client data, so that you can use this to view a snapshot of how
 the system state was just prior to it failing.
 
@@ -294,13 +294,13 @@ the system state was just prior to it failing.
 .SH XYMON NETWORK TEST TOOLS
 These tools are used on servers that execute tests of network services.
 
-.I hobbitping(1)
+.I xymonping(1)
 performs network connectivity (ping) tests.
 
-.I bbtest-net(1)
+.I xymonnet(1)
 runs the network service tests.
 
-.I bbretest-net.sh(1)
+.I xymonnet-again.sh(1)
 is an extension script for re-doing failed network tests with a higher 
 frequency than the normal network tests. This allows Xymon to pick up
 the recovery of a network service as soon as it happens, resulting in 
@@ -311,36 +311,36 @@ less downtime being recorded.
 These tools take care of generating and updating the various
 Xymon web-pages.
 
-.I bbgen(1)
+.I xymongen(1)
 takes care of updating the Xymon web pages.
 
-.I hobbitsvc.cgi(1)
+.I svcstatus.cgi(1)
 This CGI program generates an HTML view of a single status log.
 It is used to present the Xymon status-logs.
 
-.I hobbitgraph.cgi(1)
+.I showgraph.cgi(1)
 This CGI program generates graphs of the trend-data collected
 by Xymon.
 
-.I hobbit-hostgraphs.cgi(1)
+.I hostgraphs.cgi(1)
 When you want to combine multiple graphs into one, this CGI lets
 you combine graphs so you can e.g. compare the load on all of the
 nodes in your server farm.
 
-.I hobbit-nkview.cgi(1)
+.I criticalview.cgi(1)
 Generates the Critical Systems view, based on the currently critical
 systems and the configuration of what systems and services you want to 
 monitor when.
 
-.I bb-hist.cgi(1)
+.I history.cgi(1)
 This CGI program generates a web page with the most recent history 
 of a particular host+service combination.
 
-.I bb-eventlog.cgi(1)
+.I eventlog.cgi(1)
 This CGI lets you view a log of events that have happened over a period 
 of time, for a single host or test, or for multiple systems.
 
-.I bb-ack.cgi(1)
+.I ack.cgi(1)
 This CGI program allows a user to acknowledge an alert he received
 from Xymon about a host that is in a critical state. Acknowledging
 an alert serves two purposes: First, it stops more alerts from being
@@ -348,45 +348,45 @@ sent so the technicians are not bothered wit more alerts, and secondly
 it provides feedback to those looking at the Xymon web pages that the
 problem is being handled.
 
-.I hobbit-mailack(8)
+.I xymon-mailack(8)
 is a tool for processing acknowledgments sent via e-mail, e.g. as a 
 response to an e-mail alert.
 
-.I hobbit-enadis.cgi(8)
+.I enadis.cgi(8)
 is a CGI program to disable or re-enable hosts or individual tests.
 When disabling a host or test, you stop alarms from being sent and
 also any outages do not affect the SLA calculations. So this tool
 is useful when systems are being brought down for maintenance.
 
-.I bb-findhost.cgi(1)
+.I findhost.cgi(1)
 is a CGI program that finds a given host in the Xymon
 web pages. As your Xymon installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
 
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 This CGI program triggers the generation of Xymon availability 
 reports, using
-.I bbgen(1)
+.I xymongen(1)
 as the reporting back-end engine.
 
-.I bb-replog.cgi(1)
+.I reportlog.cgi(1)
 This CGI program generates the detailed availability report for a 
 particular host+service combination.
 
-.I bb-snapshot.cgi(1)
+.I snapshot.cgi(1)
 is a CGI program to build the Xymon web pages in a "snapshot"
 mode, showing the look of the web pages at a particular point 
 in time. It uses
-.I bbgen(1)
+.I xymongen(1)
 as the back-end engine.
 
-.I hobbit-statusreport.cgi(1)
+.I statusreport.cgi(1)
 is a CGI program reporting test results for a single status but
 for several hosts. It is used to e.g. see which SSL certificates
 are about to expire, across all of the Xymon web pages.
 
-.I bb-csvinfo.cgi(1)
+.I csvinfo.cgi(1)
 is a CGI program to present information about a host. The 
 information is pulled from a CSV (Comma Separated Values)
 file, which is easily exported from any spreadsheet or
@@ -407,7 +407,7 @@ can happen without an administrator having to logon to the server.
 .I msgcache(8)
 This tool acts as a mini Xymon server to the client. It stores client
 data internally, so that the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 utility can pick it up later and send it to the Xymon server. It
 is typically used on hosts that cannot contact the Xymon server 
 directly due to network- or firewall-restrictions.
@@ -419,15 +419,15 @@ and the Xymon clients. If there are no firewalls then they are not
 needed, but it may be necessary due to network or firewall issues
 to make use of them.
 
-.I bbproxy(8)
+.I xymonproxy(8)
 is a proxy-server that forwards Xymon messages between
 clients and the Xymon server. The clients must be able to talk
 to the proxy, and the proxy must be able to talk to the Xymon
 server.
 
-.I hobbitfetch(8)
+.I xymonfetch(8)
 is used when the client is not able to make outbound connections
-to neither bbproxy nor the Xymon server (typically, for clients
+to neither xymonproxy nor the Xymon server (typically, for clients
 located in a DMZ network zone). Together with the
 .I msgcache(8)
 utility running on the client, the Xymon server can contact the
@@ -435,43 +435,43 @@ clients and pick up their data.
 
 
 .SH OTHER TOOLS
-.I hobbitlaunch(8)
+.I xymonlaunch(8)
 is a program scheduler for Xymon. It acts as a master program
 for running all of the Xymon tools on a system. On the Xymon
 server, it controls running all of the server tasks. On a Xymon
 client, it periodically launches the client to collect data
 and send them to the Xymon server.
 
-.I bb(1)
+.I xymon(1)
 is the tool used to communicate with the Xymon server.
 It is used to send status reports to the Xymon server,
 through the custom Xymon/BB protocol, or via HTTP. It
 can be used to query the state of tests on the central Xymon 
 server and retrieve Xymon configuration files. The server-side 
 script 
-.I bbmessage.cgi(1) 
+.I xymoncgimsg.cgi(1) 
 used to receive messages sent via HTTP is also included.
 
-.I bbcmd(1)
+.I xymoncmd(1)
 is a wrapper for the other Xymon tools which sets up all
 of the environment variables used by Xymon tools.
 
-.I bbhostgrep(1)
+.I xymongrep(1)
 is a utility for use by Xymon extension scripts. It
 allows an extension script to easily pick out the hosts that
 are relevant to a script, so it need not parse a huge
-bb-hosts file with lots of unwanted test-specifications.
+hosts.cfg file with lots of unwanted test-specifications.
 
-.I bbhostshow(1)
+.I xymoncfg(1)
 is a utility to dump the full
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file following any "include" statements.
 
-.I bbdigest(1)
+.I xymondigest(1)
 is a utility to compute message digest values for use in
 content checks that use digests.
 
-.I bbcombotest(1)
+.I combostatus(1)
 is an extension script for the Xymon server,
 allowing you to build complicated tests from simpler
 Xymon test results. E.g. you can define a test that uses the results
@@ -497,16 +497,20 @@ use of several external libraries for network tests, resulting in a
 significant performance improvement.
 
 With version 4.0 released on March 30 2005, the project was de-coupled 
-from Big Brother, and the name changed to Xymon. This version was the 
-first full implementation of the Xymon server, but it still used the
+from Big Brother, and the name changed to Hobbit. This version was the 
+first full implementation of the Hobbit server, but it still used the
 data collected by Big Brother clients for monitoring host metrics.
 
-Version 4.1 was released in July 2005 included a simple Xymon client
+Version 4.1 was released in July 2005 included a simple client
 for Unix. Log file monitoring was not implemented.
 
 Version 4.2 was released in July 2006, and includes a fully functional
-Xymon client for Unix.
+client for Unix.
 
+Version 4.3 was released in November 2010, and implemented the renaming
+of the project to Xymon. This name was already introduced in 2008 with
+a patch version of 4.2, but with version 4.3.0 this change of names
+was fully implemented.
 
 .SH COPYRIGHT
 Xymon is
@@ -523,18 +527,18 @@ is allowed.  See the file COPYING for details.
 
 
 .SH "SEE ALSO"
-hobbitd(8), hobbitd_channel(8), hobbitd_history(8), hobbitd_rrd(8), hobbitd_alert(8), 
-hobbitd_client(8), hobbitd_hostdata(8), 
-hobbitping(1), bbtest-net(1), bbretest-net.sh(1), 
-bbgen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
-bb-hist.cgi(1), bb-eventlog.cgi(1), 
-bb-ack.cgi(1), hobbit-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 
-bb-rep.cgi(1), bb-replog.cgi(1), bb-snapshot.cgi(1), hobbit-statusreport.cgi(1), bb-csvinfo.cgi(1), 
+xymond(8), xymond_channel(8), xymond_history(8), xymond_rrd(8), xymond_alert(8), 
+xymond_client(8), xymond_hostdata(8), 
+xymonping(1), xymonnet(1), xymonnet-again.sh(1), 
+xymongen(1), svcstatus.cgi(1), showgraph.cgi(1), hostgraphs.cgi(1), criticalview.cgi(1), 
+history.cgi(1), eventlog.cgi(1), 
+ack.cgi(1), xymon-mailack(8), enadis.cgi(8), findhost.cgi(1), 
+report.cgi(1), reportlog.cgi(1), snapshot.cgi(1), statusreport.cgi(1), csvinfo.cgi(1), 
 logfetch(1), clientupdate(1), msgcache(8), 
-bbproxy(8), hobbitfetch(8), 
-hobbitlaunch(8), bb(1), bbmessage.cgi(1), bbcmd(1), bbhostgrep(1), bbhostshow(1), 
-bbdigest(1), bbcombotest(1), trimhistory(8),
-bb-hosts(5), hobbitlaunch.cfg(5), hobbitserver.cfg(5),
-hobbit-alerts.cfg(5),
-hobbit-clients.cfg(5), client-local.cfg(5)
+xymonproxy(8), xymonfetch(8), 
+xymonlaunch(8), xymon(1), xymoncgimsg.cgi(1), xymoncmd(1), xymongrep(1), xymoncfg(1), 
+xymondigest(1), combostatus(1), trimhistory(8),
+hosts.cfg(5), tasks.cfg(5), xymonserver.cfg(5),
+alerts.cfg(5),
+analysis.cfg(5), client-local.cfg(5)
 

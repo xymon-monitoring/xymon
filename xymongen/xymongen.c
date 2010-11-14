@@ -23,24 +23,23 @@ static char rcsid[] = "$Id$";
 
 #include "version.h"
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 #include "debug.h"
-#include "loadbbhosts.h"
+#include "loadlayout.h"
 #include "loaddata.h"
 #include "process.h"
 #include "pagegen.h"
 #include "wmlgen.h"
 #include "rssgen.h"
-#include "bbconvert.h"
 #include "csvreport.h"
 
 /* Global vars */
-bbgen_page_t	*pagehead = NULL;			/* Head of page list */
+xymongen_page_t	*pagehead = NULL;			/* Head of page list */
 state_t		*statehead = NULL;			/* Head of list of all state entries */
 summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
-int		bb_color, bb2_color, bbnk_color;	/* Top-level page colors */
+int		xymon_color, nongreen_color, critical_color;	/* Top-level page colors */
 int		fqdn = 1;				/* Xymon FQDN setting */
 
 time_t		reportstart = 0;
@@ -50,40 +49,36 @@ double		reportgreenlevel = 99.995;
 int		reportwarnstops = -1;
 int		reportstyle = STYLE_CRIT;
 int		dynamicreport = 1;
-enum tooltipuse_t tooltipuse = TT_BBONLY;
+enum tooltipuse_t tooltipuse = TT_STDONLY;
 
 char *reqenv[] = {
-"BB",
-"BBACKS",
-"BBDISP",
-"BBHIST",
-"BBHISTLOGS",
-"BBHOME",
-"BBHOSTS",
-"BBLOGS",
-"BBLOGSTATUS",
-"BBNOTES",
-"BBREL",
-"BBRELDATE",
-"BBREP",
-"BBREPURL",
-"BBSKIN",
-"BBTMP",
-"BBVAR",
-"BBWEB",
-"BBWEBHOST",
-"BBWEBHOSTURL",
+"XYMONACKDIR",
+"XYMONHISTDIR",
+"XYMONHISTLOGS",
+"XYMONHOME",
+"HOSTSCFG",
+"XYMONRAWSTATUSDIR",
+"XYMONLOGSTATUS",
+"XYMONNOTESDIR",
+"XYMONREPDIR",
+"XYMONREPURL",
+"XYMONSKIN",
+"XYMONTMP",
+"XYMONVAR",
+"XYMONWEB",
+"XYMONWEBHOST",
+"XYMONWEBHOSTURL",
 "CGIBINURL",
 "DOTHEIGHT",
 "DOTWIDTH",
 "MACHINE",
 "MACHINEADDR",
-"MKBBCOLFONT",
-"MKBBLOCAL",
-"MKBBSUBLOCAL",
-"MKBBREMOTE",
-"MKBBROWFONT",
-"MKBBTITLE",
+"XYMONPAGECOLFONT",
+"XYMONPAGELOCAL",
+"XYMONPAGESUBLOCAL",
+"XYMONPAGEREMOTE",
+"XYMONPAGEROWFONT",
+"XYMONPAGETITLE",
 "PURPLEDELAY",
 NULL };
 
@@ -91,7 +86,7 @@ NULL };
 int main(int argc, char *argv[])
 {
 	char		*pagedir;
-	bbgen_page_t 	*p;
+	xymongen_page_t 	*p;
 	dispsummary_t	*s;
 	int		i;
 	char		*pageset = NULL;
@@ -100,22 +95,21 @@ int main(int argc, char *argv[])
 	char		*csvfile = NULL;
 	char		csvdelim = ',';
 	int		embedded = 0;
-	int		hobbitddump = 0;
 	char		*envarea = NULL;
-	int		do_normal_pages = 1;
-	int		do_nongreen_page = 1;
+	int		do_normal = 1;
+	int		do_nongreen = 1;
 
 	/* Setup standard header+footer (might be modified by option pageset) */
-	select_headers_and_footers("bb");
+	select_headers_and_footers("std");
 
-	bb_color = bb2_color = bbnk_color = -1;
+	xymon_color = nongreen_color = critical_color = -1;
 	pagedir = NULL;
 	init_timestamp();
 	fqdn = get_fqdn();
 
 	/* Setup values from env. vars that may be overridden via command-line options */
-	if (xgetenv("MKBB2COLREPEAT")) {
-		int i = atoi(xgetenv("MKBB2COLREPEAT"));
+	if (xgetenv("XYMONPAGECOLREPEAT")) {
+		int i = atoi(xgetenv("XYMONPAGECOLREPEAT"));
 
 		if (i > 0) maxrowsbeforeheading = i;
 	}
@@ -134,32 +128,29 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 			envarea = strdup(lp+1);
 		}
-		else if (argnmatch(argv[i], "--hobbitddump")) {
-			hobbitddump = 1;
-		}
 
 		else if (argnmatch(argv[i], "--ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');
 			ignorecolumns = (char *) malloc(strlen(lp)+2);
 			sprintf(ignorecolumns, ",%s,", (lp+1));
 		}
-		else if (argnmatch(argv[i], "--nk-reds-only")) {
-			nkonlyreds = 1;
+		else if (argnmatch(argv[i], "--critical-reds-only") || argnmatch(argv[i], "--nk-reds-only")) {
+			critonlyreds = 1;
 		}
-		else if (argnmatch(argv[i], "--bb2-ignorecolumns=")) {
+		else if (argnmatch(argv[i], "--nongreen-ignorecolumns=") || argnmatch(argv[i], "--bb2-ignorecolumns=")) {
 			char *lp = strchr(argv[i], '=');
-			bb2ignorecolumns = (char *) malloc(strlen(lp)+2);
-			sprintf(bb2ignorecolumns, ",%s,", (lp+1));
+			nongreenignorecolumns = (char *) malloc(strlen(lp)+2);
+			sprintf(nongreenignorecolumns, ",%s,", (lp+1));
 		}
-		else if (argnmatch(argv[i], "--bb2-colors=")) {
+		else if (argnmatch(argv[i], "--nongreen-colors=") || argnmatch(argv[i], "--bb2-colors=")) {
 			char *lp = strchr(argv[i], '=') + 1;
-			bb2colors = colorset(lp, (1 << COL_GREEN));
+			nongreencolors = colorset(lp, (1 << COL_GREEN));
 		}
-		else if (argnmatch(argv[i], "--bb2-ignorepurples")) {
-			bb2colors = (bb2colors & ~(1 << COL_PURPLE));
+		else if (argnmatch(argv[i], "--nongreen-ignorepurples") || argnmatch(argv[i], "--bb2-ignorepurples")) {
+			nongreencolors = (nongreencolors & ~(1 << COL_PURPLE));
 		}
-		else if (argnmatch(argv[i], "--bb2-ignoredialups")) {
-			bb2nodialups = 1;
+		else if (argnmatch(argv[i], "--nongreen-ignoredialups") || argnmatch(argv[i], "--bb2-ignoredialups")) {
+			nongreennodialups = 1;
 		}
 		else if (argnmatch(argv[i], "--includecolumns=")) {
 			char *lp = strchr(argv[i], '=');
@@ -257,13 +248,13 @@ int main(int argc, char *argv[])
 			if (reportstart < 788918400) reportstart = 788918400;
 			if (reportend > getcurrenttime(NULL)) reportend = getcurrenttime(NULL);
 
-			if (xgetenv("BBREPWARN")) reportwarnlevel = atof(xgetenv("BBREPWARN"));
-			if (xgetenv("BBREPGREEN")) reportgreenlevel = atof(xgetenv("BBREPGREEN"));
+			if (xgetenv("XYMONREPWARN")) reportwarnlevel = atof(xgetenv("XYMONREPWARN"));
+			if (xgetenv("XYMONREPGREEN")) reportgreenlevel = atof(xgetenv("XYMONREPGREEN"));
 
 			if ((reportwarnlevel < 0.0) || (reportwarnlevel > 100.0)) reportwarnlevel = 97.0;
 			if ((reportgreenlevel < 0.0) || (reportgreenlevel > 100.0)) reportgreenlevel = 99.995;
 
-			select_headers_and_footers("bbrep");
+			select_headers_and_footers("rep");
 			sethostenv_report(reportstart, reportend, reportwarnlevel, reportgreenlevel);
 		}
 		else if (argnmatch(argv[i], "--csv="))  {
@@ -278,7 +269,7 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[i], '=');
 
 			snapshot = atol(lp+1);
-			select_headers_and_footers("bbsnap");
+			select_headers_and_footers("snap");
 			sethostenv_snapshot(snapshot);
 		}
 
@@ -340,36 +331,36 @@ int main(int argc, char *argv[])
 			underlineheadings = 0;
 		}
 		else if (strcmp(argv[i], "--no-eventlog") == 0) {
-			bb2eventlog = 0;
+			nongreeneventlog = 0;
 		}
 		else if (argnmatch(argv[i], "--max-eventcount=")) {
 			char *lp = strchr(argv[i], '=');
 
-			bb2eventlogmaxcount = atoi(lp+1);
+			nongreeneventlogmaxcount = atoi(lp+1);
 		}
 		else if (argnmatch(argv[i], "--max-eventtime=")) {
 			char *lp = strchr(argv[i], '=');
 
-			bb2eventlogmaxtime = atoi(lp+1);
+			nongreeneventlogmaxtime = atoi(lp+1);
 		}
 		else if (argnmatch(argv[i], "--max-ackcount=")) {
 			char *lp = strchr(argv[i], '=');
 
-			bb2acklogmaxcount = atoi(lp+1);
+			nongreenacklogmaxcount = atoi(lp+1);
 		}
 		else if (argnmatch(argv[i], "--max-acktime=")) {
 			char *lp = strchr(argv[i], '=');
 
-			bb2acklogmaxtime = atoi(lp+1);
+			nongreenacklogmaxtime = atoi(lp+1);
 		}
 		else if (strcmp(argv[i], "--no-acklog") == 0) {
-			bb2acklog = 0;
+			nongreenacklog = 0;
 		}
 		else if (strcmp(argv[i], "--no-pages") == 0) {
-			do_normal_pages = 0;
+			do_normal = 0;
 		}
-		else if (strcmp(argv[i], "--no-bb2") == 0) {
-			do_nongreen_page = 0;
+		else if ((strcmp(argv[i], "--no-nongreen") == 0) || (strcmp(argv[i], "--no-bb2") == 0)) {
+			do_nongreen = 0;
 		}
 
 		else if (argnmatch(argv[i], "--noprop=")) {
@@ -421,15 +412,15 @@ int main(int argc, char *argv[])
 			lp++;
 			if (strcmp(lp, "always") == 0) tooltipuse = TT_ALWAYS;
 			else if (strcmp(lp, "never") == 0) tooltipuse = TT_NEVER;
-			else tooltipuse = TT_BBONLY;
+			else tooltipuse = TT_STDONLY;
 		}
 
 		else if (argnmatch(argv[i], "--purplelog=")) {
 			char *lp = strchr(argv[i], '=');
 			if (*(lp+1) == '/') purplelogfn = strdup(lp+1);
 			else {
-				purplelogfn = (char *) malloc(strlen(xgetenv("BBHOME"))+1+strlen(lp+1)+1);
-				sprintf(purplelogfn, "%s/%s", xgetenv("BBHOME"), (lp+1));
+				purplelogfn = (char *) malloc(strlen(xgetenv("XYMONHOME"))+1+strlen(lp+1)+1);
+				sprintf(purplelogfn, "%s/%s", xgetenv("XYMONHOME"), (lp+1));
 			}
 		}
 		else if (argnmatch(argv[i], "--report=") || (strcmp(argv[i], "--report") == 0)) {
@@ -437,15 +428,16 @@ int main(int argc, char *argv[])
 			if (lp) {
 				egocolumn = strdup(lp+1);
 			}
-			else egocolumn = "bbgen";
+			else egocolumn = "xymongen";
 			timing = 1;
 		}
-		else if (argnmatch(argv[i], "--nklog=") || (strcmp(argv[i], "--nklog") == 0)) {
+		else if ( argnmatch(argv[i], "--criticallog=") || (strcmp(argv[i], "--criticallog") == 0) || 
+			  argnmatch(argv[i], "--nklog=") || (strcmp(argv[i], "--nklog") == 0) ){
 			char *lp = strchr(argv[i], '=');
 			if (lp) {
-				lognkstatus = strdup(lp+1);
+				logcritstatus = strdup(lp+1);
 			}
-			else lognkstatus = "nk";
+			else logcritstatus = "critical";
 		}
 		else if (strcmp(argv[i], "--timing") == 0) {
 			timing = 1;
@@ -457,30 +449,30 @@ int main(int argc, char *argv[])
 			dontsendmessages = 1;
 		}
 		else if (strcmp(argv[i], "--version") == 0) {
-			printf("bbgen version %s\n", VERSION);
+			printf("xymongen version %s\n", VERSION);
 			printf("\n");
 			exit(0);
 		}
 
 		else if ((strcmp(argv[i], "--help") == 0) || (strcmp(argv[i], "-?") == 0)) {
-			printf("bbgen for Xymon version %s\n\n", VERSION);
+			printf("xymongen for Xymon version %s\n\n", VERSION);
 			printf("Usage: %s [options] [WebpageDirectory]\n", argv[0]);
 			printf("Options:\n");
 			printf("    --ignorecolumns=test[,test] : Completely ignore these columns\n");
-			printf("    --nk-reds-only              : Only show red statuses on the NK page\n");
-			printf("    --bb2-ignorecolumns=test[,test]: Ignore these columns for the BB2 page\n");
-			printf("    --bb2-ignorepurples         : Ignore all-purple hosts on BB2 page\n");
-			printf("    --includecolumns=test[,test]: Always include these columns on BB2 page\n");
+			printf("    --critical-reds-only        : Only show red statuses on the Critical page\n");
+			printf("    --nongreen-ignorecolumns=test[,test]: Ignore these columns for the non-green page\n");
+			printf("    --nongreen-ignorepurples         : Ignore all-purple hosts on non-green page\n");
+			printf("    --includecolumns=test[,test]: Always include these columns on non-green page\n");
 		        printf("    --max-eventcount=N          : Max number of events to include in eventlog\n");
 		        printf("    --max-eventtime=N           : Show events that occurred within the last N minutes\n");
-			printf("    --eventignore=test[,test]   : Columns to ignore in bb2 event-log display\n");
-			printf("    --no-eventlog               : Do not generate the bb2 eventlog display\n");
-			printf("    --no-acklog                 : Do not generate the bb2 ack-log display\n");
-			printf("    --no-pages                  : Generate only the bb2 and bbnk pages\n");
+			printf("    --eventignore=test[,test]   : Columns to ignore in non-green event-log display\n");
+			printf("    --no-eventlog               : Do not generate the non-green eventlog display\n");
+			printf("    --no-acklog                 : Do not generate the non-green ack-log display\n");
+			printf("    --no-pages                  : Generate only the nongreen and critical pages\n");
 			printf("    --docurl=documentation-URL  : Hostnames link to a general (dynamic) web page for docs\n");
 			printf("    --no-doc-window             : Open doc-links in same window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbgen\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymongen\n");
 			printf("    --reportopts=ST:END:DYN:STL : Run in Xymon Reporting mode\n");
 			printf("    --csv=FILENAME              : For Xymon Reporting, output CSV file\n");
 			printf("    --csvdelim=CHARACTER        : Delimiter in CSV file output (default: comma)\n");
@@ -506,7 +498,7 @@ int main(int argc, char *argv[])
 			printf("    --pageset=SETNAME           : Generate non-standard pageset with tag SETNAME\n");
 			printf("    --template=TEMPLATE         : template for header and footer files\n");
 			printf("\nAlternate output formats:\n");
-			printf("    --wml[=test1,test2,...]     : Generate a small (bb2-style) WML page\n");
+			printf("    --wml[=test1,test2,...]     : Generate a small (All nongreen-style) WML page\n");
 			printf("    --nstab=FILENAME            : Generate a Netscape Sidebar feed\n");
 			printf("    --nslimit=COLOR             : Minimum color to include on Netscape sidebar\n");
 			printf("    --rss                       : Generate a RSS/RDF feed of alerts\n");
@@ -535,10 +527,10 @@ int main(int argc, char *argv[])
 
 	if (debug) {
 		int i;
-		printf("Command: bbgen");
+		printf("Command: xymongen");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment BBHOSTS='%s'\n", textornull(xgetenv("BBHOSTS")));
+		printf("Environment HOSTSCFG='%s'\n", textornull(xgetenv("HOSTSCFG")));
 		printf("\n");
 	}
 
@@ -548,24 +540,24 @@ int main(int argc, char *argv[])
 	envcheck(reqenv);
 
 	/* Catch a SEGV fault */
-	setup_signalhandler("bbgen");
+	setup_signalhandler("xymongen");
 
 	/* Set umask to 0022 so that the generated HTML pages have world-read access */
 	umask(0022);
 
 	if (pagedir == NULL) {
-		if (xgetenv("BBWWW")) {
-			pagedir = strdup(xgetenv("BBWWW"));
+		if (xgetenv("XYMONWWWDIR")) {
+			pagedir = strdup(xgetenv("XYMONWWWDIR"));
 		}
 		else {
-			pagedir = (char *) malloc(strlen(xgetenv("BBHOME"))+5);
-			sprintf(pagedir, "%s/www", xgetenv("BBHOME"));
+			pagedir = (char *) malloc(strlen(xgetenv("XYMONHOME"))+5);
+			sprintf(pagedir, "%s/www", xgetenv("XYMONHOME"));
 		}
 	}
 
-	if (xgetenv("BBHTACCESS")) bbhtaccess = strdup(xgetenv("BBHTACCESS"));
-	if (xgetenv("BBPAGEHTACCESS")) bbpagehtaccess = strdup(xgetenv("BBPAGEHTACCESS"));
-	if (xgetenv("BBSUBPAGEHTACCESS")) bbsubpagehtaccess = strdup(xgetenv("BBSUBPAGEHTACCESS"));
+	if (xgetenv("XYMONHTACCESS")) xymonhtaccess = strdup(xgetenv("XYMONHTACCESS"));
+	if (xgetenv("XYMONPAGEHTACCESS")) xymonpagehtaccess = strdup(xgetenv("XYMONPAGEHTACCESS"));
+	if (xgetenv("XYMONSUBPAGEHTACCESS")) xymonsubpagehtaccess = strdup(xgetenv("XYMONSUBPAGEHTACCESS"));
 
 	/*
 	 * When doing embedded- or snapshot-pages, dont build the WML/RSS pages.
@@ -584,8 +576,8 @@ int main(int argc, char *argv[])
 	/* Load all data from the various files */
 	load_all_links();
 	add_timestamp("Load links done");
-	pagehead = load_bbhosts(pageset);
-	add_timestamp("Load bbhosts done");
+	pagehead = load_layout(pageset);
+	add_timestamp("Load hosts.cfg done");
 
 	if (!embedded) {
 		/* Remove old acknowledgements */
@@ -602,24 +594,19 @@ int main(int argc, char *argv[])
 	if (embedded || snapshot) dispsums = NULL;
 	add_timestamp("Load STATE done");
 
-	if (hobbitddump) {
-		dump_hobbitdchk();
-		return 0;
-	}
-
 	/* Calculate colors of hosts and pages */
-	calc_hostcolors(bb2ignorecolumns);
+	calc_hostcolors(nongreenignorecolumns);
 	calc_pagecolors(pagehead);
 
-	/* Topmost page (background color for bb.html) */
+	/* Topmost page (background color for xymon.html) */
 	for (p=pagehead; (p); p = p->next) {
 		if (p->color > pagehead->color) pagehead->color = p->color;
 	}
-	bb_color = pagehead->color;
+	xymon_color = pagehead->color;
 
 	if (xgetenv("SUMMARY_SET_BKG") && (strcmp(xgetenv("SUMMARY_SET_BKG"), "TRUE") == 0)) {
 		/*
-		 * Displayed summaries affect the BB page only, 
+		 * Displayed summaries affect the Xymon page only, 
 		 * but should not go into the color we report to
 		 * others.
 		 */
@@ -643,12 +630,12 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	/* The main page - bb.html and pages/subpages thereunder */
+	/* The main page - xymon.html and pages/subpages thereunder */
 	add_timestamp("Xymon pagegen start");
 	if (reportstart && csvfile) {
 		csv_availability(csvfile, csvdelim);
 	}
-	if (do_normal_pages) {
+	if (do_normal) {
 		do_page_with_subs(pagehead, dispsums);
 	}
 	add_timestamp("Xymon pagegen done");
@@ -658,15 +645,15 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	/* The full summary page - bb2.html */
-	if (do_nongreen_page) {
-		bb2_color = do_bb2_page(nssidebarfilename, PAGE_BB2);
-		add_timestamp("BB2 generation done");
+	/* The full summary page - nongreen.html */
+	if (do_nongreen) {
+		nongreen_color = do_nongreen_page(nssidebarfilename, PAGE_NONGREEN);
+		add_timestamp("Non-green page generation done");
 	}
 
-	/* Reduced summary (alerts) page - bbnk.html */
-	bbnk_color = do_bb2_page(NULL, PAGE_NK);
-	add_timestamp("BBNK generation done");
+	/* Reduced summary (alerts) page - critical.html */
+	critical_color = do_nongreen_page(NULL, PAGE_CRITICAL);
+	add_timestamp("Critical page generation done");
 
 	if (snapshot) {
 		/* Snapshots end here */
@@ -692,12 +679,12 @@ int main(int argc, char *argv[])
 	if (egocolumn) {
 		char msgline[4096];
 		char *timestamps;
-		long bbsleep = (xgetenv("BBSLEEP") ? atol(xgetenv("BBSLEEP")) : 300);
+		long tasksleep = (xgetenv("TASKSLEEP") ? atol(xgetenv("TASKSLEEP")) : 300);
 		int color;
 
 		/* Go yellow if it runs for too long */
-		if (total_runtime() > bbsleep) {
-			errprintf("WARNING: Runtime %ld longer than BBSLEEP (%ld)\n", total_runtime(), bbsleep);
+		if (total_runtime() > tasksleep) {
+			errprintf("WARNING: Runtime %ld longer than TASKSLEEP (%ld)\n", total_runtime(), tasksleep);
 		}
 		color = (errbuf ? COL_YELLOW : COL_GREEN);
 
@@ -706,7 +693,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status %s.%s %s %s\n\n", xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbgen for Xymon version %s\n", VERSION);
+		sprintf(msgline, "xymongen for Xymon version %s\n", VERSION);
 		addtostatus(msgline);
 
 		addtostatus("\nStatistics:\n");

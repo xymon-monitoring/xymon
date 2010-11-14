@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This program runs from the Xymon users' .procmailrc file, and processes    */
 /* incoming e-mails that are responses to alert mails that Xymon has sent     */
-/* out. It was inspired by the functionality of the bb-mailack.sh.            */
+/* out.                                                                       */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	if (firsttxtline == NULL) firsttxtline = "<No cause specified>";
 	ackbuf = (char *)malloc(4096 + strlen(firsttxtline) + (fromline ? strlen(fromline) : 0));
 	p = ackbuf;
-	p += sprintf(p, "hobbitdack %s %d %s", cookie, duration, firsttxtline);
+	p += sprintf(p, "xymondack %s %d %s", cookie, duration, firsttxtline);
 	if (fromline) {
 		p += sprintf(p, "\nAcked by: %s", fromline);
 	}
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	sendmessage(ackbuf, NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(ackbuf, NULL, XYMON_TIMEOUT, NULL);
 	return 0;
 }
 

@@ -10,9 +10,9 @@ then
 	exit 1
 fi
 
-# cd $HOME/hobbit || exit 1
+# cd $HOME/xymon || exit 1
 
-for DIR in bbdisplay bbnet bbproxy common hobbitd web
+for DIR in xymongen xymonnet xymonproxy common xymond web
 do
    pushd $DIR
 

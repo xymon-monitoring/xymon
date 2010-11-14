@@ -49,7 +49,7 @@ int init_svc(char *sockfn)
 
 	memset(&myaddr, 0, sizeof(myaddr));
 	myaddr.sun_family = AF_UNIX;
-	sprintf(myaddr.sun_path, "%s/%s", xgetenv("BBTMP"), sockfn);
+	sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONTMP"), sockfn);
 	myaddrsz = sizeof(myaddr);
 
 	if (connect(ctlsocket, (struct sockaddr *)&myaddr, myaddrsz) == -1) {

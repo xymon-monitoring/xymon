@@ -11,7 +11,7 @@
 #ifndef __CSVREPORT_H__
 #define __CSVREPORT_H__
 
-#include "bbgen.h"
+#include "xymongen.h"
 
 extern void csv_availability(char *fn, char csvdelim);
 

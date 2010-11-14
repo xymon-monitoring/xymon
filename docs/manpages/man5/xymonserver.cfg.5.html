@@ -1,22 +1,22 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITSERVER.CFG</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONSERVER.CFG</TITLE>
 </HEAD><BODY>
-<H1>HOBBITSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMONSERVER.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitserver.cfg - Xymon environment variables
+xymonserver.cfg - Xymon environment variables
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
 Xymon programs use multiple environment variables beside the
 normal set of variables.  The environment definitions
-are stored in the ~Xymon/server/etc/hobbitserver.cfg file. 
+are stored in the ~Xymon/server/etc/xymonserver.cfg file. 
 Each line in this file is of the form <B>NAME=VALUE</B> and defines
 one environment variable NAME with the value VALUE.
 <P>
@@ -42,7 +42,7 @@ by an application in the &quot;management&quot; area, you would do this:
 
 Areas are invoked by using the &quot;--area&quot; option for all tools, or via the 
 ENVAREA setting in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file.
 <P>
@@ -75,13 +75,13 @@ set to TRUE. Default: TRUE.
 <DT>BBLOGSTATUS<DD>
 Controls how the HTML page for a status log is generated. If set to
 DYNAMIC, the HTML logs are generated on-demand by the 
-<I><A HREF="../man1/bb-hostsvc.cgi.1.html">bb-hostsvc.cgi</A>(1)</I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
 
 script. If set to STATIC, you must activate the
-<I><A HREF="../man8/hobbitd_filestore.8.html">hobbitd_filestore</A>(8)</I>
+<I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
 
 module (through an entry in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file) to create and store the HTML logs whenever a status update is
 received. Setting &quot;BBLOGSTATUS=STATIC&quot; is <B>discouraged</B> since the
@@ -127,8 +127,8 @@ add this, if configured to do so.
 <P>
 <DT>HOLIDAYS<DD>
 Defines the default set of holidays used if there is no &quot;holidays&quot; 
-tag for a host in the bb-hosts file. Holiday sets are defined in the
-<I><A HREF="../man5/hobbit-holidays.cfg.5.html">hobbit-holidays.cfg</A>(5)</I>
+tag for a host in the hosts.cfg file. Holiday sets are defined in the
+<I><A HREF="../man5/holidays.cfg.5.html">holidays.cfg</A>(5)</I>
 
 file. If not defined, only the default holidays (those defined outside
 a named holiday set) will be considered as holidays.
@@ -136,6 +136,21 @@ a named holiday set) will be considered as holidays.
 <DT>WEEKSTART<DD>
 Defines which day is the first day of the week. Set to &quot;0&quot; for Sunday,
 &quot;1&quot; for Monday. Default: 1 (Monday).
+<P>
+<DT>XYMONBODYHEADER<DD>
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_header templates. If this is set to a value
+beginning with &quot;file:&quot;, then the contents of the specified file is
+included. Default: &quot;file:$BBHOME/etc/xymonmenu.cfg&quot;
+<P>
+<DT>XYMONBODYFOOTER<DD>
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_footer templates. If this is set to a value
+beginning with &quot;file:&quot;, then the contents of the specified file is
+included. Default: Empty.
+<P>
+<DT>XYMONBODYMENUCSS<DD>
+URL for the Xymon menu CSS file. Default: &quot;$BBMENUSKIN/xymonmenu.css&quot;
 <P>
 <P>
 </DL>
@@ -171,7 +186,7 @@ Default: $BBHOME/www/notes/
 Directory for Xymon availability reports. The $BBREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-<I><A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1)</I>
+<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
 
 CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
 <P>
@@ -179,7 +194,7 @@ CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
 Directory for Xymon snapshots. The $BBSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-<I><A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1)</I>
+<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
 
 CGI script to generate snapshots on-demand. Default: $BBHOME/www/snap/
 <P>
@@ -189,13 +204,13 @@ Default: $BBSERVERROOT/data/
 <P>
 <DT>BBLOGS<DD>
 Directory for storing the raw status-logs. Not used unless
-&quot;hobbitd_filestore --status&quot; is running, which is <B>discouraged</B>
+&quot;xymond_filestore --status&quot; is running, which is <B>discouraged</B>
 since it increases the load on the Xymon server significantly.
 Default: $BBVAR/logs/
 <P>
 <DT>BBHTML<DD>
 Directory for storing HTML status-logs. Not used unless
-&quot;hobbitd_filestore --status --html&quot; is running, which is <B>discouraged</B>
+&quot;xymond_filestore --status --html&quot; is running, which is <B>discouraged</B>
 since it increases the load on the Xymon server significantly.
 Default: $BBHOME/www/html/
 <P>
@@ -228,10 +243,18 @@ Default: $BBVAR/rrd/
 Directory for storing the data sent by a Xymon client around the
 time a status changes to a warning (yellow) or critical (red) state.
 Used by the
-<I><A HREF="../man8/hobbitd_hostdata.8.html">hobbitd_hostdata</A>(8)</I>
+<I><A HREF="../man8/xymond_hostdata.8.html">xymond_hostdata</A>(8)</I>
 
 module.
 Default: $BBVAR/hostdata/
+<P>
+<DT>XYMONCGILOGDIR<DD>
+Directory where debug output from CGI applications are stored. If not
+specified, it defaults to $BBSERVERLOGS, but this is often a directory
+that is not writable by the userid running the CGI applications. It
+is therefore recommended when using &quot;--debug&quot; on CGI applications that
+you create a separate directory owned by the user running your webserver,
+and point XYMONCGILOGDIR to this directory.
 <P>
 <P>
 </DL>
@@ -240,23 +263,23 @@ Default: $BBVAR/hostdata/
 
 <P>
 <DL COMPACT>
-<DT>BBHOSTS<DD>
+<DT>HOSTSCFG<DD>
 Full path to the Xymon
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
-configuration file. Default: $BBHOME/etc/bb-hosts.
+configuration file. Default: $BBHOME/etc/hosts.cfg.
 <P>
 <DT>BB<DD>
 Full path to the 
-<I><A HREF="../man1/bb.1.html">bb</A>(1)</I>
+<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
 
-client program. Default: $BBHOME/bin/bb.
+client program. Default: $BBHOME/bin/xymon.
 <P>
 <DT>BBGEN<DD>
 Full path to the
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
-webpage generator program. Default: $BBHOME/bin/bbgen.
+webpage generator program. Default: $BBHOME/bin/xymongen.
 <P>
 <P>
 </DL>
@@ -267,13 +290,13 @@ webpage generator program. Default: $BBHOME/bin/bbgen.
 <DT>BBSERVERWWWURL<DD>
 The root URL for the Xymon webpages, without the hostname. This
 URL must be mapped to the ~/server/www/ directory in your webserver
-configuration. See the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+configuration. See the sample Apache configuration in ~/server/etc/xymon-apache.conf.
 <P>
 <DT>BBSERVERCGIURL<DD>
 The root URL for the Xymon CGI-scripts, without the hostname. This
 directory must be mapped to the ~/cgi-bin/ directory in your webserver
 configuration, and must be flagged as holding executable scripts. See
-the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+the sample Apache configuration in ~/server/etc/xymon-apache.conf.
 <P>
 <DT>BBWEBHOST<DD>
 Initial part of the Xymon URL, including just the protocol and the
@@ -315,20 +338,20 @@ URL prefix (without hostname) of the Xymon CGI-scripts. Default: $BBSERVERCGIURL
 <P>
 <DT>COLUMNDOCURL<DD>
 Format string used to build a link to the documentation for a column heading.
-Default: &quot;$CGIBINURL/hobbitcolumn.sh?%s&quot;, which causes links to use the
-<I><A HREF="../man1/hobbitcolumn.sh.1.html">hobbitcolumn.sh</A>(1)</I>
+Default: &quot;$CGIBINURL/columndoc.sh?%s&quot;, which causes links to use the
+<I><A HREF="../man1/columndoc.sh.1.html">columndoc.sh</A>(1)</I>
 
 script to document a column.
 <P>
 <P>
 </DL>
 <A NAME="lbAI">&nbsp;</A>
-<H2>SETTINGS FOR SENDING MESSAGES TO HOBBIT</H2>
+<H2>SETTINGS FOR SENDING MESSAGES TO XYMON</H2>
 
 <DL COMPACT>
 <DT>BBDISP<DD>
 The IP-address used to contact the
-<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
 
 service. Used by clients and the tools that perform network tests.
 Default: $BBSERVERIP
@@ -353,7 +376,7 @@ BBPAGER service, used if BBPAGE=0.0.0.0. It is not used by Xymon.
 <P>
 <DT>BBPORT<DD>
 The portnumber for used to contact the
-<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
 
 service. Used by clients and the tools that perform network tests.
 Default: 1984.
@@ -366,11 +389,11 @@ combo-messages or not. Ignored by Xymon.
 The maximum number of status messages to combine into one
 combo message. You may need to lower this number of your
 BBDISPLAY server has trouble keeping up with the incoming
-status messages from bbtest-net.  Default: 100.
+status messages from xymonnet.  Default: 100.
 <P>
 <DT>BBSLEEPBETWEENMSGS<DD>
 Length of a pause introduced between each successive transmission
-of a combo-message by bbtest-net. You may have to increase this
+of a combo-message by xymonnet. You may have to increase this
 value to give your BBDISPLAY server time to process one combo
 message before the next one arrives. This number defines how
 many microseconds to wait between the messages.
@@ -379,7 +402,7 @@ Default: 0 (send messages as quickly as possible).
 <P>
 </DL>
 <A NAME="lbAJ">&nbsp;</A>
-<H2>HOBBITD SETTINGS</H2>
+<H2>XYMOND SETTINGS</H2>
 
 <P>
 <DL COMPACT>
@@ -387,7 +410,7 @@ Default: 0 (send messages as quickly as possible).
 Comma-separated list of the colors that may trigger an alert-message.
 The default is &quot;red,yellow,purple&quot;. Note that alerts may further be
 generated or suppresed based on the configuration in the
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 file.
 <P>
@@ -398,13 +421,13 @@ The default is &quot;green,clear,blue&quot;.
 <DT>ALERTREPEAT<DD>
 How often alerts get repeated while a status is in an alert state.
 This is the default setting, which may be changed in the 
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 file.
 <P>
 <DT>BBGHOSTS<DD>
 Controls how status messages from unknown hosts (i.e. hosts not
-listed in the bb-hosts file) are handled.
+listed in the hosts.cfg file) are handled.
 <P>
 <B>BBGHOSTS=1:</B>
 
@@ -414,7 +437,7 @@ default behaviour in Xymon.
 <B>BBGHOSTS=2:</B>
 
 Discards the status report, but keep track of the hostname
-and report it on the hobbitd status page.
+and report it on the xymond status page.
 <P>
 When BBGHOSTS is set to 1 or 2, the hostnames in incoming 
 status-messages is matched without any case-sensitivity,
@@ -422,7 +445,7 @@ unlike normal Big Brother which is case-sensitive in
 hostnames. So with BBGHOSTS set to 1 or 2, &quot;WWW.FOO.COM&quot;
 and &quot;<A HREF="http://www.foo.com">www.foo.com</A>&quot; are considered to be the same host.
 If necessary, the incoming hostname will be changed
-to match the way it is written in the bb-hosts file,
+to match the way it is written in the hosts.cfg file,
 changing case as needed.
 <P>
 <DT>MAXMSG_STATUS<DD>
@@ -431,21 +454,21 @@ Status messages are the ones that end up as columns on the
 web display. The default size should be adequate in most
 cases, but some extension scripts can generate very large
 status messages - close to 1024 kB. You should only change
-this if you see messages in the hobbitd log file about status
+this if you see messages in the xymond log file about status
 messages being truncated.
 <P>
 <DT>MAXMSG_CLIENT<DD>
 The maximum size of a &quot;client&quot; message in kB, default: 512.
 &quot;client&quot; messages are generated by the Xymon client, and often
 include large process-listings. You should only change
-this if you see messages in the hobbitd log file about client
+this if you see messages in the xymond log file about client
 messages being truncated.
 <P>
 <DT>MAXMSG_DATA<DD>
 The maximum size of a &quot;data&quot; message in kB, default: 256.
 &quot;data&quot; messages are typically used for client reports of
 e.g. netstat or vmstat data. You should only change this
-setting if you see messages in the hobbitd log file about
+setting if you see messages in the xymond log file about
 data messages being truncated.
 <P>
 <DT>MAXMSG_NOTES<DD>
@@ -482,23 +505,23 @@ reason to change this setting.
 <P>
 </DL>
 <A NAME="lbAK">&nbsp;</A>
-<H2>HOBBITD_HISTORY SETTINGS</H2>
+<H2>XYMOND_HISTORY SETTINGS</H2>
 
 <P>
 <DL COMPACT>
 <DT>BBALLHISTLOG<DD>
 If set to TRUE,
-<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
 
 will update the $BBHIST/allevents file logging all changes to
 a status. The allevents file is used by the
-<I><A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1)</I>
+<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
 
 tool to show the list of recent events on the BB2 webpage.
 <P>
 <DT>BBHOSTHISTLOG<DD>
 If set to TRUE,
-<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
 
 will update the host-specific eventlog that keeps record
 of all status changes for a host. This logfile is not used
@@ -506,7 +529,7 @@ by any Xymon tool.
 <P>
 <DT>SAVESTATUSLOG<DD>
 If set to TRUE,
-<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
 
 will save historical detailed status-logs to the $BBHISTLOGS
 directory.
@@ -514,7 +537,7 @@ directory.
 <P>
 </DL>
 <A NAME="lbAL">&nbsp;</A>
-<H2>HOBBITD_ALERT SETTINGS</H2>
+<H2>XYMOND_ALERT SETTINGS</H2>
 
 <P>
 <DL COMPACT>
@@ -534,7 +557,7 @@ the service is provided in the BBSVCNUM variable.
 <P>
 </DL>
 <A NAME="lbAM">&nbsp;</A>
-<H2>HOBBITD_RRD SETTINGS</H2>
+<H2>XYMOND_RRD SETTINGS</H2>
 
 <P>
 <DL COMPACT>
@@ -542,15 +565,15 @@ the service is provided in the BBSVCNUM variable.
 List of &quot;COLUMNNAME[=RRDSERVICE]&quot; settings, that define which
 status- and data-messages have a corresponding RRD graph. You will 
 normally not need to modify this, unless you have added a
-custom TCP-based test to the bb-services file, and want to collect data about
+custom TCP-based test to the protocols.cfg file, and want to collect data about
 the response-time, OR if you are using the
-<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
 
 external script mechanism to collect data from custom tests. 
 Note: All TCP tests are automatically added.
 <P>
 This is also used by the 
-<I><A HREF="../man1/bb-hostsvc.cgi.1.html">bb-hostsvc.cgi</A>(1) </I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1) </I>
 
 script to determine if the detailed status view of a test should 
 include a graph.
@@ -582,13 +605,13 @@ tracked.
 <P>
 </DL>
 <A NAME="lbAN">&nbsp;</A>
-<H2>BBTEST-NET NETWORK TEST SETTINGS</H2>
+<H2>XYMONNET NETWORK TEST SETTINGS</H2>
 
 <P>
 <DL COMPACT>
 <DT>BBLOCATION<DD>
 If this variable is defined, then only the hosts that have been tagged
-with &quot;NET:$BBLOCATION&quot; will be tested by the bbtest-net tool.
+with &quot;NET:$BBLOCATION&quot; will be tested by the xymonnet tool.
 <P>
 <DT>CONNTEST<DD>
 If set to TRUE, the connectivity (ping) test will be performed.
@@ -610,7 +633,7 @@ the variable. So to inform the users that an intermediate switch
 or router is down, use BBROUTERTEXT=&quot;switch or router&quot;.  This can 
 also be set on a per-host basis using the &quot;DESCR:hosttype:description&quot;
 tag in the 
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file.
 <P>
@@ -621,12 +644,12 @@ you can change it to &quot;FAILED&quot; or customize it as you like.
 <P>
 <DT>FPING<DD>
 The command used to run the
-<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
 
 tool for the connectivity test. (The name FPING is due to the fact that
 the &quot;fping&quot; utility was used until Xymon version 4.2). This may include 
-suid-root wrappers and hobbitping options.
-Default: &quot;hobbitping&quot;
+suid-root wrappers and xymonping options.
+Default: &quot;xymonping&quot;
 <P>
 <DT>TRACEROUTE<DD>
 Defines the location of the &quot;traceroute&quot; tool and
@@ -666,11 +689,11 @@ Default: &quot;rpcinfo&quot;
 <P>
 </DL>
 <A NAME="lbAO">&nbsp;</A>
-<H2>BBGEN WEBPAGE GENERATOR SETTINGS</H2>
+<H2>XYMONGEN WEBPAGE GENERATOR SETTINGS</H2>
 
 <P>
 <DL COMPACT>
-<DT>HOBBITLOGO<DD>
+<DT>XYMONLOGO<DD>
 HTML code that is inserted on all standard headers. The default is to add
 the text &quot;Xymon&quot; in the upper-left corner of the page, but you can easily 
 replace this with e.g. a company logo. If you do, I suggest that you keep 
@@ -715,7 +738,7 @@ the timeformat using the controls in your systems
 routine, and add the text suitable for your setup.
 <P>
 <DT>BBDATEFORMAT<DD>
-On webpages generated by bbgen, the default header includes
+On webpages generated by xymongen, the default header includes
 the current date and time. Normally this looks like &quot;Tue Aug 24
 21:59:47 2004&quot;. The BBDATEFORMAT controls the format of this
 timestamp - you can define the format using the controls in the 
@@ -737,11 +760,11 @@ routine, so any controls available for this routine may be used.
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
 on a webpage. This sets the default value for the 
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 &quot;--maxrows&quot; option; if the command-line option is also specifed,
 then it overrides this environment variable. Note that unlike
-Jeff's patch, bbgen implements this for both the bb2.html page
+Jeff's patch, xymongen implements this for both the bb2.html page
 and all other pages (bb.html, subpages, bbnk.html). 
 <P>
 <DT>SUMMARY_SET_BKG<DD>
@@ -764,7 +787,7 @@ Default: cpu,disk,memory,procs,svcs.
 <P>
 <DT>BBRSSTITLE<DD>
 If defined, this is the title of the RSS/RDF documents generated when
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 is invoked with the &quot;--rss&quot; option. The default value is &quot;Xymon Alerts&quot;.
 <P>
@@ -775,7 +798,7 @@ Default: 1500.
 <DT>BBMKBB2EXT<DD>
 List of scripts to run as extensions to the BB2 page. Note that
 two scripts, &quot;eventlog.sh&quot; and &quot;acklog.sh&quot; are handled specially:
-They are handled internally by bbgen, but the script names must
+They are handled internally by xymongen, but the script names must
 be listed in this variable for this function to be enabled.
 <P>
 <DT>BBHISTEXT<DD>
@@ -785,24 +808,24 @@ List of scripts to run as extensions to a history page.
 Default threshold for listing the availability as &quot;critical&quot; (red) when
 generating the availability report. This can be set on a per-host basis
 with the WARNPCT setting in
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5).</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5).</I>
 
 Default: 97 (percent)
 <P>
 <DT>BBGENREPOPTS<DD>
-Default bbgen options used for reports. This will typically include
+Default xymongen options used for reports. This will typically include
 such options as &quot;--subpagecolumns&quot;, and also &quot;--ignorecolumns&quot; if 
 you wish to exclude certain tests from reports by default.
 <P>
 <DT>BBGENSNAPOPTS<DD>
-Default bbgen options used by snapshots. This should be identical to
+Default xymongen options used by snapshots. This should be identical to
 the options you normally used when building Xymon webpages.
 <P>
 </DL>
 <A NAME="lbAP">&nbsp;</A>
 <H2>FILES</H2>
 
-<B>~xymon/server/etc/hobbitserver.cfg</B>
+<B>~xymon/server/etc/xymonserver.cfg</B>
 
 <P>
 <A NAME="lbAQ">&nbsp;</A>
@@ -822,13 +845,13 @@ the options you normally used when building Xymon webpages.
 <DT><A HREF="#lbAF">DIRECTORIES</A><DD>
 <DT><A HREF="#lbAG">SYSTEM FILES</A><DD>
 <DT><A HREF="#lbAH">URLS</A><DD>
-<DT><A HREF="#lbAI">SETTINGS FOR SENDING MESSAGES TO HOBBIT</A><DD>
-<DT><A HREF="#lbAJ">HOBBITD SETTINGS</A><DD>
-<DT><A HREF="#lbAK">HOBBITD_HISTORY SETTINGS</A><DD>
-<DT><A HREF="#lbAL">HOBBITD_ALERT SETTINGS</A><DD>
-<DT><A HREF="#lbAM">HOBBITD_RRD SETTINGS</A><DD>
-<DT><A HREF="#lbAN">BBTEST-NET NETWORK TEST SETTINGS</A><DD>
-<DT><A HREF="#lbAO">BBGEN WEBPAGE GENERATOR SETTINGS</A><DD>
+<DT><A HREF="#lbAI">SETTINGS FOR SENDING MESSAGES TO XYMON</A><DD>
+<DT><A HREF="#lbAJ">XYMOND SETTINGS</A><DD>
+<DT><A HREF="#lbAK">XYMOND_HISTORY SETTINGS</A><DD>
+<DT><A HREF="#lbAL">XYMOND_ALERT SETTINGS</A><DD>
+<DT><A HREF="#lbAM">XYMOND_RRD SETTINGS</A><DD>
+<DT><A HREF="#lbAN">XYMONNET NETWORK TEST SETTINGS</A><DD>
+<DT><A HREF="#lbAO">XYMONGEN WEBPAGE GENERATOR SETTINGS</A><DD>
 <DT><A HREF="#lbAP">FILES</A><DD>
 <DT><A HREF="#lbAQ">SEE ALSO</A><DD>
 </DL>
@@ -836,6 +859,6 @@ the options you normally used when building Xymon webpages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <rrd.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { O_NONE, O_XML, O_CSV } outform = O_NONE;
 char csvdelim = ',';
@@ -210,8 +210,8 @@ int onehost(char *hostname, char *starttime, char *endtime)
 	DIR *d;
 	struct dirent *de;
 
-	if ((chdir(xgetenv("BBRRDS")) == -1) || (chdir(hostname) == -1)) {
-		errprintf("Cannot cd to %s/%s\n", xgetenv("BBRRDS"), hostname);
+	if ((chdir(xgetenv("XYMONRRDS")) == -1) || (chdir(hostname) == -1)) {
+		errprintf("Cannot cd to %s/%s\n", xgetenv("XYMONRRDS"), hostname);
 		return 1;
 	}
 
@@ -378,14 +378,14 @@ int main(int argc, char **argv)
 			break;
 
 		  case O_NONE:
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 			showform(stdout, "perfdata", "perfdata_form", COL_BLUE, getcurrenttime(NULL), NULL, NULL);
 			return 0;
 		}
 	}
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	if (hostpattern) hostptn = compileregex(hostpattern);
 	if (exhostpattern) exhostptn = compileregex(exhostpattern);
@@ -404,8 +404,8 @@ int main(int argc, char **argv)
 	dbgprintf("Got hosts, it is %s\n", (first_host() == NULL) ? "empty" : "not empty");
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
-		hostname = bbh_item(hwalk, BBH_HOSTNAME);
-		pagename = bbh_item(hwalk, BBH_PAGEPATH);
+		hostname = xmh_item(hwalk, XMH_HOSTNAME);
+		pagename = xmh_item(hwalk, XMH_PAGEPATH);
 
 		dbgprintf("Processing host %s\n", hostname);
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# This is a wrapper for the Xymon hobbitsvc.cgi script
+# This is a wrapper for the Xymon svcstatus.cgi script
 
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi $CGI_SVC_OPTS
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/svcstatus.cgi $CGI_SVC_OPTS
 

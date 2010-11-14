@@ -2,7 +2,7 @@
 
 # This is the Xymon snapshot CGI wrapper
 
-. @BBHOME@/etc/hobbitserver.cfg
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-snapshot.cgi $CGI_SNAPSHOT_OPTS $BBGENSNAPOPTS
+. @XYMONHOME@/etc/xymonserver.cfg
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/snapshot.cgi $CGI_SNAPSHOT_OPTS $XYMONGENSNAPOPTS
 

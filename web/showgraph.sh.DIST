@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# This is the Xymon CGI script interface to hobbitgraph.cgi
+# This is the Xymon CGI script interface to showgraph.cgi
 #
 # Install this script in your webservers' cgi-bin directory
 
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitgraph.cgi $CGI_HOBBITGRAPH_OPTS
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/showgraph.cgi $CGI_SHOWGRAPH_OPTS
 

@@ -3,9 +3,9 @@
 # $Id$
 
 # Script to pick up most of the commands used by BB extension scripts.
-# This is used during installation, to build a hobbitserver.cfg that
+# This is used during installation, to build a xymonserver.cfg that
 # includes these commands so that extension scripts can run from
-# hobbitserver.cfg without having to do special setups.
+# xymonserver.cfg without having to do special setups.
 
 findbin() {
 	MYP="`echo ${PATH} | sed -e 's/:/ /g'`"

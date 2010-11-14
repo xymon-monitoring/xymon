@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {

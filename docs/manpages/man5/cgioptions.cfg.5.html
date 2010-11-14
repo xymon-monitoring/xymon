@@ -1,26 +1,26 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITCGI.CFG</TITLE>
+<HTML><HEAD><TITLE>Man page of CGIOPTIONS.CFG</TITLE>
 </HEAD><BODY>
-<H1>HOBBITCGI.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>CGIOPTIONS.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitcgi.cfg - Command-line parameters for the Xymon CGI tools
+cgioptions.cfg - Command-line parameters for the Xymon CGI tools
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>$BBHOME/etc/hobbitcgi.cfg</B>
+<B>$BBHOME/etc/cgioptions.cfg</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man1/hobbitcgi.cfg.1.html">hobbitcgi.cfg</A>(1)</I>
+<I><A HREF="../man1/cgioptions.cfg.1.html">cgioptions.cfg</A>(1)</I>
 
 controls the command-line options passed to all of the Xymon CGI tools
 through their respective shell-script wrappers. Typically the options
@@ -39,116 +39,116 @@ the CGI-specific variables must follow standard shell-script syntax.
 <DL COMPACT>
 <DT>CGI_ACKINFO_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbit-ackinfo.cgi.1.html">hobbit-ackinfo.cgi</A>(1)</I>
+<I><A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_ACK_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-ack.cgi.1.html">bb-ack.cgi</A>(1)</I>
+<I><A HREF="../man1/acknowledge.cgi.1.html">acknowledge.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_CSVINFO_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1)</I>
+<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_DATEPAGE_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-datepage.cgi.1.html">bb-datepage.cgi</A>(1)</I>
+<I><A HREF="../man1/datepage.cgi.1.html">datepage.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_ENADIS_OPTS<DD>
 Options for the
-<I><A HREF="../man8/hobbit-enadis.cgi.8.html">hobbit-enadis.cgi</A>(8)</I>
+<I><A HREF="../man8/enadis.cgi.8.html">enadis.cgi</A>(8)</I>
 
 utility.
 <P>
 <DT>CGI_EVENTLOG_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-eventlog.cgi.1.html">bb-eventlog.cgi</A>(1)</I>
+<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_FINDHOST_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-findhost.cgi.1.html">bb-findhost.cgi</A>(1)</I>
+<I><A HREF="../man1/findhost.cgi.1.html">findhost.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_HIST_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-hist.cgi.1.html">bb-hist.cgi</A>(1)</I>
+<I><A HREF="../man1/history.cgi.1.html">history.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_HOBBITCOLUMN_OPTS<DD>
 Xymon-specific options for column documentation. This uses the
-<I><A HREF="../man1/bb-csvinfo.cgi.1.html">bb-csvinfo.cgi</A>(1)</I>
+<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
 
 utility with the <B>server/etc/columndoc.cfg</B> configuration file.
 <P>
 <DT>CGI_HOBBITCONFREPORT_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbit-confreport.cgi.1.html">hobbit-confreport.cgi</A>(1)</I>
+<I><A HREF="../man1/confreport.cgi.1.html">confreport.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_HOBBITGRAPH_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbitgraph.cgi.1.html">hobbitgraph.cgi</A>(1)</I>
+<I><A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_HOSTGRAPHS_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbit-hostgraphs.cgi.1.html">hobbit-hostgraphs.cgi</A>(1)</I>
+<I><A HREF="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_NKEDIT_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbit-nkedit.cgi.1.html">hobbit-nkedit.cgi</A>(1)</I>
+<I><A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_NKVIEW_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbit-nkview.cgi.1.html">hobbit-nkview.cgi</A>(1)</I>
+<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_REPLOG_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-replog.cgi.1.html">bb-replog.cgi</A>(1)</I>
+<I><A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_REP_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-rep.cgi.1.html">bb-rep.cgi</A>(1)</I>
+<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_SNAPSHOT_OPTS<DD>
 Options for the
-<I><A HREF="../man1/bb-snapshot.cgi.1.html">bb-snapshot.cgi</A>(1)</I>
+<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
 
 utility.
 <P>
 <DT>CGI_SVCHIST_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1)</I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
 
 utility when used to view historical logs. Note that the
 &quot;--historical&quot; option must be included in this setting.
 <P>
 <DT>CGI_SVC_OPTS<DD>
 Options for the
-<I><A HREF="../man1/hobbitsvc.cgi.1.html">hobbitsvc.cgi</A>(1)</I>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
 
 utility.
 <P>
@@ -173,6 +173,6 @@ utility.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:58 GMT, October 05, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

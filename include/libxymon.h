@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __LIBBBGEN_H__
-#define __LIBBBGEN_H__
+#ifndef __LIBXYMON_H__
+#define __LIBXYMON_H__
 
 #include <stdio.h>
 #include <time.h>
@@ -70,12 +70,12 @@ typedef struct strbuffer_t {
 #include "../lib/environ.h"
 #include "../lib/errormsg.h"
 #include "../lib/files.h"
-#include "../lib/hobbitrrd.h"
+#include "../lib/xymonrrd.h"
 #include "../lib/holidays.h"
 #include "../lib/ipaccess.h"
 #include "../lib/loadalerts.h"
 #include "../lib/loadhosts.h"
-#include "../lib/loadnkconf.h"
+#include "../lib/loadcriticalconf.h"
 #include "../lib/locator.h"
 #include "../lib/matching.h"
 #include "../lib/md5.h"

@@ -16,7 +16,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 long compute(char *expression, int *error)
 {

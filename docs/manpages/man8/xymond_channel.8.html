@@ -1,50 +1,50 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITD_CHANNEL</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMOND_CHANNEL</TITLE>
 </HEAD><BODY>
-<H1>HOBBITD_CHANNEL</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMOND_CHANNEL</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitd_channel - Feed a hobbitd channel to a worker module
+xymond_channel - Feed a xymond channel to a worker module
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitd_channel --channel=CHANNEL [options] workerprogram [worker-options]</B>
+<B>xymond_channel --channel=CHANNEL [options] workerprogram [worker-options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-hobbitd_channel hooks into one of the 
-<I><A HREF="../man8/hobbitd.8.html">hobbitd</A>(8)</I>
+xymond_channel hooks into one of the 
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
 
 channels that provide information about events occurring in the Xymon system.
-It retrieves messages from the hobbitd daemon, and passes them on to the
+It retrieves messages from the xymond daemon, and passes them on to the
 <B>workerprogram</B> on the STDIN (file descripter 1) of the worker program. 
 Worker programs can then handle messages as they like.
 <P>
-A number of worker programs are shipped with hobbitd, e.g.
-<I><A HREF="../man8/hobbitd_filestore.8.html">hobbitd_filestore</A>(8)</I>
+A number of worker programs are shipped with xymond, e.g.
+<I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
 
-<I><A HREF="../man8/hobbitd_history.8.html">hobbitd_history</A>(8)</I>
+<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
 
-<I><A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8)</I>
+<I><A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8)</I>
 
-<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
 
 <P>
 If you want to write your own worker module, a sample worker module
-is provided as part of the hobbitd distribution in the hobbitd_sample.c
+is provided as part of the xymond distribution in the xymond_sample.c
 file. This illustrates how to easily fetch and parse messages.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>OPTIONS</H2>
 
-hobbitd_channel accepts a few options.
+xymond_channel accepts a few options.
 <P>
 <DL COMPACT>
 <DT>--channel=CHANNELNAME<DD>
@@ -69,27 +69,39 @@ This option is required. The following channels are available:
 
 &quot;enadis&quot; receives information about hosts being disabled or enabled.
 <P>
+<DT>--filter=EXPRESSION<DD>
+EXPRESSION is a Perl-compatible regular expression. xymond_channel will match 
+the first line of each message against this expression, and silently drops any
+message that does not match the expression. Especially useful for custom 
+worker modules and during testing, to limit the amount of data that the module
+must process.
+<BR>
+
+Note that messages for &quot;logrotate&quot;, &quot;shutdown&quot;, &quot;drophost&quot;, &quot;renamehost&quot;,
+&quot;droptest&quot; and &quot;renametest&quot; are always forwarded by xymond_channel, whether
+they match the filter or not.
+<P>
 <DT>--daemon<DD>
-hobbitd_channel is normally started by 
-<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+xymond_channel is normally started by 
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
 
 as a task defined in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
-file. If you are not using hobbitlaunch, then starting hobbitd_channel with this
+file. If you are not using xymonlaunch, then starting xymond_channel with this
 option causes it to run as a stand-alone background task.
 <P>
 <DT>--pidfile=FILENAME<DD>
-If running as a stand-alone daemon, hobbitd_channel will save the proces-ID 
+If running as a stand-alone daemon, xymond_channel will save the proces-ID 
 of the daemon in FILENAME. This is useful for automated startup- and shutdown-
 scripts.
 <P>
 <DT>--env=FILENAME<DD>
-Loads the environment variables defined in FILENAME before starting hobbitd_channel.
-This is normally used only when running as a stand-alone daemon; if hobbitd_channel
-is started by hobbitlaunch, then the environment is controlled by the task definition 
+Loads the environment variables defined in FILENAME before starting xymond_channel.
+This is normally used only when running as a stand-alone daemon; if xymond_channel
+is started by xymonlaunch, then the environment is controlled by the task definition 
 in the
-<I><A HREF="../man5/hobbitlaunch.cfg.5.html">hobbitlaunch.cfg</A>(5)</I>
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
 
 file.
 <P>
@@ -108,7 +120,7 @@ This program does not use any configuration files.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -126,6 +138,6 @@ This program does not use any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

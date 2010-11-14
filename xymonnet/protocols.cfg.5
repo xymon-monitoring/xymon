@@ -1,13 +1,13 @@
-.TH BB-SERVICES 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH PROTOCOLS.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bb-services \- Configuration of TCP network services
+protocols.cfg \- Configuration of TCP network services
 
 .SH SYNOPSIS
-.BR $BBHOME/etc/bb-services
+.BR $XYMONHOME/etc/protocols.cfg
 
 .SH DESCRIPTION
-\fBbb-services\fR contains definitions of how 
-.I bbtest-net(1)
+\fBprotocols.cfg\fR contains definitions of how 
+.I xymonnet(1)
 should test a TCP-based network service (i.e. all common
 network services except HTTP and DNS).
 For each service, a simple dialogue can be defined to
@@ -16,7 +16,7 @@ flags determine if the service has e.g. a banner or requires
 SSL- or telnet-style handshaking to be tested.
 
 .SH FILE FORMAT
-bb-services is a text file. A simple service definition for
+protocols.cfg is a text file. A simple service definition for
 the SMTP service would be this:
 .br
 .sp
@@ -30,12 +30,12 @@ the SMTP service would be this:
 .br
 .sp
 This defines a service called "smtp". When the connection is
-first established, bbtest-net will send the string "mail\\r\\nquit\\r\\n"
+first established, xymonnet will send the string "mail\\r\\nquit\\r\\n"
 to the service. It will then expect a response beginning with "220".
 Any data returned by the service (a so-called "banner") will be recorded 
 and included in the status message.
 .sp
-The full set of commands available for the bb-services file are:
+The full set of commands available for the protocols.cfg file are:
 
 .IP "[NAME]"
 Define the name of the TCP service, which will also be the column-name
@@ -49,7 +49,7 @@ separating each service-name with a pipe-sign.
 Defines the strings to send to the service after a connection is
 established, and the response that is expected. Either of these
 may be omitted, in which case
-.I bbtest-net(1)
+.I xymonnet(1)
 will simply not send any data, or match a response against anything.
 
 The send- and expect-strings use standard escaping for non-printable
@@ -61,7 +61,7 @@ of the byte.
 .IP "port NUMBER"
 Define the default TCP port-number for this service. If no portnumber
 is defined,
-.I bbtest-net(1)
+.I xymonnet(1)
 will attempt to lookup the portnumber in the standard /etc/services 
 file.
 
@@ -76,8 +76,8 @@ Defines test options. The possible options are
 
 
 .SH FILES
-.BR $BBHOME/etc/bb-services
+.BR $XYMONHOME/etc/protocols.cfg
 
 .SH "SEE ALSO"
-bbtest-net(1)
+xymonnet(1)
 

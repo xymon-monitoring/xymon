@@ -35,7 +35,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 volatile int running = 1;
 volatile time_t reloadtime = 0;
@@ -239,7 +239,7 @@ void process_clientdata(conn_t *conn)
 	 */
 
 	char *mptr, *databegin, *msgbegin;
-	int portnum = atoi(xgetenv("BBPORT"));
+	int portnum = atoi(xgetenv("XYMONDPORT"));
 
 	databegin = strchr(STRBUF(conn->msgbuf), '\n');
 	if (!databegin || (STRBUFLEN(conn->msgbuf) == 0)) {
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	setup_signalhandler("hobbitfetch");
+	setup_signalhandler("xymonfetch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);
@@ -476,17 +476,17 @@ int main(int argc, char *argv[])
 		
 		now = gettimer();
 		if (now > reloadtime) {
-			/* Time to reload the bb-hosts file */
+			/* Time to reload the hosts.cfg file */
 			reloadtime = now + 600;
 
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk, 0)) {
 				char *hname;
 				clients_t *newclient;
 
-				if (!bbh_item(hostwalk, BBH_FLAG_PULLDATA)) continue;
+				if (!xmh_item(hostwalk, XMH_FLAG_PULLDATA)) continue;
 
-				hname = bbh_item(hostwalk, BBH_HOSTNAME);
+				hname = xmh_item(hostwalk, XMH_HOSTNAME);
 				handle = rbtFind(clients, hname);
 				if (handle == rbtEnd(clients)) {
 					newclient = (clients_t *)calloc(1, sizeof(clients_t));
@@ -613,13 +613,13 @@ int main(int argc, char *argv[])
 
 				/* Deleted hosts stay in our tree - but should disappear from the known hosts */
 				hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
-				pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
+				pullstr = xmh_item(hostwalk, XMH_FLAG_PULLDATA); if (!pullstr) continue;
 
 				ip = strchr(pullstr, '=');
-				port = atoi(xgetenv("BBPORT"));
+				port = atoi(xgetenv("XYMONDPORT"));
 
 				if (!ip) {
-					ip = strdup(bbh_item(hostwalk, BBH_IP));
+					ip = strdup(xmh_item(hostwalk, XMH_IP));
 				}
 				else {
 					/* There is an explicit IP setting in the pulldata tag */
@@ -633,7 +633,7 @@ int main(int argc, char *argv[])
 					if (*ip == '\0') {
 						/* No IP given, just a port number */
 						xfree(ip);
-						ip = strdup(bbh_item(hostwalk, BBH_IP));
+						ip = strdup(xmh_item(hostwalk, XMH_IP));
 					}
 				}
 

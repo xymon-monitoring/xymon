@@ -1,11 +1,11 @@
-.TH HOBBIT-STATUSREPORT.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH STATUSREPORT.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbit-statusreport.cgi \- CGI program to report a status for a group of servers
+statusreport.cgi \- CGI program to report a status for a group of servers
 .SH SYNOPSIS
-.B "hobbit-statusreport.cgi --column=COLUMNNAME [options]"
+.B "statusreport.cgi --column=COLUMNNAME [options]"
 
 .SH DESCRIPTION
-\fBhobbit-statusreport.cgi\fR is a CGI tool to generate a simple HTML
+\fBstatusreport.cgi\fR is a CGI tool to generate a simple HTML
 report showing the current status of a single column for a group of
 Xymon hosts.
 
@@ -15,14 +15,14 @@ certificates that are about to expire.
 The generated webpage is a simple HTML table, suitable for copying
 into other documents or e-mail.
 
-hobbit-statusreport.cgi runs as a CGI program, invoked by your webserver.
+statusreport.cgi runs as a CGI program, invoked by your webserver.
 It is normally run via a wrapper shell-script in the CGI directory for Xymon.
 
 .SH EXAMPLES
 The Xymon installation includes two web report scripts using this
-CGI tool: The \fBhobbit-certreport.sh\fR script generates a list of
+CGI tool: The \fBcertreport.sh\fR script generates a list of
 SSL server certificates that are yellow or red (i.e. they will expire
-soon); and the \fBhobbit-nongreen.sh\fR script generates a report
+soon); and the \fBnongreen.sh\fR script generates a report
 of all statuses that are currently non-green. These can be accessed
 from a web browser through a URL referencing the script in the
 Xymon CGI directory (e.g. "/xymon-cgi/xymon-nongreen.sh").
@@ -39,8 +39,8 @@ cookie).
 
 .IP "--filter=CRITERIA"
 Only report on statuses that match the CRITERIA setting. See the
-.I bb(1)
-man-page - in the "hobbitdboard" command description - for 
+.I xymon(1)
+man-page - in the "xymondboard" command description - for 
 details about specifying filters.
 
 .IP "--heading=HTML"

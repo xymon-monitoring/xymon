@@ -2,7 +2,7 @@
 /* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module for Xymon, responsible for loading the            */
-/* hobbit-alerts.cfg file which holds information about the Xymon alert       */
+/* alerts.cfg file which holds information about the Xymon alert       */
 /* configuration.                                                             */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 
 /* token's are the pre-processor macros we expand while parsing the config file */
@@ -204,7 +204,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -939,7 +939,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * some random system recovered ... not good. So apply
 	 * this check to all messages.
 	 */
-	if (crit && crit->timespec && !timematch(bbh_item(hinfo, BBH_HOLIDAYS), crit->timespec)) {
+	if (crit && crit->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->timespec)) {
 		traceprintf("Failed '%s' (time criteria)\n", cfline);
 		if (!printmode) return 0; 
 	}
@@ -1071,7 +1071,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	MEMDEFINE(codes);
 
 	if (printmode == 2) {
-		/* For print-out usage - e.g. hobbit-confreport.cgi */
+		/* For print-out usage - e.g. confreport.cgi */
 		normalfont = "COLOR=\"#000000\" FACE=\"Tahoma, Arial, Helvetica\"";
 		stopfont = "COLOR=\"#FF0000\" FACE=\"Tahoma, Arial, Helvetica\"";
 	}

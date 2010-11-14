@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is part of the hobbitd_alert worker module.                           */
-/* This module implements the standard hobbitd alerting function. It loads    */
-/* the alert configuration from hobbit-alerts.cfg, and incoming alerts are    */
+/* This is part of the xymond_alert worker module.                            */
+/* This module implements the standard xymond alerting function. It loads     */
+/* the alert configuration from alerts.cfg, and incoming alerts are           */
 /* then sent according to the rules defined.                                  */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
@@ -29,7 +29,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define MAX_ALERTMSG_SCRIPTS 4096
 
@@ -284,7 +284,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 
 		if (recip->format == ALERTFORM_TEXT) {
 			sprintf(info, "See %s%s\n", 
-				xgetenv("BBWEBHOST"), 
+				xgetenv("XYMONWEBHOST"), 
 				hostsvcurl(alert->hostname, alert->testname, 0));
 			addtobuffer(buf, info);
 		}
@@ -343,7 +343,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(buf, msg_data(alert->pagemessage));
 		addtobuffer(buf, "\n");
 		sprintf(info, "See %s%s\n", 
-			xgetenv("BBWEBHOST"),
+			xgetenv("XYMONWEBHOST"),
 			hostsvcurl(alert->hostname, alert->testname, 0));
 		addtobuffer(buf, info);
 		MEMUNDEFINE(info);
@@ -588,12 +588,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 					hinfo = hostinfo(alert->hostname);
 					if (hinfo) {
-						enum bbh_item_t walk;
+						enum xmh_item_t walk;
 						char *itm, *id, *bbhenv;
 
-						for (walk = 0; (walk < BBH_LAST); walk++) {
-							itm = bbh_item(hinfo, walk);
-							id = bbh_item_id(walk);
+						for (walk = 0; (walk < XMH_LAST); walk++) {
+							itm = xmh_item(hinfo, walk);
+							id = xmh_item_id(walk);
 							if (itm && id) {
 								bbhenv = (char *)malloc(strlen(id) + strlen(itm) + 2);
 								sprintf(bbhenv, "%s=%s", id, itm);
@@ -667,7 +667,7 @@ time_t next_alert(activealerts_t *alert)
 	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, &r_next)) != NULL)) {
 		found = 1;
 		/* 
-		 * This runs in the parent hobbitd_alert proces, so we must create
+		 * This runs in the parent xymond_alert proces, so we must create
 		 * a repeat-record here - or all alerts will get repeated every minute.
 		 */
 		rpt = find_repeatinfo(alert, recip, 1);

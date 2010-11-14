@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for reading configuration files with "include"s.      */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <dirent.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct filelist_t {
 	char *filename;

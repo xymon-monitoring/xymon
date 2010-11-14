@@ -1,60 +1,60 @@
-# bbgen - common tools
+# Xymon - common tools
 #
 
-PROGRAMS = bbhostgrep bbhostshow bbdigest bb bbcmd hobbitlaunch
-CLIENTPROGRAMS = ../client/bb ../client/hobbitlaunch ../client/bbcmd ../client/bbhostgrep ../client/bbhostshow ../client/bbdigest
+PROGRAMS = xymongrep xymondigest xymon xymoncmd xymonlaunch xymoncfg
+CLIENTPROGRAMS = ../client/xymon ../client/xymonlaunch ../client/xymoncmd ../client/xymongrep ../client/xymoncfg ../client/xymondigest
 
-HOSTGREPOBJS = bbhostgrep.o
-HOSTSHOWOBJS = bbhostshow.o
-DIGESTOBJS   = bbdigest.o
-BBOBJS       = bb.o
-LAUNCHOBJS   = hobbitlaunch.o
-CMDOBJS      = bbcmd.o
+HOSTGREPOBJS = xymongrep.o
+HOSTSHOWOBJS = xymoncfg.o
+DIGESTOBJS   = xymondigest.o
+XYMONOBJS    = xymon.o
+LAUNCHOBJS   = xymonlaunch.o
+CMDOBJS      = xymoncmd.o
 
 all: $(PROGRAMS)
 
 client: $(CLIENTPROGRAMS)
 
-bbhostgrep: $(HOSTGREPOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymongrep: $(HOSTGREPOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-../client/bbhostgrep: $(HOSTGREPOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymongrep: $(HOSTGREPOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
-bbhostshow: $(HOSTSHOWOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libbbgen.a $(LIBRTDEF)
+xymoncfg: $(HOSTSHOWOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libxymon.a $(LIBRTDEF)
 
-../client/bbhostshow: $(HOSTSHOWOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
+../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
-bb: $(BBOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymon: $(XYMONOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-../client/bb: $(BBOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(BBOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymon: $(XYMONOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
-hobbitlaunch: $(LAUNCHOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libbbgen.a $(LIBRTDEF)
+xymonlaunch: $(LAUNCHOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libxymon.a $(LIBRTDEF)
 
-../client/hobbitlaunch: $(LAUNCHOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
+../client/xymonlaunch: $(LAUNCHOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
-bbcmd: $(CMDOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libbbgen.a $(LIBRTDEF)
+xymoncmd: $(CMDOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libxymon.a $(LIBRTDEF)
 
-../client/bbcmd: $(CMDOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/hobbitclient.a $(LIBRTDEF)
+../client/xymoncmd: $(CMDOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/xymonclient.a $(LIBRTDEF)
 
-bbdigest: $(DIGESTOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymondigest: $(DIGESTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-../client/bbdigest: $(DIGESTOBJS) ../lib/hobbitclient.a
-	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/hobbitclient.a $(NETLIBS) $(LIBRTDEF)
+../client/xymondigest: $(DIGESTOBJS) ../lib/xymonclient.a
+	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 
-bb.exe: bb.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
-	$(CC) $(CFLAGS) -c bb.c 
-	$(CC) $(CFLAGS) -DBBTOPDIR=\"$(BBTOPDIR)\" -DBBLOGDIR=\"$(BBLOGDIR)\" -DBBHOSTNAME=\"$(BBHOSTNAME)\" -DBBHOSTIP=\"$(BBHOSTIP)\" -DBBHOSTOS=\"$(BBHOSTOS)\" -DBUILD_HOME=\"$(BBTOPDIR)/client\" -c ../lib/environ.c
+xymon.exe: xymon.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.c ../lib/timefunc.c ../lib/memory.c ../lib/sendmsg.c ../lib/holidays.c ../lib/rbtr.c ../lib/msort.c
+	$(CC) $(CFLAGS) -c xymon.c 
+	$(CC) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DBUILD_HOME=\"$(XYMONTOPDIR)/client\" -c ../lib/environ.c
 	$(CC) $(CFLAGS) -c ../lib/strfunc.c 
 	$(CC) $(CFLAGS) -c ../lib/errormsg.c
 	$(CC) $(CFLAGS) -c ../lib/stackio.c 
@@ -65,9 +65,9 @@ bb.exe: bb.c ../lib/strfunc.c ../lib/errormsg.c ../lib/environ.c ../lib/stackio.
 	$(CC) $(CFLAGS) -c ../lib/rbtr.c 
 	$(CC) $(CFLAGS) -c ../lib/msort.c
 	$(CC) $(CFLAGS) -c ../lib/misc.c
-	ar cr bbwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
-	ranlib bbwin32.a || echo ""
-	$(CC) -o $@ bb.o bbwin32.a
+	ar cr xymonwin32.a environ.o strfunc.o errormsg.o stackio.o timefunc.o memory.o sendmsg.o holidays.o rbtr.o msort.o misc.o
+	ranlib xymonwin32.a || echo ""
+	$(CC) -o $@ xymon.o xymonwin32.a
 
 
 ################################################

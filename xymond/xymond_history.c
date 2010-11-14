@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is a hobbitd worker module for the "stachg" channel.                  */
+/* This is a xymond worker module for the "stachg" channel.                   */
 /* This module implements the file-based history logging, and keeps the       */
-/* historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated to keep     */
-/* track of the status changes.                                               */
+/* historical logfiles in $XYMONVAR/hist/ and $XYMONVAR/histlogs/ updated     */
+/* to keep track of the status changes.                                       */
 /*                                                                            */
 /* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -28,9 +28,9 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 
 int rotatefiles = 0;
 
@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
-	if (xgetenv("BBALLHISTLOG")) save_allevents = (strcmp(xgetenv("BBALLHISTLOG"), "TRUE") == 0);
-	if (xgetenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("BBHOSTHISTLOG"), "TRUE") == 0);
+	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
+	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
 	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -98,16 +98,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (xgetenv("BBHIST") && (histdir == NULL)) {
-		histdir = strdup(xgetenv("BBHIST"));
+	if (xgetenv("XYMONHISTDIR") && (histdir == NULL)) {
+		histdir = strdup(xgetenv("XYMONHISTDIR"));
 	}
 	if (histdir == NULL) {
 		errprintf("No history directory given, aborting\n");
 		return 1;
 	}
 
-	if (save_histlogs && (histlogdir == NULL) && xgetenv("BBHISTLOGS")) {
-		histlogdir = strdup(xgetenv("BBHISTLOGS"));
+	if (save_histlogs && (histlogdir == NULL) && xgetenv("XYMONHISTLOGS")) {
+		histlogdir = strdup(xgetenv("XYMONHISTLOGS"));
 	}
 	if (save_histlogs && (histlogdir == NULL)) {
 		errprintf("No history-log directory given, aborting\n");
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 		xfree(savelist);
 	}
 
-	sprintf(pidfn, "%s/hobbitd_history.pid", xgetenv("BBSERVERLOGS"));
+	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
 	{
 		FILE *pidfd = fopen(pidfn, "w");
 		if (pidfd) {
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("hobbitd_history");
+	setup_signalhandler("xymond_history");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
+		msg = get_xymond_message(C_STACHG, "xymond_history", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -274,12 +274,12 @@ int main(int argc, char *argv[])
 
 				if (logexists) {
 					/*
-					 * There is a fair chance hobbitd has not been
+					 * There is a fair chance xymond has not been
 					 * running all the time while this system was monitored.
 					 * So get the time of the latest status change from the file,
 					 * instead of relying on the "lastchange" value we get
-					 * from hobbitd. This is also needed when migrating from 
-					 * standard bbd to hobbitd.
+					 * from xymond. This is also needed when migrating from 
+					 * standard bbd to xymond.
 					 */
 					off_t pos = -1;
 					char l[1024];
@@ -557,7 +557,7 @@ int main(int argc, char *argv[])
 
 				MEMDEFINE(statuslogfn);
 
-				/* Remove bbvar/hist/host,name.* */
+				/* Remove $XYMONVAR/hist/host,name.* */
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				hostlead = malloc(strlen(hostname) + 2);
 				strcpy(hostlead, hostnamecommas); strcat(hostlead, ".");
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
 			running = 0;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

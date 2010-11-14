@@ -2,7 +2,7 @@
 
 # Startup script for the Xymon monitor
 #
-# This starts the "hobbitlaunch" tool, which in turn starts
+# This starts the "xymonlaunch" tool, which in turn starts
 # all of the other Xymon server programs.
 
 ### BEGIN INIT INFO
@@ -17,9 +17,9 @@
 #                    (Also monitors the local host.)
 ### END INIT INFO
 
-PIDFILE=/var/run/xymon/hobbitlaunch.pid
-DAEMON=/usr/lib/xymon/server/bin/hobbitlaunch
-NAME="hobbitd"
+PIDFILE=/var/run/xymon/xymonlaunch.pid
+DAEMON=/usr/lib/xymon/server/bin/xymonlaunch
+NAME="xymond"
 DESC="Xymon Server"
 
 test -x $DAEMON || exit 0
@@ -27,7 +27,7 @@ test -x $DAEMON || exit 0
 . /lib/lsb/init-functions
 . /usr/share/xymon/init-common.sh
 
-# Include hobbitclient defaults if available
+# Include xymonclient defaults if available
 if [ -f /etc/default/xymon-client ] ; then
 	. /etc/default/xymon-client
 fi
@@ -39,9 +39,9 @@ case "$1" in
 	log_daemon_msg "Starting $DESC" "$NAME"
 	start-stop-daemon --exec $DAEMON --chuid xymon --umask 022 --start \
 		-- \
-		--config=/etc/xymon/hobbitlaunch.cfg \
-		--env=/etc/xymon/hobbitserver.cfg \
-		--log=/var/log/xymon/hobbitlaunch.log \
+		--config=/etc/xymon/tasks.cfg \
+		--env=/etc/xymon/xymonserver.cfg \
+		--log=/var/log/xymon/xymonlaunch.log \
 		--pidfile=$PIDFILE
 	log_end_msg $?
 	;;
@@ -58,7 +58,7 @@ case "$1" in
 		kill -0 `cat $PIDFILE`
 		if test $? -eq 0
 		then
-			echo "Xymon (hobbitlaunch) running with PID `cat $PIDFILE`"
+			echo "Xymon (xymonlaunch) running with PID `cat $PIDFILE`"
 			exit 0
 		else
 			echo "Xymon not running, removing stale PID file"
@@ -66,7 +66,7 @@ case "$1" in
 			exit 1
 		fi
 	else
-		echo "Xymon (hobbitlaunch) does not appear to be running"
+		echo "Xymon (xymonlaunch) does not appear to be running"
 		exit 3
 	fi
 	;;
@@ -78,7 +78,7 @@ case "$1" in
 		sleep 1
 		$0 start
 	else
-		log_action_msg "hobbitlaunch does not appear to be running, starting it"
+		log_action_msg "xymonlaunch does not appear to be running, starting it"
 		$0 start
 	fi
 	;;
@@ -87,10 +87,10 @@ case "$1" in
 	if test -s $PIDFILE
 	then
 		create_includefiles
-		log_action_msg "Reloading hobbitd config"
-		kill -HUP `cat /var/run/xymon/hobbitd.pid`
+		log_action_msg "Reloading xymond config"
+		kill -HUP `cat /var/run/xymon/xymond.pid`
 	else
-		log_action_msg "hobbitd not running (no PID file)"
+		log_action_msg "xymond not running (no PID file)"
 	fi
 	;;
 

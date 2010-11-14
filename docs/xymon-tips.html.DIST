@@ -31,12 +31,12 @@ raised with Xymon.</p>
 <h3><a name="icons">What do the little red/yellow/green icons mean ?</a></h3>
 <table align="center" border=1 summary="Xymon status icons">
 	<tr><th align=left valign=top>Color</th><td>Recently changed</td><td>Last change &gt; 24 hours</td></tr>
-	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@BBHOSTURL@/gifs/green-recent.gif" alt="Green - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/green.gif" alt="Green"></td></tr>
-	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@BBHOSTURL@/gifs/yellow-recent.gif" alt="Yellow - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/yellow.gif" alt="Yellow"></td></tr>
-	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="@BBHOSTURL@/gifs/red-recent.gif" alt="Red - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/red.gif" alt="Red"></td></tr>
-	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="@BBHOSTURL@/gifs/clear-recent.gif" alt="Clear - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/clear.gif" alt="Clear"></td></tr>
-	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@BBHOSTURL@/gifs/purple-recent.gif" alt="Purple - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/purple.gif" alt="Purple"></td></tr>
-	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@BBHOSTURL@/gifs/blue-recent.gif" alt="Blue - recently changed"></td><td align=center><img src="@BBHOSTURL@/gifs/blue.gif" alt="Blue"></td></tr>
+	<tr><th align=left valign=top>Green: Status is OK</th><td align=center><img src="@XYMONHOSTURL@/gifs/green-recent.gif" alt="Green - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/green.gif" alt="Green"></td></tr>
+	<tr><th align=left valign=top>Yellow: Warning</th><td align=center><img src="@XYMONHOSTURL@/gifs/yellow-recent.gif" alt="Yellow - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/yellow.gif" alt="Yellow"></td></tr>
+	<tr><th align=left valign=top>Red: Critical</th><td align=center><img src="@XYMONHOSTURL@/gifs/red-recent.gif" alt="Red - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/red.gif" alt="Red"></td></tr>
+	<tr><th align=left valign=top>Clear: No data</th><td align=center><img src="@XYMONHOSTURL@/gifs/clear-recent.gif" alt="Clear - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/clear.gif" alt="Clear"></td></tr>
+	<tr><th align=left valign=top>Purple: No report</th><td align=center><img src="@XYMONHOSTURL@/gifs/purple-recent.gif" alt="Purple - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/purple.gif" alt="Purple"></td></tr>
+	<tr><th align=left valign=top>Blue: Disabled</th><td align=center><img src="@XYMONHOSTURL@/gifs/blue-recent.gif" alt="Blue - recently changed"></td><td align=center><img src="@XYMONHOSTURL@/gifs/blue.gif" alt="Blue"></td></tr>
 </table>
 <hr>
 
@@ -50,14 +50,14 @@ want to monitor.</p>
 <p>If you did install a client, then the two most probable causes for 
 this are:</p>
 <ul>
-	<li>The client is using another hostname than what is in the bb-hosts file.<br>
-	Xymon only cares about the hosts that are in the bb-hosts file, and
-	discards status-reports from unknown hosts. If you check the "hobbitd"
+	<li>The client is using another hostname than what is in the hosts.cfg file.<br>
+	Xymon only cares about the hosts that are in the hosts.cfg file, and
+	discards status-reports from unknown hosts. If you check the "xymond"
 	column on the webserver display for the Xymon server, you will see 
 	a report about these unknown hosts.<br>
 	Either reconfigure the client to use the same hostname as is in the
-	bb-hosts file, or add a <tt>CLIENT:clienthostname</tt> tag in the
-	bb-hosts file so Xymon knows what host matches the client hostname.
+	hosts.cfg file, or add a <tt>CLIENT:clienthostname</tt> tag in the
+	hosts.cfg file so Xymon knows what host matches the client hostname.
 	The Xymon client can be started with a <tt>&quot;--hostname=MYHOSTNAME&quot;</tt>
 	option to explicitly define the hostname that the client uses when
 	reporting data to Xymon.</li>
@@ -67,7 +67,7 @@ this are:</p>
 	to send their status reports. If this port is blocked by a firewall,
 	client status reports will not show up.<br>
 	If possible, open up the firewall to allow this access. Alternatively,
-	you may setup a proxy using the <em>bbproxy</em> tool (part of Xymon)
+	you may setup a proxy using the <em>xymonproxy</em> tool (part of Xymon)
 	to forward status messages from a protected network to the Xymon
 	server.<br>
 	Other methods are also possible, e.g. <em>bbfetch</em> (available from
@@ -75,8 +75,8 @@ this are:</p>
 </ul>
 
 <hr>
-<h3><a name="clientnames">My silly clients are using a hostname different from the one in bb-hosts</a></h3>
-<p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the bb-hosts file,
+<h3><a name="clientnames">My silly clients are using a hostname different from the one in hosts.cfg</a></h3>
+<p>Add a <tt>CLIENT:clienthostname</tt> tag to the host entry in the hosts.cfg file,
 or re-configure the client to use the proper hostname.</p>
 
 
@@ -90,7 +90,7 @@ the next three questions.</p>
 <h3><a name="droptest">I accidentally added an 'ftp' check. Now I cannot get it off the webpage!</a></h3>
 <p>Use the command</p>
 <pre>
-    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME ftp"
+    ~/server/bin/xymon 127.0.0.1 "drop HOSTNAME ftp"
 </pre>
 <p>to permanenly remove all traces of a test. Note that you need the quotes
 around the &quot;drop HOSTNAME ftp&quot;.</p>
@@ -98,19 +98,19 @@ around the &quot;drop HOSTNAME ftp&quot;.</p>
 
 <hr>
 <h3><a name="drophost">So how do I get rid of an entire host in Xymon?</a></h3>
-<p>First, remove the host from the ~/server/etc/bb-hosts file. Then use the command</p>
+<p>First, remove the host from the ~/server/etc/hosts.cfg file. Then use the command</p>
 <pre>
-    ~/server/bin/bb 127.0.0.1 "drop HOSTNAME"
+    ~/server/bin/xymon 127.0.0.1 "drop HOSTNAME"
 </pre>
 <p>to permanenly remove all traces of a host. Note that you need the quotes
 around the &quot;drop HOSTNAME&quot;.</p>
 
 <hr>
 <h3><a name="renamehost">How do I rename a host in the Xymon display?</a></h3>
-<p>First, change the ~/server/etc/bb-hosts file so it has the new name.
+<p>First, change the ~/server/etc/hosts.cfg file so it has the new name.
 Then to move your historical data over to the new name, run</p>
 <pre>
-    ~/server/bin/bb 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
+    ~/server/bin/xymon 127.0.0.1 "rename OLDHOSTNAME NEWHOSTNAME"
 </pre>
 
 
@@ -124,7 +124,7 @@ Subject: Re: [hobbit] Apache tag
 
 Okay, first you must make the indicated addition to your apache
 httpd.conf (or you can make a xymon.conf in apaches conf.d directory).
-[ed: See the bb-hosts man-page for the "apache" description]
+[ed: See the hosts.cfg man-page for the "apache" description]
 
 Then, you must restart apache for the change to take effect
 (/etc/init.d/httpd restart).
@@ -148,7 +148,7 @@ IdleWorkers: 13
 Scoreboard: RR__RWR___RR_R_RR_RRRRRRRRR_RRRRRRR__RRR_RRRRCRRRRR_RRRR........................................................................................................................................................................................................
 
 Now, assuming you are getting back the server-status info, time to make
-sure your bb-hosts is correctly configured to collect and graph the
+sure your hosts.cfg is correctly configured to collect and graph the
 data.  Heres what I have in mine:
 
 1.2.3.4    my.server.com  # conn ssh http://1.2.3.4 apache=http://1.2.3.4/server-status?auto TRENDS:*,apache:apache|apache1|apache2|apache3
@@ -171,11 +171,11 @@ MRTG to save data in a format that Xymon can handle natively.</p>
 
 <hr>
 <h3><a name="updatefreq">I need the web-pages to update more frequently</a></h3>
-<p>The ~/server/etc/hobbitlaunch.cfg defines the update
+<p>The ~/server/etc/tasks.cfg defines the update
 interval for all of the Xymon programs. The default is for
 network tests to run every 5 minutes, and webpage updates to
 happen once a minute.</p>
-<p>Note that if you run the <em>bbretest-net.sh</em> tool
+<p>Note that if you run the <em>xymonnet-again.sh</em> tool
 on your network test server (this is the default for a new
 Xymon server), then network tests that fail 
 will run every minute for up to 30 minutes after the initial
@@ -184,12 +184,12 @@ interval for your network tests.</p>
 
 <hr>
 <h3><a name="fahrenheit">I want my temperature graphs in Fahrenheit</a></h3>
-<p>Edit the file server/etc/hobbitgraph.cfg, and change the <b>[temperature]</b>
+<p>Edit the file server/etc/graphs.cfg, and change the <b>[temperature]</b>
 definition from the default one to the one below that shows Fahrenheit graphs.</p>
 
 <hr>
 <h3><a name="nohtmllink">How do I remove the HTML links from the alert messages?</a></h3>
-<p>Configure your alerts in server/etc/hobbit-alerts.cfg to use <tt>FORMAT=PLAIN</tt>
+<p>Configure your alerts in server/etc/alerts.cfg to use <tt>FORMAT=PLAIN</tt>
 instead of TEXT.</p>
 
 <hr>
@@ -210,7 +210,7 @@ scripts. Stephen Beaudry found the solution:</p>
 <p>Xymon by default uses the system <b>mail</b> command to send out messages.
 The mail-command in Solaris and HP-UX does not understand the "-s SUBJECT" syntax that Xymon uses.
 So you get mails with no subject. The solution is to change the MAIL setting in
-etc/hobbitserver.cfg to use the <b>mailx</b> command instead. Xymon needs to be
+etc/xymonserver.cfg to use the <b>mailx</b> command instead. Xymon needs to be
 restarted after this change.</p>
 
 <hr>
@@ -262,7 +262,7 @@ script is pretty simple. You need to figure out some things:</p>
    fi
 
    # Tell Xymon about it
-   $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+   $XYMON $XYMSRV "status $MACHINE.$COLUMN $COLOR `date`
 
    ${MSG}
    "
@@ -271,8 +271,8 @@ script is pretty simple. You need to figure out some things:</p>
 </tt></pre>
 
 <p>You will notice that some environment variables are pre-defined:
-BB, BBDISP, MACHINE are all provided by Xymon when you run your script via
-hobbitlaunch. Also note how the MSG variable is used to build the status
+XYMON, XYMSRV, MACHINE are all provided by Xymon when you run your script via
+xymonlaunch. Also note how the MSG variable is used to build the status
 message - it starts out with just the "Bad stuff status", then you add
 data to the message when we decided what the status is.</p>
 
@@ -283,39 +283,39 @@ like this:</p>
 
 <pre><tt>
    [myscript]
-	ENVFILE $HOBBITCLIENTHOME/etc/hobbitclient.cfg
-	CMD $HOBBITCLIENTHOME/ext/myscript.sh
-	LOGFILE $HOBBITCLIENTHOME/logs/myscript.log
+	ENVFILE $XYMONCLIENTHOME/etc/xymonclient.cfg
+	CMD $XYMONCLIENTHOME/ext/myscript.sh
+	LOGFILE $XYMONCLIENTHOME/logs/myscript.log
 	INTERVAL 5m
 </tt></pre>
 
 <br><br>
 
 <p><b>Server-side scripts</b> look almost the same, but they will
-typically use the <a href="manpages/man1/bbhostgrep.1.html">bbhostgrep</a>
-utility to pick out hosts in the bb-hosts file that have a special tag 
+typically use the <a href="manpages/man1/xymongrep.1.html">xymongrep</a>
+utility to pick out hosts in the hosts.cfg file that have a special tag 
 defined, and then send one status message for each of those hosts. 
 Like this:</p>
 <pre><tt>
    #!/bin/sh
 
-   BBHTAG=foo           # What we put in bb-hosts to trigger this test
-   COLUMN=$BBHTAG	# Name of the column, often same as tag in bb-hosts
+   HOSTTAG=foo          # What we put in hosts.cfg to trigger this test
+   COLUMN=$HOSTTAG	# Name of the column, often same as tag in hosts.cfg
 
-   $BBHOME/bin/bbhostgrep $BBHTAG | while read L
+   $XYMONHOME/bin/xymongrep $HOSTTAG | while read L
    do
-      set $L	# To get one line of output from bbhostgrep
+      set $L	# To get one line of output from xymongrep
 
       HOSTIP="$1"
       MACHINEDOTS="$2"
       MACHINE=`echo $2 | $SED -e's/\./,/g'`
 
       COLOR=green
-      MSG="$BBHTAG status for host $MACHINEDOTS"
+      MSG="$HOSTTAG status for host $MACHINEDOTS"
 
       #... do the test, perhaps modify COLOR and MSG
 
-      $BB $BBDISP "status $MACHINE.$COLUMN $COLOR `date`
+      $XYMON $XYMSRV "status $MACHINE.$COLUMN $COLOR `date`
 
       ${MSG}
       "
@@ -325,7 +325,7 @@ Like this:</p>
 </tt></pre>
 
 <p>Note that for server side tests, you need to loop over the list
-of hosts found in the bb-hosts file, and send one status message for
+of hosts found in the hosts.cfg file, and send one status message for
 each host. Other than that, it is just like the client-side tests.</p>
 
 <hr>

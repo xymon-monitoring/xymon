@@ -2,7 +2,7 @@
 /* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module                                                      */
-/* This file has routines that load the hobbitd_client configuration and      */
+/* This file has routines that load the xymond_client configuration and       */
 /* finds the rules relevant for a particular test when applied.               */
 /*                                                                            */
 /* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "client_config.h"
 
 typedef struct exprlist_t {
@@ -524,7 +524,7 @@ int load_client_config(char *configfn)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-clients.cfg", xgetenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/analysis.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -1876,7 +1876,7 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *
 		rwalk = rwalk->next;
 	}
 
-	holidayset = (hinfo ? bbh_item(hinfo, BBH_HOLIDAYS) : NULL);
+	holidayset = (hinfo ? xmh_item(hinfo, XMH_HOLIDAYS) : NULL);
 
 	for (; (rwalk); rwalk = rwalk->next) {
 		if (rwalk->rule->ruletype != ruletype) continue;
@@ -1896,8 +1896,8 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*loadyellow = 5.0;
 	*loadred = 10.0;
@@ -1937,8 +1937,8 @@ int get_disk_thresholds(void *hinfo, char *classname,
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*warnlevel = 90;
 	*paniclevel = 95;
@@ -1974,8 +1974,8 @@ int get_inode_thresholds(void *hinfo, char *classname,
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
 	*warnlevel = 70;
 	*paniclevel = 90;
@@ -2009,8 +2009,8 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
         int result = 0;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
         *dsayel = 90;
         *dsared = 95;
@@ -2047,8 +2047,8 @@ void get_zvsevsize_thresholds(void *hinfo, char *classname,
         int result = 0;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
         *usedyel = 90;
         *usedred = 95;
@@ -2070,8 +2070,8 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
         int result = 0;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
         *gv24yel = 90;
         *gv24red = 95;
@@ -2107,8 +2107,8 @@ void get_memory_thresholds(void *hinfo, char *classname,
 	c_rule_t *rule;
 	int gotphys = 0, gotswap = 0, gotact = 0;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*physyellow = 100;
 	*physred = 101;
@@ -2154,8 +2154,8 @@ void get_zos_memory_thresholds(void *hinfo, char *classname,
         c_rule_t *rule;
         int gotcsa = 0, gotecsa = 0, gotsqa = 0, gotesqa = 0;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
         *csayellow = 90;
         *csared = 95;
@@ -2211,8 +2211,8 @@ void get_asid_thresholds(void *hinfo, char *classname,
         char *hostname, *pagename;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
         *maxyellow = 101;
         *maxred = 101;
@@ -2246,8 +2246,8 @@ int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
 	*pagingyellow = 5;
 	*pagingred = 10;
@@ -2278,8 +2278,8 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 		have_mibnametree = 1;
 	}
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
 	/* Any potential rules at all ? */
 	rule = getrule(hostname, pagename, classname, hinfo, C_MIBVAL);
@@ -2492,8 +2492,8 @@ int scan_log(void *hinfo, char *classname,
 	char *boln, *eoln;
 	char msgline[PATH_MAX];
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	
 	nofile = (strncmp(logdata, "Cannot open logfile ", 20) == 0);
 
@@ -2573,8 +2573,8 @@ int check_file(void *hinfo, char *classname,
 	unsigned int ctimedif, mtimedif, atimedif;
 	char *md5hash = NULL, *sha1hash = NULL, *rmd160hash = NULL;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	*trackit = *anyrules = 0;
 
 	boln = filedata;
@@ -2888,8 +2888,8 @@ int check_dir(void *hinfo, char *classname,
 
 	unsigned long dsize = 0;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	*trackit = 0;
 
 	boln = filedata;
@@ -3101,8 +3101,8 @@ void get_mqqueue_thresholds(void *hinfo, char *classname, char *qmgrname, char *
 	char *hostname, *pagepaths;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagepaths = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagepaths = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*warnlen = *critlen = *warnage = *critage = -1;
 	*trackit = NULL;
@@ -3128,8 +3128,8 @@ int get_mqchannel_params(void *hinfo, char *classname, char *qmgrname, char *chn
 	char *hostname, *pagepaths;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagepaths = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagepaths = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	rule = getrule(hostname, pagepaths, classname, hinfo, C_MQ_CHANNEL);
 	while (rule) {
@@ -3174,8 +3174,8 @@ static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype,
 	}
 	*head = *tail = *walk = NULL;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	rule = getrule(hostname, pagename, classname, hinfo, ruletype);
 	while (rule) {

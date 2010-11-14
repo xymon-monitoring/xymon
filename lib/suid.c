@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for handling UID changes.                             */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
@@ -17,7 +17,7 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int havemyuid = 0;
 static uid_t myuid;

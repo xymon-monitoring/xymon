@@ -1,4 +1,4 @@
-Changes from 4.3.0 beta 2 -> 4.3.0 beta 3 (15 Oct 2010)
+Changes from 4.3.0 beta 2 -> 4.3.0 beta 3 (15 Nov 2010)
 =======================================================
 
 * Reflect the renaming of the project at Sourceforge
@@ -9,13 +9,13 @@ Changes from 4.3.0 beta 2 -> 4.3.0 beta 3 (15 Oct 2010)
   if the response-time of a network test is longer than
   expected, even though the service is responding. Also
   works for custom tests that feed data into graphs.
-  (see hobbit-clients.cfg "DS" definition). This uses a
-  new hobbitd command, "modify".
+  (see analysis.cfg "DS" definition). This uses a
+  new xymond command, "modify".
 * Clients can now use several modules to send "client"
   data to the Xymon server, all of which are passed to
   (specialised) client-data processors on the Xymon server.
 * All tools for the "Critical Systems View" now have a
-  "--nkconfig=FILENAME" option for which file to load
+  "--config=FILENAME" option for which file to load
   the configuration from.
 
 Configuration files:
@@ -23,54 +23,54 @@ Configuration files:
 * Allow the "include" and "directory" definitions to be
   indented.
 
-bbgen:
-* New "--no-bb2" option for bbgen disables generating the
+xymongen:
+* New "--no-nongreen" option for bbgen disables generating the
   "All Non-green" page, since this is not useful on large
   installations.
-* If bbgen cannot load the current status from hobbitd,
+* If xymongen cannot load the current status from xymond,
   abort updating of the webpages instead of generating
   a 100% green set of webpages.
 
-bbtest-net:
-* New "--source-ip=ADDRESS" option for bbtest-net to
+xymonnet:
+* New "--source-ip=ADDRESS" option for xymonnet to
   set the default source IP used for network tests.
 * HTTP tests now use the source-IP.
-* New "--ping-tasks=N" option for bbtest-net to split
+* New "--ping-tasks=N" option for xymonnet to split
   the ping-tests to multiple processes. Needed to speed
   up ping of large installations.
 * Disable support for the old Big Brother syntax for
   HTTP proxies in web checks. Necessary to allow testing
   of URL's beginning with "http". If necessary, the old
   Big Brother compatible behaviour is enabled with the
-  new "--bb-proxy-syntax" option for bbtest-net.
+  new "--bb-proxy-syntax" option for xymonnet.
 
-bbproxy:
+xymonproxy:
 * Rename "--bbdisplay" option to "--server".
 * Drop support for sending data to Big Brother servers.
   This means that the Big Brother "page" messages will 
   no longer be relayed by bbproxy, so the "--bbpager" 
   and "--hobbitd" options have been removed.
 
-msgcache / hobbitfetch:
+msgcache / xymonfetch:
 * Fix off-by-one bug when reading data. Could lead to
   data corruption, crashes and other nasty behaviour.
 * Remove port-numbers from the "Message received from..."
   line so these don't show up as multi-source.
 
-hobbitlaunch:
+xymonlaunch:
 * Support for cron-style time specification, so tasks
   will run at specific times.
 
-bb tool:
+xymon tool:
 * New "--response" option overrides auto-detection of 
   whether to expect a response back from the server.
 * Support the new "usermsg" and "modify" commands.
 
-bb-hosts configuration settings:
+hosts.cfg configuration settings:
 * New "multihomed" option disables the multi-source detection
   for a host.
 
-hobbitd:
+xymond:
 * Support multiple client-collector modules for each host.
 * Detect when the same host receives updates from multiple source
   IP adresses. Usually indicates a misconfigured client reporting
@@ -81,18 +81,18 @@ hobbitd:
   In that case, the most severe state is enforced until the
   flapping stops. Such flapping would lead to a huge number of
   status messages being stored as historical logs.
-* Fix rare bug where missing status-log data could crash hobbitd.
+* Fix rare bug where missing status-log data could crash xymond.
 * Fix small memory leak in processing "config" and "download" commands.
 
-hobbitd_capture:
+xymond_capture:
 * New server-side tool to capture selected messages from a Xymon channel.
 
-hobbitd_channel:
+xymond_channel:
 * New "--filter" option allows use of a regular expression to filter
   data being passed to the worker module based on the message
   summary line.
 
-hobbitd_client:
+xymond_client:
 * Fix bug where very large client messages could result in
   the next message processed being corrupted. Typically, this
   would cause semi-random disk graphs to appear, or bogus
@@ -102,17 +102,17 @@ hobbitd_client:
 * Test for any data going into graphs triggering a "modify" of
   a status if the value is outside limits.
 * Mangle filenames with a colon (i.e. Windows filenames) when
-  passing them to other status-messages, e.g. hobbitd_rrd.
+  passing them to other status-messages, e.g. xymond_rrd.
 * Detect/discard duplicated update-messages and discard them.
 
-hobbitd_history:
+xymond_history:
 * The SAVESTATUSLOG setting can now select which status-logs to
   save as historical logs.
 
-hobbitd_rootlogin.pl:
+xymond_rootlogin.pl:
 * Sample serverside module in Perl.
 
-hobbitd_rrd:
+xymond_rrd:
 * Explicitly update access-times when updating RRD files on Linux,
   since the memory-mapped I/O on this platform does not modify
   timestamps, causing Xymon to consider all graphs stale.
@@ -125,7 +125,7 @@ Top-changing hosts/statuses:
 * Eventlog CGI application can now report the most changing
   hosts/statuses.
 
-hobbit-perfdata CGI:
+perfdata CGI:
 * New "--page=REGEXP" option for selecting which hosts to include.
 
 BBWin client:
@@ -151,7 +151,7 @@ IBM MQ:
 * New collector module and sub-client.
 
 CGI applications:
-* New XYMONCGILOGDIR setting in hobbitserver.cfg sets a
+* New XYMONCGILOGDIR setting in xymonserver.cfg sets a
   directory where CGI debug output is stored.
 
 BEA/NetApp/Database add-on:

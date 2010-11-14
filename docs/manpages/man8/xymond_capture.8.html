@@ -1,34 +1,34 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITD_CAPTURE</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMOND_CAPTURE</TITLE>
 </HEAD><BODY>
-<H1>HOBBITD_CAPTURE</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMOND_CAPTURE</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitd_capture - catch selected messages from a hobbitd channel
+xymond_capture - catch selected messages from a xymond channel
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitd_channel --channel=status hobbitd_capture [options]</B>
+<B>xymond_channel --channel=status xymond_capture [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-hobbitd_capture is a worker module for hobbitd, and as such it is normally
+xymond_capture is a worker module for xymond, and as such it is normally
 run via the
-<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
 
-program. It receives messages from hobbitd via stdin and filters them to
+program. It receives messages from xymond via stdin and filters them to
 select messages based on the hostname, testname or color of the status.
 By default the resulting messages are printed on stdout, but they can also
 be fed into a command for further processing.
 <P>
-hobbitd_capture supports the <B>status</B>, <B>data</B>, <B>client</B> and 
+xymond_capture supports the <B>status</B>, <B>data</B>, <B>client</B> and 
 <B>hostdata</B> channels.
 <P>
 <A NAME="lbAE">&nbsp;</A>
@@ -71,7 +71,7 @@ Enable debugging output.
 <A NAME="lbAF">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/hobbit.7.html">hobbit</A>(7)
+<A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -88,6 +88,6 @@ Enable debugging output.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

@@ -1,12 +1,12 @@
-.TH HOBBIT-ALERTS.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH ALERTS.CFG 5 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbit-alerts.cfg \- Configuration for for hobbitd_alert module
+alerts.cfg \- Configuration for for xymond_alert module
 
 .SH SYNOPSIS
-.B ~xymon/server/etc/hobbit-alerts.cfg
+.B ~xymon/server/etc/alerts.cfg
 
 .SH DESCRIPTION
-The hobbit-alerts.cfg file controls the sending of alerts by Xymon
+The alerts.cfg file controls the sending of alerts by Xymon
 when monitoring detects a failure.
 
 .SH FILE FORMAT
@@ -24,8 +24,8 @@ next line.
 A rule consists of one of more filters using these keywords:
 .sp
 .BR "PAGE=targetstring"
-Rule matching an alert by the name of the page in BB. This is the path of
-the page as defined in the bb-hosts file. E.g. if you have this setup:
+Rule matching an alert by the name of the page in Xymon. This is the path of
+the page as defined in the hosts.cfg file. E.g. if you have this setup:
 .IP
 .nf
 page servers All Servers
@@ -62,17 +62,17 @@ Rule excluding an alert by matching the service name.
 .sp
 .BR "GROUP=groupname"
 Rule matching an alert by the group name. Groupnames are assigned to a status via the GROUP
-setting in the hobbit-clients.cfg file.
+setting in the analysis.cfg file.
 .sp
 .BR "EXGROUP=groupname"
 Rule excluding an alert by the group name. Groupnames are assigned to a status via the GROUP
-setting in the hobbit-clients.cfg file.
+setting in the analysis.cfg file.
 .sp
 .BR "COLOR=color[,color]"
 Rule matching an alert by color. Can be "red", "yellow", or "purple". The forms "!red", "!yellow" and "!purple" can also be used to NOT send an alert if the color is the specified one.
 .sp
 .BR "TIME=timespecification"
-Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file.
+Rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file.
 .sp
 .BR "DURATION>time, DURATION<time"
 Rule matcing an alert if the event has lasted longer/shorter than the given duration. E.g. DURATION>1h (lasted longer than 1 hour) or DURATION<30 (only sends alerts the first 30 minutes). The duration is specified as a number, optionally followed by 'm' (minutes, default), 'h' (hours) or 'd' (days).
@@ -181,10 +181,10 @@ Number of seconds the service has been down.
 When recovered, holds the text "Event duration : N" where N is the DOWNSECS value.
 .sp
 .BR CFID
-Line-number in the hobbit-alerts.cfg file that caused the script to be invoked.
+Line-number in the alerts.cfg file that caused the script to be invoked.
 Can be useful when troubleshooting alert configuration rules.
 
 .SH "SEE ALSO"
-hobbitd_alert(8), hobbitd(8), xymon(7), the "Configuring Xymon Alerts"
+xymond_alert(8), xymond(8), xymon(7), the "Configuring Xymon Alerts"
 guide in the Online documentation.
 

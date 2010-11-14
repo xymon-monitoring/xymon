@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef _HOBBITD_RRD_H__
-#define _HOBBITD_RRD_H__
+#ifndef _XYMOND_RRD_H__
+#define _XYMOND_RRD_H__
 
 extern char **get_rrd_definition(char *key, int *count);
 #endif

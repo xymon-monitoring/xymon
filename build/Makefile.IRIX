@@ -1,4 +1,4 @@
-# bbgen compile-time settings for a IRIX system
+# Xymon compile-time settings for a IRIX system
 #
 
 OSDEF = -DIRIX

@@ -1,40 +1,40 @@
-.TH BBRETEST-NET.SH 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMONNET-AGAIN.SH 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bbretest-net.sh \- Xymon network re-test tool
+xymonnet-again.sh \- Xymon network re-test tool
 .SH SYNOPSIS
-.B "bbretest-net.sh"
+.B "xymonnet-again.sh"
 
 .SH DESCRIPTION
-\fBbbretest-net.sh\fR
+\fBxymonnet-again.sh\fR
 is an extension script for Xymon that runs on the network
 test server.  It picks up the failing network tests executed by the 
-.I bbtest-net(1)
+.I xymonnet(1)
 program, and repeats these tests with a faster test cycle
-than the normal bbtest-net schedule. This means that when
+than the normal xymonnet schedule. This means that when
 the server recovers and the network service becomes available
 again, this is detected quicker resulting in less reported
 downtime.
 
 Only tests whose first failure occurred within 30 minutes
-are included in the tests that are run by bbretest-net.sh.
+are included in the tests that are run by xymonnet-again.sh.
 The 30 minute limit is there to avoid hosts that are down for
-longer periods of time to bog down bbretest-net.sh.  You can change 
+longer periods of time to bog down xymonnet-again.sh.  You can change 
 this limit with the "--frequenttestlimit=SECONDS" when you run
-bbtest-net.
+xyxmonnet.
 
 
 .SH INSTALLATION
 This script runs by default from your
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 file.
 
 
 .SH FILES
-.IP $BBTMP/TESTNAME.LOCATION.status
-Temporary status file managed by bbtest-net with status of tests that have currently failed.
-.IP $BBTMP/frequenttests.LOCATION
-Temporary file managed by bbtest-net with the hostnames that bbretest-net.sh should test.
+.IP $XYMONTMP/TESTNAME.LOCATION.status
+Temporary status file managed by xyxmonnet with status of tests that have currently failed.
+.IP $XYMONTMP/frequenttests.LOCATION
+Temporary file managed by xymonnet with the hostnames that xymonnet-again.sh should test.
 
 .SH "SEE ALSO"
-bbtest-net(1), xymon(7), hobbitlaunch.cfg(5)
+xymonnet(1), xymon(7), tasks.cfg(5)
 

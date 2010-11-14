@@ -16,8 +16,8 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
-#include "hobbitd_buffer.h"
+#include "libxymon.h"
+#include "xymond_buffer.h"
 
 unsigned int shbufsz(enum msgchannels_t chnid)
 {

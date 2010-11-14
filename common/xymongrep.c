@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Xymon bb-hosts file grep'er                                                */
+/* Xymon hosts.cfg file grep'er                                               */
 /*                                                                            */
-/* This tool will pick out the hosts from a bb-hosts file that has one of the */
-/* tags given on the command line. This allows an extension script to deal    */
-/* with only the relevant parts of the bb-hosts file, instead of having to    */
-/* parse the entire file.                                                     */
+/* This tool will pick out the hosts from a hosts.cfg file that has one of    */
+/* the tags given on the command line. This allows an extension script to     */
+/* deal with only the relevant parts of the hosts.cfg file, instead of        */
+/* having to parse the entire file.                                           */
 /*                                                                            */
 /* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static char *connstatus = NULL;
 static char *teststatus = NULL;
@@ -35,18 +35,18 @@ static void load_hoststatus()
 	char msg[1024];
 	sendreturn_t *sres;
 
-	sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", conncolumn);
+	sprintf(msg, "xymondboard fields=hostname,testname,color test=%s", conncolumn);
 	sres = newsendreturnbuf(1, NULL);
-	res = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
-	if (res == BB_OK) connstatus = getsendreturnstr(sres, 1);
+	res = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
+	if (res == XYMONSEND_OK) connstatus = getsendreturnstr(sres, 1);
 
-	if ((res == BB_OK) && testcolumn) {
-		sprintf(msg, "hobbitdboard fields=hostname,testname,color test=%s", testcolumn);
-		res = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
-		if (res == BB_OK) teststatus = getsendreturnstr(sres, 1);
+	if ((res == XYMONSEND_OK) && testcolumn) {
+		sprintf(msg, "xymondboard fields=hostname,testname,color test=%s", testcolumn);
+		res = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
+		if (res == XYMONSEND_OK) teststatus = getsendreturnstr(sres, 1);
 	}
 
-	if (res != BB_OK) {
+	if (res != XYMONSEND_OK) {
 		errprintf("Cannot fetch Xymon status, ignoring --no-down\n");
 		connstatus = NULL;
 		teststatus = NULL;
@@ -106,7 +106,7 @@ static int downok(char *hostname, int nodownhosts)
 int main(int argc, char *argv[])
 { 
 	void *hwalk;
-	char *bbhostsfn = NULL;
+	char *hostsfn = NULL;
 	char *netstring = NULL;
 	char *include2 = NULL;
 	int extras = 1;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 	lookv = (char **)malloc(argc*sizeof(char *));
 	lookc = 0;
 
-	bbhostsfn = xgetenv("BBHOSTS");
+	hostsfn = xgetenv("HOSTSCFG");
 	conncolumn = xgetenv("PINGCOLUMN");
 
 	for (argi=1; (argi < argc); argi++) {
@@ -143,19 +143,19 @@ int main(int argc, char *argv[])
 			if (p) testcolumn = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("bbhostgrep version %s\n", VERSION);
+			printf("xymongrep version %s\n", VERSION);
 			exit(0);
 		}
-		else if (strcmp(argv[argi], "--bbnet") == 0) {
+		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet"))) {
 			include2 = "netinclude";
 			onlypreferredentry = 0;
 		}
-		else if (strcmp(argv[argi], "--bbdisp") == 0) {
+		else if ((strcmp(argv[argi], "--web") == 0) || (strcmp(argv[argi], "--bbdisp") == 0)) {
 			include2 = "dispinclude";
 			onlypreferredentry = 1;
 		}
-		else if (argnmatch(argv[argi], "--bbhosts=")) {
-			bbhostsfn = strchr(argv[argi], '=') + 1;
+		else if (argnmatch(argv[argi], "--hosts=")) {
+			hostsfn = strchr(argv[argi], '=') + 1;
 		}
 		else {
 			lookv[lookc] = strdup(argv[argi]);
@@ -164,14 +164,14 @@ int main(int argc, char *argv[])
 	}
 	lookv[lookc] = NULL;
 
-	if ((bbhostsfn == NULL) || (strlen(bbhostsfn) == 0)) {
-		errprintf("Environment variable BBHOSTS is not set - aborting\n");
+	if ((hostsfn == NULL) || (strlen(hostsfn) == 0)) {
+		errprintf("Environment variable HOSTSCFG is not set - aborting\n");
 		exit(2);
 	}
 
-	load_hostnames(bbhostsfn, include2, get_fqdn());
+	load_hostnames(hostsfn, include2, get_fqdn());
 	if (first_host() == NULL) {
-		errprintf("Cannot load bb-hosts, or file is empty\n");
+		errprintf("Cannot load %s, or file is empty\n", hostsfn);
 		exit(3);
 	}
 
@@ -179,15 +179,16 @@ int main(int argc, char *argv[])
 	if (nodownhosts) load_hoststatus();
 
 	/* Each network test tagged with NET:locationname */
-	p = xgetenv("BBLOCATION");
+	p = xgetenv("XYMONNETWORK");
+	if ((p == NULL) || (strlen(p) == 0)) p = xgetenv("BBLOCATION");
 	if (p && strlen(p)) netstring = strdup(p);
 
 	hwalk = first_host();
 	wantedtags = newstrbuffer(0);
 	while (hwalk) {
 		char hostip[IP_ADDR_STRLEN];
-		char *curnet = bbh_item(hwalk, BBH_NET);
-		char *curname = bbh_item(hwalk, BBH_HOSTNAME);
+		char *curnet = xmh_item(hwalk, XMH_NET);
+		char *curname = xmh_item(hwalk, XMH_HOSTNAME);
 
 		/* 
 		 * Only look at the hosts whose NET: definition matches the wanted one.
@@ -198,7 +199,7 @@ int main(int argc, char *argv[])
 			char *item;
 
 			clearstrbuffer(wantedtags);
-			for (item = bbh_item_walk(hwalk); (item); item = bbh_item_walk(NULL)) {
+			for (item = xmh_item_walk(hwalk); (item); item = xmh_item_walk(NULL)) {
 				int i;
 				char *realitem = item + strspn(item, "!~?");
 
@@ -225,16 +226,16 @@ int main(int argc, char *argv[])
 			}
 
 			if (STRBUF(wantedtags) && (*STRBUF(wantedtags) != '\0') && extras) {
-				if (bbh_item(hwalk, BBH_FLAG_DIALUP)) addtobuffer(wantedtags, " dialup");
-				if (bbh_item(hwalk, BBH_FLAG_TESTIP)) addtobuffer(wantedtags, " testip");
+				if (xmh_item(hwalk, XMH_FLAG_DIALUP)) addtobuffer(wantedtags, " dialup");
+				if (xmh_item(hwalk, XMH_FLAG_TESTIP)) addtobuffer(wantedtags, " testip");
 			}
 
 			if (STRBUF(wantedtags) && *STRBUF(wantedtags)) {
-				printf("%s %s #%s\n", bbh_item(hwalk, BBH_IP), bbh_item(hwalk, BBH_HOSTNAME), STRBUF(wantedtags));
+				printf("%s %s #%s\n", xmh_item(hwalk, XMH_IP), xmh_item(hwalk, XMH_HOSTNAME), STRBUF(wantedtags));
 			}
 		}
 
-		do { hwalk = next_host(hwalk, 1); } while (hwalk && onlypreferredentry && (strcmp(curname, bbh_item(hwalk, BBH_HOSTNAME)) == 0));
+		do { hwalk = next_host(hwalk, 1); } while (hwalk && onlypreferredentry && (strcmp(curname, xmh_item(hwalk, XMH_HOSTNAME)) == 0));
 	}
 
 	return 0;

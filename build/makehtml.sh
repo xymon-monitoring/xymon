@@ -8,10 +8,10 @@ then
 	VERSION="Exp"
 fi
 
-# cd ~/hobbit
+# cd ~/xymon/trunk
 rm -f docs/*~ docs/manpages/index.html* docs/manpages/man1/* docs/manpages/man5/* docs/manpages/man7/* docs/manpages/man8/*
 
-for DIR in bbdisplay bbnet bbproxy common hobbitd web
+for DIR in xymongen xymonnet xymonproxy common xymond web
 do
 	for SECT in 1 5 7 8
 	do
@@ -29,5 +29,5 @@ do
 done
 
 # Sourceforge update
-# cd ~/hobbit/docs && rsync -av --rsh=ssh --exclude=RCS ./ storner@shell.sourceforge.net:/home/groups/h/ho/hobbitmon/htdocs/docs/
+# cd ~/xymon/trunk/docs && rsync -av --rsh=ssh --exclude=RCS ./ storner@shell.sourceforge.net:/home/groups/x/xy/xymon/htdocs/docs/
 

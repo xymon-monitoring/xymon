@@ -28,13 +28,13 @@ case "$1" in
 
 	cd /var/lib/xymon; chown xymon:xymon . acks data disabled hist histlogs hostdata logs rrd tmp www
 	cd /var/lib/xymon/www; chown xymon:xymon html notes wml rep snap; chgrp www-data rep snap; chmod g+w rep snap
-	cd /etc/xymon; chgrp www-data hobbit-nkview.cfg hobbit-nkview.cfg.bak; chmod g+w hobbit-nkview.cfg hobbit-nkview.cfg.bak
+	cd /etc/xymon; chgrp www-data critical.cfg critical.cfg.bak; chmod g+w critical.cfg critical.cfg.bak
 
-	if ! test -e /etc/xymon/bb-hosts ; then
+	if ! test -e /etc/xymon/hosts.cfg ; then
 		if test -e /etc/default/xymon-client ; then
 			. /etc/default/xymon-client || true
 		fi
-		cat > /etc/xymon/bb-hosts <<EOF
+		cat > /etc/xymon/hosts.cfg <<EOF
 # Master configuration file for Xymon
 #
 # This file defines several things:
@@ -43,7 +43,7 @@ case "$1" in
 # 2) By adding "page", "subpage", "group" definitions, you define the layout
 #    of the Xymon webpages, and how hosts are divided among the various webpages 
 #    that Xymon generates.
-# 3) Several other definitions can be done for each host, see the bb-hosts(5)
+# 3) Several other definitions can be done for each host, see the hosts.cfg(5)
 #    man-page.
 #
 # You need to define at least the Xymon server itself here.

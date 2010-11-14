@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is the main alert module for hobbitd. It receives alert messages,     */
+/* This is the main alert module for xymond. It receives alert messages,      */
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
 /* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
@@ -52,9 +52,9 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 #include "do_alert.h"
 
 
@@ -271,9 +271,9 @@ void load_checkpoint(char *filename)
 	fd = fopen(filename, "r");
 	if (fd == NULL) return;
 
-	sprintf(statuscmd, "hobbitdboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
+	sprintf(statuscmd, "xymondboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
 	sres = newsendreturnbuf(1, NULL);
-	sendmessage(statuscmd, NULL, BBTALK_TIMEOUT, sres);
+	sendmessage(statuscmd, NULL, XYMON_TIMEOUT, sres);
 	statusbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 
@@ -441,19 +441,19 @@ int main(int argc, char *argv[])
 			}
 
 			if ((testhost == NULL) || (testservice == NULL)) {
-				printf("Usage: hobbitd_alert --test HOST SERVICE [options]\n");
+				printf("Usage: xymond_alert --test HOST SERVICE [options]\n");
 				printf("Possible options:\n\t[--duration=SECONDS]\n\t[--color=COLOR]\n\t[--group=GROUPNAME]\n\t[--time=TIMESPEC]\n");
 
 				return 1;
 			}
 
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			hinfo = hostinfo(testhost);
 			if (hinfo) {
-				testpage = strdup(bbh_item(hinfo, BBH_ALLPAGEPATHS));
+				testpage = strdup(xmh_item(hinfo, XMH_ALLPAGEPATHS));
 			}
 			else {
-				errprintf("Host not found in bb-hosts - assuming it is on the top page\n");
+				errprintf("Host not found in hosts.cfg - assuming it is on the top page\n");
 				testpage = "";
 			}
 
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
 		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
-	setup_signalhandler("hobbitd_alert");
+	setup_signalhandler("xymond_alert");
 	/* Need to handle these ourselves, so we can shutdown and save state-info */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
@@ -510,10 +510,10 @@ int main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
 
-	if (xgetenv("BBSERVERLOGS")) {
-		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
+	if (xgetenv("XYMONSERVERLOGS")) {
+		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 		acklogfd = fopen(acklogfn, "a");
-		sprintf(notiflogfn, "%s/notifications.log", xgetenv("BBSERVERLOGS"));
+		sprintf(notiflogfn, "%s/notifications.log", xgetenv("XYMONSERVERLOGS"));
 		notiflogfd = fopen(notiflogfn, "a");
 	}
 
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
 		}
 
 		timeout.tv_sec = 60; timeout.tv_nsec = 0;
-		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout);
+		msg = get_xymond_message(C_PAGE, "xymond_alert", &seq, &timeout);
 		if (msg == NULL) {
 			running = 0;
 			continue;
@@ -797,7 +797,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

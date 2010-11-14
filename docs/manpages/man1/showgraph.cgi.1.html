@@ -1,28 +1,28 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITGRAPH.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of SHOWGRAPH.CGI</TITLE>
 </HEAD><BODY>
-<H1>HOBBITGRAPH.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>SHOWGRAPH.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitgraph.cgi - CGI to generate Xymon trend graphs
+showgraph.cgi - CGI to generate Xymon trend graphs
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitgraph [options]</B>
+<B>showgraph [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>hobbitgraph.cgi</B>
-is invoked as a CGI script via the hobbitgraph.sh CGI wrapper.
+<B>showgraph.cgi</B>
+is invoked as a CGI script via the showgraph.sh CGI wrapper.
 <P>
-hobbitgraph.cgi is passed a QUERY_STRING environment variable with the
+showgraph.cgi is passed a QUERY_STRING environment variable with the
 following parameters:
 <P>
 <B>host</B>
@@ -44,7 +44,7 @@ that the graph covers.
 <P>
 <B>first</B>
 
-Used to split multi-graphs into multiple graphs. This causes hobbitgraph.cgi
+Used to split multi-graphs into multiple graphs. This causes showgraph.cgi
 to generate only the graphs starting with the &quot;first'th&quot; graph and continuing
 for &quot;count&quot;.
 <P>
@@ -84,13 +84,13 @@ any graphs, only the HTML that links to the graphs.
 
 Generate an HTML page with link to single graph, and with JavaScript code 
 that lets the user select part of the graph for a zoom-operation. The 
-JavaScript invokes hobbitgraph.cgi with &quot;action=showzoom&quot; to generate the
+JavaScript invokes showgraph.cgi with &quot;action=showzoom&quot; to generate the
 zoomed graph webpage.
 <P>
 <B>action=showzoom</B>
 
 Generate HTML with a link to the zoomed graph image. This link goes to
-an &quot;action=view&quot; invocation of hobbitgraph.cgi.
+an &quot;action=view&quot; invocation of showgraph.cgi.
 <P>
 <B>action=view</B>
 
@@ -102,8 +102,8 @@ Generate a single graph image.
 <DL COMPACT>
 <DT>--config=FILENAME<DD>
 Loads the graph configuration file from FILENAME. If not specified,
-the file $BBHOME/etc/hobbitgraph.cfg is used. See the
-<I><A HREF="../man5/hobbitgraph.cfg.5.html">hobbitgraph.cfg</A>(5)</I>
+the file $BBHOME/etc/graphs.cfg is used. See the
+<I><A HREF="../man5/graphs.cfg.5.html">graphs.cfg</A>(5)</I>
 
 for details about this file.
 <P>
@@ -136,7 +136,7 @@ to generate.
 <H2>FILES</H2>
 
 <P>
-<B>hobbitgraph.cfg:</B>
+<B>graphs.cfg:</B>
 
 The configuration file determining how graphs are generated from
 RRD files.
@@ -144,7 +144,7 @@ RRD files.
 <A NAME="lbAH">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/hobbitgraph.cfg.5.html">hobbitgraph.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man1/rrdtool.1.html">rrdtool</A>(1)
+<A HREF="../man5/graphs.cfg.5.html">graphs.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man1/rrdtool.1.html">rrdtool</A>(1)
 <P>
 <P>
 
@@ -163,6 +163,6 @@ RRD files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

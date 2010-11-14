@@ -37,22 +37,22 @@ load, filesystem utilisation, processes that must be running etc.
 rm -rf $RPM_BUILD_ROOT
 
 %setup
-	USEHOBBITPING=y \
+	USEXYMONPING=y \
         ENABLESSL=y \
         ENABLELDAP=y \
         ENABLELDAPSSL=y \
-        BBUSER=xymon \
-        BBTOPDIR=/usr/lib/xymon \
-        BBVAR=/var/lib/xymon \
-        BBHOSTURL=/xymon \
+        XYMONUSER=xymon \
+        XYMONTOPDIR=/usr/lib/xymon \
+        XYMONVAR=/var/lib/xymon \
+        XYMONHOSTURL=/xymon \
         CGIDIR=/usr/lib/xymon/cgi-bin \
-        BBCGIURL=/xymon-cgi \
+        XYMONCGIURL=/xymon-cgi \
         SECURECGIDIR=/usr/lib/xymon/cgi-secure \
-        SECUREBBCGIURL=/xymon-seccgi \
+        SECUREXYMONCGIURL=/xymon-seccgi \
         HTTPDGID=apache \
-        BBLOGDIR=/var/log/xymon \
-        BBHOSTNAME=localhost \
-        BBHOSTIP=127.0.0.1 \
+        XYMONLOGDIR=/var/log/xymon \
+        XYMONHOSTNAME=localhost \
+        XYMONHOSTIP=127.0.0.1 \
         MANROOT=/usr/share/man \
         INSTALLBINDIR=/usr/lib/xymon/server/bin \
         INSTALLETCDIR=/etc/xymon \
@@ -75,16 +75,16 @@ rm -rf $RPM_BUILD_ROOT
 	mkdir -p $RPM_BUILD_ROOT/etc/default
 	cp %{SOURCE4} $RPM_BUILD_ROOT/etc/default/xymon-client
 	mkdir -p $RPM_BUILD_ROOT/usr/bin
-	cd $RPM_BUILD_ROOT/usr/bin && ln -sf ../lib/xymon/server/bin/{bb,bbcmd} .
+	cd $RPM_BUILD_ROOT/usr/bin && ln -sf ../lib/xymon/server/bin/{xymon,xymoncmd} .
 	mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 	mv $RPM_BUILD_ROOT/etc/xymon/xymon-apache.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/
 	rmdir $RPM_BUILD_ROOT/usr/lib/xymon/client/tmp
 	cd $RPM_BUILD_ROOT/usr/lib/xymon/client && ln -sf /tmp tmp
 	rmdir $RPM_BUILD_ROOT/usr/lib/xymon/client/logs
 	cd $RPM_BUILD_ROOT/usr/lib/xymon/client && ln -sf ../../../../var/log/xymon logs
-	mv $RPM_BUILD_ROOT/usr/lib/xymon/client/etc/hobbitclient.cfg /tmp/hobbitclient.cfg.$$
-	cat /tmp/hobbitclient.cfg.$$ | sed -e 's!^BBDISP=.*!include /var/run/hobbitclient-runtime.cfg!' | grep -v "^BBDISPLAYS=" >$RPM_BUILD_ROOT/usr/lib/xymon/client/etc/hobbitclient.cfg
-	rm /tmp/hobbitclient.cfg.$$
+	mv $RPM_BUILD_ROOT/usr/lib/xymon/client/etc/xymonclient.cfg /tmp/xymonclient.cfg.$$
+	cat /tmp/xymonclient.cfg.$$ | sed -e 's!^XYMSRV=.*!include /var/run/xymonclient-runtime.cfg!' | grep -v "^XYMSERVERS=" >$RPM_BUILD_ROOT/usr/lib/xymon/client/etc/xymonclient.cfg
+	rm /tmp/xymonclient.cfg.$$
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -97,7 +97,7 @@ then
    groupadd xymon || true
    useradd -g xymon -c "Xymon user" -d /usr/lib/xymon xymon
 fi
-if [ -e /var/log/xymon/hobbitlaunch.pid -a -x /etc/init.d/xymon ]
+if [ -e /var/log/xymon/xymonlaunch.pid -a -x /etc/init.d/xymon ]
 then
 	/etc/init.d/xymon stop || true
 fi
@@ -123,7 +123,7 @@ chkconfig --add xymon-client
 
 
 %preun
-if [ -e /var/log/xymon/hobbitlaunch.pid -a -x /etc/init.d/xymon ]
+if [ -e /var/log/xymon/xymonlaunch.pid -a -x /etc/init.d/xymon ]
 then
 	/etc/init.d/xymon stop || true
 fi
@@ -155,9 +155,9 @@ chkconfig --del xymon-client
 %attr(775, xymon, apache) %dir /var/lib/xymon/www/snap
 %attr(644, root, root) %config /var/lib/xymon/www/menu/xymonmenu.css
 %attr(755, xymon, xymon) %dir /usr/lib/xymon/client/ext
-%attr(664, xymon, apache) %config /etc/xymon/hobbit-nkview.cfg
-%attr(664, xymon, apache) %config /etc/xymon/hobbit-nkview.cfg.bak
-%attr(4750, root, xymon) /usr/lib/xymon/server/bin/hobbitping
+%attr(664, xymon, apache) %config /etc/xymon/critical.cfg
+%attr(664, xymon, apache) %config /etc/xymon/critical.cfg.bak
+%attr(4750, root, xymon) /usr/lib/xymon/server/bin/xymonping
 %attr(750, root, xymon) /usr/lib/xymon/client/bin/logfetch
 %attr(750, root, xymon) /usr/lib/xymon/client/bin/clientupdate
 

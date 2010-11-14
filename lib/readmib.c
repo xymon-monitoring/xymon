@@ -13,7 +13,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static RbtHandle mibdefs;				/* Holds the list of MIB definitions */
 static RbtIterator nexthandle;
@@ -87,8 +87,8 @@ int readmibs(char *cfgfn, int verbose)
 	if (fn) xfree(fn);
 	fn = cfgfn;
 	if (!fn) {
-		fn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/hobbit-snmpmibs.cfg") + 1);
-		sprintf(fn, "%s/etc/hobbit-snmpmibs.cfg", xgetenv("BBHOME"));
+		fn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/etc/snmpmibs.cfg") + 1);
+		sprintf(fn, "%s/etc/snmpmibs.cfg", xgetenv("XYMONHOME"));
 	}
 
 	cfgfd = stackfopen(fn, "r", &cfgfiles);

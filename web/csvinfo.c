@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define MAXCOLUMNS 80
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-csvinfo");
+	redirect_cgilog("csvinfo");
 
 	cgidata = cgi_request();
 	parse_query();
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	sprintf(dbfn, "%s/etc/%s", xgetenv("BBHOME"), srcdb);
+	sprintf(dbfn, "%s/etc/%s", xgetenv("XYMONHOME"), srcdb);
 	db = fopen(dbfn, "r");
 	if (db == NULL) {
 		char msg[PATH_MAX];

@@ -1,52 +1,52 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BBHOSTGREP</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONGREP</TITLE>
 </HEAD><BODY>
-<H1>BBHOSTGREP</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMONGREP</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bbhostgrep - pick out lines in bb-hosts
+xymongrep - pick out lines in hosts.cfg
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bbhostgrep --help</B>
+<B>xymongrep --help</B>
 
 <BR>
 
-<B>bbhostgrep --version</B>
+<B>xymongrep --version</B>
 
 <BR>
 
-<B>bbhostgrep [--noextras] [--test-untagged] [--bbdisp] [--bbnet] TAG [TAG...]</B>
+<B>xymongrep [--noextras] [--test-untagged] [--bbdisp] [--net] TAG [TAG...]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man1/bbhostgrep.1.html">bbhostgrep</A>(1)</I>
+<I><A HREF="../man1/xymongrep.1.html">xymongrep</A>(1)</I>
 
 is for use by extension scripts that need to pick out the entries 
-in a bb-hosts file that are relevant to the script.
+in a hosts.cfg file that are relevant to the script.
 <P>
 The utility accepts test names as parameters, and will then
-parse the bb-hosts file and print out the host entries that
+parse the hosts.cfg file and print out the host entries that
 have at least one of the wanted tests specified. Tags may be
-given with a trailing asterisk '*', e.g. &quot;bbhostgrep http*&quot;
+given with a trailing asterisk '*', e.g. &quot;xymongrep http*&quot;
 is needed to find all http and https tags.
 <P>
-The bbhostgrep utility supports the use of &quot;include&quot; directives
-inside the bb-hosts file, and will find matching tags in all
+The xymongrep utility supports the use of &quot;include&quot; directives
+inside the hosts.cfg file, and will find matching tags in all
 included files.
 <P>
 If the DOWNTIME or SLA tags are used in the
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file, these are interpreted relative to the current time. 
-bbhostgrep then outputs a &quot;INSIDESLA&quot; or &quot;OUTSIDESLA&quot; tag
+xymongrep then outputs a &quot;INSIDESLA&quot; or &quot;OUTSIDESLA&quot; tag
 for easier use by scripts that want to check if the current
 time is inside or outside the expected uptime window.
 <P>
@@ -60,7 +60,7 @@ from the output.
 <P>
 <DT>--test-untagged<DD>
 When using the BBLOCATION environment variable to test
-only hosts on a particular network segment, bbtest-net
+only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any &quot;NET:x&quot; tag.
 So only hosts that have a NET:$BBLOCATION tag will be
 tested.
@@ -71,7 +71,7 @@ in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 <P>
 <DT>--no-down[=TESTNAME]<DD>
-bbhostgrep will query the Xymon server for the current
+xymongrep will query the Xymon server for the current
 status of the &quot;conn&quot; test, and if TESTNAME is specified
 also for the current state of the specified test. If
 the status of the &quot;conn&quot; test for a host is non-green,
@@ -81,25 +81,25 @@ This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
 <P>
 <DT>--bbdisp<DD>
-Search the bb-hosts file following include statements as a
-BBDISPLAY server would.
+Search the hosts.cfg file following include statements as a
+Xymon server would.
 <P>
-<DT>--bbnet<DD>
-Search the bb-hosts file following include statements as a
-BBNET server would.
+<DT>--net<DD>
+Search the hosts.cfg file following include statements as 
+when running xymonnet.
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
 <H2>EXAMPLE</H2>
 
-If your bb-hosts file looks like this
+If your hosts.cfg file looks like this
 <P>
 <BR>&nbsp;&nbsp;&nbsp;192.168.1.1&nbsp;&nbsp;&nbsp;<A HREF="http://www.test.com">www.test.com</A>&nbsp;&nbsp;#&nbsp;ftp&nbsp;telnet&nbsp;!oracle
 <BR>&nbsp;&nbsp;&nbsp;192.168.1.2&nbsp;&nbsp;&nbsp;db1.test.com&nbsp;&nbsp;#&nbsp;oracle
 <BR>&nbsp;&nbsp;&nbsp;192.168.1.3&nbsp;&nbsp;&nbsp;mail.test.com&nbsp;#&nbsp;smtp
 <P>
 and you have a custom Xymon extension script that performs the
-&quot;oracle&quot; test, then running &quot;bbhostgrep oracle&quot; would yield
+&quot;oracle&quot; test, then running &quot;xymongrep oracle&quot; would yield
 <P>
 <BR>&nbsp;&nbsp;&nbsp;192.168.1.1&nbsp;&nbsp;&nbsp;<A HREF="http://www.test.com">www.test.com</A>&nbsp;&nbsp;#&nbsp;!oracle
 <BR>&nbsp;&nbsp;&nbsp;192.168.1.2&nbsp;&nbsp;&nbsp;db1.test.com&nbsp;&nbsp;#&nbsp;oracle
@@ -108,28 +108,28 @@ so the script can quickly find the hosts that are of interest.
 <P>
 Note that the reverse-test modifier - &quot;!oracle&quot; - is included
 in the output; this also applies to the other test modifiers
-defined by Xymon (the dialup and always-true modifiers).
+defined by Xymon (the dial-up and always-true modifiers).
 <P>
 If your extension scripts use more than one tag, just list
 all of the interesting tags on the command line.
 <P>
-bbhostgrep also supports the &quot;NET:location&quot; tag used by 
-bbtest-net, so if your script performs network checks then 
+xymongrep also supports the &quot;NET:location&quot; tag used by 
+xymonnet, so if your script performs network checks then 
 it will see only the hosts that are relevant for the test
 location that the script currently executes on.
 <P>
 <A NAME="lbAG">&nbsp;</A>
 <H2>USE IN EXTENSION SCRIPTS</H2>
 
-To integrate bbhostgrep into an existing script, look for
-the line in the script that grep's in the $BBHOSTS file. 
+To integrate xymongrep into an existing script, look for
+the line in the script that grep's in the $HOSTSCFG file. 
 Typically it will look somewhat like this:
 <P>
-<BR>&nbsp;&nbsp;&nbsp;$GREP&nbsp;-i&nbsp;&quot;^[0-9].*#.*TESTNAME&quot;&nbsp;$BBHOSTS&nbsp;|&nbsp;...&nbsp;code&nbsp;to&nbsp;handle&nbsp;test
+<BR>&nbsp;&nbsp;&nbsp;$GREP&nbsp;-i&nbsp;&quot;^[0-9].*#.*TESTNAME&quot;&nbsp;$HOSTSCFG&nbsp;|&nbsp;...&nbsp;code&nbsp;to&nbsp;handle&nbsp;test
 <P>
-Instead of the grep, we will use bbhostgrep. It then becomes
+Instead of the grep, we will use xymongrep. It then becomes
 <P>
-<BR>&nbsp;&nbsp;&nbsp;$BBHOME/bin/bbhostgrep&nbsp;TESTNAME&nbsp;|&nbsp;...&nbsp;code&nbsp;to&nbsp;handle&nbsp;test
+<BR>&nbsp;&nbsp;&nbsp;$BBHOME/bin/xymongrep&nbsp;TESTNAME&nbsp;|&nbsp;...&nbsp;code&nbsp;to&nbsp;handle&nbsp;test
 <P>
 which is simpler, less error-prone and more efficient.
 <P>
@@ -138,12 +138,12 @@ which is simpler, less error-prone and more efficient.
 
 <DL COMPACT>
 <DT>BBLOCATION<DD>
-If set, bbhostgrep outputs only lines from bb-hosts that have
+If set, xymongrep outputs only lines from hosts.cfg that have
 a matching NET:$BBLOCATION setting.
 <P>
-<DT>BBHOSTS<DD>
+<DT>HOSTSCFG<DD>
 Filename for the Xymon
-<I><A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5)</I>
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
 
 file.
 <P>
@@ -152,14 +152,14 @@ file.
 <H2>FILES</H2>
 
 <DL COMPACT>
-<DT>$BBHOSTS<DD>
-The Xymon bb-hosts file
+<DT>$HOSTSCFG<DD>
+The Xymon hosts.cfg file
 <P>
 </DL>
 <A NAME="lbAJ">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
 <P>
 
 <HR>
@@ -179,6 +179,6 @@ The Xymon bb-hosts file
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

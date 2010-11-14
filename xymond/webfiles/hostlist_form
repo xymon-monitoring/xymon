@@ -3,7 +3,7 @@
 <form name="listparams" method="post" action="&SCRIPT_NAME">
 <input name=csvdelim type=hidden value=";">
 
-<tr><th valign=top align=left>Page</td><td><input type=text name=page size=50 maxlength=80 value="&BBPAGEPATH"></td></tr>
+<tr><th valign=top align=left>Page</td><td><input type=text name=page size=50 maxlength=80 value="&XYMWEBPAGEPATH"></td></tr>
 <tr><td colspan=2><hr></td></tr>
 <tr><th valign=top align=left>Select</td>
     <td>
@@ -29,14 +29,14 @@
 <tr><th valign=top align=left>Include</td>
     <td>
         <table>
-	   <tr><td><input name="BBH_PAGEPATH" type=checkbox></td><td>Page path</td></tr>
-	   <tr><td><input name="BBH_COMMENT" type=checkbox></td><td>Comment</td></tr>
-	   <tr><td><input name="BBH_DOWNTIME" type=checkbox></td><td>Downtime</td></tr>
-	   <tr><td><input name="BBH_NK" type=checkbox></td><td>NK columns</td></tr>
-	   <tr><td><input name="BBH_NKTIME" type=checkbox></td><td>NK time</td></tr>
-	   <tr><td><input name="BBH_REPORTTIME" type=checkbox></td><td>SLA period</td></tr>
-	   <tr><td><input name="BBH_WARNPCT" type=checkbox></td><td>SLA level</td></tr>
-	   <tr><td><input name="BBH_NET" type=checkbox></td><td>Network</td></tr>
+	   <tr><td><input name="XMH_PAGEPATH" type=checkbox></td><td>Page path</td></tr>
+	   <tr><td><input name="XMH_COMMENT" type=checkbox></td><td>Comment</td></tr>
+	   <tr><td><input name="XMH_DOWNTIME" type=checkbox></td><td>Downtime</td></tr>
+	   <tr><td><input name="XMH_NK" type=checkbox></td><td>NK columns</td></tr>
+	   <tr><td><input name="XMH_NKTIME" type=checkbox></td><td>NK time</td></tr>
+	   <tr><td><input name="XMH_REPORTTIME" type=checkbox></td><td>SLA period</td></tr>
+	   <tr><td><input name="XMH_WARNPCT" type=checkbox></td><td>SLA level</td></tr>
+	   <tr><td><input name="XMH_NET" type=checkbox></td><td>Network</td></tr>
 	</table>
     </td>
 </tr>

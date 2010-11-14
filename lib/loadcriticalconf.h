@@ -2,7 +2,7 @@
 /* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is a library module for Xymon, responsible for loading the            */
-/* hobbit-nkview.cfg file.                                                    */
+/* critical.cfg file.                                                         */
 /*                                                                            */
 /* Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
@@ -11,35 +11,35 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __LOADNKCONF_H__
-#define __LOADNKCONF_H__
+#ifndef __LOADCRITICALCONF_H__
+#define __LOADCRITICALCONF_H__
 
 #include <time.h>
 
-typedef struct nkconf_t {
+typedef struct critconf_t {
 	char *key;
 	int priority;
 	time_t starttime, endtime;
-	char *nktime;
+	char *crittime;
 	char *ttgroup;
 	char *ttextra;
 	char *updinfo;
-} nkconf_t;
+} critconf_t;
 
-#define NKCONF_TIMEFILTER 1
-#define NKCONF_FIRSTMATCH 2
-#define NKCONF_FIRST      3
-#define NKCONF_NEXT       4
-#define NKCONF_RAW_FIRST  5
-#define NKCONF_RAW_NEXT   6
-#define NKCONF_FIRSTHOSTMATCH 7
+#define CRITCONF_TIMEFILTER 1
+#define CRITCONF_FIRSTMATCH 2
+#define CRITCONF_FIRST      3
+#define CRITCONF_NEXT       4
+#define CRITCONF_RAW_FIRST  5
+#define CRITCONF_RAW_NEXT   6
+#define CRITCONF_FIRSTHOSTMATCH 7
 
-extern int load_nkconfig(char *fn);
-extern nkconf_t *get_nkconfig(char *key, int flags, char **resultkey);
-extern int update_nkconfig(nkconf_t *rec);
-extern void addclone_nkconfig(char *origin, char *newclone);
-extern void dropclone_nkconfig(char *drop);
-extern int delete_nkconfig(char *dropkey, int evenifcloned);
+extern int load_critconfig(char *fn);
+extern critconf_t *get_critconfig(char *key, int flags, char **resultkey);
+extern int update_critconfig(critconf_t *rec);
+extern void addclone_critconfig(char *origin, char *newclone);
+extern void dropclone_critconfig(char *drop);
+extern int delete_critconfig(char *dropkey, int evenifcloned);
 
 #endif
 

@@ -8,13 +8,13 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __HOBBITSVC_INFO_H__
-#define __HOBBITSVC_INFO_H__
+#ifndef __SVCSTATUS_INFO_H__
+#define __SVCSTATUS_INFO_H__
 
 extern int showenadis;
 extern int usejsvalidation;
-extern int newnkconfig;
+extern int newcritconfig;
 
-extern char *generate_info(char *hostname, char *nkconfigfn);
+extern char *generate_info(char *hostname, char *critconfigfn);
 
 #endif

@@ -114,7 +114,7 @@ in Xymon, I strongly recommend that you create a dedicated userid for the Xymon
 programs. This user should <em>not</em> be a member of any other groups on your
 system.</p>
 
-<p>Xymon will install the <u>hobbitping</u> tool as <b>setuid-root</b>(only on
+<p>Xymon will install the <u>xymonping</u> tool as <b>setuid-root</b>(only on
 the Xymon server). This program requires root privileges to be able to perform
 network &quot;ping&quot; tests. It will drop root privileges immediately after 
 obtaining the network socket needed for this, and will not run with root
@@ -163,7 +163,7 @@ directory (recommended for better security), you will also need to setup the
 password-file that controls access to this directory. Use the <tt>htpasswd</tt>
 command both to create the password file and to add or delete users:<br>
 <pre><tt>
-	# /usr/sbin/htpasswd -c /usr/local/xymon/server/etc/hobbitpasswd admin
+	# /usr/sbin/htpasswd -c /usr/local/xymon/server/etc/xymonpasswd admin
 	New password:
 	Re-type new password:
 	Adding password for user admin
@@ -176,26 +176,26 @@ file. See the Apache documentation for details about how to use htpasswd.</p>
 <p>You can now login as the "xymon" user, and run the command <tt>./server/xymon.sh start</tt>
 to start Xymon. After a few seconds, it should have started and you now have the following
 processes running: <br><img src="xymonprocs.png" alt="Xymon processes"></p>
-<p>Quite a few, but all of them controlled by the master <tt>hobbitlaunch</tt> process.
+<p>Quite a few, but all of them controlled by the master <tt>xymonlaunch</tt> process.
 A quick run-down of what each of them does:</p>
 <ul>
-	<li><tt>hobbitd</tt> is the network daemon that receives status updates from
+	<li><tt>xymond</tt> is the network daemon that receives status updates from
 	the clients and the network test tool. It also provides the current status of
 	all your systems to the tool that generates the webpages.</li>
-	<li><tt>hobbitd_channel</tt> provides the communication between hobbitd and 
+	<li><tt>xymond_channel</tt> provides the communication between xymond and 
 	all of the helper modules that implement other server-based functions.</li>
-	<li><tt>hobbitd_history</tt> takes care of recording the history of status
+	<li><tt>xymond_history</tt> takes care of recording the history of status
 	changes for each item you monitor. This is used to track what has happened
 	with a single status over time - when it was red, when it was green, what the
 	error reported at 2:51 AM last Friday looked like. The history file format is
 	compatible with the format used by the Big Brother package.</li>
-	<li><tt>hobbitd_filestore</tt> stores files with information about the current
+	<li><tt>xymond_filestore</tt> stores files with information about the current
 	status of the systems monitored by Xymon. There may be several of these
 	running, but normally you will only need the one that stores information about
 	hosts that have been disabled, which is the one you see here.</li>
-	<li><tt>hobbitd_alert</tt> takes care of sending out alerts when your servers
+	<li><tt>xymond_alert</tt> takes care of sending out alerts when your servers
 	begin to report a critical status.</li>
-	<li><tt>hobbitd_rrd</tt> updates the RRD database files with the numeric data
+	<li><tt>xymond_rrd</tt> updates the RRD database files with the numeric data
 	collected from the status reports, to track e.g. how the disk utilization of
 	a server changes over time. There are two of these processes, because the
 	data can arrive in two different ways.</li>
@@ -207,17 +207,17 @@ should see something like this:<br><img src="xymonmain.png" alt="Xymon main wind
 you see the default set of items that the Xymon installation sets up for a Xymon server:</p>
 <ul>
 	<li><em>bbd</em> is the availability of the Xymon network daemon.</li>
-	<li><em>bbgen</em> is the status of the bbgen tool, which updates the webpages.</li>
-	<li><em>bbtest</em> is the status of the bbtest-net network tester that performs
-	all of the network tests you configure in Xymon.</li>
 	<li><em>conn</em> is a simple &quot;ping&quot; test of the host.</li>
-	<li><em>hobbitd</em> is the status of the Xymon daemon, with statistics about
-	how many monitored items are being tracked.</li>
 	<li><em>http</em> is the status of the HTTP-server running on the Xymon server.</li>
 	<li><em>info</em> contains information about how the host is configured in Xymon,
 	such as what IP-address it has, what network tests are being run against this
 	host etc.</li>
 	<li><em>trends</em> is a collection of the various RRD graphs available for this host.</li>
+	<li><em>xymond</em> is the status of the Xymon daemon, with statistics about
+	how many monitored items are being tracked.</li>
+	<li><em>xymongen</em> is the status of the xymongen tool, which updates the webpages.</li>
+	<li><em>xymonnet</em> is the status of the xymonnet network tester that performs
+	all of the network tests you configure in Xymon.</li>
 </ul>
 <p>You can click on each of the green icons to see a more detailed status.</p>
 

@@ -5,7 +5,7 @@
 #*                                                                            */
 #* This perl program shows how to create a server-side module using the       */
 #* data sent by the Xymon clients. This program is fed data from the          */
-#* Xymon "client" channel via the hobbitd_channel program; each client        */
+#* Xymon "client" channel via the xymond_channel program; each client         */
 #* message is processed by looking at the [who] section and generates         */
 #* a "login" status that goes red when an active "root" login is found.       */
 #*                                                                            */
@@ -16,12 +16,12 @@
 #*                                                                            */
 #*----------------------------------------------------------------------------*/
 
-# $Id: hobbitd_rootlogin.pl 5819 2008-09-30 16:37:31Z storner $
+# $Id: xymond_rootlogin.pl 5819 2008-09-30 16:37:31Z storner $
 
 
-my $bb;
-my $bbdisp;
-my $hobbitcolumn = "login";
+my $xymon;
+my $xymsrv;
+my $statuscolumn = "login";
 
 my $hostname = "";
 my $msgtxt = "";
@@ -31,9 +31,9 @@ my $cursection = "";
 sub processmessage;
 
 
-# Get the BB and BBDISP environment settings.
-$bb = $ENV{"BB"} || die "BB not defined";
-$bbdisp = $ENV{"BBDISP"} || die "BBDISP not defined";
+# Get the XYMON and XYMSRV environment settings.
+$xymon = $ENV{"XYMON"} || die "XYMON not defined";
+$xymsrv = $ENV{"XYMSRV"} || die "XYMSRV not defined";
 
 
 # Main routine. 
@@ -106,7 +106,7 @@ sub processmessage {
 	}
 
 	# Build the command we use to send a status to the Xymon daemon
-	$cmd = $bb . " " . $bbdisp . " \"status " . $hostname . "." . $hobbitcolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
+	$cmd = $xymon . " " . $xymsrv . " \"status " . $hostname . "." . $statuscolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
 
 	# And send the message
 	system $cmd;

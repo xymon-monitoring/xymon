@@ -1,20 +1,20 @@
-.TH HOBBIT-ENADIS.CGI 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH ENADIS.CGI 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbit-enadis.cgi \- CGI program to enable/disable Xymon tests
+enadis.cgi \- CGI program to enable/disable Xymon tests
 .SH SYNOPSIS
-.B "hobbit-enadis.cgi (invoked via CGI from webserver)"
+.B "enadis.cgi (invoked via CGI from webserver)"
 
 .SH DESCRIPTION
-\fBhobbit-enadis.cgi\fR is a CGI tool for disabling and enabling
+\fBenadis.cgi\fR is a CGI tool for disabling and enabling
 hosts and tests monitored by Xymon. You can disable monitoring of
 a single test, all tests for a host, or multiple hosts - immediately
 or at a future point in time.
 
-hobbit-enadis.cgi runs as a CGI program, invoked by your webserver.
+enadis.cgi runs as a CGI program, invoked by your webserver.
 It is normally run via a wrapper shell-script in the secured CGI 
 directory for Xymon.
 
-hobbit-enadis.cgi is the back-end script for the enable/disable
+enadis.cgi is the back-end script for the enable/disable
 form present on the "info" status-pages. It can also run in
 "stand-alone" mode, in which case it displays a web form allowing
 users to select what to enable or disable.
@@ -22,11 +22,11 @@ users to select what to enable or disable.
 
 .SH OPTIONS
 .IP "--no-cookies"
-Normally, hobbit-enadis.cgi uses a cookie sent by the browser to initially 
+Normally, enadis.cgi uses a cookie sent by the browser to initially 
 filter the list of hosts presented. If this is not desired, you can
-turn off this behaviour by calling bb-ack.cgi with the --no-cookies
+turn off this behaviour by calling acknowledge.cgi with the --no-cookies
 option. This would normally be placed in the CGI_ENADIS_OPTS setting in
-.I hobbitcgi.cfg(5)
+.I cgioptions.cfg(5)
 
 .IP "--env=FILENAME"
 Load the environment from FILENAME before executing the CGI.
@@ -36,7 +36,7 @@ Load environment variables for a specific area. NB: if used,
 this option must appear before any --env=FILENAME option.
 
 .SH FILES
-.IP "$BBHOME/web/maint_{header,form,footer}"
+.IP "$XYMONHOME/web/maint_{header,form,footer}"
 HTML template header
 
 .SH BUGS

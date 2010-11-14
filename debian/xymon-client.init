@@ -15,7 +15,7 @@
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON="/usr/lib/xymon/client/bin/hobbitlaunch"
+DAEMON="/usr/lib/xymon/client/bin/xymonlaunch"
 NAME=xymonclient
 DESC="Xymon Client"
 PIDFILE="/var/run/xymon/clientlaunch.pid"
@@ -37,7 +37,7 @@ export XYMONSERVERS XYMONCLIENTHOME CLIENTHOSTNAME MACHINE MACHINEDOTS
 case "$1" in
   start)
 	# do not run the client script on the server
-	[ -x /usr/lib/xymon/server/bin/hobbitd ] && exit 0
+	[ -x /usr/lib/xymon/server/bin/xymond ] && exit 0
 
 	create_includefiles
 
@@ -73,7 +73,7 @@ case "$1" in
 	fi
 	;;
   restart)
-	if [ -x /usr/lib/xymon/server/bin/hobbitd ] ; then
+	if [ -x /usr/lib/xymon/server/bin/xymond ] ; then
 		log_action_msg "Xymon server installed. Please restart 'xymon' instead"
 		exit 0
 	fi
@@ -82,7 +82,7 @@ case "$1" in
 	$0 start
 	;;
   reload|force-reload)
-	[ -x /usr/lib/xymon/server/bin/hobbitd ] && exit 0
+	[ -x /usr/lib/xymon/server/bin/xymond ] && exit 0
 	create_includefiles
 	kill -HUP `cat /var/run/xymon/clientlaunch.pid`
 	;;

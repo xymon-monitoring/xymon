@@ -1,37 +1,37 @@
-.TH BBHOSTSHOW 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMONCFG 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bbhostshow \- output the full bb-hosts file
+xymoncfg \- output the full hosts.cfg file
 .SH SYNOPSIS
-.B "bbhostshow [--bbdisp] [--bbnet] [filename]"
+.B "xymoncfg [--web] [--net] [filename]"
 
 .SH DESCRIPTION
-.I bbhostshow(1)
-dumps the full bb-hosts file to stdout. It follows "include"
-tags in the bb-hosts files, and prints the full contents
+.I xymoncfg(1)
+dumps the full hosts.cfg file to stdout. It follows "include"
+tags in the hosts.cfg files, and prints the full contents
 as seen by the
-.I bbgen(1)
+.I xymongen(1)
 and
-.I bbtest-net(1)
+.I xymonnet(1)
 utilities.
 
-If no filename is given, bbhostshow displays the file pointed
-to by the BBHOSTS environment variable.
+If no filename is given, xymoncfg displays the file pointed
+to by the HOSTSCFG environment variable.
 
 .SH OPTIONS
-.IP "--bbdisp"
-Show the bb-hosts file following include statements as a
-BBDISPLAY server would.
+.IP "--web"
+Show the hosts.cfg file following include statements as a
+Xymon web-server would.
 
-.IP "--bbnet"
-Show the bb-hosts file following include statements as a
-BBNET server would.
+.IP "--net"
+Show the hosts.cfg file following include statements as done
+when running xymonnet.
 
 
 .SH ENVIRONMENT VARIABLES
-.IP BBHOSTS
+.IP HOSTSCFG
 Filename for the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 .SH "SEE ALSO"
-bb-hosts(5), hobbitserver.cfg(5)
+hosts.cfg(5), xymonserver.cfg(5)

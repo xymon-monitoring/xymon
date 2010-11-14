@@ -1,14 +1,14 @@
-.TH HOBBITGRAPH.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH SHOWGRAPH.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbitgraph.cgi \- CGI to generate Xymon trend graphs
+showgraph.cgi \- CGI to generate Xymon trend graphs
 .SH SYNOPSIS
-.B "hobbitgraph [options]"
+.B "showgraph [options]"
 
 .SH DESCRIPTION
-\fBhobbitgraph.cgi\fR
-is invoked as a CGI script via the hobbitgraph.sh CGI wrapper.
+\fBshowgraph.cgi\fR
+is invoked as a CGI script via the showgraph.sh CGI wrapper.
 
-hobbitgraph.cgi is passed a QUERY_STRING environment variable with the
+showgraph.cgi is passed a QUERY_STRING environment variable with the
 following parameters:
 .sp
 .BR host
@@ -25,7 +25,7 @@ Can be "hourly", "daily", "weekly" or "monthly" to select the time period
 that the graph covers.
 .sp
 .BR first
-Used to split multi-graphs into multiple graphs. This causes hobbitgraph.cgi
+Used to split multi-graphs into multiple graphs. This causes showgraph.cgi
 to generate only the graphs starting with the "first'th" graph and continuing
 for "count".
 .sp
@@ -56,12 +56,12 @@ any graphs, only the HTML that links to the graphs.
 .BR action=selzoom
 Generate an HTML page with link to single graph, and with JavaScript code 
 that lets the user select part of the graph for a zoom-operation. The 
-JavaScript invokes hobbitgraph.cgi with "action=showzoom" to generate the
+JavaScript invokes showgraph.cgi with "action=showzoom" to generate the
 zoomed graph webpage.
 .sp
 .BR action=showzoom
 Generate HTML with a link to the zoomed graph image. This link goes to
-an "action=view" invocation of hobbitgraph.cgi.
+an "action=view" invocation of showgraph.cgi.
 .sp
 .BR action=view
 Generate a single graph image.
@@ -69,8 +69,8 @@ Generate a single graph image.
 .SH OPTIONS
 .IP "--config=FILENAME"
 Loads the graph configuration file from FILENAME. If not specified,
-the file $BBHOME/etc/hobbitgraph.cfg is used. See the
-.I hobbitgraph.cfg(5)
+the file $XYMONHOME/etc/graphs.cfg is used. See the
+.I graphs.cfg(5)
 for details about this file.
 
 .IP "--env=FILENAME"
@@ -79,7 +79,7 @@ the CGI.
 
 .IP "--rrddir=DIRECTORY"
 The top-level directory for the RRD files. If not specified, the
-directory given by the BBRRDS environment is used.
+directory given by the XYMONRRDS environment is used.
 
 .IP "--save=FILENAME"
 Instead of returning the image via the CGI interface (i.e. on stdout),
@@ -96,10 +96,10 @@ to generate.
 
 .SH FILES
 .sp
-.BR hobbitgraph.cfg:
+.BR graphs.cfg:
 The configuration file determining how graphs are generated from
 RRD files.
 
 .SH "SEE ALSO"
-hobbitgraph.cfg(5), xymon(7), rrdtool(1)
+graphs.cfg(5), xymon(7), rrdtool(1)
 

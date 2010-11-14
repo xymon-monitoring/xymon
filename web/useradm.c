@@ -15,7 +15,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <sys/wait.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static void errormsg(char *msg)
 {
@@ -102,8 +102,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (passfile == NULL) {
-		passfile = (char *)malloc(strlen(xgetenv("BBHOME")) + 20);
-		sprintf(passfile, "%s/etc/hobbitpasswd", xgetenv("BBHOME"));
+		passfile = (char *)malloc(strlen(xgetenv("XYMONHOME")) + 20);
+		sprintf(passfile, "%s/etc/xymonpasswd", xgetenv("XYMONHOME"));
 	}
 
 	switch (parse_query()) {

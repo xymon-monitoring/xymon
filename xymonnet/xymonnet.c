@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #ifdef HAVE_RPCENT_H
 #include <rpc/rpcent.h>
@@ -44,10 +44,10 @@ struct rpcent {
 extern struct rpcent *getrpcbyname(char *);
 #endif
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "dns.h"
 #include "contest.h"
 #include "httptest.h"
@@ -59,11 +59,9 @@ extern struct rpcent *getrpcbyname(char *);
 
 char *reqenv[] = {
 	"NONETPAGE",
-	"BBHOSTS",
-	"BBTMP",
-	"BBHOME",
-	"BB",
-	"BBDISP",
+	"HOSTSCFG",
+	"XYMONTMP",
+	"XYMONHOME",
 	NULL
 };
 
@@ -86,7 +84,7 @@ int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert c
 int             mincipherbits = 0;		/* If weakest cipher is weaker than this # of buts, SSL cert column = red */
 int		validity = 30;
 int		pingchildcount = DEFAULT_PING_CHILD_COUNT;	/* How many ping processes to start */
-char		*location = "";			/* BBLOCATION value */
+char		*location = "";			/* XYMONNETWORK value */
 int		hostcount = 0;
 int		testcount = 0;
 int		notesthostcount = 0;
@@ -368,18 +366,18 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 
 int wanted_host(void *host, char *netstring)
 {
-	char *netlocation = bbh_item(host, BBH_NET);
+	char *netlocation = xmh_item(host, XMH_NET);
 
 	if (selectedcount == 0)
-		return ((strlen(netstring) == 0) || 				   /* No BBLOCATION = do all */
-			(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* BBLOCATION && matching NET: tag */
+		return ((strlen(netstring) == 0) || 				   /* No XYMONNETWORK = do all */
+			(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* XYMONNETWORK && matching NET: tag */
 			(testuntagged && (netlocation == NULL)));		   /* No NET: tag for this host */
 	else {
 		/* User provided an explicit list of hosts to test */
 		int i;
 
 		for (i=0; (i < selectedcount); i++) {
-			if (strcmp(selectedhosts[i], bbh_item(host, BBH_HOSTNAME)) == 0) return 1;
+			if (strcmp(selectedhosts[i], xmh_item(host, XMH_HOSTNAME)) == 0) return 1;
 		}
 	}
 
@@ -393,9 +391,9 @@ void load_tests(void)
 	void *hwalk;
 	testedhost_t *h;
 
-	load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn());
 	if (first_host() == NULL) {
-		errprintf("Cannot load bb-hosts\n");
+		errprintf("Cannot load file %s\n", xgetenv("HOSTSCFG"));
 		return;
 	}
 
@@ -412,38 +410,38 @@ void load_tests(void)
 
 		if (!wanted_host(hwalk, location)) continue;
 
-		h = init_testedhost(bbh_item(hwalk, BBH_HOSTNAME));
+		h = init_testedhost(xmh_item(hwalk, XMH_HOSTNAME));
 
-		p = bbh_custom_item(hwalk, "badconn:");
+		p = xmh_custom_item(hwalk, "badconn:");
 		if (p) sscanf(p+strlen("badconn:"), "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 
-		p = bbh_custom_item(hwalk, "route:");
+		p = xmh_custom_item(hwalk, "route:");
 		if (p) h->routerdeps = p + strlen("route:");
 		if (routestring) {
-			p = bbh_custom_item(hwalk, routestring);
+			p = xmh_custom_item(hwalk, routestring);
 			if (p) h->routerdeps = p + strlen(routestring);
 		}
 
-		if (bbh_item(hwalk, BBH_FLAG_NOCONN)) h->noconn = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOPING)) h->noping = 1;
-		if (bbh_item(hwalk, BBH_FLAG_TRACE)) h->dotrace = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOTRACE)) h->dotrace = 0;
-		if (bbh_item(hwalk, BBH_FLAG_TESTIP)) h->testip = 1;
-		if (bbh_item(hwalk, BBH_FLAG_DIALUP)) h->dialup = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOSSLCERT)) h->nosslcert = 1;
-		if (bbh_item(hwalk, BBH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
-		if (bbh_item(hwalk, BBH_FLAG_HIDEHTTP)) h->hidehttp = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOCONN)) h->noconn = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOPING)) h->noping = 1;
+		if (xmh_item(hwalk, XMH_FLAG_TRACE)) h->dotrace = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOTRACE)) h->dotrace = 0;
+		if (xmh_item(hwalk, XMH_FLAG_TESTIP)) h->testip = 1;
+		if (xmh_item(hwalk, XMH_FLAG_DIALUP)) h->dialup = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOSSLCERT)) h->nosslcert = 1;
+		if (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
+		if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) h->hidehttp = 1;
 
-		p = bbh_item(hwalk, BBH_SSLDAYS);
+		p = xmh_item(hwalk, XMH_SSLDAYS);
 		if (p) sscanf(p, "%d:%d", &h->sslwarndays, &h->sslalarmdays);
 
-		p = bbh_item(hwalk, BBH_SSLMINBITS);
+		p = xmh_item(hwalk, XMH_SSLMINBITS);
 		if (p) h->mincipherbits = atoi(p);
 
-		p = bbh_item(hwalk, BBH_DEPENDS);
+		p = xmh_item(hwalk, XMH_DEPENDS);
 		if (p) h->deptests = p;
 
-		p = bbh_item(hwalk, BBH_LDAPLOGIN);
+		p = xmh_item(hwalk, XMH_LDAPLOGIN);
 		if (p) {
 			h->ldapuser = strdup(p);
 			h->ldappasswd = (strchr(h->ldapuser, ':'));
@@ -453,21 +451,21 @@ void load_tests(void)
 			}
 		}
 
-		p = bbh_item(hwalk, BBH_DESCRIPTION);
+		p = xmh_item(hwalk, XMH_DESCRIPTION);
 		if (p) {
 			h->hosttype = strdup(p);
 			p = strchr(h->hosttype, ':');
 			if (p) *p = '\0';
 		}
 
-		testspec = bbh_item_walk(hwalk);
+		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
 			service_t *s = NULL;
 			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
 			char *srcip = NULL;
-			int alwaystruetest = (bbh_item(hwalk, BBH_FLAG_NOCLEAR) != NULL);
+			int alwaystruetest = (xmh_item(hwalk, XMH_FLAG_NOCLEAR) != NULL);
 
-			if (bbh_item_idx(testspec) == -1) {
+			if (xmh_item_idx(testspec) == -1) {
 
 				/* Test prefixes:
 				 * - '?' denotes dialup test, i.e. report failures as clear.
@@ -526,11 +524,11 @@ void load_tests(void)
 					/*
 					 * LDAP test. This uses ':' a lot, so save it here.
 					 */
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 					s = ldaptest;
 					add_url_to_dns_queue(testspec);
 #else
-					errprintf("ldap test requested, but bbgen was built with no ldap support\n");
+					errprintf("ldap test requested, but xymonnet was built with no ldap support\n");
 #endif
 				}
 				else if ((strcmp(testspec, "http") == 0) || (strcmp(testspec, "https") == 0)) {
@@ -554,7 +552,7 @@ void load_tests(void)
 					  argnmatch(testspec, "type=")        )      {
 
 					/* HTTP test. */
-					bburl_t url;
+					weburl_t url;
 
 					decode_url(testspec, &url);
 					if (url.desturl->parseerror || (url.proxyurl && url.proxyurl->parseerror)) {
@@ -577,7 +575,7 @@ void load_tests(void)
 
 					userurl = strchr(testspec, '='); 
 					if (userurl) {
-						bburl_t url;
+						weburl_t url;
 						userurl++;
 
 						decode_url(userurl, &url);
@@ -592,7 +590,7 @@ void load_tests(void)
 						}
 					}
 					else {
-						char *ip = bbh_item(hwalk, BBH_IP);
+						char *ip = xmh_item(hwalk, XMH_IP);
 						statusurl = (char *)malloc(strlen(deffmt) + strlen(ip) + 1);
 						sprintf(statusurl, deffmt, ip);
 						s = httptest;
@@ -648,7 +646,7 @@ void load_tests(void)
 						 * combination for multiple hosts.
 						 *
 						 * According to Xymon docs, this type of services must be in
-						 * BBNETSVCS - so it is known already.
+						 * XYMONNETSVCS - so it is known already.
 						 */
 						int specialport = 0;
 						char *specialname;
@@ -720,7 +718,7 @@ void load_tests(void)
 				}
 			}
 
-			testspec = bbh_item_walk(NULL);
+			testspec = xmh_item_walk(NULL);
 		}
 
 		if (pingtest && !h->noconn) {
@@ -744,7 +742,7 @@ void load_tests(void)
 		 * So after parsing the badFOO tag, we must find the testitem_t
 		 * record created earlier for this test (it may not exist).
 		 */
-		testspec = bbh_item_walk(hwalk);
+		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
 			char *testname, *timespec, *badcounts;
 			int badclear, badyellow, badred;
@@ -754,7 +752,7 @@ void load_tests(void)
 
 			if (strncmp(testspec, "bad", 3) != 0) {
 				/* Not a bad* tag - skip it */
-				testspec = bbh_item_walk(NULL);
+				testspec = xmh_item_walk(NULL);
 				continue;
 			}
 
@@ -799,7 +797,7 @@ void load_tests(void)
 				}
 			}
 
-			testspec = bbh_item_walk(NULL);
+			testspec = xmh_item_walk(NULL);
 		}
 
 
@@ -815,10 +813,10 @@ void load_tests(void)
 
 			res = rbtInsert(testhosttree, h->hostname, h);
 			if (res == RBT_STATUS_DUPLICATE_KEY) {
-				errprintf("Host %s appears twice in bb-hosts! This may cause strange results\n", h->hostname);
+				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
-			strcpy(h->ip, bbh_item(hwalk, BBH_IP));
+			strcpy(h->ip, xmh_item(hwalk, XMH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
@@ -853,7 +851,7 @@ char *ip_to_test(testedhost_t *h)
 		else {
 			/* Cannot resolve hostname */
 			h->dnserror = 1;
-			errprintf("bbtest-net: Cannot resolve IP for host %s\n", h->hostname);
+			errprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
 		}
 	}
 
@@ -872,7 +870,7 @@ void load_ping_status(void)
 	RbtIterator handle;
 	testedhost_t *h;
 
-	sprintf(statusfn, "%s/ping.%s.status", xgetenv("BBTMP"), location);
+	sprintf(statusfn, "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -901,7 +899,7 @@ void save_ping_status(void)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/ping.%s.status", xgetenv("BBTMP"), location);
+	sprintf(statusfn, "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -929,7 +927,7 @@ void load_test_status(service_t *test)
 	testedhost_t *h;
 	testitem_t *walk;
 
-	sprintf(statusfn, "%s/%s.%s.status", xgetenv("BBTMP"), test->testname, location);
+	sprintf(statusfn, "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -962,7 +960,7 @@ void save_test_status(service_t *test)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/%s.%s.status", xgetenv("BBTMP"), test->testname, location);
+	sprintf(statusfn, "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -988,7 +986,7 @@ void save_frequenttestlist(int argc, char *argv[])
 	int didany = 0;
 	int i;
 
-	sprintf(fn, "%s/frequenttests.%s", xgetenv("BBTMP"), location);
+	sprintf(fn, "%s/frequenttests.%s", xgetenv("XYMONTMP"), location);
 	fd = fopen(fn, "w");
 	if (fd == NULL) return;
 
@@ -1096,18 +1094,18 @@ int start_ping_service(service_t *service)
 	 *      for the process to finish.
 	 *
 	 * Therefore this slightly more complex solution, which in essence
-	 * forks a new process running "hobbitping 2>&1 1>$BBTMP/ping.$$"
+	 * forks a new process running "xymonping 2>&1 1>$XYMONTMP/ping.$$"
 	 * The output is then picked up by the finish_ping_service().
 	 */
 
 	pingcount = 0;
 	pingpids = calloc(pingchildcount, sizeof(pid_t));
-	pingcmd = strdup(getenv_default("FPING", "hobbitping", NULL));
+	pingcmd = strdup(getenv_default("FPING", "xymonping", NULL));
 	pingcmd = realloc(pingcmd, strlen(pingcmd)+5);
 	strcat(pingcmd, " -Ae");
 
-	sprintf(pinglog, "%s/ping-stdout.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
-	sprintf(pingerrlog, "%s/ping-stderr.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
+	sprintf(pinglog, "%s/ping-stdout.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
+	sprintf(pingerrlog, "%s/ping-stderr.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
 
 	/* Setup command line and arguments */
 	cmdargs = setup_commandargs(pingcmd, &cmd);
@@ -1115,7 +1113,7 @@ int start_ping_service(service_t *service)
 	for (i=0; (i < pingchildcount); i++) {
 		/* Get a pipe FD */
 		if (pipe(pfd) == -1) {
-			errprintf("Could not create pipe for hobbitping\n");
+			errprintf("Could not create pipe for xymonping\n");
 			return -1;
 		}
 
@@ -1232,7 +1230,7 @@ int finish_ping_service(service_t *service)
 
 			case 98:
 				failed = 1;
-				errprintf("hobbitping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
+				errprintf("xymonping child could not create outputfiles in %s\n", xgetenv("$XYMONTMP"));
 				break;
 
 			case 99:
@@ -1411,7 +1409,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			char *routertext;
 
 			routertext = test->host->deprouterdown->hosttype;
-			if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
+			if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 			if (routertext == NULL) routertext = "router";
 
 			strcat(cause, "\nIntermediate ");
@@ -1621,7 +1619,7 @@ void send_results(service_t *service, int failgoesclear)
 					char *routertext;
 
 					routertext = t->host->deprouterdown->hosttype;
-					if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
+					if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 					if (routertext == NULL) routertext = "router";
 
 					strcat(msgline, ": Intermediate ");
@@ -1646,7 +1644,7 @@ void send_results(service_t *service, int failgoesclear)
 						char *routertext;
 
 						routertext = t->host->deprouterdown->hosttype;
-						if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
+						if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 						if (routertext == NULL) routertext = "router";
 
 						strcat(msgline, ": Intermediate ");
@@ -1918,7 +1916,7 @@ int main(int argc, char *argv[])
 	char *egocolumn = NULL;
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 	int dumpdata = 0;
-	int runtimewarn;		/* 300 = default BBSLEEP setting */
+	int runtimewarn;		/* 300 = default TASKSLEEP setting */
 	int servicedumponly = 0;
 	int pingrunning = 0;
 
@@ -1928,7 +1926,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (xgetenv("CONNTEST") && (strcmp(xgetenv("CONNTEST"), "FALSE") == 0)) pingcolumn = NULL;
-	runtimewarn = (xgetenv("BBSLEEP") ? atol(xgetenv("BBSLEEP")) : 300);
+	runtimewarn = (xgetenv("TASKSLEEP") ? atol(xgetenv("TASKSLEEP")) : 300);
 
 	for (argi=1; (argi < argc); argi++) {
 		if      (argnmatch(argv[argi], "--timeout=")) {
@@ -1977,7 +1975,7 @@ int main(int argc, char *argv[])
 			if (p) {
 				egocolumn = strdup(p+1);
 			}
-			else egocolumn = "bbtest";
+			else egocolumn = "xymonnet";
 			timing = 1;
 		}
 		else if (strcmp(argv[argi], "--test-untagged") == 0) {
@@ -2111,14 +2109,14 @@ int main(int argc, char *argv[])
 			servicedumponly = 1;
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("bbtest-net version %s\n", VERSION);
+			printf("xymonnet version %s\n", VERSION);
 			if (ssl_library_version) printf("SSL library : %s\n", ssl_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
 			printf("\n");
 			return 0;
 		}
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
-			printf("bbtest-net version %s\n\n", VERSION);
+			printf("xymonnet version %s\n\n", VERSION);
 			printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
 			printf("General options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
@@ -2127,13 +2125,13 @@ int main(int argc, char *argv[])
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
 			printf("    --no-ares                   : Use the system resolver library for hostname lookups\n");
 			printf("    --dnslog=FILENAME           : Log failed hostname lookups to file FILENAME\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymonnet\n");
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
-			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
+			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [TASKSLEEP]\n");
 			printf("\nOptions for simple TCP service tests:\n");
 			printf("    --checkresponse             : Check response from known services\n");
-			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
+			printf("    --no-flags                  : Dont send extra xymonnet test flags\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
 			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
 			printf("    --noping                    : Disable ping checking\n");
@@ -2148,7 +2146,7 @@ int main(int argc, char *argv[])
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
 			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
 			printf("\nDebugging options:\n");
-			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
+			printf("    --no-update                 : Send status messages to stdout instead of to Xymon\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
@@ -2178,9 +2176,13 @@ int main(int argc, char *argv[])
 	fqdn = get_fqdn();
 
 	/* Setup SEGV handler */
-	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
+	setup_signalhandler(egocolumn ? egocolumn : "xymonnet");
 
-	if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
+	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
+		location = strdup(xgetenv("XYMONNETWORK"));
+	else if (xgetenv("BBLOCATION") && (strlen(xgetenv("BBLOCATION")) > 0))
+		location = strdup(xgetenv("BBLOCATION"));
+
 	if (pingcolumn && (strlen(pingcolumn) == 0)) pingcolumn = xgetenv("PINGCOLUMN");
 	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
@@ -2189,16 +2191,16 @@ int main(int argc, char *argv[])
 
 	if (debug) {
 		int i;
-		printf("Command: bbtest-net");
+		printf("Command: xymonnet");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment BBLOCATION='%s'\n", textornull(xgetenv("BBLOCATION")));
+		printf("Environment XYMONNETWORK='%s'\n", textornull(location));
 		printf("Environment CONNTEST='%s'\n", textornull(xgetenv("CONNTEST")));
 		printf("Environment IPTEST_2_CLEAR_ON_FAILED_CONN='%s'\n", textornull(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")));
 		printf("\n");
 	}
 
-	add_timestamp("bbtest-net startup");
+	add_timestamp("xymonnet startup");
 
 	load_services();
 	if (servicedumponly) {
@@ -2392,7 +2394,7 @@ int main(int argc, char *argv[])
 	/*
 	 * The list of hosts to test frequently because of a failure must
 	 * be saved - it is then picked up by the frequent-test ext script
-	 * that runs bbtest-net again with the frequent-test hosts as
+	 * that runs xymonnet again with the frequent-test hosts as
 	 * parameter.
 	 *
 	 * Should the retest itself update the frequent-test file ? It
@@ -2418,7 +2420,7 @@ int main(int argc, char *argv[])
 	save_session_cookies();
 
 	shutdown_ldap_library();
-	add_timestamp("bbtest-net completed");
+	add_timestamp("xymonnet completed");
 
 	if (dumpdata & 2) { dump_hostlist(); dump_testitems(); }
 
@@ -2440,7 +2442,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbtest-net version %s\n", VERSION);
+		sprintf(msgline, "xymonnet version %s\n", VERSION);
 		addtostatus(msgline);
 		if (ssl_library_version) {
 			sprintf(msgline, "SSL library : %s\n", ssl_library_version);
@@ -2452,7 +2454,7 @@ int main(int argc, char *argv[])
 		}
 
 		sprintf(msgline, "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n Status messages       : %8d\n Alert status msgs     : %8d\n Transmissions         : %8d\n", 
-			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
+			hostcount, notesthostcount, testcount, xymonstatuscount, xymonnocombocount, xymonmsgcount);
 		addtostatus(msgline);
 		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %8d\n # succesful           : %8d\n # failed              : %8d\n # calls to dnsresolve : %8d\n",
 			dns_stats_total, dns_stats_success, dns_stats_failed, dns_stats_lookups);

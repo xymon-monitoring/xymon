@@ -14,15 +14,15 @@
 # Requires Xymon server ver. 4.3.0
 #
 #
-# Called from hobbitlaunch with
+# Called from xymonlaunch with
 #
-#     CMD $BBHOME/ext/mq.sh QUEUEMGR1 [QUEUEMGR2...]
+#     CMD $XYMONHOME/ext/mq.sh QUEUEMGR1 [QUEUEMGR2...]
 #
 # where QUEUEMGR* are the names of the queue managers.
 #
 # $Id$
 
-TMPFILE="$BBTMP/mq-$MACHINE.$$"
+TMPFILE="$XYMONTMP/mq-$MACHINE.$$"
 
 echo "client/mqcollect $MACHINE.mqcollect mqcollect" >$TMPFILE
 
@@ -32,7 +32,7 @@ do
     (echo 'dis ql(*) curdepth'; echo 'dis chs(*)'; echo 'end') | runmqsc $QMGR >> $TMPFILE
 done
     
-$BB $BBDISP "@" < $TMPFILE
+$XYMON $XYMSRV "@" < $TMPFILE
 rm $TMPFILE
 
 exit 0

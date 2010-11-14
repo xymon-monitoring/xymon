@@ -1,26 +1,26 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBIT-CLIENTS.CFG</TITLE>
+<HTML><HEAD><TITLE>Man page of ANALYSIS.CFG</TITLE>
 </HEAD><BODY>
-<H1>HOBBIT-CLIENTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>ANALYSIS.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbit-clients.cfg - Configuration file for the hobbitd_client module
+analysis.cfg - Configuration file for the xymond_client module
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>~Xymon/server/etc/hobbit-clients.cfg</B>
+<B>~Xymon/server/etc/analysis.cfg</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-The hobbit-clients.cfg file controls what color is assigned to
+The analysis.cfg file controls what color is assigned to
 the status-messages that are generated from the Xymon client
 data - typically the cpu, disk, memory, procs- and msgs-columns. Color
 is decided on the basis of some <B>settings</B> defined in this file;
@@ -102,9 +102,15 @@ CLOCK 15
 <P>
 <B>DISK filesystem warnlevel paniclevel</B>
 
+<BR>
+
 <B>DISK filesystem IGNORE</B>
 
+<BR>
+
 <B>INODE filesystem warnlevel paniclevel</B>
+
+<BR>
 
 <B>INODE filesystem IGNORE</B>
 
@@ -215,7 +221,7 @@ If &quot;processname&quot; contains whitespace (blanks or TAB), you must enclose
 the full string in double quotes - including the &quot;%&quot; if you use regular
 expression matching. E.g.
 <P>
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;PROC&nbsp;&quot;%hobbitd_channel&nbsp;--channel=data.*hobbitd_rrd&quot;&nbsp;1&nbsp;1&nbsp;yellow
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;PROC&nbsp;&quot;%xymond_channel&nbsp;--channel=data.*xymond_rrd&quot;&nbsp;1&nbsp;1&nbsp;yellow
 <P>
 or
 <P>
@@ -584,14 +590,14 @@ DEFAULT
 All of the settings can be applied to a group of hosts, by preceding them with
 rules. A rule defines of one of more filters using these keywords (note that
 this is identical to the rule definitions used in the
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 file).
 <P>
 <B>PAGE=targetstring</B>
 
 Rule matching an alert by the name of the page in BB. &quot;targetstring&quot; is the path of
-the page as defined in the bb-hosts file. E.g. if you have this setup:
+the page as defined in the hosts.cfg file. E.g. if you have this setup:
 <DL COMPACT>
 <DT><DD>
 <PRE>
@@ -623,7 +629,7 @@ Rule excluding a host if the pagename matches.
 <B>HOST=targetstring</B>
 
 Rule matching a host by the hostname.
-&quot;targetstring&quot; is either a comma-separated list of hostnames (from the bb-hosts file),
+&quot;targetstring&quot; is either a comma-separated list of hostnames (from the hosts.cfg file),
 &quot;*&quot; to indicate &quot;all hosts&quot;, or a Perl-compatible regular expression.
 E.g. &quot;HOST=dns.foo.com,<A HREF="http://www.foo.com">www.foo.com</A>&quot; identifies two specific hosts;
 &quot;HOST=%www.*.foo.com EXHOST=www-test.foo.com&quot; matches all hosts with a name
@@ -647,7 +653,7 @@ Exclude all hosts belonging to &quot;classname&quot; from this rule.
 <B>TIME=timespecification</B>
 
 Rule matching by the time-of-day. This is specified as the DOWNTIME 
-time specification in the bb-hosts file.  E.g. &quot;TIME=W:0800:2200&quot;
+time specification in the hosts.cfg file.  E.g. &quot;TIME=W:0800:2200&quot;
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
 <P>
@@ -665,7 +671,7 @@ To handle this, all rules can have a &quot;GROUP=groupname&quot; setting.
 When a rule with this setting triggers a yellow or red status,
 the groupname is passed on to the Xymon alerts module, so you
 can use it in the alert rule definitions in 
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5)</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5)</I>
 
 to direct alerts to the correct group of people.
 <P>
@@ -728,7 +734,7 @@ file- and directory-names in the
 
 file. If the filenames are not listed there, the clients will not collect
 any data about these files/directories, and the settings in the 
-hobbit-clients.cfg file will be silently ignored.
+analysis.cfg file will be silently ignored.
 <P>
 The ability to compute file checksums with MD5, SHA1 or RMD160 should not be
 used for general-purpose file integrity checking, since the overhead of calculating
@@ -743,7 +749,7 @@ is not considered strong enough when a high level of security is required.
 <A NAME="lbAT">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitd_client.8.html">hobbitd_client</A>(8), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man8/xymond_client.8.html">xymond_client</A>(8), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -774,6 +780,6 @@ is not considered strong enough when a high level of security is required.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

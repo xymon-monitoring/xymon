@@ -51,7 +51,7 @@ static char rcsid[] = "$Id$";
 /*[wm] For the POSIX regex support*/
 #include <regex.h> 
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* Global vars */
 
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-findhost");
+	redirect_cgilog("findhost");
 
 	cgidata = cgi_request();
 	if (cgidata == NULL) {
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	}
 
 	outbuf = newstrbuffer(0);
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	hostwalk = first_host();
 	while (hostwalk) {
 		/* 
@@ -182,10 +182,10 @@ int main(int argc, char *argv[])
 		 */
 		char *hostname, *displayname, *comment, *ip;
 
-		hostname = bbh_item(hostwalk, BBH_HOSTNAME);
-		displayname = bbh_item(hostwalk, BBH_DISPLAYNAME);
-		comment = bbh_item(hostwalk, BBH_COMMENT);
-		ip = bbh_item(hostwalk, BBH_IP);
+		hostname = xmh_item(hostwalk, XMH_HOSTNAME);
+		displayname = xmh_item(hostwalk, XMH_DISPLAYNAME);
+		comment = xmh_item(hostwalk, XMH_COMMENT);
+		ip = xmh_item(hostwalk, XMH_IP);
 
        		if ( regexec (&re, hostname, (size_t)0, NULL, 0) == 0  ||
 			(regexec(&re, ip, (size_t)0, NULL, 0) == 0)    ||
@@ -197,9 +197,9 @@ int main(int argc, char *argv[])
 			sprintf(msgline, "<td align=left> %s </td>\n", displayname ? displayname : hostname);
 			addtobuffer(outbuf, msgline);
 			sprintf(oneurl, "%s/%s/#%s",
-				xgetenv("BBWEB"), bbh_item(hostwalk, BBH_PAGEPATH), hostname);
+				xgetenv("XYMONWEB"), xmh_item(hostwalk, XMH_PAGEPATH), hostname);
 			sprintf(msgline, "<td align=left> <a href=\"%s\">%s</a>\n",
-				oneurl, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+				oneurl, xmh_item(hostwalk, XMH_PAGEPATHTITLE));
 			addtobuffer(outbuf, msgline);
 			gotany++;
 
@@ -207,11 +207,11 @@ int main(int argc, char *argv[])
 			switch (gotonepage) {
 			  case OP_INITIAL:
 				gotonepage = OP_YES;
-				onepage = bbh_item(hostwalk, BBH_PAGEPATH);
+				onepage = xmh_item(hostwalk, XMH_PAGEPATH);
 				break;
 
 			  case OP_YES:
-				if (strcmp(onepage, bbh_item(hostwalk, BBH_PAGEPATH)) != 0) gotonepage = OP_NO;
+				if (strcmp(onepage, xmh_item(hostwalk, XMH_PAGEPATH)) != 0) gotonepage = OP_NO;
 				break;
 
 			  case OP_NO:
@@ -219,12 +219,12 @@ int main(int argc, char *argv[])
 			}
 
 			clonewalk = next_host(hostwalk, 1);
-			while (clonewalk && (strcmp(bbh_item(hostwalk, BBH_HOSTNAME), bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
+			while (clonewalk && (strcmp(xmh_item(hostwalk, XMH_HOSTNAME), xmh_item(clonewalk, XMH_HOSTNAME)) == 0)) {
 				sprintf(msgline, "<br><a href=\"%s/%s/#%s\">%s</a>\n",
-					xgetenv("BBWEB"), 
-					bbh_item(clonewalk, BBH_PAGEPATH),
-					bbh_item(clonewalk, BBH_HOSTNAME),
-					bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+					xgetenv("XYMONWEB"), 
+					xmh_item(clonewalk, XMH_PAGEPATH),
+					xmh_item(clonewalk, XMH_HOSTNAME),
+					xmh_item(clonewalk, XMH_PAGEPATHTITLE));
 				addtobuffer(outbuf, msgline);
 				clonewalk = next_host(clonewalk, 1);
 				gotany++;
@@ -242,12 +242,12 @@ int main(int argc, char *argv[])
 	
 	if (dojump) {
 		if (gotany == 1) {
-			printf("Location: %s%s\n\n", xgetenv("BBWEBHOST"), oneurl);
+			printf("Location: %s%s\n\n", xgetenv("XYMONWEBHOST"), oneurl);
 			return 0;
 		}
 		else if ((gotany > 1) && (gotonepage == OP_YES)) {
 			printf("Location: %s%s/%s/\n\n", 
-			       xgetenv("BBWEBHOST"), xgetenv("BBWEB"), onepage);
+			       xgetenv("XYMONWEBHOST"), xgetenv("XYMONWEB"), onepage);
 			return 0;
 		}
 	}

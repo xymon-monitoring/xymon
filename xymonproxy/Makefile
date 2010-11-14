@@ -1,17 +1,17 @@
-# bbproxy Makefile
+# xymonproxy Makefile
 
-PROGRAMS = bbproxy bbmessage.cgi
+PROGRAMS = xymonproxy xymoncgimsg.cgi
 
-PROXYOBJS = bbproxy.o
-BBCGIOBJS = bbmessage.o
+PROXYOBJS = xymonproxy.o
+MSGCGIOBJS = xymoncgimsg.o
 
 all: $(PROGRAMS)
 
-bbproxy: $(PROXYOBJS)
-	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymonproxy: $(PROXYOBJS)
+	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-bbmessage.cgi: $(BBCGIOBJS) ../lib/libbbgen.a
-	$(CC) $(CFLAGS) -o $@ $(BBCGIOBJS) ../lib/libbbgen.a $(NETLIBS) $(LIBRTDEF)
+xymoncgimsg.cgi: $(MSGCGIOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(MSGCGIOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ################################################
 # Default compilation rules

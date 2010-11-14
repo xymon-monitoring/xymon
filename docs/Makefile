@@ -1,5 +1,5 @@
 all:
-	cat xymon-tips.html.DIST | sed -e 's!@BBHOSTURL@!$(BBHOSTURL)!g' >xymon-tips.html
+	cat xymon-tips.html.DIST | sed -e 's!@XYMONHOSTURL@!$(XYMONHOSTURL)!g' >xymon-tips.html
 
 clean:
 	rm -f xymon-tips.html *~

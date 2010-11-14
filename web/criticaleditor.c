@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Xymon CGI for administering the hobbit-nkview.cfg file                     */
+/* Xymon CGI for administering the critical.cfg file                          */
 /*                                                                            */
 /* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -21,17 +21,17 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static char *operator = NULL;
 
-static enum { NKEDIT_FIND, NKEDIT_NEXT, NKEDIT_UPDATE, NKEDIT_DELETE, NKEDIT_ADDCLONE, NKEDIT_DROPCLONE } editaction = NKEDIT_FIND;
+static enum { CRITEDIT_FIND, CRITEDIT_NEXT, CRITEDIT_UPDATE, CRITEDIT_DELETE, CRITEDIT_ADDCLONE, CRITEDIT_DROPCLONE } editaction = CRITEDIT_FIND;
 static char *rq_hostname = NULL;
 static char *rq_service = NULL;
 static int rq_priority = 0;
 static char *rq_group = NULL;
 static char *rq_extra = NULL;
-static char *rq_nktime = NULL;
+static char *rq_crittime = NULL;
 static time_t rq_start = 0;
 static time_t rq_end = 0;
 static char *rq_clonestoadd = NULL;
@@ -42,9 +42,9 @@ static void parse_query(void)
 {
 	cgidata_t *cgidata = cgi_request();
 	cgidata_t *cwalk;
-	char *rq_nkwkdays = NULL;
-	char *rq_nkslastart = NULL;
-	char *rq_nkslaend = NULL;
+	char *rq_critwkdays = NULL;
+	char *rq_critslastart = NULL;
+	char *rq_critslaend = NULL;
 	int  rq_startday = 0;
 	int  rq_startmon = 0;
 	int  rq_startyear = 0;
@@ -55,20 +55,20 @@ static void parse_query(void)
 	cwalk = cgidata;
 	while (cwalk) {
 		if (strcasecmp(cwalk->name, "Find") == 0) {
-			editaction = NKEDIT_FIND;
+			editaction = CRITEDIT_FIND;
 		}
 		else if (strcasecmp(cwalk->name, "Next") == 0) {
-			editaction = NKEDIT_NEXT;
+			editaction = CRITEDIT_NEXT;
 		}
 		else if (strcasecmp(cwalk->name, "Update") == 0) {
-			editaction = NKEDIT_UPDATE;
+			editaction = CRITEDIT_UPDATE;
 		}
 		else if (strcasecmp(cwalk->name, "Drop") == 0) {
-			editaction = NKEDIT_DELETE;
+			editaction = CRITEDIT_DELETE;
 		}
 		else if (strcasecmp(cwalk->name, "Clone") == 0) {
 			/* The "clone" button does both things */
-			editaction = NKEDIT_ADDCLONE;
+			editaction = CRITEDIT_ADDCLONE;
 		}
 		else if (strcasecmp(cwalk->name, "HOSTNAME") == 0) {
 			if (*cwalk->value) rq_hostname = strdup(cwalk->value);
@@ -82,20 +82,20 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "GROUP") == 0) {
 			if (*cwalk->value) rq_group = strdup(cwalk->value);
 		}
-		else if (strcasecmp(cwalk->name, "NKWKDAYS") == 0) {
+		else if (strcasecmp(cwalk->name, "CRITWKDAYS") == 0) {
 			if (*cwalk->value) {
-				if (!rq_nkwkdays) rq_nkwkdays = strdup(cwalk->value);
+				if (!rq_critwkdays) rq_critwkdays = strdup(cwalk->value);
 				else {
-					rq_nkwkdays = (char *)realloc(rq_nkwkdays, strlen(rq_nkwkdays) + strlen(cwalk->value) + 1);
-					strcat(rq_nkwkdays, cwalk->value);
+					rq_critwkdays = (char *)realloc(rq_critwkdays, strlen(rq_critwkdays) + strlen(cwalk->value) + 1);
+					strcat(rq_critwkdays, cwalk->value);
 				}
 			}
 		}
-		else if (strcasecmp(cwalk->name, "NKSTARTHOUR") == 0) {
-			if (*cwalk->value) rq_nkslastart = strdup(cwalk->value);
+		else if (strcasecmp(cwalk->name, "CRITSTARTHOUR") == 0) {
+			if (*cwalk->value) rq_critslastart = strdup(cwalk->value);
 		}
-		else if (strcasecmp(cwalk->name, "NKENDHOUR") == 0) {
-			if (*cwalk->value) rq_nkslaend = strdup(cwalk->value);
+		else if (strcasecmp(cwalk->name, "CRITENDHOUR") == 0) {
+			if (*cwalk->value) rq_critslaend = strdup(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "start-day") == 0) {
 			rq_startday = atoi(cwalk->value);
@@ -121,10 +121,10 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "DROPEVENIFCLONED") == 0) {
 			rq_dropevenifcloned = 1;
 		}
-		else if (strcasecmp(cwalk->name, "NKEDITADDCLONES") == 0) {
+		else if (strcasecmp(cwalk->name, "CRITEDITADDCLONES") == 0) {
 			if (*cwalk->value) rq_clonestoadd = strdup(cwalk->value);
 		}
-		else if (strcasecmp(cwalk->name, "NKEDITCLONELIST") == 0) {
+		else if (strcasecmp(cwalk->name, "CRITEDITCLONELIST") == 0) {
 			if (rq_clonestodrop) {
 				rq_clonestodrop = (char *)realloc(rq_clonestodrop, strlen(rq_clonestodrop) + strlen(cwalk->value) + 2);
 				strcat(rq_clonestodrop, " ");
@@ -138,7 +138,7 @@ static void parse_query(void)
 		cwalk = cwalk->next;
 	}
 
-	if (editaction == NKEDIT_UPDATE) {
+	if (editaction == CRITEDIT_UPDATE) {
 		struct tm tm;
 
 		if ((rq_startday == 0) || (rq_startmon == 0) || (rq_startyear == 0))
@@ -163,37 +163,37 @@ static void parse_query(void)
 			rq_end = mktime(&tm);
 		}
 
-		rq_nktime = (char *)malloc(strlen(rq_nkwkdays) + strlen(rq_nkslastart) + strlen(rq_nkslaend) + 3);
-		sprintf(rq_nktime, "%s:%s:%s", rq_nkwkdays, rq_nkslastart, rq_nkslaend);
+		rq_crittime = (char *)malloc(strlen(rq_critwkdays) + strlen(rq_critslastart) + strlen(rq_critslaend) + 3);
+		sprintf(rq_crittime, "%s:%s:%s", rq_critwkdays, rq_critslastart, rq_critslaend);
 	}
-	else if (editaction == NKEDIT_ADDCLONE) {
-		if (!rq_clonestoadd && rq_clonestodrop) editaction = NKEDIT_DROPCLONE;
+	else if (editaction == CRITEDIT_ADDCLONE) {
+		if (!rq_clonestoadd && rq_clonestodrop) editaction = CRITEDIT_DROPCLONE;
 	}
 }
 
 void findrecord(char *hostname, char *service, char *nodatawarning, char *isclonewarning, char *hascloneswarning)
 {
-	nkconf_t *rec = NULL;
+	critconf_t *rec = NULL;
 	int isaclone = 0;
 	int hasclones = 0;
 	char warnmsg[4096];
 
 	/* Setup the list of cloned records */
-	sethostenv_nkclonelist_clear();
+	sethostenv_critclonelist_clear();
 
 	if (hostname && *hostname) {
 		char *key, *realkey, *clonekey;
-		nkconf_t *clonerec;
+		critconf_t *clonerec;
 
 		if (service && *service) {
 			/* First check if the host+service is really a clone of something else */
 			key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
 			sprintf(key, "%s|%s", hostname, service);
-			rec = get_nkconfig(key, NKCONF_FIRSTMATCH, &realkey);
+			rec = get_critconfig(key, CRITCONF_FIRSTMATCH, &realkey);
 		}
 		else {
 			key = strdup(hostname);
-			rec = get_nkconfig(key, NKCONF_FIRSTHOSTMATCH, &realkey);
+			rec = get_critconfig(key, CRITCONF_FIRSTHOSTMATCH, &realkey);
 		}
 
 		if (rec && realkey && (strcmp(key, realkey) != 0)) {
@@ -213,13 +213,13 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 		xfree(key);
 
 		/* Next, see what hosts are clones of this one */
-		clonerec = get_nkconfig(NULL, NKCONF_RAW_FIRST, &clonekey);
+		clonerec = get_critconfig(NULL, CRITCONF_RAW_FIRST, &clonekey);
 		while (clonerec) {
 			if ((*(clonekey + strlen(clonekey) -1) == '=') && (strcmp(hostname, (char *)clonerec) == 0)) {
-				sethostenv_nkclonelist_add(clonekey);
+				sethostenv_critclonelist_add(clonekey);
 				hasclones = 1;
 			}
-			clonerec = get_nkconfig(NULL, NKCONF_RAW_NEXT, &clonekey);
+			clonerec = get_critconfig(NULL, CRITCONF_RAW_NEXT, &clonekey);
 		}
 	}
 	else {
@@ -228,8 +228,8 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 
 	if (!service || !(*service)) service="";
 
-	if (rec) sethostenv_nkedit(rec->updinfo, rec->priority, rec->ttgroup, rec->starttime, rec->endtime, rec->nktime, rec->ttextra);
-	else sethostenv_nkedit("", 0, NULL, 0, 0, NULL, NULL);
+	if (rec) sethostenv_critedit(rec->updinfo, rec->priority, rec->ttgroup, rec->starttime, rec->endtime, rec->crittime, rec->ttextra);
+	else sethostenv_critedit("", 0, NULL, 0, 0, NULL, NULL);
 
 	sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
@@ -239,13 +239,13 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	if (hasclones && hascloneswarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", hascloneswarning);
 
 	printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	showform(stdout, "nkedit", "nkedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
+	showform(stdout, "critedit", "critedit_form", COL_BLUE, getcurrenttime(NULL), warnmsg, NULL);
 }
 
 
 void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascloneswarning)
 {
-	nkconf_t *rec;
+	critconf_t *rec;
 	char *nexthost, *nextservice;
 
 	/* First check if the host+service is really a clone of something else */
@@ -254,12 +254,12 @@ void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 
 		key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
 		sprintf(key, "%s|%s", hostname, service);
-		rec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
-		if (rec) rec = get_nkconfig(NULL, NKCONF_NEXT, NULL);
+		rec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
+		if (rec) rec = get_critconfig(NULL, CRITCONF_NEXT, NULL);
 		xfree(key);
 	}
 	else {
-		rec = get_nkconfig(NULL, NKCONF_FIRST, NULL);
+		rec = get_critconfig(NULL, CRITCONF_FIRST, NULL);
 	}
 
 	if (rec) {
@@ -277,7 +277,7 @@ void nextrecord(char *hostname, char *service, char *isclonewarning, char *hascl
 
 void updaterecord(char *hostname, char *service)
 {
-	nkconf_t *rec = NULL;
+	critconf_t *rec = NULL;
 
 	if (hostname && service) {
 		char *key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
@@ -287,21 +287,21 @@ void updaterecord(char *hostname, char *service)
 
 		strftime(datestr, sizeof(datestr), "%Y-%m-%d %H:%M:%S", localtime(&now));
 		sprintf(key, "%s|%s", hostname, service);
-		rec = get_nkconfig(key, NKCONF_FIRSTMATCH, &realkey);
+		rec = get_critconfig(key, CRITCONF_FIRSTMATCH, &realkey);
 		if (rec == NULL) {
-			rec = (nkconf_t *)calloc(1, sizeof(nkconf_t));
+			rec = (critconf_t *)calloc(1, sizeof(critconf_t));
 			rec->key = strdup(key);
 		}
 		rec->priority = rq_priority;
 		rec->starttime = (rq_start > 0) ? rq_start : 0;
 		rec->endtime = (rq_end > 0) ? rq_end : 0;
 
-		if (rec->nktime) {
-			xfree(rec->nktime); rec->nktime = NULL;
+		if (rec->crittime) {
+			xfree(rec->crittime); rec->crittime = NULL;
 		}
 
-		if (rq_nktime) {
-			rec->nktime = (strcmp(rq_nktime, "*:0000:2400") == 0) ? NULL : strdup(rq_nktime);
+		if (rq_crittime) {
+			rec->crittime = (strcmp(rq_crittime, "*:0000:2400") == 0) ? NULL : strdup(rq_crittime);
 		}
 
 		if (rec->ttgroup) xfree(rec->ttgroup); 
@@ -312,7 +312,7 @@ void updaterecord(char *hostname, char *service)
 		rec->updinfo = (char *)malloc(strlen(operator) + strlen(datestr) + 2);
 		sprintf(rec->updinfo, "%s %s", operator, datestr);
 
-		update_nkconfig(rec);
+		update_critconfig(rec);
 		xfree(key);
 	}
 
@@ -325,11 +325,11 @@ void addclone(char *origin, char *newhosts, char *service)
 
 	newclone = strtok(newhosts, " ");
 	while (newclone) {
-		addclone_nkconfig(origin, newclone);
+		addclone_critconfig(origin, newclone);
 		newclone = strtok(NULL, " ");
 	}
 
-	update_nkconfig(NULL);
+	update_critconfig(NULL);
 	findrecord(origin, service, NULL, NULL, NULL);
 }
 
@@ -339,11 +339,11 @@ void dropclone(char *origin, char *drops, char *service)
 
 	drop = strtok(drops, " ");
 	while (drop) {
-		dropclone_nkconfig(drop);
+		dropclone_critconfig(drop);
 		drop = strtok(NULL, " ");
 	}
 
-	update_nkconfig(NULL);
+	update_critconfig(NULL);
 	findrecord(origin, service, NULL, NULL, NULL);
 }
 
@@ -353,8 +353,8 @@ void deleterecord(char *hostname, char *service, int evenifcloned)
 
 	key = (char *)malloc(strlen(hostname) + strlen(service) + 2);
 	sprintf(key, "%s|%s", hostname, service);
-	if (delete_nkconfig(key, evenifcloned) == 0) {
-		update_nkconfig(NULL);
+	if (delete_critconfig(key, evenifcloned) == 0) {
+		update_critconfig(NULL);
 	}
 
 	findrecord(hostname, service, NULL, NULL, 
@@ -388,34 +388,34 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("hobbit-nkedit");
+	redirect_cgilog("criticaleditor");
 	parse_query();
-	load_nkconfig(configfn);
+	load_critconfig(configfn);
 
 	switch (editaction) {
-	  case NKEDIT_FIND:
+	  case CRITEDIT_FIND:
 		findrecord(rq_hostname, rq_service, 
 			   ((rq_hostname && rq_service) ? "No record for this host/service" : NULL),
 			   "Cloned - showing master record", NULL);
 		break;
 
-	  case NKEDIT_NEXT:
+	  case CRITEDIT_NEXT:
 		nextrecord(rq_hostname, rq_service, "Cloned - showing master record", NULL);
 		break;
 
-	  case NKEDIT_UPDATE:
+	  case CRITEDIT_UPDATE:
 		updaterecord(rq_hostname, rq_service);
 		break;
 
-	  case NKEDIT_DELETE:
+	  case CRITEDIT_DELETE:
 		deleterecord(rq_hostname, rq_service, rq_dropevenifcloned);
 		break;
 
-	  case NKEDIT_ADDCLONE:
+	  case CRITEDIT_ADDCLONE:
 		addclone(rq_hostname, rq_clonestoadd, rq_service);
 		break;
 
-	  case NKEDIT_DROPCLONE:
+	  case CRITEDIT_DROPCLONE:
 		dropclone(rq_hostname, rq_clonestodrop, rq_service);
 		break;
 	}

@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		val = strtok_r(NULL, " \t\n", &vp);
 	}
 
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	return 0;
 }

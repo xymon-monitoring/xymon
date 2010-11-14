@@ -1,46 +1,46 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBIT-HOSTGRAPHS.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of HOSTGRAPHS.CGI</TITLE>
 </HEAD><BODY>
-<H1>HOBBIT-HOSTGRAPHS.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>HOSTGRAPHS.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbit-hostgraphs.cgi - CGI program to show multiple graphs
+hostgraphs.cgi - CGI program to show multiple graphs
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbit-hostgraph.cgi</B>
+<B>hostgraph.cgi</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>hobbit-hostgraph.cgi</B>
-is invoked as a CGI script via the hobbit-hostgraph.sh CGI wrapper.
+<B>hostgraph.cgi</B>
+is invoked as a CGI script via the hostgraph.sh CGI wrapper.
 <P>
 If no parameters are provided when invoked, it will present a form
 where the user can select a time period, one or more hosts, and a
 set of graphs.
 <P>
 The parameters selected by the user are passed to a second invocation
-of hobbit-hostgraph.cgi, and result in a webpage showing a list of
+of hostgraph.cgi, and result in a webpage showing a list of
 graph images based on the trend data stored about the hosts.
 <P>
-If multiple graph-types are selected, hobbit-hostgraph.cgi will display
+If multiple graph-types are selected, hostgraph.cgi will display
 a list of graphs, with one graph per type.
 <P>
-If multiple hosts are selected, hobbit-hostgraph.cgi will attempt to
+If multiple hosts are selected, hostgraph.cgi will attempt to
 display a multi-host graph for each type where the graphs for all
 hosts are overlayed in a single image, allowing for easy comparison
 of the hosts.
 <P>
 The hostlist uses the PAGEPATH cookie provided by Xymon webpages to
 select the list of hosts to present. Only the hosts visible on the
-page where hobbit-hostgraph.cgi is invoked from will be visible.
+page where hostgraph.cgi is invoked from will be visible.
 <P>
 The resulting graph page can be bookmarked, but the bookmark
 also fixates the time period shown.
@@ -69,7 +69,7 @@ If the tool is invoked directly, all hosts defined in Xymon will be listed.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
 <P>
 <P>
 
@@ -87,6 +87,6 @@ If the tool is invoked directly, all hosts defined in Xymon will be listed.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

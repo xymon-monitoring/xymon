@@ -33,9 +33,9 @@ static char rcsid[] = "$Id$";
 #include <netdb.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "contest.h"
 #include "httptest.h"
 #include "dns.h"
@@ -321,7 +321,7 @@ char *ssl_library_version = NULL;
  */
 static void setup_ssl(tcptest_t *item)
 {
-	errprintf("SSL test, but bbtest-net was built without SSL support\n");
+	errprintf("SSL test, but xymonnet was built without SSL support\n");
 	item->sslrunning = 0;
 	item->errcode = CONTEST_ESSL;
 }
@@ -372,7 +372,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	 * Private key passphrases are stored in the file named same as the
 	 * certificate itself, but with extension ".pass"
 	 */
-	sprintf(passfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
+	sprintf(passfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
 	p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
 	strcpy(p, ".pass");
 
@@ -392,7 +392,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	return strlen(buf);
 }
 
-static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
+static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 {
 	static char result[256];
 	char *asn1_string;
@@ -514,7 +514,7 @@ static void setup_ssl(tcptest_t *item)
 			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
 			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);
 
-			sprintf(certfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
+			sprintf(certfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
 			status = SSL_CTX_use_certificate_chain_file(item->sslctx, certfn);
 			if (status == 1) {
 				status = SSL_CTX_use_PrivateKey_file(item->sslctx, certfn, SSL_FILETYPE_PEM);
@@ -638,8 +638,8 @@ static void setup_ssl(tcptest_t *item)
 	sslinfo = newstrbuffer(0);
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
-	certstart = strdup(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
-	certend = strdup(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
+	certstart = strdup(xymon_ASN1_UTCTIME(X509_get_notBefore(peercert)));
+	certend = strdup(xymon_ASN1_UTCTIME(X509_get_notAfter(peercert)));
 
 	snprintf(msglin, sizeof(msglin),
 		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 
@@ -1369,7 +1369,7 @@ int main(int argc, char *argv[])
 	int timeout = 0;
 	int concurrency = 0;
 
-	if (xgetenv("BBNETSVCS") == NULL) putenv("BBNETSVCS=");
+	if (xgetenv("XYMONNETSVCS") == NULL) putenv("XYMONNETSVCS=");
 	init_tcp_services();
 
 	for (argi=1; (argi<argc); argi++) {
@@ -1387,7 +1387,7 @@ int main(int argc, char *argv[])
 			if (concurrency < 0) concurrency = 0;
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
-			printf("Run with\n~hobbit/server/bin/bbcmd ./contest --debug 172.16.10.2/25/smtp\n");
+			printf("Run with\n~xymon/server/bin/xymoncmd ./contest --debug 172.16.10.2/25/smtp\n");
 			printf("I.e. IP/PORTNUMBER/TESTSPEC\n");
 			return 0;
 		}

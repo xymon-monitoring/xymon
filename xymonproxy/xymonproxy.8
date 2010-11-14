@@ -1,34 +1,34 @@
-.TH BBPROXY 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMONPROXY 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 
 .SH NAME
-bbproxy \- Xymon message proxy
+xymonproxy \- Xymon message proxy
 .SH SYNOPSIS
-.B "bbproxy [options] --server=$BBDISP"
+.B "xymonproxy [options] --server=$XYMSRV"
 
 .SH DESCRIPTION
-.I bbproxy(8)
+.I xymonproxy(8)
 is a proxy for forwarding Xymon messages from one
 server to another. It will typically be needed if you have
 clients behind a firewall, so they cannot send status
 messages to the Xymon server directly.
 
-bbproxy serves three purposes. First, it acts as a regular
+xymonproxy serves three purposes. First, it acts as a regular
 proxy server, allowing clients that cannot connect directly to 
-the Xymon servers to send data. Although bbproxy is optimized for handling
+the Xymon servers to send data. Although xymonproxy is optimized for handling
 status messages, it will forward all types of messages, including
 notes- and data-messages.
 .br
 
 Second, it acts as a buffer, smoothing out peak loads if
 many clients try to send status messages simultaneously.
-bbproxy can absorb messages very quickly, but will queue
+xymonproxy can absorb messages very quickly, but will queue
 them up internally and forward them to the Xymon server
 at a reasonable pace.
 .br
 
-Third, bbproxy merges small "status" messages into larger
+Third, xymonproxy merges small "status" messages into larger
 "combo" messages. This can dramatically decrease the number
-of connections that need to go from bbproxy to the Xymon
+of connections that need to go from xymonproxy to the Xymon
 server.  The merging of messages causes "status" messages 
 to be delayed for up to 0.25 seconds before being sent off 
 to the Xymon server.
@@ -38,7 +38,7 @@ to the Xymon server.
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
-Xymon environment, you can use "--server=$BBDISP". Up
+Xymon environment, you can use "--server=$XYMSRV". Up
 to 3 servers can be specified; incoming messages are sent to
 all of them (except "config", "query" and "download" messages, 
 which go to the LAST server only). If you have Xymon clients
@@ -47,8 +47,8 @@ receive their configuration data from the LAST of the servers
 listed here.  This option is required.
 
 .IP "--listen=LOCALIP[:PORT]"
-Specifies the IP-adress where bbproxy listens for incoming 
-connections. By default, bbproxy listens on all IP-adresses
+Specifies the IP-adress where xymonproxy listens for incoming 
+connections. By default, xymonproxy listens on all IP-adresses
 assigned to the host. If no portnumber is given, port 1984
 will be used.
 
@@ -56,14 +56,14 @@ will be used.
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 
-.IP "--report=[PROXYHOSTNAME.]BBSERVICE"
-If given, this option causes bbproxy to send a status report
+.IP "--report=[PROXYHOSTNAME.]SERVICE"
+If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use
-"--report=bbproxy" to have bbproxy report its status to a
-"bbproxy" column in Xymon. The default for PROXYHOSTNAME
+"--report=xymonproxy" to have xymonproxy report its status to a
+"xymonproxy" column in Xymon. The default for PROXYHOSTNAME
 is the $MACHINE environment variable, i.e. the hostname of the
-server running bbproxy. See REPORT OUTPUT below for an 
+server running xymonproxy. See REPORT OUTPUT below for an 
 explanation of the report contents.
 
 .IP "--lqueue=N"
@@ -76,11 +76,11 @@ Run in daemon mode, i.e. detach and run as a background proces.
 This is the default.
 
 .IP "--no-daemon"
-Runs bbproxy as a foreground proces.
+Runs xymonproxy as a foreground proces.
 
 .IP "--pidfile=FILENAME"
 Specifies the location of a file containing the proces-ID 
-of the bbproxy daemon proces. Default: /var/run/bbproxy.pid.
+of the xymonproxy daemon proces. Default: /var/run/xymonproxy.pid.
 
 .IP "--logfile=FILENAME"
 Sends all logging output to the specified file instead of stderr.
@@ -88,13 +88,13 @@ Sends all logging output to the specified file instead of stderr.
 .IP "--log-details"
 Log details (IP-address, message type and hostname) to the logfile.
 This can also be enabled and disabled at run-time by sending the
-bbproxy proces a SIGUSR1 signal.
+xymonproxy proces a SIGUSR1 signal.
 
 .IP "--debug"
 Enable debugging output.
 
 .SH "REPORT OUTPUT"
-If enabled via the "--report" option, bbproxy will send a 
+If enabled via the "--report" option, xymonproxy will send a 
 status message about itself to the Xymon server once
 every 5 minutes.
 
@@ -108,7 +108,7 @@ average number of messages per second over the past 5 minutes.
 .IP "Outbound messages"
 The total number of messages sent to the Xymon server. 
 Note that this is probably smaller than
-the number of incoming messages, since bbproxy merges
+the number of incoming messages, since xymonproxy merges
 messages before sending them.
 
 .IP "Incoming - Combo messages"
@@ -116,7 +116,7 @@ The number of "combo" messages received from a client.
 
 .IP "Incoming - Status messages"
 The number of "status" messages received from a client.
-bbproxy attempts to merge these into "combo" messages. 
+xymonproxy attempts to merge these into "combo" messages. 
 The "Messages merged" is the number of "status" messages
 that were merged into a combo message, the "Resulting combos"
 is the number of "combo" messages that resulted from the
@@ -150,7 +150,7 @@ was established.
 
 .IP "Timeout details - recovered"
 When a timeout happens while sending the status message to 
-the server, bbproxy will attempt to recover the message and
+the server, xymonproxy will attempt to recover the message and
 retry sending it to the server after waiting a few seconds.
 This number is the number of messages that were recovered,
 and so were not lost.
@@ -206,5 +206,5 @@ Shut down the proxy.
 Toggles logging of individual messages.
 
 .SH "SEE ALSO"
-bb(1), bbd(1), xymon(7)
+xymon(1), xymond(1), xymon(7)
 

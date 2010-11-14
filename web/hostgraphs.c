@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <sys/time.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { A_SELECT, A_GENERATE } action = A_SELECT;
 
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 
 
 		for (testi=0; (tests[testi]); testi++) {
-			fprintf(stdout, "<tr><td><img src=\"%s/hobbitgraph.sh?host=%s",
+			fprintf(stdout, "<tr><td><img src=\"%s/showgraph.sh?host=%s",
 				xgetenv("CGIBINURL"), hosts[0]);
 
 			for (hosti=1; (hosts[hosti]); hosti++) fprintf(stdout, ",%s", hosts[hosti]);

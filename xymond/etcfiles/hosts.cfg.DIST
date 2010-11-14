@@ -7,10 +7,10 @@
 # 2) By adding "page", "subpage", "group" definitions, you define the layout
 #    of the Xymon webpages, and how hosts are divided among the various webpages 
 #    that Xymon generates.
-# 3) Several other definitions can be done for each host, see the bb-hosts(5)
+# 3) Several other definitions can be done for each host, see the hosts.cfg(5)
 #    man-page.
 #
 # You need to define at least the Xymon server itself here.
 
-@BBHOSTIP@   @BBHOSTNAME@      # bbd http://@BBHOSTNAME@/
+@XYMONHOSTIP@   @XYMONHOSTNAME@      # bbd http://@XYMONHOSTNAME@/
 

@@ -15,7 +15,7 @@
 
 #include <time.h>
 
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 #include <lber.h>
 #define LDAP_DEPRECATED 1
 #include <ldap.h>

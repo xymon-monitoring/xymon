@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <netdb.h>
 #include <sys/time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <ares.h>
 #include <ares_version.h>
@@ -232,19 +232,19 @@ void add_host_to_dns_queue(char *hostname)
 
 void add_url_to_dns_queue(char *url)
 {
-	bburl_t bburl;
+	weburl_t weburl;
 
 	dns_init();
 
-	decode_url(url, &bburl);
+	decode_url(url, &weburl);
 
-	if (bburl.proxyurl) {
-		if (bburl.proxyurl->parseerror) return;
-		add_host_to_dns_queue(bburl.proxyurl->host); 
+	if (weburl.proxyurl) {
+		if (weburl.proxyurl->parseerror) return;
+		add_host_to_dns_queue(weburl.proxyurl->host); 
 	}
 	else {
-		if (bburl.desturl->parseerror) return;
-		add_host_to_dns_queue(bburl.desturl->host); 
+		if (weburl.desturl->parseerror) return;
+		add_host_to_dns_queue(weburl.desturl->host); 
 	}
 }
 

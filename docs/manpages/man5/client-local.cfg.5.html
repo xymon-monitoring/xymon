@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of CLIENT-LOCAL.CFG</TITLE>
 </HEAD><BODY>
 <H1>CLIENT-LOCAL.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -33,14 +33,14 @@ are being monitored in the &quot;files&quot; status column.
 <P>
 Note that there is a dependency between the client-local.cfg file 
 and the 
-<I><A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)</I>
+<I><A HREF="../man5/anaysis.cfg.5.html">anaysis.cfg</A>(5)</I>
 
 file. When monitoring e.g. a logfile, you must first enter it into the 
 client-local.cfg file, to trigger the Xymon client into reporting any 
-data about the logfile. Next, you must configure hobbit-clients.cfg 
+data about the logfile. Next, you must configure analysis.cfg 
 so the Xymon server knows what to look for in the file data sent by 
 the client. So: client-local.cfg defines what raw data is collected 
-by the client, and hobbit-clients.cfg defines how to analyze them.
+by the client, and analysis.cfg defines how to analyze them.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>PROPAGATION TO CLIENTS</H2>
@@ -179,7 +179,7 @@ to use a <B>du</B> command which reports data in KB, e.g. by setting
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;DU=&quot;du&nbsp;-k&quot;
 <BR>
 
-in the hobbitclient.cfg file.
+in the xymonclient.cfg file.
 <P>
 <A NAME="lbAK">&nbsp;</A>
 <H2>NOTES</H2>
@@ -196,7 +196,7 @@ of files and/or sub-directories can be quite ressource-intensive.
 <A NAME="lbAL">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5), <A HREF="../man8/hobbitd_client.8.html">hobbitd_client</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man8/xymond_client.8.html">xymond_client</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -219,6 +219,6 @@ of files and/or sub-directories can be quite ressource-intensive.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

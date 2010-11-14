@@ -18,7 +18,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static char selfurl[PATH_MAX];
 static time_t req_endtime = 0;
@@ -87,17 +87,17 @@ static void generate_pct_summary(
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000000\">\n");
 
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		xgetenv("BBSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), colorname(COL_GREEN), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+		xgetenv("XYMONSKIN"), dotgiffilename(COL_GREEN, 0, 1), colorname(COL_GREEN), colorname(COL_GREEN), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		xgetenv("BBSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), colorname(COL_YELLOW), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+		xgetenv("XYMONSKIN"), dotgiffilename(COL_YELLOW, 0, 1), colorname(COL_YELLOW), colorname(COL_YELLOW), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		xgetenv("BBSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), colorname(COL_RED), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+		xgetenv("XYMONSKIN"), dotgiffilename(COL_RED, 0, 1), colorname(COL_RED), colorname(COL_RED), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		xgetenv("BBSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), colorname(COL_PURPLE), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+		xgetenv("XYMONSKIN"), dotgiffilename(COL_PURPLE, 0, 1), colorname(COL_PURPLE), colorname(COL_PURPLE), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		xgetenv("BBSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), colorname(COL_CLEAR), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+		xgetenv("XYMONSKIN"), dotgiffilename(COL_CLEAR, 0, 1), colorname(COL_CLEAR), colorname(COL_CLEAR), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0></TD>\n", 
-		xgetenv("BBSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), colorname(COL_BLUE), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+		xgetenv("XYMONSKIN"), dotgiffilename(COL_BLUE, 0, 1), colorname(COL_BLUE), colorname(COL_BLUE), xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#000033\">\n");
 	fprintf(htmlrep, "<TD ALIGN=CENTER><B>%.2f%%</B></TD>\n", repinfo->fullpct[COL_GREEN]);
@@ -459,9 +459,9 @@ static void generate_histlog_table(FILE *htmlrep,
 	}
 	fprintf(htmlrep, "</TR>\n");
 	fprintf(htmlrep, "<TR BGCOLOR=\"#333333\">\n");
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Date</B></FONT></TD>\n", xgetenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></FONT></TD>\n", xgetenv("MKBBCOLFONT"));
-	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></FONT></TD>\n", xgetenv("MKBBCOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Date</B></FONT></TD>\n", xgetenv("XYMONPAGECOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Status</B></FONT></TD>\n", xgetenv("XYMONPAGECOLFONT"));
+	fprintf(htmlrep, "<TD ALIGN=CENTER><FONT %s><B>Duration</B></FONT></TD>\n", xgetenv("XYMONPAGECOLFONT"));
 	fprintf(htmlrep, "</TR>\n");
 
 	for (walk = loghead; (walk); walk = walk->next) {
@@ -474,7 +474,7 @@ static void generate_histlog_table(FILE *htmlrep,
 		fprintf(htmlrep, "<TD ALIGN=CENTER BGCOLOR=\"#000000\">");
 		fprintf(htmlrep, "<A HREF=\"%s\">", histlogurl(hostname, service, 0, walk->timespec));
 		fprintf(htmlrep, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=%s WIDTH=%s BORDER=0>", 
-			xgetenv("BBSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
+			xgetenv("XYMONSKIN"), dotgiffilename(walk->color, 0, 1), colorname(walk->color), colorname(walk->color),
 			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 		fprintf(htmlrep, "</A></TD>\n");
 
@@ -517,7 +517,7 @@ void generate_history(FILE *htmlrep, 			/* output file */
 	fprintf(htmlrep, "<CENTER>\n");
 	if (wantserviceid) {
 		fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT><BR>\n", 
-			xgetenv("MKBBROWFONT"), displayname, service);
+			xgetenv("XYMONPAGEROWFONT"), displayname, service);
 	}
 
 	/* Create the color-bars */
@@ -552,8 +552,8 @@ void generate_history(FILE *htmlrep, 			/* output file */
 
 	fprintf(htmlrep, "<BR><BR>\n");
 
-	/* BBHISTEXT extensions */
-	do_bbext(htmlrep, "BBHISTEXT", "hist");
+	/* XYMONHISTEXT extensions */
+	do_extensions(htmlrep, "XYMONHISTEXT", "hist");
 
 	fprintf(htmlrep, "</CENTER>\n");
 
@@ -572,16 +572,16 @@ int entrycount = 50;
 cgidata_t *cgidata = NULL;
 
 char *reqenv[] = {
-"BBHIST",
-"BBHISTLOGS",
-"BBREP",
-"BBREPURL",
-"BBSKIN",
+"XYMONHISTDIR",
+"XYMONHISTLOGS",
+"XYMONREPDIR",
+"XYMONREPURL",
+"XYMONSKIN",
 "CGIBINURL",
 "DOTWIDTH",
 "DOTHEIGHT",
-"MKBBCOLFONT",
-"MKBBROWFONT",
+"XYMONPAGECOLFONT",
+"XYMONPAGEROWFONT",
 NULL };
 
 static void errormsg(char *msg)
@@ -666,7 +666,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-hist");
+	redirect_cgilog("history");
 
 	envcheck(reqenv);
 	cgidata = cgi_request();
@@ -703,7 +703,7 @@ int main(int argc, char *argv[])
 		len1y = 10; bartitle1y = "10 month summary";
 	}
 
-	sprintf(histlogfn, "%s/%s.%s", xgetenv("BBHIST"), commafy(hostname), service);
+	sprintf(histlogfn, "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
 	if (fd == NULL) {
 		errormsg("Cannot open history file");

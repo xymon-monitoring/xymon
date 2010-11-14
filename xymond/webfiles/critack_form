@@ -1,4 +1,4 @@
-<table border=1 summary="NK info" align=center>
+<table border=1 summary="Critical info" align=center>
 <tr>
 <th align=center>Priority</th>
 <th align=center>Resolver group</th>
@@ -6,22 +6,22 @@
 </tr>
 
 <tr>
-  <td align=center>&NKACKTTPRIO</td>
-  <td align=center>&NKACKTTGROUP</td>
+  <td align=center>&CRITACKTTPRIO</td>
+  <td align=center>&CRITACKTTGROUP</td>
   <td align=center>
-     <a href="&NKACKINFOURL">Host info</a>
+     <a href="&CRITACKINFOURL">Host info</a>
      <br>
-     <a href="&NKACKDOCURL">Host docs</a>
+     <a href="&CRITACKDOCURL">Host docs</a>
   </td>
 </tr>
 
 <tr>
-  <td colspan=3 align=center>&NKACKTTEXTRA</td>
+  <td colspan=3 align=center>&CRITACKTTEXTRA</td>
 </tr>
 
 <tr>
   <td colspan=3 align=center valign=middle>
-    <form method="POST" action="&SECURECGIBINURL/hobbit-ackinfo.sh">
+    <form method="POST" action="&SECURECGIBINURL/ackinfo.sh">
       <INPUT TYPE="TEXT" NAME="NOTE" VALUE="" MAXLENGTH=60 SIZE=60 tabindex="0">
       &nbsp;&nbsp;Host-ack
       <INPUT TYPE="CHECKBOX" NAME="ALLTESTS" VALUE="OFF">&nbsp;&nbsp;
@@ -40,8 +40,8 @@
          <OPTION VALUE="10080">1 week</OPTION>
          <OPTION VALUE="43200">4 weeks</OPTION>
       </SELECT>
-      <INPUT TYPE="HIDDEN"   NAME="HOST"     VALUE="&BBHOST">
-      <INPUT TYPE="HIDDEN"   NAME="SERVICE"  VALUE="&BBSVC">
+      <INPUT TYPE="HIDDEN"   NAME="HOST"     VALUE="&XYMWEBHOST">
+      <INPUT TYPE="HIDDEN"   NAME="SERVICE"  VALUE="&XYMWEBSVC">
       <INPUT TYPE="HIDDEN"   NAME="LEVEL"    VALUE="1">
       <INPUT TYPE="SUBMIT"   NAME="ACK"      VALUE="Acknowledge">
     </form>

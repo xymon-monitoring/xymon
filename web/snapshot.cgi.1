@@ -1,17 +1,17 @@
-.TH BB-SNAPSHOT.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH SNAPSHOT.CGI 1 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-bb-snapshot.cgi \- CGI program to rebuild the Xymon webpages for a specific point in time.
+snapshot.cgi \- CGI program to rebuild the Xymon webpages for a specific point in time.
 .SH SYNOPSIS
-.B "bb-snapshot.cgi"
+.B "snapshot.cgi"
 
 .SH DESCRIPTION
-\fBbb-snapshot.cgi\fR
-is invoked as a CGI script via the bb-snapshot.sh CGI wrapper.
+\fBsnapshot.cgi\fR
+is invoked as a CGI script via the snapshot.sh CGI wrapper.
 It rebuilds the Xymon web pages to the look they had 
 at a particular point in time, based upon the historical information
 logged about events.
 
-bb-snapshot.cgi is passed a QUERY_STRING environment variable with the
+snapshot.cgi is passed a QUERY_STRING environment variable with the
 following parameters:
 
    mon (Start month of the snapshot)
@@ -30,33 +30,33 @@ using a 24-hour clock.
 
 All of the processing involved in generating the report is done 
 by invoking 
-.I bbgen(1)
+.I xymongen(1)
 with the proper "--snapshot" option.
 
 .SH OPTIONS
 .IP "--env=FILENAME"
 Load environment from FILENAME before executing the CGI.
 
-.IP "bbgen-options"
+.IP "xymongen-options"
 All options except "--env" are passed on to the 
-.I bbgen(1)
+.I xymongen(1)
 program building the snapshot files.
 
 .SH ENVIRONMENT VARIABLES
-.IP BBGENSNAPOPTS
-bbgen options passed by default to the bb-snapshot.cgi script. 
-This happens in the bb-snapshot.sh CGI wrapper script.
-.IP BBHOME
+.IP XYMONGENSNAPOPTS
+xymongen options passed by default to the snapshot.cgi script. 
+This happens in the snapshot.sh CGI wrapper script.
+.IP XYMONHOME
 Home directory of the Xymon server files
-.IP BBSNAP
+.IP XYMONSNAPDIR
 Directory where generated snapshots are stored. This directory must
 be writable by the userid executing the CGI script, typically
-"www", "apache" or "nobody". Default: $BBHOME/www/snap/
-.IP BBSNAPURL
+"www", "apache" or "nobody". Default: $XYMONHOME/www/snap/
+.IP XYMONSNAPURL
 The URL prefix to use when accessing the reports via a browser.
-Default: $BBWEB/snap
+Default: $XYMONWEB/snap
 
 
 .SH "SEE ALSO"
-bbgen(1), bb-hosts(5), hobbitserver.cfg(5)
+xymongen(1), hosts.cfg(5), xymonserver.cfg(5)
 

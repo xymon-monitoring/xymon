@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int havedoneacklog = 0;
 
@@ -45,11 +45,11 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 	cutoff = ( (maxminutes) ? (getcurrenttime(NULL) - maxminutes*60) : 0);
 	if ((!maxcount) || (maxcount > 100)) maxcount = 100;
 
-	sprintf(acklogfilename, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
+	sprintf(acklogfilename, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 	acklog = fopen(acklogfilename, "r");
 	if (!acklog) {
 		/* BB compatible naming */
-		sprintf(acklogfilename, "%s/acklog", xgetenv("BBACKS"));
+		sprintf(acklogfilename, "%s/acklog", xgetenv("XYMONACKDIR"));
 		acklog = fopen(acklogfilename, "r");
 	}
 	if (!acklog) {
@@ -84,7 +84,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 		if (atol(l) >= cutoff) {
 			int c_used;
-			char *p, *p1, *hobbitdacker = NULL;
+			char *p, *p1, *xymondacker = NULL;
 
 			sscanf(l, "%u\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
 				(time_t *)&acks[num].acktime, &acks[num].acknum,
@@ -118,14 +118,14 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Xymon uses \n in the ack message, for the "acked by" data. Cut it off. */
 			nldecode(ackmsg); p = strchr(ackmsg, '\n'); 
 			if (p) {
-				if (strncmp(p, "\nAcked by:", 10) == 0) hobbitdacker = p+10;
+				if (strncmp(p, "\nAcked by:", 10) == 0) xymondacker = p+10;
 				*p = '\0';
 			}
 
 			/* Show only the first 30 characters in message */
 			if (strlen(ackmsg) > 30) ackmsg[30] = '\0';
 
-			sprintf(ackfn, "%s/ack.%s", xgetenv("BBACKS"), hosttest);
+			sprintf(ackfn, "%s/ack.%s", xgetenv("XYMONACKDIR"), hosttest);
 
 			testname = strrchr(hosttest, '.');
 			if (testname) {
@@ -141,7 +141,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 			/* Unknown host ? */
 			hinfo = hostinfo(hosttest);
 			if (!hinfo) ok = 0;
-			if (hinfo && bbh_item(hinfo, BBH_FLAG_NOBB2)) ok = 0;
+			if (hinfo && xmh_item(hinfo, XMH_FLAG_NONONGREEN)) ok = 0;
 
 			if (ok) {
 				char *ackerp;
@@ -158,8 +158,8 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 					if (p > ackerp) *p = '\0';
 					acks[num].ackedby = strdup(ackerp);
 				}
-				else if (hobbitdacker) {
-					acks[num].ackedby = strdup(hobbitdacker);
+				else if (xymondacker) {
+					acks[num].ackedby = strdup(xymondacker);
 				}
 				else {
 					acks[num].ackedby = "";
@@ -208,7 +208,7 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 
 			if (acks[num].color != -1) {
    				fprintf(output, "<TD ALIGN=CENTER><IMG SRC=\"%s/%s\"></TD>\n", 
-					xgetenv("BBSKIN"), 
+					xgetenv("XYMONSKIN"), 
 					dotgiffilename(acks[num].color, acks[num].ackvalid, 1));
 			}
 			else

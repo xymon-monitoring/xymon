@@ -11,7 +11,7 @@
 #ifndef _ACKLOG_H_
 #define _ACKLOG_H_
 
-/* Format of records in $BBACKS/acklog file (TAB separated) */
+/* Format of records in $XYMONACKDIR/acklog file (TAB separated) */
 typedef struct ack_t {
 	time_t	acktime;
 	int	acknum;

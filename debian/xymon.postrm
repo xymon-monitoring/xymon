@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
 	purge|disappear)
-	rm -f /etc/xymon/bb-hosts /etc/xymon/xymongroups /etc/xymon/xymonpasswd \
+	rm -f /etc/xymon/hosts.cfg /etc/xymon/xymongroups /etc/xymon/xymonpasswd \
 		/etc/default/xymon
 	if test -e /usr/share/debconf/confmodule ; then
 		. /usr/share/debconf/confmodule

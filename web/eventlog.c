@@ -28,7 +28,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 240;	/* Default: for the past 4 hours */
@@ -179,22 +179,22 @@ void show_topchanges(FILE *output,
 
 		for (i=0, cwalk=hostcounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
-					bbh_item(cwalk->src, BBH_HOSTNAME), 
+				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
-					bbh_item(cwalk->src, BBH_HOSTNAME), 
+					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 				if (STRBUFLEN(s) > 0) addtobuffer(s, "|"); 
 				addtobuffer(s, "^");
-				addtobuffer(s, bbh_item(cwalk->src, BBH_HOSTNAME));
+				addtobuffer(s, xmh_item(cwalk->src, XMH_HOSTNAME));
 				addtobuffer(s, "$");
 			}
 			else {
 				others += cwalk->total;
 			}
 		}
-		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXHOSTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+		fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?EXHOSTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 			STRBUF(s),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
@@ -261,7 +261,7 @@ void show_topchanges(FILE *output,
 
 		for (i=0, cwalk=svccounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					((htnames_t *)cwalk->src)->name, 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
@@ -276,7 +276,7 @@ void show_topchanges(FILE *output,
 				others += cwalk->total;
 			}
 		}
-		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXTESTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+		fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?EXTESTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 			STRBUF(s),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
@@ -320,8 +320,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-eventlog");
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	redirect_cgilog("eventlog");
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 

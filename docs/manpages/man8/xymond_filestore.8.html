@@ -1,41 +1,41 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITD_FILESTORE</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMOND_FILESTORE</TITLE>
 </HEAD><BODY>
-<H1>HOBBITD_FILESTORE</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMOND_FILESTORE</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitd_filestore - hobbitd worker module for storing Xymon data
+xymond_filestore - xymond worker module for storing Xymon data
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitd_channel --channel=status hobbitd_filestore --status [options]</B>
+<B>xymond_channel --channel=status xymond_filestore --status [options]</B>
 
 <BR>
 
-<B>hobbitd_channel --channel=data   hobbitd_filestore --data [options]</B>
+<B>xymond_channel --channel=data   xymond_filestore --data [options]</B>
 
 <BR>
 
-<B>hobbitd_channel --channel=notes  hobbitd_filestore --notes [options]</B>
+<B>xymond_channel --channel=notes  xymond_filestore --notes [options]</B>
 
 <BR>
 
-<B>hobbitd_channel --channel=enadis hobbitd_filestore --enadis [options]</B>
+<B>xymond_channel --channel=enadis xymond_filestore --enadis [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-hobbitd_filestore is a worker module for hobbitd, and as such it is normally
+xymond_filestore is a worker module for xymond, and as such it is normally
 run via the
-<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
 
-program. It receives hobbitd messages from a hobbitd channel via stdin, and 
+program. It receives xymond messages from a xymond channel via stdin, and 
 stores these in the filesystem in a manner that is compatible with the 
 Big Brother daemon, bbd.
 <P>
@@ -55,7 +55,7 @@ throughout your Xymon server, you will not need to run this
 module to save status messages, unless you have a third-party 
 add-on that reads the status-logs directly.
 This module is NOT needed to get trend graphs, you should run the 
-<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
 
 module instead.
 <P>
@@ -64,7 +64,7 @@ Incoming messages are &quot;data&quot; messages, they will be stored in the
 $BBDATA directory. This module is not needed, unless you have a
 third-party module that processes the data-files. This module is
 NOT needed to get trend graphs, you should run the 
-<I><A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8)</I>
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
 
 module instead.
 <P>
@@ -83,7 +83,7 @@ third-party add-ons that use these files.
 Overrides the default output directory.
 <P>
 <DT>--html<DD>
-Used together with &quot;--status&quot;. Tells hobbitd_filestore to also save
+Used together with &quot;--status&quot;. Tells xymond_filestore to also save
 an HTML version of the status-log. Should not be used unless you 
 must run with &quot;BBLOGSTATUS=static&quot;.
 <P>
@@ -96,7 +96,7 @@ Set the filename extension for generated HTML files. By default, HTML
 files are saved with a &quot;.html&quot; extension.
 <P>
 <DT>--multigraphs=TEST1[,TEST2]<DD>
-This causes hobbitd_filestore to generate HTML status pages with links to 
+This causes xymond_filestore to generate HTML status pages with links to 
 service graphs that are split up into multiple images, with at most 5 graphs
 per image. If not specified, only the &quot;disk&quot; status is split up this way.
 <P>
@@ -117,7 +117,7 @@ This module does not rely on any configuration files.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8), <A HREF="../man8/hobbitd_rrd.8.html">hobbitd_rrd</A>(8), <A HREF="../man8/hobbitd.8.html">hobbitd</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -135,6 +135,6 @@ This module does not rely on any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

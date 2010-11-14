@@ -22,9 +22,9 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "contest.h"
 #include "httpcookies.h"
 #include "httptest.h"
@@ -345,7 +345,7 @@ void add_http_test(testitem_t *t)
 	httptest = (http_data_t *) calloc(1, sizeof(http_data_t));
 	t->privdata = (void *) httptest;
 
-	decodedurl = decode_url(t->testspec, &httptest->bburl);
+	decodedurl = decode_url(t->testspec, &httptest->weburl);
 	if (!decodedurl) {
 		errprintf("Invalid URL for http check: %s\n", t->testspec);
 		return;
@@ -353,42 +353,42 @@ void add_http_test(testitem_t *t)
 
 	httptest->url = strdup(decodedurl);
 	httptest->contlen = -1;
-	httptest->parsestatus = (httptest->bburl.proxyurl ? httptest->bburl.proxyurl->parseerror : httptest->bburl.desturl->parseerror);
+	httptest->parsestatus = (httptest->weburl.proxyurl ? httptest->weburl.proxyurl->parseerror : httptest->weburl.desturl->parseerror);
 
 	/* If there was a parse error in the URL, dont run the test */
 	if (httptest->parsestatus) return;
 
 
-	if (httptest->bburl.proxyurl && (httptest->bburl.proxyurl->ip == NULL)) {
-		dnsip = dnsresolve(httptest->bburl.proxyurl->host);
+	if (httptest->weburl.proxyurl && (httptest->weburl.proxyurl->ip == NULL)) {
+		dnsip = dnsresolve(httptest->weburl.proxyurl->host);
 		if (dnsip) {
-			httptest->bburl.proxyurl->ip = strdup(dnsip);
+			httptest->weburl.proxyurl->ip = strdup(dnsip);
 		}
 		else {
-			dbgprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.proxyurl->host);
+			dbgprintf("Could not resolve URL hostname '%s'\n", httptest->weburl.proxyurl->host);
 		}
 	}
-	else if (httptest->bburl.desturl->ip == NULL) {
-		dnsip = dnsresolve(httptest->bburl.desturl->host);
+	else if (httptest->weburl.desturl->ip == NULL) {
+		dnsip = dnsresolve(httptest->weburl.desturl->host);
 		if (dnsip) {
-			httptest->bburl.desturl->ip = strdup(dnsip);
+			httptest->weburl.desturl->ip = strdup(dnsip);
 		}
 		else {
-			dbgprintf("Could not resolve URL hostname '%s'\n", httptest->bburl.desturl->host);
+			dbgprintf("Could not resolve URL hostname '%s'\n", httptest->weburl.desturl->host);
 		}
 	}
 
-	switch (httptest->bburl.testtype) {
-	  case BBTEST_PLAIN:
-	  case BBTEST_STATUS:
+	switch (httptest->weburl.testtype) {
+	  case WEBTEST_PLAIN:
+	  case WEBTEST_STATUS:
 		httptest->contentcheck = CONTENTCHECK_NONE;
 		break;
 
-	  case BBTEST_CONTENT:
+	  case WEBTEST_CONTENT:
 		{
 			FILE *contentfd;
 			char contentfn[PATH_MAX];
-			sprintf(contentfn, "%s/content/%s.substring", xgetenv("BBHOME"), commafy(t->host->hostname));
+			sprintf(contentfn, "%s/content/%s.substring", xgetenv("XYMONHOME"), commafy(t->host->hostname));
 			contentfd = fopen(contentfn, "r");
 			if (contentfd) {
 				char l[MAX_LINE_LEN];
@@ -396,7 +396,7 @@ void add_http_test(testitem_t *t)
 
 				if (fgets(l, sizeof(l), contentfd)) {
 					p = strchr(l, '\n'); if (p) { *p = '\0'; };
-					httptest->bburl.expdata = strdup(l);
+					httptest->weburl.expdata = strdup(l);
 				}
 				else {
 					httptest->contstatus = STATUS_CONTENTMATCH_NOFILE;
@@ -410,27 +410,27 @@ void add_http_test(testitem_t *t)
 		}
 		break;
 
-	  case BBTEST_CONT:
-		httptest->contentcheck = ((*httptest->bburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
+	  case WEBTEST_CONT:
+		httptest->contentcheck = ((*httptest->weburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
 		break;
 
-	  case BBTEST_NOCONT:
+	  case WEBTEST_NOCONT:
 		httptest->contentcheck = CONTENTCHECK_NOREGEX;
 		break;
 
-	  case BBTEST_POST:
-	  case BBTEST_SOAP:
-		if (httptest->bburl.expdata == NULL) {
+	  case WEBTEST_POST:
+	  case WEBTEST_SOAP:
+		if (httptest->weburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
 		else {
-			httptest->contentcheck = ((*httptest->bburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
+			httptest->contentcheck = ((*httptest->weburl.expdata == '#') ?  CONTENTCHECK_DIGEST : CONTENTCHECK_REGEX);
 		}
 		break;
 
-	  case BBTEST_NOPOST:
-	  case BBTEST_NOSOAP:
-		if (httptest->bburl.expdata == NULL) {
+	  case WEBTEST_NOPOST:
+	  case WEBTEST_NOSOAP:
+		if (httptest->weburl.expdata == NULL) {
 			httptest->contentcheck = CONTENTCHECK_NONE;
 		}
 		else {
@@ -438,7 +438,7 @@ void add_http_test(testitem_t *t)
 		}
 		break;
 
-	  case BBTEST_TYPE:
+	  case WEBTEST_TYPE:
 		httptest->contentcheck = CONTENTCHECK_CONTENTTYPE;
 		break;
 	}
@@ -449,7 +449,7 @@ void add_http_test(testitem_t *t)
 		{
 			char *hashfunc;
 
-			httptest->exp = (void *) strdup(httptest->bburl.expdata+1);
+			httptest->exp = (void *) strdup(httptest->weburl.expdata+1);
 			hashfunc = strchr(httptest->exp, ':');
 			if (hashfunc) {
 				*hashfunc = '\0';
@@ -465,38 +465,38 @@ void add_http_test(testitem_t *t)
 			int status;
 
 			httptest->exp = (void *) malloc(sizeof(regex_t));
-			status = regcomp((regex_t *)httptest->exp, httptest->bburl.expdata, REG_EXTENDED|REG_NOSUB);
+			status = regcomp((regex_t *)httptest->exp, httptest->weburl.expdata, REG_EXTENDED|REG_NOSUB);
 			if (status) {
-				errprintf("Failed to compile regexp '%s' for URL %s\n", httptest->bburl.expdata, httptest->url);
+				errprintf("Failed to compile regexp '%s' for URL %s\n", httptest->weburl.expdata, httptest->url);
 				httptest->contstatus = STATUS_CONTENTMATCH_BADREGEX;
 			}
 		}
 		break;
 
 	  case CONTENTCHECK_CONTENTTYPE:
-		httptest->exp = httptest->bburl.expdata;
+		httptest->exp = httptest->weburl.expdata;
 		break;
 	}
 
-	if (httptest->bburl.desturl->schemeopts) {
-		if      (strstr(httptest->bburl.desturl->schemeopts, "3"))      sslopt_version = SSLVERSION_V3;
-		else if (strstr(httptest->bburl.desturl->schemeopts, "2"))      sslopt_version = SSLVERSION_V2;
+	if (httptest->weburl.desturl->schemeopts) {
+		if      (strstr(httptest->weburl.desturl->schemeopts, "3"))      sslopt_version = SSLVERSION_V3;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "2"))      sslopt_version = SSLVERSION_V2;
 
-		if      (strstr(httptest->bburl.desturl->schemeopts, "h"))      sslopt_ciphers = ciphershigh;
-		else if (strstr(httptest->bburl.desturl->schemeopts, "m"))      sslopt_ciphers = ciphersmedium;
+		if      (strstr(httptest->weburl.desturl->schemeopts, "h"))      sslopt_ciphers = ciphershigh;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "m"))      sslopt_ciphers = ciphersmedium;
 
-		if      (strstr(httptest->bburl.desturl->schemeopts, "10"))     httpversion    = HTTPVER_10;
-		else if (strstr(httptest->bburl.desturl->schemeopts, "11"))     httpversion    = HTTPVER_11;
+		if      (strstr(httptest->weburl.desturl->schemeopts, "10"))     httpversion    = HTTPVER_10;
+		else if (strstr(httptest->weburl.desturl->schemeopts, "11"))     httpversion    = HTTPVER_11;
 	}
 
 	/* Get any cookies */
 	load_cookies();
 
 	/* Generate the request */
-	addtobuffer(httprequest, (httptest->bburl.postdata ? "POST " : "GET "));
+	addtobuffer(httprequest, (httptest->weburl.postdata ? "POST " : "GET "));
 	switch (httpversion) {
 		case HTTPVER_10: 
-			addtobuffer(httprequest, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
+			addtobuffer(httprequest, (httptest->weburl.proxyurl ? httptest->url : httptest->weburl.desturl->relurl));
 			addtobuffer(httprequest, " HTTP/1.0\r\n"); 
 			break;
 
@@ -506,48 +506,48 @@ void add_http_test(testitem_t *t)
 			 * full URL, some servers (e.g. SunOne App server 7) choke on it.
 			 * So just send the good-old relative URL unless we're proxying.
 			 */
-			addtobuffer(httprequest, (httptest->bburl.proxyurl ? httptest->url : httptest->bburl.desturl->relurl));
+			addtobuffer(httprequest, (httptest->weburl.proxyurl ? httptest->url : httptest->weburl.desturl->relurl));
 			addtobuffer(httprequest, " HTTP/1.1\r\n"); 
 			addtobuffer(httprequest, "Connection: close\r\n"); 
 			break;
 	}
 
 	addtobuffer(httprequest, "Host: ");
-	addtobuffer(httprequest, httptest->bburl.desturl->host);
-	if ((httptest->bburl.desturl->port != 80) && (httptest->bburl.desturl->port != 443)) {
+	addtobuffer(httprequest, httptest->weburl.desturl->host);
+	if ((httptest->weburl.desturl->port != 80) && (httptest->weburl.desturl->port != 443)) {
 		char hostporthdr[20];
 
-		sprintf(hostporthdr, ":%d", httptest->bburl.desturl->port);
+		sprintf(hostporthdr, ":%d", httptest->weburl.desturl->port);
 		addtobuffer(httprequest, hostporthdr);
 	}
 	addtobuffer(httprequest, "\r\n");
 
-	if (httptest->bburl.postdata) {
+	if (httptest->weburl.postdata) {
 		char hdr[100];
-		int contlen = strlen(httptest->bburl.postdata);
+		int contlen = strlen(httptest->weburl.postdata);
 
-		if (strncmp(httptest->bburl.postdata, "file:", 5) == 0) {
+		if (strncmp(httptest->weburl.postdata, "file:", 5) == 0) {
 			/* Load the POST data from a file */
-			FILE *pf = fopen(httptest->bburl.postdata+5, "r");
+			FILE *pf = fopen(httptest->weburl.postdata+5, "r");
 			if (pf == NULL) {
-				errprintf("Cannot open POST data file %s\n", httptest->bburl.postdata+5);
-				xfree(httptest->bburl.postdata);
-				httptest->bburl.postdata = strdup("");
+				errprintf("Cannot open POST data file %s\n", httptest->weburl.postdata+5);
+				xfree(httptest->weburl.postdata);
+				httptest->weburl.postdata = strdup("");
 				contlen = 0;
 			}
 			else {
 				struct stat st;
 
 				if (fstat(fileno(pf), &st) == 0) {
-					xfree(httptest->bburl.postdata);
-					httptest->bburl.postdata = (char *)malloc(st.st_size + 1);
-					fread(httptest->bburl.postdata, 1, st.st_size, pf);
-					*(httptest->bburl.postdata+st.st_size) = '\0';
+					xfree(httptest->weburl.postdata);
+					httptest->weburl.postdata = (char *)malloc(st.st_size + 1);
+					fread(httptest->weburl.postdata, 1, st.st_size, pf);
+					*(httptest->weburl.postdata+st.st_size) = '\0';
 					contlen = st.st_size;
 				}
 				else {
-					errprintf("Cannot stat file %s\n", httptest->bburl.postdata+5);
-					httptest->bburl.postdata = strdup("");
+					errprintf("Cannot stat file %s\n", httptest->weburl.postdata+5);
+					httptest->weburl.postdata = strdup("");
 					contlen = 0;
 				}
 
@@ -556,9 +556,9 @@ void add_http_test(testitem_t *t)
 		}
 
 		addtobuffer(httprequest, "Content-type: ");
-		if      (httptest->bburl.postcontenttype) 
-			addtobuffer(httprequest, httptest->bburl.postcontenttype);
-		else if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) 
+		if      (httptest->weburl.postcontenttype) 
+			addtobuffer(httprequest, httptest->weburl.postcontenttype);
+		else if ((httptest->weburl.testtype == WEBTEST_SOAP) || (httptest->weburl.testtype == WEBTEST_NOSOAP)) 
 			addtobuffer(httprequest, "application/soap+xml; charset=utf-8");
 		else 
 			addtobuffer(httprequest, "application/x-www-form-urlencoded");
@@ -573,42 +573,42 @@ void add_http_test(testitem_t *t)
 		char *browser = NULL;
 
 		hinfo = hostinfo(t->host->hostname);
-		if (hinfo) browser = bbh_item(hinfo, BBH_BROWSER);
+		if (hinfo) browser = xmh_item(hinfo, XMH_BROWSER);
 
 		if (browser) {
 			sprintf(useragent, "User-Agent: %s\r\n", browser);
 		}
 		else {
-			sprintf(useragent, "User-Agent: Xymon bbtest-net/%s\r\n", VERSION);
+			sprintf(useragent, "User-Agent: Xymon xymonnet/%s\r\n", VERSION);
 		}
 
 		addtobuffer(httprequest, useragent);
 	}
-	if (httptest->bburl.desturl->auth) {
-		if (strncmp(httptest->bburl.desturl->auth, "CERT:", 5) == 0) {
-			sslopt_clientcert = httptest->bburl.desturl->auth+5;
+	if (httptest->weburl.desturl->auth) {
+		if (strncmp(httptest->weburl.desturl->auth, "CERT:", 5) == 0) {
+			sslopt_clientcert = httptest->weburl.desturl->auth+5;
 		}
 		else {
 			addtobuffer(httprequest, "Authorization: Basic ");
-			addtobuffer(httprequest, base64encode(httptest->bburl.desturl->auth));
+			addtobuffer(httprequest, base64encode(httptest->weburl.desturl->auth));
 			addtobuffer(httprequest, "\r\n");
 		}
 	}
-	if (httptest->bburl.proxyurl && httptest->bburl.proxyurl->auth) {
+	if (httptest->weburl.proxyurl && httptest->weburl.proxyurl->auth) {
 		addtobuffer(httprequest, "Proxy-Authorization: Basic ");
-		addtobuffer(httprequest, base64encode(httptest->bburl.proxyurl->auth));
+		addtobuffer(httprequest, base64encode(httptest->weburl.proxyurl->auth));
 		addtobuffer(httprequest, "\r\n");
 	}
 	for (ck = cookiehead; (ck); ck = ck->next) {
 		int useit = 0;
 
 		if (ck->tailmatch) {
-			int startpos = strlen(httptest->bburl.desturl->host) - strlen(ck->host);
+			int startpos = strlen(httptest->weburl.desturl->host) - strlen(ck->host);
 
-			if (startpos > 0) useit = (strcmp(httptest->bburl.desturl->host+startpos, ck->host) == 0);
+			if (startpos > 0) useit = (strcmp(httptest->weburl.desturl->host+startpos, ck->host) == 0);
 		}
-		else useit = (strcmp(httptest->bburl.desturl->host, ck->host) == 0);
-		if (useit) useit = (strncmp(ck->path, httptest->bburl.desturl->relurl, strlen(ck->path)) == 0);
+		else useit = (strcmp(httptest->weburl.desturl->host, ck->host) == 0);
+		if (useit) useit = (strncmp(ck->path, httptest->weburl.desturl->relurl, strlen(ck->path)) == 0);
 
 		if (useit) {
 			if (firstcookie) {
@@ -626,7 +626,7 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "Accept: */*\r\n");
 	addtobuffer(httprequest, "Pragma: no-cache\r\n");
 
-	if ((httptest->bburl.testtype == BBTEST_SOAP) || (httptest->bburl.testtype == BBTEST_NOSOAP)) {
+	if ((httptest->weburl.testtype == WEBTEST_SOAP) || (httptest->weburl.testtype == WEBTEST_NOSOAP)) {
 		/* Must provide a SOAPAction header */
 		addtobuffer(httprequest, "SOAPAction: ");
 		addtobuffer(httprequest, httptest->url);
@@ -637,7 +637,7 @@ void add_http_test(testitem_t *t)
 	addtobuffer(httprequest, "\r\n");
 
 	/* Post data goes last */
-	if (httptest->bburl.postdata) addtobuffer(httprequest, httptest->bburl.postdata);
+	if (httptest->weburl.postdata) addtobuffer(httprequest, httptest->weburl.postdata);
 
 	/* Pickup any SSL options the user wants */
 	if (sslopt_ciphers || (sslopt_version != SSLVERSION_DEFAULT) || sslopt_clientcert){
@@ -648,18 +648,18 @@ void add_http_test(testitem_t *t)
 	}
 
 	/* Add to TCP test queue */
-	if (httptest->bburl.proxyurl == NULL) {
-		httptest->tcptest = add_tcp_test(httptest->bburl.desturl->ip, 
-						 httptest->bburl.desturl->port, 
-						 httptest->bburl.desturl->scheme,
+	if (httptest->weburl.proxyurl == NULL) {
+		httptest->tcptest = add_tcp_test(httptest->weburl.desturl->ip, 
+						 httptest->weburl.desturl->port, 
+						 httptest->weburl.desturl->scheme,
 						 sslopt, t->srcip,
 						 t->testspec, t->silenttest, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);
 	}
 	else {
-		httptest->tcptest = add_tcp_test(httptest->bburl.proxyurl->ip, 
-						 httptest->bburl.proxyurl->port, 
-						 httptest->bburl.proxyurl->scheme,
+		httptest->tcptest = add_tcp_test(httptest->weburl.proxyurl->ip, 
+						 httptest->weburl.proxyurl->port, 
+						 httptest->weburl.proxyurl->scheme,
 						 sslopt, t->srcip,
 						 t->testspec, t->silenttest, grabstrbuffer(httprequest), 
 						 httptest, tcp_http_data_callback, tcp_http_final_callback);

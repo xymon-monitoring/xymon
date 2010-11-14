@@ -1,28 +1,28 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BBCOMBOTEST.CFG</TITLE>
+<HTML><HEAD><TITLE>Man page of COMBO.CFG</TITLE>
 </HEAD><BODY>
-<H1>BBCOMBOTEST.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>COMBO.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bbcombotest.cfg - Configuration of bbcombotest tool
+combo.cfg - Configuration of combostatus tool
 <P>
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>$BBHOME/etc/bbcombotest.cfg</B>
+<B>$BBHOME/etc/combo.cfg</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+<I><A HREF="../man1/combostatus.1.html">combostatus</A>(1)</I>
 
-uses it's own configuration file, $BBHOME/etc/bbcombotest.cfg
+uses it's own configuration file, $BBHOME/etc/combo.cfg
 Each line in this file defines a combined test.
 <P>
 <A NAME="lbAE">&nbsp;</A>
@@ -32,7 +32,7 @@ Each line of the file defines a new combined test. Blank lines and lines
 starting with a hash mark (#) are treated as comments and ignored.
 <P>
 The configuration file uses the hostnames and testnames
-that are already used in your Xymon bb-hosts file. These are
+that are already used in your Xymon hosts.cfg file. These are
 then combined using normal logical operators - &quot;||&quot; for &quot;or&quot;, &quot;&amp;&amp;&quot; for
 &quot;and&quot; etc.
 <P>
@@ -113,13 +113,13 @@ test, defining a test that shows the overall health of the system.
 <A NAME="lbAG">&nbsp;</A>
 <H2>FILES</H2>
 
-<B>$BBHOME/etc/bbcombotest.cfg</B>
+<B>$BBHOME/etc/combo.cfg</B>
 
 <P>
 <A NAME="lbAH">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)
+<A HREF="../man1/combostatus.1.html">combostatus</A>(1)
 <P>
 <P>
 
@@ -138,6 +138,6 @@ test, defining a test that shows the overall health of the system.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

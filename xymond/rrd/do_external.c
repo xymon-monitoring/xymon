@@ -31,7 +31,7 @@ int do_external_rrd(char *hostname, char *testname, char *classname, char *pagep
 		
 		MEMDEFINE(fn); MEMDEFINE(extcmd);
 
-		sprintf(fn, "%s/rrd_msg_%d", xgetenv("BBTMP"), (int) getpid());
+		sprintf(fn, "%s/rrd_msg_%d", xgetenv("XYMONTMP"), (int) getpid());
 		dbgprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);
 
 		fd = fopen(fn, "w");

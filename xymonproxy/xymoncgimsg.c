@@ -13,7 +13,7 @@
 
 static char rcsid[] = "$Id$";
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	if (cgidata) {
 		printf("Content-Type: application/octet-stream\n\n");
 		sres = newsendreturnbuf(1, stdout);
-		result = sendmessage(cgidata->value, "127.0.0.1", BBTALK_TIMEOUT, sres);
+		result = sendmessage(cgidata->value, "127.0.0.1", XYMON_TIMEOUT, sres);
 	}
 
 	return result;

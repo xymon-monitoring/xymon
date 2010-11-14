@@ -80,7 +80,7 @@ typedef unsigned int u_int32_t;
 #define BIG_ENDIAN     4321
 #endif
 
-#ifdef HOBBIT_LITTLE_ENDIAN
+#ifdef XYMON_LITTLE_ENDIAN
 #define BYTE_ORDER LITTLE_ENDIAN
 #else
 #define BYTE_ORDER BIG_ENDIAN

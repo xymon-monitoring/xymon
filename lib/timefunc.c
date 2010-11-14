@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for timehandling.                                     */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #ifdef time
 #undef time
@@ -327,8 +327,8 @@ char *check_downtime(char *hostname, char *testname)
 
 	if (hinfo == NULL) return NULL;
 
-	dtag = bbh_item(hinfo, BBH_DOWNTIME);
-	holkey = bbh_item(hinfo, BBH_HOLIDAYS);
+	dtag = xmh_item(hinfo, XMH_DOWNTIME);
+	holkey = xmh_item(hinfo, XMH_HOLIDAYS);
 	if (dtag && *dtag) {
 		static char *downtag = NULL;
 		static unsigned char *cause = NULL;
@@ -618,7 +618,7 @@ time_t timestr2timet(char *s)
 	struct tm tm;
 
 	if (strlen(s) != 12) {
-		errprintf("Invalid timestring in bb-hosts: '%s'\n", s);
+		errprintf("Invalid timestring: '%s'\n", s);
 		return -1;
 	}
 

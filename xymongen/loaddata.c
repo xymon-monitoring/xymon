@@ -23,19 +23,19 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
-#include "loadbbhosts.h"
+#include "loadlayout.h"
 #include "loaddata.h"
 
 int		statuscount = 0;
 
 char		*ignorecolumns = NULL;			/* Columns that will be ignored totally */
-char		*dialupskin = NULL;			/* BBSKIN used for dialup tests */
-char		*reverseskin = NULL;			/* BBSKIN used for reverse tests */
+char		*dialupskin = NULL;			/* XYMONSKIN used for dialup tests */
+char		*reverseskin = NULL;			/* XYMONSKIN used for reverse tests */
 time_t		recentgif_limit = 86400;		/* Limit for recent-gifs display, in seconds */
 
-bbgen_col_t   	null_column = { "", NULL };		/* Null column */
+xymongen_col_t 	null_column = { "", NULL };		/* Null column */
 
 char		*purplelogfn = NULL;
 static FILE	*purplelog = NULL;
@@ -109,7 +109,7 @@ int unwantedcolumn(char *hostname, char *testname)
 	hinfo = hostinfo(hostname);
 	if (!hinfo) return 1;
 
-	nc = bbh_item(hinfo, BBH_NOCOLUMNS);
+	nc = xmh_item(hinfo, XMH_NOCOLUMNS);
 	if (!nc) return 0;
 
 	nc = strdup(nc);
@@ -156,7 +156,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		if (strcmp(p, xgetenv("TRENDSCOLUMN")) == 0) return NULL;
 
 		/*
-		 * When doing reports, we are scanning the BBHIST directory. It may
+		 * When doing reports, we are scanning the XYMONHISTDIR directory. It may
 		 * contain files that are named as a host only (no test-name).
 		 * Skip those.
 		 */
@@ -169,7 +169,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		logexpired = (log->validtime < now);
 	}
 	else {
-		sprintf(fullfn, "%s/%s", xgetenv("BBHIST"), filename);
+		sprintf(fullfn, "%s/%s", xgetenv("XYMONHISTDIR"), filename);
 
 		/* Check that we can access this file */
 		if ( (stat(fullfn, &log_st) == -1)       || 
@@ -323,7 +323,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		host->entries = newstate->entry;
 
 		/* There may be multiple host entries, if a host is
-		 * listed in several locations in bb-hosts (for display purposes).
+		 * listed in several locations in hosts.cfg (for display purposes).
 		 * This is handled by updating ALL of the cloned host records.
 		 * Bug reported by Bluejay Adametz of Fuji.
 		 */
@@ -335,7 +335,7 @@ state_t *init_state(char *filename, logdata_t *log)
 		for (l=l->clones; (l); l = l->clones) l->hostentry->entries = host->entries;
 	}
 	else {
-		/* No host for this test - must be missing from bb-hosts */
+		/* No host for this test - must be missing from hosts.cfg */
 		newstate->entry->next = NULL;
 	}
 
@@ -395,7 +395,7 @@ dispsummary_t *init_displaysummary(char *fn, logdata_t *log)
 
 void generate_compactitems(state_t **topstate)
 {
-	void *bbh;
+	void *xmh;
 	compact_t **complist = NULL;
 	int complistsz = 0;
 	hostlist_t 	*h;
@@ -408,8 +408,8 @@ void generate_compactitems(state_t **topstate)
 	time_t now = getcurrenttime(NULL);
 
 	for (h = hostlistBegin(); (h); h = hostlistNext()) {
-		bbh = hostinfo(h->hostentry->hostname);
-		compacted = bbh_item(bbh, BBH_COMPACT);
+		xmh = hostinfo(h->hostentry->hostname);
+		compacted = xmh_item(xmh, XMH_COMPACT);
 		if (!compacted) continue;
 
 		tok1 = strtok_r(compacted, ",", &savep1);
@@ -472,7 +472,7 @@ void generate_compactitems(state_t **topstate)
 
 state_t *load_state(dispsummary_t **sumhead)
 {
-	int hobbitdresult;
+	int 		xymondresult;
 	char		fn[PATH_MAX];
 	state_t		*newstate, *topstate;
 	dispsummary_t	*newsum, *topsum;
@@ -494,31 +494,31 @@ state_t *load_state(dispsummary_t **sumhead)
 			struct stat st;
 			FILE *fd;
 
-			hobbitdresult = BB_ETIMEOUT;
+			xymondresult = XYMONSEND_ETIMEOUT;
 			if (stat(dumpfn, &st) == 0) {
 				fd = fopen(dumpfn, "r");
 				if (fd) {
 					board = (char *)malloc(st.st_size + 1);
 					fread(board, 1, st.st_size, fd);
 					fclose(fd);
-					hobbitdresult = BB_OK;
+					xymondresult = XYMONSEND_OK;
 				}
 			}
 		}
 		else {
-			hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, BBTALK_TIMEOUT, sres);
+			xymondresult = sendmessage("xymondboard fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1,acklist", NULL, XYMON_TIMEOUT, sres);
 			board = getsendreturnstr(sres, 1);
 		}
 	}
 	else {
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname", NULL, BBTALK_TIMEOUT, sres);
+		xymondresult = sendmessage("xymondboard fields=hostname,testname", NULL, XYMON_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 	}
 
 	freesendreturnbuf(sres);
 
-	if ((hobbitdresult != BB_OK) || (board == NULL) || (*board == '\0')) {
-		errprintf("hobbitd status-board not available, code %d\n", hobbitdresult);
+	if ((xymondresult != XYMONSEND_OK) || (board == NULL) || (*board == '\0')) {
+		errprintf("xymond status-board not available, code %d\n", xymondresult);
 		return NULL;
 	}
 

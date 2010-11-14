@@ -1,8 +1,8 @@
-.TH HOBBITFETCH 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
+.TH XYMONFETCH 8 "Version 4.2.3:  4 Feb 2009" "Xymon"
 .SH NAME
-hobbitfetch \- fetch client data from passive clients
+xymonfetch \- fetch client data from passive clients
 .SH SYNOPSIS
-.B "hobbitfetch [--server=HOBBIT.SERVER.IP] [options]"
+.B "xymonfetch [--server=XYMON.SERVER.IP] [options]"
 
 .SH DESCRIPTION
 This utility is used to collect data from Xymon clients.
@@ -15,36 +15,36 @@ to an external server such as the Xymon server, due to firewall
 policies. In such a setup you can configure the client to store
 all of the client data locally by enabling the
 .I msgcache(8)
-utility on the client, and using \fBhobbitfetch\fR on the Xymon
+utility on the client, and using \fBxymonfetch\fR on the Xymon
 server to collect data from the clients.
 
-hobbitfetch will only collect data from clients that have the
+xymonfetch will only collect data from clients that have the
 \fBpulldata\fR tag listed in the
-.I bb-hosts(5)
-file. The IP-address listed in the bb-hosts file must be correct,
-since this is the IP-address where hobbitfetch will attempt to contact
+.I hosts.cfg(5)
+file. The IP-address listed in the hosts.cfg file must be correct,
+since this is the IP-address where xymonfetch will attempt to contact
 the client.  If the msgcache daemon is running on a non-standard 
 IP-address or portnumber, you can specify the portnumber as in
 \fBpulldata=192.168.1.2:8084\fR for contacting the msgcache daemon 
 using IP 192.168.1.2 port 8084. If the IP-address is omitted, the
-default IP in the bb-hosts file is used. If the port number is
-omitted, the portnumber from the BBPORT setting in
-.I hobbitserver.cfg(5)
+default IP in the hosts.cfg file is used. If the port number is
+omitted, the portnumber from the XYMONDPORT setting in
+.I xymonserver.cfg(5)
 is used (normally, this is port 1984).
 
 .SH OPTIONS
-.IP "--server=HOBBIT.SERVER.IP"
+.IP "--server=XYMON.SERVER.IP"
 Defines the IP address of the Xymon server where the collected client
 messages are forwarded to. By default, messages are sent to the
 loopback address 127.0.0.1, i.e. to a Xymon server running on the same 
-host as hobbitfetch.
+host as xymonfetch.
 
 .IP "--interval=N"
 Sets the interval (in seconds) between polls of a client. Default: 60 seconds.
 
 .IP "--id=N"
 Used when you have a setup with multiple Xymon servers. In that case, you
-must run hobbitfetch on each of the Xymon servers, with hobbitfetch instance
+must run xymonfetch on each of the Xymon servers, with xymonfetch instance
 using a different value of N. This allows several Xymon servers to pick up
 data from the clients running msgcache, and msgcache can distinguish between
 which messages have already been forwarded to which server.
@@ -52,14 +52,14 @@ which messages have already been forwarded to which server.
 N is a number in the range 1-31.
 
 .IP "--log-interval=N"
-Limit how often hobbitfetch will log problems with fetching data from a
+Limit how often xymonfetch will log problems with fetching data from a
 host, in seconds. Default: 900 seconds (15 minutes). This is to prevent
 a host that is down or where msgcache has not been started from flooding
-the hobbitfetch logs. Note that this is ignored when debugging is enabled.
+the xymonfetch logs. Note that this is ignored when debugging is enabled.
 
 .IP "--debug"
 Enable debugging output.
 
 .SH "SEE ALSO"
-msgcache(8), hobbitd(8), xymon(7)
+msgcache(8), xymond(8), xymon(7)
 

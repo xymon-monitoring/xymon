@@ -8,8 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBTEST_NET_H__
-#define __BBTEST_NET_H__
+#ifndef __XYMONNET_H__
+#define __XYMONNET_H__
 
 #include <sys/time.h>
 
@@ -23,7 +23,7 @@
 enum toolid_t { TOOL_CONTEST, TOOL_DNS, TOOL_NTP, TOOL_FPING, TOOL_HTTP, TOOL_LDAP, TOOL_RPCINFO };
 
 /*
- * Structure of the bbtest-net in-memory records
+ * Structure of the xymonnet in-memory records
  *
  *  +->service_t
  *  |      testname
@@ -128,7 +128,7 @@ typedef struct testitem_t {
 	struct testedhost_t *host;	/* Pointer to testedhost_t record for this host */
 	struct service_t *service;	/* Pointer to service_t record for the service to test */
 
-	char		*testspec;      /* Pointer to the raw testspec in bb-hosts */
+	char		*testspec;      /* Pointer to the raw testspec in hosts.cfg */
 	int		reverse;	/* "!testname" flag */
 	int		dialup;		/* "?testname" flag */
 	int		alwaystrue;	/* "~testname" flag */

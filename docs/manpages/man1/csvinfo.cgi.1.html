@@ -1,31 +1,31 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BB-CSVINFO.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of CSVINFO.CGI</TITLE>
 </HEAD><BODY>
-<H1>BB-CSVINFO.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>CSVINFO.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bb-csvinfo.cgi - CGI program to show host information from a CSV file
+csvinfo.cgi - CGI program to show host information from a CSV file
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bb-csvinfo.cgi</B>
+<B>csvinfo.cgi</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>bb-csvinfo.cgi</B>
-is invoked as a CGI script via the bb-csvinfo.sh CGI wrapper.
+<B>csvinfo.cgi</B>
+is invoked as a CGI script via the csvinfo.sh CGI wrapper.
 Based on the parameters it receives, it searches a comma-
 separated file for the matching host, and presents the information
 found as a table.
 <P>
-bb-csvinfo.cgi is passed a QUERY_STRING environment variable 
+csvinfo.cgi is passed a QUERY_STRING environment variable 
 with the following parameters:
 <P>
 <BR>&nbsp;&nbsp;&nbsp;key&nbsp;(string&nbsp;to&nbsp;search&nbsp;for,&nbsp;typically&nbsp;hostname)
@@ -37,33 +37,33 @@ CSV files are easily created from e.g. spreadsheets, by exporting them
 in CSV format. You should have one host per line, with the first line
 containing the column headings. Despite their name, the default delimiter
 for CSV files is the semi-colon - if you need a different delimiter, 
-invoke bb-csvinfo.cgi with the &quot;delimiter=&lt;character&gt;&quot; in the query
+invoke csvinfo.cgi with the &quot;delimiter=&lt;character&gt;&quot; in the query
 string.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>Example usage</H2>
 
-This example shows how you can use the bb-csvinfo CGI. It assumes
+This example shows how you can use the csvinfo CGI. It assumes
 you have a CSV-formatted file with information about the hosts stored
 as $BBHOME/etc/hostinfo.csv, and the hostname is in the first column
 of the file.
 <P>
 <DL COMPACT>
-<DT>Use with the bbgen --docurl<DD>
+<DT>Use with the xymongen --docurl<DD>
 The --docurl option to
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 sets up all of the hostnames on your Xymon webpages to act as links to
-a CGI script. To invoke the bb-csvinfo CGI script, run bbgen with the
+a CGI script. To invoke the csvinfo CGI script, run xymongen with the
 option
 <P>
-<BR>&nbsp;&nbsp;&nbsp;--docurl=/cgi-bin/bb-csvinfo.sh?db=hostinfo.csv&amp;key=%s
+<BR>&nbsp;&nbsp;&nbsp;--docurl=/cgi-bin/csvinfo.sh?db=hostinfo.csv&amp;key=%s
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5), <A HREF="../man1/bbgen.1.html">bbgen</A>(1)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5), <A HREF="../man1/xymongen.1.html">xymongen</A>(1)
 <P>
 <P>
 
@@ -80,6 +80,6 @@ option
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

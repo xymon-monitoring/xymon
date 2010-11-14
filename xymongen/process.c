@@ -23,29 +23,29 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <sys/wait.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "process.h"
 #include "util.h"
 
-void calc_hostcolors(char *bb2ignores)
+void calc_hostcolors(char *nongreenignores)
 {
-	int		color, bb2color, bbnkcolor, oldage;
+	int		color, nongreencolor, criticalcolor, oldage;
 	hostlist_t 	*h, *cwalk;
 	entry_t		*e;
 
 	for (h = hostlistBegin(); (h); h = hostlistNext()) {
-		color = bb2color = bbnkcolor = 0; oldage = 1;
+		color = nongreencolor = criticalcolor = 0; oldage = 1;
 
 		for (e = h->hostentry->entries; (e); e = e->next) {
 			if (e->propagate && (e->color > color)) color = e->color;
 			oldage &= e->oldage;
 
-			if (e->propagate && (e->color > bb2color) && (strstr(bb2ignores, e->column->listname) == NULL)) {
-				bb2color = e->color;
+			if (e->propagate && (e->color > nongreencolor) && (strstr(nongreenignores, e->column->listname) == NULL)) {
+				nongreencolor = e->color;
 			}
 
-			if (e->propagate && e->alert && (e->color > bbnkcolor)) {
-				bbnkcolor = e->color;
+			if (e->propagate && e->alert && (e->color > criticalcolor)) {
+				criticalcolor = e->color;
 			}
 		}
 
@@ -53,24 +53,24 @@ void calc_hostcolors(char *bb2ignores)
 		if ((color == COL_CLEAR) || (color == COL_BLUE)) color = COL_GREEN;
 
 		h->hostentry->color = color;
-		h->hostentry->bb2color = bb2color;
-		h->hostentry->bbnkcolor = bbnkcolor;
+		h->hostentry->nongreencolor = nongreencolor;
+		h->hostentry->criticalcolor = criticalcolor;
 		h->hostentry->oldage = oldage;
 
 		/* Need to update the clones also */
 		for (cwalk = h->clones; (cwalk); cwalk = cwalk->clones) {
 			cwalk->hostentry->color = color;
-			cwalk->hostentry->bb2color = bb2color;
-			cwalk->hostentry->bbnkcolor = bbnkcolor;
+			cwalk->hostentry->nongreencolor = nongreencolor;
+			cwalk->hostentry->criticalcolor = criticalcolor;
 			cwalk->hostentry->oldage = oldage;
 		}
 	}
 }
 
 
-void calc_pagecolors(bbgen_page_t *phead)
+void calc_pagecolors(xymongen_page_t *phead)
 {
-	bbgen_page_t 	*p, *toppage;
+	xymongen_page_t 	*p, *toppage;
 	group_t *g;
 	host_t  *h;
 	int	color, oldage;
@@ -162,20 +162,20 @@ void calc_pagecolors(bbgen_page_t *phead)
 
 void delete_old_acks(void)
 {
-	DIR             *bbacks;
+	DIR             *xymonacks;
 	struct dirent   *d;
 	struct stat     st;
 	time_t		now = getcurrenttime(NULL);
 	char		fn[PATH_MAX];
 
-	bbacks = opendir(xgetenv("BBACKS"));
-	if (!bbacks) {
-		errprintf("No BBACKS! Cannot cd to directory %s\n", xgetenv("BBACKS"));
+	xymonacks = opendir(xgetenv("XYMONACKDIR"));
+	if (!xymonacks) {
+		errprintf("No XYMONACKDIR! Cannot cd to directory %s\n", xgetenv("XYMONACKDIR"));
 		return;
         }
 
-	chdir(xgetenv("BBACKS"));
-	while ((d = readdir(bbacks))) {
+	chdir(xgetenv("XYMONACKDIR"));
+	while ((d = readdir(xymonacks))) {
 		strcpy(fn, d->d_name);
 		if (strncmp(fn, "ack.", 4) == 0) {
 			stat(fn, &st);
@@ -184,7 +184,7 @@ void delete_old_acks(void)
 			}
 		}
 	}
-	closedir(bbacks);
+	closedir(xymonacks);
 }
 
 void send_summaries(summary_t *sumhead)
@@ -206,24 +206,24 @@ void send_summaries(summary_t *sumhead)
 			p = strchr(suburl, '/');	/* Find next '/' */
 			if (p) suburl = p;
 		}
-		if (strncmp(suburl, xgetenv("BBWEB"), strlen(xgetenv("BBWEB"))) == 0) 
-			suburl += strlen(xgetenv("BBWEB"));
+		if (strncmp(suburl, xgetenv("XYMONWEB"), strlen(xgetenv("XYMONWEB"))) == 0) 
+			suburl += strlen(xgetenv("XYMONWEB"));
 		if (*suburl == '/') suburl++;
 
 		dbgprintf("summ1: s->url=%s, suburl=%s\n", s->url, suburl);
 
-		if      (strcmp(suburl, "bb.html") == 0) summarycolor = bb_color;
-		else if (strcmp(suburl, "index.html") == 0) summarycolor = bb_color;
-		else if (strcmp(suburl, "") == 0) summarycolor = bb_color;
-		else if (strcmp(suburl, "bb2.html") == 0) summarycolor = bb2_color;
-		else if (strcmp(suburl, "bbnk.html") == 0) summarycolor = bbnk_color;
+		if      (strcmp(suburl, "xymon.html") == 0) summarycolor = xymon_color;
+		else if (strcmp(suburl, "index.html") == 0) summarycolor = xymon_color;
+		else if (strcmp(suburl, "") == 0) summarycolor = xymon_color;
+		else if (strcmp(suburl, "nongreen.html") == 0) summarycolor = nongreen_color;
+		else if (strcmp(suburl, "critical.html") == 0) summarycolor = critical_color;
 		else {
 			/* 
 			 * Specific page - find it in the page tree.
 			 */
 			char *p, *pg;
-			bbgen_page_t *pgwalk;
-			bbgen_page_t *sourcepg = NULL;
+			xymongen_page_t *pgwalk;
+			xymongen_page_t *sourcepg = NULL;
 			char *urlcopy = strdup(suburl);
 
 			/*
@@ -262,7 +262,7 @@ void send_summaries(summary_t *sumhead)
 		summsg = (char *)malloc(1024 + strlen(s->name) + strlen(s->url) + strlen(timestamp));
 		sprintf(summsg, "summary summary.%s %s %s %s",
 			s->name, colorname(summarycolor), s->url, timestamp);
-		sendmessage(summsg, s->receiver, BBTALK_TIMEOUT, NULL);
+		sendmessage(summsg, s->receiver, XYMON_TIMEOUT, NULL);
 		xfree(summsg);
 	}
 }

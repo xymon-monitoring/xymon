@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for working with RRD graphs.                          */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -20,23 +20,23 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 /* This is for mapping a status-name -> RRD file */
-hobbitrrd_t *hobbitrrds = NULL;
-RbtHandle hobbitrrdtree;
+xymonrrd_t *xymonrrds = NULL;
+RbtHandle xymonrrdtree;
 
 /* This is the information needed to generate links on the trends column page  */
-hobbitgraph_t *hobbitgraphs = NULL;
+xymongraph_t *xymongraphs = NULL;
 
-static const char *hobbitlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"hobbitgraph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=custom&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
+static const char *xymonlinkfmt = "<table summary=\"%s Graph\"><tr><td><A HREF=\"%s&amp;action=menu\"><IMG BORDER=0 SRC=\"%s&amp;graph=hourly&amp;action=view\" ALT=\"xymongraph %s\"></A></td><td> <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=custom&amp;action=selzoom\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td></tr></table>\n";
 
 static const char *metafmt = "<RRDGraph>\n  <GraphType>%s</GraphType>\n  <GraphLink><![CDATA[%s]]></GraphLink>\n  <GraphImage><![CDATA[%s&amp;graph=hourly]]></GraphImage>\n</RRDGraph>\n";
 
 
 /*
- * Define the mapping between BB columns and RRD graphs.
+ * Define the mapping between Xymon columns and RRD graphs.
  * Normally they are identical, but some RRD's use different names.
  */
 static void rrd_setup(void)
@@ -44,8 +44,9 @@ static void rrd_setup(void)
 	static int setup_done = 0;
 	char *lenv, *ldef, *p, *tcptests, *services;
 	int count;
-	hobbitrrd_t *lrec;
-	hobbitgraph_t *grec;
+	xymonrrd_t *lrec;
+	xymongraph_t *grec;
+
 
 	/* Do nothing if we have been called within the past 5 minutes */
 	if ((setup_done + 300) >= getcurrenttime(NULL)) return;
@@ -54,26 +55,26 @@ static void rrd_setup(void)
 	/* 
 	 * Must free any old data first.
 	 * NB: These lists are NOT null-terminated ! 
-	 *     Stop when bbsvcname becomes a NULL.
+	 *     Stop when svcname becomes a NULL.
 	 */
-	lrec = hobbitrrds;
-	while (lrec && lrec->bbsvcname) {
-		if (lrec->hobbitrrdname != lrec->bbsvcname) xfree(lrec->hobbitrrdname);
-		xfree(lrec->bbsvcname);
+	lrec = xymonrrds;
+	while (lrec && lrec->svcname) {
+		if (lrec->xymonrrdname != lrec->svcname) xfree(lrec->xymonrrdname);
+		xfree(lrec->svcname);
 		lrec++;
 	}
-	if (hobbitrrds) {
-		xfree(hobbitrrds);
-		rbtDelete(hobbitrrdtree);
+	if (xymonrrds) {
+		xfree(xymonrrds);
+		rbtDelete(xymonrrdtree);
 	}
 
-	grec = hobbitgraphs;
-	while (grec && grec->hobbitrrdname) {
-		if (grec->hobbitpartname) xfree(grec->hobbitpartname);
-		xfree(grec->hobbitrrdname);
+	grec = xymongraphs;
+	while (grec && grec->xymonrrdname) {
+		if (grec->xymonpartname) xfree(grec->xymonpartname);
+		xfree(grec->xymonrrdname);
 		grec++;
 	}
-	if (hobbitgraphs) xfree(hobbitgraphs);
+	if (xymongraphs) xfree(xymongraphs);
 
 
 	/* Get the tcp services, and count how many there are */
@@ -82,7 +83,7 @@ static void rrd_setup(void)
 	count = 0; p = strtok(tcptests, " "); while (p) { count++; p = strtok(NULL, " "); }
 	strcpy(tcptests, services);
 
-	/* Setup the hobbitrrds table, mapping test-names to RRD files */
+	/* Setup the xymonrrds table, mapping test-names to RRD files */
 	lenv = (char *)malloc(strlen(xgetenv("TEST2RRD")) + strlen(tcptests) + count*strlen(",=tcp") + 1);
 	strcpy(lenv, xgetenv("TEST2RRD")); 
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
@@ -91,52 +92,52 @@ static void rrd_setup(void)
 	xfree(services);
 
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
-	hobbitrrds = (hobbitrrd_t *)calloc(sizeof(hobbitrrd_t), (count+1));
+	xymonrrds = (xymonrrd_t *)calloc(sizeof(xymonrrd_t), (count+1));
 
-	hobbitrrdtree = rbtNew(name_compare);
-	lrec = hobbitrrds; ldef = strtok(lenv, ",");
+	xymonrrdtree = rbtNew(name_compare);
+	lrec = xymonrrds; ldef = strtok(lenv, ",");
 	while (ldef) {
 		p = strchr(ldef, '=');
 		if (p) {
 			*p = '\0'; 
-			lrec->bbsvcname = strdup(ldef);
-			lrec->hobbitrrdname = strdup(p+1);
+			lrec->svcname = strdup(ldef);
+			lrec->xymonrrdname = strdup(p+1);
 		}
 		else {
-			lrec->bbsvcname = lrec->hobbitrrdname = strdup(ldef);
+			lrec->svcname = lrec->xymonrrdname = strdup(ldef);
 		}
-		rbtInsert(hobbitrrdtree, lrec->bbsvcname, lrec);
+		rbtInsert(xymonrrdtree, lrec->svcname, lrec);
 
 		ldef = strtok(NULL, ",");
 		lrec++;
 	}
 	xfree(lenv);
 
-	/* Setup the hobbitgraphs table, describing how to make graphs from an RRD */
+	/* Setup the xymongraphs table, describing how to make graphs from an RRD */
 	lenv = strdup(xgetenv("GRAPHS"));
 	p = lenv+strlen(lenv)-1; if (*p == ',') *p = '\0';	/* Drop a trailing comma */
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
-	hobbitgraphs = (hobbitgraph_t *)calloc(sizeof(hobbitgraph_t), (count+1));
+	xymongraphs = (xymongraph_t *)calloc(sizeof(xymongraph_t), (count+1));
 
-	grec = hobbitgraphs; ldef = strtok(lenv, ",");
+	grec = xymongraphs; ldef = strtok(lenv, ",");
 	while (ldef) {
 		p = strchr(ldef, ':');
 		if (p) {
 			*p = '\0'; 
-			grec->hobbitrrdname = strdup(ldef);
-			grec->hobbitpartname = strdup(p+1);
-			p = strchr(grec->hobbitpartname, ':');
+			grec->xymonrrdname = strdup(ldef);
+			grec->xymonpartname = strdup(p+1);
+			p = strchr(grec->xymonpartname, ':');
 			if (p) {
 				*p = '\0';
 				grec->maxgraphs = atoi(p+1);
-				if (strlen(grec->hobbitpartname) == 0) {
-					xfree(grec->hobbitpartname);
-					grec->hobbitpartname = NULL;
+				if (strlen(grec->xymonpartname) == 0) {
+					xfree(grec->xymonpartname);
+					grec->xymonpartname = NULL;
 				}
 			}
 		}
 		else {
-			grec->hobbitrrdname = strdup(ldef);
+			grec->xymonrrdname = strdup(ldef);
 		}
 
 		ldef = strtok(NULL, ",");
@@ -148,9 +149,9 @@ static void rrd_setup(void)
 }
 
 
-hobbitrrd_t *find_hobbit_rrd(char *service, char *flags)
+xymonrrd_t *find_xymon_rrd(char *service, char *flags)
 {
-	/* Lookup an entry in the hobbitrrds table */
+	/* Lookup an entry in the xymonrrds table */
 	RbtHandle handle;
 
 	rrd_setup();
@@ -160,30 +161,30 @@ hobbitrrd_t *find_hobbit_rrd(char *service, char *flags)
 		return NULL;
 	}
 
-	handle = rbtFind(hobbitrrdtree, service);
-	if (handle == rbtEnd(hobbitrrdtree)) 
+	handle = rbtFind(xymonrrdtree, service);
+	if (handle == rbtEnd(xymonrrdtree)) 
 		return NULL;
 	else {
 		void *k1, *k2;
-		rbtKeyValue(hobbitrrdtree, handle, &k1, &k2);
-		return (hobbitrrd_t *)k2;
+		rbtKeyValue(xymonrrdtree, handle, &k1, &k2);
+		return (xymonrrd_t *)k2;
 	}
 }
 
-hobbitgraph_t *find_hobbit_graph(char *rrdname)
+xymongraph_t *find_xymon_graph(char *rrdname)
 {
-	/* Lookup an entry in the hobbitgraphs table */
-	hobbitgraph_t *grec;
+	/* Lookup an entry in the xymongraphs table */
+	xymongraph_t *grec;
 	int found = 0;
 	char *dchar;
 
 	rrd_setup();
-	grec = hobbitgraphs; 
-	while (!found && (grec->hobbitrrdname != NULL)) {
-		found = (strncmp(grec->hobbitrrdname, rrdname, strlen(grec->hobbitrrdname)) == 0);
+	grec = xymongraphs; 
+	while (!found && (grec->xymonrrdname != NULL)) {
+		found = (strncmp(grec->xymonrrdname, rrdname, strlen(grec->xymonrrdname)) == 0);
 		if (found) {
 			/* Check that it's not a partial match, e.g. "ftp" matches "ftps" */
-			dchar = rrdname + strlen(grec->hobbitrrdname);
+			dchar = rrdname + strlen(grec->xymonrrdname);
 			if ( (*dchar != '.') && (*dchar != ',') && (*dchar != '\0') ) found = 0;
 		}
 
@@ -194,8 +195,8 @@ hobbitgraph_t *find_hobbit_graph(char *rrdname)
 }
 
 
-static char *hobbit_graph_text(char *hostname, char *dispname, char *service, int bgcolor,
-			      hobbitgraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt,
+static char *xymon_graph_text(char *hostname, char *dispname, char *service, int bgcolor,
+			      xymongraph_t *graphdef, int itemcount, hg_stale_rrds_t nostale, const char *fmt,
 			      int locatorbased, time_t starttime, time_t endtime)
 {
 	static char *rrdurl = NULL;
@@ -223,19 +224,19 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 
 	dbgprintf("rrdlink_url: host %s, rrd %s (partname:%s, maxgraphs:%d, count=%d)\n", 
 		hostname, 
-		graphdef->hobbitrrdname, textornull(graphdef->hobbitpartname), graphdef->maxgraphs, itemcount);
+		graphdef->xymonrrdname, textornull(graphdef->xymonpartname), graphdef->maxgraphs, itemcount);
 
-	if ((service != NULL) && (strcmp(graphdef->hobbitrrdname, "tcp") == 0)) {
+	if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "tcp") == 0)) {
 		sprintf(rrdservicename, "tcp:%s", service);
 	}
-	else if ((service != NULL) && (strcmp(graphdef->hobbitrrdname, "ncv") == 0)) {
+	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "ncv") == 0)) {
 		sprintf(rrdservicename, "ncv:%s", service);
 	}
-	else if ((service != NULL) && (strcmp(graphdef->hobbitrrdname, "devmon") == 0)) {
+	else if ((service != NULL) && (strcmp(graphdef->xymonrrdname, "devmon") == 0)) {
 		sprintf(rrdservicename, "devmon:%s", service);
 	}
 	else {
-		strcpy(rrdservicename, graphdef->hobbitrrdname);
+		strcpy(rrdservicename, graphdef->xymonrrdname);
 	}
 
 	svcurllen = 2048                    + 
@@ -249,7 +250,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 			 strlen(fmt)        +
 			 3*svcurllen        +
 			 strlen(rrdservicename) +
-			 strlen(xgetenv("BBSKIN"));
+			 strlen(xgetenv("XYMONSKIN"));
 
 	if (rrdurl == NULL) {
 		rrdurlsize = rrdparturlsize;
@@ -271,13 +272,13 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 		rrdparturl = (char *) malloc(rrdparturlsize);
 		do {
 			if (itemcount > 0) {
-				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
+				sprintf(svcurl, "%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d&amp;first=%d&amp;count=%d", 
 					cgiurl, hostname, rrdservicename, 
 					gwidth, gheight,
 					first, step);
 			}
 			else {
-				sprintf(svcurl, "%s/hobbitgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
+				sprintf(svcurl, "%s/showgraph.sh?host=%s&amp;service=%s&amp;graph_width=%d&amp;graph_height=%d", 
 					cgiurl, hostname, rrdservicename,
 					gwidth, gheight);
 			}
@@ -289,7 +290,7 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 			if (bgcolor != -1) sprintf(svcurl+strlen(svcurl), "&amp;color=%s", colorname(bgcolor));
 			sprintf(svcurl+strlen(svcurl), "&amp;graph_start=%d&amp;graph_end=%d", (int)starttime, (int)endtime);
 
-			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("BBSKIN"));
+			sprintf(rrdparturl, fmt, rrdservicename, svcurl, svcurl, rrdservicename, svcurl, xgetenv("XYMONSKIN"));
 			if ((strlen(rrdparturl) + strlen(rrdurl) + 1) >= rrdurlsize) {
 				rrdurlsize += (4096 + rrdparturlsize);
 				rrdurl = (char *) realloc(rrdurl, rrdurlsize);
@@ -309,15 +310,15 @@ static char *hobbit_graph_text(char *hostname, char *dispname, char *service, in
 	return rrdurl;
 }
 
-char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
-			hobbitgraph_t *graphdef, int itemcount,
+char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
+			xymongraph_t *graphdef, int itemcount,
 			hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
 			time_t starttime, time_t endtime)
 {
-	return hobbit_graph_text(hostname, dispname, 
+	return xymon_graph_text(hostname, dispname, 
 				 service, bgcolor, graphdef, 
 				 itemcount, nostale,
-				 ((wantmeta == HG_META_LINK) ? metafmt : hobbitlinkfmt),
+				 ((wantmeta == HG_META_LINK) ? metafmt : xymonlinkfmt),
 				 locatorbased, starttime, endtime);
 }
 

@@ -1,8 +1,8 @@
-xymon (4.3.0-0.beta3) unstable; urgency=low
+xymon (4.3.0-0.201011061605.6565) unstable; urgency=low
 
-  * Xymon version 4.3.0 BETA 3
+  * Interim release r6565 renamed
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sat, 23 Oct 2010 15:25:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Sat, 06 Nov 2010 16:05:00 +0100
 
 hobbit (4.3.0-0.beta2) unstable; urgency=low
 

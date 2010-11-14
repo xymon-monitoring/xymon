@@ -1,28 +1,28 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBIT-CONFREPORT.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of CONFREPORT.CGI</TITLE>
 </HEAD><BODY>
-<H1>HOBBIT-CONFREPORT.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>CONFREPORT.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbit-confreport.cgi - Xymon Configuration report
+confreport.cgi - Xymon Configuration report
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbit-confreport.cgi</B>
+<B>confreport.cgi</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>hobbit-confreport.cgi</B> is invoked as a CGI script via the 
-hobbit-confreport.sh CGI wrapper.
+<B>confreport.cgi</B> is invoked as a CGI script via the 
+confreport.sh CGI wrapper.
 <P>
-<B>hobbit-confreport.cgi</B> provides a plain HTML (Web) report of
+<B>confreport.cgi</B> provides a plain HTML (Web) report of
 the Xymon configuration for a group of hosts; which hosts are included
 is determined by the hosts available on the webpage from where the CGI
 script is invoked.
@@ -45,7 +45,7 @@ Report only on the statuses that are configured to show up on the
 <B>Critical Systems</B> view.
 <P>
 <DT>--old-nk-config<DD>
-Use the deprecated <B>NK</B> tag in bb-hosts to determine if tests
+Use the deprecated <B>NK</B> tag in hosts.cfg to determine if tests
 appear on the Critical Systems view.
 <P>
 <DT>--env=FILENAME<DD>
@@ -61,14 +61,14 @@ Enables debugging output.
 <DT>--nkconfig=FILENAME<DD>
 Use FILENAME as the configuration file for the Critical 
 Systems information. The default is to load this from
-$BBHOME/etc/hobbit-nkview.cfg
+$BBHOME/etc/critical.cfg
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
 <H2>BUGS</H2>
 
 Client-side configuration done in the 
-<I><A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5)</I>
+<I><A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5)</I>
 
 is not currently reflected in the report.
 <P>
@@ -77,7 +77,7 @@ Critical Systems view configuration is not reflected in the report.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man5/bb-hosts.5.html">bb-hosts</A>(5), <A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5), <A HREF="../man5/hobbit-clients.cfg.5.html">hobbit-clients.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5), <A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -95,6 +95,6 @@ Critical Systems view configuration is not reflected in the report.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

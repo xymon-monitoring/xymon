@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# This is a wrapper for the Xymon hobbit-perfdata.cgi script
+# This is a wrapper for the Xymon perfdata.cgi script
 
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-perfdata.cgi $CGI_PERFDATA_OPTS
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/perfdata.cgi $CGI_PERFDATA_OPTS
 

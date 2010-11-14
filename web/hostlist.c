@@ -14,7 +14,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 cgidata_t *cgidata = NULL;
 char *pagefilter = NULL;
@@ -27,7 +27,7 @@ void parse_query(void)
 {
 	cgidata_t *cwalk;
 
-	fields = strdup("BBH_HOSTNAME,BBH_IP");
+	fields = strdup("XMH_HOSTNAME,XMH_IP");
 	cwalk = cgidata;
 	while (cwalk) {
 		/*
@@ -47,7 +47,7 @@ void parse_query(void)
 			else if (strcasecmp(cwalk->value, "ip") == 0)
 				sortkey = SORT_IP;
 		}
-		else if (strncasecmp(cwalk->name, "BBH_", 4) == 0) {
+		else if (strncasecmp(cwalk->name, "XMH_", 4) == 0) {
 			if (strcasecmp(cwalk->value, "on") == 0) {
 				fields = (char *)realloc(fields, strlen(fields) + strlen(cwalk->name) + 2);
 				strcat(fields, ",");
@@ -100,10 +100,10 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(fields) + strlen(testfilter) + strlen(pagefilter));
-	sprintf(req, "hobbitdboard fields=%s test=%s page=%s",
+	sprintf(req, "xymondboard fields=%s test=%s page=%s",
 		fields, testfilter, pagefilter);
-	res = sendmessage(req, NULL, BBTALK_TIMEOUT, sres);
-	if (res != BB_OK) return 1;
+	res = sendmessage(req, NULL, XYMON_TIMEOUT, sres);
+	if (res != XYMONSEND_OK) return 1;
 	board = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 

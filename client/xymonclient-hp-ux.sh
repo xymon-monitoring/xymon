@@ -29,7 +29,7 @@ s/[ 	]*\n[ 	]*/ /
 echo "[mount]"
 mount
 echo "[memory]"
-$BBHOME/bin/hpux-meminfo
+$XYMONHOME/bin/hpux-meminfo
 echo "[swapinfo]"
 /usr/sbin/swapinfo -tm
 echo "[ifconfig]"
@@ -52,16 +52,16 @@ then
     then
         echo "[top]"
 	# Cits Bogajewski 03-08-2005: redirect of top fails
-	$TOP -d 1 -f $BBHOME/tmp/top.OUT
-	cat $BBHOME/tmp/top.OUT
-	rm $BBHOME/tmp/top.OUT
+	$TOP -d 1 -f $XYMONHOME/tmp/top.OUT
+	cat $XYMONHOME/tmp/top.OUT
+	rm $XYMONHOME/tmp/top.OUT
     fi
 fi
 
 # vmstat
-nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "vmstat 300 2 1>$XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ $XYMONTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $XYMONTMP/xymon_vmstat.$MACHINEDOTS; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; fi
 
 exit
 

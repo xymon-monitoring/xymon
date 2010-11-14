@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct {
 	int dow;
@@ -162,7 +162,7 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 
 	cause[0] = '\0';
 
-	sprintf(fn, "%s/%s", xgetenv("BBHISTLOGS"), commafy(hostname));
+	sprintf(fn, "%s/%s", xgetenv("XYMONHISTLOGS"), commafy(hostname));
 	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
 	sprintf(p, "/%s/%s", servicename, timespec);
 

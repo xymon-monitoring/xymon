@@ -19,13 +19,13 @@ are being monitored in the "files" status column.
 
 Note that there is a dependency between the client-local.cfg file 
 and the 
-.I hobbit-clients.cfg(5)
+.I anaysis.cfg(5)
 file. When monitoring e.g. a logfile, you must first enter it into the 
 client-local.cfg file, to trigger the Xymon client into reporting any 
-data about the logfile. Next, you must configure hobbit-clients.cfg 
+data about the logfile. Next, you must configure analysis.cfg 
 so the Xymon server knows what to look for in the file data sent by 
 the client. So: client-local.cfg defines what raw data is collected 
-by the client, and hobbit-clients.cfg defines how to analyze them.
+by the client, and analysis.cfg defines how to analyze them.
 
 .SH PROPAGATION TO CLIENTS
 The client-local.cfg file resides on the Xymon server.
@@ -142,7 +142,7 @@ to use a \fBdu\fR command which reports data in KB, e.g. by setting
 .br
     DU="du -k"
 .br
-in the hobbitclient.cfg file.
+in the xymonclient.cfg file.
 
 .SH NOTES
 The ability of the Xymon client to calculate file hashes and monitor those
@@ -155,5 +155,5 @@ Use of the directory monitoring on directory structures with a large number
 of files and/or sub-directories can be quite ressource-intensive.
 
 .SH "SEE ALSO"
-hobbit-clients.cfg(5), hobbitd_client(8), hobbitd(8), xymon(7)
+analysis.cfg(5), xymond_client(8), xymond(8), xymon(7)
 

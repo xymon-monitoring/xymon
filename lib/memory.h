@@ -11,7 +11,7 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
-#undef HOBBIT_MEMORY_WRAPPERS		/* If defined, will wrap mem-alloc routines */
+#undef XYMON_MEMORY_WRAPPERS		/* If defined, will wrap mem-alloc routines */
 #undef MEMORY_DEBUG			/* If defined, use debugging code */
 
 typedef struct xmemory_t {
@@ -38,7 +38,7 @@ extern char *xstrncpy(char *dest, const char *src, size_t maxlen);
 extern int   xsprintf(char *dest, const char *fmt, ...);
 
 
-#ifdef HOBBIT_MEMORY_WRAPPERS
+#ifdef XYMON_MEMORY_WRAPPERS
 #ifndef LIB_MEMORY_C_COMPILE
 #undef calloc
 #undef malloc
@@ -57,7 +57,7 @@ extern int   xsprintf(char *dest, const char *fmt, ...);
 #define realloc(P,S) xrealloc((P), (S))
 #define strdup(P)    xstrdup((P))
 #endif /* LIB_MEMORY_C_COMPILE */
-#endif /* HOBBIT_MEMORY_WRAPPERS */
+#endif /* XYMON_MEMORY_WRAPPERS */
 
 
 #ifdef MEMORY_DEBUG

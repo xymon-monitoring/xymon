@@ -1,29 +1,29 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBIT-NKVIEW.CGI</TITLE>
+<HTML><HEAD><TITLE>Man page of CRITICALVIEW.CGI</TITLE>
 </HEAD><BODY>
-<H1>HOBBIT-NKVIEW.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>CRITICALVIEW.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbit-nkview.cgi - Xymon Critical Systems view CGI
+criticalview.cgi - Xymon Critical Systems view CGI
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbit-nkview.cgi</B>
+<B>criticalview.cgi</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<B>hobbit-nkview.cgi</B> is invoked as a CGI script via the 
-hobbit-nkview.sh CGI wrapper.
+<B>criticalview.cgi</B> is invoked as a CGI script via the 
+criticalview.sh CGI wrapper.
 <P>
-hobbit-nkview.cgi matches the current critical statuses against the
-<I><A HREF="../man5/hobbit-nkview.cfg.5.html">hobbit-nkview.cfg</A>(5)</I>
+criticalview.cgi matches the current critical statuses against the
+<I><A HREF="../man5/critical.cfg.5.html">critical.cfg</A>(5)</I>
 
 file, and generates the &quot;Critical Systems&quot; view. 
 <P>
@@ -41,10 +41,10 @@ that You switch to the newer Critical Systems view provided by this CGI.
 <DL COMPACT>
 <DT>--nkacklevel=NUMBER<DD>
 Sets the acknowledgment level for acknowledgments sent via the
-<I><A HREF="../man1/hobbit-ackinfo.cgi.1.html">hobbit-ackinfo.cgi</A>(1)</I>
+<I><A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1)</I>
 
 page. Note that this may be overridden by the configuration of the
-hobbit-ackinfo.cgi utility.
+ackinfo.cgi utility.
 <P>
 <DT>--env=FILENAME<DD>
 Loads the environment defined in FILENAME before executing the CGI script.
@@ -59,7 +59,7 @@ Enables debugging output.
 <DT>--nkconfig=FILENAME<DD>
 Use FILENAME as the configuration file for the Critical 
 Systems information. The default is to load this from
-$BBHOME/etc/hobbit-nkview.cfg
+$BBHOME/etc/critical.cfg
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -76,7 +76,7 @@ Contains the parameters for the CGI script.
 <A NAME="lbAH">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/hobbit-ackinfo.cgi.1.html">hobbit-ackinfo.cgi</A>(1), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -95,6 +95,6 @@ Contains the parameters for the CGI script.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:44 GMT, October 27, 2010
 </BODY>
 </HTML>

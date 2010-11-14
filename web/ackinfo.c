@@ -17,7 +17,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static char *hostname = NULL;
 static char *testname = NULL;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
-	char *bbmsg;
+	char *xymonmsg;
 	int res;
 
 	for (argi = 1; (argi < argc); argi++) {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("hobbit-ackinfo");
+	redirect_cgilog("ackinfo");
 	parse_query();
 
 	if (hostname && *hostname && testname && *testname && ((level == 0) || (validity>0)) && ackmsg && *ackmsg) {
@@ -108,21 +108,21 @@ int main(int argc, char *argv[])
 		p = strchr(ackmsg, '\n'); if (p) *p = '\0';
 
 		/* ackinfo HOST.TEST\nlevel\nvaliduntil\nackedby\nmsg */
-		bbmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackedby) + strlen(ackmsg));
-		sprintf(bbmsg, "ackinfo %s.%s\n%d\n%d\n%s\n%s\n",
+		xymonmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackedby) + strlen(ackmsg));
+		sprintf(xymonmsg, "ackinfo %s.%s\n%d\n%d\n%s\n%s\n",
 			hostname, testname, level, validity, ackedby, ackmsg);
-		res = sendmessage(bbmsg, NULL, BBTALK_TIMEOUT, NULL);
+		res = sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL);
 	}
 	else {
-		bbmsg = (char *)malloc(4096);
-		sprintf(bbmsg, "error in input params: hostname=%s, testname=%s, ackmsg=%s, validity=%d\n",
+		xymonmsg = (char *)malloc(4096);
+		sprintf(xymonmsg, "error in input params: hostname=%s, testname=%s, ackmsg=%s, validity=%d\n",
 			hostname, testname, ackmsg, validity);
 	}
 
 	fprintf(stdout, "Content-type: %s\n", xgetenv("HTMLCONTENTTYPE"));
 	fprintf(stdout, "Location: %s\n", getenv("HTTP_REFERER"));
 	fprintf(stdout, "\n");
-	fprintf(stdout, "Sent to hobbitd:\n%s\n", bbmsg);
+	fprintf(stdout, "Sent to xymond:\n%s\n", xymonmsg);
 
 	return 0;
 }

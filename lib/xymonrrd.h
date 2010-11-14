@@ -8,24 +8,24 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __HOBBITRRD_H__
-#define __HOBBITRRD_H__
+#ifndef __XYMONRRD_H__
+#define __XYMONRRD_H__
 
 #include <time.h>
 #include "rbtr.h"
 
 /* This is for mapping a service -> an RRD file */
 typedef struct {
-   char *bbsvcname;
-   char *hobbitrrdname;
-} hobbitrrd_t;
+   char *svcname;
+   char *xymonrrdname;
+} xymonrrd_t;
 
 /* This is for displaying an RRD file. */
 typedef struct {
-   char *hobbitrrdname;
-   char *hobbitpartname;
+   char *xymonrrdname;
+   char *xymonpartname;
    int  maxgraphs;
-} hobbitgraph_t;
+} xymongraph_t;
 
 typedef enum {
 	HG_WITHOUT_STALE_RRDS, HG_WITH_STALE_RRDS
@@ -45,13 +45,13 @@ typedef struct rrdtplnames_t {
 } rrdtplnames_t;
 
 
-extern hobbitrrd_t *hobbitrrds;
-extern hobbitgraph_t *hobbitgraphs;
+extern xymonrrd_t *xymonrrds;
+extern xymongraph_t *xymongraphs;
 
-extern hobbitrrd_t *find_hobbit_rrd(char *service, char *flags);
-extern hobbitgraph_t *find_hobbit_graph(char *rrdname);
-extern char *hobbit_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
-		hobbitgraph_t *graphdef, int itemcount, 
+extern xymonrrd_t *find_xymon_rrd(char *service, char *flags);
+extern xymongraph_t *find_xymon_graph(char *rrdname);
+extern char *xymon_graph_data(char *hostname, char *dispname, char *service, int bgcolor,
+		xymongraph_t *graphdef, int itemcount, 
 		hg_stale_rrds_t nostale, hg_link_t wantmeta, int locatorbased,
 		time_t starttime, time_t endtime);
 extern rrdtpldata_t *setup_template(char *params[]);

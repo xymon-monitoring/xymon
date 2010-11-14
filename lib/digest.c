@@ -17,7 +17,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 char *md5hash(char *input)
 {

@@ -1,35 +1,35 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of BBPROXY</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONPROXY</TITLE>
 </HEAD><BODY>
-<H1>BBPROXY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMONPROXY</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <P>
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-bbproxy - Xymon message proxy
+xymonproxy - Xymon message proxy
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>bbproxy [options] --server=$BBDISP</B>
+<B>xymonproxy [options] --server=$BBDISP</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man8/bbproxy.8.html">bbproxy</A>(8)</I>
+<I><A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8)</I>
 
 is a proxy for forwarding Xymon messages from one
 server to another. It will typically be needed if you have
 clients behind a firewall, so they cannot send status
 messages to the Xymon server directly.
 <P>
-bbproxy serves three purposes. First, it acts as a regular
+xymonproxy serves three purposes. First, it acts as a regular
 proxy server, allowing clients that cannot connect directly to 
-the Xymon servers to send data. Although bbproxy is optimized for handling
+the Xymon servers to send data. Although xymonproxy is optimized for handling
 status messages, it will forward all types of messages, including
 notes- and data-messages.
 <BR>
@@ -37,15 +37,15 @@ notes- and data-messages.
 <P>
 Second, it acts as a buffer, smoothing out peak loads if
 many clients try to send status messages simultaneously.
-bbproxy can absorb messages very quickly, but will queue
+xymonproxy can absorb messages very quickly, but will queue
 them up internally and forward them to the Xymon server
 at a reasonable pace.
 <BR>
 
 <P>
-Third, bbproxy merges small &quot;status&quot; messages into larger
+Third, xymonproxy merges small &quot;status&quot; messages into larger
 &quot;combo&quot; messages. This can dramatically decrease the number
-of connections that need to go from bbproxy to the Xymon
+of connections that need to go from xymonproxy to the Xymon
 server.  The merging of messages causes &quot;status&quot; messages 
 to be delayed for up to 0.25 seconds before being sent off 
 to the Xymon server.
@@ -67,8 +67,8 @@ receive their configuration data from the LAST of the servers
 listed here.  This option is required.
 <P>
 <DT>--listen=LOCALIP[:PORT]<DD>
-Specifies the IP-adress where bbproxy listens for incoming 
-connections. By default, bbproxy listens on all IP-adresses
+Specifies the IP-adress where xymonproxy listens for incoming 
+connections. By default, xymonproxy listens on all IP-adresses
 assigned to the host. If no portnumber is given, port 1984
 will be used.
 <P>
@@ -77,13 +77,13 @@ Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 <P>
 <DT>--report=[PROXYHOSTNAME.]BBSERVICE<DD>
-If given, this option causes bbproxy to send a status report
+If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use
-&quot;--report=bbproxy&quot; to have bbproxy report its status to a
-&quot;bbproxy&quot; column in Xymon. The default for PROXYHOSTNAME
+&quot;--report=xymonproxy&quot; to have xymonproxy report its status to a
+&quot;xymonproxy&quot; column in Xymon. The default for PROXYHOSTNAME
 is the $MACHINE environment variable, i.e. the hostname of the
-server running bbproxy. See REPORT OUTPUT below for an 
+server running xymonproxy. See REPORT OUTPUT below for an 
 explanation of the report contents.
 <P>
 <DT>--lqueue=N<DD>
@@ -96,11 +96,11 @@ Run in daemon mode, i.e. detach and run as a background proces.
 This is the default.
 <P>
 <DT>--no-daemon<DD>
-Runs bbproxy as a foreground proces.
+Runs xymonproxy as a foreground proces.
 <P>
 <DT>--pidfile=FILENAME<DD>
 Specifies the location of a file containing the proces-ID 
-of the bbproxy daemon proces. Default: /var/run/bbproxy.pid.
+of the xymonproxy daemon proces. Default: /var/run/xymonproxy.pid.
 <P>
 <DT>--logfile=FILENAME<DD>
 Sends all logging output to the specified file instead of stderr.
@@ -108,7 +108,7 @@ Sends all logging output to the specified file instead of stderr.
 <DT>--log-details<DD>
 Log details (IP-address, message type and hostname) to the logfile.
 This can also be enabled and disabled at run-time by sending the
-bbproxy proces a SIGUSR1 signal.
+xymonproxy proces a SIGUSR1 signal.
 <P>
 <DT>--debug<DD>
 Enable debugging output.
@@ -117,7 +117,7 @@ Enable debugging output.
 <A NAME="lbAF">&nbsp;</A>
 <H2>REPORT OUTPUT</H2>
 
-If enabled via the &quot;--report&quot; option, bbproxy will send a 
+If enabled via the &quot;--report&quot; option, xymonproxy will send a 
 status message about itself to the Xymon server once
 every 5 minutes.
 <P>
@@ -132,7 +132,7 @@ average number of messages per second over the past 5 minutes.
 <DT>Outbound messages<DD>
 The total number of messages sent to the Xymon server. 
 Note that this is probably smaller than
-the number of incoming messages, since bbproxy merges
+the number of incoming messages, since xymonproxy merges
 messages before sending them.
 <P>
 <DT>Incoming - Combo messages<DD>
@@ -140,7 +140,7 @@ The number of &quot;combo&quot; messages received from a client.
 <P>
 <DT>Incoming - Status messages<DD>
 The number of &quot;status&quot; messages received from a client.
-bbproxy attempts to merge these into &quot;combo&quot; messages. 
+xymonproxy attempts to merge these into &quot;combo&quot; messages. 
 The &quot;Messages merged&quot; is the number of &quot;status&quot; messages
 that were merged into a combo message, the &quot;Resulting combos&quot;
 is the number of &quot;combo&quot; messages that resulted from the
@@ -174,7 +174,7 @@ was established.
 <P>
 <DT>Timeout details - recovered<DD>
 When a timeout happens while sending the status message to 
-the server, bbproxy will attempt to recover the message and
+the server, xymonproxy will attempt to recover the message and
 retry sending it to the server after waiting a few seconds.
 This number is the number of messages that were recovered,
 and so were not lost.
@@ -239,7 +239,7 @@ Toggles logging of individual messages.
 <A NAME="lbAI">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man1/bb.1.html">bb</A>(1), <A HREF="../man1/bbd.1.html">bbd</A>(1), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man1/xymond.1.html">xymond</A>(1), <A HREF="../man7/xymon.7.html">xymon</A>(7)
 <P>
 <P>
 
@@ -259,6 +259,6 @@ Toggles logging of individual messages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

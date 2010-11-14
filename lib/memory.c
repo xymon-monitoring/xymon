@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains memory management routines.                                    */
 /*                                                                            */
 /* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 
 #define LIB_MEMORY_C_COMPILE 1
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #ifdef MEMORY_DEBUG
 static xmemory_t *mhead = NULL;

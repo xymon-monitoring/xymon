@@ -1,58 +1,58 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITD</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
-<H1>HOBBITD</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMOND</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitd - Master network daemon for a Xymon server
+xymond - Master network daemon for a Xymon server
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitd [options]</B>
+<B>xymond [options]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-hobbitd is the core daemon in the Xymon Monitor.
+xymond is the core daemon in the Xymon Monitor.
 It is designed to handle monitoring of a large number of hosts, 
 with a strong focus on being a high-speed, low-overhead implementation 
 of a Big Brother compatible server.
 <P>
-To achieve this, hobbitd stores all information about the state
+To achieve this, xymond stores all information about the state
 of the monitored systems in memory, instead of storing it in
 the host filesystem. A number of plug-ins can be enabled to
 enhance the basic operation; e.g. a set of plugins are provided
 to implement persistent storage in a way that is compatible 
 with the Big Brother daemon. However, even with these
-plugins enabled, hobbitd still performs much faster than the
+plugins enabled, xymond still performs much faster than the
 standard bbd daemon.
 <P>
-hobbitd is normally started and controlled by the
-<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+xymond is normally started and controlled by the
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
 
-tool, and the command used to invoke hobbitd should therefore be
-in the hobbitlaunch.cfg file.
+tool, and the command used to invoke xymond should therefore be
+in the tasks.cfg file.
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>OPTIONS</H2>
 
 <DL COMPACT>
-<DT>--bbhosts=FILENAME<DD>
-Specifies the path to the Xymon bb-hosts file. This is used
+<DT>--hosts=FILENAME<DD>
+Specifies the path to the Xymon hosts.cfg file. This is used
 to check if incoming status messages refer to known hosts; depending
 on the &quot;--ghosts&quot; option, messages for unknown hosts may be dropped.
-If this option is omitted, the default path used is set by the BBHOSTS
+If this option is omitted, the default path used is set by the HOSTSCFG
 environment variable.
 <P>
 <DT>--checkpoint-file=FILENAME<DD>
-With regular intervals, hobbitd will dump all of its internal state 
-to this check-point file. It is also dumped when hobbitd terminates,
+With regular intervals, xymond will dump all of its internal state 
+to this check-point file. It is also dumped when xymond terminates,
 or when it receives a SIGUSR1 signal.
 <P>
 <DT>--checkpoint-interval=N<DD>
@@ -60,30 +60,32 @@ Specifies the interval (in seconds) between dumps to the check-point
 file. The default is 900 seconds (15 minutes).
 <P>
 <DT>--restart=FILENAME<DD>
-Specifies an existing file containing a previously generated hobbitd 
-checkpoint. When starting up, hobbitd will restore its internal state
+Specifies an existing file containing a previously generated xymond 
+checkpoint. When starting up, xymond will restore its internal state
 from the information in this file. You can use the same filename for
 &quot;--checkpoint-file&quot; and &quot;--restart&quot;.
 <P>
-<DT>--ghosts={allow|drop|log}<DD>
+<DT>--ghosts={allow|drop|log|match}<DD>
 How to handle status messages from unknown hosts. The &quot;allow&quot; setting
 accepts all status messages, regardless of whether the host is known
-in the bb-hosts file or not. &quot;drop&quot; silently ignores reports from unknown 
-hosts. &quot;log&quot; works like drop, but logs the event in the hobbitd output file.
-The default is &quot;allow&quot;, unless the BBGHOSTS environment variable is set.
+in the hosts.cfg file or not. &quot;drop&quot; silently ignores reports from unknown 
+hosts. &quot;log&quot; works like drop, but logs the event in the xymond output file.
+&quot;match&quot; will try to match the name of the unknown host reporting with 
+the known names by ignoring any domain-names - if a match is found, then
+a temporary client alias is automatically generated. The default is &quot;log&quot;. 
 <P>
 <DT>--no-purple<DD>
 Prevent status messages from going purple when they are no longer valid.
-Unlike the standard bbd daemon, purple-handling is done by hobbitd.
+Unlike the standard bbd daemon, purple-handling is done by xymond.
 <P>
 <DT>--listen=IP[:PORT]<DD>
-Specifies the IP-address and port where hobbitd will listen for incoming
-connections. By default, hobbitd listens on IP 0.0.0.0 (i.e. all IP-
+Specifies the IP-address and port where xymond will listen for incoming
+connections. By default, xymond listens on IP 0.0.0.0 (i.e. all IP-
 adresses available on the host) and port 1984.
 <P>
 <DT>--daemon<DD>
-hobbitd is normally started by 
-<I><A HREF="../man8/hobbitlaunch.8.html">hobbitlaunch</A>(8)</I>
+xymond is normally started by 
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
 
 
 it will then detach from the terminal and continue running as a background
@@ -97,17 +99,17 @@ Default: 10 seconds.
 <P>
 <DT>--env=FILENAME<DD>
 Loads the content of FILENAME as environment settings before starting
-hobbitd. This is mostly used when running as a stand-alone daemon; if
-hobbitd is started by hobbitlaunch, the environment settings are controlled
-by the hobbitlaunch hobbitlaunch.cfg file.
+xymond. This is mostly used when running as a stand-alone daemon; if
+xymond is started by xymonlaunch, the environment settings are controlled
+by the xymonlaunch tasks.cfg file.
 <P>
 <DT>--pidfile=FILENAME<DD>
-hobbitd writes the process-ID it is running with to this file.
+xymond writes the process-ID it is running with to this file.
 This is for use in automated startup scripts. The default file is
-$BBSERVERLOGS/hobbitd.pid.
+$BBSERVERLOGS/xymond.pid.
 <P>
 <DT>--log=FILENAME<DD>
-Redirect all output from hobbitd to FILENAME.
+Redirect all output from xymond to FILENAME.
 <P>
 <DT>--store-clientlogs[=[!]COLUMN]<DD>
 Determines which status columns can cause a client message to be
@@ -123,14 +125,14 @@ columns except those listed will cause the client data to be sent.
 <P>
 <DT>--status-senders=IP[/MASK][,IP/MASK]<DD>
 Controls which hosts may send &quot;status&quot;, &quot;combo&quot;, &quot;config&quot; and &quot;query&quot;
-commands to hobbitd.
+commands to xymond.
 <P>
 By default, any host can send status-updates. If this option is used, 
 then status-updates are accepted only if they are sent by one of the 
 IP-adresses listed here, or if they are sent from the IP-address of the 
 host that the updates pertains to (this is to allow Xymon clients to send in their
 own status updates, without having to list all clients here). So typically
-you will need to list your BBNET servers here.
+you will need to list your servers running network tests here.
 <P>
 The format of this option is a list of IP-adresses, optionally with a
 network mask in the form of the number of bits. E.g. if you want to 
@@ -148,7 +150,7 @@ would use
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;--status-senders=172.16.10.2,10.0.2.0/24
 <P>
 <DT>--maint-senders=IP[/MASK][,IP/MASK]<DD>
-Controls which hosts may send maintenance commands to hobbitd. Maintenance
+Controls which hosts may send maintenance commands to xymond. Maintenance
 commands are the &quot;enable&quot;, &quot;disable&quot;, &quot;ack&quot; and &quot;notes&quot; commands. Format
 of this option is as for the --status-senders option. It is strongly
 recommended that you use this to restrict access to these commands, so
@@ -158,26 +160,26 @@ hide a system compromise from the monitoring system.
 <B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running bbproxy in the list of allowed addresses.
+include the address of a server running xymonproxy in the list of allowed addresses.
 <P>
 <DT>--www-senders=IP[/MASK][,IP/MASK]<DD>
-Controls which hosts may send commands to retrieve the state of hobbitd. These
+Controls which hosts may send commands to retrieve the state of xymond. These
 are the &quot;hobbitdlog&quot;, &quot;hobbitdboard&quot; and &quot;hobbitdxboard&quot; commands, which are used
 by
-<I><A HREF="../man1/bbgen.1.html">bbgen</A>(1)</I>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
 and
-<I><A HREF="../man1/bbcombotest.1.html">bbcombotest</A>(1)</I>
+<I><A HREF="../man1/combostatus.1.html">combostatus</A>(1)</I>
 
 to retrieve the state of the Xymon system so they can generate the Xymon webpages.
 <P>
 <B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running bbproxy in the list of allowed addresses.
+include the address of a server running xymonproxy in the list of allowed addresses.
 <P>
 <DT>--admin-senders=IP[/MASK][,IP/MASK]<DD>
-Controls which hosts may send administrative commands to hobbitd. These
+Controls which hosts may send administrative commands to xymond. These
 commands are the &quot;drop&quot; and &quot;rename&quot; commands. Access to these should be 
 restricted, since they provide an un-authenticated means of completely
 disabling monitoring of a host, and can be used to remove all traces of e.g.
@@ -186,7 +188,7 @@ a system compromise from the Xymon monitor.
 <B>Note:</B> If messages are sent through a proxy, the IP-address restrictions
 are of little use, since the messages will appear to originate from the
 proxy server address. It is therefore strongly recommended that you do NOT
-include the address of a server running bbproxy in the list of allowed addresses.
+include the address of a server running xymonproxy in the list of allowed addresses.
 <P>
 <DT>--no-download<DD>
 Disable the &quot;download&quot; and &quot;config&quot; commands which can be used by clients
@@ -198,14 +200,14 @@ Enable debugging output.
 <P>
 <DT>--dbghost=HOSTNAME<DD>
 For troubleshooting problems with a specific host, it may be useful to track
-the exact communications from a single host. This option causes hobbitd to
-dump all traffic from a single host to the file &quot;/tmp/hobbitd.dbg&quot;.
+the exact communications from a single host. This option causes xymond to
+dump all traffic from a single host to the file &quot;/tmp/xymond.dbg&quot;.
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
 <H2>HOW ALERTS TRIGGER</H2>
 
-When a status arrives, hobbitd matches the old and new color against
+When a status arrives, xymond matches the old and new color against
 the &quot;alert&quot; colors (from the &quot;ALERTCOLORS&quot; setting) and the &quot;OK&quot; colors 
 (from the &quot;OKCOLORS&quot; setting). The old and new color falls into one of three
 categories:
@@ -223,14 +225,14 @@ The color is one of the &quot;alert&quot; colors (e.g. &quot;red&quot;).
 The color is neither an &quot;alert&quot; color nor an &quot;OK&quot; color (e.g. &quot;yellow&quot;).
 <P>
 If the new status shows an ALERT state, then a message to the
-<I><A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8) </I>
+<I><A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8) </I>
 
 module is triggered. This may be a repeat of a previous alert, but 
-<I><A HREF="../man8/hobbitd_alert.8.html">hobbitd_alert</A>(8)</I>
+<I><A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8)</I>
 
 will handle that internally, and only send alert messages with the
 interval configured in 
-<I><A HREF="../man5/hobbit-alerts.cfg.5.html">hobbit-alerts.cfg</A>(5).</I>
+<I><A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5).</I>
 
 <P>
 If the status goes from a not-OK state (ALERT or UNDECIDED) to OK, 
@@ -245,21 +247,21 @@ e.g yellow and red, or green and yellow.
 <H2>CHANNELS</H2>
 
 A lot of functionality in the Xymon server is delegated to &quot;worker modules&quot;
-that are fed various events from hobbitd via a &quot;channel&quot;. Programs access a
+that are fed various events from xymond via a &quot;channel&quot;. Programs access a
 channel using IPC mechanisms - specifically, shared memory and semaphores -
 or by using an instance of the
-<I><A HREF="../man8/hobbitd_channel.8.html">hobbitd_channel</A>(8)</I>
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
 
-intermediate program. hobbitd_channel enables access to a channel via a
+intermediate program. xymond_channel enables access to a channel via a
 simple file I/O interface.
 <P>
-A skeleton program for hooking into a hobbitd channel is provided as
+A skeleton program for hooking into a xymond channel is provided as
 part of Xymon in the
-<I><A HREF="../man8/hobbitd_sample.8.html">hobbitd_sample</A>(8)</I>
+<I><A HREF="../man8/xymond_sample.8.html">xymond_sample</A>(8)</I>
 
 program.
 <P>
-The following channels are provided by hobbitd:
+The following channels are provided by xymond:
 <P>
 <B>status</B>
 
@@ -301,14 +303,14 @@ This channel is fed the contents of a host client messages,
 whenever a status for that host goes red, yellow or purple.
 <P>
 Information about the data stream passed on these channels is
-in the Xymon source-tree, see the &quot;hobbitd/new-daemon.txt&quot; file.
+in the Xymon source-tree, see the &quot;xymond/new-daemon.txt&quot; file.
 <P>
 <A NAME="lbAH">&nbsp;</A>
 <H2>SIGNALS</H2>
 
 <DL COMPACT>
 <DT>SIGHUP<DD>
-Re-read the bb-hosts configuration file.
+Re-read the hosts.cfg configuration file.
 <P>
 <DT>SIGUSR1<DD>
 Force an immediate dump of the checkpoint file.
@@ -325,13 +327,13 @@ some activity happens on another (unrelated) connection.
 <A NAME="lbAJ">&nbsp;</A>
 <H2>FILES</H2>
 
-If ghost-handling is enabled via the &quot;--ghosts&quot; option, the bb-hosts
+If ghost-handling is enabled via the &quot;--ghosts&quot; option, the hosts.cfg
 file is read to determine the names of all known hosts.
 <P>
 <A NAME="lbAK">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/hobbitserver.cfg.5.html">hobbitserver.cfg</A>(5).
+<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5).
 <P>
 <P>
 
@@ -353,6 +355,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>

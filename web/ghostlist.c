@@ -14,7 +14,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 enum { S_NAME, S_SENDER, S_TIME } sorttype = S_NAME;
 char *sortstring = "name";
@@ -110,11 +110,11 @@ void find_candidate(ghost_t *rec)
 
 	for (hrec = first_host(), found = 0; (hrec && !found); hrec = next_host(hrec, 0)) {
 		/* Check the IP */
-		found = (strcmp(rec->sender, bbh_item(hrec, BBH_IP)) == 0);
+		found = (strcmp(rec->sender, xmh_item(hrec, XMH_IP)) == 0);
 
 		if (!found) {
 			/* Check if hostnames w/o domain match */
-			hname = bbh_item(hrec, BBH_HOSTNAME);
+			hname = xmh_item(hrec, XMH_HOSTNAME);
 			if ((tdelim = strchr(hname, '.')) != NULL) *tdelim = '\0';
 			found = (strcasecmp(ghostnofqdn, hname) == 0);
 			if (tdelim) *tdelim = '.';
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	parse_query();
 
 	switch (outform) {
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 
-	if (sendmessage("ghostlist", NULL, BBTALK_TIMEOUT, sres) == BB_OK) {
+	if (sendmessage("ghostlist", NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
 		char *bol, *eoln, *name, *sender, *timestr;
 		time_t tstamp, now;
 		int count, idx;
@@ -229,10 +229,10 @@ int main(int argc, char *argv[])
 		if (outform == O_HTML) {
 			fprintf(stdout, "<table align=center>\n");
 			fprintf(stdout, "<tr>");
-			fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=name&MAXAGE=%d\">Hostname</a></th>", maxage);
-			fprintf(stdout, "<th align=left><a href=\"hobbit-ghosts.sh?SORT=sender&MAXAGE=%d\">Sent from</a></th>", maxage);
+			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=name&MAXAGE=%d\">Hostname</a></th>", maxage);
+			fprintf(stdout, "<th align=left><a href=\"ghostlist.sh?SORT=sender&MAXAGE=%d\">Sent from</a></th>", maxage);
 			fprintf(stdout, "<th align=left>Candidate</th>");
-			fprintf(stdout, "<th align=right><a href=\"hobbit-ghosts.sh?SORT=time&MAXAGE=%d\">Report age</a></th>", maxage);
+			fprintf(stdout, "<th align=right><a href=\"ghostlist.sh?SORT=time&MAXAGE=%d\">Report age</a></th>", maxage);
 			fprintf(stdout, "</tr>\n");
 		}
 
@@ -248,8 +248,8 @@ int main(int argc, char *argv[])
 
 				if (ghosttable[idx].candidate) {
 					fprintf(stdout, "<td align=left><a href=\"%s\">%s</a></td>",
-						hostsvcurl(bbh_item(ghosttable[idx].candidate, BBH_HOSTNAME), xgetenv("INFOCOLUMN"), 1),
-						bbh_item(ghosttable[idx].candidate, BBH_HOSTNAME));
+						hostsvcurl(xmh_item(ghosttable[idx].candidate, XMH_HOSTNAME), xgetenv("INFOCOLUMN"), 1),
+						xmh_item(ghosttable[idx].candidate, XMH_HOSTNAME));
 				}
 				else {
 					fprintf(stdout, "<td>&nbsp;</td>");
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 
 		if (outform == O_HTML) {
 			fprintf(stdout, "</table>\n");
-			fprintf(stdout, "<br><br><center><a href=\"hobbit-ghosts.sh?SORT=%s&MAXAGE=%d&TEXT\">Text report</a></center>\n", sortstring, maxage);
+			fprintf(stdout, "<br><br><center><a href=\"ghostlist.sh?SORT=%s&MAXAGE=%d&TEXT\">Text report</a></center>\n", sortstring, maxage);
 		}
 	}
 	else

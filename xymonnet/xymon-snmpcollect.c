@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* -----------------  struct's used for the host/requests we need to do ---------------- */
 /* List of the OID's we will request */
@@ -538,7 +538,7 @@ void stophosts(void)
 /* 
  * This routine loads MIB files, and computes the key-OID values.
  * We defer this until the mib-definition is actually being referred to 
- * in hobbit-snmphosts.cfg, because lots of MIB's are not being used
+ * in snmphosts.cfg, because lots of MIB's are not being used
  * (and probably do not exist on the host where we're running) and
  * to avoid spending a lot of time to load MIB's that are not used.
  */
@@ -626,7 +626,7 @@ void readconfig(char *cfgfn, int verbose)
 	strbuffer_t *inbuf;
 
 	struct req_t *reqitem = NULL;
-	int bbsleep = atoi(xgetenv("BBSLEEP"));
+	int tasksleep = atoi(xgetenv("TASKSLEEP"));
 
 	mibdef_t *mib;
 
@@ -663,15 +663,15 @@ void readconfig(char *cfgfn, int verbose)
 			/*
 			 * See if we're running a non-standard interval.
 			 * If yes, then process only the records that match
-			 * this BBSLEEP setting.
+			 * this TASKSLEEP setting.
 			 */
-			if (bbsleep != 300) {
+			if (tasksleep != 300) {
 				/* Non-default interval. Skip the host if it HASN'T got an interval setting */
 				if (!intvl) continue;
 
 				/* Also skip the hosts that have an interval different from the current */
 				*intvl = '\0';	/* Clip the interval from the hostname */
-				if (atoi(intvl+1) != bbsleep) continue;
+				if (atoi(intvl+1) != tasksleep) continue;
 			}
 			else {
 				/* Default interval. Skip the host if it HAS an interval setting */
@@ -814,7 +814,7 @@ void readconfig(char *cfgfn, int verbose)
 			continue;
 		}
 		else {
-			errprintf("Unknown MIB (not in hobbit-snmpmibs.cfg): '%s'\n", bot);
+			errprintf("Unknown MIB (not in snmpmibs.cfg): '%s'\n", bot);
 		}
 	}
 
@@ -921,7 +921,7 @@ void sendresult(void)
 			if (havemsg) {
 				sprintf(msgline, "\n.<!-- linecount=%d -->\n", itemcount);
 				addtobuffer(clientmsg, msgline);
-				sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
+				sendmessage(STRBUF(clientmsg), NULL, XYMON_TIMEOUT, NULL);
 			}
 			clearstrbuffer(clientmsg);
 			havemsg = 0;
@@ -939,7 +939,7 @@ void sendresult(void)
 
 			sprintf(msgline, "\n[%s]\nInterval=%d\nActiveIP=%s\n\n",
 				mib->mibname,
-				atoi(xgetenv("BBSLEEP")),
+				atoi(xgetenv("TASKSLEEP")),
 				rwalk->hostip[rwalk->hostipidx]);
 			addtobuffer(mib->resultbuf, msgline);
 		}
@@ -991,7 +991,7 @@ void sendresult(void)
 	}
 
 	if (havemsg) {
-		sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(STRBUF(clientmsg), NULL, XYMON_TIMEOUT, NULL);
 	}
 	
 	freestrbuffer(clientmsg);
@@ -1077,10 +1077,10 @@ int main (int argc, char **argv)
 		}
 	}
 
-	add_timestamp("hobbit_snmpcollect startup");
+	add_timestamp("xymon-snmpcollect startup");
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
-	init_snmp("hobbit_snmpcollect");
+	init_snmp("xymon-snmpcollect");
 	snmp_mib_toggle_options("e");	/* Like -Pe: Dont show MIB parsing errors */
 	snmp_out_toggle_options("qn");	/* Like -Oqn: OID's printed as numbers, values printed without type */
 
@@ -1088,7 +1088,7 @@ int main (int argc, char **argv)
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
-		sprintf(configfn, "%s/etc/hobbit-snmphosts.cfg", xgetenv("BBHOME"));
+		sprintf(configfn, "%s/etc/snmphosts.cfg", xgetenv("XYMONHOME"));
 	}
 	readconfig(configfn, mibcheck);
 	if (cfgcheck) return 0;

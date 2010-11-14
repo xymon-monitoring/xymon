@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
@@ -118,13 +118,13 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(pagefilter) + strlen(filter));
-	sprintf(req, "hobbitdboard fields=hostname,testname,color,msg %s %s",
+	sprintf(req, "xymondboard fields=hostname,testname,color,msg %s %s",
 		pagefilter, filter);
-	res = sendmessage(req, server, BBTALK_TIMEOUT, sres);
+	res = sendmessage(req, server, XYMON_TIMEOUT, sres);
 	board = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 
-	if (res != BB_OK) return 1;
+	if (res != XYMONSEND_OK) return 1;
 
 	if (!embedded) {
 		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));

@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct value_t {
 	char *symbol;
@@ -124,24 +124,17 @@ static void loadtests(void)
 	strbuffer_t *inbuf;
 
 	if (!fn) {
-		fn = (char *)malloc(1024 + strlen(xgetenv("BBHOME")));
+		fn = (char *)malloc(1024 + strlen(xgetenv("XYMONHOME")));
 		*fn = '\0';
 	}
 
-	if (*fn == '\0') {
-		/* 
-		 * Why this ? Because I goofed and released a version using bbcombotests.cfg,
-		 * and you shouldn't break peoples' setups when fixing silly bugs.
-		 */
-		sprintf(fn, "%s/etc/bbcombotest.cfg", xgetenv("BBHOME"));
-		if (stat(fn, &st) == -1) sprintf(fn, "%s/etc/bbcombotests.cfg", xgetenv("BBHOME"));
-	}
+	sprintf(fn, "%s/etc/combo.cfg", xgetenv("XYMONHOME"));
 	if ((stat(fn, &st) == 0) && (st.st_mtime == lastupdate)) return;
 	lastupdate = st.st_mtime;
 
 	fd = fopen(fn, "r");
 	if (fd == NULL) {
-		errprintf("Cannot open %s/bbcombotest.cfg\n", xgetenv("BBHOME"));
+		errprintf("Cannot open %s/combo.cfg\n", xgetenv("XYMONHOME"));
 		*fn = '\0';
 		return;
 	}
@@ -202,22 +195,22 @@ static void loadtests(void)
 	freestrbuffer(inbuf);
 }
 
-static int gethobbitdvalue(char *hostname, char *testname, char **errptr)
+static int getxymondvalue(char *hostname, char *testname, char **errptr)
 {
 	static char *board = NULL;
-	int hobbitdresult;
+	int xymondresult;
 	int result = COL_CLEAR;
 	char *pattern, *found, *colstr;
 
 	if (board == NULL) {
 		sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-		hobbitdresult = sendmessage("hobbitdboard fields=hostname,testname,color", NULL, BBTALK_TIMEOUT, sres);
+		xymondresult = sendmessage("xymondboard fields=hostname,testname,color", NULL, XYMON_TIMEOUT, sres);
 		board = getsendreturnstr(sres, 1);
 
-		if ((hobbitdresult != BB_OK) || (board == NULL)) {
+		if ((xymondresult != XYMONSEND_OK) || (board == NULL)) {
 			board = "";
-			*errptr += sprintf(*errptr, "Could not access hobbitd board, error %d\n", hobbitdresult);
+			*errptr += sprintf(*errptr, "Could not access xymond board, error %d\n", xymondresult);
 			return COL_CLEAR;
 		}
 
@@ -262,7 +255,7 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 		return walk->result;
 	}
 
-	*color = gethobbitdvalue(hostname, testname, &errptr);
+	*color = getxymondvalue(hostname, testname, &errptr);
 
 	/* Save error messages */
 	if (strlen(errtext) > 0) {
@@ -458,7 +451,7 @@ int update_combotests(int showeval, int cleanexpr)
 			addtostatus(msgline);
 
 			for (vwalk = t->valuelist; (vwalk); vwalk = vwalk->next) {
-				sprintf(msgline, "&%s <a href=\"%s/bb-hostsvc.sh?HOST=%s&amp;SERVICE=%s\">%s</a>\n",
+				sprintf(msgline, "&%s <a href=\"%s/svcstatus.sh?HOST=%s&amp;SERVICE=%s\">%s</a>\n",
 					colorname(vwalk->color), xgetenv("CGIBINURL"), gethname(vwalk->symbol), gettname(vwalk->symbol), vwalk->symbol);
 				addtostatus(msgline);
 			}

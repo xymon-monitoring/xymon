@@ -64,7 +64,7 @@ bbmessage.cgi			xymoncgimsg.cgi
 Web tools
 =========
 bbgen				xymongen
-bb-ack.cgi			ack.cgi
+bb-ack.cgi			acknowledge.cgi
 bb-csvinfo.cgi			csvinfo.cgi
 bb-datepage.cgi			datepage.cgi
 bb-eventlog.cgi			eventlog.cgi

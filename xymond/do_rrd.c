@@ -25,9 +25,9 @@ static char rcsid[] = "$Id$";
 #include <rrd.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_rrd.h"
+#include "xymond_rrd.h"
 #include "do_rrd.h"
 #include "client_config.h"
 
@@ -35,7 +35,7 @@ static char rcsid[] = "$Id$";
 #define NAME_MAX 255	/* Solaris doesn't define NAME_MAX, but ufs limit is 255 */
 #endif
 
-extern int seq;	/* from hobbitd_rrd.c */
+extern int seq;	/* from xymond_rrd.c */
 
 char *rrddir = NULL;
 int use_rrd_cache = 1;         /* Use the cache by default */
@@ -382,7 +382,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		if (cacheitem->updseq[cacheitem->valcount-1] == seq) {
 			/*
 			 * This is usually caused by a configuration error, 
-			 * e.g. two PORT settings in hobbit-clients.cfg that
+			 * e.g. two PORT settings in analysis.cfg that
 			 * use the same TRACK string.
 			 * Can also be two web checks using the same URL, but
 			 * with different POST data.
@@ -426,7 +426,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * Match the RRD data against any DS client-configuration modifiers.
 	 */
 	modifymsg = check_rrdds_thresholds(hostname, classname, pagepaths, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
-	if (modifymsg) sendmessage(modifymsg, NULL, BBTALK_TIMEOUT, NULL);
+	if (modifymsg) sendmessage(modifymsg, NULL, XYMON_TIMEOUT, NULL);
 
 	/*
 	 * See if we want the data to go to an external handler.
@@ -594,10 +594,10 @@ static int rrddatasets(char *hostname, char ***dsnames)
 }
 
 /* Include all of the sub-modules. */
-#include "rrd/do_bbgen.c"
-#include "rrd/do_bbtest.c"
-#include "rrd/do_bbproxy.c"
-#include "rrd/do_hobbitd.c"
+#include "rrd/do_xymongen.c"
+#include "rrd/do_xymonnet.c"
+#include "rrd/do_xymonproxy.c"
+#include "rrd/do_xymond.c"
 #include "rrd/do_citrix.c"
 #include "rrd/do_ntpstat.c"
 
@@ -657,20 +657,24 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_devmon.c"
 
 
-void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef, char *classname, char *pagepaths)
+void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, xymonrrd_t *ldef, char *classname, char *pagepaths)
 {
 	int res = 0;
 	char *id;
 
 	MEMDEFINE(rrdvalues);
 
-	if (ldef) id = ldef->hobbitrrdname; else id = testname;
+	if (ldef) id = ldef->xymonrrdname; else id = testname;
 	senderip = sender;
 
-	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbproxy") == 0)     res = do_bbproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "hobbitd") == 0)     res = do_hobbitd_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	if      (strcmp(id, "bbgen") == 0)       res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymongen") == 0)    res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbtest") == 0)      res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonnet") == 0)    res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbproxy") == 0)     res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonproxy") == 0)  res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "hobbitd") == 0)     res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymond") == 0)      res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "citrix") == 0)      res = do_citrix_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "ntpstat") == 0)     res = do_ntpstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* This file holds data-definitions and declarations used in bbgen.           */
+/* This file holds data-definitions and declarations used in xymongen.        */
 /*                                                                            */
 /* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
@@ -10,21 +10,21 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBGEN_H_
-#define __BBGEN_H_
+#ifndef _XYMONGEN_H_
+#define _XYMONGEN_H_
 
 #include <time.h>
-#include "libbbgen.h"
+#include "libxymon.h"
 
-/* Structure defs for bbgen */
+/* Structure defs for xymongen */
 
 /*
-   This "drawing" depicts the relations between the various data objects used by bbgen.
+   This "drawing" depicts the relations between the various data objects used by xymongen.
    Think of this as doing object-oriented programming in plain C.
 
 
 
-   bbgen_page_t                          hostlist_t          state_t
+   xymongen_page_t                       hostlist_t          state_t
 +->  name                                  hostentry --+       entry --+
 |    title                                 next        |       next    |
 |    color                                             |               |
@@ -36,8 +36,8 @@
      next     |         next               ip                  |
       ^       +------------------------>   color               |
       |                                    oldage              |
-      |                                    bb2color            |
-      |                                    bbnkcolor           |
+      |                                    nongreencolor       |
+      |                                    criticalcolor       |
       +---------------------------------   parent              |
                                            alerts              |
                                            waps                |
@@ -48,7 +48,7 @@
                                            nopropacktests      |
 					   rawentry            V
                                            entries ---------> entry_t
-                                           dialup               column -------> bbgen_col_t
+                                           dialup               column -------> xymongen_col_t
                                            reportwarnlevel      color             name
                                            comment              age               next
                                            next                 oldage
@@ -61,11 +61,11 @@
                                                                 next
 
 
-  bbgen_page_t structure holds data about one BB page - the first record in this list
-  represents the top-level bb.html page. Other pages in the list are defined
-  using the bb-hosts "page" directive and access via the page->next link.
+  xymongen_page_t structure holds data about one Xymon page - the first record in this list
+  represents the top-level xymon.html page. Other pages in the list are defined
+  using the hosts.cfg "page" directive and access via the page->next link.
 
-  subpages are stored in bbgen_page_t structures also. Accessible via the "subpages"
+  subpages are stored in xymongen_page_t structures also. Accessible via the "subpages"
   link from a page.
 
   group_t structure holds the data from a "group" directive. groups belong to
@@ -79,8 +79,8 @@
   hostlist_t is a simple 1-dimensional list of all the hosts, for easier
   traversal of the host list.
 
-  entry_t holds the data for a given test (basically, a file in $BBLOGS).
-  test-names are not stored directly, but in the linked "bbgen_col_t" list.
+  entry_t holds the data for a given test (basically, a file in $XYMONRAWSTATUSDIR).
+  test-names are not stored directly, but in the linked "xymongen_col_t" list.
   "age" is the "Status unchanged in X" text from the logfile. "oldage" is
   a boolean indicating if "age" is more than 1 day. "alert" means this 
   test belongs on the reduced summary (alerts) page.
@@ -88,9 +88,9 @@
   state_t is a simple 1-dimensional list of all tests (entry_t records).
 */
 
-#define PAGE_BB		0
-#define PAGE_BB2	1
-#define PAGE_NK		2
+#define PAGE_NORMAL	0
+#define PAGE_NONGREEN	1
+#define PAGE_CRITICAL	2
 
 
 /* Max number of purple messages in one run */
@@ -99,14 +99,14 @@
 /* Column definitions.                     */
 /* Basically a list of all possible column */
 /* names                                   */
-typedef struct bbgen_col_t {
+typedef struct xymongen_col_t {
 	char	*name;
 	char	*listname;	/* The ",NAME," string used for searches */
-	struct bbgen_col_t	*next;
-} bbgen_col_t;
+	struct xymongen_col_t	*next;
+} xymongen_col_t;
 
 typedef struct col_list_t {
-	struct bbgen_col_t	*column;
+	struct xymongen_col_t	*column;
 	struct col_list_t	*next;
 } col_list_t;
 
@@ -115,7 +115,7 @@ typedef struct col_list_t {
 /* contains the actual color of a measurement */
 /* Linked list.                               */
 typedef struct entry_t {
-	struct bbgen_col_t *column;
+	struct xymongen_col_t *column;
 	int	color;
 	char	age[20];
 	int	oldage;
@@ -142,7 +142,7 @@ typedef struct state_t {
 } state_t;
 
 /* OSX has a built-in "host_t" type. */
-#define host_t bbgen_host_t
+#define host_t xymongen_host_t
 
 typedef struct host_t {
 	char	*hostname;
@@ -154,8 +154,8 @@ typedef struct host_t {
 	int	dialup;
 	struct entry_t	*entries;
 	int	color;		/* Calculated */
-	int	bb2color;	/* Calculated */
-	int	bbnkcolor;	/* Calculated */
+	int	nongreencolor;	/* Calculated */
+	int	criticalcolor;	/* Calculated */
 	int     oldage;
 	char	*alerts;
 	int	nktime;
@@ -167,11 +167,11 @@ typedef struct host_t {
 	char    *noproppurpletests;
 	char    *nopropacktests;
 	char	*pretitle;
-	struct bbgen_page_t *parent;
+	struct xymongen_page_t *parent;
 	double  reportwarnlevel;
 	int	reportwarnstops;
 	char	*reporttime;
-	int     nobb2;
+	int     nonongreen;
 	struct host_t	*next;
 } host_t;
 
@@ -192,18 +192,18 @@ typedef struct group_t {
 } group_t;
 
 
-typedef struct bbgen_page_t {
+typedef struct xymongen_page_t {
 	char	*name;
 	char	*title;
 	int	color;		/* Calculated */
 	int     oldage;
 	char	*pretitle;
-	struct bbgen_page_t	*next;
-	struct bbgen_page_t	*subpages;
-	struct bbgen_page_t	*parent;
+	struct xymongen_page_t	*next;
+	struct xymongen_page_t	*subpages;
+	struct xymongen_page_t	*parent;
 	struct group_t	*groups;
 	struct host_t	*hosts;
-} bbgen_page_t;
+} xymongen_page_t;
 
 typedef struct summary_t {
 	char		*name;
@@ -220,15 +220,15 @@ typedef struct dispsummary_t {
 	struct dispsummary_t	*next;
 } dispsummary_t;
 
-enum tooltipuse_t { TT_BBONLY, TT_ALWAYS, TT_NEVER};
+enum tooltipuse_t { TT_STDONLY, TT_ALWAYS, TT_NEVER};
 
 extern enum tooltipuse_t tooltipuse;
-extern bbgen_page_t	*pagehead;
+extern xymongen_page_t	*pagehead;
 extern state_t		*statehead;
-extern bbgen_col_t	*colhead, null_column;
+extern xymongen_col_t	*colhead, null_column;
 extern summary_t	*sumhead;
 extern dispsummary_t	*dispsums;
-extern int		bb_color, bb2_color, bbnk_color;
+extern int		xymon_color, nongreen_color, critical_color;
 extern time_t		reportstart, reportend;
 extern double           reportwarnlevel, reportgreenlevel;
 extern int		reportwarnstops;

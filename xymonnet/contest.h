@@ -38,7 +38,7 @@
 
 #else
 /*
- * bbgen without support for SSL protocols.
+ * xymonnet without support for SSL protocols.
  */
 #undef TCP_SSL
 #define TCP_SSL 0x0000
@@ -46,7 +46,7 @@
 #define SSL void
 #endif
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 extern char *ssl_library_version;
 extern char *ciphershigh;
@@ -151,9 +151,9 @@ typedef struct tcptest_t {
 typedef struct {
 	tcptest_t	*tcptest;
 
-	char		*url;			/* URL to request, stripped of BB'isms */
+	char		*url;			/* URL to request, stripped of configuration artefacts */
 	int		parsestatus;
-	bburl_t		bburl;
+	weburl_t	weburl;
 
 	int		gotheaders;
 	int		contlen;

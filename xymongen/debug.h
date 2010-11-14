@@ -21,7 +21,7 @@ extern void dumphosts(host_t *head, char *prefix);
 extern void dumpgroups(group_t *head, char *prefix, char *hostprefix);
 extern void dumphostlist(hostlist_t *head);
 extern void dumpstatelist(state_t *head);
-extern void dumpall(bbgen_page_t *head);
+extern void dumpall(xymongen_page_t *head);
 
 #endif
 

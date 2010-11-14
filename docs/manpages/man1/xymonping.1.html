@@ -1,25 +1,25 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Man page of HOBBITPING</TITLE>
+<HTML><HEAD><TITLE>Man page of XYMONPING</TITLE>
 </HEAD><BODY>
-<H1>HOBBITPING</H1>
-Section: User Commands  (1)<BR>Updated: Version 4.3.0-0.201010051645:  5 Oct 2010<BR><A HREF="#index">Index</A>
+<H1>XYMONPING</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
 <H2>NAME</H2>
 
-hobbitping - Xymon ping tool
+xymonping - Xymon ping tool
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>hobbitping [--retries=N] [--timeout=N] [IP-adresses]</B>
+<B>xymonping [--retries=N] [--timeout=N] [IP-adresses]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
 <H2>DESCRIPTION</H2>
 
-<I><A HREF="../man1/hobbitping.1.html">hobbitping</A>(1)</I>
+<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
 
 is used for ping testing of the hosts monitored by the
 <I><A HREF="../man7/xymon.7.html">xymon</A>(7)</I>
@@ -27,7 +27,7 @@ is used for ping testing of the hosts monitored by the
 monitoring system. It reads a list of IP adresses from stdin,
 and performs a &quot;ping&quot; check to see if these hosts are alive.
 It is normally invoked by the
-<I><A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1)</I>
+<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
 
 utility, which performs all of the Xymon network tests.
 <P>
@@ -35,37 +35,37 @@ Optionally, if a list of IP-adresses is passed as command-line
 arguments, it will ping those IP's instead of reading them 
 from stdin.
 <P>
-hobbitping only handles IP-adresses, not hostnames.
+xymonping only handles IP-adresses, not hostnames.
 <P>
-hobbitping was inspired by the
+xymonping was inspired by the
 <I><A HREF="../man1/fping.1.html">fping</A>(1)</I>
 
 tool, but has been written from scratch to implement a fast
 ping tester without much of the overhead found in other
-such utilities. The output from hobbitping is similar to that 
+such utilities. The output from xymonping is similar to that 
 of &quot;fping -Ae&quot;.
 <P>
-hobbitping probes multiple systems in parallel, and the runtime
+xymonping probes multiple systems in parallel, and the runtime
 is therefore mostly dependant on the timeout-setting and the
-number of retries. With the default options, hobbitping takes
+number of retries. With the default options, xymonping takes
 approximately 18 seconds to ping all hosts (tested with an
 input set of 1500 IP adresses).
 <P>
 <A NAME="lbAE">&nbsp;</A>
 <H2>SUID-ROOT INSTALLATION REQUIRED</H2>
 
-hobbitping needs to be installed with suid-root privileges,
+xymonping needs to be installed with suid-root privileges,
 since it requires a &quot;raw socket&quot; to send and receive ICMP
 Echo (ping) packets.
 <P>
-hobbitping is implemented such that it immediately drops
+xymonping is implemented such that it immediately drops
 the root privileges, and only regains them to perform two
 operations: Obtaining the raw socket, and optionally binding
 it to a specific source address. These operations are performed
-as root, the rest of the time hobbitping runs with normal user
+as root, the rest of the time xymonping runs with normal user
 privileges. Specifically, no user-supplied data or network data
 is used while running with root privileges. Therefore it 
-should be safe to provide hobbitping with the necessary
+should be safe to provide xymonping with the necessary
 suid-root privileges.
 <P>
 <A NAME="lbAF">&nbsp;</A>
@@ -85,17 +85,17 @@ unavailable, unless it responds to one of the retries.
 The default is --timeout=5.
 <P>
 <DT>--responses=N<DD>
-hobbitping normally stops pinging a host after receiving a single
+xymonping normally stops pinging a host after receiving a single
 response, and uses that to determine the round-trip time. If the
 first response takes longer to arrive - e.g. because of additional
 network overhead when first determining the route to the target host -
 it may skew the round-trip-time reports. You can then use this option
-to require N responses, and hobbitping will calculate the round-trip
+to require N responses, and xymonping will calculate the round-trip
 time as the average of all of responsetimes.
 <P>
 <DT>--max-pps=N<DD>
 Maximum number of packets per second. This limits the number of
-ICMP packets hobbitping will send per second, by enforcing a
+ICMP packets xymonping will send per second, by enforcing a
 brief delay after each packet is sent. The default setting is
 to send a maximum of 50 packets per second. Note that increasing
 this may cause flooding of the network, and since ICMP packets
@@ -115,7 +115,7 @@ Enable debug output. This prints out all packets sent and received.
 <A NAME="lbAG">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
-<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man1/bbtest-net.1.html">bbtest-net</A>(1), <A HREF="../man1/fping.1.html">fping</A>(1)
+<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man1/xymonnet.1.html">xymonnet</A>(1), <A HREF="../man1/fping.1.html">fping</A>(1)
 <P>
 <P>
 
@@ -133,6 +133,6 @@ Enable debug output. This prints out all packets sent and received.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 15:16:57 GMT, October 05, 2010
+Time: 12:54:43 GMT, October 27, 2010
 </BODY>
 </HTML>
