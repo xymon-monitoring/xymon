@@ -1,0 +1,171 @@
+Upgrading from Hobbit 4.0 / 4.2 / 4.3.0 beta 1 / 4.3.0 beta 2
+=============================================================
+
+Xymon was renamed from "Hobbit" to "Xymon" during the 4.3.0
+development cycle. That meant there were quite a few names
+being used for Xymon for historical reasons:
+- "Big Brother" or "BB" (really the original software from Quest)
+- "bbgen" (the precursor to Xymon, which used the Big Brother server)
+- "Hobbit"
+and finally "Xymon". This was evident in the names of configuration
+files, programs, tools, commands, webpages, status columns etc. etc. 
+
+The forced change of name from Hobbit to Xymon was seen as a good
+time to clean up this spaghetti of various names. So with the
+4.3.0-beta3 release, all references to the old names have been
+eliminated from Xymon. However, that means upgrading involves a
+bit of renaming stuff.
+
+A script has been provided to help with this task. For it to
+work, it is essential that you perform the upgrade like this:
+
+1) Make sure you have a backup. It is not necessary to backup
+   the data in the hist/, histlogs/, hostdata/ and rrd/ 
+   directories (if you use the default directory layout, then
+   that means the entire data/ directory need not be backed up).
+2) Configure Xymon 4.3.0 using a directory layout that is
+   identical to your previous version. Make sure you keep the
+   directory names exactly as they were in the version you are
+   currently running, even though that may include "hobbit" in
+   the directory name.
+3) Build Xymon 4.3.0 (run "make")
+4) Stop Hobbit (the current version).
+5) Using the "bbcmd" utility from your current version, run
+   then "./build/upgrade430.sh" script. I.e. run a command
+   like
+       ~hobbit/server/bin/bbcmd ./build/upgrade430.sh
+   This will perform almost all of the file renaming and 
+   configuration file updates that are needed when going
+   to version 4.3. A few updates cannot be done automatically,
+   you will be notified what else is needed after the script
+   completes.
+6) Install Xymon 4.3.0 (run "make install").
+
+Your installation should now be upgraded to version 4.3.0.
+Run your normal startup-script to launch Xymon, or the
+	~hobbit/server/xymon.sh start
+command.
+
+
+If you don't feel comfortable doing the upgrade using the script,
+the rest of this document describes what must be done. It assumes
+that you perform a clean installation of Xymon 4.3.0, and then
+move your old configuration and data over manually.
+
+
+The ~xymon/server/etc/ directory
+================================
+Copy over the existing configuration files, then rename them 
+as follows:
+
+   Old name                     New name
+   --------                     --------
+mv bb-hosts                     hosts.cfg
+mv bbcombotest.cfg              combo.cfg
+mv hobbit-alerts.cfg            alerts.cfg
+mv hobbit-nkview.cfg            critical.cfg
+mv hobbit-rrddefinitions.cfg    rrddefinitions.cfg
+mv hobbitgraph.cfg              graphs.cfg
+mv hobbit-holidays.cfg          holidays.cfg
+mv hobbit-clients.cfg           analysis.cfg
+mv hobbit-snmpmibs.cfg          snmpmibs.cfg
+mv bb-services                  protocols.cfg
+
+Four files will require special attention:
+
+"hobbitcgi.cfg" is renamed to "cgioptions.cfg". Three settings
+in that file have been changed also: CGI_HOBBITCOLUMN_OPTS is
+now CGI_COLUMNDOC_OPTS, CGI_HOBBITGRAPH_OPTS is now 
+CGI_SHOWGRAPH_OPTS, and CGI_HOBBITCONFREPORT_OPTS is now 
+CGI_CONFREPORT_OPTS.
+
+"hobbitlaunch.cfg" is renamed to "tasks.cfg". However, most
+of the programs have also been renamed, so it is probably easiest
+if you use the standard tasks.cfg file as the starting point,
+and the merge your local modifications into that file. If 
+you have too many local modifications, see the "docs/Renaming-430.txt"
+file for a list of all the new program names.
+
+"hobbitserver.cfg" is renamed to "xymonserver.cfg". However
+most of the settings inside that file have also been renamed.
+As with hobbitlaunch.cfg, I would recommend that you start with
+the default xymonserver.cfg file and use that as the basis for
+merging in your local modifications. If that is not possible, then
+you can use the xymond/etcfiles/xymonserver-migration.cfg file
+together with your current hobbitserver.cfg file.
+
+"hobbitclient.cfg" is renamed to "xymonclient.cfg". As with 
+xymonserver.cfg, a lot of settings have been renamed, but since
+this file has very few it is probably easiest to setup this file
+from the standard file.
+
+Finally, if you use the "nobb2" tag in your hosts.cfg, then this
+has been deprecated. Please change it to "nonongreen".
+
+
+The ~xymon/server/bin/ directory
+================================
+Most of the programs have changed names, so if you have custom 
+scripts that use some of the programs then these will probably
+break. I recommend that you setup symlinks for the following
+programs in ~xymon/server/bin :
+
+   ln -s xymon bb
+   ln -s xymoncmd bbcmd
+   ln -s xymongrep bbhostgrep
+   ln -s xymoncfg bbhostshow
+   ln -s xymondigest bbdigest
+
+
+The ~xymon/server/web/ directory
+================================
+Some of the web template files have been renamed, and since the
+menu system has also been completely changed it is not possible
+to automatically migrate your local changes to the templates over.
+In the docs/Renaming-430.txt file you can see what the new templates
+are called.
+
+
+The ~xymon/data/rrd/ directory
+==============================
+Some of the Xymon-servers' own status-messages have changed names,
+and therefore the RRD graphs have also been renamed. So if you 
+would like to keep the history of your Xymon server before the
+upgrade, you must renamed some of the RRD files. In your
+~xymon/data/rrd/XYMONSERVERNAME/ directory:
+
+   mv bbgen.rrd     xymongen.rrd
+   mv bbtest.rrd    xymonnet.rrd
+   mv hobbit.rrd    xymon.rrd
+   mv hobbit2.rrd   xymon2.rrd
+   mv hobbitd.rrd   xymond.rrd
+   mv bbproxy.rrd   xymonproxy.rrd
+
+If you have multiple servers running Xymon tasks, do this in 
+each of these servers' RRD-directory.
+
+
+The Xymon internal statuses
+===========================
+If you have alerts defined for the internal Xymon statuses,
+then you will have to change them since the names of the
+internal statuses have changed. So in alerts.cfg, check
+if you have any alerts for the "bbgen", "bbtest", "hobbitd"
+or "bbproxy" statuses. If you do, then change them:
+
+	bbgen		is now		xymongen
+	bbtest		is now		xymonnet
+	bbproxy		is now		xymonproxy
+	hobbitd		is now		xymond
+
+
+The Xymon webpages
+==================
+The three top-level Xymon webpages have also been renamed, so if
+you use links directly to the "bb.html", "bb2.html" or "bbnk.html"
+webpage, then these will have to be changed:
+
+   bb.html		is now		xymon.html
+   bb2.html		is now		nongreen.html
+   bbnk.html		is now		critical.html
+
