@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of REPORT.CGI</TITLE>
 </HEAD><BODY>
 <H1>REPORT.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -70,9 +70,9 @@ with the proper &quot;--reportopts&quot; option.
 
 <DL COMPACT>
 <DT>--noclean<DD>
-Do not clean the BBREP directory of old reports. Makes the
+Do not clean the XYMONREPDIR directory of old reports. Makes the
 report-tool go a bit faster - instead, you can clean up the
-BBREP directory e.g. via a cron-job.
+XYMONREPDIR directory e.g. via a cron-job.
 <P>
 <DT>--env=FILENAME<DD>
 Load the environment from FILENAME before executing the CGI.
@@ -88,13 +88,13 @@ program building the report files.
 <H2>FILES</H2>
 
 <DL COMPACT>
-<DT>$BBHOME/web/report_header<DD>
+<DT>$XYMONHOME/web/report_header<DD>
 HTML template header for the report request form
 <P>
-<DT>$BBHOME/web/report_footer<DD>
+<DT>$XYMONHOME/web/report_footer<DD>
 HTML template footer for the report request form
 <P>
-<DT>$BBHOME/web/report_form<DD>
+<DT>$XYMONHOME/web/report_form<DD>
 HTML template report request form
 <P>
 </DL>
@@ -102,18 +102,18 @@ HTML template report request form
 <H2>ENVIRONMENT VARIABLES</H2>
 
 <DL COMPACT>
-<DT>BBGENREPOPTS<DD>
+<DT>XYMONGENREPOPTS<DD>
 xymongen options passed by default to the report.cgi. This 
 happens in the report.sh wrapper.
-<DT>BBHOME<DD>
+<DT>XYMONHOME<DD>
 Home directory of the Xymon server installation
-<DT>BBREP<DD>
+<DT>XYMONREPDIR<DD>
 Directory where generated reports are stored. This directory must
 be writable by the userid executing the CGI script, typically
-&quot;www&quot;, &quot;apache&quot; or &quot;nobody&quot;. Default: $BBHOME/www/rep/
-<DT>BBREPURL<DD>
+&quot;www&quot;, &quot;apache&quot; or &quot;nobody&quot;. Default: $XYMONHOME/www/rep/
+<DT>XYMONREPURL<DD>
 The URL prefix to use when accessing the reports via a browser. 
-Default: $BBWEB/rep
+Default: $XYMONWEB/rep
 <P>
 <P>
 </DL>
@@ -139,6 +139,6 @@ Default: $BBWEB/rep
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:44 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

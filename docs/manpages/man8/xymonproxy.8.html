@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONPROXY</TITLE>
 </HEAD><BODY>
 <H1>XYMONPROXY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <P>
@@ -14,7 +14,7 @@ xymonproxy - Xymon message proxy
 <A NAME="lbAC">&nbsp;</A>
 <H2>SYNOPSIS</H2>
 
-<B>xymonproxy [options] --server=$BBDISP</B>
+<B>xymonproxy [options] --server=$XYMSRV</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
@@ -58,7 +58,7 @@ to the Xymon server.
 Specifies the IP-address and optional portnumber where incoming
 messages are forwarded to. The default portnumber is 1984, the
 standard Xymon port number. If you have setup the normal
-Xymon environment, you can use &quot;--server=$BBDISP&quot;. Up
+Xymon environment, you can use &quot;--server=$XYMSRV&quot;. Up
 to 3 servers can be specified; incoming messages are sent to
 all of them (except &quot;config&quot;, &quot;query&quot; and &quot;download&quot; messages, 
 which go to the LAST server only). If you have Xymon clients
@@ -76,7 +76,7 @@ will be used.
 Specifies the number of seconds after which a connection is
 aborted due to a timeout. Default: 10 seconds.
 <P>
-<DT>--report=[PROXYHOSTNAME.]BBSERVICE<DD>
+<DT>--report=[PROXYHOSTNAME.]SERVICE<DD>
 If given, this option causes xymonproxy to send a status report
 every 5 minutes to the Xymon server about itself. If you
 have set the standard Xymon environment, you can use
@@ -259,6 +259,6 @@ Toggles logging of individual messages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

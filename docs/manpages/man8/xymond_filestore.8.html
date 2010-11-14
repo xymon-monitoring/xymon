@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND_FILESTORE</TITLE>
 </HEAD><BODY>
 <H1>XYMOND_FILESTORE</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -48,7 +48,7 @@ messages for more than one channel.
 <DL COMPACT>
 <DT>--status<DD>
 Incoming messages are &quot;status&quot; messages, they will be stored in the
-$BBLOGS/ directory. If you are using 
+$XYMONRAWSTATUSDIR/ directory. If you are using 
 <I><A HREF="../man7/xymon.7.html">xymon</A>(7)</I>
 
 throughout your Xymon server, you will not need to run this
@@ -61,7 +61,7 @@ module instead.
 <P>
 <DT>--data<DD>
 Incoming messages are &quot;data&quot; messages, they will be stored in the
-$BBDATA directory. This module is not needed, unless you have a
+$XYMONDATADIR directory. This module is not needed, unless you have a
 third-party module that processes the data-files. This module is
 NOT needed to get trend graphs, you should run the 
 <I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
@@ -70,13 +70,13 @@ module instead.
 <P>
 <DT>--notes<DD>
 Incoming messages are &quot;notes&quot; messages, they will be stored in the
-$BBNOTES directory. This modules is only needed if you want to 
+$XYMONNOTESDIR directory. This modules is only needed if you want to 
 allow people to remotely update the notes-files available on the
 Xymon webpages.
 <P>
 <DT>--enadis<DD>
 Incoming messages are enable/disable messages, they will update 
-files in the $BBDISABLED directory. This is only needed if you have
+files in the $XYMONDISABLEDDIR directory. This is only needed if you have
 third-party add-ons that use these files.
 <P>
 <DT>--dir=DIRECTORY<DD>
@@ -85,11 +85,11 @@ Overrides the default output directory.
 <DT>--html<DD>
 Used together with &quot;--status&quot;. Tells xymond_filestore to also save
 an HTML version of the status-log. Should not be used unless you 
-must run with &quot;BBLOGSTATUS=static&quot;.
+must run with &quot;XYMONLOGSTATUS=static&quot;.
 <P>
 <DT>--htmldir=DIRECTORY<DD>
 The directory where HTML-versions of the status logs are stored.
-Default: $BBHTML
+Default: $XYMONHTMLSTATUSDIR
 <P>
 <DT>--htmlext=.EXT<DD>
 Set the filename extension for generated HTML files. By default, HTML
@@ -135,6 +135,6 @@ This module does not rely on any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND_HISTORY</TITLE>
 </HEAD><BODY>
 <H1>XYMOND_HISTORY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -33,11 +33,11 @@ that is compatible with the standard Big Brother daemon, bbd.
 <DL COMPACT>
 <DT>--histdir=DIRECTORY<DD>
 The directory for the history files. If not specified, the
-directory given by the BBHIST environment is used.
+directory given by the XYMONHISTDIR environment is used.
 <P>
 <DT>--histlogdir=DIRECTORY<DD>
 The directory for the historical status-logs. If not specified, the
-directory given by the BBHISTLOGS environment is used.
+directory given by the XYMONHISTLOGS environment is used.
 <P>
 <DT>--debug<DD>
 Enable debugging output.
@@ -47,23 +47,24 @@ Enable debugging output.
 <H2>ENVIRONMENT</H2>
 
 <DL COMPACT>
-<DT>BBALLHISTLOG<DD>
-This environment variable controls if the $BBHIST/allevents
+<DT>XYMONALLHISTLOG<DD>
+This environment variable controls if the $XYMONHISTDIR/allevents
 logfile is updated. This file is used by the event-log display on the
-BB2 html page. If you do not use this, you can disable it by setting
-BBALLHISTLOGS=FALSE.
+nongreen html page and the eventlog-webpage, among other things. 
+You can disable it by setting XYMONALLHISTLOGS=FALSE, but this is not
+recommended.
 <P>
-<DT>BBHOSTHISTLOG<DD>
-This environment variable controls if the $BBHIST/HOSTNAME
+<DT>XYMONHOSTHISTLOG<DD>
+This environment variable controls if the $XYMONHISTDIR/HOSTNAME
 logfile is updated. This file holds a list of all status changes seen
 for a single host, but is not used by any of the standard Xymon
 tools. If you do not want to save this, you can disable it by setting
-BBHOSTHISTLOG=FALSE.
+XYMONHOSTHISTLOG=FALSE.
 <P>
 <DT>SAVESTATUSLOG<DD>
 This environment variable controls if the historical
 status-logs are saved whenever a status change occurs. These logfiles
-are stored in the $BBHISTLOGS directory, and are used for the detailed
+are stored in the $XYMONHISTLOGS directory, and are used for the detailed
 log-display of a status from the Xymon &quot;History&quot; page. If you
 do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
 If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
@@ -97,6 +98,6 @@ This module does not rely on any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

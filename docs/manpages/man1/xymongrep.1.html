@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONGREP</TITLE>
 </HEAD><BODY>
 <H1>XYMONGREP</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -21,7 +21,7 @@ xymongrep - pick out lines in hosts.cfg
 
 <BR>
 
-<B>xymongrep [--noextras] [--test-untagged] [--bbdisp] [--net] TAG [TAG...]</B>
+<B>xymongrep [--noextras] [--test-untagged] [--web] [--net] TAG [TAG...]</B>
 
 <P>
 <A NAME="lbAD">&nbsp;</A>
@@ -59,10 +59,10 @@ Remove the &quot;testip&quot;, &quot;dialup&quot;, &quot;INSIDESLA&quot; and &qu
 from the output.
 <P>
 <DT>--test-untagged<DD>
-When using the BBLOCATION environment variable to test
+When using the XYMONNETWORK environment variable to test
 only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any &quot;NET:x&quot; tag.
-So only hosts that have a NET:$BBLOCATION tag will be
+So only hosts that have a NET:$XYMONNETWORK tag will be
 tested.
 <BR>
 
@@ -80,9 +80,9 @@ host is ignored and will not be included in the output.
 This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
 <P>
-<DT>--bbdisp<DD>
+<DT>--web<DD>
 Search the hosts.cfg file following include statements as a
-Xymon server would.
+Xymon web-server would.
 <P>
 <DT>--net<DD>
 Search the hosts.cfg file following include statements as 
@@ -129,7 +129,7 @@ Typically it will look somewhat like this:
 <P>
 Instead of the grep, we will use xymongrep. It then becomes
 <P>
-<BR>&nbsp;&nbsp;&nbsp;$BBHOME/bin/xymongrep&nbsp;TESTNAME&nbsp;|&nbsp;...&nbsp;code&nbsp;to&nbsp;handle&nbsp;test
+<BR>&nbsp;&nbsp;&nbsp;$XYMONHOME/bin/xymongrep&nbsp;TESTNAME&nbsp;|&nbsp;...&nbsp;code&nbsp;to&nbsp;handle&nbsp;test
 <P>
 which is simpler, less error-prone and more efficient.
 <P>
@@ -137,9 +137,9 @@ which is simpler, less error-prone and more efficient.
 <H2>ENVIRONMENT VARIABLES</H2>
 
 <DL COMPACT>
-<DT>BBLOCATION<DD>
+<DT>XYMONNETWORK<DD>
 If set, xymongrep outputs only lines from hosts.cfg that have
-a matching NET:$BBLOCATION setting.
+a matching NET:$XYMONNETWORK setting.
 <P>
 <DT>HOSTSCFG<DD>
 Filename for the Xymon
@@ -179,6 +179,6 @@ The Xymon hosts.cfg file
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

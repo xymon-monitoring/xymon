@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONCLIENT.CFG</TITLE>
 </HEAD><BODY>
 <H1>XYMONCLIENT.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -24,36 +24,36 @@ one environment variable NAME with the value VALUE.
 <H2>SETTINGS</H2>
 
 <DL COMPACT>
-<DT>BBDISP<DD>
+<DT>XYMSRV<DD>
 The IP-address used to contact the Xymon server. Default:
 Chosen when the Xymon client was compiled.
 <P>
-<DT>BBDISPLAYS<DD>
+<DT>XYMSERVERS<DD>
 List of IP-adresses of Xymon servers. Data will be sent to
 all of the servers listed here. This setting is only used if 
-BBDISP=0.0.0.0.
+XYMSRV=0.0.0.0.
 <P>
-<DT>BBPORT<DD>
+<DT>XYMONDPORT<DD>
 The port number for used to contact the Xymon server.
 Default: 1984.
 <P>
-<DT>BBHOME<DD>
+<DT>XYMONHOME<DD>
 The Xymon client top-level directory. Default: The
 $XYMONCLIENTHOME setting inherited from the &quot;runclient.sh&quot;
 script which starts the Xymon client.
 <P>
-<DT>BBCLIENTLOGS<DD>
+<DT>XYMONCLIENTLOGS<DD>
 The directory for the Xymon clients' own log files. Default:
-$BBHOME/logs
+$XYMONHOME/logs
 <P>
-<DT>BBTMP<DD>
-Directory used for temporary files. Default: $BBHOME/tmp/
+<DT>XYMONTMP<DD>
+Directory used for temporary files. Default: $XYMONHOME/tmp/
 <P>
-<DT>BB<DD>
+<DT>XYMON<DD>
 Full path to the 
 <I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
 
-client program. Default: $BBHOME/bin/xymon.
+client program. Default: $XYMONHOME/bin/xymon.
 <P>
 <DT>Commands<DD>
 Many extension scripts expect a series of environment variables to
@@ -75,7 +75,7 @@ The hostname of the local system. Default: Taken from &quot;uname -n&quot;.
 The hostname of the local system, with dots replaced by commas.
 For compatibility with Big Brother extension scripts.
 <P>
-<DT>BBOSTYPE<DD>
+<DT>SERVEROSTYPE<DD>
 The operating system of the local system, in lowercase. Default:
 taken from &quot;uname -s&quot;.
 <P>
@@ -104,6 +104,6 @@ of the &quot;runclient.sh&quot; script.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

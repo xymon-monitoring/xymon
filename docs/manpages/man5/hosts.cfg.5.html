@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOSTS.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOSTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -73,7 +73,7 @@ The &quot;filename&quot; argument should point to a file that uses the
 same syntax as hosts.cfg. The filename can be an absolute 
 filename (if it begins with a '/'), or a relative filename -
 relative file names are prefixed with the directory where
-the main hosts.cfg file is located (usually $BBHOME/etc/).
+the main hosts.cfg file is located (usually $XYMONHOME/etc/).
 <P>
 You can nest include tags, i.e. a file that is included 
 from the main hosts.cfg file can itself include other files.
@@ -304,9 +304,9 @@ off-line - this should not trigger an alert. All network tests
 will go &quot;clear&quot; upon failure, and any missing reports from e.g.
 cpu- and disk-status will not go purple when they are not updated.
 <P>
-<DT>nobb2<DD>
-Ignore this host on the BB2 page. Even if it has an active alert,
-it will not be included in the BB2 page. This also removes the
+<DT>nonongreen<DD>
+Ignore this host on the &quot;All non-green&quot; page. Even if it has an active alert,
+it will not be included in the &quot;All non-green&quot; page. This also removes the
 host from the event-log display.
 <P>
 <DT>nodisp<DD>
@@ -365,22 +365,22 @@ viewer, which has a separate configuration tool,
 
 with more facilities than the NK tags in hosts.cfg.
 <P>
-xymongen will create three sets of pages: The main page bb.html,
-the all-non-green-statuses page (bb2.html), and a specially
-reduced version of bb2.html with only selected tests (bbnk.html).
+xymongen will create three sets of pages: The main page xymon.html,
+the all-non-green-statuses page (nongreen.html), and a specially
+reduced version of nongreen.html with only selected tests (critical.html).
 This page includes selected tests that currently have a red
 or yellow status.
 <P>
 <DL COMPACT>
 <DT>NK:testname[,testname]<DD>
-Define the tests that you want included on the bbnk page.
+Define the tests that you want included on the critical page.
 E.g. if you have a host where you only want to see the 
-http tests on bbnk.html, you specify it as
+http tests on critical.html, you specify it as
 <P>
 <BR>&nbsp;&nbsp;12.34.56.78&nbsp;&nbsp;<A HREF="http://www.acme.com">www.acme.com</A>&nbsp;&nbsp;#&nbsp;<A HREF="http://www.acme.com/">http://www.acme.com/</A>&nbsp;NK:http
 <P>
 If you want multiple tests for a host to show up on the
-bbnk.html page, specify all the tests separated by commas.
+critical.html page, specify all the tests separated by commas.
 The test names correspond to the column names (e.g. 
 https tests are covered by an &quot;NK:http&quot; tag).
 <P>
@@ -451,8 +451,8 @@ apply to individual hosts, whereas the command line options are global.
 <DT>NOPROPRED:[+|-]testname[,[+|-]testname]<DD>
 This tag is used to inhibit a yellow or red status from
 propagating upwards - i.e. from a test status color to
-the (sub)page status color, and further on to bb.html
-or bb2.html
+the (sub)page status color, and further on to xymon.html
+or nongreen.html
 <P>
 If a host-specific tag begins with a '-' or a '+', the
 host-specific tags are removed/added to the default 
@@ -550,7 +550,7 @@ that cross into/out of a REPORTTIME interval.
 If no REPORTTIME is given, the standard 24x7 calculation is used.
 <P>
 <DT>WARNPCT:percentage<DD>
-BB's reporting facility uses a computed availability threshold
+Xymon's reporting facility uses a computed availability threshold
 to color services green (100% available), yellow (above threshold,
 but less than 100%), or red (below threshold) in the reports.
 <P>
@@ -574,7 +574,7 @@ causes Xymon to use the IP listed in the hosts.cfg file.
 <P>
 <DT>NET:location<DD>
 This tag defines the host as being tested from a specific location.
-If xymonnet sees that the environment variable BBLOCATION
+If xymonnet sees that the environment variable XYMONNETWORK
 is set, it will only test the hosts that have a matching
 &quot;NET:location&quot; tag in the hosts.cfg file. So this tag is useful
 if you have more than one system running network tests, but you 
@@ -805,13 +805,13 @@ Note: Internally, the ping test will still be handled as
 will report a status of &quot;clear&quot;.
 <P>
 <DT>route_LOCATION:router1,router2,...<DD>
-If the BBLOCATION environment variable is defined, a tag
-of &quot;route_BBLOCATION:&quot; is recognized by xymonnet with 
+If the XYMONNETWORK environment variable is defined, a tag
+of &quot;route_XYMONNETWORK:&quot; is recognized by xymonnet with 
 the same effect as the normal &quot;route:&quot; tag (see above).
 This allows you to have different route: tags for each
 server running xymonnet. The actual text for the tag then must
-match the value you have for the BBLOCATION setting.
-E.g. with BBLOCATION=dmz, the tag becomes &quot;route_dmz:&quot;
+match the value you have for the XYMONNETWORK setting.
+E.g. with XYMONNETWORK=dmz, the tag becomes &quot;route_dmz:&quot;
 <P>
 <DT>trace<DD>
 If the connectivity test fails, run a &quot;traceroute&quot;
@@ -943,7 +943,7 @@ test to end up with a green status, all lookups must succeed.
 Check for a running NTP (Network Time Protocol) server on this
 host. This test uses the &quot;ntpdate&quot; utility to check for a
 NTP server - you should either have ntpdate in your PATH, or
-set the location of the ntpdate program in $BBHOME/etc/bbsys.local
+set the location of the ntpdate program in $XYMONHOME/etc/xymonserver.cfg
 <P>
 <DT>rpc[=rpcservice1,rpcservice2,...]<DD>
 Check for one or more available RPC services. This check is indirect
@@ -997,7 +997,7 @@ for details).
 An SSL client certificate can be used for authentication.
 To use this, the client certificate must be stored in a
 PEM-formatted file together with the client certificate
-key, in the $BBHOME/certs/ directory. The URL is then given as
+key, in the $XYMONHOME/certs/ directory. The URL is then given as
 <BR>
 
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="http://CERT:FILENAME@www.sample.com/">http://CERT:FILENAME@www.sample.com/</A>
@@ -1029,11 +1029,11 @@ provide a &quot;PEM pass phrase&quot; (twice) when prompted for one.
 <BR>
 
 The file.pem file is the one you should use in the FILENAME
-field in the URL - this file must be kept in $BBHOME/certs/.
+field in the URL - this file must be kept in $XYMONHOME/certs/.
 The PEM pass phrase must be put into a file named the
 same as the certificate, but with extension &quot;.pass&quot;. E.g.
-if you have the PEM certificate in $BBHOME/certs/client.pem,
-you must put the pass phrase into the $BBHOME/certs/client.pass
+if you have the PEM certificate in $XYMONHOME/certs/client.pem,
+you must put the pass phrase into the $XYMONHOME/certs/client.pass
 file. Make sure to protect this file with Unix permissions,
 so that only the user running Xymon can read it.
 <P>
@@ -1451,7 +1451,7 @@ per-host definitions will override the default ones.
 <P>
 <B>NOTE:</B> The &quot;.default.&quot; host entry will only accept the following
 tags - others are silently ignored: NOCOLUMNS, COMMENT, DESCR, CLASS, 
-dialup, testip, nobb2, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
+dialup, testip, nonongreen, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
 NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, REPORTTIME, WARNPCT, NET, noclear, 
 nosslcert, ssldays, DOWNTIME, depends, noping, noconn, trace, notrace, 
 HIDEHTTP, browser, pulldata. Specifically, note that network tests,
@@ -1567,6 +1567,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -106,7 +106,7 @@ by the xymonlaunch tasks.cfg file.
 <DT>--pidfile=FILENAME<DD>
 xymond writes the process-ID it is running with to this file.
 This is for use in automated startup scripts. The default file is
-$BBSERVERLOGS/xymond.pid.
+$XYMONSERVERLOGS/xymond.pid.
 <P>
 <DT>--log=FILENAME<DD>
 Redirect all output from xymond to FILENAME.
@@ -164,7 +164,7 @@ include the address of a server running xymonproxy in the list of allowed addres
 <P>
 <DT>--www-senders=IP[/MASK][,IP/MASK]<DD>
 Controls which hosts may send commands to retrieve the state of xymond. These
-are the &quot;hobbitdlog&quot;, &quot;hobbitdboard&quot; and &quot;hobbitdxboard&quot; commands, which are used
+are the &quot;xymondlog&quot;, &quot;xymondboard&quot; and &quot;xymondxboard&quot; commands, which are used
 by
 <I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
 
@@ -355,6 +355,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

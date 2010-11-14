@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of CLIENTUPDATE</TITLE>
 </HEAD><BODY>
 <H1>CLIENTUPDATE</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -30,7 +30,7 @@ server, the server responds with the section of the
 file that is relevant to this client. Included in this may be
 a &quot;clientversion&quot; value. The clientversion received from the server
 is compared against the current clientversion installed on the client, 
-as determined by the contents of the $BBHOME/etc/clientversion.cfg
+as determined by the contents of the $XYMONHOME/etc/clientversion.cfg
 file. If the two versions are not identical, clientupdate is
 launched to update the client installation.
 <P>
@@ -52,7 +52,7 @@ Used internally during the update process, see <B>OPERATION</B> below.
 Used internally during the update process. This option causes
 the running clientupdate utility to delete itself - it is used
 during the update to purge a temporary copy of the clientupdate
-utility that is installed in $BBTMP.
+utility that is installed in $XYMONTMP.
 <P>
 </DL>
 <A NAME="lbAF">&nbsp;</A>
@@ -64,7 +64,7 @@ release of a new client version.
 <P>
 <DL COMPACT>
 <DT>Create the new client<DD>
-Setup the new client $BBHOME directory, e.g. by copying an existing
+Setup the new client $XYMONHOME directory, e.g. by copying an existing
 client installation to an empty directory and modifying it for your
 needs. It is a good idea to delete all files in the tmp/ and logs/
 directories, since there is no need to copy these over to all of
@@ -76,7 +76,7 @@ but the clientupdate utility cannot delete or rename files.
 <DT>Package the client<DD>
 When your new client software is ready, create a tar-file of the 
 new client. All files in the tar archive must have file names 
-relative to the clients' $BBHOME (usually, ~xymon/client/).
+relative to the clients' $XYMONHOME (usually, ~xymon/client/).
 Save the tar file on the Xymon server in 
 ~xymon/server/download/somefile.tar.  Don't compress it.
 It is recommended that you use some sort of operating-system 
@@ -117,23 +117,23 @@ the next time, it will use the new client software.
 <DT>Re-exec step<DD>
 The first step is when clientupdate is first invoked from the xymonclient.sh 
 script with the &quot;--re-exec&quot; option. This step copies the clientupdate
-program from $BBHOME/bin/ to a temporary file in the $BBTMP directory.
+program from $XYMONHOME/bin/ to a temporary file in the $XYMONTMP directory.
 This is to avoid conflicts when the update procedure installs a new
 version of the clientupdate utility itself. Upon completion of this
 step, the clientupdate utility automatically launches the next step
-by running the program from the file in $BBTMP.
+by running the program from the file in $XYMONTMP.
 <P>
 <DT>Update step<DD>
 The second step downloads the new client software from the Xymon server.
 The new software must be packed into a tar file, which clientupdate then
-unpacks into the $BBHOME directory.
+unpacks into the $XYMONHOME directory.
 <P>
 </DL>
 <A NAME="lbAH">&nbsp;</A>
 <H2>ENVIRONMENT VARIABLES</H2>
 
 clientupdate uses several of the standard Xymon environment
-variables, including <B>BBHOME</B> and <B>BBTMP</B>.
+variables, including <B>XYMONHOME</B> and <B>XYMONTMP</B>.
 <P>
 <A NAME="lbAI">&nbsp;</A>
 <H2>SEE ALSO</H2>
@@ -158,6 +158,6 @@ variables, including <B>BBHOME</B> and <B>BBTMP</B>.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

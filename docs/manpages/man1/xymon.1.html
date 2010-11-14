@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -61,18 +61,18 @@ first line of the merged message.
 <DT>RECIPIENT<DD>
 The <B>RECIPIENT</B> parameter defines which server receives
 the message. If RECIPIENT is given as &quot;0.0.0.0&quot;, then the
-message is sent to all of the servers listed in the BBDISPLAYS
+message is sent to all of the servers listed in the XYMSERVERS
 environment variable.
 <P>
-Usually, a client will use &quot;$BBDISP&quot; for the <B>RECIPIENT</B> 
+Usually, a client will use &quot;$XYMSRV&quot; for the <B>RECIPIENT</B> 
 parameter, as this is defined for the client scripts
 to automatically contain the correct value.
 <P>
 The <B>RECIPIENT</B> parameter may be a URL for a webserver
-that has the bbmessage.cgi or similar script installed. This
+that has the xymoncgimsg.cgi or similar script installed. This
 tunnels the Xymon messages to the Xymon server using standard 
 HTTP protocol. The 
-<I><A HREF="../man8/bbmessage.cgi.8.html">bbmessage.cgi</A>(8)</I>
+<I><A HREF="../man8/xymoncgimsg.cgi.8.html">xymoncgimsg.cgi</A>(8)</I>
 
 CGI tool (included in Xymon) must be installed on the webserver 
 for the HTTP transport to work.
@@ -175,6 +175,8 @@ and no alerts for this host/test will be generated. If DURATION is
 given as a number followed by s/m/h/d, it is interpreted as being
 in seconds/minutes/hours/days respectively.
 
+To disable a test until it becomes OK, use &quot;-1&quot; as the DURATION.
+
 To disable all tests for a host, use an asterisk &quot;*&quot; for TESTNAME.
 <P>
 <DT>enable HOSTNAME.TESTNAME<DD>
@@ -201,7 +203,7 @@ automatic recovery action should be initiated.
 <DT>config FILENAME<DD>
 Retrieve one of the Xymon configuration files from the
 server. This command allows a client to pull files from the
-$BBHOME/etc/ directory on the server, allowing for semi-automatic
+$XYMONHOME/etc/ directory on the server, allowing for semi-automatic
 updates of the client configuration. Since the configuration files 
 are designed to have a common file for the configuration of all hosts 
 in the system - and this is in fact the recommended way of configuring 
@@ -222,7 +224,7 @@ before changing the hostname in the hosts.cfg configuration file.
 <DT>rename HOSTNAME OLDTESTNAME NEWTESTNAME<DD>
 Rename data about a single test (column).
 <P>
-<DT>hobbitdlog HOSTNAME.TESTNAME<DD>
+<DT>xymondlog HOSTNAME.TESTNAME<DD>
 Retrieve the Xymon status-log for a single test. The first line of the
 response contains a series of fields separated by a pipe-sign:
 <P>
@@ -282,11 +284,11 @@ Newline, pipe-signs and backslashes are escaped with a backslash, C-style.
 <P>
 After the first line comes the full status log in plain text format.
 <P>
-<DT>hobbitdxlog HOSTNAME.TESTNAME<DD>
+<DT>xymondxlog HOSTNAME.TESTNAME<DD>
 Retrieves an XML string containing the status log as with the 
-&quot;hobbitdlog&quot; command.
+&quot;xymondlog&quot; command.
 <P>
-<DT>hobbitdboard [CRITERIA] [fields=FIELDLIST]<DD>
+<DT>xymondboard [CRITERIA] [fields=FIELDLIST]<DD>
 Retrieves a summary of the status of all known tests available to
 the Xymon daemon. 
 <P>
@@ -389,9 +391,9 @@ If the &quot;fields&quot; parameter is omitted, a default set of
 hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1
 is used.
 <P>
-<DT>hobbitdxboard<DD>
+<DT>xymondxboard<DD>
 Retrieves an XML string with the summary of all status logs
-as for the &quot;hobbitdboard&quot; command.
+as for the &quot;xymondboard&quot; command.
 <P>
 <DT>download FILENAME<DD>
 Download a file from the Xymon server's download directory.
@@ -446,8 +448,8 @@ To cancel a previously scheduled command, <B>&quot;schedule cancel JOBID&quot;</
 used. JOBID is a number provided as the first item in the output from the schedule list.
 <P>
 <DT>notes FILENAME<DD>
-The message text will be stored in $BBHOME/notes/FILENAME which is then used as
-hyperlinks from hostnames or column names. This requires that the &quot;bbnotes&quot; 
+The message text will be stored in $XYMONHOME/notes/FILENAME which is then used as
+hyperlinks from hostnames or column names. This requires that the &quot;storenotes&quot; 
 task is enabled in tasks.cfg (it is disabled by default). FILENAME 
 cannot contain any directory path - these are stripped automatically.
 <P>
@@ -486,37 +488,37 @@ Send a normal status message to the Xymon server, using the
 standard Xymon protocol on TCP port 1984:
 <BR>
 
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$BB&nbsp;$BBDISP&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;$XYMSRV&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
 <P>
 Send the same status message, but using HTTP protocol via the
-webserver's bbmessage.cgi script:
+webserver's xymoncgimsg.cgi script:
 <BR>
 
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$BB&nbsp;<A HREF="http://bb.foo.com/cgi-bin/bbmessage.cgi">http://bb.foo.com/cgi-bin/bbmessage.cgi</A>&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;<A HREF="http://bb.foo.com/cgi-bin/xymoncgimsg.cgi">http://bb.foo.com/cgi-bin/xymoncgimsg.cgi</A>&nbsp;&quot;status&nbsp;www,foo,com.http&nbsp;green&nbsp;`date`&nbsp;Web&nbsp;OK&quot;
 <P>
 Use &quot;query&quot; message to determine the color of the &quot;www&quot; test, and
 restart Apache if it is red:
 <BR>
 
 <P>
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;WWW=`$BB&nbsp;$BBDISP&nbsp;&quot;query&nbsp;www,foo,com.www&quot;&nbsp;|&nbsp;awk&nbsp;'{print&nbsp;$1}'`
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;WWW=`$XYMON&nbsp;$XYMSRV&nbsp;&quot;query&nbsp;www,foo,com.www&quot;&nbsp;|&nbsp;awk&nbsp;'{print&nbsp;$1}'`
 <BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;&quot;$WWW&quot;&nbsp;=&nbsp;&quot;red&quot;&nbsp;];&nbsp;then&nbsp;/etc/init.d/apache&nbsp;restart;&nbsp;fi
 <P>
-Use &quot;config&quot; message to update the local bb-dftab file (but only
+Use &quot;config&quot; message to update a local mytest.cfg file (but only
 if we get a response):
 <BR>
 
 <P>
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$BB&nbsp;$BBDISP&nbsp;&quot;config&nbsp;bb-dftab&quot;&nbsp;&gt;/tmp/bb-dftab.new
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;-s&nbsp;/tmp/bb-dftab.new&nbsp;];&nbsp;then&nbsp;
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;/tmp/bb-dftab.new&nbsp;$BBHOME/etc/bb-dftab
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;$XYMON&nbsp;$XYMSRV&nbsp;&quot;config&nbsp;mytest.cfg&quot;&nbsp;&gt;/tmp/mytest.cfg.new
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;if&nbsp;[&nbsp;-s&nbsp;/tmp/mytest.cfg.new&nbsp;];&nbsp;then&nbsp;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mv&nbsp;/tmp/mytest.cfg.new&nbsp;$XYMONHOME/etc/mytest.cfg
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fi
 <P>
 Send a very large status message that has been built in the
 file &quot;statusmsg.txt&quot;. Instead of providing it on the command-line, 
 pass it via stdin to the xymon command:
 <P>
-<BR>&nbsp;&nbsp;&nbsp;$&nbsp;cat&nbsp;statusmsg.txt&nbsp;|&nbsp;$BB&nbsp;$BBDISP&nbsp;&quot;@&quot;
+<BR>&nbsp;&nbsp;&nbsp;$&nbsp;cat&nbsp;statusmsg.txt&nbsp;|&nbsp;$XYMON&nbsp;$XYMSRV&nbsp;&quot;@&quot;
 <P>
 <A NAME="lbAH">&nbsp;</A>
 <H2>SEE ALSO</H2>
@@ -540,6 +542,6 @@ pass it via stdin to the xymon command:
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

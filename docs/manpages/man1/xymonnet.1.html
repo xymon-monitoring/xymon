@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONNET</TITLE>
 </HEAD><BODY>
 <H1>XYMONNET</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -57,7 +57,7 @@ was enabled when configuring xymonnet. The full list of known
 tests is found in the
 <I><A HREF="../man5/protocols.cfg.5.html">protocols.cfg</A>(5)</I>
 
-file in $BBHOME/etc/protocols.cfg.
+file in $XYMONHOME/etc/protocols.cfg.
 <P>
 In addition, it implements the &quot;dns&quot; and &quot;dig&quot; tests for
 testing DNS servers.
@@ -164,13 +164,13 @@ be a full pathname.
 With this option, xymonnet will send a status message with details 
 of how many hosts were processed, how many tests were generated, 
 any errors that occurred during the run, and some timing statistics. 
-The default columnname is &quot;bbtest&quot;.
+The default columnname is &quot;xymonnet&quot;.
 <P>
 <DT>--test-untagged<DD>
-When using the BBLOCATION environment variable to test
+When using the XYMONNETWORK environment variable to test
 only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any &quot;NET:x&quot; tag.
-So only hosts that have a NET:$BBLOCATION tag will be 
+So only hosts that have a NET:$XYMONNETWORK tag will be 
 tested.
 <BR>
 
@@ -189,7 +189,7 @@ seconds (30 minutes).
 <DT>--timelimit=N<DD>
 Causes xymonnet to generate a warning if the run-time
 of xymonnet exceeds N seconds. By default N is set to
-the value of BBSLEEP, so a warning triggers if the
+the value of TASKSLEEP, so a warning triggers if the
 network tests cannot complete in the time given for one
 cycle of the xymonnet task. Apart from the warning, this 
 option has no effect, i.e. it will not terminate xymonnet
@@ -198,7 +198,7 @@ option with a very high value of N.
 <P>
 <DT>--huge=N<DD>
 Warn if the response from a TCP test is more than N bytes.
-If you see from the bbtest status report that you are
+If you see from the xymonnet status report that you are
 transferring large amounts of data for your tests, you can
 enable this option to see which tests have large replies.
 <BR>
@@ -401,7 +401,7 @@ how to test. Do not run any tests.
 <A NAME="lbAL">&nbsp;</A>
 <H2>USING COOKIES IN WEB TESTS</H2>
 
-If the file $BBHOME/etc/cookies exist, cookies will be read from
+If the file $XYMONHOME/etc/cookies exist, cookies will be read from
 this file and sent along with the HTTP requests when checking
 websites. This file is in the Netscape Cookie format, see
 <A HREF="http://www.netscape.com/newsref/std/cookie_spec.html">http://www.netscape.com/newsref/std/cookie_spec.html</A> for details
@@ -514,7 +514,7 @@ xymonnet supports the NET:location tag in
 
 to distinguish 
 between hosts that should be tested from different network
-locations. If you set the environment variable BBLOCATION
+locations. If you set the environment variable XYMONNETWORK
 e.g. to &quot;dmz&quot; before running xymonnet, then it will only
 test hosts that have a &quot;NET:dmz&quot; tag in hosts.cfg. This allows
 you to keep all of your hosts in the same hosts.cfg file, but
@@ -556,7 +556,7 @@ takes. A conservative estimate for doing N TCP tests is:
 <BR>&nbsp;&nbsp;&nbsp;(1&nbsp;+&nbsp;(N&nbsp;/&nbsp;concurrency))&nbsp;*&nbsp;timeout
 <P>
 In real life it will probably be less, as the above formula is for
-every test to require a timeout. Since the most normal use of BB
+every test to require a timeout. Since the most normal use of Xymon
 is to check for services that are active, you should have a lot
 less timeouts.
 <P>
@@ -567,7 +567,7 @@ do each test.
 <H2>ENVIRONMENT VARIABLES</H2>
 
 <DL COMPACT>
-<DT>BBLOCATION<DD>
+<DT>XYMONNETWORK<DD>
 Defines the network segment where xymonnet is currently running.
 This is used to filter out only the entries in the
 <I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
@@ -575,7 +575,7 @@ This is used to filter out only the entries in the
 file that have a matching &quot;NET:LOCATION&quot; tag, and execute the
 tests for only those hosts.
 <P>
-<DT>BBMAXMSGSPERCOMBO<DD>
+<DT>MAXMSGSPERCOMBO<DD>
 Defines the maximum number of status messages that can be sent in 
 one combo message. Default is 0 - no limit.
 <BR>
@@ -586,7 +586,7 @@ size is 32 KB, but that will easily accomodate 100 status
 messages per transmission. So if you want to experiment
 with this setting, I suggest starting with a value of 10.
 <P>
-<DT>BBSLEEPBETWEENMSGS<DD>
+<DT>SLEEPBETWEENMSGS<DD>
 Defines a a delay (in microseconds) after each 
 message is transmitted to the Xymon server. The default 
 is 0, i.e.  send the messages as fast as possible.
@@ -645,7 +645,7 @@ defining services in the protocols.cfg file. See
 
 for details on this file.
 <P>
-<DT>$BBHOME/etc/netrc - authentication data for password-protected webs<DD>
+<DT>$XYMONHOME/etc/netrc - authentication data for password-protected webs<DD>
 If you have password-protected sites, you can put the usernames and 
 passwords for these here. They will then get picked up automatically
 when running your network tests.  This works for web-sites that use 
@@ -664,7 +664,7 @@ Note that the machine-name must be the name you use in the
 use for the system-name in Xymon.
 <P>
 <P>
-<DT>$BBHOME/etc/cookies<DD>
+<DT>$XYMONHOME/etc/cookies<DD>
 This file may contain website cookies, in the Netscape HTTP
 Cookie format. If a website requires a static cookie to be 
 present in order for the check to complete, then you can add
@@ -673,7 +673,7 @@ HTTP request. To get the cookies into this file, you can use
 the &quot;curl --cookie-jar FILE&quot; to request the URL that sets
 the cookie.
 <P>
-<DT>$BBTMP/*.status - test status summary<DD>
+<DT>$XYMONTMP/*.status - test status summary<DD>
 Each time xymonnet runs, if any tests fail (i.e. they result
 in a red status) then they will be listed in a file name
 TESTNAME.[LOCATION].status. The LOCATION part may be null. This
@@ -686,7 +686,7 @@ in turn decides if this test should be included in the tests done by
 It is also used internally by xymonnet when determining the
 color for tests that use the &quot;badconn&quot; or &quot;badTESTNAME&quot; tags.
 <P>
-<DT>$BBTMP/frequenttests.[LOCATION]<DD>
+<DT>$XYMONTMP/frequenttests.[LOCATION]<DD>
 This file contains the hostnames of those hosts that should be
 retested by the
 <I><A HREF="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</A>(1)</I>
@@ -729,6 +729,6 @@ runs, and read by xymonnet-again.sh.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

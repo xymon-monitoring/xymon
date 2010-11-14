@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of CRITICALVIEW.CGI</TITLE>
 </HEAD><BODY>
 <H1>CRITICALVIEW.CGI</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -28,18 +28,18 @@ criticalview.cgi matches the current critical statuses against the
 file, and generates the &quot;Critical Systems&quot; view. 
 <P>
 <A NAME="lbAE">&nbsp;</A>
-<H2>RELATION TO BBNK PAGE</H2>
+<H2>RELATION TO OLD CRITICAL PAGE</H2>
 
-This view is a replacement for the statically generated &quot;bbnk&quot; page 
+This view is a replacement for the statically generated &quot;critical&quot; page 
 provided in versions of Xymon prior to version 4.2. Although the 
-&quot;bbnk&quot; pages are supported throughout Xymon 4.x, it is recommended 
+&quot;critical&quot; pages are supported throughout Xymon 4.x, it is recommended 
 that You switch to the newer Critical Systems view provided by this CGI.
 <P>
 <A NAME="lbAF">&nbsp;</A>
 <H2>OPTIONS</H2>
 
 <DL COMPACT>
-<DT>--nkacklevel=NUMBER<DD>
+<DT>--acklevel=NUMBER<DD>
 Sets the acknowledgment level for acknowledgments sent via the
 <I><A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1)</I>
 
@@ -56,17 +56,17 @@ this option must appear before any --env=FILENAME option.
 <DT>--debug<DD>
 Enables debugging output.
 <P>
-<DT>--nkconfig=FILENAME<DD>
+<DT>--config=FILENAME<DD>
 Use FILENAME as the configuration file for the Critical 
 Systems information. The default is to load this from
-$BBHOME/etc/critical.cfg
+$XYMONHOME/etc/critical.cfg
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
 <H2>ENVIRONMENT VARIABLES</H2>
 
 <DL COMPACT>
-<DT>BBHOME<DD>
+<DT>XYMONHOME<DD>
 Used to locate the template files for the generated web pages.
 <P>
 <DT>QUERY_STRING<DD>
@@ -86,7 +86,7 @@ Contains the parameters for the CGI script.
 <DT><A HREF="#lbAB">NAME</A><DD>
 <DT><A HREF="#lbAC">SYNOPSIS</A><DD>
 <DT><A HREF="#lbAD">DESCRIPTION</A><DD>
-<DT><A HREF="#lbAE">RELATION TO BBNK PAGE</A><DD>
+<DT><A HREF="#lbAE">RELATION TO OLD CRITICAL PAGE</A><DD>
 <DT><A HREF="#lbAF">OPTIONS</A><DD>
 <DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
 <DT><A HREF="#lbAH">SEE ALSO</A><DD>
@@ -95,6 +95,6 @@ Contains the parameters for the CGI script.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:44 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

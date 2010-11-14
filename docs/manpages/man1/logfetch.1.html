@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of LOGFETCH</TITLE>
 </HEAD><BODY>
 <H1>LOGFETCH</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -26,12 +26,12 @@ which is then sent to the Xymon server for analysis.
 logfetch uses a configuration file, which is automatically
 retrieved from the Xymon server. There is no configuration
 done locally. The configuration file is usually stored in
-the <B>$BBHOME/tmp/logfetch.cfg</B> file, but editing this file has
+the <B>$XYMONHOME/tmp/logfetch.cfg</B> file, but editing this file has
 no effect since it is re-written with data from the Xymon 
 server each time the client runs.
 <P>
 logfetch stores information about what parts of the monitored
-logfiles have been processed already in the <B>$BBHOME/tmp/logfetch.status</B> 
+logfiles have been processed already in the <B>$XYMONHOME/tmp/logfetch.status</B> 
 file. This file is an internal file used by logfetch, and should
 not be edited. If deleted, it will be re-created automatically.
 <P>
@@ -64,7 +64,7 @@ Command used to collect information about the size of directories.
 By default, this is the command <B>du -k</B>. If the local
 du-command on the client does not recognize the &quot;-k&quot; option,
 you should set the DU environment variable in the 
-<B>$BBHOME/etc/xymonclient.cfg</B> file to a command that
+<B>$XYMONHOME/etc/xymonclient.cfg</B> file to a command that
 does report directory sizes in kilobytes.
 <P>
 </DL>
@@ -72,8 +72,8 @@ does report directory sizes in kilobytes.
 <H2>FILES</H2>
 
 <DL COMPACT>
-<DT>$BBHOME/tmp/logfetch.cfg<DD>
-<DT>$BBHOME/tmp/logfetch.status<DD>
+<DT>$XYMONHOME/tmp/logfetch.cfg<DD>
+<DT>$XYMONHOME/tmp/logfetch.status<DD>
 <P>
 </DL>
 <A NAME="lbAH">&nbsp;</A>
@@ -98,6 +98,6 @@ does report directory sizes in kilobytes.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>

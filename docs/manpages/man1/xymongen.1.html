@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONGEN</TITLE>
 </HEAD><BODY>
 <H1>XYMONGEN</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 27 Oct 2010<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -42,9 +42,9 @@ each test.
 Note: The data for the webpages is retrieved from the 
 <I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
 
-daemon, and xymongen uses the values of the BBDISPLAY / BBDISPLAYS environment 
+daemon, and xymongen uses the values of the XYMSRV / XYMSERVERS environment 
 variables to determine the network address where xymond can be reached. If
-you have more than one server listed in BBDISPLAYS, make sure the first one
+you have more than one server listed in XYMSERVERS, make sure the first one
 is the local Xymon server - this is the one that xymongen will query for data.
 <P>
 <P>
@@ -97,44 +97,44 @@ columnname is &quot;xymongen&quot;.
 <P>
 <DT>--htaccess[=htaccess-filename]<DD>
 Create .htaccess files when new web page directories are created. The 
-content of the .htaccess files are determined by the BBHTACCESS environment 
-variable (for the top-level directory with bb.html and bb2.html); by the 
-BBPAGEHTACCESS variable (for the page-level directories); and by the 
-BBSUBPAGEHTACCESS variable for subpage- and subparent-level directories.
+content of the .htaccess files are determined by the XYMONHTACCESS environment 
+variable (for the top-level directory with xymon.html and nongreen.html); by the 
+XYMONPAGEHTACCESS variable (for the page-level directories); and by the 
+XYMONSUBPAGEHTACCESS variable for subpage- and subparent-level directories.
 The filename of the .htaccess files default to &quot;.htaccess&quot; if no filename
 is given with this option.
-The BBHTACCESS variable is copied verbatim into the top-level .htaccess file.
-The BBPAGEHTACCESS variable may contain a &quot;%s&quot; where the name of the
+The XYMONHTACCESS variable is copied verbatim into the top-level .htaccess file.
+The XYMONPAGEHTACCESS variable may contain a &quot;%s&quot; where the name of the
 page is inserted.
-The BBSUBPAGEHTACCESS variable may contain two &quot;%s&quot; instances: The first is
+The XYMONSUBPAGEHTACCESS variable may contain two &quot;%s&quot; instances: The first is
 replaced with the pagename, the second with the subpagename.
 <P>
 <DT>--max-eventcount=N<DD>
-Limit the eventlog on the BB2 page to only N events. Default: 100.
+Limit the eventlog on the &quot;All non-green&quot; page to only N events. Default: 100.
 <P>
 <DT>--max-eventtime=N<DD>
-Limit the eventlog on the BB2 page to events that happened within
+Limit the eventlog on the &quot;All non-green&quot; page to events that happened within
 the past N minutes. Default: 240.
 <P>
 <DT>--no-eventlog<DD>
-Disable the eventlog normally displayed on the BB2 page
+Disable the eventlog normally displayed on the &quot;All non-green&quot; page
 <P>
 <DT>--max-ackcount=N<DD>
-Limit the acknowledgment log on the BB2 page to only N events. Default: 25.
+Limit the acknowledgment log on the &quot;All non-green&quot; page to only N events. Default: 25.
 <P>
 <DT>--max-acktime=N<DD>
-Limit the acknowledgment log on the BB2 page to acks that happened within
+Limit the acknowledgment log on the &quot;All non-green&quot; page to acks that happened within
 the past N minutes. Default: 240.
 <P>
 <DT>--no-acklog<DD>
-Disable the acknowledgement log normally displayed on the BB2 page.
+Disable the acknowledgement log normally displayed on the &quot;All non-green&quot; page.
 <P>
-<DT>--nklog[=NK log column]<DD>
-This generates a text-based log of what is shown on the bbnk.html
+<DT>--cricitcallog[=Critical log column]<DD>
+This generates a text-based log of what is shown on the critical.html
 status page, and sends a status message for the Xymon server itself
-reflecting the color of the NK status page. This allows you to track
-when problems have appeared on the bbnk status page. The logfile is
-stored in $BBHOME/nkstatus.log
+reflecting the color of the Critical status page. This allows you to track
+when problems have appeared on the critical status page. The logfile is
+stored in $XYMONSERVERLOGS/criticalstatus.log
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -178,7 +178,7 @@ tag. This option disables the underlining of headings.
 <DT>--recentgifs[=MINUTES]<DD>
 Use images named COLOR-recent.gif for tests, where the test status
 has changed within the past 24 hours. These GIF files need to be installed
-in the $BBHOME/www/gifs/ directory. By default, the threshold is set to 24
+in the $XYMONHOME/www/gifs/ directory. By default, the threshold is set to 24
 hours - if you want it differently, you can specify the time limit also.
 E.g. &quot;--recentgifs=3h&quot; will show the recent GIFs for only 3 hours after
 a status change.
@@ -194,7 +194,7 @@ alphabetically.
 If you want to visually show that a test is a dialup-test, you can use
 an alternate set of icons for the green/red/yellow&gt;/etc. images by
 specifying this option. The URL parameter specified here overrides the
-normal setting from the BBSKIN environment variable, but only for dialup
+normal setting from the XYMONSKIN environment variable, but only for dialup
 tests.
 <P>
 <DT>--reverseskin=URL<DD>
@@ -207,8 +207,8 @@ Determines which pages use tooltips to show the description of the host
 
 file). If set to <B>always</B>, tooltips are used on all pages. If set to
 <B>never</B>, tooltips are never used. If set to <B>main</B>, tooltips are
-used on the main pages, but not on the BB2 (all non-green) or NK (critical
-systems) pages.
+used on the main pages, but not on the &quot;All non-green&quot; or &quot;Critical
+systems&quot; pages.
 <P>
 </DL>
 <A NAME="lbAH">&nbsp;</A>
@@ -223,35 +223,36 @@ The given columns will be completely ignored by xymongen when generating
 webpages. Can be used to generate reports where you eliminate
 some of the more noisy tests, like &quot;msgs&quot;.
 <P>
-<DT>--nk-reds-only<DD>
-Only red status columns will be included on the NK page. By default,
-the NK page will contain hosts with red, yellow and clear status.
+<DT>--critical-reds-only<DD>
+Only red status columns will be included on the Critical page. By default,
+the Critical page will contain hosts with red, yellow and clear status.
 <P>
-<DT>--bb2-colors=COLOR[,COLOR]<DD>
+<DT>--nongreen-colors=COLOR[,COLOR]<DD>
 Defines which colors cause a test to appear on the &quot;All non-green&quot;
-status page (a.k.a. the BB2 page). COLOR is red, yellow or purple.
-The default is to include all three.
+status page. COLOR is red, yellow or purple.  The default is to include 
+all three.
 <P>
-<DT>--bb2-ignorecolumns=test[,test]<DD>
-Same as the --ignorecolumns, but applies to hosts on the BB2 page only.
+<DT>--nongreen-ignorecolumns=test[,test]<DD>
+Same as the --ignorecolumns, but applies to hosts on the &quot;All non-green&quot; 
+page only.
 <P>
-<DT>--bb2-ignorepurples<DD>
-Deprecated, use &quot;--bb2colors&quot; instead.
+<DT>--nongreen-ignorepurples<DD>
+Deprecated, use &quot;--nongreen-colors&quot; instead.
 <P>
-<DT>--bb2-ignoredialups<DD>
-Ignore all dialup hosts on the BB2 page, including the BB2 eventlog.
+<DT>--nongreen-ignoredialups<DD>
+Ignore all dialup hosts on the &quot;All non-green&quot; page, including the eventlog.
 <P>
-<DT>--no-bb2<DD>
+<DT>--no-nongreen<DD>
 Do not generate the &quot;All non-green&quot; page.
 <P>
 <DT>--includecolumns=test[,test]<DD>
-Always include these columns on bb2 page Will include certain columns on 
-the bb2.html page, regardless of its color. Normally, bb2.html drops a 
+Always include these columns on &quot;All non-green&quot; page Will include certain columns on 
+the nongreen.html page, regardless of its color. Normally, nongreen.html drops a 
 test-column, if all tests are green. This can be used e.g. to always have 
-a link to the trends column (with the RRD graphs) from your bb2.html page.
+a link to the trends column (with the RRD graphs) from your nongreen.html page.
 <P>
 <DT>--eventignore=test[,test]<DD>
-Ignore these tests in the BB2 event log display.
+Ignore these tests in the &quot;All non-green&quot; event log display.
 <P>
 </DL>
 <A NAME="lbAI">&nbsp;</A>
@@ -330,7 +331,7 @@ file. If no tests are specified, all tests will be included.
 Generate an HTML file suitable for a Netscape 6/Mozilla sidebar
 entry. To actually enable your users to obtain such a sidebar
 entry, you need this Javascript code in a webpage (e.g. you can
-include it in the $BBHOME/web/bb_header file):
+include it in the $XYMONHOME/web/stdnormal_header file):
 <P>
 &lt;SCRIPT TYPE=&quot;text/javascript&quot;&gt;
 <BR>
@@ -387,7 +388,7 @@ The &quot;add-button.gif&quot; is available from Netscape at
 <A HREF="http://developer.netscape.com/docs/manuals/browser/sidebar/add-button.gif.">http://developer.netscape.com/docs/manuals/browser/sidebar/add-button.gif.</A>
 <P>
 If FILENAME does not begin with a slash, the Netscape sidebar file
-is placed in the $BBHOME/www/ directory.
+is placed in the $XYMONHOME/www/ directory.
 <P>
 <DT>--nslimit=COLOR<DD>
 The minimum color to include in the Netscape Sidebar - default is &quot;red&quot;,
@@ -398,8 +399,8 @@ warnings also, use &quot;--nslimit=yellow&quot;.
 Generate RSS/RDF content delivery stream of your Xymon
 alerts. This output format can be dynamically embedded in other web
 pages, much like the live newsfeeds often seen on web sites. Two RSS files
-will be generated, one reflects the BB2 page, the other reflects the BBNK
-page. They will be in the &quot;bb2.rss&quot; and &quot;bbnk.rss&quot; files, respectively.
+will be generated, one reflects the &quot;All non-green&quot; page, the other reflects the &quot;Critical&quot;
+page. They will be in the &quot;nongreen.rss&quot; and &quot;critical.rss&quot; files, respectively.
 In addition, an RSS file will be generated for each page and/or subpage
 listing the hosts present on that page or subpage.
 <BR>
@@ -502,7 +503,7 @@ With version 1.4 of xymongen comes the possibility to generate
 multiple sets of pages from the same data.
 <BR>
 
-Suppose you have two groups of people looking at the BB
+Suppose you have two groups of people looking at the Xymon
 webpages.  Group A wants to have the hosts grouped by the client, 
 they belong to. This is how you have Xymon set up - the default pageset.
 Now group B wants to have the hosts grouped by operating system - 
@@ -533,7 +534,7 @@ ossubpage   unix-sun     Solaris
 ossubpage   unix-linux   Linux
 <P>
 This defines a set of pages with one top-level page (the
-bb.html page), two pages linked from bb.html (win.html 
+xymon.html page), two pages linked from xymon.html (win.html 
 and unix.html), and from e.g. the win.html page there are
 subpages win-nt4.html and win-xp.html
 <BR>
@@ -574,29 +575,29 @@ you define - i.e. create an extension script like this:
 <PRE>
 #!/bin/sh
 
-BBWEB=&quot;/xymon/os&quot; $BBHOME/bin/xymongen \
+XYMONWEB=&quot;/xymon/os&quot; $XYMONHOME/bin/xymongen \
         --pageset=os --template=os \
-        $BBHOME/www/os/
+        $XYMONHOME/www/os/
 </PRE>
 
 </DL>
 <P>
 
-Save this to $BBHOME/ext/os-display.sh, and set this up to run as
+Save this to $XYMONHOME/ext/os-display.sh, and set this up to run as
 a Xymon extension; this means addng an extra section to tasks.cfg
 to run it.
 <P>
 This generates the pages. There are some important options used here:
 <BR>
 
-* BBWEB=&quot;/xymon/os&quot; environment variable, and the 
-<BR>&nbsp;&nbsp;&quot;$BBHOME/www/os/&quot;&nbsp;option&nbsp;work&nbsp;together,&nbsp;and&nbsp;places&nbsp;the&nbsp;
+* XYMONWEB=&quot;/xymon/os&quot; environment variable, and the 
+<BR>&nbsp;&nbsp;&quot;$XYMONHOME/www/os/&quot;&nbsp;option&nbsp;work&nbsp;together,&nbsp;and&nbsp;places&nbsp;the&nbsp;
 <BR>&nbsp;&nbsp;new&nbsp;pageset&nbsp;HTML&nbsp;files&nbsp;in&nbsp;a&nbsp;subdirectory&nbsp;off&nbsp;the&nbsp;normal&nbsp;
 <BR>&nbsp;&nbsp;Xymon&nbsp;webroot.&nbsp;If&nbsp;you&nbsp;normally&nbsp;access&nbsp;the&nbsp;Xymon&nbsp;pages&nbsp;as&nbsp;
 <BR>&nbsp;&nbsp;&quot;<A HREF="http://xymon.acme.com/xymon/">http://xymon.acme.com/xymon/</A>&quot;,&nbsp;you&nbsp;will&nbsp;then&nbsp;access&nbsp;
 <BR>&nbsp;&nbsp;the&nbsp;new&nbsp;pageset&nbsp;as&nbsp;&quot;<A HREF="http://xymon.acme.com/xymon/os/">http://xymon.acme.com/xymon/os/</A>&quot;
-<BR>&nbsp;&nbsp;NB:&nbsp;The&nbsp;directory&nbsp;given&nbsp;as&nbsp;BBWEB&nbsp;must&nbsp;contain&nbsp;a&nbsp;symbolic&nbsp;
-<BR>&nbsp;&nbsp;link&nbsp;to&nbsp;the&nbsp;$BBHOME/www/html/&nbsp;directory,&nbsp;or&nbsp;links&nbsp;to&nbsp;
+<BR>&nbsp;&nbsp;NB:&nbsp;The&nbsp;directory&nbsp;given&nbsp;as&nbsp;XYMONWEB&nbsp;must&nbsp;contain&nbsp;a&nbsp;symbolic&nbsp;
+<BR>&nbsp;&nbsp;link&nbsp;to&nbsp;the&nbsp;$XYMONHOME/www/html/&nbsp;directory,&nbsp;or&nbsp;links&nbsp;to&nbsp;
 <BR>&nbsp;&nbsp;individual&nbsp;status&nbsp;messages&nbsp;will&nbsp;not&nbsp;work.&nbsp;Similar&nbsp;links&nbsp;
 <BR>&nbsp;&nbsp;should&nbsp;be&nbsp;made&nbsp;for&nbsp;the&nbsp;gifs/,&nbsp;help/&nbsp;and&nbsp;notes/&nbsp;
 <BR>&nbsp;&nbsp;directories.
@@ -608,10 +609,10 @@ This generates the pages. There are some important options used here:
 
 * &quot;--template=os&quot; tells xymongen to use a different set of 
 <BR>&nbsp;&nbsp;header-&nbsp;and&nbsp;footer-templates.&nbsp;Normally&nbsp;xymongen&nbsp;uses&nbsp;the&nbsp;
-<BR>&nbsp;&nbsp;standard&nbsp;template&nbsp;in&nbsp;$BBHOME/web/bb_header&nbsp;and&nbsp;
-<BR>&nbsp;&nbsp;.../bb_footer&nbsp;-&nbsp;with&nbsp;this&nbsp;option,&nbsp;it&nbsp;will&nbsp;instead&nbsp;use&nbsp;
+<BR>&nbsp;&nbsp;standard&nbsp;template&nbsp;in&nbsp;$XYMONHOME/web/stdnormal_header&nbsp;and&nbsp;
+<BR>&nbsp;&nbsp;.../stdnormal_footer&nbsp;-&nbsp;with&nbsp;this&nbsp;option,&nbsp;it&nbsp;will&nbsp;instead&nbsp;use&nbsp;
 <BR>&nbsp;&nbsp;the&nbsp;files&nbsp;&quot;os_header&quot;&nbsp;and&nbsp;&quot;os_footer&quot;&nbsp;from&nbsp;the&nbsp;
-<BR>&nbsp;&nbsp;$BBHOME/web/&nbsp;directory.&nbsp;This&nbsp;allows&nbsp;you&nbsp;to&nbsp;customize&nbsp;
+<BR>&nbsp;&nbsp;$XYMONHOME/web/&nbsp;directory.&nbsp;This&nbsp;allows&nbsp;you&nbsp;to&nbsp;customize&nbsp;
 <BR>&nbsp;&nbsp;headers&nbsp;and&nbsp;footers&nbsp;for&nbsp;each&nbsp;pageset.&nbsp;If&nbsp;you&nbsp;just&nbsp;want&nbsp;
 <BR>&nbsp;&nbsp;to&nbsp;use&nbsp;the&nbsp;normal&nbsp;template,&nbsp;you&nbsp;can&nbsp;omit&nbsp;this&nbsp;option.
 <P>
@@ -630,7 +631,7 @@ and invoke the
 or
 <I><A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1)</I>
 
-scripts in $BBHOME/bin/
+scripts in $XYMONHOME/bin/
 <P>
 You can use xymongen command-line options when generating reports,
 e.g. to exclude certain types of tests (e.g. &quot;--ignorecolumns=msgs&quot;) 
@@ -638,18 +639,18 @@ from the reports, to specify the name of the trends- and info-
 columns that should not be in the report, or to format the report 
 differently (e.g. &quot;--subpagecolumns=2&quot;). If you want certain
 options to be used when a report is generated from the web
-interface, put these options into your $BBHOME/etc/xymonserver.cfg
-file in the BBGENREPOPTS environment variable.
+interface, put these options into your $XYMONHOME/etc/xymonserver.cfg
+file in the XYMONGENREPOPTS environment variable.
 <P>
 The report files generated by xymongen are stored in individual 
-directories (one per report) below the $BBHOME/www/rep/ directory.
+directories (one per report) below the $XYMONHOME/www/rep/ directory.
 These should be automatically cleaned up - as new reports are
 generated, the old ones get removed.
 <P>
 After installing, try generating a report. You will probably see that
-the links in the upper left corner (to ack.html, bb2.html etc.)
-no longer works. To fix these, change your $BBHOME/web/bbrep_header
-file so these links do not refer to &quot;&amp;BBWEB&quot; but to the normal 
+the links in the upper left corner (to ack.html, nongreen.html etc.)
+no longer works. To fix these, change your $XYMONHOME/web/repnormal_header
+file so these links do not refer to &quot;&amp;XYMONWEB&quot; but to the normal 
 URL prefix for your Xymon pages.
 <P>
 <P>
@@ -709,7 +710,7 @@ The &quot;WARNPCT:level&quot; tag is supported in the hosts.cfg file, to set
 the availability threshold on a host-by-host basis. This threshold
 determines whether a test is reported as green, yellow or red in
 the reports. A default value can be set for all hosts with the via 
-the BBREPWARN environment variable, but overridden by this tag.
+the XYMONREPWARN environment variable, but overridden by this tag.
 The level is given as a percentage, e.g. &quot;WARNPCT:98.5&quot;
 <P>
 <P>
@@ -752,11 +753,11 @@ events).
 Other xymongen options can be used, e.g. &quot;--ignorecolumns&quot; if you 
 want to exclude certain tests from the report.
 <P>
-You will normally also need to specify the BBWEB environment 
+You will normally also need to specify the XYMONWEB environment 
 variable (it must match the base URL for where the report will
 be made accessible from), and an output directory where the
-report files are saved.  If you specify BBWEB, you should probably
-also define the BBHELPSKIN and BBNOTESSKIN environment variables. 
+report files are saved.  If you specify XYMONWEB, you should probably
+also define the XYMONHELPSKIN and XYMONNOTESSKIN environment variables. 
 These should point to the URL where your Xymon help- and notes-files 
 are located; if they are not defined, the links to help- and
 notes-files will point inside the report directory and will
@@ -766,20 +767,20 @@ So a typical invocation of xymongen for a static report would be:
 <P>
 <BR>&nbsp;&nbsp;START=`date&nbsp;+%s&nbsp;--date=&quot;22&nbsp;Jun&nbsp;2003&nbsp;00:00:00&quot;`
 <BR>&nbsp;&nbsp;END=`date&nbsp;+%s&nbsp;--date=&quot;22&nbsp;Jun&nbsp;2003&nbsp;23:59:59&quot;`
-<BR>&nbsp;&nbsp;BBWEB=/reports/bigbrother/daily/2003/06/22&nbsp;\
-<BR>&nbsp;&nbsp;BBHELPSKIN=/xymon/help&nbsp;\
-<BR>&nbsp;&nbsp;BBNOTESSKIN=/xymon/notes&nbsp;\
+<BR>&nbsp;&nbsp;XYMONWEB=/reports/bigbrother/daily/2003/06/22&nbsp;\
+<BR>&nbsp;&nbsp;XYMONHELPSKIN=/xymon/help&nbsp;\
+<BR>&nbsp;&nbsp;XYMONNOTESSKIN=/xymon/notes&nbsp;\
 <BR>&nbsp;&nbsp;xymongen&nbsp;--reportopts=$START:$END:1:crit&nbsp;\
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--subpagecolumns=2&nbsp;\
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/var/www/docroot/reports/xymon/daily/2003/06/22
 <P>
-The &quot;BBWEB&quot; setting means that the report will be available with
+The &quot;XYMONWEB&quot; setting means that the report will be available with
 a URL of &quot;<A HREF="http://www.server.com/reports/xymon/daily/2003/06/22">http://www.server.com/reports/xymon/daily/2003/06/22</A>&quot;.
 The report contains internal links that use this URL, so it cannot
 be easily moved to another location.
 <P>
 The last parameter is the corresponding physical directory on your
-webserver matching the BBWEB URL. You can of course create the report
+webserver matching the XYMONWEB URL. You can of course create the report
 files anywhere you like - perhaps on another machine - and then move
 them to the webserver later on.
 <P>
@@ -822,6 +823,6 @@ utility is used to calculate the start- and end-time parameters.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 12:54:43 GMT, October 27, 2010
+Time: 17:30:02 GMT, November 14, 2010
 </BODY>
 </HTML>
