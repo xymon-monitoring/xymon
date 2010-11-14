@@ -1,8 +1,8 @@
-xymon (4.3.0-0.201011061605.6565) unstable; urgency=low
+xymon (4.3.0-0.20101114.beta3) unstable; urgency=low
 
-  * Interim release r6565 renamed
+  * Beta-3 release - rev 6590
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sat, 06 Nov 2010 16:05:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 14 Nov 2010 19:00:00 +0100
 
 hobbit (4.3.0-0.beta2) unstable; urgency=low
 
