@@ -4231,6 +4231,13 @@ void load_checkpoint(char *fn)
 		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
 		if (strcmp(testname, xgetenv("TRENDSCOLUMN")) == 0) continue;
 
+		/* Rename the now-forgotten internal statuses */
+		if (strcmp(hostname, getenv("MACHINEDOTS")) == 0) {
+			if (strcmp(testname, "bbgen") == 0) testname = "xymongen";
+			else if (strcmp(testname, "bbtest") == 0) testname = "xymonnet";
+			else if (strcmp(testname, "hobbitd") == 0) testname = "xymond";
+		}
+
 		dbgprintf("Status: Host=%s, test=%s\n", hostname, testname); count++;
 
 		hosthandle = rbtFind(rbhosts, hostname);

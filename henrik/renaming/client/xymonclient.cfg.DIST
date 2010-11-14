@@ -13,3 +13,15 @@ XYMON="$XYMONHOME/bin/xymon"          # The Xymon client "xymon" utility
 XYMONTMP="$XYMONHOME/tmp"             # Where we may store temporary files.
 XYMONCLIENTLOGS="$XYMONHOME/logs"     # Where we store the client logfiles
 
+# Compatibility settings
+HOBBITCLIENTHOME="$XYMONCLIENTHOME"
+
+BBDISP="$XYMSRV"
+BBDISPLAYS="$XYMSERVERS"
+
+BBPORT="$XYMONDPORT"
+BBHOME="$XYMONHOME"
+BB="$XYMON"
+BBTMP="$XYMONTMP"
+BBCLIENTLOGS="$XYMONCLIENTLOGS"
+

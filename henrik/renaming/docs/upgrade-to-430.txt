@@ -1,5 +1,5 @@
-Upgrading from 4.3.0 beta2 and earlier to 4.3.0
-===============================================
+Upgrading from Hobbit 4.0 / 4.2 / 4.3.0 beta 1 / 4.3.0 beta 2
+=============================================================
 
 Xymon was renamed from "Hobbit" to "Xymon" during the 4.3.0
 development cycle. That meant there were quite a few names
@@ -13,12 +13,45 @@ files, programs, tools, commands, webpages, status columns etc. etc.
 The forced change of name from Hobbit to Xymon was seen as a good
 time to clean up this spaghetti of various names. So with the
 4.3.0-beta3 release, all references to the old names have been
-eliminated from Xymon. However, that means YOU have to do some
-renaming when upgrading to the 4.3.0 release.
+eliminated from Xymon. However, that means upgrading involves a
+bit of renaming stuff.
 
-For that reason, it is recommended that you configure the new
-version of Xymon to install in a new directory, instead of 
-installing on top of your current Hobbit setup.
+A script has been provided to help with this task. For it to
+work, it is essential that you perform the upgrade like this:
+
+1) Make sure you have a backup. It is not necessary to backup
+   the data in the hist/, histlogs/, hostdata/ and rrd/ 
+   directories (if you use the default directory layout, then
+   that means the entire data/ directory need not be backed up).
+2) Configure Xymon 4.3.0 using a directory layout that is
+   identical to your previous version. Make sure you keep the
+   directory names exactly as they were in the version you are
+   currently running, even though that may include "hobbit" in
+   the directory name.
+3) Build Xymon 4.3.0 (run "make")
+4) Stop Hobbit (the current version).
+5) Using the "bbcmd" utility from your current version, run
+   then "./build/upgrade430.sh" script. I.e. run a command
+   like
+       ~hobbit/server/bin/bbcmd ./build/upgrade430.sh
+   This will perform almost all of the file renaming and 
+   configuration file updates that are needed when going
+   to version 4.3. A few updates cannot be done automatically,
+   you will be notified what else is needed after the script
+   completes.
+6) Install Xymon 4.3.0 (run "make install").
+
+Your installation should now be upgraded to version 4.3.0.
+Run your normal startup-script to launch Xymon, or the
+	~hobbit/server/xymon.sh start
+command.
+
+
+If you don't feel comfortable doing the upgrade using the script,
+the rest of this document describes what must be done. It assumes
+that you perform a clean installation of Xymon 4.3.0, and then
+move your old configuration and data over manually.
+
 
 The ~xymon/server/etc/ directory
 ================================
@@ -50,7 +83,7 @@ CGI_CONFREPORT_OPTS.
 of the programs have also been renamed, so it is probably easiest
 if you use the standard tasks.cfg file as the starting point,
 and the merge your local modifications into that file. If 
-you have too many local modifications, see the "Renaming-430.txt"
+you have too many local modifications, see the "docs/Renaming-430.txt"
 file for a list of all the new program names.
 
 "hobbitserver.cfg" is renamed to "xymonserver.cfg". However
@@ -89,7 +122,7 @@ The ~xymon/server/web/ directory
 Some of the web template files have been renamed, and since the
 menu system has also been completely changed it is not possible
 to automatically migrate your local changes to the templates over.
-In the Renaming-430.txt file you can see what the new templates
+In the docs/Renaming-430.txt file you can see what the new templates
 are called.
 
 
