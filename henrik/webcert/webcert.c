@@ -38,6 +38,8 @@ char *csrdata = NULL;
 int  internalcert = 0;
 enum { ADM_NONE, ADM_VIEWPENDING, ADM_MOVETOPROCESSING, ADM_VIEWPROCESSING, ADM_MOVETODONE, ADM_VIEWDONE, ADM_VIEWREQUEST } adminaction = ADM_NONE;
 char *adminid = NULL;
+char *hffile = "webcert";
+char *hfform = "webcert_form";
 
 static void errormsg(char *msg)
 {
@@ -106,7 +108,7 @@ void showreqlist(char *dir, char *title, char *action, char *actiontitle)
 
 	chdir(dirname);
 
-	headfoot(stdout, "webcert", "", "header", COL_BLUE);
+	headfoot(stdout, hffile, "", "header", COL_BLUE);
 	fprintf(stdout, "<center>\n");
 	fprintf(stdout, "<table>\n");
 
@@ -135,7 +137,7 @@ void showreqlist(char *dir, char *title, char *action, char *actiontitle)
 
 	fprintf(stdout, "</table>\n");
 	fprintf(stdout, "</center>\n");
-	headfoot(stdout, "webcert", "", "footer", COL_BLUE);
+	headfoot(stdout, hffile, "", "footer", COL_BLUE);
 }
 
 
@@ -155,14 +157,14 @@ void showrequest(char *id)
 	fd = fopen(fn, "r");
 	if (fd == NULL) return;
 
-	headfoot(stdout, "webcert", "", "header", COL_BLUE);
+	headfoot(stdout, hffile, "", "header", COL_BLUE);
 	fprintf(stdout, "<pre>\n");
 
 	while ((n = fread(buf, 1, sizeof(buf), fd)) > 0) fwrite(buf, 1, n, stdout);
 	fclose(fd);
 
 	fprintf(stdout, "</pre>\n");
-	headfoot(stdout, "webcert", "", "footer", COL_BLUE);
+	headfoot(stdout, hffile, "", "footer", COL_BLUE);
 }
 
 
@@ -203,7 +205,6 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
-	char *hffile = "webcert";
 	int bgcolor = COL_BLUE;
 	strbuffer_t *errortxt = newstrbuffer(0);
 	FILE *tmpfd, *pfd;
@@ -260,7 +261,7 @@ int main(int argc, char *argv[])
 		switch (adminaction) {
 		  case ADM_NONE:
 			fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-			showform(stdout, hffile, "webcert_form", bgcolor, 0, NULL, NULL);
+			showform(stdout, hffile, hfform, bgcolor, 0, NULL, NULL);
 			break;
 
 		  case ADM_VIEWPENDING:
@@ -433,7 +434,7 @@ int main(int argc, char *argv[])
 		addtobuffer(msg, "<center><font size=+1 color=\"#FF0000\">");
 		addtostrbuffer(msg, errortxt);
 		addtobuffer(msg, "</font></center>");
-		showform(stdout, hffile, "webcert_form", bgcolor, 0, STRBUF(msg), NULL);
+		showform(stdout, hffile, hfform, bgcolor, 0, STRBUF(msg), NULL);
 		return 0;
 	}
 
@@ -498,7 +499,7 @@ int main(int argc, char *argv[])
 	}
 
 
-	headfoot(stdout, "webcert", "", "header", COL_BLUE);
+	headfoot(stdout, hffile, "", "header", COL_BLUE);
 
 	fprintf(stdout, "<pre>\n");
 	fprintf(stdout, "%s", STRBUF(mbuf));
@@ -512,7 +513,7 @@ int main(int argc, char *argv[])
 
 		/* The "mail" utility uses REPLYTO environment */
 		replytoenv = (char *)malloc(strlen("REPLYTO=") + strlen(mailaddr) + 1);
-		sprintf(replytoenv, "REPLYTO=%s", email);
+		sprintf(replytoenv, "REPLYTO=%s", mailaddr);
 		putenv(replytoenv);
 
 		sprintf(cmd, "%s \"Certrequest %s\" '%s'", xgetenv("MAIL"), cn, mailaddr);
@@ -545,7 +546,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	headfoot(stdout, "webcert", "", "footer", COL_BLUE);
+	headfoot(stdout, hffile, "", "footer", COL_BLUE);
 
 	return 0;
 }
