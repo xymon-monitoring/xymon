@@ -313,6 +313,12 @@ if test -d bbtest; then mv bbtest xymonnet; fi
 if test -d hobbitd; then mv hobbitd xymond; fi
 if test -d bbproxy; then mv bbproxy xymonproxy; fi
 
+cd $BBWWW || (echo "Cannot cd to Xymon-servers\' www directory"; exit 1)
+if test ! -w .; then echo "Cannot write to Xymon-servers\' www directory"; exit 1; fi
+renameandlink bb.html xymon.html
+renameandlink bb2.html nongreen.html
+renameandlink bbnk.html critical.html
+
 
 echo ""
 echo "Things you must do"
