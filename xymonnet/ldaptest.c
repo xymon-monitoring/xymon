@@ -94,7 +94,6 @@ int add_ldap_test(testitem_t *t)
 	req->certinfo = NULL;
 	req->certexpires = 0;
 	req->skiptest = 0;
-#endif
 
 	if (badurl) {
 		errprintf("Invalid LDAP URL %s\n", t->testspec);
@@ -115,6 +114,8 @@ int add_ldap_test(testitem_t *t)
 		req->ldapstatus = XYMON_LDAP_BINDFAIL;
 		req->output = "Cannot connect to server";
 	}
+
+#endif
 
 	return 0;
 }
