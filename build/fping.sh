@@ -75,7 +75,7 @@
 			echo "NOTE: If you are using an suid-root wrapper, make sure the 'xymond'"
 			echo "      user is also allowed to run fping without having to enter passwords."
 			echo "      For 'sudo', add something like this to your 'sudoers' file:"
-			echo "      xymon: ALL=(ALL) NOPASSWD: /usr/local/sbin/fping"
+			echo "      xymon ALL=(ALL) NOPASSWD: $FPING"
 			echo ""
 			NOTOK=0
 		else
