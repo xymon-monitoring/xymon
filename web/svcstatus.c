@@ -467,7 +467,7 @@ int do_request(void)
 		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 		sethostenv_histlog(tstamp);
 
-		if (stat(logfn, &st) == -1) {
+		if ((stat(logfn, &st) == -1) || (st.st_size < 10)) {
 			errormsg("Historical status log not available\n");
 			return 1;
 		}
