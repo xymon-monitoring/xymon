@@ -43,5 +43,7 @@ extern char *nextcolumn(char *s);
 extern int selectcolumn(char *heading, char *wanted);
 extern char *getcolumn(char *s, int wanted);
 
+extern int chkfreespace(char *path, int minblks, int mininodes);
+
 #endif
 

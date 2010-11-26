@@ -33,6 +33,7 @@ static char rcsid[] = "$Id$";
 #include "xymond_worker.h"
 
 int rotatefiles = 0;
+time_t nextfscheck = 0;
 
 void sig_handler(int signum)
 {
@@ -45,6 +46,7 @@ void sig_handler(int signum)
 
 	  case SIGHUP:
 		  rotatefiles = 1;
+		  nextfscheck = 0;
 		  break;
 	}
 }
@@ -73,6 +75,8 @@ int main(int argc, char *argv[])
 	char oldcol2[3];
 	char alleventsfn[PATH_MAX];
 	char pidfn[PATH_MAX];
+	int logdirfull = 0;
+	int minlogspace = 5;
 
 	MEMDEFINE(pidfn);
 	MEMDEFINE(alleventsfn);
@@ -92,6 +96,9 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--histlogdir=")) {
 			histlogdir = strchr(argv[argi], '=')+1;
+		}
+		else if (argnmatch(argv[argi], "--minimum-free=")) {
+			minlogspace = atoi(strchr(argv[argi], '=')+1);
 		}
 		else if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
@@ -204,6 +211,12 @@ int main(int argc, char *argv[])
 		if (msg == NULL) {
 			running = 0;
 			continue;
+		}
+
+		if (nextfscheck < gettimer()) {
+			logdirfull = (chkfreespace(histlogdir, minlogspace, minlogspace) != 0);
+			if (logdirfull) errprintf("Historylog directory %s has less than %d%% free space - disabling save of data for 5 minutes\n", histlogdir, minlogspace);
+			nextfscheck = gettimer() + 300;
 		}
 
 		p = strchr(msg, '\n'); 
@@ -396,7 +409,7 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(timestamp);
 			}
 
-			if (save_histlogs && saveit->saveit) {
+			if (save_histlogs && saveit->saveit && !logdirfull) {
 				char *hostdash;
 				char fname[PATH_MAX];
 				FILE *histlogfd;
@@ -422,6 +435,7 @@ int main(int argc, char *argv[])
 					int txtcolor = parse_color(statusdata);
 					char *origstatus = statusdata;
 					char *eoln, *restofdata;
+					int written, closestatus, ok = 1;
 
 					if (txtcolor != -1) {
 						fprintf(histlogfd, "%s", colorname(newcolor));
@@ -461,11 +475,24 @@ int main(int argc, char *argv[])
 						}
 					}
 
-					fwrite(restofdata, strlen(restofdata), 1, histlogfd);
-					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
-					fprintf(histlogfd, "Message received from %s\n", metadata[2]);
-					if (clienttstamp) fprintf(histlogfd, "Client data ID %d\n", (int) clienttstamp);
-					fclose(histlogfd);
+					written = fwrite(restofdata, 1, strlen(restofdata), histlogfd);
+					if (written != strlen(restofdata)) {
+						ok = 0;
+						errprintf("Error writing to file %s: %s\n", fname, strerror(errno));
+						closestatus = fclose(histlogfd); /* Ignore any errors on close */
+					}
+					else {
+						fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
+						fprintf(histlogfd, "Message received from %s\n", metadata[2]);
+						if (clienttstamp) fprintf(histlogfd, "Client data ID %d\n", (int) clienttstamp);
+						closestatus = fclose(histlogfd);
+						if (closestatus != 0) {
+							ok = 0;
+							errprintf("Error writing to file %s: %s\n", fname, strerror(errno));
+						}
+					}
+
+					if (!ok) remove(fname);
 				}
 				else {
 					errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));

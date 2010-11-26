@@ -21,6 +21,12 @@ directory given by the XYMONHISTDIR environment is used.
 The directory for the historical status-logs. If not specified, the
 directory given by the XYMONHISTLOGS environment is used.
 
+.IP "--minimum-free=N"
+Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
+directory. If there is less than N% free space, xymond_history will
+not save the detailed status-logs.
+Default: 5
+
 .IP "--debug"
 Enable debugging output.
 
@@ -47,6 +53,10 @@ log-display of a status from the Xymon "History" page. If you
 do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
 If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
 If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
+.br
+NOTE: Status logs will not be saved if there is less than 5% free space on 
+the filesystem hosting the $XYMONHISTLOGS directory. The threshold can
+be tuned via the "--minimum-free" option.
 
 .SH FILES
 This module does not rely on any configuration files.

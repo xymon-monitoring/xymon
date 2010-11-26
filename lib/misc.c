@@ -30,6 +30,7 @@ static char rcsid[] = "$Id$";
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
 #include <fcntl.h>
+#include <sys/statvfs.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -787,5 +788,28 @@ char *getcolumn(char *s, int wanted)
 	for (i=0, result=nextcolumn(s); (i < wanted); i++, result = nextcolumn(NULL));
 
 	return result;
+}
+
+
+int chkfreespace(char *path, int minblks, int mininodes)
+{
+	/* Check there is least 'minblks' % free space on filesystem 'path' */
+	struct statvfs fs;
+	int n;
+	int avlblk, avlnod;
+
+	n = statvfs(path, &fs);
+	if (n == -1) {
+		errprintf("Cannot stat filesystem %s: %s", path, strerror(errno));
+		return 0;
+	}
+
+	/* Not all filesystems report i-node data, so play it safe */
+	avlblk = ((fs.f_bavail > 0) && (fs.f_blocks > 0)) ? fs.f_bavail / (fs.f_blocks / 100) : 100;
+	avlnod = ((fs.f_favail > 0) && (fs.f_files > 0))   ? fs.f_favail / (fs.f_files / 100)  : 100;
+
+	if ((avlblk >= minblks) && (avlnod >= mininodes)) return 0;
+
+	return 1;
 }
 
