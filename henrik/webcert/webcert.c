@@ -22,7 +22,7 @@ static char rcsid[] = "$Id: webcert.c,v 1.1 2009/01/26 09:34:16 henrik Exp hstoe
 #include <libgen.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 char *certdir = "/var/ca/requests";
 char *opensslcnf = "/var/ca/openssl.cnf";
@@ -512,8 +512,8 @@ int main(int argc, char *argv[])
 		time_t now = getcurrenttime(NULL);
 
 		/* The "mail" utility uses REPLYTO environment */
-		replytoenv = (char *)malloc(strlen("REPLYTO=") + strlen(mailaddr) + 1);
-		sprintf(replytoenv, "REPLYTO=%s", mailaddr);
+		replytoenv = (char *)malloc(strlen("REPLYTO=") + strlen(email) + 1);
+		sprintf(replytoenv, "REPLYTO=%s", email);
 		putenv(replytoenv);
 
 		sprintf(cmd, "%s \"Certrequest %s\" '%s'", xgetenv("MAIL"), cn, mailaddr);

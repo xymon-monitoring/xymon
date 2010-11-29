@@ -12,7 +12,7 @@ PROGRAMS = webcert.cgi
 WEBFILES = webcert_footer webcert_form webcert_header
 CGIFILES = webcert.sh
 
-LIBOBJS = $(XYMONDIR)/lib/libbbgen.a
+LIBOBJS = $(XYMONDIR)/lib/libxymon.a
 CC = gcc
 CFLAGS = -g -Wall -Wno-unused -D_REENTRANT -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DLINUX -Wno-pointer-sign -I$(XYMONDIR)/include
 
