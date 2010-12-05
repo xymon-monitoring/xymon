@@ -237,9 +237,6 @@ int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
 
-time_t fixtime_delta = 0;
-time_t fixtime_wrongtime = 0;
-
 typedef struct xymond_statistics_t {
 	char *cmd;
 	unsigned long count;
@@ -4078,7 +4075,7 @@ void save_checkpoint(void)
 	dbgprintf("<- save_checkpoint\n");
 }
 
-#define fixdelta(V) { if ((fixtime_delta > 0) && ((V) > fixtime_wrongtime)) { (V) += fixtime_delta; } }
+
 void load_checkpoint(char *fn)
 {
 	FILE *fd;
@@ -4121,7 +4118,7 @@ void load_checkpoint(char *fn)
 				  case 0: break;
 				  case 1: break;
 				  case 2: newtask->id = atoi(item); break;
-				  case 3: newtask->executiontime = (time_t) atoi(item); fixdelta(newtask->executiontime); break;
+				  case 3: newtask->executiontime = (time_t) atoi(item); break;
 				  case 4: newtask->sender = strdup(item); break;
 				  case 5: nldecode(item); newtask->command = strdup(item); break;
 				  default: break;
@@ -4162,9 +4159,9 @@ void load_checkpoint(char *fn)
 					testhandle = rbtFind(rbtests, item);
 					t = (testhandle == rbtEnd(rbtests)) ? NULL : gettreeitem(rbtests, testhandle);
 					break;
-				  case 4: newack->received = atoi(item); fixdelta(newack->received); break;
-				  case 5: newack->validuntil = atoi(item); fixdelta(newack->validuntil); break;
-				  case 6: newack->cleartime = atoi(item); fixdelta(newack->cleartime); break;
+				  case 4: newack->received = atoi(item); break;
+				  case 5: newack->validuntil = atoi(item); break;
+				  case 6: newack->cleartime = atoi(item); break;
 				  case 7: newack->level = atoi(item); break;
 				  case 8: newack->ackedby = strdup(item); break;
 				  case 9: newack->msg = strdup(item); break;
@@ -4203,13 +4200,13 @@ void load_checkpoint(char *fn)
 			  case 5: color = parse_color(item); if (color == -1) err = 1; break;
 			  case 6: testflags = item; break;
 			  case 7: oldcolor = parse_color(item); if (oldcolor == -1) oldcolor = NO_COLOR; break;
-			  case 8: logtime = atoi(item); fixdelta(logtime); break;
-			  case 9: lastchange = atoi(item); fixdelta(lastchange); break;
-			  case 10: validtime = atoi(item); fixdelta(validtime); break;
-			  case 11: enabletime = atoi(item); fixdelta(enabletime); break;
-			  case 12: acktime = atoi(item); fixdelta(acktime); break;
+			  case 8: logtime = atoi(item); break;
+			  case 9: lastchange = atoi(item); break;
+			  case 10: validtime = atoi(item); break;
+			  case 11: enabletime = atoi(item); break;
+			  case 12: acktime = atoi(item); break;
 			  case 13: cookie = atoi(item); break;
-			  case 14: cookieexpires = atoi(item); fixdelta(cookieexpires); break;
+			  case 14: cookieexpires = atoi(item); break;
 			  case 15: if (strlen(item)) statusmsg = item; else err=1; break;
 			  case 16: disablemsg = item; break;
 			  case 17: ackmsg = item; break;
@@ -4644,10 +4641,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-download") == 0) {
 			 allow_downloads = 0;
 		}
-
-		else if (argnmatch(argv[argi], "--fixtime=")) {
-		}
-
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
