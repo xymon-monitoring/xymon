@@ -954,7 +954,7 @@ static void do_nongreenext(FILE *output, char *extenv, char *family)
 				do_eventlog(output, nongreeneventlogmaxcount, nongreeneventlogmaxtime,
 				NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, nongreennodialups, 
 				host_exists,
-				NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
+				NULL, NULL, NULL, XYMON_COUNT_NONE, XYMON_S_NONE, NULL);
 			}
 		}
 		else if (strcmp(p, "acklog.sh") == 0) {
@@ -1139,7 +1139,7 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype)
 			do_eventlog(output, nongreeneventlogmaxcount, nongreeneventlogmaxtime, 
 				    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, nongreennodialups, 
 				    host_exists,
-				    NULL, NULL, NULL, COUNT_NONE, S_NONE, NULL);
+				    NULL, NULL, NULL, XYMON_COUNT_NONE, XYMON_S_NONE, NULL);
 		}
 		if (nongreenacklog && !havedoneacklog) do_acklog(output, nongreenacklogmaxcount, nongreenacklogmaxtime);
 	}

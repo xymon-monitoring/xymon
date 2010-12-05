@@ -35,8 +35,8 @@ typedef struct countlist_t {
 	struct countlist_t *next;
 } countlist_t;
 
-typedef enum { S_NONE, S_HOST_BREAKDOWN, S_SERVICE_BREAKDOWN } eventsummary_t;
-typedef enum { COUNT_NONE, COUNT_EVENTS, COUNT_DURATION } countsummary_t;
+typedef enum { XYMON_S_NONE, XYMON_S_HOST_BREAKDOWN, XYMON_S_SERVICE_BREAKDOWN } eventsummary_t;
+typedef enum { XYMON_COUNT_NONE, XYMON_COUNT_EVENTS, XYMON_COUNT_DURATION } countsummary_t;
 
 typedef int (*f_hostcheck)(char *hostname);
 

@@ -641,7 +641,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		oldcolname = colorname(eventcolor(oldcol));
 		newcolname = colorname(eventcolor(newcol));
 		/* For DURATION counts, we must parse all events until now */
-		if ((counttype != COUNT_DURATION) && (eventtime > lastevent)) break;
+		if ((counttype != XYMON_COUNT_DURATION) && (eventtime > lastevent)) break;
 		eventhost = hostinfo(hostname);
 		eventcolumn = getname(svcname, 1);
 
@@ -657,7 +657,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 					ignoredialups, hostcheck) == 0) continue;
 
 			/* For duration counts, record all events. We'll filter out the colors later. */
-			if (colrregexp && (counttype != COUNT_DURATION)) {
+			if (colrregexp && (counttype != XYMON_COUNT_DURATION)) {
 				colrmatch = ( (pcre_exec(colrregexp, NULL, newcolname, strlen(newcolname), 0, 0,
 							ovector, (sizeof(ovector)/sizeof(int))) >= 0) ||
 					      (pcre_exec(colrregexp, NULL, oldcolname, strlen(oldcolname), 0, 0,
@@ -678,7 +678,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			newevent->next = eventhead;
 			eventhead = newevent;
 
-			if (counttype != COUNT_DURATION) {
+			if (counttype != XYMON_COUNT_DURATION) {
 				countrec = (eventcount_t *)xmh_item(eventhost, XMH_DATA);
 				while (countrec && (countrec->service != eventcolumn)) countrec = countrec->next;
 				if (countrec == NULL) {
@@ -695,8 +695,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	/* Count the state changes per host */
 	svccounthead = hostcounthead = NULL;
 	switch (counttype) {
-	  case COUNT_EVENTS: count_events(&hostcounthead, &svccounthead); break;
-	  case COUNT_DURATION: count_duration(firstevent, lastevent,
+	  case XYMON_COUNT_EVENTS: count_events(&hostcounthead, &svccounthead); break;
+	  case XYMON_COUNT_DURATION: count_duration(firstevent, lastevent,
 					       pageregexp, expageregexp,
 					       hostregexp, exhostregexp,
 					       testregexp, extestregexp,
@@ -718,12 +718,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		if (periodstring) fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
 
 		switch (sumtype) {
-		  case S_HOST_BREAKDOWN:
+		  case XYMON_S_HOST_BREAKDOWN:
 			/* Request for a specific service, show breakdown by host */
 			for (cwalk = hostcounthead; (cwalk); cwalk = cwalk->next) totalcount += cwalk->total;
 			fprintf(output, "<table summary=\"Breakdown by host\" border=0>\n");
 			fprintf(output, "<tr><th align=left>Host</th><th colspan=2>%s</th></tr>\n",
-				(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+				(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 			fprintf(output, "<tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
 			for (cwalk = hostcounthead; (cwalk && (cwalk->total > 0)); cwalk = cwalk->next) {
 				fprintf(output, "<tr><td align=left>%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</tr>\n",
@@ -733,12 +733,12 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			fprintf(output, "</table>\n");
 			break;
 
-		  case S_SERVICE_BREAKDOWN:
+		  case XYMON_S_SERVICE_BREAKDOWN:
 			/* Request for a specific host, show breakdown by service */
 			for (cwalk = svccounthead; (cwalk); cwalk = cwalk->next) totalcount += cwalk->total;
 			fprintf(output, "<table summary=\"Breakdown by service\" border=0>\n");
 			fprintf(output, "<tr><th align=left>Service</th><th colspan=2>%s</th></tr>\n",
-				(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+				(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 			fprintf(output, "<tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
 			for (cwalk = svccounthead; (cwalk && (cwalk->total > 0)); cwalk = cwalk->next) {
 				fprintf(output, "<tr><td align=left>%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</tr>\n",
@@ -748,11 +748,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			fprintf(output, "</table>\n");
 			break;
 
-		  case S_NONE:
+		  case XYMON_S_NONE:
 			break;
 		}
 
-		if (sumtype == S_NONE) {
+		if (sumtype == XYMON_S_NONE) {
 			int  count;
 			count=0;
 			ewalk=eventhead; 
@@ -783,11 +783,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		for (ewalk=eventhead; (ewalk); ewalk=ewalk->next) {
 			char *hostname = xmh_item(ewalk->host, XMH_HOSTNAME);
 
-			if ( (counttype == COUNT_DURATION) &&
+			if ( (counttype == XYMON_COUNT_DURATION) &&
 			     (ewalk->oldcolor < COL_YELLOW) &&
 			     (ewalk->newcolor < COL_YELLOW) ) continue;
 
-			if ( (counttype == COUNT_DURATION) &&
+			if ( (counttype == XYMON_COUNT_DURATION) &&
 			     (ewalk->eventtime >= lastevent) ) continue;
 
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);

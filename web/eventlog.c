@@ -43,8 +43,8 @@ char	*expageregex = NULL;
 char	*colorregex = NULL;
 int	ignoredialups = 0;
 int	topcount = 0;
-eventsummary_t summarybar = S_NONE;
-countsummary_t counttype = COUNT_NONE;
+eventsummary_t summarybar = XYMON_S_NONE;
+countsummary_t counttype = XYMON_COUNT_NONE;
 char	*webfile_hf = "event";
 char	*webfile_form = "event_form";
 cgidata_t *cgidata = NULL;
@@ -102,14 +102,14 @@ static void parse_query(void)
 			if (*(cwalk->value)) topcount = atoi(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "SUMMARY") == 0) {
-			if (strcasecmp(cwalk->value, "hosts") == 0) summarybar = S_HOST_BREAKDOWN;
-			else if (strcasecmp(cwalk->value, "services") == 0) summarybar = S_SERVICE_BREAKDOWN;
-			else summarybar = S_NONE;
+			if (strcasecmp(cwalk->value, "hosts") == 0) summarybar = XYMON_S_HOST_BREAKDOWN;
+			else if (strcasecmp(cwalk->value, "services") == 0) summarybar = XYMON_S_SERVICE_BREAKDOWN;
+			else summarybar = XYMON_S_NONE;
 		}
 		else if (strcasecmp(cwalk->name, "COUNTTYPE") == 0) {
-			if (strcasecmp(cwalk->value, "events") == 0) counttype = COUNT_EVENTS;
-			else if (strcasecmp(cwalk->value, "duration") == 0) counttype = COUNT_DURATION;
-			else counttype = COUNT_NONE;
+			if (strcasecmp(cwalk->value, "events") == 0) counttype = XYMON_COUNT_EVENTS;
+			else if (strcasecmp(cwalk->value, "duration") == 0) counttype = XYMON_COUNT_DURATION;
+			else counttype = XYMON_COUNT_NONE;
 		}
 		else if (strcasecmp(cwalk->name, "TIMETXT") == 0) {
 			if (*(cwalk->value)) strcpy(periodstring, cwalk->value);
@@ -165,14 +165,14 @@ void show_topchanges(FILE *output,
 		addtobuffer(othercriteria, "&amp;SUMMARY=services");
 		addtobuffer(othercriteria, "&amp;TIMETXT=");
 		addtobuffer(othercriteria, periodstring);
-		if (counttype == COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
-		else if (counttype == COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
+		if (counttype == XYMON_COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
+		else if (counttype == XYMON_COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d hosts\" border=0>\n", topcount);
 		fprintf(output, "      <tr><th colspan=3>Top %d hosts</th></tr>\n", topcount);
 		fprintf(output, "      <tr><th align=left>Host</th><th align=left colspan=2>%s</th></tr>\n",
-			(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+			(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 
 		/* Compute the total count */
 		for (i=0, cwalk=hostcounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
@@ -246,15 +246,15 @@ void show_topchanges(FILE *output,
 		addtobuffer(othercriteria, "&amp;SUMMARY=hosts");
 		addtobuffer(othercriteria, "&amp;TIMETXT=");
 		addtobuffer(othercriteria, periodstring);
-		if (counttype == COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
-		else if (counttype == COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
+		if (counttype == XYMON_COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
+		else if (counttype == XYMON_COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d services\" border=0>\n", topcount);
 		fprintf(output, "      <tr><th colspan=3>Top %d services</th></tr>\n", topcount);
 		fprintf(output, "      <tr><th align=left>Service</th><th align=left colspan=2>%s</th></tr>\n",
-			(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+			(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 
 		/* Compute the total count */
 		for (i=0, cwalk=svccounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
 		do_eventlog(NULL, -1, -1, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    &events, &hcounts, &scounts, counttype, S_NONE, NULL);
+			    &events, &hcounts, &scounts, counttype, XYMON_S_NONE, NULL);
 
 		lastevent = (totime ? eventreport_time(totime) : getcurrenttime(NULL));
 
