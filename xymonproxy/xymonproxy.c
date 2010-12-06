@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 		}
-		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--xymonserverlay=")) {
+		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--bbdisplay=")) {
 			char *ips, *ip1;
 			int port1;
 
