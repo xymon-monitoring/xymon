@@ -3971,7 +3971,7 @@ done:
 	if (msg->doingwhat == RESPONDING) {
 		shutdown(msg->sock, SHUT_RD);
 	}
-	else {
+	else if (msg->sock >= 0) {
 		shutdown(msg->sock, SHUT_RDWR);
 		close(msg->sock);
 		msg->sock = -1;
@@ -5040,6 +5040,8 @@ int main(int argc, char *argv[])
 					swalk = swalk->next;
 
 					memset(&task, 0, sizeof(task));
+					task.sock = -1;
+					task.doingwhat = NOTALK;
 					inet_aton(runtask->sender, (struct in_addr *) &task.addr.sin_addr.s_addr);
 					task.buf = task.bufp = runtask->command;
 					task.buflen = strlen(runtask->command); task.bufsz = task.buflen+1;
@@ -5060,6 +5062,7 @@ int main(int argc, char *argv[])
 		{
 			conn_t *tmp, *khead;
 
+			dbgprintf("Beginning conn_t cleanup\n");
 			now = getcurrenttime(NULL);
 			khead = NULL; cwalk = connhead;
 			while (cwalk) {
@@ -5116,13 +5119,19 @@ int main(int argc, char *argv[])
 				if (tmp->buf) xfree(tmp->buf);
 				xfree(tmp);
 			}
+
+			dbgprintf("conn_t cleanup complete\n");
 		}
 
 		/* Pick up new connections */
 		if (FD_ISSET(lsocket, &fdread)) {
 			struct sockaddr_in addr;
 			int addrsz = sizeof(addr);
-			int sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
+			int sock;
+
+			dbgprintf("Picking up new connections\n");
+
+			sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
 
 			if (sock >= 0) {
 				/* Make sure our sockets are non-blocking */
