@@ -587,8 +587,8 @@ function onMouseUpEvent(e) {
 
  graphStart = parseInt(gUrlObj.getUrlParameterValue("graph_start"));
  graphEnd = parseInt(gUrlObj.getUrlParameterValue("graph_end"));
- graphTop = parseInt(gUrlObj.getUrlParameterValue("upper"));
- graphBottom = parseInt(gUrlObj.getUrlParameterValue("lower"));
+ graphTop = parseFloat(gUrlObj.getUrlParameterValue("upper"));
+ graphBottom = parseFloat(gUrlObj.getUrlParameterValue("lower"));
  haveGraphLimits = (gUrlObj.getUrlParameterValue("upper") != undefined) && (gUrlObj.getUrlParameterValue("lower") != undefined);
 
  idxStr = "";
