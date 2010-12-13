@@ -170,6 +170,11 @@ XYMONDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
 XYMONRSSTITLE="Xymon Alerts"			# Title for the RSS and WML outputs.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
 
+# Stylesheet and menu control stuff
+XYMONBODYMENUCSS="$XYMONMENUSKIN/xymonmenu-blue.css"	# Stylesheet used for the Xymon webpage menu
+XYMONBODYHEADER="file:$XYMONHOME/etc/xymonmenu.cfg"	# File containing the HTML code snippet that defines the menu
+XYMONBODYFOOTER=""					# HTML inserted at the bottom of all webpages.
+
 # For WML output
 WMLMAXCHARS="1500"				# Max number of bytes in a WAP message
 
