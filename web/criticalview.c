@@ -32,6 +32,7 @@ typedef struct hstatus_t {
 static RbtHandle rbstate;
 static time_t oldlimit = 3600;
 static int critacklevel = 1;
+static int usetooltips = 0;
 
 void errormsg(char *s)
 {
@@ -203,7 +204,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	fprintf(output, "</TD>\n");
 
 	/* Print the hostname with a link to the critical systems info page */
-	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, 0));
+	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, usetooltips));
 
 	key = (char *)malloc(strlen(itm->hostname) + 1024);
 	for (colhandle = rbtBegin(columns); (colhandle != rbtEnd(columns)); colhandle = rbtNext(columns, colhandle)) {
@@ -412,6 +413,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (strcmp(argv[argi], "--tooltips") == 0) {
+			usetooltips = 1;
 		}
 		else if (argnmatch(argv[argi], "--acklevel=")) {
 			char *p = strchr(argv[argi], '=');
