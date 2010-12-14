@@ -36,7 +36,10 @@ the Changes file for a longer list):
   different data (e.g. MAX/MIN values)
 * SLA calculations now include the number of outages in addition
   to the down-time.
-
+* Solaris client now uses "swap -l" to determine swap-space
+  usage, which gives very different results from the previous
+  "swap -s" data. So your Solaris hosts will appear to change
+  swap-utilisation when the Xymon client is upgraded.
 
 TRACKMAX feature removed
 ------------------------

@@ -41,6 +41,8 @@ echo "[memory]"
 vmstat 1 2 | tail -1
 echo "[swap]"
 /usr/sbin/swap -s
+echo "[swaplist]"
+/usr/sbin/swap -l
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
