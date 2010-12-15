@@ -883,17 +883,19 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	get_memory_thresholds(hinfo, clientclass, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
 
 	memphyspct = (memphystotal > 0) ? ((100 * memphysused) / memphystotal) : 0;
-	if (memphyspct > physyellow) physcolor = COL_YELLOW;
-	if (memphyspct > physred)    physcolor = COL_RED;
+	if (memphyspct <= 100) {
+		if (memphyspct > physyellow) physcolor = COL_YELLOW;
+		if (memphyspct > physred)    physcolor = COL_RED;
+	}
 
-	if (memswapused != -1) {
-		memswappct = (memswaptotal > 0) ? ((100 * memswapused) / memswaptotal) : 0;
+	if (memswapused != -1) memswappct = (memswaptotal > 0) ? ((100 * memswapused) / memswaptotal) : 0;
+	if (memswappct <= 100) {
 		if (memswappct > swapyellow) swapcolor = COL_YELLOW;
 		if (memswappct > swapred)    swapcolor = COL_RED;
 	}
 
-	if (memactused != -1) {
-		memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
+	if (memactused != -1) memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
+	if (memactpct <= 100) {
 		if (memactpct  > actyellow)  actcolor  = COL_YELLOW;
 		if (memactpct  > actred)     actcolor  = COL_RED;
 	}
@@ -927,14 +929,24 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	addtostatus(msgline);
 
 	if (memactused != -1) {
-		sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
-			colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
+		if (memactpct <= 100)
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+				colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
+		else
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%% - invalid data\n", 
+				colorname(COL_CLEAR), "Actual", memactused, memphystotal, 0);
+			
 		addtostatus(msgline);
 	}
 
 	if (memswapused != -1) {
-		sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
-			colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
+		if (memswappct <= 100)
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+				colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
+		else
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%% - invalid data\n", 
+				colorname(COL_CLEAR), "Swap", memswapused, memswaptotal, 0);
+
 		addtostatus(msgline);
 	}
 	if (fromline && !localmode) addtostatus(fromline);
