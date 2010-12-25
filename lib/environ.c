@@ -137,6 +137,7 @@ const static struct {
 	{ "HTMLCONTENTTYPE", "text/html" },
 	{ "HOLIDAYFORMAT", "%d/%m" },
 	{ "WEEKSTART", "1" },
+	{ "XYMONBODYCSS", "$XYMONSKIN/xymonbody.css" },
 	{ "XYMONBODYMENUCSS", "$XYMONMENUSKIN/xymonmenu.css" },
 	{ "XYMONBODYHEADER", "file:$XYMONHOME/etc/xymonmenu.cfg" },
 	{ "XYMONBODYFOOTER", "" },

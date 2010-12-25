@@ -1,0 +1,34 @@
+/* body classes definitions */
+body { 
+	color: #D8D8BF; 
+	background-color: black;
+	background-repeat: repeat-y;
+}
+
+a:link { color: #00FFAA; text-decoration: underline; } 
+a:visited { color: #FFFF44; text-decoration: underline; } 
+
+.green {
+	background-image: url(bkg-green.gif);
+}
+
+.yellow {
+	background-image: url(bkg-yellow.gif);
+}
+
+.red {
+	background-image: url(bkg-red.gif);
+}
+
+.purple {
+	background-image: url(bkg-purple.gif);
+}
+
+.blue {
+	background-image: url(bkg-blue.gif);
+}
+
+.clear {
+	background-image: url(bkg-clear.gif);
+}
+

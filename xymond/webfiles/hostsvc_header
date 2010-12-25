@@ -10,12 +10,15 @@
 <!-- Styles for the menu bar -->
 <link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
 
+<!-- Styles for the Xymon body  -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYCSS">
+
 <!-- The favicon image -->
 <link rel="shortcut icon" href="&XYMONSKIN/favicon-&XYMWEBBACKGROUND.ico">
 
 </HEAD>
 
-<BODY BGCOLOR="&XYMWEBBACKGROUND" BACKGROUND="&XYMONSKIN/bkg-&XYMWEBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+<BODY class="&XYMWEBBACKGROUND">
 
 &XYMONBODYHEADER
 
