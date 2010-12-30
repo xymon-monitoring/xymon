@@ -108,10 +108,11 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 				nl = strchr(bol, '\n'); if (nl) *nl = '\0';
 				tmpline = strdup(bol);
 				/* According to the Solaris man-page for versions 8 thru 10, the "swap -l" output is always 5 columns */
-				p = getcolumn(tmpline, 4);
+				/* Note: getcolumn() is zero-based (thanks, Dominique Frise) */
+				p = getcolumn(tmpline, 3);
 				if (p) blktotal += atol(p);
 				strcpy(tmpline, bol);
-				p = getcolumn(tmpline, 5);
+				p = getcolumn(tmpline, 4);
 				if (p) blkfree += atol(p);
 				xfree(tmpline);
 
