@@ -40,6 +40,7 @@ enum { ADM_NONE, ADM_VIEWPENDING, ADM_MOVETOPROCESSING, ADM_VIEWPROCESSING, ADM_
 char *adminid = NULL;
 char *hffile = "webcert";
 char *hfform = "webcert_form";
+int minkeysz = 2048;
 
 static void errormsg(char *msg)
 {
@@ -218,6 +219,7 @@ int main(int argc, char *argv[])
 	strbuffer_t *whoisbuf = newstrbuffer(0);
 	char mailaddr[1024];
 	char *replytoenv;
+	int keysz = 0;
 
 	mailaddr[0] = '\0';
 
@@ -237,6 +239,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--rootcert=")) {
 			char *p = strchr(argv[argi], '=');
 			rootcert = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--minimum-keysize=")) {
+			char *p = strchr(argv[argi], '=');
+			minkeysz = atoi(p+1);
 		}
 		else if (argnmatch(argv[argi], "--realm=")) {
 			char *p = strchr(argv[argi], '=');
@@ -351,12 +357,14 @@ int main(int argc, char *argv[])
 		pfd = popen(cmd, "r");
 		while (fgets(buf, sizeof(buf), pfd)) {
 			char *eol = strchr(buf, '\n'); if (eol) *eol = '\0';
-			char *tok = strstr(buf, "Subject:");
+			char *subjstr = strstr(buf, "Subject:");
+			char *keyszstr = strstr(buf, "RSA Public Key:");
 			char *p;
 	
-			if (tok) {
-				char *subjcopy;
+			if (subjstr) {
+				char *tok, *subjcopy;
 
+				tok = subjstr;
 				tok += strlen("Subject:");
 				tok += strspn(tok, " \t");
 				subj = strdup(tok);
@@ -374,6 +382,14 @@ int main(int argc, char *argv[])
 				}
 				xfree(subjcopy);
 			}
+
+			if (keyszstr) {
+				char *tok;
+
+				tok = keyszstr + strlen("RSA Public Key:");
+				tok += strcspn(tok, "0123456678");
+				keysz = atoi(tok);
+			}
 		}
 		if (pclose(pfd) != 0) {
 			addtobuffer(errortxt, "Could not parse CSR data!<br>");
@@ -384,6 +400,11 @@ int main(int argc, char *argv[])
 		}
 		else if (!cn) {
 			addtobuffer(errortxt, "Invalid CSR, missing Common Name (CN)!<br>");
+		}
+		else if (keysz < minkeysz) {
+			char txt[1024];
+			sprintf(txt, "Invalid CSR: Detected a %d-bit public key, minimum required is %d-bit!<br>", keysz, minkeysz);
+			addtobuffer(errortxt, txt);
 		}
 
 		domainname = cn;
