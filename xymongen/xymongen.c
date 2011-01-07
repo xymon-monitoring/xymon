@@ -470,7 +470,7 @@ int main(int argc, char *argv[])
 			printf("    --no-acklog                 : Do not generate the non-green ack-log display\n");
 			printf("    --no-pages                  : Generate only the nongreen and critical pages\n");
 			printf("    --docurl=documentation-URL  : Hostnames link to a general (dynamic) web page for docs\n");
-			printf("    --no-doc-window             : Open doc-links in same window\n");
+			printf("    --doc-window                : Open doc-links in a new browser window\n");
 			printf("    --htmlextension=.EXT        : Sets filename extension for generated file (default: .html\n");
 			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymongen\n");
 			printf("    --reportopts=ST:END:DYN:STL : Run in Xymon Reporting mode\n");
