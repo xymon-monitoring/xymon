@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 			/* This is a no-op now */
 		}
 		else if (argnmatch(argv[i], "--doc-window")) {
-			setdocurl("TARGET=\"_blank\"");
+			setdoctarget("TARGET=\"_blank\"");
 		}
 		else if (argnmatch(argv[i], "--htmlextension=")) {
 			char *lp = strchr(argv[i], '=');
