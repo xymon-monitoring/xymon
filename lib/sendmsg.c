@@ -38,6 +38,7 @@ static char rcsid[] = "$Id$";
 
 /* These commands go to all Xymon servers */
 static char *multircptcmds[] = { "status", "combo", "meta", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
+static char errordetails[1024];
 
 /* Stuff for combo message handling */
 int		xymonmsgcount = 0;	/* Number of messages transmitted */
@@ -228,7 +229,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		}
 
 		if ((posturl == NULL) || (posthost == NULL)) {
-			errprintf("Unable to parse HTTP recipient\n");
+			sprintf(errordetails + strlen(errordetails), "Unable to parse HTTP recipient");
 			if (posturl) xfree(posturl);
 			if (posthost) xfree(posthost);
 			if (rcptip) xfree(rcptip);
@@ -267,7 +268,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 			}
 		}
 		else {
-			errprintf("Cannot determine IP address of message recipient %s\n", rcptip);
+			sprintf(errordetails+strlen(errordetails), "Cannot determine IP address of message recipient %s", rcptip);
 			result = XYMONSEND_EIPUNKNOWN;
 			goto done;
 		}
@@ -289,7 +290,7 @@ retry_connect:
 
 	res = connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr));
 	if ((res == -1) && (errno != EINPROGRESS)) {
-		errprintf("connect to Xymon daemon failed - %s\n", strerror(errno));
+		sprintf(errordetails+strlen(errordetails), "connect to Xymon daemon@%s:%d failed (%s)", rcptip, rcptport, strerror(errno));
 		result = XYMONSEND_ECONNFAILED;
 		goto done;
 	}
@@ -304,7 +305,7 @@ retry_connect:
 		tmo.tv_sec = timeout;  tmo.tv_usec = 0;
 		res = select(sockfd+1, &readfds, &writefds, NULL, (timeout ? &tmo : NULL));
 		if (res == -1) {
-			errprintf("Select failure while sending to Xymon daemon@%s:%d!\n", rcptip, rcptport);
+			sprintf(errordetails+strlen(errordetails), "Select failure while sending to Xymon daemon@%s:%d", rcptip, rcptport);
 			result = XYMONSEND_ESELFAILED;
 			goto done;
 		}
@@ -333,7 +334,7 @@ retry_connect:
 				dbgprintf("Connect status is %d\n", connres);
 				isconnected = (connres == 0);
 				if (!isconnected) {
-					errprintf("Could not connect to Xymon daemon@%s:%d - %s\n", 
+					sprintf(errordetails+strlen(errordetails), "Could not connect to Xymon daemon@%s:%d (%s)", 
 						  rcptip, rcptport, strerror(connres));
 					result = XYMONSEND_ECONNFAILED;
 					goto done;
@@ -400,7 +401,7 @@ retry_connect:
 				/* Send some data */
 				res = write(sockfd, msgptr, strlen(msgptr));
 				if (res == -1) {
-					errprintf("Write error while sending message to Xymon daemon@%s:%d\n", rcptip, rcptport);
+					sprintf(errordetails+strlen(errordetails), "Write error while sending message to Xymon daemon@%s:%d", rcptip, rcptport);
 					result = XYMONSEND_EWRITEERROR;
 					goto done;
 				}
@@ -460,7 +461,7 @@ static int sendtomany(char *onercpt, char *morercpts, char *msg, int timeout, se
 	}
 
 	if (allservers && !morercpts) {
-		errprintf("No recipients listed! XYMSRV was %s, XYMSERVERS %s\n",
+		sprintf(errordetails+strlen(errordetails), "No recipients listed! XYMSRV was %s, XYMSERVERS %s",
 			  onercpt, textornull(morercpts));
 		return XYMONSEND_EBADIP;
 	}
@@ -572,6 +573,8 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 	static char *xymsrv = NULL;
 	int res = 0;
 
+	*errordetails = '\0';
+
  	if ((xymsrv == NULL) && xgetenv("XYMSRV")) xymsrv = strdup(xgetenv("XYMSRV"));
 	if (recipient == NULL) recipient = xymsrv;
 	if (recipient == NULL) {
@@ -579,10 +582,11 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 		return XYMONSEND_EBADIP;
 	}
 
-	res = sendtomany((recipient ? recipient : xymsrv), xgetenv("XYMSERVERS"), msg, timeout, response);
+	res = sendtomany(recipient, xgetenv("XYMSERVERS"), msg, timeout, response);
 
 	if (res != XYMONSEND_OK) {
 		char *statustext = "";
+		char *eoln;
 
 		switch (res) {
 		  case XYMONSEND_OK            : statustext = "OK"; break;
@@ -599,7 +603,13 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 		  default:                statustext = "Unknown error"; break;
 		};
 
-		errprintf("Whoops ! Failed to send message - %s\n", statustext, res);
+		eoln = strchr(msg, '\n'); if (eoln) *eoln = '\0';
+		if (strcmp(recipient, "0.0.0.0") == 0) recipient = xgetenv("XYMSERVERS");
+		errprintf("Whoops ! Failed to send message (%s)\n", statustext);
+		errprintf("->  %s\n", errordetails);
+		errprintf("->  Recipient '%s', timeout %d\n", recipient, timeout);
+		errprintf("->  1st line: '%s'\n", msg);
+		if (eoln) *eoln = '\n';
 	}
 
 	/* Give it a break */
