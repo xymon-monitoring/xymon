@@ -1093,10 +1093,11 @@ curtime, curtext, curgroup, cfid);
 					}
 					else if ((strncasecmp(tok, "owner=", 6) == 0) ||
 						 (strncasecmp(tok, "ownerid=", 8) == 0)) {
-						char *eptr;
+						char *p, *eptr;
 						int uid;
-						
-						uid = strtol(tok+6, &eptr, 10);
+
+						p = strchr(tok, '=');
+						uid = strtol(p+1, &eptr, 10);
 						if (*eptr == '\0') {
 							/* All numeric */
 							currule->flags |= FCHK_OWNERID;
@@ -1104,15 +1105,16 @@ curtime, curtext, curgroup, cfid);
 						}
 						else {
 							currule->flags |= FCHK_OWNERSTR;
-							currule->rule.fcheck.ownerstr = strdup(tok+6);
+							currule->rule.fcheck.ownerstr = strdup(p+1);
 						}
 					}
 					else if (strncasecmp(tok, "groupid=", 8) == 0) {
 						/* Cannot use "group" because that is reserved */
-						char *eptr;
+						char *p, *eptr;
 						int uid;
-						
-						uid = strtol(tok+6, &eptr, 10);
+
+						p = strchr(tok, '=');
+						uid = strtol(p+1, &eptr, 10);
 						if (*eptr == '\0') {
 							/* All numeric */
 							currule->flags |= FCHK_GROUPID;
@@ -1120,7 +1122,7 @@ curtime, curtext, curgroup, cfid);
 						}
 						else {
 							currule->flags |= FCHK_GROUPSTR;
-							currule->rule.fcheck.groupstr = strdup(tok+6);
+							currule->rule.fcheck.groupstr = strdup(p+1);
 						}
 					}
 					else if (strncasecmp(tok, "mtime>", 6) == 0) {
