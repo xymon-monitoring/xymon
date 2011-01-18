@@ -414,6 +414,11 @@ number of active SSH connections, and warn if there are more than 5.
 .br
         PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
 .sp
+.sp
+.SH SVCS status (Microsoft Windows clients)
+.sp
+.BR "SVC servicename status=(started|stopped) [startup=automatic|disabled|manual]"
+.sp
 .SH DS - RRD based status override
 .sp
 .BR "DS column filename:dataset rules COLOR=colorname TEXT=explanation"

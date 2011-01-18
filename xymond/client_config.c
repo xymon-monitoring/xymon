@@ -181,7 +181,7 @@ typedef struct c_svc_t {
 	exprlist_t *svcexp;
 	exprlist_t *stateexp;
 	exprlist_t *startupexp;
-	char *startup, *state;
+	char *svcname, *startup, *state;
 	int scount;
 	int color;
 } c_svc_t;
@@ -1008,38 +1008,6 @@ int load_client_config(char *configfn)
 					}
 				} while (tok && (!isqual(tok)));
 			}
-                        else if (strcasecmp(tok, "SVC") == 0) {
-                               int idx = 0;
-
-                                currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, 
-curtime, curtext, curgroup, cfid);
-
-				currule->rule.svc.svcexp = NULL;
-                                currule->rule.svc.startupexp = NULL;
-                                currule->rule.svc.stateexp = NULL;
-                                currule->rule.svc.state = NULL;
-                                currule->rule.svc.startup = NULL; 
-                                currule->rule.svc.color = COL_RED;
-
-                                tok = wstok(NULL);
-                                currule->rule.svc.svcexp = setup_expr(tok, 0);
-                                do {
-                                       tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
-
-                                        if (strncasecmp(tok, "startup=", 8) == 0) {
-                                                currule->rule.svc.startupexp = setup_expr(tok+8, 0);
-                                        }
-                                        else if (strncasecmp(tok, "status=", 7) == 0) {
-                                                currule->rule.svc.stateexp = setup_expr(tok+7, 0);
-                                        }
-                                        else if (strncasecmp(tok, "col=", 4) == 0) {
-                                                currule->rule.svc.color = parse_color(tok+4);
-                                        }
-                                        else if (strncasecmp(tok, "color=", 6) == 0) {
-                                                currule->rule.svc.color = parse_color(tok+6);
-                                        }
-                               } while (tok && (!isqual(tok)));
-                        }
 			else if (strcasecmp(tok, "FILE") == 0) {
 				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 				currule->rule.fcheck.filename = NULL;
@@ -1343,33 +1311,39 @@ curtime, curtext, curgroup, cfid);
 			else if (strcasecmp(tok, "SVC") == 0) {
 				int idx = 0;
 
-				currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				tok = wstok(NULL);	/* See if there is any service definition at all */
+				if (tok) {
+					currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 
-				currule->rule.svc.svcexp = NULL;
-				currule->rule.svc.startupexp = NULL;
-				currule->rule.svc.stateexp = NULL;
-				currule->rule.svc.state = NULL;
-				currule->rule.svc.startup = NULL; 
-				currule->rule.svc.color = COL_RED;
+					currule->rule.svc.svcexp = setup_expr(tok, 0);
+					currule->rule.svc.startupexp = NULL;
+					currule->rule.svc.stateexp = NULL;
+					currule->rule.svc.state = NULL;
+					currule->rule.svc.startup = NULL; 
+					currule->rule.svc.color = COL_RED;
 
-				tok = wstok(NULL);
-				currule->rule.svc.svcexp = setup_expr(tok, 0);
-				do {
-					tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
+					do {
+						tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
 
-					if (strncasecmp(tok, "startup=", 8) == 0) {
-						currule->rule.svc.startupexp = setup_expr(tok+8, 0);
+						if (strncasecmp(tok, "startup=", 8) == 0) {
+							currule->rule.svc.startupexp = setup_expr(tok+8, 0);
+						}
+						else if (strncasecmp(tok, "status=", 7) == 0) {
+							currule->rule.svc.stateexp = setup_expr(tok+7, 0);
+						}
+						else if (strncasecmp(tok, "col=", 4) == 0) {
+							currule->rule.svc.color = parse_color(tok+4);
+						}
+						else if (strncasecmp(tok, "color=", 6) == 0) {
+							currule->rule.svc.color = parse_color(tok+6);
+						}
+					} while (tok && (!isqual(tok)));
+
+					if (!currule->rule.svc.stateexp && !currule->rule.svc.startupexp) {
+						/* No criteria defined, so we'll assume they just want to check that the service is running */
+						currule->rule.svc.stateexp = setup_expr("started", 0);
 					}
-					else if (strncasecmp(tok, "status=", 7) == 0) {
-						currule->rule.svc.stateexp = setup_expr(tok+7, 0);
-					}
-					else if (strncasecmp(tok, "col=", 4) == 0) {
-						currule->rule.svc.color = parse_color(tok+4);
-					}
-					else if (strncasecmp(tok, "color=", 6) == 0) {
-						currule->rule.svc.color = parse_color(tok+6);
-					}
-				} while (tok && (!isqual(tok)));
+				}
 			}
 			else if (strcasecmp(tok, "MIB") == 0) {
 				currule = setup_rule(C_MIBVAL, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
@@ -1779,16 +1753,14 @@ void dump_client_config(void)
 			printf("CICS: Appid:%s, DSA warning:%d, DSA panic:%d, EDSA warning%d, EDSA panic:%d", rwalk->rule.cics.applid->pattern, rwalk->rule.cics.dsawarnlevel, rwalk->rule.cics.dsapaniclevel, rwalk->rule.cics.edsawarnlevel, rwalk->rule.cics.edsapaniclevel);
 			break;
 
-                  case C_SVC:
-                        printf("SVC");
-                        if (rwalk->rule.svc.svcexp)
-                                printf(" %s", rwalk->rule.svc.svcexp->pattern);
-                        if (rwalk->rule.svc.stateexp)
-                                printf(" status=%s", rwalk->rule.svc.stateexp->pattern);
-                        if (rwalk->rule.svc.startupexp)
-                                printf(" startup=%s", rwalk->rule.svc.startupexp->pattern);
-                        printf(" color=%s", colorname(rwalk->rule.svc.color));
-                        break;
+		  case C_SVC:
+			printf("SVC %s", rwalk->rule.svc.svcexp->pattern);
+			if (rwalk->rule.svc.stateexp)
+				printf(" status=%s", rwalk->rule.svc.stateexp->pattern);
+			if (rwalk->rule.svc.startupexp)
+				printf(" startup=%s", rwalk->rule.svc.startupexp->pattern);
+			printf(" color=%s", colorname(rwalk->rule.svc.color));
+			break;
 
 		  case C_MIBVAL:
 			printf("MIB");
@@ -3300,19 +3272,24 @@ static void add_count3(char *pname0, char *pname1, char *pname2 , mon_proc_t *he
 			if (mymatch == 3) {pwalk->rule->rule.port.pcount++;}
 			break;
 
-                  case C_SVC: 
-                        mymatch = 0;
+		  case C_SVC: 
+			mymatch = 0;
 
-                        if (check_expr_match(pname0, pwalk->rule->rule.svc.svcexp, NULL)) {
-                               mymatch++;
-                               pwalk->rule->rule.svc.startup = strdup(pname1);
-                               pwalk->rule->rule.svc.state = strdup(pname2);
-                              if (check_expr_match(pname1, pwalk->rule->rule.svc.startupexp, NULL)) mymatch++;
-            	              if (check_expr_match(pname2, pwalk->rule->rule.svc.stateexp, NULL)) mymatch++;
-                        }
+			if (check_expr_match(pname0, pwalk->rule->rule.svc.svcexp, NULL)) {
+				mymatch++;
 
-                        if (mymatch == 3) {pwalk->rule->rule.svc.scount++;}
-                        break;
+				/* Save the actual startup-method and state for later display in the status message */
+				pwalk->rule->rule.svc.svcname = strdup(pname0);
+				pwalk->rule->rule.svc.startup = strdup(pname1);
+				pwalk->rule->rule.svc.state = strdup(pname2);
+
+				/* Startupexp and stateexp are optional - if no criteria defined, then they do match */
+				if (!pwalk->rule->rule.svc.startupexp || check_expr_match(pname1, pwalk->rule->rule.svc.startupexp, NULL)) mymatch++;
+				if (!pwalk->rule->rule.svc.stateexp || check_expr_match(pname2, pwalk->rule->rule.svc.stateexp, NULL)) mymatch++;
+			}
+
+			if (mymatch == 3) {pwalk->rule->rule.svc.scount++;}
+			break;
 
 		  default:
 			break;
@@ -3367,7 +3344,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 	  case C_PORT:
 		result = (*walk)->rule->statustext;
 		if (!result) {
-			int sz = 0;
+			int sz = 1024;
 			char *p;
 
 			if ((*walk)->rule->rule.port.localexp)
@@ -3383,7 +3360,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 			if ((*walk)->rule->rule.port.exstateexp)
 				sz += strlen((*walk)->rule->rule.port.exstateexp->pattern) + 10;
 
-			(*walk)->rule->statustext = (char *)malloc(sz + 10);
+			(*walk)->rule->statustext = (char *)malloc(sz + 1);
 			p = (*walk)->rule->statustext;
 			if ((*walk)->rule->rule.port.localexp)
 				p += sprintf(p, "local=%s ", (*walk)->rule->rule.port.localexp->pattern);
@@ -3412,54 +3389,54 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		if (group) *group = (*walk)->rule->groups;
 		break;
 
-          case C_SVC:
- 		result = (*walk)->rule->statustext;
-                if (!result) { 
-			int sz = 0;
+	  case C_SVC:
+		result = (*walk)->rule->statustext;
+		if (!result) { 
+			int sz = 1024;
 			char *p;
 
-			if ((*walk)->rule->rule.svc.svcexp->pattern)
-				sz = strlen((*walk)->rule->rule.svc.svcexp->pattern);
 			/* Current state */
+			if ((*walk)->rule->rule.svc.svcname)
+				sz += strlen((*walk)->rule->rule.svc.svcname) + 10;
 			if ((*walk)->rule->rule.svc.startup)
-				sz += strlen((*walk)->rule->rule.svc.startup);
-			else
-				sz += strlen("Not Found");
+				sz += strlen((*walk)->rule->rule.svc.startup) + 10;
 			if ((*walk)->rule->rule.svc.state)
-				sz += strlen((*walk)->rule->rule.svc.state);
-			/* Rule state */
-			if ((*walk)->rule->rule.svc.startupexp->pattern)
-				sz += strlen((*walk)->rule->rule.svc.startupexp->pattern);
-                        if ((*walk)->rule->rule.svc.stateexp->pattern)
-                                sz += strlen((*walk)->rule->rule.svc.stateexp->pattern);
+				sz += strlen((*walk)->rule->rule.svc.state) + 10;
+			if ((*walk)->rule->rule.svc.startupexp)
+				sz += strlen((*walk)->rule->rule.svc.startupexp->pattern) + 10;
+			if ((*walk)->rule->rule.svc.stateexp)
+				sz += strlen((*walk)->rule->rule.svc.stateexp->pattern) + 10;
 
-			(*walk)->rule->statustext = (char *)malloc(sz + 12);
+			(*walk)->rule->statustext = (char *)malloc(sz + 1);
 			p = (*walk)->rule->statustext;
-			if ((*walk)->rule->rule.svc.svcexp->pattern)
-				p += sprintf(p, "%s is", (*walk)->rule->rule.svc.svcexp->pattern);
-			if ((*walk)->rule->rule.svc.startup)
-				p += sprintf(p, " %s", (*walk)->rule->rule.svc.startup);
-			else
-				p += sprintf(p, " %s", "Not Found");
-			if ((*walk)->rule->rule.svc.state)
-				p += sprintf(p, " %s",	(*walk)->rule->rule.svc.state);
-                        if ((*walk)->rule->rule.svc.startupexp->pattern)
-                                 p += sprintf(p, " req %s", (*walk)->rule->rule.svc.startupexp->pattern);
-			if ((*walk)->rule->rule.svc.stateexp->pattern)
-				p += sprintf(p, " %s", (*walk)->rule->rule.svc.stateexp->pattern);
+			if ((*walk)->rule->rule.svc.svcname) {
+				p += sprintf(p, "%s is %s/%s", (*walk)->rule->rule.svc.svcname,
+					     ((*walk)->rule->rule.svc.state ? (*walk)->rule->rule.svc.state : "Unknown"),
+					     ((*walk)->rule->rule.svc.startup ? (*walk)->rule->rule.svc.startup : "Unknown"));
+			}
+			else {
+				/* Did not find the service matching our wanted criteria */
+				p += sprintf(p, "%s: No matching service", (*walk)->rule->rule.svc.svcexp->pattern);
+			}
+			p += sprintf(p, " - want %s/%s",
+				     ((*walk)->rule->rule.svc.stateexp ? (*walk)->rule->rule.svc.stateexp->pattern : "Any"),
+				     ((*walk)->rule->rule.svc.startupexp ? (*walk)->rule->rule.svc.startupexp->pattern : "Any"));
 			*p = '\0';
 
 			result = (*walk)->rule->statustext;
-			/* We free the extra buffer */
+
+			/* We free the extra buffers */
+			if ((*walk)->rule->rule.svc.svcname)
+				xfree((*walk)->rule->rule.svc.svcname);
 			if ((*walk)->rule->rule.svc.state)
 				xfree((*walk)->rule->rule.svc.state);
 			if ((*walk)->rule->rule.svc.startup)
 				xfree((*walk)->rule->rule.svc.startup);
 		}
-                *count = (*walk)->rule->rule.svc.scount;
+		*count = (*walk)->rule->rule.svc.scount;
 		if (*count == 0) *color = (*walk)->rule->rule.svc.color;
-                if (group) *group = (*walk)->rule->groups;
-                break;
+		if (group) *group = (*walk)->rule->groups;
+		break;
 
 	  default: break;
 	}
