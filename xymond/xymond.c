@@ -60,7 +60,6 @@ static char rcsid[] = "$Id$";
 #include "xymond_ipc.h"
 
 #define DISABLED_UNTIL_OK -1
-#define LASTCHANGESZ 10
 
 /*
  * The absolute maximum size we'll grow our buffers to accomodate an incoming message.
@@ -79,6 +78,10 @@ static char rcsid[] = "$Id$";
 
 /* How long are sub-client messages valid */
 #define MAX_SUBCLIENT_LIFETIME 960	/* 15 minutes + a bit */
+
+#define DEFAULT_FLAPCOUNT 5
+int flapcount = DEFAULT_FLAPCOUNT;
+int flapthreshold = (DEFAULT_FLAPCOUNT+1)*5*60;	/* Seconds - if more than flapcount changes during this period, it's flapping */
 
 htnames_t *metanames = NULL;
 typedef struct xymond_meta_t {
@@ -115,7 +118,7 @@ typedef struct xymond_log_t {
 	char *testflags;
 	char *grouplist;        /* For extended status reports (e.g. from xymond_client) */
 	char sender[IP_ADDR_STRLEN];
-	time_t lastchange[LASTCHANGESZ];	/* time when the currently logged status began */
+	time_t *lastchange;	/* Table of times when the currently logged status began */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
 	time_t enabletime;	/* time when test auto-enables after a disable */
@@ -172,7 +175,7 @@ int      ignoretraced = 0;
 int      clientsavemem = 1;	/* In memory */
 int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
-int	flapthreshold = 600;	/* Seconds - if more than LASTCHANGESZ changes during this period, it's flapping */
+
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -1086,6 +1089,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
 			lwalk = (xymond_log_t *)calloc(1, sizeof(xymond_log_t));
+			lwalk->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
@@ -1233,18 +1237,18 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	/*
 	 * Flap check. 
 	 *
-	 * We check if more than LASTCHANGESZ changes have occurred 
+	 * We check if more than flapcount changes have occurred 
 	 * within "flapthreshold" seconds. If yes, and the newcolor 
 	 * is less serious than the old color, then we ignore the
 	 * color change and keep the status at the more serious level.
 	 */
-	if (modifyonly) {
+	if (modifyonly || issummary) {
 		/* Nothing */
 	}
-	else if (!issummary && ((now - log->lastchange[LASTCHANGESZ-1]) < flapthreshold)) {
+	else if ((flapcount > 0) && ((now - log->lastchange[flapcount-1]) < flapthreshold)) {
 		if (!log->flapping) {
 			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
-				  hostname, testname, LASTCHANGESZ, (now - log->lastchange[LASTCHANGESZ-1]));
+				  hostname, testname, flapcount, (now - log->lastchange[flapcount-1]));
 			log->flapping = 1;
 			log->oldflapcolor = log->color;
 			log->currflapcolor = newcolor;
@@ -1265,7 +1269,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 */
 		if ((log->oldflapcolor != log->currflapcolor) && (newcolor == log->color)) {
 			int i;
-			for (i=LASTCHANGESZ-1; (i > 0); i--)
+			for (i=flapcount-1; (i > 0); i--)
 				log->lastchange[i] = log->lastchange[i-1];
 			log->lastchange[0] = now;
 		}
@@ -1485,8 +1489,12 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
 						hostname, log, NULL);
 			}
-			for (i=LASTCHANGESZ-1; (i > 0); i--)
-				log->lastchange[i] = log->lastchange[i-1];
+
+			if (flapcount > 0) {
+				/* We keep track of flaps, so update the lastchange table */
+				for (i=flapcount-1; (i > 0); i--)
+					log->lastchange[i] = log->lastchange[i-1];
+			}
 			log->lastchange[0] = now;
 			log->statuschangecount++;
 		}
@@ -2724,7 +2732,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_FLAPINFO:
 			bufp += sprintf(bufp, "%d/%ld/%ld/%s/%s", 
 					lwalk->flapping, 
-					lwalk->lastchange[0], lwalk->lastchange[LASTCHANGESZ-1],
+					lwalk->lastchange[0], (flapcount > 0) ? lwalk->lastchange[flapcount-1] : 0,
 					colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor]);
 			break;
 
@@ -3306,6 +3314,7 @@ void do_message(conn_t *msg, char *origin)
 		xymond_hostlist_t *hwalk;
 		xymond_log_t *lwalk, *firstlog;
 		xymond_log_t infologrec, rrdlogrec;
+		time_t *dummytimes;
 		testinfo_t trendstest, infotest;
 		char *buf, *bufp;
 		int bufsz;
@@ -3333,6 +3342,7 @@ void do_message(conn_t *msg, char *origin)
 		bufp = buf = (char *)malloc(bufsz);
 
 		/* Setup fake log-records for the "info" and "trends" data. */
+		dummytimes = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 		memset(&infotest, 0, sizeof(infotest));
 		infotest.name = xgetenv("INFOCOLUMN");
 		memset(&infologrec, 0, sizeof(infologrec));
@@ -3345,6 +3355,7 @@ void do_message(conn_t *msg, char *origin)
 
 		infologrec.color = rrdlogrec.color = COL_GREEN;
 		infologrec.message = rrdlogrec.message = "";
+		infologrec.lastchange = rrdlogrec.lastchange = dummytimes;
 
 		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
 			hwalk = gettreeitem(rbhosts, hosthandle);
@@ -3380,6 +3391,8 @@ void do_message(conn_t *msg, char *origin)
 				}
 			}
 
+			rrdlogrec.host = infologrec.host = hwalk;
+
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
 				if (!match_test_filter(lwalk, stest, scolor)) continue;
 
@@ -3400,6 +3413,7 @@ void do_message(conn_t *msg, char *origin)
 		msg->buflen = (bufp - buf);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
 
+		xfree(dummytimes);
 		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 	else if ((strncmp(msg->buf, "xymondxboard", 12) == 0) || (strncmp(msg->buf, "hobbitdxboard", 13) == 0)) {
@@ -4287,6 +4301,7 @@ void load_checkpoint(char *fn)
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
+		ltail->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 		ltail->lastchange[0] = lastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
@@ -4567,8 +4582,16 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--dbghost=")) {
 			char *p = strchr(argv[argi], '=');
-
 			dbghost = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--flap-seconds=")) {
+			char *p = strchr(argv[argi], '=');
+			flapthreshold = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--flap-count=")) {
+			char *p = strchr(argv[argi], '=');
+			flapcount = atoi(p+1);
+			if (flapcount < 0) flapcount = 0;
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');

@@ -78,6 +78,24 @@ received more than N seconds after the connection was accepted, then
 the connection is dropped and any status message is discarded.
 Default: 10 seconds.
 
+.IP "--flap-count=N"
+Track the N latest status-changes for flap-detection. See the
+\fB--flap-seconds\fR option also. To disable flap-checks, set
+N to zero.
+Default: 5
+
+.IP "--flap-seconds=N"
+If a status changes more than \fBflap-count\fR times in N seconds or 
+less, then it is considered to be flapping. In that case, the status 
+is locked at the most severe level until the flapping stops. The 
+history information is not updated after the flapping is detected. 
+\fBNOTE:\fR If this is set higher than the default value, you should 
+also use the \fB--flap-count\fR option to ensure that enough status-changes 
+are stored for flap detection to work. The flap-count setting should be
+at least (N/300)-1, e.g. if you set flap-seconds to 3600 (1 hour), then 
+flap-count should be at least (3600/300)-1, i.e. 11.
+Default: 1800 seconds (30 minutes).
+
 .IP "--env=FILENAME"
 Loads the content of FILENAME as environment settings before starting
 xymond. This is mostly used when running as a stand-alone daemon; if
