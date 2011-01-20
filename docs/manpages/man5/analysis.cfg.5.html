@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of ANALYSIS.CFG</TITLE>
 </HEAD><BODY>
 <H1>ANALYSIS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -501,7 +501,15 @@ number of active SSH connections, and warn if there are more than 5.
 
 <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PORT&nbsp;LOCAL=%[.:]22$&nbsp;STATE=ESTABLISHED&nbsp;MAX=5&nbsp;TRACK=ssh&nbsp;TEXT=SSH
 <P>
+<P>
 <A NAME="lbAM">&nbsp;</A>
+<H2>SVCS status (Microsoft Windows clients)</H2>
+
+<P>
+<B>SVC servicename status=(started|stopped) [startup=automatic|disabled|manual]</B>
+
+<P>
+<A NAME="lbAN">&nbsp;</A>
 <H2>DS - RRD based status override</H2>
 
 <P>
@@ -536,7 +544,7 @@ Example: Flag &quot;conn&quot; status a yellow if responsetime exceeds
 
 <TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>DS tcp.conn.rrd:sec &gt;0.1 COLOR=yellow TEXT=&quot;Response time &amp;V exceeds &amp;U seconds&quot;<BR>
 <P>
-<A NAME="lbAN">&nbsp;</A>
+<A NAME="lbAO">&nbsp;</A>
 <H2>MQ Series SETTINGS</H2>
 
 <P>
@@ -562,7 +570,7 @@ can warn or alert based on the reported status of the channel. The
 PATTERN is a normal pattern, i.e. either a list of status keywords,
 or a regular expression pattern.
 <P>
-<A NAME="lbAO">&nbsp;</A>
+<A NAME="lbAP">&nbsp;</A>
 <H2>CHANGING THE DEFAULT SETTINGS</H2>
 
 If you would like to use different defaults for the settings described above, 
@@ -584,7 +592,7 @@ DEFAULT
 <P>
 
 <P>
-<A NAME="lbAP">&nbsp;</A>
+<A NAME="lbAQ">&nbsp;</A>
 <H2>RULES TO SELECT HOSTS</H2>
 
 All of the settings can be applied to a group of hosts, by preceding them with
@@ -657,7 +665,7 @@ time specification in the hosts.cfg file.  E.g. &quot;TIME=W:0800:2200&quot;
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
 <P>
-<A NAME="lbAQ">&nbsp;</A>
+<A NAME="lbAR">&nbsp;</A>
 <H2>DIRECTING ALERTS TO GROUPS</H2>
 
 For some tests - e.g. &quot;procs&quot; or &quot;msgs&quot; - the right group of people
@@ -675,7 +683,7 @@ can use it in the alert rule definitions in
 
 to direct alerts to the correct group of people.
 <P>
-<A NAME="lbAR">&nbsp;</A>
+<A NAME="lbAS">&nbsp;</A>
 <H2>RULES: APPLYING SETTINGS TO SELECTED HOSTS</H2>
 
 Rules must be placed after the settings, e.g.
@@ -725,7 +733,7 @@ match found is used. So you should put the specific settings first, and
 the generic ones last.
 <P>
 <P>
-<A NAME="lbAS">&nbsp;</A>
+<A NAME="lbAT">&nbsp;</A>
 <H2>NOTES</H2>
 
 For the LOG, FILE and DIR checks, it is necessary also to configure the actual 
@@ -746,7 +754,7 @@ cryptographically safe. The MD5 algorithm has been shown to have some weaknesses
 is not considered strong enough when a high level of security is required.
 <P>
 <P>
-<A NAME="lbAT">&nbsp;</A>
+<A NAME="lbAU">&nbsp;</A>
 <H2>SEE ALSO</H2>
 
 <A HREF="../man8/xymond_client.8.html">xymond_client</A>(8), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
@@ -767,19 +775,20 @@ is not considered strong enough when a high level of security is required.
 <DT><A HREF="#lbAJ">MSGS STATUS COLUMN SETTINGS</A><DD>
 <DT><A HREF="#lbAK">FILES STATUS COLUMN SETTINGS</A><DD>
 <DT><A HREF="#lbAL">PORTS STATUS COLUMN SETTINGS</A><DD>
-<DT><A HREF="#lbAM">DS - RRD based status override</A><DD>
-<DT><A HREF="#lbAN">MQ Series SETTINGS</A><DD>
-<DT><A HREF="#lbAO">CHANGING THE DEFAULT SETTINGS</A><DD>
-<DT><A HREF="#lbAP">RULES TO SELECT HOSTS</A><DD>
-<DT><A HREF="#lbAQ">DIRECTING ALERTS TO GROUPS</A><DD>
-<DT><A HREF="#lbAR">RULES: APPLYING SETTINGS TO SELECTED HOSTS</A><DD>
-<DT><A HREF="#lbAS">NOTES</A><DD>
-<DT><A HREF="#lbAT">SEE ALSO</A><DD>
+<DT><A HREF="#lbAM">SVCS status (Microsoft Windows clients)</A><DD>
+<DT><A HREF="#lbAN">DS - RRD based status override</A><DD>
+<DT><A HREF="#lbAO">MQ Series SETTINGS</A><DD>
+<DT><A HREF="#lbAP">CHANGING THE DEFAULT SETTINGS</A><DD>
+<DT><A HREF="#lbAQ">RULES TO SELECT HOSTS</A><DD>
+<DT><A HREF="#lbAR">DIRECTING ALERTS TO GROUPS</A><DD>
+<DT><A HREF="#lbAS">RULES: APPLYING SETTINGS TO SELECTED HOSTS</A><DD>
+<DT><A HREF="#lbAT">NOTES</A><DD>
+<DT><A HREF="#lbAU">SEE ALSO</A><DD>
 </DL>
 <HR>
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 17:30:02 GMT, November 14, 2010
+Time: 21:08:18 GMT, January 20, 2011
 </BODY>
 </HTML>

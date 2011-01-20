@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND_HISTORY</TITLE>
 </HEAD><BODY>
 <H1>XYMOND_HISTORY</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -39,6 +39,12 @@ directory given by the XYMONHISTDIR environment is used.
 The directory for the historical status-logs. If not specified, the
 directory given by the XYMONHISTLOGS environment is used.
 <P>
+<DT>--minimum-free=N<DD>
+Sets the minimum percentage of free filesystem space on the $XYMONHISTLOGS
+directory. If there is less than N% free space, xymond_history will
+not save the detailed status-logs.
+Default: 5
+<P>
 <DT>--debug<DD>
 Enable debugging output.
 <P>
@@ -69,6 +75,11 @@ log-display of a status from the Xymon &quot;History&quot; page. If you
 do not want to save these, you can disable it by setting SAVESTATUSLOG=FALSE.
 If you want to save all except some specific logs, use SAVESTATUSLOG=TRUE,!TEST1[,!TEST2...]
 If you want to save none except some specific logs, use SAVESTATUSLOG=FALSE,TEST1[,TEST2...]
+<BR>
+
+NOTE: Status logs will not be saved if there is less than 5% free space on 
+the filesystem hosting the $XYMONHISTLOGS directory. The threshold can
+be tuned via the &quot;--minimum-free&quot; option.
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -98,6 +109,6 @@ This module does not rely on any configuration files.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 17:30:02 GMT, November 14, 2010
+Time: 21:08:18 GMT, January 20, 2011
 </BODY>
 </HTML>

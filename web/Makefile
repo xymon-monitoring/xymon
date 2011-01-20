@@ -1,5 +1,5 @@
-PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi showgraph.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi perfdata.cgi useradm.cgi
-CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh showgraph.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh hostlist.sh perfdata.sh topchanges.sh
+PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi showgraph.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi perfdata.cgi useradm.cgi pagestats.cgi
+CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh showgraph.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh hostlist.sh perfdata.sh topchanges.sh pagestats.sh
 SECCGISCRIPTS = acknowledge.sh enadis.sh criticaleditor.sh ackinfo.sh useradm.sh
 
 LIBOBJS = ../lib/libxymon.a
@@ -32,6 +32,7 @@ USERADMOBJS	= useradm.o
 
 HOSTGRAPHSOBJS  = hostgraphs.o
 BOILERPLATEOBJS = boilerplate.o
+PAGESTATSOBJS	= pagestats.o
 
 
 IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else echo id; fi)
@@ -124,6 +125,9 @@ perfdata.cgi: $(PERFDATAOBJS) $(LIBOBJS)
 
 useradm.cgi: $(USERADMOBJS) $(LIBOBJS)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(USERADMOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+
+pagestats.cgi: $(PAGESTATSOBJS) $(LIBOBJS)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PAGESTATSOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 
 acknowledge.sh: acknowledge.sh.DIST
@@ -236,6 +240,10 @@ useradm.sh: useradm.sh.DIST
 	chmod 755 $@
 
 topchanges.sh: topchanges.sh.DIST
+	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	chmod 755 $@
+
+pagestats.sh: pagestats.sh.DIST
 	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 

@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 14 Nov 2010<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -96,6 +96,24 @@ Set the timeout used for incoming connections. If a status has not been
 received more than N seconds after the connection was accepted, then
 the connection is dropped and any status message is discarded.
 Default: 10 seconds.
+<P>
+<DT>--flap-count=N<DD>
+Track the N latest status-changes for flap-detection. See the
+<B>--flap-seconds</B> option also. To disable flap-checks, set
+N to zero.
+Default: 5
+<P>
+<DT>--flap-seconds=N<DD>
+If a status changes more than <B>flap-count</B> times in N seconds or 
+less, then it is considered to be flapping. In that case, the status 
+is locked at the most severe level until the flapping stops. The 
+history information is not updated after the flapping is detected. 
+<B>NOTE:</B> If this is set higher than the default value, you should 
+also use the <B>--flap-count</B> option to ensure that enough status-changes 
+are stored for flap detection to work. The flap-count setting should be
+at least (N/300)-1, e.g. if you set flap-seconds to 3600 (1 hour), then 
+flap-count should be at least (3600/300)-1, i.e. 11.
+Default: 1800 seconds (30 minutes).
 <P>
 <DT>--env=FILENAME<DD>
 Loads the content of FILENAME as environment settings before starting
@@ -355,6 +373,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 17:30:02 GMT, November 14, 2010
+Time: 21:08:18 GMT, January 20, 2011
 </BODY>
 </HTML>
