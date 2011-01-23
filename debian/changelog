@@ -1,7 +1,8 @@
 xymon (4.3.0-0.20110120.rc1) unstable; urgency=low
 
-  * 4.3.0 RC1 release - rev 6623
+  * 4.3.0 RC1 release - rev 6627
 
+  * hosts.cfg badldap documentation: Document that for LDAP URL's you must use 'badldapurl'. Reported by Simo Hmami.
   * xymond flap detection: Make number of tracked status changes and the flap-check period configurable. Change the defaults to trigger flapping at more than 5 status changes in a 30 minute period.
   * sendmessage: Enhanced error reporting, to help track down communication problems.
   * xymond_client: Fix Windows SVC status handling to avoid coredumps, memory corruption and other nasties. 
@@ -32,7 +33,7 @@ xymon (4.3.0-0.20110120.rc1) unstable; urgency=low
   * xymonserver.cfg.DIST: Missing end-quote in compatibility BBSERVERSECURECGIURL setting. From Ralph Mitchell
   * xymongrep: Fix broken commandline parsing resulting from trying to be backwards-compatible. Reported by Jason Chambers.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Thu, 20 Jan 2011 16:00:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 23 Jan 2011 12:36:00 +0100
 
 xymon (4.3.0-0.20101114.beta3) unstable; urgency=low
 
