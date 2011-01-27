@@ -329,7 +329,7 @@ void generate_critpage(FILE *output, char *hfprefix)
         }
         else {
                 /* "All Monitored Systems OK */
-		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
+		fprintf(output, "%s", xgetenv("XYMONALLOKTEXT"));
         }
 
         fprintf(output, "</center>\n");
@@ -401,6 +401,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	char *critconfig = NULL;
+	char *hffile = "critical";
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -425,6 +426,10 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			critconfig = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--hffile=")) {
+			char *p = strchr(argv[argi], '=');
+			hffile = strdup(p+1);
+		}
 	}
 
 	redirect_cgilog("criticalview");
@@ -439,7 +444,7 @@ int main(int argc, char *argv[])
 
 	if (loadstatus(maxprio, maxage, mincolor, wantacked) == 0) {
 		use_recentgifs = 1;
-		generate_critpage(stdout, "critical");
+		generate_critpage(stdout, hffile);
 	}
 	else {
 		fprintf(stdout, "Cannot load Xymon status\n");

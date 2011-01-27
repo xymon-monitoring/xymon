@@ -30,6 +30,11 @@ Hide the host description in a "tooltip", i.e. it will be shown when your
 mouse hovers over the hostname on the webpage. This saves space on the 
 display so there is more room for the status columns.
 
+.IP "--hffile=PREFIX"
+Define the header/footer files used when building the webpage. The actual
+files used will be PREFIX_header and PREFIX_footer found in the ~xymon/server/web/ 
+directory. Default: critical.
+
 .IP "--env=FILENAME"
 Loads the environment defined in FILENAME before executing the CGI script.
 

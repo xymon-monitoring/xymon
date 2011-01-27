@@ -1127,8 +1127,8 @@ int do_nongreen_page(char *nssidebarfilename, int summarytype)
 		do_hosts(nongreenpage.hosts, 0, NULL, NULL, output, rssoutput, "", summarytype, NULL);
 	}
 	else {
-		/* "All Monitored Systems OK */
-		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
+		/* All Monitored Systems OK */
+		fprintf(output, "%s", xgetenv("XYMONALLOKTEXT"));
 	}
 
 	if ((snapshot == 0) && (summarytype == PAGE_NONGREEN)) {

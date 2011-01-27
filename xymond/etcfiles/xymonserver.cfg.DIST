@@ -169,6 +169,7 @@ XYMONPAGETITLE="COLOR=\"#FFFFF0\" SIZE=\"+1\""	# Size and color of the Xymon tit
 XYMONDATEFORMAT="%a %b %d %H:%M:%S %Y"		# Date format
 XYMONRSSTITLE="Xymon Alerts"			# Title for the RSS and WML outputs.
 ACKUNTILMSG="Next update at: %H:%M %Y-%m-%d"    # strftime format for the acknowledgement status display.
+XYMONALLOKTEXT="<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>"
 
 # Stylesheet and menu control stuff
 XYMONBODYCSS="$XYMONSKIN/xymonbody.css"			# Stylesheet used for the Xymon webpage body
