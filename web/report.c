@@ -195,8 +195,8 @@ int main(int argc, char *argv[])
 	char *xymongen_argv[20];
 	pid_t childpid;
 	int childstat;
-	char htmldelim[20];
-	char startstr[20], endstr[20];
+	char htmldelim[100];
+	char startstr[30], endstr[30];
 	int cleanupoldreps = 1;
 	int argi, newargi;
 	char *envarea = NULL;
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 	if (xgetenv("XYMONGEN")) sprintf(xymongencmd, "%s", xgetenv("XYMONGEN"));
 	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("XYMONHOME"));
 
-	sprintf(xymongentimeopt, "--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
+	snprintf(xymongentimeopt, sizeof(xymongentimeopt)-1,"--reportopts=%u:%u:1:%s", (unsigned int)starttime, (unsigned int)endtime, style);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
 	if (!csvoutput) {
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
-		sprintf(htmldelim, "xymonrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
+		snprintf(htmldelim, sizeof(htmldelim)-1, "xymonrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("--%s\n", htmldelim);

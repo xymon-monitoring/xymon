@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	char *xymongen_argv[20];
 	pid_t childpid;
 	int childstat;
-	char htmldelim[20];
+	char htmldelim[100];
 	char startstr[20];
 	int argi, newargi;
 	char *envarea = NULL;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 
 	if (usemultipart) {
 		/* Output the "please wait for report ... " thing */
-		sprintf(htmldelim, "xymonrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
+		snprintf(htmldelim, sizeof(htmldelim)-1, "xymonrep-%u-%u", (int)getpid(), (unsigned int)getcurrenttime(NULL));
 		printf("Content-type: multipart/mixed;boundary=%s\n", htmldelim);
 		printf("\n");
 		printf("%s\n", htmldelim);
