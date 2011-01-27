@@ -221,7 +221,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				p = strchr(m1, '\n'); if (p) *p = '\0';
 			}
 			else {
-				sprintf(m1, "HTTP error %ld", req->httpstatus);
+				sprintf(m1, "Connected, but got empty response (code:%ld)", req->httpstatus);
 			}
 			addtobuffer(msgtext, m1);
 			req->errorcause = strdup(m1);
