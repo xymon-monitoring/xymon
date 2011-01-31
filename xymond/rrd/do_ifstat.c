@@ -228,13 +228,13 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				dmatch = 0;
 			}
 
-			if (ifname && strcmp(ifname, "mac") == 0) {
-				/* Ignore "mac" entries - these are for sub-devices for multiple nic's aggregated into one */
+			/* Ignore "mac" and "wrsmd" entries - these are for sub-devices for multiple nic's aggregated into one */
+			/* See http://www.xymon.com/archive/2009/06/msg00204.html for more info */
+			if (ifname && ((strcmp(ifname, "mac") == 0) || (strcmp(ifname, "wrsmd") == 0)) ) {
 				xfree(ifname); xfree(txstr);
 				dmatch = 0;
 			}
-			if (dummy && strcmp(dummy, "mac") == 0) {
-				/* Ignore "mac" entries - these are for sub-devices for multiple nic's aggregated into one */
+			if (dummy && ((strcmp(dummy, "mac") == 0) || (strcmp(dummy, "wrsmd") == 0)) ) {
 				xfree(dummy); xfree(rxstr);
 				dmatch = 0;
 			}

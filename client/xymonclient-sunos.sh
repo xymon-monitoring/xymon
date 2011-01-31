@@ -53,7 +53,8 @@ echo "[ports]"
 netstat -na -f inet -P tcp | tail +3
 netstat -na -f inet6 -P tcp | tail +5
 echo "[ifstat]"
-/usr/bin/kstat -p -s '[or]bytes64' | sort
+# Leave out the wrmsd and mac interfaces. See http://www.xymon.com/archive/2009/06/msg00204.html
+/usr/bin/kstat -p -s '[or]bytes64' | egrep -v 'wrsmd|mac' | sort
 echo "[ps]"
 ps -A -o pid,ppid,user,stime,s,pri,pcpu,time,pmem,rss,vsz,args
 
