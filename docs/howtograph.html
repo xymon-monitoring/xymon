@@ -12,6 +12,23 @@ allowing you to add your own tests. For many kinds of tests, it
 is nice to view them over a period of time in a graph - this 
 document tells you how to do that.
 
+<h1>The NCV (Name-Colon-Value) and SPLITNCV methods</h1>
+<p>In many cases it is quite trivial to collect some data and
+send them to Xymon in format like this:</p>
+<pre>
+  Name: Value
+</pre>
+<p>e.g. if you have a device that collects weather information,
+it might look like</p>
+<pre>
+  Temperature: 19.2
+  Humidity: 53
+  Wind: 9.6
+</pre>
+<p>In Xymon, this is known as <b>NCV</b> - Name, Colon, Value - 
+formatted data, and Xymon has built-in support to pick up data
+formatted this way, and collect the data for graphs.</p>
+
 <h2>Make a script to collect the data</h2>
 <p>First create your test data. Typically, this is an extension
 script that sends in some data to Xymon, using a <b>status</b> or
@@ -107,6 +124,17 @@ setting to xymonserver.cfg:</p>
 <p>This tells the xymond_rrd module that it should create an RRD file with
 two datasets of type GAUGE instead of the default (DERIVE). The setting must
 be named NCV_&lt;columnname&gt;.</p>
+
+<p>In some cases it can be useful to use multiple RRD files - one for
+each dataset - instead of putting all of the datasets into one RRD file.
+E.g. if you want to add or remove datasets over time - if they are
+all stored in one RRD file then you have to dump, modify and reload the 
+data from the RRD file. If you store each dataset in a separate file,
+then you can just delete the file. Xymon supports this if you call this
+setting <b>SPLITNCV</b> instead of NCV. Then Xymon will store each
+dataset in an RRD file <tt>column,dataset.rrd</tt>, e.g. <tt>slab,inodecache.rrd</tt>,
+and the name of the dataset will be &quot;<b>lambda</b>&quot;.
+Apart from this, the setup is identical for the NCV- and SPLITNCV-methods.</p>
 
 <p>The xymonserver.cfg file is not reloaded automatically, so you must restart
 Xymon after making these changes. Or at least, kill the xymond_rrd processes
@@ -226,6 +254,82 @@ when the RRD file is created, and cannot be changed on the fly.</p>
 <h3>No graph on the status page, but OK on the trends page</h3>
 <p>Make sure you have <b>ncv</b> listed in the GRAPHS setting in xymonserver.cfg. 
 (Don't ask why - just take my word that it must be there).</p>
+
+
+<h1>More advanced: Sending a &quot;trends&quot; message</h1>
+<p>The NCV method works fine in many cases, but you may run
+into a situation where it isn't really suitable. One possible
+problem with this method is that you can only store data in 
+a single RRD file using the NCV method, and there may be
+situations where you want to use multiple RRD files for
+flexibility - e.g. if you are reporting performance for a
+number of applications, then it is useful to have one RRD
+file for each application. And since there are different
+performance metrics for each application, you cannot use
+the SPLITNCV method.</p>
+
+<p>Xymon supports a different method for collecting data in
+these cases - you can send a "trends" message to Xymon with
+the data you want to put into a graph. All hosts appearing
+on the Xymon server already have a "trends" status column,
+but if you send a "trends" status message to Xymon, it will
+not show up in the "trends" column - instead, it will be used
+to create/update an RRD file with data. And inside the "trends"
+message, you can define exactly what RRD files you want to
+use, how they are formatted, what data goes into the RRD
+file and so on. Here is an example of a "trends" message,
+using the same data that we used in the example above for
+collecting some data about the current weather:</p>
+
+<pre>
+data berlin.trends
+[weather.rrd]
+DS:temperature:GAUGE:600:U:U 19.2
+DS:humidity:GAUGE:600:0:U 72
+DS:wind:GAUGE:600:0:U 9.6
+</pre>
+
+<p>This creates an RRD file for the host "berlin", called "weather.rrd".
+The RRD file has three datasets: temperature, humidity and wind,
+all of which are of the GAUGE datatype. For more information about
+the DS definitions, see the
+.I rrdcreate(1)
+manpage. The current values for each of the datasets is specified
+after the DS definition.</p>
+<p>If the RRD file already exists, then it just updates the data.</p>
+
+<p>You still need to create graph definitions on the Xymon server,
+and if you want the trend graphs displayed on the "trends" status
+page then you must also add the graph name to the "TEST2RRD" and
+"GRAPHS" settings in 
+.I xymonserver.cfg(5)
+but it is not necessary to restart the xymond_rrd program.</p>
+
+<p>If you want to create more than one RRD file, you just
+add more data in the "trends" status message. E.g. if you have
+three applications with performance metrics:</p>
+<pre>
+data appserver.trends
+[salaryapp.rrd]
+DS:usercount:GAUGE:600:0:U 210
+DS:payrollgeneration:GAUGE:600:0:U 29
+[bulkmailapp.rrd]
+DS:customercount:GAUGE:600:0:U 1922
+DS:mailsize:GAUGE:600:0:U 61293
+DS:transmissiontime:GAUGE:600:0:U 88
+</pre>
+
+<p>This will create 2 RRD files, <b>salaryapp.rrd</b> with performance
+metrics from the Salary application, and <b>bulkmailapp.rrd</b> with
+performance metrics from the bulkmail application. Note that the
+metrics collected are quite different - you have total control over
+which RRD files get created, what datasets they contain etc.</p>
+
+<p>To view the graphs, you still need to setup a definition for
+generating the graphs in the <b>graphs.cfg</b> configuration file,
+and the graph definition must be listed in both the TEST2RRD- and
+GRAPHS-settings in xymonserver.cfg - then the graph will appear
+on the "trends" page.</p>
 
 </body>
 </html>
