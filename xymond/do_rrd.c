@@ -328,6 +328,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		int rrddefcount, i;
 		char *rrakey = NULL;
 		char stepsetting[10];
+		int havestepsetting = 0, fixcount = 2;
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
@@ -345,12 +346,20 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		rrdcreate_params = (char **)calloc(4 + pcount + rrddefcount + 1, sizeof(char *));
 		rrdcreate_params[0] = "rrdcreate";
 		rrdcreate_params[1] = filedir;
-		rrdcreate_params[2] = "-s";
-		rrdcreate_params[3] = stepsetting;
+
+		/* Is there already a step-setting in the rrddefinitions? */
+		for (i=0; (!havestepsetting && (i < rrddefcount)); i++) 
+			havestepsetting = ((strcmp(rrddefinitions[i], "-s") == 0) || (strcmp(rrddefinitions[i], "--step") == 0));
+		if (!havestepsetting) {
+			rrdcreate_params[2] = "-s";
+			rrdcreate_params[3] = stepsetting;
+			fixcount = 4;
+		}
+
 		for (i=0; (i < pcount); i++)
-			rrdcreate_params[4+i]      = creparams[i];
+			rrdcreate_params[fixcount+i]      = creparams[i];
 		for (i=0; (i < rrddefcount); i++, pcount++)
-			rrdcreate_params[4+pcount] = rrddefinitions[i];
+			rrdcreate_params[fixcount+pcount] = rrddefinitions[i];
 
 		if (debug) {
 			for (i = 0; (rrdcreate_params[i]); i++) {
