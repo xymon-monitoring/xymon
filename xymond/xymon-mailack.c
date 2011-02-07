@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 			else if ((strncasecmp(STRBUF(inbuf), "ack=", 4) == 0) || (strncasecmp(STRBUF(inbuf), "ack ", 4) == 0)) {
 				/* Some systems cannot generate a subject. Allow them to ack
 				 * via text in the message body. */
-				subjectline = (char *)malloc(1024);
-				snprintf(subjectline, 1023, "Subject: Xymon [%s]", STRBUF(inbuf)+4);
+				subjectline = (char *)malloc(STRBUFLEN(inbuf) + 1024);
+				sprintf(subjectline, "Subject: Xymon [%s]", STRBUF(inbuf)+4);
 			}
 			else if (*STRBUF(inbuf) && !firsttxtline) {
 				/* Save the first line of the message body, but ignore blank lines */
