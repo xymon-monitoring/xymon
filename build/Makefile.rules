@@ -57,7 +57,15 @@ endif
 
 all: include/config.h $(BUILDTARGETS)
 	@echo ""
-	@echo "Build complete. Now run '${MAKE} install' as root"
+	@echo "Build complete."
+	@echo ""
+	@echo "#####################################################################"
+	@echo "IMPORTANT: If upgrading from 4.2.x, see the docs/upgrade-to-430.txt"
+	@echo "           file for instructions. You must run build/upgrade430.sh"
+	@echo "           before installing the new version."
+	@echo "#####################################################################"
+	@echo ""
+	@echo "Now run '${MAKE} install' as root"
 	@echo ""
 
 client: include/config.h $(CLIENTTARGETS)
