@@ -75,8 +75,8 @@ typedef struct alertanchor_t {
 activealerts_t *ahead = NULL;
 
 char *statename[] = {
-	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD */
-	"paging", "norecip", "acked", "recovered", "notify", "dead"
+	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD */
+	"paging", "norecip", "acked", "recovered", "disabled", "notify", "dead"
 };
 
 char *find_name(RbtHandle tree, char *name)
@@ -662,7 +662,7 @@ int main(int argc, char *argv[])
 				 * Dont update the color here - we want recoveries to go out 
 				 * only if the alert color triggered an alert
 				 */
-				awalk->state = A_RECOVERED;
+				awalk->state = (newcolor == COL_BLUE) ? A_DISABLED : A_RECOVERED;
 			}
 
 			if (oldalertstatus != newalertstatus) {
@@ -865,6 +865,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case A_RECOVERED:
+			  case A_DISABLED:
 			  case A_NOTIFY:
 				anytogo++;
 				break;
@@ -895,6 +896,7 @@ int main(int argc, char *argv[])
 						break;
 
 					  case A_RECOVERED:
+					  case A_DISABLED:
 					  case A_NOTIFY:
 						send_alert(awalk, notiflogfd);
 						break;
@@ -929,6 +931,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case A_RECOVERED:
+			  case A_DISABLED:
 			  case A_NOTIFY:
 				awalk->state = A_DEAD;
 				/* Fall through */

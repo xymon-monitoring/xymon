@@ -169,7 +169,8 @@ As BBHOSTSVC, but dots in the hostname replaced with commas
 A 22-digit number made by BBSVCNUM, MACHIP and ACKCODE.
 .sp
 .BR RECOVERED
-Is "1" if the service has recovered.
+Is "0" if the service is alerting, "1" if the service has 
+recovered, "2" if the service was disabled.
 .sp
 .BR EVENTSTART
 Timestamp when the current status (color) began.

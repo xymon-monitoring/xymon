@@ -958,7 +958,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		return result;
 	}
 
-	if (alert->state == A_RECOVERED) {
+	if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 		/*
 		 * Dont do the check until we are checking individual recipients (rulecrit is set).
 		 * You dont need to have RECOVERED on the top-level rule, it's enough if a recipient
