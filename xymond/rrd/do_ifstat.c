@@ -29,6 +29,12 @@ static const char *ifstat_freebsd_exprs[] = {
 	"^([a-z0-9]+)\\s+\\d+\\s+[0-9.\\/]+\\s+[0-9.]+\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+[0-9-]+"
 };
 
+/* Name    Mtu Network       Address         Ipkts Ierrs Idrop     Ibytes    Opkts Oerrs     Obytes  Coll */
+/* bge0   1500 192.168.X.X 192.168.X.X    29292829     -     - 1130285651 26543376     - 2832025203     - */
+static const char *ifstat_freebsdV8_exprs[] = {
+	"^([a-z0-9]+)\\s+\\d+\\s+[0-9.\\/]+\\s+[0-9.]+\\s+\\d+\\s+[0-9-]+\\s+[0-9-]+\\s+(\\d+)\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+[0-9-]+"
+};
+
 /* Name MTU  Network        IP            Ibytes Obytes */
 /* lnc0 1500 172.16.10.0/24 172.16.10.151 1818   1802   */
 static const char *ifstat_openbsd_exprs[] = {
@@ -112,6 +118,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	static int pcres_compiled = 0;
 	static pcre **ifstat_linux_pcres = NULL;
 	static pcre **ifstat_freebsd_pcres = NULL;
+	static pcre **ifstat_freebsdV8_pcres = NULL;
 	static pcre **ifstat_openbsd_pcres = NULL;
 	static pcre **ifstat_netbsd_pcres = NULL;
 	static pcre **ifstat_darwin_pcres = NULL;
@@ -133,6 +140,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 						 (sizeof(ifstat_linux_exprs) / sizeof(ifstat_linux_exprs[0])));
 		ifstat_freebsd_pcres = compile_exprs("FREEBSD", ifstat_freebsd_exprs, 
 						 (sizeof(ifstat_freebsd_exprs) / sizeof(ifstat_freebsd_exprs[0])));
+		ifstat_freebsdV8_pcres = compile_exprs("FREEBSD", ifstat_freebsdV8_exprs, 
+						 (sizeof(ifstat_freebsdV8_exprs) / sizeof(ifstat_freebsdV8_exprs[0])));
 		ifstat_openbsd_pcres = compile_exprs("OPENBSD", ifstat_openbsd_exprs, 
 						 (sizeof(ifstat_openbsd_exprs) / sizeof(ifstat_openbsd_exprs[0])));
 		ifstat_netbsd_pcres = compile_exprs("NETBSD", ifstat_netbsd_exprs, 
@@ -206,7 +215,13 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			break;
 
 		  case OS_FREEBSD:
-			if (pickdata(bol, ifstat_freebsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			/*
+			 * FreeBSD 8 added an "Idrop" counter in the middle of the data.
+			 * See if we match this expression, and if not then fall back to
+			 * the old regex without that field.
+			 */
+			if (pickdata(bol, ifstat_freebsdV8_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			else if (pickdata(bol, ifstat_freebsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_OPENBSD:
