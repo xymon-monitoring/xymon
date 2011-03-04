@@ -85,6 +85,8 @@ can subscribe to the list by sending an e-mail to
 
    xymon-subscribe@xymon.com
 
+or on the web http://lists.xymon.com/mailman/listinfo/xymon
+
 Please note that mail sent from adresses that are not subscribed
 to the list need to go through a moderator approval, and therefore
 may not show up on the list for some time.
@@ -93,10 +95,11 @@ may not show up on the list for some time.
 Updates
 -------
 If you want to be notified of future updates, please subscribe
-to the xymon-announce mailing list. Send an email to
+to the xymon-announce mailing list. You can subscribe to the
+list by sending an e-mail to 
 
    xymon-announce-subscribe@xymon.com
 
-to be added to the mailing list. This is a moderated list, used
-only for announcing new Xymon releases.
+or on the web http://lists.xymon.com/mailman/listinfo/xymon-announce
+This is a moderated list, used only for announcing new Xymon releases.
 
