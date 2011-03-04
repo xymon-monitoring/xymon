@@ -1,3 +1,48 @@
+xymon (4.3.0) unstable; urgency=medium
+
+  * Critical view and other webpages: Make the 'All systems OK' message 
+    configurable. Also allow the header/footer for the Critical Systems 
+    view to be configurable.
+    Suggestion and preliminary patch from Buchan Milne.
+  * xymonnet: Improve error report when HTTP tests get an empty response - 
+    'HTTP error 0' sounds weird.
+  * report / snapshot CGI's: Fix buffer overrun in the HTML delimiter 
+    generated in the "please wait..." message. Also, fix potential buffer 
+    overrun in report CGI if invoked with a large value for the "style" 
+    parameter. 
+    Reported by Rolf Biesbroek.
+  * Graph definitions (graphs.cfg): Multi graphs cannot use a regex pattern. 
+    Problem report by Brian Majeska
+  * Solaris interface statistics: Filter out "mac" and "wrsmd" devices at
+    the client side. 
+    Update RRD handler to also filter "wrsmd" at the server side, like we 
+    already did for "mac" devices. 
+    Cf. http://www.xymon.com/archive/2009/06/msg00204.html
+  * Documentation: Document the XMH_* fields available in xymondboard commands.
+  * Documentation: Document SPLITNCV and "trends" methods of doing 
+    custom graphs.
+  * RRD definitions: Allow override of --step/-s option for rrdcreate, 
+    from template supplied in rrddefinitions.cfg. 
+    Suggestion from Brian Majeska.
+  * mailack: Remove restriction on how long a subjectline/message body can be.
+  * Build procedure: Add notice about running upgrade script before 
+    installing the new version.
+  * xymond_alert: Document --trace option
+  * Alerts: For recovery messages, add information so you can tell 
+    whether the recovery was due to the service actually recovering, or 
+    if it was merely disabled.
+  * xymond_alert: Fix missing element in array of alert status texts used 
+    for tracing. 
+    Spotted by Dominique Frise.
+  * Add support for FreeBSD v8 modified ifstat output
+  * Documentation: Update information about the Xymon mailing lists 
+    following move to Mailman and new archive URL.
+  * HP/UX client: Use "swapinfo" to extract memory utilisation data, 
+    instead of the hpux-meminfo utility. 
+    By Earl Flack http://lists.xymon.com/pipermail/xymon/2010-December/030100.html
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 4 Mar 2011 11:08:00 +0100
+
 xymon (4.3.0-0.20110120.rc1) unstable; urgency=low
 
   * 4.3.0 RC1 release - rev 6627
