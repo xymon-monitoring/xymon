@@ -1,11 +1,11 @@
 OSTYPE := $(shell uname -s | tr '[A-Z]' '[a-z]')
 
-ifeq ($(OSTYPE),hpux)
-	EXTRATOOLS=hpux-meminfo
-endif
-ifeq ($(OSTYPE),hp-ux)
-	EXTRATOOLS=hpux-meminfo
-endif
+#ifeq ($(OSTYPE),hpux)
+#	EXTRATOOLS=hpux-meminfo
+#endif
+#ifeq ($(OSTYPE),hp-ux)
+#	EXTRATOOLS=hpux-meminfo
+#endif
 ifeq ($(OSTYPE),freebsd)
 	EXTRATOOLS=freebsd-meminfo
 endif

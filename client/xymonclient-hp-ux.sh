@@ -29,7 +29,14 @@ s/[ 	]*\n[ 	]*/ /
 echo "[mount]"
 mount
 echo "[memory]"
-$XYMONHOME/bin/hpux-meminfo
+# $XYMONHOME/bin/hpux-meminfo
+# From Earl Flack  http://lists.xymon.com/archive/2010-December/030100.html 
+FREE=`/usr/sbin/swapinfo |grep ^memory |awk {'print $4'}`
+FREEREPORT=`echo $FREE / 1024 |/usr/bin/bc`
+TOTAL=`/usr/sbin/swapinfo |grep ^memory |awk {'print $2'}`
+TOTALREPORT=`echo $TOTAL / 1024 |/usr/bin/bc`
+echo Total:$TOTALREPORT
+echo Free:$FREEREPORT
 echo "[swapinfo]"
 /usr/sbin/swapinfo -tm
 echo "[ifconfig]"
