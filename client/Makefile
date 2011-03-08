@@ -1,11 +1,11 @@
 OSTYPE := $(shell uname -s | tr '[A-Z]' '[a-z]')
 
-ifeq ($(OSTYPE),hpux)
-	EXTRATOOLS=hpux-meminfo
-endif
-ifeq ($(OSTYPE),hp-ux)
-	EXTRATOOLS=hpux-meminfo
-endif
+#ifeq ($(OSTYPE),hpux)
+#	EXTRATOOLS=hpux-meminfo
+#endif
+#ifeq ($(OSTYPE),hp-ux)
+#	EXTRATOOLS=hpux-meminfo
+#endif
 ifeq ($(OSTYPE),freebsd)
 	EXTRATOOLS=freebsd-meminfo
 endif
@@ -16,14 +16,14 @@ ifeq ($(OSTYPE),openbsd)
 	EXTRATOOLS=openbsd-meminfo
 endif
 
-PROGRAMS=hobbitlaunch logfetch clientupdate orcahobbit msgcache
-COMMONTOOLS=bb bbcmd bbhostgrep bbhostshow bbdigest
+PROGRAMS=xymonlaunch logfetch clientupdate orcaxymon msgcache
+COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest
 
-all: $(PROGRAMS) $(COMMONTOOLS) hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS)
+all: $(PROGRAMS) $(COMMONTOOLS) xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS)
 
-hobbitclient.cfg: hobbitclient.cfg.DIST
-	cat hobbitclient.cfg.DIST | sed -e 's!@BBHOSTIP@!$(BBHOSTIP)!g' >hobbitclient.cfg
-	../build/bb-commands.sh >>hobbitclient.cfg
+xymonclient.cfg: xymonclient.cfg.DIST
+	cat xymonclient.cfg.DIST | sed -e 's!@XYMONHOSTIP@!$(XYMONHOSTIP)!g' >xymonclient.cfg
+	../build/bb-commands.sh >>xymonclient.cfg
 
 clientlaunch.cfg: clientlaunch.cfg.DIST
 ifeq ($(LOCALCLIENT),yes)
@@ -33,16 +33,16 @@ else
 endif
 
 logfetch: logfetch.c
-	$(CC) $(CFLAGS) -o $@ logfetch.c ../lib/hobbitclient.a
+	$(CC) $(CFLAGS) -o $@ logfetch.c ../lib/xymonclient.a $(LIBRTDEF)
 
 clientupdate: clientupdate.c
-	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/hobbitclient.a $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ clientupdate.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
-orcahobbit: orcahobbit.c
-	$(CC) $(CFLAGS) -o $@ orcahobbit.c ../lib/hobbitclient.a $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
+orcaxymon: orcaxymon.c
+	$(CC) $(CFLAGS) -o $@ orcaxymon.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 msgcache: msgcache.c
-	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/hobbitclient.a $(HOBBITZLIB) $(NETLIBS)
+	$(CC) $(CFLAGS) -o $@ msgcache.c ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 hpux-meminfo: hpux-meminfo.c
 	$(CC) -o $@ hpux-meminfo.c
@@ -57,29 +57,29 @@ netbsd-meminfo: netbsd-meminfo.c
 	$(CC) -o $@ netbsd-meminfo.c
 
 install:
-	if test ! -d $(INSTALLROOT)$(BBHOME)     ; then mkdir -p $(INSTALLROOT)$(BBHOME)     ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/bin ; then mkdir -p $(INSTALLROOT)$(BBHOME)/bin ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/etc ; then mkdir -p $(INSTALLROOT)$(BBHOME)/etc ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(BBHOME)/tmp ; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/logs; then mkdir -p $(INSTALLROOT)$(BBHOME)/logs; fi
-	if test ! -d $(INSTALLROOT)$(BBHOME)/ext ; then mkdir -p $(INSTALLROOT)$(BBHOME)/ext ; fi
-	if test ! -f $(INSTALLROOT)$(BBHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(BBHOME)/etc/ ; fi
-	cp -fp runclient.sh $(INSTALLROOT)$(BBHOME)
-	cp -fp $(PROGRAMS) hobbitclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(BBHOME)/bin/
-	chmod ugo+x $(INSTALLROOT)$(BBHOME)/bin/*
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)     ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)     ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/bin ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/bin ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/etc ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/etc ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/tmp ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/logs; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/logs; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext ; fi
+	if test ! -f $(INSTALLROOT)$(XYMONHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/ ; fi
+	cp -fp runclient.sh $(INSTALLROOT)$(XYMONHOME)
+	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(XYMONHOME)/bin/
+	chmod ugo+x $(INSTALLROOT)$(XYMONHOME)/bin/*
 
-	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(BBHOME)/etc/clientlaunch.cfg
-	../build/merge-lines hobbitclient.cfg $(INSTALLROOT)$(BBHOME)/etc/hobbitclient.cfg
+	../build/merge-sects clientlaunch.cfg $(INSTALLROOT)$(XYMONHOME)/etc/clientlaunch.cfg
+	../build/merge-lines xymonclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/xymonclient.cfg
 ifndef PKGBUILD
-	chown -R $(BBUSER) $(INSTALLROOT)$(BBHOME)
+	chown -R $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)
 endif
 
 install-localclient:
-	cp -fp hobbitd_client $(INSTALLROOT)$(BBHOME)/bin/
+	cp -fp xymond_client $(INSTALLROOT)$(XYMONHOME)/bin/
 ifndef PKGBUILD
-	chown $(BBUSER) $(INSTALLROOT)$(BBHOME)/bin/hobbitd_client
+	chown $(XYMONUSER) $(INSTALLROOT)$(XYMONHOME)/bin/xymond_client
 endif
 
 clean:
-	rm -f $(PROGRAMS) $(COMMONTOOLS) hobbitd_client hobbitclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
+	rm -f $(PROGRAMS) $(COMMONTOOLS) xymond_client xymonclient.cfg clientlaunch.cfg $(EXTRATOOLS) *~
 

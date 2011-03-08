@@ -1,35 +1,39 @@
-Source: hobbit
+Source: xymon
 Section: net
-Priority: optional
+Priority: extra
 Maintainer: Henrik Stoerner <henrik@hswn.dk>
-Build-Depends: debhelper (>= 4.0.0), zlib1g-dev, librrd2-dev, libssl-dev, libldap2-dev, libpcre3-dev, fping
-Standards-Version: 3.6.1
+Build-Depends: debhelper (>= 7), librrd2-dev, libssl-dev, libldap2-dev, libpcre3-dev
+Standards-Version: 3.8.3
+Homepage: http://xymon.sourceforge.net/
 
-Package: hobbit
+Package: xymon
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: hobbit, hobbit-client
+Provides: xymon
+Replaces: hobbit, hobbit-client
+Depends: xymon-client, ${shlibs:Depends}, ${misc:Depends}
 Description: monitoring system for systems, networks and applications
  Xymon (previously called Hobbit) is a network- and applications-
- monitoring system designed for use in large-scale networks. But 
- it will also work just fine on a small network with just a few 
- nodes. It is low-overhead and high-performance, with an easy to
- use web front-end. It handles monitoring of network services, 
- and through client packages it can also be used to monitor server-
- specific items.  Alerts can trigger when monitoring detects a 
- problem, resulting in e-mails or calls to your pager or mobile 
- phone.
+ monitoring system designed for use in large-scale networks. But it will
+ also work just fine on a small network with just a few nodes. It is
+ low-overhead and high-performance, with an easy to use web front-end.
+ It handles monitoring of network services, and through client packages
+ it can also be used to monitor server- specific items.  Alerts can
+ trigger when monitoring detects a problem, resulting in e-mails or
+ calls to your pager or mobile phone.
  .
- Xymon has a great deal of inspiration from the non-free Big Brother 
+ Xymon has a great deal of inspiration from the non-free Big Brother
  package, but does not include any Big Brother code.
 
-Package: hobbit-client
+Package: xymon-client
 Architecture: any
-Conflicts: hobbit
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: hobbit, hobbit-client
+Provides: xymon-client
+Replaces: hobbit, hobbit-client
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base
 Description: client for the Xymon network monitor
- Client data collection package for Xymon (previously 
- known as Hobbit). This gathers statistics and data from 
- a single system and reports it to the Xymon monitor. 
- You should run this on all systems if you have a Xymon 
- server installed.
+ Client data collection package for Xymon (previously known as Hobbit).
+ This gathers statistics and data from a single system and reports it to
+ the Xymon monitor. You should run this on all systems if you have a
+ Xymon server installed.
 

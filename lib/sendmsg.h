@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -11,21 +11,21 @@
 #ifndef __SENDMSG_H_
 #define __SENDMSG_H_
 
-#define BBTALK_TIMEOUT 15  /* Default timeout for a request going to bbd */
+#define XYMON_TIMEOUT 15  /* Default timeout for a request going to Xymon server */
 #define PAGELEVELSDEFAULT "red purple"
 
 typedef enum {
-	BB_OK,
-	BB_EBADIP,
-	BB_EIPUNKNOWN,
-	BB_ENOSOCKET,
-	BB_ECANNOTDONONBLOCK,
-	BB_ECONNFAILED,
-	BB_ESELFAILED,
-	BB_ETIMEOUT,
-	BB_EWRITEERROR,
-	BB_EREADERROR,
-	BB_EBADURL 
+	XYMONSEND_OK,
+	XYMONSEND_EBADIP,
+	XYMONSEND_EIPUNKNOWN,
+	XYMONSEND_ENOSOCKET,
+	XYMONSEND_ECANNOTDONONBLOCK,
+	XYMONSEND_ECONNFAILED,
+	XYMONSEND_ESELFAILED,
+	XYMONSEND_ETIMEOUT,
+	XYMONSEND_EWRITEERROR,
+	XYMONSEND_EREADERROR,
+	XYMONSEND_EBADURL 
 } sendresult_t;
 
 typedef struct sendreturn_t {
@@ -33,18 +33,12 @@ typedef struct sendreturn_t {
 	strbuffer_t *respstr;
 	int fullresponse;
 	int haveseenhttphdrs;
-	enum { CMP_LOOKFORMARKER, CMP_DECOMPRESS, CMP_NONE } cmprhandling;
-	void *cmprhandle;
 } sendreturn_t;
 
-extern int bbmsgcount;
-extern int bbstatuscount;
-extern int bbnocombocount;
+extern int xymonmsgcount;
+extern int xymonstatuscount;
+extern int xymonnocombocount;
 extern int dontsendmessages;
-extern int sendcompressedmessages;
-extern int sendssl;
-extern char *sslcertfn;
-extern char *sslkeyfn;
 
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);

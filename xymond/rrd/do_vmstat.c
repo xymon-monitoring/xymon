@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -380,10 +380,6 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		layout = vmstat_irix_layout; break;
 	  case OS_HPUX: 
 		layout = vmstat_hpux_layout; break;
-	  case OS_WIN32:
-	  case OS_WIN32_BBWIN:
-		errprintf("Cannot handle Win32 vmstat from host '%s' \n", hostname);
-		return -1;
 	  case OS_FREEBSD:
 		layout = vmstat_freebsd_layout; break;
 	  case OS_NETBSD:
@@ -401,17 +397,11 @@ int do_vmstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		layout = vmstat_rhel3_layout; break;
           case OS_SCO_SV:
                 layout = vmstat_sco_sv_layout; break;
-	  case OS_DARWIN:
-		errprintf("Cannot handle Darwin vmstat from host '%s' \n", hostname);
-		return -1;
-	  case OS_SNMP:
-		errprintf("Cannot handle SNMP vmstat from host '%s' \n", hostname);
-		return -1;
-	  case OS_NETWARE_SNMP:
-		errprintf("Cannot handle SNMP vmstat from host '%s' \n", hostname);
-		return -1;
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports vmstat for an unknown OS\n", hostname);
+		return -1;
+	  default:
+		errprintf("Cannot handle vmstat from host '%s' \n", hostname);
 		return -1;
 	}
 

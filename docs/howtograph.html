@@ -12,6 +12,23 @@ allowing you to add your own tests. For many kinds of tests, it
 is nice to view them over a period of time in a graph - this 
 document tells you how to do that.
 
+<h1>The NCV (Name-Colon-Value) and SPLITNCV methods</h1>
+<p>In many cases it is quite trivial to collect some data and
+send them to Xymon in format like this:</p>
+<pre>
+  Name: Value
+</pre>
+<p>e.g. if you have a device that collects weather information,
+it might look like</p>
+<pre>
+  Temperature: 19.2
+  Humidity: 53
+  Wind: 9.6
+</pre>
+<p>In Xymon, this is known as <b>NCV</b> - Name, Colon, Value - 
+formatted data, and Xymon has built-in support to pick up data
+formatted this way, and collect the data for graphs.</p>
+
 <h2>Make a script to collect the data</h2>
 <p>First create your test data. Typically, this is an extension
 script that sends in some data to Xymon, using a <b>status</b> or
@@ -23,7 +40,7 @@ see the graph. For this example, we'll use <b>status</b>.</p>
 
 <p>So we create an extension script. Here is an example script; 
 it picks two numbers out of the Linux kernel's memory statistics,
-and reports these to hobbit.
+and reports these to Xymon.
 
 <pre><tt>
 	#!/bin/sh
@@ -32,7 +49,7 @@ and reports these to hobbit.
 	   egrep "^dentry_cache|^inode_cache" | \
 	      awk '{print $1 " : " $3*$4}' &gt;/tmp/slab.txt
 
-	$BB $BBDISP "status $MACHINE.slab green `date`
+	$XYMON $XYMSRV "status $MACHINE.slab green `date`
 
 	`cat /tmp/slab.txt`
 	"
@@ -40,18 +57,18 @@ and reports these to hobbit.
 	exit 0
 </tt></pre>
 
-<h2>Get hobbitlaunch to run the script</h2>
-<p>Save this script in ~hobbit/client/ext/slab, and add a section to
-the ~hobbit/client/etc/clientlaunch.cfg to run it every 5 minutes:
+<h2>Get xymonlaunch to run the script</h2>
+<p>Save this script in ~xymon/client/ext/slab, and add a section to
+the ~xymon/client/etc/clientlaunch.cfg to run it every 5 minutes:
 
 <pre><tt>
 	[slabinfo]
-        	ENVFILE /usr/lib/hobbit/client/etc/hobbitclient.cfg
-	        CMD /usr/lib/hobbit/client/ext/slab
+        	ENVFILE /usr/lib/xymon/client/etc/xymonclient.cfg
+	        CMD /usr/lib/xymon/client/ext/slab
 		INTERVAL 5m
 </tt></pre>
 (On the Xymon server itself, you must add this to the file 
-~hobbit/server/etc/hobbitlaunch.cfg)
+~xymon/server/etc/tasks.cfg)
 
 
 <h2>Check that the script data arrives in Xymon</h2>
@@ -73,13 +90,13 @@ The first will be called <b>inodecache</b>, and the second <b>dentrycache</b>
 or a number; Xymon also limits the length of the dataset name to 19 
 letters max. since RRD will not handle longer names).
 
-To enable this, on the Xymon server edit the ~hobbit/server/etc/hobbitserver.cfg
+To enable this, on the Xymon server edit the ~xymon/server/etc/xymonserver.cfg
 file. The TEST2RRD setting defines how Xymon tests (status columns) map to RRD 
 datafiles. So you add the new test to this setting, by adding <b>slab=ncv</b> at the
 end:
 
 <pre><tt>
-TEST2RRD=&quot;cpu=la,disk,&lt;...lots more stuff...&gt;,hobbitd,mysql=ncv,slab=ncv&quot;
+TEST2RRD=&quot;cpu=la,disk,&lt;...lots more stuff...&gt;,xymond,mysql=ncv,slab=ncv&quot;
 </tt></pre>
 
 <p><b>slab</b> is the status column name, and <b>=ncv</b> is a token that tells Xymon
@@ -92,32 +109,43 @@ Some data are not like that - the data in our test script is not - and for
 those data you'll have to make an extra setting to tell Xymon what RRD data
 type to use.  The RRDtool rrdcreate(1) man-page has a detailed description 
 of the various RRD datatypes. It is available online at 
-<a href="http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/doc/rrdcreate.en.html">
-	http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/doc/rrdcreate.en.html</a></p>
+<a href="http://www.mrtg.org/rrdtool/doc/rrdcreate.en.html">
+http://www.mrtg.org/rrdtool/doc/rrdcreate.en.html</a></p>
 
 <p>Our test script provides data that goes up and down in value
 (it is the number of bytes of memory used for a Linux kernel bufffer), and
 for that kind of data we'll use the RRD <b>GAUGE</b> datatype. So we add an extra
-setting to hobbitserver.cfg:</p>
+setting to xymonserver.cfg:</p>
 
 <pre><tt>
 	NCV_slab=&quot;inodecache:GAUGE,dentrycache:GAUGE&quot;
 </tt></pre>
 
-<p>This tells the hobbitd_rrd module that it should create an RRD file with
+<p>This tells the xymond_rrd module that it should create an RRD file with
 two datasets of type GAUGE instead of the default (DERIVE). The setting must
 be named NCV_&lt;columnname&gt;.</p>
 
-<p>The hobbitserver.cfg file is not reloaded automatically, so you must restart
-Xymon after making these changes. Or at least, kill the hobbitd_rrd processes
-(there are usually two) - hobbitlaunch will automatically restart them, and
+<p>In some cases it can be useful to use multiple RRD files - one for
+each dataset - instead of putting all of the datasets into one RRD file.
+E.g. if you want to add or remove datasets over time - if they are
+all stored in one RRD file then you have to dump, modify and reload the 
+data from the RRD file. If you store each dataset in a separate file,
+then you can just delete the file. Xymon supports this if you call this
+setting <b>SPLITNCV</b> instead of NCV. Then Xymon will store each
+dataset in an RRD file <tt>column,dataset.rrd</tt>, e.g. <tt>slab,inodecache.rrd</tt>,
+and the name of the dataset will be &quot;<b>lambda</b>&quot;.
+Apart from this, the setup is identical for the NCV- and SPLITNCV-methods.</p>
+
+<p>The xymonserver.cfg file is not reloaded automatically, so you must restart
+Xymon after making these changes. Or at least, kill the xymond_rrd processes
+(there are usually two) - xymonlaunch will automatically restart them, and
 they will then pick up the new settings.</p>
 
 <h2>Check that the RRD collects data</h2>
 <p>The next time the <b>slab</b> status is updated, Xymon will begin to collect
 the data. You can check this by looking for the <b>slab.rrd</b> file in the
-~hobbit/data/rrd/HOSTNAME/ directory. If you want to check the data it
-collects, the <b>rrdtool dump ~hobbit/data/rrd/HOSTNAME/slab.rrd</b> will 
+~xymon/data/rrd/HOSTNAME/ directory. If you want to check the data it
+collects, the <b>rrdtool dump ~xymon/data/rrd/HOSTNAME/slab.rrd</b> will 
 tell you what it got:
 
 <pre><tt>
@@ -142,13 +170,13 @@ current value-----&gt;	&lt;last_ds&gt; 330624 &lt;/last_ds&gt;
 </tt></pre>
 
 <p>If you go and look at the status page for the <b>slab</b> column, you should
-not see any graph yet, but a link to <b>hobbit graph ncv:slab</b>. One final
+not see any graph yet, but a link to <b>xymon graph ncv:slab</b>. One final
 step is missing.</p>
 
 
 <h2>Setup a graph definition</h2>
 <p>The final step is to tell Xymon how to create a graph from the data 
-in the RRD file. This is done in the ~hobbit/server/etc/hobbitgraph.cfg
+in the RRD file. This is done in the ~xymon/server/etc/graphs.cfg
 file.
 
 <pre><tt>
@@ -191,24 +219,24 @@ greenish-blue color. Note that you can have several lines in one graph,
 if it makes sense to compare them. You can also use other types of
 visual effects, e.g. stack values on top of each other (like the <b>vmstat</b>
 graphs do) - this is described in the rrdgraph man-page. An online version
-is at <a href="http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/doc/rrdgraph.en.html">
-	http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/doc/rrdgraph.en.html</a>.</p>
+is at <a href="http://www.mrtg.org/rrdtool/doc/rrdgraph.en.html">
+http://www.mrtg.org/rrdtool/doc/rrdgraph.en.html</a>.</p>
 
 <p>The GPRINT lines at the end of the graph definition also uses the <b>inode</b>
 value to print a summary line showing the current, maximum, minimum and 
 average values from the data that has been collected.</p>
 
-<p>Once you have added this section to hobbitgraph.cfg, refresh the
+<p>Once you have added this section to graphs.cfg, refresh the
 status page in your browser, and the graph should show up.</p>
 
 
 <h2>Add the graph to the collection of graphs on the trends column</h2>
 <p>If you want the graph included with the other graphs on the <b>trends</b>
 column, you must add it to the GRAPHS setting in the
-~hobbit/server/etc/hobbitserver.cfg file.</p>
+~xymon/server/etc/xymonserver.cfg file.</p>
 
 <pre><tt>
-	GRAPHS=&quot;la,disk,&lt;... lots more ...&gt;,bbproxy,hobbitd,slab&quot;
+	GRAPHS=&quot;la,disk,&lt;... lots more ...&gt;,xymonproxy,xymond,slab&quot;
 </tt></pre>
 Save the file, and when you click on the <b>trends</b> column you should
 see the slab graph at the bottom of the page.
@@ -224,8 +252,84 @@ you must delete any existing RRD files - the RRD datatype is defined
 when the RRD file is created, and cannot be changed on the fly.</p>
 
 <h3>No graph on the status page, but OK on the trends page</h3>
-<p>Make sure you have <b>ncv</b> listed in the GRAPHS setting in hobbitserver.cfg. 
+<p>Make sure you have <b>ncv</b> listed in the GRAPHS setting in xymonserver.cfg. 
 (Don't ask why - just take my word that it must be there).</p>
+
+
+<h1>More advanced: Sending a &quot;trends&quot; message</h1>
+<p>The NCV method works fine in many cases, but you may run
+into a situation where it isn't really suitable. One possible
+problem with this method is that you can only store data in 
+a single RRD file using the NCV method, and there may be
+situations where you want to use multiple RRD files for
+flexibility - e.g. if you are reporting performance for a
+number of applications, then it is useful to have one RRD
+file for each application. And since there are different
+performance metrics for each application, you cannot use
+the SPLITNCV method.</p>
+
+<p>Xymon supports a different method for collecting data in
+these cases - you can send a "trends" message to Xymon with
+the data you want to put into a graph. All hosts appearing
+on the Xymon server already have a "trends" status column,
+but if you send a "trends" status message to Xymon, it will
+not show up in the "trends" column - instead, it will be used
+to create/update an RRD file with data. And inside the "trends"
+message, you can define exactly what RRD files you want to
+use, how they are formatted, what data goes into the RRD
+file and so on. Here is an example of a "trends" message,
+using the same data that we used in the example above for
+collecting some data about the current weather:</p>
+
+<pre>
+data berlin.trends
+[weather.rrd]
+DS:temperature:GAUGE:600:U:U 19.2
+DS:humidity:GAUGE:600:0:U 72
+DS:wind:GAUGE:600:0:U 9.6
+</pre>
+
+<p>This creates an RRD file for the host "berlin", called "weather.rrd".
+The RRD file has three datasets: temperature, humidity and wind,
+all of which are of the GAUGE datatype. For more information about
+the DS definitions, see the
+.I rrdcreate(1)
+manpage. The current values for each of the datasets is specified
+after the DS definition.</p>
+<p>If the RRD file already exists, then it just updates the data.</p>
+
+<p>You still need to create graph definitions on the Xymon server,
+and if you want the trend graphs displayed on the "trends" status
+page then you must also add the graph name to the "TEST2RRD" and
+"GRAPHS" settings in 
+.I xymonserver.cfg(5)
+but it is not necessary to restart the xymond_rrd program.</p>
+
+<p>If you want to create more than one RRD file, you just
+add more data in the "trends" status message. E.g. if you have
+three applications with performance metrics:</p>
+<pre>
+data appserver.trends
+[salaryapp.rrd]
+DS:usercount:GAUGE:600:0:U 210
+DS:payrollgeneration:GAUGE:600:0:U 29
+[bulkmailapp.rrd]
+DS:customercount:GAUGE:600:0:U 1922
+DS:mailsize:GAUGE:600:0:U 61293
+DS:transmissiontime:GAUGE:600:0:U 88
+</pre>
+
+<p>This will create 2 RRD files, <b>salaryapp.rrd</b> with performance
+metrics from the Salary application, and <b>bulkmailapp.rrd</b> with
+performance metrics from the bulkmail application. Note that the
+metrics collected are quite different - you have total control over
+which RRD files get created, what datasets they contain etc.</p>
+
+<p>To view the graphs, you still need to setup a definition for
+generating the graphs in the <b>graphs.cfg</b> configuration file,
+and the graph definition must be listed in both the TEST2RRD- and
+GRAPHS-settings in xymonserver.cfg - then the graph will appear
+on the "trends" page.</p>
 
 </body>
 </html>

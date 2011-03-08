@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor SNMP data collection tool                                   */
+/* Xymon monitor SNMP data collection tool                                    */
 /*                                                                            */
-/* Copyright (C) 2007-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* Inspired by the asyncapp.c file from the "NET-SNMP demo", available from   */
 /* the Net-SNMP website. This file carries the attribution                    */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* -----------------  struct's used for the host/requests we need to do ---------------- */
 /* List of the OID's we will request */
@@ -45,7 +45,7 @@ typedef struct keyrecord_t {
 
 /* A host and the OID's we will be polling */
 typedef struct req_t {
-	char *hostname;				/* Hostname used for reporting to Hobbit */
+	char *hostname;				/* Hostname used for reporting to Xymon */
 	char *hostip[10];			/* Hostname(s) or IP(s) used for testing. Max 10 IP's */
 	int hostipidx;				/* Index into hostip[] for the active IP we use */
 	long version;				/* SNMP version to use */
@@ -538,7 +538,7 @@ void stophosts(void)
 /* 
  * This routine loads MIB files, and computes the key-OID values.
  * We defer this until the mib-definition is actually being referred to 
- * in hobbit-snmphosts.cfg, because lots of MIB's are not being used
+ * in snmphosts.cfg, because lots of MIB's are not being used
  * (and probably do not exist on the host where we're running) and
  * to avoid spending a lot of time to load MIB's that are not used.
  */
@@ -626,7 +626,7 @@ void readconfig(char *cfgfn, int verbose)
 	strbuffer_t *inbuf;
 
 	struct req_t *reqitem = NULL;
-	int bbsleep = atoi(xgetenv("BBSLEEP"));
+	int tasksleep = atoi(xgetenv("TASKSLEEP"));
 
 	mibdef_t *mib;
 
@@ -663,15 +663,15 @@ void readconfig(char *cfgfn, int verbose)
 			/*
 			 * See if we're running a non-standard interval.
 			 * If yes, then process only the records that match
-			 * this BBSLEEP setting.
+			 * this TASKSLEEP setting.
 			 */
-			if (bbsleep != 300) {
+			if (tasksleep != 300) {
 				/* Non-default interval. Skip the host if it HASN'T got an interval setting */
 				if (!intvl) continue;
 
 				/* Also skip the hosts that have an interval different from the current */
 				*intvl = '\0';	/* Clip the interval from the hostname */
-				if (atoi(intvl+1) != bbsleep) continue;
+				if (atoi(intvl+1) != tasksleep) continue;
 			}
 			else {
 				/* Default interval. Skip the host if it HAS an interval setting */
@@ -814,7 +814,7 @@ void readconfig(char *cfgfn, int verbose)
 			continue;
 		}
 		else {
-			errprintf("Unknown MIB (not in hobbit-snmpmibs.cfg): '%s'\n", bot);
+			errprintf("Unknown MIB (not in snmpmibs.cfg): '%s'\n", bot);
 		}
 	}
 
@@ -912,14 +912,20 @@ void sendresult(void)
 	mibdef_t *mib;
 	strbuffer_t *clientmsg = newstrbuffer(0);
 	int havemsg = 0;
+	int itemcount = 0;
 
 	currhost = "";
 	for (rwalk = reqhead; (rwalk); rwalk = rwalk->next) {
 		if (strcmp(rwalk->hostname, currhost) != 0) {
 			/* Flush buffer */
-			if (havemsg) sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
+			if (havemsg) {
+				sprintf(msgline, "\n.<!-- linecount=%d -->\n", itemcount);
+				addtobuffer(clientmsg, msgline);
+				sendmessage(STRBUF(clientmsg), NULL, XYMON_TIMEOUT, NULL);
+			}
 			clearstrbuffer(clientmsg);
 			havemsg = 0;
+			itemcount = 0;
 
 			sprintf(msgline, "client/snmpcollect %s.snmpcollect snmp\n\n", rwalk->hostname);
 			addtobuffer(clientmsg, msgline);
@@ -933,7 +939,7 @@ void sendresult(void)
 
 			sprintf(msgline, "\n[%s]\nInterval=%d\nActiveIP=%s\n\n",
 				mib->mibname,
-				atoi(xgetenv("BBSLEEP")),
+				atoi(xgetenv("TASKSLEEP")),
 				rwalk->hostip[rwalk->hostipidx]);
 			addtobuffer(mib->resultbuf, msgline);
 		}
@@ -946,6 +952,7 @@ void sendresult(void)
 					addtobuffer(owalk->mib->resultbuf, "\n<");
 					addtobuffer(owalk->mib->resultbuf, owalk->devname);
 					addtobuffer(owalk->mib->resultbuf, ">\n");
+					itemcount++;
 				}
 			}
 
@@ -984,7 +991,7 @@ void sendresult(void)
 	}
 
 	if (havemsg) {
-		sendmessage(STRBUF(clientmsg), NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(STRBUF(clientmsg), NULL, XYMON_TIMEOUT, NULL);
 	}
 	
 	freestrbuffer(clientmsg);
@@ -995,9 +1002,11 @@ void egoresult(int color, char *egocolumn)
 	char msgline[1024];
 	char *timestamps = NULL;
 
+	init_timestamp();
+
 	combo_start();
 	init_status(color);
-	sprintf(msgline, "status %s.%s %s %s\n\n", 
+	sprintf(msgline, "status %s.%s %s snmpcollect %s\n\n", 
 		xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 	addtostatus(msgline);
 
@@ -1068,10 +1077,10 @@ int main (int argc, char **argv)
 		}
 	}
 
-	add_timestamp("hobbit_snmpcollect startup");
+	add_timestamp("xymon-snmpcollect startup");
 
 	netsnmp_register_loghandler(NETSNMP_LOGHANDLER_STDERR, 7);
-	init_snmp("hobbit_snmpcollect");
+	init_snmp("xymon-snmpcollect");
 	snmp_mib_toggle_options("e");	/* Like -Pe: Dont show MIB parsing errors */
 	snmp_out_toggle_options("qn");	/* Like -Oqn: OID's printed as numbers, values printed without type */
 
@@ -1079,7 +1088,7 @@ int main (int argc, char **argv)
 
 	if (configfn == NULL) {
 		configfn = (char *)malloc(PATH_MAX);
-		sprintf(configfn, "%s/etc/hobbit-snmphosts.cfg", xgetenv("BBHOME"));
+		sprintf(configfn, "%s/etc/snmphosts.cfg", xgetenv("XYMONHOME"));
 	}
 	readconfig(configfn, mibcheck);
 	if (cfgcheck) return 0;

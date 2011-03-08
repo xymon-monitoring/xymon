@@ -1,33 +1,30 @@
-# Hobbit - BBNET Makefile
+# Xymon - xymonnet Makefile
 
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-PROGRAMS = bbtest-net hobbitping beastat
-SNMPPROGRAMS = hobbit_snmpcollect
-EXTENSIONS = bbretest-net.sh
+PROGRAMS = xymonnet xymonping beastat
+EXTENSIONS = xymonnet-again.sh
+SNMPPROGRAMS = xymon-snmpcollect
 DBGTOOLS = contest
 
 ifeq ($(DOSNMP),yes)
 PROGRAMS += $(SNMPPROGRAMS)
 endif
-
-LIBOBJS = ../lib/$(HOBBITLIBRARY)
-
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
-NETTESTOBJS = bbtest-net.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
-PINGTESTOBJS = hobbitping.o
+NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
-bbtest-net: $(NETTESTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) $(LIBOBJS) libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(HOBBITZLIB) $(NETLIBS) $(LIBRTDEF)
+xymonnet: $(NETTESTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) ../lib/libxymon.a libcares.a $(LDAPLIBS) $(SSLLIBS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbitping: $(PINGTESTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(LIBOBJS) $(NETLIBS)
+xymonping: $(PINGTESTOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
-bbtest-net.o: bbtest-net.c
-	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ bbtest-net.c
+xymonnet.o: xymonnet.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) $(LDAPFLAGS) $(SSLINCDIR) $(LDAPINCDIR) -c -o $@ xymonnet.c
 
 ldaptest.o: ldaptest.c
 	$(CC) $(CFLAGS) $(LDAPFLAGS) $(LDAPINCDIR) -c -o $@ ldaptest.c
@@ -63,22 +60,22 @@ c-ares/configure: c-ares-$(ARESVER).tar.gz
 	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
 	touch c-ares/configure
 
-beastat: $(BEASTATOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
+beastat: $(BEASTATOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BEASTATOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
 contest: contest.c $(LIBOBJS)
-	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a $(LIBOBJS) $(HOBBITZLIB) $(NETLIBS) $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 
-hobbit_snmpcollect: hobbit_snmpcollect.o $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ hobbit_snmpcollect.o `net-snmp-config --libs` $(LIBOBJS) $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
+xymon-snmpcollect: xymon-snmpcollect.o $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` ../lib/libxymon.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 
-hobbit_snmpcollect.o: hobbit_snmpcollect.c
-	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ hobbit_snmpcollect.c
+xymon-snmpcollect.o: xymon-snmpcollect.c
+	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ xymon-snmpcollect.c
 
 ################################################
 # Default compilation rules
@@ -87,11 +84,11 @@ hobbit_snmpcollect.o: hobbit_snmpcollect.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.sh: %.sh.DIST
-	cat $< | sed -e 's!@BBHOME@!$(BBHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
+	cat $< | sed -e 's!@XYMONHOME@!$(XYMONHOME)!g' | sed -e 's!@RUNTIMEDEFS@!$(RUNTIMEDEFS)!g' >$@
 	chmod 755 $@
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) $(SNMPPROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
+	rm -f *.o *.a *~ $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 
 install: install-bin install-ext install-config install-man
@@ -103,8 +100,8 @@ install-ext: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 install-config:
-	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/bb-services
-	../build/merge-sects bb-services $(INSTALLROOT)$(INSTALLETCDIR)/bb-services
+	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5

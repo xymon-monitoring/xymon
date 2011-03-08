@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module for SCO_SV                                           */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2006-2008 Charles Goyard <cg@fsck.Fr>                        */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -104,4 +104,6 @@ void handle_sco_sv_client(char *hostname, char *clienttype, enum ostype_t os,
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 				   memphystotal, (memphystotal - memphysfree), -1, memswaptotal, (memswaptotal - memswapfree));
 	}
+
+	splitmsg_done();
 }

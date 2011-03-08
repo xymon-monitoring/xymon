@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit status report generator.                                            */
+/* Xymon status report generator.                                             */
 /*                                                                            */
 /* This is a CGI program to generate a simple HTML table with a summary of    */
 /* all FOO statuses for a group of hosts.                                     */
@@ -7,7 +7,7 @@
 /* E.g. this can generate a report of all SSL certificates that are about     */
 /* to expire.                                                                 */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
@@ -118,13 +118,13 @@ int main(int argc, char *argv[])
 
 	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(pagefilter) + strlen(filter));
-	sprintf(req, "hobbitdboard fields=hostname,testname,color,msg %s %s",
+	sprintf(req, "xymondboard fields=hostname,testname,color,msg %s %s",
 		pagefilter, filter);
-	res = sendmessage(req, server, BBTALK_TIMEOUT, sres);
+	res = sendmessage(req, server, XYMON_TIMEOUT, sres);
 	board = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 
-	if (res != BB_OK) return 1;
+	if (res != XYMONSEND_OK) return 1;
 
 	if (!embedded) {
 		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));

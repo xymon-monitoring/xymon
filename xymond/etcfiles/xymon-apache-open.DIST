@@ -2,7 +2,7 @@
 #
 # Add this to your Apache configuration, it makes
 # the Xymon webpages and cgi-scripts available in the
-# "@BBHOSTURL@" and "@BBCGIURL@" URLs.
+# "@XYMONHOSTURL@" and "@XYMONCGIURL@" URLs.
 
 
 # NB: The "Alias" line below must NOT be used if you have
@@ -11,18 +11,56 @@
 #
 #          DocumentRoot @INSTALLWWWDIR@
 
-Alias @BBHOSTURL@/  "@INSTALLWWWDIR@/"
+Alias @XYMONHOSTURL@/  "@INSTALLWWWDIR@/"
 <Directory "@INSTALLWWWDIR@">
     Options Indexes FollowSymLinks Includes MultiViews
     Order allow,deny
     Allow from all
 </Directory>
 
-ScriptAlias @BBCGIURL@/ "@CGIDIR@/"
+ScriptAlias @XYMONCGIURL@/ "@CGIDIR@/"
 <Directory "@CGIDIR@">
     AllowOverride None
     Options ExecCGI Includes
     Order allow,deny
     Allow from all
 </Directory>
+
+
+# Rewrite-rules for migrating from the URL's used in Hobbit
+RewriteEngine On
+
+RewriteRule ^@XYMONHOSTURL@/bb.html @XYMONHOSTURL@/xymon.html [R=permanent,L]
+RewriteRule ^@XYMONHOSTURL@/bb2.html @XYMONHOSTURL@/nongreen.html [R=permanent,L]
+RewriteRule ^@XYMONHOSTURL@/bbnk.html @XYMONHOSTURL@/critical.html [R=permanent,L]
+
+RewriteRule ^@XYMONCGIURL@/bb-hist.sh @XYMONCGIURL@/history.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-eventlog.sh @XYMONCGIURL@/eventlog.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-rep.sh @XYMONCGIURL@/report.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-replog.sh @XYMONCGIURL@/reportlog.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-snapshot.sh @XYMONCGIURL@/snapshot.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-findhost.sh @XYMONCGIURL@/findhost.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-csvinfo.sh @XYMONCGIURL@/csvinfo.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbitcolumn.sh @XYMONCGIURL@/columndoc.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-datepage.sh @XYMONCGIURL@/datepage.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbitgraph.sh @XYMONCGIURL@/showgraph.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-hostsvc.sh @XYMONCGIURL@/svcstatus.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/bb-histlog.sh @XYMONCGIURL@/historylog.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-confreport.sh @XYMONCGIURL@/confreport.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-confreport-critical.sh @XYMONCGIURL@/confreport-critical.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-nkview.sh @XYMONCGIURL@/criticalview.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-certreport.sh @XYMONCGIURL@/certreport.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-nongreen.sh @XYMONCGIURL@/nongreen.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-hostgraphs.sh @XYMONCGIURL@/hostgraphs.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-ghosts.sh @XYMONCGIURL@/ghostlist.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-notifylog.sh @XYMONCGIURL@/notifications.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-hostlist.sh @XYMONCGIURL@/hostlist.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-perfdata.sh @XYMONCGIURL@/perfdata.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-topchanges.sh @XYMONCGIURL@/topchanges.sh [R=permanent,L]
+
+RewriteRule ^@XYMONCGIURL@/bb-ack.sh @XYMONCGIURL@/acknowledge.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-enadis.sh @XYMONCGIURL@/enadis.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-nkedit.sh @XYMONCGIURL@/criticaleditor.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-ackinfo.sh @XYMONCGIURL@/ackinfo.sh [R=permanent,L]
+RewriteRule ^@XYMONCGIURL@/hobbit-useradm.sh @XYMONCGIURL@/useradm.sh [R=permanent,L]
 

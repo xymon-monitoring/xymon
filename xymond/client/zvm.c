@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module for z/VM                                             */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2006-2008 Rich Smrcina                                       */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -185,7 +185,7 @@ static void zvm_mdc_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	        sprintf(msgline, "data %s.mdc\n%s\n%d:%d:%d\n", commafy(hostname), osname(os), mdcreads, mdcwrites, mdchitpct);
         	addtobuffer(msg, msgline);
-		sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
         	}
 
         freestrbuffer(msg);
@@ -350,7 +350,7 @@ static void zvm_users_report(char *hostname, char *clientclass, enum ostype_t os
 
         freestrbuffer(monmsg);
 
-        if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+        if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
         clearstrbuffer(countdata);
 }
 
@@ -397,5 +397,6 @@ void handle_zvm_client(char *hostname, char *clienttype, enum ostype_t os,
 	file_report(hostname, clienttype, os, hinfo, fromline, timestr);
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 
-}
 
+	splitmsg_done();
+}

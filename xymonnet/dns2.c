@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -43,7 +43,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <netdb.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <ares.h>
 #include <ares_dns.h>
@@ -141,15 +141,7 @@ static const char *rcodes[] = {
   "(unknown)", "(unknown)", "(unknown)", "(unknown)", "NOCHANGE"
 };
 
-#if (ARES_VERSION_MAJOR > 1)
-#error "Unsupported C-ARES version"
-#else
-#if (ARES_VERSION_MINOR > 4)
 void dns_detail_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen)
-#else
-void dns_detail_callback(void *arg, int status, unsigned char *abuf, int alen)
-#endif
-#endif
 {
 	int id, qr, opcode, aa, tc, rd, ra, rcode;
 	unsigned int qdcount, ancount, nscount, arcount, i;

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -27,6 +27,12 @@ static const char *ifstat_linux_exprs[] = {
 /* lnc0 1500 172.16.10.0/24 172.16.10.151 26    -     1818   26    -     1802   -    */
 static const char *ifstat_freebsd_exprs[] = {
 	"^([a-z0-9]+)\\s+\\d+\\s+[0-9.\\/]+\\s+[0-9.]+\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+[0-9-]+"
+};
+
+/* Name    Mtu Network       Address         Ipkts Ierrs Idrop     Ibytes    Opkts Oerrs     Obytes  Coll */
+/* bge0   1500 192.168.X.X 192.168.X.X    29292829     -     - 1130285651 26543376     - 2832025203     - */
+static const char *ifstat_freebsdV8_exprs[] = {
+	"^([a-z0-9]+)\\s+\\d+\\s+[0-9.\\/]+\\s+[0-9.]+\\s+\\d+\\s+[0-9-]+\\s+[0-9-]+\\s+(\\d+)\\s+\\d+\\s+[0-9-]+\\s+(\\d+)\\s+[0-9-]+"
 };
 
 /* Name MTU  Network        IP            Ibytes Obytes */
@@ -112,6 +118,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	static int pcres_compiled = 0;
 	static pcre **ifstat_linux_pcres = NULL;
 	static pcre **ifstat_freebsd_pcres = NULL;
+	static pcre **ifstat_freebsdV8_pcres = NULL;
 	static pcre **ifstat_openbsd_pcres = NULL;
 	static pcre **ifstat_netbsd_pcres = NULL;
 	static pcre **ifstat_darwin_pcres = NULL;
@@ -133,6 +140,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 						 (sizeof(ifstat_linux_exprs) / sizeof(ifstat_linux_exprs[0])));
 		ifstat_freebsd_pcres = compile_exprs("FREEBSD", ifstat_freebsd_exprs, 
 						 (sizeof(ifstat_freebsd_exprs) / sizeof(ifstat_freebsd_exprs[0])));
+		ifstat_freebsdV8_pcres = compile_exprs("FREEBSD", ifstat_freebsdV8_exprs, 
+						 (sizeof(ifstat_freebsdV8_exprs) / sizeof(ifstat_freebsdV8_exprs[0])));
 		ifstat_openbsd_pcres = compile_exprs("OPENBSD", ifstat_openbsd_exprs, 
 						 (sizeof(ifstat_openbsd_exprs) / sizeof(ifstat_openbsd_exprs[0])));
 		ifstat_netbsd_pcres = compile_exprs("NETBSD", ifstat_netbsd_exprs, 
@@ -206,7 +215,13 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			break;
 
 		  case OS_FREEBSD:
-			if (pickdata(bol, ifstat_freebsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			/*
+			 * FreeBSD 8 added an "Idrop" counter in the middle of the data.
+			 * See if we match this expression, and if not then fall back to
+			 * the old regex without that field.
+			 */
+			if (pickdata(bol, ifstat_freebsdV8_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
+			else if (pickdata(bol, ifstat_freebsd_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
 		  case OS_OPENBSD:
@@ -225,6 +240,17 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				/* They must match, drop the data */
 				errprintf("Host %s has weird ifstat data - device name mismatch %s:%s\n", hostname, ifname, dummy);
 				xfree(ifname); xfree(txstr); xfree(rxstr); xfree(dummy);
+				dmatch = 0;
+			}
+
+			/* Ignore "mac" and "wrsmd" entries - these are for sub-devices for multiple nic's aggregated into one */
+			/* See http://www.xymon.com/archive/2009/06/msg00204.html for more info */
+			if (ifname && ((strcmp(ifname, "mac") == 0) || (strcmp(ifname, "wrsmd") == 0)) ) {
+				xfree(ifname); xfree(txstr);
+				dmatch = 0;
+			}
+			if (dummy && ((strcmp(dummy, "mac") == 0) || (strcmp(dummy, "wrsmd") == 0)) ) {
+				xfree(dummy); xfree(rxstr);
 				dmatch = 0;
 			}
 			break;
@@ -262,12 +288,7 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			if (pickdata(bol, ifstat_bbwin_pcres[0], 0, &ifname, &rxstr, &txstr)) dmatch = 7;
 			break;
 
-		  case OS_OSF:
-		  case OS_IRIX:
-		  case OS_SNMP:
-		  case OS_WIN32:
-		  case OS_NETWARE_SNMP:
-		  case OS_UNKNOWN:
+		  default:
 			break;
 		}
 

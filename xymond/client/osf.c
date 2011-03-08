@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module for OSF                                              */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -131,5 +131,7 @@ void handle_osf_client(char *hostname, char *clienttype, enum ostype_t os,
 				   phystotal, (phystotal - physfree), -1, 
 				   swaptotal, (swaptotal - swapfree));
 	}
+
+	splitmsg_done();
 }
 

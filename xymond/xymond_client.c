@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module                                                      */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* "PORT" handling (C) Mirko Saam                                             */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -18,20 +18,18 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <signal.h>
 #include <time.h>
 #include <ctype.h>
 #include <limits.h>
 
-#include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "libxymon.h"
+#include "xymond_worker.h"
 #include "client_config.h"
-
-#include <signal.h>
-
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
-enum msgtype_t { MSG_CPU, MSG_DISK, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_SVCS, MSG_WHO, MSG_LAST };
+enum msgtype_t { MSG_CPU, MSG_DISK, MSG_INODE, MSG_FILES, MSG_MEMORY, MSG_MSGS, MSG_PORTS, MSG_PROCS, MSG_SVCS, MSG_WHO, MSG_LAST };
 
 typedef struct sectlist_t {
 	char *sname;
@@ -51,6 +49,38 @@ int sendclearports = 1;
 int sendclearsvcs = 1;
 int localmode     = 0;
 int noreportcolor = COL_CLEAR;
+
+typedef struct updinfo_t {
+	char *hostname;
+	time_t updtime;
+	int updseq;
+} updinfo_t;
+static RbtHandle updinfotree;
+
+int add_updateinfo(char *hostname, int seq, time_t tstamp)
+{
+	RbtIterator handle;
+	updinfo_t *itm;
+
+	handle = rbtFind(updinfotree, hostname);
+	if (handle == rbtEnd(updinfotree)) {
+		itm = (updinfo_t *)calloc(1, sizeof(updinfo_t));
+		itm->hostname = strdup(hostname);
+		rbtInsert(updinfotree, itm->hostname, itm);
+	}
+	else {
+		itm = (updinfo_t *)gettreeitem(updinfotree, handle);
+	}
+
+	if (itm->updtime == tstamp) {
+		dbgprintf("%s: Duplicate client message at time %d, seq %d, lastseq %d\n", hostname, (int) tstamp, seq, itm->updseq);
+		return 1;
+	}
+
+	itm->updtime = tstamp;
+	itm->updseq = seq;
+	return 0;
+}
 
 void nextsection_r_done(void *secthead)
 {
@@ -128,12 +158,28 @@ void splitmsg_r(char *clientdata, sectlist_t **secthead)
 	}
 }
 
-void splitmsg(char *clientdata)
+void splitmsg_done(void)
 {
+	/*
+	 * NOTE: This MUST be called when we're doing using a message,
+	 * and BEFORE the next message is read. If called after the
+	 * next message is read, the restore-pointers in the "defsecthead"
+	 * list will point to data inside the NEW message, and 
+	 * if the buffer-usage happens to be setup correctly, then
+	 * this will write semi-random data over the new message.
+	 */
 	if (defsecthead) {
 		/* Clean up after the previous message */
 		nextsection_r_done(defsecthead);
 		defsecthead = NULL;
+	}
+}
+
+void splitmsg(char *clientdata)
+{
+	if (defsecthead) {
+		errprintf("BUG: splitmsg_done() was not called on previous message - data corruption possible.\n");
+		splitmsg_done();
 	}
 
 	splitmsg_r(clientdata, &defsecthead);
@@ -207,13 +253,14 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 
 		currhost = hinfo;
 		currset = 0;
-		val = bbh_item(currhost, BBH_NOCOLUMNS);
+		val = xmh_item(currhost, XMH_NOCOLUMNS);
 		if (val) {
 			val = strdup(val);
 			tok = strtok(val, ",");
 			while (tok) {
 				if      (strcmp(tok, "cpu") == 0) currset |= (1 << MSG_CPU);
 				else if (strcmp(tok, "disk") == 0) currset |= (1 << MSG_DISK);
+				else if (strcmp(tok, "inode") == 0) currset |= (1 << MSG_INODE);
 				else if (strcmp(tok, "files") == 0) currset |= (1 << MSG_FILES);
 				else if (strcmp(tok, "memory") == 0) currset |= (1 << MSG_MEMORY);
 				else if (strcmp(tok, "msgs") == 0) currset |= (1 << MSG_MSGS);
@@ -229,6 +276,26 @@ int want_msgtype(void *hinfo, enum msgtype_t msg)
 	}
 
 	return ((currset & (1 << msg)) == 0);
+}
+
+char *nocolon(char *txt)
+{
+	static char *result = NULL;
+	char *p;
+	/*
+	 * This function changes all colons in "txt" to semi-colons.
+	 * This is needed because some of the data messages we use 
+	 * for reporting things like file- and directory-sizes, or
+	 * linecounts in files, use a colon-delimited string that
+	 * is sent to the RRD module, and this breaks for the Windows
+	 * Powershell client where filenames may contain a colon.
+	 */
+
+	if (result) xfree(result);
+	result = strdup(txt);
+
+	p = result; while ((p = strchr(p, ':')) != NULL) *p = ';';
+	return result;
 }
 
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
@@ -320,6 +387,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 	else *myupstr = '\0';
 
+	load5 = 0.0;
 	*loadresult = '\0';
 	p = strstr(uptimestr, "load average: ");
 	if (!p) p = strstr(uptimestr, "load averages: "); /* Many BSD's */
@@ -555,8 +623,8 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 			capahdr, mnthdr);
 		addtobuffer(monmsg, msgline);
 
-		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n%s\n",
-			  hostname, osname(os), capahdr, mnthdr, dfstr);
+		errprintf("Host %s (%s) sent incomprehensible disk report - missing columnheaders '%s' and '%s'\n",
+			  hostname, osname(os), capahdr, mnthdr);
 	}
 
 	/* Check for filesystems that must (not) exist */
@@ -611,6 +679,190 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 	freestrbuffer(dfstr_filtered);
 }
 
+void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
+		      void *hinfo, char *fromline, char *timestr, 
+		      char *freehdr, char *capahdr, char *mnthdr, char *dfstr)
+{
+	int inodecolor = COL_GREEN;
+
+	int ichecks = 0;
+	int freecol = -1;
+	int capacol = -1;
+	int mntcol  = -1;
+	char *p, *bol, *nl;
+	char msgline[4096];
+	strbuffer_t *monmsg, *dfstr_filtered;
+	char *iname;
+	int imin, imax, icount, icolor;
+	char *group;
+
+	if (!want_msgtype(hinfo, MSG_INODE)) return;
+	if (!dfstr) return;
+
+	dbgprintf("Inode check host %s\n", hostname);
+
+	monmsg = newstrbuffer(0);
+	dfstr_filtered = newstrbuffer(0);
+	ichecks = clear_inode_counts(hinfo, clientclass);
+	clearalertgroups();
+
+	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
+	while (bol) {
+		int ignored = 0;
+
+		nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+
+		if ((capacol == -1) && (mntcol == -1) && (freecol == -1)) {
+			/* First line: Check the header and find the columns we want */
+			p = strdup(bol);
+			freecol = selectcolumn(p, freehdr);
+			strcpy(p, bol);
+			capacol = selectcolumn(p, capahdr);
+			strcpy(p, bol);
+			mntcol = selectcolumn(p, mnthdr);
+			xfree(p);
+			dbgprintf("Inode check: header '%s', columns %d and %d\n", bol, freecol, capacol, mntcol);
+		}
+		else {
+			char *fsname = NULL, *levelstr = NULL;
+			int abswarn, abspanic;
+			long levelpct = -1, levelabs = -1, warnlevel, paniclevel;
+
+			p = strdup(bol);
+			fsname = getcolumn(p, mntcol); 
+			if (fsname) {
+				char *msgp = msgline;
+
+				add_inode_count(fsname);
+				get_inode_thresholds(hinfo, clientclass, fsname, 
+						    &warnlevel, &paniclevel, 
+						    &abswarn, &abspanic, 
+						    &ignored, &group);
+
+				strcpy(p, bol);
+				levelstr = getcolumn(p, freecol); if (levelstr) levelabs = atol(levelstr);
+				strcpy(p, bol);
+				levelstr = getcolumn(p, capacol); if (levelstr) levelpct = atol(levelstr);
+
+				dbgprintf("Inode check: FS='%s' level %ld%%/%ldU (thresholds: %lu/%lu, abs: %d/%d)\n",
+					fsname, levelpct, levelabs, 
+					warnlevel, paniclevel, abswarn, abspanic);
+
+				if (ignored) {
+					/* Forget about this one */
+				}
+				else if ( (abspanic && (levelabs <= paniclevel)) || 
+				     (!abspanic && (levelpct >= paniclevel)) ) {
+					if (inodecolor < COL_RED) inodecolor = COL_RED;
+
+					msgp += sprintf(msgp, "&red <!-- ID=%s --> %s ", fsname, fsname);
+
+					if (abspanic) msgp += sprintf(msgp, "(%lu units free)", levelabs);
+					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+
+					msgp += sprintf(msgp, " has reached the PANIC level ");
+
+					if (abspanic) msgp += sprintf(msgp, "(%lu units)\n", paniclevel);
+					else msgp += sprintf(msgp, "(%lu%%)\n", paniclevel);
+
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
+				}
+				else if ( (abswarn && (levelabs <= warnlevel)) || 
+				          (!abswarn && (levelpct >= warnlevel)) ) {
+					if (inodecolor < COL_YELLOW) inodecolor = COL_YELLOW;
+
+					msgp += sprintf(msgp, "&yellow <!-- ID=%s --> %s ", fsname, fsname);
+
+					if (abswarn) msgp += sprintf(msgp, "(%lu units free)", levelabs);
+					else msgp += sprintf(msgp, "(%lu%% used)", levelpct);
+
+					msgp += sprintf(msgp, " has reached the WARNING level ");
+
+					if (abswarn) msgp += sprintf(msgp, "(%lu units)\n", warnlevel);
+					else msgp += sprintf(msgp, "(%lu%%)\n", warnlevel);
+
+					addtobuffer(monmsg, msgline);
+					addalertgroup(group);
+				} else {
+					msgp += sprintf(msgp, "&green <!-- ID=%s --> %s OK\n", fsname, fsname);
+					addtobuffer(monmsg, msgline);
+				}
+			}
+
+			xfree(p);
+		}
+
+		if (!ignored) {
+			addtobuffer(dfstr_filtered, bol);
+			addtobuffer(dfstr_filtered, "\n");
+		}
+		if (nl) { *nl = '\n'; bol = nl+1; } else bol = NULL;
+	}
+
+	if ((capacol == -1) && (mntcol == -1)) {
+		/* If this happens, we havent found our headers so no filesystems have been processed */
+		inodecolor = COL_YELLOW;
+		sprintf(msgline, "&red Expected strings (%s and %s) not found in df output\n", 
+			capahdr, mnthdr);
+		addtobuffer(monmsg, msgline);
+
+		errprintf("Host %s (%s) sent incomprehensible inode report - missing columnheaders '%s' and '%s'\n%s\n",
+			  hostname, osname(os), capahdr, mnthdr, dfstr);
+	}
+
+	/* Check for filesystems that must (not) exist */
+	while ((iname = check_inode_count(&icount, &imin, &imax, &icolor, &group)) != NULL) {
+		char limtxt[1024];
+
+		*limtxt = '\0';
+
+		if (imax == -1) {
+			if (imin > 0) sprintf(limtxt, "%d or more", imin);
+			else if (imin == 0) sprintf(limtxt, "none");
+		}
+		else {
+			if (imin > 0) sprintf(limtxt, "between %d and %d", imin, imax);
+			else if (imin == 0) sprintf(limtxt, "at most %d", imax);
+		}
+
+		if (icolor != COL_GREEN) {
+			if (icolor > inodecolor) inodecolor = icolor;
+			sprintf(msgline, "&%s <!-- ID=%s -->Filesystem %s (found %d, req. %s)\n",
+				colorname(icolor), iname, iname, icount, limtxt);
+			addtobuffer(monmsg, msgline);
+			addalertgroup(group);
+		}
+	}
+
+	/* Now we know the result, so generate a status message */
+	init_status(inodecolor);
+	group = getalertgroups();
+	if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+	addtostatus(msgline);
+
+	sprintf(msgline, "%s.inode %s %s - Filesystems %s\n",
+		commafy(hostname), colorname(inodecolor), 
+		(timestr ? timestr : "<No timestamp data>"), 
+		((inodecolor == COL_GREEN) ? "OK" : "NOT ok"));
+	addtostatus(msgline);
+
+	/* And add the info about what's wrong */
+	if (STRBUFLEN(monmsg)) {
+		addtostrstatus(monmsg);
+		addtostatus("\n");
+	}
+
+	/* And the full df output */
+	addtostrstatus(dfstr_filtered);
+
+	if (fromline && !localmode) addtostatus(fromline);
+	finish_status();
+
+	freestrbuffer(monmsg);
+	freestrbuffer(dfstr_filtered);
+}
+
 void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 		        void *hinfo, char *fromline, char *timestr, 
 			long memphystotal, long memphysused, long memactused,
@@ -631,17 +883,19 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	get_memory_thresholds(hinfo, clientclass, &physyellow, &physred, &swapyellow, &swapred, &actyellow, &actred);
 
 	memphyspct = (memphystotal > 0) ? ((100 * memphysused) / memphystotal) : 0;
-	if (memphyspct > physyellow) physcolor = COL_YELLOW;
-	if (memphyspct > physred)    physcolor = COL_RED;
+	if (memphyspct <= 100) {
+		if (memphyspct > physyellow) physcolor = COL_YELLOW;
+		if (memphyspct > physred)    physcolor = COL_RED;
+	}
 
-	if (memswapused != -1) {
-		memswappct = (memswaptotal > 0) ? ((100 * memswapused) / memswaptotal) : 0;
+	if (memswapused != -1) memswappct = (memswaptotal > 0) ? ((100 * memswapused) / memswaptotal) : 0;
+	if (memswappct <= 100) {
 		if (memswappct > swapyellow) swapcolor = COL_YELLOW;
 		if (memswappct > swapred)    swapcolor = COL_RED;
 	}
 
-	if (memactused != -1) {
-		memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
+	if (memactused != -1) memactpct = (memphystotal > 0) ? ((100 * memactused) / memphystotal) : 0;
+	if (memactpct <= 100) {
 		if (memactpct  > actyellow)  actcolor  = COL_YELLOW;
 		if (memactpct  > actred)     actcolor  = COL_RED;
 	}
@@ -675,14 +929,24 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	addtostatus(msgline);
 
 	if (memactused != -1) {
-		sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
-			colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
+		if (memactpct <= 100)
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+				colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
+		else
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%% - invalid data\n", 
+				colorname(COL_CLEAR), "Actual", memactused, memphystotal, 0);
+			
 		addtostatus(msgline);
 	}
 
 	if (memswapused != -1) {
-		sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
-			colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
+		if (memswappct <= 100)
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
+				colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
+		else
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%% - invalid data\n", 
+				colorname(COL_CLEAR), "Swap", memswapused, memswaptotal, 0);
+
 		addtostatus(msgline);
 	}
 	if (fromline && !localmode) addtostatus(fromline);
@@ -747,7 +1011,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 	if (eol) *eol = '\n';
 
 	if (debug) {
-		if (cmdofs >= 0) dbgprintf("Host %s: Found ps commandline at offset %d\n", hostname, cmdofs);
+		if (cmdofs >= 0) dbgprintf("Host %s: Found ps command line at offset %d\n", hostname, cmdofs);
 		else dbgprintf("Host %s: None of the headings found\n", hostname);
 	}
 
@@ -885,7 +1149,7 @@ void unix_procs_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	freestrbuffer(monmsg);
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1105,9 +1369,9 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", id, sz);
+				sprintf(msgline, "%s:%lld\n", nocolon(id), sz);
 #else
-				sprintf(msgline, "%s:%ld\n", id, sz);
+				sprintf(msgline, "%s:%ld\n", nocolon(id), sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -1122,9 +1386,9 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", id, sz);
+				sprintf(msgline, "%s:%lld\n", nocolon(id), sz);
 #else
-				sprintf(msgline, "%s:%ld\n", id, sz);
+				sprintf(msgline, "%s:%ld\n", nocolon(id), sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -1144,7 +1408,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 			if (trackit) {
 				/* Save the size data for later DATA message to track directory sizes */
 				if (id == NULL) id = sfn;
-				sprintf(msgline, "%s:%lu\n", id, sz);
+				sprintf(msgline, "%s:%lu\n", nocolon(id), sz);
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
 			}
@@ -1240,7 +1504,7 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(greendata);
 	}
 
-	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anyszdata) sendmessage(STRBUF(sizedata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(sizedata);
 }
 
@@ -1273,7 +1537,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 				countstr = (id ? strtok(NULL, "\n") : NULL);
 				if (id && countstr) {
 					countstr += strspn(countstr, "\t ");
-					sprintf(msgline, "%s#%s:%s\n", fn, id, countstr);
+					sprintf(msgline, "%s#%s:%s\n", nocolon(fn), id, countstr);
 					addtobuffer(countdata, msgline);
 				}
 
@@ -1282,7 +1546,7 @@ void linecount_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 	}
 
-	if (anydata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anydata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1300,7 +1564,7 @@ void unix_netstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.netstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, netstatstr);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1318,7 +1582,7 @@ void unix_ifstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.ifstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, ifstatstr);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1345,7 +1609,7 @@ void unix_vmstat_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "data %s.vmstat\n%s\n", commafy(hostname), osname(os));
 	addtobuffer(msg, msgline);
 	addtobuffer(msg, p+1);
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	freestrbuffer(msg);
 }
@@ -1403,7 +1667,8 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		/* Check the number found for each monitored port */
  		while ((pname = check_port_count(&pcount, &pmin, &pmax, &pcolor, &pid, &ptrack, &group)) != NULL) {
  			char limtxt[1024];
-			
+
+			*limtxt = '\0';
 			if (pmax == -1) {
 				if (pmin > 0) sprintf(limtxt, "%d or more", pmin);
 				else if (pmin == 0) sprintf(limtxt, "none");
@@ -1471,7 +1736,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 		clearstrbuffer(monmsg);
 	}
 
-	if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+	if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
 	clearstrbuffer(countdata);
 }
 
@@ -1487,14 +1752,13 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/darwin.c"
 #include "client/irix.c"
 #include "client/sco_sv.c"
-#include "client/netware-snmp.c"
-#include "client/hmdc.c"
 #include "client/bbwin.c"
+#include "client/powershell.c"	/* Must go after client/bbwin.c */
 #include "client/zvm.c"
 #include "client/zvse.c"
 #include "client/zos.c"
+#include "client/mqcollect.c"
 #include "client/snmpcollect.c"
-#include "client/gnukfreebsd.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1524,7 +1788,7 @@ void testmode(char *configfn)
 	char s[4096];
 	int cfid;
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_client_config(configfn);
 	*hostname = '\0';
 	*clientclass = '\0';
@@ -1538,19 +1802,19 @@ void testmode(char *configfn)
 
 			if (strlen(hostname) == 0) {
 				hinfo = oldhinfo;
-				if (hinfo) strcpy(hostname, bbh_item(hinfo, BBH_HOSTNAME));
+				if (hinfo) strcpy(hostname, xmh_item(hinfo, XMH_HOSTNAME));
 			}
 			else if (strcmp(hostname, ".") == 0) {
 				exit(0);
 			}
 			else if (strcmp(hostname, "!") == 0) {
-				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+				load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 				load_client_config(configfn);
 				*hostname = '\0';
 			}
 			else if (strcmp(hostname, "?") == 0) {
 				dump_client_config();
-				if (oldhinfo) strcpy(hostname, bbh_item(oldhinfo, BBH_HOSTNAME));
+				if (oldhinfo) strcpy(hostname, xmh_item(oldhinfo, XMH_HOSTNAME));
 			}
 			else {
 				hinfo = hostinfo(hostname);
@@ -1657,7 +1921,6 @@ void testmode(char *configfn)
 				if (*s == '@') {
 					fd = fopen(s+1, "r");
 					while (fd && fgets(s, sizeof(s), fd)) {
-						clean_instr(s);
 						if (*s) addtobuffer(logdata, s);
 					}
 					fclose(fd);
@@ -1756,6 +2019,7 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	time_t nextconfigload = 0;
 	char *configfn = NULL;
+	char **collectors = NULL;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -1788,6 +2052,19 @@ int main(int argc, char *argv[])
 			char *lp = strchr(argv[argi], '=');
 			configfn = strdup(lp+1);
 		}
+		else if (argnmatch(argv[argi], "--collectors=")) {
+			char *lp = strdup(strchr(argv[argi], '=')+1);
+			char *tok;
+			int i;
+
+			tok = strtok(lp, ","); i = 0; collectors = (char **)calloc(1, sizeof(char *));
+			while (tok) {
+				collectors = (char **)realloc(collectors, (i+2)*sizeof(char *));
+				if (strcasecmp(tok, "default") == 0) tok = "";
+				collectors[i++] = tok; collectors[i] = NULL;
+				tok = strtok(NULL, ",");
+			}
+		}
 		else if (argnmatch(argv[argi], "--dump-config")) {
 			load_client_config(configfn);
 			dump_client_config();
@@ -1806,34 +2083,43 @@ int main(int argc, char *argv[])
 
 	save_errbuf = 0;
 
+	if (collectors == NULL) {
+		/* Setup the default collectors */
+		collectors = (char **)calloc(2, sizeof(char *));
+		collectors[0] = "";
+		collectors[1] = NULL;
+	}
+
 	/* Do the network stuff if needed */
 	net_worker_run(ST_CLIENT, LOC_ROAMING, NULL);
 
 	/* Signals */
-	setup_signalhandler("hobbitd_client");
+	setup_signalhandler("xymond_client");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGCHLD, SIG_IGN);
 
+	updinfotree = rbtNew(name_compare);
 	running = 1;
 
 	while (running) {
 		char *eoln, *restofmsg, *p;
 		char *metadata[MAX_META+1];
 		int metacount;
+		time_t nowtimer = gettimer();
 
-		msg = get_hobbitd_message(C_CLIENT, argv[0], &seq, NULL);
+		msg = get_xymond_message(C_CLIENT, argv[0], &seq, NULL);
 		if (msg == NULL) {
 			if (!localmode) errprintf("Failed to get a message, terminating\n");
 			running = 0;
 			continue;
 		}
 
-		if (reloadconfig || (getcurrenttime(NULL) >= nextconfigload)) {
-			nextconfigload = getcurrenttime(NULL) + 600;
+		if (reloadconfig || (nowtimer >= nextconfigload)) {
+			nextconfigload = nowtimer + 600;
 			reloadconfig = 0;
-			if (!localmode) load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			if (!localmode) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			load_client_config(configfn);
 		}
 
@@ -1848,6 +2134,7 @@ int main(int argc, char *argv[])
 		}
 
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < MAX_META)) {
 			metadata[metacount++] = p;
@@ -1856,6 +2143,7 @@ int main(int argc, char *argv[])
 		metadata[metacount] = NULL;
 
 		if ((metacount > 4) && (strncmp(metadata[0], "@@client", 8) == 0)) {
+			int cnum, havecollector;
 			time_t timestamp = atoi(metadata[1]);
 			char *sender = metadata[2];
 			char *hostname = metadata[3];
@@ -1867,8 +2155,11 @@ int main(int argc, char *argv[])
 
 			dbgprintf("Client report from host %s\n", (hostname ? hostname : "<unknown>"));
 
-			/* We handle data from the default client collector and snmpcollect - nothing else */
-			if (collectorid && (strcmp(collectorid, "") != 0) && (strcmp(collectorid, "snmpcollect") != 0)) continue;
+			/* Check if we are running a collector module for this type of client */
+			if (!collectorid) collectorid = "";
+			for (cnum = 0, havecollector = 0; (collectors[cnum] && !havecollector); cnum++) 
+				havecollector = (strcmp(collectorid, collectors[cnum]) == 0);
+			if (!havecollector) continue;
 
 			hinfo = (localmode ? localhostinfo(hostname) : hostinfo(hostname));
 			if (!hinfo) continue;
@@ -1877,64 +2168,63 @@ int main(int argc, char *argv[])
 			/* Default clientclass to the OS name */
 			if (!clientclass || (*clientclass == '\0')) clientclass = clientos;
 
+			/* Check for duplicates */
+			if (add_updateinfo(hostname, seq, timestamp) != 0) continue;
+
 			combo_start();
 			switch (os) {
-			  case OS_FREEBSD: 
-				handle_freebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_FREEBSD:
+                                handle_freebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_NETBSD: 
-				handle_netbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_NETBSD:
+                                handle_netbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_OPENBSD: 
-				handle_openbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_OPENBSD:
+                                handle_openbsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_LINUX22: 
-			  case OS_LINUX: 
-			  case OS_RHEL3: 
-				handle_linux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_LINUX22:
+                          case OS_LINUX:
+                          case OS_RHEL3:
+                                handle_linux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_DARWIN:
-				handle_darwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_DARWIN:
+                                handle_darwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_SOLARIS: 
-				handle_solaris_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_SOLARIS:
+                                handle_solaris_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_HPUX: 
-				handle_hpux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_HPUX:
+                                handle_hpux_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_OSF: 
-				handle_osf_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_OSF:
+                                handle_osf_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_AIX: 
-				handle_aix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_AIX:
+                                handle_aix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_IRIX:
-				handle_irix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
-				
+                          case OS_IRIX:
+                                handle_irix_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
+
                           case OS_SCO_SV:
-  			        handle_sco_sv_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
-				
-                          case OS_NETWARE_SNMP:
-  			        handle_netware_snmp_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                                handle_sco_sv_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_WIN32_HMDC: 
-  			        handle_win32_hmdc_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
-				break;
+                          case OS_WIN32_BBWIN:
+                                handle_win32_bbwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+                                break;
 
-			  case OS_WIN32_BBWIN: 
-  			        handle_win32_bbwin_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+			  case OS_WIN_POWERSHELL:
+				handle_powershell_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  case OS_ZVM:
@@ -1953,15 +2243,13 @@ int main(int argc, char *argv[])
 				handle_snmpcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
-			  case OS_GNUKFREEBSD:
-				handle_gnukfreebsd_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+			  case OS_MQCOLLECT:
+				handle_mqcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
-			  case OS_WIN32: 
-			  case OS_SNMP: 
-			  case OS_UNKNOWN:
-				errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
-				break;
+			  default:
+                                errprintf("No client backend for OS '%s' sent by %s\n", clientos, sender);
+                                break;
 			}
 			combo_end();
 		}
@@ -1971,7 +2259,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

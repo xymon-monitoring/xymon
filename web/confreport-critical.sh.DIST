@@ -1,10 +1,10 @@
 #!/bin/sh
 
-# This is the Hobbit CGI script interface to hobbit-confreport.cgi
+# This is the Xymon CGI script interface to confreport.cgi
 # It shows only the statuses on the Critical systems view
 #
 # Install this script in your webservers' cgi-bin directory
 
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-confreport.cgi $CGI_HOBBITCONFREPORT_OPTS --critical
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/confreport.cgi $CGI_CONFREPORT_OPTS --critical
 

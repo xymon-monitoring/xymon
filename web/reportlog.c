@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit report-mode statuslog viewer.                                       */
+/* Xymon report-mode statuslog viewer.                                        */
 /*                                                                            */
 /* This tool generates the report status log for a single status, with the    */
 /* availability percentages etc needed for a report-mode view.                */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 char *hostname = NULL;
 char *displayname = NULL;
@@ -121,20 +121,20 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-replog");
+	redirect_cgilog("reportlog");
 
 	cgidata = cgi_request();
 	parse_query();
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
         if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
 		return 1;
 	}
-	ip = bbh_item(hinfo, BBH_IP);
-	displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
+	ip = xmh_item(hinfo, XMH_IP);
+	displayname = xmh_item(hinfo, XMH_DISPLAYNAME);
 	if (!displayname) displayname = hostname;
 
-	sprintf(histlogfn, "%s/%s.%s", xgetenv("BBHIST"), commafy(hostname), service);
+	sprintf(histlogfn, "%s/%s.%s", xgetenv("XYMONHISTDIR"), commafy(hostname), service);
 	fd = fopen(histlogfn, "r");
 	if (fd == NULL) {
 		errormsg("Cannot open history file");
@@ -144,8 +144,8 @@ int main(int argc, char *argv[])
 	fclose(fd);
 
 	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (int)getpid());
-	sprintf(textrepfullfn, "%s/%s", xgetenv("BBREP"), textrepfn);
-	sprintf(textrepurl, "%s/%s", xgetenv("BBREPURL"), textrepfn);
+	sprintf(textrepfullfn, "%s/%s", xgetenv("XYMONREPDIR"), textrepfn);
+	sprintf(textrepurl, "%s/%s", xgetenv("XYMONREPURL"), textrepfn);
 	textrep = fopen(textrepfullfn, "w");
 
 	/* Now generate the webpage */

@@ -1,0 +1,92 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of HOSTGRAPHS.CGI</TITLE>
+</HEAD><BODY>
+<H1>HOSTGRAPHS.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+hostgraphs.cgi - CGI program to show multiple graphs
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>hostgraph.cgi</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>hostgraph.cgi</B>
+is invoked as a CGI script via the hostgraph.sh CGI wrapper.
+<P>
+If no parameters are provided when invoked, it will present a form
+where the user can select a time period, one or more hosts, and a
+set of graphs.
+<P>
+The parameters selected by the user are passed to a second invocation
+of hostgraph.cgi, and result in a webpage showing a list of
+graph images based on the trend data stored about the hosts.
+<P>
+If multiple graph-types are selected, hostgraph.cgi will display
+a list of graphs, with one graph per type.
+<P>
+If multiple hosts are selected, hostgraph.cgi will attempt to
+display a multi-host graph for each type where the graphs for all
+hosts are overlayed in a single image, allowing for easy comparison
+of the hosts.
+<P>
+The hostlist uses the PAGEPATH cookie provided by Xymon webpages to
+select the list of hosts to present. Only the hosts visible on the
+page where hostgraph.cgi is invoked from will be visible.
+<P>
+The resulting graph page can be bookmarked, but the bookmark
+also fixates the time period shown.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--env=FILENAME<DD>
+Loads the environment defined in FILENAME before executing the CGI script.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>BUGS</H2>
+
+This utility is experimental. It may change in a future release of Xymon.
+<P>
+It is possible for the user to select graphs which do not exist. This results
+in broken image links.
+<P>
+The set of graph-types is fixed in the server/web/hostgraphs_form template 
+and does not adjust to which graphs are available.
+<P>
+If the tool is invoked directly, all hosts defined in Xymon will be listed.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">BUGS</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

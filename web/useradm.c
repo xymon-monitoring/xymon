@@ -1,21 +1,21 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Xymon webpage generator tool.                                              */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: boilerplate.c 5819 2008-09-30 16:37:31Z storner $";
+static char rcsid[] = "$Id: useradm.c 6588 2010-11-14 17:21:19Z storner $";
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static void errormsg(char *msg)
 {
@@ -102,8 +102,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (passfile == NULL) {
-		passfile = (char *)malloc(strlen(xgetenv("BBHOME")) + 20);
-		sprintf(passfile, "%s/etc/hobbitpasswd", xgetenv("BBHOME"));
+		passfile = (char *)malloc(strlen(xgetenv("XYMONHOME")) + 20);
+		sprintf(passfile, "%s/etc/xymonpasswd", xgetenv("XYMONHOME"));
 	}
 
 	switch (parse_query()) {
@@ -150,8 +150,8 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	sethostenv_clearlist();
-	sethostenv_addtolist("", "", 1); /* Have a blank entry first so we won't delete one by accident */
+	sethostenv_clearlist(NULL);
+	sethostenv_addtolist(NULL, "", "", NULL, 1); /* Have a blank entry first so we won't delete one by accident */
 	fd = fopen(passfile, "r");
 	if (fd != NULL) {
 		char l[1024];
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
 		while (fgets(l, sizeof(l), fd)) {
 			id = l; delim = strchr(l, ':'); if (delim) *delim = '\0';
-			sethostenv_addtolist(id, id, 0);
+			sethostenv_addtolist(NULL, id, id, NULL, 0);
 		}
 
 		fclose(fd);

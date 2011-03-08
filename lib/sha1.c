@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This file is part of the Hobbit monitor library, but was taken from the    */
-/* "mutt" source archive and adapted for use in Hobbit. According to the      */
+/* This file is part of the Xymon monitor library, but was taken from the     */
+/* "mutt" source archive and adapted for use in Xymon. According to the       */
 /* copyright notice in the "mutt" version, this file is public domain.        */
 /*----------------------------------------------------------------------------*/
 
@@ -34,7 +34,7 @@ typedef struct {
 } SHA1_CTX;
 
 
-#if !defined(HOBBIT_BIG_ENDIAN) && !defined(HOBBIT_LITTLE_ENDIAN)
+#if !defined(XYMON_BIG_ENDIAN) && !defined(XYMON_LITTLE_ENDIAN)
 #error "Endianness is UNDEFINED"
 #endif
 
@@ -44,7 +44,7 @@ typedef struct {
 
 /* blk0() and blk() perform the initial expand. */
 /* I got the idea of expanding during the round function from SSLeay */
-#ifdef HOBBIT_BIG_ENDIAN
+#ifdef XYMON_BIG_ENDIAN
 #  define blk0(i) block->l[i]
 #else
 #  define blk0(i) (block->l[i] = (rol(block->l[i],24)&0xFF00FF00) \
@@ -209,7 +209,7 @@ unsigned char c;
 }
 
 /*
- * Not part of the original file. Added for use with Hobbit,
+ * Not part of the original file. Added for use with Xymon,
  * to avoid namespace-pollution when compiled with OpenSSL.
  */
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -20,6 +20,9 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 	static int ptnsetup = 0;
 	static pcre *inclpattern = NULL;
 	static pcre *exclpattern = NULL;
+
+	if (strstr(msg, "netapp.pl")) return do_netapp_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	if (strstr(msg, "dbcheck.pl")) return do_dbcheck_tablespace_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	if (disk_tpl == NULL) disk_tpl = setup_template(disk_params);
 

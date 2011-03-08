@@ -1,8 +1,8 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# Irix client for Hobbit                                                     #
+# Irix client for Xymon                                                      #
 #                                                                            #
-# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
@@ -50,9 +50,9 @@ then
 fi
 
 # vmstat and iostat do not exist on irix. SAR is your only option at this time. 
-nohup sh -c "sar 300 2 1>$BBTMP/hobbit_sar.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_sar.$MACHINEDOTS.$$ $BBTMP/hobbit_sar.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "sar 300 2 1>$XYMONTMP/xymon_sar.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_sar.$MACHINEDOTS.$$ $XYMONTMP/xymon_sar.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/hobbit_sar.$MACHINEDOTS; then echo "[sar]"; cat $BBTMP/hobbit_sar.$MACHINEDOTS; rm -f $BBTMP/hobbit_sar.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_sar.$MACHINEDOTS; then echo "[sar]"; cat $XYMONTMP/xymon_sar.$MACHINEDOTS; rm -f $XYMONTMP/xymon_sar.$MACHINEDOTS; fi
 
 exit
 

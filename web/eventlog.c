@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit eventlog generator tool.                                            */
+/* Xymon eventlog generator tool.                                             */
 /*                                                                            */
 /* This displays the "eventlog" found on the "All non-green status" page.     */
 /* It also implements a CGI tool to show an eventlog for a given period of    */
 /* time, as a reporting function.                                             */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /* Host/test/color/start/end filtering code by Eric Schwimmer 2005            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -28,7 +28,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 240;	/* Default: for the past 4 hours */
@@ -43,8 +43,8 @@ char	*expageregex = NULL;
 char	*colorregex = NULL;
 int	ignoredialups = 0;
 int	topcount = 0;
-eventsummary_t summarybar = S_NONE;
-countsummary_t counttype = COUNT_NONE;
+eventsummary_t summarybar = XYMON_S_NONE;
+countsummary_t counttype = XYMON_COUNT_NONE;
 char	*webfile_hf = "event";
 char	*webfile_form = "event_form";
 cgidata_t *cgidata = NULL;
@@ -102,14 +102,14 @@ static void parse_query(void)
 			if (*(cwalk->value)) topcount = atoi(cwalk->value);
 		}
 		else if (strcasecmp(cwalk->name, "SUMMARY") == 0) {
-			if (strcasecmp(cwalk->value, "hosts") == 0) summarybar = S_HOST_BREAKDOWN;
-			else if (strcasecmp(cwalk->value, "services") == 0) summarybar = S_SERVICE_BREAKDOWN;
-			else summarybar = S_NONE;
+			if (strcasecmp(cwalk->value, "hosts") == 0) summarybar = XYMON_S_HOST_BREAKDOWN;
+			else if (strcasecmp(cwalk->value, "services") == 0) summarybar = XYMON_S_SERVICE_BREAKDOWN;
+			else summarybar = XYMON_S_NONE;
 		}
 		else if (strcasecmp(cwalk->name, "COUNTTYPE") == 0) {
-			if (strcasecmp(cwalk->value, "events") == 0) counttype = COUNT_EVENTS;
-			else if (strcasecmp(cwalk->value, "duration") == 0) counttype = COUNT_DURATION;
-			else counttype = COUNT_NONE;
+			if (strcasecmp(cwalk->value, "events") == 0) counttype = XYMON_COUNT_EVENTS;
+			else if (strcasecmp(cwalk->value, "duration") == 0) counttype = XYMON_COUNT_DURATION;
+			else counttype = XYMON_COUNT_NONE;
 		}
 		else if (strcasecmp(cwalk->name, "TIMETXT") == 0) {
 			if (*(cwalk->value)) strcpy(periodstring, cwalk->value);
@@ -165,36 +165,36 @@ void show_topchanges(FILE *output,
 		addtobuffer(othercriteria, "&amp;SUMMARY=services");
 		addtobuffer(othercriteria, "&amp;TIMETXT=");
 		addtobuffer(othercriteria, periodstring);
-		if (counttype == COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
-		else if (counttype == COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
+		if (counttype == XYMON_COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
+		else if (counttype == XYMON_COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d hosts\" border=0>\n", topcount);
 		fprintf(output, "      <tr><th colspan=3>Top %d hosts</th></tr>\n", topcount);
 		fprintf(output, "      <tr><th align=left>Host</th><th align=left colspan=2>%s</th></tr>\n",
-			(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+			(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 
 		/* Compute the total count */
 		for (i=0, cwalk=hostcounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
 
 		for (i=0, cwalk=hostcounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
-					bbh_item(cwalk->src, BBH_HOSTNAME), 
+				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?HOSTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
-					bbh_item(cwalk->src, BBH_HOSTNAME), 
+					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 				if (STRBUFLEN(s) > 0) addtobuffer(s, "|"); 
 				addtobuffer(s, "^");
-				addtobuffer(s, bbh_item(cwalk->src, BBH_HOSTNAME));
+				addtobuffer(s, xmh_item(cwalk->src, XMH_HOSTNAME));
 				addtobuffer(s, "$");
 			}
 			else {
 				others += cwalk->total;
 			}
 		}
-		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXHOSTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+		fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?EXHOSTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 			STRBUF(s),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
@@ -246,22 +246,22 @@ void show_topchanges(FILE *output,
 		addtobuffer(othercriteria, "&amp;SUMMARY=hosts");
 		addtobuffer(othercriteria, "&amp;TIMETXT=");
 		addtobuffer(othercriteria, periodstring);
-		if (counttype == COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
-		else if (counttype == COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
+		if (counttype == XYMON_COUNT_EVENTS) addtobuffer(othercriteria, "&amp;COUNTTYPE=events");
+		else if (counttype == XYMON_COUNT_DURATION) addtobuffer(othercriteria, "&amp;COUNTTYPE=duration");
 
 
 		fprintf(output, "<td width=40%% align=center valign=top>\n");
 		fprintf(output, "   <table summary=\"Top %d services\" border=0>\n", topcount);
 		fprintf(output, "      <tr><th colspan=3>Top %d services</th></tr>\n", topcount);
 		fprintf(output, "      <tr><th align=left>Service</th><th align=left colspan=2>%s</th></tr>\n",
-			(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+			(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 
 		/* Compute the total count */
 		for (i=0, cwalk=svccounthead; (cwalk); i++, cwalk=cwalk->next) totalcount += cwalk->total;
 
 		for (i=0, cwalk=svccounthead; (cwalk && (cwalk->total > 0)); i++, cwalk=cwalk->next) {
 			if (i < topcount) {
-				fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+				fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?TESTMATCH=^%s$&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</a></td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 					((htnames_t *)cwalk->src)->name, 
 					(unsigned long)firstevent, (unsigned long)lastevent,
 					STRBUF(othercriteria),
@@ -276,7 +276,7 @@ void show_topchanges(FILE *output,
 				others += cwalk->total;
 			}
 		}
-		fprintf(output, "      <tr><td align=left><a href=\"bb-eventlog.sh?EXTESTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
+		fprintf(output, "      <tr><td align=left><a href=\"eventlog.sh?EXTESTMATCH=%s&amp;MAXCOUNT=-1&amp;MAXTIME=-1&amp;FROMTIME=%lu&amp;TOTIME=%lu%s\">%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</td></tr>\n", 
 			STRBUF(s),
 			(unsigned long)firstevent, (unsigned long)lastevent,
 			STRBUF(othercriteria),
@@ -320,7 +320,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-eventlog");
+	redirect_cgilog("eventlog");
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
@@ -334,7 +335,6 @@ int main(int argc, char *argv[])
 
 	*periodstring = '\0';
 	parse_query();
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	if ((*periodstring == '\0') && (fromtime || totime)) {
 		if (fromtime && totime) sprintf(periodstring, "Events between %s - %s", fromtime, totime);
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
 		do_eventlog(NULL, -1, -1, fromtime, totime, 
 			    pageregex, expageregex, hostregex, exhostregex, testregex, extestregex,
 			    colorregex, ignoredialups, NULL,
-			    &events, &hcounts, &scounts, counttype, S_NONE, NULL);
+			    &events, &hcounts, &scounts, counttype, XYMON_S_NONE, NULL);
 
 		lastevent = (totime ? eventreport_time(totime) : getcurrenttime(NULL));
 

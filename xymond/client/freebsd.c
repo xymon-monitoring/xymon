@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module for FreeBSD                                          */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -118,5 +118,7 @@ void handle_freebsd_client(char *hostname, char *clienttype, enum ostype_t os,
 		unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 			   memphystotal, memphysused, -1, memswaptotal, memswapused);
 	}
+
+	splitmsg_done();
 }
 

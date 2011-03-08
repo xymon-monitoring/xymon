@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* This is an implementation of a fast "ping" program, for use with Hobbit.   */
+/* This is an implementation of a fast "ping" program, for use with Xymon.    */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -37,7 +37,7 @@ static char rcsid[] = "$Id$";
 
 #include <stdio.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define PING_PACKET_SIZE 64
 #define PING_MINIMUM_SIZE ICMP_MINLEN
@@ -47,7 +47,7 @@ typedef struct hostdata_t {
 	int id;
 	struct sockaddr_in addr;	/* Address of host to ping */
 	int received;			/* how many ICMP_ECHO replies we've got */
-	struct timeval rtt_total;
+	struct timespec rtt_total;
 	struct hostdata_t *next;
 } hostdata_t;
 
@@ -89,7 +89,7 @@ char *nextip(int argc, char *argv[], FILE *fd)
 	static char buf[4096];
 
 	if (argi == 0) {
-		/* Check if there are any commandline IP's */
+		/* Check if there are any command-line IP's */
 		struct sockaddr_in ina;
 
 		for (argi=1; ((argi < argc) && (inet_aton(argv[argi], &ina.sin_addr) == 0)); argi++) ;
@@ -157,7 +157,7 @@ void load_ips(int argc, char *argv[], FILE *fd)
 /* This is the data we send with each ping packet */
 typedef struct pingdata_t {
 	int id;				/* ID for the host this belongs to */
-	struct timeval timesent;	/* time we sent this ping */
+	struct timespec timesent;	/* time we sent this ping */
 } pingdata_t;
 
 
@@ -203,7 +203,7 @@ int send_ping(int sock, int startidx, int minresponses)
 
 	pingdata = (struct pingdata_t *)(buffer + sizeof(struct icmp));
 	pingdata->id = idx;
-	gettimeofday(&pingdata->timesent, &tz);
+	getntimer(&pingdata->timesent);
 
 	icmphdr->icmp_cksum = calc_icmp_checksum((unsigned short *)buffer, PING_PACKET_SIZE);
 
@@ -240,8 +240,7 @@ int get_response(int sock)
 	struct icmp *icmphdr;
 	struct pingdata_t *pingdata;
 	int hostidx;
-	struct timeval rtt;
-	struct timezone tz;
+	struct timespec rtt;
 
 	/*
 	 * Read responses from the network.
@@ -251,12 +250,13 @@ int get_response(int sock)
 	pktcount = 0;
 	do {
 		addrlen = sizeof(addr);
-		gettimeofday(&rtt, &tz);
 		n = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&addr, &addrlen);
 		if (n < 0) {
 			if (errno != EWOULDBLOCK) errprintf("Failed to receive packet: %s\n", strerror(errno));
 			continue;
 		}
+
+		getntimer(&rtt);
 
 		/* Check the IP header - we need to have at least enough bytes for an ICMP header. */
 		iphdr = (struct ip *)buffer;
@@ -294,18 +294,18 @@ int get_response(int sock)
 
 				/* Calculate the round-trip time. */
 				rtt.tv_sec -= pingdata->timesent.tv_sec;
-				rtt.tv_usec -= pingdata->timesent.tv_usec;
-				if (rtt.tv_usec < 0) {
+				rtt.tv_nsec -= pingdata->timesent.tv_nsec;
+				if (rtt.tv_nsec < 0) {
 					rtt.tv_sec--;
-					rtt.tv_usec += 1000000;
+					rtt.tv_nsec += 1000000000;
 				}
 
 				/* Add RTT to the total time */
 				hosts[hostidx]->rtt_total.tv_sec += rtt.tv_sec;
-				hosts[hostidx]->rtt_total.tv_usec += rtt.tv_usec;
-				if (hosts[hostidx]->rtt_total.tv_usec >= 1000000) {
+				hosts[hostidx]->rtt_total.tv_nsec += rtt.tv_nsec;
+				if (hosts[hostidx]->rtt_total.tv_nsec >= 1000000000) {
 					hosts[hostidx]->rtt_total.tv_sec++;
-					hosts[hostidx]->rtt_total.tv_usec -= 1000000;
+					hosts[hostidx]->rtt_total.tv_nsec -= 1000000000;
 				}
 			}
 			break;
@@ -351,12 +351,12 @@ void show_results(void)
 
 	/*
 	 * Print out the results. Format is identical to "fping -Ae" so we can use
-	 * it directly in Hobbit without changing the bbtest-net code.
+	 * it directly in Xymon without changing the xymonnet code.
 	 */
 	for (idx = 0; (idx < hostcount); idx++) {
 		if (hosts[idx]->received > 0) {
 			printf("%s is alive", inet_ntoa(hosts[idx]->addr.sin_addr));
-			rtt_usecs = (hosts[idx]->rtt_total.tv_sec*1000000 + hosts[idx]->rtt_total.tv_usec) / hosts[idx]->received;
+			rtt_usecs = (hosts[idx]->rtt_total.tv_sec*1000000 + (hosts[idx]->rtt_total.tv_nsec / 1000)) / hosts[idx]->received;
 			if (rtt_usecs >= 1000) {
 				printf(" (%lu ms)\n", rtt_usecs / 1000);
 			}
@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[argi], "--debug", 7) == 0) {
 			char *delim = strchr(argv[argi], '=');
 			debug = 1;
-			if (delim) set_debugfile(delim+1);
+			if (delim) set_debugfile(delim+1, 0);
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
 			if (pingsocket >= 0) close(pingsocket);
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
 		/* Do one loop over the hosts we havent had responses from yet. */
 		while (pending > 0) {
 			fd_set readfds, writefds;
-			struct timeval tmo;
+			struct timeval selecttmo;
 			int n;
 
 			FD_ZERO(&readfds);
@@ -487,9 +487,9 @@ int main(int argc, char *argv[])
 
 			if (sendnow && (sendidx < hostcount)) FD_SET(pingsocket, &writefds);
 
-			tmo.tv_sec = 0;
-			tmo.tv_usec = 100000;
-			n = select(pingsocket+1, &readfds, &writefds, NULL, &tmo);
+			selecttmo.tv_sec = 0;
+			selecttmo.tv_usec = 100000;
+			n = select(pingsocket+1, &readfds, &writefds, NULL, &selecttmo);
 
 			if (n < 0) {
 				if (errno == EINTR) continue;
@@ -498,10 +498,6 @@ int main(int argc, char *argv[])
 			}
 			else if (n == 0) {
 				/* Time out */
-				if ((getcurrenttime(NULL) >= cutoff) && (sendidx >= hostcount)) {
-					/* No more to send and the read timed out - so we're done */
-					pending = 0;
-				}
 				sendnow = SENDLIMIT;
 			}
 			else {
@@ -520,6 +516,11 @@ int main(int argc, char *argv[])
 					pending -= count;
 					sendnow += count; if (sendnow > SENDLIMIT) sendnow = SENDLIMIT;
 				}
+			}
+
+			/* See if we have hit the timeout */
+			if ((getcurrenttime(NULL) >= cutoff) && (sendidx >= hostcount)) {
+				pending = 0;
 			}
 		}
 

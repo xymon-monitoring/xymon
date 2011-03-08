@@ -1,0 +1,665 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of XYMON</TITLE>
+</HEAD><BODY>
+<H1>XYMON</H1>
+Section: Environments, Tables, and Troff Macros (7)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+Xymon - Introduction to Xymon
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>OVERVIEW</H2>
+
+Xymon is a tool for monitoring the health of your networked servers 
+and the applications running on them.  It provides a simple, 
+intuitive way of checking the health of your systems from 
+a web browser, and can also alert you to any problems that 
+arise through alarms sent as e-mail, SMS messages, via a 
+pager or by other means.
+<P>
+Xymon is Open Source software, licensed under the GNU GPL.
+This means that you are free to use Xymon as much as you like,
+and you are free to re-distribute it and change it to suit 
+your specific needs. However, if you change it then you must make 
+your changes available to others on the same terms that you 
+received Xymon originally. See the file COPYING in the Xymon
+source-archive for details.
+<P>
+Xymon was called &quot;Hobbit&quot; until November 2008, when it was renamed
+to Xymon. This was done because the name &quot;Hobbit&quot; is trademarked.
+<P>
+Xymon initially began life as an enhancement to Big Brother called 
+&quot;bbgen&quot;. Over a period of 5 years, Xymon has evolved from a small
+add-on to a full-fledged monitoring system with capabilities far
+exceeding what was in the original Big Brother package. Xymon
+does still maintain some compatibility with Big Brother, so it
+is possible to migrate from Big Brother to Xymon without too
+much trouble. 
+<P>
+Migrating to Xymon will give you a significant performance boost, 
+and provide you with much more advanced monitoring.  The Xymon tools 
+are designed for installations that need to monitor a large number 
+of hosts, with very little overhead on the monitoring server. 
+Monitoring of thousands of hosts with a single Xymon server is 
+possible - it was developed to handle just this task.
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>FEATURES</H2>
+
+These are some of the core features in Xymon:
+<P>
+<DL COMPACT>
+<DT>Monitoring of hosts and networks<DD>
+Xymon collects information about your systems in two ways: From
+querying network services (Web, LDAP, DNS, Mail etc.), or from
+scripts that run either on the Xymon server or on the systems 
+you monitor. The Xymon package includes a Xymon client
+which you can install on the servers you monitor; it collects
+data about the CPU-load, disk- and memory-utilization, log files,
+network ports in use, file- and directory-information and more.
+All of the information is stored inside Xymon, and you can define
+conditions that result in alerts, e.g. if a network service stops
+responding, or a disk fills up.
+<P>
+<P>
+<DT>Centralized configuration<DD>
+All configuration of Xymon is done on the Xymon server. Even when
+monitoring hundreds or thousands of hosts, you can control their
+configuration centrally on the Xymon server - so there is no need 
+for you to login to a system just to change e.g. which processes are
+monitored.
+<P>
+<P>
+<DT>Works on all major platforms<DD>
+The Xymon server works on all Unix-like systems, including Linux,
+Solaris, FreeBSD, AIX, HP-UX and others. The Xymon client supports
+all major Unix platforms, and there are other Open Source projects
+- e.g. BBWin, see <A HREF="http://bbwin.sourceforge.net/">http://bbwin.sourceforge.net/</A> - providing support for 
+Microsoft Windows based systems.
+<P>
+<P>
+<DT>A simple, intuitive web-based front-end<DD>
+&quot;Green is good, red is bad&quot;. Using the Xymon web pages is as simple
+as that. The hosts you monitor can be grouped together in a way that
+makes sense in your organisation and presented in a tree-structure.
+The web pages use many techniques to convey information about the monitored
+systems, e.g. different icons can be used for recently changed statuses;
+links to sub-pages can be listed in multiple columns; different icons
+can be used for dial-up-tests or reverse-tests; selected columns
+can be dropped or unconditionally included on the web pages to
+eliminate unwanted information, or always include certain information;
+user-friendly names can be shown for hosts regardless of their true
+hostname. You can also have automatic links to on-line documentation, 
+so information about your critical systems is just a click away.
+<P>
+<P>
+<DT>Integrated trend analysis, historical data and SLA reporting<DD>
+Xymon stores trend- and availability-information about everything 
+it monitors. So if you need to look at how your systems behave over
+time, Xymon has all of the information you need: Whether it is response 
+times of your web pages during peak hours, the CPU utilization over the 
+past 4 weeks, or what the availability of a site was compared to the
+SLA - it's all there inside Xymon. All measurements are tracked
+and made available in time-based graphs.
+<P>
+When you need to drill down into events that have occurred, Xymon
+provides a powerful tool for viewing the event history for each
+status log, with overviews of when problems have occurred during the
+past and easy-to-use zoom-in on the event.
+<P>
+For SLA reporting, You can configure planned downtime, agreed service 
+availability level, service availability time and have Xymon generate 
+availability reports directly showing the actual availability measured 
+against the agreed SLA. Such reports of service availability can be 
+generated on-the-fly, or pre-generated e.g. for monthly reporting. 
+<P>
+<P>
+<DT>Role-based views<DD>
+You can have multiple different views of the same hosts for different
+parts of the organisation, e.g. one view for the hardware group,
+and another view for the webmasters - all of them fed by the same
+test tools.
+<P>
+If you have a dedicated Network Operations Center, you can configure 
+precisely which alerts will appear on their monitors - e.g. a simple 
+anomaly in the system log file need not trigger a call to 3rd-level 
+support at 2 AM, but if the on-line shop goes down you do want someone
+to respond immediately.  So you put the web-check for the on-line shop 
+on the NOC monitor page, and leave out the log-file check.
+<P>
+<P>
+<DT>Also for the techies<DD>
+The Xymon user-interface is simple, but engineers will also find
+lots of relevant information. E.g. the data that clients report to Xymon
+contain the raw output from a number of system commands.  That information 
+is available directly in Xymon, so an administrator no longer needs to 
+login to a server to get an overview of how it is behaving - the very 
+commands they would normally run have already been performed, and the 
+results are on-line in Xymon.
+<P>
+<P>
+<DT>Easy to adapt to your needs<DD>
+Xymon includes a lot of tests in the core package, but there will
+always be something specific to your setup that you would like to
+watch. Xymon allows you to write test scripts in your favorite
+scripting language and have the results show up as regular status
+columns in Xymon. You can trigger alerts from these, and even track
+trends in graphs just by a simple configuration setting.
+<P>
+<P>
+<DT>Real network service tests<DD>
+The network test tool knows how to test most commonly used protocols,
+including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
+many more. When checking websites, it is possible to not only check
+that the web server is responding, but also that the response looks
+correct by matching the response against a pre-defined pattern or a
+check-sum. So you can test that a network service is really working
+and supplying the data you expect - not just that the service is
+running.
+<P>
+Protocols that use SSL encryption such as https web sites are fully supported, 
+and while checking such services the network tester will automatically run a 
+check of the validity of the SSL server certificate, and warn about 
+certificates that are about to expire.
+<P>
+<P>
+<DT>Highly configurable alerts<DD>
+You want to know when something breaks. But you don't want to get flooded
+with alerts all the time. Xymon lets you define several criteria for
+when to send out an alert, so you only get alerts when there is really
+something that needs your attention right away. While you are handling
+an incident, you can tell Xymon about it so it stops sending more alerts,
+and so that everyone else can check with Xymon and know that the problem
+is being taken care of.
+<P>
+<P>
+<DT>Combined super-tests and test inter-dependencies<DD>
+If a single test is not enough, combination tests can be defined
+that combine the result of several tests to a single status-report.
+So if you need to monitor that at least 3 out of 5 servers are
+running at any time, Xymon can do that for you and generate
+the necessary availability report.
+<P>
+Tests can also be configured to depend on each other, so that
+when a critical router goes down you will get alerts only for
+the router - and not from the 200 hosts behind the router.
+<P>
+<P>
+</DL>
+<A NAME="lbAE">&nbsp;</A>
+<H2>SECURITY</H2>
+
+All of the Xymon server tools run under an unprivileged user account.
+A single program - the
+<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
+
+network connectivity tester - must be installed setuid-root, but has
+been written so that it drops all root privileges immediately after
+performing the operation that requires root privileges.
+<P>
+It is recommended that you setup a dedicated account for Xymon.
+<P>
+Communications between the Xymon server and Xymon clients use the
+Big Brother TCP port 1984. If the Xymon server is located behind
+a firewall, it must allow for inbound connections to the Xymon 
+server on tcp port 1984. Normally, Xymon clients - i.e. the servers
+you are monitoring - must be permitted to connect to the Xymon server 
+on this port. However, if that is not possible due to firewall 
+policies, then Xymon includes the
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
+
+and
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+tools to allows for a pull-style way of collecting data, where it 
+is the Xymon server that initiates connections to the clients.
+<P>
+The Xymon web pages are dynamically generated through CGI programs.
+<P>
+Access to the Xymon web pages is controlled through your web server
+access controls, e.g. you can require a login through some form of
+HTTP authentication.
+<P>
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>DEMONSTRATION SITE</H2>
+
+A site running this software can be seen at <A HREF="http://www.xymon.com/">http://www.xymon.com/</A>
+<P>
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>PREREQUISITES AND INSTALLATION</H2>
+
+You will need a Unix-like system (Linux, Solaris, HP-UX, AIX,
+FreeBSD, Mac OS X or similar) with a web server installed. You
+will also need a C compiler and some additional libraries, but
+many systems come with the required development tools and 
+libraries pre-installed. The required libraries are:
+<P>
+<B>RRDtool</B>
+
+This library is used to store and present trend-data. It is required.
+<P>
+<B>libpcre</B>
+
+This library is used for advanced pattern-matching of text strings
+in configuration files. This library is required.
+<P>
+<B>OpenSSL</B>
+
+This library is used for communication with SSL-enabled network services.
+Although optional, it is recommended that you install this for Xymon
+since many network tests do use SSL.
+<P>
+<B>OpenLDAP</B>
+
+This library is used for testing LDAP servers. Use of this is optional.
+<P>
+For more detailed information about Xymon system requirements and
+how to install Xymon, refer to the on-line documentation &quot;Installing
+Xymon&quot; available from the Xymon web server (via the &quot;Help&quot; menu),
+or from the &quot;docs/install.html&quot; file in the Xymon source archive.
+<P>
+<P>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SUPPORT and MAILING LISTS</H2>
+
+<A HREF="mailto:xymon@xymon.com">xymon@xymon.com</A> is an open mailing list for discussions about Xymon.
+If you would like to participate, send an e-mail to <B><A HREF="mailto:xymon-subscribe@xymon.com">xymon-subscribe@xymon.com</A></B>
+to join the list.
+<P>
+An archive of the mailing list is available at <A HREF="http://www.xymon.com/archive/">http://www.xymon.com/archive/</A>
+<P>
+If you just want to be notified of new releases of Xymon, please
+subscribe to the xymon-announce mailing list. This is a moderated list,
+used only for announcing new Xymon releases. To be added to the list, send
+an e-mail to <B><A HREF="mailto:xymon-announce-subscribe@xymon.com">xymon-announce-subscribe@xymon.com</A></B>.
+<P>
+<P>
+<A NAME="lbAI">&nbsp;</A>
+<H2>XYMON SERVER TOOLS</H2>
+
+These tools implement the core functionality of the Xymon server:
+<P>
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
+
+is the core daemon that collects all reports about the status of 
+your hosts. It uses a number of helper modules to
+implement certain tasks such as updating log files and sending
+out alerts: xymond_client, xymond_history, xymond_alert
+and xymond_rrd. There is also a xymond_filestore module for
+compatibility with Big Brother.
+<P>
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
+
+Implements the communication between the Xymon daemon and the
+other Xymon server modules.
+<P>
+<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
+
+Stores historical data about the things that Xymon monitors.
+<P>
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
+
+Stores trend data, which is used to generate graphs of the data
+monitored by Xymon.
+<P>
+<I><A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8)</I>
+
+handles alerts. When a status changes to a critical state, this 
+module decides if an alert should be sent out, and to whom.
+<P>
+<I><A HREF="../man8/xymond_client.8.html">xymond_client</A>(8)</I>
+
+handles data collected by the Xymon clients, analyzes the data
+and feeds back several status updates to Xymon to build the
+view of the client status.
+<P>
+<I><A HREF="../man8/xymond_hostdata.8.html">xymond_hostdata</A>(8)</I>
+
+stores historical client data when something breaks. E.g. when a
+web page stops responding xymond_hostdata will save the latest
+client data, so that you can use this to view a snapshot of how
+the system state was just prior to it failing.
+<P>
+<P>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>XYMON NETWORK TEST TOOLS</H2>
+
+These tools are used on servers that execute tests of network services.
+<P>
+<I><A HREF="../man1/xymonping.1.html">xymonping</A>(1)</I>
+
+performs network connectivity (ping) tests.
+<P>
+<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
+
+runs the network service tests.
+<P>
+<I><A HREF="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</A>(1)</I>
+
+is an extension script for re-doing failed network tests with a higher 
+frequency than the normal network tests. This allows Xymon to pick up
+the recovery of a network service as soon as it happens, resulting in 
+less downtime being recorded.
+<P>
+<P>
+<A NAME="lbAK">&nbsp;</A>
+<H2>XYMON TOOLS HANDLING THE WEB USER-INTERFACE</H2>
+
+These tools take care of generating and updating the various
+Xymon web-pages.
+<P>
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
+
+takes care of updating the Xymon web pages.
+<P>
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
+
+This CGI program generates an HTML view of a single status log.
+It is used to present the Xymon status-logs.
+<P>
+<I><A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1)</I>
+
+This CGI program generates graphs of the trend-data collected
+by Xymon.
+<P>
+<I><A HREF="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</A>(1)</I>
+
+When you want to combine multiple graphs into one, this CGI lets
+you combine graphs so you can e.g. compare the load on all of the
+nodes in your server farm.
+<P>
+<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
+
+Generates the Critical Systems view, based on the currently critical
+systems and the configuration of what systems and services you want to 
+monitor when.
+<P>
+<I><A HREF="../man1/history.cgi.1.html">history.cgi</A>(1)</I>
+
+This CGI program generates a web page with the most recent history 
+of a particular host+service combination.
+<P>
+<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
+
+This CGI lets you view a log of events that have happened over a period 
+of time, for a single host or test, or for multiple systems.
+<P>
+<I><A HREF="../man1/ack.cgi.1.html">ack.cgi</A>(1)</I>
+
+This CGI program allows a user to acknowledge an alert he received
+from Xymon about a host that is in a critical state. Acknowledging
+an alert serves two purposes: First, it stops more alerts from being
+sent so the technicians are not bothered wit more alerts, and secondly
+it provides feedback to those looking at the Xymon web pages that the
+problem is being handled.
+<P>
+<I><A HREF="../man8/xymon-mailack.8.html">xymon-mailack</A>(8)</I>
+
+is a tool for processing acknowledgments sent via e-mail, e.g. as a 
+response to an e-mail alert.
+<P>
+<I><A HREF="../man8/enadis.cgi.8.html">enadis.cgi</A>(8)</I>
+
+is a CGI program to disable or re-enable hosts or individual tests.
+When disabling a host or test, you stop alarms from being sent and
+also any outages do not affect the SLA calculations. So this tool
+is useful when systems are being brought down for maintenance.
+<P>
+<I><A HREF="../man1/findhost.cgi.1.html">findhost.cgi</A>(1)</I>
+
+is a CGI program that finds a given host in the Xymon
+web pages. As your Xymon installation grows, it can become
+difficult to remember exactly which page a host is on; this CGI
+script lets you find hosts easily.
+<P>
+<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
+
+This CGI program triggers the generation of Xymon availability 
+reports, using
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
+
+as the reporting back-end engine.
+<P>
+<I><A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1)</I>
+
+This CGI program generates the detailed availability report for a 
+particular host+service combination.
+<P>
+<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
+
+is a CGI program to build the Xymon web pages in a &quot;snapshot&quot;
+mode, showing the look of the web pages at a particular point 
+in time. It uses
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
+
+as the back-end engine.
+<P>
+<I><A HREF="../man1/statusreport.cgi.1.html">statusreport.cgi</A>(1)</I>
+
+is a CGI program reporting test results for a single status but
+for several hosts. It is used to e.g. see which SSL certificates
+are about to expire, across all of the Xymon web pages.
+<P>
+<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
+
+is a CGI program to present information about a host. The 
+information is pulled from a CSV (Comma Separated Values)
+file, which is easily exported from any spreadsheet or
+database program.
+<P>
+<P>
+<A NAME="lbAL">&nbsp;</A>
+<H2>CLIENT-SIDE TOOLS</H2>
+
+<I><A HREF="../man1/logfetch.1.html">logfetch</A>(1)</I>
+
+is a utility used by the Xymon Unix client to collect
+information from log files on the client. It can also monitor various
+other file-related data, e.g. file meta-data or directory sizes.
+<P>
+<I><A HREF="../man1/clientupdate.1.html">clientupdate</A>(1)</I>
+
+Is used on Xymon clients, to automatically update the client software
+with new versions. Through this tool, updates of the client software
+can happen without an administrator having to logon to the server.
+<P>
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+This tool acts as a mini Xymon server to the client. It stores client
+data internally, so that the
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
+
+utility can pick it up later and send it to the Xymon server. It
+is typically used on hosts that cannot contact the Xymon server 
+directly due to network- or firewall-restrictions.
+<P>
+<P>
+<A NAME="lbAM">&nbsp;</A>
+<H2>XYMON COMMUNICATION TOOLS</H2>
+
+These tools are used for communications between the Xymon server
+and the Xymon clients. If there are no firewalls then they are not
+needed, but it may be necessary due to network or firewall issues
+to make use of them.
+<P>
+<I><A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8)</I>
+
+is a proxy-server that forwards Xymon messages between
+clients and the Xymon server. The clients must be able to talk
+to the proxy, and the proxy must be able to talk to the Xymon
+server.
+<P>
+<I><A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8)</I>
+
+is used when the client is not able to make outbound connections
+to neither xymonproxy nor the Xymon server (typically, for clients
+located in a DMZ network zone). Together with the
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+utility running on the client, the Xymon server can contact the
+clients and pick up their data.
+<P>
+<P>
+<A NAME="lbAN">&nbsp;</A>
+<H2>OTHER TOOLS</H2>
+
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
+
+is a program scheduler for Xymon. It acts as a master program
+for running all of the Xymon tools on a system. On the Xymon
+server, it controls running all of the server tasks. On a Xymon
+client, it periodically launches the client to collect data
+and send them to the Xymon server.
+<P>
+<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
+
+is the tool used to communicate with the Xymon server.
+It is used to send status reports to the Xymon server,
+through the custom Xymon/BB protocol, or via HTTP. It
+can be used to query the state of tests on the central Xymon 
+server and retrieve Xymon configuration files. The server-side 
+script 
+<I><A HREF="../man1/xymoncgimsg.cgi.1.html">xymoncgimsg.cgi</A>(1) </I>
+
+used to receive messages sent via HTTP is also included.
+<P>
+<I><A HREF="../man1/xymoncmd.1.html">xymoncmd</A>(1)</I>
+
+is a wrapper for the other Xymon tools which sets up all
+of the environment variables used by Xymon tools.
+<P>
+<I><A HREF="../man1/xymongrep.1.html">xymongrep</A>(1)</I>
+
+is a utility for use by Xymon extension scripts. It
+allows an extension script to easily pick out the hosts that
+are relevant to a script, so it need not parse a huge
+hosts.cfg file with lots of unwanted test-specifications.
+<P>
+<I><A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1)</I>
+
+is a utility to dump the full
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
+
+file following any &quot;include&quot; statements.
+<P>
+<I><A HREF="../man1/xymondigest.1.html">xymondigest</A>(1)</I>
+
+is a utility to compute message digest values for use in
+content checks that use digests.
+<P>
+<I><A HREF="../man1/combostatus.1.html">combostatus</A>(1)</I>
+
+is an extension script for the Xymon server,
+allowing you to build complicated tests from simpler
+Xymon test results. E.g. you can define a test that uses the results
+from testing your web server, database server and router to have a 
+single test showing the availability of your enterprise web
+application.
+<P>
+<I><A HREF="../man8/trimhistory.8.html">trimhistory</A>(8)</I>
+
+is a tool to trim the Xymon history logs. It will remove all
+log entries and optionally also the individual status-logs for
+events that happened before a given time.
+<P>
+<P>
+<A NAME="lbAO">&nbsp;</A>
+<H2>VERSIONS</H2>
+
+Version 1 of bbgen was released in November 2002, and optimized the
+web page generation on Big Brother servers.
+<P>
+Version 2 of bbgen was released in April 2003, and added a tool
+for performing network tests.
+<P>
+Version 3 of bbgen was released in September 2004, and eliminated the 
+use of several external libraries for network tests, resulting in a 
+significant performance improvement.
+<P>
+With version 4.0 released on March 30 2005, the project was de-coupled 
+from Big Brother, and the name changed to Hobbit. This version was the 
+first full implementation of the Hobbit server, but it still used the
+data collected by Big Brother clients for monitoring host metrics.
+<P>
+Version 4.1 was released in July 2005 included a simple client
+for Unix. Log file monitoring was not implemented.
+<P>
+Version 4.2 was released in July 2006, and includes a fully functional
+client for Unix.
+<P>
+Version 4.3 was released in November 2010, and implemented the renaming
+of the project to Xymon. This name was already introduced in 2008 with
+a patch version of 4.2, but with version 4.3.0 this change of names
+was fully implemented.
+<P>
+<A NAME="lbAP">&nbsp;</A>
+<H2>COPYRIGHT</H2>
+
+Xymon is
+<BR>
+
+<BR>&nbsp;&nbsp;Copyright&nbsp;(C)&nbsp;2002-2010&nbsp;Henrik&nbsp;Storner&nbsp;&lt;<A HREF="mailto:henrik@storner.dk">henrik@storner.dk</A>&gt;&nbsp;
+<BR>
+
+Parts of the Xymon sources are from public-domain or other freely
+available sources. These are the the Red-Black tree implementation, and 
+the MD5-, SHA1- and RIPEMD160-implementations. Details of the license for
+these is in the README file included with the Xymon sources.
+All other files are released under the GNU General Public License version 2, 
+with the additional exemption that compiling, linking, and/or using OpenSSL 
+is allowed.  See the file COPYING for details.
+<P>
+<P>
+<A NAME="lbAQ">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond_history.8.html">xymond_history</A>(8), <A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8), <A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8), 
+<A HREF="../man8/xymond_client.8.html">xymond_client</A>(8), <A HREF="../man8/xymond_hostdata.8.html">xymond_hostdata</A>(8), 
+<A HREF="../man1/xymonping.1.html">xymonping</A>(1), <A HREF="../man1/xymonnet.1.html">xymonnet</A>(1), <A HREF="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</A>(1), 
+<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1), <A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1), <A HREF="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</A>(1), <A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1), 
+<A HREF="../man1/history.cgi.1.html">history.cgi</A>(1), <A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1), 
+<A HREF="../man1/ack.cgi.1.html">ack.cgi</A>(1), <A HREF="../man8/xymon-mailack.8.html">xymon-mailack</A>(8), <A HREF="../man8/enadis.cgi.8.html">enadis.cgi</A>(8), <A HREF="../man1/findhost.cgi.1.html">findhost.cgi</A>(1), 
+<A HREF="../man1/report.cgi.1.html">report.cgi</A>(1), <A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1), <A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1), <A HREF="../man1/statusreport.cgi.1.html">statusreport.cgi</A>(1), <A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1), 
+<A HREF="../man1/logfetch.1.html">logfetch</A>(1), <A HREF="../man1/clientupdate.1.html">clientupdate</A>(1), <A HREF="../man8/msgcache.8.html">msgcache</A>(8), 
+<A HREF="../man8/xymonproxy.8.html">xymonproxy</A>(8), <A HREF="../man8/xymonfetch.8.html">xymonfetch</A>(8), 
+<A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8), <A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man1/xymoncgimsg.cgi.1.html">xymoncgimsg.cgi</A>(1), <A HREF="../man1/xymoncmd.1.html">xymoncmd</A>(1), <A HREF="../man1/xymongrep.1.html">xymongrep</A>(1), <A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1), 
+<A HREF="../man1/xymondigest.1.html">xymondigest</A>(1), <A HREF="../man1/combostatus.1.html">combostatus</A>(1), <A HREF="../man8/trimhistory.8.html">trimhistory</A>(8),
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5),
+<A HREF="../man5/alerts.cfg.5.html">alerts.cfg</A>(5),
+<A HREF="../man5/analysis.cfg.5.html">analysis.cfg</A>(5), <A HREF="../man5/client-local.cfg.5.html">client-local.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">OVERVIEW</A><DD>
+<DT><A HREF="#lbAD">FEATURES</A><DD>
+<DT><A HREF="#lbAE">SECURITY</A><DD>
+<DT><A HREF="#lbAF">DEMONSTRATION SITE</A><DD>
+<DT><A HREF="#lbAG">PREREQUISITES AND INSTALLATION</A><DD>
+<DT><A HREF="#lbAH">SUPPORT and MAILING LISTS</A><DD>
+<DT><A HREF="#lbAI">XYMON SERVER TOOLS</A><DD>
+<DT><A HREF="#lbAJ">XYMON NETWORK TEST TOOLS</A><DD>
+<DT><A HREF="#lbAK">XYMON TOOLS HANDLING THE WEB USER-INTERFACE</A><DD>
+<DT><A HREF="#lbAL">CLIENT-SIDE TOOLS</A><DD>
+<DT><A HREF="#lbAM">XYMON COMMUNICATION TOOLS</A><DD>
+<DT><A HREF="#lbAN">OTHER TOOLS</A><DD>
+<DT><A HREF="#lbAO">VERSIONS</A><DD>
+<DT><A HREF="#lbAP">COPYRIGHT</A><DD>
+<DT><A HREF="#lbAQ">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

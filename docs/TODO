@@ -28,9 +28,9 @@ Bugfixes
   RRD files, unless we look at what datasets exist and drop
   data that cannot be stored.
   For AIX (bug-report Nov.10-14-16 2006 from Andy France):
-  > There's a mix of "cpu_w" and "cpu_wait" definitions in the Hobbit RRD
+  > There's a mix of "cpu_w" and "cpu_wait" definitions in the Xymon RRD
   > module, depending on what operating system the vmstat data comes from.
-  > But all of the graph definitions in hobbitgraph.cfg use the cpu_wait
+  > But all of the graph definitions in graphs.cfg use the cpu_wait
   > definition.
   Also, postponed from the 4.2 release:
   o vmstat columns on HP-UX 11.0 are different from 11.11i. Marco Avvissano March 10.
@@ -41,7 +41,7 @@ Bugfixes
   alternate pageset. Configuring this will cause it to appear
   twice on each page. Fixing this requires a complete re-design
   of how alternate pagesets are built, and probably also quite
-  a bit of work on the internal datastructures in bbgen.
+  a bit of work on the internal datastructures in xymongen.
 
 
 Things I must remember to look at
@@ -61,17 +61,17 @@ Things I must remember to look at
   - filter out unwanted lines
   - more flexible DS configuration than the env settings
 
-* Create a new hobbitd worker module off the stachg channel.
+* Create a new xymond worker module off the stachg channel.
   This will dynamically receive status updates, and therefore
   it can have the full status of each PAGE without having to
-  load the hobbitd board (should do so regularly just in case).
+  load the xymond board (should do so regularly just in case).
   This can be used to switch the overview pages to a CGI tool
   instead of generating the static pages. NB: Must be able to
   handle multiple page setups - or should we just have one
   worker per setup with different config files ?
 * "cpu" status determined by the non-idle time reported by
   vmstat, instead of the rather meaningless load average.
-* hobbitd_client process/disk alarms to different people depending
+* xymond_client process/disk alarms to different people depending
   on *which* process/disk is in error.
 * process checks that relate to a group of host (process "foo"
   must exist on at least X of these Y nodes: HostA, HostB, HostC.
@@ -80,13 +80,13 @@ Things I must remember to look at
   Charles Jones 15-feb-2005.
   What we really want to do is customize on a per host/test
   basis which graphs appear for which tests. So this means some
-  way of customizing hobbitsvc.cgi to include specific graphs.
+  way of customizing svcstatus.cgi to include specific graphs.
 * Something similar to larrd-graphs.cgi for picking out a bunch
   of graphs to show on one page.
-* Move all of the bbtest-net "badFOO" etc. stuff away from bbtest-net
-  and into hobbitd.
+* Move all of the xymonnet "badFOO" etc. stuff away from xymonnet
+  and into xymond.
 * On Fri, Aug 05, 2005 at 09:39:15AM +0200, Thomas Bergauer wrote:
-  2. the NOPROP(RED|YELLOW|..) command in the BB-hosts file works as
+  2. the NOPROP(RED|YELLOW|..) command in the hosts.cfg file works as
   announced, but I am looking for a possibility to tell NOPROP a "level"
   of propagation. This means that an alarm should propagate to its
   sub-page, but not further up to the main page.
@@ -100,17 +100,17 @@ Things I must remember to look at
   that one http test depends on another on the same host. And direct alerts 
   for one URL to one group, and for another URL to a different group 
   (like GROUP in client handling).
-  See http://www.hswn.dk/hobbiton/2006/06/msg00210.html
+  See http://www.xymon.com/archive/2006/06/msg00210.html
 * Better selection of which graphs go with what statuses. 
 * Easy way of grouping hosts for multi-graphs.
 
 
 Improvements
 ------------
-* hobbitgraph.cgi change to make zoom work in two dimensions. 
+* showgraph.cgi change to make zoom work in two dimensions. 
   Requires RRDtool 1.2.x.
 * More reports: Check out bb-reports on deadcat
-* Multi-line macros in hobbit-alerts.cfg
+* Multi-line macros in alerts.cfg
 * Allow for regex's in the TCP response match code.
 * Merging of alerts based on some criteria, e.g. merge all
   purple alerts for a host into one message.
@@ -135,12 +135,12 @@ Improvements
   shortlived statuses. They should not automatically be given 1
   pixel each, as that will cause the history graph to be *very*
   wide.
-* Display-only tags should work on duplicate host-entries in bb-hosts,
+* Display-only tags should work on duplicate host-entries in hosts.cfg,
   e.g. you should be able to put a "NAME:foo" tag on a host and have it
   show up with different names for the same host.
 
-Various ideas that have appeared on the BB mailing list
--------------------------------------------------------
+Various ideas that have appeared on the mailing lists
+-----------------------------------------------------
 * A report generater capable of displaying for a certain time frame:
   1) List of the top XX "host.service" state changes.  This is to help us
      understand what is barking the most in our environment and focus efforts

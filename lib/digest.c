@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is used to implement message digest functions (MD5, SHA1 etc.)        */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -17,7 +17,36 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
+
+char *md5hash(char *input)
+{
+	/* We have a fast MD5 hash function, since that may be used a lot */
+
+	static struct digestctx_t *ctx = NULL;
+	unsigned char md_value[16];
+	static char md_string[2*16+1];
+	int i;
+	char *p;
+
+	if (!ctx) {
+		ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+		ctx->digestname = strdup("md5");
+		ctx->digesttype = D_MD5;
+		ctx->mdctx = (void *)malloc(myMD5_Size());
+	}
+
+	myMD5_Init(ctx->mdctx);
+	myMD5_Update(ctx->mdctx, input, strlen(input));
+	myMD5_Final(md_value, ctx->mdctx);
+
+	for(i = 0, p = md_string; (i < sizeof(md_value)); i++) 
+		p += sprintf(p, "%02x", md_value[i]);
+	*p = '\0';
+
+	return md_string;
+}
+
 
 digestctx_t *digest_init(char *digest)
 {

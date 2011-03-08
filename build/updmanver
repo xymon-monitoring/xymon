@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export LANG=C 
 DATE=`date +"%e %b %Y"`
@@ -10,20 +10,20 @@ then
 	exit 1
 fi
 
-cd $HOME/hobbit || exit 1
+# cd $HOME/xymon || exit 1
 
-for DIR in bbdisplay bbnet bbproxy common hobbitd web
+for DIR in xymongen xymonnet xymonproxy common xymond web
 do
    pushd $DIR
 
-   co -l RCS/*.[1-9],v
+   # co -l RCS/*.[1-9],v
    for f in *.[1-9]
    do
       NAME=`head -n 1 $f | awk '{print $2}'`;
       SECTION=`head -n 1 $f | awk '{print $3}'`;
-      (echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Hobbit Monitor\""; tail +2 $f) >$f.new
+      (echo ".TH $NAME $SECTION \"Version $VERSION: $DATE\" \"Xymon\""; tail -n +2 $f) >$f.new
       mv $f.new $f
-      ci -u -m"Version update" -q -f $f
+      # ci -u -m"Version update" -q -f $f
    done
 
    popd

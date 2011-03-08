@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# This is the Hobbit CGI script interface to bb-findhost.CGI
+# This is the Xymon CGI script interface to findhost.CGI
 
-. @BBHOME@/etc/hobbitcgi.cfg
+. @XYMONHOME@/etc/cgioptions.cfg
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-findhost.cgi $CGI_FINDHOST_OPTS
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/findhost.cgi $CGI_FINDHOST_OPTS
 

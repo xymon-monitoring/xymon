@@ -1,13 +1,13 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains a "mergesort" implementation for sorting linked lists.         */
 /*                                                                            */
 /* Based on http://en.wikipedia.org/wiki/Merge_sort pseudo code, adapted for  */
 /* use in a generic library routine.                                          */
 /*                                                                            */
-/* Copyright (C) 2007 Henrik Storner <henrik@storner.dk>                      */
+/* Copyright (C) 2009 Henrik Storner <henrik@storner.dk>                      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -22,8 +22,9 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <string.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
+#if 0
 static void *merge(void *left, void *right, 
 		   msortcompare_fn_t comparefn, 
 		   msortgetnext_fn_t getnext, 
@@ -102,6 +103,26 @@ void *msort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getnext, 
 	/* We have sorted the two halves, now we must merge them together */
 	return merge(left, right, comparefn, getnext, setnext);
 }
+#endif
+
+void *msort(void *head, msortcompare_fn_t comparefn, msortgetnext_fn_t getnext, msortsetnext_fn_t setnext)
+{
+	void *walk;
+	int len, i;
+	void **plist;
+
+	for (walk = head, len=0; (walk); walk = getnext(walk)) len++;
+	plist = malloc((len+1) * sizeof(void *));
+	for (walk = head, i=0; (walk); walk = getnext(walk)) plist[i++] = walk;
+	plist[len] = NULL;
+
+	qsort(plist, len, sizeof(plist[0]), comparefn);
+
+	for (i=0, head = plist[0]; (i < len); i++) setnext(plist[i], plist[i+1]);
+	xfree(plist);
+
+	return head;
+}
 
 
 #ifdef STANDALONE
@@ -117,14 +138,16 @@ void dumplist(rec_t *head)
 {
 	rec_t *walk;
 
-	walk = head; while (walk) { printf("%-15s:%3s\n", walk->key, walk->val); walk = walk->next; } printf("\n");
+	walk = head; while (walk) { printf("%p : %-15s:%3s\n", walk, walk->key, walk->val); walk = walk->next; } printf("\n");
 	printf("\n");
 }
 
 
-int record_compare(void *a, void *b)
+int record_compare(void **a, void **b)
 {
-	return strcasecmp(((rec_t *)a)->key, ((rec_t *)b)->key);
+	rec_t **reca = (rec_t **)a;
+	rec_t **recb = (rec_t **)b;
+	return strcasecmp((*reca)->key, (*recb)->key);
 }
 
 void * record_getnext(void *a)

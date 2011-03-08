@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* This module handles any message with data in the form                      */
 /*     NAME: VALUE                                                            */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* split-ncv added by Charles Goyard November 2006                            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -84,7 +84,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 			val = l + strspn(l, " \t"); 
 			/* Find the end of the value string */
 			l = val; if ((*l == '-') || (*l == '+')) l++; /* Pass leading sign */
-			l += strspn(l, "0123456789."); /* and the numbers. */
+			l += strspn(l, "0123456789.+-"); /* and the numbers. */
 			if( *val ) {
 				int iseol = (*l == '\n');
 
@@ -110,7 +110,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 				char dskey[252];     /* name of final DS key (stripped)                    */
 				char *dstype = NULL; /* type of final DS                                   */
 				char *inp;
-				int outidx;
+				int outidx = 0;
 				/* val contains a valid number */
 
 				/* rrdcreate(1) says: ds must be in the set [a-zA-Z0-9_] ... */
@@ -128,7 +128,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 					}
 				}
 
-				if (dsname[outidx-1] == '_') {
+				if ((outidx > 0) && (dsname[outidx-1] == '_')) {
 					dsname[outidx-1] = '\0';
 				}
 				else {
@@ -176,7 +176,7 @@ int do_ncv_rrd(char *hostname, char *testname, char *classname, char *pagepaths,
 					sprintf(rrdvalues+strlen(rrdvalues), ":%s", val);
 				}
 			}
-			
+
 			if (split_ncv && (paridx > 0)) {
 				create_and_update_rrd(hostname, testname, classname, pagepaths, params, NULL);
 

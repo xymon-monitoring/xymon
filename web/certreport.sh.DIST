@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# This is the Hobbit CGI script interface to hobbit-statusreport.cgi
+# This is an example of using the Xymon statusreport.cgi tool.
 # Through the options, it generates a report of the currently
 # about-to-expire SSL certificates.
 
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-statusreport.cgi --column=sslcert --filter=color=red,yellow --all --no-colors
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/statusreport.cgi --column=sslcert --filter=color=red,yellow --all --no-colors
 

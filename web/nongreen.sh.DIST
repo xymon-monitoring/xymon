@@ -1,11 +1,11 @@
 #!/bin/sh
 
-# This uses the hobbit-statusreport.cgi to provide a list
+# This uses the statusreport.cgi to provide a list
 # of all non-green statuses with a brief summary of what is wrong.
 
-. @BBHOME@/etc/hobbitcgi.cfg
+. @XYMONHOME@/etc/cgioptions.cfg
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-statusreport.cgi \
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/statusreport.cgi \
 	--filter="color=red,yellow" --all \
 	--heading="All non-green systems" \
 	--show-column \

@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit client update tool.                                                 */
+/* Xymon client update tool.                                                  */
 /*                                                                            */
 /* This tool is used to fetch the current client version from the config-file */
 /* saved in etc/clientversion.cfg. The client script compares this with the   */
 /* current version on the server, and if they do not match then this utility  */
 /* is run to fetch the new version from the server and unpack it via "tar".   */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define CLIENTVERSIONFILE "etc/clientversion.cfg"
 #define INPROGRESSFILE "tmp/.inprogress.update"
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	char *newverreq;
 	char *updateparam = NULL;
 	int  removeself = 0;
-	int bbstat = 0;
+	int talkstat = 0;
 	sendreturn_t *sres;
 
 #ifdef BIG_SECURITY_HOLE
@@ -57,10 +57,10 @@ int main(int argc, char *argv[])
 	drop_root_and_removesuid(argv[0]);
 #endif
 
-	versionfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(CLIENTVERSIONFILE) + 2);
-	sprintf(versionfn, "%s/%s", xgetenv("BBHOME"), CLIENTVERSIONFILE);
-	inprogressfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen(INPROGRESSFILE) + 2);
-	sprintf(inprogressfn, "%s/%s", xgetenv("BBHOME"), INPROGRESSFILE);
+	versionfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen(CLIENTVERSIONFILE) + 2);
+	sprintf(versionfn, "%s/%s", xgetenv("XYMONHOME"), CLIENTVERSIONFILE);
+	inprogressfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen(INPROGRESSFILE) + 2);
+	sprintf(inprogressfn, "%s/%s", xgetenv("XYMONHOME"), INPROGRESSFILE);
 
 	versionfd = fopen(versionfn, "r");
 	if (versionfd) {
@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
 		*version = '\0';
 	}
 
-	if (chdir(xgetenv("BBHOME")) != 0) {
-		errprintf("Cannot chdir to BBHOME\n");
+	if (chdir(xgetenv("XYMONHOME")) != 0) {
+		errprintf("Cannot chdir to XYMONHOME\n");
 		return 1;
 	}
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 			srcfd = fopen(srcfn, "r"); cperr = errno;
 
 			sprintf(tmpfn, "%s/.update.%s.%ld.tmp", 
-				xgetenv("BBTMP"), xgetenv("MACHINEDOTS"), (long)getcurrenttime(NULL));
+				xgetenv("XYMONTMP"), xgetenv("MACHINEDOTS"), (long)getcurrenttime(NULL));
 
 			dbgprintf("Starting update by copying %s to %s\n", srcfn, tmpfn);
 
@@ -209,9 +209,9 @@ int main(int argc, char *argv[])
 	sres = newsendreturnbuf(1, tarpipefd);
 	newverreq = (char *)malloc(100+strlen(newversion));
 	sprintf(newverreq, "download %s.tar", newversion);
-	dbgprintf("Sending command to Hobbit: %s\n", newverreq);
-	if ((bbstat = sendmessage(newverreq, NULL, BBTALK_TIMEOUT, sres)) != BB_OK) {
-		errprintf("Cannot fetch new client tarfile: Status %d\n", bbstat);
+	dbgprintf("Sending command to Xymon: %s\n", newverreq);
+	if ((talkstat = sendmessage(newverreq, NULL, XYMON_TIMEOUT, sres)) != XYMONSEND_OK) {
+		errprintf("Cannot fetch new client tarfile: Status %d\n", talkstat);
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		freesendreturnbuf(sres);
 		return 1;
@@ -222,8 +222,8 @@ int main(int argc, char *argv[])
 	}
 
 	dbgprintf("Closing tar pipe\n");
-	if ((bbstat = pclose(tarpipefd)) != 0) {
-		errprintf("Upgrade failed, tar exited with status %d\n", bbstat);
+	if ((talkstat = pclose(tarpipefd)) != 0) {
+		errprintf("Upgrade failed, tar exited with status %d\n", talkstat);
 		cleanup(inprogressfn, (removeself ? argv[0] : NULL));
 		return 1;
 	}
@@ -244,8 +244,8 @@ int main(int argc, char *argv[])
 	}
 
 	/* Make sure these have execute permissions */
-	dbgprintf("Setting execute permissions on hobbitclient.sh and clientupdate tools\n");
-	chmod("bin/hobbitclient.sh", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
+	dbgprintf("Setting execute permissions on xymonclient.sh and clientupdate tools\n");
+	chmod("bin/xymonclient.sh", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
 	chmod("bin/clientupdate", S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP);
 
 	/*

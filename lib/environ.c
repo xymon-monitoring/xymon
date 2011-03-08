@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains environment variable handling routines.                        */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -18,77 +18,74 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 const static struct {
 	char *name;
 	char *val;
-} hobbitenv[] = {
-	{ "HOBBITDREL", VERSION },
-	{ "BBSERVERROOT", BBTOPDIR },
-	{ "BBSERVERLOGS", BBLOGDIR },
-	{ "BBSERVERHOSTNAME", BBHOSTNAME },
-	{ "BBSERVERIP", BBHOSTIP },
-	{ "BBSERVEROS", BBHOSTOS },
-	{ "BBSERVERWWWNAME", BBHOSTNAME },
-	{ "BBSERVERWWWURL", "/hobbit" },
-	{ "BBSERVERCGIURL", "/hobbit-cgi" },
-	{ "BBSERVERSECCGIURL", "/hobbit-cgisecure" },
+} xymonenv[] = {
+	{ "XYMONDREL", VERSION },
+	{ "XYMONSERVERROOT", XYMONTOPDIR },
+	{ "XYMONSERVERLOGS", XYMONLOGDIR },
+	{ "XYMONSERVERHOSTNAME", XYMONHOSTNAME },
+	{ "XYMONSERVERIP", XYMONHOSTIP },
+	{ "XYMONSERVEROS", XYMONHOSTOS },
+	{ "XYMONSERVERWWWNAME", XYMONHOSTNAME },
+	{ "XYMONSERVERWWWURL", "/xymon" },
+	{ "XYMONSERVERCGIURL", "/xymon-cgi" },
+	{ "XYMONSERVERSECCGIURL", "/xymon-cgisecure" },
+	{ "XYMONNETWORK", "" },
 	{ "BBLOCATION", "" },
 	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:"BUILD_HOME"/bin" },
-	{ "BBPORT", "1984" },
-	{ "BBDISP", "$BBSERVERIP" },
-	{ "BBDISPLAYS", "" },
-	{ "BBPAGE", "$BBSERVERIP" },
-	{ "BBPAGERS", "" },
+	{ "XYMONDPORT", "1984" },
+	{ "XYMSRV", "$XYMONSERVERIP" },
+	{ "XYMSERVERS", "" },
 	{ "FQDN", "TRUE" },
-	{ "USEHOBBITD", "TRUE" },
-	{ "BBGHOSTS", "1" },
 	{ "PAGELEVELS", "red yellow purple" },
 	{ "PURPLEDELAY", "30" },
-	{ "BBLOGSTATUS", "DYNAMIC" },
+	{ "XYMONLOGSTATUS", "DYNAMIC" },
 	{ "PINGCOLUMN", "conn" },
 	{ "INFOCOLUMN", "info" },
 	{ "TRENDSCOLUMN", "trends" },
 	{ "DOCOMBO", "TRUE" },
-	{ "BBMAXMSGSPERCOMBO", "100" },
-	{ "BBSLEEPBETWEENMSGS", "0" },
-	{ "BBOSTYPE", "$BBSERVEROS" },
-	{ "MACHINEDOTS", "$BBSERVERHOSTNAME" },
-	{ "MACHINEADDR", "$BBSERVERIP" },
-	{ "BBWEBHOST", "http://$BBSERVERWWWNAME" },
-	{ "BBWEBHOSTURL", "$BBWEBHOST$BBSERVERWWWURL" },
-	{ "BBWEBHTMLLOGS", "$BBWEBHOSTURL/html"	 },
-	{ "BBWEB", "$BBSERVERWWWURL" },
-	{ "BBSKIN", "$BBSERVERWWWURL/gifs" },
-	{ "BBHELPSKIN", "$BBSERVERWWWURL/help" },
-	{ "BBNOTESSKIN", "$BBSERVERWWWURL/notes" },
-	{ "BBMENUSKIN", "$BBSERVERWWWURL/menu" },
-	{ "BBREPURL", "$BBSERVERWWWURL/rep" },
-	{ "BBSNAPURL", "$BBSERVERWWWURL/snap" },
-	{ "BBWAP", "$BBSERVERWWWURL/wml" },
-	{ "CGIBINURL", "$BBSERVERCGIURL" },
-	{ "BBHOME", BUILD_HOME },
-	{ "BBTMP", "$BBHOME/tmp" },
-	{ "BBHOSTS", "$BBHOME/etc/bb-hosts" },
-	{ "BB", "$BBHOME/bin/bb" },
-	{ "BBGEN", "$BBHOME/bin/bbgen" },
-	{ "BBVAR", "$BBSERVERROOT/data" },
-	{ "BBACKS", "$BBVAR/acks" },
-	{ "BBDATA", "$BBVAR/data" },
-	{ "BBDISABLED", "$BBVAR/disabled" },
-	{ "BBHIST", "$BBVAR/hist" },
-	{ "BBHISTLOGS", "$BBVAR/histlogs" },
-	{ "BBLOGS", "$BBVAR/logs" },
-	{ "BBWWW", "$BBHOME/www" },
-	{ "BBHTML", "$BBWWW/html" },
-	{ "BBNOTES", "$BBWWW/notes" },
-	{ "BBREP", "$BBWWW/rep" },
-	{ "BBSNAP", "$BBWWW/snap" },
-	{ "BBALLHISTLOG", "TRUE" },
-	{ "BBHOSTHISTLOG", "TRUE" },
+	{ "MAXMSGSPERCOMBO", "100" },
+	{ "SLEEPBETWEENMSGS", "0" },
+	{ "SERVEROSTYPE", "$XYMONSERVEROS" },
+	{ "MACHINEDOTS", "$XYMONSERVERHOSTNAME" },
+	{ "MACHINEADDR", "$XYMONSERVERIP" },
+	{ "XYMONWEBHOST", "http://$XYMONSERVERWWWNAME" },
+	{ "XYMONWEBHOSTURL", "$XYMONWEBHOST$XYMONSERVERWWWURL" },
+	{ "XYMONWEBHTMLLOGS", "$XYMONWEBHOSTURL/html"	 },
+	{ "XYMONWEB", "$XYMONSERVERWWWURL" },
+	{ "XYMONSKIN", "$XYMONSERVERWWWURL/gifs" },
+	{ "XYMONHELPSKIN", "$XYMONSERVERWWWURL/help" },
+	{ "XYMONNOTESSKIN", "$XYMONSERVERWWWURL/notes" },
+	{ "XYMONMENUSKIN", "$XYMONSERVERWWWURL/menu" },
+	{ "XYMONREPURL", "$XYMONSERVERWWWURL/rep" },
+	{ "XYMONSNAPURL", "$XYMONSERVERWWWURL/snap" },
+	{ "XYMONWAP", "$XYMONSERVERWWWURL/wml" },
+	{ "CGIBINURL", "$XYMONSERVERCGIURL" },
+	{ "XYMONHOME", BUILD_HOME },
+	{ "XYMONTMP", "$XYMONHOME/tmp" },
+	{ "HOSTSCFG", "$XYMONHOME/etc/hosts.cfg" },
+	{ "XYMON", "$XYMONHOME/bin/xymon" },
+	{ "XYMONGEN", "$XYMONHOME/bin/xymongen" },
+	{ "XYMONVAR", "$XYMONSERVERROOT/data" },
+	{ "XYMONACKDIR", "$XYMONVAR/acks" },
+	{ "XYMONDATADIR", "$XYMONVAR/data" },
+	{ "XYMONDISABLEDDIR", "$XYMONVAR/disabled" },
+	{ "XYMONHISTDIR", "$XYMONVAR/hist" },
+	{ "XYMONHISTLOGS", "$XYMONVAR/histlogs" },
+	{ "XYMONRAWSTATUSDIR", "$XYMONVAR/logs" },
+	{ "XYMONWWWDIR", "$XYMONHOME/www" },
+	{ "XYMONHTMLSTATUSDIR", "$XYMONWWWDIR/html" },
+	{ "XYMONNOTESDIR", "$XYMONWWWDIR/notes" },
+	{ "XYMONREPDIR", "$XYMONWWWDIR/rep" },
+	{ "XYMONSNAPDIR", "$XYMONWWWDIR/snap" },
+	{ "XYMONALLHISTLOG", "TRUE" },
+	{ "XYMONHOSTHISTLOG", "TRUE" },
 	{ "SAVESTATUSLOG", "TRUE" },
-	{ "CLIENTLOGS", "$BBVAR/hostdata" },
+	{ "CLIENTLOGS", "$XYMONVAR/hostdata" },
 	{ "MAILC", "mail" },
 	{ "MAIL", "$MAILC -s" },
 	{ "SVCCODES", "disk:100,cpu:200,procs:300,svcs:350,msgs:400,conn:500,http:600,dns:800,smtp:725,telnet:723,ftp:721,pop:810,pop3:810,pop-3:810,ssh:722,imap:843,ssh1:722,ssh2:722,imap2:843,imap3:843,imap4:843,pop2:809,pop-2:809,nntp:819,test:901" },
@@ -98,50 +95,53 @@ const static struct {
 	{ "CONNTEST", "TRUE" },
 	{ "IPTEST_2_CLEAR_ON_FAILED_CONN", "TRUE" },
 	{ "NONETPAGE", "" },
-	{ "FPING", "hobbitping" },
+	{ "FPING", "xymonping" },
 	{ "NTPDATE", "ntpdate" },
 	{ "TRACEROUTE", "traceroute" },
 	{ "RPCINFO", "rpcinfo" },
-	{ "BBROUTERTEXT", "router" },
+	{ "XYMONROUTERTEXT", "router" },
 	{ "NETFAILTEXT", "not OK" },
-	{ "BBRRDS", "$BBVAR/rrd" },
-	{ "TEST2RRD", "cpu=la,disk,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
-	{ "GRAPHS", "la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,bbgen,bbtest,bbproxy,hobbitd" },
+	{ "XYMONRRDS", "$XYMONVAR/rrd" },
+	{ "TEST2RRD", "cpu=la,disk,memory,$PINGCOLUMN=tcp,http=tcp,dns=tcp,dig=tcp,time=ntpstat,vmstat,iostat,netstat,temperature,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,xymongen,xymonnet,xymonproxy,xymond" },
+	{ "GRAPHS", "la,disk:disk_part:5,memory,users,vmstat,iostat,tcp.http,tcp,netstat,temperature,ntpstat,apache,bind,sendmail,nmailq,socks,bea,iishealth,citrix,xymongen,xymonnet,xymonproxy,xymond" },
 	{ "SUMMARY_SET_BKG", "FALSE" },
-	{ "BBMKBB2EXT", "eventlog.sh acklog.sh" },
-	{ "BBREL", "Hobbit" },
-	{ "BBRELDATE", "" },
+	{ "XYMONNONGREENEXT", "eventlog.sh acklog.sh" },
 	{ "DOTHEIGHT", "16" },
 	{ "DOTWIDTH", "16" },
 	{ "RRDHEIGHT", "120" },
 	{ "RRDWIDTH", "576" },
-	{ "COLUMNDOCURL", "$CGIBINURL/hobbitcolumn.sh?%s" },
-	{ "HOBBITLOGO", "Hobbit" },
-	{ "MKBBLOCAL", "<B><I>Pages Hosted Locally</I></B>" },
-	{ "MKBBREMOTE", "<B><I>Remote Status Display</I></B>" },
-	{ "MKBBSUBLOCAL", "<B><I>Subpages Hosted Locally</I></B>" },
-	{ "MKBBACKFONT", "COLOR=\"#33ebf4\" SIZE=\"-1\"" },
-	{ "MKBBCOLFONT", "COLOR=\"#87a9e5\" SIZE=\"-1\"" },
-	{ "MKBBROWFONT", "SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"" },
-	{ "MKBBTITLE", "COLOR=\"ivory\" SIZE=\"+1\"" },
-	{ "BBDATEFORMAT", "%a %b %d %H:%M:%S %Y" },
-	{ "BBRSSTITLE", "Hobbit Alerts" },
+	{ "COLUMNDOCURL", "$CGIBINURL/columndoc.sh?%s" },
+	{ "XYMONLOGO", "Xymon" },
+	{ "XYMONPAGELOCAL", "<B><I>Pages Hosted Locally</I></B>" },
+	{ "XYMONPAGEREMOTE", "<B><I>Remote Status Display</I></B>" },
+	{ "XYMONPAGESUBLOCAL", "<B><I>Subpages Hosted Locally</I></B>" },
+	{ "XYMONPAGEACKFONT", "COLOR=\"#33ebf4\" SIZE=\"-1\"" },
+	{ "XYMONPAGECOLFONT", "COLOR=\"#87a9e5\" SIZE=\"-1\"" },
+	{ "XYMONPAGEROWFONT", "SIZE=\"+1\" COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"" },
+	{ "XYMONPAGETITLE", "COLOR=\"ivory\" SIZE=\"+1\"" },
+	{ "XYMONDATEFORMAT", "%a %b %d %H:%M:%S %Y" },
+	{ "XYMONRSSTITLE", "Xymon Alerts" },
 	{ "ACKUNTILMSG", "Next update at: %H:%M %Y-%m-%d" },
 	{ "WMLMAXCHARS", "1500"	},
-	{ "BBREPWARN", "97" },
-	{ "BBGENREPOPTS", "--recentgifs --subpagecolumns=2" },
-	{ "BBGENSNAPOPTS", "--recentgifs --subpagecolumns=2" },
-	{ "BBMKBBEXT", "" },
-	{ "BBHISTEXT", "" },
-	{ "BBSLEEP", "300" },
-	{ "MKBB2COLREPEAT", "0" },
-	{ "BBHTACCESS", "" },
-	{ "BBPAGEHTACCESS", "" },
-	{ "BBSUBPAGEHTACCESS", "" },
-	{ "BBNETSVCS", "smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp" },
+	{ "XYMONREPWARN", "97" },
+	{ "XYMONGENREPOPTS", "--recentgifs --subpagecolumns=2" },
+	{ "XYMONGENSNAPOPTS", "--recentgifs --subpagecolumns=2" },
+	{ "XYMONSTDEXT", "" },
+	{ "XYMONHISTEXT", "" },
+	{ "TASKSLEEP", "300" },
+	{ "XYMONPAGECOLREPEAT", "0" },
+	{ "XYMONHTACCESS", "" },
+	{ "XYMONPAGEHTACCESS", "" },
+	{ "XYMONSUBPAGEHTACCESS", "" },
+	{ "XYMONNETSVCS", "smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp" },
 	{ "HTMLCONTENTTYPE", "text/html" },
 	{ "HOLIDAYFORMAT", "%d/%m" },
 	{ "WEEKSTART", "1" },
+	{ "XYMONBODYCSS", "$XYMONSKIN/xymonbody.css" },
+	{ "XYMONBODYMENUCSS", "$XYMONMENUSKIN/xymonmenu.css" },
+	{ "XYMONBODYHEADER", "file:$XYMONHOME/etc/xymonmenu.cfg" },
+	{ "XYMONBODYFOOTER", "" },
+	{ "XYMONALLOKTEXT", "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>" },
 	{ NULL, NULL }
 };
 
@@ -163,8 +163,8 @@ char *xgetenv(const char *name)
 	}
 
 	if (result == NULL) {
-		for (i=0; (hobbitenv[i].name && (strcmp(hobbitenv[i].name, name) != 0)); i++) ;
-		if (hobbitenv[i].name) result = expand_env(hobbitenv[i].val);
+		for (i=0; (xymonenv[i].name && (strcmp(xymonenv[i].name, name) != 0)); i++) ;
+		if (xymonenv[i].name) result = expand_env(xymonenv[i].val);
 		if (result == NULL) {
 			errprintf("xgetenv: Cannot find value for variable %s\n", name);
 			return NULL;
@@ -218,35 +218,61 @@ void loadenv(char *envfile, char *area)
 	fd = stackfopen(envfile, "r", NULL);
 	if (fd) {
 		while (stackfgets(inbuf, NULL)) {
+			char *equalpos;
+			int appendto = 0;
+
 			sanitize_input(inbuf, 1, 1);
 
-			if (STRBUFLEN(inbuf) && strchr(STRBUF(inbuf), '=')) {
-				/*
-				 * Do the environment "area" stuff: If the input
-				 * is of the form AREA/NAME=VALUE, then setup the variable
-				 * only if we're called with the correct AREA setting.
-				 */
-				oneenv = NULL;
+			if ((STRBUFLEN(inbuf) == 0) || ((equalpos = strchr(STRBUF(inbuf), '=')) == NULL)) continue;
 
-				p = STRBUF(inbuf) + strcspn(STRBUF(inbuf), "=/");
-				if (*p == '/') {
-					if (area) {
-						*p = '\0';
-						if (strcasecmp(STRBUF(inbuf), area) == 0) oneenv = strdup(expand_env(p+1));
+			appendto = ((equalpos > STRBUF(inbuf)) && (*(equalpos-1) == '+'));
+
+			/*
+			 * Do the environment "area" stuff: If the input
+			 * is of the form AREA/NAME=VALUE, then setup the variable
+			 * only if we're called with the correct AREA setting.
+			 */
+			oneenv = NULL;
+
+			p = STRBUF(inbuf) + strcspn(STRBUF(inbuf), "=/");
+			if (*p == '/') {
+				if (area) {
+					*p = '\0';
+					if (strcasecmp(STRBUF(inbuf), area) == 0) oneenv = strdup(expand_env(p+1));
+				}
+			}
+			else oneenv = strdup(expand_env(STRBUF(inbuf)));
+
+			if (oneenv) {
+				p = strchr(oneenv, '=');
+				if (*(p+1) == '"') {
+					/* Move string over the first '"' */
+					memmove(p+1, p+2, strlen(p+2)+1);
+					/* Kill a trailing '"' */
+					if (*(oneenv + strlen(oneenv) - 1) == '"') *(oneenv + strlen(oneenv) - 1) = '\0';
+				}
+
+				if (appendto) {
+					char *oldval, *addstring, *p;
+
+					addstring = strchr(oneenv, '='); if (addstring) { *addstring = '\0'; addstring++; }
+					p = strchr(oneenv, '+'); if (p) *p = '\0';
+
+					oldval = getenv(oneenv);
+					if (oldval) {
+						char *combinedenv = (char *)malloc(strlen(oneenv) + strlen(oldval) + strlen(addstring) + 2);
+						sprintf(combinedenv, "%s=%s%s", oneenv, oldval, (addstring));
+						xfree(oneenv);
+						oneenv = combinedenv;
+					}
+					else {
+						/* oneenv is now VARxxVALUE, so fix it to be a normal env. variable format */
+						strcat(oneenv, "=");
+						memmove(oneenv+strlen(oneenv), addstring, strlen(addstring) + 1);
 					}
 				}
-				else oneenv = strdup(expand_env(STRBUF(inbuf)));
 
-				if (oneenv) {
-					p = strchr(oneenv, '=');
-					if (*(p+1) == '"') {
-						/* Move string over the first '"' */
-						memmove(p+1, p+2, strlen(p+2)+1);
-						/* Kill a trailing '"' */
-						if (*(oneenv + strlen(oneenv) - 1) == '"') *(oneenv + strlen(oneenv) - 1) = '\0';
-					}
-					n = putenv(oneenv);
-				}
+				n = putenv(oneenv);
 			}
 		}
 		stackfclose(fd);

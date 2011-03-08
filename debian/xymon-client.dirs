@@ -1,1 +1,7 @@
-/etc/default
+etc/default
+etc/xymon/clientlaunch.d
+etc/xymon/xymonclient.d
+usr/bin
+usr/share/xymon
+var/lib/xymon/tmp
+var/log/xymon

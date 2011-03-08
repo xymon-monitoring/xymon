@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -18,7 +18,7 @@
 #if defined(LOCALCLIENT) || !defined(CLIENTONLY)
 #include <pcre.h>
 
-typedef enum { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD } astate_t;
+typedef enum { A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD } astate_t;
 
 typedef struct activealerts_t {
 	/* Identification of the alert */
@@ -89,7 +89,7 @@ typedef struct recip_t {
 } recip_t;
 
 extern int load_alertconfig(char *configfn, int alertcolors, int alertinterval);
-extern void dump_alertconfig(void);
+extern void dump_alertconfig(int showlinenumbers);
 
 extern int stoprulefound;
 extern recip_t *next_recipient(activealerts_t *alert, int *first, int *anymatch, time_t *nexttime);

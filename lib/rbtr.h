@@ -65,7 +65,7 @@ void rbtKeyValue(RbtHandle h, RbtIterator i, void **key, void **value);
 RbtIterator rbtFind(RbtHandle h, void *key);
 /* returns iterator associated with key */
 
-/* Utility functions used in Hobbit */
+/* Utility functions used in Xymon */
 extern int name_compare(void *a, void *b);
 extern int string_compare(void *a, void *b);
 extern int int_compare(void *a, void *b);

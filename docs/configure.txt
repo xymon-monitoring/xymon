@@ -1,19 +1,19 @@
-Configuration script for Hobbit
+Configuration script for Xymon
 
-This script asks a few questions and builds a Makefile to compile Hobbit
+This script asks a few questions and builds a Makefile to compile Xymon
 
 Checking your make-utility
-Checking pre-requisites for building Hobbit
+Checking pre-requisites for building Xymon
 
 Checking for fping ...
 Found fping in /usr/bin/fping
 Checking to see if '/usr/bin/fping 127.0.0.1' works ...
 127.0.0.1 is alive
 OK, will use '/usr/bin/fping' for ping tests
-NOTE: If you are using an suid-root wrapper, make sure the 'hobbit'
+NOTE: If you are using an suid-root wrapper, make sure the 'xymon'
       user is also allowed to run fping without having to enter passwords.
       For 'sudo', add something like this to your 'sudoers' file:
-      hobbit: ALL=(ALL) NOPASSWD: /usr/local/sbin/fping
+      xymon: ALL=(ALL) NOPASSWD: /usr/local/sbin/fping
 
 
 
@@ -32,7 +32,7 @@ Checking for OpenSSL ...
 Found OpenSSL include files in /usr/include
 Found OpenSSL libraries in /usr/lib
 
-Hobbit can use the OpenSSL library to test SSL-enabled services
+Xymon can use the OpenSSL library to test SSL-enabled services
 like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL
 library installed, I recommend that you enable this.
 
@@ -45,7 +45,7 @@ Checking for LDAP ...
 Found LDAP include files in /usr/include
 Found LDAP libraries in /usr/lib
 
-Hobbit can use your OpenLDAP LDAP client library to test LDAP servers.
+Xymon can use your OpenLDAP LDAP client library to test LDAP servers.
 
 Do you want to be able to test LDAP servers (y) ?
 y
@@ -54,54 +54,54 @@ y
 
 
 
-Setting up for a Hobbit server
+Setting up for a Xymon server
 
 
-What userid will be running Hobbit [hobbit] ?
+What userid will be running Xymon [xymon] ?
 
-Found passwd entry for user hobbit:x:1000:100:Hobbit user:/usr/lib/hobbit:
-
-
-Where do you want the Hobbit installation [/usr/lib/hobbit] ?
-
-OK, will configure to use /usr/lib/hobbit as the Hobbit toplevel directory
+Found passwd entry for user xymon:x:1000:100:Xymon user:/usr/lib/xymon:
 
 
-What URL will you use for the Hobbit webpages [/hobbit] ? 
+Where do you want the Xymon installation [/usr/lib/xymon] ?
+
+OK, will configure to use /usr/lib/xymon as the Xymon toplevel directory
 
 
-
-Where to put the Hobbit CGI scripts [/usr/lib/hobbit/cgi-bin] ? 
+What URL will you use for the Xymon webpages [/xymon] ? 
 
 
 
-What is the URL for the Hobbit CGI directory [/hobbit-cgi] ? 
+Where to put the Xymon CGI scripts [/usr/lib/xymon/cgi-bin] ? 
+
+
+
+What is the URL for the Xymon CGI directory [/xymon-cgi] ? 
 
 
 
 ********************** SECURITY NOTICE ****************************
-If your Hobbit server is accessible by outsiders, then you should
+If your Xymon server is accessible by outsiders, then you should
 restrict access to the CGI scripts that handle enable/disable of
 hosts, and acknowledging of alerts. The easiest way to do this is
 to put these in a separate CGI directory and require a password to
 access them.
-If your Hobbit server is on a secure network (Intranet) and you trust
+If your Xymon server is on a secure network (Intranet) and you trust
 your users, then you can keep all the CGI scripts in one directory.
 
-Where to put the Hobbit Administration CGI scripts [/usr/lib/hobbit/cgi-secure] ? 
+Where to put the Xymon Administration CGI scripts [/usr/lib/xymon/cgi-secure] ? 
 
 
 
-What is the URL for the Hobbit Administration CGI directory [/hobbit-seccgi] ? 
+What is the URL for the Xymon Administration CGI directory [/xymon-seccgi] ? 
 
 
 
 ** Note that you may need to modify your webserver configuration.
-** After installing, see /usr/lib/hobbit/server/etc/hobbit-apache.conf for an example configuration.
+** After installing, see /usr/lib/xymon/server/etc/xymon-apache.conf for an example configuration.
 
 
-To generate Hobbit availability reports, your webserver
-must have write-access to a directory below the Hobbit
+To generate Xymon availability reports, your webserver
+must have write-access to a directory below the Xymon
 top-level directory. I can set this up if you tell me
 what group-ID your webserver runs with. This is typically
 'nobody' or 'apache' or 'www-data'
@@ -111,7 +111,7 @@ What group-ID does your webserver use ?
 www-data
 
 
-Where to put the Hobbit logfiles [/var/log/hobbit] ? 
+Where to put the Xymon logfiles [/var/log/xymon] ? 
 
 
 
@@ -123,11 +123,11 @@ What is the IP-address of this host [127.0.0.1] ?
 172.16.10.100
 
 
-Where should I install the Hobbit man-pages (/usr/local/man) ?
+Where should I install the Xymon man-pages (/usr/local/man) ?
 
 
 
-The Hobbit history webpage by default displays a 1-day
+The Xymon history webpage by default displays a 1-day
 graph of the history. It can also show a 1-week, 4-weeks and
 1-year graphs, or any combination of these.
 
@@ -135,13 +135,13 @@ Which graphs to show by default (1d/1w/4w/1y/all) [all]
 
 
 
-The Hobbit history webpage can use a new method to
+The Xymon history webpage can use a new method to
 create the summary graphs on the history page. This method
 gives a more accurate view (more detailed), but uses a fixed-width
 graph instead of the standard Big Brother graph that automatically
 resizes to fit your browser window.
 
-Use the new detailed Hobbit history graph (y/n) [y] ? 
+Use the new detailed Xymon history graph (y/n) [y] ? 
 
    Tell me the display width (in pixels) to use for
    the history graph. This could be anything, but to
@@ -158,7 +158,7 @@ Using Linux Makefile settings
 
 
 
-Created Makefile with the necessary information to build Hobbit
+Created Makefile with the necessary information to build Xymon
 Some defaults are used, so do look at the Makefile before continuing.
 
 Configuration complete - now run make (GNU make) to build the tools

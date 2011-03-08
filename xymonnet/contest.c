@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of a TCP service.                    */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -33,9 +33,9 @@ static char rcsid[] = "$Id$";
 #include <netdb.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "contest.h"
 #include "httptest.h"
 #include "dns.h"
@@ -47,6 +47,7 @@ static char rcsid[] = "$Id$";
 
 #define MAX_TELNET_CYCLES 5		/* Max loops with telnet options before aborting banner */
 #define SSLSETUP_PENDING -1		/* Magic value for tcptest_t->sslrunning while handshaking */
+#define SLOWLIMSECS	  5		/* How long a socket may be inactive before deemed slow */
 
 /* See http://www.openssl.org/docs/apps/ciphers.html for cipher strings */
 char *ciphersmedium = "MEDIUM";	/* Must be formatted for openssl library */
@@ -61,6 +62,8 @@ unsigned long tcp_stats_written = 0;
 unsigned int warnbytesread = 0;
 
 static tcptest_t *thead = NULL;
+
+int shuffletests = 0;
 
 static svcinfo_t svcinfo_http  = { "http", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP), 80 };
 static svcinfo_t svcinfo_https = { "https", NULL, 0, NULL, 0, 0, (TCP_GET_BANNER|TCP_HTTP|TCP_SSL), 443 };
@@ -154,17 +157,18 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 	}
 
 	tcp_stats_total++;
-	newtest = (tcptest_t *) malloc(sizeof(tcptest_t));
+	newtest = (tcptest_t *) calloc(1, sizeof(tcptest_t));
 
 	newtest->tspec = (tspec ? strdup(tspec) : NULL);
 	newtest->fd = -1;
+	newtest->lastactive = 0;
 	newtest->bytesread = 0;
 	newtest->byteswritten = 0;
 	newtest->open = 0;
 	newtest->connres = -1;
 	newtest->errcode = CONTEST_ENOERROR;
-	newtest->duration.tv_sec = newtest->duration.tv_usec = 0;
-	newtest->totaltime.tv_sec = newtest->totaltime.tv_usec = 0;
+	newtest->duration.tv_sec = newtest->duration.tv_nsec = 0;
+	newtest->totaltime.tv_sec = newtest->totaltime.tv_nsec = 0;
 
 	memset(&newtest->addr, 0, sizeof(newtest->addr));
 	newtest->addr.sin_family = PF_INET;
@@ -235,12 +239,12 @@ tcptest_t *add_tcp_test(char *ip, int port, char *service, ssloptions_t *sslopt,
 }
 
 
-static void get_connectiontime(tcptest_t *item, struct timeval *timestamp)
+static void get_connectiontime(tcptest_t *item, struct timespec *timestamp)
 {
 	tvdiff(&item->timestart, timestamp, &item->duration);
 }
 
-static void get_totaltime(tcptest_t *item, struct timeval *timestamp)
+static void get_totaltime(tcptest_t *item, struct timespec *timestamp)
 {
 	tvdiff(&item->timestart, timestamp, &item->totaltime);
 }
@@ -251,7 +255,7 @@ static int do_telnet_options(tcptest_t *item)
 	 * Handle telnet options.
 	 *
 	 * This code was taken from the sources for "netcat" version 1.10
-	 * by "Hobbit" <hobbit@avian.org>.
+	 * by "Xymon" <hobbit@avian.org>.
 	 */
 
 	unsigned char *obuf;
@@ -317,7 +321,7 @@ char *ssl_library_version = NULL;
  */
 static void setup_ssl(tcptest_t *item)
 {
-	errprintf("SSL test, but bbtest-net was built without SSL support\n");
+	errprintf("SSL test, but xymonnet was built without SSL support\n");
 	item->sslrunning = 0;
 	item->errcode = CONTEST_ESSL;
 }
@@ -368,7 +372,7 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	 * Private key passphrases are stored in the file named same as the
 	 * certificate itself, but with extension ".pass"
 	 */
-	sprintf(passfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
+	sprintf(passfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
 	p = strrchr(passfn, '.'); if (p == NULL) p = passfn+strlen(passfn);
 	strcpy(p, ".pass");
 
@@ -388,50 +392,44 @@ static int cert_password_cb(char *buf, int size, int rwflag, void *userdata)
 	return strlen(buf);
 }
 
-static char *bbgen_ASN1_UTCTIME(ASN1_UTCTIME *tm)
+static char *xymon_ASN1_UTCTIME(ASN1_UTCTIME *tm)
 {
 	static char result[256];
 	char *asn1_string;
 	int gmt=0;
-	int i, yearlen;
-	int year=0,month=0,day=0,hour=0,minute=0,second=0;
+	int len, i;
+	int century=0,year=0,month=0,day=0,hour=0,minute=0,second=0;
 
-	i=tm->length;
+	len=tm->length;
 	asn1_string=(char *)tm->data;
 
-	if (i < 10) return NULL;
-	if (asn1_string[i-1] == 'Z') gmt=1;
-	for (i=0; i<10; i++) {
+	if (len < 10) return NULL;
+	if (asn1_string[len-1] == 'Z') gmt=1;
+	for (i=0; i<len-1; i++) {
 		if ((asn1_string[i] > '9') || (asn1_string[i] < '0')) return NULL;
 	}
 
-	yearlen = (tm->length >= 14) ? 4 : 2;
-
-	if (yearlen == 4) {
-		year = (asn1_string[0]-'0')*1000 + 
-		       (asn1_string[1]-'0')*100 +
-		       (asn1_string[2]-'0')*10 +
-		       (asn1_string[3]-'0') -
-		       1900;
-	}
-	else {
-		year=(asn1_string[0]-'0')*10+(asn1_string[1]-'0');
-		if (year < 50) year+=100;
+	if (len >= 15) { /* 20541024111745Z format */
+		century = 100 * ((asn1_string[0]-'0')*10+(asn1_string[1]-'0'));
+		asn1_string += 2;
 	}
 
-	month=(asn1_string[yearlen+0]-'0')*10+(asn1_string[yearlen+1]-'0');
+	year=(asn1_string[0]-'0')*10+(asn1_string[1]-'0');
+	if (century == 0 && year < 50) year+=100;
+
+	month=(asn1_string[2]-'0')*10+(asn1_string[3]-'0');
 	if ((month > 12) || (month < 1)) return NULL;
 
-	day=(asn1_string[yearlen+2]-'0')*10+(asn1_string[yearlen+3]-'0');
-	hour=(asn1_string[yearlen+4]-'0')*10+(asn1_string[yearlen+5]-'0');
-	minute=(asn1_string[yearlen+6]-'0')*10+(asn1_string[yearlen+7]-'0');
-	if ( (asn1_string[yearlen+8] >= '0') && (asn1_string[yearlen+8] <= '9') &&
-	     (asn1_string[yearlen+9] >= '0') && (asn1_string[yearlen+9] <= '9')) {
-		second= (asn1_string[yearlen+8]-'0')*10+(asn1_string[yearlen+9]-'0');
+	day=(asn1_string[4]-'0')*10+(asn1_string[5]-'0');
+	hour=(asn1_string[6]-'0')*10+(asn1_string[7]-'0');
+	minute=(asn1_string[8]-'0')*10+(asn1_string[9]-'0');
+	if ( (asn1_string[10] >= '0') && (asn1_string[10] <= '9') &&
+	     (asn1_string[11] >= '0') && (asn1_string[11] <= '9')) {
+		second= (asn1_string[10]-'0')*10+(asn1_string[11]-'0');
 	}
 
 	sprintf(result, "%04d-%02d-%02d %02d:%02d:%02d %s",
-		year+1900, month, day, hour, minute, second, (gmt?"GMT":""));
+		year+(century?century:1900), month, day, hour, minute, second, (gmt?"GMT":""));
 
 	return result;
 }
@@ -516,7 +514,7 @@ static void setup_ssl(tcptest_t *item)
 			SSL_CTX_set_default_passwd_cb(item->sslctx, cert_password_cb);
 			SSL_CTX_set_default_passwd_cb_userdata(item->sslctx, item);
 
-			sprintf(certfn, "%s/certs/%s", xgetenv("BBHOME"), item->ssloptions->clientcert);
+			sprintf(certfn, "%s/certs/%s", xgetenv("XYMONHOME"), item->ssloptions->clientcert);
 			status = SSL_CTX_use_certificate_chain_file(item->sslctx, certfn);
 			if (status == 1) {
 				status = SSL_CTX_use_PrivateKey_file(item->sslctx, certfn, SSL_FILETYPE_PEM);
@@ -640,13 +638,14 @@ static void setup_ssl(tcptest_t *item)
 	sslinfo = newstrbuffer(0);
 
 	certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
-	certstart = strdup(bbgen_ASN1_UTCTIME(X509_get_notBefore(peercert)));
-	certend = strdup(bbgen_ASN1_UTCTIME(X509_get_notAfter(peercert)));
+	certstart = strdup(xymon_ASN1_UTCTIME(X509_get_notBefore(peercert)));
+	certend = strdup(xymon_ASN1_UTCTIME(X509_get_notAfter(peercert)));
 
 	snprintf(msglin, sizeof(msglin),
 		"Server certificate:\n\tsubject:%s\n\tstart date: %s\n\texpire date:%s\n", 
 		certcn, certstart, certend);
 	addtobuffer(sslinfo, msglin);
+	item->certsubject = strdup(certcn);
 	item->certexpires = sslcert_expiretime(certend);
 	xfree(certcn); xfree(certstart); xfree(certend);
 	X509_free(peercert);
@@ -755,11 +754,31 @@ static void socket_shutdown(tcptest_t *item)
 #endif
 
 
+static int tcptest_compare(void **a, void **b)
+{
+	tcptest_t **tcpa = (tcptest_t **)a;
+	tcptest_t **tcpb = (tcptest_t **)b;
+
+	if ((*tcpa)->randomizer < (*tcpb)->randomizer) return -1;
+	else if ((*tcpa)->randomizer > (*tcpb)->randomizer) return 1;
+	else return 0;
+}
+static void * tcptest_getnext(void *a)
+{
+	return ((tcptest_t *)a)->next;
+}
+static void tcptest_setnext(void *a, void *newval)
+{
+	((tcptest_t *)a)->next = (tcptest_t *)newval;
+}
+
+
 void do_tcp_tests(int timeout, int concurrency)
 {
 	int		selres;
 	fd_set		readfds, writefds;
-	struct timeval	tmo, timestamp, cutoff;
+	struct timespec	timestamp;
+	int 		absmaxconcurrency;
 
 	int		activesockets = 0; /* Number of allocated sockets */
 	int		pending = 0;	   /* Total number of tests */
@@ -774,7 +793,6 @@ void do_tcp_tests(int timeout, int concurrency)
 	char		msgbuf[4096];
 
 	struct rlimit lim;
-	struct timezone tz;
 
 	/* If timeout or concurrency are 0, set them to reasonable defaults */
 	if (timeout == 0) timeout = 10;	/* seconds */
@@ -783,32 +801,64 @@ void do_tcp_tests(int timeout, int concurrency)
 	 * Decide how many tests to run in parallel.
 	 * If no --concurrency set by user, default to (FD_SETSIZE / 4) - typically 256.
 	 * But never go above the ressource limit that is set, or above FD_SETSIZE.
+	 * And we save 10 fd's for stdio, libs etc.
 	 */
+	absmaxconcurrency = (FD_SETSIZE - 10);
+	getrlimit(RLIMIT_NOFILE, &lim); 
+	if ((lim.rlim_cur > 10) && ((lim.rlim_cur - 10) < absmaxconcurrency)) absmaxconcurrency = (lim.rlim_cur - 10);
+
 	if (concurrency == 0) concurrency = (FD_SETSIZE / 4);
-	getrlimit(RLIMIT_NOFILE, &lim); if (lim.rlim_cur < concurrency) concurrency = lim.rlim_cur;
-	if (concurrency > FD_SETSIZE) concurrency = FD_SETSIZE;
-	if (concurrency > 10) concurrency -= 10; /* Save 10 descriptors for stuff like stdin/stdout/stderr and shared libs */
+	if (concurrency > absmaxconcurrency) concurrency = absmaxconcurrency;
+
+	dbgprintf("Concurrency evaluation: rlim_cur=%lu, FD_SETSIZE=%d, absmax=%d, initial=%d\n", 
+		  lim.rlim_cur, FD_SETSIZE, absmaxconcurrency, concurrency);
+
+	if (shuffletests) {
+		struct timeval tv;
+		struct timezone tz;
+		gettimeofday(&tv, &tz);
+		srandom(tv.tv_usec);
+	}
 
 	/* How many tests to do ? */
-	for (item = thead; (item); item = item->next) pending++; 
+	for (item = thead; (item); item = item->next) {
+		if (shuffletests) item->randomizer = random();
+		pending++; 
+	}
+	if (shuffletests) thead = msort(thead, tcptest_compare, tcptest_getnext, tcptest_setnext);
+
 	firstactive = nextinqueue = thead;
-	dbgprintf("About to do %d TCP tests running %d in parallel\n", pending, concurrency);
+	dbgprintf("About to do %d TCP tests running %d in parallel, abs.max %d\n", 
+		  pending, concurrency, absmaxconcurrency);
 
 	while (pending > 0) {
+		int slowrunning, cclimit;
+		time_t slowtimestamp = gettimer() - SLOWLIMSECS;
+
 		/*
 		 * First, see if we need to allocate new sockets and initiate connections.
 		 */
-		sockok = 1;
-		while (sockok && nextinqueue && (activesockets < concurrency)) {
 
+		/*
+		 * We start by counting the number of tests where the latest activity
+		 * happened more than SLOWLIMSECS seconds ago. These are ignored when counting
+		 * how many more tests we can start concurrenly. But never exceed the absolute 
+		 * max. number of concurrently open sockets possible.
+		 */
+		for (item=firstactive, slowrunning = 0; (item != nextinqueue); item=item->next) {
+			if ((item->fd > -1) && (item->lastactive < slowtimestamp)) slowrunning++;
+		}
+		cclimit = concurrency + slowrunning; 
+		if (cclimit > absmaxconcurrency) cclimit = absmaxconcurrency;
+
+		sockok = 1;
+		while (sockok && nextinqueue && (activesockets < cclimit)) {
 			/*
 			 * We need to allocate a new socket that has O_NONBLOCK set.
 			 */
 			nextinqueue->fd = socket(PF_INET, SOCK_STREAM, 0);
 			sockok = (nextinqueue->fd != -1);
 			if (sockok) {
-				res = fcntl(nextinqueue->fd, F_SETFL, O_NONBLOCK);
-
 				/* Set the source address */
 				if (nextinqueue->srcaddr) {
 					struct sockaddr_in src;
@@ -826,25 +876,25 @@ void do_tcp_tests(int timeout, int concurrency)
 
 					if (isip) {
 						res = bind(nextinqueue->fd, (struct sockaddr *)&src, sizeof(src));
-						if (res != 0) errprintf("Could not bind to source IP %s for test %s: %s\n", 
-									nextinqueue->srcaddr, nextinqueue->tspec, strerror(errno));
+						if (res != 0) errprintf("WARNING: Could not bind to source IP %s for test %s: %s\n",
+								nextinqueue->srcaddr, nextinqueue->tspec, strerror(errno));
 					}
 					else {
-						errprintf("Invalid source IP %s for test %s, using default\n", 
-							  nextinqueue->srcaddr, nextinqueue->tspec);
+						errprintf("WARNING: Invalid source IP %s for test %s, using default\n",
+								nextinqueue->srcaddr, nextinqueue->tspec);
 					}
-
-					res = 0;
 				}
+
+				res = fcntl(nextinqueue->fd, F_SETFL, O_NONBLOCK);
 
 				if (res == 0) {
 					/*
 					 * Initiate the connection attempt ... 
 					 */
-					gettimeofday(&nextinqueue->timestart, &tz);
+					getntimer(&nextinqueue->timestart);
+					nextinqueue->lastactive = nextinqueue->timestart.tv_sec;
+					nextinqueue->cutoff = nextinqueue->timestart.tv_sec + timeout + 1;
 					res = connect(nextinqueue->fd, (struct sockaddr *)&nextinqueue->addr, sizeof(nextinqueue->addr));
-					cutoff.tv_sec = nextinqueue->timestart.tv_sec + timeout + 1;
-					cutoff.tv_usec = 0;
 
 					/*
 					 * Did it work ?
@@ -923,7 +973,8 @@ void do_tcp_tests(int timeout, int concurrency)
 		}
 
 		/* Ready to go - we have a bunch of connections being established */
-		dbgprintf("%d tests pending - %d active tests\n", pending, activesockets);
+		dbgprintf("%d tests pending - %d active tests, %d slow tests\n", 
+			  pending, activesockets, slowrunning);
 
 restartselect:
 		/*
@@ -967,27 +1018,13 @@ restartselect:
 		/*
 		 * Wait for something to happen: connect, timeout, banner arrives ...
 		 */
-		gettimeofday(&timestamp, &tz);
-		tvdiff(&timestamp, &cutoff, &tmo);
-		if ((tmo.tv_sec < 0) || (tmo.tv_usec < 0)) {
-			/*
-			 * This is actually OK, and it does happen occasionally.
-			 * It just means that we passed the cutoff-threshold.
-			 * So set selres=0 (timeout) without doing the select,
-			 * and we will act as correctly.
-			 */
-			dbgprintf("select timeout is < 0: %d.%06d (cutoff=%d.%06d, timestamp=%d.%06d)\n", 
-					tmo.tv_sec, tmo.tv_usec,
-					cutoff.tv_sec, cutoff.tv_usec,
-					timestamp.tv_sec, timestamp.tv_usec);
-			selres = 0;
-		}
-		else if (maxfd < 0) {
+		if (maxfd < 0) {
 			errprintf("select - no active fd's found, but pending is %d\n", pending);
 			selres = 0;
 		}
 		else {
-			dbgprintf("Doing select\n");
+			struct timeval tmo = { 1, 0 };
+			dbgprintf("Doing select with maxfd=%d\n", maxfd);
 			selres = select((maxfd+1), &readfds, &writefds, NULL, &tmo);
 			dbgprintf("select returned %d\n", selres);
 		}
@@ -1001,9 +1038,7 @@ restartselect:
 			switch (selerr) {
 			   case EINTR : errprintf("select failed - EINTR\n"); goto restartselect;
 			   case EBADF : errprintf("select failed - EBADF\n"); break;
-			   case EINVAL: errprintf("select failed - EINVAL, maxfd=%d, tmo=%u.%06u\n", maxfd, 
-						(unsigned int)tmo.tv_sec, (unsigned int)tmo.tv_usec); 
-					break;
+			   case EINVAL: errprintf("select failed - EINVAL\n"); break;
 			   case ENOMEM: errprintf("select failed - ENOMEM\n"); break;
 			   default    : errprintf("Unknown select() error %d\n", selerr); break;
 			}
@@ -1013,16 +1048,17 @@ restartselect:
 			return;
 		}
 
+		/* selres == 0 (timeout) isn't special - just go through the list of active tests */
+
 		/* Fetch the timestamp so we can tell how long the connect took */
-		gettimeofday(&timestamp, &tz);
+		getntimer(&timestamp);
 
 		/* Now find out which connections had something happen to them */
 		for (item=firstactive; (item != nextinqueue); item=item->next) {
 			if (item->fd > -1) {		/* Only active sockets have this */
-				if ((selres == 0) || (timestamp.tv_sec >= cutoff.tv_sec)) {
+				if (timestamp.tv_sec > item->cutoff) {
 					/* 
-					 * Timeout on all active connection attempts.
-					 * Close all sockets.
+					 * Request timed out.
 					 */
 					if (item->readpending) {
 						/* Final read timeout - just shut this socket */
@@ -1046,6 +1082,8 @@ restartselect:
 						int do_talk = 1;
 						unsigned char *outbuf = NULL;
 						unsigned int outlen = 0;
+
+						item->lastactive = timestamp.tv_sec;
 
 						if (!item->open) {
 							/*
@@ -1163,6 +1201,8 @@ restartselect:
 						int wantmoredata = 0;
 						int datadone = 0;
 
+						item->lastactive = timestamp.tv_sec;
+
 						/*
 						 * We may be in the process of setting up an SSL connection
 						 */
@@ -1256,8 +1296,8 @@ void show_tcp_test_results(void)
 				inet_ntoa(item->addr.sin_addr), 
 				ntohs(item->addr.sin_port),
 				item->open, item->connres, item->errcode,
-				(unsigned int)item->duration.tv_sec, (unsigned int)item->duration.tv_usec,
-				(unsigned int)item->totaltime.tv_sec, (unsigned int)item->totaltime.tv_usec);
+				(unsigned int)item->duration.tv_sec, (unsigned int)(item->duration.tv_nsec/1000),
+				(unsigned int)item->totaltime.tv_sec, (unsigned int)(item->totaltime.tv_nsec/1000));
 
 		if (item->banner && (item->bannerbytes == strlen(item->banner))) {
 			printf("banner='%s' (%d bytes)",
@@ -1329,7 +1369,7 @@ int main(int argc, char *argv[])
 	int timeout = 0;
 	int concurrency = 0;
 
-	if (xgetenv("BBNETSVCS") == NULL) putenv("BBNETSVCS=");
+	if (xgetenv("XYMONNETSVCS") == NULL) putenv("XYMONNETSVCS=");
 	init_tcp_services();
 
 	for (argi=1; (argi<argc); argi++) {
@@ -1347,7 +1387,7 @@ int main(int argc, char *argv[])
 			if (concurrency < 0) concurrency = 0;
 		}
 		else if (strcmp(argv[argi], "--help") == 0) {
-			printf("Run with\n~hobbit/server/bin/bbcmd ./contest --debug 172.16.10.2/25/smtp\n");
+			printf("Run with\n~xymon/server/bin/xymoncmd ./contest --debug 172.16.10.2/25/smtp\n");
 			printf("I.e. IP/PORTNUMBER/TESTSPEC\n");
 			return 0;
 		}

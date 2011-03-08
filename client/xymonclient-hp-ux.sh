@@ -1,9 +1,9 @@
 #!/bin/sh
 #
 #----------------------------------------------------------------------------#
-# HP-UX client for Hobbit                                                    #
+# HP-UX client for Xymon                                                     #
 #                                                                            #
-# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
@@ -29,7 +29,14 @@ s/[ 	]*\n[ 	]*/ /
 echo "[mount]"
 mount
 echo "[memory]"
-$BBHOME/bin/hpux-meminfo
+# $XYMONHOME/bin/hpux-meminfo
+# From Earl Flack  http://lists.xymon.com/archive/2010-December/030100.html 
+FREE=`/usr/sbin/swapinfo |grep ^memory |awk {'print $4'}`
+FREEREPORT=`echo $FREE / 1024 |/usr/bin/bc`
+TOTAL=`/usr/sbin/swapinfo |grep ^memory |awk {'print $2'}`
+TOTALREPORT=`echo $TOTAL / 1024 |/usr/bin/bc`
+echo Total:$TOTALREPORT
+echo Free:$FREEREPORT
 echo "[swapinfo]"
 /usr/sbin/swapinfo -tm
 echo "[ifconfig]"
@@ -52,16 +59,16 @@ then
     then
         echo "[top]"
 	# Cits Bogajewski 03-08-2005: redirect of top fails
-	$TOP -d 1 -f $BBHOME/tmp/top.OUT
-	cat $BBHOME/tmp/top.OUT
-	rm $BBHOME/tmp/top.OUT
+	$TOP -d 1 -f $XYMONHOME/tmp/top.OUT
+	cat $XYMONHOME/tmp/top.OUT
+	rm $XYMONHOME/tmp/top.OUT
     fi
 fi
 
 # vmstat
-nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "vmstat 300 2 1>$XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ $XYMONTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $XYMONTMP/xymon_vmstat.$MACHINEDOTS; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; fi
 
 exit
 

@@ -1,0 +1,128 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of ACKNOWLEDGE.CGI</TITLE>
+</HEAD><BODY>
+<H1>ACKNOWLEDGE.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+acknowledge.cgi - Xymon CGI script to acknowledge alerts
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>acknowledge.cgi?ACTION=action&amp;NUMBER=acknum&amp;DELAY=validity&amp;MESSAGE=text</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>acknowledge.cgi</B> is invoked as a CGI script via the acknowledge.sh CGI wrapper.
+<P>
+acknowledge.cgi is passed a QUERY_STRING environment variable with the
+ACTION, NUMBER, DELAY and MESSAGE parameters. 
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>PARAMETERS</H2>
+
+ACTION is the action to perform. The only supported action is &quot;Ack&quot; 
+to acknowledge an alert.
+<P>
+NUMBER is the number identifying the host/service to be acknowledged.
+It is included in all alert-messages sent out by Xymon.
+<P>
+DELAY is the time (in minutes) that the acknowledge is valid.
+<P>
+MESSAGE is an optional text which will be shown on the status page
+while the acknowledgment is active. You can use it to e.g. tell users
+not to contact you about the problem, or inform them when the problem
+is expected to be resolved.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--no-pin<DD>
+acknowledge.cgi normally requires the user to enter the acknowledgment code
+received in an alert message. If you run it with this option, the user
+will instead get a list of the current non-green statuses, and he may
+send an acknowledge without knowing the code.
+<P>
+<DT>--no-cookies<DD>
+Normally, acknowledge.cgi uses a cookie sent by the browser to initially 
+filter the list of hosts presented. If this is not desired, you can
+turn off this behaviour by calling acknowledge.cgi with the --no-cookies
+option. This would normally be placed in the CGI_ACK_OPTS setting in
+<I><A HREF="../man5/cgioptions.cfg.5.html">cgioptions.cfg</A>(5)</I>
+
+<P>
+<DT>--env=FILENAME<DD>
+Loads the environment defined in FILENAME before executing the CGI script.
+<P>
+<DT>--debug<DD>
+Enables debugging output.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>FILES</H2>
+
+<DL COMPACT>
+<DT>$XYMONHOME/web/acknowledge_header<DD>
+HTML header file for the generated web page
+<P>
+<DT>$XYMONHOME/web/acknowledge_footer<DD>
+HTML footer file for the generated web page
+<P>
+<DT>$XYMONHOME/web/acknowledge_form<DD>
+Query form displayed when acknowledge.cgi is called with no parameters.
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>XYMONHOME<DD>
+Used to locate the template files for the generated web pages.
+<P>
+<DT>QUERY_STRING<DD>
+Contains the parameters for the CGI script.
+<P>
+</DL>
+<A NAME="lbAI">&nbsp;</A>
+<H2>BUGS</H2>
+
+When using alternate pagesets, hosts will only show up on the
+acknowledgment page if this is accessed from the primary page
+in which they are defined. So if you have hosts on multiple
+pages, they will only be visible for acknowledging from their
+main page which is not what you would expect.
+<P>
+<A NAME="lbAJ">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">PARAMETERS</A><DD>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">FILES</A><DD>
+<DT><A HREF="#lbAH">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAI">BUGS</A><DD>
+<DT><A HREF="#lbAJ">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

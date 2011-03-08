@@ -1,0 +1,178 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of CGIOPTIONS.CFG</TITLE>
+</HEAD><BODY>
+<H1>CGIOPTIONS.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+cgioptions.cfg - Command-line parameters for the Xymon CGI tools
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>$XYMONHOME/etc/cgioptions.cfg</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/cgioptions.cfg.1.html">cgioptions.cfg</A>(1)</I>
+
+controls the command-line options passed to all of the Xymon CGI tools
+through their respective shell-script wrappers. Typically the options
+listed here are used for system-wide configuration of the CGI utilities,
+e.g. to define where they read configuration files.
+<P>
+The exact set of command-line options available are described in the
+man-page for each of the CGI utilities.
+<P>
+The file is &quot;sourced&quot; into the shell script wrapper, so assignments to
+the CGI-specific variables must follow standard shell-script syntax.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>SETTINGS</H2>
+
+<DL COMPACT>
+<DT>CGI_ACKINFO_OPTS<DD>
+Options for the
+<I><A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_ACK_OPTS<DD>
+Options for the
+<I><A HREF="../man1/acknowledge.cgi.1.html">acknowledge.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_CSVINFO_OPTS<DD>
+Options for the
+<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_DATEPAGE_OPTS<DD>
+Options for the
+<I><A HREF="../man1/datepage.cgi.1.html">datepage.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_ENADIS_OPTS<DD>
+Options for the
+<I><A HREF="../man8/enadis.cgi.8.html">enadis.cgi</A>(8)</I>
+
+utility.
+<P>
+<DT>CGI_EVENTLOG_OPTS<DD>
+Options for the
+<I><A HREF="../man1/eventlog.cgi.1.html">eventlog.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_FINDHOST_OPTS<DD>
+Options for the
+<I><A HREF="../man1/findhost.cgi.1.html">findhost.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_HIST_OPTS<DD>
+Options for the
+<I><A HREF="../man1/history.cgi.1.html">history.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_COLUMNDOC_OPTS<DD>
+Xymon-specific options for column documentation. This uses the
+<I><A HREF="../man1/csvinfo.cgi.1.html">csvinfo.cgi</A>(1)</I>
+
+utility with the <B>server/etc/columndoc.cfg</B> configuration file.
+<P>
+<DT>CGI_CONFREPORT_OPTS<DD>
+Options for the
+<I><A HREF="../man1/confreport.cgi.1.html">confreport.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_SHOWGRAPH_OPTS<DD>
+Options for the
+<I><A HREF="../man1/showgraph.cgi.1.html">showgraph.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_HOSTGRAPHS_OPTS<DD>
+Options for the
+<I><A HREF="../man1/hostgraphs.cgi.1.html">hostgraphs.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_CRITEDIT_OPTS<DD>
+Options for the
+<I><A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_CRITVIEW_OPTS<DD>
+Options for the
+<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_REPLOG_OPTS<DD>
+Options for the
+<I><A HREF="../man1/reportlog.cgi.1.html">reportlog.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_REP_OPTS<DD>
+Options for the
+<I><A HREF="../man1/report.cgi.1.html">report.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_SNAPSHOT_OPTS<DD>
+Options for the
+<I><A HREF="../man1/snapshot.cgi.1.html">snapshot.cgi</A>(1)</I>
+
+utility.
+<P>
+<DT>CGI_SVCHIST_OPTS<DD>
+Options for the
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
+
+utility when used to view historical logs. Note that the
+&quot;--historical&quot; option must be included in this setting.
+<P>
+<DT>CGI_SVC_OPTS<DD>
+Options for the
+<I><A HREF="../man1/svcstatus.cgi.1.html">svcstatus.cgi</A>(1)</I>
+
+utility.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man7/xymon.7.html">xymon</A>(7), the individual CGI utility man-pages.
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">SETTINGS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

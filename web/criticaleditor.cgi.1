@@ -1,15 +1,15 @@
-.TH HOBBIT-NKEDIT.CGI 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH CRITICALEDITOR.CGI 1 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbit-nkedit.cgi \- Xymon Critical Systems view CGI
+criticaleditor.cgi \- Xymon Critical Systems View Editor CGI
 .SH SYNOPSIS
-.B "hobbit-nkedit.cgi"
+.B "criticaleditor.cgi"
 
 .SH DESCRIPTION
-\fBhobbit-nkedit.cgi\fR is invoked as a CGI script via the 
-hobbit-nkedit.sh CGI wrapper.
+\fBcriticaleditor.cgi\fR is invoked as a CGI script via the 
+criticaleditor.sh CGI wrapper.
 
-hobbit-nkedit.cgi is a web-based editor for the 
-.I hobbit-nkview.cfg(5)
+criticaleditor.cgi is a web-based editor for the 
+.I critical.cfg(5)
 file, which is used to configure the Xymon "Critical Systems" view.
 
 A detailed description of how to use the editor is provided in the
@@ -24,7 +24,7 @@ impact the monitoring of your site.
 .SH OPTIONS
 .IP "--config=FILENAME"
 Name of the Critical Systems View configuration file. The default is
-hobbit-nkview.cfg in the $BBHOME/etc/ directory.
+critical.cfg in the $XYMONHOME/etc/ directory.
 
 .IP "--env=FILENAME"
 Loads the environment defined in FILENAME before executing the CGI script.
@@ -37,5 +37,5 @@ this option must appear before any --env=FILENAME option.
 Enables debugging output.
 
 .SH "SEE ALSO"
-hobbit-nkview.cgi(1), xymon(7)
+criticalview.cgi(1), critical.cfg(5), xymon(7)
 

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit application launcher.                                               */
+/* Xymon application launcher.                                                */
 /*                                                                            */
-/* This is used to launch a single Hobbit application, with the environment   */
-/* that would normally be established by hobbitlaunch.                        */
+/* This is used to launch a single Xymon application, with the environment    */
+/* that would normally be established by xymonlaunch.                         */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -23,9 +23,9 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-static void hobbit_default_envs(char *envfn)
+static void xymon_default_envs(char *envfn)
 {
 	FILE *fd;
 	char buf[1024];
@@ -49,7 +49,7 @@ static void hobbit_default_envs(char *envfn)
 
 	xgetenv("MACHINE");
 
-	if (getenv("BBOSTYPE") == NULL) {
+	if (getenv("SERVEROSTYPE") == NULL) {
 		char *p;
 
 		fd = popen("uname -s", "r");
@@ -61,11 +61,11 @@ static void hobbit_default_envs(char *envfn)
 		for (p=buf; (*p); p++) *p = (char) tolower((int)*p);
 
 		evar = (char *)malloc(strlen(buf) + 10);
-		sprintf(evar, "BBOSTYPE=%s", buf);
+		sprintf(evar, "SERVEROSTYPE=%s", buf);
 		putenv(evar);
 	}
 
-	if (getenv("HOBBITCLIENTHOME") == NULL) {
+	if (getenv("XYMONCLIENTHOME") == NULL) {
 		homedir = strdup(envfn);
 		p = strrchr(homedir, '/');
 		if (p) {
@@ -75,7 +75,7 @@ static void hobbit_default_envs(char *envfn)
 				if (strcmp(p, "/etc") == 0) {
 					*p = '\0';
 					evar = (char *)malloc(20 + strlen(homedir));
-					sprintf(evar, "HOBBITCLIENTHOME=%s", homedir);
+					sprintf(evar, "XYMONCLIENTHOME=%s", homedir);
 					putenv(evar);
 				}
 			}
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 			envarea = strdup(p+1);
 		}
 		else if ((argcount == 0) && (strcmp(argv[argi], "--version") == 0)) {
-			fprintf(stdout, "Hobbit version %s\n", VERSION);
+			fprintf(stdout, "Xymon version %s\n", VERSION);
 			return 0;
 		}
 		else {
@@ -122,17 +122,17 @@ int main(int argc, char *argv[])
 	if (!envfile) {
 		struct stat st;
 
-		sprintf(envfn, "%s/etc/hobbitserver.cfg", xgetenv("BBHOME"));
-		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/hobbitclient.cfg", xgetenv("BBHOME"));
+		sprintf(envfn, "%s/etc/xymonserver.cfg", xgetenv("XYMONHOME"));
+		if (stat(envfn, &st) == -1) sprintf(envfn, "%s/etc/xymonclient.cfg", xgetenv("XYMONHOME"));
 		errprintf("Using default environment file %s\n", envfn);
 
-		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
-		hobbit_default_envs(envfn);
+		/* Make sure SERVEROSTYPE, MACHINEDOTS and MACHINE are setup for our child */
+		xymon_default_envs(envfn);
 		loadenv(envfn, envarea);
 	}
 	else {
-		/* Make sure BBOSTYPE, MACHINEDOTS and MACHINE are setup for our child */
-		hobbit_default_envs(envfile);
+		/* Make sure SERVEROSTYPE, MACHINEDOTS and MACHINE are setup for our child */
+		xymon_default_envs(envfile);
 		loadenv(envfile, envarea);
 	}
 

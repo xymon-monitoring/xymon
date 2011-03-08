@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* Debugging code for dumping various data in bbgen.                          */
+/* Debugging code for dumping various data in xymongen.                       */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 
 void dumphosts(host_t *head, char *prefix)
@@ -86,9 +86,9 @@ void dumpstatelist(state_t *head)
 	}
 }
 
-void dumponepagewithsubs(bbgen_page_t *curpage, char *indent)
+void dumponepagewithsubs(xymongen_page_t *curpage, char *indent)
 {
-	bbgen_page_t *levelpage;
+	xymongen_page_t *levelpage;
 
 	char newindent[100];
 	char newindentextra[105];
@@ -108,7 +108,7 @@ void dumponepagewithsubs(bbgen_page_t *curpage, char *indent)
 	}
 }
 
-void dumpall(bbgen_page_t *head)
+void dumpall(xymongen_page_t *head)
 {
 	dumponepagewithsubs(head, "");
 }

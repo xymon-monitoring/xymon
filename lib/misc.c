@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains miscellaneous routines.                                        */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -25,15 +25,15 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <signal.h>
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
 #endif
 #include <fcntl.h>
+#include <sys/statvfs.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
-
-#include <signal.h>
 
 enum ostype_t get_ostype(char *osname)
 {
@@ -53,6 +53,7 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "win32") == 0)       result = OS_WIN32;
 	else if (strcasecmp(osname, "hmdc") == 0)        result = OS_WIN32_HMDC;
 	else if (strcasecmp(osname, "bbwin") == 0)       result = OS_WIN32_BBWIN;
+	else if (strcasecmp(osname, "powershell") == 0)  result = OS_WIN_POWERSHELL;
 	else if (strcasecmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
 	else if (strcasecmp(osname, "netbsd") == 0)      result = OS_NETBSD;
 	else if (strcasecmp(osname, "openbsd") == 0)     result = OS_OPENBSD;
@@ -72,13 +73,14 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(osname, "macosx") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "darwin") == 0)      result = OS_DARWIN;
 	else if (strcasecmp(osname, "sco_sv") == 0)      result = OS_SCO_SV;
+	else if (strcasecmp(osname, "unixware") == 0)    result = OS_SCO_SV;
 	else if (strcasecmp(osname, "netware_snmp") == 0) result = OS_NETWARE_SNMP;
 	else if (strcasecmp(osname, "zvm") == 0)         result = OS_ZVM;
 	else if (strcasecmp(osname, "zvse") == 0)        result = OS_ZVSE;
 	else if (strcasecmp(osname, "zos") == 0)         result = OS_ZOS;
 	else if (strcasecmp(osname, "snmpcollect") == 0) result = OS_SNMPCOLLECT;
+	else if (strcasecmp(osname, "mqcollect") == 0)    result = OS_MQCOLLECT;
 	else if (strcasecmp(osname, "gnu/kfreebsd") == 0) result = OS_GNUKFREEBSD;
-	else if (strcasecmp(osname, "gnu_kfreebsd") == 0) result = OS_GNUKFREEBSD;
 
 	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
 
@@ -96,6 +98,7 @@ char *osname(enum ostype_t os)
 		case OS_WIN32: return "win32";
 		case OS_WIN32_HMDC: return "hmdc";
 		case OS_WIN32_BBWIN: return "bbwin";
+		case OS_WIN_POWERSHELL: return "powershell";
 		case OS_FREEBSD: return "freebsd";
 		case OS_NETBSD: return "netbsd";
 		case OS_OPENBSD: return "openbsd";
@@ -111,6 +114,7 @@ char *osname(enum ostype_t os)
 		case OS_ZVSE: return "zvse";
 		case OS_ZOS: return "zos";
 		case OS_SNMPCOLLECT: return "snmpcollect";
+		case OS_MQCOLLECT: return "mqcollect";
 		case OS_GNUKFREEBSD: return "gnu/kfreebsd";
 		case OS_UNKNOWN: return "unknown";
 	}
@@ -428,8 +432,8 @@ int get_fqdn(void)
 
 int generate_static(void)
 {
-	getenv_default("BBLOGSTATUS", "STATIC", NULL);
-	return (strcmp(xgetenv("BBLOGSTATUS"), "STATIC") == 0);
+	getenv_default("XYMONLOGSTATUS", "STATIC", NULL);
+	return (strcmp(xgetenv("XYMONLOGSTATUS"), "STATIC") == 0);
 }
 
 
@@ -476,8 +480,7 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 	else {
 		/* The parent runs here */
 		int done = 0, didterm = 0, n;
-		struct timeval tmo, timestamp, cutoff;
-		struct timezone tz;
+		struct timespec tmo, timestamp, cutoff;
 
 		close(pfd[1]);
 
@@ -487,22 +490,26 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 			errprintf("Could not set non-blocking reads on pipe: %s\n", strerror(errno));
 		}
 
-		gettimeofday(&cutoff, &tz);
+		getntimer(&cutoff);
 		cutoff.tv_sec += timeout;
 
 		while (!done) {
 			fd_set readfds;
 
-			gettimeofday(&timestamp, &tz);
+			getntimer(&timestamp);
 			tvdiff(&timestamp, &cutoff, &tmo);
-			if ((tmo.tv_sec < 0) || (tmo.tv_usec < 0)) {
+			if ((tmo.tv_sec < 0) || (tmo.tv_nsec < 0)) {
 				/* Timeout already happened */
 				n = 0;
 			}
 			else {
+				struct timeval selecttmo;
+
+				selecttmo.tv_sec = tmo.tv_sec;
+				selecttmo.tv_usec = tmo.tv_nsec / 1000;
 				FD_ZERO(&readfds);
 				FD_SET(pfd[0], &readfds);
-				n = select(pfd[0]+1, &readfds, NULL, NULL, &tmo);
+				n = select(pfd[0]+1, &readfds, NULL, NULL, &selecttmo);
 			}
 
 			if (n == -1) {
@@ -554,14 +561,14 @@ int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, in
 }
 
 
-void do_bbext(FILE *output, char *extenv, char *family)
+void do_extensions(FILE *output, char *extenv, char *family)
 {
 	/*
 	 * Extension scripts. These are ad-hoc, and implemented as a
 	 * simple pipe. So we do a fork here ...
 	 */
 
-	char *bbexts, *p;
+	char *exts, *p;
 	FILE *inpipe;
 	char extfn[PATH_MAX];
 	strbuffer_t *inbuf;
@@ -574,15 +581,15 @@ void do_bbext(FILE *output, char *extenv, char *family)
 
 	MEMDEFINE(extfn);
 
-	bbexts = strdup(p);
-	p = strtok(bbexts, "\t ");
+	exts = strdup(p);
+	p = strtok(exts, "\t ");
 	inbuf = newstrbuffer(0);
 
 	while (p) {
 		/* Dont redo the eventlog or acklog things */
 		if ((strcmp(p, "eventlog.sh") != 0) &&
 		    (strcmp(p, "acklog.sh") != 0)) {
-			sprintf(extfn, "%s/ext/%s/%s", xgetenv("BBHOME"), family, p);
+			sprintf(extfn, "%s/ext/%s/%s", xgetenv("XYMONHOME"), family, p);
 			inpipe = popen(extfn, "r");
 			if (inpipe) {
 				initfgets(inpipe);
@@ -594,7 +601,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 		p = strtok(NULL, "\t ");
 	}
 
-	xfree(bbexts);
+	xfree(exts);
 
 	MEMUNDEFINE(extfn);
 	MEMUNDEFINE(buf);
@@ -603,7 +610,7 @@ void do_bbext(FILE *output, char *extenv, char *family)
 static void clean_cmdarg(char *l)
 {
 	/*
-	 * This routine sanitizes commandline argument, stripping off whitespace,
+	 * This routine sanitizes command-line argument, stripping off whitespace,
 	 * removing comments and un-escaping \-escapes and quotes.
 	 */
 	char *p, *outp;
@@ -644,7 +651,7 @@ char **setup_commandargs(char *cmdline, char **cmd)
 	 * Good grief - argument parsing is complex!
 	 *
 	 * This routine takes a command-line, picks out any environment settings
-	 * that are in the commandline, and splits up the remainder into the
+	 * that are in the command line, and splits up the remainder into the
 	 * actual command to run, and the arguments.
 	 *
 	 * It handles quotes, hyphens and escapes.
@@ -726,7 +733,6 @@ long long str2ll(char *s, char **errptr)
 	return result;
 #endif
 }
-
 int checkalert(char *alertlist, char *testname)
 {
 	char *alist, *aname;
@@ -782,5 +788,28 @@ char *getcolumn(char *s, int wanted)
 	for (i=0, result=nextcolumn(s); (i < wanted); i++, result = nextcolumn(NULL));
 
 	return result;
+}
+
+
+int chkfreespace(char *path, int minblks, int mininodes)
+{
+	/* Check there is least 'minblks' % free space on filesystem 'path' */
+	struct statvfs fs;
+	int n;
+	int avlblk, avlnod;
+
+	n = statvfs(path, &fs);
+	if (n == -1) {
+		errprintf("Cannot stat filesystem %s: %s", path, strerror(errno));
+		return 0;
+	}
+
+	/* Not all filesystems report i-node data, so play it safe */
+	avlblk = ((fs.f_bavail > 0) && (fs.f_blocks > 0)) ? fs.f_bavail / (fs.f_blocks / 100) : 100;
+	avlnod = ((fs.f_favail > 0) && (fs.f_files > 0))   ? fs.f_favail / (fs.f_files / 100)  : 100;
+
+	if ((avlblk >= minblks) && (avlnod >= mininodes)) return 0;
+
+	return 1;
 }
 

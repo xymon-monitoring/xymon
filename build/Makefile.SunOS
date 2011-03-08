@@ -1,4 +1,4 @@
-# bbgen compile-time settings for SunOS / Solaris
+# Xymon compile-time settings for SunOS / Solaris
 
 OSDEF = -DSunOS
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-enum ostype_t { OS_UNKNOWN, OS_SOLARIS, OS_OSF, OS_AIX, OS_HPUX, OS_WIN32, OS_FREEBSD, OS_NETBSD, OS_OPENBSD, OS_LINUX22, OS_LINUX, OS_RHEL3, OS_SNMP, OS_IRIX, OS_DARWIN, OS_SCO_SV, OS_NETWARE_SNMP, OS_WIN32_HMDC, OS_WIN32_BBWIN, OS_ZVM, OS_ZVSE, OS_ZOS, OS_SNMPCOLLECT, OS_GNUKFREEBSD } ;
+enum ostype_t { OS_UNKNOWN, OS_SOLARIS, OS_OSF, OS_AIX, OS_HPUX, OS_WIN32, OS_FREEBSD, OS_NETBSD, OS_OPENBSD, OS_LINUX22, OS_LINUX, OS_RHEL3, OS_SNMP, OS_IRIX, OS_DARWIN, OS_SCO_SV, OS_NETWARE_SNMP, OS_WIN32_HMDC, OS_WIN32_BBWIN, OS_WIN_POWERSHELL, OS_ZVM, OS_ZVSE, OS_ZOS, OS_SNMPCOLLECT, OS_MQCOLLECT, OS_GNUKFREEBSD } ;
 
 extern enum ostype_t get_ostype(char *osname);
 extern char *osname(enum ostype_t os);
@@ -33,7 +33,7 @@ extern const char *textornull(const char *text);
 extern int get_fqdn(void);
 extern int generate_static(void);
 extern int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, int timeout);
-extern void do_bbext(FILE *output, char *extenv, char *family);
+extern void do_extensions(FILE *output, char *extenv, char *family);
 extern char **setup_commandargs(char *cmdline, char **cmd);
 extern int checkalert(char *alertlist, char *test);
 
@@ -42,6 +42,8 @@ extern long long str2ll(char *s, char **errptr);
 extern char *nextcolumn(char *s);
 extern int selectcolumn(char *heading, char *wanted);
 extern char *getcolumn(char *s, int wanted);
+
+extern int chkfreespace(char *path, int minblks, int mininodes);
 
 #endif
 

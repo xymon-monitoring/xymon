@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
-/* It contains routines for communicating with the Hobbit locator service.    */
+/* This is a library module, part of libxymon.                                */
+/* It contains routines for communicating with the Xymon locator service.     */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -31,7 +31,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <signal.h>
 
@@ -240,7 +240,7 @@ int locator_init(char *ipport)
 		portnum = atoi(p+1);
 	}
 	else {
-		portnum = atoi(xgetenv("BBPORT"));
+		portnum = atoi(xgetenv("XYMONDPORT"));
 	}
 
 	memset(&myaddr, 0, sizeof(myaddr));

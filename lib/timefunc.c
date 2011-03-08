@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for timehandling.                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,61 +19,60 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-/* Make sure we get the *real* time() function */
 #ifdef time
 #undef time
 #endif
 
 time_t fakestarttime = 0;
-time_t timewarp = 0;
 
 time_t getcurrenttime(time_t *retparm)
 {
 	static time_t firsttime = 0;
-	static time_t lastresult = 0;
-	time_t now, result;
-	int timewarphappened = 0;
-
-	result = now = time(NULL);
 
 	if (fakestarttime != 0) {
-		if (firsttime == 0) firsttime = now;
-		result = fakestarttime + (now - firsttime);
+		time_t result;
+
+		if (firsttime == 0) firsttime = time(NULL);
+		result = fakestarttime + (time(NULL) - firsttime);
+		if (retparm) *retparm = result;
+		return result;
 	}
+	else
+		return time(retparm);
+}
 
-	if (result < lastresult) {
-		/*
-		 * Einstein says clocks cannot go backwards.
-		 * But it just did. Lets assume time is now the same as the last
-		 * time this function was called, and adjust future calls by
-		 * the necessary amount of seconds to make sure clock never goes
-		 * back in time.
-		 */
-		timewarp = (lastresult - result);
-		timewarphappened = 1;
-	}
 
-	result += timewarp;
+time_t gettimer(void)
+{
+	int res;
+	struct timespec t;
 
-	/* We're done. Save the result for next time to catch clock going backwards. */
-	lastresult = result;
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	res = clock_gettime(CLOCK_MONOTONIC, &t);
+	return (time_t) t.tv_sec;
+#else
+	return time(NULL);
+#endif
+}
 
-	if (retparm) *retparm = result;
 
-	if (timewarphappened) {
-		/* 
-		 * Tell the world about it. 
-		 * Must do this AFTER changing timewarp and lastresult,
-		 * or we will start an endless loop triggering a stack
-		 * overflow because errprintf() calls getcurrenttime().
-		 */
-		errprintf("Time warp detected: Adjusting returned clock by %d seconds\n", timewarp);
-	}
+void getntimer(struct timespec *tp)
+{
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	int res;
+	res = clock_gettime(CLOCK_MONOTONIC, tp);
+#else
+	struct timeval t;
+	struct timezone tz;
 
-	return result;
+	gettimeofday(&t, &tz);
+	tp->tv_sec = t.tv_sec;
+	tp->tv_nsec = 1000*t.tv_usec;
+#endif
 }
 
 
@@ -97,7 +96,7 @@ char *timespec_text(char *spec)
 	static char *wkdays = NULL;
 	static strbuffer_t *result = NULL;
 	char *sCopy;
-	char *sItem;
+	char *p;
 
 	if (result == NULL) result = newstrbuffer(0);
 	clearstrbuffer(result);
@@ -120,12 +119,35 @@ char *timespec_text(char *spec)
 		sprintf(wkdays, "%s-%s", daynames[1], daynames[5]);
 	}
 
-	sCopy = strdup(spec);
-	sItem = strtok(sCopy, ",");
-	while (sItem) {
+
+	p = sCopy = strdup(spec);
+	do {
+		char *s1, *s2, *s3, *s4, *s5;
+		char *days, *starttime, *endtime, *columns, *cause;
 		char *oneday, *dtext;
-		int daysdone = 0, firstday = 1;
-		oneday = sItem;
+		int daysdone = 0, firstday = 1, ecount, causelen;
+
+		/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
+
+		s1 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+		s2 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+		s3 = p; p += strcspn(p, ":;,"); 
+		if ((*p == ',') || (*p == ';') || (*p == '\0')) { 
+			if (*p != '\0') { *p = '\0'; p++; }
+			days = s1; starttime = s2; endtime = s3;
+			columns = "*";
+			cause = strdup("Planned downtime");
+		}
+		else if (*p == ':') {
+			*p = '\0'; p++; 
+			s4 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+			s5 = p; p += strcspn(p, ",;"); if (*p != '\0') { *p = '\0'; p++; }
+			days = s2; starttime = s3; endtime = s4;
+			columns = s1;
+			getescapestring(s5, &cause, &causelen);
+		}
+
+		oneday = days;
 
 		while (!daysdone) {
 			switch (*oneday) {
@@ -142,33 +164,50 @@ char *timespec_text(char *spec)
 			}
 
 			if (!firstday) addtobuffer(result, "/");
+
 			addtobuffer(result, dtext);
 			oneday++;
 			firstday = 0;
 		}
 
-		sItem = strtok(NULL, ",");
-		if (sItem) addtobuffer(result, ", ");
-	}
+		addtobuffer(result, ":"); addtobuffer(result, starttime);
+
+		addtobuffer(result, ":"); addtobuffer(result, endtime);
+
+		addtobuffer(result, " (status:"); 
+		if (strcmp(columns, "*") == 0)
+			addtobuffer(result, "All");
+		else
+			addtobuffer(result, columns); 
+		addtobuffer(result, ")");
+
+		if (cause) { 
+			addtobuffer(result, " (cause:"); 
+			addtobuffer(result, cause); 
+			addtobuffer(result, ")");
+			xfree(cause);
+		}
+	} while (*p);
+
 	xfree(sCopy);
 
 	return STRBUF(result);
 }
 
-struct timeval *tvdiff(struct timeval *tstart, struct timeval *tend, struct timeval *result)
+struct timespec *tvdiff(struct timespec *tstart, struct timespec *tend, struct timespec *result)
 {
-	static struct timeval resbuf;
+	static struct timespec resbuf;
 
 	if (result == NULL) result = &resbuf;
 
 	result->tv_sec = tend->tv_sec;
-	result->tv_usec = tend->tv_usec;
-	if (result->tv_usec < tstart->tv_usec) {
+	result->tv_nsec = tend->tv_nsec;
+	if (result->tv_nsec < tstart->tv_nsec) {
 		result->tv_sec--;
-		result->tv_usec += 1000000;
+		result->tv_nsec += 1000000000;
 	}
 	result->tv_sec  -= tstart->tv_sec;
-	result->tv_usec -= tstart->tv_usec;
+	result->tv_nsec -= tstart->tv_nsec;
 
 	return result;
 }
@@ -288,8 +327,8 @@ char *check_downtime(char *hostname, char *testname)
 
 	if (hinfo == NULL) return NULL;
 
-	dtag = bbh_item(hinfo, BBH_DOWNTIME);
-	holkey = bbh_item(hinfo, BBH_HOLIDAYS);
+	dtag = xmh_item(hinfo, XMH_DOWNTIME);
+	holkey = xmh_item(hinfo, XMH_HOLIDAYS);
 	if (dtag && *dtag) {
 		static char *downtag = NULL;
 		static unsigned char *cause = NULL;
@@ -331,6 +370,9 @@ char *check_downtime(char *hostname, char *testname)
 					if (strcmp(onesvc, testname) == 0) return cause;
 					onesvc = strtok_r(NULL, ",", &buf);
 				}
+
+				/* If we didn't use the "cause" we just created, it must be freed */
+				if (cause) xfree(cause);
 			}
 		} while (*p);
 	}
@@ -454,6 +496,13 @@ int durationvalue(char *dur)
 
 	int result = 0;
 	char *startofval;
+	char *endpos;
+	char savedelim;
+
+	/* Make sure we only process the first token, dont go past whitespace or some other delimiter */
+	endpos = dur + strspn(dur, "01234567890mhdw");
+	savedelim = *endpos;
+	*endpos = '\0';
 
 	startofval = dur;
 
@@ -469,15 +518,19 @@ int durationvalue(char *dur)
 		*p = modifier;
 
 		switch (modifier) {
-		  case 'm': break;			/* minutes */
-		  case 'h': oneval *= 60; break;	/* hours */
-		  case 'd': oneval *= 1440; break;	/* days */
-		  case 'w': oneval *= 10080; break;	/* weeks */
+		  case '\0': break;			/* No delimiter = minutes */
+		  case 'm' : break;			/* minutes */
+		  case 'h' : oneval *= 60; break;	/* hours */
+		  case 'd' : oneval *= 1440; break;	/* days */
+		  case 'w' : oneval *= 10080; break;	/* weeks */
 		}
 
 		result += oneval;
 		startofval = ((*p) ? p+1 : NULL);
 	}
+
+	/* Restore the saved delimiter */
+	*endpos = savedelim;
 
 	return result;
 }
@@ -559,6 +612,26 @@ char *agestring(time_t secs)
 	return result;
 }
 
+time_t timestr2timet(char *s)
+{
+	/* Convert a string "YYYYMMDDHHMM" to time_t value */
+	struct tm tm;
+
+	if (strlen(s) != 12) {
+		errprintf("Invalid timestring: '%s'\n", s);
+		return -1;
+	}
+
+	tm.tm_min = atoi(s+10); *(s+10) = '\0';
+	tm.tm_hour = atoi(s+8); *(s+8) = '\0';
+	tm.tm_mday = atoi(s+6); *(s+6) = '\0';
+	tm.tm_mon = atoi(s+4) - 1; *(s+4) = '\0';
+	tm.tm_year = atoi(s) - 1900; *(s+4) = '\0';
+	tm.tm_isdst = -1;
+	return mktime(&tm);
+}
+
+
 time_t eventreport_time(char *timestamp)
 {
 	time_t event = 0;
@@ -590,26 +663,5 @@ time_t eventreport_time(char *timestamp)
 
 	return event;
 }
-
-
-time_t timestr2timet(char *s)
-{
-	/* Convert a string "YYYYMMDDHHMM" to time_t value */
-	struct tm tm;
-
-	if (strlen(s) != 12) {
-		errprintf("Invalid timestring in bb-hosts: '%s'\n", s);
-		return -1;
-	}
-
-	tm.tm_min = atoi(s+10); *(s+10) = '\0';
-	tm.tm_hour = atoi(s+8); *(s+8) = '\0';
-	tm.tm_mday = atoi(s+6); *(s+6) = '\0';
-	tm.tm_mon = atoi(s+4) - 1; *(s+4) = '\0';
-	tm.tm_year = atoi(s) - 1900; *(s+4) = '\0';
-	tm.tm_isdst = -1;
-	return mktime(&tm);
-}
-
 
 

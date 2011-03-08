@@ -1,13 +1,18 @@
-.TH HOBBITSERVER.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH XYMONSERVER.CFG 5 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbitserver.cfg \- Xymon environment variables
+xymonserver.cfg \- Xymon environment variables
 
 .SH DESCRIPTION
 Xymon programs use multiple environment variables beside the
 normal set of variables.  The environment definitions
-are stored in the ~Xymon/server/etc/hobbitserver.cfg file. 
+are stored in the ~Xymon/server/etc/xymonserver.cfg file. 
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
+
+You can also append data to existing variables, using the
+syntax \fBNAME+=VALUE\fR. VALUE is then appended to the existing
+value of the NAME variable. If NAME has not been defined, then
+this acts as if it were a normal definition.
 
 .SH ENVIRONMENT AREAS
 In some cases it may be useful to have different values for an environment
@@ -15,32 +20,32 @@ variable, depending on where it is used. This is possible by defining
 variables with an associated "area". Such definitions have the form
 \fBAREA/NAME=VALUE\fR.
 
-E.g. to define a special setup of the BBDISPLAY variable when it is used
+E.g. to define a special setup of the XYMSERVERS variable when it is used
 by an application in the "management" area, you would do this:
 .IP
 .nf
-  BBDISP="127.0.0.1"            # Default definition
-  management/BBDISP="10.1.0.5"  # Definition in the "management" area
+  XYMSERVERS="127.0.0.1"            # Default definition
+  management/XYMSERVERS="10.1.0.5"  # Definition in the "management" area
 .fi
 .LP
 Areas are invoked by using the "--area" option for all tools, or via the 
 ENVAREA setting in the
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 file.
 
 .SH GENERAL SETTINGS
 
-.IP BBSERVERHOSTNAME
+.IP XYMONSERVERHOSTNAME
 The fully-qualified hostname of the server that is running Xymon.
 
-.IP BBSERVERWWWNAME
+.IP XYMONSERVERWWWNAME
 The hostname used to access this servers' web-pages, used to construct
-URL's in the Xymon webpages. Default is the BBSERVERHOSTNAME.
+URL's in the Xymon webpages. Default is the XYMONSERVERHOSTNAME.
 
-.IP BBSERVERIP
+.IP XYMONSERVERIP
 The public IP-address of the server that is running Xymon.
 
-.IP BBSERVEROS
+.IP XYMONSERVEROS
 A name identifying the operating system of the Xymon server. The 
 known names are currently "linux", "freebsd", "solaris", "hpux",
 "aix" and "osf".
@@ -51,16 +56,16 @@ If set to FALSE, hostnames are stripped of their domain-part before
 being processed. It is \fBhighly recommended\fR that you keep this
 set to TRUE. Default: TRUE.
 
-.IP BBLOGSTATUS
+.IP XYMONLOGSTATUS
 Controls how the HTML page for a status log is generated. If set to
 DYNAMIC, the HTML logs are generated on-demand by the 
-.I bb-hostsvc.cgi(1)
+.I svcstatus.cgi(1)
 script. If set to STATIC, you must activate the
-.I hobbitd_filestore(8)
+.I xymond_filestore(8)
 module (through an entry in the
-.I hobbitlaunch.cfg(5)
+.I tasks.cfg(5)
 file) to create and store the HTML logs whenever a status update is
-received. Setting "BBLOGSTATUS=STATIC" is \fBdiscouraged\fR since the
+received. Setting "XYMONLOGSTATUS=STATIC" is \fBdiscouraged\fR since the
 I/O load on the Xymon server will increase significantly.
 
 .IP PINGCOLUMN
@@ -101,8 +106,8 @@ add this, if configured to do so.
 
 .IP HOLIDAYS
 Defines the default set of holidays used if there is no "holidays" 
-tag for a host in the bb-hosts file. Holiday sets are defined in the
-.I hobbit-holidays.cfg(5)
+tag for a host in the hosts.cfg file. Holiday sets are defined in the
+.I holidays.cfg(5)
 file. If not defined, only the default holidays (those defined outside
 a named holiday set) will be considered as holidays.
 
@@ -110,228 +115,229 @@ a named holiday set) will be considered as holidays.
 Defines which day is the first day of the week. Set to "0" for Sunday,
 "1" for Monday. Default: 1 (Monday).
 
+.IP XYMONBODYHEADER
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_header templates. If this is set to a value
+beginning with "file:", then the contents of the specified file is
+included. Default: "file:$XYMONHOME/etc/xymonmenu.cfg"
+
+.IP XYMONBODYFOOTER
+Text that is included in the Xymon web pages at the location specified
+by ~xymon/server/web/*_footer templates. If this is set to a value
+beginning with "file:", then the contents of the specified file is
+included. Default: Empty.
+
+.IP XYMONBODYMENUCSS
+URL for the Xymon menu CSS file. Default: "$XYMONMENUSKIN/xymonmenu.css"
+
 
 .SH DIRECTORIES
 
-.IP BBSERVERROOT
+.IP XYMONSERVERROOT
 The top-level directory for the Xymon installation. The default 
 is the home-directory for the user running Xymon.
 
-.IP BBSERVERLOGS
+.IP XYMONSERVERLOGS
 The directory for the Xymon's own logfiles (NOT the status-logs
 from the monitored hosts).
 
-.IP BBHOME
+.IP XYMONHOME
 The Xymon server directory, where programs and configurations are kept.
-Default: $BBSERVERROOT/server/ .
+Default: $XYMONSERVERROOT/server/ .
 
-.IP BBTMP
-Directory used for temporary files. Default: $BBHOME/tmp/
+.IP XYMONTMP
+Directory used for temporary files. Default: $XYMONHOME/tmp/
 
-.IP BBWWW
-Directory for Xymon webfiles. The $BBWEB URL must map to this directory.
-Default: $BBHOME/www/
+.IP XYMONWWWDIR
+Directory for Xymon webfiles. The $XYMONWEB URL must map to this directory.
+Default: $XYMONHOME/www/
 
-.IP BBNOTES
-Directory for Xymon notes-files. The $BBNOTESSKIN URL must map to this directory.
-Default: $BBHOME/www/notes/
+.IP XYMONNOTESDIR
+Directory for Xymon notes-files. The $XYMONNOTESSKIN URL must map to this directory.
+Default: $XYMONHOME/www/notes/
 
-.IP BBREP
-Directory for Xymon availability reports. The $BBREPURL URL must map to this directory.
+.IP XYMONREPDIR
+Directory for Xymon availability reports. The $XYMONREPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-.I bb-rep.cgi(1)
-CGI script to generate reports on-demand. Default: $BBHOME/www/rep/
+.I report.cgi(1)
+CGI script to generate reports on-demand. Default: $XYMONHOME/www/rep/
 
-.IP BBSNAP
-Directory for Xymon snapshots. The $BBSNAPURL URL must map to this directory.
+.IP XYMONSNAPDIR
+Directory for Xymon snapshots. The $XYMONSNAPURL URL must map to this directory.
 Note also that your webserver must have write-access to this directory, if you want to
 use the 
-.I bb-snapshot.cgi(1)
-CGI script to generate snapshots on-demand. Default: $BBHOME/www/snap/
+.I snapshot.cgi(1)
+CGI script to generate snapshots on-demand. Default: $XYMONHOME/www/snap/
 
-.IP BBVAR
+.IP XYMONVAR
 Directory for all data stored about the monitored items. 
-Default: $BBSERVERROOT/data/
+Default: $XYMONSERVERROOT/data/
 
-.IP BBLOGS
+.IP XYMONRAWSTATUSDIR
 Directory for storing the raw status-logs. Not used unless
-"hobbitd_filestore --status" is running, which is \fBdiscouraged\fR
+"xymond_filestore --status" is running, which is \fBdiscouraged\fR
 since it increases the load on the Xymon server significantly.
-Default: $BBVAR/logs/
+Default: $XYMONVAR/logs/
 
-.IP BBHTML
+.IP XYMONHTMLSTATUSDIR
 Directory for storing HTML status-logs. Not used unless
-"hobbitd_filestore --status --html" is running, which is \fBdiscouraged\fR
+"xymond_filestore --status --html" is running, which is \fBdiscouraged\fR
 since it increases the load on the Xymon server significantly.
-Default: $BBHOME/www/html/
+Default: $XYMONHOME/www/html/
 
-.IP BBHIST
+.IP XYMONHISTDIR
 Directory for storing the history of monitored items.
-Default: $BBVAR/hist/
+Default: $XYMONVAR/hist/
 
-.IP BBHISTLOGS
+.IP XYMONHISTLOGS
 Directory for storing the detailed status-log of historical events.
-Default: $BBVAR/histlogs/
+Default: $XYMONVAR/histlogs/
 
-.IP BBACKS
+.IP XYMONACKDIR
 Directory for storing information about alerts that have been acknowledged.
-Default: $BBVAR/acks/
+Default: $XYMONVAR/acks/
 
-.IP BBDISABLED
+.IP XYMONDISABLEDDIR
 Directory for storing information about tests that have been disabled.
-Default: $BBVAR/disabled/
+Default: $XYMONVAR/disabled/
 
-.IP BBDATA
+.IP XYMONDATADIR
 Directory for storing incoming "data" messages.
-Default: $BBVAR/data/
+Default: $XYMONVAR/data/
 
-.IP BBRRDS
+.IP XYMONRRDS
 Top-level directory for storing RRD files (the databases with
 trend-information used to generate graphs).
-Default: $BBVAR/rrd/
+Default: $XYMONVAR/rrd/
 
 .IP CLIENTLOGS
 Directory for storing the data sent by a Xymon client around the
 time a status changes to a warning (yellow) or critical (red) state.
 Used by the
-.I hobbitd_hostdata(8)
+.I xymond_hostdata(8)
 module.
-Default: $BBVAR/hostdata/
+Default: $XYMONVAR/hostdata/
+
+.IP XYMONCGILOGDIR
+Directory where debug output from CGI applications are stored. If not
+specified, it defaults to $XYMONSERVERLOGS, but this is often a directory
+that is not writable by the userid running the CGI applications. It
+is therefore recommended when using "--debug" on CGI applications that
+you create a separate directory owned by the user running your webserver,
+and point XYMONCGILOGDIR to this directory.
 
 
 .SH SYSTEM FILES
 
-.IP BBHOSTS
+.IP HOSTSCFG
 Full path to the Xymon
-.I bb-hosts(5)
-configuration file. Default: $BBHOME/etc/bb-hosts.
+.I hosts.cfg(5)
+configuration file. Default: $XYMONHOME/etc/hosts.cfg.
 
-.IP BB
+.IP XYMON
 Full path to the 
-.I bb(1)
-client program. Default: $BBHOME/bin/bb.
+.I xymon(1)
+client program. Default: $XYMONHOME/bin/xymon.
 
-.IP BBGEN
+.IP XYMONGEN
 Full path to the
-.I bbgen(1)
-webpage generator program. Default: $BBHOME/bin/bbgen.
+.I xymongen(1)
+webpage generator program. Default: $XYMONHOME/bin/xymongen.
 
 
 .SH URLS
-.IP BBSERVERWWWURL
+.IP XYMONSERVERWWWURL
 The root URL for the Xymon webpages, without the hostname. This
 URL must be mapped to the ~/server/www/ directory in your webserver
-configuration. See the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+configuration. See the sample Apache configuration in ~/server/etc/xymon-apache.conf.
 
-.IP BBSERVERCGIURL
+.IP XYMONSERVERCGIURL
 The root URL for the Xymon CGI-scripts, without the hostname. This
 directory must be mapped to the ~/cgi-bin/ directory in your webserver
 configuration, and must be flagged as holding executable scripts. See
-the sample Apache configuration in ~/server/etc/hobbit-apache.conf.
+the sample Apache configuration in ~/server/etc/xymon-apache.conf.
 
-.IP BBWEBHOST
+.IP XYMONWEBHOST
 Initial part of the Xymon URL, including just the protocol and the
 hostname, e.g. "http://www.foo.com"
 
-.IP BBWEBHOSTURL
+.IP XYMONWEBHOSTURL
 Prefix for all of the static Xymon webpages, e.g. "http://www.foo.com/xymon"
 
-.IP BBWEBHTMLLOGS
-URL prefix for the static HTML status-logs generated when BBLOGSTATUS=STATIC.
+.IP XYMONWEBHTMLLOGS
+URL prefix for the static HTML status-logs generated when XYMONLOGSTATUS=STATIC.
 Note that this setting is \fBdiscouraged\fR so this setting should not be used.
 
-.IP BBWEB
+.IP XYMONWEB
 URL prefix (without hostname) of the Xymon webpages. E.g. "/xymon".
 
-.IP BBSKIN
+.IP XYMONSKIN
 URL prefix (without hostname) of the Xymon graphics. E.g. "/xymon/gifs".
 
-.IP BBHELPSKIN
+.IP XYMONHELPSKIN
 URL prefix (without hostname) of the Xymon on-line help files. E.g "/xymon/help".
 
-.IP BBMENUSKIN
+.IP XYMONMENUSKIN
 URL prefix (without hostname) of the Xymon menu files. E.g "/xymon/menu".
 
-.IP BBNOTESSKIN
+.IP XYMONNOTESSKIN
 URL prefix (without hostname) of the Xymon on-line notes files. E.g "/xymon/notes".
 
-.IP BBREPURL
+.IP XYMONREPURL
 URL prefix (without hostname) of the Xymon availability reports. E.g. "/xymon/rep".
 
-.IP BBSNAPURL
+.IP XYMONSNAPURL
 URL prefix (without hostname) of the Xymon snapshots. E.g. "/xymon/snap".
 
-.IP BBWAP
+.IP XYMONWAP
 URL prefix (without hostname) of the Xymon WAP/WML files. E.g. "/xymon/wml".
 
 .IP CGIBINURL
-URL prefix (without hostname) of the Xymon CGI-scripts. Default: $BBSERVERCGIURL .
+URL prefix (without hostname) of the Xymon CGI-scripts. Default: $XYMONSERVERCGIURL .
 
 .IP COLUMNDOCURL
 Format string used to build a link to the documentation for a column heading.
-Default: "$CGIBINURL/hobbitcolumn.sh?%s", which causes links to use the
-.I hobbitcolumn.sh(1)
+Default: "$CGIBINURL/columndoc.sh?%s", which causes links to use the
+.I columndoc.sh(1)
 script to document a column.
 
 
-.SH SETTINGS FOR SENDING MESSAGES TO HOBBIT
-.IP BBDISP
+.SH SETTINGS FOR SENDING MESSAGES TO XYMON
+.IP XYMSRV
 The IP-address used to contact the
-.I hobbitd(8)
+.I xymond(8)
 service. Used by clients and the tools that perform network tests.
-Default: $BBSERVERIP
+Default: $XYMONSERVERIP
 
-.IP BBDISPLAYS
+.IP XYMSERVERS
 List of IP-adresses. Clients and network test tools will try to
 send status reports to a Xymon server running on each of these
-adresses. This setting is only used if BBDISP=0.0.0.0.
+adresses. This setting is only used if XYMSRV=0.0.0.0.
 
-.IP PAGELEVELS
-Compatibility setting for Big Brother: List of colors that are 
-considered "critical" and therefore will trigger an alert. Not
-used by Xymon.
-
-.IP BBPAGE
-Compatibility setting for Big Brother: This is the IP-address of
-the server where a BBPAGER service is running. It is not used by Xymon.
-
-.IP BBPAGERS
-Compatibility setting for Big Brother: List of servers running the
-BBPAGER service, used if BBPAGE=0.0.0.0. It is not used by Xymon.
-
-.IP BBPORT
+.IP XYMONDPORT
 The portnumber for used to contact the
-.I hobbitd(8)
+.I xymond(8)
 service. Used by clients and the tools that perform network tests.
 Default: 1984.
 
-.IP DOCOMBO
-Compatibility setting for Big Brother. Controls whether so send 
-combo-messages or not. Ignored by Xymon.
-
-.IP BBMAXMSGSPERCOMBO
+.IP MAXMSGSPERCOMBO
 The maximum number of status messages to combine into one
-combo message. You may need to lower this number of your
-BBDISPLAY server has trouble keeping up with the incoming
-status messages from bbtest-net.  Default: 100.
+combo message.  Default: 100.
 
-.IP BBSLEEPBETWEENMSGS
+.IP SLEEPBETWEENMSGS
 Length of a pause introduced between each successive transmission
-of a combo-message by bbtest-net. You may have to increase this
-value to give your BBDISPLAY server time to process one combo
-message before the next one arrives. This number defines how
-many microseconds to wait between the messages.
-Default: 0 (send messages as quickly as possible).
+of a combo-message by xymonnet, in microseconds. Default: 0 
+(send messages as quickly as possible).
 
 
-.SH HOBBITD SETTINGS
+.SH XYMOND SETTINGS
 
 .IP ALERTCOLORS
 Comma-separated list of the colors that may trigger an alert-message.
 The default is "red,yellow,purple". Note that alerts may further be
 generated or suppresed based on the configuration in the
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 file.
 
 .IP OKCOLORS
@@ -341,29 +347,8 @@ The default is "green,clear,blue".
 .IP ALERTREPEAT
 How often alerts get repeated while a status is in an alert state.
 This is the default setting, which may be changed in the 
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 file.
-
-.IP BBGHOSTS
-Controls how status messages from unknown hosts (i.e. hosts not
-listed in the bb-hosts file) are handled.
-.sp
-.BR BBGHOSTS=1:
-Causes the status report to be silently discarded. This is the
-default behaviour in Xymon.
-.sp
-.BR BBGHOSTS=2: 
-Discards the status report, but keep track of the hostname
-and report it on the hobbitd status page.
-.sp
-When BBGHOSTS is set to 1 or 2, the hostnames in incoming 
-status-messages is matched without any case-sensitivity,
-unlike normal Big Brother which is case-sensitive in
-hostnames. So with BBGHOSTS set to 1 or 2, "WWW.FOO.COM"
-and "www.foo.com" are considered to be the same host.
-If necessary, the incoming hostname will be changed
-to match the way it is written in the bb-hosts file,
-changing case as needed.
 
 .IP MAXMSG_STATUS
 The maximum size of a "status" message in kB, default: 256.
@@ -371,21 +356,21 @@ Status messages are the ones that end up as columns on the
 web display. The default size should be adequate in most
 cases, but some extension scripts can generate very large
 status messages - close to 1024 kB. You should only change
-this if you see messages in the hobbitd log file about status
+this if you see messages in the xymond log file about status
 messages being truncated.
 
 .IP MAXMSG_CLIENT
 The maximum size of a "client" message in kB, default: 512.
 "client" messages are generated by the Xymon client, and often
 include large process-listings. You should only change
-this if you see messages in the hobbitd log file about client
+this if you see messages in the xymond log file about client
 messages being truncated.
 
 .IP MAXMSG_DATA
 The maximum size of a "data" message in kB, default: 256.
 "data" messages are typically used for client reports of
 e.g. netstat or vmstat data. You should only change this
-setting if you see messages in the hobbitd log file about
+setting if you see messages in the xymond log file about
 data messages being truncated.
 
 .IP MAXMSG_NOTES
@@ -420,31 +405,32 @@ alert-colors, usually red, yellow and purple. There is no
 reason to change this setting.
 
 
-.SH HOBBITD_HISTORY SETTINGS
+.SH XYMOND_HISTORY SETTINGS
 
-.IP BBALLHISTLOG
+.IP XYMONALLHISTLOG
 If set to TRUE,
-.I hobbitd_history(8)
-will update the $BBHIST/allevents file logging all changes to
+.I xymond_history(8)
+will update the $XYMONHISTDIR/allevents file logging all changes to
 a status. The allevents file is used by the
-.I bb-eventlog.cgi(1)
-tool to show the list of recent events on the BB2 webpage.
+.I eventlog.cgi(1)
+tool to show the list of recent events on the "All non-green" 
+webpage.
 
-.IP BBHOSTHISTLOG
+.IP XYMONHOSTHISTLOG
 If set to TRUE,
-.I hobbitd_history(8)
+.I xymond_history(8)
 will update the host-specific eventlog that keeps record
 of all status changes for a host. This logfile is not used
 by any Xymon tool.
 
 .IP SAVESTATUSLOG
 If set to TRUE,
-.I hobbitd_history(8)
-will save historical detailed status-logs to the $BBHISTLOGS
+.I xymond_history(8)
+will save historical detailed status-logs to the $XYMONHISTLOGS
 directory.
 
 
-.SH HOBBITD_ALERT SETTINGS
+.SH XYMOND_ALERT SETTINGS
 
 .IP MAIL
 Command used to send alerts via e-mail, including a "Subject:"
@@ -460,20 +446,20 @@ used when sending an alert using a script, where the numeric code of
 the service is provided in the BBSVCNUM variable.
 
 
-.SH HOBBITD_RRD SETTINGS
+.SH XYMOND_RRD SETTINGS
 
 .IP TEST2RRD
 List of "COLUMNNAME[=RRDSERVICE]" settings, that define which
 status- and data-messages have a corresponding RRD graph. You will 
 normally not need to modify this, unless you have added a
-custom TCP-based test to the bb-services file, and want to collect data about
+custom TCP-based test to the protocols.cfg file, and want to collect data about
 the response-time, OR if you are using the
-.I hobbitd_rrd(8)
+.I xymond_rrd(8)
 external script mechanism to collect data from custom tests. 
 Note: All TCP tests are automatically added.
 
 This is also used by the 
-.I bb-hostsvc.cgi(1) 
+.I svcstatus.cgi(1) 
 script to determine if the detailed status view of a test should 
 include a graph.
 
@@ -501,11 +487,11 @@ that default so that only those filesystems that match this pattern will be
 tracked.
 
 
-.SH BBTEST-NET NETWORK TEST SETTINGS
+.SH XYMONNET NETWORK TEST SETTINGS
 
-.IP BBLOCATION
+.IP XYMONNETWORK
 If this variable is defined, then only the hosts that have been tagged
-with "NET:$BBLOCATION" will be tested by the bbtest-net tool.
+with "NET:$XYMONNETWORK" will be tested by the xymonnet tool.
 
 .IP CONNTEST
 If set to TRUE, the connectivity (ping) test will be performed.
@@ -517,17 +503,17 @@ If set to TRUE, then failing network tests go CLEAR if the conn-test fails.
 List of network services (separated with <space>) that should go yellow
 upon failure instead of red.
 
-.IP BBROUTERTEXT
+.IP XYMONROUTERTEXT
 When using the "router" or "depends" tags for a host, a failure
 status will include text that an "Intermediate router is down".
 With todays network topologies, the router could be a switch or
 another network device; if you define this environment variable
 the word "router" will be replaced with whatever you put into
 the variable. So to inform the users that an intermediate switch
-or router is down, use BBROUTERTEXT="switch or router".  This can 
+or router is down, use XYMONROUTERTEXT="switch or router".  This can 
 also be set on a per-host basis using the "DESCR:hosttype:description"
 tag in the 
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 .IP NETFAILTEXT
@@ -537,11 +523,11 @@ you can change it to "FAILED" or customize it as you like.
 
 .IP FPING
 The command used to run the
-.I hobbitping(1)
+.I xymonping(1)
 tool for the connectivity test. (The name FPING is due to the fact that
 the "fping" utility was used until Xymon version 4.2). This may include 
-suid-root wrappers and hobbitping options.
-Default: "hobbitping"
+suid-root wrappers and xymonping options.
+Default: "xymonping"
 
 .IP TRACEROUTE
 Defines the location of the "traceroute" tool and
@@ -576,39 +562,39 @@ program used for "rpc" tests.
 Default: "rpcinfo"
 
 
-.SH BBGEN WEBPAGE GENERATOR SETTINGS
+.SH XYMONGEN WEBPAGE GENERATOR SETTINGS
 
-.IP HOBBITLOGO
+.IP XYMONLOGO
 HTML code that is inserted on all standard headers. The default is to add
 the text "Xymon" in the upper-left corner of the page, but you can easily 
 replace this with e.g. a company logo. If you do, I suggest that you keep 
 it at about 30-35 pixels high, and 100-150 pixels wide.
 
-.IP MKBBLOCAL
+.IP XYMONPAGELOCAL
 The string "Pages hosted locally" that appears above all of the pages
 linked from the main Xymon webpage.
 
-.IP MKBBSUBLOCAL
+.IP XYMONPAGESUBLOCAL
 The string "Subpages hosted locally" that appears above all of the sub-pages
 linked from pages below the main Xymon webpage.
 
-.IP MKBBREMOTE
+.IP XYMONPAGEREMOTE
 The string "Remote status display" that appears about the summary
 statuses displayed on the min Xymon webpage.
 
-.IP MKBBTITLE
+.IP XYMONPAGETITLE
 HTML tags designed to go in a <FONT> tag, to choose the font for 
 titles of the webpages.
 
-.IP MKBBROWFONT
+.IP XYMONPAGEROWFONT
 HTML tags designed to go in a <FONT> tag, to choose the font for 
 row headings (hostnames) on the webpages.
 
-.IP MKBBCOLFONT
+.IP XYMONPAGECOLFONT
 HTML tags designed to go in a <FONT> tag, to chose the font for
 column headings (test names) on the webpages.
 
-.IP MKBBACKFONT
+.IP XYMONPAGEACKFONT
 HTML tags designed to go in a <FONT> tag, to chose the font for
 the acknowledgement text displayed on the status-log HTML page
 for an acknowledged status.
@@ -621,14 +607,14 @@ the timeformat using the controls in your systems
 .I strftime(3)
 routine, and add the text suitable for your setup.
 
-.IP BBDATEFORMAT
-On webpages generated by bbgen, the default header includes
+.IP XYMONDATEFORMAT
+On webpages generated by xymongen, the default header includes
 the current date and time. Normally this looks like "Tue Aug 24
-21:59:47 2004". The BBDATEFORMAT controls the format of this
+21:59:47 2004". The XYMONDATEFORMAT controls the format of this
 timestamp - you can define the format using the controls in the 
 .I strftime(3)
 routine. E.g. to have it show up as "2004-08-24 21:59:47 +0200"
-you would set BBDATEFORMAT="%Y-%m-%d %H:%M:%S %z"
+you would set XYMONDATEFORMAT="%Y-%m-%d %H:%M:%S %z"
 
 .IP HOLIDAYFORMAT
 How holiday dates are displayed. The default is "%d/%m" which
@@ -638,15 +624,15 @@ is a formatting string for the system
 .I strftime(3)
 routine, so any controls available for this routine may be used.
 
-.IP MKBB2COLREPEAT
+.IP XYMONPAGECOLREPEAT
 Inspired by Jeff Stoner's col_repeat_patch.tgz patch, this defines
 the maximum number of rows before repeating the column headings
 on a webpage. This sets the default value for the 
-.I bbgen(1)
+.I xymongen(1)
 "--maxrows" option; if the command-line option is also specifed,
 then it overrides this environment variable. Note that unlike
-Jeff's patch, bbgen implements this for both the bb2.html page
-and all other pages (bb.html, subpages, bbnk.html). 
+Jeff's patch, xymongen implements this for both the "All non-green" 
+page and all other pages (xymon.html, subpages, critical.html). 
 
 .IP SUMMARY_SET_BKG
 If set to TRUE, then summaries will affect the color of the
@@ -666,42 +652,42 @@ status logs will - if there are Xymon client data available for
 the host - include a link to the raw data sent by the client.
 Default: cpu,disk,memory,procs,svcs.
 
-.IP BBRSSTITLE
+.IP XYMONRSSTITLE
 If defined, this is the title of the RSS/RDF documents generated when
-.I bbgen(1)
+.I xymongen(1)
 is invoked with the "--rss" option. The default value is "Xymon Alerts".
 
 .IP WMLMAXCHARS
 Maximum size of a WAP/WML output "card" when generating these.
 Default: 1500.
 
-.IP BBMKBB2EXT
-List of scripts to run as extensions to the BB2 page. Note that
+.IP XYMONNONGREENEXT
+List of scripts to run as extensions to the "All non-green" page. Note that
 two scripts, "eventlog.sh" and "acklog.sh" are handled specially:
-They are handled internally by bbgen, but the script names must
+They are handled internally by xymongen, but the script names must
 be listed in this variable for this function to be enabled.
 
-.IP BBHISTEXT
+.IP XYMONHISTEXT
 List of scripts to run as extensions to a history page.
 
-.IP BBREPWARN
+.IP XYMONREPWARN
 Default threshold for listing the availability as "critical" (red) when
 generating the availability report. This can be set on a per-host basis
 with the WARNPCT setting in
-.I bb-hosts(5).
+.I hosts.cfg(5).
 Default: 97 (percent)
 
-.IP BBGENREPOPTS
-Default bbgen options used for reports. This will typically include
+.IP XYMONGENREPOPTS
+Default xymongen options used for reports. This will typically include
 such options as "--subpagecolumns", and also "--ignorecolumns" if 
 you wish to exclude certain tests from reports by default.
 
-.IP BBGENSNAPOPTS
-Default bbgen options used by snapshots. This should be identical to
+.IP XYMONGENSNAPOPTS
+Default xymongen options used by snapshots. This should be identical to
 the options you normally used when building Xymon webpages.
 
 .SH FILES
-.BR "~xymon/server/etc/hobbitserver.cfg"
+.BR "~xymon/server/etc/xymonserver.cfg"
 
 .SH "SEE ALSO"
 xymon(7)

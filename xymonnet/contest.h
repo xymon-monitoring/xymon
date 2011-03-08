@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of a TCP service.                    */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -38,7 +38,7 @@
 
 #else
 /*
- * bbgen without support for SSL protocols.
+ * xymonnet without support for SSL protocols.
  */
 #undef TCP_SSL
 #define TCP_SSL 0x0000
@@ -46,12 +46,13 @@
 #define SSL void
 #endif
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 extern char *ssl_library_version;
 extern char *ciphershigh;
 extern char *ciphersmedium;
 extern unsigned int warnbytesread;
+extern int shuffletests;
 
 #define SSLVERSION_DEFAULT 0
 #define SSLVERSION_V2      1
@@ -78,7 +79,10 @@ typedef struct tcptest_t {
 	struct sockaddr_in addr;        /* Address (IP+port) to test */
 	char *srcaddr;
 	struct svcinfo_t *svcinfo;      /* svcinfo_t for service */
+	long int randomizer;
 	int  fd;                        /* Socket filedescriptor */
+	time_t lastactive;
+	time_t cutoff;
 	char *tspec;
 	unsigned int bytesread;
 	unsigned int byteswritten;
@@ -87,9 +91,9 @@ typedef struct tcptest_t {
 	int  connres;                   /* connect() status returned */
 	int  open;                      /* Result - is it open? */
 	int  errcode;                   /* Pick up any errors */
-	struct timeval timestart;	/* Starttime of connection attempt */
-	struct timeval duration;	/* Duration of connection attempt */
-	struct timeval totaltime;	/* Duration of the full transfer */
+	struct timespec timestart;	/* Starttime of connection attempt */
+	struct timespec duration;	/* Duration of connection attempt */
+	struct timespec totaltime;	/* Duration of the full transfer */
 
 	/* Data we send */
 	unsigned char *sendtxt;
@@ -107,7 +111,8 @@ typedef struct tcptest_t {
 	SSL  *ssldata;			/* SSL data (socket) pointer */
 	char *certinfo;			/* Certificate info (subject+expiretime) */
 	time_t certexpires;		/* Expiretime in time_t format */
-	int mincipherbits;		/* Bits in the weakest encryption supported */
+	char *certsubject;
+	int mincipherbits;              /* Bits in the weakest encryption supported */
 	int sslrunning;			/* Track state of an SSL session */
 	int sslagain;			/* SSL read/write needs more data */
 
@@ -146,9 +151,9 @@ typedef struct tcptest_t {
 typedef struct {
 	tcptest_t	*tcptest;
 
-	char		*url;			/* URL to request, stripped of BB'isms */
+	char		*url;			/* URL to request, stripped of configuration artefacts */
 	int		parsestatus;
-	bburl_t		bburl;
+	weburl_t	weburl;
 
 	int		gotheaders;
 	int		contlen;

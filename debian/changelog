@@ -1,46 +1,168 @@
-hobbit (4.3.0-0.20080929) unstable; urgency=low
+xymon (4.3.0) unstable; urgency=medium
 
-  * Interim release for testing
+  * Critical view and other webpages: Make the 'All systems OK' message 
+    configurable. Also allow the header/footer for the Critical Systems 
+    view to be configurable.
+    Suggestion and preliminary patch from Buchan Milne.
+  * xymonnet: Improve error report when HTTP tests get an empty response - 
+    'HTTP error 0' sounds weird.
+  * report / snapshot CGI's: Fix buffer overrun in the HTML delimiter 
+    generated in the "please wait..." message. Also, fix potential buffer 
+    overrun in report CGI if invoked with a large value for the "style" 
+    parameter. 
+    Reported by Rolf Biesbroek.
+  * Graph definitions (graphs.cfg): Multi graphs cannot use a regex pattern. 
+    Problem report by Brian Majeska
+  * Solaris interface statistics: Filter out "mac" and "wrsmd" devices at
+    the client side. 
+    Update RRD handler to also filter "wrsmd" at the server side, like we 
+    already did for "mac" devices. 
+    Cf. http://www.xymon.com/archive/2009/06/msg00204.html
+  * Documentation: Document the XMH_* fields available in xymondboard commands.
+  * Documentation: Document SPLITNCV and "trends" methods of doing 
+    custom graphs.
+  * RRD definitions: Allow override of --step/-s option for rrdcreate, 
+    from template supplied in rrddefinitions.cfg. 
+    Suggestion from Brian Majeska.
+  * mailack: Remove restriction on how long a subjectline/message body can be.
+  * Build procedure: Add notice about running upgrade script before 
+    installing the new version.
+  * xymond_alert: Document --trace option
+  * Alerts: For recovery messages, add information so you can tell 
+    whether the recovery was due to the service actually recovering, or 
+    if it was merely disabled.
+  * xymond_alert: Fix missing element in array of alert status texts used 
+    for tracing. 
+    Spotted by Dominique Frise.
+  * Add support for FreeBSD v8 modified ifstat output
+  * Documentation: Update information about the Xymon mailing lists 
+    following move to Mailman and new archive URL.
+  * HP/UX client: Use "swapinfo" to extract memory utilisation data, 
+    instead of the hpux-meminfo utility. 
+    By Earl Flack http://lists.xymon.com/pipermail/xymon/2010-December/030100.html
 
- -- Henrik Stoerner <henrik@hswn.dk>  Tue, 29 Sep 2008 17:25:00 +0200
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 4 Mar 2011 11:08:00 +0100
 
+xymon (4.3.0-0.20110120.rc1) unstable; urgency=low
 
-hobbit (4.3.0-0.20070402) unstable; urgency=low
+  * 4.3.0 RC1 release - rev 6627
 
-  * Interim release for CSC, to support Easter holiday
-    reduction in alerts.
+  * hosts.cfg badldap documentation: Document that for LDAP URL's you must use 'badldapurl'. Reported by Simo Hmami.
+  * xymond flap detection: Make number of tracked status changes and the flap-check period configurable. Change the defaults to trigger flapping at more than 5 status changes in a 30 minute period.
+  * sendmessage: Enhanced error reporting, to help track down communication problems.
+  * xymond_client: Fix Windows SVC status handling to avoid coredumps, memory corruption and other nasties. 
+    Will now report the real name of the service, instead of the pattern used in the analysis.cfg file.
+    NOTE: Slight change to status message format.
+  * Client handler: Fix owner/user check parsing. Reported by Ian Marsh http://www.xymon.com/archive/2011/01/msg00133.html (also broken in 4.2.3).
+  * xymongen: Fix broken --doc-window option handling. Reported by Tom Schmitt.
+  * Xymongen: Fix documentation of the --doc-window/--no-doc-window options.
+  * Webpage background: Use a CSS and a new set of gif's to implement a background that works on all displays, regardless of width. Uses a new xymonbody.css stylesheet which can also control some other aspects of the webpage. From Francois Claire.
+  * Documentation: The xymon 'rename' command should be used AFTER renaming a host in hosts.cfg, not before. From Tom Georgoulias.
+  * Memory status: Add some sanity checks for the memory utilisation reported by clients. Occasionally we get completely bogus data from clients, so only act on them if percentages do not exceed 100.
+  * Critical systems view: Add "--tooltips" option so you can save screen space by hiding the host descriptions in a tooltip, like we do on the statically generated pages. Feature request from Chris Morris.
+  * Solaris client: Report "swap -l" in addition to "swap -s" for swap usage. Backend prefers output from "swap -l" when determining swap utilisation.
+  * Webpage menu: Use the CSS and GIF's by Malcolm Hunter - they are much nicer than the ones from Debian. Distribute both the blue and the grey version, and configure which one to use in xymonserver.cfg.
+  * Graph zoom: Use float variables when calculating the upper/lower limits of the graph. Fixes vertical zoom.
+  * xymond: Make sure we do not perform socket operations on invalid sockets (e.g. those from a scheduled task pseudo-connection)
+  * Installation: Remove any existing old commands before creating symlinks
+  * xymonproxy: Fix broken compatibility option '--bbdisplay'
+  * Fix eventlog summary/count enums so they dont clash with Solaris predefined entities
+  * History- and hostdata-modules: Dont save data if there is less than 5% free space on the filesystem. Also, dont save hostdata info more than 5 times per hour.
+  * Historical statuslog display: Work-around for crash when status-log is empty
+  * fping.sh configure sub-script: Fix syntax error in suggested 'sudoers' configuration, and point to the found fping binary. From Steff Coene.
+  * namematch routine: Fix broken matching when doing simple matching against two strings where one was a subset of the other. http://www.xymon.com/archive/2010/11/msg00177.html .  Reported by Elmar Heeb who also provided a patch, although I chose a different solution to this.
+  * Xymon net: Fix broken compile when LDAP-checks are disabled. Reported by Roland Soderstrom, fix from Ralph Mitchell.
+  * xymon(7) manpage: Drop notice that renaming in 4.3.0 is not complete
+  * Installation: Setup links for the commonly used Hobbit binaries (bb, bbcmd, bbdigest, bbhostgrep, bbhostshow)
+  * Upgrade script: Setup symlinks for the old names of the standard webpages
+  * xymonserver.cfg.DIST: Missing end-quote in compatibility BBSERVERSECURECGIURL setting. From Ralph Mitchell
+  * xymongrep: Fix broken commandline parsing resulting from trying to be backwards-compatible. Reported by Jason Chambers.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Mon, 02 Apr 2007 11:12:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 23 Jan 2011 12:36:00 +0100
 
+xymon (4.3.0-0.20101114.beta3) unstable; urgency=low
 
-hobbit (4.3.0-0.20070202) unstable; urgency=low
+  * Beta-3 release - rev 6590
 
-  * Interim release for CSC, to support off-loading of RRD
-    updates to multiple servers.
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 14 Nov 2010 19:00:00 +0100
 
- -- Henrik Stoerner <henrik@hswn.dk>  Fri, 02 Feb 2007 12:29:00 +0100
+hobbit (4.3.0-0.beta2) unstable; urgency=low
 
+  * Xymon version 4.3.0 BETA 2
 
-hobbit (4.3.0-0.20061124) unstable; urgency=low
+  Core changes:
+  * New API's for loadhosts and sendmessage, in preparation for
+    the full 5.0 changes.
+  * Always use getcurrenttime() instead of time().
+  * Support for defining holidays as non-working days in alerts and
+    SLA calculations.
+  * Hosts which appear on multiple pages in the web display can
+    use any page they are on in the alerting rules and elsewhere.
+  * Worker modules (RRD, client-data parsers etc) can operate on
+    remote hosts from the hobbitd daemon, for load-sharing.
+  * Various bugfixes collected over time.
+  * New client support: z/OS, z/VSE and z/VM.
 
-  * Interim release for CSC, to support off-loading of RRD
-    updates to multiple servers.
+  Network test changes:
+  * Merged new network tests from trunk: SOAP-over-HTTP,
+    SSL minimum cipher strength
+  * Changed network test code to always report a validity period
+    for network tests, so it it possible to run network tests less
+    often than every 30 minutes (e.g. once an hour).
+  * Make the content-type setting in HTTP POST tests configurable.
+  * Make the source-address used for TCP tests configurable.
+  * Make the acceptable HTTP result codes configurable.
+  * Use and save HTTP session cookies.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Fri, 24 Nov 2006 10:08:00 +0100
+  Web changes
+  * Support generic drop-down lists in templates.
+  * "NOCOLUMNS" changed to work for all columns.
+  * New "group-sorted" definition to auto-sort hosts in a group
+  * Use browser tooltips for host comments
+  * "Compact" status allows several statuses to appear as a single
+    status on the overview webpages.
+  * Trends page can select the time period to show. Buttons provided
+    for the common selections.
+  * Ghost list report now lists possible candidates for a ghost,
+    based on IP-address or unqualified hostname.
+  * Enhanced eventlog and top-changing hosts webpage
 
-hobbit (4.2.1-1) unstable; urgency=low
+  Report changes
+  * Number of outages as SLA parameter
 
-  * Xymon version 4.2.1: 4.2.0 plus all-in-one patch
+  Miscellaneous
+  * hobbitlaunch support for running tasks only on certain hosts,
+    and for a maximum time.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Fri, 24 May 2009 10:39:00 +0200
+
+hobbit (4.2.3-1) unstable; urgency=low
+
+  * Xymon version 4.2.3 release
+  * Time-out code changed to use clock_gettime() with CLOCK_MONOTONIC
+  * Bugfix for hobbitd/hobbitd_worker communication going out-of-sync
+    resulting in "garbled data" being logged and worker modules 
+    stopping.
+  * NCV module now works with negative numbers.
+  * Several bugfixes in DNS lookup code - could lead to crashes when
+    performing DNS tests.
+  * Switch to C-ARES 1.6.0 - drop support for older versions.
+  * Run more TCP tests in parallel by not waiting for very slow
+    connections to complete before starting new ones.
+  * Added "hostlist" web utility for spreadsheet-reporting of the
+    hosts in Hobbit.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 09 Feb 2009 10:46:00 +0100
+
+hobbit (4.2.2-1) unstable; urgency=low
+
+  * Xymon version 4.2.2: 4.2.0 plus all-in-one patch
+  * BBWin support added
   * Project renamed to "Xymon" - preliminary changes in
     documents and web templates, but no filename changes.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Wed, 12 Sep 2008 13:56:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Thu, 28 Sep 2008 14:52:00 +0100
 
-hobbit (4.2.0-2) unstable; urgency=low
-
-  * Patchset 2 for Hobbit 4.2.0
-
- -- Henrik Stoerner <henrik@hswn.dk>  Tue, 03 Oct 2006 15:02:00 +0200
 
 hobbit (4.2.0-1) unstable; urgency=low
 

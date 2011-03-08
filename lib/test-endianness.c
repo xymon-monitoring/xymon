@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* Utility program to define endian-ness of the target system.                */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -35,16 +35,16 @@ int main(int argc, char **argv)
 	if (c == 65537) {
 		/* Big endian */
 		if (outform == 0)
-			printf("#ifndef HOBBIT_BIG_ENDIAN\n#define HOBBIT_BIG_ENDIAN\n#endif\n");
+			printf("#ifndef XYMON_BIG_ENDIAN\n#define XYMON_BIG_ENDIAN\n#endif\n");
 		else
-			printf(" -DHOBBIT_BIG_ENDIAN");
+			printf(" -DXYMON_BIG_ENDIAN");
 	}
 	else if (c == 16777472) {
 		/* Little endian */
 		if (outform == 0)
-			printf("#ifndef HOBBIT_LITTLE_ENDIAN\n#define HOBBIT_LITTLE_ENDIAN\n#endif\n");
+			printf("#ifndef XYMON_LITTLE_ENDIAN\n#define XYMON_LITTLE_ENDIAN\n#endif\n");
 		else
-			printf(" -DHOBBIT_LITTLE_ENDIAN");
+			printf(" -DXYMON_LITTLE_ENDIAN");
 	}
 	else {
 		fprintf(stderr, "UNKNOWN ENDIANNESS! testvalue is %u\n", c);

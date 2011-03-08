@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -34,5 +34,6 @@ extern char *alttag(char *columnname, int color, int acked, int propagate, char 
 extern void setdocurl(char *url);
 extern void setdoctarget(char *target);
 extern char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip);
+
 
 #endif

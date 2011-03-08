@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 /* dnslookup values */
-#define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from bb-hosts */
+#define DNS_THEN_IP     0	/* Try DNS - if it fails, use IP from hosts.cfg */
 #define DNS_ONLY        1	/* DNS only - if it fails, report service down */
 #define IP_ONLY         2	/* IP only - dont do DNS lookups */
 

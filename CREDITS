@@ -17,6 +17,7 @@ Lars Ebeling
 Tom Georgoulias
 Laurent Grilli
 Kevin Hanrahan
+Malcolm Hunter
 Asif Iqbal
 Charles Jones
 Thomas J Jones
@@ -47,10 +48,10 @@ Rick Waegner
 Rob Watson
 
 Several others have contributed bug reports and helped with
-testing the beta releases - Hobbit would not be as good as it
+testing the beta releases - Xymon would not be as good as it
 is without their efforts.
 
-It would have been hard to implement Hobbit without the
+It would have been hard to implement Xymon without the
 existing libraries for lots of stuff:
 
 libCURL (although this is no longer used, it was quite
@@ -65,7 +66,7 @@ libCARES
 	Greg Hudson, Daniel Steenberg and others
 
 RRDtool
-	http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/
+	http://www.mrtg.org/rrdtool/
 
 OpenSSL
 	http://www.openssl.org/

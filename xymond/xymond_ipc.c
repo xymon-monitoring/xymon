@@ -1,13 +1,13 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This module implements the setup/teardown of the hobbitd communications    */
+/* This module implements the setup/teardown of the xymond communications     */
 /* channel, using standard System V IPC mechanisms: Shared memory and         */
 /* semaphores.                                                                */
 /*                                                                            */
 /* The concept is to use a shared memory segment for each "channel" that      */
-/* hobbitd supports. This memory segment is used to pass a single hobbitd     */
-/* message between the hobbit master daemon, and the hobbitd_channel workers. */
+/* xymond supports. This memory segment is used to pass a single xymond       */
+/* message between the xymond master daemon, and the xymond_channel workers.  */
 /* Two semaphores are used to synchronize between the master daemon and the   */
 /* workers, i.e. the workers wait for a semaphore to go up indicating that a  */
 /* new message has arrived, and the master daemon then waits for the other    */
@@ -15,7 +15,7 @@
 /* third semaphore is used as a simple counter to tell how many workers have  */
 /* attached to a channel.                                                     */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -35,9 +35,9 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_ipc.h"
+#include "xymond_ipc.h"
 
 char *channelnames[C_LAST+1] = {
 	"",		/* First one is index 0 - not used */
@@ -53,33 +53,33 @@ char *channelnames[C_LAST+1] = {
 	NULL
 };
 
-hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
+xymond_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 {
 	key_t key;
 	struct stat st;
 	struct sembuf s;
-	hobbitd_channel_t *newch;
+	xymond_channel_t *newch;
 	unsigned int bufsz;
 	int flags = ((role == CHAN_MASTER) ? (IPC_CREAT | 0600) : 0);
-	char *bbh = xgetenv("BBHOME");
+	char *xymonhome = xgetenv("XYMONHOME");
 
-	if ( (bbh == NULL) || (stat(bbh, &st) == -1) ) {
-		errprintf("BBHOME not defined, or points to invalid directory - cannot continue.\n");
+	if ( (xymonhome == NULL) || (stat(xymonhome, &st) == -1) ) {
+		errprintf("XYMONHOME not defined, or points to invalid directory - cannot continue.\n");
 		return NULL;
 	}
 
 	bufsz = 1024*shbufsz(chnid);
 	dbgprintf("Setting up %s channel (id=%d)\n", channelnames[chnid], chnid);
 
-	dbgprintf("calling ftok('%s',%d)\n", bbh, chnid);
-	key = ftok(bbh, chnid);
+	dbgprintf("calling ftok('%s',%d)\n", xymonhome, chnid);
+	key = ftok(xymonhome, chnid);
 	if (key == -1) {
-		errprintf("Could not generate shmem key based on %s: %s\n", bbh, strerror(errno));
+		errprintf("Could not generate shmem key based on %s: %s\n", xymonhome, strerror(errno));
 		return NULL;
 	}
 	dbgprintf("ftok() returns: 0x%X\n", key);
 
-	newch = (hobbitd_channel_t *)malloc(sizeof(hobbitd_channel_t));
+	newch = (xymond_channel_t *)malloc(sizeof(xymond_channel_t));
 	newch->seq = 0;
 	newch->channelid = chnid;
 	newch->msgcount = 0;
@@ -126,7 +126,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 
 		n = semctl(newch->semid, CLIENTCOUNT, GETVAL);
 		if (n > 0) {
-			errprintf("FATAL: hobbitd sees clientcount %d, should be 0\nCheck for hanging hobbitd_channel processes or stale semaphores\n", n);
+			errprintf("FATAL: xymond sees clientcount %d, should be 0\nCheck for hanging xymond_channel processes or stale semaphores\n", n);
 			shmdt(newch->channelbuf);
 			shmctl(newch->shmid, IPC_RMID, NULL);
 			semctl(newch->semid, 0, IPC_RMID);
@@ -141,7 +141,7 @@ hobbitd_channel_t *setup_channel(enum msgchannels_t chnid, int role)
 	return newch;
 }
 
-void close_channel(hobbitd_channel_t *chn, int role)
+void close_channel(xymond_channel_t *chn, int role)
 {
 	if (chn == NULL) return;
 

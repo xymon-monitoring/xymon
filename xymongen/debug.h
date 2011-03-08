@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -21,7 +21,7 @@ extern void dumphosts(host_t *head, char *prefix);
 extern void dumpgroups(group_t *head, char *prefix, char *hostprefix);
 extern void dumphostlist(hostlist_t *head);
 extern void dumpstatelist(state_t *head);
-extern void dumpall(bbgen_page_t *head);
+extern void dumpall(xymongen_page_t *head);
 
 #endif
 

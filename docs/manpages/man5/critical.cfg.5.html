@@ -1,0 +1,67 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of CRITICAL.CFG</TITLE>
+</HEAD><BODY>
+<H1>CRITICAL.CFG</H1>
+Section: File Formats (5)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+critical.cfg - Configuration of the showgraph CGI
+<P>
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>$XYMONHOME/etc/critical.cfg</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/critical.cgi.1.html">critical.cgi</A>(1)</I>
+
+uses the configuration file $XYMONHOME/etc/critical.cfg to
+determine which of the statuses currently in a red or yellow state
+should appear on the Critical Systems view.
+<P>
+This file should not be edited manually. It is maintained by the
+<I><A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)</I>
+
+utility via a web-based frontend.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>FILE PERMISSIONS</H2>
+
+Since the file is maintained by a web front-end tool, the userid
+running Web CGI scripts must have write-permission to the file.
+Typically, this means it must have a group-ownership matching your
+webserver userid, and group-write permissions (mode 664).
+<P>
+When editing the file with the web front-end, a backup file is created.
+Therefore the critical.cfg.bak file should have identical permissions.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1), <A HREF="../man1/criticaleditor.cgi.1.html">criticaleditor.cgi</A>(1)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">FILE PERMISSIONS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

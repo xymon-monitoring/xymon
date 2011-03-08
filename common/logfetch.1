@@ -1,4 +1,4 @@
-.TH LOGFETCH 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH LOGFETCH 1 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
 logfetch \- Xymon client data collector
 .SH SYNOPSIS
@@ -12,12 +12,12 @@ which is then sent to the Xymon server for analysis.
 logfetch uses a configuration file, which is automatically
 retrieved from the Xymon server. There is no configuration
 done locally. The configuration file is usually stored in
-the \fB$BBHOME/tmp/logfetch.cfg\fR file, but editing this file has
+the \fB$XYMONHOME/tmp/logfetch.cfg\fR file, but editing this file has
 no effect since it is re-written with data from the Xymon 
 server each time the client runs.
 
 logfetch stores information about what parts of the monitored
-logfiles have been processed already in the \fB$BBHOME/tmp/logfetch.status\fR 
+logfiles have been processed already in the \fB$XYMONHOME/tmp/logfetch.status\fR 
 file. This file is an internal file used by logfetch, and should
 not be edited. If deleted, it will be re-created automatically.
 
@@ -44,13 +44,13 @@ Command used to collect information about the size of directories.
 By default, this is the command \fBdu -k\fR. If the local
 du-command on the client does not recognize the "-k" option,
 you should set the DU environment variable in the 
-\fB$BBHOME/etc/hobbitclient.cfg\fR file to a command that
+\fB$XYMONHOME/etc/xymonclient.cfg\fR file to a command that
 does report directory sizes in kilobytes.
 
 .SH FILES
-.IP $BBHOME/tmp/logfetch.cfg
-.IP $BBHOME/tmp/logfetch.status
+.IP $XYMONHOME/tmp/logfetch.cfg
+.IP $XYMONHOME/tmp/logfetch.status
 
 .SH "SEE ALSO"
-xymon(7), hobbit-clients.cfg(5)
+xymon(7), analysis.cfg(5)
 

@@ -1,7 +1,7 @@
 #
-#       Logrotate fragment for Hobbit.
+#       Logrotate fragment for Xymon.
 #
-/var/log/hobbit/*.log {
+/var/log/xymon/*.log {
         weekly
         compress
         delaycompress
@@ -10,7 +10,7 @@
         nocreate
         sharedscripts
         postrotate
-                /etc/init.d/hobbit rotate
+                /etc/init.d/xymon rotate
         endscript
 }
 

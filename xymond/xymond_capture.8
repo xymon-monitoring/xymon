@@ -1,20 +1,20 @@
-.TH HOBBITD_CAPTURE 8 "Version 4.2.0:  9 Aug 2006" "Hobbit Monitor"
+.TH XYMOND_CAPTURE 8 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbitd_capture \- catch selected messages from a hobbitd channel
+xymond_capture \- catch selected messages from a xymond channel
 .SH SYNOPSIS
-.B "hobbitd_channel --channel=status hobbitd_capture [options]"
+.B "xymond_channel --channel=status xymond_capture [options]"
 
 .SH DESCRIPTION
-hobbitd_capture is a worker module for hobbitd, and as such it is normally
+xymond_capture is a worker module for xymond, and as such it is normally
 run via the
-.I hobbitd_channel(8)
-program. It receives messages from hobbitd via stdin and filters them to
+.I xymond_channel(8)
+program. It receives messages from xymond via stdin and filters them to
 select messages based on the hostname, testname or color of the status.
 By default the resulting messages are printed on stdout, but they can also
 be fed into a command for further processing.
 
-hobbitd_capture supports the \fBstatus\fR, \fBdata\fR and \fBhostdata\fR
-channels.
+xymond_capture supports the \fBstatus\fR, \fBdata\fR, \fBclient\fR and 
+\fBhostdata\fR channels.
 
 .SH OPTIONS
 .IP "--hosts=PATTERN"
@@ -43,9 +43,12 @@ can be any command which accepts the mssage on standard input.
 Collect messages until no messages have arrived in SECONDS seconds, before sending
 them to the --batch-command COMMAND.
 
+.IP "--client"
+Capture data from the "client" channel instead of the default "status" channel.
+
 .IP "--debug"
 Enable debugging output.
 
 .SH "SEE ALSO"
-hobbitd_channel(8), hobbitd(8), hobbit(7)
+xymond_channel(8), xymond(8), xymon(7)
 

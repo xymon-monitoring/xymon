@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message proxy.                                                      */
+/* Xymon message proxy.                                                       */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -30,12 +30,11 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <signal.h>
 #include <time.h>
 
 #include "version.h"
-#include "libbbgen.h"
-
-#include <signal.h>
+#include "libxymon.h"
 
 enum phase_t {
 	P_IDLE, 
@@ -81,8 +80,9 @@ typedef struct conn_t {
 	int conntries, sendtries;
 	int connectpending;
 	time_t conntime;
-	int madetocombo, isclientmessage, compressionok;
-	struct timeval timelimit, arrival;
+	int madetocombo;
+	struct timespec arrival;
+	struct timespec timelimit;
 	unsigned char *buf, *bufp, *bufpsave;
 	unsigned int bufsize, buflen, buflensave;
 	struct conn_t *next;
@@ -97,13 +97,12 @@ typedef struct conn_t {
 #define MAX_OPEN_SOCKS 256
 #define MINIMUM_FOR_COMBO 2048	/* To start merging messages, at least have 2 KB free */
 #define MAXIMUM_FOR_COMBO 32768 /* Max. size of a combined message */
-#define COMBO_DELAY 250000	/* Delay before sending a combo message (in microseconds) */
+#define COMBO_DELAY 250000000	/* Delay before sending a combo message (in nanoseconds) */
 
 int keeprunning = 1;
 time_t laststatus = 0;
 char *logfile = NULL;
 int logdetails = 0;
-int compressmessages = 0;
 unsigned long msgs_timeout_from[P_CLEANUP+1] = { 0, };
 
 
@@ -131,11 +130,11 @@ void sigmisc_handler(int signum)
 	}
 }
 
-int overdue(struct timeval *now, struct timeval *limit)
+int overdue(struct timespec *now, struct timespec *limit)
 {
 	if (now->tv_sec < limit->tv_sec) return 0;
 	else if (now->tv_sec > limit->tv_sec) return 1;
-	else return (now->tv_usec >= limit->tv_usec);
+	else return (now->tv_nsec >= limit->tv_nsec);
 }
 
 static int do_read(int sockfd, struct in_addr *addr, conn_t *conn, enum phase_t completedstate)
@@ -216,34 +215,31 @@ int main(int argc, char *argv[])
 	int daemonize = 1;
 	int timeout = 10;
 	int listenq = 512;
-	char *pidfile = "/var/run/bbproxy.pid";
+	char *pidfile = "/var/run/xymonproxy.pid";
 	char *proxyname = NULL;
-	char *proxynamesvc = "bbproxy";
+	char *proxynamesvc = "xymonproxy";
 
 	int sockcount = 0;
 	int lsocket;
 	struct sockaddr_in laddr;
-	struct sockaddr_in bbdispaddr[MAX_SERVERS];
-	int bbdispcount = 0;
-	struct sockaddr_in clientaddr[MAX_SERVERS];
-	int clientcount = 0;
+	struct sockaddr_in xymonserveraddr[MAX_SERVERS];
+	int xymonservercount = 0;
 	int opt;
 	conn_t *chead = NULL;
 	struct sigaction sa;
 
 	/* Statistics info */
-	time_t startuptime = getcurrenttime(NULL);
+	time_t startuptime = gettimer();
 	unsigned long msgs_total = 0;
 	unsigned long msgs_total_last = 0;
 	unsigned long msgs_combined = 0;
 	unsigned long msgs_merged = 0;
 	unsigned long msgs_delivered = 0;
 	unsigned long msgs_status = 0;
-	unsigned long msgs_page = 0;
 	unsigned long msgs_combo = 0;
 	unsigned long msgs_other = 0;
 	unsigned long msgs_recovered = 0;
-	struct timeval timeinqueue = { 0, 0 };
+	struct timespec timeinqueue = { 0, 0 };
 
 	/* Dont save the output from errprintf() */
 	save_errbuf = 0;
@@ -270,36 +266,7 @@ int main(int argc, char *argv[])
 				return 1;
 			}
 		}
-		else if (argnmatch(argv[opt], "--bbdisplay=") || argnmatch(argv[opt], "--servers=")) {
-			char *ips, *ip1;
-			int port1;
-
-			if (argnmatch(argv[opt], "--bbdisplay=")) 
-				errprintf("The --bbdisplay option is obsolete, use --servers instead\n");
-
-			ips = strdup(strchr(argv[opt], '=')+1);
-
-			ip1 = strtok(ips, ",");
-			while (ip1) {
-				char *p; 
-				p = strchr(ip1, ':');
-				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
-
-				memset(&bbdispaddr[bbdispcount], 0, sizeof(bbdispaddr[bbdispcount]));
-				bbdispaddr[bbdispcount].sin_port = htons(port1);
-				bbdispaddr[bbdispcount].sin_family = AF_INET;
-				if (inet_aton(ip1, (struct in_addr *) &bbdispaddr[bbdispcount].sin_addr.s_addr) == 0) {
-					errprintf("Invalid remote address %s\n", ip1);
-				}
-				else {
-					bbdispcount++;
-				}
-				if (p) *p = ':';
-				ip1 = strtok(NULL, ",");
-			}
-			xfree(ips);
-		}
-		else if (argnmatch(argv[opt], "--clienthandlers=")) {
+		else if (argnmatch(argv[opt], "--server=") || argnmatch(argv[opt], "--bbdisplay=")) {
 			char *ips, *ip1;
 			int port1;
 
@@ -311,14 +278,14 @@ int main(int argc, char *argv[])
 				p = strchr(ip1, ':');
 				if (p) { port1 = atoi(p+1); *p = '\0'; } else port1 = 1984;
 
-				memset(&clientaddr[clientcount], 0, sizeof(clientaddr[clientcount]));
-				clientaddr[clientcount].sin_port = htons(port1);
-				clientaddr[clientcount].sin_family = AF_INET;
-				if (inet_aton(ip1, (struct in_addr *) &clientaddr[clientcount].sin_addr.s_addr) == 0) {
+				memset(&xymonserveraddr[xymonservercount], 0, sizeof(xymonserveraddr[xymonservercount]));
+				xymonserveraddr[xymonservercount].sin_port = htons(port1);
+				xymonserveraddr[xymonservercount].sin_family = AF_INET;
+				if (inet_aton(ip1, (struct in_addr *) &xymonserveraddr[xymonservercount].sin_addr.s_addr) == 0) {
 					errprintf("Invalid remote address %s\n", ip1);
 				}
 				else {
-					clientcount++;
+					xymonservercount++;
 				}
 				if (p) *p = ':';
 				ip1 = strtok(NULL, ",");
@@ -350,9 +317,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--log-details") == 0) {
 			logdetails = 1;
 		}
-		else if (strcmp(argv[opt], "--compress") == 0) {
-			compressmessages = 1;
-		}
 		else if (argnmatch(argv[opt], "--report=")) {
 			char *p1 = strchr(argv[opt], '=')+1;
 
@@ -377,14 +341,14 @@ int main(int argc, char *argv[])
 			debug = 1;
 		}
 		else if (strcmp(argv[opt], "--version") == 0) {
-			printf("bbproxy version %s\n", VERSION);
+			printf("xymonproxy version %s\n", VERSION);
 			return 0;
 		}
 		else if (strcmp(argv[opt], "--help") == 0) {
-			printf("bbproxy version %s\n", VERSION);
+			printf("xymonproxy version %s\n", VERSION);
 			printf("\nOptions:\n");
 			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
-			printf("\t--servers=IP[:port]         : Hobbit server address and portnumber\n");
+			printf("\t--server=IP[:port]          : Xymon server address and portnumber\n");
 			printf("\t--report=[HOST.]SERVICE     : Sends a status message about proxy activity\n");
 			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
 			printf("\t--lqueue=N                  : Listen-queue size\n");
@@ -398,20 +362,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (bbdispcount == 0) {
-		errprintf("No Hobbit server address given - aborting\n");
+	if (xymonservercount == 0) {
+		errprintf("No Xymon server address given - aborting\n");
 		return 1;
-	}
-
-	if (clientcount == 0) {
-		int i;
-
-		for (i = 0; (i < bbdispcount); i++) {
-			memcpy(&clientaddr[i], &bbdispaddr[i], sizeof(clientaddr[i]));
-			clientaddr[i].sin_port = bbdispaddr[i].sin_port;
-			clientaddr[i].sin_family = bbdispaddr[i].sin_family;
-			clientcount++;
-		}
 	}
 
 	/* Set up a socket to listen for new connections */
@@ -439,22 +392,17 @@ int main(int argc, char *argv[])
 		freopen(logfile, "a", stderr);
 	}
 
-	errprintf("bbproxy version %s starting\n", VERSION);
+	errprintf("xymonproxy version %s starting\n", VERSION);
 	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
 	{
 		int i;
 		char *p;
 		char srvrs[500];
 
-		for (i=0, srvrs[0] = '\0', p=srvrs; (i<bbdispcount); i++) {
-			p += sprintf(p, "%s:%d ", inet_ntoa(bbdispaddr[i].sin_addr), ntohs(bbdispaddr[i].sin_port));
+		for (i=0, srvrs[0] = '\0', p=srvrs; (i<xymonservercount); i++) {
+			p += sprintf(p, "%s:%d ", inet_ntoa(xymonserveraddr[i].sin_addr), ntohs(xymonserveraddr[i].sin_port));
 		}
-		errprintf("Sending to Hobbit server(s) %s\n", srvrs);
-
-		for (i=0, srvrs[0] = '\0', p=srvrs; (i<clientcount); i++) {
-			p += sprintf(p, "%s:%d ", inet_ntoa(clientaddr[i].sin_addr), ntohs(clientaddr[i].sin_port));
-		}
-		errprintf("Sending client data to server(s) %s\n", srvrs);
+		errprintf("Sending to Xymon server(s) %s\n", srvrs);
 	}
 
 	if (daemonize) {
@@ -492,8 +440,8 @@ int main(int argc, char *argv[])
 	do {
 		fd_set fdread, fdwrite;
 		int maxfd;
-		struct timeval tmo;
-		struct timezone tz;
+		struct timespec tmo;
+		struct timeval selecttmo;
 		int n, idx;
 		conn_t *cwalk, *ctmp;
 		time_t ctime;
@@ -501,7 +449,7 @@ int main(int argc, char *argv[])
 		int combining = 0;
 
 		/* See if it is time for a status report */
-		if (proxyname && ((now = getcurrenttime(NULL)) >= (laststatus+300))) {
+		if (proxyname && ((now = gettimer()) >= (laststatus+300))) {
 			conn_t *stentry;
 			int ccount = 0;
 			unsigned long bufspace = 0;
@@ -516,9 +464,9 @@ int main(int argc, char *argv[])
 			stentry->state = P_REQ_READY;
 			stentry->csocket = stentry->ssocket = -1;
 			stentry->clientip = &stentry->caddr.sin_addr;
-			gettimeofday(&stentry->arrival, &tz);
+			getntimer(&stentry->arrival);
 			stentry->timelimit.tv_sec = stentry->arrival.tv_sec + timeout;
-			stentry->timelimit.tv_usec = stentry->arrival.tv_usec;
+			stentry->timelimit.tv_nsec = stentry->arrival.tv_nsec;
 			stentry->bufsize = BUFSZ_INC;
 			stentry->buf = (char *)malloc(stentry->bufsize);
 			stentry->next = chead;
@@ -539,17 +487,17 @@ int main(int argc, char *argv[])
 				avgtime = 0;
 			}
 			else {
-				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_usec/1000) / msgs_sent;
+				avgtime = (timeinqueue.tv_sec*1000 + timeinqueue.tv_nsec/1000) / msgs_sent;
 			}
 
 			p = stentry->buf;
-			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nbbproxy for Hobbit version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Page messages          : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
+			p += sprintf(p, "combo\nstatus %s green %s Proxy up %s\n\nxymonproxy for Xymon version %s\n\nProxy statistics\n\nIncoming messages        : %10lu (%lu msgs/second)\nOutbound messages        : %10lu\n\nIncoming message distribution\n- Combo messages         : %10lu\n- Status messages        : %10lu\n  Messages merged        : %10lu\n  Resulting combos       : %10lu\n- Other messages         : %10lu\n\nProxy ressources\n- Connection table size  : %10d\n- Buffer space           : %10lu kByte\n",
 				proxyname, timestamp, runtime_s, VERSION,
 				msgs_total, (msgs_total - msgs_total_last) / (now - laststatus),
 				msgs_delivered,
 				msgs_combo, 
 				msgs_status, msgs_merged, msgs_combined, 
-				msgs_page, msgs_other,
+				msgs_other,
 				ccount, bufspace / 1024);
 			p += sprintf(p, "\nTimeout/failure details\n");
 			p += sprintf(p, "- %-22s : %10lu\n", statename[P_REQ_READING], msgs_timeout_from[P_REQ_READING]);
@@ -564,7 +512,7 @@ int main(int argc, char *argv[])
 			/* Clear the summary collection totals */
 			laststatus = now;
 			msgs_total_last = msgs_total;
-			timeinqueue.tv_sec = timeinqueue.tv_usec = 0;
+			timeinqueue.tv_sec = timeinqueue.tv_nsec = 0;
 
 			stentry->buflen = strlen(stentry->buf);
 			stentry->bufp = stentry->buf + stentry->buflen;
@@ -587,26 +535,6 @@ int main(int argc, char *argv[])
 				break;
 
 			  case P_REQ_READY:
-				if (strncmp(cwalk->buf+6, compressionmarker, compressionmarkersz) == 0) {
-					strbuffer_t *dbuf;
-
-					cwalk->compressionok = 1;
-					dbuf = uncompress_buffer(cwalk->buf+6, cwalk->buflen-6, "combo\n");
-					if (!dbuf) {
-						errprintf("Invalid compressed data from %s\n", inet_ntoa(*cwalk->clientip));
-						cwalk->state = P_CLEANUP;
-						break;
-					}
-					else {
-						xfree(cwalk->buf);
-						if (STRBUFSZ(dbuf) < BUFSZ_INC) strbuffergrow(dbuf, BUFSZ_INC);
-						cwalk->buflen = cwalk->buflensave = STRBUFLEN(dbuf);
-						cwalk->bufsize = STRBUFSZ(dbuf);
-						cwalk->buf = grabstrbuffer(dbuf);
-						cwalk->bufp = cwalk->bufpsave = (cwalk->buf + cwalk->buflen);
-					}
-				}
-
 				if (cwalk->buflen <= 6) {
 					/* Got an empty request - just drop it */
 					dbgprintf("Dropping empty request from %s\n", inet_ntoa(*cwalk->clientip));
@@ -633,14 +561,13 @@ int main(int argc, char *argv[])
 				 */
 				if (strncmp(cwalk->buf+6, "client", 6) == 0) {
 					/*
-					 * "client" messages go to all bbdisplay servers, but
+					 * "client" messages go to all Xymon servers, but
 					 * we will only pass back the response from one of them
 					 * (the last one).
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
-					cwalk->snum = clientcount;
-					cwalk->isclientmessage = 1;
+					cwalk->snum = xymonservercount;
 
 					if ((cwalk->buflen + 40 ) < cwalk->bufsize) {
 						int n = sprintf(cwalk->bufp, 
@@ -656,7 +583,7 @@ int main(int argc, char *argv[])
 				         (strncmp(cwalk->buf+6, "download", 8) == 0)) {
 					/* 
 					 * These requests get a response back, but send no data.
-					 * Send these to the last of the Hobbit servers only.
+					 * Send these to the last of the Xymon servers only.
 					 */
 					shutdown(cwalk->csocket, SHUT_RD);
 					msgs_other++;
@@ -669,15 +596,15 @@ int main(int argc, char *argv[])
 						close(cwalk->csocket); sockcount--;
 						cwalk->csocket = -1;
 					}
-					cwalk->snum = bbdispcount;
+					cwalk->snum = xymonservercount;
 
 					if (strncmp(cwalk->buf+6, "status", 6) == 0) {
 						msgs_status++;
-						gettimeofday(&cwalk->timelimit, &tz);
-						cwalk->timelimit.tv_usec += COMBO_DELAY;
-						if (cwalk->timelimit.tv_usec >= 1000000) {
+						getntimer(&cwalk->timelimit);
+						cwalk->timelimit.tv_nsec += COMBO_DELAY;
+						if (cwalk->timelimit.tv_nsec >= 1000000000) {
 							cwalk->timelimit.tv_sec++;
-							cwalk->timelimit.tv_usec -= 1000000;
+							cwalk->timelimit.tv_nsec -= 1000000000;
 						}
 
 						/*
@@ -710,11 +637,11 @@ int main(int argc, char *argv[])
 						cwalk->buflen = strlen(cwalk->buf);
 						cwalk->bufp = cwalk->buf + cwalk->buflen;
 
-						gettimeofday(&cwalk->timelimit, &tz);
-						cwalk->timelimit.tv_usec += COMBO_DELAY;
-						if (cwalk->timelimit.tv_usec >= 1000000) {
+						getntimer(&cwalk->timelimit);
+						cwalk->timelimit.tv_nsec += COMBO_DELAY;
+						if (cwalk->timelimit.tv_nsec >= 1000000000) {
 							cwalk->timelimit.tv_sec++;
-							cwalk->timelimit.tv_usec -= 1000000;
+							cwalk->timelimit.tv_nsec -= 1000000000;
 						}
 
 						currmsg = cwalk->buf+12; /* Skip pre-def. "combo\n" and message "combo\n" */
@@ -743,7 +670,7 @@ int main(int argc, char *argv[])
 						break;
 					}
 					else if (strncmp(cwalk->buf+6, "page", 4) == 0) {
-						/* hobbitd has no use for page requests */
+						/* xymond has no use for page requests */
 						cwalk->state = P_CLEANUP;
 						break;
 					}
@@ -758,17 +685,6 @@ int main(int argc, char *argv[])
 				 */
 				cwalk->bufp = cwalk->buf+6; 
 				cwalk->buflen -= 6;
-				if (compressmessages) {
-					strbuffer_t *cbuf = compress_buffer(cwalk->bufp, cwalk->buflen);
-					if (cbuf) {
-						xfree(cwalk->buf);
-						if (STRBUFSZ(cbuf) < BUFSZ_INC) strbuffergrow(cbuf, BUFSZ_INC);
-						cwalk->buflen = STRBUFLEN(cbuf);
-						cwalk->bufsize = STRBUFSZ(cbuf);
-						cwalk->buf = cwalk->bufp = grabstrbuffer(cbuf);
-					}
-				}
-
 				cwalk->bufpsave = cwalk->bufp;
 				cwalk->buflensave = cwalk->buflen;
 				cwalk->state = P_REQ_CONNECTING;
@@ -779,7 +695,7 @@ int main(int argc, char *argv[])
 				cwalk->bufp = cwalk->bufpsave;
 				cwalk->buflen = cwalk->buflensave;
 
-				ctime = getcurrenttime(NULL);
+				ctime = gettimer();
 				if (ctime < (cwalk->conntime + CONNECT_INTERVAL)) {
 					dbgprintf("Delaying retry of connection\n");
 					break;
@@ -789,7 +705,7 @@ int main(int argc, char *argv[])
 				cwalk->conntime = ctime;
 				if (cwalk->conntries < 0) {
 					errprintf("Server not responding, message lost\n");
-					cwalk->state = (cwalk->snum > 1) ? P_REQ_DONE : P_CLEANUP;
+					cwalk->state = P_REQ_DONE;	/* Not CLENAUP - might be more servers */
 					msgs_timeout_from[P_REQ_CONNECTING]++;
 					break;
 				}
@@ -802,23 +718,17 @@ int main(int argc, char *argv[])
 				sockcount++;
 				fcntl(cwalk->ssocket, F_SETFL, O_NONBLOCK);
 
-				if (cwalk->isclientmessage) {
-					int idx = (clientcount - cwalk->snum);
-					n = connect(cwalk->ssocket, (struct sockaddr *)&clientaddr[idx], sizeof(clientaddr[idx]));
-					cwalk->serverip = &clientaddr[idx].sin_addr;
-					dbgprintf("Connecting to CLIENT interpreter at %s\n", inet_ntoa(*cwalk->serverip));
-				}
-				else {
-					int idx = (bbdispcount - cwalk->snum);
-					n = connect(cwalk->ssocket, (struct sockaddr *)&bbdispaddr[idx], sizeof(bbdispaddr[idx]));
-					cwalk->serverip = &bbdispaddr[idx].sin_addr;
-					dbgprintf("Connecting to Hobbit at %s\n", inet_ntoa(*cwalk->serverip));
+				{
+					int idx = (xymonservercount - cwalk->snum);
+					n = connect(cwalk->ssocket, (struct sockaddr *)&xymonserveraddr[idx], sizeof(xymonserveraddr[idx]));
+					cwalk->serverip = &xymonserveraddr[idx].sin_addr;
+					dbgprintf("Connecting to Xymon server at %s\n", inet_ntoa(*cwalk->serverip));
 				}
 
 				if ((n == 0) || ((n == -1) && (errno == EINPROGRESS))) {
 					cwalk->state = P_REQ_SENDING;
 					cwalk->connectpending = 1;
-					gettimeofday(&cwalk->timelimit, &tz);
+					getntimer(&cwalk->timelimit);
 					cwalk->timelimit.tv_sec += timeout;
 					/* Fallthrough */
 				}
@@ -864,21 +774,21 @@ int main(int argc, char *argv[])
 				}
 
 				if (cwalk->arrival.tv_sec > 0) {
-					struct timeval departure;
+					struct timespec departure;
 
-					gettimeofday(&departure, &tz);
+					getntimer(&departure);
 					timeinqueue.tv_sec += (departure.tv_sec - cwalk->arrival.tv_sec);
-					if (departure.tv_usec >= cwalk->arrival.tv_usec) {
-						timeinqueue.tv_usec += (departure.tv_usec - cwalk->arrival.tv_usec);
+					if (departure.tv_nsec >= cwalk->arrival.tv_nsec) {
+						timeinqueue.tv_nsec += (departure.tv_nsec - cwalk->arrival.tv_nsec);
 					}
 					else {
 						timeinqueue.tv_sec--;
-						timeinqueue.tv_usec += (1000000 + departure.tv_usec - cwalk->arrival.tv_usec);
+						timeinqueue.tv_nsec += (1000000000 + departure.tv_nsec - cwalk->arrival.tv_nsec);
 					}
 
-					if (timeinqueue.tv_usec > 1000000) {
+					if (timeinqueue.tv_nsec > 1000000000) {
 						timeinqueue.tv_sec++;
-						timeinqueue.tv_usec -= 1000000;
+						timeinqueue.tv_nsec -= 1000000000;
 					}
 				}
 				else {
@@ -891,7 +801,7 @@ int main(int argc, char *argv[])
 				}
 				else {
 					cwalk->state = P_RESP_READING;
-					gettimeofday(&cwalk->timelimit, &tz);
+					getntimer(&cwalk->timelimit);
 					cwalk->timelimit.tv_sec += timeout;
 				}
 				/* Fallthrough */
@@ -905,20 +815,9 @@ int main(int argc, char *argv[])
 				shutdown(cwalk->ssocket, SHUT_RD);
 				close(cwalk->ssocket); sockcount--;
 				cwalk->ssocket = -1;
-
-				/* Decompress response for clients that do not understand compression */
-				if ((strncmp(cwalk->buf, compressionmarker, compressionmarkersz) == 0) && !cwalk->compressionok) {
-					/* Must de-compress the response */
-					strbuffer_t *cbuf = uncompress_buffer(cwalk->buf, cwalk->buflen, NULL);
-					xfree(cwalk->buf);
-					cwalk->buflen = STRBUFLEN(cbuf);
-					cwalk->bufsize = STRBUFSZ(cbuf);
-					cwalk->buf = grabstrbuffer(cbuf);
-				}
-
 				cwalk->bufp = cwalk->buf;
 				cwalk->state = P_RESP_SENDING;
-				gettimeofday(&cwalk->timelimit, &tz);
+				getntimer(&cwalk->timelimit);
 				cwalk->timelimit.tv_sec += timeout;
 				/* Fall through */
 
@@ -951,7 +850,7 @@ int main(int argc, char *argv[])
 					close(cwalk->ssocket); sockcount--;
 					cwalk->ssocket = -1;
 				}
-				cwalk->arrival.tv_sec = cwalk->arrival.tv_usec = 0;
+				cwalk->arrival.tv_sec = cwalk->arrival.tv_nsec = 0;
 				cwalk->bufp = cwalk->bufp; 
 				cwalk->buflen = 0;
 				memset(cwalk->buf, 0, cwalk->bufsize);
@@ -966,7 +865,7 @@ int main(int argc, char *argv[])
 			  case P_REQ_COMBINING:
 				/* See if we can combine some "status" messages into a "combo" */
 				combining++;
-				gettimeofday(&tmo, &tz);
+				getntimer(&tmo);
 				if ((cwalk->buflen < MINIMUM_FOR_COMBO) && !overdue(&tmo, &cwalk->timelimit)) {
 					conn_t *cextra;
 
@@ -1038,19 +937,6 @@ int main(int argc, char *argv[])
 						cwalk->buflen -= 6;
 						dbgprintf("No messages to combine - sending unchanged\n");
 					}
-
-					/* Compress the resulting combined message */
-					if (compressmessages) {
-						strbuffer_t *cbuf = compress_buffer(cwalk->buf, cwalk->buflen);
-						if (cbuf) {
-							if (STRBUFSZ(cbuf) < BUFSZ_INC) strbuffergrow(cbuf, BUFSZ_INC);
-							xfree(cwalk->buf);
-							cwalk->buflen = STRBUFLEN(cbuf);
-							cwalk->bufsize = STRBUFSZ(cbuf);
-							cwalk->buf = cwalk->bufp = grabstrbuffer(cbuf);
-						}
-					}
-
 				}
 
 				cwalk->bufpsave = cwalk->bufp;
@@ -1069,21 +955,21 @@ int main(int argc, char *argv[])
 		}
 		else {
 			static time_t lastlog = 0;
-			if ((now = getcurrenttime(NULL)) < (lastlog+30)) {
+			if ((now = gettimer()) < (lastlog+30)) {
 				lastlog = now;
 				errprintf("Squelching incoming connections, sockcount=%d\n", sockcount);
 			}
 		}
 
 		if (combining) {
-			tmo.tv_sec = 0; tmo.tv_usec = COMBO_DELAY;
+			selecttmo.tv_sec = 0; selecttmo.tv_usec = COMBO_DELAY;
 		}
 		else {
-			tmo.tv_sec = 1; tmo.tv_usec = 0;
+			selecttmo.tv_sec = 1; selecttmo.tv_usec = 0;
 		}
-		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
+		n = select(maxfd+1, &fdread, &fdwrite, NULL, &selecttmo);
 		if (n <= 0) {
-			gettimeofday(&tmo, &tz);
+			getntimer(&tmo);
 			for (cwalk = chead; (cwalk); cwalk = cwalk->next) {
 				switch (cwalk->state) {
 				  case P_REQ_READING:
@@ -1141,7 +1027,7 @@ int main(int argc, char *argv[])
 							cwalk->sendtries--;
 							cwalk->state = P_REQ_CONNECTING;
 							cwalk->conntries = CONNECT_TRIES;
-							cwalk->conntime = getcurrenttime(NULL);
+							cwalk->conntime = gettimer();
 						}
 					}
 					break;
@@ -1174,14 +1060,21 @@ int main(int argc, char *argv[])
 					newconn = cwalk;
 				}
 				else {
-					newconn = calloc(1, sizeof(conn_t));
+					newconn = malloc(sizeof(conn_t));
 					newconn->next = chead;
 					chead = newconn;
 					newconn->bufsize = BUFSZ_INC;
 					newconn->buf = newconn->bufp = malloc(newconn->bufsize);
 				}
 
+				newconn->connectpending = 0;
+				newconn->madetocombo = 0;
+				newconn->snum = 0;
 				newconn->ssocket = -1;
+				newconn->serverip = NULL;
+				newconn->conntries = 0;
+				newconn->sendtries = 0;
+				newconn->timelimit.tv_sec = newconn->timelimit.tv_nsec = 0;
 
 				/*
 				 * Why this ? Because we like to merge small status messages
@@ -1207,9 +1100,9 @@ int main(int argc, char *argv[])
 					sockcount++;
 					fcntl(newconn->csocket, F_SETFL, O_NONBLOCK);
 					newconn->state = P_REQ_READING;
-					gettimeofday(&newconn->arrival, &tz);
+					getntimer(&newconn->arrival);
 					newconn->timelimit.tv_sec = newconn->arrival.tv_sec + timeout;
-					newconn->timelimit.tv_usec = newconn->arrival.tv_usec;
+					newconn->timelimit.tv_nsec = newconn->arrival.tv_nsec;
 				}
 			}
 		}

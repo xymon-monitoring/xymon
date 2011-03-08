@@ -1,22 +1,22 @@
-.TH HOBBITGRAPH.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH GRAPHS.CFG 5 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbitgraph.cfg \- Configuration of the hobbitgraph CGI
+graphs.cfg \- Configuration of the showgraph CGI
 
 .SH SYNOPSIS
-.B $BBHOME/etc/hobbitgraph.cfg
+.B $XYMONHOME/etc/graphs.cfg
 
 .SH DESCRIPTION
-.I hobbitgraph.cgi(1)
-uses the configuration file $BBHOME/etc/hobbitgraph.cfg to
+.I showgraph.cgi(1)
+uses the configuration file $XYMONHOME/etc/graphs.cfg to
 build graphs from the RRD files collected by Xymon.
 
 .SH FILE FORMAT
 Each definition of a graph type begins with a "[SERVICE]" indicator,
 this is the name passed as the "service" parameter to 
-.I hobbitgraph.cgi(1).
-If the service name passed to hobbitgraph.cgi is not found, it will
+.I showgraph.cgi(1).
+If the service name passed to showgraph.cgi is not found, it will
 attempt to match the service name to a graph via the TEST2RRD environment
-variable. So calling hobbitgraph.cgi with "service=cpu" or "service=la"
+variable. So calling showgraph.cgi with "service=cpu" or "service=la"
 will end up producing the same graph.
 
 A graph definition needs to have a TITLE and a YAXIS setting. These are
@@ -34,9 +34,7 @@ to exclude from the graph with EXFNPATTERN (see "[tcp]" for an example).
 When FNPATTERN is used, you can use "@RRDFN@" in the RRDtool definitions
 to pick up each filename. "@RRDIDX@" is an index (starting at 0) for each
 file in the set. "@RRDPARAM@" contains the first word extracted from the
-pattern of files (see e.g. "[memory]" how this is used). "@RRDMETA@" by default
-works like "@RRDPARAM@", but if you create a file called \fBrrd.meta\fR in the 
-hosts rrd directory, it will lookup a legend in this file. "@COLOR@" picks
+pattern of files (see e.g. "[memory]" how this is used). "@COLOR@" picks
 a new color for each graph automatically.
 
 The remainder of the lines in each definition are passed directly to the
@@ -98,7 +96,7 @@ for the graph legend:
 
 .SH ADVANCED GRAPH  TITLES
 Normally the title of a graph is a static text defined in
-the hobbitgraph.cfg file. However, there may be situations where
+the graphs.cfg file. However, there may be situations where
 you want to use different titles for the same type of graph, e.g.
 if you are incorporating RRD files from MRTG into Xymon. In that
 case you can setup the TITLE definition so that it runs a custom
@@ -120,5 +118,5 @@ Most of the RRD graph definitions shipped with Xymon have been ported
 from the definitions in the \fBlarrd-grapher.cgi\fR CGI from LARRD 0.43c.
 
 .SH "SEE ALSO"
-hobbitserver.cfg(5), rrdtool(1), rrdgraph(1)
+xymonserver.cfg(5), rrdtool(1), rrdgraph(1)
 

@@ -1,19 +1,19 @@
-.TH HOBBITD_SAMPLE 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH XYMOND_SAMPLE 8 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbitd_sample \- example of a hobbitd worker module
+xymond_sample \- example of a xymond worker module
 .SH SYNOPSIS
-.B "hobbitd_channel --channel=status hobbitd_sample [options]"
+.B "xymond_channel --channel=status xymond_sample [options]"
 
 .SH DESCRIPTION
-hobbitd_sample is a worker module for hobbitd, and as such it is normally
+xymond_sample is a worker module for xymond, and as such it is normally
 run via the
-.I hobbitd_channel(8)
-program. It receives messages from hobbitd via stdin, and simply displays
-these on stdout. It can be used with all types of hobbitd channels.
+.I xymond_channel(8)
+program. It receives messages from xymond via stdin, and simply displays
+these on stdout. It can be used with all types of xymond channels.
 
-hobbitd_sample is not designed to actually run, except as a demonstration.
-The purpose of this tool is to show how hobbitd worker modules can be
-implemented to handle different tasks that need to hook into the hobbitd
+xymond_sample is not designed to actually run, except as a demonstration.
+The purpose of this tool is to show how xymond worker modules can be
+implemented to handle different tasks that need to hook into the xymond
 processing.
 
 .SH OPTIONS
@@ -24,5 +24,5 @@ Read messages with a timeout of N seconds.
 Enable debugging output.
 
 .SH "SEE ALSO"
-hobbitd_channel(8), hobbitd(8), xymon(7)
+xymond_channel(8), xymond(8), xymon(7)
 

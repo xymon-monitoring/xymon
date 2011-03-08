@@ -1,8 +1,8 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# Linux client for Hobbit                                                    #
+# Linux client for Xymon                                                     #
 #                                                                            #
-# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
@@ -19,6 +19,9 @@ echo "[osversion]"
 if [ -x /bin/lsb_release ]; then
 	/bin/lsb_release -r -i -s | xargs echo
 	/bin/lsb_release -a
+elif [ -x /usr/bin/lsb_release ]; then
+	/usr/bin/lsb_release -r -i -s | xargs echo
+	/usr/bin/lsb_release -a
 elif [ -f /etc/redhat-release ]; then
 	cat /etc/redhat-release
 elif [ -f /etc/gentoo-release ]; then
@@ -78,9 +81,9 @@ then
 fi
 
 # vmstat
-nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "vmstat 300 2 1>$XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ $XYMONTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $XYMONTMP/xymon_vmstat.$MACHINEDOTS; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; fi
 
 exit
 

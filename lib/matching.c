@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for matching names and expressions                    */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 static pcre *compileregex_opts(const char *pattern, int flags)
 {
@@ -69,9 +69,13 @@ void freeregex(pcre *pcrecode)
 int namematch(char *needle, char *haystack, pcre *pcrecode)
 {
 	char *xhay;
-	char *xneedle;
+	char *tokbuf, *tok;
 	char *match;
+	int found = 0;
 	int result = 0;
+	int allneg = 1;
+
+	if ((needle == NULL) || (*needle == '\0')) return 0;
 
 	if (pcrecode) {
 		/* Do regex matching. The regex has already been compiled for us. */
@@ -84,43 +88,33 @@ int namematch(char *needle, char *haystack, pcre *pcrecode)
 	}
 
 	/* Implement a simple, no-wildcard match */
-	xhay = malloc(strlen(haystack) + 3);
-	sprintf(xhay, ",%s,", haystack);
-	xneedle = malloc(strlen(needle)+2);
-	sprintf(xneedle, "%s,", needle);
+	xhay = strdup(haystack);
 
-	match = strstr(xhay, xneedle);
-	if (match) {
-		if (*(match-1) == '!') {
-			/* Matched, but was a negative rule. */
-			result = 0;
+	tok = strtok_r(xhay, ",", &tokbuf);
+	while (tok) {
+		allneg = (allneg && (*tok == '!'));
+
+		if (!found) {
+			if (*tok == '!') {
+				found = (strcmp(tok+1, needle) == 0);
+				if (found) result = 0;
+			}
+			else {
+				found = (strcmp(tok, needle) == 0);
+				if (found) result = 1;
+			}
 		}
-		else if (*(match-1) == ',') {
-			/* Matched */
-			result = 1;
-		}
-		else {
-			/* Matched a partial string. Fail. */
-			result = 0;
-		}
+
+		/* We must check all of the items in the haystack to see if they are all negative matches */
+		tok = strtok_r(NULL, ",", &tokbuf);
 	}
-	else {
-		/* 
-		 * It is not in the list. If the list is exclusively negative matches,
-		 * we must return a positive result for "no match".
-		 */
-		char *p;
-
-		/* Find the first name in the list that does not begin with a '!' */
-		p = xhay+1;
-		while (p && (*p == '!')) {
-			p = strchr(p, ','); if (p) p++;
-		}
-		if (*p == '\0') result = 1;
-	}
-
 	xfree(xhay);
-	xfree(xneedle);
+
+	/* 
+	 * If we didn't find it, and the list is exclusively negative matches,
+	 * we must return a positive result for "no match".
+	 */
+	if (!found && allneg) result = 1;
 
 	return result;
 }
@@ -187,7 +181,7 @@ int pickdata(char *buf, pcre *expr, int dupok, ...)
 				*ptr = strdup(w);
 			}
 			else {
-				errprintf("Internal error: Duplicate match ignored\n");
+				dbgprintf("Internal error: Duplicate match ignored\n");
 			}
 		}
 	}

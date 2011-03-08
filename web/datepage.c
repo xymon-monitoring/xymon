@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Xymon webpage generator tool.                                              */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 static enum { FRM_NONE, FRM_MONTH, FRM_WEEK, FRM_DAY } frmtype = FRM_NONE;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-datepage");
+	redirect_cgilog("datepage");
 	parse_query();
 
 	if (cgi_method == CGI_POST) {
@@ -121,10 +121,10 @@ int main(int argc, char *argv[])
 			if (cookie && *cookie) {
 				void *hinfo;
 
-				load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+				load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 				hinfo = hostinfo(cookie);
 				if (hinfo) {
-					pagepath = bbh_item(hinfo, BBH_PAGEPATH);
+					pagepath = xmh_item(hinfo, XMH_PAGEPATH);
 				}
 				else {
 					pagepath = "";

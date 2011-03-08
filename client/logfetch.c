@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit client logfile collection tool.                                     */
+/* Xymon client logfile collection tool.                                      */
 /* This tool retrieves data from logfiles. If run continuously, it will pick  */
 /* out the data stored in the logfile over the past 6 runs (30 minutes with   */
-/* the default Hobbit client polling frequency) and send these data to stdout */
-/* for inclusion in the hobbit "client" message.                              */
+/* the default Xymon client polling frequency) and send these data to stdout  */
+/* for inclusion in the Xymon "client" message.                               */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -34,7 +34,7 @@ static char rcsid[] = "$Id$";
 #define S_ISSOCK(m)   (((m) & S_IFMT) == C_ISSOCK)
 #endif
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 /* Is it ok for these to be hardcoded ? */
 #define MAXCHECK   102400   /* When starting, dont look at more than 100 KB of data */

@@ -1,11 +1,11 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# Hobbit client main script.                                                 #
+# Xymon client main script.                                                  #
 #                                                                            #
 # This invokes the OS-specific script to build a client message, and sends   #
-# if off to the Hobbit server.                                               #
+# if off to the Xymon server.                                                #
 #                                                                            #
-# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
@@ -28,45 +28,45 @@ if test $# -ge 1; then
 	shift
 fi
 
-if test "$BBOSSCRIPT" = ""; then
-	BBOSSCRIPT="hobbitclient-`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`.sh"
+if test "$XYMONOSSCRIPT" = ""; then
+	XYMONOSSCRIPT="xymonclient-`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`.sh"
 fi
 
-MSGFILE="$BBTMP/msg.$MACHINEDOTS.txt"
+MSGFILE="$XYMONTMP/msg.$MACHINEDOTS.txt"
 MSGTMPFILE="$MSGFILE.$$"
-LOGFETCHCFG=$BBTMP/logfetch.$MACHINEDOTS.cfg
-LOGFETCHSTATUS=$BBTMP/logfetch.$MACHINEDOTS.status
+LOGFETCHCFG=$XYMONTMP/logfetch.$MACHINEDOTS.cfg
+LOGFETCHSTATUS=$XYMONTMP/logfetch.$MACHINEDOTS.status
 export LOGFETCHCFG LOGFETCHSTATUS
 
 rm -f $MSGTMPFILE
 touch $MSGTMPFILE
 
 
-CLIENTVERSION="`$BBHOME/bin/clientupdate --level`"
+CLIENTVERSION="`$XYMONHOME/bin/clientupdate --level`"
 
 if test "$LOCALMODE" = "yes"; then
-	echo "@@client#1|0|127.0.0.1|$MACHINEDOTS|$BBOSTYPE" >> $MSGTMPFILE
+	echo "@@client#1|0|127.0.0.1|$MACHINEDOTS|$SERVEROSTYPE" >> $MSGTMPFILE
 fi
 
-echo "client $MACHINE.$BBOSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
-$BBHOME/bin/$BBOSSCRIPT >> $MSGTMPFILE
+echo "client $MACHINE.$SERVEROSTYPE $CONFIGCLASS"  >>  $MSGTMPFILE
+$XYMONHOME/bin/$XYMONOSSCRIPT >> $MSGTMPFILE
 # logfiles
 if test -f $LOGFETCHCFG
 then
-    $BBHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS >>$MSGTMPFILE
+    $XYMONHOME/bin/logfetch $LOGFETCHCFG $LOGFETCHSTATUS >>$MSGTMPFILE
 fi
 # Client version
 echo "[clientversion]"  >>$MSGTMPFILE
 echo "$CLIENTVERSION"   >> $MSGTMPFILE
 # System clock
 echo "[clock]"          >> $MSGTMPFILE
-$BBHOME/bin/logfetch --clock >> $MSGTMPFILE
+$XYMONHOME/bin/logfetch --clock >> $MSGTMPFILE
 
 if test "$LOCALMODE" = "yes"; then
 	echo "@@" >> $MSGTMPFILE
-	$BBHOME/bin/hobbitd_client --local --config=$BBHOME/etc/localclient.cfg <$MSGTMPFILE
+	$XYMONHOME/bin/xymond_client --local --config=$XYMONHOME/etc/localclient.cfg <$MSGTMPFILE
 else
-	$BB $BBDISP "@" < $MSGTMPFILE >$LOGFETCHCFG.tmp
+	$XYMON $XYMSRV "@" < $MSGTMPFILE >$LOGFETCHCFG.tmp
 	if test -f $LOGFETCHCFG.tmp
 	then
 		if test -s $LOGFETCHCFG.tmp
@@ -86,7 +86,7 @@ if test "$LOCALMODE" != "yes" -a -f $LOGFETCHCFG; then
 	# Check for client updates
 	SERVERVERSION=`grep "^clientversion:" $LOGFETCHCFG | cut -d: -f2`
 	if test "$SERVERVERSION" != "" -a "$SERVERVERSION" != "$CLIENTVERSION"; then
-		exec $BBHOME/bin/clientupdate --update=$SERVERVERSION --reexec
+		exec $XYMONHOME/bin/clientupdate --update=$SERVERVERSION --reexec
 	fi
 fi
 

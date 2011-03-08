@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for handling of signals and crashes.                  */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -14,6 +14,7 @@
 static char rcsid[] = "$Id$";
 
 #include <limits.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -22,15 +23,13 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "libbbgen.h"
-
-#include <signal.h>
+#include "libxymon.h"
 
 /* Data used while crashing - cannot depend on the stack being usable */
-static char signal_bbcmd[PATH_MAX];
-static char signal_bbdisp[1024];
+static char signal_xymoncmd[PATH_MAX];
+static char signal_xymondserver[1024];
 static char signal_msg[1024];
-static char signal_bbtmp[PATH_MAX];
+static char signal_tmpdir[PATH_MAX];
 
 
 static void sigsegv_handler(int signum)
@@ -47,14 +46,14 @@ static void sigsegv_handler(int signum)
 
 	/* 
 	 * Try to fork a child to send in an alarm message.
-	 * If the fork fails, then just attempt to exec() the BB command
+	 * If the fork fails, then just attempt to exec() the XYMON command
 	 */
 	if (fork() <= 0) {
-		execl(signal_bbcmd, "bbgen-signal", signal_bbdisp, signal_msg, NULL);
+		execl(signal_xymoncmd, "xymon-signal", signal_xymondserver, signal_msg, NULL);
 	}
 
 	/* Dump core and abort */
-	chdir(signal_bbtmp);
+	chdir(signal_tmpdir);
 	abort();
 }
 
@@ -77,9 +76,9 @@ void setup_signalhandler(char *programname)
 	struct rlimit lim;
 	struct sigaction sa;
 
-	MEMDEFINE(signal_bbcmd);
-	MEMDEFINE(signal_bbdisp);
-	MEMDEFINE(signal_bbtmp);
+	MEMDEFINE(signal_xymoncmd);
+	MEMDEFINE(signal_xymondserver);
+	MEMDEFINE(signal_tmpdir);
 	MEMDEFINE(signal_msg);
 
 	memset(&sa, 0, sizeof(sa));
@@ -92,18 +91,18 @@ void setup_signalhandler(char *programname)
 	lim.rlim_cur = RLIM_INFINITY;
 	setrlimit(RLIMIT_CORE, &lim);
 
-	if (xgetenv("BB") == NULL) return;
-	if (xgetenv("BBDISP") == NULL) return;
+	if (xgetenv("XYMON") == NULL) return;
+	if (xgetenv("XYMSRV") == NULL) return;
 
 	/*
 	 * Used inside signal-handler. Must be setup in
 	 * advance.
 	 */
-	strcpy(signal_bbcmd, xgetenv("BB"));
-	strcpy(signal_bbdisp, xgetenv("BBDISP"));
-	strcpy(signal_bbtmp, xgetenv("BBTMP"));
+	strcpy(signal_xymoncmd, xgetenv("XYMON"));
+	strcpy(signal_xymondserver, xgetenv("XYMSRV"));
+	strcpy(signal_tmpdir, xgetenv("XYMONTMP"));
 	sprintf(signal_msg, "status %s.%s red - Program crashed\n\nFatal signal caught!\n", 
-		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "BBDISPLAY"), programname);
+		(xgetenv("MACHINE") ? xgetenv("MACHINE") : "XYMSERVERS"), programname);
 
 	sigaction(SIGSEGV, &sa, NULL);
 	sigaction(SIGILL, &sa, NULL);

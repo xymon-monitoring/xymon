@@ -1,44 +1,44 @@
-.TH HOBBITCLIENT.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH XYMONCLIENT.CFG 5 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbitclient.cfg \- Xymon client environment variables
+xymonclient.cfg \- Xymon client environment variables
 
 .SH DESCRIPTION
 Xymon programs use multiple environment variables beside the
 normal set of variables.  For the Xymon client, the environment 
-definitions are stored in the ~xymon/client/etc/hobbitclient.cfg file. 
+definitions are stored in the ~xymon/client/etc/xymonclient.cfg file. 
 Each line in this file is of the form \fBNAME=VALUE\fR and defines
 one environment variable NAME with the value VALUE.
 
 .SH SETTINGS
-.IP BBDISP
+.IP XYMSRV
 The IP-address used to contact the Xymon server. Default:
 Chosen when the Xymon client was compiled.
 
-.IP BBDISPLAYS
+.IP XYMSERVERS
 List of IP-adresses of Xymon servers. Data will be sent to
 all of the servers listed here. This setting is only used if 
-BBDISP=0.0.0.0.
+XYMSRV=0.0.0.0.
 
-.IP BBPORT
-The portnumber for used to contact the Xymon server.
+.IP XYMONDPORT
+The port number for used to contact the Xymon server.
 Default: 1984.
 
-.IP BBHOME
+.IP XYMONHOME
 The Xymon client top-level directory. Default: The
-$HOBBITCLIENTHOME setting inherited from the "runclient.sh"
+$XYMONCLIENTHOME setting inherited from the "runclient.sh"
 script which starts the Xymon client.
 
-.IP BBCLIENTLOGS
-The directory for the Xymon clients' own logfiles. Default:
-$BBHOME/logs
+.IP XYMONCLIENTLOGS
+The directory for the Xymon clients' own log files. Default:
+$XYMONHOME/logs
 
-.IP BBTMP
-Directory used for temporary files. Default: $BBHOME/tmp/
+.IP XYMONTMP
+Directory used for temporary files. Default: $XYMONHOME/tmp/
 
-.IP BB
+.IP XYMON
 Full path to the 
-.I bb(1)
-client program. Default: $BBHOME/bin/bb.
+.I xymon(1)
+client program. Default: $XYMONHOME/bin/xymon.
 
 .IP Commands
 Many extension scripts expect a series of environment variables to
@@ -56,11 +56,11 @@ The hostname of the local system. Default: Taken from "uname -n".
 The hostname of the local system, with dots replaced by commas.
 For compatibility with Big Brother extension scripts.
 
-.IP BBOSTYPE
+.IP SERVEROSTYPE
 The operating system of the local system, in lowercase. Default:
 taken from "uname -s".
 
-.IP HOBBITCLIENTHOME
+.IP XYMONCLIENTHOME
 The top-level directory for the Xymon client. Default: The location
 of the "runclient.sh" script.
 

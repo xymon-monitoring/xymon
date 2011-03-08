@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This file is part of the Hobbit monitor library, but was taken from the    */
+/* This file is part of the Xymon monitor library, but was taken from the     */
 /* FreeBSD sources. It was originally written by Eric Young, and is NOT       */
 /* licensed under the GPL. Please adhere the original copyright notice below. */
 /*----------------------------------------------------------------------------*/
@@ -66,7 +66,7 @@
 #ifndef HEADER_RIPEMD_H
 #define HEADER_RIPEMD_H
 
-/******************** Modifications for Hobbit ***************************/
+/******************** Modifications for Xymon ***************************/
 #include "config.h"
 #ifndef HAVE_UINT32_TYPEDEF
 typedef unsigned int u_int32_t;
@@ -80,13 +80,13 @@ typedef unsigned int u_int32_t;
 #define BIG_ENDIAN     4321
 #endif
 
-#ifdef HOBBIT_LITTLE_ENDIAN
+#ifdef XYMON_LITTLE_ENDIAN
 #define BYTE_ORDER LITTLE_ENDIAN
 #else
 #define BYTE_ORDER BIG_ENDIAN
 #endif
 #endif
-/******************** End of modifications for Hobbit ***************************/
+/******************** End of modifications for Xymon ***************************/
 
 #define RIPEMD160_CBLOCK	64
 #define RIPEMD160_LBLOCK	16

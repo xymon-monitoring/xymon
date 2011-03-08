@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of an LDAP service.                  */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,21 +19,19 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
-
-#include "libbbgen.h"
-
-#include "bbtest-net.h"
-#include "ldaptest.h"
-
 #include <signal.h>
 
+#include "libxymon.h"
 
-#define BBGEN_LDAP_OK 		0
-#define BBGEN_LDAP_INITFAIL	10
-#define BBGEN_LDAP_TLSFAIL	11
-#define BBGEN_LDAP_BINDFAIL	20
-#define BBGEN_LDAP_TIMEOUT	30
-#define BBGEN_LDAP_SEARCHFAILED	40
+#include "xymonnet.h"
+#include "ldaptest.h"
+
+#define XYMON_LDAP_OK 		0
+#define XYMON_LDAP_INITFAIL	10
+#define XYMON_LDAP_TLSFAIL	11
+#define XYMON_LDAP_BINDFAIL	20
+#define XYMON_LDAP_TIMEOUT	30
+#define XYMON_LDAP_SEARCHFAILED	40
 
 char *ldap_library_version = NULL;
 
@@ -41,7 +39,7 @@ static volatile int connect_timeout = 0;
 
 int init_ldap_library(void)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 	char versionstring[100];
 
 	/* Doesnt really do anything except define the version-number string */
@@ -54,35 +52,35 @@ int init_ldap_library(void)
 
 void shutdown_ldap_library(void)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 	/* No-op for LDAP */
 #endif
 }
 
 int add_ldap_test(testitem_t *t)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
+	testitem_t *basecheck;
 	ldap_data_t *req;
 	LDAPURLDesc *ludp;
 	char *urltotest;
+	int badurl;
+
+	basecheck = (testitem_t *)t->privdata;
 
 	/* 
 	 * t->testspec containts the full testspec
 	 * We need to remove any URL-encoding.
 	 */
 	urltotest = urlunescape(t->testspec);
-
-	if (ldap_url_parse(urltotest, &ludp) != 0) {
-		errprintf("Invalid LDAP URL %s\n", t->testspec);
-		return 1;
-	}
+	badurl = (ldap_url_parse(urltotest, &ludp) != 0);
 
 	/* Allocate the private data and initialize it */
-	t->privdata = (void *) malloc(sizeof(ldap_data_t)); 
+	t->privdata = (void *) calloc(1, sizeof(ldap_data_t)); 
 	req = (ldap_data_t *) t->privdata;
 	req->ldapdesc = (void *) ludp;
 	req->usetls = (strncmp(urltotest, "ldaps:", 6) == 0);
-#ifdef BBGEN_LDAP_USESTARTTLS
+#ifdef XYMON_LDAP_USESTARTTLS
 	if (req->usetls && (ludp->lud_port == LDAPS_PORT)) {
 		dbgprintf("Forcing port %d for ldaps with STARTTLS\n", LDAP_PORT );
 		ludp->lud_port = LDAP_PORT;
@@ -92,9 +90,31 @@ int add_ldap_test(testitem_t *t)
 	req->output = NULL;
 	req->ldapcolor = -1;
 	req->faileddeps = NULL;
-	req->duration.tv_sec = req->duration.tv_usec = 0;
+	req->duration.tv_sec = req->duration.tv_nsec = 0;
 	req->certinfo = NULL;
 	req->certexpires = 0;
+	req->skiptest = 0;
+
+	if (badurl) {
+		errprintf("Invalid LDAP URL %s\n", t->testspec);
+		req->skiptest = 1;
+		req->ldapstatus = XYMON_LDAP_BINDFAIL;
+		req->output = "Cannot parse LDAP URL";
+	}
+
+	/*
+	 * At this point, the plain TCP checks have already run.
+	 * So we know from the test found in t->privdata whether
+	 * the LDAP port is open.
+	 * If it is not open, then dont run this check.
+	 */
+	if (basecheck->open == 0) {
+		/* Cannot connect to LDAP port. */
+		req->skiptest = 1;
+		req->ldapstatus = XYMON_LDAP_BINDFAIL;
+		req->output = "Cannot connect to server";
+	}
+
 #endif
 
 	return 0;
@@ -109,12 +129,11 @@ static void ldap_alarmhandler(int signum)
 
 void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 {
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 	ldap_data_t *req;
 	testitem_t *t;
-	struct timeval starttime;
-	struct timeval endtime;
-	struct timezone tz;
+	struct timespec starttime;
+	struct timespec endtime;
 
 	/* Pick a sensible default for the timeout setting */
 	if (querytimeout == 0) querytimeout = 30;
@@ -124,16 +143,19 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		LDAP		*ld;
 		int		rc, finished;
 		int		msgID = -1;
-		struct timeval	timeout;
+		struct timeval	ldaptimeout;
+		struct timeval	openldaptimeout;
 		LDAPMessage	*result;
 		LDAPMessage	*e;
 		strbuffer_t	*response;
 		char		buf[MAX_LINE_LEN];
 
 		req = (ldap_data_t *) t->privdata;
+		if (req->skiptest) continue;
+
 		ludp = (LDAPURLDesc *) req->ldapdesc;
 
-		gettimeofday(&starttime, &tz);
+		getntimer(&starttime);
 
 		/* Initiate session with the LDAP server */
 		dbgprintf("Initiating LDAP session for host %s port %d\n",
@@ -141,16 +163,23 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		if( (ld = ldap_init(ludp->lud_host, ludp->lud_port)) == NULL ) {
 			dbgprintf("ldap_init failed\n");
-			req->ldapstatus = BBGEN_LDAP_INITFAIL;
+			req->ldapstatus = XYMON_LDAP_INITFAIL;
 			continue;
 		}
 
 		/* 
 		 * There is apparently no standard way of defining a network
-		 * timeout for the initial connection setup. OpenLDAP does
-		 * have an undocumented ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &tv)
-		 * but this is a) undocumented, and b) non-portable.
-		 * 
+		 * timeout for the initial connection setup. 
+		 */
+#if (LDAP_VENDOR == OpenLDAP) && defined(LDAP_OPT_NETWORK_TIMEOUT)
+		/* 
+		 * OpenLDAP has an undocumented ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &tv)
+		 */
+		openldaptimeout.tv_sec = querytimeout;
+		openldaptimeout.tv_usec = 0;
+		ldap_set_option(ld, LDAP_OPT_NETWORK_TIMEOUT, &openldaptimeout);
+#else
+		/*
 		 * So using an alarm() to interrupt any pending operations
 		 * seems to be the least insane way of doing this.
 		 *
@@ -161,6 +190,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		connect_timeout = 0;
 		signal(SIGALRM, ldap_alarmhandler);
 		alarm(querytimeout);
+#endif
 
 		/*
 		 * This is completely undocumented in the OpenLDAP docs.
@@ -185,20 +215,20 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 				protocol = LDAP_VERSION2;
 				if ((rc = ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &protocol)) != LDAP_SUCCESS) {
 					req->output = strdup(ldap_err2string(rc));
-					req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+					req->ldapstatus = XYMON_LDAP_TLSFAIL;
 				}
 				continue;
 			}
 		}
 #endif
 
-#ifdef BBGEN_LDAP_USESTARTTLS
+#ifdef XYMON_LDAP_USESTARTTLS
 		if (req->usetls) {
 			dbgprintf("Trying to enable TLS for session\n");
 			if ((rc = ldap_start_tls_s(ld, NULL, NULL)) != LDAP_SUCCESS) {
 				dbgprintf("ldap_start_tls failed\n");
 				req->output = strdup(ldap_err2string(rc));
-				req->ldapstatus = BBGEN_LDAP_TLSFAIL;
+				req->ldapstatus = XYMON_LDAP_TLSFAIL;
 				continue;
 			}
 		}
@@ -215,23 +245,23 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 		/* Did we connect? */
 		if (connect_timeout || (msgID == -1)) {
-			req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+			req->ldapstatus = XYMON_LDAP_BINDFAIL;
 			req->output = "Cannot connect to server";
 			continue;
 		}
 
 		/* Wait for bind to complete */
 		rc = 0; finished = 0; 
-		timeout.tv_sec = querytimeout;
-		timeout.tv_usec = 0L;
+		ldaptimeout.tv_sec = querytimeout;
+		ldaptimeout.tv_usec = 0L;
 		while( ! finished ) {
 			int rc2;
 
-			rc = ldap_result(ld, msgID, LDAP_MSG_ONE, &timeout, &result);
+			rc = ldap_result(ld, msgID, LDAP_MSG_ONE, &ldaptimeout, &result);
 			dbgprintf("ldap_result returned %d for ldap_simple_bind()\n", rc);
 			if(rc == -1) {
 				finished = 1;
-				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+				req->ldapstatus = XYMON_LDAP_BINDFAIL;
 
 				if (result == NULL) {
 					errprintf("LDAP library problem - NULL result returned\n");
@@ -245,7 +275,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 			}
 			else if (rc == 0) {
 				finished = 1;
-				req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+				req->ldapstatus = XYMON_LDAP_BINDFAIL;
 				req->output = strdup("Connection timeout");
 				ldap_unbind(ld);
 			}
@@ -253,14 +283,14 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 				finished = 1;
 				if (result == NULL) {
 					errprintf("LDAP library problem - got a NULL resultcode for status %d\n", rc);
-					req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+					req->ldapstatus = XYMON_LDAP_BINDFAIL;
 					req->output = strdup("LDAP library problem: ldap_result2error returned a NULL result for status %d\n");
 					ldap_unbind(ld);
 				}
 				else {
 					rc2 = ldap_result2error(ld, result, 1);
 					if(rc2 != LDAP_SUCCESS) {
-						req->ldapstatus = BBGEN_LDAP_BINDFAIL;
+						req->ldapstatus = XYMON_LDAP_BINDFAIL;
 						req->output = strdup(ldap_err2string(rc));
 						ldap_unbind(ld);
 					}
@@ -272,24 +302,24 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 		if (req->ldapstatus != 0) continue;
 
 		/* Now do the search. With a timeout */
-		timeout.tv_sec = querytimeout;
-		timeout.tv_usec = 0L;
-		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &timeout, &result);
+		ldaptimeout.tv_sec = querytimeout;
+		ldaptimeout.tv_usec = 0L;
+		rc = ldap_search_st(ld, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &ldaptimeout, &result);
 
 		if(rc == LDAP_TIMEOUT) {
-			req->ldapstatus = BBGEN_LDAP_TIMEOUT;
+			req->ldapstatus = XYMON_LDAP_TIMEOUT;
 			req->output = strdup(ldap_err2string(rc));
 	  		ldap_unbind(ld);
 			continue;
 		}
 		if( rc != LDAP_SUCCESS ) {
-			req->ldapstatus = BBGEN_LDAP_SEARCHFAILED;
+			req->ldapstatus = XYMON_LDAP_SEARCHFAILED;
 			req->output = strdup(ldap_err2string(rc));
 	  		ldap_unbind(ld);
 			continue;
 		}
 
-		gettimeofday(&endtime, &tz);
+		getntimer(&endtime);
 
 		response = newstrbuffer(0);
 		sprintf(buf, "Searching LDAP for %s yields %d results:\n\n", 
@@ -327,7 +357,7 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 
 			addtobuffer(response, "\n");
 		}
-		req->ldapstatus = BBGEN_LDAP_OK;
+		req->ldapstatus = XYMON_LDAP_OK;
 		req->output = grabstrbuffer(response);
 		tvdiff(&starttime, &endtime, &req->duration);
 
@@ -342,16 +372,16 @@ void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 static int statuscolor(testedhost_t *host, int ldapstatus)
 {
 	switch (ldapstatus) {
-	  case BBGEN_LDAP_OK:
+	  case XYMON_LDAP_OK:
 		return COL_GREEN;
 
-	  case BBGEN_LDAP_INITFAIL:
-	  case BBGEN_LDAP_TLSFAIL:
-	  case BBGEN_LDAP_BINDFAIL:
-	  case BBGEN_LDAP_TIMEOUT:
+	  case XYMON_LDAP_INITFAIL:
+	  case XYMON_LDAP_TLSFAIL:
+	  case XYMON_LDAP_BINDFAIL:
+	  case XYMON_LDAP_TIMEOUT:
 		return COL_RED;
 
-	  case BBGEN_LDAP_SEARCHFAILED:
+	  case XYMON_LDAP_SEARCHFAILED:
 		return (host->ldapsearchfailyellow ? COL_YELLOW : COL_RED);
 	}
 
@@ -447,7 +477,7 @@ void send_ldap_results(service_t *ldaptest, testedhost_t *host, char *nonetpage,
 		if (req->faileddeps) addtostatus(req->faileddeps);
 
 		sprintf(msgline, "\nSeconds: %u.%02u\n",
-			(unsigned int)req->duration.tv_sec, (unsigned int)req->duration.tv_usec / 10000);
+			(unsigned int)req->duration.tv_sec, (unsigned int)req->duration.tv_nsec / 10000000);
 
 		addtostatus(msgline);
 	}
@@ -468,7 +498,7 @@ void show_ldap_test_results(service_t *ldaptest)
 		printf("URL        : %s\n", t->testspec);
 		printf("Time spent : %u.%02u\n", 
 			(unsigned int)req->duration.tv_sec, 
-			(unsigned int)req->duration.tv_usec / 10000);
+			(unsigned int)req->duration.tv_nsec / 10000000);
 		printf("LDAP output:\n%s\n", textornull(req->output));
 		printf("------------------------------------------------------\n");
 	}
@@ -506,9 +536,9 @@ int main(int argc, char *argv[])
 		argi++;
 	}
 
-	/* For testing, dont crash in sendmsg when no BBDISP defined */
+	/* For testing, dont crash in sendmsg when no XYMSRV defined */
 	dontsendmessages = 1;
-	if (xgetenv("BBDISP") == NULL) putenv("BBDISP=127.0.0.1");
+	if (xgetenv("XYMSRV") == NULL) putenv("XYMSRV=127.0.0.1");
 
 	memset(&item, 0, sizeof(item));
 	memset(&host, 0, sizeof(host));
@@ -525,7 +555,7 @@ int main(int argc, char *argv[])
 	item.testspec = urlunescape(argv[argi]);
 
 	host.firstldap = &item;
-	host.hostname = "ldaptest.bbgen";
+	host.hostname = "ldaptest.xymon";
 	host.ldapuser = NULL;
 	host.ldappasswd = NULL;
 

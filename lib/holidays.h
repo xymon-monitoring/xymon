@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -28,7 +28,7 @@ typedef struct holiday_t {
 extern int load_holidays(int year);
 extern int getweekdayorholiday(char *key, struct tm *t);
 extern char *isholiday(char *key, int dayinyear);
-extern void printholidays(char *key, strbuffer_t *buf);
+extern void printholidays(char *key, strbuffer_t *buf, int mfirst, int mlast);
 
 #endif
 

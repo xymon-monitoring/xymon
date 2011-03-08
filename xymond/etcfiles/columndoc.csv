@@ -33,7 +33,6 @@ imaps;The <b>imaps</b> column shows the status when trying to communicate with t
 nntps;The <b>nntps</b> column shows the status when trying to communicate with the NNTP News service on the host over an SSL-encrypted connection. NNTP is used to access discussion groups hosted by a central server.;
 ldaps;The <b>ldaps</b> column shows the status of the LDAP Directory Service on the host when accessed over an SSL-encrypted connection. ldap is commonly used for storing information about users, e.g. their login-names and passwords, so if the ldap service is not running then users may have problems getting access to their systems.;
 bbd;The <b>bbd</b> column shows the status of the Xymon or Big Brother service on the host. The bbd service is an essential part of the Xymon or Big Brother monitoring system, so a failure of this service typically means that a large part of the monitoring system is no longer operational.;
-
 dns;The <b>dns</b> column shows the status when trying to use the DNS Domain Name service on the host. dns is an essential part of any network today, and a failure of the dns server will often result in multiple systems failing to work.;
 dig;The <b>dig</b> column shows the status when trying to use the DNS Domain Name service on the host. dns is an essential part of any network today, and a failure of the dns server will often result in multiple systems failing to work.;
 ntp;The <b>ntp</b> column shows the status when trying to use the NTP Network Time service on the host. ntp enables computers to synchronize their internal clocks, typically with an external and extremely accurate clock.;
@@ -47,10 +46,10 @@ memory;The <b>memory</b> column shows how much of the system memory (RAM) and sw
 procs;The <b>procs</b> column shows the status of select processes that are expected to run on the system.;
 svcs;The <b>svcs</b> column shows the status of select system services that are expected to run on the system.;
 msgs;The <b>msgs</b> column monitors system log-files or the Event log for warnings or critical errors.;
-bbgen;The <b>bbgen</b> column shows the status of the Xymon bbgen task. This task is responsible for updating the webpages you see when looking at the Xymon status view.;
-bbproxy;The <b>bbproxy</b> column shows the status of the Xymon bbproxy task. bbproxy is used to forward Xymon status-reports from one part of the network to another, so a failure of this task may result in servers that are not being monitored.;
-bbtest;The <b>bbtest</b> column shows the status of the Xymon network-service monitoring task. This task is responsible for testing all of the network services being monitored. ;
-hobbitd;The <b>hobbitd</b> column shows the status of the central Xymon daemon.;
+xymongen;The <b>xymongen</b> column shows the status of the Xymon xymongen task. This task is responsible for updating the webpages you see when looking at the Xymon status view.;
+xymonproxy;The <b>xymonproxy</b> column shows the status of the Xymon xymonproxy task. xymonproxy is used to forward Xymon status-reports from one part of the network to another, so a failure of this task may result in servers that are not being monitored.;
+xymonnet;The <b>xymonnet</b> column shows the status of the Xymon network-service monitoring task. This task is responsible for testing all of the network services being monitored. ;
+xymond;The <b>xymond</b> column shows the status of the central Xymon daemon.;
 info;The <b>info</b> column shows static information about how this host is configured in the Xymon system.;
 trends;The <b>trends</b> column holds a collection of the graphs that show trends in the utilisation, response-times etc. for the services monitored on this host.;
 graphs;The <b>graphs</b> column holds a collection of the graphs that show trends in the utilisation, response-times etc. for the services monitored on this host.;

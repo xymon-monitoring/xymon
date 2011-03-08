@@ -1,0 +1,144 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of REPORT.CGI</TITLE>
+</HEAD><BODY>
+<H1>REPORT.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+report.cgi - CGI front-end to xymongen reporting
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>report.cgi [--noclean] [xymongen-options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>report.cgi</B>
+is invoked as a CGI script via the report.sh CGI wrapper.
+It triggers the generation of a Xymon availability
+report for the timeperiod specified by the CGI paramaters.
+<P>
+report.cgi is passed a QUERY_STRING environment variable with the
+following parameters:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;start-mon&nbsp;(Start&nbsp;month&nbsp;of&nbsp;the&nbsp;report)
+<BR>&nbsp;&nbsp;&nbsp;start-day&nbsp;(Start&nbsp;day-of-month&nbsp;of&nbsp;the&nbsp;report)
+<BR>&nbsp;&nbsp;&nbsp;start-yr&nbsp;&nbsp;(Start&nbsp;year&nbsp;of&nbsp;the&nbsp;report)
+<BR>&nbsp;&nbsp;&nbsp;end-mon&nbsp;&nbsp;&nbsp;(End&nbsp;month&nbsp;of&nbsp;the&nbsp;report)
+<BR>&nbsp;&nbsp;&nbsp;end-day&nbsp;&nbsp;&nbsp;(End&nbsp;day-of-month&nbsp;of&nbsp;the&nbsp;report)
+<BR>&nbsp;&nbsp;&nbsp;end-yr&nbsp;&nbsp;&nbsp;&nbsp;(End&nbsp;year&nbsp;of&nbsp;the&nbsp;report)
+<BR>&nbsp;&nbsp;&nbsp;style&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Report&nbsp;style)
+<BR>&nbsp;
+The following non-standard parameters are handled by the
+xymongen version of report.cgi:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;suburl&nbsp;&nbsp;&nbsp;&nbsp;(Page&nbsp;in&nbsp;report&nbsp;to&nbsp;go&nbsp;to,&nbsp;if&nbsp;not&nbsp;the&nbsp;top&nbsp;page)
+<P>
+The &quot;month&quot; parameters must be specified as the three-letter
+english month name abbreviation: Jan, Feb, Mar ...
+<P>
+Start- and end-days are in the range 1..31; the start- and end-year
+must be specified including century (e.g. &quot;2003&quot;).
+<P>
+End-times beyond the current time are silently replaced with 
+the current time.
+<P>
+The generated report will include data for the start- and end-days,
+i.e. the report will begin at 00:00:00 of the start-day, and end 
+at 23:59:59 of the end-day.
+<P>
+The &quot;style&quot; parameter is passed directly to 
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
+
+and should be &quot;crit&quot;, &quot;non-crit&quot; or &quot;all&quot;. Other values result
+in undefined behaviour.
+<P>
+All of the processing involved in generating the report is done 
+by invoking 
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
+
+with the proper &quot;--reportopts&quot; option.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--noclean<DD>
+Do not clean the XYMONREPDIR directory of old reports. Makes the
+report-tool go a bit faster - instead, you can clean up the
+XYMONREPDIR directory e.g. via a cron-job.
+<P>
+<DT>--env=FILENAME<DD>
+Load the environment from FILENAME before executing the CGI.
+<P>
+<DT>xymongen-options<DD>
+All other options passed to report.cgi are passed on to the 
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
+
+program building the report files.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>FILES</H2>
+
+<DL COMPACT>
+<DT>$XYMONHOME/web/report_header<DD>
+HTML template header for the report request form
+<P>
+<DT>$XYMONHOME/web/report_footer<DD>
+HTML template footer for the report request form
+<P>
+<DT>$XYMONHOME/web/report_form<DD>
+HTML template report request form
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>XYMONGENREPOPTS<DD>
+xymongen options passed by default to the report.cgi. This 
+happens in the report.sh wrapper.
+<DT>XYMONHOME<DD>
+Home directory of the Xymon server installation
+<DT>XYMONREPDIR<DD>
+Directory where generated reports are stored. This directory must
+be writable by the userid executing the CGI script, typically
+&quot;www&quot;, &quot;apache&quot; or &quot;nobody&quot;. Default: $XYMONHOME/www/rep/
+<DT>XYMONREPURL<DD>
+The URL prefix to use when accessing the reports via a browser. 
+Default: $XYMONWEB/rep
+<P>
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/xymongen.1.html">xymongen</A>(1), <A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">FILES</A><DD>
+<DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

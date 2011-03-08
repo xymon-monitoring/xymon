@@ -1,0 +1,82 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of ORCAXYMON</TITLE>
+</HEAD><BODY>
+<H1>ORCAXYMON</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+orcaxymon - Xymon client utility to grab data from ORCA
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>orcaxymon --orca=PREFIX [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>NOTICE</H2>
+
+This utility is included in the client distribution for Xymon 4.2.
+However, the backend module to parse the data it sends it <B>NOT</B>
+included in Xymon 4.2. It is possible to use the generic Xymon
+NCV data handler in
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
+
+to process ORCA data, if you have an urgent need to do so.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>orcaxymon</B> is an add-on tool for the Xymon client. It is 
+used to grab data collected by the ORCA data collection tool 
+(orcallator.se), and send it to the Xymon server in NCV format.
+<P>
+orcaxymon should run from the client
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
+
+utility, i.e. there must be an entry in the 
+<I><A HREF="../man5/clientlaunch.cfg.5.html">clientlaunch.cfg</A>(5)</I>
+
+file for orcaxymon.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--orca=PREFIX<DD>
+The filename prefix for the ORCA data log. Typically this is the
+directory for the ORCA logs, followed by &quot;orcallator&quot;. The actual
+filename for the ORCA logs include a timestamp and sequence number, 
+e.g. &quot;orcallator-2006-06-20-000&quot;. This option is required.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man7/xymon.7.html">xymon</A>(7), <A HREF="../man5/clientlaunch.cfg.5.html">clientlaunch.cfg</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">NOTICE</A><DD>
+<DT><A HREF="#lbAE">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:17 GMT, January 20, 2011
+</BODY>
+</HTML>

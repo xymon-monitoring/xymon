@@ -1,94 +1,100 @@
 #! /bin/sh
 #
-# hobbitclient    This shell script takes care of starting and stopping
-#                 the hobbit client.
+# xymonclient    This shell script takes care of starting and stopping
+#                the Xymon client.
+
+### BEGIN INIT INFO
+# Provides:          xymon-client
+# Required-Start:    $remote_fs $network
+# Should-Start:      $all
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Xymon system monitor client
+# Description:       Client to feed system data to a remote Xymon server.
+### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/lib/xymon/client/runclient.sh
-NAME=hobbitclient
-DESC=hobbitclient
+DAEMON="/usr/lib/xymon/client/bin/xymonlaunch"
+NAME=xymonclient
+DESC="Xymon Client"
+PIDFILE="/var/run/xymon/clientlaunch.pid"
+XYMONCLIENTHOME="/usr/lib/xymon/client"
 
 test -x $DAEMON || exit 0
 
-CMD="$1"
+. /lib/lsb/init-functions
+. /usr/share/xymon/init-common.sh
 
-# Include hobbitclient defaults if available
-DMNOPTS=""
-if [ -f /etc/default/hobbit-client ] ; then
-	. /etc/default/hobbit-client
-else
-	echo "Installation failure - missing /etc/default/hobbit-client"
-	exit 1
+# Include xymonclient defaults if available
+if [ -f /etc/default/xymon-client ] ; then
+	. /etc/default/xymon-client
 fi
+[ -z "$MACHINE" ] && MACHINE="$CLIENTHOSTNAME"
+[ -z "$MACHINEDOTS" ] && MACHINEDOTS="`hostname -f`"
+export XYMONSERVERS XYMONCLIENTHOME CLIENTHOSTNAME MACHINE MACHINEDOTS
 
-if [ "$HOBBITSERVERS" = "" ]; then
-	echo "Please configure HOBBITSERVERS in /etc/default/hobbit-client"
-	exit 1
-fi
-
-set_servers () {
-	set $HOBBITSERVERS
-	if [ $# -eq 1 ]; then
-		echo "BBDISP=\"$HOBBITSERVERS\"" >/var/run/hobbitclient-runtime.cfg
-		echo "BBDISPLAYS=\"\"" >>/var/run/hobbitclient-runtime.cfg
-	else
-		echo "BBDISP=\"0.0.0.0\"" >/var/run/hobbitclient-runtime.cfg
-		echo "BBDISPLAYS=\"$HOBBITSERVERS\"" >>/var/run/hobbitclient-runtime.cfg
-	fi
-}
-
-kill_rogue_vmstat () {
-	for VMSTAT_PID in `ps -U hobbit | grep vmstat | awk '{print $1}'`; do
-		kill ${VMSTAT_PID}
-	done
-	# wait for the nohup parent shell script to finish
-	sleep 1
-}
-
-clean_var_run () {
-	rm /var/run/hobbitclient-runtime.cfg >/dev/null 2>&1
-}
-
-clean_tmp () {
-	# it's not the cleanest but debian client use /tmp as BBTMP anyway
-	find /tmp -user hobbit -exec rm -rf \{} \; >/dev/null 2>&1
-}
-
-if [ "$CLIENTHOSTNAME" != "" ]; then
-	DMNOPTS="${DMNOPTS} --hostname=${CLIENTHOSTNAME}"
-fi
-if [ "$CLIENTOS" != "" ]; then
-	DMNOPTS="${DMNOPTS} --os=${CLIENTOS}"
-fi
-
-set -e
-
-case "$CMD" in
+case "$1" in
   start)
-	echo -n "Starting $DESC: "
-	set_servers
-	su -c "$DAEMON $DMNOPTS start" - hobbit
-	echo "$NAME."
+	# do not run the client script on the server
+	[ -x /usr/lib/xymon/server/bin/xymond ] && exit 0
+
+	create_includefiles
+
+	log_daemon_msg "Starting $DESC" "$NAME"
+	start-stop-daemon --exec $DAEMON --chuid xymon --umask 022 --start \
+		-- \
+		--config=/etc/xymon/clientlaunch.cfg \
+		--log=/var/log/xymon/clientlaunch.log \
+		--pidfile=$PIDFILE
+	log_end_msg $?
 	;;
   stop)
-	echo -n "Stopping $DESC: "
-	su -c "$DAEMON stop" - hobbit
-	kill_rogue_vmstat
-	clean_tmp
-	clean_var_run
-	echo "$NAME."
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	start-stop-daemon --exec $DAEMON --pidfile $PIDFILE --stop --retry 5
+	log_end_msg $?
 	;;
-  restart|force-reload)
-	echo -n "Restarting $DESC: "
-	su -c "$DAEMON stop" - hobbit
-	kill_rogue_vmstat
-	clean_tmp
-	su -c "$DAEMON $DMNOPTS start" - hobbit
-	echo "$NAME."
+  status)
+	if test -s $PIDFILE
+	then
+		kill -0 `cat $PIDFILE`
+		if test $? -eq 0
+		then
+                        echo "Xymon client running with PID `cat $PIDFILE`"
+			exit 0
+		else
+			echo "Xymon client not running, removing stale PID file"
+			rm -f $PIDFILE
+			exit 1
+		fi
+	else
+		echo "Xymon client does not appear to be running"
+		exit 3
+	fi
+	;;
+  restart)
+	if [ -x /usr/lib/xymon/server/bin/xymond ] ; then
+		log_action_msg "Xymon server installed. Please restart 'xymon' instead"
+		exit 0
+	fi
+	$0 stop
+	sleep 1
+	$0 start
+	;;
+  reload|force-reload)
+	[ -x /usr/lib/xymon/server/bin/xymond ] && exit 0
+	create_includefiles
+	kill -HUP `cat /var/run/xymon/clientlaunch.pid`
+	;;
+  rotate)
+	for PIDFILE in /var/run/xymon/*.pid
+	do
+		test -e $PIDFILE && kill -HUP `cat $PIDFILE`
+	done
 	;;
   *)
 	N=/etc/init.d/$NAME
-	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	echo "Usage: $N {start|stop|restart|force-reload|status|rotate}" >&2
 	exit 1
 	;;
 esac

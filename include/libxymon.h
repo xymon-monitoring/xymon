@@ -1,15 +1,15 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __LIBBBGEN_H__
-#define __LIBBBGEN_H__
+#ifndef __LIBXYMON_H__
+#define __LIBXYMON_H__
 
 #include <stdio.h>
 #include <time.h>
@@ -26,13 +26,26 @@ typedef struct strbuffer_t {
 
 #define STRBUF(buf) (buf->s)
 #define STRBUFLEN(buf) (buf->used)
-#define STRBUFSZ(buf) (buf->sz)
 
 #define IP_ADDR_STRLEN 16
 
 #include "version.h"
 #include "config.h"
 #include "../lib/osdefs.h"
+
+#ifdef XYMONWINCLIENT
+#include "../lib/strfunc.h"
+#include "../lib/errormsg.h"
+#include "../lib/environ.h"
+#include "../lib/stackio.h"
+#include "../lib/timefunc.h"
+#include "../lib/memory.h"
+#include "../lib/sendmsg.h"
+#include "../lib/holidays.h"
+#include "../lib/rbtr.h"
+#include "../lib/msort.h"
+#include "../lib/misc.h"
+#else
 
 /* Defines CGI URL's */
 #include "../lib/cgiurls.h"
@@ -49,20 +62,20 @@ typedef struct strbuffer_t {
 #include "../lib/availability.h"
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
-#include "../lib/clientlocal.h"
 #include "../lib/color.h"
-#include "../lib/compression.h"
+#include "../lib/crondate.h"
+#include "../lib/clientlocal.h"
 #include "../lib/digest.h"
 #include "../lib/encoding.h"
 #include "../lib/environ.h"
 #include "../lib/errormsg.h"
 #include "../lib/files.h"
-#include "../lib/hobbitrrd.h"
+#include "../lib/xymonrrd.h"
 #include "../lib/holidays.h"
 #include "../lib/ipaccess.h"
 #include "../lib/loadalerts.h"
 #include "../lib/loadhosts.h"
-#include "../lib/loadnkconf.h"
+#include "../lib/loadcriticalconf.h"
 #include "../lib/locator.h"
 #include "../lib/matching.h"
 #include "../lib/md5.h"
@@ -83,6 +96,7 @@ typedef struct strbuffer_t {
 #include "../lib/timefunc.h"
 #include "../lib/timing.h"
 #include "../lib/url.h"
+#endif
 
 #endif
 

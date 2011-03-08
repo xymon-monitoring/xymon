@@ -1,18 +1,18 @@
-.TH HOBBITCGI.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH CGIOPTIONS.CFG 5 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbitcgi.cfg \- Command-line parameters for the Xymon CGI tools
+cgioptions.cfg \- Command-line parameters for the Xymon CGI tools
 
 .SH SYNOPSIS
-.B $BBHOME/etc/hobbitcgi.cfg
+.B $XYMONHOME/etc/cgioptions.cfg
 
 .SH DESCRIPTION
-.I hobbitcgi.cfg(1)
-controls the commandline options passed to all of the Xymon CGI tools
+.I cgioptions.cfg(1)
+controls the command-line options passed to all of the Xymon CGI tools
 through their respective shell-script wrappers. Typically the options
 listed here are used for system-wide configuration of the CGI utilities,
 e.g. to define where they read configuration files.
 
-The exact set of commandline options available are described in the
+The exact set of command-line options available are described in the
 man-page for each of the CGI utilities.
 
 The file is "sourced" into the shell script wrapper, so assignments to
@@ -21,98 +21,98 @@ the CGI-specific variables must follow standard shell-script syntax.
 .SH SETTINGS
 .IP CGI_ACKINFO_OPTS
 Options for the
-.I hobbit-ackinfo.cgi(1)
+.I ackinfo.cgi(1)
 utility.
 
 .IP CGI_ACK_OPTS
 Options for the
-.I bb-ack.cgi(1)
+.I acknowledge.cgi(1)
 utility.
 
 .IP CGI_CSVINFO_OPTS
 Options for the
-.I bb-csvinfo.cgi(1)
+.I csvinfo.cgi(1)
 utility.
 
 .IP CGI_DATEPAGE_OPTS
 Options for the
-.I bb-datepage.cgi(1)
+.I datepage.cgi(1)
 utility.
 
 .IP CGI_ENADIS_OPTS
 Options for the
-.I hobbit-enadis.cgi(8)
+.I enadis.cgi(8)
 utility.
 
 .IP CGI_EVENTLOG_OPTS
 Options for the
-.I bb-eventlog.cgi(1)
+.I eventlog.cgi(1)
 utility.
 
 .IP CGI_FINDHOST_OPTS
 Options for the
-.I bb-findhost.cgi(1)
+.I findhost.cgi(1)
 utility.
 
 .IP CGI_HIST_OPTS
 Options for the
-.I bb-hist.cgi(1)
+.I history.cgi(1)
 utility.
 
-.IP CGI_HOBBITCOLUMN_OPTS
+.IP CGI_COLUMNDOC_OPTS
 Xymon-specific options for column documentation. This uses the
-.I bb-csvinfo.cgi(1)
+.I csvinfo.cgi(1)
 utility with the \fBserver/etc/columndoc.cfg\fR configuration file.
 
-.IP CGI_HOBBITCONFREPORT_OPTS
+.IP CGI_CONFREPORT_OPTS
 Options for the
-.I hobbit-confreport.cgi(1)
+.I confreport.cgi(1)
 utility.
 
-.IP CGI_HOBBITGRAPH_OPTS
+.IP CGI_SHOWGRAPH_OPTS
 Options for the
-.I hobbitgraph.cgi(1)
+.I showgraph.cgi(1)
 utility.
 
 .IP CGI_HOSTGRAPHS_OPTS
 Options for the
-.I hobbit-hostgraphs.cgi(1)
+.I hostgraphs.cgi(1)
 utility.
 
-.IP CGI_NKEDIT_OPTS
+.IP CGI_CRITEDIT_OPTS
 Options for the
-.I hobbit-nkedit.cgi(1)
+.I criticaleditor.cgi(1)
 utility.
 
-.IP CGI_NKVIEW_OPTS
+.IP CGI_CRITVIEW_OPTS
 Options for the
-.I hobbit-nkview.cgi(1)
+.I criticalview.cgi(1)
 utility.
 
 .IP CGI_REPLOG_OPTS
 Options for the
-.I bb-replog.cgi(1)
+.I reportlog.cgi(1)
 utility.
 
 .IP CGI_REP_OPTS
 Options for the
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 utility.
 
 .IP CGI_SNAPSHOT_OPTS
 Options for the
-.I bb-snapshot.cgi(1)
+.I snapshot.cgi(1)
 utility.
 
 .IP CGI_SVCHIST_OPTS
 Options for the
-.I hobbitsvc.cgi(1)
+.I svcstatus.cgi(1)
 utility when used to view historical logs. Note that the
 "--historical" option must be included in this setting.
 
 .IP CGI_SVC_OPTS
 Options for the
-.I hobbitsvc.cgi(1)
+.I svcstatus.cgi(1)
 utility.
 
 .SH "SEE ALSO"

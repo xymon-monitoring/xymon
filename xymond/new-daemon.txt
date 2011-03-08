@@ -154,30 +154,29 @@
      the same message multiple times).
 
 * Environment settings - bbd_filestore
-  - BBLOGS : Default "--dir" when run with --status
-  - BBDATA : Default "--dir" when run with --data
-  - BBNOTES: Default "--dir" when run with --notes
+  - XYMONRAWSTATUSDIR : Default "--dir" when run with --status
+  - XYMONDATADIR      : Default "--dir" when run with --data
+  - XYMONNOTESDIR     : Default "--dir" when run with --notes
 
 * Environment settings - bbd_history
-  - BBALLHISTLOG  : If TRUE, the "allevents" file is updated.
-  - BBHOSTHISTLOG : If TRUE, the "hostname" host events file is updated
-  - BBHIST        : Directory for the allevents, host- and status-event logs
-  - SAVESTATUSLOG : If TRUE, the historical full status log is stored
-  - BBHISTLOGS    : Top level directory for the historical full status logs
+  - XYMONALLHISTLOG  : If TRUE, the "allevents" file is updated.
+  - XYMONHOSTHISTLOG : If TRUE, the "hostname" host events file is updated
+  - XYMONHISTDIR     : Directory for the allevents, host- and status-event logs
+  - SAVESTATUSLOG    : If TRUE, the historical full status log is stored
+  - XYMONHISTLOGS    : Top level directory for the historical full status logs
 
 * Environment settings - bbd_net
-  - BBGHOSTS      : Default "--ghosts" value
-  - BBHOSTS       : Default "--bbhosts" value
+  - HOSTSCFG      : Default "--hosts" value
 
 * Environment settings - bb-hostsvc.cgi
   - LARRDS        : Comma-separated list of statuses that have a LARRD graph
   - NONHISTS      : Comma-separated list of statuses with no History button
   - USEBBGEND     : If TRUE, get log via the bbgend net-interface instead of files.
   - CGIBINURL
-  - BBWEB
-  - BBLOGS
-  - BBHISTLOGS
-  - BBSKIN
+  - XYMONWEB
+  - XYMONRAWSTATUSDIR
+  - XYMONHISTLOGS
+  - XYMONSKIN
   - DOTHEIGHT
   - DOTWIDTH
 
@@ -189,8 +188,8 @@
   connection to receive messages. The format is kept as-is, and a
   NUL byte is used to separate one message from the next.
 
-* Use bbproxy to receive messages in "legacy" (non-streaming) format. 
-  bbproxy then implements the client-side part of the new streaming 
+* Use xymonproxy to receive messages in "legacy" (non-streaming) format. 
+  xymonproxy then implements the client-side part of the new streaming 
   protocol.
 
 * The new bbd only accepts stream messages.

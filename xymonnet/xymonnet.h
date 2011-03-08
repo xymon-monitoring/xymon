@@ -1,15 +1,15 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __BBTEST_NET_H__
-#define __BBTEST_NET_H__
+#ifndef __XYMONNET_H__
+#define __XYMONNET_H__
 
 #include <sys/time.h>
 
@@ -23,7 +23,7 @@
 enum toolid_t { TOOL_CONTEST, TOOL_DNS, TOOL_NTP, TOOL_FPING, TOOL_HTTP, TOOL_LDAP, TOOL_RPCINFO };
 
 /*
- * Structure of the bbtest-net in-memory records
+ * Structure of the xymonnet in-memory records
  *
  *  +->service_t
  *  |      testname
@@ -62,7 +62,7 @@ enum toolid_t { TOOL_CONTEST, TOOL_DNS, TOOL_NTP, TOOL_FPING, TOOL_HTTP, TOOL_LD
  */
 
 typedef struct service_t {
-	char *testname;		/* Name of the test = column name in Hobbit report */
+	char *testname;		/* Name of the test = column name in Xymon report */
 	int namelen;		/* Length of name - "testname:port" has this as strlen(testname), others 0 */
 	int portnum;		/* Port number this service runs on */
 	enum toolid_t toolid;	/* Which tool to use */
@@ -128,7 +128,7 @@ typedef struct testitem_t {
 	struct testedhost_t *host;	/* Pointer to testedhost_t record for this host */
 	struct service_t *service;	/* Pointer to service_t record for the service to test */
 
-	char		*testspec;      /* Pointer to the raw testspec in bb-hosts */
+	char		*testspec;      /* Pointer to the raw testspec in hosts.cfg */
 	int		reverse;	/* "!testname" flag */
 	int		dialup;		/* "?testname" flag */
 	int		alwaystrue;	/* "~testname" flag */
@@ -142,7 +142,7 @@ typedef struct testitem_t {
 	char		*certinfo;
 	time_t		certexpires;
 	int		mincipherbits;
-	struct timeval	duration;
+	struct timespec	duration;
 
 	/* For badTEST handling: Need to track downtime duration and poll count */
 	int		badtest[3];
@@ -152,6 +152,7 @@ typedef struct testitem_t {
 	/* Each test engine has its own data */
 	void		*privdata;	/* Private data use by test tool */
 
+	int		internal;	/* For internal use, not to be reported back to Xymon server */
 	struct testitem_t *next;
 } testitem_t;
 

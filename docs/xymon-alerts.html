@@ -22,7 +22,7 @@ a pager, sending an SMS, or however you prefer to get alerted.</p>
 </ul>
 
 <h3><a name="simple">A simple alert configuration</a></h3>
-<p>The configuration file for the Xymon alert module is <em>~/server/etc/hobbit-alerts.cfg</em>.
+<p>The configuration file for the Xymon alert module is <em>~/server/etc/alerts.cfg</em>.
 This file consists of a number of <em>rules</em> that are matched against
 the name of the host that has a problem, the name of the service, the
 time of day and a number of other criteria. Each rule then has a number
@@ -71,28 +71,28 @@ fills up during the night.</p>
 
 <h3><a name="keywords">Keywords in rules and recipients</a></h3>
 <p>These are the keywords for setting up rules:</p>
-<table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
-	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the bb-hosts file.</td></tr>
+<table width="80%" align="center" summary="alerts.cfg keywords">
+	<tr><th align="left" valign="top">PAGE</th><td>rule matching an alert by the name of the page the host is displayed on. This is the name following the "page", "subpage" or "subparent" keyword in the hosts.cfg file.</td></tr>
 	<tr><th align="left" valign="top">EXPAGE</th><td>rule excluding an alert if the pagename matches.</td></tr>
 	<tr><th align="left" valign="top">HOST</th><td>rule matching an alert by the hostname.</td></tr>
 	<tr><th align="left" valign="top">EXHOST</th><td>rule excluding an alert by matching the hostname.</td></tr>
 	<tr><th align="left" valign="top">SERVICE</th><td>rule matching an alert by the service name.</td></tr>
 	<tr><th align="left" valign="top">EXSERVICE</th><td>rule excluding an alert by matching the hostname.</td></tr>
 	<tr><th align="left" valign="top">COLOR</th><td>rule matching an alert by color. Can be "red", "yellow", or "purple".</td></tr>
-	<tr><th align="left" valign="top">TIME</th><td>rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the bb-hosts file (see bb-hosts(5)).</td></tr>
+	<tr><th align="left" valign="top">TIME</th><td>rule matching an alert by the time-of-day. This is specified as the DOWNTIME timespecification in the hosts.cfg file (see hosts.cfg(5)).</td></tr>
 	<tr><th align="left" valign="top">DURATION</th><td>Rule matching an alert if the event has lasted longer/shorter than the given duration. E.g. <em>DURATION&gt;10m</em> (lasted longer than 10 minutes) or <em>DURATION&lt;2h</em> (only sends alerts the first 2 hours). Unless explicitly stated, this is in minutes - you can use 'm', 'h', 'd' for 'minutes', 'hours' and 'days' respectively.</td></tr>
-	<tr><th align="left" valign="top">UNMATCHED</th><td>This keyword on a recipient means that he will only get an alert, if no other alerts have been sent. So you can use it e.g. when setting up alerts to specific people for some services, then after those you add a recipient with the UNMATCHED keyword who will only get those alerts that were not sent anyone else. You can also use it to setup a "catch-all" alert recipient, use the UNMATHED keyword on a recipient at the end of the hobbit-alerts.cfg file.</td></tr>
+	<tr><th align="left" valign="top">UNMATCHED</th><td>This keyword on a recipient means that he will only get an alert, if no other alerts have been sent. So you can use it e.g. when setting up alerts to specific people for some services, then after those you add a recipient with the UNMATCHED keyword who will only get those alerts that were not sent anyone else. You can also use it to setup a "catch-all" alert recipient, use the UNMATHED keyword on a recipient at the end of the alerts.cfg file.</td></tr>
 	<tr><th align="left" valign="top">RECOVERED</th><td>Rule matches if the alert has recovered from an alert state.</td></tr>
 	<tr><th align="left" valign="top">NOTICE</th><td>Rule matches if the message is a "notify" message. This type of message is sent when a host or test is disabled or enabled.</td></tr>
 </table>
 <p>These are the keywords for specifying a recipient:</p>
-<table width="80%" align="center" summary="hobbit-alerts.cfg keywords">
+<table width="80%" align="center" summary="alerts.cfg keywords">
 	<tr><th align="left" valign="top">MAIL</th><td>Recipient who receives an e-mail alert. This takes one parameter, the e-mail address.</td></tr>
 	<tr><th align="left" valign="top">SCRIPT</th><td>Recipient that invokes a script. This takes two parameters: The script filename, and the recipient that gets passed to the script.</td></tr>
 	<tr><th align="left" valign="top">IGNORE</th><td>Recipient that does NOT send an alert, and will cause Xymon to stop looking for any more recipients. See the example below.</td></tr>
 	<tr><th align="left" valign="top">FORMAT</th><td>format of the text message with the alert. Default is "TEXT" (suitable for e-mail alerts). "PLAIN" is the same as TEXT, except it does not include the URL linking to the status webpage. "SMS" is a short message with no subject for SMS alerts. "SCRIPT" is a brief message template for scripts.</td></tr>
 	<tr><th align="left" valign="top">REPEAT</th><td>How often an alert gets repeated. As with the DURATION setting, this is in minutes unless explicitly modified with 'm', 'h', 'd'.</td></tr>
-	<tr><th align="left" valign="top">STOP</th><td>By default, hobbitd_alert looks at all the possible recipients in the hobbit-alerts.cfg file when handling an alert. If you would like it stop after a specific recipient gets an alert, add the STOP keyword to this recipient. This terminates the search for more recipients.</td></tr>
+	<tr><th align="left" valign="top">STOP</th><td>By default, xymond_alert looks at all the possible recipients in the alerts.cfg file when handling an alert. If you would like it stop after a specific recipient gets an alert, add the STOP keyword to this recipient. This terminates the search for more recipients.</td></tr>
 </table>
 
 <h3><a name="wildcards">Wildcards - regular expressions</a></h3>
@@ -108,15 +108,15 @@ hosts. There is a smarter way:
 This particular expression matches "www.foo.com", "intranet.foo.com", "support.foo.com" and
 "mail.foo.com". You can use regular expressions to match hostnames, service-names and page-names.</p>
 
-<p>If you want to test how your alert configuration handles a specific host, you can run hobbitd_alert in <b>test</b> mode - you give it a hostname and servicename as input, and it will go through the configuration and tell you which rules match and who gets an alert.</p>
+<p>If you want to test how your alert configuration handles a specific host, you can run xymond_alert in <b>test</b> mode - you give it a hostname and servicename as input, and it will go through the configuration and tell you which rules match and who gets an alert.</p>
 <pre><tt>
 	osiris:~ $ cd server/
-	osiris:~/server $ ./bin/bbcmd hobbitd_alert --test osiris.hswn.dk cpu
+	osiris:~/server $ ./bin/xymoncmd xymond_alert --test osiris.hswn.dk cpu
 	Matching host:service:page 'osiris.hswn.dk:cpu:' against rule line 109:Matched
 	    *** Match with 'HOST=*' ***
 	Matching host:service:page 'osiris.hswn.dk:cpu:' against rule line 110:Matched
 	    *** Match with 'MAIL henrik@sample.com REPEAT=2 RECOVERED COLOR=red' ***
-	Mail alert with command 'mail -s "BB [12345] osiris.hswn.dk:cpu is RED" henrik@sample.com'
+	Mail alert with command 'mail -s "XYmon [12345] osiris.hswn.dk:cpu is RED" henrik@sample.com'
 </tt></pre>
 
 <h3><a name="scripts">If e-mail is not enough</a></h3>
@@ -142,7 +142,7 @@ tool could look like this:</p>
 	/usr/local/bin/sendsms $RCPT "$BBALPHAMSG"
 </pre>
 <p>Here you can see the script use two environment variables that Xymon sets up for the script: The
-<em>$RCPT</em> is the recipient, i.e. the phone-number "4538761925" that is in the hobbitalerts.cfg
+<em>$RCPT</em> is the recipient, i.e. the phone-number "4538761925" that is in the alerts.cfg
 file. The <em>$BBALPHAMSG</em> is text of the status that triggers the alert.</p>
 
 <p>Although $BBALPHAMSG is nice to have, not all recipients can handle the large messages that may
@@ -173,7 +173,7 @@ with Xymon.</p>
 
 <h3><a name="macros">Save on the typing - use macros</a></h3>
 <p>Say you have a long list of hosts or e-mail adresses that you want to use several times throughout the
-hobbit-alerts.cfg file. Do you have to write the full list every time ? No:<br>
+alerts.cfg file. Do you have to write the full list every time ? No:<br>
 <pre>
 	$WEBHOSTS=%(www|intranet|support|mail).foo.com 
 	

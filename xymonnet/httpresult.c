@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
 /* This is used to implement the testing of HTTP service.                     */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -20,9 +20,9 @@ static char rcsid[] = "$Id$";
 #include <ctype.h>
 #include <sys/stat.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "contest.h"
 #include "httpcookies.h"
 #include "httpresult.h"
@@ -133,11 +133,11 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		if (t->senddata) continue;
 
 		/* Grab session cookies */
-		update_session_cookies(host->hostname, req->bburl.desturl->host, req->headers);
+		update_session_cookies(host->hostname, req->weburl.desturl->host, req->headers);
 
 		totalreports++;
-		if (req->bburl.okcodes || req->bburl.badcodes) {
-			req->httpcolor = statuscolor_by_set(host, req->httpstatus, req->bburl.okcodes, req->bburl.badcodes);
+		if (req->weburl.okcodes || req->weburl.badcodes) {
+			req->httpcolor = statuscolor_by_set(host, req->httpstatus, req->weburl.okcodes, req->weburl.badcodes);
 		}
 		else {
 			req->httpcolor = statuscolor(host, req->httpstatus);
@@ -202,7 +202,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		else if ((req->httpcolor == COL_RED) || (req->httpcolor == COL_YELLOW)) {
 			char m1[100];
 
-			if (req->bburl.okcodes || req->bburl.badcodes) {
+			if (req->weburl.okcodes || req->weburl.badcodes) {
 				sprintf(m1, "Unwanted HTTP status %ld", req->httpstatus);
 			}
 			else if (req->headers) {
@@ -221,14 +221,14 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				p = strchr(m1, '\n'); if (p) *p = '\0';
 			}
 			else {
-				sprintf(m1, "HTTP error %ld", req->httpstatus);
+				sprintf(m1, "Connected, but got empty response (code:%ld)", req->httpstatus);
 			}
 			addtobuffer(msgtext, m1);
 			req->errorcause = strdup(m1);
 		}
 		else {
 			addtobuffer(msgtext, "OK");
-			if (req->bburl.okcodes || req->bburl.badcodes) {
+			if (req->weburl.okcodes || req->weburl.badcodes) {
 				char m1[100];
 
 				sprintf(m1, " (HTTP status %ld)", req->httpstatus);
@@ -281,7 +281,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 				if (req->errorcause) addtostatus(req->errorcause);
 				else addtostatus("failed");
 			}
-			if (req->bburl.okcodes || req->bburl.badcodes) {
+			if (req->weburl.okcodes || req->weburl.badcodes) {
 				char m1[100];
 
 				sprintf(m1, " (HTTP status %ld)", req->httpstatus);
@@ -297,7 +297,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 			sprintf(urlmsg, "\nSeconds: %5d.%02d\n\n", 
 				(unsigned int)req->tcptest->totaltime.tv_sec, 
-				(unsigned int)req->tcptest->totaltime.tv_usec / 10000 );
+				(unsigned int)req->tcptest->totaltime.tv_nsec / 10000000 );
 			addtostatus(urlmsg);
 			xfree(urlmsg);
 		}
@@ -312,7 +312,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		char *urlmsg;
 		http_data_t *req = (http_data_t *) t->privdata;
 
-		if ((t->senddata) || (!req->bburl.columnname) || (req->contentcheck != CONTENTCHECK_NONE)) continue;
+		if ((t->senddata) || (!req->weburl.columnname) || (req->contentcheck != CONTENTCHECK_NONE)) continue;
 
 		/* Handle the "badtest" stuff */
 		color = req->httpcolor;
@@ -327,12 +327,12 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		/* Send off the http status report */
 		init_status(color);
 		sprintf(msgline, "status+%d %s.%s %s %s", 
-			validity, commafy(host->hostname), req->bburl.columnname, colorname(color), timestamp);
+			validity, commafy(host->hostname), req->weburl.columnname, colorname(color), timestamp);
 		addtostatus(msgline);
 
 		addtostatus(" : ");
 		addtostatus(req->errorcause ? req->errorcause : "OK");
-		if (req->bburl.okcodes || req->bburl.badcodes) {
+		if (req->weburl.okcodes || req->weburl.badcodes) {
 			char m1[100];
 
 			sprintf(m1, " (HTTP status %ld)", req->httpstatus);
@@ -360,7 +360,7 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 
 		sprintf(msgline, "\nSeconds: %5d.%02d\n\n", 
 			(unsigned int)req->tcptest->totaltime.tv_sec, 
-			(unsigned int)req->tcptest->totaltime.tv_usec / 10000 );
+			(unsigned int)req->tcptest->totaltime.tv_nsec / 10000000 );
 		addtostatus(msgline);
 
 		addtostatus("\n\n");
@@ -378,9 +378,9 @@ void send_http_results(service_t *httptest, testedhost_t *host, testitem_t *firs
 		req = (http_data_t *) t->privdata;
 		if (req->output) data = req->output;
 
-		msg = (char *)malloc(1024 + strlen(host->hostname) + strlen(req->bburl.columnname) + strlen(data));
-		sprintf(msg, "data %s.%s\n%s", commafy(host->hostname), req->bburl.columnname, data);
-		sendmessage(msg, NULL, BBTALK_TIMEOUT, NULL);
+		msg = (char *)malloc(1024 + strlen(host->hostname) + strlen(req->weburl.columnname) + strlen(data));
+		sprintf(msg, "data %s.%s\n%s", commafy(host->hostname), req->weburl.columnname, data);
+		sendmessage(msg, NULL, XYMON_TIMEOUT, NULL);
 		xfree(msg);
 	}
 
@@ -516,16 +516,16 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			if (nopage && (color == COL_RED)) color = COL_YELLOW;
 		}
 		else {
-			/* This only happens upon internal errors in Hobbit test system */
+			/* This only happens upon internal errors in Xymon test system */
 			color = statuscolor(t->host, req->contstatus);
-			strcpy(cause, "Internal Hobbit error");
+			strcpy(cause, "Internal Xymon error");
 		}
 
 		/* Send the content status message */
 		dbgprintf("Content check on %s is %s\n", req->url, colorname(color));
 
-		if (req->bburl.columnname) {
-			strcpy(conttest, req->bburl.columnname);
+		if (req->weburl.columnname) {
+			strcpy(conttest, req->weburl.columnname);
 		}
 		else {
 			if (contentnum > 0) sprintf(conttest, "%s%d", contenttestname, contentnum);
@@ -566,7 +566,7 @@ void send_content_results(service_t *httptest, testedhost_t *host,
 			addtostatus("\nNo output received from server\n\n");
 		}
 		else if (!host->hidehttp) {
-			/* Dont flood hobbitd with data */
+			/* Dont flood xymond with data */
 			if (req->outlen > MAX_CONTENT_DATA) {
 				*(req->output + MAX_CONTENT_DATA) = '\0';
 				req->outlen = MAX_CONTENT_DATA;

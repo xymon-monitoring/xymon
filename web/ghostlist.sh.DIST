@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# This is the Hobbit wrapper for the ghosts CGI
+# This is the Xymon wrapper for the ghostlist CGI
 
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbit-ghosts.cgi $CGI_GHOSTS_OPTS
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/ghostlist.cgi $CGI_GHOSTS_OPTS
 

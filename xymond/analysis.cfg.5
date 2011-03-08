@@ -1,12 +1,12 @@
-.TH HOBBIT-CLIENTS.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH ANALYSIS.CFG 5 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbit-clients.cfg \- Configuration file for the hobbitd_client module
+analysis.cfg \- Configuration file for the xymond_client module
 
 .SH SYNOPSIS
-.B ~Xymon/server/etc/hobbit-clients.cfg
+.B ~Xymon/server/etc/analysis.cfg
 
 .SH DESCRIPTION
-The hobbit-clients.cfg file controls what color is assigned to
+The analysis.cfg file controls what color is assigned to
 the status-messages that are generated from the Xymon client
 data - typically the cpu, disk, memory, procs- and msgs-columns. Color
 is decided on the basis of some \fBsettings\fR defined in this file;
@@ -73,7 +73,12 @@ CLOCK 15
 .SH DISK STATUS COLUMN SETTINGS
 .sp
 .BR "DISK filesystem warnlevel paniclevel"
+.br
 .BR "DISK filesystem IGNORE"
+.br
+.BR "INODE filesystem warnlevel paniclevel"
+.br
+.BR "INODE filesystem IGNORE"
 .sp
 If the utilization of "filesystem" is reported to exceed "warnlevel"
 or "paniclevel", the "disk" status will go yellow or red, respectively.
@@ -91,8 +96,15 @@ devices, backup-disks and similar hardware.
 "/usr" or "/home". A filesystem-name that begins with "%" is interpreted
 as a Perl-compatible regular expression; e.g. "%^/oracle.*/" will match
 any filesystem whose mountpoint begins with "/oracle".
+
+"INODE" works identical to "DISK", but uses the count of i-nodes in
+the filesystem instead of the amount of disk space. This requires
+a 4.3.x or later Xymon client.
 .sp
-Defaults: warnlevel=90%, paniclevel=95%
+Defaults DISK: warnlevel=90%, paniclevel=95%
+.BR
+Defaults INODE: warnlevel=70%, paniclevel=90%
+
 
 .SH MEMORY STATUS COLUMN SETTINGS
 .sp
@@ -124,12 +136,6 @@ MEMSWAP warnlevel=50 paniclevel=80
 MEMACT  warnlevel=90 paniclevel=97
 .fi
 .LP
-.sp
-.BR "PAGING warnlevel paniclevel"
-.sp
-Paging rates (Page in & out per second) for operating systems
-that measure that data (currently only z/VM and z/VME). Defaults
-are warnlevel=5, paniclevel=10.
 
 .SH PROCS STATUS COLUMN SETTINGS
 .sp
@@ -161,7 +167,7 @@ If "processname" contains whitespace (blanks or TAB), you must enclose
 the full string in double quotes - including the "%" if you use regular
 expression matching. E.g.
 .sp
-    PROC "%hobbitd_channel --channel=data.*hobbitd_rrd" 1 1 yellow
+    PROC "%xymond_channel --channel=data.*xymond_rrd" 1 1 yellow
 .sp
 or
 .sp
@@ -281,8 +287,8 @@ a warning is triggered for files that have a FILE entry, but
 which do not exist.
 .IP "type=TYPE"
 where TYPE is one of "file", "dir", "char", "block",
-"fifo", "socket" or "symlink". Triggers warning if the file is not 
-of the specified type.
+"fifo", or "socket". Triggers warning if the file is not of the
+specified type.
 .IP "ownerid=OWNER"
 triggers a warning if the owner does not match what is listed here.
 OWNER is specified either with the numeric uid, or the user name.
@@ -311,10 +317,10 @@ time (seconds since midnight Jan 1 1970 UTC).
 .IP "ctime>MIN.CTIME, ctime<MAX.CTIME, ctime=TIMESTAMP"
 acts as the mtime checks, but for the ctime timestamp (when the directory
 entry of the file was last changed, eg. by chown, chgrp or chmod).
-.IP "md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM, sha256=SHA256SUM, sha512=SHA512SUM"
-trigger a warning if the file checksum using the MD5, SHA1, RMD160,
-SHA-256 or SHA-512 message digest algorithms do not match the one configured 
-here. Note: The "file" entry in the
+.IP "md5=MD5SUM, sha1=SHA1SUM, rmd160=RMD160SUM"
+trigger a warning if the file checksum using the MD5, SHA1 or RMD160 
+message digest algorithms do not match the one configured here. Note: 
+The "file" entry in the
 .I client-local.cfg(5)
 file must specify which algorithm to use.
 
@@ -408,99 +414,63 @@ number of active SSH connections, and warn if there are more than 5.
 .br
         PORT LOCAL=%[.:]22$ STATE=ESTABLISHED MAX=5 TRACK=ssh TEXT=SSH
 .sp
-
-.SH SVC STATUS COLUMN SETTINGS (WINDOWS SERVICES)
 .sp
-.BR "SVC startup status color"
+.SH SVCS status (Microsoft Windows clients)
 .sp
-The "svcs" listing sent by the client will be scanned to check 
-that specific services are running.
+.BR "SVC servicename status=(started|stopped) [startup=automatic|disabled|manual]"
 .sp
-"servicename" is a simple string, in which case this string must
-show up in the "svcs" listing.
-Note that servicename is case-sensitive. 
+.SH DS - RRD based status override
+.sp
+.BR "DS column filename:dataset rules COLOR=colorname TEXT=explanation"
+.sp
+"column" is the statuscolumn that will be modified. "filename" is
+the name of the RRD file holding the data you use for comparison.
+"dataset" is the name of the dataset in the RRD file - the "rrdtool info"
+command is useful when determining these.
+"rules" determine when to apply the override. You can use
+">", ">=", "<" or "<=" to compare the current measurement
+value against one or more thresholds. "explanation" is a text
+that will be shown to explain the override - you can use some
+placeholders in the text: "&N" is replaced with the name of the
+dataset, "&V" is replaced with the current value, "&L" is replaced
+by the low threshold, "&U" is replaced with the upper threshold.
+.sp
+NOTE: This rule uses the \fbraw\fR data value from a client
+to examine the rules. So this type of test is only really
+suitable for datasets that are of the "GAUGE" type. It cannot
+be used meaningfully for datasets that use "COUNTER" or
+"DERIVE" - e.g. the datasets that are used to capture network
+packet traffic - because the data stored in the RRD for
+COUNTER-based datasets undergo a transformation (calculation)
+when going into the RRD. Xymon does not have direct access to
+the calculated data.
+.sp
+Example: Flag "conn" status a yellow if responsetime exceeds
+100 msec.
 .br
-If "servicename" contains whitespace (blanks or TAB), you must enclose
-the full string in double quotes. You cannot use regular expression.
-Both options startup and status are required and are simple strings, and
-must show up in the "svcs" listing as StartupType and Status columns.
+	DS tcp.conn.rrd:sec >0.1 COLOR=yellow TEXT="Response time &V exceeds &U seconds"
 .sp
-    SVC Fax startup=manual status=stopped
-    SVC MSSQLSERVER startup=automatic status=started
+.SH MQ Series SETTINGS
 .sp
-You can have multiple "SVC" entries for the same host, all of the
-checks are merged into the "svcs" status and the most severe
-check defines the color of the status. 
-.sp
-Example: Check that SQL Server Agent is running:
+.BR "MQ_QUEUE queuename [age-warning=N] [age-critical=N] [depth-warning=N] [depth-critical=N]"
 .br
-	SVC SQLSERVERAGENT startup=automatic status=started color=yellow
+.BR "MQ_CHANNEL channelname [warning=PATTERN] [alert=PATTERN]"
 .sp
-Defaults:
-.br
-	color="red".
-.br
-	Note that no service are checked by default.
-
-
-.SH SNMP-BASED (MIB) STATUS COLUMN SETTINGS
+This is a set of checks for checking the health of IBM MQ message-queues.
+It requires the "mq.sh" or similar collector module to run on a node with
+access to the MQ "Queue Manager" so it can report the status of queues
+and channels.
 .sp
-.BR "MIB mibname:varname [KEY=key] [MAX=maxvalue] [MIN=minvalue] [MATCH=pattern] [COLOR=color]"
+The MQ_QUEUE setting checks the health of a single queue: You can warn 
+(yellow) or alert (red) based on the depth of the queue, and/or the
+age of the oldest entry in the queue. These values are taken directly
+from the output generated by the "runmqsc" utility.
 .sp
-This defines criteria which is used when analyzing data collected by the
-.I hobbit_snmpcollect(1)
-utility.
-"mibname" is the name of the dataset, as defined in the
-.I hobbit-snmpmibs.cfg(5)
-file. "varname" is the name of the MIB variable to check - this is also defined
-in the hobbit-snmpmibs.cfg file. "maxvalue" is the maximum value allowed for
-this variable, "minvalue" is the minimum value allowed - these two are for
-numeric data and are integers. "pattern" is a pattern used to match variables
-that contain text data - e.g. to check if a link has the status "up". If "pattern"
-begins with a '%' character, is is treated as a regular expression.
+The MQ_CHANNEL setting checks the health of a single MQ channel: You
+can warn or alert based on the reported status of the channel. The
+PATTERN is a normal pattern, i.e. either a list of status keywords,
+or a regular expression pattern.
 .sp
-The standard TRACK setting has no effect here, since the 
-.I hobbit-snmpmibs.cfg
-file defines the variables that are tracked in RRD files.
-
-
-.SH COLUMNS MODIFIED BY GRAPH DATA
-.sp
-.BR "DS column rrdfile:rrddataset criterium [COLOR=color]
-.sp
-"column" is the name of an existing status column. "rrdfile" is the
-filename of an RRD file, or a regular expression used to match against
-the filename. "rrddataset" is the name of a dataset in the RRD file.
-"criterium" consists of a numeric comparison operator (">", "<",
-">=" or "<=") followed by a number. E.g.
-.sp
-	DS cpu vmstat.rrd:cpu_idl >=50 COLOR=green
-.br
-	DS cpu vmstat.rrd:cpu_idl >20 <50 COLOR=yellow
-.br
-	DS cpu vmstat.rrd:cpu_idl <=20 COLOR=red
-.br
-	DS http %tcp.http:sec >10 COLOR=red "TEXT=Slow URL (&V sec)"
-.sp
-This type of rule is for using data fed into the Hobbit RRD graphs
-to modify the color of an existing status column. E.g. the color of
-the "cpu" status is normally controlled by the LOAD setting (see above),
-but it is often more interesting to use data from the "vmstat" command
-where the percentage of idle CPU time is reported. Or it is not enough
-that a website responds, it must also do so in less than 10 seconds.
-.sp
-As the example above illustrates, there can be multiple rules for the same
-data item. You should normally write the rules so that only one of them
-matches; if there is more than one match, the order of the rules becomes 
-significant, and the last rule to match decides the color.
-.sp
-The TEXT string (if present) will appear on the modified status page. 
-Inside this string, the tokens "&V", "&N", "&L" and "&U" are replaced
-with the current value, the rrddataset name, the lower limit and the
-upper limit, respectively. All numbers are printed as floating point
-numbers, with 2 decimals.
-
-
 .SH CHANGING THE DEFAULT SETTINGS
 If you would like to use different defaults for the settings described above, 
 then you can define the new defaults after a DEFAULT line. E.g. this would
@@ -521,12 +491,12 @@ DEFAULT
 All of the settings can be applied to a group of hosts, by preceding them with
 rules. A rule defines of one of more filters using these keywords (note that
 this is identical to the rule definitions used in the
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 file).
 
 .BR "PAGE=targetstring"
-Rule matching an alert by the name of the page in BB. "targetstring" is the path of
-the page as defined in the bb-hosts file. E.g. if you have this setup:
+Rule matching an alert by the name of the page in XYmon. "targetstring" is the path of
+the page as defined in the hosts.cfg file. E.g. if you have this setup:
 .IP
 .nf
 page servers All Servers
@@ -552,7 +522,7 @@ Rule excluding a host if the pagename matches.
 
 .BR "HOST=targetstring"
 Rule matching a host by the hostname.
-"targetstring" is either a comma-separated list of hostnames (from the bb-hosts file),
+"targetstring" is either a comma-separated list of hostnames (from the hosts.cfg file),
 "*" to indicate "all hosts", or a Perl-compatible regular expression.
 E.g. "HOST=dns.foo.com,www.foo.com" identifies two specific hosts;
 "HOST=%www.*.foo.com EXHOST=www-test.foo.com" matches all hosts with a name
@@ -572,7 +542,7 @@ Exclude all hosts belonging to "classname" from this rule.
 
 .BR "TIME=timespecification"
 Rule matching by the time-of-day. This is specified as the DOWNTIME 
-time specification in the bb-hosts file.  E.g. "TIME=W:0800:2200"
+time specification in the hosts.cfg file.  E.g. "TIME=W:0800:2200"
 applied to a rule will make this rule active only on week-days between
 8AM and 10PM.
 
@@ -588,7 +558,7 @@ To handle this, all rules can have a "GROUP=groupname" setting.
 When a rule with this setting triggers a yellow or red status,
 the groupname is passed on to the Xymon alerts module, so you
 can use it in the alert rule definitions in 
-.I hobbit-alerts.cfg(5)
+.I alerts.cfg(5)
 to direct alerts to the correct group of people.
 
 .SH RULES: APPLYING SETTINGS TO SELECTED HOSTS
@@ -633,7 +603,7 @@ file- and directory-names in the
 .I client-local.cfg(5)
 file. If the filenames are not listed there, the clients will not collect
 any data about these files/directories, and the settings in the 
-hobbit-clients.cfg file will be silently ignored.
+analysis.cfg file will be silently ignored.
 
 The ability to compute file checksums with MD5, SHA1 or RMD160 should not be
 used for general-purpose file integrity checking, since the overhead of calculating
@@ -646,5 +616,5 @@ is not considered strong enough when a high level of security is required.
 
 
 .SH "SEE ALSO"
-hobbitd_client(8), client-local.cfg(5), hobbitd(8), xymon(7)
+xymond_client(8), client-local.cfg(5), xymond(8), xymon(7)
 

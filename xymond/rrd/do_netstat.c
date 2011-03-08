@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -525,6 +525,9 @@ int do_netstat_rrd(char *hostname, char *testname, char *classname, char *pagepa
 
 	  case OS_UNKNOWN:
 		errprintf("Host '%s' reports netstat for an unknown OS\n", hostname);
+		return -1;
+
+	  default:
 		return -1;
 	}
 

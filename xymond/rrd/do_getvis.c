@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* This module handles "getvis" messages.                                     */
 /*                                                                            */
@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char getvis_rcsid[] = "$Id: do_getvis.c,v 1.00 2008/09/08 20:30:00 henrik Exp $";
+static char getvis_rcsid[] = "$Id: do_getvis.c 6585 2010-11-14 15:12:56Z storner $";
 
 static char *getvis_params[]  = { "DS:below:GAUGE:600:0:100", "DS:any:GAUGE:600:0:100", NULL };
 static char *getvis_tpl       = NULL;

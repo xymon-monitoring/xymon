@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* Hobbitd worker module, to capture status messages for a particulr host     */
+/* xymond worker module, to capture status messages for a particulr host      */
 /* or test, or data type. This is fed from the status- or data-channel, and   */
 /* simply logs the data received to a file.                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,13 +19,11 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <signal.h>
 #include <errno.h>
 
-#include "libbbgen.h"
-#include "hobbitd_worker.h"
-
-#include <signal.h>
-
+#include "libxymon.h"
+#include "xymond_worker.h"
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
@@ -35,7 +33,7 @@ int main(int argc, char *argv[])
 	char *msg;
 	int running;
 	int argi, seq;
-	struct timeval *timeout = NULL;
+	struct timespec *timeout = NULL;
 	pcre *hostexp = NULL;
 	pcre *exhostexp = NULL;
 	pcre *testexp = NULL;
@@ -48,6 +46,7 @@ int main(int argc, char *argv[])
 	char *batchcmd = NULL;
 	strbuffer_t *batchbuf = NULL;
 	time_t lastmsgtime = 0;
+	int hostnameitem = 4, testnameitem = 5, coloritem = 7;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
@@ -65,9 +64,14 @@ int main(int argc, char *argv[])
 			 * message with sequence number 0.
 			 * If you dont want a timeout, just pass a NULL for the timeout parameter.
 			 */
-			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
+			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
 			timeout->tv_sec = (atoi(argv[argi]+10));
-			timeout->tv_usec = 0;
+			timeout->tv_nsec = 0;
+		}
+		else if (strcmp(argv[argi], "--client") == 0) {
+			hostnameitem = 3;
+			testnameitem = 4;
+			errprintf("Expecting to be fed from 'client' channel\n");
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *exp = strchr(argv[argi], '=') + 1;
@@ -105,9 +109,9 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--batch-timeout=")) {
 			char *p = strchr(argv[argi], '=');
 			batchtimeout = atoi(p+1);
-			timeout = (struct timeval *)(malloc(sizeof(struct timeval)));
+			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
 			timeout->tv_sec = batchtimeout;
-			timeout->tv_usec = 0;
+			timeout->tv_nsec = 0;
 		}
 		else if (argnmatch(argv[argi], "--batch-command=")) {
 			char *p = strchr(argv[argi], '=');
@@ -129,10 +133,10 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, timeout);
+		msg = get_xymond_message(C_LAST, argv[0], &seq, timeout);
 		if (msg == NULL) {
 			/*
-			 * get_hobbitd_message will return NULL if hobbitd_channel closes
+			 * get_xymond_message will return NULL if xymond_channel closes
 			 * the input pipe. We should shutdown when that happens.
 			 */
 			running = 0;
@@ -163,6 +167,7 @@ int main(int argc, char *argv[])
 		 * like strtok(), but can handle empty elements.
 		 */
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < MAX_META)) {
 			metadata[metacount++] = p;
@@ -181,13 +186,13 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * A "logrotate" message is sent when the Hobbit logs are
+		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
-		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.
+		 * provided in the XYMONDHANNEL_LOGFILENAME environment.
 		 */
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);
@@ -196,7 +201,7 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * An "idle" message appears when get_hobbitd_message() 
+		 * An "idle" message appears when get_xymond_message() 
 		 * exceeds the timeout setting (ie. you passed a timeout
 		 * value). This allows your worker module to perform
 		 * some internal processing even though no messages arrive.
@@ -235,12 +240,12 @@ int main(int argc, char *argv[])
 		else {
 			int ovector[30];
 			int match, i;
-			char *hostname = metadata[4];
-			char *testname = metadata[5];
-			char *color = metadata[7];
+			char *hostname = metadata[hostnameitem];
+			char *testname = metadata[testnameitem];
+			char *color = metadata[coloritem];
 
 			/* See if we should handle the batched messages we've got */
-			if (batchcmd && ((lastmsgtime + batchtimeout) < getcurrenttime(NULL)) && (STRBUFLEN(batchbuf) > 0)) {
+			if (batchcmd && ((lastmsgtime + batchtimeout) < gettimer()) && (STRBUFLEN(batchbuf) > 0)) {
 				pid_t childpid = fork();
 				int childres = 0;
 
@@ -306,7 +311,7 @@ int main(int argc, char *argv[])
 				if (!match) continue;
 			}
 
-			lastmsgtime = getcurrenttime(NULL);
+			lastmsgtime = gettimer();
 
 			if (batchcmd) {
 				addtobuffer(batchbuf, "## ");

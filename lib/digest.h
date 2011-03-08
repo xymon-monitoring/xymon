@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This is used to implement the message digest functions.                    */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2010 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -21,6 +21,7 @@ typedef struct digestctx_t {
 	void *mdctx;
 } digestctx_t;
 
+extern char *md5hash(char *input);
 extern digestctx_t *digest_init(char *digest);
 extern int digest_data(digestctx_t *ctx, unsigned char *buf, int buflen);
 extern char *digest_done(digestctx_t *ctx);

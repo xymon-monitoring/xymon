@@ -1,4 +1,4 @@
-# bbgen compile-time settings for OpenBSD systems
+# Xymon compile-time settings for OpenBSD systems
 
 OSDEF = -DBSD
 

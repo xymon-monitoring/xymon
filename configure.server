@@ -24,7 +24,6 @@ do
      --ldapinclude DIRECTORY  : Specify location of OpenLDAP include files
      --ldaplib DIRECTORY      : Specify location of OpenLDAP libraries
      --fping FILENAME         : Specify location of the Fping program
-     --buggy-zlib             : Ignore version check of zlib
 
   The script will search a number of standard directories for
   all of these files, so you normally do not have to specify any options.
@@ -58,10 +57,6 @@ EOF
 	  "--fping")
 	  	USERFPING="$1"; shift
 		;;
-	  "--buggy-zlib")
-	        IGNOREOLDZLIB=1;
-		export IGNOREOLDZLIB
-		;;
 	esac
 done
 
@@ -93,9 +88,6 @@ echo ""; echo ""
 . build/rrd.sh
 echo ""; echo ""
 . build/pcre.sh
-echo ""; echo ""
-
-. build/zlib.sh
 echo ""; echo ""
 
 . build/ssl.sh
@@ -152,9 +144,9 @@ else
 
 		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
 		then
-			LDAPDEF="-DBBGEN_LDAP -DBBGEN_LDAP_USESTARTTLS ${LDAPCOMPILEFLAGS}"
+			LDAPDEF="-DXYMON_LDAP -DXYMON_LDAP_USESTARTTLS"
 		else
-			LDAPDEF="-DBBGEN_LDAP ${LDAPCOMPILEFLAGS}"
+			LDAPDEF="-DXYMON_LDAP"
 		fi
 	else
 		LDAPDEF=""
@@ -163,11 +155,16 @@ else
 fi
 echo ""; echo "";
 
-. build/snmp.sh
-echo ""; echo ""
-
 . build/clock-gettime-librt.sh
 echo ""; echo ""
+
+if test "$SNMP" = "1"
+then
+	. build/snmp.sh
+	echo ""; echo ""
+else
+	DOSNMP=no
+fi
 
 MAKE="$MAKE -s" ./build/lfs.sh
 if test $? -eq 0; then
@@ -183,83 +180,83 @@ echo "Setting up for a Xymon server"
 echo ""; echo ""
 
 echo "What userid will be running Xymon [xymon] ?"
-if test -z "$BBUSER"
+if test -z "$XYMONUSER"
 then
-	read BBUSER
+	read XYMONUSER
 fi
-if test -z "$BBUSER"
+if test -z "$XYMONUSER"
 then
-	BBUSER="xymon"
+	XYMONUSER="xymon"
 fi
 
-if test -z "$BBTOPDIR"
+if test -z "$XYMONTOPDIR"
 then
 	if test "`uname -s`" = "Darwin"
 	then
 		# Use "dscl" for locating user information. From Isaac Vetter
-		# http://www.hswn.dk/hobbiton/2008/02/msg00173.html
-		USERDATA="`dscl . -list /Users  | grep $BBUSER`"
+		# http://www.xymon.com/archive/2008/02/msg00173.html
+		USERDATA="`dscl . -list /Users  | grep $XYMONUSER`"
 		if test "$USERDATA" != ""
 		then
 			echo "Found Directory entry for user: $USERDATA"
 		else
-			echo "FAILURE: The user $BBUSER does not exist locally. Create user and try again."
+			echo "FAILURE: The user $XYMONUSER does not exist locally. Create user and try again."
 			exit 1
 		fi
 		echo ""; echo ""
-		HOMEDIR="`dscl . -read /Users/$BBUSER | grep HomeDirectory | awk '{print $2}'`"
+		HOMEDIR="`dscl . -read /Users/$XYMONUSER | grep HomeDirectory | awk '{print $2}'`"
 	else
-		USERDATA=`getent passwd $BBUSER 2>/dev/null || ypmatch "${BBUSER}" passwd || grep "^${BBUSER}:" /etc/passwd`
+		USERDATA=`getent passwd $XYMONUSER 2>/dev/null || ypmatch "${XYMONUSER}" passwd || grep "^${XYMONUSER}:" /etc/passwd`
 		if test $? -eq 0
 		then
 			echo "Found passwd entry for user $USERDATA"
 		else
-			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
+			echo "FAILURE: The user $XYMONUSER does not exist. Create user and try again."
 			exit 1
 		fi
 		echo ""; echo ""
 		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
 	fi
 else
-	HOMEDIR="$BBTOPDIR"
+	HOMEDIR="$XYMONTOPDIR"
 fi
 
 echo "Where do you want the Xymon installation [${HOMEDIR}] ?"
-if test -z "$BBTOPDIR"
+if test -z "$XYMONTOPDIR"
 then
-	read BBTOPDIR
+	read XYMONTOPDIR
 fi
-if test -z "$BBTOPDIR"
+if test -z "$XYMONTOPDIR"
 then
-	BBTOPDIR=${HOMEDIR}
+	XYMONTOPDIR=${HOMEDIR}
 fi
-if test -d "$BBTOPDIR"
+if test -d "$XYMONTOPDIR"
 then
-	echo "OK, will configure to use $BBTOPDIR as the Xymon toplevel directory"
+	echo "OK, will configure to use $XYMONTOPDIR as the Xymon toplevel directory"
 else
-	echo "WARNING: $BBTOPDIR does not exist."
+	echo "WARNING: $XYMONTOPDIR does not exist."
 fi
 echo ""; echo ""
 
 echo "What URL will you use for the Xymon webpages [/xymon] ? "
-if test -z "$BBHOSTURL"
+if test -z "$XYMONHOSTURL"
 then
-	read BBHOSTURL
+	read XYMONHOSTURL
 fi
 
-if test -z "$BBHOSTURL"
+if test -z "$XYMONHOSTURL"
 then
-	BBHOSTURL="/xmon"
-elif test "$BBHOSTURL" = "/"
+	XYMONHOSTURL="/xymon"
+elif test "$XYMONHOSTURL" = "/"
 then
 	# For Xymon as the root URL, we must clear this setting.
 	# Otherwise, gifs, menus etc stop working because we generate
 	# URL's begining with "//"
-	BBHOSTURL=""
+	XYMONHOSTURL=""
 fi
 echo ""; echo ""
 
-echo "Where to put the Xymon CGI scripts [$BBTOPDIR/cgi-bin] ? "
+echo "Where to put the Xymon CGI scripts [$XYMONTOPDIR/cgi-bin] ? "
 echo "(Note: This is the filesystem directory - we will get to the URL shortly)"
 if test -z "$CGIDIR"
 then
@@ -267,19 +264,19 @@ then
 fi
 if test -z "$CGIDIR"
 then
-	CGIDIR=$BBTOPDIR/cgi-bin
+	CGIDIR=$XYMONTOPDIR/cgi-bin
 fi
 echo ""; echo ""
 
 echo "What is the URL for the Xymon CGI directory [/xymon-cgi] ? "
 echo "(Note: This is the URL - NOT the filesystem directory)"
-if test -z "$BBCGIURL"
+if test -z "$XYMONCGIURL"
 then
-	read BBCGIURL
+	read XYMONCGIURL
 fi
-if test -z "$BBCGIURL"
+if test -z "$XYMONCGIURL"
 then
-	BBCGIURL="/xymon-cgi"
+	XYMONCGIURL="/xymon-cgi"
 fi
 echo ""; echo ""
 
@@ -293,7 +290,7 @@ echo "Even if your Xymon server is on a secured, internal network, you"
 echo "may want to have some operations (like disabling a host) be password-"
 echo "protected - that lets you see who disabled or acknowledged an alert."
 echo ""
-echo "Where to put the Xymon Administration CGI scripts [$BBTOPDIR/cgi-secure] ? "
+echo "Where to put the Xymon Administration CGI scripts [$XYMONTOPDIR/cgi-secure] ? "
 echo "(Note: This is the filesystem directory - we will get to the URL shortly)"
 if test -z "$SECURECGIDIR"
 then
@@ -301,7 +298,7 @@ then
 fi
 if test -z "$SECURECGIDIR"
 then
-	SECURECGIDIR=$BBTOPDIR/cgi-secure
+	SECURECGIDIR=$XYMONTOPDIR/cgi-secure
 fi
 echo ""; echo ""
 
@@ -309,21 +306,21 @@ if test "$CGIDIR" != "$SECURECGIDIR"
 then
 	echo "What is the URL for the Xymon Administration CGI directory [/xymon-seccgi] ? "
 	echo "(Note: This is the URL - NOT the filesystem directory)"
-	if test -z "$SECUREBBCGIURL"
+	if test -z "$SECUREXYMONCGIURL"
 	then
-		read SECUREBBCGIURL
+		read SECUREXYMONCGIURL
 	fi
-	if test -z "$SECUREBBCGIURL"
+	if test -z "$SECUREXYMONCGIURL"
 	then
-		SECUREBBCGIURL="/xymon-seccgi"
+		SECUREXYMONCGIURL="/xymon-seccgi"
 	fi
 else
-	SECUREBBCGIURL="$BBCGIURL"
+	SECUREXYMONCGIURL="$XYMONCGIURL"
 fi
 echo ""; echo ""
 
 echo "** Note that you may need to modify your webserver configuration."
-echo "** After installing, see $BBTOPDIR/server/etc/hobbit-apache.conf for an example configuration."
+echo "** After installing, see $XYMONTOPDIR/server/etc/xymon-apache.conf for an example configuration."
 echo ""; echo ""
 
 echo "To generate Xymon availability reports, your webserver"
@@ -344,45 +341,45 @@ fi
 echo ""; echo ""
 
 echo "Where to put the Xymon logfiles [/var/log/xymon] ? "
-if test -z "$BBLOGDIR"
+if test -z "$XYMONLOGDIR"
 then
-	read BBLOGDIR
+	read XYMONLOGDIR
 fi
-if test -z "$BBLOGDIR"
+if test -z "$XYMONLOGDIR"
 then
-	BBLOGDIR=/var/log/xymon
+	XYMONLOGDIR=/var/log/xymon
 fi
 echo ""; echo ""
 
 echo "What is the name of this host [`uname -n`] ? "
-if test -z "$BBHOSTNAME"
+if test -z "$XYMONHOSTNAME"
 then
-	read BBHOSTNAME
+	read XYMONHOSTNAME
 fi
-if test -z "$BBHOSTNAME"
+if test -z "$XYMONHOSTNAME"
 then
-	BBHOSTNAME=`uname -n`
+	XYMONHOSTNAME=`uname -n`
 fi
 echo ""; echo ""
 
 echo "What is the IP-address of this host [127.0.0.1] ? "
-if test -z "$BBHOSTIP"
+if test -z "$XYMONHOSTIP"
 then
-	read BBHOSTIP
+	read XYMONHOSTIP
 fi
-if test -z "$BBHOSTIP" -o "$BBHOSTIP" = "127.0.0.1"
+if test -z "$XYMONHOSTIP" -o "$XYMONHOSTIP" = "127.0.0.1"
 then
 	echo "** NOTE: Using 127.0.0.1 (loopback), but it is probably not what you want **"
-	BBHOSTIP=127.0.0.1
+	XYMONHOSTIP=127.0.0.1
 fi
 echo ""; echo ""
 
-BBHOSTOS=`uname -s | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ/]' '[abcdefghijklmnopqrstuvwxyz_]'`
-if test "$BBHOME" = ""; then
-	BBHOME=$BBTOPDIR/server
+XYMONHOSTOS=`uname -s | tr [A-Z] [a-z]`
+if test "$XYMONHOME" = ""; then
+	XYMONHOME=$XYMONTOPDIR/server
 fi
-if test "$BBVAR" = ""; then
-	BBVAR=$BBTOPDIR/data
+if test "$XYMONVAR" = ""; then
+	XYMONVAR=$XYMONTOPDIR/data
 fi
 
 echo "Where should I install the Xymon man-pages (/usr/local/man) ?"
@@ -403,37 +400,37 @@ echo ""                                  >>Makefile
 echo "# configure settings for Xymon"   >>Makefile
 echo "#"                                 >>Makefile
 echo "# Toplevel dir"                    >>Makefile
-echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
+echo "XYMONTOPDIR = $XYMONTOPDIR"        >>Makefile
 echo "# Server home dir for etc/, bin/"  >>Makefile
-echo "BBHOME = $BBHOME"                  >>Makefile
+echo "XYMONHOME = $XYMONHOME"            >>Makefile
 echo "# Server data dir for hist/ etc."  >>Makefile
-echo "BBVAR = $BBVAR"                    >>Makefile
+echo "XYMONVAR = $XYMONVAR"              >>Makefile
 echo "# CGI scripts go in CGIDIR"        >>Makefile
 echo "CGIDIR = $CGIDIR"                  >>Makefile
 echo "# Admin CGI scripts go in SECURECGIDIR" >>Makefile
 echo "SECURECGIDIR = $SECURECGIDIR"      >>Makefile
 echo "# Where to put logfiles"           >>Makefile
-echo "BBLOGDIR = $BBLOGDIR"              >>Makefile
+echo "XYMONLOGDIR = $XYMONLOGDIR"        >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
-echo "# How to run fping or hobbitping"  >>Makefile
+echo "# How to run fping or xymonping"   >>Makefile
 echo "FPING = $FPING"                    >>Makefile
 echo ""                                  >>Makefile
 echo "# Username running Xymon"          >>Makefile
-echo "BBUSER = $BBUSER"                  >>Makefile
+echo "XYMONUSER = $XYMONUSER"            >>Makefile
 echo "# Xymon server hostname"           >>Makefile
-echo "BBHOSTNAME = $BBHOSTNAME"          >>Makefile
+echo "XYMONHOSTNAME = $XYMONHOSTNAME"    >>Makefile
 echo "# Xymon server IP-address"         >>Makefile
-echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
+echo "XYMONHOSTIP = $XYMONHOSTIP"        >>Makefile
 echo "# Xymon server OS"                 >>Makefile
-echo "BBHOSTOS = $BBHOSTOS"              >>Makefile
+echo "XYMONHOSTOS = $XYMONHOSTOS"        >>Makefile
 echo ""                                  >>Makefile
 echo "# URL for Xymon webpages"          >>Makefile
-echo "BBHOSTURL = $BBHOSTURL"            >>Makefile
+echo "XYMONHOSTURL = $XYMONHOSTURL"      >>Makefile
 echo "# URL for Xymon CGIs"              >>Makefile
-echo "BBCGIURL = $BBCGIURL"              >>Makefile
+echo "XYMONCGIURL = $XYMONCGIURL"        >>Makefile
 echo "# URL for Xymon Admin CGIs"        >>Makefile
-echo "SECUREBBCGIURL = $SECUREBBCGIURL"  >>Makefile
+echo "SECUREXYMONCGIURL = $SECUREXYMONCGIURL"  >>Makefile
 echo "# Webserver group-ID"              >>Makefile
 echo "HTTPDGID=$HTTPDGID"                >>Makefile
 echo ""                                  >>Makefile
@@ -442,14 +439,12 @@ echo "# RRDtool settings"                >>Makefile
 echo "RRDDEF = $RRDDEF"                  >>Makefile
 echo "RRDINCDIR = -I$RRDINC"             >>Makefile
 echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
+echo "RPATHVAL += ${RRDLIB}"             >>Makefile
 echo ""                                  >>Makefile
 echo "# PCRE settings"                   >>Makefile
 echo "PCREINCDIR = -I$PCREINC"           >>Makefile
 echo "PCRELIBS = -L$PCRELIB -lpcre"      >>Makefile
-echo "#"                                 >>Makefile
-echo "# ZLIB settings"                   >>Makefile
-echo "ZLIBINCDIR = -I$ZLIBINC"           >>Makefile
-echo "HOBBITZLIB = -L$ZLIBLIB -lz"       >>Makefile
+echo "RPATHVAL += ${PCRELIB}"            >>Makefile
 echo "#"                                 >>Makefile
 echo "# OpenSSL settings"                >>Makefile
 echo "SSLFLAGS = $SSLDEF"                >>Makefile
@@ -457,6 +452,7 @@ if test "$SSLDEF" != ""
 then
 	echo "SSLINCDIR = -I$OSSLINC"    >>Makefile
 	echo "SSLLIBS = -L$OSSLLIB -lssl -lcrypto" >>Makefile
+	echo "RPATHVAL += ${OSSLLIB}"    >>Makefile
 fi
 echo "#"                                 >>Makefile
 echo "# OpenLDAP settings"               >>Makefile
@@ -470,35 +466,21 @@ then
 	if test "$LDAPLIB" != ""
 	then
 		echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
+		echo "RPATHVAL += ${LDAPLIB}"                 >>Makefile
 	else
 		echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
 	fi
 fi
 
-#
+echo "# clock_gettime() settings"        >>Makefile
+echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
 echo ""                                  >>Makefile
 echo "# Net-SNMP settings"               >>Makefile
 echo "DOSNMP = $DOSNMP"                  >>Makefile
 echo ""                                  >>Makefile
-echo "# clock_gettime() settings"        >>Makefile
-echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
-echo ""                                  >>Makefile
+
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
-
-echo "" >>Makefile
-echo "# Limit the size of status message texts passed to external alert scripts" >>Makefile
-echo "MAXALERTMSGSZ = 4096"              >>Makefile
-
-echo "" >>Makefile
-echo "# Build a shared library for common Hobbit code"  >>Makefile
-echo "# NOTE: Only tested on Linux" >>Makefile
-echo "# HOBBITLIBRARY = libhobbit.so" >>Makefile
-
-# Get the run-time library paths, but only once per directory
-LIBDIRS=`for D in "${RRDLIB}" "${PCRELIB}" "${ZLIBLIB}" "${OSSLLIB}" "${LDAPLIB}" "${BBHOME}/bin"; do echo "$D"; done | sort | uniq | xargs echo`
-echo ""                                  >>Makefile
-echo "RPATHVAL += ${LIBDIRS}"            >>Makefile
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
@@ -515,7 +497,7 @@ else
 	echo "If this fails, change the compile settings in Makefile"
 	echo ""
 	echo "I would appreciate it if you send the changes to"
-	echo "hobbit-owner@hswn.dk so I can include it in the next version."
+	echo "xymon-owner@xymon.com so I can include it in the next version."
 	echo ""
 fi
 echo "" >>Makefile

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* Various utility functions specific to bbgen. Generally useful code is      */
+/* Various utility functions specific to xymongen. Generally useful code is   */
 /* in the library.                                                            */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -21,7 +21,7 @@ static char rcsid[] = "$Id$";
 #include <utime.h>
 #include <unistd.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
@@ -33,14 +33,14 @@ static int havecolumntree = 0;
 
 char *hostpage_link(host_t *host)
 {
-	/* Provide a link to the page where this host lives, relative to BBWEB */
+	/* Provide a link to the page where this host lives, relative to XYMONWEB */
 
 	static char pagelink[PATH_MAX];
 	char tmppath[PATH_MAX];
-	bbgen_page_t *pgwalk;
+	xymongen_page_t *pgwalk;
 
-	if (host->parent && (strlen(((bbgen_page_t *)host->parent)->name) > 0)) {
-		sprintf(pagelink, "%s%s", ((bbgen_page_t *)host->parent)->name, htmlextension);
+	if (host->parent && (strlen(((xymongen_page_t *)host->parent)->name) > 0)) {
+		sprintf(pagelink, "%s%s", ((xymongen_page_t *)host->parent)->name, htmlextension);
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
 				sprintf(tmppath, "%s/%s", pgwalk->name, pagelink);
@@ -49,7 +49,7 @@ char *hostpage_link(host_t *host)
 		}
 	}
 	else {
-		sprintf(pagelink, "bb%s", htmlextension);
+		sprintf(pagelink, "xymon%s", htmlextension);
 	}
 
 	return pagelink;
@@ -62,9 +62,9 @@ char *hostpage_name(host_t *host)
 
 	static char pagename[PATH_MAX];
 	char tmpname[PATH_MAX];
-	bbgen_page_t *pgwalk;
+	xymongen_page_t *pgwalk;
 
-	if (host->parent && (strlen(((bbgen_page_t *)host->parent)->name) > 0)) {
+	if (host->parent && (strlen(((xymongen_page_t *)host->parent)->name) > 0)) {
 		pagename[0] = '\0';
 		for (pgwalk = host->parent; (pgwalk); pgwalk = pgwalk->parent) {
 			if (strlen(pgwalk->name)) {
@@ -204,9 +204,9 @@ hostlist_t *hostlistNext(void)
 	}
 }
 
-bbgen_col_t *find_or_create_column(char *testname, int create)
+xymongen_col_t *find_or_create_column(char *testname, int create)
 {
-	bbgen_col_t *newcol = NULL;
+	xymongen_col_t *newcol = NULL;
 	RbtIterator handle;
 
 	dbgprintf("find_or_create_column(%s)\n", textornull(testname));
@@ -217,12 +217,12 @@ bbgen_col_t *find_or_create_column(char *testname, int create)
 	}
 
 	handle = rbtFind(columntree, testname);
-	if (handle != rbtEnd(columntree)) newcol = (bbgen_col_t *)gettreeitem(columntree, handle);
+	if (handle != rbtEnd(columntree)) newcol = (xymongen_col_t *)gettreeitem(columntree, handle);
 
 	if (newcol == NULL) {
 		if (!create) return NULL;
 
-		newcol = (bbgen_col_t *) calloc(1, sizeof(bbgen_col_t));
+		newcol = (xymongen_col_t *) calloc(1, sizeof(xymongen_col_t));
 		newcol->name = strdup(testname);
 		newcol->listname = (char *)malloc(strlen(testname)+1+2); 
 		sprintf(newcol->listname, ",%s,", testname);
@@ -231,5 +231,19 @@ bbgen_col_t *find_or_create_column(char *testname, int create)
 	}
 
 	return newcol;
+}
+
+
+int wantedcolumn(char *current, char *wanted)
+{
+	char *tag;
+	int result;
+
+	tag = (char *) malloc(strlen(current)+3);
+	sprintf(tag, "|%s|", current);
+	result = (strstr(wanted, tag) != NULL);
+
+	xfree(tag);
+	return result;
 }
 

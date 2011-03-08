@@ -1,13 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module                                                      */
-/* This file has routines that load the hobbitd_client configuration and      */
+/* This file has routines that load the xymond_client configuration and       */
 /* finds the rules relevant for a particular test when applied.               */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /* "PORT" handling (C) Mirko Saam                                             */
-/* "SVC" handling (C) Francois Lacroix                                        */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -21,6 +20,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <signal.h>
 #include <time.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "client_config.h"
 
 typedef struct exprlist_t {
@@ -59,6 +59,15 @@ typedef struct c_disk_t {
 	int color;
 	int ignored;
 } c_disk_t;
+
+typedef struct c_inode_t {
+	exprlist_t *fsexp;
+	long warnlevel, paniclevel;
+	int abswarn, abspanic;
+	int imin, imax, icount;
+	int color;
+	int ignored;
+} c_inode_t;
 
 typedef struct c_mem_t {
 	enum { C_MEM_PHYS, C_MEM_SWAP, C_MEM_ACT } memtype;
@@ -170,24 +179,24 @@ typedef struct c_port_t {
 
 typedef struct c_svc_t {
 	exprlist_t *svcexp;
-        exprlist_t *stateexp;
-        exprlist_t *startupexp;
-	char *startup, *state;
+	exprlist_t *stateexp;
+	exprlist_t *startupexp;
+	char *svcname, *startup, *state;
 	int scount;
-        int color;
+	int color;
 } c_svc_t;
 
 #define MIBCHK_MINVALUE  (1 << 0)
 #define MIBCHK_MAXVALUE  (1 << 1)
 #define MIBCHK_MATCH     (1 << 2)
 typedef struct c_mibval_t {
-	exprlist_t *mibvalexp;	/* Key composed of the mib name and the value name */
-	exprlist_t *keyexp;	/* Match pattern for the mib table key */
+	exprlist_t *mibvalexp;  /* Key composed of the mib name and the value name */
+	exprlist_t *keyexp;     /* Match pattern for the mib table key */
 	int color;
 	long minval, maxval;
 	exprlist_t *matchexp;
 
-	/* 
+	/*
 	 * For optimization, we build a tree of c_rule_t pointers, indexed by a key
 	 * which is combined from the mib-, key- and value-names. This tree is updated
 	 * and/or used whenever an actual lookup happens for the thresholds.
@@ -206,15 +215,26 @@ typedef struct c_mibval_t {
 #define RRDDSCHK_EQ     (1 << 4)
 #define RRDDSCHK_INTVL  (1 << 29)
 typedef struct c_rrdds_t {
-	exprlist_t *rrdkey;	/* Pattern match for filename of the RRD file */
-	char *rrdds;		/* DS name */
-	char *column;		/* Status column modified by this check */
+	exprlist_t *rrdkey;     /* Pattern match for filename of the RRD file */
+	char *rrdds;            /* DS name */
+	char *column;           /* Status column modified by this check */
 	int color;
 	/* For absolute min/max values of the data item */
 	double limitval, limitval2;
 } c_rrdds_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_MEM, C_CICS, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_MIBVAL, C_RRDDS } ruletype_t;
+
+typedef struct c_mq_queue_t {
+	exprlist_t *qmgrname, *qname;
+	int warnlen, critlen;
+	int warnage, critage;
+} c_mq_queue_t;
+
+typedef struct c_mq_channel_t {
+	exprlist_t *qmgrname, *chnname, *warnstates, *alertstates;
+} c_mq_channel_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_INODE, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_RRDDS, C_MQ_QUEUE, C_MQ_CHANNEL, C_MIBVAL } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -233,6 +253,7 @@ typedef struct c_rule_t {
 		c_uptime_t uptime;
 		c_clock_t clock;
 		c_disk_t disk;
+		c_inode_t inode;
 		c_mem_t mem;
 		c_zos_mem_t zos_mem;
 		c_zvse_vsize_t zvse_vsize;
@@ -248,6 +269,8 @@ typedef struct c_rule_t {
 		c_paging_t paging;
 		c_mibval_t mibval;
 		c_rrdds_t rrdds;
+		c_mq_queue_t mqqueue;
+		c_mq_channel_t mqchannel;
 	} rule;
 } c_rule_t;
 
@@ -342,10 +365,10 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 		while (pgtok) {
 			if (rwalk->pageexp && (pgmatchres != 1))
 				pgmatchres = (namematch(pgtok, rwalk->pageexp->pattern, rwalk->pageexp->exp) ? 1 : 0);
-	
+
 			if (rwalk->expageexp && (pgexclres != 1))
 				pgexclres = (namematch(pgtok, rwalk->expageexp->pattern, rwalk->expageexp->exp) ? 1 : 0);
-	
+
 			pgtok = strtok(NULL, ",");
 		}
 		if (pgexclres == 1) continue;
@@ -501,7 +524,7 @@ int load_client_config(char *configfn)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-clients.cfg", xgetenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/analysis.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -670,7 +693,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "LOAD") == 0) {
 				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 				currule->rule.load.warnlevel = 5.0;
-				currule->rule.load.paniclevel = 10.0;
+				currule->rule.load.paniclevel = atof(tok);
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.load.warnlevel = atof(tok);
@@ -720,8 +743,52 @@ int load_client_config(char *configfn)
 				currule->rule.disk.dmax = atoi(tok);
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.disk.color = parse_color(tok);
-				dbgprintf("vals: %s %i %i\n", currule->rule.disk.fsexp, currule->rule.disk.abswarn, currule->rule.disk.abspanic);
 			}
+			else if (strcasecmp(tok, "INODE") == 0) {
+				currule = setup_rule(C_INODE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.inode.abswarn = 0;
+				currule->rule.inode.warnlevel = 70;
+				currule->rule.inode.abspanic = 0;
+				currule->rule.inode.paniclevel = 90;
+				currule->rule.inode.imin = 0;
+				currule->rule.inode.imax = -1;
+				currule->rule.inode.color = COL_RED;
+				currule->rule.inode.ignored = 0;
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.fsexp = setup_expr(tok, 0);
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				if (strcasecmp(tok, "ignore") == 0) {
+					currule->rule.inode.ignored = 1;
+					tok = wstok(NULL);
+					continue;
+				}
+				currule->rule.inode.warnlevel = atol(tok);
+				switch (*(tok + strspn(tok, "0123456789"))) {
+				  case 'U':
+				  case 'u': currule->rule.inode.abswarn = 1; break;
+				  case '%': currule->rule.inode.abswarn = 0; break;
+				  default : currule->rule.inode.abswarn = (currule->rule.inode.warnlevel > 200 ? 1 : 0); break;
+				}
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.paniclevel = atol(tok);
+				switch (*(tok + strspn(tok, "0123456789"))) {
+				  case 'U':
+				  case 'u': currule->rule.inode.abspanic = 1; break;
+				  case '%': currule->rule.inode.abspanic = 0; break;
+				  default : currule->rule.inode.abspanic = (currule->rule.inode.paniclevel > 200 ? 1 : 0); break;
+				}
+
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.imin = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.imax = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				currule->rule.inode.color = parse_color(tok);
+			}
+
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
 				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 				currule->rule.mem.memtype = C_MEM_PHYS;
@@ -840,12 +907,18 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "PROC") == 0) {
 				int idx = 0;
 
+				tok = wstok(NULL);
+				if (tok == NULL) {
+					errprintf("Syntax error line %d: PROC with no definition\n", cfid);
+					unknowntok = 1;
+					break;
+				}
+
 				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 				currule->rule.proc.pmin = 1;
 				currule->rule.proc.pmax = -1;
 				currule->rule.proc.color = COL_RED;
 
-				tok = wstok(NULL);
 				currule->rule.proc.procexp = setup_expr(tok, 0);
 
 				do {
@@ -988,10 +1061,11 @@ int load_client_config(char *configfn)
 					}
 					else if ((strncasecmp(tok, "owner=", 6) == 0) ||
 						 (strncasecmp(tok, "ownerid=", 8) == 0)) {
-						char *eptr;
+						char *p, *eptr;
 						int uid;
-						
-						uid = strtol(tok+6, &eptr, 10);
+
+						p = strchr(tok, '=');
+						uid = strtol(p+1, &eptr, 10);
 						if (*eptr == '\0') {
 							/* All numeric */
 							currule->flags |= FCHK_OWNERID;
@@ -999,15 +1073,16 @@ int load_client_config(char *configfn)
 						}
 						else {
 							currule->flags |= FCHK_OWNERSTR;
-							currule->rule.fcheck.ownerstr = strdup(tok+6);
+							currule->rule.fcheck.ownerstr = strdup(p+1);
 						}
 					}
 					else if (strncasecmp(tok, "groupid=", 8) == 0) {
 						/* Cannot use "group" because that is reserved */
-						char *eptr;
+						char *p, *eptr;
 						int uid;
-						
-						uid = strtol(tok+6, &eptr, 10);
+
+						p = strchr(tok, '=');
+						uid = strtol(p+1, &eptr, 10);
 						if (*eptr == '\0') {
 							/* All numeric */
 							currule->flags |= FCHK_GROUPID;
@@ -1015,7 +1090,7 @@ int load_client_config(char *configfn)
 						}
 						else {
 							currule->flags |= FCHK_GROUPSTR;
-							currule->rule.fcheck.groupstr = strdup(tok+6);
+							currule->rule.fcheck.groupstr = strdup(p+1);
 						}
 					}
 					else if (strncasecmp(tok, "mtime>", 6) == 0) {
@@ -1236,33 +1311,39 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "SVC") == 0) {
 				int idx = 0;
 
-				currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				tok = wstok(NULL);	/* See if there is any service definition at all */
+				if (tok) {
+					currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
 
-				currule->rule.svc.svcexp = NULL;
-				currule->rule.svc.startupexp = NULL;
-				currule->rule.svc.stateexp = NULL;
-				currule->rule.svc.state = NULL;
-				currule->rule.svc.startup = NULL; 
-				currule->rule.svc.color = COL_RED;
+					currule->rule.svc.svcexp = setup_expr(tok, 0);
+					currule->rule.svc.startupexp = NULL;
+					currule->rule.svc.stateexp = NULL;
+					currule->rule.svc.state = NULL;
+					currule->rule.svc.startup = NULL; 
+					currule->rule.svc.color = COL_RED;
 
-				tok = wstok(NULL);
-				currule->rule.svc.svcexp = setup_expr(tok, 0);
-				do {
-					tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
+					do {
+						tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
 
-					if (strncasecmp(tok, "startup=", 8) == 0) {
-						currule->rule.svc.startupexp = setup_expr(tok+8, 0);
+						if (strncasecmp(tok, "startup=", 8) == 0) {
+							currule->rule.svc.startupexp = setup_expr(tok+8, 0);
+						}
+						else if (strncasecmp(tok, "status=", 7) == 0) {
+							currule->rule.svc.stateexp = setup_expr(tok+7, 0);
+						}
+						else if (strncasecmp(tok, "col=", 4) == 0) {
+							currule->rule.svc.color = parse_color(tok+4);
+						}
+						else if (strncasecmp(tok, "color=", 6) == 0) {
+							currule->rule.svc.color = parse_color(tok+6);
+						}
+					} while (tok && (!isqual(tok)));
+
+					if (!currule->rule.svc.stateexp && !currule->rule.svc.startupexp) {
+						/* No criteria defined, so we'll assume they just want to check that the service is running */
+						currule->rule.svc.stateexp = setup_expr("started", 0);
 					}
-					else if (strncasecmp(tok, "status=", 7) == 0) {
-						currule->rule.svc.stateexp = setup_expr(tok+7, 0);
-					}
-					else if (strncasecmp(tok, "col=", 4) == 0) {
-						currule->rule.svc.color = parse_color(tok+4);
-					}
-					else if (strncasecmp(tok, "color=", 6) == 0) {
-						currule->rule.svc.color = parse_color(tok+6);
-					}
-				} while (tok && (!isqual(tok)));
+				}
 			}
 			else if (strcasecmp(tok, "MIB") == 0) {
 				currule = setup_rule(C_MIBVAL, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
@@ -1369,6 +1450,86 @@ int load_client_config(char *configfn)
 					}
 				} while (tok && (!isqual(tok)));
 			}
+			else if (strcasecmp(tok, "MQ_QUEUE") == 0) {
+				char *p;
+				currule = setup_rule(C_MQ_QUEUE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.mqqueue.qmgrname = NULL;
+				currule->rule.mqqueue.qname = NULL;
+				currule->rule.mqqueue.warnlen = -1;
+				currule->rule.mqqueue.critlen = -1;
+				currule->rule.mqqueue.warnage = -1;
+				currule->rule.mqqueue.critage = -1;
+
+				tok = wstok(NULL);
+				p = strchr(tok, ':');
+				if (p) {
+					*p = '\0'; p++;
+					currule->rule.mqqueue.qmgrname = setup_expr(tok, 0);
+					currule->rule.mqqueue.qname = setup_expr(p, 0);
+				}
+				else {
+					currule->rule.mqqueue.qmgrname = setup_expr("*", 0);
+					currule->rule.mqqueue.qname = setup_expr(tok, 0);
+				};
+
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, "depth-warning=", 14) == 0) {
+						currule->rule.mqqueue.warnlen = atol(tok+14);
+					}
+					else if (strncasecmp(tok, "depth-critical=", 15) == 0) {
+						currule->rule.mqqueue.critlen = atol(tok+15);
+					}
+					else if (strncasecmp(tok, "age-warning=", 12) == 0) {
+						currule->rule.mqqueue.warnage = atol(tok+12);
+					}
+					else if (strncasecmp(tok, "age-critical=", 13) == 0) {
+						currule->rule.mqqueue.critage = atol(tok+13);
+					}
+					else if (strncasecmp(tok, "track", 5) == 0) {
+						currule->flags |= CHK_TRACKIT;
+						if (*(tok+5) == '=') currule->rrdidstr = strdup(tok+6);
+					}
+				} while (tok && (!isqual(tok)));
+			}
+			else if (strcasecmp(tok, "MQ_CHANNEL") == 0) {
+				char *p;
+
+				currule = setup_rule(C_MQ_CHANNEL, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule->rule.mqchannel.qmgrname = NULL;
+				currule->rule.mqchannel.chnname = NULL;
+				currule->rule.mqchannel.warnstates = NULL;
+				currule->rule.mqchannel.alertstates = NULL;
+
+				tok = wstok(NULL);
+				p = strchr(tok, ':');
+				if (p) {
+					*p = '\0'; p++;
+					currule->rule.mqchannel.qmgrname = setup_expr(tok, 0);
+					currule->rule.mqchannel.chnname = setup_expr(p, 0);
+				}
+				else {
+					currule->rule.mqchannel.qmgrname = setup_expr("*", 0);
+					currule->rule.mqchannel.chnname = setup_expr(tok, 0);
+				};
+
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+
+					if (strncasecmp(tok, "warning=", 8) == 0) {
+						currule->rule.mqchannel.warnstates = setup_expr(tok+8, 0);
+					}
+					else if (strncasecmp(tok, "alert=", 6) == 0) {
+						currule->rule.mqchannel.alertstates = setup_expr(tok+6, 0);
+					}
+				} while (tok && (!isqual(tok)));
+
+				if ((currule->rule.mqchannel.warnstates == NULL) && (currule->rule.mqchannel.alertstates == NULL)) {
+					/* Default: Alert on channel in BIND or RETRYING state */
+					currule->rule.mqchannel.alertstates = setup_expr("%BIND|RETRYING", 0);
+				}
+			}
 			else {
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
 				unknowntok = 1; tok = NULL; continue;
@@ -1430,6 +1591,17 @@ void dump_client_config(void)
 				printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.abswarn ? 'U' : '%'));
 				printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.abspanic  ? 'U' : '%'));
 				printf(" %d %d %s", rwalk->rule.disk.dmin, rwalk->rule.disk.dmax, colorname(rwalk->rule.disk.color));
+			}
+			break;
+
+		  case C_INODE:
+			printf("INODE %s", rwalk->rule.inode.fsexp->pattern);
+			if (rwalk->rule.inode.ignored)
+				printf("IGNORE");
+			else {
+				printf(" %lu%c", rwalk->rule.inode.warnlevel, (rwalk->rule.inode.abswarn ? 'U' : '%'));
+				printf(" %lu%c", rwalk->rule.inode.paniclevel, (rwalk->rule.inode.abspanic  ? 'U' : '%'));
+				printf(" %d %d %s", rwalk->rule.inode.imin, rwalk->rule.inode.imax, colorname(rwalk->rule.inode.color));
 			}
 			break;
 
@@ -1581,16 +1753,14 @@ void dump_client_config(void)
 			printf("CICS: Appid:%s, DSA warning:%d, DSA panic:%d, EDSA warning%d, EDSA panic:%d", rwalk->rule.cics.applid->pattern, rwalk->rule.cics.dsawarnlevel, rwalk->rule.cics.dsapaniclevel, rwalk->rule.cics.edsawarnlevel, rwalk->rule.cics.edsapaniclevel);
 			break;
 
-                  case C_SVC:
-                        printf("SVC");
-                        if (rwalk->rule.svc.svcexp)
-                                printf(" %s", rwalk->rule.svc.svcexp->pattern);
-                        if (rwalk->rule.svc.stateexp)
-                                printf(" status=%s", rwalk->rule.svc.stateexp->pattern);
-                        if (rwalk->rule.svc.startupexp)
-                                printf(" startup=%s", rwalk->rule.svc.startupexp->pattern);
-                        printf(" color=%s", colorname(rwalk->rule.svc.color));
-                        break;
+		  case C_SVC:
+			printf("SVC %s", rwalk->rule.svc.svcexp->pattern);
+			if (rwalk->rule.svc.stateexp)
+				printf(" status=%s", rwalk->rule.svc.stateexp->pattern);
+			if (rwalk->rule.svc.startupexp)
+				printf(" startup=%s", rwalk->rule.svc.startupexp->pattern);
+			printf(" color=%s", colorname(rwalk->rule.svc.color));
+			break;
 
 		  case C_MIBVAL:
 			printf("MIB");
@@ -1629,6 +1799,24 @@ void dump_client_config(void)
 			}
 			printf(" color=%s", colorname(rwalk->rule.rrdds.color));
 			break;
+
+		  case C_MQ_QUEUE:
+			printf("MQ_QUEUE %s:%s", rwalk->rule.mqqueue.qmgrname->pattern, rwalk->rule.mqqueue.qname->pattern);
+			if (rwalk->rule.mqqueue.warnlen != -1)
+				printf(" depth-warn=%d", rwalk->rule.mqqueue.warnlen);
+			if (rwalk->rule.mqqueue.critlen != -1)
+				printf(" depth-critical=%d", rwalk->rule.mqqueue.critlen);
+			if (rwalk->rule.mqqueue.warnage != -1)
+				printf(" age-warn=%d", rwalk->rule.mqqueue.warnage);
+			if (rwalk->rule.mqqueue.critage != -1)
+				printf(" age-critical=%d", rwalk->rule.mqqueue.critage);
+			break;
+
+		  case C_MQ_CHANNEL:
+			printf("MQ_CHANNEL %s:%s",rwalk->rule.mqchannel.qmgrname->pattern , rwalk->rule.mqchannel.chnname->pattern);
+			if (rwalk->rule.mqchannel.warnstates) printf(" warning=%s", rwalk->rule.mqchannel.warnstates->pattern);
+			if (rwalk->rule.mqchannel.alertstates) printf(" alert=%s", rwalk->rule.mqchannel.alertstates->pattern);
+			break;
 		}
 
 		if (rwalk->flags & CHK_TRACKIT) {
@@ -1662,7 +1850,7 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *
 		rwalk = rwalk->next;
 	}
 
-	holidayset = (hinfo ? bbh_item(hinfo, BBH_HOLIDAYS) : NULL);
+	holidayset = (hinfo ? xmh_item(hinfo, XMH_HOLIDAYS) : NULL);
 
 	for (; (rwalk); rwalk = rwalk->next) {
 		if (rwalk->rule->ruletype != ruletype) continue;
@@ -1682,8 +1870,8 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*loadyellow = 5.0;
 	*loadred = 10.0;
@@ -1723,8 +1911,8 @@ int get_disk_thresholds(void *hinfo, char *classname,
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*warnlevel = 90;
 	*paniclevel = 95;
@@ -1751,6 +1939,43 @@ int get_disk_thresholds(void *hinfo, char *classname,
 	return 0;
 }
 
+int get_inode_thresholds(void *hinfo, char *classname, 
+		char *fsname, 
+		long *warnlevel, long *paniclevel, 
+		int *abswarn, int *abspanic,
+		int *ignored, char **group)
+{
+	char *hostname, *pagename;
+	c_rule_t *rule;
+
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_PAGEPATH);
+
+	*warnlevel = 70;
+	*paniclevel = 90;
+	*abswarn = 0;
+	*abspanic = 0;
+	*ignored = 0;
+	*group = NULL;
+
+	rule = getrule(hostname, pagename, classname, hinfo, C_INODE);
+	while (rule && !namematch(fsname, rule->rule.inode.fsexp->pattern, rule->rule.inode.fsexp->exp)) {
+		rule = getrule(NULL, NULL, NULL, hinfo, C_INODE);
+	}
+
+	if (rule) {
+		*warnlevel = rule->rule.inode.warnlevel;
+		*abswarn = rule->rule.inode.abswarn;
+		*paniclevel = rule->rule.inode.paniclevel;
+		*abspanic = rule->rule.inode.abspanic;
+		*ignored = rule->rule.inode.ignored;
+		*group = rule->groups;
+		return rule->cfid;
+	}
+
+	return 0;
+}
+
 void get_cics_thresholds(void *hinfo, char *classname, char *appid,
                         int *dsayel, int *dsared, int *edsayel, int *edsared)
 {
@@ -1758,8 +1983,8 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
         int result = 0;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
         *dsayel = 90;
         *dsared = 95;
@@ -1796,8 +2021,8 @@ void get_zvsevsize_thresholds(void *hinfo, char *classname,
         int result = 0;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
         *usedyel = 90;
         *usedred = 95;
@@ -1819,8 +2044,8 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
         int result = 0;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_PAGEPATH);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
         *gv24yel = 90;
         *gv24red = 95;
@@ -1849,145 +2074,6 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
         	}
 }
 
-char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, RbtHandle valnames, char *vals)
-{
-	static strbuffer_t *resbuf = NULL;
-	char msgline[1024];
-	c_rule_t *rule;
-	char *valscopy = NULL;
-	char **vallist = NULL;
-	RbtIterator handle;
-	rrdtplnames_t *tpl;
-	double val;
-	void *hinfo;
-
-	if (!resbuf) resbuf = newstrbuffer(0);
-	clearstrbuffer(resbuf);
-
-	hinfo = hostinfo(hostname);
-	rule = getrule(hostname, pagepaths, classname, hinfo, C_RRDDS);
-	while (rule) {
-		int rulematch = 0;
-
-		if (!namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
-
-		handle = rbtFind(valnames, rule->rule.rrdds.rrdds);
-		if (handle == rbtEnd(valnames)) goto nextrule;
-		tpl = (rrdtplnames_t *)gettreeitem(valnames, handle);
-
-		/* Split the value-string into individual numbers that we can index */
-		if (!vallist) {
-			char *p;
-			int idx = 0;
-
-			valscopy = strdup(vals);
-			vallist = calloc(128, sizeof(char *));
-			vallist[0] = valscopy;
-
-			for (p = strchr(valscopy, ':'); (p); p = strchr(p+1, ':')) {
-				vallist[++idx] = p+1;
-				*p = '\0';
-			}
-		}
-
-		if (vallist[tpl->idx] == NULL) goto nextrule;
-		val = atof(vallist[tpl->idx]);
-
-		/* Do the checks */
-		if (rule->flags & RRDDSCHK_INTVL) {
-			rulematch = ( ( ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval))  ||
-				        ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) ) &&
-				      ( ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval2))  ||
-				        ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval2)) ) );
-
-			if (!rule->statustext) {
-				char fmt[100];
-
-				strcpy(fmt, "&N=&V (");
-				if (rule->flags & RRDDSCHK_GT) strcat(fmt, " > &L");
-				else if (rule->flags & RRDDSCHK_GE) strcat(fmt, " >= &L");
-				strcat(fmt, " and");
-				if (rule->flags & RRDDSCHK_LT) strcat(fmt, " < &U)");
-				else if (rule->flags & RRDDSCHK_LE) strcat(fmt, " <= &U)");
-
-				rule->statustext = strdup(fmt);
-			}
-		}
-		else {
-			rulematch = ( ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval))  ||
-				      ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) ||
-				      ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval))  ||
-				      ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval))   );
-
-			if (!rule->statustext) {
-				char *fmt = "";
-
-				if      (rule->flags & RRDDSCHK_GT) fmt = "&N=&V (> &L)";
-				else if (rule->flags & RRDDSCHK_GE) fmt = "&N=&V (>= &L)";
-				else if (rule->flags & RRDDSCHK_LT) fmt = "&N=&V (< &L)";
-				else if (rule->flags & RRDDSCHK_LE) fmt = "&N=&V (<= &L)";
-
-				rule->statustext = strdup(fmt);
-			}
-		}
-
-		if (rulematch) {
-			char *bot, *marker;
-
-			sprintf(msgline, "modify %s.%s %s rrdds ", 
-				hostname, rule->rule.rrdds.column,
-				colorname(rule->rule.rrdds.color));
-			addtobuffer(resbuf, msgline);
-
-			/* Format and add the status text */
-			bot = rule->statustext;
-			do {
-				marker = strchr(bot, '&');
-				if (marker) {
-					*marker = '\0';
-					addtobuffer(resbuf, bot);
-					*marker = '&';
-					switch (*(marker+1)) {
-					  case 'N': addtobuffer(resbuf, rule->rule.rrdds.rrdds); 
-						    bot = marker+2; 
-						    break;
-
-					  case 'V': addtobuffer(resbuf, vallist[tpl->idx]); 
-						    bot = marker+2; 
-						    break;
-
-					  case 'L': sprintf(msgline, "%.2f", rule->rule.rrdds.limitval); 
-						    addtobuffer(resbuf, msgline);
-						    bot = marker+2;
-						    break;
-
-					  case 'U': sprintf(msgline, "%.2f", (rule->flags & RRDDSCHK_INTVL) ? rule->rule.rrdds.limitval2 : rule->rule.rrdds.limitval); 
-						    addtobuffer(resbuf, msgline);
-						    bot = marker+2;
-						    break;
-
-					  default:  addtobuffer(resbuf, "&"); bot = marker+1; break;
-					}
-				}
-				else {
-					addtobuffer(resbuf, bot);
-					bot = NULL;
-				}
-			} while (bot);
-
-			addtobuffer(resbuf, "\n\n");
-		}
-
-nextrule:
-		rule = getrule(NULL, NULL, NULL, hinfo, C_RRDDS);
-	}
-
-	if (valscopy) xfree(valscopy);
-	if (vallist) xfree(vallist);
-
-	return (STRBUFLEN(resbuf) > 0) ? STRBUF(resbuf) : NULL;
-}
-
 void get_memory_thresholds(void *hinfo, char *classname,
 			   int *physyellow, int *physred, int *swapyellow, int *swapred, int *actyellow, int *actred)
 {
@@ -1995,8 +2081,8 @@ void get_memory_thresholds(void *hinfo, char *classname,
 	c_rule_t *rule;
 	int gotphys = 0, gotswap = 0, gotact = 0;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	*physyellow = 100;
 	*physred = 101;
@@ -2042,8 +2128,8 @@ void get_zos_memory_thresholds(void *hinfo, char *classname,
         c_rule_t *rule;
         int gotcsa = 0, gotecsa = 0, gotsqa = 0, gotesqa = 0;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
         *csayellow = 90;
         *csared = 95;
@@ -2099,8 +2185,8 @@ void get_asid_thresholds(void *hinfo, char *classname,
         char *hostname, *pagename;
         c_rule_t *rule;
 
-        hostname = bbh_item(hinfo, BBH_HOSTNAME);
-        pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+        hostname = xmh_item(hinfo, XMH_HOSTNAME);
+        pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
         *maxyellow = 101;
         *maxred = 101;
@@ -2134,8 +2220,8 @@ int get_paging_thresholds(void *hinfo, char *classname, int *pagingyellow, int *
 	char *hostname, *pagename;
 	c_rule_t *rule;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
 	*pagingyellow = 5;
 	*pagingred = 10;
@@ -2166,8 +2252,8 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 		have_mibnametree = 1;
 	}
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_PAGEPATH);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_PAGEPATH);
 
 	/* Any potential rules at all ? */
 	rule = getrule(hostname, pagename, classname, hinfo, C_MIBVAL);
@@ -2333,16 +2419,26 @@ int check_mibvals(void *hinfo, char *classname,
 				if (group) addalertgroup(group);
 			}
 
-			if (matchexp && !namematch(dval, ((exprlist_t *)matchexp)->pattern, ((exprlist_t *)matchexp)->exp)) {
-				if (keyname)
-					sprintf(msgline, "&%s %s:%s %s (expected: %s)\n",
-						colorname(rulecolor), keyname, dnam, dval, ((exprlist_t *)matchexp)->pattern);
-				else 
-					sprintf(msgline, "&%s %s %s (expected: %s)\n",
-						colorname(rulecolor), dnam, dval, ((exprlist_t *)matchexp)->pattern);
+			if (matchexp) {
+				if (!namematch(dval, ((exprlist_t *)matchexp)->pattern, ((exprlist_t *)matchexp)->exp)) {
+					if (rulecolor > color) color = rulecolor;
+					if (group) addalertgroup(group);
+
+					if (keyname)
+						sprintf(msgline, "&%s %s:%s %s (expected: %s)\n",
+								colorname(rulecolor), keyname, dnam, dval, ((exprlist_t *)matchexp)->pattern);
+					else 
+						sprintf(msgline, "&%s %s %s (expected: %s)\n",
+								colorname(rulecolor), dnam, dval, ((exprlist_t *)matchexp)->pattern);
+				}
+				else {
+					if (keyname) 
+						sprintf(msgline, "&green %s:%s %s\n", keyname, dnam, dval);
+					else
+						sprintf(msgline, "&green %s %s\n", dnam, dval);
+				}
+
 				addtobuffer(summarybuf, msgline);
-				if (rulecolor > color) color = rulecolor;
-				if (group) addalertgroup(group);
 			}
 			break;
 		}
@@ -2360,7 +2456,6 @@ int check_mibvals(void *hinfo, char *classname,
 	return color;
 }
 
-
 int scan_log(void *hinfo, char *classname, 
 	     char *logname, char *logdata, char *section, strbuffer_t *summarybuf)
 {
@@ -2371,8 +2466,8 @@ int scan_log(void *hinfo, char *classname,
 	char *boln, *eoln;
 	char msgline[PATH_MAX];
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	
 	nofile = (strncmp(logdata, "Cannot open logfile ", 20) == 0);
 
@@ -2400,9 +2495,12 @@ int scan_log(void *hinfo, char *classname,
 		while (boln) {
 			eoln = strchr(boln, '\n'); if (eoln) *eoln = '\0';
 			if (patternmatch(boln, rule->rule.log.matchone->pattern, rule->rule.log.matchone->exp)) {
+				dbgprintf("Line '%s' matches\n", boln);
+
 				/* It matches. But maybe we'll ignore it ? */
 				if (!(rule->rule.log.ignoreexp && patternmatch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp))) {
 					/* We wants it ... */
+					dbgprintf("FOUND match in line '%s'\n", boln);
 					anylines++;
 					sprintf(msgline, "&%s ", colorname(rule->rule.log.color));
 					addtobuffer(summarybuf, msgline);
@@ -2449,8 +2547,8 @@ int check_file(void *hinfo, char *classname,
 	unsigned int ctimedif, mtimedif, atimedif;
 	char *md5hash = NULL, *sha1hash = NULL, *rmd160hash = NULL;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	*trackit = *anyrules = 0;
 
 	boln = filedata;
@@ -2764,8 +2862,8 @@ int check_dir(void *hinfo, char *classname,
 
 	unsigned long dsize = 0;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	*trackit = 0;
 
 	boln = filedata;
@@ -2832,6 +2930,204 @@ int check_dir(void *hinfo, char *classname,
 	return result;
 }
 
+char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, RbtHandle valnames, char *vals)
+{
+	static strbuffer_t *resbuf = NULL;
+	char msgline[1024];
+	c_rule_t *rule;
+	char *valscopy = NULL;
+	char **vallist = NULL;
+	RbtIterator handle;
+	rrdtplnames_t *tpl;
+	double val;
+	void *hinfo;
+
+	if (!resbuf) resbuf = newstrbuffer(0);
+	clearstrbuffer(resbuf);
+
+	hinfo = hostinfo(hostname);
+	rule = getrule(hostname, pagepaths, classname, hinfo, C_RRDDS);
+	while (rule) {
+		int rulematch = 0;
+
+		if (!namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
+
+		handle = rbtFind(valnames, rule->rule.rrdds.rrdds);
+		if (handle == rbtEnd(valnames)) goto nextrule;
+		tpl = (rrdtplnames_t *)gettreeitem(valnames, handle);
+
+		/* Split the value-string into individual numbers that we can index */
+		if (!vallist) {
+			char *p;
+			int idx = 0;
+
+			valscopy = strdup(vals);
+			vallist = calloc(128, sizeof(char *));
+			vallist[0] = valscopy;
+
+			for (p = strchr(valscopy, ':'); (p); p = strchr(p+1, ':')) {
+				vallist[++idx] = p+1;
+				*p = '\0';
+			}
+		}
+
+		if (vallist[tpl->idx] == NULL) goto nextrule;
+		val = atof(vallist[tpl->idx]);
+
+		/* Do the checks */
+		if (rule->flags & RRDDSCHK_INTVL) {
+			rulematch = ( ( ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval))  ||
+				        ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) ) &&
+				      ( ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval2))  ||
+				        ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval2)) ) );
+
+			if (!rule->statustext) {
+				char fmt[100];
+
+				strcpy(fmt, "&N=&V (");
+				if (rule->flags & RRDDSCHK_GT) strcat(fmt, " > &L");
+				else if (rule->flags & RRDDSCHK_GE) strcat(fmt, " >= &L");
+				strcat(fmt, " and");
+				if (rule->flags & RRDDSCHK_LT) strcat(fmt, " < &U)");
+				else if (rule->flags & RRDDSCHK_LE) strcat(fmt, " <= &U)");
+
+				rule->statustext = strdup(fmt);
+			}
+		}
+		else {
+			rulematch = ( ((rule->flags & RRDDSCHK_GT) && (val > rule->rule.rrdds.limitval))  ||
+				      ((rule->flags & RRDDSCHK_GE) && (val >= rule->rule.rrdds.limitval)) ||
+				      ((rule->flags & RRDDSCHK_LT) && (val < rule->rule.rrdds.limitval))  ||
+				      ((rule->flags & RRDDSCHK_LE) && (val <= rule->rule.rrdds.limitval))   );
+
+			if (!rule->statustext) {
+				char *fmt = "";
+
+				if      (rule->flags & RRDDSCHK_GT) fmt = "&N=&V (> &L)";
+				else if (rule->flags & RRDDSCHK_GE) fmt = "&N=&V (>= &L)";
+				else if (rule->flags & RRDDSCHK_LT) fmt = "&N=&V (< &L)";
+				else if (rule->flags & RRDDSCHK_LE) fmt = "&N=&V (<= &L)";
+
+				rule->statustext = strdup(fmt);
+			}
+		}
+
+		if (rulematch) {
+			char *bot, *marker;
+
+			sprintf(msgline, "modify %s.%s %s rrdds ", 
+				hostname, rule->rule.rrdds.column,
+				colorname(rule->rule.rrdds.color));
+			addtobuffer(resbuf, msgline);
+
+			/* Format and add the status text */
+			bot = rule->statustext;
+			do {
+				marker = strchr(bot, '&');
+				if (marker) {
+					*marker = '\0';
+					addtobuffer(resbuf, bot);
+					*marker = '&';
+					switch (*(marker+1)) {
+					  case 'N': addtobuffer(resbuf, rule->rule.rrdds.rrdds); 
+						    bot = marker+2; 
+						    break;
+
+					  case 'V': addtobuffer(resbuf, vallist[tpl->idx]); 
+						    bot = marker+2; 
+						    break;
+
+					  case 'L': sprintf(msgline, "%.2f", rule->rule.rrdds.limitval); 
+						    addtobuffer(resbuf, msgline);
+						    bot = marker+2;
+						    break;
+
+					  case 'U': sprintf(msgline, "%.2f", (rule->flags & RRDDSCHK_INTVL) ? rule->rule.rrdds.limitval2 : rule->rule.rrdds.limitval); 
+						    addtobuffer(resbuf, msgline);
+						    bot = marker+2;
+						    break;
+
+					  default:  addtobuffer(resbuf, "&"); bot = marker+1; break;
+					}
+				}
+				else {
+					addtobuffer(resbuf, bot);
+					bot = NULL;
+				}
+			} while (bot);
+
+			addtobuffer(resbuf, "\n\n");
+		}
+
+nextrule:
+		rule = getrule(NULL, NULL, NULL, hinfo, C_RRDDS);
+	}
+
+	if (valscopy) xfree(valscopy);
+	if (vallist) xfree(vallist);
+
+	return (STRBUFLEN(resbuf) > 0) ? STRBUF(resbuf) : NULL;
+}
+
+
+void get_mqqueue_thresholds(void *hinfo, char *classname, char *qmgrname, char *qname, int *warnlen, int *critlen, int *warnage, int *critage, char **trackit)
+{
+	char *hostname, *pagepaths;
+	c_rule_t *rule;
+
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagepaths = xmh_item(hinfo, XMH_ALLPAGEPATHS);
+
+	*warnlen = *critlen = *warnage = *critage = -1;
+	*trackit = NULL;
+
+	rule = getrule(hostname, pagepaths, classname, hinfo, C_MQ_QUEUE);
+	while (rule) {
+		if (namematch(qname, rule->rule.mqqueue.qname->pattern, rule->rule.mqqueue.qname->exp) &&
+		    namematch(qmgrname, rule->rule.mqqueue.qmgrname->pattern, rule->rule.mqqueue.qmgrname->exp)) {
+			*warnlen = rule->rule.mqqueue.warnlen;
+			*critlen = rule->rule.mqqueue.critlen;
+			*warnage = rule->rule.mqqueue.warnage;
+			*critage = rule->rule.mqqueue.critage;
+			if (rule->flags & CHK_TRACKIT) *trackit = (rule->rrdidstr ? rule->rrdidstr : "");
+			return;
+		}
+
+		rule = getrule(NULL, NULL, NULL, hinfo, C_MQ_QUEUE);
+	}
+}
+
+int get_mqchannel_params(void *hinfo, char *classname, char *qmgrname, char *chnname, char *chnstatus, int *color)
+{
+	char *hostname, *pagepaths;
+	c_rule_t *rule;
+
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagepaths = xmh_item(hinfo, XMH_ALLPAGEPATHS);
+
+	rule = getrule(hostname, pagepaths, classname, hinfo, C_MQ_CHANNEL);
+	while (rule) {
+		if (namematch(chnname, rule->rule.mqchannel.chnname->pattern, rule->rule.mqchannel.chnname->exp) &&
+		    namematch(qmgrname, rule->rule.mqchannel.qmgrname->pattern, rule->rule.mqchannel.qmgrname->exp)) {
+			if (rule->rule.mqchannel.alertstates && namematch(chnstatus, rule->rule.mqchannel.alertstates->pattern, rule->rule.mqchannel.alertstates->exp)) {
+				*color = COL_RED;
+			}
+			else if (rule->rule.mqchannel.warnstates && namematch(chnstatus, rule->rule.mqchannel.warnstates->pattern, rule->rule.mqchannel.warnstates->exp)) {
+				*color = COL_YELLOW;
+			}
+			else {
+				*color = COL_GREEN;
+			}
+
+			return 1;
+		}
+
+		rule = getrule(NULL, NULL, NULL, hinfo, C_MQ_CHANNEL);
+	}
+
+	return 0;
+}
+
 
 typedef struct mon_proc_t {
 	c_rule_t *rule;
@@ -2852,8 +3148,8 @@ static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype,
 	}
 	*head = *tail = *walk = NULL;
 
-	hostname = bbh_item(hinfo, BBH_HOSTNAME);
-	pagename = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	hostname = xmh_item(hinfo, XMH_HOSTNAME);
+	pagename = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 
 	rule = getrule(hostname, pagename, classname, hinfo, ruletype);
 	while (rule) {
@@ -2867,9 +3163,10 @@ static int clear_counts(void *hinfo, char *classname, ruletype_t ruletype,
 		count++;
 		switch (rule->ruletype) {
 		  case C_DISK : rule->rule.disk.dcount = 0; break;
+		  case C_INODE: rule->rule.inode.icount = 0; break;
 		  case C_PROC : rule->rule.proc.pcount = 0; break;
 		  case C_PORT : rule->rule.port.pcount = 0; break;
-                  case C_SVC : rule->rule.svc.scount = 0; break;
+		  case C_SVC  : rule->rule.svc.scount = 0; break;
 		  default: break;
 		}
 
@@ -2914,6 +3211,16 @@ static void add_count(char *pname, mon_proc_t *head)
 					pwalk->rule->rule.disk.dcount++;
 			}
 			break;
+
+		  case C_INODE:
+			if (!pwalk->rule->rule.inode.fsexp->exp) {
+				if (strstr(pname, pwalk->rule->rule.inode.fsexp->pattern))
+					pwalk->rule->rule.inode.icount++;
+			}
+			else {
+				if (namematch(pname, pwalk->rule->rule.inode.fsexp->pattern, pwalk->rule->rule.inode.fsexp->exp))
+					pwalk->rule->rule.inode.icount++;
+			}
 
 		  default: break;
 		}
@@ -2965,20 +3272,24 @@ static void add_count3(char *pname0, char *pname1, char *pname2 , mon_proc_t *he
 			if (mymatch == 3) {pwalk->rule->rule.port.pcount++;}
 			break;
 
-                  case C_SVC: 
-                        mymatch = 0;
+		  case C_SVC: 
+			mymatch = 0;
 
-                        if (check_expr_match(pname0, pwalk->rule->rule.svc.svcexp, NULL)) {
+			if (check_expr_match(pname0, pwalk->rule->rule.svc.svcexp, NULL)) {
 				mymatch++;
-				/* Match service name backup is status */
+
+				/* Save the actual startup-method and state for later display in the status message */
+				pwalk->rule->rule.svc.svcname = strdup(pname0);
 				pwalk->rule->rule.svc.startup = strdup(pname1);
 				pwalk->rule->rule.svc.state = strdup(pname2);
-				/* Since we match service name we can check startup ans status */
-				if (check_expr_match(pname1, pwalk->rule->rule.svc.startupexp, NULL)) mymatch++;
-				if (check_expr_match(pname2, pwalk->rule->rule.svc.stateexp, NULL)) mymatch++;
+
+				/* Startupexp and stateexp are optional - if no criteria defined, then they do match */
+				if (!pwalk->rule->rule.svc.startupexp || check_expr_match(pname1, pwalk->rule->rule.svc.startupexp, NULL)) mymatch++;
+				if (!pwalk->rule->rule.svc.stateexp || check_expr_match(pname2, pwalk->rule->rule.svc.stateexp, NULL)) mymatch++;
 			}
-                        if (mymatch == 3) {pwalk->rule->rule.svc.scount++;}
-                        break;
+
+			if (mymatch == 3) {pwalk->rule->rule.svc.scount++;}
+			break;
 
 		  default:
 			break;
@@ -2991,6 +3302,8 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 {
 	char *result = NULL;
 
+	*color = COL_GREEN;
+	*count = 0;
 	if (*walk == NULL) return NULL;
 
 	switch (ruletype) {
@@ -3000,7 +3313,6 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*count = (*walk)->rule->rule.proc.pcount;
 		*lowlim = (*walk)->rule->rule.proc.pmin;
 		*uplim = (*walk)->rule->rule.proc.pmax;
-		*color = COL_GREEN;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.proc.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.proc.color;
 		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
@@ -3013,16 +3325,26 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*count = (*walk)->rule->rule.disk.dcount;
 		*lowlim = (*walk)->rule->rule.disk.dmin;
 		*uplim = (*walk)->rule->rule.disk.dmax;
-		*color = COL_GREEN;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.disk.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.disk.color;
+		if (group) *group = (*walk)->rule->groups;
+		break;
+
+	  case C_INODE:
+		result = (*walk)->rule->rule.inode.fsexp->pattern;
+		*count = (*walk)->rule->rule.inode.icount;
+		*lowlim = (*walk)->rule->rule.inode.imin;
+		*uplim = (*walk)->rule->rule.inode.imax;
+		*color = COL_GREEN;
+		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.inode.color;
+		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.inode.color;
 		if (group) *group = (*walk)->rule->groups;
 		break;
 
 	  case C_PORT:
 		result = (*walk)->rule->statustext;
 		if (!result) {
-			int sz = 0;
+			int sz = 1024;
 			char *p;
 
 			if ((*walk)->rule->rule.port.localexp)
@@ -3038,7 +3360,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 			if ((*walk)->rule->rule.port.exstateexp)
 				sz += strlen((*walk)->rule->rule.port.exstateexp->pattern) + 10;
 
-			(*walk)->rule->statustext = (char *)malloc(sz + 10);
+			(*walk)->rule->statustext = (char *)malloc(sz + 1);
 			p = (*walk)->rule->statustext;
 			if ((*walk)->rule->rule.port.localexp)
 				p += sprintf(p, "local=%s ", (*walk)->rule->rule.port.localexp->pattern);
@@ -3060,7 +3382,6 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		*count = (*walk)->rule->rule.port.pcount;
 		*lowlim = (*walk)->rule->rule.port.pmin;
 		*uplim = (*walk)->rule->rule.port.pmax;
-		*color = COL_GREEN;
 		if ((*lowlim !=  0) && (*count < *lowlim)) *color = (*walk)->rule->rule.port.color;
 		if ((*uplim  != -1) && (*count > *uplim)) *color = (*walk)->rule->rule.port.color;
 		*trackit = ((*walk)->rule->flags & CHK_TRACKIT);
@@ -3068,55 +3389,54 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 		if (group) *group = (*walk)->rule->groups;
 		break;
 
-          case C_SVC:
- 		result = (*walk)->rule->statustext;
-                if (!result) { 
-			int sz = 0;
+	  case C_SVC:
+		result = (*walk)->rule->statustext;
+		if (!result) { 
+			int sz = 1024;
 			char *p;
 
-			if ((*walk)->rule->rule.svc.svcexp->pattern)
-				sz = strlen((*walk)->rule->rule.svc.svcexp->pattern);
 			/* Current state */
+			if ((*walk)->rule->rule.svc.svcname)
+				sz += strlen((*walk)->rule->rule.svc.svcname) + 10;
 			if ((*walk)->rule->rule.svc.startup)
-				sz += strlen((*walk)->rule->rule.svc.startup);
-			else
-				sz += strlen("Not Found");
+				sz += strlen((*walk)->rule->rule.svc.startup) + 10;
 			if ((*walk)->rule->rule.svc.state)
-				sz += strlen((*walk)->rule->rule.svc.state);
-			/* Rule state */
-			if ((*walk)->rule->rule.svc.startupexp->pattern)
-				sz += strlen((*walk)->rule->rule.svc.startupexp->pattern);
-                        if ((*walk)->rule->rule.svc.stateexp->pattern)
-                                sz += strlen((*walk)->rule->rule.svc.stateexp->pattern);
+				sz += strlen((*walk)->rule->rule.svc.state) + 10;
+			if ((*walk)->rule->rule.svc.startupexp)
+				sz += strlen((*walk)->rule->rule.svc.startupexp->pattern) + 10;
+			if ((*walk)->rule->rule.svc.stateexp)
+				sz += strlen((*walk)->rule->rule.svc.stateexp->pattern) + 10;
 
-			(*walk)->rule->statustext = (char *)malloc(sz + 12);
+			(*walk)->rule->statustext = (char *)malloc(sz + 1);
 			p = (*walk)->rule->statustext;
-			if ((*walk)->rule->rule.svc.svcexp->pattern)
-				p += sprintf(p, "%s is", (*walk)->rule->rule.svc.svcexp->pattern);
-			if ((*walk)->rule->rule.svc.startup)
-				p += sprintf(p, " %s", (*walk)->rule->rule.svc.startup);
-			else
-				p += sprintf(p, " %s", "Not Found");
-			if ((*walk)->rule->rule.svc.state)
-				p += sprintf(p, " %s",	(*walk)->rule->rule.svc.state);
-                        if ((*walk)->rule->rule.svc.startupexp->pattern)
-                                 p += sprintf(p, " req %s", (*walk)->rule->rule.svc.startupexp->pattern);
-			if ((*walk)->rule->rule.svc.stateexp->pattern)
-				p += sprintf(p, " %s", (*walk)->rule->rule.svc.stateexp->pattern);
+			if ((*walk)->rule->rule.svc.svcname) {
+				p += sprintf(p, "%s is %s/%s", (*walk)->rule->rule.svc.svcname,
+					     ((*walk)->rule->rule.svc.state ? (*walk)->rule->rule.svc.state : "Unknown"),
+					     ((*walk)->rule->rule.svc.startup ? (*walk)->rule->rule.svc.startup : "Unknown"));
+			}
+			else {
+				/* Did not find the service matching our wanted criteria */
+				p += sprintf(p, "%s: No matching service", (*walk)->rule->rule.svc.svcexp->pattern);
+			}
+			p += sprintf(p, " - want %s/%s",
+				     ((*walk)->rule->rule.svc.stateexp ? (*walk)->rule->rule.svc.stateexp->pattern : "Any"),
+				     ((*walk)->rule->rule.svc.startupexp ? (*walk)->rule->rule.svc.startupexp->pattern : "Any"));
 			*p = '\0';
 
 			result = (*walk)->rule->statustext;
-			/* We free the extra buffer */
+
+			/* We free the extra buffers */
+			if ((*walk)->rule->rule.svc.svcname)
+				xfree((*walk)->rule->rule.svc.svcname);
 			if ((*walk)->rule->rule.svc.state)
 				xfree((*walk)->rule->rule.svc.state);
 			if ((*walk)->rule->rule.svc.startup)
 				xfree((*walk)->rule->rule.svc.startup);
 		}
-                *count = (*walk)->rule->rule.svc.scount;
-		*color = COL_GREEN;
+		*count = (*walk)->rule->rule.svc.scount;
 		if (*count == 0) *color = (*walk)->rule->rule.svc.color;
-                if (group) *group = (*walk)->rule->groups;
-                break;
+		if (group) *group = (*walk)->rule->groups;
+		break;
 
 	  default: break;
 	}
@@ -3128,6 +3448,7 @@ static char *check_count(int *count, ruletype_t ruletype, int *lowlim, int *upli
 
 static mon_proc_t *phead = NULL, *ptail = NULL, *pmonwalk = NULL;
 static mon_proc_t *dhead = NULL, *dtail = NULL, *dmonwalk = NULL;
+static mon_proc_t *ihead = NULL, *itail = NULL, *imonwalk = NULL;
 static mon_proc_t *porthead = NULL, *porttail = NULL, *portmonwalk = NULL;
 static mon_proc_t *svchead = NULL, *svctail = NULL, *svcmonwalk = NULL;
 
@@ -3139,6 +3460,11 @@ int clear_process_counts(void *hinfo, char *classname)
 int clear_disk_counts(void *hinfo, char *classname)
 {
 	return clear_counts(hinfo, classname, C_DISK, &dhead, &dtail, &dmonwalk);
+}
+
+int clear_inode_counts(void *hinfo, char *classname)
+{
+	return clear_counts(hinfo, classname, C_INODE, &ihead, &itail, &imonwalk);
 }
 
 int clear_port_counts(void *hinfo, char *classname)
@@ -3161,6 +3487,11 @@ void add_disk_count(char *dname)
 	add_count(dname, dhead);
 }
 
+void add_inode_count(char *iname)
+{
+	add_count(iname, ihead);
+}
+
 void add_port_count(char *localstr, char *foreignstr, char *stname)
 {
 	add_count3(localstr, foreignstr, stname, porthead);
@@ -3181,6 +3512,11 @@ char *check_disk_count(int *count, int *lowlim, int *uplim, int *color, char **g
 	return check_count(count, C_DISK, lowlim, uplim, color, &dmonwalk, NULL, NULL, group);
 }
 
+char *check_inode_count(int *count, int *lowlim, int *uplim, int *color, char **group)
+{
+	return check_count(count, C_INODE, lowlim, uplim, color, &imonwalk, NULL, NULL, group);
+}
+
 char *check_port_count(int *count, int *lowlim, int *uplim, int *color, char **id, int *trackit, char **group)
 {
 	return check_count(count, C_PORT, lowlim, uplim, color, &portmonwalk, id, trackit, group);
@@ -3190,4 +3526,3 @@ char *check_svc_count(int *count, int *color, char **group)
 {
         return check_count(count, C_SVC, NULL, NULL, color, &svcmonwalk, NULL, NULL, group);
 }
-

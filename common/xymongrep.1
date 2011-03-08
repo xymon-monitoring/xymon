@@ -1,32 +1,32 @@
-.TH BBHOSTGREP 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH XYMONGREP 1 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-bbhostgrep \- pick out lines in bb-hosts
+xymongrep \- pick out lines in hosts.cfg
 .SH SYNOPSIS
-.B "bbhostgrep --help"
+.B "xymongrep --help"
 .br
-.B "bbhostgrep --version"
+.B "xymongrep --version"
 .br
-.B "bbhostgrep [--noextras] [--test-untagged] [--bbdisp] [--bbnet] TAG [TAG...]"
+.B "xymongrep [--noextras] [--test-untagged] [--web] [--net] TAG [TAG...]"
 
 .SH DESCRIPTION
-.I bbhostgrep(1)
+.I xymongrep(1)
 is for use by extension scripts that need to pick out the entries 
-in a bb-hosts file that are relevant to the script.
+in a hosts.cfg file that are relevant to the script.
 
 The utility accepts test names as parameters, and will then
-parse the bb-hosts file and print out the host entries that
+parse the hosts.cfg file and print out the host entries that
 have at least one of the wanted tests specified. Tags may be
-given with a trailing asterisk '*', e.g. "bbhostgrep http*"
+given with a trailing asterisk '*', e.g. "xymongrep http*"
 is needed to find all http and https tags.
 
-The bbhostgrep utility supports the use of "include" directives
-inside the bb-hosts file, and will find matching tags in all
+The xymongrep utility supports the use of "include" directives
+inside the hosts.cfg file, and will find matching tags in all
 included files.
 
 If the DOWNTIME or SLA tags are used in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file, these are interpreted relative to the current time. 
-bbhostgrep then outputs a "INSIDESLA" or "OUTSIDESLA" tag
+xymongrep then outputs a "INSIDESLA" or "OUTSIDESLA" tag
 for easier use by scripts that want to check if the current
 time is inside or outside the expected uptime window.
 
@@ -36,10 +36,10 @@ Remove the "testip", "dialup", "INSIDESLA" and "OUTSIDESLA" tags
 from the output.
 
 .IP "--test-untagged"
-When using the BBLOCATION environment variable to test
-only hosts on a particular network segment, bbtest-net
+When using the XYMONNETWORK environment variable to test
+only hosts on a particular network segment, xymonnet
 will ignore hosts that do not have any "NET:x" tag.
-So only hosts that have a NET:$BBLOCATION tag will be
+So only hosts that have a NET:$XYMONNETWORK tag will be
 tested.
 .br
 With this option, hosts with no NET: tag are included
@@ -47,7 +47,7 @@ in the test, so that all hosts that either have a
 matching NET: tag, or no NET: tag at all are tested.
 
 .IP "--no-down[=TESTNAME]"
-bbhostgrep will query the Xymon server for the current
+xymongrep will query the Xymon server for the current
 status of the "conn" test, and if TESTNAME is specified
 also for the current state of the specified test. If
 the status of the "conn" test for a host is non-green,
@@ -56,23 +56,23 @@ host is ignored and will not be included in the output.
 This can be used to ignore hosts that are down, or hosts
 where the custom test is disabled.
 
-.IP "--bbdisp"
-Search the bb-hosts file following include statements as a
-BBDISPLAY server would.
+.IP "--web"
+Search the hosts.cfg file following include statements as a
+Xymon web-server would.
 
-.IP "--bbnet"
-Search the bb-hosts file following include statements as a
-BBNET server would.
+.IP "--net"
+Search the hosts.cfg file following include statements as 
+when running xymonnet.
 
 .SH EXAMPLE
-If your bb-hosts file looks like this
+If your hosts.cfg file looks like this
 
    192.168.1.1   www.test.com  # ftp telnet !oracle
    192.168.1.2   db1.test.com  # oracle
    192.168.1.3   mail.test.com # smtp
 
 and you have a custom Xymon extension script that performs the
-"oracle" test, then running "bbhostgrep oracle" would yield
+"oracle" test, then running "xymongrep oracle" would yield
 
    192.168.1.1   www.test.com  # !oracle
    192.168.1.2   db1.test.com  # oracle
@@ -81,42 +81,42 @@ so the script can quickly find the hosts that are of interest.
 
 Note that the reverse-test modifier - "!oracle" - is included
 in the output; this also applies to the other test modifiers
-defined by Xymon (the dialup and always-true modifiers).
+defined by Xymon (the dial-up and always-true modifiers).
 
 If your extension scripts use more than one tag, just list
 all of the interesting tags on the command line.
 
-bbhostgrep also supports the "NET:location" tag used by 
-bbtest-net, so if your script performs network checks then 
+xymongrep also supports the "NET:location" tag used by 
+xymonnet, so if your script performs network checks then 
 it will see only the hosts that are relevant for the test
 location that the script currently executes on.
 
 .SH USE IN EXTENSION SCRIPTS
-To integrate bbhostgrep into an existing script, look for
-the line in the script that grep's in the $BBHOSTS file. 
+To integrate xymongrep into an existing script, look for
+the line in the script that grep's in the $HOSTSCFG file. 
 Typically it will look somewhat like this:
 
-   $GREP -i "^[0-9].*#.*TESTNAME" $BBHOSTS | ... code to handle test
+   $GREP -i "^[0-9].*#.*TESTNAME" $HOSTSCFG | ... code to handle test
 
-Instead of the grep, we will use bbhostgrep. It then becomes
+Instead of the grep, we will use xymongrep. It then becomes
 
-   $BBHOME/bin/bbhostgrep TESTNAME | ... code to handle test
+   $XYMONHOME/bin/xymongrep TESTNAME | ... code to handle test
 
 which is simpler, less error-prone and more efficient.
 
 .SH ENVIRONMENT VARIABLES
-.IP BBLOCATION
-If set, bbhostgrep outputs only lines from bb-hosts that have
-a matching NET:$BBLOCATION setting.
+.IP XYMONNETWORK
+If set, xymongrep outputs only lines from hosts.cfg that have
+a matching NET:$XYMONNETWORK setting.
 .sp
-.IP BBHOSTS
+.IP HOSTSCFG
 Filename for the Xymon
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 .SH FILES
-.IP $BBHOSTS
-The Xymon bb-hosts file
+.IP $HOSTSCFG
+The Xymon hosts.cfg file
 
 .SH "SEE ALSO"
-bb-hosts(5), hobbitserver.cfg(5)
+hosts.cfg(5), xymonserver.cfg(5)

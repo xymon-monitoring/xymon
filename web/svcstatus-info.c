@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit "info" column generator.                                            */
+/* Xymon "info" column generator.                                             */
 /*                                                                            */
 /* This is a standalone tool for generating data for the "info" column data.  */
 /* This extracts all of the static configuration info about a host contained  */
-/* in Hobbit, and displays it on one webpage.                                 */
+/* in Xymon, and displays it on one webpage.                                  */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -30,11 +30,11 @@ static char rcsid[] = "$Id$";
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int showenadis = 1;
 int usejsvalidation = 1;
-int newnkconfig = 1;
+int newcritconfig = 1;
 
 typedef struct hinf_t {
 	char *name;
@@ -68,15 +68,15 @@ static int fetch_status(char *hostname)
 {
 	char *commaname;
 	char *statuslist = NULL;
-	char *hobbitcmd = (char *)malloc(1024 + strlen(hostname));
+	char *xymoncmd = (char *)malloc(1024 + strlen(hostname));
 	char *walk;
 	int testsz;
 	int haveuname = 0;
 	sendreturn_t *sres;
 
 	sres = newsendreturnbuf(1, NULL);
-	sprintf(hobbitcmd, "hobbitdboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
-	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	sprintf(xymoncmd, "xymondboard fields=testname,color,disabletime,dismsg,client,lastchange host=^%s$", hostname);
+	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}
 	else {
@@ -122,8 +122,8 @@ static int fetch_status(char *hostname)
 	if (statuslist) xfree(statuslist); statuslist = NULL;
 
 
-	sprintf(hobbitcmd, "schedule");
-	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+	sprintf(xymoncmd, "schedule");
+	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 		return 1;
 	}
 	else {
@@ -171,8 +171,8 @@ static int fetch_status(char *hostname)
 		char *clidata = NULL;
 		char *boln, *eoln;
 
-		sprintf(hobbitcmd, "clientlog %s section=uname,osversion,clientversion", hostname);
-		if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
+		sprintf(xymoncmd, "clientlog %s section=uname,osversion,clientversion", hostname);
+		if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
 			return 1;
 		}
 		else {
@@ -218,7 +218,7 @@ static int fetch_status(char *hostname)
 	return 0;
 }
 
-static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
+static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 {
 	void *hi = hostinfo(hostname);
 	activealerts_t *alert;
@@ -231,7 +231,7 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
-	alert->location = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
+	alert->location = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
@@ -256,7 +256,7 @@ static void generate_hobbit_alertinfo(char *hostname, strbuffer_t *buf)
 
 }
 
-static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
+static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 {
 	void *hi = hostinfo(hostname);
 	char l[1024];
@@ -265,62 +265,69 @@ static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
 	int month, year;
 	int needreload = 0;
 	char *holidayset;
+	char yeartxt[10];
 
 	tm = localtime(&now);
 	year = tm->tm_year + 1900;
 	month = tm->tm_mon;
 
-	holidayset = bbh_item(hi, BBH_HOLIDAYS);
+	holidayset = xmh_item(hi, XMH_HOLIDAYS);
 
 	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", hostname);
 	addtobuffer(buf, l);
 
 	addtobuffer(buf, "<tr>");
 
-	/* In January+February, show last year's holidays */
-	if (month <= 1) {
-		needreload = 1;
-		load_holidays(year-1);
-		addtobuffer(buf, "<td><table>\n");
-		if (holidayset) {
-			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year-1, holidayset);
-		}
-		else {
-			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year-1);
-		}
-		addtobuffer(buf, l);
-		printholidays(holidayset, buf);
-		addtobuffer(buf, "</table></td>\n");
+
+	addtobuffer(buf, "<td><table>\n");
+
+	switch (month) {
+	  case 0: case 1: case 2:
+		sprintf(yeartxt, "%d/%d", year-1, year);
+		break;
+
+	  case 9: case 10: case 11:
+		sprintf(yeartxt, "%d/%d", year, year+1);
+		break;
+
+	  default:
+		sprintf(yeartxt, "%d", year);
+		break;
 	}
 
-	/* Show this year's holidays */
-	if (needreload) load_holidays(year);
-	addtobuffer(buf, "<td><table>\n");
 	if (holidayset) {
-		sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year, holidayset);
+		sprintf(l, "<tr><th colspan=2>Holidays %s (%s)</th></tr>\n", yeartxt, holidayset);
 	}
 	else {
-		sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year);
+		sprintf(l, "<tr><th colspan=2>Holidays %s</th></tr>\n", yeartxt);
 	}
 	addtobuffer(buf, l);
-	printholidays(holidayset, buf);
-	addtobuffer(buf, "</table></td>\n");
 
-	/* In November+December, show next year's holidays */
-	if (month >= 10) {
-		needreload = 1;
-		load_holidays(year+1);
-		addtobuffer(buf, "<td><table>\n");
-		if (holidayset) {
-			sprintf(l, "<tr><th colspan=2>Holidays %d (%s)</th></tr>\n", year+1, holidayset);
-		}
-		else {
-			sprintf(l, "<tr><th colspan=2>Holidays %d</th></tr>\n", year+1);
-		}
-		addtobuffer(buf, l);
-		printholidays(holidayset, buf);
-		addtobuffer(buf, "</table></td>\n");
+
+	/* In January+February+March, show last year's holidays in October+November+December */
+	if (month <= 2) {
+		load_holidays(year-1);
+		printholidays(holidayset, buf, 9, 11);
+		load_holidays(year);
 	}
+
+	if (month >= 9) {
+		/* 
+		 * In October thru December, skip the first half 
+		 * of this year from the display. Instead, show
+		 * holidays in first half of next year.
+		 */
+		printholidays(holidayset, buf, 6, 11);
+
+		load_holidays(year+1);
+		printholidays(holidayset, buf, 0, 5);
+		load_holidays(year);
+	}
+	else {
+		printholidays(holidayset, buf, 0, 11);
+	}
+
+	addtobuffer(buf, "</table></td>\n");
 
 	addtobuffer(buf, "</tr>\n");
 
@@ -331,16 +338,16 @@ static void generate_hobbit_holidayinfo(char *hostname, strbuffer_t *buf)
 
 
 
-static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
+static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 {
 	char msgline[4096];
 	char datestr[100];
 	int i, btncount;
-	char *bbdatefmt;
+	char *xymondatefmt;
 	strbuffer_t *servRed, *servYellow, *servPurple, *servBlue;
 	time_t logage;
 
-	bbdatefmt = xgetenv("BBDATEFORMAT");
+	xymondatefmt = xgetenv("XYMONDATEFORMAT");
 
 	servRed = newstrbuffer(0);
 	servYellow = newstrbuffer(0);
@@ -353,13 +360,13 @@ static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><th>Service</th><th>Since</th><th>Duration</th></tr>\n");
 
 	for (i = 0; i < testcount; i++) {
-		strftime(datestr, sizeof(datestr), bbdatefmt, localtime(&tnames[i].lastchange));
+		strftime(datestr, sizeof(datestr), xymondatefmt, localtime(&tnames[i].lastchange));
 		logage = getcurrenttime(NULL) - tnames[i].lastchange;
 
 		addtobuffer(buf, "<tr>");
 
 		sprintf(msgline, "<td><img src=\"%s/%s\" height=\"%s\" width=\"%s\" border=0 alt=\"%s status\"> %s</td>",
-			xgetenv("BBSKIN"), dotgiffilename(tnames[i].color, 0, 1),
+			xgetenv("XYMONSKIN"), dotgiffilename(tnames[i].color, 0, 1),
 			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"),
 			colorname(tnames[i].color), tnames[i].name);
 		addtobuffer(buf, msgline);
@@ -433,7 +440,7 @@ static void generate_hobbit_statuslist(char *hostname, strbuffer_t *buf)
 	freestrbuffer(servBlue);
 }
 
-static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
+static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 {
 	int i;
 	char l[1024];
@@ -448,7 +455,7 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 	beginyear = nowtm->tm_year + 1900;
 	endyear = nowtm->tm_year + 1900 + 5;
 
-	sprintf(l, "<form name=\"disableform\" method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+	sprintf(l, "<form name=\"disableform\" method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, l);
 	sprintf(l, "<table summary=\"%s disable\" border=1>\n", hostname);
 	addtobuffer(buf, l);
@@ -567,7 +574,7 @@ static void generate_hobbit_disable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "</form>\n");
 }
 
-static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
+static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 {
 	int i;
 	char l[1024];
@@ -602,7 +609,7 @@ static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
-		sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 		addtobuffer(buf, l);
 		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
 		addtobuffer(buf, l);
@@ -618,7 +625,7 @@ static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><td>ALL</td><td>&nbsp;</td><td>&nbsp;</td>\n");
 
 	addtobuffer(buf, "<td>");
-	sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+	sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, l);
 	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
 	addtobuffer(buf, l);
@@ -634,7 +641,7 @@ static void generate_hobbit_enable(char *hostname, strbuffer_t *buf)
 }
 
 
-static void generate_hobbit_scheduled(char *hostname, strbuffer_t *buf)
+static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 {
 	char l[1024];
 	sched_t *swalk;
@@ -666,7 +673,7 @@ static void generate_hobbit_scheduled(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
-		sprintf(l, "<form method=\"post\" action=\"%s/hobbit-enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
+		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 		addtobuffer(buf, l);
 		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
 		addtobuffer(buf, l);
@@ -683,7 +690,7 @@ static void generate_hobbit_scheduled(char *hostname, strbuffer_t *buf)
 }
 
 
-char *generate_info(char *hostname)
+char *generate_info(char *hostname, char *critconfigfn)
 {
 	strbuffer_t *infobuf;
 	char l[MAX_LINE_LEN];
@@ -704,7 +711,7 @@ char *generate_info(char *hostname)
 	{
 		char configfn[PATH_MAX];
 
-		sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
+		sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 		load_alertconfig(configfn, alertcolors, alertinterval);
 		load_holidays(0);
 	}
@@ -717,7 +724,7 @@ char *generate_info(char *hostname)
 
 	addtobuffer(infobuf, "<table width=\"100%\" summary=\"Host Information\">\n");
 
-	val = bbh_item(hostwalk, BBH_DISPLAYNAME);
+	val = xmh_item(hostwalk, XMH_DISPLAYNAME);
 	if (val && (strcmp(val, hostname) != 0)) {
 		sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s (%s)</td></tr>\n", 
 			val, hostname);
@@ -727,7 +734,7 @@ char *generate_info(char *hostname)
 	}
 	addtobuffer(infobuf, l);
 
-	val = bbh_item(hostwalk, BBH_CLIENTALIAS);
+	val = xmh_item(hostwalk, XMH_CLIENTALIAS);
 	if (val && (strcmp(val, hostname) != 0)) {
 		sprintf(l, "<tr><th align=left>Client alias:</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
@@ -743,7 +750,7 @@ char *generate_info(char *hostname)
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_IP);
+	val = xmh_item(hostwalk, XMH_IP);
 	if (strcmp(val, "0.0.0.0") == 0) {
 		struct in_addr addr;
 		struct hostent *hent;
@@ -762,7 +769,7 @@ char *generate_info(char *hostname)
 	sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", val);
 	addtobuffer(infobuf, l);
 
-	val = bbh_item(hostwalk, BBH_DOCURL);
+	val = xmh_item(hostwalk, XMH_DOCURL);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Documentation:</th><td align=left><a href=\"%s\">%s</a>\n", val, val);
 		addtobuffer(infobuf, l);
@@ -771,27 +778,27 @@ char *generate_info(char *hostname)
 	val = hostlink(hostname);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Notes:</th><td align=left><a href=\"%s\">%s%s</a>\n", 
-			val, xgetenv("BBWEBHOST"), val);
+			val, xgetenv("XYMONWEBHOST"), val);
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_PAGEPATH);
+	val = xmh_item(hostwalk, XMH_PAGEPATH);
 	sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s/\">%s</a>\n", 
-		xgetenv("BBWEB"), val, bbh_item(hostwalk, BBH_PAGEPATHTITLE));
+		xgetenv("XYMONWEB"), val, xmh_item(hostwalk, XMH_PAGEPATHTITLE));
 	addtobuffer(infobuf, l);
 
 	clonewalk = next_host(hostwalk, 1);
-	while (clonewalk && (strcmp(hostname, bbh_item(clonewalk, BBH_HOSTNAME)) == 0)) {
-		val = bbh_item(clonewalk, BBH_PAGEPATH);
+	while (clonewalk && (strcmp(hostname, xmh_item(clonewalk, XMH_HOSTNAME)) == 0)) {
+		val = xmh_item(clonewalk, XMH_PAGEPATH);
 		sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
-			xgetenv("BBWEB"), val, bbh_item(clonewalk, BBH_PAGEPATHTITLE));
+			xgetenv("XYMONWEB"), val, xmh_item(clonewalk, XMH_PAGEPATHTITLE));
 		addtobuffer(infobuf, l);
 		clonewalk = next_host(clonewalk, 1);
 	}
 	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-	val = bbh_item(hostwalk, BBH_DESCRIPTION);
+	val = xmh_item(hostwalk, XMH_DESCRIPTION);
 	if (val) {
 		char *delim;
 
@@ -807,21 +814,21 @@ char *generate_info(char *hostname)
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 	}
 
-	if (newnkconfig) {
-		/* Load the hobbit-nkview.cfg file and get the alerts for this host */
+	if (newcritconfig) {
+		/* Load the critical.cfg file and get the alerts for this host */
 		int i;
 		char *key;
-		nkconf_t *nkrec;
+		critconf_t *nkrec;
 		int firstrec = 1;
 
-		load_nkconfig(NULL);
+		load_critconfig(critconfigfn);
 		for (i=0; (i < testcount); i++) {
 			key = (char *)malloc(strlen(hostname) + strlen(tnames[i].name) + 2);
 			sprintf(key, "%s|%s", hostname, tnames[i].name);
-			nkrec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
+			nkrec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
 			if (!nkrec) continue;
 			if (firstrec) {
-				addtobuffer(infobuf, "<tr><th align=left>NK alerts:</th>");
+				addtobuffer(infobuf, "<tr><th align=left>Critical alerts:</th>");
 				firstrec = 0;
 			}
 			else {
@@ -831,8 +838,8 @@ char *generate_info(char *hostname)
 			sprintf(l, "<td align=left>%s:", tnames[i].name);
 			addtobuffer(infobuf, l);
 
-			if (nkrec->nktime && *nkrec->nktime) {
-				sprintf(l, " %s", timespec_text(nkrec->nktime));
+			if (nkrec->crittime && *nkrec->crittime) {
+				sprintf(l, " %s", timespec_text(nkrec->crittime));
 				addtobuffer(infobuf, l);
 			}
 			else addtobuffer(infobuf, " 24x7");
@@ -849,12 +856,12 @@ char *generate_info(char *hostname)
 		}
 	}
 	else {
-		val = bbh_item(hostwalk, BBH_NK);
+		val = xmh_item(hostwalk, XMH_NK);
 		if (val) {
-			sprintf(l, "<tr><th align=left>NK Alerts:</th><td align=left>%s", val); 
+			sprintf(l, "<tr><th align=left>Critical Alerts:</th><td align=left>%s", val); 
 			addtobuffer(infobuf, l);
 
-			val = bbh_item(hostwalk, BBH_NKTIME);
+			val = xmh_item(hostwalk, XMH_NKTIME);
 			if (val) {
 				sprintf(l, " (%s)", val);
 				addtobuffer(infobuf, l);
@@ -864,11 +871,11 @@ char *generate_info(char *hostname)
 			addtobuffer(infobuf, "</td></tr>\n");
 		}
 		else {
-			addtobuffer(infobuf, "<tr><th align=left>NK alerts:</th><td align=left>None</td></tr>\n");
+			addtobuffer(infobuf, "<tr><th align=left>Critical alerts:</th><td align=left>None</td></tr>\n");
 		}
 	}
 
-	val = bbh_item(hostwalk, BBH_DOWNTIME);
+	val = xmh_item(hostwalk, XMH_DOWNTIME);
 	if (val) {
 		char *s = timespec_text(val);
 		addtobuffer(infobuf, "<tr><th align=left>Planned downtime:</th><td align=left>");
@@ -876,63 +883,63 @@ char *generate_info(char *hostname)
 		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
-	val = bbh_item(hostwalk, BBH_REPORTTIME);
+	val = xmh_item(hostwalk, XMH_REPORTTIME);
 	if (val) {
 		char *s = timespec_text(val);
 		addtobuffer(infobuf, "<tr><th align=left>SLA report period:</th><td align=left>");
 		addtobuffer(infobuf, s);
 		addtobuffer(infobuf, "</td></tr>\n");
 
-		val = bbh_item(hostwalk, BBH_WARNPCT);
-		if (val == NULL) val = xgetenv("BBREPWARN");
+		val = xmh_item(hostwalk, XMH_WARNPCT);
+		if (val == NULL) val = xgetenv("XYMONREPWARN");
 		if (val == NULL) val = "(not set)";
 
 		sprintf(l, "<tr><th align=left>SLA Availability:</th><td align=left>%s</td></tr>\n", val); 
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPYELLOW);
+	val = xmh_item(hostwalk, XMH_NOPROPYELLOW);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed warnings (yellow):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPRED);
+	val = xmh_item(hostwalk, XMH_NOPROPRED);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed alarms (red):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPPURPLE);
+	val = xmh_item(hostwalk, XMH_NOPROPPURPLE);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed alarms (purple):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	val = bbh_item(hostwalk, BBH_NOPROPACK);
+	val = xmh_item(hostwalk, XMH_NOPROPACK);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Suppressed alarms (acked):</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-	val = bbh_item(hostwalk, BBH_NET);
+	val = xmh_item(hostwalk, XMH_NET);
 	if (val) {
 		sprintf(l, "<tr><th align=left>Tested from network:</th><td align=left>%s</td></tr>\n", val);
 		addtobuffer(infobuf, l);
 	}
 
-	if (bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
+	if (xmh_item(hostwalk, XMH_FLAG_DIALUP)) {
 		addtobuffer(infobuf, "<tr><td colspan=2 align=left>Host downtime does not trigger alarms (dialup host)</td></tr>\n");
 	}
 
 	sprintf(l, "<tr><th align=left>Network tests use:</th><td align=left>%s</td></tr>\n", 
-		(bbh_item(hostwalk, BBH_FLAG_TESTIP) ? "IP-address" : "Hostname"));
+		(xmh_item(hostwalk, XMH_FLAG_TESTIP) ? "IP-address" : "Hostname"));
 	addtobuffer(infobuf, l);
 
 	ping = 1;
-	if (bbh_item(hostwalk, BBH_FLAG_NOPING)) ping = 0;
-	if (bbh_item(hostwalk, BBH_FLAG_NOCONN)) ping = 0;
+	if (xmh_item(hostwalk, XMH_FLAG_NOPING)) ping = 0;
+	if (xmh_item(hostwalk, XMH_FLAG_NOCONN)) ping = 0;
 	sprintf(l, "<tr><th align=left>Checked with ping:</th><td align=left>%s</td></tr>\n", (ping ? "Yes" : "No"));
 	addtobuffer(infobuf, l);
 
@@ -940,7 +947,7 @@ char *generate_info(char *hostname)
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	first = 1;
-	val = bbh_item_walk(hostwalk);
+	val = xmh_item_walk(hostwalk);
 	while (val) {
 		if (*val == '~') val++;
 
@@ -955,12 +962,12 @@ char *generate_info(char *hostname)
 			sprintf(l, "<a href=\"%s\">%s</a><br>\n", urlstring, urlstring);
 			addtobuffer(infobuf, l);
 		}
-		val = bbh_item_walk(NULL);
+		val = xmh_item_walk(NULL);
 	}
 	if (!first) addtobuffer(infobuf, "</td></tr>\n");
 
 	first = 1;
-	val = bbh_item_walk(hostwalk);
+	val = xmh_item_walk(hostwalk);
 	while (val) {
 		if (*val == '~') val++;
 
@@ -975,8 +982,8 @@ char *generate_info(char *hostname)
 		     (strncmp(val, "nopost=", 7) == 0)  ||
 		     (strncmp(val, "nopost;", 7) == 0) ) {
 
-			bburl_t bburl;
-			char *urlstring = decode_url(val, &bburl);
+			weburl_t weburl;
+			char *urlstring = decode_url(val, &weburl);
 
 			if (first) {
 				addtobuffer(infobuf, "<tr><th align=left>Content checks:</th><td align=left>\n");
@@ -989,20 +996,20 @@ char *generate_info(char *hostname)
 			sprintf(l, "&nbsp; %s return %s'%s'", 
 					((strncmp(val, "no", 2) == 0) ? "cannot" : "must"), 
 					((strncmp(val, "type;", 5) == 0) ? "content-type " : ""),
-					bburl.expdata);
+					weburl.expdata);
 			addtobuffer(infobuf, l);
 			addtobuffer(infobuf, "<br>\n");
 		}
 
-		val = bbh_item_walk(NULL);
+		val = xmh_item_walk(NULL);
 	}
 	if (!first) addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
-	if (!bbh_item(hostwalk, BBH_FLAG_DIALUP)) {
+	if (!xmh_item(hostwalk, XMH_FLAG_DIALUP)) {
 		addtobuffer(infobuf, "<tr><th align=left valign=top>Alerting:</th><td align=left>\n");
 		if (gotstatus) 
-			generate_hobbit_alertinfo(hostname, infobuf);
+			generate_xymon_alertinfo(hostname, infobuf);
 		else
 			addtobuffer(infobuf, "Alert configuration unavailable");
 		addtobuffer(infobuf, "</td></tr>\n");
@@ -1010,41 +1017,41 @@ char *generate_info(char *hostname)
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	addtobuffer(infobuf, "<tr><th align=left valign=top>Holidays</th><td align=left>\n");
-	generate_hobbit_holidayinfo(hostname, infobuf);
+	generate_xymon_holidayinfo(hostname, infobuf);
 	addtobuffer(infobuf, "</td></tr>\n");
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	if (gotstatus && showenadis) {
 		int i, anydisabled = 0;
 
-		generate_hobbit_statuslist(hostname, infobuf);
+		generate_xymon_statuslist(hostname, infobuf);
 		addtobuffer(infobuf, "<tr><th align=left valign=top>Disable tests</th><td align=left>\n");
-		generate_hobbit_disable(hostname, infobuf);
+		generate_xymon_disable(hostname, infobuf);
 		addtobuffer(infobuf, "</td></tr>\n");
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 		for (i=0; (i < testcount); i++) anydisabled = (anydisabled || (tnames[i].distime != 0));
 		if (anydisabled) {
 			addtobuffer(infobuf, "<tr><th align=left valign=top>Enable tests</th><td align=left>\n");
-			generate_hobbit_enable(hostname, infobuf);
+			generate_xymon_enable(hostname, infobuf);
 			addtobuffer(infobuf, "</td></tr>\n");
 			addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 		}
 
 		if (schedtasks) {
 			addtobuffer(infobuf, "<tr><th align=left valign=top>Scheduled tasks</th><td align=left>\n");
-			generate_hobbit_scheduled(hostname, infobuf);
+			generate_xymon_scheduled(hostname, infobuf);
 			addtobuffer(infobuf, "</td></tr>\n");
 			addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 		}
 	}
 
 	addtobuffer(infobuf, "<tr><th align=left>Other tags:</th><td align=left>");
-	val = bbh_item_walk(hostwalk);
+	val = xmh_item_walk(hostwalk);
 	while (val) {
 		if (*val == '~') val++;
 
-		if ( (bbh_item_idx(val) == -1)          &&
+		if ( (xmh_item_idx(val) == -1)          &&
 		     (strncmp(val, "http", 4)    != 0)  &&
 		     (strncmp(val, "cont;", 5)   != 0)  &&
 		     (strncmp(val, "cont=", 5)   != 0)  &&
@@ -1055,13 +1062,12 @@ char *generate_info(char *hostname)
 		     (strncmp(val, "post;", 5)   != 0)  &&
 		     (strncmp(val, "post=", 5)   != 0)  &&
 		     (strncmp(val, "nopost=", 7) != 0)  &&
-		     (strncmp(val, "nopost;", 7) != 0)  &&
-		     (strncmp(val, "DEVMON:", 7) != 0) ) {
+		     (strncmp(val, "nopost;", 7) != 0) ) {
 			sprintf(l, "%s ", val);
 			addtobuffer(infobuf, l);
 		}
 
-		val = bbh_item_walk(NULL);
+		val = xmh_item_walk(NULL);
 	}
 	addtobuffer(infobuf, "</td></tr>\n</table>\n");
 

@@ -1,13 +1,13 @@
-.TH BB-HOSTS 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH HOSTS.CFG 5 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-bb-hosts \- Main Xymon configuration file
+hosts.cfg \- Main Xymon configuration file
 
 .SH SYNOPSIS
-.IP bb-hosts
+.IP hosts.cfg
 
 .SH DESCRIPTION
 The
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file is the most important configuration file for all of the
 Xymon programs.  This file contains the full list of 
 all the systems monitored by Xymon, including the set 
@@ -19,7 +19,7 @@ starting with a hash mark (#) are treated as comments and ignored.
 Long lines can be broken up by putting a backslash at the end of 
 the line and continuing the entry on the next line.
 .sp
-The format of an entry in the bb-hosts file is as follows:
+The format of an entry in the hosts.cfg file is as follows:
 .br
    IP-address hostname # tag1 tag2 ...
 .sp
@@ -31,40 +31,50 @@ by default, but no other tests.
 The optional tags are then used to define which tests are 
 relevant for the host, and also to set e.g. the time-interval used
 for availability reporting by
-.I bbgen(1)
+.I xymongen(1)
 
-An example of setting up the bb-hosts file is in the Xymon on-line 
+An example of setting up the hosts.cfg file is in the Xymon on-line 
 documentation (from the Help menu, choose "Configuring Monitoring").
-The following describes the possible settings in a bb-hosts
+The following describes the possible settings in a hosts.cfg
 file supported by Xymon.
 
 
 .SH TAGS RECOGNIZED BY ALL TOOLS
 
 .IP "include filename"
-This tag is used to include another file into the bb-hosts
-file at run-time, allowing for a large bb-hosts file to be
+This tag is used to include another file into the hosts.cfg
+file at run-time, allowing for a large hosts.cfg file to be
 split up into more manageable pieces.
 
 The "filename" argument should point to a file that uses the
-same syntax as bb-hosts. The filename can be an absolute 
+same syntax as hosts.cfg. The filename can be an absolute 
 filename (if it begins with a '/'), or a relative filename -
-relative filenames are prefixed with the directory where
-the main bb-hosts file is located (usually $BBHOME/etc/).
+relative file names are prefixed with the directory where
+the main hosts.cfg file is located (usually $XYMONHOME/etc/).
 
 You can nest include tags, i.e. a file that is included 
-from the main bb-hosts file can itself include other files.
+from the main hosts.cfg file can itself include other files.
 
 .IP "dispinclude filename"
-Acts like the "include" tag, but only on the BBDISPLAY server.
-Can be used e.g. to put a group of hosts on multiple subpages,
+Acts like the "include" tag, but only for the xymongen tool.
+Can be used e.g. to put a group of hosts on multiple sub-pages,
 without having to repeat the host definitions.
 
 .IP "netinclude filename"
-Acts like the "include" tag, but only on the BBNET server.
+Acts like the "include" tag, but only for the xymonnet tool.
+
+.IP "directory directoryname"
+This tag is used to include all files in the named directory.
+Files are included in alphabetical order. If there are sub-
+directories, these are recursively included also. The following 
+files are ignored: Files that begin with a dot, files that end
+with a tilde, RCS files that end with ",v", RPM package manager
+files ending in ".rpmsave" or ".rpmnew", DPKG package manager
+files ending in ".dpkg-new" or ".dpkg-orig", and all special
+files (devices, sockets, pipes etc).
 
 
-.SH GENERAL PER-HOST OPTIONS 
+.SH GENERAL PER-HOST OPTIONS
 .IP noclear
 Controls whether stale status messages go purple or clear when
 a host is down. Normally, when a host is down the client statuses
@@ -75,28 +85,36 @@ other tests will go "clear" instead of purple so you only get alerts
 for the "conn" test. If you do want the stale statuses to go purple,
 you can use the "noclear" tag to override this behaviour.
 
-Note that "noclear" also affects the behaviour of network tests; 
+Note that "noclear" also affects the behaviour of network tests;
 see below.
 
 .IP prefer
-When a single host is defined multiple time in the bb-hosts file,
-bbgen tries to guess which definition is the best to use for
+When a single host is defined multiple time in the hosts.cfg file,
+xymongen tries to guess which definition is the best to use for
 the information used on the "info" column, or for the NOPROPRED
-and other bbgen-specific settings. Host definitions that have
+and other xymongen-specific settings. Host definitions that have
 a "noconn" tag or an IP of 0.0.0.0 get lower priority.
 
-By using the "prefer" tag you tell bbgen that this host definition
+By using the "prefer" tag you tell xymongen that this host definition
 should be used.
 
 Note: This only applies to hosts that are defined multiple
-times in the bb-hosts file, although it will not hurt to add it
+times in the hosts.cfg file, although it will not hurt to add it
 on other hosts as well.
 
+.IP multihomed
+Tell Xymon that data from the host can arrive from multiple IP-adresses.
+By default, Xymon will warn if it sees data for one host coming from
+different IP-adresses, because this usually indicates a mis-configuration
+of the hostname on at least one of the servers involved. Some hosts
+with multiple IP-adresses may use different IP's for sending data to
+Xymon, however. This tag disables the check of source IP when receiving
+data.
 
 
-.SH BBGEN DISPLAY OPTIONS
+.SH XYMONGEN DISPLAY OPTIONS
 These tags are processed by the 
-.I bbgen(1)
+.I xymongen(1)
 tool when generating the Xymon webpages or reports.
 
 .IP "page NAME [Page-title]"
@@ -105,19 +123,19 @@ hosts following the "page" directive appear on this page, until
 a new "page", "subpage" or "subparent" line is found.
 
 .IP "subpage NAME [Page-title]"
-This defines a subpage in the second level below the entry page.
-You must have a previous "page" line to hook this subpage to.
+This defines a sub-page in the second level below the entry page.
+You must have a previous "page" line to hook this sub-page to.
 
 .IP "subparent parentpage newpage [Page-title]"
-This is used to define subpages in whatever levels you may
+This is used to define sub-pages in whatever levels you may
 wish. Just like the standard "subpage" tag, "subparent" defines a
-new Xymon webpage; however with "subparent" you explicitly
-list which page it should go as a subpage to. You can pick
-any page as the parent - pages, subpages or even other
+new Xymon web page; however with "subparent" you explicitly
+list which page it should go as a sub-page to. You can pick
+any page as the parent - pages, sub-pages or even other
 subparent pages. So this allows you to define any tree
 structure of pages that you like.
 
-E.g. with this in bb-hosts:
+E.g. with this in hosts.cfg:
 
    page USA United States
    subpage NY New York
@@ -135,22 +153,22 @@ Note: The parent page must be defined before you define
 the subparent. If not, the page will not be generated,
 and you get a message in the log file.
 
-Note: bbgen is case-sensitive, when trying to match the
+Note: xymongen is case-sensitive, when trying to match the
 name of the parent page.
 
 The inspiration for this came from Craig Cook's mkbb.pl
 script, and I am grateful to Craig for suggesting that
-I implement it in bbgen. The idea to explicitly list
+I implement it in xymongen. The idea to explicitly list
 the parent page in the "subparent" tag was what made
 it easy to implement.
 
 .IP "group [group-title]"
 .IP "group-compress [group-title]"
-Defines a group of hosts, that appear together on the webpage,
+Defines a group of hosts, that appear together on the web page,
 with a single header-line listing all of the columns. Hosts
 following the "group" line appear inside the group, until a
 new "group" or page-line is found. The two group-directives
-are handled identically by Xymon and bbgen, but both forms
+are handled identically by Xymon and xymongen, but both forms
 are allowed for backwards compatibility.
 
 .IP "group-sorted [group-title]"
@@ -169,10 +187,10 @@ be ignored for these hosts - all other columns are shown.
 
 .IP "title Page, group or host title text"
 The "title" tag is used to put custom headings into the
-pages generated by bbgen, in front of page/subpage links,
+pages generated by xymongen, in front of page/subpage links,
 groups or hosts.
 
-The title tag operates on the next item in the bb-hosts
+The title tag operates on the next item in the hosts.cfg
 file following the title tag.
 
 If a title tag precedes a host entry, the title is 
@@ -186,11 +204,11 @@ show just before the group on the status page.
 If a title tag precedes a page/subpage/subparent
 entry, the title text replaces the normal "Pages hosted
 locally" heading normally inserted by Xymon. This
-appears on the page that links to the subpages,
-not on the subpage itself. To get a custom heading on
-the subpage, you may want to use the "--pagetext-heading"
+appears on the page that links to the sub-pages,
+not on the sub-page itself. To get a custom heading on
+the sub-page, you may want to use the "--pagetext-heading"
 when running
-.I bbgen(1)
+.I xymongen(1)
 
 .IP NAME:hostname
 Overrides the default hostname used on the overview web pages.
@@ -199,15 +217,15 @@ quotes, e.g. NAME:"R&D Oracle Server"
 
 .IP CLIENT:hostname
 Defines an alias for a host, which will be used when identifying
-status messages. This is typically used to accomodate a local
+status messages. This is typically used to accommodate a local
 client that sends in status reports with a different hostname,
 e.g. if you use hostnames with domains in your Xymon configuration,
 but the client is a silly Window box that does not include the
-hostname. Or vice versa. Whatever the reason, this can be used
+hostname. Or vice-versa. Whatever the reason, this can be used
 to match status reports with the hosts you define in your
-bb-hosts file. It causes incoming status reports with the
+hosts.cfg file. It causes incoming status reports with the
 specified hostname to be filed using the hostname defined in
-bb-hosts.
+hosts.cfg.
 
 .IP NOCOLUMNS:column[,column]
 Used to drop certain of the status columns generated by the
@@ -215,14 +233,14 @@ Xymon client. \fBcolumn\fR is one of \fBcpu\fR, \fBdisk\fR,
 \fBfiles\fR, \fBmemory\fR, \fBmsgs\fR, \fBports\fR, \fBprocs\fR.
 This setting stops these columns from being updated for the 
 host. Note: If the columns already exist, you must use the
-.I bb(1)
+.I xymon(1)
 utility to \fBdrop\fR them, or they will go purple.
 
 .IP "COMMENT:Host comment"
-Adds a small text after the hostname on the webpage. This can
+Adds a small text after the hostname on the web page. This can
 be used to describe the host, without completely changing its
 display-name as the NAME: tag does. If the comment includes
-whitespace, it must be in double-quotes, e.g. COMMENT:"Sun webserver"
+whitespace, it must be in double-quotes, e.g. COMMENT:"Sun web server"
 
 .IP "DESCR:Hosttype:Description"
 Define some informational text about the host. The "Hosttype"
@@ -238,11 +256,11 @@ Force the host to belong to a specific class. Class-names are used
 when configuring log-file monitoring (they can be used as references in
 .I client-local.cfg(5)
 and
-.I hobbit-clients.cfg(5)
-to group logfile checks). Normally, class-names are controlled on the 
+.I analysis.cfg(5)
+to group log file checks). Normally, class-names are controlled on the 
 client by starting the Xymon client with the "--class=Classname" option.
-If you specify it in the bb-hosts file on the Xymon server, it overrides
-any classname that the client reports.
+If you specify it in the hosts.cfg file on the Xymon server, it overrides
+any class name that the client reports.
 
 .IP dialup
 The keyword "dialup" for a host means that it is OK for it to be
@@ -250,9 +268,9 @@ off-line - this should not trigger an alert. All network tests
 will go "clear" upon failure, and any missing reports from e.g.
 cpu- and disk-status will not go purple when they are not updated.
 
-.IP nobb2
-Ignore this host on the BB2 page. Even if it has an active alert,
-it will not be included in the BB2 page. This also removes the
+.IP nonongreen
+Ignore this host on the "All non-green" page. Even if it has an active alert,
+it will not be included in the "All non-green" page. This also removes the
 host from the event-log display.
 
 .IP nodisp
@@ -263,9 +281,9 @@ hiding a host that is shown only on a second pageset.
 
 .IP TRENDS:[*,][![graph,...]]
 Defines the RRD graphs to include in the "trends" column
-generated by bbgen.  This option syntax is complex.
+generated by xymongen.  This option syntax is complex.
 .br
-If this option is not present, bbgen provides graphs
+If this option is not present, xymongen provides graphs
 matching the standard set of RRD files: la, disk, memory, 
 users, vmstat, iostat, netstat, tcp, bind, apache, sendmail
 .br
@@ -274,28 +292,66 @@ include start out as being empty (no graphs).
 .br
 * To include all default graphs, use an asterisk.  E.g. "TRENDS:*"
 .br
-* To exclude a certain graph, speficy it prefixed with '!'. E.g. 
+* To exclude a certain graph, specify it prefixed with '!'. E.g. 
 to see all graphs except users: "TRENDS:*,!users"
 .br
 * The netstat, vmstat and tcp graphs have many "subgraphs".
-Which of these are shown can be speficied like this:
+Which of these are shown can be specified like this:
 "TRENDS:*,netstat:netstat2|netstat3,tcp:http|smtp|conn"
 This will show all graphs, but instead of the normal 
 netstat graph, there will be two: The netstat2 and
 netstat3 graphs. Instead of the combined tcp graphs showing
 all services, there will be three: One for each of
 the http, conn and smtp services.
+.br
+.IP "COMPACT:COLUMN=COLUMN1,COLUMN2,COLUMN3[;ditto]"
+Collapses a series of statuses into a single column on
+the overview web page.
 
-.IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
-.IP DOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]
-This tag can be used to ignore failed checks during
-specific times of the day - e.g. if you run services that
-are only monitored e.g. Mon-Fri 8am-5pm, or you always 
-reboot a server every Monday between 5 and 6 pm.
+.SH XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE
+\fBNOTE:\fR The "NK" set of tags is deprecated. They will
+be supported for Xymon 4.x, but will be dropped in version 5.
+It is recommended that you move your critical systems
+view to the
+.I criticalview.cgi(1)
+viewer, which has a separate configuration tool,
+.I criticaleditor.cgi(1)
+with more facilities than the NK tags in hosts.cfg.
 
-The timespecification consists of
+xymongen will create three sets of pages: The main page xymon.html,
+the all-non-green-statuses page (nongreen.html), and a specially
+reduced version of nongreen.html with only selected tests (critical.html).
+This page includes selected tests that currently have a red
+or yellow status.
+
+.IP NK:testname[,testname]
+Define the tests that you want included on the critical page.
+E.g. if you have a host where you only want to see the 
+http tests on critical.html, you specify it as
+
+  12.34.56.78  www.acme.com  # http://www.acme.com/ NK:http
+
+If you want multiple tests for a host to show up on the
+critical.html page, specify all the tests separated by commas.
+The test names correspond to the column names (e.g. 
+https tests are covered by an "NK:http" tag).
+
+.IP NKTIME=day:starttime:endtime[,day:starttime:endtime]
+This tag limits the time when an active alert is presented
+on the NK web page.
+
+By default, tests with a red or yellow status that are listed
+in the "NK:testname" tag will appear on the NK page. However,
+you may not want the test to be shown outside of normal
+working hours - if, for example, the host is not being
+serviced during week-ends.
+
+You can then use the NKTIME tag to define the time periods
+where the alert will show up on the NK page. 
+
+The time specification consists of
 .sp
-.BR day:
+.BR day-of-week:
 \fBW\fR means Mon-Fri ("weekdays"), \fB*\fR means all days, \fB0\fR .. \fB6\fR = Sunday .. Saturday. 
 Listing multiple days is possible, e.g. "60" is valid meaning "Saturday and Sunday".
 .sp
@@ -308,86 +364,14 @@ Time to stop showing errors.
 
 If necessary, multiple periods can be specified. E.g. to
 monitor a site 24x7, except between noon and 1 pm, use
-DOWNTIME=*:0000:1159,*:1300:2359
+NKTIME=*:0000:1159,*:1300:2359
 
-The interval between starttime and endtime may cross midnight, e.g. \fB*:2330:0200\fR
+The interval between start time and end time may cross midnight, e.g. \fB*:2330:0200\fR
 would be valid and have the same effect as \fB*:2330:2400,*:0000:0200\fR.
-
-What happens is that if a test fails during the specified time, 
-it is reported with status BLUE instead of yellow or red. Thus 
-you can still see when the service was unavailable, but alarms 
-will not be triggered and the downtime is not counted in the 
-availability calculations generated by the Xymon reports.
-
-The "columns" setting is optional - it may be a comma-separated
-list of status columns in which case the DOWNTIME setting only applies
-to these columns.
-
-The "cause" string (optional) is a text that will be displayed on 
-the status web page to explain thy the system is down.
-
-.IP SLA=day:starttime:endtime[,day:starttime:endtime]
-This tag is now deprecated. Use the DOWNTIME tag instead.
-
-This tag works the opposite of the DOWNTIME tag - you use 
-it to specify the periods of the day that the service should be 
-green. Failures OUTSIDE the SLA interval are reported as blue.
-
-.IP holidays=HOLIDAYSETNAME
-Define which set of holidays to use for a host. Holiday sets are
-defined in the
-.I hobbit-holidays.cfg(5)
-configuration file. If omitted, the set given in the HOLIDAYS
-setting in the
-.I hobbitserver.cfg(5)
-file is used.
-
-
-.SH XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE
-\fBNOTE:\fR The "NK" set of tags is deprecated. They will
-be supported for Xymon 4.x, but will be dropped in version 5.
-It is recommended that you move your critical systems
-view to the
-.I hobbit-nkview.cgi(1)
-viewer, which has a separate configuration tool,
-.I hobbit-nkedit.cgi(1)
-with more facilities than the NK tags in bb-hosts.
-
-bbgen will create three sets of pages: The main page bb.html,
-the all-non-green-statuses page (bb2.html), and a specially
-reduced version of bb2.html with only selected tests (bbnk.html).
-This page includes selected tests that currently have a red
-or yellow status.
-
-.IP NK:testname[,testname]
-Define the tests that you want included on the bbnk page.
-E.g. if you have a host where you only want to see the 
-http tests on bbnk.html, you specify it as
-
-  12.34.56.78  www.acme.com  # http://www.acme.com/ NK:http
-
-If you want multiple tests for a host to show up on the
-bbnk.html page, specify all the tests separated by commas.
-The test names correspond to the column names (e.g. 
-https tests are covered by an "NK:http" tag).
-
-.IP NKTIME=day:starttime:endtime[,day:starttime:endtime]
-This tag limits the time when an active alert is presented
-on the NK webpage.
-
-By default, tests with a red or yellow status that are listed
-in the "NK:testname" tag will appear on the NK page. However,
-you may not want the test to be shown outside of normal
-working hours - if, for example, the host is not being
-serviced during week-ends.
-
-You can then use the NKTIME tag to define the time periods
-where the alert will show up on the NK page. The NKTIME syntax
-is identical to the one used for DOWNTIME specification.
 
 
 .SH XYMON TAGS FOR THE WML (WAP) CARDS
-If bbgen is run with the "--wml" option, it will generate a
+If xymongen is run with the "--wml" option, it will generate a
 set of WAP-format output "cards" that can be viewed with a
 WAP-capable device, e.g. a PDA or cell-phone.
 
@@ -396,9 +380,8 @@ This tag determines which tests for this hosts are included
 in the WML (WAP) page. Syntax is identical to the NK: tag.  
 
 The default set of WML tests are taken from the --wml
-commandline option.  If no "WML:" tag is specified, the 
+command line option.  If no "WML:" tag is specified, the 
 "NK:" tag is used if present.
-
 
 .SH XYMON STATUS PROPAGATION OPTIONS
 These tags affect how a status propagates upwards from a single
@@ -409,8 +392,8 @@ apply to individual hosts, whereas the command line options are global.
 .IP NOPROPRED:[+|-]testname[,[+|-]testname]
 This tag is used to inhibit a yellow or red status from
 propagating upwards - i.e. from a test status color to
-the (sub)page status color, and further on to bb.html
-or bb2.html
+the (sub)page status color, and further on to xymon.html
+or nongreen.html
 
 If a host-specific tag begins with a '-' or a '+', the
 host-specific tags are removed/added to the default 
@@ -419,13 +402,13 @@ tag does not begin with a '+' or a '-', the default setting
 is ignored for this host and the NOPROPRED applies to the
 tests given with this tag.
 
-E.g.: bbgen runs with "--nopropred=ftp,smtp".
+E.g.: xymongen runs with "--nopropred=ftp,smtp".
 "NOPROPRED:+dns,-smtp" gives a NOPROPRED setting of "ftp,dns"
 (dns is added to the default, ftp is removed).
 "NOPROPRED:dns" gives a setting of "dns" only (the default
 is ignored).
 
-Note: If you set use the "--nopropred=*" commandline
+Note: If you set use the "--nopropred=*" command line
 option to disable propagation of all alerts, you cannot use
 the "+" and "-" methods to add or remove from the wildcard
 setting. In that case, do not use the "+" or "-" setting,
@@ -448,14 +431,14 @@ acknowledged status upwards.
 .SH XYMON AVAILABILITY REPORT OPTIONS
 These options affect the way the Xymon availability
 reports are processed (see
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 for details about availability reports).
 
 .IP REPORTTIME=day:starttime:endtime[,day:starttime:endtime]
 This tag defines the time interval where you measure uptime
 of a service for reporting purposes.
 
-When bbgen generates a report, it computes the availability
+When xymongen generates a report, it computes the availability
 of each service - i.e. the percentage of time that the 
 service is reported as available (meaning: not red).
 
@@ -473,7 +456,7 @@ and the availability calculation will only be performed
 for the service with measurements from this time interval.
 
 The syntax for REPORTTIME is the same as the one used
-by the DOWNTIME parameter.
+by the NKTIME parameter.
 
 When REPORTTIME is specified, the availability calculation
 happens like this:
@@ -499,7 +482,7 @@ that cross into/out of a REPORTTIME interval.
 If no REPORTTIME is given, the standard 24x7 calculation is used.
 
 .IP WARNPCT:percentage
-BB's reporting facility uses a computed availability threshold
+Xymon's reporting facility uses a computed availability threshold
 to color services green (100% available), yellow (above threshold,
 but less than 100%), or red (below threshold) in the reports.
 
@@ -511,42 +494,43 @@ be at 98.5%
 
 
 .SH NETWORK TEST SETTINGS
+
 .IP testip
 By default, Xymon will perform a name lookup of the hostname
 to get the IP address it will use for network tests. This tag
-causes Xymon to use the IP listed in the bb-hosts file.
+causes Xymon to use the IP listed in the hosts.cfg file.
 
 .IP NET:location
 This tag defines the host as being tested from a specific location.
-If bbtest-net sees that the environment variable BBLOCATION
+If xymonnet sees that the environment variable XYMONNETWORK
 is set, it will only test the hosts that have a matching
-"NET:location" tag in the bb-hosts file. So this tag is useful
-if you have more than one BBNET system, but you still want
-to keep a consolidated bb-hosts file for all your systems.
+"NET:location" tag in the hosts.cfg file. So this tag is useful
+if you have more than one system running network tests, but you 
+still want to keep a consolidated hosts.cfg file for all your 
+systems.
 
 Note: The "--test-untagged" option modifies this behaviour,
 see
-.I bbtest-net(1)
+.I xymonnet(1)
 
 .IP noclear
 Some network tests depend on others. E.g. if the host does not
 respond to ping, then there's a good chance that the entire host 
 is down and all network tests will fail. Or if the http server
 is down, then any web content checks are also likely to fail.
-To avoid floods of alerts, the default behaviour is for bbtest-net
+To avoid floods of alerts, the default behaviour is for xymonnet
 to change the status of these tests that fail because of another
 problem to "clear" instead of "red". The "noclear" tag disables this
 behaviour and causes all failing tests to be reported with their
 true color.
 
-This behaviour can also be implemented on a per-test basis by 
+This behaviour can also be implemented on a per-test basis by
 putting the "~" flag on any network test.
 
 Note that "noclear" also affects whether stale status messages
 from e.g. a client on the host go purple or clear when the
-host is down; see the "noclear" description in the 
+host is down; see the "noclear" description in the
 "GENERAL PER-HOST OPTIONS" section above.
-
 
 .IP nosslcert
 Disables the standard check of any SSL certificates for
@@ -560,19 +544,48 @@ Define the number of days before an SSL certificate expires,
 in which the sslcert status shows a warning (yellow) or
 alarm (red) status. These default to the values from the
 "--sslwarndays" and "--sslalarmdays" options for the
-.I bbtest-net(1)
+.I xymonnet(1)
 tool; the values specified in the "ssldays" tag overrides
 the default.
 
 .IP "sslbits=MINIMUMKEYBITS"
-Enable checking of the encryption strengt of the SSL protocol
+Enable checking of the encryption strength of the SSL protocol
 offered by the server. If the server offers encryption using
 a key with fewer than MINIMUMKEYBITS bits, the "sslcert"
 test will go red. E.g. to check that your server only uses
 strong encryption (128 bits or better), use "sslbits=128".
 
+.IP DOWNTIME=day:starttime:endtime[,day:starttime:endtime]
+.IP DOWNTIME=columns:day:starttime:endtime:cause[,columns:day:starttime:endtime:cause]
+This tag can be used to ignore failed checks during
+specific times of the day - e.g. if you run services that
+are only monitored e.g. Mon-Fri 8am-5pm, or you always 
+reboot a server every Monday between 5 and 6 pm.
+
+What happens is that if a test fails during the specified time, 
+it is reported with status BLUE instead of yellow or red. Thus 
+you can still see when the service was unavailable, but alarms 
+will not be triggered and the downtime is not counted in the 
+availability calculations generated by the Xymon reports.
+
+The "columns" and "cause" settings are optional, but both or 
+neither must be specified. "columns" may be a comma-separated 
+list of status columns to which DOWNTIME will apply.  The "cause" 
+string will be displayed on the status web page to explain why 
+the system is down.
+
+The syntax for DOWNTIME is the same as the one used
+by the NKTIME parameter.
+
+.IP SLA=day:starttime:endtime[,day:starttime:endtime]
+This tag is now deprecated. Use the DOWNTIME tag instead.
+
+This tag works the opposite of the DOWNTIME tag - you use 
+it to specify the periods of the day that the service should be 
+green. Failures OUTSIDE the SLA interval are reported as blue.
+
 .IP depends=(testA:host1/test1,host2/test2),(testB:host3/test3),[...]
-This tag allows you to define dependencies betweeen tests.
+This tag allows you to define dependencies between tests.
 If "testA" for the current host depends on "test1" for host "host1"
 and test "test2" for "host2", this can be defined with
 
@@ -592,11 +605,11 @@ to use tests from the same host that the dependency is for. E.g.
 is valid; if both the http and the webmin tests fail, then webmin
 will be reported as clear.
 
-Note: The "depends" tag is evaluated on the BBNET server while
+Note: The "depends" tag is evaluated by xymonnet while
 running the network tests. It can therefore only refer to other
-network tests that are handled by the same BBNET server - there
+network tests that are handled by the same server - there
 is currently no way to use the e.g. the status of locally
-run tests (disk, cpu, msgs) or network tests from other BBNET
+run tests (disk, cpu, msgs) or network tests from other
 servers in a dependency definition. Such dependencies are
 silently ignored.
 
@@ -612,7 +625,7 @@ red immediately.  With a "badTEST:x:y:z" tag this behaviour changes:
 .br
 * While fewer than "x" successive tests fail, the column stays GREEN.
 
-The optional timespecification can be used to limit this
+The optional time specification can be used to limit this
 "badTEST" setting to a particular time of day, e.g. to 
 require a longer period of downtime before raising an
 alarm during out-of-office hours. The time-specification
@@ -623,7 +636,7 @@ uses:
 as "12345", i.e. all working days. Putting "*" here 
 counts as all days of the week, equivalent to "0123456".
 .br
-* starttime and endtime are specified using 24-hour clocks,
+* start time and end time are specified using 24-hour clocks,
 e.g. "badTEST-W-0900-2000" is valid for working days
 between 9 AM (09:00) and 8 PM (20:00).
 
@@ -638,11 +651,12 @@ defines a http test that goes "clear" after the first failure,
 "yellow" after two successive failures, and "red" after four
 successive failures.
 
+For LDAP tests using URL's, use the option "badldapurl".
 For the other network tests, use "badftp", "badssh" etc.
 
 
 .SH CONNECTIVITY (PING) TEST
-These tags affect the behaviour of the bbtest-net connectivity
+These tags affect the behaviour of the xymonnet connectivity
 test.
 
 .IP noping
@@ -664,7 +678,7 @@ when the host is NOT up, and red if it does appear on
 the network.
 
 The actual name of the tag - "conn" by default - depends
-on the "--ping=TESTNAME" option for bbtest-net, as that
+on the "--ping=TESTNAME" option for xymonnet, as that
 decides the testname for the connectivity test.
 
 .IP "conn={best,|worst,}IP1[,IP2...]"
@@ -683,17 +697,17 @@ just one of the IP's respond to ping.
 
 .IP badconn[-weekdays-starttime-endtime]:x:y:z
 This is taken directly from the "fping.sh" connectivity-
-testing script, and is used by bbtest-net when it runs
+testing script, and is used by xymonnet when it runs
 with ping testing enabled (the default). See the description
 of the "badTEST" tag.
 
 .IP route:router1,router2,....
 This tag is taken from the "fping.sh" script, and is used
-by bbtest-net when run with the "--ping" option to enable
+by xymonnet when run with the "--ping" option to enable
 ping testing.
 
 The router1,router2,... is a comma-separated list of hosts
-elsewhere in the bb-hosts file. You cannot have any spaces
+elsewhere in the hosts.cfg file. You cannot have any spaces
 in the list - separate hosts with commas.
 
 This tag changes the color reported for a ping check that
@@ -708,13 +722,13 @@ Note: Internally, the ping test will still be handled as
 will report a status of "clear".
 
 .IP route_LOCATION:router1,router2,...
-If the BBLOCATION environment variable is defined, a tag
-of "route_BBLOCATION:" is recognized by bbtest-net with 
+If the XYMONNETWORK environment variable is defined, a tag
+of "route_XYMONNETWORK:" is recognized by xymonnet with 
 the same effect as the normal "route:" tag (see above).
 This allows you to have different route: tags for each
-BBNET server. The actual text for the tag then must
-match the value you have for the BBLOCATION setting.
-E.g. with BBLOCATION=dmz, the tag becomes "route_dmz:"
+server running xymonnet. The actual text for the tag then must
+match the value you have for the XYMONNETWORK setting.
+E.g. with XYMONNETWORK=dmz, the tag becomes "route_dmz:"
 
 .IP "trace"
 If the connectivity test fails, run a "traceroute"
@@ -722,7 +736,7 @@ and include the output from this in the status message
 from the failed connectivity test. Note: For this to
 work, you may have to define the TRACEROUTE environment
 variable, see 
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 
 .IP "notrace"
 Similar to the "trace" option, this disables the running
@@ -736,7 +750,7 @@ to the port and possibly checking that a banner is shown by the
 server.
 
 How these tests operate are configured in the
-.I bb-services(5)
+.I protocols.cfg(5)
 configuration file, which controls which port to use for the service,
 whether to send any data to the service, whether to check for
 a response from the service etc.
@@ -759,7 +773,7 @@ test specification, \fBafter\fR any other modifiers or port number.
 "IPADDRESS" must be a valid dotted IP-address (not hostname) which
 is assigned to the host running the network tests.
 
-The name of the test also determines the columnname that the test 
+The name of the test also determines the column name that the test 
 result will appear with in the Xymon webpages.
 
 By prefixing a test with "!" it becomes a reverse test: Xymon will 
@@ -774,24 +788,24 @@ without getting alarms while they are off-line.
 
 .IP "ftp ssh telnet smtp pop3 imap nntp rsync clamd oratns qmtp qmqp"
 These tags are for testing services offering the FTP, Secure Shell (ssh), 
-SMTP, POP3, IMAP, NNTP, rsync, CLAM antivirus daemon (clamd), Oracle TNS
+SMTP, POP3, IMAP, NNTP, rsync, CLAM anti-virus daemon (clamd), Oracle TNS
 listener (oratns), qmail QMTP and QMQP protocols.
 
 .IP "ftps telnets smtps pop3s imaps nntps"
 These tags are for testing of the SSL-tunneled versions of
 the standard ftp, telnet, smtp, pop3, imap and nntp protocols. 
 If Xymon was configured with support for SSL, you can test these
-services like any other network service - bbtest-net will
+services like any other network service - xymonnet will
 setup an SSL-encrypted session while testing the service.
 The server certificate is validated and information about
 it sent in the "sslcert" column. Note that smtps does not
-have a standard portnumber assignment, so you will need to enter
-this into the bb-services file or your /etc/services file.
+have a standard port number assignment, so you will need to enter
+this into the protocols.cfg file or your /etc/services file.
 
 .IP bbd
 Test that a Big Brother compatible daemon is running. This check
 works both for the Xymon
-.I hobbitd(8)
+.I xymond(8)
 daemon, and the original Big Brother bbd daemon.
 
 
@@ -803,7 +817,7 @@ Simple DNS test. It will attempt to lookup the A record for
 the hostname of the DNS server.
 
 .IP dig
-This is an alias for the "dns" test. In bbtest-net, the "dns"
+This is an alias for the "dns" test. In xymonnet, the "dns"
 and "dig" tests are handled identically, so all of the facilities
 for testing described for the "dns" test are also available for
 the "dig" test.
@@ -831,29 +845,29 @@ test to end up with a green status, all lookups must succeed.
 Check for a running NTP (Network Time Protocol) server on this
 host. This test uses the "ntpdate" utility to check for a
 NTP server - you should either have ntpdate in your PATH, or
-set the location of the ntpdate program in $BBHOME/etc/bbsys.local
+set the location of the ntpdate program in $XYMONHOME/etc/xymonserver.cfg
 
 .IP rpc[=rpcservice1,rpcservice2,...]
 Check for one or more available RPC services. This check is indirect
 in that it only queries the RPC Portmapper on the host, not the
 actual service. 
 
-If only "rpc" is given, the test only verifies that the portmapper
+If only "rpc" is given, the test only verifies that the port mapper
 is available on the remote host. If you want to check that one or
-more RPC services are registered with the portmapper, list the 
+more RPC services are registered with the port mapper, list the 
 names of the desired RPC services after the equals-sign. E.g. for
 a working NFS server the "mount", "nlockmgr" and "nfs" services
 must be available; this can be checked with "rpc=mount,nlockmgr,nfs".
 
 This test uses the rpcinfo tool for the actual test; if this tool
-is not available in the PATH of bbtest-net, you must define the
+is not available in the PATH of xymonnet, you must define the
 RPCINFO environment variable to point at this tool. See
-.I hobbitserver.cfg(5)
+.I xymonserver.cfg(5)
 
 
 .SH HTTP TESTS
 Simple testing of a http URL is done simply by putting the
-URL into the bb-hosts file. Note that this only applies to
+URL into the hosts.cfg file. Note that this only applies to
 URL's that begin with "http:" or "https:".
 
 The following items describe more advanced forms of http
@@ -862,7 +876,7 @@ URL's.
 .IP "Basic Authentication with username/password"
 If the URL requires authentication in the form of a
 username and password, it is most likely using the
-HTTP "Basic" authentication. bbtest-net support this,
+HTTP "Basic" authentication. xymonnet support this,
 and you can provide the username and password either 
 by embedding them in the URL e.g.
 .br
@@ -877,7 +891,7 @@ for details).
 An SSL client certificate can be used for authentication.
 To use this, the client certificate must be stored in a
 PEM-formatted file together with the client certificate
-key, in the $BBHOME/certs/ directory. The URL is then given as
+key, in the $XYMONHOME/certs/ directory. The URL is then given as
 .br
     http://CERT:FILENAME@www.sample.com/
 .br
@@ -903,11 +917,11 @@ password you gave when exporting the certificate. Then
 provide a "PEM pass phrase" (twice) when prompted for one.
 .br
 The file.pem file is the one you should use in the FILENAME
-field in the URL - this file must be kept in $BBHOME/certs/.
+field in the URL - this file must be kept in $XYMONHOME/certs/.
 The PEM pass phrase must be put into a file named the
 same as the certificate, but with extension ".pass". E.g.
-if you have the PEM certificate in $BBHOME/certs/client.pem,
-you must put the pass phrase into the $BBHOME/certs/client.pass
+if you have the PEM certificate in $XYMONHOME/certs/client.pem,
+you must put the pass phrase into the $XYMONHOME/certs/client.pass
 file. Make sure to protect this file with Unix permissions,
 so that only the user running Xymon can read it.
 
@@ -916,7 +930,7 @@ Some SSL sites will only allow you to connect, if you use
 specific "dialects" of HTTP or SSL. Normally this is auto-negotiated,
 but experience shows that this fails on some systems.
 
-bbtest-net can be told to use specific dialects, by adding
+xymonnet can be told to use specific dialects, by adding
 one or more "dialect names" to the URL scheme, i.e. the
 "http" or "https" in the URL:
 
@@ -936,8 +950,8 @@ These can be combined where it makes sense, e.g to force
 SSLv2 and HTTP 1.0 you would use "https210".
 
 .IP "Testing sites by IP-address"
-bbtest-net ignores the "testip" tag normally used to force a 
-test to use the IP-address from the bb-hosts file instead of
+xymonnet ignores the "testip" tag normally used to force a 
+test to use the IP-address from the hosts.cfg file instead of
 the hostname, when it performs http and https tests.
 
 The reason for this is that it interacts badly with virtual
@@ -949,18 +963,23 @@ specifying it as:
 
 	http://www.sample.com=1.2.3.4/index.html
 
-The "=1.2.3.4" will case bbtest-net to run the test against
+The "=1.2.3.4" will case xymonnet to run the test against
 the IP-address "1.2.3.4", but still trying to access a virtual
 website with the name "www.sample.com".
 
 The "=ip.address.of.host" must be the last part of the hostname,
-so if you need to combine this with e.g. an explicit portnumber,
+so if you need to combine this with e.g. an explicit port number,
 it should be done as
 
 	http://www.sample.com:3128=1.2.3.4/index.html
 
 .IP "HTTP Testing via proxy"
-bbtest-net supports the Big Brother syntax for
+\fBNOTE:\fR This is not enabled by default. You must
+add the "--bb-proxy-syntax" option when running
+.I xymonnet(1)
+if you want to use this.
+
+xymonnet supports the Big Brother syntax for
 specifying an HTTP proxy to use when performing http 
 tests. This syntax just joins the proxy- and the target-URL
 into one, e.g.
@@ -970,8 +989,8 @@ into one, e.g.
 would be the syntax for testing the www.foo.com website
 via the proxy running on "webproxy.sample.com" port 3128.
 
-If the proxy portnumber is not specified, the default 
-HTTP portnumber (80) is used.
+If the proxy port number is not specified, the default 
+HTTP port number (80) is used.
 
 If your proxy requires authentication, you can specify the
 username and password inside the proxy-part of the URL, e.g.
@@ -1026,18 +1045,18 @@ Note: If you are migrating from the "cont2.sh" script,
 you must change the '_' used as wildcards by cont2.sh 
 into '.' which is the regular-expression wildcard character.
 
-Message digests can use different algorithms: "md5", "sha1",
-"sha256", "sha512" or "rmd160". The digest is calculated on 
-the data portion of the response from the server, i.e. HTTP 
-headers are not included in the digest (as they change from 
-one request to the next). Note that the md5 and sha1 hash
-algorithms are no longer considered cryptographically safe.
+Message digests can use whatever digest algorithms your
+libcrypto implementation (usually OpenSSL) supports. 
+Common message digests are "md5" and "sha1". The digest
+is calculated on the data portion of the response from 
+the server, i.e. HTTP headers are not included in the
+digest (as they change from one request to the next).
 
 The expected digest value can be computed with the
-.I bbdigest(1)
+.I xymondigest(1)
 utility.
 
-"cont" tags in bb-hosts result in two status reports: One
+"cont" tags in hosts.cfg result in two status reports: One
 status with the "http" check, and another with the "content" 
 check.
 
@@ -1047,15 +1066,15 @@ SSLv2 or strong ciphers.
 
 The column name for the result of the content check is by default
 called "content" - you can change the default with the "--content=NAME"
-option to bbtest-net. See 
-.I bbtest-net(1)
+option to xymonnet. See 
+.I xymonnet(1)
 for a description of this option.
 
 If more than one content check is present for a host, the first
 content check is reported in the column "content", the second is
 reported in the column "content1", the third in "content2" etc.
 
-You can also specify the columnname directly in the test
+You can also specify the column name directly in the test
 specification, by writing it as "cont=COLUMN;http://...".
 Column-names cannot include whitespace or semi-colon.
 
@@ -1075,8 +1094,9 @@ in the form-data field, and the result can be checked
 as if it was a normal content check (see above for a description
 of the cont-tag and the restrictions on how the URL must be writen).
 
-The form-data field by default is in the "application/x-www-form-urlencoded"
-format, which is the most commonly used format for web forms.
+The form-data field must be entered in "application/x-www-form-urlencoded"
+format, which is the most commonly used format for web
+forms.
 
 E.g. if you have a web form defined like this:
 
@@ -1091,18 +1111,18 @@ E.g. if you have a web form defined like this:
    </form>
 
 and you want to post the value "John" to the first field
-and "Doe Jr." to the second field, then the formdata field
+and "Doe Jr." to the second field, then the form data field
 would be
 
-    givenname=John&surname=Doe\\x20Jr.
+    givenname=John&surname=Doe+Jr.
 
 Note that any spaces in the input value is replaced with '+'.
 
-If your form-data requires a different content-type, you can specify 
-it by beginning the form-data with \fB(content-type=TYPE)\fR, 
+If your form-data requires a different content-type, you can specify
+it by beginning the form-data with \fB(content-type=TYPE)\fR,
 e.g. "(content-type=text/xml)" followed by the POST data. Note
 that as with normal forms, the POST data should be specified using
-escape-sequences for reserved characters: "space" should be 
+escape-sequences for reserved characters: "space" should be
 entered as "\\x20", double quote as "\\x22", newline as "\\n",
 carriage-return as "\\r", TAB as "\\t", backslash as "\\\\".
 Any byte value can be entered using "\\xNN" with NN being
@@ -1136,17 +1156,40 @@ the HTTP Content-Type: header. This can used to check if a
 URL returns e.g. a PDF file, regardless of what is inside the
 PDF file.
 
+.IP soap[=COLUMN];URL;SOAPMESSAGE;[expected_data_regexp|#digesttype:digest]
+Send SOAP message over HTTP. This is identical to the "cont"
+test, except that the request sent to the server uses a
+Content-type of "application/soap+xml", and it also sends
+a "SOAPAction" header with the URL. SOAPMESSAGE is the SOAP
+message sent to the server. Since SOAP messages are usually
+XML documents, you can store this in a separate file by
+specifying "file:FILENAME" as the SOAPMESSAGE parameter.
+E.g. a test specification of
+    soap=echo;http://soap.foo.bar/baz?wsdl;file:/home/foo/msg.xml;.
+will read the SOAP message from the file /home/foo/msg.xml
+and post it to the URL http://soap.foo.bar/bas?wsdl
+
+Note that SOAP XML documents usually must begin with the XML
+version line, \fB<?xml version="1.0">\fR
+
+.IP nosoap[=COLUMN];URL;SOAPMESSAGE;[forbidden_data_regexp|#digesttype:digest]
+This tag works just like "soap" tag, but reverses the test.
+It is green when the "forbidden_data_regexp" is NOT found in
+the response, and red when it IS found. So it can be used to
+watch for data that should NOT be present in the response,
+e.g. a server error message.
+
 .IP httpstatus[=COLUMN];URL;okstatusexpr;notokstatusexpr
 This is used to explicitly test for certain HTTP statuscodes
 returned when the URL is requested. The \fBokstatusexpr\fR and
 \fBnokokstatusexpr\fR expressions are Perl-compatible regular
 expressions, e.g. "2..|302" will match all OK codes and the
-redirect (302) status code. If the URL cannot be retrived, 
+redirect (302) status code. If the URL cannot be retrieved,
 the status is "999".
 
 .IP HIDEHTTP
 The status display for HTTP checks usually includes the URL,
-and for content checks also the actual data from the webpage.
+and for content checks also the actual data from the web page.
 If you would like to hide these from view, then the HIDEHTTP
 tag will keep this information from showing up on the status
 webpages.
@@ -1177,7 +1220,7 @@ not perform any actual LDAP transaction.
 Check for an LDAP service by performing an LDAP request. This
 tag is in the form of an LDAP URI (cf. RFC 2255). This type of
 LDAP test requires that
-.I bbtest-net(1)
+.I xymonnet(1)
 was built with support for LDAP, e.g. via the OpenLDAP library.
 The components of the LDAP URI are:
 .nf
@@ -1193,13 +1236,13 @@ The components of the LDAP URI are:
 .IP ldaps://hostport/dn[?attrs[?scope[?filter[?exts]]]]
 LDAP service check using LDAPv3 and STARTTLS for talking to
 an LDAP server that requires TLS encryption. See
-.I bbtest-net(1)
+.I xymonnet(1)
 for a discussion of the different ways of running LDAP servers
-with SSL/TLS, and which of these are supported by bbtest-net.
+with SSL/TLS, and which of these are supported by xymonnet.
 
 .IP ldaplogin=username:password
 Define a username and password to use when binding to the LDAP
-server for ldap URI tests. If not specified, bbtest-net will
+server for ldap URI tests. If not specified, xymonnet will
 attempt an anonymous bind.
 
 .IP ldapyellowfail
@@ -1210,13 +1253,13 @@ as "red" (alarm). This tag reduces a search failure to a
 
 .SH PERFORMANCE MONITORING TESTS
 .IP apache[=URL]
-If you are running an Apache webserver, adding this tag makes
-.I bbtest-net(1)
-collect performance statistics from the Apache webserver by
+If you are running an Apache web server, adding this tag makes
+.I xymonnet(1)
+collect performance statistics from the Apache web server by
 querying the URL \fBhttp://IP.ADDRESS.OF.HOST/server-status?auto\fR.
 The response is sent as a data-report and processed by the Xymon
-hobbitd_rrd module into an RRD file and an "apache" graph. If
-your webserver requires e.g. authentication, or runs on a different
+xymond_rrd module into an RRD file and an "apache" graph. If
+your web server requires e.g. authentication, or runs on a different
 URL for the server-status, you can provide the full URL needed to 
 fetch the server-status page, e.g. 
 \fBapache=http://LOGIN:PASSWORD@10.0.0.1/server-status?auto\fR 
@@ -1252,7 +1295,7 @@ per-host definitions will override the default ones.
 
 \fBNOTE:\fR The ".default." host entry will only accept the following
 tags - others are silently ignored: NOCOLUMNS, COMMENT, DESCR, CLASS, 
-dialup, testip, nobb2, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
+dialup, testip, nonongreen, nodisp, noinfo, notrends, TRENDS, NOPROPRED, 
 NOPROPYELLOW, NOPROPPURPLE, NOPROPACK, REPORTTIME, WARNPCT, NET, noclear, 
 nosslcert, ssldays, DOWNTIME, depends, noping, noconn, trace, notrace, 
 HIDEHTTP, browser, pulldata. Specifically, note that network tests,
@@ -1266,7 +1309,7 @@ form a hierarchy of servers by sending the overall status of this server
 to a remote Xymon server, which then displays this in a special summary
 section. E.g. if your offices are spread over three locations, you can 
 have a Xymon server at each office. These branch-office Xymon have
-a "summary" definition in their bb-hosts file that makes them report
+a "summary" definition in their hosts.cfg file that makes them report
 the overall status of their branch Xymon to the central Xymon server
 you maintain at the corporate headquarters.
 
@@ -1281,7 +1324,7 @@ used in the normal displays. The IP is the IP-address of the \fBremote\fR
 URL of your \fBlocal\fR Xymon server.
 
 The URL need not be that of your Xymon server's main page - it could
-be the URL of a subpage on the local Xymon server. Xymon will report
+be the URL of a sub-page on the local Xymon server. Xymon will report
 the summary using the color of the page found at the URL you specify.
 E.g. on your corporate Xymon server you want a summary from the
 Las Vegas office - but you would like to know both what the overall 
@@ -1294,18 +1337,18 @@ the Las Vegas Xymon server to send \fBtwo\fR summaries:
     summary Vegas.Sales 10.0.1.1 http://vegas.foo.com/xymon/sales/
 .sp
 
-This gives you one summary line for Las Vegas, with two columns: An
+This gives you one summary line for Baltimore, with two columns: An
 "All" column showing the overall status, and a "Sales" column showing
-the status of the "sales" page on the Las Vegas Xymon server.
+the status of the "sales" page on the Baltimore Xymon server.
 
 Note: Pages defined using alternate pageset definitions cannot be used,
-the URL must point to a webpage from the default set of Xymon webpages.
+the URL must point to a web page from the default set of Xymon webpages.
 
 
 .SH OTHER TAGS
 .IP pulldata[=[IP][:port]]
 This option is recognized by the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 utility, and causes it to poll the host for client data. The optional
 IP-address and port-number can be used if the client-side
 .I msgcache(8)
@@ -1313,8 +1356,8 @@ daemon is listening on a non-standard IP-address or port-number.
 
 
 .SH FILES
-.BR ~xymon/server/etc/bb-hosts
+.BR ~xymon/server/etc/hosts.cfg
 
 .SH "SEE ALSO"
-bbgen(1), bbtest-net(1), bbdigest(1), hobbitserver.cfg(5), xymon(7)
+xymongen(1), xymonnet(1), xymondigest(1), xymonserver.cfg(5), xymon(7)
 

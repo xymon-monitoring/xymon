@@ -39,7 +39,7 @@
 	fi
 
 	if test -z "$PCREINC" -o -z "$PCRELIB"; then
-		echo "PCRE include- or library-files not found. These are REQUIRED for hobbitd"
+		echo "PCRE include- or library-files not found. These are REQUIRED for xymond"
 		echo "PCRE can be found at http://www.pcre.org/"
 		echo "If you have PCRE installed, use the \"--pcreinclude DIR\" and \"--pcrelib DIR\""
 		echo "options to configure to specify where they are."

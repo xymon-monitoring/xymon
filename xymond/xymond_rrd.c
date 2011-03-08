@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is a hobbitd worker module for the "status" and "data" channels.      */
+/* This is a xymond worker module for the "status" and "data" channels.       */
 /* This module maintains the RRD database-files, updating them as new         */
 /* data arrives.                                                              */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -29,10 +29,10 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "libxymon.h"
+#include "xymond_worker.h"
 
-#include "hobbitd_rrd.h"
+#include "xymond_rrd.h"
 #include "do_rrd.h"
 #include "client_config.h"
 
@@ -41,6 +41,7 @@ static char rcsid[] = "$Id$";
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
+int seq = 0;
 static int running = 1;
 static time_t reloadtime = 0;
 
@@ -97,7 +98,7 @@ static void load_rrddefs(void)
 
 	rrddeftree = rbtNew(name_compare);
 
-	sprintf(fn, "%s/etc/hobbit-rrddefinitions.cfg", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/rrddefinitions.cfg", xgetenv("XYMONHOME"));
 	fd = stackfopen(fn, "r", NULL);
 	if (fd == NULL) goto loaddone;
 
@@ -179,7 +180,7 @@ char **get_rrd_definition(char *key, int *count)
 int main(int argc, char *argv[])
 {
 	char *msg;
-	int argi, seq;
+	int argi;
 	struct sigaction sa;
 	char *exthandler = NULL;
 	char *extids = NULL;
@@ -218,8 +219,8 @@ int main(int argc, char *argv[])
 
 	save_errbuf = 0;
 
-	if ((rrddir == NULL) && xgetenv("BBRRDS")) {
-		rrddir = strdup(xgetenv("BBRRDS"));
+	if ((rrddir == NULL) && xgetenv("XYMONRRDS")) {
+		rrddir = strdup(xgetenv("XYMONRRDS"));
 	}
 
 	if (exthandler && extids) setup_exthandler(exthandler, extids);
@@ -227,7 +228,7 @@ int main(int argc, char *argv[])
 	/* Do the network stuff if needed */
 	net_worker_run(ST_RRD, LOC_STICKY, update_locator_hostdata);
 
-	setup_signalhandler("hobbitd_rrd");
+	setup_signalhandler("xymond_rrd");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGHUP, &sa, NULL);
@@ -238,7 +239,7 @@ int main(int argc, char *argv[])
 
 	/* Setup the control socket that receives cache-flush commands */
 	memset(&ctlsockaddr, 0, sizeof(ctlsockaddr));
-	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%d", xgetenv("BBTMP"), getpid());
+	sprintf(ctlsockaddr.sun_path, "%s/rrdctl.%d", xgetenv("XYMONTMP"), getpid());
 	unlink(ctlsockaddr.sun_path);     /* In case it was accidentally left behind */
 	ctlsockaddr.sun_family = AF_UNIX;
 	ctlsocket = socket(AF_UNIX, SOCK_DGRAM, 0);
@@ -269,7 +270,7 @@ int main(int argc, char *argv[])
 		int metacount;
 		char *p;
 		char *hostname = NULL, *testname = NULL, *sender = NULL, *classname = NULL, *pagepaths = NULL;
-		hobbitrrd_t *ldef = NULL;
+		xymonrrd_t *ldef = NULL;
 		time_t tstamp;
 		int childstat;
                 ssize_t n;
@@ -296,22 +297,16 @@ int main(int argc, char *argv[])
 		} while (gotcachectlmessage);
 
 		/* Get next message */
-		msg = get_hobbitd_message(C_LAST, argv[0], &seq, NULL);
+		msg = get_xymond_message(C_LAST, argv[0], &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
 		}
 
-		if (timewarp) {
-			errprintf("WARNING: Time has gone BACK by %d seconds.\n", timewarp);
-			if (timewarp >= 300) errprintf("This will cause problems with RRD updates already registered\n");
-			errprintf("hobbitd_rrd module is restarting to pick up new time\n");
-			running = 0;
-		}
-
-		if (reloadtime < (now = getcurrenttime(NULL))) {
+		now = gettimer();
+		if (reloadtime < now) {
 			/* Reload configuration files */
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			load_client_config(NULL);
 			reloadtime = now + 600;
 		}
@@ -325,6 +320,7 @@ int main(int argc, char *argv[])
 
 		/* Parse the meta-data */
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < MAX_META)) {
 			metadata[metacount++] = p;
@@ -351,7 +347,7 @@ int main(int argc, char *argv[])
 				testname = metadata[5];
 				classname = (metadata[17] ? metadata[17] : "");
 				pagepaths = (metadata[18] ? metadata[18] : "");
-				ldef = find_hobbit_rrd(testname, metadata[8]);
+				ldef = find_xymon_rrd(testname, metadata[8]);
 				update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 				break;
 
@@ -368,7 +364,7 @@ int main(int argc, char *argv[])
 			testname = metadata[5];
 			classname = (metadata[6] ? metadata[6] : "");
 			pagepaths = (metadata[7] ? metadata[7] : "");
-			ldef = find_hobbit_rrd(testname, "");
+			ldef = find_xymon_rrd(testname, "");
 			update_rrd(hostname, testname, restofmsg, tstamp, sender, ldef, classname, pagepaths);
 		}
 		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
@@ -380,7 +376,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

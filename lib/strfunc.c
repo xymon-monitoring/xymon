@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains string handling routines.                                      */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 #define BUFSZINCREMENT 4096
@@ -118,7 +118,7 @@ static void strbuf_addtobuffer(strbuffer_t *buf, char *newtext, int newlen)
 
 void addtobuffer(strbuffer_t *buf, char *newtext)
 {
-	strbuf_addtobuffer(buf, newtext, strlen(newtext));
+	if (newtext) strbuf_addtobuffer(buf, newtext, strlen(newtext));
 }
 
 void addtostrbuffer(strbuffer_t *buf, strbuffer_t *newtext)

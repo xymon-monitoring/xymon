@@ -1,13 +1,13 @@
-.TH BBCOMBOTEST.CFG 5 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH COMBO.CFG 5 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-bbcombotest.cfg \- Configuration of bbcombotest tool
+combo.cfg \- Configuration of combostatus tool
 
 .SH SYNOPSIS
-.B $BBHOME/etc/bbcombotest.cfg
+.B $XYMONHOME/etc/combo.cfg
 
 .SH DESCRIPTION
-.I bbcombotest(1)
-uses it's own configuration file, $BBHOME/etc/bbcombotest.cfg
+.I combostatus(1)
+uses it's own configuration file, $XYMONHOME/etc/combo.cfg
 Each line in this file defines a combined test.
 
 .SH FILE FORMAT
@@ -15,7 +15,7 @@ Each line of the file defines a new combined test. Blank lines and lines
 starting with a hash mark (#) are treated as comments and ignored.
 .sp
 The configuration file uses the hostnames and testnames
-that are already used in your Xymon bb-hosts file. These are
+that are already used in your Xymon hosts.cfg file. These are
 then combined using normal logical operators - "||" for "or", "&&" for
 "and" etc.
 
@@ -89,8 +89,8 @@ test, defining a test that shows the overall health of the system.
 
 
 .SH FILES
-.BR "$BBHOME/etc/bbcombotest.cfg"
+.BR "$XYMONHOME/etc/combo.cfg"
 
 .SH "SEE ALSO"
-bbcombotest(1)
+combostatus(1)
 

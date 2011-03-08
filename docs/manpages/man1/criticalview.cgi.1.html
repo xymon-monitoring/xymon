@@ -1,0 +1,105 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of CRITICALVIEW.CGI</TITLE>
+</HEAD><BODY>
+<H1>CRITICALVIEW.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+criticalview.cgi - Xymon Critical Systems view CGI
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>criticalview.cgi</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>criticalview.cgi</B> is invoked as a CGI script via the 
+criticalview.sh CGI wrapper.
+<P>
+criticalview.cgi matches the current critical statuses against the
+<I><A HREF="../man5/critical.cfg.5.html">critical.cfg</A>(5)</I>
+
+file, and generates the &quot;Critical Systems&quot; view. 
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>RELATION TO OLD CRITICAL PAGE</H2>
+
+This view is a replacement for the statically generated &quot;critical&quot; page 
+provided in versions of Xymon prior to version 4.2. Although the 
+&quot;critical&quot; pages are supported throughout Xymon 4.x, it is recommended 
+that You switch to the newer Critical Systems view provided by this CGI.
+<P>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--acklevel=NUMBER<DD>
+Sets the acknowledgment level for acknowledgments sent via the
+<I><A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1)</I>
+
+page. Note that this may be overridden by the configuration of the
+ackinfo.cgi utility.
+<P>
+<DT>--tooltips<DD>
+Hide the host description in a &quot;tooltip&quot;, i.e. it will be shown when your
+mouse hovers over the hostname on the webpage. This saves space on the 
+display so there is more room for the status columns.
+<P>
+<DT>--env=FILENAME<DD>
+Loads the environment defined in FILENAME before executing the CGI script.
+<P>
+<DT>--area=NAME<DD>
+Load environment variables for a specific area. NB: if used,
+this option must appear before any --env=FILENAME option.
+<P>
+<DT>--debug<DD>
+Enables debugging output.
+<P>
+<DT>--config=FILENAME<DD>
+Use FILENAME as the configuration file for the Critical 
+Systems information. The default is to load this from
+$XYMONHOME/etc/critical.cfg
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>XYMONHOME<DD>
+Used to locate the template files for the generated web pages.
+<P>
+<DT>QUERY_STRING<DD>
+Contains the parameters for the CGI script.
+<P>
+</DL>
+<A NAME="lbAH">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/ackinfo.cgi.1.html">ackinfo.cgi</A>(1), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">RELATION TO OLD CRITICAL PAGE</A><DD>
+<DT><A HREF="#lbAF">OPTIONS</A><DD>
+<DT><A HREF="#lbAG">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAH">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

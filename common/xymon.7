@@ -1,12 +1,12 @@
-.TH XYMON 7 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH XYMON 7 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-Xymon \- introduction to Xymon
+Xymon \- Introduction to Xymon
 
 .SH OVERVIEW
 Xymon is a tool for monitoring the health of your networked servers 
 and the applications running on them.  It provides a simple, 
 intuitive way of checking the health of your systems from 
-a webbrowser, and can also alert you to any problems that 
+a web browser, and can also alert you to any problems that 
 arise through alarms sent as e-mail, SMS messages, via a 
 pager or by other means.
 
@@ -20,9 +20,6 @@ source-archive for details.
 
 Xymon was called "Hobbit" until November 2008, when it was renamed
 to Xymon. This was done because the name "Hobbit" is trademarked.
-The current release of Xymon is an interim version without all
-of the changes needed for a full renaming, so there are still
-quite a few references to the old "hobbit" name.
 
 Xymon initially began life as an enhancement to Big Brother called 
 "bbgen". Over a period of 5 years, Xymon has evolved from a small
@@ -48,7 +45,7 @@ querying network services (Web, LDAP, DNS, Mail etc.), or from
 scripts that run either on the Xymon server or on the systems 
 you monitor. The Xymon package includes a \fbXymon client\fR
 which you can install on the servers you monitor; it collects
-data about the CPU-load, disk- and memory-utilisation, logfiles,
+data about the CPU-load, disk- and memory-utilization, log files,
 network ports in use, file- and directory-information and more.
 All of the information is stored inside Xymon, and you can define
 conditions that result in alerts, e.g. if a network service stops
@@ -72,14 +69,14 @@ Microsoft Windows based systems.
 
 
 .IP "A simple, intuitive web-based front-end"
-"Green is good, red is bad". Using the Xymon webpages is as simple
+"Green is good, red is bad". Using the Xymon web pages is as simple
 as that. The hosts you monitor can be grouped together in a way that
 makes sense in your organisation and presented in a tree-structure.
-The webpages use many techniques to convey information about the monitored
+The web pages use many techniques to convey information about the monitored
 systems, e.g. different icons can be used for recently changed statuses;
-links to subpages can be listed in multiple columns; different icons
-can be used for dialup-tests or reverse-tests; selected columns
-can be dropped or unconditionally included on the webpages to
+links to sub-pages can be listed in multiple columns; different icons
+can be used for dial-up-tests or reverse-tests; selected columns
+can be dropped or unconditionally included on the web pages to
 eliminate unwanted information, or always include certain information;
 user-friendly names can be shown for hosts regardless of their true
 hostname. You can also have automatic links to on-line documentation, 
@@ -89,15 +86,15 @@ so information about your critical systems is just a click away.
 .IP "Integrated trend analysis, historical data and SLA reporting"
 Xymon stores trend- and availability-information about everything 
 it monitors. So if you need to look at how your systems behave over
-time, Xymon has all of the information you need: Whether is is response 
-times of your webpages during peak hours, the CPU utilisation over the 
+time, Xymon has all of the information you need: Whether it is response 
+times of your web pages during peak hours, the CPU utilization over the 
 past 4 weeks, or what the availability of a site was compared to the
 SLA - it's all there inside Xymon. All measurements are tracked
 and made available in time-based graphs.
 
 When you need to drill down into events that have occurred, Xymon
 provides a powerful tool for viewing the event history for each
-statuslog, with overviews of when problems have occurred during the
+status log, with overviews of when problems have occurred during the
 past and easy-to-use zoom-in on the event.
 
 For SLA reporting, You can configure planned downtime, agreed service 
@@ -113,11 +110,11 @@ parts of the organisation, e.g. one view for the hardware group,
 and another view for the webmasters - all of them fed by the same
 test tools.
 
-If you have a dedicated Network Operations Centre, you can configure 
+If you have a dedicated Network Operations Center, you can configure 
 precisely which alerts will appear on their monitors - e.g. a simple 
-anomaly in the system logfile need not trigger a call to 3rd-level 
+anomaly in the system log file need not trigger a call to 3rd-level 
 support at 2 AM, but if the on-line shop goes down you do want someone
-to respond immediately.  So you put the webcheck for the on-line shop 
+to respond immediately.  So you put the web-check for the on-line shop 
 on the NOC monitor page, and leave out the log-file check.
 
 
@@ -127,14 +124,14 @@ lots of relevant information. E.g. the data that clients report to Xymon
 contain the raw output from a number of system commands.  That information 
 is available directly in Xymon, so an administrator no longer needs to 
 login to a server to get an overview of how it is behaving - the very 
-commands they would normally run have alredy been performed, and the 
+commands they would normally run have already been performed, and the 
 results are on-line in Xymon.
 
 
 .IP "Easy to adapt to your needs"
 Xymon includes a lot of tests in the core package, but there will
 always be something specific to your setup that you would like to
-watch. Xymon allows you to write test scripts in your favourite
+watch. Xymon allows you to write test scripts in your favorite
 scripting language and have the results show up as regular status
 columns in Xymon. You can trigger alerts from these, and even track
 trends in graphs just by a simple configuration setting.
@@ -144,13 +141,13 @@ trends in graphs just by a simple configuration setting.
 The network test tool knows how to test most commonly used protocols,
 including HTTP, SMTP (e-mail), DNS, LDAP (directory services), and 
 many more. When checking websites, it is possible to not only check
-that the webserver is responding, but also that the response looks
+that the web server is responding, but also that the response looks
 correct by matching the response against a pre-defined pattern or a
-checksum. So you can test that a network service is really working
+check-sum. So you can test that a network service is really working
 and supplying the data you expect - not just that the service is
 running.
 
-Protocols that use SSL encryption such as https-websites are fully supported, 
+Protocols that use SSL encryption such as https web sites are fully supported, 
 and while checking such services the network tester will automatically run a 
 check of the validity of the SSL server certificate, and warn about 
 certificates that are about to expire.
@@ -166,7 +163,7 @@ and so that everyone else can check with Xymon and know that the problem
 is being taken care of.
 
 
-.IP "Combined super-tests and test interdependencies"
+.IP "Combined super-tests and test inter-dependencies"
 If a single test is not enough, combination tests can be defined
 that combine the result of several tests to a single status-report.
 So if you need to monitor that at least 3 out of 5 servers are
@@ -181,7 +178,7 @@ the router - and not from the 200 hosts behind the router.
 .SH SECURITY
 All of the Xymon server tools run under an unprivileged user account.
 A single program - the
-.I hobbitping(1)
+.I xymonping(1)
 network connectivity tester - must be installed setuid-root, but has
 been written so that it drops all root privileges immediately after
 performing the operation that requires root privileges.
@@ -195,27 +192,27 @@ server on tcp port 1984. Normally, Xymon clients - i.e. the servers
 you are monitoring - must be permitted to connect to the Xymon server 
 on this port. However, if that is not possible due to firewall 
 policies, then Xymon includes the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 and
 .I msgcache(8)
 tools to allows for a pull-style way of collecting data, where it 
 is the Xymon server that initiates connections to the clients.
 
-The Xymon webpages are dynamically generated through CGI programs.
+The Xymon web pages are dynamically generated through CGI programs.
 
-Access to the Xymon webpages is controlled through your webserver
+Access to the Xymon web pages is controlled through your web server
 access controls, e.g. you can require a login through some form of
 HTTP authentication.
 
 
 .SH DEMONSTRATION SITE
-A site running this software can be seen at http://www.hswn.dk/hobbit/
+A site running this software can be seen at http://www.xymon.com/
 
 
 .SH PREREQUISITES AND INSTALLATION
 You will need a Unix-like system (Linux, Solaris, HP-UX, AIX,
-FreeBSD, Mac OS X or similar) with a webserver installed. You
-will also need a C compiler and som additional libraries, but
+FreeBSD, Mac OS X or similar) with a web server installed. You
+will also need a C compiler and some additional libraries, but
 many systems come with the required development tools and 
 libraries pre-installed. The required libraries are:
 .sp
@@ -235,58 +232,59 @@ since many network tests do use SSL.
 This library is used for testing LDAP servers. Use of this is optional.
 
 For more detailed information about Xymon system requirements and
-how to install Xymon, refer to the online documentation "Installing
-Xymon" available from the Xymon webserver (via the "Help" menu),
+how to install Xymon, refer to the on-line documentation "Installing
+Xymon" available from the Xymon web server (via the "Help" menu),
 or from the "docs/install.html" file in the Xymon source archive.
 
 
 .SH "SUPPORT and MAILING LISTS"
-hobbit@hswn.dk is an open mailing list for discussions about Xymon.
-If you would like to participate, send an e-mail to \fBhobbit-subscribe@hswn.dk\fR
-to join the list.
+xymon@xymon.com is an open mailing list for discussions about Xymon.
+If you would like to participate, send an e-mail to \fBxymon-subscribe@xymon.com\fR
+to join the list, or visit http://lists.xymon.com/mailman/listinfo/xymon .
 
-An archive of the mailing list is available at http://www.hswn.dk/hobbiton/
+An archive of the mailing list is available at http://lists.xymon.com/archive/
 
 If you just want to be notified of new releases of Xymon, please
-subscribe to the hobbit-announce mailing list. This is a moderated list,
+subscribe to the xymon-announce mailing list. This is a moderated list,
 used only for announcing new Xymon releases. To be added to the list, send
-an e-mail to \fBhobbit-announce-subscribe@hswn.dk\fR.
+an e-mail to \fBxymon-announce-subscribe@xymon.com\fR or visit
+http://lists.xymon.com/mailman/listinfo/xymon-announce .
 
 
 .SH XYMON SERVER TOOLS
 These tools implement the core functionality of the Xymon server:
 
-.I hobbitd(8)
+.I xymond(8)
 is the core daemon that collects all reports about the status of 
 your hosts. It uses a number of helper modules to
-implement certain tasks such as updating logfiles and sending
-out alerts: hobbitd_client, hobbitd_history, hobbitd_alert
-and hobbitd_rrd. There is also a hobbitd_filestore module for
+implement certain tasks such as updating log files and sending
+out alerts: xymond_client, xymond_history, xymond_alert
+and xymond_rrd. There is also a xymond_filestore module for
 compatibility with Big Brother.
 
-.I hobbitd_channel(8)
+.I xymond_channel(8)
 Implements the communication between the Xymon daemon and the
 other Xymon server modules.
 
-.I hobbitd_history(8)
+.I xymond_history(8)
 Stores historical data about the things that Xymon monitors.
 
-.I hobbitd_rrd(8)
+.I xymond_rrd(8)
 Stores trend data, which is used to generate graphs of the data
 monitored by Xymon.
 
-.I hobbitd_alert(8)
+.I xymond_alert(8)
 handles alerts. When a status changes to a critical state, this 
 module decides if an alert should be sent out, and to whom.
 
-.I hobbitd_client(8)
+.I xymond_client(8)
 handles data collected by the Xymon clients, analyzes the data
 and feeds back several status updates to Xymon to build the
 view of the client status.
 
-.I hobbitd_hostdata(8)
+.I xymond_hostdata(8)
 stores historical client data when something breaks. E.g. when a
-webpage stops responding hobbitd_hostdata will save the latest
+web page stops responding xymond_hostdata will save the latest
 client data, so that you can use this to view a snapshot of how
 the system state was just prior to it failing.
 
@@ -294,13 +292,13 @@ the system state was just prior to it failing.
 .SH XYMON NETWORK TEST TOOLS
 These tools are used on servers that execute tests of network services.
 
-.I hobbitping(1)
+.I xymonping(1)
 performs network connectivity (ping) tests.
 
-.I bbtest-net(1)
+.I xymonnet(1)
 runs the network service tests.
 
-.I bbretest-net.sh(1)
+.I xymonnet-again.sh(1)
 is an extension script for re-doing failed network tests with a higher 
 frequency than the normal network tests. This allows Xymon to pick up
 the recovery of a network service as soon as it happens, resulting in 
@@ -311,82 +309,82 @@ less downtime being recorded.
 These tools take care of generating and updating the various
 Xymon web-pages.
 
-.I bbgen(1)
-takes care of updating the Xymon webpages.
+.I xymongen(1)
+takes care of updating the Xymon web pages.
 
-.I hobbitsvc.cgi(1)
+.I svcstatus.cgi(1)
 This CGI program generates an HTML view of a single status log.
 It is used to present the Xymon status-logs.
 
-.I hobbitgraph.cgi(1)
+.I showgraph.cgi(1)
 This CGI program generates graphs of the trend-data collected
 by Xymon.
 
-.I hobbit-hostgraphs.cgi(1)
+.I hostgraphs.cgi(1)
 When you want to combine multiple graphs into one, this CGI lets
 you combine graphs so you can e.g. compare the load on all of the
 nodes in your server farm.
 
-.I hobbit-nkview.cgi(1)
+.I criticalview.cgi(1)
 Generates the Critical Systems view, based on the currently critical
 systems and the configuration of what systems and services you want to 
 monitor when.
 
-.I bb-hist.cgi(1)
-This CGI program generates a webpage with the most recent history 
+.I history.cgi(1)
+This CGI program generates a web page with the most recent history 
 of a particular host+service combination.
 
-.I bb-eventlog.cgi(1)
+.I eventlog.cgi(1)
 This CGI lets you view a log of events that have happened over a period 
 of time, for a single host or test, or for multiple systems.
 
-.I bb-ack.cgi(1)
+.I ack.cgi(1)
 This CGI program allows a user to acknowledge an alert he received
 from Xymon about a host that is in a critical state. Acknowledging
 an alert serves two purposes: First, it stops more alerts from being
 sent so the technicians are not bothered wit more alerts, and secondly
-it provides feedback to those looking at the Xymon webpages that the
+it provides feedback to those looking at the Xymon web pages that the
 problem is being handled.
 
-.I hobbit-mailack(8)
-is a tool for processing acknowledgements sent via e-mail, e.g. as a 
+.I xymon-mailack(8)
+is a tool for processing acknowledgments sent via e-mail, e.g. as a 
 response to an e-mail alert.
 
-.I hobbit-enadis.cgi(8)
+.I enadis.cgi(8)
 is a CGI program to disable or re-enable hosts or individual tests.
 When disabling a host or test, you stop alarms from being sent and
 also any outages do not affect the SLA calculations. So this tool
 is useful when systems are being brought down for maintenance.
 
-.I bb-findhost.cgi(1)
+.I findhost.cgi(1)
 is a CGI program that finds a given host in the Xymon
-webpages. As your Xymon installation grows, it can become
+web pages. As your Xymon installation grows, it can become
 difficult to remember exactly which page a host is on; this CGI
 script lets you find hosts easily.
 
-.I bb-rep.cgi(1)
+.I report.cgi(1)
 This CGI program triggers the generation of Xymon availability 
 reports, using
-.I bbgen(1)
+.I xymongen(1)
 as the reporting back-end engine.
 
-.I bb-replog.cgi(1)
+.I reportlog.cgi(1)
 This CGI program generates the detailed availability report for a 
 particular host+service combination.
 
-.I bb-snapshot.cgi(1)
-is a CGI program to build the Xymon webpages in a "snapshot"
-mode, showing the look of the webpages at a particular point 
+.I snapshot.cgi(1)
+is a CGI program to build the Xymon web pages in a "snapshot"
+mode, showing the look of the web pages at a particular point 
 in time. It uses
-.I bbgen(1)
+.I xymongen(1)
 as the back-end engine.
 
-.I hobbit-statusreport.cgi(1)
+.I statusreport.cgi(1)
 is a CGI program reporting test results for a single status but
 for several hosts. It is used to e.g. see which SSL certificates
-are about to expire, across all of the Xymon webpages.
+are about to expire, across all of the Xymon web pages.
 
-.I bb-csvinfo.cgi(1)
+.I csvinfo.cgi(1)
 is a CGI program to present information about a host. The 
 information is pulled from a CSV (Comma Separated Values)
 file, which is easily exported from any spreadsheet or
@@ -396,8 +394,8 @@ database program.
 .SH CLIENT-SIDE TOOLS
 .I logfetch(1)
 is a utility used by the Xymon Unix client to collect
-information from logfiles on the client. It can also monitor various
-other file-related data, e.g. file metadata or directory sizes.
+information from log files on the client. It can also monitor various
+other file-related data, e.g. file meta-data or directory sizes.
 
 .I clientupdate(1)
 Is used on Xymon clients, to automatically update the client software
@@ -407,7 +405,7 @@ can happen without an administrator having to logon to the server.
 .I msgcache(8)
 This tool acts as a mini Xymon server to the client. It stores client
 data internally, so that the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 utility can pick it up later and send it to the Xymon server. It
 is typically used on hosts that cannot contact the Xymon server 
 directly due to network- or firewall-restrictions.
@@ -419,15 +417,15 @@ and the Xymon clients. If there are no firewalls then they are not
 needed, but it may be necessary due to network or firewall issues
 to make use of them.
 
-.I bbproxy(8)
+.I xymonproxy(8)
 is a proxy-server that forwards Xymon messages between
 clients and the Xymon server. The clients must be able to talk
 to the proxy, and the proxy must be able to talk to the Xymon
 server.
 
-.I hobbitfetch(8)
+.I xymonfetch(8)
 is used when the client is not able to make outbound connections
-to neither bbproxy nor the Xymon server (typically, for clients
+to neither xymonproxy nor the Xymon server (typically, for clients
 located in a DMZ network zone). Together with the
 .I msgcache(8)
 utility running on the client, the Xymon server can contact the
@@ -435,47 +433,47 @@ clients and pick up their data.
 
 
 .SH OTHER TOOLS
-.I hobbitlaunch(8)
+.I xymonlaunch(8)
 is a program scheduler for Xymon. It acts as a master program
 for running all of the Xymon tools on a system. On the Xymon
 server, it controls running all of the server tasks. On a Xymon
 client, it periodically launches the client to collect data
 and send them to the Xymon server.
 
-.I bb(1)
+.I xymon(1)
 is the tool used to communicate with the Xymon server.
 It is used to send status reports to the Xymon server,
 through the custom Xymon/BB protocol, or via HTTP. It
 can be used to query the state of tests on the central Xymon 
 server and retrieve Xymon configuration files. The server-side 
 script 
-.I bbmessage.cgi(1) 
+.I xymoncgimsg.cgi(1) 
 used to receive messages sent via HTTP is also included.
 
-.I bbcmd(1)
+.I xymoncmd(1)
 is a wrapper for the other Xymon tools which sets up all
 of the environment variables used by Xymon tools.
 
-.I bbhostgrep(1)
+.I xymongrep(1)
 is a utility for use by Xymon extension scripts. It
 allows an extension script to easily pick out the hosts that
 are relevant to a script, so it need not parse a huge
-bb-hosts file with lots of unwanted test-specifications.
+hosts.cfg file with lots of unwanted test-specifications.
 
-.I bbhostshow(1)
+.I xymoncfg(1)
 is a utility to dump the full
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file following any "include" statements.
 
-.I bbdigest(1)
+.I xymondigest(1)
 is a utility to compute message digest values for use in
 content checks that use digests.
 
-.I bbcombotest(1)
+.I combostatus(1)
 is an extension script for the Xymon server,
 allowing you to build complicated tests from simpler
 Xymon test results. E.g. you can define a test that uses the results
-from testing your webserver, database server and router to have a 
+from testing your web server, database server and router to have a 
 single test showing the availability of your enterprise web
 application.
 
@@ -486,8 +484,8 @@ events that happened before a given time.
 
 
 .SH VERSIONS
-Version 1 of bbgen was relased in November 2002, and optimized the
-webpage generation on Big Brother servers.
+Version 1 of bbgen was released in November 2002, and optimized the
+web page generation on Big Brother servers.
 
 Version 2 of bbgen was released in April 2003, and added a tool
 for performing network tests.
@@ -497,21 +495,25 @@ use of several external libraries for network tests, resulting in a
 significant performance improvement.
 
 With version 4.0 released on March 30 2005, the project was de-coupled 
-from Big Brother, and the name changed to Xymon. This version was the 
-first full implementation of the Xymon server, but it still used the
+from Big Brother, and the name changed to Hobbit. This version was the 
+first full implementation of the Hobbit server, but it still used the
 data collected by Big Brother clients for monitoring host metrics.
 
-Version 4.1 was released in July 2005 included a simple Xymon client
-for Unix. Logfile monitoring was not implemented.
+Version 4.1 was released in July 2005 included a simple client
+for Unix. Log file monitoring was not implemented.
 
 Version 4.2 was released in July 2006, and includes a fully functional
-Xymon client for Unix.
+client for Unix.
 
+Version 4.3 was released in November 2010, and implemented the renaming
+of the project to Xymon. This name was already introduced in 2008 with
+a patch version of 4.2, but with version 4.3.0 this change of names
+was fully implemented.
 
 .SH COPYRIGHT
 Xymon is
 .br
-  Copyright (C) 2002-2006, Henrik Storner <henrik@storner.dk> 
+  Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk> 
 .br
 Parts of the Xymon sources are from public-domain or other freely
 available sources. These are the the Red-Black tree implementation, and 
@@ -523,18 +525,18 @@ is allowed.  See the file COPYING for details.
 
 
 .SH "SEE ALSO"
-hobbitd(8), hobbitd_channel(8), hobbitd_history(8), hobbitd_rrd(8), hobbitd_alert(8), 
-hobbitd_client(8), hobbitd_hostdata(8), 
-hobbitping(1), bbtest-net(1), bbretest-net.sh(1), 
-bbgen(1), hobbitsvc.cgi(1), hobbitgraph.cgi(1), hobbit-hostgraphs.cgi(1), hobbit-nkview.cgi(1), 
-bb-hist.cgi(1), bb-eventlog.cgi(1), 
-bb-ack.cgi(1), hobbit-mailack(8), hobbit-enadis.cgi(8), bb-findhost.cgi(1), 
-bb-rep.cgi(1), bb-replog.cgi(1), bb-snapshot.cgi(1), hobbit-statusreport.cgi(1), bb-csvinfo.cgi(1), 
+xymond(8), xymond_channel(8), xymond_history(8), xymond_rrd(8), xymond_alert(8), 
+xymond_client(8), xymond_hostdata(8), 
+xymonping(1), xymonnet(1), xymonnet-again.sh(1), 
+xymongen(1), svcstatus.cgi(1), showgraph.cgi(1), hostgraphs.cgi(1), criticalview.cgi(1), 
+history.cgi(1), eventlog.cgi(1), 
+ack.cgi(1), xymon-mailack(8), enadis.cgi(8), findhost.cgi(1), 
+report.cgi(1), reportlog.cgi(1), snapshot.cgi(1), statusreport.cgi(1), csvinfo.cgi(1), 
 logfetch(1), clientupdate(1), msgcache(8), 
-bbproxy(8), hobbitfetch(8), 
-hobbitlaunch(8), bb(1), bbmessage.cgi(1), bbcmd(1), bbhostgrep(1), bbhostshow(1), 
-bbdigest(1), bbcombotest(1), trimhistory(8),
-bb-hosts(5), hobbitlaunch.cfg(5), hobbitserver.cfg(5),
-hobbit-alerts.cfg(5),
-hobbit-clients.cfg(5), client-local.cfg(5)
+xymonproxy(8), xymonfetch(8), 
+xymonlaunch(8), xymon(1), xymoncgimsg.cgi(1), xymoncmd(1), xymongrep(1), xymoncfg(1), 
+xymondigest(1), combostatus(1), trimhistory(8),
+hosts.cfg(5), tasks.cfg(5), xymonserver.cfg(5),
+alerts.cfg(5),
+analysis.cfg(5), client-local.cfg(5)
 

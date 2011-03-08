@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for generating HTML version of a status log.          */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 #include "htmllog.h"
@@ -44,17 +44,15 @@ static void hostsvc_setup(void)
 	if (setup_done) return;
 
 	getenv_default("NONHISTS", "info,trends,graphs", NULL);
-	getenv_default("BBREL", "bbgen", NULL);
-	getenv_default("BBRELDATE", VERSION, NULL);
 	getenv_default("CGIBINURL", "/cgi-bin", &cgibinurl);
-	getenv_default("MKBBACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);
-	getenv_default("MKBBCOLFONT", "COLOR=\"#87a9e5\" SIZE=-1\"", &colfont);
-	getenv_default("MKBBROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
-	getenv_default("BBWEB", "/bb", NULL);
+	getenv_default("XYMONPAGEACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);
+	getenv_default("XYMONPAGECOLFONT", "COLOR=\"#87a9e5\" SIZE=-1\"", &colfont);
+	getenv_default("XYMONPAGEROWFONT", "SIZE=+1 COLOR=\"#FFFFCC\" FACE=\"Tahoma, Arial, Helvetica\"", &rowfont);
+	getenv_default("XYMONWEB", "/xymon", NULL);
 	{
-		char *dbuf = malloc(strlen(xgetenv("BBWEB")) + 6);
-		sprintf(dbuf, "%s/gifs", xgetenv("BBWEB"));
-		getenv_default("BBSKIN", dbuf, NULL);
+		char *dbuf = malloc(strlen(xgetenv("XYMONWEB")) + 6);
+		sprintf(dbuf, "%s/gifs", xgetenv("XYMONWEB"));
+		getenv_default("XYMONSKIN", dbuf, NULL);
 		xfree(dbuf);
 	}
 
@@ -73,7 +71,7 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 	sprintf(tmp1, ",%s,", xgetenv("NONHISTS"));
 	sprintf(tmp2, ",%s,", service);
 	if (strstr(tmp1, tmp2) == NULL) {
-		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/bb-hist.sh\"> \
+		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/history.sh\"> \
 			<INPUT TYPE=SUBMIT VALUE=\"%s\"> \
 			<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s.%s\"> \
 			<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\"> \
@@ -118,7 +116,7 @@ static void textwithcolorimg(char *msg, FILE *output)
 				recent = (strncmp(p + 1 + strlen(colorname(color)), "-recent", 7) == 0);
 
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0>",
-                                                        xgetenv("BBSKIN"), dotgiffilename(color, acked, !recent),
+                                                        xgetenv("XYMONSKIN"), dotgiffilename(color, acked, !recent),
 							colorname(color),
                                                         xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
 
@@ -144,13 +142,13 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		       int is_history, int wantserviceid, int htmlfmt, int locatorbased,
 		       char *multigraphs,
 		       char *linktoclient,
-		       char *nkprio, char *nkttgroup, char *nkttextra,
+		       char *prio, char *ttgroup, char *ttextra,
 		       int graphtime,
 		       FILE *output)
 {
 	int linecount = 0;
-	hobbitrrd_t *rrd = NULL;
-	hobbitgraph_t *graph = NULL;
+	xymonrrd_t *rrd = NULL;
+	xymongraph_t *graph = NULL;
 	char *tplfile = "hostsvc";
 	time_t now = getcurrenttime(NULL);
 
@@ -172,7 +170,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/trends_form", xgetenv("BBHOME"));
+		sprintf(formfn, "%s/web/trends_form", xgetenv("XYMONHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -191,11 +189,11 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		}
 	}
 
-	if (nkprio) {
+	if (prio) {
 		int formfile;
 		char formfn[PATH_MAX];
 
-		sprintf(formfn, "%s/web/nkack_form", xgetenv("BBHOME"));
+		sprintf(formfn, "%s/web/critack_form", xgetenv("XYMONHOME"));
 		formfile = open(formfn, O_RDONLY);
 
 		if (formfile >= 0) {
@@ -208,7 +206,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			inbuf[st.st_size] = '\0';
 			close(formfile);
 
-			sethostenv_nkack(atoi(nkprio), nkttgroup, nkttextra, 
+			sethostenv_critack(atoi(prio), ttgroup, ttextra, 
 				 hostsvcurl(hostname, xgetenv("INFOCOLUMN"), 1), hostlink(hostname));
 
 			output_parsed(output, inbuf, color, 0);
@@ -268,9 +266,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output, "<br><br><a name=\"begindata\">&nbsp;</a>\n");
 
-	if (flapping) {
-		fprintf(output, "<CENTER><B>WARNING: Flapping status</B></CENTER>\n");
-	}
+	if (flapping) fprintf(output, "<CENTER><B>WARNING: Flapping status</B></CENTER>\n");
 
 	if (histlocation == HIST_TOP) {
 		historybutton(cgibinurl, hostname, service, ip, displayname,
@@ -282,12 +278,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
 
 	if (disabletime != 0) {
-		fprintf(output, "<TR><TD><H3>Disabled until %s</H3></TD></TR>\n", 
+		fprintf(output, "<TR><TD ALIGN=LEFT><H3>Disabled until %s</H3></TD></TR>\n", 
 			(disabletime == -1 ? "OK" : ctime(&disabletime)));
-		fprintf(output, "<TR><TD><PRE>%s</PRE></TD></TR>\n", dismsg);
-		fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
+		fprintf(output, "<TR><TD ALIGN=LEFT><PRE>%s</PRE></TD></TR>\n", dismsg);
+		fprintf(output, "<TR><TD ALIGN=LEFT><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 
-		fprintf(output, "<TR><TD>");
+		fprintf(output, "<TR><TD ALIGN=LEFT>");
 		if (strlen(firstline)) {
 			fprintf(output, "<H3>");
 			textwithcolorimg(firstline, output);
@@ -297,29 +293,30 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			
 	}
 	else {
-		char *txt;
+		char *txt = skipword(firstline);
 
 		if (dismsg) {
-			fprintf(output, "<TR><TD><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
-			fprintf(output, "<TR><TD><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
+			fprintf(output, "<TR><TD ALIGN=LEFT><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
+			fprintf(output, "<TR><TD ALIGN=LEFT><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 		}
 
 		if (modifiers) {
+			char *modtxt;
+
 			nldecode(modifiers);
-			fprintf(output, "<TR><TD>");
-			txt = strtok(modifiers, "\n");
-			while (txt) {
+			fprintf(output, "<TR><TD ALIGN=LEFT>");
+			modtxt = strtok(modifiers, "\n");
+			while (modtxt) {
 				fprintf(output, "<H3>");
-				textwithcolorimg(txt, output);
+				textwithcolorimg(modtxt, output);
 				fprintf(output, "</H3>");
-				txt = strtok(NULL, "\n");
-				if (txt) fprintf(output, "<br>");
+				modtxt = strtok(NULL, "\n");
+				if (modtxt) fprintf(output, "<br>");
 			}
 			fprintf(output, "\n");
 		}
 
-		txt = skipword(firstline);
-		fprintf(output, "<TR><TD>");
+		fprintf(output, "<TR><TD ALIGN=LEFT>");
 		if (strlen(txt)) {
 			fprintf(output, "<H3>");
 			textwithcolorimg(txt, output);
@@ -369,30 +366,37 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	/* trends stuff here */
 	if (!is_history) {
-		rrd = find_hobbit_rrd(service, flags);
+		rrd = find_xymon_rrd(service, flags);
 		if (rrd) {
-			graph = find_hobbit_graph(rrd->hobbitrrdname);
+			graph = find_xymon_graph(rrd->xymonrrdname);
 			if (graph == NULL) {
 				errprintf("Setup error: Service %s has a graph %s, but no graph-definition\n",
-					  service, rrd->hobbitrrdname);
+					  service, rrd->xymonrrdname);
 			}
 		}
 	}
 	if (rrd && graph) {
-		char *p, *lcountid;
-
-		if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,ifmib,";
+		int may_have_rrd = 1;
 
 		/*
-		 * Suggested by Francesco Duranti:
-		 * Check if there's a <!-- linecount=xx -->" already, and use that
-		 * as the linecount if there is. This will work also with test not defined 
-		 * as multigraphs.
+		 * See if there is already a linecount in the report.
+		 * If there is, this overrides the calculation here.
+		 *
+		 * From Francesco Duranti's hobbit-perl-client.
 		 */
-		lcountid = strstr(restofmsg, "<!-- linecount=");
-		if (lcountid) {
-			linecount = atoi(lcountid+15);
-		} else {
+		char *lcstr = strstr(restofmsg, "<!-- linecount=");
+		if (lcstr) {
+			linecount=atoi(lcstr+15);
+		}
+		else {
+			char *p, *multikey;
+
+			/* quotas, snapshot and TblSpace are generated by hobbit-perl-client */
+			if (multigraphs == NULL) multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
+
+			/* Not all devmon statuses have graphs, so try to avoid generating graph links unless there is one */
+			if (strncmp(rrd->xymonrrdname,"devmon",6) == 0) may_have_rrd=0;
+
 			/* 
 			 * Some reports (disk) use the number of lines as a rough measure for how many
 			 * graphs to build.
@@ -400,14 +404,19 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 			 * RRD database files are present matching this service - but that is way too
 			 * much overhead for something that might be called on every status logged.
 			 */
-			char *multikey = (char *)malloc(strlen(service) + 3);
+			multikey = (char *)malloc(strlen(service) + 3);
 			sprintf(multikey, ",%s,", service);
-
 			if (strstr(multigraphs, multikey)) {
 				/* The "disk" report from the NetWare client puts a "warning light" on all entries */
 				int netwarediskreport = (strstr(firstline, "NetWare Volumes") != NULL);
 
-				/* Count how many lines are in the status message. This is needed by hobbitd_graph later */
+				/* FD: The "TblSpace" report from dbcheck.pl need to take out a total of 3 line of heade */
+				int tblspacereport = (strstr(restofmsg, "dbcheck.pl") != NULL);
+
+				/* Old BB clients do not send in df's header line */
+				int header = (strchr(firstline, '/') == NULL);
+
+				/* Count how many lines are in the status message. This is needed by xymond_graph later */
 				linecount = 0; p = restofmsg;
 				do {
 					/* First skip all whitespace and blank lines */
@@ -421,20 +430,32 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 							/* We found something that is not blank, so one more line */
 							if (!netwarediskreport) linecount++;
 						}
+
+						if (strlen(p) > 10 &&  *p == '<' ) {
+							/* Check if this is a devmon RRD header, reset the linecount to -2, as we will see a DS line and a Devmon banner*/
+							if(!strncmp(p, "<!--DEVMON",10)) {
+								linecount = -2;
+								may_have_rrd=1;
+							}
+						}
+
 						/* Then skip forward to the EOLN */
 						p = strchr(p, '\n');
 					}
 				} while (p && (*p));
 
-				/* There is probably a header line ... */
-				if (!netwarediskreport && (linecount > 1)) linecount--;
+				/* Do not count the 'df' header line */
+				if (!netwarediskreport && header && (linecount > 1)) linecount--;
+				if (tblspacereport && (linecount > 2)) linecount-=2;
+
 			}
-
 			xfree(multikey);
-
-			fprintf(output, "<!-- linecount=%d -->\n", linecount);
 		}
-		fprintf(output, "%s\n", hobbit_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+
+		if (may_have_rrd) {
+			fprintf(output, "<!-- linecount=%d -->\n", linecount);
+			fprintf(output, "%s\n", xymon_graph_data(hostname, displayname, service, color, graph, linecount, HG_WITHOUT_STALE_RRDS, HG_PLAIN_LINK, locatorbased, now-graphtime, now));
+		}
 	}
 
 	if (histlocation == HIST_BOTTOM) {
@@ -474,10 +495,10 @@ static char *nameandcomment(void *host, char *hostname, int usetooltip)
 	/* For summary "hosts", we have no hinfo record. */
 	if (!host) return hostname;
 
-	hname = bbh_item(host, BBH_HOSTNAME);
-	disp = bbh_item(host, BBH_DISPLAYNAME);
-	cmt = bbh_item(host, BBH_COMMENT); if (!cmt) cmt = bbh_item(host, BBH_DESCRIPTION);
-	if (!cmt && usetooltip) cmt = bbh_item(host, BBH_IP);
+	hname = xmh_item(host, XMH_HOSTNAME);
+	disp = xmh_item(host, XMH_DISPLAYNAME);
+	cmt = xmh_item(host, XMH_COMMENT); if (!cmt) cmt = xmh_item(host, XMH_DESCRIPTION);
+	if (!cmt && usetooltip) cmt = xmh_item(host, XMH_IP);
 
 	if (disp == NULL) disp = hname;
 
@@ -488,8 +509,8 @@ static char *nameandcomment(void *host, char *hostname, int usetooltip)
 			sprintf(result, "<span title=\"%s\">%s</span>", cmt, disp);
 		}
 		else {
-			result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
-			sprintf(result, "%s (%s)", disp, cmt);
+		result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
+		sprintf(result, "%s (%s)", disp, cmt);
 		}
 		return result;
 	}
@@ -544,7 +565,7 @@ char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 	 *
 	 * else if a host has a direct notes-link, use that.
 	 *
-	 * else if no direct link and we are doing a BB2/BBNK page, 
+	 * else if no direct link and we are doing a nongreen/critical page, 
 	 * provide a link to the main page with this host (there
 	 * may be links to documentation in some page-title).
 	 *
@@ -553,21 +574,21 @@ char *hostnamehtml(char *hostname, char *defaultlink, int usetooltip)
 	if (documentationurl) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
 			urldoclink(documentationurl, hostname),
-			doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			doctarget, xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else if ((hostlinkurl = hostlink(hostname)) != NULL) {
 		snprintf(result, sizeof(result), "<A HREF=\"%s\" %s><FONT %s>%s</FONT></A>",
-			hostlinkurl, doctarget, xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			hostlinkurl, doctarget, xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else if (defaultlink) {
 		/* Provide a link to the page where this host lives */
 		snprintf(result, sizeof(result), "<A HREF=\"%s/%s\" %s><FONT %s>%s</FONT></A>",
-			xgetenv("BBWEB"), defaultlink, doctarget,
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			xgetenv("XYMONWEB"), defaultlink, doctarget,
+			xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 	else {
 		snprintf(result, sizeof(result), "<FONT %s>%s</FONT>",
-			xgetenv("MKBBROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
+			xgetenv("XYMONPAGEROWFONT"), nameandcomment(hinfo, hostname, usetooltip));
 	}
 
 	return result;

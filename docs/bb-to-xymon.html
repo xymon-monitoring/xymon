@@ -20,41 +20,41 @@ for the server- and data-files. The default is to use <em>~/server</em> and
 <em>~/data</em> respectively, which is unlikely to clash with the
 directories where you have Big Brother installed. If you do need to
 change the directories, you must edit the top-level Makefile and
-change the BBHOME and BBVAR settings near the top of the file.</p>
+change the XYMONHOME and XYMONVAR settings near the top of the file.</p>
 
 <h3>Step two: Move the configuration files</h3>
 <p>A couple of configuration files can be copied directly from 
 Big Brother to Xymon:</p>
 <ul>
-	<li>The <b>bb-hosts</b> file
+	<li>The <b>bb-hosts</b> file, must be renamed to <b>hosts.cfg</b>
 	<li>The <b>bb-services</b> file. You need only copy this if you 
 	have used bbgen before, and added custom network tests to the
-	bb-services file.</li>
+	bb-services file. You must rename it to <b>protocols.cfg</b>.</li>
 	<li>The <b>cookies</b> file. You may not have this
 	file - it is only present if you have used bbgen before and
 	have setup HTTP tests that require cookies.</li>
 	<li>The <b>bbcombotests.cfg</b> file. You may not have this
 	file - it is only present if you have used bbgen before and
-	have setup the bbcombotest tool.</li>
+	have setup the bbcombotest tool. Copy it to <b>combo.cfg</b>.</li>
 </ul>
 
 <p>The <em>bbwarnrules.cfg</em> and <em>bbwarnsetup.cfg</em> files
 cannot be copied over. Xymon uses a very different configuration
 file for the alert configuration, so you will have to re-write your
-alert configuration for Xymon. See the <a href="hobbit-alerts.html">Xymon alert configuration</a>
+alert configuration for Xymon. See the <a href="xymon-alerts.html">Xymon alert configuration</a>
 to learn how Xymon alerts are configured.</p>
 
-<p>Any server-side extension-scripts can be copied from the $BBHOME/ext/
+<p>Any server-side extension-scripts can be copied from the $XYMONHOME/ext/
 directory to the ~/server/ext/ directory. You must also add entries for
-them to the Xymon <em>hobbitlaunch.cfg</em> file. Beware that many
+them to the Xymon <em>tasks.cfg</em> file. Beware that many
 scripts rely on environment variables that Big Brother defines, but which
 Xymon does not define - in that case, you need to setup those environment
-variables in the <a href="manpages/man5/hobbitserver.cfg.5.html">hobbitserver.cfg</a> file. It is probably easiest to
+variables in the <a href="manpages/man5/xymonserver.cfg.5.html">xymonserver.cfg</a> file. It is probably easiest to
 save this until you start running Xymon, and can look at any error-output
 from the scripts.</p>
 
 <p>If you have modified the webpage header- and footer-files in 
-$BBHOME/web/ then you can copy the modified files over directly to
+$XYMONHOME/web/ then you can copy the modified files over directly to
 the ~/server/web/ directory. Note that Xymon has a number of 
 header- and footer-files for the various CGI scripts that are not
 present in Big Brother, so you may need to setup a few extra 
@@ -68,9 +68,9 @@ over to Xymon, I recommend that you stop Big Brother now.</p>
 
 <h3>Step four: Move the history logs</h3>
 <p>You may want to save the historical logfiles and the history of your
-status changes. To do that, move all of the files or directories in the <em>$BBVAR/hist/</em>
+status changes. To do that, move all of the files or directories in the <em>$XYMONVAR/hist/</em>
 to the <em>~/data/hist/</em> directory, and all of the files or directories in
-<em>$BBVAR/histlogs/</em> to the <em>~/data/histlogs/</em> directory.
+<em>$XYMONVAR/histlogs/</em> to the <em>~/data/histlogs/</em> directory.
 If you prefer to keep them in the Big Brother directory, you can copy
 them over with "cp -r" or "tar" instead of moving them.</p>
 
@@ -87,7 +87,7 @@ host. This is easier to manage, and also speeds up the graph generation when
 you have many hosts. Unfortunately, it makes migrating from Big Brother to
 Xymon slightly more complicated.</p>
 
-<p>In the Xymon source-tree, you will find a script <em>hobbitd/moverrd.sh</em>.
+<p>In the Xymon source-tree, you will find a script <em>xymond/moverrd.sh</em>.
 This script moves or copies the RRD files from the Big Brother+LARRD structure
 into the Xymon structure. You must edit a couple of settings at the beginning
 of the file, especially to set the correct directory where Big Brother stores
@@ -96,12 +96,12 @@ the files over to the new structure, if you would rather just move them then
 change to "OP" setting to "mv".</p>
 
 <p>After setting up the script, run it and it should copy all of the RRD-files
-that relate to a host currently in the bb-hosts file to the new directory 
+that relate to a host currently in the hosts.cfg file to the new directory 
 structure.</p>
 
 <h3>Step 6: Start Xymon</h3>
-<p>Start Xymon with the <tt>~/server/hobbit.sh start</tt> command. Look 
-at the logfiles in the <tt>/var/log/hobbit</tt> directory (or elsewhere, if
+<p>Start Xymon with the <tt>~/server/xymon.sh start</tt> command. Look 
+at the logfiles in the <tt>/var/log/xymon</tt> directory (or elsewhere, if
 you did not choose the default logfile directory when configuring Xymon) and
 fix any problems that show up.</p>
 

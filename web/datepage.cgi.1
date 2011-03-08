@@ -1,13 +1,13 @@
-.TH BB-DATEPAGE.CGI 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH DATEPAGE.CGI 1 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-bb-datepage.cgi \- Xymon CGI script to view pre-built reports by date
+datepage.cgi \- Xymon CGI script to view pre-built reports by date
 .SH SYNOPSIS
-.B "bb-datepage.cgi?type={day,week,month} --url=URLPREFIX [options]
+.B "datepage.cgi?type={day,week,month} --url=URLPREFIX [options]
 
 .SH DESCRIPTION
-\fBbb-datepage.cgi\fR is invoked as a CGI script via the bb-datepage.sh CGI wrapper.
+\fBdatepage.cgi\fR is invoked as a CGI script via the datepage.sh CGI wrapper.
 
-bb-datepage.cgi is passed a QUERY_STRING environment variable with the
+datepage.cgi is passed a QUERY_STRING environment variable with the
 type of time-selection that is desired: Either "day", "week" or "month"
 can be requested. It will then generate a web form with appropriate
 day/week/month selection boxes, and based on the users' selection a
@@ -32,7 +32,7 @@ two-digit number of the month (01..12). DAY is the number of the
 day in the month (01..31). WEEK is the ISO 8601:1988 week-number 
 (01..53). PAGEPATH is the current value of the "pagepath" cookie
 if set; if it is not set but the "host" cookie is set, then this
-host is looked up in the bb-hosts file and the page where this host
+host is looked up in the hosts.cfg file and the page where this host
 is found is used for PAGEPATH. These two cookies are set by the 
 default web-header templates supplied with Xymon.
 
@@ -41,7 +41,7 @@ default web-header templates supplied with Xymon.
 This specifies the initial part of the final URL. This option is required.
 
 .IP "--hffile=FILENAME"
-Specifies the template files (from $BBHOME/web/) to use. The default is 
+Specifies the template files (from $XYMONHOME/web/) to use. The default is 
 "--hffile=report".
 
 .IP "--color=COLOR"
@@ -53,28 +53,28 @@ Loads the environment defined in FILENAME before executing the CGI script.
 .IP "--debug"
 Enables debugging output.
 
-.IP "$BBHOME/web/report_form_daily"
+.IP "$XYMONHOME/web/report_form_daily"
 HTML form template for the date selection form when type=daily.
 
-.IP "$BBHOME/web/report_form_weekly"
+.IP "$XYMONHOME/web/report_form_weekly"
 HTML form template for the date selection form when type=weekly.
 
-.IP "$BBHOME/web/report_form_monthly"
+.IP "$XYMONHOME/web/report_form_monthly"
 HTML form template for the date selection form when type=monthly.
 
-.IP "$BBHOME/web/report_header"
+.IP "$XYMONHOME/web/report_header"
 HTML header file for the generated web page
 
-.IP "$BBHOME/web/report_footer"
+.IP "$XYMONHOME/web/report_footer"
 HTML footer file for the generated web page
 
 .SH "ENVIRONMENT VARIABLES"
-.IP BBHOME
+.IP XYMONHOME
 Used to locate the template files for the generated web pages.
 
 .IP QUERY_STRING
 Contains the parameters for the CGI script.
 
 .SH "SEE ALSO"
-bbgen(1), bb-hosts(5), hobbitserver.cfg(5)
+xymongen(1), hosts.cfg(5), xymonserver.cfg(5)
 

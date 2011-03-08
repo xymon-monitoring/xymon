@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This utility is used to manually control the RRD cache.                    */
 /* It is a debugging tool.                                                    */
 /*                                                                            */
-/* Copyright (C) 2007-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2007-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -49,7 +49,7 @@ int init_svc(char *sockfn)
 
 	memset(&myaddr, 0, sizeof(myaddr));
 	myaddr.sun_family = AF_UNIX;
-	sprintf(myaddr.sun_path, "%s/%s", xgetenv("BBTMP"), sockfn);
+	sprintf(myaddr.sun_path, "%s/%s", xgetenv("XYMONTMP"), sockfn);
 	myaddrsz = sizeof(myaddr);
 
 	if (connect(ctlsocket, (struct sockaddr *)&myaddr, myaddrsz) == -1) {

@@ -1,0 +1,84 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of XYMONCFG</TITLE>
+</HEAD><BODY>
+<H1>XYMONCFG</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+xymoncfg - output the full hosts.cfg file
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>xymoncfg [--web] [--net] [filename]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<I><A HREF="../man1/xymoncfg.1.html">xymoncfg</A>(1)</I>
+
+dumps the full hosts.cfg file to stdout. It follows &quot;include&quot;
+tags in the hosts.cfg files, and prints the full contents
+as seen by the
+<I><A HREF="../man1/xymongen.1.html">xymongen</A>(1)</I>
+
+and
+<I><A HREF="../man1/xymonnet.1.html">xymonnet</A>(1)</I>
+
+utilities.
+<P>
+If no filename is given, xymoncfg displays the file pointed
+to by the HOSTSCFG environment variable.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--web<DD>
+Show the hosts.cfg file following include statements as a
+Xymon web-server would.
+<P>
+<DT>--net<DD>
+Show the hosts.cfg file following include statements as done
+when running xymonnet.
+<P>
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>ENVIRONMENT VARIABLES</H2>
+
+<DL COMPACT>
+<DT>HOSTSCFG<DD>
+Filename for the
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
+
+file.
+<P>
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5), <A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">ENVIRONMENT VARIABLES</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:17 GMT, January 20, 2011
+</BODY>
+</HTML>

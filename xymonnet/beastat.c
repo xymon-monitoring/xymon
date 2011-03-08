@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor BEA statistics tool.                                        */
+/* Xymon monitor BEA statistics tool.                                         */
 /*                                                                            */
 /* This is used to collect statistics from a BEA Weblogic server              */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 typedef struct bea_idx_t {
@@ -36,8 +36,8 @@ static bea_idx_t *bea_idxhead = NULL;
 static char msgline[MAX_LINE_LEN];
 static int statuscolor = COL_GREEN;
 
-/* Set with environment or commandline options */
-static char *location = "";		/* BBLOCATION value */
+/* Set with environment or command-line options */
+static char *location = "";		/* XYMONNETWORK value */
 static int testuntagged = 0;
 static int default_port = 161;
 static char *default_community = "public";
@@ -81,10 +81,10 @@ static void find_idxes(char *buf, char *searchstr)
 
 int wanted_host(void *host, char *netstring)
 {
-	char *netlocation = bbh_item(host, BBH_NET);
+	char *netlocation = xmh_item(host, XMH_NET);
 
-	return ((strlen(netstring) == 0) ||                                /* No BBLOCATION = do all */
-		(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* BBLOCATION && matching NET: tag */
+	return ((strlen(netstring) == 0) ||                                /* No XYMONNETWORK = do all */
+		(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* XYMONNETWORK && matching NET: tag */
 		(testuntagged && (netlocation == NULL)));                  /* No NET: tag for this host */
 }
 
@@ -151,7 +151,7 @@ void send_data(void *host, char *beadomain, char *databuf, char **items)
 	msgbuf = newstrbuffer(0);
 
         for (idxwalk = bea_idxhead; (idxwalk); idxwalk = idxwalk->next) {
-		sprintf(msgline, "data %s.bea\n\n", commafy(bbh_item(host, BBH_HOSTNAME)));
+		sprintf(msgline, "data %s.bea\n\n", commafy(xmh_item(host, XMH_HOSTNAME)));
 		addtobuffer(msgbuf, msgline);
 
 		if (beadomain && *beadomain) {
@@ -165,7 +165,7 @@ void send_data(void *host, char *beadomain, char *databuf, char **items)
 			addtobuffer(msgbuf, msgline);
 		}
 
-		sendmessage(STRBUF(msgbuf), NULL, BBTALK_TIMEOUT, NULL);
+		sendmessage(STRBUF(msgbuf), NULL, XYMON_TIMEOUT, NULL);
 		clearstrbuffer(msgbuf);
 	}
 
@@ -209,9 +209,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
-        load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
+        load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn());
+        if (first_host() == NULL) {
+                errprintf("Cannot load file %s\n", xgetenv("HOSTSCFG"));
+                return 1;
+        }
 
-        if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
+	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
+		location = strdup(xgetenv("XYMONNETWORK"));
+	else if (xgetenv("BBLOCATION") && (strlen(xgetenv("BBLOCATION")) > 0))
+		location = strdup(xgetenv("BBLOCATION"));
 
 	init_timestamp();
 	combo_start();
@@ -220,7 +227,7 @@ int main(int argc, char *argv[])
 	qout = newstrbuffer(0);
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
-		char *tspec = bbh_custom_item(hwalk, "bea=");
+		char *tspec = xmh_custom_item(hwalk, "bea=");
 		char *snmpcommunity = default_community;
 		char *beadomain = "";
 		int snmpport = default_port;
@@ -259,7 +266,7 @@ int main(int argc, char *argv[])
 
 		/* Setup the snmpwalk pipe-command for jrockit stats */
 		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.302.1",
-			snmpcommunity, beadomain, bbh_item(hwalk, BBH_IP), snmpport);
+			snmpcommunity, beadomain, xmh_item(hwalk, XMH_IP), snmpport);
 		jrockres = run_command(pipecmd, NULL, jrockout, 0, extcmdtimeout);
 		if (jrockres == 0) {
 			find_idxes(STRBUF(jrockout), "BEA-WEBLOGIC-MIB::jrockitRuntimeIndex.");
@@ -268,13 +275,13 @@ int main(int argc, char *argv[])
 		else {
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
 			sprintf(msgline, "Could not retrieve BEA jRockit statistics from %s:%d domain %s (code %d)\n",
-				bbh_item(hwalk, BBH_IP), snmpport, beadomain, jrockres);
+				xmh_item(hwalk, XMH_IP), snmpport, beadomain, jrockres);
 			addtobuffer(statusmsg, msgline);
 		}
 
 		/* Setup the snmpwalk pipe-command for executeQueur stats */
 		sprintf(pipecmd, "snmpwalk -m BEA-WEBLOGIC-MIB -c %s@%s -v 1 %s:%d enterprises.140.625.180.1",
-			snmpcommunity, beadomain, bbh_item(hwalk, BBH_IP), snmpport);
+			snmpcommunity, beadomain, xmh_item(hwalk, XMH_IP), snmpport);
 		qres = run_command(pipecmd, NULL, qout, 0, extcmdtimeout);
 		if (qres == 0) {
 			find_idxes(STRBUF(qout), "BEA-WEBLOGIC-MIB::executeQueueRuntimeIndex.");
@@ -283,14 +290,14 @@ int main(int argc, char *argv[])
 		else {
 			if (statuscolor < COL_YELLOW) statuscolor = COL_YELLOW;
 			sprintf(msgline, "Could not retrieve BEA executeQueue statistics from %s:%d domain %s (code %d)\n",
-				bbh_item(hwalk, BBH_IP), snmpport, beadomain, qres);
+				xmh_item(hwalk, XMH_IP), snmpport, beadomain, qres);
 			addtobuffer(statusmsg, msgline);
 		}
 
 		/* FUTURE: Have the statuscolor/statusmsg be updated to check against thresholds */
 		/* Right now, the "bea" status is always green */
 		init_status(statuscolor);
-		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(bbh_item(hwalk, BBH_HOSTNAME)), "bea", colorname(statuscolor), timestamp);
+		sprintf(msgline, "status %s.%s %s %s\n\n", commafy(xmh_item(hwalk, XMH_HOSTNAME)), "bea", colorname(statuscolor), timestamp);
 		addtostatus(msgline);
 		if (STRBUFLEN(statusmsg) == 0) addtobuffer(statusmsg, "All BEA monitors OK\n");
 		addtostrstatus(statusmsg);

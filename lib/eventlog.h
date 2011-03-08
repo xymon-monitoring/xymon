@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -11,7 +11,7 @@
 #ifndef __EVENTLOG_H_
 #define __EVENTLOG_H_
 
-/* Format of records in the $BBHIST/allevents file */
+/* Format of records in the $XYMONHISTDIR/allevents file */
 typedef struct event_t {
 	void    *host;
 	struct htnames_t *service;
@@ -35,8 +35,8 @@ typedef struct countlist_t {
 	struct countlist_t *next;
 } countlist_t;
 
-typedef enum { S_NONE, S_HOST_BREAKDOWN, S_SERVICE_BREAKDOWN } eventsummary_t;
-typedef enum { COUNT_NONE, COUNT_EVENTS, COUNT_DURATION } countsummary_t;
+typedef enum { XYMON_S_NONE, XYMON_S_HOST_BREAKDOWN, XYMON_S_SERVICE_BREAKDOWN } eventsummary_t;
+typedef enum { XYMON_COUNT_NONE, XYMON_COUNT_EVENTS, XYMON_COUNT_DURATION } countsummary_t;
 
 typedef int (*f_hostcheck)(char *hostname);
 

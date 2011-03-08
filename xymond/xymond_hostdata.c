@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This Hobbit worker module saves the client messages that arrive on the     */
+/* This Xymon worker module saves the client messages that arrive on the      */
 /* CLICHG channel, for use when looking at problems with a host.              */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -25,16 +25,38 @@ static char rcsid[] = "$Id$";
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "libbbgen.h"
-#include "hobbitd_worker.h"
+#include "libxymon.h"
+#include "xymond_worker.h"
 
 #include <signal.h>
 
 
 #define MAX_META 20	/* The maximum number of meta-data items in a message */
 
+typedef struct savetimes_t {
+	char *hostname;
+	time_t tstamp[12];
+} savetimes_t;
+RbtHandle savetimes;
 
 static char *clientlogdir = NULL;
+int nextfscheck = 0;
+
+
+void sig_handler(int signum)
+{
+	/*
+	 * Why this? Because we must have our own signal handler installed to call wait()
+	 */
+	switch (signum) {
+	  case SIGCHLD:
+		  break;
+
+	  case SIGHUP:
+		  nextfscheck = 0;
+		  break;
+	}
+}
 
 void update_locator_hostdata(char *id)
 {
@@ -61,11 +83,27 @@ int main(int argc, char *argv[])
 	char *msg;
 	int running;
 	int argi, seq;
+	int recentperiod = 3600;
+	int maxrecentcount = 5;
+	int logdirfull = 0;
+	int minlogspace = 5;
+	struct sigaction sa;
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
                 if (argnmatch(argv[argi], "--logdir=")) {
 			clientlogdir = strchr(argv[argi], '=')+1;
+		}
+		else if (argnmatch(argv[argi], "--recent-period=")) {
+			char *p = strchr(argv[argi], '=');
+			recentperiod = 60*atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--recent-count=")) {
+			char *p = strchr(argv[argi], '=');
+			maxrecentcount = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--minimum-free=")) {
+			minlogspace = atoi(strchr(argv[argi], '=')+1);
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			/*
@@ -81,8 +119,8 @@ int main(int argc, char *argv[])
 
 	if (clientlogdir == NULL) clientlogdir = xgetenv("CLIENTLOGS");
 	if (clientlogdir == NULL) {
-		clientlogdir = (char *)malloc(strlen(xgetenv("BBVAR")) + 10);
-		sprintf(clientlogdir, "%s/hostdata", xgetenv("BBVAR"));
+		clientlogdir = (char *)malloc(strlen(xgetenv("XYMONVAR")) + 10);
+		sprintf(clientlogdir, "%s/hostdata", xgetenv("XYMONVAR"));
 	}
 
 	save_errbuf = 0;
@@ -90,7 +128,13 @@ int main(int argc, char *argv[])
 	/* Do the network stuff if needed */
 	net_worker_run(ST_HOSTDATA, LOC_STICKY, update_locator_hostdata);
 
-	setup_signalhandler("hobbitd_hostdata");
+	setup_signalhandler("xymond_hostdata");
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = sig_handler;
+	sigaction(SIGHUP, &sa, NULL);
+	signal(SIGPIPE, SIG_DFL);
+
+	savetimes = rbtNew(name_compare);
 
 	running = 1;
 	while (running) {
@@ -98,14 +142,20 @@ int main(int argc, char *argv[])
 		char *metadata[MAX_META+1];
 		int metacount;
 
-		msg = get_hobbitd_message(C_CLICHG, "hobbitd_hostdata", &seq, NULL);
+		msg = get_xymond_message(C_CLICHG, "xymond_hostdata", &seq, NULL);
 		if (msg == NULL) {
 			/*
-			 * get_hobbitd_message will return NULL if hobbitd_channel closes
+			 * get_xymond_message will return NULL if xymond_channel closes
 			 * the input pipe. We should shutdown when that happens.
 			 */
 			running = 0;
 			continue;
+		}
+
+		if (nextfscheck < gettimer()) {
+			logdirfull = (chkfreespace(clientlogdir, minlogspace, minlogspace) != 0);
+			if (logdirfull) errprintf("Hostdata directory %s has less than %d%% free space - disabling save of data for 5 minutes\n", clientlogdir, minlogspace);
+			nextfscheck = gettimer() + 300;
 		}
 
 		/* Split the message in the first line (with meta-data), and the rest */
@@ -119,6 +169,7 @@ int main(int argc, char *argv[])
 		}
 
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < MAX_META)) {
 			metadata[metacount++] = p;
@@ -127,20 +178,58 @@ int main(int argc, char *argv[])
 		metadata[metacount] = NULL;
 
 		if (strncmp(metadata[0], "@@clichg", 8) == 0) {
+			RbtIterator handle;
+			savetimes_t *itm;
+			int i, recentcount;
+			time_t now = gettimer();
 			char hostdir[PATH_MAX];
 			char fn[PATH_MAX];
 			FILE *fd;
 
-			sprintf(hostdir, "%s/%s", clientlogdir, metadata[3]);
-			mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-			sprintf(fn, "%s/%s", hostdir, metadata[4]);
-			fd = fopen(fn, "w");
-			if (fd == NULL) {
-				errprintf("Cannot create file %s: %s\n", fn, strerror(errno));
-				continue;
+			/* metadata[3] is the hostname */
+			handle = rbtFind(savetimes, metadata[3]);
+			if (handle != rbtEnd(savetimes)) {
+				itm = (savetimes_t *)gettreeitem(savetimes, handle);
 			}
-			fwrite(restofmsg, strlen(restofmsg), 1, fd);
-			fclose(fd);
+			else {
+				itm = (savetimes_t *)calloc(1, sizeof(savetimes_t));
+				itm->hostname = strdup(metadata[3]);
+				rbtInsert(savetimes, itm->hostname, itm);
+			}
+
+			/* See how many times we've saved the hostdata recently (within the past 'recentperiod' seconds) */
+			for (i=0, recentcount=0; ((i < 12) && (itm->tstamp[i] > (now - recentperiod))); i++) recentcount++;
+			/* If it's been saved less than 'maxrecentcount' times, then save it. Otherwise just drop it */
+			if (!logdirfull && (recentcount < maxrecentcount)) {
+				int written, closestatus, ok = 1;
+
+				for (i = 10; (i > 0); i--) itm->tstamp[i+1] = itm->tstamp[i];
+				itm->tstamp[0] = now;
+
+				sprintf(hostdir, "%s/%s", clientlogdir, metadata[3]);
+				mkdir(hostdir, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+				sprintf(fn, "%s/%s", hostdir, metadata[4]);
+				fd = fopen(fn, "w");
+				if (fd == NULL) {
+					errprintf("Cannot create file %s: %s\n", fn, strerror(errno));
+					continue;
+				}
+				written = fwrite(restofmsg, 1, strlen(restofmsg), fd);
+				if (written != strlen(restofmsg)) {
+					errprintf("Cannot write hostdata file %s: %s\n", fn, strerror(errno));
+					closestatus = fclose(fd);	/* Ignore any close errors */
+					ok = 0;
+				}
+				else {
+					closestatus = fclose(fd);
+					if (closestatus != 0) {
+						errprintf("Cannot write hostdata file %s: %s\n", fn, strerror(errno));
+						ok = 0;
+					}
+				}
+
+				if (!ok) remove(fn);
+			}
 		}
 
 		/*
@@ -157,13 +246,13 @@ int main(int argc, char *argv[])
 		}
 
 		/*
-		 * A "logrotate" message is sent when the Hobbit logs are
+		 * A "logrotate" message is sent when the Xymon logs are
 		 * rotated. The child workers must re-open their logfiles,
 		 * typically stdin and stderr - the filename is always
-		 * provided in the HOBBITCHANNEL_LOGFILENAME environment.
+		 * provided in the XYMONCHANNEL_LOGFILENAME environment.
 		 */
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);

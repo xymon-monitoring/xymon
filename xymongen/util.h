@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -22,7 +22,8 @@ extern hostlist_t *find_hostlist(char *hostname);
 extern hostlist_t *hostlistBegin(void);
 extern hostlist_t *hostlistNext(void);
 extern void add_to_hostlist(hostlist_t *rec);
-extern bbgen_col_t *find_or_create_column(char *testname, int create);
+extern xymongen_col_t *find_or_create_column(char *testname, int create);
+extern int wantedcolumn(char *current, char *wanted);
 
 #endif
 

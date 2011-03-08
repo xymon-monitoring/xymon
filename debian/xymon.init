@@ -1,63 +1,109 @@
-#! /bin/sh
+#!/bin/sh
+
+# Startup script for the Xymon monitor
 #
+# This starts the "xymonlaunch" tool, which in turn starts
+# all of the other Xymon server programs.
 
 ### BEGIN INIT INFO
 # Provides:          xymon
-# Required-Start:    $network
-# Required-Stop:     $network
+# Required-Start:    $remote_fs $network
+# Should-Start:      $all
+# Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
-# Default-Stop:      S 0 1 6
-# Short-Description: The Xymon monitor
-# Description:       Xymon is a monitoring tool for monitoring 
-#                    servers and network applications.
+# Default-Stop:      0 1 6
+# Short-Description: Xymon system monitor server
+# Description:       Xymon system monitor, server part.
+#                    (Also monitors the local host.)
 ### END INIT INFO
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/lib/xymon/server/hobbit.sh
-NAME=hobbit
-DESC=hobbit
+PIDFILE=/var/run/xymon/xymonlaunch.pid
+DAEMON=/usr/lib/xymon/server/bin/xymonlaunch
+NAME="xymond"
+DESC="Xymon Server"
 
 test -x $DAEMON || exit 0
 
-# Include hobbit defaults if available
-if [ -f /etc/default/hobbit ] ; then
-	. /etc/default/hobbit
+. /lib/lsb/init-functions
+. /usr/share/xymon/init-common.sh
+
+# Include xymonclient defaults if available
+if [ -f /etc/default/xymon-client ] ; then
+	. /etc/default/xymon-client
 fi
 
-set -e
-
 case "$1" in
-  start)
-	echo -n "Starting $DESC: "
-	su -c "$DAEMON start" - hobbit
-	echo "$NAME."
+   "start")
+	create_includefiles
+
+	log_daemon_msg "Starting $DESC" "$NAME"
+	start-stop-daemon --exec $DAEMON --chuid xymon --umask 022 --start \
+		-- \
+		--config=/etc/xymon/tasks.cfg \
+		--env=/etc/xymon/xymonserver.cfg \
+		--log=/var/log/xymon/xymonlaunch.log \
+		--pidfile=$PIDFILE
+	log_end_msg $?
 	;;
-  stop)
-	echo -n "Stopping $DESC: "
-	su -c "$DAEMON stop" - hobbit
-	echo "$NAME."
+
+   "stop")
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	start-stop-daemon --exec $DAEMON --pidfile $PIDFILE --stop --retry 5
+	log_end_msg $?
 	;;
-  reload|force-reload)
-	echo "Reloading $DESC configuration files."
-	su -c "$DAEMON reload" - hobbit
-	echo "$NAME."
-  	;;
-  restart)
-	echo -n "Restarting $DESC: "
-	su -c "$DAEMON restart" - hobbit
-	echo "$NAME."
+
+   "status")
+	if test -s $PIDFILE
+	then
+		kill -0 `cat $PIDFILE`
+		if test $? -eq 0
+		then
+			echo "Xymon (xymonlaunch) running with PID `cat $PIDFILE`"
+			exit 0
+		else
+			echo "Xymon not running, removing stale PID file"
+			rm -f $PIDFILE
+			exit 1
+		fi
+	else
+		echo "Xymon (xymonlaunch) does not appear to be running"
+		exit 3
+	fi
 	;;
-  rotate)
-	echo -n "Rotating log for $DESC: "
-  	su -c "$DAEMON rotate" - hobbit
-	echo "$NAME."
+
+   "restart")
+	if test -s $PIDFILE
+	then
+		$0 stop
+		sleep 1
+		$0 start
+	else
+		log_action_msg "xymonlaunch does not appear to be running, starting it"
+		$0 start
+	fi
 	;;
-  *)
-	N=/etc/init.d/$NAME
-	# echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $N {start|stop|restart|force-reload}" >&2
-	exit 1
+
+   "reload"|"force-reload")
+	if test -s $PIDFILE
+	then
+		create_includefiles
+		log_action_msg "Reloading xymond config"
+		kill -HUP `cat /var/run/xymon/xymond.pid`
+	else
+		log_action_msg "xymond not running (no PID file)"
+	fi
 	;;
+
+   "rotate")
+	for PIDFILE in /var/run/xymon/*.pid
+	do
+		test -e $PIDFILE && kill -HUP `cat $PIDFILE`
+	done
+	;;
+
+   *)
+   	echo "Usage: $0 start|stop|restart|force-reload|reload|status|rotate"
+	break;
 esac
 
 exit 0

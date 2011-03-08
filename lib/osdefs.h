@@ -1,16 +1,16 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /* Compatibility definitions for various OS's                                 */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2010 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __LIBBBGEN_OSDEFS_H__
-#define __LIBBBGEN_OSDEFS_H__
+#ifndef __LIBXYMON_OSDEFS_H__
+#define __LIBXYMON_OSDEFS_H__
 
 #include "config.h"
 

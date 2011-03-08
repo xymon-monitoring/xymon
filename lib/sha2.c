@@ -39,7 +39,7 @@
 
 
 
-/* For Hobbit: These definitions were copied in here from sha2.h */
+/* For Xymon: These definitions were copied in here from sha2.h */
 
 #define SHA224_DIGEST_SIZE (224 / 8)
 #define SHA256_DIGEST_SIZE (256 / 8)
@@ -965,7 +965,7 @@ int main()
 #endif /* TEST_VECTORS */
 
 
-/* Added for Hobbit - not part of the original file */
+/* Added for Xymon - not part of the original file */
 int  mySHA224_Size(void) { return sizeof(sha224_ctx); }
 void mySHA224_Init(void *c) { sha224_init((sha224_ctx *)c); }
 void mySHA224_Update(void *c, unsigned char *in, int len) {sha224_update((sha224_ctx *)c, in, len); }

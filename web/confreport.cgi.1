@@ -1,14 +1,14 @@
-.TH HOBBIT-CONFREPORT.CGI 1 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH CONFREPORT.CGI 1 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-hobbit-confreport.cgi \- Xymon Configuration report
+confreport.cgi \- Xymon Configuration report
 .SH SYNOPSIS
-.B "hobbit-confreport.cgi"
+.B "confreport.cgi"
 
 .SH DESCRIPTION
-\fBhobbit-confreport.cgi\fR is invoked as a CGI script via the 
-hobbit-confreport.sh CGI wrapper.
+\fBconfreport.cgi\fR is invoked as a CGI script via the 
+confreport.sh CGI wrapper.
 
-\fBhobbit-confreport.cgi\fR provides a plain HTML (Web) report of
+\fBconfreport.cgi\fR provides a plain HTML (Web) report of
 the Xymon configuration for a group of hosts; which hosts are included
 is determined by the hosts available on the webpage from where the CGI
 script is invoked.
@@ -28,7 +28,7 @@ Report only on the statuses that are configured to show up on the
 \fBCritical Systems\fR view.
 
 .IP "--old-nk-config"
-Use the deprecated \fBNK\fR tag in bb-hosts to determine if tests
+Use the deprecated \fBNK\fR tag in hosts.cfg to determine if tests
 appear on the Critical Systems view.
 
 .IP "--env=FILENAME"
@@ -41,13 +41,18 @@ this option must appear before any --env=FILENAME option.
 .IP "--debug"
 Enables debugging output.
 
+.IP "--nkconfig=FILENAME"
+Use FILENAME as the configuration file for the Critical 
+Systems information. The default is to load this from
+$XYMONHOME/etc/critical.cfg
+
 .SH BUGS
 Client-side configuration done in the 
-.I hobbit-clients.cfg(5)
+.I analysis.cfg(5)
 is not currently reflected in the report.
 
 Critical Systems view configuration is not reflected in the report.
 
 .SH "SEE ALSO"
-bb-hosts(5), hobbit-alerts.cfg(5), hobbit-clients.cfg(5), xymon(7)
+hosts.cfg(5), alerts.cfg(5), analysis.cfg(5), xymon(7)
 

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This file is part of the Hobbit monitor library, but was taken from the    */
+/* This file is part of the Xymon monitor library, but was taken from the     */
 /* FreeBSD sources. It was originally written by Eric Young, and is NOT       */
 /* licensed under the GPL. Please adhere the original copyright notice below. */
 /*----------------------------------------------------------------------------*/

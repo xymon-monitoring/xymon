@@ -1,6 +1,6 @@
-.TH MSGCACHE 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH MSGCACHE 8 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
-msgcache \- Cache client messages for later pickup by hobbitfetch
+msgcache \- Cache client messages for later pickup by xymonfetch
 
 .SH SYNOPSIS
 .B "msgcache [options]"
@@ -12,19 +12,19 @@ the normal way. Instead of having the client tools connect to the
 Xymon server, msgcache runs locally and the client tools then
 deliver their data to the msgcache daemon. The msgcache daemon is
 then polled regularly by the
-.I hobbitfetch(8)
+.I xymonfetch(8)
 utility, which collects the client messages stored by msgcache
 and forwards them to the Xymon server.
 
-\fBNOTE:\fR When using msgcache, the \fBBBDISP\fR setting for
-the clients should be \fBBBDISP=127.0.0.1\fR instead of pointing
+\fBNOTE:\fR When using msgcache, the \fBXYMSRV\fR setting for
+the clients should be \fBXYMSRV=127.0.0.1\fR instead of pointing
 at the real Xymon server.
 
 .SH RESTRICTIONS
 Clients delivering their data to msgcache instead of the real
 Xymon server will in general not notice this. Specifically,
 the client configuration data provided by the Xymon server when
-a client delivers its data is forwarded through the hobbitfetch / 
+a client delivers its data is forwarded through the xymonfetch / 
 msgcache chain, so the normal centralized client configuration
 works.
 
@@ -62,7 +62,7 @@ run as a background task
 .IP "--no-daemon"
 Run as a foreground task. This option must be used when msgcache
 is started by
-.I hobbitlaunch(8)
+.I xymonlaunch(8)
 which is the normal way of running msgcache.
 
 .IP "--pidfile=FILENAME"
@@ -75,5 +75,5 @@ Log msgcache output to FILENAME.
 Enable debugging output.
 
 .SH "SEE ALSO"
-hobbitfetch(8), xymon(7)
+xymonfetch(8), xymon(7)
 

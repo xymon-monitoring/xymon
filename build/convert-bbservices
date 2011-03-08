@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Script to convert a bbgen v3 bb-services file to the
-# [NAME] section delimited format used in Hobbit v4 (starting with RC3).
+# Script to convert a bbgen v3 protocols.cfg file to the
+# [NAME] section delimited format used in Xymon v4 (starting with RC3).
 
 FN="$1"
 

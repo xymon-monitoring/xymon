@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is part of the hobbitd_alert worker module.                           */
-/* This module implements the standard hobbitd alerting function. It loads    */
-/* the alert configuration from hobbit-alerts.cfg, and incoming alerts are    */
+/* This is part of the xymond_alert worker module.                            */
+/* This module implements the standard xymond alerting function. It loads     */
+/* the alert configuration from alerts.cfg, and incoming alerts are           */
 /* then sent according to the rules defined.                                  */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -29,11 +29,9 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#ifndef MAX_ALERTMSG_SCRIPTS
 #define MAX_ALERTMSG_SCRIPTS 4096
-#endif
 
 /*
  * This is the dynamic info stored to keep track of active alerts. We
@@ -143,6 +141,49 @@ static repeat_t *find_repeatinfo(activealerts_t *alert, recip_t *recip, int crea
 	return walk;
 }
 
+static char *message_recipient(char *reciptext, char *hostname, char *svcname, char *colorname)
+{
+	static char *result = NULL;
+	char *inpos, *p;
+
+	if (result) xfree(result);
+	result = (char *)malloc(strlen(reciptext) + strlen(hostname) + strlen(svcname) + strlen(colorname) + 1);
+	*result = '\0';
+
+	inpos = reciptext;
+	do {
+		p = strchr(inpos, '&');
+		if (p) {
+			*p = '\0';
+			strcat(result, inpos);
+			*p = '&';
+			p++;
+			if (strncasecmp(p, "HOST&", 5) == 0) {
+				strcat(result, hostname);
+				inpos = p + 5;
+			}
+			else if (strncasecmp(p, "SERVICE&", 8) == 0) {
+				strcat(result, svcname);
+				inpos = p + 8;
+			}
+			else if (strncasecmp(p, "COLOR&", 6) == 0) {
+				strcat(result, colorname);
+				inpos = p + 6;
+			}
+			else {
+				strcat(result, "&");
+				inpos = p;
+			}
+		}
+		else {
+			strcat(result, inpos);
+			inpos = NULL;
+		}
+	} while (inpos && *inpos);
+
+	return result;
+}
+
 static char *message_subject(activealerts_t *alert, recip_t *recip)
 {
 	static char subj[250];
@@ -167,19 +208,25 @@ static char *message_subject(activealerts_t *alert, recip_t *recip)
 	switch (alert->state) {
 	  case A_PAGING:
 	  case A_ACKED:
-		subjfmt = (include_configid ? "Hobbit [%d] %s:%s %s [cfid:%d]" :  "Hobbit [%d] %s:%s %s");
+		subjfmt = (include_configid ? "Xymon [%d] %s:%s %s [cfid:%d]" :  "Xymon [%d] %s:%s %s");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->cookie, alert->hostname, alert->testname, sev, recip->cfid);
 		break;
 
 	  case A_NOTIFY:
-		subjfmt = (include_configid ? "Hobbit %s:%s NOTICE [cfid:%d]" :  "Hobbit %s:%s NOTICE");
+		subjfmt = (include_configid ? "Xymon %s:%s NOTICE [cfid:%d]" :  "Xymon %s:%s NOTICE");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->hostname, alert->testname, recip->cfid);
 		break;
 
 	  case A_RECOVERED:
-		subjfmt = (include_configid ? "Hobbit %s:%s recovered [cfid:%d]" :  "Hobbit %s:%s recovered");
+		subjfmt = (include_configid ? "Xymon %s:%s recovered [cfid:%d]" :  "Xymon %s:%s recovered");
+		snprintf(subj, sizeof(subj)-1, subjfmt, 
+			 alert->hostname, alert->testname, recip->cfid);
+		break;
+
+	  case A_DISABLED:
+		subjfmt = (include_configid ? "Xymon %s:%s disabled [cfid:%d]" :  "Xymon %s:%s disabled");
 		snprintf(subj, sizeof(subj)-1, subjfmt, 
 			 alert->hostname, alert->testname, recip->cfid);
 		break;
@@ -243,7 +290,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 
 		if (recip->format == ALERTFORM_TEXT) {
 			sprintf(info, "See %s%s\n", 
-				xgetenv("BBWEBHOST"), 
+				xgetenv("XYMONWEBHOST"), 
 				hostsvcurl(alert->hostname, alert->testname, 0));
 			addtobuffer(buf, info);
 		}
@@ -266,6 +313,11 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 
 		  case A_RECOVERED:
 			sprintf(info, "%s:%s RECOVERED", 
+				alert->hostname, alert->testname);
+			break;
+
+		  case A_DISABLED:
+			sprintf(info, "%s:%s DISABLED", 
 				alert->hostname, alert->testname);
 			break;
 
@@ -302,7 +354,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 		addtobuffer(buf, msg_data(alert->pagemessage));
 		addtobuffer(buf, "\n");
 		sprintf(info, "See %s%s\n", 
-			xgetenv("BBWEBHOST"),
+			xgetenv("XYMONWEBHOST"),
 			hostsvcurl(alert->hostname, alert->testname, 0));
 		addtobuffer(buf, info);
 		MEMUNDEFINE(info);
@@ -324,7 +376,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 	int first = 1;
 	int alertcount = 0;
 	time_t now = getcurrenttime(NULL);
-	char *alerttxt[A_DEAD+1] = { "Paging", "Acked", "Recovered", "Notify", "Dead" };
+	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD */
+	char *alerttxt[A_DEAD+1] = { "Paging", "Norecip", "Acked", "Recovered", "Disabled", "Notify", "Dead" };
 
 	dbgprintf("send_alert %s:%s state %d\n", alert->hostname, alert->testname, (int)alert->state);
 	traceprintf("send_alert %s:%s state %s\n", 
@@ -339,7 +392,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			continue;
 		}
 
-		if (recip->noalerts && ((alert->state == A_PAGING) || (alert->state == A_RECOVERED))) {
+		if (recip->noalerts && ((alert->state == A_PAGING) || (alert->state == A_RECOVERED) || (alert->state == A_DISABLED))) {
 			traceprintf("Recipient '%s' dropped (NOALERT)\n", recip->recipient);
 			continue;
 		}
@@ -367,7 +420,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			}
 			alertcount++;
 		}
-		else if (alert->state == A_RECOVERED) {
+		else if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 			/* RECOVERED messages require that we've sent out an alert before */
 			repeat_t *rpt = NULL;
 
@@ -385,11 +438,13 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 			{
 				char cmd[32768];
 				char *mailsubj;
+				char *mailrecip;
 				FILE *mailpipe;
 
 				MEMDEFINE(cmd);
 
 				mailsubj = message_subject(alert, recip);
+				mailrecip = message_recipient(recip->recipient, alert->hostname, alert->testname, colorname(alert->color));
 
 				if (mailsubj) {
 					if (xgetenv("MAIL")) 
@@ -405,7 +460,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					else 
 						sprintf(cmd, "mail ");
 				}
-				strcat(cmd, recip->recipient);
+				strcat(cmd, mailrecip);
 
 				traceprintf("Mail alert with command '%s'\n", cmd);
 				if (testonly) { MEMUNDEFINE(cmd); break; }
@@ -418,9 +473,9 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 						init_timestamp();
 						fprintf(logfd, "%s %s.%s (%s) %s[%d] %ld %d",
 							timestamp, alert->hostname, alert->testname,
-							alert->ip, recip->recipient, recip->cfid,
+							alert->ip, mailrecip, recip->cfid,
 							(long)now, servicecode(alert->testname));
-						if (alert->state == A_RECOVERED) {
+						if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
 						}
 						else {
@@ -441,10 +496,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 		  case M_SCRIPT:
 			{
 				pid_t scriptpid;
+				char *scriptrecip;
 
 				traceprintf("Script alert with command '%s' and recipient %s\n", recip->scriptname, recip->recipient);
 				if (testonly) break;
 
+				scriptrecip = message_recipient(recip->recipient, alert->hostname, alert->testname, colorname(alert->color));
 				scriptpid = fork();
 				if (scriptpid == 0) {
 					/* Setup all of the environment for a paging script */
@@ -474,8 +531,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					sprintf(ackcode, "ACKCODE=%d", alert->cookie);
 					putenv(ackcode);
 
-					rcpt = (char *)malloc(strlen("RCPT=") + strlen(recip->recipient) + 1);
-					sprintf(rcpt, "RCPT=%s", recip->recipient);
+					rcpt = (char *)malloc(strlen("RCPT=") + strlen(scriptrecip) + 1);
+					sprintf(rcpt, "RCPT=%s", scriptrecip);
 					putenv(rcpt);
 
 					bbhostname = (char *)malloc(strlen("BBHOSTNAME=") + strlen(alert->hostname) + 1);
@@ -516,7 +573,17 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					putenv(bbcolorlevel);
 
 					recovered = (char *)malloc(strlen("RECOVERED=") + 2);
-					sprintf(recovered, "RECOVERED=%d", ((alert->state == A_RECOVERED) ? 1 : 0));
+					switch (alert->state) {
+					  case A_RECOVERED:
+						strcpy(recovered, "RECOVERED=1");
+						break;
+					  case A_DISABLED:
+						strcpy(recovered, "RECOVERED=2");
+						break;
+					  default:
+						strcpy(recovered, "RECOVERED=0");
+						break;
+					}
 					putenv(recovered);
 
 					downsecs = (char *)malloc(strlen("DOWNSECS=") + 20);
@@ -527,7 +594,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					sprintf(eventtstamp, "EVENTSTART=%ld", (long)alert->eventstart);
 					putenv(eventtstamp);
 
-					if (alert->state == A_RECOVERED) {
+					if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 						downsecsmsg = (char *)malloc(strlen("DOWNSECSMSG=Event duration :") + 20);
 						sprintf(downsecsmsg, "DOWNSECSMSG=Event duration : %ld", (long)(getcurrenttime(NULL) - alert->eventstart));
 					}
@@ -543,12 +610,12 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 
 					hinfo = hostinfo(alert->hostname);
 					if (hinfo) {
-						enum bbh_item_t walk;
+						enum xmh_item_t walk;
 						char *itm, *id, *bbhenv;
 
-						for (walk = 0; (walk < BBH_LAST); walk++) {
-							itm = bbh_item(hinfo, walk);
-							id = bbh_item_id(walk);
+						for (walk = 0; (walk < XMH_LAST); walk++) {
+							itm = xmh_item(hinfo, walk);
+							id = xmh_item_id(walk);
 							if (itm && id) {
 								bbhenv = (char *)malloc(strlen(id) + strlen(itm) + 2);
 								sprintf(bbhenv, "%s=%s", id, itm);
@@ -581,9 +648,9 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 						init_timestamp();
 						fprintf(logfd, "%s %s.%s (%s) %s %ld %d",
 							timestamp, alert->hostname, alert->testname,
-							alert->ip, recip->recipient, (long)now, 
+							alert->ip, scriptrecip, (long)now, 
 							servicecode(alert->testname));
-						if (alert->state == A_RECOVERED) {
+						if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 							fprintf(logfd, " %ld\n", (long)(now - alert->eventstart));
 						}
 						else {
@@ -622,7 +689,7 @@ time_t next_alert(activealerts_t *alert)
 	while (!stoprulefound && ((recip = next_recipient(alert, &first, NULL, &r_next)) != NULL)) {
 		found = 1;
 		/* 
-		 * This runs in the parent hobbitd_alert proces, so we must create
+		 * This runs in the parent xymond_alert proces, so we must create
 		 * a repeat-record here - or all alerts will get repeated every minute.
 		 */
 		rpt = find_repeatinfo(alert, recip, 1);

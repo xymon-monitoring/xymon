@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module for z/VSE, VSE/ESA and z/OS                          */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
-/* Copyright (C) 2006-2008 Rich Smrcina <rsmrcina@wi.rr.com>                  */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Rich Smrcina                                       */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -528,7 +528,7 @@ void zos_jobs_report(char *hostname, char *clientclass, enum ostype_t os,
 
         freestrbuffer(monmsg);
 
-        if (anycountdata) sendmessage(STRBUF(countdata), NULL, BBTALK_TIMEOUT, NULL);
+        if (anycountdata) sendmessage(STRBUF(countdata), NULL, XYMON_TIMEOUT, NULL);
         clearstrbuffer(countdata);
 }
 
@@ -664,5 +664,7 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 	linecount_report(hostname, clienttype, os, hinfo, fromline, timestr);
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
 
+
+	splitmsg_done();
 }
 

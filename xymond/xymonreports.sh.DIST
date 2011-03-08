@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Pre-generate periodic Hobbit reports
+# Pre-generate periodic Xymon reports
 #
-# This would typically run via cron and bbcmd. A sample crontab
+# This would typically run via cron and xymoncmd. A sample crontab
 # to generate daily, weekly and monthly reports would be:
 #
-#     10 0 * * * @BBHOME@/bin/bbcmd --env=@BBHOME@/etc/hobbitserver.cfg hobbitreports.sh daily
-#     10 1 * * 1 @BBHOME@/bin/bbcmd --env=@BBHOME@/etc/hobbitserver.cfg hobbitreports.sh weekly
-#     10 2 1 * * @BBHOME@/bin/bbcmd --env=@BBHOME@/etc/hobbitserver.cfg hobbitreports.sh monthly
+#     10 0 * * * @XYMONHOME@/bin/xymoncmd --env=@XYMONHOME@/etc/xymonserver.cfg xymonreports.sh daily
+#     10 1 * * 1 @XYMONHOME@/bin/xymoncmd --env=@XYMONHOME@/etc/xymonserver.cfg xymonreports.sh weekly
+#     10 2 1 * * @XYMONHOME@/bin/xymoncmd --env=@XYMONHOME@/etc/xymonserver.cfg xymonreports.sh monthly
 #
 # I.e. daily reports run each day at 0:10 AM, weekly reports run 
 # on Monday morning at 1:10 AM, monthly reports run on the first of 
@@ -29,14 +29,14 @@ then
    exit 1
 fi
 
-if [ "$BBHOME" = "" ]; then
-   echo "Must have Hobbit environment set."
+if [ "$XYMONHOME" = "" ]; then
+   echo "Must have Xymon environment set."
    exit 1
 fi
 
 # This is the top-level directory for the pre-generated reports.
-REPORTTOPDIR="$BBWWW/periodic"
-REPORTTOPURL="$BBWEB/periodic"
+REPORTTOPDIR="$XYMONWWWDIR/periodic"
+REPORTTOPURL="$XYMONWEB/periodic"
 
 REPTYPE=$1
 if [ "$REPTYPE" == "" ]
@@ -80,7 +80,7 @@ ETIME=`$GNUDATE +%s --date "$EDAY $EMON $EYEAR 23:59:59"`
 
 # Create the output directory
 mkdir -p $REPORTTOPDIR/$REPDIR || exit 1
-BBWEB=$REPORTTOPURL/$REPDIR $BBHOME/bin/bbgen --reportopts=$STIME:$ETIME:0:nongr $BBGENREPOPTS $REPORTTOPDIR/$REPDIR
+XYMONWEB=$REPORTTOPURL/$REPDIR $XYMONHOME/bin/xymongen --reportopts=$STIME:$ETIME:0:nongr $XYMONGENREPOPTS $REPORTTOPDIR/$REPDIR
 
 exit 0
 

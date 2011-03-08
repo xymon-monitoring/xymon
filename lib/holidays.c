@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for handling holidays.                                */
 /*                                                                            */
 /* Copyright (C) 2006-2008 Michael Nagel                                      */
-/* Modifications for Hobbit (C) 2007-2008 Henrik Storner <henrik@hswn.dk>     */
+/* Modifications for Xymon (C) 2007-2009 Henrik Storner <henrik@hswn.dk>      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 
 static int holidays_like_weekday = -1;
@@ -328,9 +328,12 @@ static void add_holiday(char *key, int year, holiday_t *newhol)
 	}
 }
 
-static int record_compare(void *a, void *b)
+static int record_compare(void **a, void **b)
 {
-	return (((holiday_t *)a)->yday < ((holiday_t *)b)->yday);
+	holiday_t **reca = (holiday_t **)a;
+	holiday_t **recb = (holiday_t **)b;
+
+	return ((*reca)->yday < (*recb)->yday);
 }
 
 static void * record_getnext(void *a)
@@ -369,7 +372,7 @@ int load_holidays(int year)
 		year -= 1900;
 	}
 
-	sprintf(fn, "%s/etc/hobbit-holidays.cfg", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/holidays.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configholidays) {
@@ -564,7 +567,7 @@ char *isholiday(char *key, int dayinyear)
 }
 
 
-void printholidays(char *key, strbuffer_t *buf)
+void printholidays(char *key, strbuffer_t *buf, int mfirst, int mlast)
 {
 	int day;
 	char *fmt;
@@ -592,9 +595,11 @@ void printholidays(char *key, strbuffer_t *buf)
 			tm.tm_hour = 12; tm.tm_min = 0; tm.tm_sec = 0;
 			tm.tm_isdst = -1;
 			t = mktime(&tm);
-			strftime(dstr, sizeof(dstr), fmt, localtime(&t));
-			sprintf(oneh, "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
-			addtobuffer(buf, oneh);
+			if ((tm.tm_mon >= mfirst) && (tm.tm_mon <= mlast)) {
+				strftime(dstr, sizeof(dstr), fmt, localtime(&t));
+				sprintf(oneh, "<tr><td>%s</td><td>%s</td>\n", desc, dstr);
+				addtobuffer(buf, oneh);
+			}
 		}
 	}
 }

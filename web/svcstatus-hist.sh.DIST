@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# This is the wrapper for hobbitsvc.cgi when viewing a 
+# This is the wrapper for svcstatus.cgi when viewing a 
 # a historical logfile.
 
-. @BBHOME@/etc/hobbitcgi.cfg
-@RUNTIMEDEFS@ exec @BBHOME@/bin/hobbitsvc.cgi $CGI_SVCHIST_OPTS --historical
+. @XYMONHOME@/etc/cgioptions.cfg
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/svcstatus.cgi $CGI_SVCHIST_OPTS --historical
 

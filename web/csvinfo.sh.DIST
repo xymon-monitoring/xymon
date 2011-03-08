@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# This is the Hobbit CGI wrapper for the bb-csvinfo.cgi program.
+# This is the Xymon CGI wrapper for the csvinfo.cgi program.
 
-. @BBHOME@/etc/hobbitcgi.cfg
+. @XYMONHOME@/etc/cgioptions.cfg
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-csvinfo.cgi $CGI_CSVINFO_OPTS
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/csvinfo.cgi $CGI_CSVINFO_OPTS
 

@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is the main alert module for hobbitd. It receives alert messages,     */
+/* This is the main alert module for xymond. It receives alert messages,      */
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
 /* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -13,7 +13,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*
- * Information from the Hobbit docs about "page" modules:
+ * Information from the Xymon docs about "page" modules:
  *
  *   page
  *   ----
@@ -47,16 +47,17 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 #include "do_alert.h"
 
-#include <signal.h>
+
 
 
 static int running = 1;
@@ -74,8 +75,8 @@ typedef struct alertanchor_t {
 activealerts_t *ahead = NULL;
 
 char *statename[] = {
-	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_NOTIFY, A_DEAD */
-	"paging", "norecip", "acked", "recovered", "notify", "dead"
+	/* A_PAGING, A_NORECIP, A_ACKED, A_RECOVERED, A_DISABLED, A_NOTIFY, A_DEAD */
+	"paging", "norecip", "acked", "recovered", "disabled", "notify", "dead"
 };
 
 char *find_name(RbtHandle tree, char *name)
@@ -270,9 +271,9 @@ void load_checkpoint(char *filename)
 	fd = fopen(filename, "r");
 	if (fd == NULL) return;
 
-	sprintf(statuscmd, "hobbitdboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
+	sprintf(statuscmd, "xymondboard color=%s fields=hostname,testname,color", xgetenv("ALERTCOLORS"));
 	sres = newsendreturnbuf(1, NULL);
-	sendmessage(statuscmd, NULL, BBTALK_TIMEOUT, sres);
+	sendmessage(statuscmd, NULL, XYMON_TIMEOUT, sres);
 	statusbuf = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 
@@ -398,7 +399,7 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--dump-config")) {
 			load_alertconfig(configfn, alertcolors, alertinterval);
-			dump_alertconfig();
+			dump_alertconfig(1);
 			return 0;
 		}
 		else if (argnmatch(argv[argi], "--cfid")) {
@@ -440,19 +441,19 @@ int main(int argc, char *argv[])
 			}
 
 			if ((testhost == NULL) || (testservice == NULL)) {
-				printf("Usage: hobbitd_alert --test HOST SERVICE [options]\n");
+				printf("Usage: xymond_alert --test HOST SERVICE [options]\n");
 				printf("Possible options:\n\t[--duration=SECONDS]\n\t[--color=COLOR]\n\t[--group=GROUPNAME]\n\t[--time=TIMESPEC]\n");
 
 				return 1;
 			}
 
-			load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 			hinfo = hostinfo(testhost);
 			if (hinfo) {
-				testpage = strdup(bbh_item(hinfo, BBH_ALLPAGEPATHS));
+				testpage = strdup(xmh_item(hinfo, XMH_ALLPAGEPATHS));
 			}
 			else {
-				errprintf("Host not found in bb-hosts - assuming it is on the top page\n");
+				errprintf("Host not found in hosts.cfg - assuming it is on the top page\n");
 				testpage = "";
 			}
 
@@ -495,11 +496,11 @@ int main(int argc, char *argv[])
 
 	if (checkfn) {
 		load_checkpoint(checkfn);
-		nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
+		nextcheckpoint = gettimer() + checkpointinterval;
 		dbgprintf("Next checkpoint at %d, interval %d\n", (int) nextcheckpoint, checkpointinterval);
 	}
 
-	setup_signalhandler("hobbitd_alert");
+	setup_signalhandler("xymond_alert");
 	/* Need to handle these ourselves, so we can shutdown and save state-info */
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
@@ -509,10 +510,10 @@ int main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
 
-	if (xgetenv("BBSERVERLOGS")) {
-		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("BBSERVERLOGS"));
+	if (xgetenv("XYMONSERVERLOGS")) {
+		sprintf(acklogfn, "%s/acknowledge.log", xgetenv("XYMONSERVERLOGS"));
 		acklogfd = fopen(acklogfn, "a");
-		sprintf(notiflogfn, "%s/notifications.log", xgetenv("BBSERVERLOGS"));
+		sprintf(notiflogfn, "%s/notifications.log", xgetenv("XYMONSERVERLOGS"));
 		notiflogfd = fopen(notiflogfn, "a");
 	}
 
@@ -538,38 +539,31 @@ int main(int argc, char *argv[])
 		char *p;
 		int metacount;
 		char *hostname = NULL, *testname = NULL;
-		struct timeval timeout;
-		time_t now;
+		struct timespec timeout;
+		time_t now, nowtimer;
 		int anytogo;
 		activealerts_t *awalk;
 		int childstat;
 
-		now = getcurrenttime(NULL);
-		if (checkfn && (now > nextcheckpoint)) {
+		nowtimer = gettimer();
+		if (checkfn && (nowtimer > nextcheckpoint)) {
 			dbgprintf("Saving checkpoint\n");
-			nextcheckpoint = now + checkpointinterval;
+			nextcheckpoint = nowtimer + checkpointinterval;
 			save_checkpoint(checkfn);
 
 			if (acklogfd) acklogfd = freopen(acklogfn, "a", acklogfd);
 			if (notiflogfd) notiflogfd = freopen(notiflogfn, "a", notiflogfd);
 		}
 
-		timeout.tv_sec = 60; timeout.tv_usec = 0;
-		msg = get_hobbitd_message(C_PAGE, "hobbitd_alert", &seq, &timeout);
+		timeout.tv_sec = 60; timeout.tv_nsec = 0;
+		msg = get_xymond_message(C_PAGE, "xymond_alert", &seq, &timeout);
 		if (msg == NULL) {
-			dbgprintf("get_hobbitd_message returned NULL, termsig is %d, running is %d\n", termsig, running);
 			running = 0;
 			continue;
 		}
 
 		/* See what time it is - must happen AFTER the timeout */
 		now = getcurrenttime(NULL);
-
-		if (timewarp) {
-			errprintf("WARNING: Time has gone BACK by %d seconds - repeat-alerts will be affected.\n", timewarp);
-			errprintf("hobbitd_alert module is restarting to pick up new time\n");
-			running = 0;
-		}
 
 		/* Split the message in the first line (with meta-data), and the rest */
  		eoln = strchr(msg, '\n');
@@ -587,6 +581,7 @@ int main(int argc, char *argv[])
 		 * like strtok(), but can handle empty elements.
 		 */
 		metacount = 0; 
+		memset(&metadata, 0, sizeof(metadata));
 		p = gettok(msg, "|");
 		while (p && (metacount < 19)) {
 			metadata[metacount] = p;
@@ -599,7 +594,7 @@ int main(int argc, char *argv[])
 		if (metacount > 4) testname = metadata[4];
 
 		if ((metacount > 10) && (strncmp(metadata[0], "@@page", 6) == 0)) {
-			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie|osname|classname|grouplist */
+			/* @@page|timestamp|sender|hostname|testname|hostip|expiretime|color|prevcolor|changetime|location|cookie|osname|classname|grouplist|modifiers */
 
 			int newcolor, newalertstatus, oldalertstatus;
 
@@ -667,7 +662,7 @@ int main(int argc, char *argv[])
 				 * Dont update the color here - we want recoveries to go out 
 				 * only if the alert color triggered an alert
 				 */
-				awalk->state = A_RECOVERED;
+				awalk->state = (newcolor == COL_BLUE) ? A_DISABLED : A_RECOVERED;
 			}
 
 			if (oldalertstatus != newalertstatus) {
@@ -684,7 +679,15 @@ int main(int argc, char *argv[])
 			if (awalk->groups) xfree(awalk->groups);
 			awalk->groups    = (metadata[14] ? strdup(metadata[14]) : NULL);
 			if (awalk->pagemessage) xfree(awalk->pagemessage);
-			awalk->pagemessage = strdup(restofmsg);
+			if (metadata[15]) {
+				/* Modifiers are more interesting than the message itself */
+				awalk->pagemessage = (char *)malloc(strlen(awalk->hostname) + strlen(awalk->testname) + strlen(colorname(awalk->color)) + strlen(metadata[15]) + strlen(restofmsg) + 10);
+				sprintf(awalk->pagemessage, "%s:%s %s\n%s\n%s",
+					awalk->hostname, awalk->testname, colorname(awalk->color), metadata[15], restofmsg);
+			}
+			else {
+				awalk->pagemessage = strdup(restofmsg);
+			}
 		}
 		else if ((metacount > 5) && (strncmp(metadata[0], "@@ack", 5) == 0)) {
  			/* @@ack|timestamp|sender|hostname|testname|hostip|expiretime */
@@ -794,7 +797,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);
@@ -816,8 +819,8 @@ int main(int argc, char *argv[])
 		 * do the full alert handling once every 10 secs - that lets us
 		 * combine a bunch of alerts into one transmission process.
 		 */
-		if (now < (lastxmit+10)) continue;
-		lastxmit = now;
+		if (nowtimer < (lastxmit+10)) continue;
+		lastxmit = nowtimer;
 
 		/* 
 		 * Loop through the activealerts list and see if anything is pending.
@@ -862,6 +865,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case A_RECOVERED:
+			  case A_DISABLED:
 			  case A_NOTIFY:
 				anytogo++;
 				break;
@@ -892,6 +896,7 @@ int main(int argc, char *argv[])
 						break;
 
 					  case A_RECOVERED:
+					  case A_DISABLED:
 					  case A_NOTIFY:
 						send_alert(awalk, notiflogfd);
 						break;
@@ -926,6 +931,7 @@ int main(int argc, char *argv[])
 				break;
 
 			  case A_RECOVERED:
+			  case A_DISABLED:
 			  case A_NOTIFY:
 				awalk->state = A_DEAD;
 				/* Fall through */

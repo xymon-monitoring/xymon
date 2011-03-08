@@ -1,0 +1,107 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of XYMONFETCH</TITLE>
+</HEAD><BODY>
+<H1>XYMONFETCH</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+xymonfetch - fetch client data from passive clients
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>xymonfetch [--server=XYMON.SERVER.IP] [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+This utility is used to collect data from Xymon clients.
+<P>
+Normally, Xymon clients will themselves take care of sending
+all of their data directly to the Xymon server. In that case,
+you do not need this utility at all. However, in some network 
+setups clients may be prohibited from establishing a connection
+to an external server such as the Xymon server, due to firewall 
+policies. In such a setup you can configure the client to store
+all of the client data locally by enabling the
+<I><A HREF="../man8/msgcache.8.html">msgcache</A>(8)</I>
+
+utility on the client, and using <B>xymonfetch</B> on the Xymon
+server to collect data from the clients.
+<P>
+xymonfetch will only collect data from clients that have the
+<B>pulldata</B> tag listed in the
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
+
+file. The IP-address listed in the hosts.cfg file must be correct,
+since this is the IP-address where xymonfetch will attempt to contact
+the client.  If the msgcache daemon is running on a non-standard 
+IP-address or portnumber, you can specify the portnumber as in
+<B>pulldata=192.168.1.2:8084</B> for contacting the msgcache daemon 
+using IP 192.168.1.2 port 8084. If the IP-address is omitted, the
+default IP in the hosts.cfg file is used. If the port number is
+omitted, the portnumber from the XYMONDPORT setting in
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
+
+is used (normally, this is port 1984).
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--server=XYMON.SERVER.IP<DD>
+Defines the IP address of the Xymon server where the collected client
+messages are forwarded to. By default, messages are sent to the
+loopback address 127.0.0.1, i.e. to a Xymon server running on the same 
+host as xymonfetch.
+<P>
+<DT>--interval=N<DD>
+Sets the interval (in seconds) between polls of a client. Default: 60 seconds.
+<P>
+<DT>--id=N<DD>
+Used when you have a setup with multiple Xymon servers. In that case, you
+must run xymonfetch on each of the Xymon servers, with xymonfetch instance
+using a different value of N. This allows several Xymon servers to pick up
+data from the clients running msgcache, and msgcache can distinguish between
+which messages have already been forwarded to which server.
+<BR>
+
+N is a number in the range 1-31.
+<P>
+<DT>--log-interval=N<DD>
+Limit how often xymonfetch will log problems with fetching data from a
+host, in seconds. Default: 900 seconds (15 minutes). This is to prevent
+a host that is down or where msgcache has not been started from flooding
+the xymonfetch logs. Note that this is ignored when debugging is enabled.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/msgcache.8.html">msgcache</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

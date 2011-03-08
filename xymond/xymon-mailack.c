@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit mail-acknowledgment filter.                                         */
+/* Xymon mail-acknowledgment filter.                                          */
 /*                                                                            */
-/* This program runs from the Hobbit users' .procmailrc file, and processes   */
-/* incoming e-mails that are responses to alert mails that Hobbit has sent    */
-/* out. It was inspired by the functionality of the bb-mailack.sh.            */
+/* This program runs from the Xymon users' .procmailrc file, and processes    */
+/* incoming e-mails that are responses to alert mails that Xymon has sent     */
+/* out.                                                                       */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -19,7 +19,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 			else if ((strncasecmp(STRBUF(inbuf), "ack=", 4) == 0) || (strncasecmp(STRBUF(inbuf), "ack ", 4) == 0)) {
 				/* Some systems cannot generate a subject. Allow them to ack
 				 * via text in the message body. */
-				subjectline = (char *)malloc(1024);
-				snprintf(subjectline, 1023, "Subject: Hobbit [%s]", STRBUF(inbuf)+4);
+				subjectline = (char *)malloc(STRBUFLEN(inbuf) + 1024);
+				sprintf(subjectline, "Subject: Xymon [%s]", STRBUF(inbuf)+4);
 			}
 			else if (*STRBUF(inbuf) && !firsttxtline) {
 				/* Save the first line of the message body, but ignore blank lines */
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Get the alert cookie */
-	subjexp = pcre_compile(".*(Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
+	subjexp = pcre_compile(".*(Xymon|Hobbit|BB)[ -]* \\[*(-*[0-9]+)[\\]!]*", PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (subjexp == NULL) {
 		dbgprintf("pcre compile failed - 1\n");
 		return 2;
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	if (firsttxtline == NULL) firsttxtline = "<No cause specified>";
 	ackbuf = (char *)malloc(4096 + strlen(firsttxtline) + (fromline ? strlen(fromline) : 0));
 	p = ackbuf;
-	p += sprintf(p, "hobbitdack %s %d %s", cookie, duration, firsttxtline);
+	p += sprintf(p, "xymondack %s %d %s", cookie, duration, firsttxtline);
 	if (fromline) {
 		p += sprintf(p, "\nAcked by: %s", fromline);
 	}
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	sendmessage(ackbuf, NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(ackbuf, NULL, XYMON_TIMEOUT, NULL);
 	return 0;
 }
 

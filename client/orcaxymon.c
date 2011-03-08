@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit ORCA data collector.                                                */
+/* Xymon ORCA data collector.                                                 */
 /* This tool grabs the last reading from an ORCA logfile and formats it in    */
 /* NAME:VALUE format for the client message.                                  */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		val = strtok_r(NULL, " \t\n", &vp);
 	}
 
-	sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+	sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 
 	return 0;
 }

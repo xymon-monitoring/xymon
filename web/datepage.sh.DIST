@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# This is the Hobbit CGI script to select a pre-generated report.
+# This is the Xymon CGI script to select a pre-generated report.
 
-. @BBHOME@/etc/hobbitcgi.cfg
+. @XYMONHOME@/etc/cgioptions.cfg
 
-@RUNTIMEDEFS@ exec @BBHOME@/bin/bb-datepage.cgi $CGI_DATEPAGE_OPTS
+@RUNTIMEDEFS@ exec @XYMONHOME@/bin/datepage.cgi $CGI_DATEPAGE_OPTS
 

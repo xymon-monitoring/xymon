@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -11,6 +11,7 @@
 static char rcsid[] = "$Id$";
 
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,20 +20,25 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>
+#include <utime.h>
 
 #include <rrd.h>
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_rrd.h"
+#include "xymond_rrd.h"
 #include "do_rrd.h"
 #include "client_config.h"
 
+#ifndef NAME_MAX
+#define NAME_MAX 255	/* Solaris doesn't define NAME_MAX, but ufs limit is 255 */
+#endif
+
+extern int seq;	/* from xymond_rrd.c */
 
 char *rrddir = NULL;
-int  log_double_updates = 1;
-int use_rrd_cache = 1;		/* Use the cache by default */
+int use_rrd_cache = 1;         /* Use the cache by default */
 
 static int  processorfd = 0;
 static FILE *processorstream = NULL;
@@ -43,15 +49,15 @@ static char **extids = NULL;
 static char rrdvalues[MAX_LINE_LEN];
 
 static char *senderip = NULL;
-static char rrdfn[PATH_MAX];	/* Base filename without directories, from setupfn() */
-static char filedir[PATH_MAX];	/* Full path filename */
-static char *fnparams[4] = { NULL, };	/* Saved parameters passed to setupfn() */
+static char rrdfn[PATH_MAX];   /* Base filename without directories, from setupfn() */
+static char filedir[PATH_MAX]; /* Full path filename */
+static char *fnparams[4] = { NULL, };  /* Saved parameters passed to setupfn() */
 
 /* How often do we feed data into the RRD file */
 #define DEFAULT_RRD_INTERVAL 300
 static int  rrdinterval = DEFAULT_RRD_INTERVAL;
 
-#define CACHESZ 6
+#define CACHESZ 12             /* # of updates that can be cached - updates are usually 5 minutes apart */
 static int updcache_keyofs = -1;
 static RbtHandle updcache;
 typedef struct updcacheitem_t {
@@ -59,6 +65,8 @@ typedef struct updcacheitem_t {
 	rrdtpldata_t *tpl;
 	int valcount;
 	char *vals[CACHESZ];
+	int updseq[CACHESZ];
+	time_t updtime[CACHESZ];
 } updcacheitem_t;
 
 static RbtHandle flushtree;
@@ -67,6 +75,7 @@ typedef struct flushtree_t {
 	char *hostname;
 	time_t flushtime;
 } flushtree_t;
+
 
 void setup_exthandler(char *handlerpath, char *ids)
 {
@@ -180,6 +189,17 @@ static void setupfn3(char *format, char *param1, char *param2, char *param3)
 	snprintf(rrdfn, sizeof(rrdfn)-1, format, param1, param2, param3);
 	rrdfn[sizeof(rrdfn)-1] = '\0';
 	while ((p = strchr(rrdfn, ' ')) != NULL) *p = '_';
+
+	if (strlen(rrdfn) >= (NAME_MAX - 50)) {
+		/*
+		 * Filename is too long. Limit filename length
+		 * by replacing the last part of the filename
+		 * with an MD5 hash.
+		 */
+		char *hash = md5hash(rrdfn+(NAME_MAX-50));
+
+		sprintf(rrdfn+(NAME_MAX-50), "_%s.rrd", hash);
+	}
 }
 
 static void setupinterval(int intvl)
@@ -201,15 +221,35 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 
 	/* Setup the parameter list with all of the cached and new readings */
 	for (i=0; (i < cacheitem->valcount); i++) updparams[4+i] = cacheitem->vals[i];
-	updparams[4+cacheitem->valcount] = newdata;
-	updparams[4+cacheitem->valcount+1] = NULL;
+
+	if (newdata) {
+		updparams[4+cacheitem->valcount] = newdata;
+		updparams[4+cacheitem->valcount+1] = NULL;
+	}
+	else {
+		/* No new data - happens when flushing the cache */
+		updparams[4+cacheitem->valcount] = NULL;
+	}
 
 	for (pcount = 0; (updparams[pcount]); pcount++);
 	optind = opterr = 0; rrd_clear_error();
 	result = rrd_update(pcount, updparams);
 
+#if defined(LINUX) && defined(RRDTOOL12)
+	/*
+	 * RRDtool 1.2+ uses mmap'ed I/O, but the Linux kernel does not update timestamps when
+	 * doing file I/O on mmap'ed files. This breaks our check for stale/nostale RRD's.
+	 * So do an explicit timestamp update on the file here.
+	 */
+	utimes(filedir, NULL);
+#endif
+
 	/* Clear the cached data */
-	for (i=0; (i < cacheitem->valcount); i++) xfree(cacheitem->vals[i]);
+	for (i=0; (i < cacheitem->valcount); i++) {
+		cacheitem->updseq[i] = 0;
+		cacheitem->updtime[i] = 0;
+		xfree(cacheitem->vals[i]);
+	}
 	cacheitem->valcount = 0;
 
 	return result;
@@ -225,6 +265,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	updcacheitem_t *cacheitem = NULL;
 	int pollinterval;
 	char *modifymsg;
+	time_t updtime = 0;
 
 	/* Reset the RRD poll interval */
 	pollinterval = rrdinterval;
@@ -287,6 +328,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		int rrddefcount, i;
 		char *rrakey = NULL;
 		char stepsetting[10];
+		int havestepsetting = 0, fixcount = 2;
 
 		dbgprintf("Creating rrd %s\n", filedir);
 
@@ -304,12 +346,20 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		rrdcreate_params = (char **)calloc(4 + pcount + rrddefcount + 1, sizeof(char *));
 		rrdcreate_params[0] = "rrdcreate";
 		rrdcreate_params[1] = filedir;
-		rrdcreate_params[2] = "-s";
-		rrdcreate_params[3] = stepsetting;
+
+		/* Is there already a step-setting in the rrddefinitions? */
+		for (i=0; (!havestepsetting && (i < rrddefcount)); i++) 
+			havestepsetting = ((strcmp(rrddefinitions[i], "-s") == 0) || (strcmp(rrddefinitions[i], "--step") == 0));
+		if (!havestepsetting) {
+			rrdcreate_params[2] = "-s";
+			rrdcreate_params[3] = stepsetting;
+			fixcount = 4;
+		}
+
 		for (i=0; (i < pcount); i++)
-			rrdcreate_params[4+i]      = creparams[i];
+			rrdcreate_params[fixcount+i]      = creparams[i];
 		for (i=0; (i < rrddefcount); i++, pcount++)
-			rrdcreate_params[4+pcount] = rrddefinitions[i];
+			rrdcreate_params[fixcount+pcount] = rrddefinitions[i];
 
 		if (debug) {
 			for (i = 0; (rrdcreate_params[i]); i++) {
@@ -334,11 +384,58 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		}
 	}
 
+	updtime = atoi(rrdvalues);
+	if (cacheitem->valcount > 0) {
+		/* Check for duplicate updates */
+
+		if (cacheitem->updseq[cacheitem->valcount-1] == seq) {
+			/*
+			 * This is usually caused by a configuration error, 
+			 * e.g. two PORT settings in analysis.cfg that
+			 * use the same TRACK string.
+			 * Can also be two web checks using the same URL, but
+			 * with different POST data.
+			 */
+			dbgprintf("%s/%s: Error - ignored duplicate update for message sequence %d\n", hostname, rrdfn, seq);
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return 0;
+		}
+		else if (cacheitem->updtime[cacheitem->valcount-1] > updtime) {
+			dbgprintf("%s/%s: Error - RRD time goes backwards: Now=%d, previous=%d\n", hostname, rrdfn, (int) updtime, (int)cacheitem->updtime[cacheitem->valcount-1]);
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return 0;
+		}
+		else if (cacheitem->updtime[cacheitem->valcount-1] == updtime) {
+			int identical = (strcmp(rrdvalues, cacheitem->vals[cacheitem->valcount-1]) == 0);
+
+			if (!identical) {
+				int i;
+
+				errprintf("%s/%s: Bug - duplicate RRD data with same timestamp %d, different data\n", 
+					  hostname, rrdfn, (int) updtime);
+
+				for (i=0; (i < cacheitem->valcount); i++) 
+					dbgprintf("Val %d: Seq %d: %s\n", i, cacheitem->updseq[i], cacheitem->vals[i]);
+				dbgprintf("NewVal: Seq %d: %s\n", seq, rrdvalues);
+			}
+			else {
+				dbgprintf("%s/%s: Ignored duplicate (and identical) update timestamped %d\n", hostname, rrdfn, (int) updtime);
+			}
+
+			MEMUNDEFINE(filedir);
+			MEMUNDEFINE(rrdvalues);
+			return 0;
+		}
+	}
+
+
 	/*
 	 * Match the RRD data against any DS client-configuration modifiers.
 	 */
 	modifymsg = check_rrdds_thresholds(hostname, classname, pagepaths, rrdfn, ((rrdtpldata_t *)template)->dsnames, rrdvalues);
-	if (modifymsg) sendmessage(modifymsg, NULL, BBTALK_TIMEOUT, NULL);
+	if (modifymsg) sendmessage(modifymsg, NULL, XYMON_TIMEOUT, NULL);
 
 	/*
 	 * See if we want the data to go to an external handler.
@@ -358,14 +455,19 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	}
 
 	/* 
-	 * To smooth the load, we force the update through for every CACHESZ updates.
-	 * This gives us a steady load during the initial cache fill period.
+	 * We cannot just cache data every time because then after CACHESZ updates
+	 * of each RRD, we will flush all of the data at once (all of the caches 
+	 * fill at the same speed); this would result in huge load-spikes every 
+	 * rrdinterval*CACHESZ seconds.
+	 *
+	 * So to smooth the load, we force the update through for every CACHESZ 
+	 * updates, regardless of how much is in the cache. This gives us a steady 
+	 * (although slightly higher) load.
 	 */
 	if (use_rrd_cache && (++callcounter < CACHESZ)) {
 		if (cacheitem && (cacheitem->valcount < CACHESZ)) {
-			/* 
-			 * There's room for caching this update.
-			 */ 
+			cacheitem->updseq[cacheitem->valcount] = seq;
+			cacheitem->updtime[cacheitem->valcount] = updtime;
 			cacheitem->vals[cacheitem->valcount] = strdup(rrdvalues);
 			cacheitem->valcount += 1;
 			MEMUNDEFINE(filedir);
@@ -380,7 +482,11 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	if (result != 0) {
 		char *msg = rrd_get_error();
 
-		if (log_double_updates || (strncmp(msg, "illegal attempt", 15) != 0)) {
+		if (strstr(msg, "(minimum one second step)") != NULL) {
+			dbgprintf("RRD error updating %s from %s: %s\n", 
+				  filedir, (senderip ? senderip : "unknown"), msg);
+		}
+		else {
 			errprintf("RRD error updating %s from %s: %s\n", 
 				  filedir, (senderip ? senderip : "unknown"), msg);
 		}
@@ -418,7 +524,7 @@ void rrdcacheflushhost(char *hostname)
 	updcacheitem_t *cacheitem;
 	flushtree_t *flushitem;
 	int keylen;
-	time_t now = getcurrenttime(NULL);
+	time_t now = gettimer();
 
 	if (updcache_keyofs == -1) return;
 
@@ -496,17 +602,32 @@ static int rrddatasets(char *hostname, char ***dsnames)
 	return dscount;
 }
 
-
 /* Include all of the sub-modules. */
-#include "rrd/do_bbgen.c"
-#include "rrd/do_bbtest.c"
-#include "rrd/do_bbproxy.c"
-#include "rrd/do_hobbitd.c"
+#include "rrd/do_xymongen.c"
+#include "rrd/do_xymonnet.c"
+#include "rrd/do_xymonproxy.c"
+#include "rrd/do_xymond.c"
 #include "rrd/do_citrix.c"
 #include "rrd/do_ntpstat.c"
 
 #include "rrd/do_memory.c"	/* Must go before do_la.c */
 #include "rrd/do_la.c"
+
+/*
+ * From hobbit-perl-client http://sourceforge.net/projects/hobbit-perl-cl/
+ * version 1.15 Oct. 17 2006 (downloaded on 2008-12-01).
+ *
+ * Include file for netapp.pl dbcheck.pl and beastat.pl scripts
+ * do_fd_lib.c contains some function used by the other library
+ *
+ * Must go before "do_disk.c"
+ */
+#include "rrd/do_fd_lib.c"
+#include "rrd/do_netapp.c"
+#include "rrd/do_beastat.c"
+#include "rrd/do_dbcheck.c"
+
+
 #include "rrd/do_disk.c"
 #include "rrd/do_netstat.c"
 #include "rrd/do_vmstat.c"
@@ -526,29 +647,43 @@ static int rrddatasets(char *hostname, char ***dsnames)
 #include "rrd/do_filesizes.c"
 #include "rrd/do_counts.c"
 #include "rrd/do_trends.c"
+
+#include "rrd/do_ifmib.c"
+#include "rrd/do_snmpmib.c"
+
+/* z/OS, z/VM, z/VME stuff */
 #include "rrd/do_paging.c"
 #include "rrd/do_mdc.c"
 #include "rrd/do_cics.c"
 #include "rrd/do_getvis.c"
 #include "rrd/do_asid.c"
 
-#include "rrd/do_ifmib.c"
-#include "rrd/do_snmpmib.c"
 
-void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, hobbitrrd_t *ldef, char *classname, char *pagepaths)
+/*
+ * From devmon http://sourceforge.net/projects/devmon/
+ * version 0.3.0 (downloaded on 2008-12-01).
+ */
+#include "rrd/do_devmon.c"
+
+
+void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *sender, xymonrrd_t *ldef, char *classname, char *pagepaths)
 {
 	int res = 0;
 	char *id;
 
 	MEMDEFINE(rrdvalues);
 
-	if (ldef) id = ldef->hobbitrrdname; else id = testname;
+	if (ldef) id = ldef->xymonrrdname; else id = testname;
 	senderip = sender;
 
-	if      (strcmp(id, "bbgen") == 0)       res = do_bbgen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbtest") == 0)      res = do_bbtest_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "bbproxy") == 0)     res = do_bbproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "hobbitd") == 0)     res = do_hobbitd_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	if      (strcmp(id, "bbgen") == 0)       res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymongen") == 0)    res = do_xymongen_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbtest") == 0)      res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonnet") == 0)    res = do_xymonnet_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "bbproxy") == 0)     res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymonproxy") == 0)  res = do_xymonproxy_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "hobbitd") == 0)     res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "xymond") == 0)      res = do_xymond_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "citrix") == 0)      res = do_citrix_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "ntpstat") == 0)     res = do_ntpstat_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
@@ -577,15 +712,47 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 	else if (strcmp(id, "proccounts") == 0)  res = do_counts_rrd("processes", hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "portcounts") == 0)  res = do_counts_rrd("ports", hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "linecounts") == 0)  res = do_derives_rrd("lines", hostname, testname, classname, pagepaths, msg, tstamp);
-	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-        else if (strcmp(id, "mdc") == 0)         res = do_mdc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (strcmp(id, "trends") == 0)      res = do_trends_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-        else if (strcmp(id, "cics") == 0)        res = do_cics_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-        else if (strcmp(id, "getvis") == 0)      res = do_getvis_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-        else if (strcmp(id, "maxuser") == 0)     res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
-        else if (strcmp(id, "nparts") == 0)      res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
 	else if (strcmp(id, "ifmib") == 0)       res = do_ifmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	else if (is_snmpmib_rrd(id))             res = do_snmpmib_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
+	/* z/OS, z/VSE, z/VM from Rich Smrcina */
+	else if (strcmp(id, "paging") == 0)      res = do_paging_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "mdc") == 0)         res = do_mdc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "cics") == 0)        res = do_cics_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "getvis") == 0)      res = do_getvis_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "maxuser") == 0)     res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "nparts") == 0)      res = do_asid_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
+	/* 
+	 * These are from the hobbit-perl-client
+	 * NetApp check for netapp.pl, dbcheck.pl and beastat.pl scripts
+	 */
+	else if (strcmp(id, "xtstats") == 0)     res = do_netapp_extrastats_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "quotas") == 0)      res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "snapshot") == 0)    res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "TblSpace") == 0)    res = do_disk_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "stats") == 0)       res = do_netapp_stats_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ops") == 0)         res = do_netapp_ops_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "cifs") == 0)        res = do_netapp_cifs_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "snaplist") == 0)    res = do_netapp_snaplist_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "snapmirr") == 0)    res = do_netapp_snapmirror_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "HitCache") == 0)    res = do_dbcheck_hitcache_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "Session") == 0)     res = do_dbcheck_session_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "RollBack") == 0)    res = do_dbcheck_rb_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "InvObj") == 0)      res = do_dbcheck_invobj_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "MemReq") == 0)      res = do_dbcheck_memreq_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JVM") == 0)         res = do_beastat_jvm_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JMS") == 0)         res = do_beastat_jms_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JTA") == 0)         res = do_beastat_jta_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "ExecQueue") == 0)   res = do_beastat_exec_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+	else if (strcmp(id, "JDBCConn") == 0)    res = do_beastat_jdbc_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
+
+	/*
+	 * This is from the devmon SNMP collector
+	 */
+	else if (strcmp(id, "devmon") == 0)      res = do_devmon_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 
 	else if (extids && exthandler) {
 		int i;

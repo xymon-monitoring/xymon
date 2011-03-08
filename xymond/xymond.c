@@ -1,24 +1,24 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is the master daemon, hobbitd.                                        */
+/* This is the master daemon, xymond.                                         */
 /*                                                                            */
 /* This is a daemon that implements the Big Brother network protocol, with    */
-/* additional protocol items implemented for Hobbit.                          */
+/* additional protocol items implemented for Xymon.                           */
 /*                                                                            */
-/* This daemon maintains the full state of the Hobbit system in memory,       */
+/* This daemon maintains the full state of the Xymon system in memory,        */
 /* eliminating the need for file-based storage of e.g. status logs. The web   */
-/* frontend programs (bbgen, bbcombotest, bb-hostsvc.cgi etc) can retrieve    */
-/* current statuslogs from this daemon to build the Hobbit webpages. However, */
+/* frontend programs (xymongen, combostatus, hostsvc.cgi etc) can retrieve    */
+/* current statuslogs from this daemon to build the Xymon webpages. However,  */
 /* a "plugin" mechanism is also implemented to allow "worker modules" to      */
 /* pickup various types of events that occur in the system. This allows       */
-/* such modules to e.g. maintain the standard Hobbit file-based storage, or   */
+/* such modules to e.g. maintain the standard Xymon file-based storage, or    */
 /* implement history logging or RRD database updates. This plugin mechanism   */
 /* uses System V IPC mechanisms for a high-performance/low-latency communi-   */
-/* cation between hobbitd and the worker modules - under no circumstances     */
+/* cation between  xymond and the worker modules - under no circumstances     */
 /* should the daemon be tasked with storing data to a low-bandwidth channel.  */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -32,7 +32,6 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
-#include <sys/un.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #ifdef HAVE_SYS_SELECT_H
@@ -47,6 +46,7 @@ static char rcsid[] = "$Id$";
 #include <stdio.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <signal.h>
 #include <time.h>
 
 #include <sys/ipc.h>
@@ -54,33 +54,24 @@ static char rcsid[] = "$Id$";
 #include <sys/shm.h>
 #include <sys/wait.h>
 
-#ifdef HAVE_OPENSSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#endif
+#include "libxymon.h"
 
-#include "libbbgen.h"
-
-#include "hobbitd_buffer.h"
-#include "hobbitd_ipc.h"
-
-#include <signal.h>
-
+#include "xymond_buffer.h"
+#include "xymond_ipc.h"
 
 #define DISABLED_UNTIL_OK -1
-#define LASTCHANGESZ 10
 
 /*
  * The absolute maximum size we'll grow our buffers to accomodate an incoming message.
  * This is really just an upper bound to squash the bad guys trying to data-flood us. 
  */
-#define MAX_HOBBIT_INBUFSZ (10*1024*1024)	/* 10 MB */
+#define MAX_XYMON_INBUFSZ (10*1024*1024)	/* 10 MB */
 
 /* The initial size of an input buffer. Make this large enough for most traffic. */
-#define HOBBIT_INBUF_INITIAL   (128*1024)
+#define XYMON_INBUF_INITIAL   (128*1024)
 
 /* How much the input buffer grows per re-allocation */
-#define HOBBIT_INBUF_INCREMENT (32*1024)
+#define XYMON_INBUF_INCREMENT (32*1024)
 
 /* How long to keep an ack after the status has recovered */
 #define ACKCLEARDELAY 720 /* 12 minutes */
@@ -88,12 +79,16 @@ static char rcsid[] = "$Id$";
 /* How long are sub-client messages valid */
 #define MAX_SUBCLIENT_LIFETIME 960	/* 15 minutes + a bit */
 
+#define DEFAULT_FLAPCOUNT 5
+int flapcount = DEFAULT_FLAPCOUNT;
+int flapthreshold = (DEFAULT_FLAPCOUNT+1)*5*60;	/* Seconds - if more than flapcount changes during this period, it's flapping */
+
 htnames_t *metanames = NULL;
-typedef struct hobbitd_meta_t {
+typedef struct xymond_meta_t {
 	htnames_t *metaname;
 	char *value;
-	struct hobbitd_meta_t *next;
-} hobbitd_meta_t;
+	struct xymond_meta_t *next;
+} xymond_meta_t;
 
 typedef struct ackinfo_t {
 	int level;
@@ -115,15 +110,15 @@ typedef struct modifier_t {
 } modifier_t;
 
 /* This holds all information about a single status */
-typedef struct hobbitd_log_t {
-	struct hobbitd_hostlist_t *host;
+typedef struct xymond_log_t {
+	struct xymond_hostlist_t *host;
 	testinfo_t *test;
 	char *origin;
 	int color, oldcolor, activealert, histsynced, downtimeactive, flapping, oldflapcolor, currflapcolor;
 	char *testflags;
-	char *grouplist;        /* For extended status reports (e.g. from hobbitd_client) */
+	char *grouplist;        /* For extended status reports (e.g. from xymond_client) */
 	char sender[IP_ADDR_STRLEN];
-	time_t lastchange[LASTCHANGESZ];	/* time when the currently logged status began */
+	time_t *lastchange;	/* Table of times when the currently logged status began */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
 	time_t enabletime;	/* time when test auto-enables after a disable */
@@ -133,12 +128,12 @@ typedef struct hobbitd_log_t {
 	unsigned char *dismsg, *ackmsg;
 	int cookie;
 	time_t cookieexpires;
-	struct hobbitd_meta_t *metas;
+	struct xymond_meta_t *metas;
 	struct modifier_t *modifiers;
 	ackinfo_t *acklist;	/* Holds list of acks */
 	unsigned long statuschangecount;
-	struct hobbitd_log_t *next;
-} hobbitd_log_t;
+	struct xymond_log_t *next;
+} xymond_log_t;
 
 typedef struct clientmsg_list_t {
 	char *collectorid;
@@ -148,15 +143,15 @@ typedef struct clientmsg_list_t {
 } clientmsg_list_t;
 
 /* This is a list of the hosts we have seen reports for, and links to their status logs */
-typedef struct hobbitd_hostlist_t {
+typedef struct xymond_hostlist_t {
 	char *hostname;
 	char ip[IP_ADDR_STRLEN];
 	enum { H_NORMAL, H_SUMMARY } hosttype;
-	hobbitd_log_t *logs;
-	hobbitd_log_t *pinglog; /* Points to entry in logs list, but we need it often */
+	xymond_log_t *logs;
+	xymond_log_t *pinglog; /* Points to entry in logs list, but we need it often */
 	clientmsg_list_t *clientmsgs;
 	time_t clientmsgtstamp;
-} hobbitd_hostlist_t;
+} xymond_hostlist_t;
 
 typedef struct filecache_t {
 	char *fn;
@@ -180,23 +175,19 @@ int      ignoretraced = 0;
 int      clientsavemem = 1;	/* In memory */
 int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
-int	 flapthreshold = 600;	/* Seconds - if more than LASTCHANGESZ changes during this period, it's flapping */
 
-/* This struct describes an active connection with a Hobbit client */
+
+#define NOTALK 0
+#define RECEIVING 1
+#define RESPONDING 2
+
+/* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
 	int sock;			/* Communications socket */
 	struct sockaddr_in addr;	/* Client source address */
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
-	enum { NOTALK, 
-	       SSLREAD_HANDSHAKE, SSLWRITE_HANDSHAKE, 
-	       SSLREAD_RECEIVING, SSLWRITE_RECEIVING,
-	       SSLREAD_RESPONDING, SSLWRITE_RESPONDING,
-	       RECEIVING, RESPONDING } doingwhat;	/* Communications state */
-	int compressionok;		/* Remote end can handle compression */
-	int onelinercheckdone;		/* Flag if we have checked if this is a one-line command */
-	void *sslobj;			/* SSL object for SSL-enabled connections */
-	int expectbytes;		/* # of bytes to read from client (from "starttls") */
+	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
 	time_t timeout;			/* When the timeout for this connection happens */
 	struct conn_t *next;
 } conn_t;
@@ -210,15 +201,15 @@ static volatile int dologswitch = 0;
 static volatile int gotalarm = 0;
 
 /* Our channels to worker modules */
-hobbitd_channel_t *statuschn = NULL;	/* Receives full "status" messages */
-hobbitd_channel_t *stachgchn = NULL;	/* Receives brief message about a status change */
-hobbitd_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
-hobbitd_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
-hobbitd_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
-hobbitd_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
-hobbitd_channel_t *clientchn = NULL;	/* Receives "client" messages */
-hobbitd_channel_t *clichgchn = NULL;	/* Receives "clichg" messages */
-hobbitd_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
+xymond_channel_t *statuschn = NULL;	/* Receives full "status" messages */
+xymond_channel_t *stachgchn = NULL;	/* Receives brief message about a status change */
+xymond_channel_t *pagechn   = NULL;	/* Receives alert messages (triggered from status changes) */
+xymond_channel_t *datachn   = NULL;	/* Receives raw "data" messages */
+xymond_channel_t *noteschn  = NULL;	/* Receives raw "notes" messages */
+xymond_channel_t *enadischn = NULL;	/* Receives "enable" and "disable" messages */
+xymond_channel_t *clientchn = NULL;	/* Receives "client" messages */
+xymond_channel_t *clichgchn = NULL;	/* Receives "clichg" messages */
+xymond_channel_t *userchn   = NULL;	/* Receives "usermsg" messages */
 
 #define NO_COLOR (COL_COUNT)
 static char *colnames[COL_COUNT+1];
@@ -228,7 +219,7 @@ enum alertstate_t { A_OK, A_ALERT, A_UNDECIDED };
 typedef struct ghostlist_t {
 	char *name;
 	char *sender;
-	time_t tstamp;
+	time_t tstamp, matchtime;
 } ghostlist_t;
 RbtHandle rbghosts;
 
@@ -239,22 +230,22 @@ typedef struct multisrclist_t {
 } multisrclist_t;
 RbtHandle rbmultisrc;
 
-int ghosthandling = -1;
+enum ghosthandling_t ghosthandling = GH_LOG;
 
 char *checkpointfn = NULL;
 FILE *dbgfd = NULL;
 char *dbghost = NULL;
-time_t boottime;
+time_t boottimer = 0;
 int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
 
-typedef struct hobbitd_statistics_t {
+typedef struct xymond_statistics_t {
 	char *cmd;
 	unsigned long count;
-} hobbitd_statistics_t;
+} xymond_statistics_t;
 
-hobbitd_statistics_t hobbitd_stats[] = {
+xymond_statistics_t xymond_stats[] = {
 	{ "status", 0 },
 	{ "combo", 0 },
 	{ "page", 0 },
@@ -267,8 +258,8 @@ hobbitd_statistics_t hobbitd_stats[] = {
 	{ "ack", 0 },
 	{ "config", 0 },
 	{ "query", 0 },
-	{ "hobbitdboard", 0 },
-	{ "hobbitdlog", 0 },
+	{ "xymondboard", 0 },
+	{ "xymondlog", 0 },
 	{ "drop", 0 },
 	{ "rename", 0 },
 	{ "dummy", 0 },
@@ -313,7 +304,7 @@ boardfieldnames_t boardfieldnames[] = {
 	{ "client", F_CLIENT },
 	{ "clntstamp", F_CLIENTTSTAMP },
 	{ "acklist", F_ACKLIST },
-	{ "BBH_", F_HOSTINFO },
+	{ "XMH_", F_HOSTINFO },
 	{ "flapinfo", F_FLAPINFO },
 	{ "stats", F_STATS },
 	{ "modifiers", F_MODIFIERS },
@@ -321,7 +312,7 @@ boardfieldnames_t boardfieldnames[] = {
 };
 typedef struct boardfields_t {
 	enum boardfield_t field;
-	enum bbh_item_t bbhfield;
+	enum xmh_item_t xmhfield;
 } boardfield_t;
 #define BOARDFIELDS_MAX 50
 boardfield_t boardfields[BOARDFIELDS_MAX+1];
@@ -342,226 +333,6 @@ typedef struct scheduletask_t {
 scheduletask_t *schedulehead = NULL;
 int nextschedid = 1;
 
-
-#ifdef HAVE_OPENSSL
-SSL_METHOD *sslmethod = NULL;
-SSL_CTX *sslctx = NULL;
-int sslpossible = 1;
-#endif
-
-
-#ifdef HAVE_OPENSSL
-static int sslcert_verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
-{
-	/* No verification for now, we just accept the client certificate */
-
-	return 1;	/* 1=accept connection, 0=reject it */
-}
-#endif
-
-int sslinitialize(char *certfn, char *keyfn)
-{
-#ifdef HAVE_OPENSSL
-	/* Setup OpenSSL */
-	SSL_load_error_strings();
-	SSL_library_init();
-	sslmethod = SSLv23_server_method();
-	sslctx = SSL_CTX_new(sslmethod);
-	if (sslctx == NULL) {
-		errprintf("Cannot create SSL context\n");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-	SSL_CTX_set_options(sslctx, SSL_OP_NO_SSLv2);
-	if (SSL_CTX_use_certificate_chain_file(sslctx, certfn) <= 0) {
-		errprintf("Cannot load SSL certificate\n");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-	if (SSL_CTX_use_PrivateKey_file(sslctx, keyfn, SSL_FILETYPE_PEM) <= 0) {
-		errprintf("Cannot load SSL private key\n");
-		ERR_print_errors_fp(stderr);
-		return 1;
-	}
-	if (!SSL_CTX_check_private_key(sslctx)) {
-		errprintf("Invalid private key, does not match certificate\n");
-		return 1;
-	}
-	/* We want a peer certificate */
-	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE, sslcert_verify_callback);
-#endif
-
-	return 0;
-}
-
-
-void sslhandshake(conn_t *cn)
-{
-#ifdef HAVE_OPENSSL
-	int n;
-
-	n = SSL_do_handshake((SSL *)cn->sslobj);
-	if (n == 1) {
-		X509 *peercert;
-
-		/* SSL handshake is done */
-		cn->doingwhat = RECEIVING;
-
-		peercert = SSL_get_peer_certificate(cn->sslobj);
-		if (!peercert) {
-			errprintf("Host %s does not provide a client certificate\n", inet_ntoa(cn->addr.sin_addr));
-		}
-		else {
-			char *certcn = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
-			char *issuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
-
-			errprintf("Host %s presents certificate %s, issued by %s\n", 
-				  inet_ntoa(cn->addr.sin_addr), 
-				  certcn, issuer);
-
-			xfree(certcn); xfree(issuer);
-			X509_free(peercert);
-		}
-	}
-	else {
-		/* SSL handshake in progress or an error occurred */
-		switch (SSL_get_error((SSL *)cn->sslobj, n)) {
-		  case SSL_ERROR_WANT_READ:
-			cn->doingwhat = SSLREAD_HANDSHAKE;
-			break;
-		  case SSL_ERROR_WANT_WRITE:
-			cn->doingwhat = SSLWRITE_HANDSHAKE;
-			break;
-		  default:
-			cn->doingwhat = NOTALK;
-			break;
-		}
-	}
-#else
-	errprintf("SSL attempted, but server does not support it\n");
-	cn->doingwhat = NOTALK;
-#endif
-}
-
-int socketread(conn_t *cn)
-{
-	int n;
-
-#ifdef HAVE_OPENSSL
-	if (cn->sslobj) {
-		n = SSL_read((SSL *)cn->sslobj, cn->bufp, (cn->bufsz - cn->buflen - 1));
-		if (n <= 0) {
-			switch (SSL_get_error((SSL *)cn->sslobj, n)) {
-			  case SSL_ERROR_WANT_READ:
-				cn->doingwhat = SSLREAD_RECEIVING;
-				break;
-
-			  case SSL_ERROR_WANT_WRITE:
-				cn->doingwhat = SSLWRITE_RECEIVING;
-				break;
-
-			  case SSL_ERROR_ZERO_RETURN:
-				/* Normal end of read */
-				n = 0;
-				break;
-
-			  default:
-				/* Communication error */
-				n = -1;
-				break;
-			}
-		}
-	}
-	else {
-		/* 
-		 * Must check for the "starttls %08d\n" string first.
-		 * At the beginning of our read sequence, only read 
-		 * enough bytes to determine if there is a "starttls\n"
-		 * string - if yes, then the SSL handshake data follows
-		 * immediately, and we don't want to grab that ahead of
-		 * SSL_handshake().
-		 */
-		if (cn->buflen < 18) {
-			n = read(cn->sock, cn->bufp, 18 - cn->buflen);
-			if (sslpossible && (n > 0) && (n+cn->buflen >= 18) && (memcmp(cn->buf, "starttls ", 9) == 0)) {
-				dbgprintf("Initiating SSL handshake\n");
-				cn->sslobj = SSL_new(sslctx);
-				cn->expectbytes = atoi(cn->buf+9); if (cn->expectbytes < 0) cn->expectbytes = 0;
-				SSL_set_fd((SSL *)cn->sslobj, cn->sock);
-				SSL_set_accept_state((SSL *)cn->sslobj);
-				cn->doingwhat = SSLREAD_HANDSHAKE;
-				cn->bufp = cn->buf;
-				cn->buflen = 0;
-				n = -1;
-			}
-		}
-		else {
-			n = read(cn->sock, cn->bufp, (cn->bufsz - cn->buflen - 1));
-		}
-	}
-#else
-	n = read(cn->sock, cn->bufp, (cn->bufsz - cn->buflen - 1));
-#endif
-
-	return n;
-}
-
-int socketwrite(conn_t *cn)
-{
-	int n;
-
-#ifdef HAVE_OPENSSL
-	if (cn->sslobj) {
-		n = SSL_write((SSL *)cn->sslobj, cn->bufp, cn->buflen);
-		if (n <= 0) {
-			switch (SSL_get_error((SSL *)cn->sslobj, n)) {
-			  case SSL_ERROR_WANT_READ:
-				cn->doingwhat = SSLREAD_RESPONDING;
-				break;
-
-			  case SSL_ERROR_WANT_WRITE:
-				cn->doingwhat = SSLWRITE_RESPONDING;
-				break;
-
-			  case SSL_ERROR_ZERO_RETURN:
-				/* Normal end of read */
-				n = 0;
-				break;
-
-			  default:
-				/* Communication error */
-				n = -1;
-				break;
-			}
-		}
-	}
-	else
-		n = write(cn->sock, cn->bufp, cn->buflen);
-#else
-	n = write(cn->sock, cn->bufp, cn->buflen);
-#endif
-
-	return n;
-}
-
-void socketclose(conn_t *cn)
-{
-	int n;
-
-#ifdef HAVE_OPENSSL
-	if (cn->sslobj) {
-		n = SSL_shutdown((SSL *)cn->sslobj);
-		SSL_free((SSL *)cn->sslobj);
-		cn->sslobj = NULL;
-	}
-#endif
-
-	shutdown(cn->sock, SHUT_RDWR);
-	close(cn->sock);
-	cn->sock = -1;
-}
-
-
 void update_statistics(char *cmd)
 {
 	int i;
@@ -576,8 +347,8 @@ void update_statistics(char *cmd)
 	msgs_total++;
 
 	i = 0;
-	while (hobbitd_stats[i].cmd && strncmp(hobbitd_stats[i].cmd, cmd, strlen(hobbitd_stats[i].cmd))) { i++; }
-	hobbitd_stats[i].count++;
+	while (xymond_stats[i].cmd && strncmp(xymond_stats[i].cmd, cmd, strlen(xymond_stats[i].cmd))) { i++; }
+	xymond_stats[i].count++;
 
 	dbgprintf("<- update_statistics\n");
 }
@@ -586,11 +357,13 @@ char *generate_stats(void)
 {
 	static strbuffer_t *statsbuf = NULL;
 	time_t now = getcurrenttime(NULL);
+	time_t nowtimer = gettimer();
 	int i, clients;
 	char bootuptxt[40];
 	char uptimetxt[40];
 	RbtHandle ghandle;
-	time_t uptime = (now - boottime);
+	time_t uptime = (nowtimer - boottimer);
+	time_t boottstamp = (now - uptime);
 	char msgline[2048];
 
 	dbgprintf("-> generate_stats\n");
@@ -605,22 +378,22 @@ char *generate_stats(void)
 		clearstrbuffer(statsbuf);
 	}
 
-	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottime));
+	strftime(bootuptxt, sizeof(bootuptxt), "%d-%b-%Y %T", localtime(&boottstamp));
 	sprintf(uptimetxt, "%d days, %02d:%02d:%02d", 
 		(int)(uptime / 86400), (int)(uptime % 86400)/3600, (int)(uptime % 3600)/60, (int)(uptime % 60));
 
-	sprintf(msgline, "status %s.hobbitd %s\nStatistics for Hobbit daemon\nUp since %s (%s)\n\n",
-		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), bootuptxt, uptimetxt);
+	sprintf(msgline, "status %s.xymond %s\nStatistics for Xymon daemon\nVersion: %s\nUp since %s (%s)\n\n",
+		xgetenv("MACHINE"), colorname(errbuf ? COL_YELLOW : COL_GREEN), VERSION, bootuptxt, uptimetxt);
 	addtobuffer(statsbuf, msgline);
 	sprintf(msgline, "Incoming messages      : %10ld\n", msgs_total);
 	addtobuffer(statsbuf, msgline);
 	i = 0;
-	while (hobbitd_stats[i].cmd) {
-		sprintf(msgline, "- %-20s : %10ld\n", hobbitd_stats[i].cmd, hobbitd_stats[i].count);
+	while (xymond_stats[i].cmd) {
+		sprintf(msgline, "- %-20s : %10ld\n", xymond_stats[i].cmd, xymond_stats[i].count);
 		addtobuffer(statsbuf, msgline);
 		i++;
 	}
-	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Timeouts ", hobbitd_stats[i].count);
+	sprintf(msgline, "- %-20s : %10ld\n", "Bogus/Timeouts ", xymond_stats[i].count);
 	addtobuffer(statsbuf, msgline);
 
 	if ((now > last_stats_time) && (last_stats_time > 0)) {
@@ -663,7 +436,7 @@ char *generate_stats(void)
 		ghostlist_t *gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 
 		/* Skip records older than 10 minutes */
-		if (gwalk->tstamp < (now - 600)) continue;
+		if (gwalk->tstamp < (nowtimer - 600)) continue;
 		sprintf(msgline, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
 		addtobuffer(statsbuf, msgline);
 	}
@@ -674,7 +447,7 @@ char *generate_stats(void)
 		multisrclist_t *mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, ghandle);
 
 		/* Skip records older than 10 minutes */
-		if (mwalk->tstamp < (now - 600)) continue;
+		if (mwalk->tstamp < (nowtimer - 600)) continue;
 		sprintf(msgline, "  %-25s reported by %s and %s\n", mwalk->id, mwalk->senders[0], mwalk->senders[1]);
 		addtobuffer(statsbuf, msgline);
 	}
@@ -698,13 +471,13 @@ char *totalclientmsg(clientmsg_list_t *msglist)
 {
 	static strbuffer_t *result = NULL;
 	clientmsg_list_t *mwalk;
-	time_t now = getcurrenttime(NULL);
+	time_t nowtimer = gettimer();
 
 	if (!result) result = newstrbuffer(10240);
 
 	clearstrbuffer(result);
 	for (mwalk = msglist; (mwalk); mwalk = mwalk->next) {
-		if ((mwalk->timestamp + MAX_SUBCLIENT_LIFETIME) < now) continue; /* Expired data */
+		if ((mwalk->timestamp + MAX_SUBCLIENT_LIFETIME) < nowtimer) continue; /* Expired data */
 		addtobuffer(result, "\n[collector:");
 		addtobuffer(result, mwalk->collectorid);
 		addtobuffer(result, "]\n");
@@ -722,11 +495,11 @@ enum alertstate_t decide_alertstate(int color)
 }
 
 
-hobbitd_hostlist_t *create_hostlist_t(char *hostname, char *ip)
+xymond_hostlist_t *create_hostlist_t(char *hostname, char *ip)
 {
-	hobbitd_hostlist_t *hitem;
+	xymond_hostlist_t *hitem;
 
-	hitem = (hobbitd_hostlist_t *) calloc(1, sizeof(hobbitd_hostlist_t));
+	hitem = (xymond_hostlist_t *) calloc(1, sizeof(xymond_hostlist_t));
 	hitem->hostname = strdup(hostname);
 	strcpy(hitem->ip, ip);
 	if (strcmp(hostname, "summary") == 0) hitem->hosttype = H_SUMMARY;
@@ -748,8 +521,8 @@ testinfo_t *create_testinfo(char *name)
 	return newrec;
 }
 
-void posttochannel(hobbitd_channel_t *channel, char *channelmarker, 
-		   char *msg, char *sender, char *hostname, hobbitd_log_t *log, char *readymsg)
+void posttochannel(xymond_channel_t *channel, char *channelmarker, 
+		   char *msg, char *sender, char *hostname, xymond_log_t *log, char *readymsg)
 {
 	struct sembuf s;
 	int clients;
@@ -760,6 +533,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 	unsigned int bufsz = 1024*shbufsz(channel->channelid);
 	void *hi;
 	char *pagepath, *classname, *osname;
+	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	dbgprintf("-> posttochannel\n");
 
@@ -832,8 +606,8 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 		switch(channel->channelid) {
 		  case C_STATUS:
 			hi = hostinfo(hostname);
-			pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
-			classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
+			pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
+			classname = (hi ? xmh_item(hi, XMH_CLASS) : "");
 			if (!classname) classname = "";
 
 			n = snprintf(channel->channelbuf, (bufsz-5),
@@ -859,17 +633,30 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 15 */
-					(int)log->host->clientmsgtstamp);
+					(int)(log->host->clientmsgtstamp + timeroffset));
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 16 */
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", classname);	/* 16 */
+			}
+			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", pagepath);	/* 17 */
+			}
+			if (n < (bufsz-5)) {
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d",	/* 18 */
 					(int)log->flapping);
 			}
 			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", classname);	/* 17 */
-			}
-			if (n < (bufsz-5)) {
-				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%s", pagepath);	/* 18 */
+				modifier_t *mwalk;
+
+				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
+				mwalk = log->modifiers;						/* 19 */
+				while ((n < (bufsz-5)) && mwalk) {
+					if (mwalk->valid > 0) {
+						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
+								nlencode(mwalk->cause));
+					}
+					mwalk = mwalk->next;
+				}
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
@@ -904,7 +691,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			}
 			if (n < (bufsz-5)) {
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|%d", 	/* 13 */
-						(int) log->host->clientmsgtstamp);
+						(int) (log->host->clientmsgtstamp + timeroffset));
 			}
 			if (n < (bufsz-5)) {
 				modifier_t *mwalk;
@@ -912,7 +699,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 				n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
 				mwalk = log->modifiers;						/* 14 */
 				while ((n < (bufsz-5)) && mwalk) {
-					if (mwalk->valid) {
+					if (mwalk->valid > 0) {
 						n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
 								nlencode(mwalk->cause));
 					}
@@ -933,7 +720,7 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			n = snprintf(channel->channelbuf, (bufsz-5),
 				"@@%s#%u/%s|%d.%06d|%s|%s|%d\n%s",
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
-				sender, hostname, (int) log->host->clientmsgtstamp, 
+				sender, hostname, (int) (log->host->clientmsgtstamp + timeroffset), 
 				totalclientmsg(log->host->clientmsgs));
 			if (n > (bufsz-5)) {
 				errprintf("Oversize clichg msg from %s for %s truncated (n=%d, limit=%d)\n", 
@@ -953,21 +740,38 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 			}
 			else {
 				hi = hostinfo(hostname);
-				pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
-				classname = (hi ? bbh_item(hi, BBH_CLASS) : "");
-				osname = (hi ? bbh_item(hi, BBH_OS) : "");
+				pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
+				classname = (hi ? xmh_item(hi, XMH_CLASS) : "");
+				osname = (hi ? xmh_item(hi, XMH_OS) : "");
 				if (!classname) classname = "";
 				if (!osname) osname = "";
 
 				n = snprintf(channel->channelbuf, (bufsz-5),
-					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s\n%s", 
+					"@@%s#%u/%s|%d.%06d|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%s|%s|%s", 
 					channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange[0],
 					pagepath, log->cookie, osname, classname, 
-					(log->grouplist ? log->grouplist : ""),
-					msg);
+					(log->grouplist ? log->grouplist : ""));
+
+				if (n < (bufsz-5)) {
+					modifier_t *mwalk;
+
+					n += snprintf(channel->channelbuf+n, (bufsz-n-5), "|");
+					mwalk = log->modifiers;
+					while ((n < (bufsz-5)) && mwalk) {
+						if (mwalk->valid > 0) {
+							n += snprintf(channel->channelbuf+n, (bufsz-n-5), "%s",
+									nlencode(mwalk->cause));
+						}
+						mwalk = mwalk->next;
+					}
+				}
+
+				if (n < (bufsz-5)) {
+					n += snprintf(channel->channelbuf+n, (bufsz-n-5), "\n%s", msg);
+				}
 			}
 			if (n > (bufsz-5)) {
 				errprintf("Oversize page/ack/notify msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
@@ -1041,10 +845,12 @@ void posttochannel(hobbitd_channel_t *channel, char *channelmarker,
 }
 
 
-void log_ghost(char *hostname, char *sender, char *msg)
+char *log_ghost(char *hostname, char *sender, char *msg)
 {
 	RbtHandle ghandle;
 	ghostlist_t *gwalk;
+	char *result = NULL;
+	time_t nowtimer = gettimer();
 
 	dbgprintf("-> log_ghost\n");
 
@@ -1054,27 +860,64 @@ void log_ghost(char *hostname, char *sender, char *msg)
 		fflush(dbgfd);
 	}
 
-	if ((hostname == NULL) || (sender == NULL)) return;
+	if ((hostname == NULL) || (sender == NULL)) return NULL;
 
 	ghandle = rbtFind(rbghosts, hostname);
-	if (ghandle == rbtEnd(rbghosts)) {
-		gwalk = (ghostlist_t *)malloc(sizeof(ghostlist_t));
-		gwalk->name = strdup(hostname);
-		gwalk->sender = strdup(sender);
-		gwalk->tstamp = getcurrenttime(NULL);
-		rbtInsert(rbghosts, gwalk->name, gwalk);
+	gwalk = (ghandle != rbtEnd(rbghosts)) ? (ghostlist_t *)gettreeitem(rbghosts, ghandle) : NULL;
+
+	if ((gwalk == NULL) || ((gwalk->matchtime + 600) < nowtimer)) {
+		int found = 0;
+
+		if (ghosthandling == GH_MATCH) {
+			/* See if we can find this host just by ignoring domains */
+			char *hostnodom, *p;
+			void *hrec;
+
+			hostnodom = strdup(hostname);
+			p = strchr(hostnodom, '.'); if (p) *p = '\0';
+			for (hrec = first_host(); (hrec && !found); hrec = next_host(hrec, 0)) {
+				char *candname;
+			
+				candname = xmh_item(hrec, XMH_HOSTNAME);
+				p = strchr(candname, '.'); if (p) *p = '\0';
+				found = (strcasecmp(hostnodom, candname) == 0);
+				if (p) *p = '.';
+	
+				if (found) {
+					result = candname;
+					xmh_set_item(hrec, XMH_CLIENTALIAS, hostname);
+					errprintf("Matched ghost '%s' to host '%s'\n", hostname, result);
+				}
+			}
+		}
+
+		if (!found) {
+			if (gwalk == NULL) {
+				gwalk = (ghostlist_t *)calloc(1, sizeof(ghostlist_t));
+				gwalk->name = strdup(hostname);
+				gwalk->sender = strdup(sender);
+				gwalk->tstamp = gwalk->matchtime = nowtimer;
+				rbtInsert(rbghosts, gwalk->name, gwalk);
+			}
+			else {
+				if (gwalk->sender) xfree(gwalk->sender);
+				gwalk->sender = strdup(sender);
+				gwalk->tstamp = gwalk->matchtime = nowtimer;
+			}
+		}
 	}
 	else {
-		gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 		if (gwalk->sender) xfree(gwalk->sender);
 		gwalk->sender = strdup(sender);
-		gwalk->tstamp = getcurrenttime(NULL);
+		gwalk->tstamp = nowtimer;
 	}
 
 	dbgprintf("<- log_ghost\n");
+
+	return result;
 }
 
-void log_multisrc(hobbitd_log_t *log, char *newsender)
+void log_multisrc(xymond_log_t *log, char *newsender)
 {
 	RbtHandle ghandle;
 	multisrclist_t *gwalk;
@@ -1089,26 +932,26 @@ void log_multisrc(hobbitd_log_t *log, char *newsender)
 		gwalk->id = strdup(id);
 		gwalk->senders[0] = strdup(log->sender);
 		gwalk->senders[1] = strdup(newsender);
-		gwalk->tstamp = getcurrenttime(NULL);
+		gwalk->tstamp = gettimer();
 		rbtInsert(rbmultisrc, gwalk->id, gwalk);
 	}
 	else {
 		gwalk = (multisrclist_t *)gettreeitem(rbghosts, ghandle);
 		xfree(gwalk->senders[0]); gwalk->senders[0] = strdup(log->sender);
 		xfree(gwalk->senders[1]); gwalk->senders[1] = strdup(newsender);
-		gwalk->tstamp = getcurrenttime(NULL);
+		gwalk->tstamp = gettimer();
 	}
 
 	dbgprintf("<- log_multisrc\n");
 }
 
-hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_hostlist_t **host)
+xymond_log_t *find_log(char *hostname, char *testname, char *origin, xymond_hostlist_t **host)
 {
 	RbtIterator hosthandle, testhandle, originhandle;
-	hobbitd_hostlist_t *hwalk;
+	xymond_hostlist_t *hwalk;
 	char *owalk = NULL;
 	testinfo_t *twalk;
-	hobbitd_log_t *lwalk;
+	xymond_log_t *lwalk;
 
 	*host = NULL;
 	if ((hostname == NULL) || (testname == NULL)) return NULL;
@@ -1129,24 +972,24 @@ hobbitd_log_t *find_log(char *hostname, char *testname, char *origin, hobbitd_ho
 }
 
 void get_hts(char *msg, char *sender, char *origin,
-	     hobbitd_hostlist_t **host, testinfo_t **test, char **grouplist, hobbitd_log_t **log, 
+	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log, 
 	     int *color, char **downcause, int *alltests, int createhost, int createlog)
 {
 	/*
 	 * This routine takes care of finding existing status log records, or
 	 * (if they dont exist) creating new ones for an incoming status.
 	 *
-	 * "msg" contains an incoming message. First list is of the form "KEYWORD host.domain.test COLOR"
+	 * "msg" contains an incoming message. First list is of the form "KEYWORD host,domain.test COLOR"
 	 */
 
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr, *grp;
 	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle, originhandle;
-	hobbitd_hostlist_t *hwalk = NULL;
+	xymond_hostlist_t *hwalk = NULL;
 	testinfo_t *twalk = NULL;
 	char *owalk = NULL;
-	hobbitd_log_t *lwalk = NULL;
+	xymond_log_t *lwalk = NULL;
 
 	dbgprintf("-> get_hts\n");
 
@@ -1204,8 +1047,8 @@ void get_hts(char *msg, char *sender, char *origin,
 
 		knownname = knownhost(hostname, hostip, ghosthandling);
 		if (knownname == NULL) {
-			log_ghost(hostname, sender, msg);
-			goto done;
+			knownname = log_ghost(hostname, sender, msg);
+			if (knownname == NULL) goto done;
 		}
 		hostname = knownname;
 	}
@@ -1245,7 +1088,8 @@ void get_hts(char *msg, char *sender, char *origin,
 	if (hwalk && twalk && owalk) {
 		for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
 		if (createlog && (lwalk == NULL)) {
-			lwalk = (hobbitd_log_t *)calloc(1, sizeof(hobbitd_log_t));
+			lwalk = (xymond_log_t *)calloc(1, sizeof(xymond_log_t));
+			lwalk->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 			lwalk->color = lwalk->oldcolor = NO_COLOR;
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
@@ -1286,17 +1130,17 @@ done:
 }
 
 
-hobbitd_log_t *find_cookie(int cookie)
+xymond_log_t *find_cookie(int cookie)
 {
 	/*
 	 * Find a cookie we have issued.
 	 */
-	hobbitd_log_t *result = NULL;
+	xymond_log_t *result = NULL;
 	RbtIterator cookiehandle;
 
 	dbgprintf("-> find_cookie\n");
 
-	cookiehandle = rbtFind(rbcookies, &cookie);
+	cookiehandle = rbtFind(rbcookies, (void *)&cookie);
 	if (cookiehandle != rbtEnd(rbcookies)) {
 		result = gettreeitem(rbcookies, cookiehandle);
 		if (result->cookieexpires <= getcurrenttime(NULL)) result = NULL;
@@ -1307,13 +1151,13 @@ hobbitd_log_t *find_cookie(int cookie)
 	return result;
 }
 
-void clear_cookie(hobbitd_log_t *log)
+void clear_cookie(xymond_log_t *log)
 {
 	RbtIterator cookiehandle;
 
 	if (log->cookie <= 0) return;
 
-	cookiehandle = rbtFind(rbcookies, &log->cookie);
+	cookiehandle = rbtFind(rbcookies, (void *)&log->cookie);
 	log->cookie = -1; log->cookieexpires = 0;
 
 	if (cookiehandle == rbtEnd(rbcookies)) return;
@@ -1323,7 +1167,7 @@ void clear_cookie(hobbitd_log_t *log)
 
 
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist, 
-		   hobbitd_log_t *log, int newcolor, char *downcause, int modifyonly)
+		   xymond_log_t *log, int newcolor, char *downcause, int modifyonly)
 {
 	int validity = 30;	/* validity is counted in minutes */
 	time_t now = getcurrenttime(NULL);
@@ -1364,17 +1208,26 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		modifier_t *mwalk;
 		int mcolor = -1;
 
-		for (mwalk = log->modifiers; (mwalk); mwalk = mwalk->next) {
-			if (mwalk->valid <= 0) continue;
-
+		mwalk = log->modifiers;
+		while (mwalk) {
 			mwalk->valid--;
-			if (mwalk->valid == 0) {
-				/* Modifier no longer valid */
-				if (mwalk->cause) xfree(mwalk->cause);
-				continue;
-			}
+			if (mwalk->valid <= 0) {
+				modifier_t *zombie;
 
-			if (mwalk->color > mcolor) mcolor = mwalk->color;
+				/* Modifier no longer valid */
+				zombie = mwalk;
+				if (zombie->source) xfree(zombie->source);
+				if (zombie->cause) xfree(zombie->cause);
+
+				/* Remove this modifier from the list. Make sure log->modifiers is updated */
+				if (mwalk == log->modifiers) log->modifiers = mwalk->next;
+				mwalk = mwalk->next;
+				xfree(zombie);
+			}
+			else {
+				if (mwalk->color > mcolor) mcolor = mwalk->color;
+				mwalk = mwalk->next;
+			}
 		}
 
 		/* If there was an active modifier, this overrides the current "newcolor" status value */
@@ -1384,18 +1237,18 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	/*
 	 * Flap check. 
 	 *
-	 * We check if more than LASTCHANGESZ changes have occurred 
+	 * We check if more than flapcount changes have occurred 
 	 * within "flapthreshold" seconds. If yes, and the newcolor 
 	 * is less serious than the old color, then we ignore the
 	 * color change and keep the status at the more serious level.
 	 */
-	if (modifyonly) {
+	if (modifyonly || issummary) {
 		/* Nothing */
 	}
-	else if (!issummary && ((now - log->lastchange[LASTCHANGESZ-1]) < flapthreshold)) {
+	else if ((flapcount > 0) && ((now - log->lastchange[flapcount-1]) < flapthreshold)) {
 		if (!log->flapping) {
 			errprintf("Flapping detected for %s:%s - %d changes in %d seconds\n",
-				  hostname, testname, LASTCHANGESZ, (now - log->lastchange[LASTCHANGESZ-1]));
+				  hostname, testname, flapcount, (now - log->lastchange[flapcount-1]));
 			log->flapping = 1;
 			log->oldflapcolor = log->color;
 			log->currflapcolor = newcolor;
@@ -1416,7 +1269,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 */
 		if ((log->oldflapcolor != log->currflapcolor) && (newcolor == log->color)) {
 			int i;
-			for (i=LASTCHANGESZ-1; (i > 0); i--)
+			for (i=flapcount-1; (i > 0); i--)
 				log->lastchange[i] = log->lastchange[i-1];
 			log->lastchange[0] = now;
 		}
@@ -1500,8 +1353,18 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * the wrong hostname.
 		 */
 		if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
-			if ( (strcmp(log->sender, "hobbitd") != 0) && (strcmp(sender, "hobbitd") != 0) )  {
-				log_multisrc(log, sender);
+			/*
+			 * There are a few exceptions:
+			 * - if sender is "xymond", then this is an internal update, e.g. a status going purple.
+			 * - if the host has "pulldata" enabled, then the sender shows up as the host doing the
+			 *   data collection, so it does not make sense to check it (thanks to Cade Robinson).
+			 * - some multi-homed hosts use a random IP for sending us data.
+			 */
+			if ( (strcmp(log->sender, "xymond") != 0) && (strcmp(sender, "xymond") != 0) )  {
+				void *hinfo = hostinfo(hostname);
+				if ((xmh_item(hinfo, XMH_FLAG_PULLDATA) == NULL) && (xmh_item(hinfo, XMH_FLAG_MULTIHOMED) == NULL)) {
+					log_multisrc(log, sender);
+				}
 			}
 		}
 		strncpy(log->sender, sender, sizeof(log->sender)-1);
@@ -1591,7 +1454,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			} while (find_cookie(newcookie));
 
 			log->cookie = newcookie;
-			rbtInsert(rbcookies, &log->cookie, log);
+			rbtInsert(rbcookies, (void *)&log->cookie, log);
 
 			/*
 			 * This is fundamentally flawed. The cookie should be generated by
@@ -1626,8 +1489,12 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				posttochannel(clichgchn, channelnames[C_CLICHG], msg, sender, 
 						hostname, log, NULL);
 			}
-			for (i=LASTCHANGESZ-1; (i > 0); i--)
-				log->lastchange[i] = log->lastchange[i-1];
+
+			if (flapcount > 0) {
+				/* We keep track of flaps, so update the lastchange table */
+				for (i=flapcount-1; (i > 0); i--)
+					log->lastchange[i] = log->lastchange[i-1];
+			}
 			log->lastchange[0] = now;
 			log->statuschangecount++;
 		}
@@ -1666,14 +1533,14 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	return;
 }
 
-void handle_meta(char *msg, hobbitd_log_t *log)
+void handle_meta(char *msg, xymond_log_t *log)
 {
 	/*
 	 * msg has the format "meta HOST.TEST metaname\nmeta-value\n"
 	 */
 	char *metaname = NULL, *eoln, *line1 = NULL;
 	htnames_t *nwalk;
-	hobbitd_meta_t *mwalk;
+	xymond_meta_t *mwalk;
 
 	dbgprintf("-> handle_meta\n");
 
@@ -1706,7 +1573,7 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 
 	for (mwalk = log->metas; (mwalk && (mwalk->metaname != nwalk)); mwalk = mwalk->next);
 	if (mwalk == NULL) {
-		mwalk = (hobbitd_meta_t *)malloc(sizeof(hobbitd_meta_t));
+		mwalk = (xymond_meta_t *)malloc(sizeof(xymond_meta_t));
 		mwalk->metaname = nwalk;
 		mwalk->value = strdup(eoln+1);
 		mwalk->next = log->metas;
@@ -1722,7 +1589,7 @@ void handle_meta(char *msg, hobbitd_log_t *log)
 	dbgprintf("<- handle_meta\n");
 }
 
-void handle_modify(char *msg, hobbitd_log_t *log, int color)
+void handle_modify(char *msg, xymond_log_t *log, int color)
 {
 	char *tok, *sourcename, *cause;
 	modifier_t *mwalk;
@@ -1742,14 +1609,7 @@ void handle_modify(char *msg, hobbitd_log_t *log, int color)
 		/* Got all tokens - find the modifier, if this is just an update */
 		for (mwalk = log->modifiers; (mwalk && strcmp(mwalk->source, sourcename)); mwalk = mwalk->next);
 
-		if (color == -1) {
-			/* An invalid color means "cancel the current modifier" */
-			if (mwalk) {
-				mwalk->valid = 0;
-				if (mwalk->cause) xfree(mwalk->cause);
-			}
-		}
-		else {
+		if ((color >= 0) && (color < COL_COUNT)) {
 			if (!mwalk) {
 				/* New modifier record */
 				mwalk = (modifier_t *)calloc(1, sizeof(modifier_t));
@@ -1778,7 +1638,7 @@ void handle_modify(char *msg, hobbitd_log_t *log, int color)
 		 * is different than the original status color, we trigger a change.
 		 */
 		for (newcolor=color, mwalk=log->modifiers; (mwalk); mwalk = mwalk->next) {
-			if (!mwalk->valid) continue;
+			if (mwalk->valid <= 0) continue;
 			if (mwalk->color > newcolor) newcolor = mwalk->color;
 		}
 
@@ -1803,8 +1663,8 @@ void handle_data(char *msg, char *sender, char *origin, char *hostname, char *te
 	dbgprintf("->handle_data\n");
 
 	hi = hostinfo(hostname);
-	classname = (hi ? bbh_item(hi, BBH_CLASS) : NULL);
-	pagepath = (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : "");
+	classname = (hi ? xmh_item(hi, XMH_CLASS) : NULL);
+	pagepath = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
 
 	if (origin) buflen += strlen(origin); else dbgprintf("   origin is NULL\n");
 	if (hostname) buflen += strlen(hostname); else dbgprintf("  hostname is NULL\n");
@@ -1849,9 +1709,9 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	time_t expires = 0;
 	int alltests = 0;
 	RbtIterator hosthandle, testhandle;
-	hobbitd_hostlist_t *hwalk = NULL;
+	xymond_hostlist_t *hwalk = NULL;
 	testinfo_t *twalk = NULL;
-	hobbitd_log_t *log;
+	xymond_log_t *log;
 	char *p;
 	char hostip[IP_ADDR_STRLEN];
 
@@ -1995,7 +1855,7 @@ done:
 }
 
 
-void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
+void handle_ack(char *msg, char *sender, xymond_log_t *log, int duration)
 {
 	char *p;
 
@@ -2019,7 +1879,7 @@ void handle_ack(char *msg, char *sender, hobbitd_log_t *log, int duration)
 	return;
 }
 
-void handle_ackinfo(char *msg, char *sender, hobbitd_log_t *log)
+void handle_ackinfo(char *msg, char *sender, xymond_log_t *log)
 {
 	int level = -1;
 	time_t validuntil = -1, itemval;
@@ -2111,7 +1971,7 @@ void handle_notify(char *msg, char *sender, char *hostname, char *testname)
 
 	/* Tell the pagers */
 	sprintf(channelmsg, "%s|%s|%s\n%s", 
-		hostname, (testname ? testname : ""), (hi ? bbh_item(hi, BBH_ALLPAGEPATHS) : ""), msgtext);
+		hostname, (testname ? testname : ""), (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : ""), msgtext);
 	posttochannel(pagechn, "notify", msg, sender, hostname, NULL, channelmsg);
 
 	xfree(channelmsg);
@@ -2140,7 +2000,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 	if (clientsavemem) {
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle != rbtEnd(rbhosts)) {
-			hobbitd_hostlist_t *hwalk;
+			xymond_hostlist_t *hwalk;
 			hwalk = gettreeitem(rbhosts, hosthandle);
 
 			for (cwalk = hwalk->clientmsgs; (cwalk && strcmp(cwalk->collectorid, collectorid)); cwalk = cwalk->next) ;
@@ -2160,7 +2020,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 				cwalk->msg = strdup(msg);
 			}
 
-			hwalk->clientmsgtstamp = cwalk->timestamp = getcurrenttime(NULL);
+			hwalk->clientmsgtstamp = cwalk->timestamp = gettimer();
 
 			/* Purge any outdated client sub-messages */
 			chead = ctail = NULL;
@@ -2187,6 +2047,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 					ctail->next = NULL;
 				}
 			}
+			hwalk->clientmsgs = chead;
 		}
 	}
 
@@ -2198,8 +2059,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 }
 
 
-
-void flush_acklist(hobbitd_log_t *zombie, int flushall)
+void flush_acklist(xymond_log_t *zombie, int flushall)
 {
 	ackinfo_t *awalk, *newhead = NULL, *newtail = NULL;
 	time_t now = getcurrenttime(NULL);
@@ -2230,7 +2090,7 @@ void flush_acklist(hobbitd_log_t *zombie, int flushall)
 	zombie->acklist = newhead;
 }
 
-char *acklist_string(hobbitd_log_t *log, int level)
+char *acklist_string(xymond_log_t *log, int level)
 {
 	static strbuffer_t *res = NULL;
 	ackinfo_t *awalk;
@@ -2252,9 +2112,9 @@ char *acklist_string(hobbitd_log_t *log, int level)
 	return STRBUF(res);
 }
 
-void free_log_t(hobbitd_log_t *zombie)
+void free_log_t(xymond_log_t *zombie)
 {
-	hobbitd_meta_t *mwalk, *mtmp;
+	xymond_meta_t *mwalk, *mtmp;
 	modifier_t *modwalk, *modtmp;
 
 	dbgprintf("-> free_log_t\n");
@@ -2273,6 +2133,7 @@ void free_log_t(hobbitd_log_t *zombie)
 		modtmp = modwalk;
 		modwalk = modwalk->next;
 
+		if (modtmp->source) xfree(modtmp->source);
 		if (modtmp->cause) xfree(modtmp->cause);
 		xfree(modtmp);
 	}
@@ -2290,9 +2151,9 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 {
 	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle;
-	hobbitd_hostlist_t *hwalk;
+	xymond_hostlist_t *hwalk;
 	testinfo_t *twalk, *newt;
-	hobbitd_log_t *lwalk;
+	xymond_log_t *lwalk;
 	char *marker = NULL;
 	char *canonhostname;
 
@@ -2303,7 +2164,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		/*
 		 * We pass drop- and rename-messages to the workers, whether 
 		 * we know about this host or not. It could be that the drop command
-		 * arrived after we had already re-loaded the bb-hosts file, and 
+		 * arrived after we had already re-loaded the hosts.cfg file, and 
 		 * so the host is no longer known by us - but there is still some
 		 * data stored about it that needs to be cleaned up.
 		 */
@@ -2351,7 +2212,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 	/*
 	 * Now clean up our internal state info, if there is any.
-	 * NB: knownhost() may return NULL, if the bb-hosts file was re-loaded before
+	 * NB: knownhost() may return NULL, if the hosts.cfg file was re-loaded before
 	 * we got around to cleaning up a host.
 	 */
 	canonhostname = knownhost(hostname, hostip, ghosthandling);
@@ -2374,7 +2235,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			hwalk->logs = hwalk->logs->next;
 		}
 		else {
-			hobbitd_log_t *plog;
+			xymond_log_t *plog;
 			for (plog = hwalk->logs; (plog->next != lwalk); plog = plog->next) ;
 			plog->next = lwalk->next;
 		}
@@ -2390,7 +2251,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		/* Loop through the host logs and free them */
 		lwalk = hwalk->logs;
 		while (lwalk) {
-			hobbitd_log_t *tmp = lwalk;
+			xymond_log_t *tmp = lwalk;
 			lwalk = lwalk->next;
 
 			free_log_t(tmp);
@@ -2514,7 +2375,7 @@ int get_config(char *fn, conn_t *msg)
 	strbuffer_t *inbuf, *result;
 
 	dbgprintf("-> get_config %s\n", fn);
-	sprintf(fullfn, "%s/etc/%s", xgetenv("BBHOME"), fn);
+	sprintf(fullfn, "%s/etc/%s", xgetenv("XYMONHOME"), fn);
 	fd = stackfopen(fullfn, "r", NULL);
 	if (fd == NULL) {
 		errprintf("Config file %s not found\n", fn);
@@ -2545,7 +2406,7 @@ int get_binary(char *fn, conn_t *msg)
 	long flen;
 
 	dbgprintf("-> get_binary %s\n", fn);
-	sprintf(fullfn, "%s/download/%s", xgetenv("BBHOME"), fn);
+	sprintf(fullfn, "%s/download/%s", xgetenv("XYMONHOME"), fn);
 
 	result = get_filecache(fullfn, &flen);
 	if (!result) {
@@ -2693,33 +2554,35 @@ void setup_filter(char *buf, char *defaultfields,
 	tok = strtok(s, ",");
 	while (tok) {
 		enum boardfield_t fieldid = F_LAST;
-		enum bbh_item_t bbhfieldid = BBH_LAST;
+		enum xmh_item_t xmhfieldid = XMH_LAST;
 		int validfield = 1;
 
-		if (strncmp(tok, "BBH_", 4) == 0) {
+		if (strncmp(tok, "BBH_", 4) == 0) memmove(tok, "XMH_", 4);	/* For compatibility */
+
+		if (strncmp(tok, "XMH_", 4) == 0) {
 			fieldid = F_HOSTINFO;
-			bbhfieldid = bbh_key_idx(tok);
-			validfield = (bbhfieldid != BBH_LAST);
+			xmhfieldid = xmh_key_idx(tok);
+			validfield = (xmhfieldid != XMH_LAST);
 		}
 		else {
 			int i;
 			for (i=0; (boardfieldnames[i].name && strcmp(tok, boardfieldnames[i].name)); i++) ;
 			if (boardfieldnames[i].name) {
 				fieldid = boardfieldnames[i].id;
-				bbhfieldid = BBH_LAST;
+				xmhfieldid = XMH_LAST;
 			}
 		}
 
 		if ((fieldid != F_LAST) && (idx < BOARDFIELDS_MAX) && validfield) {
 			boardfields[idx].field = fieldid;
-			boardfields[idx].bbhfield = bbhfieldid;
+			boardfields[idx].xmhfield = xmhfieldid;
 			idx++;
 		}
 
 		tok = strtok(NULL, ",");
 	}
 	boardfields[idx].field = F_NONE;
-	boardfields[idx].bbhfield = BBH_LAST;
+	boardfields[idx].xmhfield = XMH_LAST;
 
 	xfree(s);
 
@@ -2730,26 +2593,26 @@ int match_host_filter(void *hinfo, pcre *spage, pcre *shost, pcre *snet)
 {
 	char *match;
 
-	match = bbh_item(hinfo, BBH_HOSTNAME);
+	match = xmh_item(hinfo, XMH_HOSTNAME);
 	if (shost && match && !matchregex(match, shost)) return 0;
 	if (spage) {
 		int matchres = 0;
 
-		match = bbh_item_multi(hinfo, BBH_PAGEPATH);
+		match = xmh_item_multi(hinfo, XMH_PAGEPATH);
 		while (match && (matchres == 0)) {
 			if (match && matchregex(match, spage)) matchres = 1;
-			match = bbh_item_multi(NULL, BBH_PAGEPATH);
+			match = xmh_item_multi(NULL, XMH_PAGEPATH);
 		}
 
 		if (matchres == 0) return 0;
 	}
-	match = bbh_item(hinfo, BBH_NET);
+	match = xmh_item(hinfo, XMH_NET);
 	if (snet  && match && !matchregex(match, snet))  return 0;
 
 	return 1;
 }
 
-int match_test_filter(hobbitd_log_t *log, pcre *stest, int scolor)
+int match_test_filter(xymond_log_t *log, pcre *stest, int scolor)
 {
 	/* Testname filter */
 	if (stest && !matchregex(log->test->name, stest)) return 0;
@@ -2763,7 +2626,7 @@ int match_test_filter(hobbitd_log_t *log, pcre *stest, int scolor)
 
 
 void generate_outbuf(char **outbuf, char **outpos, int *outsz, 
-		     hobbitd_hostlist_t *hwalk, hobbitd_log_t *lwalk, int acklevel)
+		     xymond_hostlist_t *hwalk, xymond_log_t *lwalk, int acklevel)
 {
 	int f_idx;
 	char *buf, *bufp;
@@ -2775,6 +2638,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 	enum boardfield_t f_type;
 	modifier_t *mwalk;
 	time_t now = getcurrenttime(NULL);
+	time_t timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	buf = *outbuf;
 	bufp = *outpos;
@@ -2798,7 +2662,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_HOSTINFO:
 			if (!hinfo) hinfo = hostinfo(hwalk->hostname);
 			if (hinfo) {
-				char *infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
+				char *infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
 				if (infostr) needed += strlen(infostr);
 			}
 			break;
@@ -2809,7 +2673,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		  case F_MODIFIERS:
 			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
-				if (!mwalk->valid) continue;
+				if (mwalk->valid <= 0) continue;
 				needed += 3+2*strlen(mwalk->cause);
 			}
 			break;
@@ -2855,12 +2719,12 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_DISMSG: if (lwalk->dismsg) bufp += sprintf(bufp, "%s", nlencode(lwalk->dismsg)); break;
 		  case F_MSG: bufp += sprintf(bufp, "%s", nlencode(lwalk->message)); break;
 		  case F_CLIENT: bufp += sprintf(bufp, "%s", (hwalk->clientmsgs ? "Y" : "N")); break;
-		  case F_CLIENTTSTAMP: bufp += sprintf(bufp, "%ld", (hwalk->clientmsgs ? (long) hwalk->clientmsgtstamp : 0)); break;
+		  case F_CLIENTTSTAMP: bufp += sprintf(bufp, "%ld", (hwalk->clientmsgs ? (long) (hwalk->clientmsgtstamp + timeroffset) : 0)); break;
 		  case F_ACKLIST: if (acklist) bufp += sprintf(bufp, "%s", nlencode(acklist)); break;
 
 		  case F_HOSTINFO:
 			if (hinfo) {	/* hinfo has been set above while scanning for the needed bufsize */
-				char *infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
+				char *infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
 				if (infostr) bufp += sprintf(bufp, "%s", infostr);
 			}
 			break;
@@ -2868,7 +2732,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_FLAPINFO:
 			bufp += sprintf(bufp, "%d/%ld/%ld/%s/%s", 
 					lwalk->flapping, 
-					lwalk->lastchange[0], lwalk->lastchange[LASTCHANGESZ-1],
+					lwalk->lastchange[0], (flapcount > 0) ? lwalk->lastchange[flapcount-1] : 0,
 					colnames[lwalk->oldflapcolor], colnames[lwalk->currflapcolor]);
 			break;
 
@@ -2878,7 +2742,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 
 		  case F_MODIFIERS:
 			for (mwalk = lwalk->modifiers; (mwalk); mwalk = mwalk->next) {
-				if (!mwalk->valid) continue;
+				if (mwalk->valid <= 0) continue;
 				bufp += sprintf(bufp, "%s", nlencode(mwalk->cause));
 			}
 			break;
@@ -2911,8 +2775,11 @@ void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, void *hi
 
 		switch (boardfields[f_idx].field) {
 		  case F_HOSTINFO:
-			infostr = bbh_item(hinfo, boardfields[f_idx].bbhfield);
-			if (infostr) needed += strlen(infostr);
+			infostr = xmh_item(hinfo, boardfields[f_idx].xmhfield);
+			if (infostr) {
+				if (boardfields[f_idx].xmhfield != XMH_RAW) infostr = nlencode(infostr);
+				needed += strlen(infostr);
+			}
 			break;
 
 		  default: break;
@@ -2943,14 +2810,14 @@ void generate_hostinfo_outbuf(char **outbuf, char **outpos, int *outsz, void *hi
 void do_message(conn_t *msg, char *origin)
 {
 	static int nesting = 0;
-	hobbitd_hostlist_t *h;
+	xymond_hostlist_t *h;
 	testinfo_t *t;
-	hobbitd_log_t *log;
+	xymond_log_t *log;
 	int color;
 	char *downcause;
 	char sender[IP_ADDR_STRLEN];
 	char *grouplist;
-	time_t now;
+	time_t now, timeroffset;
 	char *msgfrom;
 
 	nesting++;
@@ -2968,28 +2835,7 @@ void do_message(conn_t *msg, char *origin)
 	msg->doingwhat = NOTALK;
 	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
 	now = getcurrenttime(NULL);
-
-	/* If the data is compressed, deflate it */
-	if (strncmp(msg->buf, compressionmarker, compressionmarkersz) == 0) {
-		strbuffer_t *dbuf;
-
-		msg->compressionok = 1;
-		dbuf = uncompress_buffer(msg->buf, msg->buflen, NULL);
-
-		if (dbuf) {
-			/* Grab the output buffer */
-			xfree(msg->buf);
-			msg->buflen = STRBUFLEN(dbuf);
-			msg->bufsz = STRBUFSZ(dbuf);
-			msg->buf = grabstrbuffer(dbuf);
-			msg->bufp = msg->buf + msg->buflen;
-			*(msg->bufp) = '\0';
-		}
-		else {
-			errprintf("Invalid compressed message from '%s', dropped\n", sender);
-			goto done;
-		}
-	}
+	timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	if (traceall || tracelist) {
 		int found = 0;
@@ -3015,7 +2861,7 @@ void do_message(conn_t *msg, char *origin)
 
 			gettimeofday(&tv, &tz);
 
-			sprintf(tracefn, "%s/%d_%06d_%s.trace", xgetenv("BBTMP"), 
+			sprintf(tracefn, "%s/%d_%06d_%s.trace", xgetenv("XYMONTMP"), 
 				(int) tv.tv_sec, (int) tv.tv_usec, sender);
 			fd = fopen(tracefn, "w");
 			if (fd) {
@@ -3059,17 +2905,26 @@ void do_message(conn_t *msg, char *origin)
 					fflush(dbgfd);
 				}
 
-				if (color == COL_PURPLE) {
+				switch (color) {
+				  case COL_PURPLE:
 					errprintf("Ignored PURPLE status update from %s for %s.%s\n",
 						  sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
-				}
-				else {
+					break;
+
+				  case COL_CLIENT:
+					/* Pseudo color, allows us to send "client" data from a standard BB utility */
+					/* In HOSTNAME.TESTNAME, the TESTNAME is used as the collector-ID */
+					handle_client(currmsg, sender, h->hostname, t->name, "", NULL);
+					break;
+
+				  default:
 					/* Count individual status-messages also */
 					update_statistics(currmsg);
 
 					if (h && t && log && (color != -1)) {
 						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
 					}
+					break;
 				}
 			}
 
@@ -3126,14 +2981,23 @@ void do_message(conn_t *msg, char *origin)
 			fflush(dbgfd);
 		}
 
-		if (color == COL_PURPLE) {
+		switch (color) {
+		  case COL_PURPLE:
 			errprintf("Ignored PURPLE status update from %s for %s.%s\n",
 				  sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
-		}
-		else {
+			break;
+
+		  case COL_CLIENT:
+			/* Pseudo color, allows us to send "client" data from a standard BB utility */
+			/* In HOSTNAME.TESTNAME, the TESTNAME is used as the collector-ID */
+			handle_client(msg->buf, sender, h->hostname, t->name, "", NULL);
+			break;
+
+		  default:
 			if (h && t && log && (color != -1)) {
 				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
 			}
+			break;
 		}
 	}
 	else if (strncmp(msg->buf, "data", 4) == 0) {
@@ -3176,7 +3040,11 @@ void do_message(conn_t *msg, char *origin)
 			hname = knownhost(hostname, hostip, ghosthandling);
 
 			if (hname == NULL) {
-				log_ghost(hostname, sender, msg->buf);
+				hname = log_ghost(hostname, sender, msg->buf);
+			}
+
+			if (hname == NULL) {
+				/* Ignore it */
 			}
 			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
 				/* Invalid sender */
@@ -3218,7 +3086,7 @@ void do_message(conn_t *msg, char *origin)
 		/* 
 		 * We dont validate the ID, because "notes" may also send messages
 		 * for documenting pages or column-names. And the "usermsg" stuff can be
-		 * anything in the "ID" field. So we just insist that the IS an ID.
+		 * anything in the "ID" field. So we just insist that there IS an ID.
 		 */
 		if (*id) {
 			if (*msg->buf == 'n') {
@@ -3269,6 +3137,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
+		xfree(conffn);
 	}
 	else if (allow_downloads && (strncmp(msg->buf, "download", 8) == 0)) {
 		char *fn, *p;
@@ -3283,6 +3152,7 @@ void do_message(conn_t *msg, char *origin)
 			msg->doingwhat = RESPONDING;
 			msg->bufp = msg->buf;
 		}
+		xfree(fn);
 	}
 	else if (strncmp(msg->buf, "flush filecache", 15) == 0) {
 		flush_filecache();
@@ -3320,10 +3190,10 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdlog ", 11) == 0) {
+	else if ((strncmp(msg->buf, "xymondlog ", 10) == 0) || (strncmp(msg->buf, "hobbitdlog ", 11) == 0)) {
 		/* 
 		 * Request for a single status log
-		 * hobbitdlog HOST.TEST [fields=FIELDLIST]
+		 * xymondlog HOST.TEST [fields=FIELDLIST]
 		 *
 		 */
 
@@ -3346,7 +3216,8 @@ void do_message(conn_t *msg, char *origin)
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->name);
-				log->message = strdup("");
+				log->message = strdup("No data");
+				log->msgsz = strlen(log->message) + 1;
 			}
 
 			bufsz = 1024 + strlen(log->message);
@@ -3365,10 +3236,10 @@ void do_message(conn_t *msg, char *origin)
 
 		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
-	else if (strncmp(msg->buf, "hobbitdxlog ", 12) == 0) {
+	else if ((strncmp(msg->buf, "xymondxlog ", 11) == 0) || (strncmp(msg->buf, "hobbitdxlog ", 12) == 0)) {
 		/* 
 		 * Request for a single status log in XML format
-		 * hobbitdxlog HOST.TEST
+		 * xymondxlog HOST.TEST
 		 *
 		 */
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
@@ -3377,12 +3248,13 @@ void do_message(conn_t *msg, char *origin)
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
-			hobbitd_meta_t *mwalk;
+			xymond_meta_t *mwalk;
 
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
 				errprintf("%s.%s has a NULL message\n", log->host->hostname, log->test->name);
-				log->message = strdup("");
+				log->message = strdup("No data");
+				log->msgsz = strlen(log->message) + 1;
 			}
 
 			bufsz = 4096 + strlen(log->message);
@@ -3433,15 +3305,16 @@ void do_message(conn_t *msg, char *origin)
 			msg->buflen = (bufp - buf);
 		}
 	}
-	else if (strncmp(msg->buf, "hobbitdboard", 12) == 0) {
+	else if ((strncmp(msg->buf, "xymondboard", 11) == 0) || (strncmp(msg->buf, "hobbitdboard", 12) == 0)) {
 		/* 
 		 * Request for a summmary of all known status logs
 		 *
 		 */
 		RbtIterator hosthandle;
-		hobbitd_hostlist_t *hwalk;
-		hobbitd_log_t *lwalk, *firstlog;
-		hobbitd_log_t infologrec, rrdlogrec;
+		xymond_hostlist_t *hwalk;
+		xymond_log_t *lwalk, *firstlog;
+		xymond_log_t infologrec, rrdlogrec;
+		time_t *dummytimes;
 		testinfo_t trendstest, infotest;
 		char *buf, *bufp;
 		int bufsz;
@@ -3469,6 +3342,7 @@ void do_message(conn_t *msg, char *origin)
 		bufp = buf = (char *)malloc(bufsz);
 
 		/* Setup fake log-records for the "info" and "trends" data. */
+		dummytimes = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 		memset(&infotest, 0, sizeof(infotest));
 		infotest.name = xgetenv("INFOCOLUMN");
 		memset(&infologrec, 0, sizeof(infologrec));
@@ -3481,6 +3355,7 @@ void do_message(conn_t *msg, char *origin)
 
 		infologrec.color = rrdlogrec.color = COL_GREEN;
 		infologrec.message = rrdlogrec.message = "";
+		infologrec.lastchange = rrdlogrec.lastchange = dummytimes;
 
 		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
 			hwalk = gettreeitem(rbhosts, hosthandle);
@@ -3506,22 +3381,25 @@ void do_message(conn_t *msg, char *origin)
 				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
 
 				/* Handle NOINFO and NOTRENDS here */
-				if (!bbh_item(hinfo, BBH_FLAG_NOINFO)) {
+				if (!xmh_item(hinfo, XMH_FLAG_NOINFO)) {
 					infologrec.next = firstlog;
 					firstlog = &infologrec;
 				}
-				if (!bbh_item(hinfo, BBH_FLAG_NOTRENDS)) {
+				if (!xmh_item(hinfo, XMH_FLAG_NOTRENDS)) {
 					rrdlogrec.next = firstlog;
 					firstlog = &rrdlogrec;
 				}
 			}
+
+			rrdlogrec.host = infologrec.host = hwalk;
 
 			for (lwalk = firstlog; (lwalk); lwalk = lwalk->next) {
 				if (!match_test_filter(lwalk, stest, scolor)) continue;
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
-					lwalk->message = strdup("");
+					lwalk->message = strdup("No data");
+					lwalk->msgsz = strlen(lwalk->message) + 1;
 				}
 
 				generate_outbuf(&buf, &bufp, &bufsz, hwalk, lwalk, acklevel);
@@ -3535,16 +3413,17 @@ void do_message(conn_t *msg, char *origin)
 		msg->buflen = (bufp - buf);
 		if (msg->buflen > lastboardsize) lastboardsize = msg->buflen;
 
+		xfree(dummytimes);
 		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
-	else if (strncmp(msg->buf, "hobbitdxboard", 13) == 0) {
+	else if ((strncmp(msg->buf, "xymondxboard", 12) == 0) || (strncmp(msg->buf, "hobbitdxboard", 13) == 0)) {
 		/* 
 		 * Request for a summmary of all known status logs in XML format
 		 *
 		 */
 		RbtIterator hosthandle;
-		hobbitd_hostlist_t *hwalk;
-		hobbitd_log_t *lwalk;
+		xymond_hostlist_t *hwalk;
+		xymond_log_t *lwalk;
 		char *buf, *bufp;
 		int bufsz;
 		pcre *spage = NULL, *shost = NULL, *snet = NULL, *stest = NULL;
@@ -3604,7 +3483,8 @@ void do_message(conn_t *msg, char *origin)
 
 				if (lwalk->message == NULL) {
 					errprintf("%s.%s has a NULL message\n", lwalk->host->hostname, lwalk->test->name);
-					lwalk->message = strdup("");
+					lwalk->message = strdup("No data");
+					lwalk->msgsz = strlen(lwalk->message) + 1;
 				}
 
 				eoln = strchr(lwalk->message, '\n');
@@ -3664,7 +3544,7 @@ void do_message(conn_t *msg, char *origin)
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
-			     "BBH_HOSTNAME,BBH_IP,BBH_RAW",
+			     "XMH_HOSTNAME,XMH_IP,XMH_RAW",
 			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
 			     &chspage, &chshost, &chsnet, &chstest);
 
@@ -3694,12 +3574,12 @@ void do_message(conn_t *msg, char *origin)
 		freeregex(spage); freeregex(shost); freeregex(snet); freeregex(stest);
 	}
 
-	else if ((strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
-		/* hobbitdack COOKIE DURATION TEXT */
+	else if ((strncmp(msg->buf, "xymondack", 9) == 0) || (strncmp(msg->buf, "hobbitdack", 10) == 0) || (strncmp(msg->buf, "ack ack_event", 13) == 0)) {
+		/* xymondack COOKIE DURATION TEXT */
 		char *p;
 		int cookie, duration;
 		char durstr[100];
-		hobbitd_log_t *lwalk;
+		xymond_log_t *lwalk;
 
 		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
@@ -3710,7 +3590,8 @@ void do_message(conn_t *msg, char *origin)
 		 * we will accept an "ack ack_event" message. This allows us
 		 * to work with existing acknowledgement scripts.
 		 */
-		if (strncmp(msg->buf, "hobbitdack", 10) == 0) p = msg->buf + 10;
+		if (strncmp(msg->buf, "xymondack", 9) == 0) p = msg->buf + 9;
+		else if (strncmp(msg->buf, "hobbitdack", 10) == 0) p = msg->buf + 10;
 		else if (strncmp(msg->buf, "ack ack_event", 13) == 0) p = msg->buf + 13;
 		else p = msg->buf;
 
@@ -3752,7 +3633,7 @@ void do_message(conn_t *msg, char *origin)
 			handle_ackinfo(msg->buf, sender, log);
 		}
 		else if (ackall) {
-			hobbitd_log_t *lwalk;
+			xymond_log_t *lwalk;
 
 			for (lwalk = h->logs; (lwalk); lwalk = lwalk->next) {
 				if (decide_alertstate(lwalk->color) != A_OK) {
@@ -3805,7 +3686,7 @@ void do_message(conn_t *msg, char *origin)
 		/* Tell them we're here */
 		char id[128];
 
-		sprintf(id, "hobbitd %s\n", VERSION);
+		sprintf(id, "xymond %s\n", VERSION);
 		msg->doingwhat = RESPONDING;
 		xfree(msg->buf);
 		msg->bufp = msg->buf = strdup(id);
@@ -3938,7 +3819,11 @@ void do_message(conn_t *msg, char *origin)
 			hname = knownhost(hostname, hostip, ghosthandling);
 
 			if (hname == NULL) {
-				log_ghost(hostname, sender, msg->buf);
+				hname = log_ghost(hostname, sender, msg->buf);
+			}
+
+			if (hname == NULL) {
+				/* Ignore it */
 			}
 			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
 				/* Invalid sender */
@@ -3951,17 +3836,17 @@ void do_message(conn_t *msg, char *origin)
 				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
 
 				if (hinfo) {
-					if (clientos) bbh_set_item(hinfo, BBH_OS, clientos);
+					if (clientos) xmh_set_item(hinfo, XMH_OS, clientos);
 					if (clientclass) {
 						/*
 						 * If the client sends an explicit class,
 						 * save it for later use unless there is an
-						 * explicit override (BBH_CLASS is alread set).
+						 * explicit override (XMH_CLASS is alread set).
 						 */
-						char *forcedclass = bbh_item(hinfo, BBH_CLASS);
+						char *forcedclass = xmh_item(hinfo, XMH_CLASS);
 
 						if (!forcedclass) 
-							bbh_set_item(hinfo, BBH_CLASS, clientclass);
+							xmh_set_item(hinfo, XMH_CLASS, clientclass);
 						else 
 							clientclass = forcedclass;
 					}
@@ -3996,7 +3881,7 @@ void do_message(conn_t *msg, char *origin)
 
 		hosthandle = rbtFind(rbhosts, hostname);
 		if (hosthandle != rbtEnd(rbhosts)) {
-			hobbitd_hostlist_t *hwalk;
+			xymond_hostlist_t *hwalk;
 			hwalk = gettreeitem(rbhosts, hosthandle);
 
 			if (hwalk->clientmsgs) {
@@ -4058,7 +3943,7 @@ void do_message(conn_t *msg, char *origin)
 			for (ghandle = rbtBegin(rbghosts); (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
 				gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 				snprintf(msgline, sizeof(msgline), "%s|%s|%ld\n", 
-					 gwalk->name, gwalk->sender, (long int)gwalk->tstamp);
+					 gwalk->name, gwalk->sender, (long int)(gwalk->tstamp + timeroffset));
 				addtobuffer(resp, msgline);
 			}
 
@@ -4083,7 +3968,7 @@ void do_message(conn_t *msg, char *origin)
 			for (mhandle = rbtBegin(rbmultisrc); (mhandle != rbtEnd(rbmultisrc)); mhandle = rbtNext(rbmultisrc, mhandle)) {
 				mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, mhandle);
 				snprintf(msgline, sizeof(msgline), "%s|%s|%s|%ld\n", 
-					 mwalk->id, mwalk->senders[0], mwalk->senders[1], (long int)mwalk->tstamp);
+					 mwalk->id, mwalk->senders[0], mwalk->senders[1], (long int)(mwalk->tstamp + timeroffset));
 				addtobuffer(resp, msgline);
 			}
 
@@ -4098,20 +3983,12 @@ void do_message(conn_t *msg, char *origin)
 
 done:
 	if (msg->doingwhat == RESPONDING) {
-		if (msg->compressionok) {
-			/* Compress the message response */
-			strbuffer_t *cmsg = compress_buffer(msg->buf, msg->buflen);
-			if (cmsg) {
-				xfree(msg->buf);
-				msg->buflen = STRBUFLEN(cmsg);
-				msg->buf = msg->bufp = grabstrbuffer(cmsg);
-			}
-		}
-
-		shutdown(msg->sock, SHUT_RD); /* ---- not needed, I think */
+		shutdown(msg->sock, SHUT_RD);
 	}
-	else {
-		socketclose(msg);
+	else if (msg->sock >= 0) {
+		shutdown(msg->sock, SHUT_RDWR);
+		close(msg->sock);
+		msg->sock = -1;
 	}
 
 	MEMUNDEFINE(sender);
@@ -4120,13 +3997,14 @@ done:
 	nesting--;
 }
 
+
 void save_checkpoint(void)
 {
 	char *tempfn;
 	FILE *fd;
 	RbtIterator hosthandle;
-	hobbitd_hostlist_t *hwalk;
-	hobbitd_log_t *lwalk;
+	xymond_hostlist_t *hwalk;
+	xymond_log_t *lwalk;
 	time_t now = getcurrenttime(NULL);
 	scheduletask_t *swalk;
 	ackinfo_t *awalk;
@@ -4161,7 +4039,7 @@ void save_checkpoint(void)
 				lwalk->acktime = 0;
 			}
 			flush_acklist(lwalk, 0);
-			iores = fprintf(fd, "@@HOBBITDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
+			iores = fprintf(fd, "@@XYMONDCHK-V1|%s|%s|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%s", 
 				lwalk->origin, hwalk->hostname, lwalk->test->name, lwalk->sender,
 				colnames[lwalk->color], 
 				(lwalk->testflags ? lwalk->testflags : ""),
@@ -4177,7 +4055,7 @@ void save_checkpoint(void)
 			if (iores >= 0) iores = fprintf(fd, "\n");
 
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
-				iores = fprintf(fd, "@@HOBBITDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
+				iores = fprintf(fd, "@@XYMONDCHK-V1|.acklist.|%s|%s|%d|%d|%d|%d|%s|%s\n",
 						hwalk->hostname, lwalk->test->name,
 			 			(int)awalk->received, (int)awalk->validuntil, (int)awalk->cleartime,
 						awalk->level, awalk->ackedby, awalk->msg);
@@ -4186,7 +4064,7 @@ void save_checkpoint(void)
 	}
 
 	for (swalk = schedulehead; (swalk && (iores >= 0)); swalk = swalk->next) {
-		iores = fprintf(fd, "@@HOBBITDCHK-V1|.task.|%d|%d|%s|%s\n", 
+		iores = fprintf(fd, "@@XYMONDCHK-V1|.task.|%d|%d|%s|%s\n", 
 			swalk->id, (int)swalk->executiontime, swalk->sender, nlencode(swalk->command));
 	}
 
@@ -4220,10 +4098,10 @@ void load_checkpoint(char *fn)
 	int i, err;
 	char hostip[IP_ADDR_STRLEN];
 	RbtIterator hosthandle, testhandle, originhandle;
-	hobbitd_hostlist_t *hitem = NULL;
+	xymond_hostlist_t *hitem = NULL;
 	testinfo_t *t = NULL;
 	char *origin = NULL;
-	hobbitd_log_t *ltail = NULL;
+	xymond_log_t *ltail = NULL;
 	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg; 
 	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires;
 	int color = COL_GREEN, oldcolor = COL_GREEN, cookie;
@@ -4245,7 +4123,7 @@ void load_checkpoint(char *fn)
 		cookie = -1;
 		err = 0;
 
-		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0) {
+		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.task.|", 22) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0)) {
 			scheduletask_t *newtask = (scheduletask_t *)calloc(1, sizeof(scheduletask_t));
 
 			item = gettok(STRBUF(inbuf), "|\n"); i = 0;
@@ -4275,8 +4153,8 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
-		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.acklist.|", 26) == 0) {
-			hobbitd_log_t *log = NULL;
+		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.acklist.|", 25) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.acklist.|", 26) == 0)) {
+			xymond_log_t *log = NULL;
 			ackinfo_t *newack = (ackinfo_t *)calloc(1, sizeof(ackinfo_t));
 
 			hitem = NULL;
@@ -4323,12 +4201,12 @@ void load_checkpoint(char *fn)
 			continue;
 		}
 
-		if (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.", 17) == 0) continue;
+		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.", 16) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.", 17) == 0)) continue;
 
 		item = gettok(STRBUF(inbuf), "|\n"); i = 0;
 		while (item && !err) {
 			switch (i) {
-			  case 0: err = ((strcmp(item, "@@HOBBITDCHK-V1") != 0) && (strcmp(item, "@@BBGENDCHK-V1") != 0)); break;
+			  case 0: err = ((strcmp(item, "@@XYMONDCHK-V1") != 0) && (strcmp(item, "@@HOBBITDCHK-V1") != 0) && (strcmp(item, "@@BBGENDCHK-V1") != 0)); break;
 			  case 1: originname = item; break;
 			  case 2: if (strlen(item)) hostname = item; else err=1; break;
 			  case 3: if (strlen(item)) testname = item; else err=1; break;
@@ -4367,6 +4245,13 @@ void load_checkpoint(char *fn)
 		if (strcmp(testname, xgetenv("INFOCOLUMN")) == 0) continue;
 		if (strcmp(testname, xgetenv("TRENDSCOLUMN")) == 0) continue;
 
+		/* Rename the now-forgotten internal statuses */
+		if (strcmp(hostname, getenv("MACHINEDOTS")) == 0) {
+			if (strcmp(testname, "bbgen") == 0) testname = "xymongen";
+			else if (strcmp(testname, "bbtest") == 0) testname = "xymonnet";
+			else if (strcmp(testname, "hobbitd") == 0) testname = "xymond";
+		}
+
 		dbgprintf("Status: Host=%s, test=%s\n", hostname, testname); count++;
 
 		hosthandle = rbtFind(rbhosts, hostname);
@@ -4393,10 +4278,10 @@ void load_checkpoint(char *fn)
 		else origin = gettreeitem(rborigins, originhandle);
 
 		if (hitem->logs == NULL) {
-			ltail = hitem->logs = (hobbitd_log_t *) calloc(1, sizeof(hobbitd_log_t));
+			ltail = hitem->logs = (xymond_log_t *) calloc(1, sizeof(xymond_log_t));
 		}
 		else {
-			ltail->next = (hobbitd_log_t *)calloc(1, sizeof(hobbitd_log_t));
+			ltail->next = (xymond_log_t *)calloc(1, sizeof(xymond_log_t));
 			ltail = ltail->next;
 		}
 
@@ -4416,6 +4301,7 @@ void load_checkpoint(char *fn)
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
 		strcpy(ltail->sender, sender);
 		ltail->logtime = logtime;
+		ltail->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 		ltail->lastchange[0] = lastchange;
 		ltail->validtime = validtime;
 		ltail->enabletime = enabletime;
@@ -4437,7 +4323,7 @@ void load_checkpoint(char *fn)
 		else 
 			ltail->ackmsg = NULL;
 		ltail->cookie = cookie;
-		if (cookie > 0) rbtInsert(rbcookies, &ltail->cookie, ltail);
+		if (cookie > 0) rbtInsert(rbcookies, (void *)&ltail->cookie, ltail);
 		ltail->cookieexpires = cookieexpires;
 		ltail->metas = NULL;
 		ltail->acklist = NULL;
@@ -4455,8 +4341,8 @@ void load_checkpoint(char *fn)
 void check_purple_status(void)
 {
 	RbtIterator hosthandle;
-	hobbitd_hostlist_t *hwalk;
-	hobbitd_log_t *lwalk;
+	xymond_hostlist_t *hwalk;
+	xymond_log_t *lwalk;
 	time_t now = getcurrenttime(NULL);
 
 	dbgprintf("-> check_purple_status\n");
@@ -4471,7 +4357,7 @@ void check_purple_status(void)
 					/*
 					 * A summary has gone stale. Drop it.
 					 */
-					hobbitd_log_t *tmp;
+					xymond_log_t *tmp;
 
 					if (lwalk == hwalk->logs) {
 						tmp = hwalk->logs;
@@ -4494,7 +4380,7 @@ void check_purple_status(void)
 					 * See if this is a host where the "conn" test shows it is down.
 					 * If yes, then go CLEAR, instead of PURPLE.
 					 */
-					if (hwalk->pinglog && hinfo && (bbh_item(hinfo, BBH_FLAG_NOCLEAR) == NULL)) {
+					if (hwalk->pinglog && hinfo && (xmh_item(hinfo, XMH_FLAG_NOCLEAR) == NULL)) {
 						switch (hwalk->pinglog->color) {
 						  case COL_RED:
 						  case COL_YELLOW:
@@ -4510,11 +4396,11 @@ void check_purple_status(void)
 					}
 
 					/* Tests on dialup hosts go clear, not purple */
-					if ((newcolor == COL_PURPLE) && hinfo && bbh_item(hinfo, BBH_FLAG_DIALUP)) {
+					if ((newcolor == COL_PURPLE) && hinfo && xmh_item(hinfo, XMH_FLAG_DIALUP)) {
 						newcolor = COL_CLEAR;
 					}
 
-					handle_status(lwalk->message, "hobbitd", 
+					handle_status(lwalk->message, "xymond", 
 						hwalk->hostname, lwalk->test->name, lwalk->grouplist, lwalk, newcolor, NULL, 0);
 					lwalk = lwalk->next;
 				}
@@ -4553,97 +4439,20 @@ void sig_handler(int signum)
 	}
 }
 
-int commandiscomplete(conn_t *cn)
-{
-	 /* One-line commands */
-	char *oneliners[] = {
-		"ping",
-		"query",
-		"hobbitdlog",
-		"hobbitdxlog",
-		"hobbitdboard",
-		"hobbitdxboard",
-		"hostinfo",
-		"clientlog",
-		"ghostlist",
-		"multisrclist"
-	};
-	int i;
-
-	/*
-	 * It is actually a bit tricky to decide when a client 
-	 * has sent us the full command.
-	 *
-	 * Non-SSL connections from the "bb" utility (or any 
-	 * Hobbbit tool) must be compatible with the old
-	 * BB protocol, which simply shuts down the connection
-	 * when all data has been sent. In that case the read()
-	 * operation will indicate that the command is complete,
-	 * and we never go here.
-	 *
-	 * Non-SSL connections from e.g. "telnet" do not close
-	 * the connection. There is no way we can figure out 
-	 * when the command is complete, except for those that
-	 * by design are only on one line - those are complete
-	 * when we have a newline in the receive buffer. So 
-	 * this type of connection will only work with the one-
-	 * liner commands.
-	 *
-	 * SSL connections do not support the shutdown() transport
-	 * layer method of indicating when no more data is being
-	 * sent by the client which we use for non-SSL connections.
-	 * So we need some other way of detecting this, and do so
-	 * by having the message length (in bytes) appear in the 
-	 * "starttls" command - as "starttls 00014\n". This number
-	 * is parsed when the "starttls" command is seen and stored
-	 * in the "expectbytes" field, so if this is non-zero, we
-	 * can easily tell if all of the data has been received.
-	 */
-
-	/* If we know how much to expect, use it */
-	if (cn->expectbytes) return (cn->buflen >= cn->expectbytes);
-
-	/* If we already did the check, skip doing it again (it must be a 
-	 * multi-line command from a non-SSL connection). So this command
-	 * is terminated by the client shutting down the connection, 
-	 * which is detected elsewhere.
-	 */
-	if (cn->onelinercheckdone) return 0;
-
-	/* 
-	 * This check is done when we have a newline in the buffer.
-	 * We check the "oneliners" array for a match just below, and
-	 * if there is one then the command is done (so onelinercheckdone
-	 * becomes irrelevant). If there is no match but we have a NL
-	 * now, then there is no way it can be a one-line command so
-	 * set onelinercheckdone TRUE to skip doing the tests again.
-	 */
-	cn->onelinercheckdone = (strchr(cn->buf, '\n') != NULL);
-	if (!cn->onelinercheckdone) return 0;	/* Oneliners MUST finish with a newline, or they are incomplete */
-
-	/* See if the command is one of our one-line commands */
-	for (i=0; (i < (sizeof(oneliners) / sizeof(oneliners[0]))); i++) {
-		if (cn->buflen < strlen(oneliners[i])) continue;
-		if (strncmp(cn->buf, oneliners[i], strlen(oneliners[i])) == 0) return 1;
-	}
-
-	return 0;
-}
 
 int main(int argc, char *argv[])
 {
 	conn_t *connhead = NULL, *conntail=NULL;
 	char *listenip = "0.0.0.0";
 	int listenport = 0;
-	char *bbhostsfn = NULL;
+	char *hostsfn = NULL;
 	char *restartfn = NULL;
 	char *logfn = NULL;
 	int checkpointinterval = 900;
 	int do_purples = 1;
 	time_t nextpurpleupdate;
 	struct sockaddr_in laddr;
-	struct sockaddr_un localaddr;
-	int lsocket, localsocket, opt;
+	int lsocket, opt;
 	int listenq = 512;
 	int argi;
 	struct timeval tv;
@@ -4653,12 +4462,10 @@ int main(int argc, char *argv[])
 	struct sigaction sa;
 	time_t conn_timeout = 30;
 	char *envarea = NULL;
-	char *sslcertfn = NULL;
-	char *sslkeyfn = NULL;
 
 	MEMDEFINE(colnames);
 
-	boottime = getcurrenttime(NULL);
+	boottimer = gettimer();
 
 	/* Create our trees */
 	rbhosts = rbtNew(name_compare);
@@ -4708,9 +4515,9 @@ int main(int argc, char *argv[])
 			else
 				conn_timeout = newconn_timeout;
 		}
-		else if (argnmatch(argv[argi], "--bbhosts=")) {
+		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
-			bbhostsfn = strdup(p);
+			hostsfn = strdup(p);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -4727,9 +4534,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--ghosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
-			if (strcmp(p, "allow") == 0) ghosthandling = 0;
-			else if (strcmp(p, "drop") == 0) ghosthandling = 1;
-			else if (strcmp(p, "log") == 0) ghosthandling = 2;
+			if (strcmp(p, "allow") == 0) ghosthandling = GH_ALLOW;
+			else if (strcmp(p, "drop") == 0) ghosthandling = GH_IGNORE;
+			else if (strcmp(p, "log") == 0) ghosthandling = GH_LOG;
+			else if (strcmp(p, "match") == 0) ghosthandling = GH_MATCH;
 		}
 		else if (argnmatch(argv[argi], "--no-purple")) {
 			do_purples = 0;
@@ -4768,14 +4576,22 @@ int main(int argc, char *argv[])
 			adminsenders = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--www-senders=")) {
-			/* Who is allowed to send us "hobbitdboard", "hobbitdlog"  messages */
+			/* Who is allowed to send us "xymondboard", "xymondlog"  messages */
 			char *p = strchr(argv[argi], '=');
 			wwwsenders = getsenderlist(p+1);
 		}
 		else if (argnmatch(argv[argi], "--dbghost=")) {
 			char *p = strchr(argv[argi], '=');
-
 			dbghost = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--flap-seconds=")) {
+			char *p = strchr(argv[argi], '=');
+			flapthreshold = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--flap-count=")) {
+			char *p = strchr(argv[argi], '=');
+			flapcount = atoi(p+1);
+			if (flapcount < 0) flapcount = 0;
 		}
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
@@ -4851,7 +4667,7 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--help")) {
 			printf("Options:\n");
 			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
-			printf("\t--bbhosts=FILENAME            : The bb-hosts file\n");
+			printf("\t--hosts=FILENAME              : The hosts.cfg file\n");
 			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
 			return 1;
 		}
@@ -4860,40 +4676,30 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (xgetenv("BBHOSTS") && (bbhostsfn == NULL)) {
-		bbhostsfn = strdup(xgetenv("BBHOSTS"));
+	if (xgetenv("HOSTSCFG") && (hostsfn == NULL)) {
+		hostsfn = strdup(xgetenv("HOSTSCFG"));
 	}
 
 	if (listenport == 0) {
-		if (xgetenv("BBPORT"))
-			listenport = atoi(xgetenv("BBPORT"));
+		if (xgetenv("XYMONDPORT"))
+			listenport = atoi(xgetenv("XYMONDPORT"));
 		else
 			listenport = 1984;
 	}
 
-	if (ghosthandling == -1) {
-		if (xgetenv("BBGHOSTS")) ghosthandling = atoi(xgetenv("BBGHOSTS"));
-		else ghosthandling = 0;
-	}
-
-	if (ghosthandling && (bbhostsfn == NULL)) {
-		errprintf("No bb-hosts file specified, required when using ghosthandling\n");
+	if ((ghosthandling != GH_ALLOW) && (hostsfn == NULL)) {
+		errprintf("No hosts.cfg file specified, required when using ghosthandling\n");
 		exit(1);
 	}
 
 	errprintf("Loading hostnames\n");
-	load_hostnames(bbhostsfn, NULL, get_fqdn());
+	load_hostnames(hostsfn, NULL, get_fqdn());
 	load_clientconfig();
 
 	if (restartfn) {
 		errprintf("Loading saved state\n");
 		load_checkpoint(restartfn);
 	}
-
-	sslcertfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/hobbitserver.cert") + 1);
-	sprintf(sslcertfn, "%s/etc/hobbitserver.cert", xgetenv("BBHOME"));
-	sslkeyfn = (char *)malloc(strlen(xgetenv("BBHOME")) + strlen("/etc/hobbitserver.key") + 1);
-	sprintf(sslkeyfn, "%s/etc/hobbitserver.key", xgetenv("BBHOME"));
 
 	nextcheckpoint = getcurrenttime(NULL) + checkpointinterval;
 	nextpurpleupdate = getcurrenttime(NULL) + 600;	/* Wait 10 minutes the first time */
@@ -4923,38 +4729,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	/* Set up a Unix domain socket for local communications with modules */
-	errprintf("Setting up local listener\n");
-	memset(&localaddr, 0, sizeof(localaddr));
-	sprintf(localaddr.sun_path, "%s/hobbitd_if", xgetenv("BBTMP"));
-	unlink(localaddr.sun_path);	/* In case it was accidentally left behind */
-	localaddr.sun_family = AF_UNIX;
-	localsocket = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (localsocket == -1) {
-		errprintf("Cannot create local listener socket (%s)\n", strerror(errno));
-		return 1;
-	}
-	fcntl(localsocket, F_SETFL, O_NONBLOCK);
-	if (bind(localsocket, (struct sockaddr *)&localaddr, sizeof(localaddr)) == -1) {
-		errprintf("Cannot bind to local listen socket (%s)\n", strerror(errno));
-		return 1;
-	}
-	if (listen(localsocket, listenq) == -1) {
-		errprintf("Cannot listen locally (%s)\n", strerror(errno));
-		return 1;
-	}
-	/* Linux obeys filesystem permissions on the socket file, so make it world-accessible */
-	if (chmod(localaddr.sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) == -1) {
-		errprintf("Setting permissions on local socket failed: %s\n", strerror(errno));
-	}
-
-	/* Initialize SSL, if used */
-	if (sslinitialize(sslcertfn, sslkeyfn) != 0) {
-		/* SSL setup failed */
-		errprintf("SSL setup failed, continuing with SSL support disabled\n");
-		sslpossible = 0;
-	}
-
 	/* Go daemon */
 	if (daemonize) {
 		pid_t childpid;
@@ -4979,7 +4753,7 @@ int main(int argc, char *argv[])
 		/* Setup a default pid-file */
 		char fn[PATH_MAX];
 
-		sprintf(fn, "%s/hobbitd.pid", xgetenv("BBSERVERLOGS"));
+		sprintf(fn, "%s/xymond.pid", xgetenv("XYMONSERVERLOGS"));
 		pidfile = strdup(fn);
 	}
 
@@ -4998,7 +4772,7 @@ int main(int argc, char *argv[])
 	}
 
 	errprintf("Setting up signal handlers\n");
-	setup_signalhandler("hobbitd");
+	setup_signalhandler("xymond");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
@@ -5008,7 +4782,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGALRM, &sa, NULL);
 
-	errprintf("Setting up hobbitd channels\n");
+	errprintf("Setting up xymond channels\n");
 	statuschn = setup_channel(C_STATUS, CHAN_MASTER);
 	if (statuschn == NULL) { errprintf("Cannot setup status channel\n"); return 1; }
 	stachgchn = setup_channel(C_STACHG, CHAN_MASTER);
@@ -5047,7 +4821,7 @@ int main(int argc, char *argv[])
 	if (dbghost) {
 		char fname[PATH_MAX];
 
-		sprintf(fname, "%s/hobbitd.dbg", xgetenv("BBTMP"));
+		sprintf(fname, "%s/xymond.dbg", xgetenv("XYMONTMP"));
 		dbgfd = fopen(fname, "a");
 		if (dbgfd == NULL) errprintf("Cannot open debug file %s: %s\n", fname, strerror(errno));
 	}
@@ -5061,7 +4835,7 @@ int main(int argc, char *argv[])
 		 * - send out our heartbeat signal;
 		 * - pick up children to avoid zombies;
 		 * - rotate logs, if we have been asked to;
-		 * - re-load the bb-hosts configuration if needed;
+		 * - re-load the hosts.cfg configuration if needed;
 		 * - check for stale status-logs that must go purple;
 		 * - inject our own statistics message.
 		 * - save the checkpoint file;
@@ -5074,7 +4848,6 @@ int main(int argc, char *argv[])
 		conn_t *cwalk;
 		time_t now = getcurrenttime(NULL);
 		int childstat;
-		int newnetconn, newlocalconn;
 
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
@@ -5084,25 +4857,25 @@ int main(int argc, char *argv[])
 			freopen(logfn, "a", stderr);
 			if (ackinfologfd) freopen(ackinfologfn, "a", ackinfologfd);
 			dologswitch = 0;
-			posttochannel(statuschn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
-			posttochannel(stachgchn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
-			posttochannel(pagechn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
-			posttochannel(datachn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
-			posttochannel(noteschn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
-			posttochannel(enadischn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
-			posttochannel(clientchn, "logrotate", NULL, "hobbitd", NULL, NULL, "");
+			posttochannel(statuschn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(stachgchn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(pagechn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(datachn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(noteschn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(enadischn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(clientchn, "logrotate", NULL, "xymond", NULL, NULL, "");
 		}
 
-		if (reloadconfig && bbhostsfn) {
+		if (reloadconfig && hostsfn) {
 			RbtIterator hosthandle;
 
 			reloadconfig = 0;
-			load_hostnames(bbhostsfn, NULL, get_fqdn());
+			load_hostnames(hostsfn, NULL, get_fqdn());
 
 			/* Scan our list of hosts and weed out those we do not know about any more */
 			hosthandle = rbtBegin(rbhosts);
 			while (hosthandle != rbtEnd(rbhosts)) {
-				hobbitd_hostlist_t *hwalk;
+				xymond_hostlist_t *hwalk;
 
 				hwalk = gettreeitem(rbhosts, hosthandle);
 
@@ -5112,7 +4885,7 @@ int main(int argc, char *argv[])
 				}
 				else if (hostinfo(hwalk->hostname) == NULL) {
 					/* Remove all state info about this host. This will NOT remove files. */
-					handle_dropnrename(CMD_DROPSTATE, "hobbitd", hwalk->hostname, NULL, NULL);
+					handle_dropnrename(CMD_DROPSTATE, "xymond", hwalk->hostname, NULL, NULL);
 
 					/* Must restart tree-walk after deleting node from the tree */
 					hosthandle = rbtBegin(rbhosts);
@@ -5132,19 +4905,19 @@ int main(int argc, char *argv[])
 
 		if ((last_stats_time + 300) <= now) {
 			char *buf;
-			hobbitd_hostlist_t *h;
+			xymond_hostlist_t *h;
 			testinfo_t *t;
-			hobbitd_log_t *log;
+			xymond_log_t *log;
 			int color;
 
 			buf = generate_stats();
-			get_hts(buf, "hobbitd", "", &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
+			get_hts(buf, "xymond", "", &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 			if (!h || !t || !log) {
-				errprintf("hobbitd servername MACHINE='%s' not listed in bb-hosts, dropping hobbitd status\n",
+				errprintf("xymond servername MACHINE='%s' not listed in hosts.cfg, dropping xymond status\n",
 					  xgetenv("MACHINE"));
 			}
 			else {
-				handle_status(buf, "hobbitd", h->hostname, t->name, NULL, log, color, NULL, 0);
+				handle_status(buf, "xymond", h->hostname, t->name, NULL, log, color, NULL, 0);
 			}
 			last_stats_time = now;
 			flush_errbuf();
@@ -5171,28 +4944,17 @@ int main(int argc, char *argv[])
 		 * and setup the select() FD sets.
 		 */
 		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
-		FD_SET(lsocket, &fdread);
-		FD_SET(localsocket, &fdread); maxfd = ((lsocket > localsocket) ? lsocket : localsocket);
+		FD_SET(lsocket, &fdread); maxfd = lsocket;
 
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
-				case SSLREAD_HANDSHAKE:
-				case SSLREAD_RECEIVING:
-				case SSLREAD_RESPONDING:
 				case RECEIVING:
 					FD_SET(cwalk->sock, &fdread);
 					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
 					break;
-
-				case SSLWRITE_HANDSHAKE:
-				case SSLWRITE_RECEIVING:
-				case SSLWRITE_RESPONDING:
 				case RESPONDING:
 					FD_SET(cwalk->sock, &fdwrite);
 					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
-					break;
-
-				default:
 					break;
 			}
 		}
@@ -5221,87 +4983,64 @@ int main(int argc, char *argv[])
 		 */
 		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
 			switch (cwalk->doingwhat) {
-			  case SSLREAD_HANDSHAKE:
-			  case SSLWRITE_HANDSHAKE:
-				if ( ((cwalk->doingwhat == SSLREAD_HANDSHAKE) && FD_ISSET(cwalk->sock, &fdread)) ||
-				     ((cwalk->doingwhat == SSLWRITE_HANDSHAKE) && FD_ISSET(cwalk->sock, &fdwrite)) ) {
-					sslhandshake(cwalk);
-				}
-				break;
-
-			  case SSLREAD_RECEIVING:
-				if (FD_ISSET(cwalk->sock, &fdread)) goto statereceiving;
-				break;
-			  case SSLWRITE_RECEIVING:
-				if (FD_ISSET(cwalk->sock, &fdwrite)) goto statereceiving;
-				break;
 			  case RECEIVING:
-				if (!FD_ISSET(cwalk->sock, &fdread)) break;
-statereceiving:
-				n = socketread(cwalk);
-				if ((n == -1) && ((errno == EAGAIN) || (cwalk->doingwhat == SSLREAD_HANDSHAKE))) break; /* Do nothing */
+				if (FD_ISSET(cwalk->sock, &fdread)) {
+					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
 
-				if (n <= 0) {
-					/* End of input data on this connection */
-					*(cwalk->bufp) = '\0';
+					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
+					if (n <= 0) {
+						/* End of input data on this connection */
+						*(cwalk->bufp) = '\0';
 
-					/* FIXME - need to set origin here */
-					do_message(cwalk, "");
-				}
-				else {
-					/* Add data to the input buffer - within reason ... */
-					cwalk->bufp += n;
-					cwalk->buflen += n;
-					*(cwalk->bufp) = '\0';
-					if (commandiscomplete(cwalk)) {
+						/* FIXME - need to set origin here */
 						do_message(cwalk, "");
 					}
-					else if ((cwalk->bufsz - cwalk->buflen) < 2048) {
-						if (cwalk->bufsz < MAX_HOBBIT_INBUFSZ) {
-							cwalk->bufsz += HOBBIT_INBUF_INCREMENT;
-							cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
-							cwalk->bufp = cwalk->buf + cwalk->buflen;
-						}
-						else {
-							/* Someone is flooding us */
-							errprintf("Data flooding from %s, closing connection\n",
-								  inet_ntoa(cwalk->addr.sin_addr));
-							socketclose(cwalk);
-							cwalk->doingwhat = NOTALK;
+					else {
+						/* Add data to the input buffer - within reason ... */
+						cwalk->bufp += n;
+						cwalk->buflen += n;
+						*(cwalk->bufp) = '\0';
+						if ((cwalk->bufsz - cwalk->buflen) < 2048) {
+							if (cwalk->bufsz < MAX_XYMON_INBUFSZ) {
+								cwalk->bufsz += XYMON_INBUF_INCREMENT;
+								cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
+								cwalk->bufp = cwalk->buf + cwalk->buflen;
+							}
+							else {
+								/* Someone is flooding us */
+								errprintf("Data flooding from %s, closing connection\n",
+									  inet_ntoa(cwalk->addr.sin_addr));
+								shutdown(cwalk->sock, SHUT_RDWR);
+								close(cwalk->sock); 
+								cwalk->sock = -1; 
+								cwalk->doingwhat = NOTALK;
+							}
 						}
 					}
 				}
-
 				break;
 
-			  case SSLREAD_RESPONDING:
-				if (FD_ISSET(cwalk->sock, &fdread)) goto stateresponding;
-				break;
-			  case SSLWRITE_RESPONDING:
-				if (FD_ISSET(cwalk->sock, &fdwrite)) goto stateresponding;
-				break;
 			  case RESPONDING:
-				if (!FD_ISSET(cwalk->sock, &fdwrite)) break;
-stateresponding:
-				n = socketwrite(cwalk);
+				if (FD_ISSET(cwalk->sock, &fdwrite)) {
+					n = write(cwalk->sock, cwalk->bufp, cwalk->buflen);
 
-				if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
+					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
 
-				if (n < 0) {
-					cwalk->buflen = 0;
+					if (n < 0) {
+						cwalk->buflen = 0;
+					}
+					else {
+						cwalk->bufp += n;
+						cwalk->buflen -= n;
+					}
+
+					if (cwalk->buflen == 0) {
+						shutdown(cwalk->sock, SHUT_WR);
+						close(cwalk->sock); 
+						cwalk->sock = -1; 
+						cwalk->doingwhat = NOTALK;
+					}
 				}
-				else {
-					cwalk->bufp += n;
-					cwalk->buflen -= n;
-				}
-
-				if (cwalk->buflen == 0) {
-					socketclose(cwalk);
-					cwalk->doingwhat = NOTALK;
-				}
-				break;
-
-			  default:
 				break;
 			}
 		}
@@ -5324,6 +5063,8 @@ stateresponding:
 					swalk = swalk->next;
 
 					memset(&task, 0, sizeof(task));
+					task.sock = -1;
+					task.doingwhat = NOTALK;
 					inet_aton(runtask->sender, (struct in_addr *) &task.addr.sin_addr.s_addr);
 					task.buf = task.bufp = runtask->command;
 					task.buflen = strlen(runtask->command); task.bufsz = task.buflen+1;
@@ -5344,6 +5085,7 @@ stateresponding:
 		{
 			conn_t *tmp, *khead;
 
+			dbgprintf("Beginning conn_t cleanup\n");
 			now = getcurrenttime(NULL);
 			khead = NULL; cwalk = connhead;
 			while (cwalk) {
@@ -5352,7 +5094,9 @@ stateresponding:
 					update_statistics("");
 					cwalk->doingwhat = NOTALK;
 					if (cwalk->sock >= 0) {
-						socketclose(cwalk);
+						shutdown(cwalk->sock, SHUT_RDWR);
+						close(cwalk->sock);
+						cwalk->sock = -1;
 					}
 				}
 
@@ -5398,45 +5142,36 @@ stateresponding:
 				if (tmp->buf) xfree(tmp->buf);
 				xfree(tmp);
 			}
+
+			dbgprintf("conn_t cleanup complete\n");
 		}
 
 		/* Pick up new connections */
-		newnetconn = FD_ISSET(lsocket, &fdread);
-		newlocalconn = FD_ISSET(localsocket, &fdread);
-		if (newnetconn || newlocalconn) {
-			struct sockaddr_un unixaddr;
-			struct sockaddr_in netaddr;
-			int addrsz;
-			int sock = -1;
+		if (FD_ISSET(lsocket, &fdread)) {
+			struct sockaddr_in addr;
+			int addrsz = sizeof(addr);
+			int sock;
 
-			if (newlocalconn) {
-				addrsz = sizeof(unixaddr);
-				sock = accept(localsocket, (struct sockaddr *)&unixaddr, &addrsz);
-				/* Fake the loopback IP for unix domain connections */
-				netaddr.sin_family = AF_INET;
-				inet_aton("127.0.0.1", (struct in_addr *)&netaddr.sin_addr.s_addr);
-			}
-			else if (newnetconn) {
-				addrsz = sizeof(netaddr);
-				sock = accept(lsocket, (struct sockaddr *)&netaddr, &addrsz);
-			}
+			dbgprintf("Picking up new connections\n");
+
+			sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
 
 			if (sock >= 0) {
 				/* Make sure our sockets are non-blocking */
 				fcntl(sock, F_SETFL, O_NONBLOCK);
 
 				if (connhead == NULL) {
-					connhead = conntail = (conn_t *)calloc(1, sizeof(conn_t));
+					connhead = conntail = (conn_t *)malloc(sizeof(conn_t));
 				}
 				else {
-					conntail->next = (conn_t *)calloc(1, sizeof(conn_t));
+					conntail->next = (conn_t *)malloc(sizeof(conn_t));
 					conntail = conntail->next;
 				}
 
 				conntail->sock = sock;
-				memcpy(&conntail->addr, &netaddr, sizeof(conntail->addr));
+				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
 				conntail->doingwhat = RECEIVING;
-				conntail->bufsz = HOBBIT_INBUF_INITIAL;
+				conntail->bufsz = XYMON_INBUF_INITIAL;
 				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
 				conntail->bufp = conntail->buf;
 				conntail->buflen = 0;
@@ -5448,15 +5183,15 @@ stateresponding:
 
 	/* Tell the workers we to shutdown also */
 	running = 1;   /* Kludge, but it's the only way to get posttochannel to do something. */
-	posttochannel(statuschn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(stachgchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(pagechn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(datachn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(noteschn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(enadischn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(clientchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(clichgchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
-	posttochannel(userchn, "shutdown", NULL, "hobbitd", NULL, NULL, "");
+	posttochannel(statuschn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(stachgchn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(pagechn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(datachn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(noteschn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(enadischn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(clientchn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(clichgchn, "shutdown", NULL, "xymond", NULL, NULL, "");
+	posttochannel(userchn, "shutdown", NULL, "xymond", NULL, NULL, "");
 	running = 0;
 
 	/* Close the channels */
@@ -5471,8 +5206,6 @@ stateresponding:
 	close_channel(userchn, CHAN_MASTER);
 
 	save_checkpoint();
-	close(lsocket);
-	close(localsocket); unlink(localaddr.sun_path);
 	unlink(pidfile);
 
 	if (dbgfd) fclose(dbgfd);

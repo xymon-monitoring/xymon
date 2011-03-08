@@ -3,7 +3,7 @@
 /*
  This code was taken from the "Cacti" project by Henrik Storner, and
  modified slightly for use with the "Xymon" monitor project
- (see hobbitmon.sourceforge.net)
+ (see xymon.sourceforge.net)
 
  The original copyright notice follows.
 
@@ -35,7 +35,7 @@
 
 // Global constant
 
-var cURLBase = "hobbitgraph.sh?action=selzoom&graph=custom";
+var cURLBase = "showgraph.sh?action=selzoom&graph=custom";
 
 // Global variables
 
@@ -300,10 +300,10 @@ else {
 
 
  divObject = document.getElementById(cZoomBoxName);
- divObject.style.left = this.zoomBoxLeft;
- divObject.style.top = this.zoomBoxTop;
- divObject.style.width = this.zoomBoxWidth;
- divObject.style.height = this.zoomBoxHeight;
+ divObject.style.left = this.zoomBoxLeft + "px";
+ divObject.style.top = this.zoomBoxTop + "px";
+ divObject.style.width = this.zoomBoxWidth + "px";
+ divObject.style.height = this.zoomBoxHeight + "px";
 
 
  this.zoomSensitiveZoneLeft = this.zoomBoxLeft - cZoomSensitiveZoneOffset;
@@ -314,10 +314,10 @@ else {
  this.zoomSensitiveZoneHeight = this.zoomSensitiveZoneBottom - this.zoomSensitiveZoneTop;
 
  divObject = document.getElementById(cZoomSensitiveZoneName);
- divObject.style.left = this.zoomSensitiveZoneLeft;
- divObject.style.top = this.zoomSensitiveZoneTop;
- divObject.style.width = this.zoomSensitiveZoneWidth;
- divObject.style.height = this.zoomSensitiveZoneHeight;
+ divObject.style.left = this.zoomSensitiveZoneLeft + "px";
+ divObject.style.top = this.zoomSensitiveZoneTop + "px";
+ divObject.style.width = this.zoomSensitiveZoneWidth + "px";
+ divObject.style.height = this.zoomSensitiveZoneHeight + "px";
 }
 
 /*++++++++++++++++++++++  zoomGraphObjDrawSelection  ++++++++++++++++++++++++*/
@@ -587,8 +587,8 @@ function onMouseUpEvent(e) {
 
  graphStart = parseInt(gUrlObj.getUrlParameterValue("graph_start"));
  graphEnd = parseInt(gUrlObj.getUrlParameterValue("graph_end"));
- graphTop = parseInt(gUrlObj.getUrlParameterValue("upper"));
- graphBottom = parseInt(gUrlObj.getUrlParameterValue("lower"));
+ graphTop = parseFloat(gUrlObj.getUrlParameterValue("upper"));
+ graphBottom = parseFloat(gUrlObj.getUrlParameterValue("lower"));
  haveGraphLimits = (gUrlObj.getUrlParameterValue("upper") != undefined) && (gUrlObj.getUrlParameterValue("lower") != undefined);
 
  idxStr = "";

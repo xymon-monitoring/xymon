@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module, part of libbbgen.                                */
+/* This is a library module, part of libxymon.                                */
 /* It contains routines for color <-> string conversion                       */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -16,7 +16,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int use_recentgifs = 0;
 
@@ -77,6 +77,10 @@ int parse_color(char *colortext)
 	else if (strncasecmp(inpcolor, "purple ", 7) == 0) {
 		MEMUNDEFINE(inpcolor);
 		return COL_PURPLE;
+	}
+	else if (strncasecmp(inpcolor, "client ", 7) == 0) {
+		MEMUNDEFINE(inpcolor);
+		return COL_CLIENT;
 	}
 
 	MEMUNDEFINE(inpcolor);

@@ -1,14 +1,13 @@
-# Makefile for bbgen - bbdisplay programs
+# Makefile for xymongen
 #
 
-PROGRAMS = bbgen
-GENOBJS = bbgen.o loadbbhosts.o loaddata.o bbconvert.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
-LIBOBJS = ../lib/$(HOBBITLIBRARY)
+PROGRAMS = xymongen
+GENOBJS = xymongen.o loadlayout.o loaddata.o pagegen.o process.o wmlgen.o rssgen.o util.o debug.o csvreport.o
 
 all: $(PROGRAMS)
 
-bbgen: $(GENOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) $(LIBOBJS) $(PCRELIBS) $(HOBBITZLIB) $(SSLLIBS) $(NETLIBS)
+xymongen: $(GENOBJS) ../lib/libxymon.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(GENOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 
 ################################################
@@ -21,13 +20,10 @@ clean:
 	rm -f *.o *.a *~ $(PROGRAMS)
 
 
-install: install-bin install-man install-obsoleted
+install: install-bin install-man
 
 install-bin: $(PROGRAMS)
 	cp -fp $(PROGRAMS) $(INSTALLROOT)$(INSTALLBINDIR)/
-
-install-obsoleted:
-	for f in bb-infocolumn bb-larrdcolumn bb-hostsvc.cgi; do if test -f $(INSTALLROOT)$(INSTALLBINDIR)/$f; then rm -f $(INSTALLROOT)$(INSTALLBINDIR)/$f; fi; done
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5

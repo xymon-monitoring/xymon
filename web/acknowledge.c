@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit alert acknowledgment CGI tool.                                      */
+/* Xymon alert acknowledgment CGI tool.                                       */
 /*                                                                            */
 /* This is a CGI script for handling acknowledgments of alerts.               */
 /* If called with no CGI query, it will present the acknowledgment form;      */
 /* if called with a proper CGI query string it will send an ack-message to    */
-/* the Hobbit daemon.                                                         */
+/* the Xymon daemon.                                                          */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 static cgidata_t *cgidata = NULL;
@@ -159,8 +159,8 @@ void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 
 	fprintf(output, "<tr>\n");
 
-	fprintf(output, "    <td>%s</td>\n", (hname ? hname : "&nbsp;"));
-	fprintf(output, "    <td>%s</td>\n", (tname ? tname : "&nbsp;"));
+	fprintf(output, "    <td align=left>%s</td>\n", (hname ? hname : "&nbsp;"));
+	fprintf(output, "    <td align=left>%s</td>\n", (tname ? tname : "&nbsp;"));
 	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=8 MAXLENGTH=20></TD>\n", numstr);
 	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%s\" SIZE=60 MAXLENGTH=80></TD>\n", numstr);
 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-ack");
+	redirect_cgilog("ack");
 
 	cgidata = cgi_request();
 	if ( (nopin && (cgi_method == CGI_GET)) || (!nopin && (cgidata == NULL)) ) {
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
 
 			cmd = (char *)malloc(1024);
-			strcpy(cmd, "hobbitdboard color=red,yellow fields=hostname,testname,cookie");
+			strcpy(cmd, "xymondboard color=red,yellow fields=hostname,testname,cookie");
 
 			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 
 			sres = newsendreturnbuf(1, NULL);
 
-			if (sendmessage(cmd, NULL, BBTALK_TIMEOUT, sres) == BB_OK) {
+			if (sendmessage(cmd, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
 				char *bol, *eoln;
 				int first = 1;
 
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	else if ( (nopin && (cgi_method == CGI_POST)) || (!nopin && (cgidata != NULL)) ) {
-		char *bbmsg;
+		char *xymonmsg;
 		char *acking_user = "";
 		acklist_t *awalk;
 		char msgline[4096];
@@ -340,9 +340,9 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			bbmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
-			sprintf(bbmsg, "hobbitdack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
-			if (sendmessage(bbmsg, NULL, BBTALK_TIMEOUT, NULL) == BB_OK) {
+			xymonmsg = (char *)malloc(1024 + strlen(awalk->ackmsg) + strlen(acking_user));
+			sprintf(xymonmsg, "xymondack %d %d %s %s", awalk->acknum, awalk->validity, awalk->ackmsg, acking_user);
+			if (sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL) == XYMONSEND_OK) {
 				if (awalk->hostname && awalk->testname) {
 					sprintf(msgline, "Acknowledge sent for host %s / test %s<br>\n", 
 						awalk->hostname, awalk->testname);
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 			}
 
 			addtobuffer(response, msgline);
-			xfree(bbmsg);
+			xfree(xymonmsg);
 		}
 
 		if (count == 0) addtobuffer(response, "<b>No acks requested</b>\n");

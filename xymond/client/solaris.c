@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
 /* Client backend module for Solaris                                          */
 /*                                                                            */
-/* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -26,6 +26,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *prtconfstr;
 	char *memorystr;
 	char *swapstr;
+	char *swapliststr;
 	char *dfstr;
 	char *msgsstr;
 	char *netstatstr;
@@ -51,6 +52,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	prtconfstr = getdata("prtconf");
 	memorystr = getdata("memory");
 	swapstr = getdata("swap");
+	swapliststr = getdata("swaplist");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");
@@ -72,7 +74,7 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
 	unix_vmstat_report(hostname, clienttype, os, hinfo, fromline, timestr, vmstatstr);
 
-	if (prtconfstr && memorystr && swapstr) {
+	if (prtconfstr && memorystr && (swapstr || swapliststr)) {
 		long memphystotal, memphysfree, memswapused, memswapfree;
 		char *p;
 
@@ -80,11 +82,56 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 		p = strstr(prtconfstr, "\nMemory size:");
 		if (p && (sscanf(p, "\nMemory size: %ld Megabytes", &memphystotal) == 1)) ;
 		if (sscanf(memorystr, "%*d %*d %*d %*d %ld", &memphysfree) == 1) memphysfree /= 1024;
-		p = strchr(swapstr, '=');
-		if (p && sscanf(p, "= %ldk used, %ldk available", &memswapused, &memswapfree) == 2) {
-			memswapused /= 1024;
-			memswapfree /= 1024;
+
+		if (!swapliststr) {
+			/*
+			 * No "swap -l" output, so use what "swap -s" reports. 
+			 * Xymon clients prior to 2010-Dec-14 (roughly 4.3.0 release) does not report "swap -l".
+			 */
+			p = strchr(swapstr, '=');
+			if (p && sscanf(p, "= %ldk used, %ldk available", &memswapused, &memswapfree) == 2) {
+				memswapused /= 1024;
+				memswapfree /= 1024;
+			}
 		}
+		else {
+			/* We prefer using "swap -l" output since it matches what other system tools report */
+			char *bol;
+			long blktotal, blkfree;
+
+			blktotal = blkfree = 0;
+
+			bol = swapliststr;
+			while (bol) {
+				char *nl, *tmpline;
+
+				nl = strchr(bol, '\n'); if (nl) *nl = '\0';
+				tmpline = strdup(bol);
+				/* According to the Solaris man-page for versions 8 thru 10, the "swap -l" output is always 5 columns */
+				/* Note: getcolumn() is zero-based (thanks, Dominique Frise) */
+				p = getcolumn(tmpline, 3);
+				if (p) blktotal += atol(p);
+				strcpy(tmpline, bol);
+				p = getcolumn(tmpline, 4);
+				if (p) blkfree += atol(p);
+				xfree(tmpline);
+
+				if (nl) {
+					*nl = '\n';
+					bol = nl+1;
+				}
+				else {
+					bol = NULL;
+				}
+			}
+
+			if ((blktotal > 0) && (blkfree > 0)) {
+				/* Values from swap -l are numbers of 512-byte blocks. Convert to MB = N*512/(1024*1024) = N/2048 */
+				memswapused = (blktotal - blkfree) / 2048;
+				memswapfree = blkfree / 2048;
+			}
+		}
+
 		if ((memphystotal>=0) && (memphysfree>=0) && (memswapused>=0) && (memswapfree>=0)) {
 			unix_memory_report(hostname, clienttype, os, hinfo, fromline, timestr,
 					   memphystotal, (memphystotal - memphysfree), -1,
@@ -103,9 +150,11 @@ void handle_solaris_client(char *hostname, char *clienttype, enum ostype_t os,
 			sprintf(msgline, "data %s.iostatdisk\n%s\n", commafy(hostname), osname(os));
 			addtobuffer(msg, msgline);
 			addtobuffer(msg, p);
-			sendmessage(STRBUF(msg), NULL, BBTALK_TIMEOUT, NULL);
+			sendmessage(STRBUF(msg), NULL, XYMON_TIMEOUT, NULL);
 		}
 		freestrbuffer(msg);
 	}
+
+	splitmsg_done();
 }
 

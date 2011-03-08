@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor                                                             */
+/* Xymon monitor                                                              */
 /*                                                                            */
 /* This is used to pull client data from the client "msgcache" daemon         */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -33,17 +33,16 @@ static char rcsid[] = "$Id$";
 #include <arpa/nameser.h>
 #include <netdb.h>
 #include <ctype.h>
-
-#include "libbbgen.h"
-
 #include <signal.h>
 
+#include "libxymon.h"
 
 volatile int running = 1;
 volatile time_t reloadtime = 0;
 volatile int dumpsessions = 0;
 char *serverip = "127.0.0.1";
 int pollinterval = 60; /* Seconds between polls, +/- 15 seconds */
+time_t whentoqueue = 0;
 int serverid = 1;
 int errorloginterval = 900;
 
@@ -79,6 +78,7 @@ typedef struct conn_t {
 conn_t *chead = NULL;			/* Head of current connection queue */
 conn_t *ctail = NULL;			/* Tail of current connection queue */
 unsigned long connseq = 0;		/* Sequence number, to identify requests in debugging */
+int needcleanup = 0;			/* Do we need to perform a cleanup? */
 
 void sigmisc_handler(int signum)
 {
@@ -98,14 +98,22 @@ void sigmisc_handler(int signum)
 	}
 }
 
-char *addrstring(struct sockaddr_in *addr)
+char *addrstring(struct sockaddr_in *addr, int includeport)
 {
+	int n;
 	static char res[100];
 
-	sprintf(res, "%s:%d", inet_ntoa(addr->sin_addr), ntohs(addr->sin_port));
+	n = sprintf(res, "%s", inet_ntoa(addr->sin_addr));
+	if (includeport) sprintf(res+n, ":%d", ntohs(addr->sin_port));
 	return res;
 }
 
+void flag_cleanup(conn_t *conn)
+{
+	/* Called whenever a connection request is complete */
+	conn->action = C_CLEANUP;
+	needcleanup = 1;
+}
 
 void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, clients_t *client)
 {
@@ -128,19 +136,19 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	newconn->ctype = ctype;
 	newconn->savedata = ((ctype == C_SERVER) && (strncmp(STRBUF(req), "client ", 7) == 0));
 	newconn->action = C_WRITING;
-	newconn->tstamp = getcurrenttime(NULL);
+	newconn->tstamp = gettimer();
 
 	/* Setup the address. */
 	newconn->caddr.sin_port = htons(portnum);
 	newconn->caddr.sin_family = AF_INET;
 	if (inet_aton(destip, (struct in_addr *)&newconn->caddr.sin_addr.s_addr) == 0) {
 		/* Bad IP. */
-		time_t now = getcurrenttime(NULL);
+		time_t now = gettimer();
 		if (debug || (newconn->client->nexterrortxt < now)) {
 			errprintf("Invalid client IP: %s (req %lu)\n", destip, newconn->seq);
 			newconn->client->nexterrortxt = now + errorloginterval;
 		}
-		xfree(newconn);
+		flag_cleanup(newconn);
 		goto done;
 	}
 
@@ -148,7 +156,7 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 	if (newconn->sockfd == -1) {
 		/* No more sockets available. Try again later. */
 		errprintf("Out of sockets (req %lu)\n", newconn->seq);
-		xfree(newconn);
+		flag_cleanup(newconn);
 		goto done;
 	}
 	fcntl(newconn->sockfd, F_SETFL, O_NONBLOCK);
@@ -158,22 +166,21 @@ void addrequest(conntype_t ctype, char *destip, int portnum, strbuffer_t *req, c
 
 		snprintf(dbgmsg, sizeof(dbgmsg), "%s\n", STRBUF(req));
 		dbgprintf("Queuing request %lu to %s for %s: '%s'\n", 
-			connseq, addrstring(&newconn->caddr), client->hostname, dbgmsg);
+			connseq, addrstring(&newconn->caddr, 1), client->hostname, dbgmsg);
 	}
 
 	/* All set ... start the connection */
 	n = connect(newconn->sockfd, (struct sockaddr *)&newconn->caddr, sizeof(newconn->caddr)); 
 	if ((n == -1) && (errno != EINPROGRESS)) {
 		/* Immediate connect failure - drop it */
-		time_t now = getcurrenttime(NULL);
+		time_t now = gettimer();
 		if (debug || (newconn->client->nexterrortxt < now)) {
 			errprintf("Could not connect to %s (req %lu): %s\n", 
-				  addrstring(&newconn->caddr), newconn->seq, strerror(errno));
+				  addrstring(&newconn->caddr, 1), newconn->seq, strerror(errno));
 			newconn->client->nexterrortxt = now + errorloginterval;
 		}
 
-		close(newconn->sockfd);
-		xfree(newconn);
+		flag_cleanup(newconn);
 		goto done;
 	}
 
@@ -200,19 +207,17 @@ void senddata(conn_t *conn)
 	n = write(conn->sockfd, startp, togo);
 
 	if (n == -1) {
-		if ((errno != EINTR) && (errno != EAGAIN)) {
-			/* Write failure. Also happens if connecting to peer fails */
-			time_t now = getcurrenttime(NULL);
-			if (debug || (conn->client->nexterrortxt < now)) {
-				errprintf("Connection lost during connect/write to %s (req %lu): %s\n", 
-					  addrstring(&conn->caddr), conn->seq, strerror(errno));
-				conn->client->nexterrortxt = now + errorloginterval;
-			}
-			conn->action = C_CLEANUP;
+		/* Write failure. Also happens if connecting to peer fails */
+		time_t now = gettimer();
+		if (debug || (conn->client->nexterrortxt < now)) {
+			errprintf("Connection lost during connect/write to %s (req %lu): %s\n", 
+				  addrstring(&conn->caddr, 1), conn->seq, strerror(errno));
+			conn->client->nexterrortxt = now + errorloginterval;
 		}
+		flag_cleanup(conn);
 	}
 	else if (n >= 0) {
-		dbgprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr), conn->seq);
+		dbgprintf("Sent %d bytes to %s (req %lu)\n", n, addrstring(&conn->caddr, 1), conn->seq);
 		conn->sentbytes += n;
 		if (conn->sentbytes == STRBUFLEN(conn->msgbuf)) {
 			/* Everything has been sent, so switch to READ mode */
@@ -227,19 +232,19 @@ void senddata(conn_t *conn)
 void process_clientdata(conn_t *conn)
 {
 	/* 
-	 * Handle data we received while talking to the Hobbit client.
+	 * Handle data we received while talking to the Xymon client.
 	 * This will be a list of messages we must send to the server.
 	 * Each of the messages are pushed to the server through
 	 * new C_SERVER requests.
 	 */
 
 	char *mptr, *databegin, *msgbegin;
-	int portnum = atoi(xgetenv("BBPORT"));
+	int portnum = atoi(xgetenv("XYMONDPORT"));
 
 	databegin = strchr(STRBUF(conn->msgbuf), '\n');
 	if (!databegin || (STRBUFLEN(conn->msgbuf) == 0)) {
 		/* No data - we're done */
-		conn->action = C_CLEANUP;
+		flag_cleanup(conn);
 		return;
 	}
 	*databegin = '\0'; /* End the first line, and point msgbegin at start of data */
@@ -261,7 +266,7 @@ void process_clientdata(conn_t *conn)
 			if ((msgbytes <= 0) || ((msgbegin + msgbytes) - STRBUF(conn->msgbuf)) > STRBUFLEN(conn->msgbuf)) {
 				/* Someone is playing games with us */
 				errprintf("Invalid message data from %s (req %lu): Current offset %d, msgbytes %d, msglen %d\n",
-					  addrstring(&conn->caddr), conn->seq,
+					  addrstring(&conn->caddr, 1), conn->seq,
 					  (msgbegin - STRBUF(conn->msgbuf)), msgbytes, STRBUFLEN(conn->msgbuf));
 				return;
 			}
@@ -278,15 +283,15 @@ void process_clientdata(conn_t *conn)
 				 */
 				char msgcachesection[100];
 
-				conn->client->suggestpoll = getcurrenttime(NULL) - (msgago % 300) + 300 + 10;
+				conn->client->suggestpoll = gettimer() - (msgago % 300) + 300 + 10;
 				dbgprintf("Client %s (req %lu) received a client message %d secs ago, poll again at %lu\n",
-					addrstring(&conn->caddr), conn->seq, msgago,
+					addrstring(&conn->caddr, 1), conn->seq, msgago,
 					conn->client->suggestpoll);
 
 				/* Add a section to the client message with cache delay info */
 				snprintf(msgcachesection, sizeof(msgcachesection),
 					 "[msgcache]\nCachedelay: %d\n[proxy]\nClientIP:%s", 
-					 msgago, addrstring(&conn->caddr));
+					 msgago, addrstring(&conn->caddr, 0));
 				addtobuffer(req, msgcachesection);
 			}
 			else if ( (strncmp(msgbegin, "status", 6) == 0) ||
@@ -295,7 +300,7 @@ void process_clientdata(conn_t *conn)
 
 				/* Add a line to the message showing where it came from */
 				sprintf(sourcemsg, "\nStatus message received from %s\n", 
-					addrstring(&conn->caddr));
+					addrstring(&conn->caddr, 0));
 				addtobuffer(req, sourcemsg);
 			}
 
@@ -308,7 +313,7 @@ void process_clientdata(conn_t *conn)
 		}
 		else {
 			errprintf("Garbled pullclient response from %s (req %lu), token %s\n",
-				  addrstring(&conn->caddr), conn->seq, mptr);
+				  addrstring(&conn->caddr, 1), conn->seq, mptr);
 			mptr = NULL;
 		}
 	}
@@ -317,7 +322,7 @@ void process_clientdata(conn_t *conn)
 void process_serverdata(conn_t *conn)
 {
 	/*
-	 * Handle data we received while talking to the Hobbit server.
+	 * Handle data we received while talking to the Xymon server.
 	 * We only handle the "client" message response.
 	 */
 
@@ -343,32 +348,30 @@ void grabdata(conn_t *conn)
 	char buf[8192];
 
 	/* Read data from a peer connection (client or server) */
-        n = read(conn->sockfd, buf, sizeof(buf));
+        n = read(conn->sockfd, buf, sizeof(buf)-1);
 	if (n == -1) {
-		if ((errno != EINTR) && (errno != EAGAIN)) {
-			/* Read failure */
-			time_t now = getcurrenttime(NULL);
-			if (debug || (conn->client->nexterrortxt < now)) {
-				errprintf("Connection lost during read from %s (req %lu): %s\n", 
-					  addrstring(&conn->caddr), conn->seq, strerror(errno));
-				conn->client->nexterrortxt = now + errorloginterval;
-			}
-			conn->action = C_CLEANUP;
+		/* Read failure */
+		time_t now = gettimer();
+		if (debug || (conn->client->nexterrortxt < now)) {
+			errprintf("Connection lost during read from %s (req %lu): %s\n", 
+				  addrstring(&conn->caddr, 1), conn->seq, strerror(errno));
+			conn->client->nexterrortxt = now + errorloginterval;
 		}
+		flag_cleanup(conn);
 	}
 	else if (n > 0) {
 		/* Save the data */
 		dbgprintf("Got %d bytes of data from %s (req %lu)\n", 
-			n, addrstring(&conn->caddr), conn->seq);
+			n, addrstring(&conn->caddr, 1), conn->seq);
 		buf[n] = '\0';
 		addtobuffer(conn->msgbuf, buf);
 	}
 	else if (n == 0) {
 		/* Done reading. Process the data. */
 		dbgprintf("Done reading data from %s (req %lu)\n", 
-			addrstring(&conn->caddr), conn->seq);
+			addrstring(&conn->caddr, 1), conn->seq);
 		shutdown(conn->sockfd, SHUT_RDWR);
-		conn->action = C_CLEANUP;
+		flag_cleanup(conn);
 
 		switch (conn->ctype) {
 		  case C_CLIENT:
@@ -384,7 +387,7 @@ void grabdata(conn_t *conn)
 
 void set_polltime(clients_t *client)
 {
-	time_t now = getcurrenttime(NULL);
+	time_t now = gettimer();
 
 	if ((client->suggestpoll > now) && (client->suggestpoll < (now + pollinterval))) {
 		/*
@@ -409,209 +412,18 @@ void set_polltime(clients_t *client)
 		client->nextpoll = now + delay;
 		dbgprintf("Next poll of %s in %d seconds\n", client->hostname, delay);
 	}
-}
 
-void reload_config(void)
-{
-	void *hostwalk;
-
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk, 0)) {
-		RbtIterator handle;
-		char *hname;
-		clients_t *newclient;
-
-		if (!bbh_item(hostwalk, BBH_FLAG_PULLDATA)) continue;
-
-		hname = bbh_item(hostwalk, BBH_HOSTNAME);
-		handle = rbtFind(clients, hname);
-		if (handle == rbtEnd(clients)) {
-			newclient = (clients_t *)calloc(1, sizeof(clients_t));
-			newclient->hostname = strdup(hname);
-			set_polltime(newclient);
-			rbtInsert(clients, newclient->hostname, newclient);
-		}
+	if (whentoqueue > client->nextpoll) {
+		whentoqueue = client->nextpoll;
 	}
 }
-
-void remove_finished_requests(void)
-{
-	static time_t nextcleanup = 0;
-	time_t now = getcurrenttime(NULL);
-	conn_t *connwalk, *cprev;
-
-	if (now < nextcleanup) return;
-	nextcleanup = now+60;
-
-	dbgprintf("Doing cleanup\n");
-
-	connwalk = chead; cprev = NULL;
-
-	while (connwalk) {
-		conn_t *zombie;
-
-		if ((connwalk->action == C_READING) || (connwalk->action == C_WRITING)) {
-			/* Active connection - skip to the next conn_t record */
-			cprev = connwalk;
-			connwalk = connwalk->next;
-			continue;
-		}
-
-		if (connwalk->action == C_CLEANUP) {
-			if (connwalk->ctype == C_CLIENT) {
-				/* 
-				 * Finished getting data from a client, 
-				 * flag idle and set next poll time.
-				 */
-				connwalk->client->busy = 0;
-				set_polltime(connwalk->client);
-			}
-			else if (connwalk->ctype == C_SERVER) {
-				/* Nothing needed for server cleanups */
-			}
-		}
-
-		/* Unlink the request from the list of active connections */
-		zombie = connwalk;
-		if (cprev == NULL) {
-			connwalk = chead = zombie->next;
-		}
-		else {
-			cprev->next = zombie->next;
-			connwalk = zombie->next;
-		}
-
-		/* Purge the zombie */
-		dbgprintf("Request completed: req %lu, peer %s, action was %d, type was %d\n", 
-			zombie->seq, addrstring(&zombie->caddr), 
-			zombie->action, zombie->ctype);
-		close(zombie->sockfd);
-		freestrbuffer(zombie->msgbuf);
-		xfree(zombie);
-	}
-
-	/* Set the tail pointer correctly */
-	ctail = chead;
-	if (ctail) { while (ctail->next) ctail = ctail->next; }
-}
-
-void do_session_dump(void)
-{
-	conn_t *connwalk;
-	time_t now;
-
-	/* Set by SIGUSR1 - dump the list of active requests */
-	if (!dumpsessions) return;
-	dumpsessions = 0;
-
-	now = getcurrenttime(NULL);
-	for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
-		char *ctypestr, *actionstr;
-		char timestr[30];
-
-		switch (connwalk->ctype) {
-		  case C_CLIENT: ctypestr = "client"; break;
-		  case C_SERVER: ctypestr = "server"; break;
-		}
-
-		switch (connwalk->action) {
-		  case C_READING: actionstr = "reading"; break;
-		  case C_WRITING: actionstr = "writing"; break;
-		  case C_CLEANUP: actionstr = "cleanup"; break;
-		}
-
-		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
-			 localtime(&connwalk->tstamp));
-
-		errprintf("Request %lu: state %s/%s, peer %s, started %s (%lu secs ago)\n",
-			  connwalk->seq, ctypestr, actionstr, addrstring(&connwalk->caddr),
-			  timestr, (now - connwalk->tstamp));
-	}
-}
-
-void queue_new_requests(void)
-{
-	void *hostwalk;
-	RbtIterator handle;
-
-	/* Scan host-tree for clients we need to contact */
-	for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
-		static char *ipbuffer = NULL;
-		clients_t *clientwalk;
-		char msgline[100];
-		strbuffer_t *request;
-		char *pullstr, *ip;
-		int port;
-		struct in_addr addr;
-
-		clientwalk = (clients_t *)gettreeitem(clients, handle);
-		if (clientwalk->busy || (clientwalk->nextpoll > getcurrenttime(NULL))) continue;
-
-		/* Deleted hosts stay in our tree - but should disappear from the known hosts */
-		hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
-		pullstr = bbh_item(hostwalk, BBH_FLAG_PULLDATA); if (!pullstr) continue;
-
-		ip = bbh_item(hostwalk, BBH_IP);
-		port = atoi(xgetenv("BBPORT"));
-		if (ipbuffer) xfree(ipbuffer);
-
-		if ((pullstr = strchr(pullstr, '=')) != NULL) {
-			/* There is an explicit IP setting in the pulldata tag */
-			char *p;
-
-			ip = ipbuffer = strdup(pullstr+1);
-			p = strchr(ip, ':'); if (p) { *p = '\0'; port = atoi(p+1); }
-
-			if (*ip == '\0') {
-				/* No IP given, just a port number */
-				ip = bbh_item(hostwalk, BBH_IP);
-			}
-		}
-
-		if (strcmp(ip, "0.0.0.0") == 0) {
-			struct hostent *hent;
-
-			if (ipbuffer) xfree(ipbuffer);
-			hent = gethostbyname(clientwalk->hostname);
-			if (hent) {
-				memcpy(&addr, *(hent->h_addr_list), sizeof(addr));
-				ip = ipbuffer = strdup(inet_ntoa(addr));
-			}
-			else {
-				errprintf("Could not determine IP for %s\n", clientwalk->hostname);
-				ip = NULL;
-			}
-		}
-
-		if (ip && (inet_aton(ip, &addr) == 0)) {
-			errprintf("Invalid IP '%s' for host %s\n", ip, clientwalk->hostname);
-			ip = NULL;
-		}
-
-		if (!ip) continue;
-
-		/* 
-		 * Build the "pullclient" request, which includes the latest
-		 * clientdata config we got from the server. Keep the clientdata
-		 * here - we send "pullclient" requests more often that we actually
-		 * contact the server, but we should provide the config data always.
-		 */
-		request = newstrbuffer(0);
-		sprintf(msgline, "pullclient %d\n", serverid);
-		addtobuffer(request, msgline);
-		if (clientwalk->clientdata) addtobuffer(request, clientwalk->clientdata);
-
-		/* Put the request on the connection queue */
-		addrequest(C_CLIENT, ip, port, request, clientwalk);
-		clientwalk->busy = 1;
-	}
-}
-
 
 int main(int argc, char *argv[])
 {
 	int argi;
 	struct sigaction sa;
+	void *hostwalk;
+	time_t nexttimeout;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--server=")) {
@@ -635,7 +447,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	setup_signalhandler("hobbitfetch");
+	setup_signalhandler("xymonfetch");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);
@@ -643,6 +455,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGUSR1, &sa, NULL);	/* SIGUSR1 triggers logging of active requests */
 
 	clients = rbtNew(name_compare);
+	nexttimeout = gettimer() + 60;
 
 	{
 		/* Seed the random number generator */
@@ -654,36 +467,209 @@ int main(int argc, char *argv[])
 	}
 
 	do {
-		conn_t *connwalk;
+		RbtIterator handle;
+		conn_t *connwalk, *cprev;
 		fd_set fdread, fdwrite;
 		int n, maxfd;
 		struct timeval tmo;
 		time_t now;
 		
-		now = getcurrenttime(NULL);
+		now = gettimer();
 		if (now > reloadtime) {
-			/* Time to reload the bb-hosts file */
+			/* Time to reload the hosts.cfg file */
 			reloadtime = now + 600;
-			reload_config();
-		}
 
-		/* Check for connections that have timed out */
-		for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
-			if ((connwalk->tstamp + 60) < now) {
-				if (debug || (connwalk->client->nexterrortxt < now)) {
-					errprintf("Timeout while talking to %s (req %lu): Aborting session\n",
-						  addrstring(&connwalk->caddr), connwalk->seq);
-					connwalk->client->nexterrortxt = now + errorloginterval;
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+			for (hostwalk = first_host(); (hostwalk); hostwalk = next_host(hostwalk, 0)) {
+				char *hname;
+				clients_t *newclient;
+
+				if (!xmh_item(hostwalk, XMH_FLAG_PULLDATA)) continue;
+
+				hname = xmh_item(hostwalk, XMH_HOSTNAME);
+				handle = rbtFind(clients, hname);
+				if (handle == rbtEnd(clients)) {
+					newclient = (clients_t *)calloc(1, sizeof(clients_t));
+					newclient->hostname = strdup(hname);
+					rbtInsert(clients, newclient->hostname, newclient);
+					whentoqueue = now;
 				}
-				connwalk->action = C_CLEANUP;
 			}
 		}
 
-		/* Remove any finished requests */
-		remove_finished_requests();
+		now = gettimer();
+		if (now > nexttimeout) {
+			/* Check for connections that have timed out */
+			nexttimeout = now + 60;
 
-		/* Add new requests */
-		queue_new_requests();
+			for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
+				if ((connwalk->tstamp + 60) < now) {
+					if (debug || (connwalk->client->nexterrortxt < now)) {
+						errprintf("Timeout while talking to %s (req %lu): Aborting session\n",
+							  addrstring(&connwalk->caddr, 1), connwalk->seq);
+						connwalk->client->nexterrortxt = now + errorloginterval;
+					}
+					flag_cleanup(connwalk);
+				}
+			}
+		}
+
+		if (needcleanup) {
+			/* Remove any finished requests */
+			needcleanup = 0;
+			connwalk = chead; cprev = NULL;
+			dbgprintf("Doing cleanup\n");
+
+			while (connwalk) {
+				conn_t *zombie;
+
+				if ((connwalk->action == C_READING) || (connwalk->action == C_WRITING)) {
+					/* Active connection - skip to the next conn_t record */
+					cprev = connwalk;
+					connwalk = connwalk->next;
+					continue;
+				}
+
+				if (connwalk->action == C_CLEANUP) {
+					if (connwalk->ctype == C_CLIENT) {
+						/* 
+						 * Finished getting data from a client, 
+						 * flag idle and set next poll time.
+						 */
+						connwalk->client->busy = 0;
+						set_polltime(connwalk->client);
+					}
+					else if (connwalk->ctype == C_SERVER) {
+						/* Nothing needed for server cleanups */
+					}
+				}
+
+				/* Unlink the request from the list of active connections */
+				zombie = connwalk;
+				if (cprev == NULL) {
+					chead = zombie->next;
+					connwalk = chead;
+					cprev = NULL;
+				}
+				else {
+					cprev->next = zombie->next;
+					connwalk = zombie->next;
+				}
+
+				/* Purge the zombie */
+				dbgprintf("Request completed: req %lu, peer %s, action was %d, type was %d\n", 
+					zombie->seq, addrstring(&zombie->caddr, 1), 
+					zombie->action, zombie->ctype);
+				close(zombie->sockfd);
+				freestrbuffer(zombie->msgbuf);
+				xfree(zombie);
+			}
+
+			/* Set the tail pointer correctly */
+			ctail = chead;
+			if (ctail) { while (ctail->next) ctail = ctail->next; }
+		}
+
+		if (dumpsessions) {
+			/* Set by SIGUSR1 - dump the list of active requests */
+			dumpsessions = 0;
+			for (connwalk = chead; (connwalk); connwalk = connwalk->next) {
+				char *ctypestr, *actionstr;
+				char timestr[30];
+
+				switch (connwalk->ctype) {
+				  case C_CLIENT: ctypestr = "client"; break;
+				  case C_SERVER: ctypestr = "server"; break;
+				}
+
+				switch (connwalk->action) {
+				  case C_READING: actionstr = "reading"; break;
+				  case C_WRITING: actionstr = "writing"; break;
+				  case C_CLEANUP: actionstr = "cleanup"; break;
+				}
+
+				strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S",
+					 localtime(&connwalk->tstamp));
+
+				errprintf("Request %lu: state %s/%s, peer %s, started %s (%lu secs ago)\n",
+					  connwalk->seq, ctypestr, actionstr, addrstring(&connwalk->caddr, 1),
+					  timestr, (now - connwalk->tstamp));
+			}
+		}
+
+		now = gettimer();
+		if (now >= whentoqueue) {
+			/* Scan host-tree for clients we need to contact */
+			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
+				clients_t *clientwalk;
+				char msgline[100];
+				strbuffer_t *request;
+				char *pullstr, *ip;
+				int port;
+
+				clientwalk = (clients_t *)gettreeitem(clients, handle);
+				if (clientwalk->busy) continue;
+				if (clientwalk->nextpoll > now) continue;
+
+				/* Deleted hosts stay in our tree - but should disappear from the known hosts */
+				hostwalk = hostinfo(clientwalk->hostname); if (!hostwalk) continue;
+				pullstr = xmh_item(hostwalk, XMH_FLAG_PULLDATA); if (!pullstr) continue;
+
+				ip = strchr(pullstr, '=');
+				port = atoi(xgetenv("XYMONDPORT"));
+
+				if (!ip) {
+					ip = strdup(xmh_item(hostwalk, XMH_IP));
+				}
+				else {
+					/* There is an explicit IP setting in the pulldata tag */
+					char *p;
+
+					ip++; /* Skip the '=' */
+					ip = strdup(ip);
+					p = strchr(ip, ':');
+					if (p) { *p = '\0'; port = atoi(p+1); }
+
+					if (*ip == '\0') {
+						/* No IP given, just a port number */
+						xfree(ip);
+						ip = strdup(xmh_item(hostwalk, XMH_IP));
+					}
+				}
+
+				if (strcmp(ip, "0.0.0.0") == 0) {
+					struct hostent *hent;
+
+					xfree(ip); ip = NULL;
+					hent = gethostbyname(clientwalk->hostname);
+					if (hent) {
+						struct in_addr addr;
+
+						memcpy(&addr, *(hent->h_addr_list), sizeof(addr));
+						ip = strdup(inet_ntoa(addr));
+					}
+				}
+
+				if (!ip) continue;
+
+				/* 
+				 * Build the "pullclient" request, which includes the latest
+				 * clientdata config we got from the server. Keep the clientdata
+				 * here - we send "pullclient" requests more often that we actually
+				 * contact the server, but we should provide the config data always.
+				 */
+				request = newstrbuffer(0);
+				sprintf(msgline, "pullclient %d\n", serverid);
+				addtobuffer(request, msgline);
+				if (clientwalk->clientdata) addtobuffer(request, clientwalk->clientdata);
+
+				/* Put the request on the connection queue */
+				addrequest(C_CLIENT, ip, port, request, clientwalk);
+				clientwalk->busy = 1;
+
+				xfree(ip);
+			}
+		}
 
 		/* Handle request queue */
 		FD_ZERO(&fdread);
@@ -704,29 +690,6 @@ int main(int argc, char *argv[])
 			  case C_CLEANUP:
 				break;
 			}
-		}
-
-		if (maxfd == -1) {
-			/* No active connections. Wait until our next queue time arrives */
-			time_t nextqueuetime;
-			RbtIterator handle;
-
-			now = getcurrenttime(NULL);
-			nextqueuetime = now+60;
-
-			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
-				clients_t *clientwalk = (clients_t *)gettreeitem(clients, handle);
-
-				if (clientwalk->busy) continue;
-
-				if (clientwalk->nextpoll < nextqueuetime) nextqueuetime = clientwalk->nextpoll;
-			}
-
-			if (nextqueuetime > now) {
-				dbgprintf("Nothing happening, sleeping %d seconds\n", nextqueuetime-now);
-				sleep(nextqueuetime-now);
-			}
-			continue;
 		}
 
 		/* Do select with a 1 second timeout */

@@ -1,0 +1,140 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of XYMOND_FILESTORE</TITLE>
+</HEAD><BODY>
+<H1>XYMOND_FILESTORE</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+xymond_filestore - xymond worker module for storing Xymon data
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>xymond_channel --channel=status xymond_filestore --status [options]</B>
+
+<BR>
+
+<B>xymond_channel --channel=data   xymond_filestore --data [options]</B>
+
+<BR>
+
+<B>xymond_channel --channel=notes  xymond_filestore --notes [options]</B>
+
+<BR>
+
+<B>xymond_channel --channel=enadis xymond_filestore --enadis [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+xymond_filestore is a worker module for xymond, and as such it is normally
+run via the
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
+
+program. It receives xymond messages from a xymond channel via stdin, and 
+stores these in the filesystem in a manner that is compatible with the 
+Big Brother daemon, bbd.
+<P>
+This program can be started multiple times, if you want to store
+messages for more than one channel.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--status<DD>
+Incoming messages are &quot;status&quot; messages, they will be stored in the
+$XYMONRAWSTATUSDIR/ directory. If you are using 
+<I><A HREF="../man7/xymon.7.html">xymon</A>(7)</I>
+
+throughout your Xymon server, you will not need to run this
+module to save status messages, unless you have a third-party 
+add-on that reads the status-logs directly.
+This module is NOT needed to get trend graphs, you should run the 
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
+
+module instead.
+<P>
+<DT>--data<DD>
+Incoming messages are &quot;data&quot; messages, they will be stored in the
+$XYMONDATADIR directory. This module is not needed, unless you have a
+third-party module that processes the data-files. This module is
+NOT needed to get trend graphs, you should run the 
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
+
+module instead.
+<P>
+<DT>--notes<DD>
+Incoming messages are &quot;notes&quot; messages, they will be stored in the
+$XYMONNOTESDIR directory. This modules is only needed if you want to 
+allow people to remotely update the notes-files available on the
+Xymon webpages.
+<P>
+<DT>--enadis<DD>
+Incoming messages are enable/disable messages, they will update 
+files in the $XYMONDISABLEDDIR directory. This is only needed if you have
+third-party add-ons that use these files.
+<P>
+<DT>--dir=DIRECTORY<DD>
+Overrides the default output directory.
+<P>
+<DT>--html<DD>
+Used together with &quot;--status&quot;. Tells xymond_filestore to also save
+an HTML version of the status-log. Should not be used unless you 
+must run with &quot;XYMONLOGSTATUS=static&quot;.
+<P>
+<DT>--htmldir=DIRECTORY<DD>
+The directory where HTML-versions of the status logs are stored.
+Default: $XYMONHTMLSTATUSDIR
+<P>
+<DT>--htmlext=.EXT<DD>
+Set the filename extension for generated HTML files. By default, HTML
+files are saved with a &quot;.html&quot; extension.
+<P>
+<DT>--multigraphs=TEST1[,TEST2]<DD>
+This causes xymond_filestore to generate HTML status pages with links to 
+service graphs that are split up into multiple images, with at most 5 graphs
+per image. If not specified, only the &quot;disk&quot; status is split up this way.
+<P>
+<DT>--only=test[,test,test]<DD>
+Save status messages only for the listed set of tests. This can be useful
+if you have an external script that needs to parse some of the status logs,
+but you do not want to save all status logs.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>FILES</H2>
+
+This module does not rely on any configuration files.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">FILES</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

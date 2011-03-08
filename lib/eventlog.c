@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This displays the "eventlog" found on the "All non-green status" page.     */
 /* It also implements a CGI tool to show an eventlog for a given period of    */
 /* time, as a reporting function.                                             */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /* Host/test/color/start/end filtering code by Eric Schwimmer 2005            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
@@ -30,7 +30,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 char *eventignorecolumns = NULL;
 int havedoneeventlog = 0;
@@ -56,11 +56,13 @@ static char *string_time(time_t timestamp)
 	return result;
 }
 
-int record_compare(void *a, void *b)
+int record_compare(void **a, void **b)
 {
+	countlist_t **reca = (countlist_t **)a, **recb = (countlist_t **)b;
+
 	/* Sort the countlist_t records in reverse */
-	if (((countlist_t *)a)->total > ((countlist_t *)b)->total) return -1;
-	else if (((countlist_t *)a)->total < ((countlist_t *)b)->total) return 1;
+	if ( (*reca)->total > (*recb)->total )  return -1;
+	else if ( (*reca)->total < (*recb)->total ) return 1;
 	else return 0;
 }
 
@@ -98,7 +100,7 @@ static void count_events(countlist_t **hostcounthead, countlist_t **svccounthead
 		eventcount_t *swalk;
 		countlist_t *hrec, *srec;
 
-		swalk = (eventcount_t *)bbh_item(hostwalk, BBH_DATA); if (!swalk) continue;
+		swalk = (eventcount_t *)xmh_item(hostwalk, XMH_DATA); if (!swalk) continue;
 
 		hrec = (countlist_t *)malloc(sizeof(countlist_t));
 		hrec->src = hostwalk;
@@ -106,7 +108,7 @@ static void count_events(countlist_t **hostcounthead, countlist_t **svccounthead
 		hrec->next = *hostcounthead;
 		*hostcounthead = hrec;
 
-		for (swalk = (eventcount_t *)bbh_item(hostwalk, BBH_DATA); (swalk); swalk = swalk->next) {
+		for (swalk = (eventcount_t *)xmh_item(hostwalk, XMH_DATA); (swalk); swalk = swalk->next) {
 			hrec->total += swalk->count;
 			for (srec = *svccounthead; (srec && (srec->src != (void *)swalk->service)); srec = srec->next) ;
 			if (!srec) {
@@ -138,8 +140,8 @@ static void dump_eventtree(void)
 	ed_t *ewalk;
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
-		printf("%s\n", bbh_item(hwalk, BBH_HOSTNAME));
-		lwalk = (elist_t *)bbh_item(hwalk, BBH_DATA);
+		printf("%s\n", xmh_item(hwalk, XMH_HOSTNAME));
+		lwalk = (elist_t *)xmh_item(hwalk, XMH_DATA);
 		while (lwalk) {
 			printf("\t%s\n", lwalk->svc->name);
 			ewalk = lwalk->head;
@@ -162,7 +164,7 @@ void dump_countlists(countlist_t *hosthead, countlist_t *svchead)
 
 	printf("Hosts\n");
 	for (cwalk = hosthead; (cwalk); cwalk = cwalk->next) {
-		printf("\t%20s : %lu\n", bbh_item(cwalk->src, BBH_HOSTNAME), cwalk->total);
+		printf("\t%20s : %lu\n", xmh_item(cwalk->src, XMH_HOSTNAME), cwalk->total);
 	}
 	printf("\n");
 
@@ -180,21 +182,21 @@ static int  eventfilter(void *hinfo, char *testname,
 			int ignoredialups, f_hostcheck hostcheck)
 {
 	int pagematch, hostmatch, testmatch;
-	char *hostname = bbh_item(hinfo, BBH_HOSTNAME);
+	char *hostname = xmh_item(hinfo, XMH_HOSTNAME);
 	int ovector[30];
 
-	if (ignoredialups && bbh_item(hinfo, BBH_FLAG_DIALUP)) return 0;
+	if (ignoredialups && xmh_item(hinfo, XMH_FLAG_DIALUP)) return 0;
 	if (hostcheck && (hostcheck(hostname) == 0)) return 0;
 
 	if (pageregexp) {
 		char *pagename;
 
-		pagename = bbh_item_multi(hinfo, BBH_PAGEPATH);
+		pagename = xmh_item_multi(hinfo, XMH_PAGEPATH);
 		pagematch = 0;
 		while (!pagematch && pagename) {
 			pagematch = (pcre_exec(pageregexp, NULL, pagename, strlen(pagename), 0, 0, 
 					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
-			pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+			pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 		}
 	}
 	else
@@ -204,12 +206,12 @@ static int  eventfilter(void *hinfo, char *testname,
 	if (expageregexp) {
 		char *pagename;
 
-		pagename = bbh_item_multi(hinfo, BBH_PAGEPATH);
+		pagename = xmh_item_multi(hinfo, XMH_PAGEPATH);
 		pagematch = 0;
 		while (!pagematch && pagename) {
 			pagematch = (pcre_exec(expageregexp, NULL, pagename, strlen(pagename), 0, 0, 
 					ovector, (sizeof(ovector)/sizeof(int))) >= 0);
-			pagename = bbh_item_multi(NULL, BBH_PAGEPATH);
+			pagename = xmh_item_multi(NULL, XMH_PAGEPATH);
 		}
 	}
 	else
@@ -276,13 +278,13 @@ static void count_duration(time_t fromtime, time_t totime,
 	 *
 	 */
 	for (ewalk = eventhead; (ewalk); ewalk = ewalk->next) {
-		lwalk = (elist_t *)bbh_item(ewalk->host, BBH_DATA);
+		lwalk = (elist_t *)xmh_item(ewalk->host, XMH_DATA);
 		while (lwalk && (lwalk->svc != ewalk->service)) lwalk = lwalk->next;
 		if (lwalk == NULL) {
 			lwalk = (elist_t *)calloc(1, sizeof(elist_t));
 			lwalk->svc = ewalk->service;
-			lwalk->next = (elist_t *)bbh_item(ewalk->host, BBH_DATA);
-			bbh_set_item(ewalk->host, BBH_DATA, (void *)lwalk);
+			lwalk->next = (elist_t *)xmh_item(ewalk->host, XMH_DATA);
+			xmh_set_item(ewalk->host, XMH_DATA, (void *)lwalk);
 		}
 
 		ed = (ed_t *)calloc(1, sizeof(ed_t));
@@ -306,7 +308,7 @@ static void count_duration(time_t fromtime, time_t totime,
 	 * color has been since the start of the event-period.
 	 */
 	bdata = newsendreturnbuf(1, NULL);
-	if (sendmessage("hobbitdboard fields=hostname,testname,color,lastchange", NULL, BBTALK_TIMEOUT, bdata) == BB_OK) {
+	if (sendmessage("xymondboard fields=hostname,testname,color,lastchange", NULL, XYMON_TIMEOUT, bdata) == XYMONSEND_OK) {
 		char *bol, *eol;
 		char *hname, *tname;
 		int color;
@@ -336,13 +338,13 @@ static void count_duration(time_t fromtime, time_t totime,
 						testregexp, extestregexp,
 						ignoredialups, hostcheck) == 0) goto nextrecord;
 
-				lwalk = (elist_t *)bbh_item(hrec, BBH_DATA);
+				lwalk = (elist_t *)xmh_item(hrec, XMH_DATA);
 				while (lwalk && (lwalk->svc != srec)) lwalk = lwalk->next;
 				if (lwalk == NULL) {
 					lwalk = (elist_t *)calloc(1, sizeof(elist_t));
 					lwalk->svc = srec;
-					lwalk->next = (elist_t *)bbh_item(hrec, BBH_DATA);
-					bbh_set_item(hrec, BBH_DATA, (void *)lwalk);
+					lwalk->next = (elist_t *)xmh_item(hrec, XMH_DATA);
+					xmh_set_item(hrec, XMH_DATA, (void *)lwalk);
 				}
 
 				/* See if we already have an event past the "totime" value */
@@ -419,7 +421,7 @@ nextrecord:
 		event_t *erec;
 		ed_t *ewalk;
 
-		lwalk = (elist_t *)bbh_item(hwalk, BBH_DATA); 
+		lwalk = (elist_t *)xmh_item(hwalk, XMH_DATA); 
 		while (lwalk) {
 			if (lwalk->head) {
 				erec = lwalk->head->event;
@@ -468,7 +470,7 @@ nextrecord:
 		hrec->next = *hostcounthead;
 		*hostcounthead = hrec;
 
-		lwalk = (elist_t *)bbh_item(hwalk, BBH_DATA);
+		lwalk = (elist_t *)xmh_item(hwalk, XMH_DATA);
 		while (lwalk) {
 			for (srec = *svccounthead; (srec && (srec->src != (void *)lwalk->svc)); srec = srec->next) ;
 			if (!srec) {
@@ -579,7 +581,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (extestregex && *extestregex) extestregexp = pcre_compile(extestregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 	if (colrregex && *colrregex) colrregexp = pcre_compile(colrregex, PCRE_CASELESS, &errmsg, &errofs, NULL);
 
-	sprintf(eventlogfilename, "%s/allevents", xgetenv("BBHIST"));
+	sprintf(eventlogfilename, "%s/allevents", xgetenv("XYMONHISTDIR"));
 	eventlog = fopen(eventlogfilename, "r");
 
 	if (eventlog && (stat(eventlogfilename, &st) == 0)) {
@@ -639,13 +641,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		oldcolname = colorname(eventcolor(oldcol));
 		newcolname = colorname(eventcolor(newcol));
 		/* For DURATION counts, we must parse all events until now */
-		if ((counttype != COUNT_DURATION) && (eventtime > lastevent)) break;
+		if ((counttype != XYMON_COUNT_DURATION) && (eventtime > lastevent)) break;
 		eventhost = hostinfo(hostname);
 		eventcolumn = getname(svcname, 1);
 
 		if ( (itemsfound == 8) && 
 		     (eventtime >= firstevent) && 
-		     (eventhost && !bbh_item(eventhost, BBH_FLAG_NOBB2)) && 
+		     (eventhost && !xmh_item(eventhost, XMH_FLAG_NONONGREEN)) && 
 		     (wanted_eventcolumn(svcname)) ) {
 
 			if (eventfilter(eventhost, svcname, 
@@ -655,7 +657,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 					ignoredialups, hostcheck) == 0) continue;
 
 			/* For duration counts, record all events. We'll filter out the colors later. */
-			if (colrregexp && (counttype != COUNT_DURATION)) {
+			if (colrregexp && (counttype != XYMON_COUNT_DURATION)) {
 				colrmatch = ( (pcre_exec(colrregexp, NULL, newcolname, strlen(newcolname), 0, 0,
 							ovector, (sizeof(ovector)/sizeof(int))) >= 0) ||
 					      (pcre_exec(colrregexp, NULL, oldcolname, strlen(oldcolname), 0, 0,
@@ -676,14 +678,14 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			newevent->next = eventhead;
 			eventhead = newevent;
 
-			if (counttype != COUNT_DURATION) {
-				countrec = (eventcount_t *)bbh_item(eventhost, BBH_DATA);
+			if (counttype != XYMON_COUNT_DURATION) {
+				countrec = (eventcount_t *)xmh_item(eventhost, XMH_DATA);
 				while (countrec && (countrec->service != eventcolumn)) countrec = countrec->next;
 				if (countrec == NULL) {
 					countrec = (eventcount_t *)calloc(1, sizeof(eventcount_t));
 					countrec->service = eventcolumn;
-					countrec->next = (eventcount_t *)bbh_item(eventhost, BBH_DATA);
-					bbh_set_item(eventhost, BBH_DATA, (void *)countrec);
+					countrec->next = (eventcount_t *)xmh_item(eventhost, XMH_DATA);
+					xmh_set_item(eventhost, XMH_DATA, (void *)countrec);
 				}
 				countrec->count++;
 			}
@@ -693,8 +695,8 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	/* Count the state changes per host */
 	svccounthead = hostcounthead = NULL;
 	switch (counttype) {
-	  case COUNT_EVENTS: count_events(&hostcounthead, &svccounthead); break;
-	  case COUNT_DURATION: count_duration(firstevent, lastevent,
+	  case XYMON_COUNT_EVENTS: count_events(&hostcounthead, &svccounthead); break;
+	  case XYMON_COUNT_DURATION: count_duration(firstevent, lastevent,
 					       pageregexp, expageregexp,
 					       hostregexp, exhostregexp,
 					       testregexp, extestregexp,
@@ -716,27 +718,27 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		if (periodstring) fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
 
 		switch (sumtype) {
-		  case S_HOST_BREAKDOWN:
+		  case XYMON_S_HOST_BREAKDOWN:
 			/* Request for a specific service, show breakdown by host */
 			for (cwalk = hostcounthead; (cwalk); cwalk = cwalk->next) totalcount += cwalk->total;
 			fprintf(output, "<table summary=\"Breakdown by host\" border=0>\n");
 			fprintf(output, "<tr><th align=left>Host</th><th colspan=2>%s</th></tr>\n",
-				(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+				(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 			fprintf(output, "<tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
 			for (cwalk = hostcounthead; (cwalk && (cwalk->total > 0)); cwalk = cwalk->next) {
 				fprintf(output, "<tr><td align=left>%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</tr>\n",
-					bbh_item(cwalk->src, BBH_HOSTNAME), 
+					xmh_item(cwalk->src, XMH_HOSTNAME), 
 					cwalk->total, ((100.0 * cwalk->total) / totalcount));
 			}
 			fprintf(output, "</table>\n");
 			break;
 
-		  case S_SERVICE_BREAKDOWN:
+		  case XYMON_S_SERVICE_BREAKDOWN:
 			/* Request for a specific host, show breakdown by service */
 			for (cwalk = svccounthead; (cwalk); cwalk = cwalk->next) totalcount += cwalk->total;
 			fprintf(output, "<table summary=\"Breakdown by service\" border=0>\n");
 			fprintf(output, "<tr><th align=left>Service</th><th colspan=2>%s</th></tr>\n",
-				(counttype == COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
+				(counttype == XYMON_COUNT_EVENTS) ? "State changes" : "Seconds red/yellow");
 			fprintf(output, "<tr><td colspan=3><hr width=\"100%%\"></td></tr>\n");
 			for (cwalk = svccounthead; (cwalk && (cwalk->total > 0)); cwalk = cwalk->next) {
 				fprintf(output, "<tr><td align=left>%s</td><td align=right>%lu</td><td align=right>(%6.2f %%)</tr>\n",
@@ -746,11 +748,11 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			fprintf(output, "</table>\n");
 			break;
 
-		  case S_NONE:
+		  case XYMON_S_NONE:
 			break;
 		}
 
-		if (sumtype == S_NONE) {
+		if (sumtype == XYMON_S_NONE) {
 			int  count;
 			count=0;
 			ewalk=eventhead; 
@@ -779,13 +781,13 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
 
 		for (ewalk=eventhead; (ewalk); ewalk=ewalk->next) {
-			char *hostname = bbh_item(ewalk->host, BBH_HOSTNAME);
+			char *hostname = xmh_item(ewalk->host, XMH_HOSTNAME);
 
-			if ( (counttype == COUNT_DURATION) &&
+			if ( (counttype == XYMON_COUNT_DURATION) &&
 			     (ewalk->oldcolor < COL_YELLOW) &&
 			     (ewalk->newcolor < COL_YELLOW) ) continue;
 
-			if ( (counttype == COUNT_DURATION) &&
+			if ( (counttype == XYMON_COUNT_DURATION) &&
 			     (ewalk->eventtime >= lastevent) ) continue;
 
 			fprintf(output, "<TR BGCOLOR=%s>\n", bgcolors[bgcolor]);
@@ -806,15 +808,15 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(hostname, ewalk->service->name, ewalk->changetime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A>\n", 
-				xgetenv("BBSKIN"), dotgiffilename(ewalk->oldcolor, 0, 0), 
+				xgetenv("XYMONSKIN"), dotgiffilename(ewalk->oldcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
 				colorname(ewalk->oldcolor), colorname(ewalk->oldcolor));
 			fprintf(output, "<IMG SRC=\"%s/arrow.gif\" BORDER=0 ALT=\"From -&gt; To\">\n", 
-				xgetenv("BBSKIN"));
+				xgetenv("XYMONSKIN"));
 			fprintf(output, "<TD><A HREF=\"%s\">\n", 
 				histlogurl(hostname, ewalk->service->name, ewalk->eventtime, NULL));
 			fprintf(output, "<IMG SRC=\"%s/%s\"  HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0 ALT=\"%s\" TITLE=\"%s\"></A></TD>\n", 
-				xgetenv("BBSKIN"), dotgiffilename(ewalk->newcolor, 0, 0), 
+				xgetenv("XYMONSKIN"), dotgiffilename(ewalk->newcolor, 0, 0), 
 				xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"), 
 				colorname(ewalk->newcolor), colorname(ewalk->newcolor));
 			fprintf(output, "</TR>\n");

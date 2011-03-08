@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit CGI tool to generate a report of the Hobbit configuration           */
+/* Xymon CGI tool to generate a report of the Xymon configuration             */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <time.h>
 #include <dirent.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct hostlist_t {
 	char *hostname;
@@ -45,8 +45,8 @@ static char *pingplus = "conn=";
 static char *coldelim = ";";
 static coltext_t *chead = NULL;
 static int ccount = 0;
-static int nkonly = 0;
-static int newnkconfig = 1;
+static int criticalonly = 0;
+static int newcritconfig = 1;
 
 void errormsg(char *msg)
 {
@@ -116,7 +116,7 @@ static void print_disklist(char *hostname)
 	struct dirent *de;
 	char *p;
 
-	sprintf(dirname, "%s/%s", xgetenv("BBRRDS"), hostname);
+	sprintf(dirname, "%s/%s", xgetenv("XYMONRRDS"), hostname);
 	d = opendir(dirname);
 	if (!d) return;
 
@@ -133,33 +133,33 @@ static void print_disklist(char *hostname)
 	closedir(d);
 }
 
-char *nkval(char *hname, char *tname, char *nkalerts)
+char *criticalval(char *hname, char *tname, char *alerts)
 {
 	static char *result = NULL;
 
 	if (result) xfree(result);
 
-	if (newnkconfig) {
+	if (newcritconfig) {
 		char *key;
-		nkconf_t *nkrec;
+		critconf_t *critrec;
 
 		key = (char *)malloc(strlen(hname) + strlen(tname) + 2);
 		sprintf(key, "%s|%s", hname, tname);
-		nkrec = get_nkconfig(key, NKCONF_FIRSTMATCH, NULL);
-		if (!nkrec) {
+		critrec = get_critconfig(key, CRITCONF_FIRSTMATCH, NULL);
+		if (!critrec) {
 			result = strdup("No");
 		}
 		else {
 			char *tspec;
 
-			tspec = (nkrec->nktime ? timespec_text(nkrec->nktime) : "24x7");
+			tspec = (critrec->crittime ? timespec_text(critrec->crittime) : "24x7");
 			result = (char *)malloc(strlen(tspec) + 30);
-			sprintf(result, "%s&nbsp;prio&nbsp;%d", tspec, nkrec->priority);
+			sprintf(result, "%s&nbsp;prio&nbsp;%d", tspec, critrec->priority);
 		}
 		xfree(key);
 	}
 	else {
-		result = strdup((checkalert(nkalerts, tname) ? "Yes" : "No"));
+		result = strdup((checkalert(alerts, tname) ? "Yes" : "No"));
 	}
 
 	return result;
@@ -171,8 +171,8 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	int testi, rowcount, netcount;
 	void *hinfo = hostinfo(host->hostname);
 	char *dispname = NULL, *clientalias = NULL, *comment = NULL, *description = NULL, *pagepathtitle = NULL;
-	char *net = NULL, *nkalerts = NULL;
-	char *nktime = NULL, *downtime = NULL, *reporttime = NULL;
+	char *net = NULL, *alerts = NULL;
+	char *crittime = NULL, *downtime = NULL, *reporttime = NULL;
 	char *itm;
 	tag_t *taghead = NULL;
 	int contidx = 0, haveping = 0;
@@ -183,33 +183,33 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	fprintf(stdout, "<p style=\"page-break-before: always\">\n"); 
 	fprintf(stdout, "<table width=\"100%%\" border=1 summary=\"%s configuration\">\n", host->hostname);
 
-	pagepathtitle = bbh_item(hinfo, BBH_PAGEPATHTITLE);
+	pagepathtitle = xmh_item(hinfo, XMH_PAGEPATHTITLE);
 	if (!pagepathtitle || (strlen(pagepathtitle) == 0)) pagepathtitle = "Top page";
-	dispname = bbh_item(hinfo, BBH_DISPLAYNAME); 
+	dispname = xmh_item(hinfo, XMH_DISPLAYNAME); 
 	if (dispname && (strcmp(dispname, host->hostname) == 0)) dispname = NULL;
-	clientalias = bbh_item(hinfo, BBH_CLIENTALIAS); 
+	clientalias = xmh_item(hinfo, XMH_CLIENTALIAS); 
 	if (clientalias && (strcmp(clientalias, host->hostname) == 0)) clientalias = NULL;
-	comment = bbh_item(hinfo, BBH_COMMENT);
-	description = bbh_item(hinfo, BBH_DESCRIPTION); 
-	net = bbh_item(hinfo, BBH_NET);
-	nkalerts = bbh_item(hinfo, BBH_NK);
-	nktime = bbh_item(hinfo, BBH_NKTIME); if (!nktime) nktime = "24x7"; else nktime = strdup(timespec_text(nktime));
-	downtime = bbh_item(hinfo, BBH_DOWNTIME); if (downtime) downtime = strdup(timespec_text(downtime));
-	reporttime = bbh_item(hinfo, BBH_REPORTTIME); if (!reporttime) reporttime = "24x7"; else reporttime = strdup(timespec_text(reporttime));
+	comment = xmh_item(hinfo, XMH_COMMENT);
+	description = xmh_item(hinfo, XMH_DESCRIPTION); 
+	net = xmh_item(hinfo, XMH_NET);
+	alerts = xmh_item(hinfo, XMH_NK);
+	crittime = xmh_item(hinfo, XMH_NKTIME); if (!crittime) crittime = "24x7"; else crittime = strdup(timespec_text(crittime));
+	downtime = xmh_item(hinfo, XMH_DOWNTIME); if (downtime) downtime = strdup(timespec_text(downtime));
+	reporttime = xmh_item(hinfo, XMH_REPORTTIME); if (!reporttime) reporttime = "24x7"; else reporttime = strdup(timespec_text(reporttime));
 
 	rowcount = 1;
 	if (pagepathtitle) rowcount++;
 	if (dispname || clientalias) rowcount++;
 	if (comment) rowcount++;
 	if (description) rowcount++;
-	if (!newnkconfig && nktime) rowcount++;
+	if (!newcritconfig && crittime) rowcount++;
 	if (downtime) rowcount++;
 	if (reporttime) rowcount++;
 
 	fprintf(stdout, "<tr>\n");
 	fprintf(stdout, "<th rowspan=%d align=left width=\"25%%\" valign=top>Basics</th>\n", rowcount);
 	fprintf(stdout, "<th align=center>%s (%s)</th>\n", 
-		(dispname ? dispname : host->hostname), bbh_item(hinfo, BBH_IP));
+		(dispname ? dispname : host->hostname), xmh_item(hinfo, XMH_IP));
 	fprintf(stdout, "</tr>\n");
 
 	if (dispname || clientalias) {
@@ -221,16 +221,16 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	if (pagepathtitle) fprintf(stdout, "<tr><td>Monitoring location: %s</td></tr>\n", pagepathtitle);
 	if (comment) fprintf(stdout, "<tr><td>Comment: %s</td></tr>\n", comment);
 	if (description) fprintf(stdout, "<tr><td>Description: %s</td></tr>\n", description);
-	if (!newnkconfig && nktime) fprintf(stdout, "<tr><td>NK monitoring period: %s</td></tr>\n", nktime);
+	if (!newcritconfig && crittime) fprintf(stdout, "<tr><td>Critical monitoring period: %s</td></tr>\n", crittime);
 	if (downtime) fprintf(stdout, "<tr><td>Planned downtime: %s</td></tr>\n", downtime);
 	if (reporttime) fprintf(stdout, "<tr><td>SLA Reporting Period: %s</td></tr>\n", reporttime);
 
 
 	/* Build a list of the network tests */
-	itm = bbh_item_walk(hinfo);
+	itm = xmh_item_walk(hinfo);
 	while (itm) {
 		char *visdata = NULL, *colname = NULL, *expdata = NULL;
-		bburl_t bu;
+		weburl_t bu;
 		int dialuptest = 0, reversetest = 0, alwaystruetest = 0, httpextra = 0;
 
 		if (*itm == '?') { dialuptest=1;     itm++; }
@@ -321,10 +321,10 @@ addtolist:
 			}
 		}
 
-		itm = bbh_item_walk(NULL);
+		itm = xmh_item_walk(NULL);
 	}
 
-	if (!haveping && !bbh_item(hinfo, BBH_FLAG_NOCONN)) {
+	if (!haveping && !xmh_item(hinfo, XMH_FLAG_NOCONN)) {
 		for (testi = 0; (testi < testcount); testi++) {
 			if (strcmp(testnames[testi]->name, pingcolumn) == 0) {
 				tag_t *newitem = (tag_t *)calloc(1, sizeof(tag_t));
@@ -336,7 +336,7 @@ addtolist:
 	}
 
 	/* Add the "badFOO" settings */
-	itm = bbh_item_walk(hinfo);
+	itm = xmh_item_walk(hinfo);
 	while (itm) {
 		if (strncmp(itm, "bad", 3) == 0) {
 			char *tname, *p;
@@ -357,7 +357,7 @@ addtolist:
 			}
 		}
 
-		itm = bbh_item_walk(NULL);
+		itm = xmh_item_walk(NULL);
 	}
 
 	if (taghead) {
@@ -367,7 +367,7 @@ addtolist:
 		fprintf(stdout, "</th>\n");
 
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s network tests\">\n", host->hostname);
-		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>NK</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Specifics</th></tr>\n");
+		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>Critical</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Specifics</th></tr>\n");
 	}
 	for (testi = 0, netcount = 0; (testi < testcount); testi++) {
 		tag_t *twalk;
@@ -378,7 +378,7 @@ addtolist:
 		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
 		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
-		fprintf(stdout, "<td valign=top>%s</td>", nkval(host->hostname, testnames[testi]->name, nkalerts));
+		fprintf(stdout, "<td valign=top>%s</td>", criticalval(host->hostname, testnames[testi]->name, alerts));
 
 		fprintf(stdout, "<td valign=top>");
 		if (twalk->b1 || twalk->b2 || twalk->b3) {
@@ -407,7 +407,7 @@ addtolist:
 		fprintf(stdout, "<tr>\n");
 		fprintf(stdout, "<th align=left valign=top>Local tests</th>\n");
 		fprintf(stdout, "<td><table border=0 cellpadding=\"3\" cellspacing=\"5\" summary=\"%s local tests\">\n", host->hostname);
-		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>NK</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Configuration <i>(NB: Thresholds on client may differ)</i></th></tr>\n");
+		fprintf(stdout, "<tr><th align=left valign=top>Service</th><th align=left valign=top>Critical</th><th align=left valign=top>C/Y/R limits</th><th align=left valign=top>Configuration <i>(NB: Thresholds on client may differ)</i></th></tr>\n");
 	}
 	for (testi = 0; (testi < testcount); testi++) {
 		tag_t *twalk;
@@ -418,7 +418,7 @@ addtolist:
 		use_columndoc(testnames[testi]->name);
 		fprintf(stdout, "<tr>");
 		fprintf(stdout, "<td valign=top>%s</td>", testnames[testi]->name);
-		fprintf(stdout, "<td valign=top>%s</td>", nkval(host->hostname, testnames[testi]->name, nkalerts));
+		fprintf(stdout, "<td valign=top>%s</td>", criticalval(host->hostname, testnames[testi]->name, alerts));
 		fprintf(stdout, "<td valign=top>-/-/-</td>");
 
 		/* Make up some default configuration data */
@@ -467,7 +467,7 @@ addtolist:
 	/* Do the alerts */
 	alert = (activealerts_t *)calloc(1, sizeof(activealerts_t));
 	alert->hostname = host->hostname;
-	alert->location = bbh_item(hinfo, BBH_ALLPAGEPATHS);
+	alert->location = xmh_item(hinfo, XMH_ALLPAGEPATHS);
 	strcpy(alert->ip, "127.0.0.1");
 	alert->color = COL_RED;
 	alert->pagemessage = "";
@@ -513,7 +513,7 @@ void load_columndocs(void)
 	FILE *fd;
 	strbuffer_t *inbuf;
 
-	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("BBHOME"));
+	sprintf(fn, "%s/etc/columndoc.csv", xgetenv("XYMONHOME"));
 	fd = fopen(fn, "r"); if (!fd) return;
 
 	inbuf = newstrbuffer(0);
@@ -554,7 +554,7 @@ void print_columndocs(void)
 
 	fprintf(stdout, "<p style=\"page-break-before: always\">\n"); 
 	fprintf(stdout, "<table width=\"100%%\" border=1 summary=\"Column descriptions\">\n");
-	fprintf(stdout, "<tr><th colspan=2>Hobbit column descriptions</th></tr>\n");
+	fprintf(stdout, "<tr><th colspan=2>Xymon column descriptions</th></tr>\n");
 	for (i=0; (i<ccount); i++) {
 		if (clist[i]->used) {
 			fprintf(stdout, "<tr><td align=left valign=top>%s</td><td>%s</td></tr>\n",
@@ -634,7 +634,7 @@ int main(int argc, char *argv[])
 	int argi, hosti, testi;
 	char *pagepattern = NULL, *hostpattern = NULL;
 	char *envarea = NULL, *cookie = NULL, *nexthost;
-	char *hobbitcmd, *procscmd, *svcscmd;
+	char *xymoncmd, *procscmd, *svcscmd;
         int alertcolors, alertinterval;
 	char configfn[PATH_MAX];
 	char *respbuf = NULL, *procsbuf = NULL, *svcsbuf = NULL;
@@ -645,6 +645,7 @@ int main(int argc, char *argv[])
 	int hostcount = 0, maxtests = 0;
 	time_t now = getcurrenttime(NULL);
 	sendreturn_t *sres;
+	char *critconfigfn = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -663,17 +664,21 @@ int main(int argc, char *argv[])
 			coldelim = strdup(p+1);
 		}
 		else if (strcmp(argv[argi], "--critical") == 0) {
-			nkonly = 1;
+			criticalonly = 1;
 		}
-		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
-			newnkconfig = 0;
+		else if (strcmp(argv[argi], "--old-critical-config") == 0) {
+			newcritconfig = 0;
+		}
+		else if (argnmatch(argv[argi], "--critical-config=")) {
+			char *p = strchr(argv[argi], '=');
+			critconfigfn = strdup(p+1);
 		}
 	}
 
-	redirect_cgilog("hobbit-confreport");
+	redirect_cgilog("confreport");
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	load_nkconfig(NULL);
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	load_critconfig(critconfigfn);
 
 	/* Setup the filter we use for the report */
 	cookie = get_cookie("pagepath"); if (cookie && *cookie) pagepattern = strdup(cookie);
@@ -681,50 +686,50 @@ int main(int argc, char *argv[])
 
 	/* Fetch the list of host+test statuses we currently know about */
 	if (pagepattern) {
-		hobbitcmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+		xymoncmd = (char *)malloc(2*strlen(pagepattern) + 1024);
 		procscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
 		svcscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
 
-		sprintf(hobbitcmd, "hobbitdboard page=^%s$|^%s/.+ fields=hostname,testname", 
+		sprintf(xymoncmd, "xymondboard page=^%s$|^%s/.+ fields=hostname,testname", 
 			pagepattern, pagepattern);
-		sprintf(procscmd,  "hobbitdboard page=^%s$|^%s/.+ test=procs fields=hostname,msg",
+		sprintf(procscmd,  "xymondboard page=^%s$|^%s/.+ test=procs fields=hostname,msg",
 			pagepattern, pagepattern);
-		sprintf(svcscmd,   "hobbitdboard page=^%s$|^%s/.+ test=svcs fields=hostname,msg",
+		sprintf(svcscmd,   "xymondboard page=^%s$|^%s/.+ test=svcs fields=hostname,msg",
 			pagepattern, pagepattern);
 	}
 	else if (hostpattern) {
-		hobbitcmd = (char *)malloc(strlen(hostpattern) + 1024);
+		xymoncmd = (char *)malloc(strlen(hostpattern) + 1024);
 		procscmd = (char *)malloc(strlen(hostpattern) + 1024);
 		svcscmd = (char *)malloc(strlen(hostpattern) + 1024);
 
-		sprintf(hobbitcmd, "hobbitdboard host=^%s$ fields=hostname,testname", hostpattern);
-		sprintf(procscmd,  "hobbitdboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
-		sprintf(svcscmd,   "hobbitdboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
+		sprintf(xymoncmd, "xymondboard host=^%s$ fields=hostname,testname", hostpattern);
+		sprintf(procscmd,  "xymondboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
+		sprintf(svcscmd,   "xymondboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
 	}
 	else {
-		hobbitcmd = (char *)malloc(1024);
+		xymoncmd = (char *)malloc(1024);
 		procscmd = (char *)malloc(1024);
 		svcscmd = (char *)malloc(1024);
 
-		sprintf(hobbitcmd, "hobbitdboard fields=hostname,testname");
-		sprintf(procscmd,  "hobbitdboard test=procs fields=hostname,msg");
-		sprintf(svcscmd,   "hobbitdboard test=svcs fields=hostname,msg");
+		sprintf(xymoncmd, "xymondboard fields=hostname,testname");
+		sprintf(procscmd,  "xymondboard test=procs fields=hostname,msg");
+		sprintf(svcscmd,   "xymondboard test=svcs fields=hostname,msg");
 	}
 
 	sres = newsendreturnbuf(1, NULL);
 
-	if (sendmessage(hobbitcmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
-		errormsg("Cannot contact the Hobbit server\n");
+	if (sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
+		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	respbuf = getsendreturnstr(sres, 1);
-	if (sendmessage(procscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
-		errormsg("Cannot contact the Hobbit server\n");
+	if (sendmessage(procscmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
+		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	procsbuf = getsendreturnstr(sres, 1);
-	if (sendmessage(svcscmd, NULL, BBTALK_TIMEOUT, sres) != BB_OK) {
-		errormsg("Cannot contact the Hobbit server\n");
+	if (sendmessage(svcscmd, NULL, XYMON_TIMEOUT, sres) != XYMONSEND_OK) {
+		errormsg("Cannot contact the Xymon server\n");
 		return 1;
 	}
 	svcsbuf = getsendreturnstr(sres, 1);
@@ -746,11 +751,15 @@ int main(int argc, char *argv[])
 		hname = nexthost;
 		tname = strchr(nexthost, '|'); if (tname) { *tname = '\0'; tname++; }
 
-		if (nkonly) {
+		if (criticalonly) {
 			void *hinfo = hostinfo(hname);
-			char *nkalerts = bbh_item(hinfo, BBH_NK);
+			char *alerts = xmh_item(hinfo, XMH_NK);
 
-			if (!nkalerts || (strcmp(nkval(hname, tname, nkalerts), "No") == 0)) wanted = 0;
+			if (newcritconfig) {
+				if (strcmp(criticalval(hname, tname, alerts), "No") == 0 ) wanted = 0;
+			} else {
+				if (!alerts) wanted = 0;
+			}
 		}
 
 		if (wanted && hname && tname && strcmp(hname, "summary") && strcmp(tname, xgetenv("INFOCOLUMN")) && strcmp(tname, xgetenv("TRENDSCOLUMN"))) {
@@ -797,7 +806,7 @@ int main(int argc, char *argv[])
 	/* Load alert config */
 	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
 	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
-	sprintf(configfn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
+	sprintf(configfn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 	load_alertconfig(configfn, alertcolors, alertinterval);
 	load_columndocs();
 
@@ -807,14 +816,14 @@ int main(int argc, char *argv[])
 	headfoot(stdout, "confreport", "", "header", COL_BLUE);
 
 	fprintf(stdout, "<table width=\"100%%\" border=0>\n");
-	fprintf(stdout, "<tr><th align=center colspan=2><font size=\"+2\">Hobbit configuration Report</font></th></tr>\n");
+	fprintf(stdout, "<tr><th align=center colspan=2><font size=\"+2\">Xymon configuration Report</font></th></tr>\n");
 	fprintf(stdout, "<tr><th valign=top align=left>Date</th><td>%s</td></tr>\n", ctime(&now));
 	fprintf(stdout, "<tr><th valign=top align=left>%d hosts included</th><td>\n", hostcount);
 	for (hosti=0; (hosti < hostcount); hosti++) {
 		fprintf(stdout, "%s ", allhosts[hosti]->hostname);
 	}
 	fprintf(stdout, "</td></tr>\n");
-	if (nkonly) {
+	if (criticalonly) {
 		fprintf(stdout, "<tr><th valign=top align=left>Filter</th><td>Only data for the &quot;Critical Systems&quot; view reported</td></tr>\n");
 	}
 	fprintf(stdout, "</table>\n");

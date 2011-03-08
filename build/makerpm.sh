@@ -25,27 +25,27 @@ buildarchtranslate: i586: i386
 buildarchtranslate: i686: i386
 EOF2
 
-cat rpm/hobbit.spec | sed -e "s/@VER@/$REL/g" >rpmbuild/SPECS/hobbit.spec
-cp rpm/hobbit-init.d rpmbuild/SOURCES/
-cp rpm/hobbit.logrotate rpmbuild/SOURCES/
-cp rpm/hobbit-client.init rpmbuild/SOURCES/
-cp rpm/hobbit-client.default rpmbuild/SOURCES/
+cat rpm/xymon.spec | sed -e "s/@VER@/$REL/g" >rpmbuild/SPECS/xymon.spec
+cp rpm/xymon-init.d rpmbuild/SOURCES/
+cp rpm/xymon.logrotate rpmbuild/SOURCES/
+cp rpm/xymon-client.init rpmbuild/SOURCES/
+cp rpm/xymon-client.default rpmbuild/SOURCES/
 
-mkdir -p rpmbuild/hobbit-$REL
-for f in bbdisplay bbnet bbpatches bbproxy build common contrib docs hobbitd web include lib client demotool
+mkdir -p rpmbuild/xymon-$REL
+for f in xymongen xymonnet bbpatches xymonproxy build common contrib docs xymond web include lib client demotool
 do
-        find $f/ | grep -v RCS | cpio -pdvmu $BASEDIR/rpmbuild/hobbit-$REL/
+        find $f/ | egrep -v "RCS|.svn" | cpio -pdvmu $BASEDIR/rpmbuild/xymon-$REL/
 done
-cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT RELEASENOTES $BASEDIR/rpmbuild/hobbit-$REL/
-find $BASEDIR/rpmbuild/hobbit-$REL -type d|xargs chmod 755
+cp -p Changes configure configure.server configure.client COPYING CREDITS README README.CLIENT RELEASENOTES $BASEDIR/rpmbuild/xymon-$REL/
+find $BASEDIR/rpmbuild/xymon-$REL -type d|xargs chmod 755
 
 cd rpmbuild
-pushd hobbit-$REL
-make -f $HOME/hobbit/Makefile.home distclean
-popd
-tar zcf SOURCES/hobbit-$REL.tar.gz hobbit-$REL
-rm -rf hobbit-$REL
-HOME=`pwd` rpmbuild -ba --clean SPECS/hobbit.spec
-rpm --addsign RPMS/i?86/hobbit-$REL-*.i?86.rpm RPMS/i386/hobbit-client-$REL-*.i?86.rpm SRPMS/hobbit-$REL-*.src.rpm
-mv RPMS/i?86/hobbit-$REL-*.i?86.rpm RPMS/i?86/hobbit-client-$REL-*.i?86.rpm SRPMS/hobbit-$REL-*.src.rpm ../rpm/pkg/
+#pushd xymon-$REL
+#make -f $HOME/xymon/Makefile.home distclean
+#popd
+tar zcf SOURCES/xymon-$REL.tar.gz xymon-$REL
+rm -rf xymon-$REL
+HOME=`pwd` rpmbuild -ba --clean SPECS/xymon.spec
+#rpm --addsign RPMS/i?86/xymon-$REL-*.i?86.rpm RPMS/i386/xymon-client-$REL-*.i?86.rpm SRPMS/xymon-$REL-*.src.rpm
+# mv RPMS/i?86/xymon-$REL-*.i?86.rpm RPMS/i?86/xymon-client-$REL-*.i?86.rpm SRPMS/xymon-$REL-*.src.rpm ../rpm/pkg/
 

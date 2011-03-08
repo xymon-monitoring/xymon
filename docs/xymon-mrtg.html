@@ -35,17 +35,17 @@ file like this at the top of the file:</p>
 
 <pre>
 # For Xymon integration
-WorkDir: /usr/local/hobbit/data/rrd
+WorkDir: /usr/local/xymon/data/rrd
 LogFormat: rrdtool
 </pre>
 
 <p>Note that the <tt>WorkDir</tt> setting points to the top-level RRD directory,
-i.e. the one defined via the BBRRDS setting in hobbitserver.cfg. The 
+i.e. the one defined via the XYMONRRDS setting in xymonserver.cfg. The 
 <tt>Logformat:&nbsp;rrdtool</tt> makes MRTG save data using the RRDtool data format.</p>
 
 <p>Each of the network interfaces you monitor have a target-definition in the
 mrtg.cfg file. You need to modify this slightly, to make it save the RRD data
-file in a subdirectory matching the hostname you have in the bb-hosts file,
+file in a subdirectory matching the hostname you have in the hosts.cfg file,
 and with a filename that begins with "mrtg.". Like this:</p>
 
 <pre>
@@ -59,11 +59,11 @@ query the SNMP daemon on the router.</p>
 
 <p>The <tt><b>Directory[mrtg.myrouter.eth0]:&nbsp;myrouter.sample.com</b></tt> instructs MRTG to
 save the data file in this directory relative to the <b>WorkDir</b> directory, i.e. the final directory 
-for the RRD datafile will be <tt>/usr/local/hobbit/data/rrd/myrouter.sample.com</tt> which is
+for the RRD datafile will be <tt>/usr/local/xymon/data/rrd/myrouter.sample.com</tt> which is
 where Xymon expects all of the RRD-files for the myrouter.sample.com host to be. The
 name of the RRD data-file will be <b>mrtg.myrouter.eth0.rrd</b> - i.e. the name of the target.</p>
 
-<p>The reason for naming the data file <b>mrtg.*.rrd</b> is that the hobbitgraph tool has a 
+<p>The reason for naming the data file <b>mrtg.*.rrd</b> is that the showgraph tool has a 
 built-in definition for generating graphs from this type of files. So if you stick to this
 naming convention, the graphs will automatically show up on the Xymon "trends" page. If you
 have more than one device that you collect data from, you'll need to modify this; you can use
@@ -79,7 +79,7 @@ MaxBytes settings, they are required - MRTG will not run without them:</p>
 
 <pre>
 # For Xymon integration
-WorkDir: /var/lib/hobbit/rrd
+WorkDir: /var/lib/xymon/rrd
 LogFormat: rrdtool
 
 # The external interface on my router
@@ -99,23 +99,23 @@ MaxBytes[mrtg.fenris.lan]: 1250000
 <p>With this setup, I have the MRTG graphs readily available on the "trends" page, together
 with all of the other Xymon graphs.</p>
 
-<h3>Running the MRTG data collector from hobbitlaunch</h3>
+<h3>Running the MRTG data collector from xymonlaunch</h3>
 <p>Normally there is a cron job that runs the <tt>mrtg</tt> command every 5
-minutes to collect the MRTG data. But you can run it from hobbitlaunch - 
-this also has the benefit that the RRD files will be owned by the hobbit user.</p>
+minutes to collect the MRTG data. But you can run it from xymonlaunch - 
+this also has the benefit that the RRD files will be owned by the xymon user.</p>
 
-<p>All that is needed is to add a section for MRTG to Xymon's  hobbitlaunch.cfg 
+<p>All that is needed is to add a section for MRTG to Xymon's  tasks.cfg 
 file. Mine looks like this:</p>
 <pre>
 [mrtg]
-	CMD /usr/bin/mrtg --lock-file $BBSERVERLOGS/mrtg.lock /etc/mrtg.cfg
+	CMD /usr/bin/mrtg --lock-file $XYMONSERVERLOGS/mrtg.lock /etc/mrtg.cfg
 	INTERVAL 5m
-	LOGFILE $BBSERVERLOGS/mrtg.log
+	LOGFILE $XYMONSERVERLOGS/mrtg.log
 </pre>
 
 <p>Some Linux distributions setup MRTG with the expectation that it will always
 be run by the root user. So you may have to change permissions on some files and
-directories e.g. to permit the hobbit user to read the mrtg.cfg file. Check the
+directories e.g. to permit the xymon user to read the mrtg.cfg file. Check the
 mrtg.log file for errors.</p>
 
 </body>

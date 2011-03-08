@@ -1,27 +1,27 @@
 #!/usr/bin/perl -w
 
 #*----------------------------------------------------------------------------*/
-#* Hobbit client message processor.                                           */
+#* Xymon client message processor.                                            */
 #*                                                                            */
 #* This perl program shows how to create a server-side module using the       */
-#* data sent by the Hobbit clients. This program is fed data from the         */
-#* Hobbit "client" channel via the hobbitd_channel program; each client       */
+#* data sent by the Xymon clients. This program is fed data from the          */
+#* Xymon "client" channel via the xymond_channel program; each client         */
 #* message is processed by looking at the [who] section and generates         */
 #* a "login" status that goes red when an active "root" login is found.       */
 #*                                                                            */
 #* Written 2007-Jan-28 by Henrik Storner <henrik@hswn.dk>                     */
 #*                                                                            */
 #* This program is in the public domain, and may be used freely for           */
-#* creating your own Hobbit server-side modules.                              */
+#* creating your own Xymon server-side modules.                               */
 #*                                                                            */
 #*----------------------------------------------------------------------------*/
 
 # $Id$
 
 
-my $bb;
-my $bbdisp;
-my $hobbitcolumn = "login";
+my $xymon;
+my $xymsrv;
+my $statuscolumn = "login";
 
 my $hostname = "";
 my $msgtxt = "";
@@ -31,9 +31,9 @@ my $cursection = "";
 sub processmessage;
 
 
-# Get the BB and BBDISP environment settings.
-$bb = $ENV{"BB"} || die "BB not defined";
-$bbdisp = $ENV{"BBDISP"} || die "BBDISP not defined";
+# Get the XYMON and XYMSRV environment settings.
+$xymon = $ENV{"XYMON"} || die "XYMON not defined";
+$xymsrv = $ENV{"XYMSRV"} || die "XYMSRV not defined";
 
 
 # Main routine. 
@@ -105,8 +105,8 @@ sub processmessage {
 		$statusmsg = "&green No root login active\n\n" . $sections{"who"};
 	}
 
-	# Build the command we use to send a status to the Hobbit daemon
-	$cmd = $bb . " " . $bbdisp . " \"status " . $hostname . "." . $hobbitcolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
+	# Build the command we use to send a status to the Xymon daemon
+	$cmd = $xymon . " " . $xymsrv . " \"status " . $hostname . "." . $statuscolumn . " " . $color . " " . $summary . "\n\n" . $statusmsg . "\"";
 
 	# And send the message
 	system $cmd;

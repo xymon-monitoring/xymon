@@ -1,4 +1,4 @@
-.TH TRIMHISTORY 8 "Version 4.2.1: 27 Nov 2008" "Xymon"
+.TH TRIMHISTORY 8 "Version 4.3.0-RC1: 20 Jan 2011" "Xymon"
 .SH NAME
 trimhistory \- Remove old Xymon history-log entries
 .SH SYNOPSIS
@@ -18,7 +18,7 @@ existing logfile is left untouched.
 
 Optionally, this tool will also remove logfiles from hosts that are 
 no longer defined in the Xymon 
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file. As an extension, even logfiles from services can be removed, 
 if the service no longer has a valid status-report logged in the
 current Xymon status.
@@ -37,14 +37,14 @@ entries prior to Oct. 1st 2004:
     trimhistory --cutoff=`date +%s --date="1 Oct 2004"`
 
 .IP "--outdir=DIRECTORY"
-Normally, files in the BBHIST directory are replaced. This option causes
+Normally, files in the XYMONHISTDIR directory are replaced. This option causes
 trimhistory to save the shortened history logfiles to another directory,
 so you can verify that the operation works as intended. The output directory
 must exist.
 
 .IP --drop
 Causes trimhistory to delete files from hosts that are not listed in the
-.I bb-hosts(5)
+.I hosts.cfg(5)
 file.
 
 .IP --dropsvcs
@@ -53,7 +53,7 @@ tracked by Xymon. Normally these files would be left untouched if only
 the host exists.
 
 .IP --droplogs
-Process the BBHISTLOGS directory also, and delete status-logs from events
+Process the XYMONHISTLOGS directory also, and delete status-logs from events
 prior to the cut-off time. Note that this can dramatically increase the
 processing time, since there are often lots and lots of files to process.
 
@@ -70,30 +70,30 @@ Enable debugging output.
 
 
 .SH FILES
-.IP "$BBHIST/allevents"
+.IP "$XYMONHISTDIR/allevents"
 The eventlog of all events that have happened in Xymon.
 
-.IP "$BBHIST/HOSTNAME"
+.IP "$XYMONHISTDIR/HOSTNAME"
 The per-host eventlogs.
 
-.IP "$BBHIST/HOSTNAME.SERVICE"
+.IP "$XYMONHISTDIR/HOSTNAME.SERVICE"
 The per-service eventlogs.
 
-.IP "$BBHISTLOGS/*/*"
+.IP "$XYMONHISTLOGS/*/*"
 The historical status-logs.
 
 .SH "ENVIRONMENT VARIABLES"
-.IP BBHIST
+.IP XYMONHISTDIR
 The directory holding all history logs.
 
-.IP BBHISTLOGS
+.IP XYMONHISTLOGS
 The top-level directory for the historical status-log collections.
 
-.IP BBHOSTS
-The location of the bb-hosts file, holding the list of currently 
+.IP HOSTSCFG
+The location of the hosts.cfg file, holding the list of currently 
 known hosts in Xymon.
 
 
 .SH "SEE ALSO"
-xymon(7), bb-hosts(5)
+xymon(7), hosts.cfg(5)
 

@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
 /* This file contains code to calculate availability percentages and do       */
 /* SLA calculations.                                                          */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct {
 	int dow;
@@ -162,7 +162,7 @@ static char *parse_histlogfile(char *hostname, char *servicename, char *timespec
 
 	cause[0] = '\0';
 
-	sprintf(fn, "%s/%s", xgetenv("BBHISTLOGS"), commafy(hostname));
+	sprintf(fn, "%s/%s", xgetenv("XYMONHISTLOGS"), commafy(hostname));
 	for (p = strrchr(fn, '/'); (*p); p++) if (*p == ',') *p = '_';
 	sprintf(p, "/%s/%s", servicename, timespec);
 

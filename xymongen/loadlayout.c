@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit overview webpage generator tool.                                    */
+/* Xymon overview webpage generator tool.                                     */
 /*                                                                            */
-/* This file contains code to load the page-structure from the bb-hosts file. */
+/* This file holds code to load the page-structure from the hosts.cfg file.   */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -23,9 +23,9 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "bbgen.h"
+#include "xymongen.h"
 #include "util.h"
-#include "loadbbhosts.h"
+#include "loadlayout.h"
 
 #define MAX_TARGETPAGES_PER_HOST 10
 
@@ -34,12 +34,12 @@ time_t	snapshot = 0;				/* Set if we are doing a snapshot */
 char	*null_text = "";
 
 /* List definition to search for page records */
-typedef struct bbpagelist_t {
-	struct bbgen_page_t *pageentry;
-	struct bbpagelist_t *next;
-} bbpagelist_t;
+typedef struct xymonpagelist_t {
+	struct xymongen_page_t *pageentry;
+	struct xymonpagelist_t *next;
+} xymonpagelist_t;
 
-static bbpagelist_t *pagelisthead = NULL;
+static xymonpagelist_t *pagelisthead = NULL;
 int	pagecount = 0;
 int	hostcount = 0;
 
@@ -49,11 +49,11 @@ char    *nopropreddefault = NULL;
 char    *noproppurpledefault = NULL;
 char    *nopropackdefault = NULL;
 
-void addtopagelist(bbgen_page_t *page)
+void addtopagelist(xymongen_page_t *page)
 {
-	bbpagelist_t *newitem;
+	xymonpagelist_t *newitem;
 
-	newitem = (bbpagelist_t *) calloc(1, sizeof(bbpagelist_t));
+	newitem = (xymonpagelist_t *) calloc(1, sizeof(xymonpagelist_t));
 	newitem->pageentry = page;
 	newitem->next = pagelisthead;
 	pagelisthead = newitem;
@@ -112,9 +112,9 @@ char *build_noprop(char *defset, char *specset)
 	return result;	/* This may be an empty string */
 }
 
-bbgen_page_t *init_page(char *name, char *title)
+xymongen_page_t *init_page(char *name, char *title)
 {
-	bbgen_page_t *newpage = (bbgen_page_t *) calloc(1, sizeof(bbgen_page_t));
+	xymongen_page_t *newpage = (xymongen_page_t *) calloc(1, sizeof(xymongen_page_t));
 
 	pagecount++;
 	dbgprintf("init_page(%s, %s)\n", textornull(name), textornull(title));
@@ -174,7 +174,7 @@ host_t *init_host(char *hostname, int issummary,
 		  char *comment, char *description,
 		  int ip1, int ip2, int ip3, int ip4, 
 		  int dialup, double warnpct, int warnstops, char *reporttime,
-		  char *alerts, int nktime, char *waps,
+		  char *alerts, int crittime, char *waps,
 		  char *nopropyellowtests, char *nopropredtests, char *noproppurpletests, char *nopropacktests)
 {
 	host_t 		*newhost = (host_t *) calloc(1, sizeof(host_t));
@@ -197,7 +197,7 @@ host_t *init_host(char *hostname, int issummary,
 	newhost->reportwarnlevel = warnpct;
 	newhost->reportwarnstops = warnstops;
 	newhost->reporttime = (reporttime ? strdup(reporttime) : NULL);
-	if (alerts && nktime) {
+	if (alerts && crittime) {
 		newhost->alerts = strdup(alerts);
 	}
 	else {
@@ -257,7 +257,7 @@ host_t *init_host(char *hostname, int issummary,
 	}
 
 	newhost->parent = NULL;
-	newhost->nobb2 = 0;
+	newhost->nonongreen = 0;
 	newhost->next = NULL;
 
 	/* Summary hosts don't go into the host list */
@@ -314,12 +314,12 @@ void getnamelink(char *l, char **name, char **link)
 }
 
 
-void getparentnamelink(char *l, bbgen_page_t *toppage, bbgen_page_t **parent, char **name, char **link)
+void getparentnamelink(char *l, xymongen_page_t *toppage, xymongen_page_t **parent, char **name, char **link)
 {
 	/* "subparent NAME PARENTNAME title-or-link" splitup */
 	char *p;
 	char *parentname;
-	bbpagelist_t *walk;
+	xymonpagelist_t *walk;
 
 	dbgprintf("getnamelink(%s, ...)\n", textornull(l));
 
@@ -413,15 +413,15 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 }
 
 
-bbgen_page_t *load_bbhosts(char *pgset)
+xymongen_page_t *load_layout(char *pgset)
 {
-	FILE 	*bbhosts;
+	FILE 	*hostsfile;
 	strbuffer_t *inbuf;
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols, *exceptcols;
 	char 	hostname[MAX_LINE_LEN];
-	bbgen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
+	xymongen_page_t 	*toppage, *curpage, *cursubpage, *cursubparent;
 	group_t *curgroup;
 	host_t	*curhost;
 	char	*curtitle;
@@ -429,17 +429,17 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	char	*p;
 	int	fqdn = get_fqdn();
 
-	load_hostnames(xgetenv("BBHOSTS"), "dispinclude", fqdn);
+	load_hostnames(xgetenv("HOSTSCFG"), "dispinclude", fqdn);
 
-	dbgprintf("load_bbhosts(pgset=%s)\n", textornull(pgset));
+	dbgprintf("load_layout(pgset=%s)\n", textornull(pgset));
 
 	/*
 	 * load_hostnames() picks up the hostname definitions, but not the page
 	 * layout. So we will scan the file again, this time doing the layout.
 	 */
-	bbhosts = stackfopen(xgetenv("BBHOSTS"), "r", NULL);
-	if (bbhosts == NULL) {
-		errprintf("Cannot open the BBHOSTS file '%s'\n", xgetenv("BBHOSTS"));
+	hostsfile = stackfopen(xgetenv("HOSTSCFG"), "r", NULL);
+	if (hostsfile == NULL) {
+		errprintf("Cannot open the HOSTSCFG file '%s'\n", xgetenv("HOSTSCFG"));
 		return NULL;
 	}
 
@@ -465,7 +465,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 	while (stackfgets(inbuf, "dispinclude")) {
 		sanitize_input(inbuf, 0, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
-		dbgprintf("load_bbhosts: -- got line '%s'\n", STRBUF(inbuf));
+		dbgprintf("load_layout: -- got line '%s'\n", STRBUF(inbuf));
 
 		if (strncmp(STRBUF(inbuf), pagetag, strlen(pagetag)) == 0) {
 			getnamelink(STRBUF(inbuf), &name, &link);
@@ -512,7 +512,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			addtopagelist(cursubpage);
 		}
 		else if (strncmp(STRBUF(inbuf), subparenttag, strlen(subparenttag)) == 0) {
-			bbgen_page_t *parentpage, *walk;
+			xymongen_page_t *parentpage, *walk;
 
 			getparentnamelink(STRBUF(inbuf), toppage, &parentpage, &name, &link);
 			if (parentpage == NULL) {
@@ -567,8 +567,8 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			curhost = NULL;
 		}
 		else if (sscanf(STRBUF(inbuf), "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
-			void *bbhost = NULL;
-			int dialup, nobb2, nktime = 1;
+			void *xymonhost = NULL;
+			int dialup, nonongreen, crittime = 1;
 			double warnpct = reportwarnlevel;
 			int warnstops = reportwarnstops;
 			char *displayname, *clientalias, *comment, *description;
@@ -576,7 +576,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			char *nopropyellowlist, *nopropredlist, *noproppurplelist, *nopropacklist;
 			char *targetpagelist[MAX_TARGETPAGES_PER_HOST];
 			int targetpagecount;
-			char *bbval;
+			char *hval;
 
 			/* Check for ".default." hosts - they are ignored. */
 			if (*hostname == '.') continue;
@@ -588,73 +588,72 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			}
 
 			/* Get the info */
-			bbhost = hostinfo(hostname);
-			if (bbhost == NULL) {
+			xymonhost = hostinfo(hostname);
+			if (xymonhost == NULL) {
 				errprintf("Confused - hostname '%s' cannot be found. Ignored\n", hostname);
 				continue;
 			}
 
 			/* Check for no-display hosts - they are ignored. */
 			/* But only when we're building the default pageset */
-			if ((strlen(pgset) == 0) && (bbh_item(bbhost, BBH_FLAG_NODISP) != NULL)) continue;
+			if ((strlen(pgset) == 0) && (xmh_item(xymonhost, XMH_FLAG_NODISP) != NULL)) continue;
 
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
 			targetpagecount = 0;
 
-			dialup = (bbh_item(bbhost, BBH_FLAG_DIALUP) != NULL);
-			nobb2 = (bbh_item(bbhost, BBH_FLAG_NOBB2) != NULL);
+			dialup = (xmh_item(xymonhost, XMH_FLAG_DIALUP) != NULL);
+			nonongreen = (xmh_item(xymonhost, XMH_FLAG_NONONGREEN) != NULL);
 
-			alertlist = bbh_item(bbhost, BBH_NK);
-			bbval = bbh_item(bbhost, BBH_NKTIME); 
-			if (bbval) nktime = within_sla(bbh_item(bbhost, BBH_HOLIDAYS), bbval, 0);
+			alertlist = xmh_item(xymonhost, XMH_NK);
+			hval = xmh_item(xymonhost, XMH_NKTIME); if (hval) crittime = within_sla(xmh_item(xymonhost, XMH_HOLIDAYS), hval, 0);
 
-			onwaplist = bbh_item(bbhost, BBH_WML);
-			nopropyellowlist = bbh_item(bbhost, BBH_NOPROPYELLOW);
-			if (nopropyellowlist == NULL) nopropyellowlist = bbh_item(bbhost, BBH_NOPROP);
-			nopropredlist = bbh_item(bbhost, BBH_NOPROPRED);
-			noproppurplelist = bbh_item(bbhost, BBH_NOPROPPURPLE);
-			nopropacklist = bbh_item(bbhost, BBH_NOPROPACK);
-			displayname = bbh_item(bbhost, BBH_DISPLAYNAME);
-			comment = bbh_item(bbhost, BBH_COMMENT);
-			description = bbh_item(bbhost, BBH_DESCRIPTION);
-			bbval = bbh_item(bbhost, BBH_WARNPCT); if (bbval) warnpct = atof(bbval);
-			bbval = bbh_item(bbhost, BBH_WARNSTOPS); if (bbval) warnstops = atof(bbval);
-			reporttime = bbh_item(bbhost, BBH_REPORTTIME);
+			onwaplist = xmh_item(xymonhost, XMH_WML);
+			nopropyellowlist = xmh_item(xymonhost, XMH_NOPROPYELLOW);
+			if (nopropyellowlist == NULL) nopropyellowlist = xmh_item(xymonhost, XMH_NOPROP);
+			nopropredlist = xmh_item(xymonhost, XMH_NOPROPRED);
+			noproppurplelist = xmh_item(xymonhost, XMH_NOPROPPURPLE);
+			nopropacklist = xmh_item(xymonhost, XMH_NOPROPACK);
+			displayname = xmh_item(xymonhost, XMH_DISPLAYNAME);
+			comment = xmh_item(xymonhost, XMH_COMMENT);
+			description = xmh_item(xymonhost, XMH_DESCRIPTION);
+			hval = xmh_item(xymonhost, XMH_WARNPCT); if (hval) warnpct = atof(hval);
+			hval = xmh_item(xymonhost, XMH_WARNSTOPS); if (hval) warnstops = atof(hval);
+			reporttime = xmh_item(xymonhost, XMH_REPORTTIME);
 
-			clientalias = bbh_item(bbhost, BBH_CLIENTALIAS);
-			if (bbhost && (strcmp(bbh_item(bbhost, BBH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
+			clientalias = xmh_item(xymonhost, XMH_CLIENTALIAS);
+			if (xymonhost && (strcmp(xmh_item(xymonhost, XMH_HOSTNAME), clientalias) == 0)) clientalias = NULL;
 
-			if (bbhost && (strlen(pgset) > 0)) {
+			if (xymonhost && (strlen(pgset) > 0)) {
 				/* Walk the clone-list and pick up the target pages for this host */
-				void *cwalk = bbhost;
+				void *cwalk = xymonhost;
 				do {
-					bbval = bbh_item_walk(cwalk);
-					while (bbval) {
-						if (strncasecmp(bbval, hosttag, strlen(hosttag)) == 0)
-							targetpagelist[targetpagecount++] = strdup(bbval+strlen(hosttag));
-						bbval = bbh_item_walk(NULL);
+					hval = xmh_item_walk(cwalk);
+					while (hval) {
+						if (strncasecmp(hval, hosttag, strlen(hosttag)) == 0)
+							targetpagelist[targetpagecount++] = strdup(hval+strlen(hosttag));
+						hval = xmh_item_walk(NULL);
 					}
 
 					cwalk = next_host(cwalk, 1);
 				} while (cwalk && 
-					 (strcmp(bbh_item(cwalk, BBH_HOSTNAME), bbh_item(bbhost, BBH_HOSTNAME)) == 0) &&
+					 (strcmp(xmh_item(cwalk, XMH_HOSTNAME), xmh_item(xymonhost, XMH_HOSTNAME)) == 0) &&
 					 (targetpagecount < MAX_TARGETPAGES_PER_HOST) );
 
 				/*
 				 * HACK: Check if the pageset tag is present at all in the host
 				 * entry. If it isn't, then drop this incarnation of the host.
 				 *
-				 * Without this, the following bb-hosts file will have the
+				 * Without this, the following hosts.cfg file will have the
 				 * www.hswn.dk host listed twice on the alternate pageset:
 				 *
 				 * adminpage nyc NYC
 				 *
 				 * 127.0.0.1   localhost      # bbd http://localhost/ CLIENT:osiris
-				 * 172.16.10.2 www.hswn.dk    # http://www.hswn.dk/ ADMIN:nyc ssh noinfo
+				 * 172.16.10.2 www.xymon.com  # http://www.xymon.com/ ADMIN:nyc ssh noinfo
 				 *
 				 * page superdome Superdome
-				 * 172.16.10.2 www.hswn.dk # noconn
+				 * 172.16.10.2 www.xymon.com # noconn
 				 *
 				 */
 				if (strstr(STRBUF(inbuf), hosttag) == NULL) targetpagecount = 0;
@@ -670,7 +669,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 							    comment, description,
 							    ip1, ip2, ip3, ip4, dialup, 
 							    warnpct, warnstops, reporttime,
-							    alertlist, nktime, onwaplist,
+							    alertlist, crittime, onwaplist,
 							    nopropyellowlist, nopropredlist, noproppurplelist, nopropacklist);
 					if (curgroup != NULL) {
 						curgroup->hosts = curhost;
@@ -693,13 +692,13 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, warnstops, reporttime,
-									    alertlist, nktime, onwaplist,
+									    alertlist, crittime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);
 				}
 				curhost->parent = (cursubparent ? cursubparent : (cursubpage ? cursubpage : curpage));
 				if (curtitle) { curhost->pretitle = curtitle; curtitle = NULL; }
-				curhost->nobb2 = nobb2;
+				curhost->nonongreen = nonongreen;
 			}
 			else if (targetpagecount) {
 
@@ -710,7 +709,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 
 					char savechar;
 					int wantedgroup = 0;
-					bbpagelist_t *targetpage = NULL;
+					xymonpagelist_t *targetpage = NULL;
 
 					/* Put the host into the page specified by the PGSET: tag */
 					p = strchr(targetpagename, ',');
@@ -740,7 +739,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 									    comment, description,
 									    ip1, ip2, ip3, ip4, dialup,
 									    warnpct, warnstops, reporttime,
-									    alertlist, nktime, onwaplist,
+									    alertlist, crittime, onwaplist,
 									    nopropyellowlist,nopropredlist, 
 									    noproppurplelist, nopropacklist);
 
@@ -784,7 +783,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 			}
 		}
 		else if (strncmp(STRBUF(inbuf), summarytag, strlen(summarytag)) == 0) {
-			/* summary row.column      IP-ADDRESS-OF-PARENT    http://bb4.com/ */
+			/* summary row.column      IP-ADDRESS-OF-PARENT    http://xymon.com/ */
 			char sumname[MAX_LINE_LEN];
 			char receiver[MAX_LINE_LEN];
 			char url[MAX_LINE_LEN];
@@ -802,7 +801,7 @@ bbgen_page_t *load_bbhosts(char *pgset)
 		}
 	}
 
-	stackfclose(bbhosts);
+	stackfclose(hostsfile);
 	freestrbuffer(inbuf);
 
 	return toppage;

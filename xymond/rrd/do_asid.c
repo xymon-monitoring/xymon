@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
 /* This module handles combined z/OS and z/VSE ASID and NPARTS messages.      */
 /*                                                                            */
 /* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
-/* Copyright (C) 2007-2008 Rich Smrcina <rsmrcina@wi.rr.com>                  */
+/* Copyright (C) 2007-2009 Rich Smrcina <rsmrcina@wi.rr.com>                  */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char asid_rcsid[] = "$Id: do_asid.c,v 1.0 2008/11/06 20:45:01 henrik Exp $";
+static char asid_rcsid[] = "$Id: do_asid.c 6585 2010-11-14 15:12:56Z storner $";
 
 static char *asid_params[]     = { "DS:util:GAUGE:600:0:100", NULL };
 static char *asid_tpl          = NULL;

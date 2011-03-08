@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit status-log viewer CGI.                                              */
+/* Xymon status-log viewer CGI.                                               */
 /*                                                                            */
 /* This CGI tool shows an HTML version of a status log.                       */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -22,16 +22,17 @@ static char rcsid[] = "$Id$";
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
-#include "hobbitsvc-info.h"
-#include "hobbitsvc-trends.h"
+#include "svcstatus-info.h"
+#include "svcstatus-trends.h"
 
-/* Commandline params */
-static enum { SRC_HOBBITD, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_HOBBITD;
+/* Command-line params */
+static enum { SRC_XYMOND, SRC_HISTLOGS, SRC_CLIENTLOGS } source = SRC_XYMOND;
 static int wantserviceid = 1;
-static char *multigraphs = NULL;
+static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
+static char *critconfigfn = NULL;
 
 /* CGI params */
 static char *hostname = NULL;
@@ -41,6 +42,7 @@ static char *nkprio = NULL, *nkttgroup = NULL, *nkttextra = NULL;
 static enum { FRM_STATUS, FRM_CLIENT } outform = FRM_STATUS;
 static char *clienturi = NULL;
 static int backsecs = 0;
+static time_t fromtime = 0, endtime = 0;
 
 static char errortxt[1000];
 static char *hostdatadir = NULL;
@@ -114,6 +116,12 @@ static int parse_query(void)
 		else if ((strcmp(cwalk->name, "backdays") == 0)   && cwalk->value && strlen(cwalk->value)) {
 			backsecs += 24*60*60*atoi(cwalk->value);
 		}
+		else if ((strcmp(cwalk->name, "FROMTIME") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			fromtime = eventreport_time(cwalk->value);
+		}
+		else if ((strcmp(cwalk->name, "TOTIME") == 0)   && cwalk->value && strlen(cwalk->value)) {
+			endtime = eventreport_time(cwalk->value);
+		}
 
 		cwalk = cwalk->next;
 	}
@@ -141,20 +149,21 @@ static int parse_query(void)
 	return 0;
 }
 
-int loadhostdata(char *hostname, char **ip, char **displayname)
+int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts)
 {
 	void *hinfo = NULL;
 
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
 		return 1;
 	}
 
-	*ip = bbh_item(hinfo, BBH_IP);
-	*displayname = bbh_item(hinfo, BBH_DISPLAYNAME);
+	*ip = xmh_item(hinfo, XMH_IP);
+	*displayname = xmh_item(hinfo, XMH_DISPLAYNAME);
 	if (!(*displayname)) *displayname = hostname;
+	*compacts = xmh_item(hinfo, XMH_COMPACT);
 
 	return 0;
 }
@@ -165,10 +174,10 @@ int do_request(void)
 	char timesincechange[100];
 	time_t logtime = 0, acktime = 0, disabletime = 0;
 	char *log = NULL, *firstline = NULL, *sender = NULL, *clientid = NULL, *flags = NULL;	/* These are free'd */
-	char *restofmsg = NULL, *modifiers = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL;	/* These are just used */
+	char *restofmsg = NULL, *ackmsg = NULL, *dismsg = NULL, *acklist=NULL, *modifiers = NULL;	/* These are just used */
 	int ishtmlformatted = 0;
 	int clientavail = 0;
-	char *ip, *displayname;
+	char *ip, *displayname, *compacts;
 
 	if (parse_query() != 0) return 1;
 
@@ -181,26 +190,26 @@ int do_request(void)
 			sprintf(hostdatadir, "%s/%s", s, hostname);
 		}
 		else {
-			s = xgetenv("BBVAR");
+			s = xgetenv("XYMONVAR");
 			hostdatadir = (char *)malloc(strlen(s) + strlen(hostname) + 12);
 			sprintf(hostdatadir, "%s/hostdata/%s", s, hostname);
 		}
 	}
 
 	if (outform == FRM_CLIENT) {
-		if (source == SRC_HOBBITD) {
-			char *hobbitdreq;
-			int hobbitdresult;
+		if (source == SRC_XYMOND) {
+			char *xymondreq;
+			int xymondresult;
 			sendreturn_t *sres = newsendreturnbuf(1, NULL);
 
-			hobbitdreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
-			sprintf(hobbitdreq, "clientlog %s", hostname);
-			if (service && *service) sprintf(hobbitdreq + strlen(hobbitdreq), " section=%s", service);
+			xymondreq = (char *)malloc(1024 + strlen(hostname) + (service ? strlen(service) : 0));
+			sprintf(xymondreq, "clientlog %s", hostname);
+			if (service && *service) sprintf(xymondreq + strlen(xymondreq), " section=%s", service);
 
-			hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
-			if (hobbitdresult != BB_OK) {
+			xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
+			if (xymondresult != XYMONSEND_OK) {
 				char errtxt[4096];
-				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", hobbitdreq, hobbitdresult);
+				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", xymondreq, xymondresult);
 				errormsg(errtxt);
 				return 1;
 			}
@@ -230,7 +239,7 @@ int do_request(void)
 		restofmsg = (log ? log : strdup("<No data>\n"));
 	}
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
-		if (loadhostdata(hostname, &ip, &displayname) != 0) return 1;
+		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
 		ishtmlformatted = 1;
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
@@ -248,112 +257,189 @@ int do_request(void)
 				}
 				else {
 					/* Redirect browser to the real server */
-					fprintf(stdout, "Location: %s/bb-hostsvc.sh?HOST=%s&SERVICE=%s\n\n",
+					fprintf(stdout, "Location: %s/svcstatus.sh?HOST=%s&SERVICE=%s\n\n",
 						cgiurl, hostname, service);
 					return 0;
 				}
 			}
 			else {
-				time_t endtime = getcurrenttime(NULL);
+				if (endtime == 0) endtime = getcurrenttime(NULL);
 
-				sethostenv_backsecs(backsecs);
-				log = restofmsg = generate_trends(hostname, endtime-backsecs, endtime);
+				if (fromtime == 0) {
+					fromtime = endtime - backsecs;
+					sethostenv_backsecs(backsecs);
+				}
+				else {
+					sethostenv_eventtime(fromtime, endtime);
+				}
+
+				log = restofmsg = generate_trends(hostname, fromtime, endtime);
 			}
 		}
 		else if (strcmp(service, xgetenv("INFOCOLUMN")) == 0) {
-			log = restofmsg = generate_info(hostname);
+			log = restofmsg = generate_info(hostname, critconfigfn);
 		}
 	}
-	else if (source == SRC_HOBBITD) {
-		char hobbitdreq[1024];
-		int hobbitdresult;
+	else if (source == SRC_XYMOND) {
+		char xymondreq[1024];
+		int xymondresult;
 		char *items[25];
 		int icount;
 		time_t logage, clntstamp;
-		char *sumline, *msg, *p;
-		sendreturn_t *sres = newsendreturnbuf(1, NULL);
+		char *sumline, *msg, *p, *compitem, *complist;
+		sendreturn_t *sres;
 
-		sprintf(hobbitdreq, "hobbitdlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,BBH_IP,BBH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
-		hobbitdresult = sendmessage(hobbitdreq, NULL, BBTALK_TIMEOUT, sres);
-		if (hobbitdresult == BB_OK) log = getsendreturnstr(sres, 1);
+		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
+
+		complist = NULL;
+		if (compacts && *compacts) {
+			compitem = strtok(compacts, ",");
+			while (compitem && !complist) {
+				p = strchr(compitem, '='); if (p) *p = '\0';
+				if (strcmp(service, compitem) == 0) complist = p+1;
+				compitem = strtok(NULL, ",");
+			}
+		}
+
+		if (!complist) {
+			sprintf(xymondreq, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+		}
+		else {
+			sprintf(xymondreq, "xymondboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
+		}
+
+		sres = newsendreturnbuf(1, NULL);
+		xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
+		if (xymondresult == XYMONSEND_OK) log = getsendreturnstr(sres, 1);
 		freesendreturnbuf(sres);
-
-		if ((hobbitdresult != BB_OK) || (log == NULL) || (strlen(log) == 0)) {
+		if ((xymondresult != XYMONSEND_OK) || (log == NULL) || (strlen(log) == 0)) {
 			errormsg("Status not available\n");
 			return 1;
 		}
 
-		sumline = log; p = strchr(log, '\n'); *p = '\0';
-		msg = (p+1); p = strchr(msg, '\n');
-		if (!p) {
-			firstline = strdup(msg);
-			restofmsg = NULL;
+		if (!complist) {
+			sumline = log; p = strchr(log, '\n'); *p = '\0';
+			msg = (p+1); p = strchr(msg, '\n');
+			if (!p) {
+				firstline = strdup(msg);
+				restofmsg = NULL;
+			}
+			else { 
+				*p = '\0'; 
+				firstline = strdup(msg); 
+				restofmsg = (p+1);
+				*p = '\n'; 
+			}
+
+			memset(items, 0, sizeof(items));
+			p = gettok(sumline, "|"); icount = 0;
+			while (p && (icount < 20)) {
+				items[icount++] = p;
+				p = gettok(NULL, "|");
+			}
+
+			/*
+			 * hostname,		[0]
+			 * testname,		[1]
+			 * color,		[2]
+			 * flags,		[3]
+			 * lastchange,		[4]
+			 * logtime,		[5]
+			 * validtime,		[6]
+			 * acktime,		[7]
+			 * disabletime,		[8]
+			 * sender,		[9]
+			 * cookie,		[10]
+			 * ackmsg,		[11]
+			 * dismsg,		[12]
+			 * client,		[13]
+			 * acklist		[14]
+			 * XMH_IP		[15]
+			 * XMH_DISPLAYNAME	[16]
+			 * clienttstamp         [17]
+			 * flapping		[18]
+			 * modifiers		[19]
+			 */
+			color = parse_color(items[2]);
+			flags = strdup(items[3]);
+			logage = getcurrenttime(NULL) - atoi(items[4]);
+			timesincechange[0] = '\0'; p = timesincechange;
+			if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
+			p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
+			logtime = atoi(items[5]);
+			if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
+			if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
+			sender = strdup(items[9]);
+
+			if (items[11] && strlen(items[11])) ackmsg = items[11];
+			if (ackmsg) nldecode(ackmsg);
+
+			if (items[12] && strlen(items[12])) dismsg = items[12];
+			if (dismsg) nldecode(dismsg);
+
+			if (items[13]) clientavail = (*items[13] == 'Y');
+
+			acklist = ((items[14] && *items[14]) ? strdup(items[14]) : NULL);
+
+			ip = (items[15] ? items[15] : "");
+			displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
+			clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
+			flapping = (items[18] ? (*items[18] == '1') : 0);
+			modifiers = (items[19] && *(items[19])) ? items[19] : NULL;
+
+			sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
+			sethostenv_refresh(60);
 		}
-		else { 
-			*p = '\0'; 
-			firstline = strdup(msg); 
-			restofmsg = (p+1);
-			*p = '\n'; 
+		else {
+			/* Compressed status display */
+			strbuffer_t *cmsg;
+			char *row, *p_row, *p_fld;
+			char *nonhistenv;
+			char l[2048];
+
+			color = COL_GREEN;
+
+			cmsg = newstrbuffer(0);
+			addtobuffer(cmsg, "<table width=\"80%\" summary=\"Compacted Status Info\">\n");
+
+			row = strtok_r(log, "\n", &p_row);
+			while (row) {
+				/* testname,color,lastchange */
+				char *testname, *itmcolor, *chgs;
+				time_t lastchange;
+				int icolor;
+
+				testname = strtok_r(row, "|", &p_fld);
+				itmcolor = strtok_r(NULL, "|", &p_fld);
+				chgs = strtok_r(NULL, "|", &p_fld);
+				lastchange = atoi(chgs);
+
+				icolor = parse_color(itmcolor);
+				if (icolor > color) color = icolor;
+
+				sprintf(l, "<tr><td align=left>&%s&nbsp;<a href=\"%s\">%s</a></td></tr>\n", 
+					itmcolor, hostsvcurl(hostname, testname, 1), testname);
+				addtobuffer(cmsg, l);
+				row = strtok_r(NULL, "\n", &p_row);
+			}
+
+			addtobuffer(cmsg, "</table>\n");
+			ishtmlformatted = 1;
+
+			sethostenv(displayname, ip, service, colorname(color), hostname);
+			sethostenv_refresh(60);
+			logtime = getcurrenttime(NULL);
+			strcpy(timesincechange, "0 minutes");
+
+			log = restofmsg = grabstrbuffer(cmsg);
+
+			sprintf(l, "%s Compressed status display\n", colorname(color));
+			firstline = strdup(l);
+
+			nonhistenv = (char *)malloc(10 + strlen(service));
+			sprintf(nonhistenv, "NONHISTS=%s", service);
+			putenv(nonhistenv);
 		}
-
-		memset(items, 0, sizeof(items));
-		p = gettok(sumline, "|"); icount = 0;
-		while (p && (icount < 20)) {
-			items[icount++] = p;
-			p = gettok(NULL, "|");
-		}
-
-		/*
-		 * hostname,		[0]
-		 * testname,		[1]
-		 * color,		[2]
-		 * flags,		[3]
-		 * lastchange,		[4]
-		 * logtime,		[5]
-		 * validtime,		[6]
-		 * acktime,		[7]
-		 * disabletime,		[8]
-		 * sender,		[9]
-		 * cookie,		[10]
-		 * ackmsg,		[11]
-		 * dismsg,		[12]
-		 * client,		[13]
-		 * acklist		[14]
-		 * BBH_IP		[15]
-		 * BBH_DISPLAYNAME	[16]
-		 * clienttstamp         [17]
-		 * flapping		[18]
-		 * modifiers		[19]
-		 */
-		color = parse_color(items[2]);
-		flags = strdup(items[3]);
-		logage = getcurrenttime(NULL) - atoi(items[4]);
-		timesincechange[0] = '\0'; p = timesincechange;
-		if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
-		p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
-		logtime = atoi(items[5]);
-		if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
-		if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
-		sender = strdup(items[9]);
-
-		if (items[11] && strlen(items[11])) ackmsg = items[11];
-		if (ackmsg) nldecode(ackmsg);
-
-		if (items[12] && strlen(items[12])) dismsg = items[12];
-		if (dismsg) nldecode(dismsg);
-
-		if (items[13]) clientavail = (*items[13] == 'Y');
-
-		acklist = ((items[14] && *items[14]) ? strdup(items[14]) : NULL);
-
-		ip = (items[15] ? items[15] : "");
-		displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
-		clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
-		flapping = (items[18] ? (*items[18] == '1') : 0);
-		modifiers = (items[19] && *(items[19])) ? items[19] : NULL;
-
-		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
-		sethostenv_refresh(60);
 	}
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
@@ -372,16 +458,16 @@ int do_request(void)
 
 		if (!tstamp) { errormsg("Invalid request"); return 1; }
 
-		if (loadhostdata(hostname, &ip, &displayname) != 0) return 1;
+		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';
-		sprintf(logfn, "%s/%s/%s/%s", xgetenv("BBHISTLOGS"), hostnamedash, service, tstamp);
+		sprintf(logfn, "%s/%s/%s/%s", xgetenv("XYMONHISTLOGS"), hostnamedash, service, tstamp);
 		xfree(hostnamedash);
 		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 		sethostenv_histlog(tstamp);
 
-		if (stat(logfn, &st) == -1) {
+		if ((stat(logfn, &st) == -1) || (st.st_size < 10)) {
 			errormsg("Historical status log not available\n");
 			return 1;
 		}
@@ -467,8 +553,8 @@ int do_request(void)
 					errprintf("Cannot find hostdata files for host %s\n", hostname);
 				}
 				else {
-					clienturi = (char *)malloc(strlen(cgiurl) + 20 + strlen(hostname));
-					sprintf(clienturi, "%s/bb-hostsvc.sh?CLIENT=%s&amp;TIMEBUF=%s", 
+					clienturi = (char *)realloc(clienturi, strlen(cgiurl) + 40 + strlen(hostname) + strlen(clientid));
+					sprintf(clienturi, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
 						cgiurl, hostname, clientid);
 				}
 			}
@@ -480,6 +566,7 @@ int do_request(void)
 				clientavail = (stat(logfn, &st) == 0);
 
 				if (clientavail) {
+					clienturi = (char *)realloc(clienturi, strlen(clienturi) + 14 + strlen(clientid));
 					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
 				}
 			}
@@ -491,7 +578,7 @@ int do_request(void)
 			  service, 
 			  ip,
 		          color, flapping,
-			  (sender ? sender : "Hobbit"), 
+			  (sender ? sender : "Xymon"), 
 			  (flags ? flags : ""),
 		          logtime, timesincechange, 
 		          (firstline ? firstline : ""), 
@@ -534,9 +621,6 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[argi], "--historical") == 0) {
 			source = SRC_HISTLOGS;
 		}
-		else if (strcmp(argv[argi], "--hobbitd") == 0) {
-			source = SRC_HOBBITD;
-		}
 		else if (strncmp(argv[argi], "--history=", 10) == 0) {
 			char *val = strchr(argv[argi], '=')+1;
 
@@ -573,8 +657,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-jsvalidation") == 0) {
 			usejsvalidation = 0;
 		}
-		else if (strcmp(argv[argi], "--old-nk-config") == 0) {
-			newnkconfig = 0;
+		else if (strcmp(argv[argi], "--old-critical-config") == 0) {
+			newcritconfig = 0;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -584,9 +668,13 @@ int main(int argc, char *argv[])
 			locator_init(p+1);
 			locatorbased = 1;
 		}
+		else if (argnmatch(argv[argi], "--critical-config=")) {
+			char *p = strchr(argv[argi], '=');
+			critconfigfn = strdup(p+1);
+		}
 	}
 
-	redirect_cgilog("hobbitsvc");
+	redirect_cgilog("svcstatus");
 
 	*errortxt = '\0';
 	hostname = service = tstamp = NULL;

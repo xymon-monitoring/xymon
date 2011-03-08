@@ -1,17 +1,17 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit service locator daemon                                              */
+/* Xymon service locator daemon                                               */
 /*                                                                            */
-/* hobbitd_channel allows you to distribute data across multiple servers, eg. */
+/* xymond_channel allows you to distribute data across multiple servers, eg.  */
 /* have several servers handling the RRD updates - for performance and/or     */
 /* resilience purposes.                                                       */
 /* For this to work, there must be a way of determining which server handles  */
 /* a particular task for some ID - e.g. which server holds the RRD files for  */
-/* host "foo" - so Hobbit sends data and requests to the right place.         */
+/* host "foo" - so Xymon sends data and requests to the right place.          */
 /*                                                                            */
 /* This daemon provides the locator service. Tasks may register ID's and      */
 /* services, allowing others to lookup where they are located.                */
 /*                                                                            */
-/* Copyright (C) 2006-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -44,7 +44,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 
 #include "version.h"
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #include <signal.h>
 
@@ -347,7 +347,7 @@ void load_state(void)
 	char *tname, *sname, *sconfweight, *sactweight, *ssticky, *sextra, *hname;
 	enum locator_servicetype_t stype;
 
-	tmpdir = xgetenv("BBTMP"); if (!tmpdir) tmpdir = "/tmp";
+	tmpdir = xgetenv("XYMONTMP"); if (!tmpdir) tmpdir = "/tmp";
 	fn = (char *)malloc(strlen(tmpdir) + 100);
 
 	sprintf(fn, "%s/locator.servers.chk", tmpdir);
@@ -409,7 +409,7 @@ void save_state(void)
 	FILE *fd;
 	int tidx;
 
-	tmpdir = xgetenv("BBTMP"); if (!tmpdir) tmpdir = "/tmp";
+	tmpdir = xgetenv("XYMONTMP"); if (!tmpdir) tmpdir = "/tmp";
 	fn = (char *)malloc(strlen(tmpdir) + 100);
 
 	sprintf(fn, "%s/locator.servers.chk", tmpdir);
@@ -713,7 +713,7 @@ int main(int argc, char *argv[])
 		freopen(logfile, "a", stderr);
 	}
 
-	errprintf("Hobbit locator version %s starting\n", VERSION);
+	errprintf("Xymon locator version %s starting\n", VERSION);
 	errprintf("Listening on %s:%d\n", inet_ntoa(laddr.sin_addr), ntohs(laddr.sin_port));
 
 	if (daemonize) {
@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	setup_signalhandler("hobbitd_locator");
+	setup_signalhandler("xymond_locator");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigmisc_handler;
 	sigaction(SIGHUP, &sa, NULL);

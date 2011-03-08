@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit notification log viewer                                             */
+/* Xymon notification log viewer                                              */
 /*                                                                            */
-/* Copyright (C) 2007-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2007-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -23,7 +23,7 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <time.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int	maxcount = 100;		/* Default: Include last 100 events */
 int	maxminutes = 1440;	/* Default: for the past 24 hours */
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 
-	for (argi=1; (argi < argc); argi++) {
+	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1, envarea);
@@ -105,9 +105,13 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
+		else if (strcmp(argv[argi], "--debug") == 0) {
+			debug = 1;
+		}
 	}
 
-	redirect_cgilog("hobbit-notifylog");
+	redirect_cgilog("notifications");
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
@@ -120,7 +124,6 @@ int main(int argc, char *argv[])
 	}
 
 	parse_query();
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
 
 	/* Now generate the webpage */
 	headfoot(stdout, "notify", "", "header", COL_GREEN);

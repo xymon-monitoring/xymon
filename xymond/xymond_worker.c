@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is a small library for hobbitd worker modules, to read a new message  */
-/* from the hobbitd_channel process, and also do the decoding of messages     */
+/* This is a small library for xymond worker modules, to read a new message   */
+/* from the xymond_channel process, and also do the decoding of messages      */
 /* that are passed on the "meta-data" first line of such a message.           */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -37,10 +37,10 @@ static char rcsid[] = "$Id$";
 #include <sys/resource.h>
 #include <sys/wait.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_ipc.h"
-#include "hobbitd_worker.h"
+#include "xymond_ipc.h"
+#include "xymond_worker.h"
 
 #include <signal.h>
 
@@ -75,7 +75,7 @@ static void net_worker_heartbeat(void)
 
 	if (!locatorid || (locatorsvc == ST_MAX)) return;
 
-	now = getcurrenttime(NULL);
+	now = gettimer();
 	if (now > locatorhb) {
 		locator_serverup(locatorid, locatorsvc);
 		locatorhb = now + 60;
@@ -145,7 +145,7 @@ static int net_worker_listener(char *ipport)
 	fcntl(lsocket, F_SETFL, O_NONBLOCK);
 
 	/* Catch some signals */
-	setup_signalhandler("hobbitd_rrd-listener");
+	setup_signalhandler("xymond_listener");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = netinp_sighandler;
 	sigaction(SIGCHLD, &sa, NULL);
@@ -313,7 +313,7 @@ void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky
 			exit(1);
 		}
 		else if (res == 1) {
-			errprintf("hobbitd_rrd network listener terminated\n");
+			errprintf("xymond_listener listener terminated\n");
 			locator_serverdown(locatorid, svc);
 			exit(0);
 		}
@@ -328,7 +328,7 @@ void net_worker_run(enum locator_servicetype_t svc, enum locator_sticky_t sticky
 }
 
 
-unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq, struct timeval *timeout)
+unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, struct timespec *timeout)
 {
 	static unsigned int seqnum = 0;
 	static char *idlemsg = NULL;
@@ -341,8 +341,7 @@ unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq,
 	static char *endpos;	/* Where the first message ends */
 	static char *fillpos;	/* Where our unused data ends (the \0 byte) */
 
-	struct timeval cutoff;
-	struct timezone tz;
+	struct timespec cutoff;
 	int maymove, needmoredata;
 	char *endsrch;		/* Where in the buffer do we start looking for the end-message marker */
 	char *result;
@@ -419,18 +418,18 @@ unsigned char *get_hobbitd_message(enum msgchannels_t chnid, char *id, int *seq,
 
 startagain:
 	if (ioerror) {
-		errprintf("get_hobbitd_message: Returning NULL due to previous i/o error\n");
+		errprintf("get_xymond_message: Returning NULL due to previous i/o error\n");
 		return NULL;
 	}
 
 	if (timeout) {
 		/* Calculate when the read should timeout. */
-		gettimeofday(&cutoff, &tz);
+		getntimer(&cutoff);
 		cutoff.tv_sec += timeout->tv_sec;
-		cutoff.tv_usec += timeout->tv_usec;
-		if (cutoff.tv_usec > 1000000) {
+		cutoff.tv_nsec += timeout->tv_nsec;
+		if (cutoff.tv_nsec > 1000000000) {
 			cutoff.tv_sec += 1;
-			cutoff.tv_usec -= 1000000;
+			cutoff.tv_nsec -= 1000000000;
 		}
 	}
 
@@ -451,7 +450,8 @@ startagain:
 	needmoredata = (endpos == NULL);
 	while (needmoredata) {
 		/* Fill buffer with more data until we get an end-of-message marker */
-		struct timeval now, tmo;
+		struct timespec now, tmo;
+		struct timeval selecttmo;
 		fd_set fdread;
 		int res;
 		size_t bufleft = bufsz - (fillpos - buf);
@@ -483,32 +483,33 @@ startagain:
 
 		if (timeout) {
 			/* How long time until the timeout ? */
-			gettimeofday(&now, &tz);
-			tmo.tv_sec = cutoff.tv_sec - now.tv_sec;
-			tmo.tv_usec = cutoff.tv_usec - now.tv_usec;
-			if (tmo.tv_usec < 0) {
-				tmo.tv_sec--;
-				tmo.tv_usec += 1000000;
+
+			getntimer(&now);
+			selecttmo.tv_sec = cutoff.tv_sec - now.tv_sec;
+			selecttmo.tv_usec = (cutoff.tv_nsec - now.tv_nsec) / 1000;
+			if (selecttmo.tv_usec < 0) {
+				selecttmo.tv_sec--;
+				selecttmo.tv_usec += 1000000;
 			}
 		}
 
 		FD_ZERO(&fdread);
 		FD_SET(inputfd, &fdread);
 
-		res = select(inputfd+1, &fdread, NULL, NULL, (timeout ? &tmo : NULL));
+		res = select(inputfd+1, &fdread, NULL, NULL, (timeout ? &selecttmo : NULL));
 
 		if (res < 0) {
 			if (errno == EAGAIN) continue;
 
 			if (errno == EINTR) {
-				dbgprintf("get_hobbitd_message: Interrupted\n");
+				dbgprintf("get_xymond_message: Interrupted\n");
 				*seq = 0;
 				return idlemsg;
 			}
 
 			/* Some error happened */
 			ioerror = 1;
-			dbgprintf("get_hobbitd_message: Returning NULL due to select error %s\n",
+			dbgprintf("get_xymond_message: Returning NULL due to select error %s\n",
 				  strerror(errno));
 			return NULL;
 		}
@@ -526,14 +527,14 @@ startagain:
 				if ((errno == EAGAIN) || (errno == EINTR)) continue;
 
 				ioerror = 1;
-				dbgprintf("get_hobbitd_message: Returning NULL due to read error %s\n",
+				dbgprintf("get_xymond_message: Returning NULL due to read error %s\n",
 					  strerror(errno));
 				return NULL;
 			}
 			else if (res == 0) {
 				/* read() returns 0 --> End-of-file */
 				ioerror = 1;
-				dbgprintf("get_hobbitd_message: Returning NULL due to EOF\n");
+				dbgprintf("get_xymond_message: Returning NULL due to EOF\n");
 				return NULL;
 			}
 			else {
@@ -574,7 +575,7 @@ startagain:
 		/* 
 		 * Get and check the message sequence number.
 		 * We dont do this for network based workers, since the
-		 * sequence number is globally generated (by hobbitd)
+		 * sequence number is globally generated (by xymond)
 		 * but a network-based worker may only see some of the
 		 * messages (those that are not handled by other network-based
 		 * worker modules).

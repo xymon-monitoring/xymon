@@ -1,13 +1,13 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.                                                     */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is a hobbitd worker module, it should be run off hobbitd_channel.     */
+/* This is a xymond worker module, it should be run off xymond_channel.       */
 /*                                                                            */
 /* This module implements the traditional Big Brother filebased storage of    */
-/* incoming status messages to the bbvar/logs/, bbvar/data/, bb/www/notes/    */
-/* and bbvar/disabled/ directories.                                           */
+/* incoming status messages to the $XYMONVAR/logs/, $XYMONVAR/data/,          */
+/* $XYMONWWWDIR/notes/ and $XYMONVAR/disabled/ directories.                   */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -23,16 +23,16 @@ static char rcsid[] = "$Id$";
 #include <utime.h>
 #include <dirent.h>
 #include <limits.h>
-#include <errno.h>
-
-#include "libbbgen.h"
-
-#include "hobbitd_worker.h"
-
 #include <signal.h>
+#include <errno.h>
+#include <libgen.h>
 
+#include "libxymon.h"
 
-static char *multigraphs = NULL;
+#include "xymond_worker.h"
+
+static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
+static int locatorbased = 0;
 
 enum role_t { ROLE_STATUS, ROLE_DATA, ROLE_NOTES, ROLE_ENADIS};
 
@@ -124,7 +124,7 @@ void update_htmlfile(char *fn, char *msg,
 			firstline, restofmsg, NULL,
 			acktime, ackmsg, NULL,
 			disabletime, dismsg,
-			0, 1, 0, 0, multigraphs, NULL, 
+			0, 1, 0, locatorbased, multigraphs, NULL, 
 			NULL, NULL, NULL,
 			0,
 			output);
@@ -199,27 +199,27 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[argi], "--status") == 0) {
 			role = ROLE_STATUS;
 			chnid = C_STATUS;
-			if (!filedir) filedir = xgetenv("BBLOGS");
+			if (!filedir) filedir = xgetenv("XYMONRAWSTATUSDIR");
 		}
 		else if (strcmp(argv[argi], "--html") == 0) {
 			role = ROLE_STATUS;
 			chnid = C_STATUS;
-			if (!htmldir) htmldir = xgetenv("BBHTML");
+			if (!htmldir) htmldir = xgetenv("XYMONHTMLSTATUSDIR");
 		}
 		else if (strcmp(argv[argi], "--data") == 0) {
 			role = ROLE_DATA;
 			chnid = C_DATA;
-			if (!filedir) filedir = xgetenv("BBDATA");
+			if (!filedir) filedir = xgetenv("XYMONDATADIR");
 		}
 		else if (strcmp(argv[argi], "--notes") == 0) {
 			role = ROLE_NOTES;
 			chnid = C_NOTES;
-			if (!filedir) filedir = xgetenv("BBNOTES");
+			if (!filedir) filedir = xgetenv("XYMONNOTESDIR");
 		}
 		else if (strcmp(argv[argi], "--enadis") == 0) {
 			role = ROLE_ENADIS;
 			chnid = C_ENADIS;
-			if (!filedir) filedir = xgetenv("BBDISABLED");
+			if (!filedir) filedir = xgetenv("XYMONDISABLEDDIR");
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
@@ -243,6 +243,11 @@ int main(int argc, char *argv[])
 			multigraphs = (char *)malloc(strlen(p+1) + 3);
 			sprintf(multigraphs, ",%s,", p+1);
 		}
+		else if (argnmatch(argv[argi], "--locator=")) {
+			char *p = strchr(argv[argi], '=');
+			locator_init(p+1);
+			locatorbased = 1;
+		}
 	}
 
 	if (filedir == NULL) {
@@ -251,14 +256,14 @@ int main(int argc, char *argv[])
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("hobbitd_filestore");
+	setup_signalhandler("xymond_filestore");
 	signal(SIGPIPE, SIG_DFL);
 
 	if (onlytests) dbgprintf("Storing tests '%s' only\n", onlytests);
 	else dbgprintf("Storing all tests\n");
 
 	while (running) {
-		char *items[20] = { NULL, };
+		char *metadata[20] = { NULL, };
 		char *statusdata = "";
 		char *p;
 		int metacount;
@@ -268,7 +273,7 @@ int main(int argc, char *argv[])
 
 		MEMDEFINE(logfn);
 
-		msg = get_hobbitd_message(chnid, "filestore", &seq, NULL);
+		msg = get_xymond_message(chnid, "filestore", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			MEMUNDEFINE(logfn);
@@ -281,19 +286,21 @@ int main(int argc, char *argv[])
 			statusdata = p+1;
 		}
 
-		p = gettok(msg, "|"); metacount = 0;
+		metacount = 0;
+		memset(&metadata, 0, sizeof(metadata));
+		p = gettok(msg, "|");
 		while (p && (metacount < 20)) {
-			items[metacount++] = p;
+			metadata[metacount++] = p;
 			p = gettok(NULL, "|");
 		}
 
-		if ((role == ROLE_STATUS) && (metacount >= 14) && (strncmp(items[0], "@@status", 8) == 0)) {
+		if ((role == ROLE_STATUS) && (metacount >= 14) && (strncmp(metadata[0], "@@status", 8) == 0)) {
 			/* @@status|timestamp|sender|origin|hostname|testname|expiretime|color|testflags|prevcolor|changetime|ackexpiretime|ackmessage|disableexpiretime|disablemessage|clientmsgtstamp|flapping */
 			int ltime, flapping = 0;
 			time_t logtime = 0, timesincechange = 0, acktime = 0, disabletime = 0;
 
-			hostname = items[4];
-			testname = items[5];
+			hostname = metadata[4];
+			testname = metadata[5];
 			if (!wantedtest(onlytests, testname)) {
 				dbgprintf("Status dropped - not wanted\n");
 				MEMUNDEFINE(logfn);
@@ -301,11 +308,11 @@ int main(int argc, char *argv[])
 			}
 
 			sprintf(logfn, "%s/%s.%s", filedir, commafy(hostname), testname);
-			expiretime = atoi(items[6]);
+			expiretime = atoi(metadata[6]);
 			statusdata = msg_data(statusdata);
-			sscanf(items[1], "%d.%*d", &ltime); logtime = ltime;
-			timesincechange = logtime - atoi(items[10]);
-			update_file(logfn, "w", statusdata, expiretime, items[2], timesincechange, seq);
+			sscanf(metadata[1], "%d.%*d", &ltime); logtime = ltime;
+			timesincechange = logtime - atoi(metadata[10]);
+			update_file(logfn, "w", statusdata, expiretime, metadata[2], timesincechange, seq);
 			if (htmldir) {
 				char *ackmsg = NULL;
 				char *dismsg = NULL;
@@ -313,29 +320,29 @@ int main(int argc, char *argv[])
 
 				MEMDEFINE(htmllogfn);
 
-				if (items[11]) acktime = atoi(items[11]);
-				if (items[12] && strlen(items[12])) ackmsg = items[12];
+				if (metadata[11]) acktime = atoi(metadata[11]);
+				if (metadata[12] && strlen(metadata[12])) ackmsg = metadata[12];
 				if (ackmsg) nldecode(ackmsg);
 
-				if (items[13]) disabletime = atoi(items[13]);
-				if (items[14] && strlen(items[14]) && (disabletime > 0)) dismsg = items[14];
+				if (metadata[13]) disabletime = atoi(metadata[13]);
+				if (metadata[14] && strlen(metadata[14]) && (disabletime > 0)) dismsg = metadata[14];
 				if (dismsg) nldecode(dismsg);
 
-				flapping = (items[16] ? (*items[16] == '1') : 0);
+				flapping = (metadata[16] ? (*metadata[16] == '1') : 0);
 
 				sprintf(htmllogfn, "%s/%s.%s.%s", htmldir, hostname, testname, htmlextension);
-				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(items[7]), flapping,
-						     items[2], items[8], logtime, timesincechange, 
+				update_htmlfile(htmllogfn, statusdata, hostname, testname, parse_color(metadata[7]), flapping,
+						     metadata[2], metadata[8], logtime, timesincechange, 
 						     acktime, ackmsg,
 						     disabletime, dismsg);
 
 				MEMUNDEFINE(htmllogfn);
 			}
 		}
-		else if ((role == ROLE_DATA) && (metacount > 5) && (strncmp(items[0], "@@data", 6) == 0)) {
+		else if ((role == ROLE_DATA) && (metacount > 5) && (strncmp(metadata[0], "@@data", 6) == 0)) {
 			/* @@data|timestamp|sender|hostname|testname */
-			p = hostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			testname = items[5];
+			p = hostname = metadata[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			testname = metadata[5];
 			if (!wantedtest(onlytests, testname)) {
 				dbgprintf("data dropped - not wanted\n");
 				MEMUNDEFINE(logfn);
@@ -347,29 +354,29 @@ int main(int argc, char *argv[])
 			expiretime = 0;
 			update_file(logfn, "a", statusdata, expiretime, NULL, -1, seq);
 		}
-		else if ((role == ROLE_NOTES) && (metacount > 3) && (strncmp(items[0], "@@notes", 7) == 0)) {
+		else if ((role == ROLE_NOTES) && (metacount > 3) && (strncmp(metadata[0], "@@notes", 7) == 0)) {
 			/* @@notes|timestamp|sender|hostname */
-			hostname = items[3];
+			hostname = metadata[3];
 			statusdata = msg_data(statusdata); if (*statusdata == '\n') statusdata++;
-			sprintf(logfn, "%s/%s", filedir, hostname);
+			sprintf(logfn, "%s/%s", basename(filedir), hostname);
 			expiretime = 0;
 			update_file(logfn, "w", statusdata, expiretime, NULL, -1, seq);
 		}
-		else if ((role == ROLE_ENADIS) && (metacount > 5) && (strncmp(items[0], "@@enadis", 8) == 0)) {
+		else if ((role == ROLE_ENADIS) && (metacount > 5) && (strncmp(metadata[0], "@@enadis", 8) == 0)) {
 			/* @@enadis|timestamp|sender|hostname|testname|expiretime */
-			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			testname = items[4];
-			expiretime = atoi(items[5]);
+			p = hostname = metadata[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			testname = metadata[4];
+			expiretime = atoi(metadata[5]);
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			update_enable(logfn, expiretime);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 3) && (strncmp(items[0], "@@drophost", 10) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
 			/* @@drophost|timestamp|sender|hostname */
 			DIR *dirfd;
 			struct dirent *de;
 			char *hostlead;
 
-			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			p = hostname = metadata[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			hostlead = malloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
 
@@ -386,14 +393,14 @@ int main(int argc, char *argv[])
 
 			xfree(hostlead);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 4) && (strncmp(items[0], "@@droptest", 10) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 4) && (strncmp(metadata[0], "@@droptest", 10) == 0)) {
 			/* @@droptest|timestamp|sender|hostname|testname */
-			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			testname = items[4];
+			p = hostname = metadata[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			testname = metadata[4];
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			unlink(logfn);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 4) && (strncmp(items[0], "@@renamehost", 12) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 4) && (strncmp(metadata[0], "@@renamehost", 12) == 0)) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			DIR *dirfd;
 			struct dirent *de;
@@ -403,10 +410,10 @@ int main(int argc, char *argv[])
 
 			MEMDEFINE(newlogfn);
 
-			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			p = hostname = metadata[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 			hostlead = malloc(strlen(hostname) + 2);
 			strcpy(hostlead, hostname); strcat(hostlead, ".");
-			p = newhostname = items[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			p = newhostname = metadata[4]; while ((p = strchr(p, '.')) != NULL) *p = ',';
 
 			dirfd = opendir(filedir);
 			if (dirfd) {
@@ -424,38 +431,38 @@ int main(int argc, char *argv[])
 
 			MEMUNDEFINE(newlogfn);
 		}
-		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
+		else if (((role == ROLE_STATUS) || (role == ROLE_DATA) || (role == ROLE_ENADIS)) && (metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 			char newfn[PATH_MAX];
 
 			MEMDEFINE(newfn);
 
-			p = hostname = items[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
-			testname = items[4];
-			newtestname = items[5];
+			p = hostname = metadata[3]; while ((p = strchr(p, '.')) != NULL) *p = ',';
+			testname = metadata[4];
+			newtestname = metadata[5];
 			sprintf(logfn, "%s/%s.%s", filedir, hostname, testname);
 			sprintf(newfn, "%s/%s.%s", filedir, hostname, newtestname);
 			rename(logfn, newfn);
 
 			MEMUNDEFINE(newfn);
 		}
-		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
+		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
 		}
-		else if (strncmp(items[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);
 			}
 			continue;
 		}
-		else if (strncmp(items[0], "@@idle", 6) == 0) {
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
 			/* Ignored */
 		}
 		else {
-			errprintf("Dropping message type %s, metacount=%d\n", items[0], metacount);
+			errprintf("Dropping message type %s, metacount=%d\n", metadata[0], metacount);
 		}
 
 		MEMUNDEFINE(logfn);

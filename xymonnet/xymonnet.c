@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor network test tool.                                          */
+/* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -24,7 +24,7 @@ static char rcsid[] = "$Id$";
 #include <fcntl.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #ifdef HAVE_RPCENT_H
 #include <rpc/rpcent.h>
@@ -44,10 +44,10 @@ struct rpcent {
 extern struct rpcent *getrpcbyname(char *);
 #endif
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
-#include "bbtest-net.h"
+#include "xymonnet.h"
 #include "dns.h"
 #include "contest.h"
 #include "httptest.h"
@@ -55,13 +55,13 @@ extern struct rpcent *getrpcbyname(char *);
 #include "httpcookies.h"
 #include "ldaptest.h"
 
+#define DEFAULT_PING_CHILD_COUNT 1
+
 char *reqenv[] = {
 	"NONETPAGE",
-	"BBHOSTS",
-	"BBTMP",
-	"BBHOME",
-	"BB",
-	"BBDISP",
+	"HOSTSCFG",
+	"XYMONTMP",
+	"XYMONHOME",
 	NULL
 };
 
@@ -83,7 +83,8 @@ int             sslwarndays = 30;		/* If cert expires in fewer days, SSL cert co
 int             sslalarmdays = 10;		/* If cert expires in fewer days, SSL cert column = red */
 int             mincipherbits = 0;		/* If weakest cipher is weaker than this # of buts, SSL cert column = red */
 int		validity = 30;
-char		*location = "";			/* BBLOCATION value */
+int		pingchildcount = DEFAULT_PING_CHILD_COUNT;	/* How many ping processes to start */
+char		*location = "";			/* XYMONNETWORK value */
 int		hostcount = 0;
 int		testcount = 0;
 int		notesthostcount = 0;
@@ -98,9 +99,11 @@ int		dosendflags = 1;
 char		*pingcmd = NULL;
 char		pinglog[PATH_MAX];
 char		pingerrlog[PATH_MAX];
+pid_t		*pingpids;
 int		respcheck_color = COL_YELLOW;
 int		extcmdtimeout = 30;
 int		bigfailure = 0;
+char		*defaultsourceip = NULL;
 
 void dump_hostlist(void)
 {
@@ -157,7 +160,7 @@ void dump_testitems(void)
 			printf("\tOpen        : %d\n", iwalk->open);
 			printf("\tBanner      : %s\n", textornull(STRBUF(iwalk->banner)));
 			printf("\tcertinfo    : %s\n", textornull(iwalk->certinfo));
-			printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_usec);
+			printf("\tDuration    : %ld.%06ld\n", (long int)iwalk->duration.tv_sec, (long int)iwalk->duration.tv_nsec / 1000);
 			printf("\tbadtest     : %d:%d:%d\n", iwalk->badtest[0], iwalk->badtest[1], iwalk->badtest[2]);
 			printf("\tdowncount    : %d started %s", iwalk->downcount, ctime(&iwalk->downstart));
 			printf("\n");
@@ -330,7 +333,7 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	testitem_t *newtest;
 
 	testcount++;
-	newtest = (testitem_t *) malloc(sizeof(testitem_t));
+	newtest = (testitem_t *) calloc(1, sizeof(testitem_t));
 	newtest->host = host;
 	newtest->service = service;
 	newtest->dialup = dialuptest;
@@ -339,16 +342,22 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 	newtest->silenttest = silenttest;
 	newtest->senddata = sendasdata;
 	newtest->testspec = (testspec ? strdup(testspec) : NULL);
-	newtest->srcip = (srcip ? strdup(srcip) : NULL);
+	if (srcip)
+		newtest->srcip = strdup(srcip);
+	else if (defaultsourceip)
+		newtest->srcip = defaultsourceip;
+	else
+		newtest->srcip = NULL;
 	newtest->privdata = NULL;
 	newtest->open = 0;
 	newtest->banner = newstrbuffer(0);
 	newtest->certinfo = NULL;
 	newtest->certexpires = 0;
 	newtest->mincipherbits = 0;
-	newtest->duration.tv_sec = newtest->duration.tv_usec = -1;
+	newtest->duration.tv_sec = newtest->duration.tv_nsec = -1;
 	newtest->downcount = 0;
 	newtest->badtest[0] = newtest->badtest[1] = newtest->badtest[2] = 0;
+	newtest->internal = 0;
 	newtest->next = NULL;
 
 	return newtest;
@@ -357,18 +366,18 @@ testitem_t *init_testitem(testedhost_t *host, service_t *service, char *srcip, c
 
 int wanted_host(void *host, char *netstring)
 {
-	char *netlocation = bbh_item(host, BBH_NET);
+	char *netlocation = xmh_item(host, XMH_NET);
 
 	if (selectedcount == 0)
-		return ((strlen(netstring) == 0) || 				   /* No BBLOCATION = do all */
-			(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* BBLOCATION && matching NET: tag */
+		return ((strlen(netstring) == 0) || 				   /* No XYMONNETWORK = do all */
+			(netlocation && (strcmp(netlocation, netstring) == 0)) ||  /* XYMONNETWORK && matching NET: tag */
 			(testuntagged && (netlocation == NULL)));		   /* No NET: tag for this host */
 	else {
 		/* User provided an explicit list of hosts to test */
 		int i;
 
 		for (i=0; (i < selectedcount); i++) {
-			if (strcmp(selectedhosts[i], bbh_item(host, BBH_HOSTNAME)) == 0) return 1;
+			if (strcmp(selectedhosts[i], xmh_item(host, XMH_HOSTNAME)) == 0) return 1;
 		}
 	}
 
@@ -382,7 +391,11 @@ void load_tests(void)
 	void *hwalk;
 	testedhost_t *h;
 
-	load_hostnames(xgetenv("BBHOSTS"), "netinclude", get_fqdn());
+	load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn());
+	if (first_host() == NULL) {
+		errprintf("Cannot load file %s\n", xgetenv("HOSTSCFG"));
+		return;
+	}
 
 	/* Each network test tagged with NET:locationname */
 	if (strlen(location) > 0) {
@@ -397,38 +410,38 @@ void load_tests(void)
 
 		if (!wanted_host(hwalk, location)) continue;
 
-		h = init_testedhost(bbh_item(hwalk, BBH_HOSTNAME));
+		h = init_testedhost(xmh_item(hwalk, XMH_HOSTNAME));
 
-		p = bbh_custom_item(hwalk, "badconn:");
+		p = xmh_custom_item(hwalk, "badconn:");
 		if (p) sscanf(p+strlen("badconn:"), "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
 
-		p = bbh_custom_item(hwalk, "route:");
+		p = xmh_custom_item(hwalk, "route:");
 		if (p) h->routerdeps = p + strlen("route:");
 		if (routestring) {
-			p = bbh_custom_item(hwalk, routestring);
+			p = xmh_custom_item(hwalk, routestring);
 			if (p) h->routerdeps = p + strlen(routestring);
 		}
 
-		if (bbh_item(hwalk, BBH_FLAG_NOCONN)) h->noconn = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOPING)) h->noping = 1;
-		if (bbh_item(hwalk, BBH_FLAG_TRACE)) h->dotrace = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOTRACE)) h->dotrace = 0;
-		if (bbh_item(hwalk, BBH_FLAG_TESTIP)) h->testip = 1;
-		if (bbh_item(hwalk, BBH_FLAG_DIALUP)) h->dialup = 1;
-		if (bbh_item(hwalk, BBH_FLAG_NOSSLCERT)) h->nosslcert = 1;
-		if (bbh_item(hwalk, BBH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
-		if (bbh_item(hwalk, BBH_FLAG_HIDEHTTP)) h->hidehttp = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOCONN)) h->noconn = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOPING)) h->noping = 1;
+		if (xmh_item(hwalk, XMH_FLAG_TRACE)) h->dotrace = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOTRACE)) h->dotrace = 0;
+		if (xmh_item(hwalk, XMH_FLAG_TESTIP)) h->testip = 1;
+		if (xmh_item(hwalk, XMH_FLAG_DIALUP)) h->dialup = 1;
+		if (xmh_item(hwalk, XMH_FLAG_NOSSLCERT)) h->nosslcert = 1;
+		if (xmh_item(hwalk, XMH_FLAG_LDAPFAILYELLOW)) h->ldapsearchfailyellow = 1;
+		if (xmh_item(hwalk, XMH_FLAG_HIDEHTTP)) h->hidehttp = 1;
 
-		p = bbh_item(hwalk, BBH_SSLDAYS);
+		p = xmh_item(hwalk, XMH_SSLDAYS);
 		if (p) sscanf(p, "%d:%d", &h->sslwarndays, &h->sslalarmdays);
 
-		p = bbh_item(hwalk, BBH_SSLMINBITS);
+		p = xmh_item(hwalk, XMH_SSLMINBITS);
 		if (p) h->mincipherbits = atoi(p);
 
-		p = bbh_item(hwalk, BBH_DEPENDS);
+		p = xmh_item(hwalk, XMH_DEPENDS);
 		if (p) h->deptests = p;
 
-		p = bbh_item(hwalk, BBH_LDAPLOGIN);
+		p = xmh_item(hwalk, XMH_LDAPLOGIN);
 		if (p) {
 			h->ldapuser = strdup(p);
 			h->ldappasswd = (strchr(h->ldapuser, ':'));
@@ -438,21 +451,21 @@ void load_tests(void)
 			}
 		}
 
-		p = bbh_item(hwalk, BBH_DESCRIPTION);
+		p = xmh_item(hwalk, XMH_DESCRIPTION);
 		if (p) {
 			h->hosttype = strdup(p);
 			p = strchr(h->hosttype, ':');
 			if (p) *p = '\0';
 		}
 
-		testspec = bbh_item_walk(hwalk);
+		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
 			service_t *s = NULL;
 			int dialuptest = 0, reversetest = 0, silenttest = 0, sendasdata = 0;
 			char *srcip = NULL;
-			int alwaystruetest = (bbh_item(hwalk, BBH_FLAG_NOCLEAR) != NULL);
+			int alwaystruetest = (xmh_item(hwalk, XMH_FLAG_NOCLEAR) != NULL);
 
-			if (bbh_item_idx(testspec) == -1) {
+			if (xmh_item_idx(testspec) == -1) {
 
 				/* Test prefixes:
 				 * - '?' denotes dialup test, i.e. report failures as clear.
@@ -511,11 +524,11 @@ void load_tests(void)
 					/*
 					 * LDAP test. This uses ':' a lot, so save it here.
 					 */
-#ifdef BBGEN_LDAP
+#ifdef XYMON_LDAP
 					s = ldaptest;
 					add_url_to_dns_queue(testspec);
 #else
-					errprintf("ldap test requested, but bbgen was built with no ldap support\n");
+					errprintf("ldap test requested, but xymonnet was built with no ldap support\n");
 #endif
 				}
 				else if ((strcmp(testspec, "http") == 0) || (strcmp(testspec, "https") == 0)) {
@@ -539,7 +552,7 @@ void load_tests(void)
 					  argnmatch(testspec, "type=")        )      {
 
 					/* HTTP test. */
-					bburl_t url;
+					weburl_t url;
 
 					decode_url(testspec, &url);
 					if (url.desturl->parseerror || (url.proxyurl && url.proxyurl->parseerror)) {
@@ -548,7 +561,8 @@ void load_tests(void)
 					}
 					else {
 						s = httptest;
-						add_url_to_dns_queue(testspec);
+						if (!url.desturl->ip)
+							add_url_to_dns_queue(testspec);
 					}
 				}
 				else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
@@ -561,7 +575,7 @@ void load_tests(void)
 
 					userurl = strchr(testspec, '='); 
 					if (userurl) {
-						bburl_t url;
+						weburl_t url;
 						userurl++;
 
 						decode_url(userurl, &url);
@@ -576,7 +590,7 @@ void load_tests(void)
 						}
 					}
 					else {
-						char *ip = bbh_item(hwalk, BBH_IP);
+						char *ip = xmh_item(hwalk, XMH_IP);
 						statusurl = (char *)malloc(strlen(deffmt) + strlen(ip) + 1);
 						sprintf(statusurl, deffmt, ip);
 						s = httptest;
@@ -631,8 +645,8 @@ void load_tests(void)
 						 * "SERVICE_PORT" so we can merge tests for this service+port
 						 * combination for multiple hosts.
 						 *
-						 * According to Hobbit docs, this type of services must be in
-						 * BBNETSVCS - so it is known already.
+						 * According to Xymon docs, this type of services must be in
+						 * XYMONNETSVCS - so it is known already.
 						 */
 						int specialport = 0;
 						char *specialname;
@@ -678,11 +692,33 @@ void load_tests(void)
 					s->items = newtest;
 
 					if (s == httptest) h->firsthttp = newtest;
-					else if (s == ldaptest) h->firstldap = newtest;
+					else if (s == ldaptest) {
+						RbtIterator handle;
+						service_t *s2 = NULL;
+						testitem_t *newtest2;
+
+						h->firstldap = newtest;
+
+						/* 
+						 * Add a plain tcp-connect test for the LDAP service.
+						 * We don't want the LDAP library to run amok and do 
+						 * time-consuming connect retries if the service
+						 * is down.
+						 */
+						handle = rbtFind(svctree, "ldap");
+						s2 = ((handle == rbtEnd(svctree)) ? NULL : (service_t *)gettreeitem(svctree, handle));
+						if (s2) {
+							newtest2 = init_testitem(h, s2, NULL, "ldap", 0, 0, 0, 0, 1);
+							newtest2->internal = 1;
+							newtest2->next = s2->items;
+							s2->items = newtest2;
+							newtest->privdata = newtest2;
+						}
+					}
 				}
 			}
 
-			testspec = bbh_item_walk(NULL);
+			testspec = xmh_item_walk(NULL);
 		}
 
 		if (pingtest && !h->noconn) {
@@ -706,7 +742,7 @@ void load_tests(void)
 		 * So after parsing the badFOO tag, we must find the testitem_t
 		 * record created earlier for this test (it may not exist).
 		 */
-		testspec = bbh_item_walk(hwalk);
+		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
 			char *testname, *timespec, *badcounts;
 			int badclear, badyellow, badred;
@@ -716,7 +752,7 @@ void load_tests(void)
 
 			if (strncmp(testspec, "bad", 3) != 0) {
 				/* Not a bad* tag - skip it */
-				testspec = bbh_item_walk(NULL);
+				testspec = xmh_item_walk(NULL);
 				continue;
 			}
 
@@ -761,7 +797,7 @@ void load_tests(void)
 				}
 			}
 
-			testspec = bbh_item_walk(NULL);
+			testspec = xmh_item_walk(NULL);
 		}
 
 
@@ -777,10 +813,10 @@ void load_tests(void)
 
 			res = rbtInsert(testhosttree, h->hostname, h);
 			if (res == RBT_STATUS_DUPLICATE_KEY) {
-				errprintf("Host %s appears twice in bb-hosts! This may cause strange results\n", h->hostname);
+				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
-			strcpy(h->ip, bbh_item(hwalk, BBH_IP));
+			strcpy(h->ip, xmh_item(hwalk, XMH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
@@ -815,7 +851,7 @@ char *ip_to_test(testedhost_t *h)
 		else {
 			/* Cannot resolve hostname */
 			h->dnserror = 1;
-			errprintf("bbtest-net: Cannot resolve IP for host %s\n", h->hostname);
+			errprintf("xymonnet: Cannot resolve IP for host %s\n", h->hostname);
 		}
 	}
 
@@ -834,7 +870,7 @@ void load_ping_status(void)
 	RbtIterator handle;
 	testedhost_t *h;
 
-	sprintf(statusfn, "%s/ping.%s.status", xgetenv("BBTMP"), location);
+	sprintf(statusfn, "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -863,7 +899,7 @@ void save_ping_status(void)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/ping.%s.status", xgetenv("BBTMP"), location);
+	sprintf(statusfn, "%s/ping.%s.status", xgetenv("XYMONTMP"), location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -891,7 +927,7 @@ void load_test_status(service_t *test)
 	testedhost_t *h;
 	testitem_t *walk;
 
-	sprintf(statusfn, "%s/%s.%s.status", xgetenv("BBTMP"), test->testname, location);
+	sprintf(statusfn, "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "r");
 	if (statusfd == NULL) return;
 
@@ -924,7 +960,7 @@ void save_test_status(service_t *test)
 	testitem_t *t;
 	int didany = 0;
 
-	sprintf(statusfn, "%s/%s.%s.status", xgetenv("BBTMP"), test->testname, location);
+	sprintf(statusfn, "%s/%s.%s.status", xgetenv("XYMONTMP"), test->testname, location);
 	statusfd = fopen(statusfn, "w");
 	if (statusfd == NULL) return;
 
@@ -950,7 +986,7 @@ void save_frequenttestlist(int argc, char *argv[])
 	int didany = 0;
 	int i;
 
-	sprintf(fn, "%s/frequenttests.%s", xgetenv("BBTMP"), location);
+	sprintf(fn, "%s/frequenttests.%s", xgetenv("XYMONTMP"), location);
 	fd = fopen(fn, "w");
 	if (fd == NULL) return;
 
@@ -995,12 +1031,28 @@ void run_ntp_service(service_t *service)
 	char		cmd[1024];
 	char		*p;
 	char		cmdpath[PATH_MAX];
+	int		use_sntp = 0;
 
-	p = xgetenv("NTPDATE");
-	strcpy(cmdpath, (p ? p : "ntpdate"));
+	p = getenv("SNTP");	/* Plain "getenv" as we want to know if it's unset */
+	use_sntp = (p != NULL);
+
+	if (use_sntp) {
+		strcpy(cmdpath, p);
+	}
+	else {
+		p = xgetenv("NTPDATE");
+		strcpy(cmdpath, (p ? p : "ntpdate"));
+	}
+
 	for (t=service->items; (t); t = t->next) {
 		if (!t->host->dnserror) {
-			sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, ip_to_test(t->host));
+			if (use_sntp) {
+				sprintf(cmd, "%s -u -d %d %s 2>&1", cmdpath, extcmdtimeout-1, ip_to_test(t->host));
+			}
+			else {
+				sprintf(cmd, "%s -u -q -p 2 %s 2>&1", cmdpath, ip_to_test(t->host));
+			}
+
 			t->open = (run_command(cmd, "no server suitable for synchronization", t->banner, 1, extcmdtimeout) == 0);
 		}
 	}
@@ -1031,7 +1083,7 @@ int start_ping_service(service_t *service)
 	char *cmd;
 	char **cmdargs;
 	int pfd[2];
-	int status;
+	int i;
 
 	/*
 	 * The idea here is to run ping in a separate process, in parallel
@@ -1042,93 +1094,102 @@ int start_ping_service(service_t *service)
 	 *      for the process to finish.
 	 *
 	 * Therefore this slightly more complex solution, which in essence
-	 * forks a new process running "hobbitping 2>&1 1>$BBTMP/ping.$$"
+	 * forks a new process running "xymonping 2>&1 1>$XYMONTMP/ping.$$"
 	 * The output is then picked up by the finish_ping_service().
 	 */
 
-	pingcmd = strdup(getenv_default("FPING", "hobbitping", NULL));
+	pingcount = 0;
+	pingpids = calloc(pingchildcount, sizeof(pid_t));
+	pingcmd = strdup(getenv_default("FPING", "xymonping", NULL));
 	pingcmd = realloc(pingcmd, strlen(pingcmd)+5);
 	strcat(pingcmd, " -Ae");
 
-	sprintf(pinglog, "%s/ping-stdout.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
-	sprintf(pingerrlog, "%s/ping-stderr.%lu", xgetenv("BBTMP"), (unsigned long)getpid());
+	sprintf(pinglog, "%s/ping-stdout.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
+	sprintf(pingerrlog, "%s/ping-stderr.%lu", xgetenv("XYMONTMP"), (unsigned long)getpid());
 
 	/* Setup command line and arguments */
 	cmdargs = setup_commandargs(pingcmd, &cmd);
 
-	/* Get a pipe FD */
-	status = pipe(pfd);
-	if (status == -1) {
-		errprintf("Could not create pipe for hobbitping\n");
-		return -1;
-	}
-
-	/* Now fork off the ping child-process */
-	status = fork();
-	if (status < 0) {
-		errprintf("Could not fork() the ping child\n");
-		return -1;
-	}
-	else if (status == 0) {
-		/*
-		 * child must have
-		 *  - stdin fed from the parent
-		 *  - stdout going to a file
-		 *  - stderr going to another file. This is important, as
-		 *    putting it together with stdout will wreak havoc when 
-		 *    we start parsing the output later on. We could just 
-		 *    dump it to /dev/null, but it might be useful to see
-		 *    what went wrong.
-		 */
-		int outfile, errfile;
-
-		outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		if (outfile == -1) errprintf("Cannot create file %s : %s\n", pinglog, strerror(errno));
-		errfile = open(pingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		if (errfile == -1) errprintf("Cannot create file %s : %s\n", pingerrlog, strerror(errno));
-
-		if ((outfile == -1) || (errfile == -1)) {
-			/* Ouch - cannot create our output files. Abort. */
-			exit(98);
+	for (i=0; (i < pingchildcount); i++) {
+		/* Get a pipe FD */
+		if (pipe(pfd) == -1) {
+			errprintf("Could not create pipe for xymonping\n");
+			return -1;
 		}
 
-		status = dup2(pfd[0], STDIN_FILENO);
-		status = dup2(outfile, STDOUT_FILENO);
-		status = dup2(errfile, STDERR_FILENO);
-		close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
+		/* Now fork off the ping child-process */
+		pingpids[i] = fork();
 
-		execvp(cmd, cmdargs);
+		if (pingpids[i] < 0) {
+			errprintf("Could not fork() the ping child\n");
+			return -1;
+		}
+		else if (pingpids[i] == 0) {
+			/*
+			 * child must have
+			 *  - stdin fed from the parent
+			 *  - stdout going to a file
+			 *  - stderr going to another file. This is important, as
+			 *    putting it together with stdout will wreak havoc when 
+			 *    we start parsing the output later on. We could just 
+			 *    dump it to /dev/null, but it might be useful to see
+			 *    what went wrong.
+			 */
+			int outfile, errfile, status;
 
-		/* Should never go here ... just kill the child */
-		fprintf(stderr, "hobbitping invocation failed: %s\n", strerror(errno));
-		exit(99);
-	}
-	else {
-		/* parent */
-		char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
+			sprintf(pinglog+strlen(pinglog), ".%02d", i);
+			sprintf(pingerrlog+strlen(pingerrlog), ".%02d", i);
 
-		close(pfd[0]);
-		pingcount = 0;
+			outfile = open(pinglog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+			if (outfile == -1) errprintf("Cannot create file %s : %s\n", pinglog, strerror(errno));
+			errfile = open(pingerrlog, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+			if (errfile == -1) errprintf("Cannot create file %s : %s\n", pingerrlog, strerror(errno));
 
-		/* Feed the IP's to test to the child */
-		for (t=service->items; (t); t = t->next) {
-			if (!t->host->dnserror && !t->host->noping) {
-				sprintf(ip, "%s\n", ip_to_test(t->host));
-				status = write(pfd[1], ip, strlen(ip));
-				pingcount++;
-				if (t->host->extrapings) {
-					ipping_t *walk;
+			if ((outfile == -1) || (errfile == -1)) {
+				/* Ouch - cannot create our output files. Abort. */
+				exit(98);
+			}
 
-					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-						sprintf(ip, "%s\n", walk->ip);
-						status = write(pfd[1], ip, strlen(ip));
-						pingcount++;
+			status = dup2(pfd[0], STDIN_FILENO);
+			status = dup2(outfile, STDOUT_FILENO);
+			status = dup2(errfile, STDERR_FILENO);
+			close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
+
+			execvp(cmd, cmdargs);
+
+			/* Should never go here ... just kill the child */
+			fprintf(stderr, "Command '%s' failed: %s\n", cmd, strerror(errno));
+			exit(99);
+		}
+		else {
+			/* parent */
+			char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
+			int hnum, n;
+
+			close(pfd[0]);
+
+			/* Feed the IP's to test to the child */
+			for (t=service->items, hnum = 0; (t); t = t->next, hnum++) {
+				if ((hnum % pingchildcount) != i) continue;
+
+				if (!t->host->dnserror && !t->host->noping) {
+					sprintf(ip, "%s\n", ip_to_test(t->host));
+					n = write(pfd[1], ip, strlen(ip));
+					pingcount++;
+					if (t->host->extrapings) {
+						ipping_t *walk;
+
+						for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+							sprintf(ip, "%s\n", walk->ip);
+							n = write(pfd[1], ip, strlen(ip));
+							pingcount++;
+						}
 					}
 				}
 			}
-		}
 
-		close(pfd[1]);	/* This is when ping starts doing tests */
+			close(pfd[1]);	/* This is when ping starts doing tests */
+		}
 	}
 
 	return 0;
@@ -1143,101 +1204,109 @@ int finish_ping_service(service_t *service)
 	char		l[MAX_LINE_LEN];
 	char		pingip[MAX_LINE_LEN];
 	int		ip1, ip2, ip3, ip4;
-	int		pingstatus, failed = 0;
+	int		pingstatus, failed = 0, i;
+	char		fn[PATH_MAX];
+
+	/* Load status of previously failed tests */
+	load_ping_status();
 
 	/* 
 	 * Wait for the ping child to finish.
 	 * If we're lucky, it will be done already since it has run
 	 * while we were doing tcp tests.
 	 */
-	wait(&pingstatus);
-	switch (WEXITSTATUS(pingstatus)) {
-	  case 0: /* All hosts reachable */
-	  case 1: /* Some hosts unreachable */
-	  case 2: /* Some IP's not found (should not happen) */
-		break;
+	for (i = 0; (i < pingchildcount); i++) {
+		waitpid(pingpids[i], &pingstatus, 0);
+		switch (WEXITSTATUS(pingstatus)) {
+			case 0: /* All hosts reachable */
+			case 1: /* Some hosts unreachable */
+			case 2: /* Some IP's not found (should not happen) */
+				break;
 
-	  case 3: /* Bad command-line args, or not suid-root */
-		failed = 1;
-		errprintf("Execution of '%s' failed - program not suid root?\n", pingcmd);
-		break;
+			case 3: /* Bad command-line args, or not suid-root */
+				failed = 1;
+				errprintf("Execution of '%s' failed - program not suid root?\n", pingcmd);
+				break;
 
-	  case 98:
-		failed = 1;
-		errprintf("hobbitping child could not create outputfiles in %s\n", xgetenv("$BBTMP"));
-		break;
+			case 98:
+				failed = 1;
+				errprintf("xymonping child could not create outputfiles in %s\n", xgetenv("$XYMONTMP"));
+				break;
 
-	  case 99:
-		failed = 1;
-		errprintf("Could not run the command '%s' (exec failed)\n", pingcmd);
-		break;
+			case 99:
+				failed = 1;
+				errprintf("Could not run the command '%s' (exec failed)\n", pingcmd);
+				break;
 
-	  default:
-		failed = 1;
-		errprintf("Execution of '%s' failed with error-code %d\n", 
-			pingcmd, WEXITSTATUS(pingstatus));
-	}
-
-	/* Load status of previously failed tests */
-	load_ping_status();
-
-	/* Open the new ping result file */
-	logfd = fopen(pinglog, "r");
-	if (logfd == NULL) { 
-		failed = 1;
-		errprintf("Cannot open ping output file %s\n", pinglog);
-	}
-
-	/* Copy error messages to the Hobbit logfile */
-	if (failed) {
-		FILE *errfd;
-		char buf[1024];
-			
-		errfd = fopen(pingerrlog, "r");
-		if (errfd && fgets(buf, sizeof(buf), errfd)) {
-			errprintf("%s", buf);
+			default:
+				failed = 1;
+				errprintf("Execution of '%s' failed with error-code %d\n", 
+						pingcmd, WEXITSTATUS(pingstatus));
 		}
-		if (errfd) fclose(errfd);
-	}
-	if (!debug) unlink(pingerrlog);
 
-	if (failed) {
-		/* Flag all ping tests as "undecided" */
-		bigfailure = 1;
-		for (t=service->items; (t); t = t->next) t->open = -1;
-		goto cleanup;
-	}
+		/* Open the new ping result file */
+		sprintf(fn, "%s.%02d", pinglog, i);
+		logfd = fopen(fn, "r");
+		if (logfd == NULL) { 
+			failed = 1;
+			errprintf("Cannot open ping output file %s\n", fn);
+		}
+		if (!debug) unlink(fn);	/* We have an open filehandle, so it's ok to delete the file now */
 
-	/* The test did run, and we have a result-file. Look at it. */
-	while (fgets(l, sizeof(l), logfd)) {
-		p = strchr(l, '\n'); if (p) *p = '\0';
-		if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
+		/* Copy error messages to the Xymon logfile */
+		sprintf(fn, "%s.%02d", pingerrlog, i);
+		if (failed) {
+			FILE *errfd;
+			char buf[1024];
 
-			sprintf(pingip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			errfd = fopen(fn, "r");
+			if (errfd && fgets(buf, sizeof(buf), errfd)) {
+				errprintf("%s", buf);
+			}
+			if (errfd) fclose(errfd);
+		}
+		if (!debug) unlink(fn);
 
-			/*
-			 * Need to loop through all testitems - there may be multiple entries for
-			 * the same IP-address.
-			 */
-			for (t=service->items; (t); t = t->next) {
-				if (strcmp(t->host->ip, pingip) == 0) {
-					if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
-					t->open = (strstr(l, "is alive") != NULL);
-					t->banner = dupstrbuffer(l);
-				}
+		if (failed) {
+			/* Flag all ping tests as "undecided" */
+			bigfailure = 1;
+			for (t=service->items; (t); t = t->next) t->open = -1;
+		}
+		else {
+			/* The test did run, and we have a result-file. Look at it. */
+			while (fgets(l, sizeof(l), logfd)) {
+				p = strchr(l, '\n'); if (p) *p = '\0';
+				if (sscanf(l, "%d.%d.%d.%d ", &ip1, &ip2, &ip3, &ip4) == 4) {
 
-				if (t->host->extrapings) {
-					ipping_t *walk;
-					for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
-						if (strcmp(walk->ip, pingip) == 0) {
+					sprintf(pingip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+
+					/*
+					 * Need to loop through all testitems - there may be multiple entries for
+					 * the same IP-address.
+					 */
+					for (t=service->items; (t); t = t->next) {
+						if (strcmp(t->host->ip, pingip) == 0) {
 							if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
-							walk->open = (strstr(l, "is alive") != NULL);
-							walk->banner = dupstrbuffer(l);
+							t->open = (strstr(l, "is alive") != NULL);
+							t->banner = dupstrbuffer(l);
+						}
+
+						if (t->host->extrapings) {
+							ipping_t *walk;
+							for (walk = t->host->extrapings->iplist; (walk); walk = walk->next) {
+								if (strcmp(walk->ip, pingip) == 0) {
+									if (t->open) dbgprintf("More than one ping result for %s\n", pingip);
+									walk->open = (strstr(l, "is alive") != NULL);
+									walk->banner = dupstrbuffer(l);
+								}
+							}
 						}
 					}
 				}
 			}
 		}
+
+		if (logfd) fclose(logfd);
 	}
 
 	/* 
@@ -1264,10 +1333,6 @@ int finish_ping_service(service_t *service)
 		}
 	}
 
-cleanup:
-	if (logfd) fclose(logfd);
-	if (!debug) unlink(pinglog);
-
 	return 0;
 }
 
@@ -1287,7 +1352,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 		 */
 		if (test->open == -1) {
 			/* Failed to run the ping utility. */
-			strcpy(cause, "Hobbit system failure");
+			strcpy(cause, "Xymon system failure");
 			return COL_CLEAR;
 		}
 		else if (test->host->noping) { 
@@ -1344,7 +1409,7 @@ int decide_color(service_t *service, char *svcname, testitem_t *test, int failgo
 			char *routertext;
 
 			routertext = test->host->deprouterdown->hosttype;
-			if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
+			if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 			if (routertext == NULL) routertext = "router";
 
 			strcat(cause, "\nIntermediate ");
@@ -1508,6 +1573,8 @@ void send_results(service_t *service, int failgoesclear)
 		char flags[10];
 		int i;
 
+		if (t->internal) continue;
+
 		i = 0;
 		flags[i++] = (t->open ? 'O' : 'o');
 		flags[i++] = (t->reverse ? 'R' : 'r');
@@ -1552,7 +1619,7 @@ void send_results(service_t *service, int failgoesclear)
 					char *routertext;
 
 					routertext = t->host->deprouterdown->hosttype;
-					if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
+					if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 					if (routertext == NULL) routertext = "router";
 
 					strcat(msgline, ": Intermediate ");
@@ -1577,7 +1644,7 @@ void send_results(service_t *service, int failgoesclear)
 						char *routertext;
 
 						routertext = t->host->deprouterdown->hosttype;
-						if (routertext == NULL) routertext = xgetenv("BBROUTERTEXT");
+						if (routertext == NULL) routertext = xgetenv("XYMONROUTERTEXT");
 						if (routertext == NULL) routertext = "router";
 
 						strcat(msgline, ": Intermediate ");
@@ -1601,7 +1668,7 @@ void send_results(service_t *service, int failgoesclear)
 					  }
 					  else if (t->open == -1) {
 						  strcat(msgline, ": System failure of the ping test");
-						  strcat(msgtext, "Hobbit system error\n");
+						  strcat(msgtext, "Xymon system error\n");
 					  }
 					  /* "clear" due to badconn: no extra text */
 				  }
@@ -1653,7 +1720,7 @@ void send_results(service_t *service, int failgoesclear)
 
 		if (t->duration.tv_sec != -1) {
 			sprintf(msgtext, "\nSeconds: %u.%02u\n", 
-				(unsigned int)t->duration.tv_sec, (unsigned int)t->duration.tv_usec / 10000);
+				(unsigned int)t->duration.tv_sec, (unsigned int)t->duration.tv_nsec / 10000000);
 			addtostatus(msgtext);
 		}
 		addtostatus("\n\n");
@@ -1849,7 +1916,7 @@ int main(int argc, char *argv[])
 	char *egocolumn = NULL;
 	int failgoesclear = 0;		/* IPTEST_2_CLEAR_ON_FAILED_CONN */
 	int dumpdata = 0;
-	int runtimewarn;		/* 300 = default BBSLEEP setting */
+	int runtimewarn;		/* 300 = default TASKSLEEP setting */
 	int servicedumponly = 0;
 	int pingrunning = 0;
 
@@ -1859,7 +1926,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (xgetenv("CONNTEST") && (strcmp(xgetenv("CONNTEST"), "FALSE") == 0)) pingcolumn = NULL;
-	runtimewarn = (xgetenv("BBSLEEP") ? atol(xgetenv("BBSLEEP")) : 300);
+	runtimewarn = (xgetenv("TASKSLEEP") ? atol(xgetenv("TASKSLEEP")) : 300);
 
 	for (argi=1; (argi < argc); argi++) {
 		if      (argnmatch(argv[argi], "--timeout=")) {
@@ -1908,7 +1975,7 @@ int main(int argc, char *argv[])
 			if (p) {
 				egocolumn = strdup(p+1);
 			}
-			else egocolumn = "bbtest";
+			else egocolumn = "xymonnet";
 			timing = 1;
 		}
 		else if (strcmp(argv[argi], "--test-untagged") == 0) {
@@ -1943,8 +2010,25 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-flags") == 0) {
 			dosendflags = 0;
 		}
+		else if (strcmp(argv[argi], "--shuffle") == 0) {
+			shuffletests = 1;
+		}
+		else if (argnmatch(argv[argi], "--source-ip=")) {
+			char *p = strchr(argv[argi], '=');
+			struct in_addr aa;
+			p++;
+			if (inet_aton(p, &aa))
+				defaultsourceip = strdup(p);
+			else
+				errprintf("Invalid source ip address '%s'\n", argv[argi]);
+		}
 
 		/* Options for PING tests */
+		else if (argnmatch(argv[argi], "--ping-tasks=")) {
+			/* Note: must check for this before checking "--ping" option */
+			char *p = strchr(argv[argi], '=');
+			pingchildcount = atoi(p+1);
+		}
 		else if (argnmatch(argv[argi], "--ping")) {
 			char *p = strchr(argv[argi], '=');
 			if (p) {
@@ -1966,6 +2050,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--content=")) {
 			char *p = strchr(argv[argi], '=');
 			contenttestname = strdup(p+1);
+		}
+		else if (strcmp(argv[argi], "--bb-proxy-syntax") == 0) {
+			/* Obey the Big Brother format for http proxy listed as part of the URL */
+			obeybbproxysyntax = 1;
 		}
 
 		/* Options for SSL certificates */
@@ -2021,14 +2109,14 @@ int main(int argc, char *argv[])
 			servicedumponly = 1;
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("bbtest-net version %s\n", VERSION);
+			printf("xymonnet version %s\n", VERSION);
 			if (ssl_library_version) printf("SSL library : %s\n", ssl_library_version);
 			if (ldap_library_version) printf("LDAP library: %s\n", ldap_library_version);
 			printf("\n");
 			return 0;
 		}
 		else if ((strcmp(argv[argi], "--help") == 0) || (strcmp(argv[argi], "-?") == 0)) {
-			printf("bbtest-net version %s\n\n", VERSION);
+			printf("xymonnet version %s\n\n", VERSION);
 			printf("Usage: %s [options] [host1 host2 host3 ...]\n", argv[0]);
 			printf("General options:\n");
 			printf("    --timeout=N                 : Timeout (in seconds) for service tests\n");
@@ -2037,18 +2125,19 @@ int main(int argc, char *argv[])
 			printf("    --dns=[only|ip|standard]    : How IP's are decided\n");
 			printf("    --no-ares                   : Use the system resolver library for hostname lookups\n");
 			printf("    --dnslog=FILENAME           : Log failed hostname lookups to file FILENAME\n");
-			printf("    --report[=COLUMNNAME]       : Send a status report about the running of bbtest-net\n");
+			printf("    --report[=COLUMNNAME]       : Send a status report about the running of xymonnet\n");
 			printf("    --test-untagged             : Include hosts without a NET: tag in the test\n");
 			printf("    --frequenttestlimit=N       : Seconds after detecting failures in which we poll frequently\n");
-			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [BBSLEEP]\n");
+			printf("    --timelimit=N               : Warns if the complete test run takes longer than N seconds [TASKSLEEP]\n");
 			printf("\nOptions for simple TCP service tests:\n");
 			printf("    --checkresponse             : Check response from known services\n");
-			printf("    --no-flags                  : Dont send extra bbgen test flags\n");
+			printf("    --no-flags                  : Dont send extra xymonnet test flags\n");
 			printf("\nOptions for PING (connectivity) tests:\n");
 			printf("    --ping[=COLUMNNAME]         : Enable ping checking, default columname is \"conn\"\n");
 			printf("    --noping                    : Disable ping checking\n");
 			printf("    --trace                     : Run traceroute on all hosts where ping fails\n");
 			printf("    --notrace                   : Disable traceroute when ping fails (default)\n");
+			printf("    --ping-tasks=N              : Run N ping tasks in parallel (default N=1)\n");
 			printf("\nOptions for HTTP/HTTPS (Web) tests:\n");
 			printf("    --content=COLUMNNAME        : Define default columnname for CONTENT checks (content)\n");
 			printf("\nOptions for SSL certificate tests:\n");
@@ -2057,7 +2146,7 @@ int main(int argc, char *argv[])
 			printf("    --sslwarn=N                 : Go yellow if certificate expires in less than N days (default:30)\n");
 			printf("    --sslalarm=N                : Go red if certificate expires in less than N days (default:10)\n");
 			printf("\nDebugging options:\n");
-			printf("    --no-update                 : Send status messages to stdout instead of to bbd\n");
+			printf("    --no-update                 : Send status messages to stdout instead of to Xymon\n");
 			printf("    --timing                    : Trace the amount of time spent on each series of tests\n");
 			printf("    --debug                     : Output debugging information\n");
 			printf("    --dump[=before|=after|=all] : Dump internal memory structures before/after tests run\n");
@@ -2087,9 +2176,13 @@ int main(int argc, char *argv[])
 	fqdn = get_fqdn();
 
 	/* Setup SEGV handler */
-	setup_signalhandler(egocolumn ? egocolumn : "bbtest");
+	setup_signalhandler(egocolumn ? egocolumn : "xymonnet");
 
-	if (xgetenv("BBLOCATION")) location = strdup(xgetenv("BBLOCATION"));
+	if (xgetenv("XYMONNETWORK") && (strlen(xgetenv("XYMONNETWORK")) > 0)) 
+		location = strdup(xgetenv("XYMONNETWORK"));
+	else if (xgetenv("BBLOCATION") && (strlen(xgetenv("BBLOCATION")) > 0))
+		location = strdup(xgetenv("BBLOCATION"));
+
 	if (pingcolumn && (strlen(pingcolumn) == 0)) pingcolumn = xgetenv("PINGCOLUMN");
 	if (pingcolumn && xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")) {
 		failgoesclear = (strcmp(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN"), "TRUE") == 0);
@@ -2098,16 +2191,16 @@ int main(int argc, char *argv[])
 
 	if (debug) {
 		int i;
-		printf("Command: bbtest-net");
+		printf("Command: xymonnet");
 		for (i=1; (i<argc); i++) printf(" '%s'", argv[i]);
 		printf("\n");
-		printf("Environment BBLOCATION='%s'\n", textornull(xgetenv("BBLOCATION")));
+		printf("Environment XYMONNETWORK='%s'\n", textornull(location));
 		printf("Environment CONNTEST='%s'\n", textornull(xgetenv("CONNTEST")));
 		printf("Environment IPTEST_2_CLEAR_ON_FAILED_CONN='%s'\n", textornull(xgetenv("IPTEST_2_CLEAR_ON_FAILED_CONN")));
 		printf("\n");
 	}
 
-	add_timestamp("bbtest-net startup");
+	add_timestamp("xymonnet startup");
 
 	load_services();
 	if (servicedumponly) {
@@ -2150,7 +2243,7 @@ int main(int argc, char *argv[])
 				if (!t->host->dnserror) {
 					strcpy(tname, s->testname);
 					if (s->namelen) tname[s->namelen] = '\0';
-					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL, 
+					t->privdata = (void *)add_tcp_test(ip_to_test(t->host), s->portnum, tname, NULL,
 									   t->srcip,
 									   NULL, t->silenttest, NULL, 
 									   NULL, NULL, NULL);
@@ -2200,7 +2293,7 @@ int main(int argc, char *argv[])
 					t->certexpires = testresult->certexpires;
 					t->mincipherbits = testresult->mincipherbits;
 					t->duration.tv_sec = testresult->duration.tv_sec;
-					t->duration.tv_usec = testresult->duration.tv_usec;
+					t->duration.tv_nsec = testresult->duration.tv_nsec;
 
 					/* Binary data in banner ... */
 					for (i=0, p=STRBUF(t->banner); (i < STRBUFLEN(t->banner)); i++, p++) {
@@ -2301,7 +2394,7 @@ int main(int argc, char *argv[])
 	/*
 	 * The list of hosts to test frequently because of a failure must
 	 * be saved - it is then picked up by the frequent-test ext script
-	 * that runs bbtest-net again with the frequent-test hosts as
+	 * that runs xymonnet again with the frequent-test hosts as
 	 * parameter.
 	 *
 	 * Should the retest itself update the frequent-test file ? It
@@ -2327,7 +2420,7 @@ int main(int argc, char *argv[])
 	save_session_cookies();
 
 	shutdown_ldap_library();
-	add_timestamp("bbtest-net completed");
+	add_timestamp("xymonnet completed");
 
 	if (dumpdata & 2) { dump_hostlist(); dump_testitems(); }
 
@@ -2349,7 +2442,7 @@ int main(int argc, char *argv[])
 		sprintf(msgline, "status+%d %s.%s %s %s\n\n", validity, xgetenv("MACHINE"), egocolumn, colorname(color), timestamp);
 		addtostatus(msgline);
 
-		sprintf(msgline, "bbtest-net version %s\n", VERSION);
+		sprintf(msgline, "xymonnet version %s\n", VERSION);
 		addtostatus(msgline);
 		if (ssl_library_version) {
 			sprintf(msgline, "SSL library : %s\n", ssl_library_version);
@@ -2361,7 +2454,7 @@ int main(int argc, char *argv[])
 		}
 
 		sprintf(msgline, "\nStatistics:\n Hosts total           : %8d\n Hosts with no tests   : %8d\n Total test count      : %8d\n Status messages       : %8d\n Alert status msgs     : %8d\n Transmissions         : %8d\n", 
-			hostcount, notesthostcount, testcount, bbstatuscount, bbnocombocount, bbmsgcount);
+			hostcount, notesthostcount, testcount, xymonstatuscount, xymonnocombocount, xymonmsgcount);
 		addtostatus(msgline);
 		sprintf(msgline, "\nDNS statistics:\n # hostnames resolved  : %8d\n # succesful           : %8d\n # failed              : %8d\n # calls to dnsresolve : %8d\n",
 			dns_stats_total, dns_stats_success, dns_stats_failed, dns_stats_lookups);

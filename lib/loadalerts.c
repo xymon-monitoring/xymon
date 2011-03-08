@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit monitor library.                                                    */
+/* Xymon monitor library.                                                     */
 /*                                                                            */
-/* This is a library module for Hobbit, responsible for loading the           */
-/* hobbit-alerts.cfg file which holds information about the Hobbit alert      */
+/* This is a library module for Xymon, responsible for loading the            */
+/* alerts.cfg file which holds information about the Xymon alert       */
 /* configuration.                                                             */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -27,7 +27,7 @@ static char rcsid[] = "$Id$";
 
 #include <pcre.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 
 /* token's are the pre-processor macros we expand while parsing the config file */
@@ -204,7 +204,7 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 
 	MEMDEFINE(fn);
 
-	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/hobbit-alerts.cfg", xgetenv("BBHOME"));
+	if (configfn) strcpy(fn, configfn); else sprintf(fn, "%s/etc/alerts.cfg", xgetenv("XYMONHOME"));
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
@@ -718,12 +718,14 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 	}
 }
 
-void dump_alertconfig(void)
+void dump_alertconfig(int showlines)
 {
 	rule_t *rulewalk;
 	recip_t *recipwalk;
 
 	for (rulewalk = rulehead; (rulewalk); rulewalk = rulewalk->next) {
+		if (showlines) printf("%5d\t", rulewalk->cfid);
+
 		dump_criteria(rulewalk->criteria, 0);
 		printf("\n");
 
@@ -859,10 +861,11 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 			pgexclres = (namematch(pgtok, crit->expagespec, crit->expagespecre) ? 1 : 0);
 
 		pgtok = strtok(NULL, ",");
+
 	}
 	if (pgexclres == 1) {
 		traceprintf("Failed '%s' (pagename excluded)\n", cfline);
-		return 0;
+		return 0; 
 	}
 	if (pgmatchres == 0) {
 		traceprintf("Failed '%s' (pagename not in include list)\n", cfline);
@@ -936,7 +939,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	 * some random system recovered ... not good. So apply
 	 * this check to all messages.
 	 */
-	if (crit && crit->timespec && !timematch(bbh_item(hinfo, BBH_HOLIDAYS), crit->timespec)) {
+	if (crit && crit->timespec && !timematch(xmh_item(hinfo, XMH_HOLIDAYS), crit->timespec)) {
 		traceprintf("Failed '%s' (time criteria)\n", cfline);
 		if (!printmode) return 0; 
 	}
@@ -955,7 +958,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 		return result;
 	}
 
-	if (alert->state == A_RECOVERED) {
+	if ((alert->state == A_RECOVERED) || (alert->state == A_DISABLED)) {
 		/*
 		 * Dont do the check until we are checking individual recipients (rulecrit is set).
 		 * You dont need to have RECOVERED on the top-level rule, it's enough if a recipient
@@ -1068,7 +1071,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	MEMDEFINE(codes);
 
 	if (printmode == 2) {
-		/* For print-out usage - e.g. hobbit-confreport.cgi */
+		/* For print-out usage - e.g. confreport.cgi */
 		normalfont = "COLOR=\"#000000\" FACE=\"Tahoma, Arial, Helvetica\"";
 		stopfont = "COLOR=\"#FF0000\" FACE=\"Tahoma, Arial, Helvetica\"";
 	}

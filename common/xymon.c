@@ -1,10 +1,10 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit communications tool.                                                */
+/* Xymon communications tool.                                                 */
 /*                                                                            */
-/* This is used to send a single message using the Hobbit/BB protocol to the  */
-/* Hobbit server.                                                             */
+/* This is used to send a single message using the Xymon/BB protocol to the   */
+/* Xymon server.                                                              */
 /*                                                                            */
-/* Copyright (C) 2002-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2002-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -23,11 +23,11 @@ static char rcsid[] = "$Id$";
 #include <errno.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int main(int argc, char *argv[])
 {
-	int timeout = BBTALK_TIMEOUT;
+	int timeout = XYMON_TIMEOUT;
 	int result = 1;
 	int argi;
 	int showhelp = 0;
@@ -36,12 +36,7 @@ int main(int argc, char *argv[])
 	FILE *respfd = stdout;
 	char *envarea = NULL;
 	sendreturn_t *sres;
-	int wantresponse = 0;
-
-	/* If invoked as "bbz", enable compression */
-	if (*(argv[0] + strlen(argv[0]) - 1) == 'z') {
-		sendcompressedmessages = 1;
-	}
+	int wantresponse = 0, mergeinput = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
@@ -55,7 +50,7 @@ int main(int argc, char *argv[])
 			showhelp = 1;
 		}
 		else if (strcmp(argv[argi], "--version") == 0) {
-			fprintf(stdout, "Hobbit version %s\n", VERSION);
+			fprintf(stdout, "Xymon version %s\n", VERSION);
 			return 0;
 		}
 		else if (strcmp(argv[argi], "--str") == 0) {
@@ -77,20 +72,11 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			envarea = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--compress") == 0) {
-			sendcompressedmessages = 1;
+		else if (strcmp(argv[argi], "--merge") == 0) {
+			mergeinput = 1;
 		}
-		else if (strcmp(argv[argi], "--ssl") == 0) {
-			sendssl = 1;
-		}
-		else if (argnmatch(argv[argi], "--ssl=")) {
-			char *p = strchr(argv[argi], '=');
-			sendssl = 1;
-			sslcertfn = strdup(p+1);
-			sslkeyfn = strdup(p+1);
-			p = strstr(sslkeyfn, ".cert");
-			if (!p) p = strstr(sslkeyfn, ".crt");
-			if (p) strcpy(p, ".key");
+		else if (strcmp(argv[argi], "--response") == 0) {
+			wantresponse = 1;
 		}
 		else if (strcmp(argv[argi], "-?") == 0) {
 			showhelp = 1;
@@ -113,8 +99,8 @@ int main(int argc, char *argv[])
 	}
 
 	if ((recipient == NULL) || (STRBUFLEN(msg) == 0) || showhelp) {
-		fprintf(stderr, "Hobbit version %s\n", VERSION);
-		fprintf(stderr, "Usage: %s [--debug] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
+		fprintf(stderr, "Xymon version %s\n", VERSION);
+		fprintf(stderr, "Usage: %s [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");
 		return 1;
@@ -133,10 +119,16 @@ int main(int argc, char *argv[])
 		return result;
 	}
 
-	if (strcmp(STRBUF(msg), "@") == 0) {
+	if (mergeinput || (strcmp(STRBUF(msg), "@") == 0)) {
 		strbuffer_t *inpline = newstrbuffer(0);
 
-		clearstrbuffer(msg);
+		if (mergeinput) 
+			/* Must add a new-line before the rest of the message */
+			addtobuffer(msg, "\n");
+		else
+			/* Clear input buffer, we'll read it all from stdin */
+			clearstrbuffer(msg);
+
 		initfgets(stdin);
 		while (unlimfgets(inpline, stdin)) addtostrbuffer(msg, inpline);
 		freestrbuffer(inpline);
@@ -146,10 +138,10 @@ int main(int argc, char *argv[])
 	else if (strncmp(STRBUF(msg), "client ", 7) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "config ", 7) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "download ", 9) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "hobbitdboard", 12) == 0) wantresponse = 1;
-	else if (strncmp(STRBUF(msg), "hobbitdxboard", 13) == 0) wantresponse = 1;
+	else if ((strncmp(STRBUF(msg), "xymondlog ", 10) == 0) || (strncmp(STRBUF(msg), "hobbitdlog ", 11) == 0)) wantresponse = 1;
+	else if ((strncmp(STRBUF(msg), "xymondxlog ", 11) == 0) || (strncmp(STRBUF(msg), "hobbitdxlog ", 12) == 0)) wantresponse = 1;
+	else if ((strncmp(STRBUF(msg), "xymondboard", 11) == 0) || (strncmp(STRBUF(msg), "hobbitdboard", 12) == 0)) wantresponse = 1;
+	else if ((strncmp(STRBUF(msg), "xymondxboard", 12) == 0) || (strncmp(STRBUF(msg), "hobbitdxboard", 13) == 0)) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "schedule", 8) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "clientlog ", 10) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "hostinfo", 8) == 0) wantresponse = 1;
@@ -157,9 +149,6 @@ int main(int argc, char *argv[])
 	else if (strncmp(STRBUF(msg), "pullclient", 10) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "ghostlist", 9) == 0) wantresponse = 1;
 	else if (strncmp(STRBUF(msg), "multisrclist", 12) == 0) wantresponse = 1;
-	else {
-		wantresponse = 0;
-	}
 
 	sres = newsendreturnbuf(wantresponse, respfd);
 	result = sendmessage(STRBUF(msg), recipient, timeout, sres);

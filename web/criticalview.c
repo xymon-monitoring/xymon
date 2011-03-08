@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit CGI for generating the Hobbit NK page                               */
+/* Xymon CGI for generating the Xymon Critical Systems page                   */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -17,7 +17,7 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef struct hstatus_t {
 	char *hostname;
@@ -26,12 +26,13 @@ typedef struct hstatus_t {
 	int color;
 	time_t lastchange, logtime, validtime, acktime;
 	char *ackedby, *ackmsg;
-	nkconf_t *config;
+	critconf_t *config;
 } hstatus_t;
 
 static RbtHandle rbstate;
 static time_t oldlimit = 3600;
-static int nkacklevel = 1;
+static int critacklevel = 1;
+static int usetooltips = 0;
 
 void errormsg(char *s)
 {
@@ -41,7 +42,7 @@ void errormsg(char *s)
 
 int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 {
-	int hobbitdresult;
+	int xymondresult;
 	char *board = NULL;
 	char *bol, *eol;
 	time_t now;
@@ -49,12 +50,12 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	int i;
 	sendreturn_t *sres;
 
-	sprintf(msg, "hobbitdboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", nkacklevel,colorname(mincolor));
+	sprintf(msg, "xymondboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", critacklevel,colorname(mincolor));
 	for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
 
 	sres = newsendreturnbuf(1, NULL);
-	hobbitdresult = sendmessage(msg, NULL, BBTALK_TIMEOUT, sres);
-	if (hobbitdresult != BB_OK) {
+	xymondresult = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
+	if (xymondresult != XYMONSEND_OK) {
 		freesendreturnbuf(sres);
 		errormsg("Unable to fetch current status\n");
 		return 1;
@@ -77,11 +78,11 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 		/* Find the config entry */
 		endkey = strchr(bol, '|'); if (endkey) endkey = strchr(endkey+1, '|'); 
 		if (endkey) {
-			nkconf_t *cfg;
+			critconf_t *cfg;
 			char *ackstr, *ackrtimestr, *ackvtimestr, *acklevelstr, *ackbystr, *ackmsgstr;
 
 			*endkey = '\0';
-			cfg = get_nkconfig(bol, NKCONF_TIMEFILTER, NULL);
+			cfg = get_critconfig(bol, CRITCONF_TIMEFILTER, NULL);
 			*endkey = '|';
 
 			if (cfg) {
@@ -174,7 +175,7 @@ void print_colheaders(FILE *output, RbtHandle rbcolumns)
 
 		fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
 		fprintf(output, " <A HREF=\"%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n",
-			columnlink(colname), xgetenv("MKBBCOLFONT"), colname);
+			columnlink(colname), xgetenv("XYMONPAGECOLFONT"), colname);
 	}
 	fprintf(output, "</TR>\n");
 	fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", colcount);
@@ -189,21 +190,21 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 
 	now = getcurrenttime(NULL);
 	hinfo = hostinfo(itm->hostname);
-	dispname = bbh_item(hinfo, BBH_DISPLAYNAME);
-	ip = bbh_item(hinfo, BBH_IP);
+	dispname = xmh_item(hinfo, XMH_DISPLAYNAME);
+	ip = xmh_item(hinfo, XMH_IP);
 
 	fprintf(output, "<TR>\n");
 
 	/* Print the priority */
 	fprintf(output, "<TD ALIGN=LEFT VALIGN=TOP WIDTH=25%% NOWRAP>");
 	if (firsthost) 
-		fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("MKBBROWFONT"), prio);
+		fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("XYMONPAGEROWFONT"), prio);
 	else 
 		fprintf(output, "&nbsp;");
 	fprintf(output, "</TD>\n");
 
-	/* Print the hostname with a link to the NK info page */
-	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, 0));
+	/* Print the hostname with a link to the critical systems info page */
+	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, usetooltips));
 
 	key = (char *)malloc(strlen(itm->hostname) + 1024);
 	for (colhandle = rbtBegin(columns); (colhandle != rbtEnd(columns)); colhandle = rbtNext(columns, colhandle)) {
@@ -243,7 +244,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 					prio, 
 					htmlgroupstr, htmlextrastr);
 				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s %s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
-					xgetenv("BBSKIN"), 
+					xgetenv("XYMONSKIN"), 
 					dotgiffilename(column->color, (column->acktime > 0), (age > oldlimit)),
 					colorname(column->color), htmlalttag, htmlackstr,
 					xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
@@ -289,7 +290,7 @@ void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int pri
 
 
 
-void generate_nkpage(FILE *output, char *hfprefix)
+void generate_critpage(FILE *output, char *hfprefix)
 {
 	RbtIterator hhandle;
 	int color = COL_GREEN;
@@ -328,7 +329,7 @@ void generate_nkpage(FILE *output, char *hfprefix)
         }
         else {
                 /* "All Monitored Systems OK */
-		fprintf(output, "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>");
+		fprintf(output, "%s", xgetenv("XYMONALLOKTEXT"));
         }
 
         fprintf(output, "</center>\n");
@@ -399,6 +400,8 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
+	char *critconfig = NULL;
+	char *hffile = "critical";
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -412,28 +415,39 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
-		else if (argnmatch(argv[argi], "--nkacklevel=")) {
+		else if (strcmp(argv[argi], "--tooltips") == 0) {
+			usetooltips = 1;
+		}
+		else if (argnmatch(argv[argi], "--acklevel=")) {
 			char *p = strchr(argv[argi], '=');
-			nkacklevel = atoi(p+1);
+			critacklevel = atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--config=")) {
+			char *p = strchr(argv[argi], '=');
+			critconfig = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--hffile=")) {
+			char *p = strchr(argv[argi], '=');
+			hffile = strdup(p+1);
 		}
 	}
 
-	redirect_cgilog("hobbit-nkview");
+	redirect_cgilog("criticalview");
 
 	setdocurl(hostsvcurl("%s", xgetenv("INFOCOLUMN"), 1));
 
 	parse_query();
-	load_hostnames(xgetenv("BBHOSTS"), NULL, get_fqdn());
-	load_nkconfig(NULL);
+	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	load_critconfig(critconfig);
 	load_all_links();
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
 	if (loadstatus(maxprio, maxage, mincolor, wantacked) == 0) {
 		use_recentgifs = 1;
-		generate_nkpage(stdout, "hobbitnk");
+		generate_critpage(stdout, hffile);
 	}
 	else {
-		fprintf(stdout, "Cannot load Hobbit status\n");
+		fprintf(stdout, "Cannot load Xymon status\n");
 	}
 
 	return 0;

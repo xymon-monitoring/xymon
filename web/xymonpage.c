@@ -1,11 +1,11 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit webpage generator tool.                                             */
+/* Xymon webpage generator tool.                                              */
 /*                                                                            */
 /* This is a generic webpage generator, that allows scripts to output a       */
-/* standard Hobbit-like webpage without having to deal with headers and       */
+/* standard Xymon-like webpage without having to deal with headers and        */
 /* footers.                                                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -18,18 +18,18 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 #include "version.h"
 
 char *reqenv[] = {
-	"BBHOME",
+	"XYMONHOME",
 	NULL
 };
 
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *hffile = "bb";
+	char *hffile = "stdnormal";
 	int bgcolor = COL_BLUE;
 	char inbuf[8192];
 	int n;

@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit RRD handler module.                                                 */
+/* Xymon RRD handler module.                                                  */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -31,7 +31,7 @@ int do_external_rrd(char *hostname, char *testname, char *classname, char *pagep
 		
 		MEMDEFINE(fn); MEMDEFINE(extcmd);
 
-		sprintf(fn, "%s/rrd_msg_%d", xgetenv("BBTMP"), (int) getpid());
+		sprintf(fn, "%s/rrd_msg_%d", xgetenv("XYMONTMP"), (int) getpid());
 		dbgprintf("%09d : Saving msg to file %s\n", (int)mypid, fn);
 
 		fd = fopen(fn, "w");

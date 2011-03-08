@@ -1,44 +1,44 @@
 #! /bin/sh
 #
-# hobbit-client   This shell script takes care of starting and stopping
-#                 the hobbit client.
+# xymon-client    This shell script takes care of starting and stopping
+#                 the Xymon client.
 #
 # chkconfig: 2345 80 20
-# description: hobbit is a network monitoring tool that allows \
+# description: Xymon is a network monitoring tool that allows \
 # you to monitor hosts and services. This client reports local \
 # system statistics (cpu-, memory-, disk-utilisation etc) \
-# to the Hobbit server.
+# to the Xymon server.
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/lib/hobbit/client/runclient.sh
-NAME=hobbit-client
-DESC=hobbit-client
+DAEMON=/usr/lib/xymon/client/runclient.sh
+NAME=xymon-client
+DESC=xymon-client
 
 test -x $DAEMON || exit 0
 
 CMD="$1"
 
-# Include hobbit-client defaults if available
+# Include xymon-client defaults if available
 DMNOPTS=""
-if [ -f /etc/default/hobbit-client ] ; then
-	. /etc/default/hobbit-client
+if [ -f /etc/default/xymon-client ] ; then
+	. /etc/default/xymon-client
 else
-	echo "Installation failure - missing /etc/default/hobbit-client"
+	echo "Installation failure - missing /etc/default/xymon-client"
 	exit 1
 fi
 
-if [ "$HOBBITSERVERS" = "" ]; then
-	echo "Please configure HOBBITSERVERS in /etc/default/hobbit-client"
+if [ "$XYMONSERVERS" = "" ]; then
+	echo "Please configure XYMONSERVERS in /etc/default/xymon-client"
 	exit 1
 fi
 
-set $HOBBITSERVERS
+set $XYMONSERVERS
 if [ $# -eq 1 ]; then
-	echo "BBDISP=\"$HOBBITSERVERS\"" >/var/run/hobbitclient-runtime.cfg
-	echo "BBDISPLAYS=\"\"" >>/var/run/hobbitclient-runtime.cfg
+	echo "XYMSRV=\"$XYMONSERVERS\"" >/var/run/xymonclient-runtime.cfg
+	echo "XYMSERVERS=\"\"" >>/var/run/xymonclient-runtime.cfg
 else
-	echo "BBDISP=\"0.0.0.0\"" >/var/run/hobbitclient-runtime.cfg
-	echo "BBDISPLAYS=\"$HOBBITSERVERS\"" >>/var/run/hobbitclient-runtime.cfg
+	echo "XYMSRV=\"0.0.0.0\"" >/var/run/xymonclient-runtime.cfg
+	echo "XYMSERVERS=\"$XYMONSERVERS\"" >>/var/run/xymonclient-runtime.cfg
 fi
 
 if [ "$CLIENTHOSTNAME" != "" ]; then
@@ -53,18 +53,18 @@ set -e
 case "$CMD" in
   start)
 	echo -n "Starting $DESC: "
-	su -c "$DAEMON $DMNOPTS start" - hobbit
+	su -c "$DAEMON $DMNOPTS start" - xymon
 	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-	su -c "$DAEMON stop" - hobbit
+	su -c "$DAEMON stop" - xymon
 	echo "$NAME."
 	;;
   restart)
 	echo -n "Restarting $DESC: "
-	su -c "$DAEMON stop" - hobbit
-	su -c "$DAEMON $DMNOPTS start" - hobbit
+	su -c "$DAEMON stop" - xymon
+	su -c "$DAEMON $DMNOPTS start" - xymon
 	echo "$NAME."
 	;;
   *)

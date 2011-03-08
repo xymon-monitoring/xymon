@@ -1,0 +1,143 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of XYMOND_CHANNEL</TITLE>
+</HEAD><BODY>
+<H1>XYMOND_CHANNEL</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+xymond_channel - Feed a xymond channel to a worker module
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>xymond_channel --channel=CHANNEL [options] workerprogram [worker-options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+xymond_channel hooks into one of the 
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
+
+channels that provide information about events occurring in the Xymon system.
+It retrieves messages from the xymond daemon, and passes them on to the
+<B>workerprogram</B> on the STDIN (file descripter 1) of the worker program. 
+Worker programs can then handle messages as they like.
+<P>
+A number of worker programs are shipped with xymond, e.g.
+<I><A HREF="../man8/xymond_filestore.8.html">xymond_filestore</A>(8)</I>
+
+<I><A HREF="../man8/xymond_history.8.html">xymond_history</A>(8)</I>
+
+<I><A HREF="../man8/xymond_alert.8.html">xymond_alert</A>(8)</I>
+
+<I><A HREF="../man8/xymond_rrd.8.html">xymond_rrd</A>(8)</I>
+
+<P>
+If you want to write your own worker module, a sample worker module
+is provided as part of the xymond distribution in the xymond_sample.c
+file. This illustrates how to easily fetch and parse messages.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+xymond_channel accepts a few options.
+<P>
+<DL COMPACT>
+<DT>--channel=CHANNELNAME<DD>
+Specifies the channel to receive messages from, only one channel can be used.
+This option is required. The following channels are available:
+<BR>
+
+&quot;status&quot; receives all Xymon status- and summary-messages
+<BR>
+
+&quot;stachg&quot; receives information about status changes
+<BR>
+
+&quot;page&quot; receives information about statuses triggering alerts
+<BR>
+
+&quot;data&quot; receives all Xymon &quot;data&quot; messages
+<BR>
+
+&quot;notes&quot; receives all Xymon &quot;notes&quot; messages
+<BR>
+
+&quot;enadis&quot; receives information about hosts being disabled or enabled.
+<P>
+<DT>--filter=EXPRESSION<DD>
+EXPRESSION is a Perl-compatible regular expression. xymond_channel will match 
+the first line of each message against this expression, and silently drops any
+message that does not match the expression. Especially useful for custom 
+worker modules and during testing, to limit the amount of data that the module
+must process.
+<BR>
+
+Note that messages for &quot;logrotate&quot;, &quot;shutdown&quot;, &quot;drophost&quot;, &quot;renamehost&quot;,
+&quot;droptest&quot; and &quot;renametest&quot; are always forwarded by xymond_channel, whether
+they match the filter or not.
+<P>
+<DT>--daemon<DD>
+xymond_channel is normally started by 
+<I><A HREF="../man8/xymonlaunch.8.html">xymonlaunch</A>(8)</I>
+
+as a task defined in the
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
+
+file. If you are not using xymonlaunch, then starting xymond_channel with this
+option causes it to run as a stand-alone background task.
+<P>
+<DT>--pidfile=FILENAME<DD>
+If running as a stand-alone daemon, xymond_channel will save the proces-ID 
+of the daemon in FILENAME. This is useful for automated startup- and shutdown-
+scripts.
+<P>
+<DT>--env=FILENAME<DD>
+Loads the environment variables defined in FILENAME before starting xymond_channel.
+This is normally used only when running as a stand-alone daemon; if xymond_channel
+is started by xymonlaunch, then the environment is controlled by the task definition 
+in the
+<I><A HREF="../man5/tasks.cfg.5.html">tasks.cfg</A>(5)</I>
+
+file.
+<P>
+<DT>--log=FILENAME<DD>
+Redirect output to this log-file.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>FILES</H2>
+
+This program does not use any configuration files.
+<P>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">FILES</A><DD>
+<DT><A HREF="#lbAG">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 21:08:18 GMT, January 20, 2011
+</BODY>
+</HTML>

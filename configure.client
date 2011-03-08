@@ -54,9 +54,6 @@ then
 fi
 echo ""
 
-. build/zlib.sh
-echo ""; echo ""
-
 MAKE="$MAKE -s" ./build/lfs.sh
 if test $? -eq 0; then
 	LFS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
@@ -65,80 +62,83 @@ else
 fi
 echo ""; echo ""
 
+MAKE="$MAKE -s" . ./build/clock-gettime-librt.sh
+echo ""; echo ""
+
 echo "What userid will be running Xymon [xymon] ?"
-if test -z "$BBUSER"
+if test -z "$XYMONUSER"
 then
-	read BBUSER
+	read XYMONUSER
 fi
-if test -z "$BBUSER"
+if test -z "$XYMONUSER"
 then
-	BBUSER="xymon"
+	XYMONUSER="xymon"
 fi
 
-if test -z "$BBTOPDIR"
+if test -z "$XYMONTOPDIR"
 then
 	if test "`uname -s`" = "Darwin"
 	then
 		# Use "dscl" for locating user information. From Isaac Vetter
-		# http://www.hswn.dk/hobbiton/2008/02/msg00173.html
-		USERDATA="`dscl . -list /Users  | grep $BBUSER`"
+		# http://www.xymon.com/archive/2008/02/msg00173.html
+		USERDATA="`dscl . -list /Users  | grep $XYMONUSER`"
 		if test "$USERDATA" != ""
 		then
 			echo "Found Directory entry for user: $USERDATA"
 		else
-			echo "FAILURE: The user $BBUSER does not exist locally. Create user and try again."
+			echo "FAILURE: The user $XYMONUSER does not exist locally. Create user and try again."
 			exit 1
 		fi
 		echo ""; echo ""
-		HOMEDIR="`dscl . -read /Users/$BBUSER | grep HomeDirectory | awk '{print $2}'`"
+		HOMEDIR="`dscl . -read /Users/$XYMONUSER | grep HomeDirectory | awk '{print $2}'`"
 	else
-		USERDATA=`getent passwd $BBUSER 2>/dev/null || ypmatch "${BBUSER}" passwd || grep "^${BBUSER}:" /etc/passwd`
+		USERDATA=`getent passwd $XYMONUSER 2>/dev/null || ypmatch "${XYMONUSER}" passwd || grep "^${XYMONUSER}:" /etc/passwd`
 		if test $? -eq 0
 		then
 			echo "Found passwd entry for user $USERDATA"
 		else
-			echo "FAILURE: The user $BBUSER does not exist. Create user and try again."
+			echo "FAILURE: The user $XYMONUSER does not exist. Create user and try again."
 			exit 1
 		fi
 		echo ""; echo ""
 		HOMEDIR="`echo $USERDATA|cut -d: -f6`"
 	fi
 else
-	HOMEDIR="$BBTOPDIR"
+	HOMEDIR="$XYMONTOPDIR"
 fi
 
 echo "Where do you want the Xymon installation [${HOMEDIR}] ?"
-if test -z "$BBTOPDIR"
+if test -z "$XYMONTOPDIR"
 then
-	read BBTOPDIR
+	read XYMONTOPDIR
 fi
-if test -z "$BBTOPDIR"
+if test -z "$XYMONTOPDIR"
 then
-	BBTOPDIR=${HOMEDIR}
+	XYMONTOPDIR=${HOMEDIR}
 fi
-if test -d "$BBTOPDIR"
+if test -d "$XYMONTOPDIR"
 then
-	echo "OK, will configure to use $BBTOPDIR as the Xymon toplevel directory"
+	echo "OK, will configure to use $XYMONTOPDIR as the Xymon toplevel directory"
 else
-	echo "WARNING: $BBTOPDIR does not exist."
+	echo "WARNING: $XYMONTOPDIR does not exist."
 fi
 echo ""; echo ""
 
 echo "What is the IP-address of your Xymon server [127.0.0.1] ? "
-if test -z "$BBHOSTIP"
+if test -z "$XYMONHOSTIP"
 then
-	read BBHOSTIP
+	read XYMONHOSTIP
 fi
-if test -z "$BBHOSTIP"
+if test -z "$XYMONHOSTIP"
 then
 	echo "** NOTE: Using 127.0.0.1 (loopback), but it is probably not what you want **"
-	BBHOSTIP=127.0.0.1
+	XYMONHOSTIP=127.0.0.1
 fi
 echo ""; echo ""
 
-BBHOSTOS=`uname -s | tr [A-Z] [a-z]`
-if test "$BBHOME" = ""; then
-	BBHOME=$BBTOPDIR/client
+XYMONHOSTOS=`uname -s | tr [A-Z] [a-z]`
+if test "$XYMONHOME" = ""; then
+	XYMONHOME=$XYMONTOPDIR/client
 fi
 
 echo "# Toplevel Makefile for Xymon"    > Makefile
@@ -155,21 +155,19 @@ echo ""                                  >>Makefile
 echo "# configure settings for Xymon"    >>Makefile
 echo "#"                                 >>Makefile
 echo "# Toplevel dir"                    >>Makefile
-echo "BBTOPDIR = $BBTOPDIR"              >>Makefile
+echo "XYMONTOPDIR = $XYMONTOPDIR"        >>Makefile
 echo "# Server home dir for etc/, www/"  >>Makefile
-echo "BBHOME = $BBHOME"                  >>Makefile
+echo "XYMONHOME = $XYMONHOME"            >>Makefile
 echo ""                                  >>Makefile
 echo "# Xymon settings follows"          >>Makefile
 echo "#"                                 >>Makefile
 echo "# Username running Xymon"          >>Makefile
-echo "BBUSER = $BBUSER"                  >>Makefile
+echo "XYMONUSER = $XYMONUSER"            >>Makefile
 echo "# Xymon server IP-address"         >>Makefile
-echo "BBHOSTIP = $BBHOSTIP"              >>Makefile
+echo "XYMONHOSTIP = $XYMONHOSTIP"        >>Makefile
 echo "# Large File Support settings"     >>Makefile
 echo "LFSDEF = $LFS"                     >>Makefile
-echo "# ZLIB settings"                   >>Makefile
-echo "ZLIBINCDIR = -I$ZLIBINC"           >>Makefile
-echo "HOBBITZLIB = -L$ZLIBLIB -lz"       >>Makefile
+echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
 
 echo "" >>Makefile
 if test -r build/Makefile.`uname -s`
@@ -186,7 +184,7 @@ else
 	echo "If this fails, change the compile settings in Makefile"
 	echo ""
 	echo "I would appreciate it if you send the changes to"
-	echo "hobbit-owner@hswn.dk so I can include it in the next version."
+	echo "xymon-owner@xymon.com so I can include it in the next version."
 	echo ""
 fi
 echo "" >>Makefile

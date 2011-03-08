@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "libbbgen.h"
+#include "libxymon.h"
 
 typedef enum { BLACK, RED } NodeColor;
 
@@ -386,7 +386,7 @@ void *rbtFind(RbtHandle h, void *key) {
     return NULL;
 }
 
-/* Utility functions used in many places in Hobbit */
+/* Utility functions used in many places in Xymon */
 int name_compare(void *a, void *b)
 {
 	return strcasecmp((char *)a, (char *)b);

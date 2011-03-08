@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit general CSV info viewer.                                            */
+/* Xymon general CSV info viewer.                                             */
 /*                                                                            */
 /* This is a CGI script for a generic presentation of information stored in   */
 /* a comma-separated file (CSV), e.g. via an export from a spreadsheet or DB. */
-/* It is also used for the Hobbit column-name links, to provide information   */
+/* It is also used for the Xymon column-name links, to provide information    */
 /* about what each column header means and what kind of test is run.          */
 /*                                                                            */
-/* Copyright (C) 2003-2008 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -22,7 +22,7 @@ static char rcsid[] = "$Id$";
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define MAXCOLUMNS 80
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	redirect_cgilog("bb-csvinfo");
+	redirect_cgilog("csvinfo");
 
 	cgidata = cgi_request();
 	parse_query();
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	sprintf(dbfn, "%s/etc/%s", xgetenv("BBHOME"), srcdb);
+	sprintf(dbfn, "%s/etc/%s", xgetenv("XYMONHOME"), srcdb);
 	db = fopen(dbfn, "r");
 	if (db == NULL) {
 		char msg[PATH_MAX];

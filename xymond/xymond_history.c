@@ -1,12 +1,12 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit message daemon.    .                                                */
+/* Xymon message daemon.                                                      */
 /*                                                                            */
-/* This is a hobbitd worker module for the "stachg" channel.                  */
+/* This is a xymond worker module for the "stachg" channel.                   */
 /* This module implements the file-based history logging, and keeps the       */
-/* historical logfiles in bbvar/hist/ and bbvar/histlogs/ updated to keep     */
-/* track of the status changes.                                               */
+/* historical logfiles in $XYMONVAR/hist/ and $XYMONVAR/histlogs/ updated     */
+/* to keep track of the status changes.                                       */
 /*                                                                            */
-/* Copyright (C) 2004-2008 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -22,17 +22,18 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <signal.h>
 #include <dirent.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <limits.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
-#include "hobbitd_worker.h"
+#include "xymond_worker.h"
 
-#include <signal.h>
-
+int rotatefiles = 0;
+time_t nextfscheck = 0;
 
 void sig_handler(int signum)
 {
@@ -42,12 +43,23 @@ void sig_handler(int signum)
 	switch (signum) {
 	  case SIGCHLD:
 		  break;
+
+	  case SIGHUP:
+		  rotatefiles = 1;
+		  nextfscheck = 0;
+		  break;
 	}
 }
 
+typedef struct columndef_t {
+	char *name;
+	int saveit;
+} columndef_t;
+RbtHandle columndefs;
+
 int main(int argc, char *argv[])
 {
-	time_t starttime = getcurrenttime(NULL);
+	time_t starttime = gettimer();
 	char *histdir = NULL;
 	char *histlogdir = NULL;
 	char *msg;
@@ -55,22 +67,28 @@ int main(int argc, char *argv[])
 	int save_allevents = 1;
 	int save_hostevents = 1;
 	int save_statusevents = 1;
-	int save_histlogs = 1;
+	int save_histlogs = 1, defaultsaveop = 1;
 	FILE *alleventsfd = NULL;
 	int running = 1;
 	struct sigaction sa;
 	char newcol2[3];
 	char oldcol2[3];
+	char alleventsfn[PATH_MAX];
+	char pidfn[PATH_MAX];
+	int logdirfull = 0;
+	int minlogspace = 5;
 
+	MEMDEFINE(pidfn);
+	MEMDEFINE(alleventsfn);
 	MEMDEFINE(newcol2);
 	MEMDEFINE(oldcol2);
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
-	if (xgetenv("BBALLHISTLOG")) save_allevents = (strcmp(xgetenv("BBALLHISTLOG"), "TRUE") == 0);
-	if (xgetenv("BBHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("BBHOSTHISTLOG"), "TRUE") == 0);
-	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strcmp(xgetenv("SAVESTATUSLOG"), "TRUE") == 0);
+	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
+	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
+	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--histdir=")) {
@@ -79,51 +97,90 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--histlogdir=")) {
 			histlogdir = strchr(argv[argi], '=')+1;
 		}
+		else if (argnmatch(argv[argi], "--minimum-free=")) {
+			minlogspace = atoi(strchr(argv[argi], '=')+1);
+		}
 		else if (argnmatch(argv[argi], "--debug")) {
 			debug = 1;
 		}
 	}
 
-	if (xgetenv("BBHIST") && (histdir == NULL)) {
-		histdir = strdup(xgetenv("BBHIST"));
+	if (xgetenv("XYMONHISTDIR") && (histdir == NULL)) {
+		histdir = strdup(xgetenv("XYMONHISTDIR"));
 	}
 	if (histdir == NULL) {
 		errprintf("No history directory given, aborting\n");
 		return 1;
 	}
 
-	if (save_histlogs && (histlogdir == NULL) && xgetenv("BBHISTLOGS")) {
-		histlogdir = strdup(xgetenv("BBHISTLOGS"));
+	if (save_histlogs && (histlogdir == NULL) && xgetenv("XYMONHISTLOGS")) {
+		histlogdir = strdup(xgetenv("XYMONHISTLOGS"));
 	}
 	if (save_histlogs && (histlogdir == NULL)) {
 		errprintf("No history-log directory given, aborting\n");
 		return 1;
 	}
 
+	columndefs = rbtNew(string_compare);
+	{
+		char *defaultsave, *tok;
+		char *savelist;
+		columndef_t *newrec;
+
+		savelist = strdup(xgetenv("SAVESTATUSLOG"));
+		defaultsave = strtok(savelist, ","); 
+		/*
+		 * TRUE: Save everything by default; may list some that are not saved.
+		 * ONLY: Save nothing by default; may list some that are saved.
+		 * FALSE: Save nothing.
+		 */
+		defaultsaveop = (strcasecmp(defaultsave, "TRUE") == 0);
+		tok = strtok(NULL, ",");
+		while (tok) {
+			newrec = (columndef_t *)malloc(sizeof(columndef_t));
+			if (*tok == '!') {
+				newrec->saveit = 0;
+				newrec->name = strdup(tok+1);
+			}
+			else {
+				newrec->saveit = 1;
+				newrec->name = strdup(tok);
+			}
+			rbtInsert(columndefs, newrec->name, newrec);
+
+			tok = strtok(NULL, ",");
+		}
+		xfree(savelist);
+	}
+
+	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
+	{
+		FILE *pidfd = fopen(pidfn, "w");
+		if (pidfd) {
+			fprintf(pidfd, "%d\n", getpid());
+			fclose(pidfd);
+		}
+	}
+
+	sprintf(alleventsfn, "%s/allevents", histdir);
 	if (save_allevents) {
-		char alleventsfn[PATH_MAX];
-
-		MEMDEFINE(alleventsfn);
-
-		sprintf(alleventsfn, "%s/allevents", histdir);
 		alleventsfd = fopen(alleventsfn, "a");
 		if (alleventsfd == NULL) {
 			errprintf("Cannot open the all-events file '%s'\n", alleventsfn);
 		}
 		setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
-
-		MEMUNDEFINE(alleventsfn);
 	}
 
 	/* For picking up lost children */
-	setup_signalhandler("hobbitd_history");
+	setup_signalhandler("xymond_history");
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGCHLD, &sa, NULL);
+	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
 	while (running) {
-		char *items[20] = { NULL, };
+		char *metadata[20] = { NULL, };
 		int metacount;
 		char *p;
 		char *statusdata = "";
@@ -139,16 +196,27 @@ int main(int argc, char *argv[])
 		/* Pickup any finished child processes to avoid zombies */
 		while (wait3(&childstat, WNOHANG, NULL) > 0) ;
 
-		msg = get_hobbitd_message(C_STACHG, "hobbitd_history", &seq, NULL);
+		if (rotatefiles && alleventsfd) {
+			fclose(alleventsfd);
+			alleventsfd = fopen(alleventsfn, "a");
+			if (alleventsfd == NULL) {
+				errprintf("Cannot re-open the all-events file '%s'\n", alleventsfn);
+			}
+			else {
+				setvbuf(alleventsfd, (char *)NULL, _IOLBF, 0);
+			}
+		}
+
+		msg = get_xymond_message(C_STACHG, "xymond_history", &seq, NULL);
 		if (msg == NULL) {
 			running = 0;
 			continue;
 		}
 
-		if (timewarp) {
-			errprintf("WARNING: Time has gone BACK by %d seconds - this can make your history look odd.\n", timewarp);
-			errprintf("hobbitd_history module is restarting to pick up new time\n");
-			running = 0;
+		if (nextfscheck < gettimer()) {
+			logdirfull = (chkfreespace(histlogdir, minlogspace, minlogspace) != 0);
+			if (logdirfull) errprintf("Historylog directory %s has less than %d%% free space - disabling save of data for 5 minutes\n", histlogdir, minlogspace);
+			nextfscheck = gettimer() + 300;
 		}
 
 		p = strchr(msg, '\n'); 
@@ -156,32 +224,48 @@ int main(int argc, char *argv[])
 			*p = '\0'; 
 			statusdata = msg_data(p+1);
 		}
-		p = gettok(msg, "|"); metacount = 0;
+		metacount = 0;
+		memset(&metadata, 0, sizeof(metadata));
+		p = gettok(msg, "|");
 		while (p && (metacount < 20)) {
-			items[metacount++] = p;
+			metadata[metacount++] = p;
 			p = gettok(NULL, "|");
 		}
 
-		if ((metacount > 9) && (strncmp(items[0], "@@stachg", 8) == 0)) {
+		if ((metacount > 9) && (strncmp(metadata[0], "@@stachg", 8) == 0)) {
+			RbtIterator handle;
+			columndef_t *saveit = NULL;
+
 			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp|modifiers */
-			sscanf(items[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
-			hostname = items[4];
-			testname = items[5];
-			newcolor = parse_color(items[7]);
-			oldcolor = parse_color(items[8]);
-			lastchg  = atoi(items[9]);
-			disabletime = atoi(items[10]);
-			dismsg   = items[11];
-			downtimeactive = (atoi(items[12]) > 0);
-			clienttstamp = atoi(items[13]);
-			modifiers = items[14];
+			sscanf(metadata[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
+			hostname = metadata[4];
+			testname = metadata[5];
+			newcolor = parse_color(metadata[7]);
+			oldcolor = parse_color(metadata[8]);
+			lastchg  = atoi(metadata[9]);
+			disabletime = atoi(metadata[10]);
+			dismsg   = metadata[11];
+			downtimeactive = (atoi(metadata[12]) > 0);
+			clienttstamp = atoi(metadata[13]);
+			modifiers = metadata[14];
 
 			if (newcolor == -1) {
-				errprintf("Bad message: newcolor is unknown '%s'\n", items[7]);
+				errprintf("Bad message: newcolor is unknown '%s'\n", metadata[7]);
 				continue;
 			}
 
 			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
+
+			handle = rbtFind(columndefs, testname);
+			if (handle == rbtEnd(columndefs)) {
+				saveit = (columndef_t *)malloc(sizeof(columndef_t));
+				saveit->name = strdup(testname);
+				saveit->saveit = defaultsaveop;
+				rbtInsert(columndefs, saveit->name, saveit);
+			}
+			else {
+				saveit = (columndef_t *) gettreeitem(columndefs, handle);
+			}
 
 			if (save_statusevents) {
 				char statuslogfn[PATH_MAX];
@@ -203,12 +287,12 @@ int main(int argc, char *argv[])
 
 				if (logexists) {
 					/*
-					 * There is a fair chance hobbitd has not been
+					 * There is a fair chance xymond has not been
 					 * running all the time while this system was monitored.
 					 * So get the time of the latest status change from the file,
 					 * instead of relying on the "lastchange" value we get
-					 * from hobbitd. This is also needed when migrating from 
-					 * standard bbd to hobbitd.
+					 * from xymond. This is also needed when migrating from 
+					 * standard bbd to xymond.
 					 */
 					off_t pos = -1;
 					char l[1024];
@@ -286,7 +370,7 @@ int main(int argc, char *argv[])
 
 				if (strcmp(oldcol, colorname(newcolor)) == 0) {
 					/* We wont update history unless the color did change. */
-					if ((getcurrenttime(NULL) - starttime) > 300) {
+					if ((gettimer() - starttime) > 300) {
 						errprintf("Will not update %s - color unchanged (%s)\n", 
 							  statuslogfn, oldcol);
 					}
@@ -325,7 +409,7 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(timestamp);
 			}
 
-			if (save_histlogs) {
+			if (save_histlogs && saveit->saveit && !logdirfull) {
 				char *hostdash;
 				char fname[PATH_MAX];
 				FILE *histlogfd;
@@ -350,6 +434,8 @@ int main(int argc, char *argv[])
 					 */
 					int txtcolor = parse_color(statusdata);
 					char *origstatus = statusdata;
+					char *eoln, *restofdata;
+					int written, closestatus, ok = 1;
 
 					if (txtcolor != -1) {
 						fprintf(histlogfd, "%s", colorname(newcolor));
@@ -369,16 +455,44 @@ int main(int argc, char *argv[])
 						statusdata = origstatus;
 					}
 
+					restofdata = statusdata;
 					if (modifiers && *modifiers) {
+						char *modtxt;
+
+						/* We must finish writing the first line before putting in the modifiers */
+						eoln = strchr(restofdata, '\n');
+						if (eoln) {
+							restofdata = eoln+1;
+							*eoln = '\0';
+							fprintf(histlogfd, "%s\n", statusdata);
+						}
+
 						nldecode(modifiers);
-						fprintf(histlogfd, " %s", modifiers);
+						modtxt = strtok(modifiers, "\n");
+						while (modtxt) {
+							fprintf(histlogfd, "%s\n", modtxt);
+							modtxt = strtok(NULL, "\n");
+						}
 					}
 
-					fwrite(statusdata, strlen(statusdata), 1, histlogfd);
-					fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
-					fprintf(histlogfd, "Message received from %s\n", items[2]);
-					if (clienttstamp) fprintf(histlogfd, "Client data ID %d\n", (int) clienttstamp);
-					fclose(histlogfd);
+					written = fwrite(restofdata, 1, strlen(restofdata), histlogfd);
+					if (written != strlen(restofdata)) {
+						ok = 0;
+						errprintf("Error writing to file %s: %s\n", fname, strerror(errno));
+						closestatus = fclose(histlogfd); /* Ignore any errors on close */
+					}
+					else {
+						fprintf(histlogfd, "Status unchanged in 0.00 minutes\n");
+						fprintf(histlogfd, "Message received from %s\n", metadata[2]);
+						if (clienttstamp) fprintf(histlogfd, "Client data ID %d\n", (int) clienttstamp);
+						closestatus = fclose(histlogfd);
+						if (closestatus != 0) {
+							ok = 0;
+							errprintf("Error writing to file %s: %s\n", fname, strerror(errno));
+						}
+					}
+
+					if (!ok) remove(fname);
 				}
 				else {
 					errprintf("Cannot create histlog file '%s' : %s\n", fname, strerror(errno));
@@ -427,10 +541,10 @@ int main(int argc, char *argv[])
 
 			xfree(hostnamecommas);
 		}
-		else if ((metacount > 3) && ((strncmp(items[0], "@@drophost", 10) == 0))) {
+		else if ((metacount > 3) && ((strncmp(metadata[0], "@@drophost", 10) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 
-			hostname = items[3];
+			hostname = metadata[3];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -470,7 +584,7 @@ int main(int argc, char *argv[])
 
 				MEMDEFINE(statuslogfn);
 
-				/* Remove bbvar/hist/host,name.* */
+				/* Remove $XYMONVAR/hist/host,name.* */
 				p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 				hostlead = malloc(strlen(hostname) + 2);
 				strcpy(hostlead, hostnamecommas); strcat(hostlead, ".");
@@ -494,11 +608,11 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(statuslogfn);
 			}
 		}
-		else if ((metacount > 4) && ((strncmp(items[0], "@@droptest", 10) == 0))) {
+		else if ((metacount > 4) && ((strncmp(metadata[0], "@@droptest", 10) == 0))) {
 			/* @@droptest|timestamp|sender|hostname|testname */
 
-			hostname = items[3];
-			testname = items[4];
+			hostname = metadata[3];
+			testname = metadata[4];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -529,12 +643,12 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(statuslogfn);
 			}
 		}
-		else if ((metacount > 4) && ((strncmp(items[0], "@@renamehost", 12) == 0))) {
+		else if ((metacount > 4) && ((strncmp(metadata[0], "@@renamehost", 12) == 0))) {
 			/* @@renamehost|timestamp|sender|hostname|newhostname */
 			char *newhostname;
 
-			hostname = items[3];
-			newhostname = items[4];
+			hostname = metadata[3];
+			newhostname = metadata[4];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -605,13 +719,13 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(statuslogfn); MEMUNDEFINE(newlogfn);
 			}
 		}
-		else if ((metacount > 5) && (strncmp(items[0], "@@renametest", 12) == 0)) {
+		else if ((metacount > 5) && (strncmp(metadata[0], "@@renametest", 12) == 0)) {
 			/* @@renametest|timestamp|sender|hostname|oldtestname|newtestname */
 			char *newtestname;
 
-			hostname = items[3];
-			testname = items[4];
-			newtestname = items[5];
+			hostname = metadata[3];
+			testname = metadata[4];
+			newtestname = metadata[5];
 
 			if (save_histlogs) {
 				char *hostdash;
@@ -645,26 +759,30 @@ int main(int argc, char *argv[])
 				MEMUNDEFINE(newstatuslogfn); MEMUNDEFINE(statuslogfn);
 			}
 		}
-		else if (strncmp(items[0], "@@shutdown", 10) == 0) {
+		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
+			/* Nothing */
+		}
+		else if (strncmp(metadata[0], "@@shutdown", 10) == 0) {
 			running = 0;
 		}
-		else if (strncmp(items[0], "@@logrotate", 11) == 0) {
-			char *fn = xgetenv("HOBBITCHANNEL_LOGFILENAME");
+		else if (strncmp(metadata[0], "@@logrotate", 11) == 0) {
+			char *fn = xgetenv("XYMONCHANNEL_LOGFILENAME");
 			if (fn && strlen(fn)) {
 				freopen(fn, "a", stdout);
 				freopen(fn, "a", stderr);
 			}
 			continue;
 		}
-		else if (strncmp(items[0], "@@idle", 6) == 0) {
-			/* Ignored */
-		}
 	}
 
 	MEMUNDEFINE(newcol2);
 	MEMUNDEFINE(oldcol2);
+	MEMUNDEFINE(alleventsfn);
+	MEMUNDEFINE(pidfn);
 
 	fclose(alleventsfd);
+	unlink(pidfn);
+
 	return 0;
 }
 

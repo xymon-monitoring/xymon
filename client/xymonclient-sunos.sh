@@ -1,8 +1,8 @@
 #!/bin/sh
 #----------------------------------------------------------------------------#
-# Solaris client for Hobbit                                                  #
+# Solaris client for Xymon                                                   #
 #                                                                            #
-# Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #
 # version 2. See the file "COPYING" for details.                             #
@@ -41,6 +41,8 @@ echo "[memory]"
 vmstat 1 2 | tail -1
 echo "[swap]"
 /usr/sbin/swap -s
+echo "[swaplist]"
+/usr/sbin/swap -l
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
@@ -51,7 +53,8 @@ echo "[ports]"
 netstat -na -f inet -P tcp | tail +3
 netstat -na -f inet6 -P tcp | tail +5
 echo "[ifstat]"
-/usr/bin/kstat -p -s '[or]bytes64' | sort
+# Leave out the wrmsd and mac interfaces. See http://www.xymon.com/archive/2009/06/msg00204.html
+/usr/bin/kstat -p -s '[or]bytes64' | egrep -v 'wrsmd|mac' | sort
 echo "[ps]"
 ps -A -o pid,ppid,user,stime,s,pri,pcpu,time,pmem,rss,vsz,args
 
@@ -65,13 +68,13 @@ else
 fi
 
 # vmstat and iostat (iostat -d provides a cpu utilisation with I/O wait number)
-nohup sh -c "vmstat 300 2 1>$BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_vmstat.$MACHINEDOTS.$$ $BBTMP/hobbit_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
-nohup sh -c "iostat -c 300 2 1>$BBTMP/hobbit_iostatcpu.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_iostatcpu.$MACHINEDOTS.$$ $BBTMP/hobbit_iostatcpu.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
-nohup sh -c "iostat -dxsrP 300 2 1>$BBTMP/hobbit_iostatdisk.$MACHINEDOTS.$$ 2>&1; mv $BBTMP/hobbit_iostatdisk.$MACHINEDOTS.$$ $BBTMP/hobbit_iostatdisk.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "vmstat 300 2 1>$XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_vmstat.$MACHINEDOTS.$$ $XYMONTMP/xymon_vmstat.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "iostat -c 300 2 1>$XYMONTMP/xymon_iostatcpu.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_iostatcpu.$MACHINEDOTS.$$ $XYMONTMP/xymon_iostatcpu.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
+nohup sh -c "iostat -dxsrP 300 2 1>$XYMONTMP/xymon_iostatdisk.$MACHINEDOTS.$$ 2>&1; mv $XYMONTMP/xymon_iostatdisk.$MACHINEDOTS.$$ $XYMONTMP/xymon_iostatdisk.$MACHINEDOTS" </dev/null >/dev/null 2>&1 &
 sleep 5
-if test -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $BBTMP/hobbit_vmstat.$MACHINEDOTS; rm -f $BBTMP/hobbit_vmstat.$MACHINEDOTS; fi
-if test -f $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; then echo "[iostatcpu]"; cat $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; rm -f $BBTMP/hobbit_iostatcpu.$MACHINEDOTS; fi
-if test -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; then echo "[iostatdisk]"; cat $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; rm -f $BBTMP/hobbit_iostatdisk.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; then echo "[vmstat]"; cat $XYMONTMP/xymon_vmstat.$MACHINEDOTS; rm -f $XYMONTMP/xymon_vmstat.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_iostatcpu.$MACHINEDOTS; then echo "[iostatcpu]"; cat $XYMONTMP/xymon_iostatcpu.$MACHINEDOTS; rm -f $XYMONTMP/xymon_iostatcpu.$MACHINEDOTS; fi
+if test -f $XYMONTMP/xymon_iostatdisk.$MACHINEDOTS; then echo "[iostatdisk]"; cat $XYMONTMP/xymon_iostatdisk.$MACHINEDOTS; rm -f $XYMONTMP/xymon_iostatdisk.$MACHINEDOTS; fi
 
 exit
 
