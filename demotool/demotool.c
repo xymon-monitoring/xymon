@@ -1,9 +1,9 @@
 /*----------------------------------------------------------------------------*/
-/* Hobbit demonstration tool.                                                 */
+/* Xymon demonstration tool.                                                  */
 /*                                                                            */
-/* This tool fakes several hosts that can be tested by hobbit, both with      */
+/* This tool fakes several hosts that can be tested by Xymon, both with       */
 /* fake network services and fake client data. It is used to demonstrate      */
-/* features in Hobbit.                                                        */
+/* features in Xymon.                                                         */
 /*                                                                            */
 /* Copyright (C) 2005-2008 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
