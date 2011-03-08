@@ -1,0 +1,13 @@
+usr/share/man/man1/xymon.1
+usr/share/man/man1/xymoncmd.1
+usr/share/man/man1/xymondigest.1
+usr/share/man/man1/xymongrep.1
+usr/share/man/man1/xymoncfg.1
+usr/share/man/man5/clientlaunch.cfg.5
+usr/share/man/man1/clientupdate.1
+usr/share/man/man7/xymon.7
+usr/share/man/man5/xymonclient.cfg.5
+usr/share/man/man8/xymonlaunch.8
+usr/share/man/man1/logfetch.1
+usr/share/man/man8/msgcache.8
+usr/share/man/man1/orcaxymon.1

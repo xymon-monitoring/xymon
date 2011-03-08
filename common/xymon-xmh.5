@@ -1,0 +1,217 @@
+.TH XYMON-XMH 5 "Version 4.3.0:  4 Mar 2011" "Xymon"
+.SH NAME
+Xymon XMH variables \- Configuration items available online
+
+.SH DESCRIPTION
+The
+.I hosts.cfg(5)
+file is the most important configuration file for all of the
+Xymon programs.  This file contains the full list of 
+all the systems monitored by Xymon, including the set 
+of tests and other configuration items stored for each host.
+
+Although the file is in text format and can be searched
+using tools like
+.I xymongrep(1)
+it can be difficult to pick out specific fields from the
+configuration due to quoting and other text parsing issues.
+So Xymon allows for querying this information directly 
+from the
+.I xymond
+daemon via the "xymondboard" command. So the information
+can be provided together with the current status of
+a host and/or test. This is done by adding a "fields"
+definition to the "xymondboard" command.
+
+.SH XMH items
+Except where specified below, all items return the text of a 
+particular setting from the hosts.cfg file, or an empty string 
+if the setting has not been set for the host that is queried.
+
+.IP XMH_ALLPAGEPATHS
+List of all pages where the host is found, using the filename
+hierarchy page path.
+
+.IP XMH_BROWSER
+Value of the "browser" tag.
+
+.IP XMH_CLASS
+The host "class" (if reported by a Xymon client), or the 
+value of the CLASS tag.
+
+.IP XMH_CLIENTALIAS 
+Value of the CLIENT tag.
+
+.IP XMH_COMMENT
+Value of the COMMENT tag.
+
+.IP XMH_COMPACT
+Value of the COMPACT tag.
+
+.IP XMH_DEPENDS
+Value of the DEPENDS tag.
+
+.IP XMH_DESCRIPTION
+Value of the DESCR tag.
+
+.IP XMH_DISPLAYNAME 
+Value of the NAME tag.
+
+.IP XMH_DOCURL
+Value of the DOC tag.
+
+.IP XMH_DOWNTIME
+Value of the DOWNTIME tag.
+
+.IP XMH_FLAG_DIALUP
+Value of the "dialup" tag.
+
+.IP XMH_FLAG_HIDEHTTP
+Value of the HIDEHTTP tag.
+
+.IP XMH_FLAG_LDAPFAILYELLOW
+Value of the "ldapyellowfail" tag.
+
+.IP XMH_FLAG_MULTIHOMED
+Value of the MULTIHOMED tag.
+
+.IP XMH_FLAG_NOBB2
+Value of the "nobb2" tag (deprecated, use NONONGREEN instead).
+
+.IP XMH_FLAG_NOCLEAR
+Value of the NOCLEAR tag.
+
+.IP XMH_FLAG_NOCONN
+Value of the "noconn" tag.
+
+.IP XMH_FLAG_NODISP
+Value of the "nodisp" tag.
+
+.IP XMH_FLAG_NOINFO
+Value of the "noinfo" atg.
+
+.IP XMH_FLAG_NONONGREEN
+Value of the "nonongreen" tag.
+
+.IP XMH_FLAG_NOPING
+Value of the "noping" tag.
+
+.IP XMH_FLAG_NOSSLCERT
+Value of the "nosslcert" tag.
+
+.IP XMH_FLAG_NOTRACE
+Value of the "notrace" tag.
+
+.IP XMH_FLAG_NOTRENDS
+Value of the "notrends" tag.
+
+.IP XMH_FLAG_PREFER
+Value of the "prefer" tag.
+
+.IP XMH_FLAG_PULLDATA
+Value of the PULLDATA tag.
+
+.IP XMH_FLAG_TESTIP
+Value of the "testip" tag.
+
+.IP XMH_FLAG_TRACE
+Value of the "trace" tag.
+
+.IP XMH_GROUPID
+Number of the group where the host is listed - first group is 0. 
+If a host is present on multiple pages, this is the number of the
+group for the first page where the host is found.
+
+.IP XMH_HOLIDAYS
+Value of the "holidays" tag.
+
+.IP XMH_HOSTNAME
+The name of the host.
+
+.IP XMH_IP
+The IP-address of the host (as specified in hosts.cfg).
+
+.IP XMH_LDAPLOGIN
+Value of the "ldaplogin" tag.
+
+.IP XMH_NET
+Value of the NET tag.
+
+.IP XMH_NK
+Value of the NK tag (deprecated).
+
+.IP XMH_NKTIME
+Value of the NKTIME tag (deprecated).
+
+.IP XMH_NOCOLUMNS
+Value of the NOCOLUMNS tag.
+
+.IP XMH_NOPROP
+Value of the NOPROP tag.
+
+.IP XMH_NOPROPACK
+Value of the NOPROPACK tag.
+
+.IP XMH_NOPROPPURPLE
+Value of the NOPROPPURPLE tag.
+
+.IP XMH_NOPROPRED
+Value of the NOPROPRED tag.
+
+.IP XMH_NOPROPYELLOW
+Value of the NOPROPYELLOW tag.
+
+.IP XMH_NOTAFTER
+Value of the NOTAFTER tag.
+
+.IP XMH_NOTBEFORE
+Value of the NOTBEFORE tag.
+
+.IP XMH_OS
+The host operating system (if reported by a Xymon client), or the 
+value of the OS tag.
+
+.IP XMH_PAGEINDEX
+Index of the host on the page where it is shown, first host has 
+index 0.
+
+.IP XMH_PAGENAME
+Name of the page where the host is shown (see also XMH_PAGEPATH).
+
+.IP XMH_PAGEPATH
+File path to the page where the host is shown.
+
+.IP XMH_PAGEPATHTITLE
+Title of the full path to the page where the host is shown.
+
+.IP XMH_PAGETITLE
+Title of the page where the host is shown.
+
+.IP XMH_RAW
+All configuration settings for the host. Settings are separated by a pipe-sign.
+
+.IP XMH_REPORTTIME
+Value of the REPORTTIME tag.
+
+.IP XMH_SSLDAYS
+Value of the "ssldays" tag.
+
+.IP XMH_SSLMINBITS
+Value of the "sslbits" tag.
+
+.IP XMH_TRENDS
+Value of the TRENDS tag.
+
+.IP XMH_WARNPCT
+Value of the WARNPCT tag.
+
+.IP XMH_WARNSTOPS
+Value of the WARNSTOPS tag.
+
+.IP XMH_WML
+Value of the WML tag.
+
+
+.SH "SEE ALSO"
+xymon(1), hosts.cfg(5), xymongrep(1)
+

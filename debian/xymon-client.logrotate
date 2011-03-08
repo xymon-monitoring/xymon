@@ -1,0 +1,16 @@
+#
+#       Logrotate fragment for Xymon (client and server).
+#
+/var/log/xymon/*.log {
+        weekly
+        compress
+        delaycompress
+        rotate 5
+        missingok
+        nocreate
+        sharedscripts
+        postrotate
+                /etc/init.d/xymon rotate
+        endscript
+}
+
