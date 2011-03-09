@@ -68,7 +68,7 @@ void show_timestamps(char **buffer)
 
 	strcpy(outbuf, "\n\nTIME SPENT\n");
 	strcat(outbuf, "Event                                   ");
-	strcat(outbuf, "        Start time");
+	strcat(outbuf, "         Starttime");
 	strcat(outbuf, "          Duration\n");
 
 	for (s=stamphead; (s); s=s->next) {
