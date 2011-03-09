@@ -43,7 +43,7 @@ typedef struct testspec_t {
 
 static testspec_t *testhead = NULL;
 static int testcount = 0;
-
+static int errorcolors = (1 << COL_RED);
 static char *gethname(char *spec)
 {
 	static char *result = NULL;
@@ -268,7 +268,7 @@ static long getvalue(char *hostname, char *testname, int *color, char **errbuf)
 	}
 
 	if (*color == -1) return -1;
-	else return ( (*color == COL_GREEN) || (*color == COL_YELLOW) || (*color == COL_CLEAR) );
+	else return (((1 << *color) & errorcolors) == 0);
 }
 
 
@@ -497,6 +497,20 @@ int main(int argc, char *argv[])
 		}
 		else if ((strcmp(argv[argi], "--clean") == 0)) {
 			cleanexpr = 1;
+		}
+		else if ((strncmp(argv[argi], "--error-colors=", 15) == 0)) {
+			char *tok;
+			int newerrorcolors = 0;
+
+			tok = strtok(strchr(argv[argi], '=')+1, ",");
+			while (tok) {
+				int col = parse_color(tok);
+
+				if ((col >= 0) && (col <= COL_RED)) newerrorcolors |= (1 << parse_color(tok));
+				tok = strtok(NULL, ",");
+			}
+
+			if (newerrorcolors) errorcolors = newerrorcolors;
 		}
 	}
 
