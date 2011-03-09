@@ -318,6 +318,32 @@ Empty (if the status is currently enabled), or the text of the disable message.
 .BR msg
 The full text of the current status message.
 .sp
+.BR client
+Shows "Y" if there is client data available, "N" if not.
+.sp
+.BR clntstamp
+Timestamp when the last client message was received, in Unix "epoch" format.
+.sp
+.BR acklist
+List of the current acknowledgements for a test. This is a text string with multiple
+fields, delimited by a colon character. There are 5 fields: Timestamp for when the ack 
+was generated and when it expires; the the "ack level"; the user who sent the ack; and 
+the acknowledgement text.
+.sp
+.BR flapinfo
+Tells if the status is flapping. 5 fields, delimited by "/": A "0" if the status
+is not flapping and "1" if it is flapping; timestamp when the latest status change
+was recorded and when the first statuschange was recorded; and the two colors that 
+the status is flapping between.
+.sp
+.BR stats
+Number of status-changes that have been recorded for this status since xymond was
+started.
+.sp
+.BR modifiers
+Lists all active modifiers for this status (i.e. updates sent using a "modify" 
+command).
+.sp
 .BR XMH_*
 The XMH-tags refer to the Xymon
 .I hosts.cfg(5)
