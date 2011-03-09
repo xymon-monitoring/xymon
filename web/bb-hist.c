@@ -491,19 +491,19 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		      char *ip, 			/* IP - for the header only */
 		      time_t endtime,			/* End time of color-bar graphs */
 
-                      time_t start1d,			/* Start time of 1-day period */
+                      time_t start1d,			/* Starttime of 1-day period */
 		      reportinfo_t *repinfo1d, 		/* Percent summaries for 1-day period */
 		      replog_t *log1d, 			/* Events during past 1 day */
 
-                      time_t start1w,			/* Start time of 1-week period */
+                      time_t start1w,			/* Starttime of 1-week period */
 		      reportinfo_t *repinfo1w, 		/* Percent summaries for 1-week period */
 		      replog_t *log1w, 			/* Events during past 1 week */
 
-                      time_t start4w,			/* Start time of 4-week period */
+                      time_t start4w,			/* Starttime of 4-week period */
 		      reportinfo_t *repinfo4w, 		/* Percent summaries for 4-week period */
 		      replog_t *log4w, 			/* Events during past 4 weeks */
 
-                      time_t start1y,			/* Start time of 1-year period */
+                      time_t start1y,			/* Starttime of 1-year period */
 		      reportinfo_t *repinfo1y, 		/* Percent summaries for 1-year period */
 		      replog_t *log1y, 			/* Events during past 1 yeary */
 
