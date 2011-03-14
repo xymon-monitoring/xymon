@@ -792,7 +792,10 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int) tstamp.tv_usec,
 				sender, hostname, msg);
 			if (n > (bufsz-5)) {
-				errprintf("Oversize notes/user msg from %s for %s truncated (n=%d, limit=%d)\n", 
+				char *source;
+
+				errprintf("Oversize %s msg from %s for %s truncated (n=%d, limit=%d)\n", 
+					((channel->channelid == C_NOTES) ? "notes" : "user"), 
 					sender, hostname, n, bufsz);
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
