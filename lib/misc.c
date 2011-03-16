@@ -37,54 +37,59 @@ static char rcsid[] = "$Id$";
 
 enum ostype_t get_ostype(char *osname)
 {
-	char savech;
+	char *nam;
 	enum ostype_t result = OS_UNKNOWN;
+	int n;
 
-	int n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/_");
-	savech = *(osname+n); *(osname+n) = '\0';
+	if (!osname || (*osname == '\0')) return OS_UNKNOWN;
 
-	if      (strcasecmp(osname, "solaris") == 0)     result = OS_SOLARIS;
-	else if (strcasecmp(osname, "sunos") == 0)       result = OS_SOLARIS;
-	else if (strcasecmp(osname, "hpux") == 0)        result = OS_HPUX;
-	else if (strcasecmp(osname, "hp-ux") == 0)       result = OS_HPUX;
-	else if (strcasecmp(osname, "aix") == 0)         result = OS_AIX;
-	else if (strcasecmp(osname, "osf") == 0)         result = OS_OSF;
-	else if (strcasecmp(osname, "osf1") == 0)        result = OS_OSF;
-	else if (strcasecmp(osname, "win32") == 0)       result = OS_WIN32;
-	else if (strcasecmp(osname, "hmdc") == 0)        result = OS_WIN32_HMDC;
-	else if (strcasecmp(osname, "bbwin") == 0)       result = OS_WIN32_BBWIN;
-	else if (strcasecmp(osname, "powershell") == 0)  result = OS_WIN_POWERSHELL;
-	else if (strcasecmp(osname, "freebsd") == 0)     result = OS_FREEBSD;
-	else if (strcasecmp(osname, "netbsd") == 0)      result = OS_NETBSD;
-	else if (strcasecmp(osname, "openbsd") == 0)     result = OS_OPENBSD;
-	else if (strcasecmp(osname, "debian3") == 0)     result = OS_LINUX22;
-	else if (strcasecmp(osname, "linux22") == 0)     result = OS_LINUX22;
-	else if (strcasecmp(osname, "linux") == 0)       result = OS_LINUX;
-	else if (strcasecmp(osname, "redhat") == 0)      result = OS_LINUX;
-	else if (strcasecmp(osname, "debian") == 0)      result = OS_LINUX;
-	else if (strcasecmp(osname, "suse") == 0)        result = OS_LINUX;
-	else if (strcasecmp(osname, "mandrake") == 0)    result = OS_LINUX;
-	else if (strcasecmp(osname, "redhatAS") == 0)    result = OS_LINUX;
-	else if (strcasecmp(osname, "redhatES") == 0)    result = OS_RHEL3;
-	else if (strcasecmp(osname, "rhel3") == 0)       result = OS_RHEL3;
-	else if (strcasecmp(osname, "snmp") == 0)        result = OS_SNMP;
-	else if (strcasecmp(osname, "snmpnetstat") == 0) result = OS_SNMP;
-	else if (strncasecmp(osname, "irix", 4) == 0)    result = OS_IRIX;
-	else if (strcasecmp(osname, "macosx") == 0)      result = OS_DARWIN;
-	else if (strcasecmp(osname, "darwin") == 0)      result = OS_DARWIN;
-	else if (strcasecmp(osname, "sco_sv") == 0)      result = OS_SCO_SV;
-	else if (strcasecmp(osname, "unixware") == 0)    result = OS_SCO_SV;
-	else if (strcasecmp(osname, "netware_snmp") == 0) result = OS_NETWARE_SNMP;
-	else if (strcasecmp(osname, "zvm") == 0)         result = OS_ZVM;
-	else if (strcasecmp(osname, "zvse") == 0)        result = OS_ZVSE;
-	else if (strcasecmp(osname, "zos") == 0)         result = OS_ZOS;
-	else if (strcasecmp(osname, "snmpcollect") == 0) result = OS_SNMPCOLLECT;
-	else if (strcasecmp(osname, "mqcollect") == 0)    result = OS_MQCOLLECT;
-	else if (strcasecmp(osname, "gnu/kfreebsd") == 0) result = OS_GNUKFREEBSD;
+	n = strspn(osname, "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/_");
+	nam = (char *)malloc(n+1);
+	strncpy(nam, osname, n);
+	*(nam+n) = '\0';
+
+	if      (strcasecmp(nam, "solaris") == 0)     result = OS_SOLARIS;
+	else if (strcasecmp(nam, "sunos") == 0)       result = OS_SOLARIS;
+	else if (strcasecmp(nam, "hpux") == 0)        result = OS_HPUX;
+	else if (strcasecmp(nam, "hp-ux") == 0)       result = OS_HPUX;
+	else if (strcasecmp(nam, "aix") == 0)         result = OS_AIX;
+	else if (strcasecmp(nam, "osf") == 0)         result = OS_OSF;
+	else if (strcasecmp(nam, "osf1") == 0)        result = OS_OSF;
+	else if (strcasecmp(nam, "win32") == 0)       result = OS_WIN32;
+	else if (strcasecmp(nam, "hmdc") == 0)        result = OS_WIN32_HMDC;
+	else if (strcasecmp(nam, "bbwin") == 0)       result = OS_WIN32_BBWIN;
+	else if (strcasecmp(nam, "powershell") == 0)  result = OS_WIN_POWERSHELL;
+	else if (strcasecmp(nam, "freebsd") == 0)     result = OS_FREEBSD;
+	else if (strcasecmp(nam, "netbsd") == 0)      result = OS_NETBSD;
+	else if (strcasecmp(nam, "openbsd") == 0)     result = OS_OPENBSD;
+	else if (strcasecmp(nam, "debian3") == 0)     result = OS_LINUX22;
+	else if (strcasecmp(nam, "linux22") == 0)     result = OS_LINUX22;
+	else if (strcasecmp(nam, "linux") == 0)       result = OS_LINUX;
+	else if (strcasecmp(nam, "redhat") == 0)      result = OS_LINUX;
+	else if (strcasecmp(nam, "debian") == 0)      result = OS_LINUX;
+	else if (strcasecmp(nam, "suse") == 0)        result = OS_LINUX;
+	else if (strcasecmp(nam, "mandrake") == 0)    result = OS_LINUX;
+	else if (strcasecmp(nam, "redhatAS") == 0)    result = OS_LINUX;
+	else if (strcasecmp(nam, "redhatES") == 0)    result = OS_RHEL3;
+	else if (strcasecmp(nam, "rhel3") == 0)       result = OS_RHEL3;
+	else if (strcasecmp(nam, "snmp") == 0)        result = OS_SNMP;
+	else if (strcasecmp(nam, "snmpnetstat") == 0) result = OS_SNMP;
+	else if (strncasecmp(nam, "irix", 4) == 0)    result = OS_IRIX;
+	else if (strcasecmp(nam, "macosx") == 0)      result = OS_DARWIN;
+	else if (strcasecmp(nam, "darwin") == 0)      result = OS_DARWIN;
+	else if (strcasecmp(nam, "sco_sv") == 0)      result = OS_SCO_SV;
+	else if (strcasecmp(nam, "unixware") == 0)    result = OS_SCO_SV;
+	else if (strcasecmp(nam, "netware_snmp") == 0) result = OS_NETWARE_SNMP;
+	else if (strcasecmp(nam, "zvm") == 0)         result = OS_ZVM;
+	else if (strcasecmp(nam, "zvse") == 0)        result = OS_ZVSE;
+	else if (strcasecmp(nam, "zos") == 0)         result = OS_ZOS;
+	else if (strcasecmp(nam, "snmpcollect") == 0) result = OS_SNMPCOLLECT;
+	else if (strcasecmp(nam, "mqcollect") == 0)    result = OS_MQCOLLECT;
+	else if (strcasecmp(nam, "gnu/kfreebsd") == 0) result = OS_GNUKFREEBSD;
 
 	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
 
-	*(osname+n) = savech;
+	xfree(nam);
 	return result;
 }
 
