@@ -42,6 +42,7 @@ char *adminid = NULL;
 char *hffile = "webcert";
 char *hfform = "webcert_form";
 int minkeysz = 2048;
+int adminfunctions = 1;
 
 static void errormsg(char *msg)
 {
@@ -74,20 +75,22 @@ void parse_query(void)
 		else if (strcmp(cwalk->name, "csrtext") == 0) csrdata = strdup(val);
 		else if (strcmp(cwalk->name, "internalcert") == 0) internalcert = 1;
 		else if (strcmp(cwalk->name, "corpid") == 0) corpid = strdup(val);
-		else if (strcmp(cwalk->name, "viewpending") == 0) adminaction = ADM_VIEWPENDING;
-		else if (strcmp(cwalk->name, "viewprocessing") == 0) adminaction = ADM_VIEWPROCESSING;
-		else if (strcmp(cwalk->name, "viewdone") == 0) adminaction = ADM_VIEWDONE;
-		else if (strcmp(cwalk->name, "viewrequest") == 0) {
-			adminaction = ADM_VIEWREQUEST;
-			adminid = strdup(val);
-		}
-		else if (strcmp(cwalk->name, "movetoprocessing") == 0) {
-			adminaction = ADM_MOVETOPROCESSING;
-			adminid = strdup(val);
-		}
-		else if (strcmp(cwalk->name, "movetodone") == 0) {
-			adminaction = ADM_MOVETODONE;
-			adminid = strdup(val);
+		else if (adminfunctions) {
+			if (strcmp(cwalk->name, "viewpending") == 0) adminaction = ADM_VIEWPENDING;
+			else if (strcmp(cwalk->name, "viewprocessing") == 0) adminaction = ADM_VIEWPROCESSING;
+			else if (strcmp(cwalk->name, "viewdone") == 0) adminaction = ADM_VIEWDONE;
+			else if (strcmp(cwalk->name, "viewrequest") == 0) {
+				adminaction = ADM_VIEWREQUEST;
+				adminid = strdup(val);
+			}
+			else if (strcmp(cwalk->name, "movetoprocessing") == 0) {
+				adminaction = ADM_MOVETOPROCESSING;
+				adminid = strdup(val);
+			}
+			else if (strcmp(cwalk->name, "movetodone") == 0) {
+				adminaction = ADM_MOVETODONE;
+				adminid = strdup(val);
+			}
 		}
 
 		cwalk = cwalk->next;
@@ -252,6 +255,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--noauth") == 0) {
 			adminrealm = NULL;
+			adminfunctions = 0;
+		}
+		else if (strcmp(argv[argi], "--admin") == 0) {
+			adminfunctions = 1;
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
