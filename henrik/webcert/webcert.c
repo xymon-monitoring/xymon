@@ -28,6 +28,7 @@ char *certdir = "/var/ca/requests";
 char *opensslcnf = "/var/ca/openssl.cnf";
 char *rootcert = "/var/ca/private/CAcert.pem";
 char *email = NULL;
+char *corpid = NULL;
 char *adminrealm = "CERTMGR";
 char *phone = NULL;
 char *costcode = NULL;
@@ -72,6 +73,7 @@ void parse_query(void)
 		else if (strcmp(cwalk->name, "validity") == 0) validity = strdup(val);
 		else if (strcmp(cwalk->name, "csrtext") == 0) csrdata = strdup(val);
 		else if (strcmp(cwalk->name, "internalcert") == 0) internalcert = 1;
+		else if (strcmp(cwalk->name, "corpid") == 0) corpid = strdup(val);
 		else if (strcmp(cwalk->name, "viewpending") == 0) adminaction = ADM_VIEWPENDING;
 		else if (strcmp(cwalk->name, "viewprocessing") == 0) adminaction = ADM_VIEWPROCESSING;
 		else if (strcmp(cwalk->name, "viewdone") == 0) adminaction = ADM_VIEWDONE;
@@ -344,6 +346,7 @@ int main(int argc, char *argv[])
 	if (!artemis) artemis = "";
 	if (!servertype) addtobuffer(errortxt, "Servertype missing!<br>");
 	if (!validity || (atoi(validity) <= 0)) addtobuffer(errortxt, "Validity invalid!<br>");
+	if (!corpid || (*corpid == '\0')) addtobuffer(errortxt, "Company ID missing!<br>");
 	if (!csrdata) {
 		addtobuffer(errortxt, "CSR data missing!<br>");
 	}
@@ -509,6 +512,7 @@ int main(int argc, char *argv[])
 		sprintf(buf, "Costcode: %s\n", costcode); addtobuffer(mbuf, buf);
 		sprintf(buf, "Validity: %d\n", atoi(validity)); addtobuffer(mbuf, buf);
 		sprintf(buf, "Servertype: %s\n", servertype); addtobuffer(mbuf, buf);
+		sprintf(buf, "Company ID: %s\n", corpid); addtobuffer(mbuf, buf);
 		sprintf(buf, "Raw CSR:\n%s\n", csrdata); addtobuffer(mbuf, buf);
 		addtobuffer(mbuf, "Parsed CSR info:\n");
 		addtobuffer(mbuf, subj);

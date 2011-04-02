@@ -47,6 +47,11 @@
      </TR>
 
      <TR>
+          <TD><b>Customer company registration ID (DUNS, CVR or similar)</b></TD>
+          <TD><INPUT TYPE=TEXT NAME="corpid" VALUE="" SIZE=40 MAXLENGTH=40></TD>
+     </TR>
+
+     <TR>
         <TD valign=top><B>CSR data<br>(Including the <br>&quot;BEGIN CERTIFICATE REQUEST&quot; .... <br>&quot;END CERTIFICATE REQUEST&quot; lines)</B></TD>
 	<td><textarea name="csrtext" cols="55" rows="16"></textarea></td>
      </TR>
