@@ -1,3 +1,26 @@
+xymon (4.3.1) unstable; urgency=medium
+
+  rev 6667
+
+  * Web UI: SECURITY FIX - fix potential cross-site scripting vulnerabilities. 
+    Initial report by David Ferrest (email April 1st 2011).
+  * Solaris Makefile: Drop guessing of what linker is being used, since we 
+    get it wrong too often.
+  * configure: Add missing <string.h> include to fix compile failure on 
+    some systems.
+  * get_ostype(): Check that we have a valid OS identifier. 
+    Dont assume we can write to the string passed us.
+  * xymond user messages: Improve error message for oversize messages. 
+    Document the MAXMSG_USER setting.
+  * combostatus: Make the set of error-colors configurable. Change default set so 
+    BLUE and PURPLE are not considered errors (only RED is an error by default).
+  * xymon(1) manpage: Add missing description of some fields available in the 
+    xymondboard command.
+  * hosts.cfg manpage: Fix wrong NOPROP interpretation. From Thomas Brand.
+  * Demotool: Change Hobbit->Xymon
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Sun, 3 Apr 2011 12:03:00 +0200
+
 xymon (4.3.0) unstable; urgency=medium
 
   * Critical view and other webpages: Make the 'All systems OK' message 
