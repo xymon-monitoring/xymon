@@ -337,9 +337,9 @@ int main(int argc, char *argv[])
 	parse_query();
 
 	if ((*periodstring == '\0') && (fromtime || totime)) {
-		if (fromtime && totime) sprintf(periodstring, "Events between %s - %s", fromtime, totime);
-		else if (fromtime) sprintf(periodstring, "Events since %s", fromtime);
-		else if (totime) sprintf(periodstring, "Events until %s", totime);
+		if (fromtime && totime) sprintf(periodstring, "Events between %s - %s", htmlquoted(fromtime), htmlquoted(totime));
+		else if (fromtime) sprintf(periodstring, "Events since %s", htmlquoted(fromtime));
+		else if (totime) sprintf(periodstring, "Events until %s", htmlquoted(totime));
 	}
 
 	/* Now generate the webpage */

@@ -1577,7 +1577,7 @@ void headfoot(FILE *output, char *template, char *pagepath, char *head_or_foot, 
 		xfree(templatedata);
 	}
 	else {
-		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", filename);
+		fprintf(output, "<HTML><BODY> \n <HR size=4> \n <BR>%s is either missing or invalid, please create this file with your custom header<BR> \n<HR size=4>", htmlquoted(filename));
 	}
 
 	/* Check for bulletin files */

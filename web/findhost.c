@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 		regerror(re_status, &re, re_errstr, BUFSIZE);
 
 		print_header();
-		printf("<tr><td align=left><font color=red>%s</font></td>\n",  pSearchPat);
+		printf("<tr><td align=left><font color=red>%s</font></td>\n",  htmlquoted(pSearchPat));
 		printf("<td align=left><font color=red>%s</font></td></tr>\n", re_errstr);
 		print_footer();
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 
 	print_header();
 	if (!gotany) {
-		printf("<tr><td align=left>%s</td><td align=left>Not found</td></tr>\n", pSearchPat);
+		printf("<tr><td align=left>%s</td><td align=left>Not found</td></tr>\n", htmlquoted(pSearchPat));
 	}
 	else {
 		printf("%s", grabstrbuffer(outbuf));

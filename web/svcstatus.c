@@ -140,10 +140,10 @@ static int parse_query(void)
 		char *p, *req;
 
 		req = getenv("SCRIPT_NAME");
-		clienturi = (char *)malloc(strlen(req) + 10 + strlen(hostname));
+		clienturi = (char *)malloc(strlen(req) + 10 + strlen(htmlquoted(hostname)));
 		strcpy(clienturi, req);
 		p = strchr(clienturi, '?'); if (p) *p = '\0'; else p = clienturi + strlen(clienturi);
-		sprintf(p, "?CLIENT=%s", hostname);
+		sprintf(p, "?CLIENT=%s", htmlquoted(hostname));
 	}
 
 	return 0;
@@ -241,7 +241,7 @@ int do_request(void)
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
 		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
 		ishtmlformatted = 1;
-		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
+		sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(COL_GREEN), htmlquoted(hostname));
 		sethostenv_refresh(600);
 		color = COL_GREEN;
 		logtime = getcurrenttime(NULL);
@@ -387,7 +387,7 @@ int do_request(void)
 			flapping = (items[18] ? (*items[18] == '1') : 0);
 			modifiers = (items[19] && *(items[19])) ? items[19] : NULL;
 
-			sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
+			sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(COL_GREEN), htmlquoted(hostname));
 			sethostenv_refresh(60);
 		}
 		else {
@@ -417,8 +417,8 @@ int do_request(void)
 				icolor = parse_color(itmcolor);
 				if (icolor > color) color = icolor;
 
-				sprintf(l, "<tr><td align=left>&%s&nbsp;<a href=\"%s\">%s</a></td></tr>\n", 
-					itmcolor, hostsvcurl(hostname, testname, 1), testname);
+				snprintf(l, sizeof(l), "<tr><td align=left>&%s&nbsp;<a href=\"%s\">%s</a></td></tr>\n", 
+					itmcolor, hostsvcurl(hostname, testname, 1), htmlquoted(testname));
 				addtobuffer(cmsg, l);
 				row = strtok_r(NULL, "\n", &p_row);
 			}
@@ -426,7 +426,7 @@ int do_request(void)
 			addtobuffer(cmsg, "</table>\n");
 			ishtmlformatted = 1;
 
-			sethostenv(displayname, ip, service, colorname(color), hostname);
+			sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(color), htmlquoted(hostname));
 			sethostenv_refresh(60);
 			logtime = getcurrenttime(NULL);
 			strcpy(timesincechange, "0 minutes");
@@ -553,9 +553,9 @@ int do_request(void)
 					errprintf("Cannot find hostdata files for host %s\n", hostname);
 				}
 				else {
-					clienturi = (char *)realloc(clienturi, strlen(cgiurl) + 40 + strlen(hostname) + strlen(clientid));
+					clienturi = (char *)realloc(clienturi, strlen(cgiurl) + 40 + strlen(htmlquoted(hostname)) + strlen(clientid));
 					sprintf(clienturi, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
-						cgiurl, hostname, clientid);
+						cgiurl, htmlquoted(hostname), clientid);
 				}
 			}
 			else {

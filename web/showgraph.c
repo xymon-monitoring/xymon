@@ -640,9 +640,9 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 	switch (action) {
 	  case ACT_MENU:
 		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\" alt=\"%s graph\"></td>\n",
-			uri, grtype, grtype);
+			uri, htmlquoted(grtype), htmlquoted(grtype));
 		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom&amp;color=%s\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
-			uri, grtype, colorname(bgcolor), getenv("XYMONSKIN"));
+			uri, htmlquoted(grtype), colorname(bgcolor), getenv("XYMONSKIN"));
 		break;
 
 	  case ACT_SELZOOM:
@@ -650,7 +650,7 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
 
 		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=%d&amp;graph_width=%d&amp;",
-			uri, grtype, (int) gstart, (int) gend, graphheight, graphwidth);
+			uri, htmlquoted(grtype), (int) gstart, (int) gend, graphheight, graphwidth);
 		if (haveupperlimit) fprintf(output, "&amp;upper=%f", upperlimit);
 		if (havelowerlimit) fprintf(output, "&amp;lower=%f", lowerlimit);
 		fprintf(output, "\" alt=\"Zoom source image\"></td>\n");
@@ -700,7 +700,7 @@ void build_menu_page(char *selfURI, int backsecs)
 {
 	/* This is special-handled, because we just want to generate an HTML link page */
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	sethostenv(displayname, "", service, colorname(bgcolor), hostname);
+	sethostenv(htmlquoted(displayname), "", htmlquoted(service), colorname(bgcolor), htmlquoted(hostname));
 	sethostenv_backsecs(backsecs);
 
 	headfoot(stdout, "graphs", "", "header", bgcolor);
@@ -882,7 +882,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 			char msg[8192];
 
 			snprintf(msg, sizeof(msg), "graphs.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
-				 gdef->fnpat, errmsg, errofs);
+				 htmlquoted(gdef->fnpat), errmsg, errofs);
 			errormsg(msg);
 		}
 		if (gdef->exfnpat) {
@@ -892,7 +892,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 
 				snprintf(msg, sizeof(msg), 
 					 "graphs.cfg error, PCRE pattern %s invalid: %s, offset %d\n",
-					 gdef->exfnpat, errmsg, errofs);
+					 htmlquoted(gdef->exfnpat), errmsg, errofs);
 				errormsg(msg);
 			}
 		}
@@ -1131,7 +1131,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 void generate_zoompage(char *selfURI)
 {
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	sethostenv(displayname, "", service, colorname(bgcolor), hostname);
+	sethostenv(htmlquoted(displayname), "", htmlquoted(service), colorname(bgcolor), htmlquoted(hostname));
 	headfoot(stdout, "graphs", "", "header", bgcolor);
 
 

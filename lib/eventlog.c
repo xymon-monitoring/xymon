@@ -544,7 +544,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (fromtime) {
 		firstevent = eventreport_time(fromtime);
 		if(firstevent < 0) {
-			if (output) fprintf(output,"<B>Invalid 'from' time: %s</B>", fromtime);
+			if (output) fprintf(output,"<B>Invalid 'from' time: %s</B>", htmlquoted(fromtime));
 			return;
 		}
 	}
@@ -562,7 +562,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 	if (totime) {
 		lastevent = eventreport_time(totime);
 		if (lastevent < 0) {
-			if (output) fprintf(output,"<B>Invalid 'to' time: %s</B>", totime);
+			if (output) fprintf(output,"<B>Invalid 'to' time: %s</B>", htmlquoted(totime));
 			return;
 		}
 		if (lastevent < firstevent) {
@@ -715,7 +715,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		countlist_t *cwalk;
 		unsigned long totalcount = 0;
 
-		if (periodstring) fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
+		if (periodstring) fprintf(output, "<p><font size=+1>%s</font></p>\n", htmlquoted(periodstring));
 
 		switch (sumtype) {
 		  case XYMON_S_HOST_BREAKDOWN:
@@ -778,7 +778,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"$EVENTSTITLE\" BORDER=0>\n");
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", htmlquoted(title));
 
 		for (ewalk=eventhead; (ewalk); ewalk=ewalk->next) {
 			char *hostname = xmh_item(ewalk->host, XMH_HOSTNAME);
@@ -835,7 +835,7 @@ void do_eventlog(FILE *output, int maxcount, int maxminutes, char *fromtime, cha
 		fprintf(output, "<CENTER><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD>\n", htmlquoted(title));
 		fprintf(output, "</TR>\n");
 		fprintf(output, "</TABLE>\n");
 		fprintf(output, "</CENTER>\n");

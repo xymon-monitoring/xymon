@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 		strftime(startstr, sizeof(startstr), "%b %d %Y", localtime(&starttime));
 		printf("<CENTER><A NAME=begindata>&nbsp;</A>\n");
 		printf("<BR><BR><BR><BR>\n");
-		printf("<H3>Generating snapshot: %s<BR>\n", startstr);
+		printf("<H3>Generating snapshot: %s<BR>\n", htmlquoted(startstr));
 		printf("<P><P>\n");
 		fflush(stdout);
 	}

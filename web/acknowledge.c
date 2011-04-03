@@ -159,16 +159,16 @@ void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 
 	fprintf(output, "<tr>\n");
 
-	fprintf(output, "    <td align=left>%s</td>\n", (hname ? hname : "&nbsp;"));
-	fprintf(output, "    <td align=left>%s</td>\n", (tname ? tname : "&nbsp;"));
+	fprintf(output, "    <td align=left>%s</td>\n", (hname ? htmlquoted(hname) : "&nbsp;"));
+	fprintf(output, "    <td align=left>%s</td>\n", (tname ? htmlquoted(tname) : "&nbsp;"));
 	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=8 MAXLENGTH=20></TD>\n", numstr);
 	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%s\" SIZE=60 MAXLENGTH=80></TD>\n", numstr);
 
 	fprintf(output, "    <TD>\n");
 	if (ackcode && hname && tname) {
-		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"NUMBER_%d\" VALUE=\"%s\">\n", num, ackcode);
-		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"HOSTNAME_%d\" VALUE=\"%s\">\n", num, hname);
-		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"TESTNAME_%d\" VALUE=\"%s\">\n", num, tname);
+		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"NUMBER_%d\" VALUE=\"%s\">\n", num, htmlquoted(ackcode));
+		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"HOSTNAME_%d\" VALUE=\"%s\">\n", num, htmlquoted(hname));
+		fprintf(output, "       <INPUT TYPE=\"HIDDEN\" NAME=\"TESTNAME_%d\" VALUE=\"%s\">\n", num, htmlquoted(tname));
 		fprintf(output, "       <INPUT TYPE=\"SUBMIT\" NAME=\"Send_%d\" VALUE=\"Send\" ALT=\"Send\">\n", num);
 	}
 	else {

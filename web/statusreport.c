@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 	if (!embedded) {
 		printf("Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
-		printf("<html><head><title>%s</title></head>\n", heading);
+		printf("<html><head><title>%s</title></head>\n", htmlquoted(heading));
 		printf("<body>");
 		printf("<table border=1 cellpadding=5><tr><th>%s</th><th align=left>Status</th></tr>\n",
 		       (showcolumn ? "Host/Column" : "Host"));
@@ -157,16 +157,16 @@ int main(int argc, char *argv[])
 			printf("<tr><td align=left valign=top><b>");
 
 			if (addlink) 
-				printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, xgetenv("INFOCOLUMN"), 1), hostname);
+				printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, xgetenv("INFOCOLUMN"), 1), htmlquoted(hostname));
 			else 
-				printf("%s", hostname);
+				printf("%s", htmlquoted(hostname));
 
 			if (showcolumn) {
 				printf("<br>");
 				if (addlink) 
-					printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, testname, 1), testname);
+					printf("<a href=\"%s\">%s</a>", hostsvcurl(hostname, testname, 1), htmlquoted(testname));
 				else
-					printf("%s", testname);
+					printf("%s", htmlquoted(testname));
 			}
 
 			if (showcolors) printf("&nbsp;-&nbsp;%s", colorstr);

@@ -78,7 +78,7 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 			<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\"> \
 			<INPUT TYPE=HIDDEN NAME=\"DISPLAYNAME\" VALUE=\"%s\"> \
 			</FORM></CENTER>\n",
-			cgibinurl, btntxt, hostname, service, ip, displayname);
+			cgibinurl, htmlquoted(btntxt), htmlquoted(hostname), htmlquoted(service), htmlquoted(ip), htmlquoted(displayname));
 	}
 
 	xfree(tmp2);
@@ -159,7 +159,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	hostsvc_setup();
 	if (!displayname) displayname = hostname;
-	sethostenv(displayname, ip, service, colorname(color), hostname);
+	sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(color), htmlquoted(hostname));
 	if (logtime) sethostenv_snapshot(logtime);
 
 	if (is_history) tplfile = "histlog";
@@ -252,9 +252,9 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 				strftime(untilstr, sizeof(untilstr)-1, "%Y-%m-%d %H:%M", localtime(&validuntil));
 				fprintf(output, "<tr>");
 				fprintf(output, "<td align=center><font %s>%d</font></td>", ackfont, level);
-				fprintf(output, "<td><font %s>%s</font></td>", ackfont, ackedby);
+				fprintf(output, "<td><font %s>%s</font></td>", ackfont, htmlquoted(ackedby));
 				fprintf(output, "<td><font %s>%s&nbsp;-&nbsp;%s</font></td>", ackfont, receivedstr, untilstr);
-				fprintf(output, "<td><font %s>%s</font></td>", ackfont, msg);
+				fprintf(output, "<td><font %s>%s</font></td>", ackfont, htmlquoted(msg));
 				fprintf(output, "</tr>\n");
 			}
 
@@ -275,12 +275,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY=\"Detail Status\">\n");
 
-	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, displayname, service);
+	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, htmlquoted(displayname), htmlquoted(service));
 
 	if (disabletime != 0) {
 		fprintf(output, "<TR><TD ALIGN=LEFT><H3>Disabled until %s</H3></TD></TR>\n", 
 			(disabletime == -1 ? "OK" : ctime(&disabletime)));
-		fprintf(output, "<TR><TD ALIGN=LEFT><PRE>%s</PRE></TD></TR>\n", dismsg);
+		fprintf(output, "<TR><TD ALIGN=LEFT><PRE>%s</PRE></TD></TR>\n", htmlquoted(dismsg));
 		fprintf(output, "<TR><TD ALIGN=LEFT><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 
 		fprintf(output, "<TR><TD ALIGN=LEFT>");
@@ -296,7 +296,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		char *txt = skipword(firstline);
 
 		if (dismsg) {
-			fprintf(output, "<TR><TD ALIGN=LEFT><H3>Planned downtime: %s</H3></TD></TR>\n", dismsg);
+			fprintf(output, "<TR><TD ALIGN=LEFT><H3>Planned downtime: %s</H3></TD></TR>\n", htmlquoted(dismsg));
 			fprintf(output, "<TR><TD ALIGN=LEFT><BR><HR>Current status message follows:<HR><BR></TD></TR>\n");
 		}
 
@@ -350,12 +350,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 		if (ackedby) {
 			*ackedby = '\0';
 			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s<br>%s</font><br>\n", 
-				ackfont, ackmsg, (ackedby+1), ackuntil);
+				ackfont, htmlquoted(ackmsg), (ackedby+1), ackuntil);
 			*ackedby = '\n';
 		}
 		else {
 			fprintf(output, "<font %s>Current acknowledgment: %s<br>%s</font><br>\n", 
-				ackfont, ackmsg, ackuntil);
+				ackfont, htmlquoted(ackmsg), ackuntil);
 		}
 
 		MEMUNDEFINE(ackuntil);

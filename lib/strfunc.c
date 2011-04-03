@@ -177,3 +177,35 @@ void strbufferuse(strbuffer_t *buf, int bytes)
 	*(buf->s+buf->used) = '\0';
 }
 
+char *htmlquoted(char *s)
+{
+	/*
+	 * This routine converts a plain string into an html-quoted string
+	 */
+
+	static strbuffer_t *result = NULL;
+	char *inp, *endp;
+	char c;
+
+	if (!result) result = newstrbuffer(4096);
+	clearstrbuffer(result);
+
+	inp = s;
+	do {
+		endp = inp + strcspn(inp, "\"&<> ");
+		c = *endp;
+		if (endp > inp) addtobufferraw(result, inp, endp-inp);
+		switch (c) {
+		  case '"': addtobuffer(result, "&quot;"); break;
+		  case '&': addtobuffer(result, "&amp;"); break;
+		  case '<': addtobuffer(result, "&lt;"); break;
+		  case '>': addtobuffer(result, "&gt;"); break;
+		  case ' ': addtobuffer(result, "&nbsp;"); break;
+		  default: break;
+		}
+		inp = (c == '\0') ? NULL : endp+1;
+	} while (inp);
+
+	return STRBUF(result);
+}
+

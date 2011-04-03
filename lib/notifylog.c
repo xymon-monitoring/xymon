@@ -120,7 +120,7 @@ void do_notifylog(FILE *output,
 	if (fromtime) {
 		firstevent = convert_time(fromtime);
 		if(firstevent < 0) {
-			fprintf(output,"<B>Invalid 'from' time: %s</B>", fromtime);
+			fprintf(output,"<B>Invalid 'from' time: %s</B>", htmlquoted(fromtime));
 			return;
 		}
 	}
@@ -134,7 +134,7 @@ void do_notifylog(FILE *output,
 	if (totime) {
 		lastevent = convert_time(totime);
 		if (lastevent < 0) {
-			fprintf(output,"<B>Invalid 'to' time: %s</B>", totime);
+			fprintf(output,"<B>Invalid 'to' time: %s</B>", htmlquoted(totime));
 			return;
 		}
 		if (lastevent < firstevent) {
@@ -314,7 +314,7 @@ void do_notifylog(FILE *output,
 		fprintf(output, "<BR><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"Notification log\" BORDER=0>\n");
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=4><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=4><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD></TR>\n", htmlquoted(title));
 		fprintf(output, "<TR BGCOLOR=\"#333333\"><TH>Time</TH><TH>Host</TH><TH>Service</TH><TH>Recipient</TH></TR>\n");
 
 		for (walk=head; (walk != lasttoshow->next); walk=walk->next) {
@@ -352,7 +352,7 @@ void do_notifylog(FILE *output,
 		fprintf(output, "<CENTER><BR>\n");
 		fprintf(output, "<TABLE SUMMARY=\"%s\" BORDER=0>\n", title);
 		fprintf(output, "<TR BGCOLOR=\"#333333\">\n");
-		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD>\n", title);
+		fprintf(output, "<TD ALIGN=CENTER COLSPAN=6><FONT SIZE=-1 COLOR=\"#33ebf4\">%s</FONT></TD>\n", htmlquoted(title));
 		fprintf(output, "</TR>\n");
 		fprintf(output, "</TABLE>\n");
 		fprintf(output, "</CENTER>\n");

@@ -225,7 +225,7 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 	char l[1024];
 	int i, rcount;
 
-	sprintf(l, "<table summary=\"%s Alerts\" border=1>\n", hostname);
+	sprintf(l, "<table summary=\"%s Alerts\" border=1>\n", htmlquoted(hostname));
 	addtobuffer(buf, l);
 	addtobuffer(buf, "<tr><th>Service</th><th>Recipient</th><th>1st Delay</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th></tr>\n");
 
@@ -273,7 +273,7 @@ static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 
 	holidayset = xmh_item(hi, XMH_HOLIDAYS);
 
-	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", hostname);
+	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", htmlquoted(hostname));
 	addtobuffer(buf, l);
 
 	addtobuffer(buf, "<tr>");
@@ -457,7 +457,7 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 	sprintf(l, "<form name=\"disableform\" method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, l);
-	sprintf(l, "<table summary=\"%s disable\" border=1>\n", hostname);
+	sprintf(l, "<table summary=\"%s disable\" border=1>\n", htmlquoted(hostname));
 	addtobuffer(buf, l);
 
 	addtobuffer(buf, "<tr>\n");
@@ -569,7 +569,7 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 	addtobuffer(buf, "</table>\n");
 
-	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
 	addtobuffer(buf, l);
 	addtobuffer(buf, "</form>\n");
 }
@@ -580,7 +580,7 @@ static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 	char l[1024];
 	char *msg, *eoln;
 
-	sprintf(l, "<table summary=\"%s disabled tests\" border=1>\n", hostname);
+	sprintf(l, "<table summary=\"%s disabled tests\" border=1>\n", htmlquoted(hostname));
 	addtobuffer(buf, l);
 
 	addtobuffer(buf, "<tr><th>Test</th><th>Disabled until</th><th>Cause</th><th>&nbsp;</th></tr>\n");
@@ -601,17 +601,17 @@ static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "<td>");
 		while ((eoln = strchr(msg, '\n')) != NULL) {
 			*eoln = '\0';
-			addtobuffer(buf, msg);
+			addtobuffer(buf, htmlquoted(msg));
 			addtobuffer(buf, "<br>");
 			msg = (eoln + 1);
 		}
-		addtobuffer(buf, msg);
+		addtobuffer(buf, htmlquoted(msg));
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
 		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 		addtobuffer(buf, l);
-		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
 		addtobuffer(buf, l);
 		sprintf(l, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", tnames[i].name);
 		addtobuffer(buf, l);
@@ -627,7 +627,7 @@ static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<td>");
 	sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 	addtobuffer(buf, l);
-	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
 	addtobuffer(buf, l);
 	sprintf(l, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", "*");
 	addtobuffer(buf, l);
@@ -647,7 +647,7 @@ static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 	sched_t *swalk;
 	char *msg, *eoln;
 
-	sprintf(l, "<table summary=\"%s scheduled disables\" border=1>\n", hostname);
+	sprintf(l, "<table summary=\"%s scheduled disables\" border=1>\n", htmlquoted(hostname));
 	addtobuffer(buf, l);
 
 	addtobuffer(buf, "<tr><th>ID</th><th>When</th><th>Command</th><th>&nbsp;</th></tr>\n");
@@ -665,17 +665,17 @@ static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "<td>");
 		while ((eoln = strchr(msg, '\n')) != NULL) {
 			*eoln = '\0';
-			addtobuffer(buf, msg);
+			addtobuffer(buf, htmlquoted(msg));
 			addtobuffer(buf, "<br>");
 			msg = (eoln + 1);
 		}
-		addtobuffer(buf, msg);
+		addtobuffer(buf, htmlquoted(msg));
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
 		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
 		addtobuffer(buf, l);
-		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", hostname);
+		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
 		addtobuffer(buf, l);
 		sprintf(l, "<input name=\"canceljob\" type=hidden value=\"%d\">\n", swalk->id);
 		addtobuffer(buf, l);
@@ -727,10 +727,10 @@ char *generate_info(char *hostname, char *critconfigfn)
 	val = xmh_item(hostwalk, XMH_DISPLAYNAME);
 	if (val && (strcmp(val, hostname) != 0)) {
 		sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s (%s)</td></tr>\n", 
-			val, hostname);
+			val, htmlquoted(hostname));
 	}
 	else {
-		sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s</td></tr>\n", hostname);
+		sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s</td></tr>\n", htmlquoted(hostname));
 	}
 	addtobuffer(infobuf, l);
 

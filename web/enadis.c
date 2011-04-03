@@ -199,7 +199,7 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 
 			if (preview) {
 				printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
-					hostname, enabletest[i], ((result == XYMONSEND_OK) ? "OK" : "Failed"));
+					htmlquoted(hostname), htmlquoted(enabletest[i]), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
@@ -219,7 +219,7 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 
 			if (preview) {
 				printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
-					hostname, disabletest[i], ((result == XYMONSEND_OK) ? "OK" : "Failed"));
+					htmlquoted(hostname), htmlquoted(disabletest[i]), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
@@ -232,7 +232,7 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 
 			if (preview) {
 				printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
-					hostname, disabletest[i], ctime(&schedtime), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
+					htmlquoted(hostname), htmlquoted(disabletest[i]), ctime(&schedtime), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
