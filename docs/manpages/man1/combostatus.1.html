@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of COMBOSTATUS</TITLE>
 </HEAD><BODY>
 <H1>COMBOSTATUS</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 20 Jan 2011<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp:  3 Apr 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -45,6 +45,12 @@ But other uses are possible.
 <H2>OPTIONS</H2>
 
 <DL COMPACT>
+<DT>--error-colors=COLOR[,COLOR]<DD>
+Specify which colors trigger an error status. By default only a &quot;red&quot; 
+status counts as an error color - all other colors, including yellow,
+will count as &quot;green&quot; when evaluating the combined status. COLOR
+is &quot;red&quot;, &quot;yellow&quot;, &quot;blue&quot;, &quot;purple&quot; or &quot;clear&quot;.
+<P>
 <DT>--quiet<DD>
 Normally, the test status sent by combostatus includes information
 about the underlying test results used to determine the current
@@ -92,6 +98,6 @@ Configuration file controlling when combostatus is run.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 21:08:18 GMT, January 20, 2011
+Time: 10:05:07 GMT, April 03, 2011
 </BODY>
 </HTML>

@@ -1,6 +1,15 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.0    * * *
+           * * *   Release notes for Xymon 4.3.1    * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+
+Changes for 4.3.1
+==================
+This is a SECURITY BUG FIX release, resolving a number of 
+potential cross-site scripting vulnerabilities in the Xymon 
+web interface.
+
+Thanks to David Ferrest who reported these to me.
+
 
 Changes for 4.3.0
 ==================
