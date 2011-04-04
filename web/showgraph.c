@@ -634,15 +634,17 @@ int rrd_name_compare(const void *v1, const void *v2)
 void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 {
 	time_t gstart, gend;
+	char *grtype_s;
 
 	fprintf(output, "<tr>\n");
+	grtype_s = htmlquoted(grtype);
 
 	switch (action) {
 	  case ACT_MENU:
 		fprintf(output, "  <td align=\"left\"><img src=\"%s&amp;action=view&amp;graph=%s\" alt=\"%s graph\"></td>\n",
-			uri, htmlquoted(grtype), htmlquoted(grtype));
+			uri, grtype_s, grtype_s);
 		fprintf(output, "  <td align=\"left\" valign=\"top\"> <a href=\"%s&amp;graph=%s&amp;action=selzoom&amp;color=%s\"> <img src=\"%s/zoom.gif\" border=0 alt=\"Zoom graph\" style='padding: 3px'> </a> </td>\n",
-			uri, htmlquoted(grtype), colorname(bgcolor), getenv("XYMONSKIN"));
+			uri, grtype_s, colorname(bgcolor), getenv("XYMONSKIN"));
 		break;
 
 	  case ACT_SELZOOM:
@@ -650,7 +652,7 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 		if (graphstart == 0) gstart = gend - persecs; else gstart = graphstart;
 
 		fprintf(output, "  <td align=\"left\"><img id='zoomGraphImage' src=\"%s&amp;graph=%s&amp;action=view&amp;graph_start=%u&amp;graph_end=%u&amp;graph_height=%d&amp;graph_width=%d&amp;",
-			uri, htmlquoted(grtype), (int) gstart, (int) gend, graphheight, graphwidth);
+			uri, grtype_s, (int) gstart, (int) gend, graphheight, graphwidth);
 		if (haveupperlimit) fprintf(output, "&amp;upper=%f", upperlimit);
 		if (havelowerlimit) fprintf(output, "&amp;lower=%f", lowerlimit);
 		fprintf(output, "\" alt=\"Zoom source image\"></td>\n");
@@ -700,7 +702,7 @@ void build_menu_page(char *selfURI, int backsecs)
 {
 	/* This is special-handled, because we just want to generate an HTML link page */
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	sethostenv(htmlquoted(displayname), "", htmlquoted(service), colorname(bgcolor), htmlquoted(hostname));
+	sethostenv(displayname, "", service, colorname(bgcolor), hostname);
 	sethostenv_backsecs(backsecs);
 
 	headfoot(stdout, "graphs", "", "header", bgcolor);
@@ -1131,7 +1133,7 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 void generate_zoompage(char *selfURI)
 {
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
-	sethostenv(htmlquoted(displayname), "", htmlquoted(service), colorname(bgcolor), htmlquoted(hostname));
+	sethostenv(displayname, "", service, colorname(bgcolor), hostname);
 	headfoot(stdout, "graphs", "", "header", bgcolor);
 
 

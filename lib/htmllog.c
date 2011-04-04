@@ -71,14 +71,14 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 	sprintf(tmp1, ",%s,", xgetenv("NONHISTS"));
 	sprintf(tmp2, ",%s,", service);
 	if (strstr(tmp1, tmp2) == NULL) {
-		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/history.sh\"> \
-			<INPUT TYPE=SUBMIT VALUE=\"%s\"> \
-			<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s.%s\"> \
-			<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\"> \
-			<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\"> \
-			<INPUT TYPE=HIDDEN NAME=\"DISPLAYNAME\" VALUE=\"%s\"> \
-			</FORM></CENTER>\n",
-			cgibinurl, htmlquoted(btntxt), htmlquoted(hostname), htmlquoted(service), htmlquoted(ip), htmlquoted(displayname));
+		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/history.sh\">,", cgibinurl);
+		fprintf(output, "<INPUT TYPE=SUBMIT VALUE=\"%s\">", htmlquoted(btntxt));
+		fprintf(output, "<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s", htmlquoted(hostname));
+		fprintf(output, ".%s\">", htmlquoted(service));
+		fprintf(output, "<INPUT TYPE=HIDDEN NAME=\"ENTRIES\" VALUE=\"50\">");
+		fprintf(output, "<INPUT TYPE=HIDDEN NAME=\"IP\" VALUE=\"%s\">", htmlquoted(ip));
+		fprintf(output, "<INPUT TYPE=HIDDEN NAME=\"DISPLAYNAME\" VALUE=\"%s\">", htmlquoted(displayname));
+		fprintf(output, "</FORM></CENTER>\n");
 	}
 
 	xfree(tmp2);
@@ -159,7 +159,7 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	hostsvc_setup();
 	if (!displayname) displayname = hostname;
-	sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(color), htmlquoted(hostname));
+	sethostenv(displayname, ip, service, colorname(color), hostname);
 	if (logtime) sethostenv_snapshot(logtime);
 
 	if (is_history) tplfile = "histlog";
@@ -275,7 +275,12 @@ void generate_html_log(char *hostname, char *displayname, char *service, char *i
 
 	fprintf(output, "<CENTER><TABLE ALIGN=CENTER BORDER=0 SUMMARY=\"Detail Status\">\n");
 
-	if (wantserviceid) fprintf(output, "<TR><TH><FONT %s>%s - %s</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n", rowfont, htmlquoted(displayname), htmlquoted(service));
+	if (wantserviceid) {
+		fprintf(output, "<TR><TH><FONT %s>", rowfont);
+		fprintf(output, "%s - ", htmlquoted(displayname));
+		fprintf(output, "%s", htmlquoted(service));
+		fprintf(output, "</FONT><BR><HR WIDTH=\"60%%\"></TH></TR>\n");
+	}
 
 	if (disabletime != 0) {
 		fprintf(output, "<TR><TD ALIGN=LEFT><H3>Disabled until %s</H3></TD></TR>\n", 

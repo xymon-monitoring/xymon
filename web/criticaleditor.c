@@ -231,7 +231,7 @@ void findrecord(char *hostname, char *service, char *nodatawarning, char *isclon
 	if (rec) sethostenv_critedit(rec->updinfo, rec->priority, rec->ttgroup, rec->starttime, rec->endtime, rec->crittime, rec->ttextra);
 	else sethostenv_critedit("", 0, NULL, 0, 0, NULL, NULL);
 
-	sethostenv(htmlquoted(hostname), "", htmlquoted(service), colorname(COL_BLUE), NULL);
+	sethostenv(hostname, "", service, colorname(COL_BLUE), NULL);
 
 	*warnmsg = '\0';
 	if (!rec && nodatawarning) sprintf(warnmsg, "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('%s'); </SCRIPT>\n", nodatawarning);

@@ -198,8 +198,9 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 			}
 
 			if (preview) {
-				printf("<tr><td>Enabling host <b>%s</b> test <b>%s</b> : %s</td></tr>\n", 
-					htmlquoted(hostname), htmlquoted(enabletest[i]), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
+				printf("<tr><td>Enabling host <b>%s</b>", htmlquoted(hostname));
+				printf(" test <b>%s</b>", htmlquoted(enabletest[i]));
+				printf(": %s</td></tr>\n", ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
@@ -218,8 +219,9 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 			}
 
 			if (preview) {
-				printf("<tr><td>Disabling host <b>%s</b> test <b>%s</b>: %s</td></tr>\n", 
-					htmlquoted(hostname), htmlquoted(disabletest[i]), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
+				printf("<tr><td>Disabling host <b>%s</b>", htmlquoted(hostname));
+				printf(" test <b>%s</b>", htmlquoted(disabletest[i]));
+				printf(": %s</td></tr>\n", ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;
@@ -231,8 +233,9 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 			result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
 
 			if (preview) {
-				printf("<tr><td>Scheduling disable of host <b>%s</b> test <b>%s</b> at <b>%s</b>: %s</td></tr>\n", 
-					htmlquoted(hostname), htmlquoted(disabletest[i]), ctime(&schedtime), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
+				printf("<tr><td>Scheduling disable of host <b>%s</b>", htmlquoted(hostname));
+				printf("test <b>%s</b>", htmlquoted(disabletest[i]));
+				printf(" at <b>%s</b>: %s</td></tr>\n", ctime(&schedtime), ((result == XYMONSEND_OK) ? "OK" : "Failed"));
 			}
 		}
 		break;

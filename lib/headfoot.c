@@ -106,10 +106,10 @@ void sethostenv(char *host, char *ip, char *svc, char *color, char *hikey)
 	if (hostenv_svc)   xfree(hostenv_svc);
 	if (hostenv_color) xfree(hostenv_color);
 
-	hostenv_hikey = (hikey ? strdup(hikey) : NULL);
-	hostenv_host = strdup(host);
-	hostenv_ip = strdup(ip);
-	hostenv_svc = strdup(svc);
+	hostenv_hikey = (hikey ? strdup(htmlquoted(hikey)) : NULL);
+	hostenv_host = strdup(htmlquoted(host));
+	hostenv_ip = strdup(htmlquoted(ip));
+	hostenv_svc = strdup(htmlquoted(svc));
 	hostenv_color = strdup(color);
 }
 

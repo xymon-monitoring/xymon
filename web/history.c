@@ -510,14 +510,14 @@ void generate_history(FILE *htmlrep, 			/* output file */
 		      int entrycount,			/* Log entry maxcount */
 		      replog_t *loghead)		/* Eventlog for entrycount events back */
 {
-	sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(COL_GREEN), htmlquoted(hostname));
+	sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 	headfoot(htmlrep, "hist", "", "header", COL_GREEN);
 
 	fprintf(htmlrep, "\n");
 	fprintf(htmlrep, "<CENTER>\n");
 	if (wantserviceid) {
-		fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT><BR>\n", 
-			xgetenv("XYMONPAGEROWFONT"), htmlquoted(displayname), htmlquoted(service));
+		fprintf(htmlrep, "<BR><FONT %s><B>%s", xgetenv("XYMONPAGEROWFONT"), htmlquoted(displayname));
+		fprintf(htmlrep, " - %s</B></FONT><BR>\n", htmlquoted(service));
 	}
 
 	/* Create the color-bars */

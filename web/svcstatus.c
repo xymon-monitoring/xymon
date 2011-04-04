@@ -241,7 +241,7 @@ int do_request(void)
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
 		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
 		ishtmlformatted = 1;
-		sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(COL_GREEN), htmlquoted(hostname));
+		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
 		color = COL_GREEN;
 		logtime = getcurrenttime(NULL);
@@ -387,7 +387,7 @@ int do_request(void)
 			flapping = (items[18] ? (*items[18] == '1') : 0);
 			modifiers = (items[19] && *(items[19])) ? items[19] : NULL;
 
-			sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(COL_GREEN), htmlquoted(hostname));
+			sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 			sethostenv_refresh(60);
 		}
 		else {
@@ -426,7 +426,7 @@ int do_request(void)
 			addtobuffer(cmsg, "</table>\n");
 			ishtmlformatted = 1;
 
-			sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(color), htmlquoted(hostname));
+			sethostenv(displayname, ip, service, colorname(color), hostname);
 			sethostenv_refresh(60);
 			logtime = getcurrenttime(NULL);
 			strcpy(timesincechange, "0 minutes");

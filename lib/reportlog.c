@@ -34,7 +34,7 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	int curbg = 0;
 
 	if (!displayname) displayname = hostname;
-	sethostenv(htmlquoted(displayname), htmlquoted(ip), htmlquoted(service), colorname(color), htmlquoted(hostname));
+	sethostenv(displayname, ip, service, colorname(color), hostname);
 	sethostenv_report(st, end, reportwarnlevel, reportgreenlevel);
 
 	headfoot(htmlrep, "replog", "", "header", color);
@@ -42,7 +42,9 @@ void generate_replog(FILE *htmlrep, FILE *textrep, char *textrepurl,
 	fprintf(htmlrep, "\n");
 
 	fprintf(htmlrep, "<CENTER>\n");
-	fprintf(htmlrep, "<BR><FONT %s><B>%s - %s</B></FONT>\n", xgetenv("XYMONPAGEROWFONT"), htmlquoted(displayname), htmlquoted(service));
+	fprintf(htmlrep, "<BR><FONT %s>", xgetenv("XYMONPAGEROWFONT"));
+	fprintf(htmlrep, "<B>%s - ", htmlquoted(displayname));
+	fprintf(htmlrep, "%s</B></FONT>\n", htmlquoted(service));
 	fprintf(htmlrep, "<TABLE BORDER=0 BGCOLOR=\"#333333\" CELLPADDING=3 SUMMARY=\"Availability percentages\">\n");
 	fprintf(htmlrep, "<TR>\n");
 

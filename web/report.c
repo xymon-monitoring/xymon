@@ -288,7 +288,9 @@ int main(int argc, char *argv[])
 		strftime(endstr, sizeof(endstr), "%b %d %Y", localtime(&endtime));
 		printf("<CENTER><A NAME=begindata>&nbsp;</A>\n");
 		printf("<BR><BR><BR><BR>\n");
-		printf("<H3>Generating report for the period: %s - %s (%s)<BR>\n", htmlquoted(startstr), htmlquoted(endstr), htmlquoted(style));
+		printf("<H3>Generating report for the period: %s", htmlquoted(startstr));
+		printf(" - %s ", htmlquoted(endstr));
+		printf("(%s)<BR>\n", htmlquoted(style));
 		printf("<P><P>\n");
 		fflush(stdout);
 	}
