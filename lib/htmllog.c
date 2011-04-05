@@ -71,7 +71,7 @@ static void historybutton(char *cgibinurl, char *hostname, char *service, char *
 	sprintf(tmp1, ",%s,", xgetenv("NONHISTS"));
 	sprintf(tmp2, ",%s,", service);
 	if (strstr(tmp1, tmp2) == NULL) {
-		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/history.sh\">,", cgibinurl);
+		fprintf(output, "<BR><BR><CENTER><FORM ACTION=\"%s/history.sh\">", cgibinurl);
 		fprintf(output, "<INPUT TYPE=SUBMIT VALUE=\"%s\">", htmlquoted(btntxt));
 		fprintf(output, "<INPUT TYPE=HIDDEN NAME=\"HISTFILE\" VALUE=\"%s", htmlquoted(hostname));
 		fprintf(output, ".%s\">", htmlquoted(service));
