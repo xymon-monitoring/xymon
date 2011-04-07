@@ -1,8 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
 <HTML>
 <HEAD>
 
 <TITLE>Active SMS alerts</TITLE>
+
+<!-- Styles for the Xymon body  -->
+<link rel="stylesheet" type="text/css" href="/xymonbody.css">
 
 <script type="text/javascript">
 	function editSms(queuename,groupid, msgid)
@@ -20,19 +23,19 @@
 
 </HEAD>
 
-<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+<BODY class="&XYMWEBBACKGROUND">
 
 <TABLE SUMMARY="Topline" WIDTH="100%">
 <TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
-    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>CSC</B></FONT>
+    Xymon
   </TD>
   <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
     <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Active SMS alerts</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
-   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMWEBDATE</B></FONT>
   </TD>
 </TR>
 <TR>

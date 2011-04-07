@@ -22,7 +22,7 @@ static char rcsid[] = "$Id: smsadmin.c,v 1.6 2009/06/30 14:36:51 henrik Exp henr
 #include <utime.h>
 #include <errno.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 #define MAX_RECIPIENTS 40
 #define DEFAULT_LIFETIME 10080	/* 1 week in minutes (7 x 24 x 60) */
@@ -445,7 +445,7 @@ void show_summary(char *topdirectory, char *queuename, FILE *outfd, char **group
 	fprintf(outfd, "<input type=\"hidden\" name=\"grouplist\" id=\"grouplist\" value=\"\">");
 	fprintf(outfd, "<input type=\"hidden\" name=\"msglist\" id=\"msglist\" value=\"\">");
 
-	fprintf(outfd, "<table width=\"70%%\" align=\"center\">\n");
+	fprintf(outfd, "<table width=\"90%%\" align=\"center\">\n");
 	fprintf(outfd, "<tr><th align=left>User</th><th align=left>Description</th><th align=left>%s transmission</th></tr>\n",
 		(strcmp(queuename, "active") == 0) ? "Next" : "Last");
 	for (acti = 0; (acti < actcount); acti++) {

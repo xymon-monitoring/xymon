@@ -23,7 +23,7 @@ static char rcsid[] = "$Id: smsqueue.c,v 1.3 2009/06/30 14:36:51 henrik Exp henr
 #include <dirent.h>
 #include <signal.h>
 
-#include "libbbgen.h"
+#include "libxymon.h"
 
 int running = 1;
 

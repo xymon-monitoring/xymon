@@ -5,8 +5,8 @@
 
    <TABLE SUMMARY="SMS data" BORDER=0>
      <TR>
-          <TD><b>Select list</b></TD>
-          <TD COLSPAN=2><SELECT NAME="recipchoice" onChange="document.smsform.submit();">
+          <TD align=left><b>Select list</b></TD>
+          <TD COLSPAN=2 align=left><SELECT NAME="recipchoice" onChange="document.smsform.submit();">
 	    &GENERICLIST_RECIPCHOICES
 	  </SELECT></TD>
      </TR>
@@ -16,54 +16,54 @@
      </TR>
 
      <TR>
-          <TD><b>Name</b></TD>
-	  <TD COLSPAN=2><INPUT TYPE=TEXT NAME="Description" SIZE=40 MAXLENGTH=40 VALUE="&DESCRTXT" &RODESCRIPTION></TD>
+          <TD align=left><b>Name</b></TD>
+	  <TD COLSPAN=2 align=left><INPUT TYPE=TEXT NAME="Description" SIZE=40 MAXLENGTH=40 VALUE="&DESCRTXT" &RODESCRIPTION></TD>
      </TR>
 
      <TR>
           <TD VALIGN=TOP>&nbsp;</TD>
-	  <TD VALIGN=TOP>
+	  <TD VALIGN=TOP align=left>
 	     <table summary="Recipients 1-10" BORDER=0>
 	     <tr><th align=left>Name</th><th align=left>Phonenumber</th></tr>
 	     <tr>
-	        <td><input type=text name="RecipName_0" size=20 maxlength=40 value="&RECIPNAME_0"></td>
-	        <td><input type=text name="RecipNumber_0" size=20 maxlength=40 value="&RECIPNUMBER_0"></td>
+	        <td align=left><input type=text name="RecipName_0" size=20 maxlength=40 value="&RECIPNAME_0"></td>
+	        <td align=left><input type=text name="RecipNumber_0" size=20 maxlength=40 value="&RECIPNUMBER_0"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_1" size=20 maxlength=40 value="&RECIPNAME_1"></td>
-	        <td><input type=text name="RecipNumber_1" size=20 maxlength=40 value="&RECIPNUMBER_1"></td>
+	        <td align=left><input type=text name="RecipName_1" size=20 maxlength=40 value="&RECIPNAME_1"></td>
+	        <td align=left><input type=text name="RecipNumber_1" size=20 maxlength=40 value="&RECIPNUMBER_1"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_2" size=20 maxlength=40 value="&RECIPNAME_2"></td>
-	        <td><input type=text name="RecipNumber_2" size=20 maxlength=40 value="&RECIPNUMBER_2"></td>
+	        <td align=left><input type=text name="RecipName_2" size=20 maxlength=40 value="&RECIPNAME_2"></td>
+	        <td align=left><input type=text name="RecipNumber_2" size=20 maxlength=40 value="&RECIPNUMBER_2"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_3" size=20 maxlength=40 value="&RECIPNAME_3"></td>
-	        <td><input type=text name="RecipNumber_3" size=20 maxlength=40 value="&RECIPNUMBER_3"></td>
+	        <td align=left><input type=text name="RecipName_3" size=20 maxlength=40 value="&RECIPNAME_3"></td>
+	        <td align=left><input type=text name="RecipNumber_3" size=20 maxlength=40 value="&RECIPNUMBER_3"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_4" size=20 maxlength=40 value="&RECIPNAME_4"></td>
-	        <td><input type=text name="RecipNumber_4" size=20 maxlength=40 value="&RECIPNUMBER_4"></td>
+	        <td align=left><input type=text name="RecipName_4" size=20 maxlength=40 value="&RECIPNAME_4"></td>
+	        <td align=left><input type=text name="RecipNumber_4" size=20 maxlength=40 value="&RECIPNUMBER_4"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_5" size=20 maxlength=40 value="&RECIPNAME_5"></td>
-	        <td><input type=text name="RecipNumber_5" size=20 maxlength=40 value="&RECIPNUMBER_5"></td>
+	        <td align=left><input type=text name="RecipName_5" size=20 maxlength=40 value="&RECIPNAME_5"></td>
+	        <td align=left><input type=text name="RecipNumber_5" size=20 maxlength=40 value="&RECIPNUMBER_5"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_6" size=20 maxlength=40 value="&RECIPNAME_6"></td>
-	        <td><input type=text name="RecipNumber_6" size=20 maxlength=40 value="&RECIPNUMBER_6"></td>
+	        <td align=left><input type=text name="RecipName_6" size=20 maxlength=40 value="&RECIPNAME_6"></td>
+	        <td align=left><input type=text name="RecipNumber_6" size=20 maxlength=40 value="&RECIPNUMBER_6"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_7" size=20 maxlength=40 value="&RECIPNAME_7"></td>
-	        <td><input type=text name="RecipNumber_7" size=20 maxlength=40 value="&RECIPNUMBER_7"></td>
+	        <td align=left><input type=text name="RecipName_7" size=20 maxlength=40 value="&RECIPNAME_7"></td>
+	        <td align=left><input type=text name="RecipNumber_7" size=20 maxlength=40 value="&RECIPNUMBER_7"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_8" size=20 maxlength=40 value="&RECIPNAME_8"></td>
-	        <td><input type=text name="RecipNumber_8" size=20 maxlength=40 value="&RECIPNUMBER_8"></td>
+	        <td align=left><input type=text name="RecipName_8" size=20 maxlength=40 value="&RECIPNAME_8"></td>
+	        <td align=left><input type=text name="RecipNumber_8" size=20 maxlength=40 value="&RECIPNUMBER_8"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_9" size=20 maxlength=40 value="&RECIPNAME_9"></td>
-	        <td><input type=text name="RecipNumber_9" size=20 maxlength=40 value="&RECIPNUMBER_9"></td>
+	        <td align=left><input type=text name="RecipName_9" size=20 maxlength=40 value="&RECIPNAME_9"></td>
+	        <td align=left><input type=text name="RecipNumber_9" size=20 maxlength=40 value="&RECIPNUMBER_9"></td>
              </tr>
 	     </table>
 	  </TD>
@@ -71,44 +71,44 @@
 	     <table summary="Recipients 11-20" BORDER=0>
 	     <tr><th align=left>Name</th><th align=left>Phonenumber</th></tr>
 	     <tr>
-	        <td><input type=text name="RecipName_10" size=20 maxlength=40 value="&RECIPNAME_10"></td>
-	        <td><input type=text name="RecipNumber_10" size=20 maxlength=40 value="&RECIPNUMBER_10"></td>
+	        <td align=left><input type=text name="RecipName_10" size=20 maxlength=40 value="&RECIPNAME_10"></td>
+	        <td align=left><input type=text name="RecipNumber_10" size=20 maxlength=40 value="&RECIPNUMBER_10"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_11" size=20 maxlength=40 value="&RECIPNAME_11"></td>
-	        <td><input type=text name="RecipNumber_11" size=20 maxlength=40 value="&RECIPNUMBER_11"></td>
+	        <td align=left><input type=text name="RecipName_11" size=20 maxlength=40 value="&RECIPNAME_11"></td>
+	        <td align=left><input type=text name="RecipNumber_11" size=20 maxlength=40 value="&RECIPNUMBER_11"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_12" size=20 maxlength=40 value="&RECIPNAME_12"></td>
-	        <td><input type=text name="RecipNumber_12" size=20 maxlength=40 value="&RECIPNUMBER_12"></td>
+	        <td align=left><input type=text name="RecipName_12" size=20 maxlength=40 value="&RECIPNAME_12"></td>
+	        <td align=left><input type=text name="RecipNumber_12" size=20 maxlength=40 value="&RECIPNUMBER_12"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_13" size=20 maxlength=40 value="&RECIPNAME_13"></td>
-	        <td><input type=text name="RecipNumber_13" size=20 maxlength=40 value="&RECIPNUMBER_13"></td>
+	        <td align=left><input type=text name="RecipName_13" size=20 maxlength=40 value="&RECIPNAME_13"></td>
+	        <td align=left><input type=text name="RecipNumber_13" size=20 maxlength=40 value="&RECIPNUMBER_13"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_14" size=20 maxlength=40 value="&RECIPNAME_14"></td>
-	        <td><input type=text name="RecipNumber_14" size=20 maxlength=40 value="&RECIPNUMBER_14"></td>
+	        <td align=left><input type=text name="RecipName_14" size=20 maxlength=40 value="&RECIPNAME_14"></td>
+	        <td align=left><input type=text name="RecipNumber_14" size=20 maxlength=40 value="&RECIPNUMBER_14"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_15" size=20 maxlength=40 value="&RECIPNAME_15"></td>
-	        <td><input type=text name="RecipNumber_15" size=20 maxlength=40 value="&RECIPNUMBER_15"></td>
+	        <td align=left><input type=text name="RecipName_15" size=20 maxlength=40 value="&RECIPNAME_15"></td>
+	        <td align=left><input type=text name="RecipNumber_15" size=20 maxlength=40 value="&RECIPNUMBER_15"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_16" size=20 maxlength=40 value="&RECIPNAME_16"></td>
-	        <td><input type=text name="RecipNumber_16" size=20 maxlength=40 value="&RECIPNUMBER_16"></td>
+	        <td align=left><input type=text name="RecipName_16" size=20 maxlength=40 value="&RECIPNAME_16"></td>
+	        <td align=left><input type=text name="RecipNumber_16" size=20 maxlength=40 value="&RECIPNUMBER_16"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_17" size=20 maxlength=40 value="&RECIPNAME_17"></td>
-	        <td><input type=text name="RecipNumber_17" size=20 maxlength=40 value="&RECIPNUMBER_17"></td>
+	        <td align=left><input type=text name="RecipName_17" size=20 maxlength=40 value="&RECIPNAME_17"></td>
+	        <td align=left><input type=text name="RecipNumber_17" size=20 maxlength=40 value="&RECIPNUMBER_17"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_18" size=20 maxlength=40 value="&RECIPNAME_18"></td>
-	        <td><input type=text name="RecipNumber_18" size=20 maxlength=40 value="&RECIPNUMBER_18"></td>
+	        <td align=left><input type=text name="RecipName_18" size=20 maxlength=40 value="&RECIPNAME_18"></td>
+	        <td align=left><input type=text name="RecipNumber_18" size=20 maxlength=40 value="&RECIPNUMBER_18"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_19" size=20 maxlength=40 value="&RECIPNAME_19"></td>
-	        <td><input type=text name="RecipNumber_19" size=20 maxlength=40 value="&RECIPNUMBER_19"></td>
+	        <td align=left><input type=text name="RecipName_19" size=20 maxlength=40 value="&RECIPNAME_19"></td>
+	        <td align=left><input type=text name="RecipNumber_19" size=20 maxlength=40 value="&RECIPNUMBER_19"></td>
              </tr>
 	     </table>
 	  </TD>
@@ -120,44 +120,44 @@
 	     <table summary="Recipients 21-30" BORDER=0>
 	     <tr><th align=left>Name</th><th align=left>Phonenumber</th></tr>
 	     <tr>
-	        <td><input type=text name="RecipName_20" size=20 maxlength=40 value="&RECIPNAME_20"></td>
-	        <td><input type=text name="RecipNumber_20" size=20 maxlength=40 value="&RECIPNUMBER_20"></td>
+	        <td align=left><input type=text name="RecipName_20" size=20 maxlength=40 value="&RECIPNAME_20"></td>
+	        <td align=left><input type=text name="RecipNumber_20" size=20 maxlength=40 value="&RECIPNUMBER_20"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_21" size=20 maxlength=40 value="&RECIPNAME_21"></td>
-	        <td><input type=text name="RecipNumber_21" size=20 maxlength=40 value="&RECIPNUMBER_21"></td>
+	        <td align=left><input type=text name="RecipName_21" size=20 maxlength=40 value="&RECIPNAME_21"></td>
+	        <td align=left><input type=text name="RecipNumber_21" size=20 maxlength=40 value="&RECIPNUMBER_21"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_22" size=20 maxlength=40 value="&RECIPNAME_22"></td>
-	        <td><input type=text name="RecipNumber_22" size=20 maxlength=40 value="&RECIPNUMBER_22"></td>
+	        <td align=left><input type=text name="RecipName_22" size=20 maxlength=40 value="&RECIPNAME_22"></td>
+	        <td align=left><input type=text name="RecipNumber_22" size=20 maxlength=40 value="&RECIPNUMBER_22"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_23" size=20 maxlength=40 value="&RECIPNAME_23"></td>
-	        <td><input type=text name="RecipNumber_23" size=20 maxlength=40 value="&RECIPNUMBER_23"></td>
+	        <td align=left><input type=text name="RecipName_23" size=20 maxlength=40 value="&RECIPNAME_23"></td>
+	        <td align=left><input type=text name="RecipNumber_23" size=20 maxlength=40 value="&RECIPNUMBER_23"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_24" size=20 maxlength=40 value="&RECIPNAME_24"></td>
-	        <td><input type=text name="RecipNumber_24" size=20 maxlength=40 value="&RECIPNUMBER_24"></td>
+	        <td align=left><input type=text name="RecipName_24" size=20 maxlength=40 value="&RECIPNAME_24"></td>
+	        <td align=left><input type=text name="RecipNumber_24" size=20 maxlength=40 value="&RECIPNUMBER_24"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_25" size=20 maxlength=40 value="&RECIPNAME_25"></td>
-	        <td><input type=text name="RecipNumber_25" size=20 maxlength=40 value="&RECIPNUMBER_25"></td>
+	        <td align=left><input type=text name="RecipName_25" size=20 maxlength=40 value="&RECIPNAME_25"></td>
+	        <td align=left><input type=text name="RecipNumber_25" size=20 maxlength=40 value="&RECIPNUMBER_25"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_26" size=20 maxlength=40 value="&RECIPNAME_26"></td>
-	        <td><input type=text name="RecipNumber_26" size=20 maxlength=40 value="&RECIPNUMBER_26"></td>
+	        <td align=left><input type=text name="RecipName_26" size=20 maxlength=40 value="&RECIPNAME_26"></td>
+	        <td align=left><input type=text name="RecipNumber_26" size=20 maxlength=40 value="&RECIPNUMBER_26"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_27" size=20 maxlength=40 value="&RECIPNAME_27"></td>
-	        <td><input type=text name="RecipNumber_27" size=20 maxlength=40 value="&RECIPNUMBER_27"></td>
+	        <td align=left><input type=text name="RecipName_27" size=20 maxlength=40 value="&RECIPNAME_27"></td>
+	        <td align=left><input type=text name="RecipNumber_27" size=20 maxlength=40 value="&RECIPNUMBER_27"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_28" size=20 maxlength=40 value="&RECIPNAME_28"></td>
-	        <td><input type=text name="RecipNumber_28" size=20 maxlength=40 value="&RECIPNUMBER_28"></td>
+	        <td align=left><input type=text name="RecipName_28" size=20 maxlength=40 value="&RECIPNAME_28"></td>
+	        <td align=left><input type=text name="RecipNumber_28" size=20 maxlength=40 value="&RECIPNUMBER_28"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_29" size=20 maxlength=40 value="&RECIPNAME_29"></td>
-	        <td><input type=text name="RecipNumber_29" size=20 maxlength=40 value="&RECIPNUMBER_29"></td>
+	        <td align=left><input type=text name="RecipName_29" size=20 maxlength=40 value="&RECIPNAME_29"></td>
+	        <td align=left><input type=text name="RecipNumber_29" size=20 maxlength=40 value="&RECIPNUMBER_29"></td>
              </tr>
 	     </table>
 	  </TD>
@@ -165,51 +165,47 @@
 	     <table summary="Recipients 31-40" BORDER=0>
 	     <tr><th align=left>Name</th><th align=left>Phonenumber</th></tr>
 	     <tr>
-	        <td><input type=text name="RecipName_30" size=20 maxlength=40 value="&RECIPNAME_30"></td>
-	        <td><input type=text name="RecipNumber_30" size=20 maxlength=40 value="&RECIPNUMBER_30"></td>
+	        <td align=left><input type=text name="RecipName_30" size=20 maxlength=40 value="&RECIPNAME_30"></td>
+	        <td align=left><input type=text name="RecipNumber_30" size=20 maxlength=40 value="&RECIPNUMBER_30"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_31" size=20 maxlength=40 value="&RECIPNAME_31"></td>
-	        <td><input type=text name="RecipNumber_31" size=20 maxlength=40 value="&RECIPNUMBER_31"></td>
+	        <td align=left><input type=text name="RecipName_31" size=20 maxlength=40 value="&RECIPNAME_31"></td>
+	        <td align=left><input type=text name="RecipNumber_31" size=20 maxlength=40 value="&RECIPNUMBER_31"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_32" size=20 maxlength=40 value="&RECIPNAME_32"></td>
-	        <td><input type=text name="RecipNumber_32" size=20 maxlength=40 value="&RECIPNUMBER_32"></td>
+	        <td align=left><input type=text name="RecipName_32" size=20 maxlength=40 value="&RECIPNAME_32"></td>
+	        <td align=left><input type=text name="RecipNumber_32" size=20 maxlength=40 value="&RECIPNUMBER_32"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_33" size=20 maxlength=40 value="&RECIPNAME_33"></td>
-	        <td><input type=text name="RecipNumber_33" size=20 maxlength=40 value="&RECIPNUMBER_33"></td>
+	        <td align=left><input type=text name="RecipName_33" size=20 maxlength=40 value="&RECIPNAME_33"></td>
+	        <td align=left><input type=text name="RecipNumber_33" size=20 maxlength=40 value="&RECIPNUMBER_33"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_34" size=20 maxlength=40 value="&RECIPNAME_34"></td>
-	        <td><input type=text name="RecipNumber_34" size=20 maxlength=40 value="&RECIPNUMBER_34"></td>
+	        <td align=left><input type=text name="RecipName_34" size=20 maxlength=40 value="&RECIPNAME_34"></td>
+	        <td align=left><input type=text name="RecipNumber_34" size=20 maxlength=40 value="&RECIPNUMBER_34"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_35" size=20 maxlength=40 value="&RECIPNAME_35"></td>
-	        <td><input type=text name="RecipNumber_35" size=20 maxlength=40 value="&RECIPNUMBER_35"></td>
+	        <td align=left><input type=text name="RecipName_35" size=20 maxlength=40 value="&RECIPNAME_35"></td>
+	        <td align=left><input type=text name="RecipNumber_35" size=20 maxlength=40 value="&RECIPNUMBER_35"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_36" size=20 maxlength=40 value="&RECIPNAME_36"></td>
-	        <td><input type=text name="RecipNumber_36" size=20 maxlength=40 value="&RECIPNUMBER_36"></td>
+	        <td align=left><input type=text name="RecipName_36" size=20 maxlength=40 value="&RECIPNAME_36"></td>
+	        <td align=left><input type=text name="RecipNumber_36" size=20 maxlength=40 value="&RECIPNUMBER_36"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_37" size=20 maxlength=40 value="&RECIPNAME_37"></td>
-	        <td><input type=text name="RecipNumber_37" size=20 maxlength=40 value="&RECIPNUMBER_37"></td>
+	        <td align=left><input type=text name="RecipName_37" size=20 maxlength=40 value="&RECIPNAME_37"></td>
+	        <td align=left><input type=text name="RecipNumber_37" size=20 maxlength=40 value="&RECIPNUMBER_37"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_38" size=20 maxlength=40 value="&RECIPNAME_38"></td>
-	        <td><input type=text name="RecipNumber_38" size=20 maxlength=40 value="&RECIPNUMBER_38"></td>
+	        <td align=left><input type=text name="RecipName_38" size=20 maxlength=40 value="&RECIPNAME_38"></td>
+	        <td align=left><input type=text name="RecipNumber_38" size=20 maxlength=40 value="&RECIPNUMBER_38"></td>
              </tr>
 	     <tr>
-	        <td><input type=text name="RecipName_39" size=20 maxlength=40 value="&RECIPNAME_39"></td>
-	        <td><input type=text name="RecipNumber_39" size=20 maxlength=40 value="&RECIPNUMBER_39"></td>
+	        <td align=left><input type=text name="RecipName_39" size=20 maxlength=40 value="&RECIPNAME_39"></td>
+	        <td align=left><input type=text name="RecipNumber_39" size=20 maxlength=40 value="&RECIPNUMBER_39"></td>
              </tr>
 	     </table>
 	  </TD>
-     </TR>
-
-     <TR>
-        <TD ALIGN=CENTER COLSPAN=3><B>&nbsp;&INFOMSG</B></TD>
      </TR>
 
      <TR>

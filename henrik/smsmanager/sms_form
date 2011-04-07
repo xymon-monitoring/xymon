@@ -155,14 +155,13 @@ var BrowserDetect = {
     }
 </script>
 
-
+<center>
 <FONT FACE="Arial, Helvetica" COLOR="silver">
-<CENTER>
 <FORM METHOD="POST" NAME="smsform" ACTION="&SCRIPT_NAME">
    <TABLE SUMMARY="SMS data" BORDER=0>
      <TR>
-          <TD width="30%"><b>Select user/group</b></TD>
-          <TD COLSPAN=2>
+          <TD width="30%" align=left><b>Select user/group</b></TD>
+          <TD COLSPAN=2 align=left>
 	    <SELECT NAME="grouplist" onChange="document.smsform.submit();">
 	      &GENERICLIST_SMSGROUP
 	    </SELECT>
@@ -170,8 +169,8 @@ var BrowserDetect = {
      </TR>
 
      <TR>
-          <TD width="30%"><b>Select message</b></TD>
-          <TD COLSPAN=2>
+          <TD width="30%" align=left><b>Select message</b></TD>
+          <TD COLSPAN=2 align=left>
 	    <SELECT NAME="msglist" onChange="document.smsform.submit();">
 	      &GENERICLIST_MSGS
 	    </SELECT>
@@ -183,43 +182,35 @@ var BrowserDetect = {
      </TR>
 
      <TR>
-          <TD><b>Description</b></TD>
-	  <td COLSPAN=2><INPUT TYPE=TEXT NAME="Description" SIZE=40 MAXLENGTH=40 VALUE="&DESCRTXT"></TD>
+          <TD align=left><b>Description</b></TD>
+	  <td COLSPAN=2 align=left><INPUT TYPE=TEXT NAME="Description" SIZE=60 MAXLENGTH=60 VALUE="&DESCRTXT"></TD>
      </TR>
 
      <TR>
-          <TD><b>Recipients</b></TD>
-          <TD><SELECT NAME="reciplist">
+          <TD align=left><b>Recipients</b></TD>
+          <TD align=left><SELECT NAME="reciplist">
 	    &GENERICLIST_RECIPS
 	  </SELECT></TD>
 	  <TD>&nbsp;</TD>
      </TR>
 
      <TR>
-        <TD valign=top><B>Repeat interval</B></TD>
-        <TD><SELECT NAME="repeat">
+        <TD valign=top align=left><B>Repeat interval</B></TD>
+        <TD align=left><SELECT NAME="repeat">
 	   &GENERICLIST_REPEAT
 	</SELECT></td>
 	<TD>&nbsp;</TD>
      </TR>
 
      <TR>
-        <TD valign=top><B>Lifetime</B></TD>
-        <TD><SELECT NAME="lifetime">
-	   &GENERICLIST_LIFETIME
-	</SELECT></td>
-	<TD>&nbsp;</TD>
-     </TR>
-
-     <TR>
-        <TD valign=top><B>Message text</B></TD>
-	<td><textarea id="smstext" name="smstext" cols="40" rows="4" wrap="soft" onKeyPress="updateCharsUsed();" onKeyUp="updateCharsUsed();" onChange="updateCharsUsed();">&SMSTEXT</textarea></td>
+        <TD valign=top align=left><B>Message text</B></TD>
+	<td align=left><textarea id="smstext" name="smstext" cols="40" rows="4" wrap="soft" onKeyPress="updateCharsUsed();" onKeyUp="updateCharsUsed();" onChange="updateCharsUsed();">&SMSTEXT</textarea></td>
 	<TD id="smsinfotxt">0 characters used</TD>
      </TR>
 
      <TR>
-        <TD valign=top><B>Time of last SMS</b></TD>
-        <TD COLSPAN=2>&XMITTEXT</TD>
+        <TD valign=top align=left><B>Time of last SMS</b></TD>
+        <TD COLSPAN=2 align=left>&XMITTEXT</TD>
      </TR>
 
      <TR>
@@ -237,32 +228,30 @@ var BrowserDetect = {
         </TD>
         <TD ALIGN=CENTER>
           <BR><BR>
-	  &nbsp;<B>&INFOMSG</B>
+	  &nbsp;
 	  <BR>
 	</TD>
      </TR>
-
    </TABLE>
 
    <BR><BR>
 
    <TABLE SUMMARY="Other actions" BORDER=0>
       <TR>
-	 <TD>
+	 <TD align=left>
 	   <INPUT TYPE="SUBMIT" NAME="ViewFinished" VALUE="View finished items" ALT="Summary">
 	 </TD>
-	 <TD>
+	 <TD align=left>
 	   <INPUT TYPE="SUBMIT" NAME="ViewSummary" VALUE="View active queue" ALT="Summary">
 	 </TD>
-	 <TD>
+	 <TD align=left>
 	   <INPUT TYPE="SUBMIT" NAME="GoRecipList" VALUE="Edit Recipient lists" ALT="Reciplist">
 	 </TD>
       </TR>
    </TABLE>
-
 </FORM>
-</CENTER>
 </FONT>
+</center>
 
 <script type="text/javascript">
     BrowserDetect.init();
