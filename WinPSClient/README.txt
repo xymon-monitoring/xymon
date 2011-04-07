@@ -7,9 +7,7 @@ and Windows XP. If it is not installed on your system, it can
 be downloaded from the Microsoft website.
 
 The client utility is completely written in Powershell, so no
-additional programs need be installed to run it. However, you
-will need the Windows Resource Toolkit to install the client
-as a Windows Service.
+additional programs need be installed to run it.
 
 
 Installation guide
@@ -19,20 +17,8 @@ Unpack the distribution zip-file to C:\ . All of the
 files unpack into the C:\Xymon directory.
 
 You must configure the IP-address or hostname of
-your Xymon server - set this at the top of the
-c:\Xymon\xymonclient.ps1
+your Xymon server - see Client Configuration below.
 
-	# $clientname  = "winxptest"
-	$xymonserver = @( "xymonhost" )
-
-Modify the "xymonhost" IP-address to be the address of your Xymon server.
-Multiple servers can be used - comma separated list. TCP port 1984 is
-standard or enter host:port format if using other than 1984.
-
-By default the client sends data using the system hostname.
-If you want it to report using a different name, you can
-set this explicitly in the "clientname". Uncomment the line,
-and change "winxptest" to the hostname you want to use.
 
 Installing as service
 =====================
@@ -47,12 +33,22 @@ To start or stop the service run:
 
 The Windows Service manager can also be used to manage the "XymonPSClient" service.
 
+
 Client configuration
 ====================
 Client configuration can be controlled by registry keys as detailed. These are
 stored in HKLM:\SOFTWARE\XymonPSClient on 32-bit systems and 
 HKLM:\SOFTWARE\Wow6432Node\XymonPSClient (32-bit universe) on 64-bit
 (note %NAME% is environment variable)
+
+You will probably need to set "servers" unless your xymon server is called "xymonhost".
+Multiple servers can be used - space delimited list as a string. TCP port 1984 is
+standard or enter host:port format if using other than 1984.
+
+By default the client sends data using the system hostname.
+If you want it to report using a different name, you can
+set this explicitly in the "clientname".
+
 
 Name                : default (comment)
 clientfqdn          : 1 (add default domain name to client name)
@@ -109,7 +105,7 @@ prompt, enter
 
 Note the initial "dot-space" on this line. This defines the function
 "XymonSend" in your Powershell instance. You can now use it to talk to
-the Xymon server - e.g. ping it:
+the Xymon server - e.g. ping it (substitute your server name for "xymonhost")
 
 	PS C:\xymon> xymonsend "ping" "xymonhost"
 	hobbitd 4.3.0-1.3
