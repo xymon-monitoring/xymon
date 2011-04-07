@@ -1,5 +1,5 @@
 # Directory with Xymon source-code. You must have run "make lib-build" before building this
-XYMONDIR = $(HOME)/xymon/4.3.0
+XYMONDIR = $(HOME)/xymon/trunk
 
 # Directory for binaries
 BINDIR = /usr/local/bin

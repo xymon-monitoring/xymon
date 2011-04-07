@@ -1,31 +1,39 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
 <HTML>
 <HEAD>
 
 <TITLE>SSL certificate request</TITLE>
 
+<!-- Styles for the Xymon body  -->
+<link rel="stylesheet" type="text/css" href="/xymonbody.css">
+
+<TITLE>SSL certificate request</TITLE>
 </HEAD>
 
-<BODY BGCOLOR="&BBBACKGROUND" BACKGROUND="&BBSKIN/bkg-&BBBACKGROUND.gif" TEXT="#D8D8BF" LINK="#00FFAA" VLINK="#FFFF44">
+<BODY class="&XYMWEBBACKGROUND">
 
+<center>
 <TABLE SUMMARY="Topline" WIDTH="100%">
 <TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
 <TR>
   <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
-    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>HSWN</B></FONT>
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Xymon</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
-    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>SSL Certificate Request</B></FONT></CENTER>
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>SSL certificate request</B></FONT></CENTER>
   </TD>
   <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
-   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&BBDATE</B></FONT>
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMWEBDATE</B></FONT>
   </TD>
 </TR>
 <TR>
   <TD COLSPAN=3> <HR WIDTH="100%"> </TD>
 </TR>
+</TABLE>
+<BR>
+
 <TR>
-  <td colspan=3 align=center>
+  <td colspan=3>
      <form method=GET action="&SCRIPT_NAME">
        <input type=submit name="viewpending" value="View pending">
        <input type=submit name="viewprocessing" value="View orders">
@@ -34,5 +42,6 @@
   </td>
 </TR>
 </TABLE>
+</center>
 <BR>
 
