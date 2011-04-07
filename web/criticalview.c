@@ -196,7 +196,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	fprintf(output, "<TR>\n");
 
 	/* Print the priority */
-	fprintf(output, "<TD ALIGN=LEFT VALIGN=TOP WIDTH=25%% NOWRAP>");
+	fprintf(output, "<TD ALIGN=LEFT VALIGN=TOP WIDTH=10%% NOWRAP>");
 	if (firsthost) 
 		fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("XYMONPAGEROWFONT"), prio);
 	else 
