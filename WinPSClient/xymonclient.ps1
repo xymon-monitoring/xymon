@@ -45,6 +45,9 @@ function XymonInit
 		if($script:XymonSettings.servers -match " ") {
 			$script:XymonSettings.servers = $script:XymonSettings.servers.Split(" ")
 		}
+		if($script:XymonSettings.wanteddisks -match " ") {
+			$script:XymonSettings.wanteddisks = $script:XymonSettings.wanteddisks.Split(" ")
+		}
 	}
 	SetIfNot $script:XymonSettings servers $xymonservers # List your Xymon servers here
 	# SetIfNot $script:XymonSettings clientname "winxptest"	# Define this to override the default client hostname
@@ -72,9 +75,8 @@ function XymonInit
 	SetIfNot $script:XymonSettings maxlogage 60 # minutes age for event log reporting
 	SetIfNot $script:XymonSettings slowscanrate 72 # repeats of main loop before collecting slowly changing information again
 	SetIfNot $script:XymonSettings reportevt 1 # scan eventlog and report (can be very slow)
-
-	$script:wanteddisks = @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
-	$script:wantedlogs = "Application",  "System", "Security"
+	SetIfNot $script:XymonSettings wanteddisks @( 3 )	# 3=Local disks, 4=Network shares, 2=USB, 5=CD
+	SetIfNot $script:XymonSettings wantedlogs @("Application",  "System", "Security")
     $script:clientlocalcfg = ""
 	$script:logfilepos = @{}
 
@@ -167,7 +169,7 @@ function XymonCollectInfo
 	$script:svcs = Get-WmiObject -Class Win32_Service | Sort-Object -Property Name
 	$script:procs = Get-Process | Sort-Object -Property Id
 	$mydisks = @()
-	foreach ($disktype in $wanteddisks) { 
+	foreach ($disktype in $script:XymonSettings.wanteddisks) { 
 		$mydisks += @( (Get-WmiObject -Class Win32_LogicalDisk | where { $_.DriveType -eq $disktype } ))
 	}
 	$script:disks = $mydisks | Sort-Object DeviceID
@@ -380,11 +382,11 @@ function XymonMsgs
 {
 	if($script:XymonSettings.reportevt -eq 0) {return}
 	$since = (Get-Date).AddMinutes(-($script:XymonSettings.maxlogage))
-	if ($wantedlogs -eq $null) {
-		$wantedlogs = "Application", "System", "Security"
+	if ($script:XymonSettings.wantedlogs -eq $null) {
+		$script:XymonSettings.wantedlogs = "Application", "System", "Security"
 	}
 
-	foreach ($l in $wantedlogs) {
+	foreach ($l in $script:XymonSettings.wantedlogs) {
 		$log = Get-EventLog -List | where { $_.Log -eq $l }
 
 		$logentries = Get-EventLog -ErrorAction:SilentlyContinue -LogName $log.Log -asBaseObject -After $since | where {$_.EntryType -match "Error|Warning"}
@@ -770,7 +772,7 @@ function XymonReportConfig
 	""
 	"HaveCmd"
 	$HaveCmd
-	foreach($v in @("wanteddisks", "wantedlogs", "XymonClientVersion", "clientname" )) {
+	foreach($v in @("XymonClientVersion", "clientname" )) {
 		""; "$v"
 		(Get-Variable $v).Value
 	}
@@ -843,7 +845,8 @@ if($args[0] -eq "set") {
 	if($args.count -eq 3) {
 		$cfgitm = Set-ItemProperty $XymonRegKey $args[1] $args[2]
 	} else {
-		"Error: need 2 args to SET"
+		"Usage: "+(get-item $MyInvocation.InvocationName).Name+" set <Param> <Value>`n  Settable Params:"
+		$script:XymonSettings | gm -memberType NoteProperty  | ?{ $_.Name -notlike "PS*" } | %{"    "+$_.Name}
 	}
 	return
 }
@@ -868,6 +871,10 @@ if($args -eq "Stop") {
 	return
 }
 if($ret) {return}
+if($args -ne $null) {
+	"Usage: "+(get-item $MyInvocation.InvocationName).Name+" install | start | stop | config | set <Param> <Value> | unset <Param>"
+	return
+}
 
 # assume no other args, so run as normal
 
