@@ -1,3 +1,19 @@
+xymon (4.3.3) unstable; urgency=high
+
+  rev 6684
+  * SECURITY FIX: Some CGI parameters were used to construct
+    filenames of historical logfiles without being sanitized,
+    so they could be abused to read files on the webserver.
+  * SECURITY FIX: More cross-site scripting vulnerabilities.
+  * Remove extra "," before "History" button on status-view
+  * Critical view: Shring priority-column to 10% width
+  * hosts.cfg loader: Check for valid IP spec (nibbles in 
+    0-255 range). Large numbers in a nibble were accepted,
+    triggering problems when trying to ping the host.
+  * Alert macros no longer limited to 8kB
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 6 May 2011 07:51:00 +0200
+
 xymon (4.3.2) unstable; urgency=medium
 
   rev 6672

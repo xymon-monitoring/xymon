@@ -1,3 +1,22 @@
+Changes from 4.3.2 -> 4.3.3 (6 May 2011)
+========================================
+* rev6684
+* SECURITY FIX: Some CGI parameters were used to construct
+  filenames of historical logfiles without being sanitized,
+  so they could be abused to read files on the webserver.
+* SECURITY FIX: More cross-site scripting vulnerabilities.
+* Remove extra "," before "History" button on status-view
+* Critical view: Shring priority-column to 10% width
+* hosts.cfg loader: Check for valid IP spec (nibbles in 
+  0-255 range). Large numbers in a nibble were accepted,
+  triggering problems when trying to ping the host.
+* Alert macros no longer limited to 8kB
+
+Changes from 4.3.1 -> 4.3.2 (4 Apr 2011)
+========================================
+* rev6672
+* Web UI: Fix bug introduced with the 4.3.1 XSS fixes.
+
 Changes from 4.3.0 -> 4.3.1 (3 Apr 2011)
 ========================================
 * Web UI: SECURITY FIX - fix potential cross-site scripting vulnerabilities. 
