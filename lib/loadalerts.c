@@ -101,35 +101,28 @@ static criteria_t *setup_criteria(rule_t **currule, recip_t **currcp)
 static char *preprocess(char *buf)
 {
 	/* Expands config-file macros */
-	static char *result = NULL;
-	static int reslen = 0;
-	int n;
-	char *inp, *outp, *p;
+	static strbuffer_t *result = NULL;
+	char *inp;
 
-	if (result == NULL) {
-		reslen = 8192;
-		result = (char *)malloc(reslen);
-	}
+	if (result == NULL) result = newstrbuffer(8192);
+	clearstrbuffer(result);
+
 	inp = buf;
-	outp = result;
-	*outp = '\0';
-
 	while (inp) {
+		char *p;
+
 		p = strchr(inp, '$');
 		if (p == NULL) {
-			n = strlen(inp);
-			strcat(outp, inp);
-			outp += n;
+			addtobuffer(result, inp);
 			inp = NULL;
 		}
 		else {
 			token_t *twalk;
 			char savech;
+			int n;
 
 			*p = '\0';
-			n = strlen(inp);
-			strcat(outp, inp);
-			outp += n;
+			addtobuffer(result, inp);
 			p = (p+1);
 
 			n = strcspn(p, "\t $.,|%!()[]{}+?/&@:;*");
@@ -138,16 +131,12 @@ static char *preprocess(char *buf)
 			for (twalk = tokhead; (twalk && strcmp(p, twalk->name)); twalk = twalk->next) ;
 			*(p+n) = savech;
 
-			if (twalk) {
-				strcat(outp, twalk->value);
-				outp += strlen(twalk->value);
-			}
+			if (twalk) addtobuffer(result, twalk->value);
 			inp = p+n;
 		}
 	}
-	*outp = '\0';
 
-	return result;
+	return STRBUF(result);
 }
 
 static void flush_rule(rule_t *currule)
