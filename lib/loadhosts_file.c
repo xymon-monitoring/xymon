@@ -156,6 +156,15 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			char groupidstr[10];
 			RbtIterator handle;
 
+			if ( (ip1 < 0) || (ip1 > 255) ||
+			     (ip2 < 0) || (ip2 > 255) ||
+			     (ip3 < 0) || (ip3 > 255) ||
+			     (ip4 < 0) || (ip4 > 255)) {
+				errprintf("Invalid IPv4-address for host %s (nibble outside 0-255 range): %d.%d.%d.%d\n",
+					  hostname, ip1, ip2, ip3, ip4);
+				continue;
+			}
+
 			namelist_t *newitem = calloc(1, sizeof(namelist_t));
 			namelist_t *iwalk, *iprev;
 
