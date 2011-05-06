@@ -607,7 +607,7 @@ static void parse_query(void)
 			char *p = strrchr(cwalk->value, '.');
 
 			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(cwalk->value);
+			hostname = strdup(basename(cwalk->value));
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (strcasecmp(cwalk->name, "IP") == 0) {
@@ -680,7 +680,7 @@ int main(int argc, char *argv[])
 
 	if (strlen(ip)) {
 		p = selfurl + strlen(selfurl);
-		sprintf(p, "&amp;IP=%s", ip);
+		sprintf(p, "&amp;IP=%s", htmlquoted(ip));
 	}
 
 	if (entrycount) {

@@ -65,24 +65,24 @@ static int parse_query(void)
 	cwalk = cgidata;
 	while (cwalk) {
 		if (strcasecmp(cwalk->name, "HOST") == 0) {
-			hostname = strdup(cwalk->value);
+			hostname = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
-			service = strdup(cwalk->value);
+			service = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "HOSTSVC") == 0) {
 			/* For backwards compatibility */
 			char *p = strrchr(cwalk->value, '.');
 			if (p) {
 				*p = '\0';
-				hostname = strdup(cwalk->value);
+				hostname = strdup(basename(cwalk->value));
 				service = strdup(p+1);
 				for (p=strchr(hostname, ','); (p); p = strchr(p, ',')) *p = '.';
 			}
 		}
 		else if (strcasecmp(cwalk->name, "TIMEBUF") == 0) {
 			/* Only for the historical logs */
-			tstamp = strdup(cwalk->value);
+			tstamp = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "CLIENT") == 0) {
 			char *p;

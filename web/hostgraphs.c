@@ -231,12 +231,12 @@ int main(int argc, char *argv[])
 
 		for (testi=0; (tests[testi]); testi++) {
 			fprintf(stdout, "<tr><td><img src=\"%s/showgraph.sh?host=%s",
-				xgetenv("CGIBINURL"), hosts[0]);
+				xgetenv("CGIBINURL"), htmlquoted(hosts[0]));
 
-			for (hosti=1; (hosts[hosti]); hosti++) fprintf(stdout, ",%s", hosts[hosti]);
+			for (hosti=1; (hosts[hosti]); hosti++) fprintf(stdout, ",%s", htmlquoted(hosts[hosti]));
 
 			fprintf(stdout, "&amp;service=%s&amp;graph_start=%ld&amp;graph_end=%ld&graph=custom&amp;action=view\"></td></tr>\n",
-				tests[testi], (long int)starttime, (long int)endtime);
+				htmlquoted(tests[testi]), (long int)starttime, (long int)endtime);
 		}
 
 	  	fprintf(stdout, "</table><br><br>\n");

@@ -672,7 +672,7 @@ char *build_selfURI(void)
 
 	p = xgetenv("SCRIPT_NAME");
 	urilen = strlen(p);
-	if (hostlist) { int i; for (i = 0; (i < hostlistsize); i++) urilen += (strlen(hostlist[i]) + 10); }
+	if (hostlist) { int i; for (i = 0; (i < hostlistsize); i++) urilen += (strlen(htmlquoted(hostlist[i])) + 10); }
 	result = (char *)malloc(urilen + 2048);
 
 	strcpy(result, p);
@@ -681,14 +681,14 @@ char *build_selfURI(void)
 	if (hostlist) {
 		int i;
 
-		p += sprintf(p, "?host=%s", hostlist[0]);
-		for (i = 1; (i < hostlistsize); i++) p += sprintf(p, ",%s", hostlist[i]);
+		p += sprintf(p, "?host=%s", htmlquoted(hostlist[0]));
+		for (i = 1; (i < hostlistsize); i++) p += sprintf(p, ",%s", htmlquoted(hostlist[i]));
 	}
 	else
-		p += sprintf(p, "?host=%s", hostname);
+		p += sprintf(p, "?host=%s", htmlquoted(hostname));
 
 	p += sprintf(p, "&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d&amp;color=%s", 
-		     service, graphheight, graphwidth, colorname(bgcolor));
+		     htmlquoted(service), graphheight, graphwidth, colorname(bgcolor));
 	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", urlencode(displayname));
 	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
 	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);

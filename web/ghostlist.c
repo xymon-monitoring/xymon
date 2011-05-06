@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
 
 		if (outform == O_HTML) {
 			fprintf(stdout, "</table>\n");
-			fprintf(stdout, "<br><br><center><a href=\"ghostlist.sh?SORT=%s&MAXAGE=%d&TEXT\">Text report</a></center>\n", sortstring, maxage);
+			fprintf(stdout, "<br><br><center><a href=\"ghostlist.sh?SORT=%s&MAXAGE=%d&TEXT\">Text report</a></center>\n", htmlquoted(sortstring), maxage);
 		}
 	}
 	else

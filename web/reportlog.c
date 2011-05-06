@@ -57,14 +57,14 @@ static void parse_query(void)
 			char *p = strrchr(cwalk->value, '.');
 
 			if (p) { *p = '\0'; service = strdup(p+1); }
-			hostname = strdup(cwalk->value);
+			hostname = strdup(basename(cwalk->value));
 			while ((p = strchr(hostname, ','))) *p = '.';
 		}
 		else if (strcasecmp(cwalk->name, "HOST") == 0) {
-			hostname = strdup(cwalk->value);
+			hostname = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "SERVICE") == 0) {
-			service = strdup(cwalk->value);
+			service = strdup(basename(cwalk->value));
 		}
 		else if (strcasecmp(cwalk->name, "REPORTTIME") == 0) {
 			reporttime = (char *) malloc(strlen(cwalk->value)+strlen("REPORTTIME=")+1);

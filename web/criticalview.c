@@ -346,9 +346,16 @@ static void selectenv(char *name, char *val)
 {
 	char *env;
 	char *p;
+	int envlen;
 
-	env = (char *)malloc(strlen(name) + strlen(val) + 20);
-	sprintf(env, "SELECT_%s_%s=SELECTED", name, val);
+	envlen = 20;
+	envlen += strlen(htmlquoted(name));
+	envlen += strlen(htmlquoted(val));
+
+	env = (char *)malloc(envlen);
+	sprintf(env, "SELECT_%s", htmlquoted(name));
+	sprintf(env+strlen(env), "_%s=SELECTED", htmlquoted(val));
+
 	for (p=env; (*p); p++) *p = toupper((int)*p);
 	putenv(env);
 }
