@@ -1,4 +1,4 @@
-<FORM METHOD="GET" ACTION="&REQUEST_URI">
+<FORM METHOD="GET" ACTION="&SCRIPT_NAME">
   <TABLE SUMMARY="Filters" WIDTH="70%" ALIGN=CENTER>
     <TR>
        <TH>Priority</TH>
@@ -61,3 +61,4 @@
 
 </BODY>
 </HTML>
+
