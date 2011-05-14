@@ -21,6 +21,7 @@ static char rcsid[] = "$Id$";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 #include "libxymon.h"
 #include "version.h"
@@ -131,7 +132,7 @@ static int parse_query(void)
 		else backsecs = 48*60*60;
 	}
 
-	if (!hostname || !service) {
+	if (!hostname || !service || ((source == SRC_HISTLOGS) && !tstamp) ) {
 		errormsg("Invalid request");
 		return 1;
 	}
@@ -229,9 +230,11 @@ int do_request(void)
 				int n;
 
 				fstat(fileno(fd), &st);
-				log = (char *)malloc(st.st_size + 1);
-				n = fread(log, 1, st.st_size, fd);
-				if (n >= 0) *(log+n) = '\0'; else *log = '\0';
+				if (S_ISREG(st.st_mode)) {
+					log = (char *)malloc(st.st_size + 1);
+					n = fread(log, 1, st.st_size, fd);
+					if (n >= 0) *(log+n) = '\0'; else *log = '\0';
+				}
 				fclose(fd);
 			}
 		}
@@ -444,7 +447,7 @@ int do_request(void)
 	else if (source == SRC_HISTLOGS) {
 		char logfn[PATH_MAX];
 		struct stat st;
-		int fd;
+		FILE *fd;
 		/*
 		 * Some clients (Unix disk reports) dont have a newline before the
 		 * "Status unchanged in ..." text. Most do, but at least Solaris and
@@ -467,20 +470,20 @@ int do_request(void)
 		p = tstamp; while ((p = strchr(p, '_')) != NULL) *p = ' ';
 		sethostenv_histlog(tstamp);
 
-		if ((stat(logfn, &st) == -1) || (st.st_size < 10)) {
+		if ((stat(logfn, &st) == -1) || (st.st_size < 10) || (!S_ISREG(st.st_mode))) {
 			errormsg("Historical status log not available\n");
 			return 1;
 		}
 
-		fd = open(logfn, O_RDONLY);
-		if (fd < 0) {
+		fd = fopen(logfn, "r");
+		if (!fd) {
 			errormsg("Unable to access historical logfile\n");
 			return 1;
 		}
 		log = (char *)malloc(st.st_size+1);
-		n = read(fd, log, st.st_size);
+		n = fread(log, 1, st.st_size, fd);
 		if (n >= 0) *(log+n) = '\0'; else *log = '\0';
-		close(fd);
+		fclose(fd);
 
 		p = strchr(log, '\n'); 
 		if (!p) {
