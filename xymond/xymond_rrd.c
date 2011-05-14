@@ -165,7 +165,7 @@ loaddone:
 
 char **get_rrd_definition(char *key, int *count)
 {
-	RbtHandle handle;
+	RbtIterator handle;
 
 	handle = rbtFind(rrddeftree, key);
 	if (handle == rbtEnd(rrddeftree)) {

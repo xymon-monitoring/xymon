@@ -152,7 +152,7 @@ static void rrd_setup(void)
 xymonrrd_t *find_xymon_rrd(char *service, char *flags)
 {
 	/* Lookup an entry in the xymonrrds table */
-	RbtHandle handle;
+	RbtIterator handle;
 
 	rrd_setup();
 

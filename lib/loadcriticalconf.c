@@ -86,7 +86,7 @@ int load_critconfig(char *fn)
 
 	if (!firsttime) {
 		/* Clean up existing datatree */
-		RbtHandle handle;
+		RbtIterator handle;
 		void *k1, *k2;
 
 		for (handle = rbtBegin(rbconf); (handle != rbtEnd(rbconf)); handle = rbtNext(rbconf, handle)) {
@@ -156,7 +156,7 @@ int load_critconfig(char *fn)
 	freestrbuffer(inbuf);
 
 	if (debug) {
-		RbtHandle handle;
+		RbtIterator handle;
 
 		handle = rbtBegin(rbconf);
 		while (handle != rbtEnd(rbconf)) {
@@ -170,9 +170,9 @@ int load_critconfig(char *fn)
 	return 0;
 }
 
-static RbtHandle findrec(char *key)
+static RbtIterator findrec(char *key)
 {
-	RbtHandle handle;
+	RbtIterator handle;
 
 	handle = rbtFind(rbconf, key);
 	if (handle == rbtEnd(rbconf)) {
@@ -218,7 +218,7 @@ static int timecheck(time_t starttime, time_t endtime, char *crittime)
 
 critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 {
-	static RbtHandle handle;
+	static RbtIterator handle;
 	static char *realkey = NULL;
 	void *k1, *k2;
 	critconf_t *result = NULL;
@@ -339,7 +339,7 @@ int update_critconfig(critconf_t *rec)
 	struct stat st;
 	struct utimbuf ut;
 
-	RbtHandle handle;
+	RbtIterator handle;
 	FILE *fd;
 	int result = 0;
 
@@ -419,7 +419,7 @@ int update_critconfig(critconf_t *rec)
 void addclone_critconfig(char *origin, char *newclone)
 {
 	char *newkey;
-	RbtHandle handle;
+	RbtIterator handle;
 
 	newkey = (char *)malloc(strlen(newclone) + 2);
 	sprintf(newkey, "%s=", newclone);
@@ -430,7 +430,7 @@ void addclone_critconfig(char *origin, char *newclone)
 
 void dropclone_critconfig(char *drop)
 {
-	RbtHandle handle;
+	RbtIterator handle;
 	char *key;
 	void *k1, *k2;
 	char *dropkey, *dropsrc;
@@ -450,7 +450,7 @@ void dropclone_critconfig(char *drop)
 
 int delete_critconfig(char *dropkey, int evenifcloned)
 {
-	RbtHandle handle;
+	RbtIterator handle;
 	void *k1, *k2;
 
 	handle = rbtFind(rbconf, dropkey);

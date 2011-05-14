@@ -361,7 +361,7 @@ char *generate_stats(void)
 	int i, clients;
 	char bootuptxt[40];
 	char uptimetxt[40];
-	RbtHandle ghandle;
+	RbtIterator ghandle;
 	time_t uptime = (nowtimer - boottimer);
 	time_t boottstamp = (now - uptime);
 	char msgline[2048];
@@ -850,7 +850,7 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 
 char *log_ghost(char *hostname, char *sender, char *msg)
 {
-	RbtHandle ghandle;
+	RbtIterator ghandle;
 	ghostlist_t *gwalk;
 	char *result = NULL;
 	time_t nowtimer = gettimer();
@@ -922,7 +922,7 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 
 void log_multisrc(xymond_log_t *log, char *newsender)
 {
-	RbtHandle ghandle;
+	RbtIterator ghandle;
 	multisrclist_t *gwalk;
 	char id[1024];
 
@@ -3936,7 +3936,7 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "ghostlist", 9) == 0) {
 		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
-			RbtHandle ghandle;
+			RbtIterator ghandle;
 			ghostlist_t *gwalk;
 			strbuffer_t *resp;
 			char msgline[1024];
@@ -3961,7 +3961,7 @@ void do_message(conn_t *msg, char *origin)
 
 	else if (strncmp(msg->buf, "multisrclist", 12) == 0) {
 		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
-			RbtHandle mhandle;
+			RbtIterator mhandle;
 			multisrclist_t *mwalk;
 			strbuffer_t *resp;
 			char msgline[1024];
