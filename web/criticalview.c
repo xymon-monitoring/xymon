@@ -206,7 +206,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 	/* Print the hostname with a link to the critical systems info page */
 	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, usetooltips));
 
-	key = (char *)malloc(strlen(itm->hostname) + 1024);
+	key = (char *)malloc(1024);
 	for (colhandle = rbtBegin(columns); (colhandle != rbtEnd(columns)); colhandle = rbtNext(columns, colhandle)) {
 		void *k1, *k2;
 		char *colname;
@@ -216,6 +216,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 
 		rbtKeyValue(columns, colhandle, &k1, &k2);
 		colname = (char *)k1;
+		key = (char *)realloc(key, 2 + strlen(itm->hostname) + strlen(colname));
 		sprintf(key, "%s|%s", itm->hostname, colname);
 		sthandle = rbtFind(rbstate, key);
 		if (sthandle == rbtEnd(rbstate)) {

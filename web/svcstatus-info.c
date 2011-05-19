@@ -222,11 +222,11 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 {
 	void *hi = hostinfo(hostname);
 	activealerts_t *alert;
-	char l[1024];
 	int i, rcount;
 
-	sprintf(l, "<table summary=\"%s Alerts\" border=1>\n", htmlquoted(hostname));
-	addtobuffer(buf, l);
+	addtobuffer(buf, "<table summary=\"");
+	addtobuffer(buf, htmlquoted(hostname));
+	addtobuffer(buf, " Alerts\" border=1>\n");
 	addtobuffer(buf, "<tr><th>Service</th><th>Recipient</th><th>1st Delay</th><th>Stop after</th><th>Repeat</th><th>Time of Day</th><th>Colors</th></tr>\n");
 
 	alert = calloc(1, sizeof(activealerts_t));
@@ -259,7 +259,6 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 {
 	void *hi = hostinfo(hostname);
-	char l[1024];
 	time_t now = getcurrenttime(NULL);
 	struct tm *tm;
 	int month, year;
@@ -273,12 +272,11 @@ static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 
 	holidayset = xmh_item(hi, XMH_HOLIDAYS);
 
-	sprintf(l, "<table summary=\"%s Holidays\" border=1>\n", htmlquoted(hostname));
-	addtobuffer(buf, l);
+	addtobuffer(buf, "<table summary=\"");
+	addtobuffer(buf, htmlquoted(hostname));
+	addtobuffer(buf, " Holidays\" border=1>\n");
 
 	addtobuffer(buf, "<tr>");
-
-
 	addtobuffer(buf, "<td><table>\n");
 
 	switch (month) {
@@ -296,12 +294,17 @@ static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 	}
 
 	if (holidayset) {
-		sprintf(l, "<tr><th colspan=2>Holidays %s (%s)</th></tr>\n", yeartxt, holidayset);
+		addtobuffer(buf, "<tr><th colspan=2>Holidays ");
+		addtobuffer(buf, yeartxt);
+		addtobuffer(buf, " (");
+		addtobuffer(buf, holidayset);
+		addtobuffer(buf, ")</th></tr>\n");
 	}
 	else {
-		sprintf(l, "<tr><th colspan=2>Holidays %s</th></tr>\n", yeartxt);
+		addtobuffer(buf, "<tr><th colspan=2>Holidays ");
+		addtobuffer(buf, yeartxt);
+		addtobuffer(buf, "</th></tr>\n");
 	}
-	addtobuffer(buf, l);
 
 
 	/* In January+February+March, show last year's holidays in October+November+December */
@@ -340,14 +343,9 @@ static void generate_xymon_holidayinfo(char *hostname, strbuffer_t *buf)
 
 static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 {
-	char msgline[4096];
-	char datestr[100];
 	int i, btncount;
-	char *xymondatefmt;
+	char *xymondatefmt = xgetenv("XYMONDATEFORMAT");
 	strbuffer_t *servRed, *servYellow, *servPurple, *servBlue;
-	time_t logage;
-
-	xymondatefmt = xgetenv("XYMONDATEFORMAT");
 
 	servRed = newstrbuffer(0);
 	servYellow = newstrbuffer(0);
@@ -360,32 +358,41 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><th>Service</th><th>Since</th><th>Duration</th></tr>\n");
 
 	for (i = 0; i < testcount; i++) {
-		strftime(datestr, sizeof(datestr), xymondatefmt, localtime(&tnames[i].lastchange));
-		logage = getcurrenttime(NULL) - tnames[i].lastchange;
+		char tstr[1024];
+		time_t logage = getcurrenttime(NULL) - tnames[i].lastchange;
 
 		addtobuffer(buf, "<tr>");
 
-		sprintf(msgline, "<td><img src=\"%s/%s\" height=\"%s\" width=\"%s\" border=0 alt=\"%s status\"> %s</td>",
-			xgetenv("XYMONSKIN"), dotgiffilename(tnames[i].color, 0, 1),
-			xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"),
-			colorname(tnames[i].color), tnames[i].name);
-		addtobuffer(buf, msgline);
+		addtobuffer(buf, "<td><img src=\"");
+		addtobuffer(buf, xgetenv("XYMONSKIN"));
+		addtobuffer(buf, "/");
+		addtobuffer(buf, dotgiffilename(tnames[i].color, 0, 1));
+		addtobuffer(buf, "\" height=\"");
+		addtobuffer(buf, xgetenv("DOTHEIGHT"));
+		addtobuffer(buf, "\" width=\"");
+		addtobuffer(buf, xgetenv("DOTWIDTH"));
+		addtobuffer(buf, "\" border=0 alt=\"");
+		addtobuffer(buf, colorname(tnames[i].color));
+		addtobuffer(buf, " status\"> ");
+		addtobuffer(buf, tnames[i].name);
+		addtobuffer(buf, "</td>");
 
-		sprintf(msgline, "<td>%s</td>", datestr);
-		addtobuffer(buf, msgline);
+		strftime(tstr, sizeof(tstr), xymondatefmt, localtime(&tnames[i].lastchange));
+		addtobuffer(buf, "<td>");
+		addtobuffer(buf, tstr);
+		addtobuffer(buf, "</td>");
 
-		sprintf(msgline, "<td align=right>%d days, %02d hours, %02d minutes</td>",
+		snprintf(tstr, sizeof(tstr), "<td align=right>%d days, %02d hours, %02d minutes</td>",
 			(int)(logage / 86400),(int) ((logage % 86400) / 3600),(int) ((logage % 3600) / 60));
-		addtobuffer(buf, msgline);
+		addtobuffer(buf, tstr);
 
 		addtobuffer(buf, "</tr>\n");
 
-		sprintf(msgline, ",%s", tnames[i].name);
 		switch (tnames[i].color) {
-		  case COL_BLUE   : addtobuffer(servBlue, msgline);   break;
-		  case COL_RED    : addtobuffer(servRed, msgline);    break;
-		  case COL_YELLOW : addtobuffer(servYellow, msgline); break;
-		  case COL_PURPLE : addtobuffer(servPurple, msgline); break;
+		  case COL_BLUE   : addtobuffer(servBlue, ",");   addtobuffer(servBlue, tnames[i].name);   break;
+		  case COL_RED    : addtobuffer(servRed, ",");    addtobuffer(servRed, tnames[i].name);    break;
+		  case COL_YELLOW : addtobuffer(servYellow, ","); addtobuffer(servYellow, tnames[i].name); break;
+		  case COL_PURPLE : addtobuffer(servPurple, ","); addtobuffer(servPurple, tnames[i].name); break;
 		}
 	}
 
@@ -395,11 +402,16 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 	if (STRBUFLEN(servPurple) > 0) btncount++;
 	if (STRBUFLEN(servBlue) > 0)   btncount++;
 	if (btncount > 0) {
+		char numstr[10];
+
+		snprintf(numstr, sizeof(numstr)-1, "%d", btncount);
+
 		addtobuffer(buf, "<tr><td colspan=3>\n");
 
 		addtobuffer(buf, "<table width=\"100%\">\n");
-		sprintf(msgline, "<tr><th colspan=%d><center><i>Toggle tests to disable</i></center></th></tr>\n", btncount);
-		addtobuffer(buf, msgline);
+		addtobuffer(buf, "<tr><th colspan=");
+		addtobuffer(buf, numstr);
+		addtobuffer(buf, "><center><i>Toggle tests to disable</i></center></th></tr>\n");
 
 		addtobuffer(buf, "<tr>\n");
 		if (STRBUFLEN(servRed) > 0) {
@@ -443,7 +455,6 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 {
 	int i;
-	char l[1024];
 	time_t now = getcurrenttime(NULL);
 	int beginyear, endyear;
 	struct tm monthtm;
@@ -455,10 +466,13 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	beginyear = nowtm->tm_year + 1900;
 	endyear = nowtm->tm_year + 1900 + 5;
 
-	sprintf(l, "<form name=\"disableform\" method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
-	addtobuffer(buf, l);
-	sprintf(l, "<table summary=\"%s disable\" border=1>\n", htmlquoted(hostname));
-	addtobuffer(buf, l);
+	addtobuffer(buf, "<form name=\"disableform\" method=\"post\" action=\"");
+	addtobuffer(buf, xgetenv("SECURECGIBINURL"));
+	addtobuffer(buf, "/enadis.sh\">\n");
+
+	addtobuffer(buf, "<table summary=\"");
+	addtobuffer(buf, htmlquoted(hostname));
+	addtobuffer(buf, " disable\" border=1>\n");
 
 	addtobuffer(buf, "<tr>\n");
 
@@ -475,9 +489,13 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 		  default:         colstyle = "color: black;"; break;
 		}
 
-		sprintf(l, "<option value=\"%s\" style=\"%s\">%s</option>\n", 
-			tnames[i].name, colstyle, tnames[i].name);
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<option value=\"");
+		addtobuffer(buf, tnames[i].name);
+		addtobuffer(buf, "\" style=\"");
+		addtobuffer(buf, colstyle);
+		addtobuffer(buf, "\">");
+		addtobuffer(buf, tnames[i].name);
+		addtobuffer(buf, "</option>\n");
 	}
 	addtobuffer(buf, "</select></td>\n");
 
@@ -509,48 +527,96 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Months */
 	addtobuffer(buf, "<SELECT NAME=\"month\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=1; (i <= 12); i++) {
+		char istr[3];
+
+		sprintf(istr, "%d", i);
+
 		if (i == (nowtm->tm_mon + 1)) selstr = "SELECTED"; else selstr = "";
 		monthtm.tm_mon = (i-1); monthtm.tm_mday = 1; monthtm.tm_year = nowtm->tm_year;
 		monthtm.tm_hour = monthtm.tm_min = monthtm.tm_sec = monthtm.tm_isdst = 0;
 		strftime(mname, sizeof(mname)-1, "%B", &monthtm);
-		sprintf(l, "<OPTION VALUE=\"%d\" %s>%s</OPTION>\n", i, selstr, mname);
-		addtobuffer(buf, l);
+
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, mname);
+		addtobuffer(buf, "</OPTION>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
 	/* Days */
 	addtobuffer(buf, "<SELECT NAME=\"day\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=1; (i <= 31); i++) {
+		char istr[3];
+
+		sprintf(istr, "%d", i);
+
 		if (i == nowtm->tm_mday) selstr = "SELECTED"; else selstr = "";
-		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
-		addtobuffer(buf, l);
+
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
 	/* Years */
 	addtobuffer(buf, "<SELECT NAME=\"year\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=beginyear; (i <= endyear); i++) {
+		char istr[3];
+
+		sprintf(istr, "%d", i);
+
 		if (i == (nowtm->tm_year + 1900)) selstr = "SELECTED"; else selstr = "";
-		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
-		addtobuffer(buf, l);
+
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
 	/* Hours */
 	addtobuffer(buf, "<SELECT NAME=\"hour\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=0; (i <= 24); i++) {
+		char istr[3];
+
+		sprintf(istr, "%d", i);
+
 		if (i == nowtm->tm_hour) selstr = "SELECTED"; else selstr = "";
-		sprintf(l, "<OPTION VALUE=\"%d\" %s>%d</OPTION>\n", i, selstr, i);
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 
 	/* Minutes */
 	addtobuffer(buf, "<SELECT NAME=\"minute\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=0; (i <= 59); i++) {
+		char istr[3];
+
+		sprintf(istr, "%02d", i);
+
 		if (i == nowtm->tm_min) selstr = "SELECTED"; else selstr = "";
-		sprintf(l, "<OPTION VALUE=\"%02d\" %s>%02d</OPTION>\n", i, selstr, i);
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<OPTION VALUE=\"");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "\" ");
+		addtobuffer(buf, selstr);
+		addtobuffer(buf, ">");
+		addtobuffer(buf, istr);
+		addtobuffer(buf, "</OPTION>\n");
 	}
 	addtobuffer(buf, "</SELECT>\n");
 	addtobuffer(buf, "              </td></tr>\n");
@@ -569,32 +635,39 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 
 	addtobuffer(buf, "</table>\n");
 
-	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
-	addtobuffer(buf, l);
+	addtobuffer(buf, "<input name=\"hostname\" type=hidden value=\"");
+	addtobuffer(buf, htmlquoted(hostname));
+	addtobuffer(buf, "\">\n");
+
 	addtobuffer(buf, "</form>\n");
 }
 
 static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 {
 	int i;
-	char l[1024];
 	char *msg, *eoln;
 
-	sprintf(l, "<table summary=\"%s disabled tests\" border=1>\n", htmlquoted(hostname));
-	addtobuffer(buf, l);
+	addtobuffer(buf, "<table summary=\"");
+	addtobuffer(buf, htmlquoted(hostname));
+	addtobuffer(buf, " disabled tests\" border=1>\n");
 
 	addtobuffer(buf, "<tr><th>Test</th><th>Disabled until</th><th>Cause</th><th>&nbsp;</th></tr>\n");
 
 	for (i=0; (i < testcount); i++) {
+		char istr[10];
+
 		if (tnames[i].distime == 0) continue;
+
+		snprintf(istr, sizeof(istr), "%d", i);
 
 		addtobuffer(buf, "<tr>\n");
 
-		sprintf(l, "<td>%s</td>\n", tnames[i].name);
-		addtobuffer(buf, l);
-		sprintf(l, "<td>%s</td>\n", 
-			(tnames[i].distime == -1) ? "OK" : ctime(&tnames[i].distime));
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<td>");
+		addtobuffer(buf, tnames[i].name);
+		addtobuffer(buf, "</td>\n");
+		addtobuffer(buf, "<td>");
+		addtobuffer(buf, (tnames[i].distime == -1) ? "OK" : ctime(&tnames[i].distime));
+		addtobuffer(buf, "</td>\n");
 
 		/* Add an HTML'ized form of the disable-message */
 		msg = tnames[i].dismsg; nldecode(msg); msg += strspn(msg, "0123456789 \t\n");
@@ -609,12 +682,18 @@ static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
-		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
-		addtobuffer(buf, l);
-		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
-		addtobuffer(buf, l);
-		sprintf(l, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", tnames[i].name);
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<form method=\"post\" action=\"");
+		addtobuffer(buf, xgetenv("SECURECGIBINURL"));
+		addtobuffer(buf, "/enadis.sh\">\n");
+
+		addtobuffer(buf, "<input name=\"hostname\" type=hidden value=\"");
+		addtobuffer(buf, htmlquoted(hostname));
+		addtobuffer(buf, "\">\n");
+
+		addtobuffer(buf, "<input name=\"enabletest\" type=hidden value=\"");
+		addtobuffer(buf, tnames[i].name);
+		addtobuffer(buf, "\">\n");
+
 		addtobuffer(buf, "<input name=\"go\" type=submit value=\"Enable\">\n");
 		addtobuffer(buf, "</form>\n");
 		addtobuffer(buf, "</td>\n");
@@ -625,12 +704,15 @@ static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 	addtobuffer(buf, "<tr><td>ALL</td><td>&nbsp;</td><td>&nbsp;</td>\n");
 
 	addtobuffer(buf, "<td>");
-	sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
-	addtobuffer(buf, l);
-	sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
-	addtobuffer(buf, l);
-	sprintf(l, "<input name=\"enabletest\" type=hidden value=\"%s\">\n", "*");
-	addtobuffer(buf, l);
+	addtobuffer(buf, "<form method=\"post\" action=\"");
+	addtobuffer(buf, xgetenv("SECURECGIBINURL"));
+	addtobuffer(buf, "/enadis.sh\">\n");
+
+	addtobuffer(buf, "<input name=\"hostname\" type=hidden value=\"");
+	addtobuffer(buf, htmlquoted(hostname));
+	addtobuffer(buf, "\">\n");
+
+	addtobuffer(buf, "<input name=\"enabletest\" type=hidden value=\"*\">\n");
 	addtobuffer(buf, "<input name=\"go\" type=submit value=\"Enable\">\n");
 	addtobuffer(buf, "</form>\n");
 	addtobuffer(buf, "</td>\n");
@@ -643,22 +725,27 @@ static void generate_xymon_enable(char *hostname, strbuffer_t *buf)
 
 static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 {
-	char l[1024];
 	sched_t *swalk;
 	char *msg, *eoln;
 
-	sprintf(l, "<table summary=\"%s scheduled disables\" border=1>\n", htmlquoted(hostname));
-	addtobuffer(buf, l);
+	addtobuffer(buf, "<table summary=\"");
+	addtobuffer(buf, htmlquoted(hostname));
+	addtobuffer(buf, " scheduled disables\" border=1>\n");
 
 	addtobuffer(buf, "<tr><th>ID</th><th>When</th><th>Command</th><th>&nbsp;</th></tr>\n");
 	for (swalk = schedtasks; (swalk); swalk = swalk->next) {
+		char idstr[10];
+
+		snprintf(idstr, sizeof(idstr)-1, "%d", swalk->id);
 		addtobuffer(buf, "<tr>\n");
 
-		sprintf(l, "<td>%d</td>\n", swalk->id);
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<td>");
+		addtobuffer(buf, idstr);
+		addtobuffer(buf, "</td>\n");
 
-		sprintf(l, "<td>%s</td>\n", ctime(&swalk->when));
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<td>");
+		addtobuffer(buf, ctime(&swalk->when));
+		addtobuffer(buf, "</td>\n");
 
 		/* Add an HTML'ized form of the command */
 		msg = swalk->cmd; nldecode(msg);
@@ -673,12 +760,16 @@ static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, "</td>\n");
 
 		addtobuffer(buf, "<td>");
-		sprintf(l, "<form method=\"post\" action=\"%s/enadis.sh\">\n", xgetenv("SECURECGIBINURL"));
-		addtobuffer(buf, l);
-		sprintf(l, "<input name=\"hostname\" type=hidden value=\"%s\">\n", htmlquoted(hostname));
-		addtobuffer(buf, l);
-		sprintf(l, "<input name=\"canceljob\" type=hidden value=\"%d\">\n", swalk->id);
-		addtobuffer(buf, l);
+		addtobuffer(buf, "<form method=\"post\" action=\"");
+		addtobuffer(buf, xgetenv("SECURECGIBINURL"));
+		addtobuffer(buf, "/enadis.sh\">\n");
+		addtobuffer(buf, "<input name=\"hostname\" type=hidden value=\"");
+		addtobuffer(buf, htmlquoted(hostname));
+		addtobuffer(buf, "\">\n");
+		snprintf(idstr, sizeof(idstr), "%d", swalk->id);
+		addtobuffer(buf, "<input name=\"canceljob\" type=hidden value=\"");
+		addtobuffer(buf, idstr);
+		addtobuffer(buf, "\">\n");
 		addtobuffer(buf, "<input name=\"go\" type=submit value=\"Cancel\">\n");
 		addtobuffer(buf, "</form>\n");
 		addtobuffer(buf, "</td>\n");
@@ -693,7 +784,6 @@ static void generate_xymon_scheduled(char *hostname, strbuffer_t *buf)
 char *generate_info(char *hostname, char *critconfigfn)
 {
 	strbuffer_t *infobuf;
-	char l[MAX_LINE_LEN];
 	void *hostwalk, *clonewalk;
 	char *val;
 	int ping, first, gotstatus;
@@ -726,28 +816,35 @@ char *generate_info(char *hostname, char *critconfigfn)
 
 	val = xmh_item(hostwalk, XMH_DISPLAYNAME);
 	if (val && (strcmp(val, hostname) != 0)) {
-		sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s (%s)</td></tr>\n", 
-			val, htmlquoted(hostname));
+		addtobuffer(infobuf, "<tr><th align=left>Hostname:</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, " (");
+		addtobuffer(infobuf, htmlquoted(hostname));
+		addtobuffer(infobuf, ")</td></tr>\n");
 	}
 	else {
-		sprintf(l, "<tr><th align=left>Hostname:</th><td align=left>%s</td></tr>\n", htmlquoted(hostname));
+		addtobuffer(infobuf, "<tr><th align=left>Hostname:</th><td align=left>");
+		addtobuffer(infobuf, htmlquoted(hostname));
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
-	addtobuffer(infobuf, l);
 
 	val = xmh_item(hostwalk, XMH_CLIENTALIAS);
 	if (val && (strcmp(val, hostname) != 0)) {
-		sprintf(l, "<tr><th align=left>Client alias:</th><td align=left>%s</td></tr>\n", val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Client alias:</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
 	if (unametxt) {
-		sprintf(l, "<tr><th align=left>OS:</th><td align=left>%s</td></tr>\n", unametxt);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>OS:</th><td align=left>");
+		addtobuffer(infobuf, unametxt);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
 	if (clientvertxt) {
-		sprintf(l, "<tr><th align=left>Client S/W:</th><td align=left>%s</td></tr>\n", clientvertxt);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Client S/W:</th><td align=left>");
+		addtobuffer(infobuf, clientvertxt);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
 	val = xmh_item(hostwalk, XMH_IP);
@@ -759,40 +856,55 @@ char *generate_info(char *hostname, char *critconfigfn)
 		hent = gethostbyname(hostname);
 		if (hent) {
 			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			strcpy(hostip, inet_ntoa(addr));
+			strncpy(hostip, inet_ntoa(addr), sizeof(hostip)-1);
 			if (inet_aton(hostip, &addr) != 0) {
-				strcat(hostip, " (dynamic)");
+				strncat(hostip, " (dynamic)", sizeof(hostip)-strlen(hostip)-1);
 				val = hostip;
 			}
 		}
 	}
-	sprintf(l, "<tr><th align=left>IP:</th><td align=left>%s</td></tr>\n", val);
-	addtobuffer(infobuf, l);
+	addtobuffer(infobuf, "<tr><th align=left>IP:</th><td align=left>");
+	addtobuffer(infobuf, val);
+	addtobuffer(infobuf, "</td></tr>\n");
 
 	val = xmh_item(hostwalk, XMH_DOCURL);
 	if (val) {
-		sprintf(l, "<tr><th align=left>Documentation:</th><td align=left><a href=\"%s\">%s</a>\n", val, val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Documentation:</th><td align=left><a href=\"");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "\">");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</a>\n");
 	}
 
 	val = hostlink(hostname);
 	if (val) {
-		sprintf(l, "<tr><th align=left>Notes:</th><td align=left><a href=\"%s\">%s%s</a>\n", 
-			val, xgetenv("XYMONWEBHOST"), val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Notes:</th><td align=left><a href=\"");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "\">");
+		addtobuffer(infobuf, xgetenv("XYMONWEBHOST"));
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</a>\n");
 	}
 
 	val = xmh_item(hostwalk, XMH_PAGEPATH);
-	sprintf(l, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"%s/%s/\">%s</a>\n", 
-		xgetenv("XYMONWEB"), val, xmh_item(hostwalk, XMH_PAGEPATHTITLE));
-	addtobuffer(infobuf, l);
+	addtobuffer(infobuf, "<tr><th align=left>Page/subpage:</th><td align=left><a href=\"");
+	addtobuffer(infobuf, xgetenv("XYMONWEB"));
+	addtobuffer(infobuf, "/");
+	addtobuffer(infobuf, val);
+	addtobuffer(infobuf, "/\">");
+	addtobuffer(infobuf, xmh_item(hostwalk, XMH_PAGEPATHTITLE));
+	addtobuffer(infobuf, "</a>\n");
 
 	clonewalk = next_host(hostwalk, 1);
 	while (clonewalk && (strcmp(hostname, xmh_item(clonewalk, XMH_HOSTNAME)) == 0)) {
 		val = xmh_item(clonewalk, XMH_PAGEPATH);
-		sprintf(l, "<br><a href=\"%s/%s/\">%s</a>\n", 
-			xgetenv("XYMONWEB"), val, xmh_item(clonewalk, XMH_PAGEPATHTITLE));
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<br><a href=\"");
+		addtobuffer(infobuf, xgetenv("XYMONWEB"));
+		addtobuffer(infobuf, "/");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "/\">");
+		addtobuffer(infobuf,xmh_item(clonewalk, XMH_PAGEPATHTITLE));
+		addtobuffer(infobuf, "</a>\n");
 		clonewalk = next_host(clonewalk, 1);
 	}
 	addtobuffer(infobuf, "</td></tr>\n");
@@ -803,13 +915,15 @@ char *generate_info(char *hostname, char *critconfigfn)
 		char *delim;
 
 		delim = strchr(val, ':'); if (delim) *delim = '\0';
-		sprintf(l, "<tr><th align=left>Host type:</th><td align=left>%s</td></tr>\n", val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Host type:</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
 		if (delim) { 
 			*delim = ':'; 
 			delim++;
-			sprintf(l, "<tr><th align=left>Description:</th><td align=left>%s</td></tr>\n", delim);
-			addtobuffer(infobuf, l);
+			addtobuffer(infobuf, "<tr><th align=left>Description:</th><td align=left>");
+			addtobuffer(infobuf, delim);
+			addtobuffer(infobuf, "</td></tr>\n");
 		}
 		addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 	}
@@ -817,6 +931,7 @@ char *generate_info(char *hostname, char *critconfigfn)
 	if (newcritconfig) {
 		/* Load the critical.cfg file and get the alerts for this host */
 		int i;
+		char istr[10];
 		char *key;
 		critconf_t *nkrec;
 		int firstrec = 1;
@@ -835,21 +950,23 @@ char *generate_info(char *hostname, char *critconfigfn)
 				addtobuffer(infobuf, "<tr><td>&nbsp;</td>");
 			}
 
-			sprintf(l, "<td align=left>%s:", tnames[i].name);
-			addtobuffer(infobuf, l);
+			addtobuffer(infobuf, "<td align=left>");
+			addtobuffer(infobuf, tnames[i].name);
+			addtobuffer(infobuf, ":");
 
 			if (nkrec->crittime && *nkrec->crittime) {
-				sprintf(l, " %s", timespec_text(nkrec->crittime));
-				addtobuffer(infobuf, l);
+				addtobuffer(infobuf, " ");
+				addtobuffer(infobuf, timespec_text(nkrec->crittime));
 			}
 			else addtobuffer(infobuf, " 24x7");
 
-			sprintf(l, " priority %d", nkrec->priority);
-			addtobuffer(infobuf, l);
+			sprintf(istr, "%d", nkrec->priority);
+			addtobuffer(infobuf, " priority ");
+			addtobuffer(infobuf, istr);
 
 			if (nkrec->ttgroup && *nkrec->ttgroup) {
-				sprintf(l, " resolver group %s", nkrec->ttgroup);
-				addtobuffer(infobuf, l);
+				addtobuffer(infobuf, " resolver group ");
+				addtobuffer(infobuf, nkrec->ttgroup);
 			}
 
 			addtobuffer(infobuf, "</td></tr>\n");
@@ -858,13 +975,14 @@ char *generate_info(char *hostname, char *critconfigfn)
 	else {
 		val = xmh_item(hostwalk, XMH_NK);
 		if (val) {
-			sprintf(l, "<tr><th align=left>Critical Alerts:</th><td align=left>%s", val); 
-			addtobuffer(infobuf, l);
+			addtobuffer(infobuf, "<tr><th align=left>Critical Alerts:</th><td align=left>");
+			addtobuffer(infobuf, val); 
 
 			val = xmh_item(hostwalk, XMH_NKTIME);
 			if (val) {
-				sprintf(l, " (%s)", val);
-				addtobuffer(infobuf, l);
+				addtobuffer(infobuf, " (");
+				addtobuffer(infobuf, val);
+				addtobuffer(infobuf, ")");
 			}
 			else addtobuffer(infobuf, " (24x7)");
 
@@ -894,54 +1012,61 @@ char *generate_info(char *hostname, char *critconfigfn)
 		if (val == NULL) val = xgetenv("XYMONREPWARN");
 		if (val == NULL) val = "(not set)";
 
-		sprintf(l, "<tr><th align=left>SLA Availability:</th><td align=left>%s</td></tr>\n", val); 
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>SLA Availability:</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n"); 
 	}
 
 	val = xmh_item(hostwalk, XMH_NOPROPYELLOW);
 	if (val) {
-		sprintf(l, "<tr><th align=left>Suppressed warnings (yellow):</th><td align=left>%s</td></tr>\n", val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Suppressed warnings (yellow):</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
 	val = xmh_item(hostwalk, XMH_NOPROPRED);
 	if (val) {
-		sprintf(l, "<tr><th align=left>Suppressed alarms (red):</th><td align=left>%s</td></tr>\n", val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Suppressed alarms (red):</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
 	val = xmh_item(hostwalk, XMH_NOPROPPURPLE);
 	if (val) {
-		sprintf(l, "<tr><th align=left>Suppressed alarms (purple):</th><td align=left>%s</td></tr>\n", val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Suppressed alarms (purple):</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
 	val = xmh_item(hostwalk, XMH_NOPROPACK);
 	if (val) {
-		sprintf(l, "<tr><th align=left>Suppressed alarms (acked):</th><td align=left>%s</td></tr>\n", val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Suppressed alarms (acked):</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
 
 	val = xmh_item(hostwalk, XMH_NET);
 	if (val) {
-		sprintf(l, "<tr><th align=left>Tested from network:</th><td align=left>%s</td></tr>\n", val);
-		addtobuffer(infobuf, l);
+		addtobuffer(infobuf, "<tr><th align=left>Tested from network:</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
 	}
 
 	if (xmh_item(hostwalk, XMH_FLAG_DIALUP)) {
 		addtobuffer(infobuf, "<tr><td colspan=2 align=left>Host downtime does not trigger alarms (dialup host)</td></tr>\n");
 	}
 
-	sprintf(l, "<tr><th align=left>Network tests use:</th><td align=left>%s</td></tr>\n", 
-		(xmh_item(hostwalk, XMH_FLAG_TESTIP) ? "IP-address" : "Hostname"));
-	addtobuffer(infobuf, l);
+	addtobuffer(infobuf, "<tr><th align=left>Network tests use:</th><td align=left>");
+	addtobuffer(infobuf, (xmh_item(hostwalk, XMH_FLAG_TESTIP) ? "IP-address" : "Hostname"));
+	addtobuffer(infobuf, "</td></tr>\n");
 
 	ping = 1;
 	if (xmh_item(hostwalk, XMH_FLAG_NOPING)) ping = 0;
 	if (xmh_item(hostwalk, XMH_FLAG_NOCONN)) ping = 0;
-	sprintf(l, "<tr><th align=left>Checked with ping:</th><td align=left>%s</td></tr>\n", (ping ? "Yes" : "No"));
-	addtobuffer(infobuf, l);
+	addtobuffer(infobuf, "<tr><th align=left>Checked with ping:</th><td align=left>");
+	addtobuffer(infobuf, (ping ? "Yes" : "No"));
+	addtobuffer(infobuf, "</td></tr>\n");
 
 	/* Space */
 	addtobuffer(infobuf, "<tr><td colspan=2>&nbsp;</td></tr>\n");
@@ -959,8 +1084,11 @@ char *generate_info(char *hostname, char *critconfigfn)
 				first = 0;
 			}
 
-			sprintf(l, "<a href=\"%s\">%s</a><br>\n", urlstring, urlstring);
-			addtobuffer(infobuf, l);
+			addtobuffer(infobuf, "<a href=\"");
+			addtobuffer(infobuf, urlstring);
+			addtobuffer(infobuf, "\">");
+			addtobuffer(infobuf, urlstring);
+			addtobuffer(infobuf, "</a><br>\n");
 		}
 		val = xmh_item_walk(NULL);
 	}
@@ -990,14 +1118,19 @@ char *generate_info(char *hostname, char *critconfigfn)
 				first = 0;
 			}
 
-			sprintf(l, "<a href=\"%s\">%s</a>", urlstring, urlstring);
-			addtobuffer(infobuf, l);
+			addtobuffer(infobuf, "<a href=\"");
+			addtobuffer(infobuf, urlstring);
+			addtobuffer(infobuf, "\">");
+			addtobuffer(infobuf, urlstring);
+			addtobuffer(infobuf, "</a>");
 
-			sprintf(l, "&nbsp; %s return %s'%s'", 
-					((strncmp(val, "no", 2) == 0) ? "cannot" : "must"), 
-					((strncmp(val, "type;", 5) == 0) ? "content-type " : ""),
-					weburl.expdata);
-			addtobuffer(infobuf, l);
+			addtobuffer(infobuf, "&nbsp; ");
+			addtobuffer(infobuf, ((strncmp(val, "no", 2) == 0) ? "cannot" : "must"));
+			addtobuffer(infobuf, " return ");
+			addtobuffer(infobuf, ((strncmp(val, "type;", 5) == 0) ? "content-type " : ""));
+			addtobuffer(infobuf, "'");
+			addtobuffer(infobuf, weburl.expdata);
+			addtobuffer(infobuf, "'");
 			addtobuffer(infobuf, "<br>\n");
 		}
 
@@ -1063,8 +1196,8 @@ char *generate_info(char *hostname, char *critconfigfn)
 		     (strncmp(val, "post=", 5)   != 0)  &&
 		     (strncmp(val, "nopost=", 7) != 0)  &&
 		     (strncmp(val, "nopost;", 7) != 0) ) {
-			sprintf(l, "%s ", val);
-			addtobuffer(infobuf, l);
+			addtobuffer(infobuf, val);
+			addtobuffer(infobuf, " ");
 		}
 
 		val = xmh_item_walk(NULL);

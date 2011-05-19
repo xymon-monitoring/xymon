@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
 	char *req, *board, *l;
 	int argi, res;
 	sendreturn_t *sres;
+	pcre *dummy;
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
@@ -97,6 +98,10 @@ int main(int argc, char *argv[])
 	}
 	parse_query();
 
+	dummy = compileregex(testfilter);
+	if (dummy == NULL) return 1; else freeregex(dummy);
+	dummy = compileregex(pagefilter);
+	if (dummy == NULL) return 1; else freeregex(dummy);
 
 	sres = newsendreturnbuf(1, NULL);
 	req = malloc(1024 + strlen(fields) + strlen(testfilter) + strlen(pagefilter));

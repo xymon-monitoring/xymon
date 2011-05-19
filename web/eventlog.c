@@ -48,7 +48,7 @@ countsummary_t counttype = XYMON_COUNT_NONE;
 char	*webfile_hf = "event";
 char	*webfile_form = "event_form";
 cgidata_t *cgidata = NULL;
-char 	periodstring[100];
+char 	*periodstring = NULL;
 
 
 static void parse_query(void)
@@ -112,7 +112,7 @@ static void parse_query(void)
 			else counttype = XYMON_COUNT_NONE;
 		}
 		else if (strcasecmp(cwalk->name, "TIMETXT") == 0) {
-			if (*(cwalk->value)) strcpy(periodstring, cwalk->value);
+			if (*(cwalk->value)) periodstring = strdup(cwalk->value);
 		}
 
 		cwalk = cwalk->next;
@@ -123,7 +123,7 @@ void show_topchanges(FILE *output,
 		     countlist_t *hostcounthead, countlist_t *svccounthead, event_t *eventhead, 
 		     int topcount, time_t firstevent, time_t lastevent)
 {
-	fprintf(output, "<p><font size=+1>%s</font></p>\n", periodstring);
+	fprintf(output, "<p><font size=+1>%s</font></p>\n", (periodstring ? periodstring : ""));
 
 	fprintf(output, "<table summary=\"Top changing hosts and services\" border=1>\n");
 	fprintf(output, "<tr>\n");
@@ -333,16 +333,28 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	*periodstring = '\0';
 	parse_query();
 
-	if ((*periodstring == '\0') && (fromtime || totime)) {
+	if (periodstring && (fromtime || totime)) {
+		strbuffer_t *pstr = newstrbuffer(1024);
+
 		if (fromtime && totime) {
-			sprintf(periodstring, "Events between %s ", htmlquoted(fromtime));
-			sprintf(periodstring+strlen(periodstring), "- %s", htmlquoted(totime));
+			addtobuffer(pstr, "Events between ");
+			addtobuffer(pstr, htmlquoted(fromtime));
+			addtobuffer(pstr, "- ");
+			addtobuffer(pstr, htmlquoted(totime));
 		}
-		else if (fromtime) sprintf(periodstring, "Events since %s", htmlquoted(fromtime));
-		else if (totime) sprintf(periodstring, "Events until %s", htmlquoted(totime));
+		else if (fromtime) {
+			addtobuffer(pstr, "Events since ");
+			addtobuffer(pstr, htmlquoted(fromtime));
+		}
+		else if (totime) {
+			addtobuffer(pstr, "Events until ");
+			addtobuffer(pstr, htmlquoted(totime));
+		}
+
+		xfree(periodstring);
+		periodstring = grabstrbuffer(pstr);
 	}
 
 	/* Now generate the webpage */

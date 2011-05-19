@@ -646,6 +646,7 @@ int main(int argc, char *argv[])
 	time_t now = getcurrenttime(NULL);
 	sendreturn_t *sres;
 	char *critconfigfn = NULL;
+	int patternerror = 0;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -686,25 +687,50 @@ int main(int argc, char *argv[])
 
 	/* Fetch the list of host+test statuses we currently know about */
 	if (pagepattern) {
-		xymoncmd = (char *)malloc(2*strlen(pagepattern) + 1024);
-		procscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
-		svcscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+		pcre *dummy;
+		char *re;
 
-		sprintf(xymoncmd, "xymondboard page=^%s$|^%s/.+ fields=hostname,testname", 
-			pagepattern, pagepattern);
-		sprintf(procscmd,  "xymondboard page=^%s$|^%s/.+ test=procs fields=hostname,msg",
-			pagepattern, pagepattern);
-		sprintf(svcscmd,   "xymondboard page=^%s$|^%s/.+ test=svcs fields=hostname,msg",
-			pagepattern, pagepattern);
+		re = (char *)malloc(8 + 2*strlen(pagepattern));
+		sprintf(re, "^%s$|^%s/.+", pagepattern, pagepattern);
+		dummy = compileregex(re);
+		if (dummy) {
+			freeregex(dummy);
+
+			xymoncmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+			procscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+			svcscmd = (char *)malloc(2*strlen(pagepattern) + 1024);
+
+			sprintf(xymoncmd, "xymondboard page=%s fields=hostname,testname", re);
+			sprintf(procscmd,  "xymondboard page=%s test=procs fields=hostname,msg", re);
+			sprintf(svcscmd,   "xymondboard page=%s test=svcs fields=hostname,msg", re);
+		}
+		else
+			patternerror = 1;
+
+		xfree(re);
 	}
 	else if (hostpattern) {
-		xymoncmd = (char *)malloc(strlen(hostpattern) + 1024);
-		procscmd = (char *)malloc(strlen(hostpattern) + 1024);
-		svcscmd = (char *)malloc(strlen(hostpattern) + 1024);
+		pcre *dummy;
+		char *re;
 
-		sprintf(xymoncmd, "xymondboard host=^%s$ fields=hostname,testname", hostpattern);
-		sprintf(procscmd,  "xymondboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
-		sprintf(svcscmd,   "xymondboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
+		re = (char *)malloc(3 + strlen(hostpattern));
+		sprintf(re, "^%s$", hostpattern);
+		dummy = compileregex(re);
+		if (dummy) {
+			freeregex(dummy);
+
+			xymoncmd = (char *)malloc(strlen(hostpattern) + 1024);
+			procscmd = (char *)malloc(strlen(hostpattern) + 1024);
+			svcscmd = (char *)malloc(strlen(hostpattern) + 1024);
+
+			sprintf(xymoncmd, "xymondboard host=^%s$ fields=hostname,testname", hostpattern);
+			sprintf(procscmd,  "xymondboard host=^%s$ test=procs fields=hostname,msg", hostpattern);
+			sprintf(svcscmd,   "xymondboard host=^%s$ test=svcs fields=hostname,msg", hostpattern);
+		}
+		else
+			patternerror = 1;
+
+		xfree(re);
 	}
 	else {
 		xymoncmd = (char *)malloc(1024);
@@ -714,6 +740,11 @@ int main(int argc, char *argv[])
 		sprintf(xymoncmd, "xymondboard fields=hostname,testname");
 		sprintf(procscmd,  "xymondboard test=procs fields=hostname,msg");
 		sprintf(svcscmd,   "xymondboard test=svcs fields=hostname,msg");
+	}
+
+	if (patternerror) {
+		errormsg("Invalid host/page filter\n");
+		return 1;
 	}
 
 	sres = newsendreturnbuf(1, NULL);

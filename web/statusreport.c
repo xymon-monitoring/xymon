@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 			sprintf(filter + strlen(filter), " test=%s", p+1);
 
 			if (!heading) {
-				heading = (char *)malloc(1024 + strlen(p));
+				heading = (char *)malloc(1024 + strlen(p) + strlen(timestamp));
 				sprintf(heading, "%s report on %s", p+1, timestamp);
 			}
 		}
@@ -111,8 +111,16 @@ int main(int argc, char *argv[])
       		/* Setup the filter we use for the report */
 		cookie = get_cookie("pagepath");
 		if (cookie && *cookie) {
-			pagefilter = malloc(10 + 2*strlen(cookie));
-			sprintf(pagefilter, "page=^%s$|^%s/.+", cookie, cookie);
+			pcre *dummy;
+			char *re = (char *)malloc(8 + 2*strlen(cookie));
+
+			sprintf(re, "^%s$|^%s/.+", cookie, cookie);
+			dummy = compileregex(re);
+			if (dummy)  {
+				freeregex(dummy);
+				pagefilter = malloc(10 + strlen(re));
+				sprintf(pagefilter, "page=%s", re);
+			}
 		}
 	}
 

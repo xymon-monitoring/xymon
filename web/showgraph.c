@@ -399,14 +399,14 @@ void load_gdefs(char *fn)
 	freestrbuffer(inbuf);
 }
 
-void lookup_meta(char *keybuf, char *rrdfn)
+char *lookup_meta(char *keybuf, char *rrdfn)
 {
 	FILE *fd;
 	char *metafn, *p;
 	int servicelen = strlen(service);
 	int keylen = strlen(keybuf);
-	char buf[1024];
 	int found;
+	static char buf[1024]; /* Must be static since it is returned to caller */
 
 	p = strrchr(rrdfn, '/');
 	if (!p) {
@@ -421,7 +421,7 @@ void lookup_meta(char *keybuf, char *rrdfn)
 	fd = fopen(metafn, "r");
 	xfree(metafn);
 
-	if (!fd) return;
+	if (!fd) return NULL;
 
 	/* Find the first line that has our key and then whitespace */
 	found = 0;
@@ -442,8 +442,10 @@ void lookup_meta(char *keybuf, char *rrdfn)
 		eoln = strchr(val, '\n');
 		if (eoln) *eoln = '\0';
 
-		if (strlen(val) > 0) strcpy(keybuf, val);
+		if (strlen(val) > 0) return val;
 	}
+
+	return NULL;
 }
 
 char *colon_escape(char *buf)
@@ -482,33 +484,32 @@ char *colon_escape(char *buf)
 
 char *expand_tokens(char *tpl)
 {
-	static char result[4096];
-	char *inp, *outp, *p;
+	static strbuffer_t *result = NULL;
+	char *inp, *p;
 
 	if (strchr(tpl, '@') == NULL) return tpl;
 
-	*result = '\0'; inp = tpl; outp = result;
+	if (!result) result = newstrbuffer(2048); else clearstrbuffer(result);
+
+	inp = tpl;
 	while (*inp) {
 		p = strchr(inp, '@');
 		if (p == NULL) {
-			strcpy(outp, inp);
+			addtobuffer(result, inp);
 			inp += strlen(inp);
-			outp += strlen(outp);
 			continue;
 		}
 
 		*p = '\0';
 		if (strlen(inp)) {
-			strcpy(outp, inp);
+			addtobuffer(result, inp);
 			inp = p;
-			outp += strlen(outp);
 		}
 		*p = '@';
 
 		if (strncmp(inp, "@RRDFN@", 7) == 0) {
-			strcpy(outp, colon_escape(rrddbs[rrdidx].rrdfn));
+			addtobuffer(result, colon_escape(rrddbs[rrdidx].rrdfn));
 			inp += 7;
-			outp += strlen(outp);
 		}
 		else if (strncmp(inp, "@RRDPARAM@", 10) == 0) {
 			/* 
@@ -516,14 +517,18 @@ char *expand_tokens(char *tpl)
 			 * this is a common mangling used by multiple backends (disk, http, iostat...)
 			 */
 			if (rrddbs[rrdidx].rrdparam) {
-				char *p;
-				int outlen;
+				char *val, *p;
+				char *resultstr;
 
-				sprintf(outp, "%-*s", paramlen, colon_escape(rrddbs[rrdidx].rrdparam));
-				p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
+				val = colon_escape(rrddbs[rrdidx].rrdparam);
+				p = val; while ((p = strchr(p, ',')) != NULL) *p = '/';
+
 				/* Watch out - legends cannot be too long */
-				outlen = strlen(outp); if (outlen > 100) outlen = 100;
-				outp += outlen; *outp = '\0';
+				if (paramlen > 100) paramlen = 100;
+				resultstr = (char *)malloc(paramlen + 1);
+				sprintf(resultstr, "%-*s", paramlen, val);
+				addtobuffer(result, resultstr);
+				xfree(resultstr);
 			}
 			inp += 10;
 		}
@@ -533,21 +538,22 @@ char *expand_tokens(char *tpl)
 			 * this is a common mangling used by multiple backends (disk, http, iostat...)
 			 */
 			if (rrddbs[rrdidx].rrdparam) {
-				char *p;
-				sprintf(outp, "%s", colon_escape(rrddbs[rrdidx].rrdparam));
-				p = outp; while ((p = strchr(p, ',')) != NULL) *p = '/';
-				lookup_meta(outp, rrddbs[rrdidx].rrdfn);
+				char *val, *p, *metaval;
+
+				val = colon_escape(rrddbs[rrdidx].rrdparam);
+				p = val; while ((p = strchr(p, ',')) != NULL) *p = '/';
+
+				metaval = lookup_meta(val, rrddbs[rrdidx].rrdfn);
+				if (metaval) addtobuffer(result, metaval);
 			}
 			inp += 9;
-			outp += strlen(outp);
 		}
 		else if (strncmp(inp, "@RRDIDX@", 8) == 0) {
 			char numstr[10];
 
 			sprintf(numstr, "%d", rrdidx);
-			strcpy(outp, numstr);
+			addtobuffer(result, numstr);
 			inp += 8;
-			outp += strlen(outp);
 		}
 		else if (strncmp(inp, "@STACKIT@", 9) == 0) {
 			/* Contributed by Gildas Le Nadan <gn1@sanger.ac.uk> */
@@ -584,30 +590,25 @@ char *expand_tokens(char *tpl)
 			else {
 				sprintf(numstr, "STACK");
 			}
-			strcpy(outp, numstr);
-			outp += strlen(outp);
+			addtobuffer(result, numstr);
 			inp += 9;
 		}
 		else if (strncmp(inp, "@SERVICE@", 9) == 0) {
-			strcpy(outp, service);
+			addtobuffer(result, service);
 			inp += 9;
-			outp += strlen(outp);
 		}
 		else if (strncmp(inp, "@COLOR@", 7) == 0) {
-			strcpy(outp, colorlist[coloridx]);
+			addtobuffer(result, colorlist[coloridx]);
 			inp += 7;
-			outp += strlen(outp);
 			coloridx++; if (colorlist[coloridx] == NULL) coloridx = 0;
 		}
 		else {
-			strcpy(outp, "@");
+			addtobuffer(result, "@");
 			inp += 1;
-			outp += 1;
 		}
 	}
-	*outp = '\0';
 
-	return result;
+	return STRBUF(result);
 }
 
 int rrd_name_compare(const void *v1, const void *v2)
@@ -667,34 +668,58 @@ void graph_link(FILE *output, char *uri, char *grtype, time_t seconds)
 
 char *build_selfURI(void)
 {
-	char *p, *result;
-	int urilen;
+	strbuffer_t *result = newstrbuffer(2048);
+	char *p;
+	char numbuf[40];
 
-	p = xgetenv("SCRIPT_NAME");
-	urilen = strlen(p);
-	if (hostlist) { int i; for (i = 0; (i < hostlistsize); i++) urilen += (strlen(htmlquoted(hostlist[i])) + 10); }
-	result = (char *)malloc(urilen + 2048);
+	addtobuffer(result, xgetenv("SCRIPT_NAME"));
 
-	strcpy(result, p);
-	p = strchr(result, '?'); if (p) *p = '\0'; else p = result + strlen(result);
-
+	addtobuffer(result, "?host=");
 	if (hostlist) {
 		int i;
 
-		p += sprintf(p, "?host=%s", htmlquoted(hostlist[0]));
-		for (i = 1; (i < hostlistsize); i++) p += sprintf(p, ",%s", htmlquoted(hostlist[i]));
+		addtobuffer(result, urlencode(hostlist[0]));
+		for (i = 1; (i < hostlistsize); i++) {
+			addtobuffer(result, ",");
+			addtobuffer(result, urlencode(hostlist[i]));
+		}
 	}
-	else
-		p += sprintf(p, "?host=%s", htmlquoted(hostname));
+	else {
+		addtobuffer(result, urlencode(hostname));
+	}
 
-	p += sprintf(p, "&amp;service=%s&amp;graph_height=%d&amp;graph_width=%d&amp;color=%s", 
-		     htmlquoted(service), graphheight, graphwidth, colorname(bgcolor));
-	if (displayname != hostname) p += sprintf(p, "&amp;disp=%s", urlencode(displayname));
-	if (firstidx != -1) p += sprintf(p, "&amp;first=%d", firstidx+1);
-	if (idxcount != -1) p += sprintf(p, "&amp;count=%d", idxcount);
-	if (ignorestalerrds) p += sprintf(p, "&amp;nostale");
+	addtobuffer(result, "&amp;color="); addtobuffer(result, colorname(bgcolor));
+	if (service) {
+		addtobuffer(result, "&amp;service=");
+		addtobuffer(result, urlencode(service));
+	}
+	if (graphheight) {
+		snprintf(numbuf, sizeof(numbuf)-1, "%d", graphheight); 
+		addtobuffer(result, "&amp;graph_height="); 
+		addtobuffer(result, urlencode(numbuf));
+	}
+	if (graphwidth) {
+		snprintf(numbuf, sizeof(numbuf)-1, "%d", graphwidth); 
+		addtobuffer(result, "&amp;graph_width="); 
+		addtobuffer(result, urlencode(numbuf));
+	}
 
-	return result;
+	if (displayname && (displayname != hostname)) {
+		addtobuffer(result, "&amp;disp=");
+		addtobuffer(result, urlencode(displayname));
+	}
+
+	if (firstidx != -1) {
+		snprintf(numbuf, sizeof(numbuf)-1, "&amp;first=%d", firstidx+1);
+		addtobuffer(result, numbuf);
+	}
+	if (idxcount != -1) {
+		snprintf(numbuf, sizeof(numbuf)-1, "&amp;count=%d", idxcount);
+		addtobuffer(result, numbuf);
+	}
+	if (ignorestalerrds) addtobuffer(result, "&amp;nostale");
+
+	return STRBUF(result);
 }
 
 

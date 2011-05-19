@@ -209,8 +209,8 @@ int do_request(void)
 
 			xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 			if (xymondresult != XYMONSEND_OK) {
-				char errtxt[4096];
-				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", xymondreq, xymondresult);
+				char *errtxt = (char *)malloc(1024 + strlen(xymondreq));
+				sprintf(errtxt, "Status not available: Req=%s, result=%d\n", htmlquoted(xymondreq), xymondresult);
 				errormsg(errtxt);
 				return 1;
 			}
@@ -284,7 +284,7 @@ int do_request(void)
 		}
 	}
 	else if (source == SRC_XYMOND) {
-		char xymondreq[1024];
+		char *xymondreq;
 		int xymondresult;
 		char *items[25];
 		int icount;
@@ -304,11 +304,36 @@ int do_request(void)
 			}
 		}
 
+		/* We need not check that hostname is valid, has already been done with loadhostdata() */
 		if (!complist) {
+			pcre *dummy = NULL;
+
+			/* Check service as a pcre pattern. And no spaces in servicenames */
+			if (strchr(service, ' ') == NULL) dummy = compileregex(service);
+			if (dummy == NULL) {
+				errormsg("Invalid testname pattern");
+				return 1;
+			}
+
+			freeregex(dummy);
+			xymondreq = (char *)malloc(1024 + strlen(hostname) + strlen(service));
 			sprintf(xymondreq, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
 		}
 		else {
-			sprintf(xymondreq, "xymondboard host=^%s$ test=^(%s)$ fields=testname,color,lastchange", hostname, complist);
+			pcre *dummy = NULL;
+			char *re;
+
+			re = (char *)malloc(5 + strlen(complist));
+			sprintf(re, "^(%s)$", complist);
+			dummy = compileregex(re);
+			if (dummy == NULL) {
+				errormsg("Invalid testname pattern");
+				return 1;
+			}
+
+			freeregex(dummy);
+			xymondreq = (char *)malloc(1024 + strlen(hostname) + strlen(re));
+			sprintf(xymondreq, "xymondboard host=^%s$ test=%s fields=testname,color,lastchange", hostname, re);
 		}
 
 		sres = newsendreturnbuf(1, NULL);
@@ -398,7 +423,6 @@ int do_request(void)
 			strbuffer_t *cmsg;
 			char *row, *p_row, *p_fld;
 			char *nonhistenv;
-			char l[2048];
 
 			color = COL_GREEN;
 
@@ -420,9 +444,14 @@ int do_request(void)
 				icolor = parse_color(itmcolor);
 				if (icolor > color) color = icolor;
 
-				snprintf(l, sizeof(l), "<tr><td align=left>&%s&nbsp;<a href=\"%s\">%s</a></td></tr>\n", 
-					itmcolor, hostsvcurl(hostname, testname, 1), htmlquoted(testname));
-				addtobuffer(cmsg, l);
+				addtobuffer(cmsg, "<tr><td align=left>&");
+				addtobuffer(cmsg, itmcolor);
+				addtobuffer(cmsg, "&nbsp;<a href=\"");
+				addtobuffer(cmsg, hostsvcurl(hostname, testname, 1));
+				addtobuffer(cmsg, "\">");
+				addtobuffer(cmsg, htmlquoted(testname));
+				addtobuffer(cmsg, "</a></td></tr>\n");
+
 				row = strtok_r(NULL, "\n", &p_row);
 			}
 
@@ -436,8 +465,8 @@ int do_request(void)
 
 			log = restofmsg = grabstrbuffer(cmsg);
 
-			sprintf(l, "%s Compressed status display\n", colorname(color));
-			firstline = strdup(l);
+			firstline = (char *)malloc(1024);
+			sprintf(firstline, "%s Compressed status display\n", colorname(color));
 
 			nonhistenv = (char *)malloc(10 + strlen(service));
 			sprintf(nonhistenv, "NONHISTS=%s", service);
@@ -556,7 +585,7 @@ int do_request(void)
 					errprintf("Cannot find hostdata files for host %s\n", hostname);
 				}
 				else {
-					clienturi = (char *)realloc(clienturi, strlen(cgiurl) + 40 + strlen(htmlquoted(hostname)) + strlen(clientid));
+					clienturi = (char *)realloc(clienturi, 1024 + strlen(cgiurl) + strlen(htmlquoted(hostname)) + strlen(clientid));
 					sprintf(clienturi, "%s/svcstatus.sh?CLIENT=%s&amp;TIMEBUF=%s", 
 						cgiurl, htmlquoted(hostname), clientid);
 				}
@@ -569,7 +598,7 @@ int do_request(void)
 				clientavail = (stat(logfn, &st) == 0);
 
 				if (clientavail) {
-					clienturi = (char *)realloc(clienturi, strlen(clienturi) + 14 + strlen(clientid));
+					clienturi = (char *)realloc(clienturi, 1024 + strlen(clienturi) + strlen(clientid));
 					sprintf(clienturi + strlen(clienturi), "&amp;TIMEBUF=%s", clientid);
 				}
 			}

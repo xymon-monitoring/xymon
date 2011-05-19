@@ -113,10 +113,11 @@ int main(int argc, char *argv[])
 
 	  case ACT_CREATE:	/* Add a user */
 		{
-			char cmd[1024];
+			char *cmd;
 			int n, ret;
 
-			snprintf(cmd, sizeof(cmd), "htpasswd -b '%s' '%s' '%s'",
+			cmd = (char *)malloc(1024 + strlen(passfile) + strlen(adduser_name) + strlen(adduser_password));
+			sprintf(cmd, "htpasswd -b '%s' '%s' '%s'",
 				 passfile, adduser_name, adduser_password);
 			n = system(cmd);
 			n = system(cmd); ret = WEXITSTATUS(n);
@@ -127,15 +128,18 @@ int main(int argc, char *argv[])
 			else {
 				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('User added/updated'); </SCRIPT>\n";
 			}
+
+			xfree(cmd);
 		}
 		break;
 
 
 	  case ACT_DELETE:	/* Delete a user */
 		{
-			char cmd[1024];
+			char *cmd;
 			int n, ret;
 
+			cmd = (char *)malloc(1024 + strlen(passfile) + strlen(deluser_name));
 			snprintf(cmd, sizeof(cmd), "htpasswd -D '%s' '%s'",
 					passfile, deluser_name);
 			n = system(cmd); ret = WEXITSTATUS(n);
@@ -146,6 +150,8 @@ int main(int argc, char *argv[])
 			else {
 				infomsg = "<SCRIPT LANGUAGE=\"Javascript\" type=\"text/javascript\"> alert('User deleted'); </SCRIPT>\n";
 			}
+
+			xfree(cmd);
 		}
 		break;
 	}

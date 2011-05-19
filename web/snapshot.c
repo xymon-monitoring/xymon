@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 	if (xgetenv("XYMONGEN")) sprintf(xymongencmd, "%s", xgetenv("XYMONGEN"));
 	else sprintf(xymongencmd, "%s/bin/xymongen", xgetenv("XYMONHOME"));
 
-	sprintf(xymongentimeopt, "--snapshot=%u", (unsigned int)starttime);
+	snprintf(xymongentimeopt, sizeof(xymongentimeopt), "--snapshot=%u", (unsigned int)starttime);
 
 	sprintf(dirid, "%u-%u", (unsigned int)getpid(), (unsigned int)getcurrenttime(NULL));
 	sprintf(outdir, "%s/%s", xgetenv("XYMONSNAPDIR"), dirid);

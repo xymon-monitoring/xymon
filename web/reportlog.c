@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 {
 	char histlogfn[PATH_MAX];
 	FILE *fd;
-	char textrepfullfn[PATH_MAX], textrepfn[1024], textrepurl[PATH_MAX];
+	char *textrepfn = NULL, *textrepfullfn = NULL, *textrepurl = NULL;
 	FILE *textrep;
 	reportinfo_t repinfo;
 	int argi;
@@ -144,8 +144,11 @@ int main(int argc, char *argv[])
 	color = parse_historyfile(fd, &repinfo, hostname, service, st, end, 0, reportwarnlevel, reportgreenlevel, reportwarnstops, reporttime);
 	fclose(fd);
 
+	textrepfn = (char *)malloc(1024 + strlen(hostname) + strlen(service));
 	sprintf(textrepfn, "avail-%s-%s-%u-%u.txt", hostname, service, (unsigned int)getcurrenttime(NULL), (int)getpid());
+	textrepfullfn = (char *)malloc(1024 + strlen(xgetenv("XYMONREPDIR")) + strlen(textrepfn));
 	sprintf(textrepfullfn, "%s/%s", xgetenv("XYMONREPDIR"), textrepfn);
+	textrepurl = (char *)malloc(1024 + strlen(xgetenv("XYMONREPURL")) + strlen(textrepfn));
 	sprintf(textrepurl, "%s/%s", xgetenv("XYMONREPURL"), textrepfn);
 	textrep = fopen(textrepfullfn, "w");
 

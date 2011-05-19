@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 		res = sendmessage(xymonmsg, NULL, XYMON_TIMEOUT, NULL);
 	}
 	else {
-		xymonmsg = (char *)malloc(4096);
+		xymonmsg = (char *)malloc(1024 + strlen(hostname) + strlen(testname) + strlen(ackmsg));
 		sprintf(xymonmsg, "error in input params: hostname=%s, testname=%s, ackmsg=%s, validity=%d\n",
 			hostname, testname, ackmsg, validity);
 	}

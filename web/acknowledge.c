@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 			char *cmd;
 			char *respbuf = NULL;
 			char *hostname, *pagename;
-			int gotfilter = 0;
+			int gotfilter = 0, filtererror = 0;
 			sendreturn_t *sres = NULL;
 
 			headfoot(stdout, "acknowledge", "", "header", COL_RED);
@@ -237,23 +237,51 @@ int main(int argc, char *argv[])
 
 			if (obeycookies && !gotfilter && ((hostname = get_cookie("host")) != NULL)) {
 				if (*hostname) {
-					cmd = (char *)realloc(cmd, 1024 + strlen(hostname));
-					sprintf(cmd + strlen(cmd), " host=^%s$", hostname);
-					gotfilter = 1;
+					pcre *dummy;
+					char *re;
+					
+					re = (char *)malloc(3+strlen(hostname));
+					sprintf(re, "^%s$", hostname);
+					dummy = compileregex(re);
+					if (dummy) {
+						/* Valid expression */
+						freeregex(dummy);
+						cmd = (char *)realloc(cmd, 1024 + strlen(cmd) + strlen(re));
+						sprintf(cmd + strlen(cmd), " host=%s", re);
+						gotfilter = 1;
+					}
+					else {
+						filtererror = 1;
+						printf("<p align=\"center\">Invalid hostname filter</p>\n");
+					}
 				}
 			}
 
 			if (obeycookies && !gotfilter && ((pagename = get_cookie("pagepath")) != NULL)) {
 				if (*pagename) {
-					cmd = (char *)realloc(cmd, 1024 + 2*strlen(pagename));
-					sprintf(cmd + strlen(cmd), " page=^%s$|^%s/.+", pagename, pagename);
-					gotfilter = 1;
+					pcre *dummy;
+					char *re;
+
+					re = (char *)malloc(8 + strlen(pagename));
+					sprintf(re, "%s$|^%s/.+", pagename, pagename);
+					dummy = compileregex(re);
+					if (dummy) {
+						/* Valid expression */
+						freeregex(dummy);
+						cmd = (char *)realloc(cmd, 1024 + strlen(cmd) + strlen(re));
+						sprintf(cmd + strlen(cmd), " page=%s", re);
+						gotfilter = 1;
+					}
+					else {
+						filtererror = 1;
+						printf("<p align=\"center\">Invalid pagename filter</p>\n");
+					}
 				}
 			}
 
 			sres = newsendreturnbuf(1, NULL);
 
-			if (sendmessage(cmd, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK) {
+			if (!filtererror && (sendmessage(cmd, NULL, XYMON_TIMEOUT, sres) == XYMONSEND_OK)) {
 				char *bol, *eoln;
 				int first = 1;
 
@@ -301,22 +329,22 @@ int main(int argc, char *argv[])
 		char *xymonmsg;
 		char *acking_user = "";
 		acklist_t *awalk;
-		char msgline[4096];
 		strbuffer_t *response = newstrbuffer(0);
 		int count = 0;
 
 		parse_query();
 		if (getenv("REMOTE_USER")) {
-			acking_user = (char *)malloc(50 + strlen(getenv("REMOTE_USER")));
+			char *remaddr = getenv("REMOTE_ADDR");
+
+			acking_user = (char *)malloc(1024 + strlen(getenv("REMOTE_USER")) + (remaddr ? strlen(remaddr) : 0));
 			sprintf(acking_user, "\nAcked by: %s", getenv("REMOTE_USER"));
-			if (getenv("REMOTE_ADDR")) {
-				char *p = acking_user + strlen(acking_user);
-				sprintf(p, " (%s)", getenv("REMOTE_ADDR"));
-			}
+			if (remaddr) sprintf(acking_user + strlen(acking_user), " (%s)", remaddr);
 		}
 
 		addtobuffer(response, "<center>\n");
 		for (awalk = ackhead; (awalk); awalk = awalk->next) {
+			char *msgline = (char *)malloc(1024 + (awalk->hostname ? strlen(awalk->hostname) : 0) + (awalk->testname ? strlen(awalk->testname) : 0));
+
 			if (!awalk->checked) continue;
 
 			if ((reqtype == ACK_ONE) && (awalk->id != sendnum)) continue;

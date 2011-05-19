@@ -181,7 +181,7 @@ void parse_cgi(void)
 
 void do_one_host(char *hostname, char *fullmsg, char *username)
 {
-	char xymoncmd[4096];
+	char *xymoncmd = (char *)malloc(1024);
 	int i, result;
 
 	switch (action) {
@@ -189,6 +189,7 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < enablecount); i++) {
 			if (preview) result = 0;
 			else {
+				xymoncmd = (char *)realloc(xymoncmd, 1024 + 2*strlen(hostname) + 2*strlen(enabletest[i]) + strlen(username));
 				sprintf(xymoncmd, "enable %s.%s", commafy(hostname), enabletest[i]);
 				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
 				sprintf(xymoncmd, "notify %s.%s\nMonitoring of %s:%s has been ENABLED by %s\n", 
@@ -209,6 +210,7 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		for (i=0; (i < disablecount); i++) {
 			if (preview) result = 0;
 			else {
+				xymoncmd = (char *)realloc(xymoncmd, 1024 + 2*strlen(hostname) + 2*strlen(disabletest[i]) + strlen(fullmsg) + strlen(username));
 				sprintf(xymoncmd, "disable %s.%s %d %s", 
 					commafy(hostname), disabletest[i], duration*scale, fullmsg);
 				result = sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL);
@@ -228,6 +230,7 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 
 	  case ACT_SCHED_DISABLE:
 		for (i=0; (i < disablecount); i++) {
+			xymoncmd = (char *)realloc(xymoncmd, 1024 + 2*strlen(hostname) + strlen(disabletest[i]) + strlen(fullmsg));
 			sprintf(xymoncmd, "schedule %d disable %s.%s %d %s", 
 				(int) schedtime, commafy(hostname), disabletest[i], duration*scale, fullmsg);
 			result = (preview ? 0 : sendmessage(xymoncmd, NULL, XYMON_TIMEOUT, NULL));
@@ -253,6 +256,8 @@ void do_one_host(char *hostname, char *fullmsg, char *username)
 		errprintf("No action\n");
 		break;
 	}
+
+	xfree(xymoncmd);
 }
 
 int main(int argc, char *argv[])
@@ -314,7 +319,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	fullmsg = (char *)malloc(strlen(username) + strlen(userhost) + strlen(disablemsg) + 1024);
+	fullmsg = (char *)malloc(1024 + strlen(username) + strlen(userhost) + strlen(disablemsg));
 	sprintf(fullmsg, "\nDisabled by: %s @ %s\nReason: %s\n", username, userhost, disablemsg);
 
 	/*
