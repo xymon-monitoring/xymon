@@ -244,7 +244,7 @@ cgidata_t *cgi_request(void)
 		/* Raw data - return a single record to caller */
 		head = (cgidata_t *)calloc(1, sizeof(cgidata_t));
 		head->name = strdup("");
-		head->value = strdup(reqdata);
+		head->value = reqdata ? strdup(reqdata) : NULL;
 	}
 
 	if (reqdata) xfree(reqdata);
