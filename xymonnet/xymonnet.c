@@ -528,11 +528,11 @@ void load_tests(void)
 					s = ldaptest;
 					add_url_to_dns_queue(testspec);
 #else
-					errprintf("ldap test requested, but xymonnet was built with no ldap support\n");
+					errprintf("Host %s: ldap test requested, but xymonnet was built with no ldap support\n", xmh_item(hwalk, XMH_HOSTNAME));
 #endif
 				}
 				else if ((strcmp(testspec, "http") == 0) || (strcmp(testspec, "https") == 0)) {
-					errprintf("http/https tests requires a full URL\n");
+					errprintf("Host %s: http/https tests requires a full URL\n", xmh_item(hwalk, XMH_HOSTNAME));
 				}
 				else if ( argnmatch(testspec, "http")         ||
 					  argnmatch(testspec, "content=http") ||
@@ -557,7 +557,8 @@ void load_tests(void)
 					decode_url(testspec, &url);
 					if (url.desturl->parseerror || (url.proxyurl && url.proxyurl->parseerror)) {
 						s = NULL;
-						errprintf("Invalid URL for http test - ignored: %s\n", testspec);
+						errprintf("Host %s: Invalid URL for http test - ignored: %s\n", 
+							  xmh_item(hwalk, XMH_HOSTNAME), testspec);
 					}
 					else {
 						s = httptest;
@@ -581,7 +582,7 @@ void load_tests(void)
 						decode_url(userurl, &url);
 						if (url.desturl->parseerror || (url.proxyurl && url.proxyurl->parseerror)) {
 							s = NULL;
-							errprintf("Invalid URL for apache test - ignored: %s\n", testspec);
+							errprintf("Host %s: Invalid URL for apache test - ignored: %s\n", xmh_item(hwalk, XMH_HOSTNAME), testspec);
 						}
 						else {
 							statusurl = (char *)malloc(strlen(userurl) + strlen(userfmt) + 1);
@@ -764,7 +765,7 @@ void load_tests(void)
 			badcounts = strchr(testspec, ':');
 			if (badcounts) {
 				if (sscanf(badcounts, ":%d:%d:%d", &badclear, &badyellow, &badred) != 3) {
-					errprintf("Incorrect 'bad' counts: '%s'\n", badcounts);
+					errprintf("Host %s: Incorrect 'bad' counts: '%s'\n", xmh_item(hwalk, XMH_HOSTNAME), badcounts);
 					badcounts = NULL;
 				}
 			}
