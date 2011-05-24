@@ -1584,6 +1584,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_DISK:
+			if (!rwalk->rule.disk.fsexp) break;
+
 			printf("DISK %s", rwalk->rule.disk.fsexp->pattern);
 			if (rwalk->rule.disk.ignored)
 				printf("IGNORE");
@@ -1595,6 +1597,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_INODE:
+			if (!rwalk->rule.inode.fsexp) break;
+
 			printf("INODE %s", rwalk->rule.inode.fsexp->pattern);
 			if (rwalk->rule.inode.ignored)
 				printf("IGNORE");
@@ -1623,6 +1627,8 @@ void dump_client_config(void)
                         break;
 
 		  case C_PROC:
+			if (!rwalk->rule.proc.procexp) break;
+
 			if (strchr(rwalk->rule.proc.procexp->pattern, ' ') ||
 			    strchr(rwalk->rule.proc.procexp->pattern, '\t')) {
 				printf("PROC \"%s\" %d %d %s", rwalk->rule.proc.procexp->pattern,
@@ -1635,6 +1641,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_LOG:
+			if (!rwalk->rule.log.logfile || !rwalk->rule.log.matchexp) break;
+
 			printf("LOG %s MATCH=%s COLOR=%s",
 				rwalk->rule.log.logfile->pattern, 
 				rwalk->rule.log.matchexp->pattern,
@@ -1643,6 +1651,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_FILE:
+			if (!rwalk->rule.fcheck.filename) break;
+
 			printf("FILE %s %s", rwalk->rule.fcheck.filename->pattern, 
 				colorname(rwalk->rule.fcheck.color));
 
@@ -1708,6 +1718,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_DIR:
+			if (!rwalk->rule.dcheck.filename) break;
+
 			printf("DIR %s %s", rwalk->rule.dcheck.filename->pattern, 
 				colorname(rwalk->rule.dcheck.color));
 
@@ -1750,10 +1762,14 @@ void dump_client_config(void)
 			break;
 
 		  case C_CICS:
+			if (!rwalk->rule.cics.applid) break;
+
 			printf("CICS: Appid:%s, DSA warning:%d, DSA panic:%d, EDSA warning%d, EDSA panic:%d", rwalk->rule.cics.applid->pattern, rwalk->rule.cics.dsawarnlevel, rwalk->rule.cics.dsapaniclevel, rwalk->rule.cics.edsawarnlevel, rwalk->rule.cics.edsapaniclevel);
 			break;
 
 		  case C_SVC:
+			if (!rwalk->rule.svc.svcexp) break;
+
 			printf("SVC %s", rwalk->rule.svc.svcexp->pattern);
 			if (rwalk->rule.svc.stateexp)
 				printf(" status=%s", rwalk->rule.svc.stateexp->pattern);
@@ -1778,6 +1794,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_RRDDS:
+			if (!rwalk->rule.rrdds.rrdkey) break;
+
 			printf("DS %s %s:%s", rwalk->rule.rrdds.column,
 				rwalk->rule.rrdds.rrdkey->pattern, rwalk->rule.rrdds.rrdds);
 			if (rwalk->flags & RRDDSCHK_GT) 
@@ -1801,6 +1819,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_MQ_QUEUE:
+			if (!rwalk->rule.mqqueue.qmgrname || !rwalk->rule.mqqueue.qname) break;
+
 			printf("MQ_QUEUE %s:%s", rwalk->rule.mqqueue.qmgrname->pattern, rwalk->rule.mqqueue.qname->pattern);
 			if (rwalk->rule.mqqueue.warnlen != -1)
 				printf(" depth-warn=%d", rwalk->rule.mqqueue.warnlen);
@@ -1813,6 +1833,8 @@ void dump_client_config(void)
 			break;
 
 		  case C_MQ_CHANNEL:
+			if (!rwalk->rule.mqchannel.qmgrname || !rwalk->rule.mqchannel.chnname) break;
+
 			printf("MQ_CHANNEL %s:%s",rwalk->rule.mqchannel.qmgrname->pattern , rwalk->rule.mqchannel.chnname->pattern);
 			if (rwalk->rule.mqchannel.warnstates) printf(" warning=%s", rwalk->rule.mqchannel.warnstates->pattern);
 			if (rwalk->rule.mqchannel.alertstates) printf(" alert=%s", rwalk->rule.mqchannel.alertstates->pattern);
@@ -1922,7 +1944,7 @@ int get_disk_thresholds(void *hinfo, char *classname,
 	*group = NULL;
 
 	rule = getrule(hostname, pagename, classname, hinfo, C_DISK);
-	while (rule && !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp)) {
+	while (rule && (!rule->rule.disk.fsexp || !namematch(fsname, rule->rule.disk.fsexp->pattern, rule->rule.disk.fsexp->exp))) {
 		rule = getrule(NULL, NULL, NULL, hinfo, C_DISK);
 	}
 
@@ -1959,7 +1981,7 @@ int get_inode_thresholds(void *hinfo, char *classname,
 	*group = NULL;
 
 	rule = getrule(hostname, pagename, classname, hinfo, C_INODE);
-	while (rule && !namematch(fsname, rule->rule.inode.fsexp->pattern, rule->rule.inode.fsexp->exp)) {
+	while (rule && (!rule->rule.inode.fsexp || !namematch(fsname, rule->rule.inode.fsexp->pattern, rule->rule.inode.fsexp->exp))) {
 		rule = getrule(NULL, NULL, NULL, hinfo, C_INODE);
 	}
 
@@ -2000,7 +2022,7 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
 		return;
 		}
 
-        while (rule && !namematch(appid, rule->rule.cics.applid->pattern, rule->rule.cics.applid->exp)) {
+        while (rule && (!rule->rule.cics.applid || !namematch(appid, rule->rule.cics.applid->pattern, rule->rule.cics.applid->exp))) {
                 rule = getrule(NULL, NULL, NULL, hinfo, C_CICS);
         }
 
@@ -2061,7 +2083,7 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
 		return;
 		}
 
-        while (rule && !namematch(pid, rule->rule.zvse_getvis.partid->pattern, rule->rule.zvse_getvis.partid->exp)) {
+        while (rule && (!rule->rule.zvse_getvis.partid || !namematch(pid, rule->rule.zvse_getvis.partid->pattern, rule->rule.zvse_getvis.partid->exp))) {
                 rule = getrule(NULL, NULL, NULL, hinfo, C_MEM_GETVIS);
         	}
 
@@ -2334,7 +2356,7 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 		sprintf(mibval_id, "%s:%s", mibname, valname);
 
 		while (rule && !found) {
-			found = namematch(mibval_id, rule->rule.mibval.mibvalexp->pattern, rule->rule.mibval.mibvalexp->exp);
+			found = (rule->rule.mibval.mibvalexp && namematch(mibval_id, rule->rule.mibval.mibvalexp->pattern, rule->rule.mibval.mibvalexp->exp));
 			if (found && keyname && rule->rule.mibval.keyexp)
 				found = namematch(keyname, rule->rule.mibval.keyexp->pattern, rule->rule.mibval.keyexp->exp);
 			if (!found) rule = getrule(NULL, NULL, NULL, hinfo, C_MIBVAL);
@@ -2475,7 +2497,7 @@ int scan_log(void *hinfo, char *classname,
 		int anylines = 0;
 
 		/* First, check if the filename matches */
-		if (!namematch(logname, rule->rule.log.logfile->pattern, rule->rule.log.logfile->exp)) continue;
+		if (!rule->rule.log.logfile || !namematch(logname, rule->rule.log.logfile->pattern, rule->rule.log.logfile->exp)) continue;
 
 		if (nofile) {
 			if (!(rule->flags & CHK_OPTIONAL)) {
@@ -2488,7 +2510,7 @@ int scan_log(void *hinfo, char *classname,
 		}
 
 		/* Next, check for a match anywhere in the data*/
-		if (!patternmatch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp)) continue;
+		if (!(rule->rule.log.matchexp && patternmatch(logdata, rule->rule.log.matchexp->pattern, rule->rule.log.matchexp->exp))) continue;
 
 		/* Some data in there matches what we want. Look at each line. */
 		boln = logdata;
@@ -2498,7 +2520,7 @@ int scan_log(void *hinfo, char *classname,
 				dbgprintf("Line '%s' matches\n", boln);
 
 				/* It matches. But maybe we'll ignore it ? */
-				if (!(rule->rule.log.ignoreexp && patternmatch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp))) {
+				if (!rule->rule.log.ignoreexp || patternmatch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp)) {
 					/* We wants it ... */
 					dbgprintf("FOUND match in line '%s'\n", boln);
 					anylines++;
@@ -2635,7 +2657,7 @@ int check_file(void *hinfo, char *classname,
 		int rulecolor = COL_GREEN;
 
 		/* First, check if the filename matches */
-		if (!namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
+		if (!rwalk->rule.fcheck.filename || !namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
 
 		*anyrules = 1;
 		if (!exists) {
@@ -2900,7 +2922,7 @@ int check_dir(void *hinfo, char *classname,
 		int rulecolor = COL_GREEN;
 
 		/* First, check if the filename matches */
-		if (!namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
+		if (!rwalk->rule.fcheck.filename || !namematch(filename, rwalk->rule.fcheck.filename->pattern, rwalk->rule.fcheck.filename->exp)) continue;
 
 		if (rwalk->flags & FCHK_MAXSIZE) {
 			if (dsize > rwalk->rule.dcheck.maxsize) {
@@ -2950,7 +2972,7 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 	while (rule) {
 		int rulematch = 0;
 
-		if (!namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
+		if (!rule->rule.rrdds.rrdkey || !namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
 
 		handle = rbtFind(valnames, rule->rule.rrdds.rrdds);
 		if (handle == rbtEnd(valnames)) goto nextrule;
@@ -3083,7 +3105,8 @@ void get_mqqueue_thresholds(void *hinfo, char *classname, char *qmgrname, char *
 
 	rule = getrule(hostname, pagepaths, classname, hinfo, C_MQ_QUEUE);
 	while (rule) {
-		if (namematch(qname, rule->rule.mqqueue.qname->pattern, rule->rule.mqqueue.qname->exp) &&
+		if (rule->rule.mqqueue.qname && rule->rule.mqqueue.qmgrname &&
+		    namematch(qname, rule->rule.mqqueue.qname->pattern, rule->rule.mqqueue.qname->exp) &&
 		    namematch(qmgrname, rule->rule.mqqueue.qmgrname->pattern, rule->rule.mqqueue.qmgrname->exp)) {
 			*warnlen = rule->rule.mqqueue.warnlen;
 			*critlen = rule->rule.mqqueue.critlen;
@@ -3107,7 +3130,8 @@ int get_mqchannel_params(void *hinfo, char *classname, char *qmgrname, char *chn
 
 	rule = getrule(hostname, pagepaths, classname, hinfo, C_MQ_CHANNEL);
 	while (rule) {
-		if (namematch(chnname, rule->rule.mqchannel.chnname->pattern, rule->rule.mqchannel.chnname->exp) &&
+		if (rule->rule.mqchannel.chnname && rule->rule.mqchannel.qmgrname && 
+		    namematch(chnname, rule->rule.mqchannel.chnname->pattern, rule->rule.mqchannel.chnname->exp) &&
 		    namematch(qmgrname, rule->rule.mqchannel.qmgrname->pattern, rule->rule.mqchannel.qmgrname->exp)) {
 			if (rule->rule.mqchannel.alertstates && namematch(chnstatus, rule->rule.mqchannel.alertstates->pattern, rule->rule.mqchannel.alertstates->exp)) {
 				*color = COL_RED;
