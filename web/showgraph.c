@@ -518,14 +518,24 @@ char *expand_tokens(char *tpl)
 			 */
 			if (rrddbs[rrdidx].rrdparam) {
 				char *val, *p;
+				int vallen;
 				char *resultstr;
 
 				val = colon_escape(rrddbs[rrdidx].rrdparam);
 				p = val; while ((p = strchr(p, ',')) != NULL) *p = '/';
 
-				/* Watch out - legends cannot be too long */
-				if (paramlen > 100) paramlen = 100;
-				resultstr = (char *)malloc(paramlen + 1);
+				/* rrdparam strings may be very long. */
+				if (strlen(val) > 100) *(val+100) = '\0';
+
+				/*
+				 * "paramlen" holds the longest string of the any of the matching files' rrdparam.
+				 * However, because this goes through colon_escape(), the actual string length 
+				 * passed to librrd functions may be longer (since ":" must be escaped as "\:").
+				 */
+				vallen = strlen(val);
+				if (vallen < paramlen) vallen = paramlen;
+
+				resultstr = (char *)malloc(vallen + 1);
 				sprintf(resultstr, "%-*s", paramlen, val);
 				addtobuffer(result, resultstr);
 				xfree(resultstr);
@@ -982,6 +992,9 @@ void generate_graph(char *gdeffn, char *rrddir, char *graphfn)
 				}
 
 				if (strlen(rrddbs[rrddbcount].rrdparam) > paramlen) {
+					/*
+					 * "paramlen" holds the longest string of the any of the matching files' rrdparam.
+					 */
 					paramlen = strlen(rrddbs[rrddbcount].rrdparam);
 				}
 
