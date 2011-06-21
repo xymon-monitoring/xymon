@@ -130,6 +130,20 @@ included. Default: Empty.
 .IP XYMONBODYMENUCSS
 URL for the Xymon menu CSS file. Default: "$XYMONMENUSKIN/xymonmenu.css"
 
+.IP HOSTPOPUP
+Determines what is used as the host comment on the webpages. The comment 
+by default appears as a pop-up when the mouse hovers over the hostname, 
+and is also shown on the "info" status page. This setting must be one or
+more of the letters "C" (COMMENT), "D" (DESCRIPTION) or "I" (IP-address).
+Including "C" uses the COMMENT setting for the host, including "D" uses 
+the DESCR setting for the host, and "I" uses the IP-address of the host.
+If more than one of these is set, then COMMENT takes precedence over
+DESCR which again has precence over IP.
+Note that DESCR and IP only appear in pop-up windows (if enabled),
+whereas the COMMENT is always used - if pop-up's have been disabled, then
+the COMMENT value is displayed next to the hostname on the webpages.
+Default: CDI
+
 
 .SH DIRECTORIES
 

@@ -142,6 +142,7 @@ const static struct {
 	{ "XYMONBODYHEADER", "file:$XYMONHOME/etc/xymonmenu.cfg" },
 	{ "XYMONBODYFOOTER", "" },
 	{ "XYMONALLOKTEXT", "<FONT SIZE=+2 FACE=\"Arial, Helvetica\"><BR><BR><I>All Monitored Systems OK</I></FONT><BR><BR>" },
+	{ "HOSTPOPUP", "CDI" },
 	{ NULL, NULL }
 };
 

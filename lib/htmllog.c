@@ -35,14 +35,47 @@ static char *rowfont = NULL;
 static char *documentationurl = NULL;
 static char *doctarget = NULL;
 
+#define HOSTPOPUP_COMMENT 1
+#define HOSTPOPUP_DESCR   2
+#define HOSTPOPUP_IP      4
+
+static int hostpopup = (HOSTPOPUP_COMMENT | HOSTPOPUP_DESCR | HOSTPOPUP_IP);
+
 enum histbutton_t histlocation = HIST_BOTTOM;
+
+static void hostpopup_setup(void)
+{
+	static int setup_done = 0;
+	char *val, *p;
+
+	if (setup_done) return;
+
+	val = xgetenv("HOSTPOPUP");
+	if (val) {
+		/* Clear the setting, since there is an explicit value for it */
+		hostpopup = 0;
+
+		for (p = val; (*p); p++) {
+			switch (*p) {
+			  case 'C': case 'c': hostpopup = (hostpopup | HOSTPOPUP_COMMENT); break;
+			  case 'D': case 'd': hostpopup = (hostpopup | HOSTPOPUP_DESCR); break;
+			  case 'I': case 'i': hostpopup = (hostpopup | HOSTPOPUP_IP); break;
+			  default: break;
+			}
+		}
+	}
+
+	setup_done = 1;
+}
 
 static void hostsvc_setup(void)
 {
 	static int setup_done = 0;
+	char *dac;
 
 	if (setup_done) return;
 
+	hostpopup_setup();
 	getenv_default("NONHISTS", "info,trends,graphs", NULL);
 	getenv_default("CGIBINURL", "/cgi-bin", &cgibinurl);
 	getenv_default("XYMONPAGEACKFONT", "COLOR=\"#33ebf4\" SIZE=-1\"", &ackfont);
@@ -497,13 +530,18 @@ static char *nameandcomment(void *host, char *hostname, int usetooltip)
 
 	if (result) xfree(result);
 
+	hostpopup_setup();
+
 	/* For summary "hosts", we have no hinfo record. */
 	if (!host) return hostname;
 
 	hname = xmh_item(host, XMH_HOSTNAME);
 	disp = xmh_item(host, XMH_DISPLAYNAME);
-	cmt = xmh_item(host, XMH_COMMENT); if (!cmt) cmt = xmh_item(host, XMH_DESCRIPTION);
-	if (!cmt && usetooltip) cmt = xmh_item(host, XMH_IP);
+
+	cmt = NULL;
+	if (!cmt && (hostpopup & HOSTPOPUP_COMMENT))             cmt = xmh_item(host, XMH_COMMENT); 
+	if (!cmt && usetooltip && (hostpopup & HOSTPOPUP_DESCR)) cmt = xmh_item(host, XMH_DESCRIPTION);
+	if (!cmt && usetooltip && (hostpopup & HOSTPOPUP_IP))    cmt = xmh_item(host, XMH_IP);
 
 	if (disp == NULL) disp = hname;
 
@@ -514,8 +552,8 @@ static char *nameandcomment(void *host, char *hostname, int usetooltip)
 			sprintf(result, "<span title=\"%s\">%s</span>", cmt, disp);
 		}
 		else {
-		result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
-		sprintf(result, "%s (%s)", disp, cmt);
+			result = (char *)malloc(strlen(disp) + strlen(cmt) + 4);
+			sprintf(result, "%s (%s)", disp, cmt);
 		}
 		return result;
 	}
