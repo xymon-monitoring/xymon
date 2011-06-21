@@ -11,20 +11,38 @@ endif
 
 CFLAGS += -I. -I../include 
 
-all: test-endianness libxymon.a xymonclient.a loadhosts stackio availability md5 sha1 rmd160 locator
+all: test-endianness libxymon.a libredblack.a redblack.h xymonclient.a loadhosts stackio availability md5 sha1 rmd160 locator
 
 client: test-endianness xymonclient.a
 
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-libxymon.a: $(XYMONLIBOBJS)
+libxymon.a: redblack.h $(XYMONLIBOBJS)
 	ar cr libxymon.a $(XYMONLIBOBJS)
 	ranlib libxymon.a || echo ""
 
 xymonclient.a: $(CLIENTLIBOBJS)
 	ar cr xymonclient.a $(CLIENTLIBOBJS)
 	ranlib xymonclient.a || echo ""
+
+libredblack.a: libredblack/.libs/libredblack.a
+	cp libredblack/.libs/libredblack.a .
+
+redblack.h: libredblack/.libs/libredblack.a
+	cp libredblack/redblack.h .
+
+libredblack/.libs/libredblack.a: libredblack/Makefile
+	(cd libredblack && $(MAKE))
+
+libredblack/Makefile: libredblack/configure
+	(cd libredblack && CFLAGS="$(CFLAGS)" ./configure --disable-shared --without-rbgen)
+
+libredblack/configure: libredblack-1.3.tar.gz
+	gzip -dc $< | tar xf -
+	mv libredblack-1.3 libredblack
+	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
+	touch libredblack/configure
 
 loadhosts.o: loadhosts.c loadhosts_file.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
@@ -84,5 +102,8 @@ locator: locator.c
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 clean:
-	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator
+	rm -f *.o *.a redblack.h *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator
+
+distclean: clean
+	rm -rf libredblack
 
