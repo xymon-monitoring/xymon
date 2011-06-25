@@ -659,11 +659,9 @@ static void setup_ssl(tcptest_t *item)
 		sk = SSL_get_ciphers(item->ssldata);
 		for (i=0; i<sk_SSL_CIPHER_num(sk); i++) {
 			int b1, b2;
-			char *cph;
 
 			b1 = SSL_CIPHER_get_bits(sk_SSL_CIPHER_value(sk,i), &b2);
-			cph = SSL_CIPHER_get_name(sk_SSL_CIPHER_value(sk,i));
-			snprintf(msglin, sizeof(msglin), "Cipher %d: %s (%d bits)\n", i, cph, b1);
+			snprintf(msglin, sizeof(msglin), "Cipher %d: %s (%d bits)\n", i, SSL_CIPHER_get_name(sk_SSL_CIPHER_value(sk,i)), b1);
 			addtobuffer(sslinfo, msglin);
 
 			if ((item->mincipherbits == 0) || (b1 < item->mincipherbits)) item->mincipherbits = b1;
