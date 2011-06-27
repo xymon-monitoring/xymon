@@ -30,7 +30,16 @@ libredblack.a: libredblack/.libs/libredblack.a
 	cp libredblack/.libs/libredblack.a .
 
 redblack.h: libredblack/.libs/libredblack.a
-	cp libredblack/redblack.h .
+# The redblack.h header-file declares all data returned from the lookup-functions as "const".
+# Which doesn't make sense, since it points to data that I have put into the tree, and can
+# therefore modify as I see fit. So to avoid gcc puking all over the place, fix these defs.
+	cat libredblack/redblack.h | sed \
+		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(find)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(find)!' \
+		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(lookup)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(lookup)!' \
+		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(search)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(search)!' \
+		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(delete)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(delete)!' \
+		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(readlist)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(readlist)!' >redblack.h
+
 
 libredblack/.libs/libredblack.a: libredblack/Makefile
 	(cd libredblack && $(MAKE))
