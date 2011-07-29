@@ -341,6 +341,7 @@ unsigned char *get_xymond_message(enum msgchannels_t chnid, char *id, int *seq, 
 	static char *endpos;	/* Where the first message ends */
 	static char *fillpos;	/* Where our unused data ends (the \0 byte) */
 
+	int truncated = 0;
 	struct timespec cutoff;
 	int maymove, needmoredata;
 	char *endsrch;		/* Where in the buffer do we start looking for the end-message marker */
@@ -463,97 +464,101 @@ startagain:
 		if (usedbytes >= maxmsgsize) {
 			/* Over-size message. Truncate it. */
 			errprintf("Got over-size message, truncating at %d bytes (max: %d)\n", usedbytes, maxmsgsize);
-			endpos = startpos + maxmsgsize;
+			endpos = startpos + usedbytes - 5;
 			memcpy(endpos, "\n@@\n", 4);	/* Simulate end-of-message and flush data */
 			needmoredata = 0;
-			continue;
+			truncated = 1;
 		}
 
-		if (maymove && (bufleft < EXTRABUFSPACE)) {
-			/* Buffer is almost full - move data to accomodate a large message. */
-			dbgprintf("Moving %d bytes to start of buffer\n", usedbytes);
-			memmove(buf, startpos, usedbytes);
-			startpos = buf;
-			fillpos = startpos + usedbytes;
-			*fillpos = '\0';
-			endsrch = (usedbytes >= 4) ? (fillpos - 4) : startpos;
-			maymove = 0;
-			bufleft = bufsz - (fillpos - buf);
-		}
-
-		if (timeout) {
-			/* How long time until the timeout ? */
-
-			getntimer(&now);
-			selecttmo.tv_sec = cutoff.tv_sec - now.tv_sec;
-			selecttmo.tv_usec = (cutoff.tv_nsec - now.tv_nsec) / 1000;
-			if (selecttmo.tv_usec < 0) {
-				selecttmo.tv_sec--;
-				selecttmo.tv_usec += 1000000;
-			}
-		}
-
-		FD_ZERO(&fdread);
-		FD_SET(inputfd, &fdread);
-
-		res = select(inputfd+1, &fdread, NULL, NULL, (timeout ? &selecttmo : NULL));
-
-		if (res < 0) {
-			if (errno == EAGAIN) continue;
-
-			if (errno == EINTR) {
-				dbgprintf("get_xymond_message: Interrupted\n");
-				*seq = 0;
-				return idlemsg;
+		if (needmoredata) {
+			if (maymove && (bufleft < EXTRABUFSPACE)) {
+				/* Buffer is almost full - move data to accomodate a large message. */
+				dbgprintf("Moving %d bytes to start of buffer\n", usedbytes);
+				memmove(buf, startpos, usedbytes);
+				startpos = buf;
+				fillpos = startpos + usedbytes;
+				*fillpos = '\0';
+				endsrch = (usedbytes >= 4) ? (fillpos - 4) : startpos;
+				maymove = 0;
+				bufleft = bufsz - (fillpos - buf);
 			}
 
-			/* Some error happened */
-			ioerror = 1;
-			dbgprintf("get_xymond_message: Returning NULL due to select error %s\n",
-				  strerror(errno));
-			return NULL;
-		}
-		else if (res == 0) {
-			/* 
-			 * Timeout - return the "idle" message.
-			 * NB: If select() was not passed a timeout parameter, this cannot trigger
-			 */
-			*seq = 0;
-			return idlemsg;
-		}
-		else if (FD_ISSET(inputfd, &fdread)) {
-			res = read(inputfd, fillpos, bufleft);
+			if (timeout) {
+				/* How long time until the timeout ? */
+
+				getntimer(&now);
+				selecttmo.tv_sec = cutoff.tv_sec - now.tv_sec;
+				selecttmo.tv_usec = (cutoff.tv_nsec - now.tv_nsec) / 1000;
+				if (selecttmo.tv_usec < 0) {
+					selecttmo.tv_sec--;
+					selecttmo.tv_usec += 1000000;
+				}
+			}
+
+			FD_ZERO(&fdread);
+			FD_SET(inputfd, &fdread);
+
+			res = select(inputfd+1, &fdread, NULL, NULL, (timeout ? &selecttmo : NULL));
+
 			if (res < 0) {
-				if ((errno == EAGAIN) || (errno == EINTR)) continue;
+				if (errno == EAGAIN) continue;
 
+				if (errno == EINTR) {
+					dbgprintf("get_xymond_message: Interrupted\n");
+					*seq = 0;
+					return idlemsg;
+				}
+
+				/* Some error happened */
 				ioerror = 1;
-				dbgprintf("get_xymond_message: Returning NULL due to read error %s\n",
-					  strerror(errno));
+				dbgprintf("get_xymond_message: Returning NULL due to select error %s\n",
+						strerror(errno));
 				return NULL;
 			}
 			else if (res == 0) {
-				/* read() returns 0 --> End-of-file */
-				ioerror = 1;
-				dbgprintf("get_xymond_message: Returning NULL due to EOF\n");
-				return NULL;
-			}
-			else {
 				/* 
-				 * Got data - null-terminate it, and update fillpos
+				 * Timeout - return the "idle" message.
+				 * NB: If select() was not passed a timeout parameter, this cannot trigger
 				 */
-				*(fillpos+res) = '\0';
-				fillpos += res;
+				*seq = 0;
+				return idlemsg;
+			}
+			else if (FD_ISSET(inputfd, &fdread)) {
+				res = read(inputfd, fillpos, bufleft);
+				if (res < 0) {
+					if ((errno == EAGAIN) || (errno == EINTR)) continue;
 
-				/* Did we get an end-of-message marker ? Then we're done. */
-				endpos = strstr(endsrch, "\n@@\n");
-				needmoredata = (endpos == NULL);
+					ioerror = 1;
+					dbgprintf("get_xymond_message: Returning NULL due to read error %s\n",
+							strerror(errno));
+					return NULL;
+				}
+				else if (res == 0) {
+					/* read() returns 0 --> End-of-file */
+					ioerror = 1;
+					dbgprintf("get_xymond_message: Returning NULL due to EOF\n");
+					return NULL;
+				}
+				else {
+					/* 
+					 * Got data - null-terminate it, and update fillpos
+					 */
+					dbgprintf("Got %d bytes\n", res);
 
-				/*
-				 * If not done, update endsrch. We need to look at the
-				 * last 3 bytes of input we got - they could be "\n@@" so
-				 * all that is missing is the final "\n".
-				 */
-				if (needmoredata && (res >= 3)) endsrch = fillpos-3;
+					*(fillpos+res) = '\0';
+					fillpos += res;
+
+					/* Did we get an end-of-message marker ? Then we're done. */
+					endpos = strstr(endsrch, "\n@@\n");
+					needmoredata = (endpos == NULL);
+
+					/*
+					 * If not done, update endsrch. We need to look at the
+					 * last 3 bytes of input we got - they could be "\n@@" so
+					 * all that is missing is the final "\n".
+					 */
+					if (needmoredata && (res >= 3)) endsrch = fillpos-3;
+				}
 			}
 		}
 	}
@@ -561,9 +566,15 @@ startagain:
 	/* We have a complete message between startpos and endpos */
 	result = startpos;
 	*endpos = '\0';
-	startpos = endpos+4; /* +4 because we skip the "\n@@\n" end-marker from the previous message */
-	endpos = strstr(startpos, "\n@@\n");	/* To see if we already have a full message loaded */
-	/* fillpos stays where it is */
+	if (truncated) {
+		startpos = fillpos = buf;
+		endpos = NULL;
+	}
+	else {
+		startpos = endpos+4; /* +4 because we skip the "\n@@\n" end-marker from the previous message */
+		endpos = strstr(startpos, "\n@@\n");	/* To see if we already have a full message loaded */
+		/* fillpos stays where it is */
+	}
 
 	/* Check that it really is a message, and not just some garbled data */
 	if (strncmp(result, "@@", 2) != 0) {
@@ -580,9 +591,9 @@ startagain:
 		 * messages (those that are not handled by other network-based
 		 * worker modules).
 		 */
-		char *p = result + strcspn(result, "0123456789|");
-		if (isdigit((int)*p)) {
-			*seq = atoi(p);
+		char *p = result + strcspn(result, "#/|\n");
+		if (*p == '#') {
+			*seq = atoi(p+1);
 
 			if (debug) {
 				p = strchr(result, '\n'); if (p) *p = '\0';
@@ -606,6 +617,43 @@ startagain:
 			}
 
 			if (seqnum == 999999) seqnum = 0;
+		}
+	}
+
+	/* Verify checksum - except for truncated messages, where it won't match since we overwrite bytes with the end-marker */
+	if (result && !truncated) {
+		static struct digestctx_t *ctx = NULL;
+		char *hashstr;
+
+		if (!ctx) {
+			ctx = (digestctx_t *) malloc(sizeof(digestctx_t));
+			ctx->digestname = strdup("md5");
+			ctx->digesttype = D_MD5;
+			ctx->mdctx = (void *)malloc(myMD5_Size());
+		}
+
+		hashstr = result + strcspn(result, ":#/|\n");
+
+		if (*hashstr == ':') {
+			unsigned char md_value[16];
+			char md_string[2*16+1];
+			int i;
+			char *p;
+
+			myMD5_Init(ctx->mdctx);
+			myMD5_Update(ctx->mdctx, result, (hashstr - result));
+			myMD5_Update(ctx->mdctx, hashstr + 33, strlen(hashstr + 33));
+			myMD5_Update(ctx->mdctx, "\n@@\n", 4);	/* Stripped earlier */
+			myMD5_Final(md_value, ctx->mdctx);
+			for(i = 0, p = md_string; (i < sizeof(md_value)); i++)
+				p += sprintf(p, "%02x", md_value[i]);
+			*p = '\0';
+			if (memcmp(hashstr+1, md_string, 32) != 0) {
+				p = strchr(result, '\n'); if (p) *(p+1) = '\0';
+				errprintf("get_xymond_message: Invalid checksum, skipping message '%s'\n", result);
+				result = NULL;
+				goto startagain;
+			}
 		}
 	}
 

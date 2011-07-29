@@ -87,6 +87,13 @@ static int running = 1;
 static int gotalarm = 0;
 static int pendingcount = 0;
 
+/*
+ * chksumsize is the space left in front of the message buffer, to
+ * allow room for a message digest checksum to be added to the
+ * message. Since we use an MD5 hash, this will be 32 bytes 
+ * plus a one-char marker.
+ */
+static int checksumsize = 0;
 
 void addnetpeer(char *peername)
 {
@@ -484,6 +491,12 @@ int main(int argc, char *argv[])
 				stdfilter = compileregex("^@@(logrotate|shutdown|drophost|droptest|renamehost|renametest)");
 			}
 		}
+		else if (argnmatch(argv[argi], "--md5")) {
+			checksumsize = 33;
+		}
+		else if (argnmatch(argv[argi], "--no-md5")) {
+			checksumsize = 0;
+		}
 		else {
 			char *childcmd;
 			char **childargs;
@@ -580,9 +593,12 @@ int main(int argc, char *argv[])
 			 * message arriving. Copy the message to our own buffer queue.
 			 */
 			char *inbuf = NULL;
+			int msgsz = 0;
 
 			if (!msgfilter || matchregex(channel->channelbuf, msgfilter) || matchregex(channel->channelbuf, stdfilter)) {
-				inbuf = strdup(channel->channelbuf);
+				msgsz = strlen(channel->channelbuf);
+				inbuf = (char *)malloc(msgsz + checksumsize + 1);
+				memcpy(inbuf+checksumsize, channel->channelbuf, msgsz+1); /* Include \0 */
 			}
 
 			/* 
@@ -625,10 +641,34 @@ int main(int argc, char *argv[])
 				 * See if they want us to rotate logs. We pass this on to
 				 * the worker module as well, but must handle our own logfile.
 				 */
-				if (strncmp(inbuf, "@@logrotate", 11) == 0) {
+				if (strncmp(inbuf+checksumsize, "@@logrotate", 11) == 0) {
 					freopen(logfn, "a", stdout);
 					freopen(logfn, "a", stderr);
 				}
+
+				if (checksumsize > 0) {
+					char *sep1 = inbuf + checksumsize + strcspn(inbuf+checksumsize, "#|\n");
+
+					if (*sep1 == '#') {
+						/* 
+						 * Add md5 hash of the message. I.e. transform the header line from
+						 *   "@@%s#%u/%s|%d.%06d| channelmarker, seq, hostname, tstamp.tv_sec, tstamp.tv_usec
+						 * to
+						 *   "@@%s:%s#%u/%s|%d.%06d| channelmarker, hashstr, seq, hostname, tstamp.tv_sec, tstamp.tv_usec
+						 */
+						char *hashstr = md5hash(inbuf+checksumsize);
+						int hlen = sep1 - (inbuf + checksumsize);
+
+						memmove(inbuf, inbuf+checksumsize, hlen);
+						*(inbuf + hlen) = ':';
+						memcpy(inbuf+hlen+1, hashstr, strlen(hashstr));
+					}
+					else {
+						/* No sequence number (control message). Skip checksum for these */
+						memmove(inbuf, inbuf+checksumsize, msgsz+1);
+					}
+				}
+
 
 				/*
 				 * Put the new message on our outbound queue.

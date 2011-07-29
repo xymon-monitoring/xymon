@@ -76,6 +76,12 @@ file.
 .IP "--log=FILENAME"
 Redirect output to this log-file.
 
+.IP "--md5 / --no-md5"
+Enable/disable checksumming of messages passed from xymond_channel to the worker
+module. This may be useful if you suspect that data may be corrupted, e.g. when
+sent to a remote worker module. Note that enabling this may break communication
+with old versions of Xymon worker modules. Default: Disabled.
+
 .IP "--debug"
 Enable debugging output.
 
