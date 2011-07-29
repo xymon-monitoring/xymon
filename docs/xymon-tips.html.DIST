@@ -25,6 +25,7 @@ raised with Xymon.</p>
 	<li><a href="#mailnosubj">My alert emails come without a subject</a></li>
 	<li><a href="#snmptraps">Does Xymon support receiving SNMP traps?</a></li>
 	<li><a href="#scripts">How can I create a custom test script?</a></li>
+	<li><a href="#ipad">How can I make the menus work on my iPad?</a></li>
 </ul>
 <hr>
 
@@ -327,6 +328,21 @@ Like this:</p>
 <p>Note that for server side tests, you need to loop over the list
 of hosts found in the hosts.cfg file, and send one status message for
 each host. Other than that, it is just like the client-side tests.</p>
+
+<hr>
+
+<h3><a name="ipad">How can I make the menus work on my iPad ?</a></h3>
+<p>The menu system uses the CSS &quot;hover&quot; tag, but this is not
+supported on tablets and other touch-screen interfaces like the iPad.
+Mark Hinkle provides <a href="http://lists.xymon.com/archive/2011-July/032069.html">this solution</a>
+to the problem:
+</p>
+<p><tt>
+In the ~xymon/server/etc/xymonmenu.cfg file, I added the 
+'&lt;a href=&quot;javascript:;&quot;&gt;' anchor around the top-level menu 
+items. Like:<br>
+&nbsp;&nbsp;&lt;span class=&quot;menutag&quot;&gt;&lt;a href=&quot;javascript:;&quot;&gt;Views&lt;/a&gt;&lt;span class=&quot;invis&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
+</tt></p>
 
 <hr>
 
