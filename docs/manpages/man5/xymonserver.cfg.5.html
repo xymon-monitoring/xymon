@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONSERVER.CFG</TITLE>
 </HEAD><BODY>
 <H1>XYMONSERVER.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp:  6 May 2011<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 30 Jul 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -156,6 +156,20 @@ included. Default: Empty.
 <P>
 <DT>XYMONBODYMENUCSS<DD>
 URL for the Xymon menu CSS file. Default: &quot;$XYMONMENUSKIN/xymonmenu.css&quot;
+<P>
+<DT>HOSTPOPUP<DD>
+Determines what is used as the host comment on the webpages. The comment 
+by default appears as a pop-up when the mouse hovers over the hostname, 
+and is also shown on the &quot;info&quot; status page. This setting must be one or
+more of the letters &quot;C&quot; (COMMENT), &quot;D&quot; (DESCRIPTION) or &quot;I&quot; (IP-address).
+Including &quot;C&quot; uses the COMMENT setting for the host, including &quot;D&quot; uses 
+the DESCR setting for the host, and &quot;I&quot; uses the IP-address of the host.
+If more than one of these is set, then COMMENT takes precedence over
+DESCR which again has precence over IP.
+Note that DESCR and IP only appear in pop-up windows (if enabled),
+whereas the COMMENT is always used - if pop-up's have been disabled, then
+the COMMENT value is displayed next to the hostname on the webpages.
+Default: CDI
 <P>
 <P>
 </DL>
@@ -826,6 +840,6 @@ the options you normally used when building Xymon webpages.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 05:49:55 GMT, May 06, 2011
+Time: 13:51:46 GMT, July 30, 2011
 </BODY>
 </HTML>
