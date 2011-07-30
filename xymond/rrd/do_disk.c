@@ -103,8 +103,7 @@ int do_disk_rrd(char *hostname, char *testname, char *classname, char *pagepaths
 		 * So check if there's a slash in the NT filesystem letter - if yes,
 		 * then it's really a Unix system after all.
 		 */
-		if ( (dsystype == DT_NT) && (*(columns[5])) &&
-		     ((strchr(columns[0], '/')) || (strlen(columns[0]) > 1)) )
+		if ( (dsystype == DT_NT) && (*(columns[5])) && (strchr(columns[0], '/')) )
 			dsystype = DT_UNIX;
 
 		switch (dsystype) {
