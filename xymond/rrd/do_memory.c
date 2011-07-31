@@ -28,7 +28,7 @@ static int get_mem_percent(char *l)
 
 	p = strchr(l, '%');
 	if (p == NULL) return 0;
-	p--; while ( (p > l) && isdigit((int) *p)) p--;
+	p--; while ( (p > l) && (isdigit((int) *p) || (*p == '.')) ) p--;
 
 	return atoi(p+1);
 }
@@ -48,6 +48,30 @@ void do_memory_rrd_update(time_t tstamp, char *hostname, char *testname, char *c
 	if ((actval >= 0) && (actval <= 100)) {
 		setupfn2("%s.%s.rrd", "memory", "actual");
 		sprintf(rrdvalues, "%d:%d", (int)tstamp, actval);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+	}
+}
+
+/* bb-xsnmp.pl memory update - Marco Avissano */
+void do_memory_rrd_update_router(time_t tstamp, char *hostname, char *testname, char *classname, char *pagepaths, int procval, int ioval, int fastval)
+{
+	if (memory_tpl == NULL) memory_tpl = setup_template(memory_params);
+
+	if ((procval >= 0) && (procval <= 100)) { 
+		setupfn2("%s.%s.rrd", "memory", "processor");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, procval);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+	}
+
+	if ((ioval >= 0) && (ioval <= 100)) {  
+		setupfn2("%s.%s.rrd", "memory", "io");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, ioval);
+		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
+	}
+
+	if ((fastval >= 0) && (fastval <= 100)) {
+		setupfn2("%s.%s.rrd", "memory", "fast");
+		sprintf(rrdvalues, "%d:%d", (int)tstamp, fastval);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 	}
 }
@@ -120,7 +144,7 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 		return 0;
-		}	  
+	}	  
 
 	if (strstr(msg, "z/VSE VSIZE Utilization")) {
 		char *p;
@@ -138,8 +162,51 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 
 		return 0;
+	}	  
 
-		}	  
+	if (strstr(msg, "bb-xsnmp.pl")) {  
+		/* bb-xsnmp.pl memory update - Marco Avissano */
+
+		/*               Cisco Routers memory report.
+		 *  Aug 22 10:52:17 2006
+
+		 *           Memory      Used      Total   Percentage
+		 * green   Processor   2710556   13032864       20.80%
+		 * green         I/O   1664400    4194304       39.68%
+		 * green        Fast   1987024    8388608       23.69%
+		 */
+
+		char *proc, *io, *fast;
+
+		proc = strstr(msg, "Processor"); if (proc == NULL) proc = strstr(msg, "Processor");
+		io = strstr(msg, "I/O"); if (io == NULL) io = strstr(msg, "I/O");
+		fast = strstr(msg, "Fast"); if (fast == NULL) fast = strstr(msg, "Fast");
+
+		if (proc) {
+			char *eoln;
+			int procval = -1, ioval = -1, fastval = -1;
+
+			eoln = strchr(proc, '\n'); if (eoln) *eoln = '\0';
+			procval = get_mem_percent(proc);
+			if (eoln) *eoln = '\n';
+
+			if (io) {
+				eoln = strchr(io, '\n'); if (eoln) *eoln = '\0';
+				ioval = get_mem_percent(io);
+				if (eoln) *eoln = '\n';
+			}
+
+			if (fast) {
+				eoln = strchr(fast, '\n'); if (eoln) *eoln = '\0';
+				fastval = get_mem_percent(fast);
+				if (eoln) *eoln = '\n';
+			}
+
+			do_memory_rrd_update_router(tstamp, hostname, testname, classname, pagepaths, procval, ioval, fastval);
+		}
+
+		return 0;
+	}
 
 	if (strstr(msg, "Total Cache Buffers")) {
 		/* Netware nwstat2bb memory report.
@@ -187,6 +254,8 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 				create_and_update_rrd(hostname, testname, classname, pagepaths, memory_params, memory_tpl);
 			}
 		}
+
+		return 0;
 	}
 	else {
 		phys = strstr(msg, "Physical"); if (phys == NULL) phys = strstr(msg, "Real");
