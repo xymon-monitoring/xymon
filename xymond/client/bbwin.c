@@ -3,7 +3,7 @@
 /*                                                                            */
 /* Client backend module for BBWin/Windoes client                             */
 /*                                                                            */
-/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2011 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2007-2008 Francois Lacroix				      */
 /* Copyright (C) 2007-2008 Etienne Grignon <etienne.grignon@gmail.com>        */
 /*                                                                            */

@@ -5,7 +5,7 @@
 # This invokes xymonlaunch, which in turn runs the Xymon client and any      #
 # extensions configured.                                                     #
 #                                                                            #
-# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2011 Henrik Storner <henrik@hswn.dk>                    #
 # "status" section (C) Scott Smith 2006                                      #
 #                                                                            #
 # This program is released under the GNU General Public License (GPL),       #

@@ -3,7 +3,7 @@
 /*                                                                            */
 /* Client backend module for SCO_SV                                           */
 /*                                                                            */
-/* Copyright (C) 2005-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2005-2011 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2006-2008 Charles Goyard <cg@fsck.Fr>                        */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */

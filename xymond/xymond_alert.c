@@ -5,7 +5,7 @@
 /* keeps track of active alerts, enable/disable, acks etc., and triggers      */
 /* outgoing alerts by calling send_alert().                                   */
 /*                                                                            */
-/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2011 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

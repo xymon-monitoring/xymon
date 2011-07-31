@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon CGI for administering the critical.cfg file                          */
 /*                                                                            */
-/* Copyright (C) 2006-2009 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2006-2011 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

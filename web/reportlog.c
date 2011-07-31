@@ -4,7 +4,7 @@
 /* This tool generates the report status log for a single status, with the    */
 /* availability percentages etc needed for a report-mode view.                */
 /*                                                                            */
-/* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2011 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

@@ -4,7 +4,7 @@
 /* This module handles any message with data in the form                      */
 /*     NAME: VALUE                                                            */
 /*                                                                            */
-/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2011 Henrik Storner <henrik@hswn.dk>                    */
 /* split-ncv added by Charles Goyard November 2006                            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */

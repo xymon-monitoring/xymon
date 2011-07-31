@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This is used to implement message digest functions (MD5, SHA1 etc.)        */
 /*                                                                            */
-/* Copyright (C) 2003-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2003-2011 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

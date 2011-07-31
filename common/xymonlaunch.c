@@ -4,7 +4,7 @@
 /* This is used to launch various parts of the Xymon system. Some programs    */
 /* start up once and keep running, other must run at various intervals.       */
 /*                                                                            */
-/* Copyright (C) 2004-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2011 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

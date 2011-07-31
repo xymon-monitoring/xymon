@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This module handles combined z/OS and z/VSE ASID and NPARTS messages.      */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2011 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2007-2009 Rich Smrcina <rsmrcina@wi.rr.com>                  */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */

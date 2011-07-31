@@ -4,7 +4,7 @@
 /* This utility is used to manually control the RRD cache.                    */
 /* It is a debugging tool.                                                    */
 /*                                                                            */
-/* Copyright (C) 2007-2009 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2007-2011 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

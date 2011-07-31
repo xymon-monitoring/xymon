@@ -6,7 +6,7 @@
 /* It is also used for the Xymon column-name links, to provide information    */
 /* about what each column header means and what kind of test is run.          */
 /*                                                                            */
-/* Copyright (C) 2003-2009 Henrik Storner <henrik@storner.dk>                 */
+/* Copyright (C) 2003-2011 Henrik Storner <henrik@storner.dk>                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

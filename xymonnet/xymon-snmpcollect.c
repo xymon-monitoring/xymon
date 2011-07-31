@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor SNMP data collection tool                                    */
 /*                                                                            */
-/* Copyright (C) 2007-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2007-2011 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* Inspired by the asyncapp.c file from the "NET-SNMP demo", available from   */
 /* the Net-SNMP website. This file carries the attribution                    */

@@ -2,7 +2,7 @@
 #----------------------------------------------------------------------------#
 # SCO Unixware client for Xymon                                              #
 #                                                                            #
-# Copyright (C) 2005-2010 Henrik Storner <henrik@hswn.dk>                    #
+# Copyright (C) 2005-2011 Henrik Storner <henrik@hswn.dk>                    #
 # Copyright (C) 2006 Charles Goyard <cg@fsck.fr>                             #
 # Copyright (C) 2009 Buchan Milne <bgmilne@mandriva.org>                     #
 #                                                                            #

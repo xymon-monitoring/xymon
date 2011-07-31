@@ -4,7 +4,7 @@
 /* This is used to send a single message using the Xymon/BB protocol to the   */
 /* Xymon server.                                                              */
 /*                                                                            */
-/* Copyright (C) 2002-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2002-2011 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

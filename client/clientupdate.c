@@ -6,7 +6,7 @@
 /* current version on the server, and if they do not match then this utility  */
 /* is run to fetch the new version from the server and unpack it via "tar".   */
 /*                                                                            */
-/* Copyright (C) 2006-2009 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2006-2011 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

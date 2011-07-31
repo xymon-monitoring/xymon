@@ -3,7 +3,7 @@
 /*                                                                            */
 /* This module handles z/VM "mdc" data messages                               */
 /*                                                                            */
-/* Copyright (C) 2006 Henrik Storner <henrik@hswn.dk>                         */
+/* Copyright (C) 2006-2011 Henrik Storner <henrik@hswn.dk>                    */
 /* Copyright (C) 2007 Rich Smrcina                                            */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
