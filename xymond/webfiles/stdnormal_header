@@ -7,11 +7,11 @@
 <META HTTP-EQUIV="Set-Cookie" CONTENT="host=; path=/">
 <TITLE>&XYMWEBBACKGROUND : Xymon - Status @ &XYMWEBDATE</TITLE>
 
-<!-- Styles for the menu bar -->
-<link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
-
 <!-- Styles for the Xymon body  -->
 <link rel="stylesheet" type="text/css" href="&XYMONBODYCSS">
+
+<!-- Styles for the menu bar -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
 
 <!-- The favicon image -->
 <link rel="shortcut icon" href="&XYMONSKIN/favicon-&XYMWEBBACKGROUND.ico">
