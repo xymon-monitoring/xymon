@@ -22,7 +22,7 @@ libxymon.a: redblack.h $(XYMONLIBOBJS)
 	ar cr libxymon.a $(XYMONLIBOBJS)
 	ranlib libxymon.a || echo ""
 
-xymonclient.a: $(CLIENTLIBOBJS)
+xymonclient.a: redblack.h $(CLIENTLIBOBJS)
 	ar cr xymonclient.a $(CLIENTLIBOBJS)
 	ranlib xymonclient.a || echo ""
 
