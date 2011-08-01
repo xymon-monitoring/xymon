@@ -1,3 +1,35 @@
+xymon (4.3.4) unstable; urgency=medium
+
+   rev 6720
+   * Fix crashes and data corruption in Xymon worker modules
+     (xymond_client, xymond_rrd etc) after handling large messages.
+   * Fix xymond lock-up when renaming/deleting hosts
+   * Fix xymond cookie lookup mechanism
+   * Fix xymond_client crash if analysis.cfg contains invalid
+     configuration entries, e.g. expressions that do not compile.
+   * Fix showgraph CGI crash when legends contain colon.
+   * CGI utils: Fix potential security issues involving buffer-
+     overruns when generating responses.
+   * CGI utils: Fix crash when invoked with HTTP "HEAD"
+   * CGI utils: Fix crashes on 64-bit platforms due to missing
+     prototype of "basename()" function.
+   * svcstatus CGI: Fix crash if history log is not a file.
+   * Critical systems view CGI: Fix cross-site scripting
+   * Fix recovery-messages for alerts sent to a GROUP
+   * xymonnet: Include hostname when reporting erroneous test-spec
+   * Webpages: Add new HOSTPOPUP setting to control what values from
+     hosts.cfg are displayed as a "comment" to the hostname (either
+     in pop-up's or next to the hostname).
+   * RRD "memory" status handler now recognizes the output from the
+     bb-xsnmp.pl module (for Cisco routers).
+   * Web templates modified so the menu CSS can override the default
+     body CSS.
+   * Acknowledge web page now allows selecting minutes/hours/days
+   * Enable/Disable webpage enhanced, so when selecting multiple hosts
+     the "Tests" column only lists the tests those hosts have.
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 1 Aug 2011 23:26:00 +0200
+
 xymon (4.3.3) unstable; urgency=high
 
   rev 6684

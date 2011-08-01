@@ -1,3 +1,34 @@
+Changes from 4.3.3 -> 4.3.4 (1 Aug 2011)
+========================================
+* rev 6713
+* Fix crashes and data corruption in Xymon worker modules
+  (xymond_client, xymond_rrd etc) after handling large
+  messages.
+* Fix xymond lock-up when renaming/deleting hosts
+* Fix xymond cookie lookup mechanism
+* Webpages: Add new HOSTPOPUP setting to control what values from 
+  hosts.cfg are displayed as a "comment" to the hostname (either 
+  in pop-up's or next to the hostname).
+* Fix xymond_client crash if analysis.cfg contains invalid configuration 
+  entries, e.g. expressions that do not compile.
+* Fix showgraph CGI crash when legends contain colon.
+* xymonnet: Include hostname when reporting erroneous test-spec
+* CGI utils: Multiple potential security fixes involving buffer-
+  overruns when generating responses.
+* CGI utils: Fix crash when invoked with HTTP "HEAD"
+* CGI utils: Fix crashes on 64-bit platforms due to missing prototype
+  of "basename()" function.
+* svcstatus CGI: Dont crash if history log is not a file.
+* Critical systems view CGI: Cross-site scripting fix
+* Fix recovery-messages for alerts sent to a GROUP
+* RRD "memory" status handler now recognizes the output from the
+  bb-xsnmp.pl module (for Cisco routers).
+* Web templates modified so the menu CSS can override the default
+  body CSS.
+* Acknowledge web page now allows selecting minutes/hours/days
+* Enable/Disable webpage enhanced, so when selecting multiple hosts
+  the "Tests" column only lists the tests those hosts have.
+
 Changes from 4.3.2 -> 4.3.3 (6 May 2011)
 ========================================
 * rev6684
