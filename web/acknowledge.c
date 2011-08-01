@@ -7,6 +7,7 @@
 /* the Xymon daemon.                                                          */
 /*                                                                            */
 /* Copyright (C) 2004-2011 Henrik Storner <henrik@storner.dk>                 */
+/* Minute/Hour/Day options for duration by Heather Keen 2011.                 */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -34,6 +35,7 @@ typedef struct acklist_t {
 	int  id, checked;
 	int acknum;
 	int validity;
+	char *period;
 	char *hostname;
 	char *testname;
 	char *ackmsg;
@@ -42,6 +44,7 @@ typedef struct acklist_t {
 acklist_t *ackhead = NULL;
 acklist_t *acktail = NULL;
 char *validityall = NULL;
+char *periodall = NULL;
 char *ackmsgall = NULL;
 enum { ACK_UNKNOWN, ACK_OLDSTYLE, ACK_ONE, ACK_MANY } reqtype = ACK_UNKNOWN;
 int sendnum = 0;
@@ -73,7 +76,7 @@ static void parse_query(void)
 		 * cwalk->value points to the value (may be an empty string).
 		 */
 		int id = 0;
-		char *acknum = NULL, *validity = NULL, *ackmsg = NULL;
+		char *acknum = NULL, *validity = NULL, *ackmsg = NULL, *period = NULL;
 		char *hostname = NULL, *testname = NULL, *checked = NULL;
 		char *delim;
 
@@ -84,11 +87,18 @@ static void parse_query(void)
 		else if (strcasecmp(cwalk->name, "DELAY_all") == 0) {
 			if (*cwalk->value) validityall = cwalk->value;
 		}
+		else if (strcasecmp(cwalk->name, "PERIOD_all") == 0) {
+			if (*cwalk->value) periodall = cwalk->value;
+		}
 		else if (strcasecmp(cwalk->name, "MESSAGE_all") == 0) {
 			if (*cwalk->value) ackmsgall = cwalk->value;
 		}
 		else if (strncasecmp(cwalk->name, "DELAY", 5) == 0) {
 			if (*cwalk->value) validity = cwalk->value;
+			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
+		}
+		else if (strncasecmp(cwalk->name, "PERIOD", 5) == 0) {
+			if (*cwalk->value) period = cwalk->value;
 			delim = strchr(cwalk->name, '_'); if (delim) id = atoi(delim+1);
 		}
 		else if (strncasecmp(cwalk->name, "MESSAGE", 7) == 0) {
@@ -137,6 +147,7 @@ static void parse_query(void)
 				if (ackmsg) awalk->ackmsg = strdup(ackmsg);
 				if (hostname) awalk->hostname = strdup(hostname);
 				if (testname) awalk->testname = strdup(testname);
+				if (period) awalk->period = strdup(period);
 				if (checked) awalk->checked = 1;
 			}
 			break;
@@ -161,7 +172,8 @@ void generate_ackline(FILE *output, char *hname, char *tname, char *ackcode)
 
 	fprintf(output, "    <td align=left>%s</td>\n", (hname ? htmlquoted(hname) : "&nbsp;"));
 	fprintf(output, "    <td align=left>%s</td>\n", (tname ? htmlquoted(tname) : "&nbsp;"));
-	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=8 MAXLENGTH=20></TD>\n", numstr);
+	fprintf(output, "    <TD NOWRAP><INPUT TYPE=TEXT NAME=\"DELAY_%s\" SIZE=4 MAXLENGTH=6><SELECT NAME=\"PERIOD_%s\"><OPTION VALUE=\"min\" SELECTED>min(s)<OPTION VALUE=\"hour\">hour(s)<OPTION VALUE=\"day\">day(s)</SELECT></TD>\n", numstr, numstr);
+
 	fprintf(output, "    <TD><INPUT TYPE=TEXT NAME=\"MESSAGE_%s\" SIZE=60 MAXLENGTH=80></TD>\n", numstr);
 
 	fprintf(output, "    <TD>\n");
@@ -300,7 +312,7 @@ int main(int argc, char *argv[])
 						if (first) {
 							fprintf(stdout, "<form method=\"POST\" ACTION=\"%s\">\n", getenv("SCRIPT_NAME"));
 							fprintf(stdout, "<center><table cellpadding=5 summary=\"Ack data\">\n");
-							fprintf(stdout, "<tr><th align=left>Host</th><th align=left>Test</th><th align=left>Duration<br>(minutes)</th><th align=left>Cause</th><th>Ack</th><th>Ack Multiple</tr>\n");
+							fprintf(stdout, "<tr><th align=left>Host</th><th align=left>Test</th><th align=left>Duration</th><th align=left>Cause</th><th>Ack</th><th>Ack Multiple</tr>\n");
 							first = 0;
 						}
 
@@ -352,7 +364,11 @@ int main(int argc, char *argv[])
 			if (reqtype == ACK_MANY) {
 				if (!awalk->ackmsg) awalk->ackmsg = ackmsgall;
 				if (!awalk->validity && validityall) awalk->validity = durationvalue(validityall);
+				if (periodall) awalk->period = periodall;
 			}
+
+			if (strncmp(awalk->period, "hour", 4) == 0) awalk->validity *= 60; 
+			else if (strncmp(awalk->period, "day", 4) == 0) awalk->validity *= 60*24;
 
 			count++;
 			if (!awalk->ackmsg || !awalk->validity || !awalk->acknum) {
