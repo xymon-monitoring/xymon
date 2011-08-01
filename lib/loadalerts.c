@@ -790,7 +790,13 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	}
 
 	/* alert->groups is a comma-separated list of groups, so it needs some special handling */
-	if (crit && (crit->groupspec || crit->exgroupspec)) {
+	/* 
+	 * NB: Dont check groups when RECOVERED - the group list for recovery messages is always empty.
+	 * It doesn't matter if we match a recipient who was not in the group that originally
+	 * got the alert - we will later check who has received the alert, and only those that
+	 * have will get the recovery message.
+	 */
+	if (crit && (crit->groupspec || crit->exgroupspec) && (alert->state != A_RECOVERED)) {
 		char *grouplist;
 		char *tokptr;
 
