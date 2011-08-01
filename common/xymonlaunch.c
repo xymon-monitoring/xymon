@@ -1,3 +1,4 @@
+/* -*- mode:C; tab-width:8; intent-tabs-mode:1; c-basic-offset:8  -*- */
 /*----------------------------------------------------------------------------*/
 /* Xymon application launcher.                                                */
 /*                                                                            */
@@ -5,6 +6,7 @@
 /* start up once and keep running, other must run at various intervals.       */
 /*                                                                            */
 /* Copyright (C) 2004-2011 Henrik Storner <henrik@hswn.dk>                    */
+/* "CMD +/-" code and enable/disable enhancement by Martin Sperl 2010-2011    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
@@ -69,6 +71,7 @@ typedef struct tasklist_t {
 	void *crondate; /* pointer to cron date-time structure */
 	struct tasklist_t *depends;
 	struct tasklist_t *next;
+	struct tasklist_t *copy;
 } tasklist_t;
 tasklist_t *taskhead = NULL;
 tasklist_t *tasktail = NULL;
@@ -77,138 +80,11 @@ grouplist_t *grouphead = NULL;
 volatile time_t nextcfgload = 0;
 volatile int running = 1;
 volatile int dologswitch = 0;
+volatile int forcereload=0;
 
-void update_task(tasklist_t *newtask)
-{
-	tasklist_t *twalk;
-	int freeit = 1;
-	int logfilechanged = 0;
-	int envfilechanged = 0;
-	int disablechanged = 0;
-	int cronstrchanged = 0;
-
-	for (twalk = taskhead; (twalk && (strcmp(twalk->key, newtask->key))); twalk = twalk->next);
-
-	if (twalk) {
-		if (twalk->logfile && newtask->logfile) {
-			logfilechanged = strcmp(twalk->logfile, newtask->logfile);
-		}
-		else if (twalk->logfile || newtask->logfile) {
-			logfilechanged = 1;
-		}
-		else {
-			logfilechanged = 0;
-		}
-
-		if (twalk->envfile && newtask->envfile) {
-			envfilechanged = strcmp(twalk->envfile, newtask->envfile);
-		}
-		else if (twalk->envfile || newtask->envfile) {
-			envfilechanged = 1;
-		}
-		else {
-			envfilechanged = 0;
-		}
-
-		if (twalk->cronstr && newtask->cronstr) {
-			cronstrchanged = strcmp(twalk->cronstr, newtask->cronstr);
-		}
-		else if (twalk->cronstr || newtask->cronstr) {
-			cronstrchanged = 1;
-		}
-		else {
-			cronstrchanged = 0;
-		}
-
-		if (twalk->envarea && newtask->envarea) {
-			envfilechanged = strcmp(twalk->envarea, newtask->envarea);
-		}
-		else if (twalk->envarea || newtask->envarea) {
-			envfilechanged = 1;
-		}
-		else {
-			envfilechanged = 0;
-		}
-
-		if (twalk->disabled != newtask->disabled)
-			disablechanged = 1;
-		else
-			disablechanged = 0;
-	}
-
-	if (newtask->cmd == NULL) {
-		errprintf("Configuration error, no command for task %s\n", newtask->key);
-	}
-	else if (twalk == NULL) {
-		/* New task, just add it to the list */
-		newtask->cfload = 0;
-
-		if (taskhead == NULL) taskhead = newtask;
-		else tasktail->next = newtask;
-
-		tasktail = newtask;
-		freeit = 0;
-	}
-	else if (strcmp(twalk->cmd, newtask->cmd) || logfilechanged || envfilechanged || disablechanged || cronstrchanged) {
-		/* Task changed. */
-		xfree(twalk->cmd); 
-		if (twalk->logfile) xfree(twalk->logfile);
-		if (twalk->envfile) xfree(twalk->envfile);
-		if (twalk->envarea) xfree(twalk->envarea);
-		if (twalk->onhostptn) xfree(twalk->onhostptn);
-		if (twalk->cronstr) xfree(twalk->cronstr);
-		if (twalk->crondate) crondatefree(twalk->crondate);
-		twalk->cmd = strdup(newtask->cmd);
-		if (newtask->logfile) twalk->logfile = strdup(newtask->logfile); else twalk->logfile = NULL;
-		if (newtask->envfile) twalk->envfile = strdup(newtask->envfile); else twalk->envfile = NULL;
-		if (newtask->envarea) twalk->envarea = strdup(newtask->envarea); else twalk->envarea = NULL;
-		if (newtask->onhostptn) twalk->onhostptn = strdup(newtask->onhostptn); else twalk->onhostptn = NULL;
-		if (newtask->cronstr) {
-			twalk->cronstr = strdup(newtask->cronstr);
-			twalk->crondate = parse_cron_time(twalk->cronstr);
-			if (!twalk->crondate) {
-				errprintf("Can't parse cron date: %s->%s", twalk->key, twalk->cronstr);
-				twalk->disabled = 1;
-			}
-			twalk->interval = -1;
-		}
-		else {
-			twalk->cronstr = NULL;
-			twalk->crondate = NULL;
-		}
-
-		/* Must bounce the task */
-		twalk->cfload = 1;
-	}
-	else if (twalk->interval != newtask->interval) {
-		twalk->interval = newtask->interval;
-		twalk->cfload = 0;
-	}
-	else if (twalk->maxruntime != newtask->maxruntime) {
-		twalk->maxruntime = newtask->maxruntime;
-		twalk->cfload = 0;
-	}
-	else if (twalk->disabled != newtask->disabled) {
-		twalk->disabled = newtask->disabled;
-		twalk->cfload = 1;
-	}
-	else {
-		/* Task was unchanged */
-		twalk->cfload = 0;
-	}
-
-	if (freeit) {
-		xfree(newtask->key);
-		if (newtask->cmd) xfree(newtask->cmd);
-		if (newtask->logfile) xfree(newtask->logfile);
-		if (newtask->envfile) xfree(newtask->envfile);
-		if (newtask->envarea) xfree(newtask->envarea);
-		if (newtask->onhostptn) xfree(newtask->onhostptn);
-		if (newtask->cronstr) xfree(newtask->cronstr);
-		if (newtask->crondate) crondatefree(newtask->crondate);
-		xfree(newtask);
-	}
-}
+# define xfreenull(k) { if (k) { xfree(k); k=NULL;} }
+# define xfreeassign(k,p) { if (k) { xfree(k); } k=p; }
+# define xfreedup(k,p) { if (k) { xfree(k); } k=strdup(p); }
 
 void load_config(char *conffn)
 {
@@ -221,7 +97,7 @@ void load_config(char *conffn)
 
 	/* First check if there were no modifications at all */
 	if (configfiles) {
-		if (!stackfmodified(configfiles)){
+	        if (!stackfmodified(configfiles) && (!forcereload)) {
 			dbgprintf("No files modified, skipping reload of %s\n", conffn);
 			return;
 		}
@@ -241,6 +117,25 @@ void load_config(char *conffn)
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
 		twalk->cfload = -1;
 		twalk->group = NULL;
+		/* Create a copy, but retain the settings and pointers are the same */
+		twalk->copy = xmalloc(sizeof(tasklist_t));
+		memcpy(twalk->copy,twalk,sizeof(tasklist_t));
+		/* These should get cleared */
+		twalk->copy->next = NULL;
+		twalk->copy->copy = NULL;
+		/* And clean the values of all others, so that we really can detect a difference */
+		twalk->disabled = 0;
+		twalk->cmd = NULL;
+		twalk->interval = 0;
+		twalk->maxruntime = 0;
+		twalk->group = NULL;
+		twalk->logfile = NULL;
+		twalk->envfile = NULL;
+		twalk->envarea = NULL;
+		twalk->onhostptn = NULL;
+		twalk->cronstr = NULL;
+		twalk->crondate = NULL;
+		twalk->depends = NULL;
 	}
 
 	fd = stackfopen(conffn, "r", &configfiles);
@@ -257,23 +152,74 @@ void load_config(char *conffn)
 		if (*p == '[') {
 			/* New task */
 			char *endp;
-
-			if (curtask) {
-				update_task(curtask);
-				curtask = NULL;
-			}
-
+			/* get name */
 			p++; endp = strchr(p, ']');
 			if (endp == NULL) continue;
 			*endp = '\0';
 
-			curtask = (tasklist_t *)calloc(1, sizeof(tasklist_t));
-			curtask->key = strdup(p);
+			/* try to find the task */
+			for (twalk = taskhead; (twalk && (strcmp(twalk->key, p))); twalk = twalk->next);
+
+			if (twalk) {
+				curtask=twalk;
+			} else {
+				/* New task, just create it */
+				curtask = (tasklist_t *)calloc(1, sizeof(tasklist_t));
+				curtask->key = strdup(p);
+				/* add it to the list */
+				if (taskhead == NULL) taskhead = curtask;
+				else tasktail->next = curtask;
+				tasktail = curtask;
+			}
+			/* mark task as configured */
+			curtask->cfload = 0;
 		}
 		else if (curtask && (strncasecmp(p, "CMD ", 4) == 0)) {
 			p += 3;
 			p += strspn(p, " \t");
-			curtask->cmd = strdup(p);
+			/* Handle + - options as well */
+			if (*p == '+') {
+				/* append to command */
+				if (curtask->cmd) {
+					int l1 = strlen(curtask->cmd);
+					int l2 = strlen(p);
+					char *newcmd = xcalloc(1, l1+l2+1);
+
+					strncpy(newcmd,curtask->cmd,l1);
+					strncpy(newcmd+l1,p,l2);
+					newcmd[l1]=' '; /* this also overwrites the + */
+
+					/* free and assign new */
+					xfreeassign(curtask->cmd,newcmd);
+				}
+			} 
+			else if (*p == '-') {
+				/* remove from command */
+				if (curtask->cmd) {
+					int l = strlen(p)-1;
+					if (l > 0) {
+						char *found;
+
+						while((found = strstr(curtask->cmd,p+1)) != NULL) {
+							/* doing a copy - can not use strcpy as we are overlapping */
+							char *s = found + l;
+
+							while (*s) {
+								*found=*s; 
+								found++;
+								s++;
+							}
+
+							*found=0;
+						}
+					} 
+					else {
+						errprintf("Configuration error, empty command removal (CMD -) for task %s\n", curtask->key);
+					}
+				}
+			} else {
+				xfreedup(curtask->cmd,p);
+			}
 		}
 		else if (strncasecmp(p, "GROUP ", 6) == 0) {
 			/* Note: GROUP can be used by itself to define a group, or inside a task definition */
@@ -313,8 +259,8 @@ void load_config(char *conffn)
 		}
 		else if (curtask && (strncasecmp(p, "CRONDATE ", 9) == 0)) {
 			p+= 9;
-			curtask->cronstr = strdup(p);
-			curtask->crondate = parse_cron_time(curtask->cronstr);
+			xfreedup(curtask->cronstr,p);
+			if (curtask->crondate) { crondatefree(curtask->crondate);curtask->crondate=parse_cron_time(curtask->cronstr); }
 			if (!curtask->crondate) {
 				errprintf("Can't parse cron date: %s->%s", curtask->key, curtask->cronstr);
 				curtask->disabled = 1;
@@ -335,7 +281,7 @@ void load_config(char *conffn)
 		else if (curtask && (strncasecmp(p, "LOGFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
-			curtask->logfile = strdup(p);
+			xfreedup(curtask->logfile,p);
 		}
 		else if (curtask && (strncasecmp(p, "NEEDS ", 6) == 0)) {
 			p += 6;
@@ -351,15 +297,18 @@ void load_config(char *conffn)
 		else if (curtask && (strncasecmp(p, "ENVFILE ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
-			curtask->envfile = strdup(p);
+			xfreedup(curtask->envfile,p);
 		}
 		else if (curtask && (strncasecmp(p, "ENVAREA ", 8) == 0)) {
 			p += 7;
 			p += strspn(p, " \t");
-			curtask->envarea = strdup(p);
+			xfreedup(curtask->envarea,p);
 		}
 		else if (curtask && (strcasecmp(p, "DISABLED") == 0)) {
 			curtask->disabled = 1;
+		}
+		else if (curtask && (strcasecmp(p, "ENABLED") == 0)) {
+			curtask->disabled = 0;
 		}
 		else if (curtask && (strncasecmp(p, "ONHOST ", 7) == 0)) {
 			regex_t cpattern;
@@ -368,7 +317,7 @@ void load_config(char *conffn)
 			p += 7;
 			p += strspn(p, " \t");
 
-			curtask->onhostptn = strdup(p);
+			xfreedup(curtask->onhostptn,p);
 
 			/* Match the hostname against the pattern; if it doesnt match then disable the task */
 			status = regcomp(&cpattern, curtask->onhostptn, REG_EXTENDED|REG_ICASE|REG_NOSUB);
@@ -381,12 +330,66 @@ void load_config(char *conffn)
 			}
 		}
 	}
-	if (curtask) update_task(curtask);
 	stackfclose(fd);
 	freestrbuffer(inbuf);
 
 	/* Running tasks that have been deleted or changed are killed off now. */
 	for (twalk = taskhead; (twalk); twalk = twalk->next) {
+		/* compare the current settings with the copy - if we have one */
+		if (twalk->cfload == 0) {
+			if (twalk->copy) {
+				/* compare the current version with the new version and decide if we have changed */
+				int changed=0;
+				int reload=0;
+				/* first the nummeric ones */
+				if (twalk->disabled!=twalk->copy->disabled) { changed++; }
+				if (twalk->interval!=twalk->copy->interval) { changed++; }
+				if (twalk->maxruntime!=twalk->copy->maxruntime) { changed++; }
+				if (twalk->group!=twalk->copy->group) { changed++; reload++;}
+				/* then the string versions */
+#define twalkstrcmp(k,doreload) {					\
+					if (twalk->k!=twalk->copy->k) {	\
+						if (twalk->copy->k) {	\
+							if (twalk->k) {	\
+								if (strcmp(twalk->k,twalk->copy->k)) { \
+									changed++;reload+=doreload; \
+								}	\
+							} else {	\
+								changed++;reload+=doreload; \
+							}		\
+							/* we can always delete the copy*/ \
+							xfree(twalk->copy->k); \
+							twalk->copy->k=NULL; \
+						} else {		\
+							changed++;reload+=doreload; \
+						}			\
+					}				\
+				}
+				twalkstrcmp(cmd,1);
+				twalkstrcmp(logfile,1);
+				twalkstrcmp(envfile,1);
+				twalkstrcmp(envarea,1);
+				twalkstrcmp(onhostptn,0);
+				twalkstrcmp(cronstr,0);
+				if ((twalk->copy->cronstr == NULL) && twalk->copy->crondate) {
+					crondatefree(twalk->copy->crondate);
+					twalk->copy->crondate = NULL;
+				}
+				
+				/* we can release the copy now - not using xfree, as this releases it from the list making a mess...*/
+				xfreenull(twalk->copy);
+				/* now make the decision for reloading 
+				   - if we have changed, then we may assign cfload,
+				   - otherwise the entry does not exist any longer */
+				if (reload) { reload=1;}
+				if (changed) { twalk->cfload=reload; }
+			} else {
+				/* new object, so we need to do this */
+				twalk->cfload=1;
+			}
+		}
+
+		/* and based on this decide what to do */
 		switch (twalk->cfload) {
 		  case -1:
 			/* Kill the task, if active */
@@ -396,13 +399,13 @@ void load_config(char *conffn)
 				kill(twalk->pid, SIGTERM);
 			}
 			/* And prepare to free this tasklist entry */
-			xfree(twalk->key); 
-			xfree(twalk->cmd); 
-			if (twalk->logfile) xfree(twalk->logfile);
-			if (twalk->envfile) xfree(twalk->envfile);
-			if (twalk->envarea) xfree(twalk->envarea);
-			if (twalk->onhostptn) xfree(twalk->onhostptn);
-			if (twalk->cronstr) xfree(twalk->cronstr);
+			xfreenull(twalk->key); 
+			xfreenull(twalk->cmd); 
+			xfreenull(twalk->logfile);
+			xfreenull(twalk->envfile);
+			xfreenull(twalk->envarea);
+			xfreenull(twalk->onhostptn);
+			xfreenull(twalk->cronstr);
 			if (twalk->crondate) crondatefree(twalk->crondate);
 			break;
 
@@ -523,8 +526,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--dump") == 0) {
 			/* Dump configuration */
-
+			forcereload=1;
 			load_config(config);
+			forcereload=0;
 			for (gwalk = grouphead; (gwalk); gwalk = gwalk->next) {
 				if (gwalk->maxuse > 1) printf("GROUP %s %d\n", gwalk->groupname, gwalk->maxuse);
 			}
@@ -544,7 +548,13 @@ int main(int argc, char *argv[])
 				if (twalk->onhostptn)    printf("\tONHOST %s\n", twalk->onhostptn);
 				printf("\n");
 			}
+			fflush(stdout);
 			return 0;
+		}
+		else {
+			fprintf(stderr,"%s: Unsupported argument: %s\n",argv[0],argv[argi]);
+			fflush(stderr);
+			return 1;
 		}
 	}
 
