@@ -65,7 +65,9 @@ xymonlaunch will not start this task. It is recommended that
 you use this to disable standard tasks, instead of removing them
 or commenting them out. Upgrades to Xymon will add standard
 tasks back into the file, so unless you have them listed as DISABLED
-then tasks may re-appear unexpectedly after an upgrade.
+then tasks may re-appear unexpectedly after an upgrade. There is
+also a corresponding \fBENABLED\fR keyword, to explicitly enable 
+a task.
 
 The \fBONHOST\fR keyword tells xymonlaunch that this task should
 only run on specific hosts. After the ONHOST keyword, you must
