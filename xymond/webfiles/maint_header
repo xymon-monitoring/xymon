@@ -20,25 +20,42 @@
  * script by Tom Schmidt, released under the "Artistic" license.
  -->
 <script language="JavaScript" type="text/javascript">
+
+Array.prototype.unique = function () {
+        var r = new Array();
+        o:for(var i = 0, n = this.length; i < n; i++)
+        {
+                for(var x = 0, y = r.length; x < y; x++)
+                {
+                        if(r[x]==this[i])
+                        {
+                                continue o;
+                        }
+                }
+                r[r.length] = this[i];
+        }
+                return r;
+}
+
 &JSHOSTLIST
 
 function updateOptions(arrayName) {
 	var selectedHosts = 0;
+	var arrayNames = new Array();
 	for (var i = 0; i < window.document.selectionform.hostname.options.length; i++)
 		if (window.document.selectionform.hostname.options[i].selected)
-			selectedHosts++;
-	if (selectedHosts == 1)
-		swapOptions(arrayName);
-	else
-		swapOptions("ALL");
+		 arrayNames = arrayNames.concat(window.document.selectionform.hostname.options[i].text);
+		swapOptions(arrayNames);
 }
 
-function swapOptions(arrayName) {
+function swapOptions(arrayNames) {
 	var i = 0;
+	var NewOptions = new Array();
 	while (window.document.selectionform.disabletest.options.length > 0)
 		window.document.selectionform.disabletest.options[0] = null;
-
-	var NewOptions = hosts[arrayName];
+	for (var j = 0, len = arrayNames.length; j < len; j++)
+	NewOptions = NewOptions.concat(hosts[arrayNames[j]]);
+	NewOptions = NewOptions.unique();
 	for (i = 0, len = NewOptions.length; i < len; i++)
 		window.document.selectionform.disabletest.options[i] = new Option(NewOptions[i]);
 }
