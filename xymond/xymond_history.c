@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
+	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
 	if (xgetenv("XYMONALLHISTLOG")) save_allevents = (strcmp(xgetenv("XYMONALLHISTLOG"), "TRUE") == 0);
 	if (xgetenv("XYMONHOSTHISTLOG")) save_hostevents = (strcmp(xgetenv("XYMONHOSTHISTLOG"), "TRUE") == 0);
 	if (xgetenv("SAVESTATUSLOG")) save_histlogs = (strncmp(xgetenv("SAVESTATUSLOG"), "FALSE", 5) != 0);
@@ -96,6 +97,9 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--histlogdir=")) {
 			histlogdir = strchr(argv[argi], '=')+1;
+		}
+		else if (argnmatch(argv[argi], "--pidfile=")) {
+			strcpy(pidfn, strchr(argv[argi], '=')+1);
 		}
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
 			minlogspace = atoi(strchr(argv[argi], '=')+1);
@@ -153,7 +157,6 @@ int main(int argc, char *argv[])
 		xfree(savelist);
 	}
 
-	sprintf(pidfn, "%s/xymond_history.pid", xgetenv("XYMONSERVERLOGS"));
 	{
 		FILE *pidfd = fopen(pidfn, "w");
 		if (pidfd) {

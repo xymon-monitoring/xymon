@@ -27,6 +27,11 @@ directory. If there is less than N% free space, xymond_history will
 not save the detailed status-logs.
 Default: 5
 
+.IP "--pidfile=FILENAME"
+xymond_history writes the process-ID it is running with to this file.
+This is for use in automated startup scripts. The default file is
+$XYMONSERVERLOGS/xymond_history.pid.
+
 .IP "--debug"
 Enable debugging output.
 
