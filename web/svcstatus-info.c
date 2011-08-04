@@ -568,7 +568,7 @@ static void generate_xymon_disable(char *hostname, strbuffer_t *buf)
 	/* Years */
 	addtobuffer(buf, "<SELECT NAME=\"year\" onClick=\"setcheck(this.form.go,true)\">\n");
 	for (i=beginyear; (i <= endyear); i++) {
-		char istr[3];
+		char istr[5];
 
 		sprintf(istr, "%d", i);
 
