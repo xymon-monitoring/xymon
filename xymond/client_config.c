@@ -2545,7 +2545,10 @@ int scan_log(void *hinfo, char *classname,
 				dbgprintf("Line '%s' matches\n", boln);
 
 				/* It matches. But maybe we'll ignore it ? */
-				if (!rule->rule.log.ignoreexp || patternmatch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp)) {
+				if (rule->rule.log.ignoreexp && patternmatch(boln, rule->rule.log.ignoreexp->pattern, rule->rule.log.ignoreexp->exp)) {
+					/* Ignore it */
+				}
+				else {
 					/* We wants it ... */
 					dbgprintf("FOUND match in line '%s'\n", boln);
 					anylines++;
