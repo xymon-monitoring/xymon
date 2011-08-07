@@ -868,7 +868,7 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 			long memphystotal, long memphysused, long memactused,
 			long memswaptotal, long memswapused)
 {
-	long memphyspct = 0, memswappct = 0, memactpct = 0;
+	unsigned long memphyspct = 0, memswappct = 0, memactpct = 0;
 	int physyellow, physred, swapyellow, swapred, actyellow, actred;
 
 	int memorycolor = COL_GREEN, physcolor = COL_GREEN, swapcolor = COL_GREEN, actcolor = COL_GREEN;
@@ -924,28 +924,28 @@ void unix_memory_report(char *hostname, char *clientclass, enum ostype_t os,
 	sprintf(msgline, "   %-12s%12s%12s%12s\n", "Memory", "Used", "Total", "Percentage");
 	addtostatus(msgline);
 
-	sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%%\n", 
+	sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
 		colorname(physcolor), "Physical", memphysused, memphystotal, memphyspct);
 	addtostatus(msgline);
 
 	if (memactused != -1) {
 		if (memactpct <= 100)
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%%\n", 
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
 				colorname(actcolor), "Actual", memactused, memphystotal, memactpct);
 		else
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%% - invalid data\n", 
-				colorname(COL_CLEAR), "Actual", memactused, memphystotal, 0L);
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%% - invalid data\n", 
+				colorname(COL_CLEAR), "Actual", memactused, memphystotal, 0);
 			
 		addtostatus(msgline);
 	}
 
 	if (memswapused != -1) {
 		if (memswappct <= 100)
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%%\n", 
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%%\n", 
 				colorname(swapcolor), "Swap", memswapused, memswaptotal, memswappct);
 		else
-			sprintf(msgline, "&%s %-12s%11ldM%11ldM%11ld%% - invalid data\n", 
-				colorname(COL_CLEAR), "Swap", memswapused, memswaptotal, 0L);
+			sprintf(msgline, "&%s %-12s%11luM%11luM%11lu%% - invalid data\n", 
+				colorname(COL_CLEAR), "Swap", memswapused, memswaptotal, 0);
 
 		addtostatus(msgline);
 	}
