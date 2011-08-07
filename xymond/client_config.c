@@ -241,6 +241,8 @@ typedef struct c_rule_t {
 	exprlist_t *exhostexp;
 	exprlist_t *pageexp;
 	exprlist_t *expageexp;
+	exprlist_t *dgexp;
+	exprlist_t *exdgexp;
 	exprlist_t *classexp;
 	exprlist_t *exclassexp;
 	char *timespec, *statustext, *rrdidstr, *groups;
@@ -359,6 +361,8 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 		if (rwalk->classexp && !namematch(classname, rwalk->classexp->pattern, rwalk->classexp->exp)) continue;
 		if (rwalk->exhostexp && namematch(hostname, rwalk->exhostexp->pattern, rwalk->exhostexp->exp)) continue;
 		if (rwalk->hostexp && !namematch(hostname, rwalk->hostexp->pattern, rwalk->hostexp->exp)) continue;
+		if (rwalk->exdgexp && namematch(hostname, rwalk->exdgexp->pattern, rwalk->exdgexp->exp)) continue;
+		if (rwalk->dgexp && !namematch(hostname, rwalk->dgexp->pattern, rwalk->dgexp->exp)) continue;
 
 		pgmatchres = pgexclres = -1;
 		pgtok = strtok(pagenamecopy, ",");
@@ -415,6 +419,7 @@ static exprlist_t *setup_expr(char *ptn, int multiline)
 static c_rule_t *setup_rule(ruletype_t ruletype, 
 			    exprlist_t *curhost, exprlist_t *curexhost, 
 			    exprlist_t *curpage, exprlist_t *curexpage, 
+			    exprlist_t *curdg, exprlist_t *curexdg, 
 			    exprlist_t *curclass, exprlist_t *curexclass, 
 			    char *curtime, char *curtext, char *curgroup,
 			    int cfid)
@@ -428,6 +433,8 @@ static c_rule_t *setup_rule(ruletype_t ruletype,
 	newitem->exhostexp = curexhost;
 	newitem->pageexp = curpage;
 	newitem->expageexp = curexpage;
+	newitem->dgexp = curdg;
+	newitem->exdgexp = curexdg;
 	newitem->classexp = curclass;
 	newitem->exclassexp = curexclass;
 	if (curtime) newitem->timespec = strdup(curtime);
@@ -443,15 +450,17 @@ static int isqual(char *token)
 {
 	if (!token) return 1;
 
-	if ( (strncasecmp(token, "HOST=", 5) == 0)	||
-	     (strncasecmp(token, "EXHOST=", 7) == 0)	||
-	     (strncasecmp(token, "PAGE=", 5) == 0)	||
-	     (strncasecmp(token, "EXPAGE=", 7) == 0)	||
-	     (strncasecmp(token, "CLASS=", 6) == 0)	||
-	     (strncasecmp(token, "EXCLASS=", 8) == 0)	||
-	     (strncasecmp(token, "TEXT=", 5) == 0)	||
-	     (strncasecmp(token, "GROUP=", 6) == 0)	||
-	     (strncasecmp(token, "TIME=", 5) == 0)	) return 1;
+	if ( (strncasecmp(token, "HOST=", 5) == 0)		||
+	     (strncasecmp(token, "EXHOST=", 7) == 0)		||
+	     (strncasecmp(token, "PAGE=", 5) == 0)		||
+	     (strncasecmp(token, "EXPAGE=", 7) == 0)		||
+	     (strncasecmp(token, "DISPLAYGROUP=", 12) == 0)	||
+	     (strncasecmp(token, "EXDISPLAYGROUP=", 14) == 0)	||
+	     (strncasecmp(token, "CLASS=", 6) == 0)		||
+	     (strncasecmp(token, "EXCLASS=", 8) == 0)		||
+	     (strncasecmp(token, "TEXT=", 5) == 0)		||
+	     (strncasecmp(token, "GROUP=", 6) == 0)		||
+	     (strncasecmp(token, "TIME=", 5) == 0)		) return 1;
 
 	return 0;
 }
@@ -517,7 +526,7 @@ int load_client_config(char *configfn)
 	FILE *fd;
 	strbuffer_t *inbuf;
 	char *tok;
-	exprlist_t *curhost, *curpage, *curclass, *curexhost, *curexpage, *curexclass;
+	exprlist_t *curhost, *curpage, *curclass, *curexhost, *curexpage, *curexclass, *curdg, *curexdg;
 	char *curtime, *curtext, *curgroup;
 	c_rule_t *currule = NULL;
 	int cfid = 0;
@@ -600,18 +609,20 @@ int load_client_config(char *configfn)
 		havetree = 0;
 	}
 
-	curhost = curpage = curclass = curexhost = curexpage = curexclass = NULL;
+#define NEWRULE(X) (setup_rule(X, curhost, curexhost, curpage, curexpage, curdg, curexdg, curclass, curexclass, curtime, curtext, curgroup, cfid));
+
+	curhost = curpage = curclass = curexhost = curexpage = curexclass = curdg = curexdg = NULL;
 	curtime = curtext = curgroup = NULL;
 	inbuf = newstrbuffer(0);
 	while (stackfgets(inbuf, NULL)) {
-		exprlist_t *newhost, *newpage, *newexhost, *newexpage, *newclass, *newexclass;
+		exprlist_t *newhost, *newpage, *newexhost, *newexpage, *newclass, *newexclass, *newdg, *newexdg;
 		char *newtime, *newtext, *newgroup;
 		int unknowntok = 0;
 
 		cfid++;
 		sanitize_input(inbuf, 1, 0); if (STRBUFLEN(inbuf) == 0) continue;
 
-		newhost = newpage = newexhost = newexpage = newclass = newexclass = NULL;
+		newhost = newpage = newexhost = newexpage = newclass = newexclass = newdg = newexdg = NULL;
 		newtime = newtext = newgroup = NULL;
 		currule = NULL;
 
@@ -639,6 +650,18 @@ int load_client_config(char *configfn)
 				char *p = strchr(tok, '=');
 				newexpage = setup_expr(p+1, 0);
 				if (currule) currule->expageexp = newexpage;
+				tok = wstok(NULL); continue;
+			}
+			else if (strncasecmp(tok, "DISPLAYGROUP=", 13) == 0) {
+				char *p = strchr(tok, '=');
+				newdg = setup_expr(p+1, 0);
+				if (currule) currule->dgexp = newdg;
+				tok = wstok(NULL); continue;
+			}
+			else if (strncasecmp(tok, "EXDISPLAYGROUP=", 15) == 0) {
+				char *p = strchr(tok, '=');
+				newexdg = setup_expr(p+1, 0);
+				if (currule) currule->exdgexp = newexdg;
 				tok = wstok(NULL); continue;
 			}
 			else if (strncasecmp(tok, "CLASS=", 6) == 0) {
@@ -675,7 +698,7 @@ int load_client_config(char *configfn)
 				currule = NULL;
 			}
 			else if (strcasecmp(tok, "UP") == 0) {
-				currule = setup_rule(C_UPTIME, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_UPTIME)
 				currule->rule.uptime.recentlimit = 3600;
 				currule->rule.uptime.ancientlimit = -1;
 
@@ -685,13 +708,13 @@ int load_client_config(char *configfn)
 				currule->rule.uptime.ancientlimit = 60*durationvalue(tok);
 			}
 			else if (strcasecmp(tok, "CLOCK") == 0) {
-				currule = setup_rule(C_CLOCK, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_CLOCK);
 				currule->rule.clock.maxdiff = 60;
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.clock.maxdiff = atoi(tok);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
-				currule = setup_rule(C_LOAD, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_LOAD);
 				currule->rule.load.warnlevel = 5.0;
 				currule->rule.load.paniclevel = atof(tok);
 
@@ -701,7 +724,7 @@ int load_client_config(char *configfn)
 				currule->rule.load.paniclevel = atof(tok);
 			}
 			else if (strcasecmp(tok, "DISK") == 0) {
-				currule = setup_rule(C_DISK, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_DISK);
 				currule->rule.disk.abswarn = 0;
 				currule->rule.disk.warnlevel = 90;
 				currule->rule.disk.abspanic = 0;
@@ -745,7 +768,7 @@ int load_client_config(char *configfn)
 				currule->rule.disk.color = parse_color(tok);
 			}
 			else if (strcasecmp(tok, "INODE") == 0) {
-				currule = setup_rule(C_INODE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_INODE);
 				currule->rule.inode.abswarn = 0;
 				currule->rule.inode.warnlevel = 70;
 				currule->rule.inode.abspanic = 0;
@@ -790,7 +813,7 @@ int load_client_config(char *configfn)
 			}
 
 			else if ((strcasecmp(tok, "MEMREAL") == 0) || (strcasecmp(tok, "MEMPHYS") == 0) || (strcasecmp(tok, "PHYS") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MEM);
 				currule->rule.mem.memtype = C_MEM_PHYS;
 				currule->rule.mem.warnlevel = 100;
 				currule->rule.mem.paniclevel = 101;
@@ -801,7 +824,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMSWAP") == 0) || (strcasecmp(tok, "SWAP") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MEM);
 				currule->rule.mem.memtype = C_MEM_SWAP;
 				currule->rule.mem.warnlevel = 50;
 				currule->rule.mem.paniclevel = 80;
@@ -812,7 +835,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if ((strcasecmp(tok, "MEMACT") == 0) || (strcasecmp(tok, "ACTUAL") == 0) || (strcasecmp(tok, "ACT") == 0)) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MEM);
 				currule->rule.mem.memtype = C_MEM_ACT;
 				currule->rule.mem.warnlevel = 90;
 				currule->rule.mem.paniclevel = 97;
@@ -823,7 +846,7 @@ int load_client_config(char *configfn)
 				currule->rule.mem.paniclevel = atoi(tok);
 			}
 			else if (strcasecmp(tok, "MEMCSA") == 0) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MEM);
 				currule->rule.zos_mem.zos_memtype = C_MEM_CSA;
 				currule->rule.zos_mem.warnlevel = 90;
 				currule->rule.zos_mem.paniclevel = 95;
@@ -834,7 +857,7 @@ int load_client_config(char *configfn)
 				currule->rule.zos_mem.paniclevel = atoi(tok);
 			}
 			else if (strcasecmp(tok, "MEMECSA") == 0) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MEM);
 				currule->rule.zos_mem.zos_memtype = C_MEM_ECSA;
 				currule->rule.zos_mem.warnlevel = 90;
 				currule->rule.zos_mem.paniclevel = 95;
@@ -845,7 +868,7 @@ int load_client_config(char *configfn)
 				currule->rule.zos_mem.paniclevel = atoi(tok);
 			}
 			else if (strcasecmp(tok, "MEMSQA") == 0) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MEM);
 				currule->rule.zos_mem.zos_memtype = C_MEM_SQA;
 				currule->rule.zos_mem.warnlevel = 90;
 				currule->rule.zos_mem.paniclevel = 95;
@@ -856,7 +879,7 @@ int load_client_config(char *configfn)
 				currule->rule.zos_mem.paniclevel = atoi(tok);
 			}
 			else if (strcasecmp(tok, "MEMESQA") == 0) {
-				currule = setup_rule(C_MEM, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MEM);
 				currule->rule.zos_mem.zos_memtype = C_MEM_ESQA;
 				currule->rule.zos_mem.warnlevel = 90;
 				currule->rule.zos_mem.paniclevel = 95;
@@ -867,7 +890,7 @@ int load_client_config(char *configfn)
 				currule->rule.zos_mem.paniclevel = atoi(tok);
 			}
                         else if (strcasecmp(tok, "CICS") == 0) {
-                                currule = setup_rule(C_CICS, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule = NEWRULE(C_CICS);
                                 currule->rule.cics.dsawarnlevel = 90;
                                 currule->rule.cics.dsapaniclevel = 95;
                                 currule->rule.cics.edsawarnlevel = 90;
@@ -914,7 +937,7 @@ int load_client_config(char *configfn)
 					break;
 				}
 
-				currule = setup_rule(C_PROC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_PROC);
 				currule->rule.proc.pmin = 1;
 				currule->rule.proc.pmax = -1;
 				currule->rule.proc.color = COL_RED;
@@ -963,7 +986,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "LOG") == 0) {
 				int idx = 0;
 
-				currule = setup_rule(C_LOG, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_LOG);
 				currule->rule.log.logfile   = NULL;
 				currule->rule.log.matchexp  = NULL;
 				currule->rule.log.matchone  = NULL;
@@ -1009,7 +1032,7 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "FILE") == 0) {
-				currule = setup_rule(C_FILE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_FILE);
 				currule->rule.fcheck.filename = NULL;
 				currule->rule.fcheck.color = COL_RED;
 
@@ -1155,7 +1178,7 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "DIR") == 0) {
-				currule = setup_rule(C_DIR, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_DIR);
 				currule->rule.dcheck.filename = NULL;
 				currule->rule.dcheck.color = COL_RED;
 
@@ -1183,7 +1206,7 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "PORT") == 0) {
-				currule = setup_rule(C_PORT, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_PORT);
 
 				currule->rule.port.localexp = NULL;
 				currule->rule.port.exlocalexp = NULL;
@@ -1241,7 +1264,7 @@ int load_client_config(char *configfn)
 				} while (tok && (!isqual(tok)));
 			}
 			else if (strcasecmp(tok, "PAGING") == 0) {
-				currule = setup_rule(C_PAGING, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_PAGING);
 
 				currule->rule.paging.warnlevel = 5;
 				currule->rule.paging.paniclevel = 10;
@@ -1253,7 +1276,7 @@ int load_client_config(char *configfn)
 				currule->rule.paging.paniclevel = atoi(tok);
 			}
 			else if (strcasecmp(tok, "GETVIS") == 0) {
-                                currule = setup_rule(C_MEM_GETVIS, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule = NEWRULE(C_MEM_GETVIS);
 				currule->rule.zvse_getvis.warnlevel =  90;
 				currule->rule.zvse_getvis.paniclevel = 95;
 				currule->rule.zvse_getvis.anywarnlevel =  90;
@@ -1273,7 +1296,7 @@ int load_client_config(char *configfn)
                                	currule->rule.zvse_getvis.anypaniclevel = atoi(tok);
 			}
                         else if (strcasecmp(tok, "VSIZE") == 0) {
-                                currule = setup_rule(C_MEM_VSIZE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule = NEWRULE(C_MEM_VSIZE);
                                 currule->rule.zvse_vsize.warnlevel = 90;
                                 currule->rule.zvse_vsize.paniclevel = 95;
 
@@ -1283,7 +1306,7 @@ int load_client_config(char *configfn)
                                 currule->rule.zvse_vsize.paniclevel = atoi(tok);
                         }
                         else if (strcasecmp(tok, "MAXUSER") == 0) {
-                                currule = setup_rule(C_ASID, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule = NEWRULE(C_ASID);
 				currule->rule.asid.asidtype = C_ASID_MAXUSER;
 
                                 currule->rule.asid.warnlevel = 101;
@@ -1296,7 +1319,7 @@ int load_client_config(char *configfn)
                                 currule->rule.asid.paniclevel = atoi(tok);
                         }
                         else if (strcasecmp(tok, "NPARTS") == 0) {
-                                currule = setup_rule(C_ASID, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+                                currule = NEWRULE(C_ASID);
                                 currule->rule.asid.asidtype = C_ASID_NPARTS;
 
                                 currule->rule.asid.warnlevel = 101;
@@ -1313,7 +1336,7 @@ int load_client_config(char *configfn)
 
 				tok = wstok(NULL);	/* See if there is any service definition at all */
 				if (tok) {
-					currule = setup_rule(C_SVC, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+					currule = NEWRULE(C_SVC);
 
 					currule->rule.svc.svcexp = setup_expr(tok, 0);
 					currule->rule.svc.startupexp = NULL;
@@ -1346,7 +1369,7 @@ int load_client_config(char *configfn)
 				}
 			}
 			else if (strcasecmp(tok, "MIB") == 0) {
-				currule = setup_rule(C_MIBVAL, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MIBVAL);
 				currule->rule.mibval.mibvalexp = NULL;
 				currule->rule.mibval.keyexp = NULL;
 				currule->rule.mibval.color = COL_RED;
@@ -1383,7 +1406,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "DS") == 0) {
 				char *key, *ds, *column;
 
-				currule = setup_rule(C_RRDDS, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_RRDDS);
 				currule->rule.rrdds.color = COL_RED;
 
 				tok = wstok(NULL);
@@ -1452,7 +1475,7 @@ int load_client_config(char *configfn)
 			}
 			else if (strcasecmp(tok, "MQ_QUEUE") == 0) {
 				char *p;
-				currule = setup_rule(C_MQ_QUEUE, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MQ_QUEUE);
 				currule->rule.mqqueue.qmgrname = NULL;
 				currule->rule.mqqueue.qname = NULL;
 				currule->rule.mqqueue.warnlen = -1;
@@ -1496,7 +1519,7 @@ int load_client_config(char *configfn)
 			else if (strcasecmp(tok, "MQ_CHANNEL") == 0) {
 				char *p;
 
-				currule = setup_rule(C_MQ_CHANNEL, curhost, curexhost, curpage, curexpage, curclass, curexclass, curtime, curtext, curgroup, cfid);
+				currule = NEWRULE(C_MQ_CHANNEL);
 				currule->rule.mqchannel.qmgrname = NULL;
 				currule->rule.mqchannel.chnname = NULL;
 				currule->rule.mqchannel.warnstates = NULL;
@@ -1851,8 +1874,10 @@ void dump_client_config(void)
 		if (rwalk->timespec) printf(" TIME=%s", rwalk->timespec);
 		if (rwalk->hostexp) printf(" HOST=%s", rwalk->hostexp->pattern);
 		if (rwalk->exhostexp) printf(" EXHOST=%s", rwalk->exhostexp->pattern);
-		if (rwalk->pageexp) printf(" HOST=%s", rwalk->pageexp->pattern);
-		if (rwalk->expageexp) printf(" EXHOST=%s", rwalk->expageexp->pattern);
+		if (rwalk->dgexp) printf(" DISPLAYGROUP=%s", rwalk->dgexp->pattern);
+		if (rwalk->exdgexp) printf(" EXDISPLAYGROUP=%s", rwalk->exdgexp->pattern);
+		if (rwalk->pageexp) printf(" PAGE=%s", rwalk->pageexp->pattern);
+		if (rwalk->expageexp) printf(" EXPAGE=%s", rwalk->expageexp->pattern);
 		if (rwalk->classexp) printf(" CLASS=%s", rwalk->classexp->pattern);
 		if (rwalk->exclassexp) printf(" EXCLASS=%s", rwalk->exclassexp->pattern);
 		if (rwalk->statustext) printf(" TEXT=%s", rwalk->statustext);

@@ -161,6 +161,10 @@ static void free_criteria(criteria_t *crit)
 	if (crit->pagespecre)    pcre_free(crit->pagespecre);
 	if (crit->expagespec)    xfree(crit->expagespec);
 	if (crit->expagespecre)  pcre_free(crit->expagespecre);
+	if (crit->dgspec)        xfree(crit->dgspec);
+	if (crit->dgspecre)      pcre_free(crit->dgspecre);
+	if (crit->exdgspec)      xfree(crit->exdgspec);
+	if (crit->exdgspecre)    pcre_free(crit->exdgspecre);
 	if (crit->hostspec)      xfree(crit->hostspec);
 	if (crit->hostspecre)    pcre_free(crit->hostspecre);
 	if (crit->exhostspec)    xfree(crit->exhostspec);
@@ -316,6 +320,28 @@ int load_alertconfig(char *configfn, int defcolors, int defaultinterval)
 				crit = setup_criteria(&currule, &currcp);
 				crit->expagespec = strdup(val);
 				if (*(crit->expagespec) == '%') crit->expagespecre = compileregex(crit->expagespec+1);
+				firsttoken = 0;
+			}
+			else if ((strncasecmp(p, "DISPLAYGROUP=", 13) == 0) || (strncasecmp(p, "DISPLAYGROUPS=", 14) == 0)) {
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
+				crit->dgspec = strdup(val);
+				if (*(crit->dgspec) == '%') crit->dgspecre = compileregex(crit->dgspec+1);
+				firsttoken = 0;
+			}
+			else if ((strncasecmp(p, "EXDISPLAYGROUP=", 15) == 0) || (strncasecmp(p, "EXDISPLAYGROUPS=", 16) == 0)) {
+				char *val;
+				criteria_t *crit;
+
+				if (firsttoken) { flush_rule(currule); currule = NULL; currcp = NULL; pstate = P_NONE; }
+				val = strchr(p, '=')+1;
+				crit = setup_criteria(&currule, &currcp);
+				crit->exdgspec = strdup(val);
+				if (*(crit->exdgspec) == '%') crit->exdgspecre = compileregex(crit->exdgspec+1);
 				firsttoken = 0;
 			}
 			else if ((strncasecmp(p, "HOST=", 5) == 0) || (strncasecmp(p, "HOSTS=", 6) == 0)) {
@@ -668,6 +694,8 @@ static void dump_criteria(criteria_t *crit, int isrecip)
 {
 	if (crit->pagespec) printf("PAGE=%s ", crit->pagespec);
 	if (crit->expagespec) printf("EXPAGE=%s ", crit->expagespec);
+	if (crit->dgspec) printf("DISPLAYGROUP=%s ", crit->dgspec);
+	if (crit->exdgspec) printf("EXDISPLAYGROUP=%s ", crit->exdgspec);
 	if (crit->hostspec) printf("HOST=%s ", crit->hostspec);
 	if (crit->exhostspec) printf("EXHOST=%s ", crit->exhostspec);
 	if (crit->svcspec) printf("SERVICE=%s ", crit->svcspec);
@@ -750,7 +778,7 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 {
 	/*
 	 * See if the "crit" matches the "alert".
-	 * Match on pagespec, hostspec, svcspec, classspec, groupspec, colors, timespec, minduration, maxduration, sendrecovered
+	 * Match on pagespec, dgspec, hostspec, svcspec, classspec, groupspec, colors, timespec, minduration, maxduration, sendrecovered
 	 */
 
 	static char *pgnames = NULL;
@@ -769,8 +797,8 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (!cfline && rulecrit) cfline = rulecrit->cfline;
 	if (!cfline) cfline = "<undefined>";
 
-	traceprintf("Matching host:service:page '%s:%s:%s' against rule line %d\n",
-			alert->hostname, alert->testname, alert->location, cfid);
+	traceprintf("Matching host:service:dgroup:page '%s:%s:%s:%s' against rule line %d\n",
+			alert->hostname, alert->testname, xmh_item(hinfo, XMH_DGNAME), alert->location, cfid);
 
 	if (alert->state == A_PAGING) {
 		/* Check max-duration now - it's fast and easy. */
@@ -856,7 +884,6 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 			pgexclres = (namematch(pgtok, crit->expagespec, crit->expagespecre) ? 1 : 0);
 
 		pgtok = strtok(NULL, ",");
-
 	}
 	if (pgexclres == 1) {
 		traceprintf("Failed '%s' (pagename excluded)\n", cfline);
@@ -865,6 +892,15 @@ static int criteriamatch(activealerts_t *alert, criteria_t *crit, criteria_t *ru
 	if (pgmatchres == 0) {
 		traceprintf("Failed '%s' (pagename not in include list)\n", cfline);
 		return 0;
+	}
+
+	if (crit && crit->dgspec && !namematch(xmh_item(hinfo, XMH_DGNAME), crit->dgspec, crit->dgspecre)) { 
+		traceprintf("Failed '%s' (displaygroup not in include list)\n", cfline);
+		return 0; 
+	}
+	if (crit && crit->exdgspec && namematch(xmh_item(hinfo, XMH_DGNAME), crit->exdgspec, crit->exdgspecre)) { 
+		traceprintf("Failed '%s' (displaygroup excluded)\n", cfline);
+		return 0; 
 	}
 
 	if (crit && crit->hostspec && !namematch(alert->hostname, crit->hostspec, crit->hostspecre)) { 

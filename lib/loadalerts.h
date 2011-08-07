@@ -53,6 +53,10 @@ typedef struct criteria_t {
 	pcre *pagespecre;
 	char *expagespec;	/* Pages to exclude */
 	pcre *expagespecre;
+	char *dgspec;		/* Display groups to include */
+	pcre *dgspecre;
+	char *exdgspec;		/* Display groups to exclude */
+	pcre *exdgspecre;
 	char *hostspec;		/* Hosts to include */
 	pcre *hostspecre;
 	char *exhostspec;	/* Hosts to exclude */

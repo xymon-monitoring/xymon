@@ -51,7 +51,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	static void *hostfiles = NULL;
 	FILE *hosts;
 	int ip1, ip2, ip3, ip4, groupid, pageidx;
-	char hostname[4096];
+	char hostname[4096], *dgname;
 	strbuffer_t *inbuf;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
@@ -76,6 +76,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	initialize_hostlist();
 	curpage = curtoppage = pgtail = pghead;
 	pageidx = groupid = 0;
+	dgname = NULL;
 
 	hosts = stackfopen(hostsfn, "r", &hostfiles);
 	if (hosts == NULL) return -1;
@@ -90,6 +91,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			char *name, *title;
 
 			pageidx = groupid = 0;
+			if (dgname) xfree(dgname); dgname = NULL;
 			if (get_page_name_title(STRBUF(inbuf), "page", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = strdup(name);
@@ -107,6 +109,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			char *name, *title;
 
 			pageidx = groupid = 0;
+			if (dgname) xfree(dgname); dgname = NULL;
 			if (get_page_name_title(STRBUF(inbuf), "subpage", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = malloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
@@ -126,6 +129,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			char *pname, *name, *title;
 
 			pageidx = groupid = 0;
+			if (dgname) xfree(dgname); dgname = NULL;
 			parent = NULL;
 			if (get_page_name_title(STRBUF(inbuf), "subparent", &pname, &title) == 0) {
 				for (parent = pghead; (parent && !pagematch(parent, pname)); parent = parent->next);
@@ -146,7 +150,50 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			}
 		}
 		else if (strncmp(STRBUF(inbuf), "group", 5) == 0) {
+			char *tok, *inp;
+
 			groupid++;
+			if (dgname) xfree(dgname); dgname = NULL;
+
+			tok = strtok(STRBUF(inbuf), " \t");
+			if ((strcmp(tok, "group-only") == 0) || (strcmp(tok, "group-except") == 0)) {
+				tok = strtok(NULL, " \t");
+			}
+			if (tok) tok = strtok(NULL, "\r\n");
+
+			if (tok) {
+				char *inp;
+
+				/* Strip HTML tags from the string */
+				dgname = (char *)malloc(strlen(tok) + 1);
+				*dgname = '\0';
+
+				inp = tok;
+				while (*inp) {
+					char *tagstart, *tagend;
+
+					tagstart = strchr(inp, '<');
+					if (tagstart) {
+						tagend = strchr(tagstart, '>');
+
+						*tagstart = '\0';
+						if (*inp) strcat(dgname, inp);
+						if (tagend) {
+							inp = tagend+1;
+						}
+						else {
+							/* Unmatched '<', keep all of the string */
+							*tagstart = '<';
+							strcat(dgname, tagstart);
+							inp += strlen(inp);
+						}
+					}
+					else {
+						strcat(dgname, inp);
+						inp += strlen(inp);
+					}
+				}
+			}
 		}
 		else if (sscanf(STRBUF(inbuf), "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *delim;
@@ -183,6 +230,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 			sprintf(groupidstr, "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
+			newitem->dgname = (dgname ? strdup(dgname) : strdup("NONE"));
 			newitem->pageindex = pageidx++;
 
 			newitem->hostname = strdup(hostname);
@@ -298,6 +346,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	}
 	stackfclose(hosts);
 	freestrbuffer(inbuf);
+	if (dgname) xfree(dgname);
 	rbtDelete(htree);
 
 	MEMUNDEFINE(hostname);

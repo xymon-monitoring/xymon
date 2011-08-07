@@ -495,7 +495,7 @@ this is identical to the rule definitions used in the
 file).
 
 .BR "PAGE=targetstring"
-Rule matching an alert by the name of the page in XYmon. "targetstring" is the path of
+Rule matching an alert by the name of the page in Xymon. "targetstring" is the path of
 the page as defined in the hosts.cfg file. E.g. if you have this setup:
 .IP
 .nf
@@ -539,6 +539,27 @@ host by default goes into a class named by the operating system.
 
 .BR "EXCLASS=classname"
 Exclude all hosts belonging to "classname" from this rule.
+
+.BR "DISPLAYGROUP=groupstring"
+Rule matching an alert by the text of the display-group (text following the group, 
+group-only, group-except heading) in the hosts.cfg file. "groupstring" is the text
+for the group, stripped of any HTML tags. E.g. if you have this setup:
+.IP
+.nf
+group Web
+10.0.0.1 www1.foo.com
+10.0.0.2 www2.foo.com
+group Production databases
+10.0.1.1 db1.foo.com
+.fi
+.LP
+Then the hosts in the Web-group can be matched with \fBDISPLAYGROUP=Web\fR,
+and the database servers can be matched with \fBDISPLAYGROUP="Production databases"\fR.
+Note that you can also use regular expressions, e.g. \fBDISPLAYGROUP=%database\fR.
+If there is no group-setting for the host, use "DISPLAYGROUP=NONE".
+
+.BR "EXDISPLAYGROUP=groupstring"
+Rule excluding a group by matching the display-group string.
 
 .BR "TIME=timespecification"
 Rule matching by the time-of-day. This is specified as the DOWNTIME 

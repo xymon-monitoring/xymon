@@ -39,7 +39,7 @@ typedef struct namelist_t {
 	void *data;		/* Misc. data supplied by the user of this library function */
 	struct namelist_t *defaulthost;	/* Points to the latest ".default." host */
 	int pageindex;
-	char *groupid;
+	char *groupid, *dgname;
 	char *classname;
 	char *osname;
 	struct namelist_t *next;
@@ -189,6 +189,7 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_PAGEPATHTITLE]       = "XMH_PAGEPATHTITLE";
 	xmh_item_name[XMH_ALLPAGEPATHS]        = "XMH_ALLPAGEPATHS";
 	xmh_item_name[XMH_GROUPID]             = "XMH_GROUPID";
+	xmh_item_name[XMH_DGNAME]              = "XMH_DGNAME";
 	xmh_item_name[XMH_PAGEINDEX]           = "XMH_PAGEINDEX";
 	xmh_item_name[XMH_RAW]                 = "XMH_RAW";
 
@@ -240,6 +241,7 @@ static void initialize_hostlist(void)
 
 		if (walk->hostname) xfree(walk->hostname);
 		if (walk->groupid) xfree(walk->groupid);
+		if (walk->dgname) xfree(walk->dgname);
 		if (walk->classname) xfree(walk->classname);
 		if (walk->osname) xfree(walk->osname);
 		if (walk->logname) xfree(walk->logname);
@@ -256,6 +258,7 @@ static void initialize_hostlist(void)
 		/* clientname should not be freed, since it's just a pointer into the elems-array */
 		if (walk->hostname) xfree(walk->hostname);
 		if (walk->groupid) xfree(walk->groupid);
+		if (walk->dgname) xfree(walk->dgname);
 		if (walk->classname) xfree(walk->classname);
 		if (walk->osname) xfree(walk->osname);
 		if (walk->logname) xfree(walk->logname);
@@ -513,6 +516,9 @@ char *xmh_item(void *hostin, enum xmh_item_t item)
 
 	  case XMH_GROUPID:
 		  return host->groupid;
+
+	  case XMH_DGNAME:
+		  return host->dgname;
 
 	  case XMH_DOCURL:
 		  p = xmh_find_item(host, item);
