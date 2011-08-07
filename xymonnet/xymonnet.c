@@ -390,6 +390,7 @@ void load_tests(void)
 	char *p, *routestring = NULL;
 	void *hwalk;
 	testedhost_t *h;
+	int badtagsused = 0;
 
 	load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn());
 	if (first_host() == NULL) {
@@ -413,7 +414,10 @@ void load_tests(void)
 		h = init_testedhost(xmh_item(hwalk, XMH_HOSTNAME));
 
 		p = xmh_custom_item(hwalk, "badconn:");
-		if (p) sscanf(p+strlen("badconn:"), "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
+		if (p) {
+			sscanf(p+strlen("badconn:"), "%d:%d:%d", &h->badconn[0], &h->badconn[1], &h->badconn[2]);
+			badtagsused = 1;
+		}
 
 		p = xmh_custom_item(hwalk, "route:");
 		if (p) h->routerdeps = p + strlen("route:");
@@ -758,6 +762,7 @@ void load_tests(void)
 			}
 
 
+			badtagsused = 1;
 			badclear = badyellow = badred = 0;
 			inscope = 1;
 
@@ -827,6 +832,10 @@ void load_tests(void)
 			notesthostcount++;
 		}
 
+	}
+
+	if (badtagsused) {
+		errprintf("WARNING: The 'bad<TESTNAME>' syntax has been deprecated, please convert to 'delayred' and/or 'delayyellow' tags\n");
 	}
 
 	return;

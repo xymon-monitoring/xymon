@@ -96,6 +96,16 @@ at least (N/300)-1, e.g. if you set flap-seconds to 3600 (1 hour), then
 flap-count should be at least (3600/300)-1, i.e. 11.
 Default: 1800 seconds (30 minutes).
 
+.IP "--delay-red=N" / "--delay-yellow=N"
+Sets the delay before a red/yellow status causes a change in the web
+page display. Is usually controlled on a per-host basis via the
+\fBdelayred\fR and \fBdelayyellow\fR settings in
+.I hosts.cfg(5)
+but these options allow you to set a default value for the delays.
+The value N is in minutes. Default: 0 minutes (no delay).
+Note: Since most tests only execute once every 5 minutes, it will
+usually not make sense to set N to anything but a multiple of 5.
+
 .IP "--env=FILENAME"
 Loads the content of FILENAME as environment settings before starting
 xymond. This is mostly used when running as a stand-alone daemon; if

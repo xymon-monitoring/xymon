@@ -129,6 +129,10 @@ static void xmh_item_list_setup(void)
 	xmh_item_name[XMH_BROWSER]             = "XMH_BROWSER";
 	xmh_item_key[XMH_HOLIDAYS]             = "holidays=";
 	xmh_item_name[XMH_HOLIDAYS]            = "XMH_HOLIDAYS";
+	xmh_item_key[XMH_DELAYRED]             = "delayred=";
+	xmh_item_name[XMH_DELAYRED]            = "XMH_DELAYRED";
+	xmh_item_key[XMH_DELAYYELLOW]          = "delayyellow=";
+	xmh_item_name[XMH_DELAYYELLOW]         = "XMH_DELAYYELLOW";
 	xmh_item_key[XMH_FLAG_NOINFO]          = "noinfo";
 	xmh_item_name[XMH_FLAG_NOINFO]         = "XMH_FLAG_NOINFO";
 	xmh_item_key[XMH_FLAG_NOTRENDS]        = "notrends";

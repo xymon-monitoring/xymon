@@ -111,6 +111,20 @@ with multiple IP-adresses may use different IP's for sending data to
 Xymon, however. This tag disables the check of source IP when receiving
 data.
 
+.IP delayred=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]
+Usually, status changes happen immediately. This tag is used to defer
+an update to red for the STATUSCOLUMN status for DELAY minutes. E.g.
+with \fBdelayred=disk:10,cpu:30\fR, a red disk-status will not appear
+on the Xymon webpages until it has been red for at least 10 minutes.
+Note: Since most tests only execute once every 5 minutes, it will
+usually not make sense to set N to anything but a multiple of 5. The
+exception is network tests, since 
+.I xymonnet-again.sh(1)
+will re-run failed network tests once a minute for up to 30 minutes.
+
+.IP delayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]
+Same as \fBdelayred\fR, but defers the change to a yellow status.
+
 
 .SH XYMONGEN DISPLAY OPTIONS
 These tags are processed by the 
@@ -325,6 +339,10 @@ This page includes selected tests that currently have a red
 or yellow status.
 
 .IP NK:testname[,testname]
+NOTE: This has been deprecated, you should use
+.I criticalview.cgi(1)
+instead of the NK tag.
+
 Define the tests that you want included on the critical page.
 E.g. if you have a host where you only want to see the 
 http tests on critical.html, you specify it as
@@ -382,6 +400,7 @@ in the WML (WAP) page. Syntax is identical to the NK: tag.
 The default set of WML tests are taken from the --wml
 command line option.  If no "WML:" tag is specified, the 
 "NK:" tag is used if present.
+
 
 .SH XYMON STATUS PROPAGATION OPTIONS
 These tags affect how a status propagates upwards from a single
@@ -614,6 +633,9 @@ servers in a dependency definition. Such dependencies are
 silently ignored.
 
 .IP badTEST[-weekdays-starttime-endtime]:x:y:z
+NOTE: This has been deprecated, use the \fBdelayred\fR and
+\fBdelayyellow\fR settings instead.
+
 Normally when a network test fails, the status changes to
 red immediately.  With a "badTEST:x:y:z" tag this behaviour changes:
 .br

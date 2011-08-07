@@ -128,6 +128,7 @@ typedef struct xymond_log_t {
 	time_t validtime;	/* time when status is no longer valid */
 	time_t enabletime;	/* time when test auto-enables after a disable */
 	time_t acktime;		/* time when test acknowledgement expires */
+	time_t redstart, yellowstart;
 	unsigned char *message;
 	int msgsz;
 	unsigned char *dismsg, *ackmsg;
@@ -180,6 +181,9 @@ int      ignoretraced = 0;
 int      clientsavemem = 1;	/* In memory */
 int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
+
+int	defaultreddelay = 0;	/* Default delay for changing a status to RED */
+int	defaultyellowdelay = 0;	/* Default delay for changing a status to YELLOW */
 
 
 #define NOTALK 0
@@ -1174,6 +1178,38 @@ void clear_cookie(xymond_log_t *log)
 }
 
 
+static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
+{
+	char *key, *tok, *dstr = NULL;
+	int keylen, result = 0;
+
+	/* Ignore any delays when we start with a purple status */
+	if (currcolor == COL_PURPLE) return 0;
+
+	switch (newcolor) {
+	  case COL_RED: dstr = xmh_item(hinfo, XMH_DELAYRED); result = defaultreddelay; break;
+	  case COL_YELLOW: dstr = xmh_item(hinfo, XMH_DELAYYELLOW); result = defaultyellowdelay; break;
+	  default: break;
+	}
+
+	if (!dstr) return result;
+
+	/* Check "DELAYRED=cpu:10,disk:30,ssh:20" - number is in minutes */
+	keylen = strlen(testname) + 1;
+	key = (char *)malloc(keylen + 1);
+	sprintf(key, "%s:", testname);
+
+	dstr = strdup(dstr);
+	tok = strtok(dstr, ",");
+	while (tok && (strncmp(key, tok, keylen) != 0)) tok = strtok(NULL, ",");
+	if (tok) result = 60*atoi(tok+keylen); /* Convert to seconds */
+
+	xfree(key);
+	xfree(dstr);
+
+	return result;
+}
+
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist, 
 		   xymond_log_t *log, int newcolor, char *downcause, int modifyonly)
 {
@@ -1181,6 +1217,8 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	time_t now = getcurrenttime(NULL);
 	int msglen, issummary;
 	enum alertstate_t oldalertstatus, newalertstatus;
+	int delayval = 0;
+	void *hinfo = hostinfo(hostname);
 
 	dbgprintf("->handle_status\n");
 
@@ -1369,7 +1407,6 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 			 * - some multi-homed hosts use a random IP for sending us data.
 			 */
 			if ( (strcmp(log->sender, "xymond") != 0) && (strcmp(sender, "xymond") != 0) )  {
-				void *hinfo = hostinfo(hostname);
 				if ((xmh_item(hinfo, XMH_FLAG_PULLDATA) == NULL) && (xmh_item(hinfo, XMH_FLAG_MULTIHOMED) == NULL)) {
 					log_multisrc(log, sender);
 				}
@@ -1378,6 +1415,53 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		strncpy(log->sender, sender, sizeof(log->sender)-1);
 		*(log->sender + sizeof(log->sender) - 1) = '\0';
 	}
+
+
+	/* Handle delayed red/yellow */
+	switch (newcolor) {
+	  case COL_RED:
+		if (log->redstart == 0) log->redstart = now;
+		/*
+		 * Do NOT clear yellowstart. If we changed green->red, then it is already clear. 
+		 * When changing yellow->red, we may drop down to yellow again later and then we 
+		 * want to count the red time as part of the yellow status.
+		 * But do set yellowstart if it is 0. If we go green->red now, and then later 
+		 * red->yellow, we do want it to look as if the yellow began when the red status 
+		 * happened.
+		 */
+		if (log->yellowstart == 0) log->yellowstart = now;
+		break;
+
+	  case COL_YELLOW:
+		if (log->yellowstart == 0) log->yellowstart = now;
+		log->redstart = 0;	/* Clear it here, so brief red's from a yellow state does not trigger red */
+		break;
+
+	  default:
+		log->yellowstart = log->redstart = 0;
+		break;
+	}
+
+	if ((newcolor == COL_RED) && ((delayval = changedelay(hinfo, COL_RED, testname, log->color)) > 0)) {
+		if ((now - log->redstart) >= delayval) {
+			/* Time's up - we will go red */
+		}
+		else {
+			delayval = changedelay(hinfo, COL_YELLOW, testname, log->color);
+			if ((now - log->redstart) >= delayval) {
+				/* The yellow delay has been passed, so go yellow */
+				newcolor = COL_YELLOW;
+			}
+			else {
+				/* Neither yellow nor red delay passed - keep current color */
+				newcolor = log->color;
+			}
+		}
+	}
+	else if ((newcolor == COL_YELLOW) && ((delayval = changedelay(hinfo, COL_YELLOW, testname, log->color)) > 0)) {
+		if ((now - log->yellowstart) < delayval) newcolor = log->color; /* Keep current color */
+	}
+
 
 	log->oldcolor = log->color;
 	log->color = newcolor;
@@ -4057,6 +4141,7 @@ void save_checkpoint(void)
 			if (iores >= 0) iores = fprintf(fd, "|%s", msgstr);
 			if (lwalk->ackmsg) msgstr = nlencode(lwalk->ackmsg); else msgstr = "";
 			if (iores >= 0) iores = fprintf(fd, "|%s", msgstr);
+			if (iores >= 0) iores = fprintf(fd, "|%d|%d", (int)lwalk->redstart, (int)lwalk->yellowstart);
 			if (iores >= 0) iores = fprintf(fd, "\n");
 
 			for (awalk = lwalk->acklist; (awalk && (iores >= 0)); awalk = awalk->next) {
@@ -4108,7 +4193,7 @@ void load_checkpoint(char *fn)
 	char *origin = NULL;
 	xymond_log_t *ltail = NULL;
 	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg, *cookie; 
-	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires;
+	time_t logtime, lastchange, validtime, enabletime, acktime, cookieexpires, yellowstart, redstart;
 	int color = COL_GREEN, oldcolor = COL_GREEN;
 	int count = 0;
 
@@ -4124,7 +4209,7 @@ void load_checkpoint(char *fn)
 	initfgets(fd);
 	while (unlimfgets(inbuf, fd)) {
 		originname = hostname = testname = sender = testflags = statusmsg = disablemsg = ackmsg = cookie = NULL;
-		logtime = lastchange = validtime = enabletime = acktime = cookieexpires = 0;
+		logtime = lastchange = validtime = enabletime = acktime = cookieexpires = yellowstart = redstart = 0;
 		err = 0;
 
 		if ((strncmp(STRBUF(inbuf), "@@XYMONDCHK-V1|.task.|", 22) == 0) || (strncmp(STRBUF(inbuf), "@@HOBBITDCHK-V1|.task.|", 23) == 0)) {
@@ -4228,6 +4313,8 @@ void load_checkpoint(char *fn)
 			  case 15: if (strlen(item)) statusmsg = item; else err=1; break;
 			  case 16: disablemsg = item; break;
 			  case 17: ackmsg = item; break;
+			  case 18: redstart = atoi(item); break;
+			  case 19: yellowstart = atoi(item); break;
 			  default: err = 1;
 			}
 
@@ -4304,6 +4391,8 @@ void load_checkpoint(char *fn)
 		ltail->enabletime = enabletime;
 		if (ltail->enabletime == DISABLED_UNTIL_OK) ltail->validtime = INT_MAX;
 		ltail->acktime = acktime;
+		ltail->redstart = redstart;
+		ltail->yellowstart = yellowstart;
 		nldecode(statusmsg);
 		ltail->message = strdup(statusmsg);
 		ltail->msgsz = strlen(statusmsg)+1;
@@ -4656,6 +4745,14 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1, envarea);
+		}
+		else if (argnmatch(argv[argi], "--delay-red=")) {
+			char *p = strchr(argv[argi], '=');
+			defaultreddelay = 60*atoi(p+1);
+		}
+		else if (argnmatch(argv[argi], "--delay-yellow=")) {
+			char *p = strchr(argv[argi], '=');
+			defaultyellowdelay = 60*atoi(p+1);
 		}
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
