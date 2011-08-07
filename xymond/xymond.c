@@ -1163,7 +1163,7 @@ void clear_cookie(xymond_log_t *log)
 
 	if (!log->cookie) return;
 
-	csrec.id = log->cookie;
+	csrec.id = log->cookie->id;
 	oldrec = rbdelete((void *)&csrec, rbcookies);
 	if (oldrec) {
 		xfree(oldrec->id);
