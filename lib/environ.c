@@ -37,6 +37,8 @@ const static struct {
 	{ "XYMONNETWORK", "" },
 	{ "BBLOCATION", "" },
 	{ "PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:"BUILD_HOME"/bin" },
+	{ "DELAYRED", "" },
+	{ "DELAYYELLOW", "" },
 	{ "XYMONDPORT", "1984" },
 	{ "XYMSRV", "$XYMONSERVERIP" },
 	{ "XYMSERVERS", "" },

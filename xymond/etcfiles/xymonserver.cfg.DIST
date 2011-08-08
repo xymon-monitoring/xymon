@@ -26,6 +26,10 @@ PATH="/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:@XYMONHOME@/b
 # You can add these extra settings here:
 @RUNTIMEDEFS@
 
+# Default settings for "delayred" and "delayyellow" parameters in hosts.cfg
+DELAYRED=""			# Format: status:delay[,status:delay - e.g. "cpu:15,disk:30"
+DELAYYELLOW=""			# Format: status:delay[,status:delay - e.g. "cpu:15,disk:30"
+
 
 ##### Normally you do not need to modify anything below this point #####
 

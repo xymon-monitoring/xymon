@@ -182,9 +182,6 @@ int      clientsavemem = 1;	/* In memory */
 int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
 
-int	defaultreddelay = 0;	/* Default delay for changing a status to RED */
-int	defaultyellowdelay = 0;	/* Default delay for changing a status to YELLOW */
-
 
 #define NOTALK 0
 #define RECEIVING 1
@@ -248,6 +245,8 @@ time_t boottimer = 0;
 int  hostcount = 0;
 char *ackinfologfn = NULL;
 FILE *ackinfologfd = NULL;
+
+char *defaultreddelay = NULL, *defaultyellowdelay = NULL;
 
 typedef struct xymond_statistics_t {
 	char *cmd;
@@ -1187,8 +1186,8 @@ static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
 	if (currcolor == COL_PURPLE) return 0;
 
 	switch (newcolor) {
-	  case COL_RED: dstr = xmh_item(hinfo, XMH_DELAYRED); result = defaultreddelay; break;
-	  case COL_YELLOW: dstr = xmh_item(hinfo, XMH_DELAYYELLOW); result = defaultyellowdelay; break;
+	  case COL_RED: dstr = xmh_item(hinfo, XMH_DELAYRED); if (!dstr) dstr = defaultreddelay; break;
+	  case COL_YELLOW: dstr = xmh_item(hinfo, XMH_DELAYYELLOW); if (!dstr) dstr = defaultyellowdelay; break;
 	  default: break;
 	}
 
@@ -4638,6 +4637,9 @@ int main(int argc, char *argv[])
 	gettimeofday(&tv, &tz);
 	srandom(tv.tv_usec);
 
+	defaultreddelay = xgetenv("DELAYRED"); if (defaultreddelay && (strlen(defaultreddelay) == 0)) defaultreddelay = NULL;
+	defaultyellowdelay = xgetenv("DELAYYELLOW"); if (defaultyellowdelay && (strlen(defaultyellowdelay) == 0)) defaultyellowdelay = NULL;
+
 	/* Load alert config */
 	alertcolors = colorset(xgetenv("ALERTCOLORS"), ((1 << COL_GREEN) | (1 << COL_BLUE)));
 	okcolors = colorset(xgetenv("OKCOLORS"), (1 << COL_RED));
@@ -4745,14 +4747,6 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--env=")) {
 			char *p = strchr(argv[argi], '=');
 			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--delay-red=")) {
-			char *p = strchr(argv[argi], '=');
-			defaultreddelay = 60*atoi(p+1);
-		}
-		else if (argnmatch(argv[argi], "--delay-yellow=")) {
-			char *p = strchr(argv[argi], '=');
-			defaultyellowdelay = 60*atoi(p+1);
 		}
 		else if (argnmatch(argv[argi], "--area=")) {
 			char *p = strchr(argv[argi], '=');
