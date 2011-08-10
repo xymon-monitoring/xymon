@@ -2,13 +2,7 @@
 .SH NAME
 xymonnet \- Xymon network test tool
 .SH SYNOPSIS
-.B "xymonnet -?"
-.br
-.B "xymonnet --help"
-.br
-.B "xymonnet --version"
-.br
-.B "xymonnet [options]"
+.B "xymonnet [--ping|--noping] [--timeout=N] [options] [hostname] [hostname]
 .br
 (See the OPTIONS section for a description of the available command-line options).
 
@@ -47,6 +41,12 @@ Note: xymonnet performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with "testip" or the 
 "--dns=ip" option is used. So the target of the connectivity
 test can be determined by your /etc/hosts file or DNS.
+
+By default, all servers are tested - if XYMONNETWORK is set via
+.I xymonserver.cfg(5)
+then only the hosts marked as belonging to this network are
+tested. If the command-line includes one or more hostnames,
+then only those servers are tested.
 
 
 .SH GENERAL OPTIONS
@@ -351,7 +351,8 @@ All certificates found for a host are reported in one status message.
 Note: On most systems, the end-date of the certificate is limited to
 Jan 19th, 2038. If your certificate is valid after this date, xymonnet
 will report it as valid only until Jan 19, 2038. This is due to
-limitations in your operating system C library.
+limitations in your operating system C library. See
+http://en.wikipedia.org/wiki/2038_problem .
 
 
 .SH LDAP TESTS
