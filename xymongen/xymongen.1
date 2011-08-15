@@ -40,17 +40,14 @@ Provide a summary of available command-line options.
 Prints the version number of xymongen
 .sp
 .IP "--docurl=URL"
-Make hostnames be hyperlinks to documentation, accessed via a common
-web page (typically a CGI script or a PHP-driven dynamic page). The URL 
-parameter is a formatting string with the name of the web page - you can 
-put a "%s" in it which will be replaced by the hostname being accessed. 
-E.g. if you use the bb-notes extension from www.deadcat.net, you would
-enable this with "--docurl=/xymon/admin/notes.php?host=%s". For the host 
-www.storner.dk this will result in a link to 
-"/xymon/admin/notes.php?host=www.storner.dk". 
+This option is deprecated, use the HOSTDOCURL setting in
+.I xymonserver.cfg(5)
+instead.
 .sp
 .IP "--doccgi=URL"
-This option is deprecated; please use --docurl instead.
+This option is deprecated, use the HOSTDOCURL setting in
+.I xymonserver.cfg(5)
+instead.
 .sp
 .IP "--doc-window"
 Causes links to documentation for hosts and services to open in a

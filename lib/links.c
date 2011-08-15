@@ -35,6 +35,7 @@ static RbtHandle linkstree;
 static char *notesskin = NULL;
 static char *helpskin = NULL;
 static char *columndocurl = NULL;
+static char *hostdocurl = NULL;
 
 char *link_docext(char *fn)
 {
@@ -118,6 +119,7 @@ void load_all_links(void)
 	if (notesskin) { xfree(notesskin); notesskin = NULL; }
 	if (helpskin) { xfree(helpskin); helpskin = NULL; }
 	if (columndocurl) { xfree(columndocurl); columndocurl = NULL; }
+	if (hostdocurl) { xfree(hostdocurl); hostdocurl = NULL; }
 
 	if (xgetenv("XYMONNOTESSKIN")) notesskin = strdup(xgetenv("XYMONNOTESSKIN"));
 	else { 
@@ -132,11 +134,15 @@ void load_all_links(void)
 	}
 
 	if (xgetenv("COLUMNDOCURL")) columndocurl = strdup(xgetenv("COLUMNDOCURL"));
+	if (xgetenv("HOSTDOCURL")) hostdocurl = strdup(xgetenv("HOSTDOCURL"));
 
-	strcpy(dirname, xgetenv("XYMONNOTESDIR"));
-	load_links(dirname, notesskin);
+	if (!hostdocurl || (strlen(hostdocurl) == 0)) {
+		strcpy(dirname, xgetenv("XYMONNOTESDIR"));
+		load_links(dirname, notesskin);
+	}
 
 	/* Change xxx/xxx/xxx/notes into xxx/xxx/xxx/help */
+	strcpy(dirname, xgetenv("XYMONNOTESDIR"));
 	p = strrchr(dirname, '/'); *p = '\0'; strcat(dirname, "/help");
 	load_links(dirname, helpskin);
 
@@ -189,24 +195,19 @@ char *hostlink(char *hostname)
 	if (linkurl == NULL) linkurl = (char *)malloc(PATH_MAX);
 	if (!linksloaded) load_all_links();
 
-	link = find_link(hostname);
-
-	if (link) {
-		sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
+	if (hostdocurl && *hostdocurl) {
+		snprintf(linkurl, PATH_MAX-1, hostdocurl, hostname);
 		return linkurl;
+	}
+	else {
+		link = find_link(hostname);
+
+		if (link) {
+			sprintf(linkurl, "%s/%s", link->urlprefix, link->filename);
+			return linkurl;
+		}
 	}
 
 	return NULL;
-}
-
-char *hostlink_filename(char *hostname)
-{
-	link_t *link;
-
-	if (!linksloaded) load_all_links();
-
-	link = find_link(hostname);
-
-	return (link ? link->filename : NULL);
 }
 

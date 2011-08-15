@@ -316,6 +316,17 @@ Default: "$CGIBINURL/columndoc.sh?%s", which causes links to use the
 .I columndoc.sh(1)
 script to document a column.
 
+.IP HOSTDOCURL
+Format string used to build a link to the documentation for a host.
+If not set, then Xymon falls back to scanning the XYMONNOTES directory
+for files matching the hostname, or the hostname together with a common
+filename extension (.php, .html, .doc and so on). If set, this string
+becomes a formatting string for the documentation URL. E.g. for the host
+"myhost", a setting of HOSTDOCURL="/docs/%s.php" will generate a link to
+"/docs/myhost.php".
+Default: Not set, so host documentation will be retrieved from the
+XYMONNOTES directory.
+
 
 .SH SETTINGS FOR SENDING MESSAGES TO XYMON
 .IP XYMSRV

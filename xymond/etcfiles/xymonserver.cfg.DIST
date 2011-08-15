@@ -157,6 +157,12 @@ XYMONNONGREENEXT="eventlog.sh acklog.sh"	# What extensions to have on the All no
 DOTHEIGHT="16"					# Height (in pixels) of the color GIF's
 DOTWIDTH="16"					# Width (in pixels) of the color GIF's
 COLUMNDOCURL="$CGIBINURL/columndoc.sh?%s"	# URL formatting string for column-links
+# HOSTDOCURL is a formatting string for generating links to host documentation.
+# If NOT set, Xymon will scan the "notes" directory for files matching the hostname 
+# and possibly a filename extension (php, html, doc, asp ...)
+#
+# HOSTDOCURL="$XYMONNOTESSKIN/%s.html"
+
 
 # HTML content
 HTMLCONTENTTYPE="text/html"                     # You can add charset options here.

@@ -113,6 +113,7 @@ const static struct {
 	{ "RRDHEIGHT", "120" },
 	{ "RRDWIDTH", "576" },
 	{ "COLUMNDOCURL", "$CGIBINURL/columndoc.sh?%s" },
+	{ "HOSTDOCURL", "" },
 	{ "XYMONLOGO", "Xymon" },
 	{ "XYMONPAGELOCAL", "<B><I>Pages Hosted Locally</I></B>" },
 	{ "XYMONPAGEREMOTE", "<B><I>Remote Status Display</I></B>" },

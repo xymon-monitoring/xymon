@@ -15,6 +15,5 @@ extern char *link_docext(char *fn);
 extern void load_all_links(void);
 extern char *columnlink(char *colname);
 extern char *hostlink(char *hostname);
-extern char *hostlink_filename(char *hostname);
 
 #endif
