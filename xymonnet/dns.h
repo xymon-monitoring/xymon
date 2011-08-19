@@ -21,6 +21,7 @@
 extern int use_ares_lookup;
 extern int max_dns_per_run;
 extern int dnstimeout;
+extern int pending_dns_count;
 
 extern int dns_stats_total;
 extern int dns_stats_success;
