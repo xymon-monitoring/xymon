@@ -67,7 +67,7 @@ beastat.o: beastat.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ beastat.c
 
 
-contest: contest.c $(LIBOBJS)
+contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(LIBOBJS)
 	$(CC) $(CFLAGS) -o contest -I../include -Ic-ares -DSTANDALONE contest.c httptest.o dns.o dns2.o httpcookies.o ./libcares.a ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 
