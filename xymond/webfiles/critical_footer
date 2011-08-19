@@ -5,6 +5,7 @@
        <TH>Color</TH>
        <TH>Age</TH>
        <TH>Acked</TH>
+       <TH>Eventlog</TH>
        <TH>&nbsp;</TH>
     </TR>
     <TR>
@@ -38,6 +39,14 @@
           <SELECT NAME="WANTACKED">
 	    <OPTION VALUE="yes"    &SELECT_WANTACKED_YES>Yes
 	    <OPTION VALUE="no"     &SELECT_WANTACKED_NO>No
+	  </SELECT>
+       </TD>
+       <TD ALIGN=CENTER>
+          <SELECT NAME="EVCOUNT">
+	    <OPTION VALUE="0"      &SELECT_EVCOUNT_0>No eventlog
+	    <OPTION VALUE="10"     &SELECT_EVCOUNT_10>Max 10 events
+	    <OPTION VALUE="50"     &SELECT_EVCOUNT_50>Max 50 events
+	    <OPTION VALUE="100"    &SELECT_EVCOUNT_100>Max 100 events
 	  </SELECT>
        </TD>
        <TD ALIGN=CENTER>

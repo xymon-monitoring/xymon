@@ -30,9 +30,11 @@ typedef struct hstatus_t {
 } hstatus_t;
 
 static RbtHandle rbstate;
+static RbtHandle hostsonpage;
 static time_t oldlimit = 3600;
 static int critacklevel = 1;
 static int usetooltips = 0;
+static time_t maxage = INT_MAX;
 
 void errormsg(char *s)
 {
@@ -67,6 +69,7 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 
 	now = getcurrenttime(NULL);
 	rbstate = rbtNew(name_compare);
+	hostsonpage = rbtNew(name_compare);
 
 	bol = board;
 	while (bol && (*bol)) {
@@ -282,6 +285,7 @@ void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int pri
 		/* New host */
 		curhost = itm->hostname;
 		print_hoststatus(output, itm, rbcolumns, prio, firsthost);
+		rbtInsert(hostsonpage, itm->hostname, itm);
 		firsthost = 0;
 	}
 
@@ -289,6 +293,14 @@ void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int pri
 	if (!firsthost) fprintf(output, "<TR><TD>&nbsp;</TD></TR>\n");
 }
 
+
+static int evcount = 0;
+
+static int ev_included(char *hostname)
+{
+	/* Callback function for filtering eventlog-hosts */
+	return (rbtFind(hostsonpage, hostname) == rbtEnd(hostsonpage)) ? 0 : 1;
+}
 
 
 void generate_critpage(FILE *output, char *hfprefix)
@@ -333,13 +345,22 @@ void generate_critpage(FILE *output, char *hfprefix)
 		fprintf(output, "%s", xgetenv("XYMONALLOKTEXT"));
         }
 
+	if (evcount > 0) {
+		/* Include the eventlog */
+		do_eventlog(output, evcount, maxage/60, 
+			    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
+			    ev_included,
+			    NULL, NULL, NULL, XYMON_COUNT_NONE, XYMON_S_NONE, NULL);
+		fprintf(output, "<br><br><br>\n");
+	}
+
         fprintf(output, "</center>\n");
+
         headfoot(output, hfprefix, "", "footer", color);
 }
 
 
 static int maxprio = 3;
-static time_t maxage = INT_MAX;
 static int mincolor = COL_YELLOW;
 static int wantacked = 0;
 
@@ -365,7 +386,7 @@ static void parse_query(void)
 {
 	cgidata_t *cgidata = cgi_request();
 	cgidata_t *cwalk;
-	int havemaxprio=0, havemaxage=0, havemincolor=0, havewantacked=0;
+	int havemaxprio=0, havemaxage=0, havemincolor=0, havewantacked=0, haveevcount=0;
 
 	cwalk = cgidata;
 	while (cwalk) {
@@ -393,6 +414,11 @@ static void parse_query(void)
 			wantacked = (strcasecmp(cwalk->value, "yes") == 0);
 			havewantacked = 1;
 		}
+		else if (strcasecmp(cwalk->name, "EVCOUNT") == 0) {
+			selectenv(cwalk->name, cwalk->value);
+			evcount = atoi(cwalk->value);
+			haveevcount = 1;
+		}
 
 		cwalk = cwalk->next;
 	}
@@ -401,6 +427,7 @@ static void parse_query(void)
 	if (!havemaxage)    selectenv("MAXAGE", "525600");
 	if (!havemincolor)  selectenv("MINCOLOR", "yellow");
 	if (!havewantacked) selectenv("WANTACKED", "no");
+	if (!haveevcount)   selectenv("EVCOUNT", "0");
 }
 
 
