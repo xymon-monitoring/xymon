@@ -29,19 +29,19 @@ typedef struct treerec_t {
 
 typedef struct xtree_t {
 	treerec_t *entries;
-	int treesz;
+	xtreePos_t treesz;
 	int (*compare)(const char *a, const char *b);
 } xtree_t;
 
-static int binsearch(xtree_t *mytree, char *key)
+static xtreePos_t binsearch(xtree_t *mytree, char *key)
 {
-	int uplim, lowlim, n;
+	xtreePos_t uplim, lowlim, n;
 
 	/* Do a binary search  */
 	lowlim = 0; uplim = mytree->treesz-1;
 
 	do {
-		int res;
+		xtreePos_t res;
 
 		n = (uplim + lowlim) / 2;
 		res = mytree->compare(key, mytree->entries[n].key);
@@ -74,7 +74,7 @@ void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b))
 void xtreeDestroy(void *treehandle)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
-	int i;
+	xtreePos_t i;
 
 	if (treehandle == NULL) return;
 
@@ -86,10 +86,10 @@ void xtreeDestroy(void *treehandle)
 	free(mytree);
 }
 
-int xtreeFind(void *treehandle, char *key)
+xtreePos_t xtreeFind(void *treehandle, char *key)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
-	int n;
+	xtreePos_t n;
 
 	/* Does tree exist ? Is it empty? */
 	if ((treehandle == NULL) || (mytree->treesz == 0)) return -1;
@@ -101,7 +101,7 @@ int xtreeFind(void *treehandle, char *key)
 	return -1;
 }
 
-int xtreeFirst(void *treehandle)
+xtreePos_t xtreeFirst(void *treehandle)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
 
@@ -111,7 +111,7 @@ int xtreeFirst(void *treehandle)
 	return 0;
 }
 
-int xtreeNext(void *treehandle, int pos)
+xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
 
@@ -125,7 +125,7 @@ int xtreeNext(void *treehandle, int pos)
 	return pos;
 }
 
-char *xtreeKey(void *treehandle, int pos)
+char *xtreeKey(void *treehandle, xtreePos_t pos)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
 
@@ -135,7 +135,7 @@ char *xtreeKey(void *treehandle, int pos)
 	return mytree->entries[pos].key;
 }
 
-void *xtreeData(void *treehandle, int pos)
+void *xtreeData(void *treehandle, xtreePos_t pos)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
 
@@ -149,7 +149,7 @@ void *xtreeData(void *treehandle, int pos)
 xtreeStatus_t xtreeAdd(void *treehandle, char *key, char *userdata)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
-	int n;
+	xtreePos_t n;
 
 	if (treehandle == NULL) return -1;
 
@@ -200,7 +200,6 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, char *userdata)
 			mytree->entries = newents;
 		}
 		else {
-			int n;
 			treerec_t *newents;
 
 			n = binsearch(mytree, key);
@@ -246,7 +245,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, char *userdata)
 void *xtreeDelete(void *treehandle, char *key)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
-	int n;
+	xtreePos_t n;
 
 	if (treehandle == NULL) return NULL;
 	if (mytree->treesz == 0) return NULL;	/* Empty tree */
@@ -268,7 +267,7 @@ int main(int argc, char **argv)
 {
 	char buf[1024], key[1024], data[1024];
 	void *th = NULL;
-	int n;
+	xtreePos_t n;
 	char *rec, *p;
 
 	do {

@@ -23,15 +23,17 @@ typedef enum {
 
 #define xtreeEnd(X) (-1)
 
+typedef int xtreePos_t;
+
 extern void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b));
 extern void xtreeDestroy(void *treehandle);
 extern xtreeStatus_t xtreeAdd(void *treehandle, char *key, char *userdata);
 extern void *xtreeDelete(void *treehandle, char *key);
-extern int xtreeFind(void *treehandle, char *key);
-extern int xtreeFirst(void *treehandle);
-extern int xtreeNext(void *treehandle, int pos);
-extern char *xtreeKey(void *treehandle, int pos);
-extern void *xtreeData(void *treehandle, int pos);
+extern xtreePos_t xtreeFind(void *treehandle, char *key);
+extern xtreePos_t xtreeFirst(void *treehandle);
+extern xtreePos_t xtreeNext(void *treehandle, xtreePos_t pos);
+extern char *xtreeKey(void *treehandle, xtreePos_t pos);
+extern void *xtreeData(void *treehandle, xtreePos_t pos);
 
 #endif
 
