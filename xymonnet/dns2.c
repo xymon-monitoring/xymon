@@ -49,7 +49,6 @@ static char rcsid[] = "$Id$";
 #include <ares_dns.h>
 #include <ares_version.h>
 
-#include "dns.h"
 #include "dns2.h"
 
 /* Some systems (AIX, HP-UX) dont know the DNS T_SRV record */
@@ -149,7 +148,6 @@ void dns_detail_callback(void *arg, int status, int timeouts, unsigned char *abu
 	const unsigned char *aptr;
 	dns_resp_t *response = (dns_resp_t *) arg;
 
-	pending_dns_count--;
 	clearstrbuffer(response->msgbuf);
 	response->msgstatus = status;
 

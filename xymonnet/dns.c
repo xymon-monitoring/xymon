@@ -35,7 +35,7 @@ char *hstrerror(int err) { return ""; }
 #endif
 
 static ares_channel mychannel;
-int pending_dns_count = 0;
+static int pending_dns_count = 0;
 int use_ares_lookup = 1;
 int max_dns_per_run = 0;
 
@@ -136,13 +136,12 @@ static void dns_ares_queue_run(ares_channel channel)
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
 	int loops = 0;
-	int timeouthappened = 0;
 
 	if ((channel == mychannel) && (!pending_dns_count)) return;
 
 	dbgprintf("Processing %d DNS lookups with ARES\n", pending_dns_count);
 
-	while ((pending_dns_count > 0) && !timeouthappened) {	/* Loop continues until all requests handled (or time out) */
+	while (1) {	/* Loop continues until all requests handled (or time out) */
 		loops++;
 		FD_ZERO(&read_fds);
 		FD_ZERO(&write_fds);
@@ -164,11 +163,10 @@ static void dns_ares_queue_run(ares_channel channel)
 		tvp = ares_timeout(channel, &tv, &tv);
 
 		selres = select(nfds, &read_fds, &write_fds, NULL, tvp);
-		timeouthappened = (selres == 0);
 		ares_process(channel, &read_fds, &write_fds);
 	}
 
-	if ((pending_dns_count > 0) && !timeouthappened) {
+	if (pending_dns_count > 0) {
 		errprintf("Odd ... pending_dns_count=%d after a queue run\n", 
 				pending_dns_count);
 		pending_dns_count = 0;
@@ -329,15 +327,12 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 
 		dbgprintf("ares_search: tlookup='%s', class=%d, type=%d\n", tlookup, C_IN, atype);
 		ares_search(channel, tlookup, C_IN, atype, dns_detail_callback, newtest);
-		pending_dns_count++;
 		tst = strtok(NULL, ",");
 	} while (tst);
 
 	dns_ares_queue_run(channel);
-	ares_destroy(channel);
 
 	getntimer(&endtime);
-
 	tspent = tvdiff(&starttime, &endtime, NULL);
 	clearstrbuffer(banner); status = ARES_SUCCESS;
 	strcpy(tspec, hostname);
@@ -356,6 +351,8 @@ int dns_test_server(char *serverip, char *hostname, strbuffer_t *banner)
 	xfree(tspec);
 	sprintf(msg, "\nSeconds: %u.%03u\n", (unsigned int)tspent->tv_sec, (unsigned int)tspent->tv_nsec/1000000);
 	addtobuffer(banner, msg);
+
+	ares_destroy(channel);
 
 	return (status != ARES_SUCCESS);
 }
