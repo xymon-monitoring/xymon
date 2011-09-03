@@ -146,7 +146,7 @@ void *xtreeData(void *treehandle, xtreePos_t pos)
 }
 
 
-xtreeStatus_t xtreeAdd(void *treehandle, char *key, char *userdata)
+xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 {
 	xtree_t *mytree = (xtree_t *)treehandle;
 	xtreePos_t n;

@@ -27,7 +27,7 @@ typedef int xtreePos_t;
 
 extern void *xtreeNew(int(*xtreeCompare)(const char *a, const char *b));
 extern void xtreeDestroy(void *treehandle);
-extern xtreeStatus_t xtreeAdd(void *treehandle, char *key, char *userdata);
+extern xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata);
 extern void *xtreeDelete(void *treehandle, char *key);
 extern xtreePos_t xtreeFind(void *treehandle, char *key);
 extern xtreePos_t xtreeFirst(void *treehandle);
