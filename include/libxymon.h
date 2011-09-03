@@ -87,7 +87,6 @@ typedef struct strbuffer_t {
 #include "../lib/netservices.h"
 #include "../lib/rbtr.h"
 #include "../lib/readmib.h"
-#include "../lib/redblack.h"
 #include "../lib/rmd160c.h"
 #include "../lib/sendmsg.h"
 #include "../lib/sha1.h"
@@ -98,6 +97,7 @@ typedef struct strbuffer_t {
 #include "../lib/suid.h"
 #include "../lib/timefunc.h"
 #include "../lib/timing.h"
+#include "../lib/tree.h"
 #include "../lib/url.h"
 #endif
 
