@@ -29,12 +29,14 @@ typedef struct hstatus_t {
 	critconf_t *config;
 } hstatus_t;
 
-static RbtHandle rbstate;
-static RbtHandle hostsonpage;
+static RbtHandle *rbstate = NULL;
+static RbtHandle *hostsonpage = NULL;
+static int treecount = 0;
 static time_t oldlimit = 3600;
 static int critacklevel = 1;
 static int usetooltips = 0;
 static time_t maxage = INT_MAX;
+static time_t pagecolor = COL_GREEN;
 
 void errormsg(char *s)
 {
@@ -42,34 +44,61 @@ void errormsg(char *s)
 }
 
 
-int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
+static char *boardmaster = NULL;
+
+static int getboard(int mincolor)
 {
-	int xymondresult;
-	char *board = NULL;
-	char *bol, *eol;
-	time_t now;
 	char msg[1024];
 	int i;
 	sendreturn_t *sres;
+	int xymondresult;
 
-	sprintf(msg, "xymondboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", critacklevel,colorname(mincolor));
-	for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
 
-	sres = newsendreturnbuf(1, NULL);
-	xymondresult = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
-	if (xymondresult != XYMONSEND_OK) {
-		freesendreturnbuf(sres);
-		errormsg("Unable to fetch current status\n");
-		return 1;
+	if (!boardmaster) {
+		sprintf(msg, "xymondboard acklevel=%d fields=hostname,testname,color,lastchange,logtime,validtime,acklist color=%s", critacklevel,colorname(mincolor));
+		for (i=mincolor+1; (i < COL_COUNT); i++) sprintf(msg+strlen(msg), ",%s", colorname(i));
+
+		sres = newsendreturnbuf(1, NULL);
+		xymondresult = sendmessage(msg, NULL, XYMON_TIMEOUT, sres);
+		if (xymondresult != XYMONSEND_OK) {
+			boardmaster = "";
+			freesendreturnbuf(sres);
+			errormsg("Unable to fetch current status\n");
+			return 1;
+		}
+		else {
+			boardmaster = getsendreturnstr(sres, 1);
+			freesendreturnbuf(sres);
+		}
 	}
-	else {
-		board = getsendreturnstr(sres, 1);
-		freesendreturnbuf(sres);
-	}
+
+	return 0;
+}
+
+int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
+{
+	char *board, *bol, *eol;
+	time_t now;
+
+	/* 
+	 * We leak memory by dup'ing this and not freeing it. 
+	 * But we cannot free it, because the tree holding the data
+	 * for later printing contains pointers into this string buffer.
+	 */
+	board = strdup(boardmaster);
 
 	now = getcurrenttime(NULL);
-	rbstate = rbtNew(name_compare);
-	hostsonpage = rbtNew(name_compare);
+	treecount++;
+	if (treecount == 1) {
+		rbstate = malloc(sizeof(RbtHandle));
+		hostsonpage = malloc(sizeof(RbtHandle));
+	}
+	else {
+		rbstate = realloc(rbstate, (treecount) * sizeof(RbtHandle));
+		hostsonpage = realloc(hostsonpage, (treecount) * sizeof(RbtHandle));
+	}
+	rbstate[treecount-1] = rbtNew(name_compare);
+	hostsonpage[treecount-1] = rbtNew(name_compare);
 
 	bol = board;
 	while (bol && (*bol)) {
@@ -125,7 +154,7 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 
 					newitem->key = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
 					sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
-					status = rbtInsert(rbstate, newitem->key, newitem);
+					status = rbtInsert(rbstate[treecount-1], newitem->key, newitem);
 				}
 			}
 		}
@@ -184,7 +213,7 @@ void print_colheaders(FILE *output, RbtHandle rbcolumns)
 	fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", colcount);
 }
 
-void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio, int firsthost)
+void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle statetree, RbtHandle columns, int prio, int firsthost)
 {
 	void *hinfo;
 	char *dispname, *ip, *key;
@@ -221,8 +250,8 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 		colname = (char *)k1;
 		key = (char *)realloc(key, 2 + strlen(itm->hostname) + strlen(colname));
 		sprintf(key, "%s|%s", itm->hostname, colname);
-		sthandle = rbtFind(rbstate, key);
-		if (sthandle == rbtEnd(rbstate)) {
+		sthandle = rbtFind(statetree, key);
+		if (sthandle == rbtEnd(statetree)) {
 			fprintf(output, "-");
 		}
 		else {
@@ -230,7 +259,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 			char *htmlalttag;
 			char *htmlackstr;
 
-			rbtKeyValue(rbstate, sthandle, &k1, &k2);
+			rbtKeyValue(statetree, sthandle, &k1, &k2);
 			column = (hstatus_t *)k2;
 			if (column->config->priority != prio) 
 				fprintf(output, "-");
@@ -265,18 +294,18 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle columns, int prio,
 }
 
 
-void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int prio)
+void print_oneprio(FILE *output, RbtHandle statetree, RbtHandle hoptree, RbtHandle rbcolumns, int prio)
 {
 	RbtIterator hhandle;
 	int firsthost = 1;
 	char *curhost = "";
 
 	/* Then output each host and their column status */
-	for (hhandle = rbtBegin(rbstate); (hhandle != rbtEnd(rbstate)); hhandle = rbtNext(rbstate, hhandle)) {
+	for (hhandle = rbtBegin(statetree); (hhandle != rbtEnd(statetree)); hhandle = rbtNext(statetree, hhandle)) {
 		void *k1, *k2;
 		hstatus_t *itm;
 
-	        rbtKeyValue(rbstate, hhandle, &k1, &k2);
+	        rbtKeyValue(statetree, hhandle, &k1, &k2);
 		itm = (hstatus_t *)k2;
 
 		if (itm->config->priority != prio) continue;
@@ -284,8 +313,8 @@ void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int pri
 
 		/* New host */
 		curhost = itm->hostname;
-		print_hoststatus(output, itm, rbcolumns, prio, firsthost);
-		rbtInsert(hostsonpage, itm->hostname, itm);
+		print_hoststatus(output, itm, statetree, rbcolumns, prio, firsthost);
+		rbtInsert(hoptree, itm->hostname, itm);
 		firsthost = 0;
 	}
 
@@ -295,46 +324,33 @@ void print_oneprio(FILE *output, RbtHandle rbstate, RbtHandle rbcolumns, int pri
 
 
 static int evcount = 0;
+static RbtHandle evhopfilter;
 
 static int ev_included(char *hostname)
 {
 	/* Callback function for filtering eventlog-hosts */
-	return (rbtFind(hostsonpage, hostname) == rbtEnd(hostsonpage)) ? 0 : 1;
+	return (rbtFind(evhopfilter, hostname) == rbtEnd(evhopfilter)) ? 0 : 1;
 }
 
 
-void generate_critpage(FILE *output, char *hfprefix)
+void generate_critpage(RbtHandle statetree, RbtHandle hoptree, FILE *output, char *header, char *footer, int color, int maxprio)
 {
 	RbtIterator hhandle;
-	int color = COL_GREEN;
-	int maxprio = 0;
 
-	/* Determine background color and max. priority */
-	for (hhandle = rbtBegin(rbstate); (hhandle != rbtEnd(rbstate)); hhandle = rbtNext(rbstate, hhandle)) {
-		void *k1, *k2;
-		hstatus_t *itm;
-
-	        rbtKeyValue(rbstate, hhandle, &k1, &k2);
-		itm = (hstatus_t *)k2;
-
-		if (itm->color > color) color = itm->color;
-		if (itm->config->priority > maxprio) maxprio = itm->config->priority;
-	}
-
-        headfoot(output, hfprefix, "", "header", color);
+        headfoot(output, header, "", "header", pagecolor);	/* Use PAGE color here, not the part color */
         fprintf(output, "<center>\n");
 
         if (color != COL_GREEN) {
 		RbtHandle rbcolumns;
 		int prio;
 
-		rbcolumns = columnlist(rbstate);
+		rbcolumns = columnlist(statetree);
 
 		fprintf(output, "<TABLE BORDER=0 CELLPADDING=4 SUMMARY=\"Critical status display\">\n");
 		print_colheaders(output, rbcolumns);
 
 		for (prio = 1; (prio <= maxprio); prio++) {
-			print_oneprio(output, rbstate, rbcolumns, prio);
+			print_oneprio(output, statetree, hoptree, rbcolumns, prio);
 		}
 
 		fprintf(output, "</TABLE>\n");
@@ -347,6 +363,7 @@ void generate_critpage(FILE *output, char *hfprefix)
 
 	if (evcount > 0) {
 		/* Include the eventlog */
+		evhopfilter = hoptree;
 		do_eventlog(output, evcount, maxage/60, 
 			    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0,
 			    ev_included,
@@ -356,7 +373,7 @@ void generate_critpage(FILE *output, char *hfprefix)
 
         fprintf(output, "</center>\n");
 
-        headfoot(output, hfprefix, "", "footer", color);
+        headfoot(output, footer, "", "footer", color);
 }
 
 
@@ -435,8 +452,11 @@ int main(int argc, char *argv[])
 {
 	int argi;
 	char *envarea = NULL;
-	char *critconfig = NULL;
+	char **critconfig = NULL;
+	int cccount = 0;
 	char *hffile = "critical";
+
+	critconfig = (char **)calloc(1, sizeof(char *));
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -459,7 +479,11 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
-			critconfig = strdup(p+1);
+
+			critconfig[cccount] = strdup(p+1);
+			cccount++;
+			critconfig = (char **)realloc(critconfig, (1 + cccount)*sizeof(char *));
+			critconfig[cccount] = NULL;
 		}
 		else if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
@@ -473,13 +497,67 @@ int main(int argc, char *argv[])
 
 	parse_query();
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
-	load_critconfig(critconfig);
 	load_all_links();
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
 
-	if (loadstatus(maxprio, maxage, mincolor, wantacked) == 0) {
-		use_recentgifs = 1;
-		generate_critpage(stdout, hffile);
+	use_recentgifs = 1;
+
+	if (getboard(mincolor) == 0) {
+		int i;
+		char *oneconfig, *onename;
+		int *partcolor, *partprio;
+		RbtIterator hhandle;
+
+		for (i=0; (critconfig[i]); i++) {
+			oneconfig = strchr(critconfig[i], ':');
+			load_critconfig(oneconfig ? oneconfig+1 : critconfig[i]);
+			loadstatus(maxprio, maxage, mincolor, wantacked);
+
+			/* Determine background color and max. priority */
+			if (i == 0) {
+				partcolor = (int *)malloc(sizeof(int));
+				partprio = (int *)malloc(sizeof(int));
+			}
+			else {
+				partcolor = (int *)realloc(partcolor, (i+1)*sizeof(int));
+				partprio = (int *)realloc(partprio, (i+1)*sizeof(int));
+			}
+			partcolor[i] = COL_GREEN;
+			partprio[i] = 0;
+
+			for (hhandle = rbtBegin(rbstate[i]); (hhandle != rbtEnd(rbstate[i])); hhandle = rbtNext(rbstate[i], hhandle)) {
+				void *k1, *k2;
+				hstatus_t *itm;
+
+				rbtKeyValue(rbstate[i], hhandle, &k1, &k2);
+				itm = (hstatus_t *)k2;
+
+				if (itm->color > partcolor[i]) partcolor[i] = itm->color;
+				if (itm->config->priority > partprio[i]) partprio[i] = itm->config->priority;
+			}
+
+			if (partcolor[i] > pagecolor) pagecolor = partcolor[i];
+		}
+
+		for (i=0; (critconfig[i]); i++) {
+			oneconfig = strchr(critconfig[i], ':'); 
+			if (oneconfig) {
+				*oneconfig = '\0';
+				oneconfig++;
+				onename = (char *)malloc(strlen("DIVIDERTEXT=") + strlen(critconfig[i]) + 1);
+				sprintf(onename, "DIVIDERTEXT=%s", critconfig[i]);
+				putenv(onename);
+			}
+			else {
+				oneconfig = critconfig[i];
+				putenv("DIVIDERTEXT=");
+			}
+
+			generate_critpage(rbstate[i], hostsonpage[i], stdout, 
+					  (i == 0) ? (critconfig[1] ? "critmulti" : "critical") : "divider", 
+					  (critconfig[i+1] == NULL) ? "critical" : "divider",
+					  partcolor[i], partprio[i]);
+		}
 	}
 	else {
 		fprintf(stdout, "Cannot load Xymon status\n");

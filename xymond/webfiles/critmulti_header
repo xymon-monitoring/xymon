@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="REFRESH" CONTENT="60">
+<META HTTP-EQUIV="EXPIRES" CONTENT="Sat, 01 Jan 2001 00:00:00 GMT">
+<TITLE>&XYMWEBBACKGROUND : Xymon - Status @ &XYMWEBDATE</TITLE>
+
+<!-- Styles for the Xymon body  -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYCSS">
+
+<!-- Styles for the menu bar -->
+<link rel="stylesheet" type="text/css" href="&XYMONBODYMENUCSS">
+
+<!-- The favicon image -->
+<link rel="shortcut icon" href="&XYMONSKIN/favicon-&XYMWEBBACKGROUND.ico">
+
+</HEAD>
+
+<BODY class="&XYMWEBBACKGROUND">
+
+&XYMONBODYHEADER
+
+<TABLE SUMMARY="Topline" WIDTH="100%">
+<TR><TD HEIGHT=16>&nbsp;</TD></TR>  <!-- For the menu bar -->
+<TR>
+  <TD VALIGN=MIDDLE ALIGN=LEFT WIDTH="30%">
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMONLOGO</B></FONT>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=CENTER WIDTH="40%">
+    <CENTER><FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>Current Critical Systems</B></FONT></CENTER>
+  </TD>
+  <TD VALIGN=MIDDLE ALIGN=RIGHT WIDTH="30%">
+   <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&XYMWEBDATE</B></FONT>
+  </TD>
+</TR>
+</TABLE>
+<BR>
+
+<table width="100%"><tr>
+<td width="10%">&nbsp;</td>
+<td width="35%"><hr></td>
+<td width="10%" align=center>
+    <FONT FACE="Arial, Helvetica" SIZE="+1" COLOR="silver"><B>&DIVIDERTEXT</B></FONT>
+</td>
+<td width="35%"><hr></td>
+<td width="10%">&nbsp;</td>
+</table>

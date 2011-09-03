@@ -69,6 +69,14 @@ int load_critconfig(char *fn)
 		fn = defaultfn;
 	}
 
+	if (configfn && (strcmp(fn, configfn) != 0)) {
+		/* Force full reload - it's a different config file */
+		if (configfiles) {
+			stackfclist(&configfiles);
+			configfiles = NULL;
+		}
+	}
+
 	if (configfn) xfree(configfn);
 	configfn = strdup(fn);
 
