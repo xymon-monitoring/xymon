@@ -85,11 +85,13 @@ void do_acklog(FILE *output, int maxcount, int maxminutes)
 		if (atol(l) >= cutoff) {
 			int c_used;
 			char *p, *p1, *xymondacker = NULL;
+			unsigned int atim;
 
 			sscanf(l, "%u\t%d\t%d\t%d\t%s\t%s\t%s\t%n",
-				(time_t *)&acks[num].acktime, &acks[num].acknum,
+				&atim, &acks[num].acknum,
 				&acks[num].duration, &acks[num].acknum2,
 				ackedby, hosttest, color, &c_used);
+			acks[num].acktime = atim;
 
 			p1 = ackmsg;
 			for (p=l+c_used, p1=ackmsg; (*p); ) {

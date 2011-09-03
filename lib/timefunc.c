@@ -123,7 +123,8 @@ char *timespec_text(char *spec)
 	p = sCopy = strdup(spec);
 	do {
 		char *s1, *s2, *s3, *s4, *s5;
-		char *days, *starttime, *endtime, *columns, *cause;
+		char *days, *starttime, *endtime, *columns;
+		unsigned char *cause;
 		char *oneday, *dtext;
 		int daysdone = 0, firstday = 1, ecount, causelen;
 

@@ -240,7 +240,7 @@ static int sendtoxymond(char *recipient, char *message, FILE *respfd, char **res
 		bufp += sprintf(httpmessage, "POST %s HTTP/1.0\n", posturl);
 		bufp += sprintf(bufp, "MIME-version: 1.0\n");
 		bufp += sprintf(bufp, "Content-Type: application/octet-stream\n");
-		bufp += sprintf(bufp, "Content-Length: %d\n", strlen(message));
+		bufp += sprintf(bufp, "Content-Length: %d\n", (int)strlen(message));
 		bufp += sprintf(bufp, "Host: %s\n", posthost);
 		bufp += sprintf(bufp, "\n%s", message);
 

@@ -186,6 +186,7 @@ void do_notifylog(FILE *output,
 
 	while (notifylog && (fgets(l, sizeof(l), notifylog))) {
 
+		unsigned int etim;
 		time_t eventtime;
 		char hostsvc[MAX_LINE_LEN];
 		char recipient[MAX_LINE_LEN];
@@ -196,7 +197,8 @@ void do_notifylog(FILE *output,
 		struct htnames_t *eventcolumn;
 		int ovector[30];
 
-		itemsfound = sscanf(l, "%*s %*s %*u %*u:%*u:%*u %*u %s %*s %s %u %*d", hostsvc, recipient, &eventtime);
+		itemsfound = sscanf(l, "%*s %*s %*u %*u:%*u:%*u %*u %s %*s %s %u %*d", hostsvc, recipient, &etim);
+		eventtime = etim;
 		if (itemsfound != 3) continue;
 		if (eventtime < firstevent) continue;
 		if (eventtime > lastevent) break;
