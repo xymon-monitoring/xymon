@@ -14,7 +14,7 @@ static char devmon_rcsid[] = "$Id $";
 int do_devmon_rrd(char *hostname, char *testname, char *classname, char *pagepaths, char *msg, time_t tstamp)
 {
 #define MAXCOLS 20
-	char *devmon_params[MAXCOLS+7];
+	char *devmon_params[MAXCOLS+7] = { NULL, };
 
 	char *eoln, *curline;
 	static int ptnsetup = 0;
