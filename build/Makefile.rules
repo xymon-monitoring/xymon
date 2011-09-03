@@ -126,13 +126,11 @@ win32: include/config.h
 #####################
 distclean: allclean
 	rm -f Makefile
-	rm -rf lib/libredblack
 	rm -rf xymonnet/c-ares
 	rm -rf debbuild rpmbuild
 
 allclean: clean
 	(cd xymonnet/c-ares && $(MAKE) clean) || true
-	(cd lib/libredblack && $(MAKE) clean) || true
 
 clean:
 	$(MAKE) -C build clean

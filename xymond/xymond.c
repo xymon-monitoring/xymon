@@ -109,11 +109,6 @@ typedef struct modifier_t {
 	struct modifier_t *next;
 } modifier_t;
 
-typedef struct cookie_t {
-	char *id;
-	void *log;
-} cookie_t;
-
 /* This holds all information about a single status */
 typedef struct xymond_log_t {
 	struct xymond_hostlist_t *host;
@@ -132,7 +127,7 @@ typedef struct xymond_log_t {
 	unsigned char *message;
 	int msgsz;
 	unsigned char *dismsg, *ackmsg;
-	struct cookie_t *cookie;
+	char *cookie;
 	time_t cookieexpires;
 	struct xymond_meta_t *metas;
 	struct modifier_t *modifiers;
@@ -165,11 +160,11 @@ typedef struct filecache_t {
 	unsigned char *fdata;
 } filecache_t;
 
-struct rbtree *rbhosts;				/* The hosts we have reports from */
-struct rbtree *rbtests;				/* The tests (columns) we have seen */
-struct rbtree *rborigins;				/* The origins we have seen */
-struct rbtree *rbcookies;				/* The cookies we use */
-struct rbtree *rbfilecache;
+RbtHandle rbhosts;				/* The hosts we have reports from */
+RbtHandle rbtests;				/* The tests (columns) we have seen */
+RbtHandle rborigins;				/* The origins we have seen */
+RbtHandle rbcookies;				/* The cookies we use */
+RbtHandle rbfilecache;
 
 sender_t *maintsenders = NULL;
 sender_t *statussenders = NULL;
@@ -227,14 +222,14 @@ typedef struct ghostlist_t {
 	char *sender;
 	time_t tstamp, matchtime;
 } ghostlist_t;
-struct rbtree *rbghosts;
+RbtHandle rbghosts;
 
 typedef struct multisrclist_t {
 	char *id;
 	char *senders[2];
 	time_t tstamp;
 } multisrclist_t;
-struct rbtree *rbmultisrc;
+RbtHandle rbmultisrc;
 
 enum ghosthandling_t ghosthandling = GH_LOG;
 
@@ -369,12 +364,10 @@ char *generate_stats(void)
 	int i, clients;
 	char bootuptxt[40];
 	char uptimetxt[40];
+	RbtIterator ghandle;
 	time_t uptime = (nowtimer - boottimer);
 	time_t boottstamp = (now - uptime);
 	char msgline[2048];
-	RBLIST *treelist;
-	ghostlist_t *gwalk;
-	multisrclist_t *mwalk;
 
 	dbgprintf("-> generate_stats\n");
 
@@ -440,27 +433,27 @@ char *generate_stats(void)
 	sprintf(msgline, "clichg channel messages: %10ld (%d readers)\n", clichgchn->msgcount, clients);
 	addtobuffer(statsbuf, msgline);
 
-	treelist = rbopenlist(rbghosts);
-	gwalk = rbreadlist(treelist);
-	if (gwalk) addtobuffer(statsbuf, "\n\nGhost reports:\n");
-	for (; (gwalk); gwalk = rbreadlist(treelist)) {
+	ghandle = rbtBegin(rbghosts);
+	if (ghandle != rbtEnd(rbghosts)) addtobuffer(statsbuf, "\n\nGhost reports:\n");
+	for (; (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
+		ghostlist_t *gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
+
 		/* Skip records older than 10 minutes */
 		if (gwalk->tstamp < (nowtimer - 600)) continue;
 		sprintf(msgline, "  %-15s reported host %s\n", gwalk->sender, gwalk->name);
 		addtobuffer(statsbuf, msgline);
 	}
-	rbcloselist(treelist);
 
-	treelist = rbopenlist(rbmultisrc);
-	mwalk = rbreadlist(treelist);
-	if (mwalk) addtobuffer(statsbuf, "\n\nMulti-source statuses\n");
-	for (; (mwalk); mwalk = rbreadlist(treelist)) {
+	ghandle = rbtBegin(rbmultisrc);
+	if (ghandle != rbtEnd(rbmultisrc)) addtobuffer(statsbuf, "\n\nMulti-source statuses\n");
+	for (; (ghandle != rbtEnd(rbmultisrc)); ghandle = rbtNext(rbmultisrc, ghandle)) {
+		multisrclist_t *mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, ghandle);
+
 		/* Skip records older than 10 minutes */
 		if (mwalk->tstamp < (nowtimer - 600)) continue;
 		sprintf(msgline, "  %-25s reported by %s and %s\n", mwalk->id, mwalk->senders[0], mwalk->senders[1]);
 		addtobuffer(statsbuf, msgline);
 	}
-	rbcloselist(treelist);
 
 	if (errbuf) {
 		addtobuffer(statsbuf, "\n\nLatest error messages:\n");
@@ -507,28 +500,28 @@ enum alertstate_t decide_alertstate(int color)
 
 xymond_hostlist_t *create_hostlist_t(char *hostname, char *ip)
 {
-	xymond_hostlist_t *hitem, *res;
+	xymond_hostlist_t *hitem;
 
 	hitem = (xymond_hostlist_t *) calloc(1, sizeof(xymond_hostlist_t));
 	hitem->hostname = strdup(hostname);
 	strcpy(hitem->ip, ip);
 	if (strcmp(hostname, "summary") == 0) hitem->hosttype = H_SUMMARY;
 	else hitem->hosttype = H_NORMAL;
-	res = rbsearch((void *)hitem, rbhosts);
+	rbtInsert(rbhosts, hitem->hostname, hitem);
 
-	return res;
+	return hitem;
 }
 
 testinfo_t *create_testinfo(char *name)
 {
-	testinfo_t *newrec, *res;
+	testinfo_t *newrec;
 
 	newrec = (testinfo_t *)calloc(1, sizeof(testinfo_t));
 	newrec->name = strdup(name);
 	newrec->clientsave = clientsavedisk;
-	res = rbsearch((void *)newrec, rbtests);
+	rbtInsert(rbtests, newrec->name, newrec);
 
-	return res;
+	return newrec;
 }
 
 void posttochannel(xymond_channel_t *channel, char *channelmarker, 
@@ -762,7 +755,9 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 					sender, hostname, 
 					log->test->name, log->host->ip, (int) log->validtime, 
 					colnames[log->color], colnames[log->oldcolor], (int) log->lastchange[0],
-					pagepath, (log->cookie ? log->cookie->id : ""), osname, classname, 
+					pagepath, 
+					(log->cookie ? log->cookie : ""), 
+					osname, classname, 
 					(log->grouplist ? log->grouplist : ""));
 
 				if (n < (bufsz-5)) {
@@ -860,7 +855,8 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 
 char *log_ghost(char *hostname, char *sender, char *msg)
 {
-	ghostlist_t *gwalk, gsrec;
+	RbtIterator ghandle;
+	ghostlist_t *gwalk;
 	char *result = NULL;
 	time_t nowtimer = gettimer();
 
@@ -874,8 +870,8 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 
 	if ((hostname == NULL) || (sender == NULL)) return NULL;
 
-	gsrec.name = hostname;
-	gwalk = rbfind((void *)&gsrec, rbghosts);
+	ghandle = rbtFind(rbghosts, hostname);
+	gwalk = (ghandle != rbtEnd(rbghosts)) ? (ghostlist_t *)gettreeitem(rbghosts, ghandle) : NULL;
 
 	if ((gwalk == NULL) || ((gwalk->matchtime + 600) < nowtimer)) {
 		int found = 0;
@@ -909,7 +905,7 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 				gwalk->name = strdup(hostname);
 				gwalk->sender = strdup(sender);
 				gwalk->tstamp = gwalk->matchtime = nowtimer;
-				rbsearch((void *)gwalk, rbghosts);
+				rbtInsert(rbghosts, gwalk->name, gwalk);
 			}
 			else {
 				if (gwalk->sender) xfree(gwalk->sender);
@@ -931,23 +927,24 @@ char *log_ghost(char *hostname, char *sender, char *msg)
 
 void log_multisrc(xymond_log_t *log, char *newsender)
 {
-	multisrclist_t *gwalk, gsrec;
+	RbtIterator ghandle;
+	multisrclist_t *gwalk;
 	char id[1024];
 
 	dbgprintf("-> log_multisrc\n");
 
 	snprintf(id, sizeof(id), "%s:%s", log->host->hostname, log->test->name);
-	gsrec.id = id;
-	gwalk = rbfind((void *)&gsrec, rbmultisrc);
-	if (gwalk == NULL) {
+	ghandle = rbtFind(rbmultisrc, id);
+	if (ghandle == rbtEnd(rbghosts)) {
 		gwalk = (multisrclist_t *)calloc(1, sizeof(multisrclist_t));
 		gwalk->id = strdup(id);
 		gwalk->senders[0] = strdup(log->sender);
 		gwalk->senders[1] = strdup(newsender);
 		gwalk->tstamp = gettimer();
-		rbsearch((void *)gwalk, rbmultisrc);
+		rbtInsert(rbmultisrc, gwalk->id, gwalk);
 	}
 	else {
+		gwalk = (multisrclist_t *)gettreeitem(rbghosts, ghandle);
 		xfree(gwalk->senders[0]); gwalk->senders[0] = strdup(log->sender);
 		xfree(gwalk->senders[1]); gwalk->senders[1] = strdup(newsender);
 		gwalk->tstamp = gettimer();
@@ -958,24 +955,24 @@ void log_multisrc(xymond_log_t *log, char *newsender)
 
 xymond_log_t *find_log(char *hostname, char *testname, char *origin, xymond_hostlist_t **host)
 {
-	xymond_hostlist_t *hwalk, hsrec;
+	RbtIterator hosthandle, testhandle, originhandle;
+	xymond_hostlist_t *hwalk;
 	char *owalk = NULL;
-	testinfo_t *twalk, tsrec;
+	testinfo_t *twalk;
 	xymond_log_t *lwalk;
 
 	*host = NULL;
 	if ((hostname == NULL) || (testname == NULL)) return NULL;
 
-	hsrec.hostname = hostname;
-	hwalk = rbfind((void *)&hsrec, rbhosts);
-	if (!hwalk) return NULL; else *host = hwalk;
+	hosthandle = rbtFind(rbhosts, hostname);
+	if (hosthandle != rbtEnd(rbhosts)) *host = hwalk = gettreeitem(rbhosts, hosthandle); else return NULL;
 
-	tsrec.name = testname;
-	twalk = rbfind((void *)&tsrec, rbtests);
-	if (!twalk) return NULL;
+	testhandle = rbtFind(rbtests, testname);
+	if (testhandle != rbtEnd(rbtests)) twalk = gettreeitem(rbtests, testhandle); else return NULL;
 
 	if (origin) {
-		owalk = rbfind((void *)origin, rborigins);
+		originhandle = rbtFind(rborigins, origin);
+		if (originhandle != rbtEnd(rborigins)) owalk = gettreeitem(rborigins, originhandle);
 	}
 
 	for (lwalk = hwalk->logs; (lwalk && ((lwalk->test != twalk) || (lwalk->origin != owalk))); lwalk = lwalk->next);
@@ -996,8 +993,9 @@ void get_hts(char *msg, char *sender, char *origin,
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr, *grp;
 	char hostip[IP_ADDR_STRLEN];
-	xymond_hostlist_t *hwalk = NULL, hsrec;
-	testinfo_t *twalk = NULL, tsrec;
+	RbtIterator hosthandle, testhandle, originhandle;
+	xymond_hostlist_t *hwalk = NULL;
+	testinfo_t *twalk = NULL;
 	char *owalk = NULL;
 	xymond_log_t *lwalk = NULL;
 
@@ -1063,10 +1061,11 @@ void get_hts(char *msg, char *sender, char *origin,
 		hostname = knownname;
 	}
 
-	hsrec.hostname = hostname;
-	hwalk = rbfind((void *)&hsrec, rbhosts);
+	hosthandle = rbtFind(rbhosts, hostname);
+	if (hosthandle == rbtEnd(rbhosts)) hwalk = NULL;
+	else hwalk = gettreeitem(rbhosts, hosthandle);
 
-	if (createhost && !hwalk) {
+	if (createhost && (hosthandle == rbtEnd(rbhosts))) {
 		hwalk = create_hostlist_t(hostname, hostip);
 		hostcount++;
 	}
@@ -1077,8 +1076,8 @@ void get_hts(char *msg, char *sender, char *origin,
 			return;
 		}
 
-		tsrec.name = testname;
-		twalk = rbfind((void *)&tsrec, rbtests);
+		testhandle = rbtFind(rbtests, testname);
+		if (testhandle != rbtEnd(rbtests)) twalk = gettreeitem(rbtests, testhandle);
 		if (createlog && (twalk == NULL)) twalk = create_testinfo(testname);
 	}
 	else {
@@ -1086,10 +1085,11 @@ void get_hts(char *msg, char *sender, char *origin,
 	}
 
 	if (origin) {
-		owalk = rbfind((void *)origin, rborigins);
+		originhandle = rbtFind(rborigins, origin);
+		if (originhandle != rbtEnd(rborigins)) owalk = gettreeitem(rborigins, originhandle);
 		if (createlog && (owalk == NULL)) {
 			owalk = strdup(origin);
-			rbsearch((void *)owalk, rborigins);
+			rbtInsert(rborigins, owalk, owalk);
 		}
 	}
 
@@ -1102,7 +1102,6 @@ void get_hts(char *msg, char *sender, char *origin,
 			lwalk->host = hwalk;
 			lwalk->test = twalk;
 			lwalk->origin = owalk;
-			lwalk->cookie = NULL;
 			lwalk->next = hwalk->logs;
 			hwalk->logs = lwalk;
 			if (strcmp(testname, xgetenv("PINGCOLUMN")) == 0) hwalk->pinglog = lwalk;
@@ -1138,42 +1137,43 @@ done:
 }
 
 
+void clear_cookie(xymond_log_t *log)
+{
+	RbtIterator cookiehandle;
+
+	if (!log->cookie) return;
+
+	cookiehandle = rbtFind(rbcookies, log->cookie);
+	if (cookiehandle == rbtEnd(rbcookies)) return;
+	rbtErase(rbcookies, cookiehandle);
+
+	xfree(log->cookie);
+	log->cookie = NULL; log->cookieexpires = 0;
+}
+
+
 xymond_log_t *find_cookie(char *cookie)
 {
 	/*
 	 * Find a cookie we have issued.
 	 */
-	cookie_t *cwalk, csrec;
 	xymond_log_t *result = NULL;
+	RbtIterator cookiehandle;
 
 	dbgprintf("-> find_cookie\n");
 
-	csrec.id = cookie;
-	cwalk = rbfind((void *)&csrec, rbcookies);
-	if (cwalk) {
-		result = (xymond_log_t *)cwalk->log;
-		if (result->cookieexpires <= getcurrenttime(NULL)) result = NULL;
+	cookiehandle = rbtFind(rbcookies, cookie);
+	if (cookiehandle != rbtEnd(rbcookies)) {
+		result = gettreeitem(rbcookies, cookiehandle);
+		if (result->cookieexpires <= getcurrenttime(NULL)) {
+			clear_cookie(result);
+			result = NULL;
+		}
 	}
 
 	dbgprintf("<- find_cookie\n");
 
 	return result;
-}
-
-void clear_cookie(xymond_log_t *log)
-{
-	cookie_t csrec, *oldrec;
-
-	if (!log->cookie) return;
-
-	csrec.id = log->cookie->id;
-	oldrec = rbdelete((void *)&csrec, rbcookies);
-	if (oldrec) {
-		xfree(oldrec->id);
-		xfree(oldrec);
-	}
-
-	log->cookie = NULL; log->cookieexpires = 0;
 }
 
 
@@ -1536,21 +1536,17 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		if (log->cookieexpires < now) {
 			int newcookie;
 			char scookie[10];
-			cookie_t *newrec;
 
 			clear_cookie(log);
 
 			/* Need to ensure that cookies are unique, hence the loop */
-			log->cookie = NULL; log->cookieexpires = 0;
 			do {
 				newcookie = (random() % 1000000);
 				sprintf(scookie, "%d", newcookie);
 			} while (find_cookie(scookie));
 
-			newrec = (cookie_t *)calloc(1, sizeof(cookie_t));
-			newrec->id = strdup(scookie);
-			newrec->log = log;
-			log->cookie = rbsearch((void *)newrec, rbcookies);
+			log->cookie = strdup(scookie);
+			rbtInsert(rbcookies, log->cookie, log);
 
 			/*
 			 * This is fundamentally flawed. The cookie should be generated by
@@ -1804,8 +1800,9 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	char *hname = NULL, *tname = NULL;
 	time_t expires = 0;
 	int alltests = 0;
-	xymond_hostlist_t *hwalk = NULL, hsrec;
-	testinfo_t *twalk = NULL, tsrec;
+	RbtIterator hosthandle, testhandle;
+	xymond_hostlist_t *hwalk = NULL;
+	testinfo_t *twalk = NULL;
 	xymond_log_t *log;
 	char *p;
 	char hostip[IP_ADDR_STRLEN];
@@ -1864,22 +1861,22 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	hname = knownhost(hosttest, hostip, ghosthandling);
 	if (hname == NULL) goto done;
 
-	hsrec.hostname = hname;
-	hwalk = rbfind((void *)&hsrec, rbhosts);
-	if (!hwalk) {
+	hosthandle = rbtFind(rbhosts, hname);
+	if (hosthandle == rbtEnd(rbhosts)) {
 		/* Unknown host */
 		goto done;
 	}
+	else hwalk = gettreeitem(rbhosts, hosthandle);
 
 	if (!oksender(maintsenders, hwalk->ip, msg->addr.sin_addr, msg->buf)) goto done;
 
 	if (tname) {
-		tsrec.name = tname;
-		twalk = rbfind((void *)&tsrec, rbtests);
-		if (!twalk) {
+		testhandle = rbtFind(rbtests, tname);
+		if (testhandle == rbtEnd(rbtests)) {
 			/* Unknown test */
 			goto done;
 		}
+		else twalk = gettreeitem(rbtests, testhandle);
 	}
 
 	if (enabled) {
@@ -2080,6 +2077,7 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 {
 	char *chnbuf, *theclass;
 	int msglen, buflen = 0;
+	RbtIterator hosthandle;
 	clientmsg_list_t *cwalk, *chead, *ctail, *czombie;
 
 	dbgprintf("->handle_client\n");
@@ -2092,11 +2090,11 @@ void handle_client(char *msg, char *sender, char *hostname, char *collectorid,
 	buflen += 6;
 
 	if (clientsavemem) {
-		xymond_hostlist_t *hwalk, hsrec;
+		hosthandle = rbtFind(rbhosts, hostname);
+		if (hosthandle != rbtEnd(rbhosts)) {
+			xymond_hostlist_t *hwalk;
+			hwalk = gettreeitem(rbhosts, hosthandle);
 
-		hsrec.hostname = hostname;
-		hwalk = rbfind((void *)&hsrec, rbhosts);
-		if (hwalk) {
 			for (cwalk = hwalk->clientmsgs; (cwalk && strcmp(cwalk->collectorid, collectorid)); cwalk = cwalk->next) ;
 			if (cwalk) {
 				if (strlen(cwalk->msg) >= msglen)
@@ -2244,8 +2242,9 @@ void free_log_t(xymond_log_t *zombie)
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
 {
 	char hostip[IP_ADDR_STRLEN];
-	xymond_hostlist_t *hwalk, hsrec;
-	testinfo_t *twalk, *newt, tsrec;
+	RbtIterator hosthandle, testhandle;
+	xymond_hostlist_t *hwalk;
+	testinfo_t *twalk, *newt;
 	xymond_log_t *lwalk;
 	char *marker = NULL;
 	char *canonhostname;
@@ -2311,15 +2310,15 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	canonhostname = knownhost(hostname, hostip, ghosthandling);
 	if (canonhostname) hostname = canonhostname;
 
-	hsrec.hostname = hostname;
-	hwalk = rbfind((void *)&hsrec, rbhosts);
-	if (!hwalk) goto done;
+	hosthandle = rbtFind(rbhosts, hostname);
+	if (hosthandle == rbtEnd(rbhosts)) goto done;
+	else hwalk = gettreeitem(rbhosts, hosthandle);
 
 	switch (cmd) {
 	  case CMD_DROPTEST:
-		tsrec.name = n1;
-		twalk = rbfind((void *)&tsrec, rbtests);
-		if (!twalk) goto done;
+		testhandle = rbtFind(rbtests, n1);
+		if (testhandle == rbtEnd(rbtests)) goto done;
+		twalk = gettreeitem(rbtests, testhandle);
 
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
 		if (lwalk == NULL) goto done;
@@ -2338,7 +2337,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	  case CMD_DROPHOST:
 	  case CMD_DROPSTATE:
 		/* Unlink the hostlist entry */
-		rbdelete((void *)hwalk, rbhosts);
+		rbtErase(rbhosts, hosthandle);
 		hostcount--;
 
 		/* Loop through the host logs and free them */
@@ -2364,7 +2363,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 		break;
 
 	  case CMD_RENAMEHOST:
-		rbdelete((void *)hwalk, rbhosts);
+		rbtErase(rbhosts, hosthandle);
 		if (strlen(hwalk->hostname) <= strlen(n1)) {
 			strcpy(hwalk->hostname, n1);
 		}
@@ -2372,23 +2371,25 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 			xfree(hwalk->hostname);
 			hwalk->hostname = strdup(n1);
 		}
-		hwalk = rbsearch((void *)hwalk, rbhosts);
+		rbtInsert(rbhosts, hwalk->hostname, hwalk);
 		break;
 
 	  case CMD_RENAMETEST:
-		tsrec.name = n1;
-		twalk = rbfind((void *)&tsrec, rbtests);
-		if (!twalk) goto done;
+		testhandle = rbtFind(rbtests, n1);
+		if (testhandle == rbtEnd(rbtests)) goto done;
+		twalk = gettreeitem(rbtests, testhandle);
 
 		for (lwalk = hwalk->logs; (lwalk && (lwalk->test != twalk)); lwalk = lwalk->next) ;
 		if (lwalk == NULL) goto done;
 
 		if (lwalk == hwalk->pinglog) hwalk->pinglog = NULL;
 
-		tsrec.name = n2;
-		newt = rbfind((void *)&tsrec, rbtests);
-		if (!newt) {
+		testhandle = rbtFind(rbtests, n2);
+		if (testhandle == rbtEnd(rbtests)) {
 			newt = create_testinfo(n2);
+		}
+		else {
+			newt = gettreeitem(rbtests, testhandle);
 		}
 		lwalk->test = newt;
 		break;
@@ -2405,12 +2406,14 @@ done:
 
 unsigned char *get_filecache(char *fn, long *len)
 {
-	filecache_t *item, srec;
+	RbtIterator handle;
+	filecache_t *item;
 	unsigned char *result;
 
-	srec.fn = fn;
-	item = rbfind((void *)&srec, rbfilecache);
-	if (!item) return NULL;
+	handle = rbtFind(rbfilecache, fn);
+	if (handle == rbtEnd(rbfilecache)) return NULL;
+
+	item = (filecache_t *)gettreeitem(rbfilecache, handle);
 	if (item->len < 0) return NULL;
 
 	result = (unsigned char *)malloc(item->len);
@@ -2423,19 +2426,20 @@ unsigned char *get_filecache(char *fn, long *len)
 
 void add_filecache(char *fn, unsigned char *buf, off_t buflen)
 {
-	filecache_t *newitem, srec;
+	RbtIterator handle;
+	filecache_t *newitem;
 
-	srec.fn = fn;
-	newitem = rbfind((void *)&srec, rbfilecache);
-	if (!newitem) {
+	handle = rbtFind(rbfilecache, fn);
+	if (handle == rbtEnd(rbfilecache)) {
 		newitem = (filecache_t *)malloc(sizeof(filecache_t));
 		newitem->fn = strdup(fn);
 		newitem->len = buflen;
 		newitem->fdata = (unsigned char *)malloc(buflen);
 		memcpy(newitem->fdata, buf, buflen);
-		rbsearch((void *)newitem, rbfilecache);
+		rbtInsert(rbfilecache, newitem->fn, newitem);
 	}
 	else {
+		newitem = (filecache_t *)gettreeitem(rbfilecache, handle);
 		if (newitem->fdata) xfree(newitem->fdata);
 		newitem->len = buflen;
 		newitem->fdata = (unsigned char *)malloc(buflen);
@@ -2446,15 +2450,13 @@ void add_filecache(char *fn, unsigned char *buf, off_t buflen)
 
 void flush_filecache(void)
 {
-	RBLIST *flist;
-	filecache_t *item;
+	RbtIterator handle;
 
-	flist = rbopenlist(rbfilecache);
-	for (item = rbreadlist(flist); (item); item = rbreadlist(flist)) {
+	for (handle = rbtBegin(rbfilecache); (handle != rbtEnd(rbfilecache)); handle = rbtNext(rbfilecache, handle)) {
+		filecache_t *item = (filecache_t *)gettreeitem(rbfilecache, handle);
 		if (item->fdata) xfree(item->fdata);
 		item->len = -1;
 	}
-	rbcloselist(flist);
 }
 
 
@@ -2797,7 +2799,7 @@ void generate_outbuf(char **outbuf, char **outpos, int *outsz,
 		  case F_ACKTIME: bufp += sprintf(bufp, "%d", (int)lwalk->acktime); break;
 		  case F_DISABLETIME: bufp += sprintf(bufp, "%d", (int)lwalk->enabletime); break;
 		  case F_SENDER: bufp += sprintf(bufp, "%s", lwalk->sender); break;
-		  case F_COOKIE: bufp += sprintf(bufp, "%s", (lwalk->cookie ? lwalk->cookie->id : "")); break;
+		  case F_COOKIE: bufp += sprintf(bufp, "%s", (lwalk->cookie ? lwalk->cookie : "")); break;
 
 		  case F_LINE1:
 			eoln = strchr(lwalk->message, '\n'); if (eoln) *eoln = '\0';
@@ -3368,8 +3370,8 @@ void do_message(conn_t *msg, char *origin)
 			bufp += sprintf(bufp, "  <DisableTime>%s</DisableTime>\n", timestr(log->enabletime));
 			bufp += sprintf(bufp, "  <Sender>%s</Sender>\n", log->sender);
 
-			if (log->cookie)
-				bufp += sprintf(bufp, "  <Cookie>%s</Cookie>\n", (log->cookie ? log->cookie->id : ""));
+			if (log->cookie && (log->cookieexpires > now))
+				bufp += sprintf(bufp, "  <Cookie>%s</Cookie>\n", log->cookie);
 			else
 				bufp += sprintf(bufp, "  <Cookie>N/A</Cookie>\n");
 
@@ -3400,6 +3402,7 @@ void do_message(conn_t *msg, char *origin)
 		 * Request for a summmary of all known status logs
 		 *
 		 */
+		RbtIterator hosthandle;
 		xymond_hostlist_t *hwalk;
 		xymond_log_t *lwalk, *firstlog;
 		xymond_log_t infologrec, rrdlogrec;
@@ -3412,7 +3415,6 @@ void do_message(conn_t *msg, char *origin)
 		char *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
-		RBLIST *treelist;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
@@ -3447,8 +3449,13 @@ void do_message(conn_t *msg, char *origin)
 		infologrec.message = rrdlogrec.message = "";
 		infologrec.lastchange = rrdlogrec.lastchange = dummytimes;
 
-		treelist = rbopenlist(rbhosts);
-		for (hwalk = rbreadlist(treelist); (hwalk); hwalk = rbreadlist(treelist)) {
+		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+			hwalk = gettreeitem(rbhosts, hosthandle);
+			if (!hwalk) {
+				errprintf("host-tree has a record with no data\n");
+				continue;
+			}
+
 			/* If there is a hostname filter, drop the "summary" 'hosts' */
 			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
 
@@ -3490,7 +3497,6 @@ void do_message(conn_t *msg, char *origin)
 				generate_outbuf(&buf, &bufp, &bufsz, hwalk, lwalk, acklevel);
 			}
 		}
-		rbcloselist(treelist);
 		*bufp = '\0';
 
 		xfree(msg->buf);
@@ -3507,6 +3513,7 @@ void do_message(conn_t *msg, char *origin)
 		 * Request for a summmary of all known status logs in XML format
 		 *
 		 */
+		RbtIterator hosthandle;
 		xymond_hostlist_t *hwalk;
 		xymond_log_t *lwalk;
 		char *buf, *bufp;
@@ -3516,7 +3523,6 @@ void do_message(conn_t *msg, char *origin)
 		char *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
-		RBLIST *treelist;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
@@ -3538,8 +3544,13 @@ void do_message(conn_t *msg, char *origin)
 		bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
 		bufp += sprintf(bufp, "<StatusBoard>\n");
 
-		treelist = rbopenlist(rbhosts);
-		for (hwalk = rbreadlist(treelist); (hwalk); hwalk = rbreadlist(treelist)) {
+		for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+			hwalk = gettreeitem(rbhosts, hosthandle);
+			if (!hwalk) {
+				errprintf("host-tree has a record with no data\n");
+				continue;
+			}
+
 			/* If there is a hostname filter, drop the "summary" 'hosts' */
 			if (shost && (hwalk->hosttype != H_NORMAL)) continue;
 
@@ -3588,8 +3599,8 @@ void do_message(conn_t *msg, char *origin)
 				bufp += sprintf(bufp, "    <DisableTime>%s</DisableTime>\n", timestr(lwalk->enabletime));
 				bufp += sprintf(bufp, "    <Sender>%s</Sender>\n", lwalk->sender);
 
-				if (lwalk->cookie)
-					bufp += sprintf(bufp, "    <Cookie>%s</Cookie>\n", (lwalk->cookie ? lwalk->cookie->id : ""));
+				if (lwalk->cookie && (lwalk->cookieexpires > now))
+					bufp += sprintf(bufp, "    <Cookie>%s</Cookie>\n", lwalk->cookie);
 				else
 					bufp += sprintf(bufp, "    <Cookie>N/A</Cookie>\n");
 
@@ -3598,7 +3609,6 @@ void do_message(conn_t *msg, char *origin)
 				if (eoln) *eoln = '\n';
 			}
 		}
-		rbcloselist(treelist);
 		bufp += sprintf(bufp, "</StatusBoard>\n");
 
 		xfree(msg->buf);
@@ -3960,17 +3970,18 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
 		char *hostname, *p;
-		xymond_hostlist_t *hwalk, hsrec;
-
+		RbtIterator hosthandle;
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
 		p = msg->buf + strlen("clientlog"); p += strspn(p, "\t ");
 		hostname = p; p += strcspn(p, "\t "); if (*p) { *p = '\0'; p++; }
 		p += strspn(p, "\t ");
 
-		hsrec.hostname = hostname;
-		hwalk = rbfind((void *)&hsrec, rbhosts);
-		if (hwalk) {
+		hosthandle = rbtFind(rbhosts, hostname);
+		if (hosthandle != rbtEnd(rbhosts)) {
+			xymond_hostlist_t *hwalk;
+			hwalk = gettreeitem(rbhosts, hosthandle);
+
 			if (hwalk->clientmsgs) {
 				char *sections = NULL;
 				char *cmsg = totalclientmsg(hwalk->clientmsgs);
@@ -4020,20 +4031,19 @@ void do_message(conn_t *msg, char *origin)
 	}
 	else if (strncmp(msg->buf, "ghostlist", 9) == 0) {
 		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+			RbtIterator ghandle;
 			ghostlist_t *gwalk;
 			strbuffer_t *resp;
 			char msgline[1024];
-			RBLIST *treelist;
 
 			resp = newstrbuffer(0);
 
-			treelist = rbopenlist(rbghosts);
-			for (gwalk = rbreadlist(treelist); (gwalk); gwalk = rbreadlist(treelist)) {
+			for (ghandle = rbtBegin(rbghosts); (ghandle != rbtEnd(rbghosts)); ghandle = rbtNext(rbghosts, ghandle)) {
+				gwalk = (ghostlist_t *)gettreeitem(rbghosts, ghandle);
 				snprintf(msgline, sizeof(msgline), "%s|%s|%ld\n", 
 					 gwalk->name, gwalk->sender, (long int)(gwalk->tstamp + timeroffset));
 				addtobuffer(resp, msgline);
 			}
-			rbcloselist(treelist);
 
 			msg->doingwhat = RESPONDING;
 			xfree(msg->buf);
@@ -4046,20 +4056,19 @@ void do_message(conn_t *msg, char *origin)
 
 	else if (strncmp(msg->buf, "multisrclist", 12) == 0) {
 		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+			RbtIterator mhandle;
 			multisrclist_t *mwalk;
 			strbuffer_t *resp;
 			char msgline[1024];
-			RBLIST *treelist;
 
 			resp = newstrbuffer(0);
 
-			treelist = rbopenlist(rbmultisrc);
-			for (mwalk = rbreadlist(treelist); (mwalk); mwalk = rbreadlist(treelist)) {
+			for (mhandle = rbtBegin(rbmultisrc); (mhandle != rbtEnd(rbmultisrc)); mhandle = rbtNext(rbmultisrc, mhandle)) {
+				mwalk = (multisrclist_t *)gettreeitem(rbmultisrc, mhandle);
 				snprintf(msgline, sizeof(msgline), "%s|%s|%s|%ld\n", 
 					 mwalk->id, mwalk->senders[0], mwalk->senders[1], (long int)(mwalk->tstamp + timeroffset));
 				addtobuffer(resp, msgline);
 			}
-			rbcloselist(treelist);
 
 			msg->doingwhat = RESPONDING;
 			xfree(msg->buf);
@@ -4091,13 +4100,13 @@ void save_checkpoint(void)
 {
 	char *tempfn;
 	FILE *fd;
+	RbtIterator hosthandle;
 	xymond_hostlist_t *hwalk;
 	xymond_log_t *lwalk;
 	time_t now = getcurrenttime(NULL);
 	scheduletask_t *swalk;
 	ackinfo_t *awalk;
 	int iores = 0;
-	RBLIST *treelist;
 
 	if (checkpointfn == NULL) return;
 
@@ -4111,9 +4120,10 @@ void save_checkpoint(void)
 		return;
 	}
 
-	treelist = rbopenlist(rbhosts);
-	for (hwalk = rbreadlist(treelist); (hwalk); hwalk = rbreadlist(treelist)) {
+	for (hosthandle = rbtBegin(rbhosts); ((hosthandle != rbtEnd(rbhosts)) && (iores >= 0)); hosthandle = rbtNext(rbhosts, hosthandle)) {
 		char *msgstr;
+
+		hwalk = gettreeitem(rbhosts, hosthandle);
 
 		for (lwalk = hwalk->logs; (lwalk); lwalk = lwalk->next) {
 			if (lwalk->dismsg && (lwalk->enabletime < now) && (lwalk->enabletime != DISABLED_UNTIL_OK)) {
@@ -4134,7 +4144,7 @@ void save_checkpoint(void)
 				colnames[lwalk->oldcolor],
 				(int)lwalk->logtime, (int) lwalk->lastchange[0], (int) lwalk->validtime, 
 				(int) lwalk->enabletime, (int) lwalk->acktime, 
-				(lwalk->cookie ? lwalk->cookie->id : ""), (int) lwalk->cookieexpires,
+				(lwalk->cookie ? lwalk->cookie : ""), (int) lwalk->cookieexpires,
 				nlencode(lwalk->message));
 			if (lwalk->dismsg) msgstr = nlencode(lwalk->dismsg); else msgstr = "";
 			if (iores >= 0) iores = fprintf(fd, "|%s", msgstr);
@@ -4151,7 +4161,6 @@ void save_checkpoint(void)
 			}
 		}
 	}
-	rbcloselist(treelist);
 
 	for (swalk = schedulehead; (swalk && (iores >= 0)); swalk = swalk->next) {
 		iores = fprintf(fd, "@@XYMONDCHK-V1|.task.|%d|%d|%s|%s\n", 
@@ -4187,8 +4196,9 @@ void load_checkpoint(char *fn)
 	char *item;
 	int i, err;
 	char hostip[IP_ADDR_STRLEN];
-	xymond_hostlist_t *hitem = NULL, hsrec;
-	testinfo_t *t = NULL, tsrec;
+	RbtIterator hosthandle, testhandle, originhandle;
+	xymond_hostlist_t *hitem = NULL;
+	testinfo_t *t = NULL;
 	char *origin = NULL;
 	xymond_log_t *ltail = NULL;
 	char *originname, *hostname, *testname, *sender, *testflags, *statusmsg, *disablemsg, *ackmsg, *cookie; 
@@ -4254,12 +4264,12 @@ void load_checkpoint(char *fn)
 				  case 0: break;
 				  case 1: break;
 				  case 2: 
-					hsrec.hostname = item;
-					hitem = rbfind((void *)&hsrec, rbhosts);
+					hosthandle = rbtFind(rbhosts, item); 
+					hitem = gettreeitem(rbhosts, hosthandle);
 					break;
 				  case 3: 
-					tsrec.name = item;
-					t = rbfind((void *)&tsrec, rbtests);
+					testhandle = rbtFind(rbtests, item);
+					t = (testhandle == rbtEnd(rbtests)) ? NULL : gettreeitem(rbtests, testhandle);
 					break;
 				  case 4: newack->received = atoi(item); break;
 				  case 5: newack->validuntil = atoi(item); break;
@@ -4344,21 +4354,28 @@ void load_checkpoint(char *fn)
 
 		dbgprintf("Status: Host=%s, test=%s\n", hostname, testname); count++;
 
-		hsrec.hostname = hostname;
-		hitem = rbfind((void *)&hsrec, rbhosts);
-		if (!hitem) {
+		hosthandle = rbtFind(rbhosts, hostname);
+		if (hosthandle == rbtEnd(rbhosts)) {
 			/* New host */
 			hitem = create_hostlist_t(hostname, hostip);
 			hostcount++;
 		}
-
-		tsrec.name = testname;
-		t = rbfind((void *)&tsrec, rbtests);
-		if (!t) {
-			t = create_testinfo(testname);
+		else {
+			hitem = gettreeitem(rbhosts, hosthandle);
 		}
 
-		origin = rbsearch((void *)originname, rborigins);
+		testhandle = rbtFind(rbtests, testname);
+		if (testhandle == rbtEnd(rbtests)) {
+			t = create_testinfo(testname);
+		}
+		else t = gettreeitem(rbtests, testhandle);
+
+		originhandle = rbtFind(rborigins, originname);
+		if (originhandle == rbtEnd(rborigins)) {
+			origin = strdup(originname);
+			rbtInsert(rborigins, origin, origin);
+		}
+		else origin = gettreeitem(rborigins, originhandle);
 
 		if (hitem->logs == NULL) {
 			ltail = hitem->logs = (xymond_log_t *) calloc(1, sizeof(xymond_log_t));
@@ -4395,27 +4412,31 @@ void load_checkpoint(char *fn)
 		nldecode(statusmsg);
 		ltail->message = strdup(statusmsg);
 		ltail->msgsz = strlen(statusmsg)+1;
+
 		if (disablemsg && strlen(disablemsg)) {
 			nldecode(disablemsg);
 			ltail->dismsg = strdup(disablemsg);
 		}
 		else 
 			ltail->dismsg = NULL;
+
 		if (ackmsg && strlen(ackmsg)) {
 			nldecode(ackmsg);
 			ltail->ackmsg = strdup(ackmsg);
 		}
 		else 
 			ltail->ackmsg = NULL;
-		if (cookie && (strlen(cookie) > 0)) {
-			cookie_t *newrec;
 
-			newrec = (cookie_t *)calloc(1, sizeof(cookie_t));
-			newrec->id = strdup(cookie);
-			newrec->log = ltail;
-			ltail->cookie = rbsearch((void *)newrec, rbcookies);
+		if (cookie && *cookie) {
+			ltail->cookie = strdup(cookie);
+			ltail->cookieexpires = cookieexpires;
+			rbtInsert(rbcookies, ltail->cookie, ltail);
 		}
-		ltail->cookieexpires = cookieexpires;
+		else {
+			ltail->cookie = NULL;
+			ltail->cookieexpires = 0;
+		}
+
 		ltail->metas = NULL;
 		ltail->acklist = NULL;
 		ltail->next = NULL;
@@ -4431,15 +4452,15 @@ void load_checkpoint(char *fn)
 
 void check_purple_status(void)
 {
+	RbtIterator hosthandle;
 	xymond_hostlist_t *hwalk;
 	xymond_log_t *lwalk;
-	RBLIST *treelist;
 	time_t now = getcurrenttime(NULL);
 
 	dbgprintf("-> check_purple_status\n");
+	for (hosthandle = rbtBegin(rbhosts); (hosthandle != rbtEnd(rbhosts)); hosthandle = rbtNext(rbhosts, hosthandle)) {
+		hwalk = gettreeitem(rbhosts, hosthandle);
 
-	treelist = rbopenlist(rbhosts);
-	for (hwalk = rbreadlist(treelist); (hwalk); hwalk = rbreadlist(treelist)) {
 		lwalk = hwalk->logs;
 		while (lwalk) {
 			if (lwalk->validtime < now) {
@@ -4501,8 +4522,6 @@ void check_purple_status(void)
 			}
 		}
 	}
-	rbcloselist(treelist);
-
 	dbgprintf("<- check_purple_status\n");
 }
 
@@ -4532,61 +4551,6 @@ void sig_handler(int signum)
 	}
 }
 
-int host_compare(const void *r1, const void *r2, const void *c)
-{
-	xymond_hostlist_t *h1 = (xymond_hostlist_t *)r1;
-	xymond_hostlist_t *h2 = (xymond_hostlist_t *)r2;
-
-	return (strcasecmp(h1->hostname, h2->hostname));
-}
-
-int test_compare(const void *r1, const void *r2, const void *c)
-{
-	testinfo_t *t1 = (testinfo_t *)r1;
-	testinfo_t *t2 = (testinfo_t *)r2;
-
-	return (strcasecmp(t1->name, t2->name));
-}
-
-int origin_compare(const void *r1, const void *r2, const void *c)
-{
-	char *o1 = (char *)r1;
-	char *o2 = (char *)r2;
-
-	return (strcasecmp(o1, o2));
-}
-
-int cookie_compare(const void *r1, const void *r2, const void *c)
-{
-	cookie_t *c1 = (cookie_t *)r1;
-	cookie_t *c2 = (cookie_t *)r2;
-
-	return (strcasecmp(c1->id, c2->id));
-}
-
-int filecache_compare(const void *r1, const void *r2, const void *c)
-{
-	filecache_t *f1 = (filecache_t *)r1;
-	filecache_t *f2 = (filecache_t *)r2;
-
-	return (strcasecmp(f1->fn, f2->fn));
-}
-
-int ghost_compare(const void *r1, const void *r2, const void *c)
-{
-	ghostlist_t *g1 = (ghostlist_t *)r1;
-	ghostlist_t *g2 = (ghostlist_t *)r2;
-
-	return (strcasecmp(g1->name, g2->name));
-}
-
-int multisrc_compare(const void *r1, const void *r2, const void *c)
-{
-	multisrclist_t *m1 = (multisrclist_t *)r1;
-	multisrclist_t *m2 = (multisrclist_t *)r2;
-
-	return (strcasecmp(m1->id, m2->id));
-}
 
 int main(int argc, char *argv[])
 {
@@ -4616,13 +4580,13 @@ int main(int argc, char *argv[])
 	boottimer = gettimer();
 
 	/* Create our trees */
-	rbhosts = rbinit(host_compare, NULL);
-	rbtests = rbinit(test_compare, NULL);
-	rborigins = rbinit(origin_compare, NULL);
-	rbcookies = rbinit(cookie_compare, NULL);
-	rbfilecache = rbinit(filecache_compare, NULL);
-	rbghosts = rbinit(ghost_compare, NULL);
-	rbmultisrc = rbinit(multisrc_compare, NULL);
+	rbhosts = rbtNew(name_compare);
+	rbtests = rbtNew(name_compare);
+	rborigins = rbtNew(name_compare);
+	rbcookies = rbtNew(name_compare);
+	rbfilecache = rbtNew(name_compare);
+	rbghosts = rbtNew(name_compare);
+	rbmultisrc = rbtNew(name_compare);
 
 	/* For wildcard notify's */
 	create_testinfo("*");
@@ -5018,28 +4982,32 @@ int main(int argc, char *argv[])
 		}
 
 		if (reloadconfig && hostsfn) {
-			RBLIST *treelist;
-			xymond_hostlist_t *hwalk;
+			RbtIterator hosthandle;
 
 			reloadconfig = 0;
 			load_hostnames(hostsfn, NULL, get_fqdn());
 
 			/* Scan our list of hosts and weed out those we do not know about any more */
-			treelist = rbopenlist(rbhosts);
-			hwalk = rbreadlist(treelist);
-			while (hwalk) {
+			hosthandle = rbtBegin(rbhosts);
+			while (hosthandle != rbtEnd(rbhosts)) {
+				xymond_hostlist_t *hwalk;
+
+				hwalk = gettreeitem(rbhosts, hosthandle);
+
 				if (hwalk->hosttype == H_SUMMARY) {
 					/* Leave the summaries as-is */
+					hosthandle = rbtNext(rbhosts, hosthandle);
 				}
 				else if (hostinfo(hwalk->hostname) == NULL) {
 					/* Remove all state info about this host. This will NOT remove files. */
 					handle_dropnrename(CMD_DROPSTATE, "xymond", hwalk->hostname, NULL, NULL);
+
+					/* Must restart tree-walk after deleting node from the tree */
+					hosthandle = rbtBegin(rbhosts);
 				}
 				else {
-					/* Do nothing */
+					hosthandle = rbtNext(rbhosts, hosthandle);
 				}
-
-				hwalk = rbreadlist(treelist);
 			}
 
 			load_clientconfig();

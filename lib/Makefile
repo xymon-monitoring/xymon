@@ -11,47 +11,20 @@ endif
 
 CFLAGS += -I. -I../include 
 
-all: test-endianness libxymon.a libredblack.a redblack.h xymonclient.a loadhosts stackio availability md5 sha1 rmd160 locator
+all: test-endianness libxymon.a xymonclient.a loadhosts stackio availability md5 sha1 rmd160 locator
 
 client: test-endianness xymonclient.a
 
 test-endianness: test-endianness.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-libxymon.a: redblack.h $(XYMONLIBOBJS)
+libxymon.a: $(XYMONLIBOBJS)
 	ar cr libxymon.a $(XYMONLIBOBJS)
 	ranlib libxymon.a || echo ""
 
-xymonclient.a: redblack.h $(CLIENTLIBOBJS)
+xymonclient.a: $(CLIENTLIBOBJS)
 	ar cr xymonclient.a $(CLIENTLIBOBJS)
 	ranlib xymonclient.a || echo ""
-
-libredblack.a: libredblack/.libs/libredblack.a
-	cp libredblack/.libs/libredblack.a .
-
-redblack.h: libredblack/.libs/libredblack.a
-# The redblack.h header-file declares all data returned from the lookup-functions as "const".
-# Which doesn't make sense, since it points to data that I have put into the tree, and can
-# therefore modify as I see fit. So to avoid gcc puking all over the place, fix these defs.
-	cat libredblack/redblack.h | sed \
-		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(find)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(find)!' \
-		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(lookup)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(lookup)!' \
-		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(search)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(search)!' \
-		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(delete)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(delete)!' \
-		-e 's!^RB_STATIC const RB_ENTRY(data_t) \*RB_ENTRY(readlist)!RB_STATIC RB_ENTRY(data_t) *RB_ENTRY(readlist)!' >redblack.h
-
-
-libredblack/.libs/libredblack.a: libredblack/Makefile
-	(cd libredblack && $(MAKE))
-
-libredblack/Makefile: libredblack/configure
-	(cd libredblack && CFLAGS="$(CFLAGS)" ./configure --disable-shared --without-rbgen)
-
-libredblack/configure: libredblack-1.3.tar.gz
-	gzip -dc $< | tar xf -
-	mv libredblack-1.3 libredblack
-	# Must touch "configure", or it will trigger a rebuild because it is older than the tar.gz file.
-	touch libredblack/configure
 
 loadhosts.o: loadhosts.c loadhosts_file.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
@@ -111,8 +84,5 @@ locator: locator.c
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ locator.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 clean:
-	rm -f *.o *.a redblack.h *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator
-
-distclean: clean
-	rm -rf libredblack
+	rm -f *.o *.a *~ loadhosts stackio availability test-endianness md5 sha1 rmd160 locator
 
