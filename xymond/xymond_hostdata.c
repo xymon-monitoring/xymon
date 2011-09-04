@@ -276,6 +276,9 @@ int main(int argc, char *argv[])
 
 			if (net_worker_locatorbased()) locator_rename_host(metadata[3], metadata[4], ST_HOSTDATA);
 		}
+		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			/* Do nothing */
+		}
 	}
 
 	return 0;

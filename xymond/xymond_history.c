@@ -776,6 +776,9 @@ int main(int argc, char *argv[])
 			}
 			continue;
 		}
+		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			/* Do nothing */
+		}
 	}
 
 	MEMUNDEFINE(newcol2);

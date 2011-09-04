@@ -5012,31 +5012,42 @@ int main(int argc, char *argv[])
 
 		if (reloadconfig && hostsfn) {
 			xtreePos_t hosthandle;
+			int loadresult;
 
 			reloadconfig = 0;
-			load_hostnames(hostsfn, NULL, get_fqdn());
+			loadresult = load_hostnames(hostsfn, NULL, get_fqdn());
 
-			/* Scan our list of hosts and weed out those we do not know about any more */
-			hosthandle = xtreeFirst(rbhosts);
-			while (hosthandle != xtreeEnd(rbhosts)) {
-				xymond_hostlist_t *hwalk;
+			if (loadresult == 0) {
+				/* Scan our list of hosts and weed out those we do not know about any more */
+				hosthandle = xtreeFirst(rbhosts);
+				while (hosthandle != xtreeEnd(rbhosts)) {
+					xymond_hostlist_t *hwalk;
 
-				hwalk = xtreeData(rbhosts, hosthandle);
+					hwalk = xtreeData(rbhosts, hosthandle);
 
-				if (hwalk->hosttype == H_SUMMARY) {
-					/* Leave the summaries as-is */
-					hosthandle = xtreeNext(rbhosts, hosthandle);
+					if (hwalk->hosttype == H_SUMMARY) {
+						/* Leave the summaries as-is */
+						hosthandle = xtreeNext(rbhosts, hosthandle);
+					}
+					else if (hostinfo(hwalk->hostname) == NULL) {
+						/* Remove all state info about this host. This will NOT remove files. */
+						handle_dropnrename(CMD_DROPSTATE, "xymond", hwalk->hostname, NULL, NULL);
+
+						/* Must restart tree-walk after deleting node from the tree */
+						hosthandle = xtreeFirst(rbhosts);
+					}
+					else {
+						hosthandle = xtreeNext(rbhosts, hosthandle);
+					}
 				}
-				else if (hostinfo(hwalk->hostname) == NULL) {
-					/* Remove all state info about this host. This will NOT remove files. */
-					handle_dropnrename(CMD_DROPSTATE, "xymond", hwalk->hostname, NULL, NULL);
 
-					/* Must restart tree-walk after deleting node from the tree */
-					hosthandle = xtreeFirst(rbhosts);
-				}
-				else {
-					hosthandle = xtreeNext(rbhosts, hosthandle);
-				}
+				posttochannel(statuschn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(stachgchn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(pagechn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(datachn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(noteschn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(enadischn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(clientchn, "reload", NULL, "xymond", NULL, NULL, "");
 			}
 
 			load_clientconfig();

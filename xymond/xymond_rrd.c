@@ -383,6 +383,9 @@ int main(int argc, char *argv[])
 			}
 			continue;
 		}
+		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			reloadtime = 0;
+		}
 		else if ((metacount > 3) && (strncmp(metadata[0], "@@drophost", 10) == 0)) {
 			char hostdir[PATH_MAX];
 			hostname = metadata[3];

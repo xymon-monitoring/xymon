@@ -461,6 +461,9 @@ int main(int argc, char *argv[])
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
 			/* Ignored */
 		}
+		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			/* Do nothing */
+		}
 		else {
 			errprintf("Dropping message type %s, metacount=%d\n", metadata[0], metacount);
 		}

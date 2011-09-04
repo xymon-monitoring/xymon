@@ -201,6 +201,13 @@ int main(int argc, char *argv[])
 		}
 
 		/*
+		 * A "reload" means the hosts.cfg file has changed.
+		 */
+		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			/* Nothing ... right now */
+		}
+
+		/*
 		 * An "idle" message appears when get_xymond_message() 
 		 * exceeds the timeout setting (ie. you passed a timeout
 		 * value). This allows your worker module to perform

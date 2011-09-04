@@ -806,6 +806,9 @@ int main(int argc, char *argv[])
 			}
 			continue;
 		}
+		else if (strncmp(metadata[0], "@@reload", 8) == 0) {
+			/* Nothing ... right now */
+		}
 		else if (strncmp(metadata[0], "@@idle", 6) == 0) {
 			/* Timeout */
 		}
