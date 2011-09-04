@@ -81,6 +81,7 @@ enum xmh_item_t {
 enum ghosthandling_t { GH_ALLOW, GH_IGNORE, GH_LOG, GH_MATCH };
 
 extern int load_hostnames(char *hostsfn, char *extrainclude, int fqdn);
+extern int load_hostinfo(char *hostname);
 extern char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling);
 extern int knownloghost(char *logdir);
 extern void *hostinfo(char *hostname);

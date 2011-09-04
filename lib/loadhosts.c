@@ -44,12 +44,11 @@ typedef struct namelist_t {
 	char *osname;
 	struct namelist_t *next;
 
-	char *rawentry;		/* The raw hosts.cfg entry for this host. */
 	char *allelems;		/* Storage for data pointed to by elems */
 	char **elems;		/* List of pointers to the elements of the entry */
 
 	/* 
-	 * The following are pre-parsed elements from the "rawentry".
+	 * The following are pre-parsed elements.
 	 * These are pre-parsed because they are used by the xymon daemon, so
 	 * fast access to them is an optimization.
 	 */
@@ -329,6 +328,7 @@ static void build_hosttree(void)
 }
 
 #include "loadhosts_file.c"
+#include "loadhosts_net.c"
 
 char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling)
 {
@@ -345,6 +345,22 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 
 	if (result) xfree(result);
 	result = NULL;
+
+	if (hivalhost) {
+		*hostip = '\0';
+
+		if (!hivalbuf || (*hivalbuf == '\0')) return NULL;
+
+		result = (strcasecmp(hivalhost, hostname) == 0) ? strdup(hivalhost) : NULL;
+		if (!result && hivals[XMH_CLIENTALIAS]) {
+			result = (strcasecmp(hivals[XMH_CLIENTALIAS], hostname) == 0) ? strdup(hivalhost) : NULL;
+		}
+
+		if (result && hivals[XMH_IP]) strcpy(hostip, hivals[XMH_IP]);
+
+		return result;
+	}
+
 
 	/* Find the host in the normal hostname list */
 	hosthandle = xtreeFind(rbhosts, hostname);
@@ -385,6 +401,19 @@ int knownloghost(char *logdir)
 {
 	namelist_t *walk = NULL;
 
+	if (hivalhost) {
+		int result;
+		char *hvh_logname, *p;
+
+		hvh_logname = strdup(hivalhost);
+		p = hvh_logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; }
+
+		result = (strcasecmp(hvh_logname, logdir) == 0);
+
+		xfree(hvh_logname);
+		return result;
+	}
+
 	/* Find the host */
 	/* Must do the linear string search, since the tree is indexed by the hostname, not logname */
 	for (walk = namehead; (walk && (strcasecmp(walk->logname, logdir) != 0)); walk = walk->next);
@@ -397,6 +426,10 @@ void *hostinfo(char *hostname)
 	xtreePos_t hosthandle;
 	namelist_t *result = NULL;
 	time_t now = getcurrenttime(NULL);
+
+	if (hivalhost) {
+		return (strcasecmp(hostname, hivalhost) == 0) ? &hival_hostinfo : NULL;
+	}
 
 	if (!configloaded) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
@@ -432,10 +465,6 @@ void *localhostinfo(char *hostname)
 	result->preference = 1;
 	result->page = pghead;
 
-	if (result->rawentry) xfree(result->rawentry);
-	result->rawentry = (char *)malloc(strlen(hostname) + 100);
-	sprintf(result->rawentry, "127.0.0.1 %s #", hostname);
-
 	if (result->allelems) xfree(result->allelems);
 	result->allelems = strdup("");
 
@@ -460,6 +489,8 @@ char *xmh_item(void *hostin, enum xmh_item_t item)
 	if (inttxt == NULL) inttxt = (char *)malloc(10);
 
 	if (host == NULL) return NULL;
+
+	if (host == &hival_hostinfo) return hivals[item];
 
 	switch (item) {
 	  case XMH_CLIENTALIAS: 
@@ -631,14 +662,14 @@ char *xmh_item_id(enum xmh_item_t idx)
 
 void *first_host(void)
 {
-	return namehead;
+	return (hivalhost ? &hival_hostinfo : namehead);
 }
 
 void *next_host(void *currenthost, int wantclones)
 {
 	namelist_t *walk;
 
-	if (!currenthost) return NULL;
+	if (!currenthost || (currenthost == &hival_hostinfo)) return NULL;
 
 	if (wantclones) return ((namelist_t *)currenthost)->next;
 
@@ -654,6 +685,23 @@ void *next_host(void *currenthost, int wantclones)
 void xmh_set_item(void *hostin, enum xmh_item_t item, void *value)
 {
 	namelist_t *host = (namelist_t *)hostin;
+
+	if (host == &hival_hostinfo) {
+		switch (item) {
+		  case XMH_CLASS:
+		  case XMH_OS:
+		  case XMH_CLIENTALIAS:
+			hivals[item] = strdup((char *)value);
+			break;
+		  case XMH_DATA:
+			hivals[item] = (char *)value;
+			break;
+		  default:
+			break;
+		}
+
+		return;
+	}
 
 	switch (item) {
 	  case XMH_CLASS:
@@ -715,7 +763,12 @@ int main(int argc, char *argv[])
 	namelist_t *h;
 	char *val;
 
-	load_hostnames(argv[1], NULL, get_fqdn());
+	if (strcmp(argv[1], "@") == 0) {
+		load_hostinfo(argv[2]);
+	}
+	else {
+		load_hostnames(argv[1], NULL, get_fqdn());
+	}
 
 	for (argi = 2; (argi < argc); argi++) {
 		char s[1024];

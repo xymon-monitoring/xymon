@@ -150,11 +150,16 @@ static int parse_query(void)
 	return 0;
 }
 
-int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts)
+int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts, int full)
 {
 	void *hinfo = NULL;
 
-	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	if (full) {
+		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+	}
+	else {
+		load_hostinfo(hostname);
+	}
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
@@ -242,7 +247,10 @@ int do_request(void)
 		restofmsg = (log ? log : strdup("<No data>\n"));
 	}
 	else if ((strcmp(service, xgetenv("TRENDSCOLUMN")) == 0) || (strcmp(service, xgetenv("INFOCOLUMN")) == 0)) {
-		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
+		int fullload = (strcmp(service, xgetenv("INFOCOLUMN")) == 0);
+
+		if (loadhostdata(hostname, &ip, &displayname, &compacts, fullload) != 0) return 1;
+
 		ishtmlformatted = 1;
 		sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 		sethostenv_refresh(600);
@@ -292,7 +300,7 @@ int do_request(void)
 		char *sumline, *msg, *p, *compitem, *complist;
 		sendreturn_t *sres;
 
-		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
+		if (loadhostdata(hostname, &ip, &displayname, &compacts, 0) != 0) return 1;
 
 		complist = NULL;
 		if (compacts && *compacts) {
@@ -490,7 +498,7 @@ int do_request(void)
 
 		if (!tstamp) { errormsg("Invalid request"); return 1; }
 
-		if (loadhostdata(hostname, &ip, &displayname, &compacts) != 0) return 1;
+		if (loadhostdata(hostname, &ip, &displayname, &compacts, 0) != 0) return 1;
 		hostnamedash = strdup(hostname);
 		p = hostnamedash; while ((p = strchr(p, '.')) != NULL) *p = '_';
 		p = hostnamedash; while ((p = strchr(p, ',')) != NULL) *p = '_';

@@ -57,6 +57,8 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	namelist_t *nametail = NULL;
 	void * htree;
 
+	load_hostinfo(NULL);
+
 	/* First check if there were no modifications at all */
 	if (hostfiles) {
 		if (!stackfmodified(hostfiles)){

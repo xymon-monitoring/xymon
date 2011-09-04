@@ -26,7 +26,7 @@ xymonclient.a: $(CLIENTLIBOBJS)
 	ar cr xymonclient.a $(CLIENTLIBOBJS)
 	ranlib xymonclient.a || echo ""
 
-loadhosts.o: loadhosts.c loadhosts_file.c
+loadhosts.o: loadhosts.c loadhosts_file.c loadhosts_net.c
 	$(CC) $(CFLAGS) -c -o $@ loadhosts.c
 
 eventlog.o: eventlog.c

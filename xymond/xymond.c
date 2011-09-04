@@ -3622,30 +3622,69 @@ void do_message(conn_t *msg, char *origin)
 		char *fields = NULL;
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
+		char *clonehost;
 
 		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
 
-		setup_filter(msg->buf, 
-			     "XMH_HOSTNAME,XMH_IP,XMH_RAW",
-			     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
-			     &chspage, &chshost, &chsnet, &chstest);
+		clonehost = strstr(msg->buf, " clone=");
+		if (clonehost) {
+			void *hinfo;
+			strbuffer_t *outbuf = NULL;
+			int outlen;
 
-		if (lastboardsize == 0) {
-			/* A guesstimate - 500 bytes per host */
-			bufsz = (hostcount+1)*500;
+			outbuf = newstrbuffer(1024);
+			clonehost += strlen(" clone=");
+			hinfo = hostinfo(clonehost);
+
+			if (hinfo) {
+				enum xmh_item_t idx;
+				char *val;
+
+				for (idx = 0; (idx < XMH_LAST); idx++) {
+					val = xmh_item(hinfo, idx);
+					if (val) {
+						addtobuffer(outbuf, xmh_item_id(idx));
+						addtobuffer(outbuf, ":");
+						addtobuffer(outbuf, val);
+						addtobuffer(outbuf, "\n");
+					}
+				}
+
+				val = xmh_item_walk(hinfo);
+				while (val) {
+					addtobuffer(outbuf, val);
+					addtobuffer(outbuf, "\n");
+					val = xmh_item_walk(NULL);
+				}
+			}
+
+			outlen = STRBUFLEN(outbuf);
+			buf = grabstrbuffer(outbuf);
+			bufp = (buf + outlen);
 		}
 		else {
-			/* Add 10% to the last size we used */
-			bufsz = lastboardsize + (lastboardsize / 10);
-		}
-		bufp = buf = (char *)malloc(bufsz);
+			setup_filter(msg->buf, 
+				     "XMH_HOSTNAME,XMH_IP,XMH_RAW",
+				     &spage, &shost, &snet, &stest, &scolor, &acklevel, &fields,
+				     &chspage, &chshost, &chsnet, &chstest);
 
-		for (hinfo = first_host(); (hinfo); hinfo = next_host(hinfo, 0)) {
-			if (!match_host_filter(hinfo, spage, shost, snet)) continue;
-			generate_hostinfo_outbuf(&buf, &bufp, &bufsz, hinfo);
-		}
+			if (lastboardsize == 0) {
+				/* A guesstimate - 500 bytes per host */
+				bufsz = (hostcount+1)*500;
+			}
+			else {
+				/* Add 10% to the last size we used */
+				bufsz = lastboardsize + (lastboardsize / 10);
+			}
+			bufp = buf = (char *)malloc(bufsz);
 
-		*bufp = '\0';
+			for (hinfo = first_host(); (hinfo); hinfo = next_host(hinfo, 0)) {
+				if (!match_host_filter(hinfo, spage, shost, snet)) continue;
+				generate_hostinfo_outbuf(&buf, &bufp, &bufsz, hinfo);
+			}
+
+			*bufp = '\0';
+		}
 
 		xfree(msg->buf);
 		msg->doingwhat = RESPONDING;
