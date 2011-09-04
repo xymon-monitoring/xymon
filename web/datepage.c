@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 			if (cookie && *cookie) {
 				void *hinfo;
 
-				load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+				load_hostinfo(cookie);
 				hinfo = hostinfo(cookie);
 				if (hinfo) {
 					pagepath = xmh_item(hinfo, XMH_PAGEPATH);

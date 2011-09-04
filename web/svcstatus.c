@@ -153,12 +153,18 @@ static int parse_query(void)
 int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts, int full)
 {
 	void *hinfo = NULL;
+	int loadres;
 
 	if (full) {
-		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+		loadres = load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	}
 	else {
-		load_hostinfo(hostname);
+		loadres = load_hostinfo(hostname);
+	}
+
+	if (loadres != 0) {
+		errormsg("Cannot load host configuration");
+		return 1;
 	}
 
 	if ((hinfo = hostinfo(hostname)) == NULL) {
