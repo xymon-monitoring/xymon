@@ -12,7 +12,6 @@
 #define __XYMONRRD_H__
 
 #include <time.h>
-#include "rbtr.h"
 
 /* This is for mapping a service -> an RRD file */
 typedef struct {
@@ -37,7 +36,7 @@ typedef enum {
 
 typedef struct rrdtpldata_t {
 	char *template;
-	RbtHandle dsnames;	/* Tree of tplnames_t records */
+	void *dsnames;	/* Tree of tplnames_t records */
 } rrdtpldata_t;
 typedef struct rrdtplnames_t {
 	char *dsnam;

@@ -55,7 +55,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	strbuffer_t *inbuf;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
-	RbtHandle htree;
+	void * htree;
 
 	/* First check if there were no modifications at all */
 	if (hostfiles) {
@@ -82,7 +82,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	if (hosts == NULL) return -1;
 
 	inbuf = newstrbuffer(0);
-	htree = rbtNew(name_compare);
+	htree = xtreeNew(strcasecmp);
 	while (stackfgets(inbuf, extrainclude)) {
 		sanitize_input(inbuf, 0, 0);
 
@@ -201,7 +201,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			char clientname[4096];
 			char downtime[4096];
 			char groupidstr[10];
-			RbtIterator handle;
+			xtreePos_t handle;
 
 			if ( (ip1 < 0) || (ip1 > 255) ||
 			     (ip2 < 0) || (ip2 > 255) ||
@@ -297,13 +297,13 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->elems[elemidx] = NULL;
 
 			/* See if this host is defined before */
-			handle = rbtFind(htree, newitem->hostname);
+			handle = xtreeFind(htree, newitem->hostname);
 			if (strcasecmp(newitem->hostname, ".default.") == 0) {
 				/* The pseudo DEFAULT host */
 				newitem->next = NULL;
 				defaulthost = newitem;
 			}
-			else if (handle == rbtEnd(htree)) {
+			else if (handle == xtreeEnd(htree)) {
 				/* New item, so add to end of list */
 				newitem->next = NULL;
 				if (namehead == NULL) 
@@ -312,11 +312,11 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 					nametail->next = newitem;
 					nametail = newitem;
 				}
-				rbtInsert(htree, newitem->hostname, newitem);
+				xtreeAdd(htree, newitem->hostname, newitem);
 			}
 			else {
 				/* Find the existing record - compare the record pointer instead of the name */
-				namelist_t *existingrec = (namelist_t *)gettreeitem(htree, handle);
+				namelist_t *existingrec = (namelist_t *)xtreeData(htree, handle);
 				for (iwalk = namehead, iprev = NULL; ((iwalk != existingrec) && iwalk); iprev = iwalk, iwalk = iwalk->next) ;
  				if (newitem->preference <= iwalk->preference) {
 					/* Add after the existing (more preferred) entry */
@@ -347,7 +347,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	stackfclose(hosts);
 	freestrbuffer(inbuf);
 	if (dgname) xfree(dgname);
-	rbtDelete(htree);
+	xtreeDestroy(htree);
 
 	MEMUNDEFINE(hostname);
 	MEMUNDEFINE(l);

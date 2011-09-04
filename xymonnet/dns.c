@@ -56,7 +56,7 @@ typedef struct dnsitem_t {
 	struct timespec resolvetime;
 } dnsitem_t;
 
-static RbtHandle dnscache;
+static void * dnscache;
 
 static void dns_init(void)
 {
@@ -64,7 +64,7 @@ static void dns_init(void)
 
 	if (initdone) return;
 
-	dnscache = rbtNew(name_compare);
+	dnscache = xtreeNew(strcasecmp);
 
 	if (use_ares_lookup) {
 		int status = ares_init(&mychannel);
@@ -82,7 +82,7 @@ static void dns_init(void)
 static char *find_dnscache(char *hostname)
 {
 	struct in_addr inp;
-	RbtIterator handle;
+	xtreePos_t handle;
 	dnsitem_t *dnsc;
 
 	dns_init();
@@ -93,10 +93,10 @@ static char *find_dnscache(char *hostname)
 	}
 
 	/* In the cache ? */
-	handle = rbtFind(dnscache, hostname);
-	if (handle == rbtEnd(dnscache)) return NULL;
+	handle = xtreeFind(dnscache, hostname);
+	if (handle == xtreeEnd(dnscache)) return NULL;
 
-	dnsc = (dnsitem_t *)gettreeitem(dnscache, handle);
+	dnsc = (dnsitem_t *)xtreeData(dnscache, handle);
 	return inet_ntoa(dnsc->addr);
 }
 
@@ -196,7 +196,7 @@ void add_host_to_dns_queue(char *hostname)
 
 	dnsc->name = strdup(hostname);
 	getntimer(&dnsc->resolvetime);
-	rbtInsert(dnscache, dnsc->name, dnsc);
+	xtreeAdd(dnscache, dnsc->name, dnsc);
 
 	if (use_ares_lookup) {
 		ares_gethostbyname(mychannel, hostname, AF_INET, dns_simple_callback, dnsc);

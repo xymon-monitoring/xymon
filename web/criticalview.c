@@ -29,8 +29,8 @@ typedef struct hstatus_t {
 	critconf_t *config;
 } hstatus_t;
 
-static RbtHandle *rbstate = NULL;
-static RbtHandle *hostsonpage = NULL;
+static void * *rbstate = NULL;
+static void * *hostsonpage = NULL;
 static int treecount = 0;
 static time_t oldlimit = 3600;
 static int critacklevel = 1;
@@ -90,20 +90,20 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 	now = getcurrenttime(NULL);
 	treecount++;
 	if (treecount == 1) {
-		rbstate = malloc(sizeof(RbtHandle));
-		hostsonpage = malloc(sizeof(RbtHandle));
+		rbstate = malloc(sizeof(void *));
+		hostsonpage = malloc(sizeof(void *));
 	}
 	else {
-		rbstate = realloc(rbstate, (treecount) * sizeof(RbtHandle));
-		hostsonpage = realloc(hostsonpage, (treecount) * sizeof(RbtHandle));
+		rbstate = realloc(rbstate, (treecount) * sizeof(void *));
+		hostsonpage = realloc(hostsonpage, (treecount) * sizeof(void *));
 	}
-	rbstate[treecount-1] = rbtNew(name_compare);
-	hostsonpage[treecount-1] = rbtNew(name_compare);
+	rbstate[treecount-1] = xtreeNew(strcasecmp);
+	hostsonpage[treecount-1] = xtreeNew(strcasecmp);
 
 	bol = board;
 	while (bol && (*bol)) {
 		char *endkey;
-		RbtStatus status;
+		xtreeStatus_t status;
 
 		eol = strchr(bol, '\n'); if (eol) *eol = '\0';
 
@@ -154,7 +154,7 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 
 					newitem->key = (char *)malloc(strlen(newitem->hostname) + strlen(newitem->testname) + 2);
 					sprintf(newitem->key, "%s|%s", newitem->hostname, newitem->testname);
-					status = rbtInsert(rbstate[treecount-1], newitem->key, newitem);
+					status = xtreeAdd(rbstate[treecount-1], newitem->key, newitem);
 				}
 			}
 		}
@@ -166,30 +166,27 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 }
 
 
-RbtHandle columnlist(RbtHandle statetree)
+void * columnlist(void * statetree)
 {
-	RbtHandle rbcolumns;
-	RbtIterator hhandle;
+	void * rbcolumns;
+	xtreePos_t hhandle;
 
-	rbcolumns = rbtNew(name_compare);
-	for (hhandle = rbtBegin(statetree); (hhandle != rbtEnd(statetree)); hhandle = rbtNext(statetree, hhandle)) {
-		void *k1, *k2;
+	rbcolumns = xtreeNew(strcasecmp);
+	for (hhandle = xtreeFirst(statetree); (hhandle != xtreeEnd(statetree)); hhandle = xtreeNext(statetree, hhandle)) {
 		hstatus_t *itm;
-		RbtStatus status;
+		xtreeStatus_t status;
 
-	        rbtKeyValue(statetree, hhandle, &k1, &k2);
-		itm = (hstatus_t *)k2;
-
-		status = rbtInsert(rbcolumns, itm->testname, NULL);
+		itm = (hstatus_t *)xtreeData(statetree, hhandle);
+		status = xtreeAdd(rbcolumns, itm->testname, NULL);
 	}
 
 	return rbcolumns;
 }
 
-void print_colheaders(FILE *output, RbtHandle rbcolumns)
+void print_colheaders(FILE *output, void * rbcolumns)
 {
 	int colcount;
-	RbtIterator colhandle;
+	xtreePos_t colhandle;
 
 	colcount = 1;	/* Remember the hostname column */
 
@@ -197,12 +194,10 @@ void print_colheaders(FILE *output, RbtHandle rbcolumns)
 	fprintf(output, "<TR>");
 	fprintf(output, "<TD ROWSPAN=2>&nbsp;</TD>\n");	/* For the prio column - in both row headers+dash rows */
 	fprintf(output, "<TD ROWSPAN=2>&nbsp;</TD>\n");	/* For the host column - in both row headers+dash rows */
-	for (colhandle = rbtBegin(rbcolumns); (colhandle != rbtEnd(rbcolumns)); colhandle = rbtNext(rbcolumns, colhandle)) {
-		void *k1, *k2;
+	for (colhandle = xtreeFirst(rbcolumns); (colhandle != xtreeEnd(rbcolumns)); colhandle = xtreeNext(rbcolumns, colhandle)) {
 		char *colname;
 
-	        rbtKeyValue(rbcolumns, colhandle, &k1, &k2);
-		colname = (char *)k1;
+		colname = (char *)xtreeKey(rbcolumns, colhandle);
 		colcount++;
 
 		fprintf(output, " <TD ALIGN=CENTER VALIGN=BOTTOM WIDTH=45>\n");
@@ -213,12 +208,12 @@ void print_colheaders(FILE *output, RbtHandle rbcolumns)
 	fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", colcount);
 }
 
-void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle statetree, RbtHandle columns, int prio, int firsthost)
+void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * columns, int prio, int firsthost)
 {
 	void *hinfo;
 	char *dispname, *ip, *key;
 	time_t now;
-	RbtIterator colhandle;
+	xtreePos_t colhandle;
 
 	now = getcurrenttime(NULL);
 	hinfo = hostinfo(itm->hostname);
@@ -239,19 +234,17 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle statetree, RbtHand
 	fprintf(output, "<TD ALIGN=LEFT>%s</TD>\n", hostnamehtml(itm->hostname, NULL, usetooltips));
 
 	key = (char *)malloc(1024);
-	for (colhandle = rbtBegin(columns); (colhandle != rbtEnd(columns)); colhandle = rbtNext(columns, colhandle)) {
-		void *k1, *k2;
+	for (colhandle = xtreeFirst(columns); (colhandle != xtreeEnd(columns)); colhandle = xtreeNext(columns, colhandle)) {
 		char *colname;
-		RbtIterator sthandle;
+		xtreePos_t sthandle;
 
 		fprintf(output, "<TD ALIGN=CENTER>");
 
-		rbtKeyValue(columns, colhandle, &k1, &k2);
-		colname = (char *)k1;
+		colname = (char *)xtreeKey(columns, colhandle);
 		key = (char *)realloc(key, 2 + strlen(itm->hostname) + strlen(colname));
 		sprintf(key, "%s|%s", itm->hostname, colname);
-		sthandle = rbtFind(statetree, key);
-		if (sthandle == rbtEnd(statetree)) {
+		sthandle = xtreeFind(statetree, key);
+		if (sthandle == xtreeEnd(statetree)) {
 			fprintf(output, "-");
 		}
 		else {
@@ -259,8 +252,7 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle statetree, RbtHand
 			char *htmlalttag;
 			char *htmlackstr;
 
-			rbtKeyValue(statetree, sthandle, &k1, &k2);
-			column = (hstatus_t *)k2;
+			column = (hstatus_t *)xtreeData(statetree, sthandle);
 			if (column->config->priority != prio) 
 				fprintf(output, "-");
 			else {
@@ -294,19 +286,17 @@ void print_hoststatus(FILE *output, hstatus_t *itm, RbtHandle statetree, RbtHand
 }
 
 
-void print_oneprio(FILE *output, RbtHandle statetree, RbtHandle hoptree, RbtHandle rbcolumns, int prio)
+void print_oneprio(FILE *output, void * statetree, void * hoptree, void * rbcolumns, int prio)
 {
-	RbtIterator hhandle;
+	xtreePos_t hhandle;
 	int firsthost = 1;
 	char *curhost = "";
 
 	/* Then output each host and their column status */
-	for (hhandle = rbtBegin(statetree); (hhandle != rbtEnd(statetree)); hhandle = rbtNext(statetree, hhandle)) {
-		void *k1, *k2;
+	for (hhandle = xtreeFirst(statetree); (hhandle != xtreeEnd(statetree)); hhandle = xtreeNext(statetree, hhandle)) {
 		hstatus_t *itm;
 
-	        rbtKeyValue(statetree, hhandle, &k1, &k2);
-		itm = (hstatus_t *)k2;
+		itm = (hstatus_t *)xtreeData(statetree, hhandle);
 
 		if (itm->config->priority != prio) continue;
 		if (strcmp(curhost, itm->hostname) == 0) continue;
@@ -314,7 +304,7 @@ void print_oneprio(FILE *output, RbtHandle statetree, RbtHandle hoptree, RbtHand
 		/* New host */
 		curhost = itm->hostname;
 		print_hoststatus(output, itm, statetree, rbcolumns, prio, firsthost);
-		rbtInsert(hoptree, itm->hostname, itm);
+		xtreeAdd(hoptree, itm->hostname, itm);
 		firsthost = 0;
 	}
 
@@ -324,24 +314,24 @@ void print_oneprio(FILE *output, RbtHandle statetree, RbtHandle hoptree, RbtHand
 
 
 static int evcount = 0;
-static RbtHandle evhopfilter;
+static void * evhopfilter;
 
 static int ev_included(char *hostname)
 {
 	/* Callback function for filtering eventlog-hosts */
-	return (rbtFind(evhopfilter, hostname) == rbtEnd(evhopfilter)) ? 0 : 1;
+	return (xtreeFind(evhopfilter, hostname) == xtreeEnd(evhopfilter)) ? 0 : 1;
 }
 
 
-void generate_critpage(RbtHandle statetree, RbtHandle hoptree, FILE *output, char *header, char *footer, int color, int maxprio)
+void generate_critpage(void * statetree, void * hoptree, FILE *output, char *header, char *footer, int color, int maxprio)
 {
-	RbtIterator hhandle;
+	xtreePos_t hhandle;
 
         headfoot(output, header, "", "header", pagecolor);	/* Use PAGE color here, not the part color */
         fprintf(output, "<center>\n");
 
         if (color != COL_GREEN) {
-		RbtHandle rbcolumns;
+		void * rbcolumns;
 		int prio;
 
 		rbcolumns = columnlist(statetree);
@@ -354,7 +344,7 @@ void generate_critpage(RbtHandle statetree, RbtHandle hoptree, FILE *output, cha
 		}
 
 		fprintf(output, "</TABLE>\n");
-		rbtDelete(rbcolumns);
+		xtreeDestroy(rbcolumns);
         }
         else {
                 /* "All Monitored Systems OK */
@@ -491,6 +481,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (!critconfig[0]) {
+		critconfig = (char **)realloc(critconfig, 2*sizeof(char *));
+		critconfig[0] = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen(DEFAULT_CRITCONFIGFN) + 2);
+		sprintf(critconfig[0], "%s/%s", xgetenv("XYMONHOME"), DEFAULT_CRITCONFIGFN);
+		critconfig[1] = NULL;
+	}
+
 	redirect_cgilog("criticalview");
 
 	setdocurl(hostsvcurl("%s", xgetenv("INFOCOLUMN"), 1));
@@ -506,7 +503,7 @@ int main(int argc, char *argv[])
 		int i;
 		char *oneconfig, *onename;
 		int *partcolor, *partprio;
-		RbtIterator hhandle;
+		xtreePos_t hhandle;
 
 		for (i=0; (critconfig[i]); i++) {
 			oneconfig = strchr(critconfig[i], ':');
@@ -525,12 +522,10 @@ int main(int argc, char *argv[])
 			partcolor[i] = COL_GREEN;
 			partprio[i] = 0;
 
-			for (hhandle = rbtBegin(rbstate[i]); (hhandle != rbtEnd(rbstate[i])); hhandle = rbtNext(rbstate[i], hhandle)) {
-				void *k1, *k2;
+			for (hhandle = xtreeFirst(rbstate[i]); (hhandle != xtreeEnd(rbstate[i])); hhandle = xtreeNext(rbstate[i], hhandle)) {
 				hstatus_t *itm;
 
-				rbtKeyValue(rbstate[i], hhandle, &k1, &k2);
-				itm = (hstatus_t *)k2;
+				itm = (hstatus_t *)xtreeData(rbstate[i], hhandle);
 
 				if (itm->color > partcolor[i]) partcolor[i] = itm->color;
 				if (itm->config->priority > partprio[i]) partprio[i] = itm->config->priority;

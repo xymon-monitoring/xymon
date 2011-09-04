@@ -42,7 +42,7 @@ static socklen_t myaddrsz = 0;
 static int locatorsocket = -1;
 
 #define DEFAULT_CACHETIMEOUT (15*60) 	/* 15 minutes */
-static RbtHandle locatorcache[ST_MAX];
+static void * locatorcache[ST_MAX];
 static int havecache[ST_MAX] = {0,};
 static int cachetimeout[ST_MAX] = {0,};
 
@@ -125,39 +125,39 @@ static int call_locator(char *buf, size_t bufsz)
 
 static char *locator_querycache(enum locator_servicetype_t svc, char *key)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	cacheitm_t *itm;
 
 	if (!havecache[svc]) return NULL;
 
-	handle = rbtFind(locatorcache[svc], key);
-	if (handle == rbtEnd(locatorcache[svc])) return NULL;
+	handle = xtreeFind(locatorcache[svc], key);
+	if (handle == xtreeEnd(locatorcache[svc])) return NULL;
 
-	itm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+	itm = (cacheitm_t *)xtreeData(locatorcache[svc], handle);
 	return (itm->tstamp + cachetimeout[svc]) > getcurrenttime(NULL) ? itm->resp : NULL;
 }
 
 
 static void locator_updatecache(enum locator_servicetype_t svc, char *key, char *resp)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	cacheitm_t *newitm;
 
 	if (!havecache[svc]) return;
 
-	handle = rbtFind(locatorcache[svc], key);
-	if (handle == rbtEnd(locatorcache[svc])) {
+	handle = xtreeFind(locatorcache[svc], key);
+	if (handle == xtreeEnd(locatorcache[svc])) {
 		newitm = (cacheitm_t *)calloc(1, sizeof(cacheitm_t));
 		newitm->key = strdup(key);
 		newitm->resp = strdup(resp);
-		if (rbtInsert(locatorcache[svc], newitm->key, newitm) != RBT_STATUS_OK) {
+		if (xtreeAdd(locatorcache[svc], newitm->key, newitm) != XTREE_STATUS_OK) {
 			xfree(newitm->key);
 			xfree(newitm->resp);
 			xfree(newitm);
 		}
 	}
 	else {
-		newitm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+		newitm = (cacheitm_t *)xtreeData(locatorcache[svc], handle);
 		if (newitm->resp) xfree(newitm->resp);
 		newitm->resp = strdup(resp);
 		newitm->tstamp = getcurrenttime(NULL);
@@ -167,20 +167,20 @@ static void locator_updatecache(enum locator_servicetype_t svc, char *key, char 
 
 void locator_flushcache(enum locator_servicetype_t svc, char *key)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 
 	if (!havecache[svc]) return;
 
 	if (key) {
-		handle = rbtFind(locatorcache[svc], key);
-		if (handle != rbtEnd(locatorcache[svc])) {
-			cacheitm_t *itm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+		handle = xtreeFind(locatorcache[svc], key);
+		if (handle != xtreeEnd(locatorcache[svc])) {
+			cacheitm_t *itm = (cacheitm_t *)xtreeData(locatorcache[svc], handle);
 			itm->tstamp = 0;
 		}
 	}
 	else {
-		for (handle = rbtBegin(locatorcache[svc]); (handle != rbtEnd(locatorcache[svc])); handle = rbtNext(locatorcache[svc], handle)) {
-			cacheitm_t *itm = (cacheitm_t *)gettreeitem(locatorcache[svc], handle);
+		for (handle = xtreeFirst(locatorcache[svc]); (handle != xtreeEnd(locatorcache[svc])); handle = xtreeNext(locatorcache[svc], handle)) {
+			cacheitm_t *itm = (cacheitm_t *)xtreeData(locatorcache[svc], handle);
 			itm->tstamp = 0;
 		}
 	}
@@ -190,7 +190,7 @@ void locator_flushcache(enum locator_servicetype_t svc, char *key)
 void locator_prepcache(enum locator_servicetype_t svc, int timeout)
 {
 	if (!havecache[svc]) {
-		locatorcache[svc] = rbtNew(name_compare);
+		locatorcache[svc] = xtreeNew(strcasecmp);
 		havecache[svc] = 1;
 	}
 	else {

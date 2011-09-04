@@ -31,7 +31,7 @@ typedef struct link_t {
 } link_t;
 
 static int linksloaded = 0;
-static RbtHandle linkstree;
+static void * linkstree;
 static char *notesskin = NULL;
 static char *helpskin = NULL;
 static char *columndocurl = NULL;
@@ -98,7 +98,7 @@ static void load_links(char *directory, char *urlprefix)
 
 		strcpy(fn, d->d_name);
 		newlink = init_link(fn, urlprefix);
-		rbtInsert(linkstree, newlink->key, newlink);
+		xtreeAdd(linkstree, newlink->key, newlink);
 	}
 	closedir(linkdir);
 
@@ -114,7 +114,7 @@ void load_all_links(void)
 
 	dbgprintf("load_all_links()\n");
 
-	linkstree = rbtNew(name_compare);
+	linkstree = xtreeNew(strcasecmp);
 
 	if (notesskin) { xfree(notesskin); notesskin = NULL; }
 	if (helpskin) { xfree(helpskin); helpskin = NULL; }
@@ -155,10 +155,10 @@ void load_all_links(void)
 static link_t *find_link(char *key)
 {
 	link_t *l = NULL;
-	RbtIterator handle;
+	xtreePos_t handle;
 
-	handle = rbtFind(linkstree, key);
-	if (handle != rbtEnd(linkstree)) l = (link_t *)gettreeitem(linkstree, handle);
+	handle = xtreeFind(linkstree, key);
+	if (handle != xtreeEnd(linkstree)) l = (link_t *)xtreeData(linkstree, handle);
 
 	return l;
 }

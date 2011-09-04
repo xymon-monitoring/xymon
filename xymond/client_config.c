@@ -205,7 +205,7 @@ typedef struct c_mibval_t {
 	 * and update the tree with the result.
 	 */
 	int havetree;
-	RbtHandle valdeftree;
+	void * valdeftree;
 } c_mibval_t;
 
 #define RRDDSCHK_GT     (1 << 0)
@@ -286,7 +286,7 @@ typedef struct ruleset_t {
 	struct ruleset_t *next;
 } ruleset_t;
 static int havetree = 0;
-static RbtHandle ruletree;
+static void * ruletree;
 
 
 static off_t filesize_value(char *s)
@@ -340,16 +340,16 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	 * the expensive pagename/hostname matches are only performed initially 
 	 * when the list of rules for the host is decided.
 	 */
-	RbtIterator handle;
+	xtreePos_t handle;
 	c_rule_t *rwalk;
 	ruleset_t *head, *tail, *itm;
 	char *pagenamecopy, *pgtok;
 	int pgmatchres, pgexclres;
 
-	handle = rbtFind(ruletree, hostname);
-	if (handle != rbtEnd(ruletree)) {
+	handle = xtreeFind(ruletree, hostname);
+	if (handle != xtreeEnd(ruletree)) {
 		/* We have the tree for this host */
-		return (ruleset_t *)gettreeitem(ruletree, handle);
+		return (ruleset_t *)xtreeData(ruletree, handle);
 	}
 
 	pagenamecopy = strdup(pagename);
@@ -392,7 +392,7 @@ static ruleset_t *ruleset(char *hostname, char *pagename, char *classname)
 	}
 
 	/* Add the list to the tree */
-	rbtInsert(ruletree, strdup(hostname), head);
+	xtreeAdd(ruletree, strdup(hostname), head);
 
 	xfree(pagenamecopy);
 
@@ -565,7 +565,7 @@ int load_client_config(char *configfn)
 
 		switch (tmp->ruletype) {
 		  case C_MIBVAL:
-			if (tmp->rule.mibval.havetree) rbtDelete(tmp->rule.mibval.valdeftree);
+			if (tmp->rule.mibval.havetree) xtreeDestroy(tmp->rule.mibval.valdeftree);
 			break;
 
 		  case C_RRDDS:
@@ -589,23 +589,21 @@ int load_client_config(char *configfn)
 	exprhead = NULL;
 
 	if (havetree) {
-		RbtIterator handle;
-		void *k1, *k2;
+		xtreePos_t handle;
 		char *key;
 		ruleset_t *head, *itm;
 
-		handle = rbtBegin(ruletree);
-		while (handle != rbtEnd(ruletree)) {
-			rbtKeyValue(ruletree, handle, &k1, &k2);
-			key = (char *)k1;
-			head = (ruleset_t *)k2;
+		handle = xtreeFirst(ruletree);
+		while (handle != xtreeEnd(ruletree)) {
+			key = (char *)xtreeKey(ruletree, handle);
+			head = (ruleset_t *)xtreeData(ruletree, handle);
 			xfree(key);
 			while (head) {
 				itm = head; head = head->next; xfree(itm);
 			}
-			handle = rbtNext(ruletree, handle);
+			handle = xtreeNext(ruletree, handle);
 		}
-		rbtDelete(ruletree);
+		xtreeDestroy(ruletree);
 		havetree = 0;
 	}
 
@@ -1581,7 +1579,7 @@ int load_client_config(char *configfn)
 	if (curtext) xfree(curtext);
 
 	/* Create the ruletree, but leave it empty - it will be filled as clients report */
-	ruletree = rbtNew(name_compare);
+	ruletree = xtreeNew(strcasecmp);
 	havetree = 1;
 
 	MEMUNDEFINE(fn);
@@ -1687,11 +1685,11 @@ void dump_client_config(void)
 				printf(" mode=%o", rwalk->rule.fcheck.fmode);
 #ifdef _LARGEFILE_SOURCE
 			if (rwalk->flags & FCHK_MINSIZE) 
-				printf(" size>%lld", rwalk->rule.fcheck.minsize);
+				printf(" size>%lld", (long long int)rwalk->rule.fcheck.minsize);
 			if (rwalk->flags & FCHK_MAXSIZE) 
-				printf(" size<%lld", rwalk->rule.fcheck.maxsize);
+				printf(" size<%lld", (long long int)rwalk->rule.fcheck.maxsize);
 			if (rwalk->flags & FCHK_EQLSIZE) 
-				printf(" size=%lld", rwalk->rule.fcheck.eqlsize);
+				printf(" size=%lld", (long long int)rwalk->rule.fcheck.eqlsize);
 #else
 			if (rwalk->flags & FCHK_MINSIZE) 
 				printf(" size>%ld", rwalk->rule.fcheck.minsize);
@@ -2287,15 +2285,15 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 			  char *mibname, char *keyname, char *valname,
 			  long *minval, long *maxval, void **matchexp, int *color, char **group)
 {
-	static RbtHandle mibnametree;
+	static void * mibnametree;
 	static int have_mibnametree = 0;
 	char *hostname, *pagename, *mibkeyval_id;
 	c_rule_t *rule;
-	RbtIterator namhandle, valdefhandle;
-	RbtHandle valdeftree;
+	xtreePos_t namhandle, valdefhandle;
+	void * valdeftree;
 
 	if (!have_mibnametree) {
-		mibnametree = rbtNew(name_compare);
+		mibnametree = xtreeNew(strcasecmp);
 		have_mibnametree = 1;
 	}
 
@@ -2348,27 +2346,27 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 	/* Setup the key and find/insert it into the mibnametree */
 	mibkeyval_id = (char *)malloc(strlen(mibname) + (keyname ? strlen(keyname) : 0) + strlen(valname) + 3);
 	sprintf(mibkeyval_id, "%s!%s!%s", mibname, (keyname ? keyname : ""), valname);
-	namhandle = rbtFind(mibnametree, mibkeyval_id);
-	if (namhandle == rbtEnd(mibnametree)) {
-		rbtInsert(mibnametree, mibkeyval_id, mibkeyval_id);
+	namhandle = xtreeFind(mibnametree, mibkeyval_id);
+	if (namhandle == xtreeEnd(mibnametree)) {
+		xtreeAdd(mibnametree, mibkeyval_id, mibkeyval_id);
 	}
 	else {
 		xfree(mibkeyval_id); /* Discard our copy - we now use the tree value */
-		mibkeyval_id = (char *)gettreeitem(mibnametree, namhandle);
+		mibkeyval_id = (char *)xtreeData(mibnametree, namhandle);
 	}
 
 	/* Create the rule tree (if it does not exist); look up the ruleset */
 	if (!rule->rule.mibval.havetree) {
 		rule->rule.mibval.havetree = 1;
-		valdeftree = rule->rule.mibval.valdeftree = rbtNew(name_compare);
-		valdefhandle = rbtEnd(rule->rule.mibval.valdeftree);
+		valdeftree = rule->rule.mibval.valdeftree = xtreeNew(strcasecmp);
+		valdefhandle = xtreeEnd(rule->rule.mibval.valdeftree);
 	}
 	else {
 		valdeftree = rule->rule.mibval.valdeftree;
-		valdefhandle = rbtFind(valdeftree, mibkeyval_id);
+		valdefhandle = xtreeFind(valdeftree, mibkeyval_id);
 	}
 
-	if (valdefhandle == rbtEnd(valdeftree)) {
+	if (valdefhandle == xtreeEnd(valdeftree)) {
 		/* 
 		 * Ruleset not in the tree. 
 		 * Scan the configuration set for a rule matching this 
@@ -2387,13 +2385,13 @@ int get_mibval_thresholds(void *hinfo, char *classname,
 			if (!found) rule = getrule(NULL, NULL, NULL, hinfo, C_MIBVAL);
 		}
 
-		rbtInsert(valdeftree, mibkeyval_id, rule);
+		xtreeAdd(valdeftree, mibkeyval_id, rule);
 
 		xfree(mibval_id);
 	}
 	else {
 		/* Found the rule */
-		rule = (c_rule_t *)gettreeitem(valdeftree, valdefhandle);
+		rule = (c_rule_t *)xtreeData(valdeftree, valdefhandle);
 	}
 
 	if (rule) {
@@ -2727,10 +2725,10 @@ int check_file(void *hinfo, char *classname,
 				rulecolor = rwalk->rule.fcheck.color;
 #ifdef _LARGEFILE_SOURCE
 				sprintf(msgline, "File has size %lld  - should be >%lld\n", 
-					fsize, rwalk->rule.fcheck.minsize);
+					(long long int)fsize, (long long int)rwalk->rule.fcheck.minsize);
 #else
 				sprintf(msgline, "File has size %ld  - should be >%ld\n", 
-					fsize, rwalk->rule.fcheck.minsize);
+					(long int)fsize, (long int)rwalk->rule.fcheck.minsize);
 #endif
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2740,10 +2738,10 @@ int check_file(void *hinfo, char *classname,
 				rulecolor = rwalk->rule.fcheck.color;
 #ifdef _LARGEFILE_SOURCE
 				sprintf(msgline, "File has size %lld  - should be <%lld\n", 
-					fsize, rwalk->rule.fcheck.maxsize);
+					(long long int)fsize, (long long int)rwalk->rule.fcheck.maxsize);
 #else
 				sprintf(msgline, "File has size %ld  - should be <%ld\n", 
-					fsize, rwalk->rule.fcheck.maxsize);
+					(long int)fsize, (long int)rwalk->rule.fcheck.maxsize);
 #endif
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2753,10 +2751,10 @@ int check_file(void *hinfo, char *classname,
 				rulecolor = rwalk->rule.fcheck.color;
 #ifdef _LARGEFILE_SOURCE
 				sprintf(msgline, "File has size %lld  - should be %lld\n", 
-					fsize, rwalk->rule.fcheck.eqlsize);
+					(long long int)fsize, (long long int)rwalk->rule.fcheck.eqlsize);
 #else
 				sprintf(msgline, "File has size %ld  - should be %ld\n", 
-					fsize, rwalk->rule.fcheck.eqlsize);
+					(long int)fsize, (long int)rwalk->rule.fcheck.eqlsize);
 #endif
 				addtobuffer(summarybuf, msgline);
 			}
@@ -2980,14 +2978,14 @@ int check_dir(void *hinfo, char *classname,
 	return result;
 }
 
-char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, RbtHandle valnames, char *vals)
+char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, char *rrdkey, void * valnames, char *vals)
 {
 	static strbuffer_t *resbuf = NULL;
 	char msgline[1024];
 	c_rule_t *rule;
 	char *valscopy = NULL;
 	char **vallist = NULL;
-	RbtIterator handle;
+	xtreePos_t handle;
 	rrdtplnames_t *tpl;
 	double val;
 	void *hinfo;
@@ -3002,9 +3000,9 @@ char *check_rrdds_thresholds(char *hostname, char *classname, char *pagepaths, c
 
 		if (!rule->rule.rrdds.rrdkey || !namematch(rrdkey, rule->rule.rrdds.rrdkey->pattern, rule->rule.rrdds.rrdkey->exp)) goto nextrule;
 
-		handle = rbtFind(valnames, rule->rule.rrdds.rrdds);
-		if (handle == rbtEnd(valnames)) goto nextrule;
-		tpl = (rrdtplnames_t *)gettreeitem(valnames, handle);
+		handle = xtreeFind(valnames, rule->rule.rrdds.rrdds);
+		if (handle == xtreeEnd(valnames)) goto nextrule;
+		tpl = (rrdtplnames_t *)xtreeData(valnames, handle);
 
 		/* Split the value-string into individual numbers that we can index */
 		if (!vallist) {

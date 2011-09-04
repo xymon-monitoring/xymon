@@ -37,7 +37,7 @@ typedef struct savetimes_t {
 	char *hostname;
 	time_t tstamp[12];
 } savetimes_t;
-RbtHandle savetimes;
+void * savetimes;
 
 static char *clientlogdir = NULL;
 int nextfscheck = 0;
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGPIPE, SIG_DFL);
 
-	savetimes = rbtNew(name_compare);
+	savetimes = xtreeNew(strcasecmp);
 
 	running = 1;
 	while (running) {
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 		metadata[metacount] = NULL;
 
 		if (strncmp(metadata[0], "@@clichg", 8) == 0) {
-			RbtIterator handle;
+			xtreePos_t handle;
 			savetimes_t *itm;
 			int i, recentcount;
 			time_t now = gettimer();
@@ -187,14 +187,14 @@ int main(int argc, char *argv[])
 			FILE *fd;
 
 			/* metadata[3] is the hostname */
-			handle = rbtFind(savetimes, metadata[3]);
-			if (handle != rbtEnd(savetimes)) {
-				itm = (savetimes_t *)gettreeitem(savetimes, handle);
+			handle = xtreeFind(savetimes, metadata[3]);
+			if (handle != xtreeEnd(savetimes)) {
+				itm = (savetimes_t *)xtreeData(savetimes, handle);
 			}
 			else {
 				itm = (savetimes_t *)calloc(1, sizeof(savetimes_t));
 				itm->hostname = strdup(metadata[3]);
-				rbtInsert(savetimes, itm->hostname, itm);
+				xtreeAdd(savetimes, itm->hostname, itm);
 			}
 
 			/* See how many times we've saved the hostdata recently (within the past 'recentperiod' seconds) */

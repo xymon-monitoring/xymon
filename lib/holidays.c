@@ -33,7 +33,7 @@ typedef struct holidayset_t {
 	holiday_t *tail;
 } holidayset_t;
 
-static RbtHandle holidays;
+static void * holidays;
 static int current_year = 0;
 
 static time_t mkday(int year, int month, int day)
@@ -153,13 +153,13 @@ static int getweekdayafter(int wkday, int daynum, int month, int year)
 static void reset_holidays(void)
 {
 	static int firsttime = 1;
-	RbtIterator handle;
+	xtreePos_t handle;
 	holidayset_t *hset;
 	holiday_t *walk, *zombie;
 
 	if (!firsttime) {
-		for (handle = rbtBegin(holidays); (handle != rbtEnd(holidays)); handle = rbtNext(holidays, handle)) {
-			hset = (holidayset_t *)gettreeitem(holidays, handle);
+		for (handle = xtreeFirst(holidays); (handle != xtreeEnd(holidays)); handle = xtreeNext(holidays, handle)) {
+			hset = (holidayset_t *)xtreeData(holidays, handle);
 			xfree(hset->key);
 
 			walk = hset->head;
@@ -171,12 +171,12 @@ static void reset_holidays(void)
 			}
 		}
 
-		rbtDelete(holidays);
+		xtreeDestroy(holidays);
 	}
 
 	holidays_like_weekday = -1;
 	firsttime = 0;
-	holidays = rbtNew(name_compare);
+	holidays = xtreeNew(strcasecmp);
 }
 
 
@@ -186,7 +186,7 @@ static void add_holiday(char *key, int year, holiday_t *newhol)
 	struct tm *t;
 	time_t day;
 	holiday_t *newitem;
-	RbtIterator handle;
+	xtreePos_t handle;
 	holidayset_t *hset;
 
 	switch (newhol->holtype) {
@@ -310,14 +310,14 @@ static void add_holiday(char *key, int year, holiday_t *newhol)
 	newitem->desc = strdup(newhol->desc);
 	newitem->yday = newhol->yday;
 
-	handle = rbtFind(holidays, key);
-	if (handle == rbtEnd(holidays)) {
+	handle = xtreeFind(holidays, key);
+	if (handle == xtreeEnd(holidays)) {
 		hset = (holidayset_t *)calloc(1, sizeof(holidayset_t));
 		hset->key = strdup(key);
-		rbtInsert(holidays, hset->key, hset);
+		xtreeAdd(holidays, hset->key, hset);
 	}
 	else {
-		hset = (holidayset_t *)gettreeitem(holidays, handle);
+		hset = (holidayset_t *)xtreeData(holidays, handle);
 	}
 
 	if (hset->head == NULL) {
@@ -355,7 +355,7 @@ int load_holidays(int year)
 	FILE *fd;
 	strbuffer_t *inbuf;
 	holiday_t newholiday;
-	RbtIterator handle, commonhandle;
+	xtreePos_t handle, commonhandle;
 	char *setname = NULL;
 	holidayset_t *commonhols;
 
@@ -487,11 +487,11 @@ int load_holidays(int year)
 	stackfclose(fd);
 	freestrbuffer(inbuf);
 
-	commonhandle = rbtFind(holidays, "");
-	commonhols = (commonhandle != rbtEnd(holidays)) ? (holidayset_t *)gettreeitem(holidays, commonhandle) : NULL;
+	commonhandle = xtreeFind(holidays, "");
+	commonhols = (commonhandle != xtreeEnd(holidays)) ? (holidayset_t *)xtreeData(holidays, commonhandle) : NULL;
 
-	for (handle = rbtBegin(holidays); (handle != rbtEnd(holidays)); handle = rbtNext(holidays, handle)) {
-		holidayset_t *oneset = (holidayset_t *)gettreeitem(holidays, handle);
+	for (handle = xtreeFirst(holidays); (handle != xtreeEnd(holidays)); handle = xtreeNext(holidays, handle)) {
+		holidayset_t *oneset = (holidayset_t *)xtreeData(holidays, handle);
 		if (commonhols && (oneset != commonhols)) {
 			/* Add the common holidays to this set */
 			holiday_t *walk;
@@ -511,24 +511,24 @@ int load_holidays(int year)
 
 static holiday_t *findholiday(char *key, int dayinyear)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	holidayset_t *hset;
 	holiday_t *p;
 
 	if (key && *key) {
-		handle = rbtFind(holidays, key);
-		if (handle == rbtEnd(holidays)) {
+		handle = xtreeFind(holidays, key);
+		if (handle == xtreeEnd(holidays)) {
 			key = NULL;
-			handle = rbtFind(holidays, "");
+			handle = xtreeFind(holidays, "");
 		}
 	}
 	else {
 		key = NULL;
-		handle = rbtFind(holidays, "");
+		handle = xtreeFind(holidays, "");
 	}
 
-	if (handle != rbtEnd(holidays)) 
-		hset = (holidayset_t *)gettreeitem(holidays, handle);
+	if (handle != xtreeEnd(holidays)) 
+		hset = (holidayset_t *)xtreeData(holidays, handle);
 	else
 		return NULL;
 

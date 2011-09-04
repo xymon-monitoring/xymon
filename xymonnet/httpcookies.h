@@ -23,7 +23,7 @@ typedef struct cookielist_t {
 
 extern cookielist_t *cookiehead;
 
-extern RbtHandle cookietree;
+extern void *cookietree;
 extern void init_session_cookies(char *urlhost, char *cknam, char *ckpath, char *ckval);
 extern void update_session_cookies(char *hostname, char *urlhost, char *headers);
 extern void save_session_cookies(void);

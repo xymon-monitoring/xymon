@@ -151,7 +151,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 	xtree_t *mytree = (xtree_t *)treehandle;
 	xtreePos_t n;
 
-	if (treehandle == NULL) return -1;
+	if (treehandle == NULL) return XTREE_STATUS_NOTREE;
 
 	if (mytree->treesz == 0) {
 		/* Empty tree, just add record */
@@ -173,11 +173,11 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 				mytree->entries[n].key = key;
 				mytree->entries[n].deleted = 0;
 				mytree->entries[n].userdata = userdata;
-				return 0;
+				return XTREE_STATUS_OK;
 			}
 			else {
 				/* Error */
-				return 1;
+				return XTREE_STATUS_DUPLICATE_KEY;
 			}
 		}
 
@@ -216,7 +216,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 				mytree->entries[n].key = key;
 				mytree->entries[n].userdata = userdata;
 				mytree->entries[n].deleted = 0;
-				return 0;
+				return XTREE_STATUS_OK;
 			}
 
 			/* Ok, must create a new list and copy entries there */
@@ -239,7 +239,7 @@ xtreeStatus_t xtreeAdd(void *treehandle, char *key, void *userdata)
 	}
 
 	mytree->treesz += 1;
-	return 0;
+	return XTREE_STATUS_OK;
 }
 
 void *xtreeDelete(void *treehandle, char *key)

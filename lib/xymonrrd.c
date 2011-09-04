@@ -25,7 +25,7 @@ static char rcsid[] = "$Id$";
 
 /* This is for mapping a status-name -> RRD file */
 xymonrrd_t *xymonrrds = NULL;
-RbtHandle xymonrrdtree;
+void * xymonrrdtree;
 
 /* This is the information needed to generate links on the trends column page  */
 xymongraph_t *xymongraphs = NULL;
@@ -65,7 +65,7 @@ static void rrd_setup(void)
 	}
 	if (xymonrrds) {
 		xfree(xymonrrds);
-		rbtDelete(xymonrrdtree);
+		xtreeDestroy(xymonrrdtree);
 	}
 
 	grec = xymongraphs;
@@ -94,7 +94,7 @@ static void rrd_setup(void)
 	count = 0; p = lenv; do { count++; p = strchr(p+1, ','); } while (p);
 	xymonrrds = (xymonrrd_t *)calloc(sizeof(xymonrrd_t), (count+1));
 
-	xymonrrdtree = rbtNew(name_compare);
+	xymonrrdtree = xtreeNew(strcasecmp);
 	lrec = xymonrrds; ldef = strtok(lenv, ",");
 	while (ldef) {
 		p = strchr(ldef, '=');
@@ -106,7 +106,7 @@ static void rrd_setup(void)
 		else {
 			lrec->svcname = lrec->xymonrrdname = strdup(ldef);
 		}
-		rbtInsert(xymonrrdtree, lrec->svcname, lrec);
+		xtreeAdd(xymonrrdtree, lrec->svcname, lrec);
 
 		ldef = strtok(NULL, ",");
 		lrec++;
@@ -152,7 +152,7 @@ static void rrd_setup(void)
 xymonrrd_t *find_xymon_rrd(char *service, char *flags)
 {
 	/* Lookup an entry in the xymonrrds table */
-	RbtIterator handle;
+	xtreePos_t handle;
 
 	rrd_setup();
 
@@ -161,13 +161,11 @@ xymonrrd_t *find_xymon_rrd(char *service, char *flags)
 		return NULL;
 	}
 
-	handle = rbtFind(xymonrrdtree, service);
-	if (handle == rbtEnd(xymonrrdtree)) 
+	handle = xtreeFind(xymonrrdtree, service);
+	if (handle == xtreeEnd(xymonrrdtree)) 
 		return NULL;
 	else {
-		void *k1, *k2;
-		rbtKeyValue(xymonrrdtree, handle, &k1, &k2);
-		return (xymonrrd_t *)k2;
+		return (xymonrrd_t *)xtreeData(xymonrrdtree, handle);
 	}
 }
 
@@ -331,7 +329,7 @@ rrdtpldata_t *setup_template(char *params[])
 	int dsindex = 1;
 
 	result = (rrdtpldata_t *)calloc(1, sizeof(rrdtpldata_t));
-	result->dsnames = rbtNew(string_compare);
+	result->dsnames = xtreeNew(strcmp);
 
 	for (i = 0; (params[i]); i++) {
 		if (strncasecmp(params[i], "DS:", 3) == 0) {
@@ -358,7 +356,7 @@ rrdtpldata_t *setup_template(char *params[])
 				}
 				strncat(result->template, pname, plen);
 
-				rbtInsert(result->dsnames, nam->dsnam, nam);
+				xtreeAdd(result->dsnames, nam->dsnam, nam);
 			}
 		}
 	}

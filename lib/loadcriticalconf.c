@@ -25,9 +25,7 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-#define DEFAULTCONFIG "etc/critical.cfg"
-
-static RbtHandle rbconf;
+static void * rbconf;
 static char *defaultfn = NULL;
 static char *configfn = NULL;
 
@@ -63,8 +61,8 @@ int load_critconfig(char *fn)
 	if (!fn) {
 		if (!defaultfn) {
 			char *xymonhome = xgetenv("XYMONHOME");
-			defaultfn = (char *)malloc(strlen(xymonhome) + strlen(DEFAULTCONFIG) + 2);
-			sprintf(defaultfn, "%s/%s", xymonhome, DEFAULTCONFIG);
+			defaultfn = (char *)malloc(strlen(xymonhome) + strlen(DEFAULT_CRITCONFIGFN) + 2);
+			sprintf(defaultfn, "%s/%s", xymonhome, DEFAULT_CRITCONFIGFN);
 		}
 		fn = defaultfn;
 	}
@@ -94,19 +92,17 @@ int load_critconfig(char *fn)
 
 	if (!firsttime) {
 		/* Clean up existing datatree */
-		RbtIterator handle;
-		void *k1, *k2;
+		xtreePos_t handle;
 
-		for (handle = rbtBegin(rbconf); (handle != rbtEnd(rbconf)); handle = rbtNext(rbconf, handle)) {
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			flushrec(k1, k2);
+		for (handle = xtreeFirst(rbconf); (handle != xtreeEnd(rbconf)); handle = xtreeNext(rbconf, handle)) {
+			flushrec(xtreeKey(rbconf, handle), xtreeData(rbconf, handle));
 		}
 
-		rbtDelete(rbconf);
+		xtreeDestroy(rbconf);
 	}
 
 	firsttime = 0;
-	rbconf = rbtNew(name_compare);
+	rbconf = xtreeNew(strcasecmp);
 
 	fd = stackfopen(fn, "r", &configfiles);
 	if (fd == NULL) return 1;
@@ -118,7 +114,7 @@ int load_critconfig(char *fn)
 		char *ehost, *eservice, *estart, *eend, *etime, *ttgroup, *ttextra, *updinfo;
 		int ttprio = 0;
 		critconf_t *newitem;
-		RbtStatus status;
+		xtreeStatus_t status;
 		int idx = 0;
 
 		ehost = gettok(STRBUF(inbuf), "|\n"); if (!ehost) continue;
@@ -129,7 +125,7 @@ int load_critconfig(char *fn)
 			char *pointsto = strdup(eservice+1);
 
 			sprintf(key, "%s=", ehost);
-			status = rbtInsert(rbconf, key, pointsto);
+			status = xtreeAdd(rbconf, key, pointsto);
 		}
 		else {
 			estart = gettok(NULL, "|\n"); if (!estart) continue;
@@ -151,11 +147,11 @@ int load_critconfig(char *fn)
 			newitem->ttextra  = strdup(ttextra);
 			newitem->updinfo  = strdup(updinfo);
 
-			status = rbtInsert(rbconf, newitem->key, newitem);
-			while (status == RBT_STATUS_DUPLICATE_KEY) {
+			status = xtreeAdd(rbconf, newitem->key, newitem);
+			while (status == XTREE_STATUS_DUPLICATE_KEY) {
 				idx++;
 				sprintf(newitem->key, "%s|%s|%d", ehost, eservice, idx);
-				status = rbtInsert(rbconf, newitem->key, newitem);
+				status = xtreeAdd(rbconf, newitem->key, newitem);
 			}
 		}
 	}
@@ -164,48 +160,44 @@ int load_critconfig(char *fn)
 	freestrbuffer(inbuf);
 
 	if (debug) {
-		RbtIterator handle;
+		xtreePos_t handle;
 
-		handle = rbtBegin(rbconf);
-		while (handle != rbtEnd(rbconf)) {
-			void *k1, *k2;
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			printf("%s\n", (char *)k1);
-			handle = rbtNext(rbconf, handle);
+		handle = xtreeFirst(rbconf);
+		while (handle != xtreeEnd(rbconf)) {
+			printf("%s\n", (char *)xtreeKey(rbconf, handle));
+			handle = xtreeNext(rbconf, handle);
 		}
 	}
 
 	return 0;
 }
 
-static RbtIterator findrec(char *key)
+static xtreePos_t findrec(char *key)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 
-	handle = rbtFind(rbconf, key);
-	if (handle == rbtEnd(rbconf)) {
+	handle = xtreeFind(rbconf, key);
+	if (handle == xtreeEnd(rbconf)) {
 		/* Check if there's a clone pointer record */
 		char *clonekey, *p;
 
 		clonekey = strdup(key);
 		p = strchr(clonekey, '|'); 
 		if (p && *(p+1)) { *p = '='; *(p+1) = '\0'; }
-		handle = rbtFind(rbconf, clonekey);
+		handle = xtreeFind(rbconf, clonekey);
 		xfree(clonekey);
 
-		if (handle != rbtEnd(rbconf)) {
-			void *k1, *k2;
+		if (handle != xtreeEnd(rbconf)) {
 			char *pointsto;
 			char *service;
 
 			/* Get the origin record for this cloned record, using the same service name */
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			pointsto = (char *)k2;
+			pointsto = (char *)xtreeData(rbconf, handle);
 			service = strchr(key, '|'); if (service) service++;
 			clonekey = (char *)malloc(strlen(pointsto) + strlen(service) + 2);
 			sprintf(clonekey, "%s|%s", pointsto, service);
 
-			handle = rbtFind(rbconf, clonekey);
+			handle = xtreeFind(rbconf, clonekey);
 			xfree(clonekey);
 		}
 	}
@@ -226,9 +218,8 @@ static int timecheck(time_t starttime, time_t endtime, char *crittime)
 
 critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 {
-	static RbtIterator handle;
+	static xtreePos_t handle;
 	static char *realkey = NULL;
-	void *k1, *k2;
 	critconf_t *result = NULL;
 	int isclone;
 
@@ -238,21 +229,19 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 	  case CRITCONF_TIMEFILTER:
 		handle = findrec(key);
 		/* We may have hit a cloned record, so use the real key for further searches */
-		if (handle != rbtEnd(rbconf)) {
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			realkey = k1;
+		if (handle != xtreeEnd(rbconf)) {
+			realkey = (char *)xtreeKey(rbconf, handle);
 		}
 
-		while (handle != rbtEnd(rbconf)) {
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			result = (critconf_t *)k2;
+		while (handle != xtreeEnd(rbconf)) {
+			result = (critconf_t *)xtreeData(rbconf, handle);
 			if (timecheck(result->starttime, result->endtime, result->crittime)) return result;
 
 			/* Go to the next */
-			handle = rbtNext(rbconf, handle);
-			if (handle != rbtEnd(rbconf)) {
-				rbtKeyValue(rbconf, handle, &k1, &k2);
-				if (strncmp(realkey, ((critconf_t *)k2)->key, strlen(realkey)) != 0) handle=rbtEnd(rbconf);
+			handle = xtreeNext(rbconf, handle);
+			if (handle != xtreeEnd(rbconf)) {
+				critconf_t *rec = (critconf_t *)xtreeData(rbconf, handle);
+				if (strncmp(realkey, rec->key, strlen(realkey)) != 0) handle=xtreeEnd(rbconf);
 			}
 		}
 		realkey = NULL;
@@ -261,45 +250,42 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 	  case CRITCONF_FIRSTMATCH:
 		handle = findrec(key);
 		realkey = NULL;
-		if (handle != rbtEnd(rbconf)) {
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			realkey = (char *)k1;
+		if (handle != xtreeEnd(rbconf)) {
+			realkey = (char *)xtreeKey(rbconf, handle);
 		}
 		break;
 
 	  case CRITCONF_FIRST:
 		realkey = NULL;
-		handle = rbtBegin(rbconf);
-		if (handle == rbtEnd(rbconf)) return NULL;
+		handle = xtreeFirst(rbconf);
+		if (handle == xtreeEnd(rbconf)) return NULL;
 		do {
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			realkey = (char *)k1;
+			realkey = (char *)xtreeKey(rbconf, handle);
 			isclone = (*(realkey + strlen(realkey) - 1) == '=');
-			if (isclone) handle = rbtNext(rbconf, handle);
-		} while (isclone && (handle != rbtEnd(rbconf)));
+			if (isclone) handle = xtreeNext(rbconf, handle);
+		} while (isclone && (handle != xtreeEnd(rbconf)));
 		break;
 
 
 	  case CRITCONF_NEXT:
-		if (!realkey || (handle == rbtEnd(rbconf))) return NULL;
+		if (!realkey || (handle == xtreeEnd(rbconf))) return NULL;
 		isclone = 1;
-		while (isclone && (handle != rbtEnd(rbconf))) {
-			handle = rbtNext(rbconf, handle);
+		while (isclone && (handle != xtreeEnd(rbconf))) {
+			handle = xtreeNext(rbconf, handle);
 			if (handle) {
-				rbtKeyValue(rbconf, handle, &k1, &k2);
-				realkey = (char *)k1;
+				realkey = (char *)xtreeKey(rbconf, handle);
 				isclone = (*(realkey + strlen(realkey) - 1) == '=');
 			}
 		}
 		break;
 
 	  case CRITCONF_RAW_FIRST:
-		handle = rbtBegin(rbconf);
+		handle = xtreeFirst(rbconf);
 		realkey = NULL;
 		break;
 
 	  case CRITCONF_RAW_NEXT:
-		handle = rbtNext(rbconf, handle);
+		handle = xtreeNext(rbconf, handle);
 		realkey = NULL;
 		break;
 
@@ -309,31 +295,29 @@ critconf_t *get_critconfig(char *key, int flags, char **resultkey)
 			char *delim;
 
 			realkey = NULL;
-			handle = rbtBegin(rbconf);
-			while (!found && (handle != rbtEnd(rbconf))) {
-				rbtKeyValue(rbconf, handle, &k1, &k2);
-				realkey = (char *)k1;
+			handle = xtreeFirst(rbconf);
+			while (!found && (handle != xtreeEnd(rbconf))) {
+				realkey = (char *)xtreeKey(rbconf, handle);
 				delim = realkey + strlen(key); /* OK even if past end of realkey */
 				found = ((strncmp(realkey, key, strlen(key)) == 0) &&
 					((*delim == '|') || (*delim == '=')));
-				if (!found) { handle = rbtNext(rbconf, handle); realkey = NULL; }
+				if (!found) { handle = xtreeNext(rbconf, handle); realkey = NULL; }
 			}
 
-			if ((handle != rbtEnd(rbconf)) && (*(realkey + strlen(realkey) - 1) == '=')) {
-				key = (char *)k2;
+			if ((handle != xtreeEnd(rbconf)) && (*(realkey + strlen(realkey) - 1) == '=')) {
+				key = (char *)xtreeData(rbconf, handle);
 				isclone = 1;
 			}
 			else isclone = 0;
 
-		} while (isclone && (handle != rbtEnd(rbconf)));
+		} while (isclone && (handle != xtreeEnd(rbconf)));
 		break;
 	}
 
-	if (handle == rbtEnd(rbconf)) { realkey = NULL; return NULL; }
+	if (handle == xtreeEnd(rbconf)) { realkey = NULL; return NULL; }
 
-	rbtKeyValue(rbconf, handle, &k1, &k2);
-	if (resultkey) *resultkey = (char *)k1;
-	result = (critconf_t *)k2;
+	if (resultkey) *resultkey = (char *)xtreeKey(rbconf, handle);
+	result = (critconf_t *)xtreeData(rbconf, handle);
 
 	return result;
 }
@@ -347,7 +331,7 @@ int update_critconfig(critconf_t *rec)
 	struct stat st;
 	struct utimbuf ut;
 
-	RbtIterator handle;
+	xtreePos_t handle;
 	FILE *fd;
 	int result = 0;
 
@@ -378,20 +362,18 @@ int update_critconfig(critconf_t *rec)
 	}
 
 	if (rec) {
-		handle = rbtFind(rbconf, rec->key);
-		if (handle == rbtEnd(rbconf)) rbtInsert(rbconf, rec->key, rec);
+		handle = xtreeFind(rbconf, rec->key);
+		if (handle == xtreeEnd(rbconf)) xtreeAdd(rbconf, rec->key, rec);
 	}
 
-	handle = rbtBegin(rbconf);
-	while (handle != rbtEnd(rbconf)) {
-		void *k1, *k2;
+	handle = xtreeFirst(rbconf);
+	while (handle != xtreeEnd(rbconf)) {
 		char *onekey;
 
-		rbtKeyValue(rbconf, handle, &k1, &k2);
-		onekey = (char *)k1;
+		onekey = (char *)xtreeKey(rbconf, handle);
 
 		if (*(onekey + strlen(onekey) - 1) == '=') {
-			char *pointsto = (char *)k2;
+			char *pointsto = (char *)xtreeData(rbconf, handle);
 			char *hostname;
 			
 			hostname = strdup(onekey);
@@ -399,7 +381,7 @@ int update_critconfig(critconf_t *rec)
 			fprintf(fd, "%s|=%s\n", hostname, pointsto);
 		}
 		else {
-			critconf_t *onerec = (critconf_t *)k2;
+			critconf_t *onerec = (critconf_t *)xtreeData(rbconf, handle);
 			char startstr[20], endstr[20];
 
 			*startstr = *endstr = '\0';
@@ -416,7 +398,7 @@ int update_critconfig(critconf_t *rec)
 				(onerec->updinfo ? onerec->updinfo : ""));
 		}
 
-		handle = rbtNext(rbconf, handle);
+		handle = xtreeNext(rbconf, handle);
 	}
 
 	fclose(fd);
@@ -427,30 +409,28 @@ int update_critconfig(critconf_t *rec)
 void addclone_critconfig(char *origin, char *newclone)
 {
 	char *newkey;
-	RbtIterator handle;
+	xtreePos_t handle;
 
 	newkey = (char *)malloc(strlen(newclone) + 2);
 	sprintf(newkey, "%s=", newclone);
-	handle = rbtFind(rbconf, newkey);
-	if (handle != rbtEnd(rbconf)) dropclone_critconfig(newclone);
-	rbtInsert(rbconf, newkey, strdup(origin));
+	handle = xtreeFind(rbconf, newkey);
+	if (handle != xtreeEnd(rbconf)) dropclone_critconfig(newclone);
+	xtreeAdd(rbconf, newkey, strdup(origin));
 }
 
 void dropclone_critconfig(char *drop)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	char *key;
-	void *k1, *k2;
 	char *dropkey, *dropsrc;
 
 	key = (char *)malloc(strlen(drop) + 2);
 	sprintf(key, "%s=", drop);
-	handle = rbtFind(rbconf, key);
-	if (handle == rbtEnd(rbconf)) return;
+	handle = xtreeFind(rbconf, key);
+	if (handle == xtreeEnd(rbconf)) return;
 
-	rbtKeyValue(rbconf, handle, &k1, &k2);
-	dropkey = k1; dropsrc = k2;
-	rbtErase(rbconf, handle);
+	dropkey = (char *)xtreeKey(rbconf, handle);
+	dropsrc = (char *)xtreeDelete(rbconf, key);
 	xfree(dropkey); xfree(dropsrc);
 
 	xfree(key);
@@ -458,11 +438,10 @@ void dropclone_critconfig(char *drop)
 
 int delete_critconfig(char *dropkey, int evenifcloned)
 {
-	RbtIterator handle;
-	void *k1, *k2;
+	xtreePos_t handle;
 
-	handle = rbtFind(rbconf, dropkey);
-	if (handle == rbtEnd(rbconf)) return 0;
+	handle = xtreeFind(rbconf, dropkey);
+	if (handle == xtreeEnd(rbconf)) return 0;
 
 	if (!evenifcloned) {
 		/* Check if this record has any clones attached to it */
@@ -471,29 +450,30 @@ int delete_critconfig(char *dropkey, int evenifcloned)
 		hostname = strdup(dropkey);
 		p = strchr(hostname, '|'); if (p) *p = '\0';
 
-		handle = rbtBegin(rbconf);
+		handle = xtreeFirst(rbconf);
 
-		while (handle != rbtEnd(rbconf)) {
-			void *k1, *k2;
+		while (handle != xtreeEnd(rbconf)) {
 			char *key, *ptr;
 
-			rbtKeyValue(rbconf, handle, &k1, &k2);
-			key = (char *)k1; ptr = (char *)k2;
+			key = (char *)xtreeKey(rbconf, handle);
+			ptr = (char *)xtreeData(rbconf, handle);
 			if ((*(key + strlen(key) - 1) == '=') && (strcmp(hostname, ptr) == 0)) {
 				xfree(hostname);
 				return 1;
 			}
 
-			handle = rbtNext(rbconf, handle);
+			handle = xtreeNext(rbconf, handle);
 		}
 
 		xfree(hostname);
 	}
 
-	handle = rbtFind(rbconf, dropkey);
-	if (handle != rbtEnd(rbconf)) {
-		rbtKeyValue(rbconf, handle, &k1, &k2);
-		rbtErase(rbconf, handle);
+	handle = xtreeFind(rbconf, dropkey);
+	if (handle != xtreeEnd(rbconf)) {
+		void *k1, *k2;
+
+		k1 = xtreeKey(rbconf, handle);
+		k2 = xtreeDelete(rbconf, dropkey);
 		flushrec(k1, k2);
 	}
 

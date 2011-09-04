@@ -19,13 +19,13 @@ typedef struct snmpmib_param_t {
 	rrdtpldata_t *tpl;
 	int valcount;
 } snmpmib_param_t;
-static RbtHandle snmpmib_paramtree;
+static void * snmpmib_paramtree;
 
 
 int is_snmpmib_rrd(char *testname)
 {
 	time_t now = getcurrenttime(NULL);
-	RbtIterator handle;
+	xtreePos_t handle;
 	mibdef_t *mib;
 	oidset_t *swalk;
 	int i;
@@ -39,8 +39,8 @@ int is_snmpmib_rrd(char *testname)
 				snmpmib_param_t *walk;
 				int i;
 
-				for (handle = rbtBegin(snmpmib_paramtree); (handle != rbtEnd(snmpmib_paramtree)); handle = rbtNext(snmpmib_paramtree, handle)) {
-					walk = (snmpmib_param_t *)gettreeitem(snmpmib_paramtree, handle);
+				for (handle = xtreeFirst(snmpmib_paramtree); (handle != xtreeEnd(snmpmib_paramtree)); handle = xtreeNext(snmpmib_paramtree, handle)) {
+					walk = (snmpmib_param_t *)xtreeData(snmpmib_paramtree, handle);
 					if (walk->valnames) xfree(walk->valnames);
 					for (i=0; (i < walk->valcount); i++) xfree(walk->dsdefs[i]);
 					if (walk->dsdefs) xfree(walk->dsdefs);
@@ -54,10 +54,10 @@ int is_snmpmib_rrd(char *testname)
 
 					xfree(walk);
 				}
-				rbtDelete(snmpmib_paramtree);
+				xtreeDestroy(snmpmib_paramtree);
 			}
 
-			snmpmib_paramtree = rbtNew(name_compare);
+			snmpmib_paramtree = xtreeNew(strcasecmp);
 		}
 
 		snmp_nextreload = now + 600;
@@ -66,8 +66,8 @@ int is_snmpmib_rrd(char *testname)
 	mib = find_mib(testname);
 	if (!mib) return 0;
 
-	handle = rbtFind(snmpmib_paramtree, mib->mibname);
-	if (handle == rbtEnd(snmpmib_paramtree)) {
+	handle = xtreeFind(snmpmib_paramtree, mib->mibname);
+	if (handle == xtreeEnd(snmpmib_paramtree)) {
 		snmpmib_param_t *newitem = (snmpmib_param_t *)calloc(1, sizeof(snmpmib_param_t));
 		int totalvars;
 
@@ -117,7 +117,7 @@ int is_snmpmib_rrd(char *testname)
 
 		newitem->dsdefs[newitem->valcount] = NULL;
 		newitem->tpl = setup_template(newitem->dsdefs);
-		rbtInsert(snmpmib_paramtree, newitem->name, newitem);
+		xtreeAdd(snmpmib_paramtree, newitem->name, newitem);
 	}
 
 	return 1;
@@ -210,7 +210,7 @@ int do_snmpmib_rrd(char *hostname, char *testname, char *classname, char *pagepa
 {
 	time_t now = getcurrenttime(NULL);
 	mibdef_t *mib;
-	RbtIterator handle;
+	xtreePos_t handle;
 	snmpmib_param_t *params;
 	int pollinterval = 0;
 	char *datapart;
@@ -218,9 +218,9 @@ int do_snmpmib_rrd(char *hostname, char *testname, char *classname, char *pagepa
 	if (now > snmp_nextreload) readmibs(NULL, 0);
 
 	mib = find_mib(testname); if (!mib) return 0;
-	handle = rbtFind(snmpmib_paramtree, mib->mibname);
-	if (handle == rbtEnd(snmpmib_paramtree)) return 0;
-	params = (snmpmib_param_t *)gettreeitem(snmpmib_paramtree, handle);
+	handle = xtreeFind(snmpmib_paramtree, mib->mibname);
+	if (handle == xtreeEnd(snmpmib_paramtree)) return 0;
+	params = (snmpmib_param_t *)xtreeData(snmpmib_paramtree, handle);
 	if (params->valcount == 0) return 0;
 
 	if ((strncmp(msg, "status", 6) == 0) || (strncmp(msg, "data", 4) == 0)) {

@@ -19,7 +19,7 @@ static void *memory_tpl           = NULL;
  * "cpu" reports, those hosts that are in the tree do
  * NOT take memory data from the cpu data.
  */
-RbtHandle memhosts;
+void * memhosts;
 int memhosts_init = 0;
 
 static int get_mem_percent(char *l)
@@ -81,14 +81,14 @@ int do_memory_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	char *phys = NULL;
 	char *swap = NULL;
 	char *actual = NULL;
-	RbtIterator hwalk;
+	xtreePos_t hwalk;
 
 	/* Log this hostname in the list of hosts we get true "memory" reports from. */
-	if (!memhosts_init) { memhosts = rbtNew(string_compare); memhosts_init = 1; }
-	hwalk = rbtFind(memhosts, hostname);
-	if (hwalk == rbtEnd(memhosts)) {
+	if (!memhosts_init) { memhosts = xtreeNew(strcmp); memhosts_init = 1; }
+	hwalk = xtreeFind(memhosts, hostname);
+	if (hwalk == xtreeEnd(memhosts)) {
 		char *keyp = xstrdup(hostname);
-		if (rbtInsert(memhosts, keyp, NULL)) {
+		if (xtreeAdd(memhosts, keyp, NULL)) {
 			errprintf("Insert into memhosts failed\n");
 		}
 	}

@@ -55,8 +55,8 @@ static char *pagepattern_text = NULL;
 static pcre *pagepattern = NULL;
 static char *ippattern_text = NULL;
 static pcre *ippattern = NULL;
-static RbtHandle hostnames;
-static RbtHandle testnames;
+static void * hostnames;
+static void * testnames;
 
 typedef struct treerec_t {
 	char *name;
@@ -85,15 +85,15 @@ typedef struct bodystorage_t {
 } bodystorage_t;
 
 
-static void clearflags(RbtHandle tree)
+static void clearflags(void * tree)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	treerec_t *rec;
 
 	if (!tree) return;
 
-	for (handle = rbtBegin(tree); (handle != rbtEnd(tree)); handle = rbtNext(tree, handle)) {
-		rec = (treerec_t *)gettreeitem(tree, handle);
+	for (handle = xtreeFirst(tree); (handle != xtreeEnd(tree)); handle = xtreeNext(tree, handle)) {
+		rec = (treerec_t *)xtreeData(tree, handle);
 		rec->flag = 0;
 	}
 }
@@ -411,8 +411,8 @@ static void fetch_board(void)
 	statusboard = getsendreturnstr(sres, 1);
 	freesendreturnbuf(sres);
 
-	hostnames = rbtNew(name_compare);
-	testnames = rbtNew(name_compare);
+	hostnames = xtreeNew(strcasecmp);
+	testnames = xtreeNew(strcasecmp);
 	walk = statusboard;
 	while (walk) {
 		eoln = strchr(walk, '\n'); if (eoln) *eoln = '\0';
@@ -428,14 +428,14 @@ static void fetch_board(void)
 				newrec = (treerec_t *)malloc(sizeof(treerec_t));
 				newrec->name = strdup(hname);
 				newrec->flag = 0;
-				rbtInsert(hostnames, newrec->name, newrec);
+				xtreeAdd(hostnames, newrec->name, newrec);
 
 				tname = gettok(NULL, "|");
 				if (tname) {
 					newrec = (treerec_t *)malloc(sizeof(treerec_t));
 					newrec->name = strdup(tname);
 					newrec->flag = 0;
-					rbtInsert(testnames, strdup(tname), newrec);
+					xtreeAdd(testnames, strdup(tname), newrec);
 				}
 			}
 
@@ -470,38 +470,35 @@ static char *eventreport_timestring(time_t timestamp)
 
 static void build_pagepath_dropdown(FILE *output)
 {
-	RbtHandle ptree;
+	void * ptree;
 	void *hwalk;
-	RbtIterator handle;
+	xtreePos_t handle;
 
-	ptree = rbtNew(string_compare);
+	ptree = xtreeNew(strcmp);
 
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		char *path = xmh_item(hwalk, XMH_PAGEPATH);
 		char *ptext;
 
-		handle = rbtFind(ptree, path);
-		if (handle != rbtEnd(ptree)) continue;
+		handle = xtreeFind(ptree, path);
+		if (handle != xtreeEnd(ptree)) continue;
 
 		ptext = xmh_item(hwalk, XMH_PAGEPATHTITLE);
-		rbtInsert(ptree, ptext, path);
+		xtreeAdd(ptree, ptext, path);
 	}
 
-	for (handle = rbtBegin(ptree); (handle != rbtEnd(ptree)); handle = rbtNext(ptree, handle)) {
-		char *path, *ptext;
-
-		rbtKeyValue(ptree, handle, (void **)&ptext, (void **)&path);
-		fprintf(output, "<option value=\"%s\">%s</option>\n", path, ptext);
+	for (handle = xtreeFirst(ptree); (handle != xtreeEnd(ptree)); handle = xtreeNext(ptree, handle)) {
+		fprintf(output, "<option value=\"%s\">%s</option>\n", (char *)xtreeData(ptree, handle), xtreeKey(ptree, handle));
 	}
 
-	rbtDelete(ptree);
+	xtreeDestroy(ptree);
 }
 
 char *xymonbody(char *id)
 {
-	static RbtHandle bodystorage;
+	static void * bodystorage;
 	static int firsttime = 1;
-	RbtIterator handle;
+	xtreePos_t handle;
 	bodystorage_t *bodyelement;
 
 	strbuffer_t *rawdata, *parseddata;
@@ -510,7 +507,7 @@ char *xymonbody(char *id)
 	int idtaglen;
 
 	if (firsttime) {
-		bodystorage = rbtNew(string_compare);
+		bodystorage = xtreeNew(strcmp);
 		firsttime = 0;
 	}
 
@@ -519,9 +516,9 @@ char *xymonbody(char *id)
 	strncpy(idtag, id, idtaglen);
 	*(idtag+idtaglen) = '\0';
 
-	handle = rbtFind(bodystorage, idtag);
-	if (handle != rbtEnd(bodystorage)) {
-		bodyelement = (bodystorage_t *)gettreeitem(bodystorage, handle);
+	handle = xtreeFind(bodystorage, idtag);
+	if (handle != xtreeEnd(bodystorage)) {
+		bodyelement = (bodystorage_t *)xtreeData(bodystorage, handle);
 		xfree(idtag);
 		return STRBUF(bodyelement->txt);
 	}
@@ -585,7 +582,7 @@ char *xymonbody(char *id)
 	bodyelement = (bodystorage_t *)calloc(1, sizeof(bodystorage_t));
 	bodyelement->id = idtag;
 	bodyelement->txt = parseddata;
-	rbtInsert(bodystorage, bodyelement->id, bodyelement);
+	xtreeAdd(bodystorage, bodyelement->id, bodyelement);
 
 	return STRBUF(bodyelement->txt);
 }
@@ -847,13 +844,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			if (ippattern_text) fprintf(output, "%s", ippattern_text);
 		}
 		else if (strcmp(t_start, "HOSTLIST") == 0) {
-			RbtIterator handle;
+			xtreePos_t handle;
 			treerec_t *rec;
 
 			fetch_board();
 
-			for (handle = rbtBegin(hostnames); (handle != rbtEnd(hostnames)); handle = rbtNext(hostnames, handle)) {
-				rec = (treerec_t *)gettreeitem(hostnames, handle);
+			for (handle = xtreeFirst(hostnames); (handle != xtreeEnd(hostnames)); handle = xtreeNext(hostnames, handle)) {
+				rec = (treerec_t *)xtreeData(hostnames, handle);
 
 				if (wanted_host(rec->name)) {
 					fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", rec->name, rec->name);
@@ -861,23 +858,23 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 		}
 		else if (strcmp(t_start, "JSHOSTLIST") == 0) {
-			RbtIterator handle;
+			xtreePos_t handle;
 
 			fetch_board();
 			clearflags(testnames);
 
 			fprintf(output, "var hosts = new Array();\n");
 			fprintf(output, "hosts[\"ALL\"] = [ \"ALL\"");
-			for (handle = rbtBegin(testnames); (handle != rbtEnd(testnames)); handle = rbtNext(testnames, handle)) {
-				treerec_t *rec = gettreeitem(testnames, handle);
+			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
+				treerec_t *rec = xtreeData(testnames, handle);
 				fprintf(output, ", \"%s\"", rec->name);
 			}
 			fprintf(output, " ];\n");
 
-			for (handle = rbtBegin(hostnames); (handle != rbtEnd(hostnames)); handle = rbtNext(hostnames, handle)) {
-				treerec_t *hrec = gettreeitem(hostnames, handle);
+			for (handle = xtreeFirst(hostnames); (handle != xtreeEnd(hostnames)); handle = xtreeNext(hostnames, handle)) {
+				treerec_t *hrec = xtreeData(hostnames, handle);
 				if (wanted_host(hrec->name)) {
-					RbtIterator thandle;
+					xtreePos_t thandle;
 					treerec_t *trec;
 					char *bwalk, *tname, *p;
 					char *key = (char *)malloc(strlen(hrec->name) + 3);
@@ -896,9 +893,9 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						p = strchr(tname, '|'); if (p) *p = '\0';
 						if ( (strcmp(tname, xgetenv("INFOCOLUMN")) != 0) &&
 						     (strcmp(tname, xgetenv("TRENDSCOLUMN")) != 0) ) {
-							thandle = rbtFind(testnames, tname);
-							if (thandle != rbtEnd(testnames)) {
-								trec = (treerec_t *)gettreeitem(testnames, thandle);
+							thandle = xtreeFind(testnames, tname);
+							if (thandle != xtreeEnd(testnames)) {
+								trec = (treerec_t *)xtreeData(testnames, thandle);
 								trec->flag = 1;
 							}
 						}
@@ -908,8 +905,8 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 					}
 
 					fprintf(output, "hosts[\"%s\"] = [ \"ALL\"", hrec->name);
-					for (thandle = rbtBegin(testnames); (thandle != rbtEnd(testnames)); thandle = rbtNext(testnames, thandle)) {
-						trec = (treerec_t *)gettreeitem(testnames, thandle);
+					for (thandle = xtreeFirst(testnames); (thandle != xtreeEnd(testnames)); thandle = xtreeNext(testnames, thandle)) {
+						trec = (treerec_t *)xtreeData(testnames, thandle);
 						if (trec->flag == 0) continue;
 
 						trec->flag = 0;
@@ -920,13 +917,13 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 			}
 		}
 		else if (strcmp(t_start, "TESTLIST") == 0) {
-			RbtIterator handle;
+			xtreePos_t handle;
 			treerec_t *rec;
 
 			fetch_board();
 
-			for (handle = rbtBegin(testnames); (handle != rbtEnd(testnames)); handle = rbtNext(testnames, handle)) {
-				rec = (treerec_t *)gettreeitem(testnames, handle);
+			for (handle = xtreeFirst(testnames); (handle != xtreeEnd(testnames)); handle = xtreeNext(testnames, handle)) {
+				rec = (treerec_t *)xtreeData(testnames, handle);
 				fprintf(output, "<OPTION VALUE=\"%s\">%s</OPTION>\n", rec->name, rec->name);
 			}
 		}
@@ -944,7 +941,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 				if (*walk) {
 					char *buf, *hname, *tname, *dismsg, *p;
 					time_t distime;
-					RbtIterator thandle;
+					xtreePos_t thandle;
 					treerec_t *rec;
 
 					buf = strdup(walk);
@@ -980,9 +977,9 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						twalk->next = hwalk->tests;
 						hwalk->tests = twalk;
 
-						thandle = rbtFind(testnames, tname);
-						if (thandle != rbtEnd(testnames)) {
-							rec = gettreeitem(testnames, thandle);
+						thandle = xtreeFind(testnames, tname);
+						if (thandle != xtreeEnd(testnames)) {
+							rec = xtreeData(testnames, thandle);
 							rec->flag = 1;
 						}
 					}
@@ -1057,11 +1054,11 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 						}
 					}
 					else {
-						RbtIterator tidx;
+						xtreePos_t tidx;
 						treerec_t *rec;
 
-						for (tidx = rbtBegin(testnames); (tidx != rbtEnd(testnames)); tidx = rbtNext(testnames, tidx)) {
-							rec = gettreeitem(testnames, tidx);
+						for (tidx = xtreeFirst(testnames); (tidx != xtreeEnd(testnames)); tidx = xtreeNext(testnames, tidx)) {
+							rec = xtreeData(testnames, tidx);
 							if (rec->flag == 0) continue;
 
 							fprintf(output, "<option value=\"%s\">%s</option>\n",

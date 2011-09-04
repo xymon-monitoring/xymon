@@ -55,21 +55,21 @@ typedef struct updinfo_t {
 	time_t updtime;
 	int updseq;
 } updinfo_t;
-static RbtHandle updinfotree;
+static void * updinfotree;
 
 int add_updateinfo(char *hostname, int seq, time_t tstamp)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	updinfo_t *itm;
 
-	handle = rbtFind(updinfotree, hostname);
-	if (handle == rbtEnd(updinfotree)) {
+	handle = xtreeFind(updinfotree, hostname);
+	if (handle == xtreeEnd(updinfotree)) {
 		itm = (updinfo_t *)calloc(1, sizeof(updinfo_t));
 		itm->hostname = strdup(hostname);
-		rbtInsert(updinfotree, itm->hostname, itm);
+		xtreeAdd(updinfotree, itm->hostname, itm);
 	}
 	else {
-		itm = (updinfo_t *)gettreeitem(updinfotree, handle);
+		itm = (updinfo_t *)xtreeData(updinfotree, handle);
 	}
 
 	if (itm->updtime == tstamp) {
@@ -1369,9 +1369,9 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", nocolon(id), sz);
+				sprintf(msgline, "%s:%lld\n", nocolon(id), (long long int)sz);
 #else
-				sprintf(msgline, "%s:%ld\n", nocolon(id), sz);
+				sprintf(msgline, "%s:%ld\n", nocolon(id), (long int)sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -1386,9 +1386,9 @@ void file_report(char *hostname, char *clientclass, enum ostype_t os,
 				/* Save the size data for later DATA message to track file sizes */
 				if (id == NULL) id = sfn;
 #ifdef _LARGEFILE_SOURCE
-				sprintf(msgline, "%s:%lld\n", nocolon(id), sz);
+				sprintf(msgline, "%s:%lld\n", nocolon(id), (long long int)sz);
 #else
-				sprintf(msgline, "%s:%ld\n", nocolon(id), sz);
+				sprintf(msgline, "%s:%ld\n", nocolon(id), (long int)sz);
 #endif
 				addtobuffer(sizedata, msgline);
 				anyszdata = 1;
@@ -2100,7 +2100,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGHUP, &sa, NULL);
 	signal(SIGCHLD, SIG_IGN);
 
-	updinfotree = rbtNew(name_compare);
+	updinfotree = xtreeNew(strcasecmp);
 	running = 1;
 
 	while (running) {

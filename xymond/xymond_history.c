@@ -55,7 +55,7 @@ typedef struct columndef_t {
 	char *name;
 	int saveit;
 } columndef_t;
-RbtHandle columndefs;
+void * columndefs;
 
 int main(int argc, char *argv[])
 {
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	columndefs = rbtNew(string_compare);
+	columndefs = xtreeNew(strcmp);
 	{
 		char *defaultsave, *tok;
 		char *savelist;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 				newrec->saveit = 1;
 				newrec->name = strdup(tok);
 			}
-			rbtInsert(columndefs, newrec->name, newrec);
+			xtreeAdd(columndefs, newrec->name, newrec);
 
 			tok = strtok(NULL, ",");
 		}
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 		}
 
 		if ((metacount > 9) && (strncmp(metadata[0], "@@stachg", 8) == 0)) {
-			RbtIterator handle;
+			xtreePos_t handle;
 			columndef_t *saveit = NULL;
 
 			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp|modifiers */
@@ -259,15 +259,15 @@ int main(int argc, char *argv[])
 
 			p = hostnamecommas = strdup(hostname); while ((p = strchr(p, '.')) != NULL) *p = ',';
 
-			handle = rbtFind(columndefs, testname);
-			if (handle == rbtEnd(columndefs)) {
+			handle = xtreeFind(columndefs, testname);
+			if (handle == xtreeEnd(columndefs)) {
 				saveit = (columndef_t *)malloc(sizeof(columndef_t));
 				saveit->name = strdup(testname);
 				saveit->saveit = defaultsaveop;
-				rbtInsert(columndefs, saveit->name, saveit);
+				xtreeAdd(columndefs, saveit->name, saveit);
 			}
 			else {
-				saveit = (columndef_t *) gettreeitem(columndefs, handle);
+				saveit = (columndef_t *) xtreeData(columndefs, handle);
 			}
 
 			if (save_statusevents) {

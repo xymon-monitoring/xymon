@@ -216,7 +216,7 @@ done_parsing:
 	 */
 	if ((now - starttime) < 360) return 0;
 
-	if (!memhosts_init || (rbtFind(memhosts, hostname) == rbtEnd(memhosts))) {
+	if (!memhosts_init || (xtreeFind(memhosts, hostname) == xtreeEnd(memhosts))) {
 		/* Pick up memory statistics */
 		int found, overflow, realuse, swapuse;
 		long long phystotal, physavail, pagetotal, pageavail;

@@ -59,7 +59,7 @@ typedef struct clients_t {
 	char *clientdata;	/* This hosts' client configuration data */
 	int busy;		/* If set, then we are currently processing this host */
 } clients_t;
-RbtHandle clients;
+void * clients;
 
 typedef enum { C_CLIENT, C_SERVER } conntype_t;
 typedef struct conn_t {
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);	/* SIGUSR1 triggers logging of active requests */
 
-	clients = rbtNew(name_compare);
+	clients = xtreeNew(strcasecmp);
 	nexttimeout = gettimer() + 60;
 
 	{
@@ -467,7 +467,7 @@ int main(int argc, char *argv[])
 	}
 
 	do {
-		RbtIterator handle;
+		xtreePos_t handle;
 		conn_t *connwalk, *cprev;
 		fd_set fdread, fdwrite;
 		int n, maxfd;
@@ -487,11 +487,11 @@ int main(int argc, char *argv[])
 				if (!xmh_item(hostwalk, XMH_FLAG_PULLDATA)) continue;
 
 				hname = xmh_item(hostwalk, XMH_HOSTNAME);
-				handle = rbtFind(clients, hname);
-				if (handle == rbtEnd(clients)) {
+				handle = xtreeFind(clients, hname);
+				if (handle == xtreeEnd(clients)) {
 					newclient = (clients_t *)calloc(1, sizeof(clients_t));
 					newclient->hostname = strdup(hname);
-					rbtInsert(clients, newclient->hostname, newclient);
+					xtreeAdd(clients, newclient->hostname, newclient);
 					whentoqueue = now;
 				}
 			}
@@ -600,14 +600,14 @@ int main(int argc, char *argv[])
 		now = gettimer();
 		if (now >= whentoqueue) {
 			/* Scan host-tree for clients we need to contact */
-			for (handle = rbtBegin(clients); (handle != rbtEnd(clients)); handle = rbtNext(clients, handle)) {
+			for (handle = xtreeFirst(clients); (handle != xtreeEnd(clients)); handle = xtreeNext(clients, handle)) {
 				clients_t *clientwalk;
 				char msgline[100];
 				strbuffer_t *request;
 				char *pullstr, *ip;
 				int port;
 
-				clientwalk = (clients_t *)gettreeitem(clients, handle);
+				clientwalk = (clients_t *)xtreeData(clients, handle);
 				if (clientwalk->busy) continue;
 				if (clientwalk->nextpoll > now) continue;
 

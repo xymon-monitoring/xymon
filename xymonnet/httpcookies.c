@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 
 cookielist_t *cookiehead = NULL;
 
-RbtHandle cookietree;
+void * cookietree;
 typedef struct hcookie_t {
 	char *key;
 	char *val;
@@ -34,7 +34,7 @@ void init_session_cookies(char *urlhost, char *cknam, char *ckpath, char *ckval)
 	itm->key = (char *)malloc(strlen(urlhost) + strlen(cknam) + strlen(ckpath) + 3);
 	sprintf(itm->key, "%s\t%s\t%s", urlhost, cknam, ckpath);
 	itm->val = strdup(ckval);
-	rbtInsert(cookietree, itm->key, itm);
+	xtreeAdd(cookietree, itm->key, itm);
 }
 
 void update_session_cookies(char *hostname, char *urlhost, char *headers)
@@ -62,7 +62,7 @@ void update_session_cookies(char *hostname, char *urlhost, char *headers)
 			if (cknam) ckval = strtok(NULL, ";");
 			if (ckval) {
 				char *tok, *key;
-				RbtIterator h;
+				xtreePos_t h;
 				hcookie_t *itm;
 
 				do {
@@ -78,15 +78,15 @@ void update_session_cookies(char *hostname, char *urlhost, char *headers)
 				if (ckpath == NULL) ckpath = "/";
 				key = (char *)malloc(strlen(urlhost) + strlen(cknam) + strlen(ckpath) + 3);
 				sprintf(key, "%s\t%s\t%s", urlhost, cknam, ckpath);
-				h = rbtFind(cookietree, key);
-				if (h == rbtEnd(cookietree)) {
+				h = xtreeFind(cookietree, key);
+				if (h == xtreeEnd(cookietree)) {
 					itm = (hcookie_t *)malloc(sizeof(hcookie_t));
 					itm->key = key;
 					itm->val = strdup(ckval);
-					rbtInsert(cookietree, itm->key, itm);
+					xtreeAdd(cookietree, itm->key, itm);
 				}
 				else {
-					itm = (hcookie_t *)gettreeitem(cookietree, h);
+					itm = (hcookie_t *)xtreeData(cookietree, h);
 					xfree(itm->val);
 					itm->val = strdup(ckval);
 					xfree(key);
@@ -102,17 +102,17 @@ void save_session_cookies(void)
 {
 	FILE *fd = NULL;
 	char cookiefn[PATH_MAX];
-	RbtIterator h;
+	xtreePos_t h;
 	hcookie_t *itm;
 
 	sprintf(cookiefn, "%s/etc/cookies.session", xgetenv("XYMONHOME"));
 	fd = fopen(cookiefn, "w");
 	if (fd == NULL) return;
 
-	for (h=rbtBegin(cookietree); (h != rbtEnd(cookietree)); h = rbtNext(cookietree, h)) {
+	for (h=xtreeFirst(cookietree); (h != xtreeEnd(cookietree)); h = xtreeNext(cookietree, h)) {
 		char *urlhost, *ckpath, *cknam;
 
-		itm = (hcookie_t *)gettreeitem(cookietree, h);
+		itm = (hcookie_t *)xtreeData(cookietree, h);
 		urlhost = strtok(itm->key, "\t");
 		cknam = strtok(NULL, "\t");
 		ckpath = strtok(NULL, "\t");

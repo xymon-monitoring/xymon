@@ -76,7 +76,7 @@ typedef struct xymon_peer_t {
 	pid_t childpid;				/* PID of the running worker child */
 } xymon_peer_t;
 
-RbtHandle peers;
+void * peers;
 
 xymond_channel_t *channel = NULL;
 char *logfn = NULL;
@@ -145,7 +145,7 @@ void addnetpeer(char *peername)
 	newpeer->peeraddr.sin_addr.s_addr = addr.s_addr;
 	newpeer->peeraddr.sin_port = htons(peerport);
 
-	rbtInsert(peers, newpeer->peername, newpeer);
+	xtreeAdd(peers, newpeer->peername, newpeer);
 
 done:
 	xfree(oneip);
@@ -169,7 +169,7 @@ void addlocalpeer(char *childcmd, char **childargs)
 	newpeer->childargs = (char **)calloc(count+1, sizeof(char *));
 	for (i=0; (i<count); i++) newpeer->childargs[i] = strdup(childargs[i]);
 
-	rbtInsert(peers, newpeer->peername, newpeer);
+	xtreeAdd(peers, newpeer->peername, newpeer);
 }
 
 
@@ -300,7 +300,7 @@ static void addmessage_onepeer(xymon_peer_t *peer, char *inbuf, int inlen)
 
 int addmessage(char *inbuf)
 {
-	RbtIterator phandle;
+	xtreePos_t phandle;
 	xymon_peer_t *peer;
 	int bcastmsg = 0;
 	int inlen = strlen(inbuf);
@@ -338,31 +338,31 @@ int addmessage(char *inbuf)
 			}
 
 			*hostend = '|';
-			phandle = rbtFind(peers, peerlocation);
-			if (phandle == rbtEnd(peers)) {
+			phandle = xtreeFind(peers, peerlocation);
+			if (phandle == xtreeEnd(peers)) {
 				/* New peer - register it */
 				addnetpeer(peerlocation);
-				phandle = rbtFind(peers, peerlocation);
+				phandle = xtreeFind(peers, peerlocation);
 			}
 		}
 	}
 	else {
-		phandle = rbtFind(peers, "");
+		phandle = xtreeFind(peers, "");
 	}
 
 	if (bcastmsg) {
-		for (phandle = rbtBegin(peers); (phandle != rbtEnd(peers)); phandle = rbtNext(peers, phandle)) {
-			peer = (xymon_peer_t *)gettreeitem(peers, phandle);
+		for (phandle = xtreeFirst(peers); (phandle != xtreeEnd(peers)); phandle = xtreeNext(peers, phandle)) {
+			peer = (xymon_peer_t *)xtreeData(peers, phandle);
 
 			addmessage_onepeer(peer, inbuf, inlen);
 		}
 	}
 	else {
-		if (phandle == rbtEnd(peers)) {
+		if (phandle == xtreeEnd(peers)) {
 			errprintf("No peer found to handle message, dropping it\n");
 			return -1;
 		}
-		peer = (xymon_peer_t *)gettreeitem(peers, phandle);
+		peer = (xymon_peer_t *)xtreeData(peers, phandle);
 
 		addmessage_onepeer(peer, inbuf, inlen);
 	}
@@ -431,14 +431,14 @@ int main(int argc, char *argv[])
 
 	int argi;
 	struct sigaction sa;
-	RbtIterator handle;
+	xtreePos_t handle;
 
 
 	/* Dont save the error buffer */
 	save_errbuf = 0;
 
 	/* Create the peer container */
-	peers = rbtNew(name_compare);
+	peers = xtreeNew(strcasecmp);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
@@ -518,7 +518,7 @@ int main(int argc, char *argv[])
 		errprintf("Must specify --service when using locator\n");
 		return 1;
 	}
-	if (!locatorbased && (rbtBegin(peers) == rbtEnd(peers))) {
+	if (!locatorbased && (xtreeFirst(peers) == xtreeEnd(peers))) {
 		errprintf("Must specify command for local worker\n");
 		return 1;
 	}
@@ -701,13 +701,13 @@ int main(int argc, char *argv[])
 		 * of the time because we'll just shove the data to the
 		 * worker child.
 		 */
-		for (handle = rbtBegin(peers); (handle != rbtEnd(peers)); handle = rbtNext(peers, handle)) {
+		for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
 			int canwrite = 1, hasfailed = 0;
 			xymon_peer_t *pwalk;
 			time_t msgtimeout = gettimer() - MSGTIMEOUT;
 			int flushcount = 0;
 
-			pwalk = (xymon_peer_t *) gettreeitem(peers, handle);
+			pwalk = (xymon_peer_t *) xtreeData(peers, handle);
 			if (pwalk->msghead == NULL) continue; /* Ignore peers with nothing queued */
 
 			switch (pwalk->peerstatus) {
@@ -791,8 +791,8 @@ int main(int argc, char *argv[])
 	close_channel(channel, CHAN_CLIENT);
 
 	/* Close peer connections */
-	for (handle = rbtBegin(peers); (handle != rbtEnd(peers)); handle = rbtNext(peers, handle)) {
-		xymon_peer_t *pwalk = (xymon_peer_t *) gettreeitem(peers, handle);
+	for (handle = xtreeFirst(peers); (handle != xtreeEnd(peers)); handle = xtreeNext(peers, handle)) {
+		xymon_peer_t *pwalk = (xymon_peer_t *) xtreeData(peers, handle);
 		shutdownconnection(pwalk);
 	}
 

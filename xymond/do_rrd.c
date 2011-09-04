@@ -59,7 +59,7 @@ static int  rrdinterval = DEFAULT_RRD_INTERVAL;
 
 #define CACHESZ 12             /* # of updates that can be cached - updates are usually 5 minutes apart */
 static int updcache_keyofs = -1;
-static RbtHandle updcache;
+static void * updcache;
 typedef struct updcacheitem_t {
 	char *key;
 	rrdtpldata_t *tpl;
@@ -69,7 +69,7 @@ typedef struct updcacheitem_t {
 	time_t updtime[CACHESZ];
 } updcacheitem_t;
 
-static RbtHandle flushtree;
+static void * flushtree;
 static int have_flushtree = 0;
 typedef struct flushtree_t {
 	char *hostname;
@@ -261,7 +261,7 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	struct stat st;
 	int pcount, result;
 	char *updcachekey;
-	RbtIterator handle;
+	xtreePos_t handle;
 	updcacheitem_t *cacheitem = NULL;
 	int pollinterval;
 	char *modifymsg;
@@ -298,12 +298,12 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 	 * Only the update-data is flushed from time to time.
 	 */
 	if (updcache_keyofs == -1) {
-		updcache = rbtNew(name_compare);
+		updcache = xtreeNew(strcasecmp);
 		updcache_keyofs = strlen(rrddir);
 	}
 	updcachekey = filedir + updcache_keyofs;
-	handle = rbtFind(updcache, updcachekey);
-	if (handle == rbtEnd(updcache)) {
+	handle = xtreeFind(updcache, updcachekey);
+	if (handle == xtreeEnd(updcache)) {
 		if (!template) template = setup_template(creparams);
 		if (!template) {
 			errprintf("BUG: setup_template() returns NULL! host=%s,test=%s,cp[0]=%s, cp[1]=%s\n",
@@ -315,10 +315,10 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 		cacheitem = (updcacheitem_t *)calloc(1, sizeof(updcacheitem_t));
 		cacheitem->key = strdup(updcachekey);
 		cacheitem->tpl = template;
-		rbtInsert(updcache, cacheitem->key, cacheitem);
+		xtreeAdd(updcache, cacheitem->key, cacheitem);
 	}
 	else {
-		cacheitem = (updcacheitem_t *)gettreeitem(updcache, handle);
+		cacheitem = (updcacheitem_t *)xtreeData(updcache, handle);
 		if (!template) template = cacheitem->tpl;
 	}
 
@@ -504,13 +504,13 @@ static int create_and_update_rrd(char *hostname, char *testname, char *classname
 
 void rrdcacheflushall(void)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	updcacheitem_t *cacheitem;
 
 	if (updcache_keyofs == -1) return; /* No cache */
 
-	for (handle = rbtBegin(updcache); (handle != rbtEnd(updcache)); handle = rbtNext(updcache, handle)) {
-		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
+	for (handle = xtreeFirst(updcache); (handle != xtreeEnd(updcache)); handle = xtreeNext(updcache, handle)) {
+		cacheitem = (updcacheitem_t *) xtreeData(updcache, handle);
 		if (cacheitem->valcount > 0) {
 			sprintf(filedir, "%s%s", rrddir, cacheitem->key);
 			flush_cached_updates(cacheitem, NULL);
@@ -520,7 +520,7 @@ void rrdcacheflushall(void)
 
 void rrdcacheflushhost(char *hostname)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	updcacheitem_t *cacheitem;
 	flushtree_t *flushitem;
 	int keylen;
@@ -533,18 +533,18 @@ void rrdcacheflushhost(char *hostname)
 	keylen = strlen(hostname);
 
 	if (!have_flushtree) {
-		flushtree = rbtNew(name_compare);
+		flushtree = xtreeNew(strcasecmp);
 		have_flushtree = 1;
 	}
-	handle = rbtFind(flushtree, hostname);
-	if (handle == rbtEnd(flushtree)) {
+	handle = xtreeFind(flushtree, hostname);
+	if (handle == xtreeEnd(flushtree)) {
 		flushitem = (flushtree_t *)calloc(1, sizeof(flushtree_t));
 		flushitem->hostname = strdup(hostname);
 		flushitem->flushtime = 0;
-		rbtInsert(flushtree, flushitem->hostname, flushitem);
+		xtreeAdd(flushtree, flushitem->hostname, flushitem);
 	}
 	else {
-		flushitem = (flushtree_t *) gettreeitem(flushtree, handle);
+		flushitem = (flushtree_t *) xtreeData(flushtree, handle);
 	}
 
 	if ((flushitem->flushtime + 60) >= now) {
@@ -553,13 +553,13 @@ void rrdcacheflushhost(char *hostname)
 	}
 	flushitem->flushtime = now;
 
-	handle = rbtBegin(updcache); 
-	while (handle != rbtEnd(updcache)) {
-		cacheitem = (updcacheitem_t *) gettreeitem(updcache, handle);
+	handle = xtreeFirst(updcache); 
+	while (handle != xtreeEnd(updcache)) {
+		cacheitem = (updcacheitem_t *) xtreeData(updcache, handle);
 
 		switch (strncasecmp(cacheitem->key, hostname, keylen)) {
 		  case 1 :
-			handle = rbtEnd(updcache); break;
+			handle = xtreeEnd(updcache); break;
 
 		  case 0:
 			if (cacheitem->valcount > 0) {
@@ -570,7 +570,7 @@ void rrdcacheflushhost(char *hostname)
 			/* Fall through */
 
 		  default:
-			handle = rbtNext(updcache, handle);
+			handle = xtreeNext(updcache, handle);
 			break;
 		}
 	}

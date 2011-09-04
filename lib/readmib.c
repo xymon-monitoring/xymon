@@ -15,8 +15,8 @@ static char rcsid[] = "$Id$";
 
 #include "libxymon.h"
 
-static RbtHandle mibdefs;				/* Holds the list of MIB definitions */
-static RbtIterator nexthandle;
+static void * mibdefs;				/* Holds the list of MIB definitions */
+static xtreePos_t nexthandle;
 
 int readmibs(char *cfgfn, int verbose)
 {
@@ -33,7 +33,7 @@ int readmibs(char *cfgfn, int verbose)
 			return 0;
 		}
 		else {
-			RbtIterator handle;
+			xtreePos_t handle;
 
 			errprintf("Re-loading MIBs\n");
 
@@ -42,8 +42,8 @@ int readmibs(char *cfgfn, int verbose)
 			cfgfiles = NULL;
 
 			/* Drop the current data */
-			for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
-				mibdef_t *mib = (mibdef_t *)gettreeitem(mibdefs, handle);
+			for (handle = xtreeFirst(mibdefs); (handle != xtreeEnd(mibdefs)); handle = xtreeNext(mibdefs, handle)) {
+				mibdef_t *mib = (mibdef_t *)xtreeData(mibdefs, handle);
 				oidset_t *swalk, *szombie;
 				mibidx_t *iwalk, *izombie;
 				int i;
@@ -77,12 +77,12 @@ int readmibs(char *cfgfn, int verbose)
 				xfree(mib);
 			}
 
-			rbtDelete(mibdefs);
+			xtreeDestroy(mibdefs);
 		}
 	}
 
-	mibdefs = rbtNew(name_compare);
-	nexthandle = rbtEnd(mibdefs);
+	mibdefs = xtreeNew(strcasecmp);
+	nexthandle = xtreeEnd(mibdefs);
 
 	if (fn) xfree(fn);
 	fn = cfgfn;
@@ -120,7 +120,7 @@ int readmibs(char *cfgfn, int verbose)
 			mib->oidlisttail->oids = (oidds_t *)malloc(mib->oidlisttail->oidsz*sizeof(oidds_t));
 			mib->resultbuf = newstrbuffer(0);
 			mib->tabular = 0;
-			rbtInsert(mibdefs, mib->mibname, mib);
+			xtreeAdd(mibdefs, mib->mibname, mib);
 
 			continue;
 		}
@@ -225,10 +225,10 @@ int readmibs(char *cfgfn, int verbose)
 	freestrbuffer(inbuf);
 
 	if (debug) {
-		RbtIterator handle;
+		xtreePos_t handle;
 
-		for (handle = rbtBegin(mibdefs); (handle != rbtEnd(mibdefs)); handle = rbtNext(mibdefs, handle)) {
-			mibdef_t *mib = (mibdef_t *)gettreeitem(mibdefs, handle);
+		for (handle = xtreeFirst(mibdefs); (handle != xtreeEnd(mibdefs)); handle = xtreeNext(mibdefs, handle)) {
+			mibdef_t *mib = (mibdef_t *)xtreeData(mibdefs, handle);
 			oidset_t *swalk;
 			int i;
 
@@ -247,33 +247,33 @@ int readmibs(char *cfgfn, int verbose)
 
 mibdef_t *first_mib(void)
 {
-	nexthandle = rbtBegin(mibdefs);
+	nexthandle = xtreeFirst(mibdefs);
 
-	if (nexthandle == rbtEnd(mibdefs))
+	if (nexthandle == xtreeEnd(mibdefs))
 		return NULL;
 	else
-		return (mibdef_t *)gettreeitem(mibdefs, nexthandle);
+		return (mibdef_t *)xtreeData(mibdefs, nexthandle);
 }
 
 mibdef_t *next_mib(void)
 {
-	nexthandle = rbtNext(mibdefs, nexthandle);
+	nexthandle = xtreeNext(mibdefs, nexthandle);
 
-	if (nexthandle == rbtEnd(mibdefs))
+	if (nexthandle == xtreeEnd(mibdefs))
 		return NULL;
 	else
-		return (mibdef_t *)gettreeitem(mibdefs, nexthandle);
+		return (mibdef_t *)xtreeData(mibdefs, nexthandle);
 }
 
 mibdef_t *find_mib(char *mibname)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 
-	handle = rbtFind(mibdefs, mibname);
-	if (handle == rbtEnd(mibdefs)) 
+	handle = xtreeFind(mibdefs, mibname);
+	if (handle == xtreeEnd(mibdefs)) 
 		return NULL;
 	else
-		return (mibdef_t *)gettreeitem(mibdefs, handle);
+		return (mibdef_t *)xtreeData(mibdefs, handle);
 }
 
 

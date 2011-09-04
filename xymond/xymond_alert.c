@@ -64,9 +64,9 @@ static int running = 1;
 static time_t nextcheckpoint = 0;
 static int termsig = -1;
 
-RbtHandle hostnames;
-RbtHandle testnames;
-RbtHandle locations;
+void * hostnames;
+void * testnames;
+void * locations;
 
 typedef struct alertanchor_t {
 	activealerts_t *head;
@@ -79,28 +79,25 @@ char *statename[] = {
 	"paging", "norecip", "acked", "recovered", "disabled", "notify", "dead"
 };
 
-char *find_name(RbtHandle tree, char *name)
+char *find_name(void * tree, char *name)
 {
 	char *result;
-	RbtIterator handle;
+	xtreePos_t handle;
 
-	handle = rbtFind(tree, name);
-	if (handle == rbtEnd(tree)) {
+	handle = xtreeFind(tree, name);
+	if (handle == xtreeEnd(tree)) {
 		result = strdup(name);
 		if (tree == hostnames) {
 			alertanchor_t *anchor = malloc(sizeof(alertanchor_t));
 			anchor->head = NULL;
-			rbtInsert(tree, result, anchor);
+			xtreeAdd(tree, result, anchor);
 		}
 		else {
-			rbtInsert(tree, result, result);
+			xtreeAdd(tree, result, result);
 		}
 	}
 	else {
-		void *k1, *k2;
-
-		rbtKeyValue(tree, handle, &k1, &k2);
-		result = (char *)k1;
+		result = (char *)xtreeKey(tree, handle);
 	}
 	
 	return result;
@@ -108,12 +105,12 @@ char *find_name(RbtHandle tree, char *name)
 
 void add_active(char *hostname, activealerts_t *rec)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	alertanchor_t *anchor;
 
-	handle = rbtFind(hostnames, hostname);
-	if (handle == rbtEnd(hostnames)) return;
-	anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+	handle = xtreeFind(hostnames, hostname);
+	if (handle == xtreeEnd(hostnames)) return;
+	anchor = (alertanchor_t *)xtreeData(hostnames, handle);
 	rec->next = anchor->head;
 	anchor->head = rec;
 }
@@ -146,45 +143,45 @@ void clean_active(alertanchor_t *anchor)
 
 void clean_all_active(void)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 
-	for (handle = rbtBegin(hostnames); handle != rbtEnd(hostnames); handle = rbtNext(hostnames, handle)) {
-		alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+	for (handle = xtreeFirst(hostnames); handle != xtreeEnd(hostnames); handle = xtreeNext(hostnames, handle)) {
+		alertanchor_t *anchor = (alertanchor_t *)xtreeData(hostnames, handle);
 		clean_active(anchor);
 	}
 }
 
 activealerts_t *find_active(char *hostname, char *testname)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	alertanchor_t *anchor;
 	char *twalk;
 	activealerts_t *awalk;
 
-	handle = rbtFind(hostnames, hostname);
-	if (handle == rbtEnd(hostnames)) return NULL;
-	anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+	handle = xtreeFind(hostnames, hostname);
+	if (handle == xtreeEnd(hostnames)) return NULL;
+	anchor = (alertanchor_t *)xtreeData(hostnames, handle);
 
-	handle = rbtFind(testnames, testname);
-	if (handle == rbtEnd(testnames)) return NULL;
-	twalk = (char *)gettreeitem(testnames, handle);
+	handle = xtreeFind(testnames, testname);
+	if (handle == xtreeEnd(testnames)) return NULL;
+	twalk = (char *)xtreeData(testnames, handle);
 
 	for (awalk = anchor->head; (awalk && (awalk->testname != twalk)); awalk=awalk->next) ;
 
 	return awalk;
 }
 
-static RbtIterator alisthandle;
+static xtreePos_t alisthandle;
 static activealerts_t *alistwalk;
 activealerts_t *alistBegin(void)
 {
-	alisthandle = rbtBegin(hostnames);
+	alisthandle = xtreeFirst(hostnames);
 	alistwalk = NULL;
 
-	while ((alisthandle != rbtEnd(hostnames)) && (alistwalk == NULL)) {
-		alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, alisthandle);
+	while ((alisthandle != xtreeEnd(hostnames)) && (alistwalk == NULL)) {
+		alertanchor_t *anchor = (alertanchor_t *)xtreeData(hostnames, alisthandle);
 		alistwalk = anchor->head;
-		if (alistwalk == NULL) alisthandle = rbtNext(hostnames, alisthandle);
+		if (alistwalk == NULL) alisthandle = xtreeNext(hostnames, alisthandle);
 	}
 
 	return alistwalk;
@@ -197,13 +194,13 @@ activealerts_t *alistNext(void)
 	alistwalk = alistwalk->next;
 	if (alistwalk) return alistwalk;
 
-	alisthandle = rbtNext(hostnames, alisthandle);
+	alisthandle = xtreeNext(hostnames, alisthandle);
 	alistwalk = NULL;
 
-	while ((alisthandle != rbtEnd(hostnames)) && (alistwalk == NULL)) {
-		alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, alisthandle);
+	while ((alisthandle != xtreeEnd(hostnames)) && (alistwalk == NULL)) {
+		alertanchor_t *anchor = (alertanchor_t *)xtreeData(hostnames, alisthandle);
 		alistwalk = anchor->head;
-		if (alistwalk == NULL) alisthandle = rbtNext(hostnames, alisthandle);
+		if (alistwalk == NULL) alisthandle = xtreeNext(hostnames, alisthandle);
 	}
 
 	return alistwalk;
@@ -379,9 +376,9 @@ int main(int argc, char *argv[])
 	alertinterval = 60*atoi(xgetenv("ALERTREPEAT"));
 
 	/* Create our loookup-trees */
-	hostnames = rbtNew(name_compare);
-	testnames = rbtNew(name_compare);
-	locations = rbtNew(name_compare);
+	hostnames = xtreeNew(strcasecmp);
+	testnames = xtreeNew(strcasecmp);
+	locations = xtreeNew(strcasecmp);
 
 	for (argi=1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--debug")) {
@@ -750,11 +747,11 @@ int main(int argc, char *argv[])
 			 ((strncmp(metadata[0], "@@drophost", 10) == 0) || (strncmp(metadata[0], "@@dropstate", 11) == 0))) {
 			/* @@drophost|timestamp|sender|hostname */
 			/* @@dropstate|timestamp|sender|hostname */
-			RbtIterator handle;
+			xtreePos_t handle;
 
-			handle = rbtFind(hostnames, hostname);
-			if (handle != rbtEnd(hostnames)) {
-				alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+			handle = xtreeFind(hostnames, hostname);
+			if (handle != xtreeEnd(hostnames)) {
+				alertanchor_t *anchor = (alertanchor_t *)xtreeData(hostnames, handle);
 				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DEAD;
 			}
 		}
@@ -772,11 +769,11 @@ int main(int argc, char *argv[])
 			 * active alert for the host, it will have to be dealt with when the next
 			 * status update arrives.
 			 */
-			RbtIterator handle;
+			xtreePos_t handle;
 
-			handle = rbtFind(hostnames, hostname);
-			if (handle != rbtEnd(hostnames)) {
-				alertanchor_t *anchor = (alertanchor_t *)gettreeitem(hostnames, handle);
+			handle = xtreeFind(hostnames, hostname);
+			if (handle != xtreeEnd(hostnames)) {
+				alertanchor_t *anchor = (alertanchor_t *)xtreeData(hostnames, handle);
 				for (awalk = anchor->head; (awalk); awalk = awalk->next) awalk->state = A_DEAD;
 			}
 		}

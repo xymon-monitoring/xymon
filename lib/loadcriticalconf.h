@@ -34,6 +34,8 @@ typedef struct critconf_t {
 #define CRITCONF_RAW_NEXT   6
 #define CRITCONF_FIRSTHOSTMATCH 7
 
+#define DEFAULT_CRITCONFIGFN "etc/critical.cfg"
+
 extern int load_critconfig(char *fn);
 extern critconf_t *get_critconfig(char *key, int flags, char **resultkey);
 extern int update_critconfig(critconf_t *rec);

@@ -61,12 +61,12 @@ typedef struct namelist_t {
 static pagelist_t *pghead = NULL;
 static namelist_t *namehead = NULL;
 static namelist_t *defaulthost = NULL;
-static const char *xmh_item_key[XMH_LAST];
-static const char *xmh_item_name[XMH_LAST];
+static char *xmh_item_key[XMH_LAST];
+static char *xmh_item_name[XMH_LAST];
 static int xmh_item_isflag[XMH_LAST];
 static int configloaded = 0;
-static RbtHandle rbhosts;
-static RbtHandle rbclients;
+static void * rbhosts;
+static void * rbclients;
 
 static void xmh_item_list_setup(void)
 {
@@ -291,26 +291,26 @@ static void build_hosttree(void)
 {
 	static int hosttree_exists = 0;
 	namelist_t *walk;
-	RbtStatus status;
+	xtreeStatus_t status;
 	char *tstr;
 
 	if (hosttree_exists) {
-		rbtDelete(rbhosts);
-		rbtDelete(rbclients);
+		xtreeDestroy(rbhosts);
+		xtreeDestroy(rbclients);
 	}
-	rbhosts = rbtNew(name_compare);
-	rbclients = rbtNew(name_compare);
+	rbhosts = xtreeNew(strcasecmp);
+	rbclients = xtreeNew(strcasecmp);
 	hosttree_exists = 1;
 
 	for (walk = namehead; (walk); walk = walk->next) {
-		status = rbtInsert(rbhosts, walk->hostname, walk);
-		if (walk->clientname) rbtInsert(rbclients, walk->clientname, walk);
+		status = xtreeAdd(rbhosts, walk->hostname, walk);
+		if (walk->clientname) xtreeAdd(rbclients, walk->clientname, walk);
 
 		switch (status) {
-		  case RBT_STATUS_OK:
-		  case RBT_STATUS_DUPLICATE_KEY:
+		  case XTREE_STATUS_OK:
+		  case XTREE_STATUS_DUPLICATE_KEY:
 			break;
-		  case RBT_STATUS_MEM_EXHAUSTED:
+		  case XTREE_STATUS_MEM_EXHAUSTED:
 			errprintf("loadhosts:build_hosttree - insert into tree failed (out of memory)\n");
 			break;
 		  default:
@@ -338,27 +338,24 @@ char *knownhost(char *hostname, char *hostip, enum ghosthandling_t ghosthandling
 	 * ghosthandling = GH_LOG    : Case-insensitive, log ghosts, drop ghosts
 	 * ghosthandling = GH_MATCH  : Like GH_LOG, but try to match unknown names against known hosts
 	 */
-	RbtIterator hosthandle;
+	xtreePos_t hosthandle;
 	namelist_t *walk = NULL;
 	static char *result = NULL;
-	void *k1, *k2;
 	time_t now = getcurrenttime(NULL);
 
 	if (result) xfree(result);
 	result = NULL;
 
 	/* Find the host in the normal hostname list */
-	hosthandle = rbtFind(rbhosts, hostname);
-	if (hosthandle != rbtEnd(rbhosts)) {
-		rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
-		walk = (namelist_t *)k2;
+	hosthandle = xtreeFind(rbhosts, hostname);
+	if (hosthandle != xtreeEnd(rbhosts)) {
+		walk = (namelist_t *)xtreeData(rbhosts, hosthandle);
 	}
 	else {
 		/* Not found - lookup in the client alias list */
-		hosthandle = rbtFind(rbclients, hostname);
-		if (hosthandle != rbtEnd(rbclients)) {
-			rbtKeyValue(rbclients, hosthandle, &k1, &k2);
-			walk = (namelist_t *)k2;
+		hosthandle = xtreeFind(rbclients, hostname);
+		if (hosthandle != xtreeEnd(rbclients)) {
+			walk = (namelist_t *)xtreeData(rbclients, hosthandle);
 		}
 	}
 
@@ -397,19 +394,15 @@ int knownloghost(char *logdir)
 
 void *hostinfo(char *hostname)
 {
-	RbtIterator hosthandle;
+	xtreePos_t hosthandle;
 	namelist_t *result = NULL;
 	time_t now = getcurrenttime(NULL);
 
 	if (!configloaded) load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
-	hosthandle = rbtFind(rbhosts, hostname);
-	if (hosthandle != rbtEnd(rbhosts)) {
-		void *k1, *k2;
-
-		rbtKeyValue(rbhosts, hosthandle, &k1, &k2);
-		result = (namelist_t *)k2;
-
+	hosthandle = xtreeFind(rbhosts, hostname);
+	if (hosthandle != xtreeEnd(rbhosts)) {
+		result = (namelist_t *)xtreeData(rbhosts, hosthandle);
 		if ((result->notbefore > now) || (result->notafter < now)) return NULL;
 	}
 
@@ -685,7 +678,7 @@ void xmh_set_item(void *hostin, enum xmh_item_t item, void *value)
 		 * if (host->clientname && (host->hostname != host->clientname) && (host->clientname != xmh_find_item(host, XMH_CLIENTALIAS)) xfree(host->clientname);
 		 */
 		host->clientname = strdup((char *)value);
-		rbtInsert(rbclients, host->clientname, host);
+		xtreeAdd(rbclients, host->clientname, host);
 		break;
 
 	  default:

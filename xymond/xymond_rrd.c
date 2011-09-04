@@ -50,7 +50,7 @@ typedef struct rrddeftree_t {
 	int count;
 	char **defs;
 } rrddeftree_t;
-static RbtHandle rrddeftree;
+static void * rrddeftree;
 
 static void sig_handler(int signum)
 {
@@ -96,7 +96,7 @@ static void load_rrddefs(void)
 	int defcount = 0;
 	rrddeftree_t *newrec;
 
-	rrddeftree = rbtNew(name_compare);
+	rrddeftree = xtreeNew(strcasecmp);
 
 	sprintf(fn, "%s/etc/rrddefinitions.cfg", xgetenv("XYMONHOME"));
 	fd = stackfopen(fn, "r", NULL);
@@ -112,7 +112,7 @@ static void load_rrddefs(void)
 				newrec->key = key;
 				newrec->defs = defs;
 				newrec->count = defcount;
-				rbtInsert(rrddeftree, newrec->key, newrec);
+				xtreeAdd(rrddeftree, newrec->key, newrec);
 
 				key = NULL; defs = NULL; defcount = 0;
 			}
@@ -140,7 +140,7 @@ static void load_rrddefs(void)
 		newrec->key = key;
 		newrec->defs = defs;
 		newrec->count = defcount;
-		rbtInsert(rrddeftree, newrec->key, newrec);
+		xtreeAdd(rrddeftree, newrec->key, newrec);
 	}
 
 	stackfclose(fd);
@@ -149,7 +149,7 @@ loaddone:
 	freestrbuffer(inbuf);
 
 	/* Check if the default record exists */
-	if (rbtFind(rrddeftree, "") == rbtEnd(rrddeftree)) {
+	if (xtreeFind(rrddeftree, "") == xtreeEnd(rrddeftree)) {
 		/* Create the default record */
 		newrec = (rrddeftree_t *)malloc(sizeof(rrddeftree_t));
 		newrec->key = strdup("");
@@ -159,19 +159,19 @@ loaddone:
 		newrec->defs[2] = strdup("RRA:AVERAGE:0.5:24:576");
 		newrec->defs[3] = strdup("RRA:AVERAGE:0.5:288:576");
 		newrec->count = 4;
-		rbtInsert(rrddeftree, newrec->key, newrec);
+		xtreeAdd(rrddeftree, newrec->key, newrec);
 	}
 }
 
 char **get_rrd_definition(char *key, int *count)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 
-	handle = rbtFind(rrddeftree, key);
-	if (handle == rbtEnd(rrddeftree)) {
-		handle = rbtFind(rrddeftree, "");	/* The default record */
+	handle = xtreeFind(rrddeftree, key);
+	if (handle == xtreeEnd(rrddeftree)) {
+		handle = xtreeFind(rrddeftree, "");	/* The default record */
 	}
-	rrddeftree_t *rec = (rrddeftree_t *)gettreeitem(rrddeftree, handle);
+	rrddeftree_t *rec = (rrddeftree_t *)xtreeData(rrddeftree, handle);
 
 	*count = rec->count;
 	return rec->defs;

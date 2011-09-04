@@ -20,7 +20,7 @@ static char rcsid[] = "$Id$";
 #include "libxymon.h"
 
 static strbuffer_t *clientconfigs = NULL;
-static RbtHandle rbconfigs;
+static void * rbconfigs;
 
 void load_clientconfig(void)
 {
@@ -51,11 +51,11 @@ void load_clientconfig(void)
 		clientconfigs = newstrbuffer(0);
 	}
 	else {
-		rbtDelete(rbconfigs);
+		xtreeDestroy(rbconfigs);
 		clearstrbuffer(clientconfigs);
 	}
 
-	rbconfigs = rbtNew(name_compare);
+	rbconfigs = xtreeNew(strcasecmp);
 	addtobuffer(clientconfigs, "\n");
 	buf = newstrbuffer(0);
 
@@ -79,7 +79,7 @@ void load_clientconfig(void)
 		nextsect = strstr(sectstart, "\n[");
 		if (nextsect) *(nextsect+1) = '\0';
 
-		rbtInsert(rbconfigs, key, sectstart+1);
+		xtreeAdd(rbconfigs, key, sectstart+1);
 		sectstart = nextsect;
 	}
 
@@ -88,7 +88,7 @@ void load_clientconfig(void)
 
 char *get_clientconfig(char *hostname, char *hostclass, char *hostos)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	char *result = NULL;
 
 	if (!clientconfigs) return NULL;
@@ -97,13 +97,13 @@ char *get_clientconfig(char *hostname, char *hostclass, char *hostos)
 	 * Find the client config.  Search for a HOSTNAME entry first, 
 	 * then the CLIENTCLASS, then CLIENTOS.
 	 */
-	handle = rbtFind(rbconfigs, hostname);
-	if ((handle == rbtEnd(rbconfigs)) && hostclass && *hostclass)
-		handle = rbtFind(rbconfigs, hostclass);
-	if ((handle == rbtEnd(rbconfigs)) && hostos && *hostos)
-		handle = rbtFind(rbconfigs, hostos);
+	handle = xtreeFind(rbconfigs, hostname);
+	if ((handle == xtreeEnd(rbconfigs)) && hostclass && *hostclass)
+		handle = xtreeFind(rbconfigs, hostclass);
+	if ((handle == xtreeEnd(rbconfigs)) && hostos && *hostos)
+		handle = xtreeFind(rbconfigs, hostos);
 
-	if (handle != rbtEnd(rbconfigs)) result = (char *)gettreeitem(rbconfigs, handle);
+	if (handle != xtreeEnd(rbconfigs)) result = (char *)xtreeData(rbconfigs, handle);
 
 	return result;
 }

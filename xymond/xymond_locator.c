@@ -66,14 +66,14 @@ typedef struct serverinfo_t {
 	int  serverconfweight, serveractualweight, serverweightleft;
 	enum locator_sticky_t sticky;
 } serverinfo_t;
-RbtHandle sitree[ST_MAX];
-RbtIterator sicurrent[ST_MAX];
+void * sitree[ST_MAX];
+xtreePos_t sicurrent[ST_MAX];
 
 typedef struct hostinfo_t {
 	char *hostname;
 	serverinfo_t *server; /* Which server handles this host ? */
 } hostinfo_t;
-RbtHandle hitree[ST_MAX];
+void * hitree[ST_MAX];
 
 
 void tree_init(void)
@@ -81,22 +81,22 @@ void tree_init(void)
 	enum locator_servicetype_t stype;
 
 	for (stype = 0; (stype < ST_MAX); stype++) {
-		sitree[stype] = rbtNew(name_compare);
-		hitree[stype] = rbtNew(name_compare);
+		sitree[stype] = xtreeNew(strcasecmp);
+		hitree[stype] = xtreeNew(strcasecmp);
 	}
 }
 
 void recalc_current(enum locator_servicetype_t stype)
 {
 	/* Point our "last-used-server" pointer at the server with the most negative weight */
-	RbtIterator handle, wantedserver;
+	xtreePos_t handle, wantedserver;
 	serverinfo_t *oneserver;
 	int minweight = INT_MAX;
 
-	wantedserver = rbtEnd(sitree[stype]);
+	wantedserver = xtreeEnd(sitree[stype]);
 
-	for (handle = rbtBegin(sitree[stype]); (handle != rbtEnd(sitree[stype])); handle = rbtNext(sitree[stype], handle)) {
-		oneserver = (serverinfo_t *)gettreeitem(sitree[stype], handle);
+	for (handle = xtreeFirst(sitree[stype]); (handle != xtreeEnd(sitree[stype])); handle = xtreeNext(sitree[stype], handle)) {
+		oneserver = (serverinfo_t *)xtreeData(sitree[stype], handle);
 		if (oneserver->serveractualweight < minweight) {
 			wantedserver = handle;
 			minweight = oneserver->serveractualweight;
@@ -108,19 +108,19 @@ void recalc_current(enum locator_servicetype_t stype)
 
 serverinfo_t *register_server(char *servername, enum locator_servicetype_t servicetype, int weight, enum locator_sticky_t sticky, char *extras)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	serverinfo_t *itm = NULL;
 
-	handle = rbtFind(sitree[servicetype], servername);
-	if (handle == rbtEnd(sitree[servicetype])) {
+	handle = xtreeFind(sitree[servicetype], servername);
+	if (handle == xtreeEnd(sitree[servicetype])) {
 		itm = (serverinfo_t *)calloc(1, sizeof(serverinfo_t));
 
 		itm->servername = strdup(servername);
-		rbtInsert(sitree[servicetype], itm->servername, itm);
+		xtreeAdd(sitree[servicetype], itm->servername, itm);
 	}
 	else {
 		/* Update existing item */
-		itm = gettreeitem(sitree[servicetype], handle);
+		itm = xtreeData(sitree[servicetype], handle);
 	}
 
 	itm->serverconfweight = itm->serveractualweight = weight;
@@ -137,19 +137,19 @@ serverinfo_t *register_server(char *servername, enum locator_servicetype_t servi
 
 serverinfo_t *downup_server(char *servername, enum locator_servicetype_t servicetype, char action)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	serverinfo_t *itm = NULL;
 
-	handle = rbtFind(sitree[servicetype], servername);
-	if (handle == rbtEnd(sitree[servicetype])) return NULL;
+	handle = xtreeFind(sitree[servicetype], servername);
+	if (handle == xtreeEnd(sitree[servicetype])) return NULL;
 
 	/* Update existing item */
-	itm = gettreeitem(sitree[servicetype], handle);
+	itm = xtreeData(sitree[servicetype], handle);
 	switch (action) {
 	  case 'F':
 		/* Flag the hosts that point to this server as un-assigned */
-		for (handle = rbtBegin(hitree[servicetype]); (handle != rbtEnd(hitree[servicetype])); handle = rbtNext(hitree[servicetype], handle)) {
-			hostinfo_t *hitm = (hostinfo_t *)gettreeitem(hitree[servicetype], handle);
+		for (handle = xtreeFirst(hitree[servicetype]); (handle != xtreeEnd(hitree[servicetype])); handle = xtreeNext(hitree[servicetype], handle)) {
+			hostinfo_t *hitm = (hostinfo_t *)xtreeData(hitree[servicetype], handle);
 			if (hitm->server == itm) hitm->server = NULL;
 		}
 		/* Fall through */
@@ -175,28 +175,28 @@ serverinfo_t *downup_server(char *servername, enum locator_servicetype_t service
 
 hostinfo_t *register_host(char *hostname, enum locator_servicetype_t servicetype, char *servername)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	hostinfo_t *itm = NULL;
 
-	handle = rbtFind(hitree[servicetype], hostname);
-	if (handle == rbtEnd(hitree[servicetype])) {
+	handle = xtreeFind(hitree[servicetype], hostname);
+	if (handle == xtreeEnd(hitree[servicetype])) {
 		itm = (hostinfo_t *)calloc(1, sizeof(hostinfo_t));
 
 		itm->hostname = strdup(hostname);
-		rbtInsert(hitree[servicetype], itm->hostname, itm);
+		xtreeAdd(hitree[servicetype], itm->hostname, itm);
 	}
 	else {
-		itm = gettreeitem(hitree[servicetype], handle);
+		itm = xtreeData(hitree[servicetype], handle);
 	}
 
 	/* If we dont know this server, then we must register it. If we do, just update the host record */
-	handle = rbtFind(sitree[servicetype], servername);
-	if (handle == rbtEnd(sitree[servicetype])) {
+	handle = xtreeFind(sitree[servicetype], servername);
+	if (handle == xtreeEnd(sitree[servicetype])) {
 		dbgprintf("Registering default server '%s'\n", servername);
 		itm->server = register_server(servername, servicetype, 1, 1, NULL);
 	}
 	else {
-		serverinfo_t *newserver = gettreeitem(sitree[servicetype], handle);
+		serverinfo_t *newserver = xtreeData(sitree[servicetype], handle);
 
 		if (itm->server && (itm->server != newserver)) {
 			errprintf("Warning: Host %s:%s moved from %s to %s\n", 
@@ -211,22 +211,22 @@ hostinfo_t *register_host(char *hostname, enum locator_servicetype_t servicetype
 
 hostinfo_t *rename_host(char *oldhostname, enum locator_servicetype_t servicetype, char *newhostname)
 {
-	RbtIterator handle, newhandle;
+	xtreePos_t handle, newhandle;
 	hostinfo_t *itm = NULL;
 
-	handle = rbtFind(hitree[servicetype], oldhostname);
-	if (handle == rbtEnd(hitree[servicetype])) return NULL;
-	newhandle = rbtFind(hitree[servicetype], newhostname);
-	if (newhandle != rbtEnd(hitree[servicetype])) {
+	handle = xtreeFind(hitree[servicetype], oldhostname);
+	if (handle == xtreeEnd(hitree[servicetype])) return NULL;
+	newhandle = xtreeFind(hitree[servicetype], newhostname);
+	if (newhandle != xtreeEnd(hitree[servicetype])) {
 		errprintf("Ignored rename of %s to %s - new name already exists\n", oldhostname, newhostname);
 		return NULL;
 	}
 
-	itm = gettreeitem(hitree[servicetype], handle);
+	itm = xtreeData(hitree[servicetype], handle);
 
-	rbtErase(hitree[servicetype], handle); xfree(itm->hostname);
+	xtreeDelete(hitree[servicetype], oldhostname); xfree(itm->hostname);
 	itm->hostname = strdup(newhostname);
-	rbtInsert(hitree[servicetype], itm->hostname, itm);
+	xtreeAdd(hitree[servicetype], itm->hostname, itm);
 
 	return itm;
 }
@@ -234,7 +234,7 @@ hostinfo_t *rename_host(char *oldhostname, enum locator_servicetype_t servicetyp
 serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 {
 	serverinfo_t *nextserver = NULL;
-	RbtIterator endmarker = rbtEnd(sitree[servicetype]);
+	xtreePos_t endmarker = xtreeEnd(sitree[servicetype]);
 
 	/* 
 	 * We must do weight handling here.
@@ -263,7 +263,7 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 		serverinfo_t *lastserver;
 
 		/* We have a last-server-used for this request */
-		lastserver = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
+		lastserver = xtreeData(sitree[servicetype], sicurrent[servicetype]);
 
 		/* 
 		 * See if our the last server used handles all requests.
@@ -278,13 +278,13 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 
 		/* Go to the next server with any tokens left */
 		do {
-			sicurrent[servicetype] = rbtNext(sitree[servicetype], sicurrent[servicetype]);
+			sicurrent[servicetype] = xtreeNext(sitree[servicetype], sicurrent[servicetype]);
 			if (sicurrent[servicetype] == endmarker) {
 				/* Start from the beginning again */
-				sicurrent[servicetype] = rbtBegin(sitree[servicetype]);
+				sicurrent[servicetype] = xtreeFirst(sitree[servicetype]);
 			}
 
-			nextserver = gettreeitem(sitree[servicetype], sicurrent[servicetype]);
+			nextserver = xtreeData(sitree[servicetype], sicurrent[servicetype]);
 		} while ((nextserver->serverweightleft == 0) && (nextserver != lastserver));
 
 		if ((nextserver == lastserver) && (nextserver->serverweightleft == 0)) {
@@ -296,17 +296,17 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 	if (nextserver == NULL) {
 		/* Restart server RR walk */
 		int totalweight = 0;
-		RbtIterator handle, firstok;
+		xtreePos_t handle, firstok;
 		serverinfo_t *srv;
 
 		firstok = endmarker;
 
 		/* Walk the list of servers, calculate total weight and find the first active server */
-		for (handle = rbtBegin(sitree[servicetype]); 
+		for (handle = xtreeFirst(sitree[servicetype]); 
 			( (handle != endmarker) && (totalweight >= 0) ); 
-			 handle = rbtNext(sitree[servicetype], handle) ) {
+			 handle = xtreeNext(sitree[servicetype], handle) ) {
 
-			srv = gettreeitem(sitree[servicetype], handle);
+			srv = xtreeData(sitree[servicetype], handle);
 			if (srv->serveractualweight <= 1) continue;
 
 			srv->serverweightleft = (srv->serveractualweight - 1);
@@ -316,7 +316,7 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 		}
 
 		sicurrent[servicetype] = firstok;
-		nextserver = (firstok != endmarker) ?  gettreeitem(sitree[servicetype], firstok) : NULL;
+		nextserver = (firstok != endmarker) ?  xtreeData(sitree[servicetype], firstok) : NULL;
 	}
 
 	return nextserver;
@@ -325,15 +325,15 @@ serverinfo_t *find_server_by_type(enum locator_servicetype_t servicetype)
 
 serverinfo_t *find_server_by_host(enum locator_servicetype_t servicetype, char *hostname)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 	hostinfo_t *hinfo;
 
-	handle = rbtFind(hitree[servicetype], hostname);
-	if (handle == rbtEnd(hitree[servicetype])) {
+	handle = xtreeFind(hitree[servicetype], hostname);
+	if (handle == xtreeEnd(hitree[servicetype])) {
 		return NULL;
 	}
 
-	hinfo = gettreeitem(hitree[servicetype], handle);
+	hinfo = xtreeData(hitree[servicetype], handle);
 	return hinfo->server;
 }
 
@@ -420,11 +420,11 @@ void save_state(void)
 	}
 	for (tidx = 0; (tidx < ST_MAX); tidx++) {
 		const char *tname = servicetype_names[tidx];
-		RbtIterator handle;
+		xtreePos_t handle;
 		serverinfo_t *itm;
 
-		for (handle = rbtBegin(sitree[tidx]); (handle != rbtEnd(sitree[tidx])); handle = rbtNext(sitree[tidx], handle)) {
-			itm = gettreeitem(sitree[tidx], handle);
+		for (handle = xtreeFirst(sitree[tidx]); (handle != xtreeEnd(sitree[tidx])); handle = xtreeNext(sitree[tidx], handle)) {
+			itm = xtreeData(sitree[tidx], handle);
 			fprintf(fd, "%s|%s|%d|%d|%d|%s\n",
 				tname, itm->servername, itm->serverconfweight, itm->serveractualweight,
 				((itm->sticky == LOC_STICKY) ? 1 : 0), 
@@ -441,11 +441,11 @@ void save_state(void)
 	}
 	for (tidx = 0; (tidx < ST_MAX); tidx++) {
 		const char *tname = servicetype_names[tidx];
-		RbtIterator handle;
+		xtreePos_t handle;
 		hostinfo_t *itm;
 
-		for (handle = rbtBegin(hitree[tidx]); (handle != rbtEnd(hitree[tidx])); handle = rbtNext(hitree[tidx], handle)) {
-			itm = gettreeitem(hitree[tidx], handle);
+		for (handle = xtreeFirst(hitree[tidx]); (handle != xtreeEnd(hitree[tidx])); handle = xtreeNext(hitree[tidx], handle)) {
+			itm = xtreeData(hitree[tidx], handle);
 			if (itm->server) {
 				fprintf(fd, "%s|%s|%s\n",
 					tname, itm->hostname, itm->server->servername);
