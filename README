@@ -71,11 +71,6 @@ by Xymon, but written by others and are NOT licensed under the GPL:
   in Xymon was taken from the "mutt" mail client sources, so 
   some changes were done by Thomas Roessler <roessler@does-not-exist.org>.
 
-* The lib/rbtr.c and lib/rbtr.h files are by Thomas Nieman,
-  who has released them into the public domain.
-  http://www.epaperpress.com/sortsearch/rbt.html
-  http://www.epaperpress.com/sortsearch/title.html
-
 
 Support
 -------

@@ -26,9 +26,9 @@ static char rcsid[] = "$Id$";
 
 char *htmlextension = ".html"; /* Filename extension for generated HTML files */
 
-static RbtHandle hosttree;
+static void * hosttree;
 static int havehosttree = 0;
-static RbtHandle columntree;
+static void * columntree;
 static int havecolumntree = 0;
 
 char *hostpage_link(host_t *host)
@@ -130,14 +130,14 @@ int checkpropagation(host_t *host, char *test, int color, int acked)
 
 host_t *find_host(char *hostname)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 
 	if (havehosttree == 0) return NULL;
 
 	/* Search for the host */
-	handle = rbtFind(hosttree, hostname);
-	if (handle != rbtEnd(hosttree)) {
-		hostlist_t *entry = (hostlist_t *)gettreeitem(hosttree, handle);
+	handle = xtreeFind(hosttree, hostname);
+	if (handle != xtreeEnd(hosttree)) {
+		hostlist_t *entry = (hostlist_t *)xtreeData(hosttree, handle);
 		return (entry ? entry->hostentry : NULL);
 	}
 	
@@ -151,14 +151,14 @@ int host_exists(char *hostname)
 
 hostlist_t *find_hostlist(char *hostname)
 {
-	RbtIterator handle;
+	xtreePos_t handle;
 
 	if (havehosttree == 0) return NULL;
 
 	/* Search for the host */
-	handle = rbtFind(hosttree, hostname);
-	if (handle != rbtEnd(hosttree)) {
-		hostlist_t *entry = (hostlist_t *)gettreeitem(hosttree, handle);
+	handle = xtreeFind(hosttree, hostname);
+	if (handle != xtreeEnd(hosttree)) {
+		hostlist_t *entry = (hostlist_t *)xtreeData(hosttree, handle);
 		return entry;
 	}
 	
@@ -168,22 +168,22 @@ hostlist_t *find_hostlist(char *hostname)
 void add_to_hostlist(hostlist_t *rec)
 {
 	if (havehosttree == 0) {
-		hosttree = rbtNew(name_compare);
+		hosttree = xtreeNew(strcasecmp);
 		havehosttree = 1;
 	}
 
-	rbtInsert(hosttree, rec->hostentry->hostname, rec);
+	xtreeAdd(hosttree, rec->hostentry->hostname, rec);
 }
 
-static RbtIterator hostlistwalk;
+static xtreePos_t hostlistwalk;
 hostlist_t *hostlistBegin(void)
 {
 	if (havehosttree == 0) return NULL;
 
-	hostlistwalk = rbtBegin(hosttree);
+	hostlistwalk = xtreeFirst(hosttree);
 
-	if (hostlistwalk != rbtEnd(hosttree)) {
-		return (hostlist_t *)gettreeitem(hosttree, hostlistwalk);
+	if (hostlistwalk != xtreeEnd(hosttree)) {
+		return (hostlist_t *)xtreeData(hosttree, hostlistwalk);
 	}
 	else {
 		return NULL;
@@ -194,10 +194,10 @@ hostlist_t *hostlistNext(void)
 {
 	if (havehosttree == 0) return NULL;
 
-	if (hostlistwalk != rbtEnd(hosttree)) hostlistwalk = rbtNext(hosttree, hostlistwalk);
+	if (hostlistwalk != xtreeEnd(hosttree)) hostlistwalk = xtreeNext(hosttree, hostlistwalk);
 
-	if (hostlistwalk != rbtEnd(hosttree)) {
-		return (hostlist_t *)gettreeitem(hosttree, hostlistwalk);
+	if (hostlistwalk != xtreeEnd(hosttree)) {
+		return (hostlist_t *)xtreeData(hosttree, hostlistwalk);
 	}
 	else {
 		return NULL;
@@ -207,17 +207,17 @@ hostlist_t *hostlistNext(void)
 xymongen_col_t *find_or_create_column(char *testname, int create)
 {
 	xymongen_col_t *newcol = NULL;
-	RbtIterator handle;
+	xtreePos_t handle;
 
 	dbgprintf("find_or_create_column(%s)\n", textornull(testname));
 
 	if (havecolumntree == 0) {
-		columntree = rbtNew(name_compare);
+		columntree = xtreeNew(strcasecmp);
 		havecolumntree = 1;
 	}
 
-	handle = rbtFind(columntree, testname);
-	if (handle != rbtEnd(columntree)) newcol = (xymongen_col_t *)gettreeitem(columntree, handle);
+	handle = xtreeFind(columntree, testname);
+	if (handle != xtreeEnd(columntree)) newcol = (xymongen_col_t *)xtreeData(columntree, handle);
 
 	if (newcol == NULL) {
 		if (!create) return NULL;
@@ -227,7 +227,7 @@ xymongen_col_t *find_or_create_column(char *testname, int create)
 		newcol->listname = (char *)malloc(strlen(testname)+1+2); 
 		sprintf(newcol->listname, ",%s,", testname);
 
-		rbtInsert(columntree, newcol->name, newcol);
+		xtreeAdd(columntree, newcol->name, newcol);
 	}
 
 	return newcol;
