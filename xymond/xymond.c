@@ -4824,6 +4824,11 @@ int main(int argc, char *argv[])
 		hostsfn = strdup(xgetenv("HOSTSCFG"));
 	}
 
+	/* Make sure we load hosts.cfg file, and not via the network from ourselves */
+	hostsfn = (char *)realloc(hostsfn, strlen(hostsfn) + 2);
+	memmove(hostsfn+1, hostsfn, strlen(hostsfn));
+	*hostsfn = '!';
+
 	if (listenport == 0) {
 		if (xgetenv("XYMONDPORT"))
 			listenport = atoi(xgetenv("XYMONDPORT"));

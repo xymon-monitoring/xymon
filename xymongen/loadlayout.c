@@ -415,8 +415,6 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 
 xymongen_page_t *load_layout(char *pgset)
 {
-	FILE 	*hostsfile;
-	strbuffer_t *inbuf;
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols, *exceptcols;
@@ -428,8 +426,12 @@ xymongen_page_t *load_layout(char *pgset)
 	int	ip1, ip2, ip3, ip4;
 	char	*p;
 	int	fqdn = get_fqdn();
+	char	*cfgdata, *inbol, *ineol, insavchar;
 
-	load_hostnames(xgetenv("HOSTSCFG"), "dispinclude", fqdn);
+	if (load_hostnames(xgetenv("HOSTSCFG"), "dispinclude", fqdn) != 0) {
+		errprintf("Cannot load host configuration\n");
+		return NULL;
+	}
 
 	dbgprintf("load_layout(pgset=%s)\n", textornull(pgset));
 
@@ -437,11 +439,6 @@ xymongen_page_t *load_layout(char *pgset)
 	 * load_hostnames() picks up the hostname definitions, but not the page
 	 * layout. So we will scan the file again, this time doing the layout.
 	 */
-	hostsfile = stackfopen(xgetenv("HOSTSCFG"), "r", NULL);
-	if (hostsfile == NULL) {
-		errprintf("Cannot open the HOSTSCFG file '%s'\n", xgetenv("HOSTSCFG"));
-		return NULL;
-	}
 
 	if (pgset == NULL) pgset = "";
 	sprintf(pagetag, "%spage", pgset);
@@ -461,14 +458,22 @@ xymongen_page_t *load_layout(char *pgset)
 	cursubparent = NULL;
 	curtitle = NULL;
 
-	inbuf = newstrbuffer(0);
-	while (stackfgets(inbuf, "dispinclude")) {
-		sanitize_input(inbuf, 0, 0); if (STRBUFLEN(inbuf) == 0) continue;
+	inbol = cfgdata = hostscfg_content();
+	while (inbol && *inbol) {
+		inbol += strspn(inbol, " \t");
+		ineol = strchr(inbol, '\n');
+		if (ineol) {
+			while ((ineol > inbol) && (isspace(*ineol) || (*ineol == '\n'))) ineol--;
+			if (*ineol != '\n') ineol++;
 
-		dbgprintf("load_layout: -- got line '%s'\n", STRBUF(inbuf));
+			insavchar = *ineol;
+			*ineol = '\0';
+		}
 
-		if (strncmp(STRBUF(inbuf), pagetag, strlen(pagetag)) == 0) {
-			getnamelink(STRBUF(inbuf), &name, &link);
+		dbgprintf("load_layout: -- got line '%s'\n", inbol);
+
+		if (strncmp(inbol, pagetag, strlen(pagetag)) == 0) {
+			getnamelink(inbol, &name, &link);
 			if (curpage == NULL) {
 				/* First page - hook it on toppage as a subpage from there */
 				curpage = toppage->subpages = init_page(name, link);
@@ -488,13 +493,13 @@ xymongen_page_t *load_layout(char *pgset)
 			curhost = NULL;
 			addtopagelist(curpage);
 		}
-		else if (strncmp(STRBUF(inbuf), subpagetag, strlen(subpagetag)) == 0) {
+		else if (strncmp(inbol, subpagetag, strlen(subpagetag)) == 0) {
 			if (curpage == NULL) {
-				errprintf("'subpage' ignored, no preceding 'page' tag : %s\n", STRBUF(inbuf));
-				continue;
+				errprintf("'subpage' ignored, no preceding 'page' tag : %s\n", inbol);
+				goto nextline;
 			}
 
-			getnamelink(STRBUF(inbuf), &name, &link);
+			getnamelink(inbol, &name, &link);
 			if (cursubpage == NULL) {
 				cursubpage = curpage->subpages = init_page(name, link);
 			}
@@ -511,13 +516,13 @@ xymongen_page_t *load_layout(char *pgset)
 			curhost = NULL;
 			addtopagelist(cursubpage);
 		}
-		else if (strncmp(STRBUF(inbuf), subparenttag, strlen(subparenttag)) == 0) {
+		else if (strncmp(inbol, subparenttag, strlen(subparenttag)) == 0) {
 			xymongen_page_t *parentpage, *walk;
 
-			getparentnamelink(STRBUF(inbuf), toppage, &parentpage, &name, &link);
+			getparentnamelink(inbol, toppage, &parentpage, &name, &link);
 			if (parentpage == NULL) {
-				errprintf("'subparent' ignored, unknown parent page: %s\n", STRBUF(inbuf));
-				continue;
+				errprintf("'subparent' ignored, unknown parent page: %s\n", inbol);
+				goto nextline;
 			}
 
 			cursubparent = init_page(name, link);
@@ -537,10 +542,10 @@ xymongen_page_t *load_layout(char *pgset)
 			curhost = NULL;
 			addtopagelist(cursubparent);
 		}
-		else if (strncmp(STRBUF(inbuf), grouptag, strlen(grouptag)) == 0) {
-			int sorthosts = (strstr(STRBUF(inbuf), "group-sorted") != NULL);
+		else if (strncmp(inbol, grouptag, strlen(grouptag)) == 0) {
+			int sorthosts = (strstr(inbol, "group-sorted") != NULL);
 
-			getgrouptitle(STRBUF(inbuf), pgset, &link, &onlycols, &exceptcols);
+			getgrouptitle(inbol, pgset, &link, &onlycols, &exceptcols);
 			if (curgroup == NULL) {
 				curgroup = init_group(link, onlycols, exceptcols, sorthosts);
 				if (cursubparent != NULL) {
@@ -566,7 +571,7 @@ xymongen_page_t *load_layout(char *pgset)
 			if (curtitle) { curgroup->pretitle = curtitle; curtitle = NULL; }
 			curhost = NULL;
 		}
-		else if (sscanf(STRBUF(inbuf), "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if (sscanf(inbol, "%3d.%3d.%3d.%3d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			void *xymonhost = NULL;
 			int dialup, nonongreen, crittime = 1;
 			double warnpct = reportwarnlevel;
@@ -579,7 +584,7 @@ xymongen_page_t *load_layout(char *pgset)
 			char *hval;
 
 			/* Check for ".default." hosts - they are ignored. */
-			if (*hostname == '.') continue;
+			if (*hostname == '.') goto nextline;
 
 			if (!fqdn) {
 				/* Strip any domain from the hostname */
@@ -591,12 +596,12 @@ xymongen_page_t *load_layout(char *pgset)
 			xymonhost = hostinfo(hostname);
 			if (xymonhost == NULL) {
 				errprintf("Confused - hostname '%s' cannot be found. Ignored\n", hostname);
-				continue;
+				goto nextline;
 			}
 
 			/* Check for no-display hosts - they are ignored. */
 			/* But only when we're building the default pageset */
-			if ((strlen(pgset) == 0) && (xmh_item(xymonhost, XMH_FLAG_NODISP) != NULL)) continue;
+			if ((strlen(pgset) == 0) && (xmh_item(xymonhost, XMH_FLAG_NODISP) != NULL)) goto nextline;
 
 			for (targetpagecount=0; (targetpagecount < MAX_TARGETPAGES_PER_HOST); targetpagecount++) 
 				targetpagelist[targetpagecount] = NULL;
@@ -656,7 +661,7 @@ xymongen_page_t *load_layout(char *pgset)
 				 * 172.16.10.2 www.xymon.com # noconn
 				 *
 				 */
-				if (strstr(STRBUF(inbuf), hosttag) == NULL) targetpagecount = 0;
+				if (strstr(inbol, hosttag) == NULL) targetpagecount = 0;
 			}
 
 			if (strlen(pgset) == 0) {
@@ -782,28 +787,36 @@ xymongen_page_t *load_layout(char *pgset)
 				}
 			}
 		}
-		else if (strncmp(STRBUF(inbuf), summarytag, strlen(summarytag)) == 0) {
+		else if (strncmp(inbol, summarytag, strlen(summarytag)) == 0) {
 			/* summary row.column      IP-ADDRESS-OF-PARENT    http://xymon.com/ */
 			char sumname[MAX_LINE_LEN];
 			char receiver[MAX_LINE_LEN];
 			char url[MAX_LINE_LEN];
 			summary_t *newsum;
 
-			if (sscanf(STRBUF(inbuf), "summary %s %s %s", sumname, receiver, url) == 3) {
+			if (sscanf(inbol, "summary %s %s %s", sumname, receiver, url) == 3) {
 				newsum = init_summary(sumname, receiver, url);
 				newsum->next = sumhead;
 				sumhead = newsum;
 			}
 		}
-		else if (strncmp(STRBUF(inbuf), titletag, strlen(titletag)) == 0) {
+		else if (strncmp(inbol, titletag, strlen(titletag)) == 0) {
 			/* Save the title for the next entry */
-			curtitle = strdup(skipwhitespace(skipword(STRBUF(inbuf))));
+			curtitle = strdup(skipwhitespace(skipword(inbol)));
 		}
+
+nextline:
+		if (ineol) {
+			*ineol = insavchar;
+			if (*ineol != '\n') ineol = strchr(ineol, '\n');
+
+			inbol = (ineol ? ineol+1 : NULL);
+		}
+		else
+			inbol = NULL;
 	}
 
-	stackfclose(hostsfile);
-	freestrbuffer(inbuf);
-
+	xfree(cfgdata);
 	return toppage;
 }
 

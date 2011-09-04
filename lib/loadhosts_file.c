@@ -45,30 +45,115 @@ static int pagematch(pagelist_t *pg, char *name)
 	}
 }
 
-int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
+
+static strbuffer_t *contentbuffer = NULL;
+
+static int prepare_fromfile(char *hostsfn, char *extrainclude)
 {
-	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	static void *hostfiles = NULL;
 	FILE *hosts;
-	int ip1, ip2, ip3, ip4, groupid, pageidx;
-	char hostname[4096], *dgname;
 	strbuffer_t *inbuf;
-	pagelist_t *curtoppage, *curpage, *pgtail;
-	namelist_t *nametail = NULL;
-	void * htree;
-
-	load_hostinfo(NULL);
 
 	/* First check if there were no modifications at all */
 	if (hostfiles) {
 		if (!stackfmodified(hostfiles)){
-			dbgprintf("No files modified, skipping reload of %s\n", hostsfn);
 			return 1;
 		}
 		else {
 			stackfclist(&hostfiles);
 			hostfiles = NULL;
 		}
+	}
+
+	if (!contentbuffer) contentbuffer = newstrbuffer(0);
+	clearstrbuffer(contentbuffer);
+
+	hosts = stackfopen(hostsfn, "r", &hostfiles);
+	if (hosts == NULL) return -1;
+
+	inbuf = newstrbuffer(0);
+	while (stackfgets(inbuf, extrainclude)) {
+		sanitize_input(inbuf, 0, 0);
+		addtostrbuffer(contentbuffer, inbuf);
+		addtobuffer(contentbuffer, "\n");
+	}
+
+	stackfclose(hosts);
+	freestrbuffer(inbuf);
+
+	return 0;
+}
+
+static int prepare_fromnet(void)
+{
+	static char contentmd5[33] = { '\0', };
+	sendreturn_t *sres;
+	sendresult_t sendstat;
+	char *fdata, *fhash;
+
+	sres = newsendreturnbuf(1, NULL);
+	sendstat = sendmessage("config hosts.cfg", NULL, XYMON_TIMEOUT, sres);
+	if (sendstat != XYMONSEND_OK) {
+		errprintf("Cannot load hosts.cfg from xymond, code %d\n", sendstat);
+		return -1;
+	}
+
+	fdata = getsendreturnstr(sres, 1);
+	fhash = md5hash(fdata);
+	if (strcmp(contentmd5, fhash) == 0) {
+		/* No changes */
+		xfree(fdata);
+		return 1;
+	}
+
+	if (contentbuffer) freestrbuffer(contentbuffer);
+	contentbuffer = convertstrbuffer(fdata, 0);
+	strcpy(contentmd5, fhash);
+
+	return 0;
+}
+
+
+char *hostscfg_content(void)
+{
+	return strdup(STRBUF(contentbuffer));
+}
+
+int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
+{
+	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
+	int prepresult;
+	int ip1, ip2, ip3, ip4, groupid, pageidx;
+	char hostname[4096], *dgname;
+	pagelist_t *curtoppage, *curpage, *pgtail;
+	namelist_t *nametail = NULL;
+	void * htree;
+	char *cfgdata, *inbol, *ineol, insavchar;
+
+	load_hostinfo(NULL);
+
+	if ((*hostsfn == '!') || extrainclude)
+		prepresult = prepare_fromfile(hostsfn+1, extrainclude);
+	else if ((*hostsfn == '@') || (strcmp(hostsfn, xgetenv("HOSTSCFG")) == 0)) {
+		prepresult = prepare_fromnet();
+		if (prepresult == -1) {
+			errprintf("Failed to load from xymond, reverting to file-load\n");
+			prepresult = prepare_fromfile(xgetenv("HOSTSCFG"), extrainclude);
+		}
+	}
+	else
+		prepresult = prepare_fromfile(hostsfn, extrainclude);
+
+	/* Did we get the data ? */
+	if (prepresult == -1) {
+		errprintf("Cannot load host data\n");
+		return -1;
+	}
+
+	/* Any modifications at all ? */
+	if (prepresult == 1) {
+		dbgprintf("No files modified, skipping reload of %s\n", hostsfn);
+		return 1;
 	}
 
 	MEMDEFINE(hostname);
@@ -80,21 +165,26 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	pageidx = groupid = 0;
 	dgname = NULL;
 
-	hosts = stackfopen(hostsfn, "r", &hostfiles);
-	if (hosts == NULL) return -1;
-
-	inbuf = newstrbuffer(0);
 	htree = xtreeNew(strcasecmp);
-	while (stackfgets(inbuf, extrainclude)) {
-		sanitize_input(inbuf, 0, 0);
+	inbol = cfgdata = hostscfg_content();
+	while (inbol && *inbol) {
+		inbol += strspn(inbol, " \t");
+		ineol = strchr(inbol, '\n'); 
+		if (ineol) {
+			while ((ineol > inbol) && (isspace(*ineol) || (*ineol == '\n'))) ineol--;
+			if (*ineol != '\n') ineol++;
 
-		if (strncmp(STRBUF(inbuf), "page", 4) == 0) {
+			insavchar = *ineol;
+			*ineol = '\0';
+		}
+
+		if (strncmp(inbol, "page", 4) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
 			pageidx = groupid = 0;
 			if (dgname) xfree(dgname); dgname = NULL;
-			if (get_page_name_title(STRBUF(inbuf), "page", &name, &title) == 0) {
+			if (get_page_name_title(inbol, "page", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = strdup(name);
 				newp->pagetitle = (title ? strdup(title) : NULL);
@@ -106,13 +196,13 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				curpage = curtoppage = newp;
 			}
 		}
-		else if (strncmp(STRBUF(inbuf), "subpage", 7) == 0) {
+		else if (strncmp(inbol, "subpage", 7) == 0) {
 			pagelist_t *newp;
 			char *name, *title;
 
 			pageidx = groupid = 0;
 			if (dgname) xfree(dgname); dgname = NULL;
-			if (get_page_name_title(STRBUF(inbuf), "subpage", &name, &title) == 0) {
+			if (get_page_name_title(inbol, "subpage", &name, &title) == 0) {
 				newp = (pagelist_t *)malloc(sizeof(pagelist_t));
 				newp->pagepath = malloc(strlen(curtoppage->pagepath) + strlen(name) + 2);
 				sprintf(newp->pagepath, "%s/%s", curtoppage->pagepath, name);
@@ -126,14 +216,14 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				curpage = newp;
 			}
 		}
-		else if (strncmp(STRBUF(inbuf), "subparent", 9) == 0) {
+		else if (strncmp(inbol, "subparent", 9) == 0) {
 			pagelist_t *newp, *parent;
 			char *pname, *name, *title;
 
 			pageidx = groupid = 0;
 			if (dgname) xfree(dgname); dgname = NULL;
 			parent = NULL;
-			if (get_page_name_title(STRBUF(inbuf), "subparent", &pname, &title) == 0) {
+			if (get_page_name_title(inbol, "subparent", &pname, &title) == 0) {
 				for (parent = pghead; (parent && !pagematch(parent, pname)); parent = parent->next);
 			}
 
@@ -151,13 +241,13 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				curpage = newp;
 			}
 		}
-		else if (strncmp(STRBUF(inbuf), "group", 5) == 0) {
+		else if (strncmp(inbol, "group", 5) == 0) {
 			char *tok, *inp;
 
 			groupid++;
 			if (dgname) xfree(dgname); dgname = NULL;
 
-			tok = strtok(STRBUF(inbuf), " \t");
+			tok = strtok(inbol, " \t");
 			if ((strcmp(tok, "group-only") == 0) || (strcmp(tok, "group-except") == 0)) {
 				tok = strtok(NULL, " \t");
 			}
@@ -197,7 +287,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				}
 			}
 		}
-		else if (sscanf(STRBUF(inbuf), "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if (sscanf(inbol, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
 			char clientname[4096];
@@ -211,7 +301,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			     (ip4 < 0) || (ip4 > 255)) {
 				errprintf("Invalid IPv4-address for host %s (nibble outside 0-255 range): %d.%d.%d.%d\n",
 					  hostname, ip1, ip2, ip3, ip4);
-				continue;
+				goto nextline;
 			}
 
 			namelist_t *newitem = calloc(1, sizeof(namelist_t));
@@ -243,7 +333,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->defaulthost = defaulthost;
 
 			clientname[0] = downtime[0] = '\0';
-			startoftags = strchr(STRBUF(inbuf), '#');
+			startoftags = strchr(inbol, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
 			newitem->allelems = strdup(startoftags);
@@ -345,9 +435,20 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			MEMUNDEFINE(clientname);
 			MEMUNDEFINE(downtime);
 		}
+
+
+nextline:
+		if (ineol) {
+			*ineol = insavchar;
+			if (*ineol != '\n') ineol = strchr(ineol, '\n');
+
+			inbol = (ineol ? ineol+1 : NULL);
+		}
+		else
+			inbol = NULL;
 	}
-	stackfclose(hosts);
-	freestrbuffer(inbuf);
+
+	xfree(cfgdata);
 	if (dgname) xfree(dgname);
 	xtreeDestroy(htree);
 
