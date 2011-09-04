@@ -132,8 +132,10 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 
 	load_hostinfo(NULL);
 
-	if ((*hostsfn == '!') || extrainclude)
+	if (*hostsfn == '!')
 		prepresult = prepare_fromfile(hostsfn+1, extrainclude);
+	else if (extrainclude)
+		prepresult = prepare_fromfile(hostsfn, extrainclude);
 	else if ((*hostsfn == '@') || (strcmp(hostsfn, xgetenv("HOSTSCFG")) == 0)) {
 		prepresult = prepare_fromnet();
 		if (prepresult == -1) {
