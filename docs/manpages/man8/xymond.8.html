@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMOND</TITLE>
 </HEAD><BODY>
 <H1>XYMOND</H1>
-Section: Maintenance Commands (8)<BR>Updated: Version Exp: 30 Jul 2011<BR><A HREF="#index">Index</A>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp:  9 Sep 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -114,6 +114,17 @@ are stored for flap detection to work. The flap-count setting should be
 at least (N/300)-1, e.g. if you set flap-seconds to 3600 (1 hour), then 
 flap-count should be at least (3600/300)-1, i.e. 11.
 Default: 1800 seconds (30 minutes).
+<P>
+<DT>--delay-red=N<DD>
+Sets the delay before a red/yellow status causes a change in the web
+page display. Is usually controlled on a per-host basis via the
+<B>delayred</B> and <B>delayyellow</B> settings in
+<I><A HREF="../man5/hosts.cfg.5.html">hosts.cfg</A>(5)</I>
+
+but these options allow you to set a default value for the delays.
+The value N is in minutes. Default: 0 minutes (no delay).
+Note: Since most tests only execute once every 5 minutes, it will
+usually not make sense to set N to anything but a multiple of 5.
 <P>
 <DT>--env=FILENAME<DD>
 Loads the content of FILENAME as environment settings before starting
@@ -373,6 +384,6 @@ file is read to determine the names of all known hosts.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 13:51:46 GMT, July 30, 2011
+Time: 08:18:06 GMT, September 09, 2011
 </BODY>
 </HTML>

@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMONGEN</TITLE>
 </HEAD><BODY>
 <H1>XYMONGEN</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 30 Jul 2011<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp:  9 Sep 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -67,17 +67,16 @@ Provide a summary of available command-line options.
 Prints the version number of xymongen
 <P>
 <DT>--docurl=URL<DD>
-Make hostnames be hyperlinks to documentation, accessed via a common
-web page (typically a CGI script or a PHP-driven dynamic page). The URL 
-parameter is a formatting string with the name of the web page - you can 
-put a &quot;%s&quot; in it which will be replaced by the hostname being accessed. 
-E.g. if you use the bb-notes extension from <A HREF="http://www.deadcat.net">www.deadcat.net</A>, you would
-enable this with &quot;--docurl=/xymon/admin/notes.php?host=%s&quot;. For the host 
-<A HREF="http://www.storner.dk">www.storner.dk</A> this will result in a link to 
-&quot;/xymon/admin/notes.php?host=<A HREF="http://www.storner.dk">www.storner.dk</A>&quot;. 
+This option is deprecated, use the HOSTDOCURL setting in
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
+
+instead.
 <P>
 <DT>--doccgi=URL<DD>
-This option is deprecated; please use --docurl instead.
+This option is deprecated, use the HOSTDOCURL setting in
+<I><A HREF="../man5/xymonserver.cfg.5.html">xymonserver.cfg</A>(5)</I>
+
+instead.
 <P>
 <DT>--doc-window<DD>
 Causes links to documentation for hosts and services to open in a
@@ -135,6 +134,16 @@ status page, and sends a status message for the Xymon server itself
 reflecting the color of the Critical status page. This allows you to track
 when problems have appeared on the critical status page. The logfile is
 stored in $XYMONSERVERLOGS/criticalstatus.log
+<P>
+<DT>--loadhostsfromxymond<DD>
+Instead of reading the hosts.cfg file, xymongen will load the
+hosts.cfg configuration from the xymond daemon. This eliminates
+the need for reading the hosts.cfg, and if you have xymond and
+xymongen running on different hosts, it also eliminates the need
+for copying the hosts.cfg file between systems. Note that the
+&quot;dispinclude&quot; option in hosts.cfg is ignored when this option is
+enabled.
+<P>
 <P>
 </DL>
 <A NAME="lbAG">&nbsp;</A>
@@ -823,6 +832,6 @@ utility is used to calculate the start- and end-time parameters.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 13:51:46 GMT, July 30, 2011
+Time: 08:18:06 GMT, September 09, 2011
 </BODY>
 </HTML>

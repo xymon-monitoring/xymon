@@ -1,6 +1,38 @@
+Changes from 4.3.4 -> 4.3.5 (9 Sep 2011)
+========================================
+* rev 6754
+* Fix crash in CGI generating the "info" status column.
+* Fix broken handling of IGNORE for log-file analysis.
+* Fix broken clean-up of obsolete cookies (no user impact).
+* Devmon RRD handler: Fix missing initialisation, which
+  might cause crashes of the RRD handler.
+* Fix crashes in xymond caused by faulty new library for
+  storing cookies and host-information.
+* Fix memory corruption/crash in xymond caused by logging 
+  of multi-source statuses.
+* New "delayred" and "delayyellow" definitions for a host
+  can be used to delay change to a yellow/red status for
+  any status column (replaces the network-specific "badFOO"
+  definitions).
+* analysis.cfg and alerts.cfg: New DISPLAYGROUP setting to
+  select hosts by the group/group-only/group-except text.
+* New HOSTDOCURL setting in xymonserver.cfg. Replaces the
+  xymongen "--docurl" and "--doccgi" options, and is used
+  by all tools.
+* xymond_history option to control location of PID file.
+* Critical Systems view: Optionally show eventlog for the
+  hosts present on the CS view.
+* Critical Systems view: Multiple --config options can
+  now be used, to display critical systems from multiple
+  configurations on one page.
+* Detailed status display: Speedup by no longer having to
+  load the hosts.cfg file.
+* xymongen and xymonnet: Optionally load the hosts.cfg
+  from xymond instead of having to read the file.
+
 Changes from 4.3.3 -> 4.3.4 (1 Aug 2011)
 ========================================
-* rev 6713
+* rev 6722
 * Fix crashes and data corruption in Xymon worker modules
   (xymond_client, xymond_rrd etc) after handling large
   messages.

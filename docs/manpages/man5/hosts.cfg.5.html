@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of HOSTS.CFG</TITLE>
 </HEAD><BODY>
 <H1>HOSTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 30 Jul 2011<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp:  9 Sep 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -137,6 +137,21 @@ of the hostname on at least one of the servers involved. Some hosts
 with multiple IP-adresses may use different IP's for sending data to
 Xymon, however. This tag disables the check of source IP when receiving
 data.
+<P>
+<DT>delayred=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]<DD>
+Usually, status changes happen immediately. This tag is used to defer
+an update to red for the STATUSCOLUMN status for DELAY minutes. E.g.
+with <B>delayred=disk:10,cpu:30</B>, a red disk-status will not appear
+on the Xymon webpages until it has been red for at least 10 minutes.
+Note: Since most tests only execute once every 5 minutes, it will
+usually not make sense to set N to anything but a multiple of 5. The
+exception is network tests, since 
+<I><A HREF="../man1/xymonnet-again.sh.1.html">xymonnet-again.sh</A>(1)</I>
+
+will re-run failed network tests once a minute for up to 30 minutes.
+<P>
+<DT>delayyellow=STATUSCOLUMN:DELAY[,STATUSCOLUMN:DELAY...]<DD>
+Same as <B>delayred</B>, but defers the change to a yellow status.
 <P>
 <P>
 </DL>
@@ -373,6 +388,11 @@ or yellow status.
 <P>
 <DL COMPACT>
 <DT>NK:testname[,testname]<DD>
+NOTE: This has been deprecated, you should use
+<I><A HREF="../man1/criticalview.cgi.1.html">criticalview.cgi</A>(1)</I>
+
+instead of the NK tag.
+<P>
 Define the tests that you want included on the critical page.
 E.g. if you have a host where you only want to see the 
 http tests on critical.html, you specify it as
@@ -437,6 +457,7 @@ in the WML (WAP) page. Syntax is identical to the NK: tag.
 The default set of WML tests are taken from the --wml
 command line option.  If no &quot;WML:&quot; tag is specified, the 
 &quot;NK:&quot; tag is used if present.
+<P>
 <P>
 </DL>
 <A NAME="lbAK">&nbsp;</A>
@@ -688,6 +709,9 @@ servers in a dependency definition. Such dependencies are
 silently ignored.
 <P>
 <DT>badTEST[-weekdays-starttime-endtime]:x:y:z<DD>
+NOTE: This has been deprecated, use the <B>delayred</B> and
+<B>delayyellow</B> settings instead.
+<P>
 Normally when a network test fails, the status changes to
 red immediately.  With a &quot;badTEST:x:y:z&quot; tag this behaviour changes:
 <BR>
@@ -1568,6 +1592,6 @@ daemon is listening on a non-standard IP-address or port-number.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 13:51:46 GMT, July 30, 2011
+Time: 08:18:06 GMT, September 09, 2011
 </BODY>
 </HTML>

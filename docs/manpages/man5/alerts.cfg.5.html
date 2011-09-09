@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of ALERTS.CFG</TITLE>
 </HEAD><BODY>
 <H1>ALERTS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 30 Jul 2011<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp:  9 Sep 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -71,6 +71,33 @@ The PAGE name of top-level page is an empty string. To match this, use
 <B>EXPAGE=targetstring</B>
 
 Rule excluding an alert if the pagename matches.
+<P>
+<B>DISPLAYGROUP=groupstring</B>
+
+Rule matching an alert by the text of the display-group (text following the group, 
+group-only, group-except heading) in the hosts.cfg file. &quot;groupstring&quot; is the text
+for the group, stripped of any HTML tags. E.g. if you have this setup:
+<DL COMPACT>
+<DT><DD>
+<PRE>
+group Web
+10.0.0.1 www1.foo.com
+10.0.0.2 www2.foo.com
+group Production databases
+10.0.1.1 db1.foo.com
+</PRE>
+
+</DL>
+<P>
+
+Then the hosts in the Web-group can be matched with <B>DISPLAYGROUP=Web</B>,
+and the database servers can be matched with <B>DISPLAYGROUP=&quot;Production databases&quot;</B>.
+Note that you can also use regular expressions, e.g. <B>DISPLAYGROUP=%database</B>.
+If there is no group-setting for the host, use &quot;DISPLAYGROUP=NONE&quot;.
+<P>
+<B>EXDISPLAYGROUP=groupstring</B>
+
+Rule excluding a group by matching the display-group string.
 <P>
 <B>HOST=targetstring</B>
 
@@ -274,6 +301,6 @@ guide in the Online documentation.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 13:51:46 GMT, July 30, 2011
+Time: 08:18:06 GMT, September 09, 2011
 </BODY>
 </HTML>
