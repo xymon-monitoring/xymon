@@ -41,6 +41,7 @@ summary_t	*sumhead = NULL;			/* Summaries we send out */
 dispsummary_t	*dispsums = NULL;			/* Summaries we received and display */
 int		xymon_color, nongreen_color, critical_color;	/* Top-level page colors */
 int		fqdn = 1;				/* Xymon FQDN setting */
+int		loadhostsfromxymond = 0;
 
 time_t		reportstart = 0;
 time_t		reportend = 0;
@@ -447,6 +448,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[i], "--no-update") == 0) {
 			dontsendmessages = 1;
+		}
+		else if (strcmp(argv[i], "--loadhostsfromxymond") == 0) {
+			loadhostsfromxymond = 1;
 		}
 		else if (strcmp(argv[i], "--version") == 0) {
 			printf("xymongen version %s\n", VERSION);

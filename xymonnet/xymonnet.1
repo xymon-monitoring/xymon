@@ -181,6 +181,15 @@ select the source IP address used for the network tests.
 "IPADDRESS" must be a valid IP-address on the host running
 xymonnet.
 
+.IP --loadhostsfromxymond
+Instead of reading the hosts.cfg file, xymonnet will load the
+hosts.cfg configuration from the xymond daemon. This eliminates
+the need for reading the hosts.cfg, and if you have xymond and
+xymonnet running on different hosts, it also eliminates the need
+for copying the hosts.cfg file between systems. Note that the
+"netinclude" option in hosts.cfg is ignored when this option is
+enabled.
+
 .SH OPTIONS FOR TESTS OF THE SIMPLE TCP SERVICES
 .IP --checkresponse[=COLOR]
 When testing well-known services (e.g. FTP, SSH, SMTP, POP-2, POP-3, 

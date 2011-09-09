@@ -104,6 +104,7 @@ int		respcheck_color = COL_YELLOW;
 int		extcmdtimeout = 30;
 int		bigfailure = 0;
 char		*defaultsourceip = NULL;
+int		loadhostsfromxymond = 0;
 
 void dump_hostlist(void)
 {
@@ -392,9 +393,21 @@ void load_tests(void)
 	testedhost_t *h;
 	int badtagsused = 0;
 
-	load_hostnames(xgetenv("HOSTSCFG"), "netinclude", get_fqdn());
+	if (loadhostsfromxymond) {
+		if (load_hostnames("@", NULL, fqdn) != 0) {
+			errprintf("Cannot load host configuration from xymond\n");
+			return;
+		}
+	}
+	else {
+		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", fqdn) != 0) {
+			errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
+			return;
+		}
+	}
+
 	if (first_host() == NULL) {
-		errprintf("Cannot load file %s\n", xgetenv("HOSTSCFG"));
+		errprintf("Empty configuration from %s\n", (loadhostsfromxymond ? "xymond" : xgetenv("HOSTSCFG")));
 		return;
 	}
 
@@ -2002,6 +2015,9 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--huge=") == 0) {
 			char *p = strchr(argv[argi], '=');
 			p++; warnbytesread = atoi(p);
+		}
+		else if (strcmp(argv[argi], "--loadhostsfromxymond") == 0) {
+			loadhostsfromxymond = 1;
 		}
 
 		/* Options for TCP tests */

@@ -235,6 +235,7 @@ extern int		reportwarnstops;
 extern int		reportstyle;
 extern int		dynamicreport;
 extern int              fqdn;
+extern int		loadhostsfromxymond;
 
 #endif
 

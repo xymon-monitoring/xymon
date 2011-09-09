@@ -428,8 +428,21 @@ xymongen_page_t *load_layout(char *pgset)
 	int	fqdn = get_fqdn();
 	char	*cfgdata, *inbol, *ineol, insavchar;
 
-	if (load_hostnames(xgetenv("HOSTSCFG"), "dispinclude", fqdn) != 0) {
-		errprintf("Cannot load host configuration\n");
+	if (loadhostsfromxymond) {
+		if (load_hostnames("@", NULL, fqdn) != 0) {
+			errprintf("Cannot load host configuration from xymond\n");
+			return NULL;
+		}
+	}
+	else {
+		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", fqdn) != 0) {
+			errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
+			return NULL;
+		}
+	}
+
+	if (first_host() == NULL) {
+		errprintf("Empty configuration from %s\n", (loadhostsfromxymond ? "xymond" : xgetenv("HOSTSCFG")));
 		return NULL;
 	}
 
