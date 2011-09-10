@@ -1,4 +1,4 @@
-PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_rrd xymond_sample xymond_client xymond_hostdata xymond_capture xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
+PROGRAMS = xymon.sh xymond xymond_channel xymond_locator xymond_filestore xymond_history xymond_alert xymond_rrd xymond_sample xymond_client xymond_hostdata xymond_capture xymond_distribute xymonfetch xymon-mailack trimhistory combostatus xymonreports.sh moverrd.sh convertnk rrdcachectl
 CLIENTPROGRAMS = ../client/xymond_client
 
 LIBOBJS = ../lib/libxymon.a
@@ -14,6 +14,7 @@ RRDOBJS       = xymond_rrd.o       xymond_worker.o xymond_buffer.o do_rrd.o clie
 HOSTDATAOBJS  = xymond_hostdata.o  xymond_worker.o xymond_buffer.o
 CAPTUREOBJS   = xymond_capture.o   xymond_worker.o xymond_buffer.o
 CLIENTOBJS    = xymond_client.o    xymond_worker.o xymond_buffer.o client_config.o
+DISTRIBUTEOBJS= xymond_distribute.o xymond_worker.o xymond_buffer.o
 COMBOTESTOBJS = combostatus.o
 MAILACKOBJS   = xymon-mailack.o
 TRIMHISTOBJS  = trimhistory.o
@@ -65,6 +66,9 @@ xymond_sample: $(SAMPLEOBJS) $(LIBOBJS)
 
 xymond_capture: $(CAPTUREOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(CAPTUREOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+
+xymond_distribute: $(DISTRIBUTEOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(DISTRIBUTEOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
 
 xymond_hostdata: $(HOSTDATAOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RPATHOPT) $(HOSTDATAOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)

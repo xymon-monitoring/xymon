@@ -1,0 +1,32 @@
+.TH XYMOND_DISTRIBUTE 8 "Version 4.3.5:  9 Sep 2011" "Xymon"
+.SH NAME
+xymond_distribute \- xymond worker module for distributing commands
+.SH SYNOPSIS
+.B "xymond_channel --channel=enadis xymond_distribute [options]"
+
+.SH DESCRIPTION
+xymond_distribute is a worker module for xymond, and as such it is normally
+run via the
+.I xymond_channel(8)
+program. It is used if you have multiple Xymon servers running in a
+master/slave configuration. xymond_distribute runs on the master server and
+receives "drop", "rename", "enable" and "disable" messages from xymond. 
+xymond_distribute then forwards these to the other Xymon servers as standard 
+xymon messages. So if a user on the master Xymon server disables a red status, 
+xymond_distribute will forward this to the other Xymon servers so that the 
+change happens everywhere.
+
+NOTE: xymond_distribute does not check to see if a message has already been
+forwarded, so you can easily create forwarding loops.
+
+.SH OPTIONS
+.IP "--peer=HOSTNAME"
+The peer that messages are forwarded to. If you have multiple peers, repeat
+this option.
+
+.IP "--debug"
+Enable debugging output.
+
+.SH "SEE ALSO"
+xymond_channel(8), xymond(8), xymon(7)
+
