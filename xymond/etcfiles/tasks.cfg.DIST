@@ -65,6 +65,19 @@
 	NEEDS xymond
 	CMD xymond_channel --channel=clichg --log=$XYMONSERVERLOGS/hostdata.log xymond_hostdata
 
+# "distribute" forwards enable/disable/drop/rename messages to other Xymon servers.
+# You would use it when running Xymon in an active/passive (master/slave) configuration.
+# I.e. one Xymon server is the primary server where users manage their hosts; the 
+# other acts as a backup in case the primary server is down. This module then makes
+# sure that all of the administrative commands are forwarded to the backup (slave)
+# system.
+# NOTE: xymond_distribute does NOT check if a message is looping between servers that
+# forward to each other. So take care not to create forwarding loops.
+[distribute]
+	DISABLED
+	ENVFILE @XYMONHOME@/etc/xymonserver.cfg
+	NEEDS xymond
+	CMD xymond_channel --channel=enadis --log=$XYMONSERVERLOGS/distribute.log xymond_distribute --peer=IP.OF.SLAVE.SERVER
 
 
 ######################################################################################
