@@ -807,13 +807,18 @@ void posttochannel(xymond_channel_t *channel, char *channelmarker,
 			break;
 
 		  case C_ENADIS:
-			n = snprintf(channel->channelbuf, (bufsz-5),
-				"@@%s#%u/%s|%d.%06d|%s|%s|%s|%d|%s",
-				channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
-				sender, hostname, log->test->name, (int) log->enabletime, (log->dismsg ? nlencode(log->dismsg) : ""));
-			if (n > (bufsz-5)) {
-				errprintf("Oversize enadis msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
-					sender, hostname, log->test->name, n, bufsz);
+			{
+				char *dism = "";
+
+				if (log->dismsg) dism = nlencode(log->dismsg);
+				n = snprintf(channel->channelbuf, (bufsz-5),
+						"@@%s#%u/%s|%d.%06d|%s|%s|%s|%d|%s",
+						channelmarker, channel->seq, hostname, (int) tstamp.tv_sec, (int)tstamp.tv_usec,
+						sender, hostname, log->test->name, (int) log->enabletime, dism);
+				if (n > (bufsz-5)) {
+					errprintf("Oversize enadis msg from %s for %s:%s truncated (n=%d, limit=%d)\n", 
+							sender, hostname, log->test->name, n, bufsz);
+				}
 			}
 			*(channel->channelbuf + bufsz - 5) = '\0';
 			break;
@@ -5013,6 +5018,8 @@ int main(int argc, char *argv[])
 			posttochannel(noteschn, "logrotate", NULL, "xymond", NULL, NULL, "");
 			posttochannel(enadischn, "logrotate", NULL, "xymond", NULL, NULL, "");
 			posttochannel(clientchn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(clichgchn, "logrotate", NULL, "xymond", NULL, NULL, "");
+			posttochannel(userchn, "logrotate", NULL, "xymond", NULL, NULL, "");
 		}
 
 		if (reloadconfig && hostsfn) {
@@ -5053,6 +5060,8 @@ int main(int argc, char *argv[])
 				posttochannel(noteschn, "reload", NULL, "xymond", NULL, NULL, "");
 				posttochannel(enadischn, "reload", NULL, "xymond", NULL, NULL, "");
 				posttochannel(clientchn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(clichgchn, "reload", NULL, "xymond", NULL, NULL, "");
+				posttochannel(userchn, "reload", NULL, "xymond", NULL, NULL, "");
 			}
 
 			load_clientconfig();
