@@ -25,6 +25,11 @@ static void errormsg(char *msg)
 	exit(1);
 }
 
+static int idcompare(const void *p1, const void *p2)
+{
+	return strcmp(* (char * const *) p1, * (char * const *) p2);
+}
+
 #define ACT_NONE 0
 #define ACT_CREATE 1
 #define ACT_DELETE 2
@@ -79,7 +84,6 @@ int main(int argc, char *argv[])
 	char *hffile = "useradm";
 	int bgcolor = COL_BLUE;
 	char *passfile = NULL;
-	char **userlist = NULL;
 	FILE *fd;
 	char *infomsg = NULL;
 
@@ -159,16 +163,32 @@ int main(int argc, char *argv[])
 	sethostenv_clearlist(NULL);
 	sethostenv_addtolist(NULL, "", "", NULL, 1); /* Have a blank entry first so we won't delete one by accident */
 	fd = fopen(passfile, "r");
+
 	if (fd != NULL) {
 		char l[1024];
 		char *id, *delim;
+		int usercount;
+		char **userlist;
+		int i;
+
+		usercount = 0;
+		userlist = (char **)calloc(usercount+1, sizeof(char *));
 
 		while (fgets(l, sizeof(l), fd)) {
-			id = l; delim = strchr(l, ':'); if (delim) *delim = '\0';
-			sethostenv_addtolist(NULL, id, id, NULL, 0);
+			id = l; delim = strchr(l, ':'); 
+			if (delim) {
+				*delim = '\0';
+				usercount++;
+				userlist = (char **)realloc(userlist, (usercount+1)*sizeof(char *));
+				userlist[usercount-1] = strdup(id);
+				userlist[usercount] = NULL;
+			}
 		}
 
 		fclose(fd);
+
+		qsort(&userlist[0], usercount, sizeof(char *), idcompare);
+		for (i=0; (userlist[i]); i++) sethostenv_addtolist(NULL, userlist[i], userlist[i], NULL, 0);
 	}
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));
