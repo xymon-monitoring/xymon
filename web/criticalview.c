@@ -139,7 +139,7 @@ int loadstatus(int maxprio, time_t maxage, int mincolor, int wantacked)
 				}
 
 				if ( (hostinfo(newitem->hostname) == NULL)  ||
-				     (newitem->config->priority > maxprio)  ||
+				     ((newitem->config->priority > maxprio)  && (newitem->config->priority != 99)) ||
 				     ((now - newitem->lastchange) > maxage) ||
 				     (newitem->color < mincolor)            ||
 				     (ackmsgstr && !wantacked)              ) {
@@ -208,7 +208,7 @@ void print_colheaders(FILE *output, void * rbcolumns)
 	fprintf(output, "<TR><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", colcount);
 }
 
-void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * columns, int prio, int firsthost)
+void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * columns, int prio, int firsthost, int firsthostever)
 {
 	void *hinfo;
 	char *dispname, *ip, *key;
@@ -225,7 +225,17 @@ void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * col
 	/* Print the priority */
 	fprintf(output, "<TD ALIGN=LEFT VALIGN=TOP WIDTH=10%% NOWRAP>");
 	if (firsthost) 
-		fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("XYMONPAGEROWFONT"), prio);
+		if (prio == 99) {
+			if (firsthostever)
+				/* Only non-prioritised hosts, so just drop that text */
+				fprintf(output, "&nbsp;");
+			else
+				fprintf(output, "<FONT %s>No priority</FONT>", xgetenv("XYMONPAGEROWFONT"));
+		}
+		else {
+			fprintf(output, "<FONT %s>PRIO %d</FONT>", xgetenv("XYMONPAGEROWFONT"), prio);
+		}
+
 	else 
 		fprintf(output, "&nbsp;");
 	fprintf(output, "</TD>\n");
@@ -289,7 +299,8 @@ void print_hoststatus(FILE *output, hstatus_t *itm, void * statetree, void * col
 void print_oneprio(FILE *output, void * statetree, void * hoptree, void * rbcolumns, int prio)
 {
 	xtreePos_t hhandle;
-	int firsthost = 1;
+	static int firsthostever = 1;
+	int firsthostthisprio = 1;
 	char *curhost = "";
 
 	/* Then output each host and their column status */
@@ -303,13 +314,13 @@ void print_oneprio(FILE *output, void * statetree, void * hoptree, void * rbcolu
 
 		/* New host */
 		curhost = itm->hostname;
-		print_hoststatus(output, itm, statetree, rbcolumns, prio, firsthost);
+		print_hoststatus(output, itm, statetree, rbcolumns, prio, firsthostthisprio, firsthostever);
 		xtreeAdd(hoptree, itm->hostname, itm);
-		firsthost = 0;
+		firsthostthisprio = 0;
 	}
 
 	/* If we did output any hosts, make some room for the next priority */
-	if (!firsthost) fprintf(output, "<TR><TD>&nbsp;</TD></TR>\n");
+	if (!firsthostthisprio) fprintf(output, "<TR><TD>&nbsp;</TD></TR>\n");
 }
 
 
