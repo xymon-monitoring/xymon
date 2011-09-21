@@ -22,10 +22,10 @@ xymongrep: $(HOSTGREPOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(HOSTGREPOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymoncfg: $(HOSTSHOWOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libxymon.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ../client/xymoncfg: $(HOSTSHOWOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/xymonclient.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(HOSTSHOWOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymon: $(XYMONOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
@@ -34,16 +34,16 @@ xymon: $(XYMONOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(XYMONOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymonlaunch: $(LAUNCHOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libxymon.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ../client/xymonlaunch: $(LAUNCHOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/xymonclient.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(LAUNCHOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymoncmd: $(CMDOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libxymon.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 ../client/xymoncmd: $(CMDOBJS) ../lib/xymonclient.a
-	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/xymonclient.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -o $@ $(CMDOBJS) ../lib/xymonclient.a $(NETLIBS) $(LIBRTDEF)
 
 xymondigest: $(DIGESTOBJS) ../lib/libxymon.a
 	$(CC) $(CFLAGS) -o $@ $(DIGESTOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)

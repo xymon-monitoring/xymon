@@ -63,13 +63,13 @@ timefunc-client.o: timefunc.c
 	$(CC) $(CFLAGS) -DCLIENTONLY -c -o $@ $<
 
 loadhosts: loadhosts.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libxymon.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ loadhosts.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 stackio: stackio.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c ./libxymon.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ stackio.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 availability: availability.c libxymon.a
-	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libxymon.a $(LIBRTDEF)
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ availability.c ./libxymon.a $(NETLIBS) $(LIBRTDEF)
 
 md5: md5.c
 	$(CC) $(CFLAGS) -DSTANDALONE `./test-endianness` -o $@ md5.c
