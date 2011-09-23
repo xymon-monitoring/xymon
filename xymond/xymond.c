@@ -1486,9 +1486,11 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		ackinfo_t *awalk;
 
 		if ((oldalertstatus != A_OK) && (newalertstatus == A_OK)) {
-			/* The status recovered. Set the "clearack" timer */
-			time_t cleartime = now + ACKCLEARDELAY;
-			for (awalk = log->acklist; (awalk); awalk = awalk->next) awalk->cleartime = cleartime;
+			/* The status recovered. Set the "clearack" timer, unless it is just because we are in a DOWNTIME period */
+			if (!log->downtimeactive) {
+				time_t cleartime = now + ACKCLEARDELAY;
+				for (awalk = log->acklist; (awalk); awalk = awalk->next) awalk->cleartime = cleartime;
+			}
 		}
 		else if ((oldalertstatus == A_OK) && (newalertstatus != A_OK)) {
 			/* The status went into a failure-mode. Any acks are revived */
