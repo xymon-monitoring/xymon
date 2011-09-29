@@ -98,11 +98,28 @@ void parse_query(void)
 }
 
 
+typedef struct f_t {
+	char *fn;
+	time_t tstamp;
+} f_t;
+
+static int mtimesort(const void *p1, const void *p2)
+{
+	const f_t *r1 = p1;
+	const f_t *r2 = p2;
+
+	if (r1->tstamp == r2->tstamp) return 0;
+	else if (r1->tstamp < r2->tstamp) return 1;
+	else return -1;
+}
+
 void showreqlist(char *dir, char *title, char *action, char *actiontitle)
 {
 	DIR *d;
 	struct dirent *de;
 	char dirname[PATH_MAX];
+	f_t *files;
+	int fcount = 0, fidx;
 	char *bgcols[] = { "#333333", "#000033", NULL };
 	int idx = 0;
 
@@ -113,12 +130,8 @@ void showreqlist(char *dir, char *title, char *action, char *actiontitle)
 	if (d == NULL) return;
 
 	chdir(dirname);
-
-	headfoot(stdout, hffile, "", "header", COL_BLUE);
-	fprintf(stdout, "<center>\n");
-	fprintf(stdout, "<table>\n");
-
-	fprintf(stdout, "<h3>%s</h3>\n", title);
+	fcount = 0;
+	files = (f_t *)calloc(1, sizeof(f_t));
 	while ((de = readdir(d)) != NULL) {
 		struct stat st;
 		char timestamp[20];
@@ -127,13 +140,31 @@ void showreqlist(char *dir, char *title, char *action, char *actiontitle)
 		stat(de->d_name, &st);
 		if (!S_ISREG(st.st_mode)) continue;
 
-		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M", localtime(&st.st_mtime));
+		fcount++;
+		files = (f_t *)realloc(files, (fcount+1)*sizeof(f_t));
+		files[fcount-1].fn = strdup(de->d_name);
+		files[fcount-1].tstamp = st.st_mtime;
+	}
+	closedir(d);
+	files[fcount].fn = NULL; files[fcount].tstamp = 0;
+	qsort(&files[0], fcount, sizeof(f_t), mtimesort);
+
+	headfoot(stdout, hffile, "", "header", COL_BLUE);
+	fprintf(stdout, "<center>\n");
+	fprintf(stdout, "<table>\n");
+
+	fprintf(stdout, "<h3>%s</h3>\n", title);
+	for (fidx = 0; (fidx < fcount); fidx++) {
+		struct stat st;
+		char timestamp[20];
+
+		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M", localtime(&(files[fidx].tstamp)));
 		fprintf(stdout, "<tr BGCOLOR=\"%s\"><td><a href=\"%s?viewrequest=%s/%s\">%s</a></td><td width=\"10px\">&nbsp;</td><td>%s</td>",
-			bgcols[idx], getenv("SCRIPT_NAME"), dir, de->d_name, de->d_name, timestamp);
+			bgcols[idx], getenv("SCRIPT_NAME"), dir, files[fidx].fn, files[fidx].fn, timestamp);
 
 		if (action) {
 			fprintf(stdout, "<td width=\"10px\">&nbsp;</td><td><a href=\"%s?%s=%s\">%s</a></td>",
-				getenv("SCRIPT_NAME"), action, de->d_name, actiontitle);
+				getenv("SCRIPT_NAME"), action, files[fidx].fn, actiontitle);
 		}
 
 		fprintf(stdout, "<tr>\n");
