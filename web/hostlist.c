@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
 	char *req, *board, *l;
 	int argi, res;
 	sendreturn_t *sres;
+	char *cookie;
 	pcre *dummy;
 
 	init_timestamp();
@@ -86,7 +87,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	sethostenv_pagepath(get_cookie("pagepath"));
+	cookie = get_cookie("pagepath");
+	if (cookie) sethostenv_pagepath(cookie);
 
 	cgidata = cgi_request();
 	if (cgidata == NULL) {
@@ -98,9 +100,9 @@ int main(int argc, char *argv[])
 	}
 	parse_query();
 
-	dummy = compileregex(testfilter);
+	dummy = (testfilter ? compileregex(testfilter) : NULL);
 	if (dummy == NULL) return 1; else freeregex(dummy);
-	dummy = compileregex(pagefilter);
+	dummy = (pagefilter ? compileregex(pagefilter) : NULL);
 	if (dummy == NULL) return 1; else freeregex(dummy);
 
 	sres = newsendreturnbuf(1, NULL);
