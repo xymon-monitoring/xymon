@@ -176,6 +176,7 @@ int      ignoretraced = 0;
 int      clientsavemem = 1;	/* In memory */
 int      clientsavedisk = 0;	/* On disk via the CLICHG channel */
 int      allow_downloads = 1;
+int	 defaultvalidity = 30;	/* Minutes */
 
 
 #define NOTALK 0
@@ -1225,7 +1226,7 @@ static int changedelay(void *hinfo, int newcolor, char *testname, int currcolor)
 void handle_status(unsigned char *msg, char *sender, char *hostname, char *testname, char *grouplist, 
 		   xymond_log_t *log, int newcolor, char *downcause, int modifyonly)
 {
-	int validity = 30;	/* validity is counted in minutes */
+	int validity = defaultvalidity;
 	time_t now = getcurrenttime(NULL);
 	int msglen, issummary;
 	enum alertstate_t oldalertstatus, newalertstatus;
@@ -4845,6 +4846,11 @@ int main(int argc, char *argv[])
 
 	if (xgetenv("HOSTSCFG") && (hostsfn == NULL)) {
 		hostsfn = strdup(xgetenv("HOSTSCFG"));
+	}
+
+	if (xgetenv("STATUSLIFETIME")) {
+		int n = atoi(xgetenv("STATUSLIFETIME"));
+		if (n > 0) defaultvalidity = n;
 	}
 
 	/* Make sure we load hosts.cfg file, and not via the network from ourselves */

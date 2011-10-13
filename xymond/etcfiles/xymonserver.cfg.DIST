@@ -40,6 +40,8 @@ XYMSERVERS=""			# IP of multiple Xymon servers. If used, XYMSRV must be 0.0.0.0
 FQDN="TRUE"			# Use fully-qualified hostnames internally. Keep it TRUE unless you know better.
 XYMONLOGSTATUS="DYNAMIC"	# Are HTML status logs statically or dynamically generated?
 				# Use DYNAMIC with Xymon, unless you run xymond_filestore --status --html
+STATUSLIFETIME="30"		# Default number of minutes a status is valid after an update. After this
+				# time has elapsed, the status will go purple.
 
 PINGCOLUMN="conn"		# Column where the ping-test reports results.
 INFOCOLUMN="info"		# Column where the info-pages are reported.
