@@ -162,12 +162,12 @@ int loadhostdata(char *hostname, char **ip, char **displayname, char **compacts,
 		loadres = load_hostinfo(hostname);
 	}
 
-	if (loadres != 0) {
+	if ((loadres != 0) && (loadres != -2)) {
 		errormsg("Cannot load host configuration");
 		return 1;
 	}
 
-	if ((hinfo = hostinfo(hostname)) == NULL) {
+	if ((loadres == -2) || (hinfo = hostinfo(hostname)) == NULL) {
 		errormsg("No such host");
 		return 1;
 	}

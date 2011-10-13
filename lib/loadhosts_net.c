@@ -38,11 +38,6 @@ int load_hostinfo(char *targethost)
 
 	if (!targethost) return -1;
 
-	hivalhost = strdup(targethost);
-	memset(hivals, 0, sizeof(hivals));
-	memset(&hival_hostinfo, 0, sizeof(hival_hostinfo));
-	hival_hostinfo.elems = (char **)calloc(1, sizeof(char *));
-
 	msg = (char *)malloc(200 + strlen(targethost));
 	sprintf(msg, "hostinfo clone=%s", targethost);
 
@@ -55,6 +50,16 @@ int load_hostinfo(char *targethost)
 	}
 
 	hivalbuf = getsendreturnstr(sres, 1);
+	if (strlen(hivalbuf) == 0) {
+		errprintf("No such host\n");
+		return -2;
+	}
+
+	hivalhost = strdup(targethost);
+	memset(hivals, 0, sizeof(hivals));
+	memset(&hival_hostinfo, 0, sizeof(hival_hostinfo));
+	hival_hostinfo.elems = (char **)calloc(1, sizeof(char *));
+
 	bol = hivalbuf;
 	while (bol && *bol) {
 		int idx;
