@@ -248,7 +248,7 @@ static int flush_cached_updates(updcacheitem_t *cacheitem, char *newdata)
 	for (i=0; (i < cacheitem->valcount); i++) {
 		cacheitem->updseq[i] = 0;
 		cacheitem->updtime[i] = 0;
-		xfree(cacheitem->vals[i]);
+		if (cacheitem->vals[i]) xfree(cacheitem->vals[i]);
 	}
 	cacheitem->valcount = 0;
 

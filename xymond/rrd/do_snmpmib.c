@@ -115,6 +115,7 @@ int is_snmpmib_rrd(char *testname)
 			}
 		}
 
+		newitem->valnames[newitem->valcount] = NULL;
 		newitem->dsdefs[newitem->valcount] = NULL;
 		newitem->tpl = setup_template(newitem->dsdefs);
 		xtreeAdd(snmpmib_paramtree, newitem->name, newitem);
