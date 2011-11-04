@@ -67,4 +67,6 @@ CGI_PERFDATA_OPTS="--env=$XYMONENV"
 CGI_TOPCHANGE_OPTS="--env=$XYMONENV --top"
 # useradm options
 CGI_USERADM_OPTS="--env=$XYMONENV"
+# appfeed options
+CGI_APPFEED_OPTS="--env=$XYMONENV"
 
