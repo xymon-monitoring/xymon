@@ -80,6 +80,8 @@ int main(int argc, char **argv)
 	int argi;
 	char *criticalconfig = NULL;
 	char *envarea = NULL;
+	char *groupfile = NULL;
+	char *userid = getenv("REMOTE_USER");
 
 	FILE *output = stdout;
 
@@ -107,6 +109,10 @@ int main(int argc, char **argv)
 			char *p = strchr(argv[argi], '=');
 			criticalconfig = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--groupfile=")) {
+			char *p = strchr(argv[argi], '=');
+			groupfile = strdup(p+1);
+		}
 	}
 
 	/* Setup the query for xymond */
@@ -127,6 +133,12 @@ int main(int argc, char **argv)
 		log = getsendreturnstr(sres, 1);
 	}
 	freesendreturnbuf(sres);
+
+	/* Load the host data (for access control) */
+	if (groupfile) {
+		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+		load_web_access_config(groupfile);
+	}
 
 	/* Load the critical config */
 	if (criticalconfig) load_critconfig(criticalconfig);
@@ -158,6 +170,11 @@ int main(int argc, char **argv)
 		if (useit) {
 			hostname = gettok(bol, "|");
 			testname = (hostname ? gettok(NULL, "|") : NULL);
+
+			if (groupfile) useit = web_access_allowed(userid, hostname, testname, WEB_ACC_VIEW);
+		}
+
+		if (useit) {
 			color = (testname ? gettok(NULL, "|") : NULL);
 			lastchange = (color ? gettok(NULL, "|") : NULL);
 			logtime = (lastchange ? gettok(NULL, "|") : NULL);
