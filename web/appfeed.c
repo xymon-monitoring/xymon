@@ -20,15 +20,70 @@ static char rcsid[] = "$Id: svcstatus.c 6765 2011-10-13 11:55:08Z storner $";
 
 #include "libxymon.h"
 
+static char *queryfilter = NULL;
+static char *boardcmd  = "xymondboard";
+static char *fieldlist = "fields=hostname,testname,color,lastchange,logtime,cookie,acktime,ackmsg,disabletime,dismsg,line1";
+static char *colorlist = "color=red,yellow,purple";
+
+static void errormsg(char *msg)
+{
+	fprintf(stderr, 
+		 "Content-type: %s\n\n<html><head><title>Invalid request</title></head>\n<body>%s</body></html>\n", 
+		 xgetenv("HTMLCONTENTTYPE"), msg);
+}
+
+static int parse_query(void)
+{
+	cgidata_t *cgidata = cgi_request();
+	cgidata_t *cwalk;
+
+	cwalk = cgidata;
+	while (cwalk) {
+		if (strcasecmp(cwalk->name, "filter") == 0) {
+			queryfilter = strdup(cwalk->value);
+		}
+
+		cwalk = cwalk->next;
+	}
+
+	if (!queryfilter) queryfilter = "";
+
+	/* See if the query includes a color filter - this overrides our default */
+	if ((strncmp(queryfilter, "color=", 6) == 0) || (strstr(queryfilter, " color=") != NULL)) colorlist = "";
+
+	return 0;
+}
+
+char *extractline(char *ptn, char **src)
+{
+	char *pos = strstr(*src, ptn);
+	char *eoln;
+
+	if (pos == NULL) return NULL;
+
+	eoln = strchr(pos, '\n');
+	if (eoln) *eoln = '\0';
+
+	if (pos == *src) 
+		*src = eoln+1;
+	else
+		*(pos-1) = '\0';
+
+	if (pos) pos += strlen(ptn);
+
+	return pos;
+}
+
+
 int main(int argc, char **argv)
 {
 	int argi;
 	char *criticalconfig = NULL;
 	char *envarea = NULL;
 
-	char *xymondreq = "xymondboard color=red,yellow,purple fields=hostname,testname,color,lastchange,logtime,cookie,acktime,ackmsg,line1";
 	FILE *output = stdout;
 
+	char *xymondreq;
 	sendreturn_t *sres;
 	int xymondresult;
 	char *log, *bol, *eoln, *endkey;
@@ -45,18 +100,27 @@ int main(int argc, char **argv)
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
 		}
+		else if (strcmp(argv[argi], "--hobbit") == 0) {
+			boardcmd = "hobbitdboard";
+		}
 		else if (argnmatch(argv[argi], "--critical=")) {
 			char *p = strchr(argv[argi], '=');
 			criticalconfig = strdup(p+1);
 		}
 	}
 
+	/* Setup the query for xymond */
+	parse_query();
+	xymondreq = (char *)malloc(strlen(boardcmd) + strlen(fieldlist) + strlen(colorlist) + strlen(queryfilter) + 5);
+	sprintf(xymondreq, "%s %s %s %s", boardcmd, fieldlist, colorlist, queryfilter);
+
+	/* Get the current status */
 	sres = newsendreturnbuf(1, NULL);
 	xymondresult = sendmessage(xymondreq, NULL, XYMON_TIMEOUT, sres);
 	if (xymondresult != XYMONSEND_OK) {
 		char *errtxt = (char *)malloc(1024 + strlen(xymondreq));
 		sprintf(errtxt, "Status not available: Req=%s, result=%d\n", htmlquoted(xymondreq), xymondresult);
-		// errormsg(errtxt);
+		errormsg(errtxt);
 		return 1;
 	}
 	else {
@@ -71,16 +135,18 @@ int main(int argc, char **argv)
 	fprintf(output, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
 	fprintf(output, "<StatusBoard>\n");
 
+	/* Step through the status board, one line at a time */
 	bol = log;
 	while (bol && *bol) {
 		int useit = 1;
-		char *hostname, *testname, *color, *txt, *lastchange, *logtime, *cookie, *acktime, *ackmsg;
+		char *hostname, *testname, *color, *txt, *lastchange, *logtime, *cookie, *acktime, *ackmsg, *distime, *dismsg;
 
 		eoln = strchr(bol, '\n'); if (eoln) *eoln = '\0';
 
 		if (criticalconfig) {
 			critconf_t *cfg;
 
+			/* The key for looking up items in the critical config is "hostname|testname", which we already have */
 			endkey = strchr(bol, '|'); if (endkey) endkey = strchr(endkey+1, '|');
 			*endkey = '\0';
 			cfg = get_critconfig(bol, CRITCONF_TIMEFILTER, NULL);
@@ -98,7 +164,9 @@ int main(int argc, char **argv)
 			cookie = (logtime ? gettok(NULL, "|") : NULL);
 			acktime = (cookie ? gettok(NULL, "|") : NULL);
 			ackmsg = (acktime ? gettok(NULL, "|") : NULL);
-			txt = (ackmsg ? gettok(NULL, "|") : NULL);
+			distime = (ackmsg ? gettok(NULL, "|") : NULL);
+			dismsg = (distime ? gettok(NULL, "|") : NULL);
+			txt = (dismsg ? gettok(NULL, "|") : NULL);
 
 			if (txt) {
 				/* We have all data */
@@ -110,8 +178,25 @@ int main(int argc, char **argv)
 				fprintf(output, "  <LogTime>%s</LogTime>\n", logtime);
 				fprintf(output, "  <Cookie>%s</Cookie>\n", cookie);
 				if (atoi(acktime) != 0) {
+					char *ackedby;
+
+					nldecode(ackmsg);
+					ackedby = extractline("Acked by: ", &ackmsg);
+
 					fprintf(output, "  <AckTime>%s</AckTime>\n", acktime);
 					fprintf(output, "  <AckText><![CDATA[%s]]></AckText>\n", ackmsg);
+					if (ackedby) fprintf(output, "  <AckedBy><![CDATA[%s]]></AckedBy>\n", ackedby);
+				}
+				if (atoi(distime) != 0) {
+					char *disabledby;
+
+					nldecode(dismsg);
+					disabledby = extractline("Disabled by: ", &dismsg);
+					if (strncmp(dismsg, "Reason: ", 8) == 0) dismsg += 8;
+
+					fprintf(output, "  <DisableTime>%s</DisableTime>\n", distime);
+					fprintf(output, "  <DisableText><![CDATA[%s]]></DisableText>\n", dismsg);
+					if (disabledby) fprintf(output, "  <DisabledBy><![CDATA[%s]]></DisabledBy>\n", disabledby);
 				}
 				fprintf(output, "  <MessageSummary><![CDATA[%s]]></MessageSummary>\n", txt);
 				fprintf(output, "  <DetailURL><![CDATA[%s]]></DetailURL>\n", hostsvcurl(hostname, testname, 0));
