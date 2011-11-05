@@ -98,6 +98,8 @@ typedef struct strbuffer_t {
 #include "../lib/timing.h"
 #include "../lib/tree.h"
 #include "../lib/url.h"
+#include "../lib/webaccess.h"
+
 #endif
 
 #endif
