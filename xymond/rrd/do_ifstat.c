@@ -19,7 +19,7 @@ static void *ifstat_tpl       = NULL;
 /* eth0   Link encap:                                                 */
 /*        RX bytes: 1829192 (265.8 MiB)  TX bytes: 1827320 (187.7 MiB */
 static const char *ifstat_linux_exprs[] = {
-	"^([a-z]+[0123456789.:]+|lo)\\s",
+	"^([a-z]+[0123456789.:]*|lo)\\s",
 	"^\\s+RX bytes:([0-9]+) .*TX bytes.([0-9]+) "
 };
 
