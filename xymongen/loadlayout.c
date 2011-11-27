@@ -112,7 +112,7 @@ char *build_noprop(char *defset, char *specset)
 	return result;	/* This may be an empty string */
 }
 
-xymongen_page_t *init_page(char *name, char *title)
+xymongen_page_t *init_page(char *name, char *title, int vertical)
 {
 	xymongen_page_t *newpage = (xymongen_page_t *) calloc(1, sizeof(xymongen_page_t));
 
@@ -131,6 +131,7 @@ xymongen_page_t *init_page(char *name, char *title)
 
 	newpage->color = -1;
 	newpage->oldage = 1;
+	newpage->vertical = vertical;
 	newpage->pretitle = NULL;
 	newpage->groups = NULL;
 	newpage->hosts = NULL;
@@ -416,6 +417,7 @@ summary_t *init_summary(char *name, char *receiver, char *url)
 xymongen_page_t *load_layout(char *pgset)
 {
 	char	pagetag[100], subpagetag[100], subparenttag[100], 
+		vpagetag[100], vsubpagetag[100], vsubparenttag[100], 
 		grouptag[100], summarytag[100], titletag[100], hosttag[100];
 	char 	*name, *link, *onlycols, *exceptcols;
 	char 	hostname[MAX_LINE_LEN];
@@ -457,12 +459,15 @@ xymongen_page_t *load_layout(char *pgset)
 	sprintf(pagetag, "%spage", pgset);
 	sprintf(subpagetag, "%ssubpage", pgset);
 	sprintf(subparenttag, "%ssubparent", pgset);
+	sprintf(vpagetag, "v%spage", pgset);
+	sprintf(vsubpagetag, "v%ssubpage", pgset);
+	sprintf(vsubparenttag, "v%ssubparent", pgset);
 	sprintf(grouptag, "%sgroup", pgset);
 	sprintf(summarytag, "%ssummary", pgset);
 	sprintf(titletag, "%stitle", pgset);
 	sprintf(hosttag, "%s:", pgset); for (p=hosttag; (*p); p++) *p = toupper((int)*p);
 
-	toppage = init_page("", "");
+	toppage = init_page("", "", 0);
 	addtopagelist(toppage);
 	curpage = NULL;
 	cursubpage = NULL;
@@ -485,14 +490,14 @@ xymongen_page_t *load_layout(char *pgset)
 
 		dbgprintf("load_layout: -- got line '%s'\n", inbol);
 
-		if (strncmp(inbol, pagetag, strlen(pagetag)) == 0) {
+		if ((strncmp(inbol, pagetag, strlen(pagetag)) == 0) || (strncmp(inbol, vpagetag, strlen(vpagetag)) == 0)) {
 			getnamelink(inbol, &name, &link);
 			if (curpage == NULL) {
 				/* First page - hook it on toppage as a subpage from there */
-				curpage = toppage->subpages = init_page(name, link);
+				curpage = toppage->subpages = init_page(name, link, (strncmp(inbol, vpagetag, strlen(vpagetag)) == 0));
 			}
 			else {
-				curpage = curpage->next = init_page(name, link);
+				curpage = curpage->next = init_page(name, link, (strncmp(inbol, vpagetag, strlen(vpagetag)) == 0));
 			}
 
 			curpage->parent = toppage;
@@ -506,7 +511,7 @@ xymongen_page_t *load_layout(char *pgset)
 			curhost = NULL;
 			addtopagelist(curpage);
 		}
-		else if (strncmp(inbol, subpagetag, strlen(subpagetag)) == 0) {
+		else if ( (strncmp(inbol, subpagetag, strlen(subpagetag)) == 0) || (strncmp(inbol, vsubpagetag, strlen(vsubpagetag)) == 0) ) {
 			if (curpage == NULL) {
 				errprintf("'subpage' ignored, no preceding 'page' tag : %s\n", inbol);
 				goto nextline;
@@ -514,10 +519,10 @@ xymongen_page_t *load_layout(char *pgset)
 
 			getnamelink(inbol, &name, &link);
 			if (cursubpage == NULL) {
-				cursubpage = curpage->subpages = init_page(name, link);
+				cursubpage = curpage->subpages = init_page(name, link, (strncmp(inbol, vsubpagetag, strlen(vsubpagetag)) == 0));
 			}
 			else {
-				cursubpage = cursubpage->next = init_page(name, link);
+				cursubpage = cursubpage->next = init_page(name, link, (strncmp(inbol, vsubpagetag, strlen(vsubpagetag)) == 0));
 			}
 			cursubpage->parent = curpage;
 			if (curtitle) { 
@@ -529,7 +534,7 @@ xymongen_page_t *load_layout(char *pgset)
 			curhost = NULL;
 			addtopagelist(cursubpage);
 		}
-		else if (strncmp(inbol, subparenttag, strlen(subparenttag)) == 0) {
+		else if ( (strncmp(inbol, subparenttag, strlen(subparenttag)) == 0) || (strncmp(inbol, vsubparenttag, strlen(vsubparenttag)) == 0) ) {
 			xymongen_page_t *parentpage, *walk;
 
 			getparentnamelink(inbol, toppage, &parentpage, &name, &link);
@@ -538,7 +543,7 @@ xymongen_page_t *load_layout(char *pgset)
 				goto nextline;
 			}
 
-			cursubparent = init_page(name, link);
+			cursubparent = init_page(name, link, (strncmp(inbol, vsubparenttag, strlen(vsubparenttag)) == 0));
 			if (parentpage->subpages == NULL) {
 				parentpage->subpages = cursubparent;
 			} 

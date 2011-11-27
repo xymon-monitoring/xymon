@@ -314,6 +314,127 @@ static int host_t_compare(const void *v1, const void *v2)
 	return strcmp((*n1)->hostname, (*n2)->hostname);
 }
 
+typedef struct vprec_t {
+	char *testname;
+	host_t **hosts;
+	entry_t **entries;
+} vprec_t;
+
+void do_vertical(host_t *head, FILE *output, char *pagepath)
+{
+	/*
+	 * This routine outputs the host part of a page or a group,
+	 * but with the hosts going across the page, and the test going down.
+	 * I.e. it generates buttons and links to all the hosts for
+	 * a test, and the host docs.
+	 */
+
+	host_t	*h;
+	entry_t	*e;
+	char	*xymonskin;
+	int	rowcount = 0, hostcount = 0;
+	int     usetooltip = 0;
+	int	width;
+	int	hidx;
+	void	*vptree;
+	xtreePos_t handle;
+
+	if (head == NULL)
+		return;
+
+	vptree = xtreeNew(strcmp);
+
+	xymonskin = strdup(xgetenv("XYMONSKIN"));
+
+	switch (tooltipuse) {
+	  case TT_STDONLY: case TT_ALWAYS: usetooltip = 1; break;
+	  case TT_NEVER:  usetooltip = 0; break;
+	}
+
+	width = atoi(xgetenv("DOTWIDTH"));
+	if ((width < 0) || (width > 50)) width = 16;
+	width += 4;
+
+	/* Start the table ... */
+	fprintf(output, "<CENTER><TABLE SUMMARY=\"Group Block\" BORDER=0 CELLPADDING=2>\n");
+
+	/* output column headings */
+	fprintf(output, "<TR><td>&nbsp;</td>");
+	for (h = head, hostcount = 0; (h); h = h->next, hostcount++) {
+		fprintf(output, " <TD>");
+		fprintf(output, " <A HREF=\"%s\"><FONT %s><B>%s</B></FONT></A> </TD>\n", 
+			hostsvcurl(h->hostname, xgetenv("INFOCOLUMN"), 1),
+			xgetenv("XYMONPAGECOLFONT"), h->hostname);
+	}
+	fprintf(output, "</TR>\n");
+	fprintf(output, "<TR><td>&nbsp;</td><TD COLSPAN=%d><HR WIDTH=\"100%%\"></TD></TR>\n\n", hostcount);
+
+	/* Create a tree indexed by the testname, and holding the show/noshow status of each test */
+	for (h = head, hidx = 0; (h); h = h->next, hidx++) {
+		for (e = h->entries; (e); e = e->next) {
+			vprec_t *itm;
+			char *hptr;
+
+			handle = xtreeFind(vptree, e->column->name);
+			if (handle == xtreeEnd(vptree)) {
+				itm = (vprec_t *)malloc(sizeof(vprec_t));
+				itm->testname = e->column->name;
+				itm->hosts = (host_t **)calloc(hostcount, sizeof(host_t *));
+				itm->entries = (entry_t **)calloc(hostcount, sizeof(entry_t *));
+				xtreeAdd(vptree, itm->testname, itm);
+			}
+			else {
+				itm = xtreeData(vptree, handle);
+			}
+
+			(itm->hosts)[hidx] = h;
+			(itm->entries)[hidx] = e;
+		}
+	}
+
+	for (handle = xtreeFirst(vptree); (handle != xtreeEnd(vptree)); handle = xtreeNext(vptree, handle)) {
+		vprec_t *itm = xtreeData(vptree, handle);
+
+		fprintf(output, "<tr>");
+		fprintf(output, "<td valign=center align=left>%s</td>", itm->testname);
+
+		for (hidx = 0; (hidx < hostcount); hidx++) {
+			char *skin, *htmlalttag;
+			host_t *h = (itm->hosts)[hidx];
+			entry_t *e = (itm->entries)[hidx];
+
+			fprintf(output, "<td align=center>");
+			if (e == NULL) {
+				fprintf(output, "-");
+			}
+			else {
+
+				if (strcmp(e->column->name, xgetenv("INFOCOLUMN")) == 0) {
+					/* show the host ip on the hint display of the "info" column */
+					htmlalttag = alttag(e->column->name, COL_GREEN, 0, 1, h->ip);
+				}
+				else {
+					htmlalttag = alttag(e->column->name, e->color, e->acked, e->propagate, e->age);
+				}
+
+				skin = (e->skin ? e->skin : xymonskin);
+
+				fprintf(output, "<A HREF=\"%s\">", hostsvcurl(h->hostname, e->column->name, 1));
+				fprintf(output, "<IMG SRC=\"%s/%s\" ALT=\"%s\" TITLE=\"%s\" HEIGHT=\"%s\" WIDTH=\"%s\" BORDER=0></A>",
+						skin, dotgiffilename(e->color, e->acked, e->oldage),
+						htmlalttag, htmlalttag,
+						xgetenv("DOTHEIGHT"), xgetenv("DOTWIDTH"));
+			}
+			fprintf(output, "</td>");
+		}
+
+		fprintf(output, "</tr>\n");
+	}
+
+	fprintf(output, "</TABLE></CENTER><BR>\n");
+	xfree(xymonskin);
+}
+
 void do_hosts(host_t *head, int sorthosts, char *onlycols, char *exceptcols, FILE *output, FILE *rssoutput, char *grouptitle, int pagetype, char *pagepath)
 {
 	/*
@@ -883,8 +1004,13 @@ void do_one_page(xymongen_page_t *page, dispsummary_t *sums, int embedded)
 	}
 
 	if (!embedded && !hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
-	do_hosts(page->hosts, 0, NULL, NULL, output, rssoutput, "", PAGE_NORMAL, pagepath);
-	do_groups(page->groups, output, rssoutput, pagepath);
+	if (page->vertical) {
+		do_vertical(page->hosts, output, pagepath);
+	}
+	else {
+		do_hosts(page->hosts, 0, NULL, NULL, output, rssoutput, "", PAGE_NORMAL, pagepath);
+		do_groups(page->groups, output, rssoutput, pagepath);
+	}
 	if (!embedded && hostsbeforepages && page->subpages) do_page_subpages(output, page->subpages, pagepath);
 
 	/* Summaries on main page only */

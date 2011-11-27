@@ -198,6 +198,7 @@ typedef struct xymongen_page_t {
 	int	color;		/* Calculated */
 	int     oldage;
 	char	*pretitle;
+	int     vertical;
 	struct xymongen_page_t	*next;
 	struct xymongen_page_t	*subpages;
 	struct xymongen_page_t	*parent;

@@ -176,6 +176,17 @@ I implement it in xymongen. The idea to explicitly list
 the parent page in the "subparent" tag was what made
 it easy to implement.
 
+.IP "vpage" "vsubpage" "vsubparent"
+These are page-definitions similar to the "page", "subpage" and
+"subparent" definitions. However, on these pages the rows are 
+the tests, and the columns are the hosts (normal pages have it
+the other way around). This is useful if you have a very large
+number of tests for a few hosts, and prefer to have them listed
+on a page that can be scrolled vertically.
+.br
+Note that the "group" directives have no effect on these types
+of pages.
+
 .IP "group [group-title]"
 .IP "group-compress [group-title]"
 Defines a group of hosts, that appear together on the web page,
