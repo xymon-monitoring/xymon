@@ -201,6 +201,7 @@ int main(int argc, char *argv[])
 	int argi;
 	char *envarea = NULL;
 	int obeycookies = 1;
+	char *accessfn = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
 		if (argnmatch(argv[argi], "--env=")) {
@@ -220,6 +221,11 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-cookies") == 0) {
 			obeycookies = 0;
 		}
+		else if (argnmatch(argv[argi], "--access=")) {
+			char *p = strchr(argv[argi], '=');
+			accessfn = strdup(p+1);
+		}
+
 	}
 
 	redirect_cgilog("ack");
@@ -353,11 +359,18 @@ int main(int argc, char *argv[])
 			if (remaddr) sprintf(acking_user + strlen(acking_user), " (%s)", remaddr);
 		}
 
+		/* Load the host data (for access control) */
+		if (accessfn) {
+			load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
+			load_web_access_config(accessfn);
+		}
+
 		addtobuffer(response, "<center>\n");
 		for (awalk = ackhead; (awalk); awalk = awalk->next) {
 			char *msgline = (char *)malloc(1024 + (awalk->hostname ? strlen(awalk->hostname) : 0) + (awalk->testname ? strlen(awalk->testname) : 0));
 
 			if (!awalk->checked) continue;
+			if (!web_access_allowed(getenv("REMOTE_USER"), awalk->hostname, awalk->testname, WEB_ACCESS_CONTROL)) continue;
 
 			if ((reqtype == ACK_ONE) && (awalk->id != sendnum)) continue;
 

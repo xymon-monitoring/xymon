@@ -1,0 +1,56 @@
+.TH XYMON-WEBACCESS 5 "Version 4.3.5:  9 Sep 2011" "Xymon"
+.SH NAME
+xymon-webaccess \- Web-based access controls in Xymon
+
+.SH DESCRIPTION
+Xymon does not provide any built-in authentication (login) mechanism.
+Instead, it relies on the access controls available in your web server,
+e.g. the Apache \fBmod_auth\fR modules.
+
+This provides a simple way of controlling access to the physical
+directories that make up the pages and subpages with the hosts
+defined in your Xymon
+.I hosts.cfg(5)
+setup - you can use the Apache "require" setting to allow or deny
+access to information on any page, usually through the use of a
+"Require group ..." setting. The group name then refers to one
+or more groups in an Apache \fBAuthGroupFile\fR file.
+
+However, this does not work for the Xymon CGI programs since they 
+are used to fetch information about all hosts in Xymon, but there
+is only a single directory holding all of the CGI's. So here you
+can only require that the user is logged-in (the Apache "Require valid-user"
+directive). A user with a login can - if he knows the hostname - 
+manipulate the request sent to the webserver and fetch information
+about any status by use of the Xymon CGI programs, even though he
+cannot see the overview webpages.
+
+To alleviate this situation, the following Xymon CGI's support a
+"--access=FILENAME" option, where FILENAME is an Apache compatible
+group-definitions file:
+.br
+.I svcstatus.cgi(1)
+.br
+.I acknowledge.cgi(1)
+.br
+.I enadis.cgi(1)
+.br
+.I appfeed.cgi(1)
+
+When invoked with this option the CGI will read the Apache
+group-definitions file, and assume that an Apache \fBgroup\fR
+maps to a Xymon \fBpage\fR, and then - based on the logged-in userid - 
+determine which pages and hosts the user is allowed access to.
+Only information about those hosts will be made available by the CGI
+tool.
+
+Members of the group \fBroot\fR has access to all hosts.
+
+Access will also be granted, if the user is a member of a group
+with the same name as the \fBhost\fR being requested, or as the
+\fBstatuscolumn\fR being requested.
+
+.SH "SEE ALSO"
+The Apache "Authentication, Authorization and Access Control" documentation,
+http://httpd.apache.org/docs/2.2/howto/auth.html
+

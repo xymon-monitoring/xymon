@@ -34,6 +34,7 @@ static int wantserviceid = 1;
 static char *multigraphs = ",disk,inode,qtree,quotas,snapshot,TblSpace,if_load,";
 static int locatorbased = 0;
 static char *critconfigfn = NULL;
+static char *accessfn = NULL;
 
 /* CGI params */
 static char *hostname = NULL;
@@ -192,6 +193,16 @@ int do_request(void)
 	char *ip, *displayname, *compacts;
 
 	if (parse_query() != 0) return 1;
+
+	/* Load the host data (for access control) */
+	if (accessfn) {
+		load_hostinfo(hostname);
+		load_web_access_config(accessfn);
+		if (!web_access_allowed(getenv("REMOTE_USER"), hostname, service, WEB_ACCESS_VIEW)) {
+			errormsg("Not available (restricted).");
+			return 1;
+		}
+	}
 
 	{
 		char *s;
@@ -717,6 +728,10 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--critical-config=")) {
 			char *p = strchr(argv[argi], '=');
 			critconfigfn = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--access=")) {
+			char *p = strchr(argv[argi], '=');
+			accessfn = strdup(p+1);
 		}
 	}
 

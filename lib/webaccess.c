@@ -89,8 +89,30 @@ int web_access_allowed(char *username, char *hostname, char *testname, web_acces
 		xfree(key);
 		onepg = strtok(NULL, ",");
 	}
-
 	xfree(pages);
+
+	if (hostname) {
+		/* See if user is a member of a group named by the hostname */
+		key = (char *)malloc(strlen(hostname) + strlen(username) + 2);
+		sprintf(key, "%s %s", hostname, username);
+		if (xtreeFind(acctree, key) != xtreeEnd(acctree)) {
+			xfree(key);
+			return 1;
+		}
+		xfree(key);
+	}
+
+	if (testname) {
+		/* See if user is a member of a group named by the testname */
+		key = (char *)malloc(strlen(testname) + strlen(username) + 2);
+		sprintf(key, "%s %s", testname, username);
+		if (xtreeFind(acctree, key) != xtreeEnd(acctree)) {
+			xfree(key);
+			return 1;
+		}
+		xfree(key);
+	}
+
 	return 0;
 }
 

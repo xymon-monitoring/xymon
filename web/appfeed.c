@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	int argi;
 	char *criticalconfig = NULL;
 	char *envarea = NULL;
-	char *groupfile = NULL;
+	char *accessfn = NULL;
 	char *userid = getenv("REMOTE_USER");
 
 	FILE *output = stdout;
@@ -109,9 +109,9 @@ int main(int argc, char **argv)
 			char *p = strchr(argv[argi], '=');
 			criticalconfig = strdup(p+1);
 		}
-		else if (argnmatch(argv[argi], "--groupfile=")) {
+		else if (argnmatch(argv[argi], "--access=")) {
 			char *p = strchr(argv[argi], '=');
-			groupfile = strdup(p+1);
+			accessfn = strdup(p+1);
 		}
 	}
 
@@ -135,9 +135,9 @@ int main(int argc, char **argv)
 	freesendreturnbuf(sres);
 
 	/* Load the host data (for access control) */
-	if (groupfile) {
+	if (accessfn) {
 		load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
-		load_web_access_config(groupfile);
+		load_web_access_config(accessfn);
 	}
 
 	/* Load the critical config */
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 			hostname = gettok(bol, "|");
 			testname = (hostname ? gettok(NULL, "|") : NULL);
 
-			if (groupfile) useit = web_access_allowed(userid, hostname, testname, WEB_ACC_VIEW);
+			if (accessfn) useit = web_access_allowed(userid, hostname, testname, WEB_ACCESS_VIEW);
 		}
 
 		if (useit) {

@@ -269,6 +269,7 @@ int main(int argc, char *argv[])
 	char *fullmsg = "No cause specified";
 	char *envarea = NULL;
 	int  obeycookies = 1;
+	char *accessfn = NULL;
 
 	if ((username == NULL) || (strlen(username) == 0)) username = "unknown";
 	if ((userhost == NULL) || (strlen(userhost) == 0)) userhost = userip;
@@ -287,6 +288,10 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+		}
+		else if (argnmatch(argv[argi], "--access=")) {
+			char *p = strchr(argv[argi], '=');
+			accessfn = strdup(p+1);
 		}
 	}
 
@@ -377,11 +382,25 @@ int main(int argc, char *argv[])
 	}
 
 	if (preview) printf("<table align=\"center\" summary=\"Actions performed\" width=\"60%%\">\n");
+
+
 	if (action == ACT_SCHED_CANCEL) {
 		do_one_host(NULL, NULL, username);
 	}
 	else {
-		for (i = 0; (i < hostcount); i++) do_one_host(hostnames[i], fullmsg, username);
+		/* Load the host data (for access control) */
+		if (accessfn) {
+			load_web_access_config(accessfn);
+
+			for (i = 0; (i < hostcount); i++) {
+				if (web_access_allowed(getenv("REMOTE_USER"), hostnames[i], NULL, WEB_ACCESS_CONTROL)) {
+					do_one_host(hostnames[i], fullmsg, username);
+				}
+			}
+		}
+		else {
+			for (i = 0; (i < hostcount); i++) do_one_host(hostnames[i], fullmsg, username);
+		}
 	}
 	if (preview) {
 		printf("<tr><td align=center><br><br><form method=\"GET\" ACTION=\"%s\"><input type=submit value=\"Continue\"></form></td></tr>\n", xgetenv("HTTP_REFERER"));
