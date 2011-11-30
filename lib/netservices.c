@@ -117,7 +117,7 @@ static char *binview(unsigned char *buf, int buflen)
 char *init_tcp_services(void)
 {
 	static char *xymonnetsvcs = NULL;
-	static time_t lastupdate = 0;
+	static void *svcflist = NULL;
 
 	char filename[PATH_MAX];
 	struct stat st;
@@ -139,7 +139,9 @@ char *init_tcp_services(void)
 
 	if ((stat(filename, &st) == 0) && xymonnetsvcs) {
 		/* See if we have already run and the file is unchanged - if so just pickup the result */
-		if (st.st_mtime == lastupdate) return xymonnetsvcs;
+		if (svcflist && !stackfmodified(svcflist)) {
+			return xymonnetsvcs;
+		}
 
 		/* File has changed - reload configuration. But clean up first so we dont leak memory. */
 		if (svcinfo != default_svcinfo) {
@@ -159,7 +161,7 @@ char *init_tcp_services(void)
 		putenv("XYMONNETSVCS=smtp telnet ftp pop pop3 pop-3 ssh imap ssh1 ssh2 imap2 imap3 imap4 pop2 pop-2 nntp");
 	}
 
-	fd = fopen(filename, "r");
+	fd = stackfopen(filename, "r", &svcflist);
 	if (fd == NULL) {
 		errprintf("Cannot open TCP service-definitions file %s - using defaults\n", filename);
 		xymonnetsvcs = strdup(xgetenv("XYMONNETSVCS"));
@@ -168,12 +170,10 @@ char *init_tcp_services(void)
 		return xymonnetsvcs;
 	}
 
-	lastupdate = st.st_mtime;
 	head = tail = first = NULL;
 
 	inbuf = newstrbuffer(0);
-	initfgets(fd);
-	while (unlimfgets(inbuf, fd)) {
+	while (stackfgets(inbuf, NULL)) {
 		char *l, *eol;
 
 		sanitize_input(inbuf, 1, 0);
@@ -259,7 +259,7 @@ char *init_tcp_services(void)
 		}
 	}
 
-	if (fd) fclose(fd);
+	if (fd) stackfclose(fd);
 	freestrbuffer(inbuf);
 
 	/* Copy from the svclist to svcinfo table */
