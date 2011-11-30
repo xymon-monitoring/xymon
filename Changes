@@ -1,6 +1,6 @@
 Changes from 4.3.5 -> 4.3.6 (30 Nov 2011)
 =========================================
-* rev 6785
+* rev 6786
 * Optionally choose the color for the "cpu" status when it goes
   non-green due to uptime or clock offset.
 * Allow for "include" and "directory" in combo.cfg and protocols.cfg
