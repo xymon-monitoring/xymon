@@ -1,4 +1,4 @@
-.TH HOSTS.CFG 5 "Version 4.3.5:  9 Sep 2011" "Xymon"
+.TH HOSTS.CFG 5 "Version 4.3.6: 30 Nov 2011" "Xymon"
 .SH NAME
 hosts.cfg \- Main Xymon configuration file
 
@@ -332,6 +332,14 @@ the http, conn and smtp services.
 .IP "COMPACT:COLUMN=COLUMN1,COLUMN2,COLUMN3[;ditto]"
 Collapses a series of statuses into a single column on
 the overview web page.
+.br
+.IP "INTERFACES:REGEXP"
+On systems with multiple network interfaces, the operating
+system may report a number of network interface where the
+statistics are of no interest. By default Xymon tracks and 
+graphs the traffic on all network interfaces. This option
+defines a regular expression, and only those interfaces whose
+name matches the expression are tracked.
 
 .SH XYMON TAGS FOR THE CRITICAL SYSTEMS OVERVIEW PAGE
 \fBNOTE:\fR The "NK" set of tags is deprecated. They will
