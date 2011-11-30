@@ -64,7 +64,7 @@ int web_access_allowed(char *username, char *hostname, char *testname, web_acces
 
 	/* Check for "root" access first */
 	key = (char *)malloc(strlen(username) + 6);
-	sprintf(key, "root %s");
+	sprintf(key, "root %s", username);
 	if (xtreeFind(acctree, key) != xtreeEnd(acctree)) {
 		xfree(key);
 		return 1;
