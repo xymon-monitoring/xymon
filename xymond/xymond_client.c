@@ -307,7 +307,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	char *p;
 	float load1, load5, load15;
 	float loadyellow, loadred;
-	int recentlimit, ancientlimit, maxclockdiff;
+	int recentlimit, ancientlimit, maxclockdiff, uptimecolor, clockdiffcolor;
 	char loadresult[100];
 	long uptimesecs = -1;
 	char myupstr[100];
@@ -413,7 +413,7 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 		}
 	}
 
-	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
+	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 
 	upmsg = newstrbuffer(0);
 
@@ -427,12 +427,14 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 	}
 
 	if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
-		if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
-		addtobuffer(upmsg, "&yellow Machine recently rebooted\n");
+		if (cpucolor != COL_RED) cpucolor = uptimecolor;
+		sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+		addtobuffer(upmsg, msgline);
 	}
 	if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
-		if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
-		sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
+		if (cpucolor != COL_RED) cpucolor = uptimecolor;
+		sprintf(msgline, "&%s Machine has been up more than %d days\n", 
+			colorname(uptimecolor), (ancientlimit / 86400));
 		addtobuffer(upmsg, msgline);
 	}
 
@@ -461,9 +463,9 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 			}
 
 			if ((maxclockdiff > 0) && (abs(clockdiff.tv_sec) > maxclockdiff)) {
-				if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
-				sprintf(msgline, "&yellow System clock is %ld seconds off (max %ld)\n",
-					(long) clockdiff.tv_sec, (long) maxclockdiff);
+				if (cpucolor != COL_RED) cpucolor = clockdiffcolor;
+				sprintf(msgline, "&%s System clock is %ld seconds off (max %ld)\n",
+					colorname(clockdiffcolor), (long) clockdiff.tv_sec, (long) maxclockdiff);
 				addtobuffer(upmsg, msgline);
 			}
 			else {
@@ -1831,15 +1833,15 @@ void testmode(char *configfn)
 		fgets(s, sizeof(s), stdin); clean_instr(s);
 		if (strcmp(s, "cpu") == 0) {
 			float loadyellow, loadred;
-			int recentlimit, ancientlimit;
-			int maxclockdiff;
+			int recentlimit, ancientlimit, uptimecolor;
+			int maxclockdiff, clockdiffcolor;
 
-			cfid = get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
+			cfid = get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 
 			printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
-			printf("Uptime: From boot until %s,", durationstring(recentlimit));
+			printf("Uptime: %s from boot until %s,", colorname(uptimecolor), durationstring(recentlimit));
 			printf("and after %s uptime\n", durationstring(ancientlimit));
-			if (maxclockdiff > 0) printf("Max clock diff: %d\n", maxclockdiff);
+			if (maxclockdiff > 0) printf("Max clock diff: %d (%s)\n", maxclockdiff, colorname(clockdiffcolor));
 		}
 		else if (strcmp(s, "mem") == 0) {
 			int physyellow, physred, swapyellow, swapred, actyellow, actred;

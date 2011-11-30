@@ -20,9 +20,9 @@ static void bbwin_uptime_report(char *hostname, char *clientclass, enum ostype_t
 {
         char *p, *myuptimestr = NULL;
 	float loadyellow, loadred;
-        int recentlimit, ancientlimit, maxclockdiff;
+        int recentlimit, ancientlimit, uptimecolor, maxclockdiff, clockdiffcolor;
         long uptimesecs = -1;
-        int uptimecolor = COL_GREEN;
+        int upcolor = COL_GREEN;
         char msgline[4096];
         strbuffer_t *upmsg;
 
@@ -45,25 +45,26 @@ static void bbwin_uptime_report(char *hostname, char *clientclass, enum ostype_t
         if (myuptimestr) {
 		++myuptimestr;
         }
-	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
+	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 	dbgprintf("DEBUG recentlimit: [%d] ancienlimit: [%d]\n", recentlimit, ancientlimit); /* DEBUG TODO REMOVE */
 
         upmsg = newstrbuffer(0);
         if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
-                if (uptimecolor == COL_GREEN) uptimecolor = COL_YELLOW;
-                addtobuffer(upmsg, "&yellow Machine recently rebooted\n");
+                if (upcolor != COL_RED) upcolor = uptimecolor;
+                sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+                addtobuffer(upmsg, msgline);
         }
         if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
-                if (uptimecolor == COL_GREEN) uptimecolor = COL_YELLOW;
-                sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
+                if (upcolor != COL_RED) upcolor = uptimecolor;
+                sprintf(msgline, "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
                 addtobuffer(upmsg, msgline);
         }
 
-        init_status(uptimecolor);
+        init_status(upcolor);
         sprintf(msgline, "status %s.uptime %s %s %s\n",
-                commafy(hostname), colorname(uptimecolor),
+                commafy(hostname), colorname(upcolor),
                 (timestr ? timestr : "<No timestamp data>"),
-                ((uptimecolor == COL_GREEN) ? "OK" : "NOT ok"));
+                ((upcolor == COL_GREEN) ? "OK" : "NOT ok"));
 
         addtostatus(msgline);
 	/* And add the info if pb */
@@ -92,7 +93,7 @@ static void bbwin_cpu_report(char *hostname, char *clientclass, enum ostype_t os
 {
         char *p, *topstr;
         float load1, loadyellow, loadred;
-        int recentlimit, ancientlimit, maxclockdiff;
+        int recentlimit, ancientlimit, uptimecolor, maxclockdiff, clockdiffcolor;
         int cpucolor = COL_GREEN;
 
         char msgline[4096];
@@ -116,7 +117,7 @@ static void bbwin_cpu_report(char *hostname, char *clientclass, enum ostype_t os
 		*(topstr - 1) = '\0';
 	}
 	
-	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
+	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 	dbgprintf("loadyellow: %d, loadred: %d\n", loadyellow, loadred);
 
         cpumsg = newstrbuffer(0);
@@ -161,7 +162,7 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
        	char *myclockstr;
         int clockcolor = COL_GREEN;
         float loadyellow, loadred;
-        int recentlimit, ancientlimit, maxclockdiff;
+        int recentlimit, ancientlimit, uptimecolor, maxclockdiff, clockdiffcolor;
         char msgline[4096];
         strbuffer_t *clockmsg;
 
@@ -177,7 +178,7 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
                 *(myclockstr - 1) = '\0';
         }
 
-	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
+	get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 
         if (clockstr) {
                 char *p;
@@ -221,9 +222,9 @@ static void bbwin_clock_report(char *hostname, char *clientclass, enum ostype_t 
                         }
 
                         if ((maxclockdiff > 0) && (abs(clockdiff.tv_sec) > maxclockdiff)) {
-                                if (clockcolor == COL_GREEN) clockcolor = COL_YELLOW;
-                                sprintf(msgline, "&yellow System clock is %ld seconds off (max %ld)\n",
-                                        (long) clockdiff.tv_sec, (long) maxclockdiff);
+                                if (clockcolor != COL_RED) clockcolor = clockdiffcolor;
+                                sprintf(msgline, "&%s System clock is %ld seconds off (max %ld)\n",
+                                        colorname(clockdiffcolor), (long) clockdiff.tv_sec, (long) maxclockdiff);
                                 addtobuffer(clockmsg, msgline);
                         }
                         else {

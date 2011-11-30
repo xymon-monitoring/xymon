@@ -1,4 +1,4 @@
-.TH ANALYSIS.CFG 5 "Version 4.3.5:  9 Sep 2011" "Xymon"
+.TH ANALYSIS.CFG 5 "Version 4.3.6: 30 Nov 2011" "Xymon"
 .SH NAME
 analysis.cfg \- Configuration file for the xymond_client module
 
@@ -31,19 +31,19 @@ numbers.
 .sp
 Defaults: warnlevel=5.0, paniclevel=10.0
 .sp
-.BR "UP bootlimit toolonglimit"
+.BR "UP bootlimit toolonglimit [color]"
 .sp
-The cpu status goes yellow if the system has been up for less than
+The cpu status goes yellow/red if the system has been up for less than
 "bootlimit" time, or longer than "toolonglimit". The time is in
 minutes, or you can add h/d/w for hours/days/weeks - eg. "2h" for
 two hours, or "4w" for 4 weeks.
 .sp
-Defaults: bootlimit=1h, toolonglimit=-1 (infinite).
+Defaults: bootlimit=1h, toolonglimit=-1 (infinite), color=yellow.
 .sp
 .sp
-.BR "CLOCK max.offset"
+.BR "CLOCK max.offset [color]"
 .sp
-The cpu status goes yellow if the system clock on the client
+The cpu status goes yellow/red if the system clock on the client
 differs more than "max.offset" seconds from that of the Xymon
 server. Note that this is not a particularly accurate test, since 
 it is affected by network delays between the client and the server,
@@ -61,12 +61,13 @@ e.g. by using NTP.
 Example: Go yellow if the load average exceeds 5, and red if it
 exceeds 10. Also, go yellow for 10 minutes after a reboot, and after 
 4 weeks uptime. Finally, check that the system clock is at most
-15 seconds offset from the clock of the Xymon system.
+15 seconds offset from the clock of the Xymon system and go red if 
+that is exceeded.
 .IP
 .nf
 LOAD 5 10
-UP 10m 4w
-CLOCK 15
+UP 10m 4w yellow
+CLOCK 15 red
 .fi
 .LP
 

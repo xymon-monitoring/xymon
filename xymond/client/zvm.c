@@ -19,7 +19,7 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 {
         char *p;
         float load1, loadyellow, loadred;
-        int recentlimit, ancientlimit, maxclockdiff;
+        int recentlimit, ancientlimit, uptimecolor, maxclockdiff, clockdiffcolor;
         int  uphour, upmin;
         char loadresult[100];
         char myupstr[100];
@@ -59,7 +59,7 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
                 }
         }
 
-        get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &maxclockdiff);
+        get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 
         upmsg = newstrbuffer(0);
 
@@ -73,12 +73,13 @@ static void zvm_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
         }
 
         if ((uptimesecs != -1) && (recentlimit != -1) && (uptimesecs < recentlimit)) {
-                if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
-                addtobuffer(upmsg, "&yellow Machine recently rebooted\n");
+                if (cpucolor != COL_RED) cpucolor = uptimecolor;
+                sprintf(msgline, "&%s Machine recently rebooted\n", colorname(uptimecolor));
+                addtobuffer(upmsg, msgline);
         }
         if ((uptimesecs != -1) && (ancientlimit != -1) && (uptimesecs > ancientlimit)) {
-                if (cpucolor == COL_GREEN) cpucolor = COL_YELLOW;
-                sprintf(msgline, "&yellow Machine has been up more than %d days\n", (ancientlimit / 86400));
+                if (cpucolor != COL_RED) cpucolor = uptimecolor;
+                sprintf(msgline, "&%s Machine has been up more than %d days\n", colorname(uptimecolor), (ancientlimit / 86400));
                 addtobuffer(upmsg, msgline);
         }
 

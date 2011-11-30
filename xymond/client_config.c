@@ -44,11 +44,11 @@ typedef struct c_load_t {
 } c_load_t;
 
 typedef struct c_uptime_t {
-	int recentlimit, ancientlimit;
+	int recentlimit, ancientlimit, color;
 } c_uptime_t;
 
 typedef struct c_clock_t {
-	int maxdiff;
+	int maxdiff, color;
 } c_clock_t;
 
 typedef struct c_disk_t {
@@ -699,17 +699,23 @@ int load_client_config(char *configfn)
 				currule = NEWRULE(C_UPTIME)
 				currule->rule.uptime.recentlimit = 3600;
 				currule->rule.uptime.ancientlimit = -1;
+				currule->rule.uptime.color = COL_YELLOW;
 
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.uptime.recentlimit = 60*durationvalue(tok);
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.uptime.ancientlimit = 60*durationvalue(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				if (tok) currule->rule.clock.color = parse_color(tok);
 			}
 			else if (strcasecmp(tok, "CLOCK") == 0) {
 				currule = NEWRULE(C_CLOCK);
 				currule->rule.clock.maxdiff = 60;
+				currule->rule.clock.color = COL_YELLOW;
 				tok = wstok(NULL); if (isqual(tok)) continue;
 				currule->rule.clock.maxdiff = atoi(tok);
+				tok = wstok(NULL); if (isqual(tok)) continue;
+				if (tok) currule->rule.clock.color = parse_color(tok);
 			}
 			else if (strcasecmp(tok, "LOAD") == 0) {
 				currule = NEWRULE(C_LOAD);
@@ -1909,7 +1915,9 @@ static c_rule_t *getrule(char *hostname, char *pagename, char *classname, void *
 }
 
 int get_cpu_thresholds(void *hinfo, char *classname, 
-		       float *loadyellow, float *loadred, int *recentlimit, int *ancientlimit, int *maxclockdiff)
+		       float *loadyellow, float *loadred, 
+		       int *recentlimit, int *ancientlimit, int *uptimecolor,
+		       int *maxclockdiff, int *clockdiffcolor)
 {
 	int result = 0;
 	char *hostname, *pagename;
@@ -1920,6 +1928,7 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 
 	*loadyellow = 5.0;
 	*loadred = 10.0;
+	*uptimecolor = *clockdiffcolor = COL_YELLOW;
 
 	rule = getrule(hostname, pagename, classname, hinfo, C_LOAD);
 	if (rule) {
@@ -1935,6 +1944,7 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 	if (rule) {
 		*recentlimit  = rule->rule.uptime.recentlimit;
 		*ancientlimit = rule->rule.uptime.ancientlimit;
+		*uptimecolor = rule->rule.uptime.color;
 		result = rule->cfid;
 	}
 
@@ -1942,6 +1952,7 @@ int get_cpu_thresholds(void *hinfo, char *classname,
 	rule = getrule(hostname, pagename, classname, hinfo, C_CLOCK);
 	if (rule) {
 		*maxclockdiff = rule->rule.clock.maxdiff;
+		*clockdiffcolor = rule->rule.clock.color;
 	}
 
 	return result;
