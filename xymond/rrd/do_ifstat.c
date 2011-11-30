@@ -134,6 +134,16 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 	char *bol, *eoln, *ifname, *rxstr, *txstr, *dummy;
 	int dmatch;
 
+	void *xmh;
+	pcre *ifname_filter_pcre = NULL;
+
+	xmh = hostinfo(hostname);
+	if (xmh) {
+		char *ifname_filter_expr = xmh_item(xmh, XMH_INTERFACES);
+		if (ifname_filter_expr && *ifname_filter_expr) 
+			ifname_filter_pcre = compileregex(ifname_filter_expr);
+	}
+
 	if (pcres_compiled == 0) {
 		pcres_compiled = 1;
 		ifstat_linux_pcres = compile_exprs("LINUX", ifstat_linux_exprs, 
@@ -293,9 +303,12 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		}
 
 		if ((dmatch == 7) && ifname && rxstr && txstr) {
-			setupfn2("%s.%s.rrd", "ifstat", ifname);
-			sprintf(rrdvalues, "%d:%s:%s", (int)tstamp, txstr, rxstr);
-			create_and_update_rrd(hostname, testname, classname, pagepaths, ifstat_params, ifstat_tpl);
+			if (!ifname_filter_pcre || matchregex(ifname, ifname_filter_pcre)) {
+				setupfn2("%s.%s.rrd", "ifstat", ifname);
+				sprintf(rrdvalues, "%d:%s:%s", (int)tstamp, txstr, rxstr);
+				create_and_update_rrd(hostname, testname, classname, pagepaths, ifstat_params, ifstat_tpl);
+			}
+
 			xfree(ifname); xfree(rxstr); xfree(txstr);
 			if (dummy) xfree(dummy);
 			ifname = rxstr = txstr = dummy = NULL;
@@ -311,6 +324,8 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 			bol = NULL;
 		}
 	}
+
+	if (ifname_filter_pcre) freeregex(ifname_filter_pcre);
 
 	if (ifname) xfree(ifname);
 	if (rxstr) xfree(rxstr);

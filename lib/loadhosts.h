@@ -75,6 +75,7 @@ enum xmh_item_t {
 	XMH_NOTBEFORE,
 	XMH_NOTAFTER,
 	XMH_COMPACT,
+	XMH_INTERFACES,
 	XMH_LAST
 };
 
