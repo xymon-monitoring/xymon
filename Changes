@@ -1,3 +1,33 @@
+Changes from 4.3.5 -> 4.3.6 (30 Nov 2011)
+=========================================
+* rev 6785
+* Optionally choose the color for the "cpu" status when it goes
+  non-green due to uptime or clock offset.
+* Allow for "include" and "directory" in combo.cfg and protocols.cfg
+* New INTERFACES definition in hosts.cfg to select which network
+  interfaces are tracked in graphs.
+* New access control mechanism for some CGI scripts returning 
+  host-specific information. Access optionally checked against
+  an Apache-style "group" file (see xymonwebaccess(5) CGI manpage).
+* New "vertical" page-definitions (vpage, vsubpage,vsubparent)
+  for listing hosts across and tests down on a page.
+* Fix hostlist CGI crash when called with HTTP "HEAD"
+* Fix svcstatus CGI crash when called with non-existing hostname
+* Fix "ackinfo" updates being cleared when host hits a
+  DOWNTIME period.
+* Fix compile-errors on Solaris due to network libraries
+  not being included.
+* Fix "logrotate" messages not being sent to some channels.
+* STATUSLIFETIME now provides the default time a status is valid (in xymond).
+* Critical systems view: Use priority 99 for un-categorised priorities
+  (imported from NK tags) and show this as 'No priority' on the webpage.
+* useradm CGI: Sort usernames
+* New xymond module - xymond_distribute - can forward
+  administrative commands (drop, rename, disable, enable)
+  from one Xymon server to another.
+* New tool: appfeed CGI provides data for the Android "xymonQV" app 
+  by Darrik Mazey.
+
 Changes from 4.3.4 -> 4.3.5 (9 Sep 2011)
 ========================================
 * rev 6754
