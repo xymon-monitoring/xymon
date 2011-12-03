@@ -4855,7 +4855,7 @@ int main(int argc, char *argv[])
 
 	/* Make sure we load hosts.cfg file, and not via the network from ourselves */
 	hostsfn = (char *)realloc(hostsfn, strlen(hostsfn) + 2);
-	memmove(hostsfn+1, hostsfn, strlen(hostsfn));
+	memmove(hostsfn+1, hostsfn, strlen(hostsfn)+1);
 	*hostsfn = '!';
 
 	if (listenport == 0) {
