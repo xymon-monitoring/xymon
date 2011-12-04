@@ -1,0 +1,90 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of APPFEED.CGI</TITLE>
+</HEAD><BODY>
+<H1>APPFEED.CGI</H1>
+Section: User Commands  (1)<BR>Updated: Version Exp: 30 Nov 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+appfeed.cgi - Xymon CGI feeder for Smartphone apps
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>appfeed.cgi [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<B>appfeed.cgi</B>
+is invoked as a CGI script via the appfeed.sh CGI wrapper.
+<P>
+appfeed.cgi is optionally passed a QUERY_STRING environment variable with the
+&quot;filter=FILTER&quot; parameter. FILTER is a filter for the &quot;xymondboard&quot; command
+sent to
+<I><A HREF="../man8/xymond.8.html">xymond</A>(8)</I>
+
+daemon. These filters are described in detail in the
+<I><A HREF="../man1/xymon.1.html">xymon</A>(1)</I>
+
+manual. Typically, the filter will specify hosts found on a specific (sub)page
+to be returned, e.g. &quot;filter=page=webservers&quot; will cause appfeed.cgi to only 
+return hosts that are present on the &quot;webservers&quot; page in Xymon.
+<P>
+If no filter is specified, appfeed.cgi returns data for all red, yellow or purple
+statuses (equivalent to the data present on the &quot;All non-green&quot; page), or if invoked 
+with the &quot;--critical&quot; option it returns data from the &quot;Critical systems&quot; page.
+<P>
+The output is an XML document with the current status of the selected hosts/services.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--env=FILENAME<DD>
+Loads the environment from FILENAME before executing the CGI.
+<P>
+<DT>--critical[=FILENAME]<DD>
+FILENAME specifies the &quot;Critical Systems&quot; configuration file (default: critical.cfg).
+appfeed.cgi will only return the statuses currently on the &quot;Critical Systems&quot; view.
+<P>
+<DT>--access=FILENAME<DD>
+In addition to the filtering done by the &quot;filter&quot; parameter or the &quot;--critical&quot; option,
+this option limits the output to hosts that the user has access to as defined in the
+Apache-compatible group-definitions in FILENAME. See
+<I><A HREF="../man5/xymon-webaccess.5.html">xymon-webaccess</A>(5)</I>
+
+for more details of this.
+
+Note: Use of this option requires that access to the appfeed.cgi tool is password-protected
+by whatever means your webserver software provides, and that the login userid is available
+via the REMOTE_USER environment variable (this is standard CGI behaviour, so all webservers
+should provide it if you use the webserver's built-in authentication mechanisms).
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man1/xymon.1.html">xymon</A>(1), <A HREF="../man5/critical.cfg.5.html">critical.cfg</A>(5), <A HREF="../man5/xymon-webaccess.5.html">xymon-webaccess</A>(5)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 09:33:46 GMT, November 30, 2011
+</BODY>
+</HTML>

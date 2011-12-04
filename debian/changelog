@@ -1,6 +1,6 @@
 xymon (4.3.6) unstable; urgency=low
 
-   rev 6787
+   rev 6788
    * Optionally choose the color for the "cpu" status when it goes
      non-green due to uptime or clock offset.
    * Allow for "include" and "directory" in combo.cfg and protocols.cfg
@@ -24,7 +24,7 @@ xymon (4.3.6) unstable; urgency=low
      disable, enable) from one Xymon server to another.
    * New tool: appfeed CGI provides data for the Android "xymonQV" app by Darrik Mazey.
 
- -- Henrik Stoerner <henrik@hswn.dk>  Sun, 3 Dec 2011 12:00:00 +0100
+ -- Henrik Stoerner <henrik@hswn.dk>  Mon, 5 Dec 2011 08:00:00 +0100
 
 xymon (4.3.5) unstable; urgency=medium
 

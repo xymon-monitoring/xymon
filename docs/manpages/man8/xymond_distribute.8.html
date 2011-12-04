@@ -1,0 +1,71 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of XYMOND_DISTRIBUTE</TITLE>
+</HEAD><BODY>
+<H1>XYMOND_DISTRIBUTE</H1>
+Section: Maintenance Commands (8)<BR>Updated: Version Exp: 30 Nov 2011<BR><A HREF="#index">Index</A>
+<A HREF="../index.html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+xymond_distribute - xymond worker module for distributing commands
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>xymond_channel --channel=enadis xymond_distribute [options]</B>
+
+<P>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+xymond_distribute is a worker module for xymond, and as such it is normally
+run via the
+<I><A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8)</I>
+
+program. It is used if you have multiple Xymon servers running in a
+master/slave configuration. xymond_distribute runs on the master server and
+receives &quot;drop&quot;, &quot;rename&quot;, &quot;enable&quot; and &quot;disable&quot; messages from xymond. 
+xymond_distribute then forwards these to the other Xymon servers as standard 
+xymon messages. So if a user on the master Xymon server disables a red status, 
+xymond_distribute will forward this to the other Xymon servers so that the 
+change happens everywhere.
+<P>
+NOTE: xymond_distribute does not check to see if a message has already been
+forwarded, so you can easily create forwarding loops.
+<P>
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>--peer=HOSTNAME<DD>
+The peer that messages are forwarded to. If you have multiple peers, repeat
+this option.
+<P>
+<DT>--debug<DD>
+Enable debugging output.
+<P>
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>SEE ALSO</H2>
+
+<A HREF="../man8/xymond_channel.8.html">xymond_channel</A>(8), <A HREF="../man8/xymond.8.html">xymond</A>(8), <A HREF="../man7/xymon.7.html">xymon</A>(7)
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">SEE ALSO</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 09:33:46 GMT, November 30, 2011
+</BODY>
+</HTML>
