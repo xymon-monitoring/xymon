@@ -344,6 +344,9 @@ void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os,
 			if (strncmp(daymark, " days ", 6) == 0) {
 				hourmark = daymark + 6;
 			}
+			else if (strncmp(daymark, " day ", 5) == 0) {
+				hourmark = daymark + 5;
+			}
 			else {
 				hourmark = strchr(daymark, ',');
 				if (hourmark) hourmark++; else hourmark = "";
