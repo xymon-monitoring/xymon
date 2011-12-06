@@ -1,5 +1,13 @@
 	echo "Checking for Large File Support ..."
 
+	# Solaris is br0ken when it comes to LFS tests.
+	# See http://lists.xymon.com/archive/2011-November/033216.html
+	if test "`uname -s`" = "SunOS"; then
+		echo "Large File Support assumed OK on Solaris"
+		exit 0
+	fi
+
+
 	cd build
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lfs clean
 	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-lfs 2>/dev/null
