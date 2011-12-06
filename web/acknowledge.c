@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
 			char *msgline = (char *)malloc(1024 + (awalk->hostname ? strlen(awalk->hostname) : 0) + (awalk->testname ? strlen(awalk->testname) : 0));
 
 			if (!awalk->checked) continue;
-			if (!web_access_allowed(getenv("REMOTE_USER"), awalk->hostname, awalk->testname, WEB_ACCESS_CONTROL)) continue;
+			if (accessfn && (!web_access_allowed(getenv("REMOTE_USER"), awalk->hostname, awalk->testname, WEB_ACCESS_CONTROL))) continue;
 
 			if ((reqtype == ACK_ONE) && (awalk->id != sendnum)) continue;
 
