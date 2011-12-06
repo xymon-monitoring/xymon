@@ -338,7 +338,7 @@ static char *message_text(activealerts_t *alert, recip_t *recip)
 			bom = eoln;
 			while ((bom = strstr(bom, "\n&")) != NULL) {
 				eoln = strchr(bom+1, '\n'); if (eoln) *eoln = '\0';
-				if ((strncmp(bom, "&red", 4) == 0) || (strncmp(bom, "&yellow", 7) == 0)) 
+				if ((strncmp(bom+1, "&red", 4) == 0) || (strncmp(bom+1, "&yellow", 7) == 0)) 
 					addtobuffer(buf, bom);
 				if (eoln) *eoln = '\n';
 				bom = (eoln ? eoln+1 : "");
