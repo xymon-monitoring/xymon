@@ -248,8 +248,9 @@ the Xymon daemon.
 
 By default - if no CRITERIA is provided - it returns one line for all 
 status messages that are found in Xymon. You can filter the response
-by selecting a page, a host, a test or a color - wildcards are not 
-supported, so you can pick only one page, host, test or color. 
+by selecting a page, a host, a test or a color - the PAGEPATH, HOSTNAME
+and TESTNAME parameters are interpreted as regular expressions, the COLOR 
+parameter accepts multiple colors separated by comma.
 .sp
 .BR page=PAGEPATH
 Include only tests from hosts found on the PAGEPATH page in the hosts.cfg
