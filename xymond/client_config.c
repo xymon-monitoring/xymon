@@ -1615,7 +1615,7 @@ void dump_client_config(void)
 
 			printf("DISK %s", rwalk->rule.disk.fsexp->pattern);
 			if (rwalk->rule.disk.ignored)
-				printf("IGNORE");
+				printf(" IGNORE");
 			else {
 				printf(" %lu%c", rwalk->rule.disk.warnlevel, (rwalk->rule.disk.abswarn ? 'U' : '%'));
 				printf(" %lu%c", rwalk->rule.disk.paniclevel, (rwalk->rule.disk.abspanic  ? 'U' : '%'));
@@ -1628,7 +1628,7 @@ void dump_client_config(void)
 
 			printf("INODE %s", rwalk->rule.inode.fsexp->pattern);
 			if (rwalk->rule.inode.ignored)
-				printf("IGNORE");
+				printf(" IGNORE");
 			else {
 				printf(" %lu%c", rwalk->rule.inode.warnlevel, (rwalk->rule.inode.abswarn ? 'U' : '%'));
 				printf(" %lu%c", rwalk->rule.inode.paniclevel, (rwalk->rule.inode.abspanic  ? 'U' : '%'));
