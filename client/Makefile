@@ -57,13 +57,15 @@ netbsd-meminfo: netbsd-meminfo.c
 	$(CC) -o $@ netbsd-meminfo.c
 
 install:
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)     ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)     ; fi
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)/bin ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/bin ; fi
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)/etc ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/etc ; fi
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)/tmp ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/tmp ; fi
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)/logs; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/logs; fi
-	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)       ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)       ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/bin   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/bin   ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/etc   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/etc   ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/tmp   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/tmp   ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/logs  ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/logs  ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/ext   ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/ext   ; fi
+	if test ! -d $(INSTALLROOT)$(XYMONHOME)/local ; then mkdir -p $(INSTALLROOT)$(XYMONHOME)/local ; fi
 	if test ! -f $(INSTALLROOT)$(XYMONHOME)/etc/localclient.cfg ; then cp localclient.cfg $(INSTALLROOT)$(XYMONHOME)/etc/ ; fi
+	if test ! -f $(INSTALLROOT)$(XYMONHOME)/local/README; then cp README-local $(INSTALLROOT)$(XYMONHOME)/local/README ; chmod 644 $(INSTALLROOT)$(XYMONHOME)/local/README; fi
 	cp -fp runclient.sh $(INSTALLROOT)$(XYMONHOME)
 	cp -fp $(PROGRAMS) xymonclient*.sh $(COMMONTOOLS) $(EXTRATOOLS) $(INSTALLROOT)$(XYMONHOME)/bin/
 	chmod ugo+x $(INSTALLROOT)$(XYMONHOME)/bin/*

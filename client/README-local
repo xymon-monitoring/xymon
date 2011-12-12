@@ -1,0 +1,14 @@
+This directory - the client/local/ directory - can be used to
+install Xymon client add-on scripts. The Xymon client will run
+all files in this directory that are executable, and include the
+output from each script in a separate section in the Xymon client
+message which is sent to the Xymon server.
+
+This output will have to be processed on the Xymon server; there
+is no default processing done by Xymon on the output from these
+scripts. They are merely added to the client data.
+
+If you want to install an add-on script that direcly generates a 
+status column in Xymon, this should go in the client/ext/ directory
+instead.
+

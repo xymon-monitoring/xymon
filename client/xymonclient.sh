@@ -58,6 +58,19 @@ fi
 # Client version
 echo "[clientversion]"  >>$MSGTMPFILE
 echo "$CLIENTVERSION"   >> $MSGTMPFILE
+
+# See if there are any local add-ons (must do this before checking the clock)
+if test -d $XYMONHOME/local; then
+	for MODULE in $XYMONHOME/local/*
+	do
+		if test -x $MODULE
+		then
+			echo "[local:`basename $MODULE`]" >>$MSGTMPFILE
+			$MODULE >>$MSGTMPFILE
+		fi
+	done
+fi
+
 # System clock
 echo "[clock]"          >> $MSGTMPFILE
 $XYMONHOME/bin/logfetch --clock >> $MSGTMPFILE
