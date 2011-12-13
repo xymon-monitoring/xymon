@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of ANALYSIS.CFG</TITLE>
 </HEAD><BODY>
 <H1>ANALYSIS.CFG</H1>
-Section: File Formats (5)<BR>Updated: Version Exp: 30 Nov 2011<BR><A HREF="#index">Index</A>
+Section: File Formats (5)<BR>Updated: Version Exp: 13 Dec 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -50,21 +50,21 @@ numbers.
 <P>
 Defaults: warnlevel=5.0, paniclevel=10.0
 <P>
-<B>UP bootlimit toolonglimit</B>
+<B>UP bootlimit toolonglimit [color]</B>
 
 <P>
-The cpu status goes yellow if the system has been up for less than
+The cpu status goes yellow/red if the system has been up for less than
 &quot;bootlimit&quot; time, or longer than &quot;toolonglimit&quot;. The time is in
 minutes, or you can add h/d/w for hours/days/weeks - eg. &quot;2h&quot; for
 two hours, or &quot;4w&quot; for 4 weeks.
 <P>
-Defaults: bootlimit=1h, toolonglimit=-1 (infinite).
+Defaults: bootlimit=1h, toolonglimit=-1 (infinite), color=yellow.
 <P>
 <P>
-<B>CLOCK max.offset</B>
+<B>CLOCK max.offset [color]</B>
 
 <P>
-The cpu status goes yellow if the system clock on the client
+The cpu status goes yellow/red if the system clock on the client
 differs more than &quot;max.offset&quot; seconds from that of the Xymon
 server. Note that this is not a particularly accurate test, since 
 it is affected by network delays between the client and the server,
@@ -83,13 +83,14 @@ e.g. by using NTP.
 Example: Go yellow if the load average exceeds 5, and red if it
 exceeds 10. Also, go yellow for 10 minutes after a reboot, and after 
 4 weeks uptime. Finally, check that the system clock is at most
-15 seconds offset from the clock of the Xymon system.
+15 seconds offset from the clock of the Xymon system and go red if 
+that is exceeded.
 <DL COMPACT>
 <DT><DD>
 <PRE>
 LOAD 5 10
-UP 10m 4w
-CLOCK 15
+UP 10m 4w yellow
+CLOCK 15 red
 </PRE>
 
 </DL>
@@ -542,7 +543,7 @@ Example: Flag &quot;conn&quot; status a yellow if responsetime exceeds
 100 msec.
 <BR>
 
-<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>DS tcp.conn.rrd:sec &gt;0.1 COLOR=yellow TEXT=&quot;Response time &amp;V exceeds &amp;U seconds&quot;<BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT>DS conn tcp.conn.rrd:sec &gt;0.1 COLOR=yellow TEXT=&quot;Response time &amp;V exceeds &amp;U seconds&quot;<BR>
 <P>
 <A NAME="lbAO">&nbsp;</A>
 <H2>MQ Series SETTINGS</H2>
@@ -816,6 +817,6 @@ is not considered strong enough when a high level of security is required.
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 09:33:46 GMT, November 30, 2011
+Time: 12:13:03 GMT, December 13, 2011
 </BODY>
 </HTML>

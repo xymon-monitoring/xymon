@@ -1,3 +1,21 @@
+Changes from 4.3.6 -> 4.3.7 (13 Dec 2011)
+=========================================
+* rev 6803
+* Fix acknowledge CGI (broken in 4.3.6)
+* Fix broken uptime calculation for systems reporting "1 day"
+* Workaround Solaris breakage in the LFS-support detection
+* Fix/add links to the HTML man-page index.
+* Fix "Stop after" value not being shown on the "info" page.
+* Fix broken alert texts when using FORMAT=SMS
+* Fix wrong description of xymondboard CRITERIA in xymon(1)
+* Fix missing columnname in analysis.cfg(5) DS example
+* Fix missing space in output from disk IGNORE rules in
+  xymond_client --dump-config
+* Fix overwrite of xymon-apache.conf when upgrading
+* Fix installation so it does not remove include/directory 
+  lines from configuration files.
+* Add client/local/ directory for custom client script
+
 Changes from 4.3.5 -> 4.3.6 (5 Dec 2011)
 ========================================
 * rev 6788

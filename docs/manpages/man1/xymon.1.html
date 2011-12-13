@@ -3,7 +3,7 @@
 <HTML><HEAD><TITLE>Man page of XYMON</TITLE>
 </HEAD><BODY>
 <H1>XYMON</H1>
-Section: User Commands  (1)<BR>Updated: Version Exp: 30 Nov 2011<BR><A HREF="#index">Index</A>
+Section: User Commands  (1)<BR>Updated: Version Exp: 13 Dec 2011<BR><A HREF="#index">Index</A>
 <A HREF="../index.html">Return to Main Contents</A><HR>
 
 <A NAME="lbAB">&nbsp;</A>
@@ -294,8 +294,9 @@ the Xymon daemon.
 <P>
 By default - if no CRITERIA is provided - it returns one line for all 
 status messages that are found in Xymon. You can filter the response
-by selecting a page, a host, a test or a color - wildcards are not 
-supported, so you can pick only one page, host, test or color. 
+by selecting a page, a host, a test or a color - the PAGEPATH, HOSTNAME
+and TESTNAME parameters are interpreted as regular expressions, the COLOR 
+parameter accepts multiple colors separated by comma.
 <P>
 <B>page=PAGEPATH</B>
 
@@ -584,6 +585,6 @@ pass it via stdin to the xymon command:
 This document was created by
 <A HREF="/cgi-bin/man/man2html">man2html</A>,
 using the manual pages.<BR>
-Time: 09:33:46 GMT, November 30, 2011
+Time: 12:13:03 GMT, December 13, 2011
 </BODY>
 </HTML>
