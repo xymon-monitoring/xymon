@@ -35,13 +35,11 @@ typedef struct sendreturn_t {
 	int haveseenhttphdrs;
 } sendreturn_t;
 
-extern int xymonmsgcount;
-extern int xymonstatuscount;
-extern int xymonnocombocount;
 extern int dontsendmessages;
 
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
+
 extern sendreturn_t *newsendreturnbuf(int fullresponse, FILE *respfd);
 extern void freesendreturnbuf(sendreturn_t *s);
 extern char *getsendreturnstr(sendreturn_t *s, int takeover);
@@ -53,13 +51,6 @@ extern void init_status(int color);
 extern void addtostatus(char *p);
 extern void addtostrstatus(strbuffer_t *p);
 extern void finish_status(void);
-
-extern void meta_start(void);
-extern void meta_end(void);
-
-extern void init_meta(char *metaname);
-extern void addtometa(char *p);
-extern void finish_meta(void);
 
 #endif
 

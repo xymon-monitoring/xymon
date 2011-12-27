@@ -40,6 +40,7 @@ const static struct {
 	{ "DELAYRED", "" },
 	{ "DELAYYELLOW", "" },
 	{ "XYMONDPORT", "1984" },
+	{ "XYMONDSSLPORT", "1985" },
 	{ "XYMSRV", "$XYMONSERVERIP" },
 	{ "XYMSERVERS", "" },
 	{ "FQDN", "TRUE" },

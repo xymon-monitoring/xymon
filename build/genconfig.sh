@@ -80,6 +80,10 @@ else
 	echo "#undef HAVE_STRTOLL_H" >>include/config.h
 fi
 
+echo "#define IPV4_SUPPORT" >>include/config.h
+echo "#define IPV6_SUPPORT" >>include/config.h
+echo "#define SSL_SUPPORT" >>include/config.h
+
 echo "#endif" >>include/config.h
 
 echo "config.h created"
