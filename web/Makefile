@@ -1,8 +1,13 @@
+XYMONLIB = ../lib/libxymon.a
+XYMONLIBS = $(XYMONLIB)
+XYMONCOMMLIB = ../lib/libxymoncomm.a
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONTIMELIB = ../lib/libxymontime.a
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+
 PROGRAMS = history.cgi eventlog.cgi report.cgi reportlog.cgi snapshot.cgi findhost.cgi csvinfo.cgi acknowledge.cgi xymonpage datepage.cgi showgraph.cgi svcstatus.cgi enadis.cgi confreport.cgi criticalview.cgi criticaleditor.cgi ackinfo.cgi statusreport.cgi boilerplate.cgi hostgraphs.cgi ghostlist.cgi notifications.cgi hostlist.cgi perfdata.cgi useradm.cgi appfeed.cgi
 CGISCRIPTS = history.sh eventlog.sh report.sh reportlog.sh snapshot.sh findhost.sh csvinfo.sh columndoc.sh datepage.sh showgraph.sh svcstatus.sh historylog.sh confreport.sh confreport-critical.sh criticalview.sh certreport.sh nongreen.sh hostgraphs.sh ghostlist.sh notifications.sh hostlist.sh perfdata.sh topchanges.sh appfeed.sh appfeed-critical.sh
 SECCGISCRIPTS = acknowledge.sh enadis.sh criticaleditor.sh ackinfo.sh useradm.sh
-
-LIBOBJS = ../lib/libxymon.a
 
 HISTOBJS        = history.o
 EVENTLOGOBJS    = eventlog.o
@@ -40,94 +45,94 @@ IDTOOL := $(shell if test `uname -s` = "SunOS"; then echo /usr/xpg4/bin/id; else
 
 all: $(PROGRAMS) $(CGISCRIPTS) $(SECCGISCRIPTS)
 
-history.cgi: $(HISTOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+history.cgi: $(HISTOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(HISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-eventlog.cgi: $(EVENTLOGOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+eventlog.cgi: $(EVENTLOGOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(EVENTLOGOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-report.cgi: $(REPOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(REPOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+report.cgi: $(REPOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(REPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-reportlog.cgi: $(REPLOGOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+reportlog.cgi: $(REPLOGOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(REPLOGOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-snapshot.cgi: $(SNAPOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+snapshot.cgi: $(SNAPOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(SNAPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-findhost.cgi: $(FINDHOSTOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+findhost.cgi: $(FINDHOSTOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(FINDHOSTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-csvinfo.cgi: $(CSVINFOOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+csvinfo.cgi: $(CSVINFOOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(CSVINFOOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-acknowledge.cgi: $(ACKCGIOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+acknowledge.cgi: $(ACKCGIOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(ACKCGIOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-xymonpage: $(WEBPAGEOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+xymonpage: $(WEBPAGEOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(WEBPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-datepage.cgi: $(DATEPAGEOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) ../lib/libxymon.a $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+datepage.cgi: $(DATEPAGEOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(DATEPAGEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 showgraph.o: showgraph.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 
 # Need NETLIBS on Solaris for getservbyname(), called by parse_url()
-showgraph.cgi: $(SHOWGRAPHOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(SHOWGRAPHOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS) $(LIBRTDEF)
+showgraph.cgi: $(SHOWGRAPHOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(SHOWGRAPHOBJS) $(XYMONCOMMLIBS) $(PCRELIBS) $(RRDLIBS)
 
-svcstatus.cgi: $(SVCSTATUSOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(SVCSTATUSOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+svcstatus.cgi: $(SVCSTATUSOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(SVCSTATUSOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-enadis.cgi: $(ENADISOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(ENADISOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+enadis.cgi: $(ENADISOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(ENADISOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-statusreport.cgi: $(STATUSREPOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(STATUSREPOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+statusreport.cgi: $(STATUSREPOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(STATUSREPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-confreport.cgi: $(CONFREPOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(CONFREPOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+confreport.cgi: $(CONFREPOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(CONFREPOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-criticalview.cgi: $(CRITVIEWOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITVIEWOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+criticalview.cgi: $(CRITVIEWOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITVIEWOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 criticalview.o: criticalview.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) -c -o $@ $<
 
-criticaleditor.cgi: $(CRITEDITOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITEDITOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+criticaleditor.cgi: $(CRITEDITOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(CRITEDITOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-ackinfo.cgi: $(ACKINFOOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(LIBOBJS) $(NETLIBS) $(LIBRTDEF)
+ackinfo.cgi: $(ACKINFOOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(ACKINFOOBJS) $(XYMONCOMMLIBS)
 
-boilerplate.cgi: $(BOILERPLATEOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BOILERPLATEOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+boilerplate.cgi: $(BOILERPLATEOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(BOILERPLATEOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-hostgraphs.cgi: $(HOSTGRAPHSOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTGRAPHSOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+hostgraphs.cgi: $(HOSTGRAPHSOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTGRAPHSOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-ghostlist.cgi: $(GHOSTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(GHOSTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+ghostlist.cgi: $(GHOSTOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(GHOSTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-notifications.cgi: $(NOTIFYOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NOTIFYOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+notifications.cgi: $(NOTIFYOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NOTIFYOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-hostlist.cgi: $(HOSTLISTOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+hostlist.cgi: $(HOSTLISTOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(HOSTLISTOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
 perfdata.o: perfdata.c
 	$(CC) $(CFLAGS) $(PCREINCDIR) $(RRDDEF) $(RRDINCDIR) -c -o $@ $<
 	#
 # Need -lm on perfdata because it refers to isnan()
-perfdata.cgi: $(PERFDATAOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PERFDATAOBJS) $(LIBOBJS) $(PCRELIBS) $(RRDLIBS) $(NETLIBS) -lm $(LIBRTDEF)
+perfdata.cgi: $(PERFDATAOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PERFDATAOBJS) $(XYMONCOMMLIBS) $(PCRELIBS) $(RRDLIBS) -lm
 
-useradm.cgi: $(USERADMOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(USERADMOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+useradm.cgi: $(USERADMOBJS) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(USERADMOBJS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
-appfeed.cgi: $(APPFEEDOBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(APPFEEDOBJS) $(LIBOBJS) $(PCRELIBS) $(NETLIBS) $(LIBRTDEF)
+appfeed.cgi: $(APPFEEDOBJS) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(APPFEEDOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS) $(PCRELIBS)
 
 
 acknowledge.sh: acknowledge.sh.DIST

@@ -83,13 +83,6 @@ static char rcsid[] = "$Id$";
 int flapcount = DEFAULT_FLAPCOUNT;
 int flapthreshold = (DEFAULT_FLAPCOUNT+1)*5*60;	/* Seconds - if more than flapcount changes during this period, it's flapping */
 
-htnames_t *metanames = NULL;
-typedef struct xymond_meta_t {
-	htnames_t *metaname;
-	char *value;
-	struct xymond_meta_t *next;
-} xymond_meta_t;
-
 typedef struct ackinfo_t {
 	int level;
 	time_t received, validuntil, cleartime;
@@ -129,7 +122,6 @@ typedef struct xymond_log_t {
 	unsigned char *dismsg, *ackmsg;
 	char *cookie;
 	time_t cookieexpires;
-	struct xymond_meta_t *metas;
 	struct modifier_t *modifiers;
 	ackinfo_t *acklist;	/* Holds list of acks */
 	unsigned long statuschangecount;
@@ -998,6 +990,67 @@ xymond_log_t *find_log(char *hostname, char *testname, char *origin, xymond_host
 	return lwalk;
 }
 
+char *check_downtime(char *hostname, char *testname)
+{
+	void *hinfo = hostinfo(hostname);
+	char *dtag;
+	char *holkey;
+
+	if (hinfo == NULL) return NULL;
+
+	dtag = xmh_item(hinfo, XMH_DOWNTIME);
+	holkey = xmh_item(hinfo, XMH_HOLIDAYS);
+	if (dtag && *dtag) {
+		static char *downtag = NULL;
+		static unsigned char *cause = NULL;
+		static int causelen = 0;
+		char *s1, *s2, *s3, *s4, *s5, *p;
+		char timetxt[30];
+
+		if (downtag) xfree(downtag);
+		if (cause) xfree(cause);
+
+		p = downtag = strdup(dtag);
+		do {
+			/* Its either DAYS:START:END or SERVICE:DAYS:START:END:CAUSE */
+
+			s1 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+			s2 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+			s3 = p; p += strcspn(p, ":;,"); 
+			if ((*p == ',') || (*p == ';') || (*p == '\0')) { 
+				if (*p != '\0') { *p = '\0'; p++; }
+				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s1, s2, s3);
+				cause = strdup("Planned downtime");
+				s1 = "*";
+			}
+			else if (*p == ':') {
+				*p = '\0'; p++; 
+				s4 = p; p += strcspn(p, ":"); if (*p != '\0') { *p = '\0'; p++; }
+				s5 = p; p += strcspn(p, ",;"); if (*p != '\0') { *p = '\0'; p++; }
+				snprintf(timetxt, sizeof(timetxt), "%s:%s:%s", s2, s3, s4);
+				getescapestring(s5, &cause, &causelen);
+			}
+
+			if (within_sla(holkey, timetxt, 0)) {
+				char *onesvc, *buf;
+
+				if (strcmp(s1, "*") == 0) return cause;
+
+				onesvc = strtok_r(s1, ",", &buf);
+				while (onesvc) {
+					if (strcmp(onesvc, testname) == 0) return cause;
+					onesvc = strtok_r(NULL, ",", &buf);
+				}
+
+				/* If we didn't use the "cause" we just created, it must be freed */
+				if (cause) xfree(cause);
+			}
+		} while (*p);
+	}
+
+	return NULL;
+}
+
 void get_hts(char *msg, char *sender, char *origin,
 	     xymond_hostlist_t **host, testinfo_t **test, char **grouplist, xymond_log_t **log, 
 	     int *color, char **downcause, int *alltests, int createhost, int createlog)
@@ -1641,62 +1694,6 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 	return;
 }
 
-void handle_meta(char *msg, xymond_log_t *log)
-{
-	/*
-	 * msg has the format "meta HOST.TEST metaname\nmeta-value\n"
-	 */
-	char *metaname = NULL, *eoln, *line1 = NULL;
-	htnames_t *nwalk;
-	xymond_meta_t *mwalk;
-
-	dbgprintf("-> handle_meta\n");
-
-	eoln = strchr(msg, '\n'); 
-	if (eoln) {
-		char *tok;
-
-		*eoln = '\0'; 
-		line1 = strdup(msg);
-		*eoln = '\n';
-
-		tok = strtok(line1, " ");		/* "meta" */
-		if (tok) tok = strtok(NULL, " ");	/* "host.test" */
-		if (tok) tok = strtok(NULL, " ");	/* metaname */
-		if (tok) metaname = tok;
-	}
-	if (!metaname) {
-		if (line1) xfree(line1);
-		errprintf("Malformed 'meta' message: '%s'\n", msg);
-		return;
-	}
-
-	for (nwalk = metanames; (nwalk && strcmp(nwalk->name, metaname)); nwalk = nwalk->next) ;
-	if (nwalk == NULL) {
-		nwalk = (htnames_t *)malloc(sizeof(htnames_t));
-		nwalk->name = strdup(metaname);
-		nwalk->next = metanames;
-		metanames = nwalk;
-	}
-
-	for (mwalk = log->metas; (mwalk && (mwalk->metaname != nwalk)); mwalk = mwalk->next);
-	if (mwalk == NULL) {
-		mwalk = (xymond_meta_t *)malloc(sizeof(xymond_meta_t));
-		mwalk->metaname = nwalk;
-		mwalk->value = strdup(eoln+1);
-		mwalk->next = log->metas;
-		log->metas = mwalk;
-	}
-	else {
-		if (mwalk->value) xfree(mwalk->value);
-		mwalk->value = strdup(eoln+1);
-	}
-
-	if (line1) xfree(line1);
-
-	dbgprintf("<- handle_meta\n");
-}
-
 void handle_modify(char *msg, xymond_log_t *log, int color)
 {
 	char *tok, *sourcename, *cause;
@@ -2222,19 +2219,9 @@ char *acklist_string(xymond_log_t *log, int level)
 
 void free_log_t(xymond_log_t *zombie)
 {
-	xymond_meta_t *mwalk, *mtmp;
 	modifier_t *modwalk, *modtmp;
 
 	dbgprintf("-> free_log_t\n");
-
-	mwalk = zombie->metas;
-	while (mwalk) {
-		mtmp = mwalk;
-		mwalk = mwalk->next;
-
-		if (mtmp->value) xfree(mtmp->value);
-		xfree(mtmp);
-	}
 
 	modwalk = zombie->modifiers;
 	while (modwalk) {
@@ -3034,22 +3021,6 @@ void do_message(conn_t *msg, char *origin)
 			currmsg = nextmsg;
 		} while (currmsg);
 	}
-	else if (strncmp(msg->buf, "meta", 4) == 0) {
-		char *currmsg, *nextmsg;
-
-		currmsg = msg->buf;
-		do {
-			nextmsg = strstr(currmsg, "\n\nmeta");
-			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
-
-			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
-				handle_meta(currmsg, log);
-			}
-
-			currmsg = nextmsg;
-		} while (currmsg);
-	}
 	else if (strncmp(msg->buf, "modify", 6) == 0) {
 		char *currmsg, *nextmsg;
 
@@ -3354,7 +3325,6 @@ void do_message(conn_t *msg, char *origin)
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
-			xymond_meta_t *mwalk;
 
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
@@ -3400,10 +3370,6 @@ void do_message(conn_t *msg, char *origin)
 				bufp += sprintf(bufp, "  <DisMsg>N/A</DisMsg>\n");
 
 			bufp += sprintf(bufp, "  <Message><![CDATA[%s]]></Message>\n", msg_data(log->message));
-			for (mwalk = log->metas; (mwalk); mwalk = mwalk->next) {
-				bufp += sprintf(bufp, "<%s>\n%s</%s>\n", 
-						mwalk->metaname->name, mwalk->value, mwalk->metaname->name);
-			}
 			bufp += sprintf(bufp, "</ServerStatus>\n");
 
 			msg->doingwhat = RESPONDING;
@@ -4490,7 +4456,6 @@ void load_checkpoint(char *fn)
 			ltail->cookieexpires = 0;
 		}
 
-		ltail->metas = NULL;
 		ltail->acklist = NULL;
 		ltail->next = NULL;
 	}

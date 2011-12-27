@@ -9,7 +9,7 @@ merge-sects: merge-sects.c
 	$(CC) -o $@ $(CFLAGS) $<
 
 setup-newfiles: setup-newfiles.c
-	$(CC) -o $@ $(CFLAGS) $(RPATHOPT) $< ../lib/xymonclient.a $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+	$(CC) -o $@ $(CFLAGS) $< ../lib/libxymonclient.a
 
 renamevars: renamevars.c
 	$(CC) -o $@ $(CFLAGS) $<

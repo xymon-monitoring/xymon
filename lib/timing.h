@@ -17,5 +17,8 @@ extern void add_timestamp(const char *msg);
 extern void show_timestamps(char **buffer);
 extern long total_runtime(void);
 
+extern time_t gettimer(void);
+extern void getntimer(struct timespec *tp);
+
 #endif
 

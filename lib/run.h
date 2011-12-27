@@ -8,26 +8,8 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __TIMEFUNC_H__
-#define __TIMEFUNC_H__
+#ifndef __RUN_H__
+#define __RUN_H__
 
-extern time_t fakestarttime;
-extern char *timestamp;
-
-extern time_t getcurrenttime(time_t *retparm);
-#define time(X) getcurrenttime(X)
-
-extern void init_timestamp(void);
-extern char *timespec_text(char *spec);
-extern struct timespec *tvdiff(struct timespec *tstart, struct timespec *tend, struct timespec *result);
-extern int within_sla(char *holidaykey, char *timespec, int defresult);
-extern int periodcoversnow(char *tag);
-extern char *histlogtime(time_t histtime);
-extern int durationvalue(char *dur);
-extern char *durationstring(time_t secs);
-extern char *agestring(time_t secs);
-extern time_t timestr2timet(char *s);
-extern time_t eventreport_time(char *timestamp);
-
+extern int run_command(char *cmd, char *errortext, strbuffer_t *banner, int showcmd, int timeout);
 #endif
-

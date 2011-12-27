@@ -1,5 +1,12 @@
 # xymonproxy Makefile
 
+XYMONLIB = ../lib/libxymon.a
+XYMONLIBS = $(XYMONLIB)
+XYMONCOMMLIB = ../lib/libxymoncomm.a
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONTIMELIB = ../lib/libxymontime.a
+XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
+
 PROGRAMS = xymonproxy xymoncgimsg.cgi
 
 PROXYOBJS = xymonproxy.o
@@ -7,11 +14,11 @@ MSGCGIOBJS = xymoncgimsg.o
 
 all: $(PROGRAMS)
 
-xymonproxy: $(PROXYOBJS)
-	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymonproxy: $(PROXYOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(PROXYOBJS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(XYMONLIBS)
 
-xymoncgimsg.cgi: $(MSGCGIOBJS) ../lib/libxymon.a
-	$(CC) $(CFLAGS) -o $@ $(MSGCGIOBJS) ../lib/libxymon.a $(NETLIBS) $(LIBRTDEF)
+xymoncgimsg.cgi: $(MSGCGIOBJS) $(XYMONCOMMLIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(MSGCGIOBJS) $(XYMONCOMMLIBS) $(XYMONLIBS) 
 
 ################################################
 # Default compilation rules

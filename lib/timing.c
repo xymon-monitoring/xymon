@@ -33,6 +33,37 @@ typedef struct timestamp_t {
 static timestamp_t *stamphead = NULL;
 static timestamp_t *stamptail = NULL;
 
+
+time_t gettimer(void)
+{
+	int res;
+	struct timespec t;
+
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	res = clock_gettime(CLOCK_MONOTONIC, &t);
+	return (time_t) t.tv_sec;
+#else
+	return time(NULL);
+#endif
+}
+
+
+void getntimer(struct timespec *tp)
+{
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	int res;
+	res = clock_gettime(CLOCK_MONOTONIC, tp);
+#else
+	struct timeval t;
+	struct timezone tz;
+
+	gettimeofday(&t, &tz);
+	tp->tv_sec = t.tv_sec;
+	tp->tv_nsec = 1000*t.tv_usec;
+#endif
+}
+
+
 void add_timestamp(const char *msg)
 {
 	if (timing) {
