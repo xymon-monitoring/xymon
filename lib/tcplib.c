@@ -147,7 +147,7 @@ long conn_elapsedms(struct timespec *tstart, struct timespec *tnow)
 
 
 /* Convert a network address to printable form */
-char *conn_print_address(tcpconn_t *conn)
+static char *conn_print_address_and_port(tcpconn_t *conn, int includeport)
 {
 	/* IPv6 address needs 46 bytes: 8 numbers (4 bytes each), 7 colons, 1 colon before portnumber, 5 digits for portnumber, terminating NUL */
 	/* This is also INET6_ADDRSTRLEN */
@@ -155,30 +155,42 @@ char *conn_print_address(tcpconn_t *conn)
 
 	*addrstring = '\0';
 	inet_ntop(conn->family, conn->peer_sin, addrstring, sizeof(addrstring));
-	switch (conn->family) {
+	if (includeport) {
+		switch (conn->family) {
 #ifdef IPV4_SUPPORT
-	  case AF_INET:
-		{
-			struct sockaddr_in *sin = (struct sockaddr_in *)conn->peer;
-			sprintf(addrstring + strlen(addrstring), ":%d", ntohs(sin->sin_port));
-		}
-		break;
+		  case AF_INET:
+			{
+				struct sockaddr_in *sin = (struct sockaddr_in *)conn->peer;
+				sprintf(addrstring + strlen(addrstring), ":%d", ntohs(sin->sin_port));
+			}
+			break;
 #endif
 
 #ifdef IPV6_SUPPORT
-	  case AF_INET6:
-		{
-			struct sockaddr_in6 *sin = (struct sockaddr_in6 *)conn->peer;
-			sprintf(addrstring + strlen(addrstring), ":%d", ntohs(sin->sin6_port));
-		}
-		break;
+		  case AF_INET6:
+			{
+				struct sockaddr_in6 *sin = (struct sockaddr_in6 *)conn->peer;
+				sprintf(addrstring + strlen(addrstring), ":%d", ntohs(sin->sin6_port));
+			}
+			break;
 #endif
 
-	  default:
-		break;
+		  default:
+			break;
+		}
 	}
 
 	return addrstring;
+}
+
+char *conn_print_address(tcpconn_t *conn)
+{
+	return conn_print_address_and_port(conn, 1);
+}
+
+char *conn_print_ip(tcpconn_t *conn)
+{
+	return conn_print_address_and_port(conn, 0);
 }
 
 #ifdef SSL_SUPPORT
@@ -653,7 +665,7 @@ int conn_read(tcpconn_t *conn, void *buf, size_t sz)
 		if ((n == -1) && ((errno == EAGAIN) || (errno == EINTR))) {
 			n = 0;
 		}
-		else if (n <= 0) {
+		else if (n < 0) {
 			conn_info(funcid, INFO_DEBUG, "read() returned no data: %s\n", strerror(errno));
 			conn->connstate = CONN_CLOSING;
 		}
@@ -690,7 +702,7 @@ int conn_write(tcpconn_t *conn, void *buf, size_t count)
 			n = 0;
 			break; /* Do nothing */
 		}
-		else if (n <= 0) {
+		else if (n < 0) {
 			conn_info(funcid, INFO_DEBUG, "write failed: %s\n", strerror(errno));
 			conn->connstate = CONN_CLOSING;
 		}
