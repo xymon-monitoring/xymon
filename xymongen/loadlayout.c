@@ -189,6 +189,7 @@ host_t *init_host(char *hostname, int issummary,
 	newhost->clientalias = (clientalias ? strdup(clientalias) : NULL);
 	newhost->comment = (comment ? strdup(comment) : NULL);
 	newhost->description = (description ? strdup(description) : NULL);
+	newhost->ip = (char *)malloc(40);
 	sprintf(newhost->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 	newhost->pretitle = NULL;
 	newhost->entries = NULL;

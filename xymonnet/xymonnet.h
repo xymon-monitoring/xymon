@@ -84,7 +84,7 @@ typedef struct extraping_t {
 
 typedef struct testedhost_t {
 	char *hostname;
-	char ip[IP_ADDR_STRLEN];
+	char *ip;
 	int dialup;		/* dialup flag (if set, failed tests report as clear) */
 	int testip;		/* testip flag (dont do dns lookups on hostname) */
 	int nosslcert;		/* nosslcert flag */

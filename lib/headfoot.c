@@ -671,7 +671,7 @@ void output_parsed(FILE *output, char *templatedata, int bgcolor, time_t selecte
 		else if ((strcmp(t_start, "XYMWEBIP") == 0) || (strcmp(t_start, "BBIP") == 0))
 			fprintf(output, "%s", hostenv_ip);
 		else if ((strcmp(t_start, "XYMWEBIPNAME") == 0) || (strcmp(t_start, "BBIPNAME") == 0)) {
-			if (strcmp(hostenv_ip, "0.0.0.0") == 0)  fprintf(output, "%s", hostenv_host);
+			if ((strcmp(hostenv_ip, "0.0.0.0") == 0) || (strcmp(hostenv_ip, "::") == 0))  fprintf(output, "%s", hostenv_host);
 			else fprintf(output, "%s", hostenv_ip);
 		}
 		else if ((strcmp(t_start, "XYMONREPWARN") == 0) || (strcmp(t_start, "BBREPWARN") == 0))

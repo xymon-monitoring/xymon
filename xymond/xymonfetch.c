@@ -637,7 +637,7 @@ int main(int argc, char *argv[])
 					}
 				}
 
-				if (strcmp(ip, "0.0.0.0") == 0) {
+				if ((strcmp(ip, "0.0.0.0") == 0) || (strcmp(ip, "::") == 0)) {
 					struct hostent *hent;
 
 					xfree(ip); ip = NULL;

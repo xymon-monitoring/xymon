@@ -835,7 +835,7 @@ void load_tests(void)
 				errprintf("Host %s appears twice in hosts.cfg! This may cause strange results\n", h->hostname);
 			}
 	
-			strcpy(h->ip, xmh_item(hwalk, XMH_IP));
+			h->ip = strdup(xmh_item(hwalk, XMH_IP));
 			if (!h->testip && (dnsmethod != IP_ONLY)) add_host_to_dns_queue(h->hostname);
 		}
 		else {
@@ -857,7 +857,7 @@ void load_tests(void)
 char *ip_to_test(testedhost_t *h)
 {
 	char *dnsresult;
-	int nullip = (strcmp(h->ip, "0.0.0.0") == 0);
+	int nullip = ((strcmp(h->ip, "0.0.0.0") == 0) || (strcmp(h->ip, "::") == 0));
 
 	if (!nullip && (h->testip || (dnsmethod == IP_ONLY))) {
 		/* Already have the IP setup */
@@ -866,7 +866,7 @@ char *ip_to_test(testedhost_t *h)
 		dnsresult = dnsresolve(h->hostname);
 
 		if (dnsresult) {
-			strcpy(h->ip, dnsresult);
+			h->ip = strdup(dnsresult);
 		}
 		else if ((dnsmethod == DNS_THEN_IP) && !nullip) {
 			/* Already have the IP setup */
@@ -1186,7 +1186,7 @@ int start_ping_service(service_t *service)
 		}
 		else {
 			/* parent */
-			char ip[IP_ADDR_STRLEN+1];	/* Must have room for the \n at the end also */
+			char ip[41];	/* Must have room for the \n at the end also */
 			int hnum, n;
 
 			close(pfd[0]);

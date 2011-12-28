@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
 	/* First scan the directory for all files, and pick up the ones we want to process */
 	while ((hent = readdir(histdir)) != NULL) {
 		char *hostname = NULL;
-		char hostip[IP_ADDR_STRLEN];
+		char *hostip = NULL;
 		enum ghosthandling_t ghosthandling = GH_IGNORE;
 
 		if (stat(hent->d_name, &st) == -1) {
@@ -448,7 +448,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		hostname = knownhost(hent->d_name, hostip, ghosthandling);
+		hostname = knownhost(hent->d_name, &hostip, ghosthandling);
 		if (hostname) {
 			/* Host history file. */
 			add_to_filelist(hent->d_name, F_HOSTHISTORY);
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
 
 			*delim = '\0'; hname = strdup(hent->d_name); tname = delim+1; *delim = '.';
 			p = strchr(hname, ','); while (p) { *p = '.'; p = strchr(p, ','); }
-			hostname = knownhost(hname, hostip, ghosthandling);
+			hostname = knownhost(hname, &hostip, ghosthandling);
 			if (!hostname) {
 				errprintf("Orphaned service-history file %s - no host\n", hent->d_name);
 				if (dropfiles) add_to_filelist(hent->d_name, F_DROPIT);

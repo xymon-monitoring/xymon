@@ -28,7 +28,7 @@ typedef struct activealerts_t {
 	char *osname;
 	char *classname;
 	char *groups;
-	char ip[IP_ADDR_STRLEN];
+	char *ip;
 
 	/* Alert status */
 	int color, maxcolor;

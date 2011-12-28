@@ -271,7 +271,7 @@ char *dnsresolve(char *hostname)
 		errprintf("dnsresolve - internal error, name '%s' not in cache\n", hostname);
 		return NULL;
 	}
-	if (strcmp(result, "0.0.0.0") == 0) return NULL;
+	if ((strcmp(result, "0.0.0.0") == 0) || (strcmp(result, "::") == 0)) return NULL;
 
 	return result;
 }

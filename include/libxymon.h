@@ -29,8 +29,6 @@ typedef struct strbuffer_t {
 #define STRBUFAVAIL(buf) (buf->sz - buf->used)
 #define STRBUFEND(buf) (buf->s + buf->used)
 
-#define IP_ADDR_STRLEN 16
-
 #include "version.h"
 #include "config.h"
 #include "../lib/osdefs.h"

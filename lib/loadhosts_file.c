@@ -321,6 +321,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				if (p) *p = '\0';
 			}
 
+			newitem->ip = (char *)malloc(40);
 			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
 			sprintf(groupidstr, "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
