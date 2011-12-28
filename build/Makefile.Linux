@@ -7,7 +7,7 @@ NETLIBS =
 
 # Compile flags for normal build
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wno-unused -D_REENTRANT $(LFSDEF) $(OSDEF)
+CFLAGS = -g -O2 -Wall -Wno-unused -Wno-pointer-sign -D_REENTRANT $(LFSDEF) $(OSDEF)
 
 ifndef PKGBUILD
 RPATH = -Wl,--rpath,

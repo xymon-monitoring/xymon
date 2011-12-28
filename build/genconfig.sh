@@ -81,8 +81,24 @@ else
 fi
 
 echo "#define IPV4_SUPPORT" >>include/config.h
-echo "#define IPV6_SUPPORT" >>include/config.h
-echo "#define SSL_SUPPORT" >>include/config.h
+
+echo "Checking for IPV6"
+$CC -c -o build/testfile.o $CFLAGS build/test-ipv6.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define IPV6_SUPPORT" >>include/config.h
+fi
+
+echo "Checking for IPV6_V6ONLY"
+$CC -c -o build/testfile.o $CFLAGS build/test-ipv6only.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define HAVE_V6ONLY" >>include/config.h
+fi
+
+echo "Checking for AI_NUMERICSERV"
+$CC -c -o build/testfile.o $CFLAGS build/test-ainumericserv.c 1>/dev/null 2>&1
+if test $? -eq 0; then
+	echo "#define HAVE_AI_NUMERICSERV" >>include/config.h
+fi
 
 echo "#endif" >>include/config.h
 

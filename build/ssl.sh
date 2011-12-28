@@ -2,7 +2,7 @@
 
 	OSSLINC=""
 	OSSLLIB=""
-	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr /usr/pkg /opt/csw /opt/sfw/ssl*
+	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr/pkg /opt/csw /opt/sfw/ssl*
 	do
 		if test -d $DIR/include/openssl
 		then
@@ -35,7 +35,61 @@
 		OSSLLIB="$USEROSSLLIB"
 	fi
 
-	if test -z "$OSSLINC" -o -z "$OSSLLIB"; then
+	# Red Hat in their wisdom ships an openssl that depends on Kerberos,
+	# and then puts the Kerberos includes where they are not found automatically.
+	if test "`uname -s`" = "Linux" -a -d /usr/kerberos/include
+	then
+		OSSLINC="$OSSLINC -I/usr/kerberos/include"
+	fi
+
+	# Lets see if it builds
+	SSLOK="YES"
+	cd build
+	if test ! -z $OSSLINC; then INCOPT="-I$OSSLINC"; fi
+	if test ! -z $OSSLLIB; then LIBOPT="-L$OSSLLIB"; fi
+	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
+	OS=`uname -s | tr '[/]' '[_]'` OSSLINC="$INCOPT" $MAKE -f Makefile.test-ssl test-compile
+	if test $? -eq 0; then
+		echo "Compiling with SSL library works OK"
+	else
+		echo "Warning: Cannot compile with SSL library"
+		SSLOK="NO"
+	fi
+
+	OS=`uname -s | tr '[/]' '[_]'` OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl test-link
+	if test $? -eq 0; then
+		echo "Linking with SSL library works OK"
+	else
+		echo "Warning: Cannot link with SSL library"
+		SSLOK="NO"
+	fi
+	OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
+	cd ..
+
+	if test "$SSLOK" = "YES"; then
+		SSLFLAGS="-DHAVE_OPENSSL=1"
+
+		cd build
+		echo "Checking if your SSL library has SSLv2 enabled"
+		OS=`uname -s | tr '[/]' '[_]'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl2 test-compile 2>/dev/null
+		CSTAT=$?; LSTAT=$?
+		if test $CSTAT -eq 0; then
+			OS=`uname -s | tr '[/]' '[_]'` OSSLINC="$INCOPT" OSSLLIB="$LIBOPT" $MAKE -f Makefile.test-ssl2 test-link 2>/dev/null
+			LSTAT=$?
+		fi
+		if test $CSTAT -ne 0 -o $LSTAT -ne 0; then
+			echo "SSLv2 support disabled (dont worry, all systems should use SSLv3 or TLS)"
+			OSSL2OK="N"
+		else
+			echo "Will support SSLv2 when testing SSL-enabled network services"
+			OSSL2OK="Y"
+			SSLFLAGS="$SSLFLAGS -DHAVE_SSLV2_SUPPORT=1"
+		fi
+		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl2 clean
+		cd ..
+	fi
+
+	if test "$SSLOK" = "NO"; then
 		echo "OpenSSL include- or library-files not found."
 		echo "Although you can use Xymon without OpenSSL, you will not"
 		echo "be able to run network tests of SSL-enabled services, e.g. https."
@@ -45,41 +99,6 @@
 		echo "If you have OpenSSL installed, use the \"--sslinclude DIR\" and \"--ssllib DIR\""
 		echo "options to configure to specify where they are."
 		echo ""
-	else
-		# Red Hat in their wisdom ships an openssl that depends on Kerberos,
-		# and then puts the Kerberos includes where they are not found automatically.
-		if test "`uname -s`" = "Linux" -a -d /usr/kerberos/include
-		then
-			OSSLINC2="-I/usr/kerberos/include"
-		else
-			OSSLINC2=""
-		fi
-
-		cd build
-		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
-		OS=`uname -s | tr '[/]' '[_]'` OSSLINC="-I$OSSLINC $OSSLINC2" $MAKE -f Makefile.test-ssl test-compile
-		if [ $? -eq 0 ]; then
-			echo "Found OpenSSL include files in $OSSLINC"
-			OSSLINC="$OSSLINC $OSSLINC2"
-		else
-			echo "WARNING: OpenSSL include files found in $OSSLINC, but compile fails."
-			OSSLINC=""
-		fi
-	
-		OS=`uname -s | tr '[/]' '[_]'` OSSLLIB="-L$OSSLLIB" $MAKE -f Makefile.test-ssl test-link
-		if [ $? -eq 0 ]; then
-			echo "Found OpenSSL libraries in $OSSLLIB"
-		else
-			echo "WARNING: OpenSSL library files found in $OSSLLIB, but link fails."
-			OSSLINC=""
-			OSSLLIB=""
-		fi
-		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl clean
-		cd ..
-
-	fi
-
-	if test -z "$OSSLINC" -o -z "$OSSLLIB"; then
 		sleep 3
 		echo "Continuing with SSL support disabled."
 	fi

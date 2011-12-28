@@ -98,8 +98,8 @@ then
 else
 	echo ""
 	echo "Xymon can use the OpenSSL library to test SSL-enabled services"
-	echo "like POP3S, IMAPS, NNTPS and TELNETS. If you have the OpenSSL"
-	echo "library installed, I recommend that you enable this."
+	echo "like https-encrypted websites, POP3S, IMAPS, NNTPS and TELNETS."
+	echo "If you have the OpenSSL library installed, I recommend that you enable this."
 	echo ""
 	echo "Do you want to be able to test SSL-enabled services (y) ?"
 	if test "$ENABLESSL" = ""
@@ -109,6 +109,10 @@ else
 	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
 	then
 		SSLDEF="-DHAVE_OPENSSL=1"
+		if test "$OSSL2OK" = "Y"
+		then
+			SSLDEF="$SSLDEF -DHAVE_SSLV2_SUPPORT=1"
+		fi
 	else
 		SSLDEF=""
 	fi
@@ -437,41 +441,60 @@ echo ""                                  >>Makefile
 
 echo "# RRDtool settings"                >>Makefile
 echo "RRDDEF = $RRDDEF"                  >>Makefile
-echo "RRDINCDIR = -I$RRDINC"             >>Makefile
-echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
-echo "RPATHVAL += ${RRDLIB}"             >>Makefile
+if test "$RRDINC" != ""; then
+	echo "RRDINCDIR = -I$RRDINC"     >>Makefile
+fi
+if test "$RRDLIB" != ""; then
+	echo "RRDLIBS = -L$RRDLIB -lrrd $PNGLIB" >>Makefile
+	echo "RPATHVAL += ${RRDLIB}"             >>Makefile
+else
+	echo "RRDLIBS = -lrrd $PNGLIB"   >>Makefile
+fi
 echo ""                                  >>Makefile
 echo "# PCRE settings"                   >>Makefile
-echo "PCREINCDIR = -I$PCREINC"           >>Makefile
-echo "PCRELIBS = -L$PCRELIB -lpcre"      >>Makefile
-echo "RPATHVAL += ${PCRELIB}"            >>Makefile
+if test "$PCREOK" = "YES"
+then
+    if test "$PCREINC" != ""; then
+	echo "PCREINCDIR = -I$PCREINC"   >>Makefile
+    fi
+    if test "$PCRELIB" != ""; then
+	echo "PCRELIBS = -L$PCRELIB -lpcre" >>Makefile
+	echo "RPATHVAL += ${PCRELIB}"       >>Makefile
+    else
+	echo "PCRELIBS = -lpcre"         >>Makefile
+    fi
+fi
 echo "#"                                 >>Makefile
 echo "# OpenSSL settings"                >>Makefile
-echo "SSLFLAGS = $SSLDEF"                >>Makefile
-if test "$SSLDEF" != ""
+if test "$SSLOK" = "YES"
 then
-	echo "SSLINCDIR = -I$OSSLINC"    >>Makefile
+    echo "SSLFLAGS = $SSLFLAGS"          >>Makefile
+    if test "$SSLINC" != ""; then
+	echo "SSLINCDIR = -I$SSLINC"     >>Makefile
+    fi
+    if test "$OSSLLIB" != ""; then
 	echo "SSLLIBS = -L$OSSLLIB -lssl -lcrypto" >>Makefile
 	echo "RPATHVAL += ${OSSLLIB}"    >>Makefile
+    else
+	echo "SSLLIBS = -lssl -lcrypto"  >>Makefile
+    fi
 fi
 echo "#"                                 >>Makefile
 echo "# OpenLDAP settings"               >>Makefile
-echo "LDAPFLAGS = $LDAPDEF"              >>Makefile
-if test "$LDAPDEF" != ""
+if test "$LDAPOK" = "YES"
 then
-	if test "$LDAPINC" != ""
-	then
-		echo "LDAPINCDIR = -I$LDAPINC"                >>Makefile
-	fi
-	if test "$LDAPLIB" != ""
-	then
-		echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
-		echo "RPATHVAL += ${LDAPLIB}"                 >>Makefile
-	else
-		echo "LDAPLIBS = -lldap $LDAPLBER"            >>Makefile
-	fi
+    echo 
+    if test "$LDAPINC" != ""; then
+	echo "LDAPINCDIR = -I$LDAPINC"   >>Makefile
+    fi
+    if test "$LDAPLIB" != ""; then
+	echo "LDAPLIBS = -L$LDAPLIB -lldap $LDAPLBER" >>Makefile
+	echo "RPATHVAL += ${LDAPLIB}"       >>Makefile
+    else
+	echo "LDAPLIBS = -lldap $LDAPLBER"  >>Makefile
+    fi
 fi
-
+echo "#"                                 >>Makefile
 echo "# clock_gettime() settings"        >>Makefile
 echo "LIBRTDEF = $LIBRTDEF"              >>Makefile
 echo ""                                  >>Makefile
