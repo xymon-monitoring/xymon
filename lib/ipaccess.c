@@ -52,8 +52,11 @@ sender_t *getsenderlist(char *iplist)
 	return result;
 }
 
-int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgbuf)
+int oksender(sender_t *oklist, char *targetip, char *sender, char *msgbuf)
 {
+#if 0 
+	--- FIXME ---
+
 	int i;
 	unsigned long int tg_ip;
 	char *eoln = NULL;
@@ -94,5 +97,9 @@ int oksender(sender_t *oklist, char *targetip, struct in_addr sender, char *msgb
 	dbgprintf("<- oksender(0)\n");
 
 	return 0;
+#else
+	return 1;
+#endif
+
 }
 
