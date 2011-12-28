@@ -59,7 +59,7 @@ typedef struct myconn_t {
 	char *readp, *writep;
 	size_t readbufsz;
 	char *peer;
-	int port, usessl;
+	int port, usessl, readmore;
 	sendresult_t result;
 	sendreturn_t *response;
 	struct myconn_t *next;
@@ -87,6 +87,7 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 		rec->readbufsz = USERBUFSZ;
 		rec->readbuf = rec->readp = malloc(rec->readbufsz);
 		*(rec->readbuf) = '\0';
+		rec->readmore = 1;
 		break;
 
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
@@ -94,7 +95,7 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 		break;
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
-		res = 1;
+		res = rec->readmore;
 		break;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
@@ -118,6 +119,10 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 						conn_close_connection(connection, NULL);
 				}
 			}
+		}
+		else if (n == 0) {
+			rec->readmore = 0;
+			conn_close_connection(connection, "r");
 		}
 
 		res = n;
@@ -286,7 +291,7 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 	if (defaulttargets == NULL) {
 		char *recips;
 
-		if ((strcmp(xgetenv("XYMSRV"), "0.0.0.0") != 0) && (strcmp(xgetenv("XYMSRV"), "0") != 0))
+		if ((strcmp(xgetenv("XYMSRV"), "0.0.0.0") != 0) || (strcmp(xgetenv("XYMSRV"), "0") != 0) || (strcmp(xgetenv("XYMSRV"), "::") == 0))
 			recips = xgetenv("XYMSRV");
 		else
 			recips = xgetenv("XYMSERVERS");
@@ -335,6 +340,7 @@ sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *
 		if (walk->readbuf) xfree(walk->readbuf);
 		xfree(walk);
 	}
+	mytail = NULL;
 
 	if (targets != defaulttargets) {
 		int i;
