@@ -136,41 +136,41 @@ char *logdata(char *filename, logdef_t *logdef)
 	 * from one run to the next.
 	 */
 	fstat(fileno(fd), &st);
-	if ((st.st_size < logdef->lastpos[0]) || (st.st_size < logdef->lastpos[6])) {
+	if ((st.st_size < logdef->lastpos[0]) || (st.st_size < logdef->lastpos[POSCOUNT-1])) {
 		/*
 		 * Logfile shrank - probably it was rotated.
 		 * Start from beginning of file.
 		 */
-		for (i=0; (i < 7); i++) logdef->lastpos[i] = 0;
+		for (i=0; (i < POSCOUNT); i++) logdef->lastpos[i] = 0;
 	}
 
-	/* Go to the position we were at 6 times ago (corresponds to 30 minutes) */
+	/* Go to the position we were at POSCOUNT-1 times ago (corresponds to 30 minutes) */
 #ifdef _LARGEFILE_SOURCE
-	fseeko(fd, logdef->lastpos[6], SEEK_SET);
+	fseeko(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
 	bufsz = st.st_size - ftello(fd);
 	if (bufsz > MAXCHECK) {
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
-		logdef->lastpos[6] = st.st_size - MAXCHECK;
-		fseeko(fd, logdef->lastpos[6], SEEK_SET);
+		logdef->lastpos[POSCOUNT-1] = st.st_size - MAXCHECK;
+		fseeko(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
 		bufsz = st.st_size - ftello(fd);
 	}
 #else
-	fseek(fd, logdef->lastpos[6], SEEK_SET);
+	fseek(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
 	bufsz = st.st_size - ftell(fd);
 	if (bufsz > MAXCHECK) {
 		/*
 		 * Too much data for us. We have to skip some of the old data.
 		 */
-		logdef->lastpos[6] = st.st_size - MAXCHECK;
-		fseek(fd, logdef->lastpos[6], SEEK_SET);
+		logdef->lastpos[POSCOUNT-1] = st.st_size - MAXCHECK;
+		fseek(fd, logdef->lastpos[POSCOUNT-1], SEEK_SET);
 		bufsz = st.st_size - ftell(fd);
 	}
 #endif
 
 	/* Shift position markers one down for the next round */
-	for (i=6; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
+	for (i=POSCOUNT-1; (i > 0); i--) logdef->lastpos[i] = logdef->lastpos[i-1];
 	logdef->lastpos[0] = st.st_size;
 
 	/*
