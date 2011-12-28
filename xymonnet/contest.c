@@ -478,8 +478,10 @@ static void setup_ssl(tcptest_t *item)
 
 	if (item->sslctx == NULL) {
 		switch (item->ssloptions->sslversion) {
+#if HAVE_SSLV2_SUPPORT
 		  case SSLVERSION_V2:
 			item->sslctx = SSL_CTX_new(SSLv2_client_method()); break;
+#endif
 		  case SSLVERSION_V3:
 			item->sslctx = SSL_CTX_new(SSLv3_client_method()); break;
 		  case SSLVERSION_TLS1:
