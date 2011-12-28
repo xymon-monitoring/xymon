@@ -39,7 +39,7 @@ static char rcsid[] = "$Id: tcplib.c,v 1.14 2011/12/26 12:07:06 henrik Exp henri
 #include "config.h"
 #include "tcplib.h"
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -193,7 +193,7 @@ char *conn_print_ip(tcpconn_t *conn)
 	return conn_print_address_and_port(conn, 0);
 }
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 static time_t convert_asn1_tstamp(ASN1_UTCTIME *tstamp)
 {
 	/*
@@ -274,7 +274,7 @@ char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend)
 {
 	char *result = NULL;
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	X509 *peercert;
 	ASN1_UTCTIME *tstamp;
 
@@ -300,7 +300,7 @@ char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend)
 
 static void conn_cleanup(tcpconn_t *conn)
 {
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	if ((conn->sock > 0) && conn->ssl) SSL_shutdown(conn->ssl);
 	if (conn->ssl) SSL_free(conn->ssl);
 	if (conn->ctx) SSL_CTX_free(conn->ctx);
@@ -435,7 +435,7 @@ int conn_listen(int portnumber, int backlog, int withssl, char *local4, char *lo
 
 static void try_ssl_accept(tcpconn_t *conn)
 {
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	const char *funcid = "try_ssl_accept";
 	int sslresult;
 
@@ -468,7 +468,7 @@ static void try_ssl_accept(tcpconn_t *conn)
 
 static void try_ssl_connect(tcpconn_t *conn)
 {
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	const char *funcid = "try_ssl_connect";
 	int sslresult;
 
@@ -550,7 +550,7 @@ tcpconn_t *conn_accept(tcpconn_t *ls)
 		newconn->connstate = CONN_CLOSING;
 	}
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	if (newconn->connstate == CONN_SSL_INIT) {
 		/* 
 		 * We have a connection, but the SSL handshake has not happened yet. 
@@ -588,7 +588,7 @@ static int try_ssl_io(tcpconn_t *conn, enum io_action_t action, void *buf, size_
 	const char *funcid = "try_ssl_io";
 	int n = 0;
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	switch (conn->connstate) {
 	  case CONN_SSL_ACCEPT_READ:
 	  case CONN_SSL_ACCEPT_WRITE:
@@ -914,7 +914,7 @@ void conn_process_listeners(fd_set *fdread)
 }
 
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 /* 
  * SSL helper routine to get the password for a certificate. 
  * Tries to read the password from a file called the same as the
@@ -1002,7 +1002,7 @@ void conn_init_server(int portnumber, int backlog, char *certfn, char *keyfn, in
 
 	if (portnumber) conn_listen(portnumber, backlog, 0, local4, local6, usercallback);
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	SSL_load_error_strings();
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
@@ -1023,7 +1023,7 @@ void conn_init_client(void)
 {
 	signal(SIGPIPE, SIG_IGN);
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	SSL_load_error_strings();
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
@@ -1169,7 +1169,7 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 
 	fcntl(newconn->sock, F_SETFL, O_NONBLOCK);
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	if (withssl) {
 		newconn->ctx = SSL_CTX_new(SSLv23_client_method());
 		SSL_CTX_set_options(newconn->ctx, (SSL_OP_NO_SSLv2 | SSL_OP_ALL));
@@ -1277,7 +1277,7 @@ void conn_close_connection(tcpconn_t *conn, char *direction)
 		break;
 
 	  default:
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 		if (conn->ssl) SSL_shutdown(conn->ssl);
 #endif
 		conn->connstate = CONN_CLOSING;
@@ -1302,7 +1302,7 @@ void conn_deinit(void)
 		conn_close_connection(walk, NULL);
 	}
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	if (serverctx) SSL_CTX_free(serverctx);
 	EVP_cleanup();
 	ERR_free_strings();

@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/rand.h>
@@ -57,7 +57,7 @@ typedef struct tcpconn_t {
 	void *userdata;
 	int (*usercallback)(struct tcpconn_t *, enum conn_callback_t, void *);
 	struct tcpconn_t *next;
-#ifdef SSL_SUPPORT
+#ifdef HAVE_OPENSSL
 	SSL_CTX *ctx;
 	SSL *ssl;
 #endif

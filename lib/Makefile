@@ -78,6 +78,9 @@ sha1.o: sha1.c
 rmd160c.o: rmd160c.c
 	$(CC) $(CFLAGS) `./test-endianness` -c -o $@ $<
 
+tcplib.o: tcplib.c
+	$(CC) $(CFLAGS) $(SSLFLAGS) -c -o $@ $<
+
 environ.o: environ.c
 	$(CC) $(CFLAGS) -DXYMONTOPDIR=\"$(XYMONTOPDIR)\" -DXYMONLOGDIR=\"$(XYMONLOGDIR)\" -DXYMONHOSTNAME=\"$(XYMONHOSTNAME)\" -DXYMONHOSTIP=\"$(XYMONHOSTIP)\" -DXYMONHOSTOS=\"$(XYMONHOSTOS)\" -DBUILD_HOME=\"$(XYMONTOPDIR)/server\" -c -o $@ environ.c
 
