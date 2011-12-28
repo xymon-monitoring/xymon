@@ -67,7 +67,7 @@
 	cd ..
 
 	if test "$SSLOK" = "YES"; then
-		SSLFLAGS="-DHAVE_OPENSSL=1"
+		SSLFLAGS="-DHAVE_OPENSSL"
 
 		cd build
 		echo "Checking if your SSL library has SSLv2 enabled"
@@ -83,7 +83,7 @@
 		else
 			echo "Will support SSLv2 when testing SSL-enabled network services"
 			OSSL2OK="Y"
-			SSLFLAGS="$SSLFLAGS -DHAVE_SSLV2_SUPPORT=1"
+			SSLFLAGS="$SSLFLAGS -DHAVE_SSLV2_SUPPORT"
 		fi
 		OS=`uname -s | tr '[/]' '[_]'` $MAKE -f Makefile.test-ssl2 clean
 		cd ..

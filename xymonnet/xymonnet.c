@@ -541,7 +541,7 @@ void load_tests(void)
 					/*
 					 * LDAP test. This uses ':' a lot, so save it here.
 					 */
-#ifdef XYMON_LDAP
+#ifdef HAVE_LDAP
 					s = ldaptest;
 					add_url_to_dns_queue(testspec);
 #else

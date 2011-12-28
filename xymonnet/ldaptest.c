@@ -39,7 +39,7 @@ static volatile int connect_timeout = 0;
 
 int init_ldap_library(void)
 {
-#ifdef XYMON_LDAP
+#ifdef HAVE_LDAP
 	char versionstring[100];
 
 	/* Doesnt really do anything except define the version-number string */
@@ -52,14 +52,14 @@ int init_ldap_library(void)
 
 void shutdown_ldap_library(void)
 {
-#ifdef XYMON_LDAP
+#ifdef HAVE_LDAP
 	/* No-op for LDAP */
 #endif
 }
 
 int add_ldap_test(testitem_t *t)
 {
-#ifdef XYMON_LDAP
+#ifdef HAVE_LDAP
 	testitem_t *basecheck;
 	ldap_data_t *req;
 	LDAPURLDesc *ludp;
@@ -129,7 +129,7 @@ static void ldap_alarmhandler(int signum)
 
 void run_ldap_tests(service_t *ldaptest, int sslcertcheck, int querytimeout)
 {
-#ifdef XYMON_LDAP
+#ifdef HAVE_LDAP
 	ldap_data_t *req;
 	testitem_t *t;
 	struct timespec starttime;

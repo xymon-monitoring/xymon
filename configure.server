@@ -91,7 +91,7 @@ echo ""; echo ""
 echo ""; echo ""
 
 . build/ssl.sh
-if test -z "$OSSLINC" -o -z "$OSSLLIB"
+if test "$SSLOK" = "NO"
 then
 	ENABLESSL="n"
 	SSLDEF=""
@@ -108,7 +108,7 @@ else
 	fi
 	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
 	then
-		SSLDEF="-DHAVE_OPENSSL=1"
+		SSLDEF="-DHAVE_OPENSSL"
 		if test "$OSSL2OK" = "Y"
 		then
 			SSLDEF="$SSLDEF -DHAVE_SSLV2_SUPPORT=1"
@@ -121,7 +121,7 @@ fi
 echo ""; echo "";
 
 . build/ldap.sh
-if test -z "$LDAPINC" -o -z "$LDAPLIB"
+if test "$LDAPOK" = "NO"
 then
 	ENABLELDAP="n"
 	LDAPDEF=""
@@ -148,9 +148,9 @@ else
 
 		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
 		then
-			LDAPDEF="-DXYMON_LDAP -DXYMON_LDAP_USESTARTTLS"
+			LDAPDEF="-DHAVE_LDAP -DXYMON_LDAP_USESTARTTLS"
 		else
-			LDAPDEF="-DXYMON_LDAP"
+			LDAPDEF="-DHAVE_LDAP"
 		fi
 	else
 		LDAPDEF=""
@@ -466,7 +466,7 @@ then
 fi
 echo "#"                                 >>Makefile
 echo "# OpenSSL settings"                >>Makefile
-if test "$SSLOK" = "YES"
+if test "$ENABLESSL" = "y"
 then
     echo "SSLFLAGS = $SSLFLAGS"          >>Makefile
     if test "$SSLINC" != ""; then
@@ -481,7 +481,8 @@ then
 fi
 echo "#"                                 >>Makefile
 echo "# OpenLDAP settings"               >>Makefile
-if test "$LDAPOK" = "YES"
+echo "LDAPFLAGS = $LDAPDEF"              >>Makefile
+if test "$ENABLELDAP" = "y"
 then
     echo 
     if test "$LDAPINC" != ""; then
