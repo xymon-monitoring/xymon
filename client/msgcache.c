@@ -130,7 +130,7 @@ void grabdata(conn_t *conn)
 		int idnum;
 
 		/* Access check */
-		if (!oksender(serverlist, NULL, conn->caddr.sin_addr, STRBUF(conn->msgbuf))) {
+		if (!oksender(serverlist, NULL, inet_ntoa(conn->caddr.sin_addr), STRBUF(conn->msgbuf))) {
 			errprintf("Rejected pullclient request from %s\n",
 				  inet_ntoa(conn->caddr.sin_addr));
 			conn->action = C_DONE;
