@@ -30,24 +30,22 @@ static char rcsid[] = "$Id$";
 #include <limits.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>         /* Someday I'll move to GNU Autoconf for this ... */
-#endif
-#include <errno.h>
-#include <sys/resource.h>
 #include <unistd.h>
+
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/resource.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <netdb.h>
 #include <ctype.h>
 #include <signal.h>
 #include <time.h>
+#include <errno.h>
 
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -110,7 +108,7 @@ typedef struct xymond_log_t {
 	int color, oldcolor, activealert, histsynced, downtimeactive, flapping, oldflapcolor, currflapcolor;
 	char *testflags;
 	char *grouplist;        /* For extended status reports (e.g. from xymond_client) */
-	char sender[IP_ADDR_STRLEN];
+	char *sender;
 	time_t *lastchange;	/* Table of times when the currently logged status began */
 	time_t logtime;		/* time when last update was received */
 	time_t validtime;	/* time when status is no longer valid */
@@ -138,7 +136,7 @@ typedef struct clientmsg_list_t {
 /* This is a list of the hosts we have seen reports for, and links to their status logs */
 typedef struct xymond_hostlist_t {
 	char *hostname;
-	char ip[IP_ADDR_STRLEN];
+	char *ip;
 	enum { H_NORMAL, H_SUMMARY } hosttype;
 	xymond_log_t *logs;
 	xymond_log_t *pinglog; /* Points to entry in logs list, but we need it often */
@@ -177,13 +175,10 @@ int	 defaultvalidity = 30;	/* Minutes */
 
 /* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
-	int sock;			/* Communications socket */
-	struct sockaddr_in addr;	/* Client source address */
+	char *sender;
 	unsigned char *buf, *bufp;	/* Message buffer and pointer */
 	size_t buflen, bufsz;		/* Active and maximum length of buffer */
 	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
-	time_t timeout;			/* When the timeout for this connection happens */
-	struct conn_t *next;
 } conn_t;
 
 enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST, CMD_DROPSTATE };
@@ -497,7 +492,7 @@ xymond_hostlist_t *create_hostlist_t(char *hostname, char *ip)
 
 	hitem = (xymond_hostlist_t *) calloc(1, sizeof(xymond_hostlist_t));
 	hitem->hostname = strdup(hostname);
-	strcpy(hitem->ip, ip);
+	hitem->ip = strdup(ip);
 	if (strcmp(hostname, "summary") == 0) hitem->hosttype = H_SUMMARY;
 	else hitem->hosttype = H_NORMAL;
 	xtreeAdd(rbhosts, hitem->hostname, hitem);
@@ -1064,7 +1059,7 @@ void get_hts(char *msg, char *sender, char *origin,
 
 	char *firstline, *p;
 	char *hosttest, *hostname, *testname, *colstr, *grp;
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 	xtreePos_t hosthandle, testhandle, originhandle;
 	xymond_hostlist_t *hwalk = NULL;
 	testinfo_t *twalk = NULL;
@@ -1072,9 +1067,6 @@ void get_hts(char *msg, char *sender, char *origin,
 	xymond_log_t *lwalk = NULL;
 
 	dbgprintf("-> get_hts\n");
-
-	MEMDEFINE(hostip);
-	*hostip = '\0';
 
 	*host = NULL;
 	*test = NULL;
@@ -1125,7 +1117,7 @@ void get_hts(char *msg, char *sender, char *origin,
 		if (testname) { *testname = '\0'; testname++; }
 		uncommafy(hostname);	/* For BB agent compatibility */
 
-		knownname = knownhost(hostname, hostip, ghosthandling);
+		knownname = knownhost(hostname, &hostip, ghosthandling);
 		if (knownname == NULL) {
 			knownname = log_ghost(hostname, sender, msg);
 			if (knownname == NULL) goto done;
@@ -1202,8 +1194,6 @@ done:
 	*host = hwalk;
 	*test = twalk;
 	*log = lwalk;
-
-	MEMUNDEFINE(hostip);
 
 	dbgprintf("<- get_hts\n");
 }
@@ -1464,7 +1454,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 		 * This could be an indication of a mis-configured host reporting with
 		 * the wrong hostname.
 		 */
-		if (*(log->sender) && (strcmp(log->sender, sender) != 0)) {
+		if (log->sender && (strcmp(log->sender, sender) != 0)) {
 			/*
 			 * There are a few exceptions:
 			 * - if sender is "xymond", then this is an internal update, e.g. a status going purple.
@@ -1478,8 +1468,7 @@ void handle_status(unsigned char *msg, char *sender, char *hostname, char *testn
 				}
 			}
 		}
-		strncpy(log->sender, sender, sizeof(log->sender)-1);
-		*(log->sender + sizeof(log->sender) - 1) = '\0';
+		log->sender = strdup(sender);
 	}
 
 
@@ -1818,11 +1807,9 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	testinfo_t *twalk = NULL;
 	xymond_log_t *log;
 	char *p;
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 
 	dbgprintf("->handle_enadis\n");
-
-	MEMDEFINE(hostip);
 
 	p = strchr(msg->buf, '\n'); if (p) *p = '\0';
 	firstline = strdup(msg->buf);
@@ -1871,7 +1858,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 		tname = (p+1);
 	}
 	uncommafy(hosttest);
-	hname = knownhost(hosttest, hostip, ghosthandling);
+	hname = knownhost(hosttest, &hostip, ghosthandling);
 	if (hname == NULL) goto done;
 
 	hosthandle = xtreeFind(rbhosts, hname);
@@ -1881,7 +1868,7 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	}
 	else hwalk = xtreeData(rbhosts, hosthandle);
 
-	if (!oksender(maintsenders, hwalk->ip, msg->addr.sin_addr, msg->buf)) goto done;
+	if (!oksender(maintsenders, hwalk->ip, msg->sender, msg->buf)) goto done;
 
 	if (tname) {
 		testhandle = xtreeFind(rbtests, tname);
@@ -1951,7 +1938,6 @@ void handle_enadis(int enabled, conn_t *msg, char *sender)
 	}
 
 done:
-	MEMUNDEFINE(hostip);
 	xfree(firstline);
 
 	dbgprintf("<-handle_enadis\n");
@@ -2233,6 +2219,7 @@ void free_log_t(xymond_log_t *zombie)
 		xfree(modtmp);
 	}
 
+	if (zombie->sender) xfree(zombie->sender);
 	if (zombie->message) xfree(zombie->message);
 	if (zombie->dismsg) xfree(zombie->dismsg);
 	if (zombie->ackmsg) xfree(zombie->ackmsg);
@@ -2244,7 +2231,7 @@ void free_log_t(xymond_log_t *zombie)
 
 void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, char *n1, char *n2)
 {
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 	xtreePos_t hosthandle, testhandle;
 	xymond_hostlist_t *hwalk;
 	testinfo_t *twalk, *newt;
@@ -2253,7 +2240,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	char *canonhostname;
 
 	dbgprintf("-> handle_dropnrename\n");
-	MEMDEFINE(hostip);
 
 	{
 		/*
@@ -2310,7 +2296,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	 * NB: knownhost() may return NULL, if the hosts.cfg file was re-loaded before
 	 * we got around to cleaning up a host.
 	 */
-	canonhostname = knownhost(hostname, hostip, ghosthandling);
+	canonhostname = knownhost(hostname, &hostip, ghosthandling);
 	if (canonhostname) hostname = canonhostname;
 
 	hosthandle = xtreeFind(rbhosts, hostname);
@@ -2354,6 +2340,7 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 
 		/* Free the hostlist entry */
 		xfree(hwalk->hostname);
+		xfree(hwalk->ip);
 		while (hwalk->clientmsgs) {
 			clientmsg_list_t *czombie = hwalk->clientmsgs;
 			hwalk->clientmsgs = hwalk->clientmsgs->next;
@@ -2394,8 +2381,6 @@ void handle_dropnrename(enum droprencmd_t cmd, char *sender, char *hostname, cha
 	}
 
 done:
-	MEMUNDEFINE(hostip);
-
 	dbgprintf("<- handle_dropnrename\n");
 
 	return;
@@ -2607,16 +2592,14 @@ void setup_filter(char *buf, char *defaultfields,
 		else if (strncmp(tok, "acklevel=", 9) == 0) *acklevel = atoi(tok+9);
 		else {
 			/* Might be an old-style HOST.TEST request */
-			char *hname, *tname, hostip[IP_ADDR_STRLEN];
+			char *hname, *tname, *hostip = NULL;
 			char *hnameexp, *tnameexp;
-
-			MEMDEFINE(hostip);
 
 			hname = tok;
 			tname = strrchr(tok, '.');
 			if (tname) { *tname = '\0'; tname++; }
 			uncommafy(hname);
-			hname = knownhost(hname, hostip, ghosthandling);
+			hname = knownhost(hname, &hostip, ghosthandling);
 
 			if (hname && tname) {
 				hnameexp = (char *)malloc(strlen(hname)+3);
@@ -2905,7 +2888,6 @@ void do_message(conn_t *msg, char *origin)
 	xymond_log_t *log;
 	int color;
 	char *downcause;
-	char sender[IP_ADDR_STRLEN];
 	char *grouplist;
 	time_t now, timeroffset;
 	char *msgfrom;
@@ -2919,11 +2901,8 @@ void do_message(conn_t *msg, char *origin)
 		if (eoln) *eoln = '\n';
 	}
 
-	MEMDEFINE(sender);
-
 	/* Most likely, we will not send a response */
 	msg->doingwhat = NOTALK;
-	strncpy(sender, inet_ntoa(msg->addr.sin_addr), sizeof(sender));
 	now = getcurrenttime(NULL);
 	timeroffset = (getcurrenttime(NULL) - gettimer());
 
@@ -2934,13 +2913,16 @@ void do_message(conn_t *msg, char *origin)
 			found = 1;
 		}
 		else {
+#if 0
+			--- FIXME ---
 			int i = 0;
 			do {
-				if ((tracelist[i].ipval & tracelist[i].ipmask) == (ntohl(msg->addr.sin_addr.s_addr) & tracelist[i].ipmask)) {
+				if ((tracelist[i].ipval & tracelist[i].ipmask) == (ntohl(msg->sender) & tracelist[i].ipmask)) {
 					found = 1;
 				}
 				i++;
 			} while (!found && (tracelist[i].ipval != 0));
+#endif
 		}
 
 		if (found) {
@@ -2952,7 +2934,7 @@ void do_message(conn_t *msg, char *origin)
 			gettimeofday(&tv, &tz);
 
 			sprintf(tracefn, "%s/%d_%06d_%s.trace", xgetenv("XYMONTMP"), 
-				(int) tv.tv_sec, (int) tv.tv_usec, sender);
+				(int) tv.tv_sec, (int) tv.tv_usec, msg->sender);
 			fd = fopen(tracefn, "w");
 			if (fd) {
 				fwrite(msg->buf, msg->buflen, 1, fd);
@@ -2979,32 +2961,32 @@ void do_message(conn_t *msg, char *origin)
 			/* Pick out the real sender of this message */
 			msgfrom = strstr(currmsg, "\nStatus message received from ");
 			if (msgfrom) {
-				sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
+				sscanf(msgfrom, "\nStatus message received from %s\n", msg->sender);
 				*msgfrom = '\0';
 			}
 
 			if (statussenders) {
-				get_hts(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
-				if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) validsender = 0;
+				get_hts(currmsg, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
+				if (!oksender(statussenders, (h ? h->ip : NULL), msg->sender, currmsg)) validsender = 0;
 			}
 
 			if (validsender) {
-				get_hts(currmsg, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
+				get_hts(currmsg, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
 				if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
-					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", sender, currmsg);
+					fprintf(dbgfd, "\n---- combo message from %s ----\n%s---- end message ----\n", msg->sender, currmsg);
 					fflush(dbgfd);
 				}
 
 				switch (color) {
 				  case COL_PURPLE:
 					errprintf("Ignored PURPLE status update from %s for %s.%s\n",
-						  sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
+						  msg->sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
 					break;
 
 				  case COL_CLIENT:
 					/* Pseudo color, allows us to send "client" data from a standard BB utility */
 					/* In HOSTNAME.TESTNAME, the TESTNAME is used as the collector-ID */
-					handle_client(currmsg, sender, h->hostname, t->name, "", NULL);
+					handle_client(currmsg, msg->sender, h->hostname, t->name, "", NULL);
 					break;
 
 				  default:
@@ -3012,7 +2994,7 @@ void do_message(conn_t *msg, char *origin)
 					update_statistics(currmsg);
 
 					if (h && t && log && (color != -1)) {
-						handle_status(currmsg, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
+						handle_status(currmsg, msg->sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
 					}
 					break;
 				}
@@ -3029,8 +3011,8 @@ void do_message(conn_t *msg, char *origin)
 			nextmsg = strstr(currmsg, "\n\nmodify");
 			if (nextmsg) { *(nextmsg+1) = '\0'; nextmsg += 2; }
 
-			get_hts(currmsg, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, currmsg)) {
+			get_hts(currmsg, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
+			if (h && t && log && oksender(statussenders, (h ? h->ip : NULL), msg->sender, currmsg)) {
 				handle_modify(currmsg, log, color);
 			}
 
@@ -3040,36 +3022,36 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "status", 6) == 0) {
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %s\n", msg->sender);
 			*msgfrom = '\0';
 		}
 
 		if (statussenders) {
-			get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
-			if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
+			get_hts(msg->buf, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 0, 0);
+			if (!oksender(statussenders, (h ? h->ip : NULL), msg->sender, msg->buf)) goto done;
 		}
 
-		get_hts(msg->buf, sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
+		get_hts(msg->buf, msg->sender, origin, &h, &t, &grouplist, &log, &color, &downcause, NULL, 1, 1);
 		if (h && dbgfd && dbghost && (strcasecmp(h->hostname, dbghost) == 0)) {
-			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", sender, msg->buf);
+			fprintf(dbgfd, "\n---- status message from %s ----\n%s---- end message ----\n", msg->sender, msg->buf);
 			fflush(dbgfd);
 		}
 
 		switch (color) {
 		  case COL_PURPLE:
 			errprintf("Ignored PURPLE status update from %s for %s.%s\n",
-				  sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
+				  msg->sender, (h ? h->hostname : "<unknown>"), (t ? t->name : "unknown"));
 			break;
 
 		  case COL_CLIENT:
 			/* Pseudo color, allows us to send "client" data from a standard BB utility */
 			/* In HOSTNAME.TESTNAME, the TESTNAME is used as the collector-ID */
-			handle_client(msg->buf, sender, h->hostname, t->name, "", NULL);
+			handle_client(msg->buf, msg->sender, h->hostname, t->name, "", NULL);
 			break;
 
 		  default:
 			if (h && t && log && (color != -1)) {
-				handle_status(msg->buf, sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
+				handle_status(msg->buf, msg->sender, h->hostname, t->name, grouplist, log, color, downcause, 0);
 			}
 			break;
 		}
@@ -3081,7 +3063,7 @@ void do_message(conn_t *msg, char *origin)
 
 		msgfrom = strstr(msg->buf, "\nStatus message received from ");
 		if (msgfrom) {
-			sscanf(msgfrom, "\nStatus message received from %16s\n", sender);
+			sscanf(msgfrom, "\nStatus message received from %s\n", msg->sender);
 			*msgfrom = '\0';
 		}
 
@@ -3097,8 +3079,8 @@ void do_message(conn_t *msg, char *origin)
 			*btest = '.';
 			testname = strdup(btest+1);
 
-			if (*hostname == '\0') { errprintf("Invalid data message from %s - blank hostname\n", sender); xfree(hostname); hostname = NULL; }
-			if (*testname == '\0') { errprintf("Invalid data message from %s - blank testname\n", sender); xfree(testname); testname = NULL; }
+			if (*hostname == '\0') { errprintf("Invalid data message from %s - blank hostname\n", msg->sender); xfree(hostname); hostname = NULL; }
+			if (*testname == '\0') { errprintf("Invalid data message from %s - blank testname\n", msg->sender); xfree(testname); testname = NULL; }
 		}
 		else {
 			errprintf("Invalid data message - no testname in '%s'\n", bhost);
@@ -3107,37 +3089,33 @@ void do_message(conn_t *msg, char *origin)
 		*ehost = savechar;
 
 		if (hostname && testname) {
-			char *hname, hostip[IP_ADDR_STRLEN];
+			char *hname, *hostip = NULL;
 
-			MEMDEFINE(hostip);
-
-			hname = knownhost(hostname, hostip, ghosthandling);
+			hname = knownhost(hostname, &hostip, ghosthandling);
 
 			if (hname == NULL) {
-				hname = log_ghost(hostname, sender, msg->buf);
+				hname = log_ghost(hostname, msg->sender, msg->buf);
 			}
 
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
+			else if (!oksender(statussenders, hostip, msg->sender, msg->buf)) {
 				/* Invalid sender */
-				errprintf("Invalid data message - sender %s not allowed for host %s\n", sender, hostname);
+				errprintf("Invalid data message - sender %s not allowed for host %s\n", msg->sender, hostname);
 			}
 			else {
-				handle_data(msg->buf, sender, origin, hname, testname);
+				handle_data(msg->buf, msg->sender, origin, hname, testname);
 			}
 
 			xfree(hostname); xfree(testname);
-
-			MEMUNDEFINE(hostip);
 		}
 	}
 	else if (strncmp(msg->buf, "summary", 7) == 0) {
 		/* Summaries are always allowed. Or should we ? */
-		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
+		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 1, 1);
 		if (h && t && log && (color != -1)) {
-			handle_status(msg->buf, sender, h->hostname, t->name, NULL, log, color, NULL, 0);
+			handle_status(msg->buf, msg->sender, h->hostname, t->name, NULL, log, color, NULL, 0);
 		}
 	}
 	else if ((strncmp(msg->buf, "notes", 5) == 0) || (strncmp(msg->buf, "usermsg", 7) == 0)) {
@@ -3165,43 +3143,43 @@ void do_message(conn_t *msg, char *origin)
 		if (*id) {
 			if (*msg->buf == 'n') {
 				/* "notes" message */
-				if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+				if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) {
 					/* Invalid sender */
 					errprintf("Invalid notes message - sender %s not allowed for host %s\n", 
-						  sender, id);
+						  msg->sender, id);
 				}
 				else {
-					handle_notes(msg->buf, sender, id);
+					handle_notes(msg->buf, msg->sender, id);
 				}
 			}
 			else if (*msg->buf == 'u') {
 				/* "usermsg" message */
-				if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) {
+				if (!oksender(statussenders, NULL, msg->sender, msg->buf)) {
 					/* Invalid sender */
 					errprintf("Invalid user message - sender %s not allowed for host %s\n", 
-						  sender, id);
+						  msg->sender, id);
 				}
 				else {
-					handle_usermsg(msg->buf, sender, id);
+					handle_usermsg(msg->buf, msg->sender, id);
 				}
 			}
 		}
 		else {
-			errprintf("Invalid notes/user message from %s - blank ID\n", sender); 
+			errprintf("Invalid notes/user message from %s - blank ID\n", msg->sender); 
 		}
 
 		xfree(id);
 	}
 	else if (strncmp(msg->buf, "enable", 6) == 0) {
-		handle_enadis(1, msg, sender);
+		handle_enadis(1, msg, msg->sender);
 	}
 	else if (strncmp(msg->buf, "disable", 7) == 0) {
-		handle_enadis(0, msg, sender);
+		handle_enadis(0, msg, msg->sender);
 	}
 	else if (allow_downloads && (strncmp(msg->buf, "config", 6) == 0)) {
 		char *conffn, *p;
 
-		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -3216,7 +3194,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (allow_downloads && (strncmp(msg->buf, "download", 8) == 0)) {
 		char *fn, *p;
 
-		if (!oksender(statussenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(statussenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 8; p += strspn(p, " \t");
 		p = strtok(p, " \t\r\n");
@@ -3235,8 +3213,8 @@ void do_message(conn_t *msg, char *origin)
 		posttoall(msg->buf);
 	}
 	else if (strncmp(msg->buf, "query ", 6) == 0) {
-		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-		if (!oksender(statussenders, (h ? h->ip : NULL), msg->addr.sin_addr, msg->buf)) goto done;
+		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
+		if (!oksender(statussenders, (h ? h->ip : NULL), msg->sender, msg->buf)) goto done;
 
 		if (log) {
 			xfree(msg->buf);
@@ -3278,7 +3256,7 @@ void do_message(conn_t *msg, char *origin)
 		char *chspage, *chshost, *chsnet, *chstest, *fields = NULL;
 		int scolor = -1, acklevel = -1;
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
 		 	     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,modifiers",
@@ -3319,9 +3297,9 @@ void do_message(conn_t *msg, char *origin)
 		 * xymondxlog HOST.TEST
 		 *
 		 */
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
+		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
 			char *buf, *bufp;
 			int bufsz, buflen;
@@ -3396,7 +3374,7 @@ void do_message(conn_t *msg, char *origin)
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		setup_filter(msg->buf, 
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
@@ -3504,7 +3482,7 @@ void do_message(conn_t *msg, char *origin)
 		int scolor = -1, acklevel = -1;
 		static unsigned int lastboardsize = 0;
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		setup_filter(msg->buf,
 			     "hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,line1",
@@ -3614,7 +3592,7 @@ void do_message(conn_t *msg, char *origin)
 		static unsigned int lastboardsize = 0;
 		char *clonehost;
 
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		clonehost = strstr(msg->buf, " clone=");
 		if (clonehost) {
@@ -3691,7 +3669,7 @@ void do_message(conn_t *msg, char *origin)
 		int duration;
 		xymond_log_t *lwalk;
 
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		MEMDEFINE(durstr);
 
@@ -3721,11 +3699,11 @@ void do_message(conn_t *msg, char *origin)
 					 * have a valid cookie (i.e. not NULL)
 					 */
 					for (lwalk = log->host->logs; (lwalk); lwalk = lwalk->next) {
-						if (lwalk->cookie) handle_ack(p, sender, lwalk, duration);
+						if (lwalk->cookie) handle_ack(p, msg->sender, lwalk, duration);
 					}
 				}
 				else {
-					handle_ack(p, sender, log, duration);
+					handle_ack(p, msg->sender, log, duration);
 				}
 			}
 			else {
@@ -3733,7 +3711,7 @@ void do_message(conn_t *msg, char *origin)
 			}
 		}
 		else {
-			errprintf("Bogus ack message from %s: '%s'\n", sender, msg->buf);
+			errprintf("Bogus ack message from %s: '%s'\n", msg->sender, msg->buf);
 		}
 		xfree(mcopy);
 
@@ -3743,18 +3721,18 @@ void do_message(conn_t *msg, char *origin)
 		/* ackinfo HOST.TEST\nlevel\nvaliduntil\nackedby\nmsg */
 		int ackall = 0;
 
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
 
-		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, &ackall, 0, 0);
+		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, &ackall, 0, 0);
 		if (log) {
-			handle_ackinfo(msg->buf, sender, log);
+			handle_ackinfo(msg->buf, msg->sender, log);
 		}
 		else if (ackall) {
 			xymond_log_t *lwalk;
 
 			for (lwalk = h->logs; (lwalk); lwalk = lwalk->next) {
 				if (decide_alertstate(lwalk->color) != A_OK) {
-					handle_ackinfo(msg->buf, sender, lwalk);
+					handle_ackinfo(msg->buf, msg->sender, lwalk);
 				}
 			}
 		}
@@ -3763,24 +3741,24 @@ void do_message(conn_t *msg, char *origin)
 		char *hostname = NULL, *testname = NULL;
 		char *p;
 
-		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(adminsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 4; p += strspn(p, " \t");
 		hostname = strtok(p, " \t");
 		if (hostname) testname = strtok(NULL, " \t");
 
 		if (hostname && !testname) {
-			handle_dropnrename(CMD_DROPHOST, sender, hostname, NULL, NULL);
+			handle_dropnrename(CMD_DROPHOST, msg->sender, hostname, NULL, NULL);
 		}
 		else if (hostname && testname) {
-			handle_dropnrename(CMD_DROPTEST, sender, hostname, testname, NULL);
+			handle_dropnrename(CMD_DROPTEST, msg->sender, hostname, testname, NULL);
 		}
 	}
 	else if (strncmp(msg->buf, "rename ", 7) == 0) {
 		char *hostname = NULL, *n1 = NULL, *n2 = NULL;
 		char *p;
 
-		if (!oksender(adminsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(adminsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + 6; p += strspn(p, " \t");
 		hostname = strtok(p, " \t");
@@ -3789,11 +3767,11 @@ void do_message(conn_t *msg, char *origin)
 
 		if (hostname && n1 && !n2) {
 			/* Host rename */
-			handle_dropnrename(CMD_RENAMEHOST, sender, hostname, n1, NULL);
+			handle_dropnrename(CMD_RENAMEHOST, msg->sender, hostname, n1, NULL);
 		}
 		else if (hostname && n1 && n2) {
 			/* Test rename */
-			handle_dropnrename(CMD_RENAMETEST, sender, hostname, n1, n2);
+			handle_dropnrename(CMD_RENAMETEST, msg->sender, hostname, n1, n2);
 		}
 	}
 	else if (strncmp(msg->buf, "dummy", 5) == 0) {
@@ -3810,9 +3788,9 @@ void do_message(conn_t *msg, char *origin)
 		msg->buflen = strlen(msg->buf);
 	}
 	else if (strncmp(msg->buf, "notify", 6) == 0) {
-		if (!oksender(maintsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
-		get_hts(msg->buf, sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
-		if (h && t) handle_notify(msg->buf, sender, h->hostname, t->name);
+		if (!oksender(maintsenders, NULL, msg->sender, msg->buf)) goto done;
+		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
+		if (h && t) handle_notify(msg->buf, msg->sender, h->hostname, t->name);
 	}
 	else if (strncmp(msg->buf, "schedule", 8) == 0) {
 		char *cmd;
@@ -3861,7 +3839,7 @@ void do_message(conn_t *msg, char *origin)
 				newitem->executiontime = (time_t) atoi(cmd);
 				cmd += strspn(cmd, "0123456789");
 				cmd += strspn(cmd, " ");
-				newitem->sender = strdup(sender);
+				newitem->sender = strdup(msg->sender);
 				newitem->command = strdup(cmd);
 				newitem->next = schedulehead;
 				schedulehead = newitem;
@@ -3902,7 +3880,7 @@ void do_message(conn_t *msg, char *origin)
 		if (msgfrom) {
 			char *ipline = strstr(msgfrom, "\nClientIP:");
 			if (ipline) { 
-				sscanf(ipline, "\nClientIP:%16s\n", sender);
+				sscanf(ipline, "\nClientIP:%s\n", msg->sender);
 			}
 		}
 
@@ -3929,28 +3907,26 @@ void do_message(conn_t *msg, char *origin)
 		}
 
 		if (hostname && clientos) {
-			char hostip[IP_ADDR_STRLEN];
+			char *hostip = NULL;
 
-			MEMDEFINE(hostip);
-
-			hname = knownhost(hostname, hostip, ghosthandling);
+			hname = knownhost(hostname, &hostip, ghosthandling);
 
 			if (hname == NULL) {
-				hname = log_ghost(hostname, sender, msg->buf);
+				hname = log_ghost(hostname, msg->sender, msg->buf);
 			}
 
 			if (hname == NULL) {
 				/* Ignore it */
 			}
-			else if (!oksender(statussenders, hostip, msg->addr.sin_addr, msg->buf)) {
+			else if (!oksender(statussenders, hostip, msg->sender, msg->buf)) {
 				/* Invalid sender */
-				errprintf("Invalid client message - sender %s not allowed for host %s\n", sender, hostname);
+				errprintf("Invalid client message - sender %s not allowed for host %s\n", msg->sender, hostname);
 				hname = NULL;
 			}
 			else {
 				void *hinfo = hostinfo(hname);
 
-				handle_client(msg->buf, sender, hname, collectorid, clientos, clientclass);
+				handle_client(msg->buf, msg->sender, hname, collectorid, clientos, clientclass);
 
 				if (hinfo) {
 					if (clientos) xmh_set_item(hinfo, XMH_OS, clientos);
@@ -3969,8 +3945,6 @@ void do_message(conn_t *msg, char *origin)
 					}
 				}
 			}
-
-			MEMUNDEFINE(hostip);
 		}
 
 		if (hname) {
@@ -3990,7 +3964,7 @@ void do_message(conn_t *msg, char *origin)
 	else if (strncmp(msg->buf, "clientlog ", 10) == 0) {
 		char *hostname, *p;
 		xtreePos_t hosthandle;
-		if (!oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) goto done;
+		if (!oksender(wwwsenders, NULL, msg->sender, msg->buf)) goto done;
 
 		p = msg->buf + strlen("clientlog"); p += strspn(p, "\t ");
 		hostname = p; p += strcspn(p, "\t "); if (*p) { *p = '\0'; p++; }
@@ -4049,7 +4023,7 @@ void do_message(conn_t *msg, char *origin)
 		}
 	}
 	else if (strncmp(msg->buf, "ghostlist", 9) == 0) {
-		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+		if (oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
 			xtreePos_t ghandle;
 			ghostlist_t *gwalk;
 			strbuffer_t *resp;
@@ -4074,7 +4048,7 @@ void do_message(conn_t *msg, char *origin)
 	}
 
 	else if (strncmp(msg->buf, "multisrclist", 12) == 0) {
-		if (oksender(wwwsenders, NULL, msg->addr.sin_addr, msg->buf)) {
+		if (oksender(wwwsenders, NULL, msg->sender, msg->buf)) {
 			xtreePos_t mhandle;
 			multisrclist_t *mwalk;
 			strbuffer_t *resp;
@@ -4099,17 +4073,6 @@ void do_message(conn_t *msg, char *origin)
 	}
 
 done:
-	if (msg->doingwhat == RESPONDING) {
-		shutdown(msg->sock, SHUT_RD);
-	}
-	else if (msg->sock >= 0) {
-		shutdown(msg->sock, SHUT_RDWR);
-		close(msg->sock);
-		msg->sock = -1;
-	}
-
-	MEMUNDEFINE(sender);
-
 	dbgprintf("<- do_message/%d\n", nesting);
 	nesting--;
 }
@@ -4214,7 +4177,7 @@ void load_checkpoint(char *fn)
 	strbuffer_t *inbuf;
 	char *item;
 	int i, err;
-	char hostip[IP_ADDR_STRLEN];
+	char *hostip = NULL;
 	xtreePos_t hosthandle, testhandle, originhandle;
 	xymond_hostlist_t *hitem = NULL;
 	testinfo_t *t = NULL;
@@ -4230,8 +4193,6 @@ void load_checkpoint(char *fn)
 		errprintf("Cannot access checkpoint file %s for restore\n", fn);
 		return;
 	}
-
-	MEMDEFINE(hostip);
 
 	inbuf = newstrbuffer(0);
 	initfgets(fd);
@@ -4357,7 +4318,7 @@ void load_checkpoint(char *fn)
 		if (err) continue;
 
 		/* Only load hosts we know; they may have been dropped while we were offline */
-		hostname = knownhost(hostname, hostip, ghosthandling);
+		hostname = knownhost(hostname, &hostip, ghosthandling);
 		if (hostname == NULL) continue;
 
 		/* Ignore the "info" and "trends" data, since we generate on the fly now. */
@@ -4418,7 +4379,7 @@ void load_checkpoint(char *fn)
 		ltail->activealert = (decide_alertstate(color) == A_ALERT);
 		ltail->histsynced = 0;
 		ltail->testflags = ( (testflags && strlen(testflags)) ? strdup(testflags) : NULL);
-		strcpy(ltail->sender, sender);
+		ltail->sender = strdup(sender);
 		ltail->logtime = logtime;
 		ltail->lastchange = (time_t *)calloc((flapcount > 0) ? flapcount : 1, sizeof(time_t));
 		ltail->lastchange[0] = lastchange;
@@ -4463,8 +4424,6 @@ void load_checkpoint(char *fn)
 	fclose(fd);
 	freestrbuffer(inbuf);
 	dbgprintf("Loaded %d status logs\n", count);
-
-	MEMDEFINE(hostip);
 }
 
 
@@ -4570,18 +4529,116 @@ void sig_handler(int signum)
 }
 
 
+int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
+{
+	int n = 0;
+	conn_t *conn = (conn_t *)userdata;
+
+	dbgprintf("CB %s\n", conn_callback_names[id]);
+
+	switch (id) {
+	  case CONN_CB_NEWCONNECTION:          /* Server mode: New incoming connection accepted */
+		conn = (conn_t *)calloc(1, sizeof(conn_t));
+		conn->doingwhat = RECEIVING;
+		conn->bufsz = XYMON_INBUF_INITIAL;
+		conn->buf = (unsigned char *)malloc(conn->bufsz);
+		conn->bufp = conn->buf;
+		conn->buflen = 0;
+		conn->sender = strdup(conn_print_ip(connection));
+		connection->userdata = conn;
+		break;
+
+	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
+	  case CONN_CB_SSLHANDSHAKE_FAILED:    /* Client/server mode: SSL handshake failed (connection will close) */
+		break;
+
+	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
+		return (conn->doingwhat == RECEIVING);
+
+	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
+		return (conn->doingwhat == RESPONDING);
+
+	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
+		n = conn_read(connection, (char *)conn->bufp, (conn->bufsz - conn->buflen - 1));
+		if (n <= 0) {
+			/* End of input data on this connection */
+			*(conn->bufp) = '\0';
+			do_message(conn, "");
+		}
+		else {
+			/* Add data to the input buffer - within reason ... */
+			conn->bufp += n;
+			conn->buflen += n;
+			*(conn->bufp) = '\0';
+			if ((conn->bufsz - conn->buflen) < 2048) {
+				if (conn->bufsz < MAX_XYMON_INBUFSZ) {
+					conn->bufsz += XYMON_INBUF_INCREMENT;
+					conn->buf = (unsigned char *) realloc(conn->buf, conn->bufsz);
+					conn->bufp = conn->buf + conn->buflen;
+				}
+				else {
+					/* Someone is flooding us */
+					char *eoln;
+
+					*(conn->buf + 200) = '\0';
+					eoln = strchr(conn->buf, '\n');
+					if (eoln) *eoln = '\0';
+					errprintf("Data flooding from %s - 1st line %s\n", conn->sender, conn->buf);
+					conn->doingwhat = NOTALK;
+				}
+			}
+		}
+		break;
+
+	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
+		n = conn_write(connection, conn->bufp, conn->buflen);
+		if (n < 0) {
+			conn->buflen = 0;
+		}
+		else {
+			conn->bufp += n;
+			conn->buflen -= n;
+		}
+
+		if (conn->buflen == 0) {
+			conn->doingwhat = NOTALK;
+		}
+		break;
+
+	  case CONN_CB_CLOSED:                 /* Client/server mode: Connection has been closed */
+	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
+		if (conn) {
+			xfree(conn->sender);
+			xfree(conn->buf);
+			xfree(conn);
+			conn = connection->userdata = NULL;
+		}
+		break;
+
+	  case CONN_CB_CONNECT_START:
+	  case CONN_CB_CONNECT_COMPLETE:
+	  case CONN_CB_CONNECT_FAILED:
+	  case CONN_CB_TIMEOUT:
+		break;
+	}
+
+	if (conn && (conn->doingwhat == NOTALK)) conn_close_connection(connection, NULL);
+
+	return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
-	conn_t *connhead = NULL, *conntail=NULL;
-	char *listenip = "0.0.0.0";
-	int listenport = 0;
+	char *listenip4 = "0.0.0.0", *listenip6 = "::";
+	int listenport = 0, listensslport = 0;
+	char *certfn = NULL, *keyfn = NULL;
 	char *hostsfn = NULL;
 	char *restartfn = NULL;
 	char *logfn = NULL;
 	int checkpointinterval = 900;
 	int do_purples = 1;
 	time_t nextpurpleupdate;
-	struct sockaddr_in laddr;
 	int lsocket, opt;
 	int listenq = 512;
 	int argi;
@@ -4633,12 +4690,16 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--listen=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
-			listenip = strdup(p);
-			p = strchr(listenip, ':');
+			listenip4 = strdup(p);
+			p = strchr(listenip4, ':');
 			if (p) {
 				*p = '\0';
 				listenport = atoi(p+1);
 			}
+		}
+		else if (argnmatch(argv[argi], "--port=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			listenport = atoi(p);
 		}
 		else if (argnmatch(argv[argi], "--timeout=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -4651,6 +4712,18 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			hostsfn = strdup(p);
+		}
+		else if (argnmatch(argv[argi], "--ssl-certificate=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			certfn = strdup(p);
+		}
+		else if (argnmatch(argv[argi], "--ssl-key=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			keyfn = strdup(p);
+		}
+		else if (argnmatch(argv[argi], "--ssl-port=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			listensslport = atoi(p);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -4827,7 +4900,14 @@ int main(int argc, char *argv[])
 		if (xgetenv("XYMONDPORT"))
 			listenport = atoi(xgetenv("XYMONDPORT"));
 		else
-			listenport = 1984;
+			listenport = conn_lookup_portnumber("bb", 1984);
+	}
+
+	if (listensslport == 0) {
+		if (xgetenv("XYMONDSSLPORT"))
+			listensslport = atoi(xgetenv("XYMONDSSLPORT"));
+		else
+			listensslport = conn_lookup_portnumber("bbssl", 1985);
 	}
 
 	if ((ghosthandling != GH_ALLOW) && (hostsfn == NULL)) {
@@ -4850,27 +4930,9 @@ int main(int argc, char *argv[])
 
 
 	/* Set up a socket to listen for new connections */
-	errprintf("Setting up network listener on %s:%d\n", listenip, listenport);
-	memset(&laddr, 0, sizeof(laddr));
-	inet_aton(listenip, (struct in_addr *) &laddr.sin_addr.s_addr);
-	laddr.sin_port = htons(listenport);
-	laddr.sin_family = AF_INET;
-	lsocket = socket(AF_INET, SOCK_STREAM, 0);
-	if (lsocket == -1) {
-		errprintf("Cannot create listen socket (%s)\n", strerror(errno));
-		return 1;
-	}
-	opt = 1;
-	setsockopt(lsocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	fcntl(lsocket, F_SETFL, O_NONBLOCK);
-	if (bind(lsocket, (struct sockaddr *)&laddr, sizeof(laddr)) == -1) {
-		errprintf("Cannot bind to listen socket (%s)\n", strerror(errno));
-		return 1;
-	}
-	if (listen(lsocket, listenq) == -1) {
-		errprintf("Cannot listen (%s)\n", strerror(errno));
-		return 1;
-	}
+	if (listenport) errprintf("Setting up network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listenport);
+	if (listensslport && certfn && keyfn) errprintf("Setting up SSL network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listensslport);
+	conn_init_server(listenport, listenq, certfn, keyfn, listensslport, listenip4, listenip6, server_callback);
 
 	/* Go daemon */
 	if (daemonize) {
@@ -4985,10 +5047,10 @@ int main(int argc, char *argv[])
 		 *
 		 * Then do the network I/O.
 		 */
-		struct timeval seltmo;
 		fd_set fdread, fdwrite;
 		int maxfd, n;
-		conn_t *cwalk;
+		struct timeval tmo;
+
 		time_t now = getcurrenttime(NULL);
 		int childstat;
 
@@ -5080,117 +5142,29 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		/*
-		 * Prepare for the network I/O.
-		 * Find the largest open socket we have, from our active sockets,
-		 * and setup the select() FD sets.
-		 */
-		FD_ZERO(&fdread); FD_ZERO(&fdwrite);
-		FD_SET(lsocket, &fdread); maxfd = lsocket;
-
-		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
-			switch (cwalk->doingwhat) {
-				case RECEIVING:
-					FD_SET(cwalk->sock, &fdread);
-					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
-					break;
-				case RESPONDING:
-					FD_SET(cwalk->sock, &fdwrite);
-					if (cwalk->sock > maxfd) maxfd = cwalk->sock;
-					break;
-			}
-		}
-
 		/* 
 		 * Do the select() with a static 2 second timeout. 
 		 * This is long enough that we will suspend activity for
 		 * some time if there's nothing to do, but short enough for
 		 * us to attend to the housekeeping stuff without undue delay.
 		 */
-		seltmo.tv_sec = 2; seltmo.tv_usec = 0;
-		n = select(maxfd+1, &fdread, &fdwrite, NULL, &seltmo);
-		if (n <= 0) {
-			if ((errno == EINTR) || (n == 0)) {
-				/* Interrupted or a timeout happened */
-				continue;
-			}
-			else {
-				errprintf("Fatal error in select: %s\n", strerror(errno));
-				break;
-			}
+		maxfd = conn_fdset(&fdread, &fdwrite);
+		tmo.tv_sec = 2; tmo.tv_usec = 0;
+		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
+		if (n < 0) {
+			if (errno != EINTR) errprintf("Fatal error in select: %s\n", strerror(errno));
+			running = 0;
+			continue;
 		}
 
-		/*
-		 * Now do the actual data exchange over the net.
-		 */
-		for (cwalk = connhead; (cwalk); cwalk = cwalk->next) {
-			switch (cwalk->doingwhat) {
-			  case RECEIVING:
-				if (FD_ISSET(cwalk->sock, &fdread)) {
-					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
+		conn_process_active(&fdread, &fdwrite);
 
-					n = read(cwalk->sock, cwalk->bufp, (cwalk->bufsz - cwalk->buflen - 1));
-					if (n <= 0) {
-						/* End of input data on this connection */
-						*(cwalk->bufp) = '\0';
+		/* Purge the old and dead connections */
+		conn_trimactive();
 
-						/* FIXME - need to set origin here */
-						do_message(cwalk, "");
-					}
-					else {
-						/* Add data to the input buffer - within reason ... */
-						cwalk->bufp += n;
-						cwalk->buflen += n;
-						*(cwalk->bufp) = '\0';
-						if ((cwalk->bufsz - cwalk->buflen) < 2048) {
-							if (cwalk->bufsz < MAX_XYMON_INBUFSZ) {
-								cwalk->bufsz += XYMON_INBUF_INCREMENT;
-								cwalk->buf = (unsigned char *) realloc(cwalk->buf, cwalk->bufsz);
-								cwalk->bufp = cwalk->buf + cwalk->buflen;
-							}
-							else {
-								/* Someone is flooding us */
-								char *eoln;
-
-								*(cwalk->buf + 200) = '\0';
-								eoln = strchr(cwalk->buf, '\n');
-								if (eoln) *eoln = '\0';
-								errprintf("Data flooding from %s - 1st line %s\n",
-									  inet_ntoa(cwalk->addr.sin_addr), cwalk->buf);
-								shutdown(cwalk->sock, SHUT_RDWR);
-								close(cwalk->sock); 
-								cwalk->sock = -1; 
-								cwalk->doingwhat = NOTALK;
-							}
-						}
-					}
-				}
-				break;
-
-			  case RESPONDING:
-				if (FD_ISSET(cwalk->sock, &fdwrite)) {
-					n = write(cwalk->sock, cwalk->bufp, cwalk->buflen);
-
-					if ((n == -1) && (errno == EAGAIN)) break; /* Do nothing */
-
-					if (n < 0) {
-						cwalk->buflen = 0;
-					}
-					else {
-						cwalk->bufp += n;
-						cwalk->buflen -= n;
-					}
-
-					if (cwalk->buflen == 0) {
-						shutdown(cwalk->sock, SHUT_WR);
-						close(cwalk->sock); 
-						cwalk->sock = -1; 
-						cwalk->doingwhat = NOTALK;
-					}
-				}
-				break;
-			}
-		}
+		/* Pick up new connections */
+		dbgprintf("Picking up new connections\n");
+		conn_process_listeners(&fdread);
 
 		/* Any scheduled tasks that need attending to? */
 		{
@@ -5210,9 +5184,8 @@ int main(int argc, char *argv[])
 					swalk = swalk->next;
 
 					memset(&task, 0, sizeof(task));
-					task.sock = -1;
 					task.doingwhat = NOTALK;
-					inet_aton(runtask->sender, (struct in_addr *) &task.addr.sin_addr.s_addr);
+					task.sender = runtask->sender;
 					task.buf = task.bufp = runtask->command;
 					task.buflen = strlen(runtask->command); task.bufsz = task.buflen+1;
 					do_message(&task, "");
@@ -5225,105 +5198,6 @@ int main(int argc, char *argv[])
 					sprev = swalk;
 					swalk = swalk->next;
 				}
-			}
-		}
-
-		/* Clean up conn structs that are no longer used */
-		{
-			conn_t *tmp, *khead;
-
-			dbgprintf("Beginning conn_t cleanup\n");
-			now = getcurrenttime(NULL);
-			khead = NULL; cwalk = connhead;
-			while (cwalk) {
-				/* Check for connections that timeout */
-				if (now > cwalk->timeout) {
-					update_statistics("");
-					cwalk->doingwhat = NOTALK;
-					if (cwalk->sock >= 0) {
-						shutdown(cwalk->sock, SHUT_RDWR);
-						close(cwalk->sock);
-						cwalk->sock = -1;
-					}
-				}
-
-				/* Move dead connections to a purge-list */
-				if ((cwalk == connhead) && (cwalk->doingwhat == NOTALK)) {
-					/* head of chain is dead */
-					tmp = connhead;
-					connhead = connhead->next;
-					tmp->next = khead;
-					khead = tmp;
-
-					cwalk = connhead;
-				}
-				else if (cwalk->next && (cwalk->next->doingwhat == NOTALK)) {
-					tmp = cwalk->next;
-					cwalk->next = tmp->next;
-					tmp->next = khead;
-					khead = tmp;
-
-					/* cwalk is unchanged */
-				}
-				else {
-					cwalk = cwalk->next;
-				}
-			}
-			if (connhead == NULL) {
-				conntail = NULL;
-			}
-			else {
-				conntail = connhead;
-				cwalk = connhead->next;
-				if (cwalk) {
-					while (cwalk->next) cwalk = cwalk->next;
-					conntail = cwalk;
-				}
-			}
-
-			/* Purge the dead connections */
-			while (khead) {
-				tmp = khead;
-				khead = khead->next;
-
-				if (tmp->buf) xfree(tmp->buf);
-				xfree(tmp);
-			}
-
-			dbgprintf("conn_t cleanup complete\n");
-		}
-
-		/* Pick up new connections */
-		if (FD_ISSET(lsocket, &fdread)) {
-			struct sockaddr_in addr;
-			int addrsz = sizeof(addr);
-			int sock;
-
-			dbgprintf("Picking up new connections\n");
-
-			sock = accept(lsocket, (struct sockaddr *)&addr, &addrsz);
-
-			if (sock >= 0) {
-				/* Make sure our sockets are non-blocking */
-				fcntl(sock, F_SETFL, O_NONBLOCK);
-
-				if (connhead == NULL) {
-					connhead = conntail = (conn_t *)malloc(sizeof(conn_t));
-				}
-				else {
-					conntail->next = (conn_t *)malloc(sizeof(conn_t));
-					conntail = conntail->next;
-				}
-
-				conntail->sock = sock;
-				memcpy(&conntail->addr, &addr, sizeof(conntail->addr));
-				conntail->doingwhat = RECEIVING;
-				conntail->bufsz = XYMON_INBUF_INITIAL;
-				conntail->buf = (unsigned char *)malloc(conntail->bufsz);
-				conntail->bufp = conntail->buf;
-				conntail->buflen = 0;
-				conntail->timeout = now + conn_timeout;
-				conntail->next = NULL;
 			}
 		}
 	} while (running);
