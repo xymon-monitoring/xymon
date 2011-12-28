@@ -24,12 +24,6 @@ static char rcsid[] = "$Id$";
 #include <unistd.h>
 #include <utime.h>
 
-/* The following is for the DNS lookup we perform on DHCP adresses */
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-
 #include "libxymon.h"
 
 int showenadis = 1;
@@ -232,7 +226,7 @@ static void generate_xymon_alertinfo(char *hostname, strbuffer_t *buf)
 	alert = calloc(1, sizeof(activealerts_t));
 	alert->hostname = hostname;
 	alert->location = (hi ? xmh_item(hi, XMH_ALLPAGEPATHS) : "");
-	strcpy(alert->ip, "127.0.0.1");
+	alert->ip = "127.0.0.1";
 	alert->color = COL_RED;
 	alert->pagemessage = "";
 	alert->state = A_PAGING;
@@ -848,19 +842,13 @@ char *generate_info(char *hostname, char *critconfigfn)
 	}
 
 	val = xmh_item(hostwalk, XMH_IP);
-	if (strcmp(val, "0.0.0.0") == 0) {
-		struct in_addr addr;
-		struct hostent *hent;
-		static char hostip[IP_ADDR_STRLEN + 20];
+	if ((strcmp(val, "0.0.0.0") == 0) || (strcmp(val, "::") == 0)) {
+		static char hostip[100];
+		char *ip = conn_lookup_ip(hostname, 0);
 
-		hent = gethostbyname(hostname);
-		if (hent) {
-			memcpy(&addr, *(hent->h_addr_list), sizeof(struct in_addr));
-			strncpy(hostip, inet_ntoa(addr), sizeof(hostip)-1);
-			if (inet_aton(hostip, &addr) != 0) {
-				strncat(hostip, " (dynamic)", sizeof(hostip)-strlen(hostip)-1);
-				val = hostip;
-			}
+		if (ip) {
+			strcpy(hostip, ip);
+			val = hostip;
 		}
 	}
 	addtobuffer(infobuf, "<tr><th align=left>IP:</th><td align=left>");
