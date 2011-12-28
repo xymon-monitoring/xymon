@@ -4525,6 +4525,20 @@ void sig_handler(int signum)
 	  case SIGUSR1:
 		nextcheckpoint = 0;
 		break;
+
+	  case SIGUSR2:
+		/* Debug toggle, must also toggle tcplib debugging */
+		if (debug) {
+			conn_register_infohandler(NULL, INFO_WARN);
+			dbgprintf("Debug OFF\n");
+			debug = 0;
+		}
+		else {
+			debug = 1;
+			conn_register_infohandler(NULL, INFO_DEBUG);
+			dbgprintf("Debug ON\n");
+		}
+		break;
 	}
 }
 
@@ -4932,6 +4946,7 @@ int main(int argc, char *argv[])
 	/* Set up a socket to listen for new connections */
 	if (listenport) errprintf("Setting up network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listenport);
 	if (listensslport && certfn && keyfn) errprintf("Setting up SSL network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listensslport);
+	if (debug) conn_register_infohandler(NULL, INFO_DEBUG);
 	conn_init_server(listenport, listenq, certfn, keyfn, listensslport, listenip4, listenip6, server_callback);
 
 	/* Go daemon */
@@ -4983,6 +4998,7 @@ int main(int argc, char *argv[])
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGALRM, &sa, NULL);
@@ -5152,9 +5168,12 @@ int main(int argc, char *argv[])
 		tmo.tv_sec = 2; tmo.tv_usec = 0;
 		n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
 		if (n < 0) {
-			if (errno != EINTR) errprintf("Fatal error in select: %s\n", strerror(errno));
-			running = 0;
-			continue;
+			/* Ignore EINTR, just carry on. All other errors are fatal. */
+			if (errno != EINTR) {
+				errprintf("Fatal error in select: %s\n", strerror(errno));
+				running = 0;
+				continue;
+			}
 		}
 
 		conn_process_active(&fdread, &fdwrite);
