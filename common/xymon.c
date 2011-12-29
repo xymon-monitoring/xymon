@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
 			debug = 1;
+			conn_register_infohandler(NULL, INFO_DEBUG);
 		}
 		else if (strncmp(argv[argi], "--proxy=", 8) == 0) {
 			char *p = strchr(argv[argi], '=');
