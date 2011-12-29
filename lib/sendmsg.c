@@ -55,6 +55,7 @@ static int sleepbetweenmsgs = 0;
 
 typedef struct myconn_t {
 	/* Plain-text protocols */
+	char szbuf[20]; char *szptr;
 	char *readbuf, *writebuf;
 	char *readp, *writep;
 	size_t readbufsz;
@@ -75,7 +76,7 @@ static myconn_t *myhead = NULL, *mytail = NULL;
 
 static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 {
-	int res = 0, n;
+	int res = 0, n, sslhandshakeinprogress = 0;
 	size_t used;
 	time_t start, expire;
 	char *certsubject;
@@ -105,6 +106,29 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 			rec->readbuf = (char *)realloc(rec->readbuf, rec->readbufsz);
 			rec->readp = rec->readbuf + used;
 		}
+
+		/*
+		 * When doing an SSL handshake, CB_READ is invoked. Eventually there
+		 * is enough data arriving so that *during* a CB READ, the callback
+		 * is recursively invoked with CB_SSL_HANDSHAKE_OK. After that has
+		 * completed, we return here from conn_read, and the status has
+		 * now been changed to CONN_SSL_READY. We should NOT clear the readmore
+		 * flag in this case, since it will happen before we have read
+		 * any data. So we use a local flag variable to remember if we
+		 * were doing a conn_read as part of the handshake.
+		 */
+		switch (connection->connstate) {
+		  case CONN_SSL_ACCEPT_READ:
+		  case CONN_SSL_ACCEPT_WRITE:
+		  case CONN_SSL_CONNECT_READ:
+		  case CONN_SSL_CONNECT_WRITE:
+		  case CONN_SSL_READ:
+		  case CONN_SSL_WRITE:
+			sslhandshakeinprogress = 1; break;
+		  default:
+			sslhandshakeinprogress = 0; break;
+		}
+
 		n = conn_read(connection, rec->readp, (rec->readbufsz - used - 1));
 
 		if (n > 0) {
@@ -120,7 +144,7 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 				}
 			}
 		}
-		else if (n == 0) {
+		else if ((n == 0) && !sslhandshakeinprogress) {
 			rec->readmore = 0;
 			conn_close_connection(connection, "r");
 		}
@@ -133,10 +157,23 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 		break;
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
-		n = conn_write(connection, rec->writep, strlen(rec->writep));
+		if (rec->szptr) {
+			n = conn_write(connection, rec->szptr, strlen(rec->szptr));
+			if (n > 0) {
+				rec->szptr += n;
+				if (*rec->szptr == '\0') rec->szptr = NULL;
+				n = 0;	/* Didn't send any message data yet */
+			}
+		}
+		else {
+			n = conn_write(connection, rec->writep, strlen(rec->writep));
+		}
+
 		if (n > 0) {
 			rec->writep += n;
-			if (*rec->writep == '\0') conn_close_connection(connection, "w");
+			if (*rec->writep == '\0') {
+				conn_close_connection(connection, "w");
+			}
 		}
 		res = n;
 		break;
@@ -181,6 +218,8 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		ip = conn_lookup_ip(targets[i]->targetip, &portnum);
 
 		myconn = (myconn_t *)calloc(1, sizeof(myconn_t));
+		sprintf(myconn->szbuf, "size:%d\n", strlen(msg));
+		myconn->szptr = myconn->szbuf;
 		myconn->writebuf = msg;
 		myconn->peer = strdup(ip ? ip : "");
 		myconn->port = (portnum ? portnum : targets[i]->defaultport);

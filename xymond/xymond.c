@@ -169,16 +169,12 @@ int      allow_downloads = 1;
 int	 defaultvalidity = 30;	/* Minutes */
 
 
-#define NOTALK 0
-#define RECEIVING 1
-#define RESPONDING 2
-
 /* This struct describes an active connection with a Xymon client */
 typedef struct conn_t {
 	char *sender;
-	unsigned char *buf, *bufp;	/* Message buffer and pointer */
-	size_t buflen, bufsz;		/* Active and maximum length of buffer */
-	int doingwhat;			/* Communications state (NOTALK, READING, RESPONDING) */
+	unsigned char *buf, *bufp;				/* Message buffer and pointer */
+	size_t buflen, bufsz, msgsz;			/* Active and maximum length of buffer */
+	enum { NOTALK, RECEIVING, RESPONDING } doingwhat;	/* Communications state (NOTALK, READING, RESPONDING) */
 } conn_t;
 
 enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST, CMD_DROPSTATE };
@@ -3405,6 +3401,7 @@ void do_message(conn_t *msg, char *origin)
 
 		infologrec.color = rrdlogrec.color = COL_GREEN;
 		infologrec.message = rrdlogrec.message = "";
+		infologrec.sender = rrdlogrec.sender = "xymond";
 		infologrec.lastchange = rrdlogrec.lastchange = dummytimes;
 
 		for (hosthandle = xtreeFirst(rbhosts); (hosthandle != xtreeEnd(rbhosts)); hosthandle = xtreeNext(rbhosts, hosthandle)) {
@@ -4558,6 +4555,7 @@ int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userda
 		conn->buf = (unsigned char *)malloc(conn->bufsz);
 		conn->bufp = conn->buf;
 		conn->buflen = 0;
+		conn->msgsz = -1;
 		conn->sender = strdup(conn_print_ip(connection));
 		connection->userdata = conn;
 		break;
@@ -4574,16 +4572,39 @@ int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userda
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
 		n = conn_read(connection, (char *)conn->bufp, (conn->bufsz - conn->buflen - 1));
-		if (n <= 0) {
+		if (n < 0) {
+			if (conn->buf && conn->buflen) {
+				*(conn->bufp) = '\0';
+				do_message(conn, "");
+			}
+			else {
+				conn->doingwhat = NOTALK;
+			}
+		}
+		else if ((n == 0) || ((n > 0) && (conn->msgsz > 0) && ((conn->buflen+n) >= conn->msgsz))) {
 			/* End of input data on this connection */
+			conn->bufp += n;
 			*(conn->bufp) = '\0';
 			do_message(conn, "");
 		}
 		else {
-			/* Add data to the input buffer - within reason ... */
 			conn->bufp += n;
 			conn->buflen += n;
 			*(conn->bufp) = '\0';
+
+			if (strncmp(conn->buf, "size:", 5) == 0) {
+				/* Got a message with size data. Ok to test for this every time, since we will remove the 'size:' line when we have it all */
+				unsigned char *eosz = strchr(conn->buf, '\n');
+				if (eosz) {
+					int szlen = (eosz - conn->buf + 1);
+					conn->msgsz = atoi(conn->buf + 5);
+					conn->buflen -= szlen;
+					memmove(conn->buf, eosz+1, conn->buflen + 1);	/* Move the '\0' also */
+					conn->bufp = conn->buf + conn->buflen;
+				}
+			}
+
+			/* Add data to the input buffer - within reason ... */
 			if ((conn->bufsz - conn->buflen) < 2048) {
 				if (conn->bufsz < MAX_XYMON_INBUFSZ) {
 					conn->bufsz += XYMON_INBUF_INCREMENT;
