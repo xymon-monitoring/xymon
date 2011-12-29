@@ -4598,9 +4598,16 @@ int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userda
 				if (eosz) {
 					int szlen = (eosz - conn->buf + 1);
 					conn->msgsz = atoi(conn->buf + 5);
-					conn->buflen -= szlen;
-					memmove(conn->buf, eosz+1, conn->buflen + 1);	/* Move the '\0' also */
-					conn->bufp = conn->buf + conn->buflen;
+					if ((conn->msgsz <= 0) || (conn->msgsz > MAX_XYMON_INBUFSZ)) {
+						/* Invalid message size */
+						errprintf("Negative or huge size value in message from %s, dropping it\n", conn->sender);
+						conn->doingwhat = NOTALK;
+					}
+					else {
+						conn->buflen -= szlen;
+						memmove(conn->buf, eosz+1, conn->buflen + 1);	/* Move the '\0' also */
+						conn->bufp = conn->buf + conn->buflen;
+					}
 				}
 			}
 
