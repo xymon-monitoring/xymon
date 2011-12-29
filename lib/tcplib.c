@@ -1277,11 +1277,14 @@ void conn_close_connection(tcpconn_t *conn, char *direction)
 		break;
 
 	  default:
+		/* Encrypted connections can only do a full close */
+		if (!direction || (strcasecmp(direction, "rw") == 0)) {
 #ifdef HAVE_OPENSSL
-		if (conn->ssl) SSL_shutdown(conn->ssl);
+			if (conn->ssl) SSL_shutdown(conn->ssl);
 #endif
-		conn->connstate = CONN_CLOSING;
-		conn_cleanup(conn);
+			conn->connstate = CONN_CLOSING;
+			conn_cleanup(conn);
+		}
 	}
 }
 
