@@ -965,18 +965,19 @@ static int try_ssl_certload(SSL_CTX *ctx, char *certfn, char *keyfn)
 	const char *funcid = "try_ssl_certload";
 	int status;
 
-	if (!certfn || !keyfn) return -1;
+	if (!certfn) return -1;
 
 	SSL_CTX_set_default_passwd_cb(ctx, cert_password_cb);
-	SSL_CTX_set_default_passwd_cb_userdata(ctx, keyfn);
+	SSL_CTX_set_default_passwd_cb_userdata(ctx, (keyfn ? keyfn : certfn));
 
 	status = SSL_CTX_use_certificate_file(ctx, certfn , SSL_FILETYPE_PEM);
-	if (status == 1) status = SSL_CTX_use_PrivateKey_file(ctx, keyfn, SSL_FILETYPE_PEM);
+	if (status == 1) status = SSL_CTX_use_PrivateKey_file(ctx, (keyfn ? keyfn : certfn), SSL_FILETYPE_PEM);
 
 	if (status != 1) {
 		char sslerrmsg[256];
 		ERR_error_string(ERR_get_error(), sslerrmsg);
-		conn_info(funcid, INFO_ERROR, "Cannot load SSL server certificate/key %s/%s: %s\n", certfn, keyfn, sslerrmsg);
+		conn_info(funcid, INFO_ERROR, "Cannot load SSL server certificate/key %s/%s: %s\n", 
+			  certfn, (keyfn ? keyfn : "builtin"), sslerrmsg);
 		return -1;
 	}
 	return 0;
@@ -995,9 +996,13 @@ static int try_ssl_certload(SSL_CTX *ctx, char *certfn, char *keyfn)
  * local4 and local6 can be used to bind to a specific local
  * adresses in the IPv4 and IPv6 adress family.
  */
-void conn_init_server(int portnumber, int backlog, char *certfn, char *keyfn, int sslportnumber, char *local4, char *local6,
+void conn_init_server(int portnumber, int backlog, 
+		      char *certfn, char *keyfn, int sslportnumber, char *rootcafn, int requireclientcert,
+		      char *local4, char *local6,
 		      int (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
 {
+	static char *funcid = "conn_init_server";
+
 	signal(SIGPIPE, SIG_IGN);	/* socket I/O needs to ignore SIGPIPE */
 
 	if (portnumber) conn_listen(portnumber, backlog, 0, local4, local6, usercallback);
@@ -1010,8 +1015,24 @@ void conn_init_server(int portnumber, int backlog, char *certfn, char *keyfn, in
 	SSL_CTX_set_options(serverctx, (SSL_OP_NO_SSLv2 | SSL_OP_ALL));
 	SSL_CTX_set_quiet_shutdown(serverctx, 1);
 
-	if (sslportnumber && (try_ssl_certload(serverctx, certfn, keyfn) == 0)) 
+	if (sslportnumber && (try_ssl_certload(serverctx, certfn, keyfn) == 0)) {
+		if (rootcafn) {
+			int mode = SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE;
+
+			conn_info(funcid, INFO_INFO, "Enabled client certificate verification\n");
+
+			if (requireclientcert) mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+
+			if (SSL_CTX_load_verify_locations(serverctx, rootcafn, NULL) != 1)
+				conn_info(funcid, INFO_WARN, "Cannot open rootca file %s\n", rootcafn);
+			else {
+				SSL_CTX_set_client_CA_list(serverctx, SSL_load_client_CA_file(rootcafn));
+				SSL_CTX_set_verify(serverctx, mode, NULL);
+			}
+		}
+
 		conn_listen(sslportnumber, backlog, 1, local4, local6, usercallback);
+	}
 #endif
 }
 
@@ -1174,9 +1195,9 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 		newconn->ctx = SSL_CTX_new(SSLv23_client_method());
 		SSL_CTX_set_options(newconn->ctx, (SSL_OP_NO_SSLv2 | SSL_OP_ALL));
 		SSL_CTX_set_quiet_shutdown(newconn->ctx, 1);
-		if (certfn && keyfn) {
+		if (certfn) {
 			if (try_ssl_certload(newconn->ctx, certfn, keyfn) != 0) {
-				conn_info(funcid, INFO_ERROR, "Client certificate %s (key %s) not available\n", certfn, keyfn);
+				conn_info(funcid, INFO_ERROR, "Client certificate %s (key %s) not available\n", certfn, (keyfn ? keyfn : "included in certfile"));
 				conn_cleanup(newconn);
 				free(newconn);
 				return NULL;
@@ -1194,7 +1215,7 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 			return NULL;
 		}
 
-		if (certfn && keyfn) {
+		if (certfn) {
 			/* Verify that the certificate is working */
 			X509 *x509 = SSL_get_certificate(newconn->ssl);
 			if(x509 != NULL) {
@@ -1204,7 +1225,7 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 			}
 
 			if (!SSL_CTX_check_private_key(newconn->ctx)) {
-				conn_info(funcid, INFO_ERROR, "Private/public key mismatch for certificate %s (key %s)\n", certfn, keyfn);
+				conn_info(funcid, INFO_ERROR, "Private/public key mismatch for client certificate\n");
 				conn_cleanup(newconn);
 				free(newconn);
 				return NULL;

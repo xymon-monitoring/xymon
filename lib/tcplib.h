@@ -77,7 +77,9 @@ extern void add_fd(int sock, fd_set *fds, int *maxfd);
 
 extern void conn_register_infohandler(void (*cb)(time_t, const char *id, char *msg), enum infolevel_t level);
 
-extern void conn_init_server(int portnumber, int backlog, char *certfn, char *keyfn, int sslportnumber, char *local4, char *local6,
+extern void conn_init_server(int portnumber, int backlog, 
+			     char *certfn, char *keyfn, int sslportnumber, char *rootcafn, int requireclientcert,
+			     char *local4, char *local6,
 			     int (*usercallback)(tcpconn_t *, enum conn_callback_t, void *));
 
 extern void conn_init_client(void);

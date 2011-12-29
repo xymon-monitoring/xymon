@@ -4674,7 +4674,8 @@ int main(int argc, char *argv[])
 {
 	char *listenip4 = "0.0.0.0", *listenip6 = "::";
 	int listenport = 0, listensslport = 0;
-	char *certfn = NULL, *keyfn = NULL;
+	char *certfn = NULL, *keyfn = NULL, *rootcafn;
+	int requireclientcert = 0;
 	char *hostsfn = NULL;
 	char *restartfn = NULL;
 	char *logfn = NULL;
@@ -4766,6 +4767,13 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--ssl-port=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 			listensslport = atoi(p);
+		}
+		else if (argnmatch(argv[argi], "--ssl-clientrootca=")) {
+			char *p = strchr(argv[argi], '=') + 1;
+			rootcafn = strdup(p);
+		}
+		else if (argnmatch(argv[argi], "--ssl-requireclientcert")) {
+			requireclientcert = 1;
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
 			char *p = strchr(argv[argi], '=') + 1;
@@ -4975,7 +4983,9 @@ int main(int argc, char *argv[])
 	if (listenport) errprintf("Setting up network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listenport);
 	if (listensslport && certfn && keyfn) errprintf("Setting up SSL network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listensslport);
 	if (debug) conn_register_infohandler(NULL, INFO_DEBUG);
-	conn_init_server(listenport, listenq, certfn, keyfn, listensslport, listenip4, listenip6, server_callback);
+	conn_init_server(listenport, listenq, 
+			 certfn, keyfn, listensslport, rootcafn, requireclientcert,
+			 listenip4, listenip6, server_callback);
 
 	/* Go daemon */
 	if (daemonize) {
