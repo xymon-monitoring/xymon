@@ -173,7 +173,7 @@ int	 defaultvalidity = 30;	/* Minutes */
 typedef struct conn_t {
 	char *sender;
 	unsigned char *buf, *bufp;				/* Message buffer and pointer */
-	size_t buflen, bufsz, msgsz;			/* Active and maximum length of buffer */
+	size_t buflen, bufsz, msgsz;				/* Active and maximum length of buffer */
 	enum { NOTALK, RECEIVING, RESPONDING } doingwhat;	/* Communications state (NOTALK, READING, RESPONDING) */
 } conn_t;
 
@@ -4604,14 +4604,25 @@ int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userda
 						conn->doingwhat = NOTALK;
 					}
 					else {
+						/* 
+						 * Create a new buffer large enough for the entire message, 
+						 * so we need not do any realloc()'s later. Add 2 kB extra, to
+						 * avoid triggering the "grow-the-buffer" code just below.
+						 * And copy the remainder of the data after the "size:.." line
+						 * to the new buffer.
+						 */
+						unsigned char *newbuf = (unsigned char *)malloc(conn->msgsz + 2048);
 						conn->buflen -= szlen;
-						memmove(conn->buf, eosz+1, conn->buflen + 1);	/* Move the '\0' also */
+						// memmove(conn->buf, eosz+1, conn->buflen + 1);   /* Move the '\0' also */
+						strcpy(newbuf, eosz+1);
+						xfree(conn->buf);
+						conn->buf = newbuf;
 						conn->bufp = conn->buf + conn->buflen;
 					}
 				}
 			}
 
-			/* Add data to the input buffer - within reason ... */
+			/* Grow the input buffer - within reason ... */
 			if ((conn->bufsz - conn->buflen) < 2048) {
 				if (conn->bufsz < MAX_XYMON_INBUFSZ) {
 					conn->bufsz += XYMON_INBUF_INCREMENT;
