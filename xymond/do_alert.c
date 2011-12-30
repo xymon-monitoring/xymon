@@ -507,8 +507,7 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					/* Setup all of the environment for a paging script */
 					void *hinfo;
 					char *p;
-					int ip1=0, ip2=0, ip3=0, ip4=0;
-					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *bbnumeric, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
+					char *bbalphamsg, *ackcode, *rcpt, *bbhostname, *bbhostsvc, *bbhostsvccommas, *machip, *bbsvcname, *bbsvcnum, *bbcolorlevel, *recovered, *downsecs, *eventtstamp, *downsecsmsg, *cfidtxt;
 					char *alertid, *alertidenv;
 					int msglen;
 
@@ -547,17 +546,8 @@ void send_alert(activealerts_t *alert, FILE *logfd)
 					sprintf(bbhostsvccommas, "BBHOSTSVCCOMMAS=%s.%s", commafy(alert->hostname), alert->testname);
 					putenv(bbhostsvccommas);
 
-					bbnumeric = (char *)malloc(strlen("BBNUMERIC=") + 22 + 1);
-					p = bbnumeric;
-					p += sprintf(p, "BBNUMERIC=");
-					p += sprintf(p, "%03d", servicecode(alert->testname));
-					sscanf(alert->ip, "%d.%d.%d.%d", &ip1, &ip2, &ip3, &ip4);
-					p += sprintf(p, "%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
-					p += sprintf(p, "%d", alert->cookie);
-					putenv(bbnumeric);
-
-					machip = (char *)malloc(strlen("MACHIP=") + 13);
-					sprintf(machip, "MACHIP=%03d%03d%03d%03d", ip1, ip2, ip3, ip4);
+					machip = (char *)malloc(strlen("MACHIP=") + strlen(alert->ip) + 1);
+					sprintf(machip, "MACHIP=%s", alert->ip);
 					putenv(machip);
 
 					bbsvcname = (char *)malloc(strlen("BBSVCNAME=") + strlen(alert->testname) + 1);
