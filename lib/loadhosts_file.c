@@ -123,12 +123,13 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 {
 	/* Return value: 0 for load OK, 1 for "No files changed since last load", -1 for error (file not found) */
 	int prepresult;
-	int ip1, ip2, ip3, ip4, groupid, pageidx;
-	char hostname[4096], *dgname;
+	int groupid, pageidx;
+	char *hostname, *dgname;
 	pagelist_t *curtoppage, *curpage, *pgtail;
 	namelist_t *nametail = NULL;
 	void * htree;
 	char *cfgdata, *inbol, *ineol, insavchar;
+	char *lcopy = NULL;
 
 	load_hostinfo(NULL);
 
@@ -158,9 +159,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		return 1;
 	}
 
-	MEMDEFINE(hostname);
-	MEMDEFINE(l);
-
 	configloaded = 1;
 	initialize_hostlist();
 	curpage = curtoppage = pgtail = pghead;
@@ -170,6 +168,8 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 	htree = xtreeNew(strcasecmp);
 	inbol = cfgdata = hostscfg_content();
 	while (inbol && *inbol) {
+		char *key, *keyp;
+
 		inbol += strspn(inbol, " \t");
 		ineol = strchr(inbol, '\n'); 
 		if (ineol) {
@@ -179,6 +179,11 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			insavchar = *ineol;
 			*ineol = '\0';
 		}
+		if ((*inbol == '#') || (strlen(inbol) == 0)) goto nextline;
+
+		if (lcopy) xfree(lcopy);
+		lcopy = strdup(inbol);
+		key = strtok_r(lcopy, " \t\r\n", &keyp);
 
 		if (strncmp(inbol, "page", 4) == 0) {
 			pagelist_t *newp;
@@ -289,7 +294,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				}
 			}
 		}
-		else if (sscanf(inbol, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, hostname) == 5) {
+		else if (conn_is_ip(key) != 0) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
 			char clientname[4096];
@@ -297,23 +302,12 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			char groupidstr[10];
 			xtreePos_t handle;
 
-			if ( (ip1 < 0) || (ip1 > 255) ||
-			     (ip2 < 0) || (ip2 > 255) ||
-			     (ip3 < 0) || (ip3 > 255) ||
-			     (ip4 < 0) || (ip4 > 255)) {
-				errprintf("Invalid IPv4-address for host %s (nibble outside 0-255 range): %d.%d.%d.%d\n",
-					  hostname, ip1, ip2, ip3, ip4);
-				goto nextline;
-			}
-
 			namelist_t *newitem = calloc(1, sizeof(namelist_t));
 			namelist_t *iwalk, *iprev;
 
-			MEMDEFINE(clientname);
-			MEMDEFINE(downtime);
-
+			hostname = strtok_r(NULL, " \t\r\n", &keyp);
 			/* Hostname beginning with '@' are "no-display" hosts. But we still want them. */
-			if (*hostname == '@') memmove(hostname, hostname+1, strlen(hostname));
+			if (*hostname == '@') hostname++;
 
 			if (!fqdn) {
 				/* Strip any domain from the hostname */
@@ -321,15 +315,15 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				if (p) *p = '\0';
 			}
 
-			newitem->ip = (char *)malloc(40);
-			sprintf(newitem->ip, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
+			newitem->ip = strdup(key);
 			sprintf(groupidstr, "%d", groupid);
 			newitem->groupid = strdup(groupidstr);
 			newitem->dgname = (dgname ? strdup(dgname) : strdup("NONE"));
 			newitem->pageindex = pageidx++;
 
 			newitem->hostname = strdup(hostname);
-			if (ip1 || ip2 || ip3 || ip4) newitem->preference = 1; else newitem->preference = 0;
+			/* If the ip is a NULL ip, then this host has lower preference */
+			newitem->preference = ((strcmp(newitem->ip, "0.0.0.0") == 0) || (strcmp(newitem->ip, "::") == 0)) ? 0 : 1;
 			newitem->logname = strdup(newitem->hostname);
 			{ char *p = newitem->logname; while ((p = strchr(p, '.')) != NULL) { *p = '_'; } }
 			newitem->page = curpage;
@@ -434,9 +428,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->clientname = xmh_find_item(newitem, XMH_CLIENTALIAS);
 			if (newitem->clientname == NULL) newitem->clientname = newitem->hostname;
 			newitem->downtime = xmh_find_item(newitem, XMH_DOWNTIME);
-
-			MEMUNDEFINE(clientname);
-			MEMUNDEFINE(downtime);
 		}
 
 
@@ -451,12 +442,10 @@ nextline:
 			inbol = NULL;
 	}
 
+	if (lcopy) xfree(lcopy);
 	xfree(cfgdata);
 	if (dgname) xfree(dgname);
 	xtreeDestroy(htree);
-
-	MEMUNDEFINE(hostname);
-	MEMUNDEFINE(l);
 
 	build_hosttree();
 
