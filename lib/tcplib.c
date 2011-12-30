@@ -1402,3 +1402,25 @@ char *conn_lookup_ip(char *hostname, int *portnumber)
 		return NULL;
 }
 
+
+int conn_is_ip(char *ip)
+{
+	int res = 0;
+
+#ifdef IPV4_SUPPORT
+	if (!res) {
+		struct in_addr addr;
+		res = (inet_pton(AF_INET, ip, &addr) == 1) ? 4 : 0;
+	}
+#endif
+
+#ifdef IPV6_SUPPORT
+	if (!res) {
+		struct in6_addr addr;
+		res = (inet_pton(AF_INET6, ip, &addr) == 1) ? 6 : 0;
+	}
+#endif
+
+	return res;
+}
+

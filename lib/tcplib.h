@@ -101,6 +101,7 @@ extern void conn_deinit(void);
 
 extern int conn_lookup_portnumber(char *svcname, int defaultport);
 extern char *conn_lookup_ip(char *hostname, int *portnumber);
+extern int conn_is_ip(char *ip);
 
 #endif
 
