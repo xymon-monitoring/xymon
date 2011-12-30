@@ -218,7 +218,7 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		ip = conn_lookup_ip(targets[i]->targetip, &portnum);
 
 		myconn = (myconn_t *)calloc(1, sizeof(myconn_t));
-		sprintf(myconn->szbuf, "size:%d\n", strlen(msg));
+		sprintf(myconn->szbuf, "size:%d\n", (int)strlen(msg));
 		myconn->szptr = myconn->szbuf;
 		myconn->writebuf = msg;
 		myconn->peer = strdup(ip ? ip : "");
