@@ -401,27 +401,6 @@ void sanitize_input(strbuffer_t *l, int stripcomment, int unescape)
 }
 
 
-unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4)
-{
-	return ((ip1 << 24) | (ip2 << 16) | (ip3 << 8) | (ip4));
-}
-
-char *u32toIP(unsigned int ip32)
-{
-	int ip1, ip2, ip3, ip4;
-	static char *result = NULL;
-
-	if (result == NULL) result = (char *)malloc(16);
-
-	ip1 = ((ip32 >> 24) & 0xFF);
-	ip2 = ((ip32 >> 16) & 0xFF);
-	ip3 = ((ip32 >> 8) & 0xFF);
-	ip4 = (ip32 & 0xFF);
-
-	sprintf(result, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-	return result;
-}
-
 const char *textornull(const char *text)
 {
 	return (text ? text : "(NULL)");

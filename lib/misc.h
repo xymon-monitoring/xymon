@@ -27,8 +27,6 @@ extern char *msg_data(char *msg);
 extern char *gettok(char *s, char *delims);
 extern char *wstok(char *s);
 extern void sanitize_input(strbuffer_t *l, int stripcomment, int unescape);
-extern unsigned int IPtou32(int ip1, int ip2, int ip3, int ip4);
-extern char *u32toIP(unsigned int ip32);
 extern const char *textornull(const char *text);
 extern int get_fqdn(void);
 extern int generate_static(void);
