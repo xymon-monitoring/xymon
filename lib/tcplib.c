@@ -725,9 +725,10 @@ int conn_write(tcpconn_t *conn, void *buf, size_t count)
 /*
  * Remove dead connections from the connection list.
  */
-void conn_trimactive(void)
+int conn_trimactive(void)
 {
 	tcpconn_t *newhead = NULL, *current;
+	int result = 0;
 
 	while (conns) {
 		current = conns;
@@ -736,6 +737,7 @@ void conn_trimactive(void)
 		if (current->connstate != CONN_DEAD) {
 			current->next = newhead;
 			newhead = current;
+			result++;
 		}
 		else {
 			current->usercallback(current, CONN_CB_CLEANUP, current->userdata);
@@ -744,6 +746,7 @@ void conn_trimactive(void)
 	}
 
 	conns = newhead;
+	return result;
 }
 
 

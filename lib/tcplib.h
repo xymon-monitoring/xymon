@@ -94,8 +94,7 @@ extern int conn_read(tcpconn_t *conn, void *buf, size_t sz);
 extern int conn_write(tcpconn_t *conn, void *buf, size_t count);
 extern void conn_close_connection(tcpconn_t *conn, char *direction);
 
-extern int conn_active(void);
-extern void conn_trimactive(void);
+extern int conn_trimactive(void);
 
 extern void conn_deinit(void);
 
