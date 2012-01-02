@@ -85,6 +85,27 @@ void add_timestamp(const char *msg)
 	}
 }
 
+int ntimerms(struct timespec *start, struct timespec *now)
+{
+	struct timespec tdiff;
+
+	/* See how long the query took */
+	if (now) {
+		memcpy(&tdiff, now, sizeof(struct timespec));
+	}
+	else {
+		getntimer(&tdiff);
+	}
+
+	if (tdiff.tv_nsec < start->tv_nsec) {
+		tdiff.tv_sec--;
+		tdiff.tv_nsec += 1000000000;
+	}
+	tdiff.tv_sec  -= start->tv_sec;
+	tdiff.tv_nsec -= start->tv_nsec;
+	return (tdiff.tv_sec*1000 + tdiff.tv_nsec/1000000);
+}
+
 void show_timestamps(char **buffer)
 {
 	timestamp_t *s;
