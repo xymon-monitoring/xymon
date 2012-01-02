@@ -72,6 +72,8 @@ typedef struct myconn_t {
 	void *dnschannel;
 	enum { DNS_NOTDONE, DNS_QUERY_READY, DNS_QUERY_ACTIVE, DNS_QUERY_COMPLETED, DNS_FINISHED } dnsstatus;
 	struct myconn_t *dnsnext;
+	struct timespec dnsstarttime;
+	int dnstimeout;
 
 	struct myconn_t *next;
 } myconn_t;

@@ -170,6 +170,7 @@ void dns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int 
 {
 	myconn_t *rec = (myconn_t *)arg;
 
+	rec->elapsedms = ntimerms(&rec->dnsstarttime, NULL);
 	rec->dnsstatus = DNS_QUERY_COMPLETED;
 	rec->talkresult = TALK_BADDATA; /* We'll set an explicit OK or timeout status below */
 

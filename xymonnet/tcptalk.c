@@ -553,7 +553,7 @@ void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, cha
 	else if (dialog == dns_dialog) {
 		newtest->talkprotocol = TALK_PROTO_DNS;
 		newtest->dnsstatus = DNS_NOTDONE;
-		build_dns_request(newtest);
+		dns_init_channel(newtest);
 		/* The DNS-specific routines handle the rest */
 	}
 	else {
@@ -573,12 +573,14 @@ void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, cha
 }
 
 
-#define TIMEOUT 60
+#define CONCURRENCY 20
+#define TIMEOUT 10
 
 void run_tcp_tests(void)
 {
 	myconn_t *nexttesttoadd = testhead;
 	int maxfd;
+	int activecount_conn, activecount_dns;
 
 	/* Loop to process data */
 	do {
@@ -587,7 +589,7 @@ void run_tcp_tests(void)
 		struct timeval tmo;
 
 		/* Start some more tests */
-		while (nexttesttoadd && (activetests < 20)) {
+		while (nexttesttoadd && (activetests < CONCURRENCY)) {
 			switch (nexttesttoadd->talkprotocol) {
 			  case TALK_PROTO_PLAIN:
 			  case TALK_PROTO_HTTP:
@@ -605,7 +607,7 @@ void run_tcp_tests(void)
 				break;
 
 			  case TALK_PROTO_DNS:
-				if (start_dns_query(nexttesttoadd, nexttesttoadd->netparams.destinationip)) {
+				if (dns_start_query(nexttesttoadd, nexttesttoadd->netparams.destinationip, TIMEOUT)) {
 					activetests++;
 					nexttesttoadd = nexttesttoadd->next;
 				}
@@ -633,10 +635,10 @@ void run_tcp_tests(void)
 			fprintf(stderr, "No more active fds\n");
 		}
 
-		conn_trimactive();
-		dns_trimactive();
+		activecount_conn = conn_trimactive();
+		activecount_dns = dns_trimactive();
 	}
-	while (conn_active() && (maxfd > 0));
+	while ((activecount_conn || activecount_dns) && (maxfd > 0));
 }
 
 void showtext(char *s)
@@ -662,11 +664,11 @@ int main(int argc, char **argv)
 	conn_register_infohandler(NULL, 7);
 	conn_init_client();
 
-	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog);
-	add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog);
-	add_tcp_test("172.16.10.3", 123, NULL, "ntp", ntp_dialog);
-	add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog);
-	add_tcp_test("89.150.129.22", 53, NULL, "www.xymon.com", dns_dialog);
+	//add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog);
+	//add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog);
+	//add_tcp_test("172.16.10.3", 123, NULL, "ntp", ntp_dialog);
+	//add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog);
+	add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog);
 
 	run_tcp_tests();
 

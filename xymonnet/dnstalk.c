@@ -22,6 +22,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 
 static myconn_t *dnshead = NULL;
 
+
 static void destroy_addr_list(struct ares_addr_node *head)
 {
 	while(head)
@@ -47,7 +48,7 @@ static void append_addr_list(struct ares_addr_node **head, struct ares_addr_node
 		*head = node;
 }
 
-void build_dns_request(myconn_t *rec)
+void dns_init_channel(myconn_t *rec)
 {
 	static int libstatus = -1;
 	ares_channel *channel;
@@ -67,7 +68,7 @@ void build_dns_request(myconn_t *rec)
 }
 
 
-int start_dns_query(myconn_t *rec, char *targetserver)
+int dns_start_query(myconn_t *rec, char *targetserver, int timeout)
 {
 	struct ares_addr_node *srvr, *servers = NULL;
 	ares_channel *channel = rec->dnschannel;
@@ -97,7 +98,7 @@ int start_dns_query(myconn_t *rec, char *targetserver)
 	options.flags = ARES_FLAG_NOCHECKRESP;
 	options.servers = NULL;
 	options.nservers = 0;
-	options.timeout = 120;	/* FIXME */
+	options.timeout = timeout;
 	status = ares_init_options(rec->dnschannel, &options, optmask);
 	if (status != ARES_SUCCESS) {
 		rec->dnsstatus = DNS_FINISHED;
@@ -108,7 +109,7 @@ int start_dns_query(myconn_t *rec, char *targetserver)
 	destroy_addr_list(servers);
 	if (status != ARES_SUCCESS)
 	{
-		fprintf(stderr, "ares_init_options: %s\n", ares_strerror(status));
+		errprintf("ares_init_options: %s\n", ares_strerror(status));
 		return 1;
 	}
 
@@ -130,14 +131,16 @@ int start_dns_query(myconn_t *rec, char *targetserver)
 			*p = ':';
 		}
 
+		/* Use ares_query() here, since we dont want to get results from hosts file or other odd stuff. */
 		ares_query(*channel, tlookup, aclass, atype, dns_callback, rec);
-		// ares_search(*channel, tlookup, aclass, atype, dnscallback, rec);
 		tst = strtok(NULL, ",");
 	} while (tst);
 
 	xfree(tdup);
 
 	rec->textlog = newstrbuffer(0);
+	getntimer(&rec->dnsstarttime);
+	rec->dnstimeout = timeout*1000;
 	rec->dnsstatus = DNS_QUERY_ACTIVE;
 
 	return 1;
@@ -175,17 +178,38 @@ void dns_process_active(fd_set *fdread, fd_set *fdwrite)
 	}
 }
 
-void dns_trimactive(void)
+int dns_trimactive(void)
 {
 	myconn_t *walk;
 	ares_channel *channel;
+	int result = 0;
+	struct timespec now;
 
+	getntimer(&now);
 	for (walk = dnshead; (walk); walk = walk->dnsnext) {
-		if (walk->dnsstatus != DNS_QUERY_COMPLETED) continue;
-
 		channel = (ares_channel *)walk->dnschannel;
-		ares_destroy(*channel);
-		walk->dnsstatus = DNS_FINISHED;
+
+		switch (walk->dnsstatus) {
+		  case DNS_QUERY_ACTIVE:
+			if (ntimerms(&walk->dnsstarttime, &now) > walk->dnstimeout) {
+				/* Timeout, kill the query */
+				ares_destroy(*channel);
+				walk->dnsstatus = DNS_FINISHED;
+			}
+			else
+				result++;
+			break;
+
+		  case DNS_QUERY_COMPLETED:
+			ares_destroy(*channel);
+			walk->dnsstatus = DNS_FINISHED;
+			break;
+
+		  default:
+			break;
+		}
 	}
+
+	return result;
 }
 
