@@ -62,19 +62,22 @@ static char *ntp_dialog[] = { NULL };
 static char *dns_dialog[] = { NULL };
 
 typedef struct connlist_t {
+	char *listname;
 	myconn_t *head, *tail;
 	int len;
 } connlist_t;
 
-connlist_t pendingtests = { NULL, NULL, 0 };
-connlist_t activetests = { NULL, NULL, 0 };
-connlist_t donetests = { NULL, NULL, 0 };
-connlist_t failedtests = { NULL, NULL, 0 };
+connlist_t pendingtests = { "pending", NULL, NULL, 0 };
+connlist_t activetests = { "active", NULL, NULL, 0 };
+connlist_t donetests = { "done", NULL, NULL, 0 };
+connlist_t failedtests = { "failed", NULL, NULL, 0 };
 static int totaltests = 0;		/* Total number of tests */
 
 
 static void list_item_move(connlist_t *tolist, connlist_t *fromlist, myconn_t *rec)
 {
+	dbgprintf("Moving test %s from %s to %s\n", rec->testspec, (fromlist ? fromlist->listname : "<null>"), tolist->listname);
+
 	if (fromlist) {
 		if (rec == fromlist->head) {
 			/* Removing the head of the list */
@@ -95,13 +98,14 @@ static void list_item_move(connlist_t *tolist, connlist_t *fromlist, myconn_t *r
 	}
 
 	if (tolist->tail) {
-		rec->previous = tolist->tail;
 		tolist->tail->next = rec;
 		tolist->tail = rec;
+		rec->previous = tolist->tail;
+		rec->next = NULL;
 	}
 	else {
 		tolist->head = tolist->tail = rec;
-		rec->previous = NULL;
+		rec->previous = rec->next = NULL;
 	}
 
 	tolist->len += 1;
@@ -671,7 +675,7 @@ void run_tcp_tests(void)
 		conn_trimactive();
 		dns_trimactive();
 	}
-	while ((maxfd > 0) && (activetests.len || pendingtests.len));
+	while ((activetests.len || pendingtests.len));
 }
 
 void test_is_done(myconn_t *rec)
@@ -699,13 +703,16 @@ int main(int argc, char **argv)
 	myconn_t *walk;
 
 	debug = 1;
-	conn_register_infohandler(NULL, 7);
+	// conn_register_infohandler(NULL, 7);
 	conn_init_client();
 
 	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog);
 	add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog);
+	add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog);
 	add_tcp_test("172.16.10.3", 123, NULL, "ntp", ntp_dialog);
 	add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog);
+	add_tcp_test("89.150.129.22", 53, NULL, "www.sslug.dk", dns_dialog);
+	add_tcp_test("89.150.129.22", 53, NULL, "www.csc.dk", dns_dialog);
 	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog);
 
 	run_tcp_tests();
