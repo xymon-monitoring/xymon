@@ -70,7 +70,6 @@ void dns_init_channel(myconn_t *rec)
 int dns_start_query(myconn_t *rec, char *targetserver)
 {
 	struct ares_addr_node *srvr, *servers = NULL;
-	ares_channel *channel = rec->dnschannel;
 	struct ares_options options;
 	int status, optmask;
 	char *tdup, *tst;
@@ -115,7 +114,7 @@ int dns_start_query(myconn_t *rec, char *targetserver)
 		return 0;
 	}
 
-	status = ares_set_servers(*channel, servers);
+	status = ares_set_servers(*((ares_channel *)rec->dnschannel), servers);
 	destroy_addr_list(servers);
 	if (status != ARES_SUCCESS)
 	{
@@ -142,7 +141,7 @@ int dns_start_query(myconn_t *rec, char *targetserver)
 		}
 
 		/* Use ares_query() here, since we dont want to get results from hosts file or other odd stuff. */
-		ares_query(*channel, tlookup, aclass, atype, dns_callback, rec);
+		ares_query(*((ares_channel *)rec->dnschannel), tlookup, aclass, atype, dns_query_callback, rec);
 		tst = strtok(NULL, ",");
 	} while (tst);
 
@@ -159,15 +158,13 @@ int dns_start_query(myconn_t *rec, char *targetserver)
 int dns_add_active_fds(int *maxfd, fd_set *fdread, fd_set *fdwrite)
 {
 	myconn_t *walk;
-	ares_channel *channel;
 	int n, activecount = 0;
 
 	for (walk = dnshead; (walk); walk = walk->dnsnext) {
 		if (walk->dnsstatus != DNS_QUERY_ACTIVE) continue;
 
 		activecount++;
-		channel = (ares_channel *)walk->dnschannel;
-		n = ares_fds(*channel, fdread, fdwrite);
+		n = ares_fds(*((ares_channel *)walk->dnschannel), fdread, fdwrite);
 		if (n > *maxfd) *maxfd = n;
 	}
 
@@ -177,20 +174,17 @@ int dns_add_active_fds(int *maxfd, fd_set *fdread, fd_set *fdwrite)
 void dns_process_active(fd_set *fdread, fd_set *fdwrite)
 {
 	myconn_t *walk;
-	ares_channel *channel;
 
 	for (walk = dnshead; (walk); walk = walk->dnsnext) {
 		if (walk->dnsstatus != DNS_QUERY_ACTIVE) continue;
 
-		channel = (ares_channel *)walk->dnschannel;
-		ares_process(*channel, fdread, fdwrite);
+		ares_process(*((ares_channel *)walk->dnschannel), fdread, fdwrite);
 	}
 }
 
 int dns_trimactive(void)
 {
 	myconn_t *walk;
-	ares_channel *channel;
 	int result = 0;
 
 	for (walk = dnshead; (walk); walk = walk->dnsnext) {
@@ -199,8 +193,7 @@ int dns_trimactive(void)
 			continue;
 		}
 
-		channel = (ares_channel *)walk->dnschannel;
-		ares_destroy(*channel);
+		ares_destroy(*((ares_channel *)walk->dnschannel));
 		walk->dnsstatus = DNS_FINISHED;
 	}
 
