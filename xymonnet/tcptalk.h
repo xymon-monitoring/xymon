@@ -28,7 +28,7 @@ typedef struct myconn_netparams_t {
 typedef struct myconn_t {
 	char *testspec;
 	myconn_netparams_t netparams;
-	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNS } talkprotocol;
+	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY } talkprotocol;
 	char **dialog;				/* SEND/EXPECT/READ/CLOSE steps */
 
 	/* Results and statistics */
@@ -74,11 +74,13 @@ typedef struct myconn_t {
 	struct myconn_t *dnsnext;
 	struct timespec dnsstarttime;
 
-	struct myconn_t *next;
+	struct myconn_t *next, *previous;
 } myconn_t;
 
 extern int client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata);
 extern char **tcp_set_dialog(myconn_t *rec, char *service);
+extern void test_is_done(myconn_t *rec);
+
 
 #endif
 

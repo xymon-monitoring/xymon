@@ -11,7 +11,7 @@
 #ifndef __DNSBITS_H__
 #define __DNSBITS_H__
 
-extern void dns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
+extern void dns_query_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
 extern void dns_print_response(unsigned char *abuf, int alen, strbuffer_t *log);
 extern int dns_name_type(char *name);
 extern int dns_name_class(char *name);

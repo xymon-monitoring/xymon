@@ -166,7 +166,7 @@ static const char *type_name(int type);
 static const char *class_name(int dnsclass);
 
 
-void dns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen)
+void dns_query_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen)
 {
 	myconn_t *rec = (myconn_t *)arg;
 
@@ -194,6 +194,7 @@ void dns_callback(void *arg, int status, int timeouts, unsigned char *abuf, int 
 	}
 
 	dns_print_response(abuf, alen, rec->textlog);
+	test_is_done(rec);
 }
 
 

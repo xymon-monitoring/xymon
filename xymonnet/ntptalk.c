@@ -17,6 +17,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include <arpa/inet.h>
 
 #include "libxymon.h"
+#include "tcptalk.h"
 #include "ntptalk.h"
 
 /* begin OS deps */
@@ -187,6 +188,7 @@ int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
 		if (rec) {
 			connection->userdata = NULL;
+			test_is_done(rec);
 		}
 		return 0;
 
