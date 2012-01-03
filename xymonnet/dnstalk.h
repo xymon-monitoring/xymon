@@ -12,7 +12,7 @@
 #define __DNSTALK_H__
 
 extern void dns_init_channel(myconn_t *rec);
-extern int dns_start_query(myconn_t *rec, char *targetserver, int timeout);
+extern int dns_start_query(myconn_t *rec, char *targetserver);
 extern int dns_add_active_fds(int *maxfd, fd_set *fdread, fd_set *fdwrite);
 extern void dns_process_active(fd_set *fdread, fd_set *fdwrite);
 extern int dns_trimactive(void);

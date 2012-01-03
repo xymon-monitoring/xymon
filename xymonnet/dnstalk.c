@@ -22,7 +22,6 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 
 static myconn_t *dnshead = NULL;
 
-
 static void destroy_addr_list(struct ares_addr_node *head)
 {
 	while(head)
@@ -68,7 +67,7 @@ void dns_init_channel(myconn_t *rec)
 }
 
 
-int dns_start_query(myconn_t *rec, char *targetserver, int timeout)
+int dns_start_query(myconn_t *rec, char *targetserver)
 {
 	struct ares_addr_node *srvr, *servers = NULL;
 	ares_channel *channel = rec->dnschannel;
@@ -94,11 +93,22 @@ int dns_start_query(myconn_t *rec, char *targetserver, int timeout)
 		return 0;
 	}
 
-	optmask = ARES_OPT_FLAGS | ARES_OPT_SERVERS | ARES_OPT_TIMEOUT;
+	/* 
+	 * The C-ARES timeout handling is a bit complicated. The timeout setting
+	 * here in the options only determines the timeout for the first query;
+	 * subsequent queries (up to the "tries" count) use a progressively
+	 * higher timeout setting.
+	 * So we cannot easily determine what combination of timeout/tries will
+	 * result in the full query timing out after the desired number of seconds.
+	 * Therefore, use a fixed set of values - the 2000 ms / 4 tries combination
+	 * results in a timeout after 23-24 seconds.
+	 */
+	optmask = ARES_OPT_FLAGS | ARES_OPT_SERVERS | ARES_OPT_TIMEOUTMS | ARES_OPT_TRIES;
 	options.flags = ARES_FLAG_NOCHECKRESP;
 	options.servers = NULL;
 	options.nservers = 0;
-	options.timeout = timeout;
+	options.timeout = 2000;
+	options.tries = 4;
 	status = ares_init_options(rec->dnschannel, &options, optmask);
 	if (status != ARES_SUCCESS) {
 		rec->dnsstatus = DNS_FINISHED;
@@ -109,7 +119,7 @@ int dns_start_query(myconn_t *rec, char *targetserver, int timeout)
 	destroy_addr_list(servers);
 	if (status != ARES_SUCCESS)
 	{
-		errprintf("ares_init_options: %s\n", ares_strerror(status));
+		errprintf("ares_init_options failed: %s\n", ares_strerror(status));
 		return 1;
 	}
 
@@ -140,7 +150,6 @@ int dns_start_query(myconn_t *rec, char *targetserver, int timeout)
 
 	rec->textlog = newstrbuffer(0);
 	getntimer(&rec->dnsstarttime);
-	rec->dnstimeout = timeout*1000;
 	rec->dnsstatus = DNS_QUERY_ACTIVE;
 
 	return 1;
@@ -183,31 +192,16 @@ int dns_trimactive(void)
 	myconn_t *walk;
 	ares_channel *channel;
 	int result = 0;
-	struct timespec now;
 
-	getntimer(&now);
 	for (walk = dnshead; (walk); walk = walk->dnsnext) {
-		channel = (ares_channel *)walk->dnschannel;
-
-		switch (walk->dnsstatus) {
-		  case DNS_QUERY_ACTIVE:
-			if (ntimerms(&walk->dnsstarttime, &now) > walk->dnstimeout) {
-				/* Timeout, kill the query */
-				ares_destroy(*channel);
-				walk->dnsstatus = DNS_FINISHED;
-			}
-			else
-				result++;
-			break;
-
-		  case DNS_QUERY_COMPLETED:
-			ares_destroy(*channel);
-			walk->dnsstatus = DNS_FINISHED;
-			break;
-
-		  default:
-			break;
+		if (walk->dnsstatus != DNS_QUERY_COMPLETED) {
+			result++;
+			continue;
 		}
+
+		channel = (ares_channel *)walk->dnschannel;
+		ares_destroy(*channel);
+		walk->dnsstatus = DNS_FINISHED;
 	}
 
 	return result;

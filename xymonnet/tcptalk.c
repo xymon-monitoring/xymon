@@ -607,7 +607,7 @@ void run_tcp_tests(void)
 				break;
 
 			  case TALK_PROTO_DNS:
-				if (dns_start_query(nexttesttoadd, nexttesttoadd->netparams.destinationip, TIMEOUT)) {
+				if (dns_start_query(nexttesttoadd, nexttesttoadd->netparams.destinationip)) {
 					activetests++;
 					nexttesttoadd = nexttesttoadd->next;
 				}
