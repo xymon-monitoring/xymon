@@ -388,14 +388,15 @@ static int listen_port(tcpconn_t *ls, int portnumber, int backlog, char *localad
  * The listener socket(s) are put in the "lsocks" list and the conn_process_listeners()
  * routine will scan them to see if there are new inbound connections.
  */
-int conn_listen(int portnumber, int backlog, int withssl, char *local4, char *local6, int (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
+int conn_listen(int portnumber, int backlog, enum sslhandling_t  sslhandling, char *local4, char *local6, 
+		enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
 {
 	const char *funcid = "conn_listen";
 	tcpconn_t *ls;
 
 #ifdef IPV4_SUPPORT
 	ls = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
-	ls->connstate = (withssl ? CONN_SSL_INIT : CONN_PLAINTEXT);
+	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
 	ls->usercallback = usercallback;
 	ls->family = AF_INET;
 	ls->peersz = sizeof(struct sockaddr_in);
@@ -413,7 +414,7 @@ int conn_listen(int portnumber, int backlog, int withssl, char *local4, char *lo
 
 #ifdef IPV6_SUPPORT
 	ls = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
-	ls->connstate = (withssl ? CONN_SSL_INIT : CONN_PLAINTEXT);
+	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
 	ls->usercallback = usercallback;
 	ls->family = AF_INET6;
 	ls->peersz = sizeof(struct sockaddr_in6);
@@ -504,6 +505,81 @@ static void try_ssl_connect(tcpconn_t *conn)
 #endif
 }
 
+static void try_ssl_starttls(tcpconn_t *conn)
+{
+#ifdef HAVE_OPENSSL
+	const char *funcid = "try_ssl_starttls";
+	int sslresult;
+
+	sslresult = SSL_do_handshake(conn->ssl);
+	if (sslresult == 1) {
+		conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_OK, conn->userdata);
+		conn->connstate = CONN_SSL_READY;
+		conn_info(funcid, INFO_INFO, "SSL connection established with %s\n", conn_print_address(conn));
+	}
+	else if (sslresult == 0) {
+		/* SSL handshake failed */
+		conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_FAILED, conn->userdata);
+		SSL_get_error(conn->ssl, sslresult);
+		conn_info(funcid, INFO_ERROR, "SSL connection failed to %s\n", conn_print_address(conn));
+		conn->connstate = CONN_CLOSING;
+	}
+	else if (sslresult == -1) {
+		switch (SSL_get_error(conn->ssl, sslresult)) {
+		  case SSL_ERROR_WANT_READ: conn->connstate = CONN_SSL_STARTTLS_READ; break;
+		  case SSL_ERROR_WANT_WRITE: conn->connstate = CONN_SSL_STARTTLS_WRITE; break;
+		  default: 
+			{
+				char sslerrmsg[256];
+				ERR_error_string(ERR_get_error(), sslerrmsg);
+				conn_info(funcid, INFO_ERROR, "SSL error during starttls with %s: %s\n", 
+					  conn_print_address(conn), sslerrmsg);
+			}
+			conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_FAILED, conn->userdata);
+			conn->connstate = CONN_CLOSING;
+			break;
+		}
+	}
+#endif
+}
+
+int conn_starttls(tcpconn_t *conn)
+{
+	const char *funcid = "conn_starttls";
+
+#ifdef HAVE_OPENSSL
+	if (!conn->ssl) {
+		conn_info(funcid, INFO_ERROR, "starttls failed, SSL certificate not prepared\n");
+		return 1;
+	}
+
+	switch (conn->sslhandling) {
+	  case CONN_SSL_STARTTLS_SERVER:
+		SSL_set_accept_state(conn->ssl);
+		break;
+	  case CONN_SSL_STARTTLS_CLIENT:
+		SSL_set_connect_state(conn->ssl);
+		break;
+	  default:
+		conn_info(funcid, INFO_ERROR, "starttls failed, not requested when socket was created\n");
+		return 1;
+	}
+
+	/* The SSL ctx and ssl settings have been setup when the socket was created */
+	if (SSL_set_fd(conn->ssl, conn->sock) != 1) {
+		char sslerrmsg[256];
+		ERR_error_string(ERR_get_error(), sslerrmsg);
+		conn_info(funcid, INFO_ERROR, "starttls failed for %s: %s\n", conn_print_address(conn), sslerrmsg);
+		return 1;
+	}
+
+	try_ssl_starttls(conn);
+	return 0;
+#else
+	return 1;
+#endif
+}
+
 /* 
  * Accept an incoming connection.
  *
@@ -545,7 +621,7 @@ tcpconn_t *conn_accept(tcpconn_t *ls)
 		break;
 	}
 
-	if (ls->usercallback(newconn, CONN_CB_NEWCONNECTION, NULL) != 0) {
+	if (ls->usercallback(newconn, CONN_CB_NEWCONNECTION, NULL) != CONN_CBRESULT_OK) {
 		/* User rejects connection */
 		newconn->connstate = CONN_CLOSING;
 	}
@@ -601,6 +677,13 @@ static int try_ssl_io(tcpconn_t *conn, enum io_action_t action, void *buf, size_
 	  case CONN_SSL_CONNECT_WRITE:
 		/* Re-try an SSL_connect() after having done SSL handshake */
 		try_ssl_connect(conn);
+		n = 0;
+		break;
+
+	  case CONN_SSL_STARTTLS_READ:
+	  case CONN_SSL_STARTTLS_WRITE:
+		/* Re-try an SSL_handshake() after having done SSL handshake */
+		try_ssl_starttls(conn);
 		n = 0;
 		break;
 
@@ -791,8 +874,8 @@ int conn_fdset(fd_set *fdread, fd_set *fdwrite)
 
 		  case CONN_PLAINTEXT:
 		  case CONN_SSL_READY:
-			wantread = walk->usercallback(walk, CONN_CB_READCHECK, walk->userdata); if (wantread) add_fd(walk->sock, fdread, &maxfd);
-			wantwrite = walk->usercallback(walk, CONN_CB_WRITECHECK, walk->userdata); if (wantwrite) add_fd(walk->sock, fdwrite, &maxfd);
+			wantread = (walk->usercallback(walk, CONN_CB_READCHECK, walk->userdata) == CONN_CBRESULT_OK); if (wantread) add_fd(walk->sock, fdread, &maxfd);
+			wantwrite = (walk->usercallback(walk, CONN_CB_WRITECHECK, walk->userdata) == CONN_CBRESULT_OK); if (wantwrite) add_fd(walk->sock, fdwrite, &maxfd);
 			if (!wantread && !wantwrite) {
 				/* Must be done with this socket */
 				walk->connstate = CONN_CLOSING;
@@ -802,6 +885,7 @@ int conn_fdset(fd_set *fdread, fd_set *fdwrite)
 
 		  case CONN_SSL_ACCEPT_READ:
 		  case CONN_SSL_CONNECT_READ:
+		  case CONN_SSL_STARTTLS_READ:
 		  case CONN_SSL_READ:
 			/* We're doing SSL handshake and the library needs to read data */
 			add_fd(walk->sock, fdread, &maxfd);
@@ -809,6 +893,7 @@ int conn_fdset(fd_set *fdread, fd_set *fdwrite)
 
 		  case CONN_SSL_ACCEPT_WRITE:
 		  case CONN_SSL_CONNECT_WRITE:
+		  case CONN_SSL_STARTTLS_WRITE:
 		  case CONN_SSL_WRITE:
 			/* We're doing SSL handshake and the library needs to write data */
 		  case CONN_SSL_CONNECTING:
@@ -852,8 +937,10 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 	conn_getntimer(&tnow);
 
 	for (walk = conns; (walk); walk = walk->next) {
+		enum conn_cbresult_t cbres = CONN_CBRESULT_OK;
+
 		if (FD_ISSET(walk->sock, fdread)) {
-			walk->usercallback(walk, CONN_CB_READ, walk->userdata);
+			cbres = walk->usercallback(walk, CONN_CB_READ, walk->userdata);
 			if (walk->connstate == CONN_DEAD) continue;
 		}
 
@@ -881,18 +968,21 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 					}
 
 					if ((walk->connstate == CONN_PLAINTEXT) || (walk->connstate == CONN_SSL_READY)) {
-						if (walk->usercallback(walk, CONN_CB_WRITECHECK, walk->userdata))
-							walk->usercallback(walk, CONN_CB_WRITE, walk->userdata);
+						if (walk->usercallback(walk, CONN_CB_WRITECHECK, walk->userdata) == CONN_CBRESULT_OK)
+							cbres = walk->usercallback(walk, CONN_CB_WRITE, walk->userdata);
 					}
 				}
 				break;
 
 			  default:
-				walk->usercallback(walk, CONN_CB_WRITE, walk->userdata);
+				cbres = walk->usercallback(walk, CONN_CB_WRITE, walk->userdata);
 				break;
 			}
 
 			if (walk->connstate == CONN_DEAD) continue;
+
+			if (cbres == CONN_CBRESULT_STARTTLS)
+				conn_starttls(walk);
 		}
 
 		if (walk->maxlifetime && (conn_elapsedms(&walk->starttime, &tnow) > walk->maxlifetime)) {
@@ -1002,7 +1092,7 @@ static int try_ssl_certload(SSL_CTX *ctx, char *certfn, char *keyfn)
 void conn_init_server(int portnumber, int backlog, 
 		      char *certfn, char *keyfn, int sslportnumber, char *rootcafn, int requireclientcert,
 		      char *local4, char *local6,
-		      int (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
+		      enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
 {
 	static char *funcid = "conn_init_server";
 
@@ -1068,8 +1158,8 @@ void conn_init_client(void)
  * conn_process_active().
  */
 tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_t socktype, 
-				   char *localaddr, int withssl, char *certfn, char *keyfn, long maxlifetime,
-				   int (*usercallback)(tcpconn_t *, enum conn_callback_t, void *), void *userdata)
+				   char *localaddr, enum sslhandling_t sslhandling, char *certfn, char *keyfn, long maxlifetime,
+				   enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *), void *userdata)
 {
 	const char *funcid = "conn_prepare_connection";
 	tcpconn_t *newconn = NULL;
@@ -1194,7 +1284,8 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 	fcntl(newconn->sock, F_SETFL, O_NONBLOCK);
 
 #ifdef HAVE_OPENSSL
-	if (withssl) {
+	if (sslhandling != CONN_SSL_NO) {
+		newconn->sslhandling = sslhandling;
 		newconn->ctx = SSL_CTX_new(SSLv23_client_method());
 		SSL_CTX_set_options(newconn->ctx, (SSL_OP_NO_SSLv2 | SSL_OP_ALL));
 		SSL_CTX_set_quiet_shutdown(newconn->ctx, 1);
@@ -1235,14 +1326,16 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 			}
 		}
 
-		if (SSL_set_fd(newconn->ssl, newconn->sock) != 1) {
-			char sslerrmsg[256];
+		if (sslhandling == CONN_SSL_YES) {
+			if (SSL_set_fd(newconn->ssl, newconn->sock) != 1) {
+				char sslerrmsg[256];
 
-			ERR_error_string(ERR_get_error(), sslerrmsg);
-			conn_info(funcid, INFO_ERROR, "SSL_set_fd failed: %s\n", sslerrmsg);
-			conn_cleanup(newconn);
-			free(newconn);
-			return NULL;
+				ERR_error_string(ERR_get_error(), sslerrmsg);
+				conn_info(funcid, INFO_ERROR, "SSL_set_fd failed: %s\n", sslerrmsg);
+				conn_cleanup(newconn);
+				free(newconn);
+				return NULL;
+			}
 		}
 	}
 #endif
@@ -1251,13 +1344,13 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 	if (n == 0) {
 		newconn->usercallback(newconn, CONN_CB_CONNECT_COMPLETE, newconn->userdata);
 
-		if (!withssl)
-			newconn->connstate = CONN_PLAINTEXT;
-		else
+		if (sslhandling == CONN_SSL_YES)
 			try_ssl_connect(newconn);
+		else
+			newconn->connstate = CONN_PLAINTEXT;
 	}
 	else if ((n == -1) && (errno == EINPROGRESS)) {
-		newconn->connstate = (withssl ? CONN_SSL_CONNECTING : CONN_PLAINTEXT_CONNECTING);
+		newconn->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_CONNECTING : CONN_PLAINTEXT_CONNECTING);
 	}
 	else {
 		newconn->usercallback(newconn, CONN_CB_CONNECT_FAILED, newconn->userdata);
