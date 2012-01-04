@@ -183,6 +183,7 @@ int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 			}
 			rec->ntpoffset = average / (ntp_float_t)(NTPTRIES - 2);
 		}
+		rec->elapsedms = connection->elapsedms;
 		return 0;
 
 	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
