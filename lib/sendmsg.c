@@ -74,9 +74,10 @@ typedef struct mytarget_t {
 
 static myconn_t *myhead = NULL, *mytail = NULL;
 
-static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
+static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 {
-	int res = 0, n, sslhandshakeinprogress = 0;
+	enum conn_cbresult_t res = CONN_CBRESULT_OK;
+	int n, sslhandshakeinprogress = 0;
 	size_t used;
 	time_t start, expire;
 	char *certsubject;
@@ -96,7 +97,7 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 		break;
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
-		res = rec->readmore;
+		res = (rec->readmore ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED);
 		break;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
@@ -148,12 +149,10 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 			rec->readmore = 0;
 			conn_close_connection(connection, "r");
 		}
-
-		res = n;
 		break;
 
 	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
-		res = (*rec->writep != '\0');
+		res = (*rec->writep != '\0') ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
@@ -175,7 +174,6 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 				conn_close_connection(connection, "w");
 			}
 		}
-		res = n;
 		break;
 
 	  case CONN_CB_TIMEOUT:
@@ -184,11 +182,11 @@ static int client_callback(tcpconn_t *connection, enum conn_callback_t id, void 
 		break;
 
 	  case CONN_CB_CLOSED:                 /* Client/server mode: Connection has been closed */
-		return 0;
+		break;
 
 	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
 		connection->userdata = NULL;
-		return 0;
+		break;
 
 	  case CONN_CB_SSLHANDSHAKE_FAILED:
 	  case CONN_CB_CONNECT_FAILED:

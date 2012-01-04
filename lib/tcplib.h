@@ -100,6 +100,7 @@ extern int conn_starttls(tcpconn_t *conn);
 extern void conn_close_connection(tcpconn_t *conn, char *direction);
 
 extern int conn_trimactive(void);
+extern int conn_active(void);
 
 extern void conn_deinit(void);
 

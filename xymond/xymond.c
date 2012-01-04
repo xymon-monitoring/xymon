@@ -4540,7 +4540,7 @@ void sig_handler(int signum)
 }
 
 
-int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
+enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 {
 	int n = 0;
 	conn_t *conn = (conn_t *)userdata;
@@ -4565,10 +4565,10 @@ int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userda
 		break;
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
-		return (conn->doingwhat == RECEIVING);
+		return (conn->doingwhat == RECEIVING) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 
 	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
-		return (conn->doingwhat == RESPONDING);
+		return (conn->doingwhat == RESPONDING) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
 		n = conn_read(connection, (char *)conn->bufp, (conn->bufsz - conn->buflen - 1));
@@ -4677,7 +4677,7 @@ int server_callback(tcpconn_t *connection, enum conn_callback_t id, void *userda
 
 	if (conn && (conn->doingwhat == NOTALK)) conn_close_connection(connection, NULL);
 
-	return 0;
+	return CONN_CBRESULT_OK;
 }
 
 
