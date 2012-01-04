@@ -80,9 +80,10 @@ static ntp_float_t mod_this (ntp_float_t x)
 }
 
 
-int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
+enum conn_cbresult_t ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 {
-	int res = 0, n;
+	enum conn_cbresult_t res = CONN_CBRESULT_OK;
+	int n;
 	myconn_t *rec = (myconn_t *)userdata;
 
 	switch (id) {
@@ -99,7 +100,7 @@ int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 		break;
 
 	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
-		res = ((rec->step & 1) == 0) && (rec->step <= 2*NTPTRIES);
+		res = ((rec->step & 1) == 0) && (rec->step <= 2*NTPTRIES) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
@@ -123,13 +124,11 @@ int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 				rec->ntpdiff[rec->step / 2] = -1000.0;
 				rec->step += 2;
 			}
-
-			res = n;
 		}
 		break;
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
-		res = ((rec->step & 1) == 1) && (rec->step <= 2*NTPTRIES);
+		res = ((rec->step & 1) == 1) && (rec->step <= 2*NTPTRIES) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
@@ -154,7 +153,6 @@ int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 			}
 
 			rec->step++;
-			res = n;
 		}
 		break;
 
@@ -184,14 +182,14 @@ int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 			rec->ntpoffset = average / (ntp_float_t)(NTPTRIES - 2);
 		}
 		rec->elapsedms = connection->elapsedms;
-		return 0;
+		break;
 
 	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
 		if (rec) {
 			connection->userdata = NULL;
 			test_is_done(rec);
 		}
-		return 0;
+		break;
 
 	  default:
 		break;

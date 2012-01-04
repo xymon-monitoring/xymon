@@ -13,6 +13,6 @@
 
 #include "tcptalk.h"
 
-extern int ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata);
+extern enum conn_cbresult_t ntp_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata);
 #endif
 

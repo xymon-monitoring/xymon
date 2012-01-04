@@ -17,6 +17,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include <limits.h>
 
 #include "libxymon.h"
+
 #include "tcptalk.h"
 #include "tcphttp.h"
 #include "ntptalk.h"
@@ -32,7 +33,10 @@ static char *telnet_dialog[] = {
 
 static char *smtp_dialog[] = {
 	"EXPECT:220",
-	"SEND:HELO hswn.dk\r\n",
+	"SEND:STARTTLS\r\n",
+	"EXPECT:220",
+	"STARTTLS",
+	"SEND:EHLO hswn.dk\r\n",
 	"EXPECT:250",
 	"SEND:MAIL FROM:<xymon>\r\n",
 	"EXPECT:250",
@@ -340,13 +344,16 @@ check_for_endofheaders:
 
 #define USERBUFSZ 4096
 
-int tcp_standard_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
+enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata)
 {
-	int res = 0, n, advancestep;
+	int res = CONN_CBRESULT_OK;
+	int n, advancestep;
 	size_t used;
 	time_t start, expire;
 	char *certsubject;
 	myconn_t *rec = (myconn_t *)userdata;
+
+	dbgprintf("CB: %s\n", conn_callback_names[id]);
 
 	switch (id) {
 	  case CONN_CB_CONNECT_START:          /* Client mode: New outbound connection start */
@@ -380,11 +387,11 @@ int tcp_standard_callback(tcpconn_t *connection, enum conn_callback_t id, void *
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
 		if (!rec->dialog[rec->step])
-			res = 0;
+			res = CONN_CBRESULT_FAILED;
 		else if (rec->istelnet > 0)
-			res = 1;
+			res = CONN_CBRESULT_OK;
 		else
-			res = ((strncmp(rec->dialog[rec->step], "EXPECT:", 7) == 0) || (strncmp(rec->dialog[rec->step], "READ", 4) == 0));
+			res = ((strncmp(rec->dialog[rec->step], "EXPECT:", 7) == 0) || (strncmp(rec->dialog[rec->step], "READ", 4) == 0)) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
@@ -442,20 +449,29 @@ int tcp_standard_callback(tcpconn_t *connection, enum conn_callback_t id, void *
 			rec->step++;
 		}
 
-		res = n;
+		/* See if we have reached a point where we switch to TLS mode */
+		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
+			if (conn_starttls(connection) == 0) {
+				rec->step++;
+			}
+			else {
+				rec->talkresult = TALK_BADSSLHANDSHAKE;
+				conn_close_connection(connection, NULL);
+			}
+		}
 		break;
 
 	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
 		if (!rec->dialog[rec->step])
-			res = 0;
+			res = CONN_CBRESULT_FAILED;
 		else if (rec->istelnet != 0)
-			res = (rec->istelnet < 0);
+			res = (rec->istelnet < 0) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		else {
 			if ((*rec->writep == '\0') && (strncmp(rec->dialog[rec->step], "SEND:", 5) == 0)) {
 				strcpy(rec->writebuf, rec->dialog[rec->step]+5);
 				rec->writep = rec->writebuf;
 			}
-			res = (*rec->writep != '\0');
+			res = (*rec->writep != '\0') ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		}
 		break;
 
@@ -479,7 +495,17 @@ int tcp_standard_callback(tcpconn_t *connection, enum conn_callback_t id, void *
 				}
 			}
 		}
-		res = n;
+
+		/* See if we have reached a point where we switch to TLS mode */
+		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
+			if (conn_starttls(connection) == 0) {
+				rec->step++;
+			}
+			else {
+				rec->talkresult = TALK_BADSSLHANDSHAKE;
+				conn_close_connection(connection, NULL);
+			}
+		}
 		break;
 
 	  case CONN_CB_TIMEOUT:
@@ -524,17 +550,22 @@ int tcp_standard_callback(tcpconn_t *connection, enum conn_callback_t id, void *
 }
 
 
-void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, char *testspec, char **dialog)
+void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, char *testspec, char **dialog, 
+		   enum sslhandling_t sslhandling, char *sslcertfn, char *sslkeyfn)
 {
 	myconn_t *newtest;
 
 	newtest = (myconn_t *)calloc(1, sizeof(myconn_t));
+	newtest->testspec = strdup(testspec);
+
 	newtest->netparams.destinationip = strdup(destinationip);
 	newtest->netparams.destinationport = destinationport;
 	newtest->netparams.socktype = CONN_SOCKTYPE_STREAM;
 	newtest->netparams.callback = tcp_standard_callback;
 	newtest->netparams.sourceip = (sourceip ? strdup(sourceip) : NULL);
-	newtest->testspec = strdup(testspec);
+	newtest->netparams.sslhandling = sslhandling;
+	newtest->netparams.sslcertfn = sslcertfn;
+	newtest->netparams.sslkeyfn = sslkeyfn;
 
 	if (dialog == http_dialog) {
 		newtest->talkprotocol = TALK_PROTO_HTTP;
@@ -616,7 +647,7 @@ void run_tcp_tests(void)
 							rec->netparams.destinationport, 
 							rec->netparams.socktype,
 							rec->netparams.sourceip, 
-							(rec->netparams.sslver != SSLVERSION_NOSSL), NULL, NULL, 
+							rec->netparams.sslhandling, rec->netparams.sslcertfn, rec->netparams.sslkeyfn, 
 							TIMEOUT*1000,
 							rec->netparams.callback, rec)) {
 					list_item_move(activetests, pcur, rec->testspec);
@@ -709,7 +740,7 @@ int main(int argc, char **argv)
 	listitem_t *walk;
 
 	debug = 1;
-	// conn_register_infohandler(NULL, 7);
+	conn_register_infohandler(NULL, 7);
 
 	conn_init_client();
 	dns_library_init();
@@ -719,20 +750,18 @@ int main(int argc, char **argv)
 	donetests = list_create("done");
 
 #if 1
-	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog);
-	// add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog);
-	// add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog);
-	add_tcp_test("172.16.10.3", 123, NULL, "ntp", ntp_dialog);
-	add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog);
-	add_tcp_test("89.150.129.22", 53, NULL, "www.sslug.dk", dns_dialog);
-	add_tcp_test("89.150.129.22", 53, NULL, "www.csc.dk", dns_dialog);
+	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
+	// add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
+	// add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("172.16.10.3", 123, NULL, "ntp", ntp_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("89.150.129.22", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("89.150.129.22", 53, NULL, "www.csc.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("www.google.dk", 443, NULL, "https://www.google.dk/", http_dialog, CONN_SSL_YES, NULL, NULL);
+	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
 #endif
-
-	add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog);
-	add_tcp_test("www.google.dk", 80, NULL, "http://www.google.dk/", http_dialog);
-	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog);
-
-	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog);
 
 	run_tcp_tests();
 
@@ -749,6 +778,9 @@ int main(int argc, char **argv)
 		  case TALK_BADDATA: printf("Bad dialog\n"); break;
 		  case TALK_BADSSLHANDSHAKE: printf("SSL handshake failure\n"); break;
 		  case TALK_INTERRUPTED: printf("Peer disconnect\n"); break;
+		}
+		if (rec->peercertificate) {
+			printf("\tCert.    : %s\n", rec->peercertificate);
 		}
 		printf("\tLookup   : %d.%03d ms\n", (rec->dnselapsedms / 1000), (rec->dnselapsedms % 1000));
 		printf("\tTime     : %d.%03d ms\n", (rec->elapsedms / 1000), (rec->elapsedms % 1000));

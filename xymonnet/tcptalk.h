@@ -17,8 +17,13 @@ typedef struct myconn_netparams_t {
 	char *destinationip, *sourceip;		/* The actual IP we will use for the connection, either IPv4 or IPv6 */
 	int destinationport;
 	enum conn_socktype_t socktype;
-	enum { SSLVERSION_NOSSL, SSLVERSION_DEFAULT, SSLVERSION_V2, SSLVERSION_V3, SSLVERSION_TLS1 } sslver;
-	int (*callback)(tcpconn_t *, enum conn_callback_t, void *);
+	enum conn_cbresult_t (*callback)(tcpconn_t *, enum conn_callback_t, void *);
+
+	/* For SSL connections */
+	enum { SSLVERSION_DEFAULT, SSLVERSION_V2, SSLVERSION_V3, SSLVERSION_TLS1 } sslver;
+	enum sslhandling_t sslhandling;
+	char *sslcertfn, *sslkeyfn;
+
 	/* For DNS lookups of destinationip */
 	char *lookupstring;
 	int af_index;
@@ -80,11 +85,7 @@ typedef struct myconn_t {
 	struct timespec dnsstarttime;
 } myconn_t;
 
-extern int client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata);
-extern char **tcp_set_dialog(myconn_t *rec, char *service);
-extern void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, char *testspec, char **dialog);
 extern void test_is_done(myconn_t *rec);
-
 
 #endif
 
