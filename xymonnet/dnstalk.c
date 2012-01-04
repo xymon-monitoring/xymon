@@ -11,6 +11,8 @@
 static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 
 #include <string.h>
+#include <stdlib.h>
+#include <assert.h>
 
 #include "ares.h"
 
@@ -20,7 +22,23 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "dnstalk.h"
 #include "dnsbits.h"
 
-static myconn_t *dnshead = NULL;
+static int dns_atype, dns_aaaatype, dns_aclass;
+
+void dns_library_init(void)
+{
+	int status;
+
+	status = ares_library_init(ARES_LIB_INIT_ALL);
+	if (status != ARES_SUCCESS) {
+		errprintf("Cannot initialize ARES library: %s\n", ares_strerror(status));
+		return;
+	}
+	
+	dns_atype= dns_name_type("A");
+	dns_aaaatype= dns_name_type("AAAA");
+	dns_aclass = dns_name_class("IN");
+
+}
 
 static void destroy_addr_list(struct ares_addr_node *head)
 {
@@ -47,25 +65,6 @@ static void append_addr_list(struct ares_addr_node **head, struct ares_addr_node
 		*head = node;
 }
 
-void dns_init_channel(myconn_t *rec)
-{
-	static int libstatus = -1;
-	ares_channel *channel;
-
-	if (libstatus == -1) {
-		libstatus = ares_library_init(ARES_LIB_INIT_ALL);
-		if (libstatus != ARES_SUCCESS) {
-			rec->dnsstatus = DNS_FINISHED;
-			return;
-		}
-	}
-
-	channel = (ares_channel *)malloc(sizeof(ares_channel));
-	rec->dnschannel = channel;
-	rec->dnsnext = dnshead;
-	dnshead = rec;
-}
-
 
 int dns_start_query(myconn_t *rec, char *targetserver)
 {
@@ -74,6 +73,7 @@ int dns_start_query(myconn_t *rec, char *targetserver)
 	int status, optmask;
 	char *tdup, *tst;
 
+	/* See what IP family we must use to communicate with the target DNS server */
 	srvr = malloc(sizeof(struct ares_addr_node));
 	append_addr_list(&servers, srvr);
 	srvr->family = -1;
@@ -88,9 +88,12 @@ int dns_start_query(myconn_t *rec, char *targetserver)
 #endif
 
 	if (srvr->family == -1) {
-		errprintf("Unsupported DNS target IP %s\n", targetserver);
+		errprintf("Unsupported IP family for DNS target IP %s, test %s\n", targetserver, rec->testspec);
 		return 0;
 	}
+
+	/* Create a new ARES request channel */
+	rec->dnschannel = malloc(sizeof(ares_channel));
 
 	/* 
 	 * The C-ARES timeout handling is a bit complicated. The timeout setting
@@ -110,38 +113,39 @@ int dns_start_query(myconn_t *rec, char *targetserver)
 	options.tries = 4;
 	status = ares_init_options(rec->dnschannel, &options, optmask);
 	if (status != ARES_SUCCESS) {
+		errprintf("Cannot create ARES channel for DNS target %s, test %s\n", targetserver, rec->testspec);
 		rec->dnsstatus = DNS_FINISHED;
 		return 0;
 	}
 
+	/* Point the channel at the target server */
 	status = ares_set_servers(*((ares_channel *)rec->dnschannel), servers);
 	destroy_addr_list(servers);
 	if (status != ARES_SUCCESS)
 	{
-		errprintf("ares_init_options failed: %s\n", ares_strerror(status));
-		return 1;
+		errprintf("Cannot select ARES target DNS server %s, test %s\n", targetserver, rec->testspec);
+		rec->dnsstatus = DNS_QUERY_COMPLETED;	/* To reap the ARES channel later */
+		return 0;
 	}
 
-
+	/* Post the queries we want to perform */
 	tdup = strdup(rec->testspec);
 
 	tst = strtok(tdup, ",");
 	do {
 		char *p, *tlookup;
-		int i, atype = dns_name_type("A"), aclass = dns_name_class("IN");
+		int atype = dns_atype;
 
 		p = strchr(tst, ':');
 		tlookup = (p ? p+1 : tst);
 		if (p) { 
-			int i;
-
 			*p = '\0'; 
 			atype = dns_name_type(tst);
 			*p = ':';
 		}
 
 		/* Use ares_query() here, since we dont want to get results from hosts file or other odd stuff. */
-		ares_query(*((ares_channel *)rec->dnschannel), tlookup, aclass, atype, dns_query_callback, rec);
+		ares_query(*((ares_channel *)rec->dnschannel), tlookup, dns_aclass, atype, dns_query_callback, rec);
 		tst = strtok(NULL, ",");
 	} while (tst);
 
@@ -155,48 +159,134 @@ int dns_start_query(myconn_t *rec, char *targetserver)
 }
 
 
-int dns_add_active_fds(int *maxfd, fd_set *fdread, fd_set *fdwrite)
+/* TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY, TALK_PROTO_DNSLOOKUP */
+char *prototxt[] = { "plain", "ntp", "http", "dnsquery", "dnslookup" };
+/* DNS_NOTDONE, DNS_QUERY_READY, DNS_QUERY_ACTIVE, DNS_QUERY_COMPLETED, DNS_FINISHED */
+char *dnsstatustxt[] = { "notdone", "ready", "active", "completed", "finished" };
+
+int dns_add_active_fds(listhead_t *activelist, int *maxfd, fd_set *fdread, fd_set *fdwrite)
 {
-	myconn_t *walk;
+	listitem_t *walk;
 	int n, activecount = 0;
 
-	for (walk = dnshead; (walk); walk = walk->dnsnext) {
-		if (walk->dnsstatus != DNS_QUERY_ACTIVE) continue;
+	// dbgprintf("DNS - check active fds\n");
+	for (walk = activelist->head; (walk); walk = walk->next) {
+		myconn_t *rec = (myconn_t *)walk->data;
+
+		//dbgprintf("\t%s - proto %s, dnsstatus %s\n", rec->testspec, prototxt[rec->talkprotocol], dnsstatustxt[rec->dnsstatus]);
+		if (rec->talkprotocol != TALK_PROTO_DNSQUERY) continue;
+		if (rec->dnsstatus != DNS_QUERY_ACTIVE) continue;
 
 		activecount++;
-		n = ares_fds(*((ares_channel *)walk->dnschannel), fdread, fdwrite);
-		if (n > *maxfd) *maxfd = n;
+
+		//dbgprintf("DNS query %s has an active fd\n", rec->testspec);
+
+		/* 
+		 * ares_fds() returns the max FD number +1, i.e. the value you would use for select()
+		 * But we expect maxfd to be just the max FD number. So use "(n-1)" instead of the
+		 * value directly from ares_fds()
+		 */
+		n = ares_fds(*((ares_channel *)rec->dnschannel), fdread, fdwrite);
+		if ((n-1) > *maxfd) *maxfd = (n-1);
 	}
 
 	return activecount;
 }
 
-void dns_process_active(fd_set *fdread, fd_set *fdwrite)
+
+void dns_process_active(listhead_t *activelist, fd_set *fdread, fd_set *fdwrite)
 {
-	myconn_t *walk;
+	listitem_t *walk;
 
-	for (walk = dnshead; (walk); walk = walk->dnsnext) {
-		if (walk->dnsstatus != DNS_QUERY_ACTIVE) continue;
+	// dbgprintf("DNS - process active fds\n");
+	for (walk = activelist->head; (walk); walk = walk->next) {
+		myconn_t *rec = (myconn_t *)walk->data;
 
-		ares_process(*((ares_channel *)walk->dnschannel), fdread, fdwrite);
+		// dbgprintf("\t%s - proto %s, dnsstatus %s\n", rec->testspec, prototxt[rec->talkprotocol], dnsstatustxt[rec->dnsstatus]);
+		if (rec->talkprotocol != TALK_PROTO_DNSQUERY) continue;
+		if (rec->dnsstatus != DNS_QUERY_ACTIVE) continue;
+
+		// dbgprintf("DNS query %s processing\n", rec->testspec);
+		ares_process(*((ares_channel *)rec->dnschannel), fdread, fdwrite);
 	}
 }
 
-int dns_trimactive(void)
+
+void dns_finish_queries(listhead_t *activelist)
 {
-	myconn_t *walk;
-	int result = 0;
+	listitem_t *walk;
 
-	for (walk = dnshead; (walk); walk = walk->dnsnext) {
-		if (walk->dnsstatus != DNS_QUERY_COMPLETED) {
-			result++;
-			continue;
-		}
+	for (walk = activelist->head; (walk); walk = walk->next) {
+		myconn_t *rec = (myconn_t *)walk->data;
+		if (rec->talkprotocol != TALK_PROTO_DNSQUERY) continue;
+		if (rec->dnsstatus != DNS_QUERY_COMPLETED) continue;
 
-		ares_destroy(*((ares_channel *)walk->dnschannel));
-		walk->dnsstatus = DNS_FINISHED;
+		dbgprintf("DNS query %s cleanup\n", rec->testspec);
+		ares_destroy(*((ares_channel *)rec->dnschannel));
+		rec->dnsstatus = DNS_FINISHED;
+	}
+}
+
+
+#if 0
+static ares_channel dns_lookupchannel;
+
+/* This defines the sequence in which we perform DNS lookup for IPv4 and IPv6 - default is IPv4 first, then v6 */
+static const int dns_lookup_sequence[] = {
+#ifdef IPV4_SUPPORT
+	AF_INET,
+#endif
+#ifdef IPV6_SUPPORT
+	AF_INET6,
+#endif
+	-1
+};
+
+void lookup_init(void)
+{
+	struct ares_options options;
+	int optmask;
+
+	optmask = ARES_OPT_TIMEOUTMS | ARES_OPT_TRIES | ARES_OPT_FLAGS;
+	options.flags = ARES_FLAG_STAYOPEN;
+	options.timeout = 2000;
+	options.tries = 4;
+	status = ares_init_options(&dns_lookupchannel, &options, optmask);
+	if (status != ARES_SUCCESS) {
+		errprintf("Cannot initialise DNS lookups: %s\n", ares_strerror(status));
+		return;
+	}
+}
+
+int dns_lookup(myconn_t *rec)
+{
+	/* Push a normal DNS lookup into the DNS queue */
+
+	ares_gethostbyname(dns_lookupchannel, rec->dnslookupstring, AF_INET, dns_lookup_callback, rec);
+	ares_gethostbyname(dns_lookupchannel, rec->dnslookupstring, AF_INET6, dns_lookup_callback, rec);
+	rec->dnspendingqueries = 2;
+	getntimer(&rec->dnsstarttime);
+	rec->dnsstatus = DNS_QUERY_ACTIVE;
+	rec->dnschannel = &dns_lookupchannel;
+	rec->netparams.lookup_addrfamily_index++;
+	list_item_move(dns_tests, rec->listitem, rec->testspec);
+
+	/* Use ares_search() here, we want to use the whole shebang of name lookup options */
+	if (dns_lookup_sequence[rec->netparams.lookup_addrfamily_index] != -1) {
+		ares_gethostbyname(dns_lookupchannel, rec->dnslookupstring, dns_lookup_sequence[rec->netparams.lookup_addrfamily_index], dns_lookup_callback, rec);
+		getntimer(&rec->dnsstarttime);
+		rec->dnsstatus = DNS_QUERY_ACTIVE;
+		rec->dnschannel = &dns_lookupchannel;
+		rec->netparams.lookup_addrfamily_index++;
+		list_item_move(dns_tests, rec->listitem, rec->testspec);
+	}
+	else {
+		rec->dnsstatus = DNS_FINISHED;
+		rec->talkresult = TALK_CANNOT_RESOLVE;
+		test_is_done(rec);
 	}
 
-	return result;
+	return 1;
 }
+#endif
 

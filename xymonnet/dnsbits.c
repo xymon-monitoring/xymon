@@ -50,6 +50,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 
 #include "libxymon.h"
 #include "tcptalk.h"
+#include "dnstalk.h"
 #include "dnsbits.h"
 
 
@@ -165,10 +166,11 @@ static const unsigned char *display_rr(const unsigned char *aptr,
 static const char *type_name(int type);
 static const char *class_name(int dnsclass);
 
-
 void dns_query_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen)
 {
 	myconn_t *rec = (myconn_t *)arg;
+
+	dbgprintf("Got result for %s\n", rec->testspec);
 
 	rec->elapsedms = ntimerms(&rec->dnsstarttime, NULL);
 	rec->dnsstatus = DNS_QUERY_COMPLETED;
@@ -607,3 +609,39 @@ int dns_name_class(char *name)
 	}
 	return C_IN;
 }
+
+
+
+#if 0
+void dns_lookup_callback(void *arg, int status, int timeouts, struct hostent *host)
+{
+	/*
+	 * This callback is used for the ares_gethostbyname() calls that we do to 
+	 * lookup the IP's of the hosts we are about to test.
+	 */
+	myconn_t *rec = (myconn_t *)arg;
+	char addr_buf[46] = "??";
+
+	rec->elapsedms = ntimerms(&rec->dnsstarttime, NULL);
+	rec->dnspendingqueries--;
+
+	if ((status != ARES_SUCCESS) || (host->h_addr_list[0] == NULL)) {
+		if (rec->dnspendingqueries <= 0) {
+			rec->dnsstatus = DNS_FINISHED;
+			rec->talkresult = TALK_CANNOT_RESOLVE;
+			test_is_done(rec);
+		}
+	}
+	else {
+		inet_ntop(host->h_addrtype, *(host->h_addr_list), addr_buf, sizeof(addr_buf));
+		if (rec->netparams.destinationip) xfree(rec->netparams.destinationip);
+		rec->netparams.destinationip = strdup(addr_buf);
+		rec->dnsstatus = DNS_QUERY_COMPLETED;
+
+		/* Got the IP, now re-start the test */
+		add_tcp_test(rec->netparams.destinationip, rec->netparams.destinationport, rec->netparams.sourceip, rec->testspec, rec->dialog, rec->listitem);
+	}
+}
+#endif
+
+

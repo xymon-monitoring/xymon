@@ -11,6 +11,10 @@
 #ifndef __DNSBITS_H__
 #define __DNSBITS_H__
 
+#if 0
+extern void dns_lookup_callback(void *arg, int status, int timeouts, struct hostent *host);
+#endif
+
 extern void dns_query_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen);
 extern void dns_print_response(unsigned char *abuf, int alen, strbuffer_t *log);
 extern int dns_name_type(char *name);

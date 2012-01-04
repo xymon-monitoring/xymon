@@ -15,6 +15,7 @@
 
 typedef struct myconn_netparams_t {
 	char *destinationip, *sourceip;		/* The actual IP we will use for the connection, either IPv4 or IPv6 */
+	int lookup_addrfamily_index;
 	int destinationport;
 	enum conn_socktype_t socktype;
 	enum { SSLVERSION_NOSSL, SSLVERSION_DEFAULT, SSLVERSION_V2, SSLVERSION_V3, SSLVERSION_TLS1 } sslver;
@@ -28,11 +29,12 @@ typedef struct myconn_netparams_t {
 typedef struct myconn_t {
 	char *testspec;
 	myconn_netparams_t netparams;
-	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY } talkprotocol;
+	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY, TALK_PROTO_DNSLOOKUP } talkprotocol;
 	char **dialog;				/* SEND/EXPECT/READ/CLOSE steps */
+	listitem_t *listitem;
 
 	/* Results and statistics */
-	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED } talkresult;
+	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_INVALID_IP } talkresult;
 	strbuffer_t *textlog;			/* Logs the actual data exchanged */
 	unsigned int bytesread;
 	unsigned int byteswritten;
@@ -71,14 +73,14 @@ typedef struct myconn_t {
 	/* DNS */
 	void *dnschannel;
 	enum { DNS_NOTDONE, DNS_QUERY_READY, DNS_QUERY_ACTIVE, DNS_QUERY_COMPLETED, DNS_FINISHED } dnsstatus;
-	struct myconn_t *dnsnext;
 	struct timespec dnsstarttime;
-
-	struct myconn_t *next, *previous;
+	char *dnslookupstring;
+	int dnspendingqueries;
 } myconn_t;
 
 extern int client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata);
 extern char **tcp_set_dialog(myconn_t *rec, char *service);
+extern void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, char *testspec, char **dialog);
 extern void test_is_done(myconn_t *rec);
 
 

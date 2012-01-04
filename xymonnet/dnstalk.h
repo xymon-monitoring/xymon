@@ -11,11 +11,11 @@
 #ifndef __DNSTALK_H__
 #define __DNSTALK_H__
 
-extern void dns_init_channel(myconn_t *rec);
+extern void dns_library_init(void);
 extern int dns_start_query(myconn_t *rec, char *targetserver);
-extern int dns_add_active_fds(int *maxfd, fd_set *fdread, fd_set *fdwrite);
-extern void dns_process_active(fd_set *fdread, fd_set *fdwrite);
-extern int dns_trimactive(void);
+extern int dns_add_active_fds(listhead_t *activelist, int *maxfd, fd_set *fdread, fd_set *fdwrite);
+extern void dns_process_active(listhead_t *activelist, fd_set *fdread, fd_set *fdwrite);
+extern void dns_finish_queries(listhead_t *activelist);
 
 #endif
 

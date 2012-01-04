@@ -61,56 +61,10 @@ static char *http_dialog[] = { NULL };
 static char *ntp_dialog[] = { NULL };
 static char *dns_dialog[] = { NULL };
 
-typedef struct connlist_t {
-	char *listname;
-	myconn_t *head, *tail;
-	int len;
-} connlist_t;
+listhead_t *pendingtests = NULL;
+listhead_t *activetests = NULL;
+listhead_t *donetests = NULL;
 
-connlist_t pendingtests = { "pending", NULL, NULL, 0 };
-connlist_t activetests = { "active", NULL, NULL, 0 };
-connlist_t donetests = { "done", NULL, NULL, 0 };
-connlist_t failedtests = { "failed", NULL, NULL, 0 };
-static int totaltests = 0;		/* Total number of tests */
-
-
-static void list_item_move(connlist_t *tolist, connlist_t *fromlist, myconn_t *rec)
-{
-	dbgprintf("Moving test %s from %s to %s\n", rec->testspec, (fromlist ? fromlist->listname : "<null>"), tolist->listname);
-
-	if (fromlist) {
-		if (rec == fromlist->head) {
-			/* Removing the head of the list */
-			fromlist->head = rec->next;
-			if (rec == fromlist->tail) fromlist->tail = NULL;
-		}
-		else if (rec == fromlist->tail) {
-			/* Removing the tail of the list */
-			fromlist->tail = rec->previous;
-			fromlist->tail->next = NULL;
-		}
-		else {
-			/* We are removing an item inside the list */
-			rec->previous->next = rec->next;
-		}
-
-		fromlist->len -= 1;
-	}
-
-	if (tolist->tail) {
-		tolist->tail->next = rec;
-		tolist->tail = rec;
-		rec->previous = tolist->tail;
-		rec->next = NULL;
-	}
-	else {
-		tolist->head = tolist->tail = rec;
-		rec->previous = rec->next = NULL;
-	}
-
-	tolist->len += 1;
-	rec->next = NULL;
-}
 
 static int last_write_step(myconn_t *rec)
 {
@@ -360,7 +314,7 @@ check_for_endofheaders:
 			break;
 
 		  case HTTP_CHUNK_NOTCHUNKED_NOCLEN:
-			/* We have no content-length: header, so keep going until we do two null-reads */
+			/* We have no content-length: header, so keep going until we do two NULL-reads */
 			if ((rec->httplastbodyread == 0) && (bodybytes == 0))
 				*advancestep = 1;
 			else
@@ -574,7 +528,6 @@ void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, cha
 {
 	myconn_t *newtest;
 
-	totaltests++;
 	newtest = (myconn_t *)calloc(1, sizeof(myconn_t));
 	newtest->netparams.destinationip = strdup(destinationip);
 	newtest->netparams.destinationport = destinationport;
@@ -597,7 +550,6 @@ void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, cha
 	else if (dialog == dns_dialog) {
 		newtest->talkprotocol = TALK_PROTO_DNSQUERY;
 		newtest->dnsstatus = DNS_NOTDONE;
-		dns_init_channel(newtest);
 		/* The DNS-specific routines handle the rest */
 	}
 	else {
@@ -605,7 +557,14 @@ void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, cha
 		newtest->dialog = dialog;
 	}
 
-	list_item_move(&pendingtests, NULL, newtest);
+	if (conn_is_ip(destinationip) == 0) {
+		/* Invalid destination IP */
+		newtest->talkresult = TALK_INVALID_IP;
+		newtest->listitem = list_item_create(donetests, newtest, newtest->testspec);
+	}
+	else {
+		newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
+	}
 
 	return newtest;
 }
@@ -623,40 +582,48 @@ void run_tcp_tests(void)
 		fd_set fdread, fdwrite;
 		int n, dodns;
 		struct timeval tmo;
+		myconn_t *rec;
 
-		/* Start some more tests */
-		while (pendingtests.len && (activetests.len < CONCURRENCY)) {
-			switch (pendingtests.head->talkprotocol) {
+		while ((pendingtests->len > 0) && (activetests->len < CONCURRENCY)) {
+			/* Start some more tests */
+			rec = (myconn_t *)pendingtests->head->data;
+
+			switch (rec->talkprotocol) {
 			  case TALK_PROTO_PLAIN:
 			  case TALK_PROTO_HTTP:
 			  case TALK_PROTO_NTP:
-				if (conn_prepare_connection(pendingtests.head->netparams.destinationip, 
-							    pendingtests.head->netparams.destinationport, 
-							    pendingtests.head->netparams.socktype,
-							    pendingtests.head->netparams.sourceip, 
-							    (pendingtests.head->netparams.sslver != SSLVERSION_NOSSL), NULL, NULL, 
-							    TIMEOUT*1000,
-							    pendingtests.head->netparams.callback, pendingtests.head)) {
-					list_item_move(&activetests, &pendingtests, pendingtests.head);
+				if (conn_prepare_connection(rec->netparams.destinationip, 
+							rec->netparams.destinationport, 
+							rec->netparams.socktype,
+							rec->netparams.sourceip, 
+							(rec->netparams.sslver != SSLVERSION_NOSSL), NULL, NULL, 
+							TIMEOUT*1000,
+							rec->netparams.callback, rec)) {
+					list_item_move(activetests, pendingtests->head, rec->testspec);
 				}
 				else {
-					list_item_move(&failedtests, &pendingtests, pendingtests.head);
+					rec->talkresult = TALK_CONN_FAILED;
+					list_item_move(donetests, pendingtests->head, rec->testspec);
 				}
 				break;
 
 			  case TALK_PROTO_DNSQUERY:
-				if (dns_start_query(pendingtests.head, pendingtests.head->netparams.destinationip)) {
-					list_item_move(&activetests, &pendingtests, pendingtests.head);
+				if (dns_start_query(rec, rec->netparams.destinationip)) {
+					list_item_move(activetests, pendingtests->head, rec->testspec);
 				}
 				else {
-					list_item_move(&failedtests, &pendingtests, pendingtests.head);
+					rec->talkresult = TALK_CONN_FAILED;
+					list_item_move(donetests, pendingtests->head, rec->testspec);
 				}
+				break;
+
+			  default:
 				break;
 			}
 		}
 
 		maxfd = conn_fdset(&fdread, &fdwrite);
-		dodns = dns_add_active_fds(&maxfd, &fdread, &fdwrite);
+		dns_add_active_fds(activetests, &maxfd, &fdread, &fdwrite);
 
 		if (maxfd > 0) {
 			tmo.tv_sec = 1; tmo.tv_usec = 0;
@@ -669,18 +636,35 @@ void run_tcp_tests(void)
 			}
 
 			conn_process_active(&fdread, &fdwrite);
-			if (dodns) dns_process_active(&fdread, &fdwrite);
+			dns_process_active(activetests, &fdread, &fdwrite);
 		}
 
 		conn_trimactive();
-		dns_trimactive();
+		dns_finish_queries(activetests);
+		dbgprintf("Active: %d, pending: %d\n", activetests->len, pendingtests->len);
 	}
-	while ((activetests.len || pendingtests.len));
+	while ((activetests->len + pendingtests->len) > 0);
 }
 
 void test_is_done(myconn_t *rec)
 {
-	list_item_move(&donetests, &activetests, rec);
+	listitem_t *walk;
+
+	printf("Before move: Active list %d entries:", activetests->len);
+	for (walk = activetests->head; (walk); walk = walk->next) {
+		myconn_t *rec = (myconn_t *)walk->data;
+		printf("\t%s", rec->testspec);
+	}
+	printf("\n");
+
+	list_item_move(donetests, rec->listitem, rec->testspec);
+
+	printf("After move: Active list %d entries:", activetests->len);
+	for (walk = activetests->head; (walk); walk = walk->next) {
+		myconn_t *rec = (myconn_t *)walk->data;
+		printf("\t%s", rec->testspec);
+	}
+	printf("\n");
 }
 
 void showtext(char *s)
@@ -700,12 +684,19 @@ void showtext(char *s)
 
 int main(int argc, char **argv)
 {
-	myconn_t *walk;
+	listitem_t *walk;
 
 	debug = 1;
 	// conn_register_infohandler(NULL, 7);
-	conn_init_client();
 
+	conn_init_client();
+	dns_library_init();
+
+	pendingtests = list_create("pending");
+	activetests = list_create("active");
+	donetests = list_create("done");
+
+#if 1
 	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog);
 	add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog);
 	add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog);
@@ -713,14 +704,23 @@ int main(int argc, char **argv)
 	add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog);
 	add_tcp_test("89.150.129.22", 53, NULL, "www.sslug.dk", dns_dialog);
 	add_tcp_test("89.150.129.22", 53, NULL, "www.csc.dk", dns_dialog);
+#endif
+
+	// add_tcp_test("www.google.com", 80, NULL, "http://www.google.com/", http_dialog);
+	// add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog);
+	// add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog);
+
 	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog);
 
 	run_tcp_tests();
 
-	for (walk = donetests.head; (walk); walk = walk->next) {
-		printf("Test %s\n", walk->testspec);
+	for (walk = donetests->head; (walk); walk = walk->next) {
+		myconn_t *rec = (myconn_t *)walk->data;
+		printf("Test %s\n", rec->testspec);
+		printf("\tTarget   : %s\n", rec->netparams.destinationip);
 		printf("\tStatus   : ");
-		switch (walk->talkresult) {
+		switch (rec->talkresult) {
+		  case TALK_INVALID_IP: printf("Cannot resolve hostname\n"); break;
 		  case TALK_CONN_FAILED: printf("Connection failed\n"); break;
 		  case TALK_CONN_TIMEOUT: printf("Connection timeout\n"); break;
 		  case TALK_OK: printf("OK\n"); break;
@@ -728,28 +728,28 @@ int main(int argc, char **argv)
 		  case TALK_BADSSLHANDSHAKE: printf("SSL handshake failure\n"); break;
 		  case TALK_INTERRUPTED: printf("Peer disconnect\n"); break;
 		}
-		printf("\tTime     : %d.%03d ms\n", (walk->elapsedms / 1000), (walk->elapsedms % 1000));
-		printf("\tRead     : %d\n", walk->bytesread);
-		printf("\tWritten  : %d\n", walk->byteswritten);
+		printf("\tTime     : %d.%03d ms\n", (rec->elapsedms / 1000), (rec->elapsedms % 1000));
+		printf("\tRead     : %d\n", rec->bytesread);
+		printf("\tWritten  : %d\n", rec->byteswritten);
 		printf("\t------------------------\n");
-		switch (walk->talkprotocol) {
+		switch (rec->talkprotocol) {
 		  case TALK_PROTO_PLAIN:
-			showtext(STRBUF(walk->textlog));
+			showtext(STRBUF(rec->textlog));
 			break;
 
 		  case TALK_PROTO_HTTP:
-			showtext(walk->dialog[0] + 5);
-			showtext(STRBUF(walk->httpheaders));
-			showtext(STRBUF(walk->httpbody));
+			showtext(rec->dialog[0] + 5);
+			showtext(STRBUF(rec->httpheaders));
+			showtext(STRBUF(rec->httpbody));
 			break;
 
 		  case TALK_PROTO_NTP:
-			printf("\tNTP server is stratum %d, offset %9.6f secs\n", walk->ntpstratum, walk->ntpoffset);
+			printf("\tNTP server is stratum %d, offset %9.6f secs\n", rec->ntpstratum, rec->ntpoffset);
 			break;
 
 		  case TALK_PROTO_DNSQUERY:
 			printf("\tDNS query:\n");
-			showtext(STRBUF(walk->textlog));
+			showtext(STRBUF(rec->textlog));
 			break;
 
 		  default:

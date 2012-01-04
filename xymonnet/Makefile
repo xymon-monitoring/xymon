@@ -10,19 +10,30 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-PROGRAMS = xymonnet xymonping beastat
+// PROGRAMS = xymonnet xymonping beastat
+PROGRAMS = tcptalk
 EXTENSIONS = xymonnet-again.sh
 SNMPPROGRAMS = xymon-snmpcollect
-DBGTOOLS = contest
+// DBGTOOLS = contest
 
 ifeq ($(DOSNMP),yes)
 PROGRAMS += $(SNMPPROGRAMS)
 endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
-NETTESTOBJS = xymonnet.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+TCPTALKOBJS = tcptalk.o ntptalk.o tcphttp.o dnstalk.o httpcookies.o dnsbits.o
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
+
+tcptalk: $(TCPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIB) libcares.a $(XYMONTIMELIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TCPTALKOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
+
+dnstalk.o: dnstalk.c dnstalk.h
+	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnstalk.c
+
+dnsbits.o: dnsbits.c dnsbits.h
+	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnsbits.c
 
 xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(LDAPLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(XYMONLIBS) $(PCRELIBS) $(SSLLIBS) $(NETLIBS)
