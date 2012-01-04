@@ -32,31 +32,29 @@ void list_item_move(listhead_t *tolist, listitem_t *rec, char *info)
 	dbgprintf("moving item %s from %s to %s\n", info, (fromlist ? fromlist->listname : "<NULL>"), (tolist ? tolist->listname : "<NULL>"));
 
 	if (fromlist) {
+		if (rec->next) rec->next->previous = rec->previous;
+		if (rec->previous) rec->previous->next = rec->next;
+
 		if (rec == fromlist->head) {
 			/* removing the head of the list */
 			fromlist->head = rec->next;
-			if (rec == fromlist->tail) fromlist->tail = NULL;
-		}
-		else if (rec == fromlist->tail) {
-			/* removing the tail of the list */
-			fromlist->tail = rec->previous;
-			fromlist->tail->next = NULL;
-		}
-		else {
-			/* we are removing an item inside the list */
-			rec->previous->next = rec->next;
 		}
 
-		rec->keeper = NULL;
+		if (rec == fromlist->tail) {
+			/* removing the tail of the list */
+			fromlist->tail = rec->previous;
+		}
+
+		rec->next = rec->previous = rec->keeper = NULL;
 		fromlist->len -= 1;
 	}
 
 	if (tolist) {
 		if (tolist->tail) {
 			tolist->tail->next = rec;
-			tolist->tail = rec;
-			rec->previous = tolist->tail;
 			rec->next = NULL;
+			rec->previous = tolist->tail;
+			tolist->tail = rec;
 		}
 		else {
 			tolist->head = tolist->tail = rec;
