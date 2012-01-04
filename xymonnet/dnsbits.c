@@ -612,7 +612,6 @@ int dns_name_class(char *name)
 
 
 
-#if 0
 void dns_lookup_callback(void *arg, int status, int timeouts, struct hostent *host)
 {
 	/*
@@ -620,28 +619,21 @@ void dns_lookup_callback(void *arg, int status, int timeouts, struct hostent *ho
 	 * lookup the IP's of the hosts we are about to test.
 	 */
 	myconn_t *rec = (myconn_t *)arg;
-	char addr_buf[46] = "??";
 
-	rec->elapsedms = ntimerms(&rec->dnsstarttime, NULL);
-	rec->dnspendingqueries--;
+	rec->dnselapsedms = ntimerms(&rec->netparams.lookupstart, NULL);
 
-	if ((status != ARES_SUCCESS) || (host->h_addr_list[0] == NULL)) {
-		if (rec->dnspendingqueries <= 0) {
-			rec->dnsstatus = DNS_FINISHED;
-			rec->talkresult = TALK_CANNOT_RESOLVE;
-			test_is_done(rec);
-		}
-	}
-	else {
+	if ((status == ARES_SUCCESS) && (host->h_addr_list[0] != NULL)) {
+		/* Got a DNS result */
+		char addr_buf[46];
+
+		dbgprintf("Got lookup result for %s\n", rec->netparams.lookupstring);
 		inet_ntop(host->h_addrtype, *(host->h_addr_list), addr_buf, sizeof(addr_buf));
 		if (rec->netparams.destinationip) xfree(rec->netparams.destinationip);
 		rec->netparams.destinationip = strdup(addr_buf);
-		rec->dnsstatus = DNS_QUERY_COMPLETED;
-
-		/* Got the IP, now re-start the test */
-		add_tcp_test(rec->netparams.destinationip, rec->netparams.destinationport, rec->netparams.sourceip, rec->testspec, rec->dialog, rec->listitem);
+		rec->netparams.lookupstatus = LOOKUP_COMPLETED;
+	}
+	else {
+		rec->netparams.lookupstatus = LOOKUP_NEEDED;
 	}
 }
-#endif
-
 

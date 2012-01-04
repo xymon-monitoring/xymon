@@ -15,11 +15,15 @@
 
 typedef struct myconn_netparams_t {
 	char *destinationip, *sourceip;		/* The actual IP we will use for the connection, either IPv4 or IPv6 */
-	int lookup_addrfamily_index;
 	int destinationport;
 	enum conn_socktype_t socktype;
 	enum { SSLVERSION_NOSSL, SSLVERSION_DEFAULT, SSLVERSION_V2, SSLVERSION_V3, SSLVERSION_TLS1 } sslver;
 	int (*callback)(tcpconn_t *, enum conn_callback_t, void *);
+	/* For DNS lookups of destinationip */
+	char *lookupstring;
+	int af_index;
+	enum { LOOKUP_COMPLETED, LOOKUP_NEEDED, LOOKUP_ACTIVE, LOOKUP_FAILED } lookupstatus;
+	struct timespec lookupstart;
 } myconn_netparams_t;
 
 /*
@@ -29,16 +33,16 @@ typedef struct myconn_netparams_t {
 typedef struct myconn_t {
 	char *testspec;
 	myconn_netparams_t netparams;
-	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY, TALK_PROTO_DNSLOOKUP } talkprotocol;
+	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY } talkprotocol;
 	char **dialog;				/* SEND/EXPECT/READ/CLOSE steps */
 	listitem_t *listitem;
 
 	/* Results and statistics */
-	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_INVALID_IP } talkresult;
+	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE } talkresult;
 	strbuffer_t *textlog;			/* Logs the actual data exchanged */
 	unsigned int bytesread;
 	unsigned int byteswritten;
-	int elapsedms;
+	int elapsedms, dnselapsedms;
 	char *peercertificate;
 	time_t peercertificateexpiry;
 
@@ -74,8 +78,6 @@ typedef struct myconn_t {
 	void *dnschannel;
 	enum { DNS_NOTDONE, DNS_QUERY_READY, DNS_QUERY_ACTIVE, DNS_QUERY_COMPLETED, DNS_FINISHED } dnsstatus;
 	struct timespec dnsstarttime;
-	char *dnslookupstring;
-	int dnspendingqueries;
 } myconn_t;
 
 extern int client_callback(tcpconn_t *connection, enum conn_callback_t id, void *userdata);

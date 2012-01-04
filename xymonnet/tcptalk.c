@@ -558,9 +558,10 @@ void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, cha
 	}
 
 	if (conn_is_ip(destinationip) == 0) {
-		/* Invalid destination IP */
-		newtest->talkresult = TALK_INVALID_IP;
-		newtest->listitem = list_item_create(donetests, newtest, newtest->testspec);
+		/* Destination is not an IP, so try doing a hostname lookup */
+		newtest->netparams.lookupstring = strdup(destinationip);
+		newtest->netparams.lookupstatus = LOOKUP_NEEDED;
+		newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
 	}
 	else {
 		newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
@@ -583,10 +584,29 @@ void run_tcp_tests(void)
 		int n, dodns;
 		struct timeval tmo;
 		myconn_t *rec;
+		listitem_t *pcur, *pnext;
+		
+		/* Start some more tests */
+		pcur = pendingtests->head;
+		while (pcur && (activetests->len < CONCURRENCY)) {
+			rec = (myconn_t *)pcur->data;
 
-		while ((pendingtests->len > 0) && (activetests->len < CONCURRENCY)) {
-			/* Start some more tests */
-			rec = (myconn_t *)pendingtests->head->data;
+			/* 
+			 * Must save the pointer to the next pending test now, 
+			 * since we may move the current item from the pending
+			 * list to the active list before going to the next
+			 * item in the pending-list.
+			 */
+			pnext = pcur->next;
+
+			if (rec->netparams.lookupstatus == LOOKUP_NEEDED)
+				dns_lookup(rec);
+
+			if (rec->netparams.lookupstatus == LOOKUP_ACTIVE) {
+				/* DNS lookup in progress, skip this test until lookup completes */
+				pcur = pnext;
+				continue;
+			}
 
 			switch (rec->talkprotocol) {
 			  case TALK_PROTO_PLAIN:
@@ -599,27 +619,29 @@ void run_tcp_tests(void)
 							(rec->netparams.sslver != SSLVERSION_NOSSL), NULL, NULL, 
 							TIMEOUT*1000,
 							rec->netparams.callback, rec)) {
-					list_item_move(activetests, pendingtests->head, rec->testspec);
+					list_item_move(activetests, pcur, rec->testspec);
 				}
 				else {
 					rec->talkresult = TALK_CONN_FAILED;
-					list_item_move(donetests, pendingtests->head, rec->testspec);
+					list_item_move(donetests, pcur, rec->testspec);
 				}
 				break;
 
 			  case TALK_PROTO_DNSQUERY:
 				if (dns_start_query(rec, rec->netparams.destinationip)) {
-					list_item_move(activetests, pendingtests->head, rec->testspec);
+					list_item_move(activetests, pcur, rec->testspec);
 				}
 				else {
 					rec->talkresult = TALK_CONN_FAILED;
-					list_item_move(donetests, pendingtests->head, rec->testspec);
+					list_item_move(donetests, pcur, rec->testspec);
 				}
 				break;
 
 			  default:
 				break;
 			}
+
+			pcur = pnext;
 		}
 
 		maxfd = conn_fdset(&fdread, &fdwrite);
@@ -698,17 +720,17 @@ int main(int argc, char **argv)
 
 #if 1
 	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog);
-	add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog);
-	add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog);
+	// add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog);
+	// add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog);
 	add_tcp_test("172.16.10.3", 123, NULL, "ntp", ntp_dialog);
 	add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog);
 	add_tcp_test("89.150.129.22", 53, NULL, "www.sslug.dk", dns_dialog);
 	add_tcp_test("89.150.129.22", 53, NULL, "www.csc.dk", dns_dialog);
 #endif
 
-	// add_tcp_test("www.google.com", 80, NULL, "http://www.google.com/", http_dialog);
-	// add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog);
-	// add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog);
+	add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog);
+	add_tcp_test("www.google.dk", 80, NULL, "http://www.google.dk/", http_dialog);
+	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog);
 
 	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog);
 
@@ -720,7 +742,7 @@ int main(int argc, char **argv)
 		printf("\tTarget   : %s\n", rec->netparams.destinationip);
 		printf("\tStatus   : ");
 		switch (rec->talkresult) {
-		  case TALK_INVALID_IP: printf("Cannot resolve hostname\n"); break;
+		  case TALK_CANNOT_RESOLVE: printf("Cannot resolve hostname\n"); break;
 		  case TALK_CONN_FAILED: printf("Connection failed\n"); break;
 		  case TALK_CONN_TIMEOUT: printf("Connection timeout\n"); break;
 		  case TALK_OK: printf("OK\n"); break;
@@ -728,6 +750,7 @@ int main(int argc, char **argv)
 		  case TALK_BADSSLHANDSHAKE: printf("SSL handshake failure\n"); break;
 		  case TALK_INTERRUPTED: printf("Peer disconnect\n"); break;
 		}
+		printf("\tLookup   : %d.%03d ms\n", (rec->dnselapsedms / 1000), (rec->dnselapsedms % 1000));
 		printf("\tTime     : %d.%03d ms\n", (rec->elapsedms / 1000), (rec->elapsedms % 1000));
 		printf("\tRead     : %d\n", rec->bytesread);
 		printf("\tWritten  : %d\n", rec->byteswritten);

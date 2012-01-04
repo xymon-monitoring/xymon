@@ -23,6 +23,8 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "dnsbits.h"
 
 static int dns_atype, dns_aaaatype, dns_aclass;
+static void dns_lookup_init(void);
+static ares_channel dns_lookupchannel;
 
 void dns_library_init(void)
 {
@@ -38,6 +40,7 @@ void dns_library_init(void)
 	dns_aaaatype= dns_name_type("AAAA");
 	dns_aclass = dns_name_class("IN");
 
+	dns_lookup_init();
 }
 
 static void destroy_addr_list(struct ares_addr_node *head)
@@ -190,6 +193,11 @@ int dns_add_active_fds(listhead_t *activelist, int *maxfd, fd_set *fdread, fd_se
 		if ((n-1) > *maxfd) *maxfd = (n-1);
 	}
 
+	/* ... and the lookup channel ... */
+	n = ares_fds(dns_lookupchannel, fdread, fdwrite);
+	if (n != 0) activecount++;
+	if ((n-1) > *maxfd) *maxfd = (n-1);
+
 	return activecount;
 }
 
@@ -209,6 +217,9 @@ void dns_process_active(listhead_t *activelist, fd_set *fdread, fd_set *fdwrite)
 		// dbgprintf("DNS query %s processing\n", rec->testspec);
 		ares_process(*((ares_channel *)rec->dnschannel), fdread, fdwrite);
 	}
+
+	/* ... and the lookup channel ... */
+	ares_process(dns_lookupchannel, fdread, fdwrite);
 }
 
 
@@ -225,27 +236,16 @@ void dns_finish_queries(listhead_t *activelist)
 		ares_destroy(*((ares_channel *)rec->dnschannel));
 		rec->dnsstatus = DNS_FINISHED;
 	}
+
+	/* Nothing to do for the lookup channel */
 }
 
 
-#if 0
-static ares_channel dns_lookupchannel;
 
-/* This defines the sequence in which we perform DNS lookup for IPv4 and IPv6 - default is IPv4 first, then v6 */
-static const int dns_lookup_sequence[] = {
-#ifdef IPV4_SUPPORT
-	AF_INET,
-#endif
-#ifdef IPV6_SUPPORT
-	AF_INET6,
-#endif
-	-1
-};
-
-void lookup_init(void)
+static void dns_lookup_init(void)
 {
 	struct ares_options options;
-	int optmask;
+	int optmask, status;
 
 	optmask = ARES_OPT_TIMEOUTMS | ARES_OPT_TRIES | ARES_OPT_FLAGS;
 	options.flags = ARES_FLAG_STAYOPEN;
@@ -258,35 +258,33 @@ void lookup_init(void)
 	}
 }
 
-int dns_lookup(myconn_t *rec)
+/* This defines the sequence in which we perform DNS lookup for IPv4 and IPv6 - default is IPv4 first, then v6 */
+static const int dns_lookup_sequence[] = {
+#ifdef IPV4_SUPPORT
+	AF_INET,
+#endif
+#ifdef IPV6_SUPPORT
+	AF_INET6,
+#endif
+	-1
+};
+
+void dns_lookup(myconn_t *rec)
 {
 	/* Push a normal DNS lookup into the DNS queue */
 
-	ares_gethostbyname(dns_lookupchannel, rec->dnslookupstring, AF_INET, dns_lookup_callback, rec);
-	ares_gethostbyname(dns_lookupchannel, rec->dnslookupstring, AF_INET6, dns_lookup_callback, rec);
-	rec->dnspendingqueries = 2;
-	getntimer(&rec->dnsstarttime);
-	rec->dnsstatus = DNS_QUERY_ACTIVE;
-	rec->dnschannel = &dns_lookupchannel;
-	rec->netparams.lookup_addrfamily_index++;
-	list_item_move(dns_tests, rec->listitem, rec->testspec);
+	if (rec->netparams.af_index == 0) getntimer(&rec->netparams.lookupstart);
 
 	/* Use ares_search() here, we want to use the whole shebang of name lookup options */
-	if (dns_lookup_sequence[rec->netparams.lookup_addrfamily_index] != -1) {
-		ares_gethostbyname(dns_lookupchannel, rec->dnslookupstring, dns_lookup_sequence[rec->netparams.lookup_addrfamily_index], dns_lookup_callback, rec);
-		getntimer(&rec->dnsstarttime);
-		rec->dnsstatus = DNS_QUERY_ACTIVE;
-		rec->dnschannel = &dns_lookupchannel;
-		rec->netparams.lookup_addrfamily_index++;
-		list_item_move(dns_tests, rec->listitem, rec->testspec);
+	if (dns_lookup_sequence[rec->netparams.af_index] != -1) {
+		ares_gethostbyname(dns_lookupchannel, rec->netparams.lookupstring, dns_lookup_sequence[rec->netparams.af_index], dns_lookup_callback, rec);
+		rec->netparams.lookupstatus = LOOKUP_ACTIVE;
+		rec->netparams.af_index++;
 	}
 	else {
-		rec->dnsstatus = DNS_FINISHED;
+		rec->netparams.lookupstatus = LOOKUP_FAILED;
 		rec->talkresult = TALK_CANNOT_RESOLVE;
 		test_is_done(rec);
 	}
-
-	return 1;
 }
-#endif
 
