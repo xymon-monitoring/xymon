@@ -73,6 +73,7 @@ typedef struct strbuffer_t {
 #include "../lib/xymonrrd.h"
 #include "../lib/holidays.h"
 #include "../lib/ipaccess.h"
+#include "../lib/lists.h"
 #include "../lib/loadalerts.h"
 #include "../lib/loadhosts.h"
 #include "../lib/loadcriticalconf.h"
