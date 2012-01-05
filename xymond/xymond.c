@@ -173,7 +173,8 @@ int	 defaultvalidity = 30;	/* Minutes */
 typedef struct conn_t {
 	char *sender;
 	unsigned char *buf, *bufp;				/* Message buffer and pointer */
-	size_t buflen, bufsz, msgsz;				/* Active and maximum length of buffer */
+	int msgsz;
+	size_t buflen, bufsz;				/* Active and maximum length of buffer */
 	enum { NOTALK, RECEIVING, RESPONDING } doingwhat;	/* Communications state (NOTALK, READING, RESPONDING) */
 } conn_t;
 
@@ -4572,6 +4573,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
 		n = conn_read(connection, (char *)conn->bufp, (conn->bufsz - conn->buflen - 1));
+
 		if (n < 0) {
 			if (conn->buf && conn->buflen) {
 				*(conn->bufp) = '\0';
@@ -4592,7 +4594,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 			conn->buflen += n;
 			*(conn->bufp) = '\0';
 
-			if (strncmp(conn->buf, "size:", 5) == 0) {
+			if (strncasecmp(conn->buf, "size:", 5) == 0) {
 				/* Got a message with size data. Ok to test for this every time, since we will remove the 'size:' line when we have it all */
 				unsigned char *eosz = strchr(conn->buf, '\n');
 				if (eosz) {
@@ -4618,8 +4620,17 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 						xfree(conn->buf);
 						conn->buf = newbuf;
 						conn->bufp = conn->buf + conn->buflen;
+
+						if (conn->buflen == conn->msgsz)
+							do_message(conn, "");
 					}
 				}
+			}
+			else if (strncasecmp(conn->buf, "starttls\n", 9) == 0) {
+				*(conn->buf) = '\0';
+				conn->bufp = conn->buf;
+				conn->buflen = 0;
+				return CONN_CBRESULT_STARTTLS;
 			}
 
 			/* Grow the input buffer - within reason ... */
@@ -4645,6 +4656,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
 		n = conn_write(connection, conn->bufp, conn->buflen);
+
 		if (n < 0) {
 			conn->buflen = 0;
 		}
