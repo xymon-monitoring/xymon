@@ -29,6 +29,9 @@ BEASTATOBJS = beastat.o
 tcptalk: $(TCPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIB) libcares.a $(XYMONTIMELIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TCPTALKOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
 
+tcptalk.o: tcptalk.c tcptalk.h dnstalk.h ntptalk.h
+	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ tcptalk.c
+
 dnstalk.o: dnstalk.c dnstalk.h
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnstalk.c
 

@@ -683,7 +683,7 @@ void run_tcp_tests(void)
 			n = select(maxfd+1, &fdread, &fdwrite, NULL, &tmo);
 			if (n < 0) {
 				if (errno != EINTR) {
-					fprintf(stderr, "select returned error (%s)\n", strerror(errno));
+					errprintf("FATAL: select() returned error %s\n", strerror(errno));
 					return;
 				}
 			}
@@ -701,25 +701,11 @@ void run_tcp_tests(void)
 
 void test_is_done(myconn_t *rec)
 {
-	listitem_t *walk;
-
-	printf("Before move: Active list %d entries:", activetests->len);
-	for (walk = activetests->head; (walk); walk = walk->next) {
-		myconn_t *rec = (myconn_t *)walk->data;
-		printf("\t%s", rec->testspec);
-	}
-	printf("\n");
-
 	list_item_move(donetests, rec->listitem, rec->testspec);
-
-	printf("After move: Active list %d entries:", activetests->len);
-	for (walk = activetests->head; (walk); walk = walk->next) {
-		myconn_t *rec = (myconn_t *)walk->data;
-		printf("\t%s", rec->testspec);
-	}
-	printf("\n");
 }
 
+
+#ifdef STANDALONE
 void showtext(char *s)
 {
 	char *bol, *eoln;
@@ -816,4 +802,5 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+#endif
 

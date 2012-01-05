@@ -241,6 +241,7 @@ void dns_finish_queries(listhead_t *activelist)
 }
 
 
+static void *dns_lookupcache = NULL;
 
 static void dns_lookup_init(void)
 {
@@ -256,6 +257,8 @@ static void dns_lookup_init(void)
 		errprintf("Cannot initialise DNS lookups: %s\n", ares_strerror(status));
 		return;
 	}
+
+	dns_lookupcache = xtreeNew(strcasecmp);
 }
 
 /* This defines the sequence in which we perform DNS lookup for IPv4 and IPv6 - default is IPv4 first, then v6 */
@@ -269,9 +272,71 @@ static const int dns_lookup_sequence[] = {
 	-1
 };
 
+typedef struct dns_lookupcache_t {
+	char *hostname;
+	char *ip4;
+	char *ip6;
+} dns_lookupcache_t;
+
+
+void dns_addtocache(myconn_t *rec, char *ip)
+{
+	xtreePos_t handle;
+	dns_lookupcache_t *cacherec;
+
+	handle = xtreeFind(dns_lookupcache, rec->netparams.lookupstring);
+	if (handle == xtreeEnd(dns_lookupcache)) {
+		cacherec = (dns_lookupcache_t *)calloc(1, sizeof(dns_lookupcache_t));
+		cacherec->hostname = strdup(rec->netparams.lookupstring);
+		xtreeAdd(dns_lookupcache, cacherec->hostname, cacherec);
+	}
+	else {
+		cacherec = xtreeData(dns_lookupcache, handle);
+	}
+
+	/*
+	 * The current response is for family af_index-1, 
+	 * because af_index is incremented immediately after
+	 * starting the query.
+	 */
+	switch (dns_lookup_sequence[rec->netparams.af_index-1]) {
+	  case AF_INET: cacherec->ip4 = strdup(ip); break;
+	  case AF_INET6: cacherec->ip6 = strdup(ip); break;
+	}
+}
+
 void dns_lookup(myconn_t *rec)
 {
 	/* Push a normal DNS lookup into the DNS queue */
+	xtreePos_t cachehandle;
+
+	if ((cachehandle = xtreeFind(dns_lookupcache, rec->netparams.lookupstring)) != xtreeEnd(dns_lookupcache)) {
+		/* In the cache */
+		dns_lookupcache_t *cacherec = xtreeData(dns_lookupcache, cachehandle);
+		char *res;
+
+		switch (dns_lookup_sequence[rec->netparams.af_index]) {
+		  case AF_INET: res = cacherec->ip4; break;
+		  case AF_INET6: res = cacherec->ip6; break;
+		}
+
+		if (res) {
+			/* We have a result in the cache for this address type */
+			if (strcmp(res, "") != 0) {
+				/* Successfully resolved from cache */
+				if (rec->netparams.destinationip) xfree(rec->netparams.destinationip);
+				rec->netparams.destinationip = strdup(res);
+				rec->netparams.lookupstatus = LOOKUP_COMPLETED;
+			}
+			else {
+				rec->netparams.lookupstatus = LOOKUP_FAILED;
+				rec->talkresult = TALK_CANNOT_RESOLVE;
+				test_is_done(rec);
+			}
+
+			return;
+		}
+	}
 
 	if (rec->netparams.af_index == 0) getntimer(&rec->netparams.lookupstart);
 

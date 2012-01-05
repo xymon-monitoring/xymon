@@ -17,6 +17,7 @@ extern int dns_add_active_fds(listhead_t *activelist, int *maxfd, fd_set *fdread
 extern void dns_process_active(listhead_t *activelist, fd_set *fdread, fd_set *fdwrite);
 extern void dns_finish_queries(listhead_t *activelist);
 extern void dns_lookup(myconn_t *rec);
+extern void dns_addtocache(myconn_t *rec, char *ip);
 
 #endif
 
