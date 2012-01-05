@@ -397,6 +397,7 @@ int conn_listen(int portnumber, int backlog, enum sslhandling_t  sslhandling, ch
 #ifdef IPV4_SUPPORT
 	ls = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
 	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
+	ls->sslhandling = sslhandling;
 	ls->usercallback = usercallback;
 	ls->family = AF_INET;
 	ls->peersz = sizeof(struct sockaddr_in);
@@ -415,6 +416,7 @@ int conn_listen(int portnumber, int backlog, enum sslhandling_t  sslhandling, ch
 #ifdef IPV6_SUPPORT
 	ls = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
 	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
+	ls->sslhandling = sslhandling;
 	ls->usercallback = usercallback;
 	ls->family = AF_INET6;
 	ls->peersz = sizeof(struct sockaddr_in6);
@@ -511,6 +513,8 @@ static void try_ssl_starttls(tcpconn_t *conn)
 	const char *funcid = "try_ssl_starttls";
 	int sslresult;
 
+	conn_info(funcid, INFO_DEBUG, "Trying STARTTLS with %s\n", conn_print_address(conn));
+
 	sslresult = SSL_do_handshake(conn->ssl);
 	if (sslresult == 1) {
 		conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_OK, conn->userdata);
@@ -547,15 +551,22 @@ int conn_starttls(tcpconn_t *conn)
 {
 	const char *funcid = "conn_starttls";
 
-#ifdef HAVE_OPENSSL
-	if (!conn->ssl) {
-		conn_info(funcid, INFO_ERROR, "starttls failed, SSL certificate not prepared\n");
-		return 1;
-	}
+	conn_info(funcid, INFO_DEBUG, "Initiating STARTTLS in %s mode\n",
+		  (conn->sslhandling == CONN_SSL_STARTTLS_SERVER) ? "server" : "client");
 
+#ifdef HAVE_OPENSSL
 	switch (conn->sslhandling) {
 	  case CONN_SSL_STARTTLS_SERVER:
-		SSL_set_accept_state(conn->ssl);
+		if (serverctx) {
+			conn->ctx = NULL;	/* NULL, because we dont want it freed in case of an error */
+			conn->ssl = SSL_new(serverctx);
+			SSL_set_accept_state(conn->ssl);
+		}
+		else {
+			conn_info(funcid, INFO_ERROR, 
+				  "starttls failed, SSL certificate not prepared\n");
+			return 1;
+		}
 		break;
 	  case CONN_SSL_STARTTLS_CLIENT:
 		SSL_set_connect_state(conn->ssl);
@@ -595,6 +606,7 @@ tcpconn_t *conn_accept(tcpconn_t *ls)
 
 	newconn = (tcpconn_t *)calloc(1, sizeof(tcpconn_t));
 	newconn->connstate = ls->connstate;
+	newconn->sslhandling = ls->sslhandling;
 	newconn->usercallback = ls->usercallback;
 	newconn->family = ls->family;
 	newconn->peer = (struct sockaddr *)malloc(sin_len);
@@ -942,6 +954,9 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 		if (FD_ISSET(walk->sock, fdread)) {
 			cbres = walk->usercallback(walk, CONN_CB_READ, walk->userdata);
 			if (walk->connstate == CONN_DEAD) continue;
+
+			if (cbres == CONN_CBRESULT_STARTTLS)
+				conn_starttls(walk);
 		}
 
 		if (FD_ISSET(walk->sock, fdwrite)) {
@@ -1095,10 +1110,9 @@ void conn_init_server(int portnumber, int backlog,
 		      enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
 {
 	static char *funcid = "conn_init_server";
+	int sslavailable = 0;
 
 	signal(SIGPIPE, SIG_IGN);	/* socket I/O needs to ignore SIGPIPE */
-
-	if (portnumber) conn_listen(portnumber, backlog, 0, local4, local6, usercallback);
 
 #ifdef HAVE_OPENSSL
 	SSL_load_error_strings();
@@ -1108,25 +1122,31 @@ void conn_init_server(int portnumber, int backlog,
 	SSL_CTX_set_options(serverctx, (SSL_OP_NO_SSLv2 | SSL_OP_ALL));
 	SSL_CTX_set_quiet_shutdown(serverctx, 1);
 
-	if (sslportnumber && (try_ssl_certload(serverctx, certfn, keyfn) == 0)) {
-		if (rootcafn) {
-			int mode = SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE;
-
-			conn_info(funcid, INFO_INFO, "Enabled client certificate verification\n");
-
-			if (requireclientcert) mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
-
-			if (SSL_CTX_load_verify_locations(serverctx, rootcafn, NULL) != 1)
-				conn_info(funcid, INFO_WARN, "Cannot open rootca file %s\n", rootcafn);
-			else {
-				SSL_CTX_set_client_CA_list(serverctx, SSL_load_client_CA_file(rootcafn));
-				SSL_CTX_set_verify(serverctx, mode, NULL);
-			}
+	if (certfn) {
+		sslavailable = (try_ssl_certload(serverctx, certfn, keyfn) == 0);
+		if (!sslavailable) {
+			conn_info(funcid, INFO_INFO, "No server certificate - disabling SSL connections\n");
 		}
+	}
 
-		conn_listen(sslportnumber, backlog, 1, local4, local6, usercallback);
+	if (sslavailable && rootcafn) {
+		int mode = SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE;
+
+		conn_info(funcid, INFO_INFO, "Enabled client certificate verification\n");
+
+		if (requireclientcert) mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+
+		if (SSL_CTX_load_verify_locations(serverctx, rootcafn, NULL) != 1)
+			conn_info(funcid, INFO_WARN, "Cannot open rootca file %s\n", rootcafn);
+		else {
+			SSL_CTX_set_client_CA_list(serverctx, SSL_load_client_CA_file(rootcafn));
+			SSL_CTX_set_verify(serverctx, mode, NULL);
+		}
 	}
 #endif
+
+	if (portnumber) conn_listen(portnumber, backlog, (sslavailable ? CONN_SSL_STARTTLS_SERVER : CONN_SSL_NO), local4, local6, usercallback);
+	if (sslavailable && sslportnumber) conn_listen(sslportnumber, backlog, CONN_SSL_YES, local4, local6, usercallback);
 }
 
 
