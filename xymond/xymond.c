@@ -175,7 +175,7 @@ typedef struct conn_t {
 	unsigned char *buf, *bufp;				/* Message buffer and pointer */
 	int msgsz;
 	size_t buflen, bufsz;				/* Active and maximum length of buffer */
-	enum { NOTALK, RECEIVING, RESPONDING } doingwhat;	/* Communications state (NOTALK, READING, RESPONDING) */
+	enum { NOTALK, RECEIVING, STARTTLSWAIT, RESPONDING } doingwhat;	/* Communications state (NOTALK, READING, RESPONDING) */
 } conn_t;
 
 enum droprencmd_t { CMD_DROPHOST, CMD_DROPTEST, CMD_RENAMEHOST, CMD_RENAMETEST, CMD_DROPSTATE };
@@ -4563,13 +4563,15 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
 	  case CONN_CB_SSLHANDSHAKE_FAILED:    /* Client/server mode: SSL handshake failed (connection will close) */
+		conn->bufp = conn->buf;
+		conn->buflen = 0;
 		break;
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
 		return (conn->doingwhat == RECEIVING) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 
 	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
-		return (conn->doingwhat == RESPONDING) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
+		return ((conn->doingwhat == RESPONDING) || (conn->doingwhat == STARTTLSWAIT)) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
 		n = conn_read(connection, (char *)conn->bufp, (conn->bufsz - conn->buflen - 1));
@@ -4600,14 +4602,17 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 		}
 		else if ((n > 0) && (conn->msgsz > 0) && ((conn->buflen+n) >= conn->msgsz)) {
 			/* End of input data on this connection */
+			// dbgprintf("Got the entire message, preparing response\n");
 			conn->bufp += n;
 			*(conn->bufp) = '\0';
 			do_message(conn, "");
 		}
 		else {
+			*(conn->bufp + n) = '\0';
+			// dbgprintf("Got data: %s\n", conn->bufp);
+
 			conn->bufp += n;
 			conn->buflen += n;
-			*(conn->bufp) = '\0';
 
 			if (strncasecmp(conn->buf, "size:", 5) == 0) {
 				/* Got a message with size data. Ok to test for this every time, since we will remove the 'size:' line when we have it all */
@@ -4636,16 +4641,29 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 						conn->buf = newbuf;
 						conn->bufp = conn->buf + conn->buflen;
 
+						// dbgprintf("Expect message of size %d, currently have %d\n", conn->msgsz, conn->buflen);
 						if (conn->buflen >= conn->msgsz)
 							do_message(conn, "");
 					}
 				}
 			}
 			else if (strncasecmp(conn->buf, "starttls\n", 9) == 0) {
-				*(conn->buf) = '\0';
+#ifdef HAVE_OPENSSL
+				if (connection->sslhandling == CONN_SSL_STARTTLS_SERVER) 
+				{
+					// dbgprintf("Got a STARTTLS command, sending OK\n");
+					conn->doingwhat = STARTTLSWAIT;
+					strcpy(conn->buf, "OK TLS\n");
+				}
+				else 
+#endif
+				{
+					// dbgprintf("Got a STARTTLS command, sending ERR\n");
+					conn->doingwhat = RESPONDING;
+					strcpy(conn->buf, "ERR No TLS\n");
+				}
 				conn->bufp = conn->buf;
-				conn->buflen = 0;
-				return CONN_CBRESULT_STARTTLS;
+				conn->buflen = strlen(conn->buf);
 			}
 
 			/* Grow the input buffer - within reason ... */
@@ -4697,7 +4715,12 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 		}
 
 		if (conn->buflen == 0) {
-			conn->doingwhat = NOTALK;
+			if (conn->doingwhat == STARTTLSWAIT) {
+				conn->doingwhat = RECEIVING;
+				return CONN_CBRESULT_STARTTLS;
+			}
+			else
+				conn->doingwhat = NOTALK;
 		}
 		break;
 
