@@ -4573,6 +4573,21 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
 		n = conn_read(connection, (char *)conn->bufp, (conn->bufsz - conn->buflen - 1));
+		if (n == 0) {
+			switch (connection->connstate) {
+			  case CONN_SSL_ACCEPT_READ:
+			  case CONN_SSL_ACCEPT_WRITE:
+			  case CONN_SSL_CONNECT_READ:
+			  case CONN_SSL_CONNECT_WRITE:
+			  case CONN_SSL_STARTTLS_READ:
+			  case CONN_SSL_STARTTLS_WRITE:
+			  case CONN_SSL_READ:
+			  case CONN_SSL_WRITE:
+				return CONN_CBRESULT_OK;
+			  default:
+				break;
+			}
+		}
 
 		if (n < 0) {
 			if (conn->buf && conn->buflen) {
@@ -4583,7 +4598,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 				conn->doingwhat = NOTALK;
 			}
 		}
-		else if ((n == 0) || ((n > 0) && (conn->msgsz > 0) && ((conn->buflen+n) >= conn->msgsz))) {
+		else if ((n > 0) && (conn->msgsz > 0) && ((conn->buflen+n) >= conn->msgsz)) {
 			/* End of input data on this connection */
 			conn->bufp += n;
 			*(conn->bufp) = '\0';
@@ -4621,7 +4636,7 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 						conn->buf = newbuf;
 						conn->bufp = conn->buf + conn->buflen;
 
-						if (conn->buflen == conn->msgsz)
+						if (conn->buflen >= conn->msgsz)
 							do_message(conn, "");
 					}
 				}
@@ -4656,6 +4671,22 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
 		n = conn_write(connection, conn->bufp, conn->buflen);
+		if (n == 0) {
+			switch (connection->connstate) {
+			  case CONN_SSL_ACCEPT_READ:
+			  case CONN_SSL_ACCEPT_WRITE:
+			  case CONN_SSL_CONNECT_READ:
+			  case CONN_SSL_CONNECT_WRITE:
+			  case CONN_SSL_STARTTLS_READ:
+			  case CONN_SSL_STARTTLS_WRITE:
+			  case CONN_SSL_READ:
+			  case CONN_SSL_WRITE:
+				return CONN_CBRESULT_OK;
+			  default:
+				break;
+			}
+		}
+
 
 		if (n < 0) {
 			conn->buflen = 0;
@@ -5243,7 +5274,6 @@ int main(int argc, char *argv[])
 		conn_trimactive();
 
 		/* Pick up new connections */
-		dbgprintf("Picking up new connections\n");
 		conn_process_listeners(&fdread);
 
 		/* Any scheduled tasks that need attending to? */
