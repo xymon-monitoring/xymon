@@ -406,7 +406,8 @@ static int listen_port(tcpconn_t *ls, int portnumber, int backlog, char *localad
  * The listener socket(s) are put in the "lsocks" list and the conn_process_listeners()
  * routine will scan them to see if there are new inbound connections.
  */
-int conn_listen(int portnumber, int backlog, enum sslhandling_t  sslhandling, char *local4, char *local6, 
+int conn_listen(int portnumber, int backlog, int maxlifetime,
+		enum sslhandling_t  sslhandling, char *local4, char *local6, 
 		enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
 {
 	const char *funcid = "conn_listen";
@@ -417,6 +418,7 @@ int conn_listen(int portnumber, int backlog, enum sslhandling_t  sslhandling, ch
 	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
 	ls->sslhandling = sslhandling;
 	ls->usercallback = usercallback;
+	ls->maxlifetime = maxlifetime;
 	ls->family = AF_INET;
 	ls->peersz = sizeof(struct sockaddr_in);
 	ls->peer = (struct sockaddr *)calloc(1, ls->peersz);
@@ -436,6 +438,7 @@ int conn_listen(int portnumber, int backlog, enum sslhandling_t  sslhandling, ch
 	ls->connstate = ((sslhandling == CONN_SSL_YES) ? CONN_SSL_INIT : CONN_PLAINTEXT);
 	ls->sslhandling = sslhandling;
 	ls->usercallback = usercallback;
+	ls->maxlifetime = maxlifetime;
 	ls->family = AF_INET6;
 	ls->peersz = sizeof(struct sockaddr_in6);
 	ls->peer = (struct sockaddr *)calloc(1, ls->peersz);
@@ -636,6 +639,7 @@ tcpconn_t *conn_accept(tcpconn_t *ls)
 	newconn->connstate = ls->connstate;
 	newconn->sslhandling = ls->sslhandling;
 	newconn->usercallback = ls->usercallback;
+	newconn->maxlifetime = ls->maxlifetime;
 	newconn->family = ls->family;
 	newconn->peer = (struct sockaddr *)malloc(sin_len);
 	newconn->sock = accept(ls->sock, newconn->peer, &sin_len);
@@ -1148,7 +1152,7 @@ static int try_ssl_certload(SSL_CTX *ctx, char *certfn, char *keyfn)
  * local4 and local6 can be used to bind to a specific local
  * adresses in the IPv4 and IPv6 adress family.
  */
-void conn_init_server(int portnumber, int backlog, 
+void conn_init_server(int portnumber, int backlog, int maxlifetime,
 		      char *certfn, char *keyfn, int sslportnumber, char *rootcafn, int requireclientcert,
 		      char *local4, char *local6,
 		      enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *))
@@ -1189,8 +1193,8 @@ void conn_init_server(int portnumber, int backlog,
 	}
 #endif
 
-	if (portnumber) conn_listen(portnumber, backlog, (sslavailable ? CONN_SSL_STARTTLS_SERVER : CONN_SSL_NO), local4, local6, usercallback);
-	if (sslavailable && sslportnumber) conn_listen(sslportnumber, backlog, CONN_SSL_YES, local4, local6, usercallback);
+	if (portnumber) conn_listen(portnumber, backlog, maxlifetime, (sslavailable ? CONN_SSL_STARTTLS_SERVER : CONN_SSL_NO), local4, local6, usercallback);
+	if (sslavailable && sslportnumber) conn_listen(sslportnumber, backlog, maxlifetime, CONN_SSL_YES, local4, local6, usercallback);
 }
 
 

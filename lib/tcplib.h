@@ -72,7 +72,10 @@ extern char *conn_print_ip(tcpconn_t *conn);
 extern char *conn_print_address(tcpconn_t *conn);
 extern char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend);
 
-extern int conn_listen(int portnumber, int backlog, enum sslhandling_t withssl, char *local4, char *local6, enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *));
+extern int conn_listen(int portnumber, int backlog, int maxlifetime,
+		       enum sslhandling_t withssl, 
+		       char *local4, char *local6, 
+		       enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *));
 extern tcpconn_t *conn_accept(tcpconn_t *ls);
 
 extern void clear_fdsets(fd_set *fdr, fd_set *fdw, int *maxfd);
@@ -81,7 +84,7 @@ extern void add_fd(int sock, fd_set *fds, int *maxfd);
 
 extern void conn_register_infohandler(void (*cb)(time_t, const char *id, char *msg), enum infolevel_t level);
 
-extern void conn_init_server(int portnumber, int backlog, 
+extern void conn_init_server(int portnumber, int backlog, int maxlifetime,
 			     char *certfn, char *keyfn, int sslportnumber, char *rootcafn, int requireclientcert,
 			     char *local4, char *local6,
 			     enum conn_cbresult_t (*usercallback)(tcpconn_t *, enum conn_callback_t, void *));
