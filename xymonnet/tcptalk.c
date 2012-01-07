@@ -50,9 +50,10 @@ static char *smtp_dialog[] = {
 
 static char *xymonping_dialog[] = {
 	"SEND:starttls\n",
+	"EXPECT:OK",
 	"STARTTLS",
-	"SEND:size:23\nxymondboard host=osiris\n",
-	"READALL",
+	"SEND:size:4\nping\n",
+	"EXPECT:xymon",
 	"CLOSE",
 	NULL
 };
@@ -456,7 +457,6 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
 			res = CONN_CBRESULT_STARTTLS;
 			rec->step++;
-			usleep(10000);
 		}
 		break;
 
@@ -501,7 +501,6 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
 			res = CONN_CBRESULT_STARTTLS;
 			rec->step++;
-			usleep(10000);
 		}
 		break;
 
@@ -746,9 +745,14 @@ int main(int argc, char **argv)
 	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
 #endif
 
-	xymonping_dialog[2] = (char *)malloc(30 + strlen(argv[1]));
-	sprintf(xymonping_dialog[2], "SEND:size:%d\n%s\n", (int)strlen(argv[1]), argv[1]);
-	add_tcp_test("127.0.0.1", 1984, NULL, "xymon", xymonping_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
+#if 1
+	{
+		xymonping_dialog[3] = (char *)malloc(30 + strlen(argv[1]));
+		sprintf(xymonping_dialog[3], "SEND:size:%d\n%s\n", (int)strlen(argv[1]), argv[1]);
+
+		add_tcp_test("127.0.0.1", 1984, NULL, "xymon", xymonping_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
+	}
+#endif
 
 	run_tcp_tests();
 
