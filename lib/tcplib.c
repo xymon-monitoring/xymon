@@ -76,6 +76,24 @@ char *conn_callback_names[CONN_CB_CLEANUP+1] = {
 	"Cleanup"
 };
 
+char *conn_state_names[CONN_DEAD+1] = {
+	"Plaintext",
+	"SSL init",
+	"SSL connecting",
+	"Plaintext connecting",
+	"SSL accept read",
+	"SSL accept write",
+	"SSL connect read",
+	"SSL connect write",
+	"SSL starttls read",
+	"SSL starttls write",
+	"SSL read",
+	"SSL write",
+	"SSL user ready",
+	"Closing",
+	"Dead",
+};
+
 void conn_register_infohandler(void (*cb)(time_t, const char *id, char *msg), enum infolevel_t level)
 {
 	userinfo = cb;
@@ -442,6 +460,8 @@ static void try_ssl_accept(tcpconn_t *conn)
 	const char *funcid = "try_ssl_accept";
 	int sslresult;
 
+	conn->connstate = CONN_SSL_INIT;
+
 	sslresult = SSL_accept(conn->ssl);
 	if (sslresult == 1) {
 		conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_OK, conn->userdata);
@@ -474,6 +494,8 @@ static void try_ssl_connect(tcpconn_t *conn)
 #ifdef HAVE_OPENSSL
 	const char *funcid = "try_ssl_connect";
 	int sslresult;
+
+	conn->connstate = CONN_SSL_INIT;
 
 	sslresult = SSL_connect(conn->ssl);
 	if (sslresult == 1) {
@@ -512,10 +534,12 @@ static void try_ssl_starttls(tcpconn_t *conn)
 #ifdef HAVE_OPENSSL
 	const char *funcid = "try_ssl_starttls";
 	int sslresult;
+	char sslerrmsg[256];
 
-	conn_info(funcid, INFO_DEBUG, "Trying STARTTLS with %s\n", conn_print_address(conn));
+	conn->connstate = CONN_SSL_INIT;
 
 	sslresult = SSL_do_handshake(conn->ssl);
+
 	if (sslresult == 1) {
 		conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_OK, conn->userdata);
 		conn->connstate = CONN_SSL_READY;
@@ -525,7 +549,8 @@ static void try_ssl_starttls(tcpconn_t *conn)
 		/* SSL handshake failed */
 		conn->usercallback(conn, CONN_CB_SSLHANDSHAKE_FAILED, conn->userdata);
 		SSL_get_error(conn->ssl, sslresult);
-		conn_info(funcid, INFO_ERROR, "SSL connection failed to %s\n", conn_print_address(conn));
+		ERR_error_string(ERR_get_error(), sslerrmsg);
+		conn_info(funcid, INFO_ERROR, "SSL connection failed to %s: %s\n", conn_print_address(conn), sslerrmsg);
 		conn->connstate = CONN_CLOSING;
 	}
 	else if (sslresult == -1) {
@@ -555,32 +580,35 @@ int conn_starttls(tcpconn_t *conn)
 		  (conn->sslhandling == CONN_SSL_STARTTLS_SERVER) ? "server" : "client");
 
 #ifdef HAVE_OPENSSL
-	switch (conn->sslhandling) {
-	  case CONN_SSL_STARTTLS_SERVER:
+	/* The SSL ctx and ssl settings have been setup when the socket was created */
+	if (conn->sslhandling == CONN_SSL_STARTTLS_SERVER) {
 		if (serverctx) {
 			conn->ctx = NULL;	/* NULL, because we dont want it freed in case of an error */
 			conn->ssl = SSL_new(serverctx);
-			SSL_set_accept_state(conn->ssl);
 		}
 		else {
 			conn_info(funcid, INFO_ERROR, 
 				  "starttls failed, SSL certificate not prepared\n");
 			return 1;
 		}
+	}
+
+	if (SSL_set_fd(conn->ssl, conn->sock) != 1) {
+		char sslerrmsg[256];
+		ERR_error_string(ERR_get_error(), sslerrmsg);
+		conn_info(funcid, INFO_ERROR, "starttls failed for %s: %s\n", conn_print_address(conn), sslerrmsg);
+		return 1;
+	}
+
+	switch (conn->sslhandling) {
+	  case CONN_SSL_STARTTLS_SERVER:
+		SSL_set_accept_state(conn->ssl);
 		break;
 	  case CONN_SSL_STARTTLS_CLIENT:
 		SSL_set_connect_state(conn->ssl);
 		break;
 	  default:
 		conn_info(funcid, INFO_ERROR, "starttls failed, not requested when socket was created\n");
-		return 1;
-	}
-
-	/* The SSL ctx and ssl settings have been setup when the socket was created */
-	if (SSL_set_fd(conn->ssl, conn->sock) != 1) {
-		char sslerrmsg[256];
-		ERR_error_string(ERR_get_error(), sslerrmsg);
-		conn_info(funcid, INFO_ERROR, "starttls failed for %s: %s\n", conn_print_address(conn), sslerrmsg);
 		return 1;
 	}
 
@@ -616,6 +644,9 @@ tcpconn_t *conn_accept(tcpconn_t *ls)
 		conn_info(funcid, INFO_WARN, "accept failed (%s)\n", strerror(errno));
 		return NULL;
 	}
+
+	/* Make the new socket non-blocking */
+	fcntl(newconn->sock, F_SETFL, O_NONBLOCK);
 
 	switch (newconn->family) {
 #ifdef IPV4_SUPPORT
@@ -868,6 +899,8 @@ void add_fd(int sock, fd_set *fds, int *maxfd)
  */
 int conn_fdset(fd_set *fdread, fd_set *fdwrite)
 {
+	const char *funcid = "conn_fdset";
+
 	int maxfd, wantread, wantwrite;
 	tcpconn_t *walk;
 
@@ -879,7 +912,6 @@ int conn_fdset(fd_set *fdread, fd_set *fdwrite)
 
 	for (walk = conns; (walk); walk = walk->next) {
 		switch (walk->connstate) {
-		  case CONN_SSL_INIT:
 		  case CONN_CLOSING:
 		  case CONN_DEAD:
 			break;
@@ -893,6 +925,18 @@ int conn_fdset(fd_set *fdread, fd_set *fdwrite)
 				walk->connstate = CONN_CLOSING;
 				conn_cleanup(walk);
 			}
+			break;
+
+		  case CONN_SSL_INIT:
+			/*
+			 * Starting an SSL handshake, we want to read or write data.
+			 * 
+			 * NOTE: This really should not happen, since all SSL I/O
+			 * operations explicitly call try_ssl_X(), which invokes the
+			 * SSL I/O operation and then changes state to CONN_SSL_X_READ/WRITE
+			 */
+			add_fd(walk->sock, fdread, &maxfd);
+			add_fd(walk->sock, fdwrite, &maxfd);
 			break;
 
 		  case CONN_SSL_ACCEPT_READ:
