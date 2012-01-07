@@ -4665,6 +4665,10 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 				conn->bufp = conn->buf;
 				conn->buflen = strlen(conn->buf);
 			}
+			else if ((n == 0) && (connection->connstate == CONN_PLAINTEXT)) {
+				/* No more data */
+				do_message(conn, "");
+			}
 
 			/* Grow the input buffer - within reason ... */
 			if ((conn->bufsz - conn->buflen) < 2048) {
@@ -4736,8 +4740,12 @@ enum conn_cbresult_t server_callback(tcpconn_t *connection, enum conn_callback_t
 
 	  case CONN_CB_CONNECT_START:
 	  case CONN_CB_CONNECT_COMPLETE:
+		break;
+
 	  case CONN_CB_CONNECT_FAILED:
 	  case CONN_CB_TIMEOUT:
+		conn->doingwhat = NOTALK;
+		conn_close_connection(connection, NULL);
 		break;
 	}
 
@@ -5060,7 +5068,7 @@ int main(int argc, char *argv[])
 	if (listenport) errprintf("Setting up network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listenport);
 	if (listensslport && certfn && keyfn) errprintf("Setting up SSL network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listensslport);
 	if (debug) conn_register_infohandler(NULL, INFO_DEBUG);
-	conn_init_server(listenport, listenq, 
+	conn_init_server(listenport, listenq, 1000*conn_timeout,
 			 certfn, keyfn, listensslport, rootcafn, requireclientcert,
 			 listenip4, listenip6, server_callback);
 
