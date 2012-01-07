@@ -56,11 +56,13 @@ static int sleepbetweenmsgs = 0;
 typedef struct myconn_t {
 	/* Plain-text protocols */
 	char szbuf[20]; char *szptr;
+	char tlsbuf[10]; char *tlsptr;
 	char *readbuf, *writebuf;
 	char *readp, *writep;
 	size_t readbufsz;
 	char *peer;
-	int port, usessl, readmore;
+	int port, readmore;
+	enum sslhandling_t usessl;
 	sendresult_t result;
 	sendreturn_t *response;
 	struct myconn_t *next;
@@ -69,7 +71,7 @@ typedef struct myconn_t {
 typedef struct mytarget_t {
 	char *targetip;
 	int defaultport;
-	int usessl;
+	enum sslhandling_t usessl;
 } mytarget_t;
 
 static myconn_t *myhead = NULL, *mytail = NULL;
@@ -82,6 +84,8 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 	time_t start, expire;
 	char *certsubject;
 	myconn_t *rec = (myconn_t *)userdata;
+
+	// dbgprintf("CB: %s\n", conn_callback_names[id]);
 
 	switch (id) {
 	  case CONN_CB_CONNECT_COMPLETE:       /* Client mode: New outbound connection succeded */
@@ -123,6 +127,8 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 		  case CONN_SSL_ACCEPT_WRITE:
 		  case CONN_SSL_CONNECT_READ:
 		  case CONN_SSL_CONNECT_WRITE:
+		  case CONN_SSL_STARTTLS_READ:
+		  case CONN_SSL_STARTTLS_WRITE:
 		  case CONN_SSL_READ:
 		  case CONN_SSL_WRITE:
 			sslhandshakeinprogress = 1; break;
@@ -156,7 +162,19 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 		break;
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
-		if (rec->szptr) {
+		if (rec->tlsptr) {
+			n = conn_write(connection, rec->tlsptr, strlen(rec->tlsptr));
+			if (n > 0) {
+				rec->tlsptr += n;
+				if (*rec->tlsptr == '\0') {
+					rec->tlsptr = NULL;
+					res = CONN_CBRESULT_STARTTLS;
+					usleep(10000);	/* FIXME - this gives a bit of time for the server to prepare for TLS handshake */
+				}
+				n = 0;	/* Didn't send any message data yet */
+			}
+		}
+		else if (rec->szptr) {
 			n = conn_write(connection, rec->szptr, strlen(rec->szptr));
 			if (n > 0) {
 				rec->szptr += n;
@@ -166,12 +184,11 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 		}
 		else {
 			n = conn_write(connection, rec->writep, strlen(rec->writep));
-		}
-
-		if (n > 0) {
-			rec->writep += n;
-			if (*rec->writep == '\0') {
-				conn_close_connection(connection, "w");
+			if (n > 0) {
+				rec->writep += n;
+				if (*rec->writep == '\0') {
+					conn_close_connection(connection, "w");
+				}
 			}
 		}
 		break;
@@ -216,12 +233,14 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		ip = conn_lookup_ip(targets[i]->targetip, &portnum);
 
 		myconn = (myconn_t *)calloc(1, sizeof(myconn_t));
+		strcpy(myconn->tlsbuf, "starttls\n");
+		myconn->tlsptr = (targets[i]->usessl ? myconn->tlsbuf : NULL);
+		myconn->usessl = targets[i]->usessl;
 		sprintf(myconn->szbuf, "size:%d\n", (int)strlen(msg));
 		myconn->szptr = myconn->szbuf;
 		myconn->writebuf = msg;
 		myconn->peer = strdup(ip ? ip : "");
 		myconn->port = (portnum ? portnum : targets[i]->defaultport);
-		myconn->usessl = targets[i]->usessl;
 		if (mytail) {
 			mytail->next = myconn;
 			mytail = myconn;
@@ -232,7 +251,7 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 
 		if (ip) {
 			conn_prepare_connection(myconn->peer, myconn->port, CONN_SOCKTYPE_STREAM, NULL, 
-					myconn->usessl, getenv("XYMONCLIENTCERT"), getenv("XYMONCLIENTKEY"), 
+					(myconn->usessl ? CONN_SSL_STARTTLS_CLIENT : CONN_SSL_NO), getenv("XYMONCLIENTCERT"), getenv("XYMONCLIENTKEY"), 
 					1000*timeout, client_callback, myconn);
 		}
 		else {
@@ -277,7 +296,7 @@ static mytarget_t **build_targetlist(char *recips, int defaultport, int defaults
 	 * Target format: [ssl:][IP|hostname][/portnumber|/servicename|:portnumber|:servicename]
 	 */
 	mytarget_t **targets;
-	char *multilist, *r;
+	char *multilist, *r, *p;
 	int tcount = 0;
 
 	multilist = strdup(recips);
@@ -287,9 +306,23 @@ static mytarget_t **build_targetlist(char *recips, int defaultport, int defaults
 	while (r) {
 		targets = (mytarget_t **)realloc(targets, (tcount+2)*sizeof(mytarget_t *));
 		targets[tcount] = (mytarget_t *)calloc(1, sizeof(mytarget_t));
-		targets[tcount]->usessl = (strncmp(r, "ssl:", 4) == 0); if (targets[tcount]->usessl) r += 4;
+		if (strncmp(r, "ssl:", 4) == 0) {
+			r += 4;
+			targets[tcount]->usessl = CONN_SSL_STARTTLS_CLIENT;
+		}
+		else {
+			targets[tcount]->usessl = CONN_SSL_NO;
+		}
+		p = strchr(r, '/');
+		if (p) {
+			targets[tcount]->defaultport = atoi(p+1);
+			*p = '\0';
+		}
+		else {
+			targets[tcount]->defaultport = defaultport;
+		}
+
 		targets[tcount]->targetip = strdup(r);
-		targets[tcount]->defaultport = (targets[tcount]->usessl ? defaultsslport : defaultport);
 		tcount++;
 		r = strtok(NULL, " ,");
 	}
