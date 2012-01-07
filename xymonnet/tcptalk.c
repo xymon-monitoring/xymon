@@ -49,8 +49,10 @@ static char *smtp_dialog[] = {
 };
 
 static char *xymonping_dialog[] = {
-	"SEND:size:4\nping",
-	"EXPECT:xymon",
+	"SEND:starttls\n",
+	"STARTTLS",
+	"SEND:size:23\nxymondboard host=osiris\n",
+	"READALL",
 	"CLOSE",
 	NULL
 };
@@ -404,7 +406,8 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		}
 		/* Read the data */
 		n = conn_read(connection, rec->readp, (rec->readbufsz - used - 1));
-		if (n > 0) rec->bytesread += n;
+		if (n <= 0) return CONN_CBRESULT_OK;	/* n == 0 happens during SSL handshakes, n < 0 means connection will close */
+		rec->bytesread += n;
 
 		/* Process data for some protocols */
 		if (rec->istelnet) n = telnet_datahandler(rec, n);
@@ -451,13 +454,9 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 
 		/* See if we have reached a point where we switch to TLS mode */
 		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
-			if (conn_starttls(connection) == 0) {
-				rec->step++;
-			}
-			else {
-				rec->talkresult = TALK_BADSSLHANDSHAKE;
-				conn_close_connection(connection, NULL);
-			}
+			res = CONN_CBRESULT_STARTTLS;
+			rec->step++;
+			usleep(10000);
 		}
 		break;
 
@@ -478,11 +477,13 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
 		if (rec->istelnet < 0) {
 			n = conn_write(connection, rec->writep, -(rec->istelnet));
+			if (n <= 0) return CONN_CBRESULT_OK;	/* n == 0 happens during SSL handshakes, n < 0 means connection will close */
 			rec->writep += n;
 			rec->istelnet += n; if (rec->istelnet == 0) rec->istelnet = 1;
 		}
 		else {
 			n = conn_write(connection, rec->writep, strlen(rec->writep));
+			if (n <= 0) return CONN_CBRESULT_OK;	/* n == 0 happens during SSL handshakes, n < 0 means connection will close */
 			if (n > 0) {
 				rec->byteswritten += n;
 				if (rec->talkprotocol == TALK_PROTO_PLAIN) addtobufferraw(rec->textlog, rec->writep, n);
@@ -498,13 +499,9 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 
 		/* See if we have reached a point where we switch to TLS mode */
 		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
-			if (conn_starttls(connection) == 0) {
-				rec->step++;
-			}
-			else {
-				rec->talkresult = TALK_BADSSLHANDSHAKE;
-				conn_close_connection(connection, NULL);
-			}
+			res = CONN_CBRESULT_STARTTLS;
+			rec->step++;
+			usleep(10000);
 		}
 		break;
 
@@ -735,7 +732,7 @@ int main(int argc, char **argv)
 	activetests = list_create("active");
 	donetests = list_create("done");
 
-#if 1
+#if 0
 	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
 	// add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
 	// add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
@@ -748,6 +745,10 @@ int main(int argc, char **argv)
 	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
 	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
 #endif
+
+	xymonping_dialog[2] = (char *)malloc(30 + strlen(argv[1]));
+	sprintf(xymonping_dialog[2], "SEND:size:%d\n%s\n", (int)strlen(argv[1]), argv[1]);
+	add_tcp_test("127.0.0.1", 1984, NULL, "xymon", xymonping_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
 
 	run_tcp_tests();
 
