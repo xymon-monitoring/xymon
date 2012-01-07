@@ -61,7 +61,7 @@ typedef struct myconn_t {
 	char *readp, *writep;
 	size_t readbufsz;
 	char *peer;
-	int port, readmore;
+	int port, readmore, starttlspending;
 	enum sslhandling_t usessl;
 	sendresult_t result;
 	sendreturn_t *response;
@@ -98,10 +98,13 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
 		certsubject = conn_peer_certificate(connection, &start, &expire);
+		rec->starttlspending = 0;
+		rec->readp = rec->readbuf;
+		*(rec->readbuf) = '\0';
 		break;
 
 	  case CONN_CB_READCHECK:              /* Client/server mode: Check if application wants to read data */
-		res = (rec->readmore ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED);
+		res = (rec->readmore || rec->starttlspending) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
@@ -138,7 +141,25 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 
 		n = conn_read(connection, rec->readp, (rec->readbufsz - used - 1));
 
-		if (n > 0) {
+		if ((n > 0) && rec->starttlspending) {
+			*(rec->readp + n) = '\0';
+			// dbgprintf("Read %d bytes while waiting for starttls OK: %s\n", n, rec->readp);
+			if ((strncmp(rec->readp, "OK", 2) == 0) && strchr(rec->readp, '\n')) {
+				rec->starttlspending = 0;
+				return CONN_CBRESULT_STARTTLS;
+			}
+			else if ((strncmp(rec->readp, "ERR", 3) == 0) && strchr(rec->readp, '\n')) {
+				errprintf("Server does not accept STARTTLS\n");
+				conn_close_connection(connection, NULL);
+				rec->result = XYMONSEND_ECONNFAILED;
+				return CONN_CBRESULT_OK;
+			}
+			else {
+				rec->readp += n;
+			}
+		}
+		else if (n > 0) {
+			// dbgprintf("Read %d bytes data\n", n);
 			if (rec->response) {
 				if (rec->response->respfd) {
 					fwrite(rec->readp, n, 1, rec->response->respfd);
@@ -152,13 +173,17 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 			}
 		}
 		else if ((n == 0) && !sslhandshakeinprogress) {
+			// dbgprintf("No more data\n");
 			rec->readmore = 0;
 			conn_close_connection(connection, "r");
 		}
 		break;
 
 	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
-		res = (*rec->writep != '\0') ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
+		if (rec->starttlspending)
+			res = CONN_CBRESULT_FAILED;
+		else
+			res = (*rec->writep != '\0') ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
@@ -168,14 +193,15 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 				rec->tlsptr += n;
 				if (*rec->tlsptr == '\0') {
 					rec->tlsptr = NULL;
-					res = CONN_CBRESULT_STARTTLS;
-					usleep(10000);	/* FIXME - this gives a bit of time for the server to prepare for TLS handshake */
+					rec->starttlspending = 1;
+					// dbgprintf("Switching to STARTTLS pending\n");
 				}
 				n = 0;	/* Didn't send any message data yet */
 			}
 		}
 		else if (rec->szptr) {
 			n = conn_write(connection, rec->szptr, strlen(rec->szptr));
+			// dbgprintf("Sent %d bytes of size command\n", n);
 			if (n > 0) {
 				rec->szptr += n;
 				if (*rec->szptr == '\0') rec->szptr = NULL;
@@ -184,6 +210,7 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 		}
 		else {
 			n = conn_write(connection, rec->writep, strlen(rec->writep));
+			// dbgprintf("Sent %d bytes of data\n", n);
 			if (n > 0) {
 				rec->writep += n;
 				if (*rec->writep == '\0') {
