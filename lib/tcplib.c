@@ -234,6 +234,7 @@ static time_t convert_asn1_tstamp(ASN1_UTCTIME *tstamp)
 		if ((tstr[i] > '9') || (tstr[i] < '0')) return 0;
 	}
 
+	memset(&tm, 0, sizeof(tm));
 	gmt = (tstr[tslen-1] == 'Z') ? 1 : 0;
 
 	if (tslen >= 14) {
