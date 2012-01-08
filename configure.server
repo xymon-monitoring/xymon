@@ -85,9 +85,11 @@ echo "Checking pre-requisites for building Xymon"
 echo ""
 . build/fping.sh
 echo ""; echo ""
-. build/rrd.sh
+. build/sqlite.sh
 echo ""; echo ""
 . build/pcre.sh
+echo ""; echo ""
+. build/rrd.sh
 echo ""; echo ""
 
 . build/ssl.sh
@@ -464,7 +466,21 @@ then
 	echo "PCRELIBS = -lpcre"         >>Makefile
     fi
 fi
-echo "#"                                 >>Makefile
+echo ""                                  >>Makefile
+echo "# SQLite3 settings"                >>Makefile
+if test "$SQLITEOK" = "YES"
+then
+    if test "$SQLITEINC" != ""; then
+	echo "SQLITEINCDIR = -I$SQLITEINC" >>Makefile
+    fi
+    if test "$SQLITELIB" != ""; then
+	echo "SQLITELIBS = -L$SQLITELIB -lsqlite3" >>Makefile
+	echo "RPATHVAL += ${SQLITELIB}"  >>Makefile
+    else
+	echo "SQLITELIBS = -lsqlite3"    >>Makefile
+    fi
+fi
+echo ""                                  >>Makefile
 echo "# OpenSSL settings"                >>Makefile
 if test "$ENABLESSL" = "y"
 then

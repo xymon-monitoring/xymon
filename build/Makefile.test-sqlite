@@ -1,0 +1,11 @@
+include Makefile.$(OS)
+
+test-compile:
+	@$(CC) $(CFLAGS) $(SQLITEINC) -o test-sqlite.o -c test-sqlite.c
+
+test-link:
+	@$(CC) $(CFLAGS) $(SQLITELIB) -o test-sqlite test-sqlite.o -lsqlite3
+
+clean:
+	@rm -f test-sqlite.o test-sqlite
+
