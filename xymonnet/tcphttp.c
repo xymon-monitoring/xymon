@@ -195,6 +195,8 @@ char **build_http_dialog(char *testspec)
 	dialog[1] = "READALL";
 	dialog[2] = NULL;
 
+	freeweburl_data(&weburl);
+
 	return dialog;
 }
 
