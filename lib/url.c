@@ -208,13 +208,13 @@ static void load_netrc(void)
 					break;
 
 				  case MACHINEVAL:
-					host = strdup(p); state = WANT_TOKEN; break;
+					host = p; state = WANT_TOKEN; break;
 
 				  case LOGINVAL:
-					login = strdup(p); state = WANT_TOKEN; break;
+					login = p; state = WANT_TOKEN; break;
 
 				  case PASSVAL:
-					password = strdup(p); state = WANT_TOKEN; break;
+					password = p; state = WANT_TOKEN; break;
 
 				  case OTHERVAL:
 				  	state = WANT_TOKEN; break;
@@ -223,7 +223,7 @@ static void load_netrc(void)
 				if (host && login && password) {
 					loginlist_t *item = (loginlist_t *) malloc(sizeof(loginlist_t));
 
-					item->host = host;
+					item->host = strdup(host);
 					item->auth = (char *) malloc(strlen(login) + strlen(password) + 2);
 					sprintf(item->auth, "%s:%s", login, password);
 					item->next = loginhead;
@@ -308,21 +308,21 @@ void parse_url(char *inputurl, urlelem_t *url)
 	if (p) {
 		*p = '\0';
 		if (strncmp(startp, "https", 5) == 0) {
-			url->scheme = "https";
+			url->scheme = strdup("https");
 			url->port = 443;
 			if (strlen(startp) > 5) url->schemeopts = strdup(startp+5);
 		} else if (strncmp(startp, "http", 4) == 0) {
-			url->scheme = "http";
+			url->scheme = strdup("http");
 			url->port = 80;
 			if (strlen(startp) > 4) url->schemeopts = strdup(startp+4);
 		} else if (strcmp(startp, "ftp") == 0) {
-			url->scheme = "ftp";
+			url->scheme = strdup("ftp");
 			url->port = 21;
 		} else if (strcmp(startp, "ldap") == 0) {
-			url->scheme = "ldap";
+			url->scheme = strdup("ldap");
 			url->port = 389;
 		} else if (strcmp(startp, "ldaps") == 0) {
-			url->scheme = "ldaps";
+			url->scheme = strdup("ldaps");
 			url->port = 389; /* ldaps:// URL's are non-standard, and must use port 389+STARTTLS */
 		}
 		else {
@@ -657,3 +657,32 @@ char *decode_url(char *testspec, weburl_t *weburl)
 	return weburl->desturl->origform;
 }
  
+void freeurlelem_data(struct urlelem_t *url)
+{
+	if (url->origform) xfree(url->origform);
+	if (url->scheme) xfree(url->scheme);
+	if (url->schemeopts) xfree(url->schemeopts);
+	if (url->host) xfree(url->host);
+	if (url->ip) xfree(url->ip);
+	if (url->auth) xfree(url->auth);
+	if (url->relurl) xfree(url->relurl);
+}
+
+void freeweburl_data(weburl_t *weburl)
+{
+	if (weburl->columnname) xfree(weburl->columnname);
+	if (weburl->desturl) {
+		freeurlelem_data(weburl->desturl);
+		xfree(weburl->desturl);
+	}
+	if (weburl->proxyurl) {
+		freeurlelem_data(weburl->proxyurl);
+		xfree(weburl->proxyurl);
+	}
+	if (weburl->postcontenttype) xfree(weburl->postcontenttype);
+	if (weburl->postdata) xfree(weburl->postdata);
+	if (weburl->expdata) xfree(weburl->expdata);
+	if (weburl->okcodes) xfree(weburl->okcodes);
+	if (weburl->badcodes) xfree(weburl->badcodes);
+}
+

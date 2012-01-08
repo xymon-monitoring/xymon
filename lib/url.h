@@ -49,5 +49,8 @@ extern char *cleanurl(char *url);
 extern void parse_url(char *inputurl, urlelem_t *url);
 extern char *decode_url(char *testspec, weburl_t *weburl);
 
+extern void freeweburl_data(weburl_t *weburl);
+extern void freeurlelem_data(struct urlelem_t *url);
+
 #endif
 
