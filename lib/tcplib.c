@@ -1589,3 +1589,23 @@ int conn_is_ip(char *ip)
 	return res;
 }
 
+
+int conn_null_ip(char *ip)
+{
+#ifdef IPV4_SUPPORT
+	{
+		struct in_addr addr;
+		if ((inet_pton(AF_INET, ip, &addr) == 1) && (addr.s_addr == INADDR_ANY)) return 1;
+	}
+#endif
+
+#ifdef IPV6_SUPPORT
+	{
+		struct in6_addr addr;
+		if ((inet_pton(AF_INET6, ip, &addr) == 1) && (memcmp(&addr.s6_addr, in6addr_any.s6_addr, sizeof(in6addr_any.s6_addr))== 0)) return 1;
+	}
+#endif
+
+	return 0;
+}
+
