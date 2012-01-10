@@ -94,6 +94,22 @@ char *conn_state_names[CONN_DEAD+1] = {
 	"Dead",
 };
 
+static void conn_ssllibrary_init(void)
+{
+	static haverun = 0;
+
+	if (haverun) return;
+
+	haverun = 1;
+
+#ifdef HAVE_OPENSSL
+	SSL_load_error_strings();
+	SSL_library_init();
+	OpenSSL_add_all_algorithms();
+	conn_info("conn_ssllibrary_init", INFO_DEBUG, "Library init done\n");
+#endif
+}
+
 void conn_register_infohandler(void (*cb)(time_t, const char *id, char *msg), enum infolevel_t level)
 {
 	userinfo = cb;
@@ -1164,9 +1180,8 @@ void conn_init_server(int portnumber, int backlog, int maxlifetime,
 	signal(SIGPIPE, SIG_IGN);	/* socket I/O needs to ignore SIGPIPE */
 
 #ifdef HAVE_OPENSSL
-	SSL_load_error_strings();
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
+	conn_ssllibrary_init();
+
 	serverctx = SSL_CTX_new(SSLv23_server_method());
 	SSL_CTX_set_options(serverctx, (SSL_OP_NO_SSLv2 | SSL_OP_ALL));
 	SSL_CTX_set_quiet_shutdown(serverctx, 1);
@@ -1206,11 +1221,7 @@ void conn_init_client(void)
 {
 	signal(SIGPIPE, SIG_IGN);
 
-#ifdef HAVE_OPENSSL
-	SSL_load_error_strings();
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
-#endif
+	conn_ssllibrary_init();
 }
 
 
@@ -1356,6 +1367,16 @@ tcpconn_t *conn_prepare_connection(char *ip, int portnumber, enum conn_socktype_
 	if (sslhandling != CONN_SSL_NO) {
 		newconn->sslhandling = sslhandling;
 		newconn->ctx = SSL_CTX_new(SSLv23_client_method());
+		if (!newconn->ctx) {
+			char sslerrmsg[256];
+
+			ERR_error_string(ERR_get_error(), sslerrmsg);
+			conn_info(funcid, INFO_ERROR, "SSL_CTX_new failed: %s\n", sslerrmsg);
+			conn_cleanup(newconn);
+			free(newconn);
+			return NULL;
+		}
+
 		SSL_CTX_set_options(newconn->ctx, (SSL_OP_NO_SSLv2 | SSL_OP_ALL));
 		SSL_CTX_set_quiet_shutdown(newconn->ctx, 1);
 		if (certfn) {
