@@ -629,24 +629,18 @@ void dns_lookup_callback(void *arg, int status, int timeouts, struct hostent *ho
 		inet_ntop(host->h_addrtype, *(host->h_addr_list), addr_buf, sizeof(addr_buf));
 
 		dns_addtocache(rec, addr_buf);
-				
-		if (rec->netparams.destinationip) xfree(rec->netparams.destinationip);
-		rec->netparams.destinationip = strdup(addr_buf);
-		rec->netparams.lookupstatus = LOOKUP_COMPLETED;
 	}
 	else if ( (status == ARES_ENOTFOUND) || 
 		  ((status == ARES_SUCCESS) && (host->h_addr_list[0] == NULL)) ) {
 		/* No IP for this hostname/address family combination */
 		dbgprintf("Got negative lookup result for %s\n", rec->netparams.lookupstring);
-		dns_addtocache(rec, "");
-		rec->netparams.lookupstatus = LOOKUP_NEEDED;
+		dns_addtocache(rec, "-");
 	}
 	else {
 		/* Uh-oh ... */
 		errprintf("ARES library failed during name resolution: %s\n",
 			  ares_strerror(status));
-		dns_addtocache(rec, "");
-		rec->netparams.lookupstatus = LOOKUP_NEEDED;
+		dns_addtocache(rec, "-");
 	}
 }
 

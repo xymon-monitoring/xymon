@@ -1,27 +1,40 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* Copyright (C) 2004-2011 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2011-2012 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __DNSTALK_H__
-#define __DNSTALK_H__
+static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 
-extern void dns_library_init(void);
+#include <string.h>
+#include <stdio.h>
 
-extern int dns_start_query(myconn_t *rec, char *targetserver);
-extern int dns_add_active_fds(listhead_t *activelist, int *maxfd, fd_set *fdread, fd_set *fdwrite);
-extern void dns_process_active(listhead_t *activelist, fd_set *fdread, fd_set *fdwrite);
-extern void dns_finish_queries(listhead_t *activelist);
+#include "libxymon.h"
+#include "setuptests.h"
+#include "tcptalk.h"
+#include "dnstalk.h"
 
-extern void dns_lookup_init(void);
-extern void dns_lookup(myconn_t *rec);
-extern void dns_addtocache(myconn_t *rec, char *ip);
-extern void dns_lookup_shutdown(void);
+int main(int argc, char **argv)
+{
 
-#endif
+	debug = 1;
+	conn_register_infohandler(NULL, 7);
+
+	init_tcp_testmodule();
+	dns_lookup_init();
+
+	setup_tests();
+	run_net_tests();
+
+	dump_net_tests(NULL);
+
+	conn_deinit();
+	dns_lookup_shutdown();
+
+	return 0;
+}
 

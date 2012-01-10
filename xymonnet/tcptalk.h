@@ -38,9 +38,10 @@ typedef struct myconn_netparams_t {
 typedef struct myconn_t {
 	char *testspec;
 	myconn_netparams_t netparams;
-	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY } talkprotocol;
+	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY, TALK_PROTO_NULL } talkprotocol;
 	char **dialog;				/* SEND/EXPECT/READ/CLOSE steps */
 	listitem_t *listitem;
+	void *hostinfo;
 
 	/* Results and statistics */
 	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE } talkresult;
@@ -85,7 +86,14 @@ typedef struct myconn_t {
 	struct timespec dnsstarttime;
 } myconn_t;
 
+enum net_test_options_t { NET_TEST_STANDARD, NET_TEST_TELNET, NET_TEST_HTTP, NET_TEST_NTP, NET_TEST_DNS, NET_TEST_PING };
+
 extern void test_is_done(myconn_t *rec);
+extern void *add_net_test(char *testspec, char **dialog, enum net_test_options_t options,
+			 myconn_netparams_t *netparams, void *hostinfo);
+extern void run_net_tests(void);
+extern void init_tcp_testmodule(void);
+extern void dump_net_tests(listhead_t *head);
 
 #endif
 

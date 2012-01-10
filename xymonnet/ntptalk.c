@@ -1,7 +1,8 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* Copyright (C) 2004-2011 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2011-2012 Henrik Storner <henrik@hswn.dk>                    */
+/* Code for NTP packet parsing contributed by Paul Sheer                      */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */

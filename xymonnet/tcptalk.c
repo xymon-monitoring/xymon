@@ -19,59 +19,12 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "libxymon.h"
 
 #include "tcptalk.h"
-#include "tcphttp.h"
 #include "ntptalk.h"
 #include "dnstalk.h"
 
-static char *silent_dialog[] = {
-	"READ", "CLOSE", NULL
-};
-
-static char *telnet_dialog[] = {
-	"READ", "CLOSE", NULL
-};
-
-static char *smtp_dialog[] = {
-	"EXPECT:220",
-	"SEND:STARTTLS\r\n",
-	"EXPECT:220",
-	"STARTTLS",
-	"SEND:EHLO hswn.dk\r\n",
-	"EXPECT:250",
-	"SEND:MAIL FROM:<xymon>\r\n",
-	"EXPECT:250",
-	"SEND:RSET\r\n",
-	"EXPECT:250",
-	"SEND:QUIT\r\n",
-	"EXPECT:221",
-	"CLOSE",
-	NULL
-};
-
-static char *xymonping_dialog[] = {
-	"SEND:starttls\n",
-	"EXPECT:OK",
-	"STARTTLS",
-	"SEND:size:4\nping\n",
-	"EXPECT:xymon",
-	"CLOSE",
-	NULL
-};
-
-static char *pop_dialog[] = {
-	"EXPECT:+OK",
-	"CLOSE",
-	NULL
-};
-
-static char *http_dialog[] = { NULL };
-static char *ntp_dialog[] = { NULL };
-static char *dns_dialog[] = { NULL };
-
-listhead_t *pendingtests = NULL;
-listhead_t *activetests = NULL;
-listhead_t *donetests = NULL;
-
+static listhead_t *pendingtests = NULL;
+static listhead_t *activetests = NULL;
+static listhead_t *donetests = NULL;
 
 static int last_write_step(myconn_t *rec)
 {
@@ -147,7 +100,7 @@ static int http_datahandler(myconn_t *rec, int iobytes, int startoffset, int *ad
 	char *xferencoding;
 	int len = iobytes;
 	char *bol, *buf;
-	int hdrbytes, bodybytes, n;
+	int hdrbytes, bodybytes = 0, n;
 
 	*advancestep = 0;
 
@@ -379,7 +332,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
 		certsubject = conn_peer_certificate(connection, &start, &expire);
 		if (certsubject) {
-			rec->peercertificate = strdup(certsubject);
+			rec->peercertificate = certsubject;	/* certsubject is malloc'ed by conn_peer_certificate */
 			rec->peercertificateexpiry = expire;
 		}
 		break;
@@ -546,47 +499,48 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 }
 
 
-void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, char *testspec, char **dialog, 
-		   enum sslhandling_t sslhandling, char *sslcertfn, char *sslkeyfn)
+void *add_net_test(char *testspec, char **dialog, enum net_test_options_t options, myconn_netparams_t *netparams, void *hostinfo)
 {
 	myconn_t *newtest;
 
 	newtest = (myconn_t *)calloc(1, sizeof(myconn_t));
-	newtest->testspec = strdup(testspec);
-
-	newtest->netparams.destinationip = strdup(destinationip);
-	newtest->netparams.destinationport = destinationport;
-	newtest->netparams.socktype = CONN_SOCKTYPE_STREAM;
+	newtest->testspec = strdup(testspec ? testspec : "<null>");
+	memcpy(&newtest->netparams, netparams, sizeof(newtest->netparams));
 	newtest->netparams.callback = tcp_standard_callback;
-	newtest->netparams.sourceip = (sourceip ? strdup(sourceip) : NULL);
-	newtest->netparams.sslhandling = sslhandling;
-	newtest->netparams.sslcertfn = sslcertfn;
-	newtest->netparams.sslkeyfn = sslkeyfn;
+	newtest->hostinfo = hostinfo;
+	newtest->dialog = dialog;
 
-	if (dialog == http_dialog) {
+	switch (options) {
+	  case NET_TEST_HTTP:
 		newtest->talkprotocol = TALK_PROTO_HTTP;
-		newtest->dialog = build_http_dialog(testspec);
 		newtest->httpheaders = newstrbuffer(0);
 		newtest->httpbody = newstrbuffer(0);
-	}
-	else if (dialog == ntp_dialog) {
+		break;
+	  case NET_TEST_NTP:
 		newtest->talkprotocol = TALK_PROTO_NTP;
 		newtest->netparams.socktype = CONN_SOCKTYPE_DGRAM;
 		newtest->netparams.callback = ntp_callback;
-	}
-	else if (dialog == dns_dialog) {
+		break;
+	  case NET_TEST_DNS:
 		newtest->talkprotocol = TALK_PROTO_DNSQUERY;
 		newtest->dnsstatus = DNS_NOTDONE;
 		/* The DNS-specific routines handle the rest */
-	}
-	else {
+		break;
+	  case NET_TEST_PING:
+		newtest->talkprotocol = TALK_PROTO_NULL;
+		break;
+	  case NET_TEST_TELNET:
+		newtest->istelnet = 1;
 		newtest->talkprotocol = TALK_PROTO_PLAIN;
-		newtest->dialog = dialog;
+		break;
+	  case NET_TEST_STANDARD:
+		newtest->talkprotocol = TALK_PROTO_PLAIN;
+		break;
 	}
 
-	if (conn_is_ip(destinationip) == 0) {
+	if (conn_is_ip(newtest->netparams.destinationip) == 0) {
 		/* Destination is not an IP, so try doing a hostname lookup */
-		newtest->netparams.lookupstring = strdup(destinationip);
+		newtest->netparams.lookupstring = strdup(newtest->netparams.destinationip);
 		newtest->netparams.lookupstatus = LOOKUP_NEEDED;
 		newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
 	}
@@ -601,7 +555,7 @@ void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, cha
 #define CONCURRENCY 20
 #define TIMEOUT 10
 
-void run_tcp_tests(void)
+void run_net_tests(void)
 {
 	int maxfd;
 
@@ -629,7 +583,7 @@ void run_tcp_tests(void)
 			if (rec->netparams.lookupstatus == LOOKUP_NEEDED)
 				dns_lookup(rec);
 
-			if (rec->netparams.lookupstatus == LOOKUP_ACTIVE) {
+			if ((rec->netparams.lookupstatus == LOOKUP_ACTIVE) || (rec->netparams.lookupstatus == LOOKUP_NEEDED)) {
 				/* DNS lookup in progress, skip this test until lookup completes */
 				pcur = pnext;
 				continue;
@@ -662,6 +616,11 @@ void run_tcp_tests(void)
 					rec->talkresult = TALK_CONN_FAILED;
 					list_item_move(donetests, pcur, rec->testspec);
 				}
+				break;
+
+			  case TALK_PROTO_NULL:
+				/* NULL is only for doing DNS lookups */
+				list_item_move(donetests, pcur, rec->testspec);
 				break;
 
 			  default:
@@ -701,8 +660,19 @@ void test_is_done(myconn_t *rec)
 }
 
 
-#ifdef STANDALONE
-void showtext(char *s)
+void init_tcp_testmodule(void)
+{
+	conn_init_client();
+	dns_library_init();
+	dns_lookup_init();
+
+	pendingtests = list_create("pending");
+	activetests = list_create("active");
+	donetests = list_create("done");
+}
+
+
+static void showtext(char *s)
 {
 	char *bol, *eoln;
 
@@ -717,47 +687,16 @@ void showtext(char *s)
 
 }
 
-int main(int argc, char **argv)
+void dump_net_tests(listhead_t *head)
 {
 	listitem_t *walk;
 
-	debug = 1;
-	conn_register_infohandler(NULL, 7);
+	if (!head) head = donetests;
 
-	conn_init_client();
-	dns_library_init();
-
-	pendingtests = list_create("pending");
-	activetests = list_create("active");
-	donetests = list_create("done");
-
-#if 0
-	add_tcp_test("172.16.10.3", 25, NULL, "smtp", smtp_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
-	// add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
-	// add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
-	add_tcp_test("172.16.10.3", 123, NULL, "ntp", ntp_dialog, CONN_SSL_NO, NULL, NULL);
-	add_tcp_test("172.16.10.3", 53, NULL, "www.xymon.com", dns_dialog, CONN_SSL_NO, NULL, NULL);
-	add_tcp_test("89.150.129.22", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
-	add_tcp_test("89.150.129.22", 53, NULL, "www.csc.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
-	add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
-	add_tcp_test("www.google.dk", 443, NULL, "https://www.google.dk/", http_dialog, CONN_SSL_YES, NULL, NULL);
-	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
-	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
-#endif
-
-#if 1
-	{
-		xymonping_dialog[3] = (char *)malloc(30 + strlen(argv[1]));
-		sprintf(xymonping_dialog[3], "SEND:size:%d\n%s\n", (int)strlen(argv[1]), argv[1]);
-
-		add_tcp_test("127.0.0.1", 1984, NULL, "xymon", xymonping_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
-	}
-#endif
-
-	run_tcp_tests();
-
-	for (walk = donetests->head; (walk); walk = walk->next) {
+	for (walk = head->head; (walk); walk = walk->next) {
 		myconn_t *rec = (myconn_t *)walk->data;
+		if (rec->talkprotocol == TALK_PROTO_NULL) continue;
+
 		printf("Test %s\n", rec->testspec);
 		printf("\tTarget   : %s\n", rec->netparams.destinationip);
 		printf("\tStatus   : ");
@@ -780,7 +719,7 @@ int main(int argc, char **argv)
 		printf("\t------------------------\n");
 		switch (rec->talkprotocol) {
 		  case TALK_PROTO_PLAIN:
-			showtext(STRBUF(rec->textlog));
+			if (rec->textlog) showtext(STRBUF(rec->textlog));
 			break;
 
 		  case TALK_PROTO_HTTP:
@@ -794,16 +733,124 @@ int main(int argc, char **argv)
 			break;
 
 		  case TALK_PROTO_DNSQUERY:
-			printf("\tDNS query:\n");
-			showtext(STRBUF(rec->textlog));
+			if (rec->textlog) {
+				printf("\tDNS query:\n");
+				showtext(STRBUF(rec->textlog));
+			}
 			break;
 
 		  default:
 			break;
 		}
 	}
+}
 
-	conn_deinit();
+#ifdef STANDALONE
+static char *silent_dialog[] = {
+	"READ", "CLOSE", NULL
+};
+
+static char *smtp_dialog[] = {
+	"EXPECT:220",
+	"SEND:STARTTLS\r\n",
+	"EXPECT:220",
+	"STARTTLS",
+	"SEND:EHLO hswn.dk\r\n",
+	"EXPECT:250",
+	"SEND:MAIL FROM:<xymon>\r\n",
+	"EXPECT:250",
+	"SEND:RSET\r\n",
+	"EXPECT:250",
+	"SEND:QUIT\r\n",
+	"EXPECT:221",
+	"CLOSE",
+	NULL
+};
+
+static char *xymonping_dialog[] = {
+	"SEND:starttls\n",
+	"EXPECT:OK",
+	"STARTTLS",
+	"SEND:size:4\nping\n",
+	"EXPECT:xymon",
+	"CLOSE",
+	NULL
+};
+
+static char *pop_dialog[] = {
+	"EXPECT:+OK",
+	"CLOSE",
+	NULL
+};
+
+static char *telnet_dialog[] = {
+	"READ", "CLOSE", NULL
+};
+ 
+static char *http_dialog[] = { NULL };
+static char *ntp_dialog[] = { NULL };
+static char *dns_dialog[] = { NULL };
+static char *null_dialog[] = { NULL };
+
+static void *add_tcp_test(char *destinationip, int destinationport, char *sourceip, char *testspec, char **dialog, 
+			  enum sslhandling_t sslhandling, char *sslcertfn, char *sslkeyfn)
+{
+	myconn_netparams_t netparams;
+	enum net_test_options_t options = NET_TEST_STANDARD;
+
+	memset(&netparams, 0, sizeof(netparams));
+	netparams.destinationip = strdup(destinationip);
+	netparams.destinationport = destinationport;
+	netparams.sourceip = (sourceip ? strdup(sourceip) : NULL);
+	netparams.sslhandling = sslhandling;
+	netparams.sslcertfn = sslcertfn;
+	netparams.sslkeyfn = sslkeyfn;
+
+	if      (dialog == http_dialog)		options = NET_TEST_HTTP;
+	else if (dialog == ntp_dialog)		options = NET_TEST_NTP;
+	else if (dialog == dns_dialog)		options = NET_TEST_DNS;
+	else if (dialog == telnet_dialog)	options = NET_TEST_TELNET;
+	else if (dialog == null_dialog)		options = NET_TEST_PING;
+
+	return add_net_test(testspec, dialog, options, &netparams, NULL);
+}
+
+int main(int argc, char **argv)
+{
+	listitem_t *walk;
+
+	debug = 1;
+	conn_register_infohandler(NULL, 7);
+
+	init_tcp_testmodule();
+
+#if 1
+	add_tcp_test("jorn.hswn.dk", 25, NULL, "smtp", smtp_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
+	// add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
+	// add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("jorn.hswn.dk", 123, NULL, "ntp", ntp_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("ns.hswn.dk", 53, NULL, "www.xymon.com", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.csc.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("www.google.dk", 443, NULL, "https://www.google.dk/", http_dialog, CONN_SSL_YES, NULL, NULL);
+	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
+	add_tcp_test("www.dba.dk", 0, NULL, NULL, null_dialog, CONN_SSL_NO, NULL, NULL);
+
+	// add_tcp_test("172.16.10.7", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
+#endif
+
+#if 0
+	{
+		xymonping_dialog[3] = (char *)malloc(30 + strlen(argv[1]));
+		sprintf(xymonping_dialog[3], "SEND:size:%d\n%s\n", (int)strlen(argv[1]), argv[1]);
+
+		add_tcp_test("127.0.0.1", 1984, NULL, "xymon", xymonping_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
+	}
+#endif
+
+	run_net_tests();
+	dump_net_tests(donetests);
 
 	return 0;
 }

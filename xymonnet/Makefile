@@ -11,7 +11,7 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 DNSFLAGS = -I./c-ares
 
 // PROGRAMS = xymonnet xymonping beastat
-PROGRAMS = tcptalk
+PROGRAMS = xymonnet2
 EXTENSIONS = xymonnet-again.sh
 SNMPPROGRAMS = xymon-snmpcollect
 // DBGTOOLS = contest
@@ -21,15 +21,23 @@ PROGRAMS += $(SNMPPROGRAMS)
 endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
-NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
-TCPTALKOBJS = tcptalk.o ntptalk.o tcphttp.o dnstalk.o httpcookies.o dnsbits.o
+// NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o
+TCPTALKOBJS = tcptalk-standalone.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
-tcptalk: $(TCPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIB) libcares.a $(XYMONTIMELIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TCPTALKOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS)
+
+xymonnet2: libcares.a $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) -lsqlite3
+
+tcptalk: libcares.a $(TCPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIB) libcares.a $(XYMONTIMELIB) $(XYMONLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TCPTALKOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) -lsqlite3
 
 tcptalk.o: tcptalk.c tcptalk.h dnstalk.h ntptalk.h
+	$(CC) $(CFLAGS) -c -o $@ tcptalk.c
+
+tcptalk-standalone.o: tcptalk.c tcptalk.h dnstalk.h ntptalk.h
 	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ tcptalk.c
 
 dnstalk.o: dnstalk.c dnstalk.h
@@ -37,9 +45,6 @@ dnstalk.o: dnstalk.c dnstalk.h
 
 dnsbits.o: dnsbits.c dnsbits.h
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnsbits.c
-
-xymonnet: $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(LDAPLIBS) $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(XYMONLIBS) $(PCRELIBS) $(SSLLIBS) $(NETLIBS)
 
 xymonping: $(PINGTESTOBJS) $(XYMONLIB) $(XYMONTIMELIB)
 	$(CC) $(CFLAGS) -o $@ $(PINGTESTOBJS) $(XYMONTIMELIBS) $(XYMONLIBS) $(NETLIBS)

@@ -1,18 +1,18 @@
 /*----------------------------------------------------------------------------*/
 /* Xymon monitor network test tool.                                           */
 /*                                                                            */
-/* Copyright (C) 2004-2011 Henrik Storner <henrik@hswn.dk>                    */
+/* Copyright (C) 2004-2012 Henrik Storner <henrik@hswn.dk>                    */
 /*                                                                            */
 /* This program is released under the GNU General Public License (GPL),       */
 /* version 2. See the file "COPYING" for details.                             */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-#ifndef __TCPHTTP_H__
-#define __TCPHTTP_H__
-
-enum xymon_httpver_t { HTTPVER_ANY, HTTPVER_10, HTTPVER_11 };
-
-extern char **build_http_dialog(char *testspec);
+#ifndef __SETUPTESTS_H__
+#define __SETUPTESTS_H__
+extern void test_nonet_hosts(int testthem);
+extern void add_wanted_host(char *hostname);
+extern void clear_wanted_hosts(void);
+extern void setup_tests(void);
 #endif
 
