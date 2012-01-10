@@ -124,7 +124,7 @@ void load_protocols(char *fn)
 			  (strncasecmp(STRBUF(l), "starttls", 8) == 0) ) {
 			dialogsz++;
 			rec->dialog = (char **)realloc(rec->dialog, (dialogsz+1)*sizeof(char *));
-			rec->dialog[dialogsz-1] = strdup(STRBUF(l));
+			getescapestring(STRBUF(l), &(rec->dialog[dialogsz-1]), NULL);
 			rec->dialog[dialogsz] = NULL;
 		}
 	}
@@ -151,6 +151,11 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	}
 
 	netparams->socktype = CONN_SOCKTYPE_STREAM;
+	if (netparams->destinationip) xfree(netparams->destinationip);
+	if (weburl.proxyurl)
+		netparams->destinationip = strdup(weburl.proxyurl->ip ? weburl.proxyurl->ip : weburl.proxyurl->host);
+	else
+		netparams->destinationip = strdup(weburl.desturl->ip ? weburl.desturl->ip : weburl.desturl->host);
 	netparams->destinationport = (weburl.proxyurl ? weburl.proxyurl->port : weburl.desturl->port);
 	netparams->sslhandling = (strcmp(weburl.desturl->scheme, "https") == 0) ? CONN_SSL_YES : CONN_SSL_NO;
 
@@ -187,7 +192,7 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 		 */
 		addtobuffer(httprequest, (weburl.proxyurl ? decodedurl : weburl.desturl->relurl));
 		addtobuffer(httprequest, " HTTP/1.1\r\n"); 
-		// addtobuffer(httprequest, "Connection: close\r\n"); 
+		addtobuffer(httprequest, "Connection: close\r\n"); 
 		break;
 	}
 
@@ -331,6 +336,8 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 char **net_dialog(char *testspec, myconn_netparams_t *netparams, enum net_test_options_t *options, void *hostinfo)
 {
 	int dialuptest = 0, reversetest = 0, alwaystruetest = 0, silenttest = 0;
+
+	*options = NET_TEST_STANDARD;
 
 	/* Skip old-style modifiers */
 	if (*testspec == '?') { dialuptest=1;     testspec++; }
