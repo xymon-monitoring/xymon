@@ -31,7 +31,7 @@ static int last_write_step(myconn_t *rec)
 	int i;
 
 	for (i = rec->step; (rec->dialog[i]); i++)
-		if (strncmp(rec->dialog[i], "SEND:", 5) == 0) return 0;
+		if (strncasecmp(rec->dialog[i], "SEND:", 5) == 0) return 0;
 
 	return 1;
 }
@@ -347,7 +347,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		else if (rec->istelnet > 0)
 			res = CONN_CBRESULT_OK;
 		else
-			res = ((strncmp(rec->dialog[rec->step], "EXPECT:", 7) == 0) || (strncmp(rec->dialog[rec->step], "READ", 4) == 0)) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
+			res = ((strncasecmp(rec->dialog[rec->step], "EXPECT:", 7) == 0) || (strncasecmp(rec->dialog[rec->step], "READ", 4) == 0)) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_READ:                   /* Client/server mode: Ready for application to read data w/ conn_read() */
@@ -375,16 +375,16 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		}
 
 		/* See how the dialog is progressing */
-		if (strncmp(rec->dialog[rec->step], "EXPECT:", 7) == 0) {
+		if (strncasecmp(rec->dialog[rec->step], "EXPECT:", 7) == 0) {
 			int explen = strlen(rec->dialog[rec->step]+7);
 
-			if ((n < explen) && (strncmp(rec->readbuf, rec->dialog[rec->step]+7, n) == 0)) {
+			if ((n < explen) && (strncasecmp(rec->readbuf, rec->dialog[rec->step]+7, n) == 0)) {
 				/* 
 				 * Got the right data so far, but not the complete amount.
 				 * Do nothing, we'll just keep reading until we have all of the data
 				 */
 			}
-			else if (strncmp(rec->readbuf, rec->dialog[rec->step]+7, explen) == 0) {
+			else if (strncasecmp(rec->readbuf, rec->dialog[rec->step]+7, explen) == 0) {
 				/* Got the expected data, go to next step */
 				rec->step++;
 				rec->readp = rec->readbuf;
@@ -396,18 +396,18 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 				conn_close_connection(connection, NULL);
 			}
 		}
-		else if (strcmp(rec->dialog[rec->step], "READALL") == 0) {
+		else if (strcasecmp(rec->dialog[rec->step], "READALL") == 0) {
 			/* No need to save the data twice (we store it in rec->textlog), so reset the readp to start of our readbuffer */
 			rec->readp = rec->readbuf;
 			*(rec->readp) = '\0';
 			if (advancestep) rec->step++;
 		}
-		else if (strcmp(rec->dialog[rec->step], "READ") == 0) {
+		else if (strcasecmp(rec->dialog[rec->step], "READ") == 0) {
 			rec->step++;
 		}
 
 		/* See if we have reached a point where we switch to TLS mode */
-		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
+		if (rec->dialog[rec->step] && (strcasecmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
 			res = CONN_CBRESULT_STARTTLS;
 			rec->step++;
 		}
@@ -419,7 +419,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		else if (rec->istelnet != 0)
 			res = (rec->istelnet < 0) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		else {
-			if ((*rec->writep == '\0') && (strncmp(rec->dialog[rec->step], "SEND:", 5) == 0)) {
+			if ((*rec->writep == '\0') && (strncasecmp(rec->dialog[rec->step], "SEND:", 5) == 0)) {
 				strcpy(rec->writebuf, rec->dialog[rec->step]+5);
 				rec->writep = rec->writebuf;
 			}
@@ -451,7 +451,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		}
 
 		/* See if we have reached a point where we switch to TLS mode */
-		if (rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
+		if (rec->dialog[rec->step] && (strcasecmp(rec->dialog[rec->step], "STARTTLS") == 0)) {
 			res = CONN_CBRESULT_STARTTLS;
 			rec->step++;
 		}
@@ -473,7 +473,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 			 * So if the current step is NOT a CLOSE or a READALL step, then 
 			 * the close was unexpected - so flag it as an error.
 			 */
-			if ((strcmp(rec->dialog[rec->step], "CLOSE") != 0) && (strcmp(rec->dialog[rec->step], "READALL") != 0))
+			if ((strcasecmp(rec->dialog[rec->step], "CLOSE") != 0) && (strcasecmp(rec->dialog[rec->step], "READALL") != 0))
 				rec->talkresult = TALK_INTERRUPTED;
 		}
 		rec->elapsedms = connection->elapsedms;
@@ -491,7 +491,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	}
 
 	/* Note: conn_read/write may have zap'ed the connection entry and we have recursively been called to cleanup the connection entry */
-	if ((connection->connstate != CONN_DEAD) && rec && rec->dialog[rec->step] && (strcmp(rec->dialog[rec->step], "CLOSE") == 0)) {
+	if ((connection->connstate != CONN_DEAD) && rec && rec->dialog[rec->step] && (strcasecmp(rec->dialog[rec->step], "CLOSE") == 0)) {
 		conn_close_connection(connection, NULL);
 	}
 
@@ -650,6 +650,16 @@ void run_net_tests(void)
 		conn_trimactive();
 		dns_finish_queries(activetests);
 		dbgprintf("Active: %d, pending: %d\n", activetests->len, pendingtests->len);
+		if ((activetests->len == 0) && (pendingtests->len > 0)) {
+			static int bugcount = 0;
+
+			bugcount++;
+			if (bugcount == 10) {
+				errprintf("BUG: No progress being done!\n");
+				dump_net_tests(pendingtests);
+				return;
+			}
+		}
 	}
 	while ((activetests->len + pendingtests->len) > 0);
 }
@@ -698,17 +708,19 @@ void dump_net_tests(listhead_t *head)
 		if (rec->talkprotocol == TALK_PROTO_NULL) continue;
 
 		printf("Test %s\n", rec->testspec);
-		printf("\tTarget   : %s\n", rec->netparams.destinationip);
+		printf("\tTarget   : %s:%d\n", rec->netparams.destinationip, rec->netparams.destinationport);
 		printf("\tStatus   : ");
 		switch (rec->talkresult) {
-		  case TALK_CANNOT_RESOLVE: printf("Cannot resolve hostname\n"); break;
-		  case TALK_CONN_FAILED: printf("Connection failed\n"); break;
-		  case TALK_CONN_TIMEOUT: printf("Connection timeout\n"); break;
-		  case TALK_OK: printf("OK\n"); break;
-		  case TALK_BADDATA: printf("Bad dialog\n"); break;
-		  case TALK_BADSSLHANDSHAKE: printf("SSL handshake failure\n"); break;
-		  case TALK_INTERRUPTED: printf("Peer disconnect\n"); break;
+		  case TALK_CANNOT_RESOLVE: printf("Cannot resolve hostname"); break;
+		  case TALK_CONN_FAILED: printf("Connection failed"); break;
+		  case TALK_CONN_TIMEOUT: printf("Connection timeout"); break;
+		  case TALK_OK: printf("OK"); break;
+		  case TALK_BADDATA: printf("Bad dialog"); break;
+		  case TALK_BADSSLHANDSHAKE: printf("SSL handshake failure"); break;
+		  case TALK_INTERRUPTED: printf("Peer disconnect"); break;
 		}
+		printf("\t(sslhandling=%d, af_idx=%d, lookupstatus=%d)\n",
+			rec->netparams.sslhandling, rec->netparams.af_index, rec->netparams.lookupstatus);
 		if (rec->peercertificate) {
 			printf("\tCert.    : %s\n", rec->peercertificate);
 		}
@@ -777,6 +789,13 @@ static char *xymonping_dialog[] = {
 	NULL
 };
 
+static char *bbd_dialog[] = {
+	"SEND:size:4\nping\n",
+	"EXPECT:xymon",
+	"CLOSE",
+	NULL
+};
+
 static char *pop_dialog[] = {
 	"EXPECT:+OK",
 	"CLOSE",
@@ -824,7 +843,10 @@ int main(int argc, char **argv)
 
 	init_tcp_testmodule();
 
-#if 1
+	add_tcp_test("jorn", 995, NULL, "pop3s", pop_dialog, CONN_SSL_YES, NULL, NULL);
+	add_tcp_test("jorn.hswn.dk", 1984, NULL, "bbd", bbd_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
+
+#if 0
 	add_tcp_test("jorn.hswn.dk", 25, NULL, "smtp", smtp_dialog, CONN_SSL_STARTTLS_CLIENT, NULL, NULL);
 	// add_tcp_test("2a00:1450:4001:c01::6a", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
 	// add_tcp_test("173.194.69.105", 80, NULL, "http://www.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
@@ -833,7 +855,6 @@ int main(int argc, char **argv)
 	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.sslug.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
 	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.csc.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
 	add_tcp_test("ipv6.google.com", 80, NULL, "http://ipv6.google.com/", http_dialog, CONN_SSL_NO, NULL, NULL);
-	add_tcp_test("www.google.dk", 443, NULL, "https://www.google.dk/", http_dialog, CONN_SSL_YES, NULL, NULL);
 	add_tcp_test("ns1.fullrate.dk", 53, NULL, "www.fullrate.dk", dns_dialog, CONN_SSL_NO, NULL, NULL);
 	add_tcp_test("www.dba.dk", 0, NULL, NULL, null_dialog, CONN_SSL_NO, NULL, NULL);
 
