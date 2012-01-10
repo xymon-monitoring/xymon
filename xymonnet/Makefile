@@ -11,7 +11,7 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 DNSFLAGS = -I./c-ares
 
 // PROGRAMS = xymonnet xymonping beastat
-PROGRAMS = xymonnet2
+PROGRAMS = xymonnet2 tcptalk
 EXTENSIONS = xymonnet-again.sh
 SNMPPROGRAMS = xymon-snmpcollect
 // DBGTOOLS = contest
