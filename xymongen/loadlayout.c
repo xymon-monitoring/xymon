@@ -435,7 +435,7 @@ xymongen_page_t *load_layout(char *pgset)
 		}
 	}
 	else {
-		if (load_hostnames(xgetenv("HOSTSCFG"), "netinclude", fqdn) != 0) {
+		if (load_hostnames(xgetenv("HOSTSCFG"), "dispinclude", fqdn) != 0) {
 			errprintf("Cannot load host configuration from %s\n", xgetenv("HOSTSCFG"));
 			return NULL;
 		}
