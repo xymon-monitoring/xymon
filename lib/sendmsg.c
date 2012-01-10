@@ -82,7 +82,6 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 	int n, sslhandshakeinprogress = 0;
 	size_t used;
 	time_t start, expire;
-	char *certsubject;
 	myconn_t *rec = (myconn_t *)userdata;
 
 	// dbgprintf("CB: %s\n", conn_callback_names[id]);
@@ -97,7 +96,6 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 		break;
 
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
-		certsubject = conn_peer_certificate(connection, &start, &expire);
 		rec->starttlspending = 0;
 		rec->readp = rec->readbuf;
 		*(rec->readbuf) = '\0';
