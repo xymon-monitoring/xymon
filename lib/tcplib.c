@@ -94,22 +94,6 @@ char *conn_state_names[CONN_DEAD+1] = {
 	"Dead",
 };
 
-static void conn_ssllibrary_init(void)
-{
-	static haverun = 0;
-
-	if (haverun) return;
-
-	haverun = 1;
-
-#ifdef HAVE_OPENSSL
-	SSL_load_error_strings();
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
-	conn_info("conn_ssllibrary_init", INFO_DEBUG, "Library init done\n");
-#endif
-}
-
 void conn_register_infohandler(void (*cb)(time_t, const char *id, char *msg), enum infolevel_t level)
 {
 	userinfo = cb;
@@ -139,6 +123,22 @@ void conn_info(const char *funcid, enum infolevel_t level, const char *fmt, ...)
 		fprintf(stderr, "%s %s(%d): %s", timestr, funcid, level, msg);
 		fflush(stderr);
 	}
+}
+
+static void conn_ssllibrary_init(void)
+{
+	static int haverun = 0;
+
+	if (haverun) return;
+
+	haverun = 1;
+
+#ifdef HAVE_OPENSSL
+	SSL_load_error_strings();
+	SSL_library_init();
+	OpenSSL_add_all_algorithms();
+	conn_info("conn_ssllibrary_init", INFO_DEBUG, "Library init done\n");
+#endif
 }
 
 void conn_getntimer(struct timespec *tp)
