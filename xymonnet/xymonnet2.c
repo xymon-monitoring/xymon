@@ -25,7 +25,6 @@ int main(int argc, char **argv)
 	conn_register_infohandler(NULL, 7);
 
 	init_tcp_testmodule();
-	dns_lookup_init();
 
 	setup_tests();
 	run_net_tests();
