@@ -310,8 +310,6 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		conn_trimactive();
 	} while (conn_active() && (maxfd > 0));
 
-	conn_deinit();
-
 	return 0;
 }
 
