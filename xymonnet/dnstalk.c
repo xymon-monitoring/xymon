@@ -364,8 +364,6 @@ void dns_lookup(myconn_t *rec)
 		break;
 	  default:
 		rec->netparams.lookupstatus = LOOKUP_FAILED;
-		rec->talkresult = TALK_CANNOT_RESOLVE;
-		test_is_done(rec);
 		return;
 	}
 

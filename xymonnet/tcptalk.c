@@ -309,7 +309,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	char *certsubject;
 	myconn_t *rec = (myconn_t *)userdata;
 
-	dbgprintf("CB: %s\n", conn_callback_names[id]);
+	// dbgprintf("CB: %s\n", conn_callback_names[id]);
 
 	switch (id) {
 	  case CONN_CB_CONNECT_START:          /* Client mode: New outbound connection start */
@@ -566,10 +566,11 @@ void run_net_tests(void)
 		struct timeval tmo;
 		myconn_t *rec;
 		listitem_t *pcur, *pnext;
+		int lookupsposted = 0;
 		
 		/* Start some more tests */
 		pcur = pendingtests->head;
-		while (pcur && (activetests->len < CONCURRENCY)) {
+		while (pcur && (activetests->len < CONCURRENCY) && (lookupsposted < CONCURRENCY)) {
 			rec = (myconn_t *)pcur->data;
 
 			/* 
@@ -580,11 +581,20 @@ void run_net_tests(void)
 			 */
 			pnext = pcur->next;
 
-			if (rec->netparams.lookupstatus == LOOKUP_NEEDED)
+			if (rec->netparams.lookupstatus == LOOKUP_NEEDED) {
+				lookupsposted++;
 				dns_lookup(rec);
+			}
 
 			if ((rec->netparams.lookupstatus == LOOKUP_ACTIVE) || (rec->netparams.lookupstatus == LOOKUP_NEEDED)) {
 				/* DNS lookup in progress, skip this test until lookup completes */
+				pcur = pnext;
+				continue;
+			}
+			else if (rec->netparams.lookupstatus == LOOKUP_FAILED) {
+				/* DNS lookup determined that this host does not have a valid IP. */
+				list_item_move(donetests, pcur, rec->testspec);
+				rec->talkresult = TALK_CANNOT_RESOLVE;
 				pcur = pnext;
 				continue;
 			}

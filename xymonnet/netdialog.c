@@ -126,7 +126,10 @@ void load_protocols(char *fn)
 			rec->dialog = (char **)realloc(rec->dialog, (dialogsz+1)*sizeof(char *));
 			getescapestring(STRBUF(l), &(rec->dialog[dialogsz-1]), NULL);
 			rec->dialog[dialogsz] = NULL;
+
+			if (strncasecmp(STRBUF(l), "starttls", 8) == 0) rec->option_starttls = 1;
 		}
+
 	}
 
 	freestrbuffer(l);
