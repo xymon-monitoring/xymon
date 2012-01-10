@@ -119,10 +119,12 @@ void setup_tests(void)
 		while (testspec) {
 			enum net_test_options_t options;
 
+			memset(&netparams, 0, sizeof(netparams));
 			dialog = net_dialog(testspec, &netparams, &options, hwalk);
 
 			if (dialog || (options != NET_TEST_STANDARD)) {
-				netparams.destinationip = strdup(destination);
+				/* destinatinonip may have been filled by net_dialog (e.g. http) */
+				if (!netparams.destinationip) netparams.destinationip = strdup(destination);
 				add_net_test(testspec, dialog, options, &netparams, hwalk);
 			}
 
