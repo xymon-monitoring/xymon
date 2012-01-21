@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id$";
+static char rcsid[] = "$Id: loadalerts.c 6795 2011-12-07 12:29:55Z storner $";
 
 #include <sys/types.h>
 #include <sys/stat.h>

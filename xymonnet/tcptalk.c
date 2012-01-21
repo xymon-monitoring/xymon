@@ -527,7 +527,7 @@ void *add_net_test(char *testspec, char **dialog, enum net_test_options_t option
 		/* The DNS-specific routines handle the rest */
 		break;
 	  case NET_TEST_PING:
-		newtest->talkprotocol = TALK_PROTO_NULL;
+		newtest->talkprotocol = TALK_PROTO_PING;
 		break;
 	  case NET_TEST_TELNET:
 		newtest->istelnet = 1;
@@ -628,8 +628,8 @@ void run_net_tests(void)
 				}
 				break;
 
-			  case TALK_PROTO_NULL:
-				/* NULL is only for doing DNS lookups */
+			  case TALK_PROTO_PING:
+				/* NULL is only for doing DNS lookups, ping tests etc. */
 				list_item_move(donetests, pcur, rec->testspec);
 				break;
 
@@ -715,7 +715,7 @@ void dump_net_tests(listhead_t *head)
 
 	for (walk = head->head; (walk); walk = walk->next) {
 		myconn_t *rec = (myconn_t *)walk->data;
-		if (rec->talkprotocol == TALK_PROTO_NULL) continue;
+		if (rec->talkprotocol == TALK_PROTO_PING) continue;
 
 		printf("Test %s\n", rec->testspec);
 		printf("\tTarget   : %s:%d\n", rec->netparams.destinationip, rec->netparams.destinationport);

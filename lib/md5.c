@@ -28,7 +28,7 @@
   ghost@aladdin.com
 
  */
-/* $Id$ */
+/* $Id: md5.c 6650 2011-03-08 17:20:28Z storner $ */
 /*
   Independent implementation of MD5 (RFC 1321).
 

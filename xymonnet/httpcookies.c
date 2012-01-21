@@ -8,7 +8,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id$";
+static char rcsid[] = "$Id: httpcookies.c 6837 2012-01-02 16:23:25Z storner $";
 
 #include <sys/types.h>
 #include <stdio.h>
