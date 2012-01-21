@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_file[] = "$Id: loadhosts_file.c 6877 2012-01-10 12:54:46Z storner $";
+static char rcsid_file[] = "$Id$";
 
 static int get_page_name_title(char *buf, char *key, char **name, char **title)
 {

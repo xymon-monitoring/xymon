@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid_net[] = "$Id: loadhosts_file.c 6745 2011-09-04 06:01:06Z storner $";
+static char rcsid_net[] = "$Id$";
 
 static char *hivalhost = NULL;
 static char *hivals[XMH_LAST] = { NULL, };

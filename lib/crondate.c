@@ -61,7 +61,7 @@
  *
  */
 
-static char rcsid[] = "$Id: crondate.c 6712 2011-07-31 21:01:52Z storner $";
+static char rcsid[] = "$Id$";
 
 
 /* --------------------  bitstring.h begins -----------------------------*/

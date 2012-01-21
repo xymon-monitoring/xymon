@@ -17,7 +17,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: tcplib.c,v 1.14 2011/12/26 12:07:06 henrik Exp henrik $";
+static char rcsid[] = "$Id$";
 
 #include <sys/types.h>
 #include <sys/socket.h>
