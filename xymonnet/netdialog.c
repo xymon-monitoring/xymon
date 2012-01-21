@@ -271,9 +271,13 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	}
 	if (weburl.desturl->auth) {
 		if (strncmp(weburl.desturl->auth, "CERT:", 5) != 0) {
+			char *s = base64encode(weburl.desturl->auth);
+
 			addtobuffer(httprequest, "Authorization: Basic ");
-			addtobuffer(httprequest, base64encode(weburl.desturl->auth));
+			addtobuffer(httprequest, s);
 			addtobuffer(httprequest, "\r\n");
+
+			xfree(s);
 		}
 		else {
 			/* Client SSL certificate */
@@ -281,9 +285,13 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 		}
 	}
 	if (weburl.proxyurl && weburl.proxyurl->auth) {
+		char *s = base64encode(weburl.proxyurl->auth);
+
 		addtobuffer(httprequest, "Proxy-Authorization: Basic ");
-		addtobuffer(httprequest, base64encode(weburl.proxyurl->auth));
+		addtobuffer(httprequest, s);
 		addtobuffer(httprequest, "\r\n");
+
+		xfree(s);
 	}
 	for (ck = cookiehead; (ck); ck = ck->next) {
 		int useit = 0;
