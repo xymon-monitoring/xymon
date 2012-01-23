@@ -262,7 +262,7 @@ void load_config(char *conffn)
 			xfreedup(curtask->cronstr,p);
 			if (curtask->crondate) { crondatefree(curtask->crondate);curtask->crondate=parse_cron_time(curtask->cronstr); }
 			if (!curtask->crondate) {
-				errprintf("Can't parse cron date: %s->%s", curtask->key, curtask->cronstr);
+				errprintf("Can't parse cron date: %s->%s\n", curtask->key, curtask->cronstr);
 				curtask->disabled = 1;
 			}
 			curtask->interval = -1; /* disable interval */
@@ -291,7 +291,7 @@ void load_config(char *conffn)
 				curtask->depends = twalk;
 			}
 			else {
-				errprintf("Configuration error, unknown dependency %s->%s", curtask->key, p);
+				errprintf("Configuration error, unknown dependency %s->%s\n", curtask->key, p);
 			}
 		}
 		else if (curtask && (strncasecmp(p, "ENVFILE ", 8) == 0)) {
