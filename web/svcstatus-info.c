@@ -357,7 +357,9 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 
 		addtobuffer(buf, "<tr>");
 
-		addtobuffer(buf, "<td><img src=\"");
+		addtobuffer(buf, "<td><a href=\"");
+		addtobuffer(buf, hostsvcurl(hostname, tnames[i].name, 1));
+		addtobuffer(buf, "\"><img src=\"");
 		addtobuffer(buf, xgetenv("XYMONSKIN"));
 		addtobuffer(buf, "/");
 		addtobuffer(buf, dotgiffilename(tnames[i].color, 0, 1));
@@ -367,7 +369,7 @@ static void generate_xymon_statuslist(char *hostname, strbuffer_t *buf)
 		addtobuffer(buf, xgetenv("DOTWIDTH"));
 		addtobuffer(buf, "\" border=0 alt=\"");
 		addtobuffer(buf, colorname(tnames[i].color));
-		addtobuffer(buf, " status\"> ");
+		addtobuffer(buf, " status\"></a> ");
 		addtobuffer(buf, tnames[i].name);
 		addtobuffer(buf, "</td>");
 
