@@ -296,6 +296,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			char downtime[4096];
 			char groupidstr[10];
 			xtreePos_t handle;
+			namelist_t *newitem, *iwalk,* *iprev;
 
 			if ( (ip1 < 0) || (ip1 > 255) ||
 			     (ip2 < 0) || (ip2 > 255) ||
@@ -306,8 +307,7 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 				goto nextline;
 			}
 
-			namelist_t *newitem = calloc(1, sizeof(namelist_t));
-			namelist_t *iwalk, *iprev;
+			newitem = calloc(1, sizeof(namelist_t));
 
 			MEMDEFINE(clientname);
 			MEMDEFINE(downtime);

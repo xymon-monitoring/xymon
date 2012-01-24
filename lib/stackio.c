@@ -361,7 +361,7 @@ static void addtofnlist(char *dirname, void **v_listhead)
 		/* Skip all dot-files */
 		if (*(d->d_name) == '.') continue;
 
-		/* Skip editor backups - file ending wit '~' */
+		/* Skip editor backups - file ending with '~' */
 		if (*(d->d_name + fnlen - 1) == '~') continue;
 
 		/* Skip RCS files - they end with ",v" */

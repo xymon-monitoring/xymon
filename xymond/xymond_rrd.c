@@ -166,12 +166,13 @@ loaddone:
 char **get_rrd_definition(char *key, int *count)
 {
 	xtreePos_t handle;
+	rrddeftree_t *rec;
 
 	handle = xtreeFind(rrddeftree, key);
 	if (handle == xtreeEnd(rrddeftree)) {
 		handle = xtreeFind(rrddeftree, "");	/* The default record */
 	}
-	rrddeftree_t *rec = (rrddeftree_t *)xtreeData(rrddeftree, handle);
+	rec = (rrddeftree_t *)xtreeData(rrddeftree, handle);
 
 	*count = rec->count;
 	return rec->defs;
