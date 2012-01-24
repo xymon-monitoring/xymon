@@ -1179,6 +1179,17 @@ char *generate_info(char *hostname, char *critconfigfn)
 		}
 	}
 
+	if (NULL != (val = xmh_item(hostwalk, XMH_DELAYYELLOW))) {
+		addtobuffer(infobuf, "<tr><th align=left>Delayed yellow updates:</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
+	}
+	if (NULL != (val = xmh_item(hostwalk, XMH_DELAYRED))) {
+		addtobuffer(infobuf, "<tr><th align=left>Delayed red updates:</th><td align=left>");
+		addtobuffer(infobuf, val);
+		addtobuffer(infobuf, "</td></tr>\n");
+	}
+
 	addtobuffer(infobuf, "<tr><th align=left>Other tags:</th><td align=left>");
 	val = xmh_item_walk(hostwalk);
 	while (val) {
