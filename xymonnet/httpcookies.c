@@ -180,7 +180,11 @@ static void load_cookies_one(char *cookiefn)
 
 void load_cookies(void)
 {
+	static int initdone = 0;
 	char cookiefn[PATH_MAX];
+
+	if (initdone) return;
+	initdone = 1;
 
 	sprintf(cookiefn, "%s/etc/cookies", xgetenv("XYMONHOME"));
 	load_cookies_one(cookiefn);
