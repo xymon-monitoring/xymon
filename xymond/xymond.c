@@ -2533,6 +2533,7 @@ int get_binary(char *fn, conn_t *msg)
 
 			flen = st.st_size;
 			add_filecache(fullfn, result, flen);
+			close(fd);
 		}
 		else {
 			errprintf("Impossible - cannot fstat() an open file ..\n");
