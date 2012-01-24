@@ -284,6 +284,14 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			adminrealm = strdup(p+1);
 		}
+		else if (argnmatch(argv[argi], "--hffile=")) {
+			char *p = strchr(argv[argi], '=');
+			hffile = strdup(p+1);
+		}
+		else if (argnmatch(argv[argi], "--hfform=")) {
+			char *p = strchr(argv[argi], '=');
+			hfform = strdup(p+1);
+		}
 		else if (strcmp(argv[argi], "--noauth") == 0) {
 			adminrealm = NULL;
 			adminfunctions = 0;
