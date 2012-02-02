@@ -89,7 +89,7 @@ static void *dbcheck_hitcache_tpl      = NULL;
 			hostname, testname, hitsql, hittbl, hitbody, hittrig);
 		dbgprintf("dbcheck: host %s test %s blbuff %5.2f rowchache %5.2f\n",
 			hostname, testname, blbuff, rowchache);
-		sprintf(rrdvalues, "%d:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f:%5.2f",
+		sprintf(rrdvalues, "%d:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f:%05.2f",
 			(int) tstamp, pinsql, pintbl, pinbody, pintrig,
 			hitsql, hittbl, hitbody, hittrig, blbuff, rowchache);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_hitcache_params, dbcheck_hitcache_tpl);
@@ -127,7 +127,7 @@ static void *dbcheck_session_tpl      = NULL;
 		hostname, testname, maxsess, currsess, pctsess);
 			dbgprintf("dbcheck: host %s test %s maxproc %ld currproc %ld pctproc %5.2f\n",
 		hostname, testname, maxproc, currproc, pctproc);
-                        sprintf(rrdvalues, "%d:%ld:%ld:%5.2f:%ld:%ld:%5.2f",
+                        sprintf(rrdvalues, "%d:%ld:%ld:%05.2f:%ld:%ld:%05.2f",
                        	(int) tstamp, maxsess, currsess, pctsess, maxproc, currproc, pctproc);
 		create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_session_params, dbcheck_session_tpl);
 	}
@@ -163,7 +163,7 @@ static void *dbcheck_rb_tpl    = NULL;
                         if ( sscanf(start,"ROLLBACK percentage for %s is %f",execname,&pct) !=2) goto nextline;
                         setupfn2("%s,%s.rrd",testname,execname);
                         dbgprintf("dbcheck: host %s test %s name %s pct %5.2f\n", hostname, testname, execname, pct);
-                        sprintf(rrdvalues, "%d:%5.2f", (int) tstamp, pct);
+                        sprintf(rrdvalues, "%d:%05.2f", (int) tstamp, pct);
                         create_and_update_rrd(hostname, testname, classname, pagepaths, dbcheck_rb_params, dbcheck_rb_tpl);
 nextline:
                         if (execname) { xfree(execname); execname = NULL; }
