@@ -260,7 +260,8 @@ void load_config(char *conffn)
 		else if (curtask && (strncasecmp(p, "CRONDATE ", 9) == 0)) {
 			p+= 9;
 			xfreedup(curtask->cronstr,p);
-			if (curtask->crondate) { crondatefree(curtask->crondate);curtask->crondate=parse_cron_time(curtask->cronstr); }
+			if (curtask->crondate) crondatefree(curtask->crondate);
+			curtask->crondate = parse_cron_time(curtask->cronstr);
 			if (!curtask->crondate) {
 				errprintf("Can't parse cron date: %s->%s\n", curtask->key, curtask->cronstr);
 				curtask->disabled = 1;
