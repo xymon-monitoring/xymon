@@ -53,26 +53,39 @@ time_t gettimer(void)
 
 #if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
 	res = clock_gettime(CLOCK_MONOTONIC, &t);
+	if(-1 == res)
+	{
+		res = clock_gettime(CLOCK_REALTIME, &t);
+		if(-1 == res)
+		{
+			return time(NULL);
+		}
+	}
 	return (time_t) t.tv_sec;
 #else
 	return time(NULL);
 #endif
 }
 
-
 void getntimer(struct timespec *tp)
 {
-#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
 	int res;
-	res = clock_gettime(CLOCK_MONOTONIC, tp);
-#else
 	struct timeval t;
 	struct timezone tz;
+
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+	res = clock_gettime(CLOCK_MONOTONIC, tp);
+	if(-1 == res)
+	{
+		res = clock_gettime(CLOCK_REALTIME, tp);
+		if(-1 != res) return;
+		/* Fall through to use gettimeofday() */
+	}
+#endif
 
 	gettimeofday(&t, &tz);
 	tp->tv_sec = t.tv_sec;
 	tp->tv_nsec = 1000*t.tv_usec;
-#endif
 }
 
 
