@@ -1110,7 +1110,7 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 	fontspec = normalfont;
 	stoprulefound = 0;
 	while ((recip = next_recipient(alert, &first, NULL, NULL)) != NULL) {
-		int mindur = 0, maxdur = 0;
+		int mindur = 0, maxdur = INT_MAX;
 		char *timespec = NULL;
 		int colors = defaultcolors;
 		int i, firstcolor = 1;
@@ -1179,7 +1179,8 @@ void print_alert_recipients(activealerts_t *alert, strbuffer_t *buf)
 
 		sprintf(l, "<td align=center>%s</td>", durationstring(mindur));
 		addtobuffer(buf, l);
-
+               /* maxdur=INT_MAX means "no max duration". So set it to 0 for durationstring() to do the right thing */
+                if (maxdur == INT_MAX) maxdur = 0;
 		sprintf(l, "<td align=center>%s</td>", durationstring(maxdur));
 		addtobuffer(buf, l);
 
