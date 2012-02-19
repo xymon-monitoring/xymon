@@ -10,18 +10,18 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-// PROGRAMS = xymonnet xymonping beastat
+# PROGRAMS = xymonnet xymonping beastat
 PROGRAMS = xymonnet2 tcptalk
 EXTENSIONS = xymonnet-again.sh
 SNMPPROGRAMS = xymon-snmpcollect
-// DBGTOOLS = contest
+# DBGTOOLS = contest
 
 ifeq ($(DOSNMP),yes)
 PROGRAMS += $(SNMPPROGRAMS)
 endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
-// NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
+# NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
 NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o
 TCPTALKOBJS = tcptalk-standalone.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o
 PINGTESTOBJS = xymonping.o
