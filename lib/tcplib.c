@@ -1032,9 +1032,10 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 				connressize = sizeof(connres);
 				getsockopt(walk->sock, SOL_SOCKET, SO_ERROR, &connres, &connressize);
 				if (connres != 0) {
-					walk->usercallback(walk, CONN_CB_CONNECT_FAILED, walk->userdata);
+					walk->errcode = connres;
 					conn_info(funcid, INFO_DEBUG, "connect() to %s failed: status %d\n", 
 						  conn_print_address(walk), connres);
+					walk->usercallback(walk, CONN_CB_CONNECT_FAILED, walk->userdata);
 					conn_cleanup(walk);
 				}
 				else {

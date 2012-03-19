@@ -54,6 +54,7 @@ typedef struct tcpconn_t {
 		CONN_CLOSING, 
 		CONN_DEAD
 	} connstate;
+	int errcode;
 	int maxlifetime;
 	struct timespec starttime;
 	long elapsedms;
