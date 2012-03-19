@@ -317,6 +317,8 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 
 	  case CONN_CB_CONNECT_FAILED:         /* Client mode: New outbound connection failed */
 		rec->talkresult = TALK_CONN_FAILED;
+		rec->textlog = newstrbuffer(0);
+		addtobuffer(rec->textlog, strerror(connection->errcode));
 		break;
 
 	  case CONN_CB_CONNECT_COMPLETE:       /* Client mode: New outbound connection succeded */
@@ -499,7 +501,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 }
 
 
-void *add_net_test(char *testspec, char **dialog, enum net_test_options_t options, myconn_netparams_t *netparams, void *hostinfo)
+void *add_net_test(char *testspec, char **dialog, net_test_options_t *options, myconn_netparams_t *netparams, void *hostinfo)
 {
 	myconn_t *newtest;
 
@@ -509,8 +511,9 @@ void *add_net_test(char *testspec, char **dialog, enum net_test_options_t option
 	newtest->netparams.callback = tcp_standard_callback;
 	newtest->hostinfo = hostinfo;
 	newtest->dialog = dialog;
+	newtest->timeout = options->timeout;
 
-	switch (options) {
+	switch (options->testtype) {
 	  case NET_TEST_HTTP:
 		newtest->talkprotocol = TALK_PROTO_HTTP;
 		newtest->httpheaders = newstrbuffer(0);
@@ -542,22 +545,20 @@ void *add_net_test(char *testspec, char **dialog, enum net_test_options_t option
 		/* Destination is not an IP, so try doing a hostname lookup */
 		newtest->netparams.lookupstring = strdup(newtest->netparams.destinationip);
 		newtest->netparams.lookupstatus = LOOKUP_NEEDED;
-		newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
 	}
-	else {
-		newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
-	}
+
+	newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
 
 	return newtest;
 }
 
 
-#define CONCURRENCY 20
-#define TIMEOUT 10
 
-void run_net_tests(void)
+listhead_t *run_net_tests(int concurrency)
 {
 	int maxfd;
+
+	list_shuffle(&pendingtests);
 
 	/* Loop to process data */
 	do {
@@ -570,7 +571,7 @@ void run_net_tests(void)
 		
 		/* Start some more tests */
 		pcur = pendingtests->head;
-		while (pcur && (activetests->len < CONCURRENCY) && (lookupsposted < CONCURRENCY)) {
+		while (pcur && (activetests->len < concurrency) && (lookupsposted < concurrency)) {
 			rec = (myconn_t *)pcur->data;
 
 			/* 
@@ -608,7 +609,7 @@ void run_net_tests(void)
 							rec->netparams.socktype,
 							rec->netparams.sourceip, 
 							rec->netparams.sslhandling, rec->netparams.sslcertfn, rec->netparams.sslkeyfn, 
-							TIMEOUT*1000,
+							rec->timeout*1000,
 							rec->netparams.callback, rec)) {
 					list_item_move(activetests, pcur, rec->testspec);
 				}
@@ -649,7 +650,7 @@ void run_net_tests(void)
 			if (n < 0) {
 				if (errno != EINTR) {
 					errprintf("FATAL: select() returned error %s\n", strerror(errno));
-					return;
+					return NULL;
 				}
 			}
 
@@ -659,7 +660,8 @@ void run_net_tests(void)
 
 		conn_trimactive();
 		dns_finish_queries(activetests);
-		dbgprintf("Active: %d, pending: %d\n", activetests->len, pendingtests->len);
+		// dbgprintf("Active: %d, pending: %d\n", activetests->len, pendingtests->len);
+#if 0
 		if ((activetests->len == 0) && (pendingtests->len > 0)) {
 			static int bugcount = 0;
 
@@ -670,8 +672,11 @@ void run_net_tests(void)
 				return;
 			}
 		}
+#endif
 	}
 	while ((activetests->len + pendingtests->len) > 0);
+
+	return donetests;
 }
 
 void test_is_done(myconn_t *rec)
@@ -692,6 +697,7 @@ void init_tcp_testmodule(void)
 }
 
 
+#ifdef STANDALONE
 static void showtext(char *s)
 {
 	char *bol, *eoln;
@@ -767,7 +773,6 @@ void dump_net_tests(listhead_t *head)
 	}
 }
 
-#ifdef STANDALONE
 static char *silent_dialog[] = {
 	"READ", "CLOSE", NULL
 };
@@ -825,7 +830,7 @@ static void *add_tcp_test(char *destinationip, int destinationport, char *source
 			  enum sslhandling_t sslhandling, char *sslcertfn, char *sslkeyfn)
 {
 	myconn_netparams_t netparams;
-	enum net_test_options_t options = NET_TEST_STANDARD;
+	net_test_options_t options = { NET_TEST_STANDARD, 10 };
 
 	memset(&netparams, 0, sizeof(netparams));
 	netparams.destinationip = strdup(destinationip);
@@ -835,13 +840,13 @@ static void *add_tcp_test(char *destinationip, int destinationport, char *source
 	netparams.sslcertfn = sslcertfn;
 	netparams.sslkeyfn = sslkeyfn;
 
-	if      (dialog == http_dialog)		options = NET_TEST_HTTP;
-	else if (dialog == ntp_dialog)		options = NET_TEST_NTP;
-	else if (dialog == dns_dialog)		options = NET_TEST_DNS;
-	else if (dialog == telnet_dialog)	options = NET_TEST_TELNET;
-	else if (dialog == null_dialog)		options = NET_TEST_PING;
+	if      (dialog == http_dialog)		options.testtype = NET_TEST_HTTP;
+	else if (dialog == ntp_dialog)		options.testtype = NET_TEST_NTP;
+	else if (dialog == dns_dialog)		options.testtype = NET_TEST_DNS;
+	else if (dialog == telnet_dialog)	options.testtype = NET_TEST_TELNET;
+	else if (dialog == null_dialog)		options.testtype = NET_TEST_PING;
 
-	return add_net_test(testspec, dialog, options, &netparams, NULL);
+	return add_net_test(testspec, dialog, &options, &netparams, NULL);
 }
 
 int main(int argc, char **argv)
@@ -880,7 +885,7 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	run_net_tests();
+	run_net_tests(10);
 	dump_net_tests(donetests);
 
 	return 0;

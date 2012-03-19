@@ -17,19 +17,23 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "setuptests.h"
 #include "tcptalk.h"
 #include "dnstalk.h"
+#include "sendresults.h"
+
+int concurrency = 10;
+int defaulttimeout = 30;
 
 int main(int argc, char **argv)
 {
+	listitem_t *resulthead = NULL;
 
 	debug = 1;
 	conn_register_infohandler(NULL, 7);
 
 	init_tcp_testmodule();
 
-	setup_tests();
-	run_net_tests();
-
-	dump_net_tests(NULL);
+	setup_tests(defaulttimeout);
+	resulthead = run_net_tests(concurrency);
+	send_test_results(resulthead, "xymonnet", 0);
 
 	conn_deinit();
 	dns_lookup_shutdown();

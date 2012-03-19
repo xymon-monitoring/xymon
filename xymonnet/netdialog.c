@@ -344,11 +344,11 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	return dialog;
 }
 
-char **net_dialog(char *testspec, myconn_netparams_t *netparams, enum net_test_options_t *options, void *hostinfo)
+char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo)
 {
 	int dialuptest = 0, reversetest = 0, alwaystruetest = 0, silenttest = 0;
 
-	*options = NET_TEST_STANDARD;
+	options->testtype = NET_TEST_STANDARD;
 
 	/* Skip old-style modifiers */
 	if (*testspec == '?') { dialuptest=1;     testspec++; }
@@ -380,7 +380,7 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, enum net_test_o
 		  argnmatch(testspec, "type;http")    ||
 		  argnmatch(testspec, "type=")        )      {
 
-		*options = NET_TEST_HTTP;
+		options->testtype = NET_TEST_HTTP;
 		return  build_http_dialog(testspec, netparams, hostinfo);
 	}
 	else {
@@ -415,10 +415,10 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, enum net_test_o
 			else if (rec->option_starttls) netparams->sslhandling = CONN_SSL_STARTTLS_CLIENT;
 			else netparams->sslhandling = CONN_SSL_NO;
 
-			if (rec->option_telnet) *options = NET_TEST_TELNET;
-			if (rec->option_dns) *options = NET_TEST_DNS;
-			if (rec->option_ntp) *options = NET_TEST_NTP;
-			else *options = NET_TEST_STANDARD;
+			if (rec->option_telnet) options->testtype = NET_TEST_TELNET;
+			if (rec->option_dns) options->testtype = NET_TEST_DNS;
+			if (rec->option_ntp) options->testtype = NET_TEST_NTP;
+			else options->testtype = NET_TEST_STANDARD;
 
 			return rec->dialog;
 		}

@@ -22,7 +22,7 @@ endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 # NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
-NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o
+NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o sendresults.o
 TCPTALKOBJS = tcptalk-standalone.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o

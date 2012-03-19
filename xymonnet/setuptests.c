@@ -69,7 +69,7 @@ static int wanted_host(void *host, char *netstring)
 	return 0;
 }
 
-void setup_tests(void)
+void setup_tests(int defaulttimeout)
 {
 	char *location;
 	void *hwalk;
@@ -95,9 +95,11 @@ void setup_tests(void)
 	load_protocols(NULL);
 	load_cookies();
 
+	/* update nettest set valid=0 */
 	for (hwalk = first_host(); (hwalk); hwalk = next_host(hwalk, 0)) {
 		char *destination, *testspec;
 		myconn_netparams_t netparams;
+		net_test_options_t options;
 		char **dialog;
 
 		if (!wanted_host(hwalk, location)) continue;
@@ -112,24 +114,34 @@ void setup_tests(void)
 			/* Add the ping check */
 			memset(&netparams, 0, sizeof(netparams));
 			netparams.destinationip = strdup(destination);
-			add_net_test("ping", NULL, NET_TEST_PING, &netparams, hwalk);
+			options.testtype = NET_TEST_PING;
+			options.timeout = defaulttimeout;
+			/* update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec="ping" */
+			add_net_test("ping", NULL, &options, &netparams, hwalk);
 		}
 
 		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
-			enum net_test_options_t options;
+			net_test_options_t options = { NET_TEST_STANDARD, defaulttimeout };
 
 			memset(&netparams, 0, sizeof(netparams));
 			dialog = net_dialog(testspec, &netparams, &options, hwalk);
 
-			if (dialog || (options != NET_TEST_STANDARD)) {
+			if (dialog || (options.testtype != NET_TEST_STANDARD)) {
+				/* insert into nettests / update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec=testspec */
 				/* destinatinonip may have been filled by net_dialog (e.g. http) */
 				if (!netparams.destinationip) netparams.destinationip = strdup(destination);
-				add_net_test(testspec, dialog, options, &netparams, hwalk);
+				add_net_test(testspec, dialog, &options, &netparams, hwalk);
 			}
 
 			testspec = xmh_item_walk(NULL);
 		}
 	}
+
+	/* delete from nettests where valid=0 */
+	/* commit */
+
+	/* select hostname,testspec from nettests where valid=1 and lastrun+interval < now
+	 * Calc hwalk, dialog, netparams - add_net_test() */
 }
 
