@@ -45,7 +45,6 @@ static char rcsid[] = "$Id$";
 
 volatile int keeprunning = 1;
 char *client_response = NULL;		/* The latest response to a "client" message */
-char *logfile = NULL;
 int maxage = 600;			/* Maximum time we will cache messages */
 sender_t *serverlist = NULL;		/* Who is allowed to grab our messages */
 
@@ -81,9 +80,9 @@ void sigmisc_handler(int signum)
 		break;
 
 	  case SIGHUP:
-		if (logfile) {
-			freopen(logfile, "a", stdout);
-			freopen(logfile, "a", stderr);
+		if (logfn) {
+			freopen(logfn, "a", stdout);
+			freopen(logfn, "a", stderr);
 			errprintf("Caught SIGHUP, reopening logfile\n");
 		}
 		break;
@@ -328,20 +327,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
-		else if (argnmatch(argv[opt], "--pidfile=")) {
-			char *p = strchr(argv[opt], '=');
-			pidfile = strdup(p+1);
-		}
-		else if (argnmatch(argv[opt], "--logfile=")) {
-			char *p = strchr(argv[opt], '=');
-			logfile = strdup(p+1);
-		}
-		else if (strcmp(argv[opt], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[opt], "--version") == 0) {
-			printf("xymonproxy version %s\n", VERSION);
-			return 0;
+		else if (standardoption(argv[0], argv[opt])) {
+			/* Do nothing */
 		}
 	}
 
@@ -365,9 +352,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* Redirect logging to the logfile, if requested */
-	if (logfile) {
-		freopen(logfile, "a", stdout);
-		freopen(logfile, "a", stderr);
+	if (logfn) {
+		freopen(logfn, "a", stdout);
+		freopen(logfn, "a", stderr);
 	}
 
 	errprintf("Xymon msgcache version %s starting\n", VERSION);
@@ -387,7 +374,7 @@ int main(int argc, char *argv[])
 		}
 		else if (childpid > 0) {
 			/* Parent - save PID and exit */
-			FILE *fd = fopen(pidfile, "w");
+			FILE *fd = fopen(pidfn, "w");
 			if (fd) {
 				fprintf(fd, "%d\n", (int)childpid);
 				fclose(fd);
@@ -556,7 +543,7 @@ int main(int argc, char *argv[])
 
 	} while (keeprunning);
 
-	if (pidfile) unlink(pidfile);
+	if (pidfn) unlink(pidfn);
 	return 0;
 }
 

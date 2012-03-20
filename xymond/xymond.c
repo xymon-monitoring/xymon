@@ -4774,7 +4774,6 @@ int main(int argc, char *argv[])
 	struct timeval tv;
 	struct timezone tz;
 	int daemonize = 0;
-	char *pidfile = NULL;
 	struct sigaction sa;
 	time_t conn_timeout = 30;
 	char *envarea = NULL;
@@ -4813,10 +4812,7 @@ int main(int argc, char *argv[])
 	okcolors = colorset(xgetenv("OKCOLORS"), (1 << COL_RED));
 
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--debug")) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--listen=")) {
+		if (argnmatch(argv[argi], "--listen=")) {
 			char *p = strchr(argv[argi], '=') + 1;
 
 			listenip4 = strdup(p);
@@ -4890,14 +4886,6 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--no-daemon")) {
 			daemonize = 0;
 		}
-		else if (argnmatch(argv[argi], "--pidfile=")) {
-			char *p = strchr(argv[argi], '=');
-			pidfile = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--log=")) {
-			char *p = strchr(argv[argi], '=');
-			logfn = strdup(p+1);
-		}
 		else if (argnmatch(argv[argi], "--ack-log=")) {
 			char *p = strchr(argv[argi], '=');
 			ackinfologfn = strdup(p+1);
@@ -4934,14 +4922,6 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			flapcount = atoi(p+1);
 			if (flapcount < 0) flapcount = 0;
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
 		}
 		else if (argnmatch(argv[argi], "--trace=")) {
 			char *p = strchr(argv[argi], '=');
@@ -5006,12 +4986,14 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-download") == 0) {
 			 allow_downloads = 0;
 		}
-		else if (argnmatch(argv[argi], "--help")) {
-			printf("Options:\n");
-			printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
-			printf("\t--hosts=FILENAME              : The hosts.cfg file\n");
-			printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
-			return 1;
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) {
+				printf("Options:\n");
+				printf("\t--listen=IP:PORT              : The address the daemon listens on\n");
+				printf("\t--hosts=FILENAME              : The hosts.cfg file\n");
+				printf("\t--ghosts=allow|drop|log       : How to handle unknown hosts\n");
+				return 1;
+			}
 		}
 		else {
 			errprintf("Unknown option '%s' - ignored\n", argv[argi]);
@@ -5093,25 +5075,17 @@ int main(int argc, char *argv[])
 		setsid();
 	}
 
-	if (pidfile == NULL) {
-		/* Setup a default pid-file */
-		char fn[PATH_MAX];
-
-		sprintf(fn, "%s/xymond.pid", xgetenv("XYMONSERVERLOGS"));
-		pidfile = strdup(fn);
-	}
-
 	/* Save PID */
 	{
-		FILE *fd = fopen(pidfile, "w");
+		FILE *fd = fopen(pidfn, "w");
 		if (fd) {
 			if (fprintf(fd, "%d\n", (int)getpid()) <= 0) {
-				errprintf("Error writing PID file %s: %s\n", pidfile, strerror(errno));
+				errprintf("Error writing PID file %s: %s\n", pidfn, strerror(errno));
 			}
 			fclose(fd);
 		}
 		else {
-			errprintf("Cannot open PID file %s: %s\n", pidfile, strerror(errno));
+			errprintf("Cannot open PID file %s: %s\n", pidfn, strerror(errno));
 		}
 	}
 
@@ -5361,7 +5335,7 @@ int main(int argc, char *argv[])
 	close_channel(userchn, CHAN_MASTER);
 
 	save_checkpoint();
-	unlink(pidfile);
+	unlink(pidfn);
 
 	if (dbgfd) fclose(dbgfd);
 

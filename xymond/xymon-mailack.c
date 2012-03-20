@@ -41,16 +41,8 @@ int main(int argc, char *argv[])
 	char *envarea = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
+		if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

@@ -442,8 +442,8 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			serverid = atoi(p+1);
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

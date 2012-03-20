@@ -94,23 +94,14 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *envarea = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
+		if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 
-	redirect_cgilog("notifications");
+	redirect_cgilog(programname);
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 
 	fprintf(stdout, "Content-type: %s\n\n", xgetenv("HTMLCONTENTTYPE"));

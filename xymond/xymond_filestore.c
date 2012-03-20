@@ -221,9 +221,6 @@ int main(int argc, char *argv[])
 			chnid = C_ENADIS;
 			if (!filedir) filedir = xgetenv("XYMONDISABLEDDIR");
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
 		else if (argnmatch(argv[argi], "--dir=")) {
 			filedir = strchr(argv[argi], '=')+1;
 		}
@@ -247,6 +244,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			locator_init(p+1);
 			locatorbased = 1;
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

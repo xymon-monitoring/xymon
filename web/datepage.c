@@ -76,21 +76,9 @@ int main(int argc, char *argv[])
 	char *hffile = "report";
 	char *urlprefix = "";
 	int bgcolor = COL_BLUE;
-	char *envarea = NULL;
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--hffile=")) {
+		if (argnmatch(argv[argi], "--hffile=")) {
 			char *p = strchr(argv[argi], '=');
 			hffile = strdup(p+1);
 		}
@@ -102,9 +90,12 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			urlprefix = strdup(p+1);
 		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
+		}
 	}
 
-	redirect_cgilog("datepage");
+	redirect_cgilog(programname);
 	parse_query();
 
 	if (cgi_method == CGI_POST) {

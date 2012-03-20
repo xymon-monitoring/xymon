@@ -142,10 +142,6 @@ int main(int argc, char *argv[])
 			p = strchr(argv[argi], '=');
 			if (p) testcolumn = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--version") == 0) {
-			printf("xymongrep version %s\n", VERSION);
-			exit(0);
-		}
 		else if ((strcmp(argv[argi], "--net") == 0) || (strcmp(argv[argi], "--bbnet") == 0)) {
 			include2 = "netinclude";
 			onlypreferredentry = 0;
@@ -156,6 +152,9 @@ int main(int argc, char *argv[])
 		}
 		else if (argnmatch(argv[argi], "--hosts=")) {
 			hostsfn = strchr(argv[argi], '=') + 1;
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else {
 			lookv[lookc] = strdup(argv[argi]);

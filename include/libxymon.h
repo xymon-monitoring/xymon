@@ -45,6 +45,7 @@ typedef struct strbuffer_t {
 #include "../lib/rbtr.h"
 #include "../lib/msort.h"
 #include "../lib/misc.h"
+#include "../lib/stdopt.h"
 #else
 
 /* Defines CGI URL's */
@@ -92,6 +93,7 @@ typedef struct strbuffer_t {
 #include "../lib/sha2.h"
 #include "../lib/sig.h"
 #include "../lib/stackio.h"
+#include "../lib/stdopt.h"
 #include "../lib/strfunc.h"
 #include "../lib/suid.h"
 #include "../lib/tcplib.h"

@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 		else if (strncmp(argv[i], "--machine=", 10) == 0) {
 			machinename = argv[i]+10;
 		}
-		else if (strcmp(argv[i], "--debug") == 0) {
-			debug = dontsendmessages = 1;
+		else if (standardoption(argv[0], argv[i])) {
+			/* Do nothing */
 		}
 	}
 

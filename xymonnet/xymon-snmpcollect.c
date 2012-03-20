@@ -1043,11 +1043,8 @@ int main (int argc, char **argv)
 	int mibcheck = 0;
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--no-update") == 0) {
-			dontsendmessages = 1;
+		if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else if (strcmp(argv[argi], "--cfgcheck") == 0) {
 			cfgcheck = 1;

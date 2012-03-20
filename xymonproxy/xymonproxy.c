@@ -215,7 +215,6 @@ int main(int argc, char *argv[])
 	int daemonize = 1;
 	int timeout = 10;
 	int listenq = 512;
-	char *pidfile = "/var/run/xymonproxy.pid";
 	char *proxyname = NULL;
 	char *proxynamesvc = "xymonproxy";
 
@@ -306,14 +305,6 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[opt], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
-		else if (argnmatch(argv[opt], "--pidfile=")) {
-			char *p = strchr(argv[opt], '=');
-			pidfile = strdup(p+1);
-		}
-		else if (argnmatch(argv[opt], "--logfile=")) {
-			char *p = strchr(argv[opt], '=');
-			logfile = strdup(p+1);
-		}
 		else if (strcmp(argv[opt], "--log-details") == 0) {
 			logdetails = 1;
 		}
@@ -337,28 +328,22 @@ int main(int argc, char *argv[])
 				proxynamesvc = strchr(proxyname, '.')+1;
 			}
 		}
-		else if (strcmp(argv[opt], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[opt], "--version") == 0) {
-			printf("xymonproxy version %s\n", VERSION);
-			return 0;
-		}
-		else if (strcmp(argv[opt], "--help") == 0) {
-			printf("xymonproxy version %s\n", VERSION);
-			printf("\nOptions:\n");
-			printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
-			printf("\t--server=IP[:port]          : Xymon server address and portnumber\n");
-			printf("\t--report=[HOST.]SERVICE     : Sends a status message about proxy activity\n");
-			printf("\t--timeout=N                 : Communications timeout (seconds)\n");
-			printf("\t--lqueue=N                  : Listen-queue size\n");
-			printf("\t--daemon                    : Run as a daemon\n");
-			printf("\t--no-daemon                 : Do not run as a daemon\n");
-			printf("\t--pidfile=FILENAME          : Save proces-ID of daemon to FILENAME\n");
-			printf("\t--logfile=FILENAME          : Log to FILENAME instead of stderr\n");
-			printf("\t--debug                     : Enable debugging output\n");
-			printf("\n");
-			return 0;
+		else if (standardoption(argv[0], argv[opt])) {
+			if (showhelp) {
+				printf("\nOptions:\n");
+				printf("\t--listen=IP[:port]          : Listen address and portnumber\n");
+				printf("\t--server=IP[:port]          : Xymon server address and portnumber\n");
+				printf("\t--report=[HOST.]SERVICE     : Sends a status message about proxy activity\n");
+				printf("\t--timeout=N                 : Communications timeout (seconds)\n");
+				printf("\t--lqueue=N                  : Listen-queue size\n");
+				printf("\t--daemon                    : Run as a daemon\n");
+				printf("\t--no-daemon                 : Do not run as a daemon\n");
+				printf("\t--pidfile=FILENAME          : Save proces-ID of daemon to FILENAME\n");
+				printf("\t--logfile=FILENAME          : Log to FILENAME instead of stderr\n");
+				printf("\t--debug                     : Enable debugging output\n");
+				printf("\n");
+				return 0;
+			}
 		}
 	}
 
@@ -419,7 +404,7 @@ int main(int argc, char *argv[])
 		}
 		else if (childpid > 0) {
 			/* Parent - save PID and exit */
-			FILE *fd = fopen(pidfile, "w");
+			FILE *fd = fopen(pidfn, "w");
 			if (fd) {
 				fprintf(fd, "%d\n", (int)childpid);
 				fclose(fd);
@@ -1146,7 +1131,7 @@ int main(int argc, char *argv[])
 		}
 	} while (keeprunning);
 
-	if (pidfile) unlink(pidfile);
+	if (pidfn) unlink(pidfn);
 	return 0;
 }
 

@@ -35,8 +35,6 @@ typedef struct sendreturn_t {
 	int haveseenhttphdrs;
 } sendreturn_t;
 
-extern int dontsendmessages;
-
 extern void setproxy(char *proxy);
 extern sendresult_t sendmessage(char *msg, char *recipient, int timeout, sendreturn_t *reponse);
 

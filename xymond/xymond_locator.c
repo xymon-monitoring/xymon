@@ -50,7 +50,6 @@ static char rcsid[] = "$Id$";
 
 
 volatile int keeprunning = 1;
-char *logfile = NULL;
 
 
 /*
@@ -464,10 +463,10 @@ void sigmisc_handler(int signum)
 		break;
 
 	  case SIGHUP:
-		if (logfile) {
-			freopen(logfile, "a", stdout);
-			freopen(logfile, "a", stderr);
-			errprintf("Caught SIGHUP, reopening logfile\n");
+		if (logfn) {
+			freopen(logfn, "a", stdout);
+			freopen(logfn, "a", stderr);
+			errprintf("Caught SIGHUP, reopening logfn\n");
 		}
 		break;
 	}
@@ -680,12 +679,8 @@ int main(int argc, char *argv[])
 		else if (strcmp(argv[argi], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
-		else if (argnmatch(argv[argi], "--logfile=")) {
-			char *p = strchr(argv[argi], '=');
-			logfile = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 
@@ -707,10 +702,10 @@ int main(int argc, char *argv[])
 	/* Make it non-blocking */
 	fcntl(lsocket, F_SETFL, O_NONBLOCK);
 
-	/* Redirect logging to the logfile, if requested */
-	if (logfile) {
-		freopen(logfile, "a", stdout);
-		freopen(logfile, "a", stderr);
+	/* Redirect logging to the logfn, if requested */
+	if (logfn) {
+		freopen(logfn, "a", stdout);
+		freopen(logfn, "a", stderr);
 	}
 
 	errprintf("Xymon locator version %s starting\n", VERSION);

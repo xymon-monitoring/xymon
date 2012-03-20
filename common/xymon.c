@@ -30,7 +30,6 @@ int main(int argc, char *argv[])
 	int timeout = XYMON_TIMEOUT;
 	int result = 1;
 	int argi;
-	int showhelp = 0;
 	char *recipient = NULL;
 	strbuffer_t *msg = newstrbuffer(0);
 	FILE *respfd = stdout;
@@ -40,19 +39,12 @@ int main(int argc, char *argv[])
 
 	for (argi=1; (argi < argc); argi++) {
 		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
+			standardoption(argv[0], argv[argi]);
 			conn_register_infohandler(NULL, INFO_DEBUG);
 		}
 		else if (strncmp(argv[argi], "--proxy=", 8) == 0) {
 			char *p = strchr(argv[argi], '=');
 			setproxy(p+1);
-		}
-		else if (strcmp(argv[argi], "--help") == 0) {
-			showhelp = 1;
-		}
-		else if (strcmp(argv[argi], "--version") == 0) {
-			fprintf(stdout, "Xymon version %s\n", VERSION);
-			return 0;
 		}
 		else if (strcmp(argv[argi], "--str") == 0) {
 			respfd = NULL;
@@ -65,22 +57,14 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			timeout = atoi(p+1);
 		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
 		else if (strcmp(argv[argi], "--merge") == 0) {
 			mergeinput = 1;
 		}
 		else if (strcmp(argv[argi], "--response") == 0) {
 			wantresponse = 1;
 		}
-		else if (strcmp(argv[argi], "-?") == 0) {
-			showhelp = 1;
+		else if (standardoption(argv[0], argv[argi])) {
+			/* Do nothing */
 		}
 		else if ((*(argv[argi]) == '-') && (strlen(argv[argi]) > 1)) {
 			fprintf(stderr, "Unknown option %s\n", argv[argi]);
@@ -100,7 +84,6 @@ int main(int argc, char *argv[])
 	}
 
 	if ((recipient == NULL) || (STRBUFLEN(msg) == 0) || showhelp) {
-		fprintf(stderr, "Xymon version %s\n", VERSION);
 		fprintf(stderr, "Usage: %s [--debug] [--merge] [--proxy=http://ip.of.the.proxy:port/] RECIPIENT DATA\n", argv[0]);
 		fprintf(stderr, "  RECIPIENT: IP-address, hostname or URL\n");
 		fprintf(stderr, "  DATA: Message to send, or \"-\" to read from stdin\n");

@@ -143,7 +143,6 @@ int main(int argc, char *argv[])
 	char htmldelim[100];
 	char startstr[20];
 	int argi, newargi;
-	char *envarea = NULL;
 	char *useragent;
 	int usemultipart = 1;
 
@@ -152,13 +151,8 @@ int main(int argc, char *argv[])
 	xymongen_argv[newargi++] = xymongentimeopt;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
+		if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else {
 			xymongen_argv[newargi++] = argv[argi];
@@ -167,7 +161,7 @@ int main(int argc, char *argv[])
 	xymongen_argv[newargi++] = outdir;
 	xymongen_argv[newargi++] = NULL;
 
-	redirect_cgilog("snapshot");
+	redirect_cgilog(programname);
 
 	cgidata = cgi_request();
 	if (cgidata == NULL) {

@@ -40,14 +40,7 @@ int main(int argc, char *argv[])
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			/*
-			 * A global "debug" variable is available. If
-			 * it is set, then "dbgprintf()" outputs debug messages.
-			 */
-			debug = 1;
-		}
-		else if (strncmp(argv[argi], "--timeout=", 10) == 0) {
+		if (strncmp(argv[argi], "--timeout=", 10) == 0) {
 			/*
 			 * You can have a timeout when waiting for new
 			 * messages. If it happens, you will get a "@@idle\n"
@@ -57,6 +50,9 @@ int main(int argc, char *argv[])
 			timeout = (struct timespec *)(malloc(sizeof(struct timespec)));
 			timeout->tv_sec = (atoi(argv[argi]+10));
 			timeout->tv_nsec = 0;
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

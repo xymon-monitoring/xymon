@@ -452,7 +452,6 @@ static void parse_query(void)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *envarea = NULL;
 	char **critconfig = NULL;
 	int cccount = 0;
 	char *hffile = "critical";
@@ -460,18 +459,7 @@ int main(int argc, char *argv[])
 	critconfig = (char **)calloc(1, sizeof(char *));
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--tooltips") == 0) {
+		if (strcmp(argv[argi], "--tooltips") == 0) {
 			usetooltips = 1;
 		}
 		else if (argnmatch(argv[argi], "--acklevel=")) {
@@ -490,6 +478,9 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			hffile = strdup(p+1);
 		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
+		}
 	}
 
 	if (!critconfig[0]) {
@@ -499,7 +490,7 @@ int main(int argc, char *argv[])
 		critconfig[1] = NULL;
 	}
 
-	redirect_cgilog("criticalview");
+	redirect_cgilog(programname);
 
 	setdocurl(hostsvcurl("%s", xgetenv("INFOCOLUMN"), 1));
 

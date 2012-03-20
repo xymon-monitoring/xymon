@@ -394,20 +394,11 @@ int main(int argc, char *argv[])
 			char *p = strchr(argv[argi], '=');
 			progressinfo = atoi(p+1);
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--help") == 0) {
-			printf("Usage:\n\n\t%s --cutoff=TIME\n\nTIME is in seconds since epoch\n", argv[0]);
-			return 0;
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) {
+				printf("Usage:\n\n\t%s --cutoff=TIME\n\nTIME is in seconds since epoch\n", argv[0]);
+				return 0;
+			}
 		}
 	}
 

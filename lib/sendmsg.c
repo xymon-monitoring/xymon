@@ -40,8 +40,6 @@ static char rcsid[] = "$Id$";
 static char *multircptcmds[] = { "status", "combo", "data", "notify", "enable", "disable", "drop", "rename", "client", NULL };
 static char errordetails[1024];
 
-int dontsendmessages = 0;		/* For debugging */
-
 static strbuffer_t *msgbuf = NULL;	/* message buffer for one status message */
 static int msgcolor;			/* color of status message in msgbuf */
 static strbuffer_t *xymonmsg = NULL;	/* Complete combo message buffer */

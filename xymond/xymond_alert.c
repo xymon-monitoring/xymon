@@ -382,10 +382,7 @@ int main(int argc, char *argv[])
 	locations = xtreeNew(strcasecmp);
 
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--debug")) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--config=")) {
+		if (argnmatch(argv[argi], "--config=")) {
 			configfn = strdup(strchr(argv[argi], '=')+1);
 		}
 		else if (argnmatch(argv[argi], "--checkpoint-file=")) {
@@ -483,6 +480,9 @@ int main(int argc, char *argv[])
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else {
 			errprintf("Unknown option '%s'\n", argv[argi]);

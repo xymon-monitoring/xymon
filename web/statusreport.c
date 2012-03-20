@@ -24,7 +24,6 @@ static char rcsid[] = "$Id$";
 
 int main(int argc, char *argv[])
 {
-	char *envarea = NULL;
 	char *server = NULL;
 	char *cookie, *pagefilter = "";
 	char *filter = NULL;
@@ -41,18 +40,7 @@ int main(int argc, char *argv[])
 
 	init_timestamp();
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if ( argnmatch(argv[argi], "--column=") || argnmatch(argv[argi], "--test=")) {
+		if ( argnmatch(argv[argi], "--column=") || argnmatch(argv[argi], "--test=")) {
 			char *p = strchr(argv[argi], '=');
 			int needed;
 			
@@ -104,6 +92,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(argv[argi], "--embedded") == 0) {
 			embedded = 1;
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

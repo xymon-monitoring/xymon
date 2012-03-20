@@ -79,7 +79,6 @@ int main(int argc, char **argv)
 {
 	int argi;
 	char *criticalconfig = NULL;
-	char *envarea = NULL;
 	char *accessfn = NULL;
 	char *userid = getenv("REMOTE_USER");
 
@@ -91,18 +90,7 @@ int main(int argc, char **argv)
 	char *log, *bol, *eoln, *endkey;
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--hobbit") == 0) {
+		if (strcmp(argv[argi], "--hobbit") == 0) {
 			boardcmd = "hobbitdboard";
 		}
 		else if (argnmatch(argv[argi], "--critical=")) {
@@ -112,6 +100,9 @@ int main(int argc, char **argv)
 		else if (argnmatch(argv[argi], "--access=")) {
 			char *p = strchr(argv[argi], '=');
 			accessfn = strdup(p+1);
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

@@ -364,31 +364,22 @@ void deleterecord(char *hostname, char *service, int evenifcloned)
 int main(int argc, char *argv[])
 {
 	int argi;
-	char *envarea = NULL;
 	char *configfn = NULL;
 
 	operator = getenv("REMOTE_USER");
 	if (!operator) operator = "Anonymous";
 
 	for (argi = 1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--config=")) {
+		if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
 			configfn = strdup(p+1);
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 
-	redirect_cgilog("criticaleditor");
+	redirect_cgilog(programname);
 	parse_query();
 	load_critconfig(configfn);
 

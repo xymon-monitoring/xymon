@@ -191,10 +191,7 @@ int main(int argc, char *argv[])
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (argnmatch(argv[argi], "--rrddir=")) {
+		if (argnmatch(argv[argi], "--rrddir=")) {
 			char *p = strchr(argv[argi], '=');
 			rrddir = strdup(p+1);
 		}
@@ -215,6 +212,9 @@ int main(int argc, char *argv[])
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

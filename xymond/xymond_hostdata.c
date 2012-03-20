@@ -105,12 +105,8 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
 			minlogspace = atoi(strchr(argv[argi], '=')+1);
 		}
-		else if (strcmp(argv[argi], "--debug") == 0) {
-			/*
-			 * A global "debug" variable is available. If
-			 * it is set, then "dbgprintf()" outputs debug messages.
-			 */
-			debug = 1;
+		else if (standardoption(argv[0], argv[argi]) == 0) {
+			if (showhelp) return 0;
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */

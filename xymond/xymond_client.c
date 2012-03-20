@@ -2028,13 +2028,7 @@ int main(int argc, char *argv[])
 
 	/* Handle program options. */
 	for (argi = 1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--no-update") == 0) {
-			dontsendmessages = 1;
-		}
-		else if (strcmp(argv[argi], "--no-ps-listing") == 0) {
+		if (strcmp(argv[argi], "--no-ps-listing") == 0) {
 			pslistinprocs = 0;
 		}
 		else if (strcmp(argv[argi], "--no-port-listing") == 0) {
@@ -2083,6 +2077,9 @@ int main(int argc, char *argv[])
 		}
 		else if (net_worker_option(argv[argi])) {
 			/* Handled in the subroutine */
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

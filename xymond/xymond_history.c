@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
 	char newcol2[3];
 	char oldcol2[3];
 	char alleventsfn[PATH_MAX];
-	char pidfn[PATH_MAX];
 	int logdirfull = 0;
 	int minlogspace = 5;
 
@@ -98,14 +97,11 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--histlogdir=")) {
 			histlogdir = strchr(argv[argi], '=')+1;
 		}
-		else if (argnmatch(argv[argi], "--pidfile=")) {
-			strcpy(pidfn, strchr(argv[argi], '=')+1);
-		}
 		else if (argnmatch(argv[argi], "--minimum-free=")) {
 			minlogspace = atoi(strchr(argv[argi], '=')+1);
 		}
-		else if (argnmatch(argv[argi], "--debug")) {
-			debug = 1;
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 

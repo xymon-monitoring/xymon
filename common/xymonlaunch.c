@@ -488,18 +488,12 @@ int main(int argc, char *argv[])
 	int daemonize = 1;
 	int verbose = 0;
 	char *config = "/etc/tasks.cfg";
-	char *logfn = NULL;
-	char *pidfn = NULL;
 	pid_t cpid;
 	int status;
 	struct sigaction sa;
-	char *envarea = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (strcmp(argv[argi], "--debug") == 0) {
-			debug = 1;
-		}
-		else if (strcmp(argv[argi], "--no-daemon") == 0) {
+		if (strcmp(argv[argi], "--no-daemon") == 0) {
 			daemonize = 0;
 		}
 		else if (strcmp(argv[argi], "--verbose") == 0) {
@@ -508,22 +502,6 @@ int main(int argc, char *argv[])
 		else if (argnmatch(argv[argi], "--config=")) {
 			char *p = strchr(argv[argi], '=');
 			config = strdup(expand_env(p+1));
-		}
-		else if (argnmatch(argv[argi], "--log=")) {
-			char *p = strchr(argv[argi], '=');
-			logfn = strdup(expand_env(p+1));
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--pidfile=")) {
-			char *p = strchr(argv[argi], '=');
-			pidfn = strdup(expand_env(p+1));
 		}
 		else if (strcmp(argv[argi], "--dump") == 0) {
 			/* Dump configuration */
@@ -551,6 +529,9 @@ int main(int argc, char *argv[])
 			}
 			fflush(stdout);
 			return 0;
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 		else {
 			fprintf(stderr,"%s: Unsupported argument: %s\n",argv[0],argv[argi]);

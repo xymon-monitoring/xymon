@@ -651,23 +651,17 @@ int main(int argc, char *argv[])
 	replog_t *log1d, *log1w, *log4w, *log1y;
 	char *p;
 	int argi;
-	char *envarea = NULL;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (argnmatch(argv[argi], "--env=")) {
-			char *p = strchr(argv[argi], '=');
-			loadenv(p+1, envarea);
-		}
-		else if (argnmatch(argv[argi], "--area=")) {
-			char *p = strchr(argv[argi], '=');
-			envarea = strdup(p+1);
-		}
-		else if (strcmp(argv[argi], "--no-svcid") == 0) {
+		if (strcmp(argv[argi], "--no-svcid") == 0) {
 			wantserviceid = 0;
+		}
+		else if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
 		}
 	}
 
-	redirect_cgilog("history");
+	redirect_cgilog(programname);
 
 	envcheck(reqenv);
 	cgidata = cgi_request();
