@@ -28,7 +28,7 @@ static void result_plain(myconn_t *rec,  strbuffer_t *txt)
 	char msgline[4096];
 
 	if (rec->textlog) {
-		sprintf(msgline, "PLAINlog: %d\n", STRBUFLEN(rec->textlog));
+		snprintf(msgline, sizeof(msgline), "PLAINlog: %d\n", STRBUFLEN(rec->textlog));
 		addtobuffer(txt, msgline);
 		addtostrbuffer(txt, rec->textlog);
 		addtobuffer(txt, "\n");
@@ -39,9 +39,9 @@ static void result_ntp(myconn_t *rec,  strbuffer_t *txt)
 {
 	char msgline[4096];
 
-	sprintf(msgline, "NTPstratum: %d\n", rec->ntpstratum);
+	snprintf(msgline, sizeof(msgline), "NTPstratum: %d\n", rec->ntpstratum);
 	addtobuffer(txt, msgline);
-	sprintf(msgline, "NTPoffset: %12.6f\n", rec->ntpoffset);
+	snprintf(msgline, sizeof(msgline), "NTPoffset: %12.6f\n", rec->ntpoffset);
 	addtobuffer(txt, msgline);
 }
 
@@ -49,12 +49,24 @@ static void result_http(myconn_t *rec,  strbuffer_t *txt)
 {
 	char msgline[4096];
 
-	sprintf(msgline, "HTTPstatus: %d\n", rec->httpstatus);
+	snprintf(msgline, sizeof(msgline), "HTTPstatus: %d\n", rec->httpstatus);
 	addtobuffer(txt, msgline);
+	if (rec->textlog) {
+		snprintf(msgline, sizeof(msgline), "HTTPrequest: %d\n", STRBUFLEN(rec->textlog));
+		addtobuffer(txt, msgline);
+		addtostrbuffer(txt, rec->textlog);
+		addtobuffer(txt, "\n");
+	}
 	if (rec->httpheaders) {
-		sprintf(msgline, "HTTPheaders: %d\n", STRBUFLEN(rec->httpheaders));
+		snprintf(msgline, sizeof(msgline), "HTTPheaders: %d\n", STRBUFLEN(rec->httpheaders));
 		addtobuffer(txt, msgline);
 		addtostrbuffer(txt, rec->httpheaders);
+		addtobuffer(txt, "\n");
+	}
+	if (rec->httpbody) {
+		snprintf(msgline, sizeof(msgline), "HTTPbody: %d\n", STRBUFLEN(rec->httpbody));
+		addtobuffer(txt, msgline);
+		addtostrbuffer(txt, rec->httpbody);
 		addtobuffer(txt, "\n");
 	}
 }
@@ -90,7 +102,7 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 			hres->txt = newstrbuffer(0);
 			xtreeAdd(hostresults, xmh_item(rec->hostinfo, XMH_HOSTNAME), hres);
 
-			sprintf(msgline, "client/%s %s.xymonnet xymonnet\n", 
+			snprintf(msgline, sizeof(msgline), "client/%s %s.netcollect netcollect\n", 
 				collector, xmh_item(rec->hostinfo, XMH_HOSTNAME));
 			addtobuffer(hres->txt, msgline);
 		}
@@ -98,19 +110,19 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 			hres = xtreeData(hostresults, handle);
 		}
 
-		sprintf(msgline, "\n[%s]\n", rec->testspec);
+		snprintf(msgline, sizeof(msgline), "\n[%s]\n", rec->testspec);
 		addtobuffer(hres->txt, msgline);
 
 		if (rec->netparams.lookupstring) {
-			sprintf(msgline, "TargetHostname: %s\n", rec->netparams.lookupstring);
+			snprintf(msgline, sizeof(msgline), "TargetHostname: %s\n", rec->netparams.lookupstring);
 			addtobuffer(hres->txt, msgline);
 		}
-		sprintf(msgline, "TargetIP: %s\n", rec->netparams.destinationip);
+		snprintf(msgline, sizeof(msgline), "TargetIP: %s\n", rec->netparams.destinationip);
 		addtobuffer(hres->txt, msgline);
-		sprintf(msgline, "TargetPort: %d\n", rec->netparams.destinationport);
+		snprintf(msgline, sizeof(msgline), "TargetPort: %d\n", rec->netparams.destinationport);
 		addtobuffer(hres->txt, msgline);
 		if (rec->netparams.sourceip) {
-			sprintf(msgline, "SourceIP: %s\n", rec->netparams.sourceip);
+			snprintf(msgline, sizeof(msgline), "SourceIP: %s\n", rec->netparams.sourceip);
 			addtobuffer(hres->txt, msgline);
 		}
 
@@ -119,7 +131,7 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 		  case CONN_SOCKTYPE_DGRAM: s = "UDP"; break;
 		  default: s = "UNKNOWN"; break;
 		}
-		sprintf(msgline, "Protocol: %s\n", s);
+		snprintf(msgline, sizeof(msgline), "Protocol: %s\n", s);
 		addtobuffer(hres->txt, msgline);
 
 		switch (rec->netparams.sslhandling) {
@@ -129,7 +141,7 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 		  case CONN_SSL_STARTTLS_SERVER: s = "STARTTLS_SERVER"; break;
 		  default: s = "UNKNOWN"; break;
 		}
-		sprintf(msgline, "SSL: %s\n", s);
+		snprintf(msgline, sizeof(msgline), "SSL: %s\n", s);
 		addtobuffer(hres->txt, msgline);
 
 		switch (rec->talkresult) {
@@ -142,21 +154,27 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 		  case TALK_CANNOT_RESOLVE: s = "CANNOT_RESOLVE"; break;
 		  default: s = "UNKNOWN"; break;
 		}
-		sprintf(msgline, "Status: %s\n", s);
+		snprintf(msgline, sizeof(msgline), "Status: %s\n", s);
 		addtobuffer(hres->txt, msgline);
 
-		sprintf(msgline, "ElapsedMS: %d\nDNSMS:%d\ntimeoutMS:%d\n",
+		snprintf(msgline, sizeof(msgline), "ElapsedMS: %d\nDNSMS:%d\ntimeoutMS:%d\n",
 			rec->elapsedms, rec->dnselapsedms, rec->timeout*1000);
 		addtobuffer(hres->txt, msgline);
 
-		sprintf(msgline, "BytesRead: %u\nBytesWritten: %u\n", rec->bytesread, rec->byteswritten);
+		snprintf(msgline, sizeof(msgline), "BytesRead: %u\nBytesWritten: %u\n", rec->bytesread, rec->byteswritten);
 		addtobuffer(hres->txt, msgline);
 
 		if (rec->peercertificate) {
+			char exps[50];
+
+			strftime(exps, sizeof(exps), "%Y-%m-%d %H:%M:%S UTC", gmtime(&rec->peercertificateexpiry));
 			addtobuffer(hres->txt, "PeerCertificateSubject: ");
 			addtobuffer(hres->txt, rec->peercertificate);
 			addtobuffer(hres->txt, "\n");
-			sprintf(msgline, "PeerCertificateExpiry: %d\n", (int)rec->peercertificateexpiry);
+			addtobuffer(hres->txt, "PeerCertificateIssuer: ");
+			addtobuffer(hres->txt, rec->peercertificateissuer);
+			addtobuffer(hres->txt, "\n");
+			snprintf(msgline, sizeof(msgline), "PeerCertificateExpiry: %d %s\n", (int)rec->peercertificateexpiry, exps);
 			addtobuffer(hres->txt, msgline);
 		}
 
@@ -173,8 +191,12 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 	for (handle = xtreeFirst(hostresults); handle != xtreeEnd(hostresults); handle = xtreeNext(hostresults, handle)) {
 		hostresult_t *hres = xtreeData(hostresults, handle);
 
-		fprintf(stdout, "======== %s ========\n", xmh_item(hres->hinfo, XMH_HOSTNAME));
-		fprintf(stdout, "%s\n", STRBUF(hres->txt));
+		sendmessage(STRBUF(hres->txt), NULL, XYMON_TIMEOUT, NULL);
+		freestrbuffer(hres->txt);
+		xtreeDelete(hostresults, xmh_item(hres->hinfo, XMH_HOSTNAME));
+		xfree(hres);
 	}
+
+	xtreeDestroy(hostresults);
 }
 
