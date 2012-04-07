@@ -325,6 +325,13 @@ static const int dns_lookup_sequence[] = {
 };
 
 
+static void dns_return_lookupdata(myconn_t *rec, char *ip)
+{
+	if (rec->netparams.destinationip) xfree(rec->netparams.destinationip);
+	rec->netparams.destinationip = strdup(ip);
+	rec->netparams.lookupstatus = LOOKUP_COMPLETED;
+}
+
 void dns_addtocache(myconn_t *rec, char *ip)
 {
 	sqlite3_stmt *updstmt = NULL;
@@ -344,6 +351,13 @@ void dns_addtocache(myconn_t *rec, char *ip)
 	if (dbres != SQLITE_DONE) errprintf("Error updating record: %s\n", sqlite3_errmsg(dns_lookupcache));
 
 	sqlite3_reset(updstmt);
+
+	if (strcmp(ip, "-") != 0) 
+		/* Got an IP, we're done */
+		dns_return_lookupdata(rec, ip);
+	else
+		/* Look for an IP in the next address family by re-doing the dns_lookup() call */
+		dns_lookup(rec);
 }
 
 void dns_lookup(myconn_t *rec)
@@ -354,6 +368,8 @@ void dns_lookup(myconn_t *rec)
 	char *res = NULL;
 	time_t updtime = 0;
 	sqlite3_stmt *querystmt = NULL;
+
+	dbgprintf("dns_lookup(): Lookup %s, family %d\n", rec->netparams.lookupstring, rec->netparams.af_index-1);
 
 	switch (dns_lookup_sequence[rec->netparams.af_index]) {
 	  case AF_INET:
@@ -380,9 +396,7 @@ void dns_lookup(myconn_t *rec)
 		/* We have a valid cache-record */
 		if ((strcmp(res, "-") != 0)) {
 			/* Successfully resolved from cache */
-			if (rec->netparams.destinationip) xfree(rec->netparams.destinationip);
-			rec->netparams.destinationip = strdup(res);
-			rec->netparams.lookupstatus = LOOKUP_COMPLETED;
+			dns_return_lookupdata(rec, res);
 		}
 		else {
 			/* Continue with next address family */
