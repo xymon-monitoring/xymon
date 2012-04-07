@@ -185,6 +185,11 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	  case HTTPVER_10: 
 		addtobuffer(httprequest, (weburl.proxyurl ? decodedurl : weburl.desturl->relurl));
 		addtobuffer(httprequest, " HTTP/1.0\r\n"); 
+		/*
+		 * Add a "Connection: close" for HTTP 1.0 - we do not do any
+		 * persistent connections.
+		 */
+		addtobuffer(httprequest, "Connection: close\r\n"); 
 		break;
 
 	  case HTTPVER_11: 
@@ -195,7 +200,14 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 		 */
 		addtobuffer(httprequest, (weburl.proxyurl ? decodedurl : weburl.desturl->relurl));
 		addtobuffer(httprequest, " HTTP/1.1\r\n"); 
-		addtobuffer(httprequest, "Connection: close\r\n"); 
+		/*
+		 * addtobuffer(httprequest, "Connection: close\r\n"); 
+		 *
+		 * Dont add a "Connection: close" header. It is generally not needed
+		 * in HTTP 1.1, and in at least one case (google) it causes the
+		 * response to use a non-chunked transfer which is much more
+		 * difficult to determine when is complete.
+		 */
 		break;
 	}
 
