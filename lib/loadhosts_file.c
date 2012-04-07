@@ -90,9 +90,12 @@ static int prepare_fromnet(void)
 	sendreturn_t *sres;
 	sendresult_t sendstat;
 	char *fdata, *fhash;
+	int dontsendcopy = dontsendmessages;
 
+	dontsendmessages = 0;
 	sres = newsendreturnbuf(1, NULL);
 	sendstat = sendmessage("config hosts.cfg", NULL, XYMON_TIMEOUT, sres);
+	dontsendmessages = dontsendcopy;
 	if (sendstat != XYMONSEND_OK) {
 		freesendreturnbuf(sres);
 		errprintf("Cannot load hosts.cfg from xymond, code %d\n", sendstat);
