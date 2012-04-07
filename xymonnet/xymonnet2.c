@@ -24,16 +24,22 @@ int defaulttimeout = 30;
 
 int main(int argc, char **argv)
 {
+	int argi;
 	listitem_t *resulthead = NULL;
 
-	debug = 1;
-	conn_register_infohandler(NULL, 7);
+	for (argi=1; (argi < argc); argi++) {
+		if (standardoption(argv[0], argv[argi])) {
+			if (showhelp) return 0;
+		}
+	}
+
+	if (debug) conn_register_infohandler(NULL, 7);
 
 	init_tcp_testmodule();
 
 	setup_tests(defaulttimeout);
 	resulthead = run_net_tests(concurrency);
-	send_test_results(resulthead, "xymonnet", 0);
+	send_test_results(resulthead, programname, 0);
 
 	conn_deinit();
 	dns_lookup_shutdown();
