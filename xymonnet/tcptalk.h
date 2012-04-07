@@ -52,6 +52,7 @@ typedef struct myconn_t {
 	int elapsedms, dnselapsedms;
 	char *peercertificate;
 	time_t peercertificateexpiry;
+	char *peercertificateissuer;
 
 	/* Plain-text protocols */
 	int step;				/* Current step in dialog */

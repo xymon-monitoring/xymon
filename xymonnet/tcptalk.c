@@ -268,6 +268,7 @@ check_for_endofheaders:
 		}
 
 		/* Done processing body content. Now see if we have all of it - if we do, then proceed to next step. */
+		dbgprintf("http chunkstate: %d\n",rec->httpchunkstate);
 		switch (rec->httpchunkstate) {
 		  case HTTP_CHUNK_NOTCHUNKED:
 			if (rec->httpcontentleft <= 0) *advancestep = 1;
@@ -306,10 +307,10 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 	int n, advancestep;
 	size_t used;
 	time_t start, expire;
-	char *certsubject;
+	char *certsubject, *issuer;
 	myconn_t *rec = (myconn_t *)userdata;
 
-	// dbgprintf("CB: %s\n", conn_callback_names[id]);
+	dbgprintf("CB: %s\n", conn_callback_names[id]);
 
 	switch (id) {
 	  case CONN_CB_CONNECT_START:          /* Client mode: New outbound connection start */
@@ -332,9 +333,10 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 		break;
 
 	  case CONN_CB_SSLHANDSHAKE_OK:        /* Client/server mode: SSL handshake completed OK (peer certificate ready) */
-		certsubject = conn_peer_certificate(connection, &start, &expire);
+		certsubject = conn_peer_certificate(connection, &start, &expire, &issuer);
 		if (certsubject) {
 			rec->peercertificate = certsubject;	/* certsubject is malloc'ed by conn_peer_certificate */
+			rec->peercertificateissuer = issuer;	/* ditto issuer */
 			rec->peercertificateexpiry = expire;
 		}
 		break;
@@ -441,7 +443,14 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 			if (n <= 0) return CONN_CBRESULT_OK;	/* n == 0 happens during SSL handshakes, n < 0 means connection will close */
 			if (n > 0) {
 				rec->byteswritten += n;
-				if (rec->talkprotocol == TALK_PROTO_PLAIN) addtobufferraw(rec->textlog, rec->writep, n);
+				switch (rec->talkprotocol) {
+				  case TALK_PROTO_PLAIN:
+				  case TALK_PROTO_HTTP:
+					addtobufferraw(rec->textlog, rec->writep, n);
+					break;
+				  default:
+					break;
+				}
 				rec->writep += n;
 				if (*rec->writep == '\0') {
 					rec->step++;	/* Next step */
@@ -568,11 +577,14 @@ listhead_t *run_net_tests(int concurrency)
 		myconn_t *rec;
 		listitem_t *pcur, *pnext;
 		int lookupsposted = 0;
-		
+
+		dbgprintf("\n*** Starting test loop ***\n");
 		/* Start some more tests */
 		pcur = pendingtests->head;
 		while (pcur && (activetests->len < concurrency) && (lookupsposted < concurrency)) {
 			rec = (myconn_t *)pcur->data;
+
+			dbgprintf("  Test: %s\n", rec->testspec);
 
 			/* 
 			 * Must save the pointer to the next pending test now, 
@@ -583,17 +595,20 @@ listhead_t *run_net_tests(int concurrency)
 			pnext = pcur->next;
 
 			if (rec->netparams.lookupstatus == LOOKUP_NEEDED) {
+				dbgprintf("    LOOKUP_NEEDED\n");
 				lookupsposted++;
 				dns_lookup(rec);
 			}
 
 			if ((rec->netparams.lookupstatus == LOOKUP_ACTIVE) || (rec->netparams.lookupstatus == LOOKUP_NEEDED)) {
 				/* DNS lookup in progress, skip this test until lookup completes */
+				dbgprintf("    lookup in progress: %s\n", (rec->netparams.lookupstatus == LOOKUP_ACTIVE) ? "ACTIVE" : "NEEDED");
 				pcur = pnext;
 				continue;
 			}
 			else if (rec->netparams.lookupstatus == LOOKUP_FAILED) {
 				/* DNS lookup determined that this host does not have a valid IP. */
+				dbgprintf("    LOOKUP_FAILED\n");
 				list_item_move(donetests, pcur, rec->testspec);
 				rec->talkresult = TALK_CANNOT_RESOLVE;
 				pcur = pnext;
@@ -604,6 +619,7 @@ listhead_t *run_net_tests(int concurrency)
 			  case TALK_PROTO_PLAIN:
 			  case TALK_PROTO_HTTP:
 			  case TALK_PROTO_NTP:
+				dbgprintf("    conn_prepare_connection()\n");
 				if (conn_prepare_connection(rec->netparams.destinationip, 
 							rec->netparams.destinationport, 
 							rec->netparams.socktype,
@@ -611,19 +627,25 @@ listhead_t *run_net_tests(int concurrency)
 							rec->netparams.sslhandling, rec->netparams.sslcertfn, rec->netparams.sslkeyfn, 
 							rec->timeout*1000,
 							rec->netparams.callback, rec)) {
+					dbgprintf("\tmoved to activetests, target %s, timeout %d\n", 
+						  rec->netparams.destinationip, rec->timeout);
 					list_item_move(activetests, pcur, rec->testspec);
 				}
 				else {
+					dbgprintf("\tmoved to failedtests\n");
 					rec->talkresult = TALK_CONN_FAILED;
 					list_item_move(donetests, pcur, rec->testspec);
 				}
 				break;
 
 			  case TALK_PROTO_DNSQUERY:
+				dbgprintf("    dns_start_query()\n");
 				if (dns_start_query(rec, rec->netparams.destinationip)) {
+					dbgprintf("\tmoved to activetests\n");
 					list_item_move(activetests, pcur, rec->testspec);
 				}
 				else {
+					dbgprintf("\tmoved to failedtests\n");
 					rec->talkresult = TALK_CONN_FAILED;
 					list_item_move(donetests, pcur, rec->testspec);
 				}
@@ -631,10 +653,12 @@ listhead_t *run_net_tests(int concurrency)
 
 			  case TALK_PROTO_PING:
 				/* NULL is only for doing DNS lookups, ping tests etc. */
+				dbgprintf("    NULL test, done\n");
 				list_item_move(donetests, pcur, rec->testspec);
 				break;
 
 			  default:
+				dbgprintf("    Huh?\n");
 				break;
 			}
 
@@ -642,7 +666,9 @@ listhead_t *run_net_tests(int concurrency)
 		}
 
 		maxfd = conn_fdset(&fdread, &fdwrite);
+		dbgprintf("Setting up select - conn_fdset has maxfd=%d\n", maxfd);
 		dns_add_active_fds(activetests, &maxfd, &fdread, &fdwrite);
+		dbgprintf("Setting up select - dns_add_active_fds set maxfd=%d\n", maxfd);
 
 		if (maxfd > 0) {
 			tmo.tv_sec = 1; tmo.tv_usec = 0;
@@ -660,19 +686,7 @@ listhead_t *run_net_tests(int concurrency)
 
 		conn_trimactive();
 		dns_finish_queries(activetests);
-		// dbgprintf("Active: %d, pending: %d\n", activetests->len, pendingtests->len);
-#if 0
-		if ((activetests->len == 0) && (pendingtests->len > 0)) {
-			static int bugcount = 0;
-
-			bugcount++;
-			if (bugcount == 10) {
-				errprintf("BUG: No progress being done!\n");
-				dump_net_tests(pendingtests);
-				return;
-			}
-		}
-#endif
+		dbgprintf("Active: %d, pending: %d\n", activetests->len, pendingtests->len);
 	}
 	while ((activetests->len + pendingtests->len) > 0);
 
