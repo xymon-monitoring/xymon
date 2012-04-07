@@ -57,7 +57,7 @@ typedef struct myconn_t {
 	char tlsbuf[10]; char *tlsptr;
 	char *readbuf, *writebuf;
 	char *readp, *writep;
-	size_t readbufsz;
+	size_t readbufsz, lefttowrite;
 	char *peer;
 	int port, readmore, starttlspending;
 	enum sslhandling_t usessl;
@@ -179,7 +179,7 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 		if (rec->starttlspending)
 			res = CONN_CBRESULT_FAILED;
 		else
-			res = (*rec->writep != '\0') ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
+			res = (rec->lefttowrite != 0) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		break;
 
 	  case CONN_CB_WRITE:                  /* Client/server mode: Ready for application to write data w/ conn_write() */
@@ -205,11 +205,12 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 			}
 		}
 		else {
-			n = conn_write(connection, rec->writep, strlen(rec->writep));
+			n = conn_write(connection, rec->writep, rec->lefttowrite);
 			// dbgprintf("Sent %d bytes of data\n", n);
 			if (n > 0) {
 				rec->writep += n;
-				if (*rec->writep == '\0') {
+				rec->lefttowrite -= n;
+				if (rec->lefttowrite == 0) {
 					conn_close_connection(connection, "w");
 				}
 			}
@@ -243,11 +244,22 @@ static enum conn_cbresult_t client_callback(tcpconn_t *connection, enum conn_cal
 
 static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t *responsebuffer)
 {
+	int compressit = 1;
 	myconn_t *myconn;
-	int i;
+	int i, msglen;
 	int maxfd;
+	strbuffer_t *cbuf = NULL;
 
 	conn_init_client();
+
+	msglen = strlen(msg);
+	if (compressit) {
+		cbuf = compress_buffer(msg, msglen);
+		if (cbuf) {
+			msg = STRBUF(cbuf);
+			msglen = STRBUFLEN(cbuf);
+		}
+	}
 
 	for (i = 0; (targets[i]); i++) {
 		char *ip;
@@ -259,7 +271,8 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		strcpy(myconn->tlsbuf, "starttls\n");
 		myconn->tlsptr = (targets[i]->usessl ? myconn->tlsbuf : NULL);
 		myconn->usessl = targets[i]->usessl;
-		sprintf(myconn->szbuf, "size:%d\n", (int)strlen(msg));
+		myconn->lefttowrite = msglen;
+		sprintf(myconn->szbuf, "size:%d\n", myconn->lefttowrite);
 		myconn->szptr = myconn->szbuf;
 		myconn->writebuf = msg;
 		myconn->peer = strdup(ip ? ip : "");
@@ -298,6 +311,7 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 			n = select(maxfd+1, &fdread, &fdwrite, NULL, (timeout ? &tmo : NULL));
 			if (n < 0) {
 				if (errno != EINTR) {
+					if (cbuf) freestrbuffer(cbuf);
 					return 1;
 				}
 			}
@@ -307,6 +321,8 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 
 		conn_trimactive();
 	} while (conn_active() && (maxfd > 0));
+
+	if (cbuf) freestrbuffer(cbuf);
 
 	return 0;
 }
