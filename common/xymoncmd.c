@@ -95,7 +95,8 @@ int main(int argc, char *argv[])
 
 	cmdargs = (char **) calloc(argc+2, sizeof(char *));
 	for (argi=1; (argi < argc); argi++) {
-		if (standardoption(argv[0], argv[argi])) {
+		/* Process standard args only until we've seen the command - after that, it is standard args for the spawned command! */
+		if ((argcount == 0) && (standardoption(argv[0], argv[argi]))) {
 			if (showhelp) return 0;
 		}
 		else {
