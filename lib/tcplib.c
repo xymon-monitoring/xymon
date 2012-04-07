@@ -305,7 +305,7 @@ static time_t convert_asn1_tstamp(ASN1_UTCTIME *tstamp)
 }
 #endif
 
-char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend)
+char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend, char **issuer)
 {
 	char *result = NULL;
 
@@ -316,7 +316,11 @@ char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend)
 	peercert = SSL_get_peer_certificate(conn->ssl);
 	if (!peercert) return NULL;
 
+	/* X509_NAME_oneline malloc's space for the result when called with a NULL buffer */
 	result = X509_NAME_oneline(X509_get_subject_name(peercert), NULL, 0);
+	if (issuer) {
+		*issuer = X509_NAME_oneline(X509_get_issuer_name(peercert), NULL, 0);
+	}
 	if (certstart) {
 		tstamp = X509_get_notBefore(peercert);
 		*certstart = convert_asn1_tstamp(tstamp);

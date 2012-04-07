@@ -71,7 +71,7 @@ typedef struct tcpconn_t {
 
 extern char *conn_print_ip(tcpconn_t *conn);
 extern char *conn_print_address(tcpconn_t *conn);
-extern char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend);
+extern char *conn_peer_certificate(tcpconn_t *conn, time_t *certstart, time_t *certend, char **issuer);
 
 extern int conn_listen(int portnumber, int backlog, int maxlifetime,
 		       enum sslhandling_t withssl, 
