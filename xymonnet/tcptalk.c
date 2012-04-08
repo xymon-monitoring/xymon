@@ -118,17 +118,22 @@ check_for_endofheaders:
 		endofhdrs = strstr(STRBUF(rec->httpheaders), "\r\n\r\n");
 		if (endofhdrs) {
 			endofhdrs += 4;
-			/* Chop the non-header section of data from the headers */
-			strbufferchop(rec->httpheaders, strlen(endofhdrs));
 		}
 		else {
 			endofhdrs = strstr(STRBUF(rec->httpheaders), "\n\n");
-			if (endofhdrs) endofhdrs += 2;
+			if (endofhdrs) {
+				endofhdrs += 2;
+			}
 		}
 
-		if (!endofhdrs)
+		if (!endofhdrs) {
 			/* No more to do for now, but pass the databyte-count back to the caller for further processing. */
 			return iobytes;
+		}
+		else {
+			/* Chop the non-header section of data from the headers */
+			strbufferchop(rec->httpheaders, strlen(endofhdrs));
+		}
 
 
 		/* We have an end-of-header delimiter, but it could be just a "100 Continue" response */
@@ -380,15 +385,18 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 
 		/* See how the dialog is progressing */
 		if (strncasecmp(rec->dialog[rec->step], "EXPECT:", 7) == 0) {
-			int explen = strlen(rec->dialog[rec->step]+7);
+			int explen, expstart;
 
-			if ((n < explen) && (strncasecmp(rec->readbuf, rec->dialog[rec->step]+7, n) == 0)) {
+			expstart = 7 + strspn(rec->dialog[rec->step] + 7, " \t");
+			explen = strlen(rec->dialog[rec->step] + expstart);
+
+			if ((n < explen) && (strncasecmp(rec->readbuf, rec->dialog[rec->step] + expstart, n) == 0)) {
 				/* 
 				 * Got the right data so far, but not the complete amount.
 				 * Do nothing, we'll just keep reading until we have all of the data
 				 */
 			}
-			else if (strncasecmp(rec->readbuf, rec->dialog[rec->step]+7, explen) == 0) {
+			else if (strncasecmp(rec->readbuf, rec->dialog[rec->step] + expstart, explen) == 0) {
 				/* Got the expected data, go to next step */
 				rec->step++;
 				rec->readp = rec->readbuf;
@@ -424,7 +432,9 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 			res = (rec->istelnet < 0) ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
 		else {
 			if ((*rec->writep == '\0') && (strncasecmp(rec->dialog[rec->step], "SEND:", 5) == 0)) {
-				strcpy(rec->writebuf, rec->dialog[rec->step]+5);
+				char *sendstart = rec->dialog[rec->step] + 5;
+				sendstart += strspn(sendstart, " \t");
+				strcpy(rec->writebuf, sendstart);
 				rec->writep = rec->writebuf;
 			}
 			res = (*rec->writep != '\0') ? CONN_CBRESULT_OK : CONN_CBRESULT_FAILED;
