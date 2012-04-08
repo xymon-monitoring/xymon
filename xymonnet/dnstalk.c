@@ -262,7 +262,21 @@ void dns_lookup_init(void)
 
 	sqlfn = (char *)malloc(strlen(xgetenv("XYMONHOME")) + strlen("/etc/xymon.sqlite3") + 1);
 	sprintf(sqlfn, "%s/etc/xymon.sqlite3", xgetenv("XYMONHOME"));
-	dbres = sqlite3_open(sqlfn, &dns_lookupcache);
+	dbres = sqlite3_open_v2(sqlfn, &dns_lookupcache, SQLITE_OPEN_READWRITE, NULL);
+	if (dbres != SQLITE_OK) {
+		/* Try creating the database - in that case, we must also create the tables */
+		dbres = sqlite3_open_v2(sqlfn, &dns_lookupcache, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+		if (dbres == SQLITE_OK) {
+			char *err = NULL;
+			dbres = sqlite3_exec(dns_lookupcache, "CREATE TABLE hostip (hostname varchar(200) unique, ip4 varchar(15), upd4time int, ip6 varchar(40), upd6time int)", NULL, NULL, &err);
+			if (dbres != SQLITE_OK) {
+				errprintf("Cannot create hostip table: %s\n", sqlfn, (err ? err : sqlite3_errmsg(dns_lookupcache)));
+				if (err) sqlite3_free(err);
+				xfree(sqlfn);
+				return;
+			}
+		}
+	}
 	if (dbres != SQLITE_OK) {
 		errprintf("Cannot open sqlite3 database %s: %s\n", sqlfn, sqlite3_errmsg(dns_lookupcache));
 		xfree(sqlfn);
