@@ -52,8 +52,21 @@ static void result_http(myconn_t *rec,  strbuffer_t *txt)
 	snprintf(msgline, sizeof(msgline), "HTTPstatus: %d\n", rec->httpstatus);
 	addtobuffer(txt, msgline);
 	if (rec->textlog) {
+		char *authtoken;
 		snprintf(msgline, sizeof(msgline), "HTTPrequest: %d\n", STRBUFLEN(rec->textlog));
 		addtobuffer(txt, msgline);
+		/*
+		 * If there is an authentication header, it is best to obscure it here.
+		 * Otherwise, anyone who can view the "client data" will be able to see
+		 * the login.
+		 */
+		authtoken = strstr(STRBUF(rec->textlog), "\nAuthorization:");
+		if (authtoken) {
+			authtoken += 15;
+			while (*authtoken != '\r') {
+				*authtoken = '*'; authtoken++;
+			}
+		}
 		addtostrbuffer(txt, rec->textlog);
 		addtobuffer(txt, "\n");
 	}
