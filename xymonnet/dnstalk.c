@@ -412,7 +412,21 @@ void dns_lookup(myconn_t *rec)
 		/* No cache record, create one */
 		dbres = sqlite3_bind_text(addrecord_sql, 1, rec->netparams.lookupstring, -1, SQLITE_STATIC);
 		if (dbres == SQLITE_OK) dbres = sqlite3_step(addrecord_sql);
-		if (dbres != SQLITE_DONE) errprintf("Error adding record: %s\n", sqlite3_errmsg(dns_lookupcache));
+		if ((dbres != SQLITE_DONE) && (dbres != SQLITE_CONSTRAINT)) {
+			/*
+			 * This can fail with a "constraint" error when there are multiple
+			 * tests involving the same hostname - in that case, we may call the
+			 * lookup routine multiple times before the cache record is created in
+			 * the database. Therefore only show it when debugging.
+			 */
+			errprintf("Error adding record for %s (%d): %s\n", 
+				  rec->netparams.lookupstring, rec->netparams.af_index-1,
+				  sqlite3_errmsg(dns_lookupcache));
+		}
+		else {
+			dbgprintf("Successfully added record for %s (%d)\n", 
+				  rec->netparams.lookupstring, rec->netparams.af_index-1);
+		}
 		sqlite3_reset(addrecord_sql);
 	}
 
