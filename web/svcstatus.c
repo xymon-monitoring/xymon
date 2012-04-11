@@ -417,8 +417,20 @@ int do_request(void)
 			flags = strdup(items[3]);
 			logage = getcurrenttime(NULL) - atoi(items[4]);
 			timesincechange[0] = '\0'; p = timesincechange;
-			if (logage > 86400) p += sprintf(p, "%d days,", (int) (logage / 86400));
-			p += sprintf(p, "%d hours, %d minutes", (int) ((logage % 86400) / 3600), (int) ((logage % 3600) / 60));
+			{
+				int days = (int) (logage / 86400);
+				int hours = (int) ((logage % 86400) / 3600);
+				int minutes = (int) ((logage % 3600) / 60);
+
+				if (days > 1) p += sprintf(p, "%d days, ", days);
+				else if (days == 1) p += sprintf(p, "1 day, ");
+
+				if (hours == 1) p += sprintf(p, "1 hour, ");
+				else p += sprintf(p, "%d hours, ", hours);
+
+				if (minutes == 1) p += sprintf(p, "1 minute");
+				else p += sprintf(p, "%d minutes", minutes);
+			}
 			logtime = atoi(items[5]);
 			if (items[7] && strlen(items[7])) acktime = atoi(items[7]);
 			if (items[8] && strlen(items[8])) disabletime = atoi(items[8]);
