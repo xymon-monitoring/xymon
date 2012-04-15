@@ -578,7 +578,7 @@ listhead_t *run_net_tests(int concurrency)
 {
 	int maxfd;
 
-	list_shuffle(&pendingtests);
+	list_shuffle(pendingtests);
 
 	/* Loop to process data */
 	do {

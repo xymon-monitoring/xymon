@@ -18,5 +18,6 @@ extern listhead_t *list_create(char *name);
 extern void list_item_move(listhead_t *tolist, listitem_t *rec, char *info);
 extern listitem_t *list_item_create(listhead_t *listhead, void *data, char *info);
 extern void *list_item_delete(listitem_t *rec, char *info);
+extern void list_shuffle(listhead_t *list);
 #endif
 
