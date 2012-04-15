@@ -270,6 +270,7 @@ check_for_endofheaders:
 				buf += bodybytes;
 				len -= bodybytes;
 				if ((rec->httpcontentleft > 0) && (rec->httpcontentleft >= bodybytes)) rec->httpcontentleft -= bodybytes;
+				dbgprintf("HTTP bodybytes %d, %d bytes left\n", bodybytes, rec->httpcontentleft);
 			}
 		}
 
@@ -498,7 +499,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 			if ((strcasecmp(rec->dialog[rec->step], "CLOSE") != 0) && (strcasecmp(rec->dialog[rec->step], "READALL") != 0))
 				rec->talkresult = TALK_INTERRUPTED;
 		}
-		rec->elapsedms = connection->elapsedms;
+		rec->elapsedus = connection->elapsedus;
 		return 0;
 
 	  case CONN_CB_CLEANUP:                /* Client/server mode: Connection cleanup */
@@ -636,7 +637,7 @@ listhead_t *run_net_tests(int concurrency)
 							rec->netparams.socktype,
 							rec->netparams.sourceip, 
 							rec->netparams.sslhandling, rec->netparams.sslcertfn, rec->netparams.sslkeyfn, 
-							rec->timeout*1000,
+							rec->timeout*1000000,
 							rec->netparams.callback, rec)) {
 					dbgprintf("\tmoved to activetests, target %s, timeout %d\n", 
 						  rec->netparams.destinationip, rec->timeout);
@@ -765,8 +766,8 @@ void dump_net_tests(listhead_t *head)
 		if (rec->peercertificate) {
 			printf("\tCert.    : %s\n", rec->peercertificate);
 		}
-		printf("\tLookup   : %d.%03d ms\n", (rec->dnselapsedms / 1000), (rec->dnselapsedms % 1000));
-		printf("\tTime     : %d.%03d ms\n", (rec->elapsedms / 1000), (rec->elapsedms % 1000));
+		printf("\tLookup   : %d.%03d ms\n", (rec->dnselapsedus / 1000), (rec->dnselapsedus % 1000));
+		printf("\tTime     : %d.%03d ms\n", (rec->elapsedus / 1000), (rec->elapsedus % 1000));
 		printf("\tRead     : %d\n", rec->bytesread);
 		printf("\tWritten  : %d\n", rec->byteswritten);
 		printf("\t------------------------\n");

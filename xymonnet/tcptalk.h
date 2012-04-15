@@ -49,7 +49,7 @@ typedef struct myconn_t {
 	strbuffer_t *textlog;			/* Logs the actual data exchanged */
 	unsigned int bytesread;
 	unsigned int byteswritten;
-	int elapsedms, dnselapsedms;
+	int elapsedus, dnselapsedus;
 	char *peercertificate;
 	time_t peercertificateexpiry;
 	char *peercertificateissuer;

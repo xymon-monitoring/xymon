@@ -394,7 +394,7 @@ static int collect_results(void)
 					}
 
 					if (testcount > 0) {
-						testrec->elapsedms = (pingtime / testcount);
+						testrec->elapsedus = ((1000.0 * pingtime) / testcount);
 						testrec->talkresult = TALK_OK;
 					}
 					else {

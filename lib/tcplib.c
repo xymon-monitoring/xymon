@@ -158,7 +158,7 @@ void conn_getntimer(struct timespec *tp)
 	}
 }
 
-long conn_elapsedms(struct timespec *tstart, struct timespec *tnow)
+long conn_elapsedus(struct timespec *tstart, struct timespec *tnow)
 {
 	struct timespec tdiff;
 
@@ -176,7 +176,7 @@ long conn_elapsedms(struct timespec *tstart, struct timespec *tnow)
 	tdiff.tv_sec  -= tstart->tv_sec;
 	tdiff.tv_nsec -= tstart->tv_nsec;
 
-	return tdiff.tv_sec*1000 + tdiff.tv_nsec/1000000;
+	return tdiff.tv_sec*1000000 + tdiff.tv_nsec/1000;
 }
 
 
@@ -349,7 +349,7 @@ static void conn_cleanup(tcpconn_t *conn)
 
 	if (conn->sock > 0) { close(conn->sock); conn->sock = -1; }
 	if (conn->peer) { free(conn->peer); conn->peer = NULL; }
-	conn->elapsedms = conn_elapsedms(&conn->starttime, NULL);
+	conn->elapsedus = conn_elapsedus(&conn->starttime, NULL);
 	conn->usercallback(conn, CONN_CB_CLOSED, conn->userdata);
 
 	conn->connstate = CONN_DEAD;
@@ -1070,7 +1070,7 @@ void conn_process_active(fd_set *fdread, fd_set *fdwrite)
 				conn_starttls(walk);
 		}
 
-		if (walk->maxlifetime && (conn_elapsedms(&walk->starttime, &tnow) > walk->maxlifetime)) {
+		if (walk->maxlifetime && (conn_elapsedus(&walk->starttime, &tnow) > walk->maxlifetime)) {
 			walk->usercallback(walk, CONN_CB_TIMEOUT, walk->userdata);
 		}
 		continue;

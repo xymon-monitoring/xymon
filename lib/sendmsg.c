@@ -288,7 +288,7 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		if (ip) {
 			conn_prepare_connection(myconn->peer, myconn->port, CONN_SOCKTYPE_STREAM, NULL, 
 					(myconn->usessl ? CONN_SSL_STARTTLS_CLIENT : CONN_SSL_NO), getenv("XYMONCLIENTCERT"), getenv("XYMONCLIENTKEY"), 
-					1000*timeout, client_callback, myconn);
+					1000000*timeout, client_callback, myconn);
 		}
 		else {
 			myconn->result = XYMONSEND_EBADIP;

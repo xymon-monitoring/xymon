@@ -183,8 +183,10 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 		snprintf(msgline, sizeof(msgline), "Status: %s\n", s);
 		addtobuffer(hres->txt, msgline);
 
-		snprintf(msgline, sizeof(msgline), "ElapsedMS: %d\nDNSMS:%d\ntimeoutMS:%d\n",
-			rec->elapsedms, rec->dnselapsedms, rec->timeout*1000);
+		snprintf(msgline, sizeof(msgline), "ElapsedMS: %d.%02d\nDNSMS:%d.%02d\ntimeoutMS:%d\n",
+			(rec->elapsedus / 1000), (rec->elapsedus % 1000), 
+			(rec->dnselapsedus / 1000), (rec->dnselapsedus % 1000), 
+			rec->timeout*1000);
 		addtobuffer(hres->txt, msgline);
 
 		snprintf(msgline, sizeof(msgline), "BytesRead: %u\nBytesWritten: %u\n", rec->bytesread, rec->byteswritten);

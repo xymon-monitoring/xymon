@@ -19,7 +19,7 @@ extern long total_runtime(void);
 
 extern time_t gettimer(void);
 extern void getntimer(struct timespec *tp);
-extern int ntimerms(struct timespec *start, struct timespec *now);
+extern int ntimerus(struct timespec *start, struct timespec *now);
 
 #endif
 

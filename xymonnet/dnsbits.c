@@ -172,7 +172,7 @@ void dns_query_callback(void *arg, int status, int timeouts, unsigned char *abuf
 
 	dbgprintf("Got result for %s\n", rec->testspec);
 
-	rec->elapsedms = ntimerms(&rec->dnsstarttime, NULL);
+	rec->elapsedus = ntimerus(&rec->dnsstarttime, NULL);
 	rec->dnsstatus = DNS_QUERY_COMPLETED;
 	rec->talkresult = TALK_BADDATA; /* We'll set an explicit OK or timeout status below */
 
@@ -619,7 +619,7 @@ void dns_lookup_callback(void *arg, int status, int timeouts, struct hostent *ho
 	 */
 	myconn_t *rec = (myconn_t *)arg;
 
-	rec->dnselapsedms = ntimerms(&rec->netparams.lookupstart, NULL);
+	rec->dnselapsedus = ntimerus(&rec->netparams.lookupstart, NULL);
 
 	if ((status == ARES_SUCCESS) && (host->h_addr_list[0] != NULL)) {
 		/* Got a DNS result */

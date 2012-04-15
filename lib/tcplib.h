@@ -57,7 +57,7 @@ typedef struct tcpconn_t {
 	int errcode;
 	int maxlifetime;
 	struct timespec starttime;
-	long elapsedms;
+	long elapsedus;
 	void *userdata;
 	enum conn_cbresult_t (*usercallback)(struct tcpconn_t *, enum conn_callback_t, void *);
 	struct tcpconn_t *next;

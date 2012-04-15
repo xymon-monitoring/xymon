@@ -98,7 +98,7 @@ void add_timestamp(const char *msg)
 	}
 }
 
-int ntimerms(struct timespec *start, struct timespec *now)
+int ntimerus(struct timespec *start, struct timespec *now)
 {
 	struct timespec tdiff;
 
@@ -116,7 +116,7 @@ int ntimerms(struct timespec *start, struct timespec *now)
 	}
 	tdiff.tv_sec  -= start->tv_sec;
 	tdiff.tv_nsec -= start->tv_nsec;
-	return (tdiff.tv_sec*1000 + tdiff.tv_nsec/1000000);
+	return (tdiff.tv_sec*1000000 + tdiff.tv_nsec/1000);
 }
 
 void show_timestamps(char **buffer)

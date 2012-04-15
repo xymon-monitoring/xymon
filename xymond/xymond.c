@@ -5076,7 +5076,7 @@ int main(int argc, char *argv[])
 	if (listenport) errprintf("Setting up network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listenport);
 	if (listensslport && certfn && keyfn) errprintf("Setting up SSL network listener on IPv4 %s and IPv6 %s port %d\n", listenip4, listenip6, listensslport);
 	if (debug) conn_register_infohandler(NULL, INFO_DEBUG);
-	conn_init_server(listenport, listenq, 1000*conn_timeout,
+	conn_init_server(listenport, listenq, 1000000*conn_timeout,
 			 certfn, keyfn, listensslport, rootcafn, requireclientcert,
 			 listenip4, listenip6, server_callback);
 
