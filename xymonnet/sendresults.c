@@ -106,7 +106,7 @@ static void result_ping(myconn_t *rec,  strbuffer_t *txt)
 	}
 }
 
-void send_test_results(listhead_t *head, char *collector, int pingtest)
+void send_test_results(listhead_t *head, char *collector)
 {
 	char msgline[4096];
 	listitem_t *walk;
@@ -118,8 +118,7 @@ void send_test_results(listhead_t *head, char *collector, int pingtest)
 		myconn_t *rec = (myconn_t *)walk->data;
 		char *s;
 
-		if ((pingtest) && (rec->talkprotocol != TALK_PROTO_PING)) continue;
-		if ((!pingtest) && (rec->talkprotocol == TALK_PROTO_PING)) continue;
+		if (rec->talkprotocol == TALK_PROTO_NULL) continue;
 
 		handle = xtreeFind(hostresults, xmh_item(rec->hostinfo, XMH_HOSTNAME));
 		if (handle == xtreeEnd(hostresults)) {

@@ -486,7 +486,7 @@ int main(int argc, char **argv)
 
 		if ((pendingtests->len == 0) && (donetests->len > 0)) {
 			dbgprintf("Sending results\n");
-			send_test_results(donetests, "netcollect-ping", 1);
+			send_test_results(donetests, programname);
 			cleanup_donetests();
 		}
 

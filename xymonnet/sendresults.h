@@ -11,6 +11,6 @@
 #ifndef __SENDRESULTS_H__
 #define __SENDRESULTS_H__
 
-extern void send_test_results(listhead_t *head, char *collector, int pingtest);
+extern void send_test_results(listhead_t *head, char *collector);
 
 #endif

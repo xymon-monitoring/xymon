@@ -666,7 +666,11 @@ listhead_t *run_net_tests(int concurrency)
 			  case TALK_PROTO_PING:
 				dbgprintf("    PING test, queued\n");
 				add_to_ping_queue(rec);
+				rec->talkprotocol = TALK_PROTO_NULL;	/* Dont send test results */
 				list_item_move(donetests, pcur, rec->testspec);
+				break;
+
+			  case TALK_PROTO_NULL:
 				break;
 
 			  default:
