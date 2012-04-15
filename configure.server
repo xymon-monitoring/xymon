@@ -19,6 +19,8 @@ do
      --rrdlib DIRECTORY       : Specify location of RRDtool libraries
      --pcreinclude DIRECTORY  : Specify location of PCRE include files
      --pcrelib DIRECTORY      : Specify location of PCRE libraries
+     --zlibinclude DIRECTORY  : Specify location of ZLIB include files
+     --zliblib DIRECTORY      : Specify location of ZLIB libraries
      --sslinclude DIRECTORY   : Specify location of OpenSSL include files
      --ssllib DIRECTORY       : Specify location of OpenSSL libraries
      --ldapinclude DIRECTORY  : Specify location of OpenLDAP include files
@@ -41,6 +43,12 @@ EOF
 		;;
 	  "--pcrelib")
 	  	USERPCRELIB="$1"; shift
+		;;
+	  "--zlibinclude")
+	  	USERZLIBINC="$1"; shift
+		;;
+	  "--zliblib")
+	  	USERZLIBLIB="$1"; shift
 		;;
 	  "--sslinclude")
 	  	USEROSSLINC="$1"; shift
@@ -90,6 +98,8 @@ echo ""; echo ""
 . build/pcre.sh
 echo ""; echo ""
 . build/rrd.sh
+echo ""; echo ""
+. build/zlib.sh
 echo ""; echo ""
 
 . build/ssl.sh
@@ -464,6 +474,20 @@ then
 	echo "RPATHVAL += ${PCRELIB}"       >>Makefile
     else
 	echo "PCRELIBS = -lpcre"         >>Makefile
+    fi
+fi
+echo ""                                  >>Makefile
+echo "# ZLIB settings"                   >>Makefile
+if test "$ZLIBOK" = "YES"
+then
+    if test "$ZLIBINC" != ""; then
+	echo "ZLIBINCDIR = -I$ZLIBINC"   >>Makefile
+    fi
+    if test "$ZLIBLIB" != ""; then
+	echo "ZLIBLIBS = -L$ZLIBLIB -lz" >>Makefile
+	echo "RPATHVAL += ${ZLIBLIB}"    >>Makefile
+    else
+	echo "ZLIBLIBS = -lz"            >>Makefile
     fi
 fi
 echo ""                                  >>Makefile

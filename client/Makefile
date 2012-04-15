@@ -19,7 +19,7 @@ endif
 XYMONCLIENTLIB = ../lib/libxymonclient.a
 XYMONCLIENTLIBS = $(XYMONCLIENTLIB)
 XYMONCLIENTCOMMLIB = ../lib/libxymonclientcomm.a
-XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCLIENTCOMMLIBS = $(XYMONCLIENTCOMMLIB) $(SSLLIBS) $(ZLIBLIBS) $(NETLIBS) $(LIBRTDEF)
 
 PROGRAMS=xymonlaunch logfetch clientupdate orcaxymon msgcache
 COMMONTOOLS=xymon xymoncmd xymongrep xymoncfg xymondigest

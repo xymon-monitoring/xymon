@@ -28,6 +28,7 @@ typedef struct strbuffer_t {
 #define STRBUFLEN(buf) (buf->used)
 #define STRBUFAVAIL(buf) (buf->sz - buf->used)
 #define STRBUFEND(buf) (buf->s + buf->used)
+#define STRBUFSZ(buf) (buf->sz)
 
 #include "version.h"
 #include "config.h"
@@ -64,6 +65,7 @@ typedef struct strbuffer_t {
 #include "../lib/calc.h"
 #include "../lib/cgi.h"
 #include "../lib/color.h"
+#include "../lib/compression.h"
 #include "../lib/crondate.h"
 #include "../lib/clientlocal.h"
 #include "../lib/digest.h"

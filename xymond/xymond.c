@@ -2890,6 +2890,36 @@ void do_message(conn_t *msg, char *origin)
 	time_t now, timeroffset;
 	char *msgfrom;
 
+	/* Most likely, we will not send a response */
+	msg->doingwhat = NOTALK;
+	now = getcurrenttime(NULL);
+	timeroffset = (getcurrenttime(NULL) - gettimer());
+
+	if (strncmp(msg->buf, "compress:zlib ", 14) == 0) {
+		strbuffer_t *expbuf = NULL;
+		unsigned char *cbegin;
+		int expandedsz = -1;
+
+		expandedsz = atoi(msg->buf+14);
+		cbegin = strchr(msg->buf, '\n'); 
+		if (cbegin) {
+			cbegin++;
+			expbuf = uncompress_buffer(cbegin, msg->buflen - (cbegin - msg->buf), NULL);
+		}
+
+		if (expbuf && (STRBUFLEN(expbuf) == expandedsz)) {
+			xfree(msg->buf);
+			msg->buflen = msg->bufsz = STRBUFLEN(expbuf);
+			msg->buf = grabstrbuffer(expbuf);
+			msg->bufp = msg->buf + msg->buflen;
+		}
+		else {
+			errprintf("Garbled compressed message, expected %d bytes, expansion got %d\n",
+				  expandedsz, (expbuf ? STRBUFLEN(expbuf) : -1));
+			goto done;
+		}
+	}
+
 	nesting++;
 	if (debug) {
 		char *eoln = strchr(msg->buf, '\n');
@@ -2898,11 +2928,6 @@ void do_message(conn_t *msg, char *origin)
 		dbgprintf("-> do_message/%d (%d bytes): %s\n", nesting, msg->buflen, msg->buf);
 		if (eoln) *eoln = '\n';
 	}
-
-	/* Most likely, we will not send a response */
-	msg->doingwhat = NOTALK;
-	now = getcurrenttime(NULL);
-	timeroffset = (getcurrenttime(NULL) - gettimer());
 
 	if (traceall || tracelist) {
 		int found = 0;
