@@ -84,7 +84,8 @@ enum ostype_t get_ostype(char *osname)
 	else if (strcasecmp(nam, "zvse") == 0)        result = OS_ZVSE;
 	else if (strcasecmp(nam, "zos") == 0)         result = OS_ZOS;
 	else if (strcasecmp(nam, "snmpcollect") == 0) result = OS_SNMPCOLLECT;
-	else if (strcasecmp(nam, "mqcollect") == 0)    result = OS_MQCOLLECT;
+	else if (strcasecmp(nam, "mqcollect") == 0)   result = OS_MQCOLLECT;
+	else if (strcasecmp(nam, "netcollect") == 0)  result = OS_NETCOLLECT;
 	else if (strcasecmp(nam, "gnu/kfreebsd") == 0) result = OS_GNUKFREEBSD;
 
 	if (result == OS_UNKNOWN) dbgprintf("Unknown OS: '%s'\n", osname);
@@ -120,6 +121,7 @@ char *osname(enum ostype_t os)
 		case OS_ZOS: return "zos";
 		case OS_SNMPCOLLECT: return "snmpcollect";
 		case OS_MQCOLLECT: return "mqcollect";
+		case OS_NETCOLLECT: return "netcollect";
 		case OS_GNUKFREEBSD: return "gnu/kfreebsd";
 		case OS_UNKNOWN: return "unknown";
 	}
