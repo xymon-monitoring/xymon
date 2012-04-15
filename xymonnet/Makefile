@@ -3,7 +3,7 @@
 XYMONLIB = ../lib/libxymon.a
 XYMONLIBS = $(XYMONLIB)
 XYMONCOMMLIB = ../lib/libxymoncomm.a
-XYMONCOMMLIBS = $(XYMONCOMMLIB) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
+XYMONCOMMLIBS = $(XYMONCOMMLIB) $(ZLIBLIBS) $(SSLLIBS) $(NETLIBS) $(LIBRTDEF)
 XYMONTIMELIB = ../lib/libxymontime.a
 XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 
@@ -11,7 +11,7 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 DNSFLAGS = -I./c-ares
 
 # PROGRAMS = xymonnet xymonping beastat
-PROGRAMS = xymonnet2 tcptalk
+PROGRAMS = xymonnet2 pingqueue tcptalk
 EXTENSIONS = xymonnet-again.sh
 SNMPPROGRAMS = xymon-snmpcollect
 # DBGTOOLS = contest
@@ -22,14 +22,18 @@ endif
 all: $(PROGRAMS) $(EXTENSIONS) $(DBGTOOLS)
 
 # NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
-NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o sendresults.o
-TCPTALKOBJS = tcptalk-standalone.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o
+NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o pingtalk.o httpcookies.o dnsbits.o sendresults.o
+TCPTALKOBJS = tcptalk-standalone.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o pingtalk.o
+PINGQOBJS = pingqueue.o sendresults.o
 PINGTESTOBJS = xymonping.o
 BEASTATOBJS = beastat.o
 
 
 xymonnet2: libcares.a $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) -lsqlite3
+
+pingqueue: $(PINGQOBJS) $(XYMONCOMMLIB) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PINGQOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS)
 
 tcptalk: libcares.a $(TCPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIB) libcares.a $(XYMONTIMELIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(TCPTALKOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) -lsqlite3
@@ -39,6 +43,9 @@ tcptalk.o: tcptalk.c tcptalk.h dnstalk.h ntptalk.h
 
 tcptalk-standalone.o: tcptalk.c tcptalk.h dnstalk.h ntptalk.h
 	$(CC) $(CFLAGS) -DSTANDALONE -c -o $@ tcptalk.c
+
+pingqueue.o: pingtalk.c dnstalk.h
+	$(CC) $(CFLAGS) -DPINGQ -c -o $@ pingtalk.c
 
 dnstalk.o: dnstalk.c dnstalk.h
 	$(CC) $(CFLAGS) $(DNSFLAGS) -c -o $@ dnstalk.c
@@ -126,8 +133,8 @@ install-ext: $(EXTENSIONS)
 	cp -fp $(EXTENSIONS) $(INSTALLROOT)$(INSTALLEXTDIR)/
 
 install-config:
-	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
-	../build/merge-sects protocols.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols.cfg
+	../build/convert-bbservices $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
+	../build/merge-sects protocols2.cfg $(INSTALLROOT)$(INSTALLETCDIR)/protocols2.cfg
 
 install-man:
 	mkdir -p $(INSTALLROOT)$(MANROOT)/man1 $(INSTALLROOT)$(MANROOT)/man5

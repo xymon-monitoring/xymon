@@ -41,6 +41,8 @@ int main(int argc, char **argv)
 	resulthead = run_net_tests(concurrency);
 	send_test_results(resulthead, programname, 0);
 
+	add_to_ping_queue(NULL);	/* Set off the ping tests */
+
 	conn_deinit();
 	dns_lookup_shutdown();
 

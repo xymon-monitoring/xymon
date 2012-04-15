@@ -32,6 +32,7 @@ static void result_plain(myconn_t *rec,  strbuffer_t *txt)
 		addtobuffer(txt, msgline);
 		addtostrbuffer(txt, rec->textlog);
 		addtobuffer(txt, "\n");
+		clearstrbuffer(rec->textlog);
 	}
 }
 
@@ -69,18 +70,21 @@ static void result_http(myconn_t *rec,  strbuffer_t *txt)
 		}
 		addtostrbuffer(txt, rec->textlog);
 		addtobuffer(txt, "\n");
+		clearstrbuffer(rec->textlog);
 	}
 	if (rec->httpheaders) {
 		snprintf(msgline, sizeof(msgline), "HTTPheaders: %d\n", STRBUFLEN(rec->httpheaders));
 		addtobuffer(txt, msgline);
 		addtostrbuffer(txt, rec->httpheaders);
 		addtobuffer(txt, "\n");
+		clearstrbuffer(rec->httpheaders);
 	}
 	if (rec->httpbody) {
 		snprintf(msgline, sizeof(msgline), "HTTPbody: %d\n", STRBUFLEN(rec->httpbody));
 		addtobuffer(txt, msgline);
 		addtostrbuffer(txt, rec->httpbody);
 		addtobuffer(txt, "\n");
+		clearstrbuffer(rec->httpbody);
 	}
 }
 
@@ -91,6 +95,15 @@ static void result_dns(myconn_t *rec,  strbuffer_t *txt)
 
 static void result_ping(myconn_t *rec,  strbuffer_t *txt)
 {
+	char msgline[4096];
+
+	if (rec->textlog) {
+		snprintf(msgline, sizeof(msgline), "PINGlog: %d\n", STRBUFLEN(rec->textlog));
+		addtobuffer(txt, msgline);
+		addtostrbuffer(txt, rec->textlog);
+		addtobuffer(txt, "\n");
+		clearstrbuffer(rec->textlog);
+	}
 }
 
 void send_test_results(listhead_t *head, char *collector, int pingtest)

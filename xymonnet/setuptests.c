@@ -129,7 +129,7 @@ void setup_tests(int defaulttimeout)
 
 			if (dialog || (options.testtype != NET_TEST_STANDARD)) {
 				/* insert into nettests / update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec=testspec */
-				/* destinatinonip may have been filled by net_dialog (e.g. http) */
+				/* destinationip may have been filled by net_dialog (e.g. http) */
 				if (!netparams.destinationip) netparams.destinationip = strdup(destination);
 				add_net_test(testspec, dialog, &options, &netparams, hwalk);
 			}

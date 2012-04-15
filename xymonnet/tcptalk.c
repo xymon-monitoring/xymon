@@ -21,6 +21,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "tcptalk.h"
 #include "ntptalk.h"
 #include "dnstalk.h"
+#include "pingtalk.h"
 
 static listhead_t *pendingtests = NULL;
 static listhead_t *activetests = NULL;
@@ -588,7 +589,7 @@ listhead_t *run_net_tests(int concurrency)
 		listitem_t *pcur, *pnext;
 		int lookupsposted = 0;
 
-		dbgprintf("\n*** Starting test loop ***\n");
+		dbgprintf("*** Starting test loop ***\n");
 		/* Start some more tests */
 		pcur = pendingtests->head;
 		while (pcur && (activetests->len < concurrency) && (lookupsposted < concurrency)) {
@@ -662,8 +663,8 @@ listhead_t *run_net_tests(int concurrency)
 				break;
 
 			  case TALK_PROTO_PING:
-				/* NULL is only for doing DNS lookups, ping tests etc. */
-				dbgprintf("    NULL test, done\n");
+				dbgprintf("    PING test, queued\n");
+				add_to_ping_queue(rec);
 				list_item_move(donetests, pcur, rec->testspec);
 				break;
 
