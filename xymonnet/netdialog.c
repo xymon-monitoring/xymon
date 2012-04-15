@@ -346,10 +346,11 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	if (weburl.postdata) addtobuffer(httprequest, weburl.postdata);
 
 	/* All done, build the dialog for simply sending the request and reading back the response */
-	dialog = (char **)calloc(3, sizeof(char *));
+	dialog = (char **)calloc(4, sizeof(char *));
 	dialog[0] = grabstrbuffer(httprequest);
 	dialog[1] = "READALL";
-	dialog[2] = NULL;
+	dialog[2] = "CLOSE";
+	dialog[3] = NULL;
 
 	freeweburl_data(&weburl);
 
