@@ -102,7 +102,7 @@ contest: contest.c httptest.o dns.o dns2.o httpcookies.o $(LIBOBJS)
 
 
 xymon-snmpcollect: xymon-snmpcollect.o $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` $(XYMONCOMMLIBS) $(XYMONLIBS) $(SSLLIBS)
+	$(CC) $(LDFLAGS) -o $@ xymon-snmpcollect.o `net-snmp-config --libs` $(XYMONCOMMLIBS) $(XYMONTIMELIBS) $(SSLLIBS)
 
 xymon-snmpcollect.o: xymon-snmpcollect.c
 	$(CC) $(CFLAGS) -I. `net-snmp-config --cflags` -c -o $@ xymon-snmpcollect.c
