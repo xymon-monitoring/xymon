@@ -30,46 +30,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "sendresults.h"
 #include "pingtalk.h"
 
-#define MAX_PER_BATCH 500
 
-void add_to_ping_queue(myconn_t *rec)
-{
-	static int batchsz = 0;
-	static FILE *batchfd = NULL;
-	static char batchfn[PATH_MAX] = { '\0', };
-	static time_t batchid = 0;
-	static int batchseq = 0;
-
-	if (rec) {
-		if (!batchfd) {
-			if (batchid == 0) batchid = getcurrenttime(NULL);
-			batchseq++;
-
-			batchsz = 0;
-			sprintf(batchfn, "%s/_pingtmp.%010d.%05d", xgetenv("XYMONTMP"), (int)batchid, batchseq);
-			batchfd = fopen(batchfn, "w");
-		}
-
-		fprintf(batchfd, "%s\t%s\n", xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip);
-		batchsz++;
-	}
-
-	if (batchfd && (!rec || (batchsz >= MAX_PER_BATCH))) {
-		char finishedfn[PATH_MAX];
-
-		sprintf(finishedfn, "%s/pingbatch.%010d.%05d", xgetenv("XYMONTMP"), (int)batchid, batchseq);
-
-		fclose(batchfd);
-		rename(batchfn, finishedfn);
-
-		*batchfn = '\0';
-		batchfd = NULL;
-		batchsz = 0;
-	}
-}
-
-
-#ifdef PINGQ
 /* pendingtests and donetests are a list of myconn_t records which holds the data for each ping test. */
 static listhead_t *pendingtests = NULL;
 static listhead_t *donetests = NULL;
@@ -278,11 +239,11 @@ static int run_ping_queue(void)
 			char *hname, *ip;
 			void *hinfo;
 
-			hname = strtok(batchl, " \t");
-			ip = (hname ? strtok(NULL, "\r\n") : NULL);
+			hname = strtok(batchl, "\t");
+			ip = (hname ? strtok(NULL, "\t\r\n") : NULL);
 			hinfo = (hname ? hostinfo(hname) : NULL);
 
-			if (hinfo && ip) {
+			if (hinfo && ip && conn_is_ip(ip)) {
 				xtreePos_t handle;
 
 				/* Add the test only if we haven't got it already */
@@ -486,7 +447,7 @@ int main(int argc, char **argv)
 
 		if ((pendingtests->len == 0) && (donetests->len > 0)) {
 			dbgprintf("Sending results\n");
-			send_test_results(donetests, programname);
+			send_test_results(donetests, programname, 1);
 			cleanup_donetests();
 		}
 
@@ -497,5 +458,4 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-#endif
 

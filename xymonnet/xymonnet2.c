@@ -17,7 +17,6 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "setuptests.h"
 #include "tcptalk.h"
 #include "dnstalk.h"
-#include "pingtalk.h"
 #include "sendresults.h"
 
 int concurrency = 10;
@@ -40,9 +39,9 @@ int main(int argc, char **argv)
 
 	setup_tests(defaulttimeout);
 	resulthead = run_net_tests(concurrency);
-	send_test_results(resulthead, programname);
+	send_test_results(resulthead, programname, 0);
 
-	add_to_ping_queue(NULL);	/* Set off the ping tests */
+	add_to_sub_queue(NULL, NULL);	/* Set off the submodule tests */
 
 	conn_deinit();
 	dns_lookup_shutdown();

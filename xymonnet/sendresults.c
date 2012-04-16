@@ -13,10 +13,83 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "libxymon.h"
 #include "tcptalk.h"
 #include "sendresults.h"
+
+
+#define MAX_PER_BATCH 500
+
+typedef struct subqueue_t {
+	char *queuename;
+	int batchsz;
+	FILE *batchfd;
+	char batchfn[PATH_MAX];
+	time_t batchid;
+	int batchseq;
+} subqueue_t;
+
+void add_to_sub_queue(myconn_t *rec, char *moduleid)
+{
+	static void *subqueues = NULL;
+	subqueue_t *qrec;
+
+	if (!subqueues) subqueues = xtreeNew(strcmp);
+
+	if (!rec && !moduleid) {
+		/* Flush all */
+		xtreePos_t handle;
+
+		for (handle = xtreeFirst(subqueues); (handle != xtreeEnd(subqueues)); handle = xtreeNext(subqueues, handle)) {
+			qrec = xtreeData(subqueues, handle);
+			add_to_sub_queue(NULL, qrec->queuename);
+		}
+	}
+
+	if (moduleid) {
+		xtreePos_t handle;
+
+		handle = xtreeFind(subqueues, moduleid);
+		if (handle == xtreeEnd(subqueues)) {
+			qrec = (subqueue_t *)calloc(1, sizeof(subqueue_t));
+			qrec->queuename = strdup(moduleid);
+			xtreeAdd(subqueues, qrec->queuename, qrec);
+		}
+		else {
+			qrec = xtreeData(subqueues, handle);
+		}
+	}
+
+	if (rec) {
+		if (!qrec->batchfd) {
+			if (qrec->batchid == 0) qrec->batchid = getcurrenttime(NULL);
+			qrec->batchseq++;
+
+			qrec->batchsz = 0;
+			sprintf(qrec->batchfn, "%s/_%stmp.%010d.%05d", xgetenv("XYMONTMP"), moduleid, (int)qrec->batchid, qrec->batchseq);
+			qrec->batchfd = fopen(qrec->batchfn, "w");
+		}
+
+		fprintf(qrec->batchfd, "%s\t%s\t%s\n", xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip, rec->testspec);
+		qrec->batchsz++;
+	}
+
+	if (qrec->batchfd && (!rec || (qrec->batchsz >= MAX_PER_BATCH))) {
+		char finishedfn[PATH_MAX];
+
+		sprintf(finishedfn, "%s/%sbatch.%010d.%05d", xgetenv("XYMONTMP"), moduleid, (int)qrec->batchid, qrec->batchseq);
+
+		fclose(qrec->batchfd);
+		rename(qrec->batchfn, finishedfn);
+
+		*(qrec->batchfn) = '\0';
+		qrec->batchfd = NULL;
+		qrec->batchsz = 0;
+	}
+}
+
 
 typedef struct hostresult_t {
 	void *hinfo;
@@ -106,7 +179,7 @@ static void result_ping(myconn_t *rec,  strbuffer_t *txt)
 	}
 }
 
-void send_test_results(listhead_t *head, char *collector)
+void send_test_results(listhead_t *head, char *collector, int issubmodule)
 {
 	char msgline[4096];
 	listitem_t *walk;
@@ -118,7 +191,31 @@ void send_test_results(listhead_t *head, char *collector)
 		myconn_t *rec = (myconn_t *)walk->data;
 		char *s;
 
-		if (rec->talkprotocol == TALK_PROTO_NULL) continue;
+		switch (rec->talkprotocol) {
+		  case TALK_PROTO_PING:
+			if (!issubmodule && (rec->talkresult == TALK_OK)) {
+				add_to_sub_queue(rec, "ping");
+				continue;
+			}
+			break;
+
+		  case TALK_PROTO_LDAP:
+			if (!issubmodule && (rec->talkresult == TALK_OK)) {
+				add_to_sub_queue(rec, "ldap");
+				continue;
+			}
+			break;
+
+		  case TALK_PROTO_RPC:
+			if (!issubmodule && (rec->talkresult == TALK_OK)) {
+				add_to_sub_queue(rec, "rpc");
+				continue;
+			}
+			break;
+
+		  default:
+			break;
+		}
 
 		handle = xtreeFind(hostresults, xmh_item(rec->hostinfo, XMH_HOSTNAME));
 		if (handle == xtreeEnd(hostresults)) {

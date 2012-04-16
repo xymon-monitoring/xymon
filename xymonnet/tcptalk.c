@@ -21,7 +21,6 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "tcptalk.h"
 #include "ntptalk.h"
 #include "dnstalk.h"
-#include "pingtalk.h"
 
 static listhead_t *pendingtests = NULL;
 static listhead_t *activetests = NULL;
@@ -560,6 +559,12 @@ void *add_net_test(char *testspec, char **dialog, net_test_options_t *options, m
 	  case NET_TEST_STANDARD:
 		newtest->talkprotocol = TALK_PROTO_PLAIN;
 		break;
+	  case NET_TEST_LDAP:
+		newtest->talkprotocol = TALK_PROTO_LDAP;
+		break;
+	  case NET_TEST_RPC:
+		newtest->talkprotocol = TALK_PROTO_RPC;
+		break;
 	}
 
 	if (conn_is_ip(newtest->netparams.destinationip) == 0) {
@@ -631,6 +636,8 @@ listhead_t *run_net_tests(int concurrency)
 			  case TALK_PROTO_PLAIN:
 			  case TALK_PROTO_HTTP:
 			  case TALK_PROTO_NTP:
+			  case TALK_PROTO_LDAP:
+			  case TALK_PROTO_RPC:
 				dbgprintf("    conn_prepare_connection()\n");
 				if (conn_prepare_connection(rec->netparams.destinationip, 
 							rec->netparams.destinationport, 
@@ -665,12 +672,8 @@ listhead_t *run_net_tests(int concurrency)
 
 			  case TALK_PROTO_PING:
 				dbgprintf("    PING test, queued\n");
-				add_to_ping_queue(rec);
-				rec->talkprotocol = TALK_PROTO_NULL;	/* Dont send test results */
+				rec->talkresult = TALK_OK;
 				list_item_move(donetests, pcur, rec->testspec);
-				break;
-
-			  case TALK_PROTO_NULL:
 				break;
 
 			  default:
