@@ -11,6 +11,7 @@
 #ifndef __SENDRESULTS_H__
 #define __SENDRESULTS_H__
 
+extern void add_to_sub_queue(myconn_t *rec, char *moduleid);
 extern void send_test_results(listhead_t *head, char *collector, int issubmodule);
 
 #endif
