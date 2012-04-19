@@ -32,8 +32,13 @@ echo "[meminfo]"
 $XYMONHOME/bin/freebsd-meminfo
 echo "[swapinfo]"
 swapinfo -k
-echo "[vmtotal]"
-sysctl vm.vmtotal
+if test `uname -r | cut -d. -f1` -ge 8
+then
+   # We prefer the data from sysctl, but the output doesnt work on FreeBSD 7.2
+   # So only report this if on an 8+ version.
+   echo "[vmtotal]"
+   sysctl vm.vmtotal
+fi
 echo "[ifconfig]"
 ifconfig -a
 echo "[route]"
