@@ -187,7 +187,6 @@ int main(int argc, char *argv[])
 		time_t tstamp, lastchg, disabletime, clienttstamp;
 		int tstamp_i, lastchg_i;
 		int newcolor, oldcolor;
-		int downtimeactive;
 		struct tm tstamptm;
 		int trend;
 		int childstat;
@@ -235,7 +234,7 @@ int main(int argc, char *argv[])
 			xtreePos_t handle;
 			columndef_t *saveit = NULL;
 
-			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|downtimeactive|clienttstamp|modifiers */
+			/* @@stachg#seq|timestamp|sender|origin|hostname|testname|expiretime|color|prevcolor|changetime|disabletime|disablemsg|clienttstamp|modifiers */
 			sscanf(metadata[1], "%d.%*d", &tstamp_i); tstamp = tstamp_i;
 			hostname = metadata[4];
 			testname = metadata[5];
@@ -244,9 +243,8 @@ int main(int argc, char *argv[])
 			lastchg  = atoi(metadata[9]);
 			disabletime = atoi(metadata[10]);
 			dismsg   = metadata[11];
-			downtimeactive = (atoi(metadata[12]) > 0);
-			clienttstamp = atoi(metadata[13]);
-			modifiers = metadata[14];
+			clienttstamp = atoi(metadata[12]);
+			modifiers = metadata[13];
 
 			if (newcolor == -1) {
 				errprintf("Bad message: newcolor is unknown '%s'\n", metadata[7]);
@@ -314,7 +312,6 @@ int main(int argc, char *argv[])
 
 					while (!gotit) {
 						off_t tmppos = ftello(statuslogfd);
-						time_t dur;
 						int dur_i;
 
 						if (fgets(l, sizeof(l)-1, statuslogfd)) {
@@ -328,7 +325,6 @@ int main(int argc, char *argv[])
 								 */
 								pos = tmppos;
 								lastchg = lastchg_i;
-								dur = dur_i;
 							}
 						}
 						else {

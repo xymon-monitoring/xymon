@@ -94,7 +94,6 @@ static time_t get4AdventDate(int year)
 static int getnumberedweekday(int wkday, int daynum, int month, int year)
 {
 	struct tm tm;
-	time_t t;
 
 	/* First see what weekday the 1st of this month is */
 	memset(&tm, 0, sizeof(tm));
@@ -102,25 +101,25 @@ static int getnumberedweekday(int wkday, int daynum, int month, int year)
 	tm.tm_year = year;
 	tm.tm_mday = 1;
 	tm.tm_isdst = -1;
-	t = mktime(&tm);
+	mktime(&tm);
 	if (tm.tm_wday != wkday) {
 		/* Skip forward so we reach the first of the wanted weekdays */
 		tm.tm_mday += (wkday - tm.tm_wday);
 		if (tm.tm_mday < 1) tm.tm_mday += 7;
 		tm.tm_isdst = -1;
-		t = mktime(&tm);
+		mktime(&tm);
 	}
 
 	/* t and tm now has the 1st wkday in this month. So skip to the one we want */
 	tm.tm_mday += 7*(daynum - 1);
 	/* Check if we overflowed into next month (if daynum == 5) */
-	t = mktime(&tm);
+	mktime(&tm);
 	tm.tm_isdst = -1;
 	if ((daynum == 5) && (tm.tm_mon != (month - 1))) {
 		/* We drifted into the next month. Go back one week to return the last wkday of the month */
 		tm.tm_mday -= 7;
 		tm.tm_isdst = -1;
-		t = mktime(&tm);
+		mktime(&tm);
 	}
 
 	return tm.tm_yday;
@@ -129,7 +128,6 @@ static int getnumberedweekday(int wkday, int daynum, int month, int year)
 static int getweekdayafter(int wkday, int daynum, int month, int year)
 {
 	struct tm tm;
-	time_t t;
 
 	/* First see what weekday this date is */
 	memset(&tm, 0, sizeof(tm));
@@ -137,13 +135,13 @@ static int getweekdayafter(int wkday, int daynum, int month, int year)
 	tm.tm_year = year;
 	tm.tm_mday = daynum;
 	tm.tm_isdst = -1;
-	t = mktime(&tm);
+	mktime(&tm);
 	if (tm.tm_wday != wkday) {
 		/* Skip forward so we reach the wanted weekday */
 		tm.tm_mday += (wkday - tm.tm_wday);
 		if (tm.tm_mday < daynum) tm.tm_mday += 7;
 		tm.tm_isdst = -1;
-		t = mktime(&tm);
+		mktime(&tm);
 	}
 
 	return tm.tm_yday;

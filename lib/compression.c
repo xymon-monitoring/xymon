@@ -190,7 +190,6 @@ strbuffer_t *compress_buffer(char *msg, int msglen)
 		freestrbuffer(cmsg); cmsg = NULL;
 	}
 
-compressdone:
 	deflateEnd(strm);
 	xfree(strm);
 

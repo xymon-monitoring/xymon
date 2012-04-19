@@ -130,7 +130,6 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 
 	enum ostype_t ostype;
 	char *datapart = msg;
-	char *outp;
 	char *bol, *eoln, *ifname, *rxstr, *txstr, *dummy;
 	int dmatch;
 
@@ -188,9 +187,6 @@ int do_ifstat_rrd(char *hostname, char *testname, char *classname, char *pagepat
 		errprintf("Too few lines in ifstat report from %s\n", hostname);
 		return -1;
 	}
-
-	/* Setup the update string */
-	outp = rrdvalues + sprintf(rrdvalues, "%d", (int)tstamp);
 
 	dmatch = 0;
 	ifname = rxstr = txstr = dummy = NULL;

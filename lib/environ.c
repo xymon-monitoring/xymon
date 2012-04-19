@@ -216,7 +216,6 @@ void loadenv(char *envfile, char *area)
 	FILE *fd;
 	strbuffer_t *inbuf;
 	char *p, *oneenv;
-	int n;
 
 	MEMDEFINE(l);
 	inbuf = newstrbuffer(0);
@@ -278,7 +277,7 @@ void loadenv(char *envfile, char *area)
 					}
 				}
 
-				n = putenv(oneenv);
+				if (putenv(oneenv) != 0) errprintf("Cannot set environment: %s\n", strerror(errno));
 			}
 		}
 		stackfclose(fd);

@@ -25,10 +25,8 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *psstr;
 	char *topstr;
 	char *dfstr;
-	char *swapstr;
 	char *msgsstr;
 	char *netstatstr;
-	char *sarstr;
 	char *ifstatstr;
 	char *portsstr;
 
@@ -46,11 +44,9 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 	psstr = getdata("ps");
 	topstr = getdata("top");
 	dfstr = getdata("df");
-	swapstr = getdata("swap");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");
-	sarstr = getdata("sar");
 	portsstr = getdata("ports");
 
 	unix_cpu_report(hostname, clienttype, os, hinfo, fromline, timestr, uptimestr, clockstr, msgcachestr, 
@@ -65,7 +61,6 @@ void handle_irix_client(char *hostname, char *clienttype, enum ostype_t os,
 
 	unix_netstat_report(hostname, clienttype, os, hinfo, fromline, timestr, netstatstr);
 	unix_ifstat_report(hostname, clienttype, os, hinfo, fromline, timestr, ifstatstr);
-	/* unix_sar_report(hostname, clienttype, os, hinfo, fromline, timestr, sarstr); */
 
 	if (topstr) {
 		char *memline, *eoln = NULL;

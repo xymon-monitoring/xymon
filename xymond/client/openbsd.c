@@ -25,7 +25,6 @@ void handle_openbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *topstr;
 	char *dfstr;
 	char *meminfostr;
-	char *swapctlstr;
 	char *msgsstr;
 	char *netstatstr;
 	char *ifstatstr;
@@ -48,7 +47,6 @@ void handle_openbsd_client(char *hostname, char *clienttype, enum ostype_t os,
 	topstr = getdata("top");
 	dfstr = getdata("df");
 	meminfostr = getdata("meminfo");
-	swapctlstr = getdata("swapctl");
 	msgsstr = getdata("msgs");
 	netstatstr = getdata("netstat");
 	ifstatstr = getdata("ifstat");

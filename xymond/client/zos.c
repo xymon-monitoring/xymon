@@ -626,7 +626,6 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *cpuutilstr;
 	char *pagingstr;
 	char *uptimestr;
-	char *msgcachestr;
 	char *dfstr;
         char *cicsstr;          /* z/OS CICS Information */
 	char *jobsstr;		/* z/OS Running jobs  */
@@ -645,7 +644,6 @@ void handle_zos_client(char *hostname, char *clienttype, enum ostype_t os,
 	uptimestr = getdata("uptime");
 	cpuutilstr = getdata("cpu");
 	pagingstr = getdata("paging");
-	msgcachestr = getdata("msgcache");
 	dfstr = getdata("df");
         cicsstr = getdata("cics");
 	jobsstr = getdata("jobs");

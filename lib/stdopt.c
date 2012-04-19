@@ -15,6 +15,7 @@ static char rcsid[] = "$Id: misc.c 6895 2012-01-23 09:14:44Z storner $";
 
 #include <string.h>
 #include <stdio.h>
+#include <libgen.h>
 
 #include "libxymon.h"
 

@@ -231,11 +231,11 @@ static void print_host(hostlist_t *host, htnames_t *testnames[], int testcount)
 	while (itm) {
 		char *visdata = NULL, *colname = NULL, *expdata = NULL;
 		weburl_t bu;
-		int dialuptest = 0, reversetest = 0, alwaystruetest = 0, httpextra = 0;
+		int httpextra = 0;
 
-		if (*itm == '?') { dialuptest=1;     itm++; }
-		if (*itm == '!') { reversetest=1;    itm++; }
-		if (*itm == '~') { alwaystruetest=1; itm++; }
+		if (*itm == '?') { itm++; }
+		if (*itm == '!') { itm++; }
+		if (*itm == '~') { itm++; }
 
 		if ( argnmatch(itm, "http")         ||
 		     argnmatch(itm, "content=http") ||

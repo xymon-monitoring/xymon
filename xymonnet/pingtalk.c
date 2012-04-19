@@ -125,7 +125,7 @@ static void launch_ping(strbuffer_t *pingdata, int subid, char *basefn)
 	else if (pingpid == 0) {
 		/* Child process */
 		char *pingoutfn, *pingerrfn, *cmd;
-		int outfile, errfile, status;
+		int outfile, errfile;
 		char *cmdargs[4];
 
 		dbgprintf("Running fping in pid %d\n", (int)getpid());
@@ -146,9 +146,9 @@ static void launch_ping(strbuffer_t *pingdata, int subid, char *basefn)
 			return;
 		}
 
-		status = dup2(pfd[0], STDIN_FILENO);
-		status = dup2(outfile, STDOUT_FILENO);
-		status = dup2(errfile, STDERR_FILENO);
+		if (dup2(pfd[0], STDIN_FILENO) != 0) errprintf("Cannot dup2 stdin: %s\n", strerror(errno));
+		if (dup2(outfile, STDOUT_FILENO) != 0) errprintf("Cannot dup2 stdout: %s\n", strerror(errno));
+		if (dup2(errfile, STDERR_FILENO) != 0) errprintf("Cannot dup2 stderr: %s\n", strerror(errno));
 		close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
 
 		switch (subid) {

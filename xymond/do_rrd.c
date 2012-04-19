@@ -767,6 +767,10 @@ void update_rrd(char *hostname, char *testname, char *msg, time_t tstamp, char *
 		if (extids[i]) res = do_external_rrd(hostname, testname, classname, pagepaths, msg, tstamp);
 	}
 
+	if (!res) {
+		dbgprintf("update_rrd: failed with res=%d\n", res);
+	}
+
 	senderip = NULL;
 
 	MEMUNDEFINE(rrdvalues);

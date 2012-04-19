@@ -136,7 +136,6 @@ state_t *init_state(char *filename, logdata_t *log)
 	struct stat 	log_st;
 	time_t		now = getcurrenttime(NULL);
 	time_t		histentry_start;
-	int		logexpired = 0;
 	int		propagating, isacked;
 
 	dbgprintf("init_state(%s, %d, ...)\n", textornull(filename));
@@ -166,7 +165,6 @@ state_t *init_state(char *filename, logdata_t *log)
 	if (!reportstart && !snapshot) {
 		hostname = strdup(log->hostname);
 		testname = strdup(log->testname);
-		logexpired = (log->validtime < now);
 	}
 	else {
 		sprintf(fullfn, "%s/%s", xgetenv("XYMONHISTDIR"), filename);
@@ -180,7 +178,6 @@ state_t *init_state(char *filename, logdata_t *log)
 		}
 
 		/* Pick out host- and test-name */
-		logexpired = (log_st.st_mtime < now);
 		hostname = strdup(filename);
 		p = strrchr(hostname, '.');
 

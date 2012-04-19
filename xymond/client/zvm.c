@@ -363,7 +363,6 @@ void handle_zvm_client(char *hostname, char *clienttype, enum ostype_t os,
 	char *timestr;
 	char *cpuutilstr;
 	char *uptimestr;
-	char *msgcachestr;
 	char *dfstr;
 	char *usersstr;		/* Logged on z/VM Users  */
 	char *msgsstr;
@@ -380,7 +379,6 @@ void handle_zvm_client(char *hostname, char *clienttype, enum ostype_t os,
 	timestr = getdata("date");
 	uptimestr = getdata("uptime");
 	cpuutilstr = getdata("cpu");
-	msgcachestr = getdata("msgcache");
 	dfstr = getdata("df");
 	usersstr = getdata("UserID");
 	msgsstr = getdata("msgs");

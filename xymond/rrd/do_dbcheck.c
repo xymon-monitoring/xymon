@@ -203,7 +203,7 @@ static void *dbcheck_invobj_tpl    = NULL;
 			if ( strstr(curline,"red") == curline) red++;
 			if ( strstr(curline,"yellow") == curline) yellow++;
 			if ( strstr(curline,"green") == curline) green++;
-nextline:
+
                         if (eoln) *(eoln)='\n';
                         curline = (eoln ? (eoln+1) : NULL);
                 }

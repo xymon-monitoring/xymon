@@ -272,7 +272,7 @@ static int sendtoall(char *msg, int timeout, mytarget_t **targets, sendreturn_t 
 		myconn->tlsptr = (targets[i]->usessl ? myconn->tlsbuf : NULL);
 		myconn->usessl = targets[i]->usessl;
 		myconn->lefttowrite = msglen;
-		sprintf(myconn->szbuf, "size:%d\n", myconn->lefttowrite);
+		sprintf(myconn->szbuf, "size:%d\n", (int)myconn->lefttowrite);
 		myconn->szptr = myconn->szbuf;
 		myconn->writebuf = msg;
 		myconn->peer = strdup(ip ? ip : "");

@@ -313,7 +313,7 @@ int do_request(void)
 		int xymondresult;
 		char *items[25];
 		int icount;
-		time_t logage, clntstamp;
+		time_t logage;
 		char *sumline, *msg, *p, *compitem, *complist;
 		sendreturn_t *sres;
 
@@ -342,7 +342,7 @@ int do_request(void)
 
 			freeregex(dummy);
 			xymondreq = (char *)malloc(1024 + strlen(hostname) + strlen(service));
-			sprintf(xymondreq, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,clntstamp,flapinfo,modifiers", hostname, service);
+			sprintf(xymondreq, "xymondlog host=%s test=%s fields=hostname,testname,color,flags,lastchange,logtime,validtime,acktime,disabletime,sender,cookie,ackmsg,dismsg,client,acklist,XMH_IP,XMH_DISPLAYNAME,flapinfo,modifiers", hostname, service);
 		}
 		else {
 			pcre *dummy = NULL;
@@ -409,9 +409,8 @@ int do_request(void)
 			 * acklist		[14]
 			 * XMH_IP		[15]
 			 * XMH_DISPLAYNAME	[16]
-			 * clienttstamp         [17]
-			 * flapping		[18]
-			 * modifiers		[19]
+			 * flapping		[17]
+			 * modifiers		[18]
 			 */
 			color = parse_color(items[2]);
 			flags = strdup(items[3]);
@@ -448,9 +447,8 @@ int do_request(void)
 
 			ip = (items[15] ? items[15] : "");
 			displayname = ((items[16]  && *items[16]) ? items[16] : hostname);
-			clntstamp = ((items[17]  && *items[17]) ? atol(items[17]) : 0);
-			flapping = (items[18] ? (*items[18] == '1') : 0);
-			modifiers = (items[19] && *(items[19])) ? items[19] : NULL;
+			flapping = (items[17] ? (*items[17] == '1') : 0);
+			modifiers = (items[18] && *(items[18])) ? items[18] : NULL;
 
 			sethostenv(displayname, ip, service, colorname(COL_GREEN), hostname);
 			sethostenv_refresh(60);
@@ -469,14 +467,11 @@ int do_request(void)
 			row = strtok_r(log, "\n", &p_row);
 			while (row) {
 				/* testname,color,lastchange */
-				char *testname, *itmcolor, *chgs;
-				time_t lastchange;
+				char *testname, *itmcolor;
 				int icolor;
 
 				testname = strtok_r(row, "|", &p_fld);
 				itmcolor = strtok_r(NULL, "|", &p_fld);
-				chgs = strtok_r(NULL, "|", &p_fld);
-				lastchange = atoi(chgs);
 
 				icolor = parse_color(itmcolor);
 				if (icolor > color) color = icolor;

@@ -553,7 +553,6 @@ void restore_replogs(replog_t *head)
 
 int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogname)
 {
-	int fileerrors;
 	char l[MAX_LINE_LEN];
 	time_t duration;
 	char colstr[MAX_LINE_LEN];
@@ -561,8 +560,8 @@ int history_color(FILE *fd, time_t snapshot, time_t *starttime, char **histlogna
 	char *p;
 
 	*histlogname = NULL;
-	fileerrors = scan_historyfile(fd, snapshot, snapshot, 
-				      l, sizeof(l), starttime, &duration, colstr);
+	scan_historyfile(fd, snapshot, snapshot, 
+		      l, sizeof(l), starttime, &duration, colstr);
 	
 	strcat(colstr, " ");
 	color = parse_color(colstr);

@@ -3325,7 +3325,7 @@ void do_message(conn_t *msg, char *origin)
 		get_hts(msg->buf, msg->sender, origin, &h, &t, NULL, &log, &color, NULL, NULL, 0, 0);
 		if (log) {
 			char *buf, *bufp;
-			int bufsz, buflen;
+			int bufsz;
 
 			flush_acklist(log, 0);
 			if (log->message == NULL) {
@@ -3340,7 +3340,6 @@ void do_message(conn_t *msg, char *origin)
 
 			xfree(msg->buf);
 			bufp = buf = (char *)malloc(bufsz);
-			buflen = 0;
 
 			bufp += sprintf(bufp, "<?xml version='1.0' encoding='ISO-8859-1'?>\n");
 			bufp += sprintf(bufp, "<ServerStatus>\n");
@@ -3829,12 +3828,12 @@ void do_message(conn_t *msg, char *origin)
 
 		if (strlen(cmd) == 0) {
 			char *buf, *bufp;
-			int bufsz, buflen;
+			int bufsz;
 			scheduletask_t *swalk;
 
 			bufsz = 4096;
 			bufp = buf = (char *)malloc(bufsz);
-			*buf = '\0'; buflen = 0;
+			*buf = '\0';
 
 			for (swalk = schedulehead; (swalk); swalk = swalk->next) {
 				int needed = 128 + strlen(swalk->command);

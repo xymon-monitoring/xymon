@@ -302,8 +302,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 		else if (conn_is_ip(key) != 0) {
 			char *startoftags, *tag, *delim;
 			int elemidx, elemsize;
-			char clientname[4096];
-			char downtime[4096];
 			char groupidstr[10];
 			xtreePos_t handle;
 
@@ -334,7 +332,6 @@ int load_hostnames(char *hostsfn, char *extrainclude, int fqdn)
 			newitem->page = curpage;
 			newitem->defaulthost = defaulthost;
 
-			clientname[0] = downtime[0] = '\0';
 			startoftags = strchr(inbol, '#');
 			if (startoftags == NULL) startoftags = ""; else startoftags++;
 			startoftags += strspn(startoftags, " \t\r\n");
