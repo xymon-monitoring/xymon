@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
 	FILE *fd;
 	char headerline[32768];
 	char vals[32768];
-	int gotvals = 0;
 	char *hp, *hdr, *vp, *val;
 	char msgline[4096];
 	strbuffer_t *msg;
@@ -70,7 +69,7 @@ int main(int argc, char *argv[])
 
 	/* Grab the header line, and the last logfile entry. */
 	if (fgets(headerline, sizeof(headerline), fd)) {
-		while (fgets(vals, sizeof(vals), fd)) gotvals = 1;
+		while (fgets(vals, sizeof(vals), fd));
 	}
 	fclose(fd);
 
