@@ -178,7 +178,7 @@ the router - and not from the 200 hosts behind the router.
 .SH SECURITY
 All of the Xymon server tools run under an unprivileged user account.
 A single program - the
-.I xymonping(1)
+.I fping(8)
 network connectivity tester - must be installed setuid-root, but has
 been written so that it drops all root privileges immediately after
 performing the operation that requires root privileges.
@@ -292,7 +292,7 @@ the system state was just prior to it failing.
 .SH XYMON NETWORK TEST TOOLS
 These tools are used on servers that execute tests of network services.
 
-.I xymonping(1)
+.I fping(8)
 performs network connectivity (ping) tests.
 
 .I xymonnet(1)
@@ -527,7 +527,7 @@ is allowed.  See the file COPYING for details.
 .SH "SEE ALSO"
 xymond(8), xymond_channel(8), xymond_history(8), xymond_rrd(8), xymond_alert(8), 
 xymond_client(8), xymond_hostdata(8), 
-xymonping(1), xymonnet(1), xymonnet-again.sh(1), 
+fping(8), xymonnet(1), xymonnet-again.sh(1), 
 xymongen(1), svcstatus.cgi(1), showgraph.cgi(1), hostgraphs.cgi(1), criticalview.cgi(1), 
 history.cgi(1), eventlog.cgi(1), 
 ack.cgi(1), xymon-mailack(8), enadis.cgi(8), findhost.cgi(1), 

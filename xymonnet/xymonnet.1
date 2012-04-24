@@ -32,10 +32,7 @@ In addition, it implements the "dns" and "dig" tests for
 testing DNS servers.
 
 xymonnet also implements a check for NTP servers - this test 
-is called "ntp". If you want to use it, you must define the
-NTPDATE environment variable to point at the location of your
-.I ntpdate(1)
-program.
+is called "ntp".
 
 Note: xymonnet performs the connectivity test (ping) based on the
 hostname, unless the host is tagged with "testip" or the 
@@ -221,15 +218,6 @@ so they are spread randomly across all of the servers
 tested.
 
 .SH OPTIONS FOR THE PING TEST
-Note: xymonnet uses the program defined by the FPING
-environment to execute ping-tests - by default, that is
-the
-.I xymonping(1)
-utility. See
-.I xymonserver.cfg(5)
-for a description of how to customize this, e.g. if you
-need to run it with "sudo" or a similar tool.
-
 .IP --ping
 Enables xymonnet's ping test. The column name used for
 ping test results is defined by the PINGCOLUMN environment 
@@ -260,7 +248,7 @@ hosts by putting a "notrace" tag on the host-entry.
 .IP --ping-tasks=N
 Spread the task of pinging the hosts over N processes. If you have
 a very large number of hosts the time it takes to ping all of them 
-can be substantial, even with the use of tools like fping or xymonping
+can be substantial, even with the use of tools like fping 
 that ping many hosts in parallel. This option causes xymonnet to
 start N separate ping processes, the IP's that are being ping'ed will
 be divided evenly between these processes.
@@ -454,8 +442,8 @@ the tests that were listed in the protocols.cfg file, plus the "dns",
 "dig" and "ntp" tests.
 
 It then runs two tasks in parallel: First, a separate process is
-started to run the "xymonping" tool for the connectivity tests. While 
-xymonping is busy doing the "ping" checks, xymonnet runs all of the
+started to run the "fping" tool for the connectivity tests. While 
+fping is busy doing the "ping" checks, xymonnet runs all of the
 TCP-based network tests.
 
 All of the TCP-based service checks are handled by a connection
@@ -516,14 +504,6 @@ define a delay of half a second, this must be set to
 the value "500000"; a delay of 1 second is achieved by
 setting this to "1000000" (one million).
 
-.IP FPING
-Command used to run the 
-.I xymonping(1) 
-utility. Used by xymonnet for connectivity (ping) testing.  See 
-.I xymonserver.cfg(5)
-for more information about how to customize the program that is
-executed to do ping tests.
-
 .IP TRACEROUTE
 Location of the 
 .I traceroute(8)
@@ -531,11 +511,6 @@ utility, or an equivalent tool e.g.
 .I mtr(8).
 Optionally used when a connectivity test fails to pinpoint the
 network location that is causing the failure.
-
-.IP NTPDATE
-Location of the 
-.I ntpdate(1) 
-utility. Used by xymonnet when checking the "ntp" service.
 
 .IP RPCINFO
 Location of the 
@@ -595,6 +570,6 @@ test tool. It is updated only by xymonnet during the normal
 runs, and read by xymonnet-again.sh.
 
 .SH "SEE ALSO"
-hosts.cfg(5), protocols.cfg(5), xymonserver.cfg(5), xymonping(1),
-curl(1), ftp(1), fping(1), ntpdate(1), rpcinfo(8)
+hosts.cfg(5), protocols.cfg(5), xymonserver.cfg(5), fping(8),
+curl(1), ftp(1), rpcinfo(8)
 

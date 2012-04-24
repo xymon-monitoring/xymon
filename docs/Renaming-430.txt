@@ -53,7 +53,6 @@ Net test tools
 ==============
 bbtest-net			xymonnet
 bbretest-net.sh			xymonnet-again.sh
-hobbitping			xymonping
 hobbit-snmpcollect		xymon-snmpcollect
 
 Proxy tools

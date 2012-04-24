@@ -98,8 +98,6 @@ const static struct {
 	{ "CONNTEST", "TRUE" },
 	{ "IPTEST_2_CLEAR_ON_FAILED_CONN", "TRUE" },
 	{ "NONETPAGE", "" },
-	{ "FPING", "xymonping" },
-	{ "NTPDATE", "ntpdate" },
 	{ "TRACEROUTE", "traceroute" },
 	{ "RPCINFO", "rpcinfo" },
 	{ "XYMONROUTERTEXT", "router" },

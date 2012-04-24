@@ -25,7 +25,6 @@ do
      --ssllib DIRECTORY       : Specify location of OpenSSL libraries
      --ldapinclude DIRECTORY  : Specify location of OpenLDAP include files
      --ldaplib DIRECTORY      : Specify location of OpenLDAP libraries
-     --fping FILENAME         : Specify location of the Fping program
 
   The script will search a number of standard directories for
   all of these files, so you normally do not have to specify any options.
@@ -62,9 +61,6 @@ EOF
 	  "--ldaplib")
 	  	USERLDAPLIB="$1"; shift
 		;;
-	  "--fping")
-	  	USERFPING="$1"; shift
-		;;
 	esac
 done
 
@@ -91,8 +87,6 @@ fi
 
 echo "Checking pre-requisites for building Xymon"
 echo ""
-. build/fping.sh
-echo ""; echo ""
 . build/sqlite.sh
 echo ""; echo ""
 . build/pcre.sh
@@ -429,8 +423,6 @@ echo "# Where to put logfiles"           >>Makefile
 echo "XYMONLOGDIR = $XYMONLOGDIR"        >>Makefile
 echo "# Where to install manpages"       >>Makefile
 echo "MANROOT = $MANROOT"                >>Makefile
-echo "# How to run fping or xymonping"   >>Makefile
-echo "FPING = $FPING"                    >>Makefile
 echo ""                                  >>Makefile
 echo "# Username running Xymon"          >>Makefile
 echo "XYMONUSER = $XYMONUSER"            >>Makefile

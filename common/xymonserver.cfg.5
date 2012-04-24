@@ -563,14 +563,6 @@ When a network test fails, the status message reports "SERVICENAME
 not OK". The "not OK" message can be changed via this variable, e.g.
 you can change it to "FAILED" or customize it as you like.
 
-.IP FPING
-The command used to run the
-.I xymonping(1)
-tool for the connectivity test. (The name FPING is due to the fact that
-the "fping" utility was used until Xymon version 4.2). This may include 
-suid-root wrappers and xymonping options.
-Default: "xymonping"
-
 .IP TRACEROUTE
 Defines the location of the "traceroute" tool and
 any options needed to run it. traceroute it used by
