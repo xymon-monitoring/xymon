@@ -114,12 +114,14 @@ else
 	fi
 	if test "$ENABLESSL" = "" -o "$ENABLESSL" = "y"
 	then
+		ENABLESSL="y"
 		SSLDEF="-DHAVE_OPENSSL"
 		if test "$OSSL2OK" = "Y"
 		then
 			SSLDEF="$SSLDEF -DHAVE_SSLV2_SUPPORT=1"
 		fi
 	else
+		ENABLESSL="n"
 		SSLDEF=""
 	fi
 	echo ""
@@ -142,6 +144,7 @@ else
 	fi
 	if test "$ENABLELDAP" = "" -o "$ENABLELDAP" = "y"
 	then
+		ENABLELDAP="y"
 		if test "$LDAPVENDOR" = "OpenLDAP"; then
 			echo "Enable experimental support for LDAP/SSL (OpenLDAP 2.x only) (y) ?"
 			if test "$ENABLELDAPSSL" = ""
@@ -154,11 +157,14 @@ else
 
 		if test "$ENABLELDAPSSL" = "" -o "$ENABLELDAPSSL" = "y"
 		then
+			ENABLELDAPSSL="y"
 			LDAPDEF="-DHAVE_LDAP -DXYMON_LDAP_USESTARTTLS"
 		else
+			ENABLELDAPSSL="n"
 			LDAPDEF="-DHAVE_LDAP"
 		fi
 	else
+		ENABLELDAP="n"
 		LDAPDEF=""
 	fi
 	echo ""
