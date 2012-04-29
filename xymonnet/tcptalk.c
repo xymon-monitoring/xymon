@@ -346,6 +346,7 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 			rec->peercertificateissuer = issuer;	/* ditto issuer */
 			rec->peercertificateexpiry = expire;
 		}
+		if (strcasecmp(rec->dialog[rec->step], "CLOSE") == 0) conn_close_connection(connection, NULL);
 		break;
 
 	  case CONN_CB_SSLHANDSHAKE_FAILED:    /* Client/server mode: SSL handshake failed (connection will close) */
@@ -425,6 +426,9 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 			res = CONN_CBRESULT_STARTTLS;
 			rec->step++;
 		}
+
+		/* See if we're done */
+		if (strcasecmp(rec->dialog[rec->step], "CLOSE") == 0) conn_close_connection(connection, NULL);
 		break;
 
 	  case CONN_CB_WRITECHECK:             /* Client/server mode: Check if application wants to write data */
@@ -478,6 +482,9 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 			res = CONN_CBRESULT_STARTTLS;
 			rec->step++;
 		}
+
+		/* See if we're done */
+		if (strcasecmp(rec->dialog[rec->step], "CLOSE") == 0) conn_close_connection(connection, NULL);
 		break;
 
 	  case CONN_CB_TIMEOUT:
@@ -511,11 +518,6 @@ enum conn_cbresult_t tcp_standard_callback(tcpconn_t *connection, enum conn_call
 
 	  default:
 		break;
-	}
-
-	/* Note: conn_read/write may have zap'ed the connection entry and we have recursively been called to cleanup the connection entry */
-	if ((connection->connstate != CONN_DEAD) && rec && rec->dialog[rec->step] && (strcasecmp(rec->dialog[rec->step], "CLOSE") == 0)) {
-		conn_close_connection(connection, NULL);
 	}
 
 	return res;
