@@ -26,6 +26,7 @@ typedef struct netdialog_t {
 	int option_telnet:1;
 	int option_ntp:1;
 	int option_dns:1;
+	int option_rpc:1;
 	int option_ssl:1;
 	int option_starttls:1;
 	int option_udp:1;
@@ -112,6 +113,7 @@ void load_protocols(char *fn)
 				if (strcasecmp(tok, "telnet") == 0) rec->option_telnet = 1;
 				if (strcasecmp(tok, "ntp") == 0) rec->option_ntp = 1;
 				if (strcasecmp(tok, "dns") == 0) rec->option_dns = 1;
+				if (strcasecmp(tok, "rpc") == 0) rec->option_rpc = 1;
 				if (strcasecmp(tok, "ssl") == 0) rec->option_ssl = 1;
 				if (strcasecmp(tok, "starttls") == 0) rec->option_starttls = 1;
 				if (strcasecmp(tok, "udp") == 0) rec->option_udp = 1;
@@ -132,6 +134,8 @@ void load_protocols(char *fn)
 		}
 
 	}
+
+	if (rec->dialog == NULL) rec->dialog = silentdialog;
 
 	freestrbuffer(l);
 	stackfclose(fd);
@@ -363,7 +367,6 @@ static char **build_ldap_dialog(char *testspec, myconn_netparams_t *netparams, v
 {
 	char *decodedurl;
 	weburl_t weburl;
-	char **dialog = NULL;
 
 	/* If there is a parse error in the URL, dont run the test */
 	decodedurl = decode_url(testspec, &weburl);
@@ -433,8 +436,10 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 			}
 		}
 
-		handle = xtreeFind(netdialogs, testspec);
+		/* We special-case the rpc check here, because it uses "rpc=..." syntax */
+		if (argnmatch(testspec, "rpc=")) *(testspec+3) = '\0';
 
+		handle = xtreeFind(netdialogs, testspec);
 		if (handle != xtreeEnd(netdialogs)) {
 			netdialog_t *rec = xtreeData(netdialogs, handle);
 
@@ -450,8 +455,9 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 			else netparams->sslhandling = CONN_SSL_NO;
 
 			if (rec->option_telnet) options->testtype = NET_TEST_TELNET;
-			if (rec->option_dns) options->testtype = NET_TEST_DNS;
-			if (rec->option_ntp) options->testtype = NET_TEST_NTP;
+			else if (rec->option_dns) options->testtype = NET_TEST_DNS;
+			else if (rec->option_ntp) options->testtype = NET_TEST_NTP;
+			else if (rec->option_rpc) options->testtype = NET_TEST_RPC;
 			else options->testtype = NET_TEST_STANDARD;
 
 			*dtoken = options->testtype;
