@@ -150,7 +150,6 @@ renameandlink hobbit-mailack xymon-mailack
 renameandlink bbcombotest combostatus
 renameandlink bbtest-net xymonnet
 renameandlink bbretest-net.sh xymonnet-again.sh
-renameandlink hobbitping xymonping
 renameandlink hobbit-snmpcollect xymon-snmpcollect
 renameandlink bbproxy xymonproxy
 renameandlink bb-ack.cgi ack.cgi

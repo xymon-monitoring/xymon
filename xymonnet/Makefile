@@ -100,7 +100,7 @@ xymon-snmpcollect.o: xymon-snmpcollect.c
 	chmod 755 $@
 
 clean:
-	rm -f *.o *.a *~ $(PROGRAMS) 
+	rm -f *.o *.a *~ fping.8 $(PROGRAMS) 
 
 install: install-bin install-config install-man
 
@@ -116,4 +116,5 @@ install-man:
 	cp -fp *.1 $(INSTALLROOT)$(MANROOT)/man1/
 	cp -fp *.5 $(INSTALLROOT)$(MANROOT)/man5/
 	cp -fp *.8 $(INSTALLROOT)$(MANROOT)/man8/
+	cd $(INSTALLROOT)$(MANROOT)/man8 && ln -sf fping.8 fping4.8 && ln -sf fping.8 fping6.8
 
