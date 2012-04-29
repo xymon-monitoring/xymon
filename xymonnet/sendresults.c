@@ -34,7 +34,7 @@ typedef struct subqueue_t {
 void add_to_sub_queue(myconn_t *rec, char *moduleid)
 {
 	static void *subqueues = NULL;
-	subqueue_t *qrec;
+	subqueue_t *qrec = NULL;
 
 	if (!subqueues) subqueues = xtreeNew(strcmp);
 
@@ -166,12 +166,12 @@ static void result_dns(myconn_t *rec,  strbuffer_t *txt)
 	result_plain(rec, txt);
 }
 
-static void result_ping(myconn_t *rec,  strbuffer_t *txt)
+static void result_subqueue(char *id, myconn_t *rec,  strbuffer_t *txt)
 {
 	char msgline[4096];
 
 	if (rec->textlog) {
-		snprintf(msgline, sizeof(msgline), "PINGlog: %d\n", STRBUFLEN(rec->textlog));
+		snprintf(msgline, sizeof(msgline), "%slog: %d\n", id, STRBUFLEN(rec->textlog));
 		addtobuffer(txt, msgline);
 		addtostrbuffer(txt, rec->textlog);
 		addtobuffer(txt, "\n");
@@ -307,7 +307,9 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 		  case TALK_PROTO_NTP: result_ntp(rec, hres->txt); break;
 		  case TALK_PROTO_HTTP: result_http(rec, hres->txt); break;
 		  case TALK_PROTO_DNSQUERY: result_dns(rec, hres->txt); break;
-		  case TALK_PROTO_PING: result_ping(rec, hres->txt); break;
+		  case TALK_PROTO_PING: result_subqueue("PING", rec, hres->txt); break;
+		  case TALK_PROTO_LDAP: result_subqueue("LDAP", rec, hres->txt); break;
+		  case TALK_PROTO_RPC: result_subqueue("RPC", rec, hres->txt); break;
 		  default: break;
 		}
 	}
