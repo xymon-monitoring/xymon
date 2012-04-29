@@ -31,7 +31,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "pingtalk.h"
 
 
-/* pendingtests and donetests are a list of myconn_t records which holds the data for each ping test. */
+/* pendingtests and donetests are a list of myconn_t records which holds the data for each test. */
 static listhead_t *pendingtests = NULL;
 static listhead_t *donetests = NULL;
 
@@ -41,17 +41,18 @@ static listhead_t *donetests = NULL;
  * It doesn't have any records on its own - it is just a tree indexed
  * by the myconn_t pendingtests records' IP-address.
  * We need it because fping returns only the IP's, not the hostnames that
- * we must use when reporting back the ping results.
+ * we must use when reporting back the results.
  */
 static void *iptree = NULL;
 
-/* "activepings" is a list of the ping processes currently running */
-typedef struct activepingrec_t {
+/* "activeprocesses" is a list of the processes currently running */
+typedef struct activeprocessrec_t {
 	pid_t pid;
 	char *basefn;
 	int subid;
-} activepingrec_t;
-static listhead_t *activepings = NULL;
+	void *datap;
+} activeprocessrec_t;
+static listhead_t *activeprocesses = NULL;
 
 
 int running = 1;
@@ -78,91 +79,131 @@ void sig_handler(int signum)
 
 }
 
-static void feed_ping(char *ip)
+
+static void feed_queue(int talkproto, char *ip)
 {
-	/* Add an IP to the appropriate list of IP's fed to the next fping process */
+	/* Add an IP to the appropriate list of IP's fed to the next worker process */
 	char l[100];
 
-	switch (conn_is_ip(ip)) {
-	  case 4:
-		if (!ping4_data) ping4_data = newstrbuffer(0);
-		sprintf(l, "%s\n", ip);
-		addtobuffer(ping4_data, l);
+	switch (talkproto) {
+	  case TALK_PROTO_PING:
+		switch (conn_is_ip(ip)) {
+		  case 4:
+			if (!ping4_data) ping4_data = newstrbuffer(0);
+			sprintf(l, "%s\n", ip);
+			addtobuffer(ping4_data, l);
+			break;
+		  case 6:
+			if (!ping6_data) ping6_data = newstrbuffer(0);
+			sprintf(l, "%s\n", ip);
+			addtobuffer(ping6_data, l);
+			break;
+		  default:
+			break;
+		}
 		break;
-	  case 6:
-		if (!ping6_data) ping6_data = newstrbuffer(0);
-		sprintf(l, "%s\n", ip);
-		addtobuffer(ping6_data, l);
+
+	  case TALK_PROTO_RPC:
 		break;
+
 	  default:
 		break;
 	}
 }
 
 
-static void launch_ping(strbuffer_t *pingdata, int subid, char *basefn)
+static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, char *basefn, void *datap)
 {
 	/* 
-	 * Fork a new fping process and feed it the IP's listed in "pingdata".
-	 * "subid" indicates if this is for IPv4 or IPv6 tests.
+	 * Fork a new worker process.
+	 *
+	 * For ping workers: 
+	 * - Feed it the IP's listed in "workerdata".
+	 * - "subid" indicates if this is for IPv4 or IPv6 tests.
+	 * For rpc workers:
+	 * - pass IP of host to test on commandline.
 	 */
 	int pfd[2];
-	pid_t pingpid;
-
-	if (!pingdata || (STRBUFLEN(pingdata) == 0)) return;
+	pid_t workerpid;
 
 	if (pipe(pfd) == -1) {
-		errprintf("Cannot create ping to fping: %s\n", strerror(errno));
+		errprintf("Cannot create pipe to worker process: %s\n", strerror(errno));
 		return;
 	}
 
-	pingpid = fork();
-	if (pingpid < 0) {
-		errprintf("Cannot fork fping: %s\n", strerror(errno));
+	workerpid = fork();
+	if (workerpid < 0) {
+		errprintf("Cannot fork worker process: %s\n", strerror(errno));
 		return;
 	}
 
-	else if (pingpid == 0) {
+	else if (workerpid == 0) {
 		/* Child process */
-		char *pingoutfn, *pingerrfn, *cmd;
+		char *workeroutfn, *workererrfn, *cmd;
 		int outfile, errfile;
 		char *cmdargs[4];
 
-		dbgprintf("Running fping in pid %d\n", (int)getpid());
+		close(pfd[1]); /* Close write end of pipe */
 
-		pingoutfn = (char *)malloc(strlen(basefn) + 16);
-		sprintf(pingoutfn, "%s.%010d.out", basefn, (int)getpid());
-		pingerrfn = (char *)malloc(strlen(basefn) + 16);
-		sprintf(pingerrfn, "%s.%010d.err", basefn, (int)getpid());
+		cmd = NULL;
+		memset(cmdargs, 0, sizeof(cmdargs));
 
-		outfile = open(pingoutfn, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		if (outfile == -1) errprintf("Cannot create file %s : %s\n", pingoutfn, strerror(errno));
-		errfile = open(pingerrfn, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
-		if (errfile == -1) errprintf("Cannot create file %s : %s\n", pingerrfn, strerror(errno));
+		dbgprintf("Running worker process in pid %d\n", (int)getpid());
+
+		workeroutfn = (char *)malloc(strlen(basefn) + 16);
+		sprintf(workeroutfn, "%s.%010d.out", basefn, (int)getpid());
+		workererrfn = (char *)malloc(strlen(basefn) + 16);
+		sprintf(workererrfn, "%s.%010d.err", basefn, (int)getpid());
+
+		outfile = open(workeroutfn, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		if (outfile == -1) errprintf("Cannot create file %s : %s\n", workeroutfn, strerror(errno));
+		errfile = open(workererrfn, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR);
+		if (errfile == -1) errprintf("Cannot create file %s : %s\n", workererrfn, strerror(errno));
 
 		if ((outfile == -1) || (errfile == -1)) {
 			/* Ouch - cannot create our output files. Abort. */
 			errprintf("Cannot create output/error files\n");
-			return;
+			exit(EXIT_FAILURE);
 		}
 
-		if (dup2(pfd[0], STDIN_FILENO) != 0) errprintf("Cannot dup2 stdin: %s\n", strerror(errno));
-		if (dup2(outfile, STDOUT_FILENO) != 0) errprintf("Cannot dup2 stdout: %s\n", strerror(errno));
-		if (dup2(errfile, STDERR_FILENO) != 0) errprintf("Cannot dup2 stderr: %s\n", strerror(errno));
-		close(pfd[0]); close(pfd[1]); close(outfile); close(errfile);
+		/* Assign stdin to the pipe */
+		close(STDIN_FILENO);
+		if (dup2(pfd[0], STDIN_FILENO) != 0) dbgprintf("Cannot dup2 stdin: %s\n", strerror(errno));
+		close(pfd[0]); /* No longer needed */
 
-		switch (subid) {
-		  case 4: cmd = xgetenv("FPING4"); break;
-		  case 6: cmd = xgetenv("FPING6"); break;
-		  default: cmd = NULL; break;
+		/* Assign stdout to the output logfile */
+		close(STDOUT_FILENO);
+		if (dup2(outfile, STDOUT_FILENO) != 0) dbgprintf("Cannot dup2 stdout: %s\n", strerror(errno));
+
+		/* Assign stderr to the error logfile */
+		close(STDERR_FILENO);
+		if (dup2(errfile, STDERR_FILENO) != 0) dbgprintf("Cannot dup2 stderr: %s\n", strerror(errno));
+
+		switch (talkproto) {
+		  case TALK_PROTO_PING:
+			switch (subid) {
+			  case 4: cmd = xgetenv("FPING4"); break;
+			  case 6: cmd = xgetenv("FPING6"); break;
+			  default: break;
+			}
+
+			/* Setup command line args. Should probably be configurable - at least the count */
+			cmdargs[1] = "-C3";
+			cmdargs[2] = "-q";
+			break;
+
+		  case TALK_PROTO_RPC:
+			cmd = xgetenv("RPCINFO");
+			cmdargs[1] = "-p";
+			cmdargs[2] = STRBUF(workerdata);
+			break;
+
+		  default:
+			break;
 		}
 
 		if (cmd) {
-			/* Setup command line args. Should probably be configurable - at least the count */
 			cmdargs[0] = cmd;
-			cmdargs[1] = "-C3";
-			cmdargs[2] = "-q";
-			cmdargs[3] = NULL;
 			execvp(cmd, cmdargs);
 		}
 
@@ -171,41 +212,68 @@ static void launch_ping(strbuffer_t *pingdata, int subid, char *basefn)
 		exit(EXIT_FAILURE);
 	}
 
-	else if (pingpid > 0) {
-		activepingrec_t *actrec;
+	else if (workerpid > 0) {
+		activeprocessrec_t *actrec;
+		char *outp;
+		int wres, outremain;
 
-		/* Parent - feed IP's to the child, and add the child PID to our list of running fping processes. */
-		close(pfd[0]);
-		write(pfd[1], STRBUF(pingdata), STRBUFLEN(pingdata));
+		/* Parent - feed IP's to the child, and add the child PID to our list of running worker processes. */
+
+		close(pfd[0]); /* Close read end of pipe */
+
+		switch (talkproto) {
+		  case TALK_PROTO_PING:
+			outp = STRBUF(workerdata); outremain = STRBUFLEN(workerdata);
+			do {
+				wres = write(pfd[1], outp, outremain);
+				if (wres < 0) {
+					errprintf("Failed to feed all IP's to child ping process: %s\n", strerror(errno));
+					outremain = 0;
+				}
+				else {
+					outremain -= wres;
+					outp += wres;
+				}
+			} while (outremain > 0);
+			break;
+
+		  case TALK_PROTO_RPC:
+			break;
+
+		  default:
+			break;
+		}
 		close(pfd[1]);
-		clearstrbuffer(pingdata);
+		clearstrbuffer(workerdata);
 
-		actrec = (activepingrec_t *)calloc(1, sizeof(activepingrec_t));
-		actrec->pid = pingpid;
+		actrec = (activeprocessrec_t *)calloc(1, sizeof(activeprocessrec_t));
+		actrec->pid = workerpid;
 		actrec->basefn = strdup(basefn);
 		actrec->subid = subid;
-		list_item_create(activepings, actrec, "");
+		actrec->datap = datap;
+		list_item_create(activeprocesses, actrec, "");
 	}
 }
 
 
-static int run_ping_queue(void)
+static int scan_queue(char *id, int talkproto)
 {
 	/*
-	 * Scan the XYMONTMP directory for "pingbatch" files, and pick up the IP's we
+	 * Scan the XYMONTMP directory for "batch" files, and pick up the IP's we
 	 * need to test now.
-	 * pingbatch files are named "pingbatch.TIMESTAMP.SEQUENCE"
+	 * batch files are named "<ID>batch.TIMESTAMP.SEQUENCE"
 	 */
 	int scanres;
 	char filepath[PATH_MAX];
 	glob_t globdata;
 	int i;
+	strbuffer_t *rpc_data;
 	int tstampofs;
 	time_t now = getcurrenttime(NULL);
 
-	tstampofs = strlen(xgetenv("XYMONTMP")) + strlen("/pingbatch.");
+	tstampofs = strlen(xgetenv("XYMONTMP")) + strlen(id) + strlen("/batch.");
 
-	sprintf(filepath, "%s/pingbatch.??????????.?????", xgetenv("XYMONTMP"));
+	sprintf(filepath, "%s/%sbatch.??????????.?????", xgetenv("XYMONTMP"), id);
 	scanres = glob(filepath, 0, NULL, &globdata);
 	if (scanres == GLOB_NOMATCH) return 0;
 
@@ -214,6 +282,8 @@ static int run_ping_queue(void)
 		return 0;
 	}
 
+	rpc_data = newstrbuffer(0);
+
 	for (i = 0; (i < globdata.gl_pathc); i++) {
 		FILE *batchfd;
 		char batchl[100];
@@ -221,7 +291,7 @@ static int run_ping_queue(void)
 
 		tstamp = (time_t)atoi(globdata.gl_pathv[i] + tstampofs);
 		if ((now - tstamp) > 300) {
-			errprintf("Dropping batch file %s - time now is %d, so it is stale\n", globdata.gl_pathv[i], (int)now);
+			errprintf("Ignoring batch file %s - time now is %d, so it is stale\n", globdata.gl_pathv[i], (int)now);
 			remove(globdata.gl_pathv[i]);
 			continue;
 		}
@@ -254,41 +324,69 @@ static int run_ping_queue(void)
 					 * 1) Create a "myconn_t" record for the test - this will be used to
 					 *    collect test data and eventually submitted to send_test_results() for
 					 *    reporting the test results back to xymond.
-					 * 2) Add the myconn_t record to the "pingtests" list of active tests.
+					 * 2) Add the myconn_t record to the "pendingtests" list of active tests.
 					 * 3) Create / update a record in the "iptree" tree, so we can map the IP
 					 *    reported by fping back to the test record.
 					 */
 					myconn_t *testrec;
 
 					testrec = (myconn_t *)calloc(1, sizeof(myconn_t));
-					testrec->testspec = strdup("ping");
-					testrec->talkprotocol = TALK_PROTO_PING;
+					testrec->testspec = strdup(id);
+					testrec->talkprotocol = talkproto;
 					testrec->hostinfo = hinfo;
 					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
 
 					testrec->netparams.destinationip = strdup(ip);
 					xtreeAdd(iptree, testrec->netparams.destinationip, testrec);
 
-					feed_ping(ip);
+					switch (talkproto) {
+					  case TALK_PROTO_PING:
+						feed_queue(talkproto, ip);
+						break;
+					  case TALK_PROTO_RPC:
+						/* We do one ping process per host to test */
+						clearstrbuffer(rpc_data);
+						addtobuffer(rpc_data, ip);
+						launch_worker(rpc_data, TALK_PROTO_RPC, 0, globdata.gl_pathv[i], testrec);
+						break;
+					  default:
+						break;
+					}
 				}
 			}
 		}
 		fclose(batchfd);
-		launch_ping(ping4_data, 4, globdata.gl_pathv[i]);
-		launch_ping(ping6_data, 6, globdata.gl_pathv[i]);
+
+		switch (talkproto) {
+		  case TALK_PROTO_PING:
+			/* We do one ping process per IP protocol for the entire batch */
+			if (ping4_data && STRBUFLEN(ping4_data)) 
+				launch_worker(ping4_data, TALK_PROTO_PING, 4, globdata.gl_pathv[i], NULL);
+			if (ping6_data && STRBUFLEN(ping6_data))
+				launch_worker(ping6_data, TALK_PROTO_PING, 6, globdata.gl_pathv[i], NULL);
+			break;
+
+		  case TALK_PROTO_RPC:
+			/* Have already forked the children */
+			break;
+
+		  default:
+			break;
+		}
 	}
 
 	globfree(&globdata);
+	freestrbuffer(rpc_data);
 
 	return 1;
 }
 
-static int collect_results(void)
+static int collect_ping_results(void)
 {
 	pid_t pid;
 	int status;
 	listitem_t *actwalk;
-	activepingrec_t *actrec;
+	activeprocessrec_t *actrec;
 	int found = 0;
 
 	/* Wait for one of the childs to finish */
@@ -304,9 +402,9 @@ static int collect_results(void)
 	dbgprintf("waitpid returned pid %d\n", (int)pid);
 
 	/* Find the data about the process that finished */
-	actwalk = (listitem_t *)activepings->head;
+	actwalk = (listitem_t *)activeprocesses->head;
 	do {
-		actrec = (activepingrec_t *)actwalk->data;
+		actrec = (activeprocessrec_t *)actwalk->data;
 		found = (actrec->pid == pid);
 		if (!found) actwalk = actwalk->next;
 	} while (actwalk && !found);
@@ -324,7 +422,11 @@ static int collect_results(void)
 		 */
 		sprintf(fn, "%s.%010d.err", actrec->basefn, (int)pid);
 		fd = fopen(fn, "r");
-		if (!fd) errprintf("Cannot open file %s\n", fn);
+		if (!fd) {
+			errprintf("Cannot open file %s\n", fn);
+			goto collectioncleanup;
+		}
+
 		while (fgets(l, sizeof(l), fd)) {
 			char *ip, *delim, *results;
 
@@ -366,13 +468,109 @@ static int collect_results(void)
 				}
 			}
 		}
-		fclose(fd);
+
+collectioncleanup:
+		if (fd) fclose(fd);
 
 		sprintf(fn, "%s.%010d.out", actrec->basefn, (int)pid);
 		remove(fn);
 		sprintf(fn, "%s.%010d.err", actrec->basefn, (int)pid);
 		remove(fn);
 
+		xfree(actrec->basefn);
+		xfree(actrec);
+	}
+
+	return 1;
+}
+
+static int collect_rpc_results(void)
+{
+	pid_t pid;
+	int status;
+	listitem_t *actwalk;
+	activeprocessrec_t *actrec;
+	myconn_t *testrec = NULL;
+	int found = 0;
+	char fn[PATH_MAX];
+	FILE *fd = NULL;
+	char l[1024];
+
+	/* Wait for one of the childs to finish */
+	pid = waitpid(-1, &status, WNOHANG);
+	if (pid == -1) {
+		errprintf("waitpid failed: %s\n", strerror(errno));
+		return 0;
+	}
+	else if (pid == 0) {
+		return 0;
+	}
+
+	dbgprintf("waitpid returned pid %d\n", (int)pid);
+
+	/* Find the data about the process that finished */
+	actwalk = (listitem_t *)activeprocesses->head;
+	do {
+		actrec = (activeprocessrec_t *)actwalk->data;
+		found = (actrec->pid == pid);
+		if (!found) actwalk = actwalk->next;
+	} while (actwalk && !found);
+
+	if (found) {
+		list_item_delete(actwalk, "");
+		testrec = (myconn_t *)actrec->datap;
+	}
+
+	if (!testrec) goto collectioncleanup;
+
+	if (!testrec->textlog) testrec->textlog = newstrbuffer(0);
+
+	if (WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
+		testrec->talkresult = TALK_OK;
+		// testrec->elapsedus = ((1000.0 * pingtime) / testcount);
+
+		sprintf(fn, "%s.%010d.out", actrec->basefn, (int)pid);
+		fd = fopen(fn, "r");
+		if (!fd) {
+			errprintf("Cannot open file %s\n", fn);
+		}
+		else {
+			while (fgets(l, sizeof(l), fd)) addtobuffer(testrec->textlog, l);
+			fclose(fd);
+		}
+	}
+	else {
+		testrec->talkresult = TALK_CONN_FAILED;
+
+		*l = '\0';
+		if (WIFEXITED(status)) sprintf(l, "rpcinfo process terminated with error status %d\n", WEXITSTATUS(status));
+		if (WIFSIGNALED(status)) sprintf(l, "rpcinfo process terminated by signal %d\n", WTERMSIG(status));
+
+		if (*l != '\0') {
+			errprintf("%s", l);
+			addtobuffer(testrec->textlog, l);
+		}
+
+		sprintf(fn, "%s.%010d.err", actrec->basefn, (int)pid);
+		fd = fopen(fn, "r");
+		if (!fd) {
+			errprintf("Cannot open file %s\n", fn);
+		}
+		else {
+			while (fgets(l, sizeof(l), fd)) addtobuffer(testrec->textlog, l);
+			fclose(fd);
+		}
+	}
+
+	list_item_move(donetests, testrec->listitem, "");
+
+collectioncleanup:
+	sprintf(fn, "%s.%010d.out", actrec->basefn, (int)pid);
+	remove(fn);
+	sprintf(fn, "%s.%010d.err", actrec->basefn, (int)pid);
+	remove(fn);
+
+	if (actrec) {
 		xfree(actrec->basefn);
 		xfree(actrec);
 	}
@@ -409,15 +607,30 @@ int main(int argc, char **argv)
 {
 	int argi;
 	struct sigaction sa;
+	char *queueid = NULL;
+	int mytalkprotocol = TALK_PROTO_PING;
 
 	for (argi=1; (argi < argc); argi++) {
 		if (standardoption(argv[0], argv[argi])) {
 			if (showhelp) return 0;
 		}
+		else if (strcmp(argv[argi], "ping") == 0) {
+			queueid = argv[argi];
+			mytalkprotocol = TALK_PROTO_PING;
+		}
+		else if (strcmp(argv[argi], "rpc") == 0) {
+			queueid = argv[argi];
+			mytalkprotocol = TALK_PROTO_RPC;
+		}
+	}
+
+	if (!queueid) {
+		errprintf("Unknown queue, aborting\n");
+		return 1;
 	}
 
 	errprintf("Setting up signal handlers\n");
-	setup_signalhandler("pingqueue");
+	setup_signalhandler(programname);
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sig_handler;
 	sigaction(SIGINT, &sa, NULL);
@@ -425,7 +638,7 @@ int main(int argc, char **argv)
 	sigaction(SIGHUP, &sa, NULL);
 
 	iptree = xtreeNew(strcmp);
-	activepings = list_create("activepings");
+	activeprocesses = list_create("activeprocesses");
 	pendingtests = list_create("pending");
 	donetests = list_create("done");
 
@@ -440,9 +653,18 @@ int main(int argc, char **argv)
 			load_hostnames("@", NULL, get_fqdn());
 		}
 
-		if (activepings->len > 0) {
+		if (activeprocesses->len > 0) {
 			dbgprintf("Collecting results\n");
-			anyaction = collect_results();
+			switch (mytalkprotocol) {
+			  case TALK_PROTO_PING:
+				anyaction = collect_ping_results();
+				break;
+			  case TALK_PROTO_RPC:
+				anyaction = collect_rpc_results();
+				break;
+			  default:
+				break;
+			}
 		}
 
 		if ((pendingtests->len == 0) && (donetests->len > 0)) {
@@ -451,7 +673,7 @@ int main(int argc, char **argv)
 			cleanup_donetests();
 		}
 
-		anyaction += run_ping_queue();
+		anyaction += scan_queue(queueid, mytalkprotocol);
 
 		if (anyaction == 0) sleep(1);
 	}
