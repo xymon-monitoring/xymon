@@ -2,7 +2,7 @@
 
 	OSSLINC=""
 	OSSLLIB=""
-	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr/pkg /opt/csw /opt/sfw/ssl*
+	for DIR in /opt/openssl* /opt/ssl* /usr/local/openssl* /usr/local/ssl* /usr/local /usr/pkg /opt/csw /opt/sfw/*ssl* /usr/sfw /usr/sfw/*ssl*
 	do
 		if test -d $DIR/include/openssl
 		then
