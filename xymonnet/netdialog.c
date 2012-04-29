@@ -32,6 +32,7 @@ typedef struct netdialog_t {
 } netdialog_t;
 
 static void *netdialogs = NULL;
+static char *silentdialog[] = { "CLOSE", NULL };
 
 void load_protocols(char *fn)
 {
@@ -124,7 +125,7 @@ void load_protocols(char *fn)
 			  (strncasecmp(STRBUF(l), "starttls", 8) == 0) ) {
 			dialogsz++;
 			rec->dialog = (char **)realloc(rec->dialog, (dialogsz+1)*sizeof(char *));
-			getescapestring(STRBUF(l), &(rec->dialog[dialogsz-1]), NULL);
+			getescapestring(STRBUF(l), (unsigned char **)&(rec->dialog[dialogsz-1]), NULL);
 			rec->dialog[dialogsz] = NULL;
 
 			if (strncasecmp(STRBUF(l), "starttls", 8) == 0) rec->option_starttls = 1;
@@ -348,8 +349,8 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	/* All done, build the dialog for simply sending the request and reading back the response */
 	dialog = (char **)calloc(4, sizeof(char *));
 	dialog[0] = grabstrbuffer(httprequest);
-	dialog[1] = "READALL";
-	dialog[2] = "CLOSE";
+	dialog[1] = strdup("READALL");
+	dialog[2] = strdup("CLOSE");
 	dialog[3] = NULL;
 
 	freeweburl_data(&weburl);
@@ -357,24 +358,40 @@ static char **build_http_dialog(char *testspec, myconn_netparams_t *netparams, v
 	return dialog;
 }
 
-char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo)
+
+static char **build_ldap_dialog(char *testspec, myconn_netparams_t *netparams, void *hostinfo)
 {
-	int dialuptest = 0, reversetest = 0, alwaystruetest = 0, silenttest = 0;
+	char *decodedurl;
+	weburl_t weburl;
+	char **dialog = NULL;
 
-	options->testtype = NET_TEST_STANDARD;
-
-	/* Skip old-style modifiers */
-	if (*testspec == '?') { dialuptest=1;     testspec++; }
-	if (*testspec == '!') { reversetest=1;    testspec++; }
-	if (*testspec == '~') { alwaystruetest=1; testspec++; }
-
-	if ((strcmp(testspec, "http") == 0) || (strcmp(testspec, "https") == 0)) {
-		errprintf("Host %s: http/https tests requires a full URL\n", xmh_item(hostinfo, XMH_HOSTNAME));
+	/* If there is a parse error in the URL, dont run the test */
+	decodedurl = decode_url(testspec, &weburl);
+	if (!decodedurl || weburl.desturl->parseerror) {
+		freeweburl_data(&weburl);
 		return NULL;
 	}
-	else if ((argnmatch(testspec, "ldap://")) || (argnmatch(testspec, "ldaps://"))) {
-		/* LDAP test - handled in another module */
-		return NULL;
+
+	netparams->socktype = CONN_SOCKTYPE_STREAM;
+	if (netparams->destinationip) xfree(netparams->destinationip);
+	netparams->destinationip = strdup(weburl.desturl->ip ? weburl.desturl->ip : weburl.desturl->host);
+	netparams->destinationport = weburl.desturl->port;
+	netparams->sslhandling = CONN_SSL_NO; /* No SSL handling, since this is just the pre-check that we can connect to the service */
+
+	freeweburl_data(&weburl);
+	return silentdialog;
+}
+
+char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_options_t *options, void *hostinfo, int *dtoken)
+{
+	options->testtype = *dtoken = NET_TEST_STANDARD;
+
+	/* Skip old-style modifiers */
+	testspec += strspn(testspec, "?!~");
+
+	if ((argnmatch(testspec, "ldap://")) || (argnmatch(testspec, "ldaps://"))) {
+		options->testtype = NET_TEST_LDAP;
+		return build_ldap_dialog(testspec, netparams, hostinfo);
 	}
 	else if ( argnmatch(testspec, "http")         ||
 		  argnmatch(testspec, "content=http") ||
@@ -393,32 +410,36 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 		  argnmatch(testspec, "type;http")    ||
 		  argnmatch(testspec, "type=")        )      {
 
-		options->testtype = NET_TEST_HTTP;
-		return  build_http_dialog(testspec, netparams, hostinfo);
+		options->testtype = *dtoken = NET_TEST_HTTP;
+		return build_http_dialog(testspec, netparams, hostinfo);
 	}
 	else {
 		xtreePos_t handle;
-		char *opt, *port = NULL;
+		char *opt;
+		int port = 0, silenttest = 0;
 
 		opt = strrchr(testspec, ':');
-		if (opt && ((strcasecmp(opt, ":s") == 0) || (strcasecmp(opt, ":q") == 0))) {
-			silenttest = 1;
-			*opt = '\0';
-			port = strrchr(testspec, ':');
-			*opt = ':';
-		}
-		else if (opt)
-			port = opt;
+		if (opt) {
+			/* Cut off the "silent" modifier */
+			if ((strcasecmp(opt, ":s") == 0) || (strcasecmp(opt, ":q") == 0)) {
+				silenttest = 1;
+				*opt = '\0';
+				opt = strrchr(testspec, ':');
+			}
 
-		if (port) *port = '\0';
+			if (opt) {
+				port = atoi(opt);
+				*opt = '\0';
+			}
+		}
+
 		handle = xtreeFind(netdialogs, testspec);
-		if (port) *port = ':';
 
 		if (handle != xtreeEnd(netdialogs)) {
 			netdialog_t *rec = xtreeData(netdialogs, handle);
 
 			if (port)
-				netparams->destinationport = atoi(port+1);
+				netparams->destinationport = port;
 			else
 				netparams->destinationport = rec->portnumber;
 
@@ -433,10 +454,30 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 			if (rec->option_ntp) options->testtype = NET_TEST_NTP;
 			else options->testtype = NET_TEST_STANDARD;
 
-			return rec->dialog;
+			*dtoken = options->testtype;
+
+			return (silenttest ? silentdialog : rec->dialog);
 		}
 	}
 
 	return NULL;
+}
+
+
+void free_net_dialog(char **dialog, int dtoken)
+{
+	int i;
+
+	if (!dialog) return;
+
+	switch (dtoken) {
+	  case NET_TEST_HTTP:
+		for (i=0; (dialog[i]); i++) xfree(dialog[i]);
+		xfree(dialog);
+		break;
+
+	  default:
+		break;
+	}
 }
 

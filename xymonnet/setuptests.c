@@ -100,7 +100,6 @@ void setup_tests(int defaulttimeout)
 		char *destination, *testspec;
 		myconn_netparams_t netparams;
 		net_test_options_t options;
-		char **dialog;
 
 		if (!wanted_host(hwalk, location)) continue;
 
@@ -117,21 +116,23 @@ void setup_tests(int defaulttimeout)
 			options.testtype = NET_TEST_PING;
 			options.timeout = defaulttimeout;
 			/* update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec="ping" */
-			add_net_test("ping", NULL, &options, &netparams, hwalk);
+			add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
 		}
 
 		testspec = xmh_item_walk(hwalk);
 		while (testspec) {
+			char **dialog;
+			int dtoken;
 			net_test_options_t options = { NET_TEST_STANDARD, defaulttimeout };
 
 			memset(&netparams, 0, sizeof(netparams));
-			dialog = net_dialog(testspec, &netparams, &options, hwalk);
+			dialog = net_dialog(testspec, &netparams, &options, hwalk, &dtoken);
 
 			if (dialog || (options.testtype != NET_TEST_STANDARD)) {
 				/* insert into nettests / update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec=testspec */
 				/* destinationip may have been filled by net_dialog (e.g. http) */
 				if (!netparams.destinationip) netparams.destinationip = strdup(destination);
-				add_net_test(testspec, dialog, &options, &netparams, hwalk);
+				add_net_test(testspec, dialog, dtoken, &options, &netparams, hwalk);
 			}
 
 			testspec = xmh_item_walk(NULL);

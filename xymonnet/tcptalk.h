@@ -40,6 +40,7 @@ typedef struct myconn_t {
 	myconn_netparams_t netparams;
 	enum { TALK_PROTO_PLAIN, TALK_PROTO_NTP, TALK_PROTO_HTTP, TALK_PROTO_DNSQUERY, TALK_PROTO_PING, TALK_PROTO_LDAP, TALK_PROTO_RPC } talkprotocol;
 	char **dialog;				/* SEND/EXPECT/READ/CLOSE steps */
+	int dialogtoken;
 	listitem_t *listitem;
 	void *hostinfo;
 	int timeout;
@@ -94,7 +95,7 @@ typedef struct net_test_options_t {
 } net_test_options_t;
 
 extern void test_is_done(myconn_t *rec);
-extern void *add_net_test(char *testspec, char **dialog, net_test_options_t *options,
+extern void *add_net_test(char *testspec, char **dialog, int dtoken, net_test_options_t *options,
 			 myconn_netparams_t *netparams, void *hostinfo);
 extern listhead_t *run_net_tests(int concurrency);
 extern void init_tcp_testmodule(void);
