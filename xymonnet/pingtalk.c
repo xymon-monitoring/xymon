@@ -30,6 +30,7 @@ static char rcsid[] = "$Id: dns2.c 6743 2011-09-03 15:44:52Z storner $";
 #include "sendresults.h"
 #include "pingtalk.h"
 
+int timeout = 0;
 
 /* pendingtests and donetests are a list of myconn_t records which holds the data for each test. */
 static listhead_t *pendingtests = NULL;
@@ -51,6 +52,9 @@ typedef struct activeprocessrec_t {
 	char *basefn;
 	int subid;
 	void *datap;
+	time_t timeout;
+	int killcount;
+	struct timespec starttime;
 } activeprocessrec_t;
 static listhead_t *activeprocesses = NULL;
 
@@ -251,6 +255,9 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		actrec->basefn = strdup(basefn);
 		actrec->subid = subid;
 		actrec->datap = datap;
+		actrec->timeout = gettimer() + timeout;
+		actrec->killcount = 0;
+		getntimer(&actrec->starttime);
 		list_item_create(activeprocesses, actrec, "");
 	}
 }
@@ -526,8 +533,11 @@ static int collect_rpc_results(void)
 	if (!testrec->textlog) testrec->textlog = newstrbuffer(0);
 
 	if (WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
+		struct timespec now;
+
 		testrec->talkresult = TALK_OK;
-		// testrec->elapsedus = ((1000.0 * pingtime) / testcount);
+		getntimer(&now);
+		testrec->elapsedus = ntimerus(&actrec->starttime, &now);
 
 		sprintf(fn, "%s.%010d.out", actrec->basefn, (int)pid);
 		fd = fopen(fn, "r");
@@ -578,6 +588,26 @@ collectioncleanup:
 	return 1;
 }
 
+
+static void kill_stalled_tasks(void)
+{
+	listitem_t *actwalk;
+	time_t now = gettimer();
+
+	actwalk = (listitem_t *)activeprocesses->head;
+	while (actwalk) {
+		activeprocessrec_t *actrec = (activeprocessrec_t *)actwalk->data;
+		if (actrec->timeout < now) {
+			/* Too old - kill it. On the next loop, collect_*_results() will pick it up. */
+			kill(actrec->pid, (actrec->killcount == 0) ? SIGTERM : SIGKILL);
+			actrec->killcount++;
+		}
+
+		actwalk = actwalk->next;
+	}
+}
+
+
 static void cleanup_donetests(void)
 {
 	listitem_t *walk, *nextlistitem;
@@ -602,7 +632,6 @@ static void cleanup_donetests(void)
 	}
 }
 
-
 int main(int argc, char **argv)
 {
 	int argi;
@@ -614,13 +643,19 @@ int main(int argc, char **argv)
 		if (standardoption(argv[0], argv[argi])) {
 			if (showhelp) return 0;
 		}
+		else if (argnmatch(argv[argi], "--timeout=")) {
+			char *p = strchr(argv[argi], '=');
+			timeout = atoi(p+1);
+		}
 		else if (strcmp(argv[argi], "ping") == 0) {
 			queueid = argv[argi];
 			mytalkprotocol = TALK_PROTO_PING;
+			if (!timeout) timeout = 200;
 		}
 		else if (strcmp(argv[argi], "rpc") == 0) {
 			queueid = argv[argi];
 			mytalkprotocol = TALK_PROTO_RPC;
+			if (!timeout) timeout = 30;
 		}
 	}
 
@@ -657,14 +692,17 @@ int main(int argc, char **argv)
 			dbgprintf("Collecting results\n");
 			switch (mytalkprotocol) {
 			  case TALK_PROTO_PING:
-				anyaction = collect_ping_results();
+				while (collect_ping_results()) anyaction++;
 				break;
 			  case TALK_PROTO_RPC:
-				anyaction = collect_rpc_results();
+				while (collect_rpc_results()) anyaction++;
 				break;
 			  default:
 				break;
 			}
+
+			/* Nuke any tasks that have stalled */
+			kill_stalled_tasks();
 		}
 
 		if ((pendingtests->len == 0) && (donetests->len > 0)) {
