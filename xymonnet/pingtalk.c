@@ -146,7 +146,7 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		/* Child process */
 		char *workeroutfn, *workererrfn, *cmd;
 		int outfile, errfile;
-		char *cmdargs[6];
+		char *cmdargs[10];
 		char timeoutstr[10];
 
 		close(pfd[1]); /* Close write end of pipe */
