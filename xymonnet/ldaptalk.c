@@ -239,7 +239,7 @@ int main(int argc, char **argv)
 	}
 
 	status = test_ldap(url, username, password, outdata, &elapsedus);
-	fprintf(stderr, "%s", STRBUF(outdata));
+	fprintf((status == 0) ? stdout : stderr, "%s", STRBUF(outdata));
 
 	return status;
 }
