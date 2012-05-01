@@ -28,7 +28,7 @@ static char rcsid[] = "$Id$";
 
 #include "tcptalk.h"
 #include "sendresults.h"
-#include "pingtalk.h"
+#include "netmodule.h"
 
 int timeout = 0;
 

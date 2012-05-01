@@ -10,7 +10,7 @@ XYMONTIMELIBS = $(XYMONTIMELIB) $(LIBRTDEF)
 # ARES settings. c-ares is included
 DNSFLAGS = -I./c-ares
 
-PROGRAMS = xymonnet2 pingtalk ldaptalk fping4 fping6
+PROGRAMS = xymonnet2 netmodule ldaptalk fping4 fping6
 SNMPPROGRAMS = xymon-snmpcollect
 
 ifeq ($(DOSNMP),yes)
@@ -19,16 +19,15 @@ endif
 
 all: $(PROGRAMS) fping.8
 
-# NETTESTOBJS = xymonnet.o tcptalk.o ntptalk.o contest.o httptest.o httpresult.o ldaptest.o dns.o dns2.o httpcookies.o
 NETTESTOBJS = xymonnet2.o setuptests.o netdialog.o tcptalk.o ntptalk.o dnstalk.o httpcookies.o dnsbits.o sendresults.o
-PINGTALKOBJS = pingtalk.o sendresults.o
+NETMODULEOBJS = netmodule.o sendresults.o
 LDAPTALKOBJS = ldaptalk.o sendresults.o
 
 xymonnet2: libcares.a $(NETTESTOBJS) $(XYMONCOMMLIB) $(XYMONTIMELIB) $(XYMONLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETTESTOBJS) libcares.a $(XYMONTIMELIBS) $(XYMONCOMMLIBS) $(PCRELIBS) -lsqlite3
 
-pingtalk: $(PINGTALKOBJS) $(XYMONCOMMLIB) $(XYMONCOMMLIB)
-	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(PINGTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS)
+netmodule: $(NETMODULEOBJS) $(XYMONCOMMLIB) $(XYMONCOMMLIB)
+	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(NETMODULEOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS)
 
 ldaptalk: $(LDAPTALKOBJS) $(XYMONCOMMLIB) $(XYMONCOMMLIB)
 	$(CC) $(CFLAGS) -o $@ $(RPATHOPT) $(LDAPTALKOBJS) $(XYMONTIMELIB) $(XYMONCOMMLIBS) $(LDAPLIBS)
