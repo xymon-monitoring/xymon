@@ -1,3 +1,11 @@
+xymon (4.3.7.20120107.ip6ssl) unstable; urgency=low
+
+   * rev 6867
+   * IPv6 support for xymond + sendmsg()
+   * SSL support for xymond + sendmsg()
+
+ -- Henrik Stoerner <henrik@hswn.dk>  Sat, 07 Jan 2012 18:00:00 +0100
+
 xymon (4.3.7) unstable; urgency=low
 
    * rev 6803

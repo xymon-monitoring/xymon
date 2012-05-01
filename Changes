@@ -1,3 +1,20 @@
+Changes from 4.3.7 -> 4.4.0
+=========================================
+* rev ????
+* Change all network I/O to support IPv6 as well as IPv4
+* Enable SSL-encryption of traffic between Xymon components
+* Fix build on systems with SSLv2 disabled in SSL library
+* Fix configure-script on systems with unusual default library location
+* BBNUMERIC is no longer passed to alert scripts, the format is 
+  incompatible with IPv6 adresses.
+* MACHIP in alert script now contains the regular (dotted IPv4)
+  address, e.g. "10.1.2.3" instead of "010001002003", or the
+  regular IPv6 address.
+* protocols.cfg has a new syntax for EXPECT/SEND dialog
+* Network tests support SSL-encrypted protocols using STARTTLS
+* xymonnet re-worked and split up into smaller modules
+* Support for NTP tests in xymonnet (no longer needs ntpdate)
+
 Changes from 4.3.6 -> 4.3.7 (13 Dec 2011)
 =========================================
 * rev 6803

@@ -234,7 +234,15 @@ typedef struct c_mq_channel_t {
 	exprlist_t *qmgrname, *chnname, *warnstates, *alertstates;
 } c_mq_channel_t;
 
-typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_INODE, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_RRDDS, C_MQ_QUEUE, C_MQ_CHANNEL, C_MIBVAL } ruletype_t;
+typedef struct c_nettest_t {
+	exprlist_t *nettestname;
+	char *dataname;
+	exprlist_t *datavalue;
+	int okcolor, failcolor;
+	char *column;
+} c_nettest_t;
+
+typedef enum { C_LOAD, C_UPTIME, C_CLOCK, C_DISK, C_INODE, C_MEM, C_PROC, C_LOG, C_FILE, C_DIR, C_PORT, C_SVC, C_CICS, C_PAGING, C_MEM_GETVIS, C_MEM_VSIZE, C_ASID, C_RRDDS, C_MQ_QUEUE, C_MQ_CHANNEL, C_MIBVAL, C_NETTEST } ruletype_t;
 
 typedef struct c_rule_t {
 	exprlist_t *hostexp;
@@ -273,6 +281,7 @@ typedef struct c_rule_t {
 		c_rrdds_t rrdds;
 		c_mq_queue_t mqqueue;
 		c_mq_channel_t mqchannel;
+		c_nettest_t nettest;
 	} rule;
 } c_rule_t;
 
@@ -571,6 +580,11 @@ int load_client_config(char *configfn)
 		  case C_RRDDS:
 			if (tmp->rule.rrdds.rrdds) xfree(tmp->rule.rrdds.rrdds);
 			if (tmp->rule.rrdds.column) xfree(tmp->rule.rrdds.column);
+			break;
+
+		  case C_NETTEST:
+			if (tmp->rule.nettest.dataname) xfree(tmp->rule.nettest.dataname);
+			if (tmp->rule.nettest.column) xfree(tmp->rule.nettest.column);
 			break;
 
 		  default:
@@ -1336,8 +1350,6 @@ int load_client_config(char *configfn)
                                 currule->rule.asid.paniclevel = atoi(tok);
                         }
 			else if (strcasecmp(tok, "SVC") == 0) {
-				int idx = 0;
-
 				tok = wstok(NULL);	/* See if there is any service definition at all */
 				if (tok) {
 					currule = NEWRULE(C_SVC);
@@ -1350,7 +1362,7 @@ int load_client_config(char *configfn)
 					currule->rule.svc.color = COL_RED;
 
 					do {
-						tok = wstok(NULL); if (!tok || isqual(tok)) { idx = -1; continue; }
+						tok = wstok(NULL);
 
 						if (strncasecmp(tok, "startup=", 8) == 0) {
 							currule->rule.svc.startupexp = setup_expr(tok+8, 0);
@@ -1556,6 +1568,36 @@ int load_client_config(char *configfn)
 					/* Default: Alert on channel in BIND or RETRYING state */
 					currule->rule.mqchannel.alertstates = setup_expr("%BIND|RETRYING", 0);
 				}
+			}
+			else if (strcasecmp(tok, "NET") == 0) {
+				currule = NEWRULE(C_NETTEST);
+				currule->rule.nettest.okcolor = COL_GREEN;
+				currule->rule.nettest.failcolor = COL_RED;
+
+				tok = wstok(NULL);
+				currule->rule.nettest.nettestname = setup_expr(tok, 0);
+				tok = wstok(NULL);
+				currule->rule.nettest.dataname = strdup(tok);
+				tok = wstok(NULL);
+				currule->rule.nettest.datavalue = setup_expr(tok, 0);
+				do {
+					tok = wstok(NULL); if (!tok || isqual(tok)) continue;
+					if (strncasecmp(tok, "color=", 6) == 0) {
+						int col = parse_color(tok+6);
+						if (col != -1) currule->rule.nettest.okcolor = col;
+					}
+					else if (strncasecmp(tok, "okcolor=", 8) == 0) {
+						int col = parse_color(tok+8);
+						if (col != -1) currule->rule.nettest.okcolor = col;
+					}
+					else if (strncasecmp(tok, "failcolor=", 10) == 0) {
+						int col = parse_color(tok+10);
+						if (col != -1) currule->rule.nettest.failcolor = col;
+					}
+					else if (strncasecmp(tok, "column=", 7) == 0) {
+						currule->rule.nettest.column = strdup(tok+7);
+					}
+				} while (tok && (!isqual(tok)));
 			}
 			else {
 				errprintf("Unknown token '%s' ignored at line %d\n", tok, cfid);
@@ -1866,6 +1908,16 @@ void dump_client_config(void)
 			if (rwalk->rule.mqchannel.warnstates) printf(" warning=%s", rwalk->rule.mqchannel.warnstates->pattern);
 			if (rwalk->rule.mqchannel.alertstates) printf(" alert=%s", rwalk->rule.mqchannel.alertstates->pattern);
 			break;
+
+		  case C_NETTEST:
+			printf("NET %s %s %s OKCOLOR=%s FAILCOLOR=%s COLUMN=%s\n",
+				rwalk->rule.nettest.nettestname->pattern,
+				rwalk->rule.nettest.dataname,
+				rwalk->rule.nettest.datavalue->pattern,
+				colorname(rwalk->rule.nettest.okcolor),
+				colorname(rwalk->rule.nettest.failcolor),
+				rwalk->rule.nettest.column);
+			break;
 		}
 
 		if (rwalk->flags & CHK_TRACKIT) {
@@ -2036,7 +2088,6 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
                         int *dsayel, int *dsared, int *edsayel, int *edsared)
 {
         char *hostname, *pagename;
-        int result = 0;
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
@@ -2065,7 +2116,6 @@ void get_cics_thresholds(void *hinfo, char *classname, char *appid,
                 *dsared = rule->rule.cics.dsapaniclevel;
                 *edsayel = rule->rule.cics.edsawarnlevel;
                 *edsared = rule->rule.cics.edsapaniclevel;
-                result = rule->cfid;
         }
 
 }
@@ -2074,7 +2124,6 @@ void get_zvsevsize_thresholds(void *hinfo, char *classname,
                         int *usedyel, int *usedred)
 {
         char *hostname, *pagename;
-        int result = 0;
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
@@ -2089,7 +2138,6 @@ void get_zvsevsize_thresholds(void *hinfo, char *classname,
         if (rule) {
                 *usedyel = rule->rule.zvse_vsize.warnlevel;
                 *usedred = rule->rule.zvse_vsize.paniclevel;
-                result = rule->cfid;
         }
 }
 
@@ -2097,7 +2145,6 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
                         int *gv24yel, int *gv24red, int *gvanyyel, int *gvanyred)
 {
         char *hostname, *pagename;
-        int result = 0;
         c_rule_t *rule;
 
         hostname = xmh_item(hinfo, XMH_HOSTNAME);
@@ -2115,19 +2162,18 @@ void get_zvsegetvis_thresholds(void *hinfo, char *classname, char *pid,
    but it doesn't.  So if there is a way to solve the problem I welcome some tips...   */
 	if (!rule) {
 		return;
-		}
+	}
 
         while (rule && (!rule->rule.zvse_getvis.partid || !namematch(pid, rule->rule.zvse_getvis.partid->pattern, rule->rule.zvse_getvis.partid->exp))) {
                 rule = getrule(NULL, NULL, NULL, hinfo, C_MEM_GETVIS);
-        	}
+       	}
 
         if (rule) {
                 *gv24yel  = rule->rule.zvse_getvis.warnlevel;
                 *gv24red  = rule->rule.zvse_getvis.paniclevel;
                 *gvanyyel = rule->rule.zvse_getvis.anywarnlevel;
                 *gvanyred = rule->rule.zvse_getvis.anypaniclevel;
-                result = rule->cfid;
-        	}
+       	}
 }
 
 void get_memory_thresholds(void *hinfo, char *classname,

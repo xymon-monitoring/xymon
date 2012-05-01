@@ -12,7 +12,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: xymon-snmpcollect.c 6712 2011-07-31 21:01:52Z storner $";
+static char rcsid[] = "$Id$";
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>

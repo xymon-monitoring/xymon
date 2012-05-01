@@ -298,6 +298,113 @@ char *nocolon(char *txt)
 	return result;
 }
 
+
+typedef struct mcm_data_t {
+	char *columnname;
+	int color;
+	strbuffer_t *mcm_summary[COL_COUNT];
+	strbuffer_t *mcm_text;
+	struct mcm_data_t *next;
+} mcm_data_t;
+mcm_data_t *mcmhead = NULL;
+
+void clear_multicolumn_message(void)
+{
+	mcm_data_t *walk;
+
+	walk = mcmhead;
+	while (walk) {
+		mcm_data_t *zombie;
+		int i;
+
+		zombie = walk; walk = walk->next;
+
+		for (i = 0; (i < COL_COUNT); i++) {
+			freestrbuffer(zombie->mcm_summary[i]);
+		}
+		freestrbuffer(zombie->mcm_text);
+		xfree(zombie->columnname);
+	}
+
+	mcmhead = NULL;
+}
+
+void add_multicolumn_message(char *columnname, int color, char *txt, char *summarytxt)
+{
+	mcm_data_t *mdata;
+
+	for (mdata = mcmhead; (mdata && (strcmp(mdata->columnname, columnname) != 0)); mdata = mdata->next) ;
+	if (!mdata) {
+		mdata = (mcm_data_t *)calloc(1, sizeof(mcm_data_t));
+		mdata->columnname = strdup(columnname);
+		mdata->color = color;
+		mdata->next = mcmhead;
+		mcmhead = mdata;
+	}
+
+	if (summarytxt) {
+		if (!mdata->mcm_summary[color]) mdata->mcm_summary[color] = newstrbuffer(0);
+		addtobuffer(mdata->mcm_summary[color], txt);
+	}
+
+	if (txt) {
+		if (!mdata->mcm_text) mdata->mcm_text = newstrbuffer(0);
+		addtobuffer(mdata->mcm_text, txt);
+	}
+
+	if (color > mdata->color) mdata->color = color;
+}
+
+void flush_multicolumn_message(char *hostname, char *line1txt, char *fromline)
+{
+	mcm_data_t *walk;
+	char msgline[4096];
+
+	combo_start();
+
+	for (walk = mcmhead; (walk); walk = walk->next) {
+		char *group;
+
+		init_status(walk->color);
+
+		group = getalertgroups();
+		if (group) sprintf(msgline, "status/group:%s ", group); else strcpy(msgline, "status ");
+		addtostatus(msgline);
+
+		sprintf(msgline, "%s.%s %s", commafy(hostname), walk->columnname, colorname(walk->color));
+		addtostatus(msgline);
+
+		if (line1txt) {
+			addtostatus(" ");
+			addtostatus(line1txt);
+			addtostatus("\n");
+		}
+
+		if (walk->mcm_summary[COL_RED]) {
+			addtostrstatus(walk->mcm_summary[COL_RED]);
+			addtostatus("\n");
+		}
+		if (walk->mcm_summary[COL_YELLOW]) {
+			addtostrstatus(walk->mcm_summary[COL_YELLOW]);
+			addtostatus("\n");
+		}
+		if (walk->mcm_summary[COL_GREEN]) {
+			addtostrstatus(walk->mcm_summary[COL_GREEN]);
+			addtostatus("\n");
+		}
+		
+		if (walk->mcm_text) addtostrstatus(walk->mcm_text);
+
+		if (fromline && !localmode) addtostatus(fromline);
+
+		finish_status();
+	}
+
+	combo_end();
+	clear_multicolumn_message();
+}
+
+
 void unix_cpu_report(char *hostname, char *clientclass, enum ostype_t os, 
 		     void *hinfo, char *fromline, char *timestr, 
 		     char *uptimestr, char *clockstr, char *msgcachestr,
@@ -509,7 +616,6 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 {
 	int diskcolor = COL_GREEN;
 
-	int dchecks = 0;
 	int freecol = -1;
 	int capacol = -1;
 	int mntcol  = -1;
@@ -527,7 +633,7 @@ void unix_disk_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	monmsg = newstrbuffer(0);
 	dfstr_filtered = newstrbuffer(0);
-	dchecks = clear_disk_counts(hinfo, clientclass);
+	clear_disk_counts(hinfo, clientclass);
 	clearalertgroups();
 
 	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
@@ -690,7 +796,6 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 {
 	int inodecolor = COL_GREEN;
 
-	int ichecks = 0;
 	int freecol = -1;
 	int capacol = -1;
 	int mntcol  = -1;
@@ -708,7 +813,7 @@ void unix_inode_report(char *hostname, char *clientclass, enum ostype_t os,
 
 	monmsg = newstrbuffer(0);
 	dfstr_filtered = newstrbuffer(0);
-	ichecks = clear_inode_counts(hinfo, clientclass);
+	clear_inode_counts(hinfo, clientclass);
 	clearalertgroups();
 
 	bol = dfstr; /* Must do this always, to at least grab the column-numbers we need */
@@ -1764,6 +1869,7 @@ void unix_ports_report(char *hostname, char *clientclass, enum ostype_t os,
 #include "client/zos.c"
 #include "client/mqcollect.c"
 #include "client/snmpcollect.c"
+#include "client/netcollect.c"
 
 static volatile int reloadconfig = 0;
 
@@ -1791,7 +1897,6 @@ void testmode(char *configfn)
 	void *hinfo, *oldhinfo = NULL;
 	char hostname[1024], clientclass[1024];
 	char s[4096];
-	int cfid;
 
 	load_hostnames(xgetenv("HOSTSCFG"), NULL, get_fqdn());
 	load_client_config(configfn);
@@ -1839,7 +1944,7 @@ void testmode(char *configfn)
 			int recentlimit, ancientlimit, uptimecolor;
 			int maxclockdiff, clockdiffcolor;
 
-			cfid = get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
+			get_cpu_thresholds(hinfo, clientclass, &loadyellow, &loadred, &recentlimit, &ancientlimit, &uptimecolor, &maxclockdiff, &clockdiffcolor);
 
 			printf("Load: Yellow at %.2f, red at %.2f\n", loadyellow, loadred);
 			printf("Uptime: %s from boot until %s,", colorname(uptimecolor), durationstring(recentlimit));
@@ -1862,7 +1967,7 @@ void testmode(char *configfn)
 
 			printf("Filesystem: "); fflush(stdout);
 			fgets(s, sizeof(s), stdin); clean_instr(s);
-			cfid = get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
+			get_disk_thresholds(hinfo, clientclass, s, &warnlevel, &paniclevel, 
 						   &abswarn, &abspanic, &ignored, &groups);
 			if (ignored) 
 				printf("Ignored\n");
@@ -2247,6 +2352,10 @@ int main(int argc, char *argv[])
 
 			  case OS_MQCOLLECT:
 				handle_mqcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
+				break;
+
+			  case OS_NETCOLLECT:
+				handle_netcollect_client(hostname, clientclass, os, hinfo, sender, timestamp, restofmsg);
 				break;
 
 			  default:

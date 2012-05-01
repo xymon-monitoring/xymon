@@ -1,6 +1,41 @@
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
-           * * *   Release notes for Xymon 4.3.6    * * *
+           * * *   Release notes for Xymon 5.0.0    * * *
           <<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>
+
+Changes for 5.0
+===============
+The main change in 5.0 is a completely rewritten network test 
+tool. This adds support for IPv6, but also moves all of the 
+analysis of the network tests over to the Xymon server - in 
+the same manner as data from the Xymon clients is analysed 
+centrally.
+
+New required libraries and support tools
+----------------------------------------
+* The "xymonping" tool has been removed. "fping" is now
+  required to run the Xymon network tests, and Xymon 
+  will install fping 3.0 automatically.
+* Xymon now uses an SQLite3 database internally. So the
+  SQLite3 library is required to build the Xymon server
+  software.
+* Messages sent to the Xymon server are now compressed
+  using "libz". So this library is needed to build the
+  Xymon server software, and recommended for Xymon clients.
+
+Configuration changes
+---------------------
+* If you have added custom network tests to the protocols.cfg
+  file, you will have to port these to the new configuration
+  file "protocols2.cfg". The new network test tool supports
+  a true "send-expect" mechanism to communicate with network
+  services.
+* The network test modifiers "!" (reverse test), "?" (dialup) 
+  and "~" (noclear) are ignored by the new network 
+  test tool. Instead, you must configure the analysis.cfg
+  file to correctly interpret the result of these tests (see
+  the analysis.cfg(5) man-page).
+* The "badTEST" syntax which was deprecated in Xymon 4.3 has
+  been removed. Use "delayred" and/or "delayyellow" instead.
 
 
 Changes for 4.3.6, 4.3.5, 4.3.4, 4.3.3, 4.3.2

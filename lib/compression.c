@@ -11,7 +11,7 @@
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
-static char rcsid[] = "$Id: compression.c,v 1.2 2008/03/02 18:37:28 henrik Exp $";
+static char rcsid[] = "$Id$";
 
 #include "config.h"
 
