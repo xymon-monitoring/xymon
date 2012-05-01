@@ -108,6 +108,7 @@ static void feed_queue(int talkproto, char *ip)
 		break;
 
 	  case TALK_PROTO_RPC:
+	  case TALK_PROTO_LDAP:
 		break;
 
 	  default:
@@ -116,7 +117,7 @@ static void feed_queue(int talkproto, char *ip)
 }
 
 
-static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, char *basefn, void *datap)
+static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, char *basefn, void *datap, char *opt1, char *opt2)
 {
 	/* 
 	 * Fork a new worker process.
@@ -145,12 +146,14 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		/* Child process */
 		char *workeroutfn, *workererrfn, *cmd;
 		int outfile, errfile;
-		char *cmdargs[4];
+		char *cmdargs[6];
+		char timeoutstr[10];
 
 		close(pfd[1]); /* Close write end of pipe */
 
 		cmd = NULL;
 		memset(cmdargs, 0, sizeof(cmdargs));
+		sprintf(timeoutstr, "%d", timeout);
 
 		dbgprintf("Running worker process in pid %d\n", (int)getpid());
 
@@ -202,6 +205,15 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 			cmdargs[2] = STRBUF(workerdata);
 			break;
 
+		  case TALK_PROTO_LDAP:
+			cmd = "ldaptalk";
+			cmdargs[1] = "--timeout";
+			cmdargs[2] = timeoutstr;
+			cmdargs[3] = STRBUF(workerdata);
+			cmdargs[4] = opt1;
+			cmdargs[5] = opt2;
+			break;
+
 		  default:
 			break;
 		}
@@ -242,6 +254,7 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 			break;
 
 		  case TALK_PROTO_RPC:
+		  case TALK_PROTO_LDAP:
 			break;
 
 		  default:
@@ -274,7 +287,7 @@ static int scan_queue(char *id, int talkproto)
 	char filepath[PATH_MAX];
 	glob_t globdata;
 	int i;
-	strbuffer_t *rpc_data;
+	strbuffer_t *queue_data;
 	int tstampofs;
 	time_t now = getcurrenttime(NULL);
 
@@ -289,7 +302,7 @@ static int scan_queue(char *id, int talkproto)
 		return 0;
 	}
 
-	rpc_data = newstrbuffer(0);
+	queue_data = newstrbuffer(0);
 
 	for (i = 0; (i < globdata.gl_pathc); i++) {
 		FILE *batchfd;
@@ -313,14 +326,17 @@ static int scan_queue(char *id, int talkproto)
 		remove(globdata.gl_pathv[i]);
 
 		while (fgets(batchl, sizeof(batchl), batchfd)) {
-			char *hname, *ip;
+			char *hname, *ip, *testspec, *opt1, *opt2;
 			void *hinfo;
 
-			hname = strtok(batchl, "\t");
+			hname = strtok(batchl, "\t\r\n");
 			ip = (hname ? strtok(NULL, "\t\r\n") : NULL);
+			testspec = (ip ? strtok(NULL, "\t\r\n") : NULL);
+			opt1 = (testspec ? strtok(NULL, "\t\r\n") : NULL);
+			opt2 = (opt1 ? strtok(NULL, "\t\r\n") : NULL);
 			hinfo = (hname ? hostinfo(hname) : NULL);
 
-			if (hinfo && ip && conn_is_ip(ip)) {
+			if (hinfo && ip && conn_is_ip(ip) && testspec) {
 				xtreePos_t handle;
 
 				/* Add the test only if we haven't got it already */
@@ -351,10 +367,16 @@ static int scan_queue(char *id, int talkproto)
 						feed_queue(talkproto, ip);
 						break;
 					  case TALK_PROTO_RPC:
-						/* We do one ping process per host to test */
-						clearstrbuffer(rpc_data);
-						addtobuffer(rpc_data, ip);
-						launch_worker(rpc_data, TALK_PROTO_RPC, 0, globdata.gl_pathv[i], testrec);
+						/* We do one ping process per test */
+						clearstrbuffer(queue_data);
+						addtobuffer(queue_data, ip);
+						launch_worker(queue_data, TALK_PROTO_RPC, 0, globdata.gl_pathv[i], testrec, opt1, opt2);
+						break;
+					  case TALK_PROTO_LDAP:
+						/* We do one ldaptalk process per test */
+						clearstrbuffer(queue_data);
+						addtobuffer(queue_data, testspec);
+						launch_worker(queue_data, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, opt1, opt2);
 						break;
 					  default:
 						break;
@@ -368,12 +390,13 @@ static int scan_queue(char *id, int talkproto)
 		  case TALK_PROTO_PING:
 			/* We do one ping process per IP protocol for the entire batch */
 			if (ping4_data && STRBUFLEN(ping4_data)) 
-				launch_worker(ping4_data, TALK_PROTO_PING, 4, globdata.gl_pathv[i], NULL);
+				launch_worker(ping4_data, TALK_PROTO_PING, 4, globdata.gl_pathv[i], NULL, NULL, NULL);
 			if (ping6_data && STRBUFLEN(ping6_data))
-				launch_worker(ping6_data, TALK_PROTO_PING, 6, globdata.gl_pathv[i], NULL);
+				launch_worker(ping6_data, TALK_PROTO_PING, 6, globdata.gl_pathv[i], NULL, NULL, NULL);
 			break;
 
 		  case TALK_PROTO_RPC:
+		  case TALK_PROTO_LDAP:
 			/* Have already forked the children */
 			break;
 
@@ -383,7 +406,7 @@ static int scan_queue(char *id, int talkproto)
 	}
 
 	globfree(&globdata);
-	freestrbuffer(rpc_data);
+	freestrbuffer(queue_data);
 
 	return 1;
 }
@@ -491,7 +514,7 @@ collectioncleanup:
 	return 1;
 }
 
-static int collect_rpc_results(void)
+static int collect_generic_results(char *toolid)
 {
 	pid_t pid;
 	int status;
@@ -553,8 +576,8 @@ static int collect_rpc_results(void)
 		testrec->talkresult = TALK_CONN_FAILED;
 
 		*l = '\0';
-		if (WIFEXITED(status)) sprintf(l, "rpcinfo process terminated with error status %d\n", WEXITSTATUS(status));
-		if (WIFSIGNALED(status)) sprintf(l, "rpcinfo process terminated by signal %d\n", WTERMSIG(status));
+		if (WIFEXITED(status)) sprintf(l, "%s process terminated with error status %d\n", toolid, WEXITSTATUS(status));
+		if (WIFSIGNALED(status)) sprintf(l, "%s process terminated by signal %d\n", toolid, WTERMSIG(status));
 
 		if (*l != '\0') {
 			errprintf("%s", l);
@@ -586,6 +609,16 @@ collectioncleanup:
 	}
 
 	return 1;
+}
+
+static int collect_rpc_results(void)
+{
+	return collect_generic_results("rpcinfo");
+}
+
+static int collect_ldap_results(void)
+{
+	return collect_generic_results("ldaptalk");
 }
 
 
@@ -657,6 +690,11 @@ int main(int argc, char **argv)
 			mytalkprotocol = TALK_PROTO_RPC;
 			if (!timeout) timeout = 30;
 		}
+		else if (strcmp(argv[argi], "ldap") == 0) {
+			queueid = argv[argi];
+			mytalkprotocol = TALK_PROTO_LDAP;
+			if (!timeout) timeout = 30;
+		}
 	}
 
 	if (!queueid) {
@@ -696,6 +734,9 @@ int main(int argc, char **argv)
 				break;
 			  case TALK_PROTO_RPC:
 				while (collect_rpc_results()) anyaction++;
+				break;
+			  case TALK_PROTO_LDAP:
+				while (collect_ldap_results()) anyaction++;
 				break;
 			  default:
 				break;
