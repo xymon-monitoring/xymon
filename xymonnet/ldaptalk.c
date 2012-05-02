@@ -71,7 +71,7 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 		nettimeout.tv_sec = timeout;
 		nettimeout.tv_usec = 0;
 		if ((rc = ldap_set_option(ldaphandle, LDAP_OPT_NETWORK_TIMEOUT, &nettimeout)) != LDAP_SUCCESS) {
-			sprintf(msgtext, "LDAP failed to select LDAP protocol, cannot connect: %s\n", ldap_err2string(rc));
+			sprintf(msgtext, "LDAP failed to set LDAP timeout: %s\n", ldap_err2string(rc));
 		}
 	}
 
