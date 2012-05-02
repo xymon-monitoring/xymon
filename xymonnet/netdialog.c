@@ -418,21 +418,29 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 	}
 	else {
 		xtreePos_t handle;
-		char *opt;
+		char *silentopt, *portopt;
 		int port = 0, silenttest = 0;
 
-		opt = strrchr(testspec, ':');
-		if (opt) {
+		silentopt = strrchr(testspec, ':');
+		if (silentopt) {
 			/* Cut off the "silent" modifier */
-			if ((strcasecmp(opt, ":s") == 0) || (strcasecmp(opt, ":q") == 0)) {
+			if ((strcasecmp(silentopt, ":s") == 0) || (strcasecmp(silentopt, ":q") == 0)) {
 				silenttest = 1;
-				*opt = '\0';
-				opt = strrchr(testspec, ':');
+				*silentopt = '\0';
 			}
+			else
+				silentopt = NULL;
+		}
 
-			if (opt) {
-				port = atoi(opt);
-				*opt = '\0';
+		portopt = strrchr(testspec, ':');
+		if (portopt) {
+			port = atoi(portopt);
+			if (port > 0) {
+				*portopt = '\0';
+			}
+			else {
+				port = 0;
+				portopt = NULL;
 			}
 		}
 
@@ -440,6 +448,11 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 		if (argnmatch(testspec, "rpc=")) *(testspec+3) = '\0';
 
 		handle = xtreeFind(netdialogs, testspec);
+
+		/* Must restore the stuff we have cut off with silent/portnumber options - it might not be a net test at all! */
+		if (portopt) *portopt = ':';
+		if (silentopt) *silentopt = ':';
+
 		if (handle != xtreeEnd(netdialogs)) {
 			netdialog_t *rec = xtreeData(netdialogs, handle);
 
