@@ -39,13 +39,15 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	LDAP *ldaphandle = NULL;
 	LDAPMessage *e, *result = NULL;
 	struct timespec starttime, endtime;
+	struct timeval nettimeout;
 	int rc, msgID = -1;
 	char msgtext[4096];
 	int testresult = 0;
 
+	getntimer(&starttime);
+
 	if (!username) username = "";
 	if (!password) password = "";
-
 
 	/*
 	 * Parse the LDAP URL and get and LDAP handle
@@ -62,16 +64,15 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 		testresult = 1; goto cleanup;
 	}
 
-
 	/* 
 	 * Set the timeout on network operations.
 	 */
 	{
-		struct timeval nettimeout;
-
 		nettimeout.tv_sec = timeout;
 		nettimeout.tv_usec = 0;
-		ldap_set_option(ldaphandle, LDAP_OPT_NETWORK_TIMEOUT, &nettimeout);
+		if ((rc = ldap_set_option(ldaphandle, LDAP_OPT_NETWORK_TIMEOUT, &nettimeout)) != LDAP_SUCCESS) {
+			sprintf(msgtext, "LDAP failed to select LDAP protocol, cannot connect: %s\n", ldap_err2string(rc));
+		}
 	}
 
 	/*
@@ -94,13 +95,7 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 		}
 	}
 
-	/*
-	 * Start timer now. TLS connections initiate the connection with the ldap_start_tls
-	 * command; non-TLS connections initiate the connection with the ldap_simple_bind command.
-	 */
-	getntimer(&starttime);
-
-	/* For TLS connections, try to start the TLS session */
+	/* For TLS connections, try to start the TLS session. This will trigger network-level connect. */
 	if (strcmp(ludp->lud_scheme, "ldaps") == 0) {
 		dbgprintf("Trying to enable TLS for querying '%s'\n", url);
 		if ((rc = ldap_start_tls_s(ldaphandle, NULL, NULL)) != LDAP_SUCCESS) {
@@ -111,7 +106,7 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	}
 
 	/* Bind to the server */
-	msgID = ldap_simple_bind_s(ldaphandle, username, password);
+	msgID = ldap_simple_bind(ldaphandle, username, password);
 	if (msgID == -1) {
 		sprintf(msgtext, "Cannot bind to LDAP server (URL: '%s')\n", url);
 		addtobuffer(outdata, msgtext);
@@ -119,7 +114,8 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	}
 
 	/* Get the result of the bind operation */
-	switch (ldap_result(ldaphandle, msgID, LDAP_MSG_ONE, NULL, &result)) {
+	nettimeout.tv_sec = timeout; nettimeout.tv_usec = 0;
+	switch (ldap_result(ldaphandle, msgID, LDAP_MSG_ONE, &nettimeout, &result)) {
 	  case -1:
 		if (result == NULL) {
 			addtobuffer(outdata, "LDAP BIND failed (unknown error)\n");
@@ -153,7 +149,8 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	}
 
 	/* We're bound to the LDAP server. Now do the search. */
-	rc = ldap_search_st(ldaphandle, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, NULL, &result);
+	nettimeout.tv_sec = timeout; nettimeout.tv_usec = 0;
+	rc = ldap_search_st(ldaphandle, ludp->lud_dn, ludp->lud_scope, ludp->lud_filter, ludp->lud_attrs, 0, &nettimeout, &result);
 	switch (rc) {
 	  case LDAP_SUCCESS:
 		break;
@@ -166,8 +163,6 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 		addtobuffer(outdata, msgtext);
 		testresult = 4; goto cleanup;
 	}
-	getntimer(&endtime);
-	*elapsedus = ntimerus(&starttime, &endtime);
 
 	sprintf(msgtext, "Searching LDAP for %s yields %d results:\n\n", url, ldap_count_entries(ldaphandle, result));
 	addtobuffer(outdata, msgtext);
@@ -203,6 +198,9 @@ int test_ldap(char *url, char *username, char *password, strbuffer_t *outdata, i
 	}
 
 cleanup:
+	getntimer(&endtime);
+	*elapsedus = ntimerus(&starttime, &endtime);
+
 	if (result) ldap_msgfree(result);
 	if (ldaphandle) ldap_unbind(ldaphandle);
 	if (ludp) ldap_free_urldesc(ludp);

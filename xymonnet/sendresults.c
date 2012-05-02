@@ -13,6 +13,7 @@ static char rcsid[] = "$Id$";
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <limits.h>
 
 #include "libxymon.h"
@@ -31,7 +32,7 @@ typedef struct subqueue_t {
 	int batchseq;
 } subqueue_t;
 
-void add_to_sub_queue(myconn_t *rec, char *moduleid)
+void add_to_sub_queue(myconn_t *rec, char *moduleid, ...)
 {
 	static void *subqueues = NULL;
 	subqueue_t *qrec = NULL;
@@ -44,7 +45,7 @@ void add_to_sub_queue(myconn_t *rec, char *moduleid)
 
 		for (handle = xtreeFirst(subqueues); (handle != xtreeEnd(subqueues)); handle = xtreeNext(subqueues, handle)) {
 			qrec = xtreeData(subqueues, handle);
-			add_to_sub_queue(NULL, qrec->queuename);
+			add_to_sub_queue(NULL, qrec->queuename, NULL);
 		}
 	}
 
@@ -63,6 +64,9 @@ void add_to_sub_queue(myconn_t *rec, char *moduleid)
 	}
 
 	if (rec) {
+		va_list extraparams;
+		char *extrastr;
+
 		if (!qrec->batchfd) {
 			if (qrec->batchid == 0) qrec->batchid = getcurrenttime(NULL);
 			qrec->batchseq++;
@@ -72,7 +76,13 @@ void add_to_sub_queue(myconn_t *rec, char *moduleid)
 			qrec->batchfd = fopen(qrec->batchfn, "w");
 		}
 
-		fprintf(qrec->batchfd, "%s\t%s\t%s\n", xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip, rec->testspec);
+
+		fprintf(qrec->batchfd, "%s\t%s\t%s", xmh_item(rec->hostinfo, XMH_HOSTNAME), rec->netparams.destinationip, rec->testspec);
+		va_start(extraparams, moduleid);
+		while ((extrastr = va_arg(extraparams, char *)) != NULL) fprintf(qrec->batchfd, "\t%s", extrastr);
+		va_end(extraparams);
+		fprintf(qrec->batchfd, "\n");
+
 		qrec->batchsz++;
 	}
 
@@ -194,21 +204,23 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 		switch (rec->talkprotocol) {
 		  case TALK_PROTO_PING:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
-				add_to_sub_queue(rec, "ping");
+				add_to_sub_queue(rec, "ping", NULL);
 				continue;
 			}
 			break;
 
 		  case TALK_PROTO_LDAP:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
-				add_to_sub_queue(rec, "ldap");
+				char *creds = xmh_item(rec->hostinfo, XMH_LDAPLOGIN);
+
+				add_to_sub_queue(rec, "ldap", creds, NULL);
 				continue;
 			}
 			break;
 
 		  case TALK_PROTO_RPC:
 			if (!issubmodule && (rec->talkresult == TALK_OK)) {
-				add_to_sub_queue(rec, "rpc");
+				add_to_sub_queue(rec, "rpc", NULL);
 				continue;
 			}
 			break;

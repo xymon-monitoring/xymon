@@ -147,13 +147,13 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		char *workeroutfn, *workererrfn, *cmd;
 		int outfile, errfile;
 		char *cmdargs[10];
-		char timeoutstr[10];
+		char timeoutstr[20];
 
 		close(pfd[1]); /* Close write end of pipe */
 
 		cmd = NULL;
 		memset(cmdargs, 0, sizeof(cmdargs));
-		sprintf(timeoutstr, "%d", timeout);
+		sprintf(timeoutstr, "--timeout=%d", timeout);
 
 		dbgprintf("Running worker process in pid %d\n", (int)getpid());
 
@@ -207,15 +207,20 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 
 		  case TALK_PROTO_LDAP:
 			cmd = "ldaptalk";
-			cmdargs[1] = "--timeout";
-			cmdargs[2] = timeoutstr;
-			cmdargs[3] = STRBUF(workerdata);
-			cmdargs[4] = opt1;
-			cmdargs[5] = opt2;
+			cmdargs[1] = timeoutstr;
+			cmdargs[2] = STRBUF(workerdata);
+			cmdargs[3] = opt1;
+			cmdargs[4] = opt2;
 			break;
 
 		  default:
 			break;
+		}
+
+		if (debug) {
+			int i;
+			dbgprintf("Command: %s", cmd);
+			for (i=1; (cmdargs[i]); i++) dbgprintf("Arg %d: %s\n", i, cmdargs[i]);
 		}
 
 		if (cmd) {
@@ -326,14 +331,13 @@ static int scan_queue(char *id, int talkproto)
 		remove(globdata.gl_pathv[i]);
 
 		while (fgets(batchl, sizeof(batchl), batchfd)) {
-			char *hname, *ip, *testspec, *opt1, *opt2;
+			char *hname, *ip, *testspec, *extras;
 			void *hinfo;
 
 			hname = strtok(batchl, "\t\r\n");
 			ip = (hname ? strtok(NULL, "\t\r\n") : NULL);
 			testspec = (ip ? strtok(NULL, "\t\r\n") : NULL);
-			opt1 = (testspec ? strtok(NULL, "\t\r\n") : NULL);
-			opt2 = (opt1 ? strtok(NULL, "\t\r\n") : NULL);
+			extras = (testspec ? strtok(NULL, "\t\r\n") : NULL);
 			hinfo = (hname ? hostinfo(hname) : NULL);
 
 			if (hinfo && ip && conn_is_ip(ip) && testspec) {
@@ -352,6 +356,7 @@ static int scan_queue(char *id, int talkproto)
 					 *    reported by fping back to the test record.
 					 */
 					myconn_t *testrec;
+					char *username, *password;
 
 					testrec = (myconn_t *)calloc(1, sizeof(myconn_t));
 					testrec->testspec = strdup(id);
@@ -370,13 +375,18 @@ static int scan_queue(char *id, int talkproto)
 						/* We do one ping process per test */
 						clearstrbuffer(queue_data);
 						addtobuffer(queue_data, ip);
-						launch_worker(queue_data, TALK_PROTO_RPC, 0, globdata.gl_pathv[i], testrec, opt1, opt2);
+						launch_worker(queue_data, TALK_PROTO_RPC, 0, globdata.gl_pathv[i], testrec, NULL, NULL);
 						break;
 					  case TALK_PROTO_LDAP:
 						/* We do one ldaptalk process per test */
 						clearstrbuffer(queue_data);
 						addtobuffer(queue_data, testspec);
-						launch_worker(queue_data, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, opt1, opt2);
+						username = password = NULL;
+						if (extras && *extras) {
+							username = strtok(extras, ":");
+							if (username) password = strtok(NULL, "\t\r\n");
+						}
+						launch_worker(queue_data, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, username, password);
 						break;
 					  default:
 						break;
@@ -503,9 +513,9 @@ collectioncleanup:
 		if (fd) fclose(fd);
 
 		sprintf(fn, "%s.%010d.out", actrec->basefn, (int)pid);
-		remove(fn);
+		if (!debug) remove(fn);
 		sprintf(fn, "%s.%010d.err", actrec->basefn, (int)pid);
-		remove(fn);
+		if (!debug) remove(fn);
 
 		xfree(actrec->basefn);
 		xfree(actrec);
@@ -529,7 +539,7 @@ static int collect_generic_results(char *toolid)
 	/* Wait for one of the childs to finish */
 	pid = waitpid(-1, &status, WNOHANG);
 	if (pid == -1) {
-		errprintf("waitpid failed: %s\n", strerror(errno));
+		dbgprintf("waitpid failed: %s\n", strerror(errno));
 		return 0;
 	}
 	else if (pid == 0) {
