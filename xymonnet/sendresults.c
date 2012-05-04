@@ -286,6 +286,7 @@ void send_test_results(listhead_t *head, char *collector, int issubmodule)
 		  case TALK_BADSSLHANDSHAKE: s = "BADSSLHANDSHAKE"; break;
 		  case TALK_INTERRUPTED: s = "INTERRUPTED"; break;
 		  case TALK_CANNOT_RESOLVE: s = "CANNOT_RESOLVE"; break;
+		  case TALK_MODULE_FAILED: s = "MODULE_FAILED"; break;
 		  default: s = "UNKNOWN"; break;
 		}
 		snprintf(msgline, sizeof(msgline), "Status: %s\n", s);

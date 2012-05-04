@@ -46,7 +46,7 @@ typedef struct myconn_t {
 	int timeout;
 
 	/* Results and statistics */
-	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE } talkresult;
+	enum { TALK_CONN_FAILED, TALK_CONN_TIMEOUT, TALK_OK, TALK_BADDATA, TALK_BADSSLHANDSHAKE, TALK_INTERRUPTED, TALK_CANNOT_RESOLVE, TALK_MODULE_FAILED } talkresult;
 	strbuffer_t *textlog;			/* Logs the actual data exchanged */
 	unsigned int bytesread;
 	unsigned int byteswritten;
@@ -87,6 +87,9 @@ typedef struct myconn_t {
 	void *dnschannel;
 	enum { DNS_NOTDONE, DNS_QUERY_READY, DNS_QUERY_ACTIVE, DNS_QUERY_COMPLETED, DNS_FINISHED } dnsstatus;
 	struct timespec dnsstarttime;
+
+	/* External tests */
+	pid_t workerpid;
 } myconn_t;
 
 typedef struct net_test_options_t {
