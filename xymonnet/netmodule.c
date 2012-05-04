@@ -366,20 +366,21 @@ static int scan_queue(char *id, int talkproto)
 				testrec->testspec = strdup(id);
 				testrec->talkprotocol = talkproto;
 				testrec->hostinfo = hinfo;
-				testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
 				testrec->netparams.destinationip = strdup(ip);
 
-				/* Add the test only if we haven't got it already */
 				switch (talkproto) {
 				  case TALK_PROTO_PING:
+					/* Add the test only if we haven't got it already */
 					handle = xtreeFind(iptree, ip);
 					if (handle == xtreeEnd(iptree)) {
 						xtreeAdd(iptree, testrec->netparams.destinationip, testrec);
 						feed_queue(talkproto, ip);
+						testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
 					}
 					break;
 				  case TALK_PROTO_LDAP:
 					/* We do one ldaptalk process per test */
+					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
 					clearstrbuffer(queue_data);
 					addtobuffer(queue_data, testspec);
 					username = password = NULL;
@@ -391,12 +392,20 @@ static int scan_queue(char *id, int talkproto)
 					break;
 				  case TALK_PROTO_EXTERNAL:
 					/* We do one process per external test */
+					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
 					clearstrbuffer(queue_data);
 					addtobuffer(queue_data, testspec);
 					launch_worker(queue_data, TALK_PROTO_EXTERNAL, 0, globdata.gl_pathv[i], testrec, ip, NULL);
 					break;
 				  default:
 					break;
+				}
+
+				if (!testrec->listitem) {
+					/* Didn't add the test - zap the unused record */
+					xfree(testrec->testspec);
+					xfree(testrec->netparams.destinationip);
+					xfree(testrec);
 				}
 			}
 		}
@@ -665,7 +674,17 @@ int main(int argc, char **argv)
 	int mytalkprotocol = TALK_PROTO_PING;
 
 	for (argi=1; (argi < argc); argi++) {
-		if (queueid || *(argv[argi]) != '-') {
+		if (strcmp(argv[argi], "ping") == 0) {
+			queueid = argv[argi];
+			mytalkprotocol = TALK_PROTO_PING;
+			if (!timeout) timeout = 200;
+		}
+		else if (strcmp(argv[argi], "ldap") == 0) {
+			queueid = argv[argi];
+			mytalkprotocol = TALK_PROTO_LDAP;
+			if (!timeout) timeout = 30;
+		}
+		else if (queueid || *(argv[argi]) != '-') {
 			/* External network test module */
 			if (!queueid) {
 				queueid = argv[argi];
@@ -686,16 +705,6 @@ int main(int argc, char **argv)
 		else if (argnmatch(argv[argi], "--timeout=")) {
 			char *p = strchr(argv[argi], '=');
 			timeout = atoi(p+1);
-		}
-		else if (strcmp(argv[argi], "ping") == 0) {
-			queueid = argv[argi];
-			mytalkprotocol = TALK_PROTO_PING;
-			if (!timeout) timeout = 200;
-		}
-		else if (strcmp(argv[argi], "ldap") == 0) {
-			queueid = argv[argi];
-			mytalkprotocol = TALK_PROTO_LDAP;
-			if (!timeout) timeout = 30;
 		}
 	}
 
@@ -747,6 +756,8 @@ int main(int argc, char **argv)
 			/* Nuke any tasks that have stalled */
 			kill_stalled_tasks();
 		}
+
+		dbgprintf("Pending:%d, done:%d\n", pendingtests->len, donetests->len);
 
 		if ((pendingtests->len == 0) && (donetests->len > 0)) {
 			listitem_t *walk;
