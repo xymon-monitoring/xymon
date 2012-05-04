@@ -27,6 +27,13 @@ static listhead_t *pendingtests = NULL;
 static listhead_t *activetests = NULL;
 static listhead_t *donetests = NULL;
 
+static enum dns_strategy_t dnsstrategy = DNS_STRATEGY_STANDARD;
+
+void set_dns_strategy(enum dns_strategy_t strategy)
+{
+	dnsstrategy = strategy;
+}
+
 static int last_write_step(myconn_t *rec)
 {
 	int i;
@@ -571,10 +578,22 @@ void *add_net_test(char *testspec, char **dialog, int dialogtoken, net_test_opti
 		break;
 	}
 
-	if (conn_is_ip(newtest->netparams.destinationip) == 0) {
-		/* Destination is not an IP, so try doing a hostname lookup */
-		newtest->netparams.lookupstring = strdup(newtest->netparams.destinationip);
-		newtest->netparams.lookupstatus = LOOKUP_NEEDED;
+	switch (dnsstrategy) {
+	  case DNS_STRATEGY_STANDARD:
+	  case DNS_STRATEGY_HOSTNAME:
+		if (conn_is_ip(newtest->netparams.destinationip) == 0) {
+			/* Destination is not an IP, so try doing a hostname lookup */
+			newtest->netparams.lookupstring = strdup(newtest->netparams.destinationip);
+			newtest->netparams.lookupstatus = LOOKUP_NEEDED;
+		}
+		break;
+	 case DNS_STRATEGY_IP:
+		if (conn_is_ip(newtest->netparams.destinationip) == 0) {
+			/* Destination is not an IP, so fail */
+			newtest->netparams.lookupstring = strdup(newtest->netparams.destinationip);
+			newtest->netparams.lookupstatus = LOOKUP_FAILED;
+		}
+		break;
 	}
 
 	newtest->listitem = list_item_create(pendingtests, newtest, newtest->testspec);
@@ -584,7 +603,7 @@ void *add_net_test(char *testspec, char **dialog, int dialogtoken, net_test_opti
 
 
 
-listhead_t *run_net_tests(int concurrency)
+listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6)
 {
 	int maxfd;
 
@@ -593,7 +612,7 @@ listhead_t *run_net_tests(int concurrency)
 	/* Loop to process data */
 	do {
 		fd_set fdread, fdwrite;
-		int n, dodns;
+		int n;
 		struct timeval tmo;
 		myconn_t *rec;
 		listitem_t *pcur, *pnext;
@@ -630,8 +649,26 @@ listhead_t *run_net_tests(int concurrency)
 			else if (rec->netparams.lookupstatus == LOOKUP_FAILED) {
 				/* DNS lookup determined that this host does not have a valid IP. */
 				dbgprintf("    LOOKUP_FAILED\n");
-				list_item_move(donetests, pcur, rec->testspec);
-				rec->talkresult = TALK_CANNOT_RESOLVE;
+				switch (dnsstrategy) {
+				  case DNS_STRATEGY_HOSTNAME:
+					/* DNS failed -> test failed */
+					list_item_move(donetests, pcur, rec->testspec);
+					rec->talkresult = TALK_CANNOT_RESOLVE;
+					break;
+				  case DNS_STRATEGY_STANDARD:
+				  case DNS_STRATEGY_IP:	/* This one cannot really happen */
+					/* Use IP from hosts.cfg, if it is valid */
+					if (!conn_null_ip(xmh_item(rec->hostinfo, XMH_IP))) {
+						xfree(rec->netparams.destinationip);
+						rec->netparams.destinationip = strdup(xmh_item(rec->hostinfo, XMH_IP));
+						rec->netparams.lookupstatus = LOOKUP_COMPLETED;
+					}
+					else {
+						list_item_move(donetests, pcur, rec->testspec);
+						rec->talkresult = TALK_CANNOT_RESOLVE;
+					}
+					break;
+				}
 				pcur = pnext;
 				continue;
 			}
@@ -643,6 +680,12 @@ listhead_t *run_net_tests(int concurrency)
 			  case TALK_PROTO_LDAP:
 			  case TALK_PROTO_EXTERNAL:
 				dbgprintf("    conn_prepare_connection()\n");
+				if (!rec->netparams.sourceip && (sourceip4 || sourceip6)) {
+					switch (conn_is_ip(rec->netparams.destinationip)) {
+					  case 4: rec->netparams.sourceip = sourceip4; break;
+					  case 6: rec->netparams.sourceip = sourceip6; break;
+					}
+				}
 				if (conn_prepare_connection(rec->netparams.destinationip, 
 							rec->netparams.destinationport, 
 							rec->netparams.socktype,

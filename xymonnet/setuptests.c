@@ -69,7 +69,7 @@ static int wanted_host(void *host, char *netstring)
 	return 0;
 }
 
-void setup_tests(int defaulttimeout)
+void setup_tests(int defaulttimeout, int pingenabled)
 {
 	char *location;
 	void *hwalk;
@@ -109,7 +109,7 @@ void setup_tests(int defaulttimeout)
 			destination = xmh_item(hwalk, XMH_IP);
 		}
 
-		if (!xmh_item(hwalk, XMH_FLAG_NOCONN) && !xmh_item(hwalk, XMH_FLAG_NOPING)) {
+		if (pingenabled && !xmh_item(hwalk, XMH_FLAG_NOCONN) && !xmh_item(hwalk, XMH_FLAG_NOPING)) {
 			/* Add the ping check */
 			memset(&netparams, 0, sizeof(netparams));
 			netparams.destinationip = strdup(destination);
@@ -126,21 +126,25 @@ void setup_tests(int defaulttimeout)
 			net_test_options_t options = { NET_TEST_STANDARD, defaulttimeout };
 
 			if (strncmp(testspec, "conn=", 5) == 0) {
-				char *tsdup = strdup(testspec+5);
-				char *sptr, *ip;
+				if (pingenabled) {
+					char *tsdup = strdup(testspec+5);
+					char *sptr, *ip;
 
-				ip = strtok_r(tsdup, ",", &sptr);
-				while (ip) {
-					if (conn_is_ip(ip) && (strcmp(ip, destination) != 0)) {
-						memset(&netparams, 0, sizeof(netparams));
-						netparams.destinationip = strdup(ip);
-						options.testtype = NET_TEST_PING;
-						options.timeout = defaulttimeout;
-						/* update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec="ping" */
-						add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
+					ip = strtok_r(tsdup, ",", &sptr);
+					while (ip) {
+						if (conn_is_ip(ip) && (strcmp(ip, destination) != 0)) {
+							memset(&netparams, 0, sizeof(netparams));
+							netparams.destinationip = strdup(ip);
+							options.testtype = NET_TEST_PING;
+							options.timeout = defaulttimeout;
+							/* update nettest set valid=1 where hostname=xmh_item(hwalk, XMH_HOSTNAME) and testspec="ping" */
+							add_net_test("ping", NULL, 0, &options, &netparams, hwalk);
+						}
+
+						ip = strtok_r(NULL, ",", &sptr);
 					}
 
-					ip = strtok_r(NULL, ",", &sptr);
+					xfree(tsdup);
 				}
 			}
 			else {

@@ -97,10 +97,13 @@ typedef struct net_test_options_t {
 	int timeout;
 } net_test_options_t;
 
+enum dns_strategy_t { DNS_STRATEGY_STANDARD, DNS_STRATEGY_IP, DNS_STRATEGY_HOSTNAME };
+extern void set_dns_strategy(enum dns_strategy_t strategy);
+
 extern void test_is_done(myconn_t *rec);
 extern void *add_net_test(char *testspec, char **dialog, int dtoken, net_test_options_t *options,
 			 myconn_netparams_t *netparams, void *hostinfo);
-extern listhead_t *run_net_tests(int concurrency);
+extern listhead_t *run_net_tests(int concurrency, char *sourceip4, char *sourceip6);
 extern void init_tcp_testmodule(void);
 
 #endif
