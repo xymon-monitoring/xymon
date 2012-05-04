@@ -36,6 +36,7 @@ char *extargs[10] = { NULL, };
 /* pendingtests and donetests are a list of myconn_t records which holds the data for each test. */
 static listhead_t *pendingtests = NULL;
 static listhead_t *donetests = NULL;
+static listhead_t *ip4tests = NULL, *ip6tests = NULL;
 
 /*
  * iptree is a cross-reference index that maps IP-adresses to record
@@ -64,11 +65,6 @@ int running = 1;
 time_t nextconfigreload = 0;
 
 
-/* ping{4,6}_data is a list of the IP's we will submit to the next fping process */
-static strbuffer_t *ping4_data = NULL;
-static strbuffer_t *ping6_data = NULL;
-
-
 void sig_handler(int signum)
 {
 	switch (signum) {
@@ -85,40 +81,7 @@ void sig_handler(int signum)
 }
 
 
-static void feed_queue(int talkproto, char *ip)
-{
-	/* Add an IP to the appropriate list of IP's fed to the next worker process */
-	char l[100];
-
-	switch (talkproto) {
-	  case TALK_PROTO_PING:
-		switch (conn_is_ip(ip)) {
-		  case 4:
-			if (!ping4_data) ping4_data = newstrbuffer(0);
-			sprintf(l, "%s\n", ip);
-			addtobuffer(ping4_data, l);
-			break;
-		  case 6:
-			if (!ping6_data) ping6_data = newstrbuffer(0);
-			sprintf(l, "%s\n", ip);
-			addtobuffer(ping6_data, l);
-			break;
-		  default:
-			break;
-		}
-		break;
-
-	  case TALK_PROTO_LDAP:
-	  case TALK_PROTO_EXTERNAL:
-		break;
-
-	  default:
-		break;
-	}
-}
-
-
-static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, char *basefn, void *datap, char *opt1, char *opt2)
+static pid_t launch_worker(char *workerdata, int talkproto, int subid, char *basefn, void *datap, char *opt1, char *opt2)
 {
 	/* 
 	 * Fork a new worker process.
@@ -128,13 +91,13 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 
 	if (pipe(pfd) == -1) {
 		errprintf("Cannot create pipe to worker process: %s\n", strerror(errno));
-		return;
+		return 0;
 	}
 
 	workerpid = fork();
 	if (workerpid < 0) {
 		errprintf("Cannot fork worker process: %s\n", strerror(errno));
-		return;
+		return 0;
 	}
 
 	else if (workerpid == 0) {
@@ -198,7 +161,7 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		  case TALK_PROTO_LDAP:
 			cmd = "ldaptalk";
 			cmdargs[1] = timeoutstr;
-			cmdargs[2] = STRBUF(workerdata);
+			cmdargs[2] = workerdata;
 			cmdargs[3] = opt1;
 			cmdargs[4] = opt2;
 			break;
@@ -207,7 +170,7 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 			cmd = extargs[0];
 			for (i=1; (extargs[i] && (i < (sizeof(extargs)/sizeof(extargs[0])))); i++) {
 				if (strcasecmp(extargs[i], "$TEST") == 0) {
-					cmdargs[i-1] = STRBUF(workerdata);
+					cmdargs[i-1] = workerdata;
 				}
 				else if (strcasecmp(extargs[i], "$IP") == 0) {
 					cmdargs[i-1] = opt1;
@@ -239,9 +202,8 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 	}
 
 	else if (workerpid > 0) {
+		listitem_t *lwalk;
 		activeprocessrec_t *actrec;
-		char *outp;
-		int wres, outremain;
 
 		/* Parent - feed IP's to the child, and add the child PID to our list of running worker processes. */
 
@@ -249,18 +211,23 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 
 		switch (talkproto) {
 		  case TALK_PROTO_PING:
-			outp = STRBUF(workerdata); outremain = STRBUFLEN(workerdata);
-			do {
-				wres = write(pfd[1], outp, outremain);
-				if (wres < 0) {
-					errprintf("Failed to feed all IP's to child ping process: %s\n", strerror(errno));
-					outremain = 0;
-				}
-				else {
-					outremain -= wres;
-					outp += wres;
-				}
-			} while (outremain > 0);
+			if (subid == 4) lwalk = ip4tests->head;
+			else if (subid == 6) lwalk = ip6tests->head;
+			else lwalk = NULL;
+
+			while (lwalk) {
+				listitem_t *lnext = lwalk->next;
+				myconn_t *testrec = (myconn_t *)lwalk->data;
+
+				/* Set workerpid here, so we dont have to walk the list twice */
+				testrec->workerpid = workerpid;
+
+				write(pfd[1], testrec->netparams.destinationip, strlen(testrec->netparams.destinationip));
+				write(pfd[1], "\n", 1);
+
+				list_item_move(pendingtests, lwalk, "");
+				lwalk = lnext;
+			}
 			break;
 
 		  case TALK_PROTO_LDAP:
@@ -271,7 +238,6 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 			break;
 		}
 		close(pfd[1]);
-		clearstrbuffer(workerdata);
 
 		actrec = (activeprocessrec_t *)calloc(1, sizeof(activeprocessrec_t));
 		actrec->pid = workerpid;
@@ -282,9 +248,12 @@ static void launch_worker(strbuffer_t *workerdata, int talkproto, int subid, cha
 		actrec->killcount = 0;
 		getntimer(&actrec->starttime);
 		list_item_create(activeprocesses, actrec, "");
+
 		/* Dont fork-bomb the system */
 		sleep(1);
 	}
+
+	return workerpid;
 }
 
 
@@ -299,7 +268,6 @@ static int scan_queue(char *id, int talkproto)
 	char filepath[PATH_MAX];
 	glob_t globdata;
 	int i;
-	strbuffer_t *queue_data;
 	int tstampofs;
 	time_t now = getcurrenttime(NULL);
 
@@ -313,8 +281,6 @@ static int scan_queue(char *id, int talkproto)
 		errprintf("Scanning for files %s failed, glob error\n", filepath);
 		return 0;
 	}
-
-	queue_data = newstrbuffer(0);
 
 	for (i = 0; (i < globdata.gl_pathc); i++) {
 		FILE *batchfd;
@@ -340,6 +306,7 @@ static int scan_queue(char *id, int talkproto)
 		while (fgets(batchl, sizeof(batchl), batchfd)) {
 			char *hname, *ip, *testspec, *extras;
 			void *hinfo;
+			int ipfamily = 0;
 
 			hname = strtok(batchl, "\t\r\n");
 			ip = (hname ? strtok(NULL, "\t\r\n") : NULL);
@@ -347,7 +314,8 @@ static int scan_queue(char *id, int talkproto)
 			extras = (testspec ? strtok(NULL, "\t\r\n") : NULL);
 			hinfo = (hname ? hostinfo(hname) : NULL);
 
-			if (hinfo && ip && conn_is_ip(ip) && testspec) {
+			if (ip) ipfamily = conn_is_ip(ip);
+			if (hinfo && ip && (ipfamily != 0) && testspec) {
 				myconn_t *testrec;
 				char *username, *password;
 				xtreePos_t handle;
@@ -374,28 +342,32 @@ static int scan_queue(char *id, int talkproto)
 					handle = xtreeFind(iptree, ip);
 					if (handle == xtreeEnd(iptree)) {
 						xtreeAdd(iptree, testrec->netparams.destinationip, testrec);
-						feed_queue(talkproto, ip);
-						testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
+						switch (ipfamily) {
+						  case 4:
+							testrec->listitem = list_item_create(ip4tests, testrec, testrec->testspec);
+							break;
+						  case 6:
+							testrec->listitem = list_item_create(ip6tests, testrec, testrec->testspec);
+							break;
+						  default:
+							break;
+						}
 					}
 					break;
 				  case TALK_PROTO_LDAP:
 					/* We do one ldaptalk process per test */
 					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
-					clearstrbuffer(queue_data);
-					addtobuffer(queue_data, testspec);
 					username = password = NULL;
 					if (extras && *extras) {
 						username = strtok(extras, ":");
 						if (username) password = strtok(NULL, "\t\r\n");
 					}
-					launch_worker(queue_data, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, username, password);
+					testrec->workerpid = launch_worker(testspec, TALK_PROTO_LDAP, 0, globdata.gl_pathv[i], testrec, username, password);
 					break;
 				  case TALK_PROTO_EXTERNAL:
 					/* We do one process per external test */
 					testrec->listitem = list_item_create(pendingtests, testrec, testrec->testspec);
-					clearstrbuffer(queue_data);
-					addtobuffer(queue_data, testspec);
-					launch_worker(queue_data, TALK_PROTO_EXTERNAL, 0, globdata.gl_pathv[i], testrec, ip, NULL);
+					testrec->workerpid = launch_worker(testspec, TALK_PROTO_EXTERNAL, 0, globdata.gl_pathv[i], testrec, ip, NULL);
 					break;
 				  default:
 					break;
@@ -414,10 +386,12 @@ static int scan_queue(char *id, int talkproto)
 		switch (talkproto) {
 		  case TALK_PROTO_PING:
 			/* We do one ping process per IP protocol for the entire batch */
-			if (ping4_data && STRBUFLEN(ping4_data)) 
-				launch_worker(ping4_data, TALK_PROTO_PING, 4, globdata.gl_pathv[i], NULL, NULL, NULL);
-			if (ping6_data && STRBUFLEN(ping6_data))
-				launch_worker(ping6_data, TALK_PROTO_PING, 6, globdata.gl_pathv[i], NULL, NULL, NULL);
+			if (ip4tests->len > 0) {
+				launch_worker(NULL, TALK_PROTO_PING, 4, globdata.gl_pathv[i], NULL, NULL, NULL);
+			}
+			if (ip6tests->len > 0) {
+				launch_worker(NULL, TALK_PROTO_PING, 6, globdata.gl_pathv[i], NULL, NULL, NULL);
+			}
 			break;
 
 		  case TALK_PROTO_LDAP:
@@ -431,10 +405,10 @@ static int scan_queue(char *id, int talkproto)
 	}
 
 	globfree(&globdata);
-	freestrbuffer(queue_data);
 
 	return 1;
 }
+
 
 static int collect_ping_results(void)
 {
@@ -442,6 +416,8 @@ static int collect_ping_results(void)
 	int status;
 	listitem_t *actwalk;
 	activeprocessrec_t *actrec;
+	listitem_t *testwalk;
+	myconn_t *testrec;
 	int found = 0;
 
 	/* Wait for one of the childs to finish */
@@ -494,11 +470,11 @@ static int collect_ping_results(void)
 			if (ip && results) {
 				handle = xtreeFind(iptree, ip);
 				if (handle != xtreeEnd(iptree)) {
-					myconn_t *testrec = (myconn_t *)xtreeData(iptree, handle);
 					int testcount = 0;
 					double pingtime = 0.0;
 					char *tok;
 
+					testrec = (myconn_t *)xtreeData(iptree, handle);
 					if (!testrec->textlog) testrec->textlog = newstrbuffer(0);
 					addtobuffer(testrec->textlog, results);
 
@@ -519,7 +495,7 @@ static int collect_ping_results(void)
 						testrec->talkresult = TALK_CONN_FAILED;
 					}
 
-					list_item_move(donetests, testrec->listitem, ip);
+					list_item_move(donetests, testrec->listitem, "");
 				}
 			}
 		}
@@ -536,8 +512,22 @@ collectioncleanup:
 		xfree(actrec);
 	}
 
+	/* If there are any test records left in "pendingtests" which were handled by this worker process, then flag them as failed. */
+	testwalk = (listitem_t *)pendingtests->head;
+	while (testwalk) {
+		listitem_t *tnext = testwalk->next;
+
+		testrec = (myconn_t *)testwalk->data;
+		if (testrec->workerpid == pid) {
+			testrec->talkresult = TALK_MODULE_FAILED;
+			list_item_move(donetests, testwalk, "");
+		}
+
+		testwalk = tnext;
+	}
 	return 1;
 }
+
 
 static int collect_generic_results(char *toolid)
 {
@@ -624,9 +614,9 @@ static int collect_generic_results(char *toolid)
 
 collectioncleanup:
 	sprintf(fn, "%s.%010d.out", actrec->basefn, (int)pid);
-	remove(fn);
+	if (!debug) remove(fn);
 	sprintf(fn, "%s.%010d.err", actrec->basefn, (int)pid);
-	remove(fn);
+	if (!debug) remove(fn);
 
 	if (actrec) {
 		xfree(actrec->basefn);
@@ -725,6 +715,8 @@ int main(int argc, char **argv)
 	activeprocesses = list_create("activeprocesses");
 	pendingtests = list_create("pending");
 	donetests = list_create("done");
+	ip4tests = list_create("ip4tests");
+	ip6tests = list_create("ip6tests");
 
 	while (running) {
 		time_t now = gettimer();
