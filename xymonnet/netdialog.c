@@ -488,6 +488,22 @@ char **net_dialog(char *testspec, myconn_netparams_t *netparams, net_test_option
 		result = build_http_dialog(testspec, netparams, hostinfo);
 		options->testtype = NET_TEST_HTTP;
 	}
+	else if (argnmatch(testspec, "apache") || argnmatch(testspec, "apache=")) {
+		char *url = strchr(testspec, '=');
+
+		if (url) 
+			url = strdup(url+1);
+		else {
+			char *target = xmh_item(hostinfo, XMH_HOSTNAME);
+
+			url = (char *)malloc(30 + strlen(target));
+			sprintf(url, "http://%s/server-status?auto", target);
+		}
+
+		result = build_http_dialog(url, netparams, hostinfo);
+		options->testtype = NET_TEST_HTTP;
+		xfree(url);
+	}
 	else {
 		/* Default to NET_TEST_STANDARD, but build_standard_dialog() may override it */
 		options->testtype = NET_TEST_STANDARD;
